@@ -26,6 +26,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	imgUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/protoutils"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -160,14 +161,33 @@ func (c *cosignSignatureVerifier) VerifySignature(ctx context.Context,
 		allVerifyErrs = multierror.Append(allVerifyErrs, err)
 	}
 
+	// Find the union of all image references from verified signatures. The resulting status
+	// is verified if at least one verification was successful.
+	//
+	// verifier_1(sig_1) OR ... OR verifier_1(sig_N)
+	// OR
+	// ...
+	// OR
+	// verifier_N(sig_1) OR ... OR verifier_N(sig_N)
+	verifiedImageReferences := set.NewStringSet()
 	for _, opts := range c.verifierOpts {
-		verifiedImageReferences, err := verifyImageSignatures(ctx, sigs, hash, image, opts)
-		if err == nil && len(verifiedImageReferences) != 0 {
-			return storage.ImageSignatureVerificationResult_VERIFIED, verifiedImageReferences, nil
+		for _, sig := range sigs {
+			verifierRefs, err := verifyImageSignature(ctx, sig, hash, image, opts)
+			if err != nil {
+				allVerifyErrs = multierror.Append(allVerifyErrs, err)
+				continue
+			}
+			// Successful verification. Keep the image references.
+			verifiedImageReferences.AddAll(verifierRefs...)
 		}
-		allVerifyErrs = multierror.Append(allVerifyErrs, err)
 	}
 
+	if len(verifiedImageReferences) > 0 {
+		verifiedRefSlice := verifiedImageReferences.AsSortedSlice(
+			func(i, j string) bool { return i < j },
+		)
+		return storage.ImageSignatureVerificationResult_VERIFIED, verifiedRefSlice, nil
+	}
 	return storage.ImageSignatureVerificationResult_FAILED_VERIFICATION, nil, allVerifyErrs
 }
 
@@ -270,26 +290,18 @@ func cosignCheckOptsFromCert(cert certVerificationData) (cosign.CheckOpts, error
 	}
 }
 
-func verifyImageSignatures(ctx context.Context, signatures []oci.Signature, imageHash gcrv1.Hash, image *storage.Image,
-	cosignOpts cosign.CheckOpts) (verifiedImageReferences []string, verificationErrors error) {
-	for _, signature := range signatures {
-		// The bundle references a rekor bundle within the transparency log. Since we do not support this, the
-		// bundle verified will _always_ be false.
-		// See: https://github.com/sigstore/cosign/blob/eaee4b7da0c1a42326bd82c6a4da7e16741db266/pkg/cosign/verify.go#L584-L586.
-		// If there is no error during the verification, the signature was successfully verified
-		// as well as the claims.
-		_, err := cosign.VerifyImageSignature(ctx, signature, imageHash, &cosignOpts)
-
-		if err != nil {
-			verificationErrors = multierror.Append(verificationErrors, err)
-			continue
-		}
-
-		if verifiedImageReferences, err = getVerifiedImageReference(signature, image); err != nil {
-			verificationErrors = multierror.Append(verificationErrors, err)
-		}
+func verifyImageSignature(ctx context.Context, signature oci.Signature,
+	imageHash gcrv1.Hash, image *storage.Image, cosignOpts cosign.CheckOpts,
+) ([]string, error) {
+	// The bundle references a rekor bundle within the transparency log. Since we do not support this, the
+	// bundle verified will _always_ be false.
+	// See: https://github.com/sigstore/cosign/blob/eaee4b7da0c1a42326bd82c6a4da7e16741db266/pkg/cosign/verify.go#L584-L586.
+	// If there is no error during the verification, the signature was successfully verified
+	// as well as the claims.
+	if _, err := cosign.VerifyImageSignature(ctx, signature, imageHash, &cosignOpts); err != nil {
+		return nil, err
 	}
-	return verifiedImageReferences, verificationErrors
+	return getVerifiedImageReference(signature, image)
 }
 
 // getVerificationResultStatusFromErr will map an error to a specific storage.ImageSignatureVerificationResult_Status.

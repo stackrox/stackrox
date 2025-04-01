@@ -12,6 +12,7 @@ import (
 	"github.com/quay/claircore/alpine"
 	"github.com/quay/claircore/aws"
 	"github.com/quay/claircore/debian"
+	"github.com/quay/claircore/enricher/epss"
 	"github.com/quay/claircore/gobin"
 	"github.com/quay/claircore/java"
 	"github.com/quay/claircore/libvuln"
@@ -29,8 +30,10 @@ import (
 	"github.com/quay/claircore/ubuntu"
 	"github.com/quay/zlog"
 	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/scanner/config"
 	"github.com/stackrox/rox/scanner/datastore/postgres"
+	"github.com/stackrox/rox/scanner/enricher/csaf"
 	"github.com/stackrox/rox/scanner/enricher/fixedby"
 	"github.com/stackrox/rox/scanner/enricher/nvd"
 	"github.com/stackrox/rox/scanner/internal/httputil"
@@ -72,7 +75,7 @@ type Matcher interface {
 	GetVulnerabilities(ctx context.Context, ir *claircore.IndexReport) (*claircore.VulnerabilityReport, error)
 	GetLastVulnerabilityUpdate(ctx context.Context) (time.Time, error)
 	GetKnownDistributions(ctx context.Context) []claircore.Distribution
-	GetSBOM(ctx context.Context, ir *claircore.IndexReport, id, name string) ([]byte, error)
+	GetSBOM(ctx context.Context, ir *claircore.IndexReport, opts *sbom.Options) ([]byte, error)
 	Ready(ctx context.Context) error
 	Initialized(ctx context.Context) error
 	Close(ctx context.Context) error
@@ -86,6 +89,8 @@ type matcherImpl struct {
 
 	vulnUpdater *vuln.Updater
 	sbomer      *sbom.SBOMer
+
+	readyWithVulns bool
 }
 
 // NewMatcher creates a new matcher.
@@ -130,14 +135,29 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 		Transport: httputil.DenyTransport,
 	}
 
+	enrichers := []driver.Enricher{
+		&fixedby.Enricher{},
+		&nvd.Enricher{},
+	}
+	var (
+		epssEnabled bool
+		csafEnabled bool
+	)
+	if features.EPSSScore.Enabled() {
+		epssEnabled = true
+		enrichers = append(enrichers, &epss.Enricher{})
+	}
+	if features.ScannerV4RedHatCSAF.Enabled() && !features.ScannerV4RedHatCVEs.Enabled() {
+		csafEnabled = true
+		enrichers = append(enrichers, &csaf.Enricher{})
+	}
+	zlog.Info(ctx).Bool("enabled", epssEnabled).Msg("EPSS enrichment")
+	zlog.Info(ctx).Bool("enabled", csafEnabled).Msg("CSAF enrichment")
 	libVuln, err := libvuln.New(ctx, &libvuln.Options{
-		Store:        store,
-		Locker:       locker,
-		MatcherNames: matcherNames,
-		Enrichers: []driver.Enricher{
-			&nvd.Enricher{},
-			&fixedby.Enricher{},
-		},
+		Store:                    store,
+		Locker:                   locker,
+		MatcherNames:             matcherNames,
+		Enrichers:                enrichers,
 		UpdateRetention:          libvuln.DefaultUpdateRetention,
 		DisableBackgroundUpdates: true,
 		Client:                   ccClient,
@@ -151,6 +171,8 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 		}
 	}()
 
+	// Using http.DefaultTransport instead of httputil.DefaultTransport, as the Matcher
+	// should never have a need to reach out to a server with untrusted certificates.
 	// Note: http.DefaultTransport has already been modified to handle configured proxies.
 	// See scanner/cmd/scanner/main.go.
 	defaultTransport := http.DefaultTransport
@@ -200,6 +222,8 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 
 		vulnUpdater: vulnUpdater,
 		sbomer:      sbomer,
+
+		readyWithVulns: cfg.Readiness == config.ReadinessVulnerability,
 	}, nil
 }
 
@@ -217,8 +241,8 @@ func (m *matcherImpl) GetKnownDistributions(_ context.Context) []claircore.Distr
 	return m.vulnUpdater.KnownDistributions()
 }
 
-func (m *matcherImpl) GetSBOM(ctx context.Context, ir *claircore.IndexReport, name, id string) ([]byte, error) {
-	return m.sbomer.GetSBOM(ctx, ir, name, id)
+func (m *matcherImpl) GetSBOM(ctx context.Context, ir *claircore.IndexReport, opts *sbom.Options) ([]byte, error) {
+	return m.sbomer.GetSBOM(ctx, ir, opts)
 }
 
 // Close closes the matcher.
@@ -244,6 +268,9 @@ func (m *matcherImpl) Initialized(ctx context.Context) error {
 func (m *matcherImpl) Ready(ctx context.Context) error {
 	if err := m.pool.Ping(ctx); err != nil {
 		return fmt.Errorf("matcher vulnerability store cannot be reached: %w", err)
+	}
+	if m.readyWithVulns && !m.vulnUpdater.Initialized(ctx) {
+		return errors.New("initial load for the vulnerability store is in progress")
 	}
 	return nil
 }

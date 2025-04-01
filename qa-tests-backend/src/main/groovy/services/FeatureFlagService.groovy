@@ -1,15 +1,20 @@
 package services
 
+import groovy.transform.CompileStatic
+
 import io.stackrox.proto.api.v1.FeatureFlagServiceGrpc
+import io.stackrox.proto.api.v1.FeatureFlagServiceOuterClass
+
 import util.E2ETestException
 
+@CompileStatic
 class FeatureFlagService extends BaseService {
-    static getFeatureFlagServiceClient() {
+    static FeatureFlagServiceGrpc.FeatureFlagServiceBlockingStub getFeatureFlagServiceClient() {
         return FeatureFlagServiceGrpc.newBlockingStub(getChannel())
     }
 
-    static getFeatureFlags() {
-        return getFeatureFlagServiceClient().getFeatureFlags().featureFlagsList
+    static List<FeatureFlagServiceOuterClass.FeatureFlag> getFeatureFlags() {
+        return getFeatureFlagServiceClient().getFeatureFlags(null).featureFlagsList
     }
 
     static boolean isFeatureFlagEnabled(String envVar) {

@@ -15,7 +15,7 @@ wait_for_central_reconciliation() {
     local success=0
     for i in $(seq 1 90); do
         local numDeployments
-        numDeployments="$(curl -sSk --config <(curl_cfg user "admin:$ROX_ADMIN_PASSWORD") "https://$API_ENDPOINT/v1/summary/counts" | jq '.numDeployments' -r)"
+        numDeployments="$(curl -sSk --config <(curl_cfg user "admin:$ROX_ADMIN_PASSWORD") -X POST -d "{\"operationName\":\"summary_counts\",\"variables\":{},\"query\":\"query summary_counts {\n  clusterCount\n  nodeCount\n  violationCount\n  deploymentCount\n  imageCount\n  secretCount\n}\"}" "https://$API_ENDPOINT/api/graphql" | jq '.data.deploymentCount' -r)"
         echo "Try number ${i}. Number of deployments in Central: $numDeployments"
         [[ -n "$numDeployments" ]]
         if [[ "$numDeployments" -lt 100 ]]; then
@@ -174,7 +174,7 @@ validate_sensor_bundle_via_upgrader() {
 
 test_sensor_bundle() {
     info "Testing the sensor bundle"
-
+    export_central_cert
     rm -rf sensor-remote
     "$TEST_ROOT/bin/${TEST_HOST_PLATFORM}/roxctl" -e "$API_ENDPOINT" sensor get-bundle remote
     [[ -d sensor-remote ]]
@@ -191,7 +191,7 @@ test_sensor_bundle() {
 
 test_upgrader() {
     info "Starting bin/upgrader tests"
-
+    export_central_cert
     deactivate_metrics_server
 
     info "Creating a 'sensor-remote-new' cluster"

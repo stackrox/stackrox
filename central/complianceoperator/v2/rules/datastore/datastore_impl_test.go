@@ -68,10 +68,6 @@ func (s *complianceRuleDataStoreTestSuite) SetupTest() {
 	s.dataStore = GetTestPostgresDataStore(s.T(), s.db)
 }
 
-func (s *complianceRuleDataStoreTestSuite) TearDownTest() {
-	s.db.Teardown(s.T())
-}
-
 func (s *complianceRuleDataStoreTestSuite) TestGetControl() {
 	ctx := sac.WithAllAccess(context.Background())
 	exampleRule2 := &storage.ComplianceOperatorRuleV2{

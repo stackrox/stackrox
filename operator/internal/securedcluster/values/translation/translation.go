@@ -368,17 +368,6 @@ func (t Translator) getCollectorContainerValues(collectorContainerSpec *platform
 		}
 	}
 
-	if collectorContainerSpec.ImageFlavor != nil {
-		switch *collectorContainerSpec.ImageFlavor {
-		case platform.ImageFlavorSlim:
-			cv.SetBoolValue("slimMode", true)
-		case platform.ImageFlavorRegular:
-			cv.SetBoolValue("slimMode", false)
-		default:
-			return cv.SetError(fmt.Errorf("invalid spec.collector.collector.imageFlavor %q", *collectorContainerSpec.ImageFlavor))
-		}
-	}
-
 	cv.AddChild(translation.ResourcesKey, translation.GetResources(collectorContainerSpec.Resources))
 
 	return &cv

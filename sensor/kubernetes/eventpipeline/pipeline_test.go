@@ -210,37 +210,6 @@ func (s *eventPipelineSuite) Test_PolicySync() {
 	messageReceived.Wait()
 }
 
-func (s *eventPipelineSuite) Test_ReassessPolicies() {
-	messageReceived := sync.WaitGroup{}
-	messageReceived.Add(2)
-
-	msgFromCentral := &central.MsgToSensor{
-		Msg: &central.MsgToSensor_ReassessPolicies{
-			ReassessPolicies: &central.ReassessPolicies{},
-		},
-	}
-	s.detector.EXPECT().ProcessReassessPolicies().Times(1).Do(func() {
-		defer messageReceived.Done()
-	})
-
-	s.resolver.EXPECT().Send(gomock.Any()).Times(1).Do(func(msg interface{}) {
-		defer messageReceived.Done()
-		resourceEvent, ok := msg.(*component.ResourceEvent)
-		assert.True(s.T(), ok)
-		assert.NotNil(s.T(), resourceEvent.DeploymentReferences)
-		assert.Equal(s.T(), 1, len(resourceEvent.DeploymentReferences))
-		assert.NotNil(s.T(), resourceEvent.DeploymentReferences[0].Reference)
-		assert.Equal(s.T(), central.ResourceAction_UPDATE_RESOURCE, resourceEvent.DeploymentReferences[0].ParentResourceAction)
-		assert.False(s.T(), resourceEvent.DeploymentReferences[0].SkipResolving)
-		assert.True(s.T(), resourceEvent.DeploymentReferences[0].ForceDetection)
-	})
-
-	err := s.pipeline.ProcessMessage(msgFromCentral)
-	s.NoError(err)
-
-	messageReceived.Wait()
-}
-
 func (s *eventPipelineSuite) Test_UpdatedImage() {
 	messageReceived := sync.WaitGroup{}
 	messageReceived.Add(2)

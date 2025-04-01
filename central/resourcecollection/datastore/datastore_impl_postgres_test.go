@@ -52,10 +52,6 @@ func (s *CollectionPostgresDataStoreTestSuite) SetupTest() {
 	s.NoError(resetLocalGraph(s.datastore.(*datastoreImpl)))
 }
 
-func (s *CollectionPostgresDataStoreTestSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-}
-
 func (s *CollectionPostgresDataStoreTestSuite) TestGraphInit() {
 	ctx := sac.WithAllAccess(context.Background())
 

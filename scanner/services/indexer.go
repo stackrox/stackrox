@@ -24,13 +24,13 @@ import (
 
 var indexerAuth = perrpc.FromMap(map[authz.Authorizer][]string{
 	or.Or(idcheck.CentralOnly(), idcheck.SensorsOnly(), idcheck.ScannerV4MatcherOnly()): {
-		"/scanner.v4.Indexer/GetIndexReport",
-		"/scanner.v4.Indexer/HasIndexReport",
+		v4.Indexer_GetIndexReport_FullMethodName,
+		v4.Indexer_HasIndexReport_FullMethodName,
 	},
 	or.Or(idcheck.CentralOnly(), idcheck.SensorsOnly()): {
 		// Matcher should never attempt to create an index report.
-		"/scanner.v4.Indexer/CreateIndexReport",
-		"/scanner.v4.Indexer/GetOrCreateIndexReport",
+		v4.Indexer_CreateIndexReport_FullMethodName,
+		v4.Indexer_GetOrCreateIndexReport_FullMethodName,
 	},
 })
 

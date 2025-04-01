@@ -56,7 +56,7 @@ const (
 // ImageCves holds the Gorm model for Postgres table `image_cves`.
 type ImageCves struct {
 	ID                             string                        `gorm:"column:id;type:varchar;primaryKey"`
-	CveBaseInfoCve                 string                        `gorm:"column:cvebaseinfo_cve;type:varchar;index:imagecves_cvebaseinfo_cve,type:hash"`
+	CveBaseInfoCve                 string                        `gorm:"column:cvebaseinfo_cve;type:varchar;index:imagecves_cvebaseinfo_cve,type:btree"`
 	CveBaseInfoPublishedOn         *time.Time                    `gorm:"column:cvebaseinfo_publishedon;type:timestamp"`
 	CveBaseInfoCreatedAt           *time.Time                    `gorm:"column:cvebaseinfo_createdat;type:timestamp"`
 	CveBaseInfoEpssEpssProbability float32                       `gorm:"column:cvebaseinfo_epss_epssprobability;type:numeric"`

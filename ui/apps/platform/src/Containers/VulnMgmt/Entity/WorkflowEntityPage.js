@@ -4,6 +4,7 @@ import PropTypes from 'prop-types';
 import { useQuery } from '@apollo/client';
 import { Bullseye } from '@patternfly/react-core';
 import { ExclamationTriangleIcon } from '@patternfly/react-icons';
+import Raven from 'raven-js';
 
 import Loader from 'Components/Loader';
 import PageNotFound from 'Components/PageNotFound';
@@ -85,6 +86,7 @@ const WorkflowEntityPage = ({
         return <Loader />;
     }
     if (error) {
+        Raven.captureException(error);
         return (
             <Bullseye>
                 <EmptyStateTemplate

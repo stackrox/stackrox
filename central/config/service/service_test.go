@@ -80,10 +80,6 @@ func (s *configServiceTestSuite) SetupSuite() {
 	protoassert.Equal(s.T(), &v1.GetVulnerabilityExceptionConfigResponse{}, cfg)
 }
 
-func (s *configServiceTestSuite) TearDownSuite() {
-	s.db.Teardown(s.T())
-}
-
 func (s *configServiceTestSuite) TestExceptionConfigOps() {
 	initialCfg := &storage.Config{
 		PrivateConfig: &storage.PrivateConfig{

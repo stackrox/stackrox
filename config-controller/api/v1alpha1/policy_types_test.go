@@ -17,6 +17,7 @@ const (
 var (
 	emailNotifierID = uuid.NewV4().String()
 	jiraNotifierID  = uuid.NewV4().String()
+	clusterID       = uuid.NewV4().String()
 )
 
 func TestToProtobuf(t *testing.T) {
@@ -37,7 +38,7 @@ func TestToProtobuf(t *testing.T) {
 					Name: "collector",
 					Scope: Scope{
 						Namespace: "stackrox",
-						Cluster:   "test",
+						Cluster:   "test-cluster",
 					},
 				},
 				Expiration: expirationTS,
@@ -59,9 +60,11 @@ func TestToProtobuf(t *testing.T) {
 				},
 			},
 		},
-		CriteriaLocked:     true,
-		MitreVectorsLocked: true,
-		IsDefault:          false,
+		Scope: []Scope{
+			{
+				Cluster: "test-cluster",
+			},
+		},
 	}
 
 	expectedProto := &storage.Policy{
@@ -82,7 +85,7 @@ func TestToProtobuf(t *testing.T) {
 					Name: "collector",
 					Scope: &storage.Scope{
 						Namespace: "stackrox",
-						Cluster:   "test",
+						Cluster:   clusterID,
 					},
 				},
 				Expiration: protoconv.ConvertTimeString(expirationTS),
@@ -106,16 +109,24 @@ func TestToProtobuf(t *testing.T) {
 				},
 			},
 		},
-		CriteriaLocked:     true,
-		MitreVectorsLocked: true,
-		IsDefault:          false,
+		Scope: []*storage.Scope{
+			{
+				Cluster: clusterID,
+			},
+		},
 	}
 
 	notifiers := map[string]string{
 		"email-notifier": emailNotifierID,
 		"jira-notifier":  jiraNotifierID,
 	}
-	protoPolicy, err := policyCRSpec.ToProtobuf(notifiers)
+	clusters := map[string]string{
+		"test-cluster": clusterID,
+	}
+	protoPolicy, err := policyCRSpec.ToProtobuf(map[CacheType]map[string]string{
+		Notifier: notifiers,
+		Cluster:  clusters,
+	})
 	assert.NoError(t, err, "unexpected error in converting to policy proto")
 	// Hack: Reset the source field for us to be able to compare
 	protoPolicy.Source = storage.PolicySource_IMPERATIVE

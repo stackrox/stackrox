@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/utils"
+	"github.com/stackrox/rox/pkg/openshift"
 	"github.com/stackrox/rox/pkg/registries"
 	"github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/sync"
@@ -251,7 +252,7 @@ func TestRegistryStore_GlobalStore(t *testing.T) {
 		_, err := regStore.GetGlobalRegistry(fakeImgName)
 		require.Error(t, err, "error is expected on empty store")
 
-		regStore.UpsertSecret(openshiftConfigNamespace, openshiftConfigPullSecret, dc, "")
+		regStore.UpsertSecret(openshift.GlobalPullSecretNamespace, openshift.GlobalPullSecretName, dc, "")
 		reg, err := regStore.GetGlobalRegistry(fakeImgName)
 		require.NoError(t, err, "should be no error on valid get")
 		assert.NotNil(t, reg)
@@ -294,7 +295,7 @@ func TestRegistryStore_GlobalStoreLazyNoFailUpsertCheckTLS(t *testing.T) {
 		dc := config.DockerConfig{fakeImgName.GetRegistry(): dce}
 
 		// Upsert should NOT fail on lazy TLS check
-		regStore.UpsertSecret(openshiftConfigNamespace, openshiftConfigPullSecret, dc, "")
+		regStore.UpsertSecret(openshift.GlobalPullSecretNamespace, openshift.GlobalPullSecretName, dc, "")
 		require.False(t, regStore.globalRegistries.IsEmpty())
 		allRegs := regStore.globalRegistries.GetAll()
 		require.Len(t, allRegs, 1)
@@ -720,14 +721,14 @@ func TestRegistyStore_Metrics(t *testing.T) {
 		regStore := NewRegistryStore(alwaysInsecureCheckTLS)
 		assert.Equal(t, 0.0, testutil.ToFloat64(c))
 
-		regStore.UpsertSecret(openshiftConfigNamespace, openshiftConfigPullSecret, dc, "")
+		regStore.UpsertSecret(openshift.GlobalPullSecretNamespace, openshift.GlobalPullSecretName, dc, "")
 		assert.Equal(t, 1.0, testutil.ToFloat64(c))
 
 		// repeat with same input, gauge should NOT increase
-		regStore.UpsertSecret(openshiftConfigNamespace, openshiftConfigPullSecret, dc, "")
+		regStore.UpsertSecret(openshift.GlobalPullSecretNamespace, openshift.GlobalPullSecretName, dc, "")
 		assert.Equal(t, 1.0, testutil.ToFloat64(c))
 
-		regStore.UpsertSecret(openshiftConfigNamespace, openshiftConfigPullSecret, dcTwo, "")
+		regStore.UpsertSecret(openshift.GlobalPullSecretNamespace, openshift.GlobalPullSecretName, dcTwo, "")
 		assert.Equal(t, 2.0, testutil.ToFloat64(c))
 
 		regStore.Cleanup()
@@ -812,7 +813,7 @@ func TestRegistyStore_Metrics(t *testing.T) {
 		c := metrics.PullSecretEntriesSize
 		metrics.ResetRegistryMetrics()
 
-		name := genIntegrationName(pullSecretNamePrefix, fakeNamespace, "", "example.com")
+		name := genIntegrationName(types.PullSecretNamePrefix, fakeNamespace, "", "example.com")
 		entrySize := float64(createImageIntegration("example.com", dce, name).SizeVT())
 
 		regStore := NewRegistryStore(alwaysInsecureCheckTLS)
@@ -868,7 +869,7 @@ func TestRegistyStore_Metrics(t *testing.T) {
 		c := metrics.PullSecretEntriesSize
 		metrics.ResetRegistryMetrics()
 
-		name := genIntegrationName(pullSecretNamePrefix, fakeNamespace, fakeSecretName, "example.com")
+		name := genIntegrationName(types.PullSecretNamePrefix, fakeNamespace, fakeSecretName, "example.com")
 		entrySize := float64(createImageIntegration("example.com", dce, name).SizeVT())
 		t.Logf("entrySize: %v", entrySize)
 

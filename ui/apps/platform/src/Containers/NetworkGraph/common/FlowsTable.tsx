@@ -1,3 +1,4 @@
+/* eslint-disable react/no-array-index-key */
 import React, { ReactElement } from 'react';
 import {
     ActionsColumn,
@@ -233,7 +234,11 @@ function FlowsTable({
                 );
 
                 return (
-                    <Tbody key={row.id} isExpanded={isExpanded} style={baselineSimulatedRowStyle}>
+                    <Tbody
+                        key={`${row.id}-${rowIndex}`}
+                        isExpanded={isExpanded}
+                        style={baselineSimulatedRowStyle}
+                    >
                         <Tr>
                             <Td
                                 expand={
@@ -321,7 +326,7 @@ function FlowsTable({
                         </Tr>
                         {isExpanded &&
                             row.children &&
-                            row.children.map((child) => {
+                            row.children.map((child, index) => {
                                 const childActions: IAction[] = [
                                     child.isAnomalous
                                         ? {
@@ -341,7 +346,7 @@ function FlowsTable({
                                 ];
 
                                 return (
-                                    <Tr key={child.id} isExpanded={isExpanded}>
+                                    <Tr key={`${child.id}-${index}`} isExpanded={isExpanded}>
                                         <Td />
                                         {isEditable && (
                                             <Td

@@ -163,16 +163,10 @@ func GetDatabaseClones(postgresConfig *postgres.Config) ([]string, error) {
 	}
 	defer rows.Close()
 
-	var clones []string
-	for rows.Next() {
-		var cloneName string
-		if err := rows.Scan(&cloneName); err != nil {
-			return nil, err
-		}
-
-		clones = append(clones, cloneName)
+	clones, err := pgutils.ScanStrings(rows)
+	if err != nil {
+		return nil, errors.Wrap(err, "scanning clone names")
 	}
-
 	log.Debugf("database clones => %s", clones)
 
 	return clones, nil
@@ -333,7 +327,6 @@ func getAvailablePostgresCapacity(postgresConfig *postgres.Config) (int64, error
 		return 0, errors.Wrap(err, "Unable to copy to tmp table")
 	}
 
-	var rawCapacityInfo []string
 	rows, err := tx.Query(ctx, "SELECT content FROM tmp_sys_df;")
 	if err != nil {
 		if err := tx.Rollback(ctx); err != nil {
@@ -341,18 +334,13 @@ func getAvailablePostgresCapacity(postgresConfig *postgres.Config) (int64, error
 		}
 		return 0, errors.Wrap(err, "Unable to read tmp table")
 	}
-	defer rows.Close()
 
-	for rows.Next() {
-		var info string
-		if err := rows.Scan(&info); err != nil {
-			if err := tx.Rollback(ctx); err != nil {
-				return 0, err
-			}
+	rawCapacityInfo, err := pgutils.ScanStrings(rows)
+	if err != nil {
+		if err := tx.Rollback(ctx); err != nil {
 			return 0, err
 		}
-
-		rawCapacityInfo = append(rawCapacityInfo, info)
+		return 0, err
 	}
 
 	// We should only get the header row and the row for the size of $PGDATA.  If we
@@ -478,17 +466,5 @@ func GetAllDatabases(postgresConfig *postgres.Config) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
-
-	var clones []string
-	for rows.Next() {
-		var cloneName string
-		if err := rows.Scan(&cloneName); err != nil {
-			return nil, err
-		}
-
-		clones = append(clones, cloneName)
-	}
-
-	return clones, nil
+	return pgutils.ScanStrings(rows)
 }

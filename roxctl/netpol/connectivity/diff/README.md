@@ -2,7 +2,7 @@
 
 ## About
 
-The static network policy connectivity diff is a tool that analyzes two sets of Kubernetes manifests, including network policies.
+The static network policy connectivity diff is a tool that analyzes two sets of Kubernetes manifests, including network policies (i.e. NetworkPolicy, AdminNetworkPolicy and BaselineAdminNetworkPolicy resources).
 Based on two given folders containing deployment and network policy YAMLs, it analyzes the permitted cluster connectivity for each input folder.
 It produces a list of a **differences in terms of allowed connections**, based on the workloads and network policies defined.
 It is based on [NP-Guard's Network Policy Analyzer component](https://github.com/np-guard/netpol-analyzer). For more details, refer to the [NP-Guard webpage](https://np-guard.github.io/).

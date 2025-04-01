@@ -7,6 +7,7 @@ import (
 
 	errorsPkg "github.com/pkg/errors"
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
+	"github.com/stackrox/rox/central/metrics"
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/policy/search"
 	"github.com/stackrox/rox/central/policy/store"
@@ -17,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	policiesPkg "github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/policyutils"
+	pgPkg "github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	searchPkg "github.com/stackrox/rox/pkg/search"
@@ -220,6 +222,12 @@ func (ds *datastoreImpl) AddPolicy(ctx context.Context, policy *storage.Policy) 
 	if err != nil {
 		return "", errorsPkg.Wrap(err, "getting all policies")
 	}
+
+	ctx, tx, err := ds.storage.Begin(ctx)
+	if err != nil {
+		return "", err
+	}
+
 	policyNameToPolicyMap := make(map[string]*storage.Policy, len(allPolicies))
 	for _, policy := range allPolicies {
 		policyNameToPolicyMap[policy.GetName()] = policy
@@ -241,13 +249,21 @@ func (ds *datastoreImpl) AddPolicy(ctx context.Context, policy *storage.Policy) 
 	clonedPolicy.Categories = []string{}
 	err = ds.storage.Upsert(ctx, clonedPolicy)
 	if err != nil {
-		return clonedPolicy.Id, err
+		return "", ds.wrapWithRollback(ctx, tx, err)
 	}
 
 	err = ds.categoriesDatastore.SetPolicyCategoriesForPolicy(ctx, clonedPolicy.GetId(), policyCategories)
 	if err != nil {
-		return clonedPolicy.Id, err
+		return "", ds.wrapWithRollback(ctx, tx, err)
 	}
+	if err := tx.Commit(ctx); err != nil {
+		return "", ds.wrapWithRollback(ctx, tx, err)
+	}
+
+	if clonedPolicy.Source == storage.PolicySource_DECLARATIVE {
+		metrics.IncrementTotalExternalPoliciesGauge()
+	}
+
 	return clonedPolicy.Id, nil
 }
 
@@ -267,21 +283,30 @@ func (ds *datastoreImpl) UpdatePolicy(ctx context.Context, policy *storage.Polic
 
 	ds.policyMutex.Lock()
 	defer ds.policyMutex.Unlock()
+
+	ctx, tx, err := ds.storage.Begin(ctx)
+	if err != nil {
+		return err
+	}
+
 	// Check if categories need to be created/new policy category edges need to be created/
 	// existing policy category edges need to be removed?
 	if err := ds.categoriesDatastore.SetPolicyCategoriesForPolicy(ctx, policy.GetId(), policy.GetCategories()); err != nil {
-		return err
+		return ds.wrapWithRollback(ctx, tx, err)
 	}
 	// Make sure to reset the policy categories field on a clone before upserting; otherwise the given reference
 	// will be changed and information lost when the reference is being kept in-memory (like in policy sets).
 	clonedPolicy := policy.CloneVT()
 	clonedPolicy.Categories = []string{}
 
-	return ds.storage.Upsert(ctx, clonedPolicy)
+	if err = ds.storage.Upsert(ctx, clonedPolicy); err != nil {
+		return ds.wrapWithRollback(ctx, tx, err)
+	}
+	return tx.Commit(ctx)
 }
 
 // RemovePolicy removes a policy from the storage.
-func (ds *datastoreImpl) RemovePolicy(ctx context.Context, id string) error {
+func (ds *datastoreImpl) RemovePolicy(ctx context.Context, policy *storage.Policy) error {
 	if ok, err := workflowAdministrationSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
@@ -291,7 +316,13 @@ func (ds *datastoreImpl) RemovePolicy(ctx context.Context, id string) error {
 	ds.policyMutex.Lock()
 	defer ds.policyMutex.Unlock()
 
-	return ds.removePolicyNoLock(ctx, id)
+	err := ds.removePolicyNoLock(ctx, policy.GetId())
+
+	if err != nil && policy.Source == storage.PolicySource_DECLARATIVE {
+		metrics.DecrementTotalExternalPoliciesGauge()
+	}
+
+	return err
 }
 
 func (ds *datastoreImpl) removePolicyNoLock(ctx context.Context, id string) error {
@@ -601,4 +632,11 @@ func (ds *datastoreImpl) removeForeignClusterScopesAndNotifiers(ctx context.Cont
 		}
 	}
 	return changedIndices, nil
+}
+
+func (ds *datastoreImpl) wrapWithRollback(ctx context.Context, tx *pgPkg.Tx, err error) error {
+	if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
+		err = errorsPkg.Wrap(err, "There was an issue rolling back changes in the database")
+	}
+	return err
 }

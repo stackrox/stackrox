@@ -34,6 +34,7 @@ const ClusterSummary = ({
     healthStatus,
     status,
     centralVersion,
+    autoRefreshEnabled = false,
     clusterId,
     clusterRetentionInfo,
     isManagerTypeNonConfigurable,
@@ -124,6 +125,7 @@ const ClusterSummary = ({
                     <CredentialExpirationWidget
                         clusterId={clusterId}
                         status={status}
+                        autoRefreshEnabled={autoRefreshEnabled}
                         isManagerTypeNonConfigurable={isManagerTypeNonConfigurable}
                     />
                 </Widget>
@@ -183,6 +185,7 @@ ClusterSummary.propTypes = {
     clusterId: PropTypes.string.isRequired,
     clusterRetentionInfo: PropTypes.shape({}),
     isManagerTypeNonConfigurable: PropTypes.bool.isRequired,
+    autoRefreshEnabled: PropTypes.bool,
 };
 
 export default ClusterSummary;

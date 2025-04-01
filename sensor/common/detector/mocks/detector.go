@@ -136,20 +136,6 @@ func (mr *MockDetectorMockRecorder) ProcessPolicySync(ctx, sync any) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessPolicySync", reflect.TypeOf((*MockDetector)(nil).ProcessPolicySync), ctx, sync)
 }
 
-// ProcessReassessPolicies mocks base method.
-func (m *MockDetector) ProcessReassessPolicies() error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ProcessReassessPolicies")
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// ProcessReassessPolicies indicates an expected call of ProcessReassessPolicies.
-func (mr *MockDetectorMockRecorder) ProcessReassessPolicies() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessReassessPolicies", reflect.TypeOf((*MockDetector)(nil).ProcessReassessPolicies))
-}
-
 // ProcessReprocessDeployments mocks base method.
 func (m *MockDetector) ProcessReprocessDeployments() error {
 	m.ctrl.T.Helper()

@@ -4,6 +4,44 @@ const rules = {
     // ESLint naming convention for positive rules:
     // If your rule is enforcing the inclusion of something, use a short name without a special prefix.
 
+    'Button-LinkShim-href': {
+        // Enforce assumption about Button and LinkShim elements.
+        meta: {
+            type: 'problem',
+            docs: {
+                description:
+                    'Require that Button element with component={LinkShim} also has href prop',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                JSXOpeningElement(node) {
+                    if (node.name?.name === 'Button') {
+                        if (
+                            node.attributes.some(
+                                (attribute) =>
+                                    attribute.name?.name === 'component' &&
+                                    attribute.value?.expression?.name === 'LinkShim'
+                            )
+                        ) {
+                            if (
+                                !node.attributes.some(
+                                    (attribute) => attribute.name?.name === 'href'
+                                )
+                            ) {
+                                context.report({
+                                    node,
+                                    message:
+                                        'Require that Button element with component={LinkShim} also has href prop',
+                                });
+                            }
+                        }
+                    }
+                },
+            };
+        },
+    },
     'ExternalLink-anchor': {
         // Require ExternalLink with anchor element as child for consistent presentation of external links.
         meta: {
@@ -41,7 +79,7 @@ const rules = {
             type: 'problem',
             docs: {
                 description:
-                    'Require tbat Link element with target="_blank" also has rel="noopener noreferrer" prop',
+                    'Require that Link element with target="_blank" also has rel="noopener noreferrer" prop',
             },
             schema: [],
         },
@@ -66,7 +104,7 @@ const rules = {
                                 context.report({
                                     node,
                                     message:
-                                        'Require tbat Link element with target="_blank" also has rel="noopener noreferrer" prop',
+                                        'Require that Link element with target="_blank" also has rel="noopener noreferrer" prop',
                                 });
                             }
                         }
@@ -261,6 +299,43 @@ const rules = {
                                 node,
                                 message:
                                     'Require that anchor element has target="_blank" and rel="noopener noreferrer" props',
+                            });
+                        }
+                    }
+                },
+            };
+        },
+    },
+    'getVersionedDocs-subPath': {
+        meta: {
+            type: 'problem',
+            docs: {
+                description:
+                    'Require that optional subPath argument of getVersionedDocs function call has no obvious problems',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                CallExpression(node) {
+                    if (
+                        node.callee?.name === 'getVersionedDocs' &&
+                        Array.isArray(node.arguments) &&
+                        typeof node.arguments[1]?.value === 'string'
+                    ) {
+                        const { value } = node.arguments[1];
+                        if (value.startsWith('/')) {
+                            context.report({
+                                node,
+                                message:
+                                    'Omit leading slash from relative subPath argument of getVersionedDocs function call',
+                            });
+                        }
+                        if (value.includes('.html')) {
+                            context.report({
+                                node,
+                                message:
+                                    'Omit .html extension from relative subPath argument of getVersionedDocs function call',
                             });
                         }
                     }

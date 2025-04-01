@@ -45,12 +45,14 @@ const labelClassName = 'leading-tight ml-2';
 type CredentialInteractionProps = {
     certExpiryStatus: CertExpiryStatus;
     upgradeStatus: SensorUpgradeStatus;
+    autoRefreshEnabled: boolean;
     clusterId: string;
 };
 
 function CredentialInteraction({
     certExpiryStatus,
     upgradeStatus,
+    autoRefreshEnabled = false,
     clusterId,
 }: CredentialInteractionProps): ReactElement {
     const upgradeStateObject = findUpgradeState(upgradeStatus);
@@ -191,7 +193,10 @@ function CredentialInteraction({
 
     return (
         <div className="flex flex-col">
-            <CredentialExpiration certExpiryStatus={certExpiryStatus} />
+            <CredentialExpiration
+                certExpiryStatus={certExpiryStatus}
+                autoRefreshEnabled={autoRefreshEnabled}
+            />
             {interactionElement}
             {errorElement}
         </div>

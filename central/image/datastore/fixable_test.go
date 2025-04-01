@@ -47,10 +47,6 @@ func (s *FixableSearchTestSuite) SetupSuite() {
 	}
 }
 
-func (s *FixableSearchTestSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-}
-
 func (s *FixableSearchTestSuite) TestImageSearch() {
 	for _, tc := range []struct {
 		desc                       string

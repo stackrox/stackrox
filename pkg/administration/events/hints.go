@@ -15,9 +15,10 @@ var (
 	// In the future, we may extend this, and possibly also ensure hints are loaded externally (similar to
 	// vulnerability definitions).
 	hints = map[string]map[string]map[string]string{
-		authenticationDomain: {
+		AuthenticationDomain: {
 			adminResources.APIToken: {
-				"": `An API token is about to expire. See the details on the expiration time within the event message.
+				codes.APITokenCreated: `An API token has been created.`,
+				codes.APITokenExpired: `An API token is about to expire. See the details on the expiration time within the event message.
 You cannot re-create the token. Instead, perform these steps:
 - Delete the expiring API token.
 - Create a new API token (you can choose the same name).
@@ -26,8 +27,8 @@ You can then use the newly-created API token.
 `,
 			},
 		},
-		defaultDomain: {},
-		imageScanningDomain: {
+		DefaultDomain: {},
+		ImageScanningDomain: {
 			// For now, this is an example string. We may want to revisit those together with UX / the docs team to get
 			// errors that are in-line with documentation guidelines.
 			adminResources.Image: {
@@ -37,7 +38,7 @@ You can then use the newly-created API token.
 - The scanned manifest exists within the registry or repository.`,
 			},
 		},
-		integrationDomain: {
+		IntegrationDomain: {
 			adminResources.Notifier: {
 				codes.AWSSHGeneric: `An issue occurred when using the AWS Security Hub notifier.
 Ensure that:

@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/config-controller/api/v1alpha1"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
 	"github.com/stackrox/rox/pkg/utils"
@@ -43,8 +44,9 @@ var (
 )
 
 const (
-	server = "smtp.mailgun.org"
-	user   = "postmaster@sandboxd6576ea8be3c477989eba2c14735d2e6.mailgun.org"
+	server      = "smtp.mailgun.org"
+	user        = "postmaster@sandboxd6576ea8be3c477989eba2c14735d2e6.mailgun.org"
+	clusterName = fixtureconsts.ClusterName1
 )
 
 func TestPolicyAsCode(t *testing.T) {
@@ -55,11 +57,13 @@ type PolicyAsCodeSuite struct {
 	suite.Suite
 	policyClient      v1.PolicyServiceClient
 	notifierClient    v1.NotifierServiceClient
+	clusterClient     v1.ClustersServiceClient
 	centralHTTPClient *http.Client
 	k8sClient         dynamic.ResourceInterface
 	informerfactory   dynamicinformer.DynamicSharedInformerFactory
 	informer          informers.GenericInformer
 	policies          []*storage.Policy
+	cluster           *storage.Cluster
 	notifier          *storage.Notifier
 	ctx               context.Context
 	cleanupCtx        context.Context
@@ -73,6 +77,8 @@ func (pc *PolicyAsCodeSuite) SetupSuite() {
 	conn := centralgrpc.GRPCConnectionToCentral(pc.T())
 	pc.policyClient = v1.NewPolicyServiceClient(conn)
 	pc.notifierClient = v1.NewNotifierServiceClient(conn)
+	pc.clusterClient = v1.NewClustersServiceClient(conn)
+	pc.cluster = pc.createClusterInCentral()
 	pc.notifier = pc.createNotifierInCentral()
 
 	pc.centralHTTPClient = centralgrpc.HTTPClientForCentral(pc.T())
@@ -155,6 +161,26 @@ func (pc *PolicyAsCodeSuite) TestCreateCR() {
 	pc.policies = append(pc.policies, policy)
 }
 
+func (pc *PolicyAsCodeSuite) TestClusterIDResolution() {
+	k8sPolicy := createBasePolicyStruct("test-cluster-id-resolution")
+	k8sPolicy.Spec.Notifiers = []string{pc.notifier.GetName()}
+	k8sPolicy.Spec.Scope = []v1alpha1.Scope{{
+		Cluster: clusterName,
+	}}
+
+	id := pc.createCRAndObserveInCentral(k8sPolicy)
+	pc.Require().NotEmpty(id)
+	pc.checkPolicyIsDeclarative(id)
+
+	policy, err := pc.policyClient.GetPolicy(pc.ctx, &v1.ResourceByID{
+		Id: id,
+	})
+	pc.Require().NoError(err)
+	pc.policies = append(pc.policies, policy)
+
+	pc.Equal(pc.cluster.Id, policy.Scope[0].Cluster)
+}
+
 func (pc *PolicyAsCodeSuite) TestCreateDefaultCR() {
 	k8sPolicy := createBasePolicyStruct("90-Day Image Age")
 	k8sPolicy.SetName("90-day-image-age")
@@ -163,7 +189,7 @@ func (pc *PolicyAsCodeSuite) TestCreateDefaultCR() {
 	_, err := pc.k8sClient.Create(pc.ctx, pc.toUnstructured(k8sPolicy), metav1.CreateOptions{})
 	pc.Require().NoError(err)
 
-	message := "status never udpated"
+	message := "status never updated"
 	timer := time.NewTimer(time.Second * 5)
 	for {
 		select {
@@ -187,7 +213,7 @@ func (pc *PolicyAsCodeSuite) TestRenameToDefaultCR() {
 	pc.Require().NoError(err)
 	pc.fromUnstructured(u, k8sPolicy)
 
-	message := "status never udpated"
+	message := "status never updated"
 	timer := time.NewTimer(time.Second * 5)
 	for {
 		accepted := false
@@ -255,6 +281,13 @@ func (pc *PolicyAsCodeSuite) createPolicyInCentral() *storage.Policy {
 	return policy
 }
 
+func (pc *PolicyAsCodeSuite) createClusterInCentral() *storage.Cluster {
+	log.Infof("Adding cluster with name \"%s\"", clusterName)
+	cluster, err := pc.clusterClient.PostCluster(pc.ctx, &storage.Cluster{Name: fixtureconsts.ClusterName1, MainImage: "docker.io/stackrox/rox:latest", CentralApiEndpoint: "central.stackrox:443"})
+	pc.NoError(err)
+	return cluster.Cluster
+}
+
 func (pc *PolicyAsCodeSuite) createNotifierInCentral() *storage.Notifier {
 	notifierName := "email-notifier"
 	log.Infof("Adding notifier with name \"%s\"", notifierName)
@@ -320,7 +353,7 @@ func (pc *PolicyAsCodeSuite) createPolicyInK8s(toCreate *v1alpha1.SecurityPolicy
 	_, err := pc.k8sClient.Create(pc.ctx, pc.toUnstructured(toCreate), metav1.CreateOptions{})
 	pc.Require().NoError(err)
 
-	message := "status never udpated"
+	message := "status never updated"
 	timer := time.NewTimer(time.Second * 5)
 	for {
 		select {
@@ -452,6 +485,14 @@ func (pc *PolicyAsCodeSuite) TearDownSuite() {
 		_, err := pc.notifierClient.DeleteNotifier(pc.ctx, &v1.DeleteNotifierRequest{
 			Id:    pc.notifier.Id,
 			Force: true,
+		})
+		pc.Require().NoError(err)
+	}
+
+	if pc.cluster != nil {
+		log.Infof("Deleting cluster with name \"%s\"", pc.cluster.Name)
+		_, err := pc.clusterClient.DeleteCluster(pc.ctx, &v1.ResourceByID{
+			Id: pc.cluster.Id,
 		})
 		pc.Require().NoError(err)
 	}

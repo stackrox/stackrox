@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/integration"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/integrationhealth"
+	"github.com/stackrox/rox/pkg/openshift"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/protoutils"
@@ -36,9 +37,6 @@ import (
 const (
 	// The number of consecutive errors for a scanner or registry that cause its health status to be UNHEALTHY
 	consecutiveErrorThreshold = 3
-
-	openshiftConfigNamespace  = "openshift-config"
-	openshiftConfigPullSecret = "pull-secret"
 )
 
 var (
@@ -226,18 +224,25 @@ func (e *enricherImpl) updateImageWithExistingImage(image *storage.Image, existi
 
 // EnrichImage enriches an image with the integration set present.
 func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext EnrichmentContext, image *storage.Image) (EnrichmentResult, error) {
-	if shouldDelegate, err := e.delegateEnrichImage(ctx, enrichContext, image); shouldDelegate {
-		// This enrichment should have been delegated, short circuit.
-		if err != nil {
+	shouldDelegate, err := e.delegateEnrichImage(ctx, enrichContext, image)
+	var delegateErr error
+	if shouldDelegate {
+		if err == nil {
+			return EnrichmentResult{ImageUpdated: true, ScanResult: ScanSucceeded}, nil
+		}
+		if errors.Is(err, delegatedregistry.ErrNoClusterSpecified) {
+			// Log the warning and try to keep enriching
+			log.Warnf("Skipping delegation for %q (ID %q): %v, enriching via Central", image.GetName().GetFullName(), image.GetId(), err)
+			delegateErr = errors.New("no cluster specified for delegated scanning and Central scan attempt failed")
+		} else {
+			// This enrichment should have been delegated, short circuit.
 			return EnrichmentResult{ImageUpdated: false, ScanResult: ScanNotDone}, err
 		}
-		return EnrichmentResult{ImageUpdated: true, ScanResult: ScanSucceeded}, nil
 	} else if err != nil {
 		log.Warnf("Error attempting to delegate: %v", err)
 	}
 
 	errorList := errorhelpers.NewErrorList("image enrichment")
-
 	imageNoteSet := make(map[storage.Image_Note]struct{}, len(image.Notes))
 	for _, note := range image.Notes {
 		imageNoteSet[note] = struct{}{}
@@ -260,7 +265,7 @@ func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext Enrichment
 	// registry could not be made. Instead of trying to scan the image / fetch signatures for it, we shall short-circuit
 	// here.
 	if err != nil {
-		errorList.AddError(err)
+		errorList.AddErrors(err, delegateErr)
 		return EnrichmentResult{ImageUpdated: didUpdateMetadata, ScanResult: ScanNotDone}, errorList.ToError()
 	}
 
@@ -300,6 +305,10 @@ func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext Enrichment
 
 	e.cvesSuppressor.EnrichImageWithSuppressedCVEs(image)
 	e.cvesSuppressorV2.EnrichImageWithSuppressedCVEs(image)
+
+	if !errorList.Empty() {
+		errorList.AddError(delegateErr)
+	}
 
 	return EnrichmentResult{
 		ImageUpdated: updated,
@@ -858,11 +867,6 @@ func (e *enricherImpl) checkRegistryForImage(image *storage.Image) error {
 	return nil
 }
 
-func isOpenshiftGlobalPullSecret(source *storage.ImageIntegration_Source) bool {
-	return source.GetNamespace() == openshiftConfigNamespace &&
-		source.GetImagePullSecretName() == openshiftConfigPullSecret
-}
-
 func (e *enricherImpl) getRegistriesForContext(ctx EnrichmentContext) ([]registryTypes.ImageRegistry, error) {
 	var registries []registryTypes.ImageRegistry
 	if env.DedupeImageIntegrations.BooleanSetting() {
@@ -919,7 +923,7 @@ func filterRegistriesBySource(requestSource *RequestSource, registries []registr
 			continue
 		}
 		// Check if the integration source is the global OpenShift registry
-		if isOpenshiftGlobalPullSecret(source) {
+		if openshift.GlobalPullSecretIntegration(integration) {
 			filteredRegistries = append(filteredRegistries, registry)
 			continue
 		}
@@ -963,7 +967,7 @@ func (e *enricherImpl) enrichImageWithScanner(ctx context.Context, image *storag
 	sema := scanner.MaxConcurrentScanSemaphore()
 	err := sema.Acquire(ctx, 1)
 	if err != nil {
-		return ScanNotDone, err
+		return ScanNotDone, errors.Wrapf(err, "acquiring max concurrent scan semaphore with scanner %q", scanner.Name())
 	}
 	defer sema.Release(1)
 

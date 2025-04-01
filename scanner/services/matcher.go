@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/scannerv4/mappers"
 	"github.com/stackrox/rox/scanner/indexer"
 	"github.com/stackrox/rox/scanner/matcher"
+	"github.com/stackrox/rox/scanner/sbom"
 	"github.com/stackrox/rox/scanner/services/validators"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -27,9 +28,9 @@ import (
 
 var matcherAuth = perrpc.FromMap(map[authz.Authorizer][]string{
 	idcheck.CentralOnly(): {
-		"/scanner.v4.Matcher/GetVulnerabilities",
-		"/scanner.v4.Matcher/GetMetadata",
-		"/scanner.v4.Matcher/GetSBOM",
+		v4.Matcher_GetVulnerabilities_FullMethodName,
+		v4.Matcher_GetMetadata_FullMethodName,
+		v4.Matcher_GetSBOM_FullMethodName,
 	},
 })
 
@@ -193,7 +194,11 @@ func (s *matcherService) GetSBOM(ctx context.Context, req *v4.GetSBOMRequest) (*
 		return nil, err
 	}
 
-	sbom, err := s.matcher.GetSBOM(ctx, ir, req.GetName(), req.GetId())
+	sbom, err := s.matcher.GetSBOM(ctx, ir, &sbom.Options{
+		Name:      req.GetId(),
+		Namespace: req.GetUri(),
+		Comment:   fmt.Sprintf("Tech Preview - generated for '%s'", req.GetName()),
+	})
 	if err != nil {
 		zlog.Error(ctx).Err(err).Msg("generating SBOM")
 		return nil, err

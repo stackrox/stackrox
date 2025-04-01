@@ -3,10 +3,13 @@ package common
 import (
 	"github.com/stackrox/rox/central/cve/converter/utils"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/scancomponent"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/set"
 )
+
+// TODO(ROX-28123): Remove file
 
 // Split splits the input image into a set of parts.
 func Split(image *storage.Image, withComponents bool) ImageParts {
@@ -15,9 +18,12 @@ func Split(image *storage.Image, withComponents bool) ImageParts {
 		ImageCVEEdges: make(map[string]*storage.ImageCVEEdge),
 	}
 
-	// These need to be called in order.
 	if withComponents {
-		parts.Children = splitComponents(parts)
+		if features.FlattenCVEData.Enabled() {
+			parts.Children = splitComponentsV2(parts)
+		} else {
+			parts.Children = splitComponents(parts)
+		}
 	}
 
 	// Clear components in the top level image.
@@ -83,6 +89,7 @@ func generateComponentCVEEdge(convertedComponent *storage.ImageComponent, conver
 	return ret
 }
 
+// Deprecated: replaced with equivalent functions using storage.ImageComponentV2
 // GenerateImageComponent returns top-level image component from embedded component.
 func GenerateImageComponent(os string, from *storage.EmbeddedImageScanComponent) *storage.ImageComponent {
 	ret := &storage.ImageComponent{

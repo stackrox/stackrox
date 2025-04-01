@@ -94,8 +94,7 @@ class CSVTest extends BaseSpecification {
         ImageService.scanImage("quay.io/rhacs-eng/qa-multi-arch:nginx")
         orchestrator.createDeployment(CVE_DEPLOYMENT)
         assert Services.waitForDeployment(CVE_DEPLOYMENT)
-        // wait for all image CVEs to be discovered and added to db
-        sleep(5000)
+        assert Services.waitForVulnerabilitiesForImage(CVE_DEPLOYMENT)
     }
 
     def cleanupSpec() {

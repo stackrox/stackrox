@@ -1,6 +1,11 @@
 import uniq from 'lodash/uniq';
 
-import { L4Protocol, NetworkEntityInfoType as EntityType } from 'types/networkFlow.proto';
+import {
+    ExternalNetworkFlowProperties,
+    L4Protocol,
+    NetworkEntityInfoType as EntityType,
+    DeploymentNetworkEntityInfo,
+} from 'types/networkFlow.proto';
 import { GroupedDiffFlows } from 'types/networkPolicyService';
 import { AdvancedFlowsFilterType } from '../common/AdvancedFlowsFilter/types';
 import { BaselineSimulationDiffState, Flow, FlowEntityType, Peer } from '../types/flow.type';
@@ -323,4 +328,34 @@ export function getNumExtraneousIngressFlows(nodes: CustomNodeModel[]): number {
             ? extraneousIngressNode?.data.numFlows
             : 0;
     return numAllowedIngressFlows;
+}
+
+/**
+ * Extracts the deployment entity from the flow and labels whether
+ * it's ingress or egress relative to the external entity.
+ * Added the `null` return type to satisfy TypeScript, but due to the union,
+ * at least one of `srcEntity` or `dstEntity` should always be a deployment.
+ */
+export function getDeploymentInfoForExternalEntity(
+    networkFlowProperties: ExternalNetworkFlowProperties
+): {
+    direction: 'Ingress' | 'Egress';
+    entity: DeploymentNetworkEntityInfo;
+} | null {
+    const { srcEntity, dstEntity } = networkFlowProperties;
+
+    if (srcEntity.type === 'DEPLOYMENT') {
+        return {
+            direction: 'Egress',
+            entity: srcEntity,
+        };
+    }
+    if (dstEntity.type === 'DEPLOYMENT') {
+        return {
+            direction: 'Ingress',
+            entity: dstEntity,
+        };
+    }
+
+    return null;
 }

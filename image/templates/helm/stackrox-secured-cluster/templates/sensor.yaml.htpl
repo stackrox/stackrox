@@ -205,8 +205,6 @@ spec:
         {{- if ._rox.env.openshift }}
         - name: ROX_OPENSHIFT_API
           value: "true"
-        - name: ROX_NODE_INDEX_ENABLED
-          value: "true"
         {{- end }}
         [<- if (not .KubectlOutput) >]
         {{- if ._rox.sensor.localImageScanning.enabled }}

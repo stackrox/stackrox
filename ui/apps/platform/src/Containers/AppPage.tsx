@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { Route, Switch } from 'react-router-dom';
+import { Route, Routes } from 'react-router-dom';
 
 import {
     loginPath,
@@ -19,23 +19,13 @@ function AppPage(): ReactElement {
         <>
             <AppPageTitle />
             <AppPageFavicon />
-            <Switch>
-                <Route path={loginPath}>
-                    <LoginPage />
-                </Route>
-                <Route path={authorizeRoxctlPath}>
-                    <LoginPage authorizeRoxctlMode />
-                </Route>
-                <Route path={testLoginResultsPath}>
-                    <TestLoginResultsPage />
-                </Route>
-                <Route path={authResponsePrefix}>
-                    <LoadingSection />
-                </Route>
-                <Route>
-                    <AuthenticatedRoutes />
-                </Route>
-            </Switch>
+            <Routes>
+                <Route path={loginPath} element={<LoginPage />} />
+                <Route path={authorizeRoxctlPath} element={<LoginPage authorizeRoxctlMode />} />
+                <Route path={testLoginResultsPath} element={<TestLoginResultsPage />} />
+                <Route path={authResponsePrefix} element={<LoadingSection />} />
+                <Route path="*" element={<AuthenticatedRoutes />} />
+            </Routes>
         </>
     );
 }

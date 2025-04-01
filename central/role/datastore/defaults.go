@@ -136,6 +136,7 @@ var defaultPermissionSets = map[string]permSetAttributes{
 		resourceWithAccess: []permissions.ResourceWithAccess{
 			permissions.Modify(resources.WorkflowAdministration),
 			permissions.View(resources.Integration),
+			permissions.View(resources.Cluster),
 		},
 	},
 }

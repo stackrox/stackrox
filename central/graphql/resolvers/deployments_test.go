@@ -61,10 +61,6 @@ func (s *DeploymentResolversTestSuite) SetupSuite() {
 	}
 }
 
-func (s *DeploymentResolversTestSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-}
-
 func (s *DeploymentResolversTestSuite) TestDeployments() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 

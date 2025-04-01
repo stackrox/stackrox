@@ -212,8 +212,12 @@ func Test_validateGetSBOMRequest(t *testing.T) {
 			req:     &v4.GetSBOMRequest{Id: "id"},
 			wantErr: "name is required",
 		},
+		"error on no uri": {
+			req:     &v4.GetSBOMRequest{Id: "id", Name: "name"},
+			wantErr: "uri is required",
+		},
 		"error on empty contentx": {
-			req: &v4.GetSBOMRequest{Id: "id", Name: "name"},
+			req: &v4.GetSBOMRequest{Id: "id", Name: "name", Uri: "uri"},
 
 			wantErr: "contents are required",
 		},
@@ -224,6 +228,7 @@ func Test_validateGetSBOMRequest(t *testing.T) {
 			req: &v4.GetSBOMRequest{
 				Id:   "id",
 				Name: "name",
+				Uri:  "uri",
 				Contents: &v4.Contents{
 					Packages: []*v4.Package{
 						{},
@@ -236,6 +241,7 @@ func Test_validateGetSBOMRequest(t *testing.T) {
 			req: &v4.GetSBOMRequest{
 				Id:       "id",
 				Name:     "name",
+				Uri:      "uri",
 				Contents: &v4.Contents{},
 			},
 		},

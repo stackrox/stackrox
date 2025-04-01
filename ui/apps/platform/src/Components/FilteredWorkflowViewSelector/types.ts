@@ -1,6 +1,14 @@
 import { HistoryAction } from 'hooks/useURLParameter';
 
-export const filteredWorkflowViews = ['Applications view', 'Platform view', 'Full view'] as const;
+export const userWorkloadWorkflowView = 'Applications view';
+export const platformWorkflowView = 'Platform view';
+export const fullWorkflowView = 'Full view';
+
+export const filteredWorkflowViews = [
+    userWorkloadWorkflowView,
+    platformWorkflowView,
+    fullWorkflowView,
+] as const;
 
 export type FilteredWorkflowView = (typeof filteredWorkflowViews)[number];
 

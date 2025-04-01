@@ -117,7 +117,7 @@ I8+UmQtwa0MOOcoUeXXJXjGagodO6A22hzjwQyf5e87eeLA1FfwtGYNLjoA=
         cy.get('button:contains("Add new certificate verification")').click({ force: true });
         getInputByLabel('Certificate OIDC issuer').type('  ');
         getInputByLabel('Certificate identity').type('  ');
-        getInputByLabel('Certificate Chain PEM encoded').type('  ');
+        getInputByLabel('Certificate chain (PEM encoded)').type('  ');
         getHelperElementByLabel('Certificate OIDC issuer').contains(
             'Certificate OIDC issuer is required'
         );
@@ -132,8 +132,8 @@ I8+UmQtwa0MOOcoUeXXJXjGagodO6A22hzjwQyf5e87eeLA1FfwtGYNLjoA=
         getInputByLabel('Public key value').clear().type(publicKeyValue);
         getInputByLabel('Certificate OIDC issuer').clear().type(certificateOIDCIssuer);
         getInputByLabel('Certificate identity').clear().type(certificateIdentity);
-        getInputByLabel('Certificate Chain PEM encoded').clear().type(chainPEM);
-        getInputByLabel('Certificate PEM encoded').clear().type(certPEM);
+        getInputByLabel('Certificate chain (PEM encoded)').clear().type(chainPEM);
+        getInputByLabel('Intermediate certificate (PEM encoded)').clear().type(certPEM);
 
         saveCreatedIntegrationInForm(integrationSource, integrationType);
 

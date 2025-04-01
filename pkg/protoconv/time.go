@@ -71,7 +71,7 @@ func MustConvertTimeToTimestamp(goTime time.Time) *timestamppb.Timestamp {
 	return protoTime
 }
 
-// ConvertTimeString converts a vulnerability time string into a proto timestamp
+// ConvertTimeString converts a vulnerability time string into a proto timestamp.
 func ConvertTimeString(str string) *timestamppb.Timestamp {
 	if str == "" {
 		return nil
@@ -97,12 +97,12 @@ func ReadableTime(ts *timestamppb.Timestamp) string {
 	return t.UTC().Format(time.DateTime)
 }
 
-// NowMinus substracts a specified amount of time from the current timestamp
+// NowMinus subtracts a specified amount of time from the current timestamp.
 func NowMinus(t time.Duration) *timestamppb.Timestamp {
 	return ConvertTimeToTimestamp(time.Now().Add(-t))
 }
 
-// TimeBeforeDays subtracts a specified number of days from the current timestamp
+// TimeBeforeDays subtracts a specified number of days from the current timestamp.
 func TimeBeforeDays(days int) *timestamppb.Timestamp {
 	return NowMinus(24 * time.Duration(days) * time.Hour)
 }

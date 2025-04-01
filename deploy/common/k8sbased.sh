@@ -539,6 +539,7 @@ function launch_central {
 
     if [[ -n "${ROX_DEV_INTERNAL_SSO_CLIENT_SECRET}" ]]; then
         ${KUBE_COMMAND:-kubectl} create secret generic sensitive-declarative-configurations -n "${central_namespace}" &>/dev/null
+        export_central_cert
         setup_internal_sso "${API_ENDPOINT}" "${ROX_DEV_INTERNAL_SSO_CLIENT_SECRET}"
     fi
 
@@ -600,6 +601,40 @@ function launch_central {
     echo "Access the UI at: https://${API_ENDPOINT}"
 }
 
+function ensure_collector_priority_class {
+    local priority_class_name="$1"
+    ${ORCH_CMD} get priorityclass -o=name "$priority_class_name" >/dev/null 2>&1 && return 0
+    ${ORCH_CMD} apply -f - <<EOT
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: ${priority_class_name}
+value: 1000000
+preemptionPolicy: PreemptLowerPriority
+globalDefault: false
+description: "This priority class shall be used for collector pods, which must be able to preempt other pods to fit exactly one collector on each node."
+EOT
+}
+
+function export_central_cert {
+    # Export the internal central TLS certificate for roxctl to access central
+    # through TLS-passthrough router by specifying the TLS server name.
+    ROX_SERVER_NAME="central.${CENTRAL_NAMESPACE:-stackrox}"
+    export ROX_SERVER_NAME
+
+    local central_cert
+    central_cert="$(mktemp -d)/central_cert.pem"
+    echo "Storing central certificate in ${central_cert}"
+
+    export LOGLEVEL=debug
+    roxctl -e "$API_ENDPOINT" \
+        central cert --insecure-skip-tls-verify 1>"$central_cert"
+
+    ROX_CA_CERT_FILE="$central_cert"
+    export ROX_CA_CERT_FILE
+    openssl x509 -in "${ROX_CA_CERT_FILE}" -subject -issuer -noout
+}
+
 function launch_sensor {
     local k8s_dir="$1"
     local sensor_namespace=${SENSOR_NAMESPACE:-stackrox}
@@ -609,6 +644,8 @@ function launch_sensor {
     local scanner_extra_config=()
     local extra_json_config=''
     local extra_helm_config=()
+
+    local collector_priority_class_name="stackrox-collector-dev"
 
     verify_orch
 
@@ -832,6 +869,11 @@ function launch_sensor {
         extra_helm_config+=(--set "collector.forceCollectionMethod=true")
       fi
 
+      if [[ "${DEDICATED_COLLECTOR_PRIORITY_CLASS:-}" == "true" ]]; then
+        ensure_collector_priority_class "$collector_priority_class_name"
+        extra_helm_config+=(--set "collector.priorityClassName=$collector_priority_class_name")
+      fi
+
       if [[ -n "$CI" ]]; then
         echo "Linting Helm chart ${sensor_helm_chart}".
         helm lint --set ca.cert=PLACEHOLDER_FOR_LINTING "${sensor_helm_chart}"
@@ -851,6 +893,7 @@ function launch_sensor {
     else
       if [[ -x "$(command -v roxctl)" && "$(roxctl version)" == "$MAIN_IMAGE_TAG" ]]; then
         [[ -n "${ROX_ADMIN_PASSWORD}" ]] || { echo >&2 "ROX_ADMIN_PASSWORD not found! Cannot launch sensor."; return 1; }
+        export_central_cert
         roxctl --endpoint "${API_ENDPOINT}" sensor generate --main-image-repository="${MAIN_IMAGE_REPO}" --central="$CLUSTER_API_ENDPOINT" --name="$CLUSTER" \
              --collection-method="$COLLECTION_METHOD" \
              "${ORCH}" \

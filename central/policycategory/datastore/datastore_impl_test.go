@@ -84,7 +84,7 @@ func (s *PolicyCategoryDatastoreTestSuite) TestRenamePolicyCategory() {
 	s.store.EXPECT().Get(s.hasReadWriteWorkflowAdministrationCtx, c.GetId()).Return(c, true, nil)
 	c, err := s.datastore.RenamePolicyCategory(s.hasReadWriteWorkflowAdministrationCtx, c.Id, "Boo's Special Category New Name")
 	s.NoError(err, "expected no error trying to rename a category with permissions")
-	s.Equal("Boo'S Special Category New Name", c.GetName(), "expected category to be renamed, but it is not")
+	s.Equal("Boo's Special Category New Name", c.GetName(), "expected category to be renamed, but it is not")
 }
 
 func (s *PolicyCategoryDatastoreTestSuite) TestRenamePolicyCategoryDuplicateName() {

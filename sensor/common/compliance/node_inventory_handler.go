@@ -23,5 +23,6 @@ func NewNodeInventoryHandler(ch <-chan *storage.NodeInventory, iw <-chan *index.
 		stopper:          concurrency.NewStopper(),
 		nodeMatcher:      nodeIDMatcher,
 		nodeRHCOSMatcher: nodeRHCOSmatcher,
+		archCache:        make(map[string]string),
 	}
 }

@@ -27,7 +27,7 @@ RUN dnf -y --installroot="$FINAL_STAGE_PATH" upgrade --nobest && \
 RUN /tmp/.konflux/subscription-manager-bro.sh cleanup
 
 
-FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_1.22 AS go-builder
+FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_1.23 AS go-builder
 
 RUN dnf -y install --allowerasing make automake gcc gcc-c++ coreutils binutils diffutils zlib-devel bzip2-devel lz4-devel cmake jq
 
@@ -50,14 +50,14 @@ ENV CI=1
 RUN # TODO(ROX-13200): make sure roxctl cli is built without running go mod tidy. \
     make main-build-nodeps cli-build && \
     mkdir -p image/rhel/docs/api/v1 && \
-    ./scripts/mergeswag.sh generated/api/v1 1 >image/rhel/docs/api/v1/swagger.json && \
+    ./scripts/mergeswag.sh 1 generated/api/v1 central/docs/api_custom_routes >image/rhel/docs/api/v1/swagger.json && \
     mkdir -p image/rhel/docs/api/v2 && \
-    ./scripts/mergeswag.sh generated/api/v2 2 >image/rhel/docs/api/v2/swagger.json
+    ./scripts/mergeswag.sh 2 generated/api/v2 >image/rhel/docs/api/v2/swagger.json
 
 RUN make copy-go-binaries-to-image-dir
 
 
-FROM registry.access.redhat.com/ubi8/nodejs-18:latest AS ui-builder
+FROM registry.access.redhat.com/ubi8/nodejs-20:latest AS ui-builder
 
 WORKDIR /go/src/github.com/stackrox/rox/app
 

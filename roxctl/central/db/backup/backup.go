@@ -7,8 +7,7 @@ import (
 )
 
 const (
-	warningDeprecatedDbBackup = `WARNING: The backup command has been deprecated. Please use "roxctl central backup"
-to create central backup with database, keys and certificates.`
+	warningDeprecatedDbBackup = `Please use "roxctl central backup" to create central backup with database, keys and certificates.`
 )
 
 // Command defines the db backup command. This command is deprecated and can be removed on or after 3.0.57.

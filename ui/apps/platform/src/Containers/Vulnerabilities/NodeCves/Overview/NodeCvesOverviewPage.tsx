@@ -1,12 +1,13 @@
 import React, { useEffect } from 'react';
 import {
-    PageSection,
-    Title,
+    Alert,
+    Card,
+    CardBody,
     Divider,
     Flex,
     FlexItem,
-    Card,
-    CardBody,
+    PageSection,
+    Title,
     ToolbarItem,
 } from '@patternfly/react-core';
 import { DropdownItem } from '@patternfly/react-core/deprecated';
@@ -31,8 +32,8 @@ import useSnoozedCveCount from 'Containers/Vulnerabilities/hooks/useSnoozedCveCo
 import { createFilterTracker } from 'utils/analyticsEventTracking';
 import {
     clusterSearchFilterConfig,
-    nodeCVESearchFilterConfig,
     nodeComponentSearchFilterConfig,
+    nodeCVESearchFilterConfig,
     nodeSearchFilterConfig,
 } from 'Containers/Vulnerabilities/searchFilterConfig';
 import AdvancedFiltersToolbar from '../../components/AdvancedFiltersToolbar';
@@ -46,14 +47,18 @@ import { nodeEntityTabValues } from '../../types';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 
 import CVEsTable, {
-    sortFields as cveSortFields,
     defaultSortOption as cveDefaultSortOption,
+    sortFields as cveSortFields,
 } from './CVEsTable';
 import NodesTable, {
-    sortFields as nodeSortFields,
     defaultSortOption as nodeDefaultSortOption,
+    sortFields as nodeSortFields,
 } from './NodesTable';
 import { useNodeCveEntityCounts } from './useNodeCveEntityCounts';
+import ExternalLink from '../../../../Components/PatternFly/IconText/ExternalLink';
+import { getVersionedDocs } from '../../../../utils/versioning';
+import useMetadata from '../../../../hooks/useMetadata';
+import useFeatureFlags from '../../../../hooks/useFeatureFlags';
 
 const searchFilterConfig = [
     nodeSearchFilterConfig,
@@ -66,6 +71,9 @@ function NodeCvesOverviewPage() {
     const apolloClient = useApolloClient();
     const { analyticsTrack } = useAnalytics();
     const trackAppliedFilter = createFilterTracker(analyticsTrack);
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const scannerV4NodeScanResultsPossible =
+        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_NODE_INDEX_ENABLED');
 
     const [activeEntityTabKey] = useURLStringUnion('entityTab', nodeEntityTabValues);
     const { searchFilter, setSearchFilter } = useURLSearch();
@@ -85,6 +93,7 @@ function NodeCvesOverviewPage() {
     const selectedCves = useMap<string, { cve: string }>();
     const { snoozeModalOptions, setSnoozeModalOptions, snoozeActionCreator } = useSnoozeCveModal();
     const snoozedCveCount = useSnoozedCveCount('Node');
+    const { version } = useMetadata();
 
     function onEntityTabChange(entityTab: 'CVE' | 'Node') {
         pagination.setPage(1);
@@ -177,6 +186,30 @@ function NodeCvesOverviewPage() {
                     </FlexItem>
                 </Flex>
             </PageSection>
+            {scannerV4NodeScanResultsPossible && (
+                <PageSection variant="light" className="pf-v5-u-pt-0">
+                    <Alert
+                        isInline
+                        variant="info"
+                        title="Results may include Node CVEs obtained from Scanner V4"
+                        component="p"
+                    >
+                        <ExternalLink>
+                            <a
+                                href={getVersionedDocs(
+                                    version,
+                                    'operating/managing-vulnerabilities#understanding-node-cves-scanner-v4_scan-rhcos-node-host'
+                                )}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                Read more about the differences between the node scanning results
+                                obtained with the StackRox Scanner and Scanner V4.
+                            </a>
+                        </ExternalLink>
+                    </Alert>
+                </PageSection>
+            )}
             <PageSection padding={{ default: 'noPadding' }}>
                 <PageSection isCenterAligned>
                     <Card>

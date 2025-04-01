@@ -1,5 +1,5 @@
 import React, { ReactElement, useState } from 'react';
-import { generatePath, useHistory } from 'react-router-dom';
+import { generatePath, useNavigate } from 'react-router-dom';
 import {
     Dropdown,
     DropdownItem,
@@ -25,7 +25,6 @@ export type ScanConfigActionDropdownProps = {
     isReportStatusPending: boolean;
     scanConfigResponse: ComplianceScanConfigurationStatus;
     isReportJobsEnabled: boolean;
-    isComplianceReportingEnabled: boolean;
 };
 
 function ScanConfigActionDropdown({
@@ -36,9 +35,8 @@ function ScanConfigActionDropdown({
     isReportStatusPending,
     scanConfigResponse,
     isReportJobsEnabled,
-    isComplianceReportingEnabled,
 }: ScanConfigActionDropdownProps): ReactElement {
-    const history = useHistory();
+    const navigate = useNavigate();
 
     const [isOpen, setIsOpen] = useState(false);
 
@@ -64,10 +62,7 @@ function ScanConfigActionDropdown({
             // description={isScanning ? 'Edit is disabled while scan is running' : ''}
             isDisabled={isProcessing}
             onClick={() => {
-                history.push({
-                    pathname: scanConfigUrl,
-                    search: 'action=edit',
-                });
+                navigate(`${scanConfigUrl}?action=edit`);
             }}
         >
             Edit scan schedule
@@ -84,31 +79,26 @@ function ScanConfigActionDropdown({
         >
             Run scan
         </DropdownItem>,
+        <DropdownItem
+            key="Send report"
+            component="button"
+            description={
+                notifiers.length === 0
+                    ? 'Send is disabled if no delivery destinations'
+                    : /* : isScanning
+                        ? 'Send is disabled while scan is running' */
+                      ''
+            }
+            isDisabled={notifiers.length === 0 || isProcessing}
+            onClick={() => {
+                handleSendReport(scanConfigResponse);
+            }}
+        >
+            Send report
+        </DropdownItem>,
     ];
 
-    if (isComplianceReportingEnabled) {
-        dropdownItems.push(
-            <DropdownItem
-                key="Send report"
-                component="button"
-                description={
-                    notifiers.length === 0
-                        ? 'Send is disabled if no delivery destinations'
-                        : /* : isScanning
-                          ? 'Send is disabled while scan is running' */
-                          ''
-                }
-                isDisabled={notifiers.length === 0 || isProcessing}
-                onClick={() => {
-                    handleSendReport(scanConfigResponse);
-                }}
-            >
-                Send report
-            </DropdownItem>
-        );
-    }
-
-    if (isComplianceReportingEnabled && isReportJobsEnabled) {
+    if (isReportJobsEnabled) {
         dropdownItems.push(
             <DropdownItem
                 key="Generate download"

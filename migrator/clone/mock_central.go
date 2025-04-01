@@ -90,7 +90,6 @@ func (m *mockCentral) destroyCentral() {
 		pgtest.DropDatabase(m.t, migrations.GetCurrentClone())
 		pgtest.DropDatabase(m.t, migrations.GetPreviousClone())
 		pgtest.DropDatabase(m.t, migrations.GetBackupClone())
-		m.tp.Teardown(m.t)
 	}
 	_ = os.RemoveAll(m.mountPath)
 }

@@ -44,10 +44,6 @@ func (s *categoriesMigrationTestSuite) SetupTest() {
 
 }
 
-func (s *categoriesMigrationTestSuite) TearDownTest() {
-	s.db.Teardown(s.T())
-}
-
 func (s *categoriesMigrationTestSuite) TestMigration() {
 	ctx := sac.WithAllAccess(context.Background())
 	testPolicy := fixtures.GetPolicy()

@@ -9,9 +9,9 @@ export function generateAndSaveSbom({ imageName }: { imageName: string }): Promi
         url: '/api/v1/images/sbom',
         data: { imageName },
         timeout: 0,
-        responseType: 'arraybuffer',
     }).then((response) => {
-        const { file, filename } = parseAxiosResponseAttachment(response);
+        const { filename } = parseAxiosResponseAttachment(response);
+        const file = new Blob([JSON.stringify(response.data)], { type: 'application/json' });
         FileSaver.saveAs(file, filename);
     });
 }

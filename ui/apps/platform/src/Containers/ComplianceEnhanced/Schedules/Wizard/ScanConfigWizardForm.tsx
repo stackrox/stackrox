@@ -1,5 +1,5 @@
 import React, { ReactElement, useCallback, useRef, useState } from 'react';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Wizard, WizardStep } from '@patternfly/react-core/deprecated';
 import { FormikProvider } from 'formik';
 import { complianceEnhancedSchedulesPath } from 'routePaths';
@@ -9,7 +9,6 @@ import useAnalytics, {
     COMPLIANCE_SCHEDULES_WIZARD_SAVE_CLICKED,
     COMPLIANCE_SCHEDULES_WIZARD_STEP_CHANGED,
 } from 'hooks/useAnalytics';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import useRestQuery from 'hooks/useRestQuery';
 import { saveScanConfig } from 'services/ComplianceScanConfigurationService';
 import { listComplianceIntegrations } from 'services/ComplianceIntegrationService';
@@ -42,14 +41,12 @@ type ScanConfigWizardFormProps = {
 
 function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps): ReactElement {
     const { analyticsTrack } = useAnalytics();
-    const history = useHistory();
+    const navigate = useNavigate();
     const formik = useFormikScanConfig(initialFormValues);
     const [isCreating, setIsCreating] = useState(false);
     const [createScanConfigError, setCreateScanConfigError] = useState('');
     const [clustersUsedForProfileData, setClustersUsedForProfileData] = useState<string[]>([]);
     const alertRef = useRef<HTMLDivElement | null>(null);
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isComplianceReportingEnabled = isFeatureFlagEnabled('ROX_COMPLIANCE_REPORTING');
 
     const listClustersQuery = useCallback(() => listComplianceIntegrations(), []);
     const { data: clusters, isLoading: isFetchingClusters } = useRestQuery(listClustersQuery);
@@ -76,7 +73,7 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
                     errorMessage: '',
                 },
             });
-            history.push(complianceEnhancedSchedulesPath);
+            navigate(complianceEnhancedSchedulesPath);
         } catch (error) {
             analyticsTrack({
                 event: COMPLIANCE_SCHEDULES_WIZARD_SAVE_CLICKED,
@@ -120,7 +117,7 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
     }
 
     function onClose(): void {
-        history.push(complianceEnhancedSchedulesPath);
+        navigate(complianceEnhancedSchedulesPath);
     }
 
     function setAllFieldsTouched(formikGroupKey: string): void {
@@ -213,7 +210,7 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
             ),
             canJumpTo: canJumpToReviewConfig(),
         },
-    ].filter(({ id }) => id !== CONFIGURE_REPORT_ID || isComplianceReportingEnabled);
+    ];
 
     return (
         <>

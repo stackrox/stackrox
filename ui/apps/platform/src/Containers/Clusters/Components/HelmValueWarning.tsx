@@ -26,7 +26,11 @@ function HelmValueWarning({ currentValue, helmValue }: HelmValueWarningProps): R
             break;
         }
         default: {
-            normalizedValue = String(helmValue);
+            try {
+                normalizedValue = JSON.stringify(helmValue, null, 0);
+            } catch {
+                // default value is better than exception
+            }
         }
     }
     return (

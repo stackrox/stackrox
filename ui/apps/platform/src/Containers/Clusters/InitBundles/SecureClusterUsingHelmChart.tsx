@@ -74,7 +74,7 @@ function SecureClusterUsingHelmChart({
                         <a
                             href={getVersionedDocs(
                                 version,
-                                '/installing/installing_other/init-bundle-other.html'
+                                'installing/installing-rhacs-on-other-platforms#init-bundle-other'
                             )}
                             target="_blank"
                             rel="noopener noreferrer"
@@ -86,7 +86,7 @@ function SecureClusterUsingHelmChart({
                         <a
                             href={getVersionedDocs(
                                 version,
-                                '/installing/installing_other/install-secured-cluster-other.html'
+                                'installing/installing-rhacs-on-other-platforms#install-secured-cluster-other'
                             )}
                             target="_blank"
                             rel="noopener noreferrer"

@@ -1,8 +1,7 @@
 import React from 'react';
-import { Alert, Text } from '@patternfly/react-core';
+import { Alert } from '@patternfly/react-core';
 
 import CollapsibleSection from 'Components/CollapsibleSection';
-import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import ToggleSwitch from 'Components/ToggleSwitch';
 import Select from 'Components/Select';
 import {
@@ -40,7 +39,6 @@ function getSelectComparison(options, key, selectedCluster, handleChange) {
 }
 
 const StaticConfigurationSection = ({
-    centralEnv,
     selectedCluster,
     isManagerTypeNonConfigurable,
     handleChange,
@@ -81,11 +79,6 @@ const StaticConfigurationSection = ({
         }
         onClusterTypeChange(selectedOption);
     }
-
-    const showSlimCollectorWarning =
-        centralEnv?.successfullyFetched &&
-        selectedCluster.slimCollector &&
-        !centralEnv.kernelSupportAvailable;
 
     const isTypeOpenShift3 = selectedCluster?.type === clusterTypes.OPENSHIFT_3;
 
@@ -315,63 +308,6 @@ const StaticConfigurationSection = ({
                             selectedCluster?.helmConfig?.staticConfig?.tolerationsConfig?.disabled
                         }
                     />
-                </div>
-                <div className="flex flex-col">
-                    <div className={wrapperMarginClassName}>
-                        <div className={divToggleOuterClassName}>
-                            <div className={justifyBetweenClassName}>
-                                <label htmlFor="slimCollector" className={labelClassName}>
-                                    <span>Enable Slim Collector Mode</span>
-                                    <br />
-                                    <span className={sublabelClassName}>
-                                        New cluster will be set up using a slim collector image
-                                    </span>
-                                </label>
-                                <ToggleSwitch
-                                    id="slimCollector"
-                                    name="slimCollector"
-                                    toggleHandler={handleChange}
-                                    disabled={isManagerTypeNonConfigurable}
-                                    enabled={selectedCluster.slimCollector}
-                                />
-                            </div>
-                        </div>
-                        <HelmValueWarning
-                            currentValue={selectedCluster?.slimCollector}
-                            helmValue={selectedCluster?.helmConfig?.staticConfig?.slimCollector}
-                        />
-                    </div>
-                    {!centralEnv?.successfullyFetched && (
-                        <Alert
-                            variant="warning"
-                            isInline
-                            title="Failed to check if Central has kernel support packages available"
-                            component="p"
-                        />
-                    )}
-                    {showSlimCollectorWarning && (
-                        <Alert
-                            variant="warning"
-                            isInline
-                            title="Kernel support package"
-                            component="p"
-                        >
-                            <Text>Central does not have the required Kernel support package.</Text>
-                            <Text>
-                                Retrieve it from{' '}
-                                <ExternalLink>
-                                    <a
-                                        href="https://install.stackrox.io/collector/support-packages/index.html"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                    >
-                                        stackrox.io
-                                    </a>
-                                </ExternalLink>
-                            </Text>
-                            <Text>Upload it to Central using roxctl</Text>
-                        </Alert>
-                    )}
                 </div>
             </div>
         </CollapsibleSection>

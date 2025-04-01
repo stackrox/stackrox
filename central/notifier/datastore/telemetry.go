@@ -31,9 +31,7 @@ var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, err
 	}
 
 	// Can safely ignore the error here since we already fetched notifiers.
-	_ = phonehome.AddTotal(ctx, props, "Notifiers", func(_ context.Context) (int, error) {
-		return len(notifiers), nil
-	})
+	_ = phonehome.AddTotal(ctx, props, "Notifiers", phonehome.Len(notifiers))
 
 	notifierTypesCount := map[string]int{
 		pkgNotifiers.AWSSecurityHubType:    0,
@@ -51,8 +49,9 @@ var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, err
 	}
 
 	cloudCredentialsEnabledNotifiersCount := map[string]int{
-		pkgNotifiers.AWSSecurityHubType: 0,
-		pkgNotifiers.CSCCType:           0,
+		pkgNotifiers.AWSSecurityHubType:    0,
+		pkgNotifiers.CSCCType:              0,
+		pkgNotifiers.MicrosoftSentinelType: 0,
 	}
 
 	for _, notifier := range notifiers {
@@ -65,16 +64,20 @@ var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, err
 		if notifier.GetType() == pkgNotifiers.CSCCType && notifier.GetCscc().GetWifEnabled() {
 			cloudCredentialsEnabledNotifiersCount[pkgNotifiers.CSCCType]++
 		}
+
+		if notifier.GetType() == pkgNotifiers.MicrosoftSentinelType && notifier.GetMicrosoftSentinel().GetWifEnabled() {
+			cloudCredentialsEnabledNotifiersCount[pkgNotifiers.MicrosoftSentinelType]++
+		}
 	}
 
+	titleCase := cases.Title(language.English, cases.Compact).String
+
 	for notifierType, count := range notifierTypesCount {
-		props[fmt.Sprintf("Total %s Notifiers",
-			cases.Title(language.English, cases.Compact).String(notifierType))] = count
+		props[fmt.Sprintf("Total %s Notifiers", titleCase(notifierType))] = count
 	}
 
 	for cloudCredentialsType, count := range cloudCredentialsEnabledNotifiersCount {
-		props[fmt.Sprintf("Total STS enabled %s Notifiers",
-			cases.Title(language.English, cases.Compact).String(cloudCredentialsType))] = count
+		props[fmt.Sprintf("Total STS enabled %s Notifiers", titleCase(cloudCredentialsType))] = count
 	}
 
 	return props, nil

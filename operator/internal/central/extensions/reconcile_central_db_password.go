@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	commonExtensions "github.com/stackrox/rox/operator/internal/common/extensions"
+	commonLabels "github.com/stackrox/rox/operator/internal/common/labels"
 	"github.com/stackrox/rox/operator/internal/types"
 	"github.com/stackrox/rox/pkg/renderer"
 	coreV1 "k8s.io/api/core/v1"
@@ -93,7 +94,7 @@ func (r *reconcileCentralDBPasswordExtensionRun) Execute(ctx context.Context) er
 
 	// At this point, r.password was set via readAndSetPasswordFromReferencedSecret above (user-specified mode), or is unset,
 	// in which case the auto-generation logic will take effect.
-	if err := r.EnsureSecret(ctx, canonicalCentralDBPasswordSecretName, r.validateSecretData, r.generateDBPassword); err != nil {
+	if err := r.EnsureSecret(ctx, canonicalCentralDBPasswordSecretName, r.validateSecretData, r.generateDBPassword, commonLabels.DefaultLabels()); err != nil {
 		return errors.Wrapf(err, "reconciling %s secret", canonicalCentralDBPasswordSecretName)
 	}
 	return nil

@@ -1,7 +1,9 @@
-import { getHeaderWithAdminPass, getHeaderWithToken } from '../src/utils.js';
 import { createSac, deleteSac } from '../src/sacUtils.js';
-import { vulnerabilityManagementDashboard } from '../groups/vulnerabilityManagementDashboard.js';
+import { getHeaderWithAdminPass, getHeaderWithToken } from '../src/utils.js';
 import { mainDashboard } from '../groups/mainDashboard.js';
+import { vulnerabilityManagementDashboard } from '../groups/vulnerabilityManagementDashboard.js';
+import {alertsGrpc} from "../groups/alerts";
+
 
 import { defaultOptions } from '../src/options.js';
 
@@ -67,6 +69,7 @@ export function teardown(sacInfos) {
 const runAllGroups = (header, tags) => {
     vulnerabilityManagementDashboard(__ENV.HOST, header, tags);
     mainDashboard(__ENV.HOST, header, tags);
+    alertsGrpc(__ENV.HOST, header, tags, 50);
 };
 
 export default function main(sacInfos) {

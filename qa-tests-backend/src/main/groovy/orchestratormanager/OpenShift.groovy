@@ -29,7 +29,7 @@ class OpenShift extends Kubernetes {
     }
 
     @Override
-    def ensureNamespaceExists(String ns) {
+    void ensureNamespaceExists(String ns) {
         ProjectRequest projectRequest = new ProjectRequestBuilder()
                 .withNewMetadata()
                 .withName(ns)
@@ -95,7 +95,8 @@ class OpenShift extends Kubernetes {
     */
 
     @Override
-    def createRoute(String routeName, String namespace) {
+    @SuppressWarnings('BuilderMethodWithSideEffects')
+    void createRoute(String routeName, String namespace) {
         log.debug "Creating a route: " + routeName
         withRetry(2, 3) {
             Route route = new RouteBuilder().withNewMetadata().withName(routeName).endMetadata()
@@ -105,7 +106,7 @@ class OpenShift extends Kubernetes {
     }
 
     @Override
-    def deleteRoute(String routeName, String namespace) {
+    void deleteRoute(String routeName, String namespace) {
         log.debug "Deleting a route: " + routeName
         withRetry(2, 3) {
             Route route = new RouteBuilder().withNewMetadata().withName(routeName).endMetadata().build()

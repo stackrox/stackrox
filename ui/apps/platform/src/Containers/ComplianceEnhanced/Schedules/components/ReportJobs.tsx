@@ -83,10 +83,9 @@ const sortOptions = {
 
 type ReportJobsProps = {
     scanConfigId: string;
-    isComplianceReportingEnabled: boolean;
 };
 
-function ReportJobs({ scanConfigId, isComplianceReportingEnabled }: ReportJobsProps) {
+function ReportJobs({ scanConfigId }: ReportJobsProps) {
     const { analyticsTrack } = useAnalytics();
 
     const { page, perPage, setPage, setPerPage } = useURLPagination(10);
@@ -233,10 +232,7 @@ function ReportJobs({ scanConfigId, isComplianceReportingEnabled }: ReportJobsPr
                                         isDownloadAvailable={snapshot.isDownloadAvailable}
                                     />
                                     <Divider component="div" className="pf-v5-u-my-md" />
-                                    <ConfigDetails
-                                        scanConfig={snapshot.reportData}
-                                        isComplianceReportingEnabled={isComplianceReportingEnabled}
-                                    />
+                                    <ConfigDetails scanConfig={snapshot.reportData} />
                                 </CardBody>
                             </Card>
                         </>

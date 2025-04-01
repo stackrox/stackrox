@@ -52,6 +52,7 @@ import ExceptionDetailsCell from '../components/ExceptionDetailsCell';
 import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
 import PartialCVEDataAlert from '../../components/PartialCVEDataAlert';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
+import { infoForEpssProbability } from './infoForTh';
 import { formatEpssProbabilityAsPercent, getCveBaseInfoFromDistroTuples } from './table.utils';
 
 export const tableId = 'WorkloadCveOverviewTable';
@@ -207,8 +208,7 @@ function WorkloadCVEOverviewTable({
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isNvdCvssColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
-    const isEpssProbabilityColumnEnabled =
-        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_EPSS_SCORE');
+    const isEpssProbabilityColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
 
     const colSpan =
         6 +
@@ -255,6 +255,7 @@ function WorkloadCVEOverviewTable({
                     {isEpssProbabilityColumnEnabled && (
                         <Th
                             className={getVisibilityClass('epssProbability')}
+                            info={infoForEpssProbability}
                             sort={getSortParams('EPSS Probability', aggregateByEPSS)}
                         >
                             EPSS probability

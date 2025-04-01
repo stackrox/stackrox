@@ -19,7 +19,10 @@ get_infra_artifacts() {
 deploy_central() {
     OS="$(uname)"
 
-    curl "https://mirror.openshift.com/pub/rhacs/assets/${PREVIOUS_RELEASE}/bin/${OS}/roxctl" --output "roxctl-${PREVIOUS_RELEASE}"
+    curl \
+        --retry 5 --retry-all-errors \
+        --output "roxctl-${PREVIOUS_RELEASE}" \
+        "https://mirror.openshift.com/pub/rhacs/assets/${PREVIOUS_RELEASE}/bin/${OS}/roxctl"
     chmod +x "roxctl-${PREVIOUS_RELEASE}"
 
     ./artifacts/test1/connect
@@ -30,6 +33,15 @@ deploy_central() {
         --enable-pod-security-policies=false \
         --image-defaults development_build \
         --output-dir bundle-test1
+
+    # Install the securitypolicies CRD since this is not done automatically when using roxctl install method
+    crd_path="./bundle-test1/helm/chart/crds/config.stackrox.io_securitypolicies.yaml"
+    if [ -f "$crd_path" ]; then
+        kubectl apply -f "$crd_path"
+    else
+        # This case is for compatibility with roxctl versions <4.6
+        echo "No securitypolicies.config.stackrox.io CRD file found at path: $crd_path. Install it manually if required."
+    fi
 
     ./bundle-test1/central/scripts/setup.sh
     kubectl apply -R -f bundle-test1/central
@@ -72,6 +84,7 @@ deploy_sensor() {
         --insecure \
         --config <(curl_cfg user "admin:${ROX_ADMIN_PASSWORD}") \
         --silent \
+        --retry 5 --retry-all-errors \
         --data-raw '{"name":"'"${CLUSTER_NAME}"'","type":"KUBERNETES_CLUSTER","mainImage":"quay.io/rhacs-eng/main","collectorImage":"quay.io/rhacs-eng/collector","centralApiEndpoint":"'"${CENTRAL_API_ENDPOINT}"'","runtimeSupport":false,"collectionMethod":"'"${COLLECTION_METHOD}"'","DEPRECATEDProviderMetadata":null,"admissionControllerEvents":true,"admissionController":false,"admissionControllerUpdates":false,"DEPRECATEDOrchestratorMetadata":null,"tolerationsConfig":{"disabled":false},"dynamicConfig":{"admissionControllerConfig":{"enabled":false,"enforceOnUpdates":false,"timeoutSeconds":3,"scanInline":false,"disableBypass":false},"registryOverride":""},"slimCollector":true}' \
         | jq -r '.cluster.id'
     )"
@@ -81,6 +94,7 @@ deploy_sensor() {
         --insecure \
         --config <(curl_cfg user "admin:${ROX_ADMIN_PASSWORD}") \
         --data-raw '{"id":"'"${CLUSTER_ID}"'","createUpgraderSA":true}' \
+        --retry 5 --retry-all-errors \
         --output "sensor-${CLUSTER_NAME}.zip"
 
     "./artifacts/${CLUSTER_NAME}/connect"
@@ -95,6 +109,7 @@ disable_autoupgrader() {
     curl "https://${CENTRAL_IP}/v1/sensorupgrades/config" \
         --insecure \
         --config <(curl_cfg user "admin:${ROX_ADMIN_PASSWORD}") \
+        --retry 5 --retry-all-errors \
         --data-raw '{"config":{"enableAutoUpgrades":false}}'
 }
 
@@ -108,6 +123,7 @@ create_policy() {
     curl "https://${CENTRAL_IP}/v1/policies?enableStrictValidation=true" \
         --config <(curl_cfg user "admin:${ROX_ADMIN_PASSWORD}") \
         --insecure \
+        --retry 5 --retry-all-errors \
         --data @"${CWD}"/.github/static/upgrade-test/policy.json | jq -r '.id'
 }
 
@@ -115,6 +131,7 @@ trigger_compliance_check() {
     curl "https://${CENTRAL_IP}/api/graphql?opname=triggerScan" \
         --config <(curl_cfg user "admin:${ROX_ADMIN_PASSWORD}") \
         --insecure \
+        --retry 5 --retry-all-errors \
         --data-raw $'{"operationName":"triggerScan","variables":{"clusterId":"*","standardId":"*"},"query":"mutation triggerScan($clusterId: ID\u0021, $standardId: ID\u0021) {\\n  complianceTriggerRuns(clusterId: $clusterId, standardId: $standardId) {\\n    id\\n    standardId\\n    clusterId\\n    state\\n    errorMessage\\n    __typename\\n  }\\n}\\n"}'
 }
 

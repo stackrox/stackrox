@@ -38,7 +38,6 @@ describe('Cluster configuration', () => {
             'admissionController',
             'admissionControllerUpdates',
             'tolerationsConfig.disabled',
-            'slimCollector',
             'dynamicConfig.registryOverride',
             'dynamicConfig.admissionControllerConfig.enabled',
             'dynamicConfig.admissionControllerConfig.enforceOnUpdates',

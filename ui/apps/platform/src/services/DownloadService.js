@@ -24,7 +24,7 @@ export function saveFile({ method, url, data, name = '', timeout = 0 }) {
                 if (name && typeof name === 'string') {
                     FileSaver.saveAs(file, name);
                 } else if (filename) {
-                    FileSaver.saveAs(file, filename);
+                    FileSaver.saveAs(file, filename.replace(/['"]/g, ''));
                 } else {
                     throw new Error('Unable to extract file name');
                 }

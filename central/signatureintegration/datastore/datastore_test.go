@@ -278,10 +278,6 @@ func newSignatureIntegration(name string) *storage.SignatureIntegration {
 	return signatureIntegration
 }
 
-func (s *signatureDataStoreTestSuite) TearDownTest() {
-	s.db.Teardown(s.T())
-}
-
 func TestRemovePoliciesInvisibleToUser(t *testing.T) {
 	cases := map[string]struct {
 		policiesVisibleToUser []*storage.Policy

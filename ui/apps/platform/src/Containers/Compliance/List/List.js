@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { useHistory, useLocation, useRouteMatch } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import lowerCase from 'lodash/lowerCase';
 import pluralize from 'pluralize';
 
@@ -10,6 +10,7 @@ import SidePanelAdjacentArea from 'Components/SidePanelAdjacentArea';
 import { searchCategories as searchCategoryTypes } from 'constants/entityTypes';
 import searchContext from 'Containers/searchContext';
 import { searchParams } from 'constants/searchParams';
+import useWorkflowMatch from 'hooks/useWorkflowMatch';
 import ListTable from './Table';
 // TODO: this exception will be unnecessary once Compliance pages are re-structured like Config Management
 /* eslint-disable-next-line import/no-cycle */
@@ -17,16 +18,16 @@ import SidePanel from './SidePanel';
 import ComplianceSearchInput from '../ComplianceSearchInput';
 
 const ComplianceList = ({ entityType, query, selectedRowId, noSearch }) => {
-    const history = useHistory();
+    const navigate = useNavigate();
     const location = useLocation();
-    const match = useRouteMatch();
+    const match = useWorkflowMatch();
     function setSelectedRowId(row) {
         const { id } = row;
         const url = URLService.getURL(match, location)
             .set('entityListType1', entityType)
             .set('entityId1', id)
             .url();
-        history.push(url);
+        navigate(url);
     }
 
     const placeholder = `Filter ${pluralize(lowerCase(entityType))}`;

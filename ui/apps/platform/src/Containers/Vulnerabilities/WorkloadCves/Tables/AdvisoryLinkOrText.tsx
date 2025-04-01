@@ -41,7 +41,7 @@ function AdvisoryLinkOrText({ advisory }: AdvisoryLinkOrTextProps): ReactNode {
         }
     }
 
-    return 'No advisory';
+    return '-';
 }
 
 export default AdvisoryLinkOrText;

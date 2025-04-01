@@ -6,15 +6,18 @@ import static io.stackrox.proto.api.v1.ClusterInitServiceOuterClass.InitBundleMe
 import static io.stackrox.proto.api.v1.ClusterInitServiceOuterClass.InitBundleRevokeRequest.newBuilder
 import static io.stackrox.proto.api.v1.ClusterInitServiceOuterClass.InitBundleRevokeResponse
 
+import groovy.transform.CompileStatic
+
 import io.stackrox.proto.api.v1.ClusterInitServiceGrpc
 
+@CompileStatic
 class ClusterInitBundleService extends BaseService {
-    static getClusterServiceClient() {
+    static ClusterInitServiceGrpc.ClusterInitServiceBlockingStub getClusterServiceClient() {
         return ClusterInitServiceGrpc.newBlockingStub(getChannel())
     }
 
     static List<InitBundleMeta> getInitBundles() {
-        return getClusterServiceClient().getInitBundles()?.itemsList
+        return getClusterServiceClient().getInitBundles(null)?.itemsList
     }
 
     static InitBundleGenResponse generateInintBundle(String name) {

@@ -25,7 +25,7 @@ type datastoreImpl struct {
 
 	scheduleStorage scheduleStore.Store
 
-	sync.Mutex
+	sync.RWMutex
 }
 
 func newPostgres(pool postgres.DB) *datastoreImpl {
@@ -58,8 +58,8 @@ func (b *datastoreImpl) GetTokenOrNil(ctx context.Context, id string) (token *st
 		return nil, nil
 	}
 
-	b.Lock()
-	defer b.Unlock()
+	b.RLock()
+	defer b.RUnlock()
 
 	token, exists, err := b.storage.Get(ctx, id)
 	if err != nil {
@@ -78,8 +78,8 @@ func (b *datastoreImpl) GetTokens(ctx context.Context, req *v1.GetAPITokensReque
 		return nil, nil
 	}
 
-	b.Lock()
-	defer b.Unlock()
+	b.RLock()
+	defer b.RUnlock()
 
 	var tokens []*storage.TokenMetadata
 	walkFn := func() error {
@@ -123,10 +123,25 @@ func (b *datastoreImpl) RevokeToken(ctx context.Context, id string) (bool, error
 	return true, nil
 }
 
+func (b *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
+	if err := sac.VerifyAuthzOK(integrationSAC.ReadAllowed(ctx)); err != nil {
+		return 0, err
+	}
+
+	b.RLock()
+	defer b.RUnlock()
+
+	return b.storage.Count(ctx, q)
+}
+
 func (b *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	if err := sac.VerifyAuthzOK(integrationSAC.ReadAllowed(ctx)); err != nil {
 		return nil, err
 	}
+
+	b.RLock()
+	defer b.RUnlock()
+
 	return b.storage.Search(ctx, q)
 }
 
@@ -134,6 +149,10 @@ func (b *datastoreImpl) SearchRawTokens(ctx context.Context, q *v1.Query) ([]*st
 	if err := sac.VerifyAuthzOK(integrationSAC.ReadAllowed(ctx)); err != nil {
 		return nil, err
 	}
+
+	b.RLock()
+	defer b.RUnlock()
+
 	return b.storage.GetByQuery(ctx, q)
 
 }

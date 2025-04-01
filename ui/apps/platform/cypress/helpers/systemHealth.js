@@ -16,6 +16,9 @@ export function setClock(currentDatetime) {
 export const integrationHealthVulnDefinitionsAlias =
     'integrationhealth/vulndefinitions?component=*';
 export const integrationHealthDeclarativeConfigsAlias = 'declarative-config/health';
+export const credentialForCentralExpiryAlias = 'credentialexpiry?component=CENTRAL';
+export const credentialForCentralDbExpiryAlias = 'credentialexpiry?component=CENTRAL_DB';
+export const credentialForScannerExpiryAlias = 'credentialexpiry?component=SCANNER';
 
 const SystemHealthHeadingSelector = 'h1:contains("System Health")';
 const routeMatcherMap = {
@@ -38,6 +41,18 @@ const routeMatcherMap = {
     'integrationhealth/externalbackups': {
         method: 'GET',
         url: api.integrationHealth.externalBackups,
+    },
+    [credentialForCentralExpiryAlias]: {
+        method: 'GET',
+        url: api.credentialHealth.central,
+    },
+    [credentialForCentralDbExpiryAlias]: {
+        method: 'GET',
+        url: api.credentialHealth.centralDb,
+    },
+    [credentialForScannerExpiryAlias]: {
+        method: 'GET',
+        url: api.credentialHealth.scanner,
     },
     externalbackups: {
         method: 'GET',

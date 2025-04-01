@@ -94,6 +94,46 @@ defaults:
         limits:
           memory: "16Gi"
           cpu: "8"
+  configController:
+    affinity:
+      nodeAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          preference:
+            matchExpressions:
+            - key: cloud.google.com/gke-preemptible
+              operator: NotIn
+              values:
+                - "true"
+        - weight: 50
+          preference:
+            matchExpressions:
+            - key: node-role.kubernetes.io/infra
+              operator: Exists
+        - weight: 25
+          preference:
+            matchExpressions:
+            - key: node-role.kubernetes.io/compute
+              operator: Exists
+        # From v1.20 node-role.kubernetes.io/control-plane replaces node-role.kubernetes.io/master (removed in
+        # v1.25). We apply both because our goal is not to run pods on control plane nodes for any version of k8s.
+        - weight: 100
+          preference:
+            matchExpressions:
+            - key: node-role.kubernetes.io/master
+              operator: DoesNotExist
+        - weight: 100
+          preference:
+            matchExpressions:
+            - key: node-role.kubernetes.io/control-plane
+              operator: DoesNotExist
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "10m"
+      limits:
+        memory: "128Mi"
+        cpu: "500m"
   scanner:
     disable: false
     replicas: 3

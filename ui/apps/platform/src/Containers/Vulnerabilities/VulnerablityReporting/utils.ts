@@ -58,6 +58,7 @@ export function getReportConfigurationFromFormValues(
         fixability,
         severities: reportParameters.cveSeverities,
         imageTypes: reportParameters.imageType,
+        includeAdvisory: reportParameters.includeAdvisory,
         includeEpssProbability: reportParameters.includeEpssProbability,
         includeNvdCvss: reportParameters.includeNvdCvss,
     };
@@ -188,6 +189,7 @@ export function getReportFormValuesFromConfiguration(
             imageType: vulnReportFilters.imageTypes,
             cvesDiscoveredSince,
             cvesDiscoveredStartDate,
+            includeAdvisory: vulnReportFilters.includeAdvisory,
             includeEpssProbability: vulnReportFilters.includeEpssProbability,
             includeNvdCvss: vulnReportFilters.includeNvdCvss,
             reportScope: {

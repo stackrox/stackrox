@@ -1,17 +1,20 @@
 package services
 
+import groovy.transform.CompileStatic
+
 import io.stackrox.proto.api.v1.AlertServiceGrpc
+import io.stackrox.proto.api.v1.AlertServiceOuterClass.GetAlertTimeseriesResponse
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.GetAlertsCountsRequest
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.GetAlertsCountsResponse
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.GetAlertsGroupResponse
-import io.stackrox.proto.api.v1.AlertServiceOuterClass.GetAlertTimeseriesResponse
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.ListAlertsRequest
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.ResolveAlertRequest
 import io.stackrox.proto.storage.AlertOuterClass.Alert
 import io.stackrox.proto.storage.AlertOuterClass.ListAlert
 
+@CompileStatic
 class AlertService extends BaseService {
-    static getAlertClient() {
+    static AlertServiceGrpc.AlertServiceBlockingStub getAlertClient() {
         return AlertServiceGrpc.newBlockingStub(getChannel())
     }
 

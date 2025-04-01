@@ -1,5 +1,8 @@
 package objects
 
+import groovy.transform.CompileStatic
+
+@CompileStatic
 class NetworkPolicy {
     String name
     String namespace
@@ -70,6 +73,7 @@ class NetworkPolicy {
     }
 }
 
+@CompileStatic
 enum NetworkPolicyTypes {
     INGRESS("Ingress"),
     EGRESS("Egress")

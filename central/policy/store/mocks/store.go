@@ -15,6 +15,7 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
+	postgres "github.com/stackrox/rox/pkg/postgres"
 	search "github.com/stackrox/rox/pkg/search"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -41,6 +42,22 @@ func NewMockStore(ctrl *gomock.Controller) *MockStore {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 	return m.recorder
+}
+
+// Begin mocks base method.
+func (m *MockStore) Begin(ctx context.Context) (context.Context, *postgres.Tx, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Begin", ctx)
+	ret0, _ := ret[0].(context.Context)
+	ret1, _ := ret[1].(*postgres.Tx)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// Begin indicates an expected call of Begin.
+func (mr *MockStoreMockRecorder) Begin(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Begin", reflect.TypeOf((*MockStore)(nil).Begin), ctx)
 }
 
 // Count mocks base method.

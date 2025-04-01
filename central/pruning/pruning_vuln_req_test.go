@@ -19,7 +19,6 @@ import (
 
 func TestExpiredVulnReqsPruning(t *testing.T) {
 	testingDB := pgtest.ForT(t)
-	defer testingDB.Teardown(t)
 	datastore := vulnReqDataStore.GetTestPostgresDataStore(t, testingDB.DB, cache.PendingReqsCacheSingleton(), cache.ActiveReqsCacheSingleton())
 
 	oneMonthDayPastRetention := (30 + configDS.DefaultExpiredVulnReqRetention) * 24 * time.Hour

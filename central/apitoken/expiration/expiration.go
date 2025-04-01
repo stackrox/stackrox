@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/administration/events"
 	"github.com/stackrox/rox/central/apitoken/datastore"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/administration/events/codes"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
@@ -17,11 +18,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
-)
-
-const (
-	// The timestamp format / layout is borrowed from `pkg/search/postgres/query/time_query.go`. It would be worth exporting.
-	timestampLayout = "01/02/2006 3:04:05 PM MST"
 )
 
 var (
@@ -144,8 +140,8 @@ func (n *expirationNotifierImpl) checkAndNotifyExpirations() {
 }
 
 func (n *expirationNotifierImpl) listItemsToNotify(now time.Time, expiresUntil time.Time) ([]*storage.TokenMetadata, error) {
-	formattedNow := now.Format(timestampLayout)
-	formattedExpiresUntil := expiresUntil.Format(timestampLayout)
+	formattedNow := now.Format(datastore.TimestampLayout)
+	formattedExpiresUntil := expiresUntil.Format(datastore.TimestampLayout)
 	// Search tokens that expire before expiresUntil, that have not expired yet,
 	// and that have not been revoked.
 	// That is now < Expiration < expiresUntil and Revoked = false.
@@ -194,7 +190,8 @@ func (n *logExpirationNotifier) Notify(items []*storage.TokenMetadata) error {
 	expirationSliceName := env.APITokenExpirationExpirationSliceName.Setting()
 	for _, token := range items {
 		log.Warnw(generateExpiringTokenLog(token, now, expirationSliceDuration, expirationSliceName),
-			logging.APITokenName(token.GetName()), logging.APITokenID(token.GetId()))
+			logging.APITokenName(token.GetName()), logging.APITokenID(token.GetId()),
+			logging.ErrCode(codes.APITokenExpired))
 	}
 	return nil
 }

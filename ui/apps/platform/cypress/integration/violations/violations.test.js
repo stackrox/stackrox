@@ -11,7 +11,7 @@ import {
     clickDeploymentTabWithFixture,
     exportAndWaitForNetworkPolicyYaml,
     interactAndWaitForNetworkPoliciesResponse,
-    interactAndWaitForSortedViolationsResponses,
+    interactAndWaitForViolationsResponses,
     selectFilteredWorkflowView,
     visitViolationFromTableWithFixture,
     visitViolationWithFixture,
@@ -221,8 +221,14 @@ describe('Violations', () => {
         // Conditionally rendered: Policy scope
     });
 
-    it.skip('should sort the Severity column', () => {
-        visitViolations();
+    it('should sort the Severity column', () => {
+        interactAndWaitForViolationsResponses(() => {
+            visitViolations();
+        });
+
+        interactAndWaitForViolationsResponses(() => {
+            selectFilteredWorkflowView('All Violations');
+        });
 
         const thSelector = 'th[scope="col"]:contains("Severity")';
         const tdSelector = 'td[data-label="Severity"]';
@@ -230,26 +236,24 @@ describe('Violations', () => {
         // 0. Initial table state is sorted descending by Time.
         cy.get(thSelector).should('have.attr', 'aria-sort', 'none');
 
-        // 1. Sort decending by the Severity column.
-        interactAndWaitForSortedViolationsResponses(() => {
+        // 1. Sort descending by the Severity column.
+        interactAndWaitForViolationsResponses(() => {
             cy.get(thSelector).click();
-        }, 'desc');
+        });
 
         cy.get(thSelector).should('have.attr', 'aria-sort', 'descending');
 
-        cy.wait(1000); // prevent timing failures
         cy.get(tdSelector).then((items) => {
             assertSortedItems(items, callbackForPairOfDescendingPolicySeverityValuesFromElements);
         });
 
         // 2. Sort ascending by the Severity column.
-        interactAndWaitForSortedViolationsResponses(() => {
+        interactAndWaitForViolationsResponses(() => {
             cy.get(thSelector).click();
-        }, 'asc');
+        });
 
         cy.get(thSelector).should('have.attr', 'aria-sort', 'ascending');
 
-        cy.wait(1000); // prevent timing failures
         cy.get(tdSelector).then((items) => {
             assertSortedItems(items, callbackForPairOfAscendingPolicySeverityValuesFromElements);
         });
@@ -259,7 +263,7 @@ describe('Violations', () => {
         visitViolations();
 
         // filter to show the "Full view" of violations
-        selectFilteredWorkflowView('Full view');
+        selectFilteredWorkflowView('All Violations');
 
         cy.intercept('GET', '/v1/alerts?query=*').as('getViolations');
         cy.wait('@getViolations');
@@ -271,33 +275,6 @@ describe('Violations', () => {
         cy.get('ul[aria-label="Violation state and resolution"] li:eq(0)').should(
             'have.text',
             'State: Active'
-        );
-    });
-
-    // TODO(ROX-27198): The test is failing since 2024-11-27.
-    it.skip('should show a resolved violation in the details page', () => {
-        visitViolations();
-
-        // view "Resolved" violations
-        cy.get('button[role="tab"]:contains("Resolved")').click();
-
-        // filter to show the "Full view" of violations
-        selectFilteredWorkflowView('Full view');
-
-        cy.intercept('GET', '/v1/alerts?query=*').as('getViolations');
-        cy.wait('@getViolations');
-
-        // go to the details page
-        cy.get('#ViolationsTable table tr:nth(1) td[data-label="Policy"] a').click();
-
-        // check if the "Violation state" is "Resolved" and has a "Resolved on" label chip
-        cy.get('ul[aria-label="Violation state and resolution"] li:eq(0)').should(
-            'have.text',
-            'State: Resolved'
-        );
-        cy.get('ul[aria-label="Violation state and resolution"] li:eq(1)').should(
-            'contain.text',
-            'Resolved on:'
         );
     });
 

@@ -133,17 +133,8 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		createUpgraderSA = *params.CreateUpgraderSA
 	}
 
-	var slimCollector bool
-	if params.SlimCollector == nil {
-		// In case it is not provided in the request we use the value as persisted for the cluster.
-		slimCollector = cluster.GetSlimCollector()
-	} else {
-		slimCollector = *params.SlimCollector
-	}
-
 	renderOpts := clusters.RenderOptions{
 		CreateUpgraderSA: createUpgraderSA,
-		SlimCollector:    slimCollector,
 		IstioVersion:     params.IstioVersion,
 
 		DisablePodSecurityPolicies: params.DisablePodSecurityPolicies,

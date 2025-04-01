@@ -37,8 +37,6 @@ type TestGraphDataStore interface {
 	CleanClusterToVulnerabilitiesGraph() error
 	CleanImageToVulnerabilitiesGraph() error
 	CleanNodeToVulnerabilitiesGraph() error
-	// Post test cleanup (TearDown)
-	Cleanup(t *testing.T)
 }
 
 type testGraphDataStoreImpl struct {
@@ -296,10 +294,6 @@ func (s *testGraphDataStoreImpl) CleanNodeToVulnerabilitiesGraph() (err error) {
 	}
 	s.storedNodes = s.storedNodes[:0]
 	return nil
-}
-
-func (s *testGraphDataStoreImpl) Cleanup(t *testing.T) {
-	s.pgtestbase.Teardown(t)
 }
 
 // NewTestGraphDataStore provides a utility for storage testing, which contains a set of connected

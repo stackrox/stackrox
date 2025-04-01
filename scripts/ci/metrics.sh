@@ -145,7 +145,9 @@ slack_top_n_failures() {
     sql='
 SELECT
     FORMAT("%6.2f", 100 * COUNTIF(Status="failed") / COUNT(*)) AS `%`,
-    IF(LENGTH(Classname) > 28, CONCAT(RPAD(Classname, 25), "..."), Classname) AS `Suite`,
+    IF(LENGTH(REPLACE(Classname, "github.com/stackrox/rox/", "")) > 28,
+        CONCAT(RPAD(REPLACE(Classname, "github.com/stackrox/rox/", ""), 25), "..."),
+        REPLACE(Classname, "github.com/stackrox/rox/", "")) AS `Suite`,
     IF(LENGTH(Name) > 123, CONCAT(RPAD(Name, 120), "..."), Name) AS `Case`
 FROM
     `acs-san-stackroxci.ci_metrics.stackrox_tests__extended_view`

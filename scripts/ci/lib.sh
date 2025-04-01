@@ -247,7 +247,7 @@ push_image_manifest_lists() {
     done
 
     # Push manifest lists for scanner and collector for amd64 only
-    local amd64_image_set=("scanner" "scanner-db" "scanner-slim" "scanner-db-slim" "collector" "collector-slim")
+    local amd64_image_set=("scanner" "scanner-db" "scanner-slim" "scanner-db-slim" "collector")
     for image in "${amd64_image_set[@]}"; do
         retry 5 true \
           "$SCRIPTS_ROOT/scripts/ci/push-as-multiarch-manifest-list.sh" "${registry}/${image}:${tag}" "amd64" | cat
@@ -461,7 +461,6 @@ push_matching_collector_scanner_images() {
     _retag "${registry}/scanner-db-slim:${scanner_version}" "${registry}/scanner-db-slim:${main_tag}-${arch}"
 
     _retag "${registry}/collector:${collector_version}"      "${registry}/collector:${main_tag}-${arch}"
-    _retag "${registry}/collector:${collector_version}-slim" "${registry}/collector-slim:${main_tag}-${arch}"
 }
 
 poll_for_system_test_images() {
@@ -483,33 +482,22 @@ poll_for_system_test_images() {
     local start_time
     start_time="$(date '+%s')"
 
-    while true; do
-        local all_exist=true
-        local tag
-        local image
-        while read -r image tag
+    local tag
+    local image
+    while read -r image tag
+    do
+        while ! check_rhacs_eng_image_exists "$image" "$tag"
         do
-            if ! check_rhacs_eng_image_exists "$image" "$tag"; then
-                info "$image does not exist"
-                all_exist=false
-                break
+            info "$image does not exist"
+            if (( $(date '+%s') - start_time > time_limit )); then
+                check_build_workflows "$(get_commit_sha)"
+                die "ERROR: Timed out waiting for images after ${time_limit} seconds"
             fi
-        done < "$image_list"
+            sleep 60
+        done
+    done < "$image_list"
 
-        if $all_exist; then
-            info "All images exist"
-            break
-        fi
-        if (( $(date '+%s') - start_time > time_limit )); then
-            local commit_sha
-            commit_sha="$(get_commit_sha)"
-            check_build_workflows "${commit_sha}"
-            die "ERROR: Timed out waiting for images after ${time_limit} seconds"
-        fi
-
-        sleep 60
-    done
-
+    info "All images exist."
     touch "${STATE_IMAGES_AVAILABLE}"
 }
 
@@ -559,6 +547,11 @@ _image_prefetcher_system_start() {
     # ROX-24818: GKE is excluded from system image prefetch as it causes
     # flakes in test.
     *-operator-e2e-tests|*ocp*qa-e2e-tests)
+        image_prefetcher_start_set stackrox-images
+        ;;
+    # Enabling scanner V4 installation tests as well, even though they also run on GKE,
+    # for gathering some more data points for CI reliability.
+    *-scanner-v4-install-tests)
         image_prefetcher_start_set stackrox-images
         ;;
     *)
@@ -664,6 +657,11 @@ _image_prefetcher_system_await() {
     *-operator-e2e-tests|*ocp*qa-e2e-tests)
         image_prefetcher_await_set stackrox-images
         ;;
+    # Enabling scanner V4 installation tests as well, even though they also run on GKE,
+    # for gathering some more data points for CI reliability.
+    *-scanner-v4-install-tests)
+        image_prefetcher_await_set stackrox-images
+        ;;
     *)
         info "No system image prefetching is performed for: ${CI_JOB_NAME}. Nothing to wait for."
         ;;
@@ -734,7 +732,9 @@ EOM
             ((attempt++))
             sleep 10
         else
-            die "ERROR: Timeout waiting for ${service} to obtain endpoint!"
+            info "Something is wrong with the ${service} service. See the following 'describe' output."
+            kubectl -n "${ns}" describe "${service}" || true
+            die "Timeout waiting for ${service} to obtain endpoint!"
         fi
     done
     local endpoint
@@ -814,7 +814,6 @@ stackrox-operator-index ${operator_metadata_tag}
 main ${tag}
 central-db ${tag}
 collector ${tag}
-collector-slim ${tag}
 scanner ${tag}
 scanner-db ${tag}
 scanner-v4 ${tag}
@@ -834,6 +833,21 @@ END
                 # Otherwise this message will surface in the Prow log when
                 # images timeout out below.
             fi
+            ;;
+        *-scanner-v4-install-tests)
+            cat >> "${image_list}" << END
+stackrox-operator ${operator_controller_tag}
+stackrox-operator-bundle ${operator_metadata_tag}
+stackrox-operator-index ${operator_metadata_tag}
+main ${tag}
+central-db ${tag}
+collector ${tag}
+scanner ${tag}
+scanner-db ${tag}
+scanner-v4 ${tag}
+scanner-v4-db ${tag}
+roxctl ${tag}
+END
             ;;
         *)
             cat >> "${image_list}" << END
@@ -1578,7 +1592,7 @@ post_process_test_results() {
         # we will fallback to short commit
         base_link="$(echo "$JOB_SPEC" | jq ".refs.base_link | select( . != null )" -r)"
         calculated_base_link="https://github.com/stackrox/stackrox/commit/$(make --quiet --no-print-directory shortcommit)"
-        curl --retry 5 --retry-connrefused -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.23/junit2jira -o junit2jira && \
+        curl --retry 5 --retry-connrefused -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.24/junit2jira -o junit2jira && \
         chmod +x junit2jira && \
         ./junit2jira \
             -base-link "${base_link:-$calculated_base_link}" \
@@ -1590,7 +1604,7 @@ post_process_test_results() {
             -job-name "${JOB_NAME}" \
             -junit-reports-dir "${ARTIFACT_DIR}" \
             -orchestrator "${ORCHESTRATOR_FLAVOR:-PROW}" \
-            -threshold 5 \
+            -threshold 10 \
             -html-output "$ARTIFACT_DIR/junit2jira-summary.html" \
             -slack-output "${slack_attachments_file}" \
             -summary-output "${summary_file}" \
@@ -1614,7 +1628,7 @@ gate_flaky_tests() {
     fi
 
     # Prepare flakechecker
-    curl --retry 5 --retry-connrefused -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.23/flakechecker -o /tmp/flakechecker || exit "${exit_code}"
+    curl --retry 5 --retry-connrefused -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.24/flakechecker -o /tmp/flakechecker || exit "${exit_code}"
     chmod +x /tmp/flakechecker
     setup_gcp || echo "setup_gcp called"
 

@@ -30,6 +30,11 @@ spec:
                 fieldRef:
                   apiVersion: v1
                   fieldPath: metadata.namespace
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.name
             - name: ROX_TELEMETRY_ENDPOINT
               value: https://telemetry.endpoint
             - name: ROX_TELEMETRY_STORAGE_KEY_V1

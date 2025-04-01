@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -48,6 +49,8 @@ var (
 		pkgSchema.ImageComponentCveEdgesTableName: "ImageCveId",
 	}
 )
+
+const cursorBatchSize = 1000
 
 // QueryType describe what type of query to execute
 //
@@ -289,7 +292,7 @@ func (q *query) AsSQL() string {
 		querySB.WriteString(join.rightTable)
 		querySB.WriteString(" on")
 
-		if env.ImageCVEEdgeCustomJoin.BooleanSetting() {
+		if env.ImageCVEEdgeCustomJoin.BooleanSetting() && !features.FlattenCVEData.Enabled() {
 			if (i == len(q.Joins)-1) && (join.rightTable == pkgSchema.ImageCveEdgesTableName) {
 				// Step 4: Join image_cve_edges table such that both its ImageID and ImageCveId columns are matched with the joins so far
 				imageIDTable := findImageIDTableAndField(q.Joins)
@@ -400,7 +403,7 @@ func (p *parsedPaginationQuery) AsSQL() string {
 		for _, entry := range p.OrderBys {
 			orderByClauses = append(orderByClauses, fmt.Sprintf("%s %s", entry.Field.SelectPath, pkgUtils.IfThenElse(entry.Descending, "desc", "asc")))
 		}
-		paginationSB.WriteString(fmt.Sprintf("order by %s", strings.Join(orderByClauses, ", ")))
+		paginationSB.WriteString(fmt.Sprintf("order by %s nulls last", strings.Join(orderByClauses, ", ")))
 	}
 	if p.Limit > 0 {
 		paginationSB.WriteString(fmt.Sprintf(" LIMIT %d", p.Limit))
@@ -421,7 +424,7 @@ func standardizeQueryAndPopulatePath(ctx context.Context, q *v1.Query, schema *w
 	joins, dbFields := getJoinsAndFields(schema, q)
 
 	var err error
-	if env.ImageCVEEdgeCustomJoin.BooleanSetting() {
+	if env.ImageCVEEdgeCustomJoin.BooleanSetting() && !features.FlattenCVEData.Enabled() {
 		joins, err = handleImageCveEdgesTableInJoins(schema, joins)
 		if err != nil {
 			return nil, err
@@ -533,6 +536,9 @@ func combineDisjunction(entries []*pgsearch.QueryEntry) *pgsearch.QueryEntry {
 	seenQueries := set.StringSet{}
 	seenSelectFields := set.StringSet{}
 	values := make([]any, 0, len(entries))
+	// skip for complex queries (having, groupby, multiple values and selects)
+	// here we support only simple cases of multiple exact match statements
+	// TODO(ROX-27944): add support for complex queries as well
 	for _, entry := range entries {
 		if entry.Having != nil ||
 			len(entry.GroupBy) != 0 ||
@@ -547,6 +553,9 @@ func combineDisjunction(entries []*pgsearch.QueryEntry) *pgsearch.QueryEntry {
 		values = append(values, fmt.Sprintf("%s", entry.Where.Values[0]))
 	}
 
+	// if we've seen more than a single exact query this means we have multiple
+	// columns there and we cannot apply IN operator there
+	// TODO(ROX-27944): handle multiple selected fields
 	if len(seenQueries) != 1 || len(seenSelectFields) > 1 {
 		return combineQueryEntries(entries, " or ")
 	}
@@ -961,7 +970,6 @@ func retryableRunGetManyQueryForSchema[T any, PT pgutils.Unmarshaler[T]](ctx con
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
 
 	return pgutils.ScanRows[T, PT](rows)
 }
@@ -987,6 +995,8 @@ func RunGetManyQueryForSchema[T any, PT pgutils.Unmarshaler[T]](ctx context.Cont
 }
 
 // RunCursorQueryForSchema creates a cursor against the database
+//
+// Deprecated: use RunCursorQueryForSchemaFn instead
 func RunCursorQueryForSchema[T any, PT pgutils.Unmarshaler[T]](ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB) (fetcher func(n int) ([]*T, error), closer func(), err error) {
 	if q == nil {
 		q = searchPkg.EmptyQuery()
@@ -1015,11 +1025,7 @@ func RunCursorQueryForSchema[T any, PT pgutils.Unmarshaler[T]](ctx context.Conte
 		}
 	}
 
-	cursorSuffix, err := random.GenerateString(16, random.CaseInsensitiveAlpha)
-	if err != nil {
-		closer()
-		return nil, nil, errors.Wrap(err, "creating cursor name")
-	}
+	cursorSuffix := random.GenerateString(16, random.CaseInsensitiveAlpha)
 	cursor := stringutils.JoinNonEmpty("_", query.From, cursorSuffix)
 	_, err = tx.Exec(ctx, fmt.Sprintf("DECLARE %s CURSOR FOR %s", cursor, queryStr), query.Data...)
 	if err != nil {
@@ -1032,10 +1038,68 @@ func RunCursorQueryForSchema[T any, PT pgutils.Unmarshaler[T]](ctx context.Conte
 		if err != nil {
 			return nil, errors.Wrap(err, "advancing in cursor")
 		}
-		defer rows.Close()
 
 		return pgutils.ScanRows[T, PT](rows)
 	}, closer, nil
+}
+
+// RunCursorQueryForSchemaFn creates a cursor against the database
+func RunCursorQueryForSchemaFn[T any, PT pgutils.Unmarshaler[T]](ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB, callback func(obj PT) error) error {
+	if q == nil {
+		q = searchPkg.EmptyQuery()
+	}
+
+	query, err := standardizeQueryAndPopulatePath(ctx, q, schema, GET)
+	if err != nil {
+		return errors.Wrap(err, "error creating query")
+	}
+	if query == nil {
+		return emptyQueryErr
+	}
+
+	queryStr := query.AsSQL()
+
+	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, cursorDefaultTimeout)
+	defer cancel()
+
+	tx, err := db.Begin(ctx)
+	if err != nil {
+		return errors.Wrap(err, "creating transaction")
+	}
+	defer func() {
+		if err := tx.Commit(ctx); err != nil {
+			log.Errorf("error committing cursor transaction: %v", err)
+		}
+	}()
+
+	cursorSuffix := random.GenerateString(16, random.CaseInsensitiveAlpha)
+	cursor := stringutils.JoinNonEmpty("_", query.From, cursorSuffix)
+	_, err = tx.Exec(ctx, fmt.Sprintf("DECLARE %s CURSOR FOR %s", cursor, queryStr), query.Data...)
+	if err != nil {
+		return errors.Wrap(err, "creating cursor")
+	}
+
+	for {
+		rows, err := tx.Query(ctx, fmt.Sprintf("FETCH %d FROM %s", cursorBatchSize, cursor))
+		if err != nil {
+			return errors.Wrap(err, "advancing in cursor")
+		}
+
+		var data []byte
+		tag, err := pgx.ForEachRow(rows, []any{&data}, func() error {
+			msg := new(T)
+			if err := PT(msg).UnmarshalVTUnsafe(data); err != nil {
+				return err
+			}
+			return callback(msg)
+		})
+		if err != nil {
+			return errors.Wrap(err, "processing rows")
+		}
+		if tag.RowsAffected() != cursorBatchSize {
+			return nil
+		}
+	}
 }
 
 // RunDeleteRequestForSchema executes a request for just the delete against the database

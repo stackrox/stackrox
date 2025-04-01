@@ -40,12 +40,11 @@ func BenchmarkInitFromStore(b *testing.B) {
 	pgtestbase := pgtest.ForT(b)
 	require.NotNil(b, pgtestbase)
 
-	nbStore, err := nbDS.GetBenchPostgresDataStore(b, pgtestbase.DB)
+	nbStore, err := nbDS.GetTestPostgresDataStore(b, pgtestbase.DB)
 	require.NoError(b, err)
-	npStore, err := npDS.GetBenchPostgresDataStore(b, pgtestbase.DB)
+	npStore, err := npDS.GetTestPostgresDataStore(b, pgtestbase.DB)
 	require.NoError(b, err)
-	networkEntityStore, err := networkEntityDS.GetBenchPostgresDataStore(b, pgtestbase.DB)
-	require.NoError(b, err)
+	networkEntityStore := networkEntityDS.GetTestPostgresDataStore(b, pgtestbase.DB)
 
 	deploymentDS := deploymentMocks.NewMockDataStore(mockCtrl)
 	clusterFlows := networkFlowDSMocks.NewMockClusterDataStore(mockCtrl)

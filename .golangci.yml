@@ -6,7 +6,7 @@ run:
   - sql_integration
   - test_e2e
   modules-download-mode: readonly
-  go: "1.22"
+  go: "1.23"
 
 output:
   formats:

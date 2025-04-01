@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { generatePath, useHistory } from 'react-router-dom';
+import { generatePath, useNavigate } from 'react-router-dom';
 import { ActionsColumn } from '@patternfly/react-table';
 
 import { ComplianceScanConfigurationStatus } from 'services/ComplianceScanConfigurationService';
@@ -18,7 +18,6 @@ export type ScanConfigActionsColumnProps = {
     scanConfigResponse: ComplianceScanConfigurationStatus;
     isSnapshotStatusPending: boolean;
     isReportJobsEnabled: boolean;
-    isComplianceReportingEnabled: boolean;
 };
 
 function ScanConfigActionsColumn({
@@ -29,9 +28,8 @@ function ScanConfigActionsColumn({
     scanConfigResponse,
     isSnapshotStatusPending,
     isReportJobsEnabled,
-    isComplianceReportingEnabled,
 }: ScanConfigActionsColumnProps): ReactElement {
-    const history = useHistory();
+    const navigate = useNavigate();
 
     const { id, /* lastExecutedTime, */ scanConfig } = scanConfigResponse;
     const { notifiers } = scanConfig;
@@ -47,10 +45,7 @@ function ScanConfigActionsColumn({
             // isDisabled: isScanning,
             onClick: (event) => {
                 event.preventDefault();
-                history.push({
-                    pathname: scanConfigUrl,
-                    search: 'action=edit',
-                });
+                navigate(`${scanConfigUrl}?action=edit`);
             },
             isDisabled: isSnapshotStatusPending,
         },
@@ -79,7 +74,6 @@ function ScanConfigActionsColumn({
                 event.preventDefault();
                 handleSendReport(scanConfigResponse);
             },
-            isHidden: !isComplianceReportingEnabled,
             isDisabled: notifiers.length === 0 || isSnapshotStatusPending,
         },
         {

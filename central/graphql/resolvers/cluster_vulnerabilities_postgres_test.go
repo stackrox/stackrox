@@ -68,10 +68,6 @@ func (s *GraphQLClusterVulnerabilityTestSuite) SetupSuite() {
 	s.NoError(err)
 }
 
-func (s *GraphQLClusterVulnerabilityTestSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-}
-
 func (s *GraphQLClusterVulnerabilityTestSuite) TestUnauthorizedClusterVulnerabilityEndpoint() {
 	_, err := s.resolver.ClusterVulnerability(s.ctx, IDQuery{})
 	s.Error(err, "Unauthorized request got through")

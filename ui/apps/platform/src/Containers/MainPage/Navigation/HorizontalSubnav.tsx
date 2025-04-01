@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { matchPath, useHistory, useLocation } from 'react-router-dom';
+import { matchPath, useLocation, useNavigate } from 'react-router-dom';
 import {
     Nav,
     Dropdown,
@@ -18,6 +18,11 @@ import {
     vulnerabilitiesPlatformPath,
     vulnerabilitiesAllImagesPath,
     vulnerabilitiesInactiveImagesPath,
+    vulnerabilitiesImagesWithoutCvesPath,
+    violationsFullViewPath,
+    violationsPlatformViewPath,
+    violationsUserWorkloadsViewPath,
+    vulnerabilitiesPlatformCvesPath,
 } from 'routePaths';
 import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import { HasReadAccess } from 'hooks/usePermissions';
@@ -27,7 +32,7 @@ import { filterNavDescriptions, isActiveLink, NavDescription } from './utils';
 
 import './HorizontalSubnav.css';
 
-type SubnavParentKey = 'vulnerabilities';
+type SubnavParentKey = 'violations' | 'vulnerabilities';
 
 /*
  * Function that returns a key/value object that maps parent routes to a list
@@ -37,6 +42,43 @@ function getSubnavDescriptionGroups(
     isFeatureFlagEnabled: IsFeatureFlagEnabled
 ): Record<SubnavParentKey, NavDescription[]> {
     return {
+        violations: isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT')
+            ? [
+                  {
+                      type: 'link',
+                      content: 'User Workloads',
+                      path: violationsUserWorkloadsViewPath,
+                      isActive: (location) => {
+                          const search: string = location.search || '';
+                          const encodedValue = encodeURIComponent('Applications view');
+                          return search.includes(`filteredWorkflowView=${encodedValue}`);
+                      },
+                      routeKey: 'violations',
+                  },
+                  {
+                      type: 'link',
+                      content: 'Platform',
+                      path: violationsPlatformViewPath,
+                      isActive: (location) => {
+                          const search: string = location.search || '';
+                          const encodedValue = encodeURIComponent('Platform view');
+                          return search.includes(`filteredWorkflowView=${encodedValue}`);
+                      },
+                      routeKey: 'violations',
+                  },
+                  {
+                      type: 'link',
+                      content: 'All Violations',
+                      path: violationsFullViewPath,
+                      isActive: (location) => {
+                          const search: string = location.search || '';
+                          const encodedValue = encodeURIComponent('Full view');
+                          return search.includes(`filteredWorkflowView=${encodedValue}`);
+                      },
+                      routeKey: 'violations',
+                  },
+              ]
+            : [],
         vulnerabilities: isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT')
             ? [
                   {
@@ -64,9 +106,9 @@ function getSubnavDescriptionGroups(
                       children: [
                           {
                               type: 'link',
-                              content: 'All Images',
+                              content: 'All vulnerable images',
                               description:
-                                  'View findings for user and platform images simultaneously',
+                                  'Findings for user, platform, and inactive images simultaneously',
                               path: vulnerabilitiesAllImagesPath,
                               routeKey: 'vulnerabilities/all-images',
                           },
@@ -74,15 +116,46 @@ function getSubnavDescriptionGroups(
                               type: 'link',
                               content: 'Inactive images',
                               description:
-                                  'View findings for images not currently deployed as workloads',
+                                  'Findings for watched images and images not currently deployed as workloads based on your image retention settings',
                               path: vulnerabilitiesInactiveImagesPath,
                               routeKey: 'vulnerabilities/inactive-images',
+                          },
+                          {
+                              type: 'link',
+                              content: 'Images without CVEs',
+                              description:
+                                  'Images and workloads without observed CVEs (results might include false negatives due to scanner limitations, such as unsupported operating systems)',
+                              path: vulnerabilitiesImagesWithoutCvesPath,
+                              routeKey: 'vulnerabilities/images-without-cves',
+                          },
+                          {
+                              type: 'link',
+                              content: 'Kubernetes components',
+                              description:
+                                  'Vulnerabilities affecting the underlying Kubernetes infrastructure',
+                              path: vulnerabilitiesPlatformCvesPath,
+                              routeKey: 'vulnerabilities/platform-cves',
                           },
                       ],
                   },
               ]
             : [],
     };
+}
+
+// Since some subnav links may contain URL parameters, we need to strip these
+// parameters off when determining whether or not to show a set of navigation items at the top.
+// This is because react-router's `matchPath` does a strict comparison that wil always fail when
+// our link's URL includes search parameters.
+function matchBasePath({
+    pathname,
+    descriptionPath,
+}: {
+    pathname: string;
+    descriptionPath: string;
+}): boolean {
+    const basePath = descriptionPath.split('?')[0] ?? '';
+    return Boolean(matchPath({ path: `${basePath}/*` }, pathname));
 }
 
 /*
@@ -97,11 +170,13 @@ function getSubnavGroupForCurrentPath(
         Object.values(subnavDescriptionGroups).find((subnavDescriptionGroup) => {
             return subnavDescriptionGroup.some((group) => {
                 if (group.type === 'link') {
-                    return matchPath(pathname, group.path);
+                    return matchBasePath({ pathname, descriptionPath: group.path });
                 }
                 return group.children
                     .filter((child) => child.type === 'link')
-                    .some(({ path }) => matchPath(pathname, path));
+                    .some(({ path }) => {
+                        return matchBasePath({ pathname, descriptionPath: path });
+                    });
             });
         }) ?? []
     );
@@ -113,14 +188,14 @@ export type HorizontalSubnavProps = {
 };
 
 function HorizontalSubnav({ hasReadAccess, isFeatureFlagEnabled }: HorizontalSubnavProps) {
-    const history = useHistory();
-    const { pathname } = useLocation();
+    const navigate = useNavigate();
+    const location = useLocation();
     const routePredicates = { hasReadAccess, isFeatureFlagEnabled };
 
     const subnavDescriptionGroups = getSubnavDescriptionGroups(isFeatureFlagEnabled);
     const subnavDescriptionGroupForCurrentPath = getSubnavGroupForCurrentPath(
         subnavDescriptionGroups,
-        pathname
+        location.pathname
     );
     const subnavDescriptions = filterNavDescriptions(
         subnavDescriptionGroupForCurrentPath,
@@ -137,7 +212,9 @@ function HorizontalSubnav({ hasReadAccess, isFeatureFlagEnabled }: HorizontalSub
         _event: React.MouseEvent<Element, MouseEvent> | undefined,
         value: string | number | undefined
     ) => {
-        history.push(value);
+        if (value !== undefined) {
+            navigate(value.toString());
+        }
         setOpenDropdownKey(null);
     };
 
@@ -155,7 +232,7 @@ function HorizontalSubnav({ hasReadAccess, isFeatureFlagEnabled }: HorizontalSub
                             return (
                                 <NavigationItem
                                     key={path}
-                                    isActive={isActiveLink(pathname, subnavDescription)}
+                                    isActive={isActiveLink(location, subnavDescription)}
                                     path={path}
                                     content={
                                         typeof content === 'function'
@@ -167,6 +244,10 @@ function HorizontalSubnav({ hasReadAccess, isFeatureFlagEnabled }: HorizontalSub
                         }
                         case 'parent': {
                             const { key, title, children } = subnavDescription;
+                            const activeChildLink = subnavDescription.children
+                                .filter((c) => c.type === 'link')
+                                .find((child) => isActiveLink(location, child));
+                            const dropdownTitle = activeChildLink?.content ?? title;
                             return (
                                 <Dropdown
                                     key={key}
@@ -178,11 +259,7 @@ function HorizontalSubnav({ hasReadAccess, isFeatureFlagEnabled }: HorizontalSub
                                     }
                                     toggle={(toggleRef: React.Ref<MenuToggleElement>) => (
                                         <NavItem
-                                            isActive={subnavDescription.children.some(
-                                                (child) =>
-                                                    child.type === 'link' &&
-                                                    isActiveLink(pathname, child)
-                                            )}
+                                            isActive={Boolean(activeChildLink)}
                                             onClick={() => onToggleClick(key)}
                                         >
                                             <MenuToggle
@@ -190,9 +267,9 @@ function HorizontalSubnav({ hasReadAccess, isFeatureFlagEnabled }: HorizontalSub
                                                 isExpanded={openDropdownKey === key}
                                                 variant="plainText"
                                             >
-                                                {typeof title === 'function'
-                                                    ? title(subnavDescriptions)
-                                                    : title}
+                                                {typeof dropdownTitle === 'function'
+                                                    ? dropdownTitle(subnavDescriptions)
+                                                    : dropdownTitle}
                                             </MenuToggle>
                                         </NavItem>
                                     )}
@@ -209,14 +286,16 @@ function HorizontalSubnav({ hasReadAccess, isFeatureFlagEnabled }: HorizontalSub
                                                 );
                                             }
                                             const { content, path, description } = child;
+                                            const isActive = isActiveLink(location, child);
                                             return (
                                                 <DropdownItem
                                                     component={'a'}
                                                     className={
-                                                        isActiveLink(pathname, child)
+                                                        isActive
                                                             ? 'acs-pf-horizontal-subnav-menu__active'
                                                             : ''
                                                     }
+                                                    isSelected={isActive}
                                                     value={path}
                                                     key={path}
                                                     description={description}

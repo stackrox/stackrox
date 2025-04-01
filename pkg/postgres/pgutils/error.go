@@ -70,7 +70,9 @@ func IsTransientError(err error) bool {
 	if errox.IsAny(err, pgx.ErrNoRows, pgx.ErrTxClosed, pgx.ErrTxCommitRollback) {
 		return false
 	}
-	// If the parent context expires, we abort the retries explicitly.
+	// Context cancellation and deadline exceeded errors are considered to be transient
+	// and should be retried. Retry loop implementations are expected to abort explicitly
+	// when the parent context is done.
 	if errox.IsAny(err, context.Canceled, context.DeadlineExceeded) {
 		return true
 	}

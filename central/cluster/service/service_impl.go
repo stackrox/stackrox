@@ -245,7 +245,7 @@ func (s *serviceImpl) GetClusterDefaultValues(ctx context.Context, _ *v1.Empty) 
 	flavor := defaults.GetImageFlavorFromEnv()
 	defaults := &v1.ClusterDefaultsResponse{
 		MainImageRepository:      flavor.MainImageNoTag(),
-		CollectorImageRepository: flavor.CollectorFullImageNoTag(),
+		CollectorImageRepository: flavor.CollectorImageNoTag(),
 		KernelSupportAvailable:   kernelSupport,
 	}
 	return defaults, nil

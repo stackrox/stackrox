@@ -44,7 +44,6 @@ var (
 type Store interface {
 	UpsertMany(ctx context.Context, objs []*storage.ReportConfiguration) error
 	Count(ctx context.Context) (int, error)
-	Walk(ctx context.Context, fn func(obj *storage.ReportConfiguration) error) error
 }
 
 type storeImpl struct {
@@ -274,29 +273,4 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 	var sacQueryFilter *v1.Query
 
 	return pgSearch.RunCountRequestForSchema(ctx, schema, sacQueryFilter, s.db)
-}
-
-// Walk iterates over all of the objects in the store and applies the closure.
-func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ReportConfiguration) error) error {
-	var sacQueryFilter *v1.Query
-	fetcher, closer, err := pgSearch.RunCursorQueryForSchema[storage.ReportConfiguration](ctx, schema, sacQueryFilter, s.db)
-	if err != nil {
-		return err
-	}
-	defer closer()
-	for {
-		rows, err := fetcher(cursorBatchSize)
-		if err != nil {
-			return pgutils.ErrNilIfNoRows(err)
-		}
-		for _, data := range rows {
-			if err := fn(data); err != nil {
-				return err
-			}
-		}
-		if len(rows) != cursorBatchSize {
-			break
-		}
-	}
-	return nil
 }

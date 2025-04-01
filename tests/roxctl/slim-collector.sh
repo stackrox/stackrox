@@ -112,8 +112,10 @@ test_collector_image_references_in_deployment_bundles() {
     fi
 }
 
-test_collector_image_references_in_deployment_bundles "--slim-collector" "has -slim"
-test_collector_image_references_in_deployment_bundles "--slim-collector=auto" "has -slim" # Central is deployed in online mode in CI
+# these tests are verifying that --slim-collector is ignored now that
+# slim collector has been removed (4.7+, ROX-18384)
+test_collector_image_references_in_deployment_bundles "--slim-collector" "does not have -slim"
+test_collector_image_references_in_deployment_bundles "--slim-collector=auto" "does not have -slim"
 test_collector_image_references_in_deployment_bundles "--slim-collector=false" "does not have -slim"
 
 if [ $FAILURES -eq 0 ]; then

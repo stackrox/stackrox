@@ -33,7 +33,6 @@ export const clustersSecureClusterPath = `${clustersBasePath}/secure-a-cluster`;
 export const collectionsBasePath = `${mainPath}/collections`;
 export const collectionsPath = `${mainPath}/collections/:collectionId?`;
 export const complianceBasePath = `${mainPath}/compliance`;
-export const compliancePath = `${mainPath}/:context(compliance)`;
 export const complianceEnhancedBasePath = `${mainPath}/compliance`;
 export const complianceEnhancedCoveragePath = `${complianceEnhancedBasePath}/coverage`;
 export const complianceEnhancedSchedulesPath = `${complianceEnhancedBasePath}/schedules`;
@@ -49,7 +48,7 @@ export const integrationEditPath = `${integrationsPath}/:source/:type/edit/:id`;
 export const integrationsListPath = `${integrationsPath}/:source/:type`;
 export const listeningEndpointsBasePath = `${mainPath}/listening-endpoints`;
 export const networkBasePath = `${mainPath}/network-graph`;
-export const networkPath = `${networkBasePath}/:detailType?/:detailId?`;
+export const networkPath = `${networkBasePath}/:nodeType?/:nodeId?/:detailType?/:detailID?`;
 export const policyManagementBasePath = `${mainPath}/policy-management`;
 export const policiesBasePath = `${policyManagementBasePath}/policies`;
 export const policiesPath = `${policiesBasePath}/:policyId?/:command?`;
@@ -65,6 +64,9 @@ export const systemHealthPath = `${mainPath}/system-health`;
 export const userBasePath = `${mainPath}/user`;
 export const userRolePath = `${userBasePath}/roles/:roleName`;
 export const violationsBasePath = `${mainPath}/violations`;
+export const violationsUserWorkloadsViewPath = `${mainPath}/violations?filteredWorkflowView=Application view`;
+export const violationsPlatformViewPath = `${mainPath}/violations?filteredWorkflowView=Platform view`;
+export const violationsFullViewPath = `${mainPath}/violations?filteredWorkflowView=Full view`;
 export const violationsPath = `${violationsBasePath}/:alertId?`;
 export const vulnManagementPath = `${mainPath}/vulnerability-management`;
 // TODO Deprecate these paths
@@ -78,6 +80,7 @@ export const vulnerabilitiesNodeCvesPath = `${vulnerabilitiesBasePath}/node-cves
 // System defined "views"
 export const vulnerabilitiesAllImagesPath = `${vulnerabilitiesBasePath}/all-images`;
 export const vulnerabilitiesInactiveImagesPath = `${vulnerabilitiesBasePath}/inactive-images`;
+export const vulnerabilitiesImagesWithoutCvesPath = `${vulnerabilitiesBasePath}/images-without-cves`;
 // user-workload template views path
 export const vulnerabilitiesViewPath = `${vulnerabilitiesBasePath}/results/:viewTemplate/:viewId`;
 
@@ -149,7 +152,8 @@ export type RouteKey =
     | 'clusters'
     | 'collections'
     | 'compliance'
-    | 'compliance-enhanced'
+    | 'compliance-coverage'
+    | 'compliance-schedules'
     | 'configmanagement'
     | 'dashboard'
     | 'exception-configuration'
@@ -170,6 +174,7 @@ export type RouteKey =
     | 'vulnerabilities/platform'
     | 'vulnerabilities/all-images'
     | 'vulnerabilities/inactive-images'
+    | 'vulnerabilities/images-without-cves'
     | 'vulnerabilities/platform-cves'
     | 'vulnerabilities/workload-cves'
     | 'vulnerability-management'
@@ -229,13 +234,16 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
             // 'ServiceAccount', // for Cluster and Deployment
         ]),
     },
-    'compliance-enhanced': {
+    'compliance-coverage': {
+        resourceAccessRequirements: everyResource(['Compliance']),
+    },
+    'compliance-schedules': {
         resourceAccessRequirements: everyResource(['Compliance']),
     },
     configmanagement: {
         // Require at least one resource for a dashboard widget.
         resourceAccessRequirements: someResource([
-            'Alert',
+            everyResource(['Alert', 'WorkflowAdministration']), // PolicyViolationsBySeverity
             // 'Cluster',
             'Compliance',
             // 'Deployment',
@@ -337,6 +345,10 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         resourceAccessRequirements: everyResource(['Deployment', 'Image']),
     },
     'vulnerabilities/inactive-images': {
+        featureFlagRequirements: allEnabled(['ROX_PLATFORM_CVE_SPLIT']),
+        resourceAccessRequirements: everyResource(['Deployment', 'Image']),
+    },
+    'vulnerabilities/images-without-cves': {
         featureFlagRequirements: allEnabled(['ROX_PLATFORM_CVE_SPLIT']),
         resourceAccessRequirements: everyResource(['Deployment', 'Image']),
     },
@@ -460,11 +472,11 @@ export const basePathToLabelMap: Record<string, string> = {
     [userBasePath]: 'User Profile',
 };
 
-const entityListTypeMatcher = `(${Object.values(urlEntityListTypes).join('|')})`;
-const entityTypeMatcher = `(${Object.values(urlEntityTypes).join('|')})`;
+export const validPageEntityListTypes = Object.values(urlEntityListTypes);
+export const validPageEntityTypes = Object.values(urlEntityTypes);
 
 export const workflowPaths = {
     DASHBOARD: `${mainPath}/:context`,
-    LIST: `${mainPath}/:context/:pageEntityListType${entityListTypeMatcher}/:entityId1?/:entityType2?/:entityId2?`,
-    ENTITY: `${mainPath}/:context/:pageEntityType${entityTypeMatcher}/:pageEntityId?/:entityType1?/:entityId1?/:entityType2?/:entityId2?`,
+    LIST: `${mainPath}/:context/:pageEntityListType/:entityId1?/:entityType2?/:entityId2?`,
+    ENTITY: `${mainPath}/:context/:pageEntityType/:pageEntityId?/:entityType1?/:entityId1?/:entityType2?/:entityId2?`,
 };

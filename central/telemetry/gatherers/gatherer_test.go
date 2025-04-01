@@ -52,12 +52,6 @@ func (s *gathererTestSuite) SetupSuite() {
 	s.gatherer = newCentralGatherer(installationStore, newDatabaseGatherer(newPostgresGatherer(s.tp.DB, adminConfig)), newAPIGatherer(metrics.GRPCSingleton(), metrics.HTTPSingleton()), gatherers.NewComponentInfoGatherer(), s.sensorUpgradeConfigDatastore)
 }
 
-func (s *gathererTestSuite) TearDownSuite() {
-	if s.tp != nil {
-		s.tp.Teardown(s.T())
-	}
-}
-
 func (s *gathererTestSuite) TestJSONSerialization() {
 	metrics := s.gatherer.Gather(sac.WithAllAccess(context.Background()))
 

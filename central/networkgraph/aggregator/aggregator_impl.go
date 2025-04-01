@@ -5,7 +5,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
@@ -181,15 +180,11 @@ func (a *aggregateExternalConnByNameImpl) Aggregate(flows []*storage.NetworkFlow
 			continue
 		}
 
-		// With the addition of the External-IPs feature, 'discovered' external entities can now be the source/destination
-		// of network-flows, and they will likely be numerous.
-		// Since the network-graph is not ready yet to display a large amount of external-entities, we aggregate 'discovered'
-		// entities under the control of the NetworkGraphExternalIPs feature-flag (enabling it is experimental).
-		// Aggregation is achieved by anonymizing 'discovered' entities (replacing them by the Internet entity).
-		if !features.NetworkGraphExternalIPs.Enabled() {
-			flowProps.SrcEntity = anonymizeDiscoveredEntity(flowProps.SrcEntity)
-			flowProps.DstEntity = anonymizeDiscoveredEntity(flowProps.DstEntity)
-		}
+		// If the entity is discovered, anonymize it to avoid overloading
+		// the graph with many nodes (external IP details are still accessible
+		// via other APIs)
+		flowProps.SrcEntity = anonymizeDiscoveredEntity(flowProps.SrcEntity)
+		flowProps.DstEntity = anonymizeDiscoveredEntity(flowProps.DstEntity)
 
 		srcEntity, dstEntity = flowProps.SrcEntity, flowProps.DstEntity
 

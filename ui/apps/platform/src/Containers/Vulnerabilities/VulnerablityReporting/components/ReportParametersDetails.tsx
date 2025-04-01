@@ -29,8 +29,12 @@ function ReportParametersDetails({
     formValues,
 }: ReportParametersDetailsProps): ReactElement {
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isIncludeEpssProbabilityEnabled =
-        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_EPSS_SCORE');
+    const isIncludeAdvisoryEnabled =
+        isFeatureFlagEnabled('ROX_SCANNER_V4') &&
+        isFeatureFlagEnabled('ROX_CVE_ADVISORY_SEPARATION');
+    const hasIncludeAdvisory =
+        isIncludeAdvisoryEnabled && formValues.reportParameters.includeAdvisory;
+    const isIncludeEpssProbabilityEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
     const hasIncludeEpssProbability =
         isIncludeEpssProbabilityEnabled && formValues.reportParameters.includeEpssProbability;
     const isIncludeNvdCvssEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
@@ -119,7 +123,7 @@ function ReportParametersDetails({
                             {getCVEsDiscoveredSinceText(formValues.reportParameters)}
                         </DescriptionListDescription>
                     </DescriptionListGroup>
-                    {(hasIncludeNvdCvss || hasIncludeEpssProbability) && (
+                    {(hasIncludeNvdCvss || hasIncludeEpssProbability || hasIncludeAdvisory) && (
                         <DescriptionListGroup>
                             <DescriptionListTerm>Optional columns</DescriptionListTerm>
                             {hasIncludeNvdCvss && (
@@ -130,6 +134,11 @@ function ReportParametersDetails({
                             {hasIncludeEpssProbability && (
                                 <DescriptionListDescription>
                                     Include EPSS probability
+                                </DescriptionListDescription>
+                            )}
+                            {hasIncludeAdvisory && (
+                                <DescriptionListDescription>
+                                    Include advisory
                                 </DescriptionListDescription>
                             )}
                         </DescriptionListGroup>

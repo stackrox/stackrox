@@ -1,9 +1,10 @@
 import React from 'react';
 import entityTypes from 'constants/entityTypes';
+import useWorkflowMatch from 'hooks/useWorkflowMatch';
 import pluralize from 'pluralize';
 import entityLabels from 'messages/entity';
 import URLService from 'utils/URLService';
-import { useLocation, useRouteMatch } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 
 import DashboardMenu from 'Components/DashboardMenu';
 
@@ -28,7 +29,7 @@ const AppMenu = () => {
         entityTypes.SECRET,
     ];
 
-    const match = useRouteMatch();
+    const match = useWorkflowMatch();
     const location = useLocation();
     const urlBuilder = URLService.getURL(match, location);
     const options = createOptions(urlBuilder, types);

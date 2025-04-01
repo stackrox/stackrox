@@ -295,6 +295,7 @@ func (m *manager) HandleConnection(ctx context.Context, sensorHello *central.Sen
 
 	err = conn.Run(ctx, server, conn.capabilities)
 	m.handleConnectionError(clusterID, err)
+	conn.Terminate(err)
 
 	// Address the scenario in which the sensor loses its connection during
 	// the initial synchronization process.

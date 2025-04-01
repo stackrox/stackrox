@@ -44,4 +44,5 @@ export const nameOfComponent: Record<CertExpiryComponent, string> = {
     CENTRAL: 'Central',
     SCANNER: 'StackRox Scanner',
     SCANNER_V4: 'Scanner V4',
+    CENTRAL_DB: 'Central Database',
 };

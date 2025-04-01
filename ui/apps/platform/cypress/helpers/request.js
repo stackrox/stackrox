@@ -21,7 +21,7 @@
  *
  * Use object spread to merge GraphQL object into object which has properties for REST requests.
  *
- * @param {[string]} opnames
+ * @param {string[]} opnames
  * @returns Record<string, { method: string, url: string }>
  */
 export function getRouteMatcherMapForGraphQL(opnames) {

@@ -1,0 +1,19 @@
+name: "test explicit image reference specified (Operator use only)"
+defs: |
+  def collector:
+    container(.daemonsets.collector; "collector");
+values:
+  image:
+    collector:
+      registry: docker.io/stackrox
+      name: collector
+  imagePullSecrets:
+    allowNone: true
+tests:
+- name: "collector image"
+  tests:
+  - name: "override image is used if full ref is specified"
+    set:
+      image.collector.fullRef: "registry.redhat.io/rh-acs/collector:1.2.3-latest"
+    expect: |
+      collector | .image | assertThat(. == "registry.redhat.io/rh-acs/collector:1.2.3-latest")

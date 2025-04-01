@@ -2,18 +2,20 @@ import com.google.protobuf.util.JsonFormat
 import groovy.io.FileType
 import io.grpc.StatusRuntimeException
 
+import io.stackrox.proto.api.v1.NamespaceServiceOuterClass
 import io.stackrox.proto.api.v1.PolicyServiceOuterClass
-import io.stackrox.proto.api.v1.SummaryServiceOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.ScopeOuterClass
 
+import services.AlertService
 import services.ClusterService
 import services.GraphQLService
+import services.ImageService
+import services.NamespaceService
+import services.NodeService
 import services.PolicyService
-import services.SummaryService
 import util.Env
 
-import spock.lang.Ignore
 import spock.lang.Tag
 import spock.lang.Unroll
 import spock.lang.IgnoreIf
@@ -58,19 +60,32 @@ class UpgradesTest extends BaseSpecification {
         cluster != null
         assert(cluster.getDynamicConfig().getDisableAuditLogs() == true)
     }
-
     @Tag("Upgrade")
-    @Ignore("ROX-24528: This API is deprecated in 4.5. Remove this test once the API is removed")
-    def "Verify that summary API returns non-zero values on upgrade"() {
+    def "Verify that APIs returns non-zero values on upgrade"() {
         expect:
-        "Summary API returns non-zero values on upgrade"
-        SummaryServiceOuterClass.SummaryCountsResponse resp = SummaryService.getCounts()
-        assert resp.numAlerts != 0
-        assert resp.numDeployments != 0
-        assert resp.numSecrets != 0
-        assert resp.numClusters != 0
-        assert resp.numImages != 0
-        assert resp.numNodes != 0
+        "Namespace API returns non-zero values on upgrade"
+        def namespaces = NamespaceService.getNamespaces()
+        assert namespaces.size() != 0
+        int numDeployments = 0
+        int numSecrets = 0
+        for (NamespaceServiceOuterClass.Namespace ns: namespaces) {
+            numDeployments += ns.getNumDeployments()
+            numSecrets += ns.getNumSecrets()
+        }
+        assert numDeployments != 0
+        assert numSecrets != 0
+        "Alert API returns non-zero values on upgrade"
+        def alerts = AlertService.getAlertCounts()
+        assert alerts.getGroupsList().size() != 0
+        "Cluster API returns non-zero values on upgrade"
+        def clusters = ClusterService.getClusters()
+        assert clusters.size() != 0
+        "Node API returns non-zero values on upgrade"
+        def nodes = NodeService.getNodes()
+        assert nodes.size() != 0
+        "Image API returns non-zero values on upgrade"
+        def images = ImageService.getImages()
+        assert images.size() != 0
     }
 
     @Unroll

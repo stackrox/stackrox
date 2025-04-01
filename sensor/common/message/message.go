@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/sensor/common/trace"
 )
 
 // ExpiringMessage is a wrapper on central.MsgFromSensor with the addition of a Context.
@@ -14,9 +15,9 @@ type ExpiringMessage struct {
 	Context context.Context
 }
 
-// New creates an ExpiringMessage with msg and context.Background.
+// New creates an ExpiringMessage with msg and trace.Background.
 func New(msg *central.MsgFromSensor) *ExpiringMessage {
-	return NewExpiring(context.Background(), msg)
+	return NewExpiring(trace.Background(), msg)
 }
 
 // NewExpiring creates a message with a specific context.

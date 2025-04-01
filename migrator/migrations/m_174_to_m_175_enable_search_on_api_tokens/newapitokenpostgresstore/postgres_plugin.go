@@ -48,8 +48,6 @@ type Store interface {
 	DeleteMany(ctx context.Context, identifiers []string) error
 
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.TokenMetadata, error)
-
-	Walk(ctx context.Context, fn func(obj *storage.TokenMetadata) error) error
 }
 
 type storeImpl struct {
@@ -290,31 +288,6 @@ func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage
 		return nil, err
 	}
 	return rows, nil
-}
-
-// Walk iterates over all of the objects in the store and applies the closure.
-func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.TokenMetadata) error) error {
-	var sacQueryFilter *v1.Query
-	fetcher, closer, err := pgSearch.RunCursorQueryForSchema[storage.TokenMetadata](ctx, schema, sacQueryFilter, s.db)
-	if err != nil {
-		return err
-	}
-	defer closer()
-	for {
-		rows, err := fetcher(cursorBatchSize)
-		if err != nil {
-			return pgutils.ErrNilIfNoRows(err)
-		}
-		for _, data := range rows {
-			if err := fn(data); err != nil {
-				return err
-			}
-		}
-		if len(rows) != cursorBatchSize {
-			break
-		}
-	}
-	return nil
 }
 
 //// Interface functions - END

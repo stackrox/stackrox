@@ -484,7 +484,9 @@ class NetworkFlowTest extends BaseSpecification {
 
     @Tag("NetworkFlowVisualization")
     // TODO: additional handling may be needed for P/Z - see ROX-19615
-    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
+    // TODO(ROX-24299): CI improvements 2025-02-12: Disabling for OCP.
+    @IgnoreIf({ Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT ||
+            Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
     def "Verify connections from external sources"() {
         given:
         "Deployment A, where an external source communicates to A"
@@ -670,7 +672,7 @@ class NetworkFlowTest extends BaseSpecification {
         // ROX-7153 - EKS cannot NetworkPolicy (RS-178)
         Assume.assumeFalse(ClusterService.isEKS())
         // ROX-7153 - AKS cannot tolerate NetworkPolicy (RS-179)
-        Assume.assumeFalse(ClusterService.isAKS())
+        Assume.assumeFalse(ClusterService.isAzure())
 
         given:
         "Two deployments, A and B, where B communicates to A"

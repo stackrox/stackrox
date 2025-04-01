@@ -47,7 +47,8 @@ import ExceptionDetailsCell from '../components/ExceptionDetailsCell';
 import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
 import PartialCVEDataAlert from '../../components/PartialCVEDataAlert';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
-import { formatEpssProbabilityAsPercent } from './table.utils';
+import { infoForEpssProbability } from './infoForTh';
+import { formatEpssProbabilityAsPercent, formatTotalAdvisories } from './table.utils';
 
 export const tableId = 'WorkloadCvesImageVulnerabilitiesTable';
 export const defaultColumns = {
@@ -69,6 +70,10 @@ export const defaultColumns = {
     },
     epssProbability: {
         title: 'EPSS probability',
+        isShownByDefault: true,
+    },
+    totalAdvisories: {
+        title: 'Advisories',
         isShownByDefault: true,
     },
     affectedComponents: {
@@ -161,13 +166,18 @@ function ImageVulnerabilitiesTable({
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isNvdCvssColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
-    const isEpssProbabilityColumnEnabled =
-        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_EPSS_SCORE');
+    // Omit for 4.7 release until CVE/advisory separatipn is available in 4.8 release.
+    // const isEpssProbabilityColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
+    const isEpssProbabilityColumnEnabled = false;
+    const isAdvisoryColumnEnabled =
+        isFeatureFlagEnabled('ROX_SCANNER_V4') &&
+        isFeatureFlagEnabled('ROX_CVE_ADVISORY_SEPARATION');
 
     const colSpan =
         7 +
         (isNvdCvssColumnEnabled ? 1 : 0) +
         (isEpssProbabilityColumnEnabled ? 1 : 0) +
+        (isAdvisoryColumnEnabled ? 1 : 0) +
         (canSelectRows ? 1 : 0) +
         (createTableActions ? 1 : 0) +
         (showExceptionDetailsLink ? 1 : 0) +
@@ -199,10 +209,14 @@ function ImageVulnerabilitiesTable({
                     {isEpssProbabilityColumnEnabled && (
                         <Th
                             className={getVisibilityClass('epssProbability')}
+                            info={infoForEpssProbability}
                             sort={getSortParams('EPSS Probability')}
                         >
                             EPSS probability
                         </Th>
+                    )}
+                    {isAdvisoryColumnEnabled && (
+                        <Th className={getVisibilityClass('totalAdvisories')}>Advisories</Th>
                     )}
                     <Th className={getVisibilityClass('affectedComponents')}>
                         Affected components
@@ -252,6 +266,7 @@ function ImageVulnerabilitiesTable({
                         );
                         const isFixableInImage = getIsSomeVulnerabilityFixable(vulnerabilities);
                         const epssProbability = cveBaseInfo?.epss?.epssProbability;
+                        const totalAdvisories = undefined;
                         const isExpanded = expandedRowSet.has(cve);
 
                         return (
@@ -334,6 +349,15 @@ function ImageVulnerabilitiesTable({
                                             dataLabel="EPSS probability"
                                         >
                                             {formatEpssProbabilityAsPercent(epssProbability)}
+                                        </Td>
+                                    )}
+                                    {isAdvisoryColumnEnabled && (
+                                        <Td
+                                            className={getVisibilityClass('totalAdvisories')}
+                                            modifier="nowrap"
+                                            dataLabel="Advisories"
+                                        >
+                                            {formatTotalAdvisories(totalAdvisories)}
                                         </Td>
                                     )}
                                     <Td

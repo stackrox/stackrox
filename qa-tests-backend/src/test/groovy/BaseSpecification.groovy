@@ -4,7 +4,7 @@ import java.security.SecureRandom
 import java.util.concurrent.TimeUnit
 
 import io.restassured.RestAssured
-import orchestratormanager.OrchestratorMain
+import orchestratormanager.Kubernetes
 import orchestratormanager.OrchestratorType
 import orchestratormanager.OrchestratorTypes
 import org.javers.core.Javers
@@ -91,7 +91,7 @@ class BaseSpecification extends Specification {
             strictIntegrationTesting = true
         }
 
-        OrchestratorMain orchestrator = OrchestratorType.create(
+        Kubernetes orchestrator = OrchestratorType.create(
                 Env.mustGetOrchestratorType(),
                 Constants.ORCHESTRATOR_NAMESPACE
         )
@@ -212,7 +212,7 @@ class BaseSpecification extends Specification {
     Logger log = LoggerFactory.getLogger("test." + this.getClass().getSimpleName())
 
     @Shared
-    OrchestratorMain orchestrator = OrchestratorType.create(
+    Kubernetes orchestrator = OrchestratorType.create(
             Env.mustGetOrchestratorType(),
             Constants.ORCHESTRATOR_NAMESPACE
     )
@@ -261,7 +261,7 @@ class BaseSpecification extends Specification {
         }
     }
 
-    private static void recordResourcesAtRunStart(OrchestratorMain orchestrator) {
+    private static void recordResourcesAtRunStart(Kubernetes orchestrator) {
         resourceRecord = [
                 "namespaces": orchestrator.getNamespaces(),
                 "deployments": orchestrator.getDeployments("default") +
@@ -318,7 +318,7 @@ class BaseSpecification extends Specification {
         MDC.remove("specification")
     }
 
-    private static void compareResourcesAtRunEnd(OrchestratorMain orchestrator) {
+    private static void compareResourcesAtRunEnd(Kubernetes orchestrator) {
         Javers javers = JaversBuilder.javers()
                 .withListCompareAlgorithm(ListCompareAlgorithm.AS_SET)
                 .build()
@@ -360,7 +360,7 @@ class BaseSpecification extends Specification {
             return
         }
 
-        OrchestratorMain orchestrator = OrchestratorType.create(
+        Kubernetes orchestrator = OrchestratorType.create(
                 Env.mustGetOrchestratorType(),
                 ns
         )
@@ -394,7 +394,7 @@ class BaseSpecification extends Specification {
             return
         }
 
-        OrchestratorMain orchestrator = OrchestratorType.create(
+        Kubernetes orchestrator = OrchestratorType.create(
                 Env.mustGetOrchestratorType(),
                 ns
         )

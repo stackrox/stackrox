@@ -174,10 +174,6 @@ func (s *ImageCVEViewTestSuite) SetupSuite() {
 	s.testImagesToDeployments[images[2].Id] = []*storage.Deployment{deployments[2]}
 }
 
-func (s *ImageCVEViewTestSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-}
-
 func (s *ImageCVEViewTestSuite) TestGetImageCVECore() {
 	for _, tc := range s.testCases() {
 		s.T().Run(tc.desc, func(t *testing.T) {

@@ -58,3 +58,15 @@ func SafeClientClose(resp *http.Response) {
 
 	utils.IgnoreError(resp.Body.Close)
 }
+
+// GetUsedPortsList returns list of ports returned by GetFreeTestPort.
+func GetUsedPortsList() []uint64 {
+	lastPort := portCounter.Add(0)
+
+	var ports []uint64
+	for port := uint64(minFreePortRange); port <= lastPort; port++ {
+		ports = append(ports, port)
+	}
+
+	return ports
+}

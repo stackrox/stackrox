@@ -45,11 +45,6 @@ func (s *servicePostgresTestSuite) SetupTest() {
 	s.service = newService(s.datastore)
 }
 
-func (s *servicePostgresTestSuite) TearDownTest() {
-	s.pool.Teardown(s.T())
-	s.pool.Close()
-}
-
 func (s *servicePostgresTestSuite) TestCount() {
 	fromBeforeNow, err := protocompat.ConvertTimeToTimestampOrError(time.Now().Add(-1 * time.Hour))
 	s.Require().NoError(err)

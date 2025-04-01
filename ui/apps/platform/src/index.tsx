@@ -6,15 +6,15 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { Provider } from 'react-redux';
-import { AnyAction, Store } from 'redux';
-import { ConnectedRouter } from 'connected-react-router';
-import { createBrowserHistory as createHistory } from 'history';
+import { HistoryRouter as Router } from 'redux-first-history/rr6';
+import { AnyAction } from 'redux';
 import { ApolloProvider } from '@apollo/client';
 
 import 'css.imports';
 
 import { configure as mobxConfigure } from 'mobx';
 import * as monaco from 'monaco-editor';
+import { loader } from '@monaco-editor/react';
 import { configureMonacoYaml } from 'monaco-yaml';
 
 import ErrorBoundary from 'Components/PatternFly/ErrorBoundary/ErrorBoundary';
@@ -37,6 +37,7 @@ configureMonacoYaml(monaco, {
     format: true,
     schemas: [],
 });
+loader.config({ monaco });
 
 // We need to call this MobX utility function, to prevent the error
 //   Uncaught Error: [MobX] There are multiple, different versions of MobX active. Make sure MobX is loaded only once or use `configure({ isolateGlobalState: true })`
@@ -49,8 +50,7 @@ installRaven();
 const rootNode = document.getElementById('root');
 /* @ts-expect-error `createRoot` expects a non-null argument */
 const root = createRoot(rootNode);
-const history = createHistory();
-const store = configureStore(undefined, history) as Store;
+const { store, history } = configureStore();
 const apolloClient = configureApollo();
 
 const dispatch = (action) =>
@@ -65,17 +65,11 @@ dispatch(fetchCentralCapabilitiesThunk());
 root.render(
     <Provider store={store}>
         <ApolloProvider client={apolloClient}>
-            {/*
-             (dv 2024-05-01)
-             ConnectedRouter does not explicitly declare `children` as a prop, which is expected by React types >=18
-             so we need to use `@ts-expect-error` to suppress the type error
-            */}
-            {/* @ts-expect-error `connected-react-router does not support React 18 */}
-            <ConnectedRouter history={history}>
+            <Router history={history}>
                 <ErrorBoundary>
                     <AppPage />
                 </ErrorBoundary>
-            </ConnectedRouter>
+            </Router>
         </ApolloProvider>
     </Provider>
 );

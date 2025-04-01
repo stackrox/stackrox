@@ -1,9 +1,11 @@
-import React, { useState, useEffect, ReactElement, ReactFragment } from 'react';
+import React, { useState, useEffect, ReactNode } from 'react';
 import {
+    ActionGroup,
     Alert,
     Breadcrumb,
     BreadcrumbItem,
     Button,
+    Divider,
     Flex,
     FlexItem,
     Form,
@@ -13,6 +15,7 @@ import {
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import PageTitle from 'Components/PageTitle';
+import usePermissions from 'hooks/usePermissions';
 import { clustersBasePath } from 'routePaths';
 import {
     fetchDelegatedRegistryConfig,
@@ -29,7 +32,7 @@ import DelegatedRegistriesList from './Components/DelegatedRegistriesList';
 type AlertObj = {
     type: 'danger' | 'success';
     title: string;
-    body: ReactElement | ReactFragment;
+    body: ReactNode;
 };
 const initialDelegatedState: DelegatedRegistryConfig = {
     enabledFor: 'NONE',
@@ -37,41 +40,20 @@ const initialDelegatedState: DelegatedRegistryConfig = {
     registries: [],
 };
 
-function getUuid() {
-    const MAX_RANDOM = 1000000;
-
-    const uuid = self?.crypto?.randomUUID() ?? Math.floor(Math.random() * MAX_RANDOM).toString();
-
-    return uuid;
-}
-
-function addUuidstoRegistries(config: DelegatedRegistryConfig) {
-    const newRegistries = config.registries.map((registry) => {
-        const uuid = getUuid();
-
-        return {
-            path: registry.path,
-            clusterId: registry.clusterId,
-            uuid,
-        };
-    });
-
-    const newState: DelegatedRegistryConfig = {
-        ...config,
-        registries: newRegistries,
-    };
-
-    return newState;
-}
-
 function DelegateScanningPage() {
-    const displayedPageTitle = 'Delegated Image Scanning';
+    const displayedPageTitle = 'Delegated image scanning';
     const [delegatedRegistryConfig, setDedicatedRegistryConfig] =
         useState<DelegatedRegistryConfig>(initialDelegatedState);
     const [delegatedRegistryClusters, setDelegatedRegistryClusters] = useState<
         DelegatedRegistryCluster[]
     >([]);
     const [alertObj, setAlertObj] = useState<AlertObj | null>(null);
+
+    const [hasLoadedClusters, setHasLoadedClusters] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
+
+    const { hasReadWriteAccess } = usePermissions();
+    const hasReadWriteAccessForAdministration = hasReadWriteAccess('Administration');
 
     useEffect(() => {
         fetchClusters();
@@ -81,10 +63,7 @@ function DelegateScanningPage() {
     function fetchConfig() {
         setAlertObj(null);
         fetchDelegatedRegistryConfig()
-            .then((configFetched) => {
-                const configWithUuids = addUuidstoRegistries(configFetched);
-                setDedicatedRegistryConfig(configWithUuids);
-            })
+            .then(setDedicatedRegistryConfig)
             .catch((error) => {
                 const newErrorObj: AlertObj = {
                     type: 'danger',
@@ -108,6 +87,7 @@ function DelegateScanningPage() {
             .then((clusters) => {
                 const validClusters = clusters.filter((cluster) => cluster.isValid);
                 setDelegatedRegistryClusters(validClusters);
+                setHasLoadedClusters(true);
             })
             .catch((error) => {
                 const newErrorObj: AlertObj = {
@@ -125,6 +105,10 @@ function DelegateScanningPage() {
                 setAlertObj(newErrorObj);
                 setDelegatedRegistryClusters([]);
             });
+    }
+
+    function onClickEdit() {
+        setIsEditing(true);
     }
 
     function onChangeEnabledFor(newEnabledState) {
@@ -146,12 +130,9 @@ function DelegateScanningPage() {
     function addRegistryRow() {
         const newState: DelegatedRegistryConfig = { ...delegatedRegistryConfig };
 
-        const uuid = getUuid();
-
         newState.registries.push({
             path: '',
             clusterId: '',
-            uuid,
         });
 
         setDedicatedRegistryConfig(newState);
@@ -175,7 +156,6 @@ function DelegateScanningPage() {
                 return {
                     path: value,
                     clusterId: registry.clusterId,
-                    uuid: registry.uuid,
                 };
             }
 
@@ -195,20 +175,11 @@ function DelegateScanningPage() {
                 return {
                     path: registry.path,
                     clusterId: value,
-                    uuid: registry.uuid,
                 };
             }
 
             return registry;
         });
-
-        newState.registries = newRegistries;
-
-        setDedicatedRegistryConfig(newState);
-    }
-
-    function updateRegistriesOrder(newRegistries) {
-        const newState: DelegatedRegistryConfig = { ...delegatedRegistryConfig };
 
         newState.registries = newRegistries;
 
@@ -221,10 +192,11 @@ function DelegateScanningPage() {
             .then(() => {
                 const newSuccessObj: AlertObj = {
                     type: 'success',
-                    title: 'Delegated scanning configuration saved successfully',
+                    title: 'Delegated image scanning configuration saved successfully',
                     body: <></>,
                 };
                 setAlertObj(newSuccessObj);
+                setIsEditing(false);
             })
             .catch((error) => {
                 const newErrorObj: AlertObj = {
@@ -244,30 +216,49 @@ function DelegateScanningPage() {
     }
 
     function onCancel() {
+        setIsEditing(false);
         fetchConfig();
     }
 
     return (
         <>
             <PageTitle title={displayedPageTitle} />
-            <PageSection variant="light" padding={{ default: 'noPadding' }}>
-                <Flex direction={{ default: 'column' }} className="pf-v5-u-py-lg pf-v5-u-pl-lg">
+            <PageSection variant="light">
+                <Flex direction={{ default: 'column' }}>
                     <FlexItem>
                         <Breadcrumb>
                             <BreadcrumbItemLink to={clustersBasePath}>Clusters</BreadcrumbItemLink>
                             <BreadcrumbItem isActive>{displayedPageTitle}</BreadcrumbItem>
                         </Breadcrumb>
                     </FlexItem>
-                    <FlexItem>
-                        <Title headingLevel="h1">{displayedPageTitle}</Title>
-                    </FlexItem>
+                    <Flex>
+                        <FlexItem flex={{ default: 'flex_1' }}>
+                            <Title headingLevel="h1">{displayedPageTitle}</Title>
+                        </FlexItem>
+                        {hasReadWriteAccessForAdministration && (
+                            <FlexItem align={{ default: 'alignRight' }}>
+                                <Button
+                                    variant="primary"
+                                    isDisabled={
+                                        delegatedRegistryConfig == null ||
+                                        !hasLoadedClusters ||
+                                        isEditing
+                                    }
+                                    onClick={onClickEdit}
+                                >
+                                    Edit
+                                </Button>
+                            </FlexItem>
+                        )}
+                    </Flex>
                     <FlexItem>
                         Delegating image scanning allows you to use secured clusters for scanning
                         instead of Central services.
                     </FlexItem>
                 </Flex>
             </PageSection>
-            <PageSection>
+            <Divider component="div" />
+            <PageSection variant="light">
                 {!!alertObj && (
                     <Alert
                         title={alertObj.title}
@@ -282,13 +273,14 @@ function DelegateScanningPage() {
                 <Form>
                     <ToggleDelegatedScanning
                         enabledFor={delegatedRegistryConfig.enabledFor}
+                        isEditing={isEditing}
                         onChangeEnabledFor={onChangeEnabledFor}
                     />
-                    {/* TODO: decide who to structure this form, where the `enabledFor` value spans multiple inputs */}
                     {delegatedRegistryConfig.enabledFor !== 'NONE' && (
                         <>
                             <DelegatedScanningSettings
                                 clusters={delegatedRegistryClusters}
+                                isEditing={isEditing}
                                 selectedClusterId={delegatedRegistryConfig.defaultClusterId}
                                 setSelectedClusterId={onChangeDefaultCluster}
                             />
@@ -296,31 +288,25 @@ function DelegateScanningPage() {
                                 registries={delegatedRegistryConfig.registries}
                                 clusters={delegatedRegistryClusters}
                                 selectedClusterId={delegatedRegistryConfig.defaultClusterId}
+                                isEditing={isEditing}
                                 handlePathChange={handlePathChange}
                                 handleClusterChange={handleClusterChange}
                                 addRegistryRow={addRegistryRow}
                                 deleteRow={deleteRow}
-                                // TODO: remove lint override after @typescript-eslint deps can be resolved to ^5.2.x
-                                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                                // @ts-ignore
-                                updateRegistriesOrder={updateRegistriesOrder}
-                                key="delegated-registries-list"
                             />
                         </>
                     )}
-                </Form>
-                <Flex className="pf-v5-u-p-md">
-                    <FlexItem align={{ default: 'alignLeft' }}>
-                        <Flex>
+                    {isEditing && (
+                        <ActionGroup>
                             <Button variant="primary" onClick={onSave}>
                                 Save
                             </Button>
                             <Button variant="secondary" onClick={onCancel}>
                                 Cancel
                             </Button>
-                        </Flex>
-                    </FlexItem>
-                </Flex>
+                        </ActionGroup>
+                    )}
+                </Form>
             </PageSection>
         </>
     );

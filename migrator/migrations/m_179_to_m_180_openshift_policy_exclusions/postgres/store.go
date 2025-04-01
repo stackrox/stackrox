@@ -38,7 +38,7 @@ type Store interface {
 	Upsert(ctx context.Context, obj *storage.Policy) error
 	UpsertMany(ctx context.Context, objs []*storage.Policy) error
 	Get(ctx context.Context, id string) (*storage.Policy, bool, error)
-	Walk(ctx context.Context, fn func(obj *storage.Policy) error) error
+
 	DeleteMany(ctx context.Context, identifiers []string) error
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.Policy, error)
 	Exists(ctx context.Context, id string) (bool, error)
@@ -369,31 +369,6 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	// With joins and multiple paths to the scoping resources, it can happen that the Count query for an object identifier
 	// returns more than 1, despite the fact that the identifier is unique in the table.
 	return count > 0, err
-}
-
-// Walk iterates over all of the objects in the store and applies the closure.
-func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.Policy) error) error {
-	var sacQueryFilter *v1.Query
-	fetcher, closer, err := pgSearch.RunCursorQueryForSchema[storage.Policy](ctx, schema, sacQueryFilter, s.db)
-	if err != nil {
-		return err
-	}
-	defer closer()
-	for {
-		rows, err := fetcher(cursorBatchSize)
-		if err != nil {
-			return pgutils.ErrNilIfNoRows(err)
-		}
-		for _, data := range rows {
-			if err := fn(data); err != nil {
-				return err
-			}
-		}
-		if len(rows) != cursorBatchSize {
-			break
-		}
-	}
-	return nil
 }
 
 //// Interface functions - END

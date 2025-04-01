@@ -1,6 +1,6 @@
 import React from 'react';
 import { ExternalLinkAltIcon } from '@patternfly/react-icons';
-import { Link, useHistory, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 
 import CloseButton from 'Components/CloseButton';
 import { PanelNew, PanelBody, PanelHead, PanelHeadEnd } from 'Components/Panel';
@@ -10,7 +10,7 @@ import parseURL from 'utils/URLParser';
 import EntityBreadCrumbs from './EntityBreadCrumbs';
 
 const WorkflowSidePanel = ({ children }) => {
-    const history = useHistory();
+    const navigate = useNavigate();
     const location = useLocation();
     const workflowState = parseURL(location);
     const pageStack = workflowState.getPageStack();
@@ -18,7 +18,7 @@ const WorkflowSidePanel = ({ children }) => {
 
     function onClose() {
         const url = workflowState.removeSidePanelParams().toUrl();
-        history.push(url);
+        navigate(url);
     }
 
     const url = workflowState.getSkimmedStack().toUrl();

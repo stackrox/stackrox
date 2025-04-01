@@ -5,7 +5,7 @@ import io.stackrox.proto.storage.NodeOuterClass.Node
 import io.stackrox.proto.storage.Rbac
 import objects.K8sRole
 import objects.K8sRoleBinding
-import orchestratormanager.OrchestratorMain
+import orchestratormanager.Kubernetes
 import orchestratormanager.OrchestratorType
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -27,7 +27,7 @@ BaseService.setUseClientCert(false)
 // Get a cluster client. Assumes you have a working kube configuration. Relies on:
 // CLUSTER: Either `OPENSHIFT` or `K8S`. This is inferred from the most recent
 //   `deploy/{k8s,openshift}/central-deploy` dir
-OrchestratorMain orchestrator = OrchestratorType.create(
+Kubernetes orchestrator = OrchestratorType.create(
         Env.mustGetOrchestratorType(),
         Constants.ORCHESTRATOR_NAMESPACE
 )

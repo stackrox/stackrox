@@ -11,6 +11,9 @@ import {
 } from '../types';
 import { getAppliedSeverities } from './searchUtils';
 
+// ROX-27906 Image CVEs view cannot use search fields as sort options without providing aggregates
+// aggregateByCVSS and aggregateByEPSS might become unnecessary in the future, at least for WorkloadCVEOverviewTable
+
 export const aggregateByCVSS: SortAggregate = {
     aggregateFunc: 'max',
 };

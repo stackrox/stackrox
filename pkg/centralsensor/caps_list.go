@@ -28,9 +28,6 @@ const (
 	// AuditLogEventsCap identifies the capability to handle audit log event detection.
 	AuditLogEventsCap SensorCapability = "AuditLogEvents"
 
-	// LocalScannerCredentialsRefresh identifies the capability to maintain the Local scanner TLS credentials refreshed.
-	LocalScannerCredentialsRefresh SensorCapability = "LocalScannerCredentialsRefresh"
-
 	// ScopedImageIntegrations identifies the capability to have image integrations with sources from image pull secrets
 	ScopedImageIntegrations SensorCapability = "ScopedImageIntegrations"
 

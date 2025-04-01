@@ -95,10 +95,6 @@ func (s *psMigrationTestSuite) SetupTest() {
 	pgutils.CreateTableFromModel(context.Background(), s.db.GetGormDB(), frozenSchema.CreateTablePermissionSetsStmt)
 }
 
-func (s *psMigrationTestSuite) TearDownTest() {
-	s.db.Teardown(s.T())
-}
-
 func (s *psMigrationTestSuite) TestMigration() {
 	ctx := sac.WithAllAccess(context.Background())
 	var psToUpsert []*storage.PermissionSet

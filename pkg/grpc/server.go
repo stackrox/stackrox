@@ -84,7 +84,7 @@ type serverAndListener struct {
 	listener net.Listener
 	endpoint *EndpointConfig
 
-	stopper func()
+	stopper func() bool
 }
 
 // APIService is the service interface

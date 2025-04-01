@@ -53,7 +53,7 @@ type Scanner interface {
 	GetMatcherMetadata(context.Context) (*v4.Metadata, error)
 
 	// GetSBOM to get sbom for an image
-	GetSBOM(ctx context.Context, name string, ref name.Digest) ([]byte, bool, error)
+	GetSBOM(ctx context.Context, name string, ref name.Digest, uri string) ([]byte, bool, error)
 
 	// Close cleans up any resources used by the implementation.
 	Close() error
@@ -180,7 +180,7 @@ func createGRPCConn(ctx context.Context, o connOptions) (*grpc.ClientConn, error
 }
 
 // GetSBOM verifies that index report exists and calls matcher to return sbom for an image
-func (c *gRPCScanner) GetSBOM(ctx context.Context, imageFullName string, ref name.Digest) ([]byte, bool, error) {
+func (c *gRPCScanner) GetSBOM(ctx context.Context, imageFullName string, ref name.Digest, uri string) ([]byte, bool, error) {
 	// verify index report exists for the image
 	hashId := getImageManifestID(ref)
 	ir, found, err := c.GetImageIndex(ctx, hashId)
@@ -194,6 +194,7 @@ func (c *gRPCScanner) GetSBOM(ctx context.Context, imageFullName string, ref nam
 	resp, err := c.matcher.GetSBOM(ctx, &v4.GetSBOMRequest{
 		Id:       ref.DigestStr(),
 		Name:     imageFullName,
+		Uri:      uri,
 		Contents: ir.GetContents(),
 	})
 	return resp.GetSbom(), true, err

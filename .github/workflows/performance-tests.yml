@@ -1,0 +1,202 @@
+name: Performance tests
+on:
+  pull_request:
+    branches:
+      - master
+    types:
+      - labeled
+      - synchronize
+concurrency: performance-tests-${{ github.ref }}
+jobs:
+  wait-for-images:
+    name: Wait for images
+    runs-on: ubuntu-latest
+    if: ${{ contains(github.event.pull_request.labels.*.name, 'ci-performance-tests') }}
+    strategy:
+      matrix:
+        image: [main, roxctl]
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Get PR image tag
+        run: |
+          MAIN_IMAGE_TAG="$(make tag)"
+          echo "MAIN_IMAGE_TAG=${MAIN_IMAGE_TAG}" >> "$GITHUB_ENV"
+      - name: Wait for the ${{ matrix.image }}
+        uses: stackrox/actions/release/wait-for-image@v1
+        with:
+          token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
+          image: rhacs-eng/${{ matrix.image }}:${{ env.MAIN_IMAGE_TAG }}
+
+  run-k6-performance-tests:
+    needs: [wait-for-images]
+    name: Run k6 performance tests
+    runs-on: ubuntu-latest
+    if: ${{ contains(github.event.pull_request.labels.*.name, 'ci-performance-tests') }}
+    env:
+      USE_GKE_GCLOUD_AUTH_PLUGIN: "True"
+      INFRA_TOKEN: ${{ secrets.INFRA_TOKEN }}
+      KUBECONFIG: artifacts/kubeconfig
+      TERM: xterm
+      DEFAULT_IMAGE_REGISTRY: "quay.io/rhacs-eng"
+      SCALE_CLUSTER_NAME: k6-test-${{ github.event.pull_request.number }}
+      SCALE_WORKLOAD_TYPE: default
+      SCALE_WORKLOAD_CLUSTERS: 10
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Checkout workflow scripts
+        uses: actions/checkout@v4
+        with:
+          repository: "stackrox/workflow"
+          path: workflow
+
+      # Create scale cluster with larger nodes.
+      - name: Create testing cluster
+        uses: stackrox/actions/infra/create-cluster@v1
+        with:
+          token: ${{ secrets.INFRA_TOKEN }}
+          flavor: gke-default
+          name: ${{ env.SCALE_CLUSTER_NAME }}
+          lifespan: 12h
+          args: nodes=3,machine-type=e2-standard-32
+          wait: true
+
+      # Fetch infractl artifacts
+      - uses: stackrox/actions/infra/install-infractl@v1
+      - uses: "google-github-actions/auth@v2"
+        with:
+          credentials_json: "${{ secrets.GCP_PERFORMANCE_TESTER_CI_SA }}"
+      - name: "Set up Cloud SDK"
+        uses: "google-github-actions/setup-gcloud@v1"
+        with:
+          install_components: "gke-gcloud-auth-plugin"
+      - name: Test cluster readiness
+        run: |
+          STATUS=$(infractl get "${SCALE_CLUSTER_NAME//./-}" --json | jq -r .Status)
+          if [ "$STATUS" != "READY" ]; then
+            exit 1
+          fi
+      - name: Fetch infra artifacts
+        run: |
+          infractl artifacts "${SCALE_CLUSTER_NAME//./-}" --download-dir artifacts > /dev/null
+
+      - name: Add Docker login for Quay.io
+        env:
+          REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+        run: |
+          docker login -u "${REGISTRY_USERNAME}" --password-stdin quay.io <<<"${REGISTRY_PASSWORD}"
+
+      - name: Clean previous installation
+        run: |
+          source ./workflow/env.sh
+          ./scripts/k8s/cleanup.sh stackrox
+
+          # Delete all namespaces created by scale script.
+          for i in $(seq 1 "${SCALE_WORKLOAD_CLUSTERS}"); do
+          ./scripts/k8s/cleanup.sh "stackrox${i}"
+          done
+
+      - name: Get PR image tag
+        run: |
+          MAIN_IMAGE_TAG="$(make tag)"
+          echo "MAIN_IMAGE_TAG=${MAIN_IMAGE_TAG}" >> "$GITHUB_ENV"
+
+      # Install Central + CentralDB
+      - name: Launch central services
+        env:
+          LOAD_BALANCER: lb
+          ROX_POSTGRES_DATASTORE: "true"
+          MONITORING_SUPPORT: "false"
+          REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+        run: |
+          source ./workflow/env.sh
+          ./scale/dev/launch_central.sh
+
+          # Required for k6 tests to run.
+          echo "ROX_ADMIN_PASSWORD=$(cat ./deploy/k8s/central-deploy/password)" >> "$GITHUB_ENV"
+          echo "ROX_PASSWORD=$(cat ./deploy/k8s/central-deploy/password)" >> "$GITHUB_ENV"
+          echo "::add-mask::$(cat ./deploy/k8s/central-deploy/password)"
+
+          LB_IP="$(kubectl -n stackrox get svc/central-loadbalancer -o json | jq -r '.status.loadBalancer.ingress[0] | .ip // .hostname')"
+          echo "HOST=https://${LB_IP}:443" >> "$GITHUB_ENV"
+          echo "API_ENDPOINT=${LB_IP}:443" >> "$GITHUB_ENV"
+          echo "::add-mask::${LB_IP}"
+
+      - name: Generate workload
+        env:
+          LOAD_BALANCER: lb
+          ROX_POSTGRES_DATASTORE: "true"
+          MONITORING_SUPPORT: "false"
+          REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+        run: |
+          source ./workflow/env.sh
+          ./scale/dev/run-many.sh "${SCALE_WORKLOAD_TYPE}" "${SCALE_WORKLOAD_CLUSTERS}"
+
+          num_deployments=$(yq '.deploymentWorkload[] | select(.deploymentType == "Deployment") | .numDeployments' "./scale/workloads/${SCALE_WORKLOAD_TYPE}.yaml")
+          max_deployments=$(( num_deployments * SCALE_WORKLOAD_CLUSTERS - 20 )) # num_deployments * SCALE_WORKLOAD_CLUSTERS is never quite reached so stop before than
+
+          ./scale/dev/wait-for-deployments.sh "${max_deployments}"
+
+      - name: Stop workload generation
+        run: |
+          source ./workflow/env.sh
+          ./scale/dev/kill-sensors.sh
+
+      - name: Create result directory
+        run: |
+          mkdir -p performance-results
+
+      - name: Run local k6 test
+        uses: grafana/k6-action@v0.3.1
+        with:
+          filename: ./tests/performance/tests/testK6Integration.js
+          flags: --out json=performance-results/raw.json --out csv=performance-results/raw.csv --iterations 50 --duration 20m --tag github_run_id=${{ github.run_id }} --tag github_ref=${{ github.ref }} --tag github_sha=${{ github.sha }}
+
+      - name: Publish JUnit test report in job summary
+        uses: test-summary/action@v2
+        with:
+          paths: performance-results/report.xml
+
+      - name: Upload results to GCS
+        uses: google-github-actions/upload-cloud-storage@v1
+        with:
+          path: performance-results
+          destination: acs-performance-test-results/${{ github.ref }}/${{ github.sha }}/${{ github.run_id }}/${{ github.run_attempt }}
+          gzip: false
+          process_gcloudignore: false
+
+      - name: Render PR comment from text report and links
+        run: |
+          report_txt=$(cat performance-results/report.txt)
+          cat <<EOF > pr-comment.md
+          # Performance test results
+
+          ## Summary
+
+          $report_txt
+
+          ## Sources
+
+          - Summary: [HTML Report](https://storage.cloud.google.com/acs-performance-test-results/${{ github.ref }}/${{ github.sha }}/${{ github.run_id }}/${{ github.run_attempt }}/performance-results/report.html) | [JSON](https://storage.cloud.google.com/acs-performance-test-results/${{ github.ref }}/${{ github.sha }}/${{ github.run_id }}/${{ github.run_attempt }}/performance-results/report.json)
+          - Raw Data: [CSV](https://storage.cloud.google.com/acs-performance-test-results/${{ github.ref }}/${{ github.sha }}/${{ github.run_id }}/${{ github.run_attempt }}/performance-results/raw.csv) | [JSON](https://storage.cloud.google.com/acs-performance-test-results/${{ github.ref }}/${{ github.sha }}/${{ github.run_id }}/${{ github.run_attempt }}/performance-results/raw.json)
+          EOF
+
+          cat pr-comment.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Add text report and links as PR comment
+        uses: mshick/add-pr-comment@v2
+        with:
+          message-id: performance-evaluation
+          message-path: |
+            pr-comment.md

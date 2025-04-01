@@ -31,7 +31,7 @@ runs:
   - name: Download junit2jira
     shell: bash
     env:
-      VERSION: "v0.0.22"
+      VERSION: "v0.0.24"
     run: |
       set -u
       LOCATION="https://github.com/stackrox/junit2jira/releases/download/$VERSION/junit2jira"

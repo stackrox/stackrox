@@ -161,6 +161,13 @@ message MicrosoftSentinel {
     string private_key = 2; // @gotags: scrub:"always"
   }
   ClientCertAuthConfig client_cert_auth_config = 7;
+
+  // Enables authentication with short-lived tokens using Azure managed identities
+  // or Azure workload identities.
+  // The toggle exists to make the use of Azure default credentials explicit rather
+  // than always using them as a fallback. The explicit behavior is more consistent
+  // with other integrations.
+  bool wif_enabled = 8; // @gotags: scrub:"dependent"
 }
 
 message Syslog {

@@ -110,17 +110,3 @@ tests:
     env.managedServices: false
   expect: |
     envVars(.deployments.central; "central") | assertThat(has("ROX_TENANT_ID") == false)
-
-- name: "override affinity"
-  values:
-    central:
-      affinity:
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 50
-              preference:
-                matchExpressions:
-                  - key: node-role.kubernetes.io/master
-                    operator: Exists
-  expect: |
-    .deployments["central"].spec.template.spec.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 1)

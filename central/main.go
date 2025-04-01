@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/NYTimes/gziphandler"
+	administrationEventDS "github.com/stackrox/rox/central/administration/events/datastore"
 	administrationEventHandler "github.com/stackrox/rox/central/administration/events/handler"
 	administrationEventService "github.com/stackrox/rox/central/administration/events/service"
 	administrationUsageCSV "github.com/stackrox/rox/central/administration/usage/csv"
@@ -17,6 +18,7 @@ import (
 	administrationUsageService "github.com/stackrox/rox/central/administration/usage/service"
 	alertDatastore "github.com/stackrox/rox/central/alert/datastore"
 	alertService "github.com/stackrox/rox/central/alert/service"
+	apitokenDS "github.com/stackrox/rox/central/apitoken/datastore"
 	apiTokenExpiration "github.com/stackrox/rox/central/apitoken/expiration"
 	apiTokenService "github.com/stackrox/rox/central/apitoken/service"
 	"github.com/stackrox/rox/central/audit"
@@ -159,7 +161,6 @@ import (
 	signatureIntegrationDS "github.com/stackrox/rox/central/signatureintegration/datastore"
 	signatureIntegrationService "github.com/stackrox/rox/central/signatureintegration/service"
 	"github.com/stackrox/rox/central/splunk"
-	summaryService "github.com/stackrox/rox/central/summary/service"
 	"github.com/stackrox/rox/central/systeminfo/listener"
 	"github.com/stackrox/rox/central/telemetry/centralclient"
 	telemetryService "github.com/stackrox/rox/central/telemetry/service"
@@ -443,7 +444,6 @@ func servicesToRegister() []pkgGRPC.APIService {
 		serviceAccountService.Singleton(),
 		siService.Singleton(),
 		signatureIntegrationService.Singleton(),
-		summaryService.Singleton(),
 		telemetryService.Singleton(),
 		userService.Singleton(),
 		vulnMgmtService.Singleton(),
@@ -620,7 +620,10 @@ func startGRPCServer() {
 		if t := cds.GetTelemetry(); t == nil || t.GetEnabled() {
 			if cfg := centralclient.Enable(); cfg.Enabled() {
 				centralclient.RegisterCentralClient(&config, basicAuthProvider.ID())
+				centralclient.StartPeriodicReload(1 * time.Hour)
 				gs := cfg.Gatherer()
+				gs.AddGatherer(administrationEventDS.Gather(administrationEventDS.Singleton()))
+				gs.AddGatherer(apitokenDS.Gather(apitokenDS.Singleton()))
 				gs.AddGatherer(authDS.Gather)
 				gs.AddGatherer(authProviderTelemetry.Gather)
 				gs.AddGatherer(cloudSourcesDS.Gather(cloudSourcesDS.Singleton()))
@@ -629,6 +632,7 @@ func startGRPCServer() {
 				gs.AddGatherer(delegatedRegistryConfigDS.Gather(delegatedRegistryConfigDS.Singleton()))
 				gs.AddGatherer(externalbackupsDS.Gather)
 				gs.AddGatherer(featuresTelemetry.Gather)
+				gs.AddGatherer(globaldb.Gather)
 				gs.AddGatherer(imageintegrationsDS.Gather)
 				gs.AddGatherer(notifierDS.Gather)
 				gs.AddGatherer(roleDataStore.Gather)

@@ -1,0 +1,3 @@
+# Exclude roxctl output from whitespace checks, as there
+# are harmless trailing spaces due to wrapping.
+roxctl*.txt whitespace=-trailing-space

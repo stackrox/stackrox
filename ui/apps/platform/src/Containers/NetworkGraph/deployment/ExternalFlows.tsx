@@ -1,57 +1,65 @@
-import { Divider, Flex, FlexItem, Stack, StackItem } from '@patternfly/react-core';
-import React, { useState } from 'react';
-import AdvancedFlowsFilter, {
-    defaultAdvancedFlowsFilters,
-} from '../common/AdvancedFlowsFilter/AdvancedFlowsFilter';
-import { AdvancedFlowsFilterType } from '../common/AdvancedFlowsFilter/types';
-import { getAllUniquePorts } from '../utils/flowUtils';
-import IPMatchFilter, { MatchType } from '../common/IPMatchFilter';
+import React, { useCallback } from 'react';
 
-type InternalFlowsProps = {
-    deploymentId: string;
+import { UseURLPaginationResult } from 'hooks/useURLPagination';
+import useRestQuery from 'hooks/useRestQuery';
+import { UseUrlSearchReturn } from 'hooks/useURLSearch';
+import { getExternalIpsFlowsMetadata } from 'services/NetworkService';
+import { ExternalNetworkFlowsMetadataResponse } from 'types/networkFlow.proto';
+import { getTableUIState } from 'utils/getTableUIState';
+
+import ExternalIpsTable from '../external/ExternalIpsTable';
+import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
+
+type ExternalFlowsProps = {
+    deploymentName: string;
+    scopeHierarchy: NetworkScopeHierarchy;
+    urlSearchFiltering: UseUrlSearchReturn;
+    urlPagination: UseURLPaginationResult;
+    onExternalIPSelect: (externalIP: string) => void;
 };
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function ExternalFlows({ deploymentId }: InternalFlowsProps) {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const [selectedMatchType, setSelectedMatchType] = useState<MatchType>('Equals');
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const [selectedExternalIP, setSelectedExternalIP] = useState('');
-    const [advancedFilters, setAdvancedFilters] = React.useState<AdvancedFlowsFilterType>(
-        defaultAdvancedFlowsFilters
-    );
+function ExternalFlows({
+    deploymentName,
+    scopeHierarchy,
+    urlSearchFiltering,
+    urlPagination,
+    onExternalIPSelect,
+}: ExternalFlowsProps) {
+    const clusterId = scopeHierarchy.cluster.id;
+    const { namespaces } = scopeHierarchy;
+    const { searchFilter } = urlSearchFiltering;
+    const { page, perPage } = urlPagination;
+    const fetchExternalIpsFlowsMetadata =
+        useCallback((): Promise<ExternalNetworkFlowsMetadataResponse> => {
+            return getExternalIpsFlowsMetadata(clusterId, namespaces, [deploymentName], {
+                sortOption: {},
+                page,
+                perPage,
+                advancedFilters: searchFilter,
+            });
+        }, [page, perPage, clusterId, deploymentName, namespaces, searchFilter]);
 
-    // TODO: Fetch external IPs connected to a deployment using the deploymentID
+    const {
+        data: externalIpsFlowsMetadata,
+        isLoading,
+        error,
+    } = useRestQuery(fetchExternalIpsFlowsMetadata);
 
-    const onSearch = ({ matchType, externalIP }) => {
-        setSelectedMatchType(matchType);
-        setSelectedExternalIP(externalIP);
-    };
-
-    // TODO: Show all unique ports
-    const allUniquePorts = getAllUniquePorts([]);
-
-    // TODO: Filter network flows based on the match type and external IP
+    const tableState = getTableUIState({
+        isLoading,
+        data: externalIpsFlowsMetadata?.entities,
+        error,
+        searchFilter,
+    });
 
     return (
-        <Stack>
-            <StackItem>
-                <Flex direction={{ default: 'row' }}>
-                    <FlexItem flex={{ default: 'flex_1' }}>
-                        <IPMatchFilter onSearch={onSearch} />
-                    </FlexItem>
-                    <FlexItem>
-                        <AdvancedFlowsFilter
-                            filters={advancedFilters}
-                            setFilters={setAdvancedFilters}
-                            allUniquePorts={allUniquePorts}
-                        />
-                    </FlexItem>
-                </Flex>
-            </StackItem>
-            <Divider component="hr" className="pf-v5-u-py-md" />
-            <StackItem isFilled style={{ overflow: 'auto' }}></StackItem>
-        </Stack>
+        <ExternalIpsTable
+            onExternalIPSelect={onExternalIPSelect}
+            tableState={tableState}
+            totalEntities={externalIpsFlowsMetadata?.totalEntities ?? 0}
+            urlPagination={urlPagination}
+            urlSearchFiltering={urlSearchFiltering}
+        />
     );
 }
 

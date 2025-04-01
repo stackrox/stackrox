@@ -219,7 +219,7 @@ func (s *Sensor) Start() {
 
 	// Enable endpoint to retrieve vulnerability definitions if local image scanning or Node Indexing is enabled.
 	// Node Indexing requires access to the repo to cpe mapping file hosted by central.
-	if env.LocalImageScanningEnabled.BooleanSetting() || env.NodeIndexEnabled.BooleanSetting() {
+	if env.LocalImageScanningEnabled.BooleanSetting() || features.NodeIndexEnabled.Enabled() {
 		route, err := s.newScannerDefinitionsRoute(s.centralEndpoint, centralCertificates)
 		if err != nil {
 			utils.Should(errors.Wrap(err, "Failed to create scanner definition route"))

@@ -10,10 +10,8 @@ import ClusterSummary from './Components/ClusterSummary';
 import StaticConfigurationSection from './StaticConfigurationSection';
 import DynamicConfigurationSection from './DynamicConfigurationSection';
 import ClusterLabelsTable from './ClusterLabelsTable';
-import { CentralEnv } from './clusterTypes'; // augmented with successfullyFetched
 
 type ClusterEditFormProps = {
-    centralEnv: CentralEnv;
     centralVersion: string;
     clusterRetentionInfo: DecommissionedClusterRetentionInfo;
     selectedCluster: Cluster;
@@ -24,7 +22,6 @@ type ClusterEditFormProps = {
 };
 
 function ClusterEditForm({
-    centralEnv,
     centralVersion,
     clusterRetentionInfo,
     selectedCluster,
@@ -48,6 +45,9 @@ function ClusterEditForm({
                     status={selectedCluster.status}
                     centralVersion={centralVersion}
                     clusterId={selectedCluster.id}
+                    autoRefreshEnabled={selectedCluster.sensorCapabilities?.includes(
+                        'SecuredClusterCertificatesRefresh'
+                    )}
                     clusterRetentionInfo={clusterRetentionInfo}
                     isManagerTypeNonConfigurable={isManagerTypeNonConfigurable}
                 />
@@ -81,7 +81,6 @@ function ClusterEditForm({
                 data-testid="cluster-form"
             >
                 <StaticConfigurationSection
-                    centralEnv={centralEnv}
                     isManagerTypeNonConfigurable={isManagerTypeNonConfigurable}
                     handleChange={handleChange}
                     selectedCluster={selectedCluster}

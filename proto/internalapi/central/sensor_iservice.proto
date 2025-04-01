@@ -50,8 +50,6 @@ message MsgFromSensor {
   }
 }
 
-message ReassessPolicies {}
-
 message ReprocessDeployments {}
 
 // next available tag: 29
@@ -64,7 +62,7 @@ message MsgToSensor {
     SensorUpgradeTrigger sensor_upgrade_trigger = 5;
     PullTelemetryDataRequest telemetry_data_request = 6;
     PolicySync policy_sync = 7;
-    ReassessPolicies reassess_policies = 8;
+    // 8 was ReassessPolicies
     BaselineSync baseline_sync = 9;
     CancelPullTelemetryDataRequest cancel_pull_telemetry_data_request = 10;
     PushNetworkEntitiesRequest push_network_entities_request = 11;

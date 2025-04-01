@@ -67,11 +67,12 @@ const (
 )
 
 var (
-	log                   = logging.LoggerForModule()
-	pruningCtx            = sac.WithAllAccess(context.Background())
-	lastClusterPruneTime  time.Time
-	lastLogImbuePruneTime time.Time
-	pruningTimeout        = env.PostgresDefaultPruningStatementTimeout.DurationSetting()
+	log                       = logging.LoggerForModule()
+	pruningCtx                = sac.WithAllAccess(context.Background())
+	lastClusterPruneTime      time.Time
+	lastLogImbuePruneTime     time.Time
+	pruningTimeout            = env.PostgresDefaultPruningStatementTimeout.DurationSetting()
+	prunedPLOPsWithoutPodUIDs = false
 
 	pruneInterval = env.PruneInterval.DurationSetting()
 	orphanWindow  = env.PruneOrphanedWindow.DurationSetting()
@@ -185,6 +186,7 @@ func (g *garbageCollectorImpl) pruneBasedOnConfig() {
 	g.removeOldReportBlobs(pvtConfig)
 	g.removeExpiredAdministrationEvents(pvtConfig)
 	g.removeExpiredDiscoveredClusters()
+	g.removeInvalidAPITokens()
 	postgres.PruneActiveComponents(pruningCtx, g.postgres)
 	postgres.PruneClusterHealthStatuses(pruningCtx, g.postgres)
 
@@ -495,7 +497,8 @@ func (g *garbageCollectorImpl) removeOrphanedProcessBaselines(deployments set.Fr
 }
 
 // removeOrphanedPLOPs: cleans up ProcessListeningOnPort objects that are expired
-// or have a PodUid and belong to a deployment or pod that does not exist.
+// or have a PodUid and belong to a deployment or pod that does not exist or have
+// no PodUid.
 func (g *garbageCollectorImpl) removeOrphanedPLOPs() {
 	defer metrics.SetPruningDuration(time.Now(), "PLOPs")
 	prunedCount := g.plops.PruneOrphanedPLOPs(pruningCtx, orphanWindow)
@@ -507,6 +510,15 @@ func (g *garbageCollectorImpl) removeOrphanedPLOPs() {
 		log.Errorf("error removing PLOPs with no matching process indicator or process information: %v", err)
 	}
 	log.Infof("[PLOP pruning] Pruning of %d orphaned PLOPs with no matching process indicator or process information complete", prunedCount)
+
+	// Only run once since we don't expect any new PLOPs without poduids.
+	if !prunedPLOPsWithoutPodUIDs {
+		prunedCount, err = g.plops.RemovePLOPsWithoutPodUID(pruningCtx)
+		if err != nil {
+			log.Errorf("error removing PLOPs without poduid: %v", err)
+		}
+		log.Infof("[PLOP pruning] Prunned %d orphaned PLOPs with no poduid", prunedCount)
+	}
 }
 
 func (g *garbageCollectorImpl) removeExpiredAdministrationEvents(config *storage.PrivateConfig) {
@@ -518,6 +530,11 @@ func (g *garbageCollectorImpl) removeExpiredAdministrationEvents(config *storage
 func (g *garbageCollectorImpl) removeExpiredDiscoveredClusters() {
 	defer metrics.SetPruningDuration(time.Now(), "DiscoveredClusters")
 	postgres.PruneDiscoveredClusters(pruningCtx, g.postgres, env.DiscoveredClustersRetentionTime.DurationSetting())
+}
+
+func (g *garbageCollectorImpl) removeInvalidAPITokens() {
+	defer metrics.SetPruningDuration(time.Now(), "InvalidAPITokens")
+	postgres.PruneInvalidAPITokens(pruningCtx, g.postgres, env.APITokenInvalidRetentionTime.DurationSetting())
 }
 
 func (g *garbageCollectorImpl) getOrphanedAlerts(ctx context.Context) ([]string, error) {

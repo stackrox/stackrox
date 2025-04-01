@@ -42,6 +42,7 @@ func request_ComplianceManagementService_GetRecentRuns_0(ctx context.Context, ma
 		protoReq GetRecentComplianceRunsRequest
 		metadata runtime.ServerMetadata
 	)
+	io.Copy(io.Discard, req.Body)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
@@ -98,6 +99,7 @@ func request_ComplianceManagementService_GetRunStatuses_0(ctx context.Context, m
 		protoReq GetComplianceRunStatusesRequest
 		metadata runtime.ServerMetadata
 	)
+	io.Copy(io.Discard, req.Body)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}

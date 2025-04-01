@@ -71,10 +71,6 @@ func (s *ReportHistoryPruningSuite) TearDownTest() {
 	s.NoError(err)
 }
 
-func (s *ReportHistoryPruningSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-}
-
 func (s *ReportHistoryPruningSuite) TestMustNotDeleteLastSuccessfulJobOneDownload() {
 	// All downloads; all delivered; outside retention window
 	snapshots := []*storage.ReportSnapshot{

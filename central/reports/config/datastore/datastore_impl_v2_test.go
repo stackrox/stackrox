@@ -45,10 +45,6 @@ func (s *ReportConfigurationDatastoreV2Tests) SetupSuite() {
 			sac.ResourceScopeKeys(resources.WorkflowAdministration)))
 }
 
-func (s *ReportConfigurationDatastoreV2Tests) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-}
-
 func (s *ReportConfigurationDatastoreV2Tests) TestSortReportConfigByCompletionTime() {
 	reportConfig1 := fixtures.GetValidReportConfigWithMultipleNotifiersV2()
 	reportConfig1.Id = ""

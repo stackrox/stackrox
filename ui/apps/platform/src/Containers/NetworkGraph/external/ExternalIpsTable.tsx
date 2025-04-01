@@ -1,59 +1,77 @@
-import React, { useCallback } from 'react';
-import { Flex, Pagination, Toolbar, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
+import React from 'react';
+import {
+    Button,
+    Divider,
+    Flex,
+    Pagination,
+    Toolbar,
+    ToolbarContent,
+    ToolbarItem,
+} from '@patternfly/react-core';
 import { InnerScrollContainer, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
+import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import useMetadata from 'hooks/useMetadata';
-import useRestQuery from 'hooks/useRestQuery';
-import useURLPagination from 'hooks/useURLPagination';
-import { getExternalIpsFlowsMetadata } from 'services/NetworkService';
-import { getTableUIState } from 'utils/getTableUIState';
+import { UseURLPaginationResult } from 'hooks/useURLPagination';
+import { UseUrlSearchReturn } from 'hooks/useURLSearch';
+import { TableUIState } from 'utils/getTableUIState';
 import { getVersionedDocs } from 'utils/versioning';
-import { ExternalNetworkFlowsMetadataResponse } from 'types/networkFlow.proto';
+import { ExternalNetworkFlowsMetadata } from 'types/networkFlow.proto';
 
-import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
+import IPMatchFilter from '../common/IPMatchFilter';
+import { EXTERNAL_SOURCE_ADDRESS_QUERY } from '../NetworkGraph.constants';
 
 export type ExternalIpsTableProps = {
-    scopeHierarchy: NetworkScopeHierarchy;
+    onExternalIPSelect: (externalIP: string) => void;
+    tableState: TableUIState<ExternalNetworkFlowsMetadata>;
+    totalEntities: number;
+    urlSearchFiltering: UseUrlSearchReturn;
+    urlPagination: UseURLPaginationResult;
 };
 
-function ExternalIpsTable({ scopeHierarchy }: ExternalIpsTableProps) {
+function ExternalIpsTable({
+    onExternalIPSelect,
+    tableState,
+    totalEntities,
+    urlSearchFiltering,
+    urlPagination,
+}: ExternalIpsTableProps) {
     const { version } = useMetadata();
-    const pagination = useURLPagination(10);
-    const { page, perPage, setPage, setPerPage } = pagination;
-    const clusterId = scopeHierarchy.cluster.id;
-    const { namespaces, deployments } = scopeHierarchy;
-    const fetchExternalIpsFlowsMetadata =
-        useCallback((): Promise<ExternalNetworkFlowsMetadataResponse> => {
-            return getExternalIpsFlowsMetadata(clusterId, namespaces, deployments, {
-                sortOption: {},
-                page,
-                perPage,
-                advancedFilters: {},
-            });
-        }, [page, perPage, clusterId, deployments, namespaces]);
-
-    const {
-        data: externalIpsFlowsMetadata,
-        isLoading,
-        error,
-    } = useRestQuery(fetchExternalIpsFlowsMetadata);
-
-    const tableState = getTableUIState({
-        isLoading,
-        data: externalIpsFlowsMetadata?.entities,
-        error,
-        searchFilter: {},
-    });
+    const { page, perPage, setPage, setPerPage } = urlPagination;
+    const { searchFilter, setSearchFilter } = urlSearchFiltering;
 
     return (
         <>
+            <Toolbar className="pf-v5-u-pb-md pf-v5-u-pt-0">
+                <ToolbarContent className="pf-v5-u-px-0">
+                    <ToolbarItem className="pf-v5-u-w-100 pf-v5-u-mr-0">
+                        <IPMatchFilter
+                            searchFilter={searchFilter}
+                            setSearchFilter={setSearchFilter}
+                        />
+                    </ToolbarItem>
+                    <ToolbarItem className="pf-v5-u-w-100">
+                        <SearchFilterChips
+                            searchFilter={searchFilter}
+                            onFilterChange={setSearchFilter}
+                            filterChipGroupDescriptors={[
+                                {
+                                    displayName: 'CIDR',
+                                    searchFilterName: EXTERNAL_SOURCE_ADDRESS_QUERY,
+                                },
+                            ]}
+                        />
+                    </ToolbarItem>
+                </ToolbarContent>
+            </Toolbar>
+            <Divider />
             <Toolbar>
                 <ToolbarContent>
                     <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
                         <Pagination
-                            itemCount={externalIpsFlowsMetadata?.totalEntities ?? 0}
+                            itemCount={totalEntities}
                             page={page}
                             perPage={perPage}
                             onSetPage={(_, newPage) => setPage(newPage)}
@@ -78,7 +96,7 @@ function ExternalIpsTable({ scopeHierarchy }: ExternalIpsTableProps) {
                             title: 'There was an error loading external ips',
                         }}
                         emptyProps={{
-                            message: 'No external ips found. This feature might not be enabled.',
+                            message: 'This feature might not be enabled.',
                             children: (
                                 <Flex alignSelf={{ default: 'alignSelfCenter' }}>
                                     <ExternalLink>
@@ -96,12 +114,27 @@ function ExternalIpsTable({ scopeHierarchy }: ExternalIpsTableProps) {
                                 </Flex>
                             ),
                         }}
+                        filteredEmptyProps={{
+                            title: 'No external ips found',
+                            onClearFilters: () => {
+                                setSearchFilter({});
+                                setPage(1);
+                            },
+                        }}
                         renderer={({ data }) => (
                             <Tbody>
                                 {data.map(({ entity, flowsCount }) => {
                                     return (
                                         <Tr key={entity.id}>
-                                            <Td dataLabel="Entity">{entity.externalSource.name}</Td>
+                                            <Td dataLabel="Entity">
+                                                <Button
+                                                    variant="link"
+                                                    isInline
+                                                    onClick={() => onExternalIPSelect(entity.id)}
+                                                >
+                                                    {entity.externalSource.name}
+                                                </Button>
+                                            </Td>
                                             <Td dataLabel="Internal flows">{flowsCount}</Td>
                                         </Tr>
                                     );

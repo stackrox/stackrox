@@ -55,6 +55,8 @@ deploy_stackrox() {
 
     export_central_basic_auth_creds
     wait_for_api "${central_namespace}"
+    export_central_cert "${central_namespace}"
+
     setup_client_TLS_certs "${tls_client_certs}"
     record_build_info "${central_namespace}"
 
@@ -170,7 +172,6 @@ export_test_environment() {
     ci_export ROX_TELEMETRY_STORAGE_KEY_V1 "DISABLED"
     ci_export ROX_SCANNER_V4 "${ROX_SCANNER_V4:-false}"
     ci_export ROX_AUTH_MACHINE_TO_MACHINE "${ROX_AUTH_MACHINE_TO_MACHINE:-true}"
-    ci_export ROX_COMPLIANCE_HIERARCHY_CONTROL_DATA "${ROX_COMPLIANCE_HIERARCHY_CONTROL_DATA:-true}"
     ci_export ROX_COMPLIANCE_REPORTING "${ROX_COMPLIANCE_REPORTING:-true}"
     ci_export ROX_REGISTRY_RESPONSE_TIMEOUT "${ROX_REGISTRY_RESPONSE_TIMEOUT:-90s}"
     ci_export ROX_REGISTRY_CLIENT_TIMEOUT "${ROX_REGISTRY_CLIENT_TIMEOUT:-120s}"
@@ -181,14 +182,15 @@ export_test_environment() {
     ci_export ROX_SBOM_GENERATION "${ROX_SBOM_GENERATION:-true}"
     ci_export ROX_CLUSTERS_PAGE_MIGRATION_UI "${ROX_CLUSTERS_PAGE_MIGRATION_UI:-true}"
     ci_export ROX_EXTERNAL_IPS "${ROX_EXTERNAL_IPS:-true}"
-    ci_export ROX_PLATFORM_CVE_SPLIT "${ROX_PLATFORM_CVE_SPLIT:-false}"
+    ci_export ROX_NETWORK_GRAPH_EXTERNAL_IPS "${ROX_NETWORK_GRAPH_EXTERNAL_IPS:-false}"
     ci_export ROX_FLATTEN_CVE_DATA "${ROX_FLATTEN_CVE_DATA:-false}"
+    ci_export ROX_VULNERABILITY_ON_DEMAND_REPORTS "${ROX_VULNERABILITY_ON_DEMAND_REPORTS:-true}"
 
     if is_in_PR_context && pr_has_label ci-fail-fast; then
         ci_export FAIL_FAST "true"
     fi
 
-    if [[ "${CI_JOB_NAME}" =~ gke ]]; then
+    if [[ "${CI_JOB_NAME:-}" =~ gke ]]; then
         # GKE uses this network for services. Consider it as a private subnet.
         ci_export ROX_NON_AGGREGATED_NETWORKS "${ROX_NON_AGGREGATED_NETWORKS:-34.118.224.0/20}"
     fi
@@ -225,19 +227,21 @@ deploy_central() {
 
     # If we're running a nightly build or race condition check, then set CGO_CHECKS=true so that central is
     # deployed with strict checks
-    if is_nightly_run || pr_has_label ci-race-tests || [[ "${CI_JOB_NAME:-}" =~ race-condition ]]; then
-        ci_export CGO_CHECKS "true"
-    fi
+    if [[ "${CI:-}" == "true" ]]; then
+        if is_nightly_run || pr_has_label ci-race-tests || [[ "${CI_JOB_NAME:-}" =~ race-condition ]]; then
+            ci_export CGO_CHECKS "true"
+        fi
 
-    if pr_has_label ci-race-tests || [[ "${CI_JOB_NAME:-}" =~ race-condition ]]; then
-        ci_export IS_RACE_BUILD "true"
+        if pr_has_label ci-race-tests || [[ "${CI_JOB_NAME:-}" =~ race-condition ]]; then
+            ci_export IS_RACE_BUILD "true"
+        fi
     fi
 
     if [[ "${DEPLOY_STACKROX_VIA_OPERATOR}" == "true" ]]; then
         deploy_central_via_operator "${central_namespace}"
     else
         if [[ -z "${OUTPUT_FORMAT:-}" ]]; then
-            if pr_has_label ci-helm-deploy; then
+            if [[ "${CI:-}" == "true" ]] && pr_has_label ci-helm-deploy; then
                 ci_export OUTPUT_FORMAT helm
             fi
         fi
@@ -298,8 +302,6 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_AUTH_MACHINE_TO_MACHINE'
     customize_envVars+=$'\n        value: "true"'
-    customize_envVars+=$'\n      - name: ROX_COMPLIANCE_HIERARCHY_CONTROL_DATA'
-    customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_COMPLIANCE_REPORTING'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_REGISTRY_RESPONSE_TIMEOUT'
@@ -320,12 +322,14 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_EXTERNAL_IPS'
     customize_envVars+=$'\n        value: "true"'
+    customize_envVars+=$'\n      - name: ROX_NETWORK_GRAPH_EXTERNAL_IPS'
+    customize_envVars+=$'\n        value: "false"'
     customize_envVars+=$'\n      - name: ROX_SBOM_GENERATION'
     customize_envVars+=$'\n        value: "true"'
-    customize_envVars+=$'\n      - name: ROX_PLATFORM_CVE_SPLIT'
-    customize_envVars+=$'\n        value: "false"'
     customize_envVars+=$'\n      - name: ROX_FLATTEN_CVE_DATA'
     customize_envVars+=$'\n        value: "false"'
+    customize_envVars+=$'\n      - name: ROX_VULNERABILITY_ON_DEMAND_REPORTS'
+    customize_envVars+=$'\n        value: "true"'
 
     CENTRAL_YAML_PATH="tests/e2e/yaml/central-cr.envsubst.yaml"
     # Different yaml for midstream images
@@ -375,6 +379,7 @@ deploy_sensor() {
         fi
 
         DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
+        ROX_CA_CERT_FILE="" # force sensor.sh to fetch the actual cert.
         CENTRAL_NAMESPACE="${central_namespace}" SENSOR_NAMESPACE="${sensor_namespace}" "${ROOT}/${DEPLOY_DIR}/sensor.sh"
     fi
 
@@ -395,7 +400,6 @@ deploy_sensor_via_operator() {
     local central_endpoint="central.${central_namespace}.svc:443"
 
     info "Deploying sensor via operator into namespace ${sensor_namespace} (central is expected in namespace ${central_namespace})"
-
     if ! kubectl get ns "${sensor_namespace}" >/dev/null 2>&1; then
         kubectl create ns "${sensor_namespace}"
     fi
@@ -487,6 +491,25 @@ export_central_basic_auth_creds() {
     ci_export "ROX_ADMIN_PASSWORD" "$ROX_ADMIN_PASSWORD"
 }
 
+export_central_cert() {
+    # Export the internal central TLS certificate for roxctl to access central
+    # through TLS-passthrough router by specifying the TLS server name.
+    ci_export ROX_SERVER_NAME "central.${CENTRAL_NAMESPACE:-stackrox}"
+
+    require_environment "API_ENDPOINT"
+    require_environment "ROX_ADMIN_PASSWORD"
+
+    local central_cert
+    central_cert="$(mktemp -d)/central_cert.pem"
+    info "Storing central certificate in ${central_cert} for ${API_ENDPOINT}"
+
+    roxctl -e "$API_ENDPOINT" \
+        central cert --insecure-skip-tls-verify 1>"$central_cert"
+
+    ci_export ROX_CA_CERT_FILE "$central_cert"
+    openssl x509 -in "${ROX_CA_CERT_FILE}" -subject -issuer -ext subjectAltName -noout
+}
+
 deploy_optional_e2e_components() {
     info "Installing optional components used in E2E tests"
 
@@ -524,6 +547,7 @@ setup_client_CA_auth_provider() {
     require_environment "ROX_ADMIN_PASSWORD"
     require_environment "CLIENT_CA_PATH"
 
+    export_central_cert
     roxctl -e "$API_ENDPOINT" \
         central userpki create test-userpki -r Analyst -c "$CLIENT_CA_PATH"
 }
@@ -540,6 +564,7 @@ setup_generated_certs_for_test() {
     require_environment "API_ENDPOINT"
     require_environment "ROX_ADMIN_PASSWORD"
 
+    export_central_cert
     roxctl -e "$API_ENDPOINT" \
         sensor generate-certs remote --output-dir "$dir"
     [[ -f "$dir"/cluster-remote-tls.yaml ]]
@@ -1243,6 +1268,7 @@ restore_4_1_postgres_backup() {
     require_environment "ROX_ADMIN_PASSWORD"
 
     gsutil cp gs://stackrox-ci-upgrade-test-fixtures/upgrade-test-dbs/postgres_db_4_1.sql.zip .
+    export_central_cert
     roxctl -e "$API_ENDPOINT" \
         central db restore --timeout 5m postgres_db_4_1.sql.zip
 }
@@ -1270,6 +1296,7 @@ db_backup_and_restore_test() {
 
     # Ensure central is ready for requests after any previous tests
     wait_for_api "${central_namespace}"
+    export_central_cert "${central_namespace}"
 
     info "Backing up to ${output_dir}"
     mkdir -p "$output_dir"
@@ -1530,3 +1557,18 @@ if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
     shift
     "$fn" "$@"
 fi
+
+# update_junit_prefix_with_central_and_sensor_version appends the central and sensor tags to all test
+# names in the result folder. This propagates into our artifacts and JIRA tasks created from failing tests
+# Used in gke-version-compatibility-tests and gke-nongroovy-compatibility-tests
+update_junit_prefix_with_central_and_sensor_version() {
+    local short_central_tag="$1"
+    local short_sensor_tag="$2"
+    local result_folder="$3"
+
+    info "Updating all test in $result_folder to have \"Central-v${short_central_tag}_Sensor-v${short_sensor_tag}_\" prefix"
+    for f in "$result_folder"/*.xml; do
+        [[ ! -e $f ]] && continue
+        sed -i "s/testcase name=\"/testcase name=\"[Central-v${short_central_tag}_Sensor-v${short_sensor_tag}] /g" "$f"
+    done
+}

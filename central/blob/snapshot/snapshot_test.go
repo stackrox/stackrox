@@ -44,10 +44,6 @@ func (s *snapshotTestSuite) SetupTest() {
 	s.NoError(err)
 }
 
-func (s *snapshotTestSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-}
-
 func (s *snapshotTestSuite) TestSnapshot() {
 	ctx := sac.WithAllAccess(context.Background())
 	size := 1024*1024 + 16

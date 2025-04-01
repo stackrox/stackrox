@@ -19,7 +19,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
@@ -233,8 +232,14 @@ func (s *serviceImpl) saveImage(img *storage.Image) error {
 
 // ScanImageInternal handles an image request from Sensor and Admission Controller.
 func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanImageInternalRequest) (*v1.ScanImageInternalResponse, error) {
-	err := s.acquireScanSemaphore()
+	err := s.acquireScanSemaphore(ctx)
 	if err != nil {
+		log.Errorw("Failed to acquire scan semaphore",
+			logging.FromContext(ctx),
+			logging.ImageName(request.GetImage().GetName().GetFullName()),
+			logging.ImageID(request.GetImage().GetId()),
+			logging.Err(err),
+		)
 		return nil, err
 	}
 	defer s.internalScanSemaphore.Release(1)
@@ -264,6 +269,7 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 			img = existingImg
 
 			log.Debugw("Scan cache ignored enriching image",
+				logging.FromContext(ctx),
 				logging.ImageName(existingImg.GetName().GetFullName()),
 				logging.ImageID(imgID),
 				logging.String("request_image", request.GetImage().GetName().GetFullName()),
@@ -344,7 +350,8 @@ func updateImageFromRequest(existingImg *storage.Image, reqImgName *storage.Imag
 // Any occurred error will be logged, and the given image will be modified, after execution it will contain the enriched
 // image data (i.e. scan results, signature data etc.).
 func (s *serviceImpl) enrichImage(ctx context.Context, img *storage.Image, fetchOpt enricher.FetchOption,
-	request *v1.ScanImageInternalRequest) error {
+	request *v1.ScanImageInternalRequest,
+) error {
 	enrichmentContext := enricher.EnrichmentContext{
 		FetchOpt: fetchOpt,
 		Internal: true,
@@ -361,6 +368,7 @@ func (s *serviceImpl) enrichImage(ctx context.Context, img *storage.Image, fetch
 
 	if _, err := s.enricher.EnrichImage(ctx, enrichmentContext, img); err != nil {
 		log.Errorw("Enriching image",
+			logging.FromContext(ctx),
 			logging.ImageName(img.GetName().GetFullName()),
 			logging.ImageID(img.GetId()),
 			logging.Err(err),
@@ -417,8 +425,14 @@ func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageReques
 // specified by the given components and scan notes.
 // This is meant to be called by Sensor.
 func (s *serviceImpl) GetImageVulnerabilitiesInternal(ctx context.Context, request *v1.GetImageVulnerabilitiesInternalRequest) (*v1.ScanImageInternalResponse, error) {
-	err := s.acquireScanSemaphore()
+	err := s.acquireScanSemaphore(ctx)
 	if err != nil {
+		log.Errorw("Failed to acquire scan semaphore",
+			logging.FromContext(ctx),
+			logging.ImageName(request.GetImageName().GetFullName()),
+			logging.ImageID(request.GetImageId()),
+			logging.Err(err),
+		)
 		return nil, err
 	}
 	defer s.internalScanSemaphore.Release(1)
@@ -462,21 +476,43 @@ func (s *serviceImpl) GetImageVulnerabilitiesInternal(ctx context.Context, reque
 	return internalScanRespFromImage(img), nil
 }
 
-func (s *serviceImpl) acquireScanSemaphore() error {
-	if err := s.internalScanSemaphore.Acquire(concurrency.AsContext(concurrency.Timeout(maxSemaphoreWaitTime)), 1); err != nil {
-		// Aborted indicates the operation was aborted, typically due to a concurrency
-		// issues.  Clients should retry by default on Aborted.
-		s, err := status.New(codes.Aborted, err.Error()).WithDetails(&v1.ScanImageInternalResponseDetails_TooManyParallelScans{})
-		if pkgUtils.ShouldErr(err) == nil {
-			return s.Err()
+func (s *serviceImpl) acquireScanSemaphore(ctx context.Context) error {
+	semaphoreCtx, cancel := context.WithTimeout(ctx, maxSemaphoreWaitTime)
+	defer cancel()
+	if err := s.internalScanSemaphore.Acquire(semaphoreCtx, 1); err != nil {
+		wrappedErr := errors.Wrap(err, "acquiring scan semaphore")
+
+		// If the context was canceled, we do not want to indicate the client to retry.
+		if errors.Is(err, context.Canceled) {
+			return status.Error(codes.Canceled, wrappedErr.Error())
 		}
+
+		// Aborted indicates the operation was aborted, typically due to concurrency issues.
+		// Clients should retry by default on Aborted.
+		s, err := status.New(codes.Aborted, wrappedErr.Error()).WithDetails(
+			&v1.ScanImageInternalResponseDetails_TooManyParallelScans{},
+		)
+		if err != nil {
+			// Encountered a broken invariant. Return internal server error.
+			return status.Error(codes.Internal,
+				errors.Wrap(err, "creating too many parallel scans error").Error(),
+			)
+		}
+		return s.Err()
 	}
 	return nil
 }
 
 func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.EnrichLocalImageInternalRequest) (*v1.ScanImageInternalResponse, error) {
-	err := s.acquireScanSemaphore()
+	err := s.acquireScanSemaphore(ctx)
 	if err != nil {
+		log.Errorw("Failed to acquire scan semaphore",
+			logging.FromContext(ctx),
+			logging.ImageName(request.GetImageName().GetFullName()),
+			logging.ImageID(request.GetImageId()),
+			logging.Err(err),
+			logging.String("request_id", request.GetRequestId()),
+		)
 		return nil, err
 	}
 
@@ -490,6 +526,7 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 		// secured clusters are failing.
 		hasErrors = true
 		log.Warnw("Received image enrichment request with errors",
+			logging.FromContext(ctx),
 			logging.ImageName(request.GetImageName().GetFullName()),
 			logging.ImageID(imgID),
 			logging.Err(errors.New(request.GetError())),
@@ -532,6 +569,7 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 			}
 
 			log.Debugw("Scan cache ignored enriching image with vulnerabilities",
+				logging.FromContext(ctx),
 				logging.ImageName(existingImg.GetName().GetFullName()),
 				logging.ImageID(imgID),
 				logging.String("request_image", request.GetImageName().GetFullName()),
@@ -558,6 +596,7 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 			if err := s.enrichWithVulnerabilities(img, request); err != nil {
 				imgName := pkgUtils.IfThenElse(existingImg != nil, existingImg.GetName().GetFullName(), request.GetImageName().GetFullName())
 				log.Errorw("Enriching image with vulnerabilities",
+					logging.FromContext(ctx),
 					logging.ImageName(imgName),
 					logging.ImageID(imgID),
 					logging.Err(err),

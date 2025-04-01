@@ -33,9 +33,7 @@ var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, err
 	}
 
 	// Can safely ignore the error here since we already fetched backups.
-	_ = phonehome.AddTotal(ctx, props, "External Backups", func(_ context.Context) (int, error) {
-		return len(backups), nil
-	})
+	_ = phonehome.AddTotal(ctx, props, "External Backups", phonehome.Len(backups))
 
 	backupTypesCount := map[string]int{
 		types.S3Type:           0,

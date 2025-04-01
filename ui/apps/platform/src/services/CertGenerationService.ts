@@ -8,6 +8,7 @@ const pathSegmentForComponent: Record<CertExpiryComponent, string> = {
     CENTRAL: 'central',
     SCANNER: 'scanner',
     SCANNER_V4: 'scanner?v=4',
+    CENTRAL_DB: 'central-db',
 };
 
 export function generateCertSecretForComponent(component: CertExpiryComponent) {

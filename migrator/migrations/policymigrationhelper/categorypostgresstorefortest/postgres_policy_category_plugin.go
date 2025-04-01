@@ -29,8 +29,6 @@ type storeType = storage.PolicyCategory
 type Store interface {
 	Upsert(ctx context.Context, obj *storeType) error
 	GetAll(ctx context.Context) ([]*storeType, error)
-
-	Walk(ctx context.Context, fn func(obj *storeType) error) error
 }
 
 type storeImpl struct {

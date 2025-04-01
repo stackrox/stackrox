@@ -789,9 +789,12 @@
             "$ref": "#/definitions/storageEmbeddedImageScanComponentExecutable"
           },
           "title": "Values are cleared after moving to cache, remove them from the grpc return as well"
+        },
+        "architecture": {
+          "type": "string"
         }
       },
-      "title": "Next Tag: 13"
+      "title": "Next Tag: 14"
     },
     "storageEmbeddedImageScanComponentExecutable": {
       "type": "object",
@@ -822,6 +825,9 @@
       "type": "object",
       "properties": {
         "cve": {
+          "type": "string"
+        },
+        "advisory": {
           "type": "string"
         },
         "cvss": {
@@ -908,7 +914,7 @@
           "$ref": "#/definitions/storageEPSS"
         }
       },
-      "title": "Next Tag: 22"
+      "title": "Next Tag: 25"
     },
     "storageEmbeddedVulnerabilityScoreVersion": {
       "type": "string",

@@ -3,9 +3,13 @@ package pgtest
 import (
 	"context"
 	"database/sql"
+	"fmt"
+	"hash/fnv"
+	"io"
 	"strings"
 	"testing"
 
+	"github.com/lib/pq"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest/conn"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
@@ -31,11 +35,13 @@ type TestPostgres struct {
 
 // CreateADatabaseForT creates a postgres database for test
 func CreateADatabaseForT(t testing.TB) string {
-	suffix, err := random.GenerateString(5, random.AlphanumericCharacters)
+	suffix := random.GenerateString(5, random.AlphanumericCharacters)
+
+	h := fnv.New64a()
+	_, err := io.WriteString(h, t.Name())
 	require.NoError(t, err)
 
-	database := strings.ToLower(strings.ReplaceAll(t.Name(), "/", "_") + suffix)
-	database = strings.ToLower(strings.ReplaceAll(database, "-", "_"))
+	database := fmt.Sprintf("%x_%s", h.Sum64(), suffix)
 
 	CreateDatabase(t, database)
 
@@ -55,13 +61,12 @@ func CreateDatabase(t testing.TB, database string) {
 
 	row := db.QueryRow(existsStmt, database)
 	var exists bool
-	if err := row.Scan(&exists); err != nil {
-		exists = false
-	}
+	err = row.Scan(&exists)
+	require.NoError(t, err)
 
 	// Only create the test DB if it does not exist
 	if !exists {
-		_, err = db.Exec("CREATE DATABASE " + database)
+		_, err = db.Exec("CREATE DATABASE " + pq.QuoteIdentifier(database))
 		require.NoError(t, err)
 	}
 	require.NoError(t, db.Close())
@@ -75,12 +80,13 @@ func DropDatabase(t testing.TB, database string) {
 		db, err := sql.Open(driverName, sourceWithPostgresDatabase)
 		require.NoError(t, err)
 
-		_, _ = db.Exec("DROP DATABASE " + database)
+		_, _ = db.Exec("DROP DATABASE " + pq.QuoteIdentifier(database))
 		require.NoError(t, db.Close())
 	}
 }
 
 // ForT creates and returns a Postgres for the test
+// It will teardown DB at the end of the test.
 func ForT(t testing.TB) *TestPostgres {
 	// Bootstrap a test database
 	database := CreateADatabaseForT(t)
@@ -97,10 +103,16 @@ func ForT(t testing.TB) *TestPostgres {
 	// initialize pool to be used
 	pool := ForTCustomPool(t, database)
 
-	return &TestPostgres{
+	testPg := &TestPostgres{
 		DB:       pool,
 		database: database,
 	}
+
+	t.Cleanup(func() {
+		testPg.teardown(t)
+	})
+
+	return testPg
 }
 
 // ForTCustomDB - creates and returns a Postgres for the test.  This is used primarily in testing migrations,
@@ -138,8 +150,7 @@ func (tp *TestPostgres) GetGormDB(t testing.TB) *gorm.DB {
 	return OpenGormDB(t, source)
 }
 
-// Teardown tears down a Postgres instance used in tests
-func (tp *TestPostgres) Teardown(t testing.TB) {
+func (tp *TestPostgres) teardown(t testing.TB) {
 	if tp == nil {
 		return
 	}

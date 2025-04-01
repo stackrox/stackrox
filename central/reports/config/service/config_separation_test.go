@@ -80,7 +80,7 @@ func (s *ServiceLevelConfigSeparationSuite) SetupSuite() {
 
 func (s *ServiceLevelConfigSeparationSuite) TearDownSuite() {
 	s.mockCtrl.Finish()
-	s.testDB.Teardown(s.T())
+
 }
 
 func (s *ServiceLevelConfigSeparationSuite) TestGetReportConfigurations() {

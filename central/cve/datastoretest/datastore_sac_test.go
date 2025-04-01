@@ -51,10 +51,6 @@ func (s *cveDataStoreSACTestSuite) SetupSuite() {
 	s.nodeTestContexts = sacTestUtils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Node)
 }
 
-func (s *cveDataStoreSACTestSuite) TearDownSuite() {
-	s.testGraphDatastore.Cleanup(s.T())
-}
-
 // Vulnerability identifiers have been modified in the migration to Postgres to hold
 // operating system information as well. This information is propagated from the image
 // scan data.

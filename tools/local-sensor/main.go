@@ -331,12 +331,11 @@ func main() {
 	}
 
 	if localConfig.RecordK8sEnabled {
-		traceRec := &k8s.TraceWriter{
-			Destination: path.Clean(localConfig.RecordK8sFile),
-		}
-		if err := traceRec.Init(); err != nil {
+		traceRec, err := k8s.NewTraceWriter(path.Clean(localConfig.RecordK8sFile))
+		if err != nil {
 			log.Fatalln(err)
 		}
+		defer utils.IgnoreError(traceRec.Close)
 		sensorConfig.WithTraceWriter(traceRec)
 	}
 

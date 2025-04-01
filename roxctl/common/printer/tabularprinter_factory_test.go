@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -83,6 +84,127 @@ func TestTabularPrinterFactory_Validate(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 			}
+		})
+	}
+}
+
+func TestTabularPrinterFactory_CustomHeaderValidation(t *testing.T) {
+	cases := map[string]struct {
+		t          *TabularPrinterFactory
+		shouldFail bool
+		error      error
+	}{
+		"should not fail with default values": {
+			t: &TabularPrinterFactory{},
+		},
+		"should fail with invalid headers": {
+			t: &TabularPrinterFactory{
+				NoHeader:              true,
+				HeaderAsComment:       true,
+				Headers:               []string{"FOO", "BAR"},
+				RowJSONPathExpression: defaultImageScanJSONPathExpression,
+			},
+			shouldFail: true,
+			error:      errox.InvalidArgs,
+		},
+		"should not fail with invalid headers but JSON Path Expression set": {
+			t: &TabularPrinterFactory{
+				NoHeader:              true,
+				HeaderAsComment:       true,
+				Headers:               []string{"FOO", "BAR"},
+				RowJSONPathExpression: "{result.vulnerabilities.#.componentName,result.vulnerabilities.#.cveId}",
+			},
+			shouldFail: false,
+		},
+		"should not fail with reordered allowed headers": {
+			t: &TabularPrinterFactory{
+				NoHeader:              true,
+				HeaderAsComment:       true,
+				Headers:               []string{"LINK", "SEVERITY", "VERSION"},
+				RowJSONPathExpression: defaultImageScanJSONPathExpression,
+			},
+			shouldFail: false,
+		},
+		"should not fail with duplicate allowed headers": {
+			t: &TabularPrinterFactory{
+				NoHeader:              true,
+				HeaderAsComment:       true,
+				Headers:               []string{"LINK", "SEVERITY", "VERSION", "LINK"},
+				RowJSONPathExpression: defaultImageScanJSONPathExpression,
+			},
+			shouldFail: false,
+		},
+	}
+
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			err := c.t.propagateCustomHeaders()
+			if c.shouldFail {
+				require.Error(t, err)
+				assert.ErrorIs(t, err, c.error)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestTabularPrinterFactory_CustomHeaderPropagation(t *testing.T) {
+	cases := map[string]struct {
+		t                          *TabularPrinterFactory
+		expectedJSONPathExpression string
+	}{
+		"Default": {
+			t: &TabularPrinterFactory{
+				Headers:               defaultImageScanHeaders,
+				RowJSONPathExpression: defaultImageScanJSONPathExpression,
+			},
+			expectedJSONPathExpression: "{" +
+				"result.vulnerabilities.#.componentName," +
+				"result.vulnerabilities.#.componentVersion," +
+				"result.vulnerabilities.#.cveId," +
+				"result.vulnerabilities.#.cveSeverity," +
+				"result.vulnerabilities.#.cveInfo," +
+				"result.vulnerabilities.#.componentFixedVersion}",
+		},
+		"Reversed": {
+			t: &TabularPrinterFactory{
+				Headers:               sliceutils.Reversed(defaultImageScanHeaders),
+				RowJSONPathExpression: defaultImageScanJSONPathExpression,
+			},
+			expectedJSONPathExpression: "{" +
+				"result.vulnerabilities.#.componentFixedVersion," +
+				"result.vulnerabilities.#.cveInfo," +
+				"result.vulnerabilities.#.cveSeverity," +
+				"result.vulnerabilities.#.cveId," +
+				"result.vulnerabilities.#.componentVersion," +
+				"result.vulnerabilities.#.componentName}",
+		},
+		"Duplicate": {
+			t: &TabularPrinterFactory{
+				Headers:               []string{"CVE", "CVE"},
+				RowJSONPathExpression: defaultImageScanJSONPathExpression,
+			},
+			expectedJSONPathExpression: "{" +
+				"result.vulnerabilities.#.cveId," +
+				"result.vulnerabilities.#.cveId}",
+		},
+		"Custom headers but --row-json-path-expression set does not propagate custom headers": {
+			t: &TabularPrinterFactory{
+				Headers:               []string{"CVE", "SEVERITY"},
+				RowJSONPathExpression: "{result.vulnerabilities.#.componentName,result.vulnerabilities.#.cveId}",
+			},
+			expectedJSONPathExpression: "{" +
+				"result.vulnerabilities.#.componentName," +
+				"result.vulnerabilities.#.cveId}",
+		},
+	}
+
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			err := c.t.propagateCustomHeaders()
+			assert.NoError(t, err)
+			assert.Equal(t, c.expectedJSONPathExpression, c.t.RowJSONPathExpression)
 		})
 	}
 }

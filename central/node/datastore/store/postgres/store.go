@@ -41,8 +41,6 @@ const (
 	// to deal with failures if we just sent it all.  Something to think about as we
 	// proceed and move into more e2e and larger performance testing
 	batchSize = 500
-
-	cursorBatchSize = 50
 )
 
 var (
@@ -935,29 +933,20 @@ func (s *storeImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(node *
 		}
 	}()
 
-	ctxWithTx := postgres.ContextWithTx(ctx, tx)
-	fetcher, closer, err := pgSearch.RunCursorQueryForSchema[storage.Node, *storage.Node](ctxWithTx, pkgSchema.NodesSchema, q, s.db)
-	if err != nil {
-		return err
-	}
-	defer closer()
-	for {
-		rows, err := fetcher(cursorBatchSize)
+	callback := func(node *storage.Node) error {
+		err := s.populateNode(ctx, tx, node)
 		if err != nil {
-			return pgutils.ErrNilIfNoRows(err)
+			return errors.Wrap(err, "populate node")
 		}
-		for _, node := range rows {
-			err := s.populateNode(ctx, tx, node)
-			if err != nil {
-				return err
-			}
-			if err := fn(node); err != nil {
-				return err
-			}
+		if err := fn(node); err != nil {
+			return errors.Wrap(err, "failed to process node")
 		}
-		if len(rows) != cursorBatchSize {
-			break
-		}
+		return nil
+	}
+
+	err = pgSearch.RunCursorQueryForSchemaFn(ctx, pkgSchema.NodesSchema, q, s.db, callback)
+	if err != nil {
+		return errors.Wrap(err, "cursor by query")
 	}
 	return nil
 }

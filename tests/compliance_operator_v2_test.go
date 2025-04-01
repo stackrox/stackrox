@@ -30,6 +30,7 @@ import (
 	cached "k8s.io/client-go/discovery/cached"
 	"k8s.io/client-go/kubernetes"
 	cgoscheme "k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/restmapper"
 	dynclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -94,6 +95,7 @@ func scaleToN(ctx context.Context, client kubernetes.Interface, deploymentName s
 
 func createDynamicClient(t *testing.T) dynclient.Client {
 	restCfg := getConfig(t)
+	restCfg.WarningHandler = rest.NoWarnings{}
 	k8sClient := createK8sClient(t)
 
 	k8sScheme := runtime.NewScheme()
@@ -111,9 +113,8 @@ func createDynamicClient(t *testing.T) dynclient.Client {
 	client, err := dynclient.New(
 		restCfg,
 		dynclient.Options{
-			Scheme:         k8sScheme,
-			Mapper:         restMapper,
-			WarningHandler: dynclient.WarningHandlerOptions{SuppressWarnings: true},
+			Scheme: k8sScheme,
+			Mapper: restMapper,
 		},
 	)
 	require.NoError(t, err, "failed to create dynamic client")

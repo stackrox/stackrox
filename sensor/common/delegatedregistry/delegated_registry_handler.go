@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/scan"
+	"github.com/stackrox/rox/sensor/common/trace"
 	"google.golang.org/grpc"
 )
 
@@ -122,7 +123,7 @@ func (d *delegatedRegistryImpl) executeScan(scanReq *central.ScanImage) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), scanTimeout)
+	ctx, cancel := context.WithTimeout(trace.Background(), scanTimeout)
 	defer cancel()
 
 	// Execute the scan, ignore returned image because will be sent to Central during enrichment.

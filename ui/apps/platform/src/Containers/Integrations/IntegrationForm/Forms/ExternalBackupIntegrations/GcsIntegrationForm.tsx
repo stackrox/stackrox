@@ -328,7 +328,7 @@ function GcsIntegrationForm({
                                                 <a
                                                     href={getVersionedDocs(
                                                         version,
-                                                        'integration/integrate-using-short-lived-tokens.html'
+                                                        'integrating/integrate-using-short-lived-tokens'
                                                     )}
                                                     target="_blank"
                                                     rel="noopener noreferrer"

@@ -1,18 +1,22 @@
 package services
 
+import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+
 import io.stackrox.proto.api.v1.Common.ResourceByID
 import io.stackrox.proto.api.v1.SearchServiceOuterClass.RawQuery
 import io.stackrox.proto.api.v1.SecretServiceGrpc
 import io.stackrox.proto.api.v1.SecretServiceOuterClass
 import io.stackrox.proto.storage.SecretOuterClass
 import io.stackrox.proto.storage.SecretOuterClass.ListSecret
+
 import util.Timer
 
 @Slf4j
+@CompileStatic
 class SecretService extends BaseService {
 
-    static getSecretClient() {
+    static SecretServiceGrpc.SecretServiceBlockingStub getSecretClient() {
         return SecretServiceGrpc.newBlockingStub(getChannel())
     }
 
@@ -22,7 +26,7 @@ class SecretService extends BaseService {
 
     static waitForSecret(String id, int timeoutSeconds = 10) {
         int intervalSeconds = 1
-        int retries = timeoutSeconds / intervalSeconds
+        int retries = (timeoutSeconds / intervalSeconds) as int
         Timer t = new Timer(retries, intervalSeconds)
         while (t.IsValid()) {
             if (getSecret(id) != null ) {
@@ -37,7 +41,7 @@ class SecretService extends BaseService {
 
     static SecretOuterClass.Secret getSecret(String id) {
         int intervalSeconds = 1
-        int retries = 50 / intervalSeconds
+        int retries = (50 / intervalSeconds) as int
         Timer t = new Timer(retries, intervalSeconds)
         while (t.IsValid()) {
             try {
@@ -52,7 +56,7 @@ class SecretService extends BaseService {
     }
 
     static SecretServiceOuterClass.ListSecretsResponse listSecrets() {
-        return getSecretClient().listSecrets()
+        return getSecretClient().listSecrets(null)
     }
 
 }

@@ -1,3 +1,4 @@
+# Please keep operator/tests/central/central-misc/010-central-cr.yaml in sync when changing this file.
 apiVersion: platform.stackrox.io/v1alpha1
 kind: Central
 metadata:

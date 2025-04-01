@@ -57,7 +57,6 @@ func BenchmarkNodeResolver(b *testing.B) {
 
 	mockCtrl := gomock.NewController(b)
 	testDB := SetupTestPostgresConn(b)
-	defer testDB.Teardown(b)
 
 	nodeDS := CreateTestNodeDatastore(b, testDB, mockCtrl)
 	_, schema := SetupTestResolver(b,
