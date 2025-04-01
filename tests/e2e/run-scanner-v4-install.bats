@@ -438,7 +438,6 @@ check_central_chart_images() {
         done
 }
 
-# bats test_tags=bats:focus
 @test "Upgrade from old Helm chart to HEAD Helm chart" {
     init
 
