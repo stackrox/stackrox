@@ -262,7 +262,7 @@ select_worker_node() {
         select_filter=".metadata.labels[\"node-role.kubernetes.io/worker\"] != null"
     fi
 
-    "${ORCH_CMD}" </dev/null get nodes -o json | jq -r ".items | map(select(${select_filter})) | .[0].metadata.name"
+    "${ORCH_CMD}" </dev/null get nodes -o json | jq -r ".items | map(select(${select_filter})) | map(.metadata.name) | sort | first"
 }
 
 teardown_file() {
