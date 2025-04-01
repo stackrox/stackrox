@@ -1171,6 +1171,8 @@ deploy_central_with_helm() {
 
     if [[ "$use_default_chart" == "true" ]]; then
         image_overwrites=$(cat <<EOT
+image:
+  registry: "$DEFAULT_IMAGE_REGISTRY"
 central:
   db:
     image:
@@ -1322,6 +1324,7 @@ deploy_sensor_with_helm() {
     if [[ "$use_default_chart" == "true" ]]; then
         image_overwrites=$(cat <<EOT
 image:
+  registry: "$DEFAULT_IMAGE_REGISTRY"
   main:
     tag: "$main_image_tag"
   scannerV4:
