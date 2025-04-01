@@ -293,6 +293,7 @@ teardown() {
 
     if [[ "${BATS_TEST_COMPLETED:-}" != "1" ]]; then
         # Previous test failed.
+        echo "FAILED: Test \"$BATS_TEST_DESCRIPTION\" failed. Look above for the test steps that have led to this failure."
         if [[ "${ABORT_ON_FAILURE:-}" == "true" ]]; then
             TEST_SUITE_ABORTED="true"
             echo "Aborting due to test failure." >&3
