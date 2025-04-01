@@ -397,7 +397,6 @@ function WorkloadCvesOverviewPage() {
     );
 
     // Report-specific state management
-    const [isCreateReportDropdownOpen, setIsCreateReportDropdownOpen] = useState(false);
     const [isCreateOnDemandReportModalOpen, setIsCreateOnDemandReportModalOpen] = useState(false);
     const isOnDemandReportsEnabled = isFeatureFlagEnabled('ROX_VULNERABILITY_AD_HOC_REPORTS');
 
@@ -464,8 +463,6 @@ function WorkloadCvesOverviewPage() {
                     {isOnDemandReportsVisible && (
                         <FlexItem>
                             <CreateReportDropdown
-                                isOpen={isCreateReportDropdownOpen}
-                                setIsOpen={setIsCreateReportDropdownOpen}
                                 onSelect={() => {
                                     setIsCreateOnDemandReportModalOpen(true);
                                 }}

@@ -90,7 +90,7 @@ function CreateOnDemandReportModal({
                 </FlexItem>
                 {message?.type === 'success' && (
                     <Alert
-                        variant="danger"
+                        variant="success"
                         isInline
                         title={message.value}
                         className="pf-v5-u-w-100"
@@ -99,7 +99,7 @@ function CreateOnDemandReportModal({
                 )}
                 {message?.type === 'error' && (
                     <Alert
-                        variant="success"
+                        variant="danger"
                         isInline
                         title={message.value}
                         className="pf-v5-u-w-100"

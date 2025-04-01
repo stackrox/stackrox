@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     Dropdown,
     DropdownItem,
@@ -8,12 +8,12 @@ import {
 } from '@patternfly/react-core';
 
 export type CreateReportDropdownProps = {
-    isOpen: boolean;
-    setIsOpen: (value: boolean) => void;
     onSelect: (value: string | number | undefined) => void;
 };
 
-function CreateReportDropdown({ isOpen, setIsOpen, onSelect }: CreateReportDropdownProps) {
+function CreateReportDropdown({ onSelect }: CreateReportDropdownProps) {
+    const [isOpen, setIsOpen] = useState(false);
+
     const onToggleClick = () => {
         setIsOpen(!isOpen);
     };
