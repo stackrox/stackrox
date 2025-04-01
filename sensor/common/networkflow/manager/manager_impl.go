@@ -1010,7 +1010,7 @@ func (m *networkFlowManager) enrichHostConnections(hostConns *hostConnections, e
 		if shallRemoveConnection(status) {
 			// connections that are no longer active and have already been used can be deleted.
 			delete(hostConns.connections, conn)
-			flowMetrics.HostConnectionsOperations.WithLabelValues("remove").Inc()
+			flowMetrics.HostConnectionsOperations.WithLabelValues("remove", "connections").Inc()
 		}
 	}
 }
@@ -1225,7 +1225,7 @@ func (m *networkFlowManager) deleteHostConnections(hostname string) {
 	if conns.pendingDeletion == nil {
 		return
 	}
-	flowMetrics.HostConnectionsOperations.WithLabelValues("remove").Add(float64(len(conns.connections)))
+	flowMetrics.HostConnectionsOperations.WithLabelValues("remove", "connections").Add(float64(len(conns.connections)))
 	delete(m.connectionsByHost, hostname)
 }
 
@@ -1294,7 +1294,7 @@ func (h *hostConnections) Process(networkInfo *sensor.NetworkConnectionInfo, now
 			}
 			status, found := h.connections[c]
 			if !found || status == nil {
-				flowMetrics.HostConnectionsOperations.WithLabelValues("add").Inc()
+				flowMetrics.HostConnectionsOperations.WithLabelValues("add", "connections").Inc()
 				status = &connStatus{
 					firstSeen: timestamp.Now(),
 				}
