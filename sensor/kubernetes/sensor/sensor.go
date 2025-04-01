@@ -205,7 +205,13 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		signalSrv = signalService.NewService(signalCmp.GetReceiver())
 	}
 
-	collectorSrv := collector.NewService(signalCmp.GetReceiver())
+	var collectorSrv collector.Service
+	if cfg.signalServiceAuthFuncOverride != nil && cfg.localSensor {
+		collectorSrv = collector.NewService(signalCmp.GetReceiver(),
+			collector.WithAuthFuncOverride(cfg.signalServiceAuthFuncOverride))
+	} else {
+		collectorSrv = collector.NewService(signalCmp.GetReceiver())
+	}
 
 	apiServices := []grpc.APIService{
 		networkFlowService,

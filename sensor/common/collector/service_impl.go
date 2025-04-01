@@ -16,10 +16,19 @@ var (
 
 type Option func(*serviceImpl)
 
+// WithAuthFuncOverride sets the AuthFuncOverride.
+func WithAuthFuncOverride(overrideFn func(context.Context, string) (context.Context, error)) Option {
+	return func(srv *serviceImpl) {
+		srv.authFuncOverride = overrideFn
+	}
+}
+
 type serviceImpl struct {
 	sensor.UnimplementedCollectorServiceServer
 
 	queue chan *sensor.ProcessSignal
+
+	authFuncOverride func(context.Context, string) (context.Context, error)
 }
 
 func newService(queue chan *sensor.ProcessSignal) Service {
