@@ -154,7 +154,7 @@ get_central_debug_dump() {
 
     require_environment "API_ENDPOINT"
     require_environment "ROX_ADMIN_PASSWORD"
-    ROX_CA_CERT_FILE="" roxctl -e "${API_ENDPOINT}" \
+    ROX_SERVER_NAME="" roxctl -e "${API_ENDPOINT}" \
         central debug dump --output-dir "${output_dir}" \
         --insecure-skip-tls-verify
     ls -l "${output_dir}"
@@ -216,7 +216,7 @@ get_central_diagnostics() {
 
     require_environment "API_ENDPOINT"
     require_environment "ROX_ADMIN_PASSWORD"
-    ROX_CA_CERT_FILE="" roxctl -e "${API_ENDPOINT}" \
+    ROX_SERVER_NAME="" roxctl -e "${API_ENDPOINT}" \
         central debug download-diagnostics --output-dir "${output_dir}" \
         --insecure-skip-tls-verify
     ls -l "${output_dir}"
