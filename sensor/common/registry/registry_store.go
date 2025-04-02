@@ -133,7 +133,7 @@ func (rs *Store) Cleanup() {
 }
 
 func (rs *Store) cleanupRegistries() {
-	// These Sets have an internal mutex for controlling access.
+	// This set has an internal mutex for controlling access.
 	rs.globalRegistries.Clear()
 
 	rs.storeMutux.Lock()
