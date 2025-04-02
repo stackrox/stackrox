@@ -11,8 +11,9 @@ type Service interface {
 	grpc.APIService
 
 	AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error)
+	GetMessagesC() <-chan *sensor.ProcessSignal
 }
 
-func NewService(queue chan *sensor.ProcessSignal, opts ...Option) Service {
-	return newService(queue)
+func NewService(opts ...Option) Service {
+	return newService()
 }

@@ -6,6 +6,7 @@ import (
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
@@ -20,18 +21,13 @@ var (
 	log = logging.LoggerForModule()
 )
 
-type Component interface {
-	common.SensorComponent
-
-	GetReceiver() chan *sensor.ProcessSignal
-}
-
 type componentImpl struct {
 	common.SensorComponent
 
 	processPipeline Pipeline
-	indicators      chan *message.ExpiringMessage
-	receiver        chan *sensor.ProcessSignal
+	indicators      <-chan *message.ExpiringMessage
+	signalMessages  <-chan *storage.ProcessSignal
+	processMessages <-chan *sensor.ProcessSignal
 	writer          io.Writer
 
 	stopper concurrency.Stopper
@@ -46,11 +42,12 @@ func WithTraceWriter(writer io.Writer) Option {
 	}
 }
 
-func New(pipeline Pipeline, indicators chan *message.ExpiringMessage, opts ...Option) Component {
+func New(pipeline Pipeline, signalMessages <-chan *storage.ProcessSignal, processMessages <-chan *sensor.ProcessSignal, indicators <-chan *message.ExpiringMessage, opts ...Option) common.SensorComponent {
 	cmp := &componentImpl{
 		processPipeline: pipeline,
 		indicators:      indicators,
-		receiver:        make(chan *sensor.ProcessSignal, maxBufferSize),
+		signalMessages:  signalMessages,
+		processMessages: processMessages,
 		writer:          nil,
 		stopper:         concurrency.NewStopper(),
 	}
@@ -86,16 +83,14 @@ func (c *componentImpl) ResponsesC() <-chan *message.ExpiringMessage {
 	return c.indicators
 }
 
-func (c *componentImpl) GetReceiver() chan *sensor.ProcessSignal {
-	return c.receiver
-}
-
 func (c *componentImpl) run() {
 	defer c.stopper.Flow().ReportStopped()
 
 	for {
 		select {
-		case msg := <-c.receiver:
+		case msg := <-c.processMessages:
+			c.processMsg(sensorIntoStorageSignal(msg))
+		case msg := <-c.signalMessages:
 			c.processMsg(msg)
 		case <-c.stopper.Flow().StopRequested():
 			log.Info("Shutting down signal component")
@@ -104,7 +99,7 @@ func (c *componentImpl) run() {
 	}
 }
 
-func (c *componentImpl) processMsg(signal *sensor.ProcessSignal) {
+func (c *componentImpl) processMsg(signal *storage.ProcessSignal) {
 	signal.ExecFilePath = stringutils.OrDefault(signal.GetExecFilePath(), signal.GetName())
 	if !isProcessSignalValid(signal) {
 		log.Debugf("Invalid process signal: %+v", signal)
@@ -124,7 +119,7 @@ func (c *componentImpl) processMsg(signal *sensor.ProcessSignal) {
 }
 
 // TODO(ROX-3281) this is a workaround for these collector issues
-func isProcessSignalValid(signal *sensor.ProcessSignal) bool {
+func isProcessSignalValid(signal *storage.ProcessSignal) bool {
 	// Example: <NA> or sometimes a truncated variant
 	if signal.GetExecFilePath() == "" || signal.GetExecFilePath()[0] == '<' {
 		return false
@@ -140,4 +135,36 @@ func isProcessSignalValid(signal *sensor.ProcessSignal) bool {
 		return false
 	}
 	return true
+}
+
+func sensorIntoStorageSignal(signal *sensor.ProcessSignal) *storage.ProcessSignal {
+	if signal == nil {
+		return nil
+	}
+
+	var lineage []*storage.ProcessSignal_LineageInfo
+	if signal.LineageInfo != nil {
+		lineage = make([]*storage.ProcessSignal_LineageInfo, 0, len(signal.LineageInfo))
+
+		for _, l := range signal.LineageInfo {
+			lineage = append(lineage, &storage.ProcessSignal_LineageInfo{
+				ParentUid:          l.ParentUid,
+				ParentExecFilePath: l.ParentExecFilePath,
+			})
+		}
+	}
+
+	return &storage.ProcessSignal{
+		Id:           signal.Id,
+		ContainerId:  signal.ContainerId,
+		Time:         signal.CreationTime,
+		Name:         signal.Name,
+		Args:         signal.Args,
+		ExecFilePath: signal.ExecFilePath,
+		Pid:          signal.Pid,
+		Uid:          signal.Uid,
+		Gid:          signal.Gid,
+		Scraped:      signal.Scraped,
+		LineageInfo:  lineage,
+	}
 }
