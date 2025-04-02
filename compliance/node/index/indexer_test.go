@@ -153,12 +153,49 @@ func (s *nodeIndexerSuite) TestRunPackageScannerAnyPath() {
 }
 
 func (s *nodeIndexerSuite) TestMappingURL() {
-	s.T().Setenv("ROX_ADVERTISED_ENDPOINT", "example.com:8080")
-	s.Equal("https://example.com:8080/scanner/definitions?file=repo2cpe", buildMappingURL())
-	s.T().Setenv("ROX_ADVERTISED_ENDPOINT", "sensor.rhacs.svc")
-	s.Equal("https://sensor.rhacs.svc/scanner/definitions?file=repo2cpe", buildMappingURL())
-	s.T().Setenv("ROX_ADVERTISED_ENDPOINT", "http://example.com")
-	s.Equal("https://example.com/scanner/definitions?file=repo2cpe", buildMappingURL())
+	tcs := map[string]struct {
+		advertisedEndpointSetting string
+		mappingURLSetting         string
+		expectedURL               string
+	}{
+		"Empty": {
+			advertisedEndpointSetting: "",
+			mappingURLSetting:         "",
+			expectedURL:               "https://sensor.stackrox.svc:443/scanner/definitions?file=repo2cpe",
+		},
+		"Host with port": {
+			advertisedEndpointSetting: "example.com:8080",
+			mappingURLSetting:         "",
+			expectedURL:               "https://example.com:8080/scanner/definitions?file=repo2cpe",
+		},
+		"Host without port": {
+			advertisedEndpointSetting: "sensor.rhacs.svc",
+			mappingURLSetting:         "",
+			expectedURL:               "https://sensor.rhacs.svc/scanner/definitions?file=repo2cpe",
+		},
+		"HTTP scheme": {
+			advertisedEndpointSetting: "http://example.com",
+			mappingURLSetting:         "",
+			expectedURL:               "https://example.com/scanner/definitions?file=repo2cpe",
+		},
+		"Mapping setting provided": {
+			advertisedEndpointSetting: "sensor.namespace.svc:443",
+			mappingURLSetting:         "https://example.com/download",
+			expectedURL:               "https://example.com/download",
+		},
+		"Mapping setting provided with no scheme and trailing slash": {
+			advertisedEndpointSetting: "sensor.namespace.svc:443",
+			mappingURLSetting:         "example.com/download/",
+			expectedURL:               "https://example.com/download",
+		},
+	}
+	for name, tc := range tcs {
+		s.T().Run(name, func(t *testing.T) {
+			s.T().Setenv("ROX_ADVERTISED_ENDPOINT", tc.advertisedEndpointSetting)
+			s.T().Setenv("ROX_NODE_INDEX_MAPPING_URL", tc.mappingURLSetting)
+			s.Equal(tc.expectedURL, buildMappingURL())
+		})
+	}
 }
 
 func (s *nodeIndexerSuite) TestIndexerE2E() {

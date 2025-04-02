@@ -126,6 +126,9 @@ func DefaultNodeIndexerConfig() NodeIndexerConfig {
 }
 
 func buildMappingURL() string {
+	if len(env.NodeIndexMappingURL.Setting()) > 0 {
+		return urlfmt.FormatURL(env.NodeIndexMappingURL.Setting(), urlfmt.HTTPS, urlfmt.NoTrailingSlash)
+	}
 	URL := env.AdvertisedEndpoint.Setting() + scannerDefinitionsRouteInSensor + "?file=" + sensorMappingsFile
 	return urlfmt.FormatURL(URL, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
 }
