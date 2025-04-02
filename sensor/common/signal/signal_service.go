@@ -106,10 +106,13 @@ func apiToSensorSignal(signal *v1.Signal) *sensorAPI.ProcessSignal {
 		return nil
 	}
 
-	lineage := make([]*sensorAPI.ProcessSignal_LineageInfo, 0, len(s.LineageInfo))
+	var lineage []*sensorAPI.ProcessSignal_LineageInfo
+	if s.LineageInfo != nil {
+		lineage = make([]*sensorAPI.ProcessSignal_LineageInfo, 0, len(s.LineageInfo))
 
-	for _, l := range s.LineageInfo {
-		lineage = append(lineage, storageToSensorLineage(l))
+		for _, l := range s.LineageInfo {
+			lineage = append(lineage, storageToSensorLineage(l))
+		}
 	}
 
 	return &sensorAPI.ProcessSignal{
