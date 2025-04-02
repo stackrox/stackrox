@@ -332,7 +332,7 @@ spec:
   - name: build-container-ppc64le
     params:
     - name: PLATFORM
-      value: linux/ppc64le
+      value: linux-test/ppc64le
     - name: IMAGE
       value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)-ppc64le
     - name: DOCKERFILE

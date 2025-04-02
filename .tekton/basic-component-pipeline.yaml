@@ -328,7 +328,7 @@ spec:
     - name: CACHI2_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
     - name: PLATFORM
-      value: linux/ppc64le
+      value: linux-test/ppc64le
     taskRef:
       params:
       - name: name
