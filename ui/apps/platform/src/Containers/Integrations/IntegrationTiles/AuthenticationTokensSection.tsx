@@ -5,6 +5,7 @@ import usePermissions from 'hooks/usePermissions';
 
 import APITokensTile from './APITokensTile';
 import ClusterInitBundles from './ClusterInitBundlesTile';
+import ClusterRegistrationSecrets from './ClusterRegistrationSecretsTile';
 import IntegrationsSection from './IntegrationsSection';
 import MachineAccessTile from './MachineAccessTile';
 
@@ -22,6 +23,7 @@ function AuthenticationTokensSection(): ReactElement {
         <IntegrationsSection headerName="Authentication Tokens" id="token-integrations">
             <APITokensTile />
             {hasAdminRole && <ClusterInitBundles />}
+            {hasAdminRole && <ClusterRegistrationSecrets />}
             {hasReadAccessForAccess && <MachineAccessTile />}
         </IntegrationsSection>
     );
