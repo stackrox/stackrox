@@ -2,7 +2,7 @@ package signal
 
 import (
 	"context"
-	"fmt"
+	"errors"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	sensorAPI "github.com/stackrox/rox/generated/internalapi/sensor"
@@ -82,12 +82,12 @@ func (s *serviceImpl) receiveMessages(stream sensorAPI.SignalService_PushSignals
 
 		signal := signalStreamMsg.GetSignal()
 		if signal == nil {
-			return fmt.Errorf("empty signal")
+			return errors.New("empty signal")
 		}
 
 		processSignal := signal.GetProcessSignal()
 		if processSignal == nil {
-			return fmt.Errorf("empty process signal")
+			return errors.New("empty process signal")
 		}
 
 		s.queue <- signal.GetProcessSignal()
