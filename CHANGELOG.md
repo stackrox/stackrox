@@ -9,6 +9,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ## [NEXT RELEASE]
 
+**HELM USERS**: Please see the ROX-27622 under "technical changes" to avoid upgrade failures!
+
 ### Added Features
 
 - ROX-13493: Support for scale subresource in the admission controller to enable policy detection and enforcement on admission review requests on the scale subresource.
@@ -24,6 +26,16 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 - ROX-28263: New `roxctl` help formatting.
 - ROX-24500: Certificate validation failure in `roxctl` is now an error.
+- ROX-27622: Move `SecurityPolicy` CRD to template directory in Helm chart. **All Helm users will need to take action!**
+  No action is needed for users that use the operator or `roxctl` to install StackRox.
+  This change makes the CRD simpler to maintain for users because it will now be automatically upgraded.
+  To avoid upgrade failure, Helm users need to apply the following changes to the CRD prior to upgrade:
+
+      kubectl annotate crd/securitypolicies.config.stackrox.io meta.helm.sh/release-name=stackrox-central-services
+      kubectl annotate crd/securitypolicies.config.stackrox.io meta.helm.sh/release-namespace=stackrox
+      kubectl label crd/securitypolicies.config.stackrox.io app.kubernetes.io/managed-by=Helm
+
+  The above values will need to be updated to match your release name (i.e. "stackrox-central-services") or namespace (i.e. "stackrox") in case you had used different ones.
 
 ## [4.7.0]
 
