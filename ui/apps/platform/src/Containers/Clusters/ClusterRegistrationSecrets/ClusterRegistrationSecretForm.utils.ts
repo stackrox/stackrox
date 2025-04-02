@@ -7,8 +7,7 @@ export function downloadClusterRegistrationSecret(
     response: GenerateClusterRegistrationSecretResponse
 ) {
     const { crs } = response;
-    // TODO atob is deprecated
-    const decoded = typeof crs === 'string' ? atob(crs) : '';
+    const decoded = typeof crs === 'string' ? window.atob(crs) : '';
 
     const file = new Blob([decoded], {
         type: 'application/x-yaml',

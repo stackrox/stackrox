@@ -18,7 +18,7 @@ function DownloadCAConfigBundle(): ReactElement {
                 if (!response.helmValuesBundle) {
                     throw Error('server returned no data');
                 }
-                const bytes = atob(response.helmValuesBundle);
+                const bytes = window.atob(response.helmValuesBundle);
                 const file = new Blob([bytes], {
                     type: 'application/x-yaml',
                 });
