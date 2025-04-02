@@ -27,16 +27,18 @@ func GetDeploymentNetworkEntity(id, name string) *storage.NetworkEntityInfo {
 	}
 }
 
-func GetExtSrcNetworkEntityDiscovered(id, name, cidr string, isDefault bool, clusterID string, isDiscovered bool) *storage.NetworkEntity {
+// GetExtSrcNetworkEntity returns a external source typed *storage.NetworkEntity object, where discoved can be true or false.
+func GetExtSrcNetworkEntityWithDiscovered(id, name, cidr string, isDefault bool, clusterID string, isDiscovered bool) *storage.NetworkEntity {
 	return &storage.NetworkEntity{
-		Info: GetExtSrcNetworkEntityInfoDiscovered(id, name, cidr, isDefault, isDiscovered),
+		Info: GetExtSrcNetworkEntityInfoWithDiscovered(id, name, cidr, isDefault, isDiscovered),
 		Scope: &storage.NetworkEntity_Scope{
 			ClusterId: clusterID,
 		},
 	}
 }
 
-func GetExtSrcNetworkEntityInfoDiscovered(id, name, cidr string, isDefault bool, isDiscovered bool) *storage.NetworkEntityInfo {
+// GetExtSrcNetworkEntityInfo returns a external source typed *storage.NetworkEntityInfo object, where discovered can be true or false.
+func GetExtSrcNetworkEntityInfoWithDiscovered(id, name, cidr string, isDefault bool, isDiscovered bool) *storage.NetworkEntityInfo {
 	return &storage.NetworkEntityInfo{
 		Id:   id,
 		Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
@@ -65,19 +67,8 @@ func GetExtSrcNetworkEntity(id, name, cidr string, isDefault bool, clusterID str
 
 // GetExtSrcNetworkEntityInfo returns a external source typed *storage.NetworkEntityInfo object.
 func GetExtSrcNetworkEntityInfo(id, name, cidr string, isDefault bool) *storage.NetworkEntityInfo {
-	return &storage.NetworkEntityInfo{
-		Id:   id,
-		Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
-		Desc: &storage.NetworkEntityInfo_ExternalSource_{
-			ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
-				Name: name,
-				Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
-					Cidr: cidr,
-				},
-				Default: isDefault,
-			},
-		},
-	}
+	isDiscovered := false
+	return GetExtSrcNetworkEntityInfoWithDiscovered(id, name, cidr, isDefault, isDiscovered)
 }
 
 // GetNetworkFlow returns a network flow constructed from supplied data.

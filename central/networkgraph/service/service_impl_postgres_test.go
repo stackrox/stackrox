@@ -157,18 +157,16 @@ func (s *networkGraphServiceSuite) TestGetNetworkGraph() {
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.NetworkGraph, resources.Deployment)))
 
-	entityIDs := []string{
-			externalsrcs.NewClusterScopedID(testCluster, "192.168.1.1/32"),
-	        externalsrcs.NewClusterScopedID(testCluster, "10.0.0.2/32"),
-	        externalsrcs.NewClusterScopedID(testCluster, "1.1.1.1/32"),
-	}
+	entityID1, _ := externalsrcs.NewClusterScopedID(testCluster, "192.168.1.1/32")
+	entityID2, _ := externalsrcs.NewClusterScopedID(testCluster, "10.0.0.2/32")
+	entityID3, _ := externalsrcs.NewClusterScopedID(testCluster, "1.1.1.1/32")
 
 	isDiscovered := true
 
 	entities := []*storage.NetworkEntity{
-		testutils.GetExtSrcNetworkEntityDiscovered(entityIDs[0], "ext1", "192.168.1.1/32", false, testCluster, isDiscovered),
-		testutils.GetExtSrcNetworkEntityDiscovered(entityIDs[1], "ext2", "10.0.0.2/32", false, testCluster, isDiscovered),
-		testutils.GetExtSrcNetworkEntityDiscovered(entityIDs[2], "ext3", "10.0.100.25/32", false, testCluster, isDiscovered),
+		testutils.GetExtSrcNetworkEntityWithDiscovered(entityID1.String(), "ext1", "192.168.1.1/32", false, testCluster, isDiscovered),
+		testutils.GetExtSrcNetworkEntityWithDiscovered(entityID2.String(), "ext2", "10.0.0.2/32", false, testCluster, isDiscovered),
+		testutils.GetExtSrcNetworkEntityWithDiscovered(entityID3.String(), "ext3", "10.0.100.25/32", false, testCluster, isDiscovered),
 	}
 
 	deployment := &storage.Deployment{
@@ -180,10 +178,8 @@ func (s *networkGraphServiceSuite) TestGetNetworkGraph() {
 	err := s.deploymentsDataStore.UpsertDeployment(globalWriteAccessCtx, deployment)
 	s.NoError(err)
 
-	for _, e := range entities {
-		err := s.entityDataStore.CreateExternalNetworkEntity(globalWriteAccessCtx, e, true)
-		s.NoError(err)
-	}
+
+	s.entityDataStore.CreateExtNetworkEntitiesForCluster(globalWriteAccessCtx, testCluster, entities...)
 
 	entityFlows := []*storage.NetworkFlow{
 		externalFlow(deployment, entities[0], false),
