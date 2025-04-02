@@ -1,10 +1,11 @@
 {{define "schemaVar"}}pkgSchema.{{.Table|upperCamelCase}}Schema{{end}}
-{{define "paramList"}}{{ $singlePK := index .Schema.PrimaryKeys 0 }}{{$singlePK.ColumnName|lowerCamelCase}} {{$singlePK.Type}}{{end}}
 {{define "commaSeparatedColumns"}}{{range $index, $field := .}}{{if $index}}, {{end}}{{$field.ColumnName}}{{end}}{{end}}
 {{define "updateExclusions"}}{{range $index, $field := .}}{{if $index}}, {{end}}{{$field.ColumnName}} = EXCLUDED.{{$field.ColumnName}}{{end}}{{end}}
 
 {{- $ := . }}
 {{ $singlePK := index .Schema.PrimaryKeys 0 }}
+{{ $primaryKeyName := $singlePK.ColumnName|lowerCamelCase }}
+{{ $primaryKeyType := $singlePK.Type }}
 
 package postgres
 
@@ -55,22 +56,22 @@ type Store interface {
 {{- if not .JoinTable }}
     Upsert(ctx context.Context, obj *storeType) error
     UpsertMany(ctx context.Context, objs []*storeType) error
-    Delete(ctx context.Context, {{template "paramList" $}}) error
+    Delete(ctx context.Context, {{$primaryKeyName}} {{$primaryKeyType}}) error
     DeleteByQuery(ctx context.Context, q *v1.Query) ([]string, error)
-    DeleteMany(ctx context.Context, identifiers []{{$singlePK.Type}}) error
-    PruneMany(ctx context.Context, identifiers []{{$singlePK.Type}}) error
+    DeleteMany(ctx context.Context, identifiers []{{$primaryKeyType}}) error
+    PruneMany(ctx context.Context, identifiers []{{$primaryKeyType}}) error
 {{- end }}
 
     Count(ctx context.Context, q *v1.Query) (int, error)
-    Exists(ctx context.Context, {{template "paramList" $}}) (bool, error)
+    Exists(ctx context.Context, {{$primaryKeyName}} {{$primaryKeyType}}) (bool, error)
     Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 
-    Get(ctx context.Context, {{template "paramList" $}}) (*storeType, bool, error)
+    Get(ctx context.Context, {{$primaryKeyName}} {{$primaryKeyType}}) (*storeType, bool, error)
 {{- if .SearchCategory }}
     GetByQuery(ctx context.Context, query *v1.Query) ([]*storeType, error)
 {{- end }}
-    GetMany(ctx context.Context, identifiers []{{$singlePK.Type}}) ([]*storeType, []int, error)
-    GetIDs(ctx context.Context) ([]{{$singlePK.Type}}, error)
+    GetMany(ctx context.Context, identifiers []{{$primaryKeyType}}) ([]*storeType, []int, error)
+    GetIDs(ctx context.Context) ([]{{$primaryKeyType}}, error)
 {{- if .GetAll }}
     GetAll(ctx context.Context) ([]*storeType, error)
 {{- end }}
@@ -131,7 +132,7 @@ func New(db postgres.DB) Store {
 
 // region Helper functions
 
-func pkGetter(obj *storeType) {{$singlePK.Type}} {
+func pkGetter(obj *storeType) {{$primaryKeyType}} {
     return {{ $singlePK.Getter "obj" }}
 }
 
