@@ -2,12 +2,14 @@ package signal
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/pkg/errors"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	sensorAPI "github.com/stackrox/rox/generated/internalapi/sensor"
+	"github.com/stackrox/rox/generated/storage"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/logging"
@@ -32,12 +34,14 @@ func WithAuthFuncOverride(overrideFn func(context.Context, string) (context.Cont
 type Service interface {
 	pkgGRPC.APIService
 	sensorAPI.SignalServiceServer
+
+	GetMessagesC() <-chan *storage.ProcessSignal
 }
 
 type serviceImpl struct {
 	sensorAPI.UnimplementedSignalServiceServer
 
-	queue chan *sensorAPI.ProcessSignal
+	queue chan *storage.ProcessSignal
 
 	authFuncOverride func(context.Context, string) (context.Context, error)
 }
@@ -68,6 +72,10 @@ func (s *serviceImpl) PushSignals(stream sensorAPI.SignalService_PushSignalsServ
 	return s.receiveMessages(stream)
 }
 
+func (s *serviceImpl) GetMessagesC() <-chan *storage.ProcessSignal {
+	return s.queue
+}
+
 func (s *serviceImpl) receiveMessages(stream sensorAPI.SignalService_PushSignalsServer) error {
 	for {
 		signalStreamMsg, err := stream.Recv()
@@ -76,9 +84,17 @@ func (s *serviceImpl) receiveMessages(stream sensorAPI.SignalService_PushSignals
 			return errors.Wrap(err, "receiving signal stream message")
 		}
 
-		signal := apiToSensorSignal(signalStreamMsg.GetSignal())
+		signal := signalStreamMsg.GetSignal()
+		if signal == nil {
+			return fmt.Errorf("empty signal")
+		}
 
-		s.queue <- signal
+		processSignal := signal.GetProcessSignal()
+		if processSignal == nil {
+			return fmt.Errorf("empty process signal")
+		}
+
+		s.queue <- signal.GetProcessSignal()
 	}
 }
 

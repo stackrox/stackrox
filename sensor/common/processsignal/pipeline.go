@@ -5,7 +5,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/channelmultiplexer"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -138,10 +137,10 @@ func (p *Pipeline) cancelCurrentContext() {
 }
 
 // Process defines processes to process a ProcessIndicator
-func (p *Pipeline) Process(signal *sensor.ProcessSignal) {
+func (p *Pipeline) Process(signal *storage.ProcessSignal) {
 	indicator := &storage.ProcessIndicator{
 		Id:     uuid.NewV4().String(),
-		Signal: sensorIntoStorageSignal(signal),
+		Signal: signal,
 	}
 
 	// indicator.GetSignal() is never nil at this point
@@ -154,38 +153,6 @@ func (p *Pipeline) Process(signal *sensor.ProcessSignal) {
 	populateIndicatorFromCachedContainer(indicator, metadata)
 	normalize.Indicator(indicator)
 	p.enrichedIndicators <- indicator
-}
-
-func sensorIntoStorageSignal(signal *sensor.ProcessSignal) *storage.ProcessSignal {
-	if signal == nil {
-		return nil
-	}
-
-	var lineage []*storage.ProcessSignal_LineageInfo
-	if signal.LineageInfo != nil {
-		lineage = make([]*storage.ProcessSignal_LineageInfo, 0, len(signal.LineageInfo))
-
-		for _, l := range signal.LineageInfo {
-			lineage = append(lineage, &storage.ProcessSignal_LineageInfo{
-				ParentUid:          l.ParentUid,
-				ParentExecFilePath: l.ParentExecFilePath,
-			})
-		}
-	}
-
-	return &storage.ProcessSignal{
-		Id:           signal.Id,
-		ContainerId:  signal.ContainerId,
-		Time:         signal.CreationTime,
-		Name:         signal.Name,
-		Args:         signal.Args,
-		ExecFilePath: signal.ExecFilePath,
-		Pid:          signal.Pid,
-		Uid:          signal.Uid,
-		Gid:          signal.Gid,
-		Scraped:      signal.Scraped,
-		LineageInfo:  lineage,
-	}
 }
 
 func (p *Pipeline) sendIndicatorEvent() {
