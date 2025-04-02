@@ -185,6 +185,17 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		return ctrl.Result{}, nil
 	}
 
+	policyCR.Status.Condition.UpdateCondition(configstackroxiov1alpha1.PolicyValidated, configstackroxiov1alpha1.SecurityPolicyCondition{
+		Type:    configstackroxiov1alpha1.PolicyValidated,
+		Status:  "True",
+		Message: "",
+	})
+	if err := r.K8sClient.Status().Update(ctx, policyCR); err != nil {
+		errMsg := fmt.Sprintf("error updating status for securitypolicy '%s'", policyCR.GetName())
+		log.Debug(errMsg)
+		return ctrl.Result{}, errors.Wrap(err, errMsg)
+	}
+
 	// policy create or update flow
 	var retErr error
 	if desiredState.GetId() != "" {
@@ -250,6 +261,16 @@ func (r *SecurityPolicyReconciler) UpdateCentralCaches(policyCR *configstackroxi
 			log.Debug(errMsg)
 			return ctrl.Result{}, errors.Wrap(err, errMsg)
 		}
+	}
+	policyCR.Status.Condition.UpdateCondition(configstackroxiov1alpha1.CentralDataFresh, configstackroxiov1alpha1.SecurityPolicyCondition{
+		Type:    configstackroxiov1alpha1.CentralDataFresh,
+		Status:  "True",
+		Message: "",
+	})
+	if err := r.K8sClient.Status().Update(ctx, policyCR); err != nil {
+		errMsg := fmt.Sprintf("Error updating status for SecurityPolicy '%s'", policyCR.GetName())
+		log.Debug(errMsg)
+		return ctrl.Result{}, errors.Wrap(err, errMsg)
 	}
 	return ctrl.Result{}, nil
 }
