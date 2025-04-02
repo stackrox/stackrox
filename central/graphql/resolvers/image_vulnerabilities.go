@@ -116,7 +116,6 @@ func (resolver *Resolver) ImageVulnerability(ctx context.Context, args IDQuery) 
 		return nil, err
 	}
 
-	//TODO(ROX-28320): Fix this
 	if features.FlattenCVEData.Enabled() {
 		// get loader
 		loader, err := loaders.GetImageCVEV2Loader(ctx)
@@ -125,20 +124,24 @@ func (resolver *Resolver) ImageVulnerability(ctx context.Context, args IDQuery) 
 		}
 
 		ret, err := loader.FromID(ctx, string(*args.ID))
-		res, err := resolver.wrapImageCVEV2WithContext(ctx, ret, true, err)
+		if err != nil {
+			return nil, err
+		}
 
-		//resolver.ImageCVEFlatView.Get(ctx, query, views.ReadOptions{})
-		//cveresolver, err := resolver.ImageCVE(ctx, struct {
-		//	Cve                *string
-		//	SubfieldScopeQuery *string
-		//}{
-		//	Cve:                pointers.String(ret.GetCveBaseInfo().GetCve()),
-		//	SubfieldScopeQuery: pointers.String("CVEID:" + ret.GetId()),
-		//})
-		//if cveresolver != nil {
-		//	res.flatData = cveresolver.data
-		//}
-		return res, err
+		query := search.NewQueryBuilder().AddExactMatches(search.CVEID, string(*args.ID)).ProtoQuery()
+		cveFlatData, err := resolver.ImageCVEFlatView.Get(ctx, query, views.ReadOptions{})
+		if err != nil {
+			return nil, err
+		}
+
+		// TODO(ROX-28808): The ticket referenced is the reason we can get here.  FromID will find
+		// a CVE ID excluded by context but the FlatView will not.  We should honor the context.  This
+		// will be cleaned up with 28808.
+		if len(cveFlatData) != 1 {
+			return nil, errors.New("unable to find CVE")
+		}
+
+		return resolver.wrapImageCVEV2FlatWithContext(ctx, ret, cveFlatData[0], true, err)
 	}
 
 	// get loader
@@ -168,14 +171,14 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 
 	if features.FlattenCVEData.Enabled() {
 		// Get the flattened data
-		cvecoreresolver, err := resolver.ImageCVEFlatView.Get(ctx, query, views.ReadOptions{})
+		cveFlatData, err := resolver.ImageCVEFlatView.Get(ctx, query, views.ReadOptions{})
 		if err != nil {
 			return nil, err
 		}
 
-		cveIDs := make([]string, 0, len(cvecoreresolver))
-		for _, cvecore := range cvecoreresolver {
-			cveIDs = append(cveIDs, cvecore.GetCVEIDs()...)
+		cveIDs := make([]string, 0, len(cveFlatData))
+		for _, cveFlat := range cveFlatData {
+			cveIDs = append(cveIDs, cveFlat.GetCVEIDs()...)
 		}
 
 		// get loader
@@ -201,11 +204,11 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 		}
 
 		// Normalize the CVEs based on the flat view to keep them in the correct paging and sort order
-		normalizedVulns := make([]*storage.ImageCVEV2, 0, len(cvecoreresolver))
-		for _, cvecore := range cvecoreresolver {
-			normalizedVulns = append(normalizedVulns, foundVulns[cvecore.GetCVE()])
+		normalizedVulns := make([]*storage.ImageCVEV2, 0, len(cveFlatData))
+		for _, cveFlat := range cveFlatData {
+			normalizedVulns = append(normalizedVulns, foundVulns[cveFlat.GetCVE()])
 		}
-		cveResolvers, err := resolver.wrapImageCVEV2sCoreWithContext(ctx, normalizedVulns, cvecoreresolver, err)
+		cveResolvers, err := resolver.wrapImageCVEV2sFlatWithContext(ctx, normalizedVulns, cveFlatData, err)
 		if err != nil {
 			return nil, err
 		}
@@ -424,15 +427,17 @@ func imageCveToVulnerabilityWithSeverity(in []*storage.ImageCVE) []Vulnerability
 }
 
 func imageCveV2ToVulnerabilityWithSeverity(in []*storage.ImageCVEV2) []VulnerabilityWithSeverity {
-	ret := make([]VulnerabilityWithSeverity, len(in))
+	ret := make([]VulnerabilityWithSeverity, 0, len(in))
 	// Data is now denormalized, need to normalize it to make the counts make sense.
 	seenVulns := set.NewStringSet()
-	for i, vuln := range in {
+
+	for _, vuln := range in {
 		if !seenVulns.Contains(vuln.GetCveBaseInfo().GetCve()) {
-			ret[i] = vuln
+			ret = append(ret, vuln)
 			seenVulns.Add(vuln.GetCveBaseInfo().GetCve())
 		}
 	}
+
 	return ret
 }
 
@@ -1166,7 +1171,6 @@ func (resolver *imageCVEV2Resolver) ExceptionCount(ctx context.Context, args str
 
 func (resolver *imageCVEV2Resolver) Advisory(ctx context.Context) (string, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "Advisory")
-	log.Infof("SHREWS -- image_vuln.Advisory")
 	if resolver.ctx == nil {
 		resolver.ctx = ctx
 	}
