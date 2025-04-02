@@ -156,17 +156,6 @@ func (p *Pipeline) Process(signal *sensor.ProcessSignal) {
 	p.enrichedIndicators <- indicator
 }
 
-func sensorIntoStorageLineage(l *sensor.ProcessSignal_LineageInfo) *storage.ProcessSignal_LineageInfo {
-	if l == nil {
-		return nil
-	}
-
-	return &storage.ProcessSignal_LineageInfo{
-		ParentUid:          l.ParentUid,
-		ParentExecFilePath: l.ParentExecFilePath,
-	}
-}
-
 func sensorIntoStorageSignal(signal *sensor.ProcessSignal) *storage.ProcessSignal {
 	if signal == nil {
 		return nil
@@ -177,7 +166,10 @@ func sensorIntoStorageSignal(signal *sensor.ProcessSignal) *storage.ProcessSigna
 		lineage = make([]*storage.ProcessSignal_LineageInfo, 0, len(signal.LineageInfo))
 
 		for _, l := range signal.LineageInfo {
-			lineage = append(lineage, sensorIntoStorageLineage(l))
+			lineage = append(lineage, &storage.ProcessSignal_LineageInfo{
+				ParentUid:          l.ParentUid,
+				ParentExecFilePath: l.ParentExecFilePath,
+			})
 		}
 	}
 
