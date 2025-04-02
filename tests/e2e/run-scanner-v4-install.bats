@@ -878,7 +878,7 @@ EOT
     _end
 }
 
-@test "Upgrade from old version without Scanner V4 support to the version which supports Scanner V4" {
+@test "Upgrade from old version without Scanner V4 to HEAD with Scanner V4 enabled" {
     _begin "deploy-stackrox"
 
     if [[ "$CI" = "true" ]]; then
@@ -889,7 +889,7 @@ EOT
     # shellcheck disable=SC2030,SC2031
     export OUTPUT_FORMAT=""
     info "Using roxctl executable ${EARLIER_ROXCTL_PATH}/roxctl for generating pre-Scanner V4 deployment bundles"
-    PATH="${EARLIER_ROXCTL_PATH}:${PATH}" MAIN_IMAGE_TAG="${EARLIER_MAIN_IMAGE_TAG}" _deploy_stackrox
+    PATH="${EARLIER_ROXCTL_PATH}:${PATH}" MAIN_IMAGE_TAG="${EARLIER_MAIN_IMAGE_TAG}" ROX_SCANNER_V4=false _deploy_stackrox
 
     _step "verify"
 
@@ -901,7 +901,7 @@ EOT
     _step "upgrade-stackrox"
 
     info "Upgrading StackRox using HEAD deployment bundles"
-    _deploy_stackrox
+    ROX_SCANNER_V4=true _deploy_stackrox
 
     _step "verify"
 
