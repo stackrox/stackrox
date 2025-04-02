@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button, Flex, FlexItem, Tooltip, Truncate } from '@patternfly/react-core';
 import { OutlinedCopyIcon } from '@patternfly/react-icons';
+import useClipboardCopy from 'hooks/useClipboardCopy';
 
 import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
 import { getImageBaseNameDisplay } from '../utils/images';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
-import useClipboardCopy from 'hooks/useClipboardCopy';
 
 export type ImageNameLinkProps = {
     name: {
@@ -31,7 +31,7 @@ function ImageNameLink({ name, id, children }: ImageNameLinkProps) {
     const baseName = getImageBaseNameDisplay(id, name);
 
     function copyImageName() {
-        copyToClipboard(`${registry}/${baseName}`).then(() => setCopyIconTooltip('Copied!'));
+        return copyToClipboard(`${registry}/${baseName}`).then(() => setCopyIconTooltip('Copied!'));
     }
 
     return (

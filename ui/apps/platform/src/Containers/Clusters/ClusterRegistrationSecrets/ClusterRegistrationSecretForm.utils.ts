@@ -13,5 +13,5 @@ export function downloadClusterRegistrationSecret(
         type: 'application/x-yaml',
     });
 
-    return FileSaver.saveAs(file, `${name}-cluster-registration-secret.yaml`);
+    FileSaver.saveAs(file, `${name}-cluster-registration-secret.yaml`);
 }
