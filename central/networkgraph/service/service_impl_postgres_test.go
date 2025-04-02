@@ -157,12 +157,10 @@ func (s *networkGraphServiceSuite) TestGetNetworkGraph() {
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.NetworkGraph, resources.Deployment)))
 
-	entityID1, _ := externalsrcs.NewClusterScopedID(testCluster, "192.168.1.1/32")
-	entityID2, _ := externalsrcs.NewClusterScopedID(testCluster, "10.0.0.2/32")
-	entityID3, _ := externalsrcs.NewClusterScopedID(testCluster, "1.1.1.1/32")
-
 	entityIDs := []string{
-		entityID1.String(), entityID2.String(), entityID3.String(),
+			externalsrcs.NewClusterScopedID(testCluster, "192.168.1.1/32"),
+	        externalsrcs.NewClusterScopedID(testCluster, "10.0.0.2/32"),
+	        externalsrcs.NewClusterScopedID(testCluster, "1.1.1.1/32"),
 	}
 
 	isDiscovered := true
