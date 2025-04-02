@@ -46,7 +46,7 @@ func TestUpdate(t *testing.T) {
 		w.Header().Set("Content-Length", fmt.Sprintf("%d", headContentLengths[responseI]))
 		w.Header().Set("Last-Modified", lastUpdatedTime.Format(http.TimeFormat))
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, body[:responseLengths[responseI]])
+		fmt.Fprint(w, body[:responseLengths[responseI]])
 		responseI++
 	}))
 
