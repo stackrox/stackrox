@@ -28,8 +28,8 @@ import { DropdownItem } from '@patternfly/react-core/deprecated';
 import { ActionsColumn, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { ExclamationCircleIcon, FileIcon, SearchIcon } from '@patternfly/react-icons';
 
-import { vulnerabilityReportsPath } from 'routePaths';
-import { vulnerabilityReportPath } from 'Containers/Vulnerabilities/VulnerablityReporting/pathsForVulnerabilityReporting';
+import { vulnerabilityConfigurationReportsPath } from 'routePaths';
+import { vulnerabilityConfigurationReportPath } from 'Containers/Vulnerabilities/VulnerablityReporting/pathsForVulnerabilityReporting';
 import useFetchReports from 'Containers/Vulnerabilities/VulnerablityReporting/api/useFetchReports';
 import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import usePermissions from 'hooks/usePermissions';
@@ -59,7 +59,7 @@ import { reportDownloadURL } from 'services/ReportsService';
 
 const CreateReportsButton = () => {
     return (
-        <Link to={`${vulnerabilityReportsPath}?action=create`}>
+        <Link to={`${vulnerabilityConfigurationReportsPath}?action=create`}>
             <Button variant="primary">Create report</Button>
         </Link>
     );
@@ -400,7 +400,7 @@ function ConfigReportsTab() {
                                         )}
                                     {reportConfigurations.map((report, rowIndex) => {
                                         const vulnReportURL = generatePath(
-                                            vulnerabilityReportPath,
+                                            vulnerabilityConfigurationReportPath,
                                             {
                                                 reportId: report.id,
                                             }

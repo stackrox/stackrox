@@ -85,6 +85,8 @@ export const vulnerabilitiesImagesWithoutCvesPath = `${vulnerabilitiesBasePath}/
 export const vulnerabilitiesViewPath = `${vulnerabilitiesBasePath}/results/:viewTemplate/:viewId`;
 
 export const vulnerabilityReportsPath = `${vulnerabilitiesBasePath}/reports`;
+export const vulnerabilityConfigurationReportsPath = `${vulnerabilityReportsPath}/configuration`;
+export const vulnerabilityOnDemandReportsPath = `${vulnerabilityReportsPath}/on-demand`;
 
 // Vulnerability Management 1.0 path for links from Dashboard:
 

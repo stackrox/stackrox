@@ -14,7 +14,7 @@ import {
 import { Wizard } from '@patternfly/react-core/deprecated';
 import isEmpty from 'lodash/isEmpty';
 
-import { vulnerabilityReportsPath } from 'routePaths';
+import { vulnerabilityConfigurationReportsPath } from 'routePaths';
 import useReportFormValues from 'Containers/Vulnerabilities/VulnerablityReporting/forms/useReportFormValues';
 import useCreateReport from 'Containers/Vulnerabilities/VulnerablityReporting/api/useCreateReport';
 import useFetchReport from 'Containers/Vulnerabilities/VulnerablityReporting/api/useFetchReport';
@@ -48,7 +48,7 @@ function CloneVulnReportPage() {
     } = useCreateReport({
         onCompleted: () => {
             formik.resetForm();
-            navigate(vulnerabilityReportsPath);
+            navigate(vulnerabilityConfigurationReportsPath);
         },
     });
 
@@ -87,7 +87,7 @@ function CloneVulnReportPage() {
     }
 
     function onClose() {
-        navigate(vulnerabilityReportsPath);
+        navigate(vulnerabilityConfigurationReportsPath);
     }
 
     const wizardSteps = [
@@ -114,7 +114,7 @@ function CloneVulnReportPage() {
                 title="Error fetching the report configuration"
                 message={error}
                 actionText="Go to reports"
-                url={vulnerabilityReportsPath}
+                url={vulnerabilityConfigurationReportsPath}
             />
         );
     }
@@ -133,7 +133,7 @@ function CloneVulnReportPage() {
             <ReportFormErrorAlert error={createError} />
             <PageSection variant="light" className="pf-v5-u-py-md">
                 <Breadcrumb>
-                    <BreadcrumbItemLink to={vulnerabilityReportsPath}>
+                    <BreadcrumbItemLink to={vulnerabilityConfigurationReportsPath}>
                         Vulnerability reporting
                     </BreadcrumbItemLink>
                     <BreadcrumbItem isActive>Clone report</BreadcrumbItem>

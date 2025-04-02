@@ -1,21 +1,24 @@
 import React from 'react';
 import { PageSection, Title, Tabs, Tab } from '@patternfly/react-core';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 
-import useURLStringUnion from 'hooks/useURLStringUnion';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import PageTitle from 'Components/PageTitle';
-import ConfigReportsTab from './ConfigReportsTab';
-import OnDemandReportsTab from './OnDemandReportsTab';
+import {
+    vulnerabilityConfigurationReportsPath,
+    vulnerabilityOnDemandReportsPath,
+} from 'routePaths';
 
 export const tabStates = ['Report configurations', 'On-demand reports'] as const;
 
 export type TabState = (typeof tabStates)[number];
 
-function VulnReportsPage() {
+function ReportsLayout() {
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isOnDemandReportsEnabled = !isFeatureFlagEnabled('ROX_VULNERABILITY_ON_DEMAND_REPORTS');
 
-    const [tabState, setTabState] = useURLStringUnion('tab', tabStates);
+    const location = useLocation();
+    const navigate = useNavigate();
 
     return (
         <>
@@ -33,18 +36,18 @@ function VulnReportsPage() {
                     className="pf-v5-u-pl-lg pf-v5-u-background-color-100"
                 >
                     <Tabs
-                        activeKey={tabState}
+                        activeKey={location.pathname}
                         onSelect={(_e, tab) => {
-                            setTabState(tab);
+                            navigate(String(tab));
                         }}
                     >
                         <Tab
-                            eventKey="Report configurations"
+                            eventKey={vulnerabilityConfigurationReportsPath}
                             title="Report configurations"
                             tabContentId="report-configurations-tab-content"
                         />
                         <Tab
-                            eventKey="On-demand reports"
+                            eventKey={vulnerabilityOnDemandReportsPath}
                             title="On-demand reports"
                             tabContentId="on-demand-reports-tab-content"
                         />
@@ -52,11 +55,10 @@ function VulnReportsPage() {
                 </PageSection>
             )}
             <PageSection padding={{ default: 'noPadding' }}>
-                {tabState === 'Report configurations' && <ConfigReportsTab />}
-                {tabState === 'On-demand reports' && <OnDemandReportsTab />}
+                <Outlet />
             </PageSection>
         </>
     );
 }
 
-export default VulnReportsPage;
+export default ReportsLayout;
