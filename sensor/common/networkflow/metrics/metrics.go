@@ -14,6 +14,7 @@ func init() {
 		NumUpdated,
 		HostConnectionsOperations,
 		NumHostConnections,
+		IncomingConnectionsEndpoints,
 
 		// Network Flows Manager
 		FlowEnrichments,
@@ -70,6 +71,12 @@ var (
 		Name:      hostConnectionsPrefix + "size",
 		Help:      "Current number of host connections being held in Sensor's memory",
 	})
+	IncomingConnectionsEndpoints = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      hostConnectionsPrefix + "incoming_objects_total",
+		Help:      "Total number of incoming connections/endpoints received from Collector with their close TS set or unset",
+	}, []string{"object", "closedTS"})
 	// End of processing of the networkConnectionInfo message
 
 	// FlowEnrichments - 4. All connections and endpoints kept in memory are enriched

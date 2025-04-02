@@ -1258,6 +1258,21 @@ func (m *networkFlowManager) UnregisterCollector(hostname string, sequenceID int
 func (h *hostConnections) Process(networkInfo *sensor.NetworkConnectionInfo, nowTimestamp timestamp.MicroTS, sequenceID int64) error {
 	flowMetrics.NetworkConnectionInfoMessagesRcvd.With(prometheus.Labels{"Hostname": h.hostname}).Inc()
 
+	for _, updatedConnection := range networkInfo.UpdatedConnections {
+		if updatedConnection.CloseTimestamp == nil {
+			flowMetrics.IncomingConnectionsEndpoints.With(prometheus.Labels{"object": "connections", "closedTS": "unset"}).Inc()
+		} else {
+			flowMetrics.IncomingConnectionsEndpoints.With(prometheus.Labels{"object": "connections", "closedTS": "set"}).Inc()
+		}
+	}
+	for _, updatedEp := range networkInfo.UpdatedEndpoints {
+		if updatedEp.CloseTimestamp == nil {
+			flowMetrics.IncomingConnectionsEndpoints.With(prometheus.Labels{"object": "endpoints", "closedTS": "unset"}).Inc()
+		} else {
+			flowMetrics.IncomingConnectionsEndpoints.With(prometheus.Labels{"object": "endpoints", "closedTS": "set"}).Inc()
+		}
+	}
+
 	updatedConnections := getUpdatedConnections(h.hostname, networkInfo)
 	updatedEndpoints := getUpdatedContainerEndpoints(h.hostname, networkInfo)
 
