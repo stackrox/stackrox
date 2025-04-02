@@ -15,8 +15,6 @@ import (
 	"github.com/stackrox/rox/sensor/common/message"
 )
 
-const maxBufferSize = 10000
-
 var (
 	log = logging.LoggerForModule()
 )
