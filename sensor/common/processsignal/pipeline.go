@@ -172,10 +172,13 @@ func sensorIntoStorageSignal(signal *sensor.ProcessSignal) *storage.ProcessSigna
 		return nil
 	}
 
-	lineage := make([]*storage.ProcessSignal_LineageInfo, 0, len(signal.LineageInfo))
+	var lineage []*storage.ProcessSignal_LineageInfo
+	if signal.LineageInfo != nil {
+		lineage = make([]*storage.ProcessSignal_LineageInfo, 0, len(signal.LineageInfo))
 
-	for _, l := range signal.LineageInfo {
-		lineage = append(lineage, sensorIntoStorageLineage(l))
+		for _, l := range signal.LineageInfo {
+			lineage = append(lineage, sensorIntoStorageLineage(l))
+		}
 	}
 
 	return &storage.ProcessSignal{
