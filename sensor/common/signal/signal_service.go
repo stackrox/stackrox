@@ -8,7 +8,6 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	sensorAPI "github.com/stackrox/rox/generated/internalapi/sensor"
-	"github.com/stackrox/rox/generated/storage"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/logging"
@@ -83,17 +82,6 @@ func (s *serviceImpl) receiveMessages(stream sensorAPI.SignalService_PushSignals
 	}
 }
 
-func storageToSensorLineage(l *storage.ProcessSignal_LineageInfo) *sensorAPI.ProcessSignal_LineageInfo {
-	if l == nil {
-		return nil
-	}
-
-	return &sensorAPI.ProcessSignal_LineageInfo{
-		ParentUid:          l.ParentUid,
-		ParentExecFilePath: l.ParentExecFilePath,
-	}
-}
-
 func apiToSensorSignal(signal *v1.Signal) *sensorAPI.ProcessSignal {
 	if signal == nil {
 		log.Error("Empty signalStreamMsg")
@@ -111,7 +99,10 @@ func apiToSensorSignal(signal *v1.Signal) *sensorAPI.ProcessSignal {
 		lineage = make([]*sensorAPI.ProcessSignal_LineageInfo, 0, len(s.LineageInfo))
 
 		for _, l := range s.LineageInfo {
-			lineage = append(lineage, storageToSensorLineage(l))
+			lineage = append(lineage, &sensorAPI.ProcessSignal_LineageInfo{
+				ParentUid:          l.ParentUid,
+				ParentExecFilePath: l.ParentExecFilePath,
+			})
 		}
 	}
 
