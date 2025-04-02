@@ -213,6 +213,7 @@ func makeNetworkConnection(src string, dst string, containerID string, closeTime
 func (w *WorkloadManager) getFakeNetworkConnectionInfo(workload NetworkWorkload) *sensor.NetworkConnectionInfo {
 	conns := make([]*sensor.NetworkConnection, 0, workload.BatchSize)
 	networkEndpoints := make([]*sensor.NetworkEndpoint, 0, workload.BatchSize)
+	now := time.Now()
 	for i := 0; i < workload.BatchSize; i++ {
 		src, ok := ipPool.randomElem()
 		if !ok {
@@ -231,7 +232,7 @@ func (w *WorkloadManager) getFakeNetworkConnectionInfo(workload NetworkWorkload)
 			continue
 		}
 
-		conn := makeNetworkConnection(src, dst, containerID, time.Now().Add(-5*time.Second))
+		conn := makeNetworkConnection(src, dst, containerID, now.Add(-5*time.Second))
 
 		originator := getRandomOriginator(containerID)
 
@@ -241,12 +242,12 @@ func (w *WorkloadManager) getFakeNetworkConnectionInfo(workload NetworkWorkload)
 		if endpointPool.Size < endpointPool.Capacity {
 			endpointPool.add(networkEndpoint)
 		}
-		networkEndpoints = append(networkEndpoints, networkEndpoint)
+		// networkEndpoints = append(networkEndpoints, networkEndpoint)
 	}
 
 	for _, endpoint := range endpointPool.EndpointsToBeClosed {
 		networkEndpoint := endpoint
-		closeTS, err := protocompat.ConvertTimeToTimestampOrError(time.Now().Add(-5 * time.Second))
+		closeTS, err := protocompat.ConvertTimeToTimestampOrError(now.Add(-5 * time.Second))
 		if err != nil {
 			log.Errorf("Unable to set CloseTimestamp for endpoint %+v", err)
 		} else {

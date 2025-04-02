@@ -79,7 +79,7 @@ var (
 		Name:      netFlowManagerPrefix + "enrichments_total",
 		Help: "Total number of enrichments started for a given object " +
 			"(allows to calculate the percentage of events being enriched for " +
-			"network_flow_enrichment_endpoint_events_total and network_flow_enrichment_connection_events_total)",
+			"network_flow_manager_enrichment_endpoint_events_total and network_flow_manager_enrichment_connection_events_total)",
 	}, []string{"object"})
 	// FlowEnrichmentEventsEndpoint - 4a. Enrichment can have various outcomes. This metric stores the details about the outcomes for endpoints.
 	FlowEnrichmentEventsEndpoint = prometheus.NewCounterVec(prometheus.CounterOpts{

@@ -678,7 +678,6 @@ func logReasonForAggregatingNetGraphFlow(conn *connection, contNs, contName, ent
 }
 
 func (m *networkFlowManager) enrichConnection(conn *connection, status *connStatus, enrichedConnections map[networkConnIndicator]timestamp.MicroTS) {
-	flowMetrics.FlowEnrichments.WithLabelValues("connection").Inc()
 	now := timestamp.Now()
 	timeElapsedSinceFirstSeen := now.ElapsedSince(status.firstSeen)
 	isMature := timeElapsedSinceFirstSeen <= maxContainerResolutionWaitPeriod
@@ -879,7 +878,6 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 }
 
 func (m *networkFlowManager) enrichContainerEndpoint(ep *containerEndpoint, status *connStatus, enrichedEndpoints map[containerEndpointIndicator]timestamp.MicroTS) {
-	flowMetrics.FlowEnrichments.WithLabelValues("endpoint").Inc()
 	now := timestamp.Now()
 	timeElapsedSinceFirstSeen := now.ElapsedSince(status.firstSeen)
 	isMature := timeElapsedSinceFirstSeen > maxContainerResolutionWaitPeriod
@@ -1005,6 +1003,7 @@ func (m *networkFlowManager) enrichHostConnections(hostConns *hostConnections, e
 	hostConns.mutex.Lock()
 	defer hostConns.mutex.Unlock()
 
+	flowMetrics.FlowEnrichments.WithLabelValues("connection").Add(float64(len(hostConns.connections)))
 	for conn, status := range hostConns.connections {
 		m.enrichConnection(&conn, status, enrichedConnections)
 		if shallRemoveConnection(status) {
@@ -1044,6 +1043,7 @@ func (m *networkFlowManager) enrichHostContainerEndpoints(hostConns *hostConnect
 	hostConns.mutex.Lock()
 	defer hostConns.mutex.Unlock()
 
+	flowMetrics.FlowEnrichments.WithLabelValues("endpoint").Add(float64(len(hostConns.endpoints)))
 	for ep, status := range hostConns.endpoints {
 		m.enrichContainerEndpoint(&ep, status, enrichedEndpoints)
 		if shallRemoveEndpoint(status) {
