@@ -107,7 +107,7 @@ func GetQueryForAllScopes(ctx context.Context) (*v1.Query, error) {
 			conjuncts = append(conjuncts, searchPkg.NewQueryBuilder().
 				AddExactMatches(searchPkg.FieldLabel(idField.Search.FieldName), scope.ID).ProtoQuery())
 		}
-		if scope.IDs != nil {
+		if len(scope.IDs) > 0 {
 			conjuncts = append(conjuncts, searchPkg.NewQueryBuilder().
 				AddExactMatches(searchPkg.FieldLabel(idField.Search.FieldName), scope.IDs...).ProtoQuery())
 		}

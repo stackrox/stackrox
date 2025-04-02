@@ -54,7 +54,7 @@ func scopeQuery(q *v1.Query, scopes []scoped.Scope) (*v1.Query, error) {
 			conjuncts = append(conjuncts, search.NewQueryBuilder().
 				AddExactMatches(search.FieldLabel(idField.Search.FieldName), scope.ID).ProtoQuery())
 		}
-		if scope.IDs != nil {
+		if len(scope.IDs) > 0 {
 			conjuncts = append(conjuncts, search.NewQueryBuilder().
 				AddExactMatches(search.FieldLabel(idField.Search.FieldName), scope.IDs...).ProtoQuery())
 		}
