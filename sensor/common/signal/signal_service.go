@@ -7,7 +7,6 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	sensorAPI "github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
@@ -95,44 +94,5 @@ func (s *serviceImpl) receiveMessages(stream sensorAPI.SignalService_PushSignals
 		}
 
 		s.queue <- signal.GetProcessSignal()
-	}
-}
-
-func apiToSensorSignal(signal *v1.Signal) *sensorAPI.ProcessSignal {
-	if signal == nil {
-		log.Error("Empty signalStreamMsg")
-		return nil
-	}
-
-	s := signal.GetProcessSignal()
-	if s == nil {
-		log.Error("Empty process signal")
-		return nil
-	}
-
-	var lineage []*sensorAPI.ProcessSignal_LineageInfo
-	if s.LineageInfo != nil {
-		lineage = make([]*sensorAPI.ProcessSignal_LineageInfo, 0, len(s.LineageInfo))
-
-		for _, l := range s.LineageInfo {
-			lineage = append(lineage, &sensorAPI.ProcessSignal_LineageInfo{
-				ParentUid:          l.ParentUid,
-				ParentExecFilePath: l.ParentExecFilePath,
-			})
-		}
-	}
-
-	return &sensorAPI.ProcessSignal{
-		Id:           s.Id,
-		ContainerId:  s.ContainerId,
-		CreationTime: s.Time,
-		Name:         s.Name,
-		Args:         s.Args,
-		ExecFilePath: s.ExecFilePath,
-		Pid:          s.Pid,
-		Uid:          s.Uid,
-		Gid:          s.Gid,
-		Scraped:      s.Scraped,
-		LineageInfo:  lineage,
 	}
 }
