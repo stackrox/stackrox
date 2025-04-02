@@ -551,5 +551,5 @@ func TestSensorIntoStorageSignal(t *testing.T) {
 			ParentExecFilePath: input.LineageInfo[0].ParentExecFilePath,
 		}},
 	}
-	assert.Equal(t, sensorIntoStorageSignal(&input), &expected)
+	assert.EqualExportedValues(t, sensorIntoStorageSignal(&input), &expected)
 }
