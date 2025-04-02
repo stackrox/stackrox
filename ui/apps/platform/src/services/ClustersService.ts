@@ -242,15 +242,11 @@ export function fetchClusterInitBundles(): Promise<{ response: { items: ClusterI
         });
 }
 
-export function fetchClusterRegistrationSecrets(): Promise<{
-    response: { items: ClusterRegistrationSecret[] };
-}> {
+export function fetchClusterRegistrationSecrets(): Promise<{ items: ClusterRegistrationSecret[] }> {
     return axios
         .get<{ items: ClusterRegistrationSecret[] }>(`${clusterInitUrl}/crs`)
         .then((response) => {
-            return {
-                response: response.data || { items: [] },
-            };
+            return response.data || { items: [] };
         });
 }
 
@@ -281,18 +277,16 @@ export function generateClusterInitBundle(data: { name: string }): Promise<{
         });
 }
 
-export function generateClusterRegistrationSecret(data: { name: string }): Promise<{
-    response: GenerateClusterRegistrationSecretResponse;
-}> {
+export function generateClusterRegistrationSecret(data: {
+    name: string;
+}): Promise<GenerateClusterRegistrationSecretResponse> {
     return axios
         .post<{
             meta: ClusterRegistrationSecret;
             crs: string;
         }>(`${clusterInitUrl}/crs`, data)
         .then((response) => {
-            return {
-                response: response.data || {},
-            };
+            return response.data;
         });
 }
 
