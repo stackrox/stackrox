@@ -17,7 +17,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const (
@@ -520,36 +519,68 @@ func deleteStore(deploymentID string, mockStore *clusterentities.Store) {
 }
 
 func TestSensorIntoStorageSignal(t *testing.T) {
-	input := sensor.ProcessSignal{
-		Id:           "1234",
-		ContainerId:  containerID1,
-		CreationTime: &timestamppb.Timestamp{},
-		Name:         "mock",
-		Args:         "--help",
-		ExecFilePath: "/usr/local/bin/mock",
-		Pid:          4321,
-		Uid:          5432,
-		Gid:          1234,
-		Scraped:      false,
-		LineageInfo: []*sensor.ProcessSignal_LineageInfo{
-			{ParentUid: 2345, ParentExecFilePath: "parent"},
+	tests := []struct {
+		input    *sensor.ProcessSignal
+		expected *storage.ProcessSignal
+	}{
+		{input: nil, expected: nil},
+		{
+			input: &sensor.ProcessSignal{
+				Id:           "1234",
+				ContainerId:  containerID1,
+				Name:         "mock",
+				Args:         "--help",
+				ExecFilePath: "/usr/local/bin/mock",
+				Pid:          4321,
+				Uid:          5432,
+				Gid:          1234,
+				Scraped:      false,
+			},
+			expected: &storage.ProcessSignal{
+				Id:           "1234",
+				ContainerId:  containerID1,
+				Name:         "mock",
+				Args:         "--help",
+				ExecFilePath: "/usr/local/bin/mock",
+				Pid:          4321,
+				Uid:          5432,
+				Gid:          1234,
+				Scraped:      false,
+			},
+		},
+		{
+			input: &sensor.ProcessSignal{
+				Id:           "1234",
+				ContainerId:  containerID1,
+				Name:         "mock",
+				Args:         "--help",
+				ExecFilePath: "/usr/local/bin/mock",
+				Pid:          4321,
+				Uid:          5432,
+				Gid:          1234,
+				Scraped:      false,
+				LineageInfo: []*sensor.ProcessSignal_LineageInfo{
+					{ParentUid: 2345, ParentExecFilePath: "parent"},
+				},
+			},
+			expected: &storage.ProcessSignal{
+				Id:           "1234",
+				ContainerId:  containerID1,
+				Name:         "mock",
+				Args:         "--help",
+				ExecFilePath: "/usr/local/bin/mock",
+				Pid:          4321,
+				Uid:          5432,
+				Gid:          1234,
+				Scraped:      false,
+				LineageInfo: []*storage.ProcessSignal_LineageInfo{
+					{ParentUid: 2345, ParentExecFilePath: "parent"},
+				},
+			},
 		},
 	}
-	expected := storage.ProcessSignal{
-		Id:           input.Id,
-		ContainerId:  input.ContainerId,
-		Time:         &timestamppb.Timestamp{},
-		Name:         input.Name,
-		Args:         input.Args,
-		ExecFilePath: input.ExecFilePath,
-		Pid:          input.Pid,
-		Uid:          input.Uid,
-		Gid:          input.Gid,
-		Scraped:      input.Scraped,
-		LineageInfo: []*storage.ProcessSignal_LineageInfo{{
-			ParentUid:          input.LineageInfo[0].ParentUid,
-			ParentExecFilePath: input.LineageInfo[0].ParentExecFilePath,
-		}},
+
+	for _, test := range tests {
+		assert.EqualExportedValues(t, sensorIntoStorageSignal(test.input), test.expected)
 	}
-	assert.EqualExportedValues(t, sensorIntoStorageSignal(&input), &expected)
 }
