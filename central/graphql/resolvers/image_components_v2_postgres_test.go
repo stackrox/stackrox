@@ -8,6 +8,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
+	"github.com/stackrox/rox/central/views/imagecveflat"
 	imagesView "github.com/stackrox/rox/central/views/images"
 	"github.com/stackrox/rox/pkg/cve"
 	"github.com/stackrox/rox/pkg/features"
@@ -81,6 +82,7 @@ func (s *GraphQLImageComponentV2TestSuite) SetupSuite() {
 		CreateTestImageComponentV2Datastore(s.T(), s.testDB, mockCtrl),
 		CreateTestImageCVEV2Datastore(s.T(), s.testDB),
 		CreateTestDeploymentDatastore(s.T(), s.testDB, mockCtrl, imageDataStore),
+		imagecveflat.NewCVEFlatView(s.testDB.DB),
 	)
 	s.resolver = resolver
 
@@ -204,9 +206,6 @@ func (s *GraphQLImageComponentV2TestSuite) TestImageComponentsScoped() {
 }
 
 func (s *GraphQLImageComponentV2TestSuite) TestImageComponentsScopeTree() {
-
-	s.T().Skip()
-
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
 	imageCompTests := []struct {

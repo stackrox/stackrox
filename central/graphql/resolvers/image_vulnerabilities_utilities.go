@@ -146,6 +146,13 @@ func (resolver *Resolver) wrapImageCVEV2WithContext(ctx context.Context, value *
 	return &imageCVEV2Resolver{ctx: ctx, root: resolver, data: value}, nil
 }
 
+func (resolver *Resolver) wrapImageCVEV2FlatWithContext(ctx context.Context, value *storage.ImageCVEV2, flatData imagecveflat.CveFlat, ok bool, err error) (*imageCVEV2Resolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &imageCVEV2Resolver{ctx: ctx, root: resolver, data: value, flatData: flatData}, nil
+}
+
 func (resolver *Resolver) wrapImageCVEV2sWithContext(ctx context.Context, values []*storage.ImageCVEV2, err error) ([]*imageCVEV2Resolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
@@ -157,12 +164,12 @@ func (resolver *Resolver) wrapImageCVEV2sWithContext(ctx context.Context, values
 	return output, nil
 }
 
-func (resolver *Resolver) wrapImageCVEV2sCoreWithContext(ctx context.Context, values []*storage.ImageCVEV2, coreResover []imagecveflat.CveFlat, err error) ([]*imageCVEV2Resolver, error) {
+func (resolver *Resolver) wrapImageCVEV2sFlatWithContext(ctx context.Context, values []*storage.ImageCVEV2, flatData []imagecveflat.CveFlat, err error) ([]*imageCVEV2Resolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
 	coreMap := make(map[string]imagecveflat.CveFlat)
-	for _, res := range coreResover {
+	for _, res := range flatData {
 		if _, ok := coreMap[res.GetCVE()]; !ok {
 			coreMap[res.GetCVE()] = res
 		}
