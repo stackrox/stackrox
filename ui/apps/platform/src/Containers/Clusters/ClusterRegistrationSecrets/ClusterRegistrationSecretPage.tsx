@@ -28,7 +28,7 @@ function ClusterRegistrationSecretPage({
         error: errorForFetch,
     } = useRestQuery(fetchClusterRegistrationSecrets);
 
-    const clusterRegistrationSecret = dataForFetch?.response?.items.find(
+    const clusterRegistrationSecret = dataForFetch?.items.find(
         (clusterRegistrationSecretArg) => clusterRegistrationSecretArg.id === id
     );
 

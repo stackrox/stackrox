@@ -1,4 +1,4 @@
-import React, { ReactElement, useState } from 'react';
+import React, { ReactElement } from 'react';
 import {
     ClipboardCopy,
     ClipboardCopyButton,
@@ -14,6 +14,7 @@ import {
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import useMetadata from 'hooks/useMetadata';
 import { getVersionedDocs } from 'utils/versioning';
+import useClipboardCopy from 'hooks/useClipboardCopy';
 
 const codeBlock = [
     'helm install -n stackrox --create-namespace \\',
@@ -34,27 +35,14 @@ function SecureClusterUsingHelmChart({
 }: SecureClusterUsingHelmChartProps): ReactElement {
     const { version } = useMetadata();
     const subHeadingLevel = headingLevel === 'h2' ? 'h3' : 'h4';
-    const [wasCopied, setWasCopied] = useState(false);
-
-    function onClickCopy() {
-        // https://developer.mozilla.org/en-US/docs/Web/API/Clipboard/writeText#browser_compatibility
-        // Chrome 66 Edge 79 Firefox 63 Safari 13.1
-        navigator?.clipboard
-            ?.writeText(codeBlock)
-            .then(() => {
-                setWasCopied(true);
-            })
-            .catch(() => {
-                // TODO addToast(title, message)
-            });
-    }
+    const { wasCopied, copyToClipboard } = useClipboardCopy();
 
     const actions = (
         <CodeBlockAction>
             <ClipboardCopyButton
                 aria-label="Copy to clipboard"
                 id="ClipboardCopyButton"
-                onClick={onClickCopy}
+                onClick={() => copyToClipboard(codeBlock)}
                 textId="CodeBlockCode"
                 variant="plain"
             >

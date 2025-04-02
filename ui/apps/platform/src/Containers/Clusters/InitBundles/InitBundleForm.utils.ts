@@ -25,8 +25,7 @@ export function downloadBundle(
 ) {
     const { helmValuesBundle, kubectlBundle } = response;
     const bundle = installation === 'Helm' ? helmValuesBundle : kubectlBundle;
-    // TODO atob is deprecated
-    const decoded = typeof bundle === 'string' ? atob(bundle) : '';
+    const decoded = typeof bundle === 'string' ? window.atob(bundle) : '';
 
     const file = new Blob([decoded], {
         type: 'application/x-yaml',

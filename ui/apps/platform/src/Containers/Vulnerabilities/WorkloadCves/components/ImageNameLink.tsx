@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button, Flex, FlexItem, Tooltip, Truncate } from '@patternfly/react-core';
 import { OutlinedCopyIcon } from '@patternfly/react-icons';
+import useClipboardCopy from 'hooks/useClipboardCopy';
 
 import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
 import { getImageBaseNameDisplay } from '../utils/images';
@@ -22,6 +23,7 @@ function ImageNameLink({ name, id, children }: ImageNameLinkProps) {
     const { getAbsoluteUrl } = useWorkloadCveViewContext();
     const vulnerabilityState = useVulnerabilityState();
     const [copyIconTooltip, setCopyIconTooltip] = useState('Copy image name');
+    const { copyToClipboard } = useClipboardCopy();
 
     const { registry } = name;
 
@@ -29,10 +31,7 @@ function ImageNameLink({ name, id, children }: ImageNameLinkProps) {
     const baseName = getImageBaseNameDisplay(id, name);
 
     function copyImageName() {
-        navigator?.clipboard
-            ?.writeText(`${registry}/${baseName}`)
-            .then(() => setCopyIconTooltip('Copied!'))
-            .catch(() => {}); /* Nothing to do */
+        return copyToClipboard(`${registry}/${baseName}`).then(() => setCopyIconTooltip('Copied!'));
     }
 
     return (

@@ -1,4 +1,4 @@
-import React, { ReactElement, useState } from 'react';
+import React, { ReactElement } from 'react';
 import {
     Alert,
     Button,
@@ -11,6 +11,7 @@ import {
 } from '@patternfly/react-core';
 
 import useAnalytics, { REVOKE_CLUSTER_REGISTRATION_SECRET } from 'hooks/useAnalytics';
+import useRestMutation from 'hooks/useRestMutation';
 import {
     ClusterRegistrationSecret,
     revokeClusterRegistrationSecrets,
@@ -27,30 +28,23 @@ function RevokeClusterRegistrationSecretModal({
     onCloseModal,
 }: RevokeClusterRegistrationSecretModalProps): ReactElement {
     const { analyticsTrack } = useAnalytics();
-    const [errorMessage, setErrorMessage] = useState('');
-    const [isRevokingClusterRegistrationSecret, setIsRevokingClusterRegistrationSecret] =
-        useState(false);
-
-    function onRevokeClusterRegistrationSecret() {
-        setErrorMessage('');
-        setIsRevokingClusterRegistrationSecret(true);
-        revokeClusterRegistrationSecrets([clusterRegistrationSecret.id])
-            .then(({ crsRevocationErrors }) => {
+    const { mutate, isLoading, error } = useRestMutation(
+        (ids: string[]) => revokeClusterRegistrationSecrets(ids),
+        {
+            onSuccess: ({ crsRevocationErrors }) => {
                 if (crsRevocationErrors.length === 0) {
                     onCloseModal(true);
                 }
                 analyticsTrack(REVOKE_CLUSTER_REGISTRATION_SECRET);
-            })
-            .catch((error) => {
-                setErrorMessage(getAxiosErrorMessage(error));
-            })
-            .finally(() => {
-                setIsRevokingClusterRegistrationSecret(false);
-            });
+            },
+        }
+    );
+
+    function onRevokeClusterRegistrationSecret() {
+        mutate([clusterRegistrationSecret.id]);
     }
 
     function onCancel() {
-        setErrorMessage('');
         onCloseModal(false);
     }
 
@@ -66,16 +60,11 @@ function RevokeClusterRegistrationSecretModal({
                     key="Revoke cluster registration secret"
                     variant="primary"
                     onClick={onRevokeClusterRegistrationSecret}
-                    isDisabled={isRevokingClusterRegistrationSecret}
+                    isDisabled={isLoading}
                 >
                     Revoke cluster registration secret
                 </Button>,
-                <Button
-                    key="Cancel"
-                    variant="secondary"
-                    onClick={onCancel}
-                    isDisabled={isRevokingClusterRegistrationSecret}
-                >
+                <Button key="Cancel" variant="secondary" onClick={onCancel} isDisabled={isLoading}>
                     Cancel
                 </Button>,
             ]}
@@ -89,14 +78,14 @@ function RevokeClusterRegistrationSecretModal({
                         </DescriptionListDescription>
                     </DescriptionListGroup>
                 </DescriptionList>
-                {errorMessage && (
+                {error !== undefined && (
                     <Alert
                         title="Revoke cluster registration secret failed"
                         variant="danger"
                         isInline
                         component="p"
                     >
-                        {errorMessage}
+                        {getAxiosErrorMessage(error)}
                     </Alert>
                 )}
             </Flex>
