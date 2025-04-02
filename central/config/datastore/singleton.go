@@ -126,6 +126,9 @@ func validateConfigAndPopulateMissingDefaults(datastore DataStore) {
 	if err != nil {
 		panic(err)
 	}
+	if config == nil {
+		config = &storage.Config{}
+	}
 
 	// See the note next to the publicConfigCache variable in datastore.go for
 	// more information on public config caching.
@@ -160,15 +163,13 @@ func validateConfigAndPopulateMissingDefaults(datastore DataStore) {
 		needsUpsert = true
 	}
 
-	if features.CustomizablePlatformComponents.Enabled() {
-		needsUpsert = populateDefaultSystemRuleIfMissing(config)
+	if features.CustomizablePlatformComponents.Enabled() && populateDefaultSystemRuleIfMissing(config) {
+		needsUpsert = true
 	}
 
 	if needsUpsert {
-		utils.Must(datastore.UpsertConfig(ctx, &storage.Config{
-			PublicConfig:  config.GetPublicConfig(),
-			PrivateConfig: privateConfig,
-		}))
+		config.PrivateConfig = privateConfig
+		utils.Must(datastore.UpsertConfig(ctx, config))
 	}
 }
 
