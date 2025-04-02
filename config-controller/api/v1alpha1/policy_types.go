@@ -140,14 +140,13 @@ type MitreAttackVectors struct {
 type SecurityPolicyConditionType string
 
 const (
-	// Ready indicates that the CR was successfully parsed from the given spec that the user provided.
-	Ready SecurityPolicyConditionType = "Ready"
-	// Reconciled indicates that config controller was able to do all pre-persist checks on the CR to ensure that
-	// everything is ready to be persisted to Central.
-	Reconciled SecurityPolicyConditionType = "Reconciled"
-	// Active indicates that the policy is persisted successfully in Central and matches the spec that has
-	// been provided.
-	Active SecurityPolicyConditionType = "Active"
+	// CentralDataFresh indicates that all caches were successfully updated from Central
+	CentralDataFresh SecurityPolicyConditionType = "CentralDataFresh"
+	// PolicyValidated indicates that the policy was successfully validated and transformed into a protobuf, ready to
+	// be persisted to Central
+	PolicyValidated SecurityPolicyConditionType = "PolicyValidated"
+	// AcceptedByCentral indicates that the policy was persisted successfully in Central
+	AcceptedByCentral SecurityPolicyConditionType = "AcceptedByCentral"
 )
 
 // SecurityPolicyCondition defines the observed state of SecurityPolicy

@@ -140,39 +140,39 @@ func TestConditionUpdates(t *testing.T) {
 	policy.Status = SecurityPolicyStatus{
 		Condition: SecurityPolicyConditions{
 			SecurityPolicyCondition{
-				Type:               Ready,
-				Status:             false,
+				Type:               CentralDataFresh,
+				Status:             "False",
 				Message:            "",
 				LastTransitionTime: startTime,
 			},
 			SecurityPolicyCondition{
-				Type:               Reconciled,
-				Status:             false,
+				Type:               PolicyValidated,
+				Status:             "False",
 				Message:            "",
 				LastTransitionTime: startTime,
 			},
 			SecurityPolicyCondition{
-				Type:               Active,
-				Status:             false,
+				Type:               AcceptedByCentral,
+				Status:             "False",
 				Message:            "",
 				LastTransitionTime: startTime,
 			},
 		},
 	}
-	assert.Equal(t, false, policy.Status.Condition.GetCondition(Ready).Status)
-	policy.Status.Condition.UpdateCondition(Ready, SecurityPolicyCondition{
-		Type:    Ready,
-		Status:  true,
-		Message: "Now Ready",
+	assert.Equal(t, "False", policy.Status.Condition.GetCondition(CentralDataFresh).Status)
+	policy.Status.Condition.UpdateCondition(CentralDataFresh, SecurityPolicyCondition{
+		Type:    CentralDataFresh,
+		Status:  "True",
+		Message: "Central data updated",
 	})
 	// Check that the condition was properly updated
-	newReadyCondition := policy.Status.Condition.GetCondition(Ready)
-	assert.Equal(t, "Now Ready", newReadyCondition.Message)
-	assert.Equal(t, true, newReadyCondition.Status)
-	assert.NotEqual(t, startTime, newReadyCondition.LastTransitionTime)
+	newCentralDataFreshCondition := policy.Status.Condition.GetCondition(CentralDataFresh)
+	assert.Equal(t, "Central data updated", newCentralDataFreshCondition.Message)
+	assert.Equal(t, "True", newCentralDataFreshCondition.Status)
+	assert.NotEqual(t, startTime, newCentralDataFreshCondition.LastTransitionTime)
 	// Ensure no other fields were changed
-	assert.Equal(t, false, policy.Status.Condition.GetCondition(Reconciled).Status)
-	assert.Equal(t, false, policy.Status.Condition.GetCondition(Active).Status)
+	assert.Equal(t, "False", policy.Status.Condition.GetCondition(PolicyValidated).Status)
+	assert.Equal(t, "False", policy.Status.Condition.GetCondition(AcceptedByCentral).Status)
 	// Ensure the length of the conditions array is still 3
 	assert.Equal(t, 3, len(policy.Status.Condition))
 }
