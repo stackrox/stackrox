@@ -47,5 +47,5 @@ func TestApiIntoSensorSignal(t *testing.T) {
 			ParentExecFilePath: signal.LineageInfo[0].ParentExecFilePath,
 		}},
 	}
-	assert.Equal(t, apiToSensorSignal(&input), &expected)
+	assert.EqualExportedValues(t, apiToSensorSignal(&input), &expected)
 }
