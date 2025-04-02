@@ -2,7 +2,7 @@
 
 load "../helpers.bash"
 
-output=""
+output_file=""
 
 setup_file() {
   local -r roxctl_version="$(roxctl-development version || true)"
@@ -13,15 +13,15 @@ setup_file() {
 }
 
 setup() {
-  output="$(mktemp -d -u)"
+  output_file="$(mktemp -d -u)"
 }
 
 teardown() {
-  rm -rf "${output}"
+  rm -rf "${output_file}"
 }
 
 @test "roxctl central init-bundles fetch-ca" {
-  run roxctl_authenticated central init-bundles fetch-ca --output ${output}
+  run roxctl_authenticated central init-bundles fetch-ca --output ${output_file}
   assert_success
-  assert_file_exist "${output}"
+  assert_file_exist "${output_file}"
 }
