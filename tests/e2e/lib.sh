@@ -185,6 +185,7 @@ export_test_environment() {
     ci_export ROX_NETWORK_GRAPH_EXTERNAL_IPS "${ROX_NETWORK_GRAPH_EXTERNAL_IPS:-false}"
     ci_export ROX_FLATTEN_CVE_DATA "${ROX_FLATTEN_CVE_DATA:-false}"
     ci_export ROX_VULNERABILITY_ON_DEMAND_REPORTS "${ROX_VULNERABILITY_ON_DEMAND_REPORTS:-true}"
+    ci_export ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS "${ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS:-true}"
 
     if is_in_PR_context && pr_has_label ci-fail-fast; then
         ci_export FAIL_FAST "true"
@@ -329,6 +330,8 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n      - name: ROX_FLATTEN_CVE_DATA'
     customize_envVars+=$'\n        value: "false"'
     customize_envVars+=$'\n      - name: ROX_VULNERABILITY_ON_DEMAND_REPORTS'
+    customize_envVars+=$'\n        value: "true"'
+    customize_envVars+=$'\n      - name: ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS'
     customize_envVars+=$'\n        value: "true"'
 
     CENTRAL_YAML_PATH="tests/e2e/yaml/central-cr.envsubst.yaml"
