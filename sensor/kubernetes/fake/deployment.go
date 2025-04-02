@@ -6,7 +6,7 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/stackrox/rox/generated/internalapi/sensor"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/containerid"
 	"github.com/stackrox/rox/pkg/fixtures"
@@ -26,7 +26,7 @@ var (
 
 // ProcessPool stores processes by containerID using a map
 type ProcessPool struct {
-	Processes map[string][]*sensor.ProcessSignal
+	Processes map[string][]*storage.ProcessSignal
 	Capacity  int
 	Size      int
 	lock      sync.RWMutex
@@ -34,13 +34,13 @@ type ProcessPool struct {
 
 func newProcessPool() *ProcessPool {
 	return &ProcessPool{
-		Processes: make(map[string][]*sensor.ProcessSignal),
+		Processes: make(map[string][]*storage.ProcessSignal),
 		Capacity:  10000,
 		Size:      0,
 	}
 }
 
-func (p *ProcessPool) add(val *sensor.ProcessSignal) {
+func (p *ProcessPool) add(val *storage.ProcessSignal) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
@@ -64,7 +64,7 @@ func (p *ProcessPool) remove(containerID string) {
 	delete(p.Processes, containerID)
 }
 
-func (p *ProcessPool) getRandomProcess(containerID string) *sensor.ProcessSignal {
+func (p *ProcessPool) getRandomProcess(containerID string) *storage.ProcessSignal {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 

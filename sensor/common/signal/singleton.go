@@ -1,19 +1,14 @@
 package signal
 
 import (
-	"github.com/stackrox/rox/generated/internalapi/sensor"
-	"github.com/stackrox/rox/sensor/common"
-	"github.com/stackrox/rox/sensor/common/message"
-	"github.com/stackrox/rox/sensor/common/signal/component"
+	"github.com/stackrox/rox/generated/storage"
 )
 
-func NewComponent(pipeline component.Pipeline, indicators chan *message.ExpiringMessage, opts ...component.Option) common.SensorComponent {
-	return component.New(pipeline, indicators, opts...)
-}
+const maxBufferSize = 10000
 
-func NewService(queue chan *sensor.ProcessSignal, opts ...Option) Service {
+func NewService(opts ...Option) Service {
 	srv := &serviceImpl{
-		queue:            queue,
+		queue:            make(chan *storage.ProcessSignal, maxBufferSize),
 		authFuncOverride: authFuncOverride,
 	}
 

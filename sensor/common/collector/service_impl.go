@@ -14,6 +14,8 @@ var (
 	log = logging.LoggerForModule()
 )
 
+const maxBufferSize = 10000
+
 type Option func(*serviceImpl)
 
 // WithAuthFuncOverride sets the AuthFuncOverride.
@@ -31,9 +33,9 @@ type serviceImpl struct {
 	authFuncOverride func(context.Context, string) (context.Context, error)
 }
 
-func newService(queue chan *sensor.ProcessSignal) Service {
+func newService() Service {
 	return &serviceImpl{
-		queue: queue,
+		queue: make(chan *sensor.ProcessSignal, maxBufferSize),
 	}
 }
 
@@ -65,6 +67,11 @@ func (s *serviceImpl) Communicate(server sensor.CollectorService_CommunicateServ
 func (s *serviceImpl) RegisterServiceServer(server *grpc.Server) {
 	sensor.RegisterCollectorServiceServer(server, s)
 }
+
 func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
 	return nil
+}
+
+func (s *serviceImpl) GetMessagesC() <-chan *sensor.ProcessSignal {
+	return s.queue
 }
