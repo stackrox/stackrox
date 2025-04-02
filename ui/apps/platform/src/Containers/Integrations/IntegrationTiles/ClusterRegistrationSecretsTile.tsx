@@ -1,11 +1,11 @@
 import React, { ReactElement } from 'react';
 
+import useRestQuery from 'hooks/useRestQuery';
 import { fetchClusterRegistrationSecrets } from 'services/ClustersService';
 import { clustersClusterRegistrationSecretsPath } from 'routePaths';
 
 import { clusterRegistrationSecretDescriptor as descriptor } from '../utils/integrationsList';
 import IntegrationTile from './IntegrationTile';
-import useRestQuery from 'hooks/useRestQuery';
 
 const { image, label } = descriptor;
 
