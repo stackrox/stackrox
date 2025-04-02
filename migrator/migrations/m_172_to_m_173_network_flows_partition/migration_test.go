@@ -50,10 +50,6 @@ func (s *networkFlowsMigrationTestSuite) SetupTest() {
 	s.oldStore2 = previous.New(s.db.DB, cluster2)
 }
 
-func (s *networkFlowsMigrationTestSuite) TearDownTest() {
-	s.db.Teardown(s.T())
-}
-
 func (s *networkFlowsMigrationTestSuite) TestMigration() {
 	// Add some data to the original tables via the old stores.
 	s.addSomeOldData()

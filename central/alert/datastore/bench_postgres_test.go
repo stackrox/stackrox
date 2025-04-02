@@ -25,8 +25,7 @@ import (
 func BenchmarkAlertDatabaseOps(b *testing.B) {
 	testDB := pgtest.ForT(b)
 	ctx := sac.WithAllAccess(context.Background())
-	datastore, err := GetTestPostgresDataStore(b, testDB.DB)
-	require.NoError(b, err)
+	datastore := GetTestPostgresDataStore(b, testDB.DB)
 
 	var ids []string
 	sevToCount := make(map[storage.Severity]int)

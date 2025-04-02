@@ -17,7 +17,7 @@ func Test_indentAndWrap(t *testing.T) {
 		"    lines."
 
 	sb := &strings.Builder{}
-	_, err := makeFormattingWriter(sb, 30, defaultTabWidth, 1, 2, 3, 4).WriteString(
+	err := makeFormattingWriter(sb, 30, defaultTabWidth, 1, 2, 3, 4).WriteString(
 		`
 This is some long text, that should be indented and	wrapped.
 There are multiple
@@ -27,11 +27,11 @@ lines.`)
 
 	sb = &strings.Builder{}
 	xw := makeFormattingWriter(sb, 30, defaultTabWidth, 1, 2, 3, 4)
-	_, _ = xw.WriteString("\nThis is")
-	_, _ = xw.WriteString(" some long text")
-	_, _ = xw.WriteString(", that should be indented ")
-	_, _ = xw.WriteString("and\twrapped.\n")
-	_, _ = xw.WriteString("There are multiple\nlines.")
+	_ = xw.WriteString("\nThis is")
+	_ = xw.WriteString(" some long text")
+	_ = xw.WriteString(", that should be indented ")
+	_ = xw.WriteString("and\twrapped.\n")
+	_ = xw.WriteString("There are multiple\nlines.")
 	assert.Equal(t, expected, sb.String())
 
 	cases := []struct {
@@ -48,7 +48,7 @@ lines.`)
 	}
 	for _, c := range cases {
 		sb := &strings.Builder{}
-		_, err := makeFormattingWriter(sb, 20, defaultTabWidth, c.padding...).WriteString(c.text)
+		err := makeFormattingWriter(sb, 20, defaultTabWidth, c.padding...).WriteString(c.text)
 		assert.NoError(t, err)
 		assert.Equal(t, c.expected, sb.String())
 	}
@@ -58,14 +58,14 @@ func Test_setIndent(t *testing.T) {
 	t.Run("should respect updated indentation", func(t *testing.T) {
 		sb := &strings.Builder{}
 		w := makeFormattingWriter(sb, 20, defaultTabWidth)
-		_, _ = w.WriteString("text 0")
+		_ = w.WriteString("text 0")
 		w.SetIndent(2, 4)
-		_, _ = w.WriteString("text 2\n")
-		_, _ = w.WriteString("text 4\n")
-		_, _ = w.WriteString("text 4")
+		_ = w.WriteString("text 2\n")
+		_ = w.WriteString("text 4\n")
+		_ = w.WriteString("text 4")
 		w.SetIndent()
-		_, _ = w.WriteString("text 0\n")
-		_, _ = w.WriteString("text 0\n")
+		_ = w.WriteString("text 0\n")
+		_ = w.WriteString("text 0\n")
 
 		assert.Equal(t, "text 0  text 2\n    text 4\n    text 4text 0\ntext 0\n", sb.String())
 	})
@@ -74,10 +74,10 @@ func Test_setIndent(t *testing.T) {
 		sb := &strings.Builder{}
 		w := makeFormattingWriter(sb, 10, defaultTabWidth)
 
-		w.SetIndent(2)               // 2
-		_, _ = w.WriteString("... ") // +4=6
-		w.SetIndent(2)               // +2=8
-		_, _ = w.WriteString(" .")   // +2=10
+		w.SetIndent(2)            // 2
+		_ = w.WriteString("... ") // +4=6
+		w.SetIndent(2)            // +2=8
+		_ = w.WriteString(" .")   // +2=10
 		assert.Equal(t, "  ...    .", sb.String())
 	})
 
@@ -86,9 +86,9 @@ func Test_setIndent(t *testing.T) {
 		w := makeFormattingWriter(sb, 10, defaultTabWidth)
 
 		w.SetIndent(2)
-		_, _ = w.WriteString(".... ")
+		_ = w.WriteString(".... ")
 		w.SetIndent(2)
-		_, _ = w.WriteString(" ..")
+		_ = w.WriteString(" ..")
 		assert.Equal(t, "  ....    \n  ..", sb.String())
 	})
 
@@ -96,29 +96,29 @@ func Test_setIndent(t *testing.T) {
 		sb := &strings.Builder{}
 		w := makeFormattingWriter(sb, 20, defaultTabWidth)
 
-		_, _ = w.WriteString("\n")
+		_ = w.WriteString("\n")
 		w.SetIndent(15)
-		_, _ = w.WriteString(">")
+		_ = w.WriteString(">")
 		w.SetIndent(15)
-		_, _ = w.WriteString("|\n")
+		_ = w.WriteString("|\n")
 		w.SetIndent(2)
-		_, _ = w.WriteString(">")
+		_ = w.WriteString(">")
 		w.SetIndent(-10)
-		_, _ = w.WriteString("|\n|\n")
+		_ = w.WriteString("|\n|\n")
 		w.SetIndent(2)
-		_, _ = w.WriteString(">>>>>>>>>")
+		_ = w.WriteString(">>>>>>>>>")
 		w.SetIndent(-10)
-		_, _ = w.WriteString("|\n")
+		_ = w.WriteString("|\n")
 		w.SetIndent(2)
-		_, _ = w.WriteString(">>>>>>>>")
+		_ = w.WriteString(">>>>>>>>")
 		w.SetIndent(-10)
-		_, _ = w.WriteString("|\n")
+		_ = w.WriteString("|\n")
 		w.SetIndent(2)
-		_, _ = w.WriteString(">>>>>>>")
+		_ = w.WriteString(">>>>>>>")
 		w.SetIndent(-10)
-		_, _ = w.WriteString("|\n|")
+		_ = w.WriteString("|\n|")
 		w.SetIndent(-15)
-		_, _ = w.WriteString("|\n|")
+		_ = w.WriteString("|\n|")
 		assert.Equal(t, `
                >
                |
@@ -138,8 +138,8 @@ func Test_setIndent(t *testing.T) {
 		w := makeFormattingWriter(sb, 14, defaultTabWidth)
 
 		w.SetIndent(4)
-		_, _ = w.WriteString("\n")
-		_, _ = w.WriteString("Blue trees arent real")
+		_ = w.WriteString("\n")
+		_ = w.WriteString("Blue trees arent real")
 		assert.Equal(t, `
     Blue trees
     arent real`, sb.String())
@@ -150,13 +150,15 @@ func Test_setIndent(t *testing.T) {
 		w := makeFormattingWriter(sb, 5, defaultTabWidth)
 
 		w.SetIndent(0, 3)
-		_, _ = w.WriteString("abc ")
-		_, _ = w.WriteString("def")
+		_ = w.WriteString("abc ")
+		_ = w.WriteString("def")
 		w.SetIndent(4)
-		_, _ = w.WriteString("ghi")
+		_ = w.WriteString("ghi")
 		assert.Equal(t, "abc \n   def\n    ghi", sb.String())
 	})
 }
+
+var errBadToken = errors.New("test error")
 
 type sbWithErrors struct {
 	strings.Builder
@@ -165,7 +167,7 @@ type sbWithErrors struct {
 
 func (sbe *sbWithErrors) WriteString(s string) (int, error) {
 	if sbe.fail(sbe.Builder.Len(), s) {
-		return 0, errors.New("test error")
+		return 0, errBadToken
 	}
 	return sbe.Builder.WriteString(s)
 }
@@ -177,38 +179,59 @@ func Test_writeErrors(t *testing.T) {
 		}}
 		w := makeFormattingWriter(sb, 10, defaultTabWidth)
 
-		n, err := w.WriteString("abcde")
+		err := w.WriteString("abcde")
 		assert.NoError(t, err)
-		assert.Equal(t, 5, n)
-		n, err = w.WriteString("fgh")
+		assert.Equal(t, 5, sb.Len())
+		err = w.WriteString("fgh")
 		assert.Error(t, err)
-		assert.Equal(t, 0, n)
+		assert.Equal(t, 5, sb.Len())
 	})
 	t.Run("write error on wrapping", func(t *testing.T) {
 		sb := &sbWithErrors{fail: func(_ int, s string) bool {
 			return s == "\n"
 		}}
 		w := makeFormattingWriter(sb, 10, defaultTabWidth)
-		n, err := w.WriteString("abcde fghij")
+		err := w.WriteString("abcde fghij")
 		assert.Error(t, err)
-		assert.Equal(t, 6, n)
+		assert.Equal(t, 6, sb.Len())
+	})
+	t.Run("write error on ln", func(t *testing.T) {
+		sb := &sbWithErrors{fail: func(_ int, s string) bool {
+			return s == "\n"
+		}}
+		w := makeFormattingWriter(sb, 10, defaultTabWidth)
+		err := w.WriteString("abc\ndef")
+		assert.Error(t, err)
+		assert.Equal(t, 3, sb.Len())
 	})
 	t.Run("write error on padding", func(t *testing.T) {
 		sb := &sbWithErrors{fail: func(_ int, s string) bool {
 			return s == "  "
 		}}
 		w := makeFormattingWriter(sb, 10, defaultTabWidth, 0, 2)
-		n, err := w.WriteString("abcde fghij")
+		err := w.WriteString("abcde fghij")
 		assert.Error(t, err)
-		assert.Equal(t, 6, n)
+		assert.Equal(t, 7, sb.Len())
+		assert.Equal(t, "abcde \n", sb.String())
 	})
 	t.Run("write error on initial padding", func(t *testing.T) {
 		sb := &sbWithErrors{fail: func(_ int, s string) bool {
 			return s == "  "
 		}}
 		w := makeFormattingWriter(sb, 10, defaultTabWidth, 2)
-		n, err := w.WriteString("a")
+		err := w.WriteString("a")
 		assert.Error(t, err)
-		assert.Equal(t, 0, n)
+		assert.Equal(t, 0, sb.Len())
 	})
+	t.Run("do not write after error", func(t *testing.T) {
+		sb := &sbWithErrors{fail: func(_ int, s string) bool {
+			return s == "X"
+		}}
+		w := makeFormattingWriter(sb, 10, defaultTabWidth)
+		err := w.WriteString("a b X d e f")
+		assert.ErrorIs(t, err, errBadToken)
+		assert.NoError(t, w.WriteString("g h i"))
+		assert.Equal(t, "a b g h i", sb.String())
+	})
+
 }

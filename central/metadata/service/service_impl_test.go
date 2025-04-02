@@ -178,7 +178,6 @@ func (s *serviceImplTestSuite) TestDatabaseStatus() {
 
 func (s *serviceImplTestSuite) TestDatabaseBackupStatus() {
 	tp := pgtest.ForT(s.T())
-	defer tp.Teardown(s.T())
 
 	srv := &serviceImpl{
 		db:              tp.DB,

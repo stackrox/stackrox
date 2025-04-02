@@ -147,10 +147,6 @@ func (s *PlatformCVEViewTestSuite) SetupSuite() {
 	s.cveView = NewCVEView(s.testDB.DB)
 }
 
-func (s *PlatformCVEViewTestSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-}
-
 func (s *PlatformCVEViewTestSuite) TestGetPlatformCVECore() {
 	for _, tc := range s.testCases() {
 		s.T().Run(tc.desc, func(t *testing.T) {

@@ -6115,6 +6115,11 @@
                 "id": 14,
                 "name": "component_id",
                 "type": "string"
+              },
+              {
+                "id": 15,
+                "name": "advisory",
+                "type": "string"
               }
             ]
           },
@@ -10429,6 +10434,11 @@
                 "id": 3,
                 "name": "cluster_id",
                 "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "updated_at",
+                "type": "google.protobuf.Timestamp"
               }
             ]
           },

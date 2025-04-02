@@ -38,7 +38,6 @@ jobs:
           dependencies
         team-reviewers: |
           collector-team
-          backend-dep-updaters
         draft: false
     - name: Enable Pull Request Automerge
       if: steps.cpr.outputs.pull-request-operation == 'created'

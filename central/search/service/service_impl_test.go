@@ -21,7 +21,7 @@ import (
 	policyDatastore "github.com/stackrox/rox/central/policy/datastore"
 	policyMocks "github.com/stackrox/rox/central/policy/datastore/mocks"
 	policySearcher "github.com/stackrox/rox/central/policy/search"
-	policyPostgres "github.com/stackrox/rox/central/policy/store/postgres"
+	policyStore "github.com/stackrox/rox/central/policy/store"
 	categoryDataStoreMocks "github.com/stackrox/rox/central/policycategory/datastore/mocks"
 	"github.com/stackrox/rox/central/ranking"
 	roleMocks "github.com/stackrox/rox/central/rbac/k8srole/datastore/mocks"
@@ -255,10 +255,10 @@ func (s *SearchOperationsTestSuite) TestAutocompleteForEnums() {
 	var ds policyDatastore.DataStore
 
 	categoriesDS := categoryDataStoreMocks.NewMockDataStore(s.mockCtrl)
-	policyStore := policyPostgres.New(s.pool)
-	s.NoError(policyStore.Upsert(ctx, fixtures.GetPolicy()))
-	policySearcher := policySearcher.New(policyStore)
-	ds = policyDatastore.New(policyStore, policySearcher, nil, nil, categoriesDS)
+	policyStorage := policyStore.New(s.pool)
+	s.NoError(policyStorage.Upsert(ctx, fixtures.GetPolicy()))
+	pSearcher := policySearcher.New(policyStorage)
+	ds = policyDatastore.New(policyStorage, pSearcher, nil, nil, categoriesDS)
 
 	builder := NewBuilder().
 		WithAlertStore(alertMocks.NewMockDataStore(s.mockCtrl)).
@@ -303,8 +303,7 @@ func (s *SearchOperationsTestSuite) TestAutocompleteAuthz() {
 	deploymentDS, err = deploymentDatastore.New(s.pool, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker(), platformmatcher.Singleton())
 	s.Require().NoError(err)
 
-	alertsDS, err = alertDatastore.GetTestPostgresDataStore(s.T(), s.pool)
-	s.NoError(err)
+	alertsDS = alertDatastore.GetTestPostgresDataStore(s.T(), s.pool)
 
 	deployment := fixtures.GetDeployment()
 	s.NoError(deploymentDS.UpsertDeployment(deploymentAccessCtx, deployment))
@@ -375,8 +374,7 @@ func (s *SearchOperationsTestSuite) TestSearchAuthz() {
 	deploymentDS, err = deploymentDatastore.New(s.pool, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker(), platformmatcher.Singleton())
 	s.Require().NoError(err)
 
-	alertsDS, err = alertDatastore.GetTestPostgresDataStore(s.T(), s.pool)
-	s.NoError(err)
+	alertsDS = alertDatastore.GetTestPostgresDataStore(s.T(), s.pool)
 
 	deployment := fixtures.GetDeployment()
 	s.NoError(deploymentDS.UpsertDeployment(deploymentAccessCtx, deployment))

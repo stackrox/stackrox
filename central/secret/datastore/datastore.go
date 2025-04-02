@@ -30,16 +30,16 @@ type DataStore interface {
 }
 
 // New returns a new instance of DataStore using the input store, and searcher.
-func New(secretStore store.Store, searcher search.Searcher) (DataStore, error) {
+func New(secretStore store.Store, searcher search.Searcher) DataStore {
 	d := &datastoreImpl{
 		storage:  secretStore,
 		searcher: searcher,
 	}
-	return d, nil
+	return d
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(_ *testing.T, pool postgres.DB) (DataStore, error) {
+func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) DataStore {
 	dbstore := pgStore.New(pool)
 	searcher := search.New(dbstore)
 	return New(dbstore, searcher)

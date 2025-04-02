@@ -78,10 +78,6 @@ func (s *GraphQLImageComponentTestSuite) SetupSuite() {
 	}
 }
 
-func (s *GraphQLImageComponentTestSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-}
-
 func (s *GraphQLImageComponentTestSuite) TestUnauthorizedImageComponentEndpoint() {
 	_, err := s.resolver.ImageComponent(s.ctx, IDQuery{})
 	assert.Error(s.T(), err, "Unauthorized request got through")

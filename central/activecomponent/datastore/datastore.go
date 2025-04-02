@@ -40,7 +40,7 @@ func New(storage store.Store, searcher search.Searcher) DataStore {
 
 // NewForTestOnly returns a new instance of DataStore. TO BE USED FOR TESTING PURPOSES ONLY.
 // To make this more explicit, we require passing a testing.T to this version.
-func NewForTestOnly(t *testing.T, db postgres.DB) (DataStore, error) {
+func NewForTestOnly(t *testing.T, db postgres.DB) DataStore {
 	testutils.MustBeInTest(t)
 
 	storage := pgStore.New(db)
@@ -50,5 +50,5 @@ func NewForTestOnly(t *testing.T, db postgres.DB) (DataStore, error) {
 		searcher: searcher,
 	}
 
-	return ds, nil
+	return ds
 }

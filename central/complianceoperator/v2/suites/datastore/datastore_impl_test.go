@@ -68,10 +68,6 @@ func (s *complianceSuiteDataStoreTestSuite) SetupTest() {
 	s.dataStore = GetTestPostgresDataStore(s.T(), s.db)
 }
 
-func (s *complianceSuiteDataStoreTestSuite) TearDownTest() {
-	s.db.Teardown(s.T())
-}
-
 func (s *complianceSuiteDataStoreTestSuite) TestGetSuite() {
 	// make sure we have nothing
 	suiteIDs, err := s.storage.GetIDs(s.hasReadCtx)

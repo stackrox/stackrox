@@ -65,10 +65,6 @@ func (s *handlerTestSuite) SetupTest() {
 	s.NoError(err)
 }
 
-func (s *handlerTestSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-}
-
 func (s *handlerTestSuite) postRequestV2() *http.Request {
 	var manifestBuf bytes.Buffer
 	zw := zip.NewWriter(&manifestBuf)

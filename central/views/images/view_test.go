@@ -121,10 +121,6 @@ func (s *ImageViewTestSuite) SetupSuite() {
 	}
 }
 
-func (s *ImageViewTestSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-}
-
 func (s *ImageViewTestSuite) TestGetImagesCore() {
 	contextMap := testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Image)
 	for _, tc := range []struct {

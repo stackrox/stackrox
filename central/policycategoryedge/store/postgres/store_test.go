@@ -39,10 +39,6 @@ func (s *PolicyCategoryEdgesStoreSuite) SetupTest() {
 	s.NoError(err)
 }
 
-func (s *PolicyCategoryEdgesStoreSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-}
-
 func (s *PolicyCategoryEdgesStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 

@@ -582,6 +582,16 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         lifecycleStages: ['BUILD', 'DEPLOY', 'RUNTIME'],
     },
     {
+        label: 'Days Since CVE Was Published',
+        name: 'Days Since CVE Was Published',
+        shortName: 'Days since CVE was published',
+        category: policyCriteriaCategories.IMAGE_CONTENTS,
+        type: 'number',
+        placeholder: '0',
+        canBooleanLogic: false,
+        lifecycleStages: ['BUILD', 'DEPLOY', 'RUNTIME'],
+    },
+    {
         label: 'Days Since CVE Was First Discovered In Image',
         name: 'Days Since CVE Was First Discovered In Image',
         shortName: 'Days since CVE was first discovered in image',
@@ -953,7 +963,7 @@ export const policyCriteriaDescriptors: Descriptor[] = [
     },
     {
         label: 'Container CPU limit',
-        name: 'Container CPU Limit"',
+        name: 'Container CPU Limit',
         shortName: 'Container CPU limit',
         category: policyCriteriaCategories.CONTAINER_CONFIGURATION,
         type: 'group',

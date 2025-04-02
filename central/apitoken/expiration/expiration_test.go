@@ -41,10 +41,6 @@ func (s *apiTokenExpirationNotifierTestSuite) SetupTest() {
 	s.notifier = newExpirationNotifier(s.datastore)
 }
 
-func (s *apiTokenExpirationNotifierTestSuite) TearDownTest() {
-	s.testpostgres.Teardown(s.T())
-}
-
 func (s *apiTokenExpirationNotifierTestSuite) TestSelectTokenAboutToExpire() {
 	now := time.Now()
 	expiration := now.Add(2 * time.Hour)

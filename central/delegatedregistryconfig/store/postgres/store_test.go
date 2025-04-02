@@ -31,10 +31,6 @@ func (s *DelegatedRegistryConfigsStoreSuite) SetupTest() {
 	s.store = New(s.testDB.DB)
 }
 
-func (s *DelegatedRegistryConfigsStoreSuite) TearDownTest() {
-	s.testDB.Teardown(s.T())
-}
-
 func (s *DelegatedRegistryConfigsStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 

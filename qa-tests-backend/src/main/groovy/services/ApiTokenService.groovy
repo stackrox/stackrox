@@ -1,13 +1,16 @@
 package services
 
+import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+
 import io.stackrox.proto.api.v1.APITokenServiceGrpc
 import io.stackrox.proto.api.v1.ApiTokenService.GenerateTokenRequest
 import io.stackrox.proto.api.v1.Common
 
 @Slf4j
+@CompileStatic
 class ApiTokenService extends BaseService {
-    static getApiTokenService() {
+    static APITokenServiceGrpc.APITokenServiceBlockingStub getApiTokenService() {
         return APITokenServiceGrpc.newBlockingStub(getChannel())
     }
 

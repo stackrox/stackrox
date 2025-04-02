@@ -46,10 +46,6 @@ func (s *ImageComponentV2StoreSuite) SetupTest() {
 	s.NoError(err)
 }
 
-func (s *ImageComponentV2StoreSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-}
-
 func (s *ImageComponentV2StoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 

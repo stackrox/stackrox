@@ -76,7 +76,7 @@ func TestFormatHelp(t *testing.T) {
 
 		FormatHelp(c, nil)
 		assert.Equal(t, `
-short description
+short description.
 
 long description
 multiline
@@ -128,7 +128,7 @@ Usage:
 
 		FormatHelp(subcommand, nil)
 		assert.Equal(t, `
-short sub test description
+short sub test description.
 
 long sub test description
 multiline
@@ -160,7 +160,7 @@ Usage:
 
 		FormatHelp(deprecatedCommand, nil)
 		assert.Equal(t, `
-short depreacted command test description
+short depreacted command test description.
 
 long depreacted command test description
 
@@ -173,5 +173,20 @@ Usage:
 
 DEPRECATED: don't use
 `, sb.String())
+	})
+
+	t.Run("don't write after errors", func(t *testing.T) {
+		sb := &sbWithErrors{fail: func(_ int, s string) bool {
+			return s == "X"
+		}}
+		w := makeHelpWriter(
+			makeFormattingWriter(sb, 40, defaultTabWidth))
+
+		w.Write("A")
+		w.Write("B", "X <- bad token")
+		w.WriteLn("C", "D")
+
+		assert.ErrorIs(t, w.err, errBadToken)
+		assert.Equal(t, "AB", sb.String())
 	})
 }

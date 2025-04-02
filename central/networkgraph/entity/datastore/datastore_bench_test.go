@@ -34,7 +34,6 @@ func BenchmarkNetEntityCreates(b *testing.B) {
 	b.Run("createNetworkEntities", func(b *testing.B) {
 		// Need to recreate the DB to avoid failure due to key conflicts from the reruns.
 		db := pgtest.ForT(b)
-		defer db.Teardown(b)
 
 		store := postgres.New(db.DB)
 
@@ -65,7 +64,6 @@ func BenchmarkNetEntityCreateBatch(b *testing.B) {
 	b.Run("createNetworkEntitiesBatch", func(b *testing.B) {
 		// Need to recreate the DB to avoid failure due to key conflicts from the reruns.
 		db := pgtest.ForT(b)
-		defer db.Teardown(b)
 
 		store := postgres.New(db.DB)
 
@@ -88,7 +86,6 @@ func BenchmarkNetEntityUpdates(b *testing.B) {
 
 	// Need to recreate the DB to avoid failure due to key conflicts from the reruns.
 	db := pgtest.ForT(b)
-	defer db.Teardown(b)
 
 	store := postgres.New(db.DB)
 	ds := NewEntityDataStore(store, mocks.NewMockDataStore(mockCtrl), networktree.Singleton(), connection.ManagerSingleton())

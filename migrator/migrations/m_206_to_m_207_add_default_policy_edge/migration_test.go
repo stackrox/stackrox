@@ -68,10 +68,6 @@ func (s *migrationTestSuite) SetupTest() {
 	}
 }
 
-func (s *migrationTestSuite) TearDownTest() {
-	s.db.Teardown(s.T())
-}
-
 func (s *migrationTestSuite) TestMigration() {
 	// Run the migration
 	s.Require().NoError(migration.Run(&types.Databases{

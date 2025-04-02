@@ -85,43 +85,32 @@ func (s *ClusterPostgresDataStoreTestSuite) SetupTest() {
 	nodeStore := nodeDataStore.GetTestPostgresDataStore(s.T(), s.db)
 	netFlowStore, err := netFlowsDataStore.GetTestPostgresClusterDataStore(s.T(), s.db)
 	s.NoError(err)
-	netEntityStore, err := netEntityDataStore.GetTestPostgresDataStore(s.T(), s.db)
-	s.NoError(err)
+	netEntityStore := netEntityDataStore.GetTestPostgresDataStore(s.T(), s.db)
 	networkBaselineM, err := networkBaselineManager.GetTestPostgresManager(s.T(), s.db)
 	s.NoError(err)
 	clusterCVEStore, err := clusterCVEDataStore.GetTestPostgresDataStore(s.T(), s.db)
 	s.NoError(err)
-	hashStore, err := datastore.GetTestPostgresDataStore(s.T(), s.db)
-	s.NoError(err)
+	hashStore := datastore.GetTestPostgresDataStore(s.T(), s.db)
 	sensorCnxMgr := connection.NewManager(hashManager.NewManager(hashStore))
 	clusterRanker := ranking.ClusterRanker()
 	compliancePruner := compliancePruning.GetTestPruner(s.T(), s.db)
 	s.nsDatastore, err = namespace.GetTestPostgresDataStore(s.T(), s.db.DB)
 	s.NoError(err)
-	s.alertDatastore, err = alertDatastore.GetTestPostgresDataStore(s.T(), s.db.DB)
-	s.NoError(err)
+	s.alertDatastore = alertDatastore.GetTestPostgresDataStore(s.T(), s.db.DB)
 	s.deploymentDatastore, err = deploymentDatastore.GetTestPostgresDataStore(s.T(), s.db.DB)
 	s.NoError(err)
-	s.podDatastore, err = podDatastore.GetTestPostgresDataStore(s.T(), s.db.DB)
-	s.NoError(err)
-	s.secretDatastore, err = secretDataStore.GetTestPostgresDataStore(s.T(), s.db.DB)
-	s.NoError(err)
-	s.serviceAccountDatastore, err = serviceAccountDataStore.GetTestPostgresDataStore(s.T(), s.db.DB)
-	s.NoError(err)
+	s.podDatastore = podDatastore.GetTestPostgresDataStore(s.T(), s.db.DB)
+	s.secretDatastore = secretDataStore.GetTestPostgresDataStore(s.T(), s.db.DB)
+	s.serviceAccountDatastore = serviceAccountDataStore.GetTestPostgresDataStore(s.T(), s.db.DB)
 	s.roleDatastore = k8sRoleDataStore.GetTestPostgresDataStore(s.T(), s.db.DB)
 	s.roleBindingDatastore = k8sRoleBindingDataStore.GetTestPostgresDataStore(s.T(), s.db.DB)
-	s.imageIntegrationDatastore, err = imageIntegrationDataStore.GetTestPostgresDataStore(s.T(), s.db.DB)
-	s.NoError(err)
+	s.imageIntegrationDatastore = imageIntegrationDataStore.GetTestPostgresDataStore(s.T(), s.db.DB)
 	s.clusterDatastore, err = New(clusterDBStore, clusterHealthDBStore, clusterCVEStore,
 		s.alertDatastore, s.imageIntegrationDatastore, s.nsDatastore, s.deploymentDatastore,
 		nodeStore, s.podDatastore, s.secretDatastore, netFlowStore, netEntityStore,
 		s.serviceAccountDatastore, s.roleDatastore, s.roleBindingDatastore, sensorCnxMgr, nil,
 		clusterRanker, networkBaselineM, compliancePruner)
 	s.NoError(err)
-}
-
-func (s *ClusterPostgresDataStoreTestSuite) TearDownTest() {
-	s.db.Teardown(s.T())
 }
 
 // Test that when we try to remove a cluster that does not exist, we return an error.

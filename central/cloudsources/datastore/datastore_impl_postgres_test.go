@@ -50,11 +50,6 @@ func (s *datastorePostgresTestSuite) SetupTest() {
 	s.datastore = GetTestPostgresDataStore(s.T(), s.postgresTest.DB)
 }
 
-func (s *datastorePostgresTestSuite) TearDownTest() {
-	s.postgresTest.Teardown(s.T())
-	s.postgresTest.Close()
-}
-
 func (s *datastorePostgresTestSuite) TestCountCloudSources() {
 	count, err := s.datastore.CountCloudSources(s.readCtx, &v1.Query{})
 	s.Require().NoError(err)

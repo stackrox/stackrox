@@ -92,7 +92,6 @@ func (suite *NetworkEntityDataStoreTestSuite) SetupSuite() {
 
 func (suite *NetworkEntityDataStoreTestSuite) TearDownSuite() {
 	suite.mockCtrl.Finish()
-	suite.db.Teardown(suite.T())
 }
 
 func (suite *NetworkEntityDataStoreTestSuite) TestNetworkEntities() {

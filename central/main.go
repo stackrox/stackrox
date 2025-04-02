@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/NYTimes/gziphandler"
+	administrationEventDS "github.com/stackrox/rox/central/administration/events/datastore"
 	administrationEventHandler "github.com/stackrox/rox/central/administration/events/handler"
 	administrationEventService "github.com/stackrox/rox/central/administration/events/service"
 	administrationUsageCSV "github.com/stackrox/rox/central/administration/usage/csv"
@@ -621,6 +622,7 @@ func startGRPCServer() {
 				centralclient.RegisterCentralClient(&config, basicAuthProvider.ID())
 				centralclient.StartPeriodicReload(1 * time.Hour)
 				gs := cfg.Gatherer()
+				gs.AddGatherer(administrationEventDS.Gather(administrationEventDS.Singleton()))
 				gs.AddGatherer(apitokenDS.Gather(apitokenDS.Singleton()))
 				gs.AddGatherer(authDS.Gather)
 				gs.AddGatherer(authProviderTelemetry.Gather)

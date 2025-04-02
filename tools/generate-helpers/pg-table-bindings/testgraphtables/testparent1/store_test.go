@@ -39,10 +39,6 @@ func (s *TestParent1StoreSuite) SetupTest() {
 	s.NoError(err)
 }
 
-func (s *TestParent1StoreSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-}
-
 func (s *TestParent1StoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 

@@ -37,10 +37,6 @@ func (s *servicePostgresTestSuite) SetupTest() {
 	s.service = New(s.helper.Deployments, s.helper.Images)
 }
 
-func (s *servicePostgresTestSuite) TearDownTest() {
-	s.helper.TearDownTest(s.T())
-}
-
 func (s *servicePostgresTestSuite) createDeployment(deployment *storage.Deployment, id string) *storage.Deployment {
 	deployment.Id = id
 	return deployment

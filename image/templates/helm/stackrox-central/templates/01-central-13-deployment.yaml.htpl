@@ -42,7 +42,7 @@ spec:
       affinity:
         {{- toYaml ._rox.central.affinity | nindent 8 }}
       {{- if ._rox.central.priorityClassName }}
-      priorityClassName: {{ ._rox.central.priorityClassName }}
+      priorityClassName: {{ quote ._rox.central.priorityClassName }}
       {{- end }}
       {{- if ._rox.central.hostAliases }}
       hostAliases: {{ toYaml ._rox.central.hostAliases | nindent 8 }}

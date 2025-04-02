@@ -101,7 +101,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 	c := &cobra.Command{
 		Use:   "scan",
-		Short: "Scan the specified image, and return scan results.",
+		Short: "Scan the specified image, and return scan results",
 		Long:  "Scan the specified image and return the fully enriched image. Optionally, force a rescan of the image. You must have write permissions for the `Image` resource.",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			if err := imageScanCmd.Construct(nil, c, objectPrinterFactory); err != nil {
@@ -118,19 +118,19 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 	objectPrinterFactory.AddFlags(c)
 
-	c.Flags().StringVarP(&imageScanCmd.image, "image", "i", "", "Image name and reference. (e.g. nginx:latest or nginx@sha256:...)")
-	c.Flags().BoolVarP(&imageScanCmd.force, "force", "f", false, "Bypass Central's cache for the image and force a new pull from the Scanner")
-	c.Flags().BoolVarP(&imageScanCmd.includeSnoozed, "include-snoozed", "a", false, "The --include-snoozed flag returns both snoozed and unsnoozed CVEs if set")
-	c.Flags().IntVarP(&imageScanCmd.retryDelay, "retry-delay", "d", 3, "Set time to wait between retries in seconds")
-	c.Flags().IntVarP(&imageScanCmd.retryCount, "retries", "r", 3, "Number of retries before exiting as error")
-	c.Flags().StringVar(&imageScanCmd.cluster, "cluster", "", "Cluster name or ID to delegate image scan to")
+	c.Flags().StringVarP(&imageScanCmd.image, "image", "i", "", "Image name and reference. (e.g. nginx:latest or nginx@sha256:...).")
+	c.Flags().BoolVarP(&imageScanCmd.force, "force", "f", false, "Bypass Central's cache for the image and force a new pull from the Scanner.")
+	c.Flags().BoolVarP(&imageScanCmd.includeSnoozed, "include-snoozed", "a", false, "The --include-snoozed flag returns both snoozed and unsnoozed CVEs if set.")
+	c.Flags().IntVarP(&imageScanCmd.retryDelay, "retry-delay", "d", 3, "Set time to wait between retries in seconds.")
+	c.Flags().IntVarP(&imageScanCmd.retryCount, "retries", "r", 3, "Number of retries before exiting as error.")
+	c.Flags().StringVar(&imageScanCmd.cluster, "cluster", "", "Cluster name or ID to delegate image scan to.")
 	c.Flags().StringSliceVar(&imageScanCmd.severities, "severity", []string{
 		lowCVESeverity.String(),
 		moderateCVESeverity.String(),
 		importantCVESeverity.String(),
 		criticalCVESeverity.String(),
-	}, "List of severities to include in the output. Use this to filter for specific severities")
-	c.Flags().BoolVarP(&imageScanCmd.failOnFinding, "fail", "", false, "Fail if vulnerabilities have been found")
+	}, "List of severities to include in the output. Use this to filter for specific severities.")
+	c.Flags().BoolVarP(&imageScanCmd.failOnFinding, "fail", "", false, "Fail if vulnerabilities have been found.")
 
 	// Deprecated flag
 	// TODO(ROX-8303): Remove this once we have fully deprecated the old output format and are sure we do not break existing customer scripts

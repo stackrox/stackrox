@@ -83,11 +83,6 @@ func (s *datastorePostgresTestSuite) SetupTest() {
 	s.authDataStore = New(store, s.mockSet, issuerFetcher)
 }
 
-func (s *datastorePostgresTestSuite) TearDownTest() {
-	s.pool.Teardown(s.T())
-	s.pool.Close()
-}
-
 func (s *datastorePostgresTestSuite) TestKubeServiceAccountConfig() {
 	controller := gomock.NewController(s.T())
 	defer controller.Finish()

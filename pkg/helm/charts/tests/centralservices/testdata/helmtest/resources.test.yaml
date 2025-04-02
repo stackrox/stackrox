@@ -1,0 +1,29 @@
+values:
+  imagePullSecrets:
+    allowNone: true
+tests:
+- name: "with default settings"
+  expect: |
+    .deployments["central"].spec.template.spec.containers[] | select(.name == "central") | assertThat(.resources.requests.memory == "4Gi")
+    .deployments["config-controller"].spec.template.spec.containers[] | select(.name == "manager") | assertThat(.resources.requests.memory == "64Mi")
+- name: "override resources"
+  values:
+    central:
+      resources:
+        requests:
+          memory: "64Gi"
+          cpu: "64"
+        limits:
+          memory: "128Gi"
+          cpu: "128"
+    configController:
+      resources:
+        requests:
+          memory: "64Gi"
+          cpu: "64"
+        limits:
+          memory: "128Gi"
+          cpu: "128"
+  expect: |
+    .deployments["central"].spec.template.spec.containers[] | select(.name == "central") | assertThat(.resources.requests.memory == "64Gi")
+    .deployments["config-controller"].spec.template.spec.containers[] | select(.name == "manager") | assertThat(.resources.requests.memory == "64Gi")

@@ -39,10 +39,6 @@ func (s *migrationTestSuite) SetupSuite() {
 	pgutils.CreateTableFromModel(s.ctx, s.db.GetGormDB(), oldSchema.CreateTableClustersStmt)
 }
 
-func (s *migrationTestSuite) TearDownSuite() {
-	s.db.Teardown(s.T())
-}
-
 func (s *migrationTestSuite) TestMigration() {
 	clusters := []*storage.Cluster{
 		s.getTestCluster("generic-1", storage.ClusterType_GENERIC_CLUSTER, "9.0"),

@@ -3,16 +3,21 @@
 # Mergeswag.sh merges JSON-encoded Swagger specification files into one mongo file
 # called swagger.json.
 
-[ -z "$1" ] && echo >&2 "Please specify a folder to search for .swagger.json files" && exit 1
+[ -z "$1" ] && [[ "$1" =~ ^(1|2)$ ]] && echo >&2 "Please specify a valid API version number for merged swagger.json file" && exit 1
 
-[ -z "$2" ] && [[ "$2" =~ ^(1|2)$ ]] && echo >&2 "Please specify a valid API version number for merged swagger.json file" && exit 1
+[ -z "$2" ] && echo >&2 "Please specify at least one folder to search for .swagger.json files" && exit 1
 
 set -euo pipefail
 
-folder="$1"
+src=$(mktemp -d)
+trap 'rm -rf "${src}"' EXIT
+
+for folder in "${@:2}"; do
+    find "$folder/" -name '*.swagger.json' -exec cp {} $src \;
+done
 
 export TITLE="API Reference"
-export VERSION="$2"
+export VERSION="$1"
 export DESCRIPTION="API reference for the StackRox Security Platform"
 
 metadata='{
@@ -23,6 +28,6 @@ metadata='{
   }
 }'
 
-find "$folder/" -name '*.swagger.json' -print0 \
+find "$src" -type f -name "*" -print0 \
 	| sort -zr \
 	| xargs -0 jq -s 'reduce .[] as $item ('"$metadata"'; $item * .)'

@@ -77,6 +77,7 @@ module.exports = [
 
         linterOptions: {
             reportUnusedDisableDirectives: 'error',
+            reportUnusedInlineConfigs: 'error',
         },
 
         // Key of plugin is namespace of its rules.

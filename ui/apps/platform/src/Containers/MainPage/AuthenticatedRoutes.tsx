@@ -1,6 +1,6 @@
 import React, { ReactElement } from 'react';
 import { useSelector } from 'react-redux';
-import { Redirect, useLocation } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { createStructuredSelector } from 'reselect';
 
 import LoadingSection from 'Components/PatternFly/LoadingSection';
@@ -29,11 +29,12 @@ function AuthenticatedRoutes(): ReactElement {
         case AUTH_STATUS.AUTH_PROVIDERS_LOADING_ERROR:
         case AUTH_STATUS.LOGIN_AUTH_PROVIDERS_LOADING_ERROR:
             return (
-                <Redirect
-                    to={{
-                        pathname: '/login',
-                        state: { from: `${location.pathname}${location.search}` },
-                    }}
+                <Navigate
+                    to="/login"
+                    // Include the current path & query string in state for authSagas,
+                    // which will store and use it to redirect back here after successful login
+                    state={{ from: `${location.pathname}${location.search}` }}
+                    replace
                 />
             );
 

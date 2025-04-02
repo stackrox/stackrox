@@ -51,31 +51,31 @@ const (
 
 	deleteStmt         = "DELETE FROM network_flows_v2 WHERE Props_SrcEntity_Type = $1 AND Props_SrcEntity_Id = $2 AND Props_DstEntity_Type = $3 AND Props_DstEntity_Id = $4 AND Props_DstPort = $5 AND Props_L4Protocol = $6 AND ClusterId = $7"
 	deleteStmtWithTime = "DELETE FROM network_flows_v2 WHERE Props_SrcEntity_Type = $1 AND Props_SrcEntity_Id = $2 AND Props_DstEntity_Type = $3 AND Props_DstEntity_Id = $4 AND Props_DstPort = $5 AND Props_L4Protocol = $6 AND ClusterId = $7 AND LastSeenTimestamp = $8"
-	walkStmt           = "SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type, nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId::text FROM %s nf " + joinStmt
+	walkStmt           = "SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type, nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.UpdatedAt, nf.ClusterId::text FROM %s nf " + joinStmt
 
 	// These mimic how the RocksDB version of the flow store work
 	getSinceStmt = `SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type,
-	nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId::text
+	nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.UpdatedAt, nf.ClusterId::text
 	FROM %s nf ` + joinStmt +
 		` WHERE (nf.LastSeenTimestamp >= $1 OR nf.LastSeenTimestamp IS NULL)`
 	deleteSrcDeploymentStmt = "DELETE FROM network_flows_v2 WHERE ClusterId = $1 AND Props_SrcEntity_Type = 1 AND Props_SrcEntity_Id = $2"
 	deleteDstDeploymentStmt = "DELETE FROM network_flows_v2 WHERE ClusterId = $1 AND Props_DstEntity_Type = 1 AND Props_DstEntity_Id = $2"
 
 	getByDeploymentStmt = `SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type,
-	nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId::text
+	nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.UpdatedAt, nf.ClusterId::text
 	FROM %s nf ` + joinStmt +
 		`WHERE nf.Props_SrcEntity_Type = 1 AND nf.Props_SrcEntity_Id = $1
 	UNION ALL
-	SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type, nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId::text
+	SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type, nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.UpdatedAt, nf.ClusterId::text
 	FROM %s nf ` + joinStmt +
 		`WHERE nf.Props_DstEntity_Type = 1 AND nf.Props_DstEntity_Id = $1`
 
 	getExternalByDeploymentStmt = `SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type,
-	nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId::text
+	nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.UpdatedAt, nf.ClusterId::text
 	FROM %s nf ` + joinStmt +
 		`WHERE nf.Props_SrcEntity_Type = 1 AND nf.Props_SrcEntity_Id = $1 AND nf.Props_DstEntity_Type = 4
 	UNION ALL
-	SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type, nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId::text
+	SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type, nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.UpdatedAt, nf.ClusterId::text
 	FROM %s nf ` + joinStmt +
 		`WHERE nf.Props_DstEntity_Type = 1 AND nf.Props_DstEntity_Id = $1 AND nf.Props_SrcEntity_Type = 4`
 
@@ -86,9 +86,9 @@ const (
 		HAVING COUNT(*) > 1
       ) b
       WHERE a.Props_SrcEntity_Type = b.Props_SrcEntity_Type
- 	AND a.Props_SrcEntity_Id = b.Props_SrcEntity_Id
- 	AND a.Props_DstEntity_Type = b.Props_DstEntity_Type
- 	AND a.Props_DstEntity_Id = b.Props_DstEntity_Id
+	AND a.Props_SrcEntity_Id = b.Props_SrcEntity_Id
+	AND a.Props_DstEntity_Type = b.Props_DstEntity_Type
+	AND a.Props_DstEntity_Id = b.Props_DstEntity_Id
 	AND a.Props_DstPort = b.Props_DstPort
 	AND a.Props_L4Protocol = b.Props_L4Protocol
 	AND a.ClusterId = b.ClusterId
@@ -98,12 +98,12 @@ const (
 	pruneNetworkFlowsSrcStmt = `DELETE FROM %s child WHERE NOT EXISTS
 		(SELECT 1 from deployments parent WHERE child.Props_SrcEntity_Id = parent.id::text AND parent.clusterid = $1)
 		AND Props_SrcEntity_Type = 1
-		AND LastSeenTimestamp < $2`
+		AND UpdatedAt < $2`
 
 	pruneNetworkFlowsDestStmt = `DELETE FROM %s child WHERE NOT EXISTS
 		(SELECT 1 from deployments parent WHERE child.Props_DstEntity_Id = parent.id::text AND parent.clusterid = $1)
 		AND Props_DstEntity_Type = 1
-		AND LastSeenTimestamp < $2`
+		AND UpdatedAt < $2`
 )
 
 var (
@@ -148,7 +148,7 @@ type flowStoreImpl struct {
 	partitionName string
 }
 
-func (s *flowStoreImpl) insertIntoNetworkflow(ctx context.Context, tx *postgres.Tx, clusterID uuid.UUID, obj *storage.NetworkFlow) error {
+func (s *flowStoreImpl) insertIntoNetworkflow(ctx context.Context, tx *postgres.Tx, clusterID uuid.UUID, obj *storage.NetworkFlow, lastUpdateTS timestamp.MicroTS) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -160,9 +160,10 @@ func (s *flowStoreImpl) insertIntoNetworkflow(ctx context.Context, tx *postgres.
 		obj.GetProps().GetL4Protocol(),
 		protocompat.NilOrTime(obj.GetLastSeenTimestamp()),
 		clusterID,
+		protocompat.NilOrNow(protoconv.ConvertMicroTSToProtobufTS(lastUpdateTS)),
 	}
 
-	finalStr := fmt.Sprintf("INSERT INTO %s (Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, LastSeenTimestamp, ClusterId) VALUES($1, $2, $3, $4, $5, $6, $7, $8)", s.partitionName)
+	finalStr := fmt.Sprintf("INSERT INTO %s (Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, LastSeenTimestamp, ClusterId, UpdatedAt) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)", s.partitionName)
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -171,7 +172,7 @@ func (s *flowStoreImpl) insertIntoNetworkflow(ctx context.Context, tx *postgres.
 	return nil
 }
 
-func (s *flowStoreImpl) copyFromNetworkflow(ctx context.Context, tx *postgres.Tx, objs ...*storage.NetworkFlow) error {
+func (s *flowStoreImpl) copyFromNetworkflow(ctx context.Context, tx *postgres.Tx, lastUpdateTS timestamp.MicroTS, objs ...*storage.NetworkFlow) error {
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)
@@ -188,6 +189,7 @@ func (s *flowStoreImpl) copyFromNetworkflow(ctx context.Context, tx *postgres.Tx
 		"props_l4protocol",
 		"lastseentimestamp",
 		"clusterid",
+		"updatedat",
 	}
 
 	for idx, obj := range objs {
@@ -200,6 +202,7 @@ func (s *flowStoreImpl) copyFromNetworkflow(ctx context.Context, tx *postgres.Tx
 			obj.GetProps().GetL4Protocol(),
 			protocompat.NilOrTime(obj.GetLastSeenTimestamp()),
 			s.clusterID,
+			protocompat.NilOrNow(protoconv.ConvertMicroTSToProtobufTS(lastUpdateTS)),
 		})
 
 		// if we hit our batch size we need to push the data
@@ -250,7 +253,7 @@ func New(db postgres.DB, clusterID string) FlowStore {
 	}
 }
 
-func (s *flowStoreImpl) copyFrom(ctx context.Context, objs ...*storage.NetworkFlow) error {
+func (s *flowStoreImpl) copyFrom(ctx context.Context, lastUpdateTS timestamp.MicroTS, objs ...*storage.NetworkFlow) error {
 	conn, release, err := s.acquireConn(ctx, ops.Get, "NetworkFlow")
 	if err != nil {
 		return err
@@ -262,7 +265,7 @@ func (s *flowStoreImpl) copyFrom(ctx context.Context, objs ...*storage.NetworkFl
 		return err
 	}
 
-	if err := s.copyFromNetworkflow(ctx, tx, objs...); err != nil {
+	if err := s.copyFromNetworkflow(ctx, tx, lastUpdateTS, objs...); err != nil {
 		if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
 			return errors.Wrapf(rollbackErr, "rolling back due to err: %v", err)
 		}
@@ -274,7 +277,7 @@ func (s *flowStoreImpl) copyFrom(ctx context.Context, objs ...*storage.NetworkFl
 	return nil
 }
 
-func (s *flowStoreImpl) upsert(ctx context.Context, objs ...*storage.NetworkFlow) error {
+func (s *flowStoreImpl) upsert(ctx context.Context, lastUpdateTS timestamp.MicroTS, objs ...*storage.NetworkFlow) error {
 	conn, release, err := s.acquireConn(ctx, ops.Get, "NetworkFlow")
 	if err != nil {
 		return err
@@ -288,7 +291,7 @@ func (s *flowStoreImpl) upsert(ctx context.Context, objs ...*storage.NetworkFlow
 	}
 	for _, obj := range objs {
 
-		if err := s.insertIntoNetworkflow(ctx, tx, s.clusterID, obj); err != nil {
+		if err := s.insertIntoNetworkflow(ctx, tx, s.clusterID, obj, lastUpdateTS); err != nil {
 			if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
 				return errors.Wrapf(rollbackErr, "rolling back due to err: %v", err)
 			}
@@ -310,14 +313,17 @@ func (s *flowStoreImpl) UpsertFlows(ctx context.Context, flows []*storage.Networ
 	})
 }
 
-func (s *flowStoreImpl) retryableUpsertFlows(ctx context.Context, flows []*storage.NetworkFlow, _ timestamp.MicroTS) error {
+func (s *flowStoreImpl) retryableUpsertFlows(ctx context.Context, flows []*storage.NetworkFlow, lastUpdateTS timestamp.MicroTS) error {
+	if lastUpdateTS <= 0 {
+		lastUpdateTS = timestamp.Now()
+	}
 	// RocksDB implementation was adding the lastUpdatedTS to a key.  That is not necessary in PG world so that
 	// parameter is not being passed forward and should be removed from the interface once RocksDB is removed.
 	if len(flows) < batchAfter {
-		return s.upsert(ctx, flows...)
+		return s.upsert(ctx, lastUpdateTS, flows...)
 	}
 
-	return s.copyFrom(ctx, flows...)
+	return s.copyFrom(ctx, lastUpdateTS, flows...)
 }
 
 func (s *flowStoreImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*postgres.Conn, func(), error) {
@@ -341,8 +347,9 @@ func (s *flowStoreImpl) readRows(rows pgx.Rows, pred func(*storage.NetworkFlowPr
 		var protocol storage.L4Protocol
 		var lastTime *time.Time
 		var clusterID string
+		var updatedAt *time.Time
 
-		if err := rows.Scan(&srcType, &srcID, &destType, &destID, &port, &protocol, &lastTime, &clusterID); err != nil {
+		if err := rows.Scan(&srcType, &srcID, &destType, &destID, &port, &protocol, &lastTime, &updatedAt, &clusterID); err != nil {
 			return nil, pgutils.ErrNilIfNoRows(err)
 		}
 
@@ -364,6 +371,10 @@ func (s *flowStoreImpl) readRows(rows pgx.Rows, pred func(*storage.NetworkFlowPr
 
 		if lastTime != nil {
 			flow.LastSeenTimestamp = protoconv.MustConvertTimeToTimestamp(*lastTime)
+		}
+
+		if updatedAt != nil {
+			flow.UpdatedAt = protoconv.MustConvertTimeToTimestamp(*updatedAt)
 		}
 
 		// Apply the predicate function.  Will phase out as we move away form Rocks to where clause

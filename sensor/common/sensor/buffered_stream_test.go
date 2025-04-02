@@ -137,7 +137,10 @@ func (s *bufferedStreamSuite) Test_Stop() {
 	messageReadSignal := make(chan struct{})
 	defer close(messageReadSignal)
 
-	s.innerStream.EXPECT().Send(gomock.Any()).Times(1).DoAndReturn(func(msg *central.MsgFromSensor) error {
+	// Most of the time, this should be called once
+	// but if the select chooses to write in errC instead of the stopC,
+	// We might reach Send again thus EXPECT AnyTimes.
+	s.innerStream.EXPECT().Send(gomock.Any()).AnyTimes().DoAndReturn(func(msg *central.MsgFromSensor) error {
 		// Send was called in the inner stream
 		messageReadSignal <- struct{}{}
 		return handleExpectSend(msg)
@@ -148,15 +151,22 @@ func (s *bufferedStreamSuite) Test_Stop() {
 	s.Assert().Nil(stream.Send(&central.MsgFromSensor{}))
 	s.Assert().Len(msgC, 1)
 
+	// At this point we buffered stream should be locked writing in errC
 	// Trigger the stop signal
 	stopSignal.Signal()
 
-	select {
-	case _, ok := <-errC:
-		s.Assert().False(ok, "the error channel should be closed")
-	case <-time.After(500 * time.Millisecond):
-		s.FailNow("timeout waiting for the stream to stop")
-	}
+	s.Assert().Eventually(func() bool {
+		select {
+		case _, ok := <-errC:
+			// At this point we are reading from errC.
+			// Since stopC and errC are active, the select will choose one randomly.
+			// We shouldn't fail the test if the channel is not closed immediately.
+			return ok == false
+		case <-time.After(500 * time.Millisecond):
+			return false
+		}
+	}, 500*time.Millisecond, 10*time.Millisecond, "timeout waiting for the stream to stop")
+
 }
 
 func handleExpectSend(msg *central.MsgFromSensor) error {

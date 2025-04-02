@@ -1,5 +1,3 @@
-import { types as locationActionTypes } from '../reducers/routes';
-
 /**
  * Redux Saga helper function that creates an action for changing the location state
  *
@@ -11,7 +9,7 @@ import { types as locationActionTypes } from '../reducers/routes';
  */
 export default function createLocationChange(pathname, from, hash) {
     return {
-        type: locationActionTypes.LOCATION_CHANGE,
+        type: '@@router/LOCATION_CHANGE',
         payload: { location: { pathname, hash, state: { from } } },
     };
 }

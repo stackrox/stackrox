@@ -44,10 +44,6 @@ func (s *RoleBindingsStoreSuite) SetupTest() {
 	s.NoError(err)
 }
 
-func (s *RoleBindingsStoreSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-}
-
 func (s *RoleBindingsStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 

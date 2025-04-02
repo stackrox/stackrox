@@ -70,10 +70,6 @@ func (s *complianceBenchmarkDataStoreSuite) SetupTest() {
 	s.datastore = New(s.storage)
 }
 
-func (s *complianceBenchmarkDataStoreSuite) TearDownTest() {
-	s.db.Teardown(s.T())
-}
-
 func (s *complianceBenchmarkDataStoreSuite) TestUpsertBenchmark() {
 	// make sure we have nothing
 	benchmarkIDs, err := s.storage.GetIDs(s.hasReadCtx)

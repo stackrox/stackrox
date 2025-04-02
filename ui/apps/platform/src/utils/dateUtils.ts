@@ -1,7 +1,6 @@
 import { distanceInWordsStrict, format } from 'date-fns';
 
 import dateTimeFormat, { dateFormat, timeFormat } from 'constants/dateTimeFormat';
-import { IntervalType } from 'services/ReportsService.types';
 
 type DateLike = string | number | Date;
 
@@ -39,22 +38,6 @@ export function getTime(timestamp: DateLike) {
  */
 export function getTimeHoursMinutes(timestamp: DateLike) {
     return format(timestamp, 'h:mm A');
-}
-
-export function getLatestDatedItemByKey<T>(key: string | null, list: T[] = []): T | null {
-    if (!key || !list.length || !list[0][key]) {
-        return null;
-    }
-
-    return list.reduce((acc: T | null, item) => {
-        const nextDate = item[key] && Date.parse(item[key]);
-
-        if (!acc || nextDate > Date.parse(acc[key])) {
-            return item;
-        }
-
-        return acc;
-    }, null);
 }
 
 export function addBrandedTimestampToString(str: string) {
@@ -110,35 +93,6 @@ export const getDistanceStrictAsPhrase = (
         unit,
     });
 
-const weekDays = [
-    { key: 1, dayName: 'Monday' },
-    { key: 2, dayName: 'Tuesday' },
-    { key: 3, dayName: 'Wednesday' },
-    { key: 4, dayName: 'Thursday' },
-    { key: 5, dayName: 'Friday' },
-    { key: 6, dayName: 'Saturday' },
-    { key: 0, dayName: 'Sunday' },
-];
-
-const monthDays = [
-    { key: 1, dayName: 'the first of the month' },
-    { key: 15, dayName: 'the middle of the month' },
-];
-
-// TODO The type of `days` is always `number[]` but it can't be annotated here due
-// to some type mismatches elsewhere.
-export function getDayList(dayListType: IntervalType, days) {
-    const dayNameConstants = dayListType === 'WEEKLY' ? weekDays : monthDays;
-
-    const dayNameArray = dayNameConstants.reduce((acc: string[], constant) => {
-        const newItem = days.find((day) => day === constant.key);
-
-        return typeof newItem !== 'undefined' ? [...acc, constant.dayName] : [...acc];
-    }, []);
-
-    return dayNameArray;
-}
-
 /**
  * Returns day of month with its ordinal suffix.
  * @param {number} num - The number to get the ordinal suffix for. Confirmed to work with 1 through 31.
@@ -160,8 +114,3 @@ export function getDayOfMonthWithOrdinal(num: number): string {
             return `${num}th`;
     }
 }
-
-export default {
-    getLatestDatedItemByKey,
-    addBrandedTimestampToString,
-};

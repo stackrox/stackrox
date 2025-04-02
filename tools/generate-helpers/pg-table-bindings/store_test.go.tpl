@@ -60,10 +60,6 @@ func (s *{{$namePrefix}}StoreSuite) SetupTest() {
 	s.NoError(err)
 }
 
-func (s *{{$namePrefix}}StoreSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-}
-
 func (s *{{$namePrefix}}StoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 

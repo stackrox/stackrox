@@ -123,15 +123,21 @@ jobs:
       SCANNER_BUNDLE_VERSION: ${{ matrix.version }}
       ROX_GIT_REF: ${{ matrix.ref }}
     steps:
+    # Checkout master to get the latest local actions
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - uses: ./.github/actions/job-preamble
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
     - name: Checkout specific reference
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
         ref: ${{ env.ROX_GIT_REF }}
-
-    - uses: ./.github/actions/job-preamble
-      with:
-        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Download NVD
       uses: ./.github/actions/download-artifact-with-retry
@@ -184,15 +190,21 @@ jobs:
       - /usr:/mnt/usr
       - /opt:/mnt/opt
     steps:
+    # Checkout master to get the latest local actions
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
-        ref: ${{ github.event.pull_request.head.sha }}
 
     - uses: ./.github/actions/job-preamble
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+    - name: Checkout specific reference
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.sha }}
 
     - name: Authenticate with test GCS bucket
       if: github.event_name == 'pull_request'

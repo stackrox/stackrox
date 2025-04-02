@@ -57,11 +57,6 @@ func (s *datastorePostgresTestSuite) SetupTest() {
 	s.datastore = newDataStore(searcher, s.store, s.writer)
 }
 
-func (s *datastorePostgresTestSuite) TearDownTest() {
-	s.postgresTest.Teardown(s.T())
-	s.postgresTest.Close()
-}
-
 func (s *datastorePostgresTestSuite) assertEventsEqual(
 	event *events.AdministrationEvent,
 	storageEvent *storage.AdministrationEvent,

@@ -51,10 +51,6 @@ func (s *blobTestSuite) SetupTest() {
 	s.NoError(err)
 }
 
-func (s *blobTestSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-}
-
 func (s *blobTestSuite) createBlobs(prefix string, size int, n int, modTime time.Time) []*storage.Blob {
 	var blobs []*storage.Blob
 	for i := 0; i < n; i++ {

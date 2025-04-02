@@ -53,10 +53,6 @@ func (s *DeploymentPostgresDataStoreTestSuite) SetupSuite() {
 	s.deploymentDatastore = deploymentDS
 }
 
-func (s *DeploymentPostgresDataStoreTestSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-}
-
 func (s *DeploymentPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 	ctx := sac.WithAllAccess(context.Background())
 	img1 := fixtures.GetImageWithUniqueComponents(5)

@@ -612,6 +612,37 @@ func (ts *DelegatedScanningSuite) TestAdHocScans() {
 		limitedConn := ts.getLimitedCentralConn(ctx, ps, role)
 		ts.executeAndValidateScan(ctx, limitedConn, scanImgReq(ts.ocpInternalImage.TagRef(), withClusterFlag))
 	})
+
+	ts.Run("scan via central when no cluster specified in config or request", func() {
+		t := ts.T()
+
+		// Apply the config with NO cluster ID.
+		err := ts.updateConfigWithRetries(ctx, &v1.DelegatedRegistryConfig{
+			EnabledFor: v1.DelegatedRegistryConfig_ALL,
+		})
+		require.NoError(t, err)
+		// Make the scan request to Central, also with NO cluster specified.
+		imgFullName := ts.ubi9Image.TagRef()
+		service := v1.NewImageServiceClient(conn)
+		img, err := ts.scanWithRetries(ctx, service, scanImgReq(imgFullName, !withClusterFlag))
+		require.NoError(t, err)
+
+		// Validate the scan was successful and executed via Central.
+		require.Equal(t, imgFullName, img.GetName().GetFullName())
+		require.False(t, img.GetIsClusterLocal(), "image %q flagged as cluster local which should NOT happen for scans handled via Central, most likely the scan was delegated, check Central/Sensor logs to confirm", imgFullName)
+		require.NotNil(t, img.GetScan(), "image scan for %q is nil, check logs for scan errors, image notes: %v", imgFullName, img.GetNotes())
+		require.NotEmpty(t, img.GetScan().GetComponents(), "image scan for %q has no components, check central logs for scan errors, this can happen if indexing succeeds but matching fails, ROX-17472 will make this an error in the future", imgFullName)
+
+		// Ensure at least one component has a vulnerability.
+		foundVuln := false
+		for _, c := range img.GetScan().GetComponents() {
+			if len(c.GetVulns()) > 0 {
+				foundVuln = true
+				break
+			}
+		}
+		require.True(t, foundVuln, "Expected at least one vulnerability in image %q, but found none.", imgFullName)
+	})
 }
 
 // TestDeploymentScans tests delegating image scans via observed k8s deployments.
@@ -690,26 +721,37 @@ func (ts *DelegatedScanningSuite) TestMirrorScans() {
 
 	ts.skipIfNotOpenShift()
 
+	// Before setting up mirrors, attempt to disable the node draining behavior of the
+	// OCP Machine Config Operator.
+	nodesDrained := false
+	err := ts.deleScanUtils.DisableMCONodeDrain(t, ctx)
+	if err != nil {
+		logf(t, "WARN: Attempts to disable machine config operator node draining behavior failed, this may lead to higher chance of flakes: %v", err)
+		nodesDrained = true
+	}
+
 	// Create mirroring CRs and update OCP global pull secret, this will
 	// trigger nodes to drain and may take between 5-10 mins to complete.
-	icspAvail, idmsAvail, itmsAvail := ts.deleScanUtils.SetupMirrors(t, ctx, "quay.io/rhacs-eng", config.DockerConfigEntry{
+	icspSupported, idmsSupported, itmsSupported := ts.deleScanUtils.SetupMirrors(t, ctx, "quay.io/rhacs-eng", config.DockerConfigEntry{
 		Username: ts.quayROUsername,
 		Password: ts.quayROPassword,
 		Email:    "dele-scan-test@example.com",
 	})
 
-	if !icspAvail && !idmsAvail && !itmsAvail {
-		t.Skip("Mirroring CRs not available in this cluster, skipping tests")
+	if !icspSupported && !idmsSupported && !itmsSupported {
+		t.Skip("Mirroring CRs not supported in this cluster, skipping tests")
 	}
 
-	// Sensor connects to Central quicker on fresh start vs. waiting for automatic reconnect.
-	// Since Sensor may have started first after the prior node drain, we restart Sensor
-	// so that testing will be able to proceed quicker.
-	logf(t, "Deleting Sensor to speed up ready state")
-	sensorPod, err := ts.getSensorPodWithRetries(ctx, ts.namespace)
-	require.NoError(t, err)
-	err = ts.k8s.CoreV1().Pods(ts.namespace).Delete(ctx, sensorPod.GetName(), metaV1.DeleteOptions{})
-	require.NoError(t, err)
+	if nodesDrained {
+		// Sensor connects to Central quicker on fresh start vs. waiting for automatic reconnect.
+		// Since Sensor may have started first after the prior node drain, we restart Sensor
+		// so that testing will be able to proceed quicker.
+		logf(t, "Deleting Sensor to speed up ready state")
+		sensorPod, err := ts.getSensorPodWithRetries(ctx, ts.namespace)
+		require.NoError(t, err)
+		err = ts.k8s.CoreV1().Pods(ts.namespace).Delete(ctx, sensorPod.GetName(), metaV1.DeleteOptions{})
+		require.NoError(t, err)
+	}
 
 	// Wait for Central/Sensor to be healthy.
 	ts.waitForHealthyCentralSensorConn()
@@ -747,9 +789,9 @@ func (ts *DelegatedScanningSuite) TestMirrorScans() {
 		imageStr string
 		skip     bool
 	}{
-		{"Scan ad-hoc image from mirror via ImageContentSourcePolicy", icspImage.IDRef(), !icspAvail},
-		{"Scan ad-hoc image from mirror via ImageDigestMirrorSet", idmsImage.IDRef(), !idmsAvail},
-		{"Scan ad-hoc image from mirror via ImageTagMirrorSet", itmsImage.TagRef(), !itmsAvail},
+		{"Scan ad-hoc image from mirror via ImageContentSourcePolicy", icspImage.IDRef(), !icspSupported},
+		{"Scan ad-hoc image from mirror via ImageDigestMirrorSet", idmsImage.IDRef(), !idmsSupported},
+		{"Scan ad-hoc image from mirror via ImageTagMirrorSet", itmsImage.TagRef(), !itmsSupported},
 	}
 
 	conn := centralgrpc.GRPCConnectionToCentral(t)
@@ -758,7 +800,7 @@ func (ts *DelegatedScanningSuite) TestMirrorScans() {
 			t := ts.T()
 
 			if tc.skip {
-				t.Skip("CR not avail, skipping test.")
+				t.Skip("CR not supported, skipping test.")
 			}
 
 			req := &v1.ScanImageRequest{
@@ -778,9 +820,9 @@ func (ts *DelegatedScanningSuite) TestMirrorScans() {
 		imageStr   string
 		skip       bool
 	}{
-		{"Scan deploy image from mirror via ImageContentSourcePolicy", "dele-scan-icsp", icspImage.ID(), icspImage.IDRef(), !icspAvail},
-		{"Scan deploy image from mirror via ImageDigestMirrorSet", "dele-scan-idms", idmsImage.ID(), idmsImage.IDRef(), !idmsAvail},
-		{"Scan deploy image from mirror via ImageTagMirrorSet", "dele-scan-itms", itmsImage.ID(), itmsImage.TagRef(), !itmsAvail},
+		{"Scan deploy image from mirror via ImageContentSourcePolicy", "dele-scan-icsp", icspImage.ID(), icspImage.IDRef(), !icspSupported},
+		{"Scan deploy image from mirror via ImageDigestMirrorSet", "dele-scan-idms", idmsImage.ID(), idmsImage.IDRef(), !idmsSupported},
+		{"Scan deploy image from mirror via ImageTagMirrorSet", "dele-scan-itms", itmsImage.ID(), itmsImage.TagRef(), !itmsSupported},
 	}
 
 	for _, tc := range deployTCs {
@@ -788,7 +830,7 @@ func (ts *DelegatedScanningSuite) TestMirrorScans() {
 			t := ts.T()
 
 			if tc.skip {
-				t.Skip("CR not avail, skipping test.")
+				t.Skip("CR not supported, skipping test.")
 			}
 
 			// Do an initial teardown in case a deployment is lingering from a previous test.

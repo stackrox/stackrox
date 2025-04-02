@@ -80,10 +80,6 @@ func (s *migrationTestSuite) SetupSuite() {
 	pgutils.CreateTableFromModel(s.ctx, s.db.GetGormDB(), oldSchemas.CreateTableComplianceOperatorProfileV2Stmt)
 }
 
-func (s *migrationTestSuite) TearDownSuite() {
-	s.db.Teardown(s.T())
-}
-
 func (s *migrationTestSuite) TestMigration() {
 	s.addOldData()
 

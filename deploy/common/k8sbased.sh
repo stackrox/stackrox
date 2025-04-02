@@ -539,6 +539,7 @@ function launch_central {
 
     if [[ -n "${ROX_DEV_INTERNAL_SSO_CLIENT_SECRET}" ]]; then
         ${KUBE_COMMAND:-kubectl} create secret generic sensitive-declarative-configurations -n "${central_namespace}" &>/dev/null
+        export_central_cert
         setup_internal_sso "${API_ENDPOINT}" "${ROX_DEV_INTERNAL_SSO_CLIENT_SECRET}"
     fi
 
@@ -613,6 +614,25 @@ preemptionPolicy: PreemptLowerPriority
 globalDefault: false
 description: "This priority class shall be used for collector pods, which must be able to preempt other pods to fit exactly one collector on each node."
 EOT
+}
+
+function export_central_cert {
+    # Export the internal central TLS certificate for roxctl to access central
+    # through TLS-passthrough router by specifying the TLS server name.
+    ROX_SERVER_NAME="central.${CENTRAL_NAMESPACE:-stackrox}"
+    export ROX_SERVER_NAME
+
+    local central_cert
+    central_cert="$(mktemp -d)/central_cert.pem"
+    echo "Storing central certificate in ${central_cert}"
+
+    export LOGLEVEL=debug
+    roxctl -e "$API_ENDPOINT" \
+        central cert --insecure-skip-tls-verify 1>"$central_cert"
+
+    ROX_CA_CERT_FILE="$central_cert"
+    export ROX_CA_CERT_FILE
+    openssl x509 -in "${ROX_CA_CERT_FILE}" -subject -issuer -noout
 }
 
 function launch_sensor {
@@ -873,6 +893,7 @@ function launch_sensor {
     else
       if [[ -x "$(command -v roxctl)" && "$(roxctl version)" == "$MAIN_IMAGE_TAG" ]]; then
         [[ -n "${ROX_ADMIN_PASSWORD}" ]] || { echo >&2 "ROX_ADMIN_PASSWORD not found! Cannot launch sensor."; return 1; }
+        export_central_cert
         roxctl --endpoint "${API_ENDPOINT}" sensor generate --main-image-repository="${MAIN_IMAGE_REPO}" --central="$CLUSTER_API_ENDPOINT" --name="$CLUSTER" \
              --collection-method="$COLLECTION_METHOD" \
              "${ORCH}" \

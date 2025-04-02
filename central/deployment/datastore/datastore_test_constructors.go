@@ -68,10 +68,7 @@ func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) (DataStore, error)
 	dbStore := pgStore.FullStoreWrap(pgStore.New(pool))
 	searcher := search.NewV2(dbStore)
 	imageStore := imageDS.GetTestPostgresDataStore(t, pool)
-	processBaselineStore, err := pbDS.GetTestPostgresDataStore(t, pool)
-	if err != nil {
-		return nil, err
-	}
+	processBaselineStore := pbDS.GetTestPostgresDataStore(t, pool)
 	networkFlowClusterStore, err := nfDS.GetTestPostgresClusterDataStore(t, pool)
 	if err != nil {
 		return nil, err

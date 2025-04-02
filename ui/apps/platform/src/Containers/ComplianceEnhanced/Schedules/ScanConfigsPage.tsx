@@ -1,14 +1,14 @@
 import React from 'react';
-import { Redirect, Route, Switch } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import { Banner } from '@patternfly/react-core';
 
 import usePageAction from 'hooks/usePageAction';
 import usePermissions from 'hooks/usePermissions';
 import { complianceEnhancedSchedulesPath } from 'routePaths';
 import useFeatureFlags from 'hooks/useFeatureFlags';
-import { scanConfigDetailsPath } from './compliance.scanConfigs.routes';
 import { PageActions } from './compliance.scanConfigs.utils';
 import CreateScanConfigPage from './CreateScanConfigPage';
+import ComplianceNotFoundPage from '../ComplianceNotFoundPage';
 import ScanConfigDetailPage from './ScanConfigDetailPage';
 import ScanConfigsTablePage from './ScanConfigsTablePage';
 
@@ -34,38 +34,34 @@ function ScanConfigsPage() {
                     newer
                 </Banner>
             )}
-            <Switch>
+            <Routes>
                 <Route
-                    exact
-                    path={complianceEnhancedSchedulesPath}
-                    render={() => {
-                        if (pageAction === 'create' && hasWriteAccessForCompliance) {
-                            return <CreateScanConfigPage />;
-                        }
-                        if (!pageAction) {
-                            return (
-                                <ScanConfigsTablePage
-                                    hasWriteAccessForCompliance={hasWriteAccessForCompliance}
-                                    isReportJobsEnabled={isReportJobsEnabled}
-                                />
-                            );
-                        }
-                        return <Redirect to={complianceEnhancedSchedulesPath} />;
-                    }}
-                />
-                <Route
-                    exact
-                    path={scanConfigDetailsPath}
-                    render={() => {
-                        return (
-                            <ScanConfigDetailPage
+                    index
+                    element={
+                        // eslint-disable-next-line no-nested-ternary
+                        pageAction === 'create' && hasWriteAccessForCompliance ? (
+                            <CreateScanConfigPage />
+                        ) : !pageAction ? (
+                            <ScanConfigsTablePage
                                 hasWriteAccessForCompliance={hasWriteAccessForCompliance}
                                 isReportJobsEnabled={isReportJobsEnabled}
                             />
-                        );
-                    }}
+                        ) : (
+                            <Navigate to={complianceEnhancedSchedulesPath} replace />
+                        )
+                    }
                 />
-            </Switch>
+                <Route
+                    path=":scanConfigId"
+                    element={
+                        <ScanConfigDetailPage
+                            hasWriteAccessForCompliance={hasWriteAccessForCompliance}
+                            isReportJobsEnabled={isReportJobsEnabled}
+                        />
+                    }
+                />
+                <Route path="*" element={<ComplianceNotFoundPage />} />
+            </Routes>
         </>
     );
 }

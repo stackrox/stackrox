@@ -53,9 +53,8 @@ func (suite *ProcessBaselineSearchTestSuite) SetupTest() {
 		))
 	suite.controller = gomock.NewController(suite.T())
 	suite.store = mockStore.NewMockStore(suite.controller)
-	searcher, err := New(suite.store)
+	searcher := New(suite.store)
 
-	suite.NoError(err)
 	suite.searcher = searcher
 }
 

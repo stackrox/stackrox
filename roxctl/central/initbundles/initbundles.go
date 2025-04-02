@@ -9,7 +9,8 @@ import (
 // Command defines the bootstrap-token command tree
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
-		Use: "init-bundles",
+		Use:   "init-bundles",
+		Short: "Commands related to init bundles",
 	}
 
 	c.AddCommand(

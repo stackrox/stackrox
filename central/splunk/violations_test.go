@@ -1289,7 +1289,6 @@ func (rb *requestBuilder) runRequest(responseWriter http.ResponseWriter) {
 	alertsDS := rb.alertsDS
 	if !rb.useAlertsDS {
 		ds := makeDS(rb.t, rb.alerts)
-		defer ds.teardown(rb.t)
 		alertsDS = ds.alertsDS
 	}
 

@@ -45,7 +45,6 @@ type ReportGeneratorBenchmarkTestSuite struct {
 func BenchmarkReportGenerator(b *testing.B) {
 	bts := &ReportGeneratorBenchmarkTestSuite{b: b}
 	bts.setupTestSuite()
-	defer bts.teardownTestSuite()
 
 	clusters := []*storage.Cluster{
 		{Id: uuid.NewV4().String(), Name: "c1"},
@@ -77,19 +76,8 @@ func BenchmarkReportGenerator(b *testing.B) {
 	}
 
 	expectedRowCount := 5000
-	expectedDeploymentCount := 2000
-	expectedWatchedImageCount := 500
 
 	reportSnap := testReportSnapshot(collection.GetId(), fixability, severities, imageTypes, nil)
-
-	b.Run("GetReportDataGraphQL", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			deployedImgResults, watchedImgResults, err := bts.reportGenerator.getReportData(reportSnap, collection, time.Time{})
-			require.NoError(b, err)
-			require.Equal(b, expectedDeploymentCount, len(deployedImgResults[0].Deployments))
-			require.Equal(b, expectedWatchedImageCount, len(watchedImgResults[0].Images))
-		}
-	})
 
 	b.Run("GetReportDataSQF", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
@@ -129,10 +117,6 @@ func (bts *ReportGeneratorBenchmarkTestSuite) setupTestSuite() {
 	bts.reportGenerator = newReportGeneratorImpl(bts.testDB, nil, bts.resolver.DeploymentDataStore,
 		bts.watchedImageDatastore, bts.collectionQueryResolver, nil, nil, bts.clusterDatastore,
 		bts.namespaceDatastore, imageCVEDatastore, bts.schema)
-}
-
-func (bts *ReportGeneratorBenchmarkTestSuite) teardownTestSuite() {
-	bts.testDB.Teardown(bts.b)
 }
 
 func (bts *ReportGeneratorBenchmarkTestSuite) upsertManyImages(images []*storage.Image) {

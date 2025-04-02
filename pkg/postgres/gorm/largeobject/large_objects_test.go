@@ -33,10 +33,6 @@ func (s *GormUtilsTestSuite) SetupTest() {
 	s.gormDB = s.db.GetGormDB(s.T()).WithContext(s.ctx)
 }
 
-func (s *GormUtilsTestSuite) TearDownTest() {
-	s.db.Teardown(s.T())
-}
-
 func (s *GormUtilsTestSuite) TestUpsertGet() {
 	// Write a long file
 	randomData := make([]byte, 90000)

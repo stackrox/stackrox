@@ -16,6 +16,8 @@ API_SERVICE_PROTOS_V2 = $(filter api/v2/%, $(SERVICE_PROTOS_REL))
 
 STORAGE_PROTOS = $(filter storage/%, $(ALL_PROTOS_REL))
 
+CUSTOM_SWAGGER_SRCS = central/docs/api_custom_routes
+CUSTOM_SWAGGER_SPECS = $(shell find $(CUSTOM_SWAGGER_SRCS) -name "*.swagger.json")
 GENERATED_BASE_PATH = $(BASE_PATH)/generated
 GENERATED_DOC_PATH = image/rhel/docs
 MERGED_API_SWAGGER_SPEC = $(GENERATED_DOC_PATH)/api/v1/swagger.json
@@ -288,15 +290,15 @@ endif
 		$(dir $<)/*.proto
 
 # Generate the docs from the merged swagger specs. Dependency cleanup-swagger-json-gotags should execute the last.
-$(MERGED_API_SWAGGER_SPEC): $(BASE_PATH)/scripts/mergeswag.sh $(GENERATED_API_SWAGGER_SPECS) cleanup-swagger-json-gotags
+$(MERGED_API_SWAGGER_SPEC): $(BASE_PATH)/scripts/mergeswag.sh $(GENERATED_API_SWAGGER_SPECS) cleanup-swagger-json-gotags $(CUSTOM_SWAGGER_SPECS)
 	@echo "+ $@"
 	$(SILENT)mkdir -p "$(dir $@)"
-	$(BASE_PATH)/scripts/mergeswag.sh "$(GENERATED_BASE_PATH)/api/v1" "1" >"$@"
+	$(BASE_PATH)/scripts/mergeswag.sh "1" "$(GENERATED_BASE_PATH)/api/v1" "$(CUSTOM_SWAGGER_SRCS)" >"$@"
 
 $(MERGED_API_SWAGGER_SPEC_V2): $(BASE_PATH)/scripts/mergeswag.sh $(GENERATED_API_SWAGGER_SPECS_V2) cleanup-swagger-json-gotags
 	@echo "+ $@"
 	$(SILENT)mkdir -p "$(dir $@)"
-	$(BASE_PATH)/scripts/mergeswag.sh "$(GENERATED_BASE_PATH)/api/v2" "2" >"$@"
+	$(BASE_PATH)/scripts/mergeswag.sh "2" "$(GENERATED_BASE_PATH)/api/v2" >"$@"
 
 # Generate the docs from the merged swagger specs.
 $(GENERATED_API_DOCS): $(MERGED_API_SWAGGER_SPEC) $(MERGED_API_SWAGGER_SPEC_V2)

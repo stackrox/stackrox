@@ -44,10 +44,6 @@ func (s *migrationTestSuite) SetupTest() {
 	pgutils.CreateTableFromModel(ctx, s.db.GetGormDB(), frozenSchema.CreateTableRolesStmt)
 }
 
-func (s *migrationTestSuite) TearDownTest() {
-	s.db.Teardown(s.T())
-}
-
 const (
 	deployment = "Deployment"
 )

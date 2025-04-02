@@ -705,6 +705,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"snoozed: Boolean!",
 	}))
 	utils.Must(builder.AddType("ImageCVEV2", []string{
+		"advisory: String!",
 		"componentId: String!",
 		"cveBaseInfo: CVEInfo",
 		"cvss: Float!",
@@ -712,7 +713,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"id: ID!",
 		"imageId: String!",
 		"impactScore: Float!",
-		"isFixable: Boolean!",
 		"nvdScoreVersion: CvssScoreVersion!",
 		"nvdcvss: Float!",
 		"operatingSystem: String!",
@@ -736,7 +736,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"id: ID!",
 		"imageId: String!",
 		"license: License",
-		"location: String!",
 		"name: String!",
 		"operatingSystem: String!",
 		"priority: Int!",
@@ -945,6 +944,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"clusterId: String!",
 		"lastSeenTimestamp: Time",
 		"props: NetworkFlowProperties",
+		"updatedAt: Time",
 	}))
 	utils.Must(builder.AddType("NetworkFlowProperties", []string{
 		"dstEntity: NetworkEntityInfo",
@@ -8417,6 +8417,11 @@ func (resolver *Resolver) wrapImageCVEV2sWithContext(ctx context.Context, values
 	return output, nil
 }
 
+func (resolver *imageCVEV2Resolver) Advisory(ctx context.Context) string {
+	value := resolver.data.GetAdvisory()
+	return value
+}
+
 func (resolver *imageCVEV2Resolver) ComponentId(ctx context.Context) string {
 	value := resolver.data.GetComponentId()
 	return value
@@ -8450,11 +8455,6 @@ func (resolver *imageCVEV2Resolver) ImageId(ctx context.Context) string {
 func (resolver *imageCVEV2Resolver) ImpactScore(ctx context.Context) float64 {
 	value := resolver.data.GetImpactScore()
 	return float64(value)
-}
-
-func (resolver *imageCVEV2Resolver) IsFixable(ctx context.Context) bool {
-	value := resolver.data.GetIsFixable()
-	return value
 }
 
 func (resolver *imageCVEV2Resolver) NvdScoreVersion(ctx context.Context) string {
@@ -8634,11 +8634,6 @@ func (resolver *imageComponentV2Resolver) ImageId(ctx context.Context) string {
 func (resolver *imageComponentV2Resolver) License(ctx context.Context) (*licenseResolver, error) {
 	value := resolver.data.GetLicense()
 	return resolver.root.wrapLicense(value, true, nil)
-}
-
-func (resolver *imageComponentV2Resolver) Location(ctx context.Context) string {
-	value := resolver.data.GetLocation()
-	return value
 }
 
 func (resolver *imageComponentV2Resolver) Name(ctx context.Context) string {
@@ -10836,6 +10831,11 @@ func (resolver *networkFlowResolver) LastSeenTimestamp(ctx context.Context) (*gr
 func (resolver *networkFlowResolver) Props(ctx context.Context) (*networkFlowPropertiesResolver, error) {
 	value := resolver.data.GetProps()
 	return resolver.root.wrapNetworkFlowProperties(value, true, nil)
+}
+
+func (resolver *networkFlowResolver) UpdatedAt(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetUpdatedAt()
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 type networkFlowPropertiesResolver struct {

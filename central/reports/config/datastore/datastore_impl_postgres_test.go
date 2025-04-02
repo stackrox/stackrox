@@ -39,10 +39,6 @@ func (s *ReportConfigurationPostgresDatastoreTests) SetupSuite() {
 			sac.ResourceScopeKeys(resources.WorkflowAdministration)))
 }
 
-func (s *ReportConfigurationPostgresDatastoreTests) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-}
-
 func (s *ReportConfigurationPostgresDatastoreTests) TearDownTest() {
 	s.truncateTable(postgresSchema.ReportConfigurationsTableName)
 }

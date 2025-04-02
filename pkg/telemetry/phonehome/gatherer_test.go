@@ -126,21 +126,43 @@ func (s *gathererTestSuite) TestGathererWithNoDuplicates() {
 
 func (s *gathererTestSuite) TestAddTotal() {
 	props := make(map[string]any)
-	err := AddTotal(context.Background(), props, "key 1", func(context.Context) (int, error) {
-		return 42, nil
-	})
-	s.NoError(err)
-	s.Equal(42, props["Total key 1"])
-
-	err = AddTotal(context.Background(), props, "key 2", func(context.Context) (int, error) {
-		return 43, nil
-	})
-	s.NoError(err)
-	s.Equal(43, props["Total key 2"])
-
 	failure := errors.New("test error")
-	err = AddTotal(context.Background(), props, "key 3", func(context.Context) (int, error) {
-		return 42, failure
-	})
-	s.ErrorIs(err, failure)
+
+	customFunc := func(ctx context.Context, c int) (int, error) {
+		return c, nil
+	}
+
+	funcs := map[string]struct {
+		f        TotalFunc
+		expected any
+		err      error
+	}{
+		"Constant": {
+			f:        Constant(42),
+			expected: 42,
+		},
+		"Another constant": {f: Constant(43),
+			expected: 43,
+		},
+		"Failure": {
+			f: func(context.Context) (int, error) {
+				return 42, failure
+			},
+			expected: nil,
+			err:      failure,
+		},
+		"Bind2nd": {
+			f:        Bind2nd(customFunc)(44),
+			expected: 44,
+		},
+		"Len": {
+			f:        Len([]int{1, 2, 3, 4, 5}),
+			expected: 5,
+		},
+	}
+	for key, f := range funcs {
+		err := AddTotal(context.Background(), props, key, f.f)
+		s.ErrorIs(err, f.err)
+		s.Equal(f.expected, props["Total "+key])
+	}
 }

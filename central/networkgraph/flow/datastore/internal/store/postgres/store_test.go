@@ -7,14 +7,15 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stackrox/rox/central/networkgraph/testhelper"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
-	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/timestamp"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"gorm.io/gorm"
 )
@@ -96,7 +97,7 @@ func (s *NetworkflowStoreSuite) TestStore() {
 	foundNetworkFlows, _, err = s.store.GetAllFlows(s.ctx, nil)
 	s.NoError(err)
 	s.Len(foundNetworkFlows, 1)
-	protoassert.Equal(s.T(), networkFlow, foundNetworkFlows[0])
+	assert.True(s.T(), testhelper.MatchElements([]*storage.NetworkFlow{networkFlow}, foundNetworkFlows))
 
 	// Check the get all flows by since time
 	time3 := time.Unix(3, 0)
@@ -333,7 +334,7 @@ func (s *NetworkflowStoreSuite) TestGetMatching() {
 
 	filteredFlows, _, err := s.store.GetMatchingFlows(s.ctx, deploymentIngressFlowsPredicate, nil)
 	s.Nil(err)
-	protoassert.ElementsMatch(s.T(), []*storage.NetworkFlow{flows[1], flows[2]}, filteredFlows)
+	assert.True(s.T(), testhelper.MatchElements([]*storage.NetworkFlow{flows[1], flows[2]}, filteredFlows))
 }
 
 func (s *NetworkflowStoreSuite) TestGetFlowsForDeployment() {
@@ -393,7 +394,7 @@ func (s *NetworkflowStoreSuite) TestGetFlowsForDeployment() {
 
 	deploymentFlows, err := s.store.GetFlowsForDeployment(s.ctx, "TestDeploymentSrc1")
 	s.Nil(err)
-	protoassert.ElementsMatch(s.T(), []*storage.NetworkFlow{flows[0], flows[2]}, deploymentFlows)
+	assert.True(s.T(), testhelper.MatchElements([]*storage.NetworkFlow{flows[0], flows[2]}, deploymentFlows))
 }
 
 func (s *NetworkflowStoreSuite) TestGetExternalFlowsForDeployment() {
@@ -453,5 +454,5 @@ func (s *NetworkflowStoreSuite) TestGetExternalFlowsForDeployment() {
 
 	deploymentFlows, err := s.store.GetExternalFlowsForDeployment(s.ctx, "TestDeployment1")
 	s.Nil(err)
-	protoassert.ElementsMatch(s.T(), []*storage.NetworkFlow{flows[0], flows[1]}, deploymentFlows)
+	assert.True(s.T(), testhelper.MatchElements([]*storage.NetworkFlow{flows[0], flows[1]}, deploymentFlows))
 }

@@ -41,10 +41,6 @@ func (s *SignatureIntegrationsStoreSuite) SetupTest() {
 	s.NoError(err)
 }
 
-func (s *SignatureIntegrationsStoreSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-}
-
 func (s *SignatureIntegrationsStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 

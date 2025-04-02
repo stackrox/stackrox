@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useHistory } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
     Button,
     Flex,
@@ -97,7 +97,7 @@ function PoliciesTable({
     searchOptions,
 }: PoliciesTableProps): React.ReactElement {
     const expandedRowSet = useSet<string>();
-    const history = useHistory();
+    const navigate = useNavigate();
     const [labelAndNotifierIdsForTypes, setLabelAndNotifierIdsForTypes] = useState<
         LabelAndNotifierIdsForType[]
     >([]);
@@ -145,17 +145,11 @@ function PoliciesTable({
     }
 
     function onEditPolicy(id: string) {
-        history.push({
-            pathname: `${policiesBasePath}/${id}`,
-            search: 'action=edit',
-        });
+        navigate(`${policiesBasePath}/${id}?action=edit`);
     }
 
     function onClonePolicy(id: string) {
-        history.push({
-            pathname: `${policiesBasePath}/${id}`,
-            search: 'action=clone',
-        });
+        navigate(`${policiesBasePath}/${id}?action=clone`);
     }
 
     const selectedIds = getSelectedIds();

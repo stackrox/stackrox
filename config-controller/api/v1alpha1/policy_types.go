@@ -75,12 +75,6 @@ type SecurityPolicySpec struct {
 	// PolicySections define the violation criteria for this policy.
 	PolicySections     []PolicySection      `json:"policySections"`
 	MitreAttackVectors []MitreAttackVectors `json:"mitreAttackVectors,omitempty"`
-	// Read-only field. If true, the policy's criteria fields are rendered read-only.
-	CriteriaLocked bool `json:"criteriaLocked,omitempty"`
-	// Read-only field. If true, the policy's MITRE ATT&CK fields are rendered read-only.
-	MitreVectorsLocked bool `json:"mitreVectorsLocked,omitempty"`
-	// Read-only field. Indicates the policy is a default policy if true and a custom policy if false.
-	IsDefault bool `json:"isDefault,omitempty"`
 }
 
 type Exclusion struct {
@@ -152,9 +146,6 @@ type SecurityPolicyStatus struct {
 
 // IsValid runs validation checks against the SecurityPolicy spec
 func (p SecurityPolicySpec) IsValid() (bool, error) {
-	if p.IsDefault {
-		return false, errors.New("isDefault must be false")
-	}
 	return true, nil
 }
 
@@ -212,17 +203,14 @@ func getClusterID(name string, caches map[CacheType]map[string]string) (string, 
 // ToProtobuf converts the SecurityPolicy spec into policy proto
 func (p SecurityPolicySpec) ToProtobuf(caches map[CacheType]map[string]string) (*storage.Policy, error) {
 	proto := storage.Policy{
-		Name:               p.PolicyName,
-		Description:        p.Description,
-		Rationale:          p.Rationale,
-		Remediation:        p.Remediation,
-		Disabled:           p.Disabled,
-		Categories:         p.Categories,
-		PolicyVersion:      policyversion.CurrentVersion().String(),
-		CriteriaLocked:     p.CriteriaLocked,
-		MitreVectorsLocked: p.MitreVectorsLocked,
-		IsDefault:          p.IsDefault,
-		Source:             storage.PolicySource_DECLARATIVE,
+		Name:          p.PolicyName,
+		Description:   p.Description,
+		Rationale:     p.Rationale,
+		Remediation:   p.Remediation,
+		Disabled:      p.Disabled,
+		Categories:    p.Categories,
+		PolicyVersion: policyversion.CurrentVersion().String(),
+		Source:        storage.PolicySource_DECLARATIVE,
 	}
 
 	proto.Notifiers = make([]string, 0, len(p.Notifiers))

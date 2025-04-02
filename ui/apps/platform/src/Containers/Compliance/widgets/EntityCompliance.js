@@ -1,12 +1,13 @@
 import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
-import { useRouteMatch, useLocation, useHistory } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import Widget from 'Components/Widget';
 import ArcSingle from 'Components/visuals/ArcSingle';
 import Query from 'Components/CacheFirstQuery';
 import Loader from 'Components/Loader';
 import entityTypes, { standardBaseTypes } from 'constants/entityTypes';
+import useWorkflowMatch from 'hooks/useWorkflowMatch';
 import URLService from 'utils/URLService';
 import { AGGREGATED_RESULTS } from 'queries/controls';
 import queryService from 'utils/queryService';
@@ -20,9 +21,9 @@ import VerticalBarChart from './VerticalBarChart';
 const EntityCompliance = ({ entityType, entityName, clusterName }) => {
     const entityTypeLabel = entityNounSentenceCaseSingular[entityType];
     const searchParam = useContext(searchContext);
-    const match = useRouteMatch();
+    const match = useWorkflowMatch();
     const location = useLocation();
-    const history = useHistory();
+    const navigate = useNavigate();
 
     function getBarData(results) {
         return results
@@ -56,7 +57,7 @@ const EntityCompliance = ({ entityType, entityName, clusterName }) => {
             })
             .url();
 
-        history.push(URL);
+        navigate(URL);
     }
 
     const whereClause = { [entityType]: entityName, [entityTypes.CLUSTER]: clusterName };

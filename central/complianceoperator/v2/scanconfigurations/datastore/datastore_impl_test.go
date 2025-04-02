@@ -142,10 +142,6 @@ func (s *complianceScanConfigDataStoreTestSuite) SetupTest() {
 	s.testContexts[noAccessCtx] = sac.WithGlobalAccessScopeChecker(context.Background(), sac.DenyAllAccessScopeChecker())
 }
 
-func (s *complianceScanConfigDataStoreTestSuite) TearDownTest() {
-	s.db.Teardown(s.T())
-}
-
 func (s *complianceScanConfigDataStoreTestSuite) TestGetScanConfiguration() {
 	configID := uuid.NewV4().String()
 

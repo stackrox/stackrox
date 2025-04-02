@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import max from 'lodash/max';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 import {
     FlexibleXYPlot,
@@ -38,7 +38,7 @@ function getLabelData(data) {
 }
 
 const LabeledBarGraph = ({ data, title }) => {
-    const history = useHistory();
+    const navigate = useNavigate();
     const { onValueMouseOver, onValueMouseOut } = useGraphHoverHint();
 
     const upperBoundX = max([...data.map((datum) => datum.x)]);
@@ -47,7 +47,7 @@ const LabeledBarGraph = ({ data, title }) => {
 
     function onValueClickHandler(datum) {
         if (datum.url) {
-            history.push(datum.url);
+            navigate(datum.url);
         }
     }
 

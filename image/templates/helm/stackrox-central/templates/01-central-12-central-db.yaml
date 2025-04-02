@@ -77,7 +77,7 @@ spec:
               - key: node-role.kubernetes.io/control-plane
                 operator: DoesNotExist
       {{- if ._rox.central.db.priorityClassName }}
-      priorityClassName: {{ ._rox.central.db.priorityClassName }}
+      priorityClassName: {{ quote ._rox.central.db.priorityClassName }}
       {{- end }}
       serviceAccountName: central-db
       terminationGracePeriodSeconds: 120
