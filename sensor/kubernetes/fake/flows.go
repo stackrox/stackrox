@@ -302,9 +302,9 @@ func (w *WorkloadManager) getFakeNetworkConnectionInfo(workload NetworkWorkload)
 	for i := 0; i < workload.BatchSize; i++ {
 		src, dst, ok := w.getRandomSrcDst()
 		if !ok {
-			log.Error("found no IPs in pool")
 			continue
 		}
+
 		containerID, ok := containerPool.randomElem()
 		if !ok {
 			log.Error("Found no containers in pool")
@@ -322,7 +322,7 @@ func (w *WorkloadManager) getFakeNetworkConnectionInfo(workload NetworkWorkload)
 		if endpointPool.Size < endpointPool.Capacity {
 			endpointPool.add(networkEndpoint)
 		}
-		networkEndpoints = append(networkEndpoints, networkEndpoint)
+		// networkEndpoints = append(networkEndpoints, networkEndpoint)
 	}
 
 	for _, endpoint := range endpointPool.EndpointsToBeClosed {
