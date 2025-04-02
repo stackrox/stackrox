@@ -1,23 +1,17 @@
-import React, { ReactElement, useEffect, useState } from 'react';
+import React, { ReactElement } from 'react';
 
 import { fetchClusterRegistrationSecrets } from 'services/ClustersService';
 import { clustersClusterRegistrationSecretsPath } from 'routePaths';
 
 import { clusterRegistrationSecretDescriptor as descriptor } from '../utils/integrationsList';
 import IntegrationTile from './IntegrationTile';
+import useRestQuery from 'hooks/useRestQuery';
 
 const { image, label } = descriptor;
 
 function ClusterRegistrationSecretsTile(): ReactElement {
-    const [numIntegrations, setNumIntegrations] = useState(0);
-
-    useEffect(() => {
-        fetchClusterRegistrationSecrets()
-            .then(({ response: { items } }) => {
-                setNumIntegrations(items.length);
-            })
-            .catch(() => {});
-    }, []);
+    const { data } = useRestQuery(fetchClusterRegistrationSecrets);
+    const numIntegrations = data?.items.length ?? 0;
 
     return (
         <IntegrationTile

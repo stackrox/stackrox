@@ -84,7 +84,7 @@ function ClusterRegistrationSecretsPage({
                             hasWriteAccessForClusterRegistrationSecrets={
                                 hasWriteAccessForClusterRegistrationSecrets
                             }
-                            clusterRegistrationSecrets={dataForFetch?.response?.items ?? []}
+                            clusterRegistrationSecrets={dataForFetch?.items ?? []}
                             setClusterRegistrationSecretToRevoke={
                                 setClusterRegistrationSecretToRevoke
                             }
