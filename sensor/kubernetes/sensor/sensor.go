@@ -113,11 +113,25 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	imageService := image.NewService(imageCache, storeProvider.Registries(), storeProvider.RegistryMirrors())
 	complianceCommandHandler := compliance.NewCommandHandler(complianceService)
 
+	var signalSrv signalService.Service
+	if cfg.signalServiceAuthFuncOverride != nil && cfg.localSensor {
+		signalSrv = signalService.NewService(signalService.WithAuthFuncOverride(cfg.signalServiceAuthFuncOverride))
+	} else {
+		signalSrv = signalService.NewService()
+	}
+
+	var collectorSrv collector.Service
+	if cfg.signalServiceAuthFuncOverride != nil && cfg.localSensor {
+		collectorSrv = collector.NewService(collector.WithAuthFuncOverride(cfg.signalServiceAuthFuncOverride))
+	} else {
+		collectorSrv = collector.NewService()
+	}
+
 	// Create Process Pipeline
 	indicators := make(chan *message.ExpiringMessage, queue.ScaleSizeOnNonDefault(env.ProcessIndicatorBufferSize))
 	processPipeline := processsignal.NewProcessPipeline(indicators, storeProvider.Entities(), processfilter.Singleton(), policyDetector)
 
-	signalCmp := signalComponent.New(processPipeline, indicators,
+	signalCmp := signalComponent.New(processPipeline, signalSrv.GetMessagesC(), collectorSrv.GetMessagesC(), indicators,
 		signalComponent.WithTraceWriter(cfg.processIndicatorWriter))
 
 	networkFlowManager :=
@@ -195,22 +209,6 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 			service.WithTraceWriter(cfg.networkFlowWriter))
 	} else {
 		networkFlowService = service.NewService(networkFlowManager, service.WithTraceWriter(cfg.networkFlowWriter))
-	}
-
-	var signalSrv signalService.Service
-	if cfg.signalServiceAuthFuncOverride != nil && cfg.localSensor {
-		signalSrv = signalService.NewService(signalCmp.GetReceiver(),
-			signalService.WithAuthFuncOverride(cfg.signalServiceAuthFuncOverride))
-	} else {
-		signalSrv = signalService.NewService(signalCmp.GetReceiver())
-	}
-
-	var collectorSrv collector.Service
-	if cfg.signalServiceAuthFuncOverride != nil && cfg.localSensor {
-		collectorSrv = collector.NewService(signalCmp.GetReceiver(),
-			collector.WithAuthFuncOverride(cfg.signalServiceAuthFuncOverride))
-	} else {
-		collectorSrv = collector.NewService(signalCmp.GetReceiver())
 	}
 
 	apiServices := []grpc.APIService{
