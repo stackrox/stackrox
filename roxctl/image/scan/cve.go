@@ -1,6 +1,7 @@
 package scan
 
 import (
+	"encoding/json"
 	"slices"
 	"sort"
 	"strings"
@@ -25,6 +26,10 @@ const (
 
 func (c cveSeverity) String() string {
 	return [...]string{"LOW", "MODERATE", "IMPORTANT", "CRITICAL"}[c]
+}
+
+func (c cveSeverity) MarshalJSON() ([]byte, error) {
+	return json.Marshal(c.String()) //nolint:wrapcheck
 }
 
 func cveSeverityFromString(s string) cveSeverity {
@@ -60,12 +65,12 @@ type cveJSONStructure struct {
 }
 
 type cveVulnerabilityJSON struct {
-	CveID                 string `json:"cveId"`
-	CveSeverity           string `json:"cveSeverity"`
-	CveInfo               string `json:"cveInfo"`
-	ComponentName         string `json:"componentName"`
-	ComponentVersion      string `json:"componentVersion"`
-	ComponentFixedVersion string `json:"componentFixedVersion"`
+	CveID                 string      `json:"cveId"`
+	CveSeverity           cveSeverity `json:"cveSeverity"`
+	CveInfo               string      `json:"cveInfo"`
+	ComponentName         string      `json:"componentName"`
+	ComponentVersion      string      `json:"componentVersion"`
+	ComponentFixedVersion string      `json:"componentFixedVersion"`
 }
 
 // newCVESummaryForPrinting creates a cveJSONResult that shall be used for printing and holds
@@ -111,7 +116,7 @@ func getVulnerabilityJSON(vulnerabilities []*storage.EmbeddedVulnerability, comp
 
 		vulnJSON := cveVulnerabilityJSON{
 			CveID:                 vulnerability.GetCve(),
-			CveSeverity:           severity.String(),
+			CveSeverity:           severity,
 			CveInfo:               vulnerability.GetLink(),
 			ComponentName:         comp.GetName(),
 			ComponentVersion:      comp.GetVersion(),
