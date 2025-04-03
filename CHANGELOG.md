@@ -7,10 +7,14 @@ Entries in this file should be limited to:
 - Obscure side-effects that are not obviously apparent based on the JIRA associated with the changes.
 Please avoid adding duplicate information across this changelog and JIRA/doc input pages.
 
+## [4.5.9]
+
+### Technical Changes
+- ROX-27885: Aligned data in old Compliance across tables and widgets
+
 ## [4.5.7]
 
 ### Technical Changes
-
 - ROX-27347: Fix vulnerability report job getting stuck in waiting state after central restart.
 
 ## [4.5.6]
