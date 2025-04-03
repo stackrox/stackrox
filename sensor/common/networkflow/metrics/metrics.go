@@ -163,7 +163,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      netFlowManagerPrefix + "processes_listening_on_port_events_total",
-		Help:      "Total number of processes listening on ports added/removed",
+		Help:      "Total number of endpoints for processes listening on ports added/removed to hostConns",
 	}, []string{"op"})
 	HostProcessesEnrichmentEvents = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,

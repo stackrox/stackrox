@@ -1105,6 +1105,7 @@ func (m *networkFlowManager) currentEnrichedProcesses() map[processListeningIndi
 
 	enrichedProcesses := make(map[processListeningIndicator]timestamp.MicroTS)
 	for _, hostConns := range allHostConns {
+		flowMetrics.HostProcessesEvents.WithLabelValues("add").Add(float64(len(hostConns.endpoints)))
 		m.enrichProcessesListening(hostConns, enrichedProcesses)
 	}
 
