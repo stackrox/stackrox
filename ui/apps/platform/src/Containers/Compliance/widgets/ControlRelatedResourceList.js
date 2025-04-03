@@ -12,7 +12,7 @@ import searchContext from 'Containers/searchContext';
 import { entityNounOrdinaryCase } from '../entitiesForCompliance';
 import LinkListWidget from './LinkListWidget';
 
-const ControlRelatedEntitiesList = ({
+const ControlRelatedResourceList = ({
     listEntityType,
     pageEntityType,
     pageEntity,
@@ -127,7 +127,7 @@ const ControlRelatedEntitiesList = ({
     );
 };
 
-ControlRelatedEntitiesList.propTypes = {
+ControlRelatedResourceList.propTypes = {
     listEntityType: PropTypes.string.isRequired,
     pageEntityType: PropTypes.string.isRequired,
     pageEntity: PropTypes.shape({
@@ -139,10 +139,10 @@ ControlRelatedEntitiesList.propTypes = {
     className: PropTypes.string,
 };
 
-ControlRelatedEntitiesList.defaultProps = {
+ControlRelatedResourceList.defaultProps = {
     pageEntity: null,
     limit: 10,
     className: '',
 };
 
-export default ControlRelatedEntitiesList;
+export default ControlRelatedResourceList;

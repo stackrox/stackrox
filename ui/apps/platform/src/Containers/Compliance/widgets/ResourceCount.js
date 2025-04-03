@@ -18,7 +18,7 @@ import searchContext from 'Containers/searchContext';
 
 import { entityNounSentenceCaseSingular } from '../entitiesForCompliance';
 
-const ResourceCount = ({ entityType, relatedToResourceType, relatedToResource, count }) => {
+const ResourceCount = ({ entityType, relatedToResourceType, relatedToResource }) => {
     const searchParam = useContext(searchContext);
     const match = useWorkflowMatch();
     const location = useLocation();
@@ -64,13 +64,6 @@ const ResourceCount = ({ entityType, relatedToResourceType, relatedToResource, c
     const headerText = `${entityNounSentenceCaseSingular[entityType]} Count`;
     const url = getUrl();
 
-    if (count || count === 0) {
-        return (
-            <Widget header={headerText} bodyClassName="p-2">
-                <CountWidget title={headerText} count={count} linkUrl={url} />;
-            </Widget>
-        );
-    }
     return (
         <Query query={QUERY} variables={variables}>
             {({ loading, data }) => {
@@ -91,20 +84,17 @@ const ResourceCount = ({ entityType, relatedToResourceType, relatedToResource, c
 };
 
 ResourceCount.propTypes = {
-    entityType: PropTypes.string,
+    entityType: PropTypes.string.isRequired,
     relatedToResourceType: PropTypes.string.isRequired,
     relatedToResource: PropTypes.shape({
         id: PropTypes.string,
         name: PropTypes.string,
         clusterName: PropTypes.string,
     }),
-    count: PropTypes.number,
 };
 
 ResourceCount.defaultProps = {
-    entityType: null,
     relatedToResource: null,
-    count: null,
 };
 
 export default ResourceCount;
