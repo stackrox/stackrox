@@ -4,12 +4,14 @@ import (
 	"context"
 	"fmt"
 	"slices"
+	"strings"
 
 	"github.com/go-logr/logr"
 	"github.com/operator-framework/helm-operator-plugins/pkg/extensions"
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	utils "github.com/stackrox/rox/operator/internal/utils"
+	"github.com/stackrox/rox/pkg/sliceutils"
 	corev1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -25,6 +27,9 @@ const (
 	// DefaultCentralDBPVCName is the default name for Central DB PVC
 	DefaultCentralDBPVCName = "central-db"
 
+	// DefaultCentralDBBackupPVCName is the default name for Central DB backup PVC
+	DefaultCentralDBBackupPVCName = "central-db-backup"
+
 	pvcTargetLabelKey = "target.pvc.stackrox.io"
 
 	defaultStorageClassAnnotation = "storageclass.kubernetes.io/is-default-class"
@@ -37,8 +42,13 @@ const (
 	// PVCTargetCentral is for any PVC that would be attached to the Central deployment
 	PVCTargetCentral PVCTarget = "central"
 
-	// PVCTargetCentralDB is for any PVC that would be attached to the Central DB deployment
+	// PVCTargetCentralDB is for a PVC that would be attached to the Central DB
+	// deployment as a data volume
 	PVCTargetCentralDB PVCTarget = "central-db"
+
+	// PVCTargetCentralDBBackup is for a PVC that would be attached to the
+	// Central DB deployment as a backup volume
+	PVCTargetCentralDBBackup PVCTarget = "central-db-backup"
 )
 
 var (
@@ -77,13 +87,19 @@ func getPersistenceByTarget(central *platform.Central, target PVCTarget) *platfo
 	switch target {
 	case PVCTargetCentral:
 		return nil
-	case PVCTargetCentralDB:
+	case PVCTargetCentralDB, PVCTargetCentralDBBackup:
 		if !central.Spec.Central.ShouldManageDB() {
 			return nil
 		}
 		dbPersistence := central.Spec.Central.GetDB().GetPersistence()
 		if dbPersistence == nil {
 			dbPersistence = &platform.DBPersistence{}
+		}
+
+		if target == PVCTargetCentralDBBackup {
+			claimName := dbPersistence.PersistentVolumeClaim.ClaimName
+			backupName := fmt.Sprintf("%s-backup", *claimName)
+			dbPersistence.PersistentVolumeClaim.ClaimName = &backupName
 		}
 		return convertDBPersistenceToPersistence(dbPersistence)
 	default:
@@ -146,64 +162,41 @@ func (r *reconcilePVCExtensionRun) Execute() error {
 	}
 
 	claimName := pointer.StringDeref(pvcConfig.ClaimName, r.defaultClaimName)
-	claimNameList := []string{claimName, fmt.Sprintf("%s-backup", claimName)}
+	key := ctrlClient.ObjectKey{Namespace: r.namespace, Name: claimName}
+	pvc := &corev1.PersistentVolumeClaim{}
+	if err := r.client.Get(r.ctx, key, pvc); err != nil {
+		if !apiErrors.IsNotFound(err) {
+			return errors.Wrapf(err, "fetching referenced %s pvc", claimName)
+		}
+		pvc = nil
+	}
 
-	ownedPVCList, err := r.getOwnedPVCsForCurrentTarget()
+	ownedPVC, err := r.getUniqueOwnedPVCForCurrentTarget()
 	if err != nil {
 		return err
 	}
-	if ownedPVCList != nil {
-		for _, ownedPVC := range ownedPVCList {
-			// Note that originally we were checking for pvc != nil here. It's
-			// not clear why should we do that, so this condition was excluded.
-			if !slices.Contains(claimNameList, ownedPVC.GetName()) {
-				return errors.Errorf("Could not create PVC %q because the "+
-					"operator can only manage one set of PVC (data and backup) "+
-					"for %s. To fix this either reference a manually created "+
-					"PVC or remove the OwnerReference of the %q PVC.",
-					claimName, r.target, ownedPVC.GetName())
-			}
+	if ownedPVC != nil {
+		if ownedPVC.GetName() != claimName && pvc == nil {
+			return errors.Errorf(
+				"Could not create PVC %q because the operator can only manage 1 PVC for %s. To fix this either reference a manually created PVC or remove the OwnerReference of the %q PVC.", claimName, r.target, ownedPVC.GetName())
 		}
 	}
 
-	// Handle reconciliation for every PVC with the same configuration
-	for _, pvcName := range claimNameList {
-		key := ctrlClient.ObjectKey{Namespace: r.namespace, Name: pvcName}
-		pvc := &corev1.PersistentVolumeClaim{}
-		if err := r.client.Get(r.ctx, key, pvc); err != nil {
-			if !apiErrors.IsNotFound(err) {
-				return errors.Wrapf(err, "fetching referenced %s pvc", pvcName)
-			}
-			pvc = nil
-		}
-
-		// The reconciliation loop should fail if a PVC should be reconciled
-		// which is not owned by the operator.
-		if pvc != nil && !metav1.IsControlledBy(pvc, r.centralObj) {
-			if pvcConfig.StorageClassName != nil ||
-				pointer.StringDeref(pvcConfig.Size, "") != "" {
-				err := errors.Errorf("Failed reconciling PVC %q. Please remove "+
-					"the storageClassName and size properties from your spec, "+
-					"or change the name to allow the operator to create a new "+
-					"one with a different name.", pvcName)
-				r.log.Error(err, "failed reconciling PVC")
-				return err
-			}
-			return nil
-		}
-
-		if pvc == nil {
-			if err := r.handleCreate(pvcName, pvcConfig); err != nil {
-				return err
-			}
-		}
-
-		if err := r.handleReconcile(pvc, pvcConfig); err != nil {
+	// The reconciliation loop should fail if a PVC should be reconciled which is not owned by the operator.
+	if pvc != nil && !metav1.IsControlledBy(pvc, r.centralObj) {
+		if pvcConfig.StorageClassName != nil || pointer.StringDeref(pvcConfig.Size, "") != "" {
+			err := errors.Errorf("Failed reconciling PVC %q. Please remove the storageClassName and size properties from your spec, or change the name to allow the operator to create a new one with a different name.", claimName)
+			r.log.Error(err, "failed reconciling PVC")
 			return err
 		}
+		return nil
 	}
 
-	return nil
+	if pvc == nil {
+		return r.handleCreate(claimName, pvcConfig)
+	}
+
+	return r.handleReconcile(pvc, pvcConfig)
 }
 
 func (r *reconcilePVCExtensionRun) handleDelete() error {
@@ -352,4 +345,25 @@ func (r *reconcilePVCExtensionRun) getTargetLabelValue(pvc *corev1.PersistentVol
 	}
 	// If the target annotation is not set, assume this (owned) PVC is a Central PVC for backwards compatibility.
 	return string(PVCTargetCentral)
+}
+
+func (r *reconcilePVCExtensionRun) getUniqueOwnedPVCForCurrentTarget() (*corev1.PersistentVolumeClaim, error) {
+	pvcList, err := r.getOwnedPVCsForCurrentTarget()
+	if err != nil {
+		return nil, err
+	}
+
+	// If no previously created managed PVC was found everything is ok.
+	if len(pvcList) == 0 {
+		return nil, nil
+	}
+	if len(pvcList) > 1 {
+		names := sliceutils.Map(pvcList, (*corev1.PersistentVolumeClaim).GetName)
+		slices.Sort(names)
+
+		return nil, errors.Wrapf(errMultipleOwnedPVCs,
+			"multiple owned PVCs were found for %s, please remove not used ones or delete their OwnerReferences. Found PVCs: %s", r.target, strings.Join(names, ", "))
+	}
+
+	return pvcList[0], nil
 }
