@@ -152,11 +152,57 @@ func (s *nodeIndexerSuite) TestRunPackageScannerAnyPath() {
 	s.Len(packages, 0)
 }
 
+func (s *nodeIndexerSuite) TestBuildMappingURL() {
+	tcs := map[string]struct {
+		advertisedEndpointSetting string
+		mappingURLSetting         string
+		expectedURL               string
+	}{
+		"Empty": {
+			advertisedEndpointSetting: "",
+			mappingURLSetting:         "",
+			expectedURL:               "https://sensor.stackrox.svc:443/scanner/definitions?file=repo2cpe",
+		},
+		"Host with port": {
+			advertisedEndpointSetting: "example.com:8080",
+			mappingURLSetting:         "",
+			expectedURL:               "https://example.com:8080/scanner/definitions?file=repo2cpe",
+		},
+		"Host without port": {
+			advertisedEndpointSetting: "sensor.rhacs.svc",
+			mappingURLSetting:         "",
+			expectedURL:               "https://sensor.rhacs.svc/scanner/definitions?file=repo2cpe",
+		},
+		"HTTP scheme": {
+			advertisedEndpointSetting: "http://example.com",
+			mappingURLSetting:         "",
+			expectedURL:               "https://example.com/scanner/definitions?file=repo2cpe",
+		},
+		"Mapping setting provided": {
+			advertisedEndpointSetting: "sensor.namespace.svc:443",
+			mappingURLSetting:         "https://example.com/download",
+			expectedURL:               "https://example.com/download",
+		},
+		"Mapping setting provided with no scheme and trailing slash": {
+			advertisedEndpointSetting: "sensor.namespace.svc:443",
+			mappingURLSetting:         "example.com/download/",
+			expectedURL:               "https://example.com/download",
+		},
+	}
+	for name, tc := range tcs {
+		s.T().Run(name, func(t *testing.T) {
+			s.T().Setenv("ROX_ADVERTISED_ENDPOINT", tc.advertisedEndpointSetting)
+			s.T().Setenv("ROX_NODE_INDEX_MAPPING_URL", tc.mappingURLSetting)
+			s.Equal(tc.expectedURL, buildMappingURL())
+		})
+	}
+}
+
 func (s *nodeIndexerSuite) TestIndexerE2E() {
 	s.T().Setenv(mtls.CertFilePathEnvName, filepath.Join("testdata", "certs", "client-cert.pem"))
 	s.T().Setenv(mtls.KeyFileEnvName, filepath.Join("testdata", "certs", "client-key.pem"))
 	server := s.createTestServer(true)
-	cfg := DefaultNodeIndexerConfig
+	cfg := DefaultNodeIndexerConfig()
 	cfg.HostPath = "testdata"
 	cfg.Repo2CPEMappingURL = server.URL
 	indexer := NewNodeIndexer(cfg)
@@ -172,7 +218,7 @@ func (s *nodeIndexerSuite) TestIndexerE2E() {
 
 func (s *nodeIndexerSuite) TestIndexerE2ENoPath() {
 	server := s.createTestServer(false)
-	cfg := DefaultNodeIndexerConfig
+	cfg := DefaultNodeIndexerConfig()
 	cfg.Client = server.Client()
 	cfg.HostPath = "doesnotexist"
 	cfg.Repo2CPEMappingURL = server.URL
