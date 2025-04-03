@@ -23,7 +23,7 @@ func NewCVEFlatView(db postgres.DB) CveFlatView {
 
 	return &imageCVEFlatViewImpl{
 		db:     db,
-		schema: schema.ImageComponentV2Schema,
+		schema: schema.ImageCvesV2Schema,
 	}
 }
 
