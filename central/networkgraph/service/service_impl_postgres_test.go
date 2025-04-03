@@ -143,6 +143,38 @@ func normalizeTimestamps(graph *v1.NetworkGraph, timeNow *timestamppb.Timestamp)
 	}
 }
 
+// The timestamps are not expected to be exactly the same. If the timestamps are
+// within a second that is good enough
+func compareTimestamps(expected *v1.NetworkGraph, actual *v1.NetworkGraph) bool {
+	if len(expected.Nodes) != len(actual.Nodes) {
+		return false
+	}
+	for nodeIndex, node := range expected.Nodes {
+		if len(node.OutEdges) != len(actual.Nodes[nodeIndex].OutEdges) {
+			return false
+		}
+		for outEdgeIndex, edgeBundle := range node.OutEdges {
+			actualBundle, ok := actual.Nodes[nodeIndex].OutEdges[outEdgeIndex]
+			if ok {
+				if len(edgeBundle.Properties) != len(actualBundle.Properties) {
+					return false
+				}
+				for edgeIndex, edge := range edgeBundle.Properties {
+					actualTime := actualBundle.Properties[edgeIndex].LastActiveTimestamp.AsTime()
+					expectedTime := edge.LastActiveTimestamp.AsTime()
+					diff := expectedTime.Sub(actualTime)
+					if diff > time.Second || diff < -time.Second {
+						return false
+					}
+				}
+			} else {
+				return false
+			}
+		}
+	}
+	return true
+}
+
 func (s *networkGraphServiceSuite) TestGetNetworkGraph() {
 	ctx := sac.WithGlobalAccessScopeChecker(
 		context.Background(),
@@ -236,9 +268,14 @@ func (s *networkGraphServiceSuite) TestGetNetworkGraph() {
 	response, err := s.service.GetNetworkGraph(ctx, request)
 	s.NoError(err)
 
+	// Compare the timestamps, but they just need to be similar. They don't need to be equal
+	similarTimestamps := compareTimestamps(expectedResponse, response)
+	s.Assert().True(similarTimestamps)
+	
 	// We don't expect the timestamps to agree perfectly so set them to the same value
 	normalizeTimestamps(response, timeNow.Protobuf())
 	normalizeTimestamps(expectedResponse, timeNow.Protobuf())
+
 	protoassert.Equal(s.T(), expectedResponse, response)
 }
 
