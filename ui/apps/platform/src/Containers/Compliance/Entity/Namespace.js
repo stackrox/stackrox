@@ -29,7 +29,6 @@ export const QUERY = gql`
     query getNamespace($id: ID!) {
         results: namespace(id: $id) {
             metadata {
-                clusterId
                 clusterName
                 name
                 id
@@ -37,7 +36,6 @@ export const QUERY = gql`
                     key
                     value
                 }
-                creationTime
             }
         }
     }
