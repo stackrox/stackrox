@@ -152,7 +152,7 @@ func (s *nodeIndexerSuite) TestRunPackageScannerAnyPath() {
 	s.Len(packages, 0)
 }
 
-func (s *nodeIndexerSuite) TestMappingURL() {
+func (s *nodeIndexerSuite) TestBuildMappingURL() {
 	tcs := map[string]struct {
 		advertisedEndpointSetting string
 		mappingURLSetting         string
