@@ -1058,7 +1058,6 @@ func (m *networkFlowManager) enrichHostContainerEndpoints(hostConns *hostConnect
 	flowMetrics.FlowEnrichments.WithLabelValues("endpoint").Add(float64(len(hostConns.endpoints)))
 	for ep, status := range hostConns.endpoints {
 		m.enrichContainerEndpoint(&ep, status, enrichedEndpoints)
-		// Add metric with status - we are removing too little here!
 		if shallRemoveEndpoint(status) {
 			delete(hostConns.endpoints, ep)
 			flowMetrics.HostConnectionsOperations.WithLabelValues("remove", "endpoints").Inc()
@@ -1075,7 +1074,7 @@ func (m *networkFlowManager) enrichProcessesListening(hostConns *hostConnections
 			flowMetrics.IncHostProcessesEnrichmentEvents(
 				"N/A", "skip-enrichment", "N/A", "emptyProcessInfo",
 				status.lastSeen != timestamp.InfiniteFuture, status.rotten, false, false)
-			// No way to update a process if the data isn't there
+			// No way to update a process if the data isn't there -> no chance for later enrichment.
 			delete(hostConns.endpoints, ep)
 			flowMetrics.HostProcessesEvents.WithLabelValues("remove").Inc()
 			continue
