@@ -777,8 +777,8 @@ export const policyCriteriaDescriptors: Descriptor[] = [
     {
         label: 'Volume source',
         name: 'Volume Source',
-        shortName: 'Volume source',
-        longName: 'Volume source is',
+        shortName: 'Volume source path',
+        longName: 'Volume source path is',
         negatedName: 'Volume source doesn’t match',
         category: policyCriteriaCategories.STORAGE,
         type: 'text',
