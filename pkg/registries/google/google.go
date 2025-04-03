@@ -30,7 +30,7 @@ type googleRegistry struct {
 // Match overrides the underlying Match function in types.Registry because our google registries are scoped by
 // GCP projects.
 func (g *googleRegistry) Match(image *storage.ImageName) bool {
-	if stringutils.GetUpTo(image.GetRemote(), "/") != g.project {
+	if g.project != "" && stringutils.GetUpTo(image.GetRemote(), "/") != g.project {
 		return false
 	}
 	return g.Registry.Match(image)
