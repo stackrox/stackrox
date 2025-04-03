@@ -97,6 +97,8 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		return result, refreshErr
 	}
 
+	fmt.Println("Notifiers:", r.CentralClient.GetNotifiers())
+	fmt.Println("Clusters:", r.CentralClient.GetClusters())
 	desiredState, err := policyCR.Spec.ToProtobuf(map[configstackroxiov1alpha1.CacheType]map[string]string{
 		configstackroxiov1alpha1.Notifier: r.CentralClient.GetNotifiers(),
 		configstackroxiov1alpha1.Cluster:  r.CentralClient.GetClusters(),
