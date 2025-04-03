@@ -12,6 +12,8 @@ message SignatureIntegration {
   CosignPublicKeyVerification cosign = 3;
 
   repeated CosignCertificateVerification cosign_certificates = 4;
+
+  TransparencyLogVerification transparency_log = 6;
 }
 
 message CosignPublicKeyVerification {
@@ -27,9 +29,11 @@ message CosignPublicKeyVerification {
 // If only the chain is given, this will be used over the Fulcio trusted root chain for verification.
 // If no certificate or chain is given, the Fulcio trusted root chain will be assumed and verified against.
 message CosignCertificateVerification {
-  // PEM encoded certificate to use for verification.
+  // PEM encoded certificate to use for verification. Leave empty when
+  // using short-lived certificates as issued by Fulcio.
   string certificate_pem_enc = 1;
-  // PEM encoded certificate chain to use for verification.
+  // PEM encoded certificate chain to use for verification. Defaults to the
+  // root certificate authority of the public Sigstore instance if left empty.
   string certificate_chain_pem_enc = 2;
   // Certificate OIDC issuer to verify against.
   // This supports regular expressions following the RE2 syntax: https://github.com/google/re2/wiki/Syntax.
@@ -43,4 +47,40 @@ message CosignCertificateVerification {
   // recommended to use Fulcio compatible certificates according to the specification:
   // https://github.com/sigstore/fulcio/blob/main/docs/certificate-specification.md.
   string certificate_identity = 4;
+  // Validate that the signature certificate contains a signed
+  // certificate timestamp as proof of inclusion into the certificate
+  // transparency log.
+  CertificateTransparencyLogVerification certificate_transparency_log = 5;
+}
+
+// Validate that the signature certificate contains a signed
+// certificate timestamp as proof of inclusion into the certificate
+// transparency log.
+message CertificateTransparencyLogVerification {
+  // Validate the inclusion of certificates into a certificate transparency log.
+  // Disables validation if not enabled.
+  bool enabled = 1;
+  // PEM encoded public key used to validate the proof of inclusion into the
+  // certificate transparency log. Defaults to the key of the public Sigstore
+  // instance if left empty.
+  string public_key_pem_enc = 2;
+}
+
+// Validate the inclusion of signature signing events into a transparency log.
+message TransparencyLogVerification {
+  // Validate the inclusion of signatures into a transparency log.
+  // Disables validation if not enabled.
+  bool enabled = 1;
+  // The URL of the transparency log. Required for online confirmation of
+  // inclusion into the transparency log. Defaults to the Sigstore instance
+  // `rekor.sigstore.dev`.
+  string url = 2;
+  // Force offline validation of the signature proof of inclusion into the
+  // transparency log. Do not fall back to request confirmation from the
+  // transparency log over network.
+  bool validate_offline = 3;
+  // PEM encoded public key used to validate the proof of inclusion into the
+  // transparency log. Defaults to the key of the public Sigstore instance if
+  // left empty.
+  string public_key_pem_enc = 4;
 }

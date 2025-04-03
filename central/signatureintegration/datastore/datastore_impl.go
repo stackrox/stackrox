@@ -79,6 +79,7 @@ func (d *datastoreImpl) AddSignatureIntegration(ctx context.Context, integration
 		return nil, errox.InvalidArgs.Newf("id should be empty but %q provided", integration.GetId())
 	}
 	integration.Id = GenerateSignatureIntegrationID()
+	applyDefaultValues(integration)
 	if err := ValidateSignatureIntegration(integration); err != nil {
 		return nil, errox.InvalidArgs.CausedBy(err)
 	}
@@ -105,6 +106,7 @@ func (d *datastoreImpl) UpdateSignatureIntegration(ctx context.Context, integrat
 	if err := sac.VerifyAuthzOK(integrationSAC.WriteAllowed(ctx)); err != nil {
 		return false, err
 	}
+	applyDefaultValues(integration)
 	if err := ValidateSignatureIntegration(integration); err != nil {
 		return false, errox.InvalidArgs.CausedBy(err)
 	}
@@ -113,12 +115,12 @@ func (d *datastoreImpl) UpdateSignatureIntegration(ctx context.Context, integrat
 	d.lock.Lock()
 	defer d.lock.Unlock()
 
-	hasUpdatedPublicKeys, err := d.verifyIntegrationIDAndUpdates(ctx, integration)
+	hasUpdates, err := d.verifyIntegrationIDAndUpdates(ctx, integration)
 	if err != nil {
 		return false, err
 	}
 
-	return hasUpdatedPublicKeys, d.storage.Upsert(ctx, integration)
+	return hasUpdates, d.storage.Upsert(ctx, integration)
 }
 
 func (d *datastoreImpl) RemoveSignatureIntegration(ctx context.Context, id string) error {
@@ -168,7 +170,8 @@ func (d *datastoreImpl) verifyIntegrationIDAndUpdates(ctx context.Context,
 	}
 
 	hasUpdates := !getPublicKeyPEMSet(existingIntegration).Equal(getPublicKeyPEMSet(updatedIntegration)) ||
-		!protoutils.SlicesEqual(existingIntegration.GetCosignCertificates(), updatedIntegration.GetCosignCertificates())
+		!protoutils.SlicesEqual(existingIntegration.GetCosignCertificates(), updatedIntegration.GetCosignCertificates()) ||
+		!existingIntegration.GetTransparencyLog().EqualVT(updatedIntegration.GetTransparencyLog())
 
 	return hasUpdates, nil
 }

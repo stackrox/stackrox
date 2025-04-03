@@ -37,7 +37,7 @@ MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEWi3tSxvBH7S/WUmv408nKPxNSJx6
 )
 
 func TestVerifyAgainstSignatureIntegration(t *testing.T) {
-	testImg, err := generateImageWithCosignSignature(imgString, b64Signature, b64SignaturePayload, nil, nil)
+	testImg, err := generateImageWithCosignSignature(imgString, b64Signature, b64SignaturePayload, nil, nil, nil)
 	require.NoError(t, err, "creating test image")
 
 	successfulCosignConfig := &storage.CosignPublicKeyVerification{
@@ -98,7 +98,7 @@ func TestVerifyAgainstSignatureIntegration(t *testing.T) {
 
 func BenchmarkVerifyAgainstSignatureIntegrations_1Integration(b *testing.B) {
 	integrations := createSignatureIntegration(1)
-	img, err := generateImageWithCosignSignature(imgString, b64Signature, b64SignaturePayload, nil, nil)
+	img, err := generateImageWithCosignSignature(imgString, b64Signature, b64SignaturePayload, nil, nil, nil)
 	require.NoError(b, err)
 
 	b.ResetTimer()
@@ -107,7 +107,7 @@ func BenchmarkVerifyAgainstSignatureIntegrations_1Integration(b *testing.B) {
 
 func BenchmarkVerifyAgainstSignatureIntegrations_10Integrations(b *testing.B) {
 	integrations := createSignatureIntegration(10)
-	img, err := generateImageWithCosignSignature(imgString, b64Signature, b64SignaturePayload, nil, nil)
+	img, err := generateImageWithCosignSignature(imgString, b64Signature, b64SignaturePayload, nil, nil, nil)
 	require.NoError(b, err)
 
 	b.ResetTimer()
@@ -116,7 +116,7 @@ func BenchmarkVerifyAgainstSignatureIntegrations_10Integrations(b *testing.B) {
 
 func BenchmarkVerifyAgainstSignatureIntegrations_100Integrations(b *testing.B) {
 	integrations := createSignatureIntegration(100)
-	img, err := generateImageWithCosignSignature(imgString, b64Signature, b64SignaturePayload, nil, nil)
+	img, err := generateImageWithCosignSignature(imgString, b64Signature, b64SignaturePayload, nil, nil, nil)
 	require.NoError(b, err)
 
 	b.ResetTimer()
@@ -125,7 +125,7 @@ func BenchmarkVerifyAgainstSignatureIntegrations_100Integrations(b *testing.B) {
 
 func BenchmarkVerifyAgainstSignatureIntegrations_200Integrations(b *testing.B) {
 	integrations := createSignatureIntegration(200)
-	img, err := generateImageWithCosignSignature(imgString, b64Signature, b64SignaturePayload, nil, nil)
+	img, err := generateImageWithCosignSignature(imgString, b64Signature, b64SignaturePayload, nil, nil, nil)
 	require.NoError(b, err)
 
 	b.ResetTimer()

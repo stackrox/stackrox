@@ -6787,6 +6787,11 @@ func (resolver *cosignSignatureResolver) RawSignature(ctx context.Context) []byt
 	return value
 }
 
+func (resolver *cosignSignatureResolver) RekorBundle(ctx context.Context) []byte {
+	value := resolver.data.GetRekorBundle()
+	return value
+}
+
 func (resolver *cosignSignatureResolver) SignaturePayload(ctx context.Context) []byte {
 	value := resolver.data.GetSignaturePayload()
 	return value
