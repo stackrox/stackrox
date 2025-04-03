@@ -37,9 +37,13 @@ func fetchCAConfig(cliEnvironment environment.Environment, outputFile string,
 	if err != nil {
 		return errors.Wrap(err, "opening output file for writing CA config")
 	}
+	defer func() {
+		if bundleOutput != nil {
+			_ = bundleOutput.Close()
+			utils.Should(os.Remove(outputFile))
+		}
+	}()
 	if err := writeCA(ctx, svc, bundleOutput); err != nil {
-		_ = bundleOutput.Close()
-		utils.Should(os.Remove(outputFile))
 		return err
 	}
 	cliEnvironment.Logger().InfofLn("The CA configuration has been written to file %q.", outputFile)
