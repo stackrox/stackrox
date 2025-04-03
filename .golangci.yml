@@ -1,5 +1,6 @@
 version: "2"
 run:
+  timeout: 240m
   go: "1.23"
   build-tags:
     - integration
@@ -14,6 +15,8 @@ output:
     junit-xml:
       path: report.xml
 linters:
+  # please, do not use `enable-all`: it's deprecated and will be removed soon.
+  # inverted configuration with `enable-all` and `disable` is not scalable during updates of golangci-lint
   default: none
   enable:
     - asciicheck
@@ -29,6 +32,10 @@ linters:
     - rowserrcheck
     - staticcheck
     - wrapcheck
+  # - nakedret TODO: add in follow-up
+  # - unconvert TODO: add in follow-up
+  # - unparam TODO: add in follow-up
+  # - unused // enabled in Makefile as it fails with release tag
   settings:
     errcheck:
       disable-default-exclusions: false
@@ -147,11 +154,7 @@ linters:
         path: _test\.go
       - linters:
           - forbidigo
-        path: roxctl/common/io/io\.go
-      - linters:
-          - staticcheck
-        path: .*/bleve@.*/index\.go
-        text: SA4023
+        path: roxctl/common/io/io\.go # io.go will by default use os.Stdin/os.StdErr.
     paths:
       - pkg/complianceoperator/api
       - third_party$
