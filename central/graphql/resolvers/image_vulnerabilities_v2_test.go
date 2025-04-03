@@ -160,16 +160,12 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilities() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
 	expected := int32(len(distinctCVEs))
-	expectedCVEs := make([]string, 0, expected)
-	for _, cveName := range distinctCVEs {
-		expectedCVEs = append(expectedCVEs, cveName)
-	}
 
 	vulns, err := s.resolver.ImageVulnerabilities(ctx, PaginatedQuery{})
 	s.NoError(err)
 	s.Equal(expected, int32(len(vulns)))
 	cveList := getCVEList(ctx, vulns)
-	s.ElementsMatch(expectedCVEs, cveList)
+	s.ElementsMatch(distinctCVEs, cveList)
 
 	count, err := s.resolver.ImageVulnerabilityCount(ctx, RawQuery{})
 	s.NoError(err)
