@@ -1286,6 +1286,7 @@ type CosignSignature struct {
 	SignaturePayload []byte                 `protobuf:"bytes,2,opt,name=signature_payload,json=signaturePayload,proto3" json:"signature_payload,omitempty"`
 	CertPem          []byte                 `protobuf:"bytes,3,opt,name=cert_pem,json=certPem,proto3" json:"cert_pem,omitempty"`
 	CertChainPem     []byte                 `protobuf:"bytes,4,opt,name=cert_chain_pem,json=certChainPem,proto3" json:"cert_chain_pem,omitempty"`
+	RekorBundle      []byte                 `protobuf:"bytes,5,opt,name=rekor_bundle,json=rekorBundle,proto3" json:"rekor_bundle,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -1344,6 +1345,13 @@ func (x *CosignSignature) GetCertPem() []byte {
 func (x *CosignSignature) GetCertChainPem() []byte {
 	if x != nil {
 		return x.CertChainPem
+	}
+	return nil
+}
+
+func (x *CosignSignature) GetRekorBundle() []byte {
+	if x != nil {
+		return x.RekorBundle
 	}
 	return nil
 }
@@ -2026,12 +2034,13 @@ const file_storage_image_proto_rawDesc = "" +
 	"\afetched\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\afetched\"L\n" +
 	"\tSignature\x122\n" +
 	"\x06cosign\x18\x01 \x01(\v2\x18.storage.CosignSignatureH\x00R\x06cosignB\v\n" +
-	"\tSignature\"\xa4\x01\n" +
+	"\tSignature\"\xc7\x01\n" +
 	"\x0fCosignSignature\x12#\n" +
 	"\rraw_signature\x18\x01 \x01(\fR\frawSignature\x12+\n" +
 	"\x11signature_payload\x18\x02 \x01(\fR\x10signaturePayload\x12\x19\n" +
 	"\bcert_pem\x18\x03 \x01(\fR\acertPem\x12$\n" +
-	"\x0ecert_chain_pem\x18\x04 \x01(\fR\fcertChainPem\"$\n" +
+	"\x0ecert_chain_pem\x18\x04 \x01(\fR\fcertChainPem\x12!\n" +
+	"\frekor_bundle\x18\x05 \x01(\fR\vrekorBundle\"$\n" +
 	"\n" +
 	"V2Metadata\x12\x16\n" +
 	"\x06digest\x18\x01 \x01(\tR\x06digest\"\xfb\x02\n" +

@@ -432,6 +432,11 @@ func (m *CosignSignature) CloneVT() *CosignSignature {
 		copy(tmpBytes, rhs)
 		r.CertChainPem = tmpBytes
 	}
+	if rhs := m.RekorBundle; rhs != nil {
+		tmpBytes := make([]byte, len(rhs))
+		copy(tmpBytes, rhs)
+		r.RekorBundle = tmpBytes
+	}
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -1319,6 +1324,9 @@ func (this *CosignSignature) EqualVT(that *CosignSignature) bool {
 		return false
 	}
 	if string(this.CertChainPem) != string(that.CertChainPem) {
+		return false
+	}
+	if string(this.RekorBundle) != string(that.RekorBundle) {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -2667,6 +2675,13 @@ func (m *CosignSignature) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if len(m.RekorBundle) > 0 {
+		i -= len(m.RekorBundle)
+		copy(dAtA[i:], m.RekorBundle)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.RekorBundle)))
+		i--
+		dAtA[i] = 0x2a
+	}
 	if len(m.CertChainPem) > 0 {
 		i -= len(m.CertChainPem)
 		copy(dAtA[i:], m.CertChainPem)
@@ -3619,6 +3634,10 @@ func (m *CosignSignature) SizeVT() (n int) {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	l = len(m.CertChainPem)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	l = len(m.RekorBundle)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
@@ -6362,6 +6381,40 @@ func (m *CosignSignature) UnmarshalVT(dAtA []byte) error {
 			m.CertChainPem = append(m.CertChainPem[:0], dAtA[iNdEx:postIndex]...)
 			if m.CertChainPem == nil {
 				m.CertChainPem = []byte{}
+			}
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RekorBundle", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.RekorBundle = append(m.RekorBundle[:0], dAtA[iNdEx:postIndex]...)
+			if m.RekorBundle == nil {
+				m.RekorBundle = []byte{}
 			}
 			iNdEx = postIndex
 		default:
@@ -10239,6 +10292,37 @@ func (m *CosignSignature) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.CertChainPem = dAtA[iNdEx:postIndex]
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RekorBundle", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.RekorBundle = dAtA[iNdEx:postIndex]
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

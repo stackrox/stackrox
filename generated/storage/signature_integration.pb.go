@@ -27,6 +27,7 @@ type SignatureIntegration struct {
 	Name               string                           `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" sql:"unique"` // @gotags: sql:"unique"
 	Cosign             *CosignPublicKeyVerification     `protobuf:"bytes,3,opt,name=cosign,proto3" json:"cosign,omitempty"`
 	CosignCertificates []*CosignCertificateVerification `protobuf:"bytes,4,rep,name=cosign_certificates,json=cosignCertificates,proto3" json:"cosign_certificates,omitempty"`
+	TransparencyLog    *TransparencyLogVerification     `protobuf:"bytes,6,opt,name=transparency_log,json=transparencyLog,proto3" json:"transparency_log,omitempty"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -89,6 +90,13 @@ func (x *SignatureIntegration) GetCosignCertificates() []*CosignCertificateVerif
 	return nil
 }
 
+func (x *SignatureIntegration) GetTransparencyLog() *TransparencyLogVerification {
+	if x != nil {
+		return x.TransparencyLog
+	}
+	return nil
+}
+
 type CosignPublicKeyVerification struct {
 	state         protoimpl.MessageState                   `protogen:"open.v1"`
 	PublicKeys    []*CosignPublicKeyVerification_PublicKey `protobuf:"bytes,3,rep,name=public_keys,json=publicKeys,proto3" json:"public_keys,omitempty"`
@@ -139,9 +147,11 @@ func (x *CosignPublicKeyVerification) GetPublicKeys() []*CosignPublicKeyVerifica
 // If no certificate or chain is given, the Fulcio trusted root chain will be assumed and verified against.
 type CosignCertificateVerification struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// PEM encoded certificate to use for verification.
+	// PEM encoded certificate to use for verification. Leave empty when
+	// using short-lived certificates as issued by Fulcio.
 	CertificatePemEnc string `protobuf:"bytes,1,opt,name=certificate_pem_enc,json=certificatePemEnc,proto3" json:"certificate_pem_enc,omitempty"`
-	// PEM encoded certificate chain to use for verification.
+	// PEM encoded certificate chain to use for verification. Defaults to the
+	// root certificate authority of the public Sigstore instance if left empty.
 	CertificateChainPemEnc string `protobuf:"bytes,2,opt,name=certificate_chain_pem_enc,json=certificateChainPemEnc,proto3" json:"certificate_chain_pem_enc,omitempty"`
 	// Certificate OIDC issuer to verify against.
 	// This supports regular expressions following the RE2 syntax: https://github.com/google/re2/wiki/Syntax.
@@ -155,8 +165,12 @@ type CosignCertificateVerification struct {
 	// recommended to use Fulcio compatible certificates according to the specification:
 	// https://github.com/sigstore/fulcio/blob/main/docs/certificate-specification.md.
 	CertificateIdentity string `protobuf:"bytes,4,opt,name=certificate_identity,json=certificateIdentity,proto3" json:"certificate_identity,omitempty"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	// Validate that the signature certificate contains a signed
+	// certificate timestamp as proof of inclusion into the certificate
+	// transparency log.
+	CertificateTransparencyLog *CertificateTransparencyLogVerification `protobuf:"bytes,5,opt,name=certificate_transparency_log,json=certificateTransparencyLog,proto3" json:"certificate_transparency_log,omitempty"`
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
 }
 
 func (x *CosignCertificateVerification) Reset() {
@@ -217,6 +231,153 @@ func (x *CosignCertificateVerification) GetCertificateIdentity() string {
 	return ""
 }
 
+func (x *CosignCertificateVerification) GetCertificateTransparencyLog() *CertificateTransparencyLogVerification {
+	if x != nil {
+		return x.CertificateTransparencyLog
+	}
+	return nil
+}
+
+// Validate that the signature certificate contains a signed
+// certificate timestamp as proof of inclusion into the certificate
+// transparency log.
+type CertificateTransparencyLogVerification struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Validate the inclusion of certificates into a certificate transparency log.
+	// Disables validation if not enabled.
+	Enabled bool `protobuf:"varint,1,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	// PEM encoded public key used to validate the proof of inclusion into the
+	// certificate transparency log. Defaults to the key of the public Sigstore
+	// instance if left empty.
+	PublicKeyPemEnc string `protobuf:"bytes,2,opt,name=public_key_pem_enc,json=publicKeyPemEnc,proto3" json:"public_key_pem_enc,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *CertificateTransparencyLogVerification) Reset() {
+	*x = CertificateTransparencyLogVerification{}
+	mi := &file_storage_signature_integration_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CertificateTransparencyLogVerification) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CertificateTransparencyLogVerification) ProtoMessage() {}
+
+func (x *CertificateTransparencyLogVerification) ProtoReflect() protoreflect.Message {
+	mi := &file_storage_signature_integration_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CertificateTransparencyLogVerification.ProtoReflect.Descriptor instead.
+func (*CertificateTransparencyLogVerification) Descriptor() ([]byte, []int) {
+	return file_storage_signature_integration_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *CertificateTransparencyLogVerification) GetEnabled() bool {
+	if x != nil {
+		return x.Enabled
+	}
+	return false
+}
+
+func (x *CertificateTransparencyLogVerification) GetPublicKeyPemEnc() string {
+	if x != nil {
+		return x.PublicKeyPemEnc
+	}
+	return ""
+}
+
+// Validate the inclusion of signature signing events into a transparency log.
+type TransparencyLogVerification struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Validate the inclusion of signatures into a transparency log.
+	// Disables validation if not enabled.
+	Enabled bool `protobuf:"varint,1,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	// The URL of the transparency log. Required for online confirmation of
+	// inclusion into the transparency log. Defaults to the Sigstore instance
+	// `rekor.sigstore.dev`.
+	Url string `protobuf:"bytes,2,opt,name=url,proto3" json:"url,omitempty"`
+	// Force offline validation of the signature proof of inclusion into the
+	// transparency log. Do not fall back to request confirmation from the
+	// transparency log over network.
+	ValidateOffline bool `protobuf:"varint,3,opt,name=validate_offline,json=validateOffline,proto3" json:"validate_offline,omitempty"`
+	// PEM encoded public key used to validate the proof of inclusion into the
+	// transparency log. Defaults to the key of the public Sigstore instance if
+	// left empty.
+	PublicKeyPemEnc string `protobuf:"bytes,4,opt,name=public_key_pem_enc,json=publicKeyPemEnc,proto3" json:"public_key_pem_enc,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *TransparencyLogVerification) Reset() {
+	*x = TransparencyLogVerification{}
+	mi := &file_storage_signature_integration_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TransparencyLogVerification) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TransparencyLogVerification) ProtoMessage() {}
+
+func (x *TransparencyLogVerification) ProtoReflect() protoreflect.Message {
+	mi := &file_storage_signature_integration_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TransparencyLogVerification.ProtoReflect.Descriptor instead.
+func (*TransparencyLogVerification) Descriptor() ([]byte, []int) {
+	return file_storage_signature_integration_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *TransparencyLogVerification) GetEnabled() bool {
+	if x != nil {
+		return x.Enabled
+	}
+	return false
+}
+
+func (x *TransparencyLogVerification) GetUrl() string {
+	if x != nil {
+		return x.Url
+	}
+	return ""
+}
+
+func (x *TransparencyLogVerification) GetValidateOffline() bool {
+	if x != nil {
+		return x.ValidateOffline
+	}
+	return false
+}
+
+func (x *TransparencyLogVerification) GetPublicKeyPemEnc() string {
+	if x != nil {
+		return x.PublicKeyPemEnc
+	}
+	return ""
+}
+
 type CosignPublicKeyVerification_PublicKey struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
 	Name            string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
@@ -227,7 +388,7 @@ type CosignPublicKeyVerification_PublicKey struct {
 
 func (x *CosignPublicKeyVerification_PublicKey) Reset() {
 	*x = CosignPublicKeyVerification_PublicKey{}
-	mi := &file_storage_signature_integration_proto_msgTypes[3]
+	mi := &file_storage_signature_integration_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -239,7 +400,7 @@ func (x *CosignPublicKeyVerification_PublicKey) String() string {
 func (*CosignPublicKeyVerification_PublicKey) ProtoMessage() {}
 
 func (x *CosignPublicKeyVerification_PublicKey) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_signature_integration_proto_msgTypes[3]
+	mi := &file_storage_signature_integration_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -273,23 +434,33 @@ var File_storage_signature_integration_proto protoreflect.FileDescriptor
 
 const file_storage_signature_integration_proto_rawDesc = "" +
 	"\n" +
-	"#storage/signature_integration.proto\x12\astorage\"\xd1\x01\n" +
+	"#storage/signature_integration.proto\x12\astorage\"\xa2\x02\n" +
 	"\x14SignatureIntegration\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12<\n" +
 	"\x06cosign\x18\x03 \x01(\v2$.storage.CosignPublicKeyVerificationR\x06cosign\x12W\n" +
-	"\x13cosign_certificates\x18\x04 \x03(\v2&.storage.CosignCertificateVerificationR\x12cosignCertificates\"\xbc\x01\n" +
+	"\x13cosign_certificates\x18\x04 \x03(\v2&.storage.CosignCertificateVerificationR\x12cosignCertificates\x12O\n" +
+	"\x10transparency_log\x18\x06 \x01(\v2$.storage.TransparencyLogVerificationR\x0ftransparencyLog\"\xbc\x01\n" +
 	"\x1bCosignPublicKeyVerification\x12O\n" +
 	"\vpublic_keys\x18\x03 \x03(\v2..storage.CosignPublicKeyVerification.PublicKeyR\n" +
 	"publicKeys\x1aL\n" +
 	"\tPublicKey\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12+\n" +
-	"\x12public_key_pem_enc\x18\x02 \x01(\tR\x0fpublicKeyPemEnc\"\xf5\x01\n" +
+	"\x12public_key_pem_enc\x18\x02 \x01(\tR\x0fpublicKeyPemEnc\"\xe8\x02\n" +
 	"\x1dCosignCertificateVerification\x12.\n" +
 	"\x13certificate_pem_enc\x18\x01 \x01(\tR\x11certificatePemEnc\x129\n" +
 	"\x19certificate_chain_pem_enc\x18\x02 \x01(\tR\x16certificateChainPemEnc\x126\n" +
 	"\x17certificate_oidc_issuer\x18\x03 \x01(\tR\x15certificateOidcIssuer\x121\n" +
-	"\x14certificate_identity\x18\x04 \x01(\tR\x13certificateIdentityB.\n" +
+	"\x14certificate_identity\x18\x04 \x01(\tR\x13certificateIdentity\x12q\n" +
+	"\x1ccertificate_transparency_log\x18\x05 \x01(\v2/.storage.CertificateTransparencyLogVerificationR\x1acertificateTransparencyLog\"o\n" +
+	"&CertificateTransparencyLogVerification\x12\x18\n" +
+	"\aenabled\x18\x01 \x01(\bR\aenabled\x12+\n" +
+	"\x12public_key_pem_enc\x18\x02 \x01(\tR\x0fpublicKeyPemEnc\"\xa1\x01\n" +
+	"\x1bTransparencyLogVerification\x12\x18\n" +
+	"\aenabled\x18\x01 \x01(\bR\aenabled\x12\x10\n" +
+	"\x03url\x18\x02 \x01(\tR\x03url\x12)\n" +
+	"\x10validate_offline\x18\x03 \x01(\bR\x0fvalidateOffline\x12+\n" +
+	"\x12public_key_pem_enc\x18\x04 \x01(\tR\x0fpublicKeyPemEncB.\n" +
 	"\x19io.stackrox.proto.storageZ\x11./storage;storageb\x06proto3"
 
 var (
@@ -304,22 +475,26 @@ func file_storage_signature_integration_proto_rawDescGZIP() []byte {
 	return file_storage_signature_integration_proto_rawDescData
 }
 
-var file_storage_signature_integration_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_storage_signature_integration_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_storage_signature_integration_proto_goTypes = []any{
-	(*SignatureIntegration)(nil),                  // 0: storage.SignatureIntegration
-	(*CosignPublicKeyVerification)(nil),           // 1: storage.CosignPublicKeyVerification
-	(*CosignCertificateVerification)(nil),         // 2: storage.CosignCertificateVerification
-	(*CosignPublicKeyVerification_PublicKey)(nil), // 3: storage.CosignPublicKeyVerification.PublicKey
+	(*SignatureIntegration)(nil),                   // 0: storage.SignatureIntegration
+	(*CosignPublicKeyVerification)(nil),            // 1: storage.CosignPublicKeyVerification
+	(*CosignCertificateVerification)(nil),          // 2: storage.CosignCertificateVerification
+	(*CertificateTransparencyLogVerification)(nil), // 3: storage.CertificateTransparencyLogVerification
+	(*TransparencyLogVerification)(nil),            // 4: storage.TransparencyLogVerification
+	(*CosignPublicKeyVerification_PublicKey)(nil),  // 5: storage.CosignPublicKeyVerification.PublicKey
 }
 var file_storage_signature_integration_proto_depIdxs = []int32{
 	1, // 0: storage.SignatureIntegration.cosign:type_name -> storage.CosignPublicKeyVerification
 	2, // 1: storage.SignatureIntegration.cosign_certificates:type_name -> storage.CosignCertificateVerification
-	3, // 2: storage.CosignPublicKeyVerification.public_keys:type_name -> storage.CosignPublicKeyVerification.PublicKey
-	3, // [3:3] is the sub-list for method output_type
-	3, // [3:3] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	4, // 2: storage.SignatureIntegration.transparency_log:type_name -> storage.TransparencyLogVerification
+	5, // 3: storage.CosignPublicKeyVerification.public_keys:type_name -> storage.CosignPublicKeyVerification.PublicKey
+	3, // 4: storage.CosignCertificateVerification.certificate_transparency_log:type_name -> storage.CertificateTransparencyLogVerification
+	5, // [5:5] is the sub-list for method output_type
+	5, // [5:5] is the sub-list for method input_type
+	5, // [5:5] is the sub-list for extension type_name
+	5, // [5:5] is the sub-list for extension extendee
+	0, // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_storage_signature_integration_proto_init() }
@@ -333,7 +508,7 @@ func file_storage_signature_integration_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_storage_signature_integration_proto_rawDesc), len(file_storage_signature_integration_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
