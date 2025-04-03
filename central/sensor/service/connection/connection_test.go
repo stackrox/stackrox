@@ -672,6 +672,7 @@ func (s *testSuite) TestImageIntegrationsOnRun() {
 				s.Len(imgInts.UpdatedIntegrations, 1)
 				s.Equal(imgInts.UpdatedIntegrations[0].Name, "valid")
 				s.Equal(imgInts.UpdatedIntegrations[0].Id, "id1")
+				s.True(imgInts.Refresh)
 				return
 			}
 		}
