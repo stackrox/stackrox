@@ -896,7 +896,6 @@ func (resolver *imageCVEResolver) Advisory(ctx context.Context) (string, error) 
 // Following are the functions that return information that is nested in the CVEInfo object
 // or are convenience functions to allow time for UI to migrate to new naming schemes
 func (resolver *imageCVEV2Resolver) ID(_ context.Context) graphql.ID {
-	// TODO(ROX-28320):  Figure out if this is really what I want to do.
 	return graphql.ID(resolver.data.GetCveBaseInfo().GetCve())
 }
 
@@ -993,9 +992,9 @@ func (resolver *imageCVEV2Resolver) FixedByVersion(ctx context.Context) (string,
 // IsFixable returns if the CVE is fixable or not.
 //
 //	TODO(ROX-28123): Once the old code is removed, this method can become generated.
-func (resolver *imageCVEV2Resolver) IsFixable(_ context.Context, _ RawQuery) (bool, error) {
+func (resolver *imageCVEV2Resolver) IsFixable(ctx context.Context, _ RawQuery) (bool, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "IsFixable")
-	// TODO(ROX-28320): figure out if I need to use the flat data here
+
 	return resolver.data.IsFixable, nil
 }
 
@@ -1041,10 +1040,9 @@ func (resolver *imageCVEV2Resolver) Vectors() *EmbeddedVulnerabilityVectorsResol
 
 func (resolver *imageCVEV2Resolver) VulnerabilityState(ctx context.Context) string {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "VulnerabilityState")
-	// TODO(ROX-28320): convert the type to the storage type.
-	//if resolver.flatData != nil {
-	//	return resolver.flatData.GetState()
-	//}
+	if resolver.flatData != nil {
+		return resolver.flatData.GetState().String()
+	}
 	return resolver.data.GetState().String()
 }
 
