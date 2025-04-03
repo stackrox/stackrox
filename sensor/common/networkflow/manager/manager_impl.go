@@ -978,7 +978,14 @@ func (m *networkFlowManager) enrichProcessListening(ep *containerEndpoint, statu
 		if isMature {
 			status.rotten = true
 			log.Debugf("Unable to fetch deployment information for container %s: no deployment found", ep.containerID)
+			flowMetrics.IncHostProcessesEnrichmentEvents(
+				strconv.FormatBool(ok), "mark-rotten", strconv.FormatBool(isHistorical), "container-not-found",
+				status.lastSeen != timestamp.InfiniteFuture, status.rotten, isMature, isFresh)
+			return
 		}
+		flowMetrics.IncHostProcessesEnrichmentEvents(
+			strconv.FormatBool(ok), "retry-later", strconv.FormatBool(isHistorical), "container-not-found",
+			status.lastSeen != timestamp.InfiniteFuture, status.rotten, isMature, isFresh)
 		return
 	}
 
@@ -998,6 +1005,9 @@ func (m *networkFlowManager) enrichProcessListening(ep *containerEndpoint, statu
 	}
 
 	processesListening[indicator] = status.lastSeen
+	flowMetrics.IncHostProcessesEnrichmentEvents(
+		strconv.FormatBool(ok), "enrich", strconv.FormatBool(isHistorical), "enrichment-finished",
+		status.lastSeen != timestamp.InfiniteFuture, status.rotten, isMature, isFresh)
 }
 
 func (m *networkFlowManager) enrichHostConnections(hostConns *hostConnections, enrichedConnections map[networkConnIndicator]timestamp.MicroTS) {
@@ -1034,6 +1044,7 @@ func shallRemoveConnection(status *connStatus) bool {
 func shallRemoveEndpoint(status *connStatus) bool {
 	shallConn := shallRemoveConnection(status)
 	// If processes listening on ports is enabled, it has to be used there as well before being deleted.
+	// TODO: Try disabling PLOP - disabling it works! The number of adds and deletes is equal for conns and eps!
 	if env.ProcessesListeningOnPort.BooleanSetting() {
 		return status.usedProcess && shallConn
 	}
@@ -1047,6 +1058,7 @@ func (m *networkFlowManager) enrichHostContainerEndpoints(hostConns *hostConnect
 	flowMetrics.FlowEnrichments.WithLabelValues("endpoint").Add(float64(len(hostConns.endpoints)))
 	for ep, status := range hostConns.endpoints {
 		m.enrichContainerEndpoint(&ep, status, enrichedEndpoints)
+		// Add metric with status - we are removing too little here!
 		if shallRemoveEndpoint(status) {
 			delete(hostConns.endpoints, ep)
 			flowMetrics.HostConnectionsOperations.WithLabelValues("remove", "endpoints").Inc()
@@ -1058,19 +1070,23 @@ func (m *networkFlowManager) enrichProcessesListening(hostConns *hostConnections
 	hostConns.mutex.Lock()
 	defer hostConns.mutex.Unlock()
 
-	prevSize := len(hostConns.endpoints)
 	for ep, status := range hostConns.endpoints {
 		if ep.processKey == emptyProcessInfo {
+			flowMetrics.IncHostProcessesEnrichmentEvents(
+				"N/A", "skip-enrichment", "N/A", "emptyProcessInfo",
+				status.lastSeen != timestamp.InfiniteFuture, status.rotten, false, false)
 			// No way to update a process if the data isn't there
+			delete(hostConns.endpoints, ep)
+			flowMetrics.HostProcessesEvents.WithLabelValues("remove").Inc()
 			continue
 		}
 
 		m.enrichProcessListening(&ep, status, processesListening)
 		if shallRemoveEndpoint(status) {
 			delete(hostConns.endpoints, ep)
+			flowMetrics.HostProcessesEvents.WithLabelValues("remove").Inc()
 		}
 	}
-	flowMetrics.HostProcessesRemoved.Add(float64(prevSize - len(hostConns.endpoints)))
 }
 
 func (m *networkFlowManager) currentEnrichedConnsAndEndpoints() (map[networkConnIndicator]timestamp.MicroTS, map[containerEndpointIndicator]timestamp.MicroTS) {

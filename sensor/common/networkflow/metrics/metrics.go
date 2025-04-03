@@ -30,7 +30,8 @@ func init() {
 
 		// Other
 		NetworkEntityFlowCounter, // flow directions and graph entities
-		HostProcessesRemoved,     // plop
+		HostProcessesEvents,      // plop
+		HostProcessesEnrichmentEvents,
 	)
 }
 
@@ -158,13 +159,31 @@ var (
 		Help:      "Total number of network entity flows observed by Sensor enrichment",
 	}, []string{"direction", "namespace"})
 
-	HostProcessesRemoved = prometheus.NewCounter(prometheus.CounterOpts{
+	HostProcessesEvents = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      netFlowManagerPrefix + "processes_listening_on_port_removed_total",
-		Help:      "Total number of processes listening on ports",
-	})
+		Name:      netFlowManagerPrefix + "processes_listening_on_port_events_total",
+		Help:      "Total number of processes listening on ports added/removed",
+	}, []string{"op"})
+	HostProcessesEnrichmentEvents = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      netFlowManagerPrefix + "processes_listening_on_port_enrichment_events_total",
+		Help:      "Total number of enrichment outcomes for the plop",
+	}, []string{"containerIDfound", "action", "isHistorical", "reason", "lastSeenSet", "rotten", "mature", "fresh"})
 )
+
+func IncHostProcessesEnrichmentEvents(condIDfound, action, isHistorical string, reason string, lastSeenSet, rotten, mature, fresh bool) {
+	FlowEnrichmentEventsEndpoint.With(prometheus.Labels{
+		"containerIDfound": condIDfound,
+		"action":           action,
+		"isHistorical":     isHistorical,
+		"reason":           reason,
+		"lastSeenSet":      strconv.FormatBool(lastSeenSet),
+		"rotten":           strconv.FormatBool(rotten),
+		"mature":           strconv.FormatBool(mature),
+		"fresh":            strconv.FormatBool(fresh)}).Inc()
+}
 
 func IncFlowEnrichmentEndpoint(condIDfound bool, action, isHistorical string, reason string, lastSeenSet, rotten, mature, fresh bool) {
 	FlowEnrichmentEventsEndpoint.With(prometheus.Labels{
