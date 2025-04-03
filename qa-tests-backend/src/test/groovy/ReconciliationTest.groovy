@@ -153,6 +153,8 @@ class ReconciliationTest extends BaseSpecification {
             List<Pod> pods = orchestrator.getPodsByLabel(Constants.STACKROX_NAMESPACE, ["app": "sensor"])
             assert pods.size() == 1
             orchestrator.scaleDeployment(Constants.STACKROX_NAMESPACE, "sensor", 0)
+            // In case the pod gets stuck in `Terminating` state after the scale down,
+            // delete Sensor's pod (not deployment) without grace period.
             orchestrator.deletePod(Constants.STACKROX_NAMESPACE, pods[0].getMetadata().getName(), 0)
 
             orchestrator.waitForAllPodsToBeRemoved(Constants.STACKROX_NAMESPACE, ["app": "sensor"], 30, 5)
