@@ -217,7 +217,7 @@ func (ds *datastoreImpl) DeleteAlerts(ctx context.Context, ids ...string) error 
 		return sac.ErrResourceAccessDenied
 	}
 
-	if err := ds.storage.DeleteMany(ctx, ids); err != nil {
+	if err := ds.storage.Delete(ctx, ids...); err != nil {
 		return errors.Wrap(err, "deleting alert")
 	}
 	return nil

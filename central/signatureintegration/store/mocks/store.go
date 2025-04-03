@@ -59,17 +59,22 @@ func (mr *MockSignatureIntegrationStoreMockRecorder) Count(ctx, q any) *gomock.C
 }
 
 // Delete mocks base method.
-func (m *MockSignatureIntegrationStore) Delete(ctx context.Context, id string) error {
+func (m *MockSignatureIntegrationStore) Delete(ctx context.Context, id ...string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Delete", ctx, id)
+	varargs := []any{ctx}
+	for _, a := range id {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "Delete", varargs...)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Delete indicates an expected call of Delete.
-func (mr *MockSignatureIntegrationStoreMockRecorder) Delete(ctx, id any) *gomock.Call {
+func (mr *MockSignatureIntegrationStoreMockRecorder) Delete(ctx any, id ...any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockSignatureIntegrationStore)(nil).Delete), ctx, id)
+	varargs := append([]any{ctx}, id...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockSignatureIntegrationStore)(nil).Delete), varargs...)
 }
 
 // Exists mocks base method.

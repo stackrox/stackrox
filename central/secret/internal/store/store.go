@@ -19,5 +19,5 @@ type Store interface {
 	Walk(context.Context, func(secret *storage.Secret) error) error
 
 	Upsert(ctx context.Context, secret *storage.Secret) error
-	Delete(ctx context.Context, id string) error
+	Delete(ctx context.Context, id ...string) error
 }

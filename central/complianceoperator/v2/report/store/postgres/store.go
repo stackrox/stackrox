@@ -39,9 +39,8 @@ type storeType = storage.ComplianceOperatorReportSnapshotV2
 type Store interface {
 	Upsert(ctx context.Context, obj *storeType) error
 	UpsertMany(ctx context.Context, objs []*storeType) error
-	Delete(ctx context.Context, reportID string) error
+	Delete(ctx context.Context, reportID ...string) error
 	DeleteByQuery(ctx context.Context, q *v1.Query) ([]string, error)
-	DeleteMany(ctx context.Context, identifiers []string) error
 	PruneMany(ctx context.Context, identifiers []string) error
 
 	Count(ctx context.Context, q *v1.Query) (int, error)
@@ -198,7 +197,7 @@ func copyFromComplianceOperatorReportSnapshotV2(ctx context.Context, s pgSearch.
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			if err := s.DeleteMany(ctx, deletes); err != nil {
+			if err := s.Delete(ctx, deletes...); err != nil {
 				return err
 			}
 			// clear the inserts and vals for the next batch

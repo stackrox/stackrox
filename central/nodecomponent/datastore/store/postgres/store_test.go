@@ -97,7 +97,7 @@ func (s *NodeComponentsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, nodeComponentCount)
 
-	s.NoError(store.DeleteMany(ctx, nodeComponentIDs))
+	s.NoError(store.Delete(ctx, nodeComponentIDs...))
 
 	nodeComponentCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

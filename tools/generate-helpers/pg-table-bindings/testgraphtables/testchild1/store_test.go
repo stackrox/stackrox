@@ -97,7 +97,7 @@ func (s *TestChild1StoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, testChild1Count)
 
-	s.NoError(store.DeleteMany(ctx, testChild1IDs))
+	s.NoError(store.Delete(ctx, testChild1IDs...))
 
 	testChild1Count, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

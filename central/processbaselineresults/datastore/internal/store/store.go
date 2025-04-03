@@ -8,7 +8,7 @@ import (
 
 // Store implements the interface for process baseline results.
 type Store interface {
-	Delete(ctx context.Context, id string) error
+	Delete(ctx context.Context, id ...string) error
 	Get(ctx context.Context, id string) (*storage.ProcessBaselineResults, bool, error)
 	Upsert(ctx context.Context, baselineresults *storage.ProcessBaselineResults) error
 }

@@ -138,7 +138,7 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, {{.TrimmedType|lowerCamelCase}}Count)
 
-	s.NoError(store.DeleteMany(ctx, {{$name}}IDs))
+	s.NoError(store.Delete(ctx, {{$name}}IDs...))
 
 	{{.TrimmedType|lowerCamelCase}}Count, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
@@ -418,10 +418,10 @@ func (s *{{$namePrefix}}StoreSuite) TestSACDeleteMany() {
 			s.NoError(s.store.Upsert(withAllAccessCtx, objA))
 			s.NoError(s.store.Upsert(withAllAccessCtx, objB))
 
-			assert.NoError(t, s.store.DeleteMany(testCase.context, []string{
+			assert.NoError(t, s.store.Delete(testCase.context,
 				{{ (index .Schema.PrimaryKeys 0).Getter "objA"}},
 				{{ (index .Schema.PrimaryKeys 0).Getter "objB"}},
-			}))
+			))
 
 			count, err := s.store.Count(withAllAccessCtx, search.EmptyQuery())
 			assert.NoError(t, err)

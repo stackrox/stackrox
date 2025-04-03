@@ -19,5 +19,5 @@ type Store interface {
 
 	Exists(ctx context.Context, id string) (bool, error)
 	Upsert(ctx context.Context, obj *storage.AuthProvider) error
-	Delete(ctx context.Context, id string) error
+	Delete(ctx context.Context, id ...string) error
 }

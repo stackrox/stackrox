@@ -113,7 +113,7 @@ func (ds *datastoreImpl) DeleteMany(ctx context.Context, ids ...string) error {
 		return sac.ErrResourceAccessDenied
 	}
 
-	return ds.storage.DeleteMany(ctx, ids)
+	return ds.storage.Delete(ctx, ids...)
 }
 
 func (ds *datastoreImpl) DeleteByQuery(ctx context.Context, q *v1.Query) error {

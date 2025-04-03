@@ -17,5 +17,5 @@ type Store interface {
 	Walk(context.Context, func(sa *storage.ServiceAccount) error) error
 
 	Upsert(ctx context.Context, serviceaccount *storage.ServiceAccount) error
-	Delete(ctx context.Context, id string) error
+	Delete(ctx context.Context, id ...string) error
 }

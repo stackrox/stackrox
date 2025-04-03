@@ -97,7 +97,7 @@ func (s *ClusterInitBundlesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, initBundleMetaCount)
 
-	s.NoError(store.DeleteMany(ctx, initBundleMetaIDs))
+	s.NoError(store.Delete(ctx, initBundleMetaIDs...))
 
 	initBundleMetaCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

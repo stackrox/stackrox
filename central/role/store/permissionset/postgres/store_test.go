@@ -97,7 +97,7 @@ func (s *PermissionSetsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, permissionSetCount)
 
-	s.NoError(store.DeleteMany(ctx, permissionSetIDs))
+	s.NoError(store.Delete(ctx, permissionSetIDs...))
 
 	permissionSetCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

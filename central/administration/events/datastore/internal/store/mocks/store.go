@@ -57,18 +57,23 @@ func (mr *MockStoreMockRecorder) Count(ctx, q any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockStore)(nil).Count), ctx, q)
 }
 
-// DeleteMany mocks base method.
-func (m *MockStore) DeleteMany(ctx context.Context, identifiers []string) error {
+// Delete mocks base method.
+func (m *MockStore) Delete(ctx context.Context, id ...string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteMany", ctx, identifiers)
+	varargs := []any{ctx}
+	for _, a := range id {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "Delete", varargs...)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// DeleteMany indicates an expected call of DeleteMany.
-func (mr *MockStoreMockRecorder) DeleteMany(ctx, identifiers any) *gomock.Call {
+// Delete indicates an expected call of Delete.
+func (mr *MockStoreMockRecorder) Delete(ctx any, id ...any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteMany", reflect.TypeOf((*MockStore)(nil).DeleteMany), ctx, identifiers)
+	varargs := append([]any{ctx}, id...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockStore)(nil).Delete), varargs...)
 }
 
 // Get mocks base method.

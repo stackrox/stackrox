@@ -100,7 +100,7 @@ func (s *ComplianceRunResultsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, complianceRunResultsCount)
 
-	s.NoError(store.DeleteMany(ctx, complianceRunResultsIDs))
+	s.NoError(store.Delete(ctx, complianceRunResultsIDs...))
 
 	complianceRunResultsCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
@@ -366,10 +366,10 @@ func (s *ComplianceRunResultsStoreSuite) TestSACDeleteMany() {
 			s.NoError(s.store.Upsert(withAllAccessCtx, objA))
 			s.NoError(s.store.Upsert(withAllAccessCtx, objB))
 
-			assert.NoError(t, s.store.DeleteMany(testCase.context, []string{
+			assert.NoError(t, s.store.Delete(testCase.context,
 				objA.GetRunMetadata().GetRunId(),
 				objB.GetRunMetadata().GetRunId(),
-			}))
+			))
 
 			count, err := s.store.Count(withAllAccessCtx, search.EmptyQuery())
 			assert.NoError(t, err)

@@ -18,5 +18,5 @@ type Store interface {
 	Get(ctx context.Context, id string) (*storage.ActiveComponent, bool, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.ActiveComponent, []int, error)
 	UpsertMany(ctx context.Context, activeComponents []*storage.ActiveComponent) error
-	DeleteMany(ctx context.Context, ids []string) error
+	Delete(ctx context.Context, id ...string) error
 }

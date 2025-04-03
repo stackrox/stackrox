@@ -18,8 +18,7 @@ type EntityStore interface {
 
 	Upsert(ctx context.Context, entity *storage.NetworkEntity) error
 	UpsertMany(ctx context.Context, objs []*storage.NetworkEntity) error
-	Delete(ctx context.Context, id string) error
-	DeleteMany(ctx context.Context, ids []string) error
+	Delete(ctx context.Context, id ...string) error
 
 	Walk(ctx context.Context, fn func(obj *storage.NetworkEntity) error) error
 	WalkByQuery(ctx context.Context, query *v1.Query, fn func(obj *storage.NetworkEntity) error) error

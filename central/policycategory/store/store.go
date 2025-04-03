@@ -21,7 +21,6 @@ type Store interface {
 	GetAll(ctx context.Context) ([]*storage.PolicyCategory, error)
 	Upsert(ctx context.Context, obj *storage.PolicyCategory) error
 	UpsertMany(ctx context.Context, objs []*storage.PolicyCategory) error
-	Delete(ctx context.Context, id string) error
-	DeleteMany(ctx context.Context, ids []string) error
+	Delete(ctx context.Context, id ...string) error
 	Walk(ctx context.Context, fn func(obj *storage.PolicyCategory) error) error
 }

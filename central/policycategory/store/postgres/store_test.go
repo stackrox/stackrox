@@ -100,7 +100,7 @@ func (s *PolicyCategoriesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, policyCategoryCount)
 
-	s.NoError(store.DeleteMany(ctx, policyCategoryIDs))
+	s.NoError(store.Delete(ctx, policyCategoryIDs...))
 
 	policyCategoryCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

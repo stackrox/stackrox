@@ -97,7 +97,7 @@ func (s *SecuredUnitsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, securedUnitsCount)
 
-	s.NoError(store.DeleteMany(ctx, securedUnitsIDs))
+	s.NoError(store.Delete(ctx, securedUnitsIDs...))
 
 	securedUnitsCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

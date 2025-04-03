@@ -22,5 +22,5 @@ type Store interface {
 	Upsert(ctx context.Context, baseline *storage.ProcessBaseline) error
 	UpsertMany(ctx context.Context, objs []*storage.ProcessBaseline) error
 
-	Delete(ctx context.Context, id string) error
+	Delete(ctx context.Context, id ...string) error
 }

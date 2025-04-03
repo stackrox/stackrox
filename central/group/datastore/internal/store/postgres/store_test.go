@@ -100,7 +100,7 @@ func (s *GroupsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, groupCount)
 
-	s.NoError(store.DeleteMany(ctx, groupIDs))
+	s.NoError(store.Delete(ctx, groupIDs...))
 
 	groupCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

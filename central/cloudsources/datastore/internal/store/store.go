@@ -18,5 +18,5 @@ type Store interface {
 	Get(ctx context.Context, id string) (*storage.CloudSource, bool, error)
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.CloudSource, error)
 	Upsert(ctx context.Context, obj *storage.CloudSource) error
-	Delete(ctx context.Context, id string) error
+	Delete(ctx context.Context, id ...string) error
 }

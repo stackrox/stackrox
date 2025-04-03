@@ -37,7 +37,7 @@ var (
 
 // Deleter is an interface that allow deletions of multiple identifiers
 type Deleter interface {
-	DeleteMany(ctx context.Context, identifiers []string) error
+	Delete(ctx context.Context, identifiers ...string) error
 	PruneMany(ctx context.Context, identifiers []string) error
 }
 
@@ -70,8 +70,7 @@ type Store[T any, PT pgutils.Unmarshaler[T]] interface {
 	GetIDsByQuery(ctx context.Context, query *v1.Query) ([]string, error)
 	GetMany(ctx context.Context, identifiers []string) ([]PT, []int, error)
 	DeleteByQuery(ctx context.Context, query *v1.Query) ([]string, error)
-	Delete(ctx context.Context, id string) error
-	DeleteMany(ctx context.Context, identifiers []string) error
+	Delete(ctx context.Context, identifiers ...string) error
 	PruneMany(ctx context.Context, identifiers []string) error
 	Upsert(ctx context.Context, obj PT) error
 	UpsertMany(ctx context.Context, objs []PT) error
@@ -319,15 +318,19 @@ func (s *genericStore[T, PT]) DeleteByQuery(ctx context.Context, query *v1.Query
 	return RunDeleteRequestReturningIDsForSchema(ctx, s.schema, query, s.db)
 }
 
-// Delete removes the object associated to the specified ID from the store.
-func (s *genericStore[T, PT]) Delete(ctx context.Context, id string) error {
+// deleteOne removes the object associated to the specified ID from the store.
+func (s *genericStore[T, PT]) deleteOne(ctx context.Context, id string) error {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.Remove)
 	q := search.NewQueryBuilder().AddDocIDs(id).ProtoQuery()
 	return RunDeleteRequestForSchema(ctx, s.schema, q, s.db)
 }
 
-// DeleteMany removes the objects associated to the specified IDs from the store within a transaction.
-func (s *genericStore[T, PT]) DeleteMany(ctx context.Context, identifiers []string) error {
+// Delete removes the objects associated to the specified IDs from the store within a transaction.
+func (s *genericStore[T, PT]) Delete(ctx context.Context, identifiers ...string) error {
+	if len(identifiers) == 1 {
+		return s.deleteOne(ctx, identifiers[0])
+	}
+
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.RemoveMany)
 
 	var err error

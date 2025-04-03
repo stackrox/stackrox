@@ -97,7 +97,7 @@ func (s *IntegrationHealthsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, integrationHealthCount)
 
-	s.NoError(store.DeleteMany(ctx, integrationHealthIDs))
+	s.NoError(store.Delete(ctx, integrationHealthIDs...))
 
 	integrationHealthCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

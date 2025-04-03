@@ -18,5 +18,5 @@ type Store interface {
 	GetMany(ctx context.Context, ids []string) ([]*storage.Risk, []int, error)
 	Walk(context.Context, func(risk *storage.Risk) error) error
 	Upsert(ctx context.Context, risk *storage.Risk) error
-	Delete(ctx context.Context, id string) error
+	Delete(ctx context.Context, id ...string) error
 }

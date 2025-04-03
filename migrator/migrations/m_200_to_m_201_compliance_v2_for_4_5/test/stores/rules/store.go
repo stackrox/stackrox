@@ -153,7 +153,7 @@ func copyFromComplianceOperatorRuleV2(ctx context.Context, s pgSearch.Deleter, t
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			if err := s.DeleteMany(ctx, deletes); err != nil {
+			if err := s.Delete(ctx, deletes...); err != nil {
 				return err
 			}
 			// clear the inserts and vals for the next batch

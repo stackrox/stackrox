@@ -10,6 +10,6 @@ import (
 type Store interface {
 	Upsert(ctx context.Context, obj *storage.WatchedImage) error
 	Walk(ctx context.Context, fn func(obj *storage.WatchedImage) error) error
-	Delete(ctx context.Context, name string) error
+	Delete(ctx context.Context, name ...string) error
 	Exists(ctx context.Context, name string) (bool, error)
 }

@@ -100,7 +100,7 @@ func (s *CloudSourcesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, cloudSourceCount)
 
-	s.NoError(store.DeleteMany(ctx, cloudSourceIDs))
+	s.NoError(store.Delete(ctx, cloudSourceIDs...))
 
 	cloudSourceCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

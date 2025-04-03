@@ -308,7 +308,7 @@ func (s *groupDataStoreTestSuite) TestAllowsUpdate() {
 
 func (s *groupDataStoreTestSuite) TestEnforcesMutate() {
 	s.storage.EXPECT().UpsertMany(gomock.Any(), gomock.Any()).Times(0)
-	s.storage.EXPECT().DeleteMany(gomock.Any(), gomock.Any()).Times(0)
+	s.storage.EXPECT().Delete(gomock.Any(), gomock.Any()).Times(0)
 
 	grp := &storage.Group{Props: &storage.GroupProperties{
 		AuthProviderId: "123",
@@ -331,7 +331,7 @@ func (s *groupDataStoreTestSuite) TestEnforcesMutate() {
 
 func (s *groupDataStoreTestSuite) TestAllowsMutate() {
 	s.storage.EXPECT().UpsertMany(gomock.Any(), gomock.Any()).Return(nil).Times(2) // two calls * two operations (add, update)
-	s.storage.EXPECT().DeleteMany(gomock.Any(), gomock.Any()).Return(nil).Times(1)
+	s.storage.EXPECT().Delete(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(fixtures.GetGroupWithMutability(storage.Traits_ALLOW_MUTATE), true, nil).Times(2)
 	s.validRoleAndAuthProvider("123", "123", storage.Traits_IMPERATIVE, 2)
 
@@ -364,7 +364,7 @@ func (s *groupDataStoreTestSuite) TestMutate() {
 	gomock.InOrder(
 		s.storage.EXPECT().UpsertMany(gomock.Any(), toAdd),
 		s.storage.EXPECT().UpsertMany(gomock.Any(), []*storage.Group{toUpdate}),
-		s.storage.EXPECT().DeleteMany(gomock.Any(), []string{toRemove.GetProps().GetId()}),
+		s.storage.EXPECT().Delete(gomock.Any(), toRemove.GetProps().GetId()),
 	)
 
 	s.NoError(s.dataStore.Mutate(s.hasWriteCtx, []*storage.Group{toRemove}, []*storage.Group{toUpdate}, toAdd, false))
@@ -756,7 +756,7 @@ func (s *groupDataStoreTestSuite) TestMutateGroupForce() {
 		s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(immutableGroup, true, nil),
 	)
 	s.storage.EXPECT().UpsertMany(gomock.Any(), []*storage.Group{mutableGroup}).Return(nil).Times(1)
-	s.storage.EXPECT().DeleteMany(gomock.Any(), []string{immutableGroup.GetProps().GetId()}).Return(nil).Times(1)
+	s.storage.EXPECT().Delete(gomock.Any(), immutableGroup.GetProps().GetId()).Return(nil).Times(1)
 	err := s.dataStore.Mutate(s.hasWriteCtx, []*storage.Group{immutableGroup}, []*storage.Group{mutableGroup}, nil, true)
 	s.NoError(err)
 
@@ -766,7 +766,7 @@ func (s *groupDataStoreTestSuite) TestMutateGroupForce() {
 		s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(mutableGroup, true, nil),
 	)
 	s.storage.EXPECT().UpsertMany(gomock.Any(), []*storage.Group{immutableGroup}).Return(nil).Times(1)
-	s.storage.EXPECT().DeleteMany(gomock.Any(), []string{mutableGroup.GetProps().GetId()}).Return(nil).Times(1)
+	s.storage.EXPECT().Delete(gomock.Any(), mutableGroup.GetProps().GetId()).Return(nil).Times(1)
 	err = s.dataStore.Mutate(s.hasWriteCtx, []*storage.Group{mutableGroup}, []*storage.Group{immutableGroup}, nil, true)
 	s.NoError(err)
 }
@@ -940,7 +940,7 @@ func (s *groupDataStoreTestSuite) TestMutateGroupViaConfig() {
 	gomock.InOrder(
 		s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(declarativeGroup, true, nil),
 	)
-	s.storage.EXPECT().DeleteMany(gomock.Any(), []string{declarativeGroup.GetProps().GetId()}).Return(nil).Times(1)
+	s.storage.EXPECT().Delete(gomock.Any(), declarativeGroup.GetProps().GetId()).Return(nil).Times(1)
 	err = s.dataStore.Mutate(s.hasWriteDeclarativeCtx, []*storage.Group{declarativeGroup}, nil, nil, true)
 	s.NoError(err)
 }

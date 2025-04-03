@@ -100,7 +100,7 @@ func (s *AuthProvidersStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, authProviderCount)
 
-	s.NoError(store.DeleteMany(ctx, authProviderIDs))
+	s.NoError(store.Delete(ctx, authProviderIDs...))
 
 	authProviderCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

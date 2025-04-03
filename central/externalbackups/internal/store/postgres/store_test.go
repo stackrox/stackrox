@@ -100,7 +100,7 @@ func (s *ExternalBackupsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, externalBackupCount)
 
-	s.NoError(store.DeleteMany(ctx, externalBackupIDs))
+	s.NoError(store.Delete(ctx, externalBackupIDs...))
 
 	externalBackupCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

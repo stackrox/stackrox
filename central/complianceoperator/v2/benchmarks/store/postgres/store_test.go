@@ -104,7 +104,7 @@ func (s *ComplianceOperatorBenchmarkV2StoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, complianceOperatorBenchmarkV2Count)
 
-	s.NoError(store.DeleteMany(ctx, complianceOperatorBenchmarkV2IDs))
+	s.NoError(store.Delete(ctx, complianceOperatorBenchmarkV2IDs...))
 
 	complianceOperatorBenchmarkV2Count, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

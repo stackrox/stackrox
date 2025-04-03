@@ -97,7 +97,7 @@ func (s *ImageCvesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, imageCVECount)
 
-	s.NoError(store.DeleteMany(ctx, imageCVEIDs))
+	s.NoError(store.Delete(ctx, imageCVEIDs...))
 
 	imageCVECount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

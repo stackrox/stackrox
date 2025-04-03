@@ -82,7 +82,7 @@ func (s *complianceSuiteDataStoreTestSuite) TestGetSuite() {
 
 	// Delayed clean up
 	defer func() {
-		s.Require().NoError(s.storage.DeleteMany(s.testContexts[sacTestUtils.UnrestrictedReadWriteCtx], suiteIDs))
+		s.Require().NoError(s.storage.Delete(s.testContexts[sacTestUtils.UnrestrictedReadWriteCtx], suiteIDs...))
 	}()
 
 	testCases := []struct {
@@ -238,7 +238,7 @@ func (s *complianceSuiteDataStoreTestSuite) TestUpsertSuites() {
 		}
 
 		// Clean up
-		s.Require().NoError(s.storage.DeleteMany(s.testContexts[sacTestUtils.UnrestrictedReadWriteCtx], allSuiteIDs))
+		s.Require().NoError(s.storage.Delete(s.testContexts[sacTestUtils.UnrestrictedReadWriteCtx], allSuiteIDs...))
 	}
 }
 

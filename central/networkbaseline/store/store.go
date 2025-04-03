@@ -18,8 +18,7 @@ type Store interface {
 
 	Upsert(ctx context.Context, baseline *storage.NetworkBaseline) error
 	UpsertMany(ctx context.Context, baselines []*storage.NetworkBaseline) error
-	Delete(ctx context.Context, id string) error
-	DeleteMany(ctx context.Context, ids []string) error
+	Delete(ctx context.Context, id ...string) error
 
 	Walk(ctx context.Context, fn func(baseline *storage.NetworkBaseline) error) error
 }

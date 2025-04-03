@@ -97,7 +97,7 @@ func (s *NetworkGraphConfigsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, networkGraphConfigCount)
 
-	s.NoError(store.DeleteMany(ctx, networkGraphConfigIDs))
+	s.NoError(store.Delete(ctx, networkGraphConfigIDs...))
 
 	networkGraphConfigCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

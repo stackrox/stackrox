@@ -97,7 +97,7 @@ func (s *DiscoveredClustersStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, discoveredClusterCount)
 
-	s.NoError(store.DeleteMany(ctx, discoveredClusterIDs))
+	s.NoError(store.Delete(ctx, discoveredClusterIDs...))
 
 	discoveredClusterCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

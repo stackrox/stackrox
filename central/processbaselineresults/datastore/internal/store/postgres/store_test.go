@@ -100,7 +100,7 @@ func (s *ProcessBaselineResultsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, processBaselineResultsCount)
 
-	s.NoError(store.DeleteMany(ctx, processBaselineResultsIDs))
+	s.NoError(store.Delete(ctx, processBaselineResultsIDs...))
 
 	processBaselineResultsCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
@@ -367,10 +367,10 @@ func (s *ProcessBaselineResultsStoreSuite) TestSACDeleteMany() {
 			s.NoError(s.store.Upsert(withAllAccessCtx, objA))
 			s.NoError(s.store.Upsert(withAllAccessCtx, objB))
 
-			assert.NoError(t, s.store.DeleteMany(testCase.context, []string{
+			assert.NoError(t, s.store.Delete(testCase.context,
 				objA.GetDeploymentId(),
 				objB.GetDeploymentId(),
-			}))
+			))
 
 			count, err := s.store.Count(withAllAccessCtx, search.EmptyQuery())
 			assert.NoError(t, err)

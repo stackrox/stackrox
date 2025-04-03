@@ -16,7 +16,7 @@ type Store interface {
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 	Get(ctx context.Context, id string) (*storage.Cluster, bool, error)
 	Upsert(ctx context.Context, obj *storage.Cluster) error
-	Delete(ctx context.Context, id string) error
+	Delete(ctx context.Context, id ...string) error
 	GetMany(ctx context.Context, ids []string) ([]*storage.Cluster, []int, error)
 
 	Walk(ctx context.Context, fn func(obj *storage.Cluster) error) error

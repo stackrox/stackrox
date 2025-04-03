@@ -17,7 +17,7 @@ type PermissionSetStore interface {
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 	Upsert(ctx context.Context, obj *storage.PermissionSet) error
 	UpsertMany(ctx context.Context, obj []*storage.PermissionSet) error
-	Delete(ctx context.Context, id string) error
+	Delete(ctx context.Context, id ...string) error
 	Walk(ctx context.Context, fn func(obj *storage.PermissionSet) error) error
 }
 
@@ -31,7 +31,7 @@ type SimpleAccessScopeStore interface {
 	Exists(ctx context.Context, id string) (bool, error)
 	Upsert(ctx context.Context, obj *storage.SimpleAccessScope) error
 	UpsertMany(ctx context.Context, obj []*storage.SimpleAccessScope) error
-	Delete(ctx context.Context, id string) error
+	Delete(ctx context.Context, id ...string) error
 	Walk(ctx context.Context, fn func(obj *storage.SimpleAccessScope) error) error
 }
 
@@ -44,6 +44,6 @@ type RoleStore interface {
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 	Upsert(ctx context.Context, obj *storage.Role) error
 	UpsertMany(ctx context.Context, obj []*storage.Role) error
-	Delete(ctx context.Context, id string) error
+	Delete(ctx context.Context, id ...string) error
 	Walk(ctx context.Context, fn func(obj *storage.Role) error) error
 }

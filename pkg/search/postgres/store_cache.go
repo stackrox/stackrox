@@ -146,39 +146,8 @@ func (c *cachedStore[T, PT]) UpsertMany(ctx context.Context, objs []PT) error {
 	return nil
 }
 
-// Delete removes the object associated to the specified ID from the store.
-func (c *cachedStore[T, PT]) Delete(ctx context.Context, id string) error {
-	obj, found := concurrency.WithRLock2[PT, bool](&c.cacheLock, func() (PT, bool) {
-		obj, found := c.cache[id]
-		return obj, found
-	})
-	if !c.isWriteAllowed(ctx, obj) {
-		// Special case: the query generator for global scoped resources currently returns sac.ErrResourceAccessDenied
-		// when write is not allowed. The cached store needs to respect that behavior for the time being.
-		// Ultimately, we have to convey on the behavior: either _always_ return sac.ErrResourceAccessDenied or return
-		// nil.
-		// TODO(ROX-22408): Once the behavior is fixed, remove this special casing.
-		if c.targetResource.GetScope() == permissions.GlobalScope {
-			return sac.ErrResourceAccessDenied
-		}
-		return nil
-	}
-	if !found {
-		return nil
-	}
-	err := c.underlyingStore.Delete(ctx, id)
-	if err != nil {
-		return err
-	}
-	defer c.setCacheOperationDurationTime(time.Now(), ops.Remove)
-	c.cacheLock.Lock()
-	defer c.cacheLock.Unlock()
-	delete(c.cache, id)
-	return nil
-}
-
 // DeleteMany removes the objects associated to the specified IDs from the store.
-func (c *cachedStore[T, PT]) DeleteMany(ctx context.Context, identifiers []string) error {
+func (c *cachedStore[T, PT]) Delete(ctx context.Context, identifiers ...string) error {
 	if len(identifiers) == 0 {
 		return nil
 	}
@@ -199,7 +168,7 @@ func (c *cachedStore[T, PT]) DeleteMany(ctx context.Context, identifiers []strin
 		}
 		filteredIDs = append(filteredIDs, c.pkGetter(obj))
 	}
-	err := c.underlyingStore.DeleteMany(ctx, filteredIDs)
+	err := c.underlyingStore.Delete(ctx, filteredIDs...)
 	if err != nil {
 		return err
 	}
@@ -221,7 +190,7 @@ func (c *cachedStore[T, PT]) PruneMany(ctx context.Context, identifiers []string
 	// Ideally we could use PruneMany, but since a batch of pruning can fail that could lead
 	// to inconsistencies with the cache.  So for the cache it is best to continue to using
 	// the cachedStore DeleteMany as it does batched deletion at DB level as well as cache synchronization.
-	return c.DeleteMany(ctx, identifiers)
+	return c.Delete(ctx, identifiers...)
 }
 
 // Exists tells whether the ID exists in the store.

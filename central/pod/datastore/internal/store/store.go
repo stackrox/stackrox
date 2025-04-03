@@ -22,5 +22,5 @@ type Store interface {
 	WalkByQuery(ctx context.Context, q *v1.Query, fn func(pod *storage.Pod) error) error
 
 	Upsert(ctx context.Context, pod *storage.Pod) error
-	Delete(ctx context.Context, id string) error
+	Delete(ctx context.Context, id ...string) error
 }

@@ -15,6 +15,5 @@ type Store interface {
 	Walk(ctx context.Context, fn func(group *storage.Group) error) error
 	Upsert(ctx context.Context, group *storage.Group) error
 	UpsertMany(ctx context.Context, groups []*storage.Group) error
-	Delete(ctx context.Context, propsID string) error
-	DeleteMany(ctx context.Context, ids []string) error
+	Delete(ctx context.Context, id ...string) error
 }

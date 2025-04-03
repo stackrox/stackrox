@@ -33,7 +33,7 @@ type UnderlyingStore interface {
 	Exists(ctx context.Context, id string) (bool, error)
 	Get(ctx context.Context, id string) (*storage.InitBundleMeta, bool, error)
 	Upsert(ctx context.Context, obj *storage.InitBundleMeta) error
-	Delete(ctx context.Context, id string) error
+	Delete(ctx context.Context, id ...string) error
 	Walk(ctx context.Context, fn func(obj *storage.InitBundleMeta) error) error
 }
 

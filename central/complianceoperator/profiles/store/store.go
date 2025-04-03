@@ -9,6 +9,6 @@ import (
 // Store provides the interface to the underlying storage
 type Store interface {
 	Upsert(ctx context.Context, obj *storage.ComplianceOperatorProfile) error
-	Delete(ctx context.Context, id string) error
+	Delete(ctx context.Context, id ...string) error
 	Walk(ctx context.Context, fn func(obj *storage.ComplianceOperatorProfile) error) error
 }

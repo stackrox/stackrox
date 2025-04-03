@@ -97,7 +97,7 @@ func (s *TestStructsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, testStructCount)
 
-	s.NoError(store.DeleteMany(ctx, testStructIDs))
+	s.NoError(store.Delete(ctx, testStructIDs...))
 
 	testStructCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

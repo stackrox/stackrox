@@ -97,7 +97,7 @@ func (s *BlobsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, blobCount)
 
-	s.NoError(store.DeleteMany(ctx, blobIDs))
+	s.NoError(store.Delete(ctx, blobIDs...))
 
 	blobCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

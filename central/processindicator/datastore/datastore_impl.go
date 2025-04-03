@@ -123,7 +123,7 @@ func (ds *datastoreImpl) removeIndicators(ctx context.Context, ids []string) err
 	if len(ids) == 0 {
 		return nil
 	}
-	if err := ds.storage.DeleteMany(ctx, ids); err != nil {
+	if err := ds.storage.Delete(ctx, ids...); err != nil {
 		return err
 	}
 

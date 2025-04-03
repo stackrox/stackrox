@@ -104,7 +104,7 @@ func (s *HashesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, hashCount)
 
-	s.NoError(store.DeleteMany(ctx, hashIDs))
+	s.NoError(store.Delete(ctx, hashIDs...))
 
 	hashCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

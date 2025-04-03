@@ -97,7 +97,7 @@ func (s *WatchedImagesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, watchedImageCount)
 
-	s.NoError(store.DeleteMany(ctx, watchedImageIDs))
+	s.NoError(store.Delete(ctx, watchedImageIDs...))
 
 	watchedImageCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

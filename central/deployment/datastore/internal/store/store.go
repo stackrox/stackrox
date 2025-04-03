@@ -23,7 +23,7 @@ type Store interface {
 	Count(ctx context.Context, q *v1.Query) (int, error)
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 	Upsert(ctx context.Context, deployment *storage.Deployment) error
-	Delete(ctx context.Context, id string) error
+	Delete(ctx context.Context, id ...string) error
 
 	GetIDs(ctx context.Context) ([]string, error)
 }

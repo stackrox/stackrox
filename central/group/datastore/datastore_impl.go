@@ -195,7 +195,7 @@ func (ds *dataStoreImpl) Mutate(ctx context.Context, remove, update, add []*stor
 		idsToRemove = append(idsToRemove, groupID)
 	}
 	if len(remove) > 0 {
-		if err := ds.storage.DeleteMany(ctx, idsToRemove); err != nil {
+		if err := ds.storage.Delete(ctx, idsToRemove...); err != nil {
 			return err
 		}
 	}

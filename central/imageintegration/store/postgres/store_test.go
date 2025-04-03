@@ -100,7 +100,7 @@ func (s *ImageIntegrationsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, imageIntegrationCount)
 
-	s.NoError(store.DeleteMany(ctx, imageIntegrationIDs))
+	s.NoError(store.Delete(ctx, imageIntegrationIDs...))
 
 	imageIntegrationCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

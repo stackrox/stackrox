@@ -56,9 +56,8 @@ type Store interface {
 {{- if not .JoinTable }}
     Upsert(ctx context.Context, obj *storeType) error
     UpsertMany(ctx context.Context, objs []*storeType) error
-    Delete(ctx context.Context, {{$primaryKeyName}} {{$primaryKeyType}}) error
+    Delete(ctx context.Context, {{$primaryKeyName}} ...{{$primaryKeyType}}) error
     DeleteByQuery(ctx context.Context, q *v1.Query) ([]string, error)
-    DeleteMany(ctx context.Context, identifiers []{{$primaryKeyType}}) error
     PruneMany(ctx context.Context, identifiers []{{$primaryKeyType}}) error
 {{- end }}
 
@@ -285,7 +284,7 @@ func {{ template "copyFunctionName" $schema }}(ctx context.Context, s pgSearch.D
             // copy does not upsert so have to delete first.  parent deletion cascades so only need to
             // delete for the top level parent
             {{if not $schema.Parent }}
-            if err := s.DeleteMany(ctx, deletes); err != nil {
+            if err := s.Delete(ctx, deletes...); err != nil {
                 return err
             }
             // clear the inserts and vals for the next batch

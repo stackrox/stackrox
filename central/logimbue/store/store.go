@@ -13,7 +13,7 @@ type Store interface {
 	GetAll(ctx context.Context) ([]*storage.LogImbue, error)
 	Upsert(ctx context.Context, log *storage.LogImbue) error
 
-	DeleteMany(ctx context.Context, ids []string) error
+	Delete(ctx context.Context, id ...string) error
 
 	Walk(ctx context.Context, fn func(obj *storage.LogImbue) error) error
 }

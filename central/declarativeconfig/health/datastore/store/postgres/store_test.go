@@ -97,7 +97,7 @@ func (s *DeclarativeConfigHealthsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, declarativeConfigHealthCount)
 
-	s.NoError(store.DeleteMany(ctx, declarativeConfigHealthIDs))
+	s.NoError(store.Delete(ctx, declarativeConfigHealthIDs...))
 
 	declarativeConfigHealthCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

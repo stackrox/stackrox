@@ -100,7 +100,7 @@ func (s *ServiceAccountsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, serviceAccountCount)
 
-	s.NoError(store.DeleteMany(ctx, serviceAccountIDs))
+	s.NoError(store.Delete(ctx, serviceAccountIDs...))
 
 	serviceAccountCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
@@ -367,10 +367,10 @@ func (s *ServiceAccountsStoreSuite) TestSACDeleteMany() {
 			s.NoError(s.store.Upsert(withAllAccessCtx, objA))
 			s.NoError(s.store.Upsert(withAllAccessCtx, objB))
 
-			assert.NoError(t, s.store.DeleteMany(testCase.context, []string{
+			assert.NoError(t, s.store.Delete(testCase.context,
 				objA.GetId(),
 				objB.GetId(),
-			}))
+			))
 
 			count, err := s.store.Count(withAllAccessCtx, search.EmptyQuery())
 			assert.NoError(t, err)

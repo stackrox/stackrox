@@ -22,7 +22,6 @@ type Store interface {
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.Alert, error)
 	Upsert(ctx context.Context, alert *storage.Alert) error
 	UpsertMany(ctx context.Context, alerts []*storage.Alert) error
-	Delete(ctx context.Context, id string) error
-	DeleteMany(ctx context.Context, ids []string) error
+	Delete(ctx context.Context, id ...string) error
 	PruneMany(ctx context.Context, ids []string) error
 }

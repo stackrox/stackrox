@@ -97,7 +97,7 @@ func (s *NetworkpolicyapplicationundorecordsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, networkPolicyApplicationUndoRecordCount)
 
-	s.NoError(store.DeleteMany(ctx, networkPolicyApplicationUndoRecordIDs))
+	s.NoError(store.Delete(ctx, networkPolicyApplicationUndoRecordIDs...))
 
 	networkPolicyApplicationUndoRecordCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

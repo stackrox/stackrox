@@ -100,7 +100,7 @@ func (s *LogImbuesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, logImbueCount)
 
-	s.NoError(store.DeleteMany(ctx, logImbueIDs))
+	s.NoError(store.Delete(ctx, logImbueIDs...))
 
 	logImbueCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

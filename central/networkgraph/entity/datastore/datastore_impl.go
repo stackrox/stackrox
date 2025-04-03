@@ -420,7 +420,7 @@ func (ds *dataStoreImpl) DeleteExternalNetworkEntitiesForCluster(ctx context.Con
 		return err
 	}
 
-	if err := ds.storage.DeleteMany(ctx, ids); err != nil {
+	if err := ds.storage.Delete(ctx, ids...); err != nil {
 		return errors.Wrapf(err, "deleting network entities for cluster %s from storage", clusterID)
 	}
 

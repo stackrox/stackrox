@@ -142,7 +142,7 @@ func (ds *dataStoreImpl) DeleteNetworkBaselines(ctx context.Context, deploymentI
 		}
 	}
 
-	if err := ds.storage.DeleteMany(ctx, deploymentIDs); err != nil {
+	if err := ds.storage.Delete(ctx, deploymentIDs...); err != nil {
 		return errors.Wrapf(err, "deleting network baselines %q from storage", deploymentIDs)
 	}
 

@@ -20,7 +20,7 @@ type Store interface {
 	GetMany(ctx context.Context, ids []string) ([]*storage.ProcessIndicator, []int, error)
 
 	UpsertMany(context.Context, []*storage.ProcessIndicator) error
-	DeleteMany(ctx context.Context, id []string) error
+	Delete(ctx context.Context, id ...string) error
 
 	Walk(context.Context, func(pi *storage.ProcessIndicator) error) error
 	DeleteByQuery(ctx context.Context, query *v1.Query) ([]string, error)

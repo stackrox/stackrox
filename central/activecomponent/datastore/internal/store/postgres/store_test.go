@@ -97,7 +97,7 @@ func (s *ActiveComponentsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, activeComponentCount)
 
-	s.NoError(store.DeleteMany(ctx, activeComponentIDs))
+	s.NoError(store.Delete(ctx, activeComponentIDs...))
 
 	activeComponentCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

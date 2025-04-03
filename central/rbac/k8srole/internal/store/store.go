@@ -18,5 +18,5 @@ type Store interface {
 	Walk(ctx context.Context, fn func(role *storage.K8SRole) error) error
 
 	Upsert(ctx context.Context, role *storage.K8SRole) error
-	Delete(ctx context.Context, id string) error
+	Delete(ctx context.Context, id ...string) error
 }

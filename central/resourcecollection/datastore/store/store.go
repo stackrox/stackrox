@@ -20,7 +20,7 @@ type Store interface {
 	GetMany(ctx context.Context, ids []string) ([]*storage.ResourceCollection, []int, error)
 
 	Upsert(context.Context, *storage.ResourceCollection) error
-	Delete(ctx context.Context, id string) error
+	Delete(ctx context.Context, id ...string) error
 
 	Walk(ctx context.Context, fn func(obj *storage.ResourceCollection) error) error
 }

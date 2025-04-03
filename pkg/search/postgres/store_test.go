@@ -154,7 +154,7 @@ func TestDeleteMany(t *testing.T) {
 	assert.False(t, missingFoundBefore)
 	assert.NoError(t, missingErrBefore)
 
-	assert.NoError(t, store.DeleteMany(ctx, identifiersToRemove))
+	assert.NoError(t, store.Delete(ctx, identifiersToRemove...))
 
 	for _, obj := range objectBatch {
 		key := pkGetter(obj)
@@ -660,7 +660,7 @@ func copyFromTestSingleKeyStructs(ctx context.Context, s Deleter, tx *postgres.T
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			if err := s.DeleteMany(ctx, deletes); err != nil {
+			if err := s.Delete(ctx, deletes...); err != nil {
 				return err
 			}
 			// clear the inserts and values for the next batch

@@ -20,5 +20,5 @@ type Store interface {
 	Walk(context.Context, func(reportConfig *storage.ReportConfiguration) error) error
 
 	Upsert(ctx context.Context, reportConfig *storage.ReportConfiguration) error
-	Delete(ctx context.Context, id string) error
+	Delete(ctx context.Context, id ...string) error
 }

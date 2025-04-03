@@ -100,7 +100,7 @@ func (s *ClustersStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, clusterCount)
 
-	s.NoError(store.DeleteMany(ctx, clusterIDs))
+	s.NoError(store.Delete(ctx, clusterIDs...))
 
 	clusterCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
@@ -366,10 +366,10 @@ func (s *ClustersStoreSuite) TestSACDeleteMany() {
 			s.NoError(s.store.Upsert(withAllAccessCtx, objA))
 			s.NoError(s.store.Upsert(withAllAccessCtx, objB))
 
-			assert.NoError(t, s.store.DeleteMany(testCase.context, []string{
+			assert.NoError(t, s.store.Delete(testCase.context,
 				objA.GetId(),
 				objB.GetId(),
-			}))
+			))
 
 			count, err := s.store.Count(withAllAccessCtx, search.EmptyQuery())
 			assert.NoError(t, err)

@@ -97,7 +97,7 @@ func (s *APITokensStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, tokenMetadataCount)
 
-	s.NoError(store.DeleteMany(ctx, tokenMetadataIDs))
+	s.NoError(store.Delete(ctx, tokenMetadataIDs...))
 
 	tokenMetadataCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

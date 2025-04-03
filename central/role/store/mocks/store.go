@@ -59,17 +59,22 @@ func (mr *MockPermissionSetStoreMockRecorder) Count(ctx, q any) *gomock.Call {
 }
 
 // Delete mocks base method.
-func (m *MockPermissionSetStore) Delete(ctx context.Context, id string) error {
+func (m *MockPermissionSetStore) Delete(ctx context.Context, id ...string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Delete", ctx, id)
+	varargs := []any{ctx}
+	for _, a := range id {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "Delete", varargs...)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Delete indicates an expected call of Delete.
-func (mr *MockPermissionSetStoreMockRecorder) Delete(ctx, id any) *gomock.Call {
+func (mr *MockPermissionSetStoreMockRecorder) Delete(ctx any, id ...any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockPermissionSetStore)(nil).Delete), ctx, id)
+	varargs := append([]any{ctx}, id...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockPermissionSetStore)(nil).Delete), varargs...)
 }
 
 // Get mocks base method.
@@ -185,17 +190,22 @@ func (mr *MockSimpleAccessScopeStoreMockRecorder) Count(ctx, q any) *gomock.Call
 }
 
 // Delete mocks base method.
-func (m *MockSimpleAccessScopeStore) Delete(ctx context.Context, id string) error {
+func (m *MockSimpleAccessScopeStore) Delete(ctx context.Context, id ...string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Delete", ctx, id)
+	varargs := []any{ctx}
+	for _, a := range id {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "Delete", varargs...)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Delete indicates an expected call of Delete.
-func (mr *MockSimpleAccessScopeStoreMockRecorder) Delete(ctx, id any) *gomock.Call {
+func (mr *MockSimpleAccessScopeStoreMockRecorder) Delete(ctx any, id ...any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockSimpleAccessScopeStore)(nil).Delete), ctx, id)
+	varargs := append([]any{ctx}, id...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockSimpleAccessScopeStore)(nil).Delete), varargs...)
 }
 
 // Exists mocks base method.
@@ -326,17 +336,22 @@ func (mr *MockRoleStoreMockRecorder) Count(ctx, q any) *gomock.Call {
 }
 
 // Delete mocks base method.
-func (m *MockRoleStore) Delete(ctx context.Context, id string) error {
+func (m *MockRoleStore) Delete(ctx context.Context, id ...string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Delete", ctx, id)
+	varargs := []any{ctx}
+	for _, a := range id {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "Delete", varargs...)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Delete indicates an expected call of Delete.
-func (mr *MockRoleStoreMockRecorder) Delete(ctx, id any) *gomock.Call {
+func (mr *MockRoleStoreMockRecorder) Delete(ctx any, id ...any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockRoleStore)(nil).Delete), ctx, id)
+	varargs := append([]any{ctx}, id...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockRoleStore)(nil).Delete), varargs...)
 }
 
 // Get mocks base method.

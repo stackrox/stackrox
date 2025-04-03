@@ -97,7 +97,7 @@ func (s *ComplianceConfigsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, complianceConfigCount)
 
-	s.NoError(store.DeleteMany(ctx, complianceConfigIDs))
+	s.NoError(store.Delete(ctx, complianceConfigIDs...))
 
 	complianceConfigCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
