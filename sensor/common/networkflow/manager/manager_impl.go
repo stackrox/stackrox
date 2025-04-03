@@ -850,6 +850,8 @@ func (m *networkFlowManager) enrichHostContainerEndpoints(hostConns *hostConnect
 		}
 	}
 	flowMetrics.HostEndpointsRemoved.Add(float64(prevSize - len(hostConns.endpoints)))
+	log.Debugf("networkFlowManager has %d active endpoints.", len(m.activeEndpoints))
+	log.Debugf("hostConns.endpoints has %d items.", len(hostConns.endpoints))
 }
 
 func (m *networkFlowManager) enrichProcessesListening(hostConns *hostConnections, processesListening map[processListeningIndicator]timestamp.MicroTS) {
