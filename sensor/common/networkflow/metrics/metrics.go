@@ -24,7 +24,7 @@ func init() {
 		InternalFlowCounter,
 		activeFlowsCurrent,
 		activeEndpointsCurrent,
-		ActiveEndpointsPurger,
+		PurgerEvents,
 		ActiveEndpointsPurgerDuration,
 		NumUpdatedConnectionsEndpoints,
 
@@ -138,18 +138,18 @@ var (
 		Name:      netFlowManagerPrefix + "active_endpoints_current",
 		Help:      "A gauge that tracks the current active endpoints in sensor",
 	})
-	ActiveEndpointsPurger = prometheus.NewCounterVec(prometheus.CounterOpts{
+	PurgerEvents = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      netFlowManagerPrefix + "active_endpoints_purger_events_total",
-		Help:      "A counter that tracks the reasons for purging active endpoints from memory",
-	}, []string{"purgeReason"})
+		Name:      netFlowManagerPrefix + "purger_events_total",
+		Help:      "A counter that tracks the reasons for purging an object from memory",
+	}, []string{"object", "purgeReason"})
 	ActiveEndpointsPurgerDuration = prometheus.NewHistogram(prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      netFlowManagerPrefix + "active_endpoints_purger_duration_ms",
-		Help:      "Time taken by a single purger run",
-		Buckets:   prometheus.ExponentialBuckets(4, 2, 10),
+		Name:      netFlowManagerPrefix + "purger_duration_ms",
+		Help:      "Time taken by a single purger run for all objects",
+		Buckets:   prometheus.ExponentialBuckets(4, 2, 11),
 	})
 
 	NetworkEntityFlowCounter = prometheus.NewCounterVec(prometheus.CounterOpts{

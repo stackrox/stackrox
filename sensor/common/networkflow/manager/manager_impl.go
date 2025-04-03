@@ -83,6 +83,8 @@ type hostConnections struct {
 }
 
 type connStatus struct {
+	// tsAdded is timestamp when this conn was added to the connectionsByHost structure
+	tsAdded   timestamp.MicroTS
 	firstSeen timestamp.MicroTS
 	lastSeen  timestamp.MicroTS
 	// used keeps track of if an endpoint has been used by the networkgraph path.
@@ -376,7 +378,7 @@ func (m *networkFlowManager) Start() error {
 	go m.enrichConnections(m.enricherTicker.C)
 	// Check if purger is enabled
 	if env.ActiveEndpointsPurgerTickerCycle.DurationSetting() > 0 {
-		go m.purgeStaleActiveEndpoints(m.purgerTicker.C)
+		go m.purgeStaleEndpoints(m.purgerTicker.C)
 	}
 	go m.publicIPs.Run(m.stopper.LowLevel().GetStopRequestSignal(), m.clusterEntities)
 	return nil
@@ -479,55 +481,6 @@ func (m *networkFlowManager) updateProcessesState(newProcesses map[processListen
 	m.lastSentStateMutex.Lock()
 	defer m.lastSentStateMutex.Unlock()
 	m.enrichedProcessesLastSentState = newProcesses
-}
-
-func (m *networkFlowManager) purgeStaleActiveEndpoints(tickerC <-chan time.Time) {
-	for {
-		select {
-		case <-m.stopper.Flow().StopRequested():
-			return
-		case <-tickerC:
-			maxAge := env.ActiveEndpointsPurgerTickerMaxAge.DurationSetting()
-			concurrency.WithLock(&m.activeEndpointsMutex, func() {
-				log.Debug("Purging active endpoints")
-				start := time.Now()
-				purgeActiveEndpointsNoLock(maxAge, m.activeEndpoints, m.clusterEntities)
-				flowMetrics.ActiveEndpointsPurgerDuration.Observe(float64(time.Since(start).Milliseconds()))
-			})
-		}
-	}
-}
-
-func purgeActiveEndpointsNoLock(maxAge time.Duration,
-	endpoints map[containerEndpoint]*containerEndpointIndicatorWithAge,
-	store EntityStore) {
-	for endpoint, age := range endpoints {
-		// remove if the endpoint is not in the store (also not in history)
-		if len(store.LookupByEndpoint(endpoint.endpoint)) == 0 {
-			delete(endpoints, endpoint)
-			flowMetrics.ActiveEndpointsPurger.WithLabelValues("endpoint-gone").Inc()
-			continue
-		}
-		// remove if the related container is not found or is found but is historical
-		_, found, isHistorical := store.LookupByContainerID(endpoint.containerID)
-		if !found || isHistorical {
-			delete(endpoints, endpoint)
-			if isHistorical {
-				flowMetrics.ActiveEndpointsPurger.WithLabelValues("containerID-historical").Inc()
-			} else {
-				flowMetrics.ActiveEndpointsPurger.WithLabelValues("containerID-gone").Inc()
-			}
-			continue
-		}
-		if maxAge > 0 {
-			// finally, remove all that didn't get any update from collector for a given time
-			cutOff := timestamp.Now().Add(-maxAge)
-			if cutOff.After(age.lastUpdate) {
-				flowMetrics.ActiveEndpointsPurger.WithLabelValues("max-age-reached").Inc()
-				delete(endpoints, endpoint)
-			}
-		}
-	}
 }
 
 func (m *networkFlowManager) enrichConnections(tickerC <-chan time.Time) {
@@ -1044,7 +997,6 @@ func shallRemoveConnection(status *connStatus) bool {
 func shallRemoveEndpoint(status *connStatus) bool {
 	shallConn := shallRemoveConnection(status)
 	// If processes listening on ports is enabled, it has to be used there as well before being deleted.
-	// TODO: Try disabling PLOP - disabling it works! The number of adds and deletes is equal for conns and eps!
 	if env.ProcessesListeningOnPort.BooleanSetting() {
 		return status.usedProcess && shallConn
 	}
@@ -1271,6 +1223,7 @@ func (m *networkFlowManager) UnregisterCollector(hostname string, sequenceID int
 
 func (h *hostConnections) Process(networkInfo *sensor.NetworkConnectionInfo, nowTimestamp timestamp.MicroTS, sequenceID int64) error {
 	flowMetrics.NetworkConnectionInfoMessagesRcvd.With(prometheus.Labels{"Hostname": h.hostname}).Inc()
+	now := timestamp.Now()
 
 	for _, updatedConnection := range networkInfo.UpdatedConnections {
 		if updatedConnection.CloseTimestamp == nil {
@@ -1325,7 +1278,8 @@ func (h *hostConnections) Process(networkInfo *sensor.NetworkConnectionInfo, now
 			if !found || status == nil {
 				flowMetrics.HostConnectionsOperations.WithLabelValues("add", "connections").Inc()
 				status = &connStatus{
-					firstSeen: timestamp.Now(),
+					tsAdded:   now,
+					firstSeen: now,
 				}
 				if t < status.firstSeen {
 					status.firstSeen = t
@@ -1347,13 +1301,13 @@ func (h *hostConnections) Process(networkInfo *sensor.NetworkConnectionInfo, now
 			if !found || status == nil {
 				flowMetrics.HostConnectionsOperations.WithLabelValues("add", "endpoints").Inc()
 				status = &connStatus{
-					firstSeen: timestamp.Now(),
+					tsAdded:   now,
+					firstSeen: now,
 				}
 				if t < status.firstSeen {
 					status.firstSeen = t
 				}
-				h.endpoints[ep] = status // TODO: The ep key contains a process identity that is almost unique for each process.
-				// Do we need that in the key of a endpoint?
+				h.endpoints[ep] = status
 			}
 			status.lastSeen = t
 		}
