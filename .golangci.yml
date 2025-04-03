@@ -25,7 +25,7 @@ linters:
     - govet
     - ineffassign
     - nolintlint
-    - revive
+    - revive # replaces golint
     - rowserrcheck
     - staticcheck
     - wrapcheck
@@ -51,8 +51,8 @@ linters:
         - pattern: ^print\(.*\)$
         - pattern: fmt\.Print.*(# Disallowed function used\. Use environments functions for printing or to a specific writer from environment\.InputOutput\(\)\.)?
         - pattern: os\.Stdout(# Disallowed output streams used\. Use environment\.InputOutput\(\).Out instead\.)?
-        - pattern: os\.Stderr(# Disallowed output streams used\. Use environment\.InputOutput\(\).Out instead\.)?
-        - pattern: os\.Stdin(# Disallowed output streams used\. Use environment\.InputOutput\(\).Out instead\.)?
+        - pattern: os\.Stderr(# Disallowed output streams used\. Use environment\.InputOutput\(\).ErrOut instead\.)?
+        - pattern: os\.Stdin(# Disallowed output streams used\. Use environment\.InputOutput\(\).In instead\.)?
     gocritic:
       disabled-checks:
         - appendAssign
