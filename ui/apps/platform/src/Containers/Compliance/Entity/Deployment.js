@@ -1,9 +1,9 @@
 import React, { useContext, useState } from 'react';
 import { useLocation } from 'react-router-dom';
+import { gql } from '@apollo/client';
 import pluralize from 'pluralize';
 
 import entityTypes from 'constants/entityTypes';
-import { DEPLOYMENT_QUERY } from 'queries/deployment';
 import Widget from 'Components/Widget';
 import Query from 'Components/CacheFirstQuery';
 import Loader from 'Components/Loader';
@@ -25,6 +25,23 @@ import useWorkflowMatch from 'hooks/useWorkflowMatch';
 
 import Header from './Header';
 import ResourceTabs from './ResourceTabs';
+
+export const DEPLOYMENT_QUERY = gql`
+    query getDeployment($id: ID!) {
+        deployment(id: $id) {
+            id
+            clusterId
+            clusterName
+            labels {
+                key
+                value
+            }
+            name
+            namespace
+            namespaceId
+        }
+    }
+`;
 
 function processData(data) {
     if (!data || !data.deployment) {

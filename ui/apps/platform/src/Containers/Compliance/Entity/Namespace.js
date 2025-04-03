@@ -1,12 +1,11 @@
 import React, { useContext, useState } from 'react';
 import pluralize from 'pluralize';
+import { gql } from '@apollo/client';
 
 import ComplianceByStandards from 'Containers/Compliance/widgets/ComplianceByStandards';
 import Query from 'Components/CacheFirstQuery';
 import IconWidget from 'Components/IconWidget';
-import CountWidget from 'Components/CountWidget';
 import Cluster from 'images/cluster.svg';
-import { NAMESPACE_QUERY as QUERY } from 'queries/namespace';
 import Widget from 'Components/Widget';
 // TODO: this exception will be unnecessary once Compliance pages are re-structured like Config Management
 /* eslint-disable-next-line import/no-cycle */
@@ -25,6 +24,24 @@ import searchContext from 'Containers/searchContext';
 
 import Header from './Header';
 import ResourceTabs from './ResourceTabs';
+
+export const QUERY = gql`
+    query getNamespace($id: ID!) {
+        results: namespace(id: $id) {
+            metadata {
+                clusterId
+                clusterName
+                name
+                id
+                labels {
+                    key
+                    value
+                }
+                creationTime
+            }
+        }
+    }
+`;
 
 function processData(data, entityId) {
     const defaultValue = {
@@ -73,7 +90,7 @@ const NamespacePage = ({
                     );
                 }
                 const namespace = processData(data);
-                const { name, id, clusterName, labels, numNetworkPolicies } = namespace;
+                const { name, id, clusterName, labels } = namespace;
                 const pdfClassName = !sidePanelMode ? 'pdf-page' : '';
                 let contents;
 
@@ -134,12 +151,6 @@ const NamespacePage = ({
                                             loading={loading}
                                         />
                                     </div>
-                                    <div className="md:pl-3 pt-3">
-                                        <CountWidget
-                                            title="Network Policies"
-                                            count={numNetworkPolicies}
-                                        />
-                                    </div>
                                 </div>
 
                                 <Widget
@@ -162,13 +173,6 @@ const NamespacePage = ({
                                             <div className="md:pr-3 pt-3">
                                                 <ResourceCount
                                                     entityType={entityTypes.DEPLOYMENT}
-                                                    relatedToResourceType={entityTypes.NAMESPACE}
-                                                    relatedToResource={namespace}
-                                                />
-                                            </div>
-                                            <div className="md:pl-3 pt-3">
-                                                <ResourceCount
-                                                    entityType={entityTypes.SECRET}
                                                     relatedToResourceType={entityTypes.NAMESPACE}
                                                     relatedToResource={namespace}
                                                 />
