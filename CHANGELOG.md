@@ -7,6 +7,18 @@ Entries in this file should be limited to:
 - Obscure side-effects that are not obviously apparent based on the JIRA associated with the changes.
 Please avoid adding duplicate information across this changelog and JIRA/doc input pages.
 
+## [4.7.2]
+
+### Added Features
+
+### Removed Features
+
+### Deprecated Features
+
+### Technical Changes
+
+- ROX-27885: Aligned data in old Compliance across tables and widgets
+
 ## [4.7.0]
 
 ### Added Features
