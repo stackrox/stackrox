@@ -289,7 +289,7 @@ func getEventFilter() predicate.Funcs {
 func (r *SecurityPolicyReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	err := ctrl.NewControllerManagedBy(mgr).
 		For(&configstackroxiov1alpha1.SecurityPolicy{}).
-		WithEventFilter(getEventFilter()).
+		//WithEventFilter(getEventFilter()).
 		Complete(r)
 
 	if err != nil {
