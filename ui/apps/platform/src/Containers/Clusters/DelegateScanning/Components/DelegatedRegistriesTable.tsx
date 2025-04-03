@@ -1,6 +1,12 @@
 import React, { useState } from 'react';
-import { Button, TextInput } from '@patternfly/react-core';
-import { Select, SelectOption } from '@patternfly/react-core/deprecated';
+import {
+    Button,
+    MenuToggleElement,
+    MenuToggle,
+    Select,
+    SelectOption,
+    TextInput,
+} from '@patternfly/react-core';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { MinusCircleIcon } from '@patternfly/react-icons';
 
@@ -8,6 +14,8 @@ import {
     DelegatedRegistry,
     DelegatedRegistryCluster,
 } from 'services/DelegatedRegistryConfigService';
+
+import { getClusterName } from '../cluster';
 
 type DelegatedRegistriesTableProps = {
     registries: DelegatedRegistry[];
@@ -38,18 +46,8 @@ function DelegatedRegistriesTable({
     }
 
     const defaultClusterName =
-        selectedClusterId === ''
-            ? 'None'
-            : (clusters.find(({ id }) => id === selectedClusterId)?.name ?? selectedClusterId);
-    const defaultClusterItem = `Default cluster (${defaultClusterName})`;
-
-    const clusterSelectOptions: JSX.Element[] = clusters.map((cluster) => {
-        return (
-            <SelectOption key={cluster.id} value={cluster.id}>
-                {cluster.name}
-            </SelectOption>
-        );
-    });
+        selectedClusterId === '' ? 'None' : getClusterName(clusters, selectedClusterId);
+    const defaultClusterItem = `Default cluster: ${defaultClusterName}`;
 
     return (
         <Table aria-label="Delegated registry exceptions table">
@@ -66,11 +64,21 @@ function DelegatedRegistriesTable({
             </Thead>
             <Tbody>
                 {registries.map((registry, rowIndex) => {
-                    const selectedClusterItem =
+                    const selectedClusterName =
                         registry.clusterId === ''
                             ? defaultClusterItem
-                            : (clusters.find((cluster) => registry.clusterId === cluster.id)
-                                  ?.name ?? registry.clusterId);
+                            : getClusterName(clusters, registry.clusterId);
+
+                    // Options consist of valid clusters, plus destination cluster (in unlikely case that it is not valid).
+                    const clusterSelectOptions: JSX.Element[] = clusters
+                        .filter((cluster) => cluster.isValid || cluster.id === registry.clusterId)
+                        .map((cluster) => {
+                            return (
+                                <SelectOption key={cluster.id} value={cluster.id}>
+                                    {getClusterName(clusters, cluster.id)}
+                                </SelectOption>
+                            );
+                        });
 
                     // Even path and clusterId combined is not a unique key.
                     /* eslint-disable react/no-array-index-key */
@@ -88,12 +96,20 @@ function DelegatedRegistriesTable({
                             </Td>
                             <Td dataLabel="Destination cluster (CLI/API only)">
                                 <Select
-                                    toggleAriaLabel="Select a cluster"
-                                    onToggle={() => toggleSelect(rowIndex)}
                                     onSelect={(_, value) => onSelect(rowIndex, value)}
                                     isOpen={openRow === rowIndex}
-                                    isDisabled={!isEditing}
-                                    selections={selectedClusterItem}
+                                    selected={registry.clusterId}
+                                    toggle={(toggleRef: React.Ref<MenuToggleElement>) => (
+                                        <MenuToggle
+                                            aria-label="Select destination cluster"
+                                            ref={toggleRef}
+                                            onClick={() => toggleSelect(rowIndex)}
+                                            isDisabled={!isEditing}
+                                            isExpanded={openRow === rowIndex}
+                                        >
+                                            {selectedClusterName}
+                                        </MenuToggle>
+                                    )}
                                 >
                                     <SelectOption key="" value="">
                                         {defaultClusterItem}

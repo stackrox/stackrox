@@ -85,8 +85,8 @@ function DelegateScanningPage() {
     function fetchClusters() {
         fetchDelegatedRegistryClusters()
             .then((clusters) => {
-                const validClusters = clusters.filter((cluster) => cluster.isValid);
-                setDelegatedRegistryClusters(validClusters);
+                // Components are reponsible for lazy filtering of invalid clusters.
+                setDelegatedRegistryClusters(clusters);
                 setHasLoadedClusters(true);
             })
             .catch((error) => {
