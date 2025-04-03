@@ -53,7 +53,6 @@ function DelegatedScanningSettings({
             <Flex>
                 <FlexItem>
                     <Select
-                        className="cluster-select"
                         onOpenChange={setIsOpen}
                         onSelect={onClusterSelect}
                         isOpen={isOpen}
