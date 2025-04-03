@@ -174,7 +174,7 @@ var (
 )
 
 func IncHostProcessesEnrichmentEvents(condIDfound, action, isHistorical string, reason string, lastSeenSet, rotten, mature, fresh bool) {
-	FlowEnrichmentEventsEndpoint.With(prometheus.Labels{
+	HostProcessesEnrichmentEvents.With(prometheus.Labels{
 		"containerIDfound": condIDfound,
 		"action":           action,
 		"isHistorical":     isHistorical,
