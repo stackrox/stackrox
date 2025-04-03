@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
-	"strings"
 	"testing"
 	"time"
 
@@ -53,14 +52,7 @@ type testCase struct {
 	testOrder      bool
 }
 
-type imageIDsPaginationTestCase struct {
-	desc string
-	q    *v1.Query
-	less lessFuncForImages
-}
-
 type lessFunc func(records []*imageCVEFlatResponse) func(i, j int) bool
-type lessFuncForImages func(records []*storage.Image) func(i, j int) bool
 
 type filterImpl struct {
 	matchImage func(image *storage.Image) bool
@@ -649,59 +641,6 @@ func (s *ImageCVEFlatViewTestSuite) paginationTestCases() []testCase {
 						return records[i].CVE < records[j].CVE
 					}
 					return recordI.FirstDiscoveredInSystem.Before(*recordJ.FirstDiscoveredInSystem)
-				}
-			},
-		},
-	}
-}
-
-func (s *ImageCVEFlatViewTestSuite) paginationTestCasesForImageIDs() []imageIDsPaginationTestCase {
-	return []imageIDsPaginationTestCase{
-		{
-			desc: "sort by image name",
-			q: search.NewQueryBuilder().WithPagination(
-				search.NewPagination().
-					AddSortOption(search.NewSortOption(search.ImageName)).
-					AddSortOption(search.NewSortOption(search.ImageSHA)),
-			).ProtoQuery(),
-			less: func(records []*storage.Image) func(i int, j int) bool {
-				return func(i, j int) bool {
-					if records[i].GetName().GetFullName() == records[j].GetName().GetFullName() {
-						return strings.Compare(records[i].GetId(), records[j].GetId()) < 0
-					}
-					return strings.Compare(records[i].GetName().GetFullName(), records[j].GetName().GetFullName()) < 0
-				}
-			},
-		},
-		{
-			desc: "sort by image OS",
-			q: search.NewQueryBuilder().WithPagination(
-				search.NewPagination().
-					AddSortOption(search.NewSortOption(search.ImageOS)).
-					AddSortOption(search.NewSortOption(search.ImageSHA)),
-			).ProtoQuery(),
-			less: func(records []*storage.Image) func(i int, j int) bool {
-				return func(i, j int) bool {
-					if records[i].GetScan().GetOperatingSystem() == records[j].GetScan().GetOperatingSystem() {
-						return strings.Compare(records[i].GetId(), records[j].GetId()) < 0
-					}
-					return strings.Compare(records[i].GetScan().GetOperatingSystem(), records[j].GetScan().GetOperatingSystem()) < 0
-				}
-			},
-		},
-		{
-			desc: "sort by image scan time",
-			q: search.NewQueryBuilder().WithPagination(
-				search.NewPagination().
-					AddSortOption(search.NewSortOption(search.ImageScanTime)).
-					AddSortOption(search.NewSortOption(search.ImageSHA)),
-			).ProtoQuery(),
-			less: func(records []*storage.Image) func(i int, j int) bool {
-				return func(i, j int) bool {
-					if protocompat.CompareTimestamps(records[i].GetScan().GetScanTime(), records[j].GetScan().GetScanTime()) == 0 {
-						return strings.Compare(records[i].GetId(), records[j].GetId()) < 0
-					}
-					return protocompat.CompareTimestamps(records[i].GetScan().GetScanTime(), records[j].GetScan().GetScanTime()) < 0
 				}
 			},
 		},
