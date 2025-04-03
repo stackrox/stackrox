@@ -46,6 +46,8 @@ const (
 	publicAPIEndpoint = ":8443"
 
 	publicWebhookEndpoint = ":9443"
+
+	scannerDefinitionsRoute = "/scanner/definitions"
 )
 
 var (
@@ -327,7 +329,7 @@ func (s *Sensor) newScannerDefinitionsRoute(centralEndpoint string, centralCerti
 	s.AddNotifiable(handler)
 	// We rely on central to handle content encoding negotiation.
 	return &routes.CustomRoute{
-		Route:         "/scanner/definitions",
+		Route:         scannerDefinitionsRoute,
 		Authorizer:    or.Or(idcheck.ScannerOnly(), idcheck.ScannerV4IndexerOnly(), idcheck.CollectorOnly()),
 		ServerHandler: handler,
 	}, nil
