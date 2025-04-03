@@ -24,6 +24,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 - ROX-28263: New `roxctl` help formatting.
 - ROX-24500: Certificate validation failure in `roxctl` is now an error.
+- ROX-27885: Aligned data in old Compliance across tables and widgets
 
 ## [4.7.0]
 
