@@ -7,10 +7,13 @@ Entries in this file should be limited to:
 - Obscure side-effects that are not obviously apparent based on the JIRA associated with the changes.
 Please avoid adding duplicate information across this changelog and JIRA/doc input pages.
 
+## [4.6.5]
+
+### Technical Changes
+- ROX-27885: Aligned data in old Compliance across tables and widgets
+
 ## [4.6.3]
 
-### Technical changes
-=======
 ### Added Features
 - ROX-13493: Support for scale subresource in the admission controller to enable policy detection and enforcement on admission review requests on the scale subresource.
 
@@ -20,7 +23,6 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ## [4.6.2]
 
 ### Technical changes
-=======
 ### Added Features
 - Fix: publish v2 API docs to OpenShift mirror bucket
 
