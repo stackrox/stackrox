@@ -26,12 +26,12 @@ func TestNetworkTreeWrapper(t *testing.T) {
 
 	*/
 
-	e1 := testutils.GetExtSrcNetworkEntityInfo("1", "1", "35.187.144.0/20", true)
-	e2 := testutils.GetExtSrcNetworkEntityInfo("2", "2", "35.187.144.0/16", false)
-	e3 := testutils.GetExtSrcNetworkEntityInfo("3", "3", "35.187.144.0/8", false)
-	e4 := testutils.GetExtSrcNetworkEntityInfo("4", "4", "35.187.144.0/23", false)
-	e5 := testutils.GetExtSrcNetworkEntityInfo("5", "5", "::23:ffff:24bc:9000/126", false)
-	e6 := testutils.GetExtSrcNetworkEntityInfo("6", "6", "::23:ffff:24bc:9000/112", true)
+	e1 := testutils.GetExtSrcNetworkEntityInfo("1", "1", "35.187.144.0/20", true, false)
+	e2 := testutils.GetExtSrcNetworkEntityInfo("2", "2", "35.187.144.0/16", false, false)
+	e3 := testutils.GetExtSrcNetworkEntityInfo("3", "3", "35.187.144.0/8", false, false)
+	e4 := testutils.GetExtSrcNetworkEntityInfo("4", "4", "35.187.144.0/23", false, false)
+	e5 := testutils.GetExtSrcNetworkEntityInfo("5", "5", "::23:ffff:24bc:9000/126", false, false)
+	e6 := testutils.GetExtSrcNetworkEntityInfo("6", "6", "::23:ffff:24bc:9000/112", true, false)
 
 	treeWrapper, err := NewNetworkTreeWrapper([]*storage.NetworkEntityInfo{e1, e2, e3, e4, e5, e6})
 	assert.NoError(t, err)
@@ -44,8 +44,8 @@ func TestNetworkTreeWrapper(t *testing.T) {
 	protoassert.Equal(t, e6, treeWrapper.GetSupernet("5"))
 	protoassert.Equal(t, networkgraph.InternetEntity().ToProto(), treeWrapper.GetSupernet(networkgraph.InternetExternalSourceID))
 
-	e7 := testutils.GetExtSrcNetworkEntityInfo("7", "7", "::23:ffff:24bc:9000/127", false)
-	e8 := testutils.GetExtSrcNetworkEntityInfo("8", "8", "35.188.144.0/5", false)
+	e7 := testutils.GetExtSrcNetworkEntityInfo("7", "7", "::23:ffff:24bc:9000/127", false, false)
+	e8 := testutils.GetExtSrcNetworkEntityInfo("8", "8", "35.188.144.0/5", false, false)
 
 	assert.NoError(t, treeWrapper.Insert(e7))
 	assert.NoError(t, treeWrapper.Insert(e8))
@@ -74,15 +74,15 @@ func TestNetworkTreeWrapper(t *testing.T) {
 	protoassert.ElementsMatch(t, []*storage.NetworkEntityInfo{e6, e8}, treeWrapper.GetSubnets(networkgraph.InternetExternalSourceID))
 
 	// Invalid CIDR
-	assert.Error(t, treeWrapper.Insert(testutils.GetExtSrcNetworkEntityInfo("9", "9", "0::0:0:0:0:0:ffff:0:0/0", false)))
+	assert.Error(t, treeWrapper.Insert(testutils.GetExtSrcNetworkEntityInfo("9", "9", "0::0:0:0:0:0:ffff:0:0/0", false, false)))
 
 	// Update CIDR
-	e4 = testutils.GetExtSrcNetworkEntityInfo("4", "4", "35.187.144.0/26", false)
+	e4 = testutils.GetExtSrcNetworkEntityInfo("4", "4", "35.187.144.0/26", false, false)
 	assert.NoError(t, treeWrapper.Insert(e4))
 	protoassert.Equal(t, e4, treeWrapper.Get("4"))
 
 	// Existing CIDR
-	assert.Error(t, treeWrapper.Insert(testutils.GetExtSrcNetworkEntityInfo("88", "88", "35.188.144.0/5", false)))
+	assert.Error(t, treeWrapper.Insert(testutils.GetExtSrcNetworkEntityInfo("88", "88", "35.188.144.0/5", false, false)))
 
 	protoassert.Equal(t, e2, treeWrapper.GetMatchingSupernet("4", func(e *storage.NetworkEntityInfo) bool { return !e.GetExternalSource().GetDefault() }))
 	protoassert.Equal(t, e1, treeWrapper.GetMatchingSupernet("4", func(e *storage.NetworkEntityInfo) bool { return e.GetExternalSource().GetDefault() }))
@@ -110,7 +110,7 @@ func TestNetworkTreeWrapper(t *testing.T) {
 	protoassert.Equal(t, e2, treeWrapper.GetMatchingSupernet("4", func(e *storage.NetworkEntityInfo) bool { return !e.GetExternalSource().GetDefault() }))
 
 	// Existing entity different IP address family
-	e8 = testutils.GetExtSrcNetworkEntityInfo("8", "8", "::23:ffff:24bc:9000/100", false)
+	e8 = testutils.GetExtSrcNetworkEntityInfo("8", "8", "::23:ffff:24bc:9000/100", false, false)
 	assert.NoError(t, treeWrapper.Insert(e8))
 
 	/*

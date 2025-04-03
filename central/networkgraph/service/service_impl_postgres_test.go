@@ -196,9 +196,9 @@ func (s *networkGraphServiceSuite) TestGetNetworkGraph() {
 	isDiscovered := true
 
 	entities := []*storage.NetworkEntity{
-		testutils.GetExtSrcNetworkEntityWithDiscovered(entityID1.String(), "ext1", "192.168.1.1/32", false, testCluster, isDiscovered),
-		testutils.GetExtSrcNetworkEntityWithDiscovered(entityID2.String(), "ext2", "10.0.0.2/32", false, testCluster, isDiscovered),
-		testutils.GetExtSrcNetworkEntityWithDiscovered(entityID3.String(), "ext3", "10.0.100.25/32", false, testCluster, isDiscovered),
+		testutils.GetExtSrcNetworkEntity(entityID1.String(), "ext1", "192.168.1.1/32", false, testCluster, isDiscovered),
+		testutils.GetExtSrcNetworkEntity(entityID2.String(), "ext2", "10.0.0.2/32", false, testCluster, isDiscovered),
+		testutils.GetExtSrcNetworkEntity(entityID3.String(), "ext3", "10.0.100.25/32", false, testCluster, isDiscovered),
 	}
 
 	deployment := &storage.Deployment{
@@ -210,8 +210,8 @@ func (s *networkGraphServiceSuite) TestGetNetworkGraph() {
 	err := s.deploymentsDataStore.UpsertDeployment(globalWriteAccessCtx, deployment)
 	s.NoError(err)
 
-
-	s.entityDataStore.CreateExtNetworkEntitiesForCluster(globalWriteAccessCtx, testCluster, entities...)
+	_, err = s.entityDataStore.CreateExtNetworkEntitiesForCluster(globalWriteAccessCtx, testCluster, entities...)
+	s.NoError(err)
 
 	entityFlows := []*storage.NetworkFlow{
 		externalFlow(deployment, entities[0], false),
@@ -271,7 +271,7 @@ func (s *networkGraphServiceSuite) TestGetNetworkGraph() {
 	// Compare the timestamps, but they just need to be similar. They don't need to be equal
 	similarTimestamps := compareTimestamps(expectedResponse, response)
 	s.Assert().True(similarTimestamps)
-	
+
 	// We don't expect the timestamps to agree perfectly so set them to the same value
 	normalizeTimestamps(response, timeNow.Protobuf())
 	normalizeTimestamps(expectedResponse, timeNow.Protobuf())
@@ -302,9 +302,9 @@ func (s *networkGraphServiceSuite) TestGetExternalNetworkFlows() {
 	}
 
 	entities := []*storage.NetworkEntity{
-		testutils.GetExtSrcNetworkEntity(entityIDs[0], "ext1", "192.168.1.1/32", false, testCluster),
-		testutils.GetExtSrcNetworkEntity(entityIDs[1], "ext2", "10.0.0.2/32", false, testCluster),
-		testutils.GetExtSrcNetworkEntity(entityIDs[2], "ext3", "10.0.100.25/32", false, testCluster),
+		testutils.GetExtSrcNetworkEntity(entityIDs[0], "ext1", "192.168.1.1/32", false, testCluster, false),
+		testutils.GetExtSrcNetworkEntity(entityIDs[1], "ext2", "10.0.0.2/32", false, testCluster, false),
+		testutils.GetExtSrcNetworkEntity(entityIDs[2], "ext3", "10.0.100.25/32", false, testCluster, false),
 	}
 
 	deployments := []*storage.Deployment{
@@ -450,9 +450,9 @@ func (s *networkGraphServiceSuite) TestGetExternalNetworkFlowsMetadata() {
 	}
 
 	entities := []*storage.NetworkEntity{
-		testutils.GetExtSrcNetworkEntity(entityIDs[0], "ext1", "192.168.1.1/32", false, testCluster),
-		testutils.GetExtSrcNetworkEntity(entityIDs[1], "ext2", "10.0.0.2/32", false, testCluster),
-		testutils.GetExtSrcNetworkEntity(entityIDs[2], "ext3", "10.0.100.25/32", false, testCluster),
+		testutils.GetExtSrcNetworkEntity(entityIDs[0], "ext1", "192.168.1.1/32", false, testCluster, false),
+		testutils.GetExtSrcNetworkEntity(entityIDs[1], "ext2", "10.0.0.2/32", false, testCluster, false),
+		testutils.GetExtSrcNetworkEntity(entityIDs[2], "ext3", "10.0.100.25/32", false, testCluster, false),
 	}
 
 	deployments := []*storage.Deployment{

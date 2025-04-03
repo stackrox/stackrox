@@ -27,18 +27,18 @@ func GetDeploymentNetworkEntity(id, name string) *storage.NetworkEntityInfo {
 	}
 }
 
-// GetExtSrcNetworkEntity returns a external source typed *storage.NetworkEntity object, where discoved can be true or false.
-func GetExtSrcNetworkEntityWithDiscovered(id, name, cidr string, isDefault bool, clusterID string, isDiscovered bool) *storage.NetworkEntity {
+// GetExtSrcNetworkEntity returns a external source typed *storage.NetworkEntity object.
+func GetExtSrcNetworkEntity(id, name, cidr string, isDefault bool, clusterID string, isDiscovered bool) *storage.NetworkEntity {
 	return &storage.NetworkEntity{
-		Info: GetExtSrcNetworkEntityInfoWithDiscovered(id, name, cidr, isDefault, isDiscovered),
+		Info: GetExtSrcNetworkEntityInfo(id, name, cidr, isDefault, isDiscovered),
 		Scope: &storage.NetworkEntity_Scope{
 			ClusterId: clusterID,
 		},
 	}
 }
 
-// GetExtSrcNetworkEntityInfo returns a external source typed *storage.NetworkEntityInfo object, where discovered can be true or false.
-func GetExtSrcNetworkEntityInfoWithDiscovered(id, name, cidr string, isDefault bool, isDiscovered bool) *storage.NetworkEntityInfo {
+// GetExtSrcNetworkEntityInfo returns a external source typed *storage.NetworkEntityInfo object.
+func GetExtSrcNetworkEntityInfo(id, name, cidr string, isDefault bool, isDiscovered bool) *storage.NetworkEntityInfo {
 	return &storage.NetworkEntityInfo{
 		Id:   id,
 		Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
@@ -53,22 +53,6 @@ func GetExtSrcNetworkEntityInfoWithDiscovered(id, name, cidr string, isDefault b
 			},
 		},
 	}
-}
-
-// GetExtSrcNetworkEntity returns a external source typed *storage.NetworkEntity object.
-func GetExtSrcNetworkEntity(id, name, cidr string, isDefault bool, clusterID string) *storage.NetworkEntity {
-	return &storage.NetworkEntity{
-		Info: GetExtSrcNetworkEntityInfo(id, name, cidr, isDefault),
-		Scope: &storage.NetworkEntity_Scope{
-			ClusterId: clusterID,
-		},
-	}
-}
-
-// GetExtSrcNetworkEntityInfo returns a external source typed *storage.NetworkEntityInfo object.
-func GetExtSrcNetworkEntityInfo(id, name, cidr string, isDefault bool) *storage.NetworkEntityInfo {
-	isDiscovered := false
-	return GetExtSrcNetworkEntityInfoWithDiscovered(id, name, cidr, isDefault, isDiscovered)
 }
 
 // GetNetworkFlow returns a network flow constructed from supplied data.
@@ -93,7 +77,7 @@ func GenRandomExtSrcNetworkEntityInfo(family pkgNet.Family, numNetworks int) ([]
 
 	entities := make([]*storage.NetworkEntityInfo, 0, len(nets))
 	for k := range nets {
-		entities = append(entities, GetExtSrcNetworkEntityInfo(k, k, k, false))
+		entities = append(entities, GetExtSrcNetworkEntityInfo(k, k, k, false, false))
 	}
 
 	return entities, nil
@@ -110,7 +94,7 @@ func GenRandomExtSrcNetworkEntity(family pkgNet.Family, numNetworks int, cluster
 	for k := range nets {
 		id, err := externalsrcs.NewClusterScopedID(clusterID, k)
 		utils.Should(err)
-		entities = append(entities, GetExtSrcNetworkEntity(id.String(), k, k, false, clusterID))
+		entities = append(entities, GetExtSrcNetworkEntity(id.String(), k, k, false, clusterID, false))
 	}
 
 	return entities, nil
