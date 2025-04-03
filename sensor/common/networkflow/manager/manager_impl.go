@@ -967,14 +967,15 @@ func expireEndpoint(ep *containerEndpoint,
 func (m *networkFlowManager) enrichProcessListening(ep *containerEndpoint, status *connStatus, processesListening map[processListeningIndicator]timestamp.MicroTS) {
 	timeElapsedSinceFirstSeen := timestamp.Now().ElapsedSince(status.firstSeen)
 	isFresh := timeElapsedSinceFirstSeen < clusterEntityResolutionWaitPeriod
+	isMature := timeElapsedSinceFirstSeen > maxContainerResolutionWaitPeriod
 	if !isFresh {
 		status.usedProcess = true
 	}
 
-	container, ok, _ := m.clusterEntities.LookupByContainerID(ep.containerID)
-	if !ok {
+	container, ok, isHistorical := m.clusterEntities.LookupByContainerID(ep.containerID)
+	if !ok || isHistorical {
 		// Expire the process if the container cannot be found within the clusterEntityResolutionWaitPeriod
-		if timeElapsedSinceFirstSeen > maxContainerResolutionWaitPeriod {
+		if isMature {
 			status.rotten = true
 			log.Debugf("Unable to fetch deployment information for container %s: no deployment found", ep.containerID)
 		}
