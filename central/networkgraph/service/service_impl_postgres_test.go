@@ -94,7 +94,7 @@ func (s *networkGraphServiceSuite) SetupTest() {
 	s.db = db
 }
 
-func externalFlow(deployment *storage.Deployment, entity *storage.NetworkEntity, ingress bool) *storage.NetworkFlow {
+func externalFlow(deployment *storage.Deployment, entity *storage.NetworkEntity, ingress bool, lastSeenTimestamp *timestamppb.Timestamp) *storage.NetworkFlow {
 	deploymentEntityInfo := &storage.NetworkEntityInfo{
 		Type: storage.NetworkEntityInfo_DEPLOYMENT,
 		Id:   deployment.Id,
@@ -115,7 +115,7 @@ func externalFlow(deployment *storage.Deployment, entity *storage.NetworkEntity,
 				DstPort:    1234,
 				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 			},
-			LastSeenTimestamp: nil,
+			LastSeenTimestamp: lastSeenTimestamp,
 			ClusterId:         deployment.ClusterId,
 		}
 	}
@@ -126,53 +126,9 @@ func externalFlow(deployment *storage.Deployment, entity *storage.NetworkEntity,
 			DstPort:    1234,
 			L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 		},
-		LastSeenTimestamp: nil,
+		LastSeenTimestamp: lastSeenTimestamp,
 		ClusterId:         deployment.ClusterId,
 	}
-}
-
-func normalizeTimestamps(graph *v1.NetworkGraph, timeNow *timestamppb.Timestamp) {
-	for _, node := range graph.Nodes {
-		for _, edgeBundle := range node.OutEdges {
-			for _, edge := range edgeBundle.Properties {
-				if edge.LastActiveTimestamp != nil {
-					edge.LastActiveTimestamp = timeNow
-				}
-			}
-		}
-	}
-}
-
-// The timestamps are not expected to be exactly the same. If the timestamps are
-// within a second that is good enough
-func compareTimestamps(expected *v1.NetworkGraph, actual *v1.NetworkGraph) bool {
-	if len(expected.Nodes) != len(actual.Nodes) {
-		return false
-	}
-	for nodeIndex, node := range expected.Nodes {
-		if len(node.OutEdges) != len(actual.Nodes[nodeIndex].OutEdges) {
-			return false
-		}
-		for outEdgeIndex, edgeBundle := range node.OutEdges {
-			actualBundle, ok := actual.Nodes[nodeIndex].OutEdges[outEdgeIndex]
-			if ok {
-				if len(edgeBundle.Properties) != len(actualBundle.Properties) {
-					return false
-				}
-				for edgeIndex, edge := range edgeBundle.Properties {
-					actualTime := actualBundle.Properties[edgeIndex].LastActiveTimestamp.AsTime()
-					expectedTime := edge.LastActiveTimestamp.AsTime()
-					diff := expectedTime.Sub(actualTime)
-					if diff > time.Second || diff < -time.Second {
-						return false
-					}
-				}
-			} else {
-				return false
-			}
-		}
-	}
-	return true
 }
 
 func (s *networkGraphServiceSuite) TestGetNetworkGraph() {
@@ -213,16 +169,20 @@ func (s *networkGraphServiceSuite) TestGetNetworkGraph() {
 	_, err = s.entityDataStore.CreateExtNetworkEntitiesForCluster(globalWriteAccessCtx, testCluster, entities...)
 	s.NoError(err)
 
+	timeNow := timestamp.FromGoTime(time.Now())
+	lastSeenTimestamp1 := timeNow.Protobuf()
+	lastSeenTimestamp2 := timeNow.Add(-time.Second).Protobuf()
+	lastSeenTimestamp3 := timeNow.Add(-2 * time.Second).Protobuf()
+
 	entityFlows := []*storage.NetworkFlow{
-		externalFlow(deployment, entities[0], false),
-		externalFlow(deployment, entities[1], false),
-		externalFlow(deployment, entities[2], false),
+		externalFlow(deployment, entities[0], false, lastSeenTimestamp1),
+		externalFlow(deployment, entities[1], false, lastSeenTimestamp2),
+		externalFlow(deployment, entities[2], false, lastSeenTimestamp3),
 	}
 
 	flowStore, err := s.flowDataStore.CreateFlowStore(globalWriteAccessCtx, testCluster)
 	s.NoError(err)
 
-	timeNow := timestamp.FromGoTime(time.Now())
 	err = flowStore.UpsertFlows(globalWriteAccessCtx, entityFlows, timeNow)
 	s.NoError(err)
 
@@ -248,7 +208,7 @@ func (s *networkGraphServiceSuite) TestGetNetworkGraph() {
 							{
 								Port:                1234,
 								Protocol:            storage.L4Protocol_L4_PROTOCOL_TCP,
-								LastActiveTimestamp: timeNow.Protobuf(),
+								LastActiveTimestamp: lastSeenTimestamp1,
 							},
 						},
 					},
@@ -267,14 +227,6 @@ func (s *networkGraphServiceSuite) TestGetNetworkGraph() {
 
 	response, err := s.service.GetNetworkGraph(ctx, request)
 	s.NoError(err)
-
-	// Compare the timestamps, but they just need to be similar. They don't need to be equal
-	similarTimestamps := compareTimestamps(expectedResponse, response)
-	s.Assert().True(similarTimestamps)
-
-	// We don't expect the timestamps to agree perfectly so set them to the same value
-	normalizeTimestamps(response, timeNow.Protobuf())
-	normalizeTimestamps(expectedResponse, timeNow.Protobuf())
 
 	protoassert.Equal(s.T(), expectedResponse, response)
 }
@@ -331,10 +283,10 @@ func (s *networkGraphServiceSuite) TestGetExternalNetworkFlows() {
 		s.NoError(err)
 	}
 
-	singleEntityFlow := externalFlow(deployments[0], entities[0], false)
+	singleEntityFlow := externalFlow(deployments[0], entities[0], false, nil)
 	multiEntityFlows := []*storage.NetworkFlow{
-		externalFlow(deployments[0], entities[2], false),
-		externalFlow(deployments[1], entities[2], false),
+		externalFlow(deployments[0], entities[2], false, nil),
+		externalFlow(deployments[1], entities[2], false, nil),
 	}
 
 	allFlows := []*storage.NetworkFlow{singleEntityFlow}
@@ -487,15 +439,15 @@ func (s *networkGraphServiceSuite) TestGetExternalNetworkFlowsMetadata() {
 
 	flows := []*storage.NetworkFlow{
 		// deployment1 -> 192.168.1.1
-		externalFlow(deployments[0], entities[0], false),
-		externalFlow(deployments[0], entities[2], false),
+		externalFlow(deployments[0], entities[0], false, nil),
+		externalFlow(deployments[0], entities[2], false, nil),
 
 		// deployment2 -> (10.0.0.2, 10.0.100.25)
-		externalFlow(deployments[1], entities[2], false),
-		externalFlow(deployments[1], entities[1], false),
+		externalFlow(deployments[1], entities[2], false, nil),
+		externalFlow(deployments[1], entities[1], false, nil),
 
 		// different namespace to 10.0.100.25
-		externalFlow(deployments[2], entities[2], false),
+		externalFlow(deployments[2], entities[2], false, nil),
 	}
 
 	flowStore, err := s.flowDataStore.CreateFlowStore(globalWriteAccessCtx, testCluster)
