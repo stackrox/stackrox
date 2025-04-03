@@ -13,8 +13,6 @@ type imageCVEResolver struct {
 	ctx  context.Context
 	root *Resolver
 	data *storage.ImageCVE
-
-	flatData imagecveflat.CveFlat
 }
 
 func (resolver *Resolver) wrapImageCVE(value *storage.ImageCVE, ok bool, err error) (*imageCVEResolver, error) {
@@ -239,22 +237,4 @@ func (resolver *imageCVEV2Resolver) Severity(ctx context.Context) string {
 func (resolver *imageCVEV2Resolver) State(ctx context.Context) string {
 	value := resolver.data.GetState()
 	return value.String()
-}
-
-func toCvssScoreVersion(value *string) storage.CvssScoreVersion {
-	if value != nil {
-		return storage.CvssScoreVersion(storage.CvssScoreVersion_value[*value])
-	}
-	return storage.CvssScoreVersion(0)
-}
-
-func toCvssScoreVersions(values *[]string) []storage.CvssScoreVersion {
-	if values == nil {
-		return nil
-	}
-	output := make([]storage.CvssScoreVersion, len(*values))
-	for i, v := range *values {
-		output[i] = toCvssScoreVersion(&v)
-	}
-	return output
 }
