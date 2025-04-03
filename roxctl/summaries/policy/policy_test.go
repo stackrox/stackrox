@@ -57,7 +57,7 @@ func TestNewPolicySummaryForPrinting(t *testing.T) {
 						ViolatedPolicies: []Policy{
 							{
 								Name:        "test Policy 1",
-								Severity:    "HIGH",
+								Severity:    HighSeverity,
 								Description: "test description 1",
 								Violation:   []string{"test violation 1", "test violation 2"},
 								Remediation: "test remediation 1",
@@ -126,14 +126,14 @@ func TestNewPolicySummaryForPrinting(t *testing.T) {
 						ViolatedPolicies: []Policy{
 							{
 								Name:        "test Policy 1",
-								Severity:    "HIGH",
+								Severity:    HighSeverity,
 								Description: "test description 1",
 								Violation:   []string{"test violation 1", "test violation 2"},
 								Remediation: "test remediation 1",
 							},
 							{
 								Name:         "test Policy 2",
-								Severity:     "LOW",
+								Severity:     LowSeverity,
 								Description:  "test description 2",
 								Violation:    []string{"test violation 1", "test violation 2"},
 								Remediation:  "test remediation 2",
@@ -267,14 +267,14 @@ func TestNewPolicySummaryForPrinting(t *testing.T) {
 						ViolatedPolicies: []Policy{
 							{
 								Name:        "test Policy 1",
-								Severity:    "HIGH",
+								Severity:    HighSeverity,
 								Description: "test description 1",
 								Violation:   []string{"test violation 1", "test violation 2"},
 								Remediation: "test remediation 1",
 							},
 							{
 								Name:         "test Policy 2",
-								Severity:     "LOW",
+								Severity:     LowSeverity,
 								Description:  "test description 2",
 								Violation:    []string{"test violation 1", "test violation 2"},
 								Remediation:  "test remediation 2",
@@ -300,14 +300,14 @@ func TestNewPolicySummaryForPrinting(t *testing.T) {
 						ViolatedPolicies: []Policy{
 							{
 								Name:        "test Policy 1",
-								Severity:    "HIGH",
+								Severity:    HighSeverity,
 								Description: "test description 1",
 								Violation:   []string{"test violation 1", "test violation 2"},
 								Remediation: "test remediation 1",
 							},
 							{
 								Name:         "test Policy 2",
-								Severity:     "LOW",
+								Severity:     LowSeverity,
 								Description:  "test description 2",
 								Violation:    []string{"test violation 1", "test violation 2"},
 								Remediation:  "test remediation 2",
@@ -358,7 +358,7 @@ func TestNewPolicySummaryForPrinting(t *testing.T) {
 						ViolatedPolicies: []Policy{
 							{
 								Name:        "test Policy 1",
-								Severity:    "HIGH",
+								Severity:    HighSeverity,
 								Description: "",
 								Violation:   []string{},
 								Remediation: "",

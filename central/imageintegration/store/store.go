@@ -17,5 +17,7 @@ type Store interface {
 	Get(ctx context.Context, id string) (*storage.ImageIntegration, bool, error)
 	GetAll(ctx context.Context) ([]*storage.ImageIntegration, error)
 	Upsert(ctx context.Context, integration *storage.ImageIntegration) error
+	UpsertMany(ctx context.Context, objs []*storage.ImageIntegration) error
 	Delete(ctx context.Context, id string) error
+	PruneMany(ctx context.Context, identifiers []string) error
 }

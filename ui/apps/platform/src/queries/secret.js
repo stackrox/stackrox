@@ -46,14 +46,6 @@ export const SECRET_FRAGMENT = gql`
         clusterId
     }
 `;
-export const SECRET_QUERY = gql`
-    query secret($id: ID!) {
-        secret(id: $id) {
-            ...secretFields
-        }
-    }
-    ${SECRET_FRAGMENT}
-`;
 
 export const SECRET_NAME = gql`
     query getSecretName($id: ID!) {

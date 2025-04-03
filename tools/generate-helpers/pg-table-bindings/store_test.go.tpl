@@ -1,9 +1,6 @@
-
-{{define "paramList"}}{{$name := .TrimmedType|lowerCamelCase}}{{range $index, $pk := .Schema.PrimaryKeys}}{{if $index}}, {{end}}{{$pk.Getter $name}}{{end}}{{end}}
-
 {{- $ := . }}
 {{- $name := .TrimmedType|lowerCamelCase }}
-
+{{- $paramList := (index .Schema.PrimaryKeys 0).Getter $name }}
 {{- $namePrefix := .Table|upperCamelCase}}
 
 //go:build sql_integration
@@ -71,7 +68,7 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 	{{$name}}.{{.EmbeddedFK}} = nil
 	{{- end}}
 
-	found{{.TrimmedType|upperCamelCase}}, exists, err := store.Get(ctx, {{template "paramList" $}})
+	found{{.TrimmedType|upperCamelCase}}, exists, err := store.Get(ctx, {{$paramList}})
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(found{{.TrimmedType|upperCamelCase}})
@@ -82,7 +79,7 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 	{{- end }}
 
 	s.NoError(store.Upsert(ctx, {{$name}}))
-	found{{.TrimmedType|upperCamelCase}}, exists, err = store.Get(ctx, {{template "paramList" $}})
+	found{{.TrimmedType|upperCamelCase}}, exists, err = store.Get(ctx, {{$paramList}})
 	s.NoError(err)
 	s.True(exists)
 	protoassert.Equal(s.T(), {{$name}}, found{{.TrimmedType|upperCamelCase}})
@@ -97,7 +94,7 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 	s.Zero({{$name}}Count)
 	{{- end }}
 
-	{{$name}}Exists, err := store.Exists(ctx, {{template "paramList" $}})
+	{{$name}}Exists, err := store.Exists(ctx, {{$paramList}})
 	s.NoError(err)
 	s.True({{$name}}Exists)
 	s.NoError(store.Upsert(ctx, {{$name}}))
@@ -105,16 +102,16 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 	s.ErrorIs(store.Upsert(withNoAccessCtx, {{$name}}), sac.ErrResourceAccessDenied)
 	{{- end }}
 
-	s.NoError(store.Delete(ctx, {{template "paramList" $}}))
-	found{{.TrimmedType|upperCamelCase}}, exists, err = store.Get(ctx, {{template "paramList" $}})
+	s.NoError(store.Delete(ctx, {{$paramList}}))
+	found{{.TrimmedType|upperCamelCase}}, exists, err = store.Get(ctx, {{$paramList}})
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(found{{.TrimmedType|upperCamelCase}})
 
 	{{- if or (.Obj.IsGloballyScoped) (.Obj.HasPermissionChecker) }}
-	s.ErrorIs(store.Delete(withNoAccessCtx, {{template "paramList" $}}), sac.ErrResourceAccessDenied)
+	s.ErrorIs(store.Delete(withNoAccessCtx, {{$paramList}}), sac.ErrResourceAccessDenied)
 	{{- else }}
-	s.NoError(store.Delete(withNoAccessCtx, {{template "paramList" $}}))
+	s.NoError(store.Delete(withNoAccessCtx, {{$paramList}}))
 	{{- end }}
 
 	var {{$name}}s []*{{.Type}}
@@ -126,7 +123,7 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 		{{$name}}.{{.EmbeddedFK}} = nil
 		{{- end}}
 		{{$name}}s = append({{.TrimmedType|lowerCamelCase}}s, {{.TrimmedType|lowerCamelCase}})
-		{{$name}}IDs = append({{$name}}IDs, {{template "paramList" $}})
+		{{$name}}IDs = append({{$name}}IDs, {{$paramList}})
 	}
 
 	s.NoError(store.UpsertMany(ctx, {{.TrimmedType|lowerCamelCase}}s))

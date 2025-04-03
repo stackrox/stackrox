@@ -30,14 +30,7 @@ export const POLICY_FRAGMENT = gql`
         }
     }
 `;
-export const POLICY_QUERY = gql`
-    query policy($id: ID!) {
-        policy(id: $id) {
-            ...policyFields
-        }
-    }
-    ${POLICY_FRAGMENT}
-`;
+
 export const POLICY_NAME = gql`
     query getPolicyName($id: ID!) {
         policy(id: $id) {

@@ -37,6 +37,7 @@ import ComplianceDashboardTile, {
 } from './ComplianceDashboardTile';
 import ComplianceScanProgress from './ComplianceScanProgress';
 import { useComplianceRunStatuses } from './useComplianceRunStatuses';
+import { isComplianceRouteEnabled } from '../complianceRBAC';
 
 const queriesToRefetchOnPollingComplete = [
     CLUSTERS_COUNT,
@@ -54,7 +55,28 @@ function ComplianceDashboardPage(): ReactElement {
         COMPLIANCE_DISCLAIMER_KEY,
         false
     );
-    const { hasReadWriteAccess } = usePermissions();
+    const { hasReadAccess, hasReadWriteAccess } = usePermissions();
+
+    // Counts and widgets (with one exception) have same conditional rendering as routes.
+    // Do not require for StandardsAcrossEntity cluster, so page has at least one widget.
+    // Do require for StandardsByEntity cluster, because it has links to clusters.
+    const isComplianceRouteEnabledForClusters = isComplianceRouteEnabled(
+        hasReadAccess,
+        'compliance/clusters'
+    );
+    const isComplianceRouteEnabledForDeployments = isComplianceRouteEnabled(
+        hasReadAccess,
+        'compliance/deployments'
+    );
+    const isComplianceRouteEnabledForNamespaces = isComplianceRouteEnabled(
+        hasReadAccess,
+        'compliance/namespaces'
+    );
+    const isComplianceRouteEnabledForNodes = isComplianceRouteEnabled(
+        hasReadAccess,
+        'compliance/nodes'
+    );
+
     const hasWriteAccessForCompliance = hasReadWriteAccess('Compliance');
 
     const [isFetchingStandards, setIsFetchingStandards] = useState(false);
@@ -111,10 +133,18 @@ function ComplianceDashboardPage(): ReactElement {
             <PageHeader header="Compliance" subHeader="Dashboard">
                 <div className="flex w-full justify-end">
                     <div className="flex">
-                        <ComplianceDashboardTile entityType="CLUSTER" />
-                        <ComplianceDashboardTile entityType="NAMESPACE" />
-                        <ComplianceDashboardTile entityType="NODE" />
-                        <ComplianceDashboardTile entityType="DEPLOYMENT" />
+                        {isComplianceRouteEnabledForClusters && (
+                            <ComplianceDashboardTile entityType="CLUSTER" />
+                        )}
+                        {isComplianceRouteEnabledForNamespaces && (
+                            <ComplianceDashboardTile entityType="NAMESPACE" />
+                        )}
+                        {isComplianceRouteEnabledForNodes && (
+                            <ComplianceDashboardTile entityType="NODE" />
+                        )}
+                        {isComplianceRouteEnabledForDeployments && (
+                            <ComplianceDashboardTile entityType="DEPLOYMENT" />
+                        )}
                         {hasWriteAccessForCompliance && (
                             <ScanButton
                                 className={`flex items-center justify-center border-2 btn btn-base h-10 lg:min-w-32 xl:min-w-43`}
@@ -183,21 +213,27 @@ function ComplianceDashboardPage(): ReactElement {
                         bodyClassName="pr-4 py-1"
                         className="pdf-page"
                     />
-                    <StandardsByEntity
-                        entityType={resourceTypes.CLUSTER}
-                        bodyClassName="p-4"
-                        className="pdf-page"
-                    />
-                    <StandardsAcrossEntity
-                        entityType={resourceTypes.NAMESPACE}
-                        bodyClassName="px-4 pt-1"
-                        className="pdf-page"
-                    />
-                    <StandardsAcrossEntity
-                        entityType={resourceTypes.NODE}
-                        bodyClassName="pr-4 py-1"
-                        className="pdf-page"
-                    />
+                    {isComplianceRouteEnabledForClusters && (
+                        <StandardsByEntity
+                            entityType={resourceTypes.CLUSTER}
+                            bodyClassName="p-4"
+                            className="pdf-page"
+                        />
+                    )}
+                    {isComplianceRouteEnabledForNamespaces && (
+                        <StandardsAcrossEntity
+                            entityType={resourceTypes.NAMESPACE}
+                            bodyClassName="px-4 pt-1"
+                            className="pdf-page"
+                        />
+                    )}
+                    {isComplianceRouteEnabledForNodes && (
+                        <StandardsAcrossEntity
+                            entityType={resourceTypes.NODE}
+                            bodyClassName="pr-4 py-1"
+                            className="pdf-page"
+                        />
+                    )}
                 </div>
             </div>
             {isExporting && <BackdropExporting />}

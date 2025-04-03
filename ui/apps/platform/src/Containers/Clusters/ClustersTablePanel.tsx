@@ -30,6 +30,7 @@ import { DEFAULT_PAGE_SIZE } from 'Components/Table';
 import useAnalytics, {
     LEGACY_SECURE_A_CLUSTER_LINK_CLICKED,
     SECURE_A_CLUSTER_LINK_CLICKED,
+    CRS_SECURE_A_CLUSTER_LINK_CLICKED,
 } from 'hooks/useAnalytics';
 import useAuthStatus from 'hooks/useAuthStatus';
 import useInterval from 'hooks/useInterval';
@@ -55,6 +56,7 @@ import {
     clustersDiscoveredClustersPath,
     clustersInitBundlesPath,
     clustersSecureClusterPath,
+    clustersSecureClusterCrsPath,
 } from 'routePaths';
 
 import AutoUpgradeToggle from './Components/AutoUpgradeToggle';
@@ -163,6 +165,20 @@ function ClustersTablePanel({
                 });
             }}
             component={<Link to={clustersSecureClusterPath}>Init bundle installation methods</Link>}
+        />,
+        <DropdownItem
+            key="cluster-registration-secret"
+            onClick={() => {
+                analyticsTrack({
+                    event: CRS_SECURE_A_CLUSTER_LINK_CLICKED,
+                    properties: { source: 'Secure a Cluster Dropdown' },
+                });
+            }}
+            component={
+                <Link to={clustersSecureClusterCrsPath}>
+                    Cluster registration secret installation methods
+                </Link>
+            }
         />,
         <DropdownItem
             key="legacy"
@@ -361,7 +377,7 @@ function ClustersTablePanel({
                                         component={LinkShim}
                                         href={clustersDelegatedScanningPath}
                                     >
-                                        Delegated scanning
+                                        Delegated image scanning
                                     </Button>
                                 </ToolbarItem>
                             )}
