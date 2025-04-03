@@ -29,6 +29,7 @@ import (
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/scannerv4/mappers"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/urlfmt"
 	pkgutils "github.com/stackrox/rox/pkg/utils"
 	"go.uber.org/zap/zapcore"
 )
@@ -37,6 +38,11 @@ const (
 	layerMediaType = "application/vnd.claircore.filesystem"
 
 	rhcosPackageDB = "sqlite:usr/share/rpm"
+
+	// scannerDefinitionsRouteInSensor should be in sync with `scannerDefinitionsRoute` in sensor/sensor.go
+	// Direct import is prohibited by import rules
+	scannerDefinitionsRouteInSensor = "/scanner/definitions"
+	sensorMappingsFile              = "repo2cpe"
 )
 
 var (
@@ -108,13 +114,23 @@ type NodeIndexerConfig struct {
 	Timeout time.Duration
 }
 
-// DefaultNodeIndexerConfig is the default configuration for a node indexer.
-var DefaultNodeIndexerConfig = NodeIndexerConfig{
-	HostPath: env.NodeIndexHostPath.Setting(),
-	// The default, mTLS-capable client will be used.
-	Client:             nil,
-	Repo2CPEMappingURL: env.NodeIndexMappingURL.Setting(),
-	Timeout:            10 * time.Second,
+// DefaultNodeIndexerConfig provides the default configuration for a node indexer.
+func DefaultNodeIndexerConfig() NodeIndexerConfig {
+	return NodeIndexerConfig{
+		HostPath: env.NodeIndexHostPath.Setting(),
+		// The default, mTLS-capable client will be used.
+		Client:             nil,
+		Repo2CPEMappingURL: buildMappingURL(),
+		Timeout:            10 * time.Second,
+	}
+}
+
+func buildMappingURL() string {
+	if len(env.NodeIndexMappingURL.Setting()) > 0 {
+		return urlfmt.FormatURL(env.NodeIndexMappingURL.Setting(), urlfmt.HTTPS, urlfmt.NoTrailingSlash)
+	}
+	u := env.AdvertisedEndpoint.Setting() + scannerDefinitionsRouteInSensor + "?file=" + sensorMappingsFile
+	return urlfmt.FormatURL(u, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
 }
 
 type localNodeIndexer struct {
