@@ -1065,9 +1065,7 @@ func (m *networkFlowManager) enrichProcessesListening(hostConns *hostConnections
 		}
 
 		m.enrichProcessListening(&ep, status, processesListening)
-		if status.rotten || (status.used && status.usedProcess && status.lastSeen != timestamp.InfiniteFuture) {
-			// endpoints that are no longer active and have already been used can be deleted.
-			// Before deleting it must be used here and in enrichContainerEndpoints.
+		if shallRemoveEndpoint(status) {
 			delete(hostConns.endpoints, ep)
 		}
 	}
@@ -1175,7 +1173,6 @@ func (m *networkFlowManager) getAllHostConnections() []*hostConnections {
 	for _, hostConns := range m.connectionsByHost {
 		allHostConns = append(allHostConns, hostConns)
 	}
-
 	return allHostConns
 }
 
