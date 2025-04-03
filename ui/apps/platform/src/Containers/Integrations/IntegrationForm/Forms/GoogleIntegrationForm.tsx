@@ -50,7 +50,7 @@ export const validationSchema = yup.object().shape({
             .required('A category is required'),
         google: yup.object().shape({
             endpoint: yup.string().trim().required('An endpoint is required'),
-            project: yup.string().trim().required('A project is required'),
+            project: yup.string().trim(),
             wifEnabled: yup.boolean(),
             serviceAccount: yup
                 .string()
@@ -246,7 +246,6 @@ function GoogleIntegrationForm({
                     </FormLabelGroup>
                     <FormLabelGroup
                         label="Project"
-                        isRequired
                         fieldId="config.google.project"
                         touched={touched}
                         errors={errors}
