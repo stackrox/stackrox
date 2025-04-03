@@ -1,5 +1,4 @@
 import static Services.getViolationsWithTimeout
-
 import static util.Helpers.withRetry
 
 import orchestratormanager.OrchestratorTypes
@@ -8,6 +7,7 @@ import io.fabric8.kubernetes.api.model.Pod
 
 import io.stackrox.proto.storage.AlertOuterClass
 
+import common.Constants
 import objects.Deployment
 import objects.NetworkPolicy
 import objects.NetworkPolicyTypes
@@ -19,7 +19,6 @@ import services.MetadataService
 import services.NamespaceService
 import services.NetworkPolicyService
 import services.SecretService
-import util.Timer
 import util.Env
 
 import spock.lang.IgnoreIf
@@ -96,7 +95,7 @@ class ReconciliationTest extends BaseSpecification {
         when:
         "Get Sensor and counts"
 
-        Deployment sensorDeployment = new Deployment().setNamespace("stackrox").setName("sensor")
+        Deployment sensorDeployment = new Deployment().setNamespace(Constants.STACKROX_NAMESPACE).setName("sensor")
 
         List<AlertOuterClass.ListAlert> violations = []
         Deployment busyboxDeployment
@@ -151,12 +150,12 @@ class ReconciliationTest extends BaseSpecification {
                 log.info pod
             }
 
-            List<Pod> pods = orchestrator.getPodsByLabel("stackrox", ["app": "sensor"])
+            List<Pod> pods = orchestrator.getPodsByLabel(Constants.STACKROX_NAMESPACE, ["app": "sensor"])
             assert pods.size() == 1
-            orchestrator.scaleDeployment("stackrox", "sensor", 0)
-            orchestrator.deletePod("stackrox", pods[0].getMetadata().getName(), 0)
+            orchestrator.scaleDeployment(Constants.STACKROX_NAMESPACE, "sensor", 0)
+            orchestrator.deletePod(Constants.STACKROX_NAMESPACE, pods[0].getMetadata().getName(), 0)
 
-            orchestrator.waitForAllPodsToBeRemoved("stackrox", ["app": "sensor"], 30, 5)
+            orchestrator.waitForAllPodsToBeRemoved(Constants.STACKROX_NAMESPACE, ["app": "sensor"], 30, 5)
 
             orchestrator.identity {
                 // Delete objects from k8s
@@ -181,13 +180,8 @@ class ReconciliationTest extends BaseSpecification {
             log.info pod
         }
 
-        // Recreate sensor
-        try {
-            orchestrator.scaleDeployment("stackrox", "sensor", 1)
-        } catch (Exception e) {
-            log.error("Error re-creating the sensor: ", e)
-            throw e
-        }
+        // Scale sensor up
+        orchestrator.scaleDeployment(Constants.STACKROX_NAMESPACE, "sensor", 1)
         Services.waitForDeployment(sensorDeployment)
 
         def maxWaitForSync = 200
@@ -197,23 +191,20 @@ class ReconciliationTest extends BaseSpecification {
         "Verify that we don't have references to resources removed when sensor was gone"
         // Get the resources from central and make sure the values exist
         int retries = (int) (maxWaitForSync / interval)
-        Timer t = new Timer(retries, interval)
         int numDeployments = -1
         int numPods = -1
         int numNamespaces = -1
         int numNetworkPolicies = -1
         int numSecrets = -1
-        while (t.IsValid()) {
+        withRetry(retries, interval) {
+            log.info "Waiting for all resources to be reconciled"
             numDeployments = Services.getDeployments().findAll { it.name == busyboxDeployment.getName() }.size()
             numPods = Services.getPods().findAll { it.deploymentId == busyboxDeployment.getDeploymentUid() }.size()
             numNamespaces = NamespaceService.getNamespaces().findAll { it.metadata.name == ns }.size()
             numNetworkPolicies = NetworkPolicyService.getNetworkPolicies().findAll { it.id == networkPolicyID }.size()
             numSecrets = SecretService.getSecrets().findAll { it.id == secretID }.size()
 
-            if (numDeployments + numPods + numNamespaces + numNetworkPolicies + numSecrets == 0) {
-                break
-            }
-            log.info "Waiting for all resources to be reconciled"
+            assert numDeployments + numPods + numNamespaces + numNetworkPolicies + numSecrets == 0
         }
         assert numDeployments == 0
         assert numPods == 0
