@@ -237,7 +237,7 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 
 	if retErr != nil {
 		// Perhaps the cache is stale, ignore errors since this is best effort
-		_ = r.CentralClient.EnsureFresh(ctx)
+		_ = r.CentralClient.FlushCache(ctx)
 	}
 
 	if err := r.K8sClient.Status().Update(ctx, policyCR); err != nil {
@@ -250,7 +250,7 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 }
 
 func (r *SecurityPolicyReconciler) UpdateCentralCaches(policyCR *configstackroxiov1alpha1.SecurityPolicy, ctx context.Context) (ctrl.Result, error) {
-	if err := r.CentralClient.EnsureFresh(ctx); err != nil {
+	if err := r.CentralClient.FlushCache(ctx); err != nil {
 		policyCR.Status.Condition.UpdateCondition(configstackroxiov1alpha1.CentralDataFresh, configstackroxiov1alpha1.SecurityPolicyCondition{
 			Type:    configstackroxiov1alpha1.CentralDataFresh,
 			Status:  "False",
