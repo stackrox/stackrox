@@ -102,17 +102,19 @@ func (s *datastorePostgresTestSuite) TestKubeServiceAccountConfig() {
 	s.NoError(authDataStore.InitializeTokenExchangers())
 }
 
-func getTestConfig(configs []*storage.AuthMachineToMachineConfig) *storage.AuthMachineToMachineConfig {
-	for _, config := range configs {
-		if config.Issuer == testIssuer {
-			return config
-		}
-	}
-	return nil
+type authDataStoreMutatorFunc func(authDataStore DataStore)
+type authDataStoreValidatorFunc func(kubeSAConfig *storage.AuthMachineToMachineConfig)
+
+type kubeSAMatcher struct{}
+
+func (m kubeSAMatcher) Matches(x any) bool {
+	kubeSAConfig, ok := x.(*storage.AuthMachineToMachineConfig)
+	return ok && kubeSAConfig.Issuer == testIssuer
 }
 
-type authDataStoreMutatorFunc func(authDataStore DataStore)
-type authDataStoreValidatorFunc func(configs []*storage.AuthMachineToMachineConfig)
+func (m kubeSAMatcher) String() string {
+	return "Matches M2M config for the Kube SA issuer of the current cluster"
+}
 
 func (s *datastorePostgresTestSuite) kubeSAM2MConfig(authDataStoreMutator authDataStoreMutatorFunc, authDataStoreValidator authDataStoreValidatorFunc) {
 	controller := gomock.NewController(s.T())
@@ -123,7 +125,7 @@ func (s *datastorePostgresTestSuite) kubeSAM2MConfig(authDataStoreMutator authDa
 	issuerFetcher := mocks.NewMockServiceAccountIssuerFetcher(controller)
 
 	issuerFetcher.EXPECT().GetServiceAccountIssuer().Return(testIssuer, nil).Times(2)
-	mockSet.EXPECT().UpsertTokenExchanger(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+	mockSet.EXPECT().UpsertTokenExchanger(gomock.Any(), kubeSAMatcher{}).Return(nil).MinTimes(1)
 	mockSet.EXPECT().GetTokenExchanger(gomock.Any()).Return(nil, false).AnyTimes()
 	mockSet.EXPECT().RemoveTokenExchanger(gomock.AssignableToTypeOf("")).Return(nil).AnyTimes()
 
@@ -133,36 +135,37 @@ func (s *datastorePostgresTestSuite) kubeSAM2MConfig(authDataStoreMutator authDa
 
 	// Emulate restarting Central by creating a new data store and token exchanger set
 	mockSet = mocks.NewMockTokenExchangerSet(controller)
-	mockSet.EXPECT().UpsertTokenExchanger(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+	mockSet.EXPECT().UpsertTokenExchanger(gomock.Any(), kubeSAMatcher{}).Return(nil).MinTimes(1)
 	mockSet.EXPECT().GetTokenExchanger(gomock.Any()).Return(nil, false).AnyTimes()
 
 	authDataStore = New(store, mockSet, issuerFetcher)
 	s.NoError(authDataStore.InitializeTokenExchangers())
 
-	var configs []*storage.AuthMachineToMachineConfig
+	var kubeSAConfig *storage.AuthMachineToMachineConfig
 	err := authDataStore.ForEachAuthM2MConfig(s.ctx, func(obj *storage.AuthMachineToMachineConfig) error {
-		configs = append(configs, obj)
+		if obj.Issuer == testIssuer {
+			kubeSAConfig = obj
+		}
 		return nil
 	})
 	s.NoError(err)
-	authDataStoreValidator(configs)
+	authDataStoreValidator(kubeSAConfig)
 }
 
 func (s *datastorePostgresTestSuite) TestKubeSAM2MConfigPersistsAfterDelete() {
 	authDataStoreMutator := func(authDataStore DataStore) {
-		var configs []*storage.AuthMachineToMachineConfig
+		var kubeSAConfig *storage.AuthMachineToMachineConfig
 		err := authDataStore.ForEachAuthM2MConfig(s.ctx, func(obj *storage.AuthMachineToMachineConfig) error {
-			configs = append(configs, obj)
+			if obj.Issuer == testIssuer {
+				kubeSAConfig = obj
+			}
 			return nil
 		})
 		s.NoError(err)
-		s.NotEmpty(configs)
-		kubeSAConfig := getTestConfig(configs)
 		s.NotNil(kubeSAConfig)
 		s.NoError(authDataStore.RemoveAuthM2MConfig(s.ctx, kubeSAConfig.Id))
 	}
-	authDataStoreValidator := func(configs []*storage.AuthMachineToMachineConfig) {
-		kubeSAConfig := getTestConfig(configs)
+	authDataStoreValidator := func(kubeSAConfig *storage.AuthMachineToMachineConfig) {
 		s.NotNil(kubeSAConfig)
 		s.Equal(1, len(kubeSAConfig.Mappings))
 		s.Equal("sub", kubeSAConfig.Mappings[0].Key)
@@ -175,8 +178,7 @@ func (s *datastorePostgresTestSuite) TestKubeSAM2MConfigPersistsAfterDelete() {
 
 func (s *datastorePostgresTestSuite) TestKubeSAM2MConfigPersistsAfterRestart() {
 	authDataStoreMutator := func(authDataStore DataStore) {}
-	authDataStoreValidator := func(configs []*storage.AuthMachineToMachineConfig) {
-		kubeSAConfig := getTestConfig(configs)
+	authDataStoreValidator := func(kubeSAConfig *storage.AuthMachineToMachineConfig) {
 		s.NotNil(kubeSAConfig)
 		s.Equal(1, len(kubeSAConfig.Mappings))
 		s.Equal("sub", kubeSAConfig.Mappings[0].Key)
@@ -200,20 +202,20 @@ func (s *datastorePostgresTestSuite) TestKubeSAM2MConfigPersistsAfterModificatio
 	}
 
 	authDataStoreMutator := func(authDataStore DataStore) {
-		var configs []*storage.AuthMachineToMachineConfig
+		var kubeSAConfig *storage.AuthMachineToMachineConfig
 		err := authDataStore.ForEachAuthM2MConfig(s.ctx, func(obj *storage.AuthMachineToMachineConfig) error {
-			configs = append(configs, obj)
+			if obj.Issuer == testIssuer {
+				kubeSAConfig = obj
+			}
 			return nil
 		})
 		s.NoError(err)
-		kubeSAConfig := getTestConfig(configs)
 		s.NotNil(kubeSAConfig)
 		kubeSAConfig.Mappings = []*storage.AuthMachineToMachineConfig_Mapping{&testMapping}
 		_, err = authDataStore.UpsertAuthM2MConfig(s.ctx, kubeSAConfig)
 		s.NoError(err)
 	}
-	authDataStoreValidator := func(configs []*storage.AuthMachineToMachineConfig) {
-		kubeSAConfig := getTestConfig(configs)
+	authDataStoreValidator := func(kubeSAConfig *storage.AuthMachineToMachineConfig) {
 		s.NotNil(kubeSAConfig)
 		s.Equal(2, len(kubeSAConfig.Mappings))
 		for _, mapping := range []*storage.AuthMachineToMachineConfig_Mapping{&testMapping, &configControllerMapping} {
