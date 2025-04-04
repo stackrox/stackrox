@@ -36,6 +36,13 @@ export type VulnerabilityReportFilters =
           sinceStartDate: string; // in the format of google.protobuf.Timestamp};
       });
 
+export type OnDemandVulnerabilityReportFilters = {
+    imageTypes: ImageType[];
+    includeEpssProbability: boolean;
+    includeNvdCvss: boolean;
+    query: string;
+};
+
 export type Fixability = 'BOTH' | 'FIXABLE' | 'NOT_FIXABLE';
 
 export const imageTypes = ['DEPLOYED', 'WATCHED'] as const;
@@ -101,6 +108,13 @@ export type ReportSnapshot = Snapshot & {
     collectionSnapshot: CollectionSnapshot;
     schedule: Schedule | null;
     notifiers: NotifierConfiguration[];
+};
+
+export type OnDemandReportSnapshot = Snapshot & {
+    requestName: string;
+    isOnDemand: boolean;
+    areaOfConcern: string;
+    vulnReportFilters: OnDemandVulnerabilityReportFilters;
 };
 
 export type CollectionSnapshot = {
