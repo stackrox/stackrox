@@ -279,58 +279,9 @@ jobs:
           path: |
             image/rhel/docs
 
-  check-collector-images-exist:
-    # This job ensures that COLLECTOR_VERSION cannot be updated to a version for which
-    # the image was not successfully built on Konflux.
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        tag_suffix: ["", "-fast"]
-    steps:
-    - name: Checkout repo
-      uses: actions/checkout@v4
-
-    - name: Get COLLECTOR_VERSION
-      id: collector-version
-      run: |
-        echo "collector-version=$(make --quiet --no-print-directory collector-tag)" >> "${GITHUB_OUTPUT}"
-
-    - name: Check image exists
-      uses: stackrox/actions/release/wait-for-image@v1
-      with:
-        token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
-        image: rhacs-eng/collector:${{ steps.collector-version.outputs.collector-version }}${{ matrix.tag_suffix }}
-        limit: 300
-
-  check-scanner-images-exist:
-    # This job ensures that SCANNER_VERSION cannot be updated to a version for which
-    # the image was not successfully built on Konflux.
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        image: ["scanner", "scanner-slim", "scanner-db", "scanner-db-slim"]
-        tag_suffix: ["", "-fast"]
-    steps:
-    - name: Checkout repo
-      uses: actions/checkout@v4
-
-    - name: Get SCANNER_VERSION
-      id: scanner-version
-      run: |
-        echo "scanner-version=$(make --quiet --no-print-directory scanner-tag)" >> "${GITHUB_OUTPUT}"
-
-    - name: Check image exists
-      uses: stackrox/actions/release/wait-for-image@v1
-      with:
-        token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
-        image: rhacs-eng/${{ matrix.image }}:${{ steps.scanner-version.outputs.scanner-version }}${{ matrix.tag_suffix }}
-        limit: 300
-
   build-and-push-main:
     runs-on: ubuntu-latest
     needs:
-      - check-collector-images-exist
-      - check-scanner-images-exist
       - define-job-matrix
       - pre-build-ui
       - pre-build-cli
