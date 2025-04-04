@@ -156,6 +156,7 @@ func (s *datastorePostgresTestSuite) TestKubeSAM2MConfigPersistsAfterDelete() {
 			return nil
 		})
 		s.NoError(err)
+		s.NotEmpty(configs)
 		kubeSAConfig := getTestConfig(configs)
 		s.NotNil(kubeSAConfig)
 		s.NoError(authDataStore.RemoveAuthM2MConfig(s.ctx, kubeSAConfig.Id))

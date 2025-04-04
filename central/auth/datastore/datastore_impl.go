@@ -168,6 +168,7 @@ func (d *datastoreImpl) InitializeTokenExchangers() error {
 	// Unconditionally add K8s service account exchanger.
 	// This is required for config-controller auth.
 	_ = upsertTokenExchanger(&storage.AuthMachineToMachineConfig{
+		Id:                      uuid.NewV4().String(),
 		Type:                    storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT,
 		TokenExpirationDuration: "1m",
 		Mappings: []*storage.AuthMachineToMachineConfig_Mapping{{
