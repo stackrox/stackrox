@@ -30,7 +30,7 @@ const allowListForNames = [
     'Common Vulnerability Scoring System (CVSS) score',
     'Common Vulnerability Scoring System (CVSS) score from National Vulnerability Database (NVD)',
     'Volume type (e.g. secret, configMap, hostPath) is',
-    'Volume destination (mountPath) path is'
+    'Volume destination (mountPath) path is',
 ];
 
 function isInitialUpperCase(item: string) {
