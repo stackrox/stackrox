@@ -26,7 +26,12 @@ func (resolver *Resolver) Groups(ctx context.Context) ([]*groupResolver, error) 
 	if err != nil {
 		return nil, err
 	}
-	return resolver.wrapGroups(resolver.GroupDataStore.GetAll(ctx))
+	var groups []*groupResolver
+	err = resolver.GroupDataStore.ProcessAll(ctx, func(group *storage.Group) error {
+		groups = append(groups, &groupResolver{root: resolver, data: group})
+		return nil
+	})
+	return groups, err
 }
 
 // Group returns a GraphQL resolver for the matching group, if it exists
