@@ -599,7 +599,7 @@ Sub Resolver Functions
 */
 
 func (resolver *imageComponentV2Resolver) ActiveState(_ context.Context, _ RawQuery) (*activeStateResolver, error) {
-	// TODO:  verify active vuln management is no longer supported
+	// No longer supported as scanner V4 does not support it.
 	return &activeStateResolver{}, nil
 }
 
@@ -725,7 +725,7 @@ func (resolver *imageComponentV2Resolver) LayerIndex() (*int32, error) {
 
 // Location returns the location of the component.
 //
-//	TODO(ROX-28123): Once the old code is removed, this method can become generated.
+//	TODO(ROX-28123): Once the old code is removed, the parameters can be removed.
 func (resolver *imageComponentV2Resolver) Location(_ context.Context, _ RawQuery) (string, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "Location")
 
