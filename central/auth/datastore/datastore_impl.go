@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/central/auth/m2m"
 	"github.com/stackrox/rox/central/auth/store"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
 	"github.com/stackrox/rox/pkg/env"
 	pgPkg "github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/sac"
@@ -152,6 +151,7 @@ func (d *datastoreImpl) InitializeTokenExchangers() error {
 	}
 
 	var tokenExchangerErrors []error
+	upserted := false
 	upsertTokenExchanger := func(config *storage.AuthMachineToMachineConfig) error {
 		if err := d.configureConfigControllerAccess(kubeSAIssuer, config); err != nil {
 			return pkgErrors.Wrap(err, "failed to configure config controller access")
@@ -159,26 +159,18 @@ func (d *datastoreImpl) InitializeTokenExchangers() error {
 		if err := d.set.UpsertTokenExchanger(ctx, config); err != nil {
 			tokenExchangerErrors = append(tokenExchangerErrors, err)
 		}
+		upserted = true
 		return nil
 	}
 	if err := d.forEachAuthM2MConfigNoLock(ctx, upsertTokenExchanger); err != nil {
 		return pkgErrors.Wrap(err, "Failed to list auth m2m configs")
 	}
-
-	// Unconditionally add K8s service account exchanger.
-	// This is required for config-controller auth.
-	_ = upsertTokenExchanger(&storage.AuthMachineToMachineConfig{
-		Id:                      uuid.NewV4().String(),
-		Type:                    storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT,
-		TokenExpirationDuration: "1m",
-		Mappings: []*storage.AuthMachineToMachineConfig_Mapping{{
-			// sub stands for "subject identifier", a required field on an OIDC token
-			Key:             "sub",
-			ValueExpression: configControllerServiceAccountName,
-			Role:            accesscontrol.ConfigController,
-		}},
-		Issuer: kubeSAIssuer,
-	})
+	// ensure we upserted the default config
+	if !upserted {
+		if err := d.configureConfigControllerAccess(kubeSAIssuer, nil); err != nil {
+			return pkgErrors.Wrap(err, "failed to configure config controller access")
+		}
+	}
 
 	return errors.Join(tokenExchangerErrors...)
 }
@@ -196,7 +188,7 @@ func (d *datastoreImpl) InitializeTokenExchangers() error {
 func (d *datastoreImpl) configureConfigControllerAccess(kubeSAIssuer string, config *storage.AuthMachineToMachineConfig) error {
 	var kubeSAConfig *storage.AuthMachineToMachineConfig
 
-	if config.Issuer == kubeSAIssuer {
+	if config.GetIssuer() == kubeSAIssuer {
 		kubeSAConfig = config
 	}
 
