@@ -255,6 +255,7 @@ func (m *Email) CloneVT() *Email {
 	r.From = m.From
 	r.StartTLSAuthMethod = m.StartTLSAuthMethod
 	r.AllowUnauthenticatedSmtp = m.AllowUnauthenticatedSmtp
+	r.SkipTLSVerify = m.SkipTLSVerify
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -976,6 +977,9 @@ func (this *Email) EqualVT(that *Email) bool {
 		return false
 	}
 	if this.AllowUnauthenticatedSmtp != that.AllowUnauthenticatedSmtp {
+		return false
+	}
+	if this.SkipTLSVerify != that.SkipTLSVerify {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -2044,6 +2048,16 @@ func (m *Email) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.SkipTLSVerify {
+		i--
+		if m.SkipTLSVerify {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x50
 	}
 	if m.AllowUnauthenticatedSmtp {
 		i--
@@ -3128,6 +3142,9 @@ func (m *Email) SizeVT() (n int) {
 		n += 1 + protohelpers.SizeOfVarint(uint64(m.StartTLSAuthMethod))
 	}
 	if m.AllowUnauthenticatedSmtp {
+		n += 2
+	}
+	if m.SkipTLSVerify {
 		n += 2
 	}
 	n += len(m.unknownFields)
@@ -5175,6 +5192,26 @@ func (m *Email) UnmarshalVT(dAtA []byte) error {
 				}
 			}
 			m.AllowUnauthenticatedSmtp = bool(v != 0)
+		case 10:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SkipTLSVerify", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.SkipTLSVerify = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -8728,6 +8765,26 @@ func (m *Email) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			}
 			m.AllowUnauthenticatedSmtp = bool(v != 0)
+		case 10:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SkipTLSVerify", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.SkipTLSVerify = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

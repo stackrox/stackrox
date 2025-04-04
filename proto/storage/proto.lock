@@ -12008,6 +12008,11 @@
                 "id": 9,
                 "name": "allow_unauthenticated_smtp",
                 "type": "bool"
+              },
+              {
+                "id": 10,
+                "name": "skipTLSVerify",
+                "type": "bool"
               }
             ]
           },

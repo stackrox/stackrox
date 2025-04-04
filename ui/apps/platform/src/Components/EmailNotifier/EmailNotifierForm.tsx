@@ -268,7 +268,7 @@ function EmailNotifierForm({
                     </FormLabelGroup>
                     <FormLabelGroup label="" fieldId="notifier.email.disableTLS" errors={errors}>
                         <Checkbox
-                            label="Disable TLS certificate validation (insecure)"
+                            label="Disable TLS (insecure)"
                             id="notifier.email.disableTLS"
                             isChecked={values.notifier.email.disableTLS}
                             onChange={(event, value) =>
@@ -295,6 +295,18 @@ function EmailNotifierForm({
                                 </SelectOption>
                             ))}
                         </SelectSingle>
+                    </FormLabelGroup>
+                    <FormLabelGroup label="" fieldId="notifier.email.skipTLSVerify" errors={errors}>
+                        <Checkbox
+                            label="Skip TLS verification"
+                            id="notifier.email.skipTLSVerify"
+                            isChecked={values.notifier.email.skipTLSVerify}
+                            onBlur={handleBlur}
+                            isDisabled={
+                                values.notifier.email.disableTLS &&
+                                values.notifier.email.startTLSAuthMethod === 'DISABLED'
+                            }
+                        />
                     </FormLabelGroup>
                 </Form>
             </PageSection>

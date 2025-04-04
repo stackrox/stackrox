@@ -605,6 +605,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"password: String!",
 		"sender: String!",
 		"server: String!",
+		"skipTLSVerify: Boolean!",
 		"startTLSAuthMethod: Email_AuthMethod!",
 		"username: String!",
 	}))
@@ -7326,6 +7327,11 @@ func (resolver *emailResolver) Sender(ctx context.Context) string {
 
 func (resolver *emailResolver) Server(ctx context.Context) string {
 	value := resolver.data.GetServer()
+	return value
+}
+
+func (resolver *emailResolver) SkipTLSVerify(ctx context.Context) bool {
+	value := resolver.data.GetSkipTLSVerify()
 	return value
 }
 

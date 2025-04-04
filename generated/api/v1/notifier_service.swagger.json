@@ -626,6 +626,9 @@
         "allowUnauthenticatedSmtp": {
           "type": "boolean",
           "title": "Set to true to allow unauthenticated SMTP"
+        },
+        "skipTLSVerify": {
+          "type": "boolean"
         }
       }
     },
