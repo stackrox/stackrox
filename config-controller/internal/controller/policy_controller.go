@@ -127,7 +127,7 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 
 	// If the policy in CR is being renamed or does not exist on central, exists will be false, and we will update the policy ID
 	// to the one in CR status. The policy ID in the CR status is expected to be blank if this is the first time policy is being reconciled.
-	if exists {
+	if exists && !existingPolicy.IsDefault {
 		desiredState.Id = existingPolicy.GetId()
 	} else {
 		desiredState.Id = policyCR.Status.PolicyId
@@ -289,7 +289,7 @@ func getEventFilter() predicate.Funcs {
 func (r *SecurityPolicyReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	err := ctrl.NewControllerManagedBy(mgr).
 		For(&configstackroxiov1alpha1.SecurityPolicy{}).
-		//WithEventFilter(getEventFilter()).
+		WithEventFilter(getEventFilter()).
 		Complete(r)
 
 	if err != nil {
