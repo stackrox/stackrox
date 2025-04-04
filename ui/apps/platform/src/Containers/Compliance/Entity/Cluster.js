@@ -5,7 +5,8 @@ import EntityCompliance from 'Containers/Compliance/widgets/EntityCompliance';
 import ResourceCount from 'Containers/Compliance/widgets/ResourceCount';
 import ClusterVersion from 'Containers/Compliance/widgets/ClusterVersion';
 import Query from 'Components/CacheFirstQuery';
-import { CLUSTER_QUERY as QUERY } from 'queries/cluster';
+import usePermissions from 'hooks/usePermissions';
+import { CLUSTER_NAME as QUERY } from 'queries/cluster';
 // TODO: this exception will be unnecessary once Compliance pages are re-structured like Config Management
 /* eslint-disable-next-line import/no-cycle */
 import ComplianceList from 'Containers/Compliance/List/List';
@@ -18,12 +19,31 @@ import isGQLLoading from 'utils/gqlLoading';
 
 import Header from './Header';
 import ResourceTabs from './ResourceTabs';
+import { isComplianceRouteEnabled } from '../complianceRBAC';
+
+function getResourceTabs({
+    isComplianceRouteEnabledForDeployments,
+    isComplianceRouteEnabledForNamespaces,
+    isComplianceRouteEnabledForNodes,
+}) {
+    const resourceTabs = [entityTypes.CONTROL];
+    if (isComplianceRouteEnabledForNamespaces) {
+        resourceTabs.push(entityTypes.NAMESPACE);
+    }
+    if (isComplianceRouteEnabledForNodes) {
+        resourceTabs.push(entityTypes.NODE);
+    }
+    if (isComplianceRouteEnabledForDeployments) {
+        resourceTabs.push(entityTypes.DEPLOYMENT);
+    }
+    return resourceTabs;
+}
 
 function processData(data) {
-    if (!data || !data.results) {
+    if (!data || !data.cluster) {
         return {};
     }
-    return data.results;
+    return data.cluster;
 }
 
 const ClusterPage = ({
@@ -38,6 +58,30 @@ const ClusterPage = ({
 }) => {
     const [isExporting, setIsExporting] = useState(false);
     const searchParam = useContext(searchContext);
+
+    const { hasReadAccess } = usePermissions();
+    const isComplianceRouteEnabledForDeployments = isComplianceRouteEnabled(
+        hasReadAccess,
+        'compliance/deployments'
+    );
+    const isComplianceRouteEnabledForNamespaces = isComplianceRouteEnabled(
+        hasReadAccess,
+        'compliance/namespaces'
+    );
+    const isComplianceRouteEnabledForNodes = isComplianceRouteEnabled(
+        hasReadAccess,
+        'compliance/nodes'
+    );
+    const isComplianceRouteEnabledForEntities =
+        isComplianceRouteEnabledForDeployments ||
+        isComplianceRouteEnabledForNamespaces ||
+        isComplianceRouteEnabledForNodes;
+
+    const resourceTabs = getResourceTabs({
+        isComplianceRouteEnabledForDeployments,
+        isComplianceRouteEnabledForNamespaces,
+        isComplianceRouteEnabledForNodes,
+    });
 
     return (
         <Query query={QUERY} variables={{ id: entityId }}>
@@ -109,12 +153,12 @@ const ClusterPage = ({
                                     entityType={entityTypes.CLUSTER}
                                 />
 
-                                {sidePanelMode && (
-                                    <>
-                                        <div
-                                            className={`grid s-2 md:grid-auto-fit md:grid-dense ${pdfClassName}`}
-                                            style={{ '--min-tile-width': '50%' }}
-                                        >
+                                {sidePanelMode && isComplianceRouteEnabledForEntities && (
+                                    <div
+                                        className={`grid s-2 md:grid-auto-fit md:grid-dense ${pdfClassName}`}
+                                        style={{ '--min-tile-width': '50%' }}
+                                    >
+                                        {isComplianceRouteEnabledForNamespaces && (
                                             <div className="md:pr-3 pb-3">
                                                 <ResourceCount
                                                     entityType={entityTypes.NAMESPACE}
@@ -122,6 +166,8 @@ const ClusterPage = ({
                                                     relatedToResource={cluster}
                                                 />
                                             </div>
+                                        )}
+                                        {isComplianceRouteEnabledForNodes && (
                                             <div className="md:pl-3 pb-3">
                                                 <ResourceCount
                                                     entityType={entityTypes.NODE}
@@ -129,6 +175,8 @@ const ClusterPage = ({
                                                     relatedToResource={cluster}
                                                 />
                                             </div>
+                                        )}
+                                        {isComplianceRouteEnabledForDeployments && (
                                             <div className="md:pr-3 pt-2">
                                                 <ResourceCount
                                                     entityType={entityTypes.DEPLOYMENT}
@@ -136,8 +184,8 @@ const ClusterPage = ({
                                                     relatedToResource={cluster}
                                                 />
                                             </div>
-                                        </div>
-                                    </>
+                                        )}
+                                    </div>
                                 )}
                             </div>
                         </div>
@@ -160,12 +208,7 @@ const ClusterPage = ({
                                     entityId={entityId}
                                     entityType={entityTypes.CLUSTER}
                                     selectedType={listEntityType1}
-                                    resourceTabs={[
-                                        entityTypes.CONTROL,
-                                        entityTypes.NAMESPACE,
-                                        entityTypes.NODE,
-                                        entityTypes.DEPLOYMENT,
-                                    ]}
+                                    resourceTabs={resourceTabs}
                                 />
                             </>
                         )}
