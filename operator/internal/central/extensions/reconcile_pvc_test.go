@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	storagev1 "k8s.io/api/storage/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -329,6 +330,16 @@ func TestReconcilePVCExtension(t *testing.T) {
 			for _, existingPVC := range testCase.ExistingPVCs {
 				allExisting = append(allExisting, existingPVC)
 			}
+			// Add the default storage class
+			allExisting = append(allExisting, &storagev1.StorageClass{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "stackrox",
+					Name:      "new-storage-class",
+					Annotations: map[string]string{
+						defaultStorageClassAnnotation: "true",
+					},
+				},
+			})
 
 			client := fake.NewClientBuilder().WithObjects(allExisting...).Build()
 
