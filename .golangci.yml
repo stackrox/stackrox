@@ -132,15 +132,12 @@ linters:
       checks:
       - all
       - -QF1001
-      - -QF1003
-      - -QF1003
+      - -QF1002
       - -QF1003
       - -QF1006
+      - -QF1007
       - -QF1008
-      - -QF1008
-      - -QF1008
-      - -QF1012
-      - -QF1012
+      - -QF1009
       - -QF1012
       - -SA1019
       - -SA4001
@@ -152,7 +149,9 @@ linters:
       - -ST1017
       - -ST1019
       - -ST1020
+      - -ST1021
       - -ST1022
+      - -ST1023
     wrapcheck:
       ignore-sig-regexps:
         - utils\.Should
