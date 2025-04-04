@@ -42,14 +42,14 @@ func (d *datastoreImpl) getAuthM2MConfigNoLock(ctx context.Context, id string) (
 	return d.store.Get(ctx, id)
 }
 
-func (d *datastoreImpl) ListAuthM2MConfigs(ctx context.Context) ([]*storage.AuthMachineToMachineConfig, error) {
+func (d *datastoreImpl) ForEachAuthM2MConfig(ctx context.Context, fn func(obj *storage.AuthMachineToMachineConfig) error) error {
 	d.mutex.RLock()
 	defer d.mutex.RUnlock()
-	return d.listAuthM2MConfigsNoLock(ctx)
+	return d.forEachAuthM2MConfigNoLock(ctx, fn)
 }
 
-func (d *datastoreImpl) listAuthM2MConfigsNoLock(ctx context.Context) ([]*storage.AuthMachineToMachineConfig, error) {
-	return d.store.GetAll(ctx)
+func (d *datastoreImpl) forEachAuthM2MConfigNoLock(ctx context.Context, fn func(obj *storage.AuthMachineToMachineConfig) error) error {
+	return d.store.Walk(ctx, fn)
 }
 
 func (d *datastoreImpl) UpsertAuthM2MConfig(ctx context.Context,
@@ -145,19 +145,30 @@ func (d *datastoreImpl) InitializeTokenExchangers() error {
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
 		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS), sac.ResourceScopeKeys(resources.Access)))
 
-	configs, err := d.listAuthM2MConfigsNoLock(ctx)
+	kubeSAIssuer, err := d.issuerFetcher.GetServiceAccountIssuer()
 	if err != nil {
-		return pkgErrors.Wrap(err, "Failed to list auth m2m configs")
+		return pkgErrors.Wrap(err, "failed to get service account issuer")
 	}
 
-	if err = d.configureConfigControllerAccess(configs); err != nil {
-		return pkgErrors.Wrap(err, "Failed to configure config controller access")
-	}
-
-	tokenExchangerErrors := []error{}
-	for _, config := range configs {
+	var tokenExchangerErrors []error
+	upserted := false
+	upsertTokenExchanger := func(config *storage.AuthMachineToMachineConfig) error {
+		if err := d.configureConfigControllerAccess(kubeSAIssuer, config); err != nil {
+			return pkgErrors.Wrap(err, "failed to configure config controller access")
+		}
 		if err := d.set.UpsertTokenExchanger(ctx, config); err != nil {
 			tokenExchangerErrors = append(tokenExchangerErrors, err)
+		}
+		upserted = true
+		return nil
+	}
+	if err := d.forEachAuthM2MConfigNoLock(ctx, upsertTokenExchanger); err != nil {
+		return pkgErrors.Wrap(err, "Failed to list auth m2m configs")
+	}
+	// ensure we upserted the default config
+	if !upserted {
+		if err := d.configureConfigControllerAccess(kubeSAIssuer, nil); err != nil {
+			return pkgErrors.Wrap(err, "failed to configure config controller access")
 		}
 	}
 
@@ -174,19 +185,11 @@ func (d *datastoreImpl) InitializeTokenExchangers() error {
 //
 // This allows customers to add their own role mappings for this config.
 // If a customer breaks config-controller auth, they can simply restart Central to get it back to a working state.
-func (d *datastoreImpl) configureConfigControllerAccess(configs []*storage.AuthMachineToMachineConfig) error {
-	kubeSAIssuer, err := d.issuerFetcher.GetServiceAccountIssuer()
-	if err != nil {
-		return pkgErrors.Wrap(err, "Failed to get service account issuer")
-	}
-
+func (d *datastoreImpl) configureConfigControllerAccess(kubeSAIssuer string, config *storage.AuthMachineToMachineConfig) error {
 	var kubeSAConfig *storage.AuthMachineToMachineConfig
 
-	for _, config := range configs {
-		if config.Issuer == kubeSAIssuer {
-			kubeSAConfig = config
-			break
-		}
+	if config.GetIssuer() == kubeSAIssuer {
+		kubeSAConfig = config
 	}
 
 	if kubeSAConfig == nil {
@@ -219,7 +222,7 @@ func (d *datastoreImpl) configureConfigControllerAccess(configs []*storage.AuthM
 		sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS), sac.ResourceScopeKeys(resources.Access)))
 
 	// This inits the token exchanger, too
-	_, err = d.upsertAuthM2MConfigNoLock(ctx, kubeSAConfig)
+	_, err := d.upsertAuthM2MConfigNoLock(ctx, kubeSAConfig)
 	if err != nil {
 		return pkgErrors.Wrap(err, "Failed to upsert auth m2m config")
 	}
