@@ -8,13 +8,13 @@ import { URLSearchParams } from 'url';
 import useURLParameter from './useURLParameter';
 
 beforeAll(() => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
 });
 
 function actAndRunTicks(callback) {
     return act(() => {
         callback();
-        jest.runAllTicks();
+        vi.runAllTicks();
     });
 }
 

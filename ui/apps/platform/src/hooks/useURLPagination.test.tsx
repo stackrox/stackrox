@@ -8,13 +8,13 @@ import { URLSearchParams } from 'url';
 import useURLPagination from './useURLPagination';
 
 beforeAll(() => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
 });
 
 function actAndRunTicks(callback) {
     return act(() => {
         callback();
-        jest.runAllTicks();
+        vi.runAllTicks();
     });
 }
 

@@ -1,6 +1,6 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`ObjectDescriptionList annotations 1`] = `
+exports[`ObjectDescriptionList > annotations 1`] = `
 <div>
   <dl
     class="pf-v5-c-description-list pf-m-horizontal"
@@ -33,7 +33,7 @@ exports[`ObjectDescriptionList annotations 1`] = `
 </div>
 `;
 
-exports[`ObjectDescriptionList labels 1`] = `
+exports[`ObjectDescriptionList > labels 1`] = `
 <div>
   <dl
     class="pf-v5-c-description-list pf-m-horizontal"
@@ -66,7 +66,7 @@ exports[`ObjectDescriptionList labels 1`] = `
 </div>
 `;
 
-exports[`ObjectDescriptionList ports 1`] = `
+exports[`ObjectDescriptionList > ports 1`] = `
 <div>
   <dl
     class="pf-v5-c-description-list pf-m-horizontal"
