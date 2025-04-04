@@ -93,7 +93,7 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		}
 	}
 
-	if result, refreshErr := r.UpdateCentralCaches(policyCR, ctx); refreshErr != nil {
+	if result, refreshErr := r.UpdateCentralCaches(policyCR, ctx, r.CentralClient.EnsureFresh); refreshErr != nil {
 		return result, refreshErr
 	}
 
@@ -105,7 +105,7 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	})
 	if err != nil {
 		// Attempt to refresh central caches and exit early if and only if caches could not be refreshed AND security policy status was not able to update
-		if result, refreshErr := r.UpdateCentralCaches(policyCR, ctx); refreshErr != nil {
+		if result, refreshErr := r.UpdateCentralCaches(policyCR, ctx, r.CentralClient.FlushCache); refreshErr != nil {
 			return result, refreshErr
 		}
 		policyCR.Status.Condition.UpdateCondition(configstackroxiov1alpha1.PolicyValidated, configstackroxiov1alpha1.SecurityPolicyCondition{
@@ -251,8 +251,8 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	return ctrl.Result{}, retErr
 }
 
-func (r *SecurityPolicyReconciler) UpdateCentralCaches(policyCR *configstackroxiov1alpha1.SecurityPolicy, ctx context.Context) (ctrl.Result, error) {
-	if err := r.CentralClient.FlushCache(ctx); err != nil {
+func (r *SecurityPolicyReconciler) UpdateCentralCaches(policyCR *configstackroxiov1alpha1.SecurityPolicy, ctx context.Context, refreshFunc func(context.Context) error) (ctrl.Result, error) {
+	if err := refreshFunc(ctx); err != nil {
 		policyCR.Status.Condition.UpdateCondition(configstackroxiov1alpha1.CentralDataFresh, configstackroxiov1alpha1.SecurityPolicyCondition{
 			Type:    configstackroxiov1alpha1.CentralDataFresh,
 			Status:  "False",
