@@ -69,6 +69,7 @@ type Store interface {
     Get(ctx context.Context, {{$primaryKeyName}} {{$primaryKeyType}}) (*storeType, bool, error)
 {{- if .SearchCategory }}
     GetByQuery(ctx context.Context, query *v1.Query) ([]*storeType, error)
+    GetByQueryFn(ctx context.Context, query *v1.Query, fn func(obj *storeType) error) error
 {{- end }}
     GetMany(ctx context.Context, identifiers []{{$primaryKeyType}}) ([]*storeType, []int, error)
     GetIDs(ctx context.Context) ([]{{$primaryKeyType}}, error)

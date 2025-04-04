@@ -49,6 +49,7 @@ type Store interface {
 
 	Get(ctx context.Context, infoID string) (*storeType, bool, error)
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*storeType, error)
+	GetByQueryFn(ctx context.Context, query *v1.Query, fn func(obj *storeType) error) error
 	GetMany(ctx context.Context, identifiers []string) ([]*storeType, []int, error)
 	GetIDs(ctx context.Context) ([]string, error)
 

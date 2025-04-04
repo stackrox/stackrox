@@ -943,6 +943,8 @@ func RunCountRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1.
 }
 
 // RunGetQueryForSchema executes a request for just the search against the database
+//
+// Deprecated: use RunGetQueryForSchemaFn instead
 func RunGetQueryForSchema[T any, PT pgutils.Unmarshaler[T]](ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB) (*T, error) {
 	if q == nil {
 		q = searchPkg.EmptyQuery()
@@ -962,6 +964,49 @@ func RunGetQueryForSchema[T any, PT pgutils.Unmarshaler[T]](ctx context.Context,
 		row := tracedQueryRow(ctx, db, queryStr, query.Data...)
 		return pgutils.Unmarshal[T, PT](row)
 	})
+}
+
+func retryableGetRows(ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB) (*tracedRows, error) {
+	if q == nil {
+		q = searchPkg.EmptyQuery()
+	}
+
+	query, err := standardizeQueryAndPopulatePath(ctx, q, schema, GET)
+	if err != nil {
+		return nil, errors.Wrap(err, "error creating query")
+	}
+	if query == nil {
+		return nil, emptyQueryErr
+	}
+
+	queryStr := query.AsSQL()
+	return tracedQuery(ctx, db, queryStr, query.Data...)
+}
+
+// RunGetQueryForSchemaFn runs a query and call a callback for each row. It stops on first error.
+func RunGetQueryForSchemaFn[T any, PT pgutils.Unmarshaler[T]](ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB, callback func(obj PT) error) error {
+	rows, err := pgutils.Retry2(ctx, func() (*tracedRows, error) {
+		return retryableGetRows(ctx, schema, q, db)
+	})
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	var data []byte
+	_, err = pgx.ForEachRow(rows, []any{&data}, func() error {
+		msg := new(T)
+		if errUnmarshal := PT(msg).UnmarshalVTUnsafe(data); errUnmarshal != nil {
+			return errUnmarshal
+		}
+		return callback(msg)
+	})
+
+	if err != nil {
+		return errors.Wrap(err, "processing rows")
+	}
+
+	return nil
 }
 
 func retryableRunGetManyQueryForSchema[T any, PT pgutils.Unmarshaler[T]](ctx context.Context, query *query, db postgres.DB) ([]*T, error) {
