@@ -139,14 +139,22 @@ func (s *datastorePostgresTestSuite) kubeSAM2MConfig(authDataStoreMutator authDa
 	authDataStore = New(store, mockSet, issuerFetcher)
 	s.NoError(authDataStore.InitializeTokenExchangers())
 
-	configs, err := authDataStore.ListAuthM2MConfigs(s.ctx)
+	var configs []*storage.AuthMachineToMachineConfig
+	err := authDataStore.ForEachAuthM2MConfig(s.ctx, func(obj *storage.AuthMachineToMachineConfig) error {
+		configs = append(configs, obj)
+		return nil
+	})
 	s.NoError(err)
 	authDataStoreValidator(configs)
 }
 
 func (s *datastorePostgresTestSuite) TestKubeSAM2MConfigPersistsAfterDelete() {
 	authDataStoreMutator := func(authDataStore DataStore) {
-		configs, err := authDataStore.ListAuthM2MConfigs(s.ctx)
+		var configs []*storage.AuthMachineToMachineConfig
+		err := authDataStore.ForEachAuthM2MConfig(s.ctx, func(obj *storage.AuthMachineToMachineConfig) error {
+			configs = append(configs, obj)
+			return nil
+		})
 		s.NoError(err)
 		kubeSAConfig := getTestConfig(configs)
 		s.NotNil(kubeSAConfig)
@@ -191,7 +199,11 @@ func (s *datastorePostgresTestSuite) TestKubeSAM2MConfigPersistsAfterModificatio
 	}
 
 	authDataStoreMutator := func(authDataStore DataStore) {
-		configs, err := authDataStore.ListAuthM2MConfigs(s.ctx)
+		var configs []*storage.AuthMachineToMachineConfig
+		err := authDataStore.ForEachAuthM2MConfig(s.ctx, func(obj *storage.AuthMachineToMachineConfig) error {
+			configs = append(configs, obj)
+			return nil
+		})
 		s.NoError(err)
 		kubeSAConfig := getTestConfig(configs)
 		s.NotNil(kubeSAConfig)
