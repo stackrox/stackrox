@@ -29,7 +29,7 @@ RUN /tmp/.konflux/subscription-manager-bro.sh cleanup
 
 FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_1.22 AS go-builder
 
-RUN dnf -y install --allowerasing make automake gcc gcc-c++ coreutils binutils diffutils zlib-devel bzip2-devel lz4-devel cmake jq
+RUN dnf -y install --allowerasing jq
 
 WORKDIR /go/src/github.com/stackrox/rox/app
 
@@ -48,9 +48,16 @@ ENV GOEXPERIMENT=strictfipsruntime
 ENV CI=1
 
 RUN # TODO(ROX-13200): make sure roxctl cli is built without running go mod tidy. \
+<<<<<<< HEAD
     make main-build-nodeps cli-build && \
     mkdir -p image/rhel/docs/api/v1 && \
     ./scripts/mergeswag.sh generated/api/v1 1 >image/rhel/docs/api/v1/swagger.json && \
+=======
+    make main-build-nodeps cli-build
+
+RUN mkdir -p image/rhel/docs/api/v1 && \
+    ./scripts/mergeswag.sh 1 generated/api/v1 central/docs/api_custom_routes >image/rhel/docs/api/v1/swagger.json && \
+>>>>>>> 20cb274c25 (build: Remove rocksdb dependencies from Konflux builder stage (#14728))
     mkdir -p image/rhel/docs/api/v2 && \
     ./scripts/mergeswag.sh generated/api/v2 2 >image/rhel/docs/api/v2/swagger.json
 
