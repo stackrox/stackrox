@@ -125,7 +125,7 @@ var (
 
 	testCVEs = []*storage.ImageCVEV2{
 		{
-			Id:      cve.IDV2("cve1", scancomponent.ComponentIDV2("comp1", "ver2", "", "sha"), "0"),
+			Id:      cve.IDV2("cve1", scancomponent.ComponentIDV2("comp1", "ver2", "", "sha")),
 			ImageId: "sha",
 			CveBaseInfo: &storage.CVEInfo{
 				Cve:          "cve1",
@@ -192,7 +192,7 @@ var (
 			ComponentId:          scancomponent.ComponentIDV2("comp1", "ver2", "", "sha"),
 		},
 		{
-			Id:      cve.IDV2("cve2", scancomponent.ComponentIDV2("comp1", "ver2", "", "sha"), "1"),
+			Id:      cve.IDV2("cve2", scancomponent.ComponentIDV2("comp1", "ver2", "", "sha")),
 			ImageId: "sha",
 			CveBaseInfo: &storage.CVEInfo{
 				Cve:          "cve2",
