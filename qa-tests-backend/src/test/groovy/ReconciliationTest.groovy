@@ -206,13 +206,12 @@ class ReconciliationTest extends BaseSpecification {
             numNetworkPolicies = NetworkPolicyService.getNetworkPolicies().findAll { it.id == networkPolicyID }.size()
             numSecrets = SecretService.getSecrets().findAll { it.id == secretID }.size()
 
-            assert numDeployments + numPods + numNamespaces + numNetworkPolicies + numSecrets == 0
+            assert numDeployments == 0
+            assert numPods == 0
+            assert numNamespaces == 0
+            assert numNetworkPolicies == 0
+            assert numSecrets == 0
         }
-        assert numDeployments == 0
-        assert numPods == 0
-        assert numNamespaces == 0
-        assert numNetworkPolicies == 0
-        assert numSecrets == 0
 
         // It is possible that more pods will be deleted in the observation period (e.g., Scanner being scaled down).
         // We want to make sure that the pods from the list are gone, so we do not assert on the total number of
