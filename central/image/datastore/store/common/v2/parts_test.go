@@ -197,7 +197,7 @@ func TestSplitAndMergeImage(t *testing.T) {
 							ImageCveId:       cve.ID("cve1", ""),
 						},
 						CVEV2: &storage.ImageCVEV2{
-							Id:      cve.IDV2("cve1", scancomponent.ComponentIDV2("comp1", "ver2", "", "sha"), "0"),
+							Id:      cve.IDV2("cve1", scancomponent.ComponentIDV2("comp1", "ver2", "", "sha")),
 							ImageId: "sha",
 							CveBaseInfo: &storage.CVEInfo{
 								Cve: "cve1",
@@ -225,7 +225,7 @@ func TestSplitAndMergeImage(t *testing.T) {
 							IsFixable: true,
 						},
 						CVEV2: &storage.ImageCVEV2{
-							Id:      cve.IDV2("cve2", scancomponent.ComponentIDV2("comp1", "ver2", "", "sha"), "1"),
+							Id:      cve.IDV2("cve2", scancomponent.ComponentIDV2("comp1", "ver2", "", "sha")),
 							ImageId: "sha",
 							CveBaseInfo: &storage.CVEInfo{
 								Cve: "cve2",
@@ -283,7 +283,7 @@ func TestSplitAndMergeImage(t *testing.T) {
 							IsFixable: true,
 						},
 						CVEV2: &storage.ImageCVEV2{
-							Id:      cve.IDV2("cve1", scancomponent.ComponentIDV2("comp2", "ver1", "", "sha"), "0"),
+							Id:      cve.IDV2("cve1", scancomponent.ComponentIDV2("comp2", "ver1", "", "sha")),
 							ImageId: "sha",
 							CveBaseInfo: &storage.CVEInfo{
 								Cve: "cve1",
@@ -311,7 +311,7 @@ func TestSplitAndMergeImage(t *testing.T) {
 							ImageCveId:       cve.ID("cve2", ""),
 						},
 						CVEV2: &storage.ImageCVEV2{
-							Id:      cve.IDV2("cve2", scancomponent.ComponentIDV2("comp2", "ver1", "", "sha"), "1"),
+							Id:      cve.IDV2("cve2", scancomponent.ComponentIDV2("comp2", "ver1", "", "sha")),
 							ImageId: "sha",
 							CveBaseInfo: &storage.CVEInfo{
 								Cve: "cve2",

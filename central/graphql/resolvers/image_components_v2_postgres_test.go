@@ -369,7 +369,7 @@ func (s *GraphQLImageComponentV2TestSuite) TestImageComponentImageVulnerabilitie
 			"comp1os1",
 			componentIDMap[comp11],
 			[]string{
-				cve.IDV2("cve-2018-1", componentIDMap[comp11], "0"),
+				cve.IDV2("cve-2018-1", componentIDMap[comp11]),
 			},
 			&VulnerabilityCounterResolver{
 				all:       &VulnerabilityFixableCounterResolver{0, 1},
@@ -383,7 +383,7 @@ func (s *GraphQLImageComponentV2TestSuite) TestImageComponentImageVulnerabilitie
 			"comp2os1",
 			componentIDMap[comp21],
 			[]string{
-				cve.IDV2("cve-2018-1", componentIDMap[comp21], "0"),
+				cve.IDV2("cve-2018-1", componentIDMap[comp21]),
 			},
 			&VulnerabilityCounterResolver{
 				all:       &VulnerabilityFixableCounterResolver{0, 1},
@@ -397,8 +397,8 @@ func (s *GraphQLImageComponentV2TestSuite) TestImageComponentImageVulnerabilitie
 			"comp3os1",
 			componentIDMap[comp31],
 			[]string{
-				cve.IDV2("cve-2019-1", componentIDMap[comp31], "0"),
-				cve.IDV2("cve-2019-2", componentIDMap[comp31], "1"),
+				cve.IDV2("cve-2019-1", componentIDMap[comp31]),
+				cve.IDV2("cve-2019-2", componentIDMap[comp31]),
 			},
 			&VulnerabilityCounterResolver{
 				all:       &VulnerabilityFixableCounterResolver{0, 0},
@@ -412,7 +412,7 @@ func (s *GraphQLImageComponentV2TestSuite) TestImageComponentImageVulnerabilitie
 			"comp1os2",
 			componentIDMap[comp12],
 			[]string{
-				cve.IDV2("cve-2018-1", componentIDMap[comp12], "0"),
+				cve.IDV2("cve-2018-1", componentIDMap[comp12]),
 			},
 			&VulnerabilityCounterResolver{
 				all:       &VulnerabilityFixableCounterResolver{0, 1},
@@ -426,8 +426,8 @@ func (s *GraphQLImageComponentV2TestSuite) TestImageComponentImageVulnerabilitie
 			"comp3os2",
 			componentIDMap[comp32],
 			[]string{
-				cve.IDV2("cve-2019-1", componentIDMap[comp32], "0"),
-				cve.IDV2("cve-2019-2", componentIDMap[comp32], "1"),
+				cve.IDV2("cve-2019-1", componentIDMap[comp32]),
+				cve.IDV2("cve-2019-2", componentIDMap[comp32]),
 			},
 			&VulnerabilityCounterResolver{
 				all:       &VulnerabilityFixableCounterResolver{0, 0},
@@ -441,8 +441,8 @@ func (s *GraphQLImageComponentV2TestSuite) TestImageComponentImageVulnerabilitie
 			"comp4os2",
 			componentIDMap[comp42],
 			[]string{
-				cve.IDV2("cve-2017-1", componentIDMap[comp42], "0"),
-				cve.IDV2("cve-2017-2", componentIDMap[comp42], "1"),
+				cve.IDV2("cve-2017-1", componentIDMap[comp42]),
+				cve.IDV2("cve-2017-2", componentIDMap[comp42]),
 			},
 			&VulnerabilityCounterResolver{
 				all:       &VulnerabilityFixableCounterResolver{0, 0},
@@ -538,7 +538,7 @@ func (s *GraphQLImageComponentV2TestSuite) TestTopImageVulnerability() {
 
 	comp := s.getImageComponentResolver(ctx, componentIDMap[comp31])
 
-	expectedID := graphql.ID(cve.IDV2("cve-2019-1", componentIDMap[comp31], "0"))
+	expectedID := graphql.ID(cve.IDV2("cve-2019-1", componentIDMap[comp31]))
 
 	vuln, err := comp.TopImageVulnerability(ctx)
 	assert.NoError(s.T(), err)

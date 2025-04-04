@@ -39,15 +39,15 @@ const (
 
 var (
 	cveIDMap = map[string]string{
-		cve111: cve.IDV2("cve-2018-1", componentIDMap[comp11], "0"),
-		cve121: cve.IDV2("cve-2018-1", componentIDMap[comp21], "0"),
-		cve231: cve.IDV2("cve-2019-1", componentIDMap[comp31], "0"),
-		cve331: cve.IDV2("cve-2019-2", componentIDMap[comp31], "1"),
-		cve112: cve.IDV2("cve-2018-1", componentIDMap[comp12], "0"),
-		cve232: cve.IDV2("cve-2019-1", componentIDMap[comp32], "0"),
-		cve332: cve.IDV2("cve-2019-2", componentIDMap[comp32], "1"),
-		cve442: cve.IDV2("cve-2017-1", componentIDMap[comp42], "0"),
-		cve542: cve.IDV2("cve-2017-2", componentIDMap[comp42], "1"),
+		cve111: cve.IDV2("cve-2018-1", componentIDMap[comp11]),
+		cve121: cve.IDV2("cve-2018-1", componentIDMap[comp21]),
+		cve231: cve.IDV2("cve-2019-1", componentIDMap[comp31]),
+		cve331: cve.IDV2("cve-2019-2", componentIDMap[comp31]),
+		cve112: cve.IDV2("cve-2018-1", componentIDMap[comp12]),
+		cve232: cve.IDV2("cve-2019-1", componentIDMap[comp32]),
+		cve332: cve.IDV2("cve-2019-2", componentIDMap[comp32]),
+		cve442: cve.IDV2("cve-2017-1", componentIDMap[comp42]),
+		cve542: cve.IDV2("cve-2017-2", componentIDMap[comp42]),
 	}
 
 	distinctCVEs = []string{"cve-2018-1", "cve-2019-1", "cve-2019-2", "cve-2017-1", "cve-2017-2"}

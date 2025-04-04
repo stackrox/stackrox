@@ -1,8 +1,6 @@
 package utils
 
 import (
-	"strconv"
-
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -84,7 +82,7 @@ func EmbeddedVulnerabilityToImageCVEV2(imageID string, componentID string, cveIn
 	}
 
 	ret := &storage.ImageCVEV2{
-		Id:          cve.IDV2(from.GetCve(), componentID, strconv.Itoa(cveIndex)),
+		Id:          cve.IDV2(from.GetCve(), componentID),
 		ComponentId: componentID,
 		CveBaseInfo: &storage.CVEInfo{
 			Cve:          from.GetCve(),
