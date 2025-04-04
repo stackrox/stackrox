@@ -330,17 +330,26 @@ func TestRegistryStore_CentralIntegrations(t *testing.T) {
 	imgName, _, err := utils.GenerateImageNameFromString("example.com/repo/path:tag")
 	require.NoError(t, err)
 
-	regStore.UpsertCentralRegistryIntegrations(iis)
-	assert.Len(t, regStore.centralRegistryIntegrations.GetAll(), 3)
+	regStore.UpsertCentralRegistryIntegrations(iis, true)
+	assert.Len(t, regStore.centralRegistryIntegrations.GetAll(), 3) // a, b, c
 
 	regs := regStore.GetCentralRegistries(imgName)
-	assert.Len(t, regs, 1)
+	assert.Len(t, regs, 1) // c
 
 	regStore.DeleteCentralRegistryIntegrations([]string{"a", "b"})
-	assert.Len(t, regStore.centralRegistryIntegrations.GetAll(), 1)
+	assert.Len(t, regStore.centralRegistryIntegrations.GetAll(), 1) // c
 
 	regs = regStore.GetCentralRegistries(imgName)
-	assert.Len(t, regs, 1)
+	assert.Len(t, regs, 1) // c
+
+	zII := &storage.ImageIntegration{Id: "z", Name: "z", Type: types.DockerType, IntegrationConfig: &storage.ImageIntegration_Docker{}}
+	// When false existing integrations should remain, in this case the 'c' integration.
+	regStore.UpsertCentralRegistryIntegrations([]*storage.ImageIntegration{zII}, false)
+	assert.Len(t, regStore.centralRegistryIntegrations.GetAll(), 2) // c, z
+
+	// When true existing integrations should be replaced, in this case 'z' removed.
+	regStore.UpsertCentralRegistryIntegrations(iis, true)
+	assert.Len(t, regStore.centralRegistryIntegrations.GetAll(), 3) // a, b, c
 }
 
 // TestRegistryStore_CreateImageIntegrationType verifies the type of an image integration
@@ -766,11 +775,11 @@ func TestRegistyStore_Metrics(t *testing.T) {
 			createImageIntegration("http://example.com/1", config.DockerConfigEntry{}, ""),
 			createImageIntegration("http://example.com/2", config.DockerConfigEntry{}, ""),
 		}
-		regStore.UpsertCentralRegistryIntegrations(iis)
+		regStore.UpsertCentralRegistryIntegrations(iis, false)
 		assert.Equal(t, 2.0, testutil.ToFloat64(c))
 
 		// Repeat with same input, gauge should NOT increase.
-		regStore.UpsertCentralRegistryIntegrations(iis)
+		regStore.UpsertCentralRegistryIntegrations(iis, false)
 		assert.Equal(t, 2.0, testutil.ToFloat64(c))
 
 		regStore.DeleteCentralRegistryIntegrations([]string{"http://example.com/1"})

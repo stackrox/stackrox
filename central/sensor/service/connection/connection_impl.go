@@ -666,6 +666,9 @@ func (c *sensorConnection) getImageIntegrationMsg(ctx context.Context) (*central
 		Msg: &central.MsgToSensor_ImageIntegrations{
 			ImageIntegrations: &central.ImageIntegrations{
 				UpdatedIntegrations: imageIntegrations,
+				// On initial/repeat connections to Sensor any previous stored image integrations
+				// should be replaced by these (potentially) new ones.
+				Refresh: true,
 			},
 		},
 	}, nil
