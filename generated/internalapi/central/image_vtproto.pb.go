@@ -46,6 +46,7 @@ func (m *ImageIntegrations) CloneVT() *ImageIntegrations {
 		return (*ImageIntegrations)(nil)
 	}
 	r := new(ImageIntegrations)
+	r.Refresh = m.Refresh
 	if rhs := m.UpdatedIntegrations; rhs != nil {
 		tmpContainer := make([]*storage.ImageIntegration, len(rhs))
 		for k, v := range rhs {
@@ -140,6 +141,9 @@ func (this *ImageIntegrations) EqualVT(that *ImageIntegrations) bool {
 		if vx != vy {
 			return false
 		}
+	}
+	if this.Refresh != that.Refresh {
+		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
@@ -245,6 +249,16 @@ func (m *ImageIntegrations) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.Refresh {
+		i--
+		if m.Refresh {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x18
+	}
 	if len(m.DeletedIntegrationIds) > 0 {
 		for iNdEx := len(m.DeletedIntegrationIds) - 1; iNdEx >= 0; iNdEx-- {
 			i -= len(m.DeletedIntegrationIds[iNdEx])
@@ -329,6 +343,9 @@ func (m *ImageIntegrations) SizeVT() (n int) {
 			l = len(s)
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
+	}
+	if m.Refresh {
+		n += 2
 	}
 	n += len(m.unknownFields)
 	return n
@@ -620,6 +637,26 @@ func (m *ImageIntegrations) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 			m.DeletedIntegrationIds = append(m.DeletedIntegrationIds, stringValue)
 			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Refresh", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.Refresh = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
