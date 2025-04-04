@@ -144,13 +144,13 @@ var (
 		Name:      netFlowManagerPrefix + "purger_events_total",
 		Help:      "A counter that tracks the reasons for purging an object from memory",
 	}, []string{"object", "purgeReason"})
-	ActiveEndpointsPurgerDuration = prometheus.NewHistogram(prometheus.HistogramOpts{
+	ActiveEndpointsPurgerDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      netFlowManagerPrefix + "purger_duration_ms",
 		Help:      "Time taken by a single purger run for all objects",
 		Buckets:   prometheus.ExponentialBuckets(4, 2, 11),
-	})
+	}, []string{"object"})
 
 	NetworkEntityFlowCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
