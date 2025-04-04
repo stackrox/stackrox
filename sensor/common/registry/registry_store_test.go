@@ -194,7 +194,6 @@ func TestRegistryStore_PullSecrets(t *testing.T) {
 			assert.Equal(t, "passwordA", regs[0].Config(bgCtx).Password)
 			assert.Equal(t, "passwordB", regs[1].Config(bgCtx).Password)
 		})
-
 	})
 }
 
@@ -244,20 +243,31 @@ func TestRegistryStore_GlobalStore(t *testing.T) {
 	// commonTests executes tests that should have the same results regardless of
 	// how secrets are stored.
 	commonTests := func(t *testing.T) *Store {
-		dce := config.DockerConfigEntry{Username: "username", Password: "password"}
-		dc := config.DockerConfig{fakeImgName.GetRegistry(): dce}
+		dockerEntries := []config.DockerConfigEntry{
+			{Username: "username-1", Password: "password-1"},
+			{Username: "username-2", Password: "password-2"},
+		}
+		dockerCfgs := []config.DockerConfig{
+			{fmt.Sprintf("%s/repo-1", fakeImgName.GetRegistry()): dockerEntries[0]},
+			{fmt.Sprintf("%s/repo-2", fakeImgName.GetRegistry()): dockerEntries[1]},
+		}
 
 		regStore := NewRegistryStore(alwaysInsecureCheckTLS)
 
-		_, err := regStore.GetGlobalRegistry(fakeImgName)
+		regs, err := regStore.GetGlobalRegistries(fakeImgName)
+		require.Empty(t, regs)
 		require.Error(t, err, "error is expected on empty store")
 
-		regStore.UpsertSecret(openshift.GlobalPullSecretNamespace, openshift.GlobalPullSecretName, dc, "")
-		reg, err := regStore.GetGlobalRegistry(fakeImgName)
+		for _, dc := range dockerCfgs {
+			regStore.UpsertSecret(openshift.GlobalPullSecretNamespace, openshift.GlobalPullSecretName, dc, "")
+		}
+		regs, err = regStore.GetGlobalRegistries(fakeImgName)
 		require.NoError(t, err, "should be no error on valid get")
-		assert.NotNil(t, reg)
-		assert.Equal(t, reg.Config(bgCtx).Username, dce.Username)
-
+		assert.Len(t, regs, 2)
+		assert.ElementsMatch(t,
+			[]string{regs[0].Config(bgCtx).Username, regs[1].Config(bgCtx).Username},
+			[]string{dockerEntries[0].Username, dockerEntries[1].Username},
+		)
 		return regStore
 	}
 
@@ -323,8 +333,10 @@ func TestRegistryStore_CentralIntegrations(t *testing.T) {
 		{Id: "bad", Name: "bad", Type: "bad"},
 		{Id: "a", Name: "a", Type: types.DockerType, IntegrationConfig: &storage.ImageIntegration_Docker{}},
 		{Id: "b", Name: "b", Type: types.DockerType, IntegrationConfig: &storage.ImageIntegration_Docker{}},
-		{Id: "c", Name: "c", Type: types.DockerType, IntegrationConfig: &storage.ImageIntegration_Docker{
-			Docker: &storage.DockerConfig{Endpoint: "example.com"}},
+		{
+			Id: "c", Name: "c", Type: types.DockerType, IntegrationConfig: &storage.ImageIntegration_Docker{
+				Docker: &storage.DockerConfig{Endpoint: "example.com"},
+			},
 		},
 	}
 
@@ -356,10 +368,10 @@ func TestRegistryStore_CentralIntegrations(t *testing.T) {
 // TestRegistryStore_CreateImageIntegrationType verifies the type of an image integration
 // is properly set based on the provided registry.
 func TestRegistryStore_CreateImageIntegrationType(t *testing.T) {
-	ii := createImageIntegration("http://example.com", config.DockerConfigEntry{}, "")
+	ii := createImageIntegration("http://example.com", config.DockerConfigEntry{}, "http://example.com")
 	assert.Equal(t, ii.Type, types.DockerType)
 
-	ii = createImageIntegration("https://registry.redhat.io", config.DockerConfigEntry{}, "")
+	ii = createImageIntegration("https://registry.redhat.io", config.DockerConfigEntry{}, "https://registry.redhat.io")
 	assert.Equal(t, ii.Type, types.RedHatType)
 }
 
@@ -527,7 +539,7 @@ func TestDataRaceAtCleanup(t *testing.T) {
 					regStore.getRegistries(fakeNamespace)
 					regStore.IsLocal(&storage.ImageName{})
 					regStore.GetCentralRegistries(&storage.ImageName{})
-					_, _ = regStore.GetGlobalRegistry(&storage.ImageName{})
+					_, _ = regStore.GetGlobalRegistries(&storage.ImageName{})
 				}
 			}
 		}()
@@ -773,8 +785,8 @@ func TestRegistyStore_Metrics(t *testing.T) {
 		assert.Equal(t, 0.0, testutil.ToFloat64(c))
 
 		iis := []*storage.ImageIntegration{
-			createImageIntegration("http://example.com/1", config.DockerConfigEntry{}, ""),
-			createImageIntegration("http://example.com/2", config.DockerConfigEntry{}, ""),
+			createImageIntegration("http://example.com/1", config.DockerConfigEntry{}, "http://example.com/1"),
+			createImageIntegration("http://example.com/2", config.DockerConfigEntry{}, "http://example.com/2"),
 		}
 		regStore.UpsertCentralRegistryIntegrations(iis, false)
 		assert.Equal(t, 2.0, testutil.ToFloat64(c))
