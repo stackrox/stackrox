@@ -91,7 +91,7 @@ func wrapError(notifier string, resp *http.Response, errCode string) error {
 		if err != nil {
 			return errors.Wrapf(err, "Error reading %s response body", notifier)
 		}
-		log.Errorw("Received an error response for notifier",
+		logging.GetRateLimitedLogger().Errorw("Received an error response for notifier",
 			logging.Err(err),
 			logging.ErrCode(errCode),
 			logging.NotifierName(notifier),
