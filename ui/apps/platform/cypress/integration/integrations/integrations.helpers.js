@@ -581,3 +581,20 @@ export function tryDeleteIntegration(integrationSource, integrationName) {
         });
     });
 }
+
+export function cleanupClusterRegistrationSecretsWithName(nameToDelete) {
+    // Clean up existing CI tokens, if they exist
+    const auth = { bearer: Cypress.env('ROX_AUTH_TOKEN') };
+
+    cy.request({ url: '/v1/cluster-init/crs', auth }).as('listCrs');
+
+    cy.get('@listCrs').then((res) => {
+        const automationTokens = res.body.items.filter(({ name }) => name === nameToDelete);
+        if (!automationTokens.length) {
+            return;
+        }
+
+        const body = { ids: automationTokens.map(({ id }) => id) };
+        cy.request({ url: '/v1/cluster-init/crs/revoke', body, auth, method: 'PATCH' });
+    });
+}
