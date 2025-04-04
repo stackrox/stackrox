@@ -43,12 +43,12 @@ func TestMultiTree(t *testing.T) {
 
 	*/
 
-	e1 := testutils.GetExtSrcNetworkEntityInfo("1", "1", "35.187.144.0/20", true)
-	e2 := testutils.GetExtSrcNetworkEntityInfo("2", "2", "35.187.144.0/16", false)
-	e3 := testutils.GetExtSrcNetworkEntityInfo("3", "3", "35.187.144.0/8", false)
-	e4 := testutils.GetExtSrcNetworkEntityInfo("4", "4", "35.187.144.0/23", true)
-	e5 := testutils.GetExtSrcNetworkEntityInfo("5", "5", "36.188.144.0/30", false)
-	e6 := testutils.GetExtSrcNetworkEntityInfo("6", "6", "36.188.144.0/16", true)
+	e1 := testutils.GetExtSrcNetworkEntityInfo("1", "1", "35.187.144.0/20", true, false)
+	e2 := testutils.GetExtSrcNetworkEntityInfo("2", "2", "35.187.144.0/16", false, false)
+	e3 := testutils.GetExtSrcNetworkEntityInfo("3", "3", "35.187.144.0/8", false, false)
+	e4 := testutils.GetExtSrcNetworkEntityInfo("4", "4", "35.187.144.0/23", true, false)
+	e5 := testutils.GetExtSrcNetworkEntityInfo("5", "5", "36.188.144.0/30", false, false)
+	e6 := testutils.GetExtSrcNetworkEntityInfo("6", "6", "36.188.144.0/16", true, false)
 
 	tree1, err := NewNetworkTreeWrapper([]*storage.NetworkEntityInfo{e2, e3, e5})
 	assert.NoError(t, err)

@@ -12,14 +12,14 @@ import (
 )
 
 func TestNRadixTreeIPv4(t *testing.T) {
-	e1 := testutils.GetExtSrcNetworkEntityInfo("1", "1", "35.187.144.0/20", true)
-	e2 := testutils.GetExtSrcNetworkEntityInfo("2", "2", "35.187.144.0/16", false)
-	e3 := testutils.GetExtSrcNetworkEntityInfo("3", "3", "35.187.144.0/8", false)
-	e4 := testutils.GetExtSrcNetworkEntityInfo("4", "4", "35.187.144.0/23", false)
-	e5 := testutils.GetExtSrcNetworkEntityInfo("5", "5", "35.188.144.0/16", true)
-	e6 := testutils.GetExtSrcNetworkEntityInfo("6", "6", "36.188.144.0/30", false)
-	e7 := testutils.GetExtSrcNetworkEntityInfo("7", "7", "36.188.144.0/16", true)
-	e8 := testutils.GetExtSrcNetworkEntityInfo("8", "8", "36.188.144.0/32", true)
+	e1 := testutils.GetExtSrcNetworkEntityInfo("1", "1", "35.187.144.0/20", true, false)
+	e2 := testutils.GetExtSrcNetworkEntityInfo("2", "2", "35.187.144.0/16", false, false)
+	e3 := testutils.GetExtSrcNetworkEntityInfo("3", "3", "35.187.144.0/8", false, false)
+	e4 := testutils.GetExtSrcNetworkEntityInfo("4", "4", "35.187.144.0/23", false, false)
+	e5 := testutils.GetExtSrcNetworkEntityInfo("5", "5", "35.188.144.0/16", true, false)
+	e6 := testutils.GetExtSrcNetworkEntityInfo("6", "6", "36.188.144.0/30", false, false)
+	e7 := testutils.GetExtSrcNetworkEntityInfo("7", "7", "36.188.144.0/16", true, false)
+	e8 := testutils.GetExtSrcNetworkEntityInfo("8", "8", "36.188.144.0/32", true, false)
 
 	tree, err := NewNRadixTree(pkgNet.IPv4, []*storage.NetworkEntityInfo{e1, e2, e3, e4, e5, e6, e7, e8})
 	assert.NoError(t, err)
@@ -34,7 +34,7 @@ func TestNRadixTreeIPv4(t *testing.T) {
 	protoassert.Equal(t, e7, tree.Get("7"))
 	protoassert.Equal(t, e8, tree.Get("8"))
 
-	assert.Error(t, tree.Insert(testutils.GetExtSrcNetworkEntityInfo("60", "60", "36.188.144.0/16", true)))
+	assert.Error(t, tree.Insert(testutils.GetExtSrcNetworkEntityInfo("60", "60", "36.188.144.0/16", true, false)))
 
 	protoassert.Equal(t, e2, tree.GetSupernet(e1.GetId()))
 	protoassert.Equal(t, e1, tree.GetSupernet(e4.GetId()))
@@ -68,12 +68,12 @@ func TestNRadixTreeIPv4(t *testing.T) {
 }
 
 func TestNRadixTreeIPv6(t *testing.T) {
-	e1 := testutils.GetExtSrcNetworkEntityInfo("1", "1", "2001:db8:3333:4444:5555:6666:7777:8888/63", true)
-	e2 := testutils.GetExtSrcNetworkEntityInfo("2", "2", "2001:db8:3333:4444:5555:6666:7777:8888/64", false)
-	e3 := testutils.GetExtSrcNetworkEntityInfo("3", "3", "2001:db8:3333:4444:5555:6666:7777:8888/100", false)
-	e4 := testutils.GetExtSrcNetworkEntityInfo("4", "4", "2001:db8:3333:4444:5555:6666:7777:8888/128", false)
-	e5 := testutils.GetExtSrcNetworkEntityInfo("5", "5", "2001:db8:2222:4444:5555:6666:7777:8888/70", true)
-	e6 := testutils.GetExtSrcNetworkEntityInfo("6", "6", "2001:db8:2222:4444:5555:6666:7777:8888/80", false)
+	e1 := testutils.GetExtSrcNetworkEntityInfo("1", "1", "2001:db8:3333:4444:5555:6666:7777:8888/63", true, false)
+	e2 := testutils.GetExtSrcNetworkEntityInfo("2", "2", "2001:db8:3333:4444:5555:6666:7777:8888/64", false, false)
+	e3 := testutils.GetExtSrcNetworkEntityInfo("3", "3", "2001:db8:3333:4444:5555:6666:7777:8888/100", false, false)
+	e4 := testutils.GetExtSrcNetworkEntityInfo("4", "4", "2001:db8:3333:4444:5555:6666:7777:8888/128", false, false)
+	e5 := testutils.GetExtSrcNetworkEntityInfo("5", "5", "2001:db8:2222:4444:5555:6666:7777:8888/70", true, false)
+	e6 := testutils.GetExtSrcNetworkEntityInfo("6", "6", "2001:db8:2222:4444:5555:6666:7777:8888/80", false, false)
 
 	tree, err := NewNRadixTree(pkgNet.IPv6, []*storage.NetworkEntityInfo{e1, e2, e3, e4, e5, e6})
 	assert.NoError(t, err)
@@ -86,7 +86,7 @@ func TestNRadixTreeIPv6(t *testing.T) {
 	protoassert.Equal(t, e5, tree.Get("5"))
 	protoassert.Equal(t, e6, tree.Get("6"))
 
-	assert.Error(t, tree.Insert(testutils.GetExtSrcNetworkEntityInfo("60", "60", "2001:db8:2222:4444:5555:6666:7777:8888/80", true)))
+	assert.Error(t, tree.Insert(testutils.GetExtSrcNetworkEntityInfo("60", "60", "2001:db8:2222:4444:5555:6666:7777:8888/80", true, false)))
 
 	protoassert.Equal(t, e1, tree.GetSupernet(e2.GetId()))
 	protoassert.Equal(t, networkgraph.InternetEntity().ToProto(), tree.GetSupernet(e1.GetId()))
