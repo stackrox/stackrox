@@ -28,6 +28,7 @@ var (
 			reflect.TypeOf((*storage.FalsePositiveRequest)(nil)),
 			reflect.TypeOf((*storage.Group)(nil)),
 			reflect.TypeOf((*storage.Image)(nil)),
+			reflect.TypeOf((*storage.ImageComponent)(nil)),
 			reflect.TypeOf((*storage.K8SRole)(nil)),
 			reflect.TypeOf((*storage.K8SRoleBinding)(nil)),
 			reflect.TypeOf((*storage.ListAlert)(nil)),
@@ -56,6 +57,7 @@ var (
 			reflect.TypeOf((*storage.ComplianceDomain_Cluster)(nil)),
 			reflect.TypeOf((*storage.ComplianceDomain_Deployment)(nil)),
 			reflect.TypeOf((*storage.ComplianceDomain_Node)(nil)),
+			reflect.TypeOf((*storage.ImageComponentV2)(nil)),
 
 			reflect.TypeOf((*v1.ComplianceStandard)(nil)),
 			reflect.TypeOf((*v1.GenerateTokenResponse)(nil)),
@@ -75,8 +77,6 @@ var (
 			reflect.TypeOf(storage.NodeVulnerability{}),
 			reflect.TypeOf((*storage.ImageCVE)(nil)),
 			reflect.TypeOf((*storage.ImageCVEV2)(nil)),
-			reflect.TypeOf((*storage.ImageComponent)(nil)),
-			reflect.TypeOf((*storage.ImageComponentV2)(nil)),
 		},
 		SkipFields: []generator.TypeAndField{
 			{
@@ -106,6 +106,13 @@ var (
 			{
 				ParentType: reflect.TypeOf(storage.CVE{}),
 				FieldName:  "CvssV3",
+			},
+			// TODO(ROX-28123): Need to skip these to keep the interfaces the same
+			// during the transition.  Once that is complete, these can become
+			// generated.
+			{
+				ParentType: reflect.TypeOf(storage.ImageComponentV2{}),
+				FieldName:  "Location",
 			},
 		},
 		InputTypes: []reflect.Type{
