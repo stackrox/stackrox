@@ -406,7 +406,7 @@ func unmarshalRekorBundle(byteBundle []byte) (*bundle.RekorBundle, error) {
 	rekorBundle := &bundle.RekorBundle{Payload: bundle.RekorPayload{Body: ""}}
 	err := json.Unmarshal(byteBundle, rekorBundle)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "unmarshalling rekor bundle")
 	}
 	return rekorBundle, nil
 }
