@@ -55,7 +55,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 // GetServiceIdentities returns the currently defined service identities.
 func (s *serviceImpl) GetServiceIdentities(ctx context.Context, _ *v1.Empty) (*v1.ServiceIdentityResponse, error) {
 	var serviceIdentities []*storage.ServiceIdentity
-	err := s.dataStore.ProcessServiceIdentities(ctx, func(si *storage.ServiceIdentity) error {
+	err := s.dataStore.ForEachServiceIdentity(ctx, func(si *storage.ServiceIdentity) error {
 		serviceIdentities = append(serviceIdentities, si)
 		return nil
 	})

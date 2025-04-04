@@ -11,7 +11,7 @@ import (
 //
 //go:generate mockgen-wrapper
 type DataStore interface {
-	ProcessServiceIdentities(context.Context, func(obj *storage.ServiceIdentity) error) error
+	ForEachServiceIdentity(context.Context, func(obj *storage.ServiceIdentity) error) error
 	AddServiceIdentity(ctx context.Context, identity *storage.ServiceIdentity) error
 }
 

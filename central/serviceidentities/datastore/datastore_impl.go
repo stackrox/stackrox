@@ -17,7 +17,7 @@ type dataStoreImpl struct {
 	storage store.Store
 }
 
-func (ds *dataStoreImpl) ProcessServiceIdentities(ctx context.Context, fn func(obj *storage.ServiceIdentity) error) error {
+func (ds *dataStoreImpl) ForEachServiceIdentity(ctx context.Context, fn func(obj *storage.ServiceIdentity) error) error {
 	if ok, err := administrationSAC.ReadAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
