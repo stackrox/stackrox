@@ -6,9 +6,7 @@ import (
 )
 
 func applyDefaultValues(integration *storage.SignatureIntegration) {
-	if tlog := integration.GetTransparencyLog(); tlog.GetEnabled() {
-		if tlog.GetUrl() == "" {
-			tlog.Url = rekorClient.DefaultHost
-		}
+	if tlog := integration.GetTransparencyLog(); tlog.GetEnabled() && tlog.GetUrl() == "" {
+		tlog.Url = rekorClient.DefaultHost
 	}
 }
