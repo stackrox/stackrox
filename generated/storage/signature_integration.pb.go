@@ -27,7 +27,7 @@ type SignatureIntegration struct {
 	Name               string                           `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" sql:"unique"` // @gotags: sql:"unique"
 	Cosign             *CosignPublicKeyVerification     `protobuf:"bytes,3,opt,name=cosign,proto3" json:"cosign,omitempty"`
 	CosignCertificates []*CosignCertificateVerification `protobuf:"bytes,4,rep,name=cosign_certificates,json=cosignCertificates,proto3" json:"cosign_certificates,omitempty"`
-	TransparencyLog    *TransparencyLogVerification     `protobuf:"bytes,6,opt,name=transparency_log,json=transparencyLog,proto3" json:"transparency_log,omitempty"`
+	TransparencyLog    *TransparencyLogVerification     `protobuf:"bytes,5,opt,name=transparency_log,json=transparencyLog,proto3" json:"transparency_log,omitempty"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -440,7 +440,7 @@ const file_storage_signature_integration_proto_rawDesc = "" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12<\n" +
 	"\x06cosign\x18\x03 \x01(\v2$.storage.CosignPublicKeyVerificationR\x06cosign\x12W\n" +
 	"\x13cosign_certificates\x18\x04 \x03(\v2&.storage.CosignCertificateVerificationR\x12cosignCertificates\x12O\n" +
-	"\x10transparency_log\x18\x06 \x01(\v2$.storage.TransparencyLogVerificationR\x0ftransparencyLog\"\xbc\x01\n" +
+	"\x10transparency_log\x18\x05 \x01(\v2$.storage.TransparencyLogVerificationR\x0ftransparencyLog\"\xbc\x01\n" +
 	"\x1bCosignPublicKeyVerification\x12O\n" +
 	"\vpublic_keys\x18\x03 \x03(\v2..storage.CosignPublicKeyVerification.PublicKeyR\n" +
 	"publicKeys\x1aL\n" +
