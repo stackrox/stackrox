@@ -71,10 +71,11 @@ describe('Delegated Image Scanning', () => {
         cy.get('[aria-label="Select default cluster"] + .pf-v5-c-menu .pf-v5-c-menu__list-item')
             .last()
             .then(($lastCluster) => {
+                // Beware that in local deployment and some CI environments, None is only option.
                 const lastClusterName = $lastCluster.text();
                 cy.log('lastClusterName', lastClusterName);
 
-                $lastCluster.click();
+                cy.wrap($lastCluster).click();
 
                 cy.get('[aria-label="Select default cluster"]').should(
                     'have.text',
