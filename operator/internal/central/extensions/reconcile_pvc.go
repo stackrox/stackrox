@@ -13,6 +13,7 @@ import (
 	utils "github.com/stackrox/rox/operator/internal/utils"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	corev1 "k8s.io/api/core/v1"
+	storagev1 "k8s.io/api/storage/v1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -26,7 +27,12 @@ const (
 	// DefaultCentralDBPVCName is the default name for Central DB PVC
 	DefaultCentralDBPVCName = "central-db"
 
+	// DefaultCentralDBBackupPVCName is the default name for Central DB backup PVC
+	DefaultCentralDBBackupPVCName = "central-db-backup"
+
 	pvcTargetLabelKey = "target.pvc.stackrox.io"
+
+	defaultStorageClassAnnotation = "storageclass.kubernetes.io/is-default-class"
 )
 
 // PVCTarget specifies which deployment should attach the PVC
@@ -36,8 +42,13 @@ const (
 	// PVCTargetCentral is for any PVC that would be attached to the Central deployment
 	PVCTargetCentral PVCTarget = "central"
 
-	// PVCTargetCentralDB is for any PVC that would be attached to the Central DB deployment
+	// PVCTargetCentralDB is for a PVC that would be attached to the Central DB
+	// deployment as a data volume
 	PVCTargetCentralDB PVCTarget = "central-db"
+
+	// PVCTargetCentralDBBackup is for a PVC that would be attached to the
+	// Central DB deployment as a backup volume
+	PVCTargetCentralDBBackup PVCTarget = "central-db-backup"
 )
 
 var (
@@ -76,13 +87,19 @@ func getPersistenceByTarget(central *platform.Central, target PVCTarget) *platfo
 	switch target {
 	case PVCTargetCentral:
 		return nil
-	case PVCTargetCentralDB:
+	case PVCTargetCentralDB, PVCTargetCentralDBBackup:
 		if !central.Spec.Central.ShouldManageDB() {
 			return nil
 		}
 		dbPersistence := central.Spec.Central.GetDB().GetPersistence()
 		if dbPersistence == nil {
 			dbPersistence = &platform.DBPersistence{}
+		}
+
+		if target == PVCTargetCentralDBBackup {
+			claimName := dbPersistence.PersistentVolumeClaim.ClaimName
+			backupName := fmt.Sprintf("%s-backup", *claimName)
+			dbPersistence.PersistentVolumeClaim.ClaimName = &backupName
 		}
 		return convertDBPersistenceToPersistence(dbPersistence)
 	default:
@@ -200,6 +217,34 @@ func (r *reconcilePVCExtensionRun) handleDelete() error {
 }
 
 func (r *reconcilePVCExtensionRun) handleCreate(claimName string, pvcConfig *platform.PersistentVolumeClaim) error {
+	storageClasses := &storagev1.StorageClassList{}
+	if err := r.client.List(r.ctx, storageClasses); err != nil {
+		r.log.Error(err, "failed to get StorageClassList, assume no default storage class is set")
+	}
+
+	// Before creating a PVC, verify if prerequisites are met. Currently there
+	// is only one requirement, a default storage class must exists. Since it's
+	// highly specific for PVCs only, it's implemented inside the extension,
+	// instead of collecting this information at the start and passing it into
+	// the extension.
+	defaultStorageClass := false
+
+	for _, class := range storageClasses.Items {
+		r.log.V(2).Info(fmt.Sprintf("Inspecting storage class %s", class.Name))
+		for k, v := range class.Annotations {
+			r.log.V(2).Info(fmt.Sprintf("Annotation %s:%s", k, v))
+
+			if k == defaultStorageClassAnnotation && v == "true" {
+				defaultStorageClass = true
+			}
+		}
+	}
+
+	if !defaultStorageClass {
+		r.log.Info("No default storage class found, skip PVC creation")
+		return nil
+	}
+
 	size, err := parseResourceQuantityOr(pvcConfig.Size, defaultPVCSize)
 	if err != nil {
 		return errors.Wrap(err, "invalid PVC size")
