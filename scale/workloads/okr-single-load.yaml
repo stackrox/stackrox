@@ -16,6 +16,7 @@ deploymentWorkload:
 networkWorkload:
   batchSize: 500
   flowInterval: 24h
+  generateRougeEndpoints: true
 nodeWorkload:
   numNodes: 1000
 rbacWorkload:
