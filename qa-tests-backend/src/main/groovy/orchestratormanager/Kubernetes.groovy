@@ -4,6 +4,8 @@ import static util.Helpers.evaluateWithRetry
 import static util.Helpers.withK8sClientRetry
 import static util.Helpers.withRetry
 
+import common.Constants
+
 import java.nio.file.Paths
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
@@ -86,7 +88,6 @@ import io.fabric8.kubernetes.api.model.rbac.Subject
 import io.fabric8.kubernetes.client.KubernetesClient
 import io.fabric8.kubernetes.client.KubernetesClientBuilder
 import io.fabric8.kubernetes.client.KubernetesClientException
-import io.fabric8.kubernetes.client.LocalPortForward
 import io.fabric8.kubernetes.client.dsl.Deletable
 import io.fabric8.kubernetes.client.dsl.ExecListener
 import io.fabric8.kubernetes.client.dsl.ExecWatch
@@ -94,6 +95,7 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation
 import io.fabric8.kubernetes.client.dsl.Resource
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource
 import io.fabric8.kubernetes.client.dsl.ScalableResource
+import io.fabric8.kubernetes.client.LocalPortForward
 import org.apache.commons.exec.CommandLine
 
 import common.YamlGenerator
@@ -1980,6 +1982,19 @@ class Kubernetes {
                 getStaticPodCount(ns).size() +
                 getStatefulSetCount(ns).size() +
                 getJobCount(ns).size()
+    }
+
+    List<LocalPortForward> createCollectorPortForwards(int port) {
+        // since Collector's a daemonset, we can match the behavior of
+        // kubectl, and pick a pod to forward to.
+        def collectorPods = getPods(Constants.STACKROX_NAMESPACE, "collector")
+
+        return collectorPods.collect {
+            this.client.pods()
+                .inNamespace(Constants.STACKROX_NAMESPACE)
+                .withName(it.getMetadata().getName())
+                .portForward(port)
+        }
     }
 
     /*
