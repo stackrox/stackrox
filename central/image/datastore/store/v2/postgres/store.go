@@ -2,6 +2,9 @@ package postgres
 
 import (
 	"context"
+	"sort"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -557,6 +560,17 @@ func (s *storeImpl) populateImage(ctx context.Context, tx *postgres.Tx, image *s
 			cveParts = append(cveParts, cvePart)
 		}
 
+		// TODO(ROX-27399):  Adding the index of where the vuln appeared in the component
+		// is not likely sustainable.  We cannot easily guarantee the order is the same when
+		// we pull the data out.  This sort is temporary to keep moving, and will be
+		// removed when the ID of the CVE is adjusted to no longer use the index of where
+		// the CVE occurs in the component list.
+		sort.SliceStable(cveParts, func(i, j int) bool {
+			cveICompIndex := getCVEComponentIndex(cveParts[i].CVEV2.GetId())
+			cveJCompIndex := getCVEComponentIndex(cveParts[j].CVEV2.GetId())
+			return cveICompIndex < cveJCompIndex
+		})
+
 		child := common.ComponentParts{
 			ComponentV2: component,
 			Children:    cveParts,
@@ -964,4 +978,17 @@ func gatherKeys(parts *imagePartsAsSlice) [][]byte {
 		keys = append(keys, []byte(component.GetId()))
 	}
 	return keys
+}
+
+func getCVEComponentIndex(s string) int {
+	lastIndex := strings.LastIndex(s, "#")
+	if lastIndex == -1 {
+		return 0
+	}
+
+	index, err := strconv.Atoi(s[lastIndex+1:])
+	if err != nil {
+		return 0
+	}
+	return index
 }
