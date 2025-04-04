@@ -1,6 +1,7 @@
 import queryString from 'qs';
 
 import {
+    OnDemandReportSnapshot,
     ReportConfiguration,
     ReportHistoryResponse,
     ReportSnapshot,
@@ -116,6 +117,39 @@ export function fetchReportHistory({
         .then((response) => {
             return response.data?.reportSnapshots ?? [];
         });
+}
+
+// @TODO: Pass API query information and set up API call to endpoint
+export function fetchOnDemandReportHistory(): Promise<OnDemandReportSnapshot[]> {
+    const mockOnDemandReportJobs: OnDemandReportSnapshot[] = [
+        {
+            reportJobId: '3dde30b0-179b-49b4-922d-0d05606c21fb',
+            isOnDemand: true,
+            name: '',
+            requestName: 'SC-040925-01',
+            areaOfConcern: 'User workloads',
+            vulnReportFilters: {
+                imageTypes: ['DEPLOYED'],
+                includeNvdCvss: false,
+                includeEpssProbability: false,
+                query: '',
+            },
+            reportStatus: {
+                runState: 'GENERATED',
+                completedAt: '2024-11-13T18:45:32.997367670Z',
+                errorMsg: '',
+                reportRequestType: 'ON_DEMAND',
+                reportNotificationMethod: 'DOWNLOAD',
+            },
+            user: {
+                id: 'sso:4df1b98c-24ed-4073-a9ad-356aec6bb62d:admin',
+                name: 'admin',
+            },
+            isDownloadAvailable: true,
+        },
+    ];
+
+    return Promise.resolve(mockOnDemandReportJobs);
 }
 
 export function createReportConfiguration(
