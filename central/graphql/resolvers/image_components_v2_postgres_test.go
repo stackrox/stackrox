@@ -204,8 +204,7 @@ func (s *GraphQLImageComponentV2TestSuite) TestImageComponentsScoped() {
 }
 
 func (s *GraphQLImageComponentV2TestSuite) TestImageComponentsScopeTree() {
-	// TODO(ROX-28320): Data here needs to be grouped by CVE not the ID when getting vulns by image
-	// as is done in the Image Vulnerabilities resolver.
+
 	s.T().Skip()
 
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
