@@ -98,6 +98,8 @@ type connStatus struct {
 	rotten bool
 	// historical means that the enrichment has been done for historical entity and no further enrichments should be tried
 	historical bool
+	// invalid means that something is not suitable for enrichment - e.g., when required inputs are missing
+	invalid bool
 }
 
 type networkConnIndicator struct {
@@ -497,9 +499,6 @@ func (m *networkFlowManager) enrichConnections(tickerC <-chan time.Time) {
 			m.enrichAndSend()
 			// Measuring number of calls to `enrichAndSend` (ticks) for remembering historical endpoints
 			m.clusterEntities.RecordTick()
-			if env.ProcessesListeningOnPort.BooleanSetting() {
-				m.enrichAndSendProcesses()
-			}
 		}
 	}
 }
@@ -510,18 +509,8 @@ func (m *networkFlowManager) getCurrentContext() context.Context {
 	return m.pipelineCtx
 }
 
-func (m *networkFlowManager) enrichAndSend() {
-	// Takes host connections & endpoints and updates them by enriching with additional data.
-	// Updates m.activeEndpoints and m.activeConnections if lastSeen was reported as null by the Collector.
-	currentConns, currentEndpoints := m.currentEnrichedConnsAndEndpoints()
-
-	// Compares currently enriched connections & endpoints with those enriched in the previous cycle.
-	// The new changes are sent to Central.
-	updatedConns := computeUpdatedConns(currentConns, m.enrichedConnsLastSentState, &m.lastSentStateMutex)
-	updatedEndpoints := computeUpdatedEndpoints(currentEndpoints, m.enrichedEndpointsLastSentState, &m.lastSentStateMutex)
-	flowMetrics.NumUpdatedConnectionsEndpoints.WithLabelValues("connections").Add(float64(len(updatedConns)))
-	flowMetrics.NumUpdatedConnectionsEndpoints.WithLabelValues("endpoints").Add(float64(len(updatedEndpoints)))
-
+func (m *networkFlowManager) sendFlowsEndpoints(updatedConns []*storage.NetworkFlow,
+	updatedEndpoints []*storage.NetworkEndpoint) (sent bool) {
 	if len(updatedConns)+len(updatedEndpoints) == 0 {
 		return
 	}
@@ -544,26 +533,21 @@ func (m *networkFlowManager) enrichAndSend() {
 	}
 
 	log.Debugf("Flow update : %v", protoToSend)
-	sent := m.sendToCentral(&central.MsgFromSensor{
+	sent = m.sendToCentral(&central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_NetworkFlowUpdate{
 			NetworkFlowUpdate: protoToSend,
 		},
 	})
 	if sent {
-		m.updateConnectionStates(currentConns, currentEndpoints)
 		metrics.IncrementTotalNetworkFlowsSentCounter(len(protoToSend.Updated))
 		metrics.IncrementTotalNetworkEndpointsSentCounter(len(protoToSend.UpdatedEndpoints))
 	}
-	metrics.SetNetworkFlowBufferSizeGauge(len(m.sensorUpdates))
+	return sent
 }
 
-func (m *networkFlowManager) enrichAndSendProcesses() {
-	currentProcesses := m.currentEnrichedProcesses()
-
-	updatedProcesses := computeUpdatedProcesses(currentProcesses, m.enrichedProcessesLastSentState, &m.lastSentStateMutex)
-
-	if len(updatedProcesses) == 0 {
-		return
+func (m *networkFlowManager) sendProcesses(updatedProcesses []*storage.ProcessListeningOnPortFromSensor) (sent bool) {
+	if len(updatedProcesses) == 0 || !env.ProcessesListeningOnPort.BooleanSetting() {
+		return false
 	}
 
 	processesToSend := &central.ProcessListeningOnPortsUpdate{
@@ -571,14 +555,43 @@ func (m *networkFlowManager) enrichAndSendProcesses() {
 		Time:                      protocompat.TimestampNow(),
 	}
 
-	if m.sendToCentral(&central.MsgFromSensor{
+	sent = m.sendToCentral(&central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_ProcessListeningOnPortUpdate{
 			ProcessListeningOnPortUpdate: processesToSend,
 		},
-	}) {
-		m.updateProcessesState(currentProcesses)
+	})
+	if sent {
 		metrics.IncrementTotalProcessesSentCounter(len(processesToSend.ProcessesListeningOnPorts))
+
 	}
+	return sent
+}
+
+func (m *networkFlowManager) enrichAndSend() {
+	// Takes host connections & endpoints & processes and updates them by enriching with additional data.
+	// Updates m.activeEndpoints and m.activeConnections if lastSeen was reported as null by the Collector.
+	currentConns, currentEndpoints, currentProcesses := m.enrichAll()
+
+	// Compares currently enriched connections & endpoints with those enriched in the previous cycle.
+	// The new changes are sent to Central.
+	updatedConns := computeUpdatedConns(currentConns, m.enrichedConnsLastSentState, &m.lastSentStateMutex)
+	updatedEndpoints := computeUpdatedEndpoints(currentEndpoints, m.enrichedEndpointsLastSentState, &m.lastSentStateMutex)
+	updatedProcesses := make([]*storage.ProcessListeningOnPortFromSensor, 0)
+	if env.ProcessesListeningOnPort.BooleanSetting() {
+		updatedProcesses = computeUpdatedProcesses(currentProcesses, m.enrichedProcessesLastSentState, &m.lastSentStateMutex)
+	}
+
+	flowMetrics.NumUpdatedConnectionsEndpoints.WithLabelValues("connections").Add(float64(len(updatedConns)))
+	flowMetrics.NumUpdatedConnectionsEndpoints.WithLabelValues("endpoints").Add(float64(len(updatedEndpoints)))
+	flowMetrics.NumUpdatedConnectionsEndpoints.WithLabelValues("plop").Add(float64(len(updatedProcesses)))
+
+	if sent := m.sendFlowsEndpoints(updatedConns, updatedEndpoints); sent {
+		m.updateConnectionStates(currentConns, currentEndpoints)
+	}
+	if sent := m.sendProcesses(updatedProcesses); sent {
+		m.updateProcessesState(currentProcesses)
+	}
+	metrics.SetNetworkFlowBufferSizeGauge(len(m.sensorUpdates))
 }
 
 func expireConnection(conn *connection,
@@ -924,6 +937,13 @@ func (m *networkFlowManager) enrichProcessListening(ep *containerEndpoint, statu
 	if !isFresh {
 		status.usedProcess = true
 	}
+	if ep.processKey == emptyProcessInfo {
+		flowMetrics.IncHostProcessesEnrichmentEvents(
+			"N/A", "skip-enrichment", "N/A", "emptyProcessInfo",
+			status.lastSeen != timestamp.InfiniteFuture, status.rotten, false, false)
+		// No way to update a process if the data isn't there -> no chance for later enrichment.
+		status.invalid = true
+	}
 
 	container, ok, isHistorical := m.clusterEntities.LookupByContainerID(ep.containerID)
 	if !ok || isHistorical {
@@ -970,7 +990,7 @@ func (m *networkFlowManager) enrichHostConnections(hostConns *hostConnections, e
 	flowMetrics.FlowEnrichments.WithLabelValues("connection").Add(float64(len(hostConns.connections)))
 	for conn, status := range hostConns.connections {
 		m.enrichConnection(&conn, status, enrichedConnections)
-		if shallRemoveConnection(status) {
+		if noMoreEnrichments(status, false) {
 			// connections that are no longer active and have already been used can be deleted.
 			delete(hostConns.connections, conn)
 			flowMetrics.HostConnectionsOperations.WithLabelValues("remove", "connections").Inc()
@@ -978,90 +998,58 @@ func (m *networkFlowManager) enrichHostConnections(hostConns *hostConnections, e
 	}
 }
 
-func shallRemoveConnection(status *connStatus) bool {
+func noMoreEnrichments(status *connStatus, isPLOP bool) bool {
+	// If something is not suitable for enrichment, then there is no point in keeping it for further attempts
+	if status.invalid {
+		return true
+	}
 	// Endpoints that are no longer active can be deleted.
 	if status.rotten {
 		return true
 	}
-	// Historical but not rotten (active) endpoints must be deleted,
-	// otherwise they will be enriched multiple times until the history expires.
-	// In some cases, e.g., long-running cluster with fake workload, the history may never expire,
-	// because the endpoints are reused (new identical are created after old ones expire),
-	// thus it is important to enrich those endpoints maximally once after they become historical.
-	if status.historical {
-		return true
+	isUsed := status.used
+	if isPLOP {
+		// We must make sure that both NetworkGraph (status.used) and PLOP (status.usedProcess) consumed the
+		// data before we delete it from memory.
+		isUsed = isUsed && status.usedProcess
 	}
-	return status.used && status.lastSeen != timestamp.InfiniteFuture
+	return isUsed && status.lastSeen != timestamp.InfiniteFuture
 }
 
-func shallRemoveEndpoint(status *connStatus) bool {
-	shallConn := shallRemoveConnection(status)
-	// If processes listening on ports is enabled, it has to be used there as well before being deleted.
-	if env.ProcessesListeningOnPort.BooleanSetting() {
-		return status.usedProcess && shallConn
-	}
-	return shallConn
-}
-
-func (m *networkFlowManager) enrichHostContainerEndpoints(hostConns *hostConnections, enrichedEndpoints map[containerEndpointIndicator]timestamp.MicroTS) {
+func (m *networkFlowManager) enrichHostContainerEndpoints(hostConns *hostConnections,
+	enrichedEndpoints map[containerEndpointIndicator]timestamp.MicroTS,
+	processesListening map[processListeningIndicator]timestamp.MicroTS,
+) {
 	hostConns.mutex.Lock()
 	defer hostConns.mutex.Unlock()
 
 	flowMetrics.FlowEnrichments.WithLabelValues("endpoint").Add(float64(len(hostConns.endpoints)))
 	for ep, status := range hostConns.endpoints {
 		m.enrichContainerEndpoint(&ep, status, enrichedEndpoints)
-		if shallRemoveEndpoint(status) {
+		m.enrichProcessListening(&ep, status, processesListening)
+
+		if noMoreEnrichments(status, true) {
 			delete(hostConns.endpoints, ep)
 			flowMetrics.HostConnectionsOperations.WithLabelValues("remove", "endpoints").Inc()
 		}
 	}
 }
 
-func (m *networkFlowManager) enrichProcessesListening(hostConns *hostConnections, processesListening map[processListeningIndicator]timestamp.MicroTS) {
-	hostConns.mutex.Lock()
-	defer hostConns.mutex.Unlock()
-
-	for ep, status := range hostConns.endpoints {
-		if ep.processKey == emptyProcessInfo {
-			flowMetrics.IncHostProcessesEnrichmentEvents(
-				"N/A", "skip-enrichment", "N/A", "emptyProcessInfo",
-				status.lastSeen != timestamp.InfiniteFuture, status.rotten, false, false)
-			// No way to update a process if the data isn't there -> no chance for later enrichment.
-			delete(hostConns.endpoints, ep)
-			flowMetrics.HostProcessesEvents.WithLabelValues("remove").Inc()
-			continue
-		}
-
-		m.enrichProcessListening(&ep, status, processesListening)
-		if shallRemoveEndpoint(status) {
-			delete(hostConns.endpoints, ep)
-			flowMetrics.HostProcessesEvents.WithLabelValues("remove").Inc()
-		}
-	}
-}
-
-func (m *networkFlowManager) currentEnrichedConnsAndEndpoints() (map[networkConnIndicator]timestamp.MicroTS, map[containerEndpointIndicator]timestamp.MicroTS) {
+func (m *networkFlowManager) enrichAll() (
+	map[networkConnIndicator]timestamp.MicroTS,
+	map[containerEndpointIndicator]timestamp.MicroTS,
+	map[processListeningIndicator]timestamp.MicroTS,
+) {
 	allHostConns := m.getAllHostConnections()
 
 	enrichedConnections := make(map[networkConnIndicator]timestamp.MicroTS)
 	enrichedEndpoints := make(map[containerEndpointIndicator]timestamp.MicroTS)
-	for _, hostConns := range allHostConns {
-		m.enrichHostConnections(hostConns, enrichedConnections)
-		m.enrichHostContainerEndpoints(hostConns, enrichedEndpoints)
-	}
-	return enrichedConnections, enrichedEndpoints
-}
-
-func (m *networkFlowManager) currentEnrichedProcesses() map[processListeningIndicator]timestamp.MicroTS {
-	allHostConns := m.getAllHostConnections()
-
 	enrichedProcesses := make(map[processListeningIndicator]timestamp.MicroTS)
 	for _, hostConns := range allHostConns {
-		flowMetrics.HostProcessesEvents.WithLabelValues("add").Add(float64(len(hostConns.endpoints)))
-		m.enrichProcessesListening(hostConns, enrichedProcesses)
+		m.enrichHostConnections(hostConns, enrichedConnections)
+		m.enrichHostContainerEndpoints(hostConns, enrichedEndpoints, enrichedProcesses)
 	}
-
-	return enrichedProcesses
+	return enrichedConnections, enrichedEndpoints, enrichedProcesses
 }
 
 func computeUpdatedConns(current map[networkConnIndicator]timestamp.MicroTS, previous map[networkConnIndicator]timestamp.MicroTS, previousMutex *sync.RWMutex) []*storage.NetworkFlow {
