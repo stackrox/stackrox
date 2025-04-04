@@ -11,18 +11,14 @@ import (
 
 	"github.com/pkg/errors"
 	concPool "github.com/sourcegraph/conc/pool"
-	deleRegDS "github.com/stackrox/rox/central/delegatedregistryconfig/datastore"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/central/sensor/telemetry"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/k8sintrospect"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -70,12 +66,6 @@ func (s *serviceImpl) getK8sDiagnostics(ctx context.Context, zipWriter *zipWrite
 	if opts.withCentral {
 		gatherPool.Go(func(ctx context.Context) ([]k8sintrospect.File, error) {
 			return pullCentralClusterDiagnostics(ctx, opts.since)
-		})
-	}
-
-	if opts.withCentral {
-		gatherPool.Go(func(ctx context.Context) ([]k8sintrospect.File, error) {
-			return getDelScanningConfigs(centralClusterPrefix, s.deleRegConfigDS, ctx), nil
 		})
 	}
 
@@ -151,28 +141,6 @@ func gatherResultCallback(res *gatherResult, clusterName string) func(ctx concur
 		}
 		return nil
 	}
-}
-
-func getDelScanningConfigs(clusterName string, d deleRegDS.DataStore, ctx context.Context) []k8sintrospect.File {
-	adminCtx := sac.WithGlobalAccessScopeChecker(
-		ctx,
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Administration),
-		),
-	)
-	config, exists, err := d.GetConfig(adminCtx)
-	f := "delegated-scanning-config.txt"
-	res := k8sintrospect.File{}
-	res.Path = path.Join(clusterName, f)
-	if err != nil {
-		res.Contents = []byte(err.Error())
-	} else if !exists {
-		res.Contents = []byte("delegated scanning configs unavailable")
-	} else {
-		res.Contents = []byte(config.String())
-	}
-	return []k8sintrospect.File{res}
 }
 
 func createErrorFile(clusterName string, err error) k8sintrospect.File {

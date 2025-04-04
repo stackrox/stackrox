@@ -435,6 +435,18 @@ type dbExtension struct {
 	ExtensionVersion string `json:"ExtensionVersion"`
 }
 
+// delegatedRegistryConfig represents delegated scanning configuration
+type delegatedRegistryConfig struct {
+	EnabledFor       string              `json:"enabled_for,omitempty"`
+	DefaultClusterID string              `json:"default_cluster_id,omitempty"`
+	Registries       []delegatedRegistry `json:"registries,omitempty"`
+}
+
+type delegatedRegistry struct {
+	Path      string `json:"path,omitempty"`
+	ClusterID string `json:"cluster_id,omitempty"`
+}
+
 // centralDBDiagnosticData represents a collection of various pieces of central db config information.
 type centralDBDiagnosticData struct {
 	// The Database versioning needs to be added by the caller due to scoping issues of config availabilty
@@ -733,6 +745,17 @@ func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseW
 			return writeTelemetryData(zipWriter, telemetryData)
 		})
 	}
+	diagBundleTasks.Go(func(ctx context.Context) error {
+		data, err := s.getDelScanningConfigs(ctx)
+		if err != nil {
+			log.Error(err)
+		}
+		err = addJSONToZip(zipWriter, "delegated-scanning-config.json", data)
+		if err != nil {
+			log.Error(err)
+		}
+		return nil
+	})
 	if opts.withAccessControl {
 		diagBundleTasks.Go(func(ctx context.Context) error {
 			fetchAndAddJSONToZip(ctx, zipWriter, "auth-providers.json", s.getAuthProviders)
@@ -880,6 +903,41 @@ func (s *serviceImpl) getDiagnosticDumpWithCentral(w http.ResponseWriter, r *htt
 	log.Infof("Started writing diagnostic bundle %q with options: %+v", filename, opts)
 
 	s.writeZippedDebugDump(r.Context(), w, filename, opts)
+}
+
+func (s *serviceImpl) getDelScanningConfigs(ctx context.Context) (interface{}, error) {
+	adminCtx := sac.WithGlobalAccessScopeChecker(
+		ctx,
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Administration),
+		),
+	)
+
+	config, exists, err := s.deleRegConfigDS.GetConfig(adminCtx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get delegated registry config: %w", err)
+	}
+
+	if !exists {
+		return map[string]string{
+			"message": "delegated scanning configs unavailable",
+		}, nil
+	}
+
+	r := delegatedRegistryConfig{
+		EnabledFor:       config.EnabledFor.String(),
+		DefaultClusterID: config.DefaultClusterId,
+	}
+
+	for _, rg := range config.Registries {
+		r.Registries = append(r.Registries, delegatedRegistry{
+			Path:      rg.Path,
+			ClusterID: rg.ClusterId,
+		})
+	}
+
+	return r, nil
 }
 
 func getOptionalQueryParams(opts *debugDumpOptions, u *url.URL) error {
