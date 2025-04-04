@@ -49,7 +49,7 @@ import { Cluster } from 'types/cluster.proto';
 import { ClusterIdToRetentionInfo } from 'types/clusterService.proto';
 import { toggleRow, toggleSelectAll } from 'utils/checkboxUtils';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import { filterAllowedSearch, convertToRestSearch, getHasSearchApplied } from 'utils/searchUtils';
+import { convertToRestSearch, getHasSearchApplied } from 'utils/searchUtils';
 import {
     clustersBasePath,
     clustersDelegatedScanningPath,
@@ -214,8 +214,8 @@ function ClustersTablePanel({
             });
     }
 
-    const filteredSearch = filterAllowedSearch(searchOptions, searchFilter || {});
-    const restSearch = convertToRestSearch(filteredSearch || {});
+    const restSearch = convertToRestSearch(searchFilter || {});
+
     useDeepCompareEffect(() => {
         refreshClusterList(restSearch);
     }, [restSearch, pollingCount]);
@@ -250,7 +250,7 @@ function ClustersTablePanel({
         );
     }
 
-    const hasSearchApplied = getHasSearchApplied(filteredSearch);
+    const hasSearchApplied = getHasSearchApplied(searchFilter);
 
     // PatternFly clusters page: reconsider whether to factor out minimal common heading.
     //
