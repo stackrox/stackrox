@@ -137,11 +137,31 @@ type MitreAttackVectors struct {
 	Techniques []string `json:"techniques,omitempty"`
 }
 
-// SecurityPolicyStatus defines the observed state of SecurityPolicy
+type SecurityPolicyConditionType string
+
+const (
+	// CentralDataFresh indicates that all caches were successfully updated from Central
+	CentralDataFresh SecurityPolicyConditionType = "CentralDataFresh"
+	// PolicyValidated indicates that the policy was successfully validated and transformed into a protobuf, ready to
+	// be persisted to Central
+	PolicyValidated SecurityPolicyConditionType = "PolicyValidated"
+	// AcceptedByCentral indicates that the policy was persisted successfully in Central
+	AcceptedByCentral SecurityPolicyConditionType = "AcceptedByCentral"
+)
+
+// SecurityPolicyCondition defines the observed state of SecurityPolicy
+type SecurityPolicyCondition struct {
+	Type               SecurityPolicyConditionType `json:"type"`
+	Status             string                      `json:"status"`
+	Message            string                      `json:"message"`
+	LastTransitionTime metav1.Time                 `json:"lastTransitionTime"`
+}
+
+type SecurityPolicyConditions []SecurityPolicyCondition
+
 type SecurityPolicyStatus struct {
-	Accepted bool   `json:"accepted"`
-	Message  string `json:"message"`
-	PolicyId string `json:"policyId"`
+	Condition SecurityPolicyConditions `json:"conditions"`
+	PolicyId  string                   `json:"policyId"`
 }
 
 // IsValid runs validation checks against the SecurityPolicy spec
@@ -345,4 +365,28 @@ func (p SecurityPolicySpec) ToProtobuf(caches map[CacheType]map[string]string) (
 	}
 
 	return &proto, nil
+}
+
+func (s *SecurityPolicyConditions) UpdateCondition(sType SecurityPolicyConditionType, newCondition SecurityPolicyCondition) {
+	for i, st := range *s {
+		if st.Type != sType {
+			continue
+		}
+		if st.Status != newCondition.Status {
+			newCondition.LastTransitionTime = metav1.Now()
+		} else {
+			newCondition.LastTransitionTime = st.LastTransitionTime
+		}
+		(*s)[i] = newCondition
+		return
+	}
+}
+
+func (s *SecurityPolicyConditions) GetCondition(sType SecurityPolicyConditionType) *SecurityPolicyCondition {
+	for _, st := range *s {
+		if st.Type == sType {
+			return &st
+		}
+	}
+	return nil
 }

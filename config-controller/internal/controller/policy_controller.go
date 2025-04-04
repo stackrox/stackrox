@@ -25,10 +25,13 @@ import (
 	"github.com/stackrox/rox/config-controller/pkg/client"
 	"github.com/stackrox/rox/pkg/logging"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
 const (
@@ -67,20 +70,49 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		return ctrl.Result{}, errors.Wrapf(err, "Invalid policy resource: namespace=%s, name=%s", req.Namespace, req.Name)
 	}
 
-	if err := r.CentralClient.EnsureFresh(ctx); err != nil {
-		return ctrl.Result{}, errors.Wrap(err, "Failed to refresh")
+	if len(policyCR.Status.Condition) == 0 {
+		policyCR.Status.Condition = configstackroxiov1alpha1.SecurityPolicyConditions{
+			configstackroxiov1alpha1.SecurityPolicyCondition{
+				Type:               configstackroxiov1alpha1.CentralDataFresh,
+				Message:            "",
+				Status:             "False",
+				LastTransitionTime: metav1.Now(),
+			},
+			configstackroxiov1alpha1.SecurityPolicyCondition{
+				Type:               configstackroxiov1alpha1.PolicyValidated,
+				Message:            "",
+				Status:             "False",
+				LastTransitionTime: metav1.Now(),
+			},
+			configstackroxiov1alpha1.SecurityPolicyCondition{
+				Type:               configstackroxiov1alpha1.AcceptedByCentral,
+				Message:            "",
+				Status:             "False",
+				LastTransitionTime: metav1.Now(),
+			},
+		}
 	}
 
+	if result, refreshErr := r.UpdateCentralCaches(policyCR, ctx, r.CentralClient.EnsureFresh); refreshErr != nil {
+		return result, refreshErr
+	}
+
+	fmt.Println("Notifiers:", r.CentralClient.GetNotifiers())
+	fmt.Println("Clusters:", r.CentralClient.GetClusters())
 	desiredState, err := policyCR.Spec.ToProtobuf(map[configstackroxiov1alpha1.CacheType]map[string]string{
 		configstackroxiov1alpha1.Notifier: r.CentralClient.GetNotifiers(),
 		configstackroxiov1alpha1.Cluster:  r.CentralClient.GetClusters(),
 	})
 	if err != nil {
-		_ = r.CentralClient.FlushCache(ctx)
-		policyCR.Status = configstackroxiov1alpha1.SecurityPolicyStatus{
-			Accepted: false,
-			Message:  err.Error(),
+		// Attempt to refresh central caches and exit early if and only if caches could not be refreshed AND security policy status was not able to update
+		if result, refreshErr := r.UpdateCentralCaches(policyCR, ctx, r.CentralClient.FlushCache); refreshErr != nil {
+			return result, refreshErr
 		}
+		policyCR.Status.Condition.UpdateCondition(configstackroxiov1alpha1.PolicyValidated, configstackroxiov1alpha1.SecurityPolicyCondition{
+			Type:    configstackroxiov1alpha1.PolicyValidated,
+			Status:  "False",
+			Message: fmt.Sprintf("Unable to convert given spec to protobuf: %v", err),
+		})
 		if err := r.K8sClient.Status().Update(ctx, policyCR); err != nil {
 			return ctrl.Result{},
 				errors.Wrap(err, "failed to update SecurityPolicy status")
@@ -115,10 +147,11 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		}
 	} else {
 		// The policy is being deleted since k8s set the deletion timestamp
+
+		// finalizer is present, so lets handle the external dependency of deleting policy in central
 		if controllerutil.ContainsFinalizer(policyCR, policyFinalizer) {
-			// finalizer is present, so lets handle the external dependency of deleting policy in central
-			if policyCR.Status.Accepted {
-				// Only try to delete a policy from Central if the CR has been marked as accepted
+			// Only try to delete a policy from Central if the policy is active in Central
+			if policyCR.Status.Condition.GetCondition(configstackroxiov1alpha1.AcceptedByCentral).Status == "True" {
 				if err := r.CentralClient.DeletePolicy(ctx, policyCR.Spec.PolicyName); err != nil {
 					// if we failed to delete the policy in central, return with error
 					// so that reconciliation can be retried.
@@ -139,10 +172,11 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 
 	if exists && existingPolicy.IsDefault {
 		retErr := errors.New(fmt.Sprintf("Failed to reconcile: existing default policy with the same name '%s' exists", desiredState.GetName()))
-		policyCR.Status = configstackroxiov1alpha1.SecurityPolicyStatus{
-			Accepted: false,
-			Message:  retErr.Error(),
-		}
+		policyCR.Status.Condition.UpdateCondition(configstackroxiov1alpha1.PolicyValidated, configstackroxiov1alpha1.SecurityPolicyCondition{
+			Type:    configstackroxiov1alpha1.PolicyValidated,
+			Status:  "False",
+			Message: retErr.Error(),
+		})
 		if err := r.K8sClient.Status().Update(ctx, policyCR); err != nil {
 			errMsg := fmt.Sprintf("error updating status for securitypolicy '%s'", policyCR.GetName())
 			log.Debug(errMsg)
@@ -153,38 +187,53 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		return ctrl.Result{}, nil
 	}
 
+	policyCR.Status.Condition.UpdateCondition(configstackroxiov1alpha1.PolicyValidated, configstackroxiov1alpha1.SecurityPolicyCondition{
+		Type:    configstackroxiov1alpha1.PolicyValidated,
+		Status:  "True",
+		Message: "",
+	})
+	if err := r.K8sClient.Status().Update(ctx, policyCR); err != nil {
+		errMsg := fmt.Sprintf("error updating status for securitypolicy '%s'", policyCR.GetName())
+		log.Debug(errMsg)
+		return ctrl.Result{}, errors.Wrap(err, errMsg)
+	}
+
 	// policy create or update flow
 	var retErr error
 	if desiredState.GetId() != "" {
 		log.Debugf("Updating policy %q (ID: %q)", desiredState.GetName(), desiredState.GetId())
 		if err := r.CentralClient.UpdatePolicy(ctx, desiredState); err != nil {
 			retErr = errors.Wrap(err, fmt.Sprintf("Failed to update policy '%s'", desiredState.GetName()))
-			policyCR.Status = configstackroxiov1alpha1.SecurityPolicyStatus{
-				Accepted: false,
-				Message:  retErr.Error(),
-			}
+			policyCR.Status.Condition.UpdateCondition(configstackroxiov1alpha1.AcceptedByCentral, configstackroxiov1alpha1.SecurityPolicyCondition{
+				Type:    configstackroxiov1alpha1.AcceptedByCentral,
+				Status:  "False",
+				Message: retErr.Error(),
+			})
 		} else {
-			policyCR.Status = configstackroxiov1alpha1.SecurityPolicyStatus{
-				Accepted: true,
-				Message:  "Successfully updated policy",
-				PolicyId: desiredState.GetId(),
-			}
+			policyCR.Status.Condition.UpdateCondition(configstackroxiov1alpha1.AcceptedByCentral, configstackroxiov1alpha1.SecurityPolicyCondition{
+				Type:    configstackroxiov1alpha1.AcceptedByCentral,
+				Status:  "True",
+				Message: "",
+			})
+			policyCR.Status.PolicyId = desiredState.GetId()
 		}
 	} else {
 		log.Debugf("Creating policy with name %q", desiredState.GetName())
 		if createdPolicy, err := r.CentralClient.CreatePolicy(ctx, desiredState); err != nil {
 			retErr = errors.Wrap(err, fmt.Sprintf("Failed to create policy '%s'", desiredState.GetName()))
-			policyCR.Status = configstackroxiov1alpha1.SecurityPolicyStatus{
-				Accepted: false,
-				Message:  retErr.Error(),
-			}
+			policyCR.Status.Condition.UpdateCondition(configstackroxiov1alpha1.AcceptedByCentral, configstackroxiov1alpha1.SecurityPolicyCondition{
+				Type:    configstackroxiov1alpha1.AcceptedByCentral,
+				Status:  "False",
+				Message: retErr.Error(),
+			})
 		} else {
 			// Create was successful so persist the policy ID received from Central
-			policyCR.Status = configstackroxiov1alpha1.SecurityPolicyStatus{
-				Accepted: true,
-				Message:  "Successfully created policy",
-				PolicyId: createdPolicy.GetId(),
-			}
+			policyCR.Status.Condition.UpdateCondition(configstackroxiov1alpha1.AcceptedByCentral, configstackroxiov1alpha1.SecurityPolicyCondition{
+				Type:    configstackroxiov1alpha1.AcceptedByCentral,
+				Status:  "True",
+				Message: "",
+			})
+			policyCR.Status.PolicyId = createdPolicy.GetId()
 		}
 	}
 
@@ -202,10 +251,45 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	return ctrl.Result{}, retErr
 }
 
+func (r *SecurityPolicyReconciler) UpdateCentralCaches(policyCR *configstackroxiov1alpha1.SecurityPolicy, ctx context.Context, refreshFunc func(context.Context) error) (ctrl.Result, error) {
+	if err := refreshFunc(ctx); err != nil {
+		policyCR.Status.Condition.UpdateCondition(configstackroxiov1alpha1.CentralDataFresh, configstackroxiov1alpha1.SecurityPolicyCondition{
+			Type:    configstackroxiov1alpha1.CentralDataFresh,
+			Status:  "False",
+			Message: fmt.Sprintf("Unable to refresh Central Caches: %v", err),
+		})
+		if err := r.K8sClient.Status().Update(ctx, policyCR); err != nil {
+			errMsg := fmt.Sprintf("Error updating status for SecurityPolicy '%s'", policyCR.GetName())
+			log.Debug(errMsg)
+			return ctrl.Result{}, errors.Wrap(err, errMsg)
+		}
+	}
+	policyCR.Status.Condition.UpdateCondition(configstackroxiov1alpha1.CentralDataFresh, configstackroxiov1alpha1.SecurityPolicyCondition{
+		Type:    configstackroxiov1alpha1.CentralDataFresh,
+		Status:  "True",
+		Message: "",
+	})
+	if err := r.K8sClient.Status().Update(ctx, policyCR); err != nil {
+		errMsg := fmt.Sprintf("Error updating status for SecurityPolicy '%s'", policyCR.GetName())
+		log.Debug(errMsg)
+		return ctrl.Result{}, errors.Wrap(err, errMsg)
+	}
+	return ctrl.Result{}, nil
+}
+
+func getEventFilter() predicate.Funcs {
+	return predicate.Funcs{
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			return e.ObjectOld.GetGeneration() != e.ObjectNew.GetGeneration()
+		},
+	}
+}
+
 // SetupWithManager sets up the controller with the Manager.
 func (r *SecurityPolicyReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	err := ctrl.NewControllerManagedBy(mgr).
 		For(&configstackroxiov1alpha1.SecurityPolicy{}).
+		WithEventFilter(getEventFilter()).
 		Complete(r)
 
 	if err != nil {
