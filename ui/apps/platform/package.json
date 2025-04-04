@@ -104,7 +104,7 @@
         "lint": "eslint --quiet .",
         "lint:fix": "eslint --fix --quiet .",
         "tsc": "tsc",
-        "cypress-open": "DISABLE_ESLINT_PLUGIN=true ./scripts/cypress.sh open --config defaultCommandTimeout=8000",
+        "cypress-open": "DISABLE_ESLINT_PLUGIN=true ./scripts/cypress.sh open --e2e --config defaultBrowser=chrome defaultCommandTimeout=8000",
         "cypress-spec": "DISABLE_ESLINT_PLUGIN=true ./scripts/cypress.sh run --spec",
         "cypress-component": "DISABLE_ESLINT_PLUGIN=true ./scripts/cypress-component.sh open --component",
         "test-e2e": "DISABLE_ESLINT_PLUGIN=true ./scripts/cypress.sh run --reporter mocha-multi-reporters --reporter-options configFile=cypress/mocha.config.js",
