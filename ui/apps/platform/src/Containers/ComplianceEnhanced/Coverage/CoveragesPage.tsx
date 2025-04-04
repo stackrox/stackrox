@@ -24,7 +24,6 @@ import {
 import { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
 import PageTitle from 'Components/PageTitle';
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
-import { clusterSearchFilterConfig } from 'Containers/Vulnerabilities/searchFilterConfig';
 import { useBooleanLocalStorage } from 'hooks/useLocalStorage';
 import useRestQuery from 'hooks/useRestQuery';
 import useURLSearch from 'hooks/useURLSearch';
@@ -47,7 +46,11 @@ import ProfilesToggleGroup from './ProfilesToggleGroup';
 import ProfileChecksPage from './ProfileChecksPage';
 import ProfileClustersPage from './ProfileClustersPage';
 import { ScanConfigurationsContext } from './ScanConfigurationsProvider';
-import { profileCheckSearchFilterConfig } from '../searchFilterConfig';
+import {
+    clusterSearchFilterConfig,
+    complianceStatusFilterChipDescriptors,
+    profileCheckSearchFilterConfig,
+} from '../searchFilterConfig';
 
 const searchFilterConfig = [profileCheckSearchFilterConfig, clusterSearchFilterConfig];
 
@@ -199,7 +202,10 @@ function CoveragesPage() {
                                         <SearchFilterChips
                                             searchFilter={searchFilter}
                                             onFilterChange={setSearchFilter}
-                                            filterChipGroupDescriptors={filterChipGroupDescriptors}
+                                            filterChipGroupDescriptors={[
+                                                ...filterChipGroupDescriptors,
+                                                complianceStatusFilterChipDescriptors,
+                                            ]}
                                         />
                                     </ToolbarGroup>
                                 </ToolbarContent>
