@@ -10,7 +10,6 @@ import (
 //
 //go:generate mockgen-wrapper
 type Store interface {
-	GetAll(ctx context.Context) ([]*storage.LogImbue, error)
 	Upsert(ctx context.Context, log *storage.LogImbue) error
 
 	DeleteMany(ctx context.Context, ids []string) error
