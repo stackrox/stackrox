@@ -42,13 +42,13 @@ func (d *datastoreImpl) getAuthM2MConfigNoLock(ctx context.Context, id string) (
 	return d.store.Get(ctx, id)
 }
 
-func (d *datastoreImpl) ProcessAuthM2MConfigs(ctx context.Context, fn func(obj *storage.AuthMachineToMachineConfig) error) error {
+func (d *datastoreImpl) ForEachAuthM2MConfig(ctx context.Context, fn func(obj *storage.AuthMachineToMachineConfig) error) error {
 	d.mutex.RLock()
 	defer d.mutex.RUnlock()
-	return d.processAuthM2MConfigsNoLock(ctx, fn)
+	return d.forEachAuthM2MConfigNoLock(ctx, fn)
 }
 
-func (d *datastoreImpl) processAuthM2MConfigsNoLock(ctx context.Context, fn func(obj *storage.AuthMachineToMachineConfig) error) error {
+func (d *datastoreImpl) forEachAuthM2MConfigNoLock(ctx context.Context, fn func(obj *storage.AuthMachineToMachineConfig) error) error {
 	return d.store.Walk(ctx, fn)
 }
 
@@ -145,16 +145,14 @@ func (d *datastoreImpl) InitializeTokenExchangers() error {
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
 		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS), sac.ResourceScopeKeys(resources.Access)))
 
-	tokenExchangerErrors := []error{}
-	upssertTokenExchanger := func(config *storage.AuthMachineToMachineConfig) {
+	var tokenExchangerErrors []error
+	upsertTokenExchanger := func(config *storage.AuthMachineToMachineConfig) error {
 		if err := d.set.UpsertTokenExchanger(ctx, config); err != nil {
 			tokenExchangerErrors = append(tokenExchangerErrors, err)
 		}
-	}
-	err := d.processAuthM2MConfigsNoLock(ctx, func(config *storage.AuthMachineToMachineConfig) error {
-		upssertTokenExchanger(config)
 		return nil
-	})
+	}
+	err := d.forEachAuthM2MConfigNoLock(ctx, upsertTokenExchanger)
 	if err != nil {
 		return pkgErrors.Wrap(err, "Failed to list auth m2m configs")
 	}
@@ -165,7 +163,7 @@ func (d *datastoreImpl) InitializeTokenExchangers() error {
 
 	// Unconditionally add K8s service account exchanger.
 	// This is required for config-controller auth.
-	upssertTokenExchanger(&storage.AuthMachineToMachineConfig{
+	err = upsertTokenExchanger(&storage.AuthMachineToMachineConfig{
 		Type:                    storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT,
 		TokenExpirationDuration: "1m",
 		Mappings: []*storage.AuthMachineToMachineConfig_Mapping{{
@@ -176,6 +174,7 @@ func (d *datastoreImpl) InitializeTokenExchangers() error {
 		}},
 		Issuer: kubeSAIssuer,
 	})
+	tokenExchangerErrors = append(tokenExchangerErrors, err)
 
 	return errors.Join(tokenExchangerErrors...)
 }

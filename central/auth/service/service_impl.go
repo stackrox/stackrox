@@ -141,7 +141,7 @@ func (s *serviceImpl) ListAuthMachineToMachineConfigs(ctx context.Context, _ *v1
 	}
 
 	var storageConfigs []*storage.AuthMachineToMachineConfig
-	err := s.authDataStore.ProcessAuthM2MConfigs(ctx, func(c *storage.AuthMachineToMachineConfig) error {
+	err := s.authDataStore.ForEachAuthM2MConfig(ctx, func(c *storage.AuthMachineToMachineConfig) error {
 		storageConfigs = append(storageConfigs, c)
 		return nil
 	})

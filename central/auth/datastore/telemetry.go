@@ -24,7 +24,7 @@ var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, err
 		storage.AuthMachineToMachineConfig_GENERIC.String():        0,
 	}
 	count := 0
-	err := Singleton().ProcessAuthM2MConfigs(ctx, func(config *storage.AuthMachineToMachineConfig) error {
+	err := Singleton().ForEachAuthM2MConfig(ctx, func(config *storage.AuthMachineToMachineConfig) error {
 		count++
 		countByType[config.GetType().String()]++
 		return nil
