@@ -3,7 +3,7 @@ package fake
 import (
 	"bytes"
 
-	"github.com/cockroachdb/pebble"
+	"github.com/cockroachdb/pebble/v2"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"k8s.io/apimachinery/pkg/types"
 )
