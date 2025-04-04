@@ -35,7 +35,6 @@ _create_job_record() {
 
     local id
     id="$(_get_metrics_job_id)"
-    set_ci_shared_export "METRICS_JOB_ID" "$id"
 
     local repo
     repo="$(get_repo_full_name)"
@@ -70,8 +69,12 @@ _get_metrics_job_id() {
         # * GITHUB_RUN_ATTEMPT - workflow re-run attempt, e.g. 1, 2, 3, ... Because GITHUB_RUN_ID stays the same.
         # * GITHUB_JOB - name of the job, e.g. "build-and-push-main".
         # * A random number because the above is not enough to differentiate matrix jobs.
-        # The resulting value has to be stored for subsequent metrics updates.
-        id="${GITHUB_RUN_ID}.${GITHUB_RUN_ATTEMPT}.${GITHUB_JOB}.${RANDOM}"
+        # We cache the resulting value and return it on subsequent calls in the same job to make sure the id stays
+        # the same.
+        if [[ -z "${GHA_METRICS_JOB_ID:-}" ]]; then
+            set_ci_shared_export "GHA_METRICS_JOB_ID" "${GITHUB_RUN_ID}.${GITHUB_RUN_ATTEMPT}.${GITHUB_JOB}.${RANDOM}"
+        fi
+        id="${GHA_METRICS_JOB_ID}"
     else
         die "Support is required for a job id for this CI environment"
     fi
@@ -113,12 +116,10 @@ _update_job_record() {
         return
     fi
 
-    if [[ -z "${METRICS_JOB_ID:-}" ]]; then
-        info "WARNING: Skipping job record update as no initial record was created"
-        return
-    fi
+    local id
+    id="$(_get_metrics_job_id)"
 
-    bq_update_job_record "${METRICS_JOB_ID}" "$@"
+    bq_update_job_record "${id}" "$@"
 }
 
 bq_update_job_record() {
