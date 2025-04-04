@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/central/policy/customresource"
 	policyDatastore "github.com/stackrox/rox/central/policy/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/apiparams"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/jsonutil"
@@ -83,15 +84,14 @@ func (h httpHandler) saveAsCustomResources(ctx context.Context, request *apipara
 		return
 	}
 
-	notifierList, err := h.notifierStore.GetNotifiers(ctx)
+	notifiers := make(map[string]string)
+	err = h.notifierStore.ProcessNotifiers(ctx, func(n *storage.Notifier) error {
+		notifiers[n.GetId()] = n.GetName()
+		return nil
+	})
 	if err != nil {
 		httputil.WriteGRPCStyleError(writer, codes.Internal, err)
 		return
-	}
-
-	notifiers := make(map[string]string, len(notifierList))
-	for _, n := range notifierList {
-		notifiers[n.GetId()] = n.GetName()
 	}
 
 	zipWriter := zip.NewWriter(writer)
