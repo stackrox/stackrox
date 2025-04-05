@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	clusterUtil "github.com/stackrox/rox/central/cluster/util"
 	"github.com/stackrox/rox/central/image/datastore"
+	"github.com/stackrox/rox/central/image/metrics"
 	iiStore "github.com/stackrox/rox/central/imageintegration/store"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/role/sachelper"
@@ -242,7 +243,7 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 		)
 		return nil, err
 	}
-	defer s.internalScanSemaphore.Release(1)
+	defer s.releaseFromScanSemaphore()
 
 	var (
 		img       *storage.Image
@@ -435,7 +436,7 @@ func (s *serviceImpl) GetImageVulnerabilitiesInternal(ctx context.Context, reque
 		)
 		return nil, err
 	}
-	defer s.internalScanSemaphore.Release(1)
+	defer s.releaseFromScanSemaphore()
 
 	imgID := request.GetImageId()
 
@@ -476,9 +477,17 @@ func (s *serviceImpl) GetImageVulnerabilitiesInternal(ctx context.Context, reque
 	return internalScanRespFromImage(img), nil
 }
 
+func (s *serviceImpl) releaseFromScanSemaphore() {
+	s.internalScanSemaphore.Release(1)
+	metrics.ImageScanSemaphoreHoldingSize.Dec()
+}
+
 func (s *serviceImpl) acquireScanSemaphore(ctx context.Context) error {
 	semaphoreCtx, cancel := context.WithTimeout(ctx, maxSemaphoreWaitTime)
 	defer cancel()
+	metrics.ImageScanSemaphoreQueueSize.Inc()
+	defer metrics.ImageScanSemaphoreQueueSize.Dec()
+	defer metrics.ImageScanSemaphoreHoldingSize.Inc()
 	if err := s.internalScanSemaphore.Acquire(semaphoreCtx, 1); err != nil {
 		wrappedErr := errors.Wrap(err, "acquiring scan semaphore")
 
@@ -516,7 +525,7 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 		return nil, err
 	}
 
-	defer s.internalScanSemaphore.Release(1)
+	defer s.releaseFromScanSemaphore()
 
 	imgID := request.GetImageId()
 	var hasErrors bool
