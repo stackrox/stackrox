@@ -73,7 +73,7 @@ func (mr *MockStoreMockRecorder) AuthProviderExistsWithName(ctx, name any) *gomo
 // GetAllAuthProviders mocks base method.
 func (m *MockStore) GetAllAuthProviders(ctx context.Context) ([]*storage.AuthProvider, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAllAuthProviders", ctx)
+	ret := m.ctrl.Call(m, "ProcessAuthProviders", ctx)
 	ret0, _ := ret[0].([]*storage.AuthProvider)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
@@ -82,7 +82,7 @@ func (m *MockStore) GetAllAuthProviders(ctx context.Context) ([]*storage.AuthPro
 // GetAllAuthProviders indicates an expected call of GetAllAuthProviders.
 func (mr *MockStoreMockRecorder) GetAllAuthProviders(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllAuthProviders", reflect.TypeOf((*MockStore)(nil).GetAllAuthProviders), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessAuthProviders", reflect.TypeOf((*MockStore)(nil).GetAllAuthProviders), ctx)
 }
 
 // GetAuthProvider mocks base method.
