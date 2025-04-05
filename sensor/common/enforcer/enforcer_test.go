@@ -102,7 +102,15 @@ func TestProcessAlertResults(t *testing.T) {
 			alerts: []alertEnforcementPair{
 				{
 					alert:       alert1,
-					enforcement: storage.EnforcementAction_KILL_POD_ENFORCEMENT,
+					enforcement: storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT,
+				},
+			},
+			expectedEnforcements: []*central.SensorEnforcement{
+				{
+					Enforcement: storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT,
+					Resource: &central.SensorEnforcement_Deployment{
+						Deployment: generateDeploymentEnforcement(alert1),
+					},
 				},
 			},
 		},
