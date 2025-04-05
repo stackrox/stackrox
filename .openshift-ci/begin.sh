@@ -13,7 +13,7 @@ info "Start of CI handling"
 openshift_ci_mods
 openshift_ci_import_creds
 
-create_job_record "${JOB_NAME:-missing}"
+create_job_record "${JOB_NAME:-missing}" "prow"
 
 if [[ -z "${SHARED_DIR:-}" ]]; then
     echo "ERROR: There is no SHARED_DIR for step env sharing"

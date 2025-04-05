@@ -8,7 +8,7 @@ source "$ROOT/scripts/ci/gcp.sh"
 
 set -euo pipefail
 
-# Possible outcome field values.
+# Possible outcome field values for prow.
 export OUTCOME_PASSED="passed"
 export OUTCOME_FAILED="failed"
 export OUTCOME_CANCELED="canceled"
@@ -25,27 +25,16 @@ create_job_record() {
 _create_job_record() {
     info "Creating a job record for this test run"
 
-    if [[ "$#" -ne 1 ]]; then
-        die "missing arg. usage: create_job_record <job name>"
+    if [[ "$#" -ne 2 ]]; then
+        die "missing arg. usage: create_job_record <job name> <ci system>"
     fi
 
     local name="$1"
 
-    local id
-    if is_OPENSHIFT_CI; then
-        if [[ -z "${BUILD_ID:-}" ]]; then
-            info "Skipping job record for jobs without a BUILD_ID (bin, images)"
-            return
-        fi
-        id="${BUILD_ID}"
-    elif is_GITHUB_ACTIONS; then
-        id="${GITHUB_RUN_ID}"
-    else
-        die "Support is required for a job id for this CI environment"
-    fi
+    local ci_system="$2"
 
-    # exported to handle updates and finalization
-    set_ci_shared_export "METRICS_JOB_ID" "$id"
+    local id
+    id="$(_get_metrics_job_id)"
 
     local repo
     repo="$(get_repo_full_name)"
@@ -61,20 +50,53 @@ _create_job_record() {
     local commit_sha
     commit_sha="$(get_commit_sha)"
 
-    bq_create_job_record "$id" "$name" "$repo" "$branch" "$pr_number" "$commit_sha"
+    bq_create_job_record "$id" "$name" "$repo" "$branch" "$pr_number" "$commit_sha" "$ci_system"
+}
+
+_get_metrics_job_id() {
+    local id
+    if is_OPENSHIFT_CI; then
+        if [[ -z "${BUILD_ID:-}" ]]; then
+            info "Skipping job record for jobs without a BUILD_ID (bin, images)"
+            return
+        fi
+        id="${BUILD_ID}"
+    elif is_GITHUB_ACTIONS; then
+        # There's such thing as a unique GitHub Actions Job ID but it's not available to us.
+        # See https://github.com/orgs/community/discussions/8945
+        # We have to uniquely identify a job run differently. Here we use the following:
+        # * GITHUB_RUN_ID - workflow id, e.g. 14113014151.
+        # * GITHUB_RUN_ATTEMPT - workflow re-run attempt, e.g. 1, 2, 3, ... Because GITHUB_RUN_ID stays the same.
+        # * GITHUB_JOB - name of the job, e.g. "build-and-push-main".
+        # * A random number because the above is not enough to differentiate matrix jobs.
+        # We cache the resulting value and return it on subsequent calls in the same job to make sure the id stays
+        # the same.
+        if [[ -z "${GHA_METRICS_JOB_ID:-}" ]]; then
+            set_ci_shared_export "GHA_METRICS_JOB_ID" "${GITHUB_RUN_ID}.${GITHUB_RUN_ATTEMPT}.${GITHUB_JOB}.${RANDOM}"
+        fi
+        id="${GHA_METRICS_JOB_ID}"
+    else
+        die "Support is required for a job id for this CI environment"
+    fi
+    echo "$id"
 }
 
 bq_create_job_record() {
     setup_gcp
 
-    read -r -d '' sql <<- _EO_RECORD_ || true
-INSERT INTO ${_JOBS_TABLE_NAME}
-    (id, name, repo, branch, pr_number, commit_sha, started_at)
-VALUES
-    ('$1', '$2', '$3', '$4', ${5:-null}, '$6', CURRENT_TIMESTAMP())
-_EO_RECORD_
-
-    bq query --use_legacy_sql=false "$sql"
+    bq query \
+        --use_legacy_sql=false \
+        --parameter="id::$1" \
+        --parameter="name::$2" \
+        --parameter="repo::$3" \
+        --parameter="branch::$4" \
+        --parameter="pr_number:INTEGER:${5:-NULL}" \
+        --parameter="commit_sha::$6" \
+        --parameter="ci_system::$7" \
+        "INSERT INTO ${_JOBS_TABLE_NAME}
+            (id, name, repo, branch, pr_number, commit_sha, started_at, ci_system)
+        VALUES
+            (@id, @name, @repo, @branch, @pr_number, @commit_sha, CURRENT_TIMESTAMP(), @ci_system)"
 }
 
 update_job_record() {
@@ -94,16 +116,20 @@ _update_job_record() {
         return
     fi
 
-    if [[ -z "${METRICS_JOB_ID:-}" ]]; then
-        info "WARNING: Skipping job record update as no initial record was created"
-        return
-    fi
+    local id
+    id="$(_get_metrics_job_id)"
 
-    bq_update_job_record "$@"
+    bq_update_job_record "${id}" "$@"
 }
 
 bq_update_job_record() {
     setup_gcp
+
+    local id="$1"
+    shift
+
+    local -a sql_params
+    sql_params=("--parameter=id::$id")
 
     local update_set=""
     while [[ "$#" -ne 0 ]]; do
@@ -115,23 +141,21 @@ bq_update_job_record() {
             update_set="$update_set, "
         fi
 
-        case "$field" in
-            # All updateable string fields need quotation
-            build|cut_*|outcome|test_target)
-                value="'$value'"
-                ;;
-        esac
-
-        update_set="$update_set $field=$value"
+        if [[ "$field" == "stopped_at" ]]; then
+            # $value is ignored, we know what to do.
+            update_set="$update_set stopped_at=CURRENT_TIMESTAMP()"
+        else
+            update_set="$update_set $field=@$field"
+            sql_params+=("--parameter=${field}::$value")
+        fi
     done
 
-    read -r -d '' sql <<- _EO_UPDATE_ || true
-UPDATE ${_JOBS_TABLE_NAME}
-SET $update_set
-WHERE id='${METRICS_JOB_ID}'
-_EO_UPDATE_
-
-    bq query --use_legacy_sql=false "$sql"
+    bq query \
+        --use_legacy_sql=false \
+        "${sql_params[@]}" \
+        "UPDATE ${_JOBS_TABLE_NAME}
+        SET $update_set
+        WHERE id=@id"
 }
 
 slack_top_n_failures() {
@@ -152,7 +176,7 @@ SELECT
 FROM
     `acs-san-stackroxci.ci_metrics.stackrox_tests__extended_view`
 WHERE
-    CONTAINS_SUBSTR(ShortJobName, "'"${job_name_match}"'")
+    CONTAINS_SUBSTR(ShortJobName, @job_name_match)
     -- omit PR check jobs
     AND NOT IsPullRequest
     AND NOT STARTS_WITH(JobName, "rehearse-")
@@ -172,13 +196,17 @@ HAVING
 ORDER BY
     COUNTIF(Status="failed") DESC
 LIMIT
-    '"${n}"'
+    @limit
 '
 
     local data_file
     data_file="$(mktemp)"
     echo "Running query with job match name $job_name_match"
-    bq --quiet --format=json query --use_legacy_sql=false "$sql" > "${data_file}" 2>/dev/null || {
+    bq --quiet --format=json query \
+        --use_legacy_sql=false \
+        --parameter="job_name_match::${job_name_match}" \
+        --parameter="limit:INTEGER:${n}" \
+        "$sql" > "${data_file}" 2>/dev/null || {
         echo >&2 -e "Cannot run query:\n${sql}\nresponse:\n$(jq < "${data_file}")"
         exit 1
     }
