@@ -178,9 +178,3 @@ func OpenGormDB(t testing.TB, source string) *gorm.DB {
 func CloseGormDB(t testing.TB, db *gorm.DB) {
 	conn.CloseGormDB(t, db)
 }
-
-// SkipIfPostgresEnabled skips the tests if the Postgres flag is on
-func SkipIfPostgresEnabled(t testing.TB) {
-	t.Skip("Skipping test because Postgres is enabled")
-	t.SkipNow()
-}
