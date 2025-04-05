@@ -4,6 +4,7 @@ import (
 	authProviderRegistry "github.com/stackrox/rox/central/authprovider/registry"
 	"github.com/stackrox/rox/central/cluster/datastore"
 	configDS "github.com/stackrox/rox/central/config/datastore"
+	deleRegDS "github.com/stackrox/rox/central/delegatedregistryconfig/datastore"
 	groupDataStore "github.com/stackrox/rox/central/group/datastore"
 	logimbueStore "github.com/stackrox/rox/central/logimbue/store"
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
@@ -30,7 +31,8 @@ func initialize() {
 		groupDataStore.Singleton(),
 		roleDataStore.Singleton(),
 		configDS.Singleton(),
-		notifierDS.Singleton())
+		notifierDS.Singleton(),
+		deleRegDS.Singleton())
 }
 
 // Singleton provides the instance of the Service interface to register.

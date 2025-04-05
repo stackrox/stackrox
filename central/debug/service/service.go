@@ -19,6 +19,7 @@ import (
 	concPool "github.com/sourcegraph/conc/pool"
 	"github.com/stackrox/rox/central/cluster/datastore"
 	configDS "github.com/stackrox/rox/central/config/datastore"
+	deleRegDS "github.com/stackrox/rox/central/delegatedregistryconfig/datastore"
 	"github.com/stackrox/rox/central/globaldb"
 	groupDS "github.com/stackrox/rox/central/group/datastore"
 	"github.com/stackrox/rox/central/logimbue/store"
@@ -125,7 +126,7 @@ type Service interface {
 func New(clusters datastore.DataStore, sensorConnMgr connection.Manager, telemetryGatherer *gatherers.RoxGatherer,
 	store store.Store, authzTraceSink observe.AuthzTraceSink, authProviderRegistry authproviders.Registry,
 	groupDataStore groupDS.DataStore, roleDataStore roleDS.DataStore, configDataStore configDS.DataStore,
-	notifierDataStore notifierDS.DataStore) Service {
+	notifierDataStore notifierDS.DataStore, deleRegConfigDS deleRegDS.DataStore) Service {
 	return &serviceImpl{
 		clusters:             clusters,
 		sensorConnMgr:        sensorConnMgr,
@@ -137,6 +138,7 @@ func New(clusters datastore.DataStore, sensorConnMgr connection.Manager, telemet
 		roleDataStore:        roleDataStore,
 		configDataStore:      configDataStore,
 		notifierDataStore:    notifierDataStore,
+		deleRegConfigDS:      deleRegConfigDS,
 	}
 }
 
@@ -153,6 +155,7 @@ type serviceImpl struct {
 	roleDataStore        roleDS.DataStore
 	configDataStore      configDS.DataStore
 	notifierDataStore    notifierDS.DataStore
+	deleRegConfigDS      deleRegDS.DataStore
 }
 
 // ResetDBStats resets pg_stat_statements in order to allow new metrics to be accumulated.
@@ -430,6 +433,18 @@ func writeTelemetryData(zipWriter *zipWriter, telemetryInfo *data.TelemetryData)
 type dbExtension struct {
 	ExtensionName    string `json:"ExtensionName"`
 	ExtensionVersion string `json:"ExtensionVersion"`
+}
+
+// delegatedRegistryConfig represents delegated scanning configuration
+type delegatedRegistryConfig struct {
+	EnabledFor       string              `json:"enabled_for,omitempty"`
+	DefaultClusterID string              `json:"default_cluster_id,omitempty"`
+	Registries       []delegatedRegistry `json:"registries,omitempty"`
+}
+
+type delegatedRegistry struct {
+	Path      string `json:"path,omitempty"`
+	ClusterID string `json:"cluster_id,omitempty"`
 }
 
 // centralDBDiagnosticData represents a collection of various pieces of central db config information.
@@ -730,6 +745,17 @@ func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseW
 			return writeTelemetryData(zipWriter, telemetryData)
 		})
 	}
+	diagBundleTasks.Go(func(ctx context.Context) error {
+		data, err := s.getDelScanningConfigs(ctx)
+		if err != nil {
+			log.Error(err)
+		}
+		err = addJSONToZip(zipWriter, "delegated-scanning-config.json", data)
+		if err != nil {
+			log.Error(err)
+		}
+		return nil
+	})
 	if opts.withAccessControl {
 		diagBundleTasks.Go(func(ctx context.Context) error {
 			fetchAndAddJSONToZip(ctx, zipWriter, "auth-providers.json", s.getAuthProviders)
@@ -877,6 +903,41 @@ func (s *serviceImpl) getDiagnosticDumpWithCentral(w http.ResponseWriter, r *htt
 	log.Infof("Started writing diagnostic bundle %q with options: %+v", filename, opts)
 
 	s.writeZippedDebugDump(r.Context(), w, filename, opts)
+}
+
+func (s *serviceImpl) getDelScanningConfigs(ctx context.Context) (interface{}, error) {
+	adminCtx := sac.WithGlobalAccessScopeChecker(
+		ctx,
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Administration),
+		),
+	)
+
+	config, exists, err := s.deleRegConfigDS.GetConfig(adminCtx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get delegated registry config: %w", err)
+	}
+
+	if !exists {
+		return map[string]string{
+			"message": "delegated scanning configs unavailable",
+		}, nil
+	}
+
+	r := delegatedRegistryConfig{
+		EnabledFor:       config.EnabledFor.String(),
+		DefaultClusterID: config.DefaultClusterId,
+	}
+
+	for _, rg := range config.Registries {
+		r.Registries = append(r.Registries, delegatedRegistry{
+			Path:      rg.Path,
+			ClusterID: rg.ClusterId,
+		})
+	}
+
+	return r, nil
 }
 
 func getOptionalQueryParams(opts *debugDumpOptions, u *url.URL) error {
