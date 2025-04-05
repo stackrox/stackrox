@@ -13,43 +13,49 @@ import (
 func TestGoogleMatch(t *testing.T) {
 	// Registry integrated is for us.gcr.io and acs-san-stackroxci
 	cases := []struct {
-		name    *storage.ImageName
-		matches bool
+		name          *storage.ImageName
+		projectMatch  bool
+		registryMatch bool
 	}{
 		{
 			name: &storage.ImageName{
 				Registry: "",
 				Remote:   "",
 			},
-			matches: false,
+			projectMatch:  false,
+			registryMatch: false,
 		},
 		{
 			name: &storage.ImageName{
 				Registry: "gcr.io",
 				Remote:   "acs-san-stackroxci/nginx",
 			},
-			matches: false, // does not match gcr.io, matches us.gcr.io
+			projectMatch:  false, // does not match gcr.io, matches us.gcr.io
+			registryMatch: false, // does not match gcr.io, matches us.gcr.io
 		},
 		{
 			name: &storage.ImageName{
 				Registry: "us.gcr.io",
 				Remote:   "acs-san-stackroxci/nginx",
 			},
-			matches: true, // matches both us.gcr.io and acs-san-stackroxci
+			projectMatch:  true, // matches both us.gcr.io and acs-san-stackroxci
+			registryMatch: true, // matches us.gcr.io
 		},
 		{
 			name: &storage.ImageName{
 				Registry: "us.gcr.io",
 				Remote:   "acs-san-stackroxci/nginx/another",
 			},
-			matches: true, // matches both us.gcr.io and acs-san-stackroxci
+			projectMatch:  true, // matches both us.gcr.io and acs-san-stackroxci
+			registryMatch: true, // matches us.gcr.io
 		},
 		{
 			name: &storage.ImageName{
 				Registry: "us.gcr.io",
 				Remote:   "stackrox-ci/nginx/another",
 			},
-			matches: false, // matches us.gcr.io, but not stackrox-ci
+			projectMatch:  false, // matches us.gcr.io, but not stackrox-ci
+			registryMatch: true,  // matches us.gcr.io
 		},
 	}
 	reg, err := docker.NewDockerRegistryWithConfig(
@@ -64,8 +70,18 @@ func TestGoogleMatch(t *testing.T) {
 		project:  "acs-san-stackroxci",
 	}
 	for _, c := range cases {
-		t.Run(fmt.Sprintf("%s/%s", c.name.GetRegistry(), c.name.GetRemote()), func(t *testing.T) {
-			assert.Equal(t, c.matches, gr.Match(c.name))
+		t.Run(fmt.Sprintf("%s/%s - project scope", c.name.GetRegistry(), c.name.GetRemote()), func(t *testing.T) {
+			assert.Equal(t, c.projectMatch, gr.Match(c.name))
+		})
+	}
+
+	// Should match all projects in the registry.
+	grGlobal := &googleRegistry{
+		Registry: reg,
+	}
+	for _, c := range cases {
+		t.Run(fmt.Sprintf("%s/%s - global scope", c.name.GetRegistry(), c.name.GetRemote()), func(t *testing.T) {
+			assert.Equal(t, c.registryMatch, grGlobal.Match(c.name))
 		})
 	}
 }
