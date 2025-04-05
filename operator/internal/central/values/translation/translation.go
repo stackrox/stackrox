@@ -148,6 +148,30 @@ func getEnv(c platform.Central) *translation.ValuesBuilder {
 	return &ret
 }
 
+func getExposureRouteValues(r *platform.ExposureRoute) *translation.ValuesBuilder {
+	if r == nil {
+		return nil
+	}
+	route := translation.NewValuesBuilder()
+	route.SetBool("enabled", r.Enabled)
+	route.SetString("host", r.Host)
+	if r.Reencrypt != nil {
+		reencrypt := translation.NewValuesBuilder()
+		reencrypt.SetBool("enabled", r.Reencrypt.Enabled)
+		reencrypt.SetString("host", r.Reencrypt.Host)
+		if r.Reencrypt.TLS != nil {
+			tls := translation.NewValuesBuilder()
+			tls.SetString("caCertificate", r.Reencrypt.TLS.CaCertificate)
+			tls.SetString("certificate", r.Reencrypt.TLS.Certificate)
+			tls.SetString("destinationCACertificate", r.Reencrypt.TLS.DestinationCACertificate)
+			tls.SetString("key", r.Reencrypt.TLS.Key)
+			reencrypt.AddChild("tls", &tls)
+		}
+		route.AddChild("reencrypt", &reencrypt)
+	}
+	return &route
+}
+
 func getCentralDBPersistenceValues(p *platform.DBPersistence) *translation.ValuesBuilder {
 	persistence := translation.NewValuesBuilder()
 	if hostPath := p.GetHostPath(); hostPath != "" {
@@ -191,12 +215,7 @@ func getCentralComponentValues(c *platform.CentralComponentSpec) (*translation.V
 			np.SetInt32("port", c.Exposure.NodePort.Port)
 			exposure.AddChild("nodePort", &np)
 		}
-		if c.Exposure.Route != nil {
-			route := translation.NewValuesBuilder()
-			route.SetBool("enabled", c.Exposure.Route.Enabled)
-			route.SetString("host", c.Exposure.Route.Host)
-			exposure.AddChild("route", &route)
-		}
+		exposure.AddChild("route", getExposureRouteValues(c.Exposure.Route))
 		cv.AddChild("exposure", &exposure)
 	}
 
