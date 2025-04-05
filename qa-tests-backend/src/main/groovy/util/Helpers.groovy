@@ -21,6 +21,11 @@ import org.junit.AssumptionViolatedException
 @Slf4j
 @CompileStatic
 class Helpers {
+    static <V> V evaluateWithRetry(int retries, int pauseSecs, String name, Closure<V> closure) {
+        log.debug("Calling ${name} with ${retries} retries")
+        return evaluateWithRetry(retries, pauseSecs, closure)
+    }
+
     static <V> V evaluateWithRetry(int retries, int pauseSecs, Closure<V> closure) {
         for (int i = 0; i < retries; i++) {
             try {
