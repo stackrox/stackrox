@@ -1010,6 +1010,10 @@
         "certChainPem": {
           "type": "string",
           "format": "byte"
+        },
+        "rekorBundle": {
+          "type": "string",
+          "format": "byte"
         }
       }
     },
