@@ -247,6 +247,7 @@ function GoogleIntegrationForm({
                     <FormLabelGroup
                         label="Project"
                         fieldId="config.google.project"
+                        helperText="Match images by the project of the registry. Leave empty to match all projects."
                         touched={touched}
                         errors={errors}
                     >
