@@ -16210,7 +16210,7 @@
                 "is_repeated": true
               },
               {
-                "id": 6,
+                "id": 5,
                 "name": "transparency_log",
                 "type": "TransparencyLogVerification"
               }

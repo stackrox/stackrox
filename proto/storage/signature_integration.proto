@@ -13,7 +13,7 @@ message SignatureIntegration {
 
   repeated CosignCertificateVerification cosign_certificates = 4;
 
-  TransparencyLogVerification transparency_log = 6;
+  TransparencyLogVerification transparency_log = 5;
 }
 
 message CosignPublicKeyVerification {

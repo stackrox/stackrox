@@ -366,7 +366,7 @@ func (m *SignatureIntegration) MarshalToSizedBufferVT(dAtA []byte) (int, error) 
 		i -= size
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
-		dAtA[i] = 0x32
+		dAtA[i] = 0x2a
 	}
 	if len(m.CosignCertificates) > 0 {
 		for iNdEx := len(m.CosignCertificates) - 1; iNdEx >= 0; iNdEx-- {
@@ -987,7 +987,7 @@ func (m *SignatureIntegration) UnmarshalVT(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 6:
+		case 5:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field TransparencyLog", wireType)
 			}
@@ -1889,7 +1889,7 @@ func (m *SignatureIntegration) UnmarshalVTUnsafe(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 6:
+		case 5:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field TransparencyLog", wireType)
 			}
