@@ -73,36 +73,37 @@ func (s *extBkpDataStoreTestSuite) TearDownTest() {
 }
 
 func (s *extBkpDataStoreTestSuite) TestUpsertExtBkps() {
-	s.storage.EXPECT().GetAll(gomock.Any()).Times(0)
+	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).Times(0)
 
-	result, err := s.dataStore.ListBackups(s.hasNoneCtx)
+	err := s.dataStore.ForEachBackup(s.hasNoneCtx, nil)
 	s.NoError(err)
-	s.Empty(result)
 
 	s.storage.EXPECT().Upsert(gomock.Any(), NewFakeExtBkp()).Return(nil).Times(1)
 
 	err = s.dataStore.UpsertBackup(s.hasWriteCtx, NewFakeExtBkp())
 	s.NoError(err)
-
-	s.storage.EXPECT().GetAll(gomock.Any()).Return(NewFakeListExtBkps(), nil).Times(1)
-
-	bkps, err := s.dataStore.ListBackups(s.hasReadCtx)
-	protoassert.SlicesEqual(s.T(), NewFakeListExtBkps(), bkps)
-	s.NoError(err)
 }
 
 func (s *extBkpDataStoreTestSuite) TestEnforcesList() {
-	s.storage.EXPECT().GetAll(gomock.Any()).Times(0)
+	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).Times(0)
 
-	result, err := s.dataStore.ListBackups(s.hasNoneCtx)
+	err := s.dataStore.ForEachBackup(s.hasNoneCtx, nil)
 	s.NoError(err)
-	s.Empty(result)
 }
 
 func (s *extBkpDataStoreTestSuite) TestAllowsList() {
-	s.storage.EXPECT().GetAll(gomock.Any()).Return(NewFakeListExtBkps(), nil).Times(1)
+	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).Do(func(_ context.Context, fn func(obj *storage.ExternalBackup) error) error {
+		for _, b := range NewFakeListExtBkps() {
+			s.NoError(fn(b))
+		}
+		return nil
+	}).Times(1)
 
-	result, err := s.dataStore.ListBackups(s.hasReadCtx)
+	var result []*storage.ExternalBackup
+	err := s.dataStore.ForEachBackup(s.hasReadCtx, func(obj *storage.ExternalBackup) error {
+		result = append(result, obj)
+		return nil
+	})
 	s.NoError(err, "expected no error, should return nil without access")
 	protoassert.SlicesEqual(s.T(), NewFakeListExtBkps(), result)
 }

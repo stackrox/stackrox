@@ -11,7 +11,7 @@ import (
 //
 //go:generate mockgen-wrapper
 type DataStore interface {
-	ListBackups(ctx context.Context) ([]*storage.ExternalBackup, error)
+	ForEachBackup(ctx context.Context, fn func(obj *storage.ExternalBackup) error) error
 	GetBackup(ctx context.Context, id string) (*storage.ExternalBackup, bool, error)
 	UpsertBackup(ctx context.Context, backup *storage.ExternalBackup) error
 	RemoveBackup(ctx context.Context, id string) error
