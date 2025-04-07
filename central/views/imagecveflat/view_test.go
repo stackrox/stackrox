@@ -499,7 +499,7 @@ func (s *ImageCVEFlatViewTestSuite) testCases() []testCase {
 		{
 			desc: "search one cve w/ image scope",
 			ctx: scoped.Context(context.Background(), scoped.Scope{
-				ID:    "sha256:6ef31316f4f9e0c31a8f4e602ba287a210d66934f91b1616f1c9b957201d025c",
+				IDs:   []string{"sha256:6ef31316f4f9e0c31a8f4e602ba287a210d66934f91b1616f1c9b957201d025c"},
 				Level: v1.SearchCategory_IMAGES,
 			}),
 			q: search.NewQueryBuilder().
@@ -517,10 +517,10 @@ func (s *ImageCVEFlatViewTestSuite) testCases() []testCase {
 		{
 			desc: "search critical severity w/ cve & image scope",
 			ctx: scoped.Context(context.Background(), scoped.Scope{
-				ID:    "sha256:6ef31316f4f9e0c31a8f4e602ba287a210d66934f91b1616f1c9b957201d025c",
+				IDs:   []string{"sha256:6ef31316f4f9e0c31a8f4e602ba287a210d66934f91b1616f1c9b957201d025c"},
 				Level: v1.SearchCategory_IMAGES,
 				Parent: &scoped.Scope{
-					ID:    cve.IDV2("CVE-2022-1552", scancomponent.ComponentIDV2("postgresql-libs", "8.4.20-6.el6", "", "sha256:05dd8ed5c76ad3c9f06481770828cf17b8c89f1e406c91d548426dd70fe94560"), "20"),
+					IDs:   []string{cve.IDV2("CVE-2022-1552", scancomponent.ComponentIDV2("postgresql-libs", "8.4.20-6.el6", "", "sha256:05dd8ed5c76ad3c9f06481770828cf17b8c89f1e406c91d548426dd70fe94560"), "20")},
 					Level: v1.SearchCategory_IMAGE_VULNERABILITIES,
 				},
 			}),
