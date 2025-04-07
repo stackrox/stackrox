@@ -38,7 +38,6 @@ import (
 	rawZap "go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	coreV1 "k8s.io/api/core/v1"
-	storagev1 "k8s.io/api/storage/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -164,9 +163,6 @@ func run() error {
 				&coreV1.ConfigMap{}: {
 					Label: cacheLabelSelector,
 				},
-				// XXX: Looks like this doesn't cache storage class requests.
-				// Is it even worth it to cache that information?
-				&storagev1.StorageClass{}: {},
 			},
 		},
 		HealthProbeBindAddress: probeAddr,

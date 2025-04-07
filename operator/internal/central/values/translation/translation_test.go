@@ -93,7 +93,7 @@ func TestTranslate(t *testing.T) {
 					"exposeMonitoring": false,
 					"db": map[string]interface{}{
 						"persistence": map[string]interface{}{
-							"backups": true,
+							"backup": true,
 							"persistentVolumeClaim": map[string]interface{}{
 								"createClaim": false,
 							},
@@ -117,7 +117,7 @@ func TestTranslate(t *testing.T) {
 					"exposeMonitoring": false,
 					"db": map[string]interface{}{
 						"persistence": map[string]interface{}{
-							"backups": true,
+							"backup": true,
 							"persistentVolumeClaim": map[string]interface{}{
 								"createClaim": false,
 							},
@@ -147,7 +147,7 @@ func TestTranslate(t *testing.T) {
 					"exposeMonitoring": false,
 					"db": map[string]interface{}{
 						"persistence": map[string]interface{}{
-							"backups": true,
+							"backup": true,
 							"persistentVolumeClaim": map[string]interface{}{
 								"createClaim": false,
 							},
@@ -480,7 +480,7 @@ func TestTranslate(t *testing.T) {
 					"exposeMonitoring": true,
 					"db": map[string]interface{}{
 						"persistence": map[string]interface{}{
-							"backups": true,
+							"backup": true,
 							"persistentVolumeClaim": map[string]interface{}{
 								"createClaim": false,
 							},
@@ -725,7 +725,7 @@ func TestTranslate(t *testing.T) {
 					"exposeMonitoring": false,
 					"db": map[string]interface{}{
 						"persistence": map[string]interface{}{
-							"backups": true,
+							"backup": true,
 							"persistentVolumeClaim": map[string]interface{}{
 								"claimName":   "central-db-test",
 								"createClaim": false,
@@ -771,7 +771,7 @@ func TestTranslate(t *testing.T) {
 					"exposeMonitoring": false,
 					"db": map[string]interface{}{
 						"persistence": map[string]interface{}{
-							"backups": true,
+							"backup": true,
 							"persistentVolumeClaim": map[string]interface{}{
 								"claimName":   "central-db-test",
 								"createClaim": false,
@@ -814,7 +814,7 @@ func TestTranslate(t *testing.T) {
 					"exposeMonitoring": false,
 					"db": map[string]interface{}{
 						"persistence": map[string]interface{}{
-							"backups": true,
+							"backup": true,
 							"persistentVolumeClaim": map[string]interface{}{
 								"claimName":   "central-db-test",
 								"createClaim": false,
@@ -861,7 +861,7 @@ func TestTranslate(t *testing.T) {
 					"exposeMonitoring": false,
 					"db": map[string]interface{}{
 						"persistence": map[string]interface{}{
-							"backups": true,
+							"backup": true,
 							"persistentVolumeClaim": map[string]interface{}{
 								"createClaim": false,
 							},
@@ -909,7 +909,7 @@ func TestTranslate(t *testing.T) {
 					"exposeMonitoring": false,
 					"db": map[string]interface{}{
 						"persistence": map[string]interface{}{
-							"backups": true,
+							"backup": true,
 							"persistentVolumeClaim": map[string]interface{}{
 								"createClaim": false,
 							},
@@ -999,7 +999,7 @@ func TestTranslate(t *testing.T) {
 					"exposeMonitoring": false,
 					"db": map[string]interface{}{
 						"persistence": map[string]interface{}{
-							"backups": true,
+							"backup": true,
 							"persistentVolumeClaim": map[string]interface{}{
 								"createClaim": false,
 							},
@@ -1039,7 +1039,7 @@ func TestTranslate(t *testing.T) {
 					"telemetry":        telemetryDisabledKey,
 					"db": map[string]interface{}{
 						"persistence": map[string]interface{}{
-							"backups": true,
+							"backup": true,
 							"persistentVolumeClaim": map[string]interface{}{
 								"createClaim": false,
 							},
@@ -1064,7 +1064,7 @@ func TestTranslate(t *testing.T) {
 					"telemetry":        telemetryDisabledKey,
 					"db": map[string]interface{}{
 						"persistence": map[string]interface{}{
-							"backups": true,
+							"backup": true,
 							"persistentVolumeClaim": map[string]interface{}{
 								"createClaim": false,
 							},
@@ -1111,7 +1111,7 @@ func TestTranslate(t *testing.T) {
 					},
 					"db": map[string]interface{}{
 						"persistence": map[string]interface{}{
-							"backups": true,
+							"backup": true,
 							"persistentVolumeClaim": map[string]interface{}{
 								"createClaim": false,
 							},
@@ -1146,7 +1146,7 @@ func TestTranslate(t *testing.T) {
 					"exposeMonitoring": false,
 					"db": map[string]interface{}{
 						"persistence": map[string]interface{}{
-							"backups": true,
+							"backup": true,
 							"persistentVolumeClaim": map[string]interface{}{
 								"createClaim": false,
 							},
