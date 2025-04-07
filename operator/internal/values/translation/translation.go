@@ -7,8 +7,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/operator/api/v1alpha1"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
+	utils "github.com/stackrox/rox/operator/internal/utils"
 	corev1 "k8s.io/api/core/v1"
-	storagev1 "k8s.io/api/storage/v1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -23,9 +23,8 @@ const (
 	TolerationsKey = "tolerations"
 	// HostAliasesKey is the default host aliases key used in the charts.
 	HostAliasesKey = "hostAliases"
-	// DefaultStorageClassAnnotationKey is the annotation used to identify a default storage class
-	DefaultStorageClassAnnotationKey = "storageclass.kubernetes.io/is-default-class"
-	defaultScannerV4PVCName          = "scanner-v4-db"
+
+	defaultScannerV4PVCName = "scanner-v4-db"
 )
 
 // GetResources converts platform.Resources to chart values builder.
@@ -315,7 +314,7 @@ func shouldUseEmptyDir(ctx context.Context, db *platform.ScannerV4DB, objKind st
 		return false, nil
 	}
 
-	hasSC, err := hasDefaultStorageClass(ctx, client)
+	hasSC, err := utils.HasDefaultStorageClass(ctx, client)
 	if err != nil {
 		return false, err
 	}
@@ -341,21 +340,6 @@ func hasScannerV4DBPVC(ctx context.Context, client ctrlClient.Reader, pvcName st
 			return false, nil
 		}
 		return false, fmt.Errorf("looking for existing scanner-v4-db pvc: %w", err)
-	}
-
-	return false, nil
-}
-func hasDefaultStorageClass(ctx context.Context, client ctrlClient.Reader) (bool, error) {
-	storageClassList := storagev1.StorageClassList{}
-	if err := client.List(ctx, &storageClassList); err != nil {
-		return false, fmt.Errorf("listing available StorageClasses: %w", err)
-	}
-
-	for _, sc := range storageClassList.Items {
-		value, hasAnnotation := sc.GetAnnotations()[DefaultStorageClassAnnotationKey]
-		if hasAnnotation && value == "true" {
-			return true, nil
-		}
 	}
 
 	return false, nil
