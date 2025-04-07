@@ -13,7 +13,6 @@ import (
 	utils "github.com/stackrox/rox/operator/internal/utils"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	corev1 "k8s.io/api/core/v1"
-	storagev1 "k8s.io/api/storage/v1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -79,9 +78,15 @@ func convertDBPersistenceToPersistence(p *platform.DBPersistence) *platform.Pers
 	}
 }
 
-// getPersistenceByTarget retrieves the persistence configuration for the given PVC target (either PVCTargetCentral, the
-// embedded persistent volume on which RocksDB is stored, or PVCTargetCentralDB, the persistent volume that serves as
-// the backing store for the central-db PostgreSQL database).
+// getPersistenceByTarget retrieves the persistence configuration for the given
+// PVC target:
+//   - PVCTargetCentral -- the embedded persistent volume on which RocksDB is
+//     stored
+//   - PVCTargetCentralDB -- the persistent volume that serves as the backing
+//     store for the central-db PostgreSQL database
+//   - PVCTargetCentralDBBackup -- the persistent volume for storing PostgreSQL
+//     database backups
+//
 // A nil return value indicates that no persistent volume should be provisioned for the respective target.
 func getPersistenceByTarget(central *platform.Central, target PVCTarget) *platform.Persistence {
 	switch target {
@@ -217,30 +222,15 @@ func (r *reconcilePVCExtensionRun) handleDelete() error {
 }
 
 func (r *reconcilePVCExtensionRun) handleCreate(claimName string, pvcConfig *platform.PersistentVolumeClaim) error {
-	storageClasses := &storagev1.StorageClassList{}
-	if err := r.client.List(r.ctx, storageClasses); err != nil {
-		r.log.Error(err, "failed to get StorageClassList, assume no default storage class is set")
-	}
-
 	// Before creating a PVC, verify if prerequisites are met. Currently there
 	// is only one requirement, a default storage class must exists. Since it's
 	// highly specific for PVCs only, it's implemented inside the extension,
 	// instead of collecting this information at the start and passing it into
 	// the extension.
-	defaultStorageClass := false
-
-	for _, class := range storageClasses.Items {
-		r.log.V(2).Info(fmt.Sprintf("Inspecting storage class %s", class.Name))
-		for k, v := range class.Annotations {
-			r.log.V(2).Info(fmt.Sprintf("Annotation %s:%s", k, v))
-
-			if k == defaultStorageClassAnnotation && v == "true" {
-				defaultStorageClass = true
-			}
-		}
-	}
-
-	if !defaultStorageClass {
+	//
+	// Note that to make this check less disruptive, in case if we face an
+	// error we still try to create a PVC.
+	if result, err := utils.HasDefaultStorageClass(r.ctx, r.client); err == nil && !result {
 		r.log.Info("No default storage class found, skip PVC creation")
 		return nil
 	}
