@@ -15,7 +15,7 @@ data:
     target_port = 1337
     arrival_rate = 0.1
     departure_rate = 0.1
-    ports_per_addr = 2
+    conns_per_addr = 2
     nconnections = 100
 
   network-client.toml: |
@@ -30,5 +30,5 @@ data:
     target_port = 1337
     arrival_rate = 0.1
     departure_rate = 0.1
-    ports_per_addr = 2
+    conns_per_addr = 2
     nconnections = 100

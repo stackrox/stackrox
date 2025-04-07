@@ -24,7 +24,7 @@ spec:
       imagePullSecrets:
       - name: {{.JobName}}-{{.Replica}}
       containers:
-      - image: quay.io/jvirtane/berserker-connection-load-1.0-77-g80d8771450-2
+      - image: quay.io/jvirtane/berserker-connection-load-1.0-82-g4efff6eac5-dirty
         resources:
           requests:
             memory: "100Mi"
