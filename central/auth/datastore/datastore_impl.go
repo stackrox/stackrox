@@ -151,25 +151,23 @@ func (d *datastoreImpl) InitializeTokenExchangers() error {
 	}
 
 	var tokenExchangerErrors []error
-	upserted := false
+	var kubeSAConfig *storage.AuthMachineToMachineConfig
 	upsertTokenExchanger := func(config *storage.AuthMachineToMachineConfig) error {
-		if err := d.configureConfigControllerAccess(kubeSAIssuer, config); err != nil {
-			return pkgErrors.Wrap(err, "failed to configure config controller access")
+		if config.GetIssuer() == kubeSAIssuer {
+			kubeSAConfig = config
+			return nil
 		}
+
 		if err := d.set.UpsertTokenExchanger(ctx, config); err != nil {
 			tokenExchangerErrors = append(tokenExchangerErrors, err)
 		}
-		upserted = true
 		return nil
 	}
 	if err := d.forEachAuthM2MConfigNoLock(ctx, upsertTokenExchanger); err != nil {
 		return pkgErrors.Wrap(err, "Failed to list auth m2m configs")
 	}
-	// ensure we upserted the default config
-	if !upserted {
-		if err := d.configureConfigControllerAccess(kubeSAIssuer, nil); err != nil {
-			return pkgErrors.Wrap(err, "failed to configure config controller access")
-		}
+	if err := d.configureConfigControllerAccess(kubeSAIssuer, kubeSAConfig); err != nil {
+		return pkgErrors.Wrap(err, "failed to configure config controller access")
 	}
 
 	return errors.Join(tokenExchangerErrors...)
@@ -185,13 +183,7 @@ func (d *datastoreImpl) InitializeTokenExchangers() error {
 //
 // This allows customers to add their own role mappings for this config.
 // If a customer breaks config-controller auth, they can simply restart Central to get it back to a working state.
-func (d *datastoreImpl) configureConfigControllerAccess(kubeSAIssuer string, config *storage.AuthMachineToMachineConfig) error {
-	var kubeSAConfig *storage.AuthMachineToMachineConfig
-
-	if config.GetIssuer() == kubeSAIssuer {
-		kubeSAConfig = config
-	}
-
+func (d *datastoreImpl) configureConfigControllerAccess(kubeSAIssuer string, kubeSAConfig *storage.AuthMachineToMachineConfig) error {
 	if kubeSAConfig == nil {
 		kubeSAConfig = &storage.AuthMachineToMachineConfig{
 			Id:                      uuid.NewV4().String(),
@@ -222,8 +214,7 @@ func (d *datastoreImpl) configureConfigControllerAccess(kubeSAIssuer string, con
 		sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS), sac.ResourceScopeKeys(resources.Access)))
 
 	// This inits the token exchanger, too
-	_, err := d.upsertAuthM2MConfigNoLock(ctx, kubeSAConfig)
-	if err != nil {
+	if _, err := d.upsertAuthM2MConfigNoLock(ctx, kubeSAConfig); err != nil {
 		return pkgErrors.Wrap(err, "Failed to upsert auth m2m config")
 	}
 
