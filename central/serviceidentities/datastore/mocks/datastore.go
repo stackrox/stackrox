@@ -55,7 +55,7 @@ func (mr *MockDataStoreMockRecorder) AddServiceIdentity(ctx, identity any) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddServiceIdentity", reflect.TypeOf((*MockDataStore)(nil).AddServiceIdentity), ctx, identity)
 }
 
-// ProcessServiceIdentities mocks base method.
+// ForEachServiceIdentity mocks base method.
 func (m *MockDataStore) ForEachServiceIdentity(arg0 context.Context, arg1 func(*storage.ServiceIdentity) error) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ForEachServiceIdentity", arg0, arg1)
@@ -63,8 +63,8 @@ func (m *MockDataStore) ForEachServiceIdentity(arg0 context.Context, arg1 func(*
 	return ret0
 }
 
-// ProcessServiceIdentities indicates an expected call of ProcessServiceIdentities.
-func (mr *MockDataStoreMockRecorder) ProcessServiceIdentities(arg0, arg1 any) *gomock.Call {
+// ForEachServiceIdentity indicates an expected call of ForEachServiceIdentity.
+func (mr *MockDataStoreMockRecorder) ForEachServiceIdentity(arg0, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ForEachServiceIdentity", reflect.TypeOf((*MockDataStore)(nil).ForEachServiceIdentity), arg0, arg1)
 }
