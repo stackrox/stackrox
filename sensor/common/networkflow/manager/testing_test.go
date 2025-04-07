@@ -22,6 +22,7 @@ func createManager(mockCtrl *gomock.Controller) (*networkFlowManager, *mocksMana
 	mockExternalStore := mocksExternalSrc.NewMockStore(mockCtrl)
 	mockDetector := mocksDetector.NewMockDetector(mockCtrl)
 	ticker := time.NewTicker(100 * time.Millisecond)
+	purgerTicker := time.NewTicker(300 * time.Millisecond)
 	mgr := &networkFlowManager{
 		clusterEntities:   mockEntityStore,
 		externalSrcs:      mockExternalStore,
@@ -31,8 +32,9 @@ func createManager(mockCtrl *gomock.Controller) (*networkFlowManager, *mocksMana
 		publicIPs:         newPublicIPsManager(),
 		centralReady:      concurrency.NewSignal(),
 		enricherTicker:    ticker,
+		purgerTicker:      purgerTicker,
 		activeConnections: make(map[connection]*networkConnIndicator),
-		activeEndpoints:   make(map[containerEndpoint]*containerEndpointIndicator),
+		activeEndpoints:   make(map[containerEndpoint]*containerEndpointIndicatorWithAge),
 		stopper:           concurrency.NewStopper(),
 	}
 	return mgr, mockEntityStore, mockExternalStore, mockDetector
@@ -48,8 +50,8 @@ func (f expectFn) runIfSet() {
 
 func expectEntityLookupContainerHelper(mockEntityStore *mocksManager.MockEntityStore, times int, containerMetadata clusterentities.ContainerMetadata, found bool) expectFn {
 	return func() {
-		mockEntityStore.EXPECT().LookupByContainerID(gomock.Any()).Times(times).DoAndReturn(func(_ any) (clusterentities.ContainerMetadata, bool) {
-			return containerMetadata, found
+		mockEntityStore.EXPECT().LookupByContainerID(gomock.Any()).Times(times).DoAndReturn(func(_ any) (clusterentities.ContainerMetadata, bool, bool) {
+			return containerMetadata, found, false
 		})
 	}
 }
@@ -217,6 +219,8 @@ func addHostConnection(mgr *networkFlowManager, connectionsHostPair *HostnameAnd
 	if !ok {
 		h = &hostConnections{}
 	}
+	h.mutex.Lock()
+	defer h.mutex.Unlock()
 	if connectionsHostPair.connPair != nil {
 		if h.connections == nil {
 			h.connections = make(map[connection]*connStatus)

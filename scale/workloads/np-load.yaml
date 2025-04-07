@@ -40,6 +40,7 @@ networkPolicyWorkload:
 networkWorkload:
   batchSize: 100
   flowInterval: 1s
+  generateUnclosedEndpoints: true
 nodeWorkload:
   numNodes: 1000
 rbacWorkload:

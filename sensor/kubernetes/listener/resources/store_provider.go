@@ -35,12 +35,10 @@ type CleanableStore interface {
 
 // InitializeStore creates the store instances
 func InitializeStore() *StoreProvider {
-	// TODO(ROX-28259): Re-enable ROX_PAST_CLUSTER_ENTITIES_MEMORY_SIZE option.
-	// memSizeSetting := pastClusterEntitiesMemorySize.IntegerSetting()
-	// if memSizeSetting < 0 {
-	// 	 memSizeSetting = pastClusterEntitiesMemorySize.DefaultValue()
-	// }
-	memSizeSetting := 0
+	memSizeSetting := pastClusterEntitiesMemorySize.IntegerSetting()
+	if memSizeSetting < 0 {
+		memSizeSetting = pastClusterEntitiesMemorySize.DefaultValue()
+	}
 	log.Infof("Initializing cluster entities store with memory that will last for %d ticks", memSizeSetting)
 	deployStore := newDeploymentStore()
 	podStore := newPodStore()
