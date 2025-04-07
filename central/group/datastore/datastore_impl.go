@@ -73,7 +73,7 @@ func (ds *dataStoreImpl) Get(ctx context.Context, props *storage.GroupProperties
 	return group, err
 }
 
-func (ds *dataStoreImpl) ProcessAll(ctx context.Context, fn func(group *storage.Group) error) error {
+func (ds *dataStoreImpl) ForEach(ctx context.Context, fn func(group *storage.Group) error) error {
 	if ok, err := accessSAC.ReadAllowed(ctx); err != nil {
 		return err
 	} else if !ok {

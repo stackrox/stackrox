@@ -45,7 +45,7 @@ var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, err
 	props["Auth Providers"] = providerTypes.AsSlice()
 	providerGroups := make(map[string]int)
 
-	err = groupDataStore.Singleton().ProcessAll(ctx, func(group *storage.Group) error {
+	err = groupDataStore.Singleton().ForEach(ctx, func(group *storage.Group) error {
 		id := group.GetProps().GetAuthProviderId()
 		providerGroups[id] = providerGroups[id] + 1
 		return nil

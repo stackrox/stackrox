@@ -55,6 +55,20 @@ func (mr *MockDataStoreMockRecorder) Add(ctx, group any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockDataStore)(nil).Add), ctx, group)
 }
 
+// ForEach mocks base method.
+func (m *MockDataStore) ForEach(ctx context.Context, fn func(*storage.Group) error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ForEach", ctx, fn)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ForEach indicates an expected call of ForEach.
+func (mr *MockDataStoreMockRecorder) ForEach(ctx, fn any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ForEach", reflect.TypeOf((*MockDataStore)(nil).ForEach), ctx, fn)
+}
+
 // Get mocks base method.
 func (m *MockDataStore) Get(ctx context.Context, props *storage.GroupProperties) (*storage.Group, error) {
 	m.ctrl.T.Helper()
@@ -97,20 +111,6 @@ func (m *MockDataStore) Mutate(ctx context.Context, remove, update, add []*stora
 func (mr *MockDataStoreMockRecorder) Mutate(ctx, remove, update, add, force any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Mutate", reflect.TypeOf((*MockDataStore)(nil).Mutate), ctx, remove, update, add, force)
-}
-
-// ProcessAll mocks base method.
-func (m *MockDataStore) ProcessAll(ctx context.Context, fn func(*storage.Group) error) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ProcessAll", ctx, fn)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// ProcessAll indicates an expected call of ProcessAll.
-func (mr *MockDataStoreMockRecorder) ProcessAll(ctx, fn any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessAll", reflect.TypeOf((*MockDataStore)(nil).ProcessAll), ctx, fn)
 }
 
 // Remove mocks base method.

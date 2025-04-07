@@ -27,7 +27,7 @@ func (resolver *Resolver) Groups(ctx context.Context) ([]*groupResolver, error) 
 		return nil, err
 	}
 	var groups []*groupResolver
-	err = resolver.GroupDataStore.ProcessAll(ctx, func(group *storage.Group) error {
+	err = resolver.GroupDataStore.ForEach(ctx, func(group *storage.Group) error {
 		groups = append(groups, &groupResolver{root: resolver, data: group})
 		return nil
 	})

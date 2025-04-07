@@ -514,7 +514,7 @@ func (s *serviceImpl) getGroups(_ context.Context) (interface{}, error) {
 			sac.ResourceScopeKeys(resources.Access)))
 
 	var groups []*storage.Group
-	err := s.groupDataStore.ProcessAll(accessGroupsCtx, func(group *storage.Group) error {
+	err := s.groupDataStore.ForEach(accessGroupsCtx, func(group *storage.Group) error {
 		groups = append(groups, group)
 		return nil
 	})

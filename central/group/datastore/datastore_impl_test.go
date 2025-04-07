@@ -138,14 +138,14 @@ func (s *groupDataStoreTestSuite) TestGetWithoutID() {
 func (s *groupDataStoreTestSuite) TestEnforcesGetAll() {
 	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).Times(0)
 
-	err := s.dataStore.ProcessAll(s.hasNoneCtx, nil)
+	err := s.dataStore.ForEach(s.hasNoneCtx, nil)
 	s.NoError(err, "expected no error, should return nil without access")
 }
 
 func (s *groupDataStoreTestSuite) TestAllowsGetAll() {
 	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).Return(nil)
 
-	err := s.dataStore.ProcessAll(s.hasReadCtx, nil)
+	err := s.dataStore.ForEach(s.hasReadCtx, nil)
 	s.NoError(err, "expected no error trying to read with permissions")
 }
 
