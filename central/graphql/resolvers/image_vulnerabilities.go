@@ -453,7 +453,7 @@ func (resolver *imageCVEResolver) imageVulnerabilityScopeContext(ctx context.Con
 	}
 
 	return scoped.Context(resolver.ctx, scoped.Scope{
-		ID:    resolver.data.GetId(),
+		IDs:   []string{resolver.data.GetId()},
 		Level: v1.SearchCategory_IMAGE_VULNERABILITIES,
 	})
 }
@@ -473,7 +473,7 @@ func (resolver *imageCVEResolver) EnvImpact(ctx context.Context) (float64, error
 		return 0, err
 	}
 	ctx = scoped.Context(ctx, scoped.Scope{
-		ID:    resolver.data.GetId(),
+		IDs:   []string{resolver.data.GetId()},
 		Level: v1.SearchCategory_IMAGE_VULNERABILITIES,
 	})
 	scopedCount, err := resolver.root.DeploymentCount(ctx, RawQuery{})
@@ -503,7 +503,7 @@ func (resolver *imageCVEResolver) FixedByVersion(ctx context.Context) (string, e
 		return "", nil
 	}
 
-	query := search.NewQueryBuilder().AddExactMatches(search.ComponentID, scope.ID).AddExactMatches(search.CVEID, resolver.data.GetId()).ProtoQuery()
+	query := search.NewQueryBuilder().AddExactMatches(search.ComponentID, scope.IDs...).AddExactMatches(search.CVEID, resolver.data.GetId()).ProtoQuery()
 	edges, err := resolver.root.ComponentCVEEdgeDataStore.SearchRawEdges(resolver.ctx, query)
 	if err != nil || len(edges) == 0 {
 		return "", err
@@ -618,7 +618,10 @@ func (resolver *imageCVEResolver) VulnerabilityState(ctx context.Context) string
 	var imageID string
 	scope, hasScope := scoped.GetScopeAtLevel(resolver.ctx, v1.SearchCategory_IMAGES)
 	if hasScope {
-		imageID = scope.ID
+		if len(scope.IDs) != 1 {
+			return ""
+		}
+		imageID = scope.IDs[0]
 	}
 
 	if imageID == "" {
@@ -709,7 +712,10 @@ func (resolver *imageCVEResolver) EffectiveVulnerabilityRequest(ctx context.Cont
 	var imageID string
 	scope, hasScope := scoped.GetScopeAtLevel(resolver.ctx, v1.SearchCategory_IMAGES)
 	if hasScope {
-		imageID = scope.ID
+		if len(scope.IDs) != 1 {
+			return nil, errors.Errorf("single image scope must be provided for determining effective vulnerability request for cve %s", resolver.data.GetId())
+		}
+		imageID = scope.IDs[0]
 	}
 
 	if imageID == "" {
@@ -762,7 +768,10 @@ func (resolver *imageCVEResolver) DiscoveredAtImage(ctx context.Context, args Ra
 	var imageID string
 	scope, hasScope := scoped.GetScopeAtLevel(resolver.ctx, v1.SearchCategory_IMAGES)
 	if hasScope {
-		imageID = scope.ID
+		if len(scope.IDs) != 1 {
+			return nil, errors.Errorf("single image scope must be provided for determining effective vulnerability request for cve %s", resolver.data.GetId())
+		}
+		imageID = scope.IDs[0]
 	} else {
 		var err error
 		imageID, err = getImageIDFromIfImageShaQuery(resolver.ctx, resolver.root, args)
@@ -1061,7 +1070,10 @@ func (resolver *imageCVEV2Resolver) EffectiveVulnerabilityRequest(ctx context.Co
 	var imageID string
 	scope, hasScope := scoped.GetScopeAtLevel(resolver.ctx, v1.SearchCategory_IMAGES)
 	if hasScope {
-		imageID = scope.ID
+		if len(scope.IDs) != 1 {
+			return nil, errors.Errorf("single image scope must be provided for determining effective vulnerability request for cve %s", resolver.data.GetId())
+		}
+		imageID = scope.IDs[0]
 	}
 
 	if imageID == "" {
@@ -1213,7 +1225,7 @@ func (resolver *imageCVEV2Resolver) imageVulnerabilityScopeContext(ctx context.C
 	}
 
 	return scoped.Context(resolver.ctx, scoped.Scope{
-		ID:    resolver.data.GetId(),
+		IDs:   []string{resolver.data.GetId()},
 		Level: v1.SearchCategory_IMAGE_VULNERABILITIES_V2,
 	})
 }

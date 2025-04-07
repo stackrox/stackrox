@@ -243,7 +243,7 @@ func (resolver *nodeCVEResolver) nodeVulnerabilityScopeContext(ctx context.Conte
 		resolver.ctx = ctx
 	}
 	return scoped.Context(resolver.ctx, scoped.Scope{
-		ID:    resolver.data.GetId(),
+		IDs:   []string{resolver.data.GetId()},
 		Level: v1.SearchCategory_NODE_VULNERABILITIES,
 	})
 }
@@ -261,7 +261,7 @@ func (resolver *nodeCVEResolver) EnvImpact(ctx context.Context) (float64, error)
 		return 0, err
 	}
 	ctx = scoped.Context(ctx, scoped.Scope{
-		ID:    resolver.data.GetId(),
+		IDs:   []string{resolver.data.GetId()},
 		Level: v1.SearchCategory_NODE_VULNERABILITIES,
 	})
 	scopedCount, err := resolver.root.NodeCount(ctx, RawQuery{})
@@ -287,7 +287,7 @@ func (resolver *nodeCVEResolver) FixedByVersion(ctx context.Context) (string, er
 	if !hasScope {
 		return "", nil
 	}
-	query := search.NewQueryBuilder().AddExactMatches(search.ComponentID, scope.ID).AddExactMatches(search.CVEID, resolver.data.GetId()).ProtoQuery()
+	query := search.NewQueryBuilder().AddExactMatches(search.ComponentID, scope.IDs...).AddExactMatches(search.CVEID, resolver.data.GetId()).ProtoQuery()
 	edges, err := resolver.root.NodeComponentCVEEdgeDataStore.SearchRawEdges(resolver.ctx, query)
 	if err != nil || len(edges) == 0 {
 		return "", err

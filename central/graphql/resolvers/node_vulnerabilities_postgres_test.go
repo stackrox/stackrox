@@ -207,7 +207,7 @@ func (s *GraphQLNodeVulnerabilityTestSuite) TestNodeVulnerabilitiesFixedByVersio
 
 	scopedCtx := scoped.Context(ctx, scoped.Scope{
 		Level: v1.SearchCategory_NODE_COMPONENTS,
-		ID:    "comp1#0.9#",
+		IDs:   []string{"comp1#0.9#"},
 	})
 	vuln := getNodeVulnerabilityResolver(scopedCtx, s.T(), s.resolver, "cve-2018-1#")
 
@@ -217,7 +217,7 @@ func (s *GraphQLNodeVulnerabilityTestSuite) TestNodeVulnerabilitiesFixedByVersio
 
 	scopedCtx = scoped.Context(ctx, scoped.Scope{
 		Level: v1.SearchCategory_NODE_COMPONENTS,
-		ID:    "comp2#1.1#",
+		IDs:   []string{"comp2#1.1#"},
 	})
 	vuln = getNodeVulnerabilityResolver(scopedCtx, s.T(), s.resolver, "cve-2018-1#")
 
@@ -227,7 +227,7 @@ func (s *GraphQLNodeVulnerabilityTestSuite) TestNodeVulnerabilitiesFixedByVersio
 
 	scopedCtx = scoped.Context(ctx, scoped.Scope{
 		Level: v1.SearchCategory_NODE_COMPONENTS,
-		ID:    "comp2#1.1#",
+		IDs:   []string{"comp2#1.1#"},
 	})
 	vuln = getNodeVulnerabilityResolver(scopedCtx, s.T(), s.resolver, "cve-2017-1#")
 

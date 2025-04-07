@@ -584,7 +584,7 @@ func (resolver *clusterResolver) clusterScopeContext(ctx context.Context) contex
 	}
 	return scoped.Context(resolver.ctx, scoped.Scope{
 		Level: v1.SearchCategory_CLUSTERS,
-		ID:    resolver.data.GetId(),
+		IDs:   []string{resolver.data.GetId()},
 	})
 }
 
@@ -673,7 +673,7 @@ func (resolver *clusterResolver) Policies(ctx context.Context, args PaginatedQue
 	for _, policyResolver := range policyResolvers {
 		policyResolver.ctx = scoped.Context(ctx, scoped.Scope{
 			Level: v1.SearchCategory_CLUSTERS,
-			ID:    resolver.data.GetId(),
+			IDs:   []string{resolver.data.GetId()},
 		})
 	}
 	return paginate(pagination, policyResolvers, nil)
@@ -739,7 +739,7 @@ func (resolver *clusterResolver) PolicyStatus(ctx context.Context, args RawQuery
 
 	scopedCtx := scoped.Context(ctx, scoped.Scope{
 		Level: v1.SearchCategory_CLUSTERS,
-		ID:    resolver.data.GetId(),
+		IDs:   []string{resolver.data.GetId()},
 	})
 
 	if len(alerts) == 0 {
