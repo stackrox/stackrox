@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -13,6 +14,7 @@ import (
 	configMocks "github.com/stackrox/rox/central/config/datastore/mocks"
 	"github.com/stackrox/rox/central/globaldb"
 	groupMocks "github.com/stackrox/rox/central/group/datastore/mocks"
+	logMocks "github.com/stackrox/rox/central/logimbue/store/mocks"
 	notifierMocks "github.com/stackrox/rox/central/notifier/datastore/mocks"
 	roleMocks "github.com/stackrox/rox/central/role/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
@@ -73,7 +75,7 @@ func (s *debugServiceTestSuite) TearDownTest() {
 }
 
 func (s *debugServiceTestSuite) TestGetGroups() {
-	s.groupsMock.EXPECT().GetAll(gomock.Any()).Return(nil, errors.New("Test"))
+	s.groupsMock.EXPECT().ForEach(gomock.Any(), gomock.Any()).Return(errors.New("Test"))
 	_, err := s.service.getGroups(s.noneCtx)
 	s.Error(err, "expected error propagation")
 
@@ -87,7 +89,10 @@ func (s *debugServiceTestSuite) TestGetGroups() {
 			},
 		},
 	}
-	s.groupsMock.EXPECT().GetAll(gomock.Any()).Return(expectedGroups, nil)
+	s.groupsMock.EXPECT().ForEach(gomock.Any(), gomock.Any()).Do(
+		func(ctx context.Context, fn func(group *storage.Group) error) error {
+			return fn(expectedGroups[0])
+		})
 	actualGroups, err := s.service.getGroups(s.noneCtx)
 	ag, ok := actualGroups.([]*storage.Group)
 	s.Require().True(ok)
@@ -225,4 +230,114 @@ func (s *debugServiceTestSuite) TestGetBundle() {
 		s.T().Log("Reading file:", zipFile.Name)
 		s.Assert().Equal(stubTime, zipFile.Modified.UTC())
 	}
+}
+
+func (s *debugServiceTestSuite) TestGetLogs() {
+	logs := []*storage.LogImbue{
+		{
+			Log: []byte("not a json"),
+		},
+		{
+			Log: []byte(`{"json": "object"}`),
+		},
+		{
+			Log: []byte(`{"weirdstring" : "**&&^^%%$$"}`),
+		},
+		{
+			Log: []byte(`[{},{"hey": "hehehehey"}]`),
+		},
+	}
+
+	logStore := logMocks.NewMockStore(s.mockCtrl)
+	logStore.EXPECT().Walk(gomock.Any(), gomock.Any()).Do(
+		func(_ context.Context, fn func(*storage.LogImbue) error) {
+			for _, l := range logs {
+				err := fn(l)
+				s.Require().NoError(err)
+			}
+		}).Return(nil)
+	s.service.store = logStore
+
+	buf := &bytes.Buffer{}
+	writer := newZipWriter(buf)
+	err := s.service.getLogImbue(context.Background(), writer)
+	s.Require().NoError(err)
+
+	s.Require().NoError(writer.Close())
+	zipReader, err := zip.NewReader(bytes.NewReader(buf.Bytes()), int64(buf.Len()))
+	s.Require().NoError(err)
+
+	s.Assert().Len(zipReader.File, 1)
+	file := zipReader.File[0]
+	s.Assert().Equal(file.Name, "logimbue-data.json")
+	open, err := file.Open()
+	s.Require().NoError(err)
+	all, err := io.ReadAll(open)
+	s.Require().NoError(err)
+	s.Assert().JSONEq(`[
+	  {
+		"encodingError":"json: error calling MarshalJSON for type json.RawMessage: invalid character 'o' in literal null (expecting 'u')",
+		"raw":"not a json"
+	  },
+	  {
+		"json":"object"
+	  },
+	  {
+		"weirdstring":"**\u0026\u0026^^%%$$"
+	  },
+	  [
+		{},
+		{
+		  "hey":"hehehehey"
+		}
+	  ]
+	]`, string(all))
+}
+
+func (s *debugServiceTestSuite) TestGetLogsWhenThereAreNoLogs() {
+	logStore := logMocks.NewMockStore(s.mockCtrl)
+	logStore.EXPECT().Walk(gomock.Any(), gomock.Any()).Return(nil)
+	s.service.store = logStore
+
+	buf := &bytes.Buffer{}
+	writer := newZipWriter(buf)
+	err := s.service.getLogImbue(context.Background(), writer)
+	s.Require().NoError(err)
+
+	s.Require().NoError(writer.Close())
+	zipReader, err := zip.NewReader(bytes.NewReader(buf.Bytes()), int64(buf.Len()))
+	s.Require().NoError(err)
+
+	s.Assert().Len(zipReader.File, 1)
+	file := zipReader.File[0]
+	s.Assert().Equal(file.Name, "logimbue-data.json")
+	open, err := file.Open()
+	s.Require().NoError(err)
+	all, err := io.ReadAll(open)
+	s.Require().NoError(err)
+	s.Assert().JSONEq(`[]`, string(all))
+}
+
+func (s *debugServiceTestSuite) TestGetLogsWhenThereAreWriteErrors() {
+	logStore := logMocks.NewMockStore(s.mockCtrl)
+	logStore.EXPECT().Walk(gomock.Any(), gomock.Any()).Return(errors.New("some error"))
+	s.service.store = logStore
+
+	buf := &bytes.Buffer{}
+	writer := newZipWriter(buf)
+	err := s.service.getLogImbue(context.Background(), writer)
+	s.Assert().Error(err)
+	s.Require().NoError(writer.Close())
+
+	zipReader, err := zip.NewReader(bytes.NewReader(buf.Bytes()), int64(buf.Len()))
+	s.Require().NoError(err)
+
+	s.Assert().Len(zipReader.File, 1)
+	file := zipReader.File[0]
+	s.Assert().Equal(file.Name, "logimbue-data.json")
+	open, err := file.Open()
+	s.Require().NoError(err)
+	all, err := io.ReadAll(open)
+	s.Require().NoError(err)
+	s.Assert().Equal(`[`, string(all))
 }

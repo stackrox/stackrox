@@ -1,6 +1,12 @@
 import React, { useState } from 'react';
-import { Button, TextInput } from '@patternfly/react-core';
-import { Select, SelectOption } from '@patternfly/react-core/deprecated';
+import {
+    Button,
+    MenuToggleElement,
+    MenuToggle,
+    Select,
+    SelectOption,
+    TextInput,
+} from '@patternfly/react-core';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { MinusCircleIcon } from '@patternfly/react-icons';
 
@@ -8,6 +14,8 @@ import {
     DelegatedRegistry,
     DelegatedRegistryCluster,
 } from 'services/DelegatedRegistryConfigService';
+
+import { getClusterName } from '../cluster';
 
 type DelegatedRegistriesTableProps = {
     registries: DelegatedRegistry[];
@@ -37,15 +45,9 @@ function DelegatedRegistriesTable({
         setRowOpen(-1);
     }
 
-    const clusterSelectOptions: JSX.Element[] = clusters.map((cluster) => {
-        const optionLabel =
-            cluster.id === selectedClusterId ? `${cluster.name} (default)` : cluster.name;
-        return (
-            <SelectOption key={cluster.id} value={cluster.id}>
-                <span>{optionLabel}</span>
-            </SelectOption>
-        );
-    });
+    const defaultClusterName =
+        selectedClusterId === '' ? 'None' : getClusterName(clusters, selectedClusterId);
+    const defaultClusterItem = `Default cluster: ${defaultClusterName}`;
 
     return (
         <Table aria-label="Delegated registry exceptions table">
@@ -63,8 +65,20 @@ function DelegatedRegistriesTable({
             <Tbody>
                 {registries.map((registry, rowIndex) => {
                     const selectedClusterName =
-                        clusters.find((cluster) => registry.clusterId === cluster.id)?.name ??
-                        'None';
+                        registry.clusterId === ''
+                            ? defaultClusterItem
+                            : getClusterName(clusters, registry.clusterId);
+
+                    // Options consist of valid clusters, plus destination cluster (in unlikely case that it is not valid).
+                    const clusterSelectOptions: JSX.Element[] = clusters
+                        .filter((cluster) => cluster.isValid || cluster.id === registry.clusterId)
+                        .map((cluster) => {
+                            return (
+                                <SelectOption key={cluster.id} value={cluster.id}>
+                                    {getClusterName(clusters, cluster.id)}
+                                </SelectOption>
+                            );
+                        });
 
                     // Even path and clusterId combined is not a unique key.
                     /* eslint-disable react/no-array-index-key */
@@ -82,21 +96,23 @@ function DelegatedRegistriesTable({
                             </Td>
                             <Td dataLabel="Destination cluster (CLI/API only)">
                                 <Select
-                                    className="cluster-select"
-                                    placeholderText={
-                                        <span style={{ position: 'relative', top: '1px' }}>
-                                            None
-                                        </span>
-                                    }
-                                    toggleAriaLabel="Select a cluster"
-                                    onToggle={() => toggleSelect(rowIndex)}
                                     onSelect={(_, value) => onSelect(rowIndex, value)}
                                     isOpen={openRow === rowIndex}
-                                    isDisabled={!isEditing}
-                                    selections={selectedClusterName}
+                                    selected={registry.clusterId}
+                                    toggle={(toggleRef: React.Ref<MenuToggleElement>) => (
+                                        <MenuToggle
+                                            aria-label="Select destination cluster"
+                                            ref={toggleRef}
+                                            onClick={() => toggleSelect(rowIndex)}
+                                            isDisabled={!isEditing}
+                                            isExpanded={openRow === rowIndex}
+                                        >
+                                            {selectedClusterName}
+                                        </MenuToggle>
+                                    )}
                                 >
-                                    <SelectOption key="no-cluster-selected" value="" isPlaceholder>
-                                        <span>None</span>
+                                    <SelectOption key="" value="">
+                                        {defaultClusterItem}
                                     </SelectOption>
                                     <>{clusterSelectOptions}</>
                                 </Select>

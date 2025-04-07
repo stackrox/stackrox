@@ -87,6 +87,8 @@ import DefaultFilterModal from '../components/DefaultFilterModal';
 import EntityTypeToggleGroup from '../../components/EntityTypeToggleGroup';
 import ObservedCveModeSelect from './ObservedCveModeSelect';
 import { getViewStateDescription, getViewStateTitle } from './string.utils';
+import CreateReportDropdown from '../components/CreateReportDropdown';
+import CreateOnDemandReportModal from '../components/CreateOnDemandReportModal';
 
 export const entityTypeCountsQuery = gql`
     query getEntityTypeCounts($query: String) {
@@ -180,6 +182,7 @@ function WorkloadCvesOverviewPage() {
         pageTitleDescription,
         baseSearchFilter,
         overviewEntityTabs,
+        viewContext,
     } = useWorkloadCveViewContext();
     const currentVulnerabilityState = useVulnerabilityState();
 
@@ -394,6 +397,17 @@ function WorkloadCvesOverviewPage() {
         />
     );
 
+    // Report-specific state management
+    const [isCreateOnDemandReportModalOpen, setIsCreateOnDemandReportModalOpen] = useState(false);
+    const isOnDemandReportsEnabled = isFeatureFlagEnabled('ROX_VULNERABILITY_ON_DEMAND_REPORTS');
+
+    const isOnDemandReportsVisible =
+        isOnDemandReportsEnabled &&
+        (viewContext === 'User workloads' ||
+            viewContext === 'Platform' ||
+            viewContext === 'All vulnerable images' ||
+            viewContext === 'Inactive images');
+
     return (
         <>
             <PageTitle title={`${pageTitle} Overview`} />
@@ -446,6 +460,15 @@ function WorkloadCvesOverviewPage() {
                         >
                             Manage watched images
                         </Button>
+                    )}
+                    {isOnDemandReportsVisible && (
+                        <FlexItem>
+                            <CreateReportDropdown
+                                onSelect={() => {
+                                    setIsCreateOnDemandReportModalOpen(true);
+                                }}
+                            />
+                        </FlexItem>
                     )}
                 </Flex>
             </PageSection>
@@ -612,6 +635,14 @@ function WorkloadCvesOverviewPage() {
                 }}
                 onWatchedImagesChange={onWatchedImagesChange}
             />
+            {isOnDemandReportsVisible && (
+                <CreateOnDemandReportModal
+                    isOpen={isCreateOnDemandReportModalOpen}
+                    setIsOpen={setIsCreateOnDemandReportModalOpen}
+                    query={workloadCvesScopedQueryString}
+                    areaOfConcern={viewContext}
+                />
+            )}
         </>
     );
 }

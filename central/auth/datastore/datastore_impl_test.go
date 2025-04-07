@@ -4,6 +4,7 @@ package datastore
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/stackrox/rox/central/auth/m2m/mocks"
@@ -13,6 +14,7 @@ import (
 	rolePostgresStore "github.com/stackrox/rox/central/role/store/role/postgres"
 	accessScopePostgresStore "github.com/stackrox/rox/central/role/store/simpleaccessscope/postgres"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
@@ -24,14 +26,15 @@ import (
 )
 
 const (
-	testRole1  = "New-Admin"
-	testRole2  = "Super-Admin"
-	testRole3  = "Super Continuous Integration"
-	testIssuer = "https://localhost"
+	testRole1        = "New-Admin"
+	testRole2        = "Super-Admin"
+	testRole3        = "Super Continuous Integration"
+	configController = "Configuration Controller"
+	testIssuer       = "https://localhost"
 )
 
 var (
-	testRoles = set.NewFrozenStringSet(testRole1, testRole2, testRole3)
+	testRoles = set.NewFrozenStringSet(testRole1, testRole2, testRole3, configController)
 )
 
 func TestAuthDatastorePostgres(t *testing.T) {
@@ -68,7 +71,7 @@ func (s *datastorePostgresTestSuite) SetupTest() {
 		return nil, nil
 	})
 
-	s.addRoles()
+	s.addRoles(roleStore)
 
 	controller := gomock.NewController(s.T())
 	s.mockSet = mocks.NewMockTokenExchangerSet(controller)
@@ -93,9 +96,144 @@ func (s *datastorePostgresTestSuite) TestKubeServiceAccountConfig() {
 
 	issuerFetcher.EXPECT().GetServiceAccountIssuer().Return(testIssuer, nil).Times(1)
 	mockSet.EXPECT().UpsertTokenExchanger(gomock.Any(), gomock.Any()).Return(nil).Times(1)
+	mockSet.EXPECT().GetTokenExchanger(gomock.Any()).Return(nil, false).Times(1)
 
 	authDataStore := New(store, mockSet, issuerFetcher)
 	s.NoError(authDataStore.InitializeTokenExchangers())
+}
+
+type authDataStoreMutatorFunc func(authDataStore DataStore)
+type authDataStoreValidatorFunc func(kubeSAConfig *storage.AuthMachineToMachineConfig)
+
+type kubeSAMatcher struct{}
+
+func (m kubeSAMatcher) Matches(x any) bool {
+	kubeSAConfig, ok := x.(*storage.AuthMachineToMachineConfig)
+	return ok && kubeSAConfig.Issuer == testIssuer
+}
+
+func (m kubeSAMatcher) String() string {
+	return "Matches M2M config for the Kube SA issuer of the current cluster"
+}
+
+func (s *datastorePostgresTestSuite) kubeSAM2MConfig(authDataStoreMutator authDataStoreMutatorFunc, authDataStoreValidator authDataStoreValidatorFunc) {
+	controller := gomock.NewController(s.T())
+	defer controller.Finish()
+	store := store.New(s.pool.DB)
+
+	mockSet := mocks.NewMockTokenExchangerSet(controller)
+	issuerFetcher := mocks.NewMockServiceAccountIssuerFetcher(controller)
+
+	issuerFetcher.EXPECT().GetServiceAccountIssuer().Return(testIssuer, nil).Times(2)
+	mockSet.EXPECT().UpsertTokenExchanger(gomock.Any(), kubeSAMatcher{}).Return(nil).MinTimes(1)
+	mockSet.EXPECT().GetTokenExchanger(gomock.Any()).Return(nil, false).AnyTimes()
+	mockSet.EXPECT().RemoveTokenExchanger(gomock.AssignableToTypeOf("")).Return(nil).AnyTimes()
+
+	authDataStore := New(store, mockSet, issuerFetcher)
+	s.NoError(authDataStore.InitializeTokenExchangers())
+	authDataStoreMutator(authDataStore)
+
+	// Emulate restarting Central by creating a new data store and token exchanger set
+	mockSet = mocks.NewMockTokenExchangerSet(controller)
+	mockSet.EXPECT().UpsertTokenExchanger(gomock.Any(), kubeSAMatcher{}).Return(nil).MinTimes(1)
+	mockSet.EXPECT().GetTokenExchanger(gomock.Any()).Return(nil, false).AnyTimes()
+
+	authDataStore = New(store, mockSet, issuerFetcher)
+	s.NoError(authDataStore.InitializeTokenExchangers())
+
+	var kubeSAConfig *storage.AuthMachineToMachineConfig
+	err := authDataStore.ForEachAuthM2MConfig(s.ctx, func(obj *storage.AuthMachineToMachineConfig) error {
+		if obj.Issuer == testIssuer {
+			kubeSAConfig = obj
+		}
+		return nil
+	})
+	s.NoError(err)
+	authDataStoreValidator(kubeSAConfig)
+}
+
+func (s *datastorePostgresTestSuite) TestKubeSAM2MConfigPersistsAfterDelete() {
+	authDataStoreMutator := func(authDataStore DataStore) {
+		var kubeSAConfig *storage.AuthMachineToMachineConfig
+		err := authDataStore.ForEachAuthM2MConfig(s.ctx, func(obj *storage.AuthMachineToMachineConfig) error {
+			if obj.Issuer == testIssuer {
+				kubeSAConfig = obj
+			}
+			return nil
+		})
+		s.NoError(err)
+		s.NotNil(kubeSAConfig)
+		s.NoError(authDataStore.RemoveAuthM2MConfig(s.ctx, kubeSAConfig.Id))
+	}
+	authDataStoreValidator := func(kubeSAConfig *storage.AuthMachineToMachineConfig) {
+		s.NotNil(kubeSAConfig)
+		s.Equal(1, len(kubeSAConfig.Mappings))
+		s.Equal("sub", kubeSAConfig.Mappings[0].Key)
+		s.Equal("Configuration Controller", kubeSAConfig.Mappings[0].Role)
+		s.Contains(kubeSAConfig.Mappings[0].ValueExpression, "config-controller")
+	}
+
+	s.kubeSAM2MConfig(authDataStoreMutator, authDataStoreValidator)
+}
+
+func (s *datastorePostgresTestSuite) TestKubeSAM2MConfigPersistsAfterRestart() {
+	authDataStoreMutator := func(authDataStore DataStore) {}
+	authDataStoreValidator := func(kubeSAConfig *storage.AuthMachineToMachineConfig) {
+		s.NotNil(kubeSAConfig)
+		s.Equal(1, len(kubeSAConfig.Mappings))
+		s.Equal("sub", kubeSAConfig.Mappings[0].Key)
+		s.Equal("Configuration Controller", kubeSAConfig.Mappings[0].Role)
+		s.Contains(kubeSAConfig.Mappings[0].ValueExpression, "config-controller")
+	}
+
+	s.kubeSAM2MConfig(authDataStoreMutator, authDataStoreValidator)
+}
+
+func (s *datastorePostgresTestSuite) TestKubeSAM2MConfigPersistsAfterModification() {
+	testMapping := storage.AuthMachineToMachineConfig_Mapping{
+		Key:             "sub",
+		Role:            testRole1,
+		ValueExpression: "system:serviceaccount:my-namespace:my-service-account",
+	}
+	configControllerMapping := storage.AuthMachineToMachineConfig_Mapping{
+		Key:             "sub",
+		Role:            configController,
+		ValueExpression: fmt.Sprintf("system:serviceaccount:%s:config-controller", env.Namespace.Setting()),
+	}
+
+	authDataStoreMutator := func(authDataStore DataStore) {
+		var kubeSAConfig *storage.AuthMachineToMachineConfig
+		err := authDataStore.ForEachAuthM2MConfig(s.ctx, func(obj *storage.AuthMachineToMachineConfig) error {
+			if obj.Issuer == testIssuer {
+				kubeSAConfig = obj
+			}
+			return nil
+		})
+		s.NoError(err)
+		s.NotNil(kubeSAConfig)
+		kubeSAConfig.Mappings = []*storage.AuthMachineToMachineConfig_Mapping{&testMapping}
+		_, err = authDataStore.UpsertAuthM2MConfig(s.ctx, kubeSAConfig)
+		s.NoError(err)
+	}
+	authDataStoreValidator := func(kubeSAConfig *storage.AuthMachineToMachineConfig) {
+		s.NotNil(kubeSAConfig)
+		s.Equal(2, len(kubeSAConfig.Mappings))
+		for _, mapping := range []*storage.AuthMachineToMachineConfig_Mapping{&testMapping, &configControllerMapping} {
+			found := false
+			for _, kubeSAMapping := range kubeSAConfig.Mappings {
+				fmt.Printf("key=%s; role=%s; valueExpression=%s\n", kubeSAMapping.Key, kubeSAMapping.Role, kubeSAMapping.ValueExpression)
+				if kubeSAMapping.Key == mapping.Key && kubeSAMapping.Role == mapping.Role && kubeSAMapping.ValueExpression == mapping.ValueExpression {
+					found = true
+					break
+				}
+			}
+			if !found {
+				s.FailNowf("Failed to find role mapping", "key=%s; role=%s; valueExpression=%s", mapping.Key, mapping.Role, mapping.ValueExpression)
+			}
+		}
+	}
+
+	s.kubeSAM2MConfig(authDataStoreMutator, authDataStoreValidator)
 }
 
 func (s *datastorePostgresTestSuite) TestAddFKConstraint() {
@@ -172,7 +310,7 @@ func (s *datastorePostgresTestSuite) TestAddUniqueIssuerConstraint() {
 	s.ErrorIs(err, errox.AlreadyExists)
 }
 
-func (s *datastorePostgresTestSuite) addRoles() {
+func (s *datastorePostgresTestSuite) addRoles(roleStore rolePostgresStore.Store) {
 	permSetID := uuid.NewV4().String()
 	accessScopeID := uuid.NewV4().String()
 	s.Require().NoError(s.roleDataStore.AddPermissionSet(s.ctx, &storage.PermissionSet{
@@ -193,7 +331,7 @@ func (s *datastorePostgresTestSuite) addRoles() {
 	}))
 
 	for _, role := range testRoles.AsSlice() {
-		s.Require().NoError(s.roleDataStore.AddRole(s.ctx, &storage.Role{
+		s.Require().NoError(roleStore.Upsert(s.ctx, &storage.Role{
 			Name:            role,
 			Description:     "test role",
 			PermissionSetId: permSetID,

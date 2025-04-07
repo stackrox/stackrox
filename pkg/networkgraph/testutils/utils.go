@@ -28,9 +28,9 @@ func GetDeploymentNetworkEntity(id, name string) *storage.NetworkEntityInfo {
 }
 
 // GetExtSrcNetworkEntity returns a external source typed *storage.NetworkEntity object.
-func GetExtSrcNetworkEntity(id, name, cidr string, isDefault bool, clusterID string) *storage.NetworkEntity {
+func GetExtSrcNetworkEntity(id, name, cidr string, isDefault bool, clusterID string, isDiscovered bool) *storage.NetworkEntity {
 	return &storage.NetworkEntity{
-		Info: GetExtSrcNetworkEntityInfo(id, name, cidr, isDefault),
+		Info: GetExtSrcNetworkEntityInfo(id, name, cidr, isDefault, isDiscovered),
 		Scope: &storage.NetworkEntity_Scope{
 			ClusterId: clusterID,
 		},
@@ -38,7 +38,7 @@ func GetExtSrcNetworkEntity(id, name, cidr string, isDefault bool, clusterID str
 }
 
 // GetExtSrcNetworkEntityInfo returns a external source typed *storage.NetworkEntityInfo object.
-func GetExtSrcNetworkEntityInfo(id, name, cidr string, isDefault bool) *storage.NetworkEntityInfo {
+func GetExtSrcNetworkEntityInfo(id, name, cidr string, isDefault bool, isDiscovered bool) *storage.NetworkEntityInfo {
 	return &storage.NetworkEntityInfo{
 		Id:   id,
 		Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
@@ -48,7 +48,8 @@ func GetExtSrcNetworkEntityInfo(id, name, cidr string, isDefault bool) *storage.
 				Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
 					Cidr: cidr,
 				},
-				Default: isDefault,
+				Default:    isDefault,
+				Discovered: isDiscovered,
 			},
 		},
 	}
@@ -76,7 +77,7 @@ func GenRandomExtSrcNetworkEntityInfo(family pkgNet.Family, numNetworks int) ([]
 
 	entities := make([]*storage.NetworkEntityInfo, 0, len(nets))
 	for k := range nets {
-		entities = append(entities, GetExtSrcNetworkEntityInfo(k, k, k, false))
+		entities = append(entities, GetExtSrcNetworkEntityInfo(k, k, k, false, false))
 	}
 
 	return entities, nil
@@ -93,7 +94,7 @@ func GenRandomExtSrcNetworkEntity(family pkgNet.Family, numNetworks int, cluster
 	for k := range nets {
 		id, err := externalsrcs.NewClusterScopedID(clusterID, k)
 		utils.Should(err)
-		entities = append(entities, GetExtSrcNetworkEntity(id.String(), k, k, false, clusterID))
+		entities = append(entities, GetExtSrcNetworkEntity(id.String(), k, k, false, clusterID, false))
 	}
 
 	return entities, nil

@@ -17,7 +17,7 @@ import (
 type DataStore interface {
 	CountCloudSources(ctx context.Context, query *v1.Query) (int, error)
 	GetCloudSource(ctx context.Context, id string) (*storage.CloudSource, error)
-	GetAllCloudSources(ctx context.Context) ([]*storage.CloudSource, error)
+	ForEachCloudSource(ctx context.Context, fn func(obj *storage.CloudSource) error) error
 	ListCloudSources(ctx context.Context, query *v1.Query) ([]*storage.CloudSource, error)
 	UpsertCloudSource(ctx context.Context, cloudSource *storage.CloudSource) error
 	DeleteCloudSource(ctx context.Context, id string) error

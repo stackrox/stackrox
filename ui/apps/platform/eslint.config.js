@@ -77,6 +77,7 @@ module.exports = [
 
         linterOptions: {
             reportUnusedDisableDirectives: 'error',
+            reportUnusedInlineConfigs: 'error',
         },
 
         // Key of plugin is namespace of its rules.
@@ -112,6 +113,7 @@ module.exports = [
                 'ignorePackages',
                 {
                     js: 'never',
+                    jsx: 'never',
                     json: 'always',
                     ts: 'never',
                     tsx: 'never',
@@ -479,9 +481,9 @@ module.exports = [
         },
 
         settings: {
-            'import/extensions': ['.js', '.ts', '.tsx'],
+            'import/extensions': ['.js', '.jsx', '.ts', '.tsx'],
             'import/parsers': {
-                '@typescript-eslint/parser': ['.js', '.ts', '.tsx'],
+                '@typescript-eslint/parser': ['.js', '.jsx', '.ts', '.tsx'],
             },
             'import/resolver': {
                 typescript: {
@@ -543,7 +545,7 @@ module.exports = [
         },
     },
     {
-        files: ['src/*.{ts,tsx}', 'src/*/**/*.{js,ts,tsx}'], // product files, except for unit tests (including mockData and test-utils folders)
+        files: ['src/*.{ts,tsx}', 'src/*/**/*.{js,jsx,ts,tsx}'], // product files, except for unit tests (including mockData and test-utils folders)
 
         languageOptions: {
             ...parserAndOptions,
@@ -619,7 +621,7 @@ module.exports = [
             'react/jsx-filename-extension': [
                 'error',
                 {
-                    extensions: ['.js', '.tsx'], // allow JSX in .js files
+                    extensions: ['.jsx', '.tsx'],
                 },
             ],
             'react/jsx-no-bind': [
@@ -736,7 +738,7 @@ module.exports = [
         },
     },
     {
-        files: ['src/**/*.test.{js,ts,tsx}'], // unit tests
+        files: ['src/**/*.test.{js,jsx,ts,tsx}'], // unit tests
 
         languageOptions: {
             ...parserAndOptions,

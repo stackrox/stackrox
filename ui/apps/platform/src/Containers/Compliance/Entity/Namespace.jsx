@@ -1,41 +1,67 @@
 import React, { useContext, useState } from 'react';
-import { useLocation } from 'react-router-dom';
 import pluralize from 'pluralize';
+import { gql } from '@apollo/client';
 
-import entityTypes from 'constants/entityTypes';
-import { DEPLOYMENT_QUERY } from 'queries/deployment';
-import Widget from 'Components/Widget';
+import ComplianceByStandards from 'Containers/Compliance/widgets/ComplianceByStandards';
 import Query from 'Components/CacheFirstQuery';
-import Loader from 'Components/Loader';
-import BackdropExporting from 'Components/PatternFly/BackdropExporting';
-import { entityPagePropTypes, entityPageDefaultProps } from 'constants/entityPageProps';
-import URLService from 'utils/URLService';
+import IconWidget from 'Components/IconWidget';
+import Cluster from 'images/cluster.svg';
+import Widget from 'Components/Widget';
 // TODO: this exception will be unnecessary once Compliance pages are re-structured like Config Management
 /* eslint-disable-next-line import/no-cycle */
 import ComplianceList from 'Containers/Compliance/List/List';
-import EntityCompliance from 'Containers/Compliance/widgets/EntityCompliance';
-import Cluster from 'images/cluster.svg';
-import Namespace from 'images/ns-icon.svg';
-import IconWidget from 'Components/IconWidget';
-import Labels from 'Containers/Compliance/widgets/Labels';
-import ComplianceByStandards from 'Containers/Compliance/widgets/ComplianceByStandards';
+import ResourceCount from 'Containers/Compliance/widgets/ResourceCount';
+import PageNotFound from 'Components/PageNotFound';
 import isGQLLoading from 'utils/gqlLoading';
+import Loader from 'Components/Loader';
+import BackdropExporting from 'Components/PatternFly/BackdropExporting';
+import Labels from 'Containers/Compliance/widgets/Labels';
+import EntityCompliance from 'Containers/Compliance/widgets/EntityCompliance';
+import entityTypes from 'constants/entityTypes';
+import useCases from 'constants/useCaseTypes';
+import { entityPagePropTypes, entityPageDefaultProps } from 'constants/entityPageProps';
 import searchContext from 'Containers/searchContext';
-import useWorkflowMatch from 'hooks/useWorkflowMatch';
 
 import Header from './Header';
 import ResourceTabs from './ResourceTabs';
 
-function processData(data) {
-    if (!data || !data.deployment) {
-        return {};
+export const QUERY = gql`
+    query getNamespace($id: ID!) {
+        results: namespace(id: $id) {
+            metadata {
+                clusterName
+                name
+                id
+                labels {
+                    key
+                    value
+                }
+            }
+        }
+    }
+`;
+
+function processData(data, entityId) {
+    const defaultValue = {
+        labels: [],
+        name: '',
+        clusterName: '',
+        id: entityId,
+    };
+
+    if (!data || !data.results || !data.results.metadata) {
+        return defaultValue;
     }
 
-    const result = { ...data.deployment };
-    return result;
+    const { metadata, ...rest } = data.results;
+
+    return {
+        ...rest,
+        ...metadata,
+    };
 }
 
-const DeploymentPage = ({
+const NamespacePage = ({
     entityId,
     listEntityType1,
     entityId1,
@@ -47,18 +73,22 @@ const DeploymentPage = ({
 }) => {
     const [isExporting, setIsExporting] = useState(false);
     const searchParam = useContext(searchContext);
-    const match = useWorkflowMatch();
-    const location = useLocation();
-
     return (
-        <Query query={DEPLOYMENT_QUERY} variables={{ id: entityId }}>
+        <Query query={QUERY} variables={{ id: entityId }}>
             {({ loading, data }) => {
                 if (isGQLLoading(loading, data)) {
                     return <Loader />;
                 }
-                const deployment = processData(data);
-                const { name, id, labels, clusterName, namespace, clusterId, namespaceId } =
-                    deployment;
+                if (!data.results) {
+                    return (
+                        <PageNotFound
+                            resourceType={entityTypes.NAMESPACE}
+                            useCase={useCases.COMPLIANCE}
+                        />
+                    );
+                }
+                const namespace = processData(data);
+                const { name, id, clusterName, labels } = namespace;
                 const pdfClassName = !sidePanelMode ? 'pdf-page' : '';
                 let contents;
 
@@ -66,7 +96,7 @@ const DeploymentPage = ({
                     const listQuery = {
                         groupBy:
                             listEntityType1 === entityTypes.CONTROL ? entityTypes.STANDARD : '',
-                        deployment: name,
+                        Namespace: namespace?.name,
                         ...query[searchParam],
                     };
                     contents = (
@@ -85,14 +115,6 @@ const DeploymentPage = ({
                         </section>
                     );
                 } else {
-                    const clusterUrl = URLService.getURL(match, location)
-                        .base(entityTypes.CLUSTER, clusterId)
-                        .url();
-
-                    const namespaceUrl = URLService.getURL(match, location)
-                        .base(entityTypes.NAMESPACE, namespaceId)
-                        .url();
-
                     contents = (
                         <div
                             className={`flex-1 relative bg-base-200 overflow-auto ${
@@ -113,7 +135,7 @@ const DeploymentPage = ({
                                 >
                                     <div className="s-full pb-3">
                                         <EntityCompliance
-                                            entityType={entityTypes.DEPLOYMENT}
+                                            entityType={entityTypes.NAMESPACE}
                                             entityId={id}
                                             entityName={name}
                                             clusterName={clusterName}
@@ -125,16 +147,6 @@ const DeploymentPage = ({
                                             icon={Cluster}
                                             description={clusterName}
                                             loading={loading}
-                                            linkUrl={clusterUrl}
-                                        />
-                                    </div>
-                                    <div className="md:pl-3 pt-3">
-                                        <IconWidget
-                                            title="Parent Namespace"
-                                            icon={Namespace}
-                                            description={namespace}
-                                            loading={loading}
-                                            linkUrl={namespaceUrl}
                                         />
                                     </div>
                                 </div>
@@ -148,8 +160,24 @@ const DeploymentPage = ({
                                 <ComplianceByStandards
                                     entityId={id}
                                     entityName={name}
-                                    entityType={entityTypes.DEPLOYMENT}
+                                    entityType={entityTypes.NAMESPACE}
                                 />
+                                {sidePanelMode && (
+                                    <>
+                                        <div
+                                            className={`grid sx-2 sy-1 md:grid-auto-fit md:grid-dense ${pdfClassName}`}
+                                            style={{ '--min-tile-width': '50%' }}
+                                        >
+                                            <div className="md:pr-3 pt-3">
+                                                <ResourceCount
+                                                    entityType={entityTypes.DEPLOYMENT}
+                                                    relatedToResourceType={entityTypes.NAMESPACE}
+                                                    relatedToResource={namespace}
+                                                />
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         </div>
                     );
@@ -160,7 +188,7 @@ const DeploymentPage = ({
                         {!sidePanelMode && (
                             <>
                                 <Header
-                                    entityType={entityTypes.DEPLOYMENT}
+                                    entityType={entityTypes.NAMESPACE}
                                     listEntityType={listEntityType1}
                                     entityName={name}
                                     entityId={id}
@@ -169,9 +197,9 @@ const DeploymentPage = ({
                                 />
                                 <ResourceTabs
                                     entityId={id}
-                                    entityType={entityTypes.DEPLOYMENT}
+                                    entityType={entityTypes.NAMESPACE}
                                     selectedType={listEntityType1}
-                                    resourceTabs={[entityTypes.CONTROL]}
+                                    resourceTabs={[entityTypes.CONTROL, entityTypes.DEPLOYMENT]}
                                 />
                             </>
                         )}
@@ -183,7 +211,7 @@ const DeploymentPage = ({
         </Query>
     );
 };
-DeploymentPage.propTypes = entityPagePropTypes;
-DeploymentPage.defaultProps = entityPageDefaultProps;
+NamespacePage.propTypes = entityPagePropTypes;
+NamespacePage.defaultProps = entityPageDefaultProps;
 
-export default DeploymentPage;
+export default NamespacePage;

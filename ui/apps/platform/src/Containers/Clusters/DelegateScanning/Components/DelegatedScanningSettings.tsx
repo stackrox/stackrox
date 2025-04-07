@@ -1,15 +1,25 @@
-import React from 'react';
-import { Card, CardBody, Flex, FlexItem } from '@patternfly/react-core';
-import { Select, SelectOption } from '@patternfly/react-core/deprecated';
+import React, { useState } from 'react';
+import {
+    Flex,
+    FlexItem,
+    FormGroup,
+    FormHelperText,
+    HelperText,
+    HelperTextItem,
+    MenuToggleElement,
+    MenuToggle,
+    Select,
+    SelectOption,
+} from '@patternfly/react-core';
 
-import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
 import { DelegatedRegistryCluster } from 'services/DelegatedRegistryConfigService';
-import useSelectToggle from 'hooks/patternfly/useSelectToggle';
+
+import { getClusterName } from '../cluster';
 
 type DelegatedScanningSettingsProps = {
-    clusters?: DelegatedRegistryCluster[];
+    clusters: DelegatedRegistryCluster[];
     isEditing: boolean;
-    selectedClusterId?: string;
+    selectedClusterId: string;
     setSelectedClusterId: (newClusterId: string) => void;
 };
 
@@ -19,64 +29,62 @@ function DelegatedScanningSettings({
     selectedClusterId,
     setSelectedClusterId,
 }: DelegatedScanningSettingsProps) {
-    const {
-        isOpen: isClusterOpen,
-        toggleSelect: toggleIsClusterOpen,
-        closeSelect: closeClusterSelect,
-    } = useSelectToggle();
+    const [isOpen, setIsOpen] = useState(false);
 
-    const clusterSelectOptions: JSX.Element[] = clusters.map((cluster) => (
-        <SelectOption key={cluster.id} value={cluster.id}>
-            <span>{cluster.name}</span>
-        </SelectOption>
-    ));
+    // Options consist of valid clusters, plus default cluster (in unlikely case that it is not valid).
+    const clusterSelectOptions: JSX.Element[] = clusters
+        .filter((cluster) => cluster.isValid || cluster.id === selectedClusterId)
+        .map((cluster) => (
+            <SelectOption key={cluster.id} value={cluster.id}>
+                <span>{getClusterName(clusters, cluster.id)}</span>
+            </SelectOption>
+        ));
 
     const onClusterSelect = (_, value) => {
-        closeClusterSelect();
+        setIsOpen(false);
         setSelectedClusterId(value);
     };
 
     const selectedClusterName =
-        clusters.find((cluster) => selectedClusterId === cluster.id)?.name ?? 'None';
+        selectedClusterId === '' ? 'None' : getClusterName(clusters, selectedClusterId);
 
     return (
-        <Card className="pf-v5-u-mb-lg">
-            <CardBody>
-                <FormLabelGroup
-                    label="Select default cluster to delegate to"
-                    helperText="Select a cluster to process CLI and API-originated scanning requests"
-                    fieldId="selectedClusterId"
-                    touched={{}}
-                    errors={{}}
-                >
-                    <Flex>
-                        <FlexItem>
-                            <Select
-                                className="cluster-select"
-                                placeholderText={
-                                    <span>
-                                        <span style={{ position: 'relative', top: '1px' }}>
-                                            None
-                                        </span>
-                                    </span>
-                                }
-                                toggleAriaLabel="Select a cluster"
-                                onToggle={(_e, v) => toggleIsClusterOpen(v)}
-                                onSelect={onClusterSelect}
+        <FormGroup label="Default cluster to delegate to">
+            <Flex>
+                <FlexItem>
+                    <Select
+                        onOpenChange={setIsOpen}
+                        onSelect={onClusterSelect}
+                        isOpen={isOpen}
+                        selected={selectedClusterId}
+                        shouldFocusToggleOnSelect
+                        toggle={(toggleRef: React.Ref<MenuToggleElement>) => (
+                            <MenuToggle
+                                aria-label="Select default cluster"
+                                ref={toggleRef}
+                                onClick={() => setIsOpen(!isOpen)}
                                 isDisabled={!isEditing}
-                                isOpen={isClusterOpen}
-                                selections={selectedClusterName}
+                                isExpanded={isOpen}
                             >
-                                <SelectOption key="no-cluster-selected" value="" isPlaceholder>
-                                    <span>None</span>
-                                </SelectOption>
-                                <>{clusterSelectOptions}</>
-                            </Select>
-                        </FlexItem>
-                    </Flex>
-                </FormLabelGroup>
-            </CardBody>
-        </Card>
+                                {selectedClusterName}
+                            </MenuToggle>
+                        )}
+                    >
+                        <SelectOption key="" value="">
+                            <span>None</span>
+                        </SelectOption>
+                        <>{clusterSelectOptions}</>
+                    </Select>
+                </FlexItem>
+            </Flex>
+            <FormHelperText>
+                <HelperText>
+                    <HelperTextItem>
+                        Select a cluster to process CLI and API-originated scanning requests
+                    </HelperTextItem>
+                </HelperText>
+            </FormHelperText>
+        </FormGroup>
     );
 }
 

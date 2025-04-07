@@ -12,7 +12,6 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "connectivity",
 		Short: "Commands related to connectivity analysis of network policy resources",
-		Long:  `Commands related to connectivity analysis of network policy resources.`,
 	}
 
 	c.AddCommand(

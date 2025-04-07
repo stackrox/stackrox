@@ -139,7 +139,7 @@ func (s *PolicyPostgresDataStoreTestSuite) TestInsertUpdatePolicy() {
 	s.Equal(policy.GetId(), results[0].ID)
 
 	// Delete policy
-	s.NoError(s.datastore.RemovePolicy(ctx, policy.GetId()))
+	s.NoError(s.datastore.RemovePolicy(ctx, policy))
 	q = pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.Category, "Boo Category 1").ProtoQuery()
 	results, err = s.datastore.Search(ctx, q)
 	s.NoError(err)
@@ -174,7 +174,7 @@ func (s *PolicyPostgresDataStoreTestSuite) TestImportPolicy() {
 	s.Equal(policy.GetId(), results[0].ID)
 
 	// Delete policy
-	s.NoError(s.datastore.RemovePolicy(ctx, policy.GetId()))
+	s.NoError(s.datastore.RemovePolicy(ctx, policy))
 	q = pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.Category, "Image Assurance").ProtoQuery()
 	results, err = s.datastore.Search(ctx, q)
 	s.NoError(err)
@@ -287,7 +287,7 @@ func (s *PolicyPostgresDataStoreTestSuite) TestImportOverwriteDefaultPolicy() {
 				s.Equal(c.existingPolicy.GetName(), result.GetName())
 
 				// Delete the policy
-				s.NoError(s.datastore.RemovePolicy(ctx, c.existingPolicy.GetId()))
+				s.NoError(s.datastore.RemovePolicy(ctx, c.existingPolicy))
 			} else {
 				s.NoError(err) // It's not an error just a failure?
 				s.True(allSucceeded)
@@ -300,7 +300,7 @@ func (s *PolicyPostgresDataStoreTestSuite) TestImportOverwriteDefaultPolicy() {
 				s.Equal(c.newPolicy.GetName(), result.GetName())
 
 				// Delete the policy
-				s.NoError(s.datastore.RemovePolicy(ctx, c.newPolicy.GetId()))
+				s.NoError(s.datastore.RemovePolicy(ctx, c.newPolicy))
 			}
 		})
 	}
@@ -376,5 +376,5 @@ func (s *PolicyPostgresDataStoreTestSuite) TestTransactionRollbacks() {
 	s.Equal(1, count)
 
 	// Clean up policy
-	_ = s.datastoreWithMockCategoryDS.RemovePolicy(ctx, policy.GetId())
+	_ = s.datastoreWithMockCategoryDS.RemovePolicy(ctx, policy)
 }

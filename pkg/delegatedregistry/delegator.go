@@ -4,7 +4,12 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errox"
 )
+
+// ErrNoClusterSpecified is returned when an ad-hoc scanning request is missing a cluster ID
+// in the delegated scanning configuration.
+var ErrNoClusterSpecified = errox.InvalidArgs.New("no ad-hoc cluster ID specified in the delegated scanning config")
 
 // Delegator defines an interface for delegating image enrichment requests to secured clusters.
 //

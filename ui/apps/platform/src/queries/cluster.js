@@ -34,76 +34,11 @@ export const CLUSTERS_QUERY = gql`
     }
 `;
 
-export const CLUSTER_QUERY = gql`
-    query getCluster($id: ID!) {
-        results: cluster(id: $id) {
-            id
-            name
-            admissionController
-            centralApiEndpoint
-            nodes {
-                id
-                name
-            }
-            deployments {
-                id
-                name
-            }
-            namespaces {
-                metadata {
-                    id
-                    name
-                }
-            }
-            subjects {
-                name
-            }
-            k8sRoles {
-                id
-            }
-            serviceAccounts {
-                id
-            }
-            status {
-                orchestratorMetadata {
-                    version
-                    openshiftVersion
-                    buildDate
-                }
-            }
-        }
-    }
-`;
-
 export const CLUSTER_NAME = gql`
     query getClusterName($id: ID!) {
         cluster(id: $id) {
             id
             name
-        }
-    }
-`;
-
-export const CLUSTER_WITH_NAMESPACES = gql`
-    query getCluster($id: ID!) {
-        results: cluster(id: $id) {
-            id
-            name
-            nodes {
-                id
-                name
-            }
-            namespaces {
-                metadata {
-                    clusterId
-                    clusterName
-                    name
-                    labels {
-                        key
-                        value
-                    }
-                }
-            }
         }
     }
 `;

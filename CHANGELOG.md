@@ -15,6 +15,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 - ROX-13493: Support for scale subresource in the admission controller to enable policy detection and enforcement on admission review requests on the scale subresource.
 - RHPF-98: Log creation of API token. The token creation log message will trigger an administration event.
+- ROX-28716: New policy criterion "Days Since CVE Was Published" to allow creation of a policy that offers a grace period to teams to fix vulnerabilities within the number of days from when the CVE was published in the vulnerability feeds.
+- ROX-28296: Support for an OpenShift reencrypt route to expose Central (`central.exposure.route.reencrypt.enabled: true`).
 
 ### Removed Features
 
@@ -24,6 +26,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 - ROX-28263: New `roxctl` help formatting.
 - ROX-24500: Certificate validation failure in `roxctl` is now an error.
+- ROX-27885: Aligned data in old Compliance across tables and widgets
+- ROX-28574: Fixed a Sensor race condition that would occasionally disable delegated scanning when Sensor reconnected to Central.
 - ROX-27622: Move `SecurityPolicy` CRD to template directory in Helm chart. **All Helm users will need to take action!**
   No action is needed for users that use the operator or `roxctl` to install StackRox.
   This change makes the CRD simpler to maintain for users because it will now be automatically upgraded.

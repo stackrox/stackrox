@@ -108,8 +108,6 @@ function getNavDescriptions(isFeatureFlagEnabled: IsFeatureFlagEnabled): NavDesc
                   content: <NavigationContent variant="Deprecated">Dashboard</NavigationContent>,
                   path: vulnManagementPath,
                   routeKey: 'vulnerability-management',
-                  isActive: (location) =>
-                      Boolean(matchPath({ path: vulnManagementPath }, location.pathname)),
               },
           ]
         : [
@@ -156,8 +154,6 @@ function getNavDescriptions(isFeatureFlagEnabled: IsFeatureFlagEnabled): NavDesc
                   content: <NavigationContent variant="Deprecated">Dashboard</NavigationContent>,
                   path: vulnManagementPath,
                   routeKey: 'vulnerability-management',
-                  isActive: (location) =>
-                      Boolean(matchPath({ path: vulnManagementPath }, location.pathname)),
               },
           ];
 
@@ -372,10 +368,10 @@ function NavigationSidebar({
                                             return (
                                                 <NavigationItem
                                                     key={path}
-                                                    isActive={isActiveLink(location, {
-                                                        ...childDescription,
-                                                        path: `${path}/*`,
-                                                    })}
+                                                    isActive={isActiveLink(
+                                                        location,
+                                                        childDescription
+                                                    )}
                                                     path={path}
                                                     content={
                                                         typeof content === 'function'

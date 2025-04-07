@@ -1,52 +1,58 @@
 import React, { useContext, useState } from 'react';
+import { useLocation } from 'react-router-dom';
+import { gql } from '@apollo/client';
 import pluralize from 'pluralize';
 
-import ComplianceByStandards from 'Containers/Compliance/widgets/ComplianceByStandards';
-import Query from 'Components/CacheFirstQuery';
-import IconWidget from 'Components/IconWidget';
-import CountWidget from 'Components/CountWidget';
-import Cluster from 'images/cluster.svg';
-import { NAMESPACE_QUERY as QUERY } from 'queries/namespace';
+import entityTypes from 'constants/entityTypes';
 import Widget from 'Components/Widget';
+import Query from 'Components/CacheFirstQuery';
+import Loader from 'Components/Loader';
+import BackdropExporting from 'Components/PatternFly/BackdropExporting';
+import { entityPagePropTypes, entityPageDefaultProps } from 'constants/entityPageProps';
+import URLService from 'utils/URLService';
 // TODO: this exception will be unnecessary once Compliance pages are re-structured like Config Management
 /* eslint-disable-next-line import/no-cycle */
 import ComplianceList from 'Containers/Compliance/List/List';
-import ResourceCount from 'Containers/Compliance/widgets/ResourceCount';
-import PageNotFound from 'Components/PageNotFound';
-import isGQLLoading from 'utils/gqlLoading';
-import Loader from 'Components/Loader';
-import BackdropExporting from 'Components/PatternFly/BackdropExporting';
-import Labels from 'Containers/Compliance/widgets/Labels';
 import EntityCompliance from 'Containers/Compliance/widgets/EntityCompliance';
-import entityTypes from 'constants/entityTypes';
-import useCases from 'constants/useCaseTypes';
-import { entityPagePropTypes, entityPageDefaultProps } from 'constants/entityPageProps';
+import Cluster from 'images/cluster.svg';
+import Namespace from 'images/ns-icon.svg';
+import IconWidget from 'Components/IconWidget';
+import Labels from 'Containers/Compliance/widgets/Labels';
+import ComplianceByStandards from 'Containers/Compliance/widgets/ComplianceByStandards';
+import isGQLLoading from 'utils/gqlLoading';
 import searchContext from 'Containers/searchContext';
+import useWorkflowMatch from 'hooks/useWorkflowMatch';
 
 import Header from './Header';
 import ResourceTabs from './ResourceTabs';
 
-function processData(data, entityId) {
-    const defaultValue = {
-        labels: [],
-        name: '',
-        clusterName: '',
-        id: entityId,
-    };
+export const DEPLOYMENT_QUERY = gql`
+    query getDeployment($id: ID!) {
+        deployment(id: $id) {
+            id
+            clusterId
+            clusterName
+            labels {
+                key
+                value
+            }
+            name
+            namespace
+            namespaceId
+        }
+    }
+`;
 
-    if (!data || !data.results || !data.results.metadata) {
-        return defaultValue;
+function processData(data) {
+    if (!data || !data.deployment) {
+        return {};
     }
 
-    const { metadata, ...rest } = data.results;
-
-    return {
-        ...rest,
-        ...metadata,
-    };
+    const result = { ...data.deployment };
+    return result;
 }
 
-const NamespacePage = ({
+const DeploymentPage = ({
     entityId,
     listEntityType1,
     entityId1,
@@ -58,22 +64,18 @@ const NamespacePage = ({
 }) => {
     const [isExporting, setIsExporting] = useState(false);
     const searchParam = useContext(searchContext);
+    const match = useWorkflowMatch();
+    const location = useLocation();
+
     return (
-        <Query query={QUERY} variables={{ id: entityId }}>
+        <Query query={DEPLOYMENT_QUERY} variables={{ id: entityId }}>
             {({ loading, data }) => {
                 if (isGQLLoading(loading, data)) {
                     return <Loader />;
                 }
-                if (!data.results) {
-                    return (
-                        <PageNotFound
-                            resourceType={entityTypes.NAMESPACE}
-                            useCase={useCases.COMPLIANCE}
-                        />
-                    );
-                }
-                const namespace = processData(data);
-                const { name, id, clusterName, labels, numNetworkPolicies } = namespace;
+                const deployment = processData(data);
+                const { name, id, labels, clusterName, namespace, clusterId, namespaceId } =
+                    deployment;
                 const pdfClassName = !sidePanelMode ? 'pdf-page' : '';
                 let contents;
 
@@ -81,7 +83,7 @@ const NamespacePage = ({
                     const listQuery = {
                         groupBy:
                             listEntityType1 === entityTypes.CONTROL ? entityTypes.STANDARD : '',
-                        Namespace: namespace?.name,
+                        deployment: name,
                         ...query[searchParam],
                     };
                     contents = (
@@ -100,6 +102,14 @@ const NamespacePage = ({
                         </section>
                     );
                 } else {
+                    const clusterUrl = URLService.getURL(match, location)
+                        .base(entityTypes.CLUSTER, clusterId)
+                        .url();
+
+                    const namespaceUrl = URLService.getURL(match, location)
+                        .base(entityTypes.NAMESPACE, namespaceId)
+                        .url();
+
                     contents = (
                         <div
                             className={`flex-1 relative bg-base-200 overflow-auto ${
@@ -120,7 +130,7 @@ const NamespacePage = ({
                                 >
                                     <div className="s-full pb-3">
                                         <EntityCompliance
-                                            entityType={entityTypes.NAMESPACE}
+                                            entityType={entityTypes.DEPLOYMENT}
                                             entityId={id}
                                             entityName={name}
                                             clusterName={clusterName}
@@ -132,12 +142,16 @@ const NamespacePage = ({
                                             icon={Cluster}
                                             description={clusterName}
                                             loading={loading}
+                                            linkUrl={clusterUrl}
                                         />
                                     </div>
                                     <div className="md:pl-3 pt-3">
-                                        <CountWidget
-                                            title="Network Policies"
-                                            count={numNetworkPolicies}
+                                        <IconWidget
+                                            title="Parent Namespace"
+                                            icon={Namespace}
+                                            description={namespace}
+                                            loading={loading}
+                                            linkUrl={namespaceUrl}
                                         />
                                     </div>
                                 </div>
@@ -151,31 +165,8 @@ const NamespacePage = ({
                                 <ComplianceByStandards
                                     entityId={id}
                                     entityName={name}
-                                    entityType={entityTypes.NAMESPACE}
+                                    entityType={entityTypes.DEPLOYMENT}
                                 />
-                                {sidePanelMode && (
-                                    <>
-                                        <div
-                                            className={`grid sx-2 sy-1 md:grid-auto-fit md:grid-dense ${pdfClassName}`}
-                                            style={{ '--min-tile-width': '50%' }}
-                                        >
-                                            <div className="md:pr-3 pt-3">
-                                                <ResourceCount
-                                                    entityType={entityTypes.DEPLOYMENT}
-                                                    relatedToResourceType={entityTypes.NAMESPACE}
-                                                    relatedToResource={namespace}
-                                                />
-                                            </div>
-                                            <div className="md:pl-3 pt-3">
-                                                <ResourceCount
-                                                    entityType={entityTypes.SECRET}
-                                                    relatedToResourceType={entityTypes.NAMESPACE}
-                                                    relatedToResource={namespace}
-                                                />
-                                            </div>
-                                        </div>
-                                    </>
-                                )}
                             </div>
                         </div>
                     );
@@ -186,7 +177,7 @@ const NamespacePage = ({
                         {!sidePanelMode && (
                             <>
                                 <Header
-                                    entityType={entityTypes.NAMESPACE}
+                                    entityType={entityTypes.DEPLOYMENT}
                                     listEntityType={listEntityType1}
                                     entityName={name}
                                     entityId={id}
@@ -195,9 +186,9 @@ const NamespacePage = ({
                                 />
                                 <ResourceTabs
                                     entityId={id}
-                                    entityType={entityTypes.NAMESPACE}
+                                    entityType={entityTypes.DEPLOYMENT}
                                     selectedType={listEntityType1}
-                                    resourceTabs={[entityTypes.CONTROL, entityTypes.DEPLOYMENT]}
+                                    resourceTabs={[entityTypes.CONTROL]}
                                 />
                             </>
                         )}
@@ -209,7 +200,7 @@ const NamespacePage = ({
         </Query>
     );
 };
-NamespacePage.propTypes = entityPagePropTypes;
-NamespacePage.defaultProps = entityPageDefaultProps;
+DeploymentPage.propTypes = entityPagePropTypes;
+DeploymentPage.defaultProps = entityPageDefaultProps;
 
-export default NamespacePage;
+export default DeploymentPage;

@@ -117,13 +117,14 @@ func NewRegistryStore(checkTLSFunc CheckTLS) *Store {
 	return store
 }
 
-// Cleanup deletes all entries from store.
+// Cleanup deletes all entries from store that are derived from k8s informers/listeners.
+// The lifecycle of other data in this store will be handled separately, such as the delegated
+// registry config and image integrations synced from Central.
 func (rs *Store) Cleanup() {
 	// Separate cleanup methods are used to ensure only one lock is obtained at a time
 	// to avoid accidental deadlock.
 	rs.cleanupRegistries()
 	rs.cleanupClusterLocalRegistryHosts()
-	rs.cleanupDelegatedRegistryConfig()
 	rs.tlsCheckCache.Cleanup()
 
 	metrics.ResetRegistryMetrics()
@@ -132,8 +133,7 @@ func (rs *Store) Cleanup() {
 }
 
 func (rs *Store) cleanupRegistries() {
-	// These Sets have an internal mutex for controlling access.
-	rs.centralRegistryIntegrations.Clear()
+	// This set has an internal mutex for controlling access.
 	rs.globalRegistries.Clear()
 
 	rs.storeMutux.Lock()
@@ -148,13 +148,6 @@ func (rs *Store) cleanupClusterLocalRegistryHosts() {
 	defer rs.clusterLocalRegistryHostsMutex.Unlock()
 
 	rs.clusterLocalRegistryHosts = set.NewStringSet()
-}
-
-func (rs *Store) cleanupDelegatedRegistryConfig() {
-	rs.delegatedRegistryConfigMutex.Lock()
-	defer rs.delegatedRegistryConfigMutex.Unlock()
-
-	rs.delegatedRegistryConfig = nil
 }
 
 func (rs *Store) getRegistries(namespace string) registries.Set {
@@ -366,7 +359,12 @@ func (rs *Store) hasClusterLocalRegistryHost(host string) bool {
 }
 
 // UpsertCentralRegistryIntegrations upserts registry integrations from Central into the store.
-func (rs *Store) UpsertCentralRegistryIntegrations(iis []*storage.ImageIntegration) {
+func (rs *Store) UpsertCentralRegistryIntegrations(iis []*storage.ImageIntegration, refresh bool) {
+	if refresh {
+		// On refresh any existing integrations should be replaced.
+		rs.centralRegistryIntegrations.Clear()
+	}
+
 	for _, ii := range iis {
 		_, err := rs.centralRegistryIntegrations.UpdateImageIntegration(ii)
 		if err != nil {

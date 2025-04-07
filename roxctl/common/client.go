@@ -1,6 +1,7 @@
 package common
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -18,6 +19,8 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/auth"
 	"golang.org/x/net/http2"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 var (
@@ -75,6 +78,18 @@ func GetRoxctlHTTPClient(config *HttpClientConfig) (RoxctlHTTPClient, error) {
 	}
 
 	retryClient := retryablehttp.NewClient()
+	retryClient.CheckRetry = func(ctx context.Context, resp *http.Response, err error) (bool, error) {
+		retry, err := retryablehttp.DefaultRetryPolicy(ctx, resp, err)
+		if !retry || err == nil || status.Code(err) == codes.PermissionDenied {
+			return false, err //nolint:wrapcheck
+		}
+		if resp != nil {
+			config.Logger.ErrfLn("%d %s: %v", resp.StatusCode, resp.Status, err)
+		} else {
+			config.Logger.ErrfLn(err.Error())
+		}
+		return true, err //nolint:wrapcheck
+	}
 	retryClient.RetryMax = config.RetryCount
 	retryClient.HTTPClient.Transport = transport
 	retryClient.HTTPClient.Timeout = config.Timeout

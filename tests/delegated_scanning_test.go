@@ -612,6 +612,37 @@ func (ts *DelegatedScanningSuite) TestAdHocScans() {
 		limitedConn := ts.getLimitedCentralConn(ctx, ps, role)
 		ts.executeAndValidateScan(ctx, limitedConn, scanImgReq(ts.ocpInternalImage.TagRef(), withClusterFlag))
 	})
+
+	ts.Run("scan via central when no cluster specified in config or request", func() {
+		t := ts.T()
+
+		// Apply the config with NO cluster ID.
+		err := ts.updateConfigWithRetries(ctx, &v1.DelegatedRegistryConfig{
+			EnabledFor: v1.DelegatedRegistryConfig_ALL,
+		})
+		require.NoError(t, err)
+		// Make the scan request to Central, also with NO cluster specified.
+		imgFullName := ts.ubi9Image.TagRef()
+		service := v1.NewImageServiceClient(conn)
+		img, err := ts.scanWithRetries(ctx, service, scanImgReq(imgFullName, !withClusterFlag))
+		require.NoError(t, err)
+
+		// Validate the scan was successful and executed via Central.
+		require.Equal(t, imgFullName, img.GetName().GetFullName())
+		require.False(t, img.GetIsClusterLocal(), "image %q flagged as cluster local which should NOT happen for scans handled via Central, most likely the scan was delegated, check Central/Sensor logs to confirm", imgFullName)
+		require.NotNil(t, img.GetScan(), "image scan for %q is nil, check logs for scan errors, image notes: %v", imgFullName, img.GetNotes())
+		require.NotEmpty(t, img.GetScan().GetComponents(), "image scan for %q has no components, check central logs for scan errors, this can happen if indexing succeeds but matching fails, ROX-17472 will make this an error in the future", imgFullName)
+
+		// Ensure at least one component has a vulnerability.
+		foundVuln := false
+		for _, c := range img.GetScan().GetComponents() {
+			if len(c.GetVulns()) > 0 {
+				foundVuln = true
+				break
+			}
+		}
+		require.True(t, foundVuln, "Expected at least one vulnerability in image %q, but found none.", imgFullName)
+	})
 }
 
 // TestDeploymentScans tests delegating image scans via observed k8s deployments.
@@ -912,6 +943,13 @@ func (ts *DelegatedScanningSuite) scanWithRetries(ctx context.Context, service v
 		// ex:
 		// - no connection to "a21b168a-280e-40d1-a175-e84d14ed8232"
 		"no connection to",
+
+		// A registry having gateway issues (Quay.io in particular) may return a 502 (Bad Gateway)
+		// message along with some HTML, retry when this happens.
+		//
+		// ex:
+		// - http: non-successful response (status=502 body="<!doctype html>...<HTML HERE>...")
+		"non-successful response (status=502",
 	}
 
 	retryFunc := func() error {

@@ -73,14 +73,14 @@ func (ds *dataStoreImpl) Get(ctx context.Context, props *storage.GroupProperties
 	return group, err
 }
 
-func (ds *dataStoreImpl) GetAll(ctx context.Context) ([]*storage.Group, error) {
+func (ds *dataStoreImpl) ForEach(ctx context.Context, fn func(group *storage.Group) error) error {
 	if ok, err := accessSAC.ReadAllowed(ctx); err != nil {
-		return nil, err
+		return err
 	} else if !ok {
-		return nil, nil
+		return nil
 	}
 
-	return ds.storage.GetAll(ctx)
+	return ds.storage.Walk(ctx, fn)
 }
 
 func (ds *dataStoreImpl) GetFiltered(ctx context.Context, filter func(*storage.Group) bool) ([]*storage.Group, error) {

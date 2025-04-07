@@ -1,48 +1,5 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`should show a process in baseline activity event marker 1`] = `
-<DocumentFragment>
-  <svg
-    data-testid="timeline-main-view"
-    height="100"
-    width="100"
-  >
-    <g
-      data-testid="timeline-event-marker"
-      transform="translate(NaN, -5)"
-    >
-      <g>
-        <svg
-          data-testid="process-in-baseline-activity-event"
-          height="10"
-          viewBox="0 0 16 16"
-          width="10"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <g
-            fill="none"
-            fill-rule="evenodd"
-            transform="translate(0 .1)"
-          >
-            <rect
-              fill="#56DDB2"
-              height="14.58"
-              rx="2.43"
-              width="14.58"
-            />
-            <path
-              d="M4.459 6.768a.807.807 0 00-1.18-.072.91.91 0 00-.067 1.24l2.685 3.17a.81.81 0 001.281-.043l4.645-6.244a.909.909 0 00-.144-1.233.808.808 0 00-1.172.151L6.48 9.153l-2.02-2.385z"
-              fill="#FFF"
-              fill-rule="nonzero"
-            />
-          </g>
-        </svg>
-      </g>
-    </g>
-  </svg>
-</DocumentFragment>
-`;
-
 exports[`should show a container restart event marker 1`] = `
 <DocumentFragment>
   <svg
@@ -179,6 +136,49 @@ exports[`should show a process activity event marker 1`] = `
             x="689"
             y="673.1"
           />
+        </svg>
+      </g>
+    </g>
+  </svg>
+</DocumentFragment>
+`;
+
+exports[`should show a process in baseline activity event marker 1`] = `
+<DocumentFragment>
+  <svg
+    data-testid="timeline-main-view"
+    height="100"
+    width="100"
+  >
+    <g
+      data-testid="timeline-event-marker"
+      transform="translate(NaN, -5)"
+    >
+      <g>
+        <svg
+          data-testid="process-in-baseline-activity-event"
+          height="10"
+          viewBox="0 0 16 16"
+          width="10"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <g
+            fill="none"
+            fill-rule="evenodd"
+            transform="translate(0 .1)"
+          >
+            <rect
+              fill="#56DDB2"
+              height="14.58"
+              rx="2.43"
+              width="14.58"
+            />
+            <path
+              d="M4.459 6.768a.807.807 0 00-1.18-.072.91.91 0 00-.067 1.24l2.685 3.17a.81.81 0 001.281-.043l4.645-6.244a.909.909 0 00-.144-1.233.808.808 0 00-1.172.151L6.48 9.153l-2.02-2.385z"
+              fill="#FFF"
+              fill-rule="nonzero"
+            />
+          </g>
         </svg>
       </g>
     </g>

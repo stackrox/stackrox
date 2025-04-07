@@ -162,9 +162,9 @@ func (s *NetworkGraphServiceTestSuite) TestGetExternalNetworkEntities() {
 	es1bID, _ := externalsrcs.NewClusterScopedID("mycluster", "35.187.144.0/16")
 	es1cID, _ := externalsrcs.NewClusterScopedID("mycluster", "35.187.144.0/8")
 
-	es1a := testutils.GetExtSrcNetworkEntityInfo(es1aID.String(), "net1", "35.187.144.0/20", false)
-	es1b := testutils.GetExtSrcNetworkEntityInfo(es1bID.String(), "net1", "35.187.144.0/16", false)
-	es1c := testutils.GetExtSrcNetworkEntityInfo(es1cID.String(), "net1", "35.187.144.0/8", false)
+	es1a := testutils.GetExtSrcNetworkEntityInfo(es1aID.String(), "net1", "35.187.144.0/20", false, false)
+	es1b := testutils.GetExtSrcNetworkEntityInfo(es1bID.String(), "net1", "35.187.144.0/16", false, false)
+	es1c := testutils.GetExtSrcNetworkEntityInfo(es1cID.String(), "net1", "35.187.144.0/8", false, false)
 
 	expected := []*storage.NetworkEntity{
 		{Info: es1a},
@@ -220,8 +220,8 @@ func (s *NetworkGraphServiceTestSuite) TestGetExternalNetworkFlows() {
 	es1aID, _ := externalsrcs.NewClusterScopedID("mycluster", "192.168.0.1/32")
 	es1bID, _ := externalsrcs.NewClusterScopedID("mycluster", "192.168.0.2/32")
 
-	es1a := testutils.GetExtSrcNetworkEntityInfo(es1aID.String(), "net1", "192.168.0.1/32", false)
-	es1b := testutils.GetExtSrcNetworkEntityInfo(es1bID.String(), "net2", "192.168.0.2/32", false)
+	es1a := testutils.GetExtSrcNetworkEntityInfo(es1aID.String(), "net1", "192.168.0.1/32", false, false)
+	es1b := testutils.GetExtSrcNetworkEntityInfo(es1bID.String(), "net2", "192.168.0.2/32", false, false)
 
 	entities := []*storage.NetworkEntity{
 		{
@@ -364,11 +364,11 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSAC() {
 	es4ID, _ := externalsrcs.NewClusterScopedID("mycluster", "10.10.10.10/8")
 	es5ID, _ := externalsrcs.NewClusterScopedID("mycluster", "36.188.144.0/30")
 
-	es1a := testutils.GetExtSrcNetworkEntityInfo(es1aID.String(), "net1", "35.187.144.0/20", false)
-	es1b := testutils.GetExtSrcNetworkEntityInfo(es1bID.String(), "net1", "35.187.144.0/16", false)
-	es1c := testutils.GetExtSrcNetworkEntityInfo(es1cID.String(), "net1", "35.187.144.0/8", false)
-	es2 := testutils.GetExtSrcNetworkEntityInfo(es2ID.String(), "2", "35.187.144.0/23", false)
-	es3 := testutils.GetExtSrcNetworkEntityInfo(es3ID.String(), "3", "36.188.144.0/16", false)
+	es1a := testutils.GetExtSrcNetworkEntityInfo(es1aID.String(), "net1", "35.187.144.0/20", false, false)
+	es1b := testutils.GetExtSrcNetworkEntityInfo(es1bID.String(), "net1", "35.187.144.0/16", false, false)
+	es1c := testutils.GetExtSrcNetworkEntityInfo(es1cID.String(), "net1", "35.187.144.0/8", false, false)
+	es2 := testutils.GetExtSrcNetworkEntityInfo(es2ID.String(), "2", "35.187.144.0/23", false, false)
+	es3 := testutils.GetExtSrcNetworkEntityInfo(es3ID.String(), "3", "36.188.144.0/16", false, false)
 
 	networkTree, err := tree.NewNetworkTreeWrapper([]*storage.NetworkEntityInfo{es1a, es1b, es1c, es2, es3})
 	s.NoError(err)
@@ -592,11 +592,11 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSACDeterminis
 	es4ID, _ := externalsrcs.NewClusterScopedID("mycluster", "10.10.10.10/8")
 	es5ID, _ := externalsrcs.NewClusterScopedID("mycluster", "36.188.144.0/30")
 
-	es1a := testutils.GetExtSrcNetworkEntityInfo(es1aID.String(), "net1", "35.187.144.0/20", false)
-	es1b := testutils.GetExtSrcNetworkEntityInfo(es1bID.String(), "net1", "35.187.144.0/16", false)
-	es1c := testutils.GetExtSrcNetworkEntityInfo(es1cID.String(), "net1", "35.187.144.0/8", false)
-	es2 := testutils.GetExtSrcNetworkEntityInfo(es2ID.String(), "2", "35.187.144.0/23", false)
-	es3 := testutils.GetExtSrcNetworkEntityInfo(es3ID.String(), "3", "36.188.144.0/16", false)
+	es1a := testutils.GetExtSrcNetworkEntityInfo(es1aID.String(), "net1", "35.187.144.0/20", false, false)
+	es1b := testutils.GetExtSrcNetworkEntityInfo(es1bID.String(), "net1", "35.187.144.0/16", false, false)
+	es1c := testutils.GetExtSrcNetworkEntityInfo(es1cID.String(), "net1", "35.187.144.0/8", false, false)
+	es2 := testutils.GetExtSrcNetworkEntityInfo(es2ID.String(), "2", "35.187.144.0/23", false, false)
+	es3 := testutils.GetExtSrcNetworkEntityInfo(es3ID.String(), "3", "36.188.144.0/16", false, false)
 
 	fooBarDeploymentsOrdered := []*storage.ListDeployment{
 		{
@@ -1099,9 +1099,9 @@ func (s *NetworkGraphServiceTestSuite) testGenerateNetworkGraphAllAccess(withLis
 	es3ID, _ := externalsrcs.NewClusterScopedID("mycluster", "36.188.144.0/16")
 	es4ID, _ := externalsrcs.NewClusterScopedID("mycluster", "10.10.10.10/8")
 
-	es1 := testutils.GetExtSrcNetworkEntityInfo(es1ID.String(), "1", "35.187.144.0/20", false)
-	es2 := testutils.GetExtSrcNetworkEntityInfo(es2ID.String(), "2", "35.187.144.0/23", false)
-	es3 := testutils.GetExtSrcNetworkEntityInfo(es3ID.String(), "3", "36.188.144.0/16", false)
+	es1 := testutils.GetExtSrcNetworkEntityInfo(es1ID.String(), "1", "35.187.144.0/20", false, false)
+	es2 := testutils.GetExtSrcNetworkEntityInfo(es2ID.String(), "2", "35.187.144.0/23", false, false)
+	es3 := testutils.GetExtSrcNetworkEntityInfo(es3ID.String(), "3", "36.188.144.0/16", false, false)
 
 	networkTree, err := tree.NewNetworkTreeWrapper([]*storage.NetworkEntityInfo{es1, es2, es3})
 	s.NoError(err)

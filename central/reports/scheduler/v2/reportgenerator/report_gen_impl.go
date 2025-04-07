@@ -3,10 +3,6 @@ package reportgenerator
 import (
 	"bytes"
 	"context"
-	"encoding/json"
-	"fmt"
-	"sort"
-	"strings"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
@@ -248,51 +244,6 @@ func (rg *reportGeneratorImpl) saveReportData(configID, reportID string, data *b
 	return rg.blobStore.Upsert(reportGenCtx, b, data)
 }
 
-func (rg *reportGeneratorImpl) getReportData(snap *storage.ReportSnapshot, collection *storage.ResourceCollection,
-	dataStartTime time.Time) ([]common.DeployedImagesResult, []common.WatchedImagesResult, error) {
-	var deployedImgResults []common.DeployedImagesResult
-	var watchedImgResults []common.WatchedImagesResult
-	rQuery, err := rg.buildReportQuery(snap, collection, dataStartTime)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	if filterOnImageType(snap.GetVulnReportFilters().GetImageTypes(), storage.VulnerabilityReportFilters_DEPLOYED) {
-		// We first get deploymentIDs using a DeploymentsQuery and then again run graphQL queries with deploymentIDs to get the deployment objects.
-		// Why do we not directly create a queryString directly from the collection and pass that to graphQL?
-		// The  query language we support for graphQL has some limitations that prevent us from doing that.
-		// DeploymentsQuery is of type *v1.Query and can support complex queries like the one below.
-		// [(Cluster: c1 AND Namespace: n1 AND Deployment: d1) OR (Cluster: c2 AND Namespace: n2 AND Deployment: d2)]
-		// This query is a 'disjunction of conjunctions' where all conjunctions involve same fields.
-		// Current query language for graphQL does not have semantics to define such a query. Due to this we need to fetch deploymentIDs first
-		// and then pass them to graphQL.
-		deploymentIds, err := rg.getDeploymentIDs(rQuery.DeploymentsQuery)
-		if err != nil {
-			return nil, nil, err
-		}
-		result, err := rg.runPaginatedDeploymentsQuery(rQuery.CveFieldsQuery, deploymentIds)
-		if err != nil {
-			return nil, nil, err
-		}
-		result.Deployments = orderByClusterAndNamespace(result.Deployments)
-		deployedImgResults = append(deployedImgResults, result)
-	}
-
-	if filterOnImageType(snap.GetVulnReportFilters().GetImageTypes(), storage.VulnerabilityReportFilters_WATCHED) {
-		watchedImages, err := rg.getWatchedImages()
-		if err != nil {
-			return nil, nil, err
-		}
-		result, err := rg.runPaginatedImagesQuery(rQuery.CveFieldsQuery, watchedImages)
-		if err != nil {
-			return nil, nil, err
-		}
-		watchedImgResults = append(watchedImgResults, result)
-	}
-
-	return deployedImgResults, watchedImgResults, nil
-}
-
 func (rg *reportGeneratorImpl) getReportDataSQF(snap *storage.ReportSnapshot, collection *storage.ResourceCollection,
 	dataStartTime time.Time) (*ReportData, error) {
 	rQuery, err := rg.buildReportQuery(snap, collection, dataStartTime)
@@ -372,84 +323,6 @@ func (rg *reportGeneratorImpl) buildReportQuery(snap *storage.ReportSnapshot,
 	return rQuery, nil
 }
 
-// Returns vuln report data from deployments matched by the collection.
-func (rg *reportGeneratorImpl) runPaginatedDeploymentsQuery(cveQuery string, deploymentIds []string) (common.DeployedImagesResult, error) {
-	offset := paginatedQueryStartOffset
-	var resultData common.DeployedImagesResult
-	for {
-		if offset >= len(deploymentIds) {
-			break
-		}
-		scopeQuery := fmt.Sprintf("%s:%s", search.DeploymentID.String(),
-			strings.Join(deploymentIds[offset:min(offset+paginationLimit, len(deploymentIds))], ","))
-		r, err := execQuery[common.DeployedImagesResult](rg, deployedImagesReportQuery, deployedImagesReportQueryOpName,
-			scopeQuery, cveQuery, nil)
-		if err != nil {
-			return r, err
-		}
-		resultData.Deployments = append(resultData.Deployments, r.Deployments...)
-		offset += paginationLimit
-	}
-	return resultData, nil
-}
-
-// Returns vuln report data for watched images
-func (rg *reportGeneratorImpl) runPaginatedImagesQuery(cveQuery string, watchedImages []string) (common.WatchedImagesResult, error) {
-	offset := paginatedQueryStartOffset
-	var resultData common.WatchedImagesResult
-	for {
-		if offset >= len(watchedImages) {
-			break
-		}
-		scopeQuery := fmt.Sprintf("%s:%s", search.ImageName.String(),
-			strings.Join(watchedImages[offset:min(offset+paginationLimit, len(watchedImages))], ","))
-		sortOpt := map[string]interface{}{
-			"field": search.ImageName.String(),
-			"aggregateBy": map[string]interface{}{
-				"aggregateFunc": "",
-				"distinct":      true,
-			},
-		}
-		r, err := execQuery[common.WatchedImagesResult](rg, watchedImagesReportQuery, watchedImagesReportQueryOpName,
-			scopeQuery, cveQuery, sortOpt)
-		if err != nil {
-			return r, err
-		}
-		resultData.Images = append(resultData.Images, r.Images...)
-		offset += paginationLimit
-	}
-	return resultData, nil
-}
-
-func execQuery[T any](rg *reportGeneratorImpl, gqlQuery, opName, scopeQuery, cveQuery string,
-	sortOpt map[string]interface{}) (T, error) {
-	pagination := map[string]interface{}{
-		"offset": paginatedQueryStartOffset,
-		"limit":  paginationLimit,
-	}
-	if sortOpt != nil {
-		pagination["sortOptions"] = []interface{}{
-			sortOpt,
-		}
-	}
-
-	response := rg.Schema.Exec(reportGenCtx,
-		gqlQuery, opName, map[string]interface{}{
-			"scopequery": scopeQuery,
-			"cvequery":   cveQuery,
-			"pagination": pagination,
-		})
-	if len(response.Errors) > 0 {
-		log.Errorf("error running graphql query: %s", response.Errors[0].Message)
-		return getZero[T](), response.Errors[0].Err
-	}
-	var res T
-	if err := json.Unmarshal(response.Data, &res); err != nil {
-		return getZero[T](), err
-	}
-	return res, nil
-}
-
 /* Utility Functions */
 
 func (rg *reportGeneratorImpl) retryableSendReportResults(reportNotifier notifiers.ReportNotifier, mailingList []string,
@@ -490,14 +363,6 @@ func (rg *reportGeneratorImpl) lastSuccessfulScheduledReportTime(snap *storage.R
 		return time.Time{}, err
 	}
 	return completedAt, nil
-}
-
-func (rg *reportGeneratorImpl) getDeploymentIDs(deploymentsQuery *v1.Query) ([]string, error) {
-	results, err := rg.deploymentDatastore.Search(reportGenCtx, deploymentsQuery)
-	if err != nil {
-		return nil, err
-	}
-	return search.ResultsToIDs(results), nil
 }
 
 func (rg *reportGeneratorImpl) getWatchedImages() ([]string, error) {
@@ -569,19 +434,4 @@ func filterOnImageType(imageTypes []storage.VulnerabilityReportFilters_ImageType
 		}
 	}
 	return false
-}
-
-func orderByClusterAndNamespace(deployments []*common.Deployment) []*common.Deployment {
-	sort.SliceStable(deployments, func(i, j int) bool {
-		if deployments[i].Cluster.GetName() == deployments[j].Cluster.GetName() {
-			return deployments[i].Namespace < deployments[j].Namespace
-		}
-		return deployments[i].Cluster.GetName() < deployments[j].Cluster.GetName()
-	})
-	return deployments
-}
-
-func getZero[T any]() T {
-	var result T
-	return result
 }
