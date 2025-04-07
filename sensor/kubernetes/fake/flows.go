@@ -322,7 +322,10 @@ func (w *WorkloadManager) getFakeNetworkConnectionInfo(workload NetworkWorkload)
 		if endpointPool.Size < endpointPool.Capacity {
 			endpointPool.add(networkEndpoint)
 		}
-		networkEndpoints = append(networkEndpoints, networkEndpoint)
+		if workload.GenerateUnclosedEndpoints {
+			// Rouge endpoints will not be closed - i.e., CloseTimestamp will be always nil.
+			networkEndpoints = append(networkEndpoints, networkEndpoint)
+		}
 	}
 
 	for _, endpoint := range endpointPool.EndpointsToBeClosed {

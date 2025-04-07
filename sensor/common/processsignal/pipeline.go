@@ -144,7 +144,7 @@ func (p *Pipeline) Process(signal *storage.ProcessSignal) {
 	}
 
 	// indicator.GetSignal() is never nil at this point
-	metadata, ok := p.clusterEntities.LookupByContainerID(indicator.GetSignal().GetContainerId())
+	metadata, ok, _ := p.clusterEntities.LookupByContainerID(indicator.GetSignal().GetContainerId())
 	if !ok {
 		p.enricher.Add(indicator)
 		return
