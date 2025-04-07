@@ -2,6 +2,7 @@ import React, { ReactElement, useState } from 'react';
 import {
     Alert,
     Button,
+    Checkbox,
     ExpandableSection,
     Flex,
     FlexItem,
@@ -53,8 +54,18 @@ const validationSchema = yup.object().shape({
                 .trim()
                 .required('Certificate OIDC issuer is required'),
             certificateIdentity: yup.string().trim().required('Certificate identity is required'),
+            certificateTransparencyLog: yup.object().shape({
+                enabled: yup.boolean(),
+                publicKeyPemEnc: yup.string().trim(),
+            }),
         })
     ),
+    transparencyLog: yup.object().shape({
+        enabled: yup.boolean(),
+        publicKeyPemEnc: yup.string().trim(),
+        url: yup.string().trim(),
+        validateOffline: yup.boolean(),
+    }),
 });
 
 const defaultValues: SignatureIntegration = {
@@ -64,6 +75,12 @@ const defaultValues: SignatureIntegration = {
         publicKeys: [],
     },
     cosignCertificates: [],
+    transparencyLog: {
+        enabled: true,
+        publicKeyPemEnc: '',
+        url: 'https://rekor.sigstore.dev',
+        validateOffline: false,
+    },
 };
 
 const defaultValuesOfCosignCertificateVerification: CosignCertificateVerification = {
@@ -71,6 +88,10 @@ const defaultValuesOfCosignCertificateVerification: CosignCertificateVerificatio
     certificatePemEnc: '',
     certificateOidcIssuer: '',
     certificateIdentity: '',
+    certificateTransparencyLog: {
+        enabled: true,
+        publicKeyPemEnc: '',
+    },
 };
 
 const defaultValuesOfCosignPublicKeys: CosignPublicKey = {
@@ -88,6 +109,26 @@ const VerificationExpandableSection = ({ toggleText, children }): ReactElement =
     return (
         <ExpandableSection
             className="verification-expandable-section"
+            toggleText={toggleText}
+            onToggle={onToggle}
+            isExpanded={isExpanded}
+            isIndented
+        >
+            {children}
+        </ExpandableSection>
+    );
+};
+
+const TransparencyLogExpandableSection = ({ toggleText, children }): ReactElement => {
+    const [isExpanded, setIsExpanded] = useState(true);
+
+    function onToggle() {
+        setIsExpanded(!isExpanded);
+    }
+
+    return (
+        <ExpandableSection
+            className="transparency-log-expandable-section"
             toggleText={toggleText}
             onToggle={onToggle}
             isExpanded={isExpanded}
@@ -160,13 +201,6 @@ function SignatureIntegrationForm({
                         </FlexItem>
                         <FlexItem>
                             <Text>
-                                Certificates that are contained in the image signature must not be
-                                expired. Communication with the transparency log Rekor is not
-                                supported.
-                            </Text>
-                        </FlexItem>
-                        <FlexItem>
-                            <Text>
                                 For more information, see{' '}
                                 <ExternalLink>
                                     <a
@@ -223,6 +257,10 @@ function SignatureIntegrationForm({
                                                                     default: 'column',
                                                                 }}
                                                                 flex={{ default: 'flex_1' }}
+                                                                grow={{ default: 'grow' }}
+                                                                spaceItems={{
+                                                                    default: 'spaceItemsXl',
+                                                                }}
                                                             >
                                                                 <FlexItem>
                                                                     <FormLabelGroup
@@ -287,6 +325,9 @@ function SignatureIntegrationForm({
                                                                                 ].publicKeyPemEnc ||
                                                                                 ''
                                                                             }
+                                                                            style={{
+                                                                                minHeight: '100px',
+                                                                            }}
                                                                             onChange={(
                                                                                 event,
                                                                                 value
@@ -366,6 +407,10 @@ function SignatureIntegrationForm({
                                                                     default: 'column',
                                                                 }}
                                                                 flex={{ default: 'flex_1' }}
+                                                                grow={{ default: 'grow' }}
+                                                                spaceItems={{
+                                                                    default: 'spaceItemsXl',
+                                                                }}
                                                             >
                                                                 <FlexItem>
                                                                     <FormLabelGroup
@@ -524,6 +569,9 @@ function SignatureIntegrationForm({
                                                                                     .certificateChainPemEnc ||
                                                                                 ''
                                                                             }
+                                                                            style={{
+                                                                                minHeight: '100px',
+                                                                            }}
                                                                             onChange={(
                                                                                 event,
                                                                                 value
@@ -588,6 +636,9 @@ function SignatureIntegrationForm({
                                                                                     .certificatePemEnc ||
                                                                                 ''
                                                                             }
+                                                                            style={{
+                                                                                minHeight: '100px',
+                                                                            }}
                                                                             onChange={(
                                                                                 event,
                                                                                 value
@@ -601,6 +652,118 @@ function SignatureIntegrationForm({
                                                                             isDisabled={!isEditable}
                                                                             placeholder={
                                                                                 '-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----'
+                                                                            }
+                                                                        />
+                                                                    </FormLabelGroup>
+                                                                </FlexItem>
+                                                                <FlexItem>
+                                                                    <FormLabelGroup
+                                                                        fieldId={`cosignCertificates[${index}].certificateTransparencyLog.enabled`}
+                                                                        helperText={
+                                                                            <>
+                                                                                <Text>
+                                                                                    Validate the
+                                                                                    proof of
+                                                                                    inclusion into
+                                                                                    the certificate
+                                                                                    transparency
+                                                                                    log.
+                                                                                </Text>
+                                                                            </>
+                                                                        }
+                                                                        touched={touched}
+                                                                        errors={errors}
+                                                                    >
+                                                                        <Checkbox
+                                                                            label="Enable certificate transparency log validation"
+                                                                            id={`cosignCertificates[${index}].certificateTransparencyLog.enabled`}
+                                                                            isChecked={
+                                                                                values
+                                                                                    .cosignCertificates[
+                                                                                    index
+                                                                                ]
+                                                                                    .certificateTransparencyLog
+                                                                                    .enabled
+                                                                            }
+                                                                            onChange={(
+                                                                                event,
+                                                                                value
+                                                                            ) =>
+                                                                                onChange(
+                                                                                    value,
+                                                                                    event
+                                                                                )
+                                                                            }
+                                                                            onBlur={handleBlur}
+                                                                            isDisabled={!isEditable}
+                                                                        />
+                                                                    </FormLabelGroup>
+                                                                </FlexItem>
+                                                                <FlexItem>
+                                                                    <FormLabelGroup
+                                                                        label="Certificate transparency log public key"
+                                                                        fieldId={`cosignCertificates[${index}].certificateTransparencyLog.publicKeyPemEnc`}
+                                                                        helperText={
+                                                                            <>
+                                                                                <Text>
+                                                                                    The public key
+                                                                                    that is used to
+                                                                                    validate the
+                                                                                    proof of
+                                                                                    inclusion into
+                                                                                    the certificate
+                                                                                    transparency
+                                                                                    log.
+                                                                                </Text>
+                                                                                <Text>
+                                                                                    Leave empty to
+                                                                                    use the key of
+                                                                                    the public
+                                                                                    Sigstore
+                                                                                    instance.
+                                                                                </Text>
+                                                                            </>
+                                                                        }
+                                                                        touched={touched}
+                                                                        errors={errors}
+                                                                    >
+                                                                        <TextArea
+                                                                            autoResize
+                                                                            resizeOrientation="vertical"
+                                                                            type="text"
+                                                                            id={`cosignCertificates[${index}].certificateTransparencyLog.publicKeyPemEnc`}
+                                                                            value={
+                                                                                values
+                                                                                    .cosignCertificates[
+                                                                                    index
+                                                                                ]
+                                                                                    .certificateTransparencyLog
+                                                                                    .publicKeyPemEnc
+                                                                            }
+                                                                            style={{
+                                                                                minHeight: '100px',
+                                                                            }}
+                                                                            onChange={(
+                                                                                event,
+                                                                                value
+                                                                            ) =>
+                                                                                onChange(
+                                                                                    value,
+                                                                                    event
+                                                                                )
+                                                                            }
+                                                                            onBlur={handleBlur}
+                                                                            isDisabled={
+                                                                                !isEditable ||
+                                                                                !values
+                                                                                    .cosignCertificates[
+                                                                                    index
+                                                                                ]
+                                                                                    .certificateTransparencyLog
+                                                                                    .enabled
+                                                                            }
+                                                                            placeholder={
+                                                                                '-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----'
                                                                             }
                                                                         />
                                                                     </FormLabelGroup>
@@ -648,6 +811,143 @@ function SignatureIntegrationForm({
                                 )}
                             />
                         </VerificationExpandableSection>
+                        <TransparencyLogExpandableSection toggleText="Transparency log">
+                            <Flex
+                                direction={{ default: 'column' }}
+                                grow={{ default: 'grow' }}
+                                spaceItems={{ default: 'spaceItemsXl' }}
+                            >
+                                <FlexItem>
+                                    <FormLabelGroup
+                                        fieldId="transparencyLog.enabled"
+                                        helperText={
+                                            <>
+                                                <Text>
+                                                    Validate the inclusion of the signature in a
+                                                    transparency log.
+                                                </Text>
+                                                <Text>
+                                                    Required when signatures contain short-lived
+                                                    certificates as they are issued by Fulcio.
+                                                </Text>
+                                            </>
+                                        }
+                                        touched={touched}
+                                        errors={errors}
+                                    >
+                                        <Checkbox
+                                            label="Enable transparency log validation"
+                                            id="transparencyLog.enabled"
+                                            isChecked={values.transparencyLog.enabled}
+                                            onChange={(event, value) => onChange(value, event)}
+                                            onBlur={handleBlur}
+                                            isDisabled={!isEditable}
+                                        />
+                                    </FormLabelGroup>
+                                </FlexItem>
+                                <FlexItem>
+                                    <FormLabelGroup
+                                        label="Rekor URL"
+                                        fieldId="transparencyLog.url"
+                                        helperText={
+                                            <>
+                                                <Text>
+                                                    The URL under which the Rekor transparency log
+                                                    is available. Defaults to the public Rekor
+                                                    instance of Sigstore.
+                                                </Text>
+                                                <Text>
+                                                    Required for online confirmation of the
+                                                    inclusion into the transparency log.
+                                                </Text>
+                                            </>
+                                        }
+                                        touched={touched}
+                                        errors={errors}
+                                    >
+                                        <TextInput
+                                            isRequired
+                                            type="text"
+                                            id="transparencyLog.url"
+                                            value={values.transparencyLog.url}
+                                            onChange={(event, value) => onChange(value, event)}
+                                            onBlur={handleBlur}
+                                            isDisabled={
+                                                !isEditable ||
+                                                !values.transparencyLog.enabled ||
+                                                values.transparencyLog.validateOffline
+                                            }
+                                        />
+                                    </FormLabelGroup>
+                                </FlexItem>
+                                <FlexItem>
+                                    <FormLabelGroup
+                                        fieldId="transparencyLog.validateOffline"
+                                        touched={touched}
+                                        helperText={
+                                            <>
+                                                <Text>
+                                                    Force offline validation of the signature proof
+                                                    of inclusion into the transparency log. Do not
+                                                    fall back to request confirmation from the
+                                                    transparency log over network.
+                                                </Text>
+                                            </>
+                                        }
+                                        errors={errors}
+                                    >
+                                        <Checkbox
+                                            label="Validate in offline mode"
+                                            id="transparencyLog.validateOffline"
+                                            isChecked={values.transparencyLog.validateOffline}
+                                            onChange={(event, value) => onChange(value, event)}
+                                            onBlur={handleBlur}
+                                            isDisabled={
+                                                !isEditable || !values.transparencyLog.enabled
+                                            }
+                                        />
+                                    </FormLabelGroup>
+                                </FlexItem>
+                                <FlexItem>
+                                    <FormLabelGroup
+                                        label="Rekor public key"
+                                        fieldId={'transparencyLog.publicKeyPemEnc'}
+                                        helperText={
+                                            <>
+                                                <Text>
+                                                    The public key that is used to validate the
+                                                    signature proof of inclusion into the Rekor
+                                                    transparency log.
+                                                </Text>
+                                                <Text>
+                                                    Leave empty to use the key of the public
+                                                    Sigstore instance.
+                                                </Text>
+                                            </>
+                                        }
+                                        touched={touched}
+                                        errors={errors}
+                                    >
+                                        <TextArea
+                                            autoResize
+                                            resizeOrientation="vertical"
+                                            type="text"
+                                            id={'transparencyLog.publicKeyPemEnc'}
+                                            value={values.transparencyLog.publicKeyPemEnc}
+                                            style={{ minHeight: '100px' }}
+                                            onChange={(event, value) => onChange(value, event)}
+                                            onBlur={handleBlur}
+                                            isDisabled={
+                                                !isEditable || !values.transparencyLog.enabled
+                                            }
+                                            placeholder={
+                                                '-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----'
+                                            }
+                                        />
+                                    </FormLabelGroup>
+                                </FlexItem>
+                            </Flex>
+                        </TransparencyLogExpandableSection>
                     </FormikProvider>
                 </Form>
             </PageSection>
