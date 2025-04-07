@@ -27,7 +27,7 @@ func (resolver *Resolver) Notifiers(ctx context.Context) ([]*notifierResolver, e
 		return nil, err
 	}
 	var notifiers []*notifierResolver
-	err := resolver.NotifierStore.ProcessScrubbedNotifiers(ctx, func(n *storage.Notifier) error {
+	err := resolver.NotifierStore.ForEachScrubbedNotifier(ctx, func(n *storage.Notifier) error {
 		notifiers = append(notifiers, &notifierResolver{root: resolver, data: n})
 		return nil
 	})

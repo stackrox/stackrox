@@ -120,7 +120,7 @@ func (b *datastoreImpl) GetScrubbedNotifier(ctx context.Context, id string) (*st
 	return notifier, exists, err
 }
 
-func (b *datastoreImpl) ProcessNotifiers(ctx context.Context, fn func(obj *storage.Notifier) error) error {
+func (b *datastoreImpl) ForEachNotifier(ctx context.Context, fn func(obj *storage.Notifier) error) error {
 	if ok, err := integrationSAC.ReadAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
@@ -138,8 +138,8 @@ func (b *datastoreImpl) GetManyNotifiers(ctx context.Context, notifierIDs []stri
 	return notifiers, nil
 }
 
-func (b *datastoreImpl) ProcessScrubbedNotifiers(ctx context.Context, fn func(obj *storage.Notifier) error) error {
-	return b.ProcessNotifiers(ctx, func(notifier *storage.Notifier) error {
+func (b *datastoreImpl) ForEachScrubbedNotifier(ctx context.Context, fn func(obj *storage.Notifier) error) error {
+	return b.ForEachNotifier(ctx, func(notifier *storage.Notifier) error {
 		secrets.ScrubSecretsFromStructWithReplacement(notifier, secrets.ScrubReplacementStr)
 		if err := fn(notifier); err != nil {
 			return err

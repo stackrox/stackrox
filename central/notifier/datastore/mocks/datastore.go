@@ -71,6 +71,34 @@ func (mr *MockDataStoreMockRecorder) Exists(ctx, id any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Exists", reflect.TypeOf((*MockDataStore)(nil).Exists), ctx, id)
 }
 
+// ForEachNotifier mocks base method.
+func (m *MockDataStore) ForEachNotifier(ctx context.Context, fn func(*storage.Notifier) error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ForEachNotifier", ctx, fn)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ForEachNotifier indicates an expected call of ForEachNotifier.
+func (mr *MockDataStoreMockRecorder) ForEachNotifier(ctx, fn any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ForEachNotifier", reflect.TypeOf((*MockDataStore)(nil).ForEachNotifier), ctx, fn)
+}
+
+// ForEachScrubbedNotifier mocks base method.
+func (m *MockDataStore) ForEachScrubbedNotifier(ctx context.Context, fn func(*storage.Notifier) error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ForEachScrubbedNotifier", ctx, fn)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ForEachScrubbedNotifier indicates an expected call of ForEachScrubbedNotifier.
+func (mr *MockDataStoreMockRecorder) ForEachScrubbedNotifier(ctx, fn any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ForEachScrubbedNotifier", reflect.TypeOf((*MockDataStore)(nil).ForEachScrubbedNotifier), ctx, fn)
+}
+
 // GetManyNotifiers mocks base method.
 func (m *MockDataStore) GetManyNotifiers(ctx context.Context, notifierIDs []string) ([]*storage.Notifier, error) {
 	m.ctrl.T.Helper()
@@ -131,34 +159,6 @@ func (m *MockDataStore) GetScrubbedNotifier(ctx context.Context, id string) (*st
 func (mr *MockDataStoreMockRecorder) GetScrubbedNotifier(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetScrubbedNotifier", reflect.TypeOf((*MockDataStore)(nil).GetScrubbedNotifier), ctx, id)
-}
-
-// ProcessNotifiers mocks base method.
-func (m *MockDataStore) ProcessNotifiers(ctx context.Context, fn func(*storage.Notifier) error) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ProcessNotifiers", ctx, fn)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// ProcessNotifiers indicates an expected call of ProcessNotifiers.
-func (mr *MockDataStoreMockRecorder) ProcessNotifiers(ctx, fn any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessNotifiers", reflect.TypeOf((*MockDataStore)(nil).ProcessNotifiers), ctx, fn)
-}
-
-// ProcessScrubbedNotifiers mocks base method.
-func (m *MockDataStore) ProcessScrubbedNotifiers(ctx context.Context, fn func(*storage.Notifier) error) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ProcessScrubbedNotifiers", ctx, fn)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// ProcessScrubbedNotifiers indicates an expected call of ProcessScrubbedNotifiers.
-func (mr *MockDataStoreMockRecorder) ProcessScrubbedNotifiers(ctx, fn any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessScrubbedNotifiers", reflect.TypeOf((*MockDataStore)(nil).ProcessScrubbedNotifiers), ctx, fn)
 }
 
 // RemoveNotifier mocks base method.

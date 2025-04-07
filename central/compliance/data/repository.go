@@ -275,7 +275,7 @@ func (r *repository) init(ctx context.Context, domain framework.ComplianceDomain
 	}
 
 	r.notifiers = []*storage.Notifier{}
-	err = f.notifierDataStore.ProcessNotifiers(ctx, func(n *storage.Notifier) error {
+	err = f.notifierDataStore.ForEachNotifier(ctx, func(n *storage.Notifier) error {
 		r.notifiers = append(r.notifiers, n)
 		return nil
 	})

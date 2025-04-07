@@ -50,9 +50,11 @@ func initialize() {
 	pr = New(ns, reporter.Singleton())
 
 	notifierDatastore := datastore.Singleton()
+	var notifiersToUpsert []*storage.Notifier
+	var needsRekey bool
+	encNotifier := func(protoNotifier *storage.Notifier) {}
 
 	if env.EncNotifierCreds.BooleanSetting() {
-		var notifiersToUpsert []*storage.Notifier
 		cryptoKey, activeIndex, err := notifierUtils.GetActiveNotifierEncryptionKey()
 		if err != nil {
 			utils.Should(errors.Wrap(err, "Error reading encryption key, notifiers will be unable to send notifications"))
@@ -73,7 +75,6 @@ func initialize() {
 		storedKeyIndex := int(encConfig.GetActiveKeyIndex())
 
 		var oldKey string
-		var needsRekey bool
 		if activeIndex != storedKeyIndex {
 			needsRekey = true
 			oldKey, err = notifierUtils.GetNotifierEncryptionKeyAtIndex(storedKeyIndex)
@@ -82,12 +83,12 @@ func initialize() {
 			}
 		}
 
-		err = notifierDatastore.ProcessNotifiers(ctx, func(protoNotifier *storage.Notifier) error {
+		encNotifier = func(protoNotifier *storage.Notifier) {
 			secured, err := notifierUtils.IsNotifierSecured(protoNotifier)
 			if err != nil {
 				utils.Should(errors.Wrapf(err, "Error checking id the notifier %s is secured, notifications to this notifier will fail",
 					protoNotifier.GetId()))
-				return nil
+				return
 			}
 			if !secured {
 				// If notifier is not secured, then we just need to secure it using the active key and continue
@@ -95,10 +96,10 @@ func initialize() {
 				if err != nil {
 					// Don't send out error from crypto lib
 					utils.Should(fmt.Errorf("error securing notifier %s, notifications to this notifier will fail", protoNotifier.GetId()))
-					return nil
+					return
 				}
 				notifiersToUpsert = append(notifiersToUpsert, protoNotifier)
-				return nil
+				return
 			}
 
 			if needsRekey {
@@ -107,32 +108,31 @@ func initialize() {
 				err = notifierUtils.RekeyNotifier(protoNotifier, oldKey, cryptoKey)
 				if err != nil {
 					utils.Should(fmt.Errorf("error rekeying notifier %s, notifications to this notifier will fail", protoNotifier.GetId()))
-					return nil
+					return
 				}
 				notifiersToUpsert = append(notifiersToUpsert, protoNotifier)
 			}
-			return nil
-		})
-		if err != nil {
-			log.Panicf("unable to fetch notifiers: %v", err)
-		}
-
-		err = notifierDatastore.UpsertManyNotifiers(ctx, notifiersToUpsert)
-		if err != nil {
-			utils.Should(errors.Wrap(err, "Error upserting secured notifiers, several notifiers will be unable to send notifications"))
 		}
 		if needsRekey {
-			// If we did a rekey, then update the stored key index
-			encConfig = &storage.NotifierEncConfig{ActiveKeyIndex: int32(activeIndex)}
-			err = encConfigDataStore.UpsertConfig(encConfig)
-			if err != nil {
-				utils.Should(errors.Wrapf(err, "Error updating notifier encryption config's stored key index to %d", activeIndex))
-			}
+			defer func() {
+				// If we did a rekey, then update the stored key index
+				encConfig := &storage.NotifierEncConfig{ActiveKeyIndex: int32(activeIndex)}
+				err = encConfigDataStore.UpsertConfig(encConfig)
+				if err != nil {
+					utils.Should(errors.Wrapf(err, "Error updating notifier encryption config's stored key index to %d", activeIndex))
+				}
+
+			}()
 		}
 	}
 
+	if err := notifierDatastore.UpsertManyNotifiers(ctx, notifiersToUpsert); err != nil {
+		utils.Should(errors.Wrap(err, "Error upserting secured notifiers, several notifiers will be unable to send notifications"))
+	}
+
 	// Create actionable notifiers from the loaded protos.
-	err := notifierDatastore.ProcessNotifiers(ctx, func(protoNotifier *storage.Notifier) error {
+	err := notifierDatastore.ForEachNotifier(ctx, func(protoNotifier *storage.Notifier) error {
+		encNotifier(protoNotifier)
 		notifier, err := notifiers.CreateNotifier(protoNotifier)
 		if err != nil {
 			utils.Should(errors.Wrapf(err, "error creating notifier with %v (%v) and type %v", protoNotifier.GetId(), protoNotifier.GetName(), protoNotifier.GetType()))

@@ -114,14 +114,14 @@ func (s *notifierDataStoreTestSuite) TestGetScrubbedNotifier() {
 func (s *notifierDataStoreTestSuite) TestEnforcesGetMany() {
 	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).Times(0)
 
-	err := s.dataStore.ProcessNotifiers(s.hasNoneCtx, nil)
+	err := s.dataStore.ForEachNotifier(s.hasNoneCtx, nil)
 	s.NoError(err, "expected no error, should return nil without access")
 }
 
 func (s *notifierDataStoreTestSuite) TestAllowsGetMany() {
 	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
-	err := s.dataStore.ProcessNotifiers(s.hasReadCtx, nil)
+	err := s.dataStore.ForEachNotifier(s.hasReadCtx, nil)
 	s.NoError(err, "expected no error trying to read with permissions")
 }
 
@@ -139,7 +139,7 @@ func (s *notifierDataStoreTestSuite) TestGetScrubbedNotifiers() {
 			return fn(testNotifier)
 		}).Times(1)
 
-	err := s.dataStore.ProcessScrubbedNotifiers(s.hasReadCtx, func(scrubbedNotifier *storage.Notifier) error {
+	err := s.dataStore.ForEachScrubbedNotifier(s.hasReadCtx, func(scrubbedNotifier *storage.Notifier) error {
 		s.Equal("******", scrubbedNotifier.Config.(*storage.Notifier_Generic).Generic.Password)
 		return nil
 	})

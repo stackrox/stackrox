@@ -85,7 +85,7 @@ func (h httpHandler) saveAsCustomResources(ctx context.Context, request *apipara
 	}
 
 	notifiers := make(map[string]string)
-	err = h.notifierStore.ProcessNotifiers(ctx, func(n *storage.Notifier) error {
+	err = h.notifierStore.ForEachNotifier(ctx, func(n *storage.Notifier) error {
 		notifiers[n.GetId()] = n.GetName()
 		return nil
 	})

@@ -47,7 +47,7 @@ var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, err
 	}
 
 	count := 0
-	err := Singleton().ProcessNotifiers(ctx, func(notifier *storage.Notifier) error {
+	err := Singleton().ForEachNotifier(ctx, func(notifier *storage.Notifier) error {
 		count++
 		notifierTypesCount[notifier.GetType()]++
 
