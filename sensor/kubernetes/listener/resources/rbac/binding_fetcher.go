@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	pkgKubernetes "github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/retry"
-	v1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -61,32 +60,24 @@ func (r *bindingFetcher) generateManyDependentEvents(bindings []namespacedBindin
 func (r *bindingFetcher) generateDependentEvent(relatedBinding namespacedBindingID, updateRoleID string, isClusterRole bool) (*central.SensorEvent, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	if relatedBinding.IsClusterBinding() {
-		var clusterRoleBinding *v1.ClusterRoleBinding
-		if err := retry.WithRetry(func() error {
-			var apiErr error
-			clusterRoleBinding, apiErr = r.k8sAPI.RbacV1().ClusterRoleBindings().Get(ctx, relatedBinding.name, metav1.GetOptions{})
+	var event *central.SensorEvent
+	err := retry.WithRetry(func() error {
+		if relatedBinding.IsClusterBinding() {
+			clusterRoleBinding, apiErr := r.k8sAPI.RbacV1().ClusterRoleBindings().Get(ctx, relatedBinding.name, metav1.GetOptions{})
 			if apiErr != nil {
 				return errors.Wrapf(apiErr, "fetching k8s API for ClusterRoleBinding %s", relatedBinding.name)
 			}
+			pkgKubernetes.TrimAnnotations(clusterRoleBinding)
+			event = toBindingEvent(toRoxClusterRoleBinding(clusterRoleBinding, updateRoleID), central.ResourceAction_UPDATE_RESOURCE)
 			return nil
-		}, retry.Tries(r.numRetries), retry.WithExponentialBackoff()); err != nil {
-			return nil, err
 		}
-		pkgKubernetes.TrimAnnotations(clusterRoleBinding)
-		return toBindingEvent(toRoxClusterRoleBinding(clusterRoleBinding, updateRoleID), central.ResourceAction_UPDATE_RESOURCE), nil
-	}
-	var roleBinding *v1.RoleBinding
-	if err := retry.WithRetry(func() error {
-		var apiErr error
-		roleBinding, apiErr = r.k8sAPI.RbacV1().RoleBindings(relatedBinding.namespace).Get(ctx, relatedBinding.name, metav1.GetOptions{})
+		roleBinding, apiErr := r.k8sAPI.RbacV1().RoleBindings(relatedBinding.namespace).Get(ctx, relatedBinding.name, metav1.GetOptions{})
 		if apiErr != nil {
 			return errors.Wrapf(apiErr, "fetching k8s API for RoleBinding %s", relatedBinding.name)
 		}
+		pkgKubernetes.TrimAnnotations(roleBinding)
+		event = toBindingEvent(toRoxRoleBinding(roleBinding, updateRoleID, isClusterRole), central.ResourceAction_UPDATE_RESOURCE)
 		return nil
-	}, retry.Tries(r.numRetries), retry.WithExponentialBackoff()); err != nil {
-		return nil, err
-	}
-	pkgKubernetes.TrimAnnotations(roleBinding)
-	return toBindingEvent(toRoxRoleBinding(roleBinding, updateRoleID, isClusterRole), central.ResourceAction_UPDATE_RESOURCE), nil
+	}, retry.Tries(r.numRetries), retry.WithExponentialBackoff())
+	return event, err
 }
