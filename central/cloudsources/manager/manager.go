@@ -144,7 +144,7 @@ func (m *managerImpl) getDiscoveredClustersFromCloudSources() []*discoveredclust
 
 	var clients []cloudsources.Client
 	var clientCreationErrs error
-	err := m.cloudSourcesDataStore.ProcessCloudSources(cloudSourceCtx, func(cloudSource *storage.CloudSource) error {
+	err := m.cloudSourcesDataStore.ForEachCloudSource(cloudSourceCtx, func(cloudSource *storage.CloudSource) error {
 		client, err := cloudsources.NewClientForCloudSource(createCtx, cloudSource)
 		if err != nil {
 			clientCreationErrs = errors.Join(clientCreationErrs,
@@ -259,7 +259,7 @@ func (m *managerImpl) changeStatusForDiscoveredClusters(clusterID string, status
 	}
 
 	var discoveredClusterIds []string
-	err = m.cloudSourcesDataStore.ProcessCloudSources(cloudSourceCtx, func(c *storage.CloudSource) error {
+	err = m.cloudSourcesDataStore.ForEachCloudSource(cloudSourceCtx, func(c *storage.CloudSource) error {
 		discoveredClusterIds = append(discoveredClusterIds, createDiscoveredClusterId(cluster, c))
 		return nil
 	})

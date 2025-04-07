@@ -84,13 +84,13 @@ func (s *datastorePostgresTestSuite) TestProcessCloudSources() {
 		return nil
 	}
 
-	err := s.datastore.ProcessCloudSources(s.readCtx, counter)
+	err := s.datastore.ForEachCloudSource(s.readCtx, counter)
 	s.Require().NoError(err)
 	s.Assert().Equal(count, 0)
 
 	s.addCloudSources(100)
 
-	err = s.datastore.ProcessCloudSources(s.readCtx, counter)
+	err = s.datastore.ForEachCloudSource(s.readCtx, counter)
 	s.Require().NoError(err)
 	s.Assert().Equal(count, 100)
 }
