@@ -42,9 +42,8 @@ type ProcessWorkload struct {
 
 // NetworkWorkload defines the rate and size of network flows
 type NetworkWorkload struct {
-	FlowInterval              time.Duration `yaml:"flowInterval"`
-	BatchSize                 int           `yaml:"batchSize"`
-	GenerateUnclosedEndpoints bool          `yaml:"generateUnclosedEndpoints"`
+	FlowInterval time.Duration `yaml:"flowInterval"`
+	BatchSize    int           `yaml:"batchSize"`
 }
 
 // PodWorkload defines the workload and lifecycle of the pods within a deployment

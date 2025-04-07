@@ -16,7 +16,6 @@ deploymentWorkload:
 networkWorkload:
   batchSize: 100
   flowInterval: 30s
-  generateUnclosedEndpoints: true
 nodeWorkload:
   numNodes: 100
 rbacWorkload:
