@@ -28,7 +28,7 @@ export const defaultNamespaceSort = [
     },
 ];
 
-const VulnMgmtNamespaces = ({ selectedRowId, search, sort, page, data, totalResults }) => {
+const VulnMgmtListNamespaces = ({ selectedRowId, search, sort, page, data, totalResults }) => {
     function getNamespaceTableColumns(workflowState) {
         const tableColumns = [
             {
@@ -205,7 +205,7 @@ const VulnMgmtNamespaces = ({ selectedRowId, search, sort, page, data, totalResu
     );
 };
 
-VulnMgmtNamespaces.propTypes = workflowListPropTypes;
-VulnMgmtNamespaces.defaultProps = workflowListDefaultProps;
+VulnMgmtListNamespaces.propTypes = workflowListPropTypes;
+VulnMgmtListNamespaces.defaultProps = workflowListDefaultProps;
 
-export default VulnMgmtNamespaces;
+export default VulnMgmtListNamespaces;
