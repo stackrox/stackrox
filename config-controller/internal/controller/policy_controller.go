@@ -151,8 +151,8 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		// finalizer is present, so lets handle the external dependency of deleting policy in central
 		if controllerutil.ContainsFinalizer(policyCR, policyFinalizer) {
 			// Only try to delete a policy from Central if the policy is active in Central
-			if policyCR.Status.Condition.GetCondition(configstackroxiov1alpha1.AcceptedByCentral).Status == "True" {
-				if err := r.CentralClient.DeletePolicy(ctx, policyCR.Spec.PolicyName); err != nil {
+			if policyCR.Status.Condition.GetCondition(configstackroxiov1alpha1.AcceptedByCentral).Status == "True" && policyCR.Status.PolicyId != "" {
+				if err := r.CentralClient.DeletePolicy(ctx, policyCR.Status.PolicyId); err != nil {
 					// if we failed to delete the policy in central, return with error
 					// so that reconciliation can be retried.
 					return ctrl.Result{}, errors.Wrapf(err, "failed to delete policy %q", policyCR.GetName())
