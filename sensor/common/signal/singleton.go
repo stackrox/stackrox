@@ -2,13 +2,14 @@ package signal
 
 import (
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/sensor/queue"
 )
 
-const maxBufferSize = 10000
-
 func NewService(opts ...Option) Service {
+	queueSize := queue.ScaleSizeOnNonDefault(env.ProcessSignalQueueSize)
 	srv := &serviceImpl{
-		queue:            make(chan *storage.ProcessSignal, maxBufferSize),
+		queue:            make(chan *storage.ProcessSignal, queueSize),
 		authFuncOverride: authFuncOverride,
 	}
 
