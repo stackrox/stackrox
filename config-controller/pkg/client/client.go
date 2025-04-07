@@ -378,10 +378,7 @@ func (c *client) FlushCache(ctx context.Context) error {
 	c.notifierNameToIDCache = newNotifierNameToIDCache
 
 	c.lastUpdated = time.Now()
-
-	fmt.Println("Cluster Cache from FlushCache:", c.clusterNameToIDCache)
-	fmt.Println("Notifier Cache from FlushCache:", c.notifierNameToIDCache)
-
+	
 	return nil
 }
 
