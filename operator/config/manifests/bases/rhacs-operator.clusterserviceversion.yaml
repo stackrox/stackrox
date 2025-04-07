@@ -85,6 +85,12 @@ spec:
         path: central.exposure.route
       - displayName: Enabled
         path: central.exposure.route.enabled
+      - displayName: Enabled
+        path: central.exposure.route.reencrypt.enabled
+      - description: PEM encoded certificate chain that may be used to establish a
+          complete chain of trust.
+        displayName: Ca Certificate
+        path: central.exposure.route.reencrypt.tls.caCertificate
       - description: |-
           Expose the monitoring endpoint. A new service, "monitoring",
           with port 9090, will be created as well as a network policy allowing
@@ -248,9 +254,20 @@ spec:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:.enabled:true
       - description: |-
           Specify a custom hostname for the central route.
-          If unspecified, an appropriate default value will be automatically chosen by OpenShift route operator.
+          If unspecified, an appropriate default value will be automatically chosen by the OpenShift route operator.
         displayName: Host
         path: central.exposure.route.host
+      - description: |-
+          Specify a custom hostname for the central reencrypt route.
+          If unspecified, an appropriate default value will be automatically chosen by the OpenShift route operator.
+        displayName: Host
+        path: central.exposure.route.reencrypt.host
+      - description: |-
+          The PEM encoded certificate that is served on the route. Must be a single serving
+          certificate instead of a certificate chain.
+          Defaults to a certificate signed by the OpenShift certificate authority is used.
+        displayName: Certificate
+        path: central.exposure.route.reencrypt.tls.certificate
       - description: |-
           The size of the persistent volume when created through the claim. If a claim was automatically created,
           this can be used after the initial deployment to resize (grow) the volume (only supported by some
@@ -345,6 +362,19 @@ spec:
         displayName: Node Port
         path: central.exposure.nodePort
       - description: |-
+          Set up a central route with reencrypt tls termination.
+          For reencrypt routes, the request is terminated on the OpenShift router with a custom certificate.
+          The request is then reencrypted by the OpenShift router and sent to central.
+          <user> --tls--> <OpenShift router> --tls--> <central>
+        displayName: Reencrypt
+        path: central.exposure.route.reencrypt
+      - description: |-
+          The CA certificate of the final destination. Should be provided because the OpenShift
+          router uses it for health checks on the secure connection.
+          Defaults to the Central certificate authority.
+        displayName: Destination CACertificate
+        path: central.exposure.route.reencrypt.tls.destinationCACertificate
+      - description: |-
           The name of the storage class to use for the PVC. If your cluster is not configured with a default storage
           class, you must select a value here.
         displayName: Storage Class
@@ -401,6 +431,11 @@ spec:
           be used if modifications need to be applied.
         displayName: Config map that will override postgresql.conf and pg_hba.conf
         path: central.db.configOverride
+      - description: |-
+          The PEM encoded private key of the certificate that is served on the route.
+          Defaults to a certificate signed by the OpenShift certificate authority.
+        displayName: Key
+        path: central.exposure.route.reencrypt.tls.key
       - description: |-
           Configures monitoring endpoint for Central. The monitoring endpoint
           allows other services to collect metrics from Central, provided in
