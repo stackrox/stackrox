@@ -104,14 +104,23 @@ func (s *indexerService) GetIndexReport(ctx context.Context, req *v4.GetIndexRep
 		"hash_id", req.GetHashId(),
 	)
 	zlog.Info(ctx).Msg("getting index report for container image")
+	ir, err := s.getIndexReport(ctx, req)
+	switch {
+	case errors.Is(err, errox.NotFound):
+		zlog.Warn(ctx).Err(err).Send()
+	case err != nil:
+		zlog.Error(ctx).Err(err).Msg("internal error: converting to v4.IndexReport")
+	}
+	return ir, err
+}
+
+func (s *indexerService) getIndexReport(ctx context.Context, req *v4.GetIndexReportRequest) (*v4.IndexReport, error) {
 	ccIR, err := getClairIndexReport(ctx, s.indexer, req.GetHashId())
 	if err != nil {
-		zlog.Warn(ctx).Err(err).Send()
 		return nil, err
 	}
 	v4IR, err := mappers.ToProtoV4IndexReport(ccIR)
 	if err != nil {
-		zlog.Error(ctx).Err(err).Msg("internal error: converting to v4.IndexReport")
 		return nil, err
 	}
 	v4IR.HashId = req.GetHashId()
@@ -124,7 +133,7 @@ func (s *indexerService) GetOrCreateIndexReport(ctx context.Context, req *v4.Get
 		"hash_id", req.GetHashId(),
 	)
 
-	ir, err := s.GetIndexReport(ctx, &v4.GetIndexReportRequest{
+	ir, err := s.getIndexReport(ctx, &v4.GetIndexReportRequest{
 		HashId: req.GetHashId(),
 	})
 	switch {
