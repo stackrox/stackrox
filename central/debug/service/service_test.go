@@ -73,7 +73,7 @@ func (s *debugServiceTestSuite) TearDownTest() {
 }
 
 func (s *debugServiceTestSuite) TestGetGroups() {
-	s.groupsMock.EXPECT().ProcessAll(gomock.Any(), gomock.Any()).Return(errors.New("Test"))
+	s.groupsMock.EXPECT().ForEach(gomock.Any(), gomock.Any()).Return(errors.New("Test"))
 	_, err := s.service.getGroups(s.noneCtx)
 	s.Error(err, "expected error propagation")
 
@@ -87,7 +87,7 @@ func (s *debugServiceTestSuite) TestGetGroups() {
 			},
 		},
 	}
-	s.groupsMock.EXPECT().ProcessAll(gomock.Any(), gomock.Any()).Do(
+	s.groupsMock.EXPECT().ForEach(gomock.Any(), gomock.Any()).Do(
 		func(ctx context.Context, fn func(group *storage.Group) error) error {
 			return fn(expectedGroups[0])
 		})
