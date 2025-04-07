@@ -677,6 +677,7 @@ spec:
     - determine-image-expiration
     - determine-image-tag
     - init
+    - post-metric-start
     - prefetch-dependencies
     - push-dockerfile
     - rpms-signature-scan
