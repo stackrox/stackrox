@@ -73,15 +73,15 @@ func (s *authProviderDataStoreEnforceTestSuite) TestEnforcesAuthProviderExistsWi
 }
 
 func (s *authProviderDataStoreEnforceTestSuite) TestEnforcesProcessAuthProviders() {
-	err := s.dataStore.ProcessAuthProviders(s.hasNoneCtx, nil)
+	err := s.dataStore.ForEachAuthProvider(s.hasNoneCtx, nil)
 	s.ErrorIs(err, sac.ErrResourceAccessDenied)
 
 	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).Return(nil).Times(2)
 
-	err = s.dataStore.ProcessAuthProviders(s.hasReadCtx, nil)
+	err = s.dataStore.ForEachAuthProvider(s.hasReadCtx, nil)
 	s.NoError(err)
 
-	err = s.dataStore.ProcessAuthProviders(s.hasWriteCtx, nil)
+	err = s.dataStore.ForEachAuthProvider(s.hasWriteCtx, nil)
 	s.NoError(err)
 }
 

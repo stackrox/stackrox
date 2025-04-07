@@ -32,7 +32,7 @@ var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, err
 		storage.Traits_DECLARATIVE_ORPHANED: 0,
 	}
 
-	err := datastore.Singleton().ProcessAuthProviders(ctx, func(provider *storage.AuthProvider) error {
+	err := datastore.Singleton().ForEachAuthProvider(ctx, func(provider *storage.AuthProvider) error {
 		providerIDTypes[provider.GetId()] = provider.GetType()
 		providerTypes.Add(provider.GetType())
 		providerOriginCount[provider.GetTraits().GetOrigin()]++
