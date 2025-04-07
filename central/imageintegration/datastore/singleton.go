@@ -26,7 +26,11 @@ var (
 
 func initializeIntegrations(iiStore store.Store) {
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
-	iis, err := iiStore.GetAll(ctx)
+	var iis []*storage.ImageIntegration
+	err := iiStore.Walk(ctx, func(ii *storage.ImageIntegration) error {
+		iis = append(iis, ii)
+		return nil
+	})
 	utils.CrashOnError(err)
 	// If we are starting from scratch in online-mode, add the default image integrations.
 	if !env.OfflineModeEnv.BooleanSetting() && len(iis) == 0 {
