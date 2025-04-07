@@ -995,7 +995,7 @@ func (resolver *imageCVEV2Resolver) FixedByVersion(ctx context.Context) (string,
 func (resolver *imageCVEV2Resolver) IsFixable(_ context.Context, _ RawQuery) (bool, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "IsFixable")
 
-	return resolver.data.IsFixable, nil
+	return resolver.data.GetIsFixable(), nil
 }
 
 func (resolver *imageCVEV2Resolver) LastScanned(ctx context.Context) (*graphql.Time, error) {
