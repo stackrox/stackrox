@@ -16,8 +16,6 @@ var (
 	log = logging.LoggerForModule()
 )
 
-const maxBufferSize = 10000
-
 type Option func(*serviceImpl)
 
 // WithAuthFuncOverride sets the AuthFuncOverride.
