@@ -223,15 +223,17 @@ func (r *reconcilePVCExtensionRun) handleDelete() error {
 
 func (r *reconcilePVCExtensionRun) handleCreate(claimName string, pvcConfig *platform.PersistentVolumeClaim) error {
 	// Before creating a PVC, verify if prerequisites are met. Currently there
-	// is only one requirement, a default storage class must exists. Since it's
-	// highly specific for PVCs only, it's implemented inside the extension,
-	// instead of collecting this information at the start and passing it into
-	// the extension.
+	// is only one requirement, a default storage class must exists or a
+	// storage class has to be specified explicitly. Since it's highly specific
+	// for PVCs only, it's implemented inside the extension, instead of
+	// collecting this information at the start and passing it into the
+	// extension.
 	//
 	// Note that to make this check less disruptive, in case if we face an
 	// error we still try to create a PVC.
-	if result, err := utils.HasDefaultStorageClass(r.ctx, r.client); err == nil && !result {
-		r.log.Info("No default storage class found, skip PVC creation")
+	hasDefault, err := utils.HasDefaultStorageClass(r.ctx, r.client)
+	if err == nil && !hasDefault && pvcConfig.StorageClassName == nil {
+		r.log.Info("No default storage class or explicit storage class found, skip PVC creation")
 		return nil
 	}
 
