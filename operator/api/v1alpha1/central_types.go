@@ -635,6 +635,8 @@ type CentralStatus struct {
 	ProductVersion string `json:"productVersion,omitempty"`
 	//+operator-sdk:csv:customresourcedefinitions:type=status,order=2
 	Central *CentralComponentStatus `json:"central,omitempty"`
+
+	Defaults *StatusDefaults `json:"defaults,omitempty"`
 }
 
 // AdminPasswordStatus shows status related to the admin password.
@@ -685,14 +687,12 @@ func init() {
 var (
 	// CentralGVK is the GVK for the Central type.
 	CentralGVK = GroupVersion.WithKind("Central")
+
+	ScannerV4Enabled  = ScannerV4ComponentEnabled
+	ScannerV4Disabled = ScannerV4ComponentDisabled
 )
 
 // IsScannerEnabled returns true if scanner is enabled.
 func (c *Central) IsScannerEnabled() bool {
 	return c.Spec.Scanner.IsEnabled()
-}
-
-// IsScannerV4Enabled returns true if Scanner V4 is enabled.
-func (c *Central) IsScannerV4Enabled() bool {
-	return c.Spec.ScannerV4.IsEnabled()
 }

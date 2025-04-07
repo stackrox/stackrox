@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"strconv"
 
-	// Required for the usage of go:embed below.
+	// Required for the usage of go:embed be)w.
 	_ "embed"
 
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
+	"github.com/stackrox/rox/operator/internal/common/defaulting"
 	"github.com/stackrox/rox/operator/internal/values/translation"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
@@ -20,6 +21,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/pointer"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlLog "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 var (
@@ -94,9 +96,7 @@ func (t Translator) translate(ctx context.Context, c platform.Central) (chartuti
 		v.AddChild("scanner", getCentralScannerComponentValues(c.Spec.Scanner))
 	}
 
-	if c.Spec.ScannerV4 != nil {
-		v.AddChild("scannerV4", getCentralScannerV4ComponentValues(ctx, c.Spec.ScannerV4, c.GetNamespace(), t.client))
-	}
+	v.AddChild("scannerV4", getCentralScannerV4ComponentValues(ctx, c.Spec.ScannerV4, c.Status.Defaults, c.GetNamespace(), t.client))
 
 	v.AddChild("customize", &customize)
 
@@ -332,8 +332,17 @@ func getCentralScannerComponentValues(s *platform.ScannerComponentSpec) *transla
 	return &sv
 }
 
-func getCentralScannerV4ComponentValues(ctx context.Context, s *platform.ScannerV4Spec, namespace string, client ctrlClient.Client) *translation.ValuesBuilder {
+func getCentralScannerV4ComponentValues(ctx context.Context, s *platform.ScannerV4Spec, statusDefaults *platform.StatusDefaults, namespace string, client ctrlClient.Client) *translation.ValuesBuilder {
+	log := ctrlLog.FromContext(ctx)
+
 	sv := translation.NewValuesBuilder()
+
+	if s == nil {
+		s = &platform.ScannerV4Spec{}
+	}
+	log.Info("getCentralScannerV4ComponentValues: before", "componentPolicy", s.ScannerComponent)
+	defaulting.ScannerV4DefaultsApply(statusDefaults, s)
+	log.Info("getCentralScannerV4ComponentValues: after", "componentPolicy", s.ScannerComponent)
 	translation.SetScannerV4DisableValue(&sv, s.ScannerComponent)
 	translation.SetScannerV4ComponentValues(&sv, "indexer", s.Indexer)
 	translation.SetScannerV4ComponentValues(&sv, "matcher", s.Matcher)

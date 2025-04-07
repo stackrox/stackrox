@@ -1817,6 +1817,16 @@ spec:
                   - type
                   type: object
                 type: array
+              defaults:
+                properties:
+                  scannerV4ComponentPolicy:
+                    properties:
+                      ownerVersion:
+                        type: string
+                      value:
+                        type: string
+                    type: object
+                type: object
               deployedRelease:
                 description: StackRoxRelease describes the Helm "release" that was
                   most recently applied.
