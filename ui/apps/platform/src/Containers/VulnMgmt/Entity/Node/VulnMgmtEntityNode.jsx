@@ -15,7 +15,7 @@ import {
     tryUpdateQueryWithVulMgmtPolicyClause,
 } from '../VulnMgmtPolicyQueryUtil';
 
-const VulmMgmtNode = ({
+const VulnMgmtEntityNode = ({
     entityId,
     entityListType,
     search,
@@ -119,7 +119,7 @@ const VulmMgmtNode = ({
     );
 };
 
-VulmMgmtNode.propTypes = workflowEntityPropTypes;
-VulmMgmtNode.defaultProps = workflowEntityDefaultProps;
+VulnMgmtEntityNode.propTypes = workflowEntityPropTypes;
+VulnMgmtEntityNode.defaultProps = workflowEntityDefaultProps;
 
-export default VulmMgmtNode;
+export default VulnMgmtEntityNode;

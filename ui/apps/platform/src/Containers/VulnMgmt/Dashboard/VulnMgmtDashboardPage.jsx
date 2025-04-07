@@ -28,7 +28,7 @@ const entityMenuTypes = [
     entityTypes.IMAGE_COMPONENT,
 ];
 
-const VulnDashboardPage = () => {
+const VulnMgmtDashboardPage = () => {
     const navigate = useNavigate();
     const { hasReadAccess } = usePermissions();
     const hasReadAccessForIntegration = hasReadAccess('Integration');
@@ -131,4 +131,4 @@ const VulnDashboardPage = () => {
     );
 };
 
-export default VulnDashboardPage;
+export default VulnMgmtDashboardPage;

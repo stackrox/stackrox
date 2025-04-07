@@ -189,7 +189,7 @@ export function getNodeTableColumns() {
 }
 
 // TODO: set getNodes query to get real nodes list
-const VulnMgmtNodes = ({ selectedRowId, search, sort, page, data, totalResults }) => {
+const VulnMgmtListNodes = ({ selectedRowId, search, sort, page, data, totalResults }) => {
     const tableSort = sort || defaultNodeSort;
     const queryOptions = {
         variables: {
@@ -216,7 +216,7 @@ const VulnMgmtNodes = ({ selectedRowId, search, sort, page, data, totalResults }
     );
 };
 
-VulnMgmtNodes.propTypes = workflowListPropTypes;
-VulnMgmtNodes.defaultProps = workflowListDefaultProps;
+VulnMgmtListNodes.propTypes = workflowListPropTypes;
+VulnMgmtListNodes.defaultProps = workflowListDefaultProps;
 
-export default VulnMgmtNodes;
+export default VulnMgmtListNodes;

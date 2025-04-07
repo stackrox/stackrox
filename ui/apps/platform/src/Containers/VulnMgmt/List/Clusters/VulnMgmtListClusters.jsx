@@ -29,7 +29,7 @@ export const defaultClusterSort = [
     },
 ];
 
-const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data, totalResults }) => {
+const VulnMgmtListClusters = ({ selectedRowId, search, sort, page, data, totalResults }) => {
     const query = gql`
         query getClusters(
             $query: String
@@ -240,7 +240,7 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data, totalResult
     );
 };
 
-VulnMgmtClusters.propTypes = workflowListPropTypes;
-VulnMgmtClusters.defaultProps = workflowListDefaultProps;
+VulnMgmtListClusters.propTypes = workflowListPropTypes;
+VulnMgmtListClusters.defaultProps = workflowListDefaultProps;
 
-export default VulnMgmtClusters;
+export default VulnMgmtListClusters;

@@ -30,7 +30,7 @@ const entityComponentMap = {
     [entityTypes.NODE]: VulnMgmtListNodes,
 };
 
-const VulnMgmtEntityList = (props) => {
+const VulnMgmtList = (props) => {
     const { entityListType } = props;
     const Component = entityComponentMap[entityListType];
     if (!Component) {
@@ -44,4 +44,4 @@ const VulnMgmtEntityList = (props) => {
     return <Component {...props} />;
 };
 
-export default VulnMgmtEntityList;
+export default VulnMgmtList;

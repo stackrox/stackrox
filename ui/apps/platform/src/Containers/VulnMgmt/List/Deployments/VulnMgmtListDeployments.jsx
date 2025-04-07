@@ -186,7 +186,7 @@ export function getCurriedDeploymentTableColumns() {
     };
 }
 
-const VulnMgmtDeployments = ({ selectedRowId, search, sort, page, data, totalResults }) => {
+const VulnMgmtListDeployments = ({ selectedRowId, search, sort, page, data, totalResults }) => {
     const query = gql`
         query getDeployments($query: String, $policyQuery: String, $pagination: Pagination) {
             results: deployments(query: $query, pagination: $pagination) {
@@ -224,7 +224,7 @@ const VulnMgmtDeployments = ({ selectedRowId, search, sort, page, data, totalRes
     );
 };
 
-VulnMgmtDeployments.propTypes = workflowListPropTypes;
-VulnMgmtDeployments.defaultProps = workflowListDefaultProps;
+VulnMgmtListDeployments.propTypes = workflowListPropTypes;
+VulnMgmtListDeployments.defaultProps = workflowListDefaultProps;
 
-export default VulnMgmtDeployments;
+export default VulnMgmtListDeployments;

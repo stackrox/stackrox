@@ -60,7 +60,7 @@ function getCVETypeFromStack(worklowStateStack) {
     return undefined;
 }
 
-const VulmMgmtCve = ({ entityId, entityListType, search, entityContext, sort, page }) => {
+const VulnMgmtEntityCve = ({ entityId, entityListType, search, entityContext, sort, page }) => {
     const workflowState = useContext(workflowStateContext);
     const worklowStateStack = workflowState.getStateStack();
     const cveType = getCVETypeFromStack(worklowStateStack) || entityTypes.IMAGE_CVE;
@@ -132,7 +132,7 @@ const VulmMgmtCve = ({ entityId, entityListType, search, entityContext, sort, pa
     );
 };
 
-VulmMgmtCve.propTypes = workflowEntityPropTypes;
-VulmMgmtCve.defaultProps = workflowEntityDefaultProps;
+VulnMgmtEntityCve.propTypes = workflowEntityPropTypes;
+VulnMgmtEntityCve.defaultProps = workflowEntityDefaultProps;
 
-export default VulmMgmtCve;
+export default VulnMgmtEntityCve;

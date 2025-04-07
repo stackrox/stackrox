@@ -204,7 +204,7 @@ export function getComponentTableColumns() {
     };
 }
 
-const VulnMgmtNodeComponents = ({ selectedRowId, search, sort, page, data, totalResults }) => {
+const VulnMgmtListImageComponents = ({ selectedRowId, search, sort, page, data, totalResults }) => {
     const query = gql`
         query getImageComponents($query: String, $pagination: Pagination) {
             results: imageComponents(query: $query, pagination: $pagination) {
@@ -242,7 +242,7 @@ const VulnMgmtNodeComponents = ({ selectedRowId, search, sort, page, data, total
     );
 };
 
-VulnMgmtNodeComponents.propTypes = workflowListPropTypes;
-VulnMgmtNodeComponents.defaultProps = workflowListDefaultProps;
+VulnMgmtListImageComponents.propTypes = workflowListPropTypes;
+VulnMgmtListImageComponents.defaultProps = workflowListDefaultProps;
 
-export default VulnMgmtNodeComponents;
+export default VulnMgmtListImageComponents;

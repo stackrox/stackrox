@@ -185,7 +185,7 @@ export function getCurriedImageTableColumns() {
     };
 }
 
-const VulnMgmtImages = ({
+const VulnMgmtListImages = ({
     selectedRowId,
     search,
     sort,
@@ -235,14 +235,14 @@ const VulnMgmtImages = ({
     );
 };
 
-VulnMgmtImages.propTypes = {
+VulnMgmtListImages.propTypes = {
     ...workflowListPropTypes,
     refreshTrigger: PropTypes.number,
 };
 
-VulnMgmtImages.defaultProps = {
+VulnMgmtListImages.defaultProps = {
     ...workflowListDefaultProps,
     refreshTrigger: 0,
 };
 
-export default VulnMgmtImages;
+export default VulnMgmtListImages;

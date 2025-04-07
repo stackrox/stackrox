@@ -15,7 +15,7 @@ import {
 import VulnMgmtClusterOverview from './VulnMgmtClusterOverview';
 import EntityList from '../../List/VulnMgmtList';
 
-const VulmMgmtEntityCluster = ({
+const VulnMgmtEntityCluster = ({
     entityId,
     entityListType,
     search,
@@ -103,7 +103,7 @@ const VulmMgmtEntityCluster = ({
     );
 };
 
-VulmMgmtEntityCluster.propTypes = entityComponentPropTypes;
-VulmMgmtEntityCluster.defaultProps = entityComponentDefaultProps;
+VulnMgmtEntityCluster.propTypes = entityComponentPropTypes;
+VulnMgmtEntityCluster.defaultProps = entityComponentDefaultProps;
 
-export default VulmMgmtEntityCluster;
+export default VulnMgmtEntityCluster;
