@@ -103,4 +103,10 @@ var (
 	// EnrichmentPurgerTickerCycle controls how frequently purger is run to check for collector updates
 	// (network flows & container endpoints) that stuck in Sensor's memory. Set to zero to completely disable the purger.
 	EnrichmentPurgerTickerCycle = registerDurationSetting("ROX_ENRICHMENT_PURGER_UPDATE_CYCLE", 30*time.Minute, WithDurationZeroAllowed())
+
+	// CollectorIServiceQueueSize is used to specify the size of the queue for the collector internal service.
+	CollectorIServiceQueueSize = RegisterIntegerSetting("ROX_SENSOR_COLLECTOR_QUEUE_SIZE", 10000)
+
+	// ProcessSignalQueueSize is used to specify the size of the queue for process signals coming from collector.
+	ProcessSignalQueueSize = RegisterIntegerSetting("ROX_SENSOR_COLLECTOR_QUEUE_SIZE", 10000)
 )

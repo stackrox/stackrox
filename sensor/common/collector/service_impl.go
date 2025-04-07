@@ -5,8 +5,10 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sensor/queue"
 	"google.golang.org/grpc"
 )
 
@@ -33,10 +35,16 @@ type serviceImpl struct {
 	authFuncOverride func(context.Context, string) (context.Context, error)
 }
 
-func newService() Service {
-	return &serviceImpl{
-		queue: make(chan *sensor.ProcessSignal, maxBufferSize),
+func newService(opts ...Option) Service {
+	queueSize := env.CollectorIServiceQueueSize
+	s := &serviceImpl{
+		queue: make(chan *sensor.ProcessSignal, queue.ScaleSizeOnNonDefault(queueSize)),
 	}
+
+	for _, o := range opts {
+		o(s)
+	}
+	return s
 }
 
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
