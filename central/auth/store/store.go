@@ -13,7 +13,7 @@ type Store interface {
 	Get(ctx context.Context, id string) (*storage.AuthMachineToMachineConfig, bool, error)
 	Upsert(ctx context.Context, obj *storage.AuthMachineToMachineConfig) error
 	Delete(ctx context.Context, id string) error
-	GetAll(ctx context.Context) ([]*storage.AuthMachineToMachineConfig, error)
+	Walk(ctx context.Context, fn func(obj *storage.AuthMachineToMachineConfig) error) error
 	Begin(ctx context.Context) (context.Context, *pgPkg.Tx, error)
 }
 
