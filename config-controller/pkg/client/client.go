@@ -10,7 +10,7 @@ import (
 
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	storage "github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
@@ -378,7 +378,7 @@ func (c *client) FlushCache(ctx context.Context) error {
 	c.notifierNameToIDCache = newNotifierNameToIDCache
 
 	c.lastUpdated = time.Now()
-	
+
 	return nil
 }
 
