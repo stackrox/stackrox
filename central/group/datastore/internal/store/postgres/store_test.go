@@ -92,9 +92,6 @@ func (s *GroupsStoreSuite) TestStore() {
 	}
 
 	s.NoError(store.UpsertMany(ctx, groups))
-	allGroup, err := store.GetAll(ctx)
-	s.NoError(err)
-	protoassert.ElementsMatch(s.T(), groups, allGroup)
 
 	groupCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
