@@ -213,7 +213,7 @@ func TestCachedClientDelete(t *testing.T) {
 	assert.NoError(t, err, "Unexpected error creating a policy")
 	assert.Equal(t, "dec123", createdDecPolicy.Id)
 
-	err = clientTest.client.DeletePolicy(clientTest.ctx, newPolicyDeclarative.Name)
+	err = clientTest.client.DeletePolicy(clientTest.ctx, createdDecPolicy.Id)
 	assert.NoError(t, err, "Unexpected error deleting the policy")
 
 	createdImpPolicy, err := clientTest.client.CreatePolicy(clientTest.ctx, &newPolicyImperative)
@@ -221,7 +221,7 @@ func TestCachedClientDelete(t *testing.T) {
 	assert.NoError(t, err, "Unexpected error creating a policy")
 	assert.Equal(t, "imp123", createdImpPolicy.Id)
 
-	err = clientTest.client.DeletePolicy(clientTest.ctx, newPolicyImperative.Name)
+	err = clientTest.client.DeletePolicy(clientTest.ctx, createdImpPolicy.Id)
 	assert.Error(t, err, "Did not receive expected error while deleting non declarative/externally managed policy")
 }
 
