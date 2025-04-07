@@ -39,7 +39,7 @@ var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, err
 	}
 
 	count := 0
-	err := Singleton().ProcessBackups(ctx, func(backup *storage.ExternalBackup) error {
+	err := Singleton().ForEachBackup(ctx, func(backup *storage.ExternalBackup) error {
 		count++
 		backupTypesCount[backup.GetType()]++
 

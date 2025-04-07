@@ -85,7 +85,7 @@ func (s *serviceImpl) GetExternalBackup(ctx context.Context, request *v1.Resourc
 // GetExternalBackups retrieves all external backups
 func (s *serviceImpl) GetExternalBackups(ctx context.Context, _ *v1.Empty) (*v1.GetExternalBackupsResponse, error) {
 	backups := make([]*storage.ExternalBackup, 0)
-	err := s.dataStore.ProcessBackups(ctx, func(b *storage.ExternalBackup) error {
+	err := s.dataStore.ForEachBackup(ctx, func(b *storage.ExternalBackup) error {
 		secrets.ScrubSecretsFromStructWithReplacement(b, secrets.ScrubReplacementStr)
 		backups = append(backups, b)
 		return nil

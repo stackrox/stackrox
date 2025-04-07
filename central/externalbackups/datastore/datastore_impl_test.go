@@ -75,7 +75,7 @@ func (s *extBkpDataStoreTestSuite) TearDownTest() {
 func (s *extBkpDataStoreTestSuite) TestUpsertExtBkps() {
 	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).Times(0)
 
-	err := s.dataStore.ProcessBackups(s.hasNoneCtx, nil)
+	err := s.dataStore.ForEachBackup(s.hasNoneCtx, nil)
 	s.NoError(err)
 
 	s.storage.EXPECT().Upsert(gomock.Any(), NewFakeExtBkp()).Return(nil).Times(1)
@@ -87,7 +87,7 @@ func (s *extBkpDataStoreTestSuite) TestUpsertExtBkps() {
 func (s *extBkpDataStoreTestSuite) TestEnforcesList() {
 	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).Times(0)
 
-	err := s.dataStore.ProcessBackups(s.hasNoneCtx, nil)
+	err := s.dataStore.ForEachBackup(s.hasNoneCtx, nil)
 	s.NoError(err)
 }
 
@@ -100,7 +100,7 @@ func (s *extBkpDataStoreTestSuite) TestAllowsList() {
 	}).Times(1)
 
 	var result []*storage.ExternalBackup
-	err := s.dataStore.ProcessBackups(s.hasReadCtx, func(obj *storage.ExternalBackup) error {
+	err := s.dataStore.ForEachBackup(s.hasReadCtx, func(obj *storage.ExternalBackup) error {
 		result = append(result, obj)
 		return nil
 	})

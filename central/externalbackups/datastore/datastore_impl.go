@@ -17,7 +17,7 @@ type datastoreImpl struct {
 	store store.Store
 }
 
-func (ds *datastoreImpl) ProcessBackups(ctx context.Context, fn func(obj *storage.ExternalBackup) error) error {
+func (ds *datastoreImpl) ForEachBackup(ctx context.Context, fn func(obj *storage.ExternalBackup) error) error {
 	if ok, err := integrationSAC.ReadAllowed(ctx); err != nil {
 		return err
 	} else if !ok {

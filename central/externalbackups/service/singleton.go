@@ -31,7 +31,7 @@ func initializeManager() manager.Manager {
 			sac.ResourceScopeKeys(resources.Integration)))
 
 	mgr := manager.New(reporter.Singleton(), backupListener.Singleton())
-	err := datastore.Singleton().ProcessBackups(ctx, func(b *storage.ExternalBackup) error {
+	err := datastore.Singleton().ForEachBackup(ctx, func(b *storage.ExternalBackup) error {
 		if err := mgr.Upsert(ctx, b); err != nil {
 			log.Errorf("error initializing backup: %v", err)
 		}
