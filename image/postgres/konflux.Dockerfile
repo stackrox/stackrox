@@ -1,4 +1,4 @@
-FROM registry.redhat.io/rhel8/postgresql-13:latest AS final
+FROM registry.redhat.io/rhel8/postgresql-15:latest AS final
 
 USER root
 
