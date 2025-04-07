@@ -93,4 +93,10 @@ var (
 	// ResponsesChannelBufferSize defines how many messages to central are we buffering before dropping messages
 	// Setting this variable to zero will disable this feature.
 	ResponsesChannelBufferSize = RegisterIntegerSetting("ROX_RESPONSES_CHANNEL_BUFFER_SIZE", 0)
+
+	// CollectorIServiceQueueSize is used to specify the size of the queue for the collector internal service.
+	CollectorIServiceQueueSize = RegisterIntegerSetting("ROX_SENSOR_COLLECTOR_QUEUE_SIZE", 10000)
+
+	// ProcessSignalQueueSize is used to specify the size of the queue for process signals coming from collector.
+	ProcessSignalQueueSize = RegisterIntegerSetting("ROX_SENSOR_COLLECTOR_QUEUE_SIZE", 10000)
 )

@@ -15,5 +15,5 @@ type Service interface {
 }
 
 func NewService(opts ...Option) Service {
-	return newService()
+	return newService(opts...)
 }
