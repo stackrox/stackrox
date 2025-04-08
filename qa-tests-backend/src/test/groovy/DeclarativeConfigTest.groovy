@@ -49,7 +49,7 @@ class DeclarativeConfigTest extends BaseSpecification {
 
     static final private int RETRIES = 60
     static final private int DELETION_RETRIES = 60
-    static final private int PAUSE_SECS = 3
+    static final private int PAUSE_SECS = 5
     // The AuthProvider reconciliation flow performs HTTP calls that can increase
     // the time needed for reconciliation errors to surface. The number of retries
     // here is increased accordingly.
