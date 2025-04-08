@@ -540,6 +540,10 @@ func (s *serviceImpl) addDeploymentFlowsToGraph(
 	// Aggregate all external flows by node names to control the number of external nodes.
 	flows = aggregator.NewDuplicateNameExtSrcConnAggregator().Aggregate(flows)
 	missingInfoFlows = aggregator.NewDuplicateNameExtSrcConnAggregator().Aggregate(missingInfoFlows)
+
+	flows = aggregator.NewAllAggregator().Aggregate(flows)
+	missingInfoFlows = aggregator.NewAllAggregator().Aggregate(missingInfoFlows)
+
 	graphBuilder.AddFlows(flows)
 
 	filteredFlows, visibleNeighbors, maskedDeployments, err := filterFlowsAndMaskScopeAlienDeployments(ctx,

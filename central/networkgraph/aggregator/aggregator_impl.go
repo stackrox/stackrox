@@ -225,6 +225,45 @@ func (a *aggregateExternalConnByNameImpl) Aggregate(flows []*storage.NetworkFlow
 	return ret
 }
 
+type aggregateAllImpl struct{}
+
+// Aggregate aggregates deduplicates all connections into a single connection.
+func (a *aggregateAllImpl) Aggregate(flows []*storage.NetworkFlow) []*storage.NetworkFlow {
+	normalizedConns := make(map[networkgraph.NetworkConnIndicator]*storage.NetworkFlow)
+	ret := make([]*storage.NetworkFlow, 0, len(flows))
+
+	for _, flow := range flows {
+		srcEntity, dstEntity := flow.GetProps().GetSrcEntity(), flow.GetProps().GetDstEntity()
+		// This is essentially an invalid connection.
+		if srcEntity == nil || dstEntity == nil {
+			utils.Should(errors.Errorf("network conn %s without endpoints is unexpected", networkgraph.GetNetworkConnIndicator(flow).String()))
+			continue
+		}
+
+		flow = flow.CloneVT()
+
+		flowProps := flow.GetProps()
+		if flowProps == nil {
+			continue
+		}
+
+		connID := networkgraph.GetNetworkConnIndicator(flow)
+		if storedFlow := normalizedConns[connID]; storedFlow != nil {
+			if protocompat.CompareTimestamps(storedFlow.GetLastSeenTimestamp(), flow.GetLastSeenTimestamp()) < 0 {
+				storedFlow.LastSeenTimestamp = flow.GetLastSeenTimestamp()
+			}
+		} else {
+			normalizedConns[connID] = flow
+		}
+	}
+
+	for _, conn := range normalizedConns {
+		ret = append(ret, conn)
+	}
+
+	return ret
+}
+
 // updateDupNameExtSrcTracker updates dupNameExtSrcTracker which tracks whether an external source name is duplicated
 // by multiple external sources. When an external source name is duplicated, we set the ID value to empty string.
 func updateDupNameExtSrcTracker(entity *storage.NetworkEntityInfo, dupNameExtSrcTracker map[string]string) {
