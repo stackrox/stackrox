@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/net"
@@ -209,7 +210,12 @@ func (s *NetworkFlowManagerTestSuite) TestAddNoOriginator() {
 
 func (s *NetworkFlowManagerTestSuite) TestEnrichConnection() {
 	mockCtrl := gomock.NewController(s.T())
-	m, mockEntityStore, mockExternalSrc, _ := createManager(mockCtrl)
+	enrichTickerC := make(chan time.Time)
+	purgerTickerC := make(chan time.Time)
+	defer close(enrichTickerC)
+	defer close(purgerTickerC)
+	defer mockCtrl.Finish()
+	m, mockEntityStore, mockExternalSrc, _ := createManager(mockCtrl, enrichTickerC, purgerTickerC)
 	srcID := "src-id"
 	dstID := "dst-id"
 	cases := map[string]struct {
@@ -409,7 +415,12 @@ func (s *NetworkFlowManagerTestSuite) TestEnrichConnection() {
 
 func (s *NetworkFlowManagerTestSuite) TestEnrichContainerEndpoint() {
 	mockCtrl := gomock.NewController(s.T())
-	m, mockEntityStore, _, _ := createManager(mockCtrl)
+	enrichTickerC := make(chan time.Time)
+	purgerTickerC := make(chan time.Time)
+	defer close(enrichTickerC)
+	defer close(purgerTickerC)
+	defer mockCtrl.Finish()
+	m, mockEntityStore, _, _ := createManager(mockCtrl, enrichTickerC, purgerTickerC)
 	id := "id"
 	_ = id
 	cases := map[string]struct {
@@ -420,19 +431,19 @@ func (s *NetworkFlowManagerTestSuite) TestEnrichContainerEndpoint() {
 		expectedEndpoint            *containerEndpointIndicator
 	}{
 		"Rotten connection should return rotten status": {
-			endpointPair:                createEndpointPair(timestamp.Now().Add(-maxContainerResolutionWaitPeriod * 2)),
-			expectEntityLookupContainer: expectEntityLookupContainerHelper(mockEntityStore, 1, clusterentities.ContainerMetadata{}, false),
+			endpointPair:                createEndpointPair(timestamp.Now().Add(-maxContainerResolutionWaitPeriod*2), timestamp.Now()),
+			expectEntityLookupContainer: expectEntityLookupContainerHelper(mockEntityStore, 1, clusterentities.ContainerMetadata{}, false, false),
 			expectedStatus: &connStatus{
 				rotten: true,
 				used:   true,
 			},
 		},
 		"Container endpoint should return an containerEndpointIndicator with the correct id": {
-			endpointPair:        createEndpointPair(timestamp.Now()),
+			endpointPair:        createEndpointPair(timestamp.Now(), timestamp.Now()),
 			enrichedConnections: make(map[containerEndpointIndicator]timestamp.MicroTS),
 			expectEntityLookupContainer: expectEntityLookupContainerHelper(mockEntityStore, 1, clusterentities.ContainerMetadata{
 				DeploymentID: id,
-			}, true),
+			}, true, false),
 			expectedStatus: &connStatus{used: true},
 			expectedEndpoint: &containerEndpointIndicator{
 				entity:   networkgraph.EntityForDeployment(id),
@@ -444,7 +455,7 @@ func (s *NetworkFlowManagerTestSuite) TestEnrichContainerEndpoint() {
 	for name, tCase := range cases {
 		s.Run(name, func() {
 			tCase.expectEntityLookupContainer.runIfSet()
-			m.enrichContainerEndpoint(tCase.endpointPair.endpoint, tCase.endpointPair.status, tCase.enrichedConnections)
+			m.enrichContainerEndpoint(tCase.endpointPair.endpoint, tCase.endpointPair.status, tCase.enrichedConnections, timestamp.Now())
 			s.Assert().Equal(tCase.expectedStatus.rotten, tCase.endpointPair.status.rotten)
 			s.Assert().Equal(tCase.expectedStatus.used, tCase.endpointPair.status.used)
 			if tCase.expectedEndpoint != nil {
@@ -455,9 +466,80 @@ func (s *NetworkFlowManagerTestSuite) TestEnrichContainerEndpoint() {
 	}
 }
 
+func (s *NetworkFlowManagerTestSuite) TestEndpointPurger() {
+	mockCtrl := gomock.NewController(s.T())
+	enrichTickerC := make(chan time.Time)
+	purgerTickerC := make(chan time.Time)
+	defer close(enrichTickerC)
+	defer close(purgerTickerC)
+	defer mockCtrl.Finish()
+	m, mockEntityStore, _, _ := createManager(mockCtrl, enrichTickerC, purgerTickerC)
+	id := "id"
+	_ = id
+	cases := map[string]struct {
+		firstSeen                   time.Duration
+		lastUpdateTime              time.Duration
+		purgerMaxAge                time.Duration
+		expectEntityLookupContainer expectFn
+		expectedStatus              *connStatus
+		expectedEndpoint            *containerEndpointIndicator
+		expectedHostConnSize        int
+	}{
+		"Purger maxAge: should purge old endpoints": {
+			firstSeen:                   2 * time.Hour,
+			lastUpdateTime:              2 * time.Hour,
+			purgerMaxAge:                1 * time.Hour,
+			expectEntityLookupContainer: expectationsEndpointPurger(mockEntityStore, 2*time.Hour, true, true, false),
+			expectedHostConnSize:        0,
+		},
+		"Purger maxAge: should keep endpoints with young lastUpdateTime": {
+			firstSeen:                   time.Minute,
+			lastUpdateTime:              time.Minute,
+			purgerMaxAge:                time.Hour,
+			expectEntityLookupContainer: expectationsEndpointPurger(mockEntityStore, time.Minute, true, true, false),
+			expectedHostConnSize:        1,
+		},
+		"Purger endpoint-gone: should remove unknown endpoints": {
+			firstSeen:                   time.Minute,
+			lastUpdateTime:              time.Minute,
+			purgerMaxAge:                time.Hour,
+			expectEntityLookupContainer: expectationsEndpointPurger(mockEntityStore, time.Minute, false, true, false),
+
+			expectedHostConnSize: 1,
+		},
+	}
+	for name, tc := range cases {
+		s.Run(name, func() {
+			const hostname = "host"
+			now := time.Now()
+			tc.expectEntityLookupContainer.runIfSet()
+			ep := createEndpointPair(timestamp.FromGoTime(now.Add(-tc.firstSeen)), timestamp.FromGoTime(now.Add(-tc.lastUpdateTime)))
+			concurrency.WithLock(&m.connectionsByHostMutex, func() {
+				m.connectionsByHost[hostname] = &hostConnections{
+					hostname:    hostname,
+					connections: nil,
+					endpoints: map[containerEndpoint]*connStatus{
+						*ep.endpoint: ep.status,
+					},
+				}
+			})
+			m.runAllPurgerRules(tc.purgerMaxAge)
+
+			concurrency.WithLock(&m.connectionsByHostMutex, func() {
+				s.Len(m.connectionsByHost[hostname].endpoints, tc.expectedHostConnSize)
+			})
+		})
+	}
+}
+
 func (s *NetworkFlowManagerTestSuite) TestEnrichProcessListening() {
 	mockCtrl := gomock.NewController(s.T())
-	m, mockEntityStore, _, _ := createManager(mockCtrl)
+	enrichTickerC := make(chan time.Time)
+	purgerTickerC := make(chan time.Time)
+	defer close(enrichTickerC)
+	defer close(purgerTickerC)
+	defer mockCtrl.Finish()
+	m, mockEntityStore, _, _ := createManager(mockCtrl, enrichTickerC, purgerTickerC)
 	deploymentID := "deployment-id"
 	podID := "pod-id"
 	cases := map[string]struct {
@@ -469,7 +551,7 @@ func (s *NetworkFlowManagerTestSuite) TestEnrichProcessListening() {
 	}{
 		"Rotten connection should return rotten status": {
 			containerPair:               createContainerPair(timestamp.Now().Add(-maxContainerResolutionWaitPeriod * 2)),
-			expectEntityLookupContainer: expectEntityLookupContainerHelper(mockEntityStore, 1, clusterentities.ContainerMetadata{}, false),
+			expectEntityLookupContainer: expectEntityLookupContainerHelper(mockEntityStore, 1, clusterentities.ContainerMetadata{}, false, false),
 			expectedStatus: &connStatus{
 				rotten:      true,
 				usedProcess: true,
@@ -482,7 +564,7 @@ func (s *NetworkFlowManagerTestSuite) TestEnrichProcessListening() {
 				DeploymentID:  deploymentID,
 				ContainerName: "container-name",
 				PodID:         podID,
-			}, true),
+			}, true, false),
 			expectedStatus: &connStatus{
 				usedProcess: true,
 			},
@@ -523,7 +605,12 @@ func (s *NetworkFlowManagerTestSuite) TestManagerOfflineMode() {
 		containerID = "container-id"
 	)
 	mockCtrl := gomock.NewController(s.T())
-	m, mockEntity, _, mockDetector := createManager(mockCtrl)
+	enrichTickerC := make(chan time.Time)
+	purgerTickerC := make(chan time.Time)
+	defer close(enrichTickerC)
+	defer close(purgerTickerC)
+	defer mockCtrl.Finish()
+	m, mockEntity, _, mockDetector := createManager(mockCtrl, enrichTickerC, purgerTickerC)
 	states := []struct {
 		testName                    string
 		notify                      common.SensorComponentEvent
@@ -544,7 +631,7 @@ func (s *NetworkFlowManagerTestSuite) TestManagerOfflineMode() {
 			notify:   common.SensorComponentEventResourceSyncFinished,
 			expectEntityLookupContainer: expectEntityLookupContainerHelper(mockEntity, 1, clusterentities.ContainerMetadata{
 				DeploymentID: srcID,
-			}, true),
+			}, true, false),
 			expectEntityLookupEndpoint: expectEntityLookupEndpointHelper(mockEntity, 1, []clusterentities.LookupResult{
 				{
 					Entity:         networkgraph.Entity{ID: dstID},
@@ -606,8 +693,8 @@ func (s *NetworkFlowManagerTestSuite) TestManagerOfflineMode() {
 			testName: "In offline mode we should not send any messages upon receiving multiple endpoints",
 			notify:   common.SensorComponentEventOfflineMode,
 			connections: []*HostnameAndConnections{
-				createHostnameConnections(hostname).withEndpointPair(createEndpointPair(timestamp.Now()).containerID(fmt.Sprintf("%s-1", containerID))),
-				createHostnameConnections(hostname).withEndpointPair(createEndpointPair(timestamp.Now()).containerID(fmt.Sprintf("%s-2", containerID))),
+				createHostnameConnections(hostname).withEndpointPair(createEndpointPair(timestamp.Now(), timestamp.Now()).containerID(fmt.Sprintf("%s-1", containerID))),
+				createHostnameConnections(hostname).withEndpointPair(createEndpointPair(timestamp.Now(), timestamp.Now()).containerID(fmt.Sprintf("%s-2", containerID))),
 			},
 		},
 		{
@@ -679,13 +766,17 @@ func (s *NetworkFlowManagerTestSuite) TestExpireMessage() {
 	// This test is for v1/v2 behavior
 	s.T().Setenv(features.SensorCapturesIntermediateEvents.EnvVar(), "false")
 	s.T().Setenv(env.ProcessesListeningOnPort.EnvVar(), "false")
-	mockCtrl := gomock.NewController(s.T())
 	hostname := "hostname"
 	containerID := "container-id"
-	m, mockEntity, _, mockDetector := createManager(mockCtrl)
-	fakeTicker := make(chan time.Time)
-	defer close(fakeTicker)
-	go m.enrichConnections(fakeTicker)
+
+	mockCtrl := gomock.NewController(s.T())
+	enrichTickerC := make(chan time.Time)
+	purgerTickerC := make(chan time.Time)
+	defer close(enrichTickerC)
+	defer close(purgerTickerC)
+	defer mockCtrl.Finish()
+	m, mockEntity, _, mockDetector := createManager(mockCtrl, enrichTickerC, purgerTickerC)
+	go m.enrichConnections(enrichTickerC)
 	mockEntity.EXPECT().LookupByContainerID(gomock.Any()).Times(1).DoAndReturn(func(_ any) (clusterentities.ContainerMetadata, bool, bool) {
 		return clusterentities.ContainerMetadata{
 			DeploymentID: containerID,
@@ -703,7 +794,7 @@ func (s *NetworkFlowManagerTestSuite) TestExpireMessage() {
 	mockEntity.EXPECT().RecordTick().AnyTimes()
 	addHostConnection(m, createHostnameConnections(hostname).withConnectionPair(createConnectionPair()))
 	m.Notify(common.SensorComponentEventResourceSyncFinished)
-	fakeTicker <- time.Now()
+	enrichTickerC <- time.Now()
 	select {
 	case <-time.After(10 * time.Second):
 		s.Fail("timeout waiting for sensor message")
@@ -737,7 +828,11 @@ const (
 
 func (b *sendNetflowsSuite) SetupTest() {
 	b.mockCtrl = gomock.NewController(b.T())
-	b.m, b.mockEntity, _, b.mockDetector = createManager(b.mockCtrl)
+	enrichTickerC := make(chan time.Time)
+	purgerTickerC := make(chan time.Time)
+	defer close(enrichTickerC)
+	defer close(purgerTickerC)
+	b.m, b.mockEntity, _, b.mockDetector = createManager(b.mockCtrl, enrichTickerC, purgerTickerC)
 
 	b.fakeTicker = make(chan time.Time)
 	go b.m.enrichConnections(b.fakeTicker)
@@ -759,14 +854,14 @@ func (b *sendNetflowsSuite) expectContainerLookups(n int) {
 	b.mockEntity.EXPECT().RecordTick().AnyTimes()
 	expectEntityLookupContainerHelper(b.mockEntity, n, clusterentities.ContainerMetadata{
 		DeploymentID: srcID,
-	}, true)()
+	}, true, false)()
 }
 
 func (b *sendNetflowsSuite) expectLookups(n int) {
 	b.mockEntity.EXPECT().RecordTick().AnyTimes()
 	expectEntityLookupContainerHelper(b.mockEntity, n, clusterentities.ContainerMetadata{
 		DeploymentID: srcID,
-	}, true)()
+	}, true, false)()
 	expectEntityLookupEndpointHelper(b.mockEntity, n, []clusterentities.LookupResult{
 		{
 			Entity:         networkgraph.Entity{ID: dstID},
@@ -777,7 +872,7 @@ func (b *sendNetflowsSuite) expectLookups(n int) {
 
 func (b *sendNetflowsSuite) expectFailedLookup(n int) {
 	b.mockEntity.EXPECT().RecordTick().AnyTimes()
-	expectEntityLookupContainerHelper(b.mockEntity, n, clusterentities.ContainerMetadata{}, false)()
+	expectEntityLookupContainerHelper(b.mockEntity, n, clusterentities.ContainerMetadata{}, false, false)()
 }
 
 func (b *sendNetflowsSuite) expectDetections(n int) {
@@ -826,7 +921,7 @@ func (b *sendNetflowsSuite) TestCloseOldConnectionFailedLookup() {
 func (b *sendNetflowsSuite) TestCloseEndpoint() {
 	b.expectContainerLookups(1)
 
-	b.updateEp(createEndpointPair(timestamp.Now().Add(-time.Hour)).lastSeen(timestamp.Now()))
+	b.updateEp(createEndpointPair(timestamp.Now().Add(-time.Hour), timestamp.Now()).lastSeen(timestamp.Now()))
 	b.thenTickerTicks()
 	b.assertOneUpdatedCloseEndpoint()
 }
@@ -834,7 +929,7 @@ func (b *sendNetflowsSuite) TestCloseEndpoint() {
 func (b *sendNetflowsSuite) TestCloseEndpointFailedLookup() {
 	b.expectFailedLookup(1)
 
-	b.updateEp(createEndpointPair(timestamp.Now().Add(-time.Hour)).lastSeen(timestamp.Now()))
+	b.updateEp(createEndpointPair(timestamp.Now().Add(-time.Hour), timestamp.Now()).lastSeen(timestamp.Now()))
 	b.thenTickerTicks()
 	mustNotRead(b.T(), b.m.sensorUpdates)
 }
@@ -843,7 +938,7 @@ func (b *sendNetflowsSuite) TestCloseOldEndpointFailedLookup() {
 	b.expectFailedLookup(1)
 
 	pair := createEndpointPair(
-		timestamp.Now().Add(-maxContainerResolutionWaitPeriod * 2)).
+		timestamp.Now().Add(-maxContainerResolutionWaitPeriod*2), timestamp.Now()).
 		lastSeen(timestamp.Now())
 	b.m.activeEndpoints[*pair.endpoint] = &containerEndpointIndicatorWithAge{}
 	b.updateEp(pair)

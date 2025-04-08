@@ -275,12 +275,33 @@ func (e *containerEndpoint) String() string {
 	return fmt.Sprintf("%s %s: %s", e.containerID, e.processKey, e.endpoint)
 }
 
+type Option func(*networkFlowManager)
+
+// WithEnrichTicker overrides the default enrichment ticker
+func WithEnrichTicker(ticker <-chan time.Time) Option {
+	return func(manager *networkFlowManager) {
+		if ticker != nil {
+			manager.enricherTickerC = ticker
+		}
+	}
+}
+
+// WithPurgerTicker overrides the default enrichment ticker
+func WithPurgerTicker(ticker <-chan time.Time) Option {
+	return func(manager *networkFlowManager) {
+		if ticker != nil {
+			manager.purgerTickerC = ticker
+		}
+	}
+}
+
 // NewManager creates a new instance of network flow manager
 func NewManager(
 	clusterEntities EntityStore,
 	externalSrcs externalsrcs.Store,
 	policyDetector detector.Detector,
 	pubSub *internalmessage.MessageSubscriber,
+	opts ...Option,
 ) Manager {
 	enricherTicker := time.NewTicker(enricherCycle)
 	purgerTicker := time.NewTicker(nonZeroPurgerCycle())
@@ -292,7 +313,9 @@ func NewManager(
 		externalSrcs:      externalSrcs,
 		policyDetector:    policyDetector,
 		enricherTicker:    enricherTicker,
+		enricherTickerC:   enricherTicker.C,
 		purgerTicker:      purgerTicker,
+		purgerTickerC:     purgerTicker.C,
 		initialSync:       &atomic.Bool{},
 		activeConnections: make(map[connection]*networkConnIndicator),
 		activeEndpoints:   make(map[containerEndpoint]*containerEndpointIndicatorWithAge),
@@ -317,6 +340,9 @@ func NewManager(
 		mgr.Notify(common.SensorComponentEventResourceSyncFinished)
 	}); err != nil {
 		log.Errorf("unable to subscribe to %s: %+v", internalmessage.SensorMessageResourceSyncFinished, err)
+	}
+	for _, o := range opts {
+		o(mgr)
 	}
 	return mgr
 }
@@ -347,8 +373,10 @@ type networkFlowManager struct {
 	pipelineCtx context.Context
 	initialSync *atomic.Bool
 
-	enricherTicker *time.Ticker
-	purgerTicker   *time.Ticker
+	enricherTicker  *time.Ticker
+	enricherTickerC <-chan time.Time
+	purgerTicker    *time.Ticker
+	purgerTickerC   <-chan time.Time
 
 	publicIPs *publicIPsManager
 
@@ -363,9 +391,9 @@ func (m *networkFlowManager) ProcessMessage(_ *central.MsgToSensor) error {
 }
 
 func (m *networkFlowManager) Start() error {
-	go m.enrichConnections(m.enricherTicker.C)
+	go m.enrichConnections(m.enricherTickerC)
 	if env.EnrichmentPurgerTickerCycle.DurationSetting() > 0 {
-		go m.purgeStaleEndpoints(m.purgerTicker.C)
+		go m.purgeStaleEndpoints(m.purgerTickerC, env.EnrichmentPurgerTickerMaxAge.DurationSetting())
 	}
 	go m.publicIPs.Run(m.stopper.LowLevel().GetStopRequestSignal(), m.clusterEntities)
 	return nil
@@ -829,7 +857,12 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 
 // enrichContainerEndpoint updates `enrichedEndpoints` and `m.activeEndpoints`.
 // It "returns" the outcome of the enrichment in the `status`.
-func (m *networkFlowManager) enrichContainerEndpoint(ep *containerEndpoint, status *connStatus, enrichedEndpoints map[containerEndpointIndicator]timestamp.MicroTS) {
+func (m *networkFlowManager) enrichContainerEndpoint(
+	ep *containerEndpoint,
+	status *connStatus,
+	enrichedEndpoints map[containerEndpointIndicator]timestamp.MicroTS,
+	lastUpdate timestamp.MicroTS,
+) {
 	now := timestamp.Now()
 	timeElapsedSinceFirstSeen := now.ElapsedSince(status.firstSeen)
 	pastContainerResolutionDeadline := timeElapsedSinceFirstSeen > maxContainerResolutionWaitPeriod
@@ -888,7 +921,7 @@ func (m *networkFlowManager) enrichContainerEndpoint(ep *containerEndpoint, stat
 	if status.lastSeen == timestamp.InfiniteFuture {
 		m.activeEndpoints[*ep] = &containerEndpointIndicatorWithAge{
 			indicator,
-			now,
+			lastUpdate,
 		}
 		flowMetrics.IncFlowEnrichmentEndpoint(ok, "update-last-seen-&-mark-active", isHistoricalStr, "last-seen-inf-future", lastSeenSet, status.rotten, pastContainerResolutionDeadline, isFresh)
 		flowMetrics.SetActiveEndpointsTotalGauge(len(m.activeEndpoints))
@@ -1032,7 +1065,7 @@ func (m *networkFlowManager) enrichHostContainerEndpoints(hostConns *hostConnect
 
 	flowMetrics.FlowEnrichments.WithLabelValues("endpoint").Add(float64(len(hostConns.endpoints)))
 	for ep, status := range hostConns.endpoints {
-		m.enrichContainerEndpoint(&ep, status, enrichedEndpoints)
+		m.enrichContainerEndpoint(&ep, status, enrichedEndpoints, timestamp.Now())
 		if shallRemoveEndpoint(status) {
 			delete(hostConns.endpoints, ep)
 			flowMetrics.HostConnectionsOperations.WithLabelValues("remove", "endpoints").Inc()
