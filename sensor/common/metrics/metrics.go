@@ -6,6 +6,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/branding"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/version"
@@ -133,6 +134,13 @@ var (
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "total_processes_received_counter",
 		Help:      "A counter of the total number of processes received by Sensor from Collector",
+	})
+
+	totalProcessesDroppedCounter = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "total_processes_dropped_counter",
+		Help:      "A counter of the total number of processes dropped by Sensor from Collector",
 	})
 
 	processSignalBufferGauge = prometheus.NewGauge(prometheus.GaugeOpts{
@@ -296,6 +304,14 @@ var (
 		Name:      "num_messages_waiting_for_transmission_to_central",
 		Help:      "A counter that tracks the operations in the responses channel",
 	}, []string{"Operation", "MessageType"})
+
+	// collectorChannelMessagesCount a counter to track the messages received from collector
+	collectorChannelMessagesCount = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "num_messages_received_collector",
+		Help:      "A counter that tracks number of messages received from collector",
+	}, []string{"MessageType"})
 )
 
 // IncrementEntityNotFound increments an instance of entity not found
@@ -386,9 +402,14 @@ func IncrementTotalProcessesSentCounter(numberOfProcesses int) {
 	totalProcessesSentCounter.Add(float64(numberOfProcesses))
 }
 
-// IncrementTotalProcessesReceivedCounter increments the total number of endpoints received
-func IncrementTotalProcessesReceivedCounter(numberOfProcesses int) {
-	totalProcessesReceivedCounter.Add(float64(numberOfProcesses))
+// IncrementTotalProcessesReceivedCounter increments the total number of processes received
+func IncrementTotalProcessesReceivedCounter() {
+	totalProcessesReceivedCounter.Inc()
+}
+
+// IncrementTotalProcessesReceivedCounter increments the total number of processes dropped
+func IncrementTotalProcessesDroppedCounter() {
+	totalProcessesDroppedCounter.Inc()
 }
 
 // SetProcessSignalBufferSizeGauge set process signal buffer size gauge.
@@ -473,6 +494,20 @@ func ResponsesChannelRemove(msg *central.MsgFromSensor) {
 // ResponsesChannelDrop increases the responsesChannelDroppedCount by 1
 func ResponsesChannelDrop(msg *central.MsgFromSensor) {
 	responsesChannelOperationCount.With(getResponsesChannelLabel(metrics.Dropped.String(), msg)).Inc()
+}
+
+func getCollectorChannelLabel(msg *sensor.MsgFromCollector) prometheus.Labels {
+	msgType := "nil"
+	if msg.GetMsg() != nil {
+		msgType = strings.TrimPrefix(reflect.TypeOf(msg.GetMsg()).String(), "*sensor.MsgFromCollector_")
+	}
+	return prometheus.Labels{
+		"MessageType": msgType,
+	}
+}
+
+func CollectorChannelInc(msg *sensor.MsgFromCollector) {
+	collectorChannelMessagesCount.With(getCollectorChannelLabel(msg)).Inc()
 }
 
 // SetTelemetryMetrics sets the cluster metrics for the telemetry metrics.
