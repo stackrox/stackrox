@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/central/administration/events"
 	"github.com/stackrox/rox/central/image/datastore"
+	"github.com/stackrox/rox/central/image/metrics"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/role/sachelper"
 	"github.com/stackrox/rox/central/sensor/service/connection"
@@ -44,6 +45,7 @@ func New(
 	scanWaiterManager waiter.Manager[*storage.Image],
 	clusterSACHelper sachelper.ClusterSacHelper,
 ) Service {
+	metrics.ImageScanSemaphoreLimit.Set(float64(env.MaxParallelImageScanInternal.IntegerSetting()))
 	return &serviceImpl{
 		datastore:             datastore,
 		watchedImages:         watchedImages,
