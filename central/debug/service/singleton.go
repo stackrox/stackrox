@@ -32,7 +32,8 @@ func initialize() {
 		roleDataStore.Singleton(),
 		configDS.Singleton(),
 		notifierDS.Singleton(),
-		deleRegDS.Singleton())
+		deleRegDS.Singleton(),
+		)
 }
 
 // Singleton provides the instance of the Service interface to register.
