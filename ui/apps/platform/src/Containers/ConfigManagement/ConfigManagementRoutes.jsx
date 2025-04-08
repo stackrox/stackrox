@@ -6,14 +6,14 @@ import searchContext from 'Containers/searchContext';
 import { searchParams } from 'constants/searchParams';
 import useCases from 'constants/useCaseTypes';
 
-import DashboardPage from './Dashboard/Page';
-import ListPage from './List/Page';
-import EntityPage from './Entity/Page';
+import DashboardPage from './Dashboard/DashboardPage';
+import ListPage from './List/ListPage';
+import EntityPage from './Entity/EntityPage';
 
 const listPath = `:entityId1?/:entityType2?/:entityId2?`;
 const entityPath = `:pageEntityId?/:entityType1?/:entityId1?/:entityType2?/:entityId2?`;
 
-const Page = () => (
+const ConfigManagementRoutes = () => (
     <searchContext.Provider value={searchParams.page}>
         <Routes>
             <Route index element={<DashboardPage />} />
@@ -45,4 +45,4 @@ const Page = () => (
     </searchContext.Provider>
 );
 
-export default React.memo(Page, isEqual);
+export default React.memo(ConfigManagementRoutes, isEqual);
