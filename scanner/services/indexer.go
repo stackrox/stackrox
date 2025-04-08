@@ -133,6 +133,7 @@ func (s *indexerService) GetOrCreateIndexReport(ctx context.Context, req *v4.Get
 		"hash_id", req.GetHashId(),
 	)
 
+	zlog.Info(ctx).Msg("getting index report for container image")
 	ir, err := s.getIndexReport(ctx, &v4.GetIndexReportRequest{
 		HashId: req.GetHashId(),
 	})
@@ -146,6 +147,7 @@ func (s *indexerService) GetOrCreateIndexReport(ctx context.Context, req *v4.Get
 		return nil, err
 	}
 
+	zlog.Info(ctx).Msg("index report for container image does not exist; creating...")
 	// TODO We currently only support container images, hence we assume the resource
 	//      is of that type. When introducing nodes and other resources, this should
 	//      evolve.
