@@ -511,7 +511,8 @@ func (e *email) startTLSConn(dialCtx context.Context) (conn net.Conn, auth smtp.
 
 func (e *email) tlsConfig() *tls.Config {
 	return &tls.Config{
-		ServerName: e.smtpServer.host,
+		ServerName:         e.smtpServer.host,
+		InsecureSkipVerify: e.config.SkipTLSVerify,
 	}
 }
 
