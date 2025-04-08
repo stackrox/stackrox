@@ -1,8 +1,7 @@
 module github.com/stackrox/rox
 
 go 1.23.4
-
-toolchain go1.23.6
+toolchain go1.24.1
 
 require (
 	cloud.google.com/go/artifactregistry v1.16.3
@@ -51,7 +50,7 @@ require (
 	github.com/fatih/color v1.18.0
 	github.com/georgysavva/scany/v2 v2.1.4
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
-	github.com/go-jose/go-jose/v4 v4.0.5
+	github.com/go-jose/go-jose/v4 v4.1.0
 	github.com/go-logr/logr v1.4.2
 	github.com/go-logr/zapr v1.3.0
 	github.com/gobwas/glob v0.2.3
