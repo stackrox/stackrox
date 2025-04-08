@@ -10,7 +10,7 @@ import CreateIntegrationPage from './CreateIntegrationPage';
 import EditIntegrationPage from './EditIntegrationPage';
 import IntegrationDetailsPage from './IntegrationDetailsPage';
 
-const Page = (): ReactElement => {
+const IntegrationsPage = (): ReactElement => {
     // Redirect from list or view page to cluster init bundles list.
     return (
         <Routes>
@@ -32,4 +32,4 @@ const Page = (): ReactElement => {
     );
 };
 
-export default Page;
+export default IntegrationsPage;

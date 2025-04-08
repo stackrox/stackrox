@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sunburst, DiscreteColorLegend, LabelSeries } from 'react-vis';
+import { Sunburst as SunburstReactVis, DiscreteColorLegend, LabelSeries } from 'react-vis';
 import PropTypes from 'prop-types';
 import merge from 'deepmerge';
 
@@ -34,7 +34,7 @@ const LABEL_STYLE = {
     fill: 'var(--primary-800)',
 };
 
-class BasicSunburst extends React.Component {
+class Sunburst extends React.Component {
     static propTypes = {
         data: PropTypes.arrayOf(
             PropTypes.shape({
@@ -209,9 +209,9 @@ class BasicSunburst extends React.Component {
         return (
             <>
                 <div className="flex flex-col justify-between">
-                    <Sunburst data={data} {...sunburstProps} hideRootNode>
+                    <SunburstReactVis data={data} {...sunburstProps} hideRootNode>
                         {this.getCenterLabel()}
-                    </Sunburst>
+                    </SunburstReactVis>
                     {legendData && (
                         <DiscreteColorLegend
                             orientation="horizontal"
@@ -231,4 +231,4 @@ class BasicSunburst extends React.Component {
     }
 }
 
-export default BasicSunburst;
+export default Sunburst;

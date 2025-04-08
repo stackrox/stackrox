@@ -38,7 +38,7 @@ import useAnalytics, { COLLECTION_CREATED } from 'hooks/useAnalytics';
 import { CollectionPageAction } from './collections.utils';
 import CollectionFormDrawer, { CollectionFormDrawerProps } from './CollectionFormDrawer';
 import useCollection from './hooks/useCollection';
-import CollectionsFormModal from './CollectionFormModal';
+import CollectionsFormModal from './CollectionsFormModal';
 import CollectionLoadError from './CollectionLoadError';
 import { useCollectionFormSubmission } from './hooks/useCollectionFormSubmission';
 

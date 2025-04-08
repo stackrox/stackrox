@@ -3,18 +3,12 @@ import PropTypes from 'prop-types';
 import * as Icon from 'react-feather';
 import CollapsibleCard from 'Components/CollapsibleCard';
 
-import ProcessesDiscoveryCardHeader from './DiscoveryCardHeader';
+import DiscoveryCardHeader from './DiscoveryCardHeader';
 
-function ProcessesDiscoveryCard({
-    deploymentId,
-    process,
-    processEpoch,
-    setProcessEpoch,
-    children,
-}) {
+function DiscoveryCard({ deploymentId, process, processEpoch, setProcessEpoch, children }) {
     function renderWhenOpened() {
         return (
-            <ProcessesDiscoveryCardHeader
+            <DiscoveryCardHeader
                 icon={<Icon.ChevronUp className="h-4 w-4" />}
                 deploymentId={deploymentId}
                 process={process}
@@ -26,7 +20,7 @@ function ProcessesDiscoveryCard({
 
     function renderWhenClosed() {
         return (
-            <ProcessesDiscoveryCardHeader
+            <DiscoveryCardHeader
                 icon={<Icon.ChevronDown className="h-4 w-4" />}
                 deploymentId={deploymentId}
                 process={process}
@@ -49,7 +43,7 @@ function ProcessesDiscoveryCard({
     );
 }
 
-ProcessesDiscoveryCard.propTypes = {
+DiscoveryCard.propTypes = {
     deploymentId: PropTypes.string.isRequired,
     process: PropTypes.shape({
         name: PropTypes.string.isRequired,
@@ -62,4 +56,4 @@ ProcessesDiscoveryCard.propTypes = {
     children: PropTypes.node.isRequired,
 };
 
-export default ProcessesDiscoveryCard;
+export default DiscoveryCard;
