@@ -13,7 +13,7 @@ import ComplianceByControls from './widgets/ComplianceByControls';
 import UsersWithMostClusterAdminRoles from './widgets/UsersWithMostClusterAdminRoles';
 import SecretsMostUsedAcrossDeployments from './widgets/SecretsMostUsedAcrossDeployments';
 
-const ConfigManagementDashboardPage = () => {
+const DashboardPage = () => {
     const [isExporting, setIsExporting] = useState(false);
     const { hasReadAccess } = usePermissions();
     const hasReadAccessForPolicyViolationsBySeverity =
@@ -49,4 +49,4 @@ const ConfigManagementDashboardPage = () => {
         </>
     );
 };
-export default ConfigManagementDashboardPage;
+export default DashboardPage;
