@@ -1,7 +1,8 @@
 import { useState } from 'react';
 
-export type useClipboardCopyReturn = {
+export type UseClipboardCopyReturn = {
     wasCopied: boolean;
+    error: unknown;
     copyToClipboard: (text: string) => Promise<void>;
 };
 
