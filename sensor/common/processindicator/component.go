@@ -1,4 +1,4 @@
-package component
+package processindicator
 
 import (
 	"io"
@@ -9,20 +9,15 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
 )
 
-var (
-	log = logging.LoggerForModule()
-)
-
 type componentImpl struct {
 	common.SensorComponent
 
-	processPipeline Pipeline
+	processPipeline *Pipeline
 	indicators      <-chan *message.ExpiringMessage
 	signalMessages  <-chan *storage.ProcessSignal
 	processMessages <-chan *sensor.ProcessSignal
@@ -40,7 +35,7 @@ func WithTraceWriter(writer io.Writer) Option {
 	}
 }
 
-func New(pipeline Pipeline, signalMessages <-chan *storage.ProcessSignal, processMessages <-chan *sensor.ProcessSignal, indicators <-chan *message.ExpiringMessage, opts ...Option) common.SensorComponent {
+func New(pipeline *Pipeline, signalMessages <-chan *storage.ProcessSignal, processMessages <-chan *sensor.ProcessSignal, indicators <-chan *message.ExpiringMessage, opts ...Option) common.SensorComponent {
 	cmp := &componentImpl{
 		processPipeline: pipeline,
 		indicators:      indicators,
