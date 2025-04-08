@@ -8,7 +8,7 @@ export type useClipboardCopyReturn = {
 /**
  * Hook that provides shorthand for copying text to the browser's clipboard
  */
-export default function useClipboardCopy() {
+export default function useClipboardCopy(): UseClipboardCopyReturn {
     const [wasCopied, setWasCopied] = useState(false);
     const [error, setError] = useState<unknown>();
 
