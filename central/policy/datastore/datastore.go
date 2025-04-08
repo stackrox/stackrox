@@ -49,3 +49,16 @@ func New(storage store.Store, searcher search.Searcher,
 	}
 	return ds
 }
+
+// newWithoutDefaults should be used only for testing purposes.
+func newWithoutDefaults(storage store.Store,
+	searcher search.Searcher, clusterDatastore clusterDS.DataStore, notifierDatastore notifierDS.DataStore,
+	categoriesDatastore categoriesDataStore.DataStore) DataStore {
+	return &datastoreImpl{
+		storage:             storage,
+		searcher:            searcher,
+		clusterDatastore:    clusterDatastore,
+		notifierDatastore:   notifierDatastore,
+		categoriesDatastore: categoriesDatastore,
+	}
+}
