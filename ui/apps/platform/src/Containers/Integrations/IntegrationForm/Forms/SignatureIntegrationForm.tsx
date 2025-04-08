@@ -108,7 +108,6 @@ const VerificationExpandableSection = ({ toggleText, children }): ReactElement =
 
     return (
         <ExpandableSection
-            className="verification-expandable-section"
             toggleText={toggleText}
             onToggle={onToggle}
             isExpanded={isExpanded}
@@ -128,7 +127,6 @@ const TransparencyLogExpandableSection = ({ toggleText, children }): ReactElemen
 
     return (
         <ExpandableSection
-            className="transparency-log-expandable-section"
             toggleText={toggleText}
             onToggle={onToggle}
             isExpanded={isExpanded}
