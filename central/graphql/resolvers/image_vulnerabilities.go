@@ -1101,6 +1101,9 @@ func (resolver *imageCVEV2Resolver) Deployments(ctx context.Context, args Pagina
 
 func (resolver *imageCVEV2Resolver) DiscoveredAtImage(_ context.Context, _ RawQuery) (*graphql.Time, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "DiscoveredAtImage")
+	log.Infof("SHREWS -- DiscoveredAtImage")
+	log.Infof("SHREWS -- flat data -- %v", resolver.flatData)
+	log.Infof("SHREWS -- old data -- %v", resolver.data)
 	if resolver.flatData != nil {
 		return convertTimeToGraphQLTime(resolver.flatData.GetFirstImageOccurrence()), nil
 	}
