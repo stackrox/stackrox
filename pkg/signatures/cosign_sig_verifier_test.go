@@ -424,6 +424,28 @@ func TestCosignVerifier_VerifySignature_Certificate(t *testing.T) {
 				)
 			},
 		},
+		"verifying with one valid and one invalid verifier should work": {
+			image:  img,
+			status: storage.ImageSignatureVerificationResult_VERIFIED,
+			v: func() (*cosignSignatureVerifier, error) {
+				return newCosignSignatureVerifier(
+					&storage.SignatureIntegration{
+						CosignCertificates: []*storage.CosignCertificateVerification{
+							{
+								CertificateChainPemEnc: string(chainPEM),
+								CertificateOidcIssuer:  "invalid-issuer",
+								CertificateIdentity:    "invalid-identity",
+							},
+							{
+								CertificateChainPemEnc: string(chainPEM),
+								CertificateIdentity:    ".*",
+								CertificateOidcIssuer:  ".*",
+							},
+						},
+					},
+				)
+			},
+		},
 		"verifying with only the cert should not work due to the wrong chain": {
 			image:  img,
 			status: storage.ImageSignatureVerificationResult_FAILED_VERIFICATION,

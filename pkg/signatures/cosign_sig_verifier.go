@@ -219,8 +219,13 @@ func (c *cosignSignatureVerifier) VerifySignature(ctx context.Context,
 }
 
 func (c *cosignSignatureVerifier) createVerifierOpts(ctx context.Context) error {
-	var verifierErrs error
+	defaultOpts, err := c.defaultCosignCheckOpts(ctx)
+	if err != nil {
+		return errors.Wrap(err, "creating default cosign check opts")
+	}
 
+	var verifierErrs error
+	// Public key verifiers.
 	for _, key := range c.parsedPublicKeys {
 		// For now, only supporting SHA256 as algorithm.
 		v, err := signature.LoadVerifier(key, crypto.SHA256)
@@ -228,18 +233,16 @@ func (c *cosignSignatureVerifier) createVerifierOpts(ctx context.Context) error 
 			verifierErrs = multierror.Append(verifierErrs, errors.Wrap(err, "creating verifier"))
 			continue
 		}
-		opts, err := c.defaultCosignCheckOpts(ctx)
-		if err != nil {
-			return err
-		}
+		opts := defaultOpts
 		opts.SigVerifier = v
 		c.verifierOpts = append(c.verifierOpts, opts)
 	}
 
-	for _, certs := range c.certs {
-		opts, err := c.cosignCheckOptsFromCert(ctx, certs)
+	// Certificate verifiers.
+	for _, cert := range c.certs {
+		opts, err := cosignCheckOptsFromCert(ctx, cert, defaultOpts)
 		if err != nil {
-			verifierErrs = multierror.Append(verifierErrs, errors.Wrap(err, "creating cosign check opts"))
+			verifierErrs = multierror.Append(verifierErrs, errors.Wrap(err, "creating cosign check opts from cert"))
 			continue
 		}
 		c.verifierOpts = append(c.verifierOpts, opts)
@@ -298,12 +301,7 @@ func (c *cosignSignatureVerifier) defaultCosignCheckOpts(ctx context.Context) (c
 	return opts, nil
 }
 
-func (c *cosignSignatureVerifier) cosignCheckOptsFromCert(ctx context.Context, cert certVerificationData) (cosign.CheckOpts, error) {
-	opts, err := c.defaultCosignCheckOpts(ctx)
-	if err != nil {
-		return cosign.CheckOpts{}, err
-	}
-
+func cosignCheckOptsFromCert(ctx context.Context, cert certVerificationData, opts cosign.CheckOpts) (cosign.CheckOpts, error) {
 	// Skip verifying the identities when the wildcard matching logic being used. This fixes an issue
 	// with verifying the identity which will yield an error when using the wildcard expressions _and_ the certificate
 	// to verify has no identities associated with it (i.e. within the BYOPKI use-case).
@@ -314,6 +312,7 @@ func (c *cosignSignatureVerifier) cosignCheckOptsFromCert(ctx context.Context, c
 		}}
 	}
 
+	var err error
 	opts.IgnoreSCT = !cert.ctlogEnabled
 	if !opts.IgnoreSCT {
 		opts.CTLogPubKeys, err = getCTLogPublicKeys(ctx, cert.ctlogPublicKey)
