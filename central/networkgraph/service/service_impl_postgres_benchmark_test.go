@@ -99,7 +99,7 @@ func (suite *networkGraphServiceBenchmarks) setupTables(b *testing.B, numFlows i
 	id, err := externalsrcs.NewClusterScopedID(fixtureconsts.Cluster1, cidr)
 	require.NoError(b, err)
 
-	entity := testutils.GetExtSrcNetworkEntity(id.String(), cidr, cidr, false, fixtureconsts.Cluster1)
+	entity := testutils.GetExtSrcNetworkEntity(id.String(), cidr, cidr, false, fixtureconsts.Cluster1, true)
 
 	err = suite.entityDataStore.CreateExternalNetworkEntity(globalWriteAccessCtx, entity, true)
 	require.NoError(b, err)
@@ -146,7 +146,7 @@ func (s *networkGraphServiceBenchmarks) setupTablesForMetadata(b *testing.B) {
 			id, err := externalsrcs.NewClusterScopedID(fixtureconsts.Cluster1, cidr)
 			require.NoError(b, err)
 
-			entity := testutils.GetExtSrcNetworkEntity(id.String(), cidr, cidr, false, fixtureconsts.Cluster1)
+			entity := testutils.GetExtSrcNetworkEntity(id.String(), cidr, cidr, false, fixtureconsts.Cluster1, true)
 			entities = append(entities, entity)
 		}
 	}
