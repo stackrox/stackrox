@@ -689,12 +689,12 @@ func registerDelayedIntegrations(integrationsInput []iiStore.DelayedIntegration)
 			if !ready {
 				continue
 			}
-			if newCVEDataModelFirstStart {
-				log.Infof("Reprocessing image integration %q", integration.Integration.GetName())
-				reprocessor.Singleton().ShortCircuit()
-				delete(integrations, idx)
-				continue
-			}
+			//if newCVEDataModelFirstStart {
+			//	log.Infof("Reprocessing image integration %q", integration.Integration.GetName())
+			//	reprocessor.Singleton().ShortCircuit()
+			//	delete(integrations, idx)
+			//	continue
+			//}
 			// add the integration first, which is more likely to fail. If it does, no big deal -- you can still try to
 			// manually add it and get the error message.
 			err := integrationManager.Upsert(integration.Integration)
