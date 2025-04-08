@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"encoding/pem"
+	"net/url"
 	"regexp"
 	"strings"
 
@@ -108,6 +109,21 @@ func validateCosignCertificateVerification(configs []*storage.CosignCertificateV
 	return multiErr
 }
 
+func validateTransparencyLogURL(config *storage.TransparencyLogVerification) error {
+	if config.GetValidateOffline() {
+		return nil
+	}
+	if config.GetUrl() == "" {
+		return errors.New("transparency log url must be filled when online validation is enabled")
+	}
+	if u, err := url.Parse(config.GetUrl()); err != nil {
+		return err
+	} else if u.Host == "" {
+		return errors.New("transparency log url must have a valid host")
+	}
+	return nil
+}
+
 func validateTransparencyLogVerification(config *storage.TransparencyLogVerification) error {
 	if !config.GetEnabled() {
 		return nil
@@ -117,9 +133,8 @@ func validateTransparencyLogVerification(config *storage.TransparencyLogVerifica
 
 	// The Rekor URL should never be empty at this point because of the applied default value.
 	// Still, we include this check to encode the expectation here.
-	if !config.GetValidateOffline() && config.GetUrl() == "" {
-		multiErr = multierror.Append(multiErr,
-			errors.New("transparency log url must be filled when online validation is enabled"))
+	if err := validateTransparencyLogURL(config); err != nil {
+		multiErr = multierror.Append(multiErr, errors.Wrap(err, "failed to validate transparency log url"))
 	}
 
 	if rekorPubKey := config.GetPublicKeyPemEnc(); rekorPubKey != "" {
