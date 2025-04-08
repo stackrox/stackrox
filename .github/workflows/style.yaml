@@ -197,6 +197,43 @@ jobs:
           image: rhacs-eng/${{ matrix.image }}:${{ steps.image-tag.outputs.image-tag }}-fast
           limit: 300
 
+  github-actions-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download actionlint
+        id: get_actionlint
+        run: bash <(curl https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash) 1.6.27
+        shell: bash
+      - name: Check workflow files
+        run: ${{ steps.get_actionlint.outputs.executable }} -color
+        shell: bash
+
+  github-actions-shellcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check scripts with shellcheck
+        run: shellcheck -P SCRIPTDIR -x ./.github/workflows/scripts/*.sh
+
+  openshift-ci-lint:
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - name: Pylint
+        run: make -C .openshift-ci lint
+
   slack-on-style-failure:
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
