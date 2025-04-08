@@ -35,12 +35,11 @@ import (
 	"github.com/stackrox/rox/sensor/common/networkflow/manager"
 	"github.com/stackrox/rox/sensor/common/networkflow/service"
 	"github.com/stackrox/rox/sensor/common/processfilter"
-	"github.com/stackrox/rox/sensor/common/processsignal"
+	"github.com/stackrox/rox/sensor/common/processindicator"
 	"github.com/stackrox/rox/sensor/common/reprocessor"
 	"github.com/stackrox/rox/sensor/common/scan"
 	"github.com/stackrox/rox/sensor/common/sensor"
 	signalService "github.com/stackrox/rox/sensor/common/signal"
-	signalComponent "github.com/stackrox/rox/sensor/common/signal/component"
 	k8sadmctrl "github.com/stackrox/rox/sensor/kubernetes/admissioncontroller"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh"
 	"github.com/stackrox/rox/sensor/kubernetes/clusterhealth"
@@ -129,10 +128,10 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 
 	// Create Process Pipeline
 	indicators := make(chan *message.ExpiringMessage, queue.ScaleSizeOnNonDefault(env.ProcessIndicatorBufferSize))
-	processPipeline := processsignal.NewProcessPipeline(indicators, storeProvider.Entities(), processfilter.Singleton(), policyDetector)
+	processPipeline := processindicator.NewProcessPipeline(indicators, storeProvider.Entities(), processfilter.Singleton(), policyDetector)
 
-	signalCmp := signalComponent.New(processPipeline, signalSrv.GetMessagesC(), collectorSrv.GetMessagesC(), indicators,
-		signalComponent.WithTraceWriter(cfg.processIndicatorWriter))
+	signalCmp := processindicator.New(processPipeline, signalSrv.GetMessagesC(), collectorSrv.GetMessagesC(), indicators,
+		processindicator.WithTraceWriter(cfg.processIndicatorWriter))
 
 	networkFlowManager :=
 		manager.NewManager(storeProvider.Entities(), externalsrcs.StoreInstance(), policyDetector, pubSub)
