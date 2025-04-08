@@ -17,12 +17,10 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-func createManager(mockCtrl *gomock.Controller) (*networkFlowManager, *mocksManager.MockEntityStore, *mocksExternalSrc.MockStore, *mocksDetector.MockDetector) {
+func createManager(mockCtrl *gomock.Controller, enrichTicker, purgerTicker <-chan time.Time) (*networkFlowManager, *mocksManager.MockEntityStore, *mocksExternalSrc.MockStore, *mocksDetector.MockDetector) {
 	mockEntityStore := mocksManager.NewMockEntityStore(mockCtrl)
 	mockExternalStore := mocksExternalSrc.NewMockStore(mockCtrl)
 	mockDetector := mocksDetector.NewMockDetector(mockCtrl)
-	ticker := time.NewTicker(100 * time.Millisecond)
-	purgerTicker := time.NewTicker(300 * time.Millisecond)
 	mgr := &networkFlowManager{
 		clusterEntities:   mockEntityStore,
 		externalSrcs:      mockExternalStore,
@@ -31,8 +29,10 @@ func createManager(mockCtrl *gomock.Controller) (*networkFlowManager, *mocksMana
 		sensorUpdates:     make(chan *message.ExpiringMessage, 5),
 		publicIPs:         newPublicIPsManager(),
 		centralReady:      concurrency.NewSignal(),
-		enricherTicker:    ticker,
-		purgerTicker:      purgerTicker,
+		enricherTicker:    time.NewTicker(time.Hour),
+		enricherTickerC:   enrichTicker,
+		purgerTicker:      time.NewTicker(time.Hour),
+		purgerTickerC:     purgerTicker,
 		activeConnections: make(map[connection]*networkConnIndicator),
 		activeEndpoints:   make(map[containerEndpoint]*containerEndpointIndicatorWithAge),
 		stopper:           concurrency.NewStopper(),
@@ -48,7 +48,29 @@ func (f expectFn) runIfSet() {
 	}
 }
 
-func expectEntityLookupContainerHelper(mockEntityStore *mocksManager.MockEntityStore, times int, containerMetadata clusterentities.ContainerMetadata, found bool) expectFn {
+func expectationsEndpointPurger(mockEntityStore *mocksManager.MockEntityStore, lastUpdate time.Duration, isKnownEndpoint, containerIDfound, historical bool) expectFn {
+	return func() {
+		knownEndpoint := clusterentities.LookupResult{
+			Entity:         networkgraph.Entity{},
+			ContainerPorts: []uint16{80},
+			PortNames:      []string{"http"},
+		}
+		mockEntityStore.EXPECT().LookupByContainerID(gomock.Any()).AnyTimes().DoAndReturn(
+			func(_ any) (clusterentities.ContainerMetadata, bool, bool) {
+				return clusterentities.ContainerMetadata{}, containerIDfound, historical
+			})
+		mockEntityStore.EXPECT().RegisterPublicIPsListener(gomock.Any()).AnyTimes()
+		mockEntityStore.EXPECT().LookupByEndpoint(gomock.Any()).AnyTimes().DoAndReturn(
+			func(_ any) []clusterentities.LookupResult {
+				if isKnownEndpoint {
+					return []clusterentities.LookupResult{knownEndpoint}
+				}
+				return []clusterentities.LookupResult{}
+			})
+	}
+}
+
+func expectEntityLookupContainerHelper(mockEntityStore *mocksManager.MockEntityStore, times int, containerMetadata clusterentities.ContainerMetadata, found, historical bool) expectFn {
 	return func() {
 		mockEntityStore.EXPECT().LookupByContainerID(gomock.Any()).Times(times).DoAndReturn(func(_ any) (clusterentities.ContainerMetadata, bool, bool) {
 			return containerMetadata, found, false
@@ -132,7 +154,7 @@ type endpointPair struct {
 	status   *connStatus
 }
 
-func createEndpointPair(firstSeen timestamp.MicroTS) *endpointPair {
+func createEndpointPair(firstSeen, tsAdded timestamp.MicroTS) *endpointPair {
 	return &endpointPair{
 		endpoint: &containerEndpoint{
 			endpoint: net.NumericEndpoint{
@@ -146,6 +168,7 @@ func createEndpointPair(firstSeen timestamp.MicroTS) *endpointPair {
 		},
 		status: &connStatus{
 			firstSeen: firstSeen,
+			tsAdded:   tsAdded,
 		},
 	}
 }

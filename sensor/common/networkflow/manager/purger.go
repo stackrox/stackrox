@@ -4,35 +4,37 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/timestamp"
 	flowMetrics "github.com/stackrox/rox/sensor/common/networkflow/metrics"
 )
 
-func (m *networkFlowManager) purgeStaleEndpoints(tickerC <-chan time.Time) {
+func (m *networkFlowManager) purgeStaleEndpoints(tickerC <-chan time.Time, maxAge time.Duration) {
 	for {
 		select {
 		case <-m.stopper.Flow().StopRequested():
 			return
 		case <-tickerC:
-			maxAge := env.EnrichmentPurgerTickerMaxAge.DurationSetting()
-			start := time.Now()
-			concurrency.WithLock(&m.activeEndpointsMutex, func() {
-				log.Debug("Purging active endpoints")
-				purgeActiveEndpointsNoLock(maxAge, m.activeEndpoints, m.clusterEntities)
-			})
-			flowMetrics.ActiveEndpointsPurgerDuration.WithLabelValues("activeEndpoints").Observe(float64(time.Since(start).Milliseconds()))
-			start = time.Now()
-			concurrency.WithLock(&m.connectionsByHostMutex, func() {
-				for _, conns := range m.connectionsByHost {
-					concurrency.WithLock(&conns.mutex, func() {
-						purgeHostConnsNoLock(maxAge, conns, m.clusterEntities)
-					})
-				}
-			})
-			flowMetrics.ActiveEndpointsPurgerDuration.WithLabelValues("hostConns").Observe(float64(time.Since(start).Milliseconds()))
+			m.runAllPurgerRules(maxAge)
 		}
 	}
+}
+
+func (m *networkFlowManager) runAllPurgerRules(maxAge time.Duration) {
+	start := time.Now()
+	concurrency.WithLock(&m.activeEndpointsMutex, func() {
+		log.Debug("Purging active endpoints")
+		purgeActiveEndpointsNoLock(maxAge, m.activeEndpoints, m.clusterEntities)
+	})
+	flowMetrics.ActiveEndpointsPurgerDuration.WithLabelValues("activeEndpoints").Observe(float64(time.Since(start).Milliseconds()))
+	start = time.Now()
+	concurrency.WithLock(&m.connectionsByHostMutex, func() {
+		for _, conns := range m.connectionsByHost {
+			concurrency.WithLock(&conns.mutex, func() {
+				purgeHostConnsNoLock(maxAge, conns, m.clusterEntities)
+			})
+		}
+	})
+	flowMetrics.ActiveEndpointsPurgerDuration.WithLabelValues("hostConns").Observe(float64(time.Since(start).Milliseconds()))
 }
 
 func purgeHostConnsNoLock(maxAge time.Duration, conns *hostConnections, store EntityStore) {
