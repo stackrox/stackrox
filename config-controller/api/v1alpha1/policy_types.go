@@ -372,10 +372,9 @@ func (s *SecurityPolicyConditions) UpdateCondition(sType SecurityPolicyCondition
 		if st.Type != sType {
 			continue
 		}
+		newCondition.LastTransitionTime = st.LastTransitionTime
 		if st.Status != newCondition.Status {
 			newCondition.LastTransitionTime = metav1.Now()
-		} else {
-			newCondition.LastTransitionTime = st.LastTransitionTime
 		}
 		(*s)[i] = newCondition
 		return
