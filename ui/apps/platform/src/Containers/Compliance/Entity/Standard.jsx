@@ -7,7 +7,7 @@ import { entityPagePropTypes, entityPageDefaultProps } from 'constants/entityPag
 import ComplianceSearchInput from '../ComplianceSearchInput';
 import Header from '../List/Header';
 
-const StandardPage = ({
+const Standard = ({
     entityId,
     listEntityType1,
     entityId1,
@@ -46,7 +46,7 @@ const StandardPage = ({
     );
 };
 
-StandardPage.propTypes = entityPagePropTypes;
-StandardPage.defaultProps = entityPageDefaultProps;
+Standard.propTypes = entityPagePropTypes;
+Standard.defaultProps = entityPageDefaultProps;
 
-export default StandardPage;
+export default Standard;
