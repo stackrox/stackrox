@@ -252,6 +252,9 @@ jobs:
       - style-check
       - golangci-lint
       - check-collector-and-scanner-images-exist
+      - github-actions-lint
+      - github-actions-shellcheck
+      - openshift-ci-lint
     permissions:
       actions: read
     steps:
