@@ -6,6 +6,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/sigstore/cosign/v2/pkg/cosign/bundle"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/images/types"
@@ -60,6 +61,37 @@ const (
 		"Mjg5M2Y2MWVkMjU0YzY4YWZmMjQxN2RlYWYzNDI2MzJhYjI2ZGJiZGIzOTkxNzE0ZTUwMWUxYzkifSwidHlwZSI6ImNvc2lnbiBjb250YWl" +
 		"uZXIgaW1hZ2Ugc2lnbmF0dXJlIn0sIm9wdGlvbmFsIjpudWxsfQ=="
 )
+
+func TestUnmarshalRekorBundle(t *testing.T) {
+	cases := map[string]struct {
+		byteBundle []byte
+		expected   *bundle.RekorBundle
+	}{
+		"bundle is an empty slice": {
+			byteBundle: nil,
+			expected:   nil,
+		},
+		"bundle is a null string": {
+			byteBundle: []byte("null"),
+			expected:   nil,
+		},
+		"bundle is valid": {
+			byteBundle: []byte(`{"SignedEntryTimestamp":"c2V0","Payload":{"body":"body","integratedTime":100,"logIndex":200,"logID":"id"}}`),
+			expected: &bundle.RekorBundle{
+				SignedEntryTimestamp: []byte("set"),
+				Payload:              bundle.RekorPayload{Body: "body", IntegratedTime: 100, LogIndex: 200, LogID: "id"},
+			},
+		},
+	}
+
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			bundle, err := unmarshalRekorBundle(c.byteBundle)
+			require.NoError(t, err)
+			assert.Equal(t, c.expected, bundle)
+		})
+	}
+}
 
 func TestNewCosignSignatureVerifier(t *testing.T) {
 	cases := map[string]struct {

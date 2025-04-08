@@ -402,6 +402,7 @@ func getVerificationResultStatusFromErr(err error) storage.ImageSignatureVerific
 }
 
 func unmarshalRekorBundle(byteBundle []byte) (*bundle.RekorBundle, error) {
+	// Nil pointers are marshalled to "null" instead of empty slices.
 	if len(byteBundle) == 0 || string(byteBundle) == "null" {
 		return nil, nil
 	}
