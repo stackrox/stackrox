@@ -3,6 +3,7 @@ package signatures
 import (
 	"context"
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -97,39 +98,24 @@ func TestVerifyAgainstSignatureIntegration(t *testing.T) {
 }
 
 func BenchmarkVerifyAgainstSignatureIntegrations_1Integration(b *testing.B) {
-	integrations := createSignatureIntegration(1)
-	img, err := generateImageWithCosignSignature(imgString, b64Signature, b64SignaturePayload, nil, nil, nil)
+	numIntegrations := []int{1, 10, 100, 200}
+	testBundle, err := os.ReadFile("testdata/bundle.json")
 	require.NoError(b, err)
+	withBundle := [][]byte{nil, testBundle}
 
-	b.ResetTimer()
-	benchmarkVerifyAgainstSignatureIntegrations(integrations, img, b)
-}
+	for _, numInt := range numIntegrations {
+		for _, bundle := range withBundle {
+			verifyBundle := len(bundle) > 0
+			b.Run(fmt.Sprintf("numInt=%d, verifyBundle=%v", numInt, verifyBundle), func(b *testing.B) {
+				integrations := createSignatureIntegration(numInt, verifyBundle)
+				img, err := generateImageWithCosignSignature(imgString, b64Signature, b64SignaturePayload, nil, nil, bundle)
+				require.NoError(b, err)
 
-func BenchmarkVerifyAgainstSignatureIntegrations_10Integrations(b *testing.B) {
-	integrations := createSignatureIntegration(10)
-	img, err := generateImageWithCosignSignature(imgString, b64Signature, b64SignaturePayload, nil, nil, nil)
-	require.NoError(b, err)
-
-	b.ResetTimer()
-	benchmarkVerifyAgainstSignatureIntegrations(integrations, img, b)
-}
-
-func BenchmarkVerifyAgainstSignatureIntegrations_100Integrations(b *testing.B) {
-	integrations := createSignatureIntegration(100)
-	img, err := generateImageWithCosignSignature(imgString, b64Signature, b64SignaturePayload, nil, nil, nil)
-	require.NoError(b, err)
-
-	b.ResetTimer()
-	benchmarkVerifyAgainstSignatureIntegrations(integrations, img, b)
-}
-
-func BenchmarkVerifyAgainstSignatureIntegrations_200Integrations(b *testing.B) {
-	integrations := createSignatureIntegration(200)
-	img, err := generateImageWithCosignSignature(imgString, b64Signature, b64SignaturePayload, nil, nil, nil)
-	require.NoError(b, err)
-
-	b.ResetTimer()
-	benchmarkVerifyAgainstSignatureIntegrations(integrations, img, b)
+				b.ResetTimer()
+				benchmarkVerifyAgainstSignatureIntegrations(integrations, img, b)
+			})
+		}
+	}
 }
 
 func benchmarkVerifyAgainstSignatureIntegrations(integrations []*storage.SignatureIntegration, img *storage.Image, b *testing.B) {
@@ -138,7 +124,7 @@ func benchmarkVerifyAgainstSignatureIntegrations(integrations []*storage.Signatu
 	}
 }
 
-func createSignatureIntegration(numberOfIntegrations int) []*storage.SignatureIntegration {
+func createSignatureIntegration(numberOfIntegrations int, verifyBundle bool) []*storage.SignatureIntegration {
 	successfulCosignConfig := &storage.CosignPublicKeyVerification{
 		PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
 			{
@@ -168,6 +154,9 @@ func createSignatureIntegration(numberOfIntegrations int) []*storage.SignatureIn
 		integrations = append(integrations, &storage.SignatureIntegration{
 			Id:     fmt.Sprintf("sig-integration-%d", i),
 			Cosign: cosignConfig,
+			TransparencyLog: &storage.TransparencyLogVerification{
+				Enabled: verifyBundle,
+			},
 		})
 	}
 
