@@ -17,6 +17,12 @@ func (m *networkFlowManager) purgeStaleEndpoints(tickerC <-chan time.Time) {
 		case <-tickerC:
 			maxAge := env.EnrichmentPurgerTickerMaxAge.DurationSetting()
 			start := time.Now()
+			concurrency.WithLock(&m.activeEndpointsMutex, func() {
+				log.Debug("Purging active endpoints")
+				purgeActiveEndpointsNoLock(maxAge, m.activeEndpoints, m.clusterEntities)
+			})
+			flowMetrics.ActiveEndpointsPurgerDuration.WithLabelValues("activeEndpoints").Observe(float64(time.Since(start).Milliseconds()))
+			start = time.Now()
 			concurrency.WithLock(&m.connectionsByHostMutex, func() {
 				for _, conns := range m.connectionsByHost {
 					concurrency.WithLock(&conns.mutex, func() {
@@ -60,6 +66,34 @@ func purgeHostConnsNoLock(maxAge time.Duration, conns *hostConnections, store En
 			if cutOff.After(status.tsAdded) {
 				flowMetrics.PurgerEvents.WithLabelValues("hostConnection", "max-age-reached").Inc()
 				delete(conns.connections, conn)
+			}
+		}
+	}
+}
+
+func purgeActiveEndpointsNoLock(maxAge time.Duration,
+	endpoints map[containerEndpoint]*containerEndpointIndicatorWithAge,
+	store EntityStore) {
+	for endpoint, age := range endpoints {
+		// Remove if the endpoint is not in the store (also not in history)
+		if len(store.LookupByEndpoint(endpoint.endpoint)) == 0 {
+			delete(endpoints, endpoint)
+			flowMetrics.PurgerEvents.WithLabelValues("activeEndpoint", "endpoint-gone").Inc()
+			continue
+		}
+		// Remove if the related container is not found (but keep historical)
+		_, found, _ := store.LookupByContainerID(endpoint.containerID)
+		if !found {
+			delete(endpoints, endpoint)
+			flowMetrics.PurgerEvents.WithLabelValues("activeEndpoint", "containerID-gone").Inc()
+			continue
+		}
+		if maxAge > 0 {
+			// finally, remove all that didn't get any update from collector for a given time
+			cutOff := timestamp.Now().Add(-maxAge)
+			if cutOff.After(age.lastUpdate) {
+				flowMetrics.PurgerEvents.WithLabelValues("activeEndpoint", "max-age-reached").Inc()
+				delete(endpoints, endpoint)
 			}
 		}
 	}
