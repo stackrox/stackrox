@@ -270,26 +270,30 @@ func getRekorPublicKeys(ctx context.Context, publicKey string) (*cosign.TrustedT
 	return newTrustedTransparencyLogPubKeys(publicKey)
 }
 
+func (c *cosignSignatureVerifier) setDefaultTlogCheckOpts(ctx context.Context, opts *cosign.CheckOpts) error {
+	if opts.IgnoreTlog = !c.transparencyLog.enabled; opts.IgnoreTlog {
+		return nil
+	}
+
+	var err error
+	if opts.RekorPubKeys, err = getRekorPublicKeys(ctx, c.transparencyLog.publicKey); err != nil {
+		return errors.Wrap(err, "getting rekor public keys")
+	}
+
+	if opts.Offline = c.transparencyLog.validateOffline; opts.Offline {
+		return nil
+	}
+	formattedURL := urlfmt.FormatURL(c.transparencyLog.url, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
+	if opts.RekorClient, err = rekorClient.GetRekorClient(formattedURL); err != nil {
+		return errors.Wrap(err, "creating rekor client")
+	}
+	return nil
+}
+
 func (c *cosignSignatureVerifier) defaultCosignCheckOpts(ctx context.Context) (cosign.CheckOpts, error) {
 	opts := cosign.CheckOpts{ClaimVerifier: cosign.SimpleClaimVerifier}
-	var err error
-
-	opts.IgnoreTlog = !c.transparencyLog.enabled
-	if !opts.IgnoreTlog {
-		opts.RekorPubKeys, err = getRekorPublicKeys(ctx, c.transparencyLog.publicKey)
-		if err != nil {
-			return cosign.CheckOpts{}, errors.Wrap(err, "getting rekor public keys")
-		}
-
-		opts.Offline = c.transparencyLog.validateOffline
-		if !opts.Offline {
-			opts.RekorClient, err = rekorClient.GetRekorClient(
-				urlfmt.FormatURL(c.transparencyLog.url, urlfmt.HTTPS, urlfmt.NoTrailingSlash),
-			)
-			if err != nil {
-				return cosign.CheckOpts{}, errors.Wrap(err, "creating rekor client")
-			}
-		}
+	if err := c.setDefaultTlogCheckOpts(ctx, &opts); err != nil {
+		return cosign.CheckOpts{}, err
 	}
 	return opts, nil
 }

@@ -95,15 +95,14 @@ func validateCosignCertificateVerification(configs []*storage.CosignCertificateV
 			multiErr = multierror.Append(multiErr, errors.Wrap(err, "unmarshalling certificate PEM"))
 		}
 
-		if ctlog := config.GetCertificateTransparencyLog(); ctlog.GetEnabled() {
-			if ctlogPubKey := ctlog.GetPublicKeyPemEnc(); ctlogPubKey != "" {
-				ctlogKeyBlock, rest := pem.Decode([]byte(ctlogPubKey))
-				if !signatures.IsValidPublicKeyPEMBlock(ctlogKeyBlock, rest) {
-					multiErr = multierror.Append(multiErr, errors.New("failed to decode PEM block containing ctlog key"))
-				}
+		ctlog := config.GetCertificateTransparencyLog()
+		ctlogPubKey := ctlog.GetPublicKeyPemEnc()
+		if ctlog.GetEnabled() && ctlogPubKey != "" {
+			ctlogKeyBlock, rest := pem.Decode([]byte(ctlogPubKey))
+			if !signatures.IsValidPublicKeyPEMBlock(ctlogKeyBlock, rest) {
+				multiErr = multierror.Append(multiErr, errors.New("failed to decode PEM block containing ctlog key"))
 			}
 		}
-
 	}
 
 	return multiErr
