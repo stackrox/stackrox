@@ -231,6 +231,118 @@ func (s *networkGraphServiceSuite) TestGetNetworkGraph() {
 	protoassert.Equal(s.T(), expectedResponse, response)
 }
 
+func (s *networkGraphServiceSuite) TestGetNetworkGraphNormalizedAndUnformalized() {
+	ctx := sac.WithGlobalAccessScopeChecker(
+		context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Deployment, resources.NetworkGraph),
+		),
+	)
+
+	globalWriteAccessCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.NetworkGraph, resources.Deployment)))
+
+	entityID1, _ := externalsrcs.NewClusterScopedID(testCluster, "192.168.1.1/32")
+	entityID2, _ := externalsrcs.NewClusterScopedID(testCluster, "10.0.0.2/32")
+	entityID3, _ := externalsrcs.NewClusterScopedID(testCluster, "1.1.1.1/32")
+
+	isDiscovered := true
+
+	entities := []*storage.NetworkEntity{
+		testutils.GetExtSrcNetworkEntity(entityID1.String(), "ext1", "192.168.1.1/32", false, testCluster, isDiscovered),
+		testutils.GetExtSrcNetworkEntity(entityID2.String(), "ext2", "10.0.0.2/32", false, testCluster, isDiscovered),
+		testutils.GetExtSrcNetworkEntity(entityID3.String(), "ext3", "10.0.100.25/32", false, testCluster, isDiscovered),
+	}
+
+	internetEntity := &storage.NetworkEntity{
+				Info: &storage.NetworkEntityInfo {
+					Type: storage.NetworkEntityInfo_INTERNET,
+					Id:   networkgraph.InternetExternalSourceID,
+				},
+				Scope: &storage.NetworkEntity_Scope {
+					ClusterId: testCluster,
+				},
+			}
+
+	deployment := &storage.Deployment{
+		Id:        fixtureconsts.Deployment1,
+		ClusterId: testCluster,
+		Namespace: testNamespace,
+	}
+
+	err := s.deploymentsDataStore.UpsertDeployment(globalWriteAccessCtx, deployment)
+	s.NoError(err)
+
+	_, err = s.entityDataStore.CreateExtNetworkEntitiesForCluster(globalWriteAccessCtx, testCluster, entities...)
+	s.NoError(err)
+
+	timeNow := timestamp.FromGoTime(time.Now())
+	lastSeenTimestamp1 := timeNow.Protobuf()
+	lastSeenTimestamp2 := timeNow.Add(-time.Second).Protobuf()
+	lastSeenTimestamp3 := timeNow.Add(-2 * time.Second).Protobuf()
+	lastSeenTimestamp4 := timeNow.Add(-3 * time.Second).Protobuf()
+
+	entityFlows := []*storage.NetworkFlow{
+		externalFlow(deployment, entities[0], false, lastSeenTimestamp1),
+		externalFlow(deployment, entities[1], false, lastSeenTimestamp2),
+		externalFlow(deployment, entities[2], false, lastSeenTimestamp3),
+		externalFlow(deployment, internetEntity, false, lastSeenTimestamp4),
+	}
+
+	flowStore, err := s.flowDataStore.CreateFlowStore(globalWriteAccessCtx, testCluster)
+	s.NoError(err)
+
+	err = flowStore.UpsertFlows(globalWriteAccessCtx, entityFlows, timeNow)
+	s.NoError(err)
+
+	request := &v1.NetworkGraphRequest{
+		ClusterId: testCluster,
+	}
+
+	expectedResponse := &v1.NetworkGraph{
+		Nodes: []*v1.NetworkNode{
+			{
+				Entity: &storage.NetworkEntityInfo{
+					Type: storage.NetworkEntityInfo_DEPLOYMENT,
+					Id:   deployment.Id,
+					Desc: &storage.NetworkEntityInfo_Deployment_{
+						Deployment: &storage.NetworkEntityInfo_Deployment{
+							Namespace: deployment.Namespace,
+						},
+					},
+				},
+				OutEdges: map[int32]*v1.NetworkEdgePropertiesBundle{
+					1: {
+						Properties: []*v1.NetworkEdgeProperties{
+							{
+								Port:                1234,
+								Protocol:            storage.L4Protocol_L4_PROTOCOL_TCP,
+								LastActiveTimestamp: lastSeenTimestamp1,
+							},
+						},
+					},
+				},
+				QueryMatch: true,
+			},
+			{
+				Entity: &storage.NetworkEntityInfo{
+					Type: storage.NetworkEntityInfo_INTERNET,
+					Id:   networkgraph.InternetExternalSourceID,
+				},
+				OutEdges: map[int32]*v1.NetworkEdgePropertiesBundle{},
+			},
+		},
+	}
+
+	response, err := s.service.GetNetworkGraph(ctx, request)
+	s.NoError(err)
+
+	protoassert.Equal(s.T(), expectedResponse, response)
+}
+
 func (s *networkGraphServiceSuite) TestGetExternalNetworkFlows() {
 	ctx := sac.WithGlobalAccessScopeChecker(
 		context.Background(),
