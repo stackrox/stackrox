@@ -663,11 +663,15 @@ func registerDelayedIntegrations(integrationsInput []iiStore.DelayedIntegration)
 	ds := iiDatastore.Singleton()
 	newCVEDataModelFirstStart := false
 	if features.FlattenCVEData.Enabled() {
+		ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Image),
+		))
 		log.Info("New data model was enabled")
 		v1ComponentDataStore := imageComponentDataStore.Singleton()
 		v2ComponentDataStore := imageComponentV2DataStore.Singleton()
-		count, err := v1ComponentDataStore.Count(context.Background(), pkgSearch.EmptyQuery())
-		v2Count, v2Err := v2ComponentDataStore.Count(context.Background(), pkgSearch.EmptyQuery())
+		count, err := v1ComponentDataStore.Count(ctx, pkgSearch.EmptyQuery())
+		v2Count, v2Err := v2ComponentDataStore.Count(ctx, pkgSearch.EmptyQuery())
 		if err == nil && v2Err == nil && count > 0 && v2Count == 0 {
 			log.Info("V1 Tables were not empty, but V2 tables were, marking to reprocess from all image integrations")
 			// If there is an error, carry on, as this rescan check is best effort
