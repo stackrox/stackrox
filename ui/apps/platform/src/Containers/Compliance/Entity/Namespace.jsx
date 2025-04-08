@@ -61,7 +61,7 @@ function processData(data, entityId) {
     };
 }
 
-const NamespacePage = ({
+const Namespace = ({
     entityId,
     listEntityType1,
     entityId1,
@@ -211,7 +211,7 @@ const NamespacePage = ({
         </Query>
     );
 };
-NamespacePage.propTypes = entityPagePropTypes;
-NamespacePage.defaultProps = entityPageDefaultProps;
+Namespace.propTypes = entityPagePropTypes;
+Namespace.defaultProps = entityPageDefaultProps;
 
-export default NamespacePage;
+export default Namespace;

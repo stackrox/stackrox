@@ -11,13 +11,13 @@ import { searchCategories as searchCategoryTypes } from 'constants/entityTypes';
 import searchContext from 'Containers/searchContext';
 import { searchParams } from 'constants/searchParams';
 import useWorkflowMatch from 'hooks/useWorkflowMatch';
-import ListTable from './Table';
+import ListTable from './ListTable';
 // TODO: this exception will be unnecessary once Compliance pages are re-structured like Config Management
 /* eslint-disable-next-line import/no-cycle */
 import SidePanel from './SidePanel';
 import ComplianceSearchInput from '../ComplianceSearchInput';
 
-const ComplianceList = ({ entityType, query, selectedRowId, noSearch }) => {
+const List = ({ entityType, query, selectedRowId, noSearch }) => {
     const navigate = useNavigate();
     const location = useLocation();
     const match = useWorkflowMatch();
@@ -62,9 +62,9 @@ const ComplianceList = ({ entityType, query, selectedRowId, noSearch }) => {
     );
 };
 
-export default ComplianceList;
+export default List;
 
-ComplianceList.propTypes = {
+List.propTypes = {
     entityType: PropTypes.string.isRequired,
     query: PropTypes.shape({}),
     selectedRowId: PropTypes.string,
@@ -73,7 +73,7 @@ ComplianceList.propTypes = {
     noSearch: PropTypes.bool,
 };
 
-ComplianceList.defaultProps = {
+List.defaultProps = {
     query: null,
     selectedRowId: null,
     noSearch: false,

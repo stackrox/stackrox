@@ -46,7 +46,7 @@ function processData(data) {
     return result;
 }
 
-const NodePage = ({
+const Node = ({
     entityId,
     listEntityType1,
     entityId1,
@@ -244,7 +244,7 @@ const NodePage = ({
         </Query>
     );
 };
-NodePage.propTypes = entityPagePropTypes;
-NodePage.defaultProps = entityPageDefaultProps;
+Node.propTypes = entityPagePropTypes;
+Node.defaultProps = entityPageDefaultProps;
 
-export default NodePage;
+export default Node;

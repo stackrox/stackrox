@@ -12,7 +12,7 @@ import useWorkflowMatch from 'hooks/useWorkflowMatch';
 import ComplianceSearchInput from '../ComplianceSearchInput';
 import Header from './Header';
 
-const ComplianceListPage = () => {
+const ListPage = () => {
     const [isExporting, setIsExporting] = useState(false);
     const location = useLocation();
     const match = useWorkflowMatch();
@@ -52,14 +52,14 @@ const ComplianceListPage = () => {
     );
 };
 
-ComplianceListPage.propTypes = {
+ListPage.propTypes = {
     params: PropTypes.shape({
         entityType: PropTypes.string.isRequired,
     }),
 };
 
-ComplianceListPage.defaultProps = {
+ListPage.defaultProps = {
     params: null,
 };
 
-export default ComplianceListPage;
+export default ListPage;

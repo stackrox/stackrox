@@ -12,7 +12,7 @@ import ControlPage from './Control';
 import DeploymentPage from './Deployment';
 import StandardPage from './Standard';
 
-const ComplianceEntityPage = () => {
+const EntityPage = () => {
     const location = useLocation();
     const match = useWorkflowMatch();
 
@@ -41,7 +41,7 @@ const ComplianceEntityPage = () => {
     return pageTypeMap[params.pageEntityType];
 };
 
-ComplianceEntityPage.propTypes = {
+EntityPage.propTypes = {
     params: PropTypes.shape({
         entityId: PropTypes.string,
         entityType: PropTypes.string,
@@ -49,9 +49,9 @@ ComplianceEntityPage.propTypes = {
     sidePanelMode: PropTypes.bool,
 };
 
-ComplianceEntityPage.defaultProps = {
+EntityPage.defaultProps = {
     params: null,
     sidePanelMode: false,
 };
 
-export default ComplianceEntityPage;
+export default EntityPage;

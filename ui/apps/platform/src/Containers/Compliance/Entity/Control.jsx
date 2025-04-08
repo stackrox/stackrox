@@ -20,7 +20,7 @@ import isGQLLoading from 'utils/gqlLoading';
 import Header from './Header';
 import ResourceTabs from './ResourceTabs';
 
-const ControlPage = ({
+const Control = ({
     entityId,
     listEntityType1,
     entityId1,
@@ -180,7 +180,7 @@ const ControlPage = ({
         </Query>
     );
 };
-ControlPage.propTypes = entityPagePropTypes;
-ControlPage.defaultProps = entityPageDefaultProps;
+Control.propTypes = entityPagePropTypes;
+Control.defaultProps = entityPageDefaultProps;
 
-export default ControlPage;
+export default Control;

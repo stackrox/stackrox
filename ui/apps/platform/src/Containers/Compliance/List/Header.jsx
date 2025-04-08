@@ -12,7 +12,7 @@ import usePermissions from 'hooks/usePermissions';
 
 // Disable to prevent merge conflict below if we need to cherry pick fix to previous release.
 /* eslint-disable prettier/prettier */
-const ListHeader = ({ entityType, searchComponent, standard, isExporting, setIsExporting }) => {
+const Header = ({ entityType, searchComponent, standard, isExporting, setIsExporting }) => {
     const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForCompliance = hasReadWriteAccess('Compliance');
 
@@ -61,7 +61,7 @@ const ListHeader = ({ entityType, searchComponent, standard, isExporting, setIsE
     );
 };
 /* eslint-enable prettier/prettier */
-ListHeader.propTypes = {
+Header.propTypes = {
     searchComponent: PropTypes.element,
     entityType: PropTypes.string.isRequired,
     standard: PropTypes.string,
@@ -69,9 +69,9 @@ ListHeader.propTypes = {
     setIsExporting: PropTypes.func.isRequired,
 };
 
-ListHeader.defaultProps = {
+Header.defaultProps = {
     searchComponent: null,
     standard: null,
 };
 
-export default ListHeader;
+export default Header;

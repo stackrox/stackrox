@@ -11,7 +11,7 @@ import usePermissions from 'hooks/usePermissions';
 
 import { entityNounSentenceCaseSingular } from '../entitiesForCompliance';
 
-const EntityHeader = ({
+const Header = ({
     entityType,
     listEntityType,
     entityName,
@@ -56,7 +56,7 @@ const EntityHeader = ({
     );
 };
 
-EntityHeader.propTypes = {
+Header.propTypes = {
     entityType: PropTypes.string,
     listEntityType: PropTypes.string,
     entityName: PropTypes.string,
@@ -66,7 +66,7 @@ EntityHeader.propTypes = {
     setIsExporting: PropTypes.func.isRequired,
 };
 
-EntityHeader.defaultProps = {
+Header.defaultProps = {
     entityType: '',
     listEntityType: '',
     entityName: '',
@@ -74,4 +74,4 @@ EntityHeader.defaultProps = {
     searchComponent: null,
 };
 
-export default EntityHeader;
+export default Header;
