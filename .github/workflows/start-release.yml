@@ -36,8 +36,8 @@ run-name: >-
     )
   }}
 
-# Ensure that only a single release automation workflow can run at a time.
-concurrency: Release automation
+# Ensure that only a single automation workflow can run at a time for each release.
+concurrency: Release automation ${{ inputs.version }}
 
 jobs:
   start-sha:

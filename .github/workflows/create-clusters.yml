@@ -37,8 +37,8 @@ run-name: >-
     format('Create clusters for {0}', inputs.version)
   }}
 
-# Ensure that only a single release automation workflow can run at a time.
-concurrency: Release automation
+# Ensure that only a single automation workflow can run at a time for each release.
+concurrency: Release automation ${{ inputs.version }}
 
 jobs:
   trim-cluster-names:
