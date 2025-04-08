@@ -5,7 +5,6 @@ package reportgenerator
 import (
 	"context"
 	"fmt"
-	"os"
 	"testing"
 	"time"
 
@@ -28,18 +27,6 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
-)
-
-const (
-	cluster1name   = "cluster1name"
-	cluster2name   = "cluster2name"
-	container1name = "container1name"
-	container2name = "container2name"
-	dep1name       = "dep1name"
-	dep2name       = "dep2name"
-	dep3name       = "dep3name"
-	namespace1name = "namespace1name"
-	namespace2name = "namespace2name"
 )
 
 type vulnReportDataNewDataModel struct {
@@ -71,12 +58,12 @@ func (s *NewDataModelEnhancedReportingTestSuite) TearDownTest() {
 	s.truncateTable(postgresSchema.ImageComponentV2TableName)
 	s.truncateTable(postgresSchema.ImageCvesV2TableName)
 	s.truncateTable(postgresSchema.CollectionsTableName)
-	os.Setenv("ROX_FLATTEN_CVE_DATA", "false")
+	// os.Setenv("ROX_FLATTEN_CVE_DATA", "false")
 }
 
 func (s *NewDataModelEnhancedReportingTestSuite) SetupSuite() {
 
-	os.Setenv("ROX_FLATTEN_CVE_DATA", "true")
+	// os.Setenv("ROX_FLATTEN_CVE_DATA", "true")
 	if !features.FlattenCVEData.Enabled() {
 		s.T().Skip()
 	}
@@ -85,7 +72,7 @@ func (s *NewDataModelEnhancedReportingTestSuite) SetupSuite() {
 	mockCtrl := gomock.NewController(s.T())
 	s.testDB = pgtest.ForT(s.T())
 
-	//set up tables
+	// set up tables
 	imageDataStore := resolvers.CreateTestImageV2Datastore(s.T(), s.testDB, mockCtrl)
 	s.watchedImageDatastore = watchedImageDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
 	resolver, schema := resolvers.SetupTestResolver(s.T(),
@@ -109,18 +96,18 @@ func (s *NewDataModelEnhancedReportingTestSuite) SetupSuite() {
 
 	namespaces := testNamespaces(clusters, 2)
 	deployments, images := testDeploymentsWithImages(namespaces, 1)
-	//insert deployments in deployment table
+	// insert deployments in deployment table
 	for _, dep := range deployments {
 		err := resolver.DeploymentDataStore.UpsertDeployment(s.ctx, dep)
 		s.NoError(err)
 	}
-	//upsert deployed image in image table
+	// upsert deployed image in image table
 	for _, image := range images {
 		err := resolver.ImageDataStore.UpsertImage(s.ctx, image)
 		s.NoError(err)
 	}
 
-	//upsert watched images
+	// upsert watched images
 	watchedImages := testWatchedImages(2)
 	for _, image := range watchedImages {
 		err := resolver.ImageDataStore.UpsertImage(s.ctx, image)
@@ -139,15 +126,6 @@ func (s *NewDataModelEnhancedReportingTestSuite) SetupSuite() {
 	s.reportGenerator = newReportGeneratorImpl(s.testDB, nil, resolver.DeploymentDataStore,
 		s.watchedImageDatastore, collectionQueryResolver, nil, blobStore, s.clusterDatastore,
 		s.namespaceDatastore, resolver.ImageCVEDataStore, resolver.ImageCVEV2DataStore, schema)
-
-	for _, img := range images {
-		for _, component := range img.GetScan().GetComponents() {
-			for _, vuln := range component.GetVulns() {
-				cve, _, err := resolver.ImageCVEV2DataStore.Get(s.ctx, vuln.GetCve())
-				fmt.Printf("cve is %s err is %s", cve, err)
-			}
-		}
-	}
 }
 func (s *NewDataModelEnhancedReportingTestSuite) upsertManyWatchedImages(images []*storage.Image) {
 	for _, img := range images {
@@ -199,7 +177,6 @@ func (s *NewDataModelEnhancedReportingTestSuite) TestGetReportData() {
 			reportSnap := testReportSnapshot(tc.collection.GetId(), tc.fixability, tc.severities, tc.imageTypes, tc.scopeRules)
 			// Test get data using SQF
 			reportData, err := s.reportGenerator.getReportDataSQF(reportSnap, tc.collection, time.Time{})
-			fmt.Sprintf("error is %s", err)
 			s.NoError(err)
 			collected := collectVulnReportDataSQFNewDataModel(reportData.CVEResponses)
 			s.ElementsMatch(tc.expected.deploymentNames, collected.deploymentNames)
