@@ -162,12 +162,13 @@ jobs:
       run: make golangci-lint-cache-status
 
   check-collector-images-exist:
-    # This job ensures that COLLECTOR_VERSION cannot be updated to a version for which
-    # the image was not successfully built on Konflux.
+    # This job ensures that COLLECTOR_VERSION cannot be updated to a version for which the image was not successfully
+    # built on Konflux (tag_suffix: "-fast"). It also verifies that GHA-built image is there (tag_suffix: "") so that
+    # the failure also happens in this job.
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        tag_suffix: ["-fast"]
+        tag_suffix: ["", "-fast"]
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -185,13 +186,14 @@ jobs:
           limit: 300
 
   check-scanner-images-exist:
-    # This job ensures that SCANNER_VERSION cannot be updated to a version for which
-    # the image was not successfully built on Konflux.
+    # This job ensures that SCANNER_VERSION cannot be updated to a version for which the image was not successfully
+    # built on Konflux (tag_suffix: "-fast"). It also verifies that GHA-built image is there (tag_suffix: "") so that
+    # the failure also happens in this job.
     runs-on: ubuntu-latest
     strategy:
       matrix:
         image: ["scanner", "scanner-slim", "scanner-db", "scanner-db-slim"]
-        tag_suffix: ["-fast"]
+        tag_suffix: ["", "-fast"]
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
