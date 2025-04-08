@@ -2057,15 +2057,16 @@ func (x *ComplianceOperatorRemediationV2) GetClusterId() string {
 
 // Next Tag: 9
 type ComplianceOperatorReportSnapshotV2 struct {
-	state               protoimpl.MessageState                     `protogen:"open.v1"`
-	ReportId            string                                     `protobuf:"bytes,1,opt,name=report_id,json=reportId,proto3" json:"report_id,omitempty" sql:"pk,id,type(uuid)"`                                    // @gotags: sql:"pk,id,type(uuid)"
-	ScanConfigurationId string                                     `protobuf:"bytes,2,opt,name=scan_configuration_id,json=scanConfigurationId,proto3" json:"scan_configuration_id,omitempty" search:"Compliance Scan Config ID" sql:"fk(ComplianceOperatorScanConfigurationV2:id)"` // @gotags: search:"Compliance Scan Config ID" sql:"fk(ComplianceOperatorScanConfigurationV2:id)"
-	Name                string                                     `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty" search:"Compliance Report Name"`                                                            // @gotags: search:"Compliance Report Name"
-	Description         string                                     `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
-	ReportStatus        *ComplianceOperatorReportStatus            `protobuf:"bytes,5,opt,name=report_status,json=reportStatus,proto3" json:"report_status,omitempty"`
-	User                *SlimUser                                  `protobuf:"bytes,6,opt,name=user,proto3" json:"user,omitempty"`
-	Scans               []*ComplianceOperatorReportSnapshotV2_Scan `protobuf:"bytes,7,rep,name=scans,proto3" json:"scans,omitempty"`
-	ReportData          *ComplianceOperatorReportData              `protobuf:"bytes,8,opt,name=report_data,json=reportData,proto3" json:"report_data,omitempty" search:"-"` // @gotags: search:"-"
+	state               protoimpl.MessageState                              `protogen:"open.v1"`
+	ReportId            string                                              `protobuf:"bytes,1,opt,name=report_id,json=reportId,proto3" json:"report_id,omitempty" sql:"pk,id,type(uuid)"`                                    // @gotags: sql:"pk,id,type(uuid)"
+	ScanConfigurationId string                                              `protobuf:"bytes,2,opt,name=scan_configuration_id,json=scanConfigurationId,proto3" json:"scan_configuration_id,omitempty" search:"Compliance Scan Config ID" sql:"fk(ComplianceOperatorScanConfigurationV2:id)"` // @gotags: search:"Compliance Scan Config ID" sql:"fk(ComplianceOperatorScanConfigurationV2:id)"
+	Name                string                                              `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty" search:"Compliance Report Name"`                                                            // @gotags: search:"Compliance Report Name"
+	Description         string                                              `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
+	ReportStatus        *ComplianceOperatorReportStatus                     `protobuf:"bytes,5,opt,name=report_status,json=reportStatus,proto3" json:"report_status,omitempty"`
+	User                *SlimUser                                           `protobuf:"bytes,6,opt,name=user,proto3" json:"user,omitempty"`
+	Scans               []*ComplianceOperatorReportSnapshotV2_Scan          `protobuf:"bytes,7,rep,name=scans,proto3" json:"scans,omitempty"`
+	ReportData          *ComplianceOperatorReportData                       `protobuf:"bytes,8,opt,name=report_data,json=reportData,proto3" json:"report_data,omitempty" search:"-"` // @gotags: search:"-"
+	FailedClusters      []*ComplianceOperatorReportSnapshotV2_FailedCluster `protobuf:"bytes,9,rep,name=failed_clusters,json=failedClusters,proto3" json:"failed_clusters,omitempty"`
 	unknownFields       protoimpl.UnknownFields
 	sizeCache           protoimpl.SizeCache
 }
@@ -2156,13 +2157,19 @@ func (x *ComplianceOperatorReportSnapshotV2) GetReportData() *ComplianceOperator
 	return nil
 }
 
+func (x *ComplianceOperatorReportSnapshotV2) GetFailedClusters() []*ComplianceOperatorReportSnapshotV2_FailedCluster {
+	if x != nil {
+		return x.FailedClusters
+	}
+	return nil
+}
+
 // Next available tag: 4
 type ComplianceOperatorReportData struct {
 	state             protoimpl.MessageState                        `protogen:"open.v1"`
 	ScanConfiguration *ComplianceOperatorScanConfigurationV2        `protobuf:"bytes,1,opt,name=scan_configuration,json=scanConfiguration,proto3" json:"scan_configuration,omitempty" search:"-" sql:"-"` // @gotags: search:"-" sql:"-"
 	ClusterStatus     []*ComplianceOperatorReportData_ClusterStatus `protobuf:"bytes,2,rep,name=cluster_status,json=clusterStatus,proto3" json:"cluster_status,omitempty"`
 	LastExecutedTime  *timestamppb.Timestamp                        `protobuf:"bytes,3,opt,name=last_executed_time,json=lastExecutedTime,proto3" json:"last_executed_time,omitempty"`
-	FailedClusters    []*ComplianceOperatorReportData_FailedCluster `protobuf:"bytes,8,rep,name=failed_clusters,json=failedClusters,proto3" json:"failed_clusters,omitempty"`
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }
@@ -2214,13 +2221,6 @@ func (x *ComplianceOperatorReportData) GetClusterStatus() []*ComplianceOperatorR
 func (x *ComplianceOperatorReportData) GetLastExecutedTime() *timestamppb.Timestamp {
 	if x != nil {
 		return x.LastExecutedTime
-	}
-	return nil
-}
-
-func (x *ComplianceOperatorReportData) GetFailedClusters() []*ComplianceOperatorReportData_FailedCluster {
-	if x != nil {
-		return x.FailedClusters
 	}
 	return nil
 }
@@ -2598,6 +2598,74 @@ func (x *ComplianceOperatorReportSnapshotV2_Scan) GetLastStartedTime() *timestam
 	return nil
 }
 
+type ComplianceOperatorReportSnapshotV2_FailedCluster struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	ClusterId       string                 `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	ClusterName     string                 `protobuf:"bytes,2,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"`
+	Reason          string                 `protobuf:"bytes,3,opt,name=reason,proto3" json:"reason,omitempty"`
+	OperatorVersion string                 `protobuf:"bytes,4,opt,name=operator_version,json=operatorVersion,proto3" json:"operator_version,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *ComplianceOperatorReportSnapshotV2_FailedCluster) Reset() {
+	*x = ComplianceOperatorReportSnapshotV2_FailedCluster{}
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[36]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ComplianceOperatorReportSnapshotV2_FailedCluster) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ComplianceOperatorReportSnapshotV2_FailedCluster) ProtoMessage() {}
+
+func (x *ComplianceOperatorReportSnapshotV2_FailedCluster) ProtoReflect() protoreflect.Message {
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[36]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ComplianceOperatorReportSnapshotV2_FailedCluster.ProtoReflect.Descriptor instead.
+func (*ComplianceOperatorReportSnapshotV2_FailedCluster) Descriptor() ([]byte, []int) {
+	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{15, 1}
+}
+
+func (x *ComplianceOperatorReportSnapshotV2_FailedCluster) GetClusterId() string {
+	if x != nil {
+		return x.ClusterId
+	}
+	return ""
+}
+
+func (x *ComplianceOperatorReportSnapshotV2_FailedCluster) GetClusterName() string {
+	if x != nil {
+		return x.ClusterName
+	}
+	return ""
+}
+
+func (x *ComplianceOperatorReportSnapshotV2_FailedCluster) GetReason() string {
+	if x != nil {
+		return x.Reason
+	}
+	return ""
+}
+
+func (x *ComplianceOperatorReportSnapshotV2_FailedCluster) GetOperatorVersion() string {
+	if x != nil {
+		return x.OperatorVersion
+	}
+	return ""
+}
+
 // Next available tag: 5
 type ComplianceOperatorReportData_SuiteStatus struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
@@ -2611,7 +2679,7 @@ type ComplianceOperatorReportData_SuiteStatus struct {
 
 func (x *ComplianceOperatorReportData_SuiteStatus) Reset() {
 	*x = ComplianceOperatorReportData_SuiteStatus{}
-	mi := &file_storage_compliance_operator_v2_proto_msgTypes[36]
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[37]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2623,7 +2691,7 @@ func (x *ComplianceOperatorReportData_SuiteStatus) String() string {
 func (*ComplianceOperatorReportData_SuiteStatus) ProtoMessage() {}
 
 func (x *ComplianceOperatorReportData_SuiteStatus) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_compliance_operator_v2_proto_msgTypes[36]
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[37]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2680,7 +2748,7 @@ type ComplianceOperatorReportData_ClusterStatus struct {
 
 func (x *ComplianceOperatorReportData_ClusterStatus) Reset() {
 	*x = ComplianceOperatorReportData_ClusterStatus{}
-	mi := &file_storage_compliance_operator_v2_proto_msgTypes[37]
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[38]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2692,7 +2760,7 @@ func (x *ComplianceOperatorReportData_ClusterStatus) String() string {
 func (*ComplianceOperatorReportData_ClusterStatus) ProtoMessage() {}
 
 func (x *ComplianceOperatorReportData_ClusterStatus) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_compliance_operator_v2_proto_msgTypes[37]
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2734,74 +2802,6 @@ func (x *ComplianceOperatorReportData_ClusterStatus) GetSuiteStatus() *Complianc
 		return x.SuiteStatus
 	}
 	return nil
-}
-
-type ComplianceOperatorReportData_FailedCluster struct {
-	state           protoimpl.MessageState `protogen:"open.v1"`
-	ClusterId       string                 `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
-	ClusterName     string                 `protobuf:"bytes,2,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"`
-	Reason          string                 `protobuf:"bytes,3,opt,name=reason,proto3" json:"reason,omitempty"`
-	OperatorVersion string                 `protobuf:"bytes,4,opt,name=operator_version,json=operatorVersion,proto3" json:"operator_version,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
-}
-
-func (x *ComplianceOperatorReportData_FailedCluster) Reset() {
-	*x = ComplianceOperatorReportData_FailedCluster{}
-	mi := &file_storage_compliance_operator_v2_proto_msgTypes[38]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ComplianceOperatorReportData_FailedCluster) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ComplianceOperatorReportData_FailedCluster) ProtoMessage() {}
-
-func (x *ComplianceOperatorReportData_FailedCluster) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_compliance_operator_v2_proto_msgTypes[38]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ComplianceOperatorReportData_FailedCluster.ProtoReflect.Descriptor instead.
-func (*ComplianceOperatorReportData_FailedCluster) Descriptor() ([]byte, []int) {
-	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{16, 2}
-}
-
-func (x *ComplianceOperatorReportData_FailedCluster) GetClusterId() string {
-	if x != nil {
-		return x.ClusterId
-	}
-	return ""
-}
-
-func (x *ComplianceOperatorReportData_FailedCluster) GetClusterName() string {
-	if x != nil {
-		return x.ClusterName
-	}
-	return ""
-}
-
-func (x *ComplianceOperatorReportData_FailedCluster) GetReason() string {
-	if x != nil {
-		return x.Reason
-	}
-	return ""
-}
-
-func (x *ComplianceOperatorReportData_FailedCluster) GetOperatorVersion() string {
-	if x != nil {
-		return x.OperatorVersion
-	}
-	return ""
 }
 
 var File_storage_compliance_operator_v2_proto protoreflect.FileDescriptor
@@ -3044,7 +3044,7 @@ const file_storage_compliance_operator_v2_proto_rawDesc = "" +
 	"\x0foutdated_object\x18\x06 \x01(\tR\x0eoutdatedObject\x12)\n" +
 	"\x10enforcement_type\x18\a \x01(\tR\x0fenforcementType\x12\x1d\n" +
 	"\n" +
-	"cluster_id\x18\b \x01(\tR\tclusterId\"\xa0\x04\n" +
+	"cluster_id\x18\b \x01(\tR\tclusterId\"\x9b\x06\n" +
 	"\"ComplianceOperatorReportSnapshotV2\x12\x1b\n" +
 	"\treport_id\x18\x01 \x01(\tR\breportId\x122\n" +
 	"\x15scan_configuration_id\x18\x02 \x01(\tR\x13scanConfigurationId\x12\x12\n" +
@@ -3054,15 +3054,21 @@ const file_storage_compliance_operator_v2_proto_rawDesc = "" +
 	"\x04user\x18\x06 \x01(\v2\x11.storage.SlimUserR\x04user\x12F\n" +
 	"\x05scans\x18\a \x03(\v20.storage.ComplianceOperatorReportSnapshotV2.ScanR\x05scans\x12F\n" +
 	"\vreport_data\x18\b \x01(\v2%.storage.ComplianceOperatorReportDataR\n" +
-	"reportData\x1an\n" +
+	"reportData\x12b\n" +
+	"\x0ffailed_clusters\x18\t \x03(\v29.storage.ComplianceOperatorReportSnapshotV2.FailedClusterR\x0efailedClusters\x1an\n" +
 	"\x04Scan\x12\x1e\n" +
 	"\vscan_ref_id\x18\x01 \x01(\tR\tscanRefId\x12F\n" +
-	"\x11last_started_time\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x0flastStartedTime\"\x8b\a\n" +
+	"\x11last_started_time\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x0flastStartedTime\x1a\x94\x01\n" +
+	"\rFailedCluster\x12\x1d\n" +
+	"\n" +
+	"cluster_id\x18\x01 \x01(\tR\tclusterId\x12!\n" +
+	"\fcluster_name\x18\x02 \x01(\tR\vclusterName\x12\x16\n" +
+	"\x06reason\x18\x03 \x01(\tR\x06reason\x12)\n" +
+	"\x10operator_version\x18\x04 \x01(\tR\x0foperatorVersion\"\x96\x05\n" +
 	"\x1cComplianceOperatorReportData\x12]\n" +
 	"\x12scan_configuration\x18\x01 \x01(\v2..storage.ComplianceOperatorScanConfigurationV2R\x11scanConfiguration\x12Z\n" +
 	"\x0ecluster_status\x18\x02 \x03(\v23.storage.ComplianceOperatorReportData.ClusterStatusR\rclusterStatus\x12H\n" +
-	"\x12last_executed_time\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x10lastExecutedTime\x12\\\n" +
-	"\x0ffailed_clusters\x18\b \x03(\v23.storage.ComplianceOperatorReportData.FailedClusterR\x0efailedClusters\x1a\xae\x01\n" +
+	"\x12last_executed_time\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x10lastExecutedTime\x1a\xae\x01\n" +
 	"\vSuiteStatus\x12\x14\n" +
 	"\x05phase\x18\x01 \x01(\tR\x05phase\x12\x16\n" +
 	"\x06result\x18\x02 \x01(\tR\x06result\x12#\n" +
@@ -3073,13 +3079,7 @@ const file_storage_compliance_operator_v2_proto_rawDesc = "" +
 	"cluster_id\x18\x01 \x01(\tR\tclusterId\x12\x16\n" +
 	"\x06errors\x18\x02 \x03(\tR\x06errors\x12!\n" +
 	"\fcluster_name\x18\x03 \x01(\tR\vclusterName\x12T\n" +
-	"\fsuite_status\x18\x04 \x01(\v21.storage.ComplianceOperatorReportData.SuiteStatusR\vsuiteStatus\x1a\x94\x01\n" +
-	"\rFailedCluster\x12\x1d\n" +
-	"\n" +
-	"cluster_id\x18\x01 \x01(\tR\tclusterId\x12!\n" +
-	"\fcluster_name\x18\x02 \x01(\tR\vclusterName\x12\x16\n" +
-	"\x06reason\x18\x03 \x01(\tR\x06reason\x12)\n" +
-	"\x10operator_version\x18\x04 \x01(\tR\x0foperatorVersion\"\xa3\x05\n" +
+	"\fsuite_status\x18\x04 \x01(\v21.storage.ComplianceOperatorReportData.SuiteStatusR\vsuiteStatus\"\xa3\x05\n" +
 	"\x1eComplianceOperatorReportStatus\x12M\n" +
 	"\trun_state\x18\x01 \x01(\x0e20.storage.ComplianceOperatorReportStatus.RunStateR\brunState\x129\n" +
 	"\n" +
@@ -3177,10 +3177,10 @@ var file_storage_compliance_operator_v2_proto_goTypes = []any{
 	nil, // 39: storage.ComplianceOperatorScanV2.AnnotationsEntry
 	nil, // 40: storage.ComplianceOperatorScanSettingBindingV2.LabelsEntry
 	nil, // 41: storage.ComplianceOperatorScanSettingBindingV2.AnnotationsEntry
-	(*ComplianceOperatorReportSnapshotV2_Scan)(nil),    // 42: storage.ComplianceOperatorReportSnapshotV2.Scan
-	(*ComplianceOperatorReportData_SuiteStatus)(nil),   // 43: storage.ComplianceOperatorReportData.SuiteStatus
-	(*ComplianceOperatorReportData_ClusterStatus)(nil), // 44: storage.ComplianceOperatorReportData.ClusterStatus
-	(*ComplianceOperatorReportData_FailedCluster)(nil), // 45: storage.ComplianceOperatorReportData.FailedCluster
+	(*ComplianceOperatorReportSnapshotV2_Scan)(nil),          // 42: storage.ComplianceOperatorReportSnapshotV2.Scan
+	(*ComplianceOperatorReportSnapshotV2_FailedCluster)(nil), // 43: storage.ComplianceOperatorReportSnapshotV2.FailedCluster
+	(*ComplianceOperatorReportData_SuiteStatus)(nil),         // 44: storage.ComplianceOperatorReportData.SuiteStatus
+	(*ComplianceOperatorReportData_ClusterStatus)(nil),       // 45: storage.ComplianceOperatorReportData.ClusterStatus
 	(*Schedule)(nil),              // 46: storage.Schedule
 	(*timestamppb.Timestamp)(nil), // 47: google.protobuf.Timestamp
 	(*SlimUser)(nil),              // 48: storage.SlimUser
@@ -3231,10 +3231,10 @@ var file_storage_compliance_operator_v2_proto_depIdxs = []int32{
 	48, // 41: storage.ComplianceOperatorReportSnapshotV2.user:type_name -> storage.SlimUser
 	42, // 42: storage.ComplianceOperatorReportSnapshotV2.scans:type_name -> storage.ComplianceOperatorReportSnapshotV2.Scan
 	23, // 43: storage.ComplianceOperatorReportSnapshotV2.report_data:type_name -> storage.ComplianceOperatorReportData
-	11, // 44: storage.ComplianceOperatorReportData.scan_configuration:type_name -> storage.ComplianceOperatorScanConfigurationV2
-	44, // 45: storage.ComplianceOperatorReportData.cluster_status:type_name -> storage.ComplianceOperatorReportData.ClusterStatus
-	47, // 46: storage.ComplianceOperatorReportData.last_executed_time:type_name -> google.protobuf.Timestamp
-	45, // 47: storage.ComplianceOperatorReportData.failed_clusters:type_name -> storage.ComplianceOperatorReportData.FailedCluster
+	43, // 44: storage.ComplianceOperatorReportSnapshotV2.failed_clusters:type_name -> storage.ComplianceOperatorReportSnapshotV2.FailedCluster
+	11, // 45: storage.ComplianceOperatorReportData.scan_configuration:type_name -> storage.ComplianceOperatorScanConfigurationV2
+	45, // 46: storage.ComplianceOperatorReportData.cluster_status:type_name -> storage.ComplianceOperatorReportData.ClusterStatus
+	47, // 47: storage.ComplianceOperatorReportData.last_executed_time:type_name -> google.protobuf.Timestamp
 	4,  // 48: storage.ComplianceOperatorReportStatus.run_state:type_name -> storage.ComplianceOperatorReportStatus.RunState
 	47, // 49: storage.ComplianceOperatorReportStatus.started_at:type_name -> google.protobuf.Timestamp
 	47, // 50: storage.ComplianceOperatorReportStatus.completed_at:type_name -> google.protobuf.Timestamp
@@ -3242,7 +3242,7 @@ var file_storage_compliance_operator_v2_proto_depIdxs = []int32{
 	5,  // 52: storage.ComplianceOperatorReportStatus.report_notification_method:type_name -> storage.ComplianceOperatorReportStatus.NotificationMethod
 	47, // 53: storage.ComplianceOperatorReportSnapshotV2.Scan.last_started_time:type_name -> google.protobuf.Timestamp
 	47, // 54: storage.ComplianceOperatorReportData.SuiteStatus.last_transition_time:type_name -> google.protobuf.Timestamp
-	43, // 55: storage.ComplianceOperatorReportData.ClusterStatus.suite_status:type_name -> storage.ComplianceOperatorReportData.SuiteStatus
+	44, // 55: storage.ComplianceOperatorReportData.ClusterStatus.suite_status:type_name -> storage.ComplianceOperatorReportData.SuiteStatus
 	56, // [56:56] is the sub-list for method output_type
 	56, // [56:56] is the sub-list for method input_type
 	56, // [56:56] is the sub-list for extension type_name
