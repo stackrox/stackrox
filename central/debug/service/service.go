@@ -936,7 +936,7 @@ func (s *serviceImpl) getDeleRegConfigs(ctx context.Context) (interface{}, error
 
 	if !exists {
 		return map[string]string{
-			"message": "delegated scanning configs unavailable",
+			"message": "delegated scanning config unavailable",
 		}, nil
 	}
 
