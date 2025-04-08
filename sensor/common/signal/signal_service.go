@@ -12,6 +12,7 @@ import (
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/sensor/common/metrics"
 	"google.golang.org/grpc"
 )
 
@@ -83,16 +84,27 @@ func (s *serviceImpl) receiveMessages(stream sensorAPI.SignalService_PushSignals
 			return errors.Wrap(err, "receiving signal stream message")
 		}
 
-		signal := signalStreamMsg.GetSignal()
-		if signal == nil {
-			return errors.New("empty signal")
+		signal, err := unwrapSignal(signalStreamMsg)
+		if err != nil {
+			metrics.IncrementTotalProcessesDroppedCounter()
+			return err
 		}
 
-		processSignal := signal.GetProcessSignal()
-		if processSignal == nil {
-			return errors.New("empty process signal")
-		}
-
-		s.queue <- signal.GetProcessSignal()
+		metrics.IncrementTotalProcessesReceivedCounter()
+		s.queue <- signal
 	}
+}
+
+func unwrapSignal(msg *sensorAPI.SignalStreamMessage) (*storage.ProcessSignal, error) {
+	signal := msg.GetSignal()
+	if signal == nil {
+		return nil, errors.New("empty signal")
+	}
+
+	processSignal := signal.GetProcessSignal()
+	if processSignal == nil {
+		return nil, errors.New("empty process signal")
+	}
+
+	return processSignal, nil
 }
