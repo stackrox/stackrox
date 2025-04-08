@@ -749,14 +749,7 @@ func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseW
 		})
 	}
 	diagBundleTasks.Go(func(ctx context.Context) error {
-		data, err := s.getDeleRegConfigs(ctx)
-		if err != nil {
-			log.Error(err)
-		}
-		err = addJSONToZip(zipWriter, "delegated-scanning-config.json", data)
-		if err != nil {
-			log.Error(err)
-		}
+		fetchAndAddJSONToZip(ctx, zipWriter, "delegated-scanning-config.json", s.getDeleRegConfigs)
 		return nil
 	})
 	if opts.withAccessControl {
