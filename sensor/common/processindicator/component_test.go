@@ -1,4 +1,4 @@
-package component
+package processindicator
 
 import (
 	"testing"
@@ -6,10 +6,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
-)
-
-const (
-	containerID1 = "1e43ac4f61f9"
 )
 
 func TestSensorIntoStorageSignal(t *testing.T) {
