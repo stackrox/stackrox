@@ -48,26 +48,24 @@ func (f expectFn) runIfSet() {
 	}
 }
 
-func expectationsEndpointPurger(mockEntityStore *mocksManager.MockEntityStore, lastUpdate time.Duration, isKnownEndpoint, containerIDfound, historical bool) expectFn {
-	return func() {
-		knownEndpoint := clusterentities.LookupResult{
-			Entity:         networkgraph.Entity{},
-			ContainerPorts: []uint16{80},
-			PortNames:      []string{"http"},
-		}
-		mockEntityStore.EXPECT().LookupByContainerID(gomock.Any()).AnyTimes().DoAndReturn(
-			func(_ any) (clusterentities.ContainerMetadata, bool, bool) {
-				return clusterentities.ContainerMetadata{}, containerIDfound, historical
-			})
-		mockEntityStore.EXPECT().RegisterPublicIPsListener(gomock.Any()).AnyTimes()
-		mockEntityStore.EXPECT().LookupByEndpoint(gomock.Any()).AnyTimes().DoAndReturn(
-			func(_ any) []clusterentities.LookupResult {
-				if isKnownEndpoint {
-					return []clusterentities.LookupResult{knownEndpoint}
-				}
-				return []clusterentities.LookupResult{}
-			})
-	}
+func expectationsEndpointPurger(mockEntityStore *mocksManager.MockEntityStore, isKnownEndpoint, containerIDfound, historical bool) {
+	mockEntityStore.EXPECT().LookupByContainerID(gomock.Any()).AnyTimes().DoAndReturn(
+		func(_ any) (clusterentities.ContainerMetadata, bool, bool) {
+			return clusterentities.ContainerMetadata{}, containerIDfound, historical
+		})
+	mockEntityStore.EXPECT().LookupByEndpoint(gomock.Any()).AnyTimes().DoAndReturn(
+		func(_ any) []clusterentities.LookupResult {
+			if isKnownEndpoint {
+				return []clusterentities.LookupResult{clusterentities.LookupResult{
+					Entity:         networkgraph.Entity{},
+					ContainerPorts: []uint16{80},
+					PortNames:      []string{"http"},
+				}}
+			}
+			return []clusterentities.LookupResult{}
+		})
+	mockEntityStore.EXPECT().RegisterPublicIPsListener(gomock.Any()).AnyTimes()
+
 }
 
 func expectEntityLookupContainerHelper(mockEntityStore *mocksManager.MockEntityStore, times int, containerMetadata clusterentities.ContainerMetadata, found, historical bool) expectFn {
