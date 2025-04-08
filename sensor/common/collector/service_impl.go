@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sensor/queue"
+	"github.com/stackrox/rox/sensor/common/metrics"
 	"google.golang.org/grpc"
 )
 
@@ -57,6 +58,7 @@ func (s *serviceImpl) Communicate(server sensor.CollectorService_CommunicateServ
 			return err
 		}
 
+		metrics.CollectorChannelInc(msg)
 		switch msg.GetMsg().(type) {
 		case *sensor.MsgFromCollector_ProcessSignal:
 			s.queue <- msg.GetProcessSignal()
