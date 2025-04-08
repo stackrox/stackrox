@@ -274,20 +274,25 @@ func getRekorPublicKeys(ctx context.Context, publicKey string) (*cosign.TrustedT
 }
 
 func (c *cosignSignatureVerifier) setDefaultTlogCheckOpts(ctx context.Context, opts *cosign.CheckOpts) error {
-	if opts.IgnoreTlog = !c.transparencyLog.enabled; opts.IgnoreTlog {
+	opts.IgnoreTlog = !c.transparencyLog.enabled
+	if opts.IgnoreTlog {
 		return nil
 	}
 
 	var err error
-	if opts.RekorPubKeys, err = getRekorPublicKeys(ctx, c.transparencyLog.publicKey); err != nil {
+	opts.RekorPubKeys, err = getRekorPublicKeys(ctx, c.transparencyLog.publicKey)
+	if err != nil {
 		return errors.Wrap(err, "getting rekor public keys")
 	}
 
-	if opts.Offline = c.transparencyLog.validateOffline; opts.Offline {
+	opts.Offline = c.transparencyLog.validateOffline
+	if opts.Offline {
 		return nil
 	}
+
 	formattedURL := urlfmt.FormatURL(c.transparencyLog.url, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
-	if opts.RekorClient, err = rekorClient.GetRekorClient(formattedURL); err != nil {
+	opts.RekorClient, err = rekorClient.GetRekorClient(formattedURL)
+	if err != nil {
 		return errors.Wrap(err, "creating rekor client")
 	}
 	return nil
