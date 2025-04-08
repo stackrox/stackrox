@@ -368,10 +368,6 @@ func cosignCheckOptsFromCert(ctx context.Context, cert certVerificationData, opt
 		if err != nil {
 			return opts, err
 		}
-		opts.IntermediateCerts, err = fulcio.GetIntermediates()
-		if err != nil {
-			return opts, err
-		}
 		return opts, nil
 	}
 }
