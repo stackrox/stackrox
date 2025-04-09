@@ -236,14 +236,13 @@ func (a *aggregateAllImpl) Aggregate(flows []*storage.NetworkFlow) []*storage.Ne
 		srcEntity, dstEntity := flow.GetProps().GetSrcEntity(), flow.GetProps().GetDstEntity()
 		// This is essentially an invalid connection.
 		if srcEntity == nil || dstEntity == nil {
-			utils.Should(errors.Errorf("network conn %s without endpoints is unexpected", networkgraph.GetNetworkConnIndicator(flow).String()))
+			utils.Should(errors.Errorf("network flow %s without endpoints is unexpected", networkgraph.GetNetworkConnIndicator(flow).String()))
 			continue
 		}
 
 		flow = flow.CloneVT()
 
-		flowProps := flow.GetProps()
-		if flowProps == nil {
+		if flow.GetProps() == nil {
 			continue
 		}
 
