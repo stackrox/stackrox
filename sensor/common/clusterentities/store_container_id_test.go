@@ -276,10 +276,7 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPastContainerIDs() {
 				// Assert on container IDs
 				s.T().Logf("Container IDs (tick %d): %s", tickNo, store.containerIDsStore.String())
 				for contID, whereFound := range expectation {
-					result, found := store.LookupByContainerID(contID)
-					result2, found2, historical := store.containerIDsStore.lookupByContainer(contID)
-					s.Equal(found2, found)
-					s.Equal(result2, result)
+					result, found, historical := store.LookupByContainerID(contID)
 					switch whereFound {
 					case theMap:
 						s.Truef(found, "expected to find contID %q in general in tick %d", contID, tickNo)
