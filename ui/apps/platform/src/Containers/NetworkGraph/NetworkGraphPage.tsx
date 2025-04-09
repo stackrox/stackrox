@@ -27,6 +27,7 @@ import queryService from 'utils/queryService';
 import timeWindowToDate from 'utils/timeWindows';
 import { isCompleteSearchFilter } from 'utils/searchUtils';
 
+import { CodeViewerThemeProvider } from 'Components/CodeViewer';
 import PageTitle from 'Components/PageTitle';
 import useInterval from 'hooks/useInterval';
 import useURLParameter from 'hooks/useURLParameter';
@@ -293,7 +294,7 @@ function NetworkGraphPage() {
     }
 
     return (
-        <>
+        <CodeViewerThemeProvider>
             {!isBannerDismissed && (
                 <Alert
                     variant="info"
@@ -446,7 +447,7 @@ function NetworkGraphPage() {
                     onClose={toggleCIDRBlockForm}
                 />
             </PageSection>
-        </>
+        </CodeViewerThemeProvider>
     );
 }
 
