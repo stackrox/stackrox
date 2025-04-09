@@ -39,7 +39,7 @@ var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, err
 		return nil
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get AuthProviders")
+		return nil, errors.Wrap(err, "failed to process auth providers for telemetry")
 	}
 
 	props["Auth Providers"] = providerTypes.AsSlice()

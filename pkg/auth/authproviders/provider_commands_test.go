@@ -71,14 +71,8 @@ func (s *mockStore) GetAuthProvider(_ context.Context, _ string) (*storage.AuthP
 	return s.expectedProvider, s.expectedFound, s.expectedErr
 }
 
-func (s *mockStore) ForEachAuthProvider(_ context.Context, fn func(obj *storage.AuthProvider) error) error {
-	for _, p := range s.expectedProviders {
-		err := fn(p)
-		if err != nil {
-			return err
-		}
-	}
-	return s.expectedErr
+func (s *mockStore) ForEachAuthProvider(_ context.Context, _ func(obj *storage.AuthProvider) error) error {
+	panic("not implemented")
 }
 
 func (s *mockStore) GetAuthProvidersFiltered(_ context.Context, _ func(authProvider *storage.AuthProvider) bool) ([]*storage.AuthProvider, error) {
