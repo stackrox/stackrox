@@ -101,6 +101,7 @@ func Test_SensorIntermediateRuntimeEvents(t *testing.T) {
 			require.NotEqual(t, "", nginxIP)
 
 			helper.SendSignalMessage(fakeCollector, talkContainerIds[0], "curl")
+			helper.SendProcessMessage(fakeCollector, talkContainerIds[0], "curl")
 			helper.SendFlowMessage(fakeCollector,
 				sensor.SocketFamily_SOCKET_FAMILY_UNKNOWN,
 				storage.L4Protocol_L4_PROTOCOL_TCP,
@@ -126,6 +127,12 @@ func Test_SensorIntermediateRuntimeEvents(t *testing.T) {
 			func(msg *storage.ProcessSignal) bool {
 				return msg.GetName() == "curl" && msg.GetContainerId() == talkContainerIds[0]
 			},
+		}
+		if !helper.UseRealCollector.BooleanSetting() {
+			// Fake collector tests both services for processes with the same process.
+			expectedSignals = append(expectedSignals, func(msg *storage.ProcessSignal) bool {
+				return msg.GetName() == "curl" && msg.GetContainerId() == talkContainerIds[0]
+			})
 		}
 		go helper.WaitToReceiveMessagesFromCollector(ctx, &messagesReceivedSignal,
 			signalC,
