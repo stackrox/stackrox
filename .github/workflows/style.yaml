@@ -166,7 +166,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        image: ["collector", "scanner", "scanner-slim", "scanner-db", "scanner-db-slim"]
+        image: ["collector", "collector-slim", "scanner", "scanner-slim", "scanner-db", "scanner-db-slim"]
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -174,7 +174,7 @@ jobs:
       - name: Get image tag from COLLECTOR|SCANNER_VERSION file
         id: image-tag
         run: |
-          if [[ "${{ matrix.image }}" == "collector" ]]; then
+          if [[ "${{ matrix.image }}" == collector* ]]; then
             makefile_target="collector-tag"
           else
             makefile_target="scanner-tag"
