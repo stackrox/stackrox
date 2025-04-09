@@ -61,22 +61,22 @@ type ScanWatcherResults struct {
 }
 
 // IsComplianceOperatorHealthy indicates whether Compliance Operator is ready for automatic reporting
-func IsComplianceOperatorHealthy(ctx context.Context, clusterID string, complianceIntegrationDataStore complianceIntegrationDS.DataStore) error {
+func IsComplianceOperatorHealthy(ctx context.Context, clusterID string, complianceIntegrationDataStore complianceIntegrationDS.DataStore) (*storage.ComplianceIntegration, error) {
 	coStatus, err := complianceIntegrationDataStore.GetComplianceIntegrationByCluster(ctx, clusterID)
 	if err != nil {
-		return errors.Wrap(err, ErrComplianceOperatorIntegrationDataStore.Error())
+		return nil, errors.Wrap(ErrComplianceOperatorIntegrationDataStore, err.Error())
 	}
 	if len(coStatus) == 0 {
 		log.Errorf("No compliance integrations retrieved from cluster %s", clusterID)
-		return ErrComplianceOperatorIntegrationZeroIntegrations
+		return nil, ErrComplianceOperatorIntegrationZeroIntegrations
 	}
 	if !coStatus[0].GetOperatorInstalled() {
-		return ErrComplianceOperatorNotInstalled
+		return coStatus[0], ErrComplianceOperatorNotInstalled
 	}
 	if semver.Compare(coStatus[0].GetVersion(), minimumComplianceOperatorVersion) < 0 {
-		return ErrComplianceOperatorVersion
+		return coStatus[0], ErrComplianceOperatorVersion
 	}
-	return nil
+	return coStatus[0], nil
 }
 
 // GetWatcherIDFromScan given a Scan, returns a unique ID for the watcher
