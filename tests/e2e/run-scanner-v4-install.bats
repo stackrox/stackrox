@@ -405,7 +405,7 @@ teardown() {
     local old_central_chart="${CHART_REPOSITORY}${CHART_BASE}/${EARLIER_CHART_VERSION}/central-services"
     local old_sensor_chart="${CHART_REPOSITORY}${CHART_BASE}/${EARLIER_CHART_VERSION}/secured-cluster-services"
 
-    _begin "deploying-old-central"
+    _begin "deploy-old-central"
     info "Deploying StackRox central-services using chart ${old_central_chart}"
     deploy_central_with_helm "$CUSTOM_CENTRAL_NAMESPACE" "$EARLIER_MAIN_IMAGE_TAG" "$old_central_chart" \
         -f <(cat <<EOT
