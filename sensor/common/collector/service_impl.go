@@ -37,7 +37,8 @@ type serviceImpl struct {
 func newService(opts ...Option) Service {
 	queueSize := env.CollectorIServiceQueueSize
 	s := &serviceImpl{
-		queue: make(chan *sensor.ProcessSignal, queue.ScaleSizeOnNonDefault(queueSize)),
+		queue:            make(chan *sensor.ProcessSignal, queue.ScaleSizeOnNonDefault(queueSize)),
+		authFuncOverride: authFuncOverride,
 	}
 
 	for _, o := range opts {
@@ -46,8 +47,12 @@ func newService(opts ...Option) Service {
 	return s
 }
 
-func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
+func authFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
 	return ctx, idcheck.CollectorOnly().Authorized(ctx, fullMethodName)
+}
+
+func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
+	return s.authFuncOverride(ctx, fullMethodName)
 }
 
 func (s *serviceImpl) Communicate(server sensor.CollectorService_CommunicateServer) error {
