@@ -100,6 +100,11 @@ type connStatus struct {
 	historical bool
 }
 
+type networkConnIndicatorWithAge struct {
+	networkConnIndicator
+	lastUpdate timestamp.MicroTS
+}
+
 type networkConnIndicator struct {
 	srcEntity networkgraph.Entity
 	dstEntity networkgraph.Entity
@@ -317,7 +322,7 @@ func NewManager(
 		purgerTicker:      purgerTicker,
 		purgerTickerC:     purgerTicker.C,
 		initialSync:       &atomic.Bool{},
-		activeConnections: make(map[connection]*networkConnIndicator),
+		activeConnections: make(map[connection]*networkConnIndicatorWithAge),
 		activeEndpoints:   make(map[containerEndpoint]*containerEndpointIndicatorWithAge),
 		stopper:           concurrency.NewStopper(),
 		pubSub:            pubSub,
@@ -359,9 +364,10 @@ type networkFlowManager struct {
 	enrichedEndpointsLastSentState map[containerEndpointIndicator]timestamp.MicroTS
 	enrichedProcessesLastSentState map[processListeningIndicator]timestamp.MicroTS
 
+	activeConnectionsMutex sync.Mutex
 	// activeConnections tracks all connections reported by Collector that are believed to be active.
 	// A connection is active until Collector sends a NetworkConnectionInfo message with `lastSeen` set to a non-nil value.
-	activeConnections    map[connection]*networkConnIndicator
+	activeConnections    map[connection]*networkConnIndicatorWithAge
 	activeEndpointsMutex sync.Mutex
 	activeEndpoints      map[containerEndpoint]*containerEndpointIndicatorWithAge
 
@@ -599,7 +605,7 @@ func (m *networkFlowManager) enrichAndSendProcesses() {
 // expireConnection is executed when Sensor decides that the full enrichment cannot be successful
 // and further enrichments shouldn't be attempted unless new data (containerID) arrives from k8s.
 func expireConnection(conn *connection,
-	activeConnections map[connection]*networkConnIndicator,
+	activeConnections map[connection]*networkConnIndicatorWithAge,
 	enrichedConnections map[networkConnIndicator]timestamp.MicroTS,
 	now timestamp.MicroTS,
 ) error {
@@ -612,7 +618,7 @@ func expireConnection(conn *connection,
 	}
 	// Active connection found - mark that Sensor considers this connection no longer active
 	// due to missing data about the container.
-	enrichedConnections[*activeConn] = now
+	enrichedConnections[activeConn.networkConnIndicator] = now
 	delete(activeConnections, *conn)
 	flowMetrics.SetActiveFlowsTotalGauge(len(activeConnections))
 	return nil
@@ -820,9 +826,12 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 
 	for _, lookupResult := range lookupResults {
 		for _, port := range lookupResult.ContainerPorts {
-			indicator := networkConnIndicator{
-				dstPort:  port,
-				protocol: conn.remote.L4Proto.ToProtobuf(),
+			indicator := networkConnIndicatorWithAge{
+				networkConnIndicator: networkConnIndicator{
+					dstPort:  port,
+					protocol: conn.remote.L4Proto.ToProtobuf(),
+				},
+				lastUpdate: now,
 			}
 
 			if conn.incoming {
@@ -835,20 +844,23 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 
 			// Multiple connections from a collector can result in a single enriched connection
 			// hence update the timestamp only if we have a more recent connection than the one we have already enriched.
-			if oldTS, found2 := enrichedConnections[indicator]; !found2 || oldTS < status.lastSeen {
-				enrichedConnections[indicator] = status.lastSeen
+			if oldTS, found2 := enrichedConnections[indicator.networkConnIndicator]; !found2 || oldTS < status.lastSeen {
+				enrichedConnections[indicator.networkConnIndicator] = status.lastSeen
 				if !features.SensorCapturesIntermediateEvents.Enabled() {
 					flowMetrics.IncFlowEnrichmentConnection(found2, "update-last-seen", isHistoricalStr, "ff-disabled", lastSeenSet, status.rotten, pastContainerResolutionDeadline, isFresh, isExternalStr)
 					return
 				}
-				if status.lastSeen == timestamp.InfiniteFuture {
-					m.activeConnections[*conn] = &indicator
+
+				concurrency.WithLock(&m.activeConnectionsMutex, func() {
+					if status.lastSeen == timestamp.InfiniteFuture {
+						m.activeConnections[*conn] = &indicator
+						flowMetrics.SetActiveFlowsTotalGauge(len(m.activeConnections))
+						flowMetrics.IncFlowEnrichmentConnection(found2, "update-last-seen-&-mark-active", isHistoricalStr, "last-seen-inf-future", lastSeenSet, status.rotten, pastContainerResolutionDeadline, isFresh, isExternalStr)
+						return
+					}
+					delete(m.activeConnections, *conn)
 					flowMetrics.SetActiveFlowsTotalGauge(len(m.activeConnections))
-					flowMetrics.IncFlowEnrichmentConnection(found2, "update-last-seen-&-mark-active", isHistoricalStr, "last-seen-inf-future", lastSeenSet, status.rotten, pastContainerResolutionDeadline, isFresh, isExternalStr)
-					return
-				}
-				delete(m.activeConnections, *conn)
-				flowMetrics.SetActiveFlowsTotalGauge(len(m.activeConnections))
+				})
 				flowMetrics.IncFlowEnrichmentConnection(found2, "update-last-seen-&-mark-no-longer-active", isHistoricalStr, "last-seen-provided", lastSeenSet, status.rotten, pastContainerResolutionDeadline, isFresh, isExternalStr)
 			}
 		}
