@@ -108,5 +108,5 @@ var (
 	CollectorIServiceQueueSize = RegisterIntegerSetting("ROX_SENSOR_COLLECTOR_QUEUE_SIZE", 10000)
 
 	// ProcessSignalQueueSize is used to specify the size of the queue for process signals coming from collector.
-	ProcessSignalQueueSize = RegisterIntegerSetting("ROX_SENSOR_COLLECTOR_QUEUE_SIZE", 10000)
+	ProcessSignalQueueSize = RegisterIntegerSetting("ROX_SENSOR_SIGNAL_QUEUE_SIZE", 10000)
 )
