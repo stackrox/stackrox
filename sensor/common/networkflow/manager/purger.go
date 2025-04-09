@@ -3,6 +3,7 @@ package manager
 import (
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/timestamp"
 	flowMetrics "github.com/stackrox/rox/sensor/common/networkflow/metrics"
@@ -20,21 +21,18 @@ func (m *networkFlowManager) purgeStaleEndpoints(tickerC <-chan time.Time, maxAg
 }
 
 func (m *networkFlowManager) runAllPurgerRules(maxAge time.Duration) {
-	start := time.Now()
 	concurrency.WithLock(&m.activeEndpointsMutex, func() {
 		log.Debug("Purging active endpoints")
 		purgeActiveEndpointsNoLock(maxAge, m.activeEndpoints, m.clusterEntities)
 	})
-	flowMetrics.ActiveEndpointsPurgerDuration.WithLabelValues("activeEndpoints").Observe(float64(time.Since(start).Milliseconds()))
 
-	start = time.Now()
 	concurrency.WithLock(&m.activeConnectionsMutex, func() {
 		log.Debug("Purging active connections")
 		purgeActiveConnectionsNoLock(maxAge, m.activeConnections, m.clusterEntities)
 	})
-	flowMetrics.ActiveEndpointsPurgerDuration.WithLabelValues("activeConnections").Observe(float64(time.Since(start).Milliseconds()))
 
-	start = time.Now()
+	timer := prometheus.NewTimer(flowMetrics.ActiveEndpointsPurgerDuration.WithLabelValues("hostConns"))
+	defer timer.ObserveDuration()
 	concurrency.WithLock(&m.connectionsByHostMutex, func() {
 		for _, conns := range m.connectionsByHost {
 			concurrency.WithLock(&conns.mutex, func() {
@@ -42,7 +40,6 @@ func (m *networkFlowManager) runAllPurgerRules(maxAge time.Duration) {
 			})
 		}
 	})
-	flowMetrics.ActiveEndpointsPurgerDuration.WithLabelValues("hostConns").Observe(float64(time.Since(start).Milliseconds()))
 }
 
 func purgeHostConnsNoLock(maxAge time.Duration, conns *hostConnections, store EntityStore) {
@@ -84,6 +81,8 @@ func purgeHostConnsNoLock(maxAge time.Duration, conns *hostConnections, store En
 func purgeActiveEndpointsNoLock(maxAge time.Duration,
 	endpoints map[containerEndpoint]*containerEndpointIndicatorWithAge,
 	store EntityStore) {
+	timer := prometheus.NewTimer(flowMetrics.ActiveEndpointsPurgerDuration.WithLabelValues("activeEndpoints"))
+	defer timer.ObserveDuration()
 	for endpoint, age := range endpoints {
 		// Remove if the endpoint is not in the store (also not in history)
 		if len(store.LookupByEndpoint(endpoint.endpoint)) == 0 {
@@ -112,6 +111,8 @@ func purgeActiveEndpointsNoLock(maxAge time.Duration,
 func purgeActiveConnectionsNoLock(maxAge time.Duration,
 	conns map[connection]*networkConnIndicatorWithAge,
 	store EntityStore) {
+	timer := prometheus.NewTimer(flowMetrics.ActiveEndpointsPurgerDuration.WithLabelValues("activeConnections"))
+	defer timer.ObserveDuration()
 	for conn, age := range conns {
 		// Remove if the related container is not found (but keep historical)
 		_, found, _ := store.LookupByContainerID(conn.containerID)

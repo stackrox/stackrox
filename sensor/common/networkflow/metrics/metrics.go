@@ -147,9 +147,9 @@ var (
 	ActiveEndpointsPurgerDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      netFlowManagerPrefix + "purger_duration_ms",
+		Name:      netFlowManagerPrefix + "purger_duration_seconds",
 		Help:      "Time taken by a single purger run for all objects",
-		Buckets:   prometheus.ExponentialBuckets(4, 2, 11),
+		Buckets:   []float64{.01, .05, .1, .25, .5, 1, 2.5, 5, 10},
 	}, []string{"object"})
 
 	NetworkEntityFlowCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
