@@ -37,6 +37,12 @@ const (
 // PVCTarget specifies which deployment should attach the PVC
 type PVCTarget string
 
+// DefaultPVCValues specifies set of default values when reconcile the PVC
+type DefaultPVCValues struct {
+	ClaimName string
+	Size      resource.Quantity
+}
+
 const (
 	// PVCTargetCentral is for any PVC that would be attached to the Central deployment
 	PVCTargetCentral PVCTarget = "central"
@@ -53,10 +59,11 @@ const (
 var (
 	errMultipleOwnedPVCs = errors.New("operator is only allowed to have 1 owned PVC")
 
-	defaultPVCSize = resource.MustParse("100Gi")
+	DefaultPVCSize       = resource.MustParse("100Gi")
+	DefaultBackupPVCSize = resource.MustParse("200Gi")
 )
 
-func convertDBPersistenceToPersistence(p *platform.DBPersistence, target PVCTarget) *platform.Persistence {
+func convertDBPersistenceToPersistence(p *platform.DBPersistence, target PVCTarget, log logr.Logger) *platform.Persistence {
 	if p == nil {
 		return nil
 	}
@@ -71,20 +78,42 @@ func convertDBPersistenceToPersistence(p *platform.DBPersistence, target PVCTarg
 	}
 
 	claimName := pvc.ClaimName
+	pvcSize := pvc.Size
 
-	if target == PVCTargetCentralDBBackup && pvc.ClaimName != nil {
-		// If a ClaimName is specified, derive the backup PVC ClamName from
-		// it as well. We don't want to modify the pointer in place, make a
-		// copy instead -- otherwise the next reconciliation will repeat the
-		// modification, duplicating the suffix.
-		backupName := fmt.Sprintf("%s-backup", *claimName)
-		claimName = &backupName
+	if target == PVCTargetCentralDBBackup {
+		if pvc.ClaimName != nil {
+			// If a ClaimName is specified, derive the backup PVC ClamName from
+			// it as well. We don't want to modify the pointer in place, make a
+			// copy instead -- otherwise the next reconciliation will repeat the
+			// modification, duplicating the suffix.
+			backupName := fmt.Sprintf("%s-backup", *claimName)
+			claimName = &backupName
+		}
+
+		if pvc.Size != nil {
+			// If a Size is specified, derive the backup PVC Size from it as
+			// well, the rule of thumb is that it should be twice as large, to
+			// accomodate the backup and one restore copy.
+			//
+			// The same as above, we don't want to modify the pointer in place,
+			// make a copy instead -- otherwise the next reconciliation will
+			// repeat the modification, duplicating the suffix.
+			quantity, err := resource.ParseQuantity(*pvcSize)
+
+			if err != nil {
+				log.Error(err, "failed to calculate backup volume size")
+			} else {
+				quantity.Mul(2)
+				backupSize := quantity.String()
+				pvcSize = &backupSize
+			}
+		}
 	}
 
 	return &platform.Persistence{
 		PersistentVolumeClaim: &platform.PersistentVolumeClaim{
 			ClaimName:        claimName,
-			Size:             pvc.Size,
+			Size:             pvcSize,
 			StorageClassName: pvc.StorageClassName,
 		},
 	}
@@ -100,7 +129,7 @@ func convertDBPersistenceToPersistence(p *platform.DBPersistence, target PVCTarg
 //     database backups
 //
 // A nil return value indicates that no persistent volume should be provisioned for the respective target.
-func getPersistenceByTarget(central *platform.Central, target PVCTarget) *platform.Persistence {
+func getPersistenceByTarget(central *platform.Central, target PVCTarget, log logr.Logger) *platform.Persistence {
 	switch target {
 	case PVCTargetCentral:
 		return nil
@@ -113,7 +142,7 @@ func getPersistenceByTarget(central *platform.Central, target PVCTarget) *platfo
 			dbPersistence = &platform.DBPersistence{}
 		}
 
-		return convertDBPersistenceToPersistence(dbPersistence, target)
+		return convertDBPersistenceToPersistence(dbPersistence, target, log)
 	default:
 		panic(errors.Errorf("unknown pvc target %q", target))
 	}
@@ -122,38 +151,44 @@ func getPersistenceByTarget(central *platform.Central, target PVCTarget) *platfo
 // ReconcilePVCExtension reconciles PVCs created by the operator. The PVC is not managed by a Helm chart
 // because if a user uninstalls StackRox, it should keep the data, preventing to unintentionally erasing data.
 // On uninstall the owner reference is removed from the PVC objects.
-func ReconcilePVCExtension(client ctrlClient.Client, direct ctrlClient.Reader, target PVCTarget, defaultClaimName string) extensions.ReconcileExtension {
+func ReconcilePVCExtension(
+	client ctrlClient.Client, direct ctrlClient.Reader, target PVCTarget,
+	defaults DefaultPVCValues) extensions.ReconcileExtension {
+
 	fn := func(ctx context.Context, central *platform.Central, client ctrlClient.Client, direct ctrlClient.Reader, _ func(statusFunc updateStatusFunc), log logr.Logger) error {
-		persistence := getPersistenceByTarget(central, target)
-		return reconcilePVC(ctx, central, persistence, target, defaultClaimName, client, log)
+		persistence := getPersistenceByTarget(central, target, log)
+		return reconcilePVC(ctx, central, persistence, target, defaults, client, log)
 	}
 	return wrapExtension(fn, client, direct)
 }
 
-func reconcilePVC(ctx context.Context, central *platform.Central, persistence *platform.Persistence, target PVCTarget, defaultClaimName string, client ctrlClient.Client, log logr.Logger) error {
+func reconcilePVC(
+	ctx context.Context, central *platform.Central,
+	persistence *platform.Persistence, target PVCTarget,
+	defaults DefaultPVCValues, client ctrlClient.Client, log logr.Logger) error {
 	ext := reconcilePVCExtensionRun{
-		ctx:              ctx,
-		namespace:        central.GetNamespace(),
-		client:           client,
-		centralObj:       central,
-		persistence:      persistence,
-		target:           target,
-		defaultClaimName: defaultClaimName,
-		log:              log.WithValues("pvcReconciler", target),
+		ctx:         ctx,
+		namespace:   central.GetNamespace(),
+		client:      client,
+		centralObj:  central,
+		persistence: persistence,
+		target:      target,
+		defaults:    defaults,
+		log:         log.WithValues("pvcReconciler", target),
 	}
 
 	return ext.Execute()
 }
 
 type reconcilePVCExtensionRun struct {
-	ctx              context.Context
-	namespace        string
-	client           ctrlClient.Client
-	centralObj       *platform.Central
-	persistence      *platform.Persistence
-	defaultClaimName string
-	target           PVCTarget
-	log              logr.Logger
+	ctx         context.Context
+	namespace   string
+	client      ctrlClient.Client
+	centralObj  *platform.Central
+	persistence *platform.Persistence
+	defaults    DefaultPVCValues
+	target      PVCTarget
+	log         logr.Logger
 }
 
 func (r *reconcilePVCExtensionRun) Execute() error {
@@ -173,7 +208,7 @@ func (r *reconcilePVCExtensionRun) Execute() error {
 		pvcConfig = &platform.PersistentVolumeClaim{}
 	}
 
-	claimName := pointer.StringDeref(pvcConfig.ClaimName, r.defaultClaimName)
+	claimName := pointer.StringDeref(pvcConfig.ClaimName, r.defaults.ClaimName)
 	key := ctrlClient.ObjectKey{Namespace: r.namespace, Name: claimName}
 	pvc := &corev1.PersistentVolumeClaim{}
 	if err := r.client.Get(r.ctx, key, pvc); err != nil {
@@ -244,7 +279,7 @@ func (r *reconcilePVCExtensionRun) handleCreate(claimName string, pvcConfig *pla
 		return nil
 	}
 
-	size, err := parseResourceQuantityOr(pvcConfig.Size, defaultPVCSize)
+	size, err := parseResourceQuantityOr(pvcConfig.Size, r.defaults.Size)
 	if err != nil {
 		return errors.Wrap(err, "invalid PVC size")
 	}
