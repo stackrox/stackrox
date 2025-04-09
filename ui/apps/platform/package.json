@@ -179,6 +179,14 @@
         "vite-plugin-svgr": "^4.3.0",
         "vitest": "^3.0.5"
     },
+    "optionalDependencies": {
+        "@rollup/rollup-darwin-arm64": "^4.39.0",
+        "@rollup/rollup-darwin-x64": "^4.39.0",
+        "@rollup/rollup-linux-arm64-gnu": "^4.39.0",
+        "@rollup/rollup-linux-powerpc64le-gnu": "^4.39.0",
+        "@rollup/rollup-linux-s390x-gnu": "^4.39.0",
+        "@rollup/rollup-linux-x64-gnu": "^4.39.0"
+    },
     "overrides": {
         "@jest/types": "^29.6.3",
         "@typescript-eslint/eslint-plugin": "^8.28.0",
