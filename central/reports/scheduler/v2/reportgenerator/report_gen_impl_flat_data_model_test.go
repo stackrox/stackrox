@@ -58,12 +58,10 @@ func (s *NewDataModelEnhancedReportingTestSuite) TearDownTest() {
 	s.truncateTable(postgresSchema.ImageComponentV2TableName)
 	s.truncateTable(postgresSchema.ImageCvesV2TableName)
 	s.truncateTable(postgresSchema.CollectionsTableName)
-	// os.Setenv("ROX_FLATTEN_CVE_DATA", "false")
 }
 
 func (s *NewDataModelEnhancedReportingTestSuite) SetupSuite() {
-
-	// os.Setenv("ROX_FLATTEN_CVE_DATA", "true")
+	// TODO ROX-28898:enable feature flag by default to run the unit tests
 	if !features.FlattenCVEData.Enabled() {
 		s.T().Skip()
 	}
