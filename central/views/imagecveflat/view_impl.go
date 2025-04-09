@@ -10,7 +10,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -22,8 +21,6 @@ import (
 
 var (
 	queryTimeout = env.PostgresVMStatementTimeout.DurationSetting()
-
-	log = logging.LoggerForModule()
 )
 
 type imageCVEFlatViewImpl struct {
@@ -78,12 +75,10 @@ func (v *imageCVEFlatViewImpl) Get(ctx context.Context, q *v1.Query, options vie
 	defer cancel()
 
 	var results []*imageCVEFlatResponse
-	log.Infof("SHREWS -- query %v", cloned)
 	results, err = pgSearch.RunSelectRequestForSchema[imageCVEFlatResponse](queryCtx, v.db, v.schema, withSelectCVECoreResponseQuery(cloned, options))
 	if err != nil {
 		return nil, err
 	}
-	log.Info("SHREWS -- executed query %v")
 
 	ret := make([]CveFlat, 0, len(results))
 	for _, r := range results {

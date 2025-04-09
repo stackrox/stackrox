@@ -141,8 +141,6 @@ func (resolver *Resolver) ImageVulnerability(ctx context.Context, args IDQuery) 
 			return nil, errors.New("unable to find CVE")
 		}
 
-		log.Infof("SHREWS -- flat data -- %v", cveFlatData[0].GetFirstImageOccurrence())
-
 		return resolver.wrapImageCVEV2FlatWithContext(ctx, ret, cveFlatData[0], true, err)
 	}
 
@@ -180,8 +178,6 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 
 		cveIDs := make([]string, 0, len(cveFlatData))
 		for _, cveFlat := range cveFlatData {
-			log.Infof("SHREWS -- flat data -- %v", cveFlat.GetFirstImageOccurrence())
-			log.Infof("SHREWS -- flat data -- created %v", cveFlat.GetFirstDiscoveredInSystem())
 			cveIDs = append(cveIDs, cveFlat.GetCVEIDs()...)
 		}
 
@@ -1105,10 +1101,6 @@ func (resolver *imageCVEV2Resolver) Deployments(ctx context.Context, args Pagina
 
 func (resolver *imageCVEV2Resolver) DiscoveredAtImage(_ context.Context, _ RawQuery) (*graphql.Time, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "DiscoveredAtImage")
-	log.Infof("SHREWS -- DiscoveredAtImage")
-	log.Infof("SHREWS -- flat data -- %v", resolver.flatData.GetFirstImageOccurrence())
-	log.Infof("SHREWS -- flat data -- discovered %v", resolver.flatData.GetFirstDiscoveredInSystem())
-	log.Infof("SHREWS -- old data -- %v", resolver.data)
 	if resolver.flatData != nil {
 		return convertTimeToGraphQLTime(resolver.flatData.GetFirstImageOccurrence()), nil
 	}
