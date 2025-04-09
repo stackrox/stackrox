@@ -56,6 +56,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 )
 
 type logsMode int
@@ -749,8 +751,21 @@ func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseW
 		})
 	}
 	diagBundleTasks.Go(func(ctx context.Context) error {
-		fetchAndAddJSONToZip(ctx, zipWriter, "delegated-scanning-config.json", s.getDeleRegConfigs)
-		return nil
+		config, err := s.getDeleRegConfigs(ctx)
+
+		var b []byte
+		if err != nil {
+			b, _ = json.Marshal(map[string]string{
+				"message": err.Error(),
+			})
+		} else {
+			b, err = protojson.MarshalOptions{Multiline: true}.Marshal(config)
+			if err != nil {
+				return err
+			}
+		}
+
+		return addJSONToZip(zipWriter, "delegated-scanning-config.json", b)
 	})
 	if opts.withAccessControl {
 		diagBundleTasks.Go(func(ctx context.Context) error {
@@ -901,7 +916,7 @@ func (s *serviceImpl) getDiagnosticDumpWithCentral(w http.ResponseWriter, r *htt
 	s.writeZippedDebugDump(r.Context(), w, filename, opts)
 }
 
-func (s *serviceImpl) getDeleRegConfigs(ctx context.Context) (interface{}, error) {
+func (s *serviceImpl) getDeleRegConfigs(ctx context.Context) (proto.Message, error) {
 	adminCtx := sac.WithGlobalAccessScopeChecker(
 		ctx,
 		sac.AllowFixedScopes(
@@ -916,9 +931,7 @@ func (s *serviceImpl) getDeleRegConfigs(ctx context.Context) (interface{}, error
 	}
 
 	if !exists {
-		return map[string]string{
-			"message": "delegated scanning config unavailable",
-		}, nil
+		return nil, errors.New("delegated registry config unavailable")
 	}
 
 	return config, nil
