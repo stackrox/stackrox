@@ -26,6 +26,14 @@ func (m *networkFlowManager) runAllPurgerRules(maxAge time.Duration) {
 		purgeActiveEndpointsNoLock(maxAge, m.activeEndpoints, m.clusterEntities)
 	})
 	flowMetrics.ActiveEndpointsPurgerDuration.WithLabelValues("activeEndpoints").Observe(float64(time.Since(start).Milliseconds()))
+
+	start = time.Now()
+	concurrency.WithLock(&m.activeConnectionsMutex, func() {
+		log.Debug("Purging active connections")
+		purgeActiveConnectionsNoLock(maxAge, m.activeConnections, m.clusterEntities)
+	})
+	flowMetrics.ActiveEndpointsPurgerDuration.WithLabelValues("activeConnections").Observe(float64(time.Since(start).Milliseconds()))
+
 	start = time.Now()
 	concurrency.WithLock(&m.connectionsByHostMutex, func() {
 		for _, conns := range m.connectionsByHost {
@@ -96,6 +104,28 @@ func purgeActiveEndpointsNoLock(maxAge time.Duration,
 			if cutOff.After(age.lastUpdate) {
 				flowMetrics.PurgerEvents.WithLabelValues("activeEndpoint", "max-age-reached").Inc()
 				delete(endpoints, endpoint)
+			}
+		}
+	}
+}
+
+func purgeActiveConnectionsNoLock(maxAge time.Duration,
+	conns map[connection]*networkConnIndicatorWithAge,
+	store EntityStore) {
+	for conn, age := range conns {
+		// Remove if the related container is not found (but keep historical)
+		_, found, _ := store.LookupByContainerID(conn.containerID)
+		if !found {
+			delete(conns, conn)
+			flowMetrics.PurgerEvents.WithLabelValues("activeConnection", "containerID-gone").Inc()
+			continue
+		}
+		if maxAge > 0 {
+			// finally, remove all that didn't get any update from collector for a given time
+			cutOff := timestamp.Now().Add(-maxAge)
+			if cutOff.After(age.lastUpdate) {
+				flowMetrics.PurgerEvents.WithLabelValues("activeConnection", "max-age-reached").Inc()
+				delete(conns, conn)
 			}
 		}
 	}

@@ -922,7 +922,7 @@ func (b *sendNetflowsSuite) TestCloseOldConnectionFailedLookup() {
 	pair := createConnectionPair().
 		firstSeen(timestamp.Now().Add(-maxContainerResolutionWaitPeriod * 2)).
 		lastSeen(timestamp.Now())
-	b.m.activeConnections[*pair.conn] = &networkConnIndicator{}
+	b.m.activeConnections[*pair.conn] = &networkConnIndicatorWithAge{}
 	b.updateConn(pair)
 	b.thenTickerTicks()
 	b.assertOneUpdatedCloseConnection()
