@@ -114,6 +114,11 @@ func createConnectionPair() *connectionPair {
 	}
 }
 
+func (c *connectionPair) tsAdded(tsAdded timestamp.MicroTS) *connectionPair {
+	c.status.tsAdded = tsAdded
+	return c
+}
+
 func (c *connectionPair) lastSeen(lastSeen timestamp.MicroTS) *connectionPair {
 	c.status.lastSeen = lastSeen
 	return c

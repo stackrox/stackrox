@@ -399,7 +399,7 @@ func (m *networkFlowManager) ProcessMessage(_ *central.MsgToSensor) error {
 func (m *networkFlowManager) Start() error {
 	go m.enrichConnections(m.enricherTickerC)
 	if env.EnrichmentPurgerTickerCycle.DurationSetting() > 0 {
-		go m.purgeStaleEndpoints(m.purgerTickerC, env.EnrichmentPurgerTickerMaxAge.DurationSetting())
+		go m.runPurger(m.purgerTickerC, env.EnrichmentPurgerTickerMaxAge.DurationSetting())
 	}
 	go m.publicIPs.Run(m.stopper.LowLevel().GetStopRequestSignal(), m.clusterEntities)
 	return nil
