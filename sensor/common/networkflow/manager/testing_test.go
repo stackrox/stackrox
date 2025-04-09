@@ -33,7 +33,7 @@ func createManager(mockCtrl *gomock.Controller, enrichTicker, purgerTicker <-cha
 		enricherTickerC:   enrichTicker,
 		purgerTicker:      time.NewTicker(time.Hour),
 		purgerTickerC:     purgerTicker,
-		activeConnections: make(map[connection]*networkConnIndicator),
+		activeConnections: make(map[connection]*networkConnIndicatorWithAge),
 		activeEndpoints:   make(map[containerEndpoint]*containerEndpointIndicatorWithAge),
 		stopper:           concurrency.NewStopper(),
 	}
