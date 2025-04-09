@@ -51,6 +51,8 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 func (s *serviceImpl) Communicate(server sensor.CollectorService_CommunicateServer) error {
+	defer close(s.queue)
+
 	for {
 		msg, err := server.Recv()
 		if err != nil {
@@ -58,16 +60,21 @@ func (s *serviceImpl) Communicate(server sensor.CollectorService_CommunicateServ
 			return err
 		}
 
-		metrics.CollectorChannelInc(msg)
-		switch msg.GetMsg().(type) {
-		case *sensor.MsgFromCollector_ProcessSignal:
-			s.queue <- msg.GetProcessSignal()
-		case *sensor.MsgFromCollector_Register:
-			log.Infof("got register: %+v", msg.GetRegister())
-		case *sensor.MsgFromCollector_Info:
-			log.Infof("got network info: %+v", msg.GetInfo())
+		select {
+		case <-server.Context().Done():
+			return nil
 		default:
-			log.Errorf("got unknown message type %T", msg.GetMsg())
+			metrics.CollectorChannelInc(msg)
+			switch msg.GetMsg().(type) {
+			case *sensor.MsgFromCollector_ProcessSignal:
+				s.queue <- msg.GetProcessSignal()
+			case *sensor.MsgFromCollector_Register:
+				log.Infof("got register: %+v", msg.GetRegister())
+			case *sensor.MsgFromCollector_Info:
+				log.Infof("got network info: %+v", msg.GetInfo())
+			default:
+				log.Errorf("got unknown message type %T", msg.GetMsg())
+			}
 		}
 	}
 }

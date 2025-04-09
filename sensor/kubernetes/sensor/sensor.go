@@ -130,8 +130,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	indicators := make(chan *message.ExpiringMessage, queue.ScaleSizeOnNonDefault(env.ProcessIndicatorBufferSize))
 	processPipeline := processindicator.NewProcessPipeline(indicators, storeProvider.Entities(), processfilter.Singleton(), policyDetector)
 
-	signalCmp := processindicator.New(processPipeline, signalSrv.GetMessagesC(), collectorSrv.GetMessagesC(), indicators,
-		processindicator.WithTraceWriter(cfg.processIndicatorWriter))
+	signalCmp := processindicator.New(processPipeline, signalSrv.GetMessagesC(), collectorSrv.GetMessagesC(), processindicator.WithTraceWriter(cfg.processIndicatorWriter))
 
 	networkFlowManager :=
 		manager.NewManager(storeProvider.Entities(), externalsrcs.StoreInstance(), policyDetector, pubSub)
