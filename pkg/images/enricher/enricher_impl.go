@@ -133,6 +133,7 @@ func (e *enricherImpl) EnrichWithSignatureVerificationData(ctx context.Context, 
 // and no error image was enriched successfully.
 func (e *enricherImpl) delegateEnrichImage(ctx context.Context, enrichCtx EnrichmentContext, image *storage.Image) (bool, error) {
 	if !enrichCtx.Delegable {
+		log.Info("Returning here")
 		// Request should not be delegated.
 		return false, nil
 	}
@@ -149,6 +150,7 @@ func (e *enricherImpl) delegateEnrichImage(ctx context.Context, enrichCtx Enrich
 	}
 
 	if err != nil || !shouldDelegate {
+		log.Info("There was an error or the request should not be delegated")
 		// If was an error or should not delegate, short-circuit.
 		return shouldDelegate, err
 	}
@@ -167,6 +169,7 @@ func (e *enricherImpl) delegateEnrichImage(ctx context.Context, enrichCtx Enrich
 			// Errors for signature verification will be logged, so we can safely ignore them for the time being.
 			_, _ = e.enrichWithSignatureVerificationData(ctx, enrichCtx, image)
 
+			log.Infof("Successfully enriched image %q", image.GetName().GetFullName())
 			log.Debugf("Delegated enrichment returning cached image for %q", image.GetName().GetFullName())
 			return true, nil
 		}
@@ -176,6 +179,7 @@ func (e *enricherImpl) delegateEnrichImage(ctx context.Context, enrichCtx Enrich
 	force := enrichCtx.FetchOpt.forceRefetchCachedValues() || enrichCtx.FetchOpt == UseImageNamesRefetchCachedValues
 	scannedImage, err := e.scanDelegator.DelegateScanImage(ctx, image.GetName(), clusterID, force)
 	if err != nil {
+		log.Info("There was an error enriching the image")
 		return true, err
 	}
 
@@ -185,6 +189,7 @@ func (e *enricherImpl) delegateEnrichImage(ctx context.Context, enrichCtx Enrich
 
 	e.cvesSuppressor.EnrichImageWithSuppressedCVEs(image)
 	e.cvesSuppressorV2.EnrichImageWithSuppressedCVEs(image)
+	log.Info("")
 	return true, nil
 }
 
@@ -225,6 +230,7 @@ func (e *enricherImpl) updateImageWithExistingImage(image *storage.Image, existi
 // EnrichImage enriches an image with the integration set present.
 func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext EnrichmentContext, image *storage.Image) (EnrichmentResult, error) {
 	shouldDelegate, err := e.delegateEnrichImage(ctx, enrichContext, image)
+	log.Infof("shouldDelegate returned %v, %q", shouldDelegate, err)
 	var delegateErr error
 	if shouldDelegate {
 		if err == nil {
