@@ -544,7 +544,7 @@ module.exports = [
         },
     },
     {
-        files: ['src/*.{js,jsx,ts,tsx}', 'src/*/**/*.{js,jsx,ts,tsx}'], // product files, except for unit tests (including mockData and test-utils folders)
+        files: ['src/*.{jsx,ts,tsx}', 'src/*/**/*.{js,jsx,ts,tsx}'], // product files, except for unit tests (including mockData and test-utils folders)
 
         languageOptions: {
             ...parserAndOptions,

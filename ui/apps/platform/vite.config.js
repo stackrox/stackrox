@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import * as fs from 'fs';
 import * as path from 'path';
 import { defineConfig } from 'vite';
@@ -54,10 +55,11 @@ function getSrcAliases() {
     return aliases;
 }
 
-export default defineConfig(async (params) => {
+export default defineConfig(async () => {
     const sslOptions = getSslOptions();
     return {
         build: {
+            assetsDir: './static',
             outDir: 'build',
             rollupOptions: {
                 output: {
@@ -93,24 +95,7 @@ export default defineConfig(async (params) => {
         optimizeDeps: {
             exclude: ['@apollo/client'],
         },
-        plugins: [
-            // Skip processing CSS in ./node_modules/ with PostCSS transforms
-            {
-                name: 'skip-postcss-node-modules',
-                enforce: 'pre',
-                transform(code, id) {
-                    if (id.includes('node_modules') && id.endsWith('.css')) {
-                        return {
-                            code,
-                            map: null,
-                        };
-                    }
-                },
-            },
-            react(),
-            svgr(),
-            ...(sslOptions?.basicSsl ? [sslOptions.basicSsl()] : []),
-        ],
+        plugins: [react(), svgr(), ...(sslOptions?.basicSsl ? [sslOptions.basicSsl()] : [])],
         resolve: {
             alias: getSrcAliases(),
         },
