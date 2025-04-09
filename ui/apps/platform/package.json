@@ -15,9 +15,7 @@
     "dependencies": {
         "@apollo/client": "^3.6.3",
         "@lifeomic/axios-fetch": "^3.1.0",
-        "@monaco-editor/react": "^4.7.0",
         "@patternfly/react-charts": "^7.2.2",
-        "@patternfly/react-code-editor": "^5.2.2",
         "@patternfly/react-component-groups": "^5.2.0",
         "@patternfly/react-core": "^5.2.2",
         "@patternfly/react-icons": "^5.2.1",
@@ -50,9 +48,6 @@
         "lodash": "^4.17.21",
         "mobx": "^6.9.0",
         "mobx-react": "^7.6.0",
-        "monaco-editor": "^0.34.1",
-        "monaco-editor-webpack-plugin": "^7.1.0",
-        "monaco-yaml": "^5.1.1",
         "object-resolve-path": "^1.1.1",
         "pluralize": "^8.0.0",
         "prop-types": "^15.7.2",
@@ -192,9 +187,6 @@
         "jest": "^29.7.0",
         "jest-resolve": "^29.7.0",
         "jest-watch-typeahead": "^2.2.2",
-        "monaco-yaml": {
-            "monaco-editor": "0.34.1"
-        },
         "react": "^18.2.0",
         "react-dom": "^18.2.0",
         "react-scripts": {

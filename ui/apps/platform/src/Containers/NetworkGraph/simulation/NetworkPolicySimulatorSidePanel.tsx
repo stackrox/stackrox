@@ -4,6 +4,7 @@ import {
     Bullseye,
     Button,
     Checkbox,
+    CodeBlockAction,
     Divider,
     DropEvent,
     Flex,
@@ -213,12 +214,7 @@ function NetworkPolicySimulatorSidePanel({
                         <NetworkPoliciesYAML
                             yaml={generatedYaml}
                             additionalControls={[
-                                <Flex
-                                    justifyContent={{ default: 'justifyContentFlexEnd' }}
-                                    alignItems={{ default: 'alignItemsCenter' }}
-                                    spaceItems={{ default: 'spaceItemsNone' }}
-                                    className="pf-v5-u-flex-1"
-                                >
+                                <CodeBlockAction className="pf-v5-u-mr-lg">
                                     <Button
                                         variant="link"
                                         onClick={() =>
@@ -248,7 +244,7 @@ function NetworkPolicySimulatorSidePanel({
                                             <HelpIcon />
                                         </button>
                                     </Popover>
-                                </Flex>,
+                                </CodeBlockAction>,
                             ]}
                         />
                     </FlexItem>
