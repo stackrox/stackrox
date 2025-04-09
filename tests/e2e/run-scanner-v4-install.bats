@@ -1222,7 +1222,7 @@ EOT
         stackrox-central-services "${helm_chart_dir}"
 
     if [[ "$upgrade" == "true" ]]; then
-        # For some reason pods don't always terminate smoothly after an upgrade.
+        # TODO(ROX-28903): For some reason pods don't always terminate smoothly after an upgrade.
         bounce_pods "${central_namespace}"
     fi
 
@@ -1363,7 +1363,7 @@ EOT
         stackrox-secured-cluster-services "${helm_chart_dir}"
 
     if [[ "$upgrade" == "true" ]]; then
-        # For some reason pods don't always terminate smoothly after an upgrade.
+        # TODO(ROX-28903): For some reason pods don't always terminate smoothly after an upgrade.
         bounce_pods "${sensor_namespace}"
     fi
 
