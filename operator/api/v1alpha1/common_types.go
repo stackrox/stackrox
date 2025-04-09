@@ -355,15 +355,6 @@ type GlobalNetworkSpec struct {
 	Policies *NetworkPolicies `json:"policies,omitempty"`
 }
 
-type StatusDefault struct {
-	OwnerVersion string `json:"ownerVersion,omitempty"`
-	Value        string `json:"value,omitempty"`
-}
-
 type StatusDefaults struct {
-	ScannerV4ComponentPolicy StatusDefault `json:"scannerV4ComponentPolicy,omitempty"`
+	ScannerV4ComponentPolicy string `json:"scannerV4ComponentPolicy,omitempty"`
 }
-
-// const (
-// 	StatusDefaultScannerV4ComponentPolicy = "scannerV4ComponentPolicy"
-// )

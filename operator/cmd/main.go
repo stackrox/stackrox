@@ -31,7 +31,6 @@ import (
 	commonLabels "github.com/stackrox/rox/operator/internal/common/labels"
 	securedClusterReconciler "github.com/stackrox/rox/operator/internal/securedcluster/reconciler"
 	"github.com/stackrox/rox/operator/internal/utils"
-	operatorVersion "github.com/stackrox/rox/operator/internal/version"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/profiling"
@@ -128,7 +127,7 @@ func run() error {
 	}
 	defer restore()
 
-	setupLog.Info("Starting RHACS Operator", "version", version.GetMainVersion(), "major", operatorVersion.XYVersion.X, "minor", operatorVersion.XYVersion.Y)
+	setupLog.Info("Starting RHACS Operator", "version", version.GetMainVersion())
 
 	var tlsOpts []func(c *tls.Config)
 	if !enableHTTP2 {

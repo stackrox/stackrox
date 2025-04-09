@@ -2,13 +2,10 @@ package defaulting
 
 import (
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
-	operatorVersion "github.com/stackrox/rox/operator/internal/version"
-	"github.com/stackrox/rox/pkg/version"
 )
 
 var (
 	defaultForNewInstallations = platform.ScannerV4Enabled
-	ownerVersion               = version.MustParseXYVersion("4.8")
 )
 
 // Only returns Enabled or Disabled.
@@ -25,7 +22,7 @@ func ScannerV4ComponentPolicy(statusDefaults *platform.StatusDefaults, spec *pla
 	// User is relying on defaulting.
 	// This includes the case spec.ScannerComponent == "Default".
 
-	if statusDefaults == nil {
+	if statusDefaults == nil || statusDefaults.ScannerV4ComponentPolicy == "" {
 		// Install.
 		return defaultForNewInstallations
 	}
@@ -33,7 +30,7 @@ func ScannerV4ComponentPolicy(statusDefaults *platform.StatusDefaults, spec *pla
 	// Upgrade.
 
 	statusDefault := statusDefaults.ScannerV4ComponentPolicy
-	if statusDefault == (platform.StatusDefault{}) {
+	if statusDefault == "" {
 		// No entry in the statusDefaults yet -> preserve defaulting behavior of versions which did not populate
 		// statusDefaults with a ScannerV4ComponentPolicy.
 		return platform.ScannerV4Disabled
@@ -41,21 +38,8 @@ func ScannerV4ComponentPolicy(statusDefaults *platform.StatusDefaults, spec *pla
 
 	// A statusDefault entry exists already.
 
-	ownerVersion, err := version.ParseXYVersion(statusDefault.OwnerVersion)
-	if err != nil {
-		// Swallow error.
-		return defaultForNewInstallations
-	}
-
-	if operatorVersion.XYVersion.LessOrEqual(ownerVersion) {
-		// Current operator version is <= recorded version.
-		// Which means we could be on the same major.minor version or a downgrade has occurred.
-		// In any case, do not use the recorded value.
-		return defaultForNewInstallations
-	}
-
 	// Recorded default comes from a previous XY version, use recorded value.
-	recordedComponentPolicy := platform.ScannerV4ComponentPolicy(statusDefault.Value)
+	recordedComponentPolicy := platform.ScannerV4ComponentPolicy(statusDefault)
 	if recordedComponentPolicy == platform.ScannerV4Enabled || recordedComponentPolicy == platform.ScannerV4Disabled {
 		return recordedComponentPolicy
 	} else {

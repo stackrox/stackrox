@@ -7,7 +7,6 @@ import (
 	"github.com/operator-framework/helm-operator-plugins/pkg/extensions"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	"github.com/stackrox/rox/operator/internal/common/defaulting"
-	operatorVersion "github.com/stackrox/rox/operator/internal/version"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -45,15 +44,7 @@ func (r *scannerV4DefaultingExtensionRun) updateStatus(status *platform.CentralS
 
 	componentPolicy := defaulting.ScannerV4ComponentPolicy(status.Defaults, r.spec.ScannerV4)
 	r.logger.Info("ScannerV4StatusDefaultsExtension computed componentPolicy", "componentPolicy", componentPolicy)
-	statusDefault := status.Defaults.ScannerV4ComponentPolicy
-	ownerVersion := operatorVersion.XYVersion.Serialize()
-	if statusDefault != (platform.StatusDefault{}) {
-		ownerVersion = statusDefault.OwnerVersion // Do not update the owner version, keep it at whatever it was initially.
-	}
-	status.Defaults.ScannerV4ComponentPolicy = platform.StatusDefault{
-		OwnerVersion: ownerVersion,
-		Value:        string(componentPolicy),
-	}
+	status.Defaults.ScannerV4ComponentPolicy = string(componentPolicy)
 
 	return true
 }
