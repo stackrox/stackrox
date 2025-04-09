@@ -160,8 +160,8 @@ type SecurityPolicyCondition struct {
 type SecurityPolicyConditions []SecurityPolicyCondition
 
 type SecurityPolicyStatus struct {
-	Condition SecurityPolicyConditions `json:"conditions"`
-	PolicyId  string                   `json:"policyId"`
+	Conditions SecurityPolicyConditions `json:"conditions"`
+	PolicyId   string                   `json:"policyId"`
 }
 
 // IsValid runs validation checks against the SecurityPolicy spec

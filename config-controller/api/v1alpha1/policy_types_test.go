@@ -138,7 +138,7 @@ func TestConditionUpdates(t *testing.T) {
 	startTime := metav1.Now()
 	policy := &SecurityPolicy{}
 	policy.Status = SecurityPolicyStatus{
-		Condition: SecurityPolicyConditions{
+		Conditions: SecurityPolicyConditions{
 			SecurityPolicyCondition{
 				Type:               CentralDataFresh,
 				Status:             "False",
@@ -159,24 +159,24 @@ func TestConditionUpdates(t *testing.T) {
 			},
 		},
 	}
-	assert.Equal(t, "False", policy.Status.Condition.GetCondition(CentralDataFresh).Status)
-	assert.Equal(t, false, policy.Status.Condition.IsCentralDataFresh())
-	policy.Status.Condition.UpdateCondition(SecurityPolicyCondition{
+	assert.Equal(t, "False", policy.Status.Conditions.GetCondition(CentralDataFresh).Status)
+	assert.Equal(t, false, policy.Status.Conditions.IsCentralDataFresh())
+	policy.Status.Conditions.UpdateCondition(SecurityPolicyCondition{
 		Type:    CentralDataFresh,
 		Status:  "True",
 		Message: "Central data updated",
 	})
 	// Check that the condition was properly updated
-	assert.Equal(t, true, policy.Status.Condition.IsCentralDataFresh())
-	newCentralDataFreshCondition := policy.Status.Condition.GetCondition(CentralDataFresh)
+	assert.Equal(t, true, policy.Status.Conditions.IsCentralDataFresh())
+	newCentralDataFreshCondition := policy.Status.Conditions.GetCondition(CentralDataFresh)
 	assert.Equal(t, "Central data updated", newCentralDataFreshCondition.Message)
 	assert.Equal(t, "True", newCentralDataFreshCondition.Status)
 	assert.NotEqual(t, startTime, newCentralDataFreshCondition.LastTransitionTime)
 	// Ensure no other fields were changed
-	assert.Equal(t, "False", policy.Status.Condition.GetCondition(PolicyValidated).Status)
-	assert.Equal(t, false, policy.Status.Condition.IsPolicyValidated())
-	assert.Equal(t, "False", policy.Status.Condition.GetCondition(AcceptedByCentral).Status)
-	assert.Equal(t, false, policy.Status.Condition.IsAcceptedByCentral())
+	assert.Equal(t, "False", policy.Status.Conditions.GetCondition(PolicyValidated).Status)
+	assert.Equal(t, false, policy.Status.Conditions.IsPolicyValidated())
+	assert.Equal(t, "False", policy.Status.Conditions.GetCondition(AcceptedByCentral).Status)
+	assert.Equal(t, false, policy.Status.Conditions.IsAcceptedByCentral())
 	// Ensure the length of the conditions array is still 3
-	assert.Equal(t, 3, len(policy.Status.Condition))
+	assert.Equal(t, 3, len(policy.Status.Conditions))
 }
