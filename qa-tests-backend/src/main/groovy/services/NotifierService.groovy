@@ -29,6 +29,10 @@ class NotifierService extends BaseService {
         return getNotifierClient().postNotifier(notifier)
     }
 
+    static getNotifiers() {
+        return getNotifierClient().getNotifiers(NotifierServiceOuterClass.GetNotifiersRequest.newBuilder().build())
+    }
+
     static testNotifier(NotifierOuterClass.Notifier notifier) {
         try {
             getNotifierClient().testNotifier(notifier)

@@ -30,6 +30,7 @@ import services.ClusterService
 import services.ExternalBackupService
 import services.ImageIntegrationService
 import services.NetworkPolicyService
+import services.NotifierService
 import services.PolicyService
 import util.Env
 import util.MailServer
@@ -265,6 +266,12 @@ class IntegrationsTest extends BaseSpecification {
         "validate notification"
         for (Notifier notifier : notifierTypes) {
             notifier.validateNetpolNotification(orchestrator.generateYaml(policy), strictIntegrationTesting)
+        }
+
+        and:
+        "check notifier is scrubbed"
+        NotifierService.getNotifiers().notifiersList.each {
+            it.getNotifierSecret() == "******"
         }
 
         cleanup:
