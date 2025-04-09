@@ -18,7 +18,6 @@ type componentImpl struct {
 	common.SensorComponent
 
 	processPipeline *Pipeline
-	indicators      <-chan *message.ExpiringMessage
 	signalMessages  <-chan *storage.ProcessSignal
 	processMessages <-chan *sensor.ProcessSignal
 	writer          io.Writer
@@ -35,10 +34,9 @@ func WithTraceWriter(writer io.Writer) Option {
 	}
 }
 
-func New(pipeline *Pipeline, signalMessages <-chan *storage.ProcessSignal, processMessages <-chan *sensor.ProcessSignal, indicators <-chan *message.ExpiringMessage, opts ...Option) common.SensorComponent {
+func New(pipeline *Pipeline, signalMessages <-chan *storage.ProcessSignal, processMessages <-chan *sensor.ProcessSignal, opts ...Option) common.SensorComponent {
 	cmp := &componentImpl{
 		processPipeline: pipeline,
-		indicators:      indicators,
 		signalMessages:  signalMessages,
 		processMessages: processMessages,
 		writer:          nil,
@@ -73,7 +71,7 @@ func (c *componentImpl) ProcessMessage(_ *central.MsgToSensor) error {
 }
 
 func (c *componentImpl) ResponsesC() <-chan *message.ExpiringMessage {
-	return c.indicators
+	return c.processPipeline.indicators
 }
 
 func (c *componentImpl) run() {
