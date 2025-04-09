@@ -14,7 +14,7 @@ class RetryTest extends Specification {
     def fail(def text, int x) {
         assert text
         assert x == 1
-        assert i++ > 2, "I was $text $i"
+        assert i++ > 2, "I was $text $i times"
         return true
     }
 }
