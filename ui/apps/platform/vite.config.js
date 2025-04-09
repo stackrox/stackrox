@@ -55,7 +55,6 @@ function getSrcAliases() {
 }
 
 export default defineConfig(async (params) => {
-    const Inspect = (await import('vite-plugin-inspect')).default;
     const sslOptions = getSslOptions();
     return {
         build: {
@@ -95,10 +94,6 @@ export default defineConfig(async (params) => {
             exclude: ['@apollo/client'],
         },
         plugins: [
-            Inspect({
-                build: true,
-                outputDir: '/tmp/.vite-inspect',
-            }),
             // Skip processing CSS in ./node_modules/ with PostCSS transforms
             {
                 name: 'skip-postcss-node-modules',
