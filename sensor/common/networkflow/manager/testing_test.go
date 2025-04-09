@@ -56,7 +56,7 @@ func expectationsEndpointPurger(mockEntityStore *mocksManager.MockEntityStore, i
 	mockEntityStore.EXPECT().LookupByEndpoint(gomock.Any()).AnyTimes().DoAndReturn(
 		func(_ any) []clusterentities.LookupResult {
 			if isKnownEndpoint {
-				return []clusterentities.LookupResult{clusterentities.LookupResult{
+				return []clusterentities.LookupResult{{
 					Entity:         networkgraph.Entity{},
 					ContainerPorts: []uint16{80},
 					PortNames:      []string{"http"},
