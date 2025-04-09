@@ -43,14 +43,14 @@ func (m *MockEntityDataStore) EXPECT() *MockEntityDataStoreMockRecorder {
 }
 
 // CreateExtNetworkEntitiesForCluster mocks base method.
-func (m *MockEntityDataStore) CreateExtNetworkEntitiesForCluster(ctx context.Context, cluster string, entities ...*storage.NetworkEntity) ([]string, error) {
+func (m *MockEntityDataStore) CreateExtNetworkEntitiesForCluster(ctx context.Context, cluster string, entities ...*storage.NetworkEntity) (int, error) {
 	m.ctrl.T.Helper()
 	varargs := []any{ctx, cluster}
 	for _, a := range entities {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "CreateExtNetworkEntitiesForCluster", varargs...)
-	ret0, _ := ret[0].([]string)
+	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
