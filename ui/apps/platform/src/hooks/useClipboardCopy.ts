@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { Dispatch, SetStateAction, useState } from 'react';
 
 export type UseClipboardCopyReturn = {
     wasCopied: boolean;
+    setWasCopied: Dispatch<SetStateAction<boolean>>;
     error: unknown;
     copyToClipboard: (text: string) => Promise<void>;
 };
@@ -21,5 +22,5 @@ export default function useClipboardCopy(): UseClipboardCopyReturn {
             })
             .catch(setError);
     }
-    return { wasCopied, error, copyToClipboard };
+    return { wasCopied, setWasCopied, error, copyToClipboard };
 }
