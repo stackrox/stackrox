@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	configStore "github.com/stackrox/rox/central/networkgraph/config/datastore"
+	entityStore "github.com/stackrox/rox/central/networkgraph/entity/datastore"
 	postgresFlowStore "github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/central/networkgraph/testhelper"
 	"github.com/stackrox/rox/generated/storage"
@@ -29,10 +31,12 @@ const (
 
 type NetworkflowStoreSuite struct {
 	suite.Suite
-	store  postgresFlowStore.FlowStore
-	ctx    context.Context
-	pool   postgres.DB
-	gormDB *gorm.DB
+	flowStore   postgresFlowStore.FlowStore
+	entityStore entityStore.EntityDataStore
+	configStore configStore.DataStore
+	ctx         context.Context
+	pool        postgres.DB
+	gormDB      *gorm.DB
 }
 
 func TestNetworkflowStore(t *testing.T) {
@@ -52,7 +56,9 @@ func (s *NetworkflowStoreSuite) SetupSuite() {
 
 func (s *NetworkflowStoreSuite) SetupTest() {
 	postgresFlowStore.Destroy(s.ctx, s.pool)
-	s.store = postgresFlowStore.CreateTableAndNewStore(s.ctx, s.pool, s.gormDB, clusterID)
+	s.flowStore = postgresFlowStore.CreateTableAndNewStore(s.ctx, s.pool, s.gormDB, clusterID)
+	s.configStore = configStore.GetTestPostgresDataStore(s.T(), s.pool)
+	s.entityStore = entityStore.GetTestPostgresDataStore(s.T(), s.pool)
 }
 
 func (s *NetworkflowStoreSuite) TearDownTest() {
@@ -87,36 +93,36 @@ func (s *NetworkflowStoreSuite) TestStore() {
 	}
 	zeroTs := timestamp.MicroTS(0)
 
-	foundNetworkFlows, _, err := s.store.GetAllFlows(s.ctx, nil)
+	foundNetworkFlows, _, err := s.flowStore.GetAllFlows(s.ctx, nil)
 	s.NoError(err)
 	s.Len(foundNetworkFlows, 0)
 
 	// Adding the same thing twice to ensure that we only retrieve 1 based on serial Flow_Id implementation
-	s.NoError(s.store.UpsertFlows(s.ctx, []*storage.NetworkFlow{networkFlow}, zeroTs))
+	s.NoError(s.flowStore.UpsertFlows(s.ctx, []*storage.NetworkFlow{networkFlow}, zeroTs))
 	networkFlow.LastSeenTimestamp = protocompat.GetProtoTimestampFromSeconds(2)
-	s.NoError(s.store.UpsertFlows(s.ctx, []*storage.NetworkFlow{networkFlow}, zeroTs))
-	foundNetworkFlows, _, err = s.store.GetAllFlows(s.ctx, nil)
+	s.NoError(s.flowStore.UpsertFlows(s.ctx, []*storage.NetworkFlow{networkFlow}, zeroTs))
+	foundNetworkFlows, _, err = s.flowStore.GetAllFlows(s.ctx, nil)
 	s.NoError(err)
 	s.Len(foundNetworkFlows, 1)
 	assert.True(s.T(), testhelper.MatchElements([]*storage.NetworkFlow{networkFlow}, foundNetworkFlows))
 
 	// Check the get all flows by since time
 	time3 := time.Unix(3, 0)
-	foundNetworkFlows, _, err = s.store.GetAllFlows(s.ctx, &time3)
+	foundNetworkFlows, _, err = s.flowStore.GetAllFlows(s.ctx, &time3)
 	s.NoError(err)
 	s.Len(foundNetworkFlows, 0)
 
-	s.NoError(s.store.RemoveFlow(s.ctx, networkFlow.GetProps()))
-	foundNetworkFlows, _, err = s.store.GetAllFlows(s.ctx, nil)
+	s.NoError(s.flowStore.RemoveFlow(s.ctx, networkFlow.GetProps()))
+	foundNetworkFlows, _, err = s.flowStore.GetAllFlows(s.ctx, nil)
 	s.NoError(err)
 	s.Len(foundNetworkFlows, 0)
 
-	s.NoError(s.store.UpsertFlows(s.ctx, []*storage.NetworkFlow{networkFlow}, zeroTs))
+	s.NoError(s.flowStore.UpsertFlows(s.ctx, []*storage.NetworkFlow{networkFlow}, zeroTs))
 
-	err = s.store.RemoveFlowsForDeployment(s.ctx, networkFlow.GetProps().GetSrcEntity().GetId())
+	err = s.flowStore.RemoveFlowsForDeployment(s.ctx, networkFlow.GetProps().GetSrcEntity().GetId())
 	s.NoError(err)
 
-	foundNetworkFlows, _, err = s.store.GetAllFlows(s.ctx, nil)
+	foundNetworkFlows, _, err = s.flowStore.GetAllFlows(s.ctx, nil)
 	s.NoError(err)
 	s.Len(foundNetworkFlows, 0)
 
@@ -128,9 +134,9 @@ func (s *NetworkflowStoreSuite) TestStore() {
 		networkFlows = append(networkFlows, networkFlow)
 	}
 
-	s.NoError(s.store.UpsertFlows(s.ctx, networkFlows, zeroTs))
+	s.NoError(s.flowStore.UpsertFlows(s.ctx, networkFlows, zeroTs))
 
-	foundNetworkFlows, _, err = s.store.GetAllFlows(s.ctx, nil)
+	foundNetworkFlows, _, err = s.flowStore.GetAllFlows(s.ctx, nil)
 	s.NoError(err)
 	s.Len(foundNetworkFlows, flowCount)
 
@@ -155,7 +161,7 @@ func (s *NetworkflowStoreSuite) TestStore() {
 	s.Len(foundNetworkFlows, 1)
 
 	// Store 1 flows should remain
-	foundNetworkFlows, _, err = s.store.GetAllFlows(s.ctx, nil)
+	foundNetworkFlows, _, err = s.flowStore.GetAllFlows(s.ctx, nil)
 	s.NoError(err)
 	s.Len(foundNetworkFlows, flowCount)
 }
@@ -254,7 +260,7 @@ func (s *NetworkflowStoreSuite) TestPruneStaleNetworkFlows() {
 		},
 	}
 
-	err := s.store.UpsertFlows(s.ctx, flows, timestamp.Now())
+	err := s.flowStore.UpsertFlows(s.ctx, flows, timestamp.Now())
 	s.Nil(err)
 
 	row := s.pool.QueryRow(s.ctx, flowsCountStmt)
@@ -263,7 +269,7 @@ func (s *NetworkflowStoreSuite) TestPruneStaleNetworkFlows() {
 	s.Nil(err)
 	s.Equal(count, len(flows))
 
-	err = s.store.RemoveStaleFlows(s.ctx)
+	err = s.flowStore.RemoveStaleFlows(s.ctx)
 	s.Nil(err)
 
 	row = s.pool.QueryRow(s.ctx, flowsCountStmt)
@@ -328,12 +334,12 @@ func (s *NetworkflowStoreSuite) TestGetMatching() {
 		},
 	}
 
-	err = s.store.UpsertFlows(s.ctx, flows, timestamp.Now())
+	err = s.flowStore.UpsertFlows(s.ctx, flows, timestamp.Now())
 	s.Nil(err)
 
 	// Normalize flow timestamps
 
-	filteredFlows, _, err := s.store.GetMatchingFlows(s.ctx, deploymentIngressFlowsPredicate, nil)
+	filteredFlows, _, err := s.flowStore.GetMatchingFlows(s.ctx, deploymentIngressFlowsPredicate, nil)
 	s.Nil(err)
 	assert.True(s.T(), testhelper.MatchElements([]*storage.NetworkFlow{flows[1], flows[2]}, filteredFlows))
 }
@@ -390,10 +396,10 @@ func (s *NetworkflowStoreSuite) TestGetFlowsForDeployment() {
 		},
 	}
 
-	err = s.store.UpsertFlows(s.ctx, flows, timestamp.Now())
+	err = s.flowStore.UpsertFlows(s.ctx, flows, timestamp.Now())
 	s.Nil(err)
 
-	deploymentFlows, err := s.store.GetFlowsForDeployment(s.ctx, "TestDeploymentSrc1")
+	deploymentFlows, err := s.flowStore.GetFlowsForDeployment(s.ctx, "TestDeploymentSrc1")
 	s.Nil(err)
 	assert.True(s.T(), testhelper.MatchElements([]*storage.NetworkFlow{flows[0], flows[2]}, deploymentFlows))
 }
@@ -450,10 +456,10 @@ func (s *NetworkflowStoreSuite) TestGetExternalFlowsForDeployment() {
 		},
 	}
 
-	err = s.store.UpsertFlows(s.ctx, flows, timestamp.Now())
+	err = s.flowStore.UpsertFlows(s.ctx, flows, timestamp.Now())
 	s.Nil(err)
 
-	deploymentFlows, err := s.store.GetExternalFlowsForDeployment(s.ctx, "TestDeployment1")
+	deploymentFlows, err := s.flowStore.GetExternalFlowsForDeployment(s.ctx, "TestDeployment1")
 	s.Nil(err)
 	assert.True(s.T(), testhelper.MatchElements([]*storage.NetworkFlow{flows[0], flows[1]}, deploymentFlows))
 }
