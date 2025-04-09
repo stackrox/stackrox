@@ -47,6 +47,6 @@ func NewDuplicateNameExtSrcConnAggregator() NetworkConnsAggregator {
 	return &aggregateExternalConnByNameImpl{}
 }
 
-func NewAllAggregator() NetworkConnsAggregator {
-	return &aggregateAllImpl{}
+func NewLatestTimestampAggregator() NetworkConnsAggregator {
+	return &aggregateLatestTimestampImpl{}
 }
