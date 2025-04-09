@@ -181,6 +181,7 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 		cveIDs := make([]string, 0, len(cveFlatData))
 		for _, cveFlat := range cveFlatData {
 			log.Infof("SHREWS -- flat data -- %v", cveFlat.GetFirstImageOccurrence())
+			log.Infof("SHREWS -- flat data -- created %v", cveFlat.GetFirstDiscoveredInSystem())
 			cveIDs = append(cveIDs, cveFlat.GetCVEIDs()...)
 		}
 
@@ -1106,6 +1107,7 @@ func (resolver *imageCVEV2Resolver) DiscoveredAtImage(_ context.Context, _ RawQu
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "DiscoveredAtImage")
 	log.Infof("SHREWS -- DiscoveredAtImage")
 	log.Infof("SHREWS -- flat data -- %v", resolver.flatData.GetFirstImageOccurrence())
+	log.Infof("SHREWS -- flat data -- discovered %v", resolver.flatData.GetFirstDiscoveredInSystem())
 	log.Infof("SHREWS -- old data -- %v", resolver.data)
 	if resolver.flatData != nil {
 		return convertTimeToGraphQLTime(resolver.flatData.GetFirstImageOccurrence()), nil
