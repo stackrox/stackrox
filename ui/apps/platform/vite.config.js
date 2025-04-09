@@ -1,9 +1,8 @@
-/* eslint-disable no-console */
 import * as fs from 'fs';
 import * as path from 'path';
 import { defineConfig } from 'vite';
 
-import react from '@vitejs/plugin-react';
+import react from '@vitejs/plugin-react-swc';
 import basicSsl from '@vitejs/plugin-basic-ssl';
 import svgr from 'vite-plugin-svgr';
 
@@ -44,16 +43,6 @@ function getSslOptions() {
     return undefined;
 }
 
-function getEnv() {
-    try {
-        return Object.fromEntries(
-            Object.entries(process.env).filter(([key]) => key.startsWith('VITE_'))
-        );
-    } catch {
-        return {};
-    }
-}
-
 function getSrcAliases() {
     const aliases = {};
 
@@ -65,18 +54,68 @@ function getSrcAliases() {
     return aliases;
 }
 
-export default defineConfig((params) => {
+export default defineConfig(async (params) => {
+    const Inspect = (await import('vite-plugin-inspect')).default;
     const sslOptions = getSslOptions();
     return {
         build: {
             outDir: 'build',
+            rollupOptions: {
+                output: {
+                    // Break the following dependencies into their own chunks to limit memory usage during build
+                    manualChunks: {
+                        d3: ['d3'],
+                        lodash: ['loadsh'],
+                        redoc: [
+                            'redoc',
+                            '@redocly/ajv',
+                            '@redocly/config',
+                            '@redocly/openapi-core',
+                        ],
+                        react: ['react', 'react-dom'],
+                        apollo: ['@apollo/client'],
+                        patternfly: ['@patternfly/react-core', '@patternfly/react-styles'],
+                        // monaco: ['monaco-editor'],
+                    },
+                },
+            },
+        },
+        css: {
+            devSourcemap: false,
         },
         define: {
-            'process.env': getEnv(),
+            'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
+            'process.env.VITE_ROX_PRODUCT_BRANDING': JSON.stringify(
+                process.env.VITE_ROX_PRODUCT_BRANDING
+            ),
             // Define `global` here due to redoc's usage of this NodeJS module
             global: {},
         },
-        plugins: [react(), svgr(), sslOptions?.basicSsl?.()],
+        optimizeDeps: {
+            exclude: ['@apollo/client'],
+        },
+        plugins: [
+            Inspect({
+                build: true,
+                outputDir: '/tmp/.vite-inspect',
+            }),
+            // Skip processing CSS in ./node_modules/ with PostCSS transforms
+            {
+                name: 'skip-postcss-node-modules',
+                enforce: 'pre',
+                transform(code, id) {
+                    if (id.includes('node_modules') && id.endsWith('.css')) {
+                        return {
+                            code,
+                            map: null,
+                        };
+                    }
+                },
+            },
+            react(),
+            svgr(),
+            ...(sslOptions?.basicSsl ? [sslOptions.basicSsl()] : []),
+        ],
         resolve: {
             alias: getSrcAliases(),
         },
