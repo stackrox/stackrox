@@ -232,6 +232,19 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilitiesNonFixabl
 	s.Equal(expected, count)
 }
 
+func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageDiscoveredAt() {
+	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
+
+	vulns, err := s.resolver.ImageVulnerabilities(ctx, PaginatedQuery{})
+	s.NoError(err)
+
+	for _, vuln := range vulns {
+		discovered, err := vuln.DiscoveredAtImage(ctx, RawQuery{})
+		s.NoError(err)
+		s.NotNil(discovered)
+	}
+}
+
 func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilitiesFixedByVersion() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
