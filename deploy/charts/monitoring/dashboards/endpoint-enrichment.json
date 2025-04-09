@@ -93,6 +93,30 @@
                 }
               }
             ]
+          },
+          {
+            "__systemRef": "hideSeriesFrom",
+            "matcher": {
+              "id": "byNames",
+              "options": {
+                "mode": "exclude",
+                "names": [
+                  "connections closedTS=set"
+                ],
+                "prefix": "All except:",
+                "readOnly": true
+              }
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": true
+                }
+              }
+            ]
           }
         ]
       },
@@ -195,7 +219,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "min (rox_sensor_network_flow_manager_purger_duration_ms_count) by (object)",
+          "expr": "min (rox_sensor_network_flow_manager_purger_duration_seconds_count) by (object)",
           "instant": false,
           "legendFormat": "__auto",
           "range": true,
@@ -265,7 +289,7 @@
           "disableTextWrap": false,
           "editorMode": "code",
           "exemplar": false,
-          "expr": "rox_sensor_network_flow_manager_purger_duration_ms_bucket{object=\"hostConns\"}",
+          "expr": "rox_sensor_network_flow_manager_purger_duration_seconds_bucket{object=\"hostConns\"}",
           "format": "heatmap",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
@@ -338,7 +362,7 @@
           "disableTextWrap": false,
           "editorMode": "code",
           "exemplar": false,
-          "expr": "rox_sensor_network_flow_manager_purger_duration_ms_bucket{object=\"activeEndpoints\"}",
+          "expr": "rox_sensor_network_flow_manager_purger_duration_seconds_bucket{object=\"activeEndpoints\"}",
           "format": "heatmap",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
@@ -411,7 +435,7 @@
           "disableTextWrap": false,
           "editorMode": "code",
           "exemplar": false,
-          "expr": "rox_sensor_network_flow_manager_purger_duration_ms_bucket{object=\"activeConnections\"}",
+          "expr": "rox_sensor_network_flow_manager_purger_duration_seconds_bucket{object=\"activeConnections\"}",
           "format": "heatmap",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
@@ -1134,7 +1158,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -1232,7 +1257,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -1290,13 +1316,13 @@
     "list": []
   },
   "time": {
-    "from": "now-30m",
+    "from": "now-1h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "",
   "title": "Enrichment of Endpoints",
   "uid": "rYh330THk",
-  "version": 55,
+  "version": 59,
   "weekStart": ""
 }
