@@ -419,7 +419,7 @@ EOT
     verify_scannerV2_deployed "$CUSTOM_CENTRAL_NAMESPACE"
     verify_no_scannerV4_deployed "$CUSTOM_CENTRAL_NAMESPACE"
 
-    _begin "upgrading-to-HEAD-central"
+    _begin "upgrade-to-HEAD-central"
     deploy_central_with_helm "$CUSTOM_CENTRAL_NAMESPACE" "$MAIN_IMAGE_TAG" "" \
         --reuse-values
 
@@ -444,7 +444,7 @@ EOT
     verify_scannerV4_deployed "$CUSTOM_CENTRAL_NAMESPACE"
     verify_deployment_scannerV4_env_var_set "$CUSTOM_CENTRAL_NAMESPACE" "central"
 
-    _begin "deploying-old-sensor"
+    _begin "deploy-old-sensor"
     info "Deploying StackRox secured-cluster-services using chart ${old_sensor_chart}"
     local central_endpoint="$(get_central_endpoint "$CUSTOM_CENTRAL_NAMESPACE")"
     local secured_cluster_name="$(get_cluster_name)"
@@ -455,13 +455,13 @@ EOT
     _step "verify-scanner-V4-not-deployed"
     verify_no_scannerV4_deployed "$CUSTOM_SENSOR_NAMESPACE"
 
-    _step "upgrading-to-HEAD-sensor"
+    _step "upgrade-to-HEAD-sensor"
     deploy_sensor_with_helm "$CUSTOM_CENTRAL_NAMESPACE" "$CUSTOM_SENSOR_NAMESPACE" "" "" "" "" ""
 
     _step "verify-scanner-not-deployed"
     verify_no_scannerV4_deployed "$CUSTOM_SENSOR_NAMESPACE"
 
-    _begin "enabling-scanner-V4-in-secured-cluster"
+    _begin "enable-scanner-V4-in-secured-cluster"
     # Without creating the scanner-db-password secret manually Scanner V2 doesn't come up.
     # Let's just reuse an existing password for this for simplicity.
     "$ORCH_CMD" </dev/null -n "$CUSTOM_SENSOR_NAMESPACE" create secret generic scanner-db-password \
@@ -732,7 +732,7 @@ EOT
 
     wait_until_central_validation_webhook_is_ready "${CUSTOM_CENTRAL_NAMESPACE}"
 
-    _step "patching-central"
+    _step "patch-central"
 
     # Enable Scanner V4 on central side.
     info "Patching Central"
@@ -778,7 +778,7 @@ EOT
     sleep 60
     "${ORCH_CMD}" </dev/null -n "${CUSTOM_CENTRAL_NAMESPACE}" wait --for=condition=Ready pods -l app=central || true
 
-    _step "patching-secured-cluster"
+    _step "patch-secured-cluster"
 
     info "Patching SecuredCluster"
     # Enable Scanner V4 on secured-cluster side
