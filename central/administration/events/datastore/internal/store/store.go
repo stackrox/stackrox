@@ -8,8 +8,6 @@ import (
 )
 
 // Store is the interface to the events data layer.
-//
-//go:generate mockgen-wrapper
 type Store interface {
 	Count(ctx context.Context, q *v1.Query) (int, error)
 	Get(ctx context.Context, id string) (*storage.AdministrationEvent, bool, error)
