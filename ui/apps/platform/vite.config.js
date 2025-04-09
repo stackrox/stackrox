@@ -65,7 +65,7 @@ export default defineConfig(async (params) => {
                     // Break the following dependencies into their own chunks to limit memory usage during build
                     manualChunks: {
                         d3: ['d3'],
-                        lodash: ['loadsh'],
+                        lodash: ['lodash'],
                         redoc: [
                             'redoc',
                             '@redocly/ajv',
