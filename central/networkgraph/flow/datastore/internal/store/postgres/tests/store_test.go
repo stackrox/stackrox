@@ -55,10 +55,11 @@ func (s *NetworkflowStoreSuite) SetupSuite() {
 }
 
 func (s *NetworkflowStoreSuite) SetupTest() {
-	postgresFlowStore.Destroy(s.ctx, s.pool)
-	s.flowStore = postgresFlowStore.CreateTableAndNewStore(s.ctx, s.pool, s.gormDB, clusterID)
-	s.configStore = configStore.GetTestPostgresDataStore(s.T(), s.pool)
-	s.entityStore = entityStore.GetTestPostgresDataStore(s.T(), s.pool)
+	db := pgtest.ForT(s.T())
+
+	s.flowStore = postgresFlowStore.CreateTableAndNewStore(s.ctx, db.DB, s.gormDB, clusterID)
+	s.configStore = configStore.GetTestPostgresDataStore(s.T(), db.DB)
+	s.entityStore = entityStore.GetTestPostgresDataStore(s.T(), db.DB)
 }
 
 func (s *NetworkflowStoreSuite) TearDownTest() {
