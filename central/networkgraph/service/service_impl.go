@@ -541,8 +541,8 @@ func (s *serviceImpl) addDeploymentFlowsToGraph(
 	flows = aggregator.NewDuplicateNameExtSrcConnAggregator().Aggregate(flows)
 	missingInfoFlows = aggregator.NewDuplicateNameExtSrcConnAggregator().Aggregate(missingInfoFlows)
 
-	flows = aggregator.NewAllAggregator().Aggregate(flows)
-	missingInfoFlows = aggregator.NewAllAggregator().Aggregate(missingInfoFlows)
+	flows = aggregator.NewLatestTimestampAggregator().Aggregate(flows)
+	missingInfoFlows = aggregator.NewLatestTimestampAggregator().Aggregate(missingInfoFlows)
 
 	graphBuilder.AddFlows(flows)
 
