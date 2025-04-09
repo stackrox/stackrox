@@ -911,7 +911,7 @@ EOT
 get_central_endpoint() {
     local namespace="$1"
     local central_ip="$("${ORCH_CMD}" -n "$CUSTOM_CENTRAL_NAMESPACE" </dev/null get service central-loadbalancer \
-        -o json | service_get_endpoint"
+        -o json | service_get_endpoint)"
     echo "${central_ip}:443"
 }
 
