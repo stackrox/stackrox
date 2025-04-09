@@ -323,7 +323,7 @@ func (w *WorkloadManager) getFakeNetworkConnectionInfo(workload NetworkWorkload)
 			endpointPool.add(networkEndpoint)
 		}
 		if workload.GenerateUnclosedEndpoints {
-			// Those endpoints will not be closed - i.e., CloseTimestamp will be always nil.
+			// These endpoints will not be closed - i.e., CloseTimestamp will be always nil.
 			networkEndpoints = append(networkEndpoints, networkEndpoint)
 		}
 	}
