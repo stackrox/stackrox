@@ -147,7 +147,7 @@ func (s *indexerService) GetOrCreateIndexReport(ctx context.Context, req *v4.Get
 		return nil, err
 	}
 
-	zlog.Info(ctx).Msg("index report for container image does not exist; creating...")
+	zlog.Info(ctx).Msg("creating index report for container image")
 	// TODO We currently only support container images, hence we assume the resource
 	//      is of that type. When introducing nodes and other resources, this should
 	//      evolve.
