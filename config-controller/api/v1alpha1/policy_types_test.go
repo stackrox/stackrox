@@ -160,19 +160,23 @@ func TestConditionUpdates(t *testing.T) {
 		},
 	}
 	assert.Equal(t, "False", policy.Status.Condition.GetCondition(CentralDataFresh).Status)
-	policy.Status.Condition.UpdateCondition(CentralDataFresh, SecurityPolicyCondition{
+	assert.Equal(t, false, policy.Status.Condition.IsCentralDataFresh())
+	policy.Status.Condition.UpdateCondition(SecurityPolicyCondition{
 		Type:    CentralDataFresh,
 		Status:  "True",
 		Message: "Central data updated",
 	})
 	// Check that the condition was properly updated
+	assert.Equal(t, true, policy.Status.Condition.IsCentralDataFresh())
 	newCentralDataFreshCondition := policy.Status.Condition.GetCondition(CentralDataFresh)
 	assert.Equal(t, "Central data updated", newCentralDataFreshCondition.Message)
 	assert.Equal(t, "True", newCentralDataFreshCondition.Status)
 	assert.NotEqual(t, startTime, newCentralDataFreshCondition.LastTransitionTime)
 	// Ensure no other fields were changed
 	assert.Equal(t, "False", policy.Status.Condition.GetCondition(PolicyValidated).Status)
+	assert.Equal(t, false, policy.Status.Condition.IsPolicyValidated())
 	assert.Equal(t, "False", policy.Status.Condition.GetCondition(AcceptedByCentral).Status)
+	assert.Equal(t, false, policy.Status.Condition.IsAcceptedByCentral())
 	// Ensure the length of the conditions array is still 3
 	assert.Equal(t, 3, len(policy.Status.Condition))
 }

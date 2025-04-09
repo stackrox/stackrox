@@ -367,9 +367,9 @@ func (p SecurityPolicySpec) ToProtobuf(caches map[CacheType]map[string]string) (
 	return &proto, nil
 }
 
-func (s *SecurityPolicyConditions) UpdateCondition(sType SecurityPolicyConditionType, newCondition SecurityPolicyCondition) {
+func (s *SecurityPolicyConditions) UpdateCondition(newCondition SecurityPolicyCondition) {
 	for i, st := range *s {
-		if st.Type != sType {
+		if st.Type != newCondition.Type {
 			continue
 		}
 		newCondition.LastTransitionTime = st.LastTransitionTime
@@ -388,4 +388,16 @@ func (s *SecurityPolicyConditions) GetCondition(sType SecurityPolicyConditionTyp
 		}
 	}
 	return nil
+}
+
+func (s *SecurityPolicyConditions) IsCentralDataFresh() bool {
+	return s.GetCondition(CentralDataFresh).Status == "True"
+}
+
+func (s *SecurityPolicyConditions) IsPolicyValidated() bool {
+	return s.GetCondition(PolicyValidated).Status == "True"
+}
+
+func (s *SecurityPolicyConditions) IsAcceptedByCentral() bool {
+	return s.GetCondition(AcceptedByCentral).Status == "True"
 }

@@ -196,7 +196,7 @@ func (pc *PolicyAsCodeSuite) TestCreateDefaultCR() {
 		case <-timer.C:
 			pc.FailNowf("Policy never marked as rejected as duplicate of default policy", message+": %s", k8sPolicy.Spec.PolicyName)
 		case p := <-ch:
-			if condition := p.Status.Condition.GetCondition(v1alpha1.PolicyValidated); condition.Status != "True" && strings.Contains(condition.Message, "existing default policy with the same name") {
+			if condition := p.Status.Condition.GetCondition(v1alpha1.PolicyValidated); !p.Status.Condition.IsPolicyValidated() && strings.Contains(condition.Message, "existing default policy with the same name") {
 				return
 			}
 			message = p.Status.Condition.GetCondition(v1alpha1.PolicyValidated).Message
@@ -250,7 +250,7 @@ func (pc *PolicyAsCodeSuite) TestRenameToDefaultCR() {
 			policy = p
 		}
 
-		if condition := policy.Status.Condition.GetCondition(v1alpha1.PolicyValidated); condition.Status != "True" && strings.Contains(condition.Message, "existing default policy with the same name") {
+		if condition := policy.Status.Condition.GetCondition(v1alpha1.PolicyValidated); !policy.Status.Condition.IsPolicyValidated() && strings.Contains(condition.Message, "existing default policy with the same name") {
 			break
 		}
 	}
@@ -361,7 +361,7 @@ func (pc *PolicyAsCodeSuite) createPolicyInK8s(toCreate *v1alpha1.SecurityPolicy
 		case <-timer.C:
 			pc.FailNowf("Policy never marked as accepted", message+": %s", toCreate.Spec.PolicyName)
 		case p := <-ch:
-			if p.Status.Condition.GetCondition(v1alpha1.AcceptedByCentral).Status == "True" && p.Status.PolicyId != "" {
+			if p.Status.Condition.IsAcceptedByCentral() && p.Status.PolicyId != "" {
 				return p
 			}
 			message = p.Status.Condition.GetCondition(v1alpha1.AcceptedByCentral).Message
