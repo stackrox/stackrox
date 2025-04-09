@@ -454,9 +454,10 @@ func createNoAuthImageRegistry(ctx context.Context, imgName *storage.ImageName, 
 		return nil, pkgErrors.Wrapf(err, "unable to check TLS for registry %q", reg)
 	}
 
+	name := fmt.Sprintf("%s/reg:%v", registryTypes.NoAuthNamePrefix, reg)
 	ii := &storage.ImageIntegration{
-		Id:         reg,
-		Name:       fmt.Sprintf("%s/reg:%v", registryTypes.NoAuthNamePrefix, reg),
+		Id:         name,
+		Name:       name,
 		Type:       registryTypes.DockerType,
 		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
 		IntegrationConfig: &storage.ImageIntegration_Docker{
