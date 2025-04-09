@@ -1308,8 +1308,8 @@ func (h *hostConnections) Process(networkInfo *sensor.NetworkConnectionInfo, now
 		}
 	}
 
-	updatedConnections := getUpdatedConnections(h.hostname, networkInfo)
-	updatedEndpoints := getUpdatedContainerEndpoints(h.hostname, networkInfo)
+	updatedConnections := getUpdatedConnections(networkInfo)
+	updatedEndpoints := getUpdatedContainerEndpoints(networkInfo)
 
 	flowMetrics.NumUpdated.With(prometheus.Labels{"Hostname": h.hostname, "Type": "Connection"}).Set(float64(len(updatedConnections)))
 	flowMetrics.NumUpdated.With(prometheus.Labels{"Hostname": h.hostname, "Type": "Endpoint"}).Set(float64(len(updatedEndpoints)))
@@ -1443,7 +1443,7 @@ func processConnection(conn *sensor.NetworkConnection) (*connection, error) {
 	return c, nil
 }
 
-func getUpdatedConnections(_ string, networkInfo *sensor.NetworkConnectionInfo) map[connection]timestamp.MicroTS {
+func getUpdatedConnections(networkInfo *sensor.NetworkConnectionInfo) map[connection]timestamp.MicroTS {
 	updatedConnections := make(map[connection]timestamp.MicroTS)
 
 	for _, conn := range networkInfo.GetUpdatedConnections() {
@@ -1464,7 +1464,7 @@ func getUpdatedConnections(_ string, networkInfo *sensor.NetworkConnectionInfo) 
 	return updatedConnections
 }
 
-func getUpdatedContainerEndpoints(hostname string, networkInfo *sensor.NetworkConnectionInfo) map[containerEndpoint]timestamp.MicroTS {
+func getUpdatedContainerEndpoints(networkInfo *sensor.NetworkConnectionInfo) map[containerEndpoint]timestamp.MicroTS {
 	updatedEndpoints := make(map[containerEndpoint]timestamp.MicroTS)
 
 	for _, endpoint := range networkInfo.GetUpdatedEndpoints() {
