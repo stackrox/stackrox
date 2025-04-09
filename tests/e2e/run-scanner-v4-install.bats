@@ -433,11 +433,7 @@ EOT
     _begin "enable-scanner-V4-in-central"
     deploy_central_with_helm "$CUSTOM_CENTRAL_NAMESPACE" "$MAIN_IMAGE_TAG" "" \
         --reuse-values \
-        -f <(cat <<EOT
-scannerV4:
-  disable: false
-EOT
-    )
+        --set scannerV4.disable=false
 
     _step "verify-scanners-deployed"
     verify_scannerV2_deployed "$CUSTOM_CENTRAL_NAMESPACE"
