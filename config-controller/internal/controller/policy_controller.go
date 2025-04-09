@@ -103,7 +103,7 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		configstackroxiov1alpha1.Cluster:  r.CentralClient.GetClusters(),
 	})
 	if err != nil {
-		retErr := errorhelpers.NewErrorList("Failed to convert policy to protobuf")
+		retErr := errorhelpers.NewErrorList("")
 		retErr.AddError(err)
 		// This condition update will be persisted to the K8s API in the call to UpdateCentralCaches right below it
 		policyCR.Status.Conditions.UpdateCondition(configstackroxiov1alpha1.SecurityPolicyCondition{
@@ -115,7 +115,7 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		if _, refreshErr := r.UpdateCentralCaches(policyCR, ctx, r.CentralClient.FlushCache); refreshErr != nil {
 			retErr.AddError(err)
 		}
-		return ctrl.Result{}, retErr.ToError()
+		return ctrl.Result{}, errors.Wrap(retErr.ToError(), "Failed to convert policy to protobuf")
 	}
 
 	existingPolicy, exists, err := r.CentralClient.GetPolicy(ctx, desiredState.GetName())
