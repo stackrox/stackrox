@@ -258,14 +258,14 @@ func (s *networkGraphServiceSuite) TestGetNetworkGraphNormalizedAndUnformalized(
 	}
 
 	internetEntity := &storage.NetworkEntity{
-				Info: &storage.NetworkEntityInfo {
-					Type: storage.NetworkEntityInfo_INTERNET,
-					Id:   networkgraph.InternetExternalSourceID,
-				},
-				Scope: &storage.NetworkEntity_Scope {
-					ClusterId: testCluster,
-				},
-			}
+		Info: &storage.NetworkEntityInfo{
+			Type: storage.NetworkEntityInfo_INTERNET,
+			Id:   networkgraph.InternetExternalSourceID,
+		},
+		Scope: &storage.NetworkEntity_Scope{
+			ClusterId: testCluster,
+		},
+	}
 
 	deployment := &storage.Deployment{
 		Id:        fixtureconsts.Deployment1,
