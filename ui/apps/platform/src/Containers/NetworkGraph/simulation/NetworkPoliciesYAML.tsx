@@ -1,9 +1,9 @@
 import React, { CSSProperties, ReactNode } from 'react';
 
-import './NetworkPoliciesYAML.css';
-import CodeViewer from '../../../Components/CodeViewer';
 import { CodeBlockAction, Button } from '@patternfly/react-core';
 import { DownloadIcon } from '@patternfly/react-icons';
+
+import CodeViewer from 'Components/CodeViewer';
 import useAnalytics, { DOWNLOAD_NETWORK_POLICIES } from 'hooks/useAnalytics';
 import useURLSearch from 'hooks/useURLSearch';
 import download from 'utils/download';

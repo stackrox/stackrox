@@ -164,7 +164,7 @@ describe('Violations', () => {
         );
     });
 
-    it.only('should show network policy details for all policies in the namespace of the target deployment', () => {
+    it('should show network policy details for all policies in the namespace of the target deployment', () => {
         visitViolationWithFixture('alerts/alertWithEmptyContainerConfig.json');
         interactAndWaitForNetworkPoliciesResponse(() => {
             cy.get(selectors.details.networkPoliciesTab).click();
