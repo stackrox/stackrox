@@ -48,17 +48,16 @@ func Singleton() DataStore {
 // from the policies table in postgres
 func addDefaults(s policyStore.Store, categoriesDS categoriesDS.DataStore) {
 	policyIDSet := set.NewStringSet()
-	storedPolicies, err := s.GetAll(workflowAdministrationCtx)
-	if err != nil {
-		panic(err)
-	}
-
-	for _, p := range storedPolicies {
+	err := s.Walk(workflowAdministrationCtx, func(p *storage.Policy) error {
 		policyIDSet.Add(p.GetId())
 		// Unrelated to adding/checking default policies, this was put here to prevent looping through all policies a second time
 		if p.Source == storage.PolicySource_DECLARATIVE {
 			metrics.IncrementTotalExternalPoliciesGauge()
 		}
+		return nil
+	})
+	if err != nil {
+		panic(err)
 	}
 
 	// Preload the default policies.
