@@ -87,7 +87,6 @@ func (v *imageCVEFlatViewImpl) Get(ctx context.Context, q *v1.Query, options vie
 
 	ret := make([]CveFlat, 0, len(results))
 	for _, r := range results {
-		log.Infof("SHREWS -- query %v, %v", r.CVE, r.GetFirstImageOccurrence())
 		// For each record, sort the IDs so that result looks consistent.
 		sort.SliceStable(r.CVEIDs, func(i, j int) bool {
 			return r.CVEIDs[i] < r.CVEIDs[j]

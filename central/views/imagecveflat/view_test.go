@@ -765,7 +765,17 @@ func compileExpected(images []*storage.Image, filter *filterImpl, options views.
 				vulnTime = vulnTime.Round(time.Microsecond)
 				vulnPublishDate, _ := protocompat.ConvertTimestampToTimeOrError(vuln.GetPublishedOn())
 				vulnPublishDate = vulnPublishDate.Round(time.Microsecond)
+				vulnImageOccurrence, _ := protocompat.ConvertTimestampToTimeOrError(vuln.GetFirstImageOccurrence())
+				vulnImageOccurrence = vulnImageOccurrence.Round(time.Microsecond)
 				val := cveMap[vuln.GetCve()]
+
+				var impactScore float32
+				if vuln.GetCvssV3() != nil {
+					impactScore = vuln.GetCvssV3().GetImpactScore()
+				} else if vuln.GetCvssV2() != nil {
+					impactScore = vuln.GetCvssV2().GetImpactScore()
+				}
+
 				if val == nil {
 					val = &imageCVEFlatResponse{
 						CVE:                     vuln.GetCve(),
@@ -773,6 +783,10 @@ func compileExpected(images []*storage.Image, filter *filterImpl, options views.
 						FirstDiscoveredInSystem: &vulnTime,
 						Published:               &vulnPublishDate,
 						Severity:                vuln.GetSeverity().Enum(),
+						FirstImageOccurrence:    &vulnImageOccurrence,
+						State:                   pointers.Pointer(vuln.GetState()),
+						ImpactScore:             pointers.Float32(impactScore),
+						EpssProbability:         pointers.Float32(vuln.GetEpss().GetEpssProbability()),
 					}
 					for _, metric := range vuln.CvssMetrics {
 						if metric.Source == storage.Source_SOURCE_NVD {
@@ -787,6 +801,8 @@ func compileExpected(images []*storage.Image, filter *filterImpl, options views.
 				}
 
 				val.TopCVSS = pointers.Float32(max(val.GetTopCVSS(), vuln.GetCvss()))
+				val.ImpactScore = pointers.Float32(max(*val.ImpactScore, impactScore))
+				val.EpssProbability = pointers.Float32(max(*val.EpssProbability, vuln.GetEpss().GetEpssProbability()))
 				if vuln.GetSeverity().Number() > val.GetSeverity().Number() {
 					val.Severity = pointers.Pointer(vuln.GetSeverity())
 				}
@@ -808,6 +824,9 @@ func compileExpected(images []*storage.Image, filter *filterImpl, options views.
 				}
 				if val.GetPublishDate().After(vulnPublishDate) {
 					val.Published = &vulnPublishDate
+				}
+				if val.GetFirstImageOccurrence().After(vulnImageOccurrence) {
+					val.FirstImageOccurrence = &vulnImageOccurrence
 				}
 
 				if !seenForImage.Add(val.CVE) {
