@@ -111,14 +111,14 @@ func (s *notifierDataStoreTestSuite) TestGetScrubbedNotifier() {
 	s.Equal("******", scrubbedNotifier.Config.(*storage.Notifier_Generic).Generic.Password)
 }
 
-func (s *notifierDataStoreTestSuite) TestEnforcesGetMany() {
+func (s *notifierDataStoreTestSuite) TestEnforcesForEach() {
 	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).Times(0)
 
 	err := s.dataStore.ForEachNotifier(s.hasNoneCtx, nil)
 	s.NoError(err, "expected no error, should return nil without access")
 }
 
-func (s *notifierDataStoreTestSuite) TestAllowsGetMany() {
+func (s *notifierDataStoreTestSuite) TestAllowsForEach() {
 	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
 	err := s.dataStore.ForEachNotifier(s.hasReadCtx, nil)
