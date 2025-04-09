@@ -407,14 +407,13 @@ teardown() {
 
     _begin "deploying-old-central"
     info "Deploying StackRox central-services using chart ${old_central_chart}"
-    password_setting=$(cat <<EOT
+    deploy_central_with_helm "$CUSTOM_CENTRAL_NAMESPACE" "$EARLIER_MAIN_IMAGE_TAG" "$old_central_chart" \
+        -f <(cat <<EOT
 central:
   adminPassword:
     value: "$ROX_ADMIN_PASSWORD"
 EOT
     )
-    deploy_central_with_helm "$CUSTOM_CENTRAL_NAMESPACE" "$EARLIER_MAIN_IMAGE_TAG" "$old_central_chart" \
-        -f <(echo "$password_setting")
 
     _step "verify-scanner-V4-not-deployed"
     verify_scannerV2_deployed "$CUSTOM_CENTRAL_NAMESPACE"
