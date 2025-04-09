@@ -52,11 +52,20 @@ func NewIndexerService(indexer indexer.Indexer) *indexerService {
 
 func (s *indexerService) CreateIndexReport(ctx context.Context, req *v4.CreateIndexReportRequest) (*v4.IndexReport, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "scanner/service/indexer.CreateIndexReport")
+	return s.createIndexReport(ctx, req)
+}
+
+// createIndexReport creates an Index Report for the given request.
+// This function writes logs using the given context.
+func (s *indexerService) createIndexReport(ctx context.Context, req *v4.CreateIndexReportRequest) (*v4.IndexReport, error) {
+	zlog.Info(ctx).Msg("creating index report for container image")
+
 	// TODO We currently only support container images, hence we assume the resource
 	//      is of that type. When introducing nodes and other resources, this should
 	//      evolve.
 	resourceType := "containerimage"
 	if err := validators.ValidateContainerImageRequest(req); err != nil {
+		zlog.Error(ctx).Err(err).Msg("invalid request")
 		return nil, err
 	}
 	ctx = zlog.ContextWithValues(ctx, "resource_type", resourceType, "hash_id", req.GetHashId())
@@ -104,18 +113,20 @@ func (s *indexerService) GetIndexReport(ctx context.Context, req *v4.GetIndexRep
 		"hash_id", req.GetHashId(),
 	)
 	zlog.Info(ctx).Msg("getting index report for container image")
-	ir, err := s.getIndexReport(ctx, req)
+	ir, err := s.getIndexReport(ctx, req.GetHashId())
 	switch {
 	case errors.Is(err, errox.NotFound):
 		zlog.Warn(ctx).Err(err).Send()
 	case err != nil:
-		zlog.Error(ctx).Err(err).Msg("internal error: converting to v4.IndexReport")
+		zlog.Error(ctx).Err(err).Msg("internal error")
 	}
 	return ir, err
 }
 
-func (s *indexerService) getIndexReport(ctx context.Context, req *v4.GetIndexReportRequest) (*v4.IndexReport, error) {
-	ccIR, err := getClairIndexReport(ctx, s.indexer, req.GetHashId())
+// getIndexReport fetches the Index Report for the resource with the given hashID.
+// Users of this function may be interested in logging the output.
+func (s *indexerService) getIndexReport(ctx context.Context, hashID string) (*v4.IndexReport, error) {
+	ccIR, err := getClairIndexReport(ctx, s.indexer, hashID)
 	if err != nil {
 		return nil, err
 	}
@@ -123,7 +134,7 @@ func (s *indexerService) getIndexReport(ctx context.Context, req *v4.GetIndexRep
 	if err != nil {
 		return nil, err
 	}
-	v4IR.HashId = req.GetHashId()
+	v4IR.HashId = hashID
 	return v4IR, nil
 }
 
@@ -134,9 +145,7 @@ func (s *indexerService) GetOrCreateIndexReport(ctx context.Context, req *v4.Get
 	)
 
 	zlog.Info(ctx).Msg("getting index report for container image")
-	ir, err := s.getIndexReport(ctx, &v4.GetIndexReportRequest{
-		HashId: req.GetHashId(),
-	})
+	ir, err := s.getIndexReport(ctx, req.GetHashId())
 	switch {
 	case errors.Is(err, nil):
 		return ir, nil
@@ -144,14 +153,14 @@ func (s *indexerService) GetOrCreateIndexReport(ctx context.Context, req *v4.Get
 		// Not found, log and go create.
 		zlog.Debug(ctx).Err(err).Msg("index report not found")
 	default:
+		zlog.Error(ctx).Err(err).Msg("internal error")
 		return nil, err
 	}
 
-	zlog.Info(ctx).Msg("creating index report for container image")
 	// TODO We currently only support container images, hence we assume the resource
 	//      is of that type. When introducing nodes and other resources, this should
 	//      evolve.
-	return s.CreateIndexReport(ctx, &v4.CreateIndexReportRequest{
+	return s.createIndexReport(ctx, &v4.CreateIndexReportRequest{
 		HashId: req.GetHashId(),
 		ResourceLocator: &v4.CreateIndexReportRequest_ContainerImage{
 			ContainerImage: req.GetContainerImage(),
