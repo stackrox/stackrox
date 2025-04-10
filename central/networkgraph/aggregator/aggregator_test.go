@@ -252,14 +252,14 @@ func TestLatestTimestampAggregator(t *testing.T) {
 	f1 := testutils.GetNetworkFlow(d1, e, 8000, storage.L4Protocol_L4_PROTOCOL_TCP, &ts1)
 	f2 := testutils.GetNetworkFlow(d1, e, 8000, storage.L4Protocol_L4_PROTOCOL_TCP, &ts2)
 	f3 := testutils.GetNetworkFlow(internet, d1, 8000, storage.L4Protocol_L4_PROTOCOL_UNKNOWN, &ts1)
-	f4 := testutils.GetNetworkFlow(d1, d2, 8000, storage.L4Protocol_L4_PROTOCOL_TCP, &ts1)
-	f5 := testutils.GetNetworkFlow(d1, d2, 8000, storage.L4Protocol_L4_PROTOCOL_TCP, &ts2)
+	f4 := testutils.GetNetworkFlow(d1, d2, 8000, storage.L4Protocol_L4_PROTOCOL_TCP, &ts2)
+	f5 := testutils.GetNetworkFlow(d1, d2, 8000, storage.L4Protocol_L4_PROTOCOL_TCP, &ts1)
 	f6 := testutils.GetNetworkFlow(d1, d2, 8001, storage.L4Protocol_L4_PROTOCOL_TCP, &ts3)
 	f7 := testutils.GetNetworkFlow(d1, d2, 8001, storage.L4Protocol_L4_PROTOCOL_UDP, &ts4)
 
 	flows := []*storage.NetworkFlow{f1, f2, f3, f4, f5, f6, f7}
 
-	expected := []*storage.NetworkFlow{f2, f3, f5, f6, f7}
+	expected := []*storage.NetworkFlow{f2, f3, f4, f6, f7}
 
 	aggr := NewLatestTimestampAggregator()
 	actual := aggr.Aggregate(flows)
