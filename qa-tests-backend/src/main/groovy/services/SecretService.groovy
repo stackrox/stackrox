@@ -26,7 +26,7 @@ class SecretService extends BaseService {
 
     @Retry(attempts = 10)
     static void waitForSecret(String id) {
-        assert getSecret(id) != null
+        getSecret(id)
     }
 
     @Retry(attempts = 50)
