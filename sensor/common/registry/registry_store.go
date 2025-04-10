@@ -339,11 +339,13 @@ func (rs *Store) IsLocal(image *storage.ImageName) bool {
 // registries that are only accessible from this cluster. These hosts will be factored
 // into IsLocal decisions. Is OK to call repeatedly for the same host.
 func (rs *Store) addClusterLocalRegistryHost(host string) {
+	trimmed := urlfmt.TrimHTTPPrefixes(host)
+
 	rs.clusterLocalRegistryHostsMutex.Lock()
 	defer rs.clusterLocalRegistryHostsMutex.Unlock()
 
-	if rs.clusterLocalRegistryHosts.Add(host) {
-		log.Infof("Added cluster local registry host %q", host)
+	if rs.clusterLocalRegistryHosts.Add(trimmed) {
+		log.Infof("Added cluster local registry host %q", trimmed)
 
 		metrics.SetClusterLocalHostsCount(len(rs.clusterLocalRegistryHosts))
 	}
@@ -424,8 +426,6 @@ func (rs *Store) upsertSecretByHost(namespace, secretName string, dockerConfig c
 	fromDefaultSA := serviceAcctName == defaultSA
 
 	for registryAddress, dce := range dockerConfig {
-		// Remove http/https prefixes and path from registry, matching may fail otherwise.
-		// The created registry.url will have the appropriate prefix.
 		registryAddr := strings.TrimSpace(registryAddress)
 		host := urlfmt.GetServerFromURL(
 			urlfmt.FormatURL(registryAddr, urlfmt.HTTPS, urlfmt.NoTrailingSlash),
@@ -478,8 +478,6 @@ func (rs *Store) upsertSecretByName(namespace, secretName string, dockerConfig c
 	defer rs.storeMutux.Unlock()
 
 	for registryAddress, dce := range dockerConfig {
-		// Remove http/https prefixes and path from registry, matching may fail otherwise.
-		// The created registry.url will have the appropriate prefix.
 		registryAddr := strings.TrimSpace(registryAddress)
 		host := urlfmt.GetServerFromURL(
 			urlfmt.FormatURL(registryAddr, urlfmt.HTTPS, urlfmt.NoTrailingSlash),
@@ -514,6 +512,8 @@ func (rs *Store) upsertSecretByName(namespace, secretName string, dockerConfig c
 }
 
 func (rs *Store) upsertPullSecretByNameNoLock(namespace, secretName, registry, host string, dce config.DockerConfigEntry) {
+	host = urlfmt.TrimHTTPPrefixes(host)
+
 	name := genIntegrationName(types.PullSecretNamePrefix, namespace, secretName, registry)
 	ii := createImageIntegration(host, dce, name)
 
