@@ -7,7 +7,7 @@ data:
     restart_interval = 10
     workers = 1
     per_core = false
-    
+
     [workload]
     type = "network"
     server = true
@@ -22,7 +22,7 @@ data:
     restart_interval = 10
     workers = 1
     per_core = false
-    
+
     [workload]
     type = "network"
     server = false
