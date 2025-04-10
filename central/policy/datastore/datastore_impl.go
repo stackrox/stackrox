@@ -318,7 +318,7 @@ func (ds *datastoreImpl) RemovePolicy(ctx context.Context, policy *storage.Polic
 
 	err := ds.removePolicyNoLock(ctx, policy.GetId())
 
-	if err != nil && policy.Source == storage.PolicySource_DECLARATIVE {
+	if err == nil && policy.Source == storage.PolicySource_DECLARATIVE {
 		metrics.DecrementTotalExternalPoliciesGauge()
 	}
 
