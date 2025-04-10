@@ -12,7 +12,7 @@ import (
 //
 //go:generate mockgen-wrapper
 type Store interface {
-	GetAll(ctx context.Context) ([]*storage.AuthProvider, error)
+	Walk(ctx context.Context, fn func(obj *storage.AuthProvider) error) error
 	Get(ctx context.Context, id string) (*storage.AuthProvider, bool, error)
 
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)

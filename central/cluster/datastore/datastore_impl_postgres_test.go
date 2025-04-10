@@ -1059,56 +1059,56 @@ func (s *ClusterPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 		},
 		{
 			desc:  "Search clusters with cluster scope",
-			ctx:   scoped.Context(ctx, scoped.Scope{ID: c1ID, Level: v1.SearchCategory_CLUSTERS}),
+			ctx:   scoped.Context(ctx, scoped.Scope{IDs: []string{c1ID}, Level: v1.SearchCategory_CLUSTERS}),
 			query: pkgSearch.EmptyQuery(),
 
 			expectedIDs: []string{c1ID},
 		},
 		{
 			desc:  "Search clusters with cluster scope and in-scope cluster query",
-			ctx:   scoped.Context(ctx, scoped.Scope{ID: c1ID, Level: v1.SearchCategory_CLUSTERS}),
+			ctx:   scoped.Context(ctx, scoped.Scope{IDs: []string{c1ID}, Level: v1.SearchCategory_CLUSTERS}),
 			query: pkgSearch.NewQueryBuilder().AddMapQuery(pkgSearch.ClusterLabel, "env", "prod").ProtoQuery(),
 
 			expectedIDs: []string{c1ID},
 		},
 		{
 			desc:  "Search clusters with cluster scope and out-of-scope cluster query",
-			ctx:   scoped.Context(ctx, scoped.Scope{ID: c1ID, Level: v1.SearchCategory_CLUSTERS}),
+			ctx:   scoped.Context(ctx, scoped.Scope{IDs: []string{c1ID}, Level: v1.SearchCategory_CLUSTERS}),
 			query: pkgSearch.NewQueryBuilder().AddMapQuery(pkgSearch.ClusterLabel, "env", "test").ProtoQuery(),
 
 			expectedIDs: []string{},
 		},
 		{
 			desc:  "Search clusters with cluster scope and in-scope namespace query",
-			ctx:   scoped.Context(ctx, scoped.Scope{ID: c1ID, Level: v1.SearchCategory_CLUSTERS}),
+			ctx:   scoped.Context(ctx, scoped.Scope{IDs: []string{c1ID}, Level: v1.SearchCategory_CLUSTERS}),
 			query: pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.Namespace, "n1").ProtoQuery(),
 
 			expectedIDs: []string{c1ID},
 		},
 		{
 			desc:  "Search clusters with cluster scope and out-of-scope namespace query",
-			ctx:   scoped.Context(ctx, scoped.Scope{ID: c2ID, Level: v1.SearchCategory_CLUSTERS}),
+			ctx:   scoped.Context(ctx, scoped.Scope{IDs: []string{c2ID}, Level: v1.SearchCategory_CLUSTERS}),
 			query: pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.Namespace, "n2").ProtoQuery(),
 
 			expectedIDs: []string{},
 		},
 		{
 			desc:  "Search clusters with namespace scope",
-			ctx:   scoped.Context(ctx, scoped.Scope{ID: ns1C1.Id, Level: v1.SearchCategory_NAMESPACES}),
+			ctx:   scoped.Context(ctx, scoped.Scope{IDs: []string{ns1C1.Id}, Level: v1.SearchCategory_NAMESPACES}),
 			query: pkgSearch.EmptyQuery(),
 
 			expectedIDs: []string{c1ID},
 		},
 		{
 			desc:  "Search clusters with namespace scope and in-scope cluster query",
-			ctx:   scoped.Context(ctx, scoped.Scope{ID: ns1C1.Id, Level: v1.SearchCategory_NAMESPACES}),
+			ctx:   scoped.Context(ctx, scoped.Scope{IDs: []string{ns1C1.Id}, Level: v1.SearchCategory_NAMESPACES}),
 			query: pkgSearch.NewQueryBuilder().AddMapQuery(pkgSearch.ClusterLabel, "env", "prod").ProtoQuery(),
 
 			expectedIDs: []string{c1ID},
 		},
 		{
 			desc:  "Search clusters with namespace scope and out-of-scope cluster query",
-			ctx:   scoped.Context(ctx, scoped.Scope{ID: ns1C1.Id, Level: v1.SearchCategory_NAMESPACES}),
+			ctx:   scoped.Context(ctx, scoped.Scope{IDs: []string{ns1C1.Id}, Level: v1.SearchCategory_NAMESPACES}),
 			query: pkgSearch.NewQueryBuilder().AddMapQuery(pkgSearch.ClusterLabel, "env", "test").ProtoQuery(),
 
 			expectedIDs: []string{},
@@ -1147,7 +1147,7 @@ func (s *ClusterPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 		},
 		{
 			desc:  "Search namespace with namespace scope",
-			ctx:   scoped.Context(ctx, scoped.Scope{ID: ns1C1.Id, Level: v1.SearchCategory_NAMESPACES}),
+			ctx:   scoped.Context(ctx, scoped.Scope{IDs: []string{ns1C1.Id}, Level: v1.SearchCategory_NAMESPACES}),
 			query: pkgSearch.EmptyQuery(),
 
 			expectedIDs: []string{ns1C1.Id},
@@ -1155,7 +1155,7 @@ func (s *ClusterPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 		},
 		{
 			desc:  "Search namespace with namespace scope and in-scope cluster query",
-			ctx:   scoped.Context(ctx, scoped.Scope{ID: ns1C1.Id, Level: v1.SearchCategory_NAMESPACES}),
+			ctx:   scoped.Context(ctx, scoped.Scope{IDs: []string{ns1C1.Id}, Level: v1.SearchCategory_NAMESPACES}),
 			query: pkgSearch.NewQueryBuilder().AddMapQuery(pkgSearch.ClusterLabel, "env", "prod").ProtoQuery(),
 
 			expectedIDs: []string{ns1C1.Id},
@@ -1163,7 +1163,7 @@ func (s *ClusterPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 		},
 		{
 			desc:  "Search namespace with namespace scope and out-of-scope cluster query",
-			ctx:   scoped.Context(ctx, scoped.Scope{ID: ns1C1.Id, Level: v1.SearchCategory_NAMESPACES}),
+			ctx:   scoped.Context(ctx, scoped.Scope{IDs: []string{ns1C1.Id}, Level: v1.SearchCategory_NAMESPACES}),
 			query: pkgSearch.NewQueryBuilder().AddMapQuery(pkgSearch.ClusterLabel, "env", "test").ProtoQuery(),
 
 			expectedIDs: []string{},
@@ -1171,7 +1171,7 @@ func (s *ClusterPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 		},
 		{
 			desc:  "Search namespace with namespace scope and in-scope namespace query",
-			ctx:   scoped.Context(ctx, scoped.Scope{ID: ns1C1.Id, Level: v1.SearchCategory_NAMESPACES}),
+			ctx:   scoped.Context(ctx, scoped.Scope{IDs: []string{ns1C1.Id}, Level: v1.SearchCategory_NAMESPACES}),
 			query: pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.Namespace, "n1").ProtoQuery(),
 
 			expectedIDs: []string{ns1C1.Id},
@@ -1179,7 +1179,7 @@ func (s *ClusterPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 		},
 		{
 			desc:  "Search namespace with namespace scope and out-of-scope namespace query",
-			ctx:   scoped.Context(ctx, scoped.Scope{ID: ns1C1.Id, Level: v1.SearchCategory_NAMESPACES}),
+			ctx:   scoped.Context(ctx, scoped.Scope{IDs: []string{ns1C1.Id}, Level: v1.SearchCategory_NAMESPACES}),
 			query: pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.Namespace, "n2").ProtoQuery(),
 
 			expectedIDs: []string{},
@@ -1187,7 +1187,7 @@ func (s *ClusterPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 		},
 		{
 			desc:  "Search namespaces with cluster scope",
-			ctx:   scoped.Context(ctx, scoped.Scope{ID: c1ID, Level: v1.SearchCategory_CLUSTERS}),
+			ctx:   scoped.Context(ctx, scoped.Scope{IDs: []string{c1ID}, Level: v1.SearchCategory_CLUSTERS}),
 			query: pkgSearch.EmptyQuery(),
 
 			expectedIDs: []string{ns1C1.Id, ns2C1.Id},
@@ -1195,7 +1195,7 @@ func (s *ClusterPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 		},
 		{
 			desc:  "Search namespaces with cluster scope and in-scope cluster query",
-			ctx:   scoped.Context(ctx, scoped.Scope{ID: c1ID, Level: v1.SearchCategory_CLUSTERS}),
+			ctx:   scoped.Context(ctx, scoped.Scope{IDs: []string{c1ID}, Level: v1.SearchCategory_CLUSTERS}),
 			query: pkgSearch.NewQueryBuilder().AddMapQuery(pkgSearch.ClusterLabel, "env", "prod").ProtoQuery(),
 
 			expectedIDs: []string{ns1C1.Id, ns2C1.Id},
@@ -1203,7 +1203,7 @@ func (s *ClusterPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 		},
 		{
 			desc:  "Search namespaces with cluster scope and out-of-scope cluster query",
-			ctx:   scoped.Context(ctx, scoped.Scope{ID: c1ID, Level: v1.SearchCategory_CLUSTERS}),
+			ctx:   scoped.Context(ctx, scoped.Scope{IDs: []string{c1ID}, Level: v1.SearchCategory_CLUSTERS}),
 			query: pkgSearch.NewQueryBuilder().AddMapQuery(pkgSearch.ClusterLabel, "env", "test").ProtoQuery(),
 
 			expectedIDs: []string{},
@@ -1213,10 +1213,10 @@ func (s *ClusterPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 			desc: "Search namespaces with cluster+namespace scope",
 			ctx: scoped.Context(ctx,
 				scoped.Scope{
-					ID:    ns1C1.Id,
+					IDs:   []string{ns1C1.Id},
 					Level: v1.SearchCategory_NAMESPACES,
 					Parent: &scoped.Scope{
-						ID:    c1ID,
+						IDs:   []string{c1ID},
 						Level: v1.SearchCategory_CLUSTERS,
 					},
 				},
@@ -1230,10 +1230,10 @@ func (s *ClusterPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 			desc: "Search namespaces with cluster+namespace scope and out-of-scope cluster query",
 			ctx: scoped.Context(ctx,
 				scoped.Scope{
-					ID:    ns1C1.Id,
+					IDs:   []string{ns1C1.Id},
 					Level: v1.SearchCategory_NAMESPACES,
 					Parent: &scoped.Scope{
-						ID:    c1ID,
+						IDs:   []string{c1ID},
 						Level: v1.SearchCategory_CLUSTERS,
 					},
 				},

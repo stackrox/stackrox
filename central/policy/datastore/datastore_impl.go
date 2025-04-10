@@ -125,7 +125,7 @@ func (ds *datastoreImpl) GetPolicy(ctx context.Context, id string) (*storage.Pol
 		return nil, false, err
 	}
 
-	err = ds.fillCategoryNames(ctx, []*storage.Policy{policy})
+	err = ds.fillCategoryNames(ctx, policy)
 	if err != nil {
 		return nil, true, err
 	}
@@ -133,7 +133,7 @@ func (ds *datastoreImpl) GetPolicy(ctx context.Context, id string) (*storage.Pol
 	return policy, true, nil
 }
 
-func (ds *datastoreImpl) fillCategoryNames(ctx context.Context, policies []*storage.Policy) error {
+func (ds *datastoreImpl) fillCategoryNames(ctx context.Context, policies ...*storage.Policy) error {
 	for _, p := range policies {
 		categories, err := ds.categoriesDatastore.GetPolicyCategoriesForPolicy(ctx, p.GetId())
 		if err != nil {
@@ -155,7 +155,7 @@ func (ds *datastoreImpl) GetPolicies(ctx context.Context, ids []string) ([]*stor
 		return nil, nil, err
 	}
 
-	err = ds.fillCategoryNames(ctx, policies)
+	err = ds.fillCategoryNames(ctx, policies...)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -167,12 +167,15 @@ func (ds *datastoreImpl) GetAllPolicies(ctx context.Context) ([]*storage.Policy,
 		return nil, err
 	}
 
-	policies, err := ds.storage.GetAll(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	err = ds.fillCategoryNames(ctx, policies)
+	var policies []*storage.Policy
+	err := ds.storage.Walk(ctx, func(policy *storage.Policy) error {
+		policies = append(policies, policy)
+		err := ds.fillCategoryNames(ctx, policy)
+		if err != nil {
+			return errorsPkg.Wrap(err, "failed to fill category names")
+		}
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -193,7 +196,7 @@ func (ds *datastoreImpl) GetPolicyByName(ctx context.Context, name string) (*sto
 
 	for _, p := range policies {
 		if p.GetName() == name {
-			err = ds.fillCategoryNames(ctx, []*storage.Policy{p})
+			err = ds.fillCategoryNames(ctx, p)
 			if err != nil {
 				return nil, true, err
 			}

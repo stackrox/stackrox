@@ -533,8 +533,14 @@ func (s *tstAuthProviderStore) GetAuthProvider(_ context.Context, id string) (*s
 	return nil, false, nil
 }
 
-func (*tstAuthProviderStore) GetAllAuthProviders(_ context.Context) ([]*storage.AuthProvider, error) {
-	return []*storage.AuthProvider{mockAuthProvider, mockAuthProviderWithAttributes}, nil
+func (*tstAuthProviderStore) ForEachAuthProvider(_ context.Context, fn func(obj *storage.AuthProvider) error) error {
+	for _, p := range []*storage.AuthProvider{mockAuthProvider, mockAuthProviderWithAttributes} {
+		err := fn(p)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (*tstAuthProviderStore) GetAuthProvidersFiltered(_ context.Context, _ func(provider *storage.AuthProvider) bool) ([]*storage.AuthProvider, error) {

@@ -408,24 +408,6 @@ func (c *cachedStore[T, PT]) GetIDsByQuery(ctx context.Context, query *v1.Query)
 	return c.underlyingStore.GetIDsByQuery(ctx, query)
 }
 
-// GetAll retrieves all objects from the store.
-//
-// Deprecated: This can be dangerous on high cardinality stores consider Walk instead.
-func (c *cachedStore[T, PT]) GetAll(ctx context.Context) ([]PT, error) {
-	defer c.setCacheOperationDurationTime(time.Now(), ops.GetAll)
-	c.cacheLock.RLock()
-	defer c.cacheLock.RUnlock()
-	result := make([]PT, 0, len(c.cache))
-	err := c.walkCacheNoLock(ctx, func(obj PT) error {
-		result = append(result, obj.CloneVT())
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	return result, nil
-}
-
 func (c *cachedStore[T, PT]) walkCacheNoLock(ctx context.Context, fn func(obj PT) error) error {
 	for _, obj := range c.cache {
 		if err := ctx.Err(); err != nil {

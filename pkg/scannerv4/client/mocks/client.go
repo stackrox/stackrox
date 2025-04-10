@@ -105,9 +105,9 @@ func (mr *MockScannerMockRecorder) GetOrCreateImageIndex(ctx, ref, auth, opt any
 }
 
 // GetSBOM mocks base method.
-func (m *MockScanner) GetSBOM(ctx context.Context, name string, ref name.Digest, uri string) ([]byte, bool, error) {
+func (m *MockScanner) GetSBOM(ctx context.Context, arg1 string, ref name.Digest, uri string) ([]byte, bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetSBOM", ctx, name, ref, uri)
+	ret := m.ctrl.Call(m, "GetSBOM", ctx, arg1, ref, uri)
 	ret0, _ := ret[0].([]byte)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
@@ -115,9 +115,9 @@ func (m *MockScanner) GetSBOM(ctx context.Context, name string, ref name.Digest,
 }
 
 // GetSBOM indicates an expected call of GetSBOM.
-func (mr *MockScannerMockRecorder) GetSBOM(ctx, name, ref, uri any) *gomock.Call {
+func (mr *MockScannerMockRecorder) GetSBOM(ctx, arg1, ref, uri any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSBOM", reflect.TypeOf((*MockScanner)(nil).GetSBOM), ctx, name, ref, uri)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSBOM", reflect.TypeOf((*MockScanner)(nil).GetSBOM), ctx, arg1, ref, uri)
 }
 
 // GetVulnerabilities mocks base method.

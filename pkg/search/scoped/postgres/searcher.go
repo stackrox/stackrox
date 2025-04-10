@@ -50,10 +50,6 @@ func scopeQuery(q *v1.Query, scopes []scoped.Scope) (*v1.Query, error) {
 			return q, nil
 		}
 		idField := schema.ID()
-		if scope.ID != "" {
-			conjuncts = append(conjuncts, search.NewQueryBuilder().
-				AddExactMatches(search.FieldLabel(idField.Search.FieldName), scope.ID).ProtoQuery())
-		}
 		if len(scope.IDs) > 0 {
 			conjuncts = append(conjuncts, search.NewQueryBuilder().
 				AddExactMatches(search.FieldLabel(idField.Search.FieldName), scope.IDs...).ProtoQuery())

@@ -70,19 +70,18 @@ func (mr *MockStoreMockRecorder) AuthProviderExistsWithName(ctx, name any) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AuthProviderExistsWithName", reflect.TypeOf((*MockStore)(nil).AuthProviderExistsWithName), ctx, name)
 }
 
-// GetAllAuthProviders mocks base method.
-func (m *MockStore) GetAllAuthProviders(ctx context.Context) ([]*storage.AuthProvider, error) {
+// ForEachAuthProvider mocks base method.
+func (m *MockStore) ForEachAuthProvider(ctx context.Context, fn func(*storage.AuthProvider) error) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAllAuthProviders", ctx)
-	ret0, _ := ret[0].([]*storage.AuthProvider)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret := m.ctrl.Call(m, "ForEachAuthProvider", ctx, fn)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
-// GetAllAuthProviders indicates an expected call of GetAllAuthProviders.
-func (mr *MockStoreMockRecorder) GetAllAuthProviders(ctx any) *gomock.Call {
+// ForEachAuthProvider indicates an expected call of ForEachAuthProvider.
+func (mr *MockStoreMockRecorder) ForEachAuthProvider(ctx, fn any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllAuthProviders", reflect.TypeOf((*MockStore)(nil).GetAllAuthProviders), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ForEachAuthProvider", reflect.TypeOf((*MockStore)(nil).ForEachAuthProvider), ctx, fn)
 }
 
 // GetAuthProvider mocks base method.

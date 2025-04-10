@@ -1038,6 +1038,9 @@ func RunCursorQueryForSchemaFn[T any, PT pgutils.Unmarshaler[T]](ctx context.Con
 
 		var data []byte
 		tag, err := pgx.ForEachRow(rows, []any{&data}, func() error {
+			if ctx.Err() != nil {
+				return errors.Wrap(ctx.Err(), "iterating over rows")
+			}
 			msg := new(T)
 			if err := PT(msg).UnmarshalVTUnsafe(data); err != nil {
 				return err

@@ -83,9 +83,6 @@ type properties struct {
 	// Indicates the directory in which the generated schema file must go.
 	SchemaDirectory string
 
-	// Indicates that we want to generate a GetAll function. Defaults to false because this can be dangerous on high cardinality stores.
-	GetAll bool
-
 	// Indicates that we should just generate the singleton store.
 	SingletonStore bool
 
@@ -135,7 +132,6 @@ func main() {
 	c.Flags().BoolVar(&props.JoinTable, "read-only-store", false, "if set to true, creates read-only store")
 	c.Flags().BoolVar(&props.NoCopyFrom, "no-copy-from", false, "if true, indicates that the store should not use Postgres copyFrom operation")
 	c.Flags().BoolVar(&props.SchemaOnly, "schema-only", false, "if true, generates only the schema and not store and index")
-	c.Flags().BoolVar(&props.GetAll, "get-all-func", false, "if true, generates a GetAll function (can be dangerous on high cardinality stores, use with care)")
 	c.Flags().StringVar(&props.SchemaDirectory, "schema-directory", "", "the directory in which to generate the schema")
 	c.Flags().BoolVar(&props.SingletonStore, "singleton", false, "indicates that we should just generate the singleton store")
 	c.Flags().StringSliceVar(&props.SearchScope, "search-scope", []string{}, "if set, the search is scoped to specified search categories. comma seperated of search categories")
@@ -202,7 +198,6 @@ func main() {
 			"SearchCategory":    searchCategory,
 			"JoinTable":         props.JoinTable,
 			"PermissionChecker": props.PermissionChecker,
-			"GetAll":            props.GetAll,
 			"Obj": object{
 				storageType:              props.Type,
 				permissionCheckerEnabled: permissionCheckerEnabled,

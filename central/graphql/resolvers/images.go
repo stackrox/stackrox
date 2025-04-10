@@ -210,7 +210,7 @@ func (resolver *imageResolver) withImageScopeContext(ctx context.Context) contex
 	}
 	return scoped.Context(resolver.ctx, scoped.Scope{
 		Level: v1.SearchCategory_IMAGES,
-		ID:    resolver.data.GetId(),
+		IDs:   []string{resolver.data.GetId()},
 	})
 }
 

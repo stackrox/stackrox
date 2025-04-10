@@ -161,6 +161,79 @@ jobs:
     - name: Check Cache golangci-lint
       run: make golangci-lint-cache-status
 
+  check-collector-and-scanner-images-exist:
+    # This job ensures that COLLECTOR_VERSION or SCANNER_VERSION files cannot be updated to a version for which the
+    # image was not successfully built on Konflux (suffix "-fast"). It also verifies that GHA-built image is there (no
+    # suffix) so that the failure also happens in this job.
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        image: ["collector", "scanner", "scanner-slim", "scanner-db", "scanner-db-slim"]
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Get image tag from COLLECTOR|SCANNER_VERSION file
+        id: image-tag
+        run: |
+          if [[ "${{ matrix.image }}" == "collector" ]]; then
+            makefile_target="collector-tag"
+          else
+            makefile_target="scanner-tag"
+          fi
+          echo "image-tag=$(make --quiet --no-print-directory "${makefile_target}")" >> "${GITHUB_OUTPUT}"
+
+      - name: Check GHA-built image exists
+        uses: stackrox/actions/release/wait-for-image@v1
+        with:
+          token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
+          image: rhacs-eng/${{ matrix.image }}:${{ steps.image-tag.outputs.image-tag }}
+          limit: 300
+
+      - name: Check Konflux-built image exists
+        uses: stackrox/actions/release/wait-for-image@v1
+        with:
+          token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
+          image: rhacs-eng/${{ matrix.image }}:${{ steps.image-tag.outputs.image-tag }}-fast
+          limit: 300
+
+  github-actions-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download actionlint
+        id: get_actionlint
+        run: bash <(curl https://raw.githubusercontent.com/rhysd/actionlint/2ab3a12c7848f6c15faca9a92612ef4261d0e370/scripts/download-actionlint.bash) 1.6.27
+        shell: bash
+      - name: Check workflow files
+        run: ${{ steps.get_actionlint.outputs.executable }} -color
+        shell: bash
+
+  github-actions-shellcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check scripts with shellcheck
+        run: shellcheck -P SCRIPTDIR -x ./.github/workflows/scripts/*.sh
+
+  openshift-ci-lint:
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - name: Pylint
+        run: make -C .openshift-ci lint
+
   slack-on-style-failure:
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -178,6 +251,10 @@ jobs:
       - misc-checks
       - style-check
       - golangci-lint
+      - check-collector-and-scanner-images-exist
+      - github-actions-lint
+      - github-actions-shellcheck
+      - openshift-ci-lint
     permissions:
       actions: read
     steps:

@@ -224,7 +224,7 @@ func (resolver *deploymentResolver) Policies(ctx context.Context, args Paginated
 	for _, policyResolver := range policyResolvers {
 		policyResolver.ctx = scoped.Context(ctx, scoped.Scope{
 			Level: v1.SearchCategory_DEPLOYMENTS,
-			ID:    resolver.data.GetId(),
+			IDs:   []string{resolver.data.GetId()},
 		})
 	}
 
@@ -304,7 +304,7 @@ func (resolver *deploymentResolver) FailingPolicies(ctx context.Context, args Pa
 	for _, policyResolver := range policyResolvers {
 		policyResolver.ctx = scoped.Context(ctx, scoped.Scope{
 			Level: v1.SearchCategory_DEPLOYMENTS,
-			ID:    resolver.data.GetId(),
+			IDs:   []string{resolver.data.GetId()},
 		})
 	}
 
@@ -562,7 +562,7 @@ func (resolver *deploymentResolver) withDeploymentScopeContext(ctx context.Conte
 	}
 	return scoped.Context(resolver.ctx, scoped.Scope{
 		Level: v1.SearchCategory_DEPLOYMENTS,
-		ID:    resolver.data.GetId(),
+		IDs:   []string{resolver.data.GetId()},
 	})
 }
 
@@ -573,7 +573,7 @@ func (resolver *deploymentResolver) PolicyStatus(ctx context.Context, args RawQu
 	var err error
 	var q *v1.Query
 	if scope, hasScope := scoped.GetScope(resolver.ctx); hasScope && scope.Level == v1.SearchCategory_POLICIES {
-		q = search.NewQueryBuilder().AddExactMatches(search.PolicyID, scope.ID).ProtoQuery()
+		q = search.NewQueryBuilder().AddExactMatches(search.PolicyID, scope.IDs...).ProtoQuery()
 	} else {
 		if q, err = args.AsV1QueryOrEmpty(); err != nil {
 			return "", err
@@ -701,7 +701,7 @@ func (resolver *deploymentResolver) LatestViolation(ctx context.Context, args Ra
 	var err error
 	var q *v1.Query
 	if scope, hasScope := scoped.GetScope(resolver.ctx); hasScope && scope.Level == v1.SearchCategory_POLICIES {
-		q = search.NewQueryBuilder().AddExactMatches(search.PolicyID, scope.ID).ProtoQuery()
+		q = search.NewQueryBuilder().AddExactMatches(search.PolicyID, scope.IDs...).ProtoQuery()
 	} else {
 		if q, err = args.AsV1QueryOrEmpty(); err != nil {
 			return nil, err

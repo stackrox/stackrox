@@ -73,7 +73,7 @@ func TestGetCVEEdgeQuery(t *testing.T) {
 
 func TestSnoozedQueryHandler(t *testing.T) {
 	scopedCtx := scoped.Context(context.Background(), scoped.Scope{
-		ID:    "img1",
+		IDs:   []string{"img1"},
 		Level: v1.SearchCategory_IMAGES,
 	})
 	snoozedCVEsQuery := search.NewQueryBuilder().AddBools(search.CVESuppressed, true).ProtoQuery()

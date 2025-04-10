@@ -92,9 +92,6 @@ func (s *TestSingleKeyStructsStoreSuite) TestStore() {
 	}
 
 	s.NoError(store.UpsertMany(ctx, testSingleKeyStructs))
-	allTestSingleKeyStruct, err := store.GetAll(ctx)
-	s.NoError(err)
-	protoassert.ElementsMatch(s.T(), testSingleKeyStructs, allTestSingleKeyStruct)
 
 	testSingleKeyStructCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

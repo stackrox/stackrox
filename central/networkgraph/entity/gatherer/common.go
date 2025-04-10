@@ -24,7 +24,7 @@ func loadStoredDefaultExtSrcsIDs(entityDS datastore.EntityDataStore) (set.String
 	return ret, nil
 }
 
-func updateInStorage(entityDS datastore.EntityDataStore, lastSeenIDs set.StringSet, entities ...*storage.NetworkEntity) ([]string, error) {
+func updateInStorage(entityDS datastore.EntityDataStore, lastSeenIDs set.StringSet, entities ...*storage.NetworkEntity) (int, error) {
 	var filtered []*storage.NetworkEntity
 	for _, entity := range entities {
 		// This is under the assumption that network from one provider does not move to another provider.

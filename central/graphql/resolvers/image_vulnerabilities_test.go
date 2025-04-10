@@ -199,7 +199,7 @@ func (s *GraphQLImageVulnerabilityTestSuite) TestImageVulnerabilitiesFixedByVers
 
 	scopedCtx := scoped.Context(ctx, scoped.Scope{
 		Level: v1.SearchCategory_IMAGE_COMPONENTS,
-		ID:    "comp1#0.9#",
+		IDs:   []string{"comp1#0.9#"},
 	})
 	vuln := s.getImageVulnerabilityResolver(scopedCtx, "cve-2018-1#")
 
@@ -209,7 +209,7 @@ func (s *GraphQLImageVulnerabilityTestSuite) TestImageVulnerabilitiesFixedByVers
 
 	scopedCtx = scoped.Context(ctx, scoped.Scope{
 		Level: v1.SearchCategory_IMAGE_COMPONENTS,
-		ID:    "comp2#1.1#",
+		IDs:   []string{"comp2#1.1#"},
 	})
 	vuln = s.getImageVulnerabilityResolver(scopedCtx, "cve-2018-1#")
 
@@ -219,7 +219,7 @@ func (s *GraphQLImageVulnerabilityTestSuite) TestImageVulnerabilitiesFixedByVers
 
 	scopedCtx = scoped.Context(ctx, scoped.Scope{
 		Level: v1.SearchCategory_IMAGE_COMPONENTS,
-		ID:    "comp2#1.1#",
+		IDs:   []string{"comp2#1.1#"},
 	})
 	vuln = s.getImageVulnerabilityResolver(scopedCtx, "cve-2017-1#")
 
@@ -478,7 +478,7 @@ func (s *GraphQLImageVulnerabilityTestSuite) TestImageVulnerabilityExceptionCoun
 func (s *GraphQLImageVulnerabilityTestSuite) TestImageVulnerabilityExceptionCountAllWithImageScope() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 	ctx = scoped.Context(ctx, scoped.Scope{
-		ID:    "sha1",
+		IDs:   []string{"sha1"},
 		Level: v1.SearchCategory_IMAGES,
 	})
 	args := struct {
@@ -511,7 +511,7 @@ func (s *GraphQLImageVulnerabilityTestSuite) TestImageVulnerabilityExceptionCoun
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 	status := []*string{pointers.String(storage.RequestStatus_PENDING.String())}
 	ctx = scoped.Context(ctx, scoped.Scope{
-		ID:    "sha1",
+		IDs:   []string{"sha1"},
 		Level: v1.SearchCategory_IMAGES,
 	})
 	args := struct {
@@ -546,7 +546,7 @@ func (s *GraphQLImageVulnerabilityTestSuite) TestImageVulnerabilityExceptionCoun
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 	status := []*string{pointers.String(storage.RequestStatus_APPROVED.String())}
 	ctx = scoped.Context(ctx, scoped.Scope{
-		ID:    "sha1",
+		IDs:   []string{"sha1"},
 		Level: v1.SearchCategory_IMAGES,
 	})
 	args := struct {
@@ -579,7 +579,7 @@ func (s *GraphQLImageVulnerabilityTestSuite) TestImageVulnerabilityExceptionCoun
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 	status := []*string{pointers.String(storage.RequestStatus_APPROVED_PENDING_UPDATE.String())}
 	ctx = scoped.Context(ctx, scoped.Scope{
-		ID:    "sha2",
+		IDs:   []string{"sha2"},
 		Level: v1.SearchCategory_IMAGES,
 	})
 	args := struct {
@@ -624,7 +624,7 @@ func (s *GraphQLImageVulnerabilityTestSuite) TestImageVulnerabilityExceptionCoun
 	s.Equal(int32(1), count)
 
 	ctx = scoped.Context(ctx, scoped.Scope{
-		ID:    "sha1",
+		IDs:   []string{"sha1"},
 		Level: v1.SearchCategory_IMAGES,
 	})
 
@@ -635,7 +635,7 @@ func (s *GraphQLImageVulnerabilityTestSuite) TestImageVulnerabilityExceptionCoun
 
 	ctx = SetAuthorizerOverride(s.ctx, allow.Anonymous())
 	ctx = scoped.Context(ctx, scoped.Scope{
-		ID:    "sha3",
+		IDs:   []string{"sha3"},
 		Level: v1.SearchCategory_IMAGES,
 	})
 
