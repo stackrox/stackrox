@@ -77,8 +77,6 @@ func (s *serviceImpl) GetMessagesC() <-chan *storage.ProcessSignal {
 }
 
 func (s *serviceImpl) receiveMessages(stream sensorAPI.SignalService_PushSignalsServer) error {
-	defer close(s.queue)
-
 	for {
 		signalStreamMsg, err := stream.Recv()
 		if err != nil {
