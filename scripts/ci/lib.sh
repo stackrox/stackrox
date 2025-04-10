@@ -1122,7 +1122,7 @@ get_base_ref() {
             die "Expect PULL_BASE_REF or CLONEREFS_OPTIONS"
         fi
     elif is_GITHUB_ACTIONS; then
-        echo "${GITHUB_BASE_REF}"
+        echo "${GITHUB_HEAD_REF:-${GITHUB_REF_NAME:-}}"
     else
         die "unsupported"
     fi
