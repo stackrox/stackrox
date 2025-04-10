@@ -655,7 +655,13 @@ spec:
           inbound connections to the port.'
         displayName: Expose Endpoint
         path: scanner.monitoring.exposeEndpoint
-      - description: If you want to deploy Scanner V4 components set this to "Enabled"
+      - description: 'Can be specified as "Enabled" or "Disabled".
+
+          If this field is not specified, the following defaulting takes place:
+
+          For new installations, Scanner V4 is enabled starting with ACS 4.8.
+
+          For upgrades to 4.8 the current enablement state of Scanner V4 will be retained.'
         displayName: Scanner V4 component
         path: scannerV4.scannerComponent
       - description: Settings pertaining to the indexer deployment.
