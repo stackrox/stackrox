@@ -33,7 +33,7 @@ ci_export() {
     fi
 }
 
-# set_ci_shared_export() - for openshift-ci this is state shared between steps.
+# set_ci_shared_export() - for openshift-ci and GHA this is state shared between steps.
 set_ci_shared_export() {
     if [[ "$#" -ne 2 ]]; then
         die "missing args. usage: set_ci_shared_export <env-name> <env-value>"
@@ -44,7 +44,8 @@ set_ci_shared_export() {
     local env_name="$1"
     local env_value="$2"
 
-    echo "export ${env_name}=${env_value}" | tee -a "${SHARED_DIR:-/tmp}/shared_env"
+    echo "export ${env_name}=${env_value}" >> "${SHARED_DIR:-/tmp}/shared_env"
+    echo "${env_name}=${env_value}" >> "${GITHUB_ENV:-/dev/null}"
 }
 
 ci_exit_trap() {
@@ -1129,8 +1130,8 @@ get_base_ref() {
 
 get_repo_full_name() {
     if is_GITHUB_ACTIONS; then
-        [[ -n "${GITHUB_ACTION_REPOSITORY:-}" ]] || die "expect: GITHUB_ACTION_REPOSITORY"
-        echo "${GITHUB_ACTION_REPOSITORY}"
+        [[ -n "${GITHUB_REPOSITORY:-}" ]] || die "expect: GITHUB_REPOSITORY"
+        echo "${GITHUB_REPOSITORY}"
     elif is_OPENSHIFT_CI; then
         if [[ -n "${REPO_OWNER:-}" ]]; then
             # presubmit, postsubmit and batch runs
