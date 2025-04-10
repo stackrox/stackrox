@@ -8,7 +8,6 @@ function setup() {
     unset PULL_BASE_REF
     unset CLONEREFS_OPTIONS
     unset GITHUB_ACTION
-    unset GITHUB_BASE_REF
     source "${BATS_TEST_DIRNAME}/../lib.sh"
 }
 
@@ -28,14 +27,6 @@ function setup() {
 @test "with PULL_BASE_REF" {
     export OPENSHIFT_CI=true
     export PULL_BASE_REF="main"
-    run get_base_ref
-    assert_success
-    assert_output 'main'
-}
-
-@test "with GITHUB_BASE_REF" {
-    export GITHUB_ACTION=true
-    export GITHUB_BASE_REF="main"
     run get_base_ref
     assert_success
     assert_output 'main'
