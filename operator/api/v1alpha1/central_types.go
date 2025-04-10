@@ -522,7 +522,7 @@ type ExposureRouteReencrypt struct {
 // ExposureRouteReencryptTLS defines TLS settings for exposing central via a reencrypt Route.
 type ExposureRouteReencryptTLS struct {
 	// PEM encoded certificate chain that may be used to establish a complete chain of trust.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,displayName="CA Certificate"
 	CaCertificate *string `json:"caCertificate,omitempty"`
 
 	// The PEM encoded certificate that is served on the route. Must be a single serving
