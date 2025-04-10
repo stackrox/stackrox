@@ -63,7 +63,6 @@ type Store[T any, PT pgutils.Unmarshaler[T]] interface {
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 	Walk(ctx context.Context, fn func(obj PT) error) error
 	WalkByQuery(ctx context.Context, q *v1.Query, fn func(obj PT) error) error
-	GetAll(ctx context.Context) ([]PT, error)
 	Get(ctx context.Context, id string) (PT, bool, error)
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*T, error)
 	GetIDs(ctx context.Context) ([]string, error)
@@ -203,20 +202,6 @@ func (s *genericStore[T, PT]) WalkByQuery(ctx context.Context, query *v1.Query, 
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.WalkByQuery)
 
 	return s.walkByQuery(ctx, query, fn)
-}
-
-// GetAll retrieves all objects from the store.
-//
-// Deprecated: This can be dangerous on high cardinality stores consider Walk instead.
-func (s *genericStore[T, PT]) GetAll(ctx context.Context) ([]PT, error) {
-	defer s.setPostgresOperationDurationTime(time.Now(), ops.GetAll)
-
-	var objs []PT
-	err := s.Walk(ctx, func(obj PT) error {
-		objs = append(objs, obj)
-		return nil
-	})
-	return objs, err
 }
 
 // Get returns the object, if it exists from the store.
