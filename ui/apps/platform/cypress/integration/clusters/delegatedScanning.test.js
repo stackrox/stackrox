@@ -6,7 +6,7 @@ import { visitWithStaticResponseForPermissions } from '../../helpers/visit';
 import {
     visitClusters,
     visitDelegateScanning,
-    saveDelegatedRegistryConfig,
+    // saveDelegatedRegistryConfig,
     delegatedScanningPath,
     clustersPath,
 } from './Clusters.helpers';
