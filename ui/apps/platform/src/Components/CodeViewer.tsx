@@ -70,11 +70,7 @@ export default function CodeViewer({
     const { wasCopied, setWasCopied, copyToClipboard } = useClipboardCopy();
     const [theme, setTheme] = useCodeViewerThemeContext();
 
-<<<<<<< HEAD
     function toggleTheme() {
-=======
-    function toggleDarkMode() {
->>>>>>> 7101b07f8f (Add syntax highlighting support)
         setTheme((prevValue) => (prevValue === 'light' ? 'dark' : 'light'));
     }
 
