@@ -2,21 +2,24 @@
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: endpoint-load-{{.Replica}}
+  name: process-load-{{.Replica}}
 spec:
   replicas: {{.podReplicas}}
   selector:
     matchLabels:
-      app: endpoint-load-{{.Replica}}
+      app: process-load-{{.Replica}}
   template:
     metadata:
       labels:
-        app: endpoint-load-{{.Replica}}
+        app: process-load-{{.Replica}}
     spec:
       imagePullSecrets:
-      - name: {{.JobName}}-{{.Replica}}
+        - name: {{.JobName}}-{{.Replica}}
       containers:
-      - image: quay.io/rhacs-eng/qa:berserker-1.0-40-ge3bd96aa5a
+      - args:
+        - sleep
+        - infinity
+        image: quay.io/rhacs-eng/qa:berserker-1.0-63-g7b0a20bf5f
         resources:
           requests:
             memory: "100Mi"
@@ -24,24 +27,16 @@ spec:
           limits:
             memory: "100Mi"
             cpu: "25m"
-        volumeMounts:
-        - name: config
-          mountPath: "/etc/berserker"
-          readOnly: true
         imagePullPolicy: IfNotPresent
-        ports:
-        - containerPort: 8080
-          protocol: TCP
-        - containerPort: 8443
-          protocol: TCP
         name: berserker
-      volumes:
-      - name: config
-        configMap:
-          name: {{.JobName}}-berserker-config
+        env:
+        - name: BERSERKER__WORKLOAD__ARRIVAL_RATE
+          value: "1"
+        downwardAPI:
           items:
-          - key: workload.toml
-            path: workload.toml
+            - path: "labels"
+              fieldRef:
+                fieldPath: metadata.labels
       # Add not-ready/unreachable tolerations for 15 minutes so that node
       # failure doesn't trigger pod deletion.
       tolerations:
