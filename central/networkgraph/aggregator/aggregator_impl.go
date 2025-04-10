@@ -245,8 +245,6 @@ func (a *aggregateLatestTimestampImpl) Aggregate(flows []*storage.NetworkFlow) [
 			continue
 		}
 
-		flow = flow.CloneVT()
-
 		connID := networkgraph.GetNetworkConnIndicator(flow)
 		if storedFlow := normalizedConns[connID]; storedFlow != nil {
 			if protocompat.CompareTimestamps(storedFlow.GetLastSeenTimestamp(), flow.GetLastSeenTimestamp()) < 0 {
