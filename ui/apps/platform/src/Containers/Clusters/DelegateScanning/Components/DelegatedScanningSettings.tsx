@@ -18,22 +18,22 @@ import { getClusterName } from '../cluster';
 
 type DelegatedScanningSettingsProps = {
     clusters: DelegatedRegistryCluster[];
+    defaultClusterId: string;
     isEditing: boolean;
-    selectedClusterId: string;
-    setSelectedClusterId: (newClusterId: string) => void;
+    setDefaultClusterId: (newClusterId: string) => void;
 };
 
 function DelegatedScanningSettings({
-    clusters = [],
+    clusters,
+    defaultClusterId,
     isEditing,
-    selectedClusterId,
-    setSelectedClusterId,
+    setDefaultClusterId,
 }: DelegatedScanningSettingsProps) {
     const [isOpen, setIsOpen] = useState(false);
 
     // Options consist of valid clusters, plus default cluster (in unlikely case that it is not valid).
     const clusterSelectOptions: JSX.Element[] = clusters
-        .filter((cluster) => cluster.isValid || cluster.id === selectedClusterId)
+        .filter((cluster) => cluster.isValid || cluster.id === defaultClusterId)
         .map((cluster) => (
             <SelectOption key={cluster.id} value={cluster.id}>
                 <span>{getClusterName(clusters, cluster.id)}</span>
@@ -42,11 +42,11 @@ function DelegatedScanningSettings({
 
     const onClusterSelect = (_, value) => {
         setIsOpen(false);
-        setSelectedClusterId(value);
+        setDefaultClusterId(value);
     };
 
-    const selectedClusterName =
-        selectedClusterId === '' ? 'None' : getClusterName(clusters, selectedClusterId);
+    const defaultClusterName =
+        defaultClusterId === '' ? 'None' : getClusterName(clusters, defaultClusterId);
 
     return (
         <FormGroup label="Default cluster to delegate to">
@@ -56,7 +56,7 @@ function DelegatedScanningSettings({
                         onOpenChange={setIsOpen}
                         onSelect={onClusterSelect}
                         isOpen={isOpen}
-                        selected={selectedClusterId}
+                        selected={defaultClusterId}
                         shouldFocusToggleOnSelect
                         toggle={(toggleRef: React.Ref<MenuToggleElement>) => (
                             <MenuToggle
@@ -66,7 +66,7 @@ function DelegatedScanningSettings({
                                 isDisabled={!isEditing}
                                 isExpanded={isOpen}
                             >
-                                {selectedClusterName}
+                                {defaultClusterName}
                             </MenuToggle>
                         )}
                     >

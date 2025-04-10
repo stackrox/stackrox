@@ -6,13 +6,13 @@ import { DelegatedRegistryConfigEnabledFor } from 'services/DelegatedRegistryCon
 type ToggleDelegatedScanningProps = {
     enabledFor: DelegatedRegistryConfigEnabledFor;
     isEditing: boolean;
-    onChangeEnabledFor: (newEnabledState: DelegatedRegistryConfigEnabledFor) => void;
+    setEnabledFor: (enabledFor: DelegatedRegistryConfigEnabledFor) => void;
 };
 
 function ToggleDelegatedScanning({
     enabledFor,
     isEditing,
-    onChangeEnabledFor,
+    setEnabledFor,
 }: ToggleDelegatedScanningProps) {
     return (
         <FormGroup role="radiogroup" isInline label="Delegate scanning for" fieldId="enabledFor">
@@ -23,7 +23,7 @@ function ToggleDelegatedScanning({
                 id="choose-none"
                 name="enabledFor"
                 onChange={() => {
-                    onChangeEnabledFor('NONE');
+                    setEnabledFor('NONE');
                 }}
             />
             <Radio
@@ -33,7 +33,7 @@ function ToggleDelegatedScanning({
                 id="choose-all-registries"
                 name="enabledFor"
                 onChange={() => {
-                    onChangeEnabledFor('ALL');
+                    setEnabledFor('ALL');
                 }}
             />
             <Radio
@@ -43,7 +43,7 @@ function ToggleDelegatedScanning({
                 id="chose-specified-registries"
                 name="enabledFor"
                 onChange={() => {
-                    onChangeEnabledFor('SPECIFIC');
+                    setEnabledFor('SPECIFIC');
                 }}
             />
         </FormGroup>
