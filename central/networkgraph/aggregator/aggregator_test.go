@@ -234,6 +234,38 @@ func TestHideDefaultExtSrcsAggregator(t *testing.T) {
 	protoassert.ElementsMatch(t, expected, actual)
 }
 
+func TestLatestTimestampAggregator(t *testing.T) {
+	d1 := testutils.GetDeploymentNetworkEntity("d1", "d1")
+	d2 := testutils.GetDeploymentNetworkEntity("d2", "d2")
+
+	cidr := "35.187.144.0/32"
+
+	id, _ := externalsrcs.NewGlobalScopedScopedID(cidr)
+	e := testutils.GetExtSrcNetworkEntityInfo(id.String(), "1", cidr, true, false)
+	internet := networkgraph.InternetEntity().ToProto()
+
+	ts1 := time.Now()
+	ts2 := ts1.Add(1000 * time.Second)
+	ts3 := ts1.Add(2000 * time.Second)
+	ts4 := ts1.Add(3000 * time.Second)
+
+	f1 := testutils.GetNetworkFlow(d1, e, 8000, storage.L4Protocol_L4_PROTOCOL_TCP, &ts1)
+	f2 := testutils.GetNetworkFlow(d1, e, 8000, storage.L4Protocol_L4_PROTOCOL_TCP, &ts2)
+	f3 := testutils.GetNetworkFlow(internet, d1, 8000, storage.L4Protocol_L4_PROTOCOL_UNKNOWN, &ts1)
+	f4 := testutils.GetNetworkFlow(d1, d2, 8000, storage.L4Protocol_L4_PROTOCOL_TCP, &ts1)
+	f5 := testutils.GetNetworkFlow(d1, d2, 8000, storage.L4Protocol_L4_PROTOCOL_TCP, &ts2)
+	f6 := testutils.GetNetworkFlow(d1, d2, 8001, storage.L4Protocol_L4_PROTOCOL_TCP, &ts3)
+	f7 := testutils.GetNetworkFlow(d1, d2, 8001, storage.L4Protocol_L4_PROTOCOL_UDP, &ts4)
+
+	flows := []*storage.NetworkFlow{f1, f2, f3, f4, f5, f6, f7}
+
+	expected := []*storage.NetworkFlow{f2, f3, f5, f6, f7}
+
+	aggr := NewLatestTimestampAggregator()
+	actual := aggr.Aggregate(flows)
+	protoassert.ElementsMatch(t, expected, actual)
+}
+
 func TestAggregateExtConnsByName(t *testing.T) {
 	ts1 := time.Now()
 	ts2 := ts1.Add(1000 * time.Second)

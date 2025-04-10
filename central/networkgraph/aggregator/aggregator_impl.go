@@ -245,7 +245,7 @@ func (a *aggregateLatestTimestampImpl) Aggregate(flows []*storage.NetworkFlow) [
 			continue
 		}
 
-		//flow = flow.CloneVT()
+		flow = flow.CloneVT()
 
 		connID := networkgraph.GetNetworkConnIndicator(flow)
 		if storedFlow := normalizedConns[connID]; storedFlow != nil {
