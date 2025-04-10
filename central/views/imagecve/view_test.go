@@ -604,7 +604,7 @@ func (s *ImageCVEViewTestSuite) testCases() []testCase {
 		{
 			desc: "search one cve w/ image scope",
 			ctx: scoped.Context(context.Background(), scoped.Scope{
-				ID:    "sha256:6ef31316f4f9e0c31a8f4e602ba287a210d66934f91b1616f1c9b957201d025c",
+				IDs:   []string{"sha256:6ef31316f4f9e0c31a8f4e602ba287a210d66934f91b1616f1c9b957201d025c"},
 				Level: v1.SearchCategory_IMAGES,
 			}),
 			q: search.NewQueryBuilder().
@@ -622,10 +622,10 @@ func (s *ImageCVEViewTestSuite) testCases() []testCase {
 		{
 			desc: "search critical severity w/ cve & image scope",
 			ctx: scoped.Context(context.Background(), scoped.Scope{
-				ID:    "sha256:6ef31316f4f9e0c31a8f4e602ba287a210d66934f91b1616f1c9b957201d025c",
+				IDs:   []string{"sha256:6ef31316f4f9e0c31a8f4e602ba287a210d66934f91b1616f1c9b957201d025c"},
 				Level: v1.SearchCategory_IMAGES,
 				Parent: &scoped.Scope{
-					ID:    cve.ID("CVE-2022-1552", "debian:8"),
+					IDs:   []string{cve.ID("CVE-2022-1552", "debian:8")},
 					Level: v1.SearchCategory_IMAGE_VULNERABILITIES,
 				},
 			}),

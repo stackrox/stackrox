@@ -554,7 +554,7 @@ func (s *NodeCVEViewTestSuite) testCases() []testCase {
 		{
 			desc: "search one cve w/ cluster scope",
 			ctx: scoped.Context(context.Background(), scoped.Scope{
-				ID:    s.nodeMap[fixtureconsts.Node1].ClusterId,
+				IDs:   []string{s.nodeMap[fixtureconsts.Node1].ClusterId},
 				Level: v1.SearchCategory_CLUSTERS,
 			}),
 			q: search.NewQueryBuilder().
@@ -571,7 +571,7 @@ func (s *NodeCVEViewTestSuite) testCases() []testCase {
 		{
 			desc: "search one cve w/ node scope",
 			ctx: scoped.Context(context.Background(), scoped.Scope{
-				ID:    s.nodeMap[fixtureconsts.Node2].Id,
+				IDs:   []string{s.nodeMap[fixtureconsts.Node2].Id},
 				Level: v1.SearchCategory_NODES,
 			}),
 			q: search.NewQueryBuilder().

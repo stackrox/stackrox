@@ -22,7 +22,7 @@ func TestScoping(t *testing.T) {
 	query := search.NewQueryBuilder().AddExactMatches(search.DeploymentName, "dep").ProtoQuery()
 	scopes := []scoped.Scope{
 		{
-			ID:    "c1",
+			IDs:   []string{"c1"},
 			Level: v1.SearchCategory_CLUSTERS,
 		},
 	}
@@ -36,7 +36,7 @@ func TestScoping(t *testing.T) {
 
 	scopes = []scoped.Scope{
 		{
-			ID:    "c1",
+			IDs:   []string{"c1"},
 			Level: v1.SearchCategory_CLUSTERS,
 		},
 		{

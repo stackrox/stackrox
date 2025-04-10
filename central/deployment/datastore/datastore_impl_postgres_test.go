@@ -127,56 +127,56 @@ func (s *DeploymentPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 		},
 		{
 			desc:         "Search deployments with deployment scope",
-			ctx:          scoped.Context(ctx, scoped.Scope{ID: dep1.Id, Level: v1.SearchCategory_DEPLOYMENTS}),
+			ctx:          scoped.Context(ctx, scoped.Scope{IDs: []string{dep1.Id}, Level: v1.SearchCategory_DEPLOYMENTS}),
 			query:        pkgSearch.EmptyQuery(),
 			orderMatters: false,
 			expectedIDs:  []string{dep1.Id},
 		},
 		{
 			desc:         "Search deployments with deployments scope and in-scope deployments query",
-			ctx:          scoped.Context(ctx, scoped.Scope{ID: dep1.Id, Level: v1.SearchCategory_DEPLOYMENTS}),
+			ctx:          scoped.Context(ctx, scoped.Scope{IDs: []string{dep1.Id}, Level: v1.SearchCategory_DEPLOYMENTS}),
 			query:        pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.Namespace, dep1.Namespace).ProtoQuery(),
 			orderMatters: false,
 			expectedIDs:  []string{dep1.Id},
 		},
 		{
 			desc:         "Search deployments with deployments scope and out-of-scope deployments query",
-			ctx:          scoped.Context(ctx, scoped.Scope{ID: dep1.Id, Level: v1.SearchCategory_DEPLOYMENTS}),
+			ctx:          scoped.Context(ctx, scoped.Scope{IDs: []string{dep1.Id}, Level: v1.SearchCategory_DEPLOYMENTS}),
 			query:        pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.Namespace, dep2.Namespace).ProtoQuery(),
 			orderMatters: false,
 			expectedIDs:  []string{},
 		},
 		{
 			desc:         "Search deployments with deployment scope and in-scope image query",
-			ctx:          scoped.Context(ctx, scoped.Scope{ID: dep2.Id, Level: v1.SearchCategory_DEPLOYMENTS}),
+			ctx:          scoped.Context(ctx, scoped.Scope{IDs: []string{dep2.Id}, Level: v1.SearchCategory_DEPLOYMENTS}),
 			query:        pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ImageOS, img2.GetScan().GetOperatingSystem()).ProtoQuery(),
 			orderMatters: false,
 			expectedIDs:  []string{dep2.Id},
 		},
 		{
 			desc:         "Search deployments with deployment scope and out-of-scope image query",
-			ctx:          scoped.Context(ctx, scoped.Scope{ID: dep2.Id, Level: v1.SearchCategory_DEPLOYMENTS}),
+			ctx:          scoped.Context(ctx, scoped.Scope{IDs: []string{dep2.Id}, Level: v1.SearchCategory_DEPLOYMENTS}),
 			query:        pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ImageOS, img3.GetScan().GetOperatingSystem()).ProtoQuery(),
 			orderMatters: false,
 			expectedIDs:  []string{},
 		},
 		{
 			desc:         "Search deployments with image scope",
-			ctx:          scoped.Context(ctx, scoped.Scope{ID: img2.Id, Level: v1.SearchCategory_IMAGES}),
+			ctx:          scoped.Context(ctx, scoped.Scope{IDs: []string{img2.Id}, Level: v1.SearchCategory_IMAGES}),
 			query:        pkgSearch.EmptyQuery(),
 			orderMatters: false,
 			expectedIDs:  []string{dep2.Id},
 		},
 		{
 			desc:         "Search deployments with image scope and in-scope deployment query",
-			ctx:          scoped.Context(ctx, scoped.Scope{ID: img2.Id, Level: v1.SearchCategory_IMAGES}),
+			ctx:          scoped.Context(ctx, scoped.Scope{IDs: []string{img2.Id}, Level: v1.SearchCategory_IMAGES}),
 			query:        pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.Namespace, dep2.GetNamespace()).ProtoQuery(),
 			orderMatters: false,
 			expectedIDs:  []string{dep2.Id},
 		},
 		{
 			desc:         "Search deployments with image scope and out-of-scope deployment query",
-			ctx:          scoped.Context(ctx, scoped.Scope{ID: img2.Id, Level: v1.SearchCategory_IMAGES}),
+			ctx:          scoped.Context(ctx, scoped.Scope{IDs: []string{img2.Id}, Level: v1.SearchCategory_IMAGES}),
 			query:        pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.Namespace, dep3.GetNamespace()).ProtoQuery(),
 			orderMatters: false,
 			expectedIDs:  []string{},
@@ -184,10 +184,10 @@ func (s *DeploymentPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 		{
 			desc: "Search deployments with image component scope",
 			ctx: scoped.Context(ctx, scoped.Scope{
-				ID: scancomponent.ComponentID(
+				IDs: []string{scancomponent.ComponentID(
 					img2.GetScan().GetComponents()[0].GetName(),
 					img2.GetScan().GetComponents()[0].GetVersion(),
-					img2.GetScan().GetOperatingSystem()),
+					img2.GetScan().GetOperatingSystem())},
 				Level: v1.SearchCategory_IMAGE_COMPONENTS,
 			}),
 			query:        pkgSearch.EmptyQuery(),
@@ -197,9 +197,9 @@ func (s *DeploymentPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 		{
 			desc: "Search deployments with image vuln scope",
 			ctx: scoped.Context(ctx, scoped.Scope{
-				ID: cve.ID(
+				IDs: []string{cve.ID(
 					img1.GetScan().GetComponents()[0].GetVulns()[0].GetCve(),
-					img1.GetScan().GetOperatingSystem()),
+					img1.GetScan().GetOperatingSystem())},
 				Level: v1.SearchCategory_IMAGE_VULNERABILITIES,
 			}),
 			query:        pkgSearch.EmptyQuery(),
@@ -240,7 +240,7 @@ func (s *DeploymentPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 		},
 		{
 			desc:         "Search images with image scope and in-scope deployment query",
-			ctx:          scoped.Context(ctx, scoped.Scope{ID: img2.Id, Level: v1.SearchCategory_IMAGES}),
+			ctx:          scoped.Context(ctx, scoped.Scope{IDs: []string{img2.Id}, Level: v1.SearchCategory_IMAGES}),
 			query:        pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.Namespace, dep2.GetNamespace()).ProtoQuery(),
 			orderMatters: false,
 			expectedIDs:  []string{img2.Id},
@@ -248,7 +248,7 @@ func (s *DeploymentPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 		},
 		{
 			desc:         "Search images with deployment scope",
-			ctx:          scoped.Context(ctx, scoped.Scope{ID: dep1.Id, Level: v1.SearchCategory_DEPLOYMENTS}),
+			ctx:          scoped.Context(ctx, scoped.Scope{IDs: []string{dep1.Id}, Level: v1.SearchCategory_DEPLOYMENTS}),
 			query:        pkgSearch.EmptyQuery(),
 			orderMatters: false,
 			expectedIDs:  []string{img1.Id},
@@ -256,7 +256,7 @@ func (s *DeploymentPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 		},
 		{
 			desc:         "Search images with image scope and out-of-scope deployment query",
-			ctx:          scoped.Context(ctx, scoped.Scope{ID: img2.Id, Level: v1.SearchCategory_IMAGES}),
+			ctx:          scoped.Context(ctx, scoped.Scope{IDs: []string{img2.Id}, Level: v1.SearchCategory_IMAGES}),
 			query:        pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.Namespace, dep1.GetNamespace()).ProtoQuery(),
 			orderMatters: false,
 			expectedIDs:  []string{},
@@ -264,7 +264,7 @@ func (s *DeploymentPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 		},
 		{
 			desc:         "Search images with deployment scope and in-scope deployment query",
-			ctx:          scoped.Context(ctx, scoped.Scope{ID: dep1.Id, Level: v1.SearchCategory_DEPLOYMENTS}),
+			ctx:          scoped.Context(ctx, scoped.Scope{IDs: []string{dep1.Id}, Level: v1.SearchCategory_DEPLOYMENTS}),
 			query:        pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.Namespace, "n1").ProtoQuery(),
 			orderMatters: false,
 			expectedIDs:  []string{img1.Id},
@@ -272,7 +272,7 @@ func (s *DeploymentPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 		},
 		{
 			desc:         "Search images with deployment scope and out-of-scope deployment query",
-			ctx:          scoped.Context(ctx, scoped.Scope{ID: dep1.Id, Level: v1.SearchCategory_DEPLOYMENTS}),
+			ctx:          scoped.Context(ctx, scoped.Scope{IDs: []string{dep1.Id}, Level: v1.SearchCategory_DEPLOYMENTS}),
 			query:        pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.Namespace, "n2").ProtoQuery(),
 			orderMatters: false,
 			expectedIDs:  []string{},

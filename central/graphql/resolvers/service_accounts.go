@@ -246,7 +246,7 @@ func (resolver *serviceAccountResolver) getEvaluators(ctx context.Context) (map[
 
 	ctx = scoped.Context(ctx, scoped.Scope{
 		Level: v1.SearchCategory_CLUSTERS,
-		ID:    saClusterID,
+		IDs:   []string{saClusterID},
 	})
 
 	namespaces, err := resolver.root.Namespaces(ctx, PaginatedQuery{})

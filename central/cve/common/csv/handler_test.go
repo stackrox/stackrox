@@ -85,7 +85,7 @@ func (suite *CVEScopingTestSuite) TestSingleResourceQuery() {
 
 	expected := scoped.Context(suite.ctx, scoped.Scope{
 		Level: v1.SearchCategory_IMAGES,
-		ID:    imgSha,
+		IDs:   []string{imgSha},
 	})
 	actual, err := suite.handler.GetScopeContext(suite.ctx, query)
 	suite.NoError(err)
@@ -106,7 +106,7 @@ func (suite *CVEScopingTestSuite) TestMultipleResourceQuery() {
 
 	expected := scoped.Context(suite.ctx, scoped.Scope{
 		Level: v1.SearchCategory_IMAGES,
-		ID:    imgSha,
+		IDs:   []string{imgSha},
 	})
 	// Lowest resource scope should be applied.
 	actual, err := suite.handler.GetScopeContext(suite.ctx, query)
@@ -140,7 +140,7 @@ func (suite *CVEScopingTestSuite) TestNoReScope() {
 
 	expected := scoped.Context(suite.ctx, scoped.Scope{
 		Level: v1.SearchCategory_DEPLOYMENTS,
-		ID:    "dep",
+		IDs:   []string{"dep"},
 	})
 	actual, err := suite.handler.GetScopeContext(expected, query)
 	suite.NoError(err)

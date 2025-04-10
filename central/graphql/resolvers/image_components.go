@@ -225,7 +225,7 @@ func (resolver *imageComponentResolver) imageComponentScopeContext(ctx context.C
 	}
 	return scoped.Context(resolver.ctx, scoped.Scope{
 		Level: v1.SearchCategory_IMAGE_COMPONENTS,
-		ID:    resolver.data.GetId(),
+		IDs:   []string{resolver.data.GetId()},
 	})
 }
 
@@ -255,7 +255,10 @@ func getDeploymentIDFromQuery(q *v1.Query) string {
 func getDeploymentScope(scopeQuery *v1.Query, contexts ...context.Context) string {
 	for _, ctx := range contexts {
 		if scope, ok := scoped.GetScope(ctx); ok && scope.Level == v1.SearchCategory_DEPLOYMENTS {
-			return scope.ID
+			if len(scope.IDs) != 1 {
+				return ""
+			}
+			return scope.IDs[0]
 		} else if deploymentID := deploymentctx.FromContext(ctx); deploymentID != "" {
 			return deploymentID
 		}
@@ -271,7 +274,10 @@ func getImageIDFromScope(contexts ...context.Context) string {
 	var hasScope bool
 	for _, ctx := range contexts {
 		if scope, hasScope = scoped.GetScopeAtLevel(ctx, v1.SearchCategory_IMAGES); hasScope {
-			return scope.ID
+			if len(scope.IDs) != 1 {
+				return ""
+			}
+			return scope.IDs[0]
 		}
 	}
 	return ""
@@ -573,7 +579,7 @@ func (resolver *imageComponentResolver) LayerIndex() (*int32, error) {
 		return nil, err
 	}
 	if len(edges) == 0 || len(edges) > 1 {
-		return nil, errors.Errorf("Unexpected number of image-component edge matched for image %s and component %s. Expected 1 edge.", scope.ID, resolver.data.GetId())
+		return nil, errors.Errorf("Unexpected number of image-component edge matched for image %s and component %s. Expected 1 edge.", scope.IDs, resolver.data.GetId())
 	}
 
 	w, ok := edges[0].GetHasLayerIndex().(*storage.ImageComponentEdge_LayerIndex)
@@ -758,6 +764,6 @@ func (resolver *imageComponentV2Resolver) imageComponentScopeContext(ctx context
 	}
 	return scoped.Context(resolver.ctx, scoped.Scope{
 		Level: v1.SearchCategory_IMAGE_COMPONENTS_V2,
-		ID:    resolver.data.GetId(),
+		IDs:   []string{resolver.data.GetId()},
 	})
 }

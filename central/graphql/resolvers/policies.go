@@ -116,7 +116,7 @@ func (resolver *policyResolver) Deployments(ctx context.Context, args PaginatedQ
 	deploymentFilterQuery := search.EmptyQuery()
 	if scope, hasScope := scoped.GetScope(ctx); hasScope {
 		if field, ok := idField[scope.Level]; ok {
-			deploymentFilterQuery = search.NewQueryBuilder().AddExactMatches(field, scope.ID).ProtoQuery()
+			deploymentFilterQuery = search.NewQueryBuilder().AddExactMatches(field, scope.IDs...).ProtoQuery()
 		}
 	} else {
 		if deploymentFilterQuery, err = args.AsV1QueryOrEmpty(); err != nil {
@@ -155,7 +155,7 @@ func (resolver *policyResolver) Deployments(ctx context.Context, args PaginatedQ
 	for _, deploymentResolver := range deploymentResolvers {
 		deploymentResolver.ctx = scoped.Context(ctx, scoped.Scope{
 			Level: v1.SearchCategory_POLICIES,
-			ID:    resolver.data.GetId(),
+			IDs:   []string{resolver.data.GetId()},
 		})
 	}
 	return deploymentResolvers, nil
@@ -210,7 +210,7 @@ func (resolver *policyResolver) failingDeployments(ctx context.Context, q *v1.Qu
 	for _, deploymentResolver := range deploymentResolvers {
 		deploymentResolver.ctx = scoped.Context(ctx, scoped.Scope{
 			Level: v1.SearchCategory_POLICIES,
-			ID:    resolver.data.GetId(),
+			IDs:   []string{resolver.data.GetId()},
 		})
 	}
 	return deploymentResolvers, nil
@@ -264,7 +264,7 @@ func (resolver *policyResolver) PolicyStatus(ctx context.Context, args RawQuery)
 	q := search.EmptyQuery()
 	if scope, hasScope := scoped.GetScope(resolver.ctx); hasScope {
 		if field, ok := idField[scope.Level]; ok {
-			q = search.NewQueryBuilder().AddExactMatches(field, scope.ID).ProtoQuery()
+			q = search.NewQueryBuilder().AddExactMatches(field, scope.IDs...).ProtoQuery()
 		}
 	} else {
 		if q, err = args.AsV1QueryOrEmpty(); err != nil {
@@ -312,7 +312,7 @@ func (resolver *policyResolver) LatestViolation(ctx context.Context, args RawQue
 	q := search.EmptyQuery()
 	if scope, hasScope := scoped.GetScope(resolver.ctx); hasScope {
 		if field, ok := idField[scope.Level]; ok {
-			q = search.NewQueryBuilder().AddExactMatches(field, scope.ID).ProtoQuery()
+			q = search.NewQueryBuilder().AddExactMatches(field, scope.IDs...).ProtoQuery()
 		}
 	} else {
 		if q, err = args.AsV1QueryOrEmpty(); err != nil {
