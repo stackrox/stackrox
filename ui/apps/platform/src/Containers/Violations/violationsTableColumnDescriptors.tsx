@@ -89,7 +89,7 @@ function EnforcementColumn({ original }: EnforcementTableCellProps): ReactElemen
     return <span>{message}</span>;
 }
 
-function getTableColumnDescriptors(filteredWorkflowView: FilteredWorkflowView) {
+export function getViolationsTableColumnDescriptors(filteredWorkflowView: FilteredWorkflowView) {
     return [
         {
             Header: 'Policy',
@@ -159,5 +159,3 @@ function getTableColumnDescriptors(filteredWorkflowView: FilteredWorkflowView) {
         },
     ];
 }
-
-export default getTableColumnDescriptors;

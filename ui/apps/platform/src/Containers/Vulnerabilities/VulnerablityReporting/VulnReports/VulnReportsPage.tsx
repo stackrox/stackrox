@@ -47,7 +47,7 @@ import { useWatchLastSnapshotForReports } from 'Containers/Vulnerabilities/Vulne
 import DeleteModal from 'Components/PatternFly/DeleteModal';
 import PageTitle from 'Components/PageTitle';
 import EmptyStateTemplate from 'Components/EmptyStateTemplate/EmptyStateTemplate';
-import CollectionsFormModal from 'Containers/Collections/CollectionFormModal';
+import CollectionsFormModal from 'Containers/Collections/CollectionsFormModal';
 import useToasts, { Toast } from 'hooks/patternfly/useToasts';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import useTableSelection from 'hooks/useTableSelection';

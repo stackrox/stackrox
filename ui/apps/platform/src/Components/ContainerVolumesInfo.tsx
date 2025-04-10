@@ -19,7 +19,7 @@ type ContainerVolumeInfoProps = {
     volumes: ContainerVolume[];
 };
 
-function ContainerVolumeInfo({ volumes }: ContainerVolumeInfoProps) {
+function ContainerVolumesInfo({ volumes }: ContainerVolumeInfoProps) {
     const initialToggleValues = Array.from({ length: volumes.length }, () => true);
     const [volumeToggles, setVolumeToggles] = useState(initialToggleValues);
 
@@ -94,4 +94,4 @@ function ContainerVolumeInfo({ volumes }: ContainerVolumeInfoProps) {
     );
 }
 
-export default ContainerVolumeInfo;
+export default ContainerVolumesInfo;

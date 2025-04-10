@@ -7,7 +7,7 @@ import EventsGraph from 'Components/TimelineGraph/EventsGraph';
 import Axis, { AXIS_HEIGHT } from '../Axis';
 import BrushableOverlay from './BrushableOverlay';
 
-const MiniMap = ({
+const Minimap = ({
     minTimeRange,
     maxTimeRange,
     minBrushTimeRange,
@@ -65,7 +65,7 @@ const MiniMap = ({
     );
 };
 
-MiniMap.propTypes = {
+Minimap.propTypes = {
     minTimeRange: PropTypes.number.isRequired,
     maxTimeRange: PropTypes.number.isRequired,
     onBrushSelectionChange: PropTypes.func.isRequired,
@@ -76,8 +76,8 @@ MiniMap.propTypes = {
     maxBrushTimeRange: PropTypes.number.isRequired,
 };
 
-MiniMap.defaultProps = {
+Minimap.defaultProps = {
     margin: 0,
 };
 
-export default MiniMap;
+export default Minimap;

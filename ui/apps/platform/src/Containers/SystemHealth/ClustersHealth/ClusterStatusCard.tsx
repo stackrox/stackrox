@@ -22,7 +22,7 @@ export type ClusterStatusTableProps = {
     errorMessageFetching: string;
 };
 
-function ClusterStatusTable({
+function ClusterStatusCard({
     clusters,
     isFetchingInitialRequest,
     errorMessageFetching,
@@ -122,4 +122,4 @@ function ClusterStatusTable({
     /* eslint-enable no-nested-ternary */
 }
 
-export default ClusterStatusTable;
+export default ClusterStatusCard;
