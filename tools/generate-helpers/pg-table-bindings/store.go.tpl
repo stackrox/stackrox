@@ -72,9 +72,6 @@ type Store interface {
 {{- end }}
     GetMany(ctx context.Context, identifiers []{{$primaryKeyType}}) ([]*storeType, []int, error)
     GetIDs(ctx context.Context) ([]{{$primaryKeyType}}, error)
-{{- if .GetAll }}
-    GetAll(ctx context.Context) ([]*storeType, error)
-{{- end }}
 
     Walk(ctx context.Context, fn func(obj *storeType) error) error
     WalkByQuery(ctx context.Context, query *v1.Query, fn func(obj *storeType) error) error
