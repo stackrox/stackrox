@@ -515,6 +515,7 @@ type ExposureRouteReencrypt struct {
 	Host *string `json:"host,omitempty"`
 
 	// TLS settings for exposing central via a reencrypt Route.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,displayName="TLS Settings"
 	TLS *ExposureRouteReencryptTLS `json:"tls,omitempty"`
 }
 
