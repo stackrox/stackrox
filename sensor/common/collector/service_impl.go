@@ -56,8 +56,6 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 func (s *serviceImpl) Communicate(server sensor.CollectorService_CommunicateServer) error {
-	defer close(s.queue)
-
 	for {
 		msg, err := server.Recv()
 		if err != nil {
