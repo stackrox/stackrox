@@ -148,7 +148,7 @@ func (s *debugServiceTestSuite) TestGetRoles() {
 }
 
 func (s *debugServiceTestSuite) TestGetNotifiers() {
-	s.notifiersMock.EXPECT().GetScrubbedNotifiers(gomock.Any()).Return(nil, errors.New("Test"))
+	s.notifiersMock.EXPECT().ForEachScrubbedNotifier(gomock.Any(), gomock.Any()).Return(errors.New("Test"))
 	_, err := s.service.getNotifiers(s.noneCtx)
 	s.Error(err, "expected error propagation")
 
@@ -162,7 +162,11 @@ func (s *debugServiceTestSuite) TestGetNotifiers() {
 			},
 		},
 	}
-	s.notifiersMock.EXPECT().GetScrubbedNotifiers(gomock.Any()).Return(expectedNotifiers, nil)
+	s.notifiersMock.EXPECT().ForEachScrubbedNotifier(gomock.Any(), gomock.Any()).DoAndReturn(
+		func(_ context.Context, fn func(obj *storage.Notifier) error) error {
+			return fn(expectedNotifiers[0])
+		},
+	)
 	actualNotifiers, err := s.service.getNotifiers(s.noneCtx)
 
 	s.NoError(err)

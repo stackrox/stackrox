@@ -111,23 +111,17 @@ func (s *notifierDataStoreTestSuite) TestGetScrubbedNotifier() {
 	s.Equal("******", scrubbedNotifier.Config.(*storage.Notifier_Generic).Generic.Password)
 }
 
-func (s *notifierDataStoreTestSuite) TestEnforcesGetMany() {
-	s.storage.EXPECT().GetAll(gomock.Any()).Times(0)
+func (s *notifierDataStoreTestSuite) TestEnforcesForEach() {
+	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).Times(0)
 
-	notifiers, err := s.dataStore.GetNotifiers(s.hasNoneCtx)
+	err := s.dataStore.ForEachNotifier(s.hasNoneCtx, nil)
 	s.NoError(err, "expected no error, should return nil without access")
-	s.Nil(notifiers, "expected return value to be nil")
 }
 
-func (s *notifierDataStoreTestSuite) TestAllowsGetMany() {
-	s.storage.EXPECT().GetAll(gomock.Any()).Return(nil, nil).Times(1)
+func (s *notifierDataStoreTestSuite) TestAllowsForEach() {
+	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
-	_, err := s.dataStore.GetNotifiers(s.hasReadCtx)
-	s.NoError(err, "expected no error trying to read with permissions")
-
-	s.storage.EXPECT().GetAll(gomock.Any()).Return(nil, nil).Times(1)
-
-	_, err = s.dataStore.GetNotifiers(s.hasWriteCtx)
+	err := s.dataStore.ForEachNotifier(s.hasReadCtx, nil)
 	s.NoError(err, "expected no error trying to read with permissions")
 }
 
@@ -140,16 +134,20 @@ func (s *notifierDataStoreTestSuite) TestGetScrubbedNotifiers() {
 		},
 	}
 
-	s.storage.EXPECT().GetAll(gomock.Any()).Return([]*storage.Notifier{testNotifier}, nil).Times(1)
+	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).DoAndReturn(
+		func(_ context.Context, fn func(obj *storage.Notifier) error) error {
+			return fn(testNotifier)
+		}).Times(1)
 
-	scrubbedNotifiers, err := s.dataStore.GetScrubbedNotifiers(s.hasReadCtx)
+	err := s.dataStore.ForEachScrubbedNotifier(s.hasReadCtx, func(scrubbedNotifier *storage.Notifier) error {
+		s.Equal("******", scrubbedNotifier.Config.(*storage.Notifier_Generic).Generic.Password)
+		return nil
+	})
 	s.NoError(err, "expected no error trying to read with permissions")
-	s.Equal(1, len(scrubbedNotifiers), "expected one notifier in the list")
-	s.Equal("******", scrubbedNotifiers[0].Config.(*storage.Notifier_Generic).Generic.Password)
 }
 
 func (s *notifierDataStoreTestSuite) TestEnforcesAdd() {
-	s.storage.EXPECT().GetAll(gomock.Any()).Times(0)
+	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).Times(0)
 
 	_, err := s.dataStore.AddNotifier(s.hasNoneCtx, &storage.Notifier{})
 	s.Error(err, "expected an error trying to write without permissions")

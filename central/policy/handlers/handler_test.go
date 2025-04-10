@@ -106,16 +106,24 @@ func (s *PolicyHandlerTestSuite) TestSaveAsValidIDSucceeds() {
 	mockRequest := &apiparams.SaveAsCustomResourcesRequest{IDs: []string{"valid-id"}}
 
 	s.policyStore.EXPECT().GetPolicies(ctx, mockRequest.IDs).Return(maps.Values(expectedNameToPolicies), nil, nil)
-	s.notifierStore.EXPECT().GetNotifiers(s.ctx).Return([]*storage.Notifier{
-		{
-			Id:   emailNotifierUuid,
-			Name: "email-notifier",
-		},
-		{
-			Id:   jiraNotifierUuid,
-			Name: "jira-notifier",
-		},
-	}, nil)
+	s.notifierStore.EXPECT().ForEachNotifier(s.ctx, gomock.Any()).DoAndReturn(
+		func(_ context.Context, fn func(obj *storage.Notifier) error) error {
+			for _, n := range []*storage.Notifier{
+				{
+					Id:   emailNotifierUuid,
+					Name: "email-notifier",
+				},
+				{
+					Id:   jiraNotifierUuid,
+					Name: "jira-notifier",
+				},
+			} {
+				if err := fn(n); err != nil {
+					return err
+				}
+			}
+			return nil
+		})
 
 	resp := s.performRequest(mockRequest)
 	s.Equal(http.StatusOK, resp.Code)
@@ -146,16 +154,24 @@ func (s *PolicyHandlerTestSuite) TestSaveAsMultipleValidIDSucceeds() {
 	policies := maps.Values(expectedNameToPolicies)
 	slices.SortFunc(policies, func(a, b *storage.Policy) int { return strings.Compare(a.GetId(), b.GetId()) })
 	s.policyStore.EXPECT().GetPolicies(ctx, mockRequest.IDs).Return(policies, nil, nil)
-	s.notifierStore.EXPECT().GetNotifiers(s.ctx).Return([]*storage.Notifier{
-		{
-			Id:   emailNotifierUuid,
-			Name: "email-notifier",
-		},
-		{
-			Id:   jiraNotifierUuid,
-			Name: "jira-notifier",
-		},
-	}, nil)
+	s.notifierStore.EXPECT().ForEachNotifier(s.ctx, gomock.Any()).DoAndReturn(
+		func(_ context.Context, fn func(obj *storage.Notifier) error) error {
+			for _, n := range []*storage.Notifier{
+				{
+					Id:   emailNotifierUuid,
+					Name: "email-notifier",
+				},
+				{
+					Id:   jiraNotifierUuid,
+					Name: "jira-notifier",
+				},
+			} {
+				if err := fn(n); err != nil {
+					return err
+				}
+			}
+			return nil
+		})
 	resp := s.performRequest(mockRequest)
 	s.Equal(http.StatusOK, resp.Code)
 
