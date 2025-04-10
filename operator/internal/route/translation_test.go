@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	"github.com/go-logr/logr"
+	"github.com/stackrox/rox/operator/internal/common"
+	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"helm.sh/helm/v3/pkg/chartutil"
@@ -37,9 +39,9 @@ func Test_injector_Enrich(t *testing.T) {
 			tlsSecret := &corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: "some-ns",
-					Name:      tlsSecretName,
+					Name:      common.TLSSecretName,
 				},
-				Data: map[string][]byte{tlsSecretCAKey: []byte(centralCA)},
+				Data: map[string][]byte{mtls.CACertFileName: []byte(centralCA)},
 			}
 			i := NewRouteInjector(fake.NewFakeClient(tlsSecret), logr.New(nil))
 			vals := chartutil.Values{}

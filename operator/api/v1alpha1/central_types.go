@@ -157,14 +157,6 @@ type CentralComponentSpec struct {
 	DeploymentSpec `json:",inline"`
 }
 
-// GetExposure provides a way to retrieve the Exposure setting that is safe to use on a nil receiver object.
-func (c *CentralComponentSpec) GetExposure() *Exposure {
-	if c == nil {
-		return nil
-	}
-	return c.Exposure
-}
-
 // GetDB returns Central's db config
 func (c *CentralComponentSpec) GetDB() *CentralDBSpec {
 	if c == nil {
@@ -445,14 +437,6 @@ type Exposure struct {
 	NodePort *ExposureNodePort `json:"nodePort,omitempty"`
 }
 
-// GetRoute provides a way to retrieve the Route setting that is safe to use on a nil receiver object.
-func (c *Exposure) GetRoute() *ExposureRoute {
-	if c == nil {
-		return nil
-	}
-	return c.Route
-}
-
 // ExposureLoadBalancer defines settings for exposing central via a LoadBalancer.
 type ExposureLoadBalancer struct {
 	//+kubebuilder:default=false
@@ -486,6 +470,8 @@ type ExposureNodePort struct {
 
 // ExposureRoute defines settings for exposing central via a Route.
 type ExposureRoute struct {
+	// Expose central with a passthrough route.
+	// The passthrough route is still required when using a reencrypt route.
 	//+kubebuilder:default=false
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
 	Enabled *bool `json:"enabled,omitempty"`
@@ -505,6 +491,8 @@ type ExposureRoute struct {
 
 // ExposureRouteReencrypt defines settings for exposing central via a reencrypt Route.
 type ExposureRouteReencrypt struct {
+	// Expose central with a reencrypt route.
+	// Requires a passthrough route for sensor communication.
 	//+kubebuilder:default=false
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
 	Enabled *bool `json:"enabled,omitempty"`
@@ -522,6 +510,7 @@ type ExposureRouteReencrypt struct {
 // ExposureRouteReencryptTLS defines TLS settings for exposing central via a reencrypt Route.
 type ExposureRouteReencryptTLS struct {
 	// The PEM encoded certificate chain that may be used to establish a complete chain of trust.
+	// Defaults to the OpenShift certificate authority.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,displayName="CA Certificate"
 	CaCertificate *string `json:"caCertificate,omitempty"`
 
@@ -531,8 +520,8 @@ type ExposureRouteReencryptTLS struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2,displayName="Certificate"
 	Certificate *string `json:"certificate,omitempty"`
 
-	// The CA certificate of the final destination, i.e. of central. Should be provided because the OpenShift
-	// router uses it for health checks on the secure connection.
+	// The CA certificate of the final destination, i.e. of central.
+	// Used by the OpenShift router for health checks on the secure connection.
 	// Defaults to the Central certificate authority.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,displayName="Destination CA Certificate"
 	DestinationCACertificate *string `json:"destinationCACertificate,omitempty"`

@@ -5,16 +5,13 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
+	"github.com/stackrox/rox/operator/internal/common"
 	"github.com/stackrox/rox/operator/internal/values/translation"
 	"github.com/stackrox/rox/pkg/k8sutil"
+	"github.com/stackrox/rox/pkg/mtls"
 	"helm.sh/helm/v3/pkg/chartutil"
 	corev1 "k8s.io/api/core/v1"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
-)
-
-const (
-	tlsSecretCAKey = "ca.pem"
-	tlsSecretName  = "central-tls"
 )
 
 // NewRouteInjector returns an object which injects the Central certificate authority into route chart values.
@@ -37,8 +34,8 @@ func (i *routeInjector) Enrich(ctx context.Context, obj k8sutil.Object, vals cha
 	namespaceName := obj.GetNamespace()
 	tlsSecret := &corev1.Secret{}
 
-	if err := i.client.Get(ctx, ctrlClient.ObjectKey{Name: tlsSecretName, Namespace: namespaceName}, tlsSecret); err != nil {
-		return nil, fmt.Errorf("getting secret %s/%s: %w", namespaceName, tlsSecretName, err)
+	if err := i.client.Get(ctx, ctrlClient.ObjectKey{Name: common.TLSSecretName, Namespace: namespaceName}, tlsSecret); err != nil {
+		return nil, fmt.Errorf("getting secret %s/%s: %w", namespaceName, common.TLSSecretName, err)
 	}
 
 	routeVals := chartutil.Values{
@@ -47,7 +44,7 @@ func (i *routeInjector) Enrich(ctx context.Context, obj k8sutil.Object, vals cha
 				"route": map[string]interface{}{
 					"reencrypt": map[string]interface{}{
 						"tls": map[string]interface{}{
-							"destinationCACertificate": string(tlsSecret.Data[tlsSecretCAKey]),
+							"destinationCACertificate": string(tlsSecret.Data[mtls.CACertFileName]),
 						},
 					},
 				},
