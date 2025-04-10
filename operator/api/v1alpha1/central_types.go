@@ -499,7 +499,7 @@ type ExposureRoute struct {
 	// For reencrypt routes, the request is terminated on the OpenShift router with a custom certificate.
 	// The request is then reencrypted by the OpenShift router and sent to central.
 	// [user] --TLS--> [OpenShift router] --TLS--> [central]
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,displayName="Re-Encrypt Route"
 	Reencrypt *ExposureRouteReencrypt `json:"reencrypt,omitempty"`
 }
 
