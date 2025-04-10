@@ -528,7 +528,7 @@ type ExposureRouteReencryptTLS struct {
 	// The PEM encoded certificate that is served on the route. Must be a single serving
 	// certificate instead of a certificate chain.
 	// Defaults to a certificate signed by the OpenShift certificate authority.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2,displayName="Certificate"
 	Certificate *string `json:"certificate,omitempty"`
 
 	// The CA certificate of the final destination. Should be provided because the OpenShift
