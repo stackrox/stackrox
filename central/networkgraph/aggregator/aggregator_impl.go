@@ -234,6 +234,10 @@ func (a *aggregateLatestTimestampImpl) Aggregate(flows []*storage.NetworkFlow) [
 	ret := make([]*storage.NetworkFlow, 0, len(flows))
 
 	for _, flow := range flows {
+		if flow.GetProps() == nil {
+			continue
+		}
+
 		srcEntity, dstEntity := flow.GetProps().GetSrcEntity(), flow.GetProps().GetDstEntity()
 		// This is essentially an invalid connection.
 		if srcEntity == nil || dstEntity == nil {
@@ -241,11 +245,7 @@ func (a *aggregateLatestTimestampImpl) Aggregate(flows []*storage.NetworkFlow) [
 			continue
 		}
 
-		flow = flow.CloneVT()
-
-		if flow.GetProps() == nil {
-			continue
-		}
+		//flow = flow.CloneVT()
 
 		connID := networkgraph.GetNetworkConnIndicator(flow)
 		if storedFlow := normalizedConns[connID]; storedFlow != nil {
