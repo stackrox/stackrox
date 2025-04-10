@@ -227,7 +227,8 @@ func (a *aggregateExternalConnByNameImpl) Aggregate(flows []*storage.NetworkFlow
 
 type aggregateLatestTimestampImpl struct{}
 
-// Aggregate aggregates deduplicates all connections into a single connection.
+// Aggregate aggregates flows by their latest timestamp. For one or more similar flows,
+// only the most recent is returned.
 func (a *aggregateLatestTimestampImpl) Aggregate(flows []*storage.NetworkFlow) []*storage.NetworkFlow {
 	normalizedConns := make(map[networkgraph.NetworkConnIndicator]*storage.NetworkFlow)
 	ret := make([]*storage.NetworkFlow, 0, len(flows))
