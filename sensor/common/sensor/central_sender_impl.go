@@ -53,15 +53,22 @@ func (s *centralSenderImpl) forwardResponses(from <-chan *message.ExpiringMessag
 }
 
 func (s *centralSenderImpl) send(stream central.SensorService_CommunicateClient, sendUnchangedIDs bool, onStops ...func(error)) {
+	var onBufferedStreamStop func() error
 	defer func() {
 		s.stopper.Flow().ReportStopped()
 		runAll(s.stopper.Client().Stopped().Err(), onStops...)
+		// This will block until the buffered stream is stopped
+		if onBufferedStreamStop != nil {
+			if err := onBufferedStreamStop(); err != nil {
+				log.Warn(err)
+			}
+		}
 		s.finished.Done()
 	}()
 
 	bufferedC := make(chan *central.MsgFromSensor, env.ResponsesChannelBufferSize.IntegerSetting())
 	defer close(bufferedC)
-	wrappedStream, streamErrC := NewBufferedStream(stream, bufferedC, s.stopper.LowLevel().GetStopRequestSignal())
+	wrappedStream, streamErrC, onBufferedStreamStop := NewBufferedStream(stream, bufferedC, s.stopper.LowLevel().GetStopRequestSignal())
 	wrappedStream = metrics.NewSizingEventStream(wrappedStream)
 	wrappedStream = metrics.NewCountingEventStream(wrappedStream, "unique")
 	wrappedStream = metrics.NewTimingEventStream(wrappedStream, "unique")

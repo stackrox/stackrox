@@ -1,6 +1,9 @@
 package sensor
 
 import (
+	"time"
+
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
@@ -10,6 +13,10 @@ import (
 
 const (
 	loggingRateLimiter = "buffered-stream"
+)
+
+var (
+	stopTimeout = 10 * time.Second
 )
 
 type bufferedStream struct {
@@ -31,10 +38,10 @@ func (s bufferedStream) Send(msg *central.MsgFromSensor) error {
 	return nil
 }
 
-func NewBufferedStream(stream messagestream.SensorMessageStream, msgC chan *central.MsgFromSensor, stopC concurrency.ReadOnlyErrorSignal) (messagestream.SensorMessageStream, <-chan error) {
+func NewBufferedStream(stream messagestream.SensorMessageStream, msgC chan *central.MsgFromSensor, stopC concurrency.ReadOnlyErrorSignal) (messagestream.SensorMessageStream, <-chan error, func() error) {
 	// if the capacity of the buffer is zero then we just return the inner stream
 	if cap(msgC) == 0 {
-		return stream, nil
+		return stream, nil, nil
 	}
 	ret := bufferedStream{
 		buffer: msgC,
@@ -42,7 +49,19 @@ func NewBufferedStream(stream messagestream.SensorMessageStream, msgC chan *cent
 		stream: stream,
 	}
 	errC := ret.run()
-	return ret, errC
+	return ret, errC, func() error {
+		for {
+			select {
+			case _, ok := <-errC:
+				if !ok {
+					return nil
+				}
+			case <-time.After(stopTimeout):
+				// If we reach this timeout we could have a deadlock in the gRPC stream
+				return errors.New("timeout waiting for the buffered stream to stop")
+			}
+		}
+	}
 }
 
 func (s bufferedStream) run() <-chan error {

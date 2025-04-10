@@ -31,9 +31,10 @@ func (s *bufferedStreamSuite) Test_NoBuffer() {
 	msgC := make(chan *central.MsgFromSensor)
 	defer close(msgC)
 	stopSignal := concurrency.NewErrorSignal()
-	stream, errC := NewBufferedStream(s.innerStream, msgC, &stopSignal)
+	stream, errC, onStop := NewBufferedStream(s.innerStream, msgC, &stopSignal)
 	s.Require().NotNil(stream)
 	s.Assert().Nil(errC)
+	s.Assert().Nil(onStop)
 
 	s.innerStream.EXPECT().Send(gomock.Any()).Times(2).DoAndReturn(func(msg *central.MsgFromSensor) error {
 		return handleExpectSend(msg)
@@ -47,9 +48,10 @@ func (s *bufferedStreamSuite) Test_BufferedStream() {
 	msgC := make(chan *central.MsgFromSensor, 1)
 	defer close(msgC)
 	stopSignal := concurrency.NewErrorSignal()
-	stream, errC := NewBufferedStream(s.innerStream, msgC, &stopSignal)
+	stream, errC, onStop := NewBufferedStream(s.innerStream, msgC, &stopSignal)
 	s.Require().NotNil(stream)
 	s.Require().NotNil(errC)
+	s.Require().NotNil(onStop)
 
 	// This is triggered when the inner stream Send function is called
 	messageReadSignal := make(chan struct{})
@@ -129,9 +131,10 @@ func (s *bufferedStreamSuite) Test_Stop() {
 	msgC := make(chan *central.MsgFromSensor, 1)
 	defer close(msgC)
 	stopSignal := concurrency.NewErrorSignal()
-	stream, errC := NewBufferedStream(s.innerStream, msgC, &stopSignal)
+	stream, errC, onStop := NewBufferedStream(s.innerStream, msgC, &stopSignal)
 	s.Require().NotNil(stream)
 	s.Require().NotNil(errC)
+	s.Require().NotNil(onStop)
 
 	// This is triggered when the inner stream Send function is called
 	messageReadSignal := make(chan struct{})
@@ -167,6 +170,25 @@ func (s *bufferedStreamSuite) Test_Stop() {
 		}
 	}, 500*time.Millisecond, 10*time.Millisecond, "timeout waiting for the stream to stop")
 
+	s.Assert().NoError(onStop())
+}
+
+func (s *bufferedStreamSuite) Test_StopTimeout() {
+	msgC := make(chan *central.MsgFromSensor, 1)
+	defer close(msgC)
+	stopSignal := concurrency.NewErrorSignal()
+	stream, errC, onStop := NewBufferedStream(s.innerStream, msgC, &stopSignal)
+	s.Require().NotNil(stream)
+	s.Require().NotNil(errC)
+	s.Require().NotNil(onStop)
+
+	stopTimeout = 10 * time.Millisecond
+	s.Assert().Error(onStop())
+
+	// Trigger the stop signal
+	stopSignal.Signal()
+
+	s.Assert().NoError(onStop())
 }
 
 func handleExpectSend(msg *central.MsgFromSensor) error {
