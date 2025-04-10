@@ -753,19 +753,22 @@ func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseW
 	diagBundleTasks.Go(func(ctx context.Context) error {
 		config, err := s.getDeleRegConfigs(ctx)
 
-		var b []byte
+		var j interface{}
 		if err != nil {
-			b, _ = json.Marshal(map[string]string{
+			j = map[string]string{
 				"message": err.Error(),
-			})
+			}
 		} else {
-			b, err = protojson.MarshalOptions{Multiline: true}.Marshal(config)
+			b, err := protojson.MarshalOptions{Multiline: true}.Marshal(config)
 			if err != nil {
 				return err
 			}
-		}
 
-		return addJSONToZip(zipWriter, "delegated-scanning-config.json", b)
+			if err := json.Unmarshal(b, &j); err != nil {
+				return err
+			}
+		}
+		return addJSONToZip(zipWriter, "delegated-scanning-config.json", j)
 	})
 	if opts.withAccessControl {
 		diagBundleTasks.Go(func(ctx context.Context) error {
