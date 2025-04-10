@@ -534,7 +534,7 @@ type ExposureRouteReencryptTLS struct {
 	// The CA certificate of the final destination. Should be provided because the OpenShift
 	// router uses it for health checks on the secure connection.
 	// Defaults to the Central certificate authority.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,displayName="Destination CA Certificate"
 	DestinationCACertificate *string `json:"destinationCACertificate,omitempty"`
 
 	// The PEM encoded private key of the certificate that is served on the route.
