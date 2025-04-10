@@ -539,7 +539,7 @@ type ExposureRouteReencryptTLS struct {
 
 	// The PEM encoded private key of the certificate that is served on the route.
 	// Defaults to a certificate signed by the OpenShift certificate authority.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4,displayName="Private Key"
 	Key *string `json:"key,omitempty"`
 }
 
