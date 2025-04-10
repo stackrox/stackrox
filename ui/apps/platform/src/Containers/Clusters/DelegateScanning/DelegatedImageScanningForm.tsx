@@ -28,7 +28,7 @@ function DelegatedImageScanningForm({
     setDelegatedRegistryConfig,
     setIsNotEditing,
 }) {
-    const [errorMessage, setErrorMessage] = useState('');
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
     const {
         dirty,
@@ -52,6 +52,7 @@ function DelegatedImageScanningForm({
                     // the following update to its state, although consistent,
                     // seems redundant with update of form state.
                     setDelegatedRegistryConfig(delegatedRegistryConfigUpdated);
+                    setErrorMessage(null);
                     setIsNotEditing();
                 })
                 .catch((error) => {
@@ -99,7 +100,7 @@ function DelegatedImageScanningForm({
 
     return (
         <Flex direction={{ default: 'column' }}>
-            {errorMessage.length !== 0 && (
+            {typeof errorMessage === 'string' && (
                 <Alert
                     title="Unable to save delegated image scanning configuration"
                     component="p"
