@@ -3,6 +3,7 @@ package registry
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"slices"
 	"strings"
 
@@ -236,22 +237,26 @@ func (rs *Store) getRegistriesInNamespace(namespace string) registries.Set {
 	return rs.storeByHost[namespace]
 }
 
-// getRegistryForImageInNamespace returns the stored registry that matches image.Registry
+// getRegistriesForImageInNamespace returns the stored registry that matches image.Registry
 // and is associated with namespace.
 //
 // An error is returned if no registry found.
-func (rs *Store) getRegistryForImageInNamespace(image *storage.ImageName, namespace string) (types.ImageRegistry, error) {
+func (rs *Store) getRegistriesForImageInNamespace(image *storage.ImageName, namespace string) ([]types.ImageRegistry, error) {
+	var regs []types.ImageRegistry
+
 	reg := image.GetRegistry()
-	regs := rs.getRegistriesInNamespace(namespace)
-	if regs != nil {
-		for _, r := range regs.GetAll() {
+	if nRegs := rs.getRegistriesInNamespace(namespace); nRegs != nil {
+		for _, r := range nRegs.GetAll() {
 			if r.Config(bgContext).GetRegistryHostname() == reg {
-				return r, nil
+				regs = append(regs, r)
 			}
 		}
 	}
+	if len(regs) == 0 {
+		return nil, errors.Errorf("unknown image registry: %q", reg)
+	}
 
-	return nil, errors.Errorf("unknown image registry: %q", reg)
+	return regs, nil
 }
 
 // upsertGlobalRegistry will store a new registry with the given credentials into the global registry store.
@@ -588,12 +593,7 @@ func (rs *Store) DeleteSecret(namespace, secretName string) bool {
 // If no pull secrets are provided, all matching registries from the namespace are returned.
 func (rs *Store) GetPullSecretRegistries(image *storage.ImageName, namespace string, imagePullSecrets []string) ([]types.ImageRegistry, error) {
 	if !features.SensorPullSecretsByName.Enabled() {
-		reg, err := rs.getRegistryForImageInNamespace(image, namespace)
-		if err != nil {
-			return nil, err
-		}
-
-		return []types.ImageRegistry{reg}, nil
+		return rs.getRegistriesForImageInNamespace(image, namespace)
 	}
 
 	rs.storeMutux.RLock()
@@ -615,16 +615,36 @@ func (rs *Store) GetPullSecretRegistries(image *storage.ImageName, namespace str
 	return rs.getAllPullSecretRegistriesNoLock(secretNameToHost, image), nil
 }
 
+// isRegistryMatch does a full match and the registry host and prefix match on the registry path.
+func isRegistryMatch(image *storage.ImageName, host string) (bool, error) {
+	// `url.Parse` requires a valid scheme - prepend one for parsing if empty.
+	regURL, err := url.Parse(urlfmt.FormatURL(host, urlfmt.HTTPS, urlfmt.NoTrailingSlash))
+	if err != nil {
+		log.Errorf("Failed to parse host URL %q: %w", host, err)
+		return false, errors.Wrap(err, "parsing registry host %q")
+	}
+	// Remove leading `/` from the path.
+	regPath := regURL.Path
+	if len(regPath) > 0 {
+		regPath = regPath[1:]
+	}
+	return image.GetRegistry() == regURL.Host && strings.HasPrefix(image.GetRemote(), regPath), nil
+}
+
 // getPullSecretRegistriesNoLock returns registries found within image pull secrets
 // from a namespace that match image.
 func (rs *Store) getPullSecretRegistriesNoLock(secretNameToHost secretNameToHostname, image *storage.ImageName, imagePullSecrets []string) []types.ImageRegistry {
 	var regs []types.ImageRegistry
-	registryHostname := image.GetRegistry()
 
 	// Extract registries from the matching pull secrets.
 	for _, secretName := range imagePullSecrets {
 		for host, reg := range secretNameToHost[secretName] {
-			if host == registryHostname {
+			isMatch, err := isRegistryMatch(image, host)
+			if err != nil {
+				log.Errorf("Failed to match registry: %w", err)
+				continue
+			}
+			if isMatch {
 				regs = append(regs, reg)
 			}
 		}

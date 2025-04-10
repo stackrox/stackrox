@@ -78,10 +78,14 @@ func TestRegistryStore_PullSecrets(t *testing.T) {
 
 			dce := config.DockerConfigEntry{Username: "username", Password: "password"}
 			dc := config.DockerConfig{
-				"image-registry.openshift-image-registry.svc:5000":       dce,
-				"image-registry.openshift-image-registry.svc.local:5000": dce,
-				"172.99.12.11:5000": dce,
-				"quay.io":           dce,
+				"image-registry.openshift-image-registry.svc:5000":          dce,
+				"image-registry.openshift-image-registry.svc:5000/qa":       dce,
+				"image-registry.openshift-image-registry.svc.local:5000":    dce,
+				"image-registry.openshift-image-registry.svc.local:5000/qa": dce,
+				"172.99.12.11:5000":    dce,
+				"172.99.12.11:5000/qa": dce,
+				"quay.io":              dce,
+				"quay.io/rhacs-eng":    dce,
 			}
 
 			regStore.UpsertSecret(namespace, fakeSecretName, dc, noServiceAcctName)
@@ -100,8 +104,9 @@ func TestRegistryStore_PullSecrets(t *testing.T) {
 					regs, err := regStore.GetPullSecretRegistries(img, namespace, nil)
 					require.NoError(t, err)
 
-					require.Len(t, regs, 1)
+					require.Len(t, regs, 2)
 					assert.Equal(t, img.GetRegistry(), regs[0].Config(bgCtx).RegistryHostname)
+					assert.Equal(t, img.GetRegistry(), regs[1].Config(bgCtx).RegistryHostname)
 				})
 			}
 		})
@@ -154,6 +159,43 @@ func TestRegistryStore_PullSecrets(t *testing.T) {
 		commonTests(t)
 
 		regStore := NewRegistryStore(alwaysInsecureCheckTLS)
+
+		t.Run("ensure path mismatches are not matched", func(t *testing.T) {
+			regStore := NewRegistryStore(alwaysInsecureCheckTLS)
+
+			dce := config.DockerConfigEntry{Username: "username", Password: "password"}
+			dc := config.DockerConfig{
+				"image-registry.openshift-image-registry.svc:5000":                dce,
+				"image-registry.openshift-image-registry.svc:5000/no-match":       dce,
+				"image-registry.openshift-image-registry.svc.local:5000":          dce,
+				"image-registry.openshift-image-registry.svc.local:5000/no-match": dce,
+				"172.99.12.11:5000":          dce,
+				"172.99.12.11:5000/no-match": dce,
+				"quay.io":                    dce,
+				"quay.io/no-match":           dce,
+			}
+
+			regStore.UpsertSecret(fakeNamespace, fakeSecretName, dc, noServiceAcctName)
+
+			tcs := []string{
+				"image-registry.openshift-image-registry.svc:5000/qa/nginx:1.18.0",
+				"image-registry.openshift-image-registry.svc.local:5000/qa/nginx:1.18.0",
+				"172.99.12.11:5000/qa/nginx:1.18.0",
+				"quay.io/rhacs-eng/scanner:latest",
+			}
+			for i, tc := range tcs {
+				t.Run(fmt.Sprint(i), func(t *testing.T) {
+					img, _, err := utils.GenerateImageNameFromString(tc)
+					require.NoError(t, err)
+
+					regs, err := regStore.GetPullSecretRegistries(img, fakeNamespace, nil)
+					require.NoError(t, err)
+
+					require.Len(t, regs, 1)
+					assert.Equal(t, img.GetRegistry(), regs[0].Config(bgCtx).RegistryHostname)
+				})
+			}
+		})
 
 		// This registry should not exist in the store, when no pull secrets are
 		// found and we're storing secrets by name the returned regs and error
