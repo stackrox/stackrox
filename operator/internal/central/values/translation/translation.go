@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
-	// Required for the usage of go:embed be)w.
+	// Required for the usage of go:embed below.
 	_ "embed"
 
 	"github.com/pkg/errors"
