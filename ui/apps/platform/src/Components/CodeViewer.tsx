@@ -70,7 +70,7 @@ export default function CodeViewer({
     const { wasCopied, setWasCopied, copyToClipboard } = useClipboardCopy();
     const [theme, setTheme] = useCodeViewerThemeContext();
 
-    function toggleDarkMode() {
+    function toggleTheme() {
         setTheme((prevValue) => (prevValue === 'light' ? 'dark' : 'light'));
     }
 
@@ -92,9 +92,9 @@ export default function CodeViewer({
             <CodeBlockAction>
                 <Button
                     variant="plain"
-                    aria-label={theme === 'light' ? 'Set dark mode' : 'Set light mode'}
+                    aria-label={theme === 'light' ? 'Set dark theme' : 'Set light theme'}
                     icon={theme === 'light' ? <MoonIcon /> : <SunIcon />}
-                    onClick={() => toggleDarkMode()}
+                    onClick={() => toggleTheme()}
                 />
             </CodeBlockAction>
             {additionalControls}
