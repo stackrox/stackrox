@@ -90,7 +90,7 @@ function DelegateScanningPage() {
                             <FlexItem align={{ default: 'alignRight' }}>
                                 <Button
                                     variant="primary"
-                                    isDisabled={delegatedRegistryConfig == null || isEditing}
+                                    isDisabled={delegatedRegistryConfig === null || isEditing}
                                     onClick={onClickEdit}
                                 >
                                     Edit
