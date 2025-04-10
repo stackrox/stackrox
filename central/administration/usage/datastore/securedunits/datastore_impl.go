@@ -18,10 +18,6 @@ var (
 	usageSAC = sac.ForResource(resources.Administration)
 )
 
-const (
-	page = 1000
-)
-
 type dataStoreImpl struct {
 	store     store.Store
 	clusterDS clusterDataStore
