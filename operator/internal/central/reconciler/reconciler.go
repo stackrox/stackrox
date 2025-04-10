@@ -61,7 +61,7 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 			// are set properly.
 			legacy.NewImagePullSecretReferenceInjector(mgr.GetAPIReader(), "imagePullSecrets",
 				"stackrox", "stackrox-scanner", "stackrox-scanner-v4"),
-			route.NewRouteInjector(mgr.GetClient(), mgr.GetLogger()),
+			route.NewRouteInjector(mgr.GetClient(), mgr.GetAPIReader(), mgr.GetLogger()),
 		),
 		opts...,
 	)

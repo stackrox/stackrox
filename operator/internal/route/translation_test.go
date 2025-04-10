@@ -43,7 +43,7 @@ func Test_injector_Enrich(t *testing.T) {
 				},
 				Data: map[string][]byte{mtls.CACertFileName: []byte(centralCA)},
 			}
-			i := NewRouteInjector(fake.NewFakeClient(tlsSecret), logr.New(nil))
+			i := NewRouteInjector(fake.NewFakeClient(tlsSecret), fake.NewFakeClient(tlsSecret), logr.New(nil))
 			vals := chartutil.Values{}
 			if tt.destCAValue != "" {
 				vals["central"] = map[string]interface{}{
