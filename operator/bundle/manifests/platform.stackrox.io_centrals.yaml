@@ -1820,12 +1820,7 @@ spec:
               defaults:
                 properties:
                   scannerV4ComponentPolicy:
-                    properties:
-                      ownerVersion:
-                        type: string
-                      value:
-                        type: string
-                    type: object
+                    type: string
                 type: object
               deployedRelease:
                 description: StackRoxRelease describes the Helm "release" that was
