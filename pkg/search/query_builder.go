@@ -501,6 +501,9 @@ func (qb *QueryBuilder) ProtoQuery() *v1.Query {
 	if qb.pagination != nil {
 		cq.Pagination = qb.pagination.qp
 	}
+	if cq.Pagination == nil && qb.ids != nil {
+		cq.Pagination = &v1.QueryPagination{Limit: int32(len(*qb.ids))}
+	}
 	return cq
 }
 
