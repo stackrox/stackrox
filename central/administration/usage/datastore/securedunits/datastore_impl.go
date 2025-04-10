@@ -47,7 +47,7 @@ func (ds *dataStoreImpl) Walk(ctx context.Context, from time.Time, to time.Time,
 
 	err := ds.store.WalkByQuery(ctx, query, fn)
 	if err != nil {
-		return errors.Wrap(err, "error while processing usage data")
+		return errors.Wrap(err, "error while walking through usage data")
 	}
 	return nil
 }
