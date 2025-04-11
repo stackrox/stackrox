@@ -1,12 +1,13 @@
 //go:build sql_integration
 
-package postgres
+package tests
 
 import (
 	"context"
 	"testing"
 	"time"
 
+	postgresFlowStore "github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/central/networkgraph/testhelper"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
@@ -28,7 +29,7 @@ const (
 
 type NetworkflowStoreSuite struct {
 	suite.Suite
-	store  FlowStore
+	store  postgresFlowStore.FlowStore
 	ctx    context.Context
 	pool   postgres.DB
 	gormDB *gorm.DB
@@ -50,14 +51,14 @@ func (s *NetworkflowStoreSuite) SetupSuite() {
 }
 
 func (s *NetworkflowStoreSuite) SetupTest() {
-	Destroy(s.ctx, s.pool)
-	s.store = CreateTableAndNewStore(s.ctx, s.pool, s.gormDB, clusterID)
+	postgresFlowStore.Destroy(s.ctx, s.pool)
+	s.store = postgresFlowStore.CreateTableAndNewStore(s.ctx, s.pool, s.gormDB, clusterID)
 }
 
 func (s *NetworkflowStoreSuite) TearDownTest() {
 	if s.pool != nil {
 		// Clean up
-		Destroy(s.ctx, s.pool)
+		postgresFlowStore.Destroy(s.ctx, s.pool)
 	}
 }
 
@@ -72,7 +73,7 @@ func (s *NetworkflowStoreSuite) TearDownSuite() {
 
 func (s *NetworkflowStoreSuite) TestStore() {
 	secondCluster := fixtureconsts.Cluster2
-	store2 := New(s.pool, secondCluster)
+	store2 := postgresFlowStore.New(s.pool, secondCluster)
 
 	networkFlow := &storage.NetworkFlow{
 		Props: &storage.NetworkFlowProperties{
