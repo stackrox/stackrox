@@ -372,6 +372,11 @@ func (c *cachedStore[T, PT]) GetByQuery(ctx context.Context, query *v1.Query) ([
 	return results, nil
 }
 
+// GetByQueryFn calls  the objects from the store matching the query.
+func (c *cachedStore[T, PT]) GetByQueryFn(ctx context.Context, query *v1.Query, fn func(obj PT) error) error {
+	return c.underlyingStore.GetByQueryFn(ctx, query, fn)
+}
+
 // DeleteByQuery removes the objects from the store based on the passed query.
 func (c *cachedStore[T, PT]) DeleteByQuery(ctx context.Context, query *v1.Query) ([]string, error) {
 	identifiersToRemove, err := c.underlyingStore.DeleteByQuery(ctx, query)
