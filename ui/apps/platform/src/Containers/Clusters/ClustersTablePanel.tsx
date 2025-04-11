@@ -57,6 +57,7 @@ import {
     clustersInitBundlesPath,
     clustersSecureClusterPath,
     clustersSecureClusterCrsPath,
+    clustersClusterRegistrationSecretsPath,
 } from 'routePaths';
 
 import AutoUpgradeToggle from './Components/AutoUpgradeToggle';
@@ -369,7 +370,11 @@ function ClustersTablePanel({
                 <Toolbar inset={{ default: 'insetNone' }} className="pf-v5-u-pb-0">
                     <ToolbarContent>
                         <Title headingLevel="h1">Clusters</Title>
-                        <ToolbarGroup variant="button-group" align={{ default: 'alignRight' }}>
+                        <ToolbarGroup
+                            className="pf-v5-u-flex-wrap"
+                            variant="button-group"
+                            align={{ default: 'alignRight' }}
+                        >
                             {hasReadAccessForAdministration && (
                                 <ToolbarItem>
                                     <Button
@@ -400,6 +405,17 @@ function ClustersTablePanel({
                                         href={clustersInitBundlesPath}
                                     >
                                         Init bundles
+                                    </Button>
+                                </ToolbarItem>
+                            )}
+                            {hasAdminRole && (
+                                <ToolbarItem>
+                                    <Button
+                                        variant="secondary"
+                                        component={LinkShim}
+                                        href={clustersClusterRegistrationSecretsPath}
+                                    >
+                                        Cluster registration secrets
                                     </Button>
                                 </ToolbarItem>
                             )}
