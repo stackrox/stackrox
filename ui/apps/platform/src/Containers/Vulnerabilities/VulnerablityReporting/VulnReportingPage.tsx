@@ -42,7 +42,7 @@ function VulnReportingPage() {
             <Route
                 path=":reportId"
                 element={
-                    pageAction === 'create' && hasWriteAccessForReport ? (
+                    pageAction === 'edit' && hasWriteAccessForReport ? (
                         <EditVulnReportPage />
                     ) : pageAction === 'clone' && hasWriteAccessForReport ? (
                         <CloneVulnReportPage />
