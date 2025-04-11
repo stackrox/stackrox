@@ -36,11 +36,17 @@ function CompareYAMLModal({ current, generated, isOpen, onClose }: CompareYAMLMo
             >
                 <Flex direction={{ default: 'column' }} style={{ flex: '1' }}>
                     <Text className="pf-v5-u-font-weight-bold">Existing network policies</Text>
-                    <NetworkPoliciesYAML yaml={current} height="400px" />
+                    <NetworkPoliciesYAML
+                        yaml={current}
+                        style={{ '--pf-v5-u-max-height--MaxHeight': '400px' }}
+                    />
                 </Flex>
                 <Flex direction={{ default: 'column' }} style={{ flex: '1' }}>
                     <Text className="pf-v5-u-font-weight-bold">Generated network policies</Text>
-                    <NetworkPoliciesYAML yaml={generated} height="400px" />
+                    <NetworkPoliciesYAML
+                        yaml={generated}
+                        style={{ '--pf-v5-u-max-height--MaxHeight': '400px' }}
+                    />
                 </Flex>
             </Flex>
         </Modal>

@@ -1,5 +1,3 @@
-const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
-
 module.exports = {
     jest: function override(config) {
         /* eslint-disable no-param-reassign */
@@ -10,12 +8,6 @@ module.exports = {
         return config;
     },
     webpack: function override(config) {
-        config.plugins.push(
-            new MonacoWebpackPlugin({
-                languages: ['json', 'yaml', 'shell'],
-            })
-        );
-
         const sourceMapRule = config.module.rules.find((rule) =>
             rule?.loader?.includes('source-map-loader')
         );

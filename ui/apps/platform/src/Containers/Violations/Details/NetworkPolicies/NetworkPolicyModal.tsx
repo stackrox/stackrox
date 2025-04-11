@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Button, Flex, Modal } from '@patternfly/react-core';
-import { CodeEditor, Language } from '@patternfly/react-code-editor';
 
-import CodeEditorDarkModeControl from 'Components/PatternFly/CodeEditorDarkModeControl';
 import { NetworkPolicy } from 'types/networkPolicy.proto';
 import download from 'utils/download';
+import CodeViewer from 'Components/CodeViewer';
 
 export type NetworkPolicyModalProps = {
     networkPolicy: Pick<NetworkPolicy, 'name' | 'yaml'>;
@@ -13,8 +12,6 @@ export type NetworkPolicyModalProps = {
 };
 
 function NetworkPolicyModal({ networkPolicy, isOpen, onClose }: NetworkPolicyModalProps) {
-    const [isDarkMode, setIsDarkMode] = useState(false);
-
     function exportYAMLHandler() {
         download(`${networkPolicy.name}.yml`, networkPolicy.yaml, 'yml');
     }
@@ -33,20 +30,11 @@ function NetworkPolicyModal({ networkPolicy, isOpen, onClose }: NetworkPolicyMod
         >
             <Flex direction={{ default: 'column' }}>
                 <p>Policy name: {networkPolicy.name}</p>
-                <CodeEditor
-                    isDarkTheme={isDarkMode}
-                    customControls={
-                        <CodeEditorDarkModeControl
-                            isDarkMode={isDarkMode}
-                            onToggleDarkMode={() => setIsDarkMode((wasDarkMode) => !wasDarkMode)}
-                        />
-                    }
-                    isCopyEnabled
-                    isLineNumbersVisible
-                    isReadOnly
+                <CodeViewer
                     code={networkPolicy.yaml}
-                    language={Language.yaml}
-                    height="450px"
+                    style={{
+                        '--pf-v5-u-max-height--MaxHeight': '450px',
+                    }}
                 />
             </Flex>
         </Modal>
