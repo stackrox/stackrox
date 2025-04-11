@@ -124,9 +124,9 @@ spec:
         - mountPath: "/etc/stackrox"
           name: collector-config
           readOnly: true
-      {{- end }}
         - mountPath: /var/profiles
           name: collector-profiles
+      {{- end }}
       - command:
         - stackrox/compliance
         env:
