@@ -9,39 +9,38 @@ import {
 import DelegatedRegistriesTable from './DelegatedRegistriesTable';
 
 type DelegatedRegistriesListProps = {
-    registries: DelegatedRegistry[];
+    addRegistry: () => void;
     clusters: DelegatedRegistryCluster[];
-    selectedClusterId: string;
+    defaultClusterId: string;
+    deleteRegistry: (indexToDelete: number) => void;
     isEditing: boolean;
-    addRegistryRow: () => void;
-    deleteRow: (number) => void;
-    handlePathChange: (number, string) => void;
-    handleClusterChange: (number, string) => void;
+    registries: DelegatedRegistry[];
+    setRegistryClusterId: (indexToSet: number, clusterId: string) => void;
+    setRegistryPath: (indexToSet: number, path: string) => void;
 };
 
 function DelegatedRegistriesList({
-    registries,
+    addRegistry,
     clusters,
-    selectedClusterId,
+    defaultClusterId,
+    deleteRegistry,
     isEditing,
-    handlePathChange,
-    handleClusterChange,
-    addRegistryRow,
-    deleteRow,
+    registries,
+    setRegistryClusterId,
+    setRegistryPath,
 }: DelegatedRegistriesListProps) {
     return (
         <FormGroup label="Registries">
             {registries.length > 0 ? (
                 <>
                     <DelegatedRegistriesTable
-                        registries={registries}
                         clusters={clusters}
-                        selectedClusterId={selectedClusterId}
+                        defaultClusterId={defaultClusterId}
+                        deleteRegistry={deleteRegistry}
                         isEditing={isEditing}
-                        handlePathChange={handlePathChange}
-                        handleClusterChange={handleClusterChange}
-                        deleteRow={deleteRow}
-                        key="delegated-registries-table"
+                        registries={registries}
+                        setRegistryClusterId={setRegistryClusterId}
+                        setRegistryPath={setRegistryPath}
                     />
                 </>
             ) : (
@@ -52,7 +51,7 @@ function DelegatedRegistriesList({
                     variant="link"
                     isInline
                     icon={<PlusCircleIcon />}
-                    onClick={addRegistryRow}
+                    onClick={addRegistry}
                     className="pf-v5-u-mt-md"
                 >
                     Add registry

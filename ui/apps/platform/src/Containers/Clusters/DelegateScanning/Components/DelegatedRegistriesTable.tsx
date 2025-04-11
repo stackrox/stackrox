@@ -18,35 +18,35 @@ import {
 import { getClusterName } from '../cluster';
 
 type DelegatedRegistriesTableProps = {
-    registries: DelegatedRegistry[];
     clusters: DelegatedRegistryCluster[];
-    selectedClusterId: string;
+    defaultClusterId: string;
+    deleteRegistry: (indexToDelete: number) => void;
     isEditing: boolean;
-    handlePathChange: (number, string) => void;
-    handleClusterChange: (number, string) => void;
-    deleteRow: (number) => void;
+    registries: DelegatedRegistry[];
+    setRegistryClusterId: (indexToSet: number, clusterId: string) => void;
+    setRegistryPath: (indexToSet: number, path: string) => void;
 };
 
 function DelegatedRegistriesTable({
-    registries,
     clusters,
-    selectedClusterId,
+    defaultClusterId,
+    deleteRegistry,
     isEditing,
-    handlePathChange,
-    handleClusterChange,
-    deleteRow,
+    registries,
+    setRegistryClusterId,
+    setRegistryPath,
 }: DelegatedRegistriesTableProps) {
     const [openRow, setRowOpen] = useState<number>(-1);
     function toggleSelect(rowToToggle: number) {
         setRowOpen((prev) => (rowToToggle === prev ? -1 : rowToToggle));
     }
     function onSelect(rowIndex, value) {
-        handleClusterChange(rowIndex, value);
+        setRegistryClusterId(rowIndex, value);
         setRowOpen(-1);
     }
 
     const defaultClusterName =
-        selectedClusterId === '' ? 'None' : getClusterName(clusters, selectedClusterId);
+        defaultClusterId === '' ? 'None' : getClusterName(clusters, defaultClusterId);
     const defaultClusterItem = `Default cluster: ${defaultClusterName}`;
 
     return (
@@ -91,7 +91,7 @@ function DelegatedRegistriesTable({
                                     isDisabled={!isEditing}
                                     type="text"
                                     value={registry.path}
-                                    onChange={(_event, value) => handlePathChange(rowIndex, value)}
+                                    onChange={(_event, value) => setRegistryPath(rowIndex, value)}
                                 />
                             </Td>
                             <Td dataLabel="Destination cluster (CLI/API only)">
@@ -125,7 +125,7 @@ function DelegatedRegistriesTable({
                                         icon={
                                             <MinusCircleIcon color="var(--pf-v5-global--danger-color--100)" />
                                         }
-                                        onClick={() => deleteRow(rowIndex)}
+                                        onClick={() => deleteRegistry(rowIndex)}
                                     >
                                         Delete row
                                     </Button>
