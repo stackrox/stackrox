@@ -40,7 +40,7 @@ _create_job_record() {
     repo="$(get_repo_full_name)"
 
     local
-    branch="$(get_base_ref)"
+    branch="$(get_branch_name)"
 
     local pr_number=""
     if is_in_PR_context; then
