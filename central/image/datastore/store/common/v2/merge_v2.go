@@ -56,7 +56,8 @@ func generateEmbeddedComponentV2(cp ComponentParts) *storage.EmbeddedImageScanCo
 		}
 	}
 
-	if cp.ComponentV2.GetSetTopCvss() != nil {
+	log.Infof("SHREWS -- set top cvss %v", cp.ComponentV2.SetTopCvss)
+	if cp.ComponentV2.SetTopCvss != nil {
 		ret.SetTopCvss = &storage.EmbeddedImageScanComponent_TopCvss{TopCvss: cp.ComponentV2.GetTopCvss()}
 	}
 

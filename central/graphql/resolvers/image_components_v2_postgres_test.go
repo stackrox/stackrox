@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/views/imagecveflat"
 	imagesView "github.com/stackrox/rox/central/views/images"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
@@ -34,12 +35,12 @@ const (
 
 var (
 	componentIDMap = map[string]string{
-		comp11: scancomponent.ComponentIDV2("comp1", "0.9", "", "sha1"),
-		comp12: scancomponent.ComponentIDV2("comp1", "0.9", "", "sha2"),
-		comp21: scancomponent.ComponentIDV2("comp2", "1.1", "", "sha1"),
-		comp31: scancomponent.ComponentIDV2("comp3", "1.0", "", "sha1"),
-		comp32: scancomponent.ComponentIDV2("comp3", "1.0", "", "sha2"),
-		comp42: scancomponent.ComponentIDV2("comp4", "1.0", "", "sha2"),
+		comp11: getTestComponentID(testImages()[0].GetScan().GetComponents()[0], "sha1"),
+		comp12: getTestComponentID(testImages()[1].GetScan().GetComponents()[0], "sha2"),
+		comp21: getTestComponentID(testImages()[0].GetScan().GetComponents()[1], "sha1"),
+		comp31: getTestComponentID(testImages()[0].GetScan().GetComponents()[2], "sha1"),
+		comp32: getTestComponentID(testImages()[1].GetScan().GetComponents()[1], "sha2"),
+		comp42: getTestComponentID(testImages()[1].GetScan().GetComponents()[2], "sha2"),
 	}
 )
 
@@ -556,9 +557,16 @@ func (s *GraphQLImageComponentV2TestSuite) getImageResolver(ctx context.Context,
 
 func (s *GraphQLImageComponentV2TestSuite) getImageComponentResolver(ctx context.Context, id string) ImageComponentResolver {
 	vulnID := graphql.ID(id)
-
+	log.Infof("SHREWS -- ID %q", id)
 	vuln, err := s.resolver.ImageComponent(ctx, IDQuery{ID: &vulnID})
 	assert.NoError(s.T(), err)
 	assert.Equal(s.T(), vulnID, vuln.Id(ctx))
 	return vuln
+}
+
+func getTestComponentID(testComponent *storage.EmbeddedImageScanComponent, imageID string) string {
+	log.Infof("SHREWS -- %v", testComponent.SetTopCvss)
+	id, _ := scancomponent.ComponentIDV2(testComponent, imageID)
+
+	return id
 }

@@ -120,26 +120,26 @@ message EmbeddedImageScanComponent {
   string name = 1; // @gotags: search:"Component,store"
   string version = 2; // @gotags: search:"Component Version,store"
   License license = 3;
-  repeated EmbeddedVulnerability vulns = 4; // @gotags: hash:"set"
+  repeated EmbeddedVulnerability vulns = 4; // @gotags: hash:"ignore"
   oneof has_layer_index {
-    int32 layer_index = 5;
+    int32 layer_index = 5; // @gotags: hash:"ignore"
   }
   int64 priority = 6; // @gotags: hash:"ignore"
-  SourceType source = 7;
-  string location = 8;
+  SourceType source = 7; // @gotags: hash:"ignore"
+  string location = 8; // @gotags: hash:"ignore"
   oneof set_top_cvss {
-    float top_cvss = 9;
+    float top_cvss = 9; // @gotags: hash:"ignore"
   }
-  float risk_score = 10; // @gotags: search:"Component Risk Score,hidden"
+  float risk_score = 10; // @gotags: search:"Component Risk Score,hidden" hash:"ignore"
   // Component version that fixes all the fixable vulnerabilities in this component.
-  string fixed_by = 11;
+  string fixed_by = 11; // @gotags: hash:"ignore"
   message Executable {
     string path = 1;
     repeated string dependencies = 2;
   }
   // Values are cleared after moving to cache, remove them from the grpc return as well
-  repeated Executable executables = 12; // @gotags: json:"-"
-  string architecture = 13;
+  repeated Executable executables = 12; // @gotags: json:"-" hash:"ignore"
+  string architecture = 13; // @gotags: hash:"ignore"
 }
 
 enum SourceType {

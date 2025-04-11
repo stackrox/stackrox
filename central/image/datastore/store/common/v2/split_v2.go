@@ -6,10 +6,13 @@ import (
 	"github.com/stackrox/rox/pkg/scancomponent"
 )
 
-func splitComponentsV2(parts ImageParts) []ComponentParts {
+func splitComponentsV2(parts ImageParts) ([]ComponentParts, error) {
 	ret := make([]ComponentParts, 0, len(parts.Image.GetScan().GetComponents()))
 	for _, component := range parts.Image.GetScan().GetComponents() {
-		generatedComponentV2 := GenerateImageComponentV2(parts.Image.GetScan().GetOperatingSystem(), parts.Image, component)
+		generatedComponentV2, err := GenerateImageComponentV2(parts.Image.GetScan().GetOperatingSystem(), parts.Image, component)
+		if err != nil {
+			return nil, err
+		}
 
 		cp := ComponentParts{
 			ComponentV2: generatedComponentV2,
@@ -19,7 +22,7 @@ func splitComponentsV2(parts ImageParts) []ComponentParts {
 		ret = append(ret, cp)
 	}
 
-	return ret
+	return ret, nil
 }
 
 func splitCVEsV2(imageID string, componentID string, embedded *storage.EmbeddedImageScanComponent) []CVEParts {
@@ -37,9 +40,14 @@ func splitCVEsV2(imageID string, componentID string, embedded *storage.EmbeddedI
 }
 
 // GenerateImageComponentV2 returns top-level image component from embedded component.
-func GenerateImageComponentV2(os string, image *storage.Image, from *storage.EmbeddedImageScanComponent) *storage.ImageComponentV2 {
+func GenerateImageComponentV2(os string, image *storage.Image, from *storage.EmbeddedImageScanComponent) (*storage.ImageComponentV2, error) {
+	componentID, err := scancomponent.ComponentIDV2(from, image.GetId())
+	if err != nil {
+		return nil, err
+	}
+
 	ret := &storage.ImageComponentV2{
-		Id:              scancomponent.ComponentIDV2(from.GetName(), from.GetVersion(), from.GetArchitecture(), image.GetId()),
+		Id:              componentID,
 		Name:            from.GetName(),
 		Version:         from.GetVersion(),
 		License:         from.GetLicense().CloneVT(),
@@ -53,9 +61,11 @@ func GenerateImageComponentV2(os string, image *storage.Image, from *storage.Emb
 		Architecture:    from.GetArchitecture(),
 	}
 
-	if from.GetSetTopCvss() != nil {
+	log.Infof("SHREWS -- set top cvss %v", from.SetTopCvss)
+	if from.SetTopCvss != nil {
 		ret.SetTopCvss = &storage.ImageComponentV2_TopCvss{TopCvss: from.GetTopCvss()}
 	}
+	log.Infof("SHREWS -- set top cvss %v", ret.SetTopCvss)
 
 	if from.HasLayerIndex != nil {
 		ret.HasLayerIndex = &storage.ImageComponentV2_LayerIndex{
@@ -63,5 +73,5 @@ func GenerateImageComponentV2(os string, image *storage.Image, from *storage.Emb
 		}
 	}
 
-	return ret
+	return ret, nil
 }
