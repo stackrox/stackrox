@@ -14,10 +14,10 @@ import {
 import { SelectOption } from '@patternfly/react-core/deprecated';
 
 import download from 'utils/download';
+import CodeViewer from 'Components/CodeViewer';
 import SelectSingle from 'Components/SelectSingle';
 import useFetchNetworkPolicies from 'hooks/useFetchNetworkPolicies';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import CodeViewer from '../../../Components/CodeViewer';
 
 type NetworkPoliciesProps = {
     entityName: string;

@@ -214,7 +214,7 @@ function NetworkPolicySimulatorSidePanel({
                         <NetworkPoliciesYAML
                             yaml={generatedYaml}
                             additionalControls={[
-                                <CodeBlockAction className="pf-v5-u-mr-lg">
+                                <CodeBlockAction>
                                     <Button
                                         variant="link"
                                         onClick={() =>
@@ -237,7 +237,7 @@ function NetworkPolicySimulatorSidePanel({
                                         }
                                     >
                                         <button
-                                            className="pf-v5-u-color-200"
+                                            className="pf-v5-u-color-200 pf-v5-u-pr-md"
                                             type="button"
                                             aria-label="More info on comparing changes"
                                         >
