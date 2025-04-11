@@ -348,6 +348,8 @@ var (
 	FixableModerateSeverityCount  = newDerivedFieldLabelWithType("Fixable Moderate Severity Count", Severity, CustomFieldType, postgres.Integer)
 	LowSeverityCount              = newDerivedFieldLabelWithType("Low Severity Count", Severity, CustomFieldType, postgres.Integer)
 	FixableLowSeverityCount       = newDerivedFieldLabelWithType("Fixable Low Severity Count", Severity, CustomFieldType, postgres.Integer)
+	UnknownSeverityCount          = newDerivedFieldLabelWithType("Unknown Severity Count", Severity, CustomFieldType, postgres.Integer)
+	FixableUnknownSeverityCount   = newDerivedFieldLabelWithType("Fixable Unknown Severity Count", Severity, CustomFieldType, postgres.Integer)
 
 	// Max-based derived fields.  These fields are primarily used in pagination.  If used in a select it will correspond
 	// to the type of the reference field and simply provide the max function on that field.
