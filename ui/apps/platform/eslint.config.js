@@ -38,7 +38,6 @@ module.exports = [
         ignores: [
             'build/**',
             'coverage/**',
-            'react-app-rewired/**',
             'scripts/**',
             'src/setupProxy.js',
             'src/setupTests.js',
@@ -732,6 +731,7 @@ module.exports = [
                         path.join(__dirname, 'eslint.config.js'),
                         path.join(__dirname, 'postcss.config.js'),
                         path.join(__dirname, 'tailwind.config.js'), // only for @tailwindcss/forms
+                        path.join(__dirname, 'vite.config.js'),
                     ],
                 },
             ],
@@ -743,6 +743,7 @@ module.exports = [
         languageOptions: {
             ...parserAndOptions,
             globals: {
+                vi: false,
                 ...jestGlobals,
             },
         },
