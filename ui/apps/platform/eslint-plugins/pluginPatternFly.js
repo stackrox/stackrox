@@ -147,6 +147,68 @@ const rules = {
             };
         },
     },
+    'version-variable-class': {
+        // Require consistent version of PatternFly variable or class.
+        meta: {
+            type: 'problem',
+            docs: {
+                description: 'Require consistent version of PatternFly variable or class',
+            },
+            schema: [],
+        },
+        create(context) {
+            const findErrorMessage = (value) => {
+                const versionExpected = '5';
+                // Include capturing group for digits in each regular expression.
+                const variableRegExpArray = [
+                    /^var\(--pf-v(\d+)-/, // variable inside var (at beginning of string)
+                    /^--pf-v(\d+)-/, // variable outside var (at beginning of string)
+                    /^pf-v(\d+)-/, // class (at beginning of string)
+                    / pf-v(\d+)-/, // class (in middle of string)
+                ];
+                for (let i = 0; i !== variableRegExpArray.length; i += 1) {
+                    const variableRegExp = variableRegExpArray[i];
+                    const result = variableRegExp.exec(value);
+                    if (Array.isArray(result)) {
+                        const [, versionReceived] = result;
+                        if (versionReceived !== versionExpected) {
+                            return `PatternFly variable or class ${value} has inconsistent version ${versionReceived} instead of ${versionExpected}`;
+                        }
+                    }
+                }
+                return undefined;
+            };
+
+            return {
+                Literal(node) {
+                    if (typeof node.value === 'string') {
+                        const message = findErrorMessage(node.value);
+                        if (typeof message === 'string') {
+                            context.report({
+                                node,
+                                message,
+                            });
+                        }
+                    }
+                },
+                TemplateLiteral(node) {
+                    if (Array.isArray(node.quasis)) {
+                        node.quasis.forEach((quasi) => {
+                            if (typeof quasi.value?.cooked === 'string') {
+                                const message = findErrorMessage(quasi.value.cooked);
+                                if (typeof message === 'string') {
+                                    context.report({
+                                        node,
+                                        message,
+                                    });
+                                }
+                            }
+                        });
+                    }
+                },
+            };
+        },
+    },
 
     // ESLint naming convention for negative rules.
     // If your rule only disallows something, prefix it with no.
