@@ -115,7 +115,7 @@ export default function CodeViewer({
                 style={theme === 'light' ? lightTheme : darkTheme}
                 customStyle={{
                     margin: 0,
-                    background: 'var(--pf-v6-c-code-block--BackgroundColor)',
+                    background: 'var(--pf-v5-c-code-block--BackgroundColor)',
                 }}
             >
                 {code}
