@@ -1,15 +1,11 @@
 package testconsts
 
-import (
-	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
-)
-
 // Clusters and Namespaces for scoped access control tests
 const (
-	Cluster1     = fixtureconsts.Cluster1
-	Cluster2     = fixtureconsts.Cluster2
-	Cluster3     = fixtureconsts.Cluster3
-	WrongCluster = fixtureconsts.ClusterFake1
+	Cluster1     = "aaaaaaaa-bbbb-4041-0000-111111111111"
+	Cluster2     = "aaaaaaaa-bbbb-4041-0000-222222222222"
+	Cluster3     = "aaaaaaaa-bbbb-4041-0000-333333333333"
+	WrongCluster = "aaaaaaaa-bbbb-4041-0000-999999999999"
 
 	NamespaceA = "namespaceA"
 	NamespaceB = "namespaceB"
