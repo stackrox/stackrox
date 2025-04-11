@@ -1108,7 +1108,7 @@ get_base_ref() {
     if is_OPENSHIFT_CI; then
         if [[ -n "${PULL_BASE_REF:-}" ]]; then
             # presubmit, postsubmit and batch runs
-            # (ref: https://github.com/kubernetes/test-infra/blob/master/prow/jobs.md#job-environment-variables)
+            # (ref: https://docs.prow.k8s.io/docs/jobs/#job-environment-variables)
             echo "${PULL_BASE_REF}"
         elif [[ -n "${CLONEREFS_OPTIONS:-}" ]]; then
             # periodics - CLONEREFS_OPTIONS exists in binary_build_commands and images.
