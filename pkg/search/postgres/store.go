@@ -238,7 +238,7 @@ func (s *genericStore[T, PT]) GetByQuery(ctx context.Context, query *v1.Query) (
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.GetByQuery)
 
 	rows := make([]*T, 0, query.GetPagination().GetLimit())
-	err := RunQueryForSchemaFn(ctx, s.schema, query, s.db, func(obj PT) error {
+	err := runQueryForSchemaFn(ctx, s.schema, query, s.db, func(obj PT) error {
 		rows = append(rows, obj)
 		return nil
 	})
@@ -285,7 +285,7 @@ func (s *genericStore[T, PT]) GetMany(ctx context.Context, identifiers []string)
 	q := search.NewQueryBuilder().AddDocIDs(identifiers...).ProtoQuery()
 
 	resultsByID := make(map[string]PT, len(identifiers))
-	err := RunQueryForSchemaFn(ctx, s.schema, q, s.db, func(msg PT) error {
+	err := runQueryForSchemaFn(ctx, s.schema, q, s.db, func(msg PT) error {
 		resultsByID[s.pkGetter(msg)] = msg
 		return nil
 	})
