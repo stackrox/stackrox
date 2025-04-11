@@ -27,9 +27,11 @@ func ComponentIDV2(component *storage.EmbeddedImageScanComponent, imageID string
 	// A little future proofing here.  Just hashing the component to ensure uniqueness.  If a field is added, the data
 	// will be replaced anyway.  We just need to ensure uniqueness within the scan since we tack on the imageID.
 	//component.SetTopCvss = nil
+	clonedComponent := component.CloneVT()
+	clonedComponent.SetTopCvss = nil
 	log.Infof("SHREWS -- %q %q", component.GetName(), component.GetVersion())
 	log.Infof("SHREWS -- %q", imageID)
-	hash, err := hashstructure.Hash(component, hashstructure.FormatV2, &hashstructure.HashOptions{ZeroNil: true})
+	hash, err := hashstructure.Hash(clonedComponent, hashstructure.FormatV2, &hashstructure.HashOptions{ZeroNil: true})
 	if err != nil {
 		return "", err
 	}
