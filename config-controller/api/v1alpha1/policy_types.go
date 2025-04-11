@@ -249,13 +249,15 @@ func (p SecurityPolicySpec) ToProtobuf(caches map[CacheType]map[string]string) (
 
 			scope := exclusion.Deployment.Scope
 			if scope != (Scope{}) {
-				clusterID, err := getClusterID(scope.Cluster, caches)
-				if err != nil {
-					return nil, errors.New(fmt.Sprintf("Cluster '%s' does not exist", scope.Cluster))
-				}
 				protoExclusion.Deployment.Scope = &storage.Scope{
-					Cluster:   clusterID,
 					Namespace: scope.Namespace,
+				}
+				if scope.Cluster != "" {
+					clusterID, err := getClusterID(scope.Cluster, caches)
+					if err != nil {
+						return nil, errors.New(fmt.Sprintf("Cluster '%s' does not exist", scope.Cluster))
+					}
+					protoExclusion.Deployment.Scope.Cluster = clusterID
 				}
 			}
 
@@ -272,13 +274,15 @@ func (p SecurityPolicySpec) ToProtobuf(caches map[CacheType]map[string]string) (
 	}
 
 	for _, scope := range p.Scope {
-		clusterID, err := getClusterID(scope.Cluster, caches)
-		if err != nil {
-			return nil, errors.New(fmt.Sprintf("Cluster '%s' does not exist", scope.Cluster))
-		}
 		protoScope := &storage.Scope{
-			Cluster:   clusterID,
 			Namespace: scope.Namespace,
+		}
+		if scope.Cluster != "" {
+			clusterID, err := getClusterID(scope.Cluster, caches)
+			if err != nil {
+				return nil, errors.New(fmt.Sprintf("Cluster '%s' does not exist", scope.Cluster))
+			}
+			protoScope.Cluster = clusterID
 		}
 
 		if scope.Label != (Label{}) {
