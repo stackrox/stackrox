@@ -362,7 +362,7 @@ func CreateTestNodeComponentCveEdgeDatastore(t testing.TB, testDB *pgtest.TestPo
 }
 
 // TestVulnReqDatastore return test vulnerability request datastore.
-func TestVulnReqDatastore(t testing.TB, testDB *pgtest.TestPostgres) vulnReqDatastore.DataStore {
+func TestVulnReqDatastore(t testing.TB, testDB *pgtest.TestPostgres) (vulnReqDatastore.DataStore, error) {
 	return vulnReqDatastore.GetTestPostgresDataStore(t, testDB, cache.New(), cache.New())
 }
 

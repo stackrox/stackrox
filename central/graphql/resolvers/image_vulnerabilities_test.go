@@ -52,6 +52,9 @@ func (s *GraphQLImageVulnerabilityTestSuite) SetupSuite() {
 	s.ctx = loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
 	mockCtrl := gomock.NewController(s.T())
 	s.testDB = SetupTestPostgresConn(s.T())
+	vulnReqDatastore, err := TestVulnReqDatastore(s.T(), s.testDB)
+	s.Require().NoError(err)
+
 	resolver, _ := SetupTestResolver(s.T(),
 		imagesView.NewImageView(s.testDB.DB),
 		CreateTestImageDatastore(s.T(), s.testDB, mockCtrl),
@@ -59,7 +62,7 @@ func (s *GraphQLImageVulnerabilityTestSuite) SetupSuite() {
 		CreateTestImageCVEDatastore(s.T(), s.testDB),
 		CreateTestImageComponentCVEEdgeDatastore(s.T(), s.testDB),
 		CreateTestImageCVEEdgeDatastore(s.T(), s.testDB),
-		TestVulnReqDatastore(s.T(), s.testDB),
+		vulnReqDatastore,
 	)
 	s.resolver = resolver
 
