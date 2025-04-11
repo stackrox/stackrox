@@ -7,6 +7,7 @@ import (
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/scanners"
 	"github.com/stackrox/rox/pkg/scanners/clairify"
+	"github.com/stackrox/rox/pkg/scanners/scannerv4"
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
 )
 
@@ -137,7 +138,8 @@ var DefaultScannerV4Integration = &storage.ImageIntegration{
 	},
 	IntegrationConfig: &storage.ImageIntegration_ScannerV4{
 		ScannerV4: &storage.ScannerV4Config{
-			// Use integration default values.
+			IndexerEndpoint: scannerv4.DefaultIndexerEndpoint,
+			MatcherEndpoint: scannerv4.DefaultMatcherEndpoint,
 		},
 	},
 }
