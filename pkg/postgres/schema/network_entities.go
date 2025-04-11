@@ -29,7 +29,7 @@ var (
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.NetworkEntity)(nil)), "network_entities")
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_NETWORK_ENTITY, "networkentity", (*storage.NetworkEntity)(nil)))
-		schema.ScopingResource = resources.NetworkGraph
+		schema.ScopingResource = resources.NetworkEntity
 		RegisterTable(schema, CreateTableNetworkEntitiesStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_NETWORK_ENTITY, schema)
 		return schema

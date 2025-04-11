@@ -29,7 +29,7 @@ const (
 var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.NetworkEntitiesSchema
-	targetResource = resources.NetworkGraph
+	targetResource = resources.NetworkEntity
 )
 
 type storeType = storage.NetworkEntity
