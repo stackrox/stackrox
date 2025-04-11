@@ -26,17 +26,16 @@ type hashWrapper struct {
 func ComponentIDV2(component *storage.EmbeddedImageScanComponent, imageID string) (string, error) {
 	// A little future proofing here.  Just hashing the component to ensure uniqueness.  If a field is added, the data
 	// will be replaced anyway.  We just need to ensure uniqueness within the scan since we tack on the imageID.
-	//component.SetTopCvss = nil
+	//We must make a clone of the incoming object to use in our hash.  The `SetTopCvss` must be set to nil before hashing
+	// as that is added by the enricher and may vary.  So we want to ignore it.  Since it is
+	// a oneof we cannot simply flag it as ignore in the proto, sadly.
 	clonedComponent := component.CloneVT()
 	clonedComponent.SetTopCvss = nil
-	log.Infof("SHREWS -- %q %q", component.GetName(), component.GetVersion())
-	log.Infof("SHREWS -- %q", imageID)
+
 	hash, err := hashstructure.Hash(clonedComponent, hashstructure.FormatV2, &hashstructure.HashOptions{ZeroNil: true})
 	if err != nil {
 		return "", err
 	}
-	log.Infof("SHREWS -- %q", strconv.FormatUint(hash, 10))
-	log.Infof("SHREWS -- %v", component.GetVulns())
-	log.Infof("SHREWS -- %v", component)
+
 	return pgSearch.IDFromPks([]string{component.GetName(), strconv.FormatUint(hash, 10), imageID}), nil
 }

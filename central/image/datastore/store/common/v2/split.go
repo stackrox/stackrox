@@ -13,9 +13,6 @@ import (
 
 // Split splits the input image into a set of parts.
 func Split(image *storage.Image, withComponents bool) (ImageParts, error) {
-	for _, component := range image.GetScan().GetComponents() {
-		log.Infof("SHREWS -- before clone %v", component.GetSetTopCvss())
-	}
 	parts := ImageParts{
 		Image:         image.CloneVT(),
 		ImageCVEEdges: make(map[string]*storage.ImageCVEEdge),

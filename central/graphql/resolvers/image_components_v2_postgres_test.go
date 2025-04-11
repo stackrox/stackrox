@@ -557,7 +557,6 @@ func (s *GraphQLImageComponentV2TestSuite) getImageResolver(ctx context.Context,
 
 func (s *GraphQLImageComponentV2TestSuite) getImageComponentResolver(ctx context.Context, id string) ImageComponentResolver {
 	vulnID := graphql.ID(id)
-	log.Infof("SHREWS -- ID %q", id)
 	vuln, err := s.resolver.ImageComponent(ctx, IDQuery{ID: &vulnID})
 	assert.NoError(s.T(), err)
 	assert.Equal(s.T(), vulnID, vuln.Id(ctx))
@@ -565,7 +564,6 @@ func (s *GraphQLImageComponentV2TestSuite) getImageComponentResolver(ctx context
 }
 
 func getTestComponentID(testComponent *storage.EmbeddedImageScanComponent, imageID string) string {
-	log.Infof("SHREWS -- %v", testComponent.SetTopCvss)
 	id, _ := scancomponent.ComponentIDV2(testComponent, imageID)
 
 	return id
