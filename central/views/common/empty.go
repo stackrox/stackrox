@@ -23,6 +23,10 @@ func (r *emptyResourceCountByCVESeverity) GetLowSeverityCount() ResourceCountByF
 	return NewEmptyResourceCountByFixability()
 }
 
+func (r *emptyResourceCountByCVESeverity) GetUnknownSeverityCount() ResourceCountByFixability {
+	return NewEmptyResourceCountByFixability()
+}
+
 // NewEmptyResourceCountByFixability creates a empty instance of type ResourceCountByFixability.
 func NewEmptyResourceCountByFixability() ResourceCountByFixability {
 	return &emptyResourceCountByFixability{}

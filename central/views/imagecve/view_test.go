@@ -1201,6 +1201,29 @@ func TestImageCVEEdgeIsJoinedLast(t *testing.T) {
 	assert.ElementsMatch(t, []string{"sha2"}, imageIDs)
 }
 
+func TestImageCVEUnknownSeverity(t *testing.T) {
+	ctx := sac.WithAllAccess(context.Background())
+	testDB := pgtest.ForT(t)
+
+	// Initialize the datastore.
+	imageStore := imageDS.GetTestPostgresDataStore(t, testDB.DB)
+
+	// Upsert test images.
+	images := testImages()
+	for _, image := range images {
+		assert.NoError(t, imageStore.UpsertImage(ctx, image))
+	}
+
+	cveView := NewCVEView(testDB.DB)
+	query := search.NewQueryBuilder().
+		AddExactMatches(search.ImageSHA, "sha1").
+		ProtoQuery()
+	counts, err := cveView.CountBySeverity(ctx, query)
+	assert.NoError(t, err)
+	assert.Equal(t, 3, counts.GetUnknownSeverityCount().GetTotal())
+	assert.Equal(t, 1, counts.GetUnknownSeverityCount().GetFixable())
+}
+
 func testImages() []*storage.Image {
 	t1, err := protocompat.ConvertTimeToTimestampOrError(time.Unix(0, 1000))
 	utils.CrashOnError(err)
@@ -1230,6 +1253,21 @@ func testImages() []*storage.Image {
 									FixedBy: "1.1",
 								},
 								Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
+							},
+							{
+								Cve: "cve-2025-1",
+								SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
+									FixedBy: "1.6",
+								},
+								Severity: storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY,
+							},
+							{
+								Cve:      "cve-2025-2",
+								Severity: storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY,
+							},
+							{
+								Cve:      "cve-2025-3",
+								Severity: storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY,
 							},
 						},
 					},
