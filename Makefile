@@ -363,7 +363,7 @@ clean-proto-generated-srcs:
 config-controller-gen:
 	make -C config-controller/ manifests
 	make -C config-controller/ generate
-	cp config-controller/config/crd/bases/config.stackrox.io_securitypolicies.yaml image/templates/helm/stackrox-central/crds
+	cp config-controller/config/crd/bases/config.stackrox.io_securitypolicies.yaml image/templates/helm/stackrox-central/internal
 
 .PHONY: generated-srcs
 generated-srcs: go-generated-srcs config-controller-gen
