@@ -12,15 +12,19 @@ import (
 // TODO(ROX-28123): Remove file
 
 // Split splits the input image into a set of parts.
-func Split(image *storage.Image, withComponents bool) ImageParts {
+func Split(image *storage.Image, withComponents bool) (ImageParts, error) {
 	parts := ImageParts{
 		Image:         image.CloneVT(),
 		ImageCVEEdges: make(map[string]*storage.ImageCVEEdge),
 	}
 
 	if withComponents {
+		var err error
 		if features.FlattenCVEData.Enabled() {
-			parts.Children = splitComponentsV2(parts)
+			parts.Children, err = splitComponentsV2(parts)
+			if err != nil {
+				return ImageParts{}, err
+			}
 		} else {
 			parts.Children = splitComponents(parts)
 		}
@@ -30,7 +34,7 @@ func Split(image *storage.Image, withComponents bool) ImageParts {
 	if parts.Image.GetScan() != nil {
 		parts.Image.Scan.Components = nil
 	}
-	return parts
+	return parts, nil
 }
 
 func splitComponents(parts ImageParts) []ComponentParts {

@@ -520,7 +520,13 @@ func (s *ImageCVEFlatViewTestSuite) testCases() []testCase {
 				IDs:   []string{"sha256:6ef31316f4f9e0c31a8f4e602ba287a210d66934f91b1616f1c9b957201d025c"},
 				Level: v1.SearchCategory_IMAGES,
 				Parent: &scoped.Scope{
-					IDs:   []string{cve.IDV2("CVE-2022-1552", scancomponent.ComponentIDV2("postgresql-libs", "8.4.20-6.el6", "", "sha256:05dd8ed5c76ad3c9f06481770828cf17b8c89f1e406c91d548426dd70fe94560"), "20")},
+					IDs: []string{cve.IDV2("CVE-2022-1552", scancomponent.ComponentIDV2(&storage.EmbeddedImageScanComponent{
+						Name:         "postgresql-libs",
+						Version:      "8.4.20-6.el6",
+						Source:       storage.SourceType_OS,
+						Location:     "",
+						Architecture: "",
+					}, "sha256:05dd8ed5c76ad3c9f06481770828cf17b8c89f1e406c91d548426dd70fe94560"), "20")},
 					Level: v1.SearchCategory_IMAGE_VULNERABILITIES,
 				},
 			}),
@@ -807,7 +813,7 @@ func compileExpected(images []*storage.Image, filter *filterImpl, options views.
 					val.Severity = pointers.Pointer(vuln.GetSeverity())
 				}
 
-				id := cve.IDV2(val.GetCVE(), scancomponent.ComponentIDV2(component.GetName(), component.GetVersion(), "", image.GetId()), strconv.Itoa(vulnIdx))
+				id := cve.IDV2(val.GetCVE(), scancomponent.ComponentIDV2(component, image.GetId()), strconv.Itoa(vulnIdx))
 				var found bool
 				for _, seenID := range val.GetCVEIDs() {
 					if seenID == id {
