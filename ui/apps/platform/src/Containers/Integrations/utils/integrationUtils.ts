@@ -21,10 +21,6 @@ export function getIsAPIToken(source: IntegrationSource, type: IntegrationType):
     return source === 'authProviders' && type === 'apitoken';
 }
 
-export function getIsClusterInitBundle(source: IntegrationSource, type: IntegrationType): boolean {
-    return source === 'authProviders' && type === 'clusterInitBundle';
-}
-
 export function getIsMachineAccessConfig(
     source: IntegrationSource,
     type: IntegrationType
@@ -77,9 +73,6 @@ export function clearStoredCredentials<I extends IntegrationBase>(
 }
 
 export function getEditDisabledMessage(type) {
-    if (type === 'clusterInitBundle') {
-        return 'This Cluster Init Bundle can not be edited. Create a new Cluster Init Bundle or delete an existing one';
-    }
     if (type === 'apitoken') {
         return 'This API Token can not be edited. Create a new API Token or delete an existing one.';
     }

@@ -27,7 +27,6 @@ import { getIntegrationLabel } from '../utils/integrationsList';
 import {
     getIsAPIToken,
     getIsCloudSource,
-    getIsClusterInitBundle,
     getIsMachineAccessConfig,
     getIsSignatureIntegration,
     getIsScannerV4,
@@ -66,7 +65,6 @@ function IntegrationsListPage({
 
     const typeLabel = getIntegrationLabel(source, type);
     const isAPIToken = getIsAPIToken(source, type);
-    const isClusterInitBundle = getIsClusterInitBundle(source, type);
     const isMachineAccessConfig = getIsMachineAccessConfig(source, type);
     const isSignatureIntegration = getIsSignatureIntegration(source);
     const isScannerV4 = getIsScannerV4(source, type);
@@ -125,7 +123,7 @@ function IntegrationsListPage({
             <PageSection variant="default">
                 <IntegrationsTable
                     integrations={integrations}
-                    hasMultipleDelete={!isClusterInitBundle}
+                    hasMultipleDelete
                     onDeleteIntegrations={onDeleteIntegrations}
                     onTriggerBackup={triggerBackup}
                     isReadOnly={isScannerV4}
@@ -145,7 +143,7 @@ function IntegrationsListPage({
                     />
                 </ConfirmationModal>
             )}
-            {!isAPIToken && !isClusterInitBundle && (
+            {!isAPIToken && (
                 <ConfirmationModal
                     ariaLabel="Confirm delete"
                     confirmText="Delete"

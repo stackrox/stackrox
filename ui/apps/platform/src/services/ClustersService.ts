@@ -224,14 +224,6 @@ export type ClusterRegistrationSecret = {
     impactedClusters: ImpactedCluster[];
 };
 
-export function fetchCAConfig(): Promise<{ helmValuesBundle?: string }> {
-    return axios
-        .get<{ helmValuesBundle: string }>(`${clusterInitUrl}/ca-config`)
-        .then((response) => {
-            return response?.data;
-        });
-}
-
 export function fetchClusterInitBundles(): Promise<{ response: { items: ClusterInitBundle[] } }> {
     return axios
         .get<{ items: ClusterInitBundle[] }>(`${clusterInitUrl}/init-bundles`)
