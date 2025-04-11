@@ -354,3 +354,7 @@ type GlobalNetworkSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,displayName="Network Policies"
 	Policies *NetworkPolicies `json:"policies,omitempty"`
 }
+
+type StatusDefaults struct {
+	ScannerV4ComponentPolicy string `json:"scannerV4ComponentPolicy,omitempty"`
+}

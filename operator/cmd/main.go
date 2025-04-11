@@ -100,7 +100,6 @@ func main() {
 }
 
 func run() error {
-	setupLog.Info("Starting RHACS Operator", "version", version.GetMainVersion())
 
 	var metricsAddr string
 	var enableLeaderElection bool
@@ -127,6 +126,8 @@ func run() error {
 		return errors.Wrap(err, "unable to redirect std log")
 	}
 	defer restore()
+
+	setupLog.Info("Starting RHACS Operator", "version", version.GetMainVersion())
 
 	var tlsOpts []func(c *tls.Config)
 	if !enableHTTP2 {
