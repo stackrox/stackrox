@@ -46,7 +46,7 @@ function processData(data) {
     return data.cluster;
 }
 
-const ClusterPage = ({
+const Cluster = ({
     entityId,
     listEntityType1,
     entityId1,
@@ -221,7 +221,7 @@ const ClusterPage = ({
     );
 };
 
-ClusterPage.propTypes = entityPagePropTypes;
-ClusterPage.defaultProps = entityPageDefaultProps;
+Cluster.propTypes = entityPagePropTypes;
+Cluster.defaultProps = entityPageDefaultProps;
 
-export default ClusterPage;
+export default Cluster;

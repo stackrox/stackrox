@@ -9,20 +9,20 @@ import { PanelNew, PanelBody, PanelHead, PanelHeadEnd } from 'Components/Panel';
 import { resourceTypes, standardEntityTypes } from 'constants/entityTypes';
 // TODO: this exception will be unnecessary once Compliance pages are re-structured like Config Management
 /* eslint-disable import/no-cycle */
-import ControlPage from 'Containers/Compliance/Entity/Control';
+import Control from 'Containers/Compliance/Entity/Control';
 import useWorkflowMatch from 'hooks/useWorkflowMatch';
 import URLService from 'utils/URLService';
 import getEntityName from 'utils/getEntityName';
 import { entityNameQueryMap } from 'utils/queryMap';
 import { truncate } from 'utils/textUtils';
-import NamespacePage from '../Entity/Namespace';
-import ClusterPage from '../Entity/Cluster';
-import NodePage from '../Entity/Node';
-import DeploymentPage from '../Entity/Deployment';
+import Namespace from '../Entity/Namespace';
+import Cluster from '../Entity/Cluster';
+import Node from '../Entity/Node';
+import Deployment from '../Entity/Deployment';
 
 const MAX_CONTROL_TITLE = 120;
 
-const ComplianceListSidePanel = ({ entityType, entityId }) => {
+const SidePanel = ({ entityType, entityId }) => {
     const navigate = useNavigate();
     const location = useLocation();
     const match = useWorkflowMatch();
@@ -30,15 +30,15 @@ const ComplianceListSidePanel = ({ entityType, entityId }) => {
     function getEntityPage() {
         switch (entityType) {
             case resourceTypes.NODE:
-                return <NodePage entityId={entityId} sidePanelMode />;
+                return <Node entityId={entityId} sidePanelMode />;
             case resourceTypes.NAMESPACE:
-                return <NamespacePage entityId={entityId} sidePanelMode />;
+                return <Namespace entityId={entityId} sidePanelMode />;
             case resourceTypes.CLUSTER:
-                return <ClusterPage entityId={entityId} sidePanelMode />;
+                return <Cluster entityId={entityId} sidePanelMode />;
             case resourceTypes.DEPLOYMENT:
-                return <DeploymentPage entityId={entityId} sidePanelMode />;
+                return <Deployment entityId={entityId} sidePanelMode />;
             case standardEntityTypes.CONTROL:
-                return <ControlPage entityId={entityId} sidePanelMode />;
+                return <Control entityId={entityId} sidePanelMode />;
             default:
                 return null;
         }
@@ -97,9 +97,9 @@ const ComplianceListSidePanel = ({ entityType, entityId }) => {
     );
 };
 
-ComplianceListSidePanel.propTypes = {
+SidePanel.propTypes = {
     entityType: PropTypes.string.isRequired,
     entityId: PropTypes.string.isRequired,
 };
 
-export default ComplianceListSidePanel;
+export default SidePanel;

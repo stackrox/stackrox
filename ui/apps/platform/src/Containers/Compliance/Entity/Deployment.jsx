@@ -52,7 +52,7 @@ function processData(data) {
     return result;
 }
 
-const DeploymentPage = ({
+const Deployment = ({
     entityId,
     listEntityType1,
     entityId1,
@@ -200,7 +200,7 @@ const DeploymentPage = ({
         </Query>
     );
 };
-DeploymentPage.propTypes = entityPagePropTypes;
-DeploymentPage.defaultProps = entityPageDefaultProps;
+Deployment.propTypes = entityPagePropTypes;
+Deployment.defaultProps = entityPageDefaultProps;
 
-export default DeploymentPage;
+export default Deployment;
