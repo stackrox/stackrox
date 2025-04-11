@@ -77,7 +77,7 @@ func GetAllVersionsUnified() Versions {
 }
 
 // parsedMainVersion contains a parsed StackRox Main Version (see https://stack-rox.atlassian.net/wiki/spaces/StackRox/pages/673808422/Product+Versioning+yes+again).
-type parsedMainVersion struct {
+type ParsedMainVersion struct {
 	MarketingMajor int
 	MarketingMinor *int
 	EngRelease     int
@@ -85,19 +85,64 @@ type parsedMainVersion struct {
 	PatchSuffix    string // Everything after the (dash-separated) `PatchLevel`.
 }
 
-func parseMainVersion(mainVersion string) (parsedMainVersion, error) {
+type XYVersion struct {
+	X int
+	Y int
+}
+
+func ParseXYVersion(versionString string) (XYVersion, error) {
+	parsedVersion, err := parseVersion(versionString)
+	if err != nil {
+		return XYVersion{}, errors.Errorf("parsing version string %q: %v", versionString, err)
+	}
+	xyVersion := XYVersion{X: parsedVersion.MarketingMajor, Y: parsedVersion.EngRelease} // Historical reasons.
+	return xyVersion, nil
+}
+
+func MustParseXYVersion(versionString string) XYVersion {
+	parsedVersion, err := ParseXYVersion(versionString)
+	if err != nil {
+		panic(err)
+	}
+	return parsedVersion
+}
+
+func GetMainXYVersion() XYVersion {
+	xyVersion, err := ParseXYVersion(internal.MainVersion)
+	if err != nil {
+		panic(err)
+	}
+	return xyVersion
+}
+
+func (a XYVersion) LessOrEqual(b XYVersion) bool {
+	if a.X != b.X {
+		return a.X <= b.X
+	}
+	return a.Y <= b.Y
+}
+
+func (a XYVersion) Less(b XYVersion) bool {
+	return !b.LessOrEqual(a)
+}
+
+func (v XYVersion) Serialize() string {
+	return fmt.Sprintf("%v.%v", v.X, v.Y)
+}
+
+func parseMainVersion(mainVersion string) (ParsedMainVersion, error) {
 	parts := strings.SplitN(mainVersion, "-", 2)
 
 	components := strings.SplitN(parts[0], ".", 4)
 
 	nComponents := len(components)
 	if nComponents < 3 || nComponents > 4 {
-		return parsedMainVersion{}, fmt.Errorf("%w (expected 3 or 4, got %d)", ErrInvalidNumberOfComponents, nComponents)
+		return ParsedMainVersion{}, fmt.Errorf("%w (expected 3 or 4, got %d)", ErrInvalidNumberOfComponents, nComponents)
 	}
 
 	marketingMajor, err := strconv.Atoi(components[0])
 	if err != nil {
-		return parsedMainVersion{}, errors.Wrapf(err, "invalid marketing major version (%q)", components[0])
+		return ParsedMainVersion{}, errors.Wrapf(err, "invalid marketing major version (%q)", components[0])
 	}
 
 	var marketingMinorOpt *int
@@ -109,7 +154,7 @@ func parseMainVersion(mainVersion string) (parsedMainVersion, error) {
 		// TODO: clean up all versioning and test code that deals with "marketing minor".
 		marketingMinor, err := strconv.Atoi(components[1])
 		if err != nil {
-			return parsedMainVersion{}, errors.Wrapf(err, "invalid marketing minor major version (%q)", components[1])
+			return ParsedMainVersion{}, errors.Wrapf(err, "invalid marketing minor major version (%q)", components[1])
 		}
 		engReleaseOfs = 2
 		marketingMinorOpt = &marketingMinor
@@ -117,14 +162,14 @@ func parseMainVersion(mainVersion string) (parsedMainVersion, error) {
 
 	engRelease, err := strconv.Atoi(components[engReleaseOfs])
 	if err != nil {
-		return parsedMainVersion{}, errors.Wrapf(err, "invalid eng release version (%q)", components[engReleaseOfs])
+		return ParsedMainVersion{}, errors.Wrapf(err, "invalid eng release version (%q)", components[engReleaseOfs])
 	}
 
 	patchLevel := components[engReleaseOfs+1]
 
 	if patchLevel == "" {
 		// Main Version scheme requires the "patch" component to be non-empty.
-		return parsedMainVersion{}, errors.New("empty patch component")
+		return ParsedMainVersion{}, errors.New("empty patch component")
 	}
 
 	patchSuffix := ""
@@ -132,7 +177,7 @@ func parseMainVersion(mainVersion string) (parsedMainVersion, error) {
 		patchSuffix = parts[1]
 	}
 
-	parsedVersion := parsedMainVersion{
+	parsedVersion := ParsedMainVersion{
 		MarketingMajor: marketingMajor,
 		MarketingMinor: marketingMinorOpt,
 		EngRelease:     engRelease,
@@ -248,10 +293,10 @@ func Variants(version string) ([]string, error) {
 
 // parseVersion mimics parseMainVersion but allows for versions to be in a
 // format that would otherwise not be a valid main version (such as X.Y).
-func parseVersion(version string) (parsedMainVersion, error) {
+func parseVersion(version string) (ParsedMainVersion, error) {
 	parsed, err := parseMainVersion(version)
 	if err != nil && !errors.Is(err, ErrInvalidNumberOfComponents) {
-		return parsedMainVersion{}, err
+		return ParsedMainVersion{}, err
 	}
 
 	if err == nil {
@@ -261,18 +306,18 @@ func parseVersion(version string) (parsedMainVersion, error) {
 	before, _, _ := strings.Cut(version, "-")
 	parts := strings.Split(before, ".")
 	if len(parts) != 2 {
-		return parsedMainVersion{}, fmt.Errorf("%w (expected 2-4, got %d)", ErrInvalidNumberOfComponents, len(parts))
+		return ParsedMainVersion{}, fmt.Errorf("%w (expected 2-4, got %d)", ErrInvalidNumberOfComponents, len(parts))
 	}
 
 	x, err := strconv.Atoi(parts[0])
 	if err != nil {
-		return parsedMainVersion{}, err
+		return ParsedMainVersion{}, err
 	}
 
 	y, err := strconv.Atoi(parts[1])
 	if err != nil {
-		return parsedMainVersion{}, err
+		return ParsedMainVersion{}, err
 	}
 
-	return parsedMainVersion{MarketingMajor: x, EngRelease: y}, nil
+	return ParsedMainVersion{MarketingMajor: x, EngRelease: y}, nil
 }

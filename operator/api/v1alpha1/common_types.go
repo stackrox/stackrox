@@ -354,3 +354,16 @@ type GlobalNetworkSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,displayName="Network Policies"
 	Policies *NetworkPolicies `json:"policies,omitempty"`
 }
+
+type StatusDefault struct {
+	OwnerVersion string `json:"ownerVersion,omitempty"`
+	Value        string `json:"value,omitempty"`
+}
+
+type StatusDefaults struct {
+	ScannerV4ComponentPolicy StatusDefault `json:"scannerV4ComponentPolicy,omitempty"`
+}
+
+// const (
+// 	StatusDefaultScannerV4ComponentPolicy = "scannerV4ComponentPolicy"
+// )

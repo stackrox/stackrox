@@ -31,6 +31,7 @@ import (
 	commonLabels "github.com/stackrox/rox/operator/internal/common/labels"
 	securedClusterReconciler "github.com/stackrox/rox/operator/internal/securedcluster/reconciler"
 	"github.com/stackrox/rox/operator/internal/utils"
+	operatorVersion "github.com/stackrox/rox/operator/internal/version"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/profiling"
@@ -100,7 +101,6 @@ func main() {
 }
 
 func run() error {
-	setupLog.Info("Starting RHACS Operator", "version", version.GetMainVersion())
 
 	var metricsAddr string
 	var enableLeaderElection bool
@@ -127,6 +127,8 @@ func run() error {
 		return errors.Wrap(err, "unable to redirect std log")
 	}
 	defer restore()
+
+	setupLog.Info("Starting RHACS Operator", "version", version.GetMainVersion(), "major", operatorVersion.XYVersion.X, "minor", operatorVersion.XYVersion.Y)
 
 	var tlsOpts []func(c *tls.Config)
 	if !enableHTTP2 {
