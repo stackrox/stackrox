@@ -426,6 +426,7 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 				},
 			}},
 		),
+		runtime.WithWriteContentLength(),
 		runtime.WithErrorHandler(errorHandler),
 	)
 	if localConn != nil {
