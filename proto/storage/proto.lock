@@ -5182,6 +5182,51 @@
             ]
           },
           {
+            "name": "PlatformComponentConfig",
+            "fields": [
+              {
+                "id": 1,
+                "name": "rules",
+                "type": "Rule",
+                "is_repeated": true
+              },
+              {
+                "id": 2,
+                "name": "needs_reevaluation",
+                "type": "bool"
+              }
+            ],
+            "messages": [
+              {
+                "name": "Rule",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "name",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "namespace_rule",
+                    "type": "NamespaceRule"
+                  }
+                ],
+                "messages": [
+                  {
+                    "name": "NamespaceRule",
+                    "fields": [
+                      {
+                        "id": 1,
+                        "name": "regex",
+                        "type": "string"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
             "name": "Config",
             "fields": [
               {
@@ -5193,6 +5238,11 @@
                 "id": 2,
                 "name": "private_config",
                 "type": "PrivateConfig"
+              },
+              {
+                "id": 3,
+                "name": "platform_component_config",
+                "type": "PlatformComponentConfig"
               }
             ]
           },
