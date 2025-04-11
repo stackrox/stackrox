@@ -321,6 +321,23 @@ func addJSONToZip(zipWriter *zipWriter, fileName string, jsonObj interface{}) er
 	return jsonEnc.Encode(jsonObj)
 }
 
+func addProtoJSONToZip(zipWriter *zipWriter, fileName string, protoMsg proto.Message) error {
+	zipWriter.LockWrite()
+	defer zipWriter.UnlockWrite()
+	w, err := zipWriter.writerWithCurrentTimestampNoLock(fileName)
+	if err != nil {
+		return errors.Wrapf(err, "unable to create zip file %q", fileName)
+	}
+
+	b, err := protojson.MarshalOptions{Multiline: true}.Marshal(protoMsg)
+	if err != nil {
+		return err
+	}
+
+	_, err = w.Write(b)
+	return err
+}
+
 func zipPrometheusMetrics(ctx context.Context, zipWriter *zipWriter, name string) error {
 	// Write to the buffer first instead of directly to the zip writer, this way we hold the lock _only_ for the copy
 	// time.
@@ -751,24 +768,14 @@ func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseW
 		})
 	}
 	diagBundleTasks.Go(func(ctx context.Context) error {
+		filename := "delegated-scanning-config.json"
+
 		config, err := s.getDeleRegConfigs(ctx)
-
-		var j interface{}
 		if err != nil {
-			j = map[string]string{
-				"message": err.Error(),
-			}
-		} else {
-			b, err := protojson.MarshalOptions{Multiline: true}.Marshal(config)
-			if err != nil {
-				return err
-			}
-
-			if err := json.Unmarshal(b, &j); err != nil {
-				return err
-			}
+			return addJSONToZip(zipWriter, filename, map[string]string{"message": err.Error()})
 		}
-		return addJSONToZip(zipWriter, "delegated-scanning-config.json", j)
+
+		return addProtoJSONToZip(zipWriter, filename, config)
 	})
 	if opts.withAccessControl {
 		diagBundleTasks.Go(func(ctx context.Context) error {
