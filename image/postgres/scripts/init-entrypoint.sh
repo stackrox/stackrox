@@ -100,7 +100,7 @@ else
 
         # Not sure how it works now, but during the upgrade group permissions
         # are rejected.
-        chmod 0700 $PGDATA
+        #chmod 0700 $PGDATA
 
         echo "Upgrade..."
         # Good idea to --check first
