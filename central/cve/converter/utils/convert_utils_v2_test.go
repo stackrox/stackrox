@@ -19,6 +19,14 @@ type componentPieces struct {
 var (
 	ts = protocompat.TimestampNow()
 
+	testComponent = &storage.EmbeddedImageScanComponent{
+		Name:         "comp1",
+		Version:      "ver2",
+		Source:       0,
+		Location:     "/test",
+		Architecture: "arm",
+	}
+
 	testVulns = []*storage.EmbeddedVulnerability{
 		{
 			Cve:          "cve1",
@@ -125,7 +133,7 @@ var (
 
 	testCVEs = []*storage.ImageCVEV2{
 		{
-			Id:      cve.IDV2("cve1", scancomponent.ComponentIDV2("comp1", "ver2", "", "sha"), "0"),
+			Id:      cve.IDV2("cve1", getTestComponentID(), "0"),
 			ImageId: "sha",
 			CveBaseInfo: &storage.CVEInfo{
 				Cve:          "cve1",
@@ -189,10 +197,10 @@ var (
 			State:                0,
 			IsFixable:            false,
 			HasFixedBy:           nil,
-			ComponentId:          scancomponent.ComponentIDV2("comp1", "ver2", "", "sha"),
+			ComponentId:          getTestComponentID(),
 		},
 		{
-			Id:      cve.IDV2("cve2", scancomponent.ComponentIDV2("comp1", "ver2", "", "sha"), "1"),
+			Id:      cve.IDV2("cve2", getTestComponentID(), "1"),
 			ImageId: "sha",
 			CveBaseInfo: &storage.CVEInfo{
 				Cve:          "cve2",
@@ -231,19 +239,19 @@ var (
 			HasFixedBy: &storage.ImageCVEV2_FixedBy{
 				FixedBy: "ver3",
 			},
-			ComponentId: scancomponent.ComponentIDV2("comp1", "ver2", "", "sha"),
+			ComponentId: getTestComponentID(),
 		},
 	}
 
 	componentInfo = []*componentPieces{
 		{
 			imageID:     "sha",
-			componentID: scancomponent.ComponentIDV2("comp1", "ver2", "", "sha"),
+			componentID: getTestComponentID(),
 			cveIndex:    0,
 		},
 		{
 			imageID:     "sha",
-			componentID: scancomponent.ComponentIDV2("comp1", "ver2", "", "sha"),
+			componentID: getTestComponentID(),
 			cveIndex:    1,
 		},
 	}
@@ -261,4 +269,10 @@ func TestEmbeddedCVEToImageCVEV2(t *testing.T) {
 		convertedVuln := EmbeddedVulnerabilityToImageCVEV2(componentInfo[idx].imageID, componentInfo[idx].componentID, componentInfo[idx].cveIndex, embeddedVuln)
 		protoassert.Equal(t, testCVEs[idx], convertedVuln)
 	}
+}
+
+func getTestComponentID() string {
+	id, _ := scancomponent.ComponentIDV2(testComponent, "sha")
+
+	return id
 }

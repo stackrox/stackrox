@@ -439,7 +439,11 @@ func (s *storeImpl) upsert(ctx context.Context, obj *storage.Image) error {
 		}
 	}
 
-	imageParts := getPartsAsSlice(common.Split(obj, scanUpdated))
+	splitParts, err := common.Split(obj, scanUpdated)
+	if err != nil {
+		return err
+	}
+	imageParts := getPartsAsSlice(splitParts)
 	keys := gatherKeys(imageParts)
 
 	return s.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(keys...), func() error {
