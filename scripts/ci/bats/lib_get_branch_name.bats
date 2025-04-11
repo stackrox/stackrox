@@ -9,6 +9,8 @@ function setup() {
     unset PULL_HEAD_REF
     unset CLONEREFS_OPTIONS
     unset GITHUB_ACTION
+    unset GITHUB_HEAD_REF
+    unset GITHUB_REF_NAME
     source "${BATS_TEST_DIRNAME}/../lib.sh"
 }
 
@@ -81,3 +83,26 @@ function setup() {
     assert_output 'main'
 }
 
+@test "GHA without any env" {
+    export GITHUB_ACTION=true
+    run get_branch_name
+    assert_failure 1
+    assert_output --partial 'ERROR: Expected'
+}
+
+@test "GHA with both refs" {
+    export GITHUB_ACTION=true
+    export GITHUB_HEAD_REF="mrsmith/fix-everything"
+    export GITHUB_REF_NAME="master"
+    run get_branch_name
+    assert_success
+    assert_output 'mrsmith/fix-everything'
+}
+
+@test "GHA with only GITHUB_REF_NAME" {
+    export GITHUB_ACTION=true
+    export GITHUB_REF_NAME="master"
+    run get_branch_name
+    assert_success
+    assert_output 'master'
+}

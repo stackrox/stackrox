@@ -1108,7 +1108,7 @@ get_branch_name() {
     # Returns the PR branch name (sometimes that's called PR source branch), e.g. 'johndoe/ROX-23456-fix-branch-name'.
     # For non-PRs, returns branch name where the commit happened, e.g. 'master'.
     if is_OPENSHIFT_CI; then
-        # Prow variables ref: https://docs.prow.k8s.io/docs/jobs/#job-environment-variables
+        # Prow variables doc: https://docs.prow.k8s.io/docs/jobs/#job-environment-variables
         if [[ -n "${PULL_HEAD_REF:-}" ]]; then
             # presubmit runs
             echo "${PULL_HEAD_REF}"
@@ -1127,7 +1127,12 @@ get_branch_name() {
             die "Expected PULL_HEAD_REF or PULL_BASE_REF or CLONEREFS_OPTIONS"
         fi
     elif is_GITHUB_ACTIONS; then
-        echo "${GITHUB_HEAD_REF:-${GITHUB_REF_NAME:-}}"
+        # GHA doc: https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/store-information-in-variables#default-environment-variables
+        local ref="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME:-}}"
+        if [[ -z "${ref}" ]]; then
+            die "Expected GITHUB_HEAD_REF or GITHUB_REF_NAME"
+        fi
+        echo "${ref}"
     else
         die "unsupported"
     fi
