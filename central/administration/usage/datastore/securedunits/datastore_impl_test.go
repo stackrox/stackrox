@@ -17,6 +17,10 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
+const (
+	page = 1000
+)
+
 func TestUsageDataStore(t *testing.T) {
 	suite.Run(t, new(UsageDataStoreTestSuite))
 }
