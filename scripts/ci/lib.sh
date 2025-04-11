@@ -1105,10 +1105,15 @@ is_openshift_CI_rehearse_PR() {
 }
 
 get_branch_name() {
+    # Returns the PR branch name (sometimes that's called PR source branch), e.g. 'johndoe/ROX-23456-fix-branch-name'.
+    # For non-PRs, returns branch name where the commit happened, e.g. 'master'.
     if is_OPENSHIFT_CI; then
-        if [[ -n "${PULL_BASE_REF:-}" ]]; then
-            # presubmit, postsubmit and batch runs
-            # (ref: https://docs.prow.k8s.io/docs/jobs/#job-environment-variables)
+        # Prow variables ref: https://docs.prow.k8s.io/docs/jobs/#job-environment-variables
+        if [[ -n "${PULL_HEAD_REF}" ]]; then
+            # presubmit runs
+            echo "${PULL_HEAD_REF}"
+        elif [[ -n "${PULL_BASE_REF:-}" ]]; then
+            # postsubmit and batch runs
             echo "${PULL_BASE_REF}"
         elif [[ -n "${CLONEREFS_OPTIONS:-}" ]]; then
             # periodics - CLONEREFS_OPTIONS exists in binary_build_commands and images.
