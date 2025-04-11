@@ -107,6 +107,7 @@ func (resolver *Resolver) ImageComponent(ctx context.Context, args IDQuery) (Ima
 		}
 
 		ret, err := loader.FromID(ctx, string(*args.ID))
+		log.Infof("SHREWS -- component %v", ret.GetSetTopCvss())
 		return resolver.wrapImageComponentV2WithContext(ctx, ret, true, err)
 	}
 	// get loader
@@ -143,6 +144,9 @@ func (resolver *Resolver) ImageComponents(ctx context.Context, q PaginatedQuery)
 
 		// get values
 		comps, err := loader.FromQuery(ctx, query)
+		for _, comp := range comps {
+			log.Infof("SHREWS -- component %v", comp.GetSetTopCvss())
+		}
 		componentResolvers, err := resolver.wrapImageComponentV2sWithContext(ctx, comps, err)
 		if err != nil {
 			return nil, err
