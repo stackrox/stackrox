@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/admissioncontroller"
 	"github.com/stackrox/rox/sensor/common/certdistribution"
+	"github.com/stackrox/rox/sensor/common/collector"
 	"github.com/stackrox/rox/sensor/common/compliance"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/delegatedregistry"
@@ -34,7 +35,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/networkflow/manager"
 	"github.com/stackrox/rox/sensor/common/networkflow/service"
 	"github.com/stackrox/rox/sensor/common/processfilter"
-	"github.com/stackrox/rox/sensor/common/processsignal"
+	"github.com/stackrox/rox/sensor/common/processindicator"
 	"github.com/stackrox/rox/sensor/common/reprocessor"
 	"github.com/stackrox/rox/sensor/common/scan"
 	"github.com/stackrox/rox/sensor/common/sensor"
@@ -111,17 +112,26 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	imageService := image.NewService(imageCache, storeProvider.Registries(), storeProvider.RegistryMirrors())
 	complianceCommandHandler := compliance.NewCommandHandler(complianceService)
 
+	var signalSrv signalService.Service
+	if cfg.signalServiceAuthFuncOverride != nil && cfg.localSensor {
+		signalSrv = signalService.NewService(signalService.WithAuthFuncOverride(cfg.signalServiceAuthFuncOverride))
+	} else {
+		signalSrv = signalService.NewService()
+	}
+
+	var collectorSrv collector.Service
+	if cfg.signalServiceAuthFuncOverride != nil && cfg.localSensor {
+		collectorSrv = collector.NewService(collector.WithAuthFuncOverride(cfg.signalServiceAuthFuncOverride))
+	} else {
+		collectorSrv = collector.NewService()
+	}
+
 	// Create Process Pipeline
 	indicators := make(chan *message.ExpiringMessage, queue.ScaleSizeOnNonDefault(env.ProcessIndicatorBufferSize))
-	processPipeline := processsignal.NewProcessPipeline(indicators, storeProvider.Entities(), processfilter.Singleton(), policyDetector)
-	var processSignals signalService.Service
-	if cfg.signalServiceAuthFuncOverride != nil && cfg.localSensor {
-		processSignals = signalService.New(processPipeline, indicators,
-			signalService.WithAuthFuncOverride(cfg.signalServiceAuthFuncOverride),
-			signalService.WithTraceWriter(cfg.processIndicatorWriter))
-	} else {
-		processSignals = signalService.New(processPipeline, indicators, signalService.WithTraceWriter(cfg.processIndicatorWriter))
-	}
+	processPipeline := processindicator.NewProcessPipeline(indicators, storeProvider.Entities(), processfilter.Singleton(), policyDetector)
+
+	signalCmp := processindicator.New(processPipeline, signalSrv.GetMessagesC(), collectorSrv.GetMessagesC(), processindicator.WithTraceWriter(cfg.processIndicatorWriter))
+
 	networkFlowManager :=
 		manager.NewManager(storeProvider.Entities(), externalsrcs.StoreInstance(), policyDetector, pubSub)
 	enhancer := deploymentenhancer.CreateEnhancer(storeProvider)
@@ -134,7 +144,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		clusterhealth.NewUpdater(cfg.k8sClient.Kubernetes(), 0),
 		clustermetrics.New(cfg.k8sClient.Kubernetes()),
 		complianceCommandHandler,
-		processSignals,
+		signalCmp,
 		telemetry.NewCommandHandler(cfg.k8sClient.Kubernetes(), storeProvider),
 		externalsrcs.Singleton(),
 		admissioncontroller.AlertHandlerSingleton(),
@@ -198,12 +208,14 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	} else {
 		networkFlowService = service.NewService(networkFlowManager, service.WithTraceWriter(cfg.networkFlowWriter))
 	}
+
 	apiServices := []grpc.APIService{
 		networkFlowService,
-		processSignals,
+		signalSrv,
 		complianceService,
 		imageService,
 		deployment.NewService(storeProvider.Deployments(), storeProvider.Pods()),
+		collectorSrv,
 	}
 
 	if admCtrlSettingsMgr != nil {
