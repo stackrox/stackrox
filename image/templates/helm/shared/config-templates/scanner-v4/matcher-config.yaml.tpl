@@ -31,6 +31,7 @@ matcher:
     password_file: /run/secrets/stackrox.io/secrets/password
   vulnerabilities_url: https://central.{{ .Release.Namespace }}.svc/api/extensions/scannerdefinitions?version=ROX_VULNERABILITY_VERSION
   indexer_addr: scanner-v4-indexer.{{ .Release.Namespace }}.svc:8443
+  readiness: vulnerability
 log_level: "{{ ._rox.scannerV4.matcher.logLevel }}"
 grpc_listen_addr: 0.0.0.0:8443
 http_listen_addr: 0.0.0.0:9443
