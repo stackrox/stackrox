@@ -13,10 +13,6 @@ func ComponentID(name, version, os string) string {
 	return pgSearch.IDFromPks([]string{name, version, os})
 }
 
-type hashWrapper struct {
-	Components storage.EmbeddedImageScanComponent `hash:"set"`
-}
-
 // ComponentIDV2 creates a component ID from the given name and version and architecture and imageID.
 func ComponentIDV2(component *storage.EmbeddedImageScanComponent, imageID string) (string, error) {
 	// A little future proofing here.  Just hashing the component to ensure uniqueness.  If a field is added, the data
