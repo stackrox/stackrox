@@ -21,7 +21,7 @@ type hashWrapper struct {
 func ComponentIDV2(component *storage.EmbeddedImageScanComponent, imageID string) (string, error) {
 	// A little future proofing here.  Just hashing the component to ensure uniqueness.  If a field is added, the data
 	// will be replaced anyway.  We just need to ensure uniqueness within the scan since we tack on the imageID.
-	//We must make a clone of the incoming object to use in our hash.  The `SetTopCvss` must be set to nil before hashing
+	// We must make a clone of the incoming object to use in our hash.  The `SetTopCvss` must be set to nil before hashing
 	// as that is added by the enricher and may vary.  So we want to ignore it.  Since it is
 	// a oneof we cannot simply flag it as ignore in the proto, sadly.
 	clonedComponent := component.CloneVT()

@@ -520,7 +520,7 @@ func (s *ImageCVEFlatViewTestSuite) testCases() []testCase {
 				IDs:   []string{"sha256:6ef31316f4f9e0c31a8f4e602ba287a210d66934f91b1616f1c9b957201d025c"},
 				Level: v1.SearchCategory_IMAGES,
 				Parent: &scoped.Scope{
-					IDs: []string{cve.IDV2("CVE-2022-1552", scancomponent.ComponentIDV2(&storage.EmbeddedImageScanComponent{
+					IDs: []string{cve.IDV2("CVE-2022-1552", getTestComponentID(&storage.EmbeddedImageScanComponent{
 						Name:         "postgresql-libs",
 						Version:      "8.4.20-6.el6",
 						Source:       storage.SourceType_OS,
@@ -813,7 +813,7 @@ func compileExpected(images []*storage.Image, filter *filterImpl, options views.
 					val.Severity = pointers.Pointer(vuln.GetSeverity())
 				}
 
-				id := cve.IDV2(val.GetCVE(), scancomponent.ComponentIDV2(component, image.GetId()), strconv.Itoa(vulnIdx))
+				id := cve.IDV2(val.GetCVE(), getTestComponentID(component, image.GetId()), strconv.Itoa(vulnIdx))
 				var found bool
 				for _, seenID := range val.GetCVEIDs() {
 					if seenID == id {
@@ -896,4 +896,10 @@ func standardizeImages(images ...*storage.Image) {
 			}
 		}
 	}
+}
+
+func getTestComponentID(testComponent *storage.EmbeddedImageScanComponent, imageID string) string {
+	id, _ := scancomponent.ComponentIDV2(testComponent, imageID)
+
+	return id
 }
