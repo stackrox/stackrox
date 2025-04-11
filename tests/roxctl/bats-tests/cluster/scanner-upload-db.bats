@@ -36,6 +36,9 @@ teardown() {
 }
 
 @test "[zip] roxctl scanner upload-db" {
+  if [[ "${ROX_SCANNER_V4}" == "true" ]]; then
+      skip "https://issues.redhat.com/browse/ROX-28949"
+  fi
   run curl --retry 30 --retry-max-time 600 --retry-all-errors --show-error --fail --output "${temp_dir}/test-scanner-vuln-updates.zip" --location 'https://install.stackrox.io/scanner/scanner-vuln-updates.zip'
   assert_success
 
