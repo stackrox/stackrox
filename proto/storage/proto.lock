@@ -8598,6 +8598,11 @@
                 "id": 4,
                 "name": "cert_chain_pem",
                 "type": "bytes"
+              },
+              {
+                "id": 5,
+                "name": "rekor_bundle",
+                "type": "bytes"
               }
             ]
           },
@@ -16203,6 +16208,11 @@
                 "name": "cosign_certificates",
                 "type": "CosignCertificateVerification",
                 "is_repeated": true
+              },
+              {
+                "id": 5,
+                "name": "transparency_log",
+                "type": "TransparencyLogVerification"
               }
             ]
           },
@@ -16255,6 +16265,51 @@
               {
                 "id": 4,
                 "name": "certificate_identity",
+                "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "certificate_transparency_log",
+                "type": "CertificateTransparencyLogVerification"
+              }
+            ]
+          },
+          {
+            "name": "CertificateTransparencyLogVerification",
+            "fields": [
+              {
+                "id": 1,
+                "name": "enabled",
+                "type": "bool"
+              },
+              {
+                "id": 2,
+                "name": "public_key_pem_enc",
+                "type": "string"
+              }
+            ]
+          },
+          {
+            "name": "TransparencyLogVerification",
+            "fields": [
+              {
+                "id": 1,
+                "name": "enabled",
+                "type": "bool"
+              },
+              {
+                "id": 2,
+                "name": "url",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "validate_offline",
+                "type": "bool"
+              },
+              {
+                "id": 4,
+                "name": "public_key_pem_enc",
                 "type": "string"
               }
             ]
