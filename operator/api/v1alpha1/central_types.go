@@ -470,14 +470,66 @@ type ExposureNodePort struct {
 
 // ExposureRoute defines settings for exposing central via a Route.
 type ExposureRoute struct {
+	// Expose central with a passthrough route.
+	// The passthrough route is still required when using a reencrypt route.
 	//+kubebuilder:default=false
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
 	Enabled *bool `json:"enabled,omitempty"`
 
 	// Specify a custom hostname for the central route.
-	// If unspecified, an appropriate default value will be automatically chosen by OpenShift route operator.
+	// If unspecified, an appropriate default value will be automatically chosen by the OpenShift route operator.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
 	Host *string `json:"host,omitempty"`
+
+	// Set up a central route with reencrypt tls termination.
+	// For reencrypt routes, the request is terminated on the OpenShift router with a custom certificate.
+	// The request is then reencrypted by the OpenShift router and sent to central.
+	// [user] --TLS--> [OpenShift router] --TLS--> [central]
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,displayName="Re-Encrypt Route"
+	Reencrypt *ExposureRouteReencrypt `json:"reencrypt,omitempty"`
+}
+
+// ExposureRouteReencrypt defines settings for exposing central via a reencrypt Route.
+type ExposureRouteReencrypt struct {
+	// Expose central with a reencrypt route.
+	// Requires a passthrough route for sensor communication.
+	//+kubebuilder:default=false
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
+	Enabled *bool `json:"enabled,omitempty"`
+
+	// Specify a custom hostname for the central reencrypt route.
+	// If unspecified, an appropriate default value will be automatically chosen by the OpenShift route operator.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
+	Host *string `json:"host,omitempty"`
+
+	// TLS settings for exposing central via a reencrypt Route.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,displayName="TLS Settings"
+	TLS *ExposureRouteReencryptTLS `json:"tls,omitempty"`
+}
+
+// ExposureRouteReencryptTLS defines TLS settings for exposing central via a reencrypt Route.
+type ExposureRouteReencryptTLS struct {
+	// The PEM encoded certificate chain that may be used to establish a complete chain of trust.
+	// Defaults to the OpenShift certificate authority.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,displayName="CA Certificate"
+	CaCertificate *string `json:"caCertificate,omitempty"`
+
+	// The PEM encoded certificate that is served on the route. Must be a single serving
+	// certificate instead of a certificate chain.
+	// Defaults to a certificate signed by the OpenShift certificate authority.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2,displayName="Certificate"
+	Certificate *string `json:"certificate,omitempty"`
+
+	// The CA certificate of the final destination, i.e. of central.
+	// Used by the OpenShift router for health checks on the secure connection.
+	// Defaults to the Central certificate authority.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,displayName="Destination CA Certificate"
+	DestinationCACertificate *string `json:"destinationCACertificate,omitempty"`
+
+	// The PEM encoded private key of the certificate that is served on the route.
+	// Defaults to a certificate signed by the OpenShift certificate authority.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4,displayName="Private Key"
+	Key *string `json:"key,omitempty"`
 }
 
 // Telemetry defines telemetry settings for Central.
