@@ -10,7 +10,7 @@ import (
 
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	storage "github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
@@ -310,19 +310,15 @@ func (c *client) UpdatePolicy(ctx context.Context, policy *storage.Policy) error
 	return nil
 }
 
-func (c *client) DeletePolicy(ctx context.Context, name string) error {
-	log.Infof("Deleting policy %q", name)
-	policyID, ok := c.policyNameToIDCache[name]
-	if !ok {
-		return nil
-	}
+func (c *client) DeletePolicy(ctx context.Context, policyID string) error {
+	log.Infof("Deleting policy %q", policyID)
 	policy := c.policyObjectCache[policyID]
 	if policy.GetSource() != storage.PolicySource_DECLARATIVE {
-		return errors.New(fmt.Sprintf("policy %q is not externally managed and can be deleted only from central", name))
+		return errors.New(fmt.Sprintf("policy %q is not externally managed and can be deleted only from central", policy.GetName()))
 	}
 
 	if err := c.centralSvc.DeletePolicy(ctx, policyID); err != nil {
-		return errors.Wrapf(err, "Failed to DELETE policy %q in central", name)
+		return errors.Wrapf(err, "Failed to DELETE policy %q in central", policy.GetName())
 	}
 	delete(c.policyObjectCache, policyID)
 	delete(c.policyNameToIDCache, policy.GetName())
