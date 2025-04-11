@@ -6,7 +6,6 @@ import (
 
 	storeMock "github.com/stackrox/rox/central/processindicator/store/mocks"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -32,7 +31,7 @@ type IndicatorSearchTestSuite struct {
 }
 
 func (suite *IndicatorSearchTestSuite) SetupSuite() {
-	suite.hasNoneCtx = sac.WithGlobalAccessScopeChecker(context.Background(), sac.DenyAllAccessScopeChecker())
+	suite.hasNoneCtx = sac.WithNoAccess(context.Background())
 	suite.hasReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
@@ -54,12 +53,11 @@ func (suite *IndicatorSearchTestSuite) TearDownSuite() {
 }
 
 func (suite *IndicatorSearchTestSuite) TestEnforcesSearch() {
-	pgtest.SkipIfPostgresEnabled(suite.T())
 	suite.storage.EXPECT().Search(gomock.Any(), gomock.Any()).Return([]search.Result{{ID: "hgdskdf"}}, nil)
 
 	processIndicators, err := suite.searcher.Search(suite.hasNoneCtx, search.EmptyQuery())
 	suite.NoError(err, "expected no error, should return nil without access")
-	suite.Nil(processIndicators, "expected return value to be nil")
+	suite.Nil(processIndicators[0].Matches, "expected return value to be nil")
 }
 
 func (suite *IndicatorSearchTestSuite) TestAllowsSearch() {
