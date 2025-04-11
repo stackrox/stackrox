@@ -552,8 +552,6 @@ func (s *storeImpl) populateImage(ctx context.Context, tx *postgres.Tx, image *s
 		Children: []common.ComponentParts{},
 	}
 	for _, component := range components {
-		log.Infof("SHREWS -- just got componet from DB -- %v", component.GetSetTopCvss())
-		log.Infof("SHREWS -- just got componet from DB -- %v", component.GetHasLayerIndex())
 		cves, err := getImageComponentCVEs(ctx, tx, component.GetId())
 		if err != nil {
 			return err

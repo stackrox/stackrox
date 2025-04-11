@@ -61,7 +61,7 @@ func GenerateImageComponentV2(os string, image *storage.Image, from *storage.Emb
 		Architecture:    from.GetArchitecture(),
 	}
 
-	if from.SetTopCvss != nil {
+	if from.GetSetTopCvss() != nil {
 		ret.SetTopCvss = &storage.ImageComponentV2_TopCvss{TopCvss: from.GetTopCvss()}
 	}
 
