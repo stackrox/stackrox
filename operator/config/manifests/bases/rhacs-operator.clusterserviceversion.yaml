@@ -83,13 +83,20 @@ spec:
       - description: Expose Central through an OpenShift route.
         displayName: Route
         path: central.exposure.route
-      - displayName: Enabled
+      - description: |-
+          Expose central with a passthrough route.
+          The passthrough route is still required when using a reencrypt route.
+        displayName: Enabled
         path: central.exposure.route.enabled
-      - displayName: Enabled
+      - description: |-
+          Expose central with a reencrypt route.
+          Requires a passthrough route for sensor communication.
+        displayName: Enabled
         path: central.exposure.route.reencrypt.enabled
-      - description: PEM encoded certificate chain that may be used to establish a
-          complete chain of trust.
-        displayName: Ca Certificate
+      - description: |-
+          The PEM encoded certificate chain that may be used to establish a complete chain of trust.
+          Defaults to the OpenShift certificate authority.
+        displayName: CA Certificate
         path: central.exposure.route.reencrypt.tls.caCertificate
       - description: |-
           Expose the monitoring endpoint. A new service, "monitoring",
@@ -265,7 +272,7 @@ spec:
       - description: |-
           The PEM encoded certificate that is served on the route. Must be a single serving
           certificate instead of a certificate chain.
-          Defaults to a certificate signed by the OpenShift certificate authority is used.
+          Defaults to a certificate signed by the OpenShift certificate authority.
         displayName: Certificate
         path: central.exposure.route.reencrypt.tls.certificate
       - description: |-
@@ -365,14 +372,17 @@ spec:
           Set up a central route with reencrypt tls termination.
           For reencrypt routes, the request is terminated on the OpenShift router with a custom certificate.
           The request is then reencrypted by the OpenShift router and sent to central.
-          <user> --tls--> <OpenShift router> --tls--> <central>
-        displayName: Reencrypt
+          [user] --TLS--> [OpenShift router] --TLS--> [central]
+        displayName: Re-Encrypt Route
         path: central.exposure.route.reencrypt
+      - description: TLS settings for exposing central via a reencrypt Route.
+        displayName: TLS Settings
+        path: central.exposure.route.reencrypt.tls
       - description: |-
-          The CA certificate of the final destination. Should be provided because the OpenShift
-          router uses it for health checks on the secure connection.
+          The CA certificate of the final destination, i.e. of central.
+          Used by the OpenShift router for health checks on the secure connection.
           Defaults to the Central certificate authority.
-        displayName: Destination CACertificate
+        displayName: Destination CA Certificate
         path: central.exposure.route.reencrypt.tls.destinationCACertificate
       - description: |-
           The name of the storage class to use for the PVC. If your cluster is not configured with a default storage
@@ -434,7 +444,7 @@ spec:
       - description: |-
           The PEM encoded private key of the certificate that is served on the route.
           Defaults to a certificate signed by the OpenShift certificate authority.
-        displayName: Key
+        displayName: Private Key
         path: central.exposure.route.reencrypt.tls.key
       - description: |-
           Configures monitoring endpoint for Central. The monitoring endpoint

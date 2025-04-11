@@ -380,6 +380,9 @@ spec:
                         properties:
                           enabled:
                             default: false
+                            description: |-
+                              Expose central with a passthrough route.
+                              The passthrough route is still required when using a reencrypt route.
                             type: boolean
                           host:
                             description: |-
@@ -391,10 +394,13 @@ spec:
                               Set up a central route with reencrypt tls termination.
                               For reencrypt routes, the request is terminated on the OpenShift router with a custom certificate.
                               The request is then reencrypted by the OpenShift router and sent to central.
-                              <user> --tls--> <OpenShift router> --tls--> <central>
+                              [user] --TLS--> [OpenShift router] --TLS--> [central]
                             properties:
                               enabled:
                                 default: false
+                                description: |-
+                                  Expose central with a reencrypt route.
+                                  Requires a passthrough route for sensor communication.
                                 type: boolean
                               host:
                                 description: |-
@@ -406,20 +412,20 @@ spec:
                                   a reencrypt Route.
                                 properties:
                                   caCertificate:
-                                    description: PEM encoded certificate chain that
-                                      may be used to establish a complete chain of
-                                      trust.
+                                    description: |-
+                                      The PEM encoded certificate chain that may be used to establish a complete chain of trust.
+                                      Defaults to the OpenShift certificate authority.
                                     type: string
                                   certificate:
                                     description: |-
                                       The PEM encoded certificate that is served on the route. Must be a single serving
                                       certificate instead of a certificate chain.
-                                      Defaults to a certificate signed by the OpenShift certificate authority is used.
+                                      Defaults to a certificate signed by the OpenShift certificate authority.
                                     type: string
                                   destinationCACertificate:
                                     description: |-
-                                      The CA certificate of the final destination. Should be provided because the OpenShift
-                                      router uses it for health checks on the secure connection.
+                                      The CA certificate of the final destination, i.e. of central.
+                                      Used by the OpenShift router for health checks on the secure connection.
                                       Defaults to the Central certificate authority.
                                     type: string
                                   key:
