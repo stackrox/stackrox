@@ -12,14 +12,14 @@ function setup() {
 }
 
 @test "without any env" {
-    run get_base_ref
+    run get_branch_name
     assert_failure 1
     assert_output --partial 'unsupported'
 }
 
 @test "OPENSHIFT_CI but nothing else" {
     export OPENSHIFT_CI=true
-    run get_base_ref
+    run get_branch_name
     assert_failure 1
     assert_output --partial 'Expect PULL_BASE_REF or CLONEREFS_OPTIONS'
 }
@@ -27,7 +27,7 @@ function setup() {
 @test "with PULL_BASE_REF" {
     export OPENSHIFT_CI=true
     export PULL_BASE_REF="main"
-    run get_base_ref
+    run get_branch_name
     assert_success
     assert_output 'main'
 }
@@ -35,7 +35,7 @@ function setup() {
 @test "with invalid CLONEREFS_OPTIONS I" {
     export OPENSHIFT_CI=true
     export CLONEREFS_OPTIONS='{}'
-    run get_base_ref
+    run get_branch_name
     assert_failure 1
     assert_output --partial 'expect: base_ref'
 }
@@ -43,7 +43,7 @@ function setup() {
 @test "with invalid CLONEREFS_OPTIONS II" {
     export OPENSHIFT_CI=true
     export CLONEREFS_OPTIONS='{ "refs": [] }'
-    run get_base_ref
+    run get_branch_name
     assert_failure 1
     assert_output --partial 'expect: base_ref'
 }
@@ -51,7 +51,7 @@ function setup() {
 @test "with invalid CLONEREFS_OPTIONS III" {
     export OPENSHIFT_CI=true
     export CLONEREFS_OPTIONS='{ "not yamls" }'
-    run get_base_ref
+    run get_branch_name
     assert_failure 1
     assert_output --partial 'invalid CLONEREFS_OPTIONS yaml'
 }
@@ -59,7 +59,7 @@ function setup() {
 @test "with invalid CLONEREFS_OPTIONS IV" {
     export OPENSHIFT_CI=true
     export CLONEREFS_OPTIONS='{ "refs": "" }'
-    run get_base_ref
+    run get_branch_name
     assert_failure 1
     assert_output --partial 'invalid CLONEREFS_OPTIONS yaml'
 }
@@ -67,7 +67,7 @@ function setup() {
 @test "with valid CLONEREFS_OPTIONS" {
     export OPENSHIFT_CI=true
     export CLONEREFS_OPTIONS='{ "refs": [{ "base_ref": "main" }] }'
-    run get_base_ref
+    run get_branch_name
     assert_success
     assert_output 'main'
 }

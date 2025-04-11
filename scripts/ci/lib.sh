@@ -1104,7 +1104,7 @@ is_openshift_CI_rehearse_PR() {
     [[ "$(get_repo_full_name)" == "openshift/release" ]]
 }
 
-get_base_ref() {
+get_branch_name() {
     if is_OPENSHIFT_CI; then
         if [[ -n "${PULL_BASE_REF:-}" ]]; then
             # presubmit, postsubmit and batch runs
