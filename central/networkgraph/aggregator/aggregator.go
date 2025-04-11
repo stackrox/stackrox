@@ -46,3 +46,7 @@ func NewDefaultToCustomExtSrcConnAggregator(networkTree tree.ReadOnlyNetworkTree
 func NewDuplicateNameExtSrcConnAggregator() NetworkConnsAggregator {
 	return &aggregateExternalConnByNameImpl{}
 }
+
+func NewLatestTimestampAggregator() NetworkConnsAggregator {
+	return &aggregateLatestTimestampImpl{}
+}
