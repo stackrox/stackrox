@@ -834,24 +834,24 @@ type EmbeddedImageScanComponent struct {
 	Name    string                   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty" search:"Component,store"`       // @gotags: search:"Component,store"
 	Version string                   `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty" search:"Component Version,store"` // @gotags: search:"Component Version,store"
 	License *License                 `protobuf:"bytes,3,opt,name=license,proto3" json:"license,omitempty"`
-	Vulns   []*EmbeddedVulnerability `protobuf:"bytes,4,rep,name=vulns,proto3" json:"vulns,omitempty" hash:"ignore"` // @gotags: hash:"ignore"
+	Vulns   []*EmbeddedVulnerability `protobuf:"bytes,4,rep,name=vulns,proto3" json:"vulns,omitempty" hash:"set"` // @gotags: hash:"set"
 	// Types that are valid to be assigned to HasLayerIndex:
 	//
 	//	*EmbeddedImageScanComponent_LayerIndex
 	HasLayerIndex isEmbeddedImageScanComponent_HasLayerIndex `protobuf_oneof:"has_layer_index"`
-	Priority      int64                                      `protobuf:"varint,6,opt,name=priority,proto3" json:"priority,omitempty" hash:"ignore"`                     // @gotags: hash:"ignore"
-	Source        SourceType                                 `protobuf:"varint,7,opt,name=source,proto3,enum=storage.SourceType" json:"source,omitempty" hash:"ignore"` // @gotags: hash:"ignore"
-	Location      string                                     `protobuf:"bytes,8,opt,name=location,proto3" json:"location,omitempty" hash:"ignore"`                      // @gotags: hash:"ignore"
+	Priority      int64                                      `protobuf:"varint,6,opt,name=priority,proto3" json:"priority,omitempty" hash:"ignore"` // @gotags: hash:"ignore"
+	Source        SourceType                                 `protobuf:"varint,7,opt,name=source,proto3,enum=storage.SourceType" json:"source,omitempty"`
+	Location      string                                     `protobuf:"bytes,8,opt,name=location,proto3" json:"location,omitempty"`
 	// Types that are valid to be assigned to SetTopCvss:
 	//
 	//	*EmbeddedImageScanComponent_TopCvss
 	SetTopCvss isEmbeddedImageScanComponent_SetTopCvss `protobuf_oneof:"set_top_cvss"`
-	RiskScore  float32                                 `protobuf:"fixed32,10,opt,name=risk_score,json=riskScore,proto3" json:"risk_score,omitempty" search:"Component Risk Score,hidden" hash:"ignore"` // @gotags: search:"Component Risk Score,hidden" hash:"ignore"
+	RiskScore  float32                                 `protobuf:"fixed32,10,opt,name=risk_score,json=riskScore,proto3" json:"risk_score,omitempty" search:"Component Risk Score,hidden"` // @gotags: search:"Component Risk Score,hidden"
 	// Component version that fixes all the fixable vulnerabilities in this component.
-	FixedBy string `protobuf:"bytes,11,opt,name=fixed_by,json=fixedBy,proto3" json:"fixed_by,omitempty" hash:"ignore"` // @gotags: hash:"ignore"
+	FixedBy string `protobuf:"bytes,11,opt,name=fixed_by,json=fixedBy,proto3" json:"fixed_by,omitempty"`
 	// Values are cleared after moving to cache, remove them from the grpc return as well
-	Executables   []*EmbeddedImageScanComponent_Executable `protobuf:"bytes,12,rep,name=executables,proto3" json:"-" hash:"ignore"`   // @gotags: json:"-" hash:"ignore"
-	Architecture  string                                   `protobuf:"bytes,13,opt,name=architecture,proto3" json:"architecture,omitempty" hash:"ignore"` // @gotags: hash:"ignore"
+	Executables   []*EmbeddedImageScanComponent_Executable `protobuf:"bytes,12,rep,name=executables,proto3" json:"-"` // @gotags: json:"-"
+	Architecture  string                                   `protobuf:"bytes,13,opt,name=architecture,proto3" json:"architecture,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1000,7 +1000,7 @@ type isEmbeddedImageScanComponent_HasLayerIndex interface {
 }
 
 type EmbeddedImageScanComponent_LayerIndex struct {
-	LayerIndex int32 `protobuf:"varint,5,opt,name=layer_index,json=layerIndex,proto3,oneof" hash:"ignore"` // @gotags: hash:"ignore"
+	LayerIndex int32 `protobuf:"varint,5,opt,name=layer_index,json=layerIndex,proto3,oneof"`
 }
 
 func (*EmbeddedImageScanComponent_LayerIndex) isEmbeddedImageScanComponent_HasLayerIndex() {}
@@ -1010,7 +1010,7 @@ type isEmbeddedImageScanComponent_SetTopCvss interface {
 }
 
 type EmbeddedImageScanComponent_TopCvss struct {
-	TopCvss float32 `protobuf:"fixed32,9,opt,name=top_cvss,json=topCvss,proto3,oneof" hash:"ignore"` // @gotags: hash:"ignore"
+	TopCvss float32 `protobuf:"fixed32,9,opt,name=top_cvss,json=topCvss,proto3,oneof"`
 }
 
 func (*EmbeddedImageScanComponent_TopCvss) isEmbeddedImageScanComponent_SetTopCvss() {}
