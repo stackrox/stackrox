@@ -667,13 +667,13 @@ func registerDelayedIntegrations(integrationsInput []iiStore.DelayedIntegration)
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.Image),
 		))
-		log.Info("New data model was enabled")
+		log.Info("ROX_FLATTEN_CVE_DATA was set to true")
 		v1ComponentDataStore := imageComponentDataStore.Singleton()
 		v2ComponentDataStore := imageComponentV2DataStore.Singleton()
 		count, err := v1ComponentDataStore.Count(ctx, pkgSearch.EmptyQuery())
 		v2Count, v2Err := v2ComponentDataStore.Count(ctx, pkgSearch.EmptyQuery())
 		if err == nil && v2Err == nil && count > 0 && v2Count == 0 {
-			log.Info("V1 Tables were not empty, but V2 tables were, marking to reprocess from all image integrations")
+			log.Info("This is the first time starting Central with the flattened CVE data model, we will reprocess all image integrations")
 			// If there is an error, carry on, as this rescan check is best effort
 			newCVEDataModelFirstStart = true
 		}
@@ -689,12 +689,6 @@ func registerDelayedIntegrations(integrationsInput []iiStore.DelayedIntegration)
 			if !ready {
 				continue
 			}
-			//if newCVEDataModelFirstStart {
-			//	log.Infof("Reprocessing image integration %q", integration.Integration.GetName())
-			//	reprocessor.Singleton().ShortCircuit()
-			//	delete(integrations, idx)
-			//	continue
-			//}
 			// add the integration first, which is more likely to fail. If it does, no big deal -- you can still try to
 			// manually add it and get the error message.
 			err := integrationManager.Upsert(integration.Integration)
