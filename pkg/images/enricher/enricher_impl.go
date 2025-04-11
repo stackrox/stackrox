@@ -1011,6 +1011,9 @@ func FillScanStats(i *storage.Image) {
 	var fixedByProvided bool
 	var imageTopCVSS float32
 	vulns := make(map[string]bool)
+	// This enriches the incoming component.  When enriching any additional component fields,
+	// be sure to update `ComponentIDV2` to ensure enriched fields like `SetTopCVSS` are not
+	// included in the hash calculation
 	for _, c := range i.GetScan().GetComponents() {
 		var componentTopCVSS float32
 		var hasVulns bool
