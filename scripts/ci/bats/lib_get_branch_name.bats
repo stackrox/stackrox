@@ -6,6 +6,7 @@ load "../../test_helpers.bats"
 function setup() {
     unset OPENSHIFT_CI
     unset PULL_BASE_REF
+    unset PULL_HEAD_REF
     unset CLONEREFS_OPTIONS
     unset GITHUB_ACTION
     source "${BATS_TEST_DIRNAME}/../lib.sh"
@@ -21,7 +22,15 @@ function setup() {
     export OPENSHIFT_CI=true
     run get_branch_name
     assert_failure 1
-    assert_output --partial 'Expect PULL_BASE_REF or CLONEREFS_OPTIONS'
+    assert_output --partial 'ERROR: Expected'
+}
+
+@test "with PULL_HEAD_REF" {
+    export OPENSHIFT_CI=true
+    export PULL_HEAD_REF="mrsmith/fix-everything"
+    run get_branch_name
+    assert_success
+    assert_output 'mrsmith/fix-everything'
 }
 
 @test "with PULL_BASE_REF" {

@@ -1109,7 +1109,7 @@ get_branch_name() {
     # For non-PRs, returns branch name where the commit happened, e.g. 'master'.
     if is_OPENSHIFT_CI; then
         # Prow variables ref: https://docs.prow.k8s.io/docs/jobs/#job-environment-variables
-        if [[ -n "${PULL_HEAD_REF}" ]]; then
+        if [[ -n "${PULL_HEAD_REF:-}" ]]; then
             # presubmit runs
             echo "${PULL_HEAD_REF}"
         elif [[ -n "${PULL_BASE_REF:-}" ]]; then
@@ -1124,7 +1124,7 @@ get_branch_name() {
             fi
             echo "${base_ref}"
         else
-            die "Expect PULL_BASE_REF or CLONEREFS_OPTIONS"
+            die "Expected PULL_HEAD_REF or PULL_BASE_REF or CLONEREFS_OPTIONS"
         fi
     elif is_GITHUB_ACTIONS; then
         echo "${GITHUB_HEAD_REF:-${GITHUB_REF_NAME:-}}"
