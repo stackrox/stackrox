@@ -61,11 +61,9 @@ func GenerateImageComponentV2(os string, image *storage.Image, from *storage.Emb
 		Architecture:    from.GetArchitecture(),
 	}
 
-	log.Infof("SHREWS -- set top cvss %v", from.SetTopCvss)
 	if from.SetTopCvss != nil {
 		ret.SetTopCvss = &storage.ImageComponentV2_TopCvss{TopCvss: from.GetTopCvss()}
 	}
-	log.Infof("SHREWS -- set top cvss %v", ret.SetTopCvss)
 
 	if from.HasLayerIndex != nil {
 		ret.HasLayerIndex = &storage.ImageComponentV2_LayerIndex{
