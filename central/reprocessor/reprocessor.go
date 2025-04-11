@@ -60,7 +60,7 @@ var (
 	imageClusterIDFieldPath = imageMapping.ImageDeploymentOptions.MustGet(search.ClusterID.String()).GetFieldPath()
 
 	allImagesQuery = search.NewQueryBuilder().AddStringsHighlighted(search.ClusterID, search.WildcardString).
-		ProtoQuery()
+			ProtoQuery()
 
 	imagesWithSignaturesQuery = search.NewQueryBuilder().
 		// We take all images into account irrespective whether they have a cluster associated with them
@@ -328,8 +328,6 @@ func (l *loopImpl) reprocessImage(id string, fetchOpt imageEnricher.FetchOption,
 	result, err := reprocessingFunc(emptyCtx, imageEnricher.EnrichmentContext{
 		FetchOpt: fetchOpt,
 	}, image)
-
-	log.Infof("reprocessingFunc returned: %v, %v", result, err)
 
 	if err != nil {
 		log.Errorw("Error enriching image", logging.ImageName(image.GetName().GetFullName()), logging.Err(err))
