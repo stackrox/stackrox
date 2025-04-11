@@ -9,8 +9,8 @@ global:
     tarballName: collected-metrics.tar.gz
   measurements: []
 jobs:
-  - name: cluster-density
-    namespace: cluster-density
+  - name: berserker-load
+    namespace: berserker
     jobIterations: 5
     jobPause: 1000h
     qps: 20
@@ -31,12 +31,17 @@ jobs:
       pod-security.kubernetes.io/warn: privileged
     objects:
 
-      - objectTemplate: deployment.yml
+      - objectTemplate: process-load-deployment.yml
         replicas: 5
         inputVars:
           podReplicas: 2
 
       - objectTemplate: endpoint-load-deployment.yml
+        replicas: 5
+        inputVars:
+          podReplicas: 2
+
+      - objectTemplate: connection-load-deployment.yml
         replicas: 5
         inputVars:
           podReplicas: 2
@@ -47,8 +52,8 @@ jobs:
       - objectTemplate: secret.yml
         replicas: 10
 
-      - objectTemplate: configmap.yml
+      - objectTemplate: berserker-configmap-endpoints-zipf.yml
         replicas: 10
 
-      - objectTemplate: berserker-configmap-endpoints-zipf.yml
+      - objectTemplate: berserker-configmap-connections.yml
         replicas: 10
