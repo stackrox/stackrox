@@ -17,6 +17,8 @@ type imageCVECoreResponse struct {
 	FixableImagesWithModerateSeverity  int        `db:"fixable_moderate_severity_count"`
 	ImagesWithLowSeverity              int        `db:"low_severity_count"`
 	FixableImagesWithLowSeverity       int        `db:"fixable_low_severity_count"`
+	ImagesWithUnknownSeverity          int        `db:"unknown_severity_count"`
+	FixableImagesWithUnknownSeverity   int        `db:"fixable_unknown_severity_count"`
 	TopCVSS                            *float32   `db:"cvss_max"`
 	AffectedImageCount                 int        `db:"image_sha_count"`
 	FirstDiscoveredInSystem            *time.Time `db:"cve_created_time_min"`
@@ -42,6 +44,8 @@ func (c *imageCVECoreResponse) GetImagesBySeverity() common.ResourceCountByCVESe
 		FixableModerateSeverityCount:  c.FixableImagesWithModerateSeverity,
 		LowSeverityCount:              c.ImagesWithLowSeverity,
 		FixableLowSeverityCount:       c.FixableImagesWithLowSeverity,
+		UnknownSeverityCount:          c.ImagesWithUnknownSeverity,
+		FixableUnknownSeverityCount:   c.FixableImagesWithUnknownSeverity,
 	}
 }
 

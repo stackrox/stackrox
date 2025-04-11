@@ -278,7 +278,7 @@ func (s *NodeCVECoreResolverTestSuite) TestNodeCVECountBySeverity() {
 	s.Require().NoError(err)
 	expectedQ = tryUnsuppressedQuery(expectedQ)
 	expectedQ = noOrphanedCVEsQuery(s.T(), expectedQ)
-	cbs := nodecve.NewCountByNodeCVESeverity(7, 3, 6, 2, 5, 1, 4, 0)
+	cbs := nodecve.NewCountByNodeCVESeverity(7, 3, 6, 2, 5, 1, 4, 0, 0, 0)
 
 	s.nodeCVEView.EXPECT().CountBySeverity(s.ctx, expectedQ).Return(cbs, nil)
 	response, err := s.resolver.NodeCVECountBySeverity(s.ctx, *q)
@@ -312,7 +312,7 @@ func (s *NodeCVECoreResolverTestSuite) TestNodeCVECountBySeverityWithQuery() {
 	expectedQ := search.NewQueryBuilder().AddStrings(search.Node, "node").ProtoQuery()
 	expectedQ = tryUnsuppressedQuery(expectedQ)
 	expectedQ = noOrphanedCVEsQuery(s.T(), expectedQ)
-	cbs := nodecve.NewCountByNodeCVESeverity(7, 3, 6, 2, 5, 1, 4, 0)
+	cbs := nodecve.NewCountByNodeCVESeverity(7, 3, 6, 2, 5, 1, 4, 0, 0, 0)
 
 	s.nodeCVEView.EXPECT().CountBySeverity(s.ctx, expectedQ).Return(cbs, nil)
 	response, err := s.resolver.NodeCVECountBySeverity(s.ctx, *q)
@@ -402,7 +402,7 @@ func (s *NodeCVECoreResolverTestSuite) TestNodeCVESubResolvers() {
 	s.Equal(ts, response.FirstDiscoveredInSystem(s.ctx).Time)
 
 	// CountByNodeCVESeverity
-	sev := nodecve.NewCountByNodeCVESeverity(7, 3, 6, 2, 5, 1, 4, 0)
+	sev := nodecve.NewCountByNodeCVESeverity(7, 3, 6, 2, 5, 1, 4, 0, 0, 0)
 	cveCoreMock.EXPECT().GetNodeCountBySeverity().Return(sev)
 	sevResolver, err := response.AffectedNodeCountBySeverity(s.ctx)
 	s.NoError(err)

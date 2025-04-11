@@ -23,6 +23,8 @@ type ResourceCountByImageCVESeverity struct {
 	FixableModerateSeverityCount  int `db:"fixable_moderate_severity_count"`
 	LowSeverityCount              int `db:"low_severity_count"`
 	FixableLowSeverityCount       int `db:"fixable_low_severity_count"`
+	UnknownSeverityCount          int `db:"unknown_severity_count"`
+	FixableUnknownSeverityCount   int `db:"fixable_unknown_severity_count"`
 }
 
 func (r *ResourceCountByImageCVESeverity) GetCriticalSeverityCount() ResourceCountByFixability {
@@ -50,5 +52,12 @@ func (r *ResourceCountByImageCVESeverity) GetLowSeverityCount() ResourceCountByF
 	return &resourceCountByFixability{
 		total:   r.LowSeverityCount,
 		fixable: r.FixableLowSeverityCount,
+	}
+}
+
+func (r *ResourceCountByImageCVESeverity) GetUnknownSeverityCount() ResourceCountByFixability {
+	return &resourceCountByFixability{
+		total:   r.UnknownSeverityCount,
+		fixable: r.FixableUnknownSeverityCount,
 	}
 }

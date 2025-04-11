@@ -15,6 +15,7 @@ func init() {
 			"important: ResourceCountByFixability!",
 			"moderate: ResourceCountByFixability!",
 			"low: ResourceCountByFixability!",
+			"unknown: ResourceCountByFixability!",
 		}),
 		schema.AddType("ResourceCountByFixability", []string{
 			"total: Int!",
@@ -57,6 +58,11 @@ func (resolver *resourceCountBySeverityResolver) Moderate(ctx context.Context) (
 // Low returns the number of resource with low CVE impact.
 func (resolver *resourceCountBySeverityResolver) Low(ctx context.Context) (*resourceCountByFixabilityResolver, error) {
 	return resolver.root.wrapResourceCountByFixabilityContext(ctx, resolver.data.GetLowSeverityCount(), nil)
+}
+
+// Unknown returns the number of resource with unknown CVE impact.
+func (resolver *resourceCountBySeverityResolver) Unknown(ctx context.Context) (*resourceCountByFixabilityResolver, error) {
+	return resolver.root.wrapResourceCountByFixabilityContext(ctx, resolver.data.GetUnknownSeverityCount(), nil)
 }
 
 type resourceCountByFixabilityResolver struct {
