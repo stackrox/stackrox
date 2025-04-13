@@ -532,11 +532,15 @@ require (
 replace github.com/nxadm/tail => github.com/stackrox/tail v1.4.9-0.20240806130957-77cf33bea65f
 
 // @stackrox/install
-// github.com/stackrox/helm-operator is a modified fork of github.com/operator-framework/helm-operator-plugins that
-// we currently depend on.
-// It includes a number of features and bug fixes which we faced in StackRox. We use this fork
-// primarily to iterate faster. See https://issues.redhat.com/browse/ROX-7911
-replace github.com/operator-framework/helm-operator-plugins => github.com/stackrox/helm-operator v0.0.12-0.20250211113659-1b2840226a8b
+replace (
+	// Enhanced to support removal of arbitrary resources.
+	github.com/helm/helm-mapkubeapis => github.com/porridge/helm-mapkubeapis v0.0.0-20250220113302-2f740596cb45
+	// github.com/stackrox/helm-operator is a modified fork of github.com/operator-framework/helm-operator-plugins that
+	// we currently depend on.
+	// It includes a number of features and bug fixes which we faced in StackRox. We use this fork
+	// primarily to iterate faster. See https://issues.redhat.com/browse/ROX-7911
+	github.com/operator-framework/helm-operator-plugins => github.com/stackrox/helm-operator v0.0.12-0.20250211113659-1b2840226a8b
+)
 
 // @stackrox/sensor-ecosystem
 replace (
