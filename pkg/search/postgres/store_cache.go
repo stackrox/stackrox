@@ -244,6 +244,18 @@ func (c *cachedStore[T, PT]) Count(ctx context.Context, q *v1.Query) (int, error
 	return c.underlyingStore.Count(ctx, q)
 }
 
+// CountBy returns the number of objects in the store matching the query.
+func (c *cachedStore[T, PT]) CountBy(ctx context.Context, q *v1.Query) ([]search.CountByWrapper, error) {
+	if q == nil || q.EqualVT(search.EmptyQuery()) {
+		count, err := c.countFromCache(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return []search.CountByWrapper{{Count: count}}, nil
+	}
+	return c.underlyingStore.CountBy(ctx, q)
+}
+
 func (c *cachedStore[T, PT]) countFromCache(ctx context.Context) (int, error) {
 	defer c.setCacheOperationDurationTime(time.Now(), ops.Count)
 	c.cacheLock.RLock()
