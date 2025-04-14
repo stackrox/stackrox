@@ -946,28 +946,4 @@ func getTestCVE() *storage.EmbeddedVulnerability {
 		Severity:   storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
 		State:      storage.VulnerabilityState_OBSERVED,
 	}
-	//return &storage.EmbeddedVulnerability{
-	//	Cve:                   "CVE-2022-1552",
-	//	Cvss:                  8.8,
-	//	Summary:               "",
-	//	Link:                  "",
-	//	SetFixedBy:            nil,
-	//	ScoreVersion:          0,
-	//	CvssV2:                nil,
-	//	CvssV3:                nil,
-	//	PublishedOn:           nil,
-	//	LastModified:          nil,
-	//	VulnerabilityType:     0,
-	//	VulnerabilityTypes:    nil,
-	//	Suppressed:            false,
-	//	SuppressActivation:    nil,
-	//	SuppressExpiry:        nil,
-	//	FirstSystemOccurrence: nil,
-	//	FirstImageOccurrence:  nil,
-	//	Severity:              0,
-	//	State:                 0,
-	//	CvssMetrics:           nil,
-	//	NvdCvss:               0,
-	//	Epss:                  nil,
-	//}
 }
