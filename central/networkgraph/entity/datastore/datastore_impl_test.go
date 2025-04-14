@@ -15,7 +15,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/networkgraph/externalsrcs"
 	"github.com/stackrox/rox/pkg/networkgraph/testutils"
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
@@ -23,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/sac/testconsts"
 	sacTestUtils "github.com/stackrox/rox/pkg/sac/testutils"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/predicate"
@@ -649,9 +649,9 @@ func (s *NetworkEntityDataStoreTestSuite) setupSACReadSingleTest() ([]sac.Resour
 	cidr := "192.168.2.0/24"
 	entity1ID, err = externalsrcs.NewGlobalScopedScopedID(cidr)
 	s.Require().NoError(err)
-	entity2ID, err = externalsrcs.NewClusterScopedID(fixtureconsts.Cluster1, cidr)
+	entity2ID, err = externalsrcs.NewClusterScopedID(testconsts.Cluster1, cidr)
 	s.Require().NoError(err)
-	entity3ID, err = externalsrcs.NewClusterScopedID(fixtureconsts.Cluster2, cidr)
+	entity3ID, err = externalsrcs.NewClusterScopedID(testconsts.Cluster2, cidr)
 	s.Require().NoError(err)
 
 	entityName := "cidr1"
@@ -669,7 +669,7 @@ func (s *NetworkEntityDataStoreTestSuite) setupSACReadSingleTest() ([]sac.Resour
 		entityName,
 		cidr,
 		true,
-		fixtureconsts.Cluster1,
+		testconsts.Cluster1,
 		false,
 	)
 
@@ -680,9 +680,9 @@ func (s *NetworkEntityDataStoreTestSuite) setupSACReadSingleTest() ([]sac.Resour
 	s.Require().NoError(err)
 
 	var insertedCount int
-	s.treeMgr.EXPECT().GetNetworkTree(gomock.Any(), fixtureconsts.Cluster1).Return(trees[cluster1])
-	s.expectPushExternalNetworkEntitiesToSensor(fixtureconsts.Cluster1)
-	insertedCount, err = s.ds.CreateExtNetworkEntitiesForCluster(ctx, fixtureconsts.Cluster1, cluster1Entity)
+	s.treeMgr.EXPECT().GetNetworkTree(gomock.Any(), testconsts.Cluster1).Return(trees[cluster1])
+	s.expectPushExternalNetworkEntitiesToSensor(testconsts.Cluster1)
+	insertedCount, err = s.ds.CreateExtNetworkEntitiesForCluster(ctx, testconsts.Cluster1, cluster1Entity)
 	s.Require().NoError(err)
 	s.Require().Equal(1, insertedCount)
 
@@ -1044,7 +1044,7 @@ func (s *NetworkEntityDataStoreTestSuite) TestGetAllEntitiesForClusterSAC() {
 			s.graphConfig.EXPECT().
 				GetNetworkGraphConfig(gomock.Any()).
 				Return(&storage.NetworkGraphConfig{HideDefaultExternalSrcs: false}, nil)
-			targetClusterID := fixtureconsts.Cluster1
+			targetClusterID := testconsts.Cluster1
 			fetchedEntities, testErr := s.ds.GetAllEntitiesForCluster(ctx, targetClusterID)
 			s.NoError(testErr)
 			protoassert.ElementsMatch(s.T(), tc.expectedEntities, fetchedEntities)
@@ -1171,7 +1171,7 @@ func (s *NetworkEntityDataStoreTestSuite) TestCreateExternalNetworkEntitySAC() {
 	cidr := "192.168.2.0/24"
 	globalEntityID, err = externalsrcs.NewGlobalScopedScopedID(cidr)
 	s.Require().NoError(err)
-	clusterEntityID, err = externalsrcs.NewClusterScopedID(fixtureconsts.Cluster1, cidr)
+	clusterEntityID, err = externalsrcs.NewClusterScopedID(testconsts.Cluster1, cidr)
 	s.Require().NoError(err)
 
 	entityName := "cidr1"
@@ -1190,7 +1190,7 @@ func (s *NetworkEntityDataStoreTestSuite) TestCreateExternalNetworkEntitySAC() {
 		entityName,
 		cidr,
 		true,
-		fixtureconsts.Cluster1,
+		testconsts.Cluster1,
 		false,
 	)
 
@@ -1262,11 +1262,11 @@ func (s *NetworkEntityDataStoreTestSuite) TestCreateExternalNetworkEntitySAC() {
 			ctx := testContexts[tc.contextName]
 			// for creation and removal
 			s.treeMgr.EXPECT().
-				GetNetworkTree(gomock.Any(), fixtureconsts.Cluster1).
+				GetNetworkTree(gomock.Any(), testconsts.Cluster1).
 				Return(tree.NewDefaultNetworkTreeWrapper()).
 				AnyTimes()
 			s.connMgr.EXPECT().
-				PushExternalNetworkEntitiesToSensor(gomock.Any(), fixtureconsts.Cluster1).
+				PushExternalNetworkEntitiesToSensor(gomock.Any(), testconsts.Cluster1).
 				Return(nil).
 				AnyTimes()
 			testErr := s.ds.CreateExternalNetworkEntity(ctx, cluster1Entity, false)
@@ -1288,7 +1288,7 @@ func (s *NetworkEntityDataStoreTestSuite) TestUpdateExternalNetworkEntitySAC() {
 	cidr := "192.168.2.0/24"
 	globalEntityID, err = externalsrcs.NewGlobalScopedScopedID(cidr)
 	s.Require().NoError(err)
-	clusterEntityID, err = externalsrcs.NewClusterScopedID(fixtureconsts.Cluster1, cidr)
+	clusterEntityID, err = externalsrcs.NewClusterScopedID(testconsts.Cluster1, cidr)
 	s.Require().NoError(err)
 
 	entityName := "cidr1"
@@ -1307,7 +1307,7 @@ func (s *NetworkEntityDataStoreTestSuite) TestUpdateExternalNetworkEntitySAC() {
 		entityName,
 		cidr,
 		true,
-		fixtureconsts.Cluster1,
+		testconsts.Cluster1,
 		false,
 	)
 	updatedGlobalEntity := globalEntity.CloneVT()
@@ -1385,11 +1385,11 @@ func (s *NetworkEntityDataStoreTestSuite) TestUpdateExternalNetworkEntitySAC() {
 			ctx := testContexts[tc.contextName]
 			// for creation, update and removal
 			s.treeMgr.EXPECT().
-				GetNetworkTree(gomock.Any(), fixtureconsts.Cluster1).
+				GetNetworkTree(gomock.Any(), testconsts.Cluster1).
 				Return(tree.NewDefaultNetworkTreeWrapper()).
 				AnyTimes()
 			s.connMgr.EXPECT().
-				PushExternalNetworkEntitiesToSensor(gomock.Any(), fixtureconsts.Cluster1).
+				PushExternalNetworkEntitiesToSensor(gomock.Any(), testconsts.Cluster1).
 				Return(nil).
 				AnyTimes()
 			createErr := s.ds.CreateExternalNetworkEntity(creationCtx, cluster1Entity, false)
@@ -1402,7 +1402,7 @@ func (s *NetworkEntityDataStoreTestSuite) TestUpdateExternalNetworkEntitySAC() {
 	}
 }
 
-func (s *NetworkEntityDataStoreTestSuite) TestCreateExtNetworkEntitiesForCluster() {
+func (s *NetworkEntityDataStoreTestSuite) TestCreateExtNetworkEntitiesForClusterSAC() {
 	testContexts := sacTestUtils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.NetworkGraph)
 	cleanupCtx := sac.WithAllAccess(context.Background())
 
@@ -1412,7 +1412,7 @@ func (s *NetworkEntityDataStoreTestSuite) TestCreateExtNetworkEntitiesForCluster
 	cidr := "192.168.2.0/24"
 	globalEntityID, err = externalsrcs.NewGlobalScopedScopedID(cidr)
 	s.Require().NoError(err)
-	clusterEntityID, err = externalsrcs.NewClusterScopedID(fixtureconsts.Cluster1, cidr)
+	clusterEntityID, err = externalsrcs.NewClusterScopedID(testconsts.Cluster1, cidr)
 	s.Require().NoError(err)
 
 	entityName := "cidr1"
@@ -1431,7 +1431,7 @@ func (s *NetworkEntityDataStoreTestSuite) TestCreateExtNetworkEntitiesForCluster
 		entityName,
 		cidr,
 		true,
-		fixtureconsts.Cluster1,
+		testconsts.Cluster1,
 		false,
 	)
 
@@ -1459,19 +1459,14 @@ func (s *NetworkEntityDataStoreTestSuite) TestCreateExtNetworkEntitiesForCluster
 		s.Run(name, func() {
 			ctx := testContexts[tc.contextName]
 			s.treeMgr.EXPECT().
-				GetNetworkTree(gomock.Any(), fixtureconsts.Cluster1).
+				GetNetworkTree(gomock.Any(), testconsts.Cluster1).
 				Return(tree.NewDefaultNetworkTreeWrapper()).
 				Times(1)
 			s.connMgr.EXPECT().
-				PushExternalNetworkEntitiesToSensor(gomock.Any(), fixtureconsts.Cluster1).
+				PushExternalNetworkEntitiesToSensor(gomock.Any(), testconsts.Cluster1).
 				Return(nil).
 				AnyTimes()
-			_, testErr := s.ds.CreateExtNetworkEntitiesForCluster(ctx, fixtureconsts.Cluster1, globalEntity)
-			if tc.expectedError != nil {
-				s.Error(testErr)
-			} else {
-				s.NoError(testErr)
-			}
+			// cleanup
 			s.treeMgr.EXPECT().
 				GetNetworkTree(gomock.Any(), globalClusterID).
 				Return(tree.NewDefaultNetworkTreeWrapper()).
@@ -1480,6 +1475,12 @@ func (s *NetworkEntityDataStoreTestSuite) TestCreateExtNetworkEntitiesForCluster
 				PushExternalNetworkEntitiesToAllSensors(gomock.Any()).
 				Return(nil).
 				AnyTimes()
+			_, testErr := s.ds.CreateExtNetworkEntitiesForCluster(ctx, testconsts.Cluster1, globalEntity)
+			if tc.expectedError != nil {
+				s.Error(testErr)
+			} else {
+				s.NoError(testErr)
+			}
 			cleanupErr := s.ds.DeleteExternalNetworkEntity(cleanupCtx, globalEntityID.String())
 			s.NoError(cleanupErr)
 		})
@@ -1513,34 +1514,35 @@ func (s *NetworkEntityDataStoreTestSuite) TestCreateExtNetworkEntitiesForCluster
 		s.Run(name, func() {
 			ctx := testContexts[tc.contextName]
 			s.treeMgr.EXPECT().
-				GetNetworkTree(gomock.Any(), fixtureconsts.Cluster1).
+				GetNetworkTree(gomock.Any(), testconsts.Cluster1).
 				Return(tree.NewDefaultNetworkTreeWrapper()).
 				AnyTimes()
 			s.connMgr.EXPECT().
-				PushExternalNetworkEntitiesToSensor(gomock.Any(), fixtureconsts.Cluster1).
+				PushExternalNetworkEntitiesToSensor(gomock.Any(), testconsts.Cluster1).
 				Return(nil).
 				AnyTimes()
-			_, testErr := s.ds.CreateExtNetworkEntitiesForCluster(ctx, fixtureconsts.Cluster1, cluster1Entity)
+			// cleanup
+			s.treeMgr.EXPECT().
+				GetNetworkTree(gomock.Any(), testconsts.Cluster1).
+				Return(tree.NewDefaultNetworkTreeWrapper()).
+				AnyTimes()
+			s.connMgr.EXPECT().
+				PushExternalNetworkEntitiesToSensor(gomock.Any(), testconsts.Cluster1).
+				Return(nil).
+				AnyTimes()
+			_, testErr := s.ds.CreateExtNetworkEntitiesForCluster(ctx, testconsts.Cluster1, cluster1Entity)
 			if tc.expectedError != nil {
 				s.Error(testErr)
 			} else {
 				s.NoError(testErr)
 			}
-			s.treeMgr.EXPECT().
-				GetNetworkTree(gomock.Any(), fixtureconsts.Cluster1).
-				Return(tree.NewDefaultNetworkTreeWrapper()).
-				AnyTimes()
-			s.connMgr.EXPECT().
-				PushExternalNetworkEntitiesToSensor(gomock.Any(), fixtureconsts.Cluster1).
-				Return(nil).
-				AnyTimes()
 			cleanupErr := s.ds.DeleteExternalNetworkEntity(cleanupCtx, clusterEntityID.String())
 			s.NoError(cleanupErr)
 		})
 	}
 }
 
-func (s *NetworkEntityDataStoreTestSuite) TestDeleteExternalNetworkEntity() {
+func (s *NetworkEntityDataStoreTestSuite) TestDeleteExternalNetworkEntitySAC() {
 	testContexts := sacTestUtils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.NetworkGraph)
 	createCtx := sac.WithAllAccess(context.Background())
 	cleanupCtx := sac.WithAllAccess(context.Background())
@@ -1551,7 +1553,7 @@ func (s *NetworkEntityDataStoreTestSuite) TestDeleteExternalNetworkEntity() {
 	cidr := "192.168.2.0/24"
 	globalEntityID, err = externalsrcs.NewGlobalScopedScopedID(cidr)
 	s.Require().NoError(err)
-	clusterEntityID, err = externalsrcs.NewClusterScopedID(fixtureconsts.Cluster1, cidr)
+	clusterEntityID, err = externalsrcs.NewClusterScopedID(testconsts.Cluster1, cidr)
 	s.Require().NoError(err)
 
 	entityName := "cidr1"
@@ -1570,7 +1572,7 @@ func (s *NetworkEntityDataStoreTestSuite) TestDeleteExternalNetworkEntity() {
 		entityName,
 		cidr,
 		true,
-		fixtureconsts.Cluster1,
+		testconsts.Cluster1,
 		false,
 	)
 
@@ -1643,11 +1645,11 @@ func (s *NetworkEntityDataStoreTestSuite) TestDeleteExternalNetworkEntity() {
 			ctx := testContexts[tc.contextName]
 			// for creation and removal
 			s.treeMgr.EXPECT().
-				GetNetworkTree(gomock.Any(), fixtureconsts.Cluster1).
+				GetNetworkTree(gomock.Any(), testconsts.Cluster1).
 				Return(tree.NewDefaultNetworkTreeWrapper()).
 				AnyTimes()
 			s.connMgr.EXPECT().
-				PushExternalNetworkEntitiesToSensor(gomock.Any(), fixtureconsts.Cluster1).
+				PushExternalNetworkEntitiesToSensor(gomock.Any(), testconsts.Cluster1).
 				Return(nil).
 				AnyTimes()
 			creationErr := s.ds.CreateExternalNetworkEntity(createCtx, cluster1Entity, false)
