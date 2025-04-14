@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sync"
+	"k8s.io/kube-openapi/pkg/util/sets"
 )
 
 // DataStore is the entry point for modifying Config data.
@@ -26,6 +27,11 @@ type DataStore interface {
 	GetVulnerabilityExceptionConfig(ctx context.Context) (*storage.VulnerabilityExceptionConfig, error)
 	GetPublicConfig() (*storage.PublicConfig, error)
 	UpsertConfig(context.Context, *storage.Config) error
+
+	GetPlatformComponentConfig(context.Context) (*storage.PlatformComponentConfig, bool, error)
+	UpsertPlatformComponentConfigRule(context.Context, *storage.PlatformComponentConfig_Rule) error
+	UpsertPlatformComponentConfigRules(context.Context, []*storage.PlatformComponentConfig_Rule) (*storage.PlatformComponentConfig, error)
+	DeletePlatformComponentConfigRules(context.Context, ...string) error
 }
 
 const (
@@ -224,4 +230,106 @@ func clusterRetentionConfigsEqual(c1 *storage.DecommissionedClusterRetentionConf
 	}
 	return c1.GetRetentionDurationDays() == c2.GetRetentionDurationDays() &&
 		reflect.DeepEqual(c1.GetIgnoreClusterLabels(), c2.GetIgnoreClusterLabels())
+}
+
+func (d *datastoreImpl) GetPlatformComponentConfig(ctx context.Context) (*storage.PlatformComponentConfig, bool, error) {
+	if ok, err := administrationSAC.ReadAllowed(ctx); err != nil {
+		return nil, false, err
+	} else if !ok {
+		return nil, false, nil
+	}
+
+	adminCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Administration)))
+
+	config, found, err := d.store.Get(adminCtx)
+	if config == nil {
+		return nil, false, nil
+	}
+	return config.GetPlatformComponentConfig(), found && config.GetPlatformComponentConfig() != nil, err
+}
+
+func (d *datastoreImpl) UpsertPlatformComponentConfigRule(ctx context.Context, rule *storage.PlatformComponentConfig_Rule) error {
+	if ok, err := administrationSAC.WriteAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return nil
+	}
+
+	adminCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Administration)))
+
+	config, found, err := d.store.Get(adminCtx)
+	if !found || err != nil {
+		return err
+	}
+	if config.PlatformComponentConfig.Rules == nil {
+		config.PlatformComponentConfig.Rules = make([]*storage.PlatformComponentConfig_Rule, 0)
+	}
+	config.PlatformComponentConfig.Rules = append(config.PlatformComponentConfig.Rules, rule)
+	return d.store.Upsert(adminCtx, config)
+}
+
+func (d *datastoreImpl) UpsertPlatformComponentConfigRules(ctx context.Context, rules []*storage.PlatformComponentConfig_Rule) (*storage.PlatformComponentConfig, error) {
+	if ok, err := administrationSAC.WriteAllowed(ctx); err != nil {
+		return nil, err
+	} else if !ok {
+		return nil, nil
+	}
+
+	adminCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Administration)))
+
+	config, found, err := d.store.Get(adminCtx)
+	if !found || err != nil {
+		return nil, err
+	}
+	if config.PlatformComponentConfig.Rules == nil {
+		config.PlatformComponentConfig.Rules = make([]*storage.PlatformComponentConfig_Rule, 0)
+	}
+	for _, rule := range rules {
+		config.PlatformComponentConfig.Rules = append(config.PlatformComponentConfig.Rules, rule)
+	}
+	err = d.store.Upsert(adminCtx, config)
+	if err != nil {
+		return nil, err
+	}
+	return config.PlatformComponentConfig, nil
+}
+
+func (d *datastoreImpl) DeletePlatformComponentConfigRules(ctx context.Context, rules ...string) error {
+	if ok, err := administrationSAC.WriteAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return nil
+	}
+
+	adminCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Administration)))
+
+	config, found, err := d.store.Get(adminCtx)
+	if !found || err != nil {
+		return err
+	}
+	if config.PlatformComponentConfig.Rules == nil {
+		config.PlatformComponentConfig.Rules = make([]*storage.PlatformComponentConfig_Rule, 0)
+	}
+	idSet := sets.NewString(rules...)
+	newRules := make([]*storage.PlatformComponentConfig_Rule, 0)
+	for _, rule := range config.PlatformComponentConfig.Rules {
+		if idSet.Has(rule.GetName()) {
+			continue
+		}
+		newRules = append(newRules, rule)
+	}
+	config.PlatformComponentConfig.Rules = newRules
+	return d.store.Upsert(adminCtx, config)
 }

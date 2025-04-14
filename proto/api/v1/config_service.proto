@@ -53,6 +53,10 @@ message UpdateVulnerabilityExceptionConfigResponse {
   VulnerabilityExceptionConfig config = 1;
 }
 
+message PutPlatformComponentConfigRequest {
+  repeated storage.PlatformComponentConfig.Rule rules = 1;
+}
+
 // ConfigService APIs can be used to manage Central config.
 service ConfigService {
   rpc GetPublicConfig(Empty) returns (storage.PublicConfig) {
@@ -70,6 +74,17 @@ service ConfigService {
   rpc UpdateVulnerabilityExceptionConfig(UpdateVulnerabilityExceptionConfigRequest) returns (UpdateVulnerabilityExceptionConfigResponse) {
     option (google.api.http) = {
       put: "/v1/config/private/exception/vulnerabilities"
+      body: "*"
+    };
+  }
+
+  rpc GetPlatformComponentConfig(Empty) returns (storage.PlatformComponentConfig) {
+    option (google.api.http) = {get: "/v1/config/platformcomponent"};
+  }
+
+  rpc UpdatePlatformComponentConfig(PutPlatformComponentConfigRequest) returns (storage.PlatformComponentConfig) {
+    option (google.api.http) = {
+      put: "/v1/config/platformcomponent"
       body: "*"
     };
   }
