@@ -64,7 +64,7 @@ function ClustersTable({
         }));
     }
 
-    function isExpanded(clusterId: string, col: ColId) {
+    function isCellExpanded(clusterId: string, col: ColId) {
         return expanded[clusterId] === col;
     }
 
@@ -148,7 +148,7 @@ function ClustersTable({
                                         <Td
                                             dataLabel="Status"
                                             compoundExpand={{
-                                                isExpanded: isExpanded(clusterId, COL.STATUS),
+                                                isExpanded: isCellExpanded(clusterId, COL.STATUS),
                                                 onToggle: () => toggle(clusterId, COL.STATUS),
                                                 rowIndex,
                                                 columnIndex: 3,
@@ -164,7 +164,7 @@ function ClustersTable({
                                         <Td
                                             dataLabel="Sensor upgrade status"
                                             compoundExpand={{
-                                                isExpanded: isExpanded(clusterId, COL.SENSOR),
+                                                isExpanded: isCellExpanded(clusterId, COL.SENSOR),
                                                 onToggle: () => toggle(clusterId, COL.SENSOR),
                                                 rowIndex,
                                                 columnIndex: 4,
@@ -211,7 +211,7 @@ function ClustersTable({
                                             />
                                         </Td>
                                     </Tr>
-                                    {isExpanded(clusterId, COL.STATUS) && (
+                                    {isCellExpanded(clusterId, COL.STATUS) && (
                                         <Tr isExpanded>
                                             <Td colSpan={colSpan}>
                                                 <ExpandableRowContent>
@@ -222,7 +222,7 @@ function ClustersTable({
                                             </Td>
                                         </Tr>
                                     )}
-                                    {isExpanded(clusterId, COL.SENSOR) && (
+                                    {isCellExpanded(clusterId, COL.SENSOR) && (
                                         <Tr isExpanded>
                                             <Td colSpan={colSpan}>
                                                 <ExpandableRowContent>
