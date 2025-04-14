@@ -1,5 +1,5 @@
 import React, { ReactElement, useState } from 'react';
-import { Alert, Bullseye, Button, PageSection, Spinner } from '@patternfly/react-core';
+import { Alert, Bullseye, Button, Divider, PageSection, Spinner } from '@patternfly/react-core';
 
 import LinkShim from 'Components/PatternFly/LinkShim';
 import useAnalytics, { CREATE_CLUSTER_REGISTRATION_SECRET_CLICKED } from 'hooks/useAnalytics';
@@ -16,6 +16,7 @@ import ClusterRegistrationSecretsHeader, {
 } from './ClusterRegistrationSecretsHeader';
 import ClusterRegistrationSecretsTable from './ClusterRegistrationSecretsTable';
 import RevokeClusterRegistrationSecretModal from './RevokeClusterRegistrationSecretModal';
+import ClusterRegistrationSecretTechPreviewAlert from './ClusterRegistrationSecretTechPreviewAlert';
 
 export type ClusterRegistrationSecretsPageProps = {
     hasWriteAccessForClusterRegistrationSecrets: boolean;
@@ -57,13 +58,17 @@ function ClusterRegistrationSecretsPage({
         }
     }
 
-    /* eslint-disable no-nested-ternary */
     return (
         <>
             <ClusterRegistrationSecretsHeader
                 headerActions={headerActions}
                 title={titleClusterRegistrationSecrets}
             />
+
+            <Divider component="div" />
+            <PageSection component="div" variant="light">
+                <ClusterRegistrationSecretTechPreviewAlert />
+            </PageSection>
             <PageSection component="div">
                 {isFetching ? (
                     <Bullseye>
@@ -100,7 +105,6 @@ function ClusterRegistrationSecretsPage({
             </PageSection>
         </>
     );
-    /* eslint-enable no-nested-ternary */
 }
 
 export default ClusterRegistrationSecretsPage;
