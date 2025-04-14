@@ -14,9 +14,14 @@ func splitComponentsV2(parts ImageParts) ([]ComponentParts, error) {
 			return nil, err
 		}
 
+		cves, err := splitCVEsV2(parts.Image.Id, generatedComponentV2.GetId(), component)
+		if err != nil {
+			return nil, err
+		}
+
 		cp := ComponentParts{
 			ComponentV2: generatedComponentV2,
-			Children:    splitCVEsV2(parts.Image.Id, generatedComponentV2.GetId(), component),
+			Children:    cves,
 		}
 
 		ret = append(ret, cp)
@@ -25,10 +30,13 @@ func splitComponentsV2(parts ImageParts) ([]ComponentParts, error) {
 	return ret, nil
 }
 
-func splitCVEsV2(imageID string, componentID string, embedded *storage.EmbeddedImageScanComponent) []CVEParts {
+func splitCVEsV2(imageID string, componentID string, embedded *storage.EmbeddedImageScanComponent) ([]CVEParts, error) {
 	ret := make([]CVEParts, 0, len(embedded.GetVulns()))
-	for cveIndex, cve := range embedded.GetVulns() {
-		convertedCVE := utils.EmbeddedVulnerabilityToImageCVEV2(imageID, componentID, cveIndex, cve)
+	for _, cve := range embedded.GetVulns() {
+		convertedCVE, err := utils.EmbeddedVulnerabilityToImageCVEV2(imageID, componentID, cve)
+		if err != nil {
+			return nil, err
+		}
 
 		cp := CVEParts{
 			CVEV2: convertedCVE,
@@ -36,7 +44,7 @@ func splitCVEsV2(imageID string, componentID string, embedded *storage.EmbeddedI
 		ret = append(ret, cp)
 	}
 
-	return ret
+	return ret, nil
 }
 
 // GenerateImageComponentV2 returns top-level image component from embedded component.

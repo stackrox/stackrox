@@ -337,11 +337,15 @@ func getImageCVEV2Resolvers(ctx context.Context, root *Resolver, imageID string,
 		return nil, err
 	}
 	resolvers := make([]ImageVulnerabilityResolver, 0, len(component.GetVulns()))
-	for idx, vuln := range component.GetVulns() {
+	for _, vuln := range component.GetVulns() {
 		if !predicate.Matches(vuln) {
 			continue
 		}
-		converted := cveConverter.EmbeddedVulnerabilityToImageCVEV2(imageID, componentID, idx, vuln)
+		converted, err := cveConverter.EmbeddedVulnerabilityToImageCVEV2(imageID, componentID, vuln)
+		if err != nil {
+			return nil, err
+		}
+
 		resolver, err := root.wrapImageCVEV2(converted, true, nil)
 		if err != nil {
 			return nil, err
@@ -704,11 +708,9 @@ func (resolver *imageComponentV2Resolver) TopImageVulnerability(ctx context.Cont
 	// Short path. Full image is embedded when image scan resolver is called.
 	if embeddedComponent := embeddedobjs.ComponentFromContext(resolver.ctx); embeddedComponent != nil {
 		var topVuln *storage.EmbeddedVulnerability
-		var topIndex int
-		for idx, vuln := range embeddedComponent.GetVulns() {
+		for _, vuln := range embeddedComponent.GetVulns() {
 			if topVuln == nil || vuln.GetCvss() > topVuln.GetCvss() {
 				topVuln = vuln
-				topIndex = idx
 			}
 		}
 		if topVuln == nil {
@@ -718,9 +720,12 @@ func (resolver *imageComponentV2Resolver) TopImageVulnerability(ctx context.Cont
 		if err != nil {
 			return nil, err
 		}
-		return resolver.root.wrapImageCVEV2WithContext(resolver.ctx,
-			cveConverter.EmbeddedVulnerabilityToImageCVEV2(resolver.ImageId(resolver.ctx), componentID, topIndex, topVuln), true, nil,
-		)
+
+		convertedTopVuln, err := cveConverter.EmbeddedVulnerabilityToImageCVEV2(resolver.ImageId(resolver.ctx), componentID, topVuln)
+		if err != nil {
+			return nil, err
+		}
+		return resolver.root.wrapImageCVEV2WithContext(resolver.ctx, convertedTopVuln, true, nil)
 	}
 
 	return resolver.root.TopImageVulnerability(resolver.imageComponentScopeContext(ctx), RawQuery{})

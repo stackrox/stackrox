@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/scancomponent"
+	"github.com/stretchr/testify/assert"
 )
 
 type componentPieces struct {
@@ -133,7 +134,7 @@ var (
 
 	testCVEs = []*storage.ImageCVEV2{
 		{
-			Id:      cve.IDV2("cve1", getTestComponentID(), "0"),
+			Id:      getTestCVEID(testVulns[0], getTestComponentID()),
 			ImageId: "sha",
 			CveBaseInfo: &storage.CVEInfo{
 				Cve:          "cve1",
@@ -200,7 +201,7 @@ var (
 			ComponentId:          getTestComponentID(),
 		},
 		{
-			Id:      cve.IDV2("cve2", getTestComponentID(), "1"),
+			Id:      getTestCVEID(testVulns[1], getTestComponentID()),
 			ImageId: "sha",
 			CveBaseInfo: &storage.CVEInfo{
 				Cve:          "cve2",
@@ -266,13 +267,20 @@ func TestImageCVEV2ToEmbeddedCVEs(t *testing.T) {
 
 func TestEmbeddedCVEToImageCVEV2(t *testing.T) {
 	for idx, embeddedVuln := range testVulns {
-		convertedVuln := EmbeddedVulnerabilityToImageCVEV2(componentInfo[idx].imageID, componentInfo[idx].componentID, componentInfo[idx].cveIndex, embeddedVuln)
+		convertedVuln, err := EmbeddedVulnerabilityToImageCVEV2(componentInfo[idx].imageID, componentInfo[idx].componentID, embeddedVuln)
+		assert.NoError(t, err)
 		protoassert.Equal(t, testCVEs[idx], convertedVuln)
 	}
 }
 
 func getTestComponentID() string {
 	id, _ := scancomponent.ComponentIDV2(testComponent, "sha")
+
+	return id
+}
+
+func getTestCVEID(testCVE *storage.EmbeddedVulnerability, componentID string) string {
+	id, _ := cve.IDV2(testCVE, componentID)
 
 	return id
 }
