@@ -29,7 +29,8 @@ import (
 const (
 	clusterID = fixtureconsts.Cluster1
 
-	flowsCountStmt = "select count(*) from network_flows_v2"
+	flowsCountStmt    = "select count(*) from network_flows_v2"
+	entitiesCountStmt = "select count(*) from network_entities"
 )
 
 type NetworkflowStoreSuite struct {
@@ -62,7 +63,8 @@ func (s *NetworkflowStoreSuite) SetupTest() {
 }
 
 func (s *NetworkflowStoreSuite) TearDownTest() {
-	s.entityStore.DeleteExternalNetworkEntitiesForCluster(s.ctx, clusterID)
+	err := s.entityStore.DeleteExternalNetworkEntitiesForCluster(s.ctx, clusterID)
+	s.Nil(err)
 }
 
 func (s *NetworkflowStoreSuite) TearDownSuite() {
@@ -273,8 +275,16 @@ func (s *NetworkflowStoreSuite) TestPruneStaleNetworkFlows() {
 }
 
 func (s *NetworkflowStoreSuite) TestPruneOrphanedExternalEntities() {
+	now := time.Now()
+
 	extEntity1 := ngTestutils.GetDiscoveredExtSrcNetworkEntity("223.42.0.1/32", clusterID)
-	s.entityStore.UpdateExternalNetworkEntity(s.ctx, extEntity1, false)
+	err := s.entityStore.UpdateExternalNetworkEntity(s.ctx, extEntity1, false)
+	s.Nil(err)
+
+	extEntity2 := ngTestutils.GetDiscoveredExtSrcNetworkEntity("223.42.0.2/32", clusterID)
+	err = s.entityStore.UpdateExternalNetworkEntity(s.ctx, extEntity2, false)
+	s.Nil(err)
+
 	flows := []*storage.NetworkFlow{
 		{
 			Props: &storage.NetworkFlowProperties{
@@ -289,32 +299,57 @@ func (s *NetworkflowStoreSuite) TestPruneOrphanedExternalEntities() {
 				},
 			},
 			ClusterId:         clusterID,
-			LastSeenTimestamp: timestamppb.New(time.Now().Add(-1000)),
+			LastSeenTimestamp: timestamppb.New(now.Add(-1000)),
+		},
+		{
+			Props: &storage.NetworkFlowProperties{
+				DstPort: 22,
+				DstEntity: &storage.NetworkEntityInfo{
+					Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+					Id:   extEntity2.GetInfo().Id,
+				},
+				SrcEntity: &storage.NetworkEntityInfo{
+					Type: storage.NetworkEntityInfo_DEPLOYMENT,
+					Id:   fixtureconsts.Deployment1,
+				},
+			},
+			ClusterId:         clusterID,
+			LastSeenTimestamp: timestamppb.New(now.Add(-1000)),
 		},
 	}
 
-	protocompat.TimestampNow()
-
-	err := s.flowStore.UpsertFlows(s.ctx, flows, timestamp.Now())
+	err = s.flowStore.UpsertFlows(s.ctx, flows, timestamp.FromGoTime(now))
 	s.Nil(err)
 
+	// flows initially in the DB
 	row := s.pgDB.DB.QueryRow(s.ctx, flowsCountStmt)
 	var count int
 	err = row.Scan(&count)
 	s.Nil(err)
-	s.Equal(count, len(flows))
+	s.Equal(len(flows), count)
 
-	window := time.Now().UTC().Add(-100)
+	// entities initially in the DB
+	row = s.pgDB.DB.QueryRow(s.ctx, entitiesCountStmt)
+	err = row.Scan(&count)
+	s.Nil(err)
+	s.Equal(2, count)
 
+	// pruning
+	window := now.Add(-100)
 	err = s.flowStore.RemoveOrphanedFlows(s.ctx, &window)
 	s.Nil(err)
 
+	// flows after pruning
 	row = s.pgDB.DB.QueryRow(s.ctx, flowsCountStmt)
 	err = row.Scan(&count)
 	s.Nil(err)
 	s.Equal(0, count)
 
-	s.Empty(s.entityStore.GetAllEntities(s.ctx))
+	// entities after pruning
+	row = s.pgDB.DB.QueryRow(s.ctx, entitiesCountStmt)
+	err = row.Scan(&count)
+	s.Nil(err)
+	s.Equal(0, count)
 }
 
 func deploymentIngressFlowsPredicate(props *storage.NetworkFlowProperties) bool {
