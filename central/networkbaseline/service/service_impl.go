@@ -2,12 +2,14 @@ package service
 
 import (
 	"context"
+	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	deploymentUtils "github.com/stackrox/rox/central/deployment/utils"
 	"github.com/stackrox/rox/central/networkbaseline/datastore"
 	"github.com/stackrox/rox/central/networkbaseline/manager"
+	flowDatastore "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -16,15 +18,19 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/networkgraph"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	"google.golang.org/grpc"
 )
 
 var (
-	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
+	defaultSince = -1 * time.Hour
+	authorizer   = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.DeploymentExtension)): {
 			v1.NetworkBaselineService_GetNetworkBaseline_FullMethodName,
 			v1.NetworkBaselineService_GetNetworkBaselineStatusForFlows_FullMethodName,
+			v1.NetworkBaselineService_GetNetworkBaselineStatusForExternalFlows_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.DeploymentExtension)): {
 			v1.NetworkBaselineService_ModifyBaselineStatusForPeers_FullMethodName,
@@ -39,6 +45,8 @@ type serviceImpl struct {
 
 	datastore datastore.ReadOnlyDataStore
 	manager   manager.Manager
+
+	flowStore flowDatastore.ClusterDataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -76,6 +84,61 @@ func (s *serviceImpl) GetNetworkBaselineStatusForFlows(
 	// Got the baseline, check status of each passed in peer
 	statuses := s.getStatusesForPeers(baseline, request.GetPeers())
 	return &v1.NetworkBaselineStatusResponse{Statuses: statuses}, nil
+}
+
+func (s *serviceImpl) GetNetworkBaselineStatusForExternalFlows(ctx context.Context, request *v1.NetworkBaselineExternalStatusRequest) (*v1.NetworkBaselineExternalStatusResponse, error) {
+	baseline, found, err := s.datastore.GetNetworkBaseline(ctx, request.GetDeploymentId())
+	if err != nil {
+		return nil, err
+	}
+
+	if !found {
+		baseline, err = s.createBaseline(ctx, request.GetDeploymentId())
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	since := protocompat.ConvertTimestampToTimeOrNil(request.GetSince())
+	if since == nil {
+		t := time.Now().Add(defaultSince)
+		since = &t
+	}
+
+	peers, err := s.manager.GetExternalNetworkPeers(ctx, request.GetDeploymentId(), request.GetQuery(), since)
+	if err != nil {
+		return nil, err
+	}
+
+	statuses := s.getStatusesForPeers(baseline, peers)
+
+	anomalousFlows := make([]*v1.NetworkBaselinePeerStatus, 0)
+	baselineFlows := make([]*v1.NetworkBaselinePeerStatus, 0)
+
+	for _, status := range statuses {
+		switch status.GetStatus() {
+		case v1.NetworkBaselinePeerStatus_ANOMALOUS:
+			anomalousFlows = append(anomalousFlows, status)
+		case v1.NetworkBaselinePeerStatus_BASELINE:
+			baselineFlows = append(baselineFlows, status)
+		}
+	}
+
+	totalAnomalous := len(anomalousFlows)
+	totalBaseline := len(baselineFlows)
+
+	pg := request.GetPagination()
+	if pg != nil {
+		anomalousFlows = paginated.PaginateSlice(int(pg.Offset), int(pg.Limit), anomalousFlows)
+		baselineFlows = paginated.PaginateSlice(int(pg.Offset), int(pg.Limit), baselineFlows)
+	}
+
+	return &v1.NetworkBaselineExternalStatusResponse{
+		Anomalous:      anomalousFlows,
+		TotalAnomalous: int32(totalAnomalous),
+		Baseline:       baselineFlows,
+		TotalBaseline:  int32(totalBaseline),
+	}, nil
 }
 
 // GetNetworkBaseline gets the network baseline associated with the deployment.
