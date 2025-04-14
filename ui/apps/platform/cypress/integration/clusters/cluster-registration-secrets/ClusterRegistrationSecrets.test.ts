@@ -2,8 +2,7 @@ import withAuth from '../../../helpers/basicAuth';
 import { readFileFromDownloads } from '../../../helpers/file';
 import { getInputByLabel } from '../../../helpers/formHelpers';
 
-// TODO The entry point for this functionality will change once the removal from integrations is complete
-import { visitIntegrationsDashboardFromLeftNav } from '../../integrations/integrations.helpers';
+import { visitClusters } from '../Clusters.helpers';
 
 import { cleanupClusterRegistrationSecretsWithName } from './ClusterRegistrationSecrets.helpers';
 
@@ -21,12 +20,9 @@ describe('Cluster registration secrets', () => {
     });
 
     it('should create a new Cluster registration secret and then view and delete', () => {
-        visitIntegrationsDashboardFromLeftNav();
+        visitClusters();
 
-        cy.get('section:contains("Authentication Tokens")').scrollIntoView();
-        cy.get(
-            'section:contains("Authentication Tokens") a:contains("Cluster Registration Secret")'
-        ).click();
+        cy.get('a:contains("Cluster registration secrets")').click();
 
         const crsLinkInTableSelector = `td[data-label="Name"] a:contains("${testCrsName}")`;
 
