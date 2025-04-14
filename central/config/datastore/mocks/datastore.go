@@ -41,6 +41,25 @@ func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 	return m.recorder
 }
 
+// DeletePlatformComponentConfigRules mocks base method.
+func (m *MockDataStore) DeletePlatformComponentConfigRules(arg0 context.Context, arg1 ...string) error {
+	m.ctrl.T.Helper()
+	varargs := []any{arg0}
+	for _, a := range arg1 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "DeletePlatformComponentConfigRules", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeletePlatformComponentConfigRules indicates an expected call of DeletePlatformComponentConfigRules.
+func (mr *MockDataStoreMockRecorder) DeletePlatformComponentConfigRules(arg0 any, arg1 ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{arg0}, arg1...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePlatformComponentConfigRules", reflect.TypeOf((*MockDataStore)(nil).DeletePlatformComponentConfigRules), varargs...)
+}
+
 // GetConfig mocks base method.
 func (m *MockDataStore) GetConfig(arg0 context.Context) (*storage.Config, error) {
 	m.ctrl.T.Helper()
@@ -54,6 +73,22 @@ func (m *MockDataStore) GetConfig(arg0 context.Context) (*storage.Config, error)
 func (mr *MockDataStoreMockRecorder) GetConfig(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetConfig", reflect.TypeOf((*MockDataStore)(nil).GetConfig), arg0)
+}
+
+// GetPlatformComponentConfig mocks base method.
+func (m *MockDataStore) GetPlatformComponentConfig(arg0 context.Context) (*storage.PlatformComponentConfig, bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPlatformComponentConfig", arg0)
+	ret0, _ := ret[0].(*storage.PlatformComponentConfig)
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetPlatformComponentConfig indicates an expected call of GetPlatformComponentConfig.
+func (mr *MockDataStoreMockRecorder) GetPlatformComponentConfig(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPlatformComponentConfig", reflect.TypeOf((*MockDataStore)(nil).GetPlatformComponentConfig), arg0)
 }
 
 // GetPrivateConfig mocks base method.
@@ -113,4 +148,33 @@ func (m *MockDataStore) UpsertConfig(arg0 context.Context, arg1 *storage.Config)
 func (mr *MockDataStoreMockRecorder) UpsertConfig(arg0, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertConfig", reflect.TypeOf((*MockDataStore)(nil).UpsertConfig), arg0, arg1)
+}
+
+// UpsertPlatformComponentConfigRule mocks base method.
+func (m *MockDataStore) UpsertPlatformComponentConfigRule(arg0 context.Context, arg1 *storage.PlatformComponentConfig_Rule) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpsertPlatformComponentConfigRule", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpsertPlatformComponentConfigRule indicates an expected call of UpsertPlatformComponentConfigRule.
+func (mr *MockDataStoreMockRecorder) UpsertPlatformComponentConfigRule(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertPlatformComponentConfigRule", reflect.TypeOf((*MockDataStore)(nil).UpsertPlatformComponentConfigRule), arg0, arg1)
+}
+
+// UpsertPlatformComponentConfigRules mocks base method.
+func (m *MockDataStore) UpsertPlatformComponentConfigRules(arg0 context.Context, arg1 []*storage.PlatformComponentConfig_Rule) (*storage.PlatformComponentConfig, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpsertPlatformComponentConfigRules", arg0, arg1)
+	ret0, _ := ret[0].(*storage.PlatformComponentConfig)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpsertPlatformComponentConfigRules indicates an expected call of UpsertPlatformComponentConfigRules.
+func (mr *MockDataStoreMockRecorder) UpsertPlatformComponentConfigRules(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertPlatformComponentConfigRules", reflect.TypeOf((*MockDataStore)(nil).UpsertPlatformComponentConfigRules), arg0, arg1)
 }
