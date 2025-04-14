@@ -105,6 +105,29 @@ func GetExtSrcNetworkEntityInfo(id, name, cidr string, isDefault bool, isDiscove
 	}
 }
 
+// GetDiscoveredExtSrcNetworkEntity returns a discovered external source named after its CIDR.
+func GetDiscoveredExtSrcNetworkEntity(cidr string, clusterID string) *storage.NetworkEntity {
+	id, _ := externalsrcs.NewClusterScopedID(clusterID, cidr)
+	return &storage.NetworkEntity{
+		Info: &storage.NetworkEntityInfo{
+			Id:   id.String(),
+			Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+			Desc: &storage.NetworkEntityInfo_ExternalSource_{
+				ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
+					Name: cidr,
+					Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
+						Cidr: cidr,
+					},
+					Discovered: true,
+				},
+			},
+		},
+		Scope: &storage.NetworkEntity_Scope{
+			ClusterId: clusterID,
+		},
+	}
+}
+
 // GetNetworkFlow returns a network flow constructed from supplied data.
 func GetNetworkFlow(src, dst *storage.NetworkEntityInfo, port int, protocol storage.L4Protocol, ts *time.Time) *storage.NetworkFlow {
 	return &storage.NetworkFlow{
