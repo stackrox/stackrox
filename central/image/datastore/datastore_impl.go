@@ -204,7 +204,7 @@ func (ds *datastoreImpl) GetImagesBatch(ctx context.Context, shas []string) ([]*
 	if ok, err := imagesSAC.ReadAllowed(ctx); err != nil {
 		return nil, err
 	} else if ok {
-		imgs, _, err = ds.storage.GetMany(ctx, shas)
+		imgs, err = ds.storage.GetByIDs(ctx, shas)
 		if err != nil {
 			return nil, err
 		}

@@ -694,60 +694,48 @@ func (s *storeImpl) deleteImageComponents(ctx context.Context, tx *postgres.Tx, 
 	return nil
 }
 
-// GetMany returns the objects specified by the IDs or the index in the missing indices slice
-func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Image, []int, error) {
+// GetByIDs returns the objects specified by the IDs or the index in the missing indices slice
+func (s *storeImpl) GetByIDs(ctx context.Context, ids []string) ([]*storage.Image, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "Image")
 
-	return pgutils.Retry3(ctx, func() ([]*storage.Image, []int, error) {
-		return s.retryableGetMany(ctx, ids)
+	return pgutils.Retry2(ctx, func() ([]*storage.Image, error) {
+		return s.retryableGetByIDs(ctx, ids)
 	})
 }
 
-func (s *storeImpl) retryableGetMany(ctx context.Context, ids []string) ([]*storage.Image, []int, error) {
+func (s *storeImpl) retryableGetByIDs(ctx context.Context, ids []string) ([]*storage.Image, error) {
 	conn, release, err := s.acquireConn(ctx, ops.GetMany, "Image")
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	defer release()
 
 	tx, err := conn.Begin(ctx)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	resultsByID := make(map[string]*storage.Image)
+	elems := make([]*storage.Image, 0, len(ids))
 	for _, id := range ids {
 		msg, found, err := s.getFullImage(ctx, tx, id)
 		if err != nil {
 			// No changes are made to the database, so COMMIT or ROLLBACK have the same effect.
 			if err := tx.Commit(ctx); err != nil {
-				return nil, nil, err
+				return nil, err
 			}
-			return nil, nil, err
+			return nil, err
 		}
 		if !found {
 			continue
 		}
-		resultsByID[msg.GetId()] = msg
+		elems = append(elems, msg)
 	}
 
 	// No changes are made to the database, so COMMIT or ROLLBACK have the same effect.
 	if err := tx.Commit(ctx); err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-
-	missingIndices := make([]int, 0, len(ids)-len(resultsByID))
-	// It is important that the elems are populated in the same order as the input ids
-	// slice, since some calling code relies on that to maintain order.
-	elems := make([]*storage.Image, 0, len(resultsByID))
-	for i, id := range ids {
-		if result, ok := resultsByID[id]; !ok {
-			missingIndices = append(missingIndices, i)
-		} else {
-			elems = append(elems, result)
-		}
-	}
-	return elems, missingIndices, nil
+	return elems, nil
 }
 
 // WalkByQuery returns the objects specified by the query
