@@ -1,6 +1,6 @@
 //go:build sql_integration
 
-package postgres
+package tests
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store"
+	postgresFlowStore "github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/networkgraph/testutils"
@@ -19,7 +20,7 @@ import (
 func BenchmarkGetAllFlows(b *testing.B) {
 	psql := pgtest.ForT(b)
 
-	clusterStore := NewClusterStore(psql)
+	clusterStore := postgresFlowStore.NewClusterStore(psql)
 	flowStore, err := clusterStore.CreateFlowStore(context.Background(), fixtureconsts.Cluster1)
 	require.NoError(b, err)
 
@@ -46,7 +47,7 @@ func BenchmarkGetAllFlows(b *testing.B) {
 func BenchmarkUpsertFlows(b *testing.B) {
 	psql := pgtest.ForT(b)
 
-	clusterStore := NewClusterStore(psql)
+	clusterStore := postgresFlowStore.NewClusterStore(psql)
 	flowStore, err := clusterStore.CreateFlowStore(context.Background(), fixtureconsts.Cluster1)
 	require.NoError(b, err)
 
@@ -85,7 +86,7 @@ func benchmarkUpsertFlows(flowStore store.FlowStore, numFlows uint32) func(*test
 func BenchmarkGetExternalFlows(b *testing.B) {
 	psql := pgtest.ForT(b)
 
-	clusterStore := NewClusterStore(psql)
+	clusterStore := postgresFlowStore.NewClusterStore(psql)
 	flowStore, err := clusterStore.CreateFlowStore(context.Background(), fixtureconsts.Cluster1)
 	require.NoError(b, err)
 
@@ -103,7 +104,7 @@ func BenchmarkGetExternalFlows(b *testing.B) {
 func BenchmarkGetFlowsForDeployment(b *testing.B) {
 	psql := pgtest.ForT(b)
 
-	clusterStore := NewClusterStore(psql)
+	clusterStore := postgresFlowStore.NewClusterStore(psql)
 	flowStore, err := clusterStore.CreateFlowStore(context.Background(), fixtureconsts.Cluster1)
 	require.NoError(b, err)
 
