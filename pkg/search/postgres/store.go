@@ -187,7 +187,7 @@ func (s *genericStore[T, PT]) Search(ctx context.Context, q *v1.Query) ([]search
 }
 
 func (s *genericStore[T, PT]) walkByQuery(ctx context.Context, query *v1.Query, fn func(obj PT) error) error {
-	return RunCursorQueryForSchemaFn[T, PT](ctx, s.schema, query, s.db, fn)
+	return RunQueryForSchemaFn[T, PT](ctx, s.schema, query, s.db, fn)
 }
 
 // Walk iterates over all the objects in the store and applies the closure.
@@ -222,11 +222,12 @@ func (s *genericStore[T, PT]) Get(ctx context.Context, id string) (PT, bool, err
 func (s *genericStore[T, PT]) GetByQuery(ctx context.Context, query *v1.Query) ([]*T, error) {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.GetByQuery)
 
-	rows, err := RunGetManyQueryForSchema[T, PT](ctx, s.schema, query, s.db)
+	rows := make([]*T, 0, query.GetPagination().GetLimit())
+	err := RunQueryForSchemaFn(ctx, s.schema, query, s.db, func(obj PT) error {
+		rows = append(rows, obj)
+		return nil
+	})
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, nil
-		}
 		return nil, err
 	}
 	return rows, nil
@@ -268,21 +269,15 @@ func (s *genericStore[T, PT]) GetMany(ctx context.Context, identifiers []string)
 
 	q := search.NewQueryBuilder().AddDocIDs(identifiers...).ProtoQuery()
 
-	rows, err := RunGetManyQueryForSchema[T, PT](ctx, s.schema, q, s.db)
+	resultsByID := make(map[string]PT, len(identifiers))
+	err := RunQueryForSchemaFn(ctx, s.schema, q, s.db, func(msg PT) error {
+		resultsByID[s.pkGetter(msg)] = msg
+		return nil
+	})
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			missingIndices := make([]int, 0, len(identifiers))
-			for i := range identifiers {
-				missingIndices = append(missingIndices, i)
-			}
-			return nil, missingIndices, nil
-		}
 		return nil, nil, err
 	}
-	resultsByID := make(map[string]PT, len(rows))
-	for _, msg := range rows {
-		resultsByID[s.pkGetter(msg)] = msg
-	}
+
 	missingIndices := make([]int, 0, len(identifiers)-len(resultsByID))
 	// It is important that the elems are populated in the same order as the input identifiers
 	// slice, since some calling code relies on that to maintain order.
