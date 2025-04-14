@@ -935,9 +935,12 @@ func (m *manager) GetExternalNetworkPeers(ctx context.Context, deploymentID stri
 		return nil, errors.Wrap(err, "failed to get matching entities")
 	}
 
+	entitiesMap := make(map[string]*storage.NetworkEntityInfo)
 	entityFilter := set.NewStringSet()
 	for _, entity := range entities {
-		entityFilter.Add(entity.GetInfo().GetId())
+		info := entity.GetInfo()
+		entityFilter.Add(info.GetId())
+		entitiesMap[info.GetId()] = info
 	}
 
 	pred := func(props *storage.NetworkFlowProperties) bool {
@@ -979,15 +982,21 @@ func (m *manager) GetExternalNetworkPeers(ctx context.Context, deploymentID stri
 		props := flow.GetProps()
 		src, dst := props.GetSrcEntity(), props.GetDstEntity()
 
-		if flow.GetProps().GetSrcEntity().GetType() == storage.NetworkEntityInfo_DEPLOYMENT {
+		if src.GetType() == storage.NetworkEntityInfo_DEPLOYMENT {
+			info := entitiesMap[dst.GetId()]
 			entity = &v1.NetworkBaselinePeerEntity{
 				Id:   dst.GetId(),
 				Type: dst.GetType(),
+				Cidr: info.GetExternalSource().GetCidr(),
+				Name: info.GetExternalSource().GetName(),
 			}
 		} else {
+			info := entitiesMap[src.GetId()]
 			entity = &v1.NetworkBaselinePeerEntity{
 				Id:   src.GetId(),
 				Type: src.GetType(),
+				Cidr: info.GetExternalSource().GetCidr(),
+				Name: info.GetExternalSource().GetName(),
 			}
 			ingress = true
 		}

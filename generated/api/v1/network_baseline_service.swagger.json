@@ -600,6 +600,12 @@
         },
         "type": {
           "$ref": "#/definitions/storageNetworkEntityInfoType"
+        },
+        "name": {
+          "type": "string"
+        },
+        "cidr": {
+          "type": "string"
         }
       }
     },
