@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
 
 import BackdropExporting from 'Components/PatternFly/BackdropExporting';
-import entityTypes from 'constants/entityTypes';
 import ComplianceList from 'Containers/Compliance/List/List';
 import { entityPagePropTypes, entityPageDefaultProps } from 'constants/entityPageProps';
 import ComplianceSearchInput from '../ComplianceSearchInput';
-import Header from '../List/Header';
+import ListHeader from '../List/ListHeader';
 
-const Standard = ({
+const ComplianceEntityStandard = ({
     entityId,
     listEntityType1,
     entityId1,
@@ -21,8 +20,8 @@ const Standard = ({
     };
     return (
         <section className="flex flex-col h-full relative" id="capture-list">
-            <Header
-                entityType={entityTypes.CONTROL}
+            <ListHeader
+                entityType="CONTROL"
                 searchComponent={
                     <ComplianceSearchInput
                         placeholder="Filter standards"
@@ -46,7 +45,7 @@ const Standard = ({
     );
 };
 
-Standard.propTypes = entityPagePropTypes;
-Standard.defaultProps = entityPageDefaultProps;
+ComplianceEntityStandard.propTypes = entityPagePropTypes;
+ComplianceEntityStandard.defaultProps = entityPageDefaultProps;
 
-export default Standard;
+export default ComplianceEntityStandard;

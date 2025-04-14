@@ -3,7 +3,6 @@ import { useLocation } from 'react-router-dom';
 import { gql } from '@apollo/client';
 import pluralize from 'pluralize';
 
-import entityTypes from 'constants/entityTypes';
 import Widget from 'Components/Widget';
 import Query from 'Components/CacheFirstQuery';
 import Loader from 'Components/Loader';
@@ -23,7 +22,7 @@ import isGQLLoading from 'utils/gqlLoading';
 import searchContext from 'Containers/searchContext';
 import useWorkflowMatch from 'hooks/useWorkflowMatch';
 
-import Header from './Header';
+import EntityHeader from './EntityHeader';
 import ResourceTabs from './ResourceTabs';
 
 export const DEPLOYMENT_QUERY = gql`
@@ -52,7 +51,7 @@ function processData(data) {
     return result;
 }
 
-const Deployment = ({
+const ComplianceEntityDeployment = ({
     entityId,
     listEntityType1,
     entityId1,
@@ -81,8 +80,7 @@ const Deployment = ({
 
                 if (listEntityType1 && !sidePanelMode) {
                     const listQuery = {
-                        groupBy:
-                            listEntityType1 === entityTypes.CONTROL ? entityTypes.STANDARD : '',
+                        groupBy: listEntityType1 === 'CONTROL' ? 'STANDARD' : '',
                         deployment: name,
                         ...query[searchParam],
                     };
@@ -103,11 +101,11 @@ const Deployment = ({
                     );
                 } else {
                     const clusterUrl = URLService.getURL(match, location)
-                        .base(entityTypes.CLUSTER, clusterId)
+                        .base('CLUSTER', clusterId)
                         .url();
 
                     const namespaceUrl = URLService.getURL(match, location)
-                        .base(entityTypes.NAMESPACE, namespaceId)
+                        .base('NAMESPACE', namespaceId)
                         .url();
 
                     contents = (
@@ -130,7 +128,7 @@ const Deployment = ({
                                 >
                                     <div className="s-full pb-3">
                                         <EntityCompliance
-                                            entityType={entityTypes.DEPLOYMENT}
+                                            entityType="DEPLOYMENT"
                                             entityId={id}
                                             entityName={name}
                                             clusterName={clusterName}
@@ -165,7 +163,7 @@ const Deployment = ({
                                 <ComplianceByStandards
                                     entityId={id}
                                     entityName={name}
-                                    entityType={entityTypes.DEPLOYMENT}
+                                    entityType="DEPLOYMENT"
                                 />
                             </div>
                         </div>
@@ -176,8 +174,8 @@ const Deployment = ({
                     <section className="flex flex-col h-full w-full">
                         {!sidePanelMode && (
                             <>
-                                <Header
-                                    entityType={entityTypes.DEPLOYMENT}
+                                <EntityHeader
+                                    entityType="DEPLOYMENT"
                                     listEntityType={listEntityType1}
                                     entityName={name}
                                     entityId={id}
@@ -186,9 +184,9 @@ const Deployment = ({
                                 />
                                 <ResourceTabs
                                     entityId={id}
-                                    entityType={entityTypes.DEPLOYMENT}
+                                    entityType="DEPLOYMENT"
                                     selectedType={listEntityType1}
-                                    resourceTabs={[entityTypes.CONTROL]}
+                                    resourceTabs={['CONTROL']}
                                 />
                             </>
                         )}
@@ -200,7 +198,7 @@ const Deployment = ({
         </Query>
     );
 };
-Deployment.propTypes = entityPagePropTypes;
-Deployment.defaultProps = entityPageDefaultProps;
+ComplianceEntityDeployment.propTypes = entityPagePropTypes;
+ComplianceEntityDeployment.defaultProps = entityPageDefaultProps;
 
-export default Deployment;
+export default ComplianceEntityDeployment;

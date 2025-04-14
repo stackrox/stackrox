@@ -2,15 +2,14 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { useLocation } from 'react-router-dom';
 import URLService from 'utils/URLService';
-import entityTypes from 'constants/entityTypes';
 import useWorkflowMatch from 'hooks/useWorkflowMatch';
 
-import NodePage from './Node';
-import NamespacePage from './Namespace';
-import ClusterPage from './Cluster';
-import ControlPage from './Control';
-import DeploymentPage from './Deployment';
-import StandardPage from './Standard';
+import ComplianceEntityCluster from './ComplianceEntityCluster';
+import ComplianceEntityControl from './ComplianceEntityControl';
+import ComplianceEntityDeployment from './ComplianceEntityDeployment';
+import ComplianceEntityNamespace from './ComplianceEntityNamespace';
+import ComplianceEntityNode from './ComplianceEntityNode';
+import ComplianceEntityStandard from './ComplianceEntityStandard';
 
 const EntityPage = () => {
     const location = useLocation();
@@ -30,12 +29,12 @@ const EntityPage = () => {
     };
 
     const pageTypeMap = {
-        [entityTypes.CLUSTER]: <ClusterPage {...pageProps} />,
-        [entityTypes.NODE]: <NodePage {...pageProps} />,
-        [entityTypes.NAMESPACE]: <NamespacePage {...pageProps} />,
-        [entityTypes.CONTROL]: <ControlPage {...pageProps} />,
-        [entityTypes.DEPLOYMENT]: <DeploymentPage {...pageProps} />,
-        [entityTypes.STANDARD]: <StandardPage {...pageProps} />,
+        CLUSTER: <ComplianceEntityCluster {...pageProps} />,
+        CONTROL: <ComplianceEntityControl {...pageProps} />,
+        DEPLOYMENT: <ComplianceEntityDeployment {...pageProps} />,
+        NAMESPACE: <ComplianceEntityNamespace {...pageProps} />,
+        NODE: <ComplianceEntityNode {...pageProps} />,
+        STANDARD: <ComplianceEntityStandard {...pageProps} />,
     };
 
     return pageTypeMap[params.pageEntityType];

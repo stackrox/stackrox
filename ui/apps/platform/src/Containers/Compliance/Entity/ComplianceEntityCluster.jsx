@@ -1,6 +1,5 @@
 import React, { useContext, useState } from 'react';
 
-import entityTypes from 'constants/entityTypes';
 import EntityCompliance from 'Containers/Compliance/widgets/EntityCompliance';
 import ResourceCount from 'Containers/Compliance/widgets/ResourceCount';
 import ClusterVersion from 'Containers/Compliance/widgets/ClusterVersion';
@@ -8,7 +7,7 @@ import Query from 'Components/CacheFirstQuery';
 import usePermissions from 'hooks/usePermissions';
 import { CLUSTER_NAME as QUERY } from 'queries/cluster';
 // TODO: this exception will be unnecessary once Compliance pages are re-structured like Config Management
-/* eslint-disable-next-line import/no-cycle */
+/* eslint-disable import/no-cycle */
 import ComplianceList from 'Containers/Compliance/List/List';
 import ComplianceByStandards from 'Containers/Compliance/widgets/ComplianceByStandards';
 import Loader from 'Components/Loader';
@@ -17,7 +16,7 @@ import { entityPagePropTypes, entityPageDefaultProps } from 'constants/entityPag
 import searchContext from 'Containers/searchContext';
 import isGQLLoading from 'utils/gqlLoading';
 
-import Header from './Header';
+import EntityHeader from './EntityHeader';
 import ResourceTabs from './ResourceTabs';
 import { isComplianceRouteEnabled } from '../complianceRBAC';
 
@@ -26,15 +25,15 @@ function getResourceTabs({
     isComplianceRouteEnabledForNamespaces,
     isComplianceRouteEnabledForNodes,
 }) {
-    const resourceTabs = [entityTypes.CONTROL];
+    const resourceTabs = ['CONTROL'];
     if (isComplianceRouteEnabledForNamespaces) {
-        resourceTabs.push(entityTypes.NAMESPACE);
+        resourceTabs.push('NAMESPACE');
     }
     if (isComplianceRouteEnabledForNodes) {
-        resourceTabs.push(entityTypes.NODE);
+        resourceTabs.push('NODE');
     }
     if (isComplianceRouteEnabledForDeployments) {
-        resourceTabs.push(entityTypes.DEPLOYMENT);
+        resourceTabs.push('DEPLOYMENT');
     }
     return resourceTabs;
 }
@@ -46,7 +45,7 @@ function processData(data) {
     return data.cluster;
 }
 
-const Cluster = ({
+const ComplianceEntityCluster = ({
     entityId,
     listEntityType1,
     entityId1,
@@ -96,8 +95,7 @@ const Cluster = ({
 
                 if (listEntityType1 && !sidePanelMode) {
                     const listQuery = {
-                        groupBy:
-                            listEntityType1 === entityTypes.CONTROL ? entityTypes.STANDARD : '',
+                        groupBy: listEntityType1 === 'CONTROL' ? 'STANDARD' : '',
                         'Cluster Id': entityId,
                         ...query[searchParam],
                     };
@@ -137,7 +135,7 @@ const Cluster = ({
                                 >
                                     <div className="s-full pb-5">
                                         <EntityCompliance
-                                            entityType={entityTypes.CLUSTER}
+                                            entityType="CLUSTER"
                                             entityId={id}
                                             entityName={name}
                                             clusterName={name}
@@ -150,7 +148,7 @@ const Cluster = ({
                                 <ComplianceByStandards
                                     entityId={id}
                                     entityName={name}
-                                    entityType={entityTypes.CLUSTER}
+                                    entityType="CLUSTER"
                                 />
 
                                 {sidePanelMode && isComplianceRouteEnabledForEntities && (
@@ -161,8 +159,8 @@ const Cluster = ({
                                         {isComplianceRouteEnabledForNamespaces && (
                                             <div className="md:pr-3 pb-3">
                                                 <ResourceCount
-                                                    entityType={entityTypes.NAMESPACE}
-                                                    relatedToResourceType={entityTypes.CLUSTER}
+                                                    entityType="NAMESPACE"
+                                                    relatedToResourceType="CLUSTER"
                                                     relatedToResource={cluster}
                                                 />
                                             </div>
@@ -170,8 +168,8 @@ const Cluster = ({
                                         {isComplianceRouteEnabledForNodes && (
                                             <div className="md:pl-3 pb-3">
                                                 <ResourceCount
-                                                    entityType={entityTypes.NODE}
-                                                    relatedToResourceType={entityTypes.CLUSTER}
+                                                    entityType="NODE"
+                                                    relatedToResourceType="CLUSTER"
                                                     relatedToResource={cluster}
                                                 />
                                             </div>
@@ -179,8 +177,8 @@ const Cluster = ({
                                         {isComplianceRouteEnabledForDeployments && (
                                             <div className="md:pr-3 pt-2">
                                                 <ResourceCount
-                                                    entityType={entityTypes.DEPLOYMENT}
-                                                    relatedToResourceType={entityTypes.CLUSTER}
+                                                    entityType="DEPLOYMENT"
+                                                    relatedToResourceType="CLUSTER"
                                                     relatedToResource={cluster}
                                                 />
                                             </div>
@@ -196,8 +194,8 @@ const Cluster = ({
                     <section className="flex flex-col h-full w-full">
                         {!sidePanelMode && (
                             <>
-                                <Header
-                                    entityType={entityTypes.CLUSTER}
+                                <EntityHeader
+                                    entityType="CLUSTER"
                                     listEntityType={listEntityType1}
                                     entityName={name}
                                     entityId={id}
@@ -206,7 +204,7 @@ const Cluster = ({
                                 />
                                 <ResourceTabs
                                     entityId={entityId}
-                                    entityType={entityTypes.CLUSTER}
+                                    entityType="CLUSTER"
                                     selectedType={listEntityType1}
                                     resourceTabs={resourceTabs}
                                 />
@@ -221,7 +219,7 @@ const Cluster = ({
     );
 };
 
-Cluster.propTypes = entityPagePropTypes;
-Cluster.defaultProps = entityPageDefaultProps;
+ComplianceEntityCluster.propTypes = entityPagePropTypes;
+ComplianceEntityCluster.defaultProps = entityPageDefaultProps;
 
-export default Cluster;
+export default ComplianceEntityCluster;

@@ -2,7 +2,6 @@ import React, { useContext, useState } from 'react';
 import { format } from 'date-fns';
 import pluralize from 'pluralize';
 
-import entityTypes from 'constants/entityTypes';
 import { NODE_QUERY } from 'queries/node';
 import Cluster from 'images/cluster.svg';
 import IpAddress from 'images/ip-address.svg';
@@ -22,11 +21,10 @@ import BackdropExporting from 'Components/PatternFly/BackdropExporting';
 import ComplianceList from 'Containers/Compliance/List/List';
 import PageNotFound from 'Components/PageNotFound';
 import { entityPagePropTypes, entityPageDefaultProps } from 'constants/entityPageProps';
-import useCases from 'constants/useCaseTypes';
 import isGQLLoading from 'utils/gqlLoading';
 import searchContext from 'Containers/searchContext';
 
-import Header from './Header';
+import EntityHeader from './EntityHeader';
 import ResourceTabs from './ResourceTabs';
 
 function processData(data) {
@@ -46,7 +44,7 @@ function processData(data) {
     return result;
 }
 
-const Node = ({
+const ComplianceEntityNode = ({
     entityId,
     listEntityType1,
     entityId1,
@@ -66,12 +64,7 @@ const Node = ({
                 }
 
                 if (!data.node) {
-                    return (
-                        <PageNotFound
-                            resourceType={entityTypes.NODE}
-                            useCase={useCases.COMPLIANCE}
-                        />
-                    );
+                    return <PageNotFound resourceType="NODE" useCase="COMPLIANCE" />;
                 }
                 const node = processData(data);
                 const {
@@ -91,8 +84,7 @@ const Node = ({
 
                 if (listEntityType1 && !sidePanelMode) {
                     const listQuery = {
-                        groupBy:
-                            listEntityType1 === entityTypes.CONTROL ? entityTypes.STANDARD : '',
+                        groupBy: listEntityType1 === 'CONTROL' ? 'STANDARD' : '',
                         node: name,
                         ...query[searchParam],
                     };
@@ -133,7 +125,7 @@ const Node = ({
                                 >
                                     <div className="s-full pb-3">
                                         <EntityCompliance
-                                            entityType={entityTypes.NODE}
+                                            entityType="NODE"
                                             entityId={id}
                                             entityName={name}
                                             clusterName={clusterName}
@@ -205,7 +197,7 @@ const Node = ({
                                 <ComplianceByStandards
                                     entityId={id}
                                     entityName={name}
-                                    entityType={entityTypes.NODE}
+                                    entityType="NODE"
                                 />
                             </div>
                         </div>
@@ -216,8 +208,8 @@ const Node = ({
                     <section className="flex flex-col h-full w-full">
                         {!sidePanelMode && (
                             <>
-                                <Header
-                                    entityType={entityTypes.NODE}
+                                <EntityHeader
+                                    entityType="NODE"
                                     listEntityType={listEntityType1}
                                     entityName={name}
                                     entityId={id}
@@ -226,13 +218,9 @@ const Node = ({
                                 />
                                 <ResourceTabs
                                     entityId={id}
-                                    entityType={entityTypes.NODE}
+                                    entityType="NODE"
                                     selectedType={listEntityType1}
-                                    resourceTabs={[
-                                        entityTypes.CONTROL,
-                                        entityTypes.CLUSTER,
-                                        entityTypes.NAMESPACE,
-                                    ]}
+                                    resourceTabs={['CONTROL', 'CLUSTER', 'NAMESPACE']}
                                 />
                             </>
                         )}
@@ -244,7 +232,7 @@ const Node = ({
         </Query>
     );
 };
-Node.propTypes = entityPagePropTypes;
-Node.defaultProps = entityPageDefaultProps;
+ComplianceEntityNode.propTypes = entityPagePropTypes;
+ComplianceEntityNode.defaultProps = entityPageDefaultProps;
 
-export default Node;
+export default ComplianceEntityNode;

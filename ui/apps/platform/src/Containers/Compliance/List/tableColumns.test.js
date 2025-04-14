@@ -1,6 +1,6 @@
 /* eslint jest/expect-expect: ["error", { "assertFunctionNames": ["expectColumnsToContain", "expectColumnsNotToContain"] }] */
 
-import { resourceTypes, standardTypes } from 'constants/entityTypes';
+import { standardTypes } from 'constants/entityTypes';
 import { getColumnsByEntity, getColumnsByStandard } from './tableColumns';
 
 function expectColumnsToContain(columns, shouldContain) {
@@ -43,17 +43,15 @@ const standards = [
 
 describe('Get columns', () => {
     it('can get columns by entity with exclusion', () => {
-        expectColumnsToContain(getColumnsByEntity(resourceTypes.CLUSTER, standards), [
+        expectColumnsToContain(getColumnsByEntity('CLUSTER', standards), [
             'id',
             standardTypes.NIST_800_190,
             standardTypes.NIST_SP_800_53_Rev_4,
         ]);
 
-        expectColumnsToContain(getColumnsByEntity(resourceTypes.NODE, standards), [
-            standardTypes.NIST_800_190,
-        ]);
+        expectColumnsToContain(getColumnsByEntity('NODE', standards), [standardTypes.NIST_800_190]);
 
-        expectColumnsNotToContain(getColumnsByEntity(resourceTypes.NODE, standards), [
+        expectColumnsNotToContain(getColumnsByEntity('NODE', standards), [
             standardTypes.NIST_SP_800_53_Rev_4,
         ]);
     });

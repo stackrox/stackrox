@@ -6,19 +6,20 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Query from 'Components/CacheFirstQuery';
 import CloseButton from 'Components/CloseButton';
 import { PanelNew, PanelBody, PanelHead, PanelHeadEnd } from 'Components/Panel';
-import { resourceTypes, standardEntityTypes } from 'constants/entityTypes';
-// TODO: this exception will be unnecessary once Compliance pages are re-structured like Config Management
-/* eslint-disable import/no-cycle */
-import Control from 'Containers/Compliance/Entity/Control';
 import useWorkflowMatch from 'hooks/useWorkflowMatch';
 import URLService from 'utils/URLService';
 import getEntityName from 'utils/getEntityName';
 import { entityNameQueryMap } from 'utils/queryMap';
 import { truncate } from 'utils/textUtils';
-import Namespace from '../Entity/Namespace';
-import Cluster from '../Entity/Cluster';
-import Node from '../Entity/Node';
-import Deployment from '../Entity/Deployment';
+
+// TODO: this exception will be unnecessary once Compliance pages are re-structured like Config Management
+/* eslint-disable import/no-cycle */
+import ComplianceEntityCluster from '../Entity/ComplianceEntityCluster';
+import ComplianceEntityControl from '../Entity/ComplianceEntityControl';
+import ComplianceEntityDeployment from '../Entity/ComplianceEntityDeployment';
+import ComplianceEntityNamespace from '../Entity/ComplianceEntityNamespace';
+import ComplianceEntityNode from '../Entity/ComplianceEntityNode';
+/* eslint-enable import/no-cycle */
 
 const MAX_CONTROL_TITLE = 120;
 
@@ -29,16 +30,16 @@ const SidePanel = ({ entityType, entityId }) => {
 
     function getEntityPage() {
         switch (entityType) {
-            case resourceTypes.NODE:
-                return <Node entityId={entityId} sidePanelMode />;
-            case resourceTypes.NAMESPACE:
-                return <Namespace entityId={entityId} sidePanelMode />;
-            case resourceTypes.CLUSTER:
-                return <Cluster entityId={entityId} sidePanelMode />;
-            case resourceTypes.DEPLOYMENT:
-                return <Deployment entityId={entityId} sidePanelMode />;
-            case standardEntityTypes.CONTROL:
-                return <Control entityId={entityId} sidePanelMode />;
+            case 'CLUSTER':
+                return <ComplianceEntityCluster entityId={entityId} sidePanelMode />;
+            case 'CONTROL':
+                return <ComplianceEntityControl entityId={entityId} sidePanelMode />;
+            case 'DEPLOYMENT':
+                return <ComplianceEntityDeployment entityId={entityId} sidePanelMode />;
+            case 'NAMESPACE':
+                return <ComplianceEntityNamespace entityId={entityId} sidePanelMode />;
+            case 'NODE':
+                return <ComplianceEntityNode entityId={entityId} sidePanelMode />;
             default:
                 return null;
         }

@@ -1,13 +1,11 @@
 import React, { useContext, useState } from 'react';
 
-import entityTypes from 'constants/entityTypes';
 import Widget from 'Components/Widget';
 import Query from 'Components/CacheFirstQuery';
 import { CONTROL_QUERY as QUERY } from 'queries/controls';
 import ControlDetails from 'Components/ControlDetails';
 import ControlRelatedResourceList from 'Containers/Compliance/widgets/ControlRelatedResourceList';
 import { entityPagePropTypes, entityPageDefaultProps } from 'constants/entityPageProps';
-import useCases from 'constants/useCaseTypes';
 // TODO: this exception will be unnecessary once Compliance pages are re-structured like Config Management
 /* eslint-disable-next-line import/no-cycle */
 import ComplianceList from 'Containers/Compliance/List/List';
@@ -17,10 +15,10 @@ import PageNotFound from 'Components/PageNotFound';
 import searchContext from 'Containers/searchContext';
 import isGQLLoading from 'utils/gqlLoading';
 
-import Header from './Header';
+import EntityHeader from './EntityHeader';
 import ResourceTabs from './ResourceTabs';
 
-const Control = ({
+const ComplianceEntityControl = ({
     entityId,
     listEntityType1,
     entityId1,
@@ -41,12 +39,7 @@ const Control = ({
                 }
 
                 if (!data || !data.results) {
-                    return (
-                        <PageNotFound
-                            resourceType={entityTypes.CONTROL}
-                            useCase={useCases.COMPLIANCE}
-                        />
-                    );
+                    return <PageNotFound resourceType="CONTROL" useCase="COMPLIANCE" />;
                 }
 
                 const { results: control, complianceStandards: standards } = data;
@@ -113,29 +106,29 @@ const Control = ({
                                 {sidePanelMode && (
                                     <>
                                         <ControlRelatedResourceList
-                                            listEntityType={entityTypes.CLUSTER}
-                                            pageEntityType={entityTypes.CONTROL}
+                                            listEntityType="CLUSTER"
+                                            pageEntityType="CONTROL"
                                             pageEntity={control}
                                             standard={standardName}
                                             className={pdfClassName}
                                         />
                                         <ControlRelatedResourceList
-                                            listEntityType={entityTypes.NAMESPACE}
-                                            pageEntityType={entityTypes.CONTROL}
+                                            listEntityType="NAMESPACE"
+                                            pageEntityType="CONTROL"
                                             pageEntity={control}
                                             standard={standardName}
                                             className={pdfClassName}
                                         />
                                         <ControlRelatedResourceList
-                                            listEntityType={entityTypes.NODE}
-                                            pageEntityType={entityTypes.CONTROL}
+                                            listEntityType="NODE"
+                                            pageEntityType="CONTROL"
                                             pageEntity={control}
                                             standard={standardName}
                                             className={pdfClassName}
                                         />
                                         <ControlRelatedResourceList
-                                            listEntityType={entityTypes.DEPLOYMENT}
-                                            pageEntityType={entityTypes.CONTROL}
+                                            listEntityType="DEPLOYMENT"
+                                            pageEntityType="CONTROL"
                                             pageEntity={control}
                                             standard={standardName}
                                             className={pdfClassName}
@@ -151,8 +144,8 @@ const Control = ({
                     <section className="flex flex-col h-full w-full">
                         {!sidePanelMode && (
                             <>
-                                <Header
-                                    entityType={entityTypes.CONTROL}
+                                <EntityHeader
+                                    entityType="CONTROL"
                                     listEntityType={listEntityType1}
                                     entity={control}
                                     entityName={`${standardName} ${name}`}
@@ -161,14 +154,10 @@ const Control = ({
                                 />
                                 <ResourceTabs
                                     entityId={entityId}
-                                    entityType={entityTypes.CONTROL}
+                                    entityType="CONTROL"
                                     selectedType={listEntityType1}
                                     standardId={standardId}
-                                    resourceTabs={[
-                                        entityTypes.NODE,
-                                        entityTypes.DEPLOYMENT,
-                                        entityTypes.CLUSTER,
-                                    ]}
+                                    resourceTabs={['NODE', 'DEPLOYMENT', 'CLUSTER']}
                                 />
                             </>
                         )}
@@ -180,7 +169,7 @@ const Control = ({
         </Query>
     );
 };
-Control.propTypes = entityPagePropTypes;
-Control.defaultProps = entityPageDefaultProps;
+ComplianceEntityControl.propTypes = entityPagePropTypes;
+ComplianceEntityControl.defaultProps = entityPageDefaultProps;
 
-export default Control;
+export default ComplianceEntityControl;

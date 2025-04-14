@@ -4,7 +4,7 @@ import qs from 'qs';
 
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import TableCellLink from 'Components/TableCellLink';
-import { resourceTypes, standardBaseTypes } from 'constants/entityTypes';
+import { standardBaseTypes } from 'constants/entityTypes';
 import { sortVersion } from 'sorters/sorters';
 import { complianceBasePath } from 'routePaths';
 
@@ -224,14 +224,14 @@ export function getColumnsForControl(query) {
 export function getColumnsByEntity(entityType, standards) {
     const filteredStandards = standards.filter(({ scopes }) => scopes.includes(entityType));
     switch (entityType) {
-        case resourceTypes.CLUSTER:
+        case 'CLUSTER':
             return getClusterColumns(filteredStandards);
-        case resourceTypes.NODE:
-            return getNodeColumns(filteredStandards);
-        case resourceTypes.NAMESPACE:
-            return getNamespaceColumns(filteredStandards);
-        case resourceTypes.DEPLOYMENT:
+        case 'DEPLOYMENT':
             return getDeploymentColumns(filteredStandards);
+        case 'NAMESPACE':
+            return getNamespaceColumns(filteredStandards);
+        case 'NODE':
+            return getNodeColumns(filteredStandards);
         default:
             return [];
     }
