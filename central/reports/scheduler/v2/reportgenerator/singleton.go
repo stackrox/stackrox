@@ -5,6 +5,7 @@ import (
 	blobDS "github.com/stackrox/rox/central/blob/datastore"
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	imageCVEDS "github.com/stackrox/rox/central/cve/image/datastore"
+	imageCVE2DS "github.com/stackrox/rox/central/cve/image/v2/datastore"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/graphql/resolvers"
@@ -36,6 +37,7 @@ func initialize() {
 		clusterDS.Singleton(),
 		namespaceDS.Singleton(),
 		imageCVEDS.Singleton(),
+		imageCVE2DS.Singleton(),
 		schema,
 	)
 }
