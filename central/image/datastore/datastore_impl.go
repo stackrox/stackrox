@@ -156,12 +156,12 @@ func (ds *datastoreImpl) canReadImage(ctx context.Context, sha string) (bool, er
 
 // GetManyImageMetadata gets the image data without the scan.
 func (ds *datastoreImpl) GetManyImageMetadata(ctx context.Context, ids []string) ([]*storage.Image, error) {
-	imgs, missingIdx, err := ds.storage.GetManyImageMetadata(ctx, ids)
+	imgs, err := ds.storage.GetManyImageMetadata(ctx, ids)
 	if err != nil {
 		return nil, err
 	}
-	if len(missingIdx) > 0 {
-		log.Errorf("Could not fetch %d/%d some images", len(missingIdx), len(ids))
+	if len(imgs) != len(ids) {
+		log.Errorf("Could not fetch %d/%d some images", len(ids)-len(imgs), len(ids))
 	}
 	for _, img := range imgs {
 		ds.updateImagePriority(img)

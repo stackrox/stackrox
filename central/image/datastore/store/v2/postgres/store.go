@@ -817,48 +817,21 @@ func (s *storeImpl) retryableGetImageMetadata(ctx context.Context, id string) (*
 }
 
 // GetManyImageMetadata returns images without scan/component data.
-func (s *storeImpl) GetManyImageMetadata(ctx context.Context, ids []string) ([]*storage.Image, []int, error) {
+func (s *storeImpl) GetManyImageMetadata(ctx context.Context, ids []string) ([]*storage.Image, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "Image")
 
-	return pgutils.Retry3(ctx, func() ([]*storage.Image, []int, error) {
+	return pgutils.Retry2(ctx, func() ([]*storage.Image, error) {
 		return s.retryableGetManyImageMetadata(ctx, ids)
 	})
 }
 
-func (s *storeImpl) retryableGetManyImageMetadata(ctx context.Context, ids []string) ([]*storage.Image, []int, error) {
+func (s *storeImpl) retryableGetManyImageMetadata(ctx context.Context, ids []string) ([]*storage.Image, error) {
 	if len(ids) == 0 {
-		return nil, nil, nil
+		return nil, nil
 	}
 
 	q := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, ids...).ProtoQuery()
-
-	rows, err := pgSearch.RunGetManyQueryForSchema[storage.Image](ctx, schema, q, s.db)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			missingIndices := make([]int, 0, len(ids))
-			for i := range ids {
-				missingIndices = append(missingIndices, i)
-			}
-			return nil, missingIndices, nil
-		}
-		return nil, nil, err
-	}
-	resultsByID := make(map[string]*storage.Image, len(rows))
-	for _, msg := range rows {
-		resultsByID[msg.GetId()] = msg
-	}
-	missingIndices := make([]int, 0, len(ids)-len(resultsByID))
-	// It is important that the elems are populated in the same order as the input ids
-	// slice, since some calling code relies on that to maintain order.
-	elems := make([]*storage.Image, 0, len(resultsByID))
-	for i, id := range ids {
-		if result, ok := resultsByID[id]; !ok {
-			missingIndices = append(missingIndices, i)
-		} else {
-			elems = append(elems, result)
-		}
-	}
-	return elems, missingIndices, nil
+	return pgSearch.RunGetManyQueryForSchema[storage.Image](ctx, schema, q, s.db)
 }
 
 func (s *storeImpl) UpdateVulnState(ctx context.Context, cve string, imageIDs []string, state storage.VulnerabilityState) error {
