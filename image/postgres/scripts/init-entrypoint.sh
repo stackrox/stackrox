@@ -49,6 +49,14 @@ else
 
     if [ "$PG_DATA_VERSION" -lt "$PG_BINARY_VERSION" ]; then
         # Binaries version is newer, upgrade the data
+        PGDATA_NEW="${PGDATA}-new"
+
+        # Verify that the upgrade data directory does not exist. If it is,
+        # there was an upgrade attempt.
+        if [ -d "$PGDATA_NEW" ]; then
+            echo "Upgraded data directory already exists, stop."
+            exit 1
+        fi
 
         # This is the amount of disk space we currently consume. Normally we
         # could use df as well, since the data will be the only disk space
@@ -73,12 +81,33 @@ else
         fi
 
         # After this point we know there is enough available disk space.
+        OLD_BINARIES="/usr/lib64/pgsql/postgresql-${PG_DATA_VERSION}/bin"
+        NEW_BINARIES="/usr/bin"
+
+        # Not sure how it works now, but during the upgrade group permissions
+        # are rejected.
+        chmod 0700 $PGDATA
+
+        # Try to restart cluster temporary to make sure it was shutdown properly
+        "${OLD_BINARIES}/pg_ctl" start -w --timeout 86400 -o "-h 127.0.0.1"
+        "${OLD_BINARIES}/pg_isready" -h 127.0.0.1
+        "${OLD_BINARIES}/pg_ctl" stop -w
+
+        STATUS=$("${OLD_BINARIES}/pg_controldata" -D "${PGDATA}" |\
+                    grep "Database cluster state" |\
+                    awk -F ':' '{print $2}' |\
+                    tr -d '[:space:]')
+
+        if [ "$STATUS" != "shutdown" ]; then
+            echo "Cluster was not shutdown clearly"
+            exit 1
+        fi
 
         BACKUP_DIR="${PG_BACKUP_VOLUME}/backups/$PG_DATA_VERSION-$PG_BINARY_VERSION/"
         # Do not care about symlinks yet
         if [ -d "${BACKUP_DIR}" ]; then
           echo "An upgrade backup directory already exists, skip."
-          else
+        else
             # Do a backup before upgrading. Since the database is stopped we
             # may as well simple take a filesystem backup. Alternatives would
             # be pg_dump or pg_basebackup, both require running database
@@ -91,22 +120,55 @@ else
 
         echo "Verify backup..."
         BACKUP_VERIFY_PGDATA="${BACKUP_DIR}/backup-restore-test"
-        OLD_BINARIES="/usr/lib64/pgsql/postgresql-13/bin/"
         mkdir -p $BACKUP_VERIFY_PGDATA
         tar -xvf $BACKUP_DIR/backup.tar -C $BACKUP_VERIFY_PGDATA
-        $OLD_BINARIES/pg_ctl -D $BACKUP_VERIFY_PGDATA -w start
-        $OLD_BINARIES/pg_ctl -D $BACKUP_VERIFY_PGDATA -w stop
-        rm -rf $BACKUP_VERIFY_PGDATA
 
-        # Not sure how it works now, but during the upgrade group permissions
-        # are rejected.
-        chmod 0700 $PGDATA
+        "${OLD_BINARIES}/pg_ctl" \
+            -D $BACKUP_VERIFY_PGDATA \
+            -w start -o "-h 127.0.0.1"
+        "${OLD_BINARIES}/pg_ctl" \
+            -D $BACKUP_VERIFY_PGDATA \
+            -w stop
+
+        rm -rf $BACKUP_VERIFY_PGDATA
 
         echo "Upgrade..."
         # Good idea to --check first
-        PGSETUP_PGUPGRADE_OPTIONS='-j 4 -k' \
-            PGPASSWORD=$(cat /run/secrets/stackrox.io/secrets/password) \
-            postgresql-upgrade "${PGDATA}"
+        "${NEW_BINARIES}/initdb" $PGSETUP_INITDB_OPTIONS "${PGDATA_NEW}"
+
+        PGPASSWORD=$(cat /run/secrets/stackrox.io/secrets/password) \
+            "${NEW_BINARIES}/pg_upgrade" \
+                --old-bindir="${OLD_BINARIES}" \
+                --new-bindir="${NEW_BINARIES}" \
+                --old-datadir="${PGDATA}" \
+                --new-datadir="${PGDATA_NEW}" \
+                --clone -j 4 -k --check
+
+        RESULT=$?
+        if [ $RESULT -ne 0 ]; then
+            echo "Upgrade check failed"
+            find "${PGDATA_NEW}" -name pg_upgrade_server.log -exec cat {} \;
+            exit 1
+        fi
+
+        PGPASSWORD=$(cat /run/secrets/stackrox.io/secrets/password) \
+            "${NEW_BINARIES}/pg_upgrade" \
+                --old-bindir="${OLD_BINARIES}" \
+                --new-bindir="${NEW_BINARIES}" \
+                --old-datadir="${PGDATA}" \
+                --new-datadir="${PGDATA_NEW}" \
+                --clone -j 4 -k
+
+        RESULT=$?
+        if [ $RESULT -ne 0 ]; then
+            echo "Upgrade failed"
+            find "${PGDATA_NEW}" -name pg_upgrade_server.log -exec cat {} \;
+            exit 1
+        fi
+
+        mv "${PGDATA}"/*.conf "${PGDATA_NEW}"
+        rm -rf "$PGDATA"
+        mv "$PGDATA_NEW" "$PGDATA"
 
         # Need to update statistics afterwards
         # vacuumdb --all --analyze-in-stages
