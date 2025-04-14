@@ -321,6 +321,9 @@ func addJSONToZip(zipWriter *zipWriter, fileName string, jsonObj interface{}) er
 	return jsonEnc.Encode(jsonObj)
 }
 
+// addProtoJSONToZip mimics addJSONToZip but instead outputs JSON similar to the gRPC gateway.
+// When compared to addJSONToZip, a few advantages include: enums are translated to human friendly
+// strings (ie: "RESOLVED" vs 2), and field names are converted to CamelCase (vs. snake_case) matching the StackRox API output.
 func addProtoJSONToZip(zipWriter *zipWriter, fileName string, protoMsg proto.Message) error {
 	zipWriter.LockWrite()
 	defer zipWriter.UnlockWrite()
