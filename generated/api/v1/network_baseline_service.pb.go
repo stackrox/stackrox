@@ -11,6 +11,7 @@ import (
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -350,6 +351,142 @@ func (x *NetworkBaselineStatusResponse) GetStatuses() []*NetworkBaselinePeerStat
 	return nil
 }
 
+type NetworkBaselineExternalStatusRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	DeploymentId  string                 `protobuf:"bytes,1,opt,name=deployment_id,json=deploymentId,proto3" json:"deployment_id,omitempty"`
+	Query         string                 `protobuf:"bytes,2,opt,name=query,proto3" json:"query,omitempty"`
+	Since         *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=since,proto3" json:"since,omitempty"`
+	Pagination    *Pagination            `protobuf:"bytes,4,opt,name=pagination,proto3" json:"pagination,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *NetworkBaselineExternalStatusRequest) Reset() {
+	*x = NetworkBaselineExternalStatusRequest{}
+	mi := &file_api_v1_network_baseline_service_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *NetworkBaselineExternalStatusRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NetworkBaselineExternalStatusRequest) ProtoMessage() {}
+
+func (x *NetworkBaselineExternalStatusRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_v1_network_baseline_service_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NetworkBaselineExternalStatusRequest.ProtoReflect.Descriptor instead.
+func (*NetworkBaselineExternalStatusRequest) Descriptor() ([]byte, []int) {
+	return file_api_v1_network_baseline_service_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *NetworkBaselineExternalStatusRequest) GetDeploymentId() string {
+	if x != nil {
+		return x.DeploymentId
+	}
+	return ""
+}
+
+func (x *NetworkBaselineExternalStatusRequest) GetQuery() string {
+	if x != nil {
+		return x.Query
+	}
+	return ""
+}
+
+func (x *NetworkBaselineExternalStatusRequest) GetSince() *timestamppb.Timestamp {
+	if x != nil {
+		return x.Since
+	}
+	return nil
+}
+
+func (x *NetworkBaselineExternalStatusRequest) GetPagination() *Pagination {
+	if x != nil {
+		return x.Pagination
+	}
+	return nil
+}
+
+type NetworkBaselineExternalStatusResponse struct {
+	state          protoimpl.MessageState       `protogen:"open.v1"`
+	Anomalous      []*NetworkBaselinePeerStatus `protobuf:"bytes,1,rep,name=anomalous,proto3" json:"anomalous,omitempty"`
+	TotalAnomalous int32                        `protobuf:"varint,2,opt,name=total_anomalous,json=totalAnomalous,proto3" json:"total_anomalous,omitempty"`
+	Baseline       []*NetworkBaselinePeerStatus `protobuf:"bytes,3,rep,name=baseline,proto3" json:"baseline,omitempty"`
+	TotalBaseline  int32                        `protobuf:"varint,4,opt,name=total_baseline,json=totalBaseline,proto3" json:"total_baseline,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *NetworkBaselineExternalStatusResponse) Reset() {
+	*x = NetworkBaselineExternalStatusResponse{}
+	mi := &file_api_v1_network_baseline_service_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *NetworkBaselineExternalStatusResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NetworkBaselineExternalStatusResponse) ProtoMessage() {}
+
+func (x *NetworkBaselineExternalStatusResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_api_v1_network_baseline_service_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NetworkBaselineExternalStatusResponse.ProtoReflect.Descriptor instead.
+func (*NetworkBaselineExternalStatusResponse) Descriptor() ([]byte, []int) {
+	return file_api_v1_network_baseline_service_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *NetworkBaselineExternalStatusResponse) GetAnomalous() []*NetworkBaselinePeerStatus {
+	if x != nil {
+		return x.Anomalous
+	}
+	return nil
+}
+
+func (x *NetworkBaselineExternalStatusResponse) GetTotalAnomalous() int32 {
+	if x != nil {
+		return x.TotalAnomalous
+	}
+	return 0
+}
+
+func (x *NetworkBaselineExternalStatusResponse) GetBaseline() []*NetworkBaselinePeerStatus {
+	if x != nil {
+		return x.Baseline
+	}
+	return nil
+}
+
+func (x *NetworkBaselineExternalStatusResponse) GetTotalBaseline() int32 {
+	if x != nil {
+		return x.TotalBaseline
+	}
+	return 0
+}
+
 type ModifyBaselineStatusForPeersRequest struct {
 	state         protoimpl.MessageState       `protogen:"open.v1"`
 	DeploymentId  string                       `protobuf:"bytes,1,opt,name=deployment_id,json=deploymentId,proto3" json:"deployment_id,omitempty"`
@@ -360,7 +497,7 @@ type ModifyBaselineStatusForPeersRequest struct {
 
 func (x *ModifyBaselineStatusForPeersRequest) Reset() {
 	*x = ModifyBaselineStatusForPeersRequest{}
-	mi := &file_api_v1_network_baseline_service_proto_msgTypes[5]
+	mi := &file_api_v1_network_baseline_service_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -372,7 +509,7 @@ func (x *ModifyBaselineStatusForPeersRequest) String() string {
 func (*ModifyBaselineStatusForPeersRequest) ProtoMessage() {}
 
 func (x *ModifyBaselineStatusForPeersRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_network_baseline_service_proto_msgTypes[5]
+	mi := &file_api_v1_network_baseline_service_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -385,7 +522,7 @@ func (x *ModifyBaselineStatusForPeersRequest) ProtoReflect() protoreflect.Messag
 
 // Deprecated: Use ModifyBaselineStatusForPeersRequest.ProtoReflect.Descriptor instead.
 func (*ModifyBaselineStatusForPeersRequest) Descriptor() ([]byte, []int) {
-	return file_api_v1_network_baseline_service_proto_rawDescGZIP(), []int{5}
+	return file_api_v1_network_baseline_service_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *ModifyBaselineStatusForPeersRequest) GetDeploymentId() string {
@@ -406,7 +543,7 @@ var File_api_v1_network_baseline_service_proto protoreflect.FileDescriptor
 
 const file_api_v1_network_baseline_service_proto_rawDesc = "" +
 	"\n" +
-	"%api/v1/network_baseline_service.proto\x12\x02v1\x1a\x13api/v1/common.proto\x1a\x12api/v1/empty.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1estorage/network_baseline.proto\x1a\x1astorage/network_flow.proto\"`\n" +
+	"%api/v1/network_baseline_service.proto\x12\x02v1\x1a\x13api/v1/common.proto\x1a\x12api/v1/empty.proto\x1a\x17api/v1/pagination.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1estorage/network_baseline.proto\x1a\x1astorage/network_flow.proto\"`\n" +
 	"\x19NetworkBaselinePeerEntity\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x123\n" +
 	"\x04type\x18\x02 \x01(\x0e2\x1f.storage.NetworkEntityInfo.TypeR\x04type\"\xb1\x01\n" +
@@ -425,17 +562,30 @@ const file_api_v1_network_baseline_service_proto_rawDesc = "" +
 	"\rdeployment_id\x18\x01 \x01(\tR\fdeploymentId\x123\n" +
 	"\x05peers\x18\x02 \x03(\v2\x1d.v1.NetworkBaselineStatusPeerR\x05peers\"Z\n" +
 	"\x1dNetworkBaselineStatusResponse\x129\n" +
-	"\bstatuses\x18\x01 \x03(\v2\x1d.v1.NetworkBaselinePeerStatusR\bstatuses\"\x7f\n" +
+	"\bstatuses\x18\x01 \x03(\v2\x1d.v1.NetworkBaselinePeerStatusR\bstatuses\"\xc3\x01\n" +
+	"$NetworkBaselineExternalStatusRequest\x12#\n" +
+	"\rdeployment_id\x18\x01 \x01(\tR\fdeploymentId\x12\x14\n" +
+	"\x05query\x18\x02 \x01(\tR\x05query\x120\n" +
+	"\x05since\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x05since\x12.\n" +
+	"\n" +
+	"pagination\x18\x04 \x01(\v2\x0e.v1.PaginationR\n" +
+	"pagination\"\xef\x01\n" +
+	"%NetworkBaselineExternalStatusResponse\x12;\n" +
+	"\tanomalous\x18\x01 \x03(\v2\x1d.v1.NetworkBaselinePeerStatusR\tanomalous\x12'\n" +
+	"\x0ftotal_anomalous\x18\x02 \x01(\x05R\x0etotalAnomalous\x129\n" +
+	"\bbaseline\x18\x03 \x03(\v2\x1d.v1.NetworkBaselinePeerStatusR\bbaseline\x12%\n" +
+	"\x0etotal_baseline\x18\x04 \x01(\x05R\rtotalBaseline\"\x7f\n" +
 	"#ModifyBaselineStatusForPeersRequest\x12#\n" +
 	"\rdeployment_id\x18\x01 \x01(\tR\fdeploymentId\x123\n" +
-	"\x05peers\x18\x02 \x03(\v2\x1d.v1.NetworkBaselinePeerStatusR\x05peers2\xe8\x04\n" +
+	"\x05peers\x18\x02 \x03(\v2\x1d.v1.NetworkBaselinePeerStatusR\x05peers2\xa7\x06\n" +
 	"\x16NetworkBaselineService\x12\x9e\x01\n" +
-	" GetNetworkBaselineStatusForFlows\x12 .v1.NetworkBaselineStatusRequest\x1a!.v1.NetworkBaselineStatusResponse\"5\x82\xd3\xe4\x93\x02/:\x01*\"*/v1/networkbaseline/{deployment_id}/status\x12b\n" +
+	" GetNetworkBaselineStatusForFlows\x12 .v1.NetworkBaselineStatusRequest\x1a!.v1.NetworkBaselineStatusResponse\"5\x82\xd3\xe4\x93\x02/:\x01*\"*/v1/networkbaseline/{deployment_id}/status\x12\xbc\x01\n" +
+	"(GetNetworkBaselineStatusForExternalFlows\x12(.v1.NetworkBaselineExternalStatusRequest\x1a).v1.NetworkBaselineExternalStatusResponse\";\x82\xd3\xe4\x93\x025\x123/v1/networkbaseline/{deployment_id}/status/external\x12b\n" +
 	"\x12GetNetworkBaseline\x12\x10.v1.ResourceByID\x1a\x18.storage.NetworkBaseline\" \x82\xd3\xe4\x93\x02\x1a\x12\x18/v1/networkbaseline/{id}\x12\x88\x01\n" +
 	"\x1cModifyBaselineStatusForPeers\x12'.v1.ModifyBaselineStatusForPeersRequest\x1a\t.v1.Empty\"4\x82\xd3\xe4\x93\x02.:\x01*2)/v1/networkbaseline/{deployment_id}/peers\x12\\\n" +
 	"\x13LockNetworkBaseline\x12\x10.v1.ResourceByID\x1a\t.v1.Empty\"(\x82\xd3\xe4\x93\x02\":\x01*2\x1d/v1/networkbaseline/{id}/lock\x12`\n" +
 	"\x15UnlockNetworkBaseline\x12\x10.v1.ResourceByID\x1a\t.v1.Empty\"*\x82\xd3\xe4\x93\x02$:\x01*2\x1f/v1/networkbaseline/{id}/unlockB'\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1X\x02b\x06proto3"
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1X\x03b\x06proto3"
 
 var (
 	file_api_v1_network_baseline_service_proto_rawDescOnce sync.Once
@@ -450,45 +600,55 @@ func file_api_v1_network_baseline_service_proto_rawDescGZIP() []byte {
 }
 
 var file_api_v1_network_baseline_service_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_api_v1_network_baseline_service_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_api_v1_network_baseline_service_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_api_v1_network_baseline_service_proto_goTypes = []any{
-	(NetworkBaselinePeerStatus_Status)(0),       // 0: v1.NetworkBaselinePeerStatus.Status
-	(*NetworkBaselinePeerEntity)(nil),           // 1: v1.NetworkBaselinePeerEntity
-	(*NetworkBaselineStatusPeer)(nil),           // 2: v1.NetworkBaselineStatusPeer
-	(*NetworkBaselinePeerStatus)(nil),           // 3: v1.NetworkBaselinePeerStatus
-	(*NetworkBaselineStatusRequest)(nil),        // 4: v1.NetworkBaselineStatusRequest
-	(*NetworkBaselineStatusResponse)(nil),       // 5: v1.NetworkBaselineStatusResponse
-	(*ModifyBaselineStatusForPeersRequest)(nil), // 6: v1.ModifyBaselineStatusForPeersRequest
-	(storage.NetworkEntityInfo_Type)(0),         // 7: storage.NetworkEntityInfo.Type
-	(storage.L4Protocol)(0),                     // 8: storage.L4Protocol
-	(*ResourceByID)(nil),                        // 9: v1.ResourceByID
-	(*storage.NetworkBaseline)(nil),             // 10: storage.NetworkBaseline
-	(*Empty)(nil),                               // 11: v1.Empty
+	(NetworkBaselinePeerStatus_Status)(0),         // 0: v1.NetworkBaselinePeerStatus.Status
+	(*NetworkBaselinePeerEntity)(nil),             // 1: v1.NetworkBaselinePeerEntity
+	(*NetworkBaselineStatusPeer)(nil),             // 2: v1.NetworkBaselineStatusPeer
+	(*NetworkBaselinePeerStatus)(nil),             // 3: v1.NetworkBaselinePeerStatus
+	(*NetworkBaselineStatusRequest)(nil),          // 4: v1.NetworkBaselineStatusRequest
+	(*NetworkBaselineStatusResponse)(nil),         // 5: v1.NetworkBaselineStatusResponse
+	(*NetworkBaselineExternalStatusRequest)(nil),  // 6: v1.NetworkBaselineExternalStatusRequest
+	(*NetworkBaselineExternalStatusResponse)(nil), // 7: v1.NetworkBaselineExternalStatusResponse
+	(*ModifyBaselineStatusForPeersRequest)(nil),   // 8: v1.ModifyBaselineStatusForPeersRequest
+	(storage.NetworkEntityInfo_Type)(0),           // 9: storage.NetworkEntityInfo.Type
+	(storage.L4Protocol)(0),                       // 10: storage.L4Protocol
+	(*timestamppb.Timestamp)(nil),                 // 11: google.protobuf.Timestamp
+	(*Pagination)(nil),                            // 12: v1.Pagination
+	(*ResourceByID)(nil),                          // 13: v1.ResourceByID
+	(*storage.NetworkBaseline)(nil),               // 14: storage.NetworkBaseline
+	(*Empty)(nil),                                 // 15: v1.Empty
 }
 var file_api_v1_network_baseline_service_proto_depIdxs = []int32{
-	7,  // 0: v1.NetworkBaselinePeerEntity.type:type_name -> storage.NetworkEntityInfo.Type
+	9,  // 0: v1.NetworkBaselinePeerEntity.type:type_name -> storage.NetworkEntityInfo.Type
 	1,  // 1: v1.NetworkBaselineStatusPeer.entity:type_name -> v1.NetworkBaselinePeerEntity
-	8,  // 2: v1.NetworkBaselineStatusPeer.protocol:type_name -> storage.L4Protocol
+	10, // 2: v1.NetworkBaselineStatusPeer.protocol:type_name -> storage.L4Protocol
 	2,  // 3: v1.NetworkBaselinePeerStatus.peer:type_name -> v1.NetworkBaselineStatusPeer
 	0,  // 4: v1.NetworkBaselinePeerStatus.status:type_name -> v1.NetworkBaselinePeerStatus.Status
 	2,  // 5: v1.NetworkBaselineStatusRequest.peers:type_name -> v1.NetworkBaselineStatusPeer
 	3,  // 6: v1.NetworkBaselineStatusResponse.statuses:type_name -> v1.NetworkBaselinePeerStatus
-	3,  // 7: v1.ModifyBaselineStatusForPeersRequest.peers:type_name -> v1.NetworkBaselinePeerStatus
-	4,  // 8: v1.NetworkBaselineService.GetNetworkBaselineStatusForFlows:input_type -> v1.NetworkBaselineStatusRequest
-	9,  // 9: v1.NetworkBaselineService.GetNetworkBaseline:input_type -> v1.ResourceByID
-	6,  // 10: v1.NetworkBaselineService.ModifyBaselineStatusForPeers:input_type -> v1.ModifyBaselineStatusForPeersRequest
-	9,  // 11: v1.NetworkBaselineService.LockNetworkBaseline:input_type -> v1.ResourceByID
-	9,  // 12: v1.NetworkBaselineService.UnlockNetworkBaseline:input_type -> v1.ResourceByID
-	5,  // 13: v1.NetworkBaselineService.GetNetworkBaselineStatusForFlows:output_type -> v1.NetworkBaselineStatusResponse
-	10, // 14: v1.NetworkBaselineService.GetNetworkBaseline:output_type -> storage.NetworkBaseline
-	11, // 15: v1.NetworkBaselineService.ModifyBaselineStatusForPeers:output_type -> v1.Empty
-	11, // 16: v1.NetworkBaselineService.LockNetworkBaseline:output_type -> v1.Empty
-	11, // 17: v1.NetworkBaselineService.UnlockNetworkBaseline:output_type -> v1.Empty
-	13, // [13:18] is the sub-list for method output_type
-	8,  // [8:13] is the sub-list for method input_type
-	8,  // [8:8] is the sub-list for extension type_name
-	8,  // [8:8] is the sub-list for extension extendee
-	0,  // [0:8] is the sub-list for field type_name
+	11, // 7: v1.NetworkBaselineExternalStatusRequest.since:type_name -> google.protobuf.Timestamp
+	12, // 8: v1.NetworkBaselineExternalStatusRequest.pagination:type_name -> v1.Pagination
+	3,  // 9: v1.NetworkBaselineExternalStatusResponse.anomalous:type_name -> v1.NetworkBaselinePeerStatus
+	3,  // 10: v1.NetworkBaselineExternalStatusResponse.baseline:type_name -> v1.NetworkBaselinePeerStatus
+	3,  // 11: v1.ModifyBaselineStatusForPeersRequest.peers:type_name -> v1.NetworkBaselinePeerStatus
+	4,  // 12: v1.NetworkBaselineService.GetNetworkBaselineStatusForFlows:input_type -> v1.NetworkBaselineStatusRequest
+	6,  // 13: v1.NetworkBaselineService.GetNetworkBaselineStatusForExternalFlows:input_type -> v1.NetworkBaselineExternalStatusRequest
+	13, // 14: v1.NetworkBaselineService.GetNetworkBaseline:input_type -> v1.ResourceByID
+	8,  // 15: v1.NetworkBaselineService.ModifyBaselineStatusForPeers:input_type -> v1.ModifyBaselineStatusForPeersRequest
+	13, // 16: v1.NetworkBaselineService.LockNetworkBaseline:input_type -> v1.ResourceByID
+	13, // 17: v1.NetworkBaselineService.UnlockNetworkBaseline:input_type -> v1.ResourceByID
+	5,  // 18: v1.NetworkBaselineService.GetNetworkBaselineStatusForFlows:output_type -> v1.NetworkBaselineStatusResponse
+	7,  // 19: v1.NetworkBaselineService.GetNetworkBaselineStatusForExternalFlows:output_type -> v1.NetworkBaselineExternalStatusResponse
+	14, // 20: v1.NetworkBaselineService.GetNetworkBaseline:output_type -> storage.NetworkBaseline
+	15, // 21: v1.NetworkBaselineService.ModifyBaselineStatusForPeers:output_type -> v1.Empty
+	15, // 22: v1.NetworkBaselineService.LockNetworkBaseline:output_type -> v1.Empty
+	15, // 23: v1.NetworkBaselineService.UnlockNetworkBaseline:output_type -> v1.Empty
+	18, // [18:24] is the sub-list for method output_type
+	12, // [12:18] is the sub-list for method input_type
+	12, // [12:12] is the sub-list for extension type_name
+	12, // [12:12] is the sub-list for extension extendee
+	0,  // [0:12] is the sub-list for field type_name
 }
 
 func init() { file_api_v1_network_baseline_service_proto_init() }
@@ -498,13 +658,14 @@ func file_api_v1_network_baseline_service_proto_init() {
 	}
 	file_api_v1_common_proto_init()
 	file_api_v1_empty_proto_init()
+	file_api_v1_pagination_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_v1_network_baseline_service_proto_rawDesc), len(file_api_v1_network_baseline_service_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   6,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
