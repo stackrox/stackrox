@@ -16,11 +16,7 @@ export type IntegrationType =
     | SignatureIntegrationType
     | CloudSourceIntegrationType;
 
-export type AuthProviderType =
-    | 'apitoken'
-    | 'clusterInitBundle'
-    | 'clusterRegistrationSecret'
-    | 'machineAccess';
+export type AuthProviderType = 'apitoken' | 'machineAccess';
 
 // Investigate why the following occur in tableColumnDescriptor but not in integrationsList:
 /*
