@@ -245,7 +245,9 @@ tests:
       .deployments["scanner-v4-db"] | assertThat(. != null)
     tests:
     - name: "on new installation with scanner V2 defaults"
+      release: { "isInstall": true, "isUpgrade": false }
     - name: "on new installation with scanner V2 enabled explicitly"
+      release: { "isInstall": true, "isUpgrade": false }
       set:
         scannerV2.disable: false
   - name: "not installed"
