@@ -944,6 +944,10 @@ func (m *manager) GetExternalNetworkPeers(ctx context.Context, deploymentID stri
 		src := props.GetSrcEntity()
 		dst := props.GetDstEntity()
 
+		if src.GetId() != deploymentID && dst.GetId() != deploymentID {
+			return false
+		}
+
 		if !networkgraph.AnyExternal(src, dst) || networkgraph.AllExternal(src, dst) {
 			// only looking for external flows, and not external pairs
 			return false
@@ -977,13 +981,13 @@ func (m *manager) GetExternalNetworkPeers(ctx context.Context, deploymentID stri
 
 		if flow.GetProps().GetSrcEntity().GetType() == storage.NetworkEntityInfo_DEPLOYMENT {
 			entity = &v1.NetworkBaselinePeerEntity{
-				Id:   src.GetId(),
-				Type: src.GetType(),
+				Id:   dst.GetId(),
+				Type: dst.GetType(),
 			}
 		} else {
 			entity = &v1.NetworkBaselinePeerEntity{
-				Id:   dst.GetId(),
-				Type: dst.GetType(),
+				Id:   src.GetId(),
+				Type: src.GetType(),
 			}
 			ingress = true
 		}
