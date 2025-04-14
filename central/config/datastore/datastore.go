@@ -15,7 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sync"
-	"k8s.io/kube-openapi/pkg/util/sets"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 // DataStore is the entry point for modifying Config data.
@@ -322,10 +322,11 @@ func (d *datastoreImpl) DeletePlatformComponentConfigRules(ctx context.Context, 
 	if config.PlatformComponentConfig.Rules == nil {
 		config.PlatformComponentConfig.Rules = make([]*storage.PlatformComponentConfig_Rule, 0)
 	}
-	idSet := sets.NewString(rules...)
+
+	ruleNameSet := sets.NewString(rules...)
 	newRules := make([]*storage.PlatformComponentConfig_Rule, 0)
 	for _, rule := range config.PlatformComponentConfig.Rules {
-		if idSet.Has(rule.GetName()) {
+		if ruleNameSet.Has(rule.GetName()) {
 			continue
 		}
 		newRules = append(newRules, rule)
