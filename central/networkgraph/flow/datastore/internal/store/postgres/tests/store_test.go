@@ -300,7 +300,7 @@ func (s *NetworkflowStoreSuite) TestPruneOrphanedExternalEntities() {
 				},
 			},
 			ClusterId:         clusterID,
-			LastSeenTimestamp: timestamppb.New(now.Add(-1000)),
+			LastSeenTimestamp: timestamppb.New(now.Add(-100 * time.Second)),
 		},
 		{
 			Props: &storage.NetworkFlowProperties{
@@ -315,11 +315,11 @@ func (s *NetworkflowStoreSuite) TestPruneOrphanedExternalEntities() {
 				},
 			},
 			ClusterId:         clusterID,
-			LastSeenTimestamp: timestamppb.New(now.Add(-1000)),
+			LastSeenTimestamp: timestamppb.New(now.Add(-100 * time.Second)),
 		},
 	}
 
-	err = s.flowStore.UpsertFlows(s.ctx, flows, timestamp.FromGoTime(now))
+	err = s.flowStore.UpsertFlows(s.ctx, flows, timestamp.FromGoTime(now.Add(-100*time.Second)))
 	s.Nil(err)
 
 	// flows initially in the DB
@@ -335,8 +335,9 @@ func (s *NetworkflowStoreSuite) TestPruneOrphanedExternalEntities() {
 	s.Nil(err)
 	s.Equal(2, count)
 
-	// pruning
-	window := now.Add(-100)
+	// pruning (anything older than 10s).
+	// Flows should get pruned because Deployment1 is not in the DB.
+	window := now.Add(-10 * time.Second)
 	err = s.flowStore.RemoveOrphanedFlows(s.ctx, &window)
 	s.Nil(err)
 
