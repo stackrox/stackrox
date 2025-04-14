@@ -43,7 +43,6 @@ type NetworkflowStoreSuite struct {
 }
 
 func TestNetworkflowStore(t *testing.T) {
-	t.Setenv(features.ExternalIPs.EnvVar(), "true")
 	suite.Run(t, new(NetworkflowStoreSuite))
 }
 
@@ -275,6 +274,8 @@ func (s *NetworkflowStoreSuite) TestPruneStaleNetworkFlows() {
 }
 
 func (s *NetworkflowStoreSuite) TestPruneOrphanedExternalEntities() {
+	s.T().Setenv(features.ExternalIPs.EnvVar(), "true")
+
 	now := time.Now()
 
 	extEntity1 := ngTestutils.GetDiscoveredExtSrcNetworkEntity("223.42.0.1/32", clusterID)
