@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cloudflare/cfssl/log"
 	"github.com/heimdalr/dag"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
@@ -460,7 +461,7 @@ func (ds *datastoreImpl) ResolveCollectionQuery(ctx context.Context, collection 
 	defer ds.lock.RUnlock()
 
 	for len(collectionQueue) > 0 {
-
+		log.Infof("COLLECTION IN QUEUE %+v, %s", collectionQueue, collectionQueue[0].Name)
 		// get first index and remove from list
 		collection := collectionQueue[0]
 		collectionQueue = collectionQueue[1:]
