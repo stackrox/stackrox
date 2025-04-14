@@ -1047,7 +1047,7 @@ verify_no_scannerV2_deployed() {
     local namespace=${1:-stackrox}
     echo "Verifying that scanner V2 is not deployed"
     run "${ORCH_CMD}" </dev/null -n "$namespace" get deployments -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}'
-    refute_output --regexp "^(scanner|scannert-db)$"
+    refute_output --regexp "^(scanner|scanner-db)$"
 }
 
 
