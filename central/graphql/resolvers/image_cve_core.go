@@ -174,6 +174,7 @@ func (resolver *imageCVECoreResolver) Deployments(ctx context.Context, args stru
 func (resolver *imageCVECoreResolver) DistroTuples(ctx context.Context) ([]ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVECore, "DistroTuples")
 	var q PaginatedQuery
+	log.Infof("SHREWS -- DistroTuples -- %v", ctx)
 	if features.FlattenCVEData.Enabled() {
 		// Suppressed is no longer valid in the flattened model
 		q = PaginatedQuery{
