@@ -83,7 +83,7 @@ func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) EntityDataStore {
 	treeMgr := networktree.Singleton()
 	sensorCnxMgr := connection.ManagerSingleton()
 	dataPusher := newEntityPusher(sensorCnxMgr)
-	return NewEntityDataStore(dbstore, graphConfigStore, treeMgr, dataPusher)
+	return newEntityDataStore(dbstore, graphConfigStore, treeMgr, dataPusher)
 }
 
 func (ds *dataStoreImpl) initNetworkTrees(ctx context.Context) {
