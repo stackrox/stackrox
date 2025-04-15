@@ -481,7 +481,7 @@ type ExposureRoute struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
 	Host *string `json:"host,omitempty"`
 
-	// Set up a central route with reencrypt tls termination.
+	// Set up a central route with reencrypt TLS termination.
 	// For reencrypt routes, the request is terminated on the OpenShift router with a custom certificate.
 	// The request is then reencrypted by the OpenShift router and sent to central.
 	// [user] --TLS--> [OpenShift router] --TLS--> [central]
