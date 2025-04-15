@@ -116,25 +116,12 @@ const (
 	// statements, the returned deleted flows are used to construct a list of
 	// deletion candidates for the external entities table, and then if any of
 	// those are no longer referenced by a network flow, they are deleted.
-	//
-	// As with flow pruning, this is performed in two queries (for src and dst entities)
-	// to improve query performance
-	pruneOrphanExternalNetworkEntitiesSrcStmt = `DELETE FROM network_entities entity
-	WHERE (entity.Info_Id = ANY($1)) AND
-	NOT EXISTS
-		(SELECT 1 FROM %s flow
-			WHERE flow.Props_SrcEntity_Type = 4
-			AND flow.Props_SrcEntity_Id = entity.Info_Id
-			AND entity.Info_ExternalSource_Discovered = true
-		);`
-
-	pruneOrphanExternalNetworkEntitiesDstStmt = `DELETE FROM network_entities entity
-	WHERE (entity.Info_Id = ANY($1)) AND
-	NOT EXISTS
-		(SELECT 1 FROM %s flow
-			WHERE flow.Props_DstEntity_Type = 4
-			AND flow.Props_DstEntity_Id = entity.Info_Id
-			AND entity.Info_ExternalSource_Discovered = true
+	pruneOrphanExternalNetworkEntitiesStmt = `DELETE FROM network_entities entity
+		WHERE entity.Info_Id = ANY($1) AND entity.Info_ExternalSource_Discovered = true AND
+		NOT EXISTS
+		(SELECT 1 FROM %s flow WHERE
+			    (flow.Props_SrcEntity_Type = 4 AND flow.Props_SrcEntity_Id = entity.Info_Id)
+			OR  (flow.Props_DstEntity_Type = 4 AND flow.Props_DstEntity_Id = entity.Info_Id)
 		);`
 )
 
@@ -675,7 +662,7 @@ func (s *flowStoreImpl) pruneOrphanExternalEntities(ctx context.Context, srcFlow
 				entities = append(entities, flow.GetProps().GetDstEntity().GetId())
 			}
 
-			pruneStmt := fmt.Sprintf(pruneOrphanExternalNetworkEntitiesSrcStmt, s.partitionName)
+			pruneStmt := fmt.Sprintf(pruneOrphanExternalNetworkEntitiesStmt, s.partitionName)
 			return s.pruneEntities(ctx, pruneStmt, entities)
 		})
 		if err != nil {
@@ -692,7 +679,7 @@ func (s *flowStoreImpl) pruneOrphanExternalEntities(ctx context.Context, srcFlow
 				entities = append(entities, flow.GetProps().GetSrcEntity().GetId())
 			}
 
-			pruneStmt := fmt.Sprintf(pruneOrphanExternalNetworkEntitiesDstStmt, s.partitionName)
+			pruneStmt := fmt.Sprintf(pruneOrphanExternalNetworkEntitiesStmt, s.partitionName)
 			return s.pruneEntities(ctx, pruneStmt, entities)
 		})
 		if err != nil {
