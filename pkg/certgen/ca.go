@@ -68,6 +68,9 @@ func GenerateCA() (mtls.CA, error) {
 		CN:           mtls.ServiceCACommonName,
 		KeyRequest:   csr.NewKeyRequest(),
 		SerialNumber: serial.String(),
+		CA: &csr.CAConfig{
+			Expiry: "43800h", // 5 years
+		},
 	}
 	caCert, _, caKey, err := initca.New(&req)
 	if err != nil {
