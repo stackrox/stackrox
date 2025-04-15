@@ -35,6 +35,15 @@ var _ translation.Enricher = &routeInjector{}
 
 // Enrich injects the Central certificate authority into the reencrypt route.
 func (i *routeInjector) Enrich(ctx context.Context, obj k8sutil.Object, vals chartutil.Values) (chartutil.Values, error) {
+	enabledPath := "central.exposure.route.reencrypt.enabled"
+	enabled, err := vals.PathValue(enabledPath)
+	if err != nil {
+		return vals, nil
+	}
+	if isEnabled, ok := enabled.(bool); !ok || !isEnabled {
+		return vals, nil
+	}
+
 	destCAPath := "central.exposure.route.reencrypt.tls.destinationCACertificate"
 	if destCA, err := vals.PathValue(destCAPath); destCA != "" && err == nil {
 		return vals, nil

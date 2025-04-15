@@ -20,16 +20,24 @@ func Test_injector_Enrich(t *testing.T) {
 	centralCA := "fake-central-CA"
 
 	tests := map[string]struct {
+		enabled     bool
 		destCAValue string
 		want        string
 	}{
 		"should default to central CA from central-tls secret": {
+			enabled:     true,
 			destCAValue: "",
 			want:        centralCA,
 		},
 		"should take destinationCACertificate from the input values": {
+			enabled:     true,
 			destCAValue: "fake-input-CA",
 			want:        "fake-input-CA",
+		},
+		"should do nothing if not enabled": {
+			enabled:     false,
+			destCAValue: "",
+			want:        "",
 		},
 	}
 	for name, tt := range tests {
@@ -44,27 +52,33 @@ func Test_injector_Enrich(t *testing.T) {
 				Data: map[string][]byte{mtls.CACertFileName: []byte(centralCA)},
 			}
 			i := NewRouteInjector(fake.NewFakeClient(tlsSecret), fake.NewFakeClient(tlsSecret), logr.New(nil))
-			vals := chartutil.Values{}
-			if tt.destCAValue != "" {
-				vals["central"] = map[string]interface{}{
+			vals := chartutil.Values{
+				"central": map[string]interface{}{
 					"exposure": map[string]interface{}{
 						"route": map[string]interface{}{
 							"reencrypt": map[string]interface{}{
-								"tls": map[string]interface{}{
-									"destinationCACertificate": string(tt.destCAValue),
-								},
+								"enabled": tt.enabled,
+								"tls":     map[string]interface{}{},
 							},
 						},
 					},
-				}
+				},
+			}
+			if tt.destCAValue != "" {
+				tlsVars, err := vals.Table("central.exposure.route.reencrypt.tls")
+				require.NoError(t, err)
+				tlsVars["destinationCACertificate"] = tt.destCAValue
 			}
 
 			gotValues, err := i.Enrich(context.Background(), obj, vals)
 			require.NoError(t, err)
 			gotCA, err := gotValues.PathValue("central.exposure.route.reencrypt.tls.destinationCACertificate")
-			require.NoError(t, err)
-
-			assert.Equal(t, tt.want, gotCA)
+			if tt.enabled {
+				require.NoError(t, err)
+				assert.Equal(t, tt.want, gotCA)
+			} else {
+				require.Error(t, err)
+			}
 		})
 	}
 }
