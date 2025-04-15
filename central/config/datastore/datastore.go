@@ -3,6 +3,7 @@ package datastore
 import (
 	"context"
 	"reflect"
+	"slices"
 	"testing"
 	"time"
 
@@ -288,21 +289,10 @@ func (d *datastoreImpl) UpsertPlatformComponentConfigRules(ctx context.Context, 
 		log.Info("Config not found or there was an error")
 		return nil, err
 	}
-	if config.PlatformComponentConfig.Rules == nil {
-		log.Info("config.PlatformComponentConfig.Rules was empty")
-		config.PlatformComponentConfig.Rules = make([]*storage.PlatformComponentConfig_Rule, 0)
+	if !slices.Equal(config.PlatformComponentConfig.Rules, rules) {
+		config.PlatformComponentConfig.NeedsReevaluation = true
 	}
-	ruleNameSet := sets.NewString()
-	for _, rule := range config.PlatformComponentConfig.Rules {
-		ruleNameSet.Insert(rule.Name)
-	}
-	for _, rule := range rules {
-		if ruleNameSet.Has(rule.Name) {
-			continue
-		}
-		log.Infof("Rule: %q", rule)
-		config.PlatformComponentConfig.Rules = append(config.PlatformComponentConfig.Rules, rule)
-	}
+	config.PlatformComponentConfig.Rules = rules
 	err = d.store.Upsert(ctx, config)
 	if err != nil {
 		log.Infof("There was an error upserting the config, %v", err)
