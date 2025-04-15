@@ -21,7 +21,6 @@ import (
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"gorm.io/gorm"
 )
@@ -273,7 +272,9 @@ func (s *NetworkflowStoreSuite) TestPruneStaleNetworkFlows() {
 	s.Equal(count, 2)
 }
 
-func (s *NetworkflowStoreSuite) TestPruneOrphanedExternalEntities() {
+// Two flows using two distinct external-entities. Both are pruned
+// and we expect that all entities are pruned as well.
+func (s *NetworkflowStoreSuite) TestPruneExternalEntitiesAllOrphaned() {
 	s.T().Setenv(features.ExternalIPs.EnvVar(), "true")
 
 	now := time.Now()
@@ -299,8 +300,7 @@ func (s *NetworkflowStoreSuite) TestPruneOrphanedExternalEntities() {
 					Id:   extEntity1.GetInfo().Id,
 				},
 			},
-			ClusterId:         clusterID,
-			LastSeenTimestamp: timestamppb.New(now.Add(-100 * time.Second)),
+			ClusterId: clusterID,
 		},
 		{
 			Props: &storage.NetworkFlowProperties{
@@ -314,8 +314,7 @@ func (s *NetworkflowStoreSuite) TestPruneOrphanedExternalEntities() {
 					Id:   fixtureconsts.Deployment1,
 				},
 			},
-			ClusterId:         clusterID,
-			LastSeenTimestamp: timestamppb.New(now.Add(-100 * time.Second)),
+			ClusterId: clusterID,
 		},
 	}
 
@@ -337,7 +336,7 @@ func (s *NetworkflowStoreSuite) TestPruneOrphanedExternalEntities() {
 
 	// pruning (anything older than 10s).
 	// Flows should get pruned because Deployment1 is not in the DB.
-	window := now.Add(-10 * time.Second)
+	window := now.UTC().Add(-10 * time.Second)
 	err = s.flowStore.RemoveOrphanedFlows(s.ctx, &window)
 	s.Nil(err)
 
@@ -352,6 +351,168 @@ func (s *NetworkflowStoreSuite) TestPruneOrphanedExternalEntities() {
 	err = row.Scan(&count)
 	s.Nil(err)
 	s.Equal(0, count)
+}
+
+// One entity used by two flows. One flow pruned only.
+// We expect that the entity remains.
+func (s *NetworkflowStoreSuite) TestPruneExternalEntitiesPartial() {
+	s.T().Setenv(features.ExternalIPs.EnvVar(), "true")
+
+	now := time.Now()
+
+	extEntity1 := ngTestutils.GetDiscoveredExtSrcNetworkEntity("223.42.0.1/32", clusterID)
+	err := s.entityStore.UpdateExternalNetworkEntity(s.ctx, extEntity1, false)
+	s.Nil(err)
+
+	flowsPruned := []*storage.NetworkFlow{
+		{
+			Props: &storage.NetworkFlowProperties{
+				DstPort: 22,
+				DstEntity: &storage.NetworkEntityInfo{
+					Type: storage.NetworkEntityInfo_DEPLOYMENT,
+					Id:   fixtureconsts.Deployment1,
+				},
+				SrcEntity: &storage.NetworkEntityInfo{
+					Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+					Id:   extEntity1.GetInfo().Id,
+				},
+			},
+			ClusterId: clusterID,
+		},
+	}
+	flowsNotPruned := []*storage.NetworkFlow{
+		{
+			Props: &storage.NetworkFlowProperties{
+				DstPort: 22,
+				DstEntity: &storage.NetworkEntityInfo{
+					Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+					Id:   extEntity1.GetInfo().Id,
+				},
+				SrcEntity: &storage.NetworkEntityInfo{
+					Type: storage.NetworkEntityInfo_DEPLOYMENT,
+					Id:   fixtureconsts.Deployment1,
+				},
+			},
+			ClusterId: clusterID,
+		},
+	}
+
+	err = s.flowStore.UpsertFlows(s.ctx, flowsPruned, timestamp.FromGoTime(now.Add(-300*time.Second)))
+	s.Nil(err)
+
+	err = s.flowStore.UpsertFlows(s.ctx, flowsNotPruned, timestamp.FromGoTime(now.Add(-100*time.Second)))
+	s.Nil(err)
+
+	// flows initially in the DB
+	row := s.pgDB.DB.QueryRow(s.ctx, flowsCountStmt)
+	var count int
+	err = row.Scan(&count)
+	s.Nil(err)
+	s.Equal(2, count)
+
+	// entities initially in the DB
+	row = s.pgDB.DB.QueryRow(s.ctx, entitiesCountStmt)
+	err = row.Scan(&count)
+	s.Nil(err)
+	s.Equal(1, count)
+
+	// pruning (anything older than 200s).
+	// Flows should get pruned because Deployment1 is not in the DB.
+	window := now.UTC().Add(-200 * time.Second)
+	err = s.flowStore.RemoveOrphanedFlows(s.ctx, &window)
+	s.Nil(err)
+
+	// flows after pruning
+	row = s.pgDB.DB.QueryRow(s.ctx, flowsCountStmt)
+	err = row.Scan(&count)
+	s.Nil(err)
+	s.Equal(1, count)
+
+	// entities after pruning
+	row = s.pgDB.DB.QueryRow(s.ctx, entitiesCountStmt)
+	err = row.Scan(&count)
+	s.Nil(err)
+	s.Equal(1, count)
+}
+
+// Two flows using two distinct external-entities. None are pruned
+// and we expect that all entities are still there at the end.
+func (s *NetworkflowStoreSuite) TestPruneExternalEntitiesNoneOrphaned() {
+	s.T().Setenv(features.ExternalIPs.EnvVar(), "true")
+
+	now := time.Now()
+
+	extEntity1 := ngTestutils.GetDiscoveredExtSrcNetworkEntity("223.42.0.1/32", clusterID)
+	err := s.entityStore.UpdateExternalNetworkEntity(s.ctx, extEntity1, false)
+	s.Nil(err)
+
+	extEntity2 := ngTestutils.GetDiscoveredExtSrcNetworkEntity("223.42.0.2/32", clusterID)
+	err = s.entityStore.UpdateExternalNetworkEntity(s.ctx, extEntity2, false)
+	s.Nil(err)
+
+	flows := []*storage.NetworkFlow{
+		{
+			Props: &storage.NetworkFlowProperties{
+				DstPort: 22,
+				DstEntity: &storage.NetworkEntityInfo{
+					Type: storage.NetworkEntityInfo_DEPLOYMENT,
+					Id:   fixtureconsts.Deployment1,
+				},
+				SrcEntity: &storage.NetworkEntityInfo{
+					Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+					Id:   extEntity1.GetInfo().Id,
+				},
+			},
+			ClusterId: clusterID,
+		},
+		{
+			Props: &storage.NetworkFlowProperties{
+				DstPort: 22,
+				DstEntity: &storage.NetworkEntityInfo{
+					Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+					Id:   extEntity2.GetInfo().Id,
+				},
+				SrcEntity: &storage.NetworkEntityInfo{
+					Type: storage.NetworkEntityInfo_DEPLOYMENT,
+					Id:   fixtureconsts.Deployment1,
+				},
+			},
+			ClusterId: clusterID,
+		},
+	}
+
+	err = s.flowStore.UpsertFlows(s.ctx, flows, timestamp.FromGoTime(now.Add(-10*time.Second)))
+	s.Nil(err)
+
+	// flows initially in the DB
+	row := s.pgDB.DB.QueryRow(s.ctx, flowsCountStmt)
+	var count int
+	err = row.Scan(&count)
+	s.Nil(err)
+	s.Equal(len(flows), count)
+
+	// entities initially in the DB
+	row = s.pgDB.DB.QueryRow(s.ctx, entitiesCountStmt)
+	err = row.Scan(&count)
+	s.Nil(err)
+	s.Equal(2, count)
+
+	// pruning (anything older than 100s): nothing
+	window := now.UTC().Add(-100 * time.Second)
+	err = s.flowStore.RemoveOrphanedFlows(s.ctx, &window)
+	s.Nil(err)
+
+	// flows after pruning
+	row = s.pgDB.DB.QueryRow(s.ctx, flowsCountStmt)
+	err = row.Scan(&count)
+	s.Nil(err)
+	s.Equal(2, count)
+
+	// entities after pruning
+	row = s.pgDB.DB.QueryRow(s.ctx, entitiesCountStmt)
+	err = row.Scan(&count)
+	s.Nil(err)
+	s.Equal(2, count)
 }
 
 func deploymentIngressFlowsPredicate(props *storage.NetworkFlowProperties) bool {
