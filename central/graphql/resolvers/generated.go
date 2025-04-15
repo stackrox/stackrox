@@ -706,7 +706,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"fixedBy: String!",
 		"id: ID!",
 		"imageId: String!",
-		"license: License",
 		"name: String!",
 		"operatingSystem: String!",
 		"priority: Int!",
@@ -8383,11 +8382,6 @@ func (resolver *imageComponentV2Resolver) Id(ctx context.Context) graphql.ID {
 func (resolver *imageComponentV2Resolver) ImageId(ctx context.Context) string {
 	value := resolver.data.GetImageId()
 	return value
-}
-
-func (resolver *imageComponentV2Resolver) License(ctx context.Context) (*licenseResolver, error) {
-	value := resolver.data.GetLicense()
-	return resolver.root.wrapLicense(value, true, nil)
 }
 
 func (resolver *imageComponentV2Resolver) Name(ctx context.Context) string {

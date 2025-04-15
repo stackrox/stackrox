@@ -30,24 +30,23 @@ message ImageComponentV2 {
   string id = 1; // @gotags: search:"Component ID,store,hidden" sql:"pk,id"
   string name = 2; // @gotags: search:"Component,store"
   string version = 3; // @gotags: search:"Component Version,store"
-  License license = 4;
-  int64 priority = 5; // @gotags: search:"Component Risk Priority,hidden"
-  SourceType source = 6; // @gotags: search:"Component Source,store"
-  float risk_score = 7; // @gotags: search:"Component Risk Score,hidden"
+  int64 priority = 4; // @gotags: search:"Component Risk Priority,hidden"
+  SourceType source = 5; // @gotags: search:"Component Source,store"
+  float risk_score = 6; // @gotags: search:"Component Risk Score,hidden"
   oneof set_top_cvss {
-    float top_cvss = 8; // @gotags: search:"Component Top CVSS,store"
+    float top_cvss = 7; // @gotags: search:"Component Top CVSS,store"
   }
   // Component version that fixes all the fixable vulnerabilities in this component.
-  string fixed_by = 9;
-  string operating_system = 10; // @gotags: search:"Operating System"
+  string fixed_by = 8;
+  string operating_system = 9; // @gotags: search:"Operating System"
   // was hash index, making it btree
-  string image_id = 11; // @gotags: sql:"fk(Image:id),index=btree"
+  string image_id = 10; // @gotags: sql:"fk(Image:id),index=btree"
   /// Layer that contains this component
   oneof has_layer_index {
-    int32 layer_index = 12;
+    int32 layer_index = 11;
   }
 
-  string location = 13; // @gotags: search:"Component Location,store,hidden"
+  string location = 12; // @gotags: search:"Component Location,store,hidden"
 
-  string architecture = 14;
+  string architecture = 13;
 }

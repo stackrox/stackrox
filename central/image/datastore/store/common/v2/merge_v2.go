@@ -41,7 +41,6 @@ func generateEmbeddedComponentV2(cp ComponentParts) *storage.EmbeddedImageScanCo
 		Name:         cp.ComponentV2.GetName(),
 		Version:      cp.ComponentV2.GetVersion(),
 		Architecture: cp.ComponentV2.GetArchitecture(),
-		License:      cp.ComponentV2.GetLicense().CloneVT(),
 		Source:       cp.ComponentV2.GetSource(),
 		Location:     cp.ComponentV2.GetLocation(),
 		FixedBy:      cp.ComponentV2.GetFixedBy(),
