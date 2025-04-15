@@ -9,7 +9,7 @@ describe('ToggleSwitch', () => {
 
     it('should have a label', () => {
         // arrange
-        const toggleHandler = jest.fn();
+        const toggleHandler = vi.fn();
         render(<ToggleSwitch id={id} toggleHandler={toggleHandler} label={label} />);
 
         // act
@@ -21,7 +21,7 @@ describe('ToggleSwitch', () => {
 
     it('should add any given extra classes to its root element', () => {
         // arrange
-        const toggleHandler = jest.fn();
+        const toggleHandler = vi.fn();
         const extraClassNames = 'toggle-switch-alert';
         const { container } = render(
             <ToggleSwitch
@@ -43,7 +43,7 @@ describe('ToggleSwitch', () => {
 
     it('should set its `checked` prop to false if it does not have an `enabled` prop', () => {
         // arrange
-        const toggleHandler = jest.fn();
+        const toggleHandler = vi.fn();
         render(<ToggleSwitch id={id} toggleHandler={toggleHandler} label={label} />);
 
         // act
@@ -55,7 +55,7 @@ describe('ToggleSwitch', () => {
 
     it('should set its `checked` prop to true it has an `enabled` prop', () => {
         // arrange
-        const toggleHandler = jest.fn();
+        const toggleHandler = vi.fn();
         render(<ToggleSwitch id={id} toggleHandler={toggleHandler} label={label} enabled />);
 
         // act
@@ -67,7 +67,7 @@ describe('ToggleSwitch', () => {
 
     it('should call its `toggleHandler` prop when the checkbox is clicked', () => {
         // arrange
-        const toggleHandler = jest.fn();
+        const toggleHandler = vi.fn();
         render(<ToggleSwitch id={id} toggleHandler={toggleHandler} label={label} />);
 
         // act

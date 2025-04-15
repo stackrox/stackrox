@@ -21,7 +21,8 @@ function trackCallbacksInArray(array: string[], scope: 'global' | 'local') {
 
 describe('useRestMutation hook', () => {
     it('should correctly handle success lifecycle statuses and data', async () => {
-        jest.useFakeTimers();
+        // See https://github.com/testing-library/react-testing-library/issues/1198
+        vi.useFakeTimers({ shouldAdvanceTime: true });
 
         const requestFn = (arg: string) =>
             new Promise<string>((resolve) =>
@@ -45,7 +46,6 @@ describe('useRestMutation hook', () => {
         act(() => {
             result.current.mutate('test', trackCallbacksInArray(callbackResults, 'local'));
         });
-
         // Check loading state
         expect(result.current.isIdle).toBe(false);
         expect(result.current.isLoading).toBe(true);
@@ -55,7 +55,8 @@ describe('useRestMutation hook', () => {
         expect(result.current.error).toBe(undefined);
 
         // Expire timeout timer and wait for state to change
-        jest.runAllTimers();
+        vi.runAllTimers();
+
         await waitForNextUpdate(result);
 
         // Check success state
@@ -87,7 +88,7 @@ describe('useRestMutation hook', () => {
     });
 
     it('should correctly handle failure lifecycle statuses and data', async () => {
-        jest.useFakeTimers();
+        vi.useFakeTimers({ shouldAdvanceTime: true });
 
         const requestFn = (arg: string) =>
             new Promise<string>((resolve, reject) =>
@@ -122,7 +123,7 @@ describe('useRestMutation hook', () => {
         expect(result.current.error).toBe(undefined);
 
         // Expire timeout timer and wait for state to change
-        jest.runAllTimers();
+        vi.runAllTimers();
         await waitForNextUpdate(result);
 
         // Check failure state
