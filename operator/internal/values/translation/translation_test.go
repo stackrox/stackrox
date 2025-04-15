@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
-	utils "github.com/stackrox/rox/operator/internal/utils"
+	"github.com/stackrox/rox/operator/internal/utils"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
