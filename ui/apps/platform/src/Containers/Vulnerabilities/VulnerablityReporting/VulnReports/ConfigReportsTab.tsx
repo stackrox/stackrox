@@ -29,7 +29,7 @@ import { ActionsColumn, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/reac
 import { ExclamationCircleIcon, FileIcon, SearchIcon } from '@patternfly/react-icons';
 
 import { vulnerabilityConfigurationReportsPath } from 'routePaths';
-import { vulnerabilityConfigurationReportPath } from 'Containers/Vulnerabilities/VulnerablityReporting/pathsForVulnerabilityReporting';
+import { vulnerabilityConfigurationReportDetailsPath } from 'Containers/Vulnerabilities/VulnerablityReporting/pathsForVulnerabilityReporting';
 import useFetchReports from 'Containers/Vulnerabilities/VulnerablityReporting/api/useFetchReports';
 import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import usePermissions from 'hooks/usePermissions';
@@ -400,7 +400,7 @@ function ConfigReportsTab() {
                                         )}
                                     {reportConfigurations.map((report, rowIndex) => {
                                         const vulnReportURL = generatePath(
-                                            vulnerabilityConfigurationReportPath,
+                                            vulnerabilityConfigurationReportDetailsPath,
                                             {
                                                 reportId: report.id,
                                             }

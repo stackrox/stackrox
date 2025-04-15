@@ -26,6 +26,7 @@ function VulnReportingPage() {
         hasReadAccess('Image') && // for vulnerabilities
         hasReadAccess('Integration'); // for notifiers
 
+    // TODO: Modify routing for edge cases - https://github.com/stackrox/stackrox/pull/14873#discussion_r2042672432
     return (
         <Routes>
             <Route

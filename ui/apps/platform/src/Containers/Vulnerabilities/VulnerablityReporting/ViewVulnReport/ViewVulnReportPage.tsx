@@ -27,7 +27,7 @@ import {
 } from '@patternfly/react-core/deprecated';
 import { CaretDownIcon } from '@patternfly/react-icons';
 
-import { vulnerabilityConfigurationReportPath } from 'Containers/Vulnerabilities/VulnerablityReporting/pathsForVulnerabilityReporting';
+import { vulnerabilityConfigurationReportDetailsPath } from 'Containers/Vulnerabilities/VulnerablityReporting/pathsForVulnerabilityReporting';
 import { vulnerabilityConfigurationReportsPath } from 'routePaths';
 import { getReportFormValuesFromConfiguration } from 'Containers/Vulnerabilities/VulnerablityReporting/utils';
 import useFetchReport from 'Containers/Vulnerabilities/VulnerablityReporting/api/useFetchReport';
@@ -136,7 +136,7 @@ function ViewVulnReportPage() {
         );
     }
 
-    const vulnReportPageURL = generatePath(vulnerabilityConfigurationReportPath, {
+    const vulnReportPageURL = generatePath(vulnerabilityConfigurationReportDetailsPath, {
         reportId: reportConfiguration.id,
     });
 
