@@ -1,5 +1,6 @@
 package utils
 
+// BatchProcess calls f with slices of the provided set. Slices are batchSize size max.
 func BatchProcess[T interface{}](set []T, batchSize int, f func([]T) error) error {
 	localBatchSize := batchSize
 	for {
