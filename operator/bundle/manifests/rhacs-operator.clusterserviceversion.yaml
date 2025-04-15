@@ -387,9 +387,7 @@ spec:
         path: central.exposure.nodePort.port
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:central.exposure.nodePort.enabled:true
-      - description: 'Expose central with a passthrough route.
-
-          The passthrough route is still required when using a reencrypt route.'
+      - description: Expose central with a passthrough route.
         displayName: Enabled
         path: central.exposure.route.enabled
       - description: 'Specify a custom hostname for the central route.
@@ -410,7 +408,7 @@ spec:
         path: central.exposure.route.reencrypt
       - description: 'Expose central with a reencrypt route.
 
-          Requires a passthrough route for sensor communication.'
+          Should not be used for sensor communication.'
         displayName: Enabled
         path: central.exposure.route.reencrypt.enabled
       - description: 'Specify a custom hostname for the central reencrypt route.

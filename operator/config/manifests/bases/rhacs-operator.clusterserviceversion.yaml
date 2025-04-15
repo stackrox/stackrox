@@ -83,14 +83,12 @@ spec:
       - description: Expose Central through an OpenShift route.
         displayName: Route
         path: central.exposure.route
-      - description: |-
-          Expose central with a passthrough route.
-          The passthrough route is still required when using a reencrypt route.
+      - description: Expose central with a passthrough route.
         displayName: Enabled
         path: central.exposure.route.enabled
       - description: |-
           Expose central with a reencrypt route.
-          Requires a passthrough route for sensor communication.
+          Should not be used for sensor communication.
         displayName: Enabled
         path: central.exposure.route.reencrypt.enabled
       - description: |-

@@ -39,7 +39,7 @@ func Test_injector_Enrich(t *testing.T) {
 			tlsSecret := &corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: "some-ns",
-					Name:      common.TLSSecretName,
+					Name:      common.CentralTLSSecretName,
 				},
 				Data: map[string][]byte{mtls.CACertFileName: []byte(centralCA)},
 			}

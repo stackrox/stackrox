@@ -42,9 +42,9 @@ func (i *routeInjector) Enrich(ctx context.Context, obj k8sutil.Object, vals cha
 
 	namespaceName := obj.GetNamespace()
 	tlsSecret := &corev1.Secret{}
-	key := ctrlClient.ObjectKey{Name: common.TLSSecretName, Namespace: namespaceName}
+	key := ctrlClient.ObjectKey{Name: common.CentralTLSSecretName, Namespace: namespaceName}
 	if err := utils.GetWithFallbackToUncached(ctx, i.client, i.direct, key, tlsSecret); err != nil {
-		return nil, fmt.Errorf("getting secret %s/%s: %w", namespaceName, common.TLSSecretName, err)
+		return nil, fmt.Errorf("getting secret %s/%s: %w", namespaceName, common.CentralTLSSecretName, err)
 	}
 
 	routeVals := chartutil.Values{

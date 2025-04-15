@@ -1,5 +1,5 @@
 package common
 
 const (
-	TLSSecretName = "central-tls"
+	CentralTLSSecretName = "central-tls"
 )

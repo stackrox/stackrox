@@ -471,7 +471,6 @@ type ExposureNodePort struct {
 // ExposureRoute defines settings for exposing central via a Route.
 type ExposureRoute struct {
 	// Expose central with a passthrough route.
-	// The passthrough route is still required when using a reencrypt route.
 	//+kubebuilder:default=false
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
 	Enabled *bool `json:"enabled,omitempty"`
@@ -492,7 +491,7 @@ type ExposureRoute struct {
 // ExposureRouteReencrypt defines settings for exposing central via a reencrypt Route.
 type ExposureRouteReencrypt struct {
 	// Expose central with a reencrypt route.
-	// Requires a passthrough route for sensor communication.
+	// Should not be used for sensor communication.
 	//+kubebuilder:default=false
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
 	Enabled *bool `json:"enabled,omitempty"`

@@ -380,9 +380,7 @@ spec:
                         properties:
                           enabled:
                             default: false
-                            description: |-
-                              Expose central with a passthrough route.
-                              The passthrough route is still required when using a reencrypt route.
+                            description: Expose central with a passthrough route.
                             type: boolean
                           host:
                             description: |-
@@ -400,7 +398,7 @@ spec:
                                 default: false
                                 description: |-
                                   Expose central with a reencrypt route.
-                                  Requires a passthrough route for sensor communication.
+                                  Should not be used for sensor communication.
                                 type: boolean
                               host:
                                 description: |-
