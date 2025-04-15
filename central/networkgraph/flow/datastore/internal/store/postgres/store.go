@@ -148,7 +148,7 @@ var (
 
 	queryTimeout = env.PostgresDefaultNetworkFlowQueryTimeout.DurationSetting()
 
-	orphanedEntitiesPruningBatchSize = 4096
+	orphanedEntitiesPruningBatchSize = 1000
 )
 
 // FlowStore stores all of the flows for a single cluster.
