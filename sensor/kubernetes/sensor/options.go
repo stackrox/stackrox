@@ -3,6 +3,7 @@ package sensor
 import (
 	"context"
 	"io"
+	"time"
 
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sensor/queue"
@@ -26,6 +27,7 @@ type CreateOptions struct {
 	signalServiceAuthFuncOverride      func(context.Context, string) (context.Context, error)
 	networkFlowWriter                  io.Writer
 	processIndicatorWriter             io.Writer
+	networkFlowTicker                  <-chan time.Time
 }
 
 // ConfigWithDefaults creates a new config object with default properties.
@@ -48,6 +50,7 @@ func ConfigWithDefaults() *CreateOptions {
 		signalServiceAuthFuncOverride:      nil,
 		networkFlowWriter:                  nil,
 		processIndicatorWriter:             nil,
+		networkFlowTicker:                  nil,
 	}
 }
 
@@ -132,5 +135,12 @@ func (cfg *CreateOptions) WithNetworkFlowTraceWriter(writer io.Writer) *CreateOp
 // Default: nil
 func (cfg *CreateOptions) WithProcessIndicatorTraceWriter(writer io.Writer) *CreateOptions {
 	cfg.processIndicatorWriter = writer
+	return cfg
+}
+
+// WithNetworkFlowTicker sets the network flows trace writer.
+// Default: nil
+func (cfg *CreateOptions) WithNetworkFlowTicker(ticker <-chan time.Time) *CreateOptions {
+	cfg.networkFlowTicker = ticker
 	return cfg
 }
