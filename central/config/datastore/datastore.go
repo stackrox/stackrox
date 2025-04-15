@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cloudflare/cfssl/log"
 	"github.com/hashicorp/golang-lru/v2/expirable"
 	"github.com/stackrox/rox/central/config/store"
 	pgStore "github.com/stackrox/rox/central/config/store/postgres"
@@ -276,8 +277,10 @@ func (d *datastoreImpl) UpsertPlatformComponentConfigRule(ctx context.Context, r
 
 func (d *datastoreImpl) UpsertPlatformComponentConfigRules(ctx context.Context, rules []*storage.PlatformComponentConfig_Rule) (*storage.PlatformComponentConfig, error) {
 	if ok, err := administrationSAC.WriteAllowed(ctx); err != nil {
+		log.Info("Error while checking permission")
 		return nil, err
 	} else if !ok {
+		log.Info("User did not have write access to the administration resource")
 		return nil, nil
 	}
 
@@ -288,18 +291,23 @@ func (d *datastoreImpl) UpsertPlatformComponentConfigRules(ctx context.Context, 
 
 	config, found, err := d.store.Get(adminCtx)
 	if !found || err != nil {
+		log.Info("Config not found or there was an error")
 		return nil, err
 	}
 	if config.PlatformComponentConfig.Rules == nil {
+		log.Info("config.PlatformComponentConfig.Rules was empty")
 		config.PlatformComponentConfig.Rules = make([]*storage.PlatformComponentConfig_Rule, 0)
 	}
 	for _, rule := range rules {
+		log.Infof("Rule: %q", rule)
 		config.PlatformComponentConfig.Rules = append(config.PlatformComponentConfig.Rules, rule)
 	}
 	err = d.store.Upsert(adminCtx, config)
 	if err != nil {
+		log.Info("There was an error upserting the config")
 		return nil, err
 	}
+	log.Infof("Config after upsert: %q", config)
 	return config.PlatformComponentConfig, nil
 }
 
