@@ -396,7 +396,7 @@ spec:
           by the OpenShift route operator.'
         displayName: Host
         path: central.exposure.route.host
-      - description: 'Set up a central route with reencrypt tls termination.
+      - description: 'Set up a central route with reencrypt TLS termination.
 
           For reencrypt routes, the request is terminated on the OpenShift router
           with a custom certificate.
