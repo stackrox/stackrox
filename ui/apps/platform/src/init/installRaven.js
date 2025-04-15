@@ -1,6 +1,6 @@
 import Raven from 'raven-js';
 
-import axios from './services/instance';
+import axios from '../services/instance';
 
 let ravenInstalled = false;
 

@@ -40,8 +40,8 @@ module.exports = {
 
     component: {
         devServer: {
-            framework: 'create-react-app',
-            bundler: 'webpack',
+            framework: 'react',
+            bundler: 'vite',
         },
         viewportHeight: 600,
         viewportWidth: 800,
