@@ -6,17 +6,21 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cloudflare/cfssl/log"
 	"github.com/hashicorp/golang-lru/v2/expirable"
 	"github.com/stackrox/rox/central/config/store"
 	pgStore "github.com/stackrox/rox/central/config/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sync"
 	"k8s.io/apimachinery/pkg/util/sets"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 // DataStore is the entry point for modifying Config data.
@@ -298,7 +302,14 @@ func (d *datastoreImpl) UpsertPlatformComponentConfigRules(ctx context.Context, 
 		log.Info("config.PlatformComponentConfig.Rules was empty")
 		config.PlatformComponentConfig.Rules = make([]*storage.PlatformComponentConfig_Rule, 0)
 	}
+	ruleNameSet := sets.NewString()
+	for _, rule := range config.PlatformComponentConfig.Rules {
+		ruleNameSet.Insert(rule.Name)
+	}
 	for _, rule := range rules {
+		if ruleNameSet.Has(rule.Name) {
+			continue
+		}
 		log.Infof("Rule: %q", rule)
 		config.PlatformComponentConfig.Rules = append(config.PlatformComponentConfig.Rules, rule)
 	}
