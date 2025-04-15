@@ -87,7 +87,8 @@ func (suite *NetworkEntityDataStoreTestSuite) SetupSuite() {
 	suite.connMgr = connMocks.NewMockManager(suite.mockCtrl)
 
 	suite.treeMgr.EXPECT().Initialize(gomock.Any())
-	suite.ds = NewEntityDataStore(suite.store, suite.graphConfig, suite.treeMgr, suite.connMgr)
+	dataPusher := newEntityPusher(suite.connMgr)
+	suite.ds = newEntityDataStore(suite.store, suite.graphConfig, suite.treeMgr, dataPusher)
 }
 
 func (suite *NetworkEntityDataStoreTestSuite) TearDownSuite() {

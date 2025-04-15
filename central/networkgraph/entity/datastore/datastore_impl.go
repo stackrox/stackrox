@@ -42,22 +42,34 @@ var (
 			sac.ResourceScopeKeys(resources.Administration)))
 )
 
+// EntityPusher is a utility to synchronize network entities with Sensor instances.
+//
+//go:generate mockgen-wrapper
+type EntityPusher interface {
+	DoPushExternalNetworkEntitiesToSensor(clusters ...string)
+}
+
 type dataStoreImpl struct {
-	storage       store.EntityStore
-	graphConfig   graphConfigDS.DataStore
-	sensorConnMgr connection.Manager
-	treeMgr       networktree.Manager
+	storage     store.EntityStore
+	graphConfig graphConfigDS.DataStore
+	dataPusher  EntityPusher
+	treeMgr     networktree.Manager
 
 	netEntityLock sync.Mutex
 }
 
-// NewEntityDataStore returns a new instance of EntityDataStore using the input storage underneath.
-func NewEntityDataStore(storage store.EntityStore, graphConfig graphConfigDS.DataStore, treeMgr networktree.Manager, sensorConnMgr connection.Manager) EntityDataStore {
+// newEntityDataStore returns a new instance of EntityDataStore using the input storage underneath.
+func newEntityDataStore(
+	storage store.EntityStore,
+	graphConfig graphConfigDS.DataStore,
+	treeMgr networktree.Manager,
+	dataPusher EntityPusher,
+) EntityDataStore {
 	ds := &dataStoreImpl{
-		storage:       storage,
-		graphConfig:   graphConfig,
-		treeMgr:       treeMgr,
-		sensorConnMgr: sensorConnMgr,
+		storage:     storage,
+		graphConfig: graphConfig,
+		treeMgr:     treeMgr,
+		dataPusher:  dataPusher,
 	}
 
 	go ds.initNetworkTrees(sac.WithAllAccess(context.Background()))
@@ -70,7 +82,8 @@ func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) EntityDataStore {
 	graphConfigStore := graphConfigDS.GetTestPostgresDataStore(t, pool)
 	treeMgr := networktree.Singleton()
 	sensorCnxMgr := connection.ManagerSingleton()
-	return NewEntityDataStore(dbstore, graphConfigStore, treeMgr, sensorCnxMgr)
+	dataPusher := newEntityPusher(sensorCnxMgr)
+	return NewEntityDataStore(dbstore, graphConfigStore, treeMgr, dataPusher)
 }
 
 func (ds *dataStoreImpl) initNetworkTrees(ctx context.Context) {
@@ -97,7 +110,7 @@ func (ds *dataStoreImpl) initNetworkTrees(ctx context.Context) {
 func (ds *dataStoreImpl) RegisterCluster(ctx context.Context, clusterID string) {
 	ds.getNetworkTree(ctx, clusterID, true)
 
-	go ds.doPushExternalNetworkEntitiesToSensor(clusterID)
+	ds.doPushExternalNetworkEntitiesToSensor(clusterID)
 }
 
 func (ds *dataStoreImpl) Exists(ctx context.Context, id string) (bool, error) {
@@ -237,7 +250,7 @@ func (ds *dataStoreImpl) CreateExternalNetworkEntity(ctx context.Context, entity
 	}
 
 	if !skipPush {
-		go ds.doPushExternalNetworkEntitiesToSensor(entity.GetScope().GetClusterId())
+		ds.doPushExternalNetworkEntitiesToSensor(entity.GetScope().GetClusterId())
 	}
 
 	return nil
@@ -283,7 +296,7 @@ func (ds *dataStoreImpl) CreateExtNetworkEntitiesForCluster(ctx context.Context,
 		}
 	}
 
-	go ds.doPushExternalNetworkEntitiesToSensor(cluster)
+	ds.doPushExternalNetworkEntitiesToSensor(cluster)
 
 	return len(toInsert), errs.ToError()
 }
@@ -350,7 +363,7 @@ func (ds *dataStoreImpl) UpdateExternalNetworkEntity(ctx context.Context, entity
 	}
 
 	if !skipPush {
-		go ds.doPushExternalNetworkEntitiesToSensor(entity.GetScope().GetClusterId())
+		ds.doPushExternalNetworkEntitiesToSensor(entity.GetScope().GetClusterId())
 	}
 
 	t := ds.getNetworkTree(ctx, entity.GetScope().GetClusterId(), true)
@@ -387,7 +400,7 @@ func (ds *dataStoreImpl) DeleteExternalNetworkEntity(ctx context.Context, id str
 		return err
 	}
 
-	go ds.doPushExternalNetworkEntitiesToSensor(decodedID.ClusterID())
+	ds.doPushExternalNetworkEntitiesToSensor(decodedID.ClusterID())
 
 	if networkTree := ds.getNetworkTree(ctx, decodedID.ClusterID(), false); networkTree != nil {
 		networkTree.Remove(id)
@@ -428,7 +441,7 @@ func (ds *dataStoreImpl) DeleteExternalNetworkEntitiesForCluster(ctx context.Con
 
 	// If we are here, it means all the network entities for the `clusterID` are removed.
 	ds.treeMgr.DeleteNetworkTree(ctx, clusterID)
-	go ds.doPushExternalNetworkEntitiesToSensor(clusterID)
+	ds.doPushExternalNetworkEntitiesToSensor(clusterID)
 
 	return nil
 }
@@ -457,23 +470,7 @@ func (ds *dataStoreImpl) getNetworkTree(ctx context.Context, clusterID string, c
 }
 
 func (ds *dataStoreImpl) doPushExternalNetworkEntitiesToSensor(clusters ...string) {
-	// If push request if for a global network entity, push to all known clusters once and return.
-	elevateCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.NetworkGraph)))
-
-	if set.NewStringSet(clusters...).Contains("") {
-		if err := ds.sensorConnMgr.PushExternalNetworkEntitiesToAllSensors(elevateCtx); err != nil {
-			log.Errorf("failed to sync external networks with some clusters: %v", err)
-		}
-		return
-	}
-
-	for _, cluster := range clusters {
-		if err := ds.sensorConnMgr.PushExternalNetworkEntitiesToSensor(elevateCtx, cluster); err != nil {
-			log.Errorf("failed to sync external networks with cluster %s: %v", cluster, err)
-		}
-	}
+	ds.dataPusher.DoPushExternalNetworkEntitiesToSensor(clusters...)
 }
 
 func (ds *dataStoreImpl) readAllowed(ctx context.Context, id string) (bool, error) {
@@ -547,4 +544,38 @@ func getScopeKey(id string) ([]sac.ScopeKey, error) {
 	}
 
 	return []sac.ScopeKey{}, nil // all clusters
+}
+
+type entityPusherImpl struct {
+	sensorConnMgr connection.Manager
+}
+
+func newEntityPusher(sensorConnMgr connection.Manager) EntityPusher {
+	return &entityPusherImpl{
+		sensorConnMgr: sensorConnMgr,
+	}
+}
+
+func (p *entityPusherImpl) DoPushExternalNetworkEntitiesToSensor(clusters ...string) {
+	go p.doPushExternalNetworkEntitiesToSensor(clusters...)
+}
+
+func (p *entityPusherImpl) doPushExternalNetworkEntitiesToSensor(clusters ...string) {
+	// If push request if for a global network entity, push to all known clusters once and return.
+	elevateCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.NetworkGraph)))
+
+	if set.NewStringSet(clusters...).Contains("") {
+		if err := p.sensorConnMgr.PushExternalNetworkEntitiesToAllSensors(elevateCtx); err != nil {
+			log.Errorf("failed to sync external networks with some clusters: %v", err)
+		}
+		return
+	}
+
+	for _, cluster := range clusters {
+		if err := p.sensorConnMgr.PushExternalNetworkEntitiesToSensor(elevateCtx, cluster); err != nil {
+			log.Errorf("failed to sync external networks with cluster %s: %v", cluster, err)
+		}
+	}
 }
