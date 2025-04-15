@@ -37,7 +37,7 @@ const (
 // PVCTarget specifies which deployment should attach the PVC
 type PVCTarget string
 
-// DefaultPVCValues specifies set of default values when reconcile the PVC
+// DefaultPVCValues specifies a set of default values used when reconciling the PVC.
 type DefaultPVCValues struct {
 	ClaimName string
 	Size      resource.Quantity
