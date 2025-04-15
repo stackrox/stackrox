@@ -422,7 +422,7 @@ func (s *PodsStoreSuite) TestSACGetByIDs() {
 	}
 
 	s.T().Run("with no identifiers", func(t *testing.T) {
-		actual, missingIndices, err := s.store.GetByIDs(withAllAccessCtx, []string{})
+		actual, err := s.store.GetByIDs(withAllAccessCtx, []string{})
 		assert.Nil(t, err)
 		assert.Nil(t, actual)
 	})

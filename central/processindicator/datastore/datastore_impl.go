@@ -71,7 +71,7 @@ func (ds *datastoreImpl) GetProcessIndicator(ctx context.Context, id string) (*s
 }
 
 func (ds *datastoreImpl) GetProcessIndicators(ctx context.Context, ids []string) ([]*storage.ProcessIndicator, bool, error) {
-	indicators, _, err := ds.storage.GetMany(ctx, ids)
+	indicators, err := ds.storage.GetByIDs(ctx, ids)
 	if err != nil || len(indicators) == 0 {
 		return nil, false, err
 	}
