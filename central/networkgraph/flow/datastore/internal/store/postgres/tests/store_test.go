@@ -76,6 +76,12 @@ func (s *NetworkflowStoreSuite) TestStore() {
 	secondCluster := fixtureconsts.Cluster2
 	store2 := postgresFlowStore.New(s.pgDB.DB, secondCluster)
 
+	//now := timestamp.Now()
+	now := time.Now()
+	timeNow := timestamp.FromGoTime(now)
+
+	time1 := timeNow.Add(time.Second)
+
 	networkFlow := &storage.NetworkFlow{
 		Props: &storage.NetworkFlowProperties{
 			SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "a"},
@@ -83,27 +89,35 @@ func (s *NetworkflowStoreSuite) TestStore() {
 			DstPort:    1,
 			L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 		},
-		LastSeenTimestamp: protocompat.GetProtoTimestampFromSeconds(1),
+		//LastSeenTimestamp: time1,
+		LastSeenTimestamp: time1.Protobuf(),
+		//LastSeenTimestamp: protocompat.GetProtoTimestampFromSeconds(1),
 		ClusterId:         clusterID,
 	}
-	zeroTs := timestamp.MicroTS(0)
+	//zeroTs := timestamp.MicroTS(0)
 
 	foundNetworkFlows, _, err := s.flowStore.GetAllFlows(s.ctx, nil)
 	s.NoError(err)
 	s.Len(foundNetworkFlows, 0)
 
 	// Adding the same thing twice to ensure that we only retrieve 1 based on serial Flow_Id implementation
-	s.NoError(s.flowStore.UpsertFlows(s.ctx, []*storage.NetworkFlow{networkFlow}, zeroTs))
-	networkFlow.LastSeenTimestamp = protocompat.GetProtoTimestampFromSeconds(2)
-	s.NoError(s.flowStore.UpsertFlows(s.ctx, []*storage.NetworkFlow{networkFlow}, zeroTs))
+	s.NoError(s.flowStore.UpsertFlows(s.ctx, []*storage.NetworkFlow{networkFlow}, timeNow))
+	//s.NoError(s.flowStore.UpsertFlows(s.ctx, []*storage.NetworkFlow{networkFlow}, now))
+	//networkFlow.LastSeenTimestamp = protocompat.GetProtoTimestampFromSeconds(2)
+	//networkFlow.LastSeenTimestamp = now.Add(2 * time.Second).Protobuf()
+	networkFlow.LastSeenTimestamp = timeNow.Add(2 * time.Second).Protobuf()
+	s.NoError(s.flowStore.UpsertFlows(s.ctx, []*storage.NetworkFlow{networkFlow}, timeNow))
 	foundNetworkFlows, _, err = s.flowStore.GetAllFlows(s.ctx, nil)
 	s.NoError(err)
 	s.Len(foundNetworkFlows, 1)
 	assert.True(s.T(), testhelper.MatchElements([]*storage.NetworkFlow{networkFlow}, foundNetworkFlows))
 
 	// Check the get all flows by since time
-	time3 := time.Unix(3, 0)
+	//time3 := time.Unix(3, 0)
+	//time3 := now.Add(3 * time.Second)
+	time3 := now.Add(3 * time.Second)
 	foundNetworkFlows, _, err = s.flowStore.GetAllFlows(s.ctx, &time3)
+	//foundNetworkFlows, _, err = s.flowStore.GetAllFlows(s.ctx, time3)
 	s.NoError(err)
 	s.Len(foundNetworkFlows, 0)
 
@@ -112,7 +126,10 @@ func (s *NetworkflowStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Len(foundNetworkFlows, 0)
 
-	s.NoError(s.flowStore.UpsertFlows(s.ctx, []*storage.NetworkFlow{networkFlow}, zeroTs))
+	s.NoError(s.flowStore.UpsertFlows(s.ctx, []*storage.NetworkFlow{networkFlow}, timeNow))
+	//s.NoError(s.flowStore.UpsertFlows(s.ctx, []*storage.NetworkFlow{networkFlow}, now))
+	//s.NoError(s.flowStore.UpsertFlows(s.ctx, []*storage.NetworkFlow{networkFlow}, timeNow.Protobuf()))
+	//s.NoError(s.flowStore.UpsertFlows(s.ctx, []*storage.NetworkFlow{networkFlow}, zeroTs))
 
 	err = s.flowStore.RemoveFlowsForDeployment(s.ctx, networkFlow.GetProps().GetSrcEntity().GetId())
 	s.NoError(err)
@@ -129,7 +146,9 @@ func (s *NetworkflowStoreSuite) TestStore() {
 		networkFlows = append(networkFlows, networkFlow)
 	}
 
-	s.NoError(s.flowStore.UpsertFlows(s.ctx, networkFlows, zeroTs))
+	s.NoError(s.flowStore.UpsertFlows(s.ctx, networkFlows, timeNow))
+	//s.NoError(s.flowStore.UpsertFlows(s.ctx, networkFlows, now.Protobuf()))
+	//s.NoError(s.flowStore.UpsertFlows(s.ctx, networkFlows, zeroTs))
 
 	foundNetworkFlows, _, err = s.flowStore.GetAllFlows(s.ctx, nil)
 	s.NoError(err)
@@ -142,7 +161,8 @@ func (s *NetworkflowStoreSuite) TestStore() {
 
 	// Add a flow to the second cluster
 	networkFlow.ClusterId = secondCluster
-	s.NoError(store2.UpsertFlows(s.ctx, []*storage.NetworkFlow{networkFlow}, zeroTs))
+	s.NoError(store2.UpsertFlows(s.ctx, []*storage.NetworkFlow{networkFlow}, timeNow))
+	//s.NoError(store2.UpsertFlows(s.ctx, []*storage.NetworkFlow{networkFlow}, now.Protobuf()))
 
 	foundNetworkFlows, _, err = store2.GetAllFlows(s.ctx, nil)
 	s.NoError(err)
