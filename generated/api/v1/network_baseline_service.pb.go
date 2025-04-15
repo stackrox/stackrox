@@ -78,7 +78,7 @@ type NetworkBaselinePeerEntity struct {
 	Id            string                         `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Type          storage.NetworkEntityInfo_Type `protobuf:"varint,2,opt,name=type,proto3,enum=storage.NetworkEntityInfo_Type" json:"type,omitempty"`
 	Name          string                         `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
-	Cidr          string                         `protobuf:"bytes,4,opt,name=cidr,proto3" json:"cidr,omitempty"`
+	Discovered    bool                           `protobuf:"varint,4,opt,name=discovered,proto3" json:"discovered,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -134,11 +134,11 @@ func (x *NetworkBaselinePeerEntity) GetName() string {
 	return ""
 }
 
-func (x *NetworkBaselinePeerEntity) GetCidr() string {
+func (x *NetworkBaselinePeerEntity) GetDiscovered() bool {
 	if x != nil {
-		return x.Cidr
+		return x.Discovered
 	}
-	return ""
+	return false
 }
 
 type NetworkBaselineStatusPeer struct {
@@ -559,12 +559,14 @@ var File_api_v1_network_baseline_service_proto protoreflect.FileDescriptor
 
 const file_api_v1_network_baseline_service_proto_rawDesc = "" +
 	"\n" +
-	"%api/v1/network_baseline_service.proto\x12\x02v1\x1a\x13api/v1/common.proto\x1a\x12api/v1/empty.proto\x1a\x17api/v1/pagination.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1estorage/network_baseline.proto\x1a\x1astorage/network_flow.proto\"\x88\x01\n" +
+	"%api/v1/network_baseline_service.proto\x12\x02v1\x1a\x13api/v1/common.proto\x1a\x12api/v1/empty.proto\x1a\x17api/v1/pagination.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1estorage/network_baseline.proto\x1a\x1astorage/network_flow.proto\"\x94\x01\n" +
 	"\x19NetworkBaselinePeerEntity\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x123\n" +
 	"\x04type\x18\x02 \x01(\x0e2\x1f.storage.NetworkEntityInfo.TypeR\x04type\x12\x12\n" +
-	"\x04name\x18\x03 \x01(\tR\x04name\x12\x12\n" +
-	"\x04cidr\x18\x04 \x01(\tR\x04cidr\"\xb1\x01\n" +
+	"\x04name\x18\x03 \x01(\tR\x04name\x12\x1e\n" +
+	"\n" +
+	"discovered\x18\x04 \x01(\bR\n" +
+	"discovered\"\xb1\x01\n" +
 	"\x19NetworkBaselineStatusPeer\x125\n" +
 	"\x06entity\x18\x01 \x01(\v2\x1d.v1.NetworkBaselinePeerEntityR\x06entity\x12\x12\n" +
 	"\x04port\x18\x02 \x01(\rR\x04port\x12/\n" +

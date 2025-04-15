@@ -17,7 +17,7 @@ message NetworkBaselinePeerEntity {
   string id = 1;
   storage.NetworkEntityInfo.Type type = 2;
   string name = 3;
-  string cidr = 4;
+  bool discovered = 4;
 }
 
 message NetworkBaselineStatusPeer {

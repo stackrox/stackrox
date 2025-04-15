@@ -940,6 +940,8 @@ func (m *manager) GetExternalNetworkPeers(ctx context.Context, deploymentID stri
 	for _, entity := range entities {
 		info := entity.GetInfo()
 		entityFilter.Add(info.GetId())
+
+		// store enriched entities data for lookup later
 		entitiesMap[info.GetId()] = info
 	}
 
@@ -985,18 +987,18 @@ func (m *manager) GetExternalNetworkPeers(ctx context.Context, deploymentID stri
 		if src.GetType() == storage.NetworkEntityInfo_DEPLOYMENT {
 			info := entitiesMap[dst.GetId()]
 			entity = &v1.NetworkBaselinePeerEntity{
-				Id:   dst.GetId(),
-				Type: dst.GetType(),
-				Cidr: info.GetExternalSource().GetCidr(),
-				Name: info.GetExternalSource().GetName(),
+				Id:         dst.GetId(),
+				Type:       dst.GetType(),
+				Name:       info.GetExternalSource().GetName(),
+				Discovered: info.GetExternalSource().GetDiscovered(),
 			}
 		} else {
 			info := entitiesMap[src.GetId()]
 			entity = &v1.NetworkBaselinePeerEntity{
-				Id:   src.GetId(),
-				Type: src.GetType(),
-				Cidr: info.GetExternalSource().GetCidr(),
-				Name: info.GetExternalSource().GetName(),
+				Id:         src.GetId(),
+				Type:       src.GetType(),
+				Name:       info.GetExternalSource().GetName(),
+				Discovered: info.GetExternalSource().GetDiscovered(),
 			}
 			ingress = true
 		}
