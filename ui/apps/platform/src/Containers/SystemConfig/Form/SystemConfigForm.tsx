@@ -36,7 +36,7 @@ import { saveSystemConfig } from 'services/SystemConfigService';
 import { PrivateConfig, PublicConfig, SystemConfig } from 'types/config.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { selectors } from 'reducers';
-import { initializeAnalytics } from 'global/initializeAnalytics';
+import { initializeAnalytics } from 'init/initializeAnalytics';
 
 import FormSelect from './FormSelect';
 import { convertBetweenBytesAndMB } from '../SystemConfig.utils';
