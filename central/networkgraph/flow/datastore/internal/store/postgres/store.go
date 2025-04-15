@@ -107,9 +107,9 @@ const (
 		AND Props_DstEntity_Type = 1
 		AND UpdatedAt < $2`
 
-	pruneNetworkFlowsReturnStmt = ` RETURNING child.Props_SrcEntity_Type, child.Props_SrcEntity_Id, child.Props_DstEntity_Type,
-		child.Props_DstEntity_Id, child.Props_DstPort, child.Props_L4Protocol,
-		child.LastSeenTimestamp, child.UpdatedAt, child.ClusterId::text;`
+	pruneNetworkFlowsReturnStmt = ` RETURNING Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type,
+		Props_DstEntity_Id, Props_DstPort, Props_L4Protocol,
+		LastSeenTimestamp, UpdatedAt, ClusterId::text;`
 
 	// The idea behind this statement is to prune orphan external (discovered)
 	// entities from the entities table. When flows are pruned using the above
@@ -422,6 +422,22 @@ func (s *flowStoreImpl) retryableRemoveFlowsForDeployment(ctx context.Context, i
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
+	if features.ExternalIPs.Enabled() || env.ExternalIPsPruning.BooleanSetting() {
+		// We are adding a return statement to retrieve the pruned flows. They are useful
+		// to limit the pruning of 'discovered' entities to only potential new orphans.
+		srcFlows, err := s.removeAndReturnDeploymentFlows(ctx, deleteSrcDeploymentStmt+pruneNetworkFlowsReturnStmt, id)
+		if err != nil {
+			return err
+		}
+
+		dstFlows, err := s.removeAndReturnDeploymentFlows(ctx, deleteDstDeploymentStmt+pruneNetworkFlowsReturnStmt, id)
+		if err != nil {
+			return err
+		}
+
+		return s.pruneOrphanExternalEntities(ctx, srcFlows, dstFlows)
+	}
+
 	// To avoid a full scan with an OR delete source and destination flows separately
 	err := s.removeDeploymentFlows(ctx, deleteSrcDeploymentStmt, id)
 	if err != nil {
@@ -455,6 +471,41 @@ func (s *flowStoreImpl) removeDeploymentFlows(ctx context.Context, deleteStmt st
 	}
 
 	return tx.Commit(ctx)
+}
+
+func (s *flowStoreImpl) removeAndReturnDeploymentFlows(ctx context.Context, deleteStmt string, id string) ([]*storage.NetworkFlow, error) {
+	conn, release, err := s.acquireConn(ctx, ops.RemoveFlowsByDeployment, "NetworkFlow")
+	if err != nil {
+		return nil, err
+	}
+	defer release()
+
+	ctx, cancel := context.WithTimeout(ctx, deleteTimeout)
+	defer cancel()
+
+	tx, err := conn.Begin(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := tx.Query(ctx, deleteStmt, s.clusterID, id)
+	if err != nil {
+		if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
+			return nil, errors.Wrapf(rollbackErr, "rolling back due to err: %v", err)
+		}
+		return nil, err
+	}
+
+	flows, err := s.readRows(rows, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, err
+	}
+
+	return flows, nil
 }
 
 // GetAllFlows returns the object, if it exists from the store, timestamp and error

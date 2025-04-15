@@ -515,6 +515,100 @@ func (s *NetworkflowStoreSuite) TestPruneExternalEntitiesNoneOrphaned() {
 	s.Equal(2, count)
 }
 
+// Three flows: Ext1->Depl1 Ext1->Depl2 Depl2->Ext2
+// Remove Depl2
+// Expect 1 flow and 1 entity remaining
+func (s *NetworkflowStoreSuite) TestRemoveDeplExternalEntitiesOrphaned() {
+	s.T().Setenv(features.ExternalIPs.EnvVar(), "true")
+
+	now := time.Now()
+
+	extEntity1 := ngTestutils.GetDiscoveredExtSrcNetworkEntity("223.42.0.1/32", clusterID)
+	err := s.entityStore.UpdateExternalNetworkEntity(s.ctx, extEntity1, false)
+	s.Nil(err)
+
+	extEntity2 := ngTestutils.GetDiscoveredExtSrcNetworkEntity("223.42.0.2/32", clusterID)
+	err = s.entityStore.UpdateExternalNetworkEntity(s.ctx, extEntity2, false)
+	s.Nil(err)
+
+	flows := []*storage.NetworkFlow{
+		{
+			Props: &storage.NetworkFlowProperties{
+				DstPort: 22,
+				SrcEntity: &storage.NetworkEntityInfo{
+					Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+					Id:   extEntity1.GetInfo().Id,
+				},
+				DstEntity: &storage.NetworkEntityInfo{
+					Type: storage.NetworkEntityInfo_DEPLOYMENT,
+					Id:   fixtureconsts.Deployment1,
+				},
+			},
+			ClusterId: clusterID,
+		},
+		{
+			Props: &storage.NetworkFlowProperties{
+				DstPort: 22,
+				SrcEntity: &storage.NetworkEntityInfo{
+					Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+					Id:   extEntity1.GetInfo().Id,
+				},
+				DstEntity: &storage.NetworkEntityInfo{
+					Type: storage.NetworkEntityInfo_DEPLOYMENT,
+					Id:   fixtureconsts.Deployment2,
+				},
+			},
+			ClusterId: clusterID,
+		},
+		{
+			Props: &storage.NetworkFlowProperties{
+				DstPort: 22,
+				SrcEntity: &storage.NetworkEntityInfo{
+					Type: storage.NetworkEntityInfo_DEPLOYMENT,
+					Id:   fixtureconsts.Deployment2,
+				},
+				DstEntity: &storage.NetworkEntityInfo{
+					Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+					Id:   extEntity2.GetInfo().Id,
+				},
+			},
+			ClusterId: clusterID,
+		},
+	}
+
+	err = s.flowStore.UpsertFlows(s.ctx, flows, timestamp.FromGoTime(now.Add(-100*time.Second)))
+	s.Nil(err)
+
+	// flows initially in the DB
+	row := s.pgDB.DB.QueryRow(s.ctx, flowsCountStmt)
+	var count int
+	err = row.Scan(&count)
+	s.Nil(err)
+	s.Equal(len(flows), count)
+
+	// entities initially in the DB
+	row = s.pgDB.DB.QueryRow(s.ctx, entitiesCountStmt)
+	err = row.Scan(&count)
+	s.Nil(err)
+	s.Equal(2, count)
+
+	// Delete deployment2
+	err = s.flowStore.RemoveFlowsForDeployment(s.ctx, fixtureconsts.Deployment2)
+	s.Nil(err)
+
+	// flows after pruning
+	row = s.pgDB.DB.QueryRow(s.ctx, flowsCountStmt)
+	err = row.Scan(&count)
+	s.Nil(err)
+	s.Equal(1, count)
+
+	// entities after pruning
+	row = s.pgDB.DB.QueryRow(s.ctx, entitiesCountStmt)
+	err = row.Scan(&count)
+	s.Nil(err)
+	s.Equal(1, count)
+}
+
 func deploymentIngressFlowsPredicate(props *storage.NetworkFlowProperties) bool {
 	return props.GetDstEntity().GetType() == storage.NetworkEntityInfo_DEPLOYMENT
 }
