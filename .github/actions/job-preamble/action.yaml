@@ -10,6 +10,7 @@ runs:
     - name: Recover docker image cache space
       run: |
         df --si /
+        printf 'Docker prune: '
         docker system prune --force --all
         df --si /
       shell: bash
