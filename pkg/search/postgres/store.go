@@ -67,6 +67,7 @@ type Store[T any, PT pgutils.Unmarshaler[T]] interface {
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*T, error)
 	GetIDs(ctx context.Context) ([]string, error)
 	GetIDsByQuery(ctx context.Context, query *v1.Query) ([]string, error)
+	GetByIDs(ctx context.Context, identifiers []string) ([]PT, error)
 	GetMany(ctx context.Context, identifiers []string) ([]PT, []int, error)
 	DeleteByQuery(ctx context.Context, query *v1.Query) ([]string, error)
 	Delete(ctx context.Context, id string) error
@@ -256,6 +257,24 @@ func (s *genericStore[T, PT]) GetIDs(ctx context.Context) ([]string, error) {
 func (s *genericStore[T, PT]) GetIDsByQuery(ctx context.Context, query *v1.Query) ([]string, error) {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.GetByQuery)
 	return s.fetchIDsByQuery(ctx, query)
+}
+
+// GetByIDs returns the objects specified by the IDs from the store as well as the index in the missing indices slice.
+func (s *genericStore[T, PT]) GetByIDs(ctx context.Context, identifiers []string) ([]PT, error) {
+	defer s.setPostgresOperationDurationTime(time.Now(), ops.GetByQuery)
+
+	if len(identifiers) == 0 {
+		return nil, nil
+	}
+
+	q := search.NewQueryBuilder().AddDocIDs(identifiers...).ProtoQuery()
+
+	rows := make([]PT, 0, len(identifiers))
+	err := RunQueryForSchemaFn(ctx, s.schema, q, s.db, func(obj PT) error {
+		rows = append(rows, obj)
+		return nil
+	})
+	return rows, err
 }
 
 // GetMany returns the objects specified by the IDs from the store as well as the index in the missing indices slice.

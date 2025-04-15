@@ -48,6 +48,7 @@ type Store interface {
 
 	Get(ctx context.Context, id string) (*storeType, bool, error)
 	GetMany(ctx context.Context, identifiers []string) ([]*storeType, []int, error)
+	GetByIDs(ctx context.Context, identifiers []string) ([]*storeType, error)
 	GetIDs(ctx context.Context) ([]string, error)
 
 	Walk(ctx context.Context, fn func(obj *storeType) error) error

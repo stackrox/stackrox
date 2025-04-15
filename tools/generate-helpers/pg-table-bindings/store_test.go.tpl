@@ -453,5 +453,25 @@ func (s *{{$namePrefix}}StoreSuite) TestSACGetMany() {
 	})
 }
 
+func (s *{{$namePrefix}}StoreSuite) TestSACGetByIDs() {
+	objA, objB, testCases := s.getTestData(storage.Access_READ_ACCESS)
+	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objA))
+	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objB))
+
+	for name, testCase := range testCases {
+		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
+			actual, err := s.store.GetByIDs(testCase.context, []string{ {{ "objA" | .Obj.GetID }}, {{ "objB" | .Obj.GetID }} })
+			assert.NoError(t, err)
+			protoassert.SlicesEqual(t, testCase.expectedObjects, actual)
+		})
+	}
+
+	s.T().Run("with no identifiers", func(t *testing.T) {
+		actual, missingIndices, err := s.store.GetByIDs(withAllAccessCtx, []string{})
+		assert.Nil(t, err)
+		assert.Nil(t, actual)
+	})
+}
+
 {{end}}
 {{- end }}

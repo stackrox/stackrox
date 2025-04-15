@@ -279,6 +279,25 @@ func (c *cachedStore[T, PT]) Get(ctx context.Context, id string) (PT, bool, erro
 	return obj.CloneVT(), true, nil
 }
 
+// GetByIDs returns the objects specified by the IDs from the store.
+func (c *cachedStore[T, PT]) GetByIDs(ctx context.Context, identifiers []string) ([]PT, error) {
+	defer c.setCacheOperationDurationTime(time.Now(), ops.GetMany)
+	if len(identifiers) == 0 {
+		return nil, nil
+	}
+	c.cacheLock.RLock()
+	defer c.cacheLock.RUnlock()
+	results := make([]PT, 0, len(identifiers))
+	for _, id := range identifiers {
+		obj, found := c.cache[id]
+		if !found || !c.isReadAllowed(ctx, obj) {
+			continue
+		}
+		results = append(results, obj.CloneVT())
+	}
+	return results, nil
+}
+
 // GetMany returns the objects specified by the IDs from the store as well as the index in the missing indices slice.
 func (c *cachedStore[T, PT]) GetMany(ctx context.Context, identifiers []string) ([]PT, []int, error) {
 	defer c.setCacheOperationDurationTime(time.Now(), ops.GetMany)
