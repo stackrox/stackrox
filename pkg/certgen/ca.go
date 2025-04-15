@@ -16,6 +16,8 @@ var (
 	errNoCAKey  = errors.New("no CA key in file map")
 )
 
+const caCertExpiry = "43800h" // 5 years
+
 // LoadCAFromFileMap loads and instantiates a StackRox service CA from the given file map. The file map
 // must contain `ca-cert.pem` and `ca-key.pem` entries.
 func LoadCAFromFileMap(fileMap map[string][]byte) (mtls.CA, error) {
@@ -69,7 +71,7 @@ func GenerateCA() (mtls.CA, error) {
 		KeyRequest:   csr.NewKeyRequest(),
 		SerialNumber: serial.String(),
 		CA: &csr.CAConfig{
-			Expiry: "43800h", // 5 years
+			Expiry: caCertExpiry,
 		},
 	}
 	caCert, _, caKey, err := initca.New(&req)
