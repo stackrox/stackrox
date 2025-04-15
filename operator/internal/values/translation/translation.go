@@ -7,7 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/operator/api/v1alpha1"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
-	utils "github.com/stackrox/rox/operator/internal/utils"
+	"github.com/stackrox/rox/operator/internal/utils"
 	corev1 "k8s.io/api/core/v1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
