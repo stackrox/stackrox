@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	// DefaultStorageClassAnnotationKey is the annotation used to identify a default storage class
+	// DefaultStorageClassAnnotationKey is the annotation used to identify a default storage class.
 	DefaultStorageClassAnnotationKey = "storageclass.kubernetes.io/is-default-class"
 )
 
