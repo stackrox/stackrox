@@ -1183,8 +1183,8 @@
         "name": {
           "type": "string"
         },
-        "cidr": {
-          "type": "string"
+        "discovered": {
+          "type": "boolean"
         }
       }
     },

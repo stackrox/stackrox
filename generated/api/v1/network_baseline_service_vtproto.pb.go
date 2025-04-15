@@ -31,7 +31,7 @@ func (m *NetworkBaselinePeerEntity) CloneVT() *NetworkBaselinePeerEntity {
 	r.Id = m.Id
 	r.Type = m.Type
 	r.Name = m.Name
-	r.Cidr = m.Cidr
+	r.Discovered = m.Discovered
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -219,7 +219,7 @@ func (this *NetworkBaselinePeerEntity) EqualVT(that *NetworkBaselinePeerEntity) 
 	if this.Name != that.Name {
 		return false
 	}
-	if this.Cidr != that.Cidr {
+	if this.Discovered != that.Discovered {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -501,12 +501,15 @@ func (m *NetworkBaselinePeerEntity) MarshalToSizedBufferVT(dAtA []byte) (int, er
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if len(m.Cidr) > 0 {
-		i -= len(m.Cidr)
-		copy(dAtA[i:], m.Cidr)
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Cidr)))
+	if m.Discovered {
 		i--
-		dAtA[i] = 0x22
+		if m.Discovered {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x20
 	}
 	if len(m.Name) > 0 {
 		i -= len(m.Name)
@@ -941,9 +944,8 @@ func (m *NetworkBaselinePeerEntity) SizeVT() (n int) {
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
-	l = len(m.Cidr)
-	if l > 0 {
-		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	if m.Discovered {
+		n += 2
 	}
 	n += len(m.unknownFields)
 	return n
@@ -1212,10 +1214,10 @@ func (m *NetworkBaselinePeerEntity) UnmarshalVT(dAtA []byte) error {
 			m.Name = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 4:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Cidr", wireType)
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Discovered", wireType)
 			}
-			var stringLen uint64
+			var v int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -1225,24 +1227,12 @@ func (m *NetworkBaselinePeerEntity) UnmarshalVT(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				v |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Cidr = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
+			m.Discovered = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -2300,10 +2290,10 @@ func (m *NetworkBaselinePeerEntity) UnmarshalVTUnsafe(dAtA []byte) error {
 			m.Name = stringValue
 			iNdEx = postIndex
 		case 4:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Cidr", wireType)
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Discovered", wireType)
 			}
-			var stringLen uint64
+			var v int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -2313,28 +2303,12 @@ func (m *NetworkBaselinePeerEntity) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				v |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			var stringValue string
-			if intStringLen > 0 {
-				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
-			}
-			m.Cidr = stringValue
-			iNdEx = postIndex
+			m.Discovered = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

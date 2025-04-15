@@ -191,10 +191,9 @@ func (s *serviceImpl) getStatusesForPeers(
 	statuses := make([]*v1.NetworkBaselinePeerStatus, 0, len(examinedPeers))
 	for _, examinedPeer := range examinedPeers {
 		status := v1.NetworkBaselinePeerStatus_ANOMALOUS
-		examinedPeerKey := networkgraph.Entity{
-			Type: examinedPeer.GetEntity().GetType(),
-			ID:   examinedPeer.GetEntity().GetId(),
-		}
+
+		examinedPeerKey := s.anonymizedPeerKey(examinedPeer)
+
 		if baselinePeer, ok := baselinePeerByID[examinedPeerKey]; ok {
 			for _, baselineProperty := range baselinePeer.GetProperties() {
 				if examinedPeer.GetProtocol() == baselineProperty.GetProtocol() &&
@@ -216,6 +215,24 @@ func (s *serviceImpl) getStatusesForPeers(
 	}
 
 	return statuses
+}
+
+// anonymizedPeerKey anonymizes discovered external peers to the internet
+// for the purposes of looking up matching baseline peers.
+func (s *serviceImpl) anonymizedPeerKey(peer *v1.NetworkBaselineStatusPeer) networkgraph.Entity {
+	entity := peer.GetEntity()
+	if entity.GetType() == storage.NetworkEntityInfo_EXTERNAL_SOURCE && entity.GetDiscovered() {
+		internet := networkgraph.InternetEntity()
+		// removing some fields for map keying
+		return networkgraph.Entity{
+			Type: internet.Type,
+			ID:   internet.ID,
+		}
+	}
+	return networkgraph.Entity{
+		Type: entity.GetType(),
+		ID:   entity.GetId(),
+	}
 }
 
 // getBaselinePeerByEntityID indexes the peers from the provided baseline
