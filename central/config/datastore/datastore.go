@@ -263,13 +263,7 @@ func (d *datastoreImpl) UpsertPlatformComponentConfigRule(ctx context.Context, r
 		return nil
 	}
 
-	adminCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.Administration)))
-
-	config, found, err := d.store.Get(adminCtx)
+	config, found, err := d.store.Get(ctx)
 	if !found || err != nil {
 		return err
 	}
@@ -277,7 +271,7 @@ func (d *datastoreImpl) UpsertPlatformComponentConfigRule(ctx context.Context, r
 		config.PlatformComponentConfig.Rules = make([]*storage.PlatformComponentConfig_Rule, 0)
 	}
 	config.PlatformComponentConfig.Rules = append(config.PlatformComponentConfig.Rules, rule)
-	return d.store.Upsert(adminCtx, config)
+	return d.store.Upsert(ctx, config)
 }
 
 func (d *datastoreImpl) UpsertPlatformComponentConfigRules(ctx context.Context, rules []*storage.PlatformComponentConfig_Rule) (*storage.PlatformComponentConfig, error) {
@@ -289,13 +283,7 @@ func (d *datastoreImpl) UpsertPlatformComponentConfigRules(ctx context.Context, 
 		return nil, nil
 	}
 
-	adminCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.Administration)))
-
-	config, found, err := d.store.Get(adminCtx)
+	config, found, err := d.store.Get(ctx)
 	if !found || err != nil {
 		log.Info("Config not found or there was an error")
 		return nil, err
@@ -315,9 +303,9 @@ func (d *datastoreImpl) UpsertPlatformComponentConfigRules(ctx context.Context, 
 		log.Infof("Rule: %q", rule)
 		config.PlatformComponentConfig.Rules = append(config.PlatformComponentConfig.Rules, rule)
 	}
-	err = d.store.Upsert(adminCtx, config)
+	err = d.store.Upsert(ctx, config)
 	if err != nil {
-		log.Info("There was an error upserting the config")
+		log.Infof("There was an error upserting the config, %v", err)
 		return nil, err
 	}
 	log.Infof("Config after upsert: %q", config)
@@ -331,13 +319,7 @@ func (d *datastoreImpl) DeletePlatformComponentConfigRules(ctx context.Context, 
 		return nil
 	}
 
-	adminCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.Administration)))
-
-	config, found, err := d.store.Get(adminCtx)
+	config, found, err := d.store.Get(ctx)
 	if !found || err != nil {
 		return err
 	}
@@ -354,5 +336,5 @@ func (d *datastoreImpl) DeletePlatformComponentConfigRules(ctx context.Context, 
 		newRules = append(newRules, rule)
 	}
 	config.PlatformComponentConfig.Rules = newRules
-	return d.store.Upsert(adminCtx, config)
+	return d.store.Upsert(ctx, config)
 }
