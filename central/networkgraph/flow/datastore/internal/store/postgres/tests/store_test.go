@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
+	"github.com/stackrox/rox/pkg/networkgraph/externalsrcs"
 	ngTestutils "github.com/stackrox/rox/pkg/networkgraph/testutils"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -272,6 +273,15 @@ func (s *NetworkflowStoreSuite) TestPruneStaleNetworkFlows() {
 	s.Equal(count, 2)
 }
 
+// Create a discovered External-Source entity that is ClusterScoped
+func GetClusterScopedDiscoveredEntity(ip string, clusterID string) *storage.NetworkEntity {
+	id, err := externalsrcs.NewClusterScopedID(clusterID, ip)
+	if err != nil {
+		return nil
+	}
+	return ngTestutils.GetExtSrcNetworkEntity(id.String(), ip, ip, false, clusterID, true)
+}
+
 // Two flows using two distinct external-entities. Both are pruned
 // and we expect that all entities are pruned as well.
 func (s *NetworkflowStoreSuite) TestPruneExternalEntitiesAllOrphaned() {
@@ -279,11 +289,11 @@ func (s *NetworkflowStoreSuite) TestPruneExternalEntitiesAllOrphaned() {
 
 	now := time.Now()
 
-	extEntity1 := ngTestutils.GetDiscoveredExtSrcNetworkEntity("223.42.0.1/32", clusterID)
+	extEntity1 := GetClusterScopedDiscoveredEntity("223.42.0.1/32", clusterID)
 	err := s.entityStore.UpdateExternalNetworkEntity(s.ctx, extEntity1, false)
 	s.Nil(err)
 
-	extEntity2 := ngTestutils.GetDiscoveredExtSrcNetworkEntity("223.42.0.2/32", clusterID)
+	extEntity2 := GetClusterScopedDiscoveredEntity("223.42.0.2/32", clusterID)
 	err = s.entityStore.UpdateExternalNetworkEntity(s.ctx, extEntity2, false)
 	s.Nil(err)
 
@@ -360,7 +370,7 @@ func (s *NetworkflowStoreSuite) TestPruneExternalEntitiesPartial() {
 
 	now := time.Now()
 
-	extEntity1 := ngTestutils.GetDiscoveredExtSrcNetworkEntity("223.42.0.1/32", clusterID)
+	extEntity1 := GetClusterScopedDiscoveredEntity("223.42.0.1/32", clusterID)
 	err := s.entityStore.UpdateExternalNetworkEntity(s.ctx, extEntity1, false)
 	s.Nil(err)
 
@@ -442,11 +452,11 @@ func (s *NetworkflowStoreSuite) TestPruneExternalEntitiesNoneOrphaned() {
 
 	now := time.Now()
 
-	extEntity1 := ngTestutils.GetDiscoveredExtSrcNetworkEntity("223.42.0.1/32", clusterID)
+	extEntity1 := GetClusterScopedDiscoveredEntity("223.42.0.1/32", clusterID)
 	err := s.entityStore.UpdateExternalNetworkEntity(s.ctx, extEntity1, false)
 	s.Nil(err)
 
-	extEntity2 := ngTestutils.GetDiscoveredExtSrcNetworkEntity("223.42.0.2/32", clusterID)
+	extEntity2 := GetClusterScopedDiscoveredEntity("223.42.0.2/32", clusterID)
 	err = s.entityStore.UpdateExternalNetworkEntity(s.ctx, extEntity2, false)
 	s.Nil(err)
 
@@ -523,11 +533,11 @@ func (s *NetworkflowStoreSuite) TestRemoveDeplExternalEntitiesOrphaned() {
 
 	now := time.Now()
 
-	extEntity1 := ngTestutils.GetDiscoveredExtSrcNetworkEntity("223.42.0.1/32", clusterID)
+	extEntity1 := GetClusterScopedDiscoveredEntity("223.42.0.1/32", clusterID)
 	err := s.entityStore.UpdateExternalNetworkEntity(s.ctx, extEntity1, false)
 	s.Nil(err)
 
-	extEntity2 := ngTestutils.GetDiscoveredExtSrcNetworkEntity("223.42.0.2/32", clusterID)
+	extEntity2 := GetClusterScopedDiscoveredEntity("223.42.0.2/32", clusterID)
 	err = s.entityStore.UpdateExternalNetworkEntity(s.ctx, extEntity2, false)
 	s.Nil(err)
 
