@@ -387,37 +387,37 @@ spec:
         path: central.exposure.nodePort.port
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:central.exposure.nodePort.enabled:true
-      - description: Expose central with a passthrough route.
+      - description: Expose Central with a passthrough route.
         displayName: Enabled
         path: central.exposure.route.enabled
-      - description: 'Specify a custom hostname for the central route.
+      - description: 'Specify a custom hostname for the Central route.
 
           If unspecified, an appropriate default value will be automatically chosen
           by the OpenShift route operator.'
         displayName: Host
         path: central.exposure.route.host
-      - description: 'Set up a central route with reencrypt TLS termination.
+      - description: 'Set up a Central route with reencrypt TLS termination.
 
           For reencrypt routes, the request is terminated on the OpenShift router
           with a custom certificate.
 
-          The request is then reencrypted by the OpenShift router and sent to central.
+          The request is then reencrypted by the OpenShift router and sent to Central.
 
-          [user] --TLS--> [OpenShift router] --TLS--> [central]'
+          [user] --TLS--> [OpenShift router] --TLS--> [Central]'
         displayName: Re-Encrypt Route
         path: central.exposure.route.reencrypt
-      - description: 'Expose central with a reencrypt route.
+      - description: 'Expose Central with a reencrypt route.
 
           Should not be used for sensor communication.'
         displayName: Enabled
         path: central.exposure.route.reencrypt.enabled
-      - description: 'Specify a custom hostname for the central reencrypt route.
+      - description: 'Specify a custom hostname for the Central reencrypt route.
 
           If unspecified, an appropriate default value will be automatically chosen
           by the OpenShift route operator.'
         displayName: Host
         path: central.exposure.route.reencrypt.host
-      - description: TLS settings for exposing central via a reencrypt Route.
+      - description: TLS settings for exposing Central via a reencrypt Route.
         displayName: TLS Settings
         path: central.exposure.route.reencrypt.tls
       - description: 'The PEM encoded certificate chain that may be used to establish
@@ -434,7 +434,7 @@ spec:
           Defaults to a certificate signed by the OpenShift certificate authority.'
         displayName: Certificate
         path: central.exposure.route.reencrypt.tls.certificate
-      - description: 'The CA certificate of the final destination, i.e. of central.
+      - description: 'The CA certificate of the final destination, i.e. of Central.
 
           Used by the OpenShift router for health checks on the secure connection.
 

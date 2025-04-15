@@ -380,33 +380,33 @@ spec:
                         properties:
                           enabled:
                             default: false
-                            description: Expose central with a passthrough route.
+                            description: Expose Central with a passthrough route.
                             type: boolean
                           host:
                             description: |-
-                              Specify a custom hostname for the central route.
+                              Specify a custom hostname for the Central route.
                               If unspecified, an appropriate default value will be automatically chosen by the OpenShift route operator.
                             type: string
                           reencrypt:
                             description: |-
-                              Set up a central route with reencrypt TLS termination.
+                              Set up a Central route with reencrypt TLS termination.
                               For reencrypt routes, the request is terminated on the OpenShift router with a custom certificate.
-                              The request is then reencrypted by the OpenShift router and sent to central.
-                              [user] --TLS--> [OpenShift router] --TLS--> [central]
+                              The request is then reencrypted by the OpenShift router and sent to Central.
+                              [user] --TLS--> [OpenShift router] --TLS--> [Central]
                             properties:
                               enabled:
                                 default: false
                                 description: |-
-                                  Expose central with a reencrypt route.
+                                  Expose Central with a reencrypt route.
                                   Should not be used for sensor communication.
                                 type: boolean
                               host:
                                 description: |-
-                                  Specify a custom hostname for the central reencrypt route.
+                                  Specify a custom hostname for the Central reencrypt route.
                                   If unspecified, an appropriate default value will be automatically chosen by the OpenShift route operator.
                                 type: string
                               tls:
-                                description: TLS settings for exposing central via
+                                description: TLS settings for exposing Central via
                                   a reencrypt Route.
                                 properties:
                                   caCertificate:
@@ -422,7 +422,7 @@ spec:
                                     type: string
                                   destinationCACertificate:
                                     description: |-
-                                      The CA certificate of the final destination, i.e. of central.
+                                      The CA certificate of the final destination, i.e. of Central.
                                       Used by the OpenShift router for health checks on the secure connection.
                                       Defaults to the Central certificate authority.
                                     type: string
