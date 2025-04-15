@@ -122,7 +122,7 @@ describe('useWidgetConfig hook', () => {
     it('should handle multiple unrelated widget configs simultaneously', () => {
         const idA = 'widgetA';
         const idB = 'widgetB';
-        const renderSpies = { [idA]: jest.fn(), [idB]: jest.fn() };
+        const renderSpies = { [idA]: vi.fn(), [idB]: vi.fn() };
         const hookReturns = { [idA]: {}, [idB]: {} };
 
         const defaultConfig = { sort: 'asc', filter: '' };
