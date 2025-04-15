@@ -3,7 +3,6 @@ package datastore
 import (
 	"context"
 	"reflect"
-	"slices"
 	"testing"
 	"time"
 
@@ -14,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sync"
@@ -289,7 +289,7 @@ func (d *datastoreImpl) UpsertPlatformComponentConfigRules(ctx context.Context, 
 		log.Info("Config not found or there was an error")
 		return nil, err
 	}
-	if !slices.Equal(config.PlatformComponentConfig.Rules, rules) {
+	if !protoutils.SlicesEqual(config.PlatformComponentConfig.Rules, rules) {
 		config.PlatformComponentConfig.NeedsReevaluation = true
 	}
 	config.PlatformComponentConfig.Rules = rules
