@@ -249,11 +249,11 @@ func (d *datastoreImpl) GetPlatformComponentConfig(ctx context.Context) (*storag
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.Administration)))
 
-	config, _, err := d.store.Get(adminCtx)
+	config, found, err := d.store.Get(adminCtx)
 	if config == nil {
 		return nil, false, nil
 	}
-	return config.GetPlatformComponentConfig(), config.GetPlatformComponentConfig() != nil, err
+	return config.GetPlatformComponentConfig(), found && config.GetPlatformComponentConfig() != nil, err
 }
 
 func (d *datastoreImpl) UpsertPlatformComponentConfigRule(ctx context.Context, rule *storage.PlatformComponentConfig_Rule) error {
@@ -268,8 +268,8 @@ func (d *datastoreImpl) UpsertPlatformComponentConfigRule(ctx context.Context, r
 			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.Administration)))
 
-	config, _, err := d.store.Get(adminCtx)
-	if err != nil {
+	config, found, err := d.store.Get(adminCtx)
+	if !found || err != nil {
 		return err
 	}
 	if config.PlatformComponentConfig.Rules == nil {
@@ -293,9 +293,9 @@ func (d *datastoreImpl) UpsertPlatformComponentConfigRules(ctx context.Context, 
 			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.Administration)))
 
-	config, _, err := d.store.Get(adminCtx)
-	if err != nil {
-		log.Infof("There was an error, %v", err)
+	config, found, err := d.store.Get(adminCtx)
+	if !found || err != nil {
+		log.Info("Config not found or there was an error")
 		return nil, err
 	}
 	if config.PlatformComponentConfig.Rules == nil {
@@ -334,8 +334,8 @@ func (d *datastoreImpl) DeletePlatformComponentConfigRules(ctx context.Context, 
 			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.Administration)))
 
-	config, _, err := d.store.Get(adminCtx)
-	if err != nil {
+	config, found, err := d.store.Get(adminCtx)
+	if !found || err != nil {
 		return err
 	}
 	if config.PlatformComponentConfig.Rules == nil {
