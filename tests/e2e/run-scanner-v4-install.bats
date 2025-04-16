@@ -1171,8 +1171,6 @@ central:
   exposure:
     loadBalancer:
       enabled: true
-  persistence:
-    none: true
   db:
     resources:
       requests:
