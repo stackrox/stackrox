@@ -76,7 +76,6 @@ function OnDemandReportsTab() {
         ...createQueryFromReportJobStatusFilters(reportJobStatusFilters),
     });
 
-    // @TODO: Pass query, pagination, sorting to API call
     const fetchOnDemandReportsHistoryCallback = useCallback(
         () =>
             fetchOnDemandReportHistory({
