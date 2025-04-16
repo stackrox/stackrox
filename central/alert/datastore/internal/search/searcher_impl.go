@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/alert/datastore/internal/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -41,13 +42,13 @@ func (ds *searcherImpl) SearchListAlerts(ctx context.Context, q *v1.Query, exclu
 	if excludeResolved {
 		q = applyDefaultState(q)
 	}
-	alerts, err := ds.storage.GetByQuery(ctx, q)
+	listAlerts := make([]*storage.ListAlert, 0, q.GetPagination().GetLimit())
+	err := ds.storage.GetByQueryFn(ctx, q, func(alert *storage.Alert) error {
+		listAlerts = append(listAlerts, convert.AlertToListAlert(alert))
+		return nil
+	})
 	if err != nil {
 		return nil, err
-	}
-	listAlerts := make([]*storage.ListAlert, 0, len(alerts))
-	for _, alert := range alerts {
-		listAlerts = append(listAlerts, convert.AlertToListAlert(alert))
 	}
 	return listAlerts, nil
 
@@ -55,8 +56,18 @@ func (ds *searcherImpl) SearchListAlerts(ctx context.Context, q *v1.Query, exclu
 
 // SearchRawAlerts retrieves Alerts from the storage
 func (ds *searcherImpl) SearchRawAlerts(ctx context.Context, q *v1.Query, excludeResolved bool) ([]*storage.Alert, error) {
-	alerts, err := ds.searchAlerts(ctx, q, excludeResolved)
-	return alerts, err
+	if excludeResolved {
+		q = applyDefaultState(q)
+	}
+	alerts := make([]*storage.Alert, 0, q.GetPagination().GetLimit())
+	err := ds.storage.GetByQueryFn(ctx, q, func(alert *storage.Alert) error {
+		alerts = append(alerts, alert)
+		return nil
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to search alerts")
+	}
+	return alerts, nil
 }
 
 func (ds *searcherImpl) searchListAlerts(ctx context.Context, q *v1.Query) ([]*storage.ListAlert, []search.Result, error) {
@@ -74,13 +85,6 @@ func (ds *searcherImpl) searchListAlerts(ctx context.Context, q *v1.Query) ([]*s
 	}
 	results = search.RemoveMissingResults(results, missingIndices)
 	return listAlerts, results, nil
-}
-
-func (ds *searcherImpl) searchAlerts(ctx context.Context, q *v1.Query, excludeResolved bool) ([]*storage.Alert, error) {
-	if excludeResolved {
-		q = applyDefaultState(q)
-	}
-	return ds.storage.GetByQuery(ctx, q)
 }
 
 // Search takes a SearchRequest and finds any matches

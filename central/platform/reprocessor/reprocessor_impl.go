@@ -4,11 +4,13 @@ import (
 	"context"
 	"sync/atomic"
 
+	"github.com/pkg/errors"
 	alertDS "github.com/stackrox/rox/central/alert/datastore"
 	alertutils "github.com/stackrox/rox/central/alert/utils"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	platformmatcher "github.com/stackrox/rox/central/platform/matcher"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
@@ -81,25 +83,28 @@ func (pr *platformReprocessorImpl) reprocessAlerts() error {
 		Limit: batchSize,
 	}
 
+	var alerts []*storage.Alert
 	for {
 		if pr.stopSignal.IsDone() {
 			log.Info("Stop called, stopping platform reprocessor")
 			break
 		}
-		alerts, err := pr.alertDatastore.GetByQuery(reprocessorCtx, q)
+
+		err := pr.alertDatastore.WalkByQuery(reprocessorCtx, q, func(alert *storage.Alert) error {
+			alert.EntityType = alertutils.GetEntityType(alert)
+			match, err := pr.platformMatcher.MatchAlert(alert)
+			if err != nil {
+				return errors.Wrap(err, "matching alert")
+			}
+			alert.PlatformComponent = match
+			alerts = append(alerts, alert)
+			return nil
+		})
 		if err != nil {
 			return err
 		}
 		if len(alerts) == 0 {
 			break
-		}
-		for _, alert := range alerts {
-			alert.EntityType = alertutils.GetEntityType(alert)
-			match, err := pr.platformMatcher.MatchAlert(alert)
-			if err != nil {
-				return err
-			}
-			alert.PlatformComponent = match
 		}
 		err = pr.alertDatastore.UpsertAlerts(reprocessorCtx, alerts)
 		if err != nil {
