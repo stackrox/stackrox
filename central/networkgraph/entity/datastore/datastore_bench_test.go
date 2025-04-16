@@ -39,7 +39,7 @@ func BenchmarkNetEntityCreates(b *testing.B) {
 	treeMgr := networktree.Singleton()
 	defer treeMgr.DeleteNetworkTree(globalAccessCtx, testconsts.Cluster1)
 
-	dataPusher := newEntityPusher(connection.ManagerSingleton())
+	dataPusher := newNetworkEntityPusher(connection.ManagerSingleton())
 
 	ds := newEntityDataStore(store, mocks.NewMockDataStore(mockCtrl), treeMgr, dataPusher)
 
@@ -61,7 +61,7 @@ func BenchmarkNetEntityCreateBatch(b *testing.B) {
 	db := pgtest.ForT(b)
 
 	store := postgres.New(db.DB)
-	dataPusher := newEntityPusher(connection.ManagerSingleton())
+	dataPusher := newNetworkEntityPusher(connection.ManagerSingleton())
 
 	ds := newEntityDataStore(store, mocks.NewMockDataStore(mockCtrl), networktree.Singleton(), dataPusher)
 
@@ -88,7 +88,7 @@ func BenchmarkNetEntityUpdates(b *testing.B) {
 	db := pgtest.ForT(b)
 
 	store := postgres.New(db.DB)
-	dataPusher := newEntityPusher(connection.ManagerSingleton())
+	dataPusher := newNetworkEntityPusher(connection.ManagerSingleton())
 	ds := newEntityDataStore(store, mocks.NewMockDataStore(mockCtrl), networktree.Singleton(), dataPusher)
 
 	entities, err := testutils.GenRandomExtSrcNetworkEntity(pkgNet.IPv4, b.N, testconsts.Cluster1)

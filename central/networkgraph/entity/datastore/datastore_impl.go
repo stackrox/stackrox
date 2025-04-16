@@ -42,17 +42,17 @@ var (
 			sac.ResourceScopeKeys(resources.Administration)))
 )
 
-// EntityPusher is a utility to synchronize network entities with Sensor instances.
+// NetworkEntityPusher is a utility to synchronize network entities with Sensor instances.
 //
 //go:generate mockgen-wrapper
-type EntityPusher interface {
+type NetworkEntityPusher interface {
 	DoPushExternalNetworkEntitiesToSensor(clusters ...string)
 }
 
 type dataStoreImpl struct {
 	storage     store.EntityStore
 	graphConfig graphConfigDS.DataStore
-	dataPusher  EntityPusher
+	dataPusher  NetworkEntityPusher
 	treeMgr     networktree.Manager
 
 	netEntityLock sync.Mutex
@@ -63,7 +63,7 @@ func newEntityDataStore(
 	storage store.EntityStore,
 	graphConfig graphConfigDS.DataStore,
 	treeMgr networktree.Manager,
-	dataPusher EntityPusher,
+	dataPusher NetworkEntityPusher,
 ) EntityDataStore {
 	ds := &dataStoreImpl{
 		storage:     storage,
@@ -82,7 +82,7 @@ func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) EntityDataStore {
 	graphConfigStore := graphConfigDS.GetTestPostgresDataStore(t, pool)
 	treeMgr := networktree.Singleton()
 	sensorCnxMgr := connection.ManagerSingleton()
-	dataPusher := newEntityPusher(sensorCnxMgr)
+	dataPusher := newNetworkEntityPusher(sensorCnxMgr)
 	return newEntityDataStore(dbstore, graphConfigStore, treeMgr, dataPusher)
 }
 
@@ -546,21 +546,21 @@ func getScopeKey(id string) ([]sac.ScopeKey, error) {
 	return []sac.ScopeKey{}, nil // all clusters
 }
 
-type entityPusherImpl struct {
+type networkEntityPusherImpl struct {
 	sensorConnMgr connection.Manager
 }
 
-func newEntityPusher(sensorConnMgr connection.Manager) EntityPusher {
-	return &entityPusherImpl{
+func newNetworkEntityPusher(sensorConnMgr connection.Manager) NetworkEntityPusher {
+	return &networkEntityPusherImpl{
 		sensorConnMgr: sensorConnMgr,
 	}
 }
 
-func (p *entityPusherImpl) DoPushExternalNetworkEntitiesToSensor(clusters ...string) {
+func (p *networkEntityPusherImpl) DoPushExternalNetworkEntitiesToSensor(clusters ...string) {
 	go p.doPushExternalNetworkEntitiesToSensor(clusters...)
 }
 
-func (p *entityPusherImpl) doPushExternalNetworkEntitiesToSensor(clusters ...string) {
+func (p *networkEntityPusherImpl) doPushExternalNetworkEntitiesToSensor(clusters ...string) {
 	// If push request if for a global network entity, push to all known clusters once and return.
 	elevateCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
