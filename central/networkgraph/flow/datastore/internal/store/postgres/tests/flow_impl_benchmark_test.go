@@ -170,11 +170,13 @@ func setupExternalIngressFlows(b *testing.B, flowStore store.FlowStore, deployme
 }
 
 func setupExternalIngressFlowsWithEntities(b *testing.B, flowStore store.FlowStore, eStore entityStore.EntityDataStore, deploymentId string, numFlows uint32) {
+	batchSize := uint32(30000)
 	flows := make([]*storage.NetworkFlow, 0, numFlows)
-	entities := make([]*storage.NetworkEntity, 0, numFlows)
-	for i := uint32(1); i < numFlows + 1; i++ {
+	entities := make([]*storage.NetworkEntity, batchSize)
+	for i := uint32(0); i < numFlows; i++ {
 		bs := [4]byte{}
-		binary.BigEndian.PutUint32(bs[:], i)
+		// Must have + 1 because the 0.0.0.0 IP address is not allowed
+		binary.BigEndian.PutUint32(bs[:], i + 1)
 		ip := netip.AddrFrom4(bs)
 		cidr := fmt.Sprintf("%s/32", ip.String())
 
@@ -182,15 +184,27 @@ func setupExternalIngressFlowsWithEntities(b *testing.B, flowStore store.FlowSto
 		id := extEntity.GetInfo().GetId()
 
 		flow := testutils.ExtFlow(deploymentId, id)
-		entities = append(entities, extEntity)
+		//entities = append(entities, extEntity)
 		flows = append(flows, flow)
+		entities[i % batchSize] = extEntity
+		if i % batchSize == 0 && i != 0 {
+			_, err := eStore.CreateExtNetworkEntitiesForCluster(sac.WithAllAccess(context.Background()), fixtureconsts.Cluster1, entities...)
+			require.NoError(b, err)
+		}
 	}
 
 	err := flowStore.UpsertFlows(context.Background(), flows, timestamp.Now()-1000000)
 	require.NoError(b, err)
 
-	_, err = eStore.CreateExtNetworkEntitiesForCluster(sac.WithAllAccess(context.Background()), fixtureconsts.Cluster1, entities...)
-	require.NoError(b, err)
+	remainder := numFlows % batchSize
+
+	if remainder > 0 {
+		entities = entities[:remainder]
+		_, err = eStore.CreateExtNetworkEntitiesForCluster(sac.WithAllAccess(context.Background()), fixtureconsts.Cluster1, entities...)
+		require.NoError(b, err)
+	}
+
+
 }
 
 func setupExternalEgressFlows(b *testing.B, flowStore store.FlowStore, deploymentId string, numFlows uint32) {
