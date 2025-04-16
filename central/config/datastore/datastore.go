@@ -206,6 +206,19 @@ func (d *datastoreImpl) UpsertConfig(ctx context.Context, config *storage.Config
 			clusterRetentionConf.LastUpdated = protocompat.TimestampNow()
 		}
 	}
+	if platformComponentConfig := config.GetPlatformComponentConfig(); platformComponentConfig != nil {
+		oldConf, _, err := d.GetPlatformComponentConfig(ctx)
+		if err != nil {
+			return err
+		}
+		if oldConf != nil {
+			if !protoutils.SlicesEqual(oldConf.GetRules(), config.GetPlatformComponentConfig().GetRules()) {
+				config.PlatformComponentConfig.NeedsReevaluation = true
+			} else {
+				config.PlatformComponentConfig.NeedsReevaluation = oldConf.NeedsReevaluation
+			}
+		}
+	}
 
 	upsertErr := d.store.Upsert(ctx, config)
 	if upsertErr != nil {
