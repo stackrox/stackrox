@@ -229,6 +229,7 @@ func (s *serviceImpl) anonymizedPeerKey(peer *v1.NetworkBaselineStatusPeer) netw
 			ID:   internet.ID,
 		}
 	}
+
 	return networkgraph.Entity{
 		Type: entity.GetType(),
 		ID:   entity.GetId(),

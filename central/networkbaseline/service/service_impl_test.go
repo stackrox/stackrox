@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
+	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
@@ -66,6 +67,39 @@ func (s *NetworkBaselineServiceTestSuite) getBaselineWithCustomFlow(
 					Id:   entityID,
 					Desc: &storage.NetworkEntityInfo_Deployment_{
 						Deployment: &storage.NetworkEntityInfo_Deployment{
+							Name: testPeerDeploymentName,
+						},
+					},
+				},
+				Scope: &storage.NetworkEntity_Scope{ClusterId: entityClusterID},
+			},
+			Properties: []*storage.NetworkBaselineConnectionProperties{
+				{
+					Ingress:  flowIsIngress,
+					Port:     flowPort,
+					Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+				},
+			},
+		},
+	}
+
+	return baseline
+}
+
+func (s *NetworkBaselineServiceTestSuite) getBaselineWithInternet(
+	entityClusterID string,
+	flowIsIngress bool,
+	flowPort uint32,
+) *storage.NetworkBaseline {
+	baseline := fixtures.GetNetworkBaseline()
+	baseline.Peers = []*storage.NetworkBaselinePeer{
+		{
+			Entity: &storage.NetworkEntity{
+				Info: &storage.NetworkEntityInfo{
+					Type: storage.NetworkEntityInfo_INTERNET,
+					Id:   networkgraph.InternetExternalSourceID,
+					Desc: &storage.NetworkEntityInfo_ExternalSource_{
+						ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
 							Name: testPeerDeploymentName,
 						},
 					},
@@ -183,6 +217,52 @@ func (s *NetworkBaselineServiceTestSuite) TestLockBaseline() {
 	s.manager.EXPECT().ProcessBaselineLockUpdate(gomock.Any(), sampleID, false).Return(nil)
 	_, err = s.service.UnlockNetworkBaseline(allAllowedCtx, &v1.ResourceByID{Id: sampleID})
 	s.Nil(err)
+}
+
+func (s *NetworkBaselineServiceTestSuite) TestGetNetworkBaselineStatusForExternalFlows() {
+	baseline := s.getBaselineWithInternet("cluster", true, 1234)
+
+	externalPeers := []*v1.NetworkBaselineStatusPeer{
+		// In the baseline
+		{
+			Entity: &v1.NetworkBaselinePeerEntity{
+				Id:         "external1",
+				Type:       storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+				Name:       "123.0.0.4",
+				Discovered: true,
+			},
+			Port:     1234,
+			Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+			Ingress:  true,
+		},
+		// not in the baseline
+		{
+			Entity: &v1.NetworkBaselinePeerEntity{
+				Id:         "external2",
+				Type:       storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+				Name:       "1.2.3.4",
+				Discovered: true,
+			},
+			Port:     4567, // different port
+			Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+			Ingress:  true,
+		},
+	}
+
+	s.baselines.EXPECT().GetNetworkBaseline(gomock.Any(), gomock.Any()).Return(baseline, true, nil)
+	s.manager.EXPECT().GetExternalNetworkPeers(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(externalPeers, nil)
+
+	resp, err := s.service.GetNetworkBaselineStatusForExternalFlows(
+		allAllowedCtx,
+		&v1.NetworkBaselineExternalStatusRequest{
+			DeploymentId: "deployment",
+		})
+
+	s.Nil(err)
+	s.Equal(1, len(resp.Anomalous))
+	s.Equal(1, len(resp.Baseline))
+	s.Equal(1, int(resp.TotalAnomalous))
+	s.Equal(1, int(resp.TotalBaseline))
 }
 
 func TestAuthz(t *testing.T) {
