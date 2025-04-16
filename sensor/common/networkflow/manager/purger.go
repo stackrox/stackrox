@@ -40,13 +40,13 @@ func (m *networkFlowManager) startPurger(tickerC <-chan time.Time, maxAge time.D
 		case <-m.stopper.Flow().StopRequested():
 			return
 		case <-tickerC:
-			npae := purgeActiveEndpoints(&m.activeEndpointsMutex, maxAge, m.activeEndpoints, m.clusterEntities)
-			npac := purgeActiveConnections(&m.activeConnectionsMutex, maxAge, m.activeConnections, m.clusterEntities)
-			nphe, nphc := purgeHostConns(&m.connectionsByHostMutex, maxAge, m.connectionsByHost, m.clusterEntities)
+			numPurgedActiveEp := purgeActiveEndpoints(&m.activeEndpointsMutex, maxAge, m.activeEndpoints, m.clusterEntities)
+			numPurgedActiveConn := purgeActiveConnections(&m.activeConnectionsMutex, maxAge, m.activeConnections, m.clusterEntities)
+			numPurgedHostEp, numPurgedHostConn := purgeHostConns(&m.connectionsByHostMutex, maxAge, m.connectionsByHost, m.clusterEntities)
 			log.Debugf("Purger deleted: "+
 				"%d active endpoints, %d active connections, "+
 				"%d host endpoints, %d host connections",
-				npae, npac, nphe, nphc)
+				numPurgedActiveEp, numPurgedActiveConn, numPurgedHostEp, numPurgedHostConn)
 		}
 	}
 }
@@ -165,8 +165,6 @@ func purgeActiveConnections(mutex *sync.Mutex, maxAge time.Duration, activeConne
 func purgeActiveConnectionsNoLock(maxAge time.Duration,
 	conns map[connection]*networkConnIndicatorWithAge,
 	store EntityStore) int {
-	timer := prometheus.NewTimer(flowMetrics.ActiveEndpointsPurgerDuration.WithLabelValues("activeConnections"))
-	defer timer.ObserveDuration()
 	numPurged := 0
 	for conn, age := range conns {
 		// Remove if the related container is not found (but keep historical)

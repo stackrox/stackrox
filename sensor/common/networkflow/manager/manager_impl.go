@@ -359,10 +359,13 @@ type networkFlowManager struct {
 
 	activeConnectionsMutex sync.Mutex
 	// activeConnections tracks all connections reported by Collector that are believed to be active.
-	// A connection is active until Collector sends a NetworkConnectionInfo message with `lastSeen` set to a non-nil value.
+	// A connection is active until Collector sends a NetworkConnectionInfo message with `lastSeen` set to a non-nil value,
+	// or until Sensor decides that such message may never arrive and decides that a given connection is no longer active.
 	activeConnections    map[connection]*networkConnIndicatorWithAge
 	activeEndpointsMutex sync.Mutex
-	activeEndpoints      map[containerEndpoint]*containerEndpointIndicatorWithAge
+	// An endpoint is active until Collector sends a NetworkConnectionInfo message with `lastSeen` set to a non-nil value,
+	// or until Sensor decides that such message may never arrive and decides that a given endpoint is no longer active.
+	activeEndpoints map[containerEndpoint]*containerEndpointIndicatorWithAge
 
 	sensorUpdates chan *message.ExpiringMessage
 	centralReady  concurrency.Signal
@@ -507,6 +510,8 @@ func (m *networkFlowManager) enrichConnections(tickerC <-chan time.Time) {
 			// Measuring number of calls to `enrichAndSend` (ticks) for remembering historical endpoints
 			m.clusterEntities.RecordTick()
 			if env.ProcessesListeningOnPort.BooleanSetting() {
+				// The current code relies on this being called after `enrichAndSend`.
+				// In particular, we rely on Endpoints being enriched before Processes.
 				m.enrichAndSendProcesses()
 			}
 		}
@@ -590,9 +595,9 @@ func (m *networkFlowManager) enrichAndSendProcesses() {
 	}
 }
 
-// expireConnection is executed when Sensor decides that the full enrichment cannot be successful
+// expireConnectionNoLock is executed when Sensor decides that the full enrichment cannot be successful
 // and further enrichments shouldn't be attempted unless new data (containerID) arrives from k8s.
-func expireConnection(conn *connection,
+func expireConnectionNoLock(conn *connection,
 	activeConnections map[connection]*networkConnIndicatorWithAge,
 	enrichedConnections map[networkConnIndicator]timestamp.MicroTS,
 	now timestamp.MicroTS,
@@ -659,24 +664,33 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 	container, found, isHistorical := m.clusterEntities.LookupByContainerID(conn.containerID)
 	isHistoricalStr := "N/A"
 	if !found {
-		// There is an incoming connection to a container that Sensor does not recognize.
+		// There is a connection involving a container that Sensor does not recognize. In this case we may do two things:
+		// (1) decide that we want to retry the enrichment later (keep the connection in hostConnections),
+		// (2) remove the connection from hostConnections, because enrichment is impossible.
 		netGraphFailReason = multierror.Append(netGraphFailReason, fmt.Errorf("ContainerID %s unknown", conn.containerID))
 		if !pastContainerResolutionDeadline {
 			flowMetrics.IncFlowEnrichmentConnection(found, "retry-later", isHistoricalStr, "in-grace-period", lastSeenSet, status.rotten, pastContainerResolutionDeadline, isFresh, "N/A")
-			netGraphFailReason = multierror.Append(netGraphFailReason, fmt.Errorf("time for container resolution (%s) not elapsed yet", maxContainerResolutionWaitPeriod))
+			netGraphFailReason = multierror.Append(netGraphFailReason, fmt.Errorf("will retry later: time for container resolution (%s) not elapsed yet", maxContainerResolutionWaitPeriod))
+			netGraphFailReason.ErrorFormat = formatMultiErrorOneline
+			log.Debugf("Enrichment finished early: %s", netGraphFailReason.Error())
+			return
 		}
-		if expireConnection(conn, m.activeConnections, enrichedConnections, now) != nil {
-			// Connection cannot be expired (not found in activeConnections), so it must be rotten
+		// Expire the connection if we are past the containerID resolution grace period.
+		expireErr := concurrency.WithLock1(&m.activeEndpointsMutex, func() error {
+			return expireConnectionNoLock(conn, m.activeConnections, enrichedConnections, now)
+		})
+		if expireErr != nil {
+			// Connection cannot be expired (not found in activeConnections) and ContainerID is unknown.
+			// We mark that as rotten, so that it is removed from hostConnections and not retried anymore.
 			status.rotten = true
-			flowMetrics.IncFlowEnrichmentConnection(found, "mark-rotten", isHistoricalStr, "not-in-activeConnections", lastSeenSet, status.rotten, pastContainerResolutionDeadline, isFresh, "N/A")
 			netGraphFailReason = multierror.Append(netGraphFailReason, errors.New("connection is rotten"))
+			flowMetrics.IncFlowEnrichmentConnection(found, "mark-rotten", isHistoricalStr, "not-in-activeConnections", lastSeenSet, status.rotten, pastContainerResolutionDeadline, isFresh, "N/A")
+		} else {
+			netGraphFailReason = multierror.Append(netGraphFailReason, fmt.Errorf("marking connection as inactive, because it involves non-existing container %s", conn.containerID))
+			flowMetrics.IncFlowEnrichmentConnection(found, "enrich-and-remove-from-activeConnections", isHistoricalStr, "past-grace-period", lastSeenSet, status.rotten, pastContainerResolutionDeadline, isFresh, "N/A")
 		}
-		netGraphFailReason = multierror.Append(netGraphFailReason, fmt.Errorf("marking connection as inactive, because it involves non-existing container %s", conn.containerID))
-
 		netGraphFailReason.ErrorFormat = formatMultiErrorOneline
 		log.Debugf("Enrichment finished early: %s", netGraphFailReason.Error())
-		// If we miss container data, there is no point in trying further enrichments (endpoint won't be found as well).
-		flowMetrics.IncFlowEnrichmentConnection(found, "enrich-and-remove-from-activeConnections", isHistoricalStr, "past-grace-period", lastSeenSet, status.rotten, pastContainerResolutionDeadline, isFresh, "N/A")
 		return
 	}
 	isHistoricalStr = strconv.FormatBool(isHistorical)
@@ -836,7 +850,7 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 				enrichedConnections[indicator.networkConnIndicator] = status.lastSeen
 				if !features.SensorCapturesIntermediateEvents.Enabled() {
 					flowMetrics.IncFlowEnrichmentConnection(found2, "update-last-seen", isHistoricalStr, "ff-disabled", lastSeenSet, status.rotten, pastContainerResolutionDeadline, isFresh, isExternalStr)
-					return
+					continue
 				}
 
 				concurrency.WithLock(&m.activeConnectionsMutex, func() {
@@ -881,7 +895,7 @@ func (m *networkFlowManager) enrichContainerEndpoint(
 		}
 		// Expire the endpoint if the container cannot be found within the clusterEntityResolutionWaitPeriod.
 		expireErr := concurrency.WithLock1(&m.activeEndpointsMutex, func() error {
-			return expireEndpoint(ep, m.activeEndpoints, enrichedEndpoints, now)
+			return expireEndpointNoLock(ep, m.activeEndpoints, enrichedEndpoints, now)
 		})
 		if expireErr != nil {
 			// Endpoint is not in activeEndpoints, so it must be rotten. No action required, as
@@ -932,9 +946,9 @@ func (m *networkFlowManager) enrichContainerEndpoint(
 	flowMetrics.SetActiveEndpointsTotalGauge(len(m.activeEndpoints))
 }
 
-// expireEndpoint removes endpoint from active endpoints and sets the timestamp in enrichedEndpoints.
+// expireEndpointNoLock removes endpoint from active endpoints and sets the timestamp in enrichedEndpoints.
 // It returns error when endpoint is not found in active endpoints.
-func expireEndpoint(ep *containerEndpoint,
+func expireEndpointNoLock(ep *containerEndpoint,
 	activeEndpoints map[containerEndpoint]*containerEndpointIndicatorWithAge,
 	enrichedEndpoints map[containerEndpointIndicator]timestamp.MicroTS,
 	now timestamp.MicroTS) error {
@@ -1083,6 +1097,7 @@ func (m *networkFlowManager) enrichProcessesListening(hostConns *hostConnections
 				"N/A", "skip-enrichment", "N/A", "emptyProcessInfo",
 				status.lastSeen != timestamp.InfiniteFuture, status.rotten, false, false)
 			// Impossible to update a process if the data isn't there -> no chance for enrichment in a retry.
+			// We can safely delete the endpoint form hostConns, because endpoint enrichment has already happened.
 			delete(hostConns.endpoints, ep)
 			flowMetrics.HostProcessesEvents.WithLabelValues("remove").Inc()
 			continue
