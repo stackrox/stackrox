@@ -89,6 +89,50 @@ const (
 var (
 	denyAllAccessScope  = accesscontrol.DefaultAccessScopeIDs[accesscontrol.DenyAllAccessScope]
 	allowAllAccessScope = accesscontrol.DefaultAccessScopeIDs[accesscontrol.UnrestrictedAccessScope]
+
+	// retryErrTokens are strings found in image scan error messages that should be retried.
+	retryErrTokens = []string{
+		scan.ErrTooManyParallelScans.Error(),
+		"context deadline exceeded",
+		"Client.Timeout exceeded while awaiting headers",
+
+		// K8s services/pods may refuse connections shortly after restart
+		//
+		// ex:
+		// - transport: Error while dialing: dial tcp <ip>:8443: connect: connection refused
+		"connect: connection refused",
+
+		// Registry issues, network glitches, resources contention, etc. may interrupt the download
+		// of image layers.
+		//
+		// ex:
+		// - could not advance in the tar archive: archive/tar: invalid tar header
+		// - could not advance in the tar archive: unexpected EOF
+		"could not advance in the tar archive",
+
+		// Sensor may accept ad-hoc scan requests prior to the mirroring CRs being loaded, this may result
+		// in attempts to reach out to the 'invalid' mirror host. We trigger a retry in this case to give
+		// Sensor time to load the mirroring CRs.
+		//
+		// ex:
+		// - unable to check TLS for registry "icsp.invalid": dial tcp: lookup icsp.invalid on <ip>:53: no such host
+		"no such host",
+
+		// Central's cluster API is used to report the health of secured clusters, this cluster status is on a delay
+		// and may not represent actual state leading to flakes. When the actual connection to a cluster fails during
+		// delegation, the scan attempt should be retried.
+		//
+		// ex:
+		// - no connection to "a21b168a-280e-40d1-a175-e84d14ed8232"
+		"no connection to",
+
+		// A registry having gateway issues (Quay.io in particular) may return a 502 (Bad Gateway)
+		// message along with some HTML, retry when this happens.
+		//
+		// ex:
+		// - http: non-successful response (status=502 body="<!doctype html>...<HTML HERE>...")
+		"non-successful response (status=502",
+	}
 )
 
 type DelegatedScanningSuite struct {
@@ -671,14 +715,8 @@ func (ts *DelegatedScanningSuite) TestDeploymentScans() {
 		// Create a deployment that will sleep forever.
 		ts.deleScanUtils.DeploySleeperImage(t, ctx, ts.namespace, deployName, image.IDRef())
 
-		// Pull the image scan from the API and validate it.
-		imageService := v1.NewImageServiceClient(conn)
-		img, err := ts.getImageWithRetries(ctx, imageService, &v1.GetImageRequest{Id: image.ID()})
-		require.NoError(t, err)
-		ts.validateImageScan(t, image.IDRef(), img)
-
-		// Verify that a fresh scan was executed per Sensor logs.
-		ts.waitUntilSensorLogsScan(ctx, image.IDRef(), fromByte)
+		// Validate the scan was delegated.
+		ts.validateDeployScanWithRetries(conn, fromByte, image.IDRef(), image.ID())
 
 		// Only perform teardown on success so that logs can be captured on failure.
 		logf(t, "Tearing down deployment %q", deployName)
@@ -816,13 +854,13 @@ func (ts *DelegatedScanningSuite) TestMirrorScans() {
 	deployTCs := []struct {
 		desc       string
 		deployName string
-		imgID      string
+		image      deleScanTestImage
 		imageStr   string
 		skip       bool
 	}{
-		{"Scan deploy image from mirror via ImageContentSourcePolicy", "dele-scan-icsp", icspImage.ID(), icspImage.IDRef(), !icspSupported},
-		{"Scan deploy image from mirror via ImageDigestMirrorSet", "dele-scan-idms", idmsImage.ID(), idmsImage.IDRef(), !idmsSupported},
-		{"Scan deploy image from mirror via ImageTagMirrorSet", "dele-scan-itms", itmsImage.ID(), itmsImage.TagRef(), !itmsSupported},
+		{"Scan deploy image from mirror via ImageContentSourcePolicy", "dele-scan-icsp", icspImage, icspImage.IDRef(), !icspSupported},
+		{"Scan deploy image from mirror via ImageDigestMirrorSet", "dele-scan-idms", idmsImage, idmsImage.IDRef(), !idmsSupported},
+		{"Scan deploy image from mirror via ImageTagMirrorSet", "dele-scan-itms", itmsImage, itmsImage.TagRef(), !itmsSupported},
 	}
 
 	for _, tc := range deployTCs {
@@ -838,11 +876,7 @@ func (ts *DelegatedScanningSuite) TestMirrorScans() {
 
 			// Because we cannot 'force' a scan for deployments, we explicitly delete the image
 			// so that it is removed from Sensor scan cache.
-			imageService := v1.NewImageServiceClient(conn)
-			query := fmt.Sprintf("Image Sha:%s", tc.imgID)
-			delResp, err := imageService.DeleteImages(ctx, &v1.DeleteImagesRequest{Query: &v1.RawQuery{Query: query}, Confirm: true})
-			require.NoError(t, err)
-			logf(t, "Num images deleted from query %q: %d", query, delResp.NumDeleted)
+			ts.deleteImageByID(tc.image.ID())
 
 			fromByte := ts.getSensorLastLogBytePos(ctx)
 
@@ -850,11 +884,8 @@ func (ts *DelegatedScanningSuite) TestMirrorScans() {
 			logf(t, "Creating deployment %q with image: %q", tc.deployName, tc.imageStr)
 			setupDeploymentNoWait(t, tc.imageStr, tc.deployName, 1)
 
-			img, err := ts.getImageWithRetries(ctx, imageService, &v1.GetImageRequest{Id: tc.imgID})
-			require.NoError(t, err)
-			ts.validateImageScan(t, tc.imageStr, img)
-
-			ts.waitUntilSensorLogsScan(ctx, tc.imageStr, fromByte)
+			// Validate the scan was delegated.
+			ts.validateDeployScanWithRetries(conn, fromByte, tc.imageStr, tc.image.ID())
 
 			// Only perform teardown on success so that logs can be captured on failure.
 			logf(t, "Tearing down deployment %q", tc.deployName)
@@ -863,23 +894,96 @@ func (ts *DelegatedScanningSuite) TestMirrorScans() {
 	}
 }
 
-// validateImageScan will fail the test if the image's scan was not completed
+// validateDeployScanWithRetries will validate an image scan triggered by a deployment
+// was successful. An attempt will be made to extract the scan error from Sensor pod logs,
+// if the error is retriable the image will be deleted via Central's API to trigger a re-scan.
+// imgFullName should contain the image name used to create the associated deployment.
+func (ts *DelegatedScanningSuite) validateDeployScanWithRetries(conn *grpc.ClientConn, fromByte int64, imgFullName string, imgID string) {
+	t := ts.T()
+	ctx := ts.ctx
+
+	imageService := v1.NewImageServiceClient(conn)
+	scanFailureRe := regexp.MustCompile(fmt.Sprintf("Scan request failed for image.*%s", imgFullName))
+
+	sensorPod, err := ts.getSensorPodWithRetries(ctx, ts.namespace)
+	require.NoError(t, err)
+
+	retryFunc := func() error {
+		img, err := ts.getImageWithRetries(ctx, imageService, &v1.GetImageRequest{Id: imgID})
+		require.NoError(t, err)
+
+		err = ts.validateImageScan(imgFullName, img)
+		if err == nil {
+			return nil
+		}
+
+		// Attempt to get scan failure reason from Sensor's logs.
+		line, logErr := ts.getPodLogLine(ctx, ts.namespace, sensorPod.GetName(), sensorContainer, fromByte, scanFailureRe)
+		if logErr != nil {
+			// Could not read/find failure log, therefore cannot
+			// determine if should retry, short-circuit.
+			logf(t, "Could not read scan failure log: %v", logErr)
+			return err
+		}
+
+		logf(t, "Deploy scan failure log line: %v", line)
+
+		for _, token := range retryErrTokens {
+			// The log line will contain the scan failure reason (err will not).
+			if strings.Contains(line, token) {
+				logf(t, "Deploy scan failure is retriable: %q", token)
+				err = retry.MakeRetryable(err)
+
+				// Reset log starting point.
+				fromByte = ts.getSensorLastLogBytePos(ctx)
+
+				// Deleting the image should propagate a message to Sensor removing the
+				// image from the Sensor's scan cache and trigger a re-scan.
+				ts.deleteImageByID(imgID)
+
+				break
+			}
+		}
+
+		return err
+	}
+
+	err = ts.withRetries(retryFunc, "Deploy Scan Failed")
+	require.NoError(t, err)
+
+	// Verify that a fresh scan was executed per Sensor logs.
+	ts.waitUntilSensorLogsScan(ctx, imgFullName, fromByte)
+}
+
+// validateImageScan will return an error if the image's scan was not completed
 // successfully, assumes that the image has at least one vulnerability.
-func (ts *DelegatedScanningSuite) validateImageScan(t *testing.T, imgFullName string, img *storage.Image) {
-	require.Equal(t, imgFullName, img.GetName().GetFullName())
-	require.True(t, img.GetIsClusterLocal(), "image %q not flagged as cluster local which is expected for any delegated scans, most likely the scan was NOT delegated, check Central/Sensor logs to confirm", imgFullName)
-	require.NotNil(t, img.GetScan(), "image scan for %q is nil, check logs for scan errors, image notes: %v", imgFullName, img.GetNotes())
-	require.NotEmpty(t, img.GetScan().GetComponents(), "image scan for %q has no components, check central logs for scan errors, this can happen if indexing succeeds but matching fails, ROX-17472 will make this an error in the future", imgFullName)
+func (ts *DelegatedScanningSuite) validateImageScan(imgFullName string, img *storage.Image) error {
+	if imgFullName != img.GetName().GetFullName() {
+		return fmt.Errorf("image name not equal: \n"+
+			"expected: %s\n"+
+			"actual  : %s", imgFullName, img.GetName().GetFullName())
+	}
+
+	if !img.GetIsClusterLocal() {
+		return fmt.Errorf("image %q not flagged as cluster local which is expected for any delegated scans, most likely the scan was NOT delegated, check Central/Sensor logs to confirm", imgFullName)
+	}
+
+	if img.GetScan() == nil {
+		return fmt.Errorf("image scan for %q is nil, check logs for scan errors, image notes: %v", imgFullName, img.GetNotes())
+	}
+
+	if len(img.GetScan().GetComponents()) == 0 {
+		return fmt.Errorf("image scan for %q has no components, check central logs for scan errors, this can happen if indexing succeeds but matching fails, ROX-17472 will make this an error in the future", imgFullName)
+	}
 
 	// Ensure at least one component has a vulnerability.
 	for _, c := range img.GetScan().GetComponents() {
 		if len(c.GetVulns()) > 0 {
-			logf(t, "Found successful scan of %q", imgFullName)
-			return
+			return nil
 		}
 	}
 
-	require.Fail(t, "No vulnerabilities found.", "Expected at least one vulnerability in image %q, but found none.", imgFullName)
+	return fmt.Errorf("no vulnerabilities found, expected at least one vulnerability in image %q.", imgFullName)
 }
 
 // getImageWithRetries will get an image from the StackRox API, retrying when not found.
@@ -908,49 +1012,6 @@ func (ts *DelegatedScanningSuite) getImageWithRetries(ctx context.Context, servi
 func (ts *DelegatedScanningSuite) scanWithRetries(ctx context.Context, service v1.ImageServiceClient, req *v1.ScanImageRequest) (*storage.Image, error) {
 	var err error
 	var img *storage.Image
-
-	retryErrTokens := []string{
-		scan.ErrTooManyParallelScans.Error(),
-		"context deadline exceeded",
-		"Client.Timeout exceeded while awaiting headers",
-
-		// K8s services/pods may refuse connections shortly after restart
-		//
-		// ex:
-		// - transport: Error while dialing: dial tcp <ip>:8443: connect: connection refused
-		"connect: connection refused",
-
-		// Registry issues, network glitches, resources contention, etc. may interrupt the download
-		// of image layers.
-		//
-		// ex:
-		// - could not advance in the tar archive: archive/tar: invalid tar header
-		// - could not advance in the tar archive: unexpected EOF
-		"could not advance in the tar archive",
-
-		// Sensor may accept ad-hoc scan requests prior to the mirroring CRs being loaded, this may result
-		// in attempts to reach out to the 'invalid' mirror host. We trigger a retry in this case to give
-		// Sensor time to load the mirroring CRs.
-		//
-		// ex:
-		// - unable to check TLS for registry "icsp.invalid": dial tcp: lookup icsp.invalid on <ip>:53: no such host
-		"no such host",
-
-		// Central's cluster API is used to report the health of secured clusters, this cluster status is on a delay
-		// and may not represent actual state leading to flakes. When the actual connection to a cluster fails during
-		// delegation, the scan attempt should be retried.
-		//
-		// ex:
-		// - no connection to "a21b168a-280e-40d1-a175-e84d14ed8232"
-		"no connection to",
-
-		// A registry having gateway issues (Quay.io in particular) may return a 502 (Bad Gateway)
-		// message along with some HTML, retry when this happens.
-		//
-		// ex:
-		// - http: non-successful response (status=502 body="<!doctype html>...<HTML HERE>...")
-		"non-successful response (status=502",
-	}
 
 	retryFunc := func() error {
 		img, err = service.ScanImage(ctx, req)
@@ -1057,8 +1118,6 @@ func (ts *DelegatedScanningSuite) waitUntilSensorLogsScan(ctx context.Context, i
 	t := ts.T()
 
 	reStr := fmt.Sprintf(`Image "%s".* enriched with metadata using pull source`, imageStr)
-	regexp.MustCompile(reStr)
-
 	ts.waitUntilLog(ctx, "contain the image scan",
 		containsLineMatchingAfter(regexp.MustCompile(reStr), fromByte),
 	)
@@ -1110,7 +1169,8 @@ func (ts *DelegatedScanningSuite) executeAndValidateScan(ctx context.Context, co
 
 	// Validate that the image scan looks 'OK'
 	imageStr := req.GetImageName()
-	ts.validateImageScan(t, imageStr, img)
+	err = ts.validateImageScan(imageStr, img)
+	require.NoError(t, err)
 
 	// Search the Sensor logs for a record of the scan that was just completed
 	ts.waitUntilSensorLogsScan(ctx, imageStr, fromByte)
@@ -1222,7 +1282,7 @@ func (ts *DelegatedScanningSuite) withRetries(retryFunc func() error, statusMsg 
 	t := ts.T()
 
 	betweenAttemptsFunc := func(num int) {
-		logf(t, "Trying again in %s, attempt %d/%d", deleScanDefaultRetryDelay, num, deleScanDefaultMaxRetries)
+		logf(t, "%s: trying again in %s, attempt %d/%d", statusMsg, deleScanDefaultRetryDelay, num, deleScanDefaultMaxRetries)
 		time.Sleep(deleScanDefaultRetryDelay)
 	}
 
