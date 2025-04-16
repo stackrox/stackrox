@@ -1,6 +1,7 @@
 package config
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -16,6 +17,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/mitchellh/mapstructure"
+	"github.com/quay/zlog"
 	"github.com/rs/zerolog"
 	"github.com/spf13/viper"
 	"github.com/stackrox/rox/pkg/buildinfo"
@@ -249,6 +251,14 @@ func (c *MatcherConfig) validate() error {
 	default:
 		return fmt.Errorf("readiness: invalid readiness type %q", c.Readiness)
 	}
+
+	zlog.Info(context.Background()).
+		Str("embedded_vulnerability_version", version.VulnerabilityVersion).
+		Str("config_vulnerability_version", c.VulnerabilityVersion).
+		Str("ROX_VERSION", roxVer).
+		Str("ROX_VULNERABILITY_VERSION", vulnVer).
+		Str("url", c.VulnerabilitiesURL).
+		Msg("Built vulnerability URL")
 
 	return nil
 }
