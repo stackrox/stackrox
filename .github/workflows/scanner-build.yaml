@@ -298,7 +298,6 @@ jobs:
         push_scanner_image_manifest_lists "$architectures"
 
   scan-images-with-roxctl:
-    if: github.event_name == 'push'
     needs:
     - build-and-push-scanner
     - push-scanner-manifests
