@@ -8,6 +8,7 @@ import {
     searchValueAsArray,
     convertToExactMatch,
     hasSearchKeyValue,
+    getSearchFilterForRequestQueryString,
 } from './searchUtils';
 
 describe('searchUtils', () => {
@@ -372,6 +373,44 @@ describe('searchUtils', () => {
                 true
             );
             expect(hasSearchKeyValue('?a=s+s&key=a+value&b=t+x', 'key', 'a value')).toBe(true);
+        });
+    });
+
+    describe('getSearchFilterForRequestQueryString', () => {
+        it('handles empty/null inputs', () => {
+            expect(getSearchFilterForRequestQueryString('')).toEqual({});
+            // Test invalid inputs that might occur at runtime.
+            expect(getSearchFilterForRequestQueryString(null as unknown as string)).toEqual({});
+            // Test invalid inputs that might occur at runtime.
+            expect(getSearchFilterForRequestQueryString(undefined as unknown as string)).toEqual(
+                {}
+            );
+        });
+
+        it('parses a single filter with a single value', () => {
+            const result = getSearchFilterForRequestQueryString('Severity:Critical');
+            expect(result).toEqual({ Severity: 'Critical' });
+        });
+
+        it('parses a single filter with multiple values', () => {
+            const result = getSearchFilterForRequestQueryString('Severity:Critical,Important');
+            expect(result).toEqual({ Severity: ['Critical', 'Important'] });
+        });
+
+        it('parses multiple filters', () => {
+            const query = 'Severity:Critical,Important+Image CVE Count:>0';
+            const result = getSearchFilterForRequestQueryString(query);
+            expect(result).toEqual({
+                Severity: ['Critical', 'Important'],
+                'Image CVE Count': '>0',
+            });
+        });
+
+        it('ignores malformed pairs', () => {
+            const result = getSearchFilterForRequestQueryString(
+                'Severity:Critical+:BadValue+NoColon+Key:'
+            );
+            expect(result).toEqual({ Severity: 'Critical' });
         });
     });
 });

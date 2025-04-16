@@ -109,6 +109,38 @@ export function getRequestQueryStringForSearchFilter(searchFilter: SearchFilter)
         .join('+');
 }
 
+/*
+ * Convert request query string to SearchFilter object.
+ */
+export function getSearchFilterForRequestQueryString(queryString: string): SearchFilter {
+    const searchFilter: SearchFilter = {};
+
+    if (!queryString || queryString === '') {
+        return searchFilter;
+    }
+
+    // Split on '+' to get individual filter criteria
+    const filterPairs = queryString.split('+');
+
+    filterPairs.forEach((pair) => {
+        const colonIndex = pair.indexOf(':');
+        if (colonIndex > 0 && colonIndex < pair.length - 1) {
+            const key = pair.substring(0, colonIndex).trim();
+            const value = pair.substring(colonIndex + 1).trim();
+
+            if (key && value) {
+                // Split comma-separated values
+                const values = value.split(',');
+
+                // Store as array if multiple values, string if single value
+                searchFilter[key] = values.length > 1 ? values : value;
+            }
+        }
+    });
+
+    return searchFilter;
+}
+
 export function getUrlQueryStringForSearchFilter(
     searchFilter: SearchFilter,
     searchPrefix = 's'
