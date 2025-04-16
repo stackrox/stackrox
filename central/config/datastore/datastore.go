@@ -33,6 +33,7 @@ type DataStore interface {
 	UpsertPlatformComponentConfigRule(context.Context, *storage.PlatformComponentConfig_Rule) error
 	UpsertPlatformComponentConfigRules(context.Context, []*storage.PlatformComponentConfig_Rule) (*storage.PlatformComponentConfig, error)
 	DeletePlatformComponentConfigRules(context.Context, ...string) error
+	MarkPCCReevaluated(context.Context) error
 }
 
 const (
@@ -324,5 +325,21 @@ func (d *datastoreImpl) DeletePlatformComponentConfigRules(ctx context.Context, 
 		newRules = append(newRules, rule)
 	}
 	config.PlatformComponentConfig.Rules = newRules
+	return d.store.Upsert(ctx, config)
+}
+
+func (d *datastoreImpl) MarkPCCReevaluated(ctx context.Context) error {
+	if ok, err := administrationSAC.WriteAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return nil
+	}
+
+	config, found, err := d.store.Get(ctx)
+	if !found || err != nil {
+		return err
+	}
+
+	config.GetPlatformComponentConfig().NeedsReevaluation = false
 	return d.store.Upsert(ctx, config)
 }

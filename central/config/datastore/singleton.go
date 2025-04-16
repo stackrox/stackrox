@@ -177,7 +177,8 @@ func validateConfigAndPopulateMissingDefaults(datastore DataStore) {
 func populateDefaultSystemRuleIfMissing(config *storage.Config) bool {
 	if config.GetPlatformComponentConfig() == nil {
 		config.PlatformComponentConfig = &storage.PlatformComponentConfig{
-			Rules: []*storage.PlatformComponentConfig_Rule{defaultPlatformConfigSystemRule},
+			Rules:             []*storage.PlatformComponentConfig_Rule{defaultPlatformConfigSystemRule},
+			NeedsReevaluation: true,
 		}
 		return true
 	}
@@ -190,6 +191,7 @@ func populateDefaultSystemRuleIfMissing(config *storage.Config) bool {
 		config.GetPlatformComponentConfig().Rules,
 		defaultPlatformConfigSystemRule,
 	)
+	config.GetPlatformComponentConfig().NeedsReevaluation = true
 	return true
 }
 
