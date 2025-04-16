@@ -1391,12 +1391,7 @@ EOT
 bounce_pods() {
     local namespace="$1"
     echo "Bouncing all workload pods..."
-    {
-        "${ORCH_CMD}" </dev/null -n "$namespace" get deployments -o name
-        "${ORCH_CMD}" </dev/null -n "$namespace" get daemonsets -o name
-    } | cut -d / -f 2 | while read -r workload; do
-        "${ORCH_CMD}" </dev/null -n "$namespace" delete pod -l "app=$workload" --force --grace-period=0
-    done
+    "${ORCH_CMD}" </dev/null -n "$namespace" delete pod --all --force --grace-period=0
 }
 
 patch_down_central() {
