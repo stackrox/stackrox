@@ -30,12 +30,12 @@ import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import { getTableUIState } from 'utils/getTableUIState';
 import useDeleteDownloadModal from 'Containers/Vulnerabilities/VulnerablityReporting/hooks/useDeleteDownloadModal';
 import DeleteModal from 'Components/PatternFly/DeleteModal';
-import ConfigDetails from './ConfigDetails';
 import ReportJobStatusFilter, {
     ensureReportJobStatuses,
     ReportJobStatus,
-} from './ReportJobStatusFilter';
-import MyJobsFilter from './MyJobsFilter';
+} from 'Components/ReportJob/ReportJobStatusFilter';
+import MyJobsFilter from 'Components/ReportJob/MyJobsFilter';
+import ConfigDetails from './ConfigDetails';
 
 function getJobId(snapshot: ComplianceReportSnapshot) {
     return snapshot.reportJobId;
@@ -181,6 +181,13 @@ function ReportJobs({ scanConfigId }: ReportJobsProps) {
                 <ToolbarContent>
                     <ToolbarItem alignItems="center">
                         <ReportJobStatusFilter
+                            availableStatuses={[
+                                'WAITING',
+                                'PREPARING',
+                                'DOWNLOAD_GENERATED',
+                                'EMAIL_DELIVERED',
+                                'ERROR',
+                            ]}
                             selectedStatuses={ensureReportJobStatuses(reportJobStatusFilters)}
                             onChange={onReportJobStatusFilterChange}
                         />

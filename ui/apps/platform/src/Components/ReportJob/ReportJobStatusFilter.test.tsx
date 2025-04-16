@@ -28,7 +28,20 @@ const ReportJobsStatusFilterWrapper = ({
         setSelectedStatuses(newStatuses);
     };
 
-    return <ReportJobStatusFilter selectedStatuses={selectedStatuses} onChange={onChange} />;
+    return (
+        <ReportJobStatusFilter
+            availableStatuses={[
+                'WAITING',
+                'PREPARING',
+                'DOWNLOAD_GENERATED',
+                'PARTIAL_ERROR',
+                'EMAIL_DELIVERED',
+                'ERROR',
+            ]}
+            selectedStatuses={selectedStatuses}
+            onChange={onChange}
+        />
+    );
 };
 
 describe('ReportJobStatusFilter', () => {
