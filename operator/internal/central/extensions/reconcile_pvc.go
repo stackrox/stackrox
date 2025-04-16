@@ -61,18 +61,19 @@ var (
 	DefaultBackupPVCSize = resource.MustParse("200Gi")
 )
 
-func convertDBPersistenceToPersistence(p *platform.DBPersistence, target PVCTarget, log logr.Logger) *platform.Persistence {
+func convertDBPersistenceToPersistence(p *platform.DBPersistence,
+	target PVCTarget, log logr.Logger) (*platform.Persistence, error) {
 	if p == nil {
-		return nil
+		return nil, nil
 	}
 	if p.HostPath != nil {
 		return &platform.Persistence{
 			HostPath: p.HostPath,
-		}
+		}, nil
 	}
 	pvc := p.GetPersistentVolumeClaim()
 	if pvc == nil {
-		return &platform.Persistence{}
+		return &platform.Persistence{}, nil
 	}
 
 	claimName := pvc.ClaimName
@@ -100,6 +101,7 @@ func convertDBPersistenceToPersistence(p *platform.DBPersistence, target PVCTarg
 
 			if err != nil {
 				log.Error(err, "failed to calculate backup volume size")
+				return nil, err
 			} else {
 				quantity.Mul(2)
 				backupSize := quantity.String()
@@ -114,7 +116,7 @@ func convertDBPersistenceToPersistence(p *platform.DBPersistence, target PVCTarg
 			Size:             pvcSize,
 			StorageClassName: pvc.StorageClassName,
 		},
-	}
+	}, nil
 }
 
 // getPersistenceByTarget retrieves the persistence configuration for the given
@@ -127,13 +129,14 @@ func convertDBPersistenceToPersistence(p *platform.DBPersistence, target PVCTarg
 //     database backups
 //
 // A nil return value indicates that no persistent volume should be provisioned for the respective target.
-func getPersistenceByTarget(central *platform.Central, target PVCTarget, log logr.Logger) *platform.Persistence {
+func getPersistenceByTarget(central *platform.Central, target PVCTarget,
+	log logr.Logger) (*platform.Persistence, error) {
 	switch target {
 	case PVCTargetCentral:
-		return nil
+		return nil, nil
 	case PVCTargetCentralDB, PVCTargetCentralDBBackup:
 		if !central.Spec.Central.ShouldManageDB() {
-			return nil
+			return nil, nil
 		}
 		dbPersistence := central.Spec.Central.GetDB().GetPersistence()
 		if dbPersistence == nil {
@@ -142,7 +145,7 @@ func getPersistenceByTarget(central *platform.Central, target PVCTarget, log log
 
 		return convertDBPersistenceToPersistence(dbPersistence, target, log)
 	default:
-		panic(errors.Errorf("unknown pvc target %q", target))
+		return nil, errors.Errorf("unknown pvc target %q", target)
 	}
 }
 
@@ -154,7 +157,11 @@ func ReconcilePVCExtension(
 	defaults DefaultPVCValues) extensions.ReconcileExtension {
 
 	fn := func(ctx context.Context, central *platform.Central, client ctrlClient.Client, direct ctrlClient.Reader, _ func(statusFunc updateStatusFunc), log logr.Logger) error {
-		persistence := getPersistenceByTarget(central, target, log)
+		persistence, err := getPersistenceByTarget(central, target, log)
+		if err != nil {
+			return err
+		}
+
 		return reconcilePVC(ctx, central, persistence, target, defaults, client, log)
 	}
 	return wrapExtension(fn, client, direct)
