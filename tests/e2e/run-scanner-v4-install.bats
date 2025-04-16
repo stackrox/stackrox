@@ -1194,9 +1194,6 @@ scannerV4:
     replicas: 1
     autoscaling:
       disable: true
-  db:
-    persistence:
-      none: true
 
 allowNonstandardNamespace: true
 EOT
