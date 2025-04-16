@@ -5,6 +5,8 @@ on:
     - 'release-*'
     tags-ignore:
     - '*-nightly-*'
+  repository_dispatch:
+    types: [trigger-missed-push]
 
 jobs:
   run-parameters:
