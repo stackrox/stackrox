@@ -11,9 +11,9 @@ import NoResultsMessage from 'Components/NoResultsMessage';
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
 import PolicySeverityIconText from 'Components/PatternFly/IconText/PolicySeverityIconText';
+import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 import { formatLifecycleStages } from 'Containers/Policies/policies.utils';
 import TableWidget from './TableWidget';
-import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 
 const QUERY = gql`
     query failedPolicies($query: String) {
