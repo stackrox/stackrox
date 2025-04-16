@@ -1,6 +1,5 @@
 import React from 'react';
 import entityTypes from 'constants/entityTypes';
-import { useParams } from 'react-router-dom';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import { gql } from '@apollo/client';
 import queryService from 'utils/queryService';
@@ -14,6 +13,7 @@ import Loader from 'Components/Loader';
 import PolicySeverityIconText from 'Components/PatternFly/IconText/PolicySeverityIconText';
 import { formatLifecycleStages } from 'Containers/Policies/policies.utils';
 import TableWidget from './TableWidget';
+import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 
 const QUERY = gql`
     query failedPolicies($query: String) {
@@ -43,8 +43,19 @@ const createTableRows = (data) => {
     return failedPolicies;
 };
 
-const FailedPoliciesAcrossDeployment = () => {
-    const { deploymentID } = useParams();
+export type FailedPoliciesAcrossDeploymentProps = {
+    deploymentID: string;
+};
+
+function FailedPoliciesAcrossDeployment({ deploymentID }: FailedPoliciesAcrossDeploymentProps) {
+    if (!deploymentID) {
+        return (
+            <TableErrorComponent
+                error={new Error('Unable to show failed policies for this deployment.')}
+                message="A required ID for this deployment was not provided!"
+            ></TableErrorComponent>
+        );
+    }
 
     return (
         <Query
@@ -150,6 +161,6 @@ const FailedPoliciesAcrossDeployment = () => {
             }}
         </Query>
     );
-};
+}
 
 export default FailedPoliciesAcrossDeployment;
