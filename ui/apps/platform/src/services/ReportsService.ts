@@ -150,8 +150,8 @@ export function fetchOnDemandReportHistory({
             areaOfConcern: 'User workloads',
             vulnReportFilters: {
                 imageTypes: ['DEPLOYED'],
-                includeNvdCvss: false,
-                includeEpssProbability: false,
+                includeNvdCvss: true,
+                includeEpssProbability: true,
                 query: '',
             },
             reportStatus: {
