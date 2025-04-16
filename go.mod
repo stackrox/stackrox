@@ -120,6 +120,7 @@ require (
 	github.com/segmentio/analytics-go/v3 v3.3.0
 	github.com/sergi/go-diff v1.3.2-0.20230802210424-5b0b94c5c0d3
 	github.com/sigstore/cosign/v2 v2.5.0
+	github.com/sigstore/rekor v1.3.9
 	github.com/sigstore/sigstore v1.9.3
 	github.com/sourcegraph/conc v0.3.0
 	github.com/spf13/cobra v1.9.1
@@ -139,11 +140,11 @@ require (
 	go.uber.org/goleak v1.3.0
 	go.uber.org/mock v0.5.1
 	go.uber.org/zap v1.27.0
-	golang.org/x/crypto v0.36.0
+	golang.org/x/crypto v0.37.0
 	golang.org/x/exp v0.0.0-20241217172543-b2144cdd0a67
 	golang.org/x/mod v0.24.0
-	golang.org/x/net v0.38.0
-	golang.org/x/oauth2 v0.28.0
+	golang.org/x/net v0.39.0
+	golang.org/x/oauth2 v0.29.0
 	golang.org/x/sync v0.13.0
 	golang.org/x/sys v0.32.0
 	golang.org/x/term v0.31.0
@@ -151,9 +152,9 @@ require (
 	golang.org/x/time v0.11.0
 	golang.org/x/tools v0.31.0
 	golang.stackrox.io/grpc-http1 v0.4.0
-	google.golang.org/api v0.228.0
+	google.golang.org/api v0.229.0
 	google.golang.org/genproto v0.0.0-20250303144028-a0af3efb3deb
-	google.golang.org/genproto/googleapis/api v0.0.0-20250303144028-a0af3efb3deb
+	google.golang.org/genproto/googleapis/api v0.0.0-20250414145226-207652e42e2e
 	google.golang.org/grpc v1.71.1
 	google.golang.org/grpc/examples v0.0.0-20210902184326-c93e472777b9
 	google.golang.org/protobuf v1.36.6
@@ -181,11 +182,11 @@ require (
 
 require (
 	cel.dev/expr v0.19.2 // indirect
-	cloud.google.com/go v0.118.3 // indirect
-	cloud.google.com/go/auth v0.15.0 // indirect
+	cloud.google.com/go v0.120.0 // indirect
+	cloud.google.com/go/auth v0.16.0 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.8 // indirect
-	cloud.google.com/go/iam v1.4.1 // indirect
-	cloud.google.com/go/longrunning v0.6.5 // indirect
+	cloud.google.com/go/iam v1.5.0 // indirect
+	cloud.google.com/go/longrunning v0.6.6 // indirect
 	cloud.google.com/go/monitoring v1.24.0 // indirect
 	dario.cat/mergo v1.0.1 // indirect
 	github.com/AdaLogics/go-fuzz-headers v0.0.0-20230811130428-ced1acdcaa24 // indirect
@@ -308,14 +309,14 @@ require (
 	github.com/go-jose/go-jose/v3 v3.0.4 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-openapi/analysis v0.23.0 // indirect
-	github.com/go-openapi/errors v0.22.0 // indirect
+	github.com/go-openapi/errors v0.22.1 // indirect
 	github.com/go-openapi/jsonpointer v0.21.0 // indirect
 	github.com/go-openapi/jsonreference v0.21.0 // indirect
 	github.com/go-openapi/loads v0.22.0 // indirect
 	github.com/go-openapi/runtime v0.28.0 // indirect
 	github.com/go-openapi/spec v0.21.0 // indirect
 	github.com/go-openapi/strfmt v0.23.0 // indirect
-	github.com/go-openapi/swag v0.23.0 // indirect
+	github.com/go-openapi/swag v0.23.1 // indirect
 	github.com/go-openapi/validate v0.24.0 // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
 	github.com/go-viper/mapstructure/v2 v2.2.1 // indirect
@@ -344,7 +345,7 @@ require (
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/huandu/xstrings v1.5.0 // indirect
-	github.com/in-toto/attestation v1.1.0 // indirect
+	github.com/in-toto/attestation v1.1.1 // indirect
 	github.com/in-toto/in-toto-golang v0.9.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/itchyny/gojq v0.12.15 // indirect
@@ -432,10 +433,9 @@ require (
 	github.com/shibumi/go-pathspec v1.3.0 // indirect
 	github.com/shopspring/decimal v1.4.0 // indirect
 	github.com/sigstore/fulcio v1.6.6 // indirect
-	github.com/sigstore/protobuf-specs v0.4.0 // indirect
-	github.com/sigstore/rekor v1.3.9 // indirect
-	github.com/sigstore/sigstore-go v0.7.0 // indirect
-	github.com/sigstore/timestamp-authority v1.2.4 // indirect
+	github.com/sigstore/protobuf-specs v0.4.1 // indirect
+	github.com/sigstore/sigstore-go v0.7.1 // indirect
+	github.com/sigstore/timestamp-authority v1.2.5 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/skeema/knownhosts v1.3.0 // indirect
 	github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966 // indirect
@@ -470,25 +470,25 @@ require (
 	github.com/xlab/treeprint v1.2.0 // indirect
 	github.com/zmap/zcrypto v0.0.0-20231219022726-a1f61fb1661c // indirect
 	github.com/zmap/zlint/v3 v3.6.0 // indirect
-	gitlab.com/gitlab-org/api/client-go v0.123.0 // indirect
+	gitlab.com/gitlab-org/api/client-go v0.127.0 // indirect
 	go.etcd.io/bbolt v1.3.11 // indirect
 	go.mongodb.org/mongo-driver v1.14.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
 	go.opentelemetry.io/contrib/detectors/gcp v1.34.0 // indirect
-	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.59.0 // indirect
-	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.59.0 // indirect
-	go.opentelemetry.io/otel v1.34.0 // indirect
+	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.60.0 // indirect
+	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.60.0 // indirect
+	go.opentelemetry.io/otel v1.35.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.32.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.32.0 // indirect
-	go.opentelemetry.io/otel/metric v1.34.0 // indirect
-	go.opentelemetry.io/otel/sdk v1.34.0 // indirect
-	go.opentelemetry.io/otel/sdk/metric v1.34.0 // indirect
-	go.opentelemetry.io/otel/trace v1.34.0 // indirect
+	go.opentelemetry.io/otel/metric v1.35.0 // indirect
+	go.opentelemetry.io/otel/sdk v1.35.0 // indirect
+	go.opentelemetry.io/otel/sdk/metric v1.35.0 // indirect
+	go.opentelemetry.io/otel/trace v1.35.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.3.1 // indirect
 	go.uber.org/automaxprocs v1.6.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250313205543-e70fdf4c4cb4 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250414145226-207652e42e2e // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
@@ -508,7 +508,7 @@ require (
 	sigs.k8s.io/kustomize/api v0.18.0 // indirect
 	sigs.k8s.io/kustomize/kyaml v0.18.1 // indirect
 	sigs.k8s.io/network-policy-api v0.1.5 // indirect
-	sigs.k8s.io/release-utils v0.11.0 // indirect
+	sigs.k8s.io/release-utils v0.11.1 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.2 // indirect
 )
 
