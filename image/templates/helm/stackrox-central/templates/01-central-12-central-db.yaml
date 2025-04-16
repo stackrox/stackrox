@@ -92,7 +92,8 @@ spec:
         volumeMounts:
         - name: disk
           mountPath: /var/lib/postgresql/data
-        {{- if ._rox.central.db.persistence.backup }}
+        {{- if and (eq ._rox.env.installMethod "operator")
+                   ._rox.central.db.persistence.backup }}
         - name: backup
           mountPath: /var/lib/postgresql/backup
         {{- end }}
