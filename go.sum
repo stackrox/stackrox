@@ -1441,8 +1441,8 @@ github.com/stackrox/external-network-pusher v0.0.0-20231115153210-b82d72f500a2 h
 github.com/stackrox/external-network-pusher v0.0.0-20231115153210-b82d72f500a2/go.mod h1:M22zIb5zuZCYbYwcn9iOWswNBrxE+YPkAHU5Bkg5XE4=
 github.com/stackrox/helm-operator v0.0.12-0.20250211113659-1b2840226a8b h1:l8jO0gzzbgvrPB7ojbTJP8P7516JL3fjh4BJn2/SqZM=
 github.com/stackrox/helm-operator v0.0.12-0.20250211113659-1b2840226a8b/go.mod h1:Sc+8bE38xTCgCChBUvtq/PxatEg9fAypr7S5iAw8nlA=
-github.com/stackrox/helmtest v0.0.3 h1:oJDsCzNbRkAsm4wvJI6/5FbbNsks+pE3Z/uJpvbYeMw=
-github.com/stackrox/helmtest v0.0.3/go.mod h1:dHVdV3B3wdcI3gFDD/GK6H35v+x54eE/ndMhjV+EMlI=
+github.com/stackrox/helmtest v0.0.5 h1:EDaCkqH//81qVZseJJSkcUoTaz4xwfrSTWyYsFF0UGA=
+github.com/stackrox/helmtest v0.0.5/go.mod h1:DoML7dGT73/Ybuk71zoQBjgC4UMHUyodwy6Njn8yQM8=
 github.com/stackrox/istio-cves v0.0.0-20221007013142-0bde9b541ec8 h1:rUIvoAHokPcd92aJT2gJwVeyE8tMuaqS5l5s3cEgXFY=
 github.com/stackrox/istio-cves v0.0.0-20221007013142-0bde9b541ec8/go.mod h1:ZF7mH4kH1G+82HxR3uFDHvyLG8eCOdrh1RDyQcTGkBA=
 github.com/stackrox/k8s-cves v0.0.0-20220818200547-7d0d1420c58d h1:88Iui7fSMKgXvpyfBlbP3qosrqyv3qMgOJ6JJ4V4tFQ=
