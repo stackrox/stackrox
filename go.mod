@@ -28,14 +28,14 @@ require (
 	github.com/andygrunwald/go-jira v1.16.0
 	github.com/aws/aws-sdk-go v1.55.6
 	github.com/aws/aws-sdk-go-v2 v1.36.3
-	github.com/aws/aws-sdk-go-v2/config v1.29.13
-	github.com/aws/aws-sdk-go-v2/credentials v1.17.66
+	github.com/aws/aws-sdk-go-v2/config v1.29.14
+	github.com/aws/aws-sdk-go-v2/credentials v1.17.67
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.16.30
-	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.17.71
-	github.com/aws/aws-sdk-go-v2/service/ecr v1.43.2
-	github.com/aws/aws-sdk-go-v2/service/s3 v1.79.1
+	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.17.72
+	github.com/aws/aws-sdk-go-v2/service/ecr v1.43.3
+	github.com/aws/aws-sdk-go-v2/service/s3 v1.79.2
 	github.com/aws/aws-sdk-go-v2/service/securityhub v1.57.2
-	github.com/aws/aws-sdk-go-v2/service/sts v1.33.18
+	github.com/aws/aws-sdk-go-v2/service/sts v1.33.19
 	github.com/aws/smithy-go v1.22.3
 	github.com/cenkalti/backoff/v3 v3.2.2
 	github.com/cloudflare/cfssl v1.6.5
@@ -65,7 +65,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/googleapis/gax-go/v2 v2.14.1
 	github.com/gorilla/schema v1.4.1
-	github.com/grafana/pyroscope-go v1.2.1
+	github.com/grafana/pyroscope-go v1.2.2
 	github.com/graph-gophers/graphql-go v1.5.0
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.2.0
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.1-0.20210315223345-82c243799c99
@@ -97,7 +97,7 @@ require (
 	github.com/onsi/gomega v1.37.0
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.1
-	github.com/openshift-online/ocm-sdk-go v0.1.464
+	github.com/openshift-online/ocm-sdk-go v0.1.465
 	github.com/openshift/api v0.0.0-20240415161129-d7aff303fa1a
 	github.com/openshift/client-go v0.0.0-20240415191513-dcdeb09390b4
 	github.com/openshift/runtime-utils v0.0.0-20230921210328-7bdb5b9c177b
@@ -108,9 +108,9 @@ require (
 	github.com/planetscale/vtprotobuf v0.6.1-0.20240409071808-615f978279ca
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2
 	github.com/prometheus/client_golang v1.22.0
-	github.com/prometheus/client_model v0.6.1
+	github.com/prometheus/client_model v0.6.2
 	github.com/prometheus/common v0.63.0
-	github.com/quay/claircore v1.5.35
+	github.com/quay/claircore v1.5.36-0.20250408161451-f5a19a457713
 	github.com/quay/claircore/toolkit v1.2.5-0.20250120211107-bea8a6c197b2
 	github.com/quay/zlog v1.1.8
 	github.com/remind101/migrate v0.0.0-20170729031349-52c1edff7319
@@ -120,14 +120,14 @@ require (
 	github.com/segmentio/analytics-go/v3 v3.3.0
 	github.com/sergi/go-diff v1.3.2-0.20230802210424-5b0b94c5c0d3
 	github.com/sigstore/cosign/v2 v2.5.0
-	github.com/sigstore/rekor v1.3.9
+	github.com/sigstore/rekor v1.3.10
 	github.com/sigstore/sigstore v1.9.3
 	github.com/sourcegraph/conc v0.3.0
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/pflag v1.0.6
 	github.com/spf13/viper v1.20.1
 	github.com/stackrox/external-network-pusher v0.0.0-20231115153210-b82d72f500a2
-	github.com/stackrox/helmtest v0.0.3
+	github.com/stackrox/helmtest v0.0.5
 	github.com/stackrox/k8s-overlay-patch v0.0.0-20250224110925-13b5b47fd812
 	github.com/stackrox/pkcs7 v0.0.0-20240314170115-841ca6b5f88d
 	github.com/stackrox/scanner v0.0.0-20240830165150-d133ba942d59
@@ -141,7 +141,7 @@ require (
 	go.uber.org/mock v0.5.1
 	go.uber.org/zap v1.27.0
 	golang.org/x/crypto v0.37.0
-	golang.org/x/exp v0.0.0-20241217172543-b2144cdd0a67
+	golang.org/x/exp v0.0.0-20250305212735-054e65f0b394
 	golang.org/x/mod v0.24.0
 	golang.org/x/net v0.39.0
 	golang.org/x/oauth2 v0.29.0
@@ -150,7 +150,7 @@ require (
 	golang.org/x/term v0.31.0
 	golang.org/x/text v0.24.0
 	golang.org/x/time v0.11.0
-	golang.org/x/tools v0.31.0
+	golang.org/x/tools v0.32.0
 	golang.stackrox.io/grpc-http1 v0.4.0
 	google.golang.org/api v0.229.0
 	google.golang.org/genproto v0.0.0-20250303144028-a0af3efb3deb
@@ -164,7 +164,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 	gorm.io/driver/postgres v1.5.11
 	gorm.io/gorm v1.25.10
-	helm.sh/helm/v3 v3.17.1
+	helm.sh/helm/v3 v3.17.3
 	k8s.io/api v0.32.3
 	k8s.io/apiextensions-apiserver v0.32.3
 	k8s.io/apimachinery v0.32.3
@@ -498,10 +498,10 @@ require (
 	k8s.io/component-base v0.32.3 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20241105132330-32ad38e42d3f // indirect
-	modernc.org/libc v1.55.3 // indirect
-	modernc.org/mathutil v1.6.0 // indirect
-	modernc.org/memory v1.8.0 // indirect
-	modernc.org/sqlite v1.34.5 // indirect
+	modernc.org/libc v1.62.1 // indirect
+	modernc.org/mathutil v1.7.1 // indirect
+	modernc.org/memory v1.9.1 // indirect
+	modernc.org/sqlite v1.37.0 // indirect
 	oras.land/oras-go v1.2.5 // indirect
 	sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.31.0 // indirect
 	sigs.k8s.io/json v0.0.0-20241010143419-9aa6b5e7a4b3 // indirect
