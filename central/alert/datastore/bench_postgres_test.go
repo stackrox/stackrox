@@ -38,7 +38,6 @@ func BenchmarkAlertDatabaseOps(b *testing.B) {
 		sevToCount[a.Policy.Severity]++
 		require.NoError(b, datastore.UpsertAlert(ctx, a))
 	}
-	log.Info("Successfully loaded the DB")
 
 	var expected []*violationsBySeverity
 	for sev, count := range sevToCount {
