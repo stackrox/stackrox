@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/pkg/errors"
@@ -46,7 +47,7 @@ var (
 //
 //go:generate mockgen-wrapper
 type NetworkEntityPusher interface {
-	DoPushExternalNetworkEntitiesToSensor(clusters ...string)
+	DoPushExternalNetworkEntitiesToSensor(clusters []string)
 }
 
 type dataStoreImpl struct {
@@ -470,7 +471,8 @@ func (ds *dataStoreImpl) getNetworkTree(ctx context.Context, clusterID string, c
 }
 
 func (ds *dataStoreImpl) doPushExternalNetworkEntitiesToSensor(clusters ...string) {
-	ds.dataPusher.DoPushExternalNetworkEntitiesToSensor(clusters...)
+	fmt.Println("Pushing entities to ", len(clusters), clusters)
+	ds.dataPusher.DoPushExternalNetworkEntitiesToSensor(clusters)
 }
 
 func (ds *dataStoreImpl) readAllowed(ctx context.Context, id string) (bool, error) {
@@ -556,11 +558,11 @@ func newNetworkEntityPusher(sensorConnMgr connection.Manager) NetworkEntityPushe
 	}
 }
 
-func (p *networkEntityPusherImpl) DoPushExternalNetworkEntitiesToSensor(clusters ...string) {
-	go p.doPushExternalNetworkEntitiesToSensor(clusters...)
+func (p *networkEntityPusherImpl) DoPushExternalNetworkEntitiesToSensor(clusters []string) {
+	go p.doPushExternalNetworkEntitiesToSensor(clusters)
 }
 
-func (p *networkEntityPusherImpl) doPushExternalNetworkEntitiesToSensor(clusters ...string) {
+func (p *networkEntityPusherImpl) doPushExternalNetworkEntitiesToSensor(clusters []string) {
 	// If push request if for a global network entity, push to all known clusters once and return.
 	elevateCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
