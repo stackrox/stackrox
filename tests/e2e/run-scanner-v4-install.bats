@@ -1118,7 +1118,8 @@ deploy_central_with_helm() {
 
     if [[ "${CI:-}" != "true" ]]; then
         info "Creating namespace and image pull secrets..."
-        "${ORCH_CMD}" </dev/null create namespace "$central_namespace" || true
+        echo '{ "apiVersion": "v1", "kind": "Namespace", "metadata": { "name": "$central_namespace" } }' | "${ORCH_CMD}" apply -f -
+
         "${ROOT}/deploy/common/pull-secret.sh" stackrox quay.io | "${ORCH_CMD}" -n "$central_namespace" apply -f -
     fi
 
