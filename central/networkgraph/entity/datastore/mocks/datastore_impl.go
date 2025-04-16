@@ -15,32 +15,32 @@ import (
 	gomock "go.uber.org/mock/gomock"
 )
 
-// MockEntityPusher is a mock of EntityPusher interface.
-type MockEntityPusher struct {
+// MockNetworkEntityPusher is a mock of NetworkEntityPusher interface.
+type MockNetworkEntityPusher struct {
 	ctrl     *gomock.Controller
-	recorder *MockEntityPusherMockRecorder
+	recorder *MockNetworkEntityPusherMockRecorder
 	isgomock struct{}
 }
 
-// MockEntityPusherMockRecorder is the mock recorder for MockEntityPusher.
-type MockEntityPusherMockRecorder struct {
-	mock *MockEntityPusher
+// MockNetworkEntityPusherMockRecorder is the mock recorder for MockNetworkEntityPusher.
+type MockNetworkEntityPusherMockRecorder struct {
+	mock *MockNetworkEntityPusher
 }
 
-// NewMockEntityPusher creates a new mock instance.
-func NewMockEntityPusher(ctrl *gomock.Controller) *MockEntityPusher {
-	mock := &MockEntityPusher{ctrl: ctrl}
-	mock.recorder = &MockEntityPusherMockRecorder{mock}
+// NewMockNetworkEntityPusher creates a new mock instance.
+func NewMockNetworkEntityPusher(ctrl *gomock.Controller) *MockNetworkEntityPusher {
+	mock := &MockNetworkEntityPusher{ctrl: ctrl}
+	mock.recorder = &MockNetworkEntityPusherMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockEntityPusher) EXPECT() *MockEntityPusherMockRecorder {
+func (m *MockNetworkEntityPusher) EXPECT() *MockNetworkEntityPusherMockRecorder {
 	return m.recorder
 }
 
 // DoPushExternalNetworkEntitiesToSensor mocks base method.
-func (m *MockEntityPusher) DoPushExternalNetworkEntitiesToSensor(clusters ...string) {
+func (m *MockNetworkEntityPusher) DoPushExternalNetworkEntitiesToSensor(clusters ...string) {
 	m.ctrl.T.Helper()
 	varargs := []any{}
 	for _, a := range clusters {
@@ -50,7 +50,7 @@ func (m *MockEntityPusher) DoPushExternalNetworkEntitiesToSensor(clusters ...str
 }
 
 // DoPushExternalNetworkEntitiesToSensor indicates an expected call of DoPushExternalNetworkEntitiesToSensor.
-func (mr *MockEntityPusherMockRecorder) DoPushExternalNetworkEntitiesToSensor(clusters ...any) *gomock.Call {
+func (mr *MockNetworkEntityPusherMockRecorder) DoPushExternalNetworkEntitiesToSensor(clusters ...any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DoPushExternalNetworkEntitiesToSensor", reflect.TypeOf((*MockEntityPusher)(nil).DoPushExternalNetworkEntitiesToSensor), clusters...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DoPushExternalNetworkEntitiesToSensor", reflect.TypeOf((*MockNetworkEntityPusher)(nil).DoPushExternalNetworkEntitiesToSensor), clusters...)
 }
