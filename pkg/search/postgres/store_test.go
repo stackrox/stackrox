@@ -356,6 +356,37 @@ func TestGetByQuery(t *testing.T) {
 	protoassert.ElementsMatch(t, objectsAfter, expectedObjectsAfter)
 }
 
+func TestGetByQueryFn(t *testing.T) {
+	testDB := pgtest.ForT(t)
+	store := newStore(testDB)
+
+	var objects []*storage.TestSingleKeyStruct
+	collect := func(obj *storage.TestSingleKeyStruct) error {
+		objects = append(objects, obj)
+		return nil
+	}
+
+	testObjects := sampleTestSingleKeyStructArray("GetByQueryFn")
+	query2 := getMatchFieldQuery("Test Name", "Test GetByQueryFn 2")
+	query4 := getMatchFieldQuery("Test Key", "TestGetByQueryFn4")
+	query := getDisjunctionQuery(query2, query4)
+
+	errBefore := store.GetByQueryFn(ctx, query, collect)
+	assert.NoError(t, errBefore)
+	assert.Empty(t, objects)
+
+	assert.NoError(t, store.UpsertMany(ctx, testObjects))
+
+	errAfter := store.GetByQueryFn(ctx, query, collect)
+	assert.NoError(t, errAfter)
+	expectedObjectsAfter := []*storage.TestSingleKeyStruct{
+		testObjects[1],
+		testObjects[3],
+	}
+	protoassert.ElementsMatch(t, objects, expectedObjectsAfter)
+
+}
+
 func TestDeleteByQuery(t *testing.T) {
 	testDB := pgtest.ForT(t)
 	store := newStore(testDB)

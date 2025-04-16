@@ -64,7 +64,9 @@ type Store[T any, PT pgutils.Unmarshaler[T]] interface {
 	Walk(ctx context.Context, fn func(obj PT) error) error
 	WalkByQuery(ctx context.Context, q *v1.Query, fn func(obj PT) error) error
 	Get(ctx context.Context, id string) (PT, bool, error)
+	// Deprecated: use GetByQueryFn instead
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*T, error)
+	GetByQueryFn(ctx context.Context, query *v1.Query, fn func(obj PT) error) error
 	GetIDs(ctx context.Context) ([]string, error)
 	GetIDsByQuery(ctx context.Context, query *v1.Query) ([]string, error)
 	GetMany(ctx context.Context, identifiers []string) ([]PT, []int, error)
@@ -218,7 +220,17 @@ func (s *genericStore[T, PT]) Get(ctx context.Context, id string) (PT, bool, err
 	return data, true, nil
 }
 
+// GetByQueryFn iterates over all the objects scoped by the query and applies the closure.
+// The main difference between GetByQueryFn and WalkByQuery or Walk is cursor usage. Prefer GetByQueryFn when
+// results set is limited or tables is small.
+// TODO(ROX-28999): merge with WalkByQuery if cursor is removed
+func (s *genericStore[T, PT]) GetByQueryFn(ctx context.Context, query *v1.Query, fn func(obj PT) error) error {
+	defer s.setPostgresOperationDurationTime(time.Now(), ops.GetByQuery)
+	return RunQueryForSchemaFn[T, PT](ctx, s.schema, query, s.db, fn)
+}
+
 // GetByQuery returns the objects from the store matching the query.
+// Deprecated: Use GetByQueryFn instead
 func (s *genericStore[T, PT]) GetByQuery(ctx context.Context, query *v1.Query) ([]*T, error) {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.GetByQuery)
 
