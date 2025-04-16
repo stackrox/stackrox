@@ -36,19 +36,16 @@ const sortOptions = {
 function createQueryFromReportJobStatusFilters(jobStatusFilters: string[]) {
     const query: Record<string, string[]> = {
         'Report State': [],
-        'Report Notification Method': [],
     };
 
     const jobStatusQueryMappings: Record<string, { category: string; value: string }> = {
         PREPARING: { category: 'Report State', value: 'PREPARING' },
         WAITING: { category: 'Report State', value: 'WAITING' },
         ERROR: { category: 'Report State', value: 'FAILURE' },
-        PARTIAL_ERROR: { category: 'Report State', value: 'PARTIAL_ERROR' },
         DOWNLOAD_GENERATED: {
-            category: 'Report Notification Method',
-            value: 'DOWNLOAD',
+            category: 'Report State',
+            value: 'GENERATED',
         },
-        EMAIL_DELIVERED: { category: 'Report Notification Method', value: 'EMAIL' },
     };
 
     const reportJobStatuses = ensureReportJobStatuses(jobStatusFilters);
