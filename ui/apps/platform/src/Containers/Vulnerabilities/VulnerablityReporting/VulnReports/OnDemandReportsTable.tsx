@@ -3,11 +3,11 @@ import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import { OnDemandReportSnapshot } from 'services/ReportsService.types';
 import useAuthStatus from 'hooks/useAuthStatus';
+import { GetSortParams } from 'hooks/useURLSort';
 import { getDateTime } from 'utils/dateUtils';
 import { TableUIState } from 'utils/getTableUIState';
 import ReportJobStatus from 'Components/ReportJob/ReportJobStatus';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
-import { GetSortParams } from 'hooks/useURLSort';
 
 export type OnDemandReportsTableProps<T> = {
     tableState: TableUIState<T>;

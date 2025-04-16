@@ -133,9 +133,11 @@ export function fetchOnDemandReportHistory({
     page,
     perPage,
     sortOption,
+    // @TODO: Use the showMyHistory value to determine which endpoint to use
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     showMyHistory,
 }: FetchOnDemandReportHistoryServiceProps): Promise<OnDemandReportSnapshot[]> {
+    // @TODO: Use the params in the future API call
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const params = queryString.stringify(
         {
