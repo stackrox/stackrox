@@ -9,7 +9,6 @@ import (
 	deploymentUtils "github.com/stackrox/rox/central/deployment/utils"
 	"github.com/stackrox/rox/central/networkbaseline/datastore"
 	"github.com/stackrox/rox/central/networkbaseline/manager"
-	flowDatastore "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -45,8 +44,6 @@ type serviceImpl struct {
 
 	datastore datastore.ReadOnlyDataStore
 	manager   manager.Manager
-
-	flowStore flowDatastore.ClusterDataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
