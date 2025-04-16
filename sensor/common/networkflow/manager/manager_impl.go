@@ -1296,21 +1296,6 @@ func (h *hostConnections) Process(networkInfo *sensor.NetworkConnectionInfo, now
 	flowMetrics.NetworkConnectionInfoMessagesRcvd.With(prometheus.Labels{"Hostname": h.hostname}).Inc()
 	now := timestamp.Now()
 
-	for _, updatedConnection := range networkInfo.UpdatedConnections {
-		if updatedConnection.CloseTimestamp == nil {
-			flowMetrics.IncomingConnectionsEndpoints.With(prometheus.Labels{"object": "connections", "closedTS": "unset"}).Inc()
-		} else {
-			flowMetrics.IncomingConnectionsEndpoints.With(prometheus.Labels{"object": "connections", "closedTS": "set"}).Inc()
-		}
-	}
-	for _, updatedEp := range networkInfo.UpdatedEndpoints {
-		if updatedEp.CloseTimestamp == nil {
-			flowMetrics.IncomingConnectionsEndpoints.With(prometheus.Labels{"object": "endpoints", "closedTS": "unset"}).Inc()
-		} else {
-			flowMetrics.IncomingConnectionsEndpoints.With(prometheus.Labels{"object": "endpoints", "closedTS": "set"}).Inc()
-		}
-	}
-
 	updatedConnections := getUpdatedConnections(networkInfo)
 	updatedEndpoints := getUpdatedContainerEndpoints(networkInfo)
 
@@ -1460,6 +1445,9 @@ func getUpdatedConnections(networkInfo *sensor.NetworkConnectionInfo) map[connec
 		ts := timestamp.FromProtobuf(conn.CloseTimestamp)
 		if ts == 0 {
 			ts = timestamp.InfiniteFuture
+			flowMetrics.IncomingConnectionsEndpoints.With(prometheus.Labels{"object": "connections", "closedTS": "unset"}).Inc()
+		} else {
+			flowMetrics.IncomingConnectionsEndpoints.With(prometheus.Labels{"object": "connections", "closedTS": "set"}).Inc()
 		}
 		updatedConnections[*c] = ts
 	}
@@ -1485,6 +1473,9 @@ func getUpdatedContainerEndpoints(networkInfo *sensor.NetworkConnectionInfo) map
 		ts := timestamp.FromProtobuf(endpoint.GetCloseTimestamp())
 		if ts == 0 {
 			ts = timestamp.InfiniteFuture
+			flowMetrics.IncomingConnectionsEndpoints.With(prometheus.Labels{"object": "endpoints", "closedTS": "unset"}).Inc()
+		} else {
+			flowMetrics.IncomingConnectionsEndpoints.With(prometheus.Labels{"object": "endpoints", "closedTS": "set"}).Inc()
 		}
 		updatedEndpoints[ep] = ts
 	}
