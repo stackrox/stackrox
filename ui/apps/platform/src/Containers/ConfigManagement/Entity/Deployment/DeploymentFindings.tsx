@@ -1,5 +1,4 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import FailedPoliciesAcrossDeployment from 'Containers/ConfigManagement/Entity/widgets/FailedPoliciesAcrossDeployment';
 import ViolationsAcrossThisDeployment from 'Containers/Workflow/widgets/ViolationsAcrossThisDeployment';
 import entityTypes from 'constants/entityTypes';
@@ -9,7 +8,7 @@ export type DeploymentFindingsProps = {
     entityContext?: Record<string, any>;
 };
 
-const DeploymentFindings = ({ entityContext = {}, deploymentID }: DeploymentFindingsProps) => {
+function DeploymentFindings({ entityContext = {}, deploymentID }: DeploymentFindingsProps) {
     if (entityContext[entityTypes.POLICY]) {
         return (
             <ViolationsAcrossThisDeployment
@@ -24,12 +23,6 @@ const DeploymentFindings = ({ entityContext = {}, deploymentID }: DeploymentFind
             <FailedPoliciesAcrossDeployment deploymentID={deploymentID} />
         </div>
     );
-};
-
-DeploymentFindings.propTypes = {};
-
-DeploymentFindings.defaultProps = {
-    entityContext: {},
-};
+}
 
 export default DeploymentFindings;
