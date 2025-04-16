@@ -88,9 +88,7 @@ service NetworkBaselineService {
   }
 
   rpc GetNetworkBaselineStatusForExternalFlows(NetworkBaselineExternalStatusRequest) returns (NetworkBaselineExternalStatusResponse) {
-    option (google.api.http) = {
-      get: "/v1/networkbaseline/{deployment_id}/status/external",
-    };
+    option (google.api.http) = {get: "/v1/networkbaseline/{deployment_id}/status/external"};
   }
 
   rpc GetNetworkBaseline(ResourceByID) returns (storage.NetworkBaseline) {
