@@ -3,6 +3,7 @@ package certgen
 import (
 	"bytes"
 	"errors"
+	"time"
 
 	"github.com/cloudflare/cfssl/csr"
 	"github.com/cloudflare/cfssl/helpers"
@@ -16,7 +17,7 @@ var (
 	errNoCAKey  = errors.New("no CA key in file map")
 )
 
-const caCertExpiry = "43800h" // 5 years
+const caCertExpiry = 5 * 365 * 24 * time.Hour
 
 // LoadCAFromFileMap loads and instantiates a StackRox service CA from the given file map. The file map
 // must contain `ca-cert.pem` and `ca-key.pem` entries.
@@ -71,7 +72,7 @@ func GenerateCA() (mtls.CA, error) {
 		KeyRequest:   csr.NewKeyRequest(),
 		SerialNumber: serial.String(),
 		CA: &csr.CAConfig{
-			Expiry: caCertExpiry,
+			Expiry: caCertExpiry.String(),
 		},
 	}
 	caCert, _, caKey, err := initca.New(&req)
