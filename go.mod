@@ -56,6 +56,7 @@ require (
 	github.com/go-logr/zapr v1.3.0
 	github.com/gobwas/glob v0.2.3
 	github.com/godbus/dbus/v5 v5.1.0
+	github.com/gohugoio/hashstructure v0.5.0
 	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/google/certificate-transparency-go v1.3.1
 	github.com/google/gnostic-models v0.6.9
@@ -87,7 +88,6 @@ require (
 	github.com/machinebox/graphql v0.2.2
 	github.com/mailru/easyjson v0.9.0
 	github.com/mitchellh/go-wordwrap v1.0.1
-	github.com/mitchellh/hashstructure/v2 v2.0.2
 	github.com/mitchellh/mapstructure v1.5.1-0.20231216201459-8508981c8b6c
 	github.com/np-guard/cluster-topology-analyzer/v2 v2.3.0
 	github.com/np-guard/netpol-analyzer v1.4.2
