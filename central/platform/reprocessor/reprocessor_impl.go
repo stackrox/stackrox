@@ -7,11 +7,13 @@ import (
 	"github.com/pkg/errors"
 	alertDS "github.com/stackrox/rox/central/alert/datastore"
 	alertutils "github.com/stackrox/rox/central/alert/utils"
+	configDS "github.com/stackrox/rox/central/config/datastore"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	platformmatcher "github.com/stackrox/rox/central/platform/matcher"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -29,23 +31,30 @@ var (
 
 type platformReprocessorImpl struct {
 	alertDatastore      alertDS.DataStore
+	configDatastore     configDS.DataStore
 	deploymentDatastore deploymentDS.DataStore
 	platformMatcher     platformmatcher.PlatformMatcher
 
 	stopSignal concurrency.Signal
 	// isStarted will make sure only one reprocessing routine runs for an instance of reprocessor
 	isStarted atomic.Bool
+
+	customized bool
 }
 
 func New(alertDatastore alertDS.DataStore,
+	configDatastore configDS.DataStore,
 	deploymentDatastore deploymentDS.DataStore,
 	platformMatcher platformmatcher.PlatformMatcher) PlatformReprocessor {
 
 	return &platformReprocessorImpl{
 		alertDatastore:      alertDatastore,
+		configDatastore:     configDatastore,
 		deploymentDatastore: deploymentDatastore,
 		platformMatcher:     platformMatcher,
 		stopSignal:          concurrency.NewSignal(),
+
+		customized: features.CustomizablePlatformComponents.Enabled(),
 	}
 }
 
@@ -55,7 +64,7 @@ func (pr *platformReprocessorImpl) Start() {
 		log.Error("Platform reprocessor was already started")
 		return
 	}
-	go pr.runReprocessing()
+	go pr.RunReprocessor()
 }
 
 func (pr *platformReprocessorImpl) Stop() {
@@ -65,15 +74,29 @@ func (pr *platformReprocessorImpl) Stop() {
 	pr.stopSignal.Signal()
 }
 
-func (pr *platformReprocessorImpl) runReprocessing() {
-	err := pr.reprocessAlerts()
-	if err != nil {
-		log.Errorf("Error reprocessing alerts with platform rules: %v", err)
+func (pr *platformReprocessorImpl) RunReprocessor() {
+	flag := true
+	if pr.customized {
+		config, _, err := pr.configDatastore.GetPlatformComponentConfig(reprocessorCtx)
+		if err != nil {
+			log.Errorf("Error getting platform component config config: %v", err)
+		}
+		flag = config.NeedsReevaluation
 	}
+	if flag {
+		err := pr.reprocessAlerts()
+		if err != nil {
+			log.Errorf("Error reprocessing alerts with platform rules: %v", err)
+		}
 
-	err = pr.reprocessDeployments()
-	if err != nil {
-		log.Errorf("Error reprocessing deployments with platform rules: %v", err)
+		err = pr.reprocessDeployments()
+		if err != nil {
+			log.Errorf("Error reprocessing deployments with platform rules: %v", err)
+		}
+		if pr.customized {
+			err = pr.configDatastore.MarkPCCReevaluated(reprocessorCtx)
+			log.Errorf("Error marking platform component config as reevaluated: %v", err)
+		}
 	}
 }
 

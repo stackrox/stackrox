@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	alertDSMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
+	configDatastoreMocks "github.com/stackrox/rox/central/config/datastore/mocks"
 	deploymentDSMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	platformmatcher "github.com/stackrox/rox/central/platform/matcher"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -24,6 +25,7 @@ type platformReprocessorImplTestSuite struct {
 
 	reprocessor         *platformReprocessorImpl
 	alertDatastore      *alertDSMocks.MockDataStore
+	configDatastore     *configDatastoreMocks.MockDataStore
 	deploymentDatastore *deploymentDSMocks.MockDataStore
 
 	mockCtrl *gomock.Controller
@@ -32,6 +34,7 @@ type platformReprocessorImplTestSuite struct {
 func (s *platformReprocessorImplTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 	s.alertDatastore = alertDSMocks.NewMockDataStore(s.mockCtrl)
+	s.configDatastore = configDatastoreMocks.NewMockDataStore(s.mockCtrl)
 	s.deploymentDatastore = deploymentDSMocks.NewMockDataStore(s.mockCtrl)
 
 	s.reprocessor = &platformReprocessorImpl{
@@ -54,7 +57,7 @@ func (s *platformReprocessorImplTestSuite) TestRunReprocessing() {
 	s.alertDatastore.EXPECT().WalkByQuery(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
 	s.deploymentDatastore.EXPECT().SearchRawDeployments(gomock.Any(), gomock.Any()).Return(nil, nil).Times(1)
 
-	s.reprocessor.runReprocessing()
+	s.reprocessor.RunReprocessor()
 
 	deployments := testDeployments()
 
@@ -75,7 +78,7 @@ func (s *platformReprocessorImplTestSuite) TestRunReprocessing() {
 	s.deploymentDatastore.EXPECT().UpsertDeployment(ctx, expectedDeps[2]).Return(nil).Times(1)
 	s.deploymentDatastore.EXPECT().UpsertDeployment(ctx, expectedDeps[3]).Return(nil).Times(1)
 
-	s.reprocessor.runReprocessing()
+	s.reprocessor.RunReprocessor()
 }
 
 func (s *platformReprocessorImplTestSuite) TestStartAndStop() {
@@ -96,7 +99,7 @@ func (s *platformReprocessorImplTestSuite) TestStartAndStop() {
 	s.deploymentDatastore.EXPECT().SearchRawDeployments(gomock.Any(), gomock.Any()).Times(0)
 	s.deploymentDatastore.EXPECT().UpsertDeployment(gomock.Any(), gomock.Any()).Times(0)
 
-	reprocessor := New(s.alertDatastore, s.deploymentDatastore, platformmatcher.Singleton())
+	reprocessor := New(s.alertDatastore, s.configDatastore, s.deploymentDatastore, platformmatcher.Singleton())
 	reprocessor.Start()
 	// Wait until execution has entered alert reprocessing loop. The loop will pause waiting for proceedAlertLoop signal
 	inAlertLoop.Wait()
@@ -121,7 +124,7 @@ func (s *platformReprocessorImplTestSuite) TestStartAndStop() {
 		proceedDeploymentLoop.Wait()
 	}).Return(nil).Times(1)
 
-	reprocessor = New(s.alertDatastore, s.deploymentDatastore, platformmatcher.Singleton())
+	reprocessor = New(s.alertDatastore, s.configDatastore, s.deploymentDatastore, platformmatcher.Singleton())
 	reprocessor.Start()
 	// Wait until execution has entered deployment reprocessing loop. The loop will pause waiting for proceedAlertLoop signal
 	inDeploymentLoop.Wait()

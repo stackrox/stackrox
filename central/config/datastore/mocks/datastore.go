@@ -133,6 +133,20 @@ func (mr *MockDataStoreMockRecorder) GetVulnerabilityExceptionConfig(ctx any) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVulnerabilityExceptionConfig", reflect.TypeOf((*MockDataStore)(nil).GetVulnerabilityExceptionConfig), ctx)
 }
 
+// MarkPCCReevaluated mocks base method.
+func (m *MockDataStore) MarkPCCReevaluated(arg0 context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MarkPCCReevaluated", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// MarkPCCReevaluated indicates an expected call of MarkPCCReevaluated.
+func (mr *MockDataStoreMockRecorder) MarkPCCReevaluated(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkPCCReevaluated", reflect.TypeOf((*MockDataStore)(nil).MarkPCCReevaluated), arg0)
+}
+
 // UpsertConfig mocks base method.
 func (m *MockDataStore) UpsertConfig(ctx context.Context, config *storage.Config) error {
 	m.ctrl.T.Helper()
