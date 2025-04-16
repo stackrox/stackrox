@@ -87,7 +87,11 @@ func main() {
 	}
 
 	ctx = zlog.ContextWithValues(ctx, "component", "main")
-	zlog.Info(ctx).Str("version", version.Version).Str("build_flavor", buildinfo.BuildFlavor).Msg("starting scanner")
+	zlog.Info(ctx).
+		Str("version", version.Version).
+		Str("vulnerability_version", version.VulnerabilityVersion).
+		Str("build_flavor", buildinfo.BuildFlavor).
+		Msg("starting scanner")
 
 	// If certs was specified, configure the identity environment.
 	if p := cfg.MTLS.CertsDir; p != "" {
