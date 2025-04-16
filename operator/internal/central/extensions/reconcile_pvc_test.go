@@ -576,6 +576,8 @@ func makePVC(owner *platform.Central, name string, size resource.Quantity, stora
 }
 
 func newReconcilePVCExtensionRun(testCase pvcReconciliationTestCase, client ctrlClient.Client) reconcilePVCExtensionRun {
+	persistence, _ := getPersistenceByTarget(testCase.Central, testCase.Target, logr.Discard())
+
 	return reconcilePVCExtensionRun{
 		ctx:         context.Background(),
 		namespace:   "stackrox",
@@ -583,7 +585,7 @@ func newReconcilePVCExtensionRun(testCase pvcReconciliationTestCase, client ctrl
 		centralObj:  testCase.Central,
 		target:      testCase.Target,
 		defaults:    testCase.Defaults,
-		persistence: getPersistenceByTarget(testCase.Central, testCase.Target, logr.Discard()),
+		persistence: persistence,
 		log:         logr.Discard(),
 	}
 }
