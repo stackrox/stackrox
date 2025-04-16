@@ -72,6 +72,8 @@ var (
 		Name:      hostConnectionsPrefix + "size",
 		Help:      "Current number of host connections being held in Sensor's memory",
 	})
+	// IncomingConnectionsEndpoints - 3c. how many Collector updates have the closeTS set and how many are unclosed
+	// This is useful to investigate the behavior of Sensor with fake workloads when manipulating the `generateUnclosedEndpoints` param.
 	IncomingConnectionsEndpoints = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
