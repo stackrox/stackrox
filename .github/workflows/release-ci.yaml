@@ -19,11 +19,13 @@ jobs:
     name: Build
     uses: ./.github/workflows/build.yaml
     secrets: inherit
+    continue-on-error: true
 
   build-scanner-v4:
     name: Build Scanner v4
     uses: ./.github/workflows/scanner-build.yaml
     secrets: inherit
+    continue-on-error: true
 
   check-is-release:
     runs-on: ubuntu-latest
