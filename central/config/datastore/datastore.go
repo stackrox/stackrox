@@ -285,16 +285,13 @@ func (d *datastoreImpl) UpsertPlatformComponentConfigRule(ctx context.Context, r
 
 func (d *datastoreImpl) UpsertPlatformComponentConfigRules(ctx context.Context, rules []*storage.PlatformComponentConfig_Rule) (*storage.PlatformComponentConfig, error) {
 	if ok, err := administrationSAC.WriteAllowed(ctx); err != nil {
-		log.Info("Error while checking permission")
 		return nil, err
 	} else if !ok {
-		log.Info("User did not have write access to the administration resource")
 		return nil, nil
 	}
 
 	config, found, err := d.store.Get(ctx)
 	if !found || err != nil {
-		log.Info("Config not found or there was an error")
 		return nil, err
 	}
 	if !protoutils.SlicesEqual(config.PlatformComponentConfig.Rules, rules) {
@@ -303,10 +300,8 @@ func (d *datastoreImpl) UpsertPlatformComponentConfigRules(ctx context.Context, 
 	config.PlatformComponentConfig.Rules = rules
 	err = d.store.Upsert(ctx, config)
 	if err != nil {
-		log.Infof("There was an error upserting the config, %v", err)
 		return nil, err
 	}
-	log.Infof("Config after upsert: %q", config)
 	return config.PlatformComponentConfig, nil
 }
 
