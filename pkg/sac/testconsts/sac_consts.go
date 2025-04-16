@@ -1,9 +1,5 @@
 package testconsts
 
-import (
-	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
-)
-
 // Clusters and Namespaces for scoped access control tests
 const (
 	Cluster1     = "aaaaaaaa-bbbb-4011-0000-111111111111"
