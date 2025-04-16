@@ -258,12 +258,7 @@ func (d *datastoreImpl) GetPlatformComponentConfig(ctx context.Context) (*storag
 		return nil, false, nil
 	}
 
-	adminCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Administration)))
-
-	config, found, err := d.store.Get(adminCtx)
+	config, found, err := d.store.Get(ctx)
 	if config == nil {
 		return nil, false, nil
 	}
