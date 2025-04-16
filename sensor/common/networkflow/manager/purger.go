@@ -5,12 +5,36 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
+	"github.com/stackrox/rox/sensor/common"
 	flowMetrics "github.com/stackrox/rox/sensor/common/networkflow/metrics"
 )
 
-func (m *networkFlowManager) runPurger(tickerC <-chan time.Time, maxAge time.Duration) {
+func nonZeroPurgerCycle() time.Duration {
+	if purgerCycleSetting > 0 {
+		return purgerCycleSetting
+	}
+	return time.Hour
+}
+
+func (m *networkFlowManager) notifyPurger(e common.SensorComponentEvent) {
+	switch e {
+	case common.SensorComponentEventResourceSyncFinished:
+		m.purgerTicker.Reset(nonZeroPurgerCycle())
+	case common.SensorComponentEventOfflineMode:
+		if !features.SensorCapturesIntermediateEvents.Enabled() {
+			m.purgerTicker.Stop()
+		}
+	}
+}
+
+func (m *networkFlowManager) startPurger(tickerC <-chan time.Time, maxAge time.Duration) {
+	if env.EnrichmentPurgerTickerCycle.DurationSetting() == 0 {
+		return
+	}
 	for {
 		select {
 		case <-m.stopper.Flow().StopRequested():

@@ -59,13 +59,6 @@ var (
 	purgerCycleSetting = env.EnrichmentPurgerTickerCycle.DurationSetting()
 )
 
-func nonZeroPurgerCycle() time.Duration {
-	if purgerCycleSetting > 0 {
-		return purgerCycleSetting
-	}
-	return time.Hour
-}
-
 type hostConnections struct {
 	hostname           string
 	connections        map[connection]*connStatus
@@ -398,9 +391,7 @@ func (m *networkFlowManager) ProcessMessage(_ *central.MsgToSensor) error {
 
 func (m *networkFlowManager) Start() error {
 	go m.enrichConnections(m.enricherTickerC)
-	if env.EnrichmentPurgerTickerCycle.DurationSetting() > 0 {
-		go m.runPurger(m.purgerTickerC, env.EnrichmentPurgerTickerMaxAge.DurationSetting())
-	}
+	go m.startPurger(m.purgerTickerC, env.EnrichmentPurgerTickerMaxAge.DurationSetting())
 	go m.publicIPs.Run(m.stopper.LowLevel().GetStopRequestSignal(), m.clusterEntities)
 	return nil
 }
@@ -425,7 +416,6 @@ func (m *networkFlowManager) Notify(e common.SensorComponentEvent) {
 		if features.SensorCapturesIntermediateEvents.Enabled() {
 			if m.initialSync.CompareAndSwap(false, true) {
 				m.enricherTicker.Reset(enricherCycle)
-				m.purgerTicker.Reset(nonZeroPurgerCycle())
 
 			}
 			return
@@ -434,16 +424,14 @@ func (m *networkFlowManager) Notify(e common.SensorComponentEvent) {
 		m.resetLastSentState()
 		m.centralReady.Signal()
 		m.enricherTicker.Reset(enricherCycle)
-		m.purgerTicker.Reset(nonZeroPurgerCycle())
-
 	case common.SensorComponentEventOfflineMode:
 		if features.SensorCapturesIntermediateEvents.Enabled() {
 			return
 		}
 		m.centralReady.Reset()
 		m.enricherTicker.Stop()
-		m.purgerTicker.Stop()
 	}
+	m.notifyPurger(e)
 }
 
 func (m *networkFlowManager) ResponsesC() <-chan *message.ExpiringMessage {
