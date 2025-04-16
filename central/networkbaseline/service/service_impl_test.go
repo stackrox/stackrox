@@ -235,10 +235,33 @@ func (s *NetworkBaselineServiceTestSuite) TestGetNetworkBaselineStatusForExterna
 			Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 			Ingress:  true,
 		},
-		// not in the baseline
 		{
 			Entity: &v1.NetworkBaselinePeerEntity{
 				Id:         "external2",
+				Type:       storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+				Name:       "123.0.0.5",
+				Discovered: true,
+			},
+			Port:     1234,
+			Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+			Ingress:  true,
+		},
+		{
+			Entity: &v1.NetworkBaselinePeerEntity{
+				Id:         "external3",
+				Type:       storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+				Name:       "123.0.0.6",
+				Discovered: true,
+			},
+			Port:     1234,
+			Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+			Ingress:  true,
+		},
+
+		// not in the baseline
+		{
+			Entity: &v1.NetworkBaselinePeerEntity{
+				Id:         "external4",
 				Type:       storage.NetworkEntityInfo_EXTERNAL_SOURCE,
 				Name:       "1.2.3.4",
 				Discovered: true,
@@ -247,22 +270,134 @@ func (s *NetworkBaselineServiceTestSuite) TestGetNetworkBaselineStatusForExterna
 			Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 			Ingress:  true,
 		},
+		{
+			Entity: &v1.NetworkBaselinePeerEntity{
+				Id:         "external5",
+				Type:       storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+				Name:       "1.2.3.5",
+				Discovered: true,
+			},
+			Port:     9012, // different port
+			Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+			Ingress:  true,
+		},
+		{
+			Entity: &v1.NetworkBaselinePeerEntity{
+				Id:         "external6",
+				Type:       storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+				Name:       "1.2.3.6",
+				Discovered: true,
+			},
+			Port:     3456, // different port
+			Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+			Ingress:  true,
+		},
 	}
 
-	s.baselines.EXPECT().GetNetworkBaseline(gomock.Any(), gomock.Any()).Return(baseline, true, nil)
-	s.manager.EXPECT().GetExternalNetworkPeers(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(externalPeers, nil)
+	s.baselines.EXPECT().GetNetworkBaseline(gomock.Any(), gomock.Any()).AnyTimes().Return(baseline, true, nil)
+	s.manager.EXPECT().GetExternalNetworkPeers(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(externalPeers, nil)
 
-	resp, err := s.service.GetNetworkBaselineStatusForExternalFlows(
-		allAllowedCtx,
-		&v1.NetworkBaselineExternalStatusRequest{
-			DeploymentId: "deployment",
-		})
+	testCases := []struct {
+		request           *v1.NetworkBaselineExternalStatusRequest
+		expectedBaseline  []*v1.NetworkBaselinePeerStatus
+		expectedAnomalous []*v1.NetworkBaselinePeerStatus
+	}{
+		{
+			request: &v1.NetworkBaselineExternalStatusRequest{
+				DeploymentId: "deployment",
+				Pagination: &v1.Pagination{
+					Limit:  1,
+					Offset: 0,
+				},
+			},
 
-	s.Nil(err)
-	s.Equal(1, len(resp.Anomalous))
-	s.Equal(1, len(resp.Baseline))
-	s.Equal(1, int(resp.TotalAnomalous))
-	s.Equal(1, int(resp.TotalBaseline))
+			expectedBaseline: []*v1.NetworkBaselinePeerStatus{
+				{
+					Peer:   externalPeers[0],
+					Status: v1.NetworkBaselinePeerStatus_BASELINE,
+				},
+			},
+
+			expectedAnomalous: []*v1.NetworkBaselinePeerStatus{
+				{
+					Peer:   externalPeers[3],
+					Status: v1.NetworkBaselinePeerStatus_ANOMALOUS,
+				},
+			},
+		},
+
+		{
+			request: &v1.NetworkBaselineExternalStatusRequest{
+				DeploymentId: "deployment",
+				Pagination: &v1.Pagination{
+					Limit:  1,
+					Offset: 2,
+				},
+			},
+
+			expectedBaseline: []*v1.NetworkBaselinePeerStatus{
+				{
+					Peer:   externalPeers[2],
+					Status: v1.NetworkBaselinePeerStatus_BASELINE,
+				},
+			},
+
+			expectedAnomalous: []*v1.NetworkBaselinePeerStatus{
+				{
+					Peer:   externalPeers[5],
+					Status: v1.NetworkBaselinePeerStatus_ANOMALOUS,
+				},
+			},
+		},
+
+		{
+			request: &v1.NetworkBaselineExternalStatusRequest{
+				DeploymentId: "deployment",
+			},
+
+			expectedBaseline: []*v1.NetworkBaselinePeerStatus{
+				{
+					Peer:   externalPeers[0],
+					Status: v1.NetworkBaselinePeerStatus_BASELINE,
+				},
+				{
+					Peer:   externalPeers[1],
+					Status: v1.NetworkBaselinePeerStatus_BASELINE,
+				},
+				{
+					Peer:   externalPeers[2],
+					Status: v1.NetworkBaselinePeerStatus_BASELINE,
+				},
+			},
+
+			expectedAnomalous: []*v1.NetworkBaselinePeerStatus{
+				{
+					Peer:   externalPeers[3],
+					Status: v1.NetworkBaselinePeerStatus_ANOMALOUS,
+				},
+				{
+					Peer:   externalPeers[4],
+					Status: v1.NetworkBaselinePeerStatus_ANOMALOUS,
+				},
+				{
+					Peer:   externalPeers[5],
+					Status: v1.NetworkBaselinePeerStatus_ANOMALOUS,
+				},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		resp, err := s.service.GetNetworkBaselineStatusForExternalFlows(
+			allAllowedCtx, tc.request)
+
+		s.Nil(err)
+
+		protoassert.ElementsMatch(s.T(), tc.expectedAnomalous, resp.Anomalous)
+		protoassert.ElementsMatch(s.T(), tc.expectedBaseline, resp.Baseline)
+		s.Equal(len(externalPeers), int(resp.TotalAnomalous+resp.TotalBaseline))
+	}
+
 }
 
 func TestAuthz(t *testing.T) {
