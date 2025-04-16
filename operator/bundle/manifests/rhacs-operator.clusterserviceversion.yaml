@@ -387,14 +387,66 @@ spec:
         path: central.exposure.nodePort.port
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:central.exposure.nodePort.enabled:true
-      - displayName: Enabled
+      - description: Expose Central with a passthrough route.
+        displayName: Enabled
         path: central.exposure.route.enabled
-      - description: 'Specify a custom hostname for the central route.
+      - description: 'Specify a custom hostname for the Central route.
 
           If unspecified, an appropriate default value will be automatically chosen
-          by OpenShift route operator.'
+          by the OpenShift route operator.'
         displayName: Host
         path: central.exposure.route.host
+      - description: 'Set up a Central route with reencrypt TLS termination.
+
+          For reencrypt routes, the request is terminated on the OpenShift router
+          with a custom certificate.
+
+          The request is then reencrypted by the OpenShift router and sent to Central.
+
+          [user] --TLS--> [OpenShift router] --TLS--> [Central]'
+        displayName: Re-Encrypt Route
+        path: central.exposure.route.reencrypt
+      - description: 'Expose Central with a reencrypt route.
+
+          Should not be used for sensor communication.'
+        displayName: Enabled
+        path: central.exposure.route.reencrypt.enabled
+      - description: 'Specify a custom hostname for the Central reencrypt route.
+
+          If unspecified, an appropriate default value will be automatically chosen
+          by the OpenShift route operator.'
+        displayName: Host
+        path: central.exposure.route.reencrypt.host
+      - description: TLS settings for exposing Central via a reencrypt Route.
+        displayName: TLS Settings
+        path: central.exposure.route.reencrypt.tls
+      - description: 'The PEM encoded certificate chain that may be used to establish
+          a complete chain of trust.
+
+          Defaults to the OpenShift certificate authority.'
+        displayName: CA Certificate
+        path: central.exposure.route.reencrypt.tls.caCertificate
+      - description: 'The PEM encoded certificate that is served on the route. Must
+          be a single serving
+
+          certificate instead of a certificate chain.
+
+          Defaults to a certificate signed by the OpenShift certificate authority.'
+        displayName: Certificate
+        path: central.exposure.route.reencrypt.tls.certificate
+      - description: 'The CA certificate of the final destination, i.e. of Central.
+
+          Used by the OpenShift router for health checks on the secure connection.
+
+          Defaults to the Central certificate authority.'
+        displayName: Destination CA Certificate
+        path: central.exposure.route.reencrypt.tls.destinationCACertificate
+      - description: 'The PEM encoded private key of the certificate that is served
+          on the route.
+
+          Defaults to a certificate signed by the OpenShift certificate authority.'
+        displayName: Private Key
+        path: central.exposure.route.reencrypt.tls.key
       - description: 'Expose the monitoring endpoint. A new service, "monitoring",
 
           with port 9090, will be created as well as a network policy allowing
