@@ -1345,8 +1345,8 @@ func (h *hostConnections) Process(networkInfo *sensor.NetworkConnectionInfo, now
 			if t != timestamp.InfiniteFuture { // adjust timestamp if not zero.
 				t += tsOffset
 			}
-			status, found := h.connections[c]
-			if !found || status == nil {
+			status := h.connections[c]
+			if status == nil {
 				flowMetrics.HostConnectionsOperations.WithLabelValues("add", "connections").Inc()
 				status = &connStatus{
 					tsAdded:   now,
@@ -1368,8 +1368,8 @@ func (h *hostConnections) Process(networkInfo *sensor.NetworkConnectionInfo, now
 			if t != timestamp.InfiniteFuture { // adjust timestamp if not zero.
 				t += tsOffset
 			}
-			status, found := h.endpoints[ep]
-			if !found || status == nil {
+			status := h.endpoints[ep]
+			if status == nil {
 				flowMetrics.HostConnectionsOperations.WithLabelValues("add", "endpoints").Inc()
 				status = &connStatus{
 					tsAdded:   now,
