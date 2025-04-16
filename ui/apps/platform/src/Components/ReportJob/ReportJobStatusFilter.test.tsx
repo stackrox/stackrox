@@ -28,7 +28,19 @@ const ReportJobsStatusFilterWrapper = ({
         setSelectedStatuses(newStatuses);
     };
 
-    return <ReportJobStatusFilter selectedStatuses={selectedStatuses} onChange={onChange} />;
+    return (
+        <ReportJobStatusFilter
+            availableStatuses={[
+                'WAITING',
+                'PREPARING',
+                'DOWNLOAD_GENERATED',
+                'EMAIL_DELIVERED',
+                'ERROR',
+            ]}
+            selectedStatuses={selectedStatuses}
+            onChange={onChange}
+        />
+    );
 };
 
 describe('ReportJobStatusFilter', () => {
@@ -70,7 +82,7 @@ describe('ReportJobStatusFilter', () => {
         const checkboxOptionForPreparing = getCheckboxOption('Preparing');
         const checkboxOptionForWaiting = getCheckboxOption('Waiting');
         const checkboxOptionForDownloadGenerated = getCheckboxOption('Download generated');
-        const checkboxOptionFoEmailDelivered = getCheckboxOption('Email delivered');
+        const checkboxOptionForEmailDelivered = getCheckboxOption('Email delivered');
         const checkboxOptionForError = getCheckboxOption('Error');
 
         await userEvent.click(checkboxOptionForPreparing);
@@ -79,7 +91,7 @@ describe('ReportJobStatusFilter', () => {
         expect(checkboxOptionForPreparing).toBeChecked();
         expect(checkboxOptionForWaiting).not.toBeChecked();
         expect(checkboxOptionForDownloadGenerated).not.toBeChecked();
-        expect(checkboxOptionFoEmailDelivered).not.toBeChecked();
+        expect(checkboxOptionForEmailDelivered).not.toBeChecked();
         expect(checkboxOptionForError).toBeChecked();
     });
 

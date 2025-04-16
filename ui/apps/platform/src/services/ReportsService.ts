@@ -119,8 +119,36 @@ export function fetchReportHistory({
         });
 }
 
+export type FetchOnDemandReportHistoryServiceProps = {
+    query: string;
+    page: number;
+    perPage: number;
+    sortOption: ApiSortOption;
+    showMyHistory: boolean;
+};
+
 // @TODO: Pass API query information and set up API call to endpoint
-export function fetchOnDemandReportHistory(): Promise<OnDemandReportSnapshot[]> {
+export function fetchOnDemandReportHistory({
+    query,
+    page,
+    perPage,
+    sortOption,
+    // @TODO: Use the showMyHistory value to determine which endpoint to use
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    showMyHistory,
+}: FetchOnDemandReportHistoryServiceProps): Promise<OnDemandReportSnapshot[]> {
+    // @TODO: Use the params in the future API call
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const params = queryString.stringify(
+        {
+            reportParamQuery: {
+                query,
+                pagination: getPaginationParams({ page, perPage, sortOption }),
+            },
+        },
+        { arrayFormat: 'repeat', allowDots: true }
+    );
+
     const mockOnDemandReportJobs: OnDemandReportSnapshot[] = [
         {
             reportJobId: '3dde30b0-179b-49b4-922d-0d05606c21fb',
