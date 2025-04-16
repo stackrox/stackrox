@@ -2,7 +2,6 @@ package datastore
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/pkg/errors"
@@ -471,7 +470,6 @@ func (ds *dataStoreImpl) getNetworkTree(ctx context.Context, clusterID string, c
 }
 
 func (ds *dataStoreImpl) doPushExternalNetworkEntitiesToSensor(clusters ...string) {
-	fmt.Println("Pushing entities to ", len(clusters), clusters)
 	ds.dataPusher.DoPushExternalNetworkEntitiesToSensor(clusters)
 }
 
