@@ -7,9 +7,11 @@ import { getDateTime } from 'utils/dateUtils';
 import { TableUIState } from 'utils/getTableUIState';
 import ReportJobStatus from 'Components/ReportJob/ReportJobStatus';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
+import { GetSortParams } from 'hooks/useURLSort';
 
 export type OnDemandReportsTableProps<T> = {
     tableState: TableUIState<T>;
+    getSortParams: GetSortParams;
     onClearFilters: () => void;
 };
 
@@ -20,6 +22,7 @@ const onDownload = (snapshot: OnDemandReportSnapshot) => () => {
 
 function OnDemandReportsTable<T extends OnDemandReportSnapshot>({
     tableState,
+    getSortParams,
     onClearFilters,
 }: OnDemandReportsTableProps<T>) {
     const { currentUser } = useAuthStatus();
@@ -32,7 +35,7 @@ function OnDemandReportsTable<T extends OnDemandReportSnapshot>({
                     <Th>Requester</Th>
                     <Th>Job status</Th>
                     <Th>Expiration</Th>
-                    <Th>Completed</Th>
+                    <Th sort={getSortParams('Report Completed Time')}>Completed</Th>
                 </Tr>
             </Thead>
             <TbodyUnified

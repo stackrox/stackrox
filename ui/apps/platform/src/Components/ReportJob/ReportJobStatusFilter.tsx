@@ -16,6 +16,15 @@ export const reportJobStatuses = {
 
 export type ReportJobStatus = ValueOf<typeof reportJobStatuses>;
 
+export const reportJobStatusLabels: Record<ReportJobStatus, string> = {
+    WAITING: 'Waiting',
+    PREPARING: 'Preparing',
+    DOWNLOAD_GENERATED: 'Download Generated',
+    EMAIL_DELIVERED: 'Email Delivered',
+    ERROR: 'Error',
+    PARTIAL_ERROR: 'Partial Error',
+};
+
 function isReportJobStatus(value: string): value is ReportJobStatus {
     return value in reportJobStatuses;
 }
@@ -43,11 +52,16 @@ export function ensureReportJobStatuses(
 }
 
 export type ReportJobStatusFilterProps = {
+    availableStatuses: ReportJobStatus[];
     selectedStatuses: ReportJobStatus[];
     onChange: (checked: boolean, value: ReportJobStatus) => void;
 };
 
-function ReportJobStatusFilter({ selectedStatuses, onChange }: ReportJobStatusFilterProps) {
+function ReportJobStatusFilter({
+    availableStatuses,
+    selectedStatuses,
+    onChange,
+}: ReportJobStatusFilterProps) {
     function onChangeHandler(checked: boolean, value: string) {
         if (!isReportJobStatus(value)) {
             return;
@@ -64,54 +78,18 @@ function ReportJobStatusFilter({ selectedStatuses, onChange }: ReportJobStatusFi
             onChange={onChangeHandler}
         >
             <SelectList>
-                <SelectOption
-                    key={reportJobStatuses.PREPARING}
-                    value={reportJobStatuses.PREPARING}
-                    hasCheckbox
-                    isSelected={selectedStatuses.includes(reportJobStatuses.PREPARING)}
-                >
-                    Preparing
-                </SelectOption>
-                <SelectOption
-                    key={reportJobStatuses.WAITING}
-                    value={reportJobStatuses.WAITING}
-                    hasCheckbox
-                    isSelected={selectedStatuses.includes(reportJobStatuses.WAITING)}
-                >
-                    Waiting
-                </SelectOption>
-                <SelectOption
-                    key={reportJobStatuses.DOWNLOAD_GENERATED}
-                    value={reportJobStatuses.DOWNLOAD_GENERATED}
-                    hasCheckbox
-                    isSelected={selectedStatuses.includes(reportJobStatuses.DOWNLOAD_GENERATED)}
-                >
-                    Download generated
-                </SelectOption>
-                <SelectOption
-                    key={reportJobStatuses.PARTIAL_ERROR}
-                    value={reportJobStatuses.PARTIAL_ERROR}
-                    hasCheckbox
-                    isSelected={selectedStatuses.includes(reportJobStatuses.PARTIAL_ERROR)}
-                >
-                    Partial download
-                </SelectOption>
-                <SelectOption
-                    key={reportJobStatuses.EMAIL_DELIVERED}
-                    value={reportJobStatuses.EMAIL_DELIVERED}
-                    hasCheckbox
-                    isSelected={selectedStatuses.includes(reportJobStatuses.EMAIL_DELIVERED)}
-                >
-                    Email delivered
-                </SelectOption>
-                <SelectOption
-                    key={reportJobStatuses.ERROR}
-                    value={reportJobStatuses.ERROR}
-                    hasCheckbox
-                    isSelected={selectedStatuses.includes(reportJobStatuses.ERROR)}
-                >
-                    Error
-                </SelectOption>
+                {availableStatuses.map((status) => {
+                    return (
+                        <SelectOption
+                            key={status}
+                            value={status}
+                            hasCheckbox
+                            isSelected={selectedStatuses.includes(status)}
+                        >
+                            {reportJobStatusLabels[status]}
+                        </SelectOption>
+                    );
+                })}
             </SelectList>
         </CheckboxSelect>
     );
