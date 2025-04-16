@@ -677,7 +677,6 @@ jobs:
         directory: 'junit-reports'
 
   scan-images-with-roxctl:
-    if: github.event_name == 'push'
     needs:
       - build-and-push-main
       - build-and-push-operator
