@@ -9,7 +9,6 @@ import {
 } from 'Components/Table';
 import TableCellLink from 'Components/TableCellLink';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
-import entityTypes from 'constants/entityTypes';
 import { subjectSortFields } from 'constants/sortFields';
 import useWorkflowMatch from 'hooks/useWorkflowMatch';
 import { SUBJECTS_QUERY } from 'queries/subject';
@@ -84,10 +83,7 @@ const buildTableColumns = (match, location) => {
                 if (!length) {
                     return 'No Roles';
                 }
-                const url = URLService.getURL(match, location)
-                    .push(id)
-                    .push(entityTypes.ROLE)
-                    .url();
+                const url = URLService.getURL(match, location).push(id).push('ROLE').url();
                 const text =
                     length === 1 ? k8sRoles[0].name : `${length} ${pluralize('Role', length)}`;
                 return (
@@ -105,7 +101,14 @@ const buildTableColumns = (match, location) => {
 
 const createTableRows = (data) => data?.results || [];
 
-const Subjects = ({ selectedRowId, onRowClick, query, className, data, totalResults }) => {
+const ConfigManagementListSubjects = ({
+    selectedRowId,
+    onRowClick,
+    query,
+    className,
+    data,
+    totalResults,
+}) => {
     const location = useLocation();
     const match = useWorkflowMatch();
     const autoFocusSearchInput = !selectedRowId;
@@ -117,7 +120,7 @@ const Subjects = ({ selectedRowId, onRowClick, query, className, data, totalResu
             className={className}
             query={SUBJECTS_QUERY}
             variables={variables}
-            entityType={entityTypes.SUBJECT}
+            entityType="SUBJECT"
             tableColumns={tableColumns}
             createTableRows={createTableRows}
             selectedRowId={selectedRowId}
@@ -131,7 +134,7 @@ const Subjects = ({ selectedRowId, onRowClick, query, className, data, totalResu
     );
 };
 
-Subjects.propTypes = entityListPropTypes;
-Subjects.defaultProps = entityListDefaultprops;
+ConfigManagementListSubjects.propTypes = entityListPropTypes;
+ConfigManagementListSubjects.defaultProps = entityListDefaultprops;
 
-export default Subjects;
+export default ConfigManagementListSubjects;

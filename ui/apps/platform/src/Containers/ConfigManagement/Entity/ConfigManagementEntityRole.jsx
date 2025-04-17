@@ -1,7 +1,8 @@
 import React, { useContext } from 'react';
-import entityTypes from 'constants/entityTypes';
-import dateTimeFormat from 'constants/dateTimeFormat';
 import { format } from 'date-fns';
+import { gql } from '@apollo/client';
+
+import dateTimeFormat from 'constants/dateTimeFormat';
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
 import CollapsibleSection from 'Components/CollapsibleSection';
@@ -11,16 +12,21 @@ import Metadata from 'Components/Metadata';
 import Rules from 'Containers/ConfigManagement/Entity/widgets/Rules';
 import RulePermissions from 'Containers/ConfigManagement/Entity/widgets/RulePermissions';
 import isGQLLoading from 'utils/gqlLoading';
-import { gql } from '@apollo/client';
 import queryService from 'utils/queryService';
 import searchContext from 'Containers/searchContext';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
-import useCases from 'constants/useCaseTypes';
 import getSubListFromEntity from 'utils/getSubListFromEntity';
 import { getConfigMgmtCountQuery } from 'Containers/ConfigManagement/ConfigMgmt.utils';
 import EntityList from '../List/EntityList';
 
-const Role = ({ id, entityListType, entityId1, query, entityContext, pagination }) => {
+const ConfigManagementEntityRole = ({
+    id,
+    entityListType,
+    entityId1,
+    query,
+    entityContext,
+    pagination,
+}) => {
     const searchParam = useContext(searchContext);
 
     const variables = {
@@ -38,7 +44,7 @@ const Role = ({ id, entityListType, entityId1, query, entityContext, pagination 
                 verbs
                 createdAt
                 ${
-                    entityContext[entityTypes.NAMESPACE]
+                    entityContext.NAMESPACE
                         ? ''
                         : `roleNamespace {
                     metadata {
@@ -56,7 +62,7 @@ const Role = ({ id, entityListType, entityId1, query, entityContext, pagination 
                     resources
                     verbs
                 }
-                ${entityContext[entityTypes.CLUSTER] ? '' : 'clusterId clusterName'}
+                ${entityContext.CLUSTER ? '' : 'clusterId clusterName'}
             }
         }
     `;
@@ -66,9 +72,9 @@ const Role = ({ id, entityListType, entityId1, query, entityContext, pagination 
             return defaultQuery;
         }
         const { listFieldName, fragmentName, fragment } = queryService.getFragmentInfo(
-            entityTypes.ROLE,
+            'ROLE',
             entityListType,
-            useCases.CONFIG_MANAGEMENT
+            'configmanagement'
         );
 
         const countQuery = getConfigMgmtCountQuery(entityListType);
@@ -99,7 +105,7 @@ const Role = ({ id, entityListType, entityId1, query, entityContext, pagination 
                             entityId={entityId1}
                             data={getSubListFromEntity(entity, entityListType)}
                             totalResults={entity.count}
-                            entityContext={{ ...entityContext, [entityTypes.ROLE]: id }}
+                            entityContext={{ ...entityContext, ROLE: id }}
                             query={query}
                         />
                     );
@@ -146,7 +152,7 @@ const Role = ({ id, entityListType, entityId1, query, entityContext, pagination 
                                 {clusterName && (
                                     <RelatedEntity
                                         className="mx-4 min-w-48 min-h-48 mb-4"
-                                        entityType={entityTypes.CLUSTER}
+                                        entityType="CLUSTER"
                                         name="Cluster"
                                         value={clusterName}
                                         entityId={clusterId}
@@ -155,7 +161,7 @@ const Role = ({ id, entityListType, entityId1, query, entityContext, pagination 
                                 {roleNamespace && (
                                     <RelatedEntity
                                         className="mx-4 min-w-48 min-h-48 mb-4"
-                                        entityType={entityTypes.NAMESPACE}
+                                        entityType="NAMESPACE"
                                         name="Namespace Scope"
                                         value={namespaceName}
                                         entityId={namespaceId}
@@ -165,13 +171,13 @@ const Role = ({ id, entityListType, entityId1, query, entityContext, pagination 
                                     className="mx-4 min-w-48 min-h-48 mb-4"
                                     name="Users & Groups"
                                     value={subjectCount}
-                                    entityType={entityTypes.SUBJECT}
+                                    entityType="SUBJECT"
                                 />
                                 <RelatedEntityListCount
                                     className="mx-4 min-w-48 min-h-48 mb-4"
                                     name="Service Accounts"
                                     value={serviceAccountCount}
-                                    entityType={entityTypes.SERVICE_ACCOUNT}
+                                    entityType="SERVICE_ACCOUNT"
                                 />
                             </div>
                         </CollapsibleSection>
@@ -188,7 +194,7 @@ const Role = ({ id, entityListType, entityId1, query, entityContext, pagination 
     );
 };
 
-Role.propTypes = entityComponentPropTypes;
-Role.defaultProps = entityComponentDefaultProps;
+ConfigManagementEntityRole.propTypes = entityComponentPropTypes;
+ConfigManagementEntityRole.defaultProps = entityComponentDefaultProps;
 
-export default Role;
+export default ConfigManagementEntityRole;

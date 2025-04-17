@@ -1,8 +1,6 @@
 import React, { useContext } from 'react';
 import { useLocation } from 'react-router-dom';
 import { gql } from '@apollo/client';
-import entityTypes from 'constants/entityTypes';
-import useCases from 'constants/useCaseTypes';
 import queryService from 'utils/queryService';
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
@@ -16,7 +14,7 @@ import Widget from 'Components/Widget';
 import searchContext from 'Containers/searchContext';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
 import NodesWithFailedControls from './widgets/NodesWithFailedControls';
-import Nodes from '../List/Nodes';
+import ConfigManagementListNodes from '../List/ConfigManagementListNodes';
 
 const QUERY = gql`
     query getControl($id: ID!, $where: String) {
@@ -44,7 +42,7 @@ const QUERY = gql`
     }
 `;
 
-const Control = ({ id, entityListType, query, entityContext }) => {
+const ConfigManagementEntityControl = ({ id, entityListType, query, entityContext }) => {
     const location = useLocation();
     const match = useWorkflowMatch();
     const searchParam = useContext(searchContext);
@@ -65,12 +63,7 @@ const Control = ({ id, entityListType, query, entityContext }) => {
                 }
 
                 if (!data || !data.results) {
-                    return (
-                        <PageNotFound
-                            resourceType={entityTypes.CONTROL}
-                            useCase={useCases.CONFIG_MANAGEMENT}
-                        />
-                    );
+                    return <PageNotFound resourceType="CONTROL" useCase="configmanagement" />;
                 }
 
                 const { results: entity } = data;
@@ -78,12 +71,12 @@ const Control = ({ id, entityListType, query, entityContext }) => {
 
                 if (entityListType) {
                     return (
-                        <Nodes
+                        <ConfigManagementListNodes
                             match={match}
                             location={location}
                             data={complianceControlNodes}
                             totalResults={complianceControlNodes?.length}
-                            entityContext={{ ...entityContext, [entityTypes.CONTROL]: id }}
+                            entityContext={{ ...entityContext, CONTROL: id }}
                         />
                     );
                 }
@@ -119,18 +112,18 @@ const Control = ({ id, entityListType, query, entityContext }) => {
                                     className="mx-4 min-w-48 min-h-48 mb-4"
                                     name="Nodes"
                                     value={complianceControlNodes.length}
-                                    entityType={entityTypes.NODE}
+                                    entityType="NODE"
                                 />
                             </div>
                         </CollapsibleSection>
-                        {!(entityContext && entityContext[entityTypes.NODE]) && (
+                        {!(entityContext && entityContext.NODE) && (
                             <CollapsibleSection title="Control Findings">
                                 <div className="flex pdf-page pdf-stretch shadow relative rounded bg-base-100 mb-4 ml-4 mr-4">
                                     <NodesWithFailedControls
-                                        entityType={entityTypes.CONTROL}
+                                        entityType="CONTROL"
                                         entityContext={{
                                             ...entityContext,
-                                            [entityTypes.CONTROL]: id,
+                                            CONTROL: id,
                                         }}
                                     />
                                 </div>
@@ -143,7 +136,7 @@ const Control = ({ id, entityListType, query, entityContext }) => {
     );
 };
 
-Control.propTypes = entityComponentPropTypes;
-Control.defaultProps = entityComponentDefaultProps;
+ConfigManagementEntityControl.propTypes = entityComponentPropTypes;
+ConfigManagementEntityControl.defaultProps = entityComponentDefaultProps;
 
-export default Control;
+export default ConfigManagementEntityControl;

@@ -1,84 +1,94 @@
-import React, { useContext } from 'react';
+import React from 'react';
 import { useLocation } from 'react-router-dom';
+import { gql } from '@apollo/client';
 import pluralize from 'pluralize';
 
-import PolicyStatusIconText from 'Components/PatternFly/IconText/PolicyStatusIconText';
 import {
     defaultHeaderClassName,
     defaultColumnClassName,
     nonSortableHeaderClassName,
 } from 'Components/Table';
 import TableCellLink from 'Components/TableCellLink';
-import searchContext from 'Containers/searchContext';
+import PolicyStatusIconText from 'Components/PatternFly/IconText/PolicyStatusIconText';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
-import entityTypes from 'constants/entityTypes';
 import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOptions';
-import { namespaceSortFields } from 'constants/sortFields';
+import { clusterSortFields } from 'constants/sortFields';
 import useWorkflowMatch from 'hooks/useWorkflowMatch';
-import { NAMESPACES_NO_POLICIES_QUERY } from 'queries/namespace';
 import queryService from 'utils/queryService';
 import URLService from 'utils/URLService';
 import { getConfigMgmtPathForEntitiesAndId } from '../entities';
 import List from './List';
+import NoEntitiesIconText from './utilities/NoEntitiesIconText';
 import filterByPolicyStatus from './utilities/filterByPolicyStatus';
 
-export const defaultNamespaceSort = [
+const CLUSTERS_QUERY = gql`
+    query clusters($query: String, $pagination: Pagination) {
+        results: clusters(query: $query, pagination: $pagination) {
+            id
+            name
+            serviceAccountCount
+            k8sRoleCount
+            subjectCount
+            status {
+                orchestratorMetadata {
+                    version
+                }
+            }
+            complianceControlCount(query: "Standard:CIS") {
+                passingCount
+                failingCount
+                unknownCount
+            }
+            policyStatus {
+                status
+                failingPolicies {
+                    id
+                    name
+                }
+            }
+        }
+        count: clusterCount(query: $query)
+    }
+`;
+
+export const defaultClusterSort = [
     {
-        id: namespaceSortFields.NAMESPACE,
+        id: clusterSortFields.CLUSTER,
         desc: false,
     },
 ];
 
-const buildTableColumns = (match, location, entityContext) => {
+const buildTableColumns = (match, location) => {
     const tableColumns = [
         {
             Header: 'Id',
             headerClassName: 'hidden',
             className: 'hidden',
-            accessor: 'metadata.id',
+            accessor: 'id',
         },
         {
-            Header: `Namespace`,
+            Header: `Cluster`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             Cell: ({ original, pdf }) => {
-                const url = getConfigMgmtPathForEntitiesAndId('NAMESPACE', original.metadata.id);
+                const url = getConfigMgmtPathForEntitiesAndId('CLUSTER', original.id);
                 return (
                     <TableCellLink pdf={pdf} url={url}>
-                        {original.metadata.name}
+                        {original.name}
                     </TableCellLink>
                 );
             },
-            accessor: 'metadata.name',
-            id: namespaceSortFields.NAMESPACE,
-            sortField: namespaceSortFields.NAMESPACE,
+            accessor: 'name',
+            id: clusterSortFields.CLUSTER,
+            sortField: clusterSortFields.CLUSTER,
         },
-        entityContext && entityContext[entityTypes.CLUSTER]
-            ? null
-            : {
-                  Header: `Cluster`,
-                  headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-                  className: `w-1/8 ${defaultColumnClassName}`,
-                  accessor: 'metadata.clusterName',
-                  Cell: ({ original, pdf }) => {
-                      const { metadata } = original;
-                      if (!metadata) {
-                          return '-';
-                      }
-                      const { clusterName, clusterId, id } = metadata;
-                      const url = URLService.getURL(match, location)
-                          .push(id)
-                          .push(entityTypes.CLUSTER, clusterId)
-                          .url();
-                      return (
-                          <TableCellLink pdf={pdf} url={url}>
-                              {clusterName}
-                          </TableCellLink>
-                      );
-                  },
-                  id: namespaceSortFields.CLUSTER,
-                  sortField: namespaceSortFields.CLUSTER,
-              },
+        {
+            Header: `K8S Version`,
+            headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
+            className: `w-1/8 ${defaultColumnClassName}`,
+            accessor: 'status.orchestratorMetadata.version',
+            sortable: false,
+        },
         {
             Header: `Policy Status`,
             headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
@@ -94,28 +104,28 @@ const buildTableColumns = (match, location, entityContext) => {
             sortable: false,
         },
         {
-            Header: `Secrets`,
+            Header: `CIS Controls`,
             headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
+            accessor: 'complianceControlCount',
             Cell: ({ original, pdf }) => {
-                const { numSecrets, metadata } = original;
-                if (!metadata || numSecrets === 0) {
-                    return 'No Secrets';
+                const { complianceControlCount } = original;
+                const { passingCount, failingCount, unknownCount } = complianceControlCount;
+                const totalCount = passingCount + failingCount + unknownCount;
+                if (!totalCount) {
+                    return <NoEntitiesIconText text="No Controls" isTextOnly={pdf} />;
                 }
-                const { id } = metadata;
                 const url = URLService.getURL(match, location)
-                    .push(id)
-                    .push(entityTypes.SECRET)
+                    .push(original.id)
+                    .push('CONTROL')
                     .url();
-                const text = `${numSecrets} ${pluralize('Secrets', numSecrets)}`;
+                const text = `${totalCount} ${pluralize('Controls', totalCount)}`;
                 return (
                     <TableCellLink pdf={pdf} url={url}>
                         {text}
                     </TableCellLink>
                 );
             },
-            id: 'numSecrets',
-            accessor: (d) => d.numSecrets,
             sortable: false,
         },
         {
@@ -123,23 +133,23 @@ const buildTableColumns = (match, location, entityContext) => {
             headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             Cell: ({ original, pdf }) => {
-                const { subjectsCount, metadata } = original;
-                if (!subjectsCount || subjectsCount === 0) {
-                    return 'No Users & Groups';
+                const { subjectCount } = original;
+                if (!subjectCount) {
+                    return <NoEntitiesIconText text="No Users & Groups" isTextOnly={pdf} />;
                 }
-                const { id } = metadata;
                 const url = URLService.getURL(match, location)
-                    .push(id)
-                    .push(entityTypes.SUBJECT)
+                    .push(original.id)
+                    .push('SUBJECT')
                     .url();
-                const text = `${subjectsCount} ${pluralize('Users & Groups', subjectsCount)}`;
+                const text = `${subjectCount} ${pluralize('Users & Groups', subjectCount)}`;
                 return (
                     <TableCellLink pdf={pdf} url={url}>
                         {text}
                     </TableCellLink>
                 );
             },
-            accessor: 'subjectCount',
+            id: 'subjectCount',
+            accessor: (d) => d.subjectCount,
             sortable: false,
         },
         {
@@ -147,14 +157,13 @@ const buildTableColumns = (match, location, entityContext) => {
             headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             Cell: ({ original, pdf }) => {
-                const { serviceAccountCount, metadata } = original;
-                if (!serviceAccountCount || serviceAccountCount === 0) {
-                    return 'No Service Accounts';
+                const { serviceAccountCount } = original;
+                if (!serviceAccountCount) {
+                    return <NoEntitiesIconText text="No Service Accounts" isTextOnly={pdf} />;
                 }
-                const { id } = metadata;
                 const url = URLService.getURL(match, location)
-                    .push(id)
-                    .push(entityTypes.SERVICE_ACCOUNT)
+                    .push(original.id)
+                    .push('SERVICE_ACCOUNT')
                     .url();
                 const text = `${serviceAccountCount} ${pluralize(
                     'Service Accounts',
@@ -166,7 +175,8 @@ const buildTableColumns = (match, location, entityContext) => {
                     </TableCellLink>
                 );
             },
-            accessor: 'serviceAccountCount',
+            id: 'serviceAccountCount',
+            accessor: (d) => d.serviceAccountCount,
             sortable: false,
         },
         {
@@ -174,15 +184,11 @@ const buildTableColumns = (match, location, entityContext) => {
             headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             Cell: ({ original, pdf }) => {
-                const { k8sRoleCount, metadata } = original;
-                if (!k8sRoleCount || k8sRoleCount === 0) {
-                    return 'No Roles';
+                const { k8sRoleCount } = original;
+                if (!k8sRoleCount) {
+                    return <NoEntitiesIconText text="No Roles" isTextOnly={pdf} />;
                 }
-                const { id } = metadata;
-                const url = URLService.getURL(match, location)
-                    .push(id)
-                    .push(entityTypes.ROLE)
-                    .url();
+                const url = URLService.getURL(match, location).push(original.id).push('ROLE').url();
                 const text = `${k8sRoleCount} ${pluralize('Roles', k8sRoleCount)}`;
                 return (
                     <TableCellLink pdf={pdf} url={url}>
@@ -190,33 +196,24 @@ const buildTableColumns = (match, location, entityContext) => {
                     </TableCellLink>
                 );
             },
-            accessor: 'k8sRoleCount',
+            id: 'k8sRoleCount',
+            accessor: (d) => d.k8sRoleCount,
             sortable: false,
         },
     ];
-    return tableColumns.filter((col) => col);
+    return tableColumns;
 };
 
 const createTableRows = (data) => data.results;
 
-const Namespaces = ({
-    className,
-    selectedRowId,
-    onRowClick,
-    query,
-    data,
-    totalResults,
-    entityContext,
-}) => {
+const ConfigManagementListClusters = ({ className, selectedRowId, onRowClick, query, data }) => {
     const location = useLocation();
     const match = useWorkflowMatch();
-    const searchParam = useContext(searchContext);
-
     const autoFocusSearchInput = !selectedRowId;
-    const tableColumns = buildTableColumns(match, location, entityContext);
-    const { [SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]: policyStatus, ...restQuery } =
-        queryService.getQueryBasedOnSearchContext(query, searchParam);
-    const queryText = queryService.objectToWhereClause({ ...restQuery });
+    const tableColumns = buildTableColumns(match, location);
+    const { [SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]: policyStatus, ...restQuery } = query || {};
+    const queryObject = { ...restQuery };
+    const queryText = queryService.objectToWhereClause(queryObject);
     const variables = queryText ? { query: queryText } : null;
 
     function createTableRowsFilteredByPolicyStatus(items) {
@@ -228,23 +225,23 @@ const Namespaces = ({
     return (
         <List
             className={className}
-            query={NAMESPACES_NO_POLICIES_QUERY}
+            query={CLUSTERS_QUERY}
             variables={variables}
-            entityType={entityTypes.NAMESPACE}
+            entityType="CLUSTER"
             tableColumns={tableColumns}
             createTableRows={createTableRowsFilteredByPolicyStatus}
             onRowClick={onRowClick}
             selectedRowId={selectedRowId}
-            idAttribute="metadata.id"
-            defaultSorted={defaultNamespaceSort}
+            idAttribute="id"
+            defaultSorted={defaultClusterSort}
             defaultSearchOptions={[SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]}
             data={filterByPolicyStatus(data, policyStatus)}
-            totalResults={totalResults}
             autoFocusSearchInput={autoFocusSearchInput}
         />
     );
 };
-Namespaces.propTypes = entityListPropTypes;
-Namespaces.defaultProps = entityListDefaultprops;
 
-export default Namespaces;
+ConfigManagementListClusters.propTypes = entityListPropTypes;
+ConfigManagementListClusters.defaultProps = entityListDefaultprops;
+
+export default ConfigManagementListClusters;

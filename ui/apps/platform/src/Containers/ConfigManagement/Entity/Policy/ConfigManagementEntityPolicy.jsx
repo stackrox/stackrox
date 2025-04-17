@@ -10,9 +10,7 @@ import PolicySeverityIconText from 'Components/PatternFly/IconText/PolicySeverit
 import Widget from 'Components/Widget';
 import Metadata from 'Components/Metadata';
 import RelatedEntityListCount from 'Components/RelatedEntityListCount';
-import entityTypes from 'constants/entityTypes';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
-import useCases from 'constants/useCaseTypes';
 import searchContext from 'Containers/searchContext';
 import { formatLifecycleStages } from 'Containers/Policies/policies.utils';
 import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
@@ -25,7 +23,14 @@ import { getConfigMgmtCountQuery } from '../../ConfigMgmt.utils';
 import EntityList from '../../List/EntityList';
 import PolicyFindings from './PolicyFindings';
 
-const Policy = ({ id, entityListType, entityId1, query, entityContext, pagination }) => {
+const ConfigManagementEntityPolicy = ({
+    id,
+    entityListType,
+    entityId1,
+    query,
+    entityContext,
+    pagination,
+}) => {
     const isRouteEnabled = useIsRouteEnabled();
     const isRouteEnabledForPolicy = isRouteEnabled('policy-management');
 
@@ -83,9 +88,9 @@ const Policy = ({ id, entityListType, entityId1, query, entityContext, paginatio
             return defaultQuery;
         }
         const { listFieldName, fragmentName, fragment } = queryService.getFragmentInfo(
-            entityTypes.POLICY,
+            'POLICY',
             entityListType,
-            useCases.CONFIG_MANAGEMENT
+            'configmanagement'
         );
         const countQuery = getConfigMgmtCountQuery(entityListType);
 
@@ -109,12 +114,7 @@ const Policy = ({ id, entityListType, entityId1, query, entityContext, paginatio
                 }
                 const { policy: entity } = data;
                 if (!entity) {
-                    return (
-                        <PageNotFound
-                            resourceType={entityTypes.POLICY}
-                            useCase={useCases.CONFIG_MANAGEMENT}
-                        />
-                    );
+                    return <PageNotFound resourceType="POLICY" useCase="configmanagement" />;
                 }
 
                 if (entityListType) {
@@ -125,7 +125,7 @@ const Policy = ({ id, entityListType, entityId1, query, entityContext, paginatio
                             data={getSubListFromEntity(entity, entityListType)}
                             totalResults={data?.policy?.count}
                             query={query}
-                            entityContext={{ ...entityContext, [entityTypes.POLICY]: id }}
+                            entityContext={{ ...entityContext, POLICY: id }}
                         />
                     );
                 }
@@ -195,7 +195,7 @@ const Policy = ({ id, entityListType, entityId1, query, entityContext, paginatio
                                     className="mx-4 min-w-48 min-h-48 h-full mb-4"
                                     name="Deployments"
                                     value={deploymentCount}
-                                    entityType={entityTypes.DEPLOYMENT}
+                                    entityType="DEPLOYMENT"
                                 />
                                 <Widget
                                     className="sx-1 min-h-48 h-full"
@@ -245,7 +245,7 @@ const Policy = ({ id, entityListType, entityId1, query, entityContext, paginatio
     );
 };
 
-Policy.propTypes = entityComponentPropTypes;
-Policy.defaultProps = entityComponentDefaultProps;
+ConfigManagementEntityPolicy.propTypes = entityComponentPropTypes;
+ConfigManagementEntityPolicy.defaultProps = entityComponentDefaultProps;
 
-export default Policy;
+export default ConfigManagementEntityPolicy;

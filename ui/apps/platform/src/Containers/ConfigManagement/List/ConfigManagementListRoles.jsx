@@ -11,7 +11,6 @@ import {
 import TableCellLink from 'Components/TableCellLink';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
-import entityTypes from 'constants/entityTypes';
 import { roleSortFields } from 'constants/sortFields';
 import useWorkflowMatch from 'hooks/useWorkflowMatch';
 import { K8S_ROLES_QUERY } from 'queries/role';
@@ -84,7 +83,7 @@ const buildTableColumns = (match, location, entityContext) => {
             accessor: 'createdAt',
             sortable: false,
         },
-        entityContext && entityContext[entityTypes.CLUSTER]
+        entityContext && entityContext.CLUSTER
             ? null
             : {
                   Header: `Cluster`,
@@ -95,7 +94,7 @@ const buildTableColumns = (match, location, entityContext) => {
                       const { clusterName, clusterId, id } = original;
                       const url = URLService.getURL(match, location)
                           .push(id)
-                          .push(entityTypes.CLUSTER, clusterId)
+                          .push('CLUSTER', clusterId)
                           .url();
                       return (
                           <TableCellLink pdf={pdf} url={url}>
@@ -120,7 +119,7 @@ const buildTableColumns = (match, location, entityContext) => {
                 } = roleNamespace;
                 const url = URLService.getURL(match, location)
                     .push(id)
-                    .push(entityTypes.NAMESPACE, namespaceId)
+                    .push('NAMESPACE', namespaceId)
                     .url();
                 return (
                     <TableCellLink pdf={pdf} url={url}>
@@ -149,7 +148,7 @@ const buildTableColumns = (match, location, entityContext) => {
                 }
                 const url = URLService.getURL(match, location)
                     .push(original.id)
-                    .push(entityTypes.SUBJECT)
+                    .push('SUBJECT')
                     .url();
                 const text = `${subjectsLength} ${pluralize('Users & Groups', subjectsLength)}`;
                 if (subjectsLength > 1) {
@@ -190,7 +189,7 @@ const buildTableColumns = (match, location, entityContext) => {
                 }
                 const url = URLService.getURL(match, location)
                     .push(id)
-                    .push(entityTypes.SERVICE_ACCOUNT)
+                    .push('SERVICE_ACCOUNT')
                     .url();
                 const text = `${serviceAccountsLength} ${pluralize(
                     'Service Accounts',
@@ -219,7 +218,7 @@ const buildTableColumns = (match, location, entityContext) => {
 
 const createTableRows = (data) => data.results;
 
-const Roles = ({
+const ConfigManagementListRoles = ({
     className,
     selectedRowId,
     onRowClick,
@@ -239,7 +238,7 @@ const Roles = ({
             className={className}
             query={K8S_ROLES_QUERY}
             variables={variables}
-            entityType={entityTypes.ROLE}
+            entityType="ROLE"
             tableColumns={tableColumns}
             createTableRows={createTableRows}
             onRowClick={onRowClick}
@@ -252,7 +251,7 @@ const Roles = ({
         />
     );
 };
-Roles.propTypes = entityListPropTypes;
-Roles.defaultProps = entityListDefaultprops;
+ConfigManagementListRoles.propTypes = entityListPropTypes;
+ConfigManagementListRoles.defaultProps = entityListDefaultprops;
 
-export default Roles;
+export default ConfigManagementListRoles;

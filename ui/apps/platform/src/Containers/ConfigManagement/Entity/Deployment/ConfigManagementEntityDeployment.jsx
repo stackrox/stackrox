@@ -11,8 +11,6 @@ import RelatedEntityListCount from 'Components/RelatedEntityListCount';
 import Metadata from 'Components/Metadata';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
-import entityTypes from 'constants/entityTypes';
-import useCases from 'constants/useCaseTypes';
 import searchContext from 'Containers/searchContext';
 import { getConfigMgmtCountQuery } from 'Containers/ConfigManagement/ConfigMgmt.utils';
 import getSubListFromEntity from 'utils/getSubListFromEntity';
@@ -21,7 +19,13 @@ import queryService from 'utils/queryService';
 import EntityList from '../../List/EntityList';
 import DeploymentFindings from './DeploymentFindings';
 
-const Deployment = ({ id, entityContext, entityListType, query, pagination }) => {
+const ConfigManagementEntityDeployment = ({
+    id,
+    entityContext,
+    entityListType,
+    query,
+    pagination,
+}) => {
     const searchParam = useContext(searchContext);
     const variables = {
         id,
@@ -37,7 +41,7 @@ const Deployment = ({ id, entityContext, entityListType, query, pagination }) =>
                     key
                     value
                 }
-                ${entityContext[entityTypes.CLUSTER] ? '' : 'cluster { id name}'}
+                ${entityContext.CLUSTER ? '' : 'cluster { id name}'}
                 hostNetwork: id
                 imagePullSecrets
                 inactive
@@ -46,7 +50,7 @@ const Deployment = ({ id, entityContext, entityListType, query, pagination }) =>
                     value
                 }
                 name
-                ${entityContext[entityTypes.NAMESPACE] ? '' : 'namespace namespaceId'}
+                ${entityContext.NAMESPACE ? '' : 'namespace namespaceId'}
                 ports {
                     containerPort
                     exposedPort
@@ -66,11 +70,7 @@ const Deployment = ({ id, entityContext, entityListType, query, pagination }) =>
                 }
                 priority
                 replicas
-                ${
-                    entityContext[entityTypes.SERVICE_ACCOUNT]
-                        ? ''
-                        : 'serviceAccount serviceAccountID'
-                }
+                ${entityContext.SERVICE_ACCOUNT ? '' : 'serviceAccount serviceAccountID'}
                 failingPolicyCount(query: $query)
 
                 tolerations {
@@ -92,9 +92,9 @@ const Deployment = ({ id, entityContext, entityListType, query, pagination }) =>
             return defaultQuery;
         }
         const { listFieldName, fragmentName, fragment } = queryService.getFragmentInfo(
-            entityTypes.DEPLOYMENT,
+            'DEPLOYMENT',
             entityListType,
-            useCases.CONFIG_MANAGEMENT
+            'configmanagement'
         );
         const countQuery = getConfigMgmtCountQuery(entityListType);
 
@@ -117,18 +117,13 @@ const Deployment = ({ id, entityContext, entityListType, query, pagination }) =>
                     return <Loader />;
                 }
                 if (!data || !data.deployment) {
-                    return (
-                        <PageNotFound
-                            resourceType={entityTypes.DEPLOYMENT}
-                            useCase={useCases.CONFIG_MANAGEMENT}
-                        />
-                    );
+                    return <PageNotFound resourceType="DEPLOYMENT" useCase="configmanagement" />;
                 }
                 const { deployment: entity } = data;
 
                 if (entityListType) {
                     const listData =
-                        entityListType === entityTypes.POLICY
+                        entityListType === 'POLICY'
                             ? entity.failingPolicies
                             : getSubListFromEntity(entity, entityListType);
 
@@ -138,7 +133,7 @@ const Deployment = ({ id, entityContext, entityListType, query, pagination }) =>
                             data={listData}
                             totalResults={data?.deployment?.count}
                             query={query}
-                            entityContext={{ ...entityContext, [entityTypes.DEPLOYMENT]: id }}
+                            entityContext={{ ...entityContext, DEPLOYMENT: id }}
                         />
                     );
                 }
@@ -186,7 +181,7 @@ const Deployment = ({ id, entityContext, entityListType, query, pagination }) =>
                                 {cluster && (
                                     <RelatedEntity
                                         className="mx-4 min-w-48 min-h-48 mb-4"
-                                        entityType={entityTypes.CLUSTER}
+                                        entityType="CLUSTER"
                                         entityId={cluster.id}
                                         name="Cluster"
                                         value={cluster.name}
@@ -195,7 +190,7 @@ const Deployment = ({ id, entityContext, entityListType, query, pagination }) =>
                                 {namespace && (
                                     <RelatedEntity
                                         className="mx-4 min-w-48 min-h-48 mb-4"
-                                        entityType={entityTypes.NAMESPACE}
+                                        entityType="NAMESPACE"
                                         entityId={namespaceId}
                                         name="Namespace"
                                         value={namespace}
@@ -204,7 +199,7 @@ const Deployment = ({ id, entityContext, entityListType, query, pagination }) =>
                                 {serviceAccount && (
                                     <RelatedEntity
                                         className="mx-4 min-w-48 min-h-48 mb-4"
-                                        entityType={entityTypes.SERVICE_ACCOUNT}
+                                        entityType="SERVICE_ACCOUNT"
                                         name="Service Account"
                                         value={serviceAccount}
                                         entityId={serviceAccountID}
@@ -214,13 +209,13 @@ const Deployment = ({ id, entityContext, entityListType, query, pagination }) =>
                                     className="mx-4 min-w-48 min-h-48 mb-4"
                                     name="Images"
                                     value={imageCount}
-                                    entityType={entityTypes.IMAGE}
+                                    entityType="IMAGE"
                                 />
                                 <RelatedEntityListCount
                                     className="mx-4 min-w-48 min-h-48 mb-4"
                                     name="Secrets"
                                     value={secretCount}
-                                    entityType={entityTypes.SECRET}
+                                    entityType="SECRET"
                                 />
                             </div>
                         </CollapsibleSection>
@@ -239,7 +234,7 @@ const Deployment = ({ id, entityContext, entityListType, query, pagination }) =>
     );
 };
 
-Deployment.propTypes = entityComponentPropTypes;
-Deployment.defaultProps = entityComponentDefaultProps;
+ConfigManagementEntityDeployment.propTypes = entityComponentPropTypes;
+ConfigManagementEntityDeployment.defaultProps = entityComponentDefaultProps;
 
-export default Deployment;
+export default ConfigManagementEntityDeployment;

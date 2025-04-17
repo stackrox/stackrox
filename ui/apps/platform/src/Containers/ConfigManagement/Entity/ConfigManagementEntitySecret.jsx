@@ -15,8 +15,6 @@ import CollapsibleRow from 'Components/CollapsibleRow';
 import Widget from 'Components/Widget';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
-import entityTypes from 'constants/entityTypes';
-import useCases from 'constants/useCaseTypes';
 import searchContext from 'Containers/searchContext';
 import { getConfigMgmtCountQuery } from 'Containers/ConfigManagement/ConfigMgmt.utils';
 import getSubListFromEntity from 'utils/getSubListFromEntity';
@@ -145,7 +143,14 @@ SecretValues.propTypes = {
     files: PropTypes.arrayOf(PropTypes.shape).isRequired,
 };
 
-const Secret = ({ id, entityListType, entityId1, query, entityContext, pagination }) => {
+const ConfigManagementEntitySecret = ({
+    id,
+    entityListType,
+    entityId1,
+    query,
+    entityContext,
+    pagination,
+}) => {
     const searchParam = useContext(searchContext);
 
     const variables = {
@@ -199,7 +204,7 @@ const Secret = ({ id, entityListType, entityId1, query, entityContext, paginatio
                     key
                     value
                 }
-                ${entityContext[entityTypes.CLUSTER] ? '' : 'clusterId clusterName'}
+                ${entityContext.CLUSTER ? '' : 'clusterId clusterName'}
             }
         }
     `;
@@ -209,9 +214,9 @@ const Secret = ({ id, entityListType, entityId1, query, entityContext, paginatio
             return defaultQuery;
         }
         const { listFieldName, fragmentName, fragment } = queryService.getFragmentInfo(
-            entityTypes.SECRET,
+            'SECRET',
             entityListType,
-            useCases.CONFIG_MANAGEMENT
+            'configmanagement'
         );
         const countQuery = getConfigMgmtCountQuery(entityListType);
 
@@ -233,12 +238,7 @@ const Secret = ({ id, entityListType, entityId1, query, entityContext, paginatio
                     return <Loader />;
                 }
                 if (!data || !data.secret) {
-                    return (
-                        <PageNotFound
-                            resourceType={entityTypes.SECRET}
-                            useCase={useCases.CONFIG_MANAGEMENT}
-                        />
-                    );
+                    return <PageNotFound resourceType="SECRET" useCase="configmanagement" />;
                 }
                 const { secret } = data;
                 if (entityListType) {
@@ -283,7 +283,7 @@ const Secret = ({ id, entityListType, entityId1, query, entityContext, paginatio
                                 {clusterName && (
                                     <RelatedEntity
                                         className="mx-4 min-w-48 min-h-48 mb-4"
-                                        entityType={entityTypes.CLUSTER}
+                                        entityType="CLUSTER"
                                         name="Cluster"
                                         value={clusterName}
                                         entityId={clusterId}
@@ -293,7 +293,7 @@ const Secret = ({ id, entityListType, entityId1, query, entityContext, paginatio
                                     className="mx-4 min-w-48 min-h-48 mb-4"
                                     name="Deployments"
                                     value={deploymentCount}
-                                    entityType={entityTypes.DEPLOYMENT}
+                                    entityType="DEPLOYMENT"
                                 />
                             </div>
                         </CollapsibleSection>
@@ -309,7 +309,7 @@ const Secret = ({ id, entityListType, entityId1, query, entityContext, paginatio
     );
 };
 
-Secret.propTypes = entityComponentPropTypes;
-Secret.defaultProps = entityComponentDefaultProps;
+ConfigManagementEntitySecret.propTypes = entityComponentPropTypes;
+ConfigManagementEntitySecret.defaultProps = entityComponentDefaultProps;
 
-export default Secret;
+export default ConfigManagementEntitySecret;

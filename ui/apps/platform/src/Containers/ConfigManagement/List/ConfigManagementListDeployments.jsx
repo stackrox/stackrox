@@ -10,7 +10,6 @@ import {
 } from 'Components/Table';
 import TableCellLink from 'Components/TableCellLink';
 import searchContext from 'Containers/searchContext';
-import entityTypes from 'constants/entityTypes';
 import { deploymentSortFields } from 'constants/sortFields';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
 import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOptions';
@@ -53,7 +52,7 @@ const buildTableColumns = (match, location, entityContext) => {
             id: deploymentSortFields.DEPLOYMENT,
             sortField: deploymentSortFields.DEPLOYMENT,
         },
-        entityContext && entityContext[entityTypes.CLUSTER]
+        entityContext && entityContext.CLUSTER
             ? null
             : {
                   Header: `Cluster`,
@@ -64,7 +63,7 @@ const buildTableColumns = (match, location, entityContext) => {
                       const { clusterName, clusterId, id } = original;
                       const url = URLService.getURL(match, location)
                           .push(id)
-                          .push(entityTypes.CLUSTER, clusterId)
+                          .push('CLUSTER', clusterId)
                           .url();
                       return (
                           <TableCellLink pdf={pdf} url={url}>
@@ -75,7 +74,7 @@ const buildTableColumns = (match, location, entityContext) => {
                   id: deploymentSortFields.CLUSTER,
                   sortField: deploymentSortFields.CLUSTER,
               },
-        entityContext && entityContext[entityTypes.NAMESPACE]
+        entityContext && entityContext.NAMESPACE
             ? null
             : {
                   Header: `Namespace`,
@@ -86,7 +85,7 @@ const buildTableColumns = (match, location, entityContext) => {
                       const { namespace, namespaceId, id } = original;
                       const url = URLService.getURL(match, location)
                           .push(id)
-                          .push(entityTypes.NAMESPACE, namespaceId)
+                          .push('NAMESPACE', namespaceId)
                           .url();
                       return (
                           <TableCellLink pdf={pdf} url={url}>
@@ -118,10 +117,7 @@ const buildTableColumns = (match, location, entityContext) => {
                 if (imageCount === 0) {
                     return 'No images';
                 }
-                const url = URLService.getURL(match, location)
-                    .push(id)
-                    .push(entityTypes.IMAGE)
-                    .url();
+                const url = URLService.getURL(match, location).push(id).push('IMAGE').url();
                 const text = `${imageCount} ${pluralize('image', imageCount)}`;
                 return (
                     <TableCellLink pdf={pdf} url={url}>
@@ -141,10 +137,7 @@ const buildTableColumns = (match, location, entityContext) => {
                 if (secretCount === 0) {
                     return 'No secrets';
                 }
-                const url = URLService.getURL(match, location)
-                    .push(id)
-                    .push(entityTypes.SECRET)
-                    .url();
+                const url = URLService.getURL(match, location).push(id).push('SECRET').url();
                 const text = `${secretCount} ${pluralize('secret', secretCount)}`;
                 return (
                     <TableCellLink pdf={pdf} url={url}>
@@ -155,7 +148,7 @@ const buildTableColumns = (match, location, entityContext) => {
             accessor: 'secretCount',
             sortable: false,
         },
-        entityContext && entityContext[entityTypes.SERVICE_ACCOUNT]
+        entityContext && entityContext.SERVICE_ACCOUNT
             ? null
             : {
                   Header: `Service Account`,
@@ -166,7 +159,7 @@ const buildTableColumns = (match, location, entityContext) => {
                       const { serviceAccount, serviceAccountID, id } = original;
                       const url = URLService.getURL(match, location)
                           .push(id)
-                          .push(entityTypes.SERVICE_ACCOUNT, serviceAccountID)
+                          .push('SERVICE_ACCOUNT', serviceAccountID)
                           .url();
                       return (
                           <TableCellLink pdf={pdf} url={url}>
@@ -183,7 +176,7 @@ const buildTableColumns = (match, location, entityContext) => {
 
 const createTableRows = (data) => data.results;
 
-const Deployments = ({
+const ConfigManagementListDeployments = ({
     className,
     selectedRowId,
     onRowClick,
@@ -215,7 +208,7 @@ const Deployments = ({
             className={className}
             query={DEPLOYMENTS_QUERY}
             variables={variables}
-            entityType={entityTypes.DEPLOYMENT}
+            entityType="DEPLOYMENT"
             tableColumns={tableColumns}
             createTableRows={createTableRowsFilteredByPolicyStatus}
             onRowClick={onRowClick}
@@ -229,7 +222,7 @@ const Deployments = ({
         />
     );
 };
-Deployments.propTypes = entityListPropTypes;
-Deployments.defaultProps = entityListDefaultprops;
+ConfigManagementListDeployments.propTypes = entityListPropTypes;
+ConfigManagementListDeployments.defaultProps = entityListDefaultprops;
 
-export default Deployments;
+export default ConfigManagementListDeployments;
