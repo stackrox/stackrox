@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
+	"github.com/stackrox/rox/sensor/common"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -78,12 +79,19 @@ func (s *NetworkFlowPurgerTestSuite) TestPurgerWithManager() {
 		expectedEndpoint     *containerEndpointIndicator
 		expectedNumEndpoints int
 	}{
-		"Endpoints-maxAge: should purge old endpoints": {
+		"Purger should purge something": {
 			firstSeen:            2 * time.Hour,
 			lastUpdateTime:       2 * time.Hour,
-			purgerMaxAge:         time.Hour,
+			purgerMaxAge:         1 * time.Hour,
 			isKnownEndpoint:      true,
 			expectedNumEndpoints: 0,
+		},
+		"Purger should purge nothing": {
+			firstSeen:            2 * time.Hour,
+			lastUpdateTime:       2 * time.Hour,
+			purgerMaxAge:         3 * time.Hour,
+			isKnownEndpoint:      true,
+			expectedNumEndpoints: 1,
 		},
 	}
 	for name, tc := range cases {
@@ -107,6 +115,10 @@ func (s *NetworkFlowPurgerTestSuite) TestPurgerWithManager() {
 				}
 			})
 			s.Require().NoError(purger.Start())
+			// Cycle through online-offline modes
+			purger.Notify(common.SensorComponentEventOfflineMode)
+			purger.Notify(common.SensorComponentEventCentralReachable)
+
 			purgerTickerC <- time.Now()
 			// wait until purger is done
 			s.Require().Eventually(purger.purgingDone.IsDone, 2*time.Second, 500*time.Millisecond)
