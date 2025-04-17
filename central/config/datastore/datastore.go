@@ -308,7 +308,11 @@ func validateAndUpdatePlatformComponentConfig(config *storage.PlatformComponentC
 			layeredProductsRuleExists = true
 		}
 		parsedRules = append(parsedRules, rule)
-		regexes = append(regexes, regexp.MustCompile(rule.GetNamespaceRule().Regex))
+		regex, compileErr := regexp.Compile(rule.GetNamespaceRule().Regex)
+		if compileErr != nil {
+			return nil, compileErr
+		}
+		regexes = append(regexes, regex)
 	}
 	// Add back in default rules if they weren't passed in by the user
 	if !systemRuleExists {
