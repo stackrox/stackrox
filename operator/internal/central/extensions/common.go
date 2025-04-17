@@ -43,6 +43,18 @@ func wrapExtension(runFn func(ctx context.Context, central *platform.Central, cl
 				return true
 			})
 		}
-		return runFn(ctx, &c, client, direct, wrappedStatusUpdater, log)
+		err = runFn(ctx, &c, client, direct, wrappedStatusUpdater, log)
+		if err != nil {
+			return err
+		}
+
+		// Keep potentially mutated central spec.
+		// The ReconcileScannerV4StatusDefaultsExtension mutates the central spec.
+		obj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&c)
+		if err != nil {
+			return errors.Wrap(err, "converting Central to unstructured object after extension execution")
+		}
+		u.Object = obj
+		return nil
 	}
 }
