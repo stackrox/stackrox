@@ -846,7 +846,7 @@ type EmbeddedImageScanComponent struct {
 	//
 	//	*EmbeddedImageScanComponent_TopCvss
 	SetTopCvss isEmbeddedImageScanComponent_SetTopCvss `protobuf_oneof:"set_top_cvss"`
-	RiskScore  float32                                 `protobuf:"fixed32,10,opt,name=risk_score,json=riskScore,proto3" json:"risk_score,omitempty" search:"Component Risk Score,hidden"` // @gotags: search:"Component Risk Score,hidden"
+	RiskScore  float32                                 `protobuf:"fixed32,10,opt,name=risk_score,json=riskScore,proto3" json:"risk_score,omitempty" search:"Component Risk Score,hidden" hash:"ignore"` // @gotags: search:"Component Risk Score,hidden" hash:"ignore"
 	// Component version that fixes all the fixable vulnerabilities in this component.
 	FixedBy string `protobuf:"bytes,11,opt,name=fixed_by,json=fixedBy,proto3" json:"fixed_by,omitempty"`
 	// Values are cleared after moving to cache, remove them from the grpc return as well
