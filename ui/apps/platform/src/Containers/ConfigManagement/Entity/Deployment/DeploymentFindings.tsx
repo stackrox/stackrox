@@ -5,7 +5,7 @@ import entityTypes from 'constants/entityTypes';
 
 export type DeploymentFindingsProps = {
     deploymentID: string;
-    entityContext?: Record<string, any>;
+    entityContext?: Partial<Record<string, string>>;
 };
 
 function DeploymentFindings({ entityContext = {}, deploymentID }: DeploymentFindingsProps) {

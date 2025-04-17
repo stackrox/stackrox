@@ -6,6 +6,7 @@ import queryService from 'utils/queryService';
 import { sortSeverity } from 'sorters/sorters';
 import { format } from 'date-fns';
 import dateTimeFormat from 'constants/dateTimeFormat';
+import { BasePolicy } from 'types/policy.proto';
 
 import NoResultsMessage from 'Components/NoResultsMessage';
 import Query from 'Components/ThrowingQuery';
@@ -14,6 +15,11 @@ import PolicySeverityIconText from 'Components/PatternFly/IconText/PolicySeverit
 import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 import { formatLifecycleStages } from 'Containers/Policies/policies.utils';
 import TableWidget from './TableWidget';
+
+type FailedPolicy = Pick<
+    BasePolicy,
+    'id' | 'name' | 'severity' | 'enforcementActions' | 'categories' | 'lifecycleStages'
+>;
 
 const QUERY = gql`
     query failedPolicies($query: String) {
@@ -32,14 +38,23 @@ const QUERY = gql`
     }
 `;
 
-const createTableRows = (data) => {
+const createTableRows = (data: {
+    violations: {
+        id: string;
+        time: string;
+        policy: FailedPolicy;
+    }[];
+}) => {
+    const initial: ({
+        time: string;
+    } & FailedPolicy)[] = [];
     const failedPolicies = data.violations.reduce((acc, curr) => {
         const row = {
             time: curr.time,
             ...curr.policy,
         };
         return [...acc, row];
-    }, []);
+    }, initial);
     return failedPolicies;
 };
 
@@ -124,7 +139,7 @@ function FailedPoliciesAcrossDeployment({ deploymentID }: FailedPoliciesAcrossDe
                         headerClassName: `w-1/5 ${defaultHeaderClassName}`,
                         className: `w-1/5 ${defaultColumnClassName}`,
                         Cell: ({ original }) => {
-                            const { categories } = original;
+                            const { categories }: { categories: string[] } = original;
                             return categories.join(', ');
                         },
                         accessor: 'categories',
