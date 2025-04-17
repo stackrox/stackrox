@@ -10,7 +10,6 @@ import ExportButton from 'Components/ExportButton';
 import PageHeader from 'Components/PageHeader';
 import BackdropExporting from 'Components/PatternFly/BackdropExporting';
 import { resourceTypes } from 'constants/entityTypes';
-import useCaseTypes from 'constants/useCaseTypes';
 import { useBooleanLocalStorage } from 'hooks/useLocalStorage';
 import usePermissions from 'hooks/usePermissions';
 import {
@@ -174,7 +173,7 @@ function ComplianceDashboardPage(): ReactElement {
                             fileName="Compliance Dashboard Report"
                             textClass="hidden lg:block"
                             type="ALL"
-                            page={useCaseTypes.COMPLIANCE}
+                            page="compliance"
                             pdfId="capture-dashboard"
                             isExporting={isExporting}
                             setIsExporting={setIsExporting}

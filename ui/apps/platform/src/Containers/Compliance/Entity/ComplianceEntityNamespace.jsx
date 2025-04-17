@@ -78,7 +78,7 @@ const ComplianceEntityNamespace = ({
                     return <Loader />;
                 }
                 if (!data.results) {
-                    return <PageNotFound resourceType="NAMESPACE" useCase="COMPLIANCE" />;
+                    return <PageNotFound resourceType="NAMESPACE" useCase="compliance" />;
                 }
                 const namespace = processData(data);
                 const { name, id, clusterName, labels } = namespace;

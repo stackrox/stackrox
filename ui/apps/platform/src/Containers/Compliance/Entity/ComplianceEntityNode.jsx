@@ -64,7 +64,7 @@ const ComplianceEntityNode = ({
                 }
 
                 if (!data.node) {
-                    return <PageNotFound resourceType="NODE" useCase="COMPLIANCE" />;
+                    return <PageNotFound resourceType="NODE" useCase="compliance" />;
                 }
                 const node = processData(data);
                 const {

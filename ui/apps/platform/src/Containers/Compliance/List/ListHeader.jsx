@@ -7,7 +7,6 @@ import PageHeader from 'Components/PageHeader';
 import ExportButton from 'Components/ExportButton';
 import ScanButton from 'Containers/Compliance/ScanButton';
 import { standardLabels } from 'messages/standards';
-import useCaseTypes from 'constants/useCaseTypes';
 import usePermissions from 'hooks/usePermissions';
 
 // Disable to prevent merge conflict below if we need to cherry pick fix to previous release.
@@ -50,7 +49,7 @@ const ListHeader = ({ entityType, searchComponent, standard, isExporting, setIsE
                     fileName={`${headerText} Compliance Report`}
                     id={standardId || entityType}
                     type={standardId ? 'STANDARD' : ''}
-                    page={useCaseTypes.COMPLIANCE}
+                    page="compliance"
                     pdfId="capture-list"
                     tableOptions={tableOptions}
                     isExporting={isExporting}

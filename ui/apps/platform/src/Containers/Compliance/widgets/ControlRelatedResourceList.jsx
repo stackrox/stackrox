@@ -2,7 +2,6 @@ import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
 import URLService from 'utils/URLService';
 import entityTypes from 'constants/entityTypes';
-import useCases from 'constants/useCaseTypes';
 import useWorkflowMatch from 'hooks/useWorkflowMatch';
 import { AGGREGATED_RESULTS as QUERY } from 'queries/controls';
 import queryService from 'utils/queryService';
@@ -20,7 +19,7 @@ const ControlRelatedResourceList = ({
     standard,
     className,
 }) => {
-    const linkContext = useCases.COMPLIANCE;
+    const linkContext = 'compliance';
     const searchParam = useContext(searchContext);
     const location = useLocation();
     const match = useWorkflowMatch();

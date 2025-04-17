@@ -39,7 +39,7 @@ const ComplianceEntityControl = ({
                 }
 
                 if (!data || !data.results) {
-                    return <PageNotFound resourceType="CONTROL" useCase="COMPLIANCE" />;
+                    return <PageNotFound resourceType="CONTROL" useCase="compliance" />;
                 }
 
                 const { results: control, complianceStandards: standards } = data;

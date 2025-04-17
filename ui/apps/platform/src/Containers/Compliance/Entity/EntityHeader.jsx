@@ -43,7 +43,7 @@ const EntityHeader = ({
                 <ExportButton
                     fileName={exportFilename}
                     type={entityType}
-                    page="COMPLIANCE"
+                    page="compliance"
                     id={entityId}
                     pdfId={pdfId}
                     isExporting={isExporting}
