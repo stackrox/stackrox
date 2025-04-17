@@ -247,7 +247,6 @@ func (s *LocalScan) getImageWithMetadata(ctx context.Context, errorList *errorhe
 	for _, pullSource := range pullSources {
 		reg, pullSourceImage, err := s.enrichImageForPullSource(ctx, pullSource, req)
 		if err != nil {
-			log.Warnf("Error getting registries for pull source %q, skipping: %v", pullSource.GetName().GetFullName(), err)
 			allErrs.AddError(err)
 			continue
 		}
