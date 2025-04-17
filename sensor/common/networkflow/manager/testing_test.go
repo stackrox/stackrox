@@ -31,8 +31,6 @@ func createManager(mockCtrl *gomock.Controller, enrichTicker, purgerTicker <-cha
 		centralReady:      concurrency.NewSignal(),
 		enricherTicker:    time.NewTicker(time.Hour),
 		enricherTickerC:   enrichTicker,
-		purgerTicker:      time.NewTicker(time.Hour),
-		purgerTickerC:     purgerTicker,
 		activeConnections: make(map[connection]*networkConnIndicatorWithAge),
 		activeEndpoints:   make(map[containerEndpoint]*containerEndpointIndicatorWithAge),
 		stopper:           concurrency.NewStopper(),
