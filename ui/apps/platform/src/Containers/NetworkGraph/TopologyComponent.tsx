@@ -261,9 +261,7 @@ const TopologyComponent = ({
                             edges={model?.edges || []}
                             edgeState={edgeState}
                             onNodeSelect={onNodeSelect}
-                            onExternalIPSelect={onExternalIPSelect}
                             defaultDeploymentTab={defaultDeploymentTab}
-                            scopeHierarchy={scopeHierarchy}
                             urlPagination={urlPagination}
                             urlSearchFiltering={urlSearchFiltering}
                         />
