@@ -22,9 +22,11 @@ import FormSaveButton from 'Components/PatternFly/FormSaveButton';
 import FormMessage from 'Components/PatternFly/FormMessage';
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import {
+    CertificateTransparencyLogVerification,
     CosignCertificateVerification,
     CosignPublicKey,
     SignatureIntegration,
+    TransparencyLogVerification,
 } from 'types/signatureIntegration.proto';
 import useMetadata from 'hooks/useMetadata';
 import { getVersionedDocs } from 'utils/versioning';
@@ -68,6 +70,7 @@ const validationSchema = yup.object().shape({
     }),
 });
 
+// Default values for newly created integrations.
 const defaultValues: SignatureIntegration = {
     id: '',
     name: '',
@@ -83,6 +86,7 @@ const defaultValues: SignatureIntegration = {
     },
 };
 
+// Default values for newly created integrations.
 const defaultValuesOfCosignCertificateVerification: CosignCertificateVerification = {
     certificateChainPemEnc: '',
     certificatePemEnc: '',
@@ -142,6 +146,27 @@ function SignatureIntegrationForm({
     isEditable = false,
 }: IntegrationFormProps<SignatureIntegration>): ReactElement {
     const formInitialValues: SignatureIntegration = merge({}, defaultValues, initialValues);
+    if (initialValues) {
+        // To guarantee backwards compatibility with signature integrations created with ACS < 4.8,
+        // we must ensure that null fields are converted to their appropriate zero values.
+        const backwardsCompatibleCtlogValues: CertificateTransparencyLogVerification = {
+            enabled: false,
+            publicKeyPemEnc: '',
+        };
+        formInitialValues.cosignCertificates.forEach((item, index) => {
+            formInitialValues.cosignCertificates[index].certificateTransparencyLog =
+                item.certificateTransparencyLog ?? structuredClone(backwardsCompatibleCtlogValues);
+        });
+
+        const backwardsCompatibleTlogValues: TransparencyLogVerification = {
+            enabled: false,
+            publicKeyPemEnc: '',
+            url: 'https://rekor.sigstore.dev',
+            validateOffline: false,
+        };
+        formInitialValues.transparencyLog =
+            formInitialValues.transparencyLog ?? backwardsCompatibleTlogValues;
+    }
     const formik = useIntegrationForm<SignatureIntegration>({
         initialValues: formInitialValues,
         validationSchema,
@@ -680,8 +705,8 @@ function SignatureIntegrationForm({
                                                                                     .cosignCertificates[
                                                                                     index
                                                                                 ]
-                                                                                    .certificateTransparencyLog
-                                                                                    .enabled
+                                                                                    ?.certificateTransparencyLog
+                                                                                    ?.enabled
                                                                             }
                                                                             onChange={(
                                                                                 event,
@@ -735,8 +760,8 @@ function SignatureIntegrationForm({
                                                                                     .cosignCertificates[
                                                                                     index
                                                                                 ]
-                                                                                    .certificateTransparencyLog
-                                                                                    .publicKeyPemEnc
+                                                                                    ?.certificateTransparencyLog
+                                                                                    ?.publicKeyPemEnc
                                                                             }
                                                                             style={{
                                                                                 minHeight: '100px',
@@ -757,8 +782,8 @@ function SignatureIntegrationForm({
                                                                                     .cosignCertificates[
                                                                                     index
                                                                                 ]
-                                                                                    .certificateTransparencyLog
-                                                                                    .enabled
+                                                                                    ?.certificateTransparencyLog
+                                                                                    ?.enabled
                                                                             }
                                                                             placeholder={
                                                                                 '-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----'
@@ -836,7 +861,7 @@ function SignatureIntegrationForm({
                                         <Checkbox
                                             label="Enable transparency log validation"
                                             id="transparencyLog.enabled"
-                                            isChecked={values.transparencyLog.enabled}
+                                            isChecked={values?.transparencyLog?.enabled}
                                             onChange={(event, value) => onChange(value, event)}
                                             onBlur={handleBlur}
                                             isDisabled={!isEditable}
@@ -867,13 +892,13 @@ function SignatureIntegrationForm({
                                             isRequired
                                             type="text"
                                             id="transparencyLog.url"
-                                            value={values.transparencyLog.url}
+                                            value={values?.transparencyLog?.url}
                                             onChange={(event, value) => onChange(value, event)}
                                             onBlur={handleBlur}
                                             isDisabled={
                                                 !isEditable ||
-                                                !values.transparencyLog.enabled ||
-                                                values.transparencyLog.validateOffline
+                                                !values?.transparencyLog?.enabled ||
+                                                values?.transparencyLog?.validateOffline
                                             }
                                         />
                                     </FormLabelGroup>
@@ -897,11 +922,11 @@ function SignatureIntegrationForm({
                                         <Checkbox
                                             label="Validate in offline mode"
                                             id="transparencyLog.validateOffline"
-                                            isChecked={values.transparencyLog.validateOffline}
+                                            isChecked={values?.transparencyLog?.validateOffline}
                                             onChange={(event, value) => onChange(value, event)}
                                             onBlur={handleBlur}
                                             isDisabled={
-                                                !isEditable || !values.transparencyLog.enabled
+                                                !isEditable || !values?.transparencyLog?.enabled
                                             }
                                         />
                                     </FormLabelGroup>
@@ -931,12 +956,12 @@ function SignatureIntegrationForm({
                                             resizeOrientation="vertical"
                                             type="text"
                                             id={'transparencyLog.publicKeyPemEnc'}
-                                            value={values.transparencyLog.publicKeyPemEnc}
+                                            value={values?.transparencyLog?.publicKeyPemEnc}
                                             style={{ minHeight: '100px' }}
                                             onChange={(event, value) => onChange(value, event)}
                                             onBlur={handleBlur}
                                             isDisabled={
-                                                !isEditable || !values.transparencyLog.enabled
+                                                !isEditable || !values?.transparencyLog?.enabled
                                             }
                                             placeholder={
                                                 '-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----'
