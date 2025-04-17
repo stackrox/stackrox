@@ -166,11 +166,13 @@ function RequestCVEsTable({
                                 const importantCount = affectedImageCountBySeverity.important.total;
                                 const moderateCount = affectedImageCountBySeverity.moderate.total;
                                 const lowCount = affectedImageCountBySeverity.low.total;
+                                const unknownCount = affectedImageCountBySeverity.unknown.total;
                                 const filteredSeverities: VulnerabilitySeverityLabel[] = [
                                     'Critical',
                                     'Important',
                                     'Moderate',
                                     'Low',
+                                    'Unknown',
                                 ];
                                 const prioritizedDistros = sortCveDistroList(distroTuples);
                                 const scoreVersions = getScoreVersionsForTopCVSS(
@@ -214,6 +216,7 @@ function RequestCVEsTable({
                                                     importantCount={importantCount}
                                                     moderateCount={moderateCount}
                                                     lowCount={lowCount}
+                                                    unknownCount={unknownCount}
                                                     filteredSeverities={filteredSeverities}
                                                 />
                                             </Td>

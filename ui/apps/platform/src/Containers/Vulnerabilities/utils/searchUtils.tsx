@@ -127,6 +127,8 @@ export function severityLabelToSeverity(label: VulnerabilitySeverityLabel): Vuln
             return 'MODERATE_VULNERABILITY_SEVERITY';
         case 'Low':
             return 'LOW_VULNERABILITY_SEVERITY';
+        case 'Unknown':
+            return 'UNKNOWN_VULNERABILITY_SEVERITY';
         default:
             return ensureExhaustive(label);
     }

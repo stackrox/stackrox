@@ -78,6 +78,9 @@ export const imageListQuery = gql`
                 low {
                     total
                 }
+                unknown {
+                    total
+                }
             }
             operatingSystem
             deploymentCount(query: $query)
@@ -107,6 +110,7 @@ export type Image = {
         important: { total: number };
         moderate: { total: number };
         low: { total: number };
+        unknown: { total: number };
     };
     operatingSystem: string;
     deploymentCount: number;
@@ -225,6 +229,7 @@ function ImageOverviewTable({
                         const importantCount = imageCVECountBySeverity.important.total;
                         const moderateCount = imageCVECountBySeverity.moderate.total;
                         const lowCount = imageCVECountBySeverity.low.total;
+                        const unknownCount = imageCVECountBySeverity.unknown.total;
 
                         const isWatchedImage = watchStatus === 'WATCHED';
                         const watchImageMenuText = isWatchedImage ? 'Unwatch image' : 'Watch image';
@@ -304,6 +309,7 @@ function ImageOverviewTable({
                                                 importantCount={importantCount}
                                                 moderateCount={moderateCount}
                                                 lowCount={lowCount}
+                                                unknownCount={unknownCount}
                                                 entity="image"
                                                 filteredSeverities={filteredSeverities}
                                             />

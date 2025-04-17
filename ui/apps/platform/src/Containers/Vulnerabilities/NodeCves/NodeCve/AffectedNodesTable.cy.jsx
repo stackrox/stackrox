@@ -149,12 +149,16 @@ describe(Cypress.spec.relative, () => {
                     'IMPORTANT_VULNERABILITY_SEVERITY',
                 ],
             ]);
+            const unknownSeverityNode = createNodeWithComponentSeverities([
+                ['UNKNOWN_VULNERABILITY_SEVERITY'],
+            ]);
 
             const nodes = [
                 lowSeverityNode,
                 moderateSeverityNode,
                 importantSeverityNode,
                 criticalSeverityNode,
+                unknownSeverityNode,
             ];
 
             setup({ type: 'COMPLETE', data: nodes });
@@ -166,6 +170,7 @@ describe(Cypress.spec.relative, () => {
                 { rowIndex: 2, expectedSeverity: 'Moderate' },
                 { rowIndex: 3, expectedSeverity: 'Important' },
                 { rowIndex: 4, expectedSeverity: 'Critical' },
+                { rowIndex: 5, expectedSeverity: 'Unknown' },
             ].forEach(({ rowIndex, expectedSeverity }) => {
                 cy.findAllByRole('row')
                     .eq(rowIndex)

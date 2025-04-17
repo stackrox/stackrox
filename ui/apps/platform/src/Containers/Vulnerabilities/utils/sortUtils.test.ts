@@ -141,11 +141,14 @@ describe('getSeveritySortOptions', () => {
     });
 
     it('should return all severity sort options when all severity filters are applied', () => {
-        expect(getSeveritySortOptions(['Critical', 'Important', 'Moderate', 'Low'])).toEqual([
+        expect(
+            getSeveritySortOptions(['Critical', 'Important', 'Moderate', 'Low', 'Unknown'])
+        ).toEqual([
             { field: 'Critical Severity Count' },
             { field: 'Important Severity Count' },
             { field: 'Moderate Severity Count' },
             { field: 'Low Severity Count' },
+            { field: 'Unknown Severity Count' },
         ]);
     });
 });
