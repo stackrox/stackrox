@@ -277,14 +277,28 @@ func (d *datastoreImpl) UpsertPlatformComponentConfigRule(ctx context.Context, r
 	if config.PlatformComponentConfig.Rules == nil {
 		config.PlatformComponentConfig.Rules = make([]*storage.PlatformComponentConfig_Rule, 0)
 	}
-	config.PlatformComponentConfig.Rules = append(config.PlatformComponentConfig.Rules, rule)
-	err = d.store.Upsert(ctx, config)
-	if err != nil {
-		return err
+	wasPreexisting := false
+	for idx, existingRule := range config.PlatformComponentConfig.Rules {
+		if existingRule.Name == rule.Name {
+			config.PlatformComponentConfig.Rules[idx] = rule
+			wasPreexisting = true
+			break
+		}
+	}
+	if !wasPreexisting {
+		config.PlatformComponentConfig.Rules = append(config.PlatformComponentConfig.Rules, rule)
 	}
 	regexes := make([]*regexp.Regexp, 0)
 	for _, rule := range config.PlatformComponentConfig.Rules {
-		regexes = append(regexes, regexp.MustCompile(rule.GetNamespaceRule().Regex))
+		regex, compileErr := regexp.Compile(rule.GetNamespaceRule().Regex)
+		if compileErr != nil {
+			return compileErr
+		}
+		regexes = append(regexes, regex)
+	}
+	err = d.store.Upsert(ctx, config)
+	if err != nil {
+		return err
 	}
 	matcher.Singleton().SetRegexes(regexes)
 	return nil
@@ -305,13 +319,17 @@ func (d *datastoreImpl) UpsertPlatformComponentConfigRules(ctx context.Context, 
 		config.PlatformComponentConfig.NeedsReevaluation = true
 	}
 	config.PlatformComponentConfig.Rules = rules
+	regexes := make([]*regexp.Regexp, 0)
+	for _, rule := range config.PlatformComponentConfig.Rules {
+		regex, compileErr := regexp.Compile(rule.GetNamespaceRule().Regex)
+		if compileErr != nil {
+			return nil, compileErr
+		}
+		regexes = append(regexes, regex)
+	}
 	err = d.store.Upsert(ctx, config)
 	if err != nil {
 		return nil, err
-	}
-	regexes := make([]*regexp.Regexp, 0)
-	for _, rule := range config.PlatformComponentConfig.Rules {
-		regexes = append(regexes, regexp.MustCompile(rule.GetNamespaceRule().Regex))
 	}
 	matcher.Singleton().SetRegexes(regexes)
 	return config.PlatformComponentConfig, nil
