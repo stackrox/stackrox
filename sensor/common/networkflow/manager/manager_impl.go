@@ -946,7 +946,7 @@ func (m *networkFlowManager) enrichProcessListening(ep *containerEndpoint, statu
 	}
 
 	container, ok, isHistorical := m.clusterEntities.LookupByContainerID(ep.containerID)
-	if !ok || isHistorical {
+	if !ok {
 		// Expire the process if the container cannot be found within the clusterEntityResolutionWaitPeriod
 		if pastContainerResolutionDeadline {
 			status.rotten = true
