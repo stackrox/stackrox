@@ -101,13 +101,6 @@ type networkConnIndicator struct {
 	protocol  storage.L4Protocol
 }
 
-func (i *networkConnIndicator) String() string {
-	return fmt.Sprintf("%s(%s) => %s(%s), port=%d, protocol=%s",
-		i.srcEntity.Type, i.srcEntity.ID,
-		i.dstEntity.Type, i.dstEntity.ID,
-		i.dstPort, i.protocol)
-}
-
 func (i *networkConnIndicator) toProto(ts timestamp.MicroTS) *storage.NetworkFlow {
 	proto := &storage.NetworkFlow{
 		Props: &storage.NetworkFlowProperties{
@@ -129,23 +122,11 @@ type containerEndpointIndicatorWithAge struct {
 	lastUpdate timestamp.MicroTS
 }
 
-func (i *containerEndpointIndicatorWithAge) String() string {
-	return fmt.Sprintf("%s, lastUpdate=%s",
-		i.containerEndpointIndicator.String(),
-		i.lastUpdate.GoTime().Format(time.RFC3339))
-}
-
 // containerEndpointIndicator is a key in Sensor's maps that track active endpoints. It's set of fields should be minimal.
 type containerEndpointIndicator struct {
 	entity   networkgraph.Entity
 	port     uint16
 	protocol storage.L4Protocol
-}
-
-func (i *containerEndpointIndicator) String() string {
-	return fmt.Sprintf("%s(%s), port=%d, protocol=%s",
-		i.entity.Type, i.entity.ID,
-		i.port, i.protocol)
 }
 
 func (i *containerEndpointIndicator) toProto(ts timestamp.MicroTS) *storage.NetworkEndpoint {
