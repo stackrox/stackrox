@@ -19,7 +19,8 @@ type centralWithScannerV4Bearer struct {
 	*platform.Central
 }
 
-// IsScannerV4Enabled ...
+// IsScannerV4Enabled implements the ScannerV4BearingCustomResource interface for centralWithScannerV4Bearer.
+// It returns true if Scanner V4 shall be enabled according to a CentralStatus and ScannerV4Spec.
 func (s *centralWithScannerV4Bearer) IsScannerV4Enabled() bool {
 	return defaulting.ScannerV4ComponentPolicyEnabled(&s.Status, s.Spec.ScannerV4)
 }
