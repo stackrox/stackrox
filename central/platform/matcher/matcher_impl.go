@@ -1,16 +1,16 @@
 package matcher
 
 import (
+	"context"
 	"regexp"
 
 	"github.com/pkg/errors"
+	configDatastore "github.com/stackrox/rox/central/config/datastore"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/sac"
 )
 
-var systemNamespaceRegex = regexp.MustCompile(`^kube-.*|^openshift-.*|^stackrox$|^rhacs-operator$|^open-cluster-management$|^multicluster-engine$|^aap$|^hive$|^nvidia-gpu-operator$`)
-
-type platformMatcherImpl struct {
-}
+type platformMatcherImpl struct{}
 
 func (p *platformMatcherImpl) MatchAlert(alert *storage.Alert) (bool, error) {
 	if alert == nil {
@@ -30,5 +30,14 @@ func (p *platformMatcherImpl) MatchDeployment(deployment *storage.Deployment) (b
 }
 
 func (p *platformMatcherImpl) matchNamespace(namespace string) bool {
-	return systemNamespaceRegex.MatchString(namespace)
+	// This isn't the most compute efficient way of doing this, but realistically there aren't going to be an
+	// insane number of platform component rules, so this is probably an okay way of doing this, and if we had something
+	// in the datastore that updated a field on the platformMatcherImpl, it would cause a circular dependency.
+	config, _, _ := configDatastore.Singleton().GetPlatformComponentConfig(sac.WithAllAccess(context.Background()))
+	for _, rule := range config.Rules {
+		if regexp.MustCompile(rule.GetNamespaceRule().Regex).MatchString(namespace) {
+			return true
+		}
+	}
+	return false
 }
