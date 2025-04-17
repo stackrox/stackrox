@@ -3,8 +3,8 @@
 package tests
 
 import (
-	"encoding/binary"
 	"context"
+	"encoding/binary"
 	"fmt"
 	"net/netip"
 	"testing"
@@ -182,13 +182,13 @@ func setupExternalIngressFlowsWithEntities(b *testing.B, flowStore store.FlowSto
 	entities := make([]*storage.NetworkEntity, batchSize)
 
 	for i := uint32(0); i < numFlows; i++ {
-		if i % batchSize == 0 && i != 0 {
+		if i%batchSize == 0 && i != 0 {
 			_, err := eStore.CreateExtNetworkEntitiesForCluster(sac.WithAllAccess(context.Background()), fixtureconsts.Cluster1, entities...)
 			require.NoError(b, err)
 		}
 		bs := [4]byte{}
 		// Must have + 1 because the 0.0.0.0 IP address is not allowed
-		binary.BigEndian.PutUint32(bs[:], i + 1)
+		binary.BigEndian.PutUint32(bs[:], i+1)
 		ip := netip.AddrFrom4(bs)
 		cidr := fmt.Sprintf("%s/32", ip.String())
 
@@ -197,7 +197,7 @@ func setupExternalIngressFlowsWithEntities(b *testing.B, flowStore store.FlowSto
 
 		flow := testutils.ExtFlow(id, deploymentId, clusterID)
 		flows = append(flows, flow)
-		entities[i % batchSize] = extEntity
+		entities[i%batchSize] = extEntity
 	}
 
 	err := flowStore.UpsertFlows(context.Background(), flows, timestamp.Now()-1000000)
