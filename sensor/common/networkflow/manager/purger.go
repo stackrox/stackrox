@@ -143,7 +143,6 @@ func (p *NetworkFlowPurger) runPurger() {
 	}
 	if p.manager == nil {
 		log.Warn("Programmer error: network flow purger is not bound to a network flow manager. Not purging.")
-		p.purgingDone.Signal()
 		return
 	}
 	numPurgedActiveEp := purgeActiveEndpoints(&p.manager.activeEndpointsMutex, p.maxAge, p.manager.activeEndpoints, p.clusterEntities)
