@@ -53,10 +53,6 @@ const (
 var (
 	emptyProcessInfo = processInfo{}
 	enricherCycle    = time.Second * 30
-	// How often purger should run. The Purger removes old endpoints from activeEndpoints slice.
-	// This is important for cases when Collector or the orchestrator never reports a given endpoint
-	// as deleted, because there is no other mechanism that would remove an endpoint from memory.
-	purgerCycleSetting = env.EnrichmentPurgerTickerCycle.DurationSetting()
 )
 
 type hostConnections struct {
