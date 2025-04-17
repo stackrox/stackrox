@@ -748,6 +748,10 @@ func (resolver *imageComponentV2Resolver) FixedIn(_ context.Context) string {
 	return resolver.data.GetFixedBy()
 }
 
+func (resolver *imageComponentV2Resolver) License(ctx context.Context) (*licenseResolver, error) {
+	return nil, nil
+}
+
 /*
 Utility Functions
 */

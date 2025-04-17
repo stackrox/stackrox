@@ -69,7 +69,6 @@ func (m *ImageComponentV2) CloneVT() *ImageComponentV2 {
 	r.Id = m.Id
 	r.Name = m.Name
 	r.Version = m.Version
-	r.License = m.License.CloneVT()
 	r.Priority = m.Priority
 	r.Source = m.Source
 	r.RiskScore = m.RiskScore
@@ -226,9 +225,6 @@ func (this *ImageComponentV2) EqualVT(that *ImageComponentV2) bool {
 		return false
 	}
 	if this.Version != that.Version {
-		return false
-	}
-	if !this.License.EqualVT(that.License) {
 		return false
 	}
 	if this.Priority != that.Priority {
@@ -468,61 +464,51 @@ func (m *ImageComponentV2) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		copy(dAtA[i:], m.Architecture)
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Architecture)))
 		i--
-		dAtA[i] = 0x72
+		dAtA[i] = 0x6a
 	}
 	if len(m.Location) > 0 {
 		i -= len(m.Location)
 		copy(dAtA[i:], m.Location)
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Location)))
 		i--
-		dAtA[i] = 0x6a
+		dAtA[i] = 0x62
 	}
 	if len(m.ImageId) > 0 {
 		i -= len(m.ImageId)
 		copy(dAtA[i:], m.ImageId)
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.ImageId)))
 		i--
-		dAtA[i] = 0x5a
+		dAtA[i] = 0x52
 	}
 	if len(m.OperatingSystem) > 0 {
 		i -= len(m.OperatingSystem)
 		copy(dAtA[i:], m.OperatingSystem)
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.OperatingSystem)))
 		i--
-		dAtA[i] = 0x52
+		dAtA[i] = 0x4a
 	}
 	if len(m.FixedBy) > 0 {
 		i -= len(m.FixedBy)
 		copy(dAtA[i:], m.FixedBy)
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.FixedBy)))
 		i--
-		dAtA[i] = 0x4a
+		dAtA[i] = 0x42
 	}
 	if m.RiskScore != 0 {
 		i -= 4
 		binary.LittleEndian.PutUint32(dAtA[i:], uint32(math.Float32bits(float32(m.RiskScore))))
 		i--
-		dAtA[i] = 0x3d
+		dAtA[i] = 0x35
 	}
 	if m.Source != 0 {
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.Source))
 		i--
-		dAtA[i] = 0x30
+		dAtA[i] = 0x28
 	}
 	if m.Priority != 0 {
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.Priority))
 		i--
-		dAtA[i] = 0x28
-	}
-	if m.License != nil {
-		size, err := m.License.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-		i--
-		dAtA[i] = 0x22
+		dAtA[i] = 0x20
 	}
 	if len(m.Version) > 0 {
 		i -= len(m.Version)
@@ -558,7 +544,7 @@ func (m *ImageComponentV2_TopCvss) MarshalToSizedBufferVT(dAtA []byte) (int, err
 	i -= 4
 	binary.LittleEndian.PutUint32(dAtA[i:], uint32(math.Float32bits(float32(m.TopCvss))))
 	i--
-	dAtA[i] = 0x45
+	dAtA[i] = 0x3d
 	return len(dAtA) - i, nil
 }
 func (m *ImageComponentV2_LayerIndex) MarshalToVT(dAtA []byte) (int, error) {
@@ -570,7 +556,7 @@ func (m *ImageComponentV2_LayerIndex) MarshalToSizedBufferVT(dAtA []byte) (int, 
 	i := len(dAtA)
 	i = protohelpers.EncodeVarint(dAtA, i, uint64(m.LayerIndex))
 	i--
-	dAtA[i] = 0x60
+	dAtA[i] = 0x58
 	return len(dAtA) - i, nil
 }
 func (m *ImageComponent) SizeVT() (n int) {
@@ -644,10 +630,6 @@ func (m *ImageComponentV2) SizeVT() (n int) {
 	}
 	l = len(m.Version)
 	if l > 0 {
-		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-	}
-	if m.License != nil {
-		l = m.License.SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.Priority != 0 {
@@ -1140,42 +1122,6 @@ func (m *ImageComponentV2) UnmarshalVT(dAtA []byte) error {
 			m.Version = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 4:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field License", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.License == nil {
-				m.License = &License{}
-			}
-			if err := m.License.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 5:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Priority", wireType)
 			}
@@ -1194,7 +1140,7 @@ func (m *ImageComponentV2) UnmarshalVT(dAtA []byte) error {
 					break
 				}
 			}
-		case 6:
+		case 5:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Source", wireType)
 			}
@@ -1213,7 +1159,7 @@ func (m *ImageComponentV2) UnmarshalVT(dAtA []byte) error {
 					break
 				}
 			}
-		case 7:
+		case 6:
 			if wireType != 5 {
 				return fmt.Errorf("proto: wrong wireType = %d for field RiskScore", wireType)
 			}
@@ -1224,7 +1170,7 @@ func (m *ImageComponentV2) UnmarshalVT(dAtA []byte) error {
 			v = uint32(binary.LittleEndian.Uint32(dAtA[iNdEx:]))
 			iNdEx += 4
 			m.RiskScore = float32(math.Float32frombits(v))
-		case 8:
+		case 7:
 			if wireType != 5 {
 				return fmt.Errorf("proto: wrong wireType = %d for field TopCvss", wireType)
 			}
@@ -1235,7 +1181,7 @@ func (m *ImageComponentV2) UnmarshalVT(dAtA []byte) error {
 			v = uint32(binary.LittleEndian.Uint32(dAtA[iNdEx:]))
 			iNdEx += 4
 			m.SetTopCvss = &ImageComponentV2_TopCvss{TopCvss: float32(math.Float32frombits(v))}
-		case 9:
+		case 8:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field FixedBy", wireType)
 			}
@@ -1267,7 +1213,7 @@ func (m *ImageComponentV2) UnmarshalVT(dAtA []byte) error {
 			}
 			m.FixedBy = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 10:
+		case 9:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field OperatingSystem", wireType)
 			}
@@ -1299,7 +1245,7 @@ func (m *ImageComponentV2) UnmarshalVT(dAtA []byte) error {
 			}
 			m.OperatingSystem = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 11:
+		case 10:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ImageId", wireType)
 			}
@@ -1331,7 +1277,7 @@ func (m *ImageComponentV2) UnmarshalVT(dAtA []byte) error {
 			}
 			m.ImageId = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 12:
+		case 11:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field LayerIndex", wireType)
 			}
@@ -1351,7 +1297,7 @@ func (m *ImageComponentV2) UnmarshalVT(dAtA []byte) error {
 				}
 			}
 			m.HasLayerIndex = &ImageComponentV2_LayerIndex{LayerIndex: v}
-		case 13:
+		case 12:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Location", wireType)
 			}
@@ -1383,7 +1329,7 @@ func (m *ImageComponentV2) UnmarshalVT(dAtA []byte) error {
 			}
 			m.Location = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 14:
+		case 13:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Architecture", wireType)
 			}
@@ -1902,42 +1848,6 @@ func (m *ImageComponentV2) UnmarshalVTUnsafe(dAtA []byte) error {
 			m.Version = stringValue
 			iNdEx = postIndex
 		case 4:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field License", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.License == nil {
-				m.License = &License{}
-			}
-			if err := m.License.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 5:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Priority", wireType)
 			}
@@ -1956,7 +1866,7 @@ func (m *ImageComponentV2) UnmarshalVTUnsafe(dAtA []byte) error {
 					break
 				}
 			}
-		case 6:
+		case 5:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Source", wireType)
 			}
@@ -1975,7 +1885,7 @@ func (m *ImageComponentV2) UnmarshalVTUnsafe(dAtA []byte) error {
 					break
 				}
 			}
-		case 7:
+		case 6:
 			if wireType != 5 {
 				return fmt.Errorf("proto: wrong wireType = %d for field RiskScore", wireType)
 			}
@@ -1986,7 +1896,7 @@ func (m *ImageComponentV2) UnmarshalVTUnsafe(dAtA []byte) error {
 			v = uint32(binary.LittleEndian.Uint32(dAtA[iNdEx:]))
 			iNdEx += 4
 			m.RiskScore = float32(math.Float32frombits(v))
-		case 8:
+		case 7:
 			if wireType != 5 {
 				return fmt.Errorf("proto: wrong wireType = %d for field TopCvss", wireType)
 			}
@@ -1997,7 +1907,7 @@ func (m *ImageComponentV2) UnmarshalVTUnsafe(dAtA []byte) error {
 			v = uint32(binary.LittleEndian.Uint32(dAtA[iNdEx:]))
 			iNdEx += 4
 			m.SetTopCvss = &ImageComponentV2_TopCvss{TopCvss: float32(math.Float32frombits(v))}
-		case 9:
+		case 8:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field FixedBy", wireType)
 			}
@@ -2033,7 +1943,7 @@ func (m *ImageComponentV2) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 			m.FixedBy = stringValue
 			iNdEx = postIndex
-		case 10:
+		case 9:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field OperatingSystem", wireType)
 			}
@@ -2069,7 +1979,7 @@ func (m *ImageComponentV2) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 			m.OperatingSystem = stringValue
 			iNdEx = postIndex
-		case 11:
+		case 10:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ImageId", wireType)
 			}
@@ -2105,7 +2015,7 @@ func (m *ImageComponentV2) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 			m.ImageId = stringValue
 			iNdEx = postIndex
-		case 12:
+		case 11:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field LayerIndex", wireType)
 			}
@@ -2125,7 +2035,7 @@ func (m *ImageComponentV2) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			}
 			m.HasLayerIndex = &ImageComponentV2_LayerIndex{LayerIndex: v}
-		case 13:
+		case 12:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Location", wireType)
 			}
@@ -2161,7 +2071,7 @@ func (m *ImageComponentV2) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 			m.Location = stringValue
 			iNdEx = postIndex
-		case 14:
+		case 13:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Architecture", wireType)
 			}

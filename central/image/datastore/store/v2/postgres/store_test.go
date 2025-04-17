@@ -80,6 +80,7 @@ func (s *ImagesStoreSuite) TestStore() {
 			// TODO(ROX-27402) remove this
 			vuln.Advisory = ""
 		}
+		comp.License = nil
 	}
 
 	foundImage, exists, err := s.store.Get(s.ctx, image.GetId())

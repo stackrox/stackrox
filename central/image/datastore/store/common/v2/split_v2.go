@@ -42,7 +42,6 @@ func GenerateImageComponentV2(os string, image *storage.Image, from *storage.Emb
 		Id:              scancomponent.ComponentIDV2(from.GetName(), from.GetVersion(), from.GetArchitecture(), image.GetId()),
 		Name:            from.GetName(),
 		Version:         from.GetVersion(),
-		License:         from.GetLicense().CloneVT(),
 		Source:          from.GetSource(),
 		FixedBy:         from.GetFixedBy(),
 		RiskScore:       from.GetRiskScore(),
