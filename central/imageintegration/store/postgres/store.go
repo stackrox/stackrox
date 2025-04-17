@@ -32,8 +32,10 @@ var (
 	targetResource = resources.Integration
 )
 
-type storeType = storage.ImageIntegration
-type callback = func(obj *storeType) error
+type (
+	storeType = storage.ImageIntegration
+	callback  = func(obj *storeType) error
+)
 
 // Store is the interface to interact with the storage for storage.ImageIntegration
 type Store interface {

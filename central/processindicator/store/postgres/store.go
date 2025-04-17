@@ -36,8 +36,10 @@ var (
 	targetResource = resources.DeploymentExtension
 )
 
-type storeType = storage.ProcessIndicator
-type callback = func(obj *storeType) error
+type (
+	storeType = storage.ProcessIndicator
+	callback  = func(obj *storeType) error
+)
 
 // Store is the interface to interact with the storage for storage.ProcessIndicator
 type Store interface {

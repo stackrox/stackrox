@@ -36,8 +36,10 @@ var (
 	targetResource = resources.Secret
 )
 
-type storeType = storage.Secret
-type callback = func(obj *storeType) error
+type (
+	storeType = storage.Secret
+	callback  = func(obj *storeType) error
+)
 
 // Store is the interface to interact with the storage for storage.Secret
 type Store interface {

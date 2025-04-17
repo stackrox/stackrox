@@ -31,8 +31,10 @@ var (
 	targetResource = resources.Integration
 )
 
-type storeType = storage.IntegrationHealth
-type callback = func(obj *storeType) error
+type (
+	storeType = storage.IntegrationHealth
+	callback  = func(obj *storeType) error
+)
 
 // Store is the interface to interact with the storage for storage.IntegrationHealth
 type Store interface {

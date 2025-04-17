@@ -32,8 +32,10 @@ var (
 	targetResource = resources.Integration
 )
 
-type storeType = storage.DeclarativeConfigHealth
-type callback = func(obj *storeType) error
+type (
+	storeType = storage.DeclarativeConfigHealth
+	callback  = func(obj *storeType) error
+)
 
 // Store is the interface to interact with the storage for storage.DeclarativeConfigHealth
 type Store interface {

@@ -31,8 +31,10 @@ var (
 	targetResource = resources.Access
 )
 
-type storeType = storage.Group
-type callback = func(obj *storeType) error
+type (
+	storeType = storage.Group
+	callback  = func(obj *storeType) error
+)
 
 // Store is the interface to interact with the storage for storage.Group
 type Store interface {

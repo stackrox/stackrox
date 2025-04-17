@@ -32,8 +32,10 @@ var (
 	targetResource = resources.Administration
 )
 
-type storeType = storage.LogImbue
-type callback = func(obj *storeType) error
+type (
+	storeType = storage.LogImbue
+	callback  = func(obj *storeType) error
+)
 
 // Store is the interface to interact with the storage for storage.LogImbue
 type Store interface {

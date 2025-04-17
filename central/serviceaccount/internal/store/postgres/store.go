@@ -35,8 +35,10 @@ var (
 	targetResource = resources.ServiceAccount
 )
 
-type storeType = storage.ServiceAccount
-type callback = func(obj *storeType) error
+type (
+	storeType = storage.ServiceAccount
+	callback  = func(obj *storeType) error
+)
 
 // Store is the interface to interact with the storage for storage.ServiceAccount
 type Store interface {

@@ -32,8 +32,10 @@ var (
 	targetResource = resources.NetworkPolicy
 )
 
-type storeType = storage.NetworkPolicyApplicationUndoDeploymentRecord
-type callback = func(obj *storeType) error
+type (
+	storeType = storage.NetworkPolicyApplicationUndoDeploymentRecord
+	callback  = func(obj *storeType) error
+)
 
 // Store is the interface to interact with the storage for storage.NetworkPolicyApplicationUndoDeploymentRecord
 type Store interface {

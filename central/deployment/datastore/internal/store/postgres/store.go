@@ -36,8 +36,10 @@ var (
 	targetResource = resources.Deployment
 )
 
-type storeType = storage.Deployment
-type callback = func(obj *storeType) error
+type (
+	storeType = storage.Deployment
+	callback  = func(obj *storeType) error
+)
 
 // Store is the interface to interact with the storage for storage.Deployment
 type Store interface {

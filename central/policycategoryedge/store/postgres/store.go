@@ -31,8 +31,10 @@ var (
 	targetResource = resources.WorkflowAdministration
 )
 
-type storeType = storage.PolicyCategoryEdge
-type callback = func(obj *storeType) error
+type (
+	storeType = storage.PolicyCategoryEdge
+	callback  = func(obj *storeType) error
+)
 
 // Store is the interface to interact with the storage for storage.PolicyCategoryEdge
 type Store interface {

@@ -35,8 +35,10 @@ var (
 	targetResource = resources.DeploymentExtension
 )
 
-type storeType = storage.Risk
-type callback = func(obj *storeType) error
+type (
+	storeType = storage.Risk
+	callback  = func(obj *storeType) error
+)
 
 // Store is the interface to interact with the storage for storage.Risk
 type Store interface {

@@ -30,8 +30,10 @@ var (
 	targetResource = resources.Image
 )
 
-type storeType = storage.ImageCVEEdge
-type callback = func(obj *storeType) error
+type (
+	storeType = storage.ImageCVEEdge
+	callback  = func(obj *storeType) error
+)
 
 // Store is the interface to interact with the storage for storage.ImageCVEEdge
 type Store interface {

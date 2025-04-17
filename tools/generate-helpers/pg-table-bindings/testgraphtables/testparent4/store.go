@@ -32,8 +32,10 @@ var (
 	targetResource = resources.Namespace
 )
 
-type storeType = storage.TestParent4
-type callback = func(obj *storeType) error
+type (
+	storeType = storage.TestParent4
+	callback  = func(obj *storeType) error
+)
 
 // Store is the interface to interact with the storage for storage.TestParent4
 type Store interface {

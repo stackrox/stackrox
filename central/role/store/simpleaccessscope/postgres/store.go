@@ -32,8 +32,10 @@ var (
 	targetResource = resources.Access
 )
 
-type storeType = storage.SimpleAccessScope
-type callback = func(obj *storeType) error
+type (
+	storeType = storage.SimpleAccessScope
+	callback  = func(obj *storeType) error
+)
 
 // Store is the interface to interact with the storage for storage.SimpleAccessScope
 type Store interface {

@@ -31,8 +31,10 @@ var (
 	targetResource = resources.Integration
 )
 
-type storeType = storage.ExternalBackup
-type callback = func(obj *storeType) error
+type (
+	storeType = storage.ExternalBackup
+	callback  = func(obj *storeType) error
+)
 
 // Store is the interface to interact with the storage for storage.ExternalBackup
 type Store interface {

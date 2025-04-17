@@ -33,8 +33,10 @@ var (
 	targetResource = resources.WorkflowAdministration
 )
 
-type storeType = storage.ReportSnapshot
-type callback = func(obj *storeType) error
+type (
+	storeType = storage.ReportSnapshot
+	callback  = func(obj *storeType) error
+)
 
 // Store is the interface to interact with the storage for storage.ReportSnapshot
 type Store interface {

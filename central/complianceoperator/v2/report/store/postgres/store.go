@@ -33,8 +33,10 @@ var (
 	targetResource = resources.Compliance
 )
 
-type storeType = storage.ComplianceOperatorReportSnapshotV2
-type callback = func(obj *storeType) error
+type (
+	storeType = storage.ComplianceOperatorReportSnapshotV2
+	callback  = func(obj *storeType) error
+)
 
 // Store is the interface to interact with the storage for storage.ComplianceOperatorReportSnapshotV2
 type Store interface {

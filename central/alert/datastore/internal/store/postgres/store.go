@@ -36,8 +36,10 @@ var (
 	targetResource = resources.Alert
 )
 
-type storeType = storage.Alert
-type callback = func(obj *storeType) error
+type (
+	storeType = storage.Alert
+	callback  = func(obj *storeType) error
+)
 
 // Store is the interface to interact with the storage for storage.Alert
 type Store interface {

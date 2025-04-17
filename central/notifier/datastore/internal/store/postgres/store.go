@@ -31,8 +31,10 @@ var (
 	targetResource = resources.Integration
 )
 
-type storeType = storage.Notifier
-type callback = func(obj *storeType) error
+type (
+	storeType = storage.Notifier
+	callback  = func(obj *storeType) error
+)
 
 // Store is the interface to interact with the storage for storage.Notifier
 type Store interface {

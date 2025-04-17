@@ -32,8 +32,10 @@ var (
 	targetResource = resources.Integration
 )
 
-type storeType = storage.TokenMetadata
-type callback = func(obj *storeType) error
+type (
+	storeType = storage.TokenMetadata
+	callback  = func(obj *storeType) error
+)
 
 // Store is the interface to interact with the storage for storage.TokenMetadata
 type Store interface {

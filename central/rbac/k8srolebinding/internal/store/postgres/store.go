@@ -35,8 +35,10 @@ var (
 	targetResource = resources.K8sRoleBinding
 )
 
-type storeType = storage.K8SRoleBinding
-type callback = func(obj *storeType) error
+type (
+	storeType = storage.K8SRoleBinding
+	callback  = func(obj *storeType) error
+)
 
 // Store is the interface to interact with the storage for storage.K8SRoleBinding
 type Store interface {

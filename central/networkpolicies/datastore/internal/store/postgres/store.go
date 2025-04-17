@@ -35,8 +35,10 @@ var (
 	targetResource = resources.NetworkPolicy
 )
 
-type storeType = storage.NetworkPolicy
-type callback = func(obj *storeType) error
+type (
+	storeType = storage.NetworkPolicy
+	callback  = func(obj *storeType) error
+)
 
 // Store is the interface to interact with the storage for storage.NetworkPolicy
 type Store interface {

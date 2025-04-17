@@ -31,8 +31,10 @@ var (
 	targetResource = resources.Namespace
 )
 
-type storeType = storage.TestGGrandChild1
-type callback = func(obj *storeType) error
+type (
+	storeType = storage.TestGGrandChild1
+	callback  = func(obj *storeType) error
+)
 
 // Store is the interface to interact with the storage for storage.TestGGrandChild1
 type Store interface {

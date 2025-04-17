@@ -32,8 +32,10 @@ var (
 	targetResource = resources.Administration
 )
 
-type storeType = storage.Blob
-type callback = func(obj *storeType) error
+type (
+	storeType = storage.Blob
+	callback  = func(obj *storeType) error
+)
 
 // Store is the interface to interact with the storage for storage.Blob
 type Store interface {

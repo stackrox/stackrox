@@ -31,8 +31,10 @@ var (
 	targetResource = resources.Hash
 )
 
-type storeType = storage.Hash
-type callback = func(obj *storeType) error
+type (
+	storeType = storage.Hash
+	callback  = func(obj *storeType) error
+)
 
 // Store is the interface to interact with the storage for storage.Hash
 type Store interface {

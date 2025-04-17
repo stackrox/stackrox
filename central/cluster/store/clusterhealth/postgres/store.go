@@ -33,8 +33,10 @@ var (
 	targetResource = resources.Cluster
 )
 
-type storeType = storage.ClusterHealthStatus
-type callback = func(obj *storeType) error
+type (
+	storeType = storage.ClusterHealthStatus
+	callback  = func(obj *storeType) error
+)
 
 // Store is the interface to interact with the storage for storage.ClusterHealthStatus
 type Store interface {

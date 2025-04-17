@@ -31,8 +31,10 @@ var (
 	schema = pkgSchema.ClusterInitBundlesSchema
 )
 
-type storeType = storage.InitBundleMeta
-type callback = func(obj *storeType) error
+type (
+	storeType = storage.InitBundleMeta
+	callback  = func(obj *storeType) error
+)
 
 // Store is the interface to interact with the storage for storage.InitBundleMeta
 type Store interface {

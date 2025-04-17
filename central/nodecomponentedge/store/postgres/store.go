@@ -30,8 +30,10 @@ var (
 	targetResource = resources.Node
 )
 
-type storeType = storage.NodeComponentEdge
-type callback = func(obj *storeType) error
+type (
+	storeType = storage.NodeComponentEdge
+	callback  = func(obj *storeType) error
+)
 
 // Store is the interface to interact with the storage for storage.NodeComponentEdge
 type Store interface {

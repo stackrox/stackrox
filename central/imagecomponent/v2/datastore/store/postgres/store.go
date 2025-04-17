@@ -31,8 +31,10 @@ var (
 	targetResource = resources.Image
 )
 
-type storeType = storage.ImageComponentV2
-type callback = func(obj *storeType) error
+type (
+	storeType = storage.ImageComponentV2
+	callback  = func(obj *storeType) error
+)
 
 // Store is the interface to interact with the storage for storage.ImageComponentV2
 type Store interface {

@@ -31,8 +31,10 @@ var (
 	targetResource = resources.WatchedImage
 )
 
-type storeType = storage.WatchedImage
-type callback = func(obj *storeType) error
+type (
+	storeType = storage.WatchedImage
+	callback  = func(obj *storeType) error
+)
 
 // Store is the interface to interact with the storage for storage.WatchedImage
 type Store interface {

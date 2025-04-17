@@ -31,8 +31,10 @@ var (
 	targetResource = resources.Access
 )
 
-type storeType = storage.AuthProvider
-type callback = func(obj *storeType) error
+type (
+	storeType = storage.AuthProvider
+	callback  = func(obj *storeType) error
+)
 
 // Store is the interface to interact with the storage for storage.AuthProvider
 type Store interface {

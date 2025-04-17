@@ -36,8 +36,10 @@ var (
 	targetResource = resources.DeploymentExtension
 )
 
-type storeType = storage.ProcessListeningOnPortStorage
-type callback = func(obj *storeType) error
+type (
+	storeType = storage.ProcessListeningOnPortStorage
+	callback  = func(obj *storeType) error
+)
 
 // Store is the interface to interact with the storage for storage.ProcessListeningOnPortStorage
 type Store interface {

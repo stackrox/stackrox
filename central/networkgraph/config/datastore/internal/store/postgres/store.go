@@ -31,8 +31,10 @@ var (
 	targetResource = resources.Administration
 )
 
-type storeType = storage.NetworkGraphConfig
-type callback = func(obj *storeType) error
+type (
+	storeType = storage.NetworkGraphConfig
+	callback  = func(obj *storeType) error
+)
 
 // Store is the interface to interact with the storage for storage.NetworkGraphConfig
 type Store interface {

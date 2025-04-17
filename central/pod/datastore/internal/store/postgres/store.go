@@ -35,8 +35,10 @@ var (
 	targetResource = resources.Deployment
 )
 
-type storeType = storage.Pod
-type callback = func(obj *storeType) error
+type (
+	storeType = storage.Pod
+	callback  = func(obj *storeType) error
+)
 
 // Store is the interface to interact with the storage for storage.Pod
 type Store interface {

@@ -35,8 +35,10 @@ var (
 	targetResource = resources.Namespace
 )
 
-type storeType = storage.NamespaceMetadata
-type callback = func(obj *storeType) error
+type (
+	storeType = storage.NamespaceMetadata
+	callback  = func(obj *storeType) error
+)
 
 // Store is the interface to interact with the storage for storage.NamespaceMetadata
 type Store interface {

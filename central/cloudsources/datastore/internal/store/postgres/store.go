@@ -32,8 +32,10 @@ var (
 	targetResource = resources.Integration
 )
 
-type storeType = storage.CloudSource
-type callback = func(obj *storeType) error
+type (
+	storeType = storage.CloudSource
+	callback  = func(obj *storeType) error
+)
 
 // Store is the interface to interact with the storage for storage.CloudSource
 type Store interface {

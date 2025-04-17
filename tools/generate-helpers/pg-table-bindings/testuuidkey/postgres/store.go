@@ -33,8 +33,10 @@ var (
 	targetResource = resources.Namespace
 )
 
-type storeType = storage.TestSingleUUIDKeyStruct
-type callback = func(obj *storeType) error
+type (
+	storeType = storage.TestSingleUUIDKeyStruct
+	callback  = func(obj *storeType) error
+)
 
 // Store is the interface to interact with the storage for storage.TestSingleUUIDKeyStruct
 type Store interface {

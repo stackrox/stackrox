@@ -31,8 +31,10 @@ var (
 	targetResource = resources.Namespace
 )
 
-type storeType = storage.TestShortCircuit
-type callback = func(obj *storeType) error
+type (
+	storeType = storage.TestShortCircuit
+	callback  = func(obj *storeType) error
+)
 
 // Store is the interface to interact with the storage for storage.TestShortCircuit
 type Store interface {

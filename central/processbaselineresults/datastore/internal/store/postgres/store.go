@@ -35,8 +35,10 @@ var (
 	targetResource = resources.DeploymentExtension
 )
 
-type storeType = storage.ProcessBaselineResults
-type callback = func(obj *storeType) error
+type (
+	storeType = storage.ProcessBaselineResults
+	callback  = func(obj *storeType) error
+)
 
 // Store is the interface to interact with the storage for storage.ProcessBaselineResults
 type Store interface {

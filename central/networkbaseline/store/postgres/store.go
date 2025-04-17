@@ -35,8 +35,10 @@ var (
 	targetResource = resources.DeploymentExtension
 )
 
-type storeType = storage.NetworkBaseline
-type callback = func(obj *storeType) error
+type (
+	storeType = storage.NetworkBaseline
+	callback  = func(obj *storeType) error
+)
 
 // Store is the interface to interact with the storage for storage.NetworkBaseline
 type Store interface {
