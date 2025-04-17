@@ -275,13 +275,17 @@ func (d *datastoreImpl) UpsertPlatformComponentConfigRules(ctx context.Context, 
 		config.PlatformComponentConfig.NeedsReevaluation = true
 	}
 	config.PlatformComponentConfig.Rules = rules
+	regexes := make([]*regexp.Regexp, 0)
+	for _, rule := range config.PlatformComponentConfig.Rules {
+		regex, compileErr := regexp.Compile(rule.GetNamespaceRule().Regex)
+		if compileErr != nil {
+			return nil, compileErr
+		}
+		regexes = append(regexes, regex)
+	}
 	err = d.store.Upsert(ctx, config)
 	if err != nil {
 		return nil, err
-	}
-	regexes := make([]*regexp.Regexp, 0)
-	for _, rule := range config.PlatformComponentConfig.Rules {
-		regexes = append(regexes, regexp.MustCompile(rule.GetNamespaceRule().Regex))
 	}
 	matcher.Singleton().SetRegexes(regexes)
 	return config.PlatformComponentConfig, nil
