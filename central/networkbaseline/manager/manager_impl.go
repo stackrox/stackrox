@@ -978,42 +978,44 @@ func (m *manager) GetExternalNetworkPeers(ctx context.Context, deploymentID stri
 	peers := make([]*v1.NetworkBaselineStatusPeer, 0, len(flows))
 
 	for _, flow := range flows {
-		var entity *v1.NetworkBaselinePeerEntity
-		ingress := false
-
-		props := flow.GetProps()
-		src, dst := props.GetSrcEntity(), props.GetDstEntity()
-
-		if src.GetType() == storage.NetworkEntityInfo_DEPLOYMENT {
-			info := entitiesMap[dst.GetId()]
-			entity = &v1.NetworkBaselinePeerEntity{
-				Id:         dst.GetId(),
-				Type:       dst.GetType(),
-				Name:       info.GetExternalSource().GetName(),
-				Discovered: info.GetExternalSource().GetDiscovered(),
-			}
-		} else {
-			info := entitiesMap[src.GetId()]
-			entity = &v1.NetworkBaselinePeerEntity{
-				Id:         src.GetId(),
-				Type:       src.GetType(),
-				Name:       info.GetExternalSource().GetName(),
-				Discovered: info.GetExternalSource().GetDiscovered(),
-			}
-			ingress = true
-		}
-
-		peer := &v1.NetworkBaselineStatusPeer{
-			Entity:   entity,
-			Port:     props.GetDstPort(),
-			Protocol: props.GetL4Protocol(),
-			Ingress:  ingress,
-		}
-
-		peers = append(peers, peer)
+		peers = append(peers, m.mapFlowToPeer(flow, entitiesMap))
 	}
 
 	return peers, nil
+}
+
+func (m *manager) mapFlowToPeer(flow *storage.NetworkFlow, entitiesMap map[string]*storage.NetworkEntityInfo) *v1.NetworkBaselineStatusPeer {
+	var entity *v1.NetworkBaselinePeerEntity
+	ingress := false
+
+	props := flow.GetProps()
+	src, dst := props.GetSrcEntity(), props.GetDstEntity()
+
+	if src.GetType() == storage.NetworkEntityInfo_DEPLOYMENT {
+		info := entitiesMap[dst.GetId()]
+		entity = &v1.NetworkBaselinePeerEntity{
+			Id:         dst.GetId(),
+			Type:       dst.GetType(),
+			Name:       info.GetExternalSource().GetName(),
+			Discovered: info.GetExternalSource().GetDiscovered(),
+		}
+	} else {
+		info := entitiesMap[src.GetId()]
+		entity = &v1.NetworkBaselinePeerEntity{
+			Id:         src.GetId(),
+			Type:       src.GetType(),
+			Name:       info.GetExternalSource().GetName(),
+			Discovered: info.GetExternalSource().GetDiscovered(),
+		}
+		ingress = true
+	}
+
+	return &v1.NetworkBaselineStatusPeer{
+		Entity:   entity,
+		Port:     props.GetDstPort(),
+		Protocol: props.GetL4Protocol(),
+		Ingress:  ingress,
+	}
 }
 
 func (m *manager) getEntitiesByQuery(ctx context.Context, clusterId, query string) ([]*storage.NetworkEntity, error) {
