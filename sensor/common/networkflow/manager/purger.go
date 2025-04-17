@@ -46,8 +46,15 @@ type NetworkFlowPurger struct {
 	stopper concurrency.Stopper
 	// purgingDone is signaled on each finished purging action
 	purgingDone concurrency.Signal
+
+	common.SensorComponent
 }
 
+// NewNetworkFlowPurger implements Sensor Component and is tightly bound to the networkFlowManager.
+// It can start in any order with relation to the networkFlowManager. The binding of networkFlowManager and the purger
+// is done by using the `WithPurger` option when constructing the manager: `manager.NewManager(..., manager.WithPurger(purger))`.
+// The purger is designed to always consume the messages from `purgerTickerC` - even if the binding to networkFlowManager
+// fails or the purger is explicitly disabled using env var.
 func NewNetworkFlowPurger(clusterEntities EntityStore, maxAge time.Duration, opts ...PurgerOption) *NetworkFlowPurger {
 	purgerTicker := time.NewTicker(nonZeroPurgerCycle())
 	defer purgerTicker.Stop()
