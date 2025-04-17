@@ -103,6 +103,21 @@ func (mr *MockStoreMockRecorder) Get(ctx, id any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockStore)(nil).Get), ctx, id)
 }
 
+// GetByIDs mocks base method.
+func (m *MockStore) GetByIDs(ctx context.Context, ids []string) ([]*storage.ProcessIndicator, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetByIDs", ctx, ids)
+	ret0, _ := ret[0].([]*storage.ProcessIndicator)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetByIDs indicates an expected call of GetByIDs.
+func (mr *MockStoreMockRecorder) GetByIDs(ctx, ids any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByIDs", reflect.TypeOf((*MockStore)(nil).GetByIDs), ctx, ids)
+}
+
 // GetByQuery mocks base method.
 func (m *MockStore) GetByQuery(ctx context.Context, q *v1.Query) ([]*storage.ProcessIndicator, error) {
 	m.ctrl.T.Helper()
@@ -116,22 +131,6 @@ func (m *MockStore) GetByQuery(ctx context.Context, q *v1.Query) ([]*storage.Pro
 func (mr *MockStoreMockRecorder) GetByQuery(ctx, q any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByQuery", reflect.TypeOf((*MockStore)(nil).GetByQuery), ctx, q)
-}
-
-// GetMany mocks base method.
-func (m *MockStore) GetMany(ctx context.Context, ids []string) ([]*storage.ProcessIndicator, []int, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetMany", ctx, ids)
-	ret0, _ := ret[0].([]*storage.ProcessIndicator)
-	ret1, _ := ret[1].([]int)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
-}
-
-// GetMany indicates an expected call of GetMany.
-func (mr *MockStoreMockRecorder) GetMany(ctx, ids any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMany", reflect.TypeOf((*MockStore)(nil).GetMany), ctx, ids)
 }
 
 // Search mocks base method.

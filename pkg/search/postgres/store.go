@@ -261,7 +261,7 @@ func (s *genericStore[T, PT]) GetIDsByQuery(ctx context.Context, query *v1.Query
 
 // GetByIDs returns the objects specified by the IDs from the store as well as the index in the missing indices slice.
 func (s *genericStore[T, PT]) GetByIDs(ctx context.Context, identifiers []string) ([]PT, error) {
-	defer s.setPostgresOperationDurationTime(time.Now(), ops.GetByQuery)
+	defer s.setPostgresOperationDurationTime(time.Now(), ops.GetMany)
 
 	if len(identifiers) == 0 {
 		return nil, nil
