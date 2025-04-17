@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stretchr/testify/suite"
@@ -17,6 +18,28 @@ func TestNetworkFlowPurger(t *testing.T) {
 
 type NetworkFlowPurgerTestSuite struct {
 	suite.Suite
+}
+
+func (s *NetworkFlowPurgerTestSuite) TestDisabledPurger() {
+	purgerTickerC := make(chan time.Time)
+	defer close(purgerTickerC)
+	mockCtrl := gomock.NewController(s.T())
+	enrichTickerC := make(chan time.Time)
+	defer close(enrichTickerC)
+	defer mockCtrl.Finish()
+	s.T().Setenv(env.EnrichmentPurgerTickerCycle.EnvVar(), "0s")
+
+	m, mockEntityStore, _, _ := createManager(mockCtrl, enrichTickerC)
+	purger := NewNetworkFlowPurger(mockEntityStore, time.Hour, WithPurgerTicker(purgerTickerC))
+	purger.manager = m
+
+	s.NoError(purger.Start())
+	// ticking should not block
+	purgerTickerC <- time.Now()
+	// purgingDone should be signaled even if the purger does nothing
+	s.Eventually(purger.purgingDone.IsDone, 500*time.Millisecond, 100*time.Millisecond)
+
+	purger.Stop(nil)
 }
 
 func (s *NetworkFlowPurgerTestSuite) TestPurgerWithoutManager() {
@@ -35,6 +58,7 @@ func (s *NetworkFlowPurgerTestSuite) TestPurgerWithoutManager() {
 	purgerTickerC <- time.Now()
 	// purgingDone should be signaled even if the purger does nothing
 	s.Eventually(purger.purgingDone.IsDone, 500*time.Millisecond, 100*time.Millisecond)
+	purger.Stop(nil)
 }
 
 func (s *NetworkFlowPurgerTestSuite) TestPurgerWithManager() {
@@ -87,6 +111,7 @@ func (s *NetworkFlowPurgerTestSuite) TestPurgerWithManager() {
 			// wait until purger is done
 			s.Require().Eventually(purger.purgingDone.IsDone, 2*time.Second, 500*time.Millisecond)
 			s.Equal(tc.expectedNumEndpoints, len(m.connectionsByHost[hostname].endpoints))
+			purger.Stop(nil)
 		})
 	}
 

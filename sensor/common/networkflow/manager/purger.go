@@ -48,6 +48,25 @@ type NetworkFlowPurger struct {
 	purgingDone concurrency.Signal
 }
 
+func NewNetworkFlowPurger(clusterEntities EntityStore, maxAge time.Duration, opts ...PurgerOption) *NetworkFlowPurger {
+	purgerTicker := time.NewTicker(nonZeroPurgerCycle())
+	defer purgerTicker.Stop()
+
+	p := &NetworkFlowPurger{
+		clusterEntities: clusterEntities,
+		manager:         nil,
+		purgerTicker:    purgerTicker,
+		purgerTickerC:   purgerTicker.C,
+		maxAge:          maxAge,
+		stopper:         concurrency.NewStopper(),
+		purgingDone:     concurrency.NewSignal(),
+	}
+	for _, o := range opts {
+		o(p)
+	}
+	return p
+}
+
 func (p *NetworkFlowPurger) Start() error {
 	var err error
 	if p.manager == nil {
@@ -72,7 +91,7 @@ func (p *NetworkFlowPurger) Capabilities() []centralsensor.SensorCapability {
 	return []centralsensor.SensorCapability{}
 }
 
-func (p *NetworkFlowPurger) ProcessMessage(msg *central.MsgToSensor) error {
+func (p *NetworkFlowPurger) ProcessMessage(_ *central.MsgToSensor) error {
 	return nil
 }
 
@@ -85,25 +104,6 @@ func nonZeroPurgerCycle() time.Duration {
 		return purgerCycleSetting
 	}
 	return time.Hour
-}
-
-func NewNetworkFlowPurger(clusterEntities EntityStore, maxAge time.Duration, opts ...PurgerOption) *NetworkFlowPurger {
-	purgerTicker := time.NewTicker(nonZeroPurgerCycle())
-	defer purgerTicker.Stop()
-
-	p := &NetworkFlowPurger{
-		clusterEntities: clusterEntities,
-		manager:         nil,
-		purgerTicker:    purgerTicker,
-		purgerTickerC:   purgerTicker.C,
-		maxAge:          maxAge,
-		stopper:         concurrency.NewStopper(),
-		purgingDone:     concurrency.NewSignal(),
-	}
-	for _, o := range opts {
-		o(p)
-	}
-	return p
 }
 
 func (p *NetworkFlowPurger) Notify(e common.SensorComponentEvent) {
@@ -120,34 +120,39 @@ func (p *NetworkFlowPurger) Notify(e common.SensorComponentEvent) {
 }
 
 func (p *NetworkFlowPurger) start() {
-	if env.EnrichmentPurgerTickerCycle.DurationSetting() == 0 {
-		return
-	}
+	defer p.stopper.Flow().ReportStopped()
 	for {
 		select {
 		case <-p.stopper.Flow().StopRequested():
 			return
-		case _, ok := <-p.purgerTickerC:
+		case _, chanOpen := <-p.purgerTickerC:
 			p.purgingDone.Reset()
-			if !ok {
-				// Do not execute potentially-expensive purger rules when ticker channel is closed.
-				continue
+			// Do not execute potentially-expensive purger rules when ticker channel is closed.
+			if chanOpen {
+				p.runPurger()
 			}
-			if p.manager == nil {
-				log.Warn("Programmer error: network flow purger is not bound to a network flow manager. Not purging.")
-				p.purgingDone.Signal()
-				continue
-			}
-			numPurgedActiveEp := purgeActiveEndpoints(&p.manager.activeEndpointsMutex, p.maxAge, p.manager.activeEndpoints, p.clusterEntities)
-			numPurgedActiveConn := purgeActiveConnections(&p.manager.activeConnectionsMutex, p.maxAge, p.manager.activeConnections, p.clusterEntities)
-			numPurgedHostEp, numPurgedHostConn := purgeHostConns(&p.manager.connectionsByHostMutex, p.maxAge, p.manager.connectionsByHost, p.clusterEntities)
-			log.Debugf("Purger deleted: "+
-				"%d active endpoints, %d active connections, "+
-				"%d host endpoints, %d host connections",
-				numPurgedActiveEp, numPurgedActiveConn, numPurgedHostEp, numPurgedHostConn)
+			p.purgingDone.Signal()
 		}
-		p.purgingDone.Signal()
 	}
+}
+
+func (p *NetworkFlowPurger) runPurger() {
+	if env.EnrichmentPurgerTickerCycle.DurationSetting() == 0 {
+		// purger is disabled, but we still want to consume the messages from purgerTickerC
+		return
+	}
+	if p.manager == nil {
+		log.Warn("Programmer error: network flow purger is not bound to a network flow manager. Not purging.")
+		p.purgingDone.Signal()
+		return
+	}
+	numPurgedActiveEp := purgeActiveEndpoints(&p.manager.activeEndpointsMutex, p.maxAge, p.manager.activeEndpoints, p.clusterEntities)
+	numPurgedActiveConn := purgeActiveConnections(&p.manager.activeConnectionsMutex, p.maxAge, p.manager.activeConnections, p.clusterEntities)
+	numPurgedHostEp, numPurgedHostConn := purgeHostConns(&p.manager.connectionsByHostMutex, p.maxAge, p.manager.connectionsByHost, p.clusterEntities)
+	log.Debugf("Purger deleted: "+
+		"%d active endpoints, %d active connections, "+
+		"%d host endpoints, %d host connections",
+		numPurgedActiveEp, numPurgedActiveConn, numPurgedHostEp, numPurgedHostConn)
 }
 
 func purgeHostConns(mutex *sync.Mutex, maxAge time.Duration, enrichmentQueue map[string]*hostConnections, store EntityStore) (numPurgedEps, numPurgedConns int) {
