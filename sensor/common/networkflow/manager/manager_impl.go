@@ -76,7 +76,7 @@ type hostConnections struct {
 }
 
 type connStatus struct {
-	// tsAdded is timestamp when this conn was added to the connectionsByHost structure
+	// tsAdded is timestamp when this connection was added to the connectionsByHost structure
 	tsAdded   timestamp.MicroTS
 	firstSeen timestamp.MicroTS
 	lastSeen  timestamp.MicroTS
@@ -84,7 +84,7 @@ type connStatus struct {
 	used bool
 	// usedProcess keeps track of if an endpoint has been used by the processes listening on
 	// ports path. If processes listening on ports is used, both must be true to delete the
-	// endpoint. Otherwise the endpoint will not be available to process listening on ports
+	// endpoint. Otherwise, the endpoint will not be available to process listening on ports,
 	// and it won't report endpoints that it doesn't have access to.
 	usedProcess bool
 	// rotten implies we expected to correlate the flow with a container, but were unable to
@@ -284,11 +284,18 @@ func WithEnrichTicker(ticker <-chan time.Time) Option {
 	}
 }
 
-// WithPurgerTicker overrides the default enrichment ticker
-func WithPurgerTicker(ticker <-chan time.Time) Option {
+// WithPurger overrides the default enrichment ticker
+func WithPurger(purger *NetworkFlowPurger) Option {
 	return func(manager *networkFlowManager) {
-		if ticker != nil {
-			manager.purgerTickerC = ticker
+		if purger != nil {
+			purger.enrichmentQueue = manager.connectionsByHost
+			purger.enrichmentQueueMutex = &manager.connectionsByHostMutex
+
+			purger.activeConnections = manager.activeConnections
+			purger.activeConnectionsMutex = &manager.activeConnectionsMutex
+
+			purger.activeEndpoints = manager.activeEndpoints
+			purger.activeEndpointsMutex = &manager.activeEndpointsMutex
 		}
 	}
 }
@@ -302,7 +309,6 @@ func NewManager(
 	opts ...Option,
 ) Manager {
 	enricherTicker := time.NewTicker(enricherCycle)
-	purgerTicker := time.NewTicker(nonZeroPurgerCycle())
 
 	mgr := &networkFlowManager{
 		connectionsByHost: make(map[string]*hostConnections),
@@ -312,8 +318,6 @@ func NewManager(
 		policyDetector:    policyDetector,
 		enricherTicker:    enricherTicker,
 		enricherTickerC:   enricherTicker.C,
-		purgerTicker:      purgerTicker,
-		purgerTickerC:     purgerTicker.C,
 		initialSync:       &atomic.Bool{},
 		activeConnections: make(map[connection]*networkConnIndicatorWithAge),
 		activeEndpoints:   make(map[containerEndpoint]*containerEndpointIndicatorWithAge),
@@ -322,7 +326,6 @@ func NewManager(
 	}
 
 	enricherTicker.Stop()
-	purgerTicker.Stop()
 	if features.SensorCapturesIntermediateEvents.Enabled() {
 		mgr.sensorUpdates = make(chan *message.ExpiringMessage, queue.ScaleSizeOnNonDefault(env.NetworkFlowBufferSize))
 	} else {
@@ -377,8 +380,6 @@ type networkFlowManager struct {
 
 	enricherTicker  *time.Ticker
 	enricherTickerC <-chan time.Time
-	purgerTicker    *time.Ticker
-	purgerTickerC   <-chan time.Time
 
 	publicIPs *publicIPsManager
 
@@ -394,7 +395,6 @@ func (m *networkFlowManager) ProcessMessage(_ *central.MsgToSensor) error {
 
 func (m *networkFlowManager) Start() error {
 	go m.enrichConnections(m.enricherTickerC)
-	go m.startPurger(m.purgerTickerC, env.EnrichmentPurgerTickerMaxAge.DurationSetting())
 	go m.publicIPs.Run(m.stopper.LowLevel().GetStopRequestSignal(), m.clusterEntities)
 	return nil
 }
@@ -413,7 +413,7 @@ func (m *networkFlowManager) Capabilities() []centralsensor.SensorCapability {
 }
 
 func (m *networkFlowManager) Notify(e common.SensorComponentEvent) {
-	log.Info(common.LogSensorComponentEvent(e))
+	log.Info(common.LogSensorComponentEvent(e, "NetworkFlowManager"))
 	switch e {
 	case common.SensorComponentEventResourceSyncFinished:
 		if features.SensorCapturesIntermediateEvents.Enabled() {
@@ -434,7 +434,6 @@ func (m *networkFlowManager) Notify(e common.SensorComponentEvent) {
 		m.centralReady.Reset()
 		m.enricherTicker.Stop()
 	}
-	m.notifyPurger(e)
 }
 
 func (m *networkFlowManager) ResponsesC() <-chan *message.ExpiringMessage {
@@ -1278,7 +1277,7 @@ func (m *networkFlowManager) UnregisterCollector(hostname string, sequenceID int
 	conns.mutex.Lock()
 	defer conns.mutex.Unlock()
 	if conns.currentSequenceID != sequenceID {
-		// Skip deletion if there has been a more recent Register call than the corresponding Unregister call
+		// Skip deletion if there has been a more recent `Register` call than the corresponding `Unregister` call
 		return
 	}
 
