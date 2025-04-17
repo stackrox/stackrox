@@ -52,10 +52,13 @@ fi
 git switch --create "$UPDATE_BRANCH"
 
 # Comments at the start of the file, and then the sorted list of release versions.
+tmpfile=$(mktemp)
+grep '^#' "$CONFIG_FILE" > "$tmpfile"
 {
-  grep '^#' "$CONFIG_FILE"
-  echo "$VERSION" | cat "$CONFIG_FILE" - | grep -v '^#' | sort -V
-} >> "${CONFIG_FILE}"
+  echo "$VERSION"
+  grep -v '^#' "$CONFIG_FILE"
+} | sort -V >> "$tmpfile"
+mv "${tmpfile}" "${CONFIG_FILE}"
 
 git diff "${CONFIG_FILE}"
 git add "${CONFIG_FILE}"
