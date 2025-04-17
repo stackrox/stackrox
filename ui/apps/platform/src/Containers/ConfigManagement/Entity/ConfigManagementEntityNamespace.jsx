@@ -11,8 +11,6 @@ import RelatedEntity from 'Components/RelatedEntity';
 import Metadata from 'Components/Metadata';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
-import entityTypes from 'constants/entityTypes';
-import useCases from 'constants/useCaseTypes';
 import DeploymentsWithFailedPolicies from 'Containers/ConfigManagement/Entity/widgets/DeploymentsWithFailedPolicies';
 import searchContext from 'Containers/searchContext';
 import { getConfigMgmtCountQuery } from 'Containers/ConfigManagement/ConfigMgmt.utils';
@@ -21,7 +19,14 @@ import isGQLLoading from 'utils/gqlLoading';
 import queryService from 'utils/queryService';
 import EntityList from '../List/EntityList';
 
-const Namespace = ({ id, entityListType, entityId1, query, entityContext, pagination }) => {
+const ConfigManagementEntityNamespace = ({
+    id,
+    entityListType,
+    entityId1,
+    query,
+    entityContext,
+    pagination,
+}) => {
     const searchParam = useContext(searchContext);
 
     const variables = {
@@ -65,9 +70,9 @@ const Namespace = ({ id, entityListType, entityId1, query, entityContext, pagina
             return defaultQuery;
         }
         const { listFieldName, fragmentName, fragment } = queryService.getFragmentInfo(
-            entityTypes.NAMESPACE,
+            'NAMESPACE',
             entityListType,
-            useCases.CONFIG_MANAGEMENT
+            'configmanagement'
         );
         const countQuery = getConfigMgmtCountQuery(entityListType);
 
@@ -93,12 +98,7 @@ const Namespace = ({ id, entityListType, entityId1, query, entityContext, pagina
                 }
                 const { namespace } = data;
                 if (!namespace) {
-                    return (
-                        <PageNotFound
-                            resourceType={entityTypes.NAMESPACE}
-                            useCase={useCases.CONFIG_MANAGEMENT}
-                        />
-                    );
+                    return <PageNotFound resourceType="NAMESPACE" useCase="configmanagement" />;
                 }
 
                 if (entityListType) {
@@ -108,7 +108,7 @@ const Namespace = ({ id, entityListType, entityId1, query, entityContext, pagina
                             entityId={entityId1}
                             data={getSubListFromEntity(namespace, entityListType)}
                             totalResults={data?.namespace?.count}
-                            entityContext={{ ...entityContext, [entityTypes.NAMESPACE]: id }}
+                            entityContext={{ ...entityContext, NAMESPACE: id }}
                         />
                     );
                 }
@@ -144,7 +144,7 @@ const Namespace = ({ id, entityListType, entityId1, query, entityContext, pagina
                                 {cluster && (
                                     <RelatedEntity
                                         className="mx-4 min-w-48 min-h-48 mb-4"
-                                        entityType={entityTypes.CLUSTER}
+                                        entityType="CLUSTER"
                                         name="Cluster"
                                         value={cluster.name}
                                         entityId={cluster.id}
@@ -154,31 +154,31 @@ const Namespace = ({ id, entityListType, entityId1, query, entityContext, pagina
                                     className="mx-4 min-w-48 min-h-48 mb-4"
                                     name="Deployments"
                                     value={deploymentCount}
-                                    entityType={entityTypes.DEPLOYMENT}
+                                    entityType="DEPLOYMENT"
                                 />
                                 <RelatedEntityListCount
                                     className="mx-4 min-w-48 min-h-48 mb-4"
                                     name="Secrets"
                                     value={secretCount}
-                                    entityType={entityTypes.SECRET}
+                                    entityType="SECRET"
                                 />
                                 <RelatedEntityListCount
                                     className="mx-4 min-w-48 min-h-48 mb-4"
                                     name="Images"
                                     value={imageCount}
-                                    entityType={entityTypes.IMAGE}
+                                    entityType="IMAGE"
                                 />
                                 <RelatedEntityListCount
                                     className="mx-4 min-w-48 min-h-48 mb-4"
                                     name="Service Accounts"
                                     value={serviceAccountCount}
-                                    entityType={entityTypes.SERVICE_ACCOUNT}
+                                    entityType="SERVICE_ACCOUNT"
                                 />
                                 <RelatedEntityListCount
                                     className="mx-4 min-w-48 min-h-48 mb-4"
                                     name="Roles"
                                     value={k8sRoleCount}
-                                    entityType={entityTypes.ROLE}
+                                    entityType="ROLE"
                                 />
                             </div>
                         </CollapsibleSection>
@@ -192,7 +192,7 @@ const Namespace = ({ id, entityListType, entityId1, query, entityContext, pagina
                                     message="No deployments violating policies in this namespace"
                                     entityContext={{
                                         ...entityContext,
-                                        [entityTypes.NAMESPACE]: id,
+                                        NAMESPACE: id,
                                     }}
                                 />
                             </div>
@@ -203,7 +203,7 @@ const Namespace = ({ id, entityListType, entityId1, query, entityContext, pagina
         </Query>
     );
 };
-Namespace.propTypes = entityComponentPropTypes;
-Namespace.defaultProps = entityComponentDefaultProps;
+ConfigManagementEntityNamespace.propTypes = entityComponentPropTypes;
+ConfigManagementEntityNamespace.defaultProps = entityComponentDefaultProps;
 
-export default Namespace;
+export default ConfigManagementEntityNamespace;

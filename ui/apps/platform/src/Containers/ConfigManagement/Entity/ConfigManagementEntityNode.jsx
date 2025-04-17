@@ -3,8 +3,6 @@ import { gql } from '@apollo/client';
 import { format } from 'date-fns';
 
 import dateTimeFormat from 'constants/dateTimeFormat';
-import entityTypes from 'constants/entityTypes';
-import useCases from 'constants/useCaseTypes';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
@@ -25,7 +23,14 @@ import queryService from 'utils/queryService';
 import getControlsWithStatus from '../List/utilities/getControlsWithStatus';
 import EntityList from '../List/EntityList';
 
-const Node = ({ id, entityListType, entityId1, query, entityContext, pagination }) => {
+const ConfigManagementEntityNode = ({
+    id,
+    entityListType,
+    entityId1,
+    query,
+    entityContext,
+    pagination,
+}) => {
     const searchParam = useContext(searchContext);
 
     const queryObject = { ...query[searchParam] };
@@ -76,12 +81,7 @@ const Node = ({ id, entityListType, entityId1, query, entityContext, pagination 
                     return <Loader />;
                 }
                 if (!data || !data.node) {
-                    return (
-                        <PageNotFound
-                            resourceType={entityTypes.NODE}
-                            useCase={useCases.CONFIG_MANAGEMENT}
-                        />
-                    );
+                    return <PageNotFound resourceType="NODE" useCase="configmanagement" />;
                 }
                 const { node } = data;
 
@@ -128,7 +128,7 @@ const Node = ({ id, entityListType, entityId1, query, entityContext, pagination 
                             entityId={entityId1}
                             data={getControlsWithStatus(complianceResults)}
                             query={query}
-                            entityContext={{ ...entityContext, [entityTypes.NODE]: id }}
+                            entityContext={{ ...entityContext, NODE: id }}
                         />
                     );
                 }
@@ -178,7 +178,7 @@ const Node = ({ id, entityListType, entityId1, query, entityContext, pagination 
                                     <RelatedEntity
                                         className="mx-4 min-w-48 min-h-48 mb-4"
                                         name="Cluster"
-                                        entityType={entityTypes.CLUSTER}
+                                        entityType="CLUSTER"
                                         value={clusterName}
                                         entityId={clusterId}
                                     />
@@ -187,11 +187,11 @@ const Node = ({ id, entityListType, entityId1, query, entityContext, pagination 
                                     className="mx-4 min-w-48 min-h-48 mb-4"
                                     name="CIS Controls"
                                     value={complianceResults.length}
-                                    entityType={entityTypes.CONTROL}
+                                    entityType="CONTROL"
                                 />
                             </div>
                         </CollapsibleSection>
-                        {!(entityContext && entityContext[entityTypes.CONTROL]) && (
+                        {!(entityContext && entityContext.CONTROL) && (
                             <CollapsibleSection title="Node Findings">
                                 <div className="flex pdf-page pdf-stretch shadow relative rounded bg-base-100 mb-4 ml-4 mr-4">
                                     {failedComplianceResults.length === 0 && (
@@ -203,7 +203,7 @@ const Node = ({ id, entityListType, entityId1, query, entityContext, pagination 
                                     )}
                                     {failedComplianceResults.length > 0 && (
                                         <TableWidget
-                                            entityType={entityTypes.CONTROL}
+                                            entityType="CONTROL"
                                             header={`${failedComplianceResults.length} controls failed across this node`}
                                             rows={failedComplianceResults}
                                             noDataText="No Controls"
@@ -232,7 +232,7 @@ const Node = ({ id, entityListType, entityId1, query, entityContext, pagination 
     );
 };
 
-Node.propTypes = entityComponentPropTypes;
-Node.defaultProps = entityComponentDefaultProps;
+ConfigManagementEntityNode.propTypes = entityComponentPropTypes;
+ConfigManagementEntityNode.defaultProps = entityComponentDefaultProps;
 
-export default Node;
+export default ConfigManagementEntityNode;

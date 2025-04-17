@@ -11,7 +11,6 @@ import {
 } from 'Components/Table';
 import TableCellLink from 'Components/TableCellLink';
 import dateTimeFormat from 'constants/dateTimeFormat';
-import entityTypes from 'constants/entityTypes';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
 import useWorkflowMatch from 'hooks/useWorkflowMatch';
 import { SECRETS_QUERY } from 'queries/secret';
@@ -97,7 +96,7 @@ const buildTableColumns = (match, location, entityContext) => {
             },
             sortable: false,
         },
-        entityContext && entityContext[entityTypes.CLUSTER]
+        entityContext && entityContext.CLUSTER
             ? null
             : {
                   Header: `Cluster`,
@@ -108,7 +107,7 @@ const buildTableColumns = (match, location, entityContext) => {
                       const { clusterName, clusterId, id } = original;
                       const url = URLService.getURL(match, location)
                           .push(id)
-                          .push(entityTypes.CLUSTER, clusterId)
+                          .push('CLUSTER', clusterId)
                           .url();
                       return (
                           <TableCellLink pdf={pdf} url={url}>
@@ -129,10 +128,7 @@ const buildTableColumns = (match, location, entityContext) => {
                 if (!deploymentCount) {
                     return 'No Deployments';
                 }
-                const url = URLService.getURL(match, location)
-                    .push(id)
-                    .push(entityTypes.DEPLOYMENT)
-                    .url();
+                const url = URLService.getURL(match, location).push(id).push('DEPLOYMENT').url();
                 const text = `${deploymentCount} ${pluralize('Deployment', deploymentCount)}`;
                 return (
                     <TableCellLink pdf={pdf} url={url}>
@@ -150,7 +146,7 @@ const createTableRows = (data) => {
     return data.secrets;
 };
 
-const Secrets = ({
+const ConfigManagementListSecrets = ({
     className,
     selectedRowId,
     onRowClick,
@@ -170,7 +166,7 @@ const Secrets = ({
             className={className}
             query={SECRETS_QUERY}
             variables={variables}
-            entityType={entityTypes.SECRET}
+            entityType="SECRET"
             tableColumns={tableColumns}
             createTableRows={createTableRows}
             onRowClick={onRowClick}
@@ -183,7 +179,7 @@ const Secrets = ({
         />
     );
 };
-Secrets.propTypes = entityListPropTypes;
-Secrets.defaultProps = entityListDefaultprops;
+ConfigManagementListSecrets.propTypes = entityListPropTypes;
+ConfigManagementListSecrets.defaultProps = entityListDefaultprops;
 
-export default Secrets;
+export default ConfigManagementListSecrets;
