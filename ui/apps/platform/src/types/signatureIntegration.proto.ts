@@ -3,7 +3,7 @@ export type SignatureIntegration = {
     name: string;
     cosign: CosignPublicKeyVerification;
     cosignCertificates: CosignCertificateVerification[];
-    transparencyLog: TransparencyLogVerification;
+    transparencyLog: TransparencyLogVerification | null;
 };
 
 export type CosignPublicKeyVerification = {
@@ -15,7 +15,7 @@ export type CosignCertificateVerification = {
     certificatePemEnc: string;
     certificateOidcIssuer: string;
     certificateIdentity: string;
-    certificateTransparencyLog: CertificateTransparencyLogVerification;
+    certificateTransparencyLog: CertificateTransparencyLogVerification | null;
 };
 
 export type CertificateTransparencyLogVerification = {
