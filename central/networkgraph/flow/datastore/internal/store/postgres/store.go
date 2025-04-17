@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/pkg/utils"
@@ -704,34 +705,29 @@ func (s *flowStoreImpl) RemoveOrphanedFlows(ctx context.Context, orphanWindow *t
 }
 
 func (s *flowStoreImpl) pruneOrphanExternalEntities(ctx context.Context, srcFlows []*storage.NetworkFlow, dstFlows []*storage.NetworkFlow) error {
+	entityIdSet := set.NewStringSet()
+
 	// srcFlows contains flows where src is the deployment,
 	// so prune external flows based on the dst entity
-	if len(srcFlows) != 0 {
-		err := utils.BatchProcess(srcFlows, orphanedEntitiesPruningBatchSize, func(flows []*storage.NetworkFlow) error {
-			entities := make([]string, 0, len(flows))
-			for _, flow := range flows {
-				entities = append(entities, flow.GetProps().GetDstEntity().GetId())
-			}
-
-			pruneStmt := fmt.Sprintf(pruneOrphanExternalNetworkEntitiesStmt, s.partitionName)
-			return s.pruneEntities(ctx, pruneStmt, entities)
-		})
-		if err != nil {
-			return err
-		}
+	for _, flow := range srcFlows {
+		entityIdSet.Add(flow.GetProps().GetDstEntity().GetId())
 	}
 
 	// dstFlows contains flows where dst is the deployment,
 	// so prune external flows based on the src entity
-	if len(dstFlows) != 0 {
-		err := utils.BatchProcess(dstFlows, orphanedEntitiesPruningBatchSize, func(flows []*storage.NetworkFlow) error {
-			entities := make([]string, 0, len(flows))
-			for _, flow := range flows {
-				entities = append(entities, flow.GetProps().GetSrcEntity().GetId())
-			}
+	for _, flow := range dstFlows {
+		entityIdSet.Add(flow.GetProps().GetSrcEntity().GetId())
+	}
 
+	entityIds := make([]string, 0, len(entityIdSet))
+	for entityId := range entityIdSet {
+		entityIds = append(entityIds, entityId)
+	}
+
+	if len(entityIds) != 0 {
+		err := utils.BatchProcess(entityIds, orphanedEntitiesPruningBatchSize, func(entityIds []string) error {
 			pruneStmt := fmt.Sprintf(pruneOrphanExternalNetworkEntitiesStmt, s.partitionName)
-			return s.pruneEntities(ctx, pruneStmt, entities)
+			return s.pruneEntities(ctx, pruneStmt, entityIds)
 		})
 		if err != nil {
 			return err
