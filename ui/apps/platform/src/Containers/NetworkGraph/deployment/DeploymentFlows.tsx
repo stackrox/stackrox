@@ -9,38 +9,31 @@ import { EdgeState } from '../components/EdgeStateSelect';
 import { Flow } from '../types/flow.type';
 import InternalFlows from './InternalFlows';
 import ExternalFlows from './ExternalFlows';
-import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
 
 export type DeploymentFlowsView = 'external-flows' | 'internal-flows';
 
 type DeploymentFlowsProps = {
     deploymentId: string;
-    deploymentName: string;
     nodes: CustomNodeModel[];
     edgeState: EdgeState;
     onNodeSelect: (id: string) => void;
-    onExternalIPSelect: (externalIP: string) => void;
     isLoadingNetworkFlows: boolean;
     networkFlowsError: string;
     networkFlows: Flow[];
     refetchFlows: () => void;
-    scopeHierarchy: NetworkScopeHierarchy;
     urlPagination: UseURLPaginationResult;
     urlSearchFiltering: UseUrlSearchReturn;
 };
 
 function DeploymentFlows({
     deploymentId,
-    deploymentName,
     nodes,
     edgeState,
     onNodeSelect,
-    onExternalIPSelect,
     isLoadingNetworkFlows,
     networkFlowsError,
     networkFlows,
     refetchFlows,
-    scopeHierarchy,
     urlPagination,
     urlSearchFiltering,
 }: DeploymentFlowsProps) {
@@ -107,13 +100,7 @@ function DeploymentFlows({
                                 refetchFlows={refetchFlows}
                             />
                         ) : (
-                            <ExternalFlows
-                                deploymentName={deploymentName}
-                                scopeHierarchy={scopeHierarchy}
-                                onExternalIPSelect={onExternalIPSelect}
-                                urlPagination={urlPagination}
-                                urlSearchFiltering={urlSearchFiltering}
-                            />
+                            <ExternalFlows deploymentId={deploymentId} />
                         )}
                     </Stack>
                 </StackItem>
