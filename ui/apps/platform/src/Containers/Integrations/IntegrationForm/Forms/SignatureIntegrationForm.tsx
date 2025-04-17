@@ -103,43 +103,9 @@ const defaultValuesOfCosignPublicKeys: CosignPublicKey = {
     publicKeyPemEnc: '',
 };
 
-const VerificationExpandableSection = ({ toggleText, children }): ReactElement => {
-    const [isExpanded, setIsExpanded] = useState(false);
-
-    function onToggle() {
-        setIsExpanded(!isExpanded);
-    }
-
-    return (
-        <ExpandableSection
-            toggleText={toggleText}
-            onToggle={onToggle}
-            isExpanded={isExpanded}
-            isIndented
-        >
-            {children}
-        </ExpandableSection>
-    );
-};
-
-const TransparencyLogExpandableSection = ({ toggleText, children }): ReactElement => {
-    const [isExpanded, setIsExpanded] = useState(true);
-
-    function onToggle() {
-        setIsExpanded(!isExpanded);
-    }
-
-    return (
-        <ExpandableSection
-            toggleText={toggleText}
-            onToggle={onToggle}
-            isExpanded={isExpanded}
-            isIndented
-        >
-            {children}
-        </ExpandableSection>
-    );
-};
+function getKeyOfTextArea(hasBeenExpanded: boolean) {
+    return hasBeenExpanded ? 'hasBeenExpanded' : 'hasNotBeenExpanded';
+}
 
 function SignatureIntegrationForm({
     initialValues = null,
@@ -202,6 +168,29 @@ function SignatureIntegrationForm({
         setFieldValue(event.target.id, value);
     }
 
+    const [isExpandedPublicKeys, setIsExpandedPublicKeys] = useState(false);
+    const [hasBeenExpandedPublicKeys, setHasBeenExpandedPublicKeys] = useState(false);
+    const [isExpandedCosignCertificates, setIsExpandedCosignCertificates] = useState(false);
+    const [hasBeenExpandedCosignCertificates, setHasBeenExpandedCosignCertificates] =
+        useState(false);
+    const [isExpandedTransparencyLog, setIsExpandedTransparencyLog] = useState(true);
+
+    function onTogglePublicKeys(_: React.MouseEvent, isExpanded: boolean) {
+        setIsExpandedPublicKeys(isExpanded);
+        if (isExpanded) {
+            setHasBeenExpandedPublicKeys(isExpanded);
+        }
+    }
+    function onToggleCosignCertificates(_: React.MouseEvent, isExpanded: boolean) {
+        setIsExpandedCosignCertificates(isExpanded);
+        if (isExpanded) {
+            setHasBeenExpandedCosignCertificates(isExpanded);
+        }
+    }
+    function onToggleTransparencyLog(_: React.MouseEvent, isExpanded: boolean) {
+        setIsExpandedTransparencyLog(isExpanded);
+    }
+
     return (
         <>
             <PageSection variant="light" isFilled hasOverflowScroll>
@@ -261,7 +250,12 @@ function SignatureIntegrationForm({
                                 isDisabled={!isEditable}
                             />
                         </FormLabelGroup>
-                        <VerificationExpandableSection toggleText="Cosign public keys">
+                        <ExpandableSection
+                            toggleText="Cosign public keys"
+                            onToggle={onTogglePublicKeys}
+                            isExpanded={isExpandedPublicKeys}
+                            isIndented
+                        >
                             <FieldArray
                                 name="cosign.publicKeys"
                                 render={(arrayHelpers) => (
@@ -348,9 +342,9 @@ function SignatureIntegrationForm({
                                                                                 ].publicKeyPemEnc ||
                                                                                 ''
                                                                             }
-                                                                            style={{
-                                                                                minHeight: '100px',
-                                                                            }}
+                                                                            key={getKeyOfTextArea(
+                                                                                hasBeenExpandedPublicKeys
+                                                                            )}
                                                                             onChange={(
                                                                                 event,
                                                                                 value
@@ -410,8 +404,13 @@ function SignatureIntegrationForm({
                                     </>
                                 )}
                             />
-                        </VerificationExpandableSection>
-                        <VerificationExpandableSection toggleText="Cosign certificates">
+                        </ExpandableSection>
+                        <ExpandableSection
+                            toggleText="Cosign certificates"
+                            onToggle={onToggleCosignCertificates}
+                            isExpanded={isExpandedCosignCertificates}
+                            isIndented
+                        >
                             <FieldArray
                                 name="cosignCertificates"
                                 render={(arrayHelpers) => (
@@ -592,9 +591,9 @@ function SignatureIntegrationForm({
                                                                                     .certificateChainPemEnc ||
                                                                                 ''
                                                                             }
-                                                                            style={{
-                                                                                minHeight: '100px',
-                                                                            }}
+                                                                            key={getKeyOfTextArea(
+                                                                                hasBeenExpandedCosignCertificates
+                                                                            )}
                                                                             onChange={(
                                                                                 event,
                                                                                 value
@@ -659,9 +658,9 @@ function SignatureIntegrationForm({
                                                                                     .certificatePemEnc ||
                                                                                 ''
                                                                             }
-                                                                            style={{
-                                                                                minHeight: '100px',
-                                                                            }}
+                                                                            key={getKeyOfTextArea(
+                                                                                hasBeenExpandedCosignCertificates
+                                                                            )}
                                                                             onChange={(
                                                                                 event,
                                                                                 value
@@ -763,9 +762,9 @@ function SignatureIntegrationForm({
                                                                                     ?.certificateTransparencyLog
                                                                                     ?.publicKeyPemEnc
                                                                             }
-                                                                            style={{
-                                                                                minHeight: '100px',
-                                                                            }}
+                                                                            key={getKeyOfTextArea(
+                                                                                hasBeenExpandedCosignCertificates
+                                                                            )}
                                                                             onChange={(
                                                                                 event,
                                                                                 value
@@ -833,8 +832,13 @@ function SignatureIntegrationForm({
                                     </>
                                 )}
                             />
-                        </VerificationExpandableSection>
-                        <TransparencyLogExpandableSection toggleText="Transparency log">
+                        </ExpandableSection>
+                        <ExpandableSection
+                            toggleText="Transparency log"
+                            onToggle={onToggleTransparencyLog}
+                            isExpanded={isExpandedTransparencyLog}
+                            isIndented
+                        >
                             <Flex
                                 direction={{ default: 'column' }}
                                 grow={{ default: 'grow' }}
@@ -957,7 +961,6 @@ function SignatureIntegrationForm({
                                             type="text"
                                             id={'transparencyLog.publicKeyPemEnc'}
                                             value={values?.transparencyLog?.publicKeyPemEnc}
-                                            style={{ minHeight: '100px' }}
                                             onChange={(event, value) => onChange(value, event)}
                                             onBlur={handleBlur}
                                             isDisabled={
@@ -970,7 +973,7 @@ function SignatureIntegrationForm({
                                     </FormLabelGroup>
                                 </FlexItem>
                             </Flex>
-                        </TransparencyLogExpandableSection>
+                        </ExpandableSection>
                     </FormikProvider>
                 </Form>
             </PageSection>
