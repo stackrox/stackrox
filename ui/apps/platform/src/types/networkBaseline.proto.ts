@@ -43,3 +43,31 @@ export type NetworkBaseline = {
 
     deploymentName: string;
 };
+
+type NetworkBaselinePeerEntity = {
+    id: string;
+    type: number;
+    name: string;
+    discovered: boolean;
+};
+
+type NetworkBaselineStatusPeer = {
+    entity: NetworkBaselinePeerEntity;
+    port: number;
+    protocol: L4Protocol;
+    ingress: boolean;
+};
+
+type PeerStatus = 'BASELINE' | 'ANOMALOUS';
+
+type NetworkBaselinePeerStatus = {
+    peer: NetworkBaselineStatusPeer;
+    status: PeerStatus;
+};
+
+export type NetworkBaselineExternalStatusResponse = {
+    anomalous: NetworkBaselinePeerStatus[];
+    totalAnomalous: number;
+    baseline: NetworkBaselinePeerStatus[];
+    totalBaseline: number;
+};
