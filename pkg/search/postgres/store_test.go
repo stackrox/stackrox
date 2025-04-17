@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -385,6 +386,13 @@ func TestGetByQueryFn(t *testing.T) {
 	}
 	protoassert.ElementsMatch(t, objects, expectedObjectsAfter)
 
+	count := 0
+	err := store.GetByQueryFn(ctx, query, func(*storage.TestSingleKeyStruct) error {
+		count++
+		return errors.New("some error")
+	})
+	assert.EqualError(t, err, "processing rows: some error")
+	assert.Equal(t, 1, count)
 }
 
 func TestDeleteByQuery(t *testing.T) {
