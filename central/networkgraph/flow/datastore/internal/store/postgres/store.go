@@ -786,7 +786,8 @@ func (s *flowStoreImpl) pruneEntities(ctx context.Context, deleteStmt string, en
 	ctx, cancel := context.WithTimeout(ctx, deleteTimeout)
 	defer cancel()
 
-	if _, err := conn.Exec(ctx, deleteStmt, entityIds); err != nil {
+	_, err = conn.Exec(ctx, deleteStmt, entityIds)
+	if err != nil {
 		return err
 	}
 
