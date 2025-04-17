@@ -1,21 +1,102 @@
 package manager
 
 import (
+	"testing"
 	"time"
 
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
+	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
 
-func (s *NetworkFlowManagerTestSuite) TestPurgerHostConnsEndpoints() {
+func TestNetworkFlowPurger(t *testing.T) {
+	suite.Run(t, new(NetworkFlowPurgerTestSuite))
+}
+
+type NetworkFlowPurgerTestSuite struct {
+	suite.Suite
+}
+
+func (s *NetworkFlowPurgerTestSuite) TestPurgerWithoutManager() {
+	purgerTickerC := make(chan time.Time)
+	defer close(purgerTickerC)
+	mockCtrl := gomock.NewController(s.T())
+	enrichTickerC := make(chan time.Time)
+	defer close(enrichTickerC)
+	defer mockCtrl.Finish()
+	_, mockEntityStore, _, _ := createManager(mockCtrl, enrichTickerC)
+	purger := NewNetworkFlowPurger(mockEntityStore, time.Hour, WithPurgerTicker(purgerTickerC))
+	purger.manager = nil // explicitly simulate disconnected purger
+
+	s.Error(purger.Start())
+	// Trigger the purger - shall not block despite the manager is missing
+	purgerTickerC <- time.Now()
+	// purgingDone should be signaled even if the purger does nothing
+	s.Eventually(purger.purgingDone.IsDone, 500*time.Millisecond, 100*time.Millisecond)
+}
+
+func (s *NetworkFlowPurgerTestSuite) TestPurgerWithManager() {
+	purgerTickerC := make(chan time.Time)
+	defer close(purgerTickerC)
+
 	const hostname = "host"
 	mockCtrl := gomock.NewController(s.T())
 	enrichTickerC := make(chan time.Time)
-	purgerTickerC := make(chan time.Time)
 	defer close(enrichTickerC)
-	defer close(purgerTickerC)
+	defer mockCtrl.Finish()
+	cases := map[string]struct {
+		firstSeen            time.Duration
+		lastUpdateTime       time.Duration
+		purgerMaxAge         time.Duration
+		isKnownEndpoint      bool
+		expectedEndpoint     *containerEndpointIndicator
+		expectedNumEndpoints int
+	}{
+		"Endpoints-maxAge: should purge old endpoints": {
+			firstSeen:            2 * time.Hour,
+			lastUpdateTime:       2 * time.Hour,
+			purgerMaxAge:         time.Hour,
+			isKnownEndpoint:      true,
+			expectedNumEndpoints: 0,
+		},
+	}
+	for name, tc := range cases {
+		s.Run(name, func() {
+			now := time.Now()
+			lastUpdateTS := timestamp.FromGoTime(now.Add(-tc.lastUpdateTime))
+
+			m, mockEntityStore, _, _ := createManager(mockCtrl, enrichTickerC)
+			purger := NewNetworkFlowPurger(mockEntityStore, tc.purgerMaxAge, WithPurgerTicker(purgerTickerC))
+			purger.manager = m
+
+			expectationsEndpointPurger(mockEntityStore, tc.isKnownEndpoint, true, false)
+			ep := createEndpointPair(timestamp.FromGoTime(now.Add(-tc.firstSeen)), lastUpdateTS)
+			concurrency.WithLock(&m.connectionsByHostMutex, func() {
+				m.connectionsByHost[hostname] = &hostConnections{
+					hostname:    hostname,
+					connections: nil,
+					endpoints: map[containerEndpoint]*connStatus{
+						*ep.endpoint: ep.status,
+					},
+				}
+			})
+			s.Require().NoError(purger.Start())
+			purgerTickerC <- time.Now()
+			// wait until purger is done
+			s.Require().Eventually(purger.purgingDone.IsDone, 2*time.Second, 500*time.Millisecond)
+			s.Equal(tc.expectedNumEndpoints, len(m.connectionsByHost[hostname].endpoints))
+		})
+	}
+
+}
+
+func (s *NetworkFlowPurgerTestSuite) TestPurgerHostConnsEndpoints() {
+	const hostname = "host"
+	mockCtrl := gomock.NewController(s.T())
+	enrichTickerC := make(chan time.Time)
+	defer close(enrichTickerC)
 	defer mockCtrl.Finish()
 	id := "id"
 	_ = id
@@ -54,7 +135,7 @@ func (s *NetworkFlowManagerTestSuite) TestPurgerHostConnsEndpoints() {
 			now := time.Now()
 			lastUpdateTS := timestamp.FromGoTime(now.Add(-tc.lastUpdateTime))
 
-			m, mockEntityStore, _, _ := createManager(mockCtrl, enrichTickerC, purgerTickerC)
+			m, mockEntityStore, _, _ := createManager(mockCtrl, enrichTickerC)
 			expectationsEndpointPurger(mockEntityStore, tc.isKnownEndpoint, true, false)
 			ep := createEndpointPair(timestamp.FromGoTime(now.Add(-tc.firstSeen)), lastUpdateTS)
 			concurrency.WithLock(&m.connectionsByHostMutex, func() {
@@ -72,13 +153,11 @@ func (s *NetworkFlowManagerTestSuite) TestPurgerHostConnsEndpoints() {
 	}
 }
 
-func (s *NetworkFlowManagerTestSuite) TestPurgerHostConnsConnections() {
+func (s *NetworkFlowPurgerTestSuite) TestPurgerHostConnsConnections() {
 	const hostname = "host"
 	mockCtrl := gomock.NewController(s.T())
 	enrichTickerC := make(chan time.Time)
-	purgerTickerC := make(chan time.Time)
 	defer close(enrichTickerC)
-	defer close(purgerTickerC)
 	defer mockCtrl.Finish()
 	id := "id"
 	_ = id
@@ -125,7 +204,7 @@ func (s *NetworkFlowManagerTestSuite) TestPurgerHostConnsConnections() {
 			now := time.Now()
 			lastUpdateTS := timestamp.FromGoTime(now.Add(-tc.lastUpdateTime))
 
-			m, mockEntityStore, _, _ := createManager(mockCtrl, enrichTickerC, purgerTickerC)
+			m, mockEntityStore, _, _ := createManager(mockCtrl, enrichTickerC)
 			expectationsEndpointPurger(mockEntityStore, true, tc.foundContainerID, tc.containerIDHistorical)
 
 			pair := createConnectionPair().
@@ -140,12 +219,10 @@ func (s *NetworkFlowManagerTestSuite) TestPurgerHostConnsConnections() {
 	}
 }
 
-func (s *NetworkFlowManagerTestSuite) TestPurgerActiveConnections() {
+func (s *NetworkFlowPurgerTestSuite) TestPurgerActiveConnections() {
 	mockCtrl := gomock.NewController(s.T())
 	enrichTickerC := make(chan time.Time)
-	purgerTickerC := make(chan time.Time)
 	defer close(enrichTickerC)
-	defer close(purgerTickerC)
 	defer mockCtrl.Finish()
 	id := "id"
 	_ = id
@@ -192,7 +269,7 @@ func (s *NetworkFlowManagerTestSuite) TestPurgerActiveConnections() {
 			now := time.Now()
 			lastUpdateTS := timestamp.FromGoTime(now.Add(-tc.lastUpdateTime))
 
-			m, mockEntityStore, _, _ := createManager(mockCtrl, enrichTickerC, purgerTickerC)
+			m, mockEntityStore, _, _ := createManager(mockCtrl, enrichTickerC)
 			expectationsEndpointPurger(mockEntityStore, true, tc.foundContainerID, tc.containerIDHistorical)
 
 			pair := createConnectionPair().
@@ -209,12 +286,10 @@ func (s *NetworkFlowManagerTestSuite) TestPurgerActiveConnections() {
 	}
 }
 
-func (s *NetworkFlowManagerTestSuite) TestPurgerActiveEndpoints() {
+func (s *NetworkFlowPurgerTestSuite) TestPurgerActiveEndpoints() {
 	mockCtrl := gomock.NewController(s.T())
 	enrichTickerC := make(chan time.Time)
-	purgerTickerC := make(chan time.Time)
 	defer close(enrichTickerC)
-	defer close(purgerTickerC)
 	defer mockCtrl.Finish()
 	id := "id"
 	_ = id
@@ -274,7 +349,7 @@ func (s *NetworkFlowManagerTestSuite) TestPurgerActiveEndpoints() {
 			now := time.Now()
 			lastUpdateTS := timestamp.FromGoTime(now.Add(-tc.lastUpdateTime))
 
-			m, mockEntityStore, _, _ := createManager(mockCtrl, enrichTickerC, purgerTickerC)
+			m, mockEntityStore, _, _ := createManager(mockCtrl, enrichTickerC)
 			expectationsEndpointPurger(mockEntityStore, tc.isKnownEndpoint, tc.foundContainerID, tc.containerIDHistorical)
 
 			ep := createEndpointPair(timestamp.FromGoTime(now.Add(-tc.firstSeen)), lastUpdateTS)

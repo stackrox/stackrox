@@ -280,18 +280,13 @@ func WithEnrichTicker(ticker <-chan time.Time) Option {
 	}
 }
 
-// WithPurger overrides the default enrichment ticker
+// WithPurger binds the manager with the purger.
+// Note that `networkFlowManager` being unexported prevents us from implementing it the other way round:
+// `NewPurger(..., ForManager(manager))`.
 func WithPurger(purger *NetworkFlowPurger) Option {
 	return func(manager *networkFlowManager) {
 		if purger != nil {
-			purger.enrichmentQueue = manager.connectionsByHost
-			purger.enrichmentQueueMutex = &manager.connectionsByHostMutex
-
-			purger.activeConnections = manager.activeConnections
-			purger.activeConnectionsMutex = &manager.activeConnectionsMutex
-
-			purger.activeEndpoints = manager.activeEndpoints
-			purger.activeEndpointsMutex = &manager.activeEndpointsMutex
+			purger.manager = manager
 		}
 	}
 }

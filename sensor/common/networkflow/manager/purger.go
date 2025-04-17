@@ -36,49 +36,27 @@ func WithPurgerTicker(ticker <-chan time.Time) PurgerOption {
 }
 
 type NetworkFlowPurger struct {
-	// enrichmentQueue represents connectionsByHost in the network manager.
-	enrichmentQueue      map[string]*hostConnections
-	enrichmentQueueMutex *sync.Mutex
-
+	maxAge          time.Duration
 	clusterEntities EntityStore
-
-	activeConnectionsMutex *sync.Mutex
-	// activeConnections tracks all connections reported by Collector that are believed to be active.
-	// A connection is active until Collector sends a NetworkConnectionInfo message with `lastSeen` set to a non-nil value,
-	// or until Sensor decides that such message may never arrive and decides that a given connection is no longer active.
-	activeConnections    map[connection]*networkConnIndicatorWithAge
-	activeEndpointsMutex *sync.Mutex
-	// An endpoint is active until Collector sends a NetworkConnectionInfo message with `lastSeen` set to a non-nil value,
-	// or until Sensor decides that such message may never arrive and decides that a given endpoint is no longer active.
-	activeEndpoints map[containerEndpoint]*containerEndpointIndicatorWithAge
+	manager         *networkFlowManager
 
 	purgerTicker  *time.Ticker
 	purgerTickerC <-chan time.Time
 
 	stopper concurrency.Stopper
+	// purgingDone is signaled on each finished purging action
+	purgingDone concurrency.Signal
 }
 
 func (p *NetworkFlowPurger) Start() error {
-	if p.activeConnectionsMutex == nil {
-		return fmt.Errorf("cannot start network flow purger without active connections mutex")
+	var err error
+	if p.manager == nil {
+		err = fmt.Errorf("programmer error: network flow purger is not bound to a network flow manager")
 	}
-	if p.activeConnections == nil {
-		return fmt.Errorf("cannot start network flow purger without active connections")
-	}
-	if p.activeEndpointsMutex == nil {
-		return fmt.Errorf("cannot start network flow purger without active endpoints mutex")
-	}
-	if p.activeEndpoints == nil {
-		return fmt.Errorf("cannot start network flow purger without active endpoints")
-	}
-	if p.enrichmentQueueMutex == nil {
-		return fmt.Errorf("cannot start network flow purger without enrichment queue mutex")
-	}
-	if p.enrichmentQueue == nil {
-		return fmt.Errorf("cannot start network flow purger without enrichment queue")
-	}
-	go p.start(env.EnrichmentPurgerTickerMaxAge.DurationSetting())
-	return nil
+	// Allow starting the purger without a manager. This is done to prevent blocking of the entire component when
+	// `purgerTickerC` receives a message
+	go p.start()
+	return err
 }
 
 func (p *NetworkFlowPurger) Stop(_ error) {
@@ -109,22 +87,18 @@ func nonZeroPurgerCycle() time.Duration {
 	return time.Hour
 }
 
-func NewNetworkFlowPurger(clusterEntities EntityStore, opts ...PurgerOption) *NetworkFlowPurger {
+func NewNetworkFlowPurger(clusterEntities EntityStore, maxAge time.Duration, opts ...PurgerOption) *NetworkFlowPurger {
 	purgerTicker := time.NewTicker(nonZeroPurgerCycle())
 	defer purgerTicker.Stop()
 
 	p := &NetworkFlowPurger{
-		clusterEntities:        clusterEntities,
-		enrichmentQueue:        nil,
-		enrichmentQueueMutex:   &sync.Mutex{},
-		activeConnections:      nil,
-		activeConnectionsMutex: &sync.Mutex{},
-		activeEndpoints:        nil,
-		activeEndpointsMutex:   &sync.Mutex{},
-
-		purgerTicker:  purgerTicker,
-		purgerTickerC: purgerTicker.C,
-		stopper:       nil,
+		clusterEntities: clusterEntities,
+		manager:         nil,
+		purgerTicker:    purgerTicker,
+		purgerTickerC:   purgerTicker.C,
+		maxAge:          maxAge,
+		stopper:         concurrency.NewStopper(),
+		purgingDone:     concurrency.NewSignal(),
 	}
 	for _, o := range opts {
 		o(p)
@@ -145,7 +119,7 @@ func (p *NetworkFlowPurger) Notify(e common.SensorComponentEvent) {
 	}
 }
 
-func (p *NetworkFlowPurger) start(maxAge time.Duration) {
+func (p *NetworkFlowPurger) start() {
 	if env.EnrichmentPurgerTickerCycle.DurationSetting() == 0 {
 		return
 	}
@@ -153,15 +127,26 @@ func (p *NetworkFlowPurger) start(maxAge time.Duration) {
 		select {
 		case <-p.stopper.Flow().StopRequested():
 			return
-		case <-p.purgerTickerC:
-			numPurgedActiveEp := purgeActiveEndpoints(p.activeEndpointsMutex, maxAge, p.activeEndpoints, p.clusterEntities)
-			numPurgedActiveConn := purgeActiveConnections(p.activeConnectionsMutex, maxAge, p.activeConnections, p.clusterEntities)
-			numPurgedHostEp, numPurgedHostConn := purgeHostConns(p.enrichmentQueueMutex, maxAge, p.enrichmentQueue, p.clusterEntities)
+		case _, ok := <-p.purgerTickerC:
+			p.purgingDone.Reset()
+			if !ok {
+				// Do not execute potentially-expensive purger rules when ticker channel is closed.
+				continue
+			}
+			if p.manager == nil {
+				log.Warn("Programmer error: network flow purger is not bound to a network flow manager. Not purging.")
+				p.purgingDone.Signal()
+				continue
+			}
+			numPurgedActiveEp := purgeActiveEndpoints(&p.manager.activeEndpointsMutex, p.maxAge, p.manager.activeEndpoints, p.clusterEntities)
+			numPurgedActiveConn := purgeActiveConnections(&p.manager.activeConnectionsMutex, p.maxAge, p.manager.activeConnections, p.clusterEntities)
+			numPurgedHostEp, numPurgedHostConn := purgeHostConns(&p.manager.connectionsByHostMutex, p.maxAge, p.manager.connectionsByHost, p.clusterEntities)
 			log.Debugf("Purger deleted: "+
 				"%d active endpoints, %d active connections, "+
 				"%d host endpoints, %d host connections",
 				numPurgedActiveEp, numPurgedActiveConn, numPurgedHostEp, numPurgedHostConn)
 		}
+		p.purgingDone.Signal()
 	}
 }
 

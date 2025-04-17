@@ -122,7 +122,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	} else {
 		processSignals = signalService.New(processPipeline, indicators, signalService.WithTraceWriter(cfg.processIndicatorWriter))
 	}
-	networkFlowPurger := manager.NewNetworkFlowPurger(storeProvider.Entities())
+	networkFlowPurger := manager.NewNetworkFlowPurger(storeProvider.Entities(), env.EnrichmentPurgerTickerMaxAge.DurationSetting())
 	networkFlowManager :=
 		manager.NewManager(storeProvider.Entities(), externalsrcs.StoreInstance(), policyDetector, pubSub, manager.WithPurger(networkFlowPurger))
 	enhancer := deploymentenhancer.CreateEnhancer(storeProvider)

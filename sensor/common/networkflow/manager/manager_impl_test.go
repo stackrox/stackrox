@@ -210,11 +210,9 @@ func (s *NetworkFlowManagerTestSuite) TestAddNoOriginator() {
 func (s *NetworkFlowManagerTestSuite) TestEnrichConnection() {
 	mockCtrl := gomock.NewController(s.T())
 	enrichTickerC := make(chan time.Time)
-	purgerTickerC := make(chan time.Time)
 	defer close(enrichTickerC)
-	defer close(purgerTickerC)
 	defer mockCtrl.Finish()
-	m, mockEntityStore, mockExternalSrc, _ := createManager(mockCtrl, enrichTickerC, purgerTickerC)
+	m, mockEntityStore, mockExternalSrc, _ := createManager(mockCtrl, enrichTickerC)
 	srcID := "src-id"
 	dstID := "dst-id"
 	cases := map[string]struct {
@@ -415,11 +413,9 @@ func (s *NetworkFlowManagerTestSuite) TestEnrichConnection() {
 func (s *NetworkFlowManagerTestSuite) TestEnrichContainerEndpoint() {
 	mockCtrl := gomock.NewController(s.T())
 	enrichTickerC := make(chan time.Time)
-	purgerTickerC := make(chan time.Time)
 	defer close(enrichTickerC)
-	defer close(purgerTickerC)
 	defer mockCtrl.Finish()
-	m, mockEntityStore, _, _ := createManager(mockCtrl, enrichTickerC, purgerTickerC)
+	m, mockEntityStore, _, _ := createManager(mockCtrl, enrichTickerC)
 	id := "id"
 	_ = id
 	cases := map[string]struct {
@@ -468,11 +464,9 @@ func (s *NetworkFlowManagerTestSuite) TestEnrichContainerEndpoint() {
 func (s *NetworkFlowManagerTestSuite) TestEnrichProcessListening() {
 	mockCtrl := gomock.NewController(s.T())
 	enrichTickerC := make(chan time.Time)
-	purgerTickerC := make(chan time.Time)
 	defer close(enrichTickerC)
-	defer close(purgerTickerC)
 	defer mockCtrl.Finish()
-	m, mockEntityStore, _, _ := createManager(mockCtrl, enrichTickerC, purgerTickerC)
+	m, mockEntityStore, _, _ := createManager(mockCtrl, enrichTickerC)
 	deploymentID := "deployment-id"
 	podID := "pod-id"
 	cases := map[string]struct {
@@ -539,11 +533,9 @@ func (s *NetworkFlowManagerTestSuite) TestManagerOfflineMode() {
 	)
 	mockCtrl := gomock.NewController(s.T())
 	enrichTickerC := make(chan time.Time)
-	purgerTickerC := make(chan time.Time)
 	defer close(enrichTickerC)
-	defer close(purgerTickerC)
 	defer mockCtrl.Finish()
-	m, mockEntity, _, mockDetector := createManager(mockCtrl, enrichTickerC, purgerTickerC)
+	m, mockEntity, _, mockDetector := createManager(mockCtrl, enrichTickerC)
 	states := []struct {
 		testName                    string
 		notify                      common.SensorComponentEvent
@@ -704,11 +696,9 @@ func (s *NetworkFlowManagerTestSuite) TestExpireMessage() {
 
 	mockCtrl := gomock.NewController(s.T())
 	enrichTickerC := make(chan time.Time)
-	purgerTickerC := make(chan time.Time)
 	defer close(enrichTickerC)
-	defer close(purgerTickerC)
 	defer mockCtrl.Finish()
-	m, mockEntity, _, mockDetector := createManager(mockCtrl, enrichTickerC, purgerTickerC)
+	m, mockEntity, _, mockDetector := createManager(mockCtrl, enrichTickerC)
 	go m.enrichConnections(enrichTickerC)
 	mockEntity.EXPECT().LookupByContainerID(gomock.Any()).Times(1).DoAndReturn(func(_ any) (clusterentities.ContainerMetadata, bool, bool) {
 		return clusterentities.ContainerMetadata{
@@ -762,10 +752,8 @@ const (
 func (b *sendNetflowsSuite) SetupTest() {
 	b.mockCtrl = gomock.NewController(b.T())
 	enrichTickerC := make(chan time.Time)
-	purgerTickerC := make(chan time.Time)
 	defer close(enrichTickerC)
-	defer close(purgerTickerC)
-	b.m, b.mockEntity, _, b.mockDetector = createManager(b.mockCtrl, enrichTickerC, purgerTickerC)
+	b.m, b.mockEntity, _, b.mockDetector = createManager(b.mockCtrl, enrichTickerC)
 
 	b.fakeTicker = make(chan time.Time)
 	go b.m.enrichConnections(b.fakeTicker)
