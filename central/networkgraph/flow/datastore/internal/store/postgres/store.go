@@ -691,27 +691,12 @@ func (s *flowStoreImpl) RemoveFlow(ctx context.Context, props *storage.NetworkFl
 func (s *flowStoreImpl) RemoveOrphanedFlows(ctx context.Context, orphanWindow *time.Time) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "NetworkFlow")
 
-	// Temporarily commenting out
-	//s.mutex.Lock()
-	//defer s.mutex.Unlock()
-
 	if features.ExternalIPs.Enabled() || env.ExternalIPsPruning.BooleanSetting() {
-		// We are adding a return statement to retrieve the pruned flows. They are useful
-		// to limit the pruning of 'discovered' entities to only potential new orphans.
-		pruneStmt := fmt.Sprintf(pruneNetworkFlowsSrcStmt+pruneNetworkFlowsReturnStmt, s.partitionName)
-		srcFlows, err := s.pruneAndReturnFlows(ctx, pruneStmt, orphanWindow)
-		if err != nil {
-			return err
-		}
-
-		pruneStmt = fmt.Sprintf(pruneNetworkFlowsDestStmt+pruneNetworkFlowsReturnStmt, s.partitionName)
-		dstFlows, err := s.pruneAndReturnFlows(ctx, pruneStmt, orphanWindow)
-		if err != nil {
-			return err
-		}
-
-		return s.pruneOrphanExternalEntities(ctx, srcFlows, dstFlows)
+		return s.removeFlowsAndEntities(ctx, orphanWindow)
 	}
+
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 
 	// To avoid a full scan with an OR delete source and destination flows separately
 	pruneStmt := fmt.Sprintf(pruneNetworkFlowsSrcStmt, s.partitionName)
@@ -722,6 +707,34 @@ func (s *flowStoreImpl) RemoveOrphanedFlows(ctx context.Context, orphanWindow *t
 
 	pruneStmt = fmt.Sprintf(pruneNetworkFlowsDestStmt, s.partitionName)
 	return s.pruneFlows(ctx, pruneStmt, orphanWindow)
+}
+
+func (s *flowStoreImpl) removeFlowsAndEntities(ctx context.Context, orphanWindow *time.Time) error {
+	srcFlows, dstFlows, err := s.removeAndReturnSrcDstFlows(ctx, orphanWindow)
+
+	if err != nil {
+		return err
+	}
+
+	return s.pruneOrphanExternalEntities(ctx, srcFlows, dstFlows)
+}
+
+func (s *flowStoreImpl) removeAndReturnSrcDstFlows(ctx context.Context, orphanWindow *time.Time) ([]*storage.NetworkFlow, []*storage.NetworkFlow, error) {
+	// We are adding a return statement to retrieve the pruned flows. They are useful
+	// to limit the pruning of 'discovered' entities to only potential new orphans.
+	pruneStmt := fmt.Sprintf(pruneNetworkFlowsSrcStmt+pruneNetworkFlowsReturnStmt, s.partitionName)
+	srcFlows, err := s.pruneAndReturnFlows(ctx, pruneStmt, orphanWindow)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	pruneStmt = fmt.Sprintf(pruneNetworkFlowsDestStmt+pruneNetworkFlowsReturnStmt, s.partitionName)
+	dstFlows, err := s.pruneAndReturnFlows(ctx, pruneStmt, orphanWindow)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return srcFlows, dstFlows, nil
 }
 
 func (s *flowStoreImpl) pruneOrphanExternalEntities(ctx context.Context, srcFlows []*storage.NetworkFlow, dstFlows []*storage.NetworkFlow) error {
@@ -778,6 +791,9 @@ func (s *flowStoreImpl) pruneFlows(ctx context.Context, deleteStmt string, orpha
 }
 
 func (s *flowStoreImpl) pruneAndReturnFlows(ctx context.Context, deleteStmt string, orphanWindow *time.Time) ([]*storage.NetworkFlow, error) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
 	conn, release, err := s.acquireConn(ctx, ops.Remove, "NetworkFlow")
 	if err != nil {
 		return nil, err

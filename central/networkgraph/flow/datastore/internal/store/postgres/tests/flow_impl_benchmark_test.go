@@ -107,7 +107,7 @@ func BenchmarkGetExternalFlows(b *testing.B) {
 	b.Run("deployment with 1000 ingress and 1000 egress flows", benchmarkGetExternalFlows(flowStore, fixtureconsts.Deployment3))
 }
 
-func BenchmarkPruneOrphanedFlowsAndExternalEntities(b *testing.B) {
+func BenchmarkPruneOrphanedFlowsForDeployment(b *testing.B) {
 	psql := pgtest.ForT(b)
 
 	clusterStore := postgresFlowStore.NewClusterStore(psql)
@@ -115,10 +115,24 @@ func BenchmarkPruneOrphanedFlowsAndExternalEntities(b *testing.B) {
 	require.NoError(b, err)
 	eStore := entityStore.GetTestPostgresDataStore(b, psql)
 
-	b.Run("1000 flows to be pruned", benchmarkPruneOrphanedFlowsAndExternalEntities(flowStore, eStore, fixtureconsts.Deployment1, 1000))
-	b.Run("10000 flows to be pruned", benchmarkPruneOrphanedFlowsAndExternalEntities(flowStore, eStore, fixtureconsts.Deployment1, 10000))
-	b.Run("100000 flows to be pruned", benchmarkPruneOrphanedFlowsAndExternalEntities(flowStore, eStore, fixtureconsts.Deployment1, 100000))
-	b.Run("900000 flows to be pruned", benchmarkPruneOrphanedFlowsAndExternalEntities(flowStore, eStore, fixtureconsts.Deployment1, 900000))
+	b.Run("1000 flows to be pruned", benchmarkPruneOrphanedFlowsForDeployment(flowStore, eStore, fixtureconsts.Deployment1, 1000))
+	b.Run("10000 flows to be pruned", benchmarkPruneOrphanedFlowsForDeployment(flowStore, eStore, fixtureconsts.Deployment1, 10000))
+	b.Run("100000 flows to be pruned", benchmarkPruneOrphanedFlowsForDeployment(flowStore, eStore, fixtureconsts.Deployment1, 100000))
+	b.Run("900000 flows to be pruned", benchmarkPruneOrphanedFlowsForDeployment(flowStore, eStore, fixtureconsts.Deployment1, 900000))
+}
+
+func BenchmarkRemoveOrphanedFlows(b *testing.B) {
+	psql := pgtest.ForT(b)
+
+	clusterStore := postgresFlowStore.NewClusterStore(psql)
+	flowStore, err := clusterStore.CreateFlowStore(context.Background(), fixtureconsts.Cluster1)
+	require.NoError(b, err)
+	eStore := entityStore.GetTestPostgresDataStore(b, psql)
+
+	b.Run("1000 flows to be pruned", benchmarkRemoveOrphanedFlows(flowStore, eStore, fixtureconsts.Deployment1, 1000))
+	b.Run("10000 flows to be pruned", benchmarkRemoveOrphanedFlows(flowStore, eStore, fixtureconsts.Deployment1, 10000))
+	b.Run("100000 flows to be pruned", benchmarkRemoveOrphanedFlows(flowStore, eStore, fixtureconsts.Deployment1, 100000))
+	b.Run("900000 flows to be pruned", benchmarkRemoveOrphanedFlows(flowStore, eStore, fixtureconsts.Deployment1, 900000))
 }
 
 func BenchmarkGetFlowsForDeployment(b *testing.B) {
@@ -233,13 +247,25 @@ func benchmarkGetFlowsForDeployment(flowStore store.FlowStore, deploymentId stri
 	}
 }
 
-func benchmarkPruneOrphanedFlowsAndExternalEntities(flowStore store.FlowStore, eStore entityStore.EntityDataStore, deploymentId string, numFlows uint32) func(*testing.B) {
+func benchmarkPruneOrphanedFlowsForDeployment(flowStore store.FlowStore, eStore entityStore.EntityDataStore, deploymentId string, numFlows uint32) func(*testing.B) {
 	return func(b *testing.B) {
 		setupExternalIngressFlowsWithEntities(b, flowStore, eStore, fixtureconsts.Deployment1, numFlows)
 		b.ResetTimer()
 
 		b.Setenv(features.ExternalIPs.EnvVar(), "true")
 		err := flowStore.RemoveFlowsForDeployment(sac.WithAllAccess(context.Background()), deploymentId)
+		require.NoError(b, err)
+	}
+}
+
+func benchmarkRemoveOrphanedFlows(flowStore store.FlowStore, eStore entityStore.EntityDataStore, deploymentId string, numFlows uint32) func(*testing.B) {
+	return func(b *testing.B) {
+		setupExternalIngressFlowsWithEntities(b, flowStore, eStore, fixtureconsts.Deployment1, numFlows)
+		b.ResetTimer()
+
+		b.Setenv(features.ExternalIPs.EnvVar(), "true")
+		orphanWindow := time.Now().UTC()
+		err := flowStore.RemoveOrphanedFlows(sac.WithAllAccess(context.Background()), &orphanWindow)
 		require.NoError(b, err)
 	}
 }
