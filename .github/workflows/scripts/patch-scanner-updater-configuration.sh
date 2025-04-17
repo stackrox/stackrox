@@ -51,8 +51,13 @@ fi
 
 git switch --create "$UPDATE_BRANCH"
 
-echo "${VERSION}" | sort -o "${CONFIG_FILE}" -m - "${CONFIG_FILE}"
-git diff
+# Comments at the start of the file, and then the sorted list of release versions.
+{
+  grep '^#' "$CONFIG_FILE"
+  echo "$VERSION" | cat "$CONFIG_FILE" - | grep -v '^#' | sort -V
+} >> "${CONFIG_FILE}"
+
+git diff "${CONFIG_FILE}"
 git add "${CONFIG_FILE}"
 
 if ! git diff-index --quiet HEAD; then
