@@ -38,7 +38,7 @@ type cveV2DataStoreSACTestSuite struct {
 
 func (s *cveV2DataStoreSACTestSuite) SetupSuite() {
 	if !features.FlattenCVEData.Enabled() {
-		s.T().Skip("FlattenCVEData is disabled")
+		s.T().Setenv(features.FlattenCVEData.EnvVar(), "true")
 	}
 
 	var err error
@@ -330,22 +330,10 @@ var (
 			},
 		},
 	}
-
-	imageCVEByIDMap = map[string]*storage.EmbeddedVulnerability{
-		getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0001(), fixtures.GetEmbeddedImageComponent1x1(), fixtures.GetImageSherlockHolmes1().GetId()):   fixtures.GetEmbeddedImageCVE1234x0001(),
-		getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002(), fixtures.GetEmbeddedImageComponent1x1(), fixtures.GetImageSherlockHolmes1().GetId()):   fixtures.GetEmbeddedImageCVE4567x0002(),
-		getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0003(), fixtures.GetEmbeddedImageComponent1x2(), fixtures.GetImageSherlockHolmes1().GetId()):   fixtures.GetEmbeddedImageCVE1234x0003(),
-		getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageSherlockHolmes1().GetId()): fixtures.GetEmbeddedImageCVE3456x0004(),
-		getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005(), fixtures.GetEmbeddedImageComponent1s2x3(), fixtures.GetImageSherlockHolmes1().GetId()): fixtures.GetEmbeddedImageCVE3456x0005(),
-		getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0006(), fixtures.GetEmbeddedImageComponent2x5(), fixtures.GetImageDoctorJekyll2().GetId()):     fixtures.GetEmbeddedImageCVE2345x0006(),
-		getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0007(), fixtures.GetEmbeddedImageComponent2x5(), fixtures.GetImageDoctorJekyll2().GetId()):     fixtures.GetEmbeddedImageCVE2345x0007(),
-	}
 )
 
 func (s *cveV2DataStoreSACTestSuite) TestSACImageCVEExistsSingleScopeOnly() {
 	// Inject the fixture graph, and test exists for CVE-1234-0001
-	//targetCVE := fixtures.GetEmbeddedImageCVE1234x0001()
-	//cveName := targetCVE.GetCve()
 	cveID := getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0001(), fixtures.GetEmbeddedImageComponent1x1(), fixtures.GetImageSherlockHolmes1().GetId())
 	s.runImageTest("TestSACImageCVEExistsSingleScopeOnly", func(c cveTestCase) {
 		testCtx := s.imageTestContexts[c.contextKey]

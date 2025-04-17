@@ -32,7 +32,7 @@ type componentV2DataStoreSACTestSuite struct {
 
 func (s *componentV2DataStoreSACTestSuite) SetupSuite() {
 	if !features.FlattenCVEData.Enabled() {
-		s.T().Skip("FlattenCVEData is disabled")
+		s.T().Setenv(features.FlattenCVEData.EnvVar(), "true")
 	}
 
 	var err error
@@ -50,10 +50,6 @@ func getImageComponentID(component *storage.EmbeddedImageScanComponent, imageID 
 
 func (s *componentV2DataStoreSACTestSuite) cleanImageToVulnerabilitiesGraph() {
 	s.Require().NoError(s.testGraphDatastore.CleanImageToVulnerabilitiesGraph())
-}
-
-func (s *componentV2DataStoreSACTestSuite) cleanNodeToVulnerabilitiesGraph() {
-	s.Require().NoError(s.testGraphDatastore.CleanNodeToVulnerabilitiesGraph())
 }
 
 type componentTestCase struct {
@@ -325,7 +321,6 @@ func (s *componentV2DataStoreSACTestSuite) TestSACImageComponentGetBatch() {
 }
 
 func (s *componentV2DataStoreSACTestSuite) TestSACImageComponentCount() {
-	s.T().Skip("Skipping Component count tests for now.")
 	s.runImageTest("TestSACImageComponentCount", func(c componentTestCase) {
 
 		testCtx := s.imageTestContexts[c.contextKey]
