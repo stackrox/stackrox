@@ -222,7 +222,7 @@ func (s *genericStore[T, PT]) Get(ctx context.Context, id string) (PT, bool, err
 
 // GetByQueryFn iterates over all the objects scoped by the query and applies the closure.
 // The main difference between GetByQueryFn and WalkByQuery or Walk is cursor usage. Prefer GetByQueryFn when
-// results set is limited or tables is small.
+// results set is limited or tables are small.
 // TODO(ROX-28999): merge with WalkByQuery if cursor is removed
 func (s *genericStore[T, PT]) GetByQueryFn(ctx context.Context, query *v1.Query, fn func(obj PT) error) error {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.GetByQuery)
