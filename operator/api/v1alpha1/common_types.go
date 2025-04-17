@@ -92,7 +92,9 @@ const (
 
 // StackRoxRelease describes the Helm "release" that was most recently applied.
 type StackRoxRelease struct {
-	Version string `json:"version,omitempty"`
+	Version  string `json:"version,omitempty"`
+	Manifest string `json:"-"`
+	Name     string `json:"name,omitempty"`
 }
 
 // AdditionalCA defines a certificate for an additional Certificate Authority.
