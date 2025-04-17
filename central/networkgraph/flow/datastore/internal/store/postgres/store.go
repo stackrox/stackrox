@@ -419,24 +419,8 @@ func (s *flowStoreImpl) RemoveFlowsForDeployment(ctx context.Context, id string)
 }
 
 func (s *flowStoreImpl) retryableRemoveFlowsForDeployment(ctx context.Context, id string) error {
-	// These remove operations can overlap.  Using a lock to avoid deadlocks in the database.
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
-
 	if features.ExternalIPs.Enabled() || env.ExternalIPsPruning.BooleanSetting() {
-		// We are adding a return statement to retrieve the pruned flows. They are useful
-		// to limit the pruning of 'discovered' entities to only potential new orphans.
-		srcFlows, err := s.removeAndReturnDeploymentFlows(ctx, deleteSrcDeploymentStmt+pruneNetworkFlowsReturnStmt, id)
-		if err != nil {
-			return err
-		}
-
-		dstFlows, err := s.removeAndReturnDeploymentFlows(ctx, deleteDstDeploymentStmt+pruneNetworkFlowsReturnStmt, id)
-		if err != nil {
-			return err
-		}
-
-		return s.pruneOrphanExternalEntities(ctx, srcFlows, dstFlows)
+		return s.removeFlowsAndEntitiesByDeployment(ctx, id)
 	}
 
 	// To avoid a full scan with an OR delete source and destination flows separately
@@ -445,8 +429,40 @@ func (s *flowStoreImpl) retryableRemoveFlowsForDeployment(ctx context.Context, i
 		return err
 	}
 
+	// These remove operations can overlap.  Using a lock to avoid deadlocks in the database.
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
 	return s.removeDeploymentFlows(ctx, deleteDstDeploymentStmt, id)
 }
+
+func (s *flowStoreImpl) removeFlowsAndEntitiesByDeployment(ctx context.Context, id string) error {
+	srcFlows, dstFlows, err := s.removeAndReturnDeploymentSrcDstFlows(ctx, id)
+
+	if err != nil {
+		return err
+	}
+
+	return s.pruneOrphanExternalEntities(ctx, srcFlows, dstFlows)
+}
+
+func (s *flowStoreImpl) removeAndReturnDeploymentSrcDstFlows(ctx context.Context, id string) ([]*storage.NetworkFlow, []*storage.NetworkFlow, error) {
+
+	// We are adding a return statement to retrieve the pruned flows. They are useful
+	// to limit the pruning of 'discovered' entities to only potential new orphans.
+	srcFlows, err := s.removeAndReturnDeploymentFlows(ctx, deleteSrcDeploymentStmt+pruneNetworkFlowsReturnStmt, id)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	dstFlows, err := s.removeAndReturnDeploymentFlows(ctx, deleteDstDeploymentStmt+pruneNetworkFlowsReturnStmt, id)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return srcFlows, dstFlows, nil
+}
+
 
 func (s *flowStoreImpl) removeDeploymentFlows(ctx context.Context, deleteStmt string, id string) error {
 	conn, release, err := s.acquireConn(ctx, ops.RemoveFlowsByDeployment, "NetworkFlow")
@@ -475,6 +491,9 @@ func (s *flowStoreImpl) removeDeploymentFlows(ctx context.Context, deleteStmt st
 }
 
 func (s *flowStoreImpl) removeAndReturnDeploymentFlows(ctx context.Context, deleteStmt string, id string) ([]*storage.NetworkFlow, error) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
 	conn, release, err := s.acquireConn(ctx, ops.RemoveFlowsByDeployment, "NetworkFlow")
 	if err != nil {
 		return nil, err
@@ -672,8 +691,9 @@ func (s *flowStoreImpl) RemoveFlow(ctx context.Context, props *storage.NetworkFl
 func (s *flowStoreImpl) RemoveOrphanedFlows(ctx context.Context, orphanWindow *time.Time) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "NetworkFlow")
 
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
+	// Temporarily commenting out
+	//s.mutex.Lock()
+	//defer s.mutex.Unlock()
 
 	if features.ExternalIPs.Enabled() || env.ExternalIPsPruning.BooleanSetting() {
 		// We are adding a return statement to retrieve the pruned flows. They are useful
@@ -726,6 +746,9 @@ func (s *flowStoreImpl) pruneOrphanExternalEntities(ctx context.Context, srcFlow
 
 	if len(entityIds) != 0 {
 		err := utils.BatchProcess(entityIds, orphanedEntitiesPruningBatchSize, func(entityIds []string) error {
+			s.mutex.Lock()
+			defer s.mutex.Unlock()
+
 			pruneStmt := fmt.Sprintf(pruneOrphanExternalNetworkEntitiesStmt, s.partitionName)
 			return s.pruneEntities(ctx, pruneStmt, entityIds)
 		})
