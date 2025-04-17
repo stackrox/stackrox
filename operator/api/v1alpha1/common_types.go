@@ -92,7 +92,9 @@ const (
 
 // StackRoxRelease describes the Helm "release" that was most recently applied.
 type StackRoxRelease struct {
-	Version string `json:"version,omitempty"`
+	Version  string `json:"version,omitempty"`
+	Manifest string `json:"-"`
+	Name     string `json:"name,omitempty"`
 }
 
 // AdditionalCA defines a certificate for an additional Certificate Authority.
@@ -353,4 +355,8 @@ type GlobalNetworkSpec struct {
 	//+kubebuilder:default=Enabled
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,displayName="Network Policies"
 	Policies *NetworkPolicies `json:"policies,omitempty"`
+}
+
+type StatusDefaults struct {
+	ScannerV4ComponentPolicy string `json:"scannerV4ComponentPolicy,omitempty"`
 }
