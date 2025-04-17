@@ -106,17 +106,23 @@ func (p *NetworkFlowPurger) ResponsesC() <-chan *message.ExpiringMessage {
 	return nil
 }
 
+// nonZeroPurgerCycle delivers a non-zero duration to be used in timers (they panic when set with 0 duration)
 func nonZeroPurgerCycle() time.Duration {
 	if purgerCycleSetting > 0 {
 		return purgerCycleSetting
 	}
-	return time.Hour
+	// Disabled purger will wake up every 71 minutes and execute a noop.
+	// We use 71; a prime number higher than 60 (but not too close to it - there maybe many things happening every hour),
+	// so that it is easier to detect and locate a potential source of a problem if something happens every 71 minutes.
+	return 71 * time.Minute
 }
 
 func (p *NetworkFlowPurger) Notify(e common.SensorComponentEvent) {
 	log.Info(common.LogSensorComponentEvent(e, "NetworkFlowPurger"))
 
 	switch e {
+	// Purger could start earlier than this, but we stick to the `SensorComponentEventResourceSyncFinished` as it also
+	// enables the networkFlowManager.
 	case common.SensorComponentEventResourceSyncFinished:
 		p.purgerTicker.Reset(nonZeroPurgerCycle())
 	case common.SensorComponentEventOfflineMode:
