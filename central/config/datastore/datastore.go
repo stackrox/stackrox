@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/central/config/store"
 	pgStore "github.com/stackrox/rox/central/config/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoutils"
@@ -18,10 +17,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sync"
 	"k8s.io/apimachinery/pkg/util/sets"
-)
-
-var (
-	log = logging.LoggerForModule()
 )
 
 // DataStore is the entry point for modifying Config data.
