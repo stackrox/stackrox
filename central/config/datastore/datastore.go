@@ -3,12 +3,14 @@ package datastore
 import (
 	"context"
 	"reflect"
+	"regexp"
 	"testing"
 	"time"
 
 	"github.com/hashicorp/golang-lru/v2/expirable"
 	"github.com/stackrox/rox/central/config/store"
 	pgStore "github.com/stackrox/rox/central/config/store/postgres"
+	"github.com/stackrox/rox/central/platform/matcher"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -277,6 +279,11 @@ func (d *datastoreImpl) UpsertPlatformComponentConfigRules(ctx context.Context, 
 	if err != nil {
 		return nil, err
 	}
+	regexes := make([]*regexp.Regexp, 0)
+	for _, rule := range config.PlatformComponentConfig.Rules {
+		regexes = append(regexes, regexp.MustCompile(rule.GetNamespaceRule().Regex))
+	}
+	matcher.Singleton().SetRegexes(regexes)
 	return config.PlatformComponentConfig, nil
 }
 
