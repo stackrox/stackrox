@@ -42,6 +42,14 @@ func (s *ImagesStoreSuite) TestStore() {
 	defer pgtest.CloseGormDB(s.T(), gormDB)
 	store := CreateTableAndNewStore(ctx, pool, gormDB, false)
 
+	metadata, err := store.GetManyImageMetadata(ctx, nil)
+	s.NoError(err)
+	s.Empty(metadata)
+
+	metadata, err = store.GetManyImageMetadata(ctx, []string{"missing id"})
+	s.NoError(err)
+	s.Empty(metadata)
+
 	image := fixtures.GetImage()
 	s.NoError(testutils.FullInit(image, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 	for _, comp := range image.GetScan().GetComponents() {

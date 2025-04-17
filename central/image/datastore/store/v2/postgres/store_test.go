@@ -267,9 +267,8 @@ func (s *ImagesStoreSuite) TestGetManyImageMetadata() {
 	s.True(exists)
 
 	searchedIndexes := []string{image.GetId(), image2.GetId()}
-	returnedImages, notFoundIDs, err := s.store.GetManyImageMetadata(s.ctx, searchedIndexes)
+	returnedImages, err := s.store.GetManyImageMetadata(s.ctx, searchedIndexes)
 	s.NoError(err)
-	s.Empty(notFoundIDs)
 	s.Equal(2, len(returnedImages))
 
 	for _, image := range returnedImages {
@@ -278,10 +277,8 @@ func (s *ImagesStoreSuite) TestGetManyImageMetadata() {
 	}
 
 	searchedIndexes = []string{image.GetId(), image2.GetId(), "nonsense"}
-	returnedImages, notFoundIDs, err = s.store.GetManyImageMetadata(s.ctx, searchedIndexes)
+	returnedImages, err = s.store.GetManyImageMetadata(s.ctx, searchedIndexes)
 	s.NoError(err)
-	s.Contains(notFoundIDs, 2)
-	s.Equal(1, len(notFoundIDs))
 	s.Equal(2, len(returnedImages))
 }
 
@@ -329,9 +326,8 @@ func (s *ImagesStoreSuite) TestGetMany() {
 	s.True(exists)
 
 	searchedIndexes := []string{image.GetId(), image2.GetId()}
-	returnedImages, notFoundIDs, err := s.store.GetMany(s.ctx, searchedIndexes)
+	returnedImages, err := s.store.GetByIDs(s.ctx, searchedIndexes)
 	s.NoError(err)
-	s.Empty(notFoundIDs)
 	s.Equal(2, len(returnedImages))
 
 	for _, image := range returnedImages {
@@ -340,10 +336,8 @@ func (s *ImagesStoreSuite) TestGetMany() {
 	}
 
 	searchedIndexes = []string{image.GetId(), image2.GetId(), "nonsense"}
-	returnedImages, notFoundIDs, err = s.store.GetMany(s.ctx, searchedIndexes)
+	returnedImages, err = s.store.GetByIDs(s.ctx, searchedIndexes)
 	s.NoError(err)
-	s.Contains(notFoundIDs, 2)
-	s.Equal(1, len(notFoundIDs))
 	s.Equal(2, len(returnedImages))
 }
 
