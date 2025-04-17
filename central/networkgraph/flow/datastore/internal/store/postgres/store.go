@@ -169,8 +169,8 @@ type flowStoreImpl struct {
 }
 
 type srcDstEntityIds struct {
-	srcId	string
-	dstId	string
+	srcId string
+	dstId string
 }
 
 func (s *flowStoreImpl) insertIntoNetworkflow(ctx context.Context, tx *postgres.Tx, clusterID uuid.UUID, obj *storage.NetworkFlow, lastUpdateTS timestamp.MicroTS) error {
@@ -488,7 +488,6 @@ func (s *flowStoreImpl) removeAndReturnDeploymentSrcDstFlows(ctx context.Context
 
 	return srcIds, dstIds, nil
 }
-
 
 func (s *flowStoreImpl) removeDeploymentFlows(ctx context.Context, deleteStmt string, id string) error {
 	conn, release, err := s.acquireConn(ctx, ops.RemoveFlowsByDeployment, "NetworkFlow")
