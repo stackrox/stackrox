@@ -124,7 +124,9 @@ func (s *indexerService) GetIndexReport(ctx context.Context, req *v4.GetIndexRep
 }
 
 // getIndexReport fetches the Index Report for the resource with the given hashID.
-// Users of this function may be interested in logging the output.
+// No logging is performed; however, callers of this method may be
+// interested in logging the error. Returns errox.NotFound when the report does
+// not exist.
 func (s *indexerService) getIndexReport(ctx context.Context, hashID string) (*v4.IndexReport, error) {
 	ccIR, err := getClairIndexReport(ctx, s.indexer, hashID)
 	if err != nil {
