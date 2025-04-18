@@ -36,6 +36,13 @@ export type VulnerabilityReportFilters =
           sinceStartDate: string; // in the format of google.protobuf.Timestamp};
       });
 
+export type OnDemandVulnerabilityReportFilters = {
+    imageTypes: ImageType[];
+    includeEpssProbability: boolean;
+    includeNvdCvss: boolean;
+    query: string;
+};
+
 export type Fixability = 'BOTH' | 'FIXABLE' | 'NOT_FIXABLE';
 
 export const imageTypes = ['DEPLOYED', 'WATCHED'] as const;
@@ -101,6 +108,15 @@ export type ReportSnapshot = Snapshot & {
     collectionSnapshot: CollectionSnapshot;
     schedule: Schedule | null;
     notifiers: NotifierConfiguration[];
+};
+
+// @TODO: Technically, this type will have the same fields as ReportSnapshot but the irrelevant
+// ones will be null or empty. For now, I didn't include them
+export type OnDemandReportSnapshot = Snapshot & {
+    requestName: string;
+    isOnDemand: boolean;
+    areaOfConcern: string;
+    vulnReportFilters: OnDemandVulnerabilityReportFilters;
 };
 
 export type CollectionSnapshot = {
