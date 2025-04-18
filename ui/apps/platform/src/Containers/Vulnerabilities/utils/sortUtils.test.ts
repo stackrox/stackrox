@@ -154,7 +154,7 @@ describe('syncSeveritySortOption', () => {
     it('should not update the sort option if the current sort option is not sorting by severity', () => {
         const searchFilter = {};
         const currentSortOption = { field: 'Image', reversed: false };
-        const applySort = jest.fn();
+        const applySort = vi.fn();
 
         syncSeveritySortOption(searchFilter, currentSortOption, applySort);
 
@@ -164,7 +164,7 @@ describe('syncSeveritySortOption', () => {
     it('should update the sort option if the current sort option is sorting by severity and a new severity filter is applied', () => {
         const searchFilter = { SEVERITY: ['Critical', 'Important'] };
         const currentSortOption = [{ field: 'Critical Severity Count', reversed: false }];
-        const applySort = jest.fn();
+        const applySort = vi.fn();
 
         syncSeveritySortOption(searchFilter, currentSortOption, applySort);
 
