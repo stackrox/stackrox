@@ -49,7 +49,7 @@ var delimiter = []byte{'\n'}
 
 // Write a slice of bytes in the Destination file
 func (tw *TraceWriter) Write(b []byte) (int, error) {
-	return concurrency.WithLock2(&tw.mu, func() (int, error) {
+	total, err := concurrency.WithLock2(&tw.mu, func() (int, error) {
 		n, err := tw.f.Write(b)
 		if err != nil {
 			return n, errors.Wrap(err, "failed to write trace data")
@@ -58,12 +58,15 @@ func (tw *TraceWriter) Write(b []byte) (int, error) {
 		if err != nil {
 			return n + m, errors.Wrap(err, "failed to write trace delimiter")
 		}
-		err = tw.f.Sync()
-		if err != nil {
+		if err := tw.f.Sync(); err != nil {
 			return n + m, errors.Wrap(err, "failed to sync trace file")
 		}
 		return n + m, nil
 	})
+	if err != nil {
+		return total, errors.Wrap(err, "writing trace under lock")
+	}
+	return total, nil
 }
 
 // TraceReader reads a file containing k8s events

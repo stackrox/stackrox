@@ -324,7 +324,7 @@ func (s *Sensor) Start() {
 func (s *Sensor) newScannerDefinitionsRoute(centralEndpoint string, centralCertificates []*x509.Certificate) (*routes.CustomRoute, error) {
 	handler, err := scannerdefinitions.NewDefinitionsHandler(centralEndpoint, centralCertificates)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "creating scanner definitions handler")
 	}
 	s.AddNotifiable(handler)
 	// We rely on central to handle content encoding negotiation.
