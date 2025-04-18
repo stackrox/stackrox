@@ -84,6 +84,7 @@ linters:
         - G108
         - G109
         - G111
+        - G113
         - G201
         - G202
         - G203
@@ -157,13 +158,14 @@ linters:
         - utils\.Should
         - errox\..+\.CausedBy(f)?
         - retry\.MakeRetryable
+        - retry\.WithRetry
         - policy\.NewErr.*
   exclusions:
     generated: lax
     rules:
       - linters:
           - wrapcheck
-        path: ^(central|compliance|integration-tests|local|migrator|operator|pkg|roxctl/scanner|roxctl/central|scanner|sensor|tests|tools|scale)/
+        path: ^(central|compliance|integration-tests|local|migrator|operator|pkg|roxctl/scanner|roxctl/central|scanner|tests|tools|scale)/
       - linters:
           - forbidigo
         path: (central/graphql/schema/print|compliance|integration-tests|local|migrator|operator|pkg|scanner|sensor|tests|tools|scale|govulncheck)/
