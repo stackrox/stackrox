@@ -4,4 +4,4 @@ resources:
     cpu: "100m"
   limits:
     memory: "200Mi"
-    cpu: "200m"
+    cpu: null

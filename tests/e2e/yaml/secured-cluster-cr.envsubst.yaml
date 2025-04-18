@@ -5,9 +5,24 @@ metadata:
 spec:
   centralEndpoint: $central_endpoint
   clusterName: remote
+  admissionControl:
+    resources:
+      limits:
+        cpu: null
   perNode:
     collector:
       collection: $collection_method
+      resources:
+        limits:
+          cpu: null
+    compliance:
+      resources:
+        limits:
+          cpu: null
+    nodeInventory:
+      resources:
+        limits:
+          cpu: null
   scanner:
     scannerComponent: $scanner_component_setting
     analyzer:
@@ -20,12 +35,16 @@ spec:
           cpu: 500m
         limits:
           memory: 2500Mi
-          cpu: 1000m
+          cpu: null
     db:
       resources:
         requests:
           cpu: 400m
           memory: 512Mi
         limits:
-          cpu: 1000m
+          cpu: null
           memory: 4Gi
+  sensor:
+    resources:
+      limits:
+        cpu: null

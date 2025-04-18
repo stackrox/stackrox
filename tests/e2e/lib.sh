@@ -388,7 +388,7 @@ deploy_sensor() {
         # https://stack-rox.atlassian.net/browse/ROX-5334
         # https://stack-rox.atlassian.net/browse/ROX-6891
         # et al.
-        kubectl -n "${sensor_namespace}" set resources deploy/sensor -c sensor --requests 'cpu=2' --limits 'cpu=4'
+        kubectl -n "${sensor_namespace}" set resources deploy/sensor -c sensor --requests 'cpu=2'
     fi
 }
 

@@ -22,7 +22,7 @@ spec:
     db:
       resources:
         limits:
-          cpu: "2000m"
+          cpu: null
           memory: "16Gi"
         requests:
           cpu: "800m"
@@ -50,7 +50,7 @@ $centralAdditionalCAIndented
           cpu: "400m"
           memory: "1Gi"
         limits:
-          cpu: "1000m"
+          cpu: null
           memory: "2Gi"
     matcher:
       scaling:
@@ -61,7 +61,7 @@ $centralAdditionalCAIndented
           cpu: "400m"
           memory: "2000Mi"
         limits:
-          cpu: "6000m"
+          cpu: null
           memory: "2000Mi"
     db:
       resources:
@@ -69,7 +69,7 @@ $centralAdditionalCAIndented
           cpu: "300m"
           memory: "500Mi"
         limits:
-          cpu: "1000m"
+          cpu: null
           memory: "1000Mi"
 ---
 apiVersion: v1
