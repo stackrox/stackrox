@@ -173,6 +173,7 @@ const defaultSeveritySummary = {
         important: { total: 0 },
         moderate: { total: 0 },
         low: { total: 0 },
+        unknown: { total: 0 },
     },
     affectedImageCount: 0,
     topCVSS: 0,
