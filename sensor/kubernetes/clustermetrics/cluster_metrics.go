@@ -2,6 +2,7 @@ package clustermetrics
 
 import (
 	"context"
+	"github.com/pkg/errors"
 	"time"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -126,7 +127,7 @@ func (cm *clusterMetricsImpl) collectMetrics() (*central.ClusterMetrics, error) 
 
 	nodes, err := cm.k8sClient.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to list nodes for cluster metrics")
 	}
 
 	var nodeCount int64 = int64(len(nodes.Items))
