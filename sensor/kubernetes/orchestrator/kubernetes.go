@@ -2,6 +2,7 @@ package orchestrator
 
 import (
 	"context"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/sensor/common/orchestrator"
 	"k8s.io/client-go/informers"
