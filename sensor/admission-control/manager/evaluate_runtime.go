@@ -138,7 +138,7 @@ func (m *manager) evaluatePodEvent(s *state, req *admission.AdmissionRequest, ev
 
 	alerts, err := s.runtimeDetectorForPoliciesWithoutDeployFields.DetectForDeploymentAndKubeEvent(booleanpolicy.EnhancedDeployment{}, event)
 	if err != nil {
-		return nil, false, err
+		return nil, false, errors.Wrap(err, "runtime detection without deployment enrichment failed")
 	}
 	return alerts, false, nil
 }

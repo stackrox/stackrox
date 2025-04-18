@@ -109,7 +109,7 @@ func (r *ServiceCertificatesRepoSecrets) getServiceCertificate(ctx context.Conte
 
 	secret, getErr := r.SecretsClient.Get(ctx, secretSpec.SecretName, metav1.GetOptions{})
 	if getErr != nil {
-		return nil, nil, getErr
+		return nil, nil, errors.Wrapf(getErr, "failed to get secret %s", secretSpec.SecretName)
 	}
 
 	ownerReferences := secret.GetOwnerReferences()
@@ -210,7 +210,7 @@ type patchSecretDataByteMap struct {
 func (r *ServiceCertificatesRepoSecrets) createSecret(ctx context.Context, caPem []byte,
 	certificate *storage.TypedServiceCertificate, secretSpec ServiceCertSecretSpec) (*v1.Secret, error) {
 
-	return r.SecretsClient.Create(ctx, &v1.Secret{
+	created, err := r.SecretsClient.Create(ctx, &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            secretSpec.SecretName,
 			Namespace:       r.Namespace,
@@ -220,6 +220,10 @@ func (r *ServiceCertificatesRepoSecrets) createSecret(ctx context.Context, caPem
 		},
 		Data: r.secretDataForCertificate(secretSpec, caPem, certificate),
 	}, metav1.CreateOptions{})
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to create secret %s", secretSpec.SecretName)
+	}
+	return created, nil
 }
 
 func (r *ServiceCertificatesRepoSecrets) secretDataForCertificate(secretSpec ServiceCertSecretSpec, caPem []byte,

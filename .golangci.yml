@@ -159,6 +159,7 @@ linters:
         - errox\..+\.CausedBy(f)?
         - retry\.MakeRetryable
         - retry\.WithRetry
+        - concurrency\.WithLock.*
         - policy\.NewErr.*
   exclusions:
     generated: lax
