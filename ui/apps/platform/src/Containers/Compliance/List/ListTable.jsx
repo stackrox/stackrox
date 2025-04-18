@@ -5,7 +5,7 @@ import orderBy from 'lodash/orderBy';
 import { useQuery } from '@apollo/client';
 import { Alert } from '@patternfly/react-core';
 
-import entityTypes, { standardTypes } from 'constants/entityTypes';
+import { standardTypes } from 'constants/entityTypes';
 import { standardLabels } from 'messages/standards';
 import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOptions';
 import Table from 'Components/Table';
@@ -26,16 +26,16 @@ import { getColumnsByEntity, getColumnsByStandard, getColumnsForControl } from '
 
 function getQuery(entityType) {
     switch (entityType) {
-        case entityTypes.CLUSTER:
+        case 'CLUSTER':
             return CLUSTERS_QUERY;
-        case entityTypes.NAMESPACE:
-            return NAMESPACES_QUERY;
-        case entityTypes.NODE:
-            return NODES_QUERY;
-        case entityTypes.DEPLOYMENT:
-            return DEPLOYMENTS_QUERY;
-        case entityTypes.CONTROL:
+        case 'CONTROL':
             return LIST_STANDARD;
+        case 'DEPLOYMENT':
+            return DEPLOYMENTS_QUERY;
+        case 'NAMESPACE':
+            return NAMESPACES_QUERY;
+        case 'NODE':
+            return NODES_QUERY;
         default:
             return null;
     }
@@ -43,7 +43,7 @@ function getQuery(entityType) {
 
 function getVariables(entityType, query) {
     const groupBy =
-        entityType === entityTypes.CONTROL
+        entityType === 'CONTROL'
             ? ['CONTROL', 'CATEGORY', ...(query.groupBy ? [query.groupBy] : [])]
             : null;
     return {
@@ -266,7 +266,7 @@ const ListTable = ({
     const { standardId } = query;
     const gqlQuery = getQuery(entityType);
     const variables = getVariables(entityType, query);
-    const isControlList = entityType === entityTypes.CONTROL;
+    const isControlList = entityType === 'CONTROL';
     const formatData = isControlList ? formatStandardData : formatResourceData;
     let tableColumns;
     if (standardId) {
