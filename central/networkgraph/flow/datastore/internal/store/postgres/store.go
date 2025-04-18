@@ -736,7 +736,7 @@ func (s *flowStoreImpl) RemoveOrphanedFlows(ctx context.Context, orphanWindow *t
 	return s.pruneFlows(ctx, pruneStmt, orphanWindow)
 }
 
-func getEntityIds(srcIds []*srcDstEntityIds, dstIds[]*srcDstEntityIds) []string {
+func getEntityIds(srcIds []*srcDstEntityIds, dstIds []*srcDstEntityIds) []string {
 	entityIdSet := set.NewStringSet()
 
 	// srcIds contains flows where src is the deployment,
