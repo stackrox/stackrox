@@ -10,28 +10,38 @@ spec:
       requests:
         memory: "100Mi"
         cpu: "100m"
+      limits:
+        cpu: null
   sensor:
     resources:
       requests:
         memory: "100Mi"
         cpu: "300m"
+      limits:
+        cpu: null
   perNode:
     collector:
       resources:
         requests:
           memory: "100Mi"
           cpu: "100m"
+        limits:
+          cpu: null
       collection: $collection_method
     compliance:
       resources:
         requests:
           memory: "100Mi"
           cpu: "100m"
+        limits:
+          cpu: null
     nodeInventory:
       resources:
         requests:
           memory: "100Mi"
           cpu: "100m"
+        limits:
+          cpu: null
   scanner:
     scannerComponent: $scanner_component_setting
     analyzer:
@@ -44,14 +54,14 @@ spec:
           cpu: 500m
         limits:
           memory: 2500Mi
-          cpu: 1000m
+          cpu: null
     db:
       resources:
         requests:
           cpu: 400m
           memory: 512Mi
         limits:
-          cpu: 1000m
+          cpu: null
           memory: 4Gi
   scannerV4:
     scannerComponent: AutoSense
@@ -64,7 +74,7 @@ spec:
           cpu: "1000m"
           memory: "1500Mi"
         limits:
-          cpu: "2000m"
+          cpu: null
           memory: "2Gi"
     db:
       resources:
@@ -72,5 +82,5 @@ spec:
           cpu: "200m"
           memory: "2Gi"
         limits:
-          cpu: "1000m"
+          cpu: null
           memory: "2500Mi"

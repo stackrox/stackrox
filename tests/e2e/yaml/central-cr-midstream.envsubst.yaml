@@ -26,7 +26,7 @@ spec:
           claimName: central-db
       resources:
         limits:
-          cpu: 8
+          cpu: null
           memory: 16Gi
         requests:
           cpu: 1
