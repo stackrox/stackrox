@@ -10,8 +10,6 @@ import Metadata from 'Components/Metadata';
 import BinderTabs from 'Components/BinderTabs';
 import Tab from 'Components/Tab';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
-import entityTypes from 'constants/entityTypes';
-import useCases from 'constants/useCaseTypes';
 import searchContext from 'Containers/searchContext';
 import { getConfigMgmtCountQuery } from 'Containers/ConfigManagement/ConfigMgmt.utils';
 import isGQLLoading from 'utils/gqlLoading';
@@ -22,15 +20,22 @@ import NodesWithFailedControls from './widgets/NodesWithFailedControls';
 import DeploymentsWithFailedPolicies from './widgets/DeploymentsWithFailedPolicies';
 import EntityList from '../List/EntityList';
 
-const Cluster = ({ id, entityListType, entityId1, query, entityContext, pagination }) => {
+const ConfigManagementEntityCluster = ({
+    id,
+    entityListType,
+    entityId1,
+    query,
+    entityContext,
+    pagination,
+}) => {
     const searchParam = useContext(searchContext);
 
     const queryObject = { ...query[searchParam] };
 
-    if (entityListType === entityTypes.POLICY) {
+    if (entityListType === 'POLICY') {
         queryObject['Lifecycle Stage'] = 'DEPLOY';
     }
-    if (!queryObject.Standard && entityListType === entityTypes.CONTROL) {
+    if (!queryObject.Standard && entityListType === 'CONTROL') {
         queryObject.Standard = 'CIS';
     }
 
@@ -76,17 +81,17 @@ const Cluster = ({ id, entityListType, entityId1, query, entityContext, paginati
             return defaultQuery;
         }
         const { listFieldName, fragmentName, fragment } = queryService.getFragmentInfo(
-            entityTypes.CLUSTER,
+            'CLUSTER',
             entityListType,
-            useCases.CONFIG_MANAGEMENT
+            'configmanagement'
         );
         const countQuery = getConfigMgmtCountQuery(entityListType);
         const availableVars =
-            entityListType === entityTypes.CONTROL
+            entityListType === 'CONTROL'
                 ? '$id: ID!, $query: String'
                 : '$id: ID!, $query: String, $pagination: Pagination';
         const listQueryVars =
-            entityListType === entityTypes.CONTROL
+            entityListType === 'CONTROL'
                 ? 'query: $query'
                 : 'query: $query, pagination: $pagination';
 
@@ -110,21 +115,16 @@ const Cluster = ({ id, entityListType, entityId1, query, entityContext, paginati
                 }
                 const { cluster: entity } = data;
                 if (!entity) {
-                    return (
-                        <PageNotFound
-                            resourceType={entityTypes.CLUSTER}
-                            useCase={useCases.CONFIG_MANAGEMENT}
-                        />
-                    );
+                    return <PageNotFound resourceType="CLUSTER" useCase="configmanagement" />;
                 }
 
                 const { complianceResults = [] } = entity;
 
                 if (entityListType) {
                     let listData = getSubListFromEntity(entity, entityListType);
-                    if (entityListType === entityTypes.CONTROL) {
+                    if (entityListType === 'CONTROL') {
                         listData = getControlsWithStatus(complianceResults);
-                    } else if (entityListType === entityTypes.SUBJECT) {
+                    } else if (entityListType === 'SUBJECT') {
                         listData = listData.map((listItem) => {
                             return {
                                 ...listItem,
@@ -139,7 +139,7 @@ const Cluster = ({ id, entityListType, entityId1, query, entityContext, paginati
                             entityId={entityId1}
                             data={listData}
                             totalResults={data?.cluster?.count}
-                            entityContext={{ ...entityContext, [entityTypes.CLUSTER]: id }}
+                            entityContext={{ ...entityContext, CLUSTER: id }}
                             query={query}
                         />
                     );
@@ -186,55 +186,55 @@ const Cluster = ({ id, entityListType, entityId1, query, entityContext, paginati
                                     className="mx-4 min-w-48 min-h-48 mb-4"
                                     name="Nodes"
                                     value={nodeCount}
-                                    entityType={entityTypes.NODE}
+                                    entityType="NODE"
                                 />
                                 <RelatedEntityListCount
                                     className="mx-4 min-w-48 min-h-48 mb-4"
                                     name="Namespaces"
                                     value={namespaceCount}
-                                    entityType={entityTypes.NAMESPACE}
+                                    entityType="NAMESPACE"
                                 />
                                 <RelatedEntityListCount
                                     className="mx-4 min-w-48 min-h-48 mb-4"
                                     name="Deployments"
                                     value={deploymentCount}
-                                    entityType={entityTypes.DEPLOYMENT}
+                                    entityType="DEPLOYMENT"
                                 />
                                 <RelatedEntityListCount
                                     className="mx-4 min-w-48 min-h-48 mb-4"
                                     name="Secrets"
                                     value={secretCount}
-                                    entityType={entityTypes.SECRET}
+                                    entityType="SECRET"
                                 />
                                 <RelatedEntityListCount
                                     className="mx-4 min-w-48 min-h-48 mb-4"
                                     name="Images"
                                     value={imageCount}
-                                    entityType={entityTypes.IMAGE}
+                                    entityType="IMAGE"
                                 />
                                 <RelatedEntityListCount
                                     className="mx-4 min-w-48 min-h-48 mb-4"
                                     name="Users & Groups"
                                     value={subjectCount}
-                                    entityType={entityTypes.SUBJECT}
+                                    entityType="SUBJECT"
                                 />
                                 <RelatedEntityListCount
                                     className="mx-4 min-w-48 min-h-48 mb-4"
                                     name="Service Accounts"
                                     value={serviceAccountCount}
-                                    entityType={entityTypes.SERVICE_ACCOUNT}
+                                    entityType="SERVICE_ACCOUNT"
                                 />
                                 <RelatedEntityListCount
                                     className="mx-4 min-w-48 min-h-48 mb-4"
                                     name="Roles"
                                     value={k8sRoleCount}
-                                    entityType={entityTypes.ROLE}
+                                    entityType="ROLE"
                                 />
                                 <RelatedEntityListCount
                                     className="mx-4 min-w-48 min-h-48 mb-4"
                                     name="CIS Controls"
                                     value={totalControlCount}
-                                    entityType={entityTypes.CONTROL}
+                                    entityType="CONTROL"
                                 />
                             </div>
                         </CollapsibleSection>
@@ -249,16 +249,16 @@ const Cluster = ({ id, entityListType, entityId1, query, entityContext, paginati
                                             message="No deployments violating policies in this cluster"
                                             entityContext={{
                                                 ...entityContext,
-                                                [entityTypes.CLUSTER]: id,
+                                                CLUSTER: id,
                                             }}
                                         />
                                     </Tab>
                                     <Tab title="CIS Controls">
                                         <NodesWithFailedControls
-                                            entityType={entityTypes.CLUSTER}
+                                            entityType="CLUSTER"
                                             entityContext={{
                                                 ...entityContext,
-                                                [entityTypes.CLUSTER]: id,
+                                                CLUSTER: id,
                                             }}
                                         />
                                     </Tab>
@@ -272,7 +272,7 @@ const Cluster = ({ id, entityListType, entityId1, query, entityContext, paginati
     );
 };
 
-Cluster.propTypes = entityComponentPropTypes;
-Cluster.defaultProps = entityComponentDefaultProps;
+ConfigManagementEntityCluster.propTypes = entityComponentPropTypes;
+ConfigManagementEntityCluster.defaultProps = entityComponentDefaultProps;
 
-export default Cluster;
+export default ConfigManagementEntityCluster;

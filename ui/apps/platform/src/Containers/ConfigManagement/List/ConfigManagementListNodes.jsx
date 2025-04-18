@@ -11,7 +11,6 @@ import {
 } from 'Components/Table';
 import TableCellLink from 'Components/TableCellLink';
 import dateTimeFormat from 'constants/dateTimeFormat';
-import entityTypes from 'constants/entityTypes';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
 import { nodeSortFields } from 'constants/sortFields';
 import useWorkflowMatch from 'hooks/useWorkflowMatch';
@@ -103,7 +102,7 @@ const buildTableColumns = (match, location, entityContext) => {
             id: nodeSortFields.NODE_JOIN_TIME,
             sortField: nodeSortFields.NODE_JOIN_TIME,
         },
-        entityContext && entityContext[entityTypes.CLUSTER]
+        entityContext && entityContext.CLUSTER
             ? null
             : {
                   Header: `Cluster`,
@@ -114,7 +113,7 @@ const buildTableColumns = (match, location, entityContext) => {
                       const { clusterName, clusterId, id } = original;
                       const url = URLService.getURL(match, location)
                           .push(id)
-                          .push(entityTypes.CLUSTER, clusterId)
+                          .push('CLUSTER', clusterId)
                           .url();
                       return (
                           <TableCellLink pdf={pdf} url={url}>
@@ -125,7 +124,7 @@ const buildTableColumns = (match, location, entityContext) => {
                   id: nodeSortFields.CLUSTER,
                   sortField: nodeSortFields.CLUSTER,
               },
-        entityContext && entityContext[entityTypes.CONTROL]
+        entityContext && entityContext.CONTROL
             ? null
             : {
                   Header: `CIS Controls`,
@@ -142,7 +141,7 @@ const buildTableColumns = (match, location, entityContext) => {
                       }
                       const url = URLService.getURL(match, location)
                           .push(original.id)
-                          .push(entityTypes.CONTROL)
+                          .push('CONTROL')
                           .url();
                       const text = `${controlCount} ${pluralize('Controls', controlCount)}`;
                       return (
@@ -159,7 +158,7 @@ const buildTableColumns = (match, location, entityContext) => {
 
 const createTableRows = (data) => data.results;
 
-const Nodes = ({
+const ConfigManagementListNodes = ({
     className,
     selectedRowId,
     onRowClick,
@@ -179,7 +178,7 @@ const Nodes = ({
             className={className}
             query={QUERY}
             variables={variables}
-            entityType={entityTypes.NODE}
+            entityType="NODE"
             tableColumns={tableColumns}
             createTableRows={createTableRows}
             onRowClick={onRowClick}
@@ -192,7 +191,7 @@ const Nodes = ({
         />
     );
 };
-Nodes.propTypes = entityListPropTypes;
-Nodes.defaultProps = entityListDefaultprops;
+ConfigManagementListNodes.propTypes = entityListPropTypes;
+ConfigManagementListNodes.defaultProps = entityListDefaultprops;
 
-export default Nodes;
+export default ConfigManagementListNodes;

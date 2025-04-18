@@ -174,7 +174,9 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
         path: complianceBasePath,
     },
     configmanagement: {
-        component: asyncComponent(() => import('Containers/ConfigManagement/Page')),
+        component: asyncComponent(
+            () => import('Containers/ConfigManagement/ConfigManagementRoutes')
+        ),
         path: configManagementPath,
     },
     dashboard: {

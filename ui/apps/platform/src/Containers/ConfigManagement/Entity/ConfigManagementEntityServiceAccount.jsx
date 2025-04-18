@@ -11,8 +11,6 @@ import RelatedEntityListCount from 'Components/RelatedEntityListCount';
 import Metadata from 'Components/Metadata';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
-import entityTypes from 'constants/entityTypes';
-import useCases from 'constants/useCaseTypes';
 import ClusterScopedPermissions from 'Containers/ConfigManagement/Entity/widgets/ClusterScopedPermissions';
 import NamespaceScopedPermissions from 'Containers/ConfigManagement/Entity/widgets/NamespaceScopedPermissions';
 import searchContext from 'Containers/searchContext';
@@ -22,7 +20,14 @@ import isGQLLoading from 'utils/gqlLoading';
 import queryService from 'utils/queryService';
 import EntityList from '../List/EntityList';
 
-const ServiceAccount = ({ id, entityListType, entityId1, query, entityContext, pagination }) => {
+const ConfigManagementEntityServiceAccount = ({
+    id,
+    entityListType,
+    entityId1,
+    query,
+    entityContext,
+    pagination,
+}) => {
     const searchParam = useContext(searchContext);
 
     const variables = {
@@ -79,9 +84,9 @@ const ServiceAccount = ({ id, entityListType, entityId1, query, entityContext, p
             return defaultQuery;
         }
         const { listFieldName, fragmentName, fragment } = queryService.getFragmentInfo(
-            entityTypes.SERVICE_ACCOUNT,
+            'SERVICE_ACCOUNT',
             entityListType,
-            useCases.CONFIG_MANAGEMENT
+            'configmanagement'
         );
         const countQuery = getConfigMgmtCountQuery(entityListType);
 
@@ -106,23 +111,20 @@ const ServiceAccount = ({ id, entityListType, entityId1, query, entityContext, p
                 const { serviceAccount: entity } = data;
                 if (!entity) {
                     return (
-                        <PageNotFound
-                            resourceType={entityTypes.SERVICE_ACCOUNT}
-                            useCase={useCases.CONFIG_MANAGEMENT}
-                        />
+                        <PageNotFound resourceType="SERVICE_ACCOUNT" useCase="configmanagement" />
                     );
                 }
 
                 if (entityListType) {
                     const listData =
-                        entityListType === entityTypes.ROLE
+                        entityListType === 'ROLE'
                             ? entity.k8sRoles
                             : getSubListFromEntity(entity, entityListType);
                     return (
                         <EntityList
                             entityListType={entityListType}
                             entityId={entityId1}
-                            entityContext={{ ...entityContext, [entityTypes.SERVICE_ACCOUNT]: id }}
+                            entityContext={{ ...entityContext, SERVICE_ACCOUNT: id }}
                             data={listData}
                             totalResults={data?.serviceAccount?.count}
                             query={query}
@@ -173,19 +175,19 @@ const ServiceAccount = ({ id, entityListType, entityId1, query, entityContext, p
                                     annotations={annotations}
                                     secrets={secrets}
                                 />
-                                {!(entityContext && entityContext[entityTypes.CLUSTER]) && (
+                                {!(entityContext && entityContext.CLUSTER) && (
                                     <RelatedEntity
                                         className="mx-4 min-w-48 min-h-48 mb-4"
-                                        entityType={entityTypes.CLUSTER}
+                                        entityType="CLUSTER"
                                         name="Cluster"
                                         value={clusterName}
                                         entityId={clusterId}
                                     />
                                 )}
-                                {!(entityContext && entityContext[entityTypes.NAMESPACE]) && (
+                                {!(entityContext && entityContext.NAMESPACE) && (
                                     <RelatedEntity
                                         className="mx-4 min-w-48 min-h-48 mb-4"
-                                        entityType={entityTypes.NAMESPACE}
+                                        entityType="NAMESPACE"
                                         name="Namespace"
                                         value={namespaceName}
                                         entityId={namespaceId}
@@ -195,13 +197,13 @@ const ServiceAccount = ({ id, entityListType, entityId1, query, entityContext, p
                                     className="mx-4 min-w-48 min-h-48 mb-4"
                                     name="Deployments"
                                     value={deploymentCount}
-                                    entityType={entityTypes.DEPLOYMENT}
+                                    entityType="DEPLOYMENT"
                                 />
                                 <RelatedEntityListCount
                                     className="mx-4 min-w-48 min-h-48 mb-4"
                                     name="Roles"
                                     value={k8sRoleCount}
-                                    entityType={entityTypes.ROLE}
+                                    entityType="ROLE"
                                 />
                             </div>
                         </CollapsibleSection>
@@ -223,7 +225,7 @@ const ServiceAccount = ({ id, entityListType, entityId1, query, entityContext, p
         </Query>
     );
 };
-ServiceAccount.propTypes = entityComponentPropTypes;
-ServiceAccount.defaultProps = entityComponentDefaultProps;
+ConfigManagementEntityServiceAccount.propTypes = entityComponentPropTypes;
+ConfigManagementEntityServiceAccount.defaultProps = entityComponentDefaultProps;
 
-export default ServiceAccount;
+export default ConfigManagementEntityServiceAccount;

@@ -2,38 +2,36 @@ import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
 
 import PageNotFound from 'Components/PageNotFound';
-import entityTypes from 'constants/entityTypes';
-import useCases from 'constants/useCaseTypes';
 import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
 import configMgmtPaginationContext from 'Containers/configMgmtPaginationContext';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { getConfigMgmtDefaultSort } from 'Containers/ConfigManagement/ConfigMgmt.utils';
 import queryService from 'utils/queryService';
-import ServiceAccount from './Entity/ServiceAccount';
-import Secret from './Entity/Secret';
-import Deployment from './Entity/Deployment/Deployment';
-import Node from './Entity/Node';
-import Cluster from './Entity/Cluster';
-import Namespace from './Entity/Namespace';
-import Role from './Entity/Role';
-import Control from './Entity/Control';
-import Image from './Entity/Image';
-import Policy from './Entity/Policy/Policy';
-import Subject from './Entity/Subject';
+
+import ConfigManagementEntityCluster from './Entity/ConfigManagementEntityCluster';
+import ConfigManagementEntityControl from './Entity/ConfigManagementEntityControl';
+import ConfigManagementEntityDeployment from './Entity/Deployment/ConfigManagementEntityDeployment';
+import ConfigManagementEntityImage from './Entity/ConfigManagementEntityImage';
+import ConfigManagementEntityNamespace from './Entity/ConfigManagementEntityNamespace';
+import ConfigManagementEntityNode from './Entity/ConfigManagementEntityNode';
+import ConfigManagementEntityPolicy from './Entity/Policy/ConfigManagementEntityPolicy';
+import ConfigManagementEntityRole from './Entity/ConfigManagementEntityRole';
+import ConfigManagementEntitySecret from './Entity/ConfigManagementEntitySecret';
+import ConfigManagementEntityServiceAccount from './Entity/ConfigManagementEntityServiceAccount';
+import ConfigManagementEntitySubject from './Entity/ConfigManagementEntitySubject';
 
 const entityComponentMap = {
-    [entityTypes.SERVICE_ACCOUNT]: ServiceAccount,
-    [entityTypes.ROLE]: Role,
-    [entityTypes.SECRET]: Secret,
-    [entityTypes.DEPLOYMENT]: Deployment,
-    [entityTypes.CLUSTER]: Cluster,
-    [entityTypes.NAMESPACE]: Namespace,
-    [entityTypes.NODE]: Node,
-    [entityTypes.CONTROL]: Control,
-    [entityTypes.NODE]: Node,
-    [entityTypes.IMAGE]: Image,
-    [entityTypes.POLICY]: Policy,
-    [entityTypes.SUBJECT]: Subject,
+    CLUSTER: ConfigManagementEntityCluster,
+    CONTROL: ConfigManagementEntityControl,
+    DEPLOYMENT: ConfigManagementEntityDeployment,
+    IMAGE: ConfigManagementEntityImage,
+    NAMESPACE: ConfigManagementEntityNamespace,
+    NODE: ConfigManagementEntityNode,
+    POLICY: ConfigManagementEntityPolicy,
+    ROLE: ConfigManagementEntityRole,
+    SECRET: ConfigManagementEntitySecret,
+    SERVICE_ACCOUNT: ConfigManagementEntityServiceAccount,
+    SUBJECT: ConfigManagementEntitySubject,
 };
 
 const Entity = ({ entityType, entityId, entityListType, ...rest }) => {
@@ -49,7 +47,7 @@ const Entity = ({ entityType, entityId, entityListType, ...rest }) => {
 
     const Component = entityComponentMap[entityType];
     if (!Component) {
-        return <PageNotFound resourceType={entityType} useCase={useCases.CONFIG_MANAGEMENT} />;
+        return <PageNotFound resourceType={entityType} useCase="configmanagement" />;
     }
     return (
         <div className={`flex w-full h-full ${entityListType ? 'bg-base-100' : 'bg-base-200'}`}>

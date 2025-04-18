@@ -12,9 +12,7 @@ import RelatedEntityListCount from 'Components/RelatedEntityListCount';
 import Metadata from 'Components/Metadata';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import { entityToColumns } from 'constants/listColumns';
-import entityTypes from 'constants/entityTypes';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
-import useCases from 'constants/useCaseTypes';
 import CVETable from 'Containers/Images/CVETable';
 import searchContext from 'Containers/searchContext';
 import { getConfigMgmtCountQuery } from 'Containers/ConfigManagement/ConfigMgmt.utils';
@@ -24,7 +22,14 @@ import queryService from 'utils/queryService';
 import TableWidget from './widgets/TableWidget';
 import EntityList from '../List/EntityList';
 
-const Image = ({ id, entityListType, entityId1, query, entityContext, pagination }) => {
+const ConfigManagementEntityImage = ({
+    id,
+    entityListType,
+    entityId1,
+    query,
+    entityContext,
+    pagination,
+}) => {
     const searchParam = useContext(searchContext);
     const safeImageId = decodeURIComponent(id);
 
@@ -42,7 +47,7 @@ const Image = ({ id, entityListType, entityId1, query, entityContext, pagination
             image(id: $id) {
                 id
                 lastUpdated
-                ${entityContext[entityTypes.DEPLOYMENT] ? '' : 'deploymentCount'}
+                ${entityContext.DEPLOYMENT ? '' : 'deploymentCount'}
                 metadata {
                     layerShas
                     v1 {
@@ -85,9 +90,9 @@ const Image = ({ id, entityListType, entityId1, query, entityContext, pagination
             return defaultQuery;
         }
         const { listFieldName, fragmentName, fragment } = queryService.getFragmentInfo(
-            entityTypes.IMAGE,
+            'IMAGE',
             entityListType,
-            useCases.CONFIG_MANAGEMENT
+            'configmanagement'
         );
         const countQuery = getConfigMgmtCountQuery(entityListType);
 
@@ -111,12 +116,7 @@ const Image = ({ id, entityListType, entityId1, query, entityContext, pagination
                 }
                 const { image: entity } = data;
                 if (!entity) {
-                    return (
-                        <PageNotFound
-                            resourceType={entityTypes.IMAGE}
-                            useCase={useCases.CONFIG_MANAGEMENT}
-                        />
-                    );
+                    return <PageNotFound resourceType="IMAGE" useCase="configmanagement" />;
                 }
 
                 if (entityListType) {
@@ -126,7 +126,7 @@ const Image = ({ id, entityListType, entityId1, query, entityContext, pagination
                             entityId={entityId1}
                             data={getSubListFromEntity(entity, entityListType)}
                             totalResults={data?.image?.count}
-                            entityContext={{ ...entityContext, [entityTypes.IMAGE]: id }}
+                            entityContext={{ ...entityContext, IMAGE: id }}
                             query={query}
                         />
                     );
@@ -188,7 +188,7 @@ const Image = ({ id, entityListType, entityId1, query, entityContext, pagination
                                         className="mx-4 min-w-48 min-h-48 mb-4"
                                         name="Deployments"
                                         value={deploymentCount}
-                                        entityType={entityTypes.DEPLOYMENT}
+                                        entityType="DEPLOYMENT"
                                     />
                                 )}
                             </div>
@@ -207,7 +207,7 @@ const Image = ({ id, entityListType, entityId1, query, entityContext, pagination
                                         rows={layers}
                                         noDataText="No Layers"
                                         className="bg-base-100"
-                                        columns={entityToColumns[entityTypes.IMAGE]}
+                                        columns={entityToColumns.IMAGE}
                                         SubComponent={renderCVEsTable}
                                         idAttribute="id"
                                     />
@@ -221,7 +221,7 @@ const Image = ({ id, entityListType, entityId1, query, entityContext, pagination
     );
 };
 
-Image.propTypes = entityComponentPropTypes;
-Image.defaultProps = entityComponentDefaultProps;
+ConfigManagementEntityImage.propTypes = entityComponentPropTypes;
+ConfigManagementEntityImage.defaultProps = entityComponentDefaultProps;
 
-export default Image;
+export default ConfigManagementEntityImage;

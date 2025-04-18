@@ -11,7 +11,6 @@ import {
 import TableCellLink from 'Components/TableCellLink';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
-import entityTypes from 'constants/entityTypes';
 import { imageSortFields } from 'constants/sortFields';
 import useWorkflowMatch from 'hooks/useWorkflowMatch';
 import { IMAGES_QUERY } from 'queries/image';
@@ -65,7 +64,7 @@ const buildTableColumns = (match, location, entityContext) => {
             id: imageSortFields.CREATED_TIME,
             sortField: imageSortFields.CREATED_TIME,
         },
-        entityContext && entityContext[entityTypes.DEPLOYMENT]
+        entityContext && entityContext.DEPLOYMENT
             ? null
             : {
                   Header: `Deployments`,
@@ -80,7 +79,7 @@ const buildTableColumns = (match, location, entityContext) => {
                       }
                       const url = URLService.getURL(match, location)
                           .push(id)
-                          .push(entityTypes.DEPLOYMENT)
+                          .push('DEPLOYMENT')
                           .url();
                       return (
                           <TableCellLink pdf={pdf} url={url}>
@@ -98,7 +97,7 @@ const buildTableColumns = (match, location, entityContext) => {
 
 const createTableRows = (data) => data.images;
 
-const Images = ({
+const ConfigManagementListImages = ({
     className,
     selectedRowId,
     onRowClick,
@@ -118,7 +117,7 @@ const Images = ({
             className={className}
             query={IMAGES_QUERY}
             variables={variables}
-            entityType={entityTypes.IMAGE}
+            entityType="IMAGE"
             tableColumns={tableColumns}
             createTableRows={createTableRows}
             onRowClick={onRowClick}
@@ -131,7 +130,7 @@ const Images = ({
         />
     );
 };
-Images.propTypes = entityListPropTypes;
-Images.defaultProps = entityListDefaultprops;
+ConfigManagementListImages.propTypes = entityListPropTypes;
+ConfigManagementListImages.defaultProps = entityListDefaultprops;
 
-export default Images;
+export default ConfigManagementListImages;

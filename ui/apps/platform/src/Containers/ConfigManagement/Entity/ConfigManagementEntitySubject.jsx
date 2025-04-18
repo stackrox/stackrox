@@ -1,5 +1,6 @@
 import React, { useContext } from 'react';
-import entityTypes from 'constants/entityTypes';
+import { gql } from '@apollo/client';
+
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
 import CollapsibleSection from 'Components/CollapsibleSection';
@@ -8,14 +9,19 @@ import Metadata from 'Components/Metadata';
 import ClusterScopedPermissions from 'Containers/ConfigManagement/Entity/widgets/ClusterScopedPermissions';
 import NamespaceScopedPermissions from 'Containers/ConfigManagement/Entity/widgets/NamespaceScopedPermissions';
 import isGQLLoading from 'utils/gqlLoading';
-import { gql } from '@apollo/client';
-import useCases from 'constants/useCaseTypes';
 import queryService from 'utils/queryService';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
 import searchContext from 'Containers/searchContext';
 import EntityList from '../List/EntityList';
 
-const Subject = ({ id, entityListType, entityId1, query, entityContext, pagination }) => {
+const ConfigManagementEntitySubject = ({
+    id,
+    entityListType,
+    entityId1,
+    query,
+    entityContext,
+    pagination,
+}) => {
     const searchParam = useContext(searchContext);
 
     const variables = {
@@ -52,9 +58,9 @@ const Subject = ({ id, entityListType, entityId1, query, entityContext, paginati
             return defaultQuery;
         }
         const { fragment } = queryService.getFragmentInfo(
-            entityTypes.SUBJECT,
+            'SUBJECT',
             entityListType,
-            useCases.CONFIG_MANAGEMENT
+            'configmanagement'
         );
 
         return gql`
@@ -105,7 +111,7 @@ const Subject = ({ id, entityListType, entityId1, query, entityContext, paginati
                     let listData;
                     let listCount;
                     switch (entityListType) {
-                        case entityTypes.ROLE:
+                        case 'ROLE':
                             listData = k8sRoles;
                             listCount = k8sRoleCount;
                             break;
@@ -120,7 +126,7 @@ const Subject = ({ id, entityListType, entityId1, query, entityContext, paginati
                             data={listData}
                             totalResults={listCount}
                             query={query}
-                            entityContext={{ ...entityContext, [entityTypes.SUBJECT]: id }}
+                            entityContext={{ ...entityContext, SUBJECT: id }}
                         />
                     );
                 }
@@ -148,7 +154,7 @@ const Subject = ({ id, entityListType, entityId1, query, entityContext, paginati
                                     className="mx-4 min-w-48 min-h-48 mb-4"
                                     name="Roles"
                                     value={k8sRoleCount}
-                                    entityType={entityTypes.ROLE}
+                                    entityType="ROLE"
                                 />
                             </div>
                         </CollapsibleSection>
@@ -171,7 +177,7 @@ const Subject = ({ id, entityListType, entityId1, query, entityContext, paginati
     );
 };
 
-Subject.propTypes = entityComponentPropTypes;
-Subject.defaultProps = entityComponentDefaultProps;
+ConfigManagementEntitySubject.propTypes = entityComponentPropTypes;
+ConfigManagementEntitySubject.defaultProps = entityComponentDefaultProps;
 
-export default Subject;
+export default ConfigManagementEntitySubject;

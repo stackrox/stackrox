@@ -9,7 +9,6 @@ import PolicyDisabledIconText from 'Components/PatternFly/IconText/PolicyDisable
 import PolicySeverityIconText from 'Components/PatternFly/IconText/PolicySeverityIconText';
 import PolicyStatusIconText from 'Components/PatternFly/IconText/PolicyStatusIconText';
 import TableCellLink from 'Components/TableCellLink';
-import entityTypes from 'constants/entityTypes';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
 import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOptions';
 import { policySortFields } from 'constants/sortFields';
@@ -22,7 +21,7 @@ import ListFrontendPaginated from './ListFrontendPaginated';
 
 import filterByPolicyStatus from './utilities/filterByPolicyStatus';
 
-export const defaultPolicyrSort = [
+export const defaultPolicySort = [
     {
         id: policySortFields.POLICY,
         desc: false,
@@ -123,7 +122,7 @@ const tableColumns = [
 
 const createTableRows = (data) => data.policies;
 
-const Policies = ({ className, onRowClick, query, selectedRowId, data }) => {
+const ConfigManagementListPolicies = ({ className, onRowClick, query, selectedRowId, data }) => {
     const autoFocusSearchInput = !selectedRowId;
     const { [SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]: policyStatus, ...restQuery } = query || {};
     const queryText = queryService.objectToWhereClause({
@@ -143,7 +142,7 @@ const Policies = ({ className, onRowClick, query, selectedRowId, data }) => {
             className={className}
             query={POLICIES_QUERY}
             variables={variables}
-            entityType={entityTypes.POLICY}
+            entityType="POLICY"
             tableColumns={tableColumns}
             createTableRows={createTableRowsFilteredByPolicyStatus}
             selectedRowId={selectedRowId}
@@ -166,7 +165,7 @@ const Policies = ({ className, onRowClick, query, selectedRowId, data }) => {
     );
 };
 
-Policies.propTypes = entityListPropTypes;
-Policies.defaultProps = entityListDefaultprops;
+ConfigManagementListPolicies.propTypes = entityListPropTypes;
+ConfigManagementListPolicies.defaultProps = entityListDefaultprops;
 
-export default Policies;
+export default ConfigManagementListPolicies;

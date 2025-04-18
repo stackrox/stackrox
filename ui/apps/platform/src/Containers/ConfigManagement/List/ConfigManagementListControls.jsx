@@ -8,7 +8,6 @@ import TableCellLink from 'Components/TableCellLink';
 import searchContext from 'Containers/searchContext';
 import COMPLIANCE_STATES from 'constants/complianceStates';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
-import entityTypes from 'constants/entityTypes';
 import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOptions';
 import { standardLabels } from 'messages/standards';
 import { LIST_STANDARD_NO_NODES as QUERY } from 'queries/standard';
@@ -85,10 +84,10 @@ const createTableRows = (data) => {
     let standardKeyIndex = 0;
     let controlKeyIndex = 0;
     data.results.results[0].aggregationKeys.forEach(({ scope }, idx) => {
-        if (scope === entityTypes.STANDARD) {
+        if (scope === 'STANDARD') {
             standardKeyIndex = idx;
         }
-        if (scope === entityTypes.CONTROL) {
+        if (scope === 'CONTROL') {
             controlKeyIndex = idx;
         }
     });
@@ -125,7 +124,7 @@ const createTableRows = (data) => {
     return Object.values(controls);
 };
 
-const CISControls = ({ className, selectedRowId, onRowClick, query, data }) => {
+const ConfigManagementListControls = ({ className, selectedRowId, onRowClick, query, data }) => {
     const searchParam = useContext(searchContext);
     const autoFocusSearchInput = !selectedRowId;
 
@@ -138,7 +137,7 @@ const CISControls = ({ className, selectedRowId, onRowClick, query, data }) => {
     const queryText = queryService.objectToWhereClause(queryObject);
     const variables = {
         where: queryText,
-        groupBy: [entityTypes.STANDARD, entityTypes.CONTROL],
+        groupBy: ['STANDARD', 'CONTROL'],
     };
 
     function createTableRowsFilteredByComplianceState(items) {
@@ -153,7 +152,7 @@ const CISControls = ({ className, selectedRowId, onRowClick, query, data }) => {
             variables={variables}
             headerText="CIS Controls"
             noDataText="No control results available. Please run a scan."
-            entityType={entityTypes.CONTROL}
+            entityType="CONTROL"
             tableColumns={tableColumns}
             createTableRows={createTableRowsFilteredByComplianceState}
             onRowClick={onRowClick}
@@ -180,7 +179,7 @@ const CISControls = ({ className, selectedRowId, onRowClick, query, data }) => {
     );
 };
 
-CISControls.propTypes = entityListPropTypes;
-CISControls.defaultProps = entityListDefaultprops;
+ConfigManagementListControls.propTypes = entityListPropTypes;
+ConfigManagementListControls.defaultProps = entityListDefaultprops;
 
-export default CISControls;
+export default ConfigManagementListControls;
