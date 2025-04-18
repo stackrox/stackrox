@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -53,7 +54,7 @@ func (c contentsMap) add(fileName string, openFunc OpenFunc) bool {
 func buildDirContentsMapRecursive(dir, base string, m contentsMap) error {
 	fileInfos, err := os.ReadDir(dir)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "reading bundle directory "+dir)
 	}
 
 	for _, fi := range fileInfos {
@@ -86,7 +87,7 @@ func ContentsFromDir(dir string) (Contents, error) {
 func ContentsFromZIPData(zipData io.ReaderAt, length int64) (Contents, error) {
 	zipReader, err := zip.NewReader(zipData, length)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "parsing ZIP bundle data")
 	}
 
 	contentsMap := make(contentsMap)

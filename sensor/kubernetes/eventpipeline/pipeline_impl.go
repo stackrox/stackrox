@@ -2,8 +2,9 @@ package eventpipeline
 
 import (
 	"context"
-	"github.com/pkg/errors"
 	"sync/atomic"
+
+	"github.com/pkg/errors"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"

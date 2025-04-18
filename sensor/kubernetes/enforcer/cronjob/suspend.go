@@ -2,6 +2,7 @@ package cronjob
 
 import (
 	"context"
+
 	"github.com/pkg/errors"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
