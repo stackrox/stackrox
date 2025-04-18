@@ -257,8 +257,8 @@ func (i *tlsIssuerImpl) requestCertificates(ctx context.Context) (*Response, err
 // send a cert refresh request to Central
 func (i *tlsIssuerImpl) send(ctx context.Context, requestID string) error {
 	select {
-   case <-ctx.Done():
-       return errors.Wrap(ctx.Err(), "failed to send cert refresh request due to context cancellation")
+	case <-ctx.Done():
+		return errors.Wrap(ctx.Err(), "failed to send cert refresh request due to context cancellation")
 	case i.msgToCentralC <- message.New(i.newMsgFromSensorFn(requestID)):
 		return nil
 	}
@@ -268,8 +268,8 @@ func (i *tlsIssuerImpl) send(ctx context.Context, requestID string) error {
 func (i *tlsIssuerImpl) receive(ctx context.Context, requestID string) (*Response, error) {
 	for {
 		response := i.responseQueue.PullBlocking(ctx)
-       if ctx.Err() != nil {
-           return nil, errors.Wrap(ctx.Err(), "failed to receive cert refresh response due to context cancellation")
+		if ctx.Err() != nil {
+			return nil, errors.Wrap(ctx.Err(), "failed to receive cert refresh response due to context cancellation")
 		}
 		if response == nil {
 			return nil, errors.New("received nil response")
