@@ -78,7 +78,7 @@ func (r *ServiceCertificatesRepoSecrets) GetServiceCertificates(ctx context.Cont
 	for serviceType, secretSpec := range r.Secrets {
 		// on context cancellation abort getting other secrets.
 		if ctx.Err() != nil {
-			return nil, ctx.Err()
+			return nil, errors.Wrap(ctx.Err(), "failed to get service certificates due to context cancellation")
 		}
 
 		certificate, ca, err := r.getServiceCertificate(ctx, serviceType, secretSpec)
@@ -98,7 +98,7 @@ func (r *ServiceCertificatesRepoSecrets) GetServiceCertificates(ctx context.Cont
 	}
 
 	if getErr != nil {
-		return nil, getErr
+		return nil, errors.Wrap(getErr, "failed to get service certificates")
 	}
 
 	return certificates, nil
@@ -151,7 +151,7 @@ func (r *ServiceCertificatesRepoSecrets) EnsureServiceCertificates(ctx context.C
 	for _, cert := range certificates.GetServiceCerts() {
 		// on context cancellation abort putting other secrets.
 		if ctx.Err() != nil {
-			return persistedCertificates, ctx.Err()
+			return persistedCertificates, errors.Wrap(ctx.Err(), "failed to ensure service certificates due to context cancellation")
 		}
 
 		secretSpec, ok := r.Secrets[cert.GetServiceType()]
@@ -166,7 +166,10 @@ func (r *ServiceCertificatesRepoSecrets) EnsureServiceCertificates(ctx context.C
 		}
 	}
 
-	return persistedCertificates, serviceErrors
+	if serviceErrors != nil {
+		return persistedCertificates, errors.Wrap(serviceErrors, "failed to ensure service certificates")
+	}
+	return persistedCertificates, nil
 }
 
 func (r *ServiceCertificatesRepoSecrets) ensureServiceCertificate(ctx context.Context, caPem []byte,

@@ -46,5 +46,8 @@ func validateModification(policies []*networkingV1.NetworkPolicy, _ map[k8sutil.
 		uniqueRefs[ref] = struct{}{}
 	}
 
-	return errList.ToError()
+	if err := errList.ToError(); err != nil {
+		return errors.Wrap(err, "invalid network policy modification")
+	}
+	return nil
 }
