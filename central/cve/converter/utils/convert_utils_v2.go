@@ -1,8 +1,6 @@
 package utils
 
 import (
-	"strconv"
-
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -47,7 +45,7 @@ func ImageCVEV2ToEmbeddedVulnerability(vuln *storage.ImageCVEV2) *storage.Embedd
 }
 
 // EmbeddedVulnerabilityToImageCVEV2 converts *storage.EmbeddedVulnerability object to *storage.ImageCVEV2 object
-func EmbeddedVulnerabilityToImageCVEV2(imageID string, componentID string, cveIndex int, from *storage.EmbeddedVulnerability) *storage.ImageCVEV2 {
+func EmbeddedVulnerabilityToImageCVEV2(imageID string, componentID string, from *storage.EmbeddedVulnerability) (*storage.ImageCVEV2, error) {
 	var nvdCvss float32
 	nvdVersion := storage.CvssScoreVersion_UNKNOWN_VERSION
 	for _, score := range from.GetCvssMetrics() {
@@ -83,8 +81,13 @@ func EmbeddedVulnerabilityToImageCVEV2(imageID string, componentID string, cveIn
 		firstImageOccurrence = timestamppb.Now()
 	}
 
+	cveID, err := cve.IDV2(from, componentID)
+	if err != nil {
+		return nil, err
+	}
+
 	ret := &storage.ImageCVEV2{
-		Id:          cve.IDV2(from.GetCve(), componentID, strconv.Itoa(cveIndex)),
+		Id:          cveID,
 		ComponentId: componentID,
 		CveBaseInfo: &storage.CVEInfo{
 			Cve:          from.GetCve(),
@@ -117,5 +120,5 @@ func EmbeddedVulnerabilityToImageCVEV2(imageID string, componentID string, cveIn
 		}
 	}
 
-	return ret
+	return ret, nil
 }

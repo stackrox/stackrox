@@ -12,7 +12,6 @@ import (
 	imagesView "github.com/stackrox/rox/central/views/images"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/cve"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
@@ -39,15 +38,46 @@ const (
 
 var (
 	cveIDMap = map[string]string{
-		cve111: cve.IDV2("cve-2018-1", componentIDMap[comp11], "0"),
-		cve121: cve.IDV2("cve-2018-1", componentIDMap[comp21], "0"),
-		cve231: cve.IDV2("cve-2019-1", componentIDMap[comp31], "0"),
-		cve331: cve.IDV2("cve-2019-2", componentIDMap[comp31], "1"),
-		cve112: cve.IDV2("cve-2018-1", componentIDMap[comp12], "0"),
-		cve232: cve.IDV2("cve-2019-1", componentIDMap[comp32], "0"),
-		cve332: cve.IDV2("cve-2019-2", componentIDMap[comp32], "1"),
-		cve442: cve.IDV2("cve-2017-1", componentIDMap[comp42], "0"),
-		cve542: cve.IDV2("cve-2017-2", componentIDMap[comp42], "1"),
+		cve111: getTestCVEID(&storage.EmbeddedVulnerability{Cve: "cve-2018-1",
+			SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
+				FixedBy: "1.1",
+			},
+			Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
+		}, componentIDMap[comp11]),
+		cve121: getTestCVEID(&storage.EmbeddedVulnerability{Cve: "cve-2018-1",
+			SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
+				FixedBy: "1.5",
+			},
+			Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
+		}, componentIDMap[comp21]),
+		cve231: getTestCVEID(&storage.EmbeddedVulnerability{Cve: "cve-2019-1",
+			Cvss:     4,
+			Severity: storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
+		}, componentIDMap[comp31]),
+		cve331: getTestCVEID(&storage.EmbeddedVulnerability{Cve: "cve-2019-2",
+			Cvss:     3,
+			Severity: storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
+		}, componentIDMap[comp31]),
+		cve112: getTestCVEID(&storage.EmbeddedVulnerability{Cve: "cve-2018-1",
+			SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
+				FixedBy: "1.1",
+			},
+			Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
+		}, componentIDMap[comp12]),
+		cve232: getTestCVEID(&storage.EmbeddedVulnerability{Cve: "cve-2019-1",
+			Severity: storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
+			Cvss:     4,
+		}, componentIDMap[comp32]),
+		cve332: getTestCVEID(&storage.EmbeddedVulnerability{Cve: "cve-2019-2",
+			Severity: storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
+			Cvss:     3,
+		}, componentIDMap[comp32]),
+		cve442: getTestCVEID(&storage.EmbeddedVulnerability{Cve: "cve-2017-1",
+			Severity: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
+		}, componentIDMap[comp42]),
+		cve542: getTestCVEID(&storage.EmbeddedVulnerability{Cve: "cve-2017-2",
+			Severity: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
+		}, componentIDMap[comp42]),
 	}
 
 	distinctCVEs = []string{"cve-2018-1", "cve-2019-1", "cve-2019-2", "cve-2017-1", "cve-2017-2"}

@@ -6,7 +6,6 @@ import (
 	"context"
 	"fmt"
 	"sort"
-	"strconv"
 	"testing"
 	"time"
 
@@ -38,6 +37,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type testCase struct {
@@ -199,7 +199,7 @@ func (s *ImageCVEFlatViewTestSuite) TestGetImageCVEFlat() {
 			}
 			assert.NoError(t, err)
 
-			expected := compileExpected(s.testImages, tc.matchFilter, tc.readOptions, tc.less)
+			expected := s.compileExpected(s.testImages, tc.matchFilter, tc.readOptions, tc.less)
 			assert.Equal(t, len(expected), len(actual))
 			assert.ElementsMatch(t, expected, actual)
 			if tc.testOrder {
@@ -237,7 +237,7 @@ func (s *ImageCVEFlatViewTestSuite) TestGetImageCVEFlatSAC() {
 					return false
 				})
 
-				expected := compileExpected(s.testImages, &matchFilter, tc.readOptions, tc.less)
+				expected := s.compileExpected(s.testImages, &matchFilter, tc.readOptions, tc.less)
 				assert.Equal(t, len(expected), len(actual))
 				assert.ElementsMatch(t, expected, actual)
 			})
@@ -280,7 +280,7 @@ func (s *ImageCVEFlatViewTestSuite) TestGetImageCVEFlatWithPagination() {
 				}
 				assert.NoError(t, err)
 
-				expected := compileExpected(s.testImages, tc.matchFilter, tc.readOptions, tc.less)
+				expected := s.compileExpected(s.testImages, tc.matchFilter, tc.readOptions, tc.less)
 
 				assert.Equal(t, len(expected), len(actual))
 				assert.EqualValues(t, expected, actual)
@@ -307,7 +307,7 @@ func (s *ImageCVEFlatViewTestSuite) TestCountImageCVEFlat() {
 			}
 			assert.NoError(t, err)
 
-			expected := compileExpected(s.testImages, tc.matchFilter, tc.readOptions, nil)
+			expected := s.compileExpected(s.testImages, tc.matchFilter, tc.readOptions, nil)
 			assert.Equal(t, len(expected), actual)
 		})
 	}
@@ -341,7 +341,7 @@ func (s *ImageCVEFlatViewTestSuite) TestCountImageCVEFlatSAC() {
 					return false
 				})
 
-				expected := compileExpected(s.testImages, &matchFilter, tc.readOptions, tc.less)
+				expected := s.compileExpected(s.testImages, &matchFilter, tc.readOptions, tc.less)
 				assert.Equal(t, len(expected), actual)
 			})
 		}
@@ -520,13 +520,14 @@ func (s *ImageCVEFlatViewTestSuite) testCases() []testCase {
 				IDs:   []string{"sha256:6ef31316f4f9e0c31a8f4e602ba287a210d66934f91b1616f1c9b957201d025c"},
 				Level: v1.SearchCategory_IMAGES,
 				Parent: &scoped.Scope{
-					IDs: []string{cve.IDV2("CVE-2022-1552", getTestComponentID(&storage.EmbeddedImageScanComponent{
-						Name:         "postgresql-libs",
-						Version:      "8.4.20-6.el6",
-						Source:       storage.SourceType_OS,
-						Location:     "",
-						Architecture: "",
-					}, "sha256:05dd8ed5c76ad3c9f06481770828cf17b8c89f1e406c91d548426dd70fe94560"), "20")},
+					IDs: []string{getTestCVEID(getTestCVE(),
+						getTestComponentID(&storage.EmbeddedImageScanComponent{
+							Name:         "postgresql-libs",
+							Version:      "8.4.20-6.el6",
+							Source:       storage.SourceType_OS,
+							Location:     "",
+							Architecture: "",
+						}, "sha256:05dd8ed5c76ad3c9f06481770828cf17b8c89f1e406c91d548426dd70fe94560"))},
 					Level: v1.SearchCategory_IMAGE_VULNERABILITIES,
 				},
 			}),
@@ -752,7 +753,7 @@ func applyPaginationProps(baseTc *testCase, paginationTc testCase) {
 	baseTc.less = paginationTc.less
 }
 
-func compileExpected(images []*storage.Image, filter *filterImpl, options views.ReadOptions, less lessFunc) []CveFlat {
+func (s *ImageCVEFlatViewTestSuite) compileExpected(images []*storage.Image, filter *filterImpl, options views.ReadOptions, less lessFunc) []CveFlat {
 	cveMap := make(map[string]*imageCVEFlatResponse)
 
 	for _, image := range images {
@@ -762,7 +763,7 @@ func compileExpected(images []*storage.Image, filter *filterImpl, options views.
 
 		var seenForImage set.Set[string]
 		for _, component := range image.GetScan().GetComponents() {
-			for vulnIdx, vuln := range component.GetVulns() {
+			for _, vuln := range component.GetVulns() {
 				if !filter.matchVuln(vuln) {
 					continue
 				}
@@ -813,7 +814,9 @@ func compileExpected(images []*storage.Image, filter *filterImpl, options views.
 					val.Severity = pointers.Pointer(vuln.GetSeverity())
 				}
 
-				id := cve.IDV2(val.GetCVE(), getTestComponentID(component, image.GetId()), strconv.Itoa(vulnIdx))
+				id, err := cve.IDV2(vuln, getTestComponentID(component, image.GetId()))
+				s.NoError(err)
+
 				var found bool
 				for _, seenID := range val.GetCVEIDs() {
 					if seenID == id {
@@ -902,4 +905,45 @@ func getTestComponentID(testComponent *storage.EmbeddedImageScanComponent, image
 	id, _ := scancomponent.ComponentIDV2(testComponent, imageID)
 
 	return id
+}
+
+func getTestCVEID(testCVE *storage.EmbeddedVulnerability, componentID string) string {
+	id, _ := cve.IDV2(testCVE, componentID)
+
+	return id
+}
+
+func getTestCVE() *storage.EmbeddedVulnerability {
+	parsedTime, _ := time.Parse(time.RFC3339, "2022-05-12T00:00:00Z")
+
+	return &storage.EmbeddedVulnerability{
+		Cve:          "CVE-2022-1552",
+		Cvss:         8.8,
+		Summary:      "DOCUMENTATION: A flaw was found in PostgreSQL. There is an issue with incomplete efforts to operate safely when a privileged user is maintaining another user's objects. The Autovacuum, REINDEX, CREATE INDEX, REFRESH MATERIALIZED VIEW, CLUSTER, and pg_amcheck commands activated relevant protections too late or not at all during the process. This flaw allows an attacker with permission to create non-temporary objects in at least one schema to execute arbitrary SQL functions under a superuser identity.                           MITIGATION: Red Hat has investigated whether a possible mitigation exists for this issue, and has not been able to identify a practical example. Please update the affected package as soon as possible.",
+		Link:         "https://access.redhat.com/security/cve/CVE-2022-1552",
+		ScoreVersion: storage.EmbeddedVulnerability_V3,
+		CvssV3: &storage.CVSSV3{
+			Vector:              "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H",
+			ExploitabilityScore: 2.8,
+			ImpactScore:         5.9,
+			AttackVector:        storage.CVSSV3_ATTACK_NETWORK,
+			AttackComplexity:    storage.CVSSV3_COMPLEXITY_LOW,
+			PrivilegesRequired:  storage.CVSSV3_PRIVILEGE_LOW,
+			UserInteraction:     storage.CVSSV3_UI_NONE,
+			Scope:               storage.CVSSV3_UNCHANGED,
+			Confidentiality:     storage.CVSSV3_IMPACT_HIGH,
+			Integrity:           storage.CVSSV3_IMPACT_HIGH,
+			Availability:        storage.CVSSV3_IMPACT_HIGH,
+			Score:               8.8,
+			Severity:            storage.CVSSV3_HIGH,
+		},
+		PublishedOn:       timestamppb.New(parsedTime),
+		VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+		VulnerabilityTypes: []storage.EmbeddedVulnerability_VulnerabilityType{
+			storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+		},
+		Suppressed: false,
+		Severity:   storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
+		State:      storage.VulnerabilityState_OBSERVED,
+	}
 }
