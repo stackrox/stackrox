@@ -4,7 +4,7 @@ import (
 	"hash"
 	"hash/fnv"
 
-	"github.com/mitchellh/hashstructure/v2"
+	"github.com/gohugoio/hashstructure"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -27,7 +27,7 @@ func (h *Hasher) HashEvent(event *central.SensorEvent) (uint64, bool) {
 		return 0, false
 	}
 	h.hasher.Reset()
-	hashValue, err := hashstructure.Hash(event.GetResource(), hashstructure.FormatV2, &hashstructure.HashOptions{
+	hashValue, err := hashstructure.Hash(event.GetResource(), &hashstructure.HashOptions{
 		TagName: "sensorhash",
 		Hasher:  h.hasher,
 	})
