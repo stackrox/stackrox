@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
+	"golang.org/x/sync/semaphore"
 )
 
 const batchSize = 5000
@@ -35,6 +36,7 @@ type platformReprocessorImpl struct {
 	deploymentDatastore deploymentDS.DataStore
 	platformMatcher     platformmatcher.PlatformMatcher
 
+	semaphore  *semaphore.Weighted
 	stopSignal concurrency.Signal
 	// isStarted will make sure only one reprocessing routine runs for an instance of reprocessor
 	isStarted atomic.Bool
@@ -52,6 +54,7 @@ func New(alertDatastore alertDS.DataStore,
 		configDatastore:     configDatastore,
 		deploymentDatastore: deploymentDatastore,
 		platformMatcher:     platformMatcher,
+		semaphore:           semaphore.NewWeighted(1),
 		stopSignal:          concurrency.NewSignal(),
 
 		customized: features.CustomizablePlatformComponents.Enabled(),
@@ -75,6 +78,11 @@ func (pr *platformReprocessorImpl) Stop() {
 }
 
 func (pr *platformReprocessorImpl) RunReprocessor() {
+	err := pr.semaphore.Acquire(reprocessorCtx, 1)
+	if err != nil {
+		log.Errorf("Failed to acquire reprocessor semaphore: %v", err)
+		return
+	}
 	flag := true
 	if pr.customized {
 		config, _, err := pr.configDatastore.GetPlatformComponentConfig(reprocessorCtx)
@@ -98,6 +106,7 @@ func (pr *platformReprocessorImpl) RunReprocessor() {
 			log.Errorf("Error marking platform component config as reevaluated: %v", err)
 		}
 	}
+	pr.semaphore.Release(1)
 }
 
 func (pr *platformReprocessorImpl) reprocessAlerts() error {
