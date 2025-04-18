@@ -105,7 +105,7 @@ func fetchCertificateFromSensor(ctx context.Context, token string) (*sensor.Fetc
 			time.Sleep(retryDelay)
 		}))
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "fetching certificate from sensor failed")
 	}
 	return fetchResult, nil
 }
