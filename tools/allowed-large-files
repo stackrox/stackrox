@@ -1,4 +1,5 @@
 **/go.sum
+**/zz_generated.deepcopy.go
 CHANGELOG.md
 central/alert/datastore/internal/store/postgres/store.go
 central/cluster/datastore/datastore_impl_test.go

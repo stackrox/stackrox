@@ -38,10 +38,8 @@ type CentralSpec struct {
 	Scanner *ScannerComponentSpec `json:"scanner,omitempty"`
 
 	// Settings for the Scanner V4 component, which can run in addition to the previously existing Scanner components
-	//+kubebuilder:default={"scannerComponent":"Default"}
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,displayName="Scanner V4 Component Settings"
 	ScannerV4 *ScannerV4Spec `json:"scannerV4,omitempty"`
-	// Above default is necessary to make the nested default work see: https://github.com/kubernetes-sigs/controller-tools/issues/622
 
 	// Settings related to outgoing network traffic.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4
@@ -582,8 +580,11 @@ type ScannerComponentSpec struct {
 
 // ScannerV4Spec defines settings for the central "Scanner V4" component.
 type ScannerV4Spec struct {
-	// If you want to deploy Scanner V4 components set this to "Enabled"
-	//+kubebuilder:default=Default
+	// Can be specified as "Enabled" or "Disabled".
+	// If this field is not specified, the following defaulting takes place:
+	// For new installations, Scanner V4 is enabled starting with ACS 4.8.
+	// For upgrades to 4.8 the current enablement state of Scanner V4 will be retained.
+	// TODO: Let the docs team describe this in better words.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,displayName="Scanner V4 component"
 	ScannerComponent *ScannerV4ComponentPolicy `json:"scannerComponent,omitempty"`
 
@@ -604,14 +605,6 @@ type ScannerV4Spec struct {
 	// Prometheus compatible format.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=5,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:fieldDependency:.scannerComponent:Enabled"}
 	Monitoring *Monitoring `json:"monitoring,omitempty"`
-}
-
-// IsEnabled checks whether Scanner V4 is enabled. This method is safe to be used with nil receivers.
-func (s *ScannerV4Spec) IsEnabled() bool {
-	if s == nil || s.ScannerComponent == nil {
-		return false // disabled by default
-	}
-	return *s.ScannerComponent == ScannerV4ComponentEnabled
 }
 
 // GetAnalyzer returns the analyzer component even if receiver is nil
@@ -646,10 +639,7 @@ const (
 type ScannerV4ComponentPolicy string
 
 const (
-	// ScannerV4ComponentDefault means that Scanner V4 uses the default semantics
-	// to identify whether Scanner V4 component should be used.
-	// Currently this defaults to "Disabled" semantics.
-	// TODO change default to "Enabled" semantics with version 4.5
+	// Keep this for compatibility and potentially for reasoning about expected defaults.
 	ScannerV4ComponentDefault ScannerV4ComponentPolicy = "Default"
 	// ScannerV4ComponentEnabled explicitly enables the Scanner V4 component.
 	ScannerV4ComponentEnabled ScannerV4ComponentPolicy = "Enabled"
@@ -688,6 +678,8 @@ type CentralStatus struct {
 	ProductVersion string `json:"productVersion,omitempty"`
 	//+operator-sdk:csv:customresourcedefinitions:type=status,order=2
 	Central *CentralComponentStatus `json:"central,omitempty"`
+
+	Defaults *StatusDefaults `json:"defaults,omitempty"`
 }
 
 // AdminPasswordStatus shows status related to the admin password.
@@ -738,14 +730,12 @@ func init() {
 var (
 	// CentralGVK is the GVK for the Central type.
 	CentralGVK = GroupVersion.WithKind("Central")
+
+	ScannerV4Enabled  = ScannerV4ComponentEnabled
+	ScannerV4Disabled = ScannerV4ComponentDisabled
 )
 
 // IsScannerEnabled returns true if scanner is enabled.
 func (c *Central) IsScannerEnabled() bool {
 	return c.Spec.Scanner.IsEnabled()
-}
-
-// IsScannerV4Enabled returns true if Scanner V4 is enabled.
-func (c *Central) IsScannerV4Enabled() bool {
-	return c.Spec.ScannerV4.IsEnabled()
 }

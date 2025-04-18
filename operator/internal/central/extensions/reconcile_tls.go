@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	"github.com/stackrox/rox/operator/internal/common"
+	"github.com/stackrox/rox/operator/internal/common/defaulting"
 	commonExtensions "github.com/stackrox/rox/operator/internal/common/extensions"
 	commonLabels "github.com/stackrox/rox/operator/internal/common/labels"
 	"github.com/stackrox/rox/operator/internal/types"
@@ -240,21 +241,21 @@ func (r *createCentralTLSExtensionRun) reconcileScannerDBTLSSecret(ctx context.C
 }
 
 func (r *createCentralTLSExtensionRun) reconcileScannerV4IndexerTLSSecret(ctx context.Context) error {
-	if r.centralObj.Spec.ScannerV4.IsEnabled() {
+	if defaulting.ScannerV4ComponentPolicyEnabled(&r.centralObj.Status, r.centralObj.Spec.ScannerV4) {
 		return r.EnsureSecret(ctx, "scanner-v4-indexer-tls", r.validateScannerV4IndexerTLSData, r.generateScannerV4IndexerTLSData, commonLabels.TLSSecretLabels())
 	}
 	return r.DeleteSecret(ctx, "scanner-v4-indexer-tls")
 }
 
 func (r *createCentralTLSExtensionRun) reconcileScannerV4MatcherTLSSecret(ctx context.Context) error {
-	if r.centralObj.Spec.ScannerV4.IsEnabled() {
+	if defaulting.ScannerV4ComponentPolicyEnabled(&r.centralObj.Status, r.centralObj.Spec.ScannerV4) {
 		return r.EnsureSecret(ctx, "scanner-v4-matcher-tls", r.validateScannerV4MatcherTLSData, r.generateScannerV4MatcherTLSData, commonLabels.TLSSecretLabels())
 	}
 	return r.DeleteSecret(ctx, "scanner-v4-matcher-tls")
 }
 
 func (r *createCentralTLSExtensionRun) reconcileScannerV4DBTLSSecret(ctx context.Context) error {
-	if r.centralObj.Spec.ScannerV4.IsEnabled() {
+	if defaulting.ScannerV4ComponentPolicyEnabled(&r.centralObj.Status, r.centralObj.Spec.ScannerV4) {
 		return r.EnsureSecret(ctx, "scanner-v4-db-tls", r.validateScannerV4DBTLSData, r.generateScannerV4DBTLSData, commonLabels.TLSSecretLabels())
 	}
 	return r.DeleteSecret(ctx, "scanner-v4-db-tls")
