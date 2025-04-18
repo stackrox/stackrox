@@ -15,6 +15,9 @@ import (
 const (
 	lastModifiedHeader    = "Last-Modified"
 	ifModifiedSinceHeader = "If-Modified-Since"
+
+	defaultRetryMax   = 4
+	defaultRetryDelay = 10 * time.Second
 )
 
 var randGen = rand.New(rand.NewSource(time.Now().UnixNano()))
@@ -28,6 +31,9 @@ type updater struct {
 	interval    time.Duration
 	once        sync.Once
 	stopSig     concurrency.Signal
+
+	RetryDelay time.Duration
+	RetryMax   int
 }
 
 // newUpdater creates a new updater.
@@ -38,6 +44,8 @@ func newUpdater(file *file.File, client *http.Client, downloadURL string, interv
 		downloadURL: downloadURL,
 		interval:    interval,
 		stopSig:     concurrency.NewSignal(),
+		RetryDelay:  defaultRetryDelay,
+		RetryMax:    defaultRetryMax,
 	}
 }
 
@@ -72,9 +80,15 @@ func (u *updater) runForever() {
 }
 
 func (u *updater) update() {
-	if err := u.doUpdate(); err != nil {
-		log.Errorf("Scanner vulnerability updater for endpoint %q failed: %v", u.downloadURL, err)
+	for attempt := 1; attempt <= u.RetryMax; attempt++ {
+		if err := u.doUpdate(); err != nil {
+			log.Warnf("Scanner vulnerability updater for endpoint %q failed attempt %d: %v", u.downloadURL, attempt, err)
+		} else {
+			return // successful update
+		}
+		time.Sleep(u.RetryDelay)
 	}
+	log.Errorf("Scanner vulnerability updater for endpoint %q failed retries.", u.downloadURL)
 }
 
 func (u *updater) doUpdate() error {
