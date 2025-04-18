@@ -16,7 +16,9 @@ type Store interface {
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 
 	Get(ctx context.Context, id string) (*storage.DiscoveredCluster, bool, error)
+	// Deprecated: use GetByQueryFn instead
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.DiscoveredCluster, error)
+	GetByQueryFn(ctx context.Context, query *v1.Query, fn func(obj *storage.DiscoveredCluster) error) error
 	UpsertMany(ctx context.Context, objs []*storage.DiscoveredCluster) error
 	DeleteByQuery(ctx context.Context, query *v1.Query) ([]string, error)
 }

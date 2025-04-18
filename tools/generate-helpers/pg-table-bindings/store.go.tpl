@@ -49,7 +49,10 @@ var (
     {{- end }}
 )
 
-type storeType = {{ .Type }}
+type (
+    storeType = {{ .Type }}
+    callback  = func(obj *storeType) error
+)
 
 // Store is the interface to interact with the storage for {{ .Type }}
 type Store interface {
@@ -68,13 +71,15 @@ type Store interface {
 
     Get(ctx context.Context, {{$primaryKeyName}} {{$primaryKeyType}}) (*storeType, bool, error)
 {{- if .SearchCategory }}
+    // Deprecated: use GetByQueryFn instead
     GetByQuery(ctx context.Context, query *v1.Query) ([]*storeType, error)
+    GetByQueryFn(ctx context.Context, query *v1.Query, fn callback) error
 {{- end }}
     GetMany(ctx context.Context, identifiers []{{$primaryKeyType}}) ([]*storeType, []int, error)
     GetIDs(ctx context.Context) ([]{{$primaryKeyType}}, error)
 
-    Walk(ctx context.Context, fn func(obj *storeType) error) error
-    WalkByQuery(ctx context.Context, query *v1.Query, fn func(obj *storeType) error) error
+    Walk(ctx context.Context, fn callback) error
+    WalkByQuery(ctx context.Context, query *v1.Query, fn callback) error
 }
 
 {{ define "defineScopeChecker" }}scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_{{ . }}_ACCESS).Resource(targetResource){{ end }}

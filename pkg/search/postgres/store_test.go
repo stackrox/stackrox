@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -354,6 +355,44 @@ func TestGetByQuery(t *testing.T) {
 		testObjects[3],
 	}
 	protoassert.ElementsMatch(t, objectsAfter, expectedObjectsAfter)
+}
+
+func TestGetByQueryFn(t *testing.T) {
+	testDB := pgtest.ForT(t)
+	store := newStore(testDB)
+
+	var objects []*storage.TestSingleKeyStruct
+	collect := func(obj *storage.TestSingleKeyStruct) error {
+		objects = append(objects, obj)
+		return nil
+	}
+
+	testObjects := sampleTestSingleKeyStructArray("GetByQueryFn")
+	query2 := getMatchFieldQuery("Test Name", "Test GetByQueryFn 2")
+	query4 := getMatchFieldQuery("Test Key", "TestGetByQueryFn4")
+	query := getDisjunctionQuery(query2, query4)
+
+	errBefore := store.GetByQueryFn(ctx, query, collect)
+	assert.NoError(t, errBefore)
+	assert.Empty(t, objects)
+
+	assert.NoError(t, store.UpsertMany(ctx, testObjects))
+
+	errAfter := store.GetByQueryFn(ctx, query, collect)
+	assert.NoError(t, errAfter)
+	expectedObjectsAfter := []*storage.TestSingleKeyStruct{
+		testObjects[1],
+		testObjects[3],
+	}
+	protoassert.ElementsMatch(t, objects, expectedObjectsAfter)
+
+	count := 0
+	err := store.GetByQueryFn(ctx, query, func(*storage.TestSingleKeyStruct) error {
+		count++
+		return errors.New("some error")
+	})
+	assert.EqualError(t, err, "processing rows: some error")
+	assert.Equal(t, 1, count)
 }
 
 func TestDeleteByQuery(t *testing.T) {

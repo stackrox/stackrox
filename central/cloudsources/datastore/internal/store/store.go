@@ -16,7 +16,9 @@ type Store interface {
 	Count(ctx context.Context, q *v1.Query) (int, error)
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 	Get(ctx context.Context, id string) (*storage.CloudSource, bool, error)
+	// Deprecated: use GetByQueryFn instead
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.CloudSource, error)
+	GetByQueryFn(ctx context.Context, query *v1.Query, fn func(obj *storage.CloudSource) error) error
 	Upsert(ctx context.Context, obj *storage.CloudSource) error
 	Delete(ctx context.Context, id string) error
 }
