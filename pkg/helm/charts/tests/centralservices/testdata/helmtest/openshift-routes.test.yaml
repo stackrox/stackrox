@@ -1,0 +1,49 @@
+server:
+  availableSchemas:
+    - openshift-4.18
+    - com.coreos
+values:
+  imagePullSecrets:
+    allowNone: true
+set:
+  env.openshift: 4
+tests:
+  - name: "only passthrough routes, no reencrypt route"
+    set:
+      central.exposure.route.enabled: true
+      central.exposure.route.reencrypt.enabled: false
+    expect: |
+      .routes["central"] | [
+          assertThat(. != null),
+          assertThat(.spec.tls.termination == "passthrough")
+        ]
+      .routes["central-mtls"] | [
+          assertThat(. != null),
+          assertThat(.spec.tls.termination == "passthrough")
+        ]
+      .routes["central-reencrypt"] | assertThat(. == null)
+  - name: "passthrough routes and reencrypt route"
+    set:
+      central.exposure.route.enabled: true
+      central.exposure.route.reencrypt.enabled: true
+    expect: |
+      .routes["central"] | [
+          assertThat(. != null),
+          assertThat(.spec.tls.termination == "passthrough")
+        ]
+      .routes["central-mtls"] | [
+          assertThat(. != null),
+          assertThat(.spec.tls.termination == "passthrough")
+        ]
+      .routes["central-reencrypt"] | [
+          assertThat(. != null),
+          assertThat(.spec.tls.termination == "reencrypt")
+        ]
+  - name: "no passthrough routes and no reencrypt route"
+    set:
+      central.exposure.route.enabled: false
+      central.exposure.route.reencrypt.enabled: false
+    expect: |
+      .routes["central"] | assertThat(. == null)
+      .routes["central-mtls"] | assertThat(. == null)
+      .routes["central-reencrypt"] | assertThat(. == null)
