@@ -154,4 +154,9 @@ var (
 	//
 	// This must be set in Scanner V4 Matcher to have any effect.
 	ScannerV4RedHatCSAF = registerFeature("Scanner V4 will enrich its results with Red Hat CSAF data", "ROX_SCANNER_V4_RED_HAT_CSAF", enabled)
+
+	// CollectorUseLegacyServices makes collector use the legacy services.
+	//
+	// This is merely for testing, this feature flag does not need to be incorporated.
+	CollectorUseLegacyServices = registerFeature("Have collector use the legacy gRPC services", "ROX_COLLECTOR_USE_LEGACY_SERVICES", enabled)
 )

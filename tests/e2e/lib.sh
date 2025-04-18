@@ -596,7 +596,7 @@ wait_for_collectors_to_be_operational() {
     local sensor_namespace=${1:-stackrox}
     info "Will wait for collectors to reach a ready state in namespace ${sensor_namespace}"
 
-    local readiness_indicator="Successfully established GRPC stream for signals"
+    local readiness_indicator="Successfully established GRPC stream"
     local timeout=300
     local retry_interval=10
 

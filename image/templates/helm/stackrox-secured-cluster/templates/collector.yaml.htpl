@@ -77,6 +77,8 @@ spec:
           value: "{{ ._rox.collector.runtimeConfig.enabled }}"
         [<- end >]
         {{- include "srox.envVars" (list . "daemonset" "collector" "collector") | nindent 8 }}
+        - name: ROX_COLLECTOR_USE_LEGACY_SERVICES
+          value: "true"
         resources:
           {{- ._rox.collector._resources | nindent 10 }}
         securityContext:
