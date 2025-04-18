@@ -5,11 +5,17 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 )
 
 var systemNamespaceRegex = regexp.MustCompile(`^kube-.*|^openshift-.*|^stackrox$|^rhacs-operator$|^open-cluster-management$|^multicluster-engine$|^aap$|^hive$|^nvidia-gpu-operator$`)
 
 type platformMatcherImpl struct {
+	regexes []*regexp.Regexp
+}
+
+func (p *platformMatcherImpl) SetRegexes(regexes []*regexp.Regexp) {
+	p.regexes = regexes
 }
 
 func (p *platformMatcherImpl) MatchAlert(alert *storage.Alert) (bool, error) {
@@ -30,5 +36,13 @@ func (p *platformMatcherImpl) MatchDeployment(deployment *storage.Deployment) (b
 }
 
 func (p *platformMatcherImpl) matchNamespace(namespace string) bool {
+	if features.CustomizablePlatformComponents.Enabled() {
+		for _, rule := range p.regexes {
+			if rule.MatchString(namespace) {
+				return true
+			}
+		}
+		return false
+	}
 	return systemNamespaceRegex.MatchString(namespace)
 }

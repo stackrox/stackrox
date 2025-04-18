@@ -2,9 +2,11 @@ package datastore
 
 import (
 	"context"
+	"regexp"
 
 	pgStore "github.com/stackrox/rox/central/config/store/postgres"
 	"github.com/stackrox/rox/central/globaldb"
+	"github.com/stackrox/rox/central/platform/matcher"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
@@ -173,11 +175,28 @@ func validateConfigAndPopulateMissingDefaults(datastore DataStore) {
 	}
 }
 
+func populatePlatformComponentMatcher(d DataStore) {
+	if !features.CustomizablePlatformComponents.Enabled() {
+		return
+	}
+	ctx := sac.WithAllAccess(context.Background())
+	platformComponentConfig, _, _ := d.GetPlatformComponentConfig(ctx)
+	if platformComponentConfig == nil {
+		return
+	}
+	regexes := make([]*regexp.Regexp, 0)
+	for _, rule := range platformComponentConfig.Rules {
+		regexes = append(regexes, regexp.MustCompile(rule.GetNamespaceRule().Regex))
+	}
+	matcher.Singleton().SetRegexes(regexes)
+}
+
 // populateDefaultSystemRuleIfMissing returns true if the platform component config's system rule was updated
 func populateDefaultSystemRuleIfMissing(config *storage.Config) bool {
 	if config.GetPlatformComponentConfig() == nil {
 		config.PlatformComponentConfig = &storage.PlatformComponentConfig{
-			Rules: []*storage.PlatformComponentConfig_Rule{defaultPlatformConfigSystemRule},
+			Rules:             []*storage.PlatformComponentConfig_Rule{defaultPlatformConfigSystemRule},
+			NeedsReevaluation: true,
 		}
 		return true
 	}
@@ -190,6 +209,7 @@ func populateDefaultSystemRuleIfMissing(config *storage.Config) bool {
 		config.GetPlatformComponentConfig().Rules,
 		defaultPlatformConfigSystemRule,
 	)
+	config.GetPlatformComponentConfig().NeedsReevaluation = true
 	return true
 }
 
@@ -199,6 +219,7 @@ func initialize() {
 	d = New(store)
 
 	validateConfigAndPopulateMissingDefaults(d)
+	populatePlatformComponentMatcher(d)
 }
 
 // Singleton provides the interface for non-service external interaction.

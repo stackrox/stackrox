@@ -39,6 +39,18 @@ func (m *MockPlatformReprocessor) EXPECT() *MockPlatformReprocessorMockRecorder 
 	return m.recorder
 }
 
+// RunReprocessor mocks base method.
+func (m *MockPlatformReprocessor) RunReprocessor() {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RunReprocessor")
+}
+
+// RunReprocessor indicates an expected call of RunReprocessor.
+func (mr *MockPlatformReprocessorMockRecorder) RunReprocessor() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RunReprocessor", reflect.TypeOf((*MockPlatformReprocessor)(nil).RunReprocessor))
+}
+
 // Start mocks base method.
 func (m *MockPlatformReprocessor) Start() {
 	m.ctrl.T.Helper()
