@@ -1,6 +1,7 @@
 package networkbaseline
 
 import (
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/networkgraph/networkbaseline"
 	"github.com/stackrox/rox/pkg/sync"
@@ -48,7 +49,7 @@ func (e *networkBaselineEvaluator) AddBaseline(baseline *storage.NetworkBaseline
 
 	baselineInfo, err := networkbaseline.ConvertBaselineInfoFromProto(baseline)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to convert baseline info from proto")
 	}
 
 	e.baselineLock.Lock()
