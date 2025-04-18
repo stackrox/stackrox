@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/config/datastore"
 	"github.com/stackrox/rox/central/convert/storagetov1"
 	"github.com/stackrox/rox/central/convert/v1tostorage"
+	"github.com/stackrox/rox/central/platform/reprocessor"
 	"github.com/stackrox/rox/central/telemetry/centralclient"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -221,6 +222,7 @@ func (s *serviceImpl) UpdatePlatformComponentConfig(ctx context.Context, req *v1
 	if err != nil {
 		return nil, err
 	}
+	reprocessor.Singleton().RunReprocessor()
 	return config, nil
 }
 
