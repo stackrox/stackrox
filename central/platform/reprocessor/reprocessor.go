@@ -9,4 +9,5 @@ type PlatformReprocessor interface {
 
 	// Stop PlatformReprocessor
 	Stop()
+	RunReprocessor()
 }
