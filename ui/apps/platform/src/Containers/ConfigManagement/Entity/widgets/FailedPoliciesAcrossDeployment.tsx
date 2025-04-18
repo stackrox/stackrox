@@ -1,19 +1,25 @@
 import React from 'react';
 import entityTypes from 'constants/entityTypes';
-import { useParams } from 'react-router-dom';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import { gql } from '@apollo/client';
 import queryService from 'utils/queryService';
 import { sortSeverity } from 'sorters/sorters';
 import { format } from 'date-fns';
 import dateTimeFormat from 'constants/dateTimeFormat';
+import { BasePolicy } from 'types/policy.proto';
 
 import NoResultsMessage from 'Components/NoResultsMessage';
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
 import PolicySeverityIconText from 'Components/PatternFly/IconText/PolicySeverityIconText';
+import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 import { formatLifecycleStages } from 'Containers/Policies/policies.utils';
 import TableWidget from './TableWidget';
+
+type FailedPolicy = Pick<
+    BasePolicy,
+    'id' | 'name' | 'severity' | 'enforcementActions' | 'categories' | 'lifecycleStages'
+>;
 
 const QUERY = gql`
     query failedPolicies($query: String) {
@@ -32,19 +38,39 @@ const QUERY = gql`
     }
 `;
 
-const createTableRows = (data) => {
+const createTableRows = (data: {
+    violations: {
+        id: string;
+        time: string;
+        policy: FailedPolicy;
+    }[];
+}) => {
+    const initial: ({
+        time: string;
+    } & FailedPolicy)[] = [];
     const failedPolicies = data.violations.reduce((acc, curr) => {
         const row = {
             time: curr.time,
             ...curr.policy,
         };
         return [...acc, row];
-    }, []);
+    }, initial);
     return failedPolicies;
 };
 
-const FailedPoliciesAcrossDeployment = () => {
-    const { deploymentID } = useParams();
+export type FailedPoliciesAcrossDeploymentProps = {
+    deploymentID: string;
+};
+
+function FailedPoliciesAcrossDeployment({ deploymentID }: FailedPoliciesAcrossDeploymentProps) {
+    if (!deploymentID) {
+        return (
+            <TableErrorComponent
+                error={new Error('Unable to show failed policies for this deployment.')}
+                message="A required ID for this deployment was not provided!"
+            ></TableErrorComponent>
+        );
+    }
 
     return (
         <Query
@@ -113,7 +139,7 @@ const FailedPoliciesAcrossDeployment = () => {
                         headerClassName: `w-1/5 ${defaultHeaderClassName}`,
                         className: `w-1/5 ${defaultColumnClassName}`,
                         Cell: ({ original }) => {
-                            const { categories } = original;
+                            const { categories }: { categories: string[] } = original;
                             return categories.join(', ');
                         },
                         accessor: 'categories',
@@ -150,6 +176,6 @@ const FailedPoliciesAcrossDeployment = () => {
             }}
         </Query>
     );
-};
+}
 
 export default FailedPoliciesAcrossDeployment;

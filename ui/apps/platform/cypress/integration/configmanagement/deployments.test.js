@@ -21,6 +21,10 @@ describe('Configuration Management Deployments', () => {
 
     it('should render the deployments list and open the side panel when a row is clicked', () => {
         visitConfigurationManagementEntityInSidePanel(entitiesKey);
+        // Expect the list of failed policies to be displayed in the side panel
+        cy.get(
+            'header:contains("Deployment Findings") + div:contains("policies failed across this deployment")'
+        );
     });
 
     it('should go from table link to images table in side panel', () => {
