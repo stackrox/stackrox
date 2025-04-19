@@ -52,6 +52,7 @@ scripts/ci/lib.sh
 sensor/tests/data/policies.json
 sensor/upgrader/preflight/testdata/k8s-1.22.json.gz
 tests/e2e/lib.sh
+tests/e2e/run-scanner-v4-install.bats
 tests/performance/load/package-lock.json
 tests/performance/scale/config/metrics-acs.yml
 tests/performance/scale/config/metrics-full.yml
