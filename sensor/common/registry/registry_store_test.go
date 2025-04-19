@@ -151,6 +151,43 @@ func TestRegistryStore_PullSecrets(t *testing.T) {
 			assert.Error(t, err)
 			assert.Empty(t, regs)
 		})
+
+		// Ensures that wildcards in secrets are retrieved as expected. That is,
+		// the wildcards don't crash and are simply ignored in the matching logic.
+		// Once we support glob wildcards, this test must be rewritten.
+		t.Run("ensure glob wildcard secrets are retrieved", func(t *testing.T) {
+			regStore := NewRegistryStore(alwaysInsecureCheckTLS)
+
+			dce := config.DockerConfigEntry{Username: "username", Password: "password"}
+			dc := config.DockerConfig{
+				"*.kubernetes.io":           dce,
+				"*.kubernetes.io/rhacs-eng": dce,
+				"*.*.kubernetes.io":         dce,
+				"prefix.*.io":               dce,
+				"*-good.kubernetes.io":      dce,
+			}
+
+			namespace := "qa"
+			regStore.UpsertSecret(namespace, fakeSecretName, dc, noServiceAcctName)
+
+			tcs := []string{
+				"abc.kubernetes.io/image:latest",
+				"abc.def.kubernetes.io/image:latest",
+				"prefix.kubernetes.io/image:latest",
+				"prefix-good.kubernetes.io/image:latest",
+			}
+			for i, tc := range tcs {
+				t.Run(fmt.Sprint(i), func(t *testing.T) {
+					img, _, err := utils.GenerateImageNameFromString(tc)
+					require.NoError(t, err)
+
+					// We expect zero matches here because glob wildcards are not supported yet.
+					regs, err := regStore.GetPullSecretRegistries(img, namespace, nil)
+					assert.Empty(t, regs)
+					assert.ErrorContains(t, err, "unknown image registry")
+				})
+			}
+		})
 	})
 
 	t.Run("SecretsByName", func(t *testing.T) {
@@ -193,6 +230,43 @@ func TestRegistryStore_PullSecrets(t *testing.T) {
 
 					require.Len(t, regs, 1)
 					assert.Equal(t, img.GetRegistry(), regs[0].Config(bgCtx).RegistryHostname)
+				})
+			}
+		})
+
+		// Ensures that wildcards in secrets are retrieved as expected. That is,
+		// the wildcards don't crash and are simply ignored in the matching logic.
+		// Once we support glob wildcards, this test must be rewritten.
+		t.Run("ensure glob wildcard secrets are retrieved", func(t *testing.T) {
+			regStore := NewRegistryStore(alwaysInsecureCheckTLS)
+
+			dce := config.DockerConfigEntry{Username: "username", Password: "password"}
+			dc := config.DockerConfig{
+				"*.kubernetes.io":           dce,
+				"*.kubernetes.io/rhacs-eng": dce,
+				"*.*.kubernetes.io":         dce,
+				"prefix.*.io":               dce,
+				"*-good.kubernetes.io":      dce,
+			}
+
+			namespace := "qa"
+			regStore.UpsertSecret(namespace, fakeSecretName, dc, noServiceAcctName)
+
+			tcs := []string{
+				"abc.kubernetes.io/image:latest",
+				"abc.def.kubernetes.io/image:latest",
+				"prefix.kubernetes.io/image:latest",
+				"prefix-good.kubernetes.io/image:latest",
+			}
+			for i, tc := range tcs {
+				t.Run(fmt.Sprint(i), func(t *testing.T) {
+					img, _, err := utils.GenerateImageNameFromString(tc)
+					require.NoError(t, err)
+
+					// We expect zero matches here because glob wildcards are not supported yet.
+					regs, err := regStore.GetPullSecretRegistries(img, namespace, nil)
+					assert.Empty(t, regs)
+					assert.NoError(t, err)
 				})
 			}
 		})
@@ -290,8 +364,13 @@ func TestRegistryStore_GlobalStore(t *testing.T) {
 			{Username: "username-2", Password: "password-2"},
 		}
 		dockerCfgs := []config.DockerConfig{
+			// For global pull secrets, we ignore the path and match by hosts. Hence we expect two matches.
 			{fmt.Sprintf("%s/repo-1", fakeImgName.GetRegistry()): dockerEntries[0]},
 			{fmt.Sprintf("%s/repo-2", fakeImgName.GetRegistry()): dockerEntries[1]},
+			// We expect zero matches for these because glob wildcards are not supported yet.
+			{fmt.Sprintf("*.%s", fakeImgName.GetRegistry()): dockerEntries[0]},
+			{fmt.Sprintf("*.%s/repo-3", fakeImgName.GetRegistry()): dockerEntries[0]},
+			{"*.com": dockerEntries[0]},
 		}
 
 		regStore := NewRegistryStore(alwaysInsecureCheckTLS)
