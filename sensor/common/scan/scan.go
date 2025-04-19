@@ -293,8 +293,8 @@ func (s *LocalScan) getRegistries(ctx context.Context, namespace string, imgName
 		}
 	}
 
-	// Add global pull secret registry.
-	// An err indicates no registry was found, only append if was no err.
+	// Add global pull secret registries.
+	// An err indicates no registries were found, only append if was no err.
 	if gRegs, err := s.getGlobalRegistries(imgName); err == nil {
 		regs = append(regs, gRegs...)
 	}
