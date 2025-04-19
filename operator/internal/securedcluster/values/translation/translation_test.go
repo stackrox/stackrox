@@ -10,6 +10,7 @@ import (
 	"github.com/jeremywohl/flatten"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	"github.com/stackrox/rox/operator/internal/images"
+	"github.com/stackrox/rox/operator/internal/utils"
 	"github.com/stackrox/rox/operator/internal/utils/testutils"
 	testingUtils "github.com/stackrox/rox/operator/internal/values/testing"
 	"github.com/stackrox/rox/operator/internal/values/translation"
@@ -1021,7 +1022,7 @@ var defaultStorageClasses = []ctrlClient.Object{
 	&storagev1.StorageClass{ObjectMeta: metav1.ObjectMeta{
 		Name: "test-sc2",
 		Annotations: map[string]string{
-			translation.DefaultStorageClassAnnotationKey: "true",
+			utils.DefaultStorageClassAnnotationKey: "true",
 		},
 	}},
 }

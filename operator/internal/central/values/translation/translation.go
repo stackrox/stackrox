@@ -184,6 +184,7 @@ func getCentralDBPersistenceValues(p *platform.DBPersistence) *translation.Value
 		}
 
 		persistence.AddChild("persistentVolumeClaim", &pvcBuilder)
+		persistence.SetBoolValue("backup", true)
 	}
 	return &persistence
 }
