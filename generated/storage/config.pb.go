@@ -612,17 +612,70 @@ func (*PrivateConfig_DEPRECATEDAlertRetentionDurationDays) isPrivateConfig_Alert
 
 func (*PrivateConfig_AlertConfig) isPrivateConfig_AlertRetention() {}
 
+type PlatformComponentConfig struct {
+	state             protoimpl.MessageState          `protogen:"open.v1"`
+	Rules             []*PlatformComponentConfig_Rule `protobuf:"bytes,1,rep,name=rules,proto3" json:"rules,omitempty"`
+	NeedsReevaluation bool                            `protobuf:"varint,2,opt,name=needs_reevaluation,json=needsReevaluation,proto3" json:"needs_reevaluation,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *PlatformComponentConfig) Reset() {
+	*x = PlatformComponentConfig{}
+	mi := &file_storage_config_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PlatformComponentConfig) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PlatformComponentConfig) ProtoMessage() {}
+
+func (x *PlatformComponentConfig) ProtoReflect() protoreflect.Message {
+	mi := &file_storage_config_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PlatformComponentConfig.ProtoReflect.Descriptor instead.
+func (*PlatformComponentConfig) Descriptor() ([]byte, []int) {
+	return file_storage_config_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *PlatformComponentConfig) GetRules() []*PlatformComponentConfig_Rule {
+	if x != nil {
+		return x.Rules
+	}
+	return nil
+}
+
+func (x *PlatformComponentConfig) GetNeedsReevaluation() bool {
+	if x != nil {
+		return x.NeedsReevaluation
+	}
+	return false
+}
+
 type Config struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	PublicConfig  *PublicConfig          `protobuf:"bytes,1,opt,name=public_config,json=publicConfig,proto3" json:"public_config,omitempty"`
-	PrivateConfig *PrivateConfig         `protobuf:"bytes,2,opt,name=private_config,json=privateConfig,proto3" json:"private_config,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState   `protogen:"open.v1"`
+	PublicConfig            *PublicConfig            `protobuf:"bytes,1,opt,name=public_config,json=publicConfig,proto3" json:"public_config,omitempty"`
+	PrivateConfig           *PrivateConfig           `protobuf:"bytes,2,opt,name=private_config,json=privateConfig,proto3" json:"private_config,omitempty"`
+	PlatformComponentConfig *PlatformComponentConfig `protobuf:"bytes,3,opt,name=platform_component_config,json=platformComponentConfig,proto3" json:"platform_component_config,omitempty"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *Config) Reset() {
 	*x = Config{}
-	mi := &file_storage_config_proto_msgTypes[7]
+	mi := &file_storage_config_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -634,7 +687,7 @@ func (x *Config) String() string {
 func (*Config) ProtoMessage() {}
 
 func (x *Config) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_config_proto_msgTypes[7]
+	mi := &file_storage_config_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -647,7 +700,7 @@ func (x *Config) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Config.ProtoReflect.Descriptor instead.
 func (*Config) Descriptor() ([]byte, []int) {
-	return file_storage_config_proto_rawDescGZIP(), []int{7}
+	return file_storage_config_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *Config) GetPublicConfig() *PublicConfig {
@@ -664,6 +717,13 @@ func (x *Config) GetPrivateConfig() *PrivateConfig {
 	return nil
 }
 
+func (x *Config) GetPlatformComponentConfig() *PlatformComponentConfig {
+	if x != nil {
+		return x.PlatformComponentConfig
+	}
+	return nil
+}
+
 type VulnerabilityExceptionConfig struct {
 	state         protoimpl.MessageState                      `protogen:"open.v1"`
 	ExpiryOptions *VulnerabilityExceptionConfig_ExpiryOptions `protobuf:"bytes,1,opt,name=expiry_options,json=expiryOptions,proto3" json:"expiry_options,omitempty"`
@@ -673,7 +733,7 @@ type VulnerabilityExceptionConfig struct {
 
 func (x *VulnerabilityExceptionConfig) Reset() {
 	*x = VulnerabilityExceptionConfig{}
-	mi := &file_storage_config_proto_msgTypes[8]
+	mi := &file_storage_config_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -685,7 +745,7 @@ func (x *VulnerabilityExceptionConfig) String() string {
 func (*VulnerabilityExceptionConfig) ProtoMessage() {}
 
 func (x *VulnerabilityExceptionConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_config_proto_msgTypes[8]
+	mi := &file_storage_config_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -698,7 +758,7 @@ func (x *VulnerabilityExceptionConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VulnerabilityExceptionConfig.ProtoReflect.Descriptor instead.
 func (*VulnerabilityExceptionConfig) Descriptor() ([]byte, []int) {
-	return file_storage_config_proto_rawDescGZIP(), []int{8}
+	return file_storage_config_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *VulnerabilityExceptionConfig) GetExpiryOptions() *VulnerabilityExceptionConfig_ExpiryOptions {
@@ -717,7 +777,7 @@ type AdministrationEventsConfig struct {
 
 func (x *AdministrationEventsConfig) Reset() {
 	*x = AdministrationEventsConfig{}
-	mi := &file_storage_config_proto_msgTypes[9]
+	mi := &file_storage_config_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -729,7 +789,7 @@ func (x *AdministrationEventsConfig) String() string {
 func (*AdministrationEventsConfig) ProtoMessage() {}
 
 func (x *AdministrationEventsConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_config_proto_msgTypes[9]
+	mi := &file_storage_config_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -742,7 +802,7 @@ func (x *AdministrationEventsConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AdministrationEventsConfig.ProtoReflect.Descriptor instead.
 func (*AdministrationEventsConfig) Descriptor() ([]byte, []int) {
-	return file_storage_config_proto_rawDescGZIP(), []int{9}
+	return file_storage_config_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *AdministrationEventsConfig) GetRetentionDurationDays() uint32 {
@@ -762,7 +822,7 @@ type DayOption struct {
 
 func (x *DayOption) Reset() {
 	*x = DayOption{}
-	mi := &file_storage_config_proto_msgTypes[10]
+	mi := &file_storage_config_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -774,7 +834,7 @@ func (x *DayOption) String() string {
 func (*DayOption) ProtoMessage() {}
 
 func (x *DayOption) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_config_proto_msgTypes[10]
+	mi := &file_storage_config_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -787,7 +847,7 @@ func (x *DayOption) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DayOption.ProtoReflect.Descriptor instead.
 func (*DayOption) Descriptor() ([]byte, []int) {
-	return file_storage_config_proto_rawDescGZIP(), []int{10}
+	return file_storage_config_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *DayOption) GetNumDays() uint32 {
@@ -804,6 +864,102 @@ func (x *DayOption) GetEnabled() bool {
 	return false
 }
 
+type PlatformComponentConfig_Rule struct {
+	state         protoimpl.MessageState                      `protogen:"open.v1"`
+	Name          string                                      `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	NamespaceRule *PlatformComponentConfig_Rule_NamespaceRule `protobuf:"bytes,2,opt,name=namespace_rule,json=namespaceRule,proto3" json:"namespace_rule,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PlatformComponentConfig_Rule) Reset() {
+	*x = PlatformComponentConfig_Rule{}
+	mi := &file_storage_config_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PlatformComponentConfig_Rule) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PlatformComponentConfig_Rule) ProtoMessage() {}
+
+func (x *PlatformComponentConfig_Rule) ProtoReflect() protoreflect.Message {
+	mi := &file_storage_config_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PlatformComponentConfig_Rule.ProtoReflect.Descriptor instead.
+func (*PlatformComponentConfig_Rule) Descriptor() ([]byte, []int) {
+	return file_storage_config_proto_rawDescGZIP(), []int{7, 0}
+}
+
+func (x *PlatformComponentConfig_Rule) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *PlatformComponentConfig_Rule) GetNamespaceRule() *PlatformComponentConfig_Rule_NamespaceRule {
+	if x != nil {
+		return x.NamespaceRule
+	}
+	return nil
+}
+
+type PlatformComponentConfig_Rule_NamespaceRule struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Regex         string                 `protobuf:"bytes,1,opt,name=regex,proto3" json:"regex,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PlatformComponentConfig_Rule_NamespaceRule) Reset() {
+	*x = PlatformComponentConfig_Rule_NamespaceRule{}
+	mi := &file_storage_config_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PlatformComponentConfig_Rule_NamespaceRule) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PlatformComponentConfig_Rule_NamespaceRule) ProtoMessage() {}
+
+func (x *PlatformComponentConfig_Rule_NamespaceRule) ProtoReflect() protoreflect.Message {
+	mi := &file_storage_config_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PlatformComponentConfig_Rule_NamespaceRule.ProtoReflect.Descriptor instead.
+func (*PlatformComponentConfig_Rule_NamespaceRule) Descriptor() ([]byte, []int) {
+	return file_storage_config_proto_rawDescGZIP(), []int{7, 0, 0}
+}
+
+func (x *PlatformComponentConfig_Rule_NamespaceRule) GetRegex() string {
+	if x != nil {
+		return x.Regex
+	}
+	return ""
+}
+
 type VulnerabilityExceptionConfig_FixableCVEOptions struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	AllFixable    bool                   `protobuf:"varint,1,opt,name=all_fixable,json=allFixable,proto3" json:"all_fixable,omitempty"`
@@ -814,7 +970,7 @@ type VulnerabilityExceptionConfig_FixableCVEOptions struct {
 
 func (x *VulnerabilityExceptionConfig_FixableCVEOptions) Reset() {
 	*x = VulnerabilityExceptionConfig_FixableCVEOptions{}
-	mi := &file_storage_config_proto_msgTypes[12]
+	mi := &file_storage_config_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -826,7 +982,7 @@ func (x *VulnerabilityExceptionConfig_FixableCVEOptions) String() string {
 func (*VulnerabilityExceptionConfig_FixableCVEOptions) ProtoMessage() {}
 
 func (x *VulnerabilityExceptionConfig_FixableCVEOptions) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_config_proto_msgTypes[12]
+	mi := &file_storage_config_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -839,7 +995,7 @@ func (x *VulnerabilityExceptionConfig_FixableCVEOptions) ProtoReflect() protoref
 
 // Deprecated: Use VulnerabilityExceptionConfig_FixableCVEOptions.ProtoReflect.Descriptor instead.
 func (*VulnerabilityExceptionConfig_FixableCVEOptions) Descriptor() ([]byte, []int) {
-	return file_storage_config_proto_rawDescGZIP(), []int{8, 0}
+	return file_storage_config_proto_rawDescGZIP(), []int{9, 0}
 }
 
 func (x *VulnerabilityExceptionConfig_FixableCVEOptions) GetAllFixable() bool {
@@ -868,7 +1024,7 @@ type VulnerabilityExceptionConfig_ExpiryOptions struct {
 
 func (x *VulnerabilityExceptionConfig_ExpiryOptions) Reset() {
 	*x = VulnerabilityExceptionConfig_ExpiryOptions{}
-	mi := &file_storage_config_proto_msgTypes[13]
+	mi := &file_storage_config_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -880,7 +1036,7 @@ func (x *VulnerabilityExceptionConfig_ExpiryOptions) String() string {
 func (*VulnerabilityExceptionConfig_ExpiryOptions) ProtoMessage() {}
 
 func (x *VulnerabilityExceptionConfig_ExpiryOptions) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_config_proto_msgTypes[13]
+	mi := &file_storage_config_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -893,7 +1049,7 @@ func (x *VulnerabilityExceptionConfig_ExpiryOptions) ProtoReflect() protoreflect
 
 // Deprecated: Use VulnerabilityExceptionConfig_ExpiryOptions.ProtoReflect.Descriptor instead.
 func (*VulnerabilityExceptionConfig_ExpiryOptions) Descriptor() ([]byte, []int) {
-	return file_storage_config_proto_rawDescGZIP(), []int{8, 1}
+	return file_storage_config_proto_rawDescGZIP(), []int{9, 1}
 }
 
 func (x *VulnerabilityExceptionConfig_ExpiryOptions) GetDayOptions() []*DayOption {
@@ -977,10 +1133,19 @@ const file_storage_config_proto_rawDesc = "" +
 	"\x17report_retention_config\x18\x06 \x01(\v2\x1e.storage.ReportRetentionConfigR\x15reportRetentionConfig\x12k\n" +
 	"\x1evulnerability_exception_config\x18\a \x01(\v2%.storage.VulnerabilityExceptionConfigR\x1cvulnerabilityExceptionConfig\x12e\n" +
 	"\x1cadministration_events_config\x18\b \x01(\v2#.storage.AdministrationEventsConfigR\x1aadministrationEventsConfigB\x11\n" +
-	"\x0falert_retention\"\x83\x01\n" +
+	"\x0falert_retention\"\xa5\x02\n" +
+	"\x17PlatformComponentConfig\x12;\n" +
+	"\x05rules\x18\x01 \x03(\v2%.storage.PlatformComponentConfig.RuleR\x05rules\x12-\n" +
+	"\x12needs_reevaluation\x18\x02 \x01(\bR\x11needsReevaluation\x1a\x9d\x01\n" +
+	"\x04Rule\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12Z\n" +
+	"\x0enamespace_rule\x18\x02 \x01(\v23.storage.PlatformComponentConfig.Rule.NamespaceRuleR\rnamespaceRule\x1a%\n" +
+	"\rNamespaceRule\x12\x14\n" +
+	"\x05regex\x18\x01 \x01(\tR\x05regex\"\xe1\x01\n" +
 	"\x06Config\x12:\n" +
 	"\rpublic_config\x18\x01 \x01(\v2\x15.storage.PublicConfigR\fpublicConfig\x12=\n" +
-	"\x0eprivate_config\x18\x02 \x01(\v2\x16.storage.PrivateConfigR\rprivateConfig\"\xc2\x03\n" +
+	"\x0eprivate_config\x18\x02 \x01(\v2\x16.storage.PrivateConfigR\rprivateConfig\x12\\\n" +
+	"\x19platform_component_config\x18\x03 \x01(\v2 .storage.PlatformComponentConfigR\x17platformComponentConfig\"\xc2\x03\n" +
 	"\x1cVulnerabilityExceptionConfig\x12Z\n" +
 	"\x0eexpiry_options\x18\x01 \x01(\v23.storage.VulnerabilityExceptionConfig.ExpiryOptionsR\rexpiryOptions\x1aU\n" +
 	"\x11FixableCVEOptions\x12\x1f\n" +
@@ -1017,50 +1182,56 @@ func file_storage_config_proto_rawDescGZIP() []byte {
 }
 
 var file_storage_config_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_storage_config_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
+var file_storage_config_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
 var file_storage_config_proto_goTypes = []any{
-	(BannerConfig_Size)(0),                       // 0: storage.BannerConfig.Size
-	(*LoginNotice)(nil),                          // 1: storage.LoginNotice
-	(*BannerConfig)(nil),                         // 2: storage.BannerConfig
-	(*PublicConfig)(nil),                         // 3: storage.PublicConfig
-	(*AlertRetentionConfig)(nil),                 // 4: storage.AlertRetentionConfig
-	(*DecommissionedClusterRetentionConfig)(nil), // 5: storage.DecommissionedClusterRetentionConfig
-	(*ReportRetentionConfig)(nil),                // 6: storage.ReportRetentionConfig
-	(*PrivateConfig)(nil),                        // 7: storage.PrivateConfig
-	(*Config)(nil),                               // 8: storage.Config
-	(*VulnerabilityExceptionConfig)(nil),         // 9: storage.VulnerabilityExceptionConfig
-	(*AdministrationEventsConfig)(nil),           // 10: storage.AdministrationEventsConfig
-	(*DayOption)(nil),                            // 11: storage.DayOption
-	nil,                                          // 12: storage.DecommissionedClusterRetentionConfig.IgnoreClusterLabelsEntry
-	(*VulnerabilityExceptionConfig_FixableCVEOptions)(nil), // 13: storage.VulnerabilityExceptionConfig.FixableCVEOptions
-	(*VulnerabilityExceptionConfig_ExpiryOptions)(nil),     // 14: storage.VulnerabilityExceptionConfig.ExpiryOptions
-	(*TelemetryConfiguration)(nil),                         // 15: storage.TelemetryConfiguration
-	(*timestamppb.Timestamp)(nil),                          // 16: google.protobuf.Timestamp
+	(BannerConfig_Size)(0),                                 // 0: storage.BannerConfig.Size
+	(*LoginNotice)(nil),                                    // 1: storage.LoginNotice
+	(*BannerConfig)(nil),                                   // 2: storage.BannerConfig
+	(*PublicConfig)(nil),                                   // 3: storage.PublicConfig
+	(*AlertRetentionConfig)(nil),                           // 4: storage.AlertRetentionConfig
+	(*DecommissionedClusterRetentionConfig)(nil),           // 5: storage.DecommissionedClusterRetentionConfig
+	(*ReportRetentionConfig)(nil),                          // 6: storage.ReportRetentionConfig
+	(*PrivateConfig)(nil),                                  // 7: storage.PrivateConfig
+	(*PlatformComponentConfig)(nil),                        // 8: storage.PlatformComponentConfig
+	(*Config)(nil),                                         // 9: storage.Config
+	(*VulnerabilityExceptionConfig)(nil),                   // 10: storage.VulnerabilityExceptionConfig
+	(*AdministrationEventsConfig)(nil),                     // 11: storage.AdministrationEventsConfig
+	(*DayOption)(nil),                                      // 12: storage.DayOption
+	nil,                                                    // 13: storage.DecommissionedClusterRetentionConfig.IgnoreClusterLabelsEntry
+	(*PlatformComponentConfig_Rule)(nil),                   // 14: storage.PlatformComponentConfig.Rule
+	(*PlatformComponentConfig_Rule_NamespaceRule)(nil),     // 15: storage.PlatformComponentConfig.Rule.NamespaceRule
+	(*VulnerabilityExceptionConfig_FixableCVEOptions)(nil), // 16: storage.VulnerabilityExceptionConfig.FixableCVEOptions
+	(*VulnerabilityExceptionConfig_ExpiryOptions)(nil),     // 17: storage.VulnerabilityExceptionConfig.ExpiryOptions
+	(*TelemetryConfiguration)(nil),                         // 18: storage.TelemetryConfiguration
+	(*timestamppb.Timestamp)(nil),                          // 19: google.protobuf.Timestamp
 }
 var file_storage_config_proto_depIdxs = []int32{
 	0,  // 0: storage.BannerConfig.size:type_name -> storage.BannerConfig.Size
 	1,  // 1: storage.PublicConfig.login_notice:type_name -> storage.LoginNotice
 	2,  // 2: storage.PublicConfig.header:type_name -> storage.BannerConfig
 	2,  // 3: storage.PublicConfig.footer:type_name -> storage.BannerConfig
-	15, // 4: storage.PublicConfig.telemetry:type_name -> storage.TelemetryConfiguration
-	12, // 5: storage.DecommissionedClusterRetentionConfig.ignore_cluster_labels:type_name -> storage.DecommissionedClusterRetentionConfig.IgnoreClusterLabelsEntry
-	16, // 6: storage.DecommissionedClusterRetentionConfig.last_updated:type_name -> google.protobuf.Timestamp
-	16, // 7: storage.DecommissionedClusterRetentionConfig.created_at:type_name -> google.protobuf.Timestamp
+	18, // 4: storage.PublicConfig.telemetry:type_name -> storage.TelemetryConfiguration
+	13, // 5: storage.DecommissionedClusterRetentionConfig.ignore_cluster_labels:type_name -> storage.DecommissionedClusterRetentionConfig.IgnoreClusterLabelsEntry
+	19, // 6: storage.DecommissionedClusterRetentionConfig.last_updated:type_name -> google.protobuf.Timestamp
+	19, // 7: storage.DecommissionedClusterRetentionConfig.created_at:type_name -> google.protobuf.Timestamp
 	4,  // 8: storage.PrivateConfig.alert_config:type_name -> storage.AlertRetentionConfig
 	5,  // 9: storage.PrivateConfig.decommissioned_cluster_retention:type_name -> storage.DecommissionedClusterRetentionConfig
 	6,  // 10: storage.PrivateConfig.report_retention_config:type_name -> storage.ReportRetentionConfig
-	9,  // 11: storage.PrivateConfig.vulnerability_exception_config:type_name -> storage.VulnerabilityExceptionConfig
-	10, // 12: storage.PrivateConfig.administration_events_config:type_name -> storage.AdministrationEventsConfig
-	3,  // 13: storage.Config.public_config:type_name -> storage.PublicConfig
-	7,  // 14: storage.Config.private_config:type_name -> storage.PrivateConfig
-	14, // 15: storage.VulnerabilityExceptionConfig.expiry_options:type_name -> storage.VulnerabilityExceptionConfig.ExpiryOptions
-	11, // 16: storage.VulnerabilityExceptionConfig.ExpiryOptions.day_options:type_name -> storage.DayOption
-	13, // 17: storage.VulnerabilityExceptionConfig.ExpiryOptions.fixable_cve_options:type_name -> storage.VulnerabilityExceptionConfig.FixableCVEOptions
-	18, // [18:18] is the sub-list for method output_type
-	18, // [18:18] is the sub-list for method input_type
-	18, // [18:18] is the sub-list for extension type_name
-	18, // [18:18] is the sub-list for extension extendee
-	0,  // [0:18] is the sub-list for field type_name
+	10, // 11: storage.PrivateConfig.vulnerability_exception_config:type_name -> storage.VulnerabilityExceptionConfig
+	11, // 12: storage.PrivateConfig.administration_events_config:type_name -> storage.AdministrationEventsConfig
+	14, // 13: storage.PlatformComponentConfig.rules:type_name -> storage.PlatformComponentConfig.Rule
+	3,  // 14: storage.Config.public_config:type_name -> storage.PublicConfig
+	7,  // 15: storage.Config.private_config:type_name -> storage.PrivateConfig
+	8,  // 16: storage.Config.platform_component_config:type_name -> storage.PlatformComponentConfig
+	17, // 17: storage.VulnerabilityExceptionConfig.expiry_options:type_name -> storage.VulnerabilityExceptionConfig.ExpiryOptions
+	15, // 18: storage.PlatformComponentConfig.Rule.namespace_rule:type_name -> storage.PlatformComponentConfig.Rule.NamespaceRule
+	12, // 19: storage.VulnerabilityExceptionConfig.ExpiryOptions.day_options:type_name -> storage.DayOption
+	16, // 20: storage.VulnerabilityExceptionConfig.ExpiryOptions.fixable_cve_options:type_name -> storage.VulnerabilityExceptionConfig.FixableCVEOptions
+	21, // [21:21] is the sub-list for method output_type
+	21, // [21:21] is the sub-list for method input_type
+	21, // [21:21] is the sub-list for extension type_name
+	21, // [21:21] is the sub-list for extension extendee
+	0,  // [0:21] is the sub-list for field type_name
 }
 
 func init() { file_storage_config_proto_init() }
@@ -1079,7 +1250,7 @@ func file_storage_config_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_storage_config_proto_rawDesc), len(file_storage_config_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   14,
+			NumMessages:   17,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
