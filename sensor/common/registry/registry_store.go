@@ -344,13 +344,11 @@ func (rs *Store) IsLocal(image *storage.ImageName) bool {
 // registries that are only accessible from this cluster. These hosts will be factored
 // into IsLocal decisions. Is OK to call repeatedly for the same host.
 func (rs *Store) addClusterLocalRegistryHost(host string) {
-	trimmed := urlfmt.TrimHTTPPrefixes(host)
-
 	rs.clusterLocalRegistryHostsMutex.Lock()
 	defer rs.clusterLocalRegistryHostsMutex.Unlock()
 
-	if rs.clusterLocalRegistryHosts.Add(trimmed) {
-		log.Infof("Added cluster local registry host %q", trimmed)
+	if rs.clusterLocalRegistryHosts.Add(host) {
+		log.Infof("Added cluster local registry host %q", host)
 
 		metrics.SetClusterLocalHostsCount(len(rs.clusterLocalRegistryHosts))
 	}
@@ -517,8 +515,6 @@ func (rs *Store) upsertSecretByName(namespace, secretName string, dockerConfig c
 }
 
 func (rs *Store) upsertPullSecretByNameNoLock(namespace, secretName, registry, host string, dce config.DockerConfigEntry) {
-	host = urlfmt.TrimHTTPPrefixes(host)
-
 	name := genIntegrationName(types.PullSecretNamePrefix, namespace, secretName, registry)
 	ii := createImageIntegration(host, dce, name)
 
