@@ -641,7 +641,7 @@ func (rs *Store) getPullSecretRegistriesNoLock(secretNameToHost secretNameToHost
 		for host, reg := range secretNameToHost[secretName] {
 			isMatch, err := isRegistryMatch(image, host)
 			if err != nil {
-				log.Errorf("Failed to match registry: %w", err)
+				log.Warnf("Failed to match registry: %w", err)
 				continue
 			}
 			if isMatch {
