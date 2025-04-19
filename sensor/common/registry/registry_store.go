@@ -616,8 +616,7 @@ func isRegistryMatch(image *storage.ImageName, host string) (bool, error) {
 	// `url.Parse` requires a valid scheme - prepend one for parsing if empty.
 	regURL, err := url.Parse(urlfmt.FormatURL(host, urlfmt.HTTPS, urlfmt.NoTrailingSlash))
 	if err != nil {
-		log.Errorf("Failed to parse host URL %q: %w", host, err)
-		return false, errors.Wrap(err, "parsing registry host %q")
+		return false, errors.Wrapf(err, "parsing registry host %q", host)
 	}
 	// Remove leading `/` from the path.
 	regPath := regURL.Path
@@ -637,7 +636,7 @@ func (rs *Store) getPullSecretRegistriesNoLock(secretNameToHost secretNameToHost
 		for host, reg := range secretNameToHost[secretName] {
 			isMatch, err := isRegistryMatch(image, host)
 			if err != nil {
-				log.Warnf("Failed to match registry: %w", err)
+				log.Warnf("Failed to match registry: %s", err.Error())
 				continue
 			}
 			if isMatch {
