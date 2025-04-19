@@ -55,12 +55,12 @@ func ScannerV4ComponentPolicy(logger logr.Logger, status *platform.CentralStatus
 	if recordedDefault == platform.ScannerV4Enabled || recordedDefault == platform.ScannerV4Disabled {
 		logger.Info(fmt.Sprintf("ScannerV4ComponentPolicy: using previously recorded ScannerV4 componentPolicy %v.", recordedDefault))
 		return recordedDefault
-	} else {
-		// This should not happen, since we only store Enabled|Disabled, but just in case something unexpected happened
-		// and we need to make some decisions...
-		logger.Info(fmt.Sprintf("ScannerV4ComponentPolicy: detected previously recorded ScannerV4 componentPolicy %v, using %v instead.", recordedDefault, defaultForUpgrades))
-		return defaultForUpgrades
 	}
+
+	// This should not happen, since we only store Enabled|Disabled, but just in case something unexpected happened
+	// and we need to make some decisions...
+	logger.Info(fmt.Sprintf("ScannerV4ComponentPolicy: detected previously recorded ScannerV4 componentPolicy %v, using %v instead.", recordedDefault, defaultForUpgrades))
+	return defaultForUpgrades
 }
 
 // Convenience for some callers.
