@@ -194,6 +194,9 @@
         },
         "transparencyLog": {
           "$ref": "#/definitions/storageTransparencyLogVerification"
+        },
+        "cosignTrustRoot": {
+          "$ref": "#/definitions/storageCosignTrustRoot"
         }
       }
     },
@@ -279,6 +282,18 @@
         }
       }
     },
+    "storageCosignTrustRoot": {
+      "type": "object",
+      "properties": {
+        "tufUrl": {
+          "type": "string"
+        },
+        "initialRoot": {
+          "type": "string"
+        }
+      },
+      "description": "Holds the information to establish a trusted root for Cosign certificate\nauthorities and public keys."
+    },
     "storageSignatureIntegration": {
       "type": "object",
       "properties": {
@@ -300,6 +315,9 @@
         },
         "transparencyLog": {
           "$ref": "#/definitions/storageTransparencyLogVerification"
+        },
+        "cosignTrustRoot": {
+          "$ref": "#/definitions/storageCosignTrustRoot"
         }
       }
     },

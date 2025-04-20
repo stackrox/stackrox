@@ -14,6 +14,8 @@ message SignatureIntegration {
   repeated CosignCertificateVerification cosign_certificates = 4;
 
   TransparencyLogVerification transparency_log = 5;
+
+  CosignTrustRoot cosign_trust_root = 6;
 }
 
 message CosignPublicKeyVerification {
@@ -83,4 +85,11 @@ message TransparencyLogVerification {
   // transparency log. Defaults to the key of the public Sigstore instance if
   // left empty.
   string public_key_pem_enc = 4;
+}
+
+// Holds the information to establish a trusted root for Cosign certificate
+// authorities and public keys.
+message CosignTrustRoot {
+  string tuf_url = 1;
+  string initial_root = 2;
 }

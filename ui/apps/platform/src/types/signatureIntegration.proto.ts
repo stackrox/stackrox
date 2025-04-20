@@ -4,6 +4,7 @@ export type SignatureIntegration = {
     cosign: CosignPublicKeyVerification;
     cosignCertificates: CosignCertificateVerification[];
     transparencyLog: TransparencyLogVerification | null;
+    cosignTrustRoot: CosignTrustRoot | null;
 };
 
 export type CosignPublicKeyVerification = {
@@ -33,4 +34,9 @@ export type TransparencyLogVerification = {
     publicKeyPemEnc: string;
     url: string;
     validateOffline: boolean;
+};
+
+export type CosignTrustRoot = {
+    tufUrl: string;
+    initialRoot: string;
 };

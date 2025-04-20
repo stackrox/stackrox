@@ -68,6 +68,10 @@ const validationSchema = yup.object().shape({
         url: yup.string().trim(),
         validateOffline: yup.boolean(),
     }),
+    cosignTrustRoot: yup.object().shape({
+        tufUrl: yup.string().trim(),
+        initialRoot: yup.string().trim(),
+    }),
 });
 
 // Default values for newly created integrations.
@@ -83,6 +87,10 @@ const defaultValues: SignatureIntegration = {
         publicKeyPemEnc: '',
         url: 'https://rekor.sigstore.dev',
         validateOffline: false,
+    },
+    cosignTrustRoot: {
+        initialRoot: '',
+        tufUrl: '',
     },
 };
 
@@ -170,6 +178,8 @@ function SignatureIntegrationForm({
 
     const [isExpandedPublicKeys, setIsExpandedPublicKeys] = useState(false);
     const [hasBeenExpandedPublicKeys, setHasBeenExpandedPublicKeys] = useState(false);
+    const [isExpandedCosignTrustRoot, setIsExpandedCosignTrustRoot] = useState(false);
+    const [hasBeenExpandedCosignTrustRoot, setHasBeenExpandedCosignTrustRoot] = useState(false);
     const [isExpandedCosignCertificates, setIsExpandedCosignCertificates] = useState(false);
     const [hasBeenExpandedCosignCertificates, setHasBeenExpandedCosignCertificates] =
         useState(false);
@@ -179,6 +189,12 @@ function SignatureIntegrationForm({
         setIsExpandedPublicKeys(isExpanded);
         if (isExpanded) {
             setHasBeenExpandedPublicKeys(isExpanded);
+        }
+    }
+    function onToggleCosignTrustRoot(_: React.MouseEvent, isExpanded: boolean) {
+        setIsExpandedCosignTrustRoot(isExpanded);
+        if (isExpanded) {
+            setHasBeenExpandedCosignTrustRoot(isExpanded);
         }
     }
     function onToggleCosignCertificates(_: React.MouseEvent, isExpanded: boolean) {
@@ -404,6 +420,60 @@ function SignatureIntegrationForm({
                                     </>
                                 )}
                             />
+                        </ExpandableSection>
+                        <ExpandableSection
+                            toggleText="Cosign trust root"
+                            onToggle={onToggleCosignTrustRoot}
+                            isExpanded={isExpandedCosignTrustRoot}
+                            isIndented
+                        >
+                            <Flex
+                                direction={{ default: 'column' }}
+                                grow={{ default: 'grow' }}
+                                spaceItems={{ default: 'spaceItemsXl' }}
+                            >
+                                <FlexItem>
+                                    <FormLabelGroup
+                                        isRequired
+                                        label="TUF URL"
+                                        fieldId="cosignTrustRoot.tufUrl"
+                                        touched={touched}
+                                        errors={errors}
+                                    >
+                                        <TextInput
+                                            isRequired
+                                            type="text"
+                                            id="cosignTrustRoot.tufUrl"
+                                            value={values.cosignTrustRoot?.tufUrl}
+                                            onChange={(event, value) => onChange(value, event)}
+                                            onBlur={handleBlur}
+                                            isDisabled={!isEditable}
+                                        />
+                                    </FormLabelGroup>
+                                </FlexItem>
+                                <FlexItem>
+                                    <FormLabelGroup
+                                        isRequired
+                                        label="Initial root"
+                                        fieldId="cosignTrustRoot.initialRoot"
+                                        touched={touched}
+                                        errors={errors}
+                                    >
+                                        <TextArea
+                                            autoResize
+                                            resizeOrientation="vertical"
+                                            isRequired
+                                            type="text"
+                                            id="cosignTrustRoot.initialRoot"
+                                            value={values.cosignTrustRoot?.initialRoot}
+                                            key={getKeyOfTextArea(hasBeenExpandedCosignTrustRoot)}
+                                            onChange={(event, value) => onChange(value, event)}
+                                            onBlur={handleBlur}
+                                            isDisabled={!isEditable}
+                                        />
+                                    </FormLabelGroup>
+                                </FlexItem>
+                            </Flex>
                         </ExpandableSection>
                         <ExpandableSection
                             toggleText="Cosign certificates"
