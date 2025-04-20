@@ -4,35 +4,36 @@ metadata:
   name: stackrox-central-services
 spec:
   scannerV4:
-    # Explicitly enable, scannerV4 is currenlty opt-in
-    scannerComponent: Enabled
+    # We are not setting 'scannerComponent' explicitly to test the defaulting behaviour.
     indexer:
       scaling:
         autoScaling: Disabled
+        minReplicas: 1
         replicas: 1
       resources:
         requests:
-          cpu: 400m
-          memory: 1Gi
+          cpu: "400m"
+          memory: "1500Mi"
         limits:
-          cpu: 1
-          memory: 2Gi
+          cpu: "1000m"
+          memory: "2Gi"
     matcher:
       scaling:
         autoScaling: Disabled
+        minReplicas: 1
         replicas: 1
       resources:
         requests:
-          cpu: 400m
-          memory: 1Gi
+          cpu: "400m"
+          memory: "2Gi"
         limits:
-          cpu: 1
-          memory: 5Gi
+          cpu: "1000m"
+          memory: "5500Mi"
     db:
       resources:
         requests:
-          cpu: 300m
-          memory: 500Mi
+          cpu: "400m"
+          memory: "2Gi"
         limits:
-          cpu: 1000m
-          memory: 1Gi
+          cpu: "1000m"
+          memory: "2500Mi"
