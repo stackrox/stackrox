@@ -47,6 +47,8 @@ deploy_stackrox() {
     local central_namespace=${2:-stackrox}
     local sensor_namespace=${3:-stackrox}
 
+    info "About to deploy StackRox (Central + Sensor)."
+
     setup_podsecuritypolicies_config
 
     deploy_stackrox_operator
@@ -72,6 +74,10 @@ deploy_stackrox() {
     wait_for_collectors_to_be_operational "${sensor_namespace}"
 
     pause_stackrox_operator_reconcile "${central_namespace}" "${sensor_namespace}"
+
+    if kubectl -n "${central_namespace}" get deployment scanner-v4-indexer >/dev/null 2>&1; then
+        wait_for_scanner_V4 "${central_namespace}"
+    fi
 
     touch "${STATE_DEPLOYED}"
 }
@@ -1095,6 +1101,61 @@ remove_compliance_operator_resources() {
     fi
 }
 
+
+wait_for_ready_deployment() {
+    local namespace="$1"
+    local deployment_name="$2"
+    local max_seconds="$3"
+
+    info "Waiting for deployment ${deployment_name} to be ready in namespace ${namespace}"
+
+    start_time="$(date '+%s')"
+    while true; do
+        deployment_json="$(kubectl -n "${namespace}" get "deploy/${deployment_name}" -o json)"
+        replicas="$(jq '.status.replicas' <<<"$deployment_json")"
+        ready_replicas="$(jq '.status.readyReplicas' <<<"$deployment_json")"
+        curr_time="$(date '+%s')"
+        elapsed_seconds=$(( curr_time - start_time ))
+
+        # Ready case. First we need to make sure that "$replicas" is an integer and not
+        # something like "null", which would cause an execution error while
+        # evaluating [[ "$replicas" -gt 0 ]].
+        if [[ "$replicas" =~ ^[0-9]+$ && "$replicas" -gt 0 && "$replicas" == "$ready_replicas" ]]; then
+            sleep 10
+            break
+        fi
+
+        # Timeout case
+        if (( elapsed_seconds > max_seconds )); then
+            kubectl -n "${namespace}" get pod -o wide
+            kubectl -n "${namespace}" get deploy -o wide
+            die "wait_for_ready_deployment() timeout after $max_seconds seconds."
+        fi
+
+        # Otherwise report and retry
+        info "Still waiting (${elapsed_seconds}s/${max_seconds}s)..."
+        sleep 5
+    done
+
+    info "Deployment ${deployment_name} is ready in namespace ${namespace}."
+}
+
+# shellcheck disable=SC2120
+wait_for_scanner_V4() {
+    local namespace="$1"
+    local max_seconds=${MAX_WAIT_SECONDS:-300}
+    info "Waiting for Scanner V4 to become ready..."
+    if [[ "${ORCHESTRATOR_FLAVOR:-}" == "openshift" ]]; then
+        # OCP Interop tests are run on minimal instances and will take longer
+        # Allow override with MAX_WAIT_SECONDS
+        max_seconds=${MAX_WAIT_SECONDS:-600}
+        info "Waiting ${max_seconds}s (increased for openshift-ci provisioned clusters) for central api and $(( max_seconds * 6 )) for ingress..."
+    fi
+
+    wait_for_ready_deployment "$namespace" "scanner-v4-indexer" "$max_seconds"
+    wait_for_ready_deployment "$namespace" "scanner-v4-matcher" "$max_seconds"
+}
+
 # shellcheck disable=SC2120
 wait_for_api() {
     local central_namespace=${1:-stackrox}
@@ -1110,31 +1171,7 @@ wait_for_api() {
     fi
     max_ingress_seconds=$(( max_seconds * 6 ))
 
-    while true; do
-        central_json="$(kubectl -n "${central_namespace}" get deploy/central -o json)"
-        replicas="$(jq '.status.replicas' <<<"$central_json")"
-        ready_replicas="$(jq '.status.readyReplicas' <<<"$central_json")"
-        curr_time="$(date '+%s')"
-        elapsed_seconds=$(( curr_time - start_time ))
-
-        # Ready case
-        if [[ "$replicas" == 1 && "$ready_replicas" == 1 ]]; then
-            sleep 30
-            break
-        fi
-
-        # Timeout case
-        if (( elapsed_seconds > max_seconds )); then
-            kubectl -n "${central_namespace}" get pod -o wide
-            kubectl -n "${central_namespace}" get deploy -o wide
-            die "wait_for_api() timeout after $max_seconds seconds."
-        fi
-
-        # Otherwise report and retry
-        info "Still waiting (${elapsed_seconds}s/${max_seconds}s)..."
-        sleep 5
-    done
-
+    wait_for_ready_deployment "$central_namespace" "central" "$max_seconds"
     info "Central deployment is ready in namespace ${central_namespace}."
     info "Waiting for Central API endpoint"
 
