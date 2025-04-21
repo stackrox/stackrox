@@ -78,10 +78,14 @@ func TestRegistryStore_PullSecrets(t *testing.T) {
 
 			dce := config.DockerConfigEntry{Username: "username", Password: "password"}
 			dc := config.DockerConfig{
-				"image-registry.openshift-image-registry.svc:5000":       dce,
-				"image-registry.openshift-image-registry.svc.local:5000": dce,
-				"172.99.12.11:5000": dce,
-				"quay.io":           dce,
+				"image-registry.openshift-image-registry.svc:5000":          dce,
+				"image-registry.openshift-image-registry.svc:5000/qa":       dce,
+				"image-registry.openshift-image-registry.svc.local:5000":    dce,
+				"image-registry.openshift-image-registry.svc.local:5000/qa": dce,
+				"172.99.12.11:5000":    dce,
+				"172.99.12.11:5000/qa": dce,
+				"quay.io":              dce,
+				"quay.io/rhacs-eng":    dce,
 			}
 
 			regStore.UpsertSecret(namespace, fakeSecretName, dc, noServiceAcctName)
@@ -100,8 +104,9 @@ func TestRegistryStore_PullSecrets(t *testing.T) {
 					regs, err := regStore.GetPullSecretRegistries(img, namespace, nil)
 					require.NoError(t, err)
 
-					require.Len(t, regs, 1)
+					require.Len(t, regs, 2)
 					assert.Equal(t, img.GetRegistry(), regs[0].Config(bgCtx).RegistryHostname)
+					assert.Equal(t, img.GetRegistry(), regs[1].Config(bgCtx).RegistryHostname)
 				})
 			}
 		})
@@ -146,6 +151,43 @@ func TestRegistryStore_PullSecrets(t *testing.T) {
 			assert.Error(t, err)
 			assert.Empty(t, regs)
 		})
+
+		// Ensures that wildcards in secrets are retrieved as expected. That is,
+		// the wildcards don't crash and are simply ignored in the matching logic.
+		// Once we support glob wildcards, this test must be rewritten.
+		t.Run("ensure glob wildcard secrets are retrieved", func(t *testing.T) {
+			regStore := NewRegistryStore(alwaysInsecureCheckTLS)
+
+			dce := config.DockerConfigEntry{Username: "username", Password: "password"}
+			dc := config.DockerConfig{
+				"*.kubernetes.io":           dce,
+				"*.kubernetes.io/rhacs-eng": dce,
+				"*.*.kubernetes.io":         dce,
+				"prefix.*.io":               dce,
+				"*-good.kubernetes.io":      dce,
+			}
+
+			namespace := "qa"
+			regStore.UpsertSecret(namespace, fakeSecretName, dc, noServiceAcctName)
+
+			tcs := []string{
+				"abc.kubernetes.io/image:latest",
+				"abc.def.kubernetes.io/image:latest",
+				"prefix.kubernetes.io/image:latest",
+				"prefix-good.kubernetes.io/image:latest",
+			}
+			for i, tc := range tcs {
+				t.Run(fmt.Sprint(i), func(t *testing.T) {
+					img, _, err := utils.GenerateImageNameFromString(tc)
+					require.NoError(t, err)
+
+					// We expect zero matches here because glob wildcards are not supported yet.
+					regs, err := regStore.GetPullSecretRegistries(img, namespace, nil)
+					assert.Empty(t, regs)
+					assert.ErrorContains(t, err, "unknown image registry")
+				})
+			}
+		})
 	})
 
 	t.Run("SecretsByName", func(t *testing.T) {
@@ -154,6 +196,80 @@ func TestRegistryStore_PullSecrets(t *testing.T) {
 		commonTests(t)
 
 		regStore := NewRegistryStore(alwaysInsecureCheckTLS)
+
+		t.Run("ensure path mismatches are not matched", func(t *testing.T) {
+			regStore := NewRegistryStore(alwaysInsecureCheckTLS)
+
+			dce := config.DockerConfigEntry{Username: "username", Password: "password"}
+			dc := config.DockerConfig{
+				"image-registry.openshift-image-registry.svc:5000":                dce,
+				"image-registry.openshift-image-registry.svc:5000/no-match":       dce,
+				"image-registry.openshift-image-registry.svc.local:5000":          dce,
+				"image-registry.openshift-image-registry.svc.local:5000/no-match": dce,
+				"172.99.12.11:5000":          dce,
+				"172.99.12.11:5000/no-match": dce,
+				"quay.io":                    dce,
+				"quay.io/no-match":           dce,
+			}
+
+			regStore.UpsertSecret(fakeNamespace, fakeSecretName, dc, noServiceAcctName)
+
+			tcs := []string{
+				"image-registry.openshift-image-registry.svc:5000/qa/nginx:1.18.0",
+				"image-registry.openshift-image-registry.svc.local:5000/qa/nginx:1.18.0",
+				"172.99.12.11:5000/qa/nginx:1.18.0",
+				"quay.io/rhacs-eng/scanner:latest",
+			}
+			for i, tc := range tcs {
+				t.Run(fmt.Sprint(i), func(t *testing.T) {
+					img, _, err := utils.GenerateImageNameFromString(tc)
+					require.NoError(t, err)
+
+					regs, err := regStore.GetPullSecretRegistries(img, fakeNamespace, nil)
+					require.NoError(t, err)
+
+					require.Len(t, regs, 1)
+					assert.Equal(t, img.GetRegistry(), regs[0].Config(bgCtx).RegistryHostname)
+				})
+			}
+		})
+
+		// Ensures that wildcards in secrets are retrieved as expected. That is,
+		// the wildcards don't crash and are simply ignored in the matching logic.
+		// Once we support glob wildcards, this test must be rewritten.
+		t.Run("ensure glob wildcard secrets are retrieved", func(t *testing.T) {
+			regStore := NewRegistryStore(alwaysInsecureCheckTLS)
+
+			dce := config.DockerConfigEntry{Username: "username", Password: "password"}
+			dc := config.DockerConfig{
+				"*.kubernetes.io":           dce,
+				"*.kubernetes.io/rhacs-eng": dce,
+				"*.*.kubernetes.io":         dce,
+				"prefix.*.io":               dce,
+				"*-good.kubernetes.io":      dce,
+			}
+
+			namespace := "qa"
+			regStore.UpsertSecret(namespace, fakeSecretName, dc, noServiceAcctName)
+
+			tcs := []string{
+				"abc.kubernetes.io/image:latest",
+				"abc.def.kubernetes.io/image:latest",
+				"prefix.kubernetes.io/image:latest",
+				"prefix-good.kubernetes.io/image:latest",
+			}
+			for i, tc := range tcs {
+				t.Run(fmt.Sprint(i), func(t *testing.T) {
+					img, _, err := utils.GenerateImageNameFromString(tc)
+					require.NoError(t, err)
+
+					// We expect zero matches here because glob wildcards are not supported yet.
+					regs, err := regStore.GetPullSecretRegistries(img, namespace, nil)
+					assert.Empty(t, regs)
+					assert.NoError(t, err)
+				})
+			}
+		})
 
 		// This registry should not exist in the store, when no pull secrets are
 		// found and we're storing secrets by name the returned regs and error
@@ -194,7 +310,6 @@ func TestRegistryStore_PullSecrets(t *testing.T) {
 			assert.Equal(t, "passwordA", regs[0].Config(bgCtx).Password)
 			assert.Equal(t, "passwordB", regs[1].Config(bgCtx).Password)
 		})
-
 	})
 }
 
@@ -244,20 +359,36 @@ func TestRegistryStore_GlobalStore(t *testing.T) {
 	// commonTests executes tests that should have the same results regardless of
 	// how secrets are stored.
 	commonTests := func(t *testing.T) *Store {
-		dce := config.DockerConfigEntry{Username: "username", Password: "password"}
-		dc := config.DockerConfig{fakeImgName.GetRegistry(): dce}
+		dockerEntries := []config.DockerConfigEntry{
+			{Username: "username-1", Password: "password-1"},
+			{Username: "username-2", Password: "password-2"},
+		}
+		dockerCfgs := []config.DockerConfig{
+			// For global pull secrets, we ignore the path and match by hosts. Hence we expect two matches.
+			{fmt.Sprintf("%s/repo-1", fakeImgName.GetRegistry()): dockerEntries[0]},
+			{fmt.Sprintf("%s/repo-2", fakeImgName.GetRegistry()): dockerEntries[1]},
+			// We expect zero matches for these because glob wildcards are not supported yet.
+			{fmt.Sprintf("*.%s", fakeImgName.GetRegistry()): dockerEntries[0]},
+			{fmt.Sprintf("*.%s/repo-3", fakeImgName.GetRegistry()): dockerEntries[0]},
+			{"*.com": dockerEntries[0]},
+		}
 
 		regStore := NewRegistryStore(alwaysInsecureCheckTLS)
 
-		_, err := regStore.GetGlobalRegistry(fakeImgName)
+		regs, err := regStore.GetGlobalRegistries(fakeImgName)
+		require.Empty(t, regs)
 		require.Error(t, err, "error is expected on empty store")
 
-		regStore.UpsertSecret(openshift.GlobalPullSecretNamespace, openshift.GlobalPullSecretName, dc, "")
-		reg, err := regStore.GetGlobalRegistry(fakeImgName)
+		for _, dc := range dockerCfgs {
+			regStore.UpsertSecret(openshift.GlobalPullSecretNamespace, openshift.GlobalPullSecretName, dc, "")
+		}
+		regs, err = regStore.GetGlobalRegistries(fakeImgName)
 		require.NoError(t, err, "should be no error on valid get")
-		assert.NotNil(t, reg)
-		assert.Equal(t, reg.Config(bgCtx).Username, dce.Username)
-
+		assert.Len(t, regs, 2)
+		assert.ElementsMatch(t,
+			[]string{regs[0].Config(bgCtx).Username, regs[1].Config(bgCtx).Username},
+			[]string{dockerEntries[0].Username, dockerEntries[1].Username},
+		)
 		return regStore
 	}
 
@@ -323,8 +454,10 @@ func TestRegistryStore_CentralIntegrations(t *testing.T) {
 		{Id: "bad", Name: "bad", Type: "bad"},
 		{Id: "a", Name: "a", Type: types.DockerType, IntegrationConfig: &storage.ImageIntegration_Docker{}},
 		{Id: "b", Name: "b", Type: types.DockerType, IntegrationConfig: &storage.ImageIntegration_Docker{}},
-		{Id: "c", Name: "c", Type: types.DockerType, IntegrationConfig: &storage.ImageIntegration_Docker{
-			Docker: &storage.DockerConfig{Endpoint: "example.com"}},
+		{
+			Id: "c", Name: "c", Type: types.DockerType, IntegrationConfig: &storage.ImageIntegration_Docker{
+				Docker: &storage.DockerConfig{Endpoint: "example.com"},
+			},
 		},
 	}
 
@@ -356,10 +489,10 @@ func TestRegistryStore_CentralIntegrations(t *testing.T) {
 // TestRegistryStore_CreateImageIntegrationType verifies the type of an image integration
 // is properly set based on the provided registry.
 func TestRegistryStore_CreateImageIntegrationType(t *testing.T) {
-	ii := createImageIntegration("http://example.com", config.DockerConfigEntry{}, "")
+	ii := createImageIntegration("http://example.com", config.DockerConfigEntry{}, "http://example.com")
 	assert.Equal(t, ii.Type, types.DockerType)
 
-	ii = createImageIntegration("https://registry.redhat.io", config.DockerConfigEntry{}, "")
+	ii = createImageIntegration("https://registry.redhat.io", config.DockerConfigEntry{}, "https://registry.redhat.io")
 	assert.Equal(t, ii.Type, types.RedHatType)
 }
 
@@ -527,7 +660,7 @@ func TestDataRaceAtCleanup(t *testing.T) {
 					regStore.getRegistries(fakeNamespace)
 					regStore.IsLocal(&storage.ImageName{})
 					regStore.GetCentralRegistries(&storage.ImageName{})
-					_, _ = regStore.GetGlobalRegistry(&storage.ImageName{})
+					_, _ = regStore.GetGlobalRegistries(&storage.ImageName{})
 				}
 			}
 		}()
@@ -773,8 +906,8 @@ func TestRegistyStore_Metrics(t *testing.T) {
 		assert.Equal(t, 0.0, testutil.ToFloat64(c))
 
 		iis := []*storage.ImageIntegration{
-			createImageIntegration("http://example.com/1", config.DockerConfigEntry{}, ""),
-			createImageIntegration("http://example.com/2", config.DockerConfigEntry{}, ""),
+			createImageIntegration("http://example.com/1", config.DockerConfigEntry{}, "http://example.com/1"),
+			createImageIntegration("http://example.com/2", config.DockerConfigEntry{}, "http://example.com/2"),
 		}
 		regStore.UpsertCentralRegistryIntegrations(iis, false)
 		assert.Equal(t, 2.0, testutil.ToFloat64(c))
