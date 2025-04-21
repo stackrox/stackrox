@@ -336,12 +336,16 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n      - name: ROX_VULNERABILITY_ON_DEMAND_REPORTS'
     customize_envVars+=$'\n        value: "true"'
 
+    local scannerV4ScannerComponent="Default"
+    case "${ROX_SCANNER_V4:-}" in
+        true)  scannerV4ScannerComponent="Enabled"  ;;
+        false) scannerV4ScannerComponent="Disabled" ;;
+    esac
+
     CENTRAL_YAML_PATH="tests/e2e/yaml/central-cr.envsubst.yaml"
     # Different yaml for midstream images
     if [[ "${USE_MIDSTREAM_IMAGES}" == "true" ]]; then
         CENTRAL_YAML_PATH="tests/e2e/yaml/central-cr-midstream.envsubst.yaml"
-    elif [[ "${ROX_SCANNER_V4:-false}" == "true" ]]; then
-        CENTRAL_YAML_PATH="tests/e2e/yaml/central-cr-with-scanner-v4.envsubst.yaml"
     fi
     env - \
       centralAdminPasswordBase64="$centralAdminPasswordBase64" \
@@ -352,6 +356,7 @@ deploy_central_via_operator() {
       central_exposure_loadBalancer_enabled="$central_exposure_loadBalancer_enabled" \
       central_exposure_route_enabled="$central_exposure_route_enabled" \
       customize_envVars="$customize_envVars" \
+      scannerV4ScannerComponent="$scannerV4ScannerComponent" \
     "${envsubst}" \
       < "${CENTRAL_YAML_PATH}" | kubectl apply -n "${central_namespace}" -f -
 
