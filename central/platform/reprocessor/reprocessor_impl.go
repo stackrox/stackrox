@@ -91,6 +91,7 @@ func (pr *platformReprocessorImpl) RunReprocessor() {
 		}
 		flag = config.NeedsReevaluation
 	}
+	log.Infof("Reprocessor started, flag: %v", flag)
 	if flag {
 		err := pr.reprocessAlerts()
 		if err != nil {
