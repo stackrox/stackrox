@@ -140,7 +140,7 @@ var (
 		{
 			contextKey: sacTestUtils.Cluster1NamespacesBCReadWriteCtx,
 			expectedComponentFound: map[string]bool{
-				imageComponentID1x2:     false,
+				imageComponentID1x1:     false,
 				imageComponentID1x2:     false,
 				imageComponentID1s2x3i1: false,
 				imageComponentID1s2x3i2: false,
