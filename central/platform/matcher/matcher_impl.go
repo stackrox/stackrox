@@ -1,6 +1,7 @@
 package matcher
 
 import (
+	"fmt"
 	"regexp"
 
 	"github.com/pkg/errors"
@@ -15,6 +16,7 @@ type platformMatcherImpl struct {
 }
 
 func (p *platformMatcherImpl) SetRegexes(regexes []*regexp.Regexp) {
+	fmt.Printf("Regexes updated: %v\n", regexes)
 	p.regexes = regexes
 }
 
@@ -32,6 +34,7 @@ func (p *platformMatcherImpl) MatchDeployment(deployment *storage.Deployment) (b
 	if deployment == nil {
 		return false, errors.New("Error matching deployment: deployment must be non nil")
 	}
+	fmt.Printf("Matching deployment %s\n", deployment.GetName())
 	return p.matchNamespace(deployment.GetNamespace()), nil
 }
 
