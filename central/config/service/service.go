@@ -222,7 +222,7 @@ func (s *serviceImpl) UpdatePlatformComponentConfig(ctx context.Context, req *v1
 	if err != nil {
 		return nil, err
 	}
-	reprocessor.Singleton().RunReprocessor()
+	go reprocessor.Singleton().RunReprocessor()
 	return config, nil
 }
 
