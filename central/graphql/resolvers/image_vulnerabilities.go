@@ -193,9 +193,19 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 		// Get the CVEs themselves.  This will be denormalized.  So use the IDs to get them, but use
 		// the data returned from CVE Flat View to keep order and set just 1 instance of a CVE
 		vulnQuery := search.NewQueryBuilder().AddExactMatches(search.CVEID, cveIDs...).ProtoQuery()
+		// Ensure the CVE instance we select for overview data matches the top sort option from the query.
+		vulnQuery.GroupBy = query.GetGroupBy()
+		if query.GetPagination() != nil {
+			vulnQuery.Pagination = query.GetPagination()
+		} else {
+			// If there is no sort, default to the most severe instance of the CVE.
+			vulnQuery.Pagination = search.NewPagination().AddSortOption(search.NewSortOption(search.Severity)).AddSortOption(
+				search.NewSortOption(search.CVSS).Reversed(true),
+			).Proto()
+		}
 		vulns, err := loader.FromQuery(ctx, vulnQuery)
 
-		// Stash a single instance of a CVE to aid in normalizing
+		// Stash a single instance of a CVE to aid in normalizing.  This is to provide the
 		foundVulns := make(map[string]*storage.ImageCVEV2)
 		for _, vuln := range vulns {
 			if _, ok := foundVulns[vuln.GetCveBaseInfo().GetCve()]; !ok {
