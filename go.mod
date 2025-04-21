@@ -155,8 +155,8 @@ require (
 	google.golang.org/api v0.229.0
 	google.golang.org/genproto v0.0.0-20250303144028-a0af3efb3deb
 	google.golang.org/genproto/googleapis/api v0.0.0-20250414145226-207652e42e2e
-	google.golang.org/grpc v1.71.1
-	google.golang.org/grpc/examples v0.0.0-20210902184326-c93e472777b9
+	google.golang.org/grpc v1.72.0
+	google.golang.org/grpc/examples v0.0.0-20230224211313-3775f633ce20
 	google.golang.org/protobuf v1.36.6
 	gopkg.in/mcuadros/go-syslog.v2 v2.3.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
@@ -181,7 +181,7 @@ require (
 )
 
 require (
-	cel.dev/expr v0.19.2 // indirect
+	cel.dev/expr v0.20.0 // indirect
 	cloud.google.com/go v0.120.0 // indirect
 	cloud.google.com/go/auth v0.16.0 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.8 // indirect
@@ -204,7 +204,7 @@ require (
 	github.com/Azure/go-autorest/tracing v0.6.0 // indirect
 	github.com/AzureAD/microsoft-authentication-library-for-go v1.4.2 // indirect
 	github.com/DataDog/zstd v1.4.5 // indirect
-	github.com/GoogleCloudPlatform/opentelemetry-operations-go/detectors/gcp v1.25.0 // indirect
+	github.com/GoogleCloudPlatform/opentelemetry-operations-go/detectors/gcp v1.26.0 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/metric v0.51.0 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/internal/resourcemapping v0.51.0 // indirect
 	github.com/MakeNowJust/heredoc v1.0.0 // indirect
@@ -442,6 +442,7 @@ require (
 	github.com/spdx/tools-golang v0.5.5 // indirect
 	github.com/spf13/afero v1.12.0 // indirect
 	github.com/spf13/cast v1.7.1 // indirect
+	github.com/spiffe/go-spiffe/v2 v2.5.0 // indirect
 	github.com/stackrox/dotnet-scraper v0.0.0-20201023051640-72ef543323dd // indirect
 	github.com/stackrox/istio-cves v0.0.0-20221007013142-0bde9b541ec8 // indirect
 	github.com/stackrox/k8s-cves v0.0.0-20220818200547-7d0d1420c58d // indirect
@@ -468,6 +469,7 @@ require (
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	github.com/xlab/treeprint v1.2.0 // indirect
+	github.com/zeebo/errs v1.4.0 // indirect
 	github.com/zmap/zcrypto v0.0.0-20231219022726-a1f61fb1661c // indirect
 	github.com/zmap/zlint/v3 v3.6.0 // indirect
 	gitlab.com/gitlab-org/api/client-go v0.127.0 // indirect
