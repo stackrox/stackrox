@@ -235,15 +235,25 @@ func (s *alertDataStoreTestSuite) TestKeyIndexing() {
 func (s *alertDataStoreTestSuite) TestGetByQuery() {
 	fakeAlert := alerttest.NewFakeAlert()
 
-	s.storage.EXPECT().GetByQuery(s.hasReadCtx, gomock.Any()).Return([]*storage.Alert{fakeAlert}, nil).Times(1)
-	alerts, err := s.dataStore.GetByQuery(s.hasReadCtx, search.EmptyQuery())
+	s.storage.EXPECT().GetByQueryFn(s.hasReadCtx, gomock.Any(), gomock.Any()).
+		DoAndReturn(func(ctx context.Context, query *v1.Query, fn func(*storage.Alert) error) error {
+			return fn(fakeAlert)
+		}).Times(1)
+	err := s.dataStore.WalkByQuery(s.hasWriteCtx, search.EmptyQuery(), func(a *storage.Alert) error {
+		protoassert.Equal(s.T(), fakeAlert, a)
+		return nil
+	})
 	s.Require().NoError(err)
-	protoassert.SlicesEqual(s.T(), []*storage.Alert{fakeAlert}, alerts)
 
-	s.storage.EXPECT().GetByQuery(s.hasWriteCtx, gomock.Any()).Return([]*storage.Alert{fakeAlert}, nil).Times(1)
-	alerts, err = s.dataStore.GetByQuery(s.hasWriteCtx, search.EmptyQuery())
+	s.storage.EXPECT().GetByQueryFn(s.hasWriteCtx, gomock.Any(), gomock.Any()).
+		DoAndReturn(func(ctx context.Context, query *v1.Query, fn func(*storage.Alert) error) error {
+			return fn(fakeAlert)
+		}).Times(1)
+	err = s.dataStore.WalkByQuery(s.hasWriteCtx, search.EmptyQuery(), func(a *storage.Alert) error {
+		protoassert.Equal(s.T(), fakeAlert, a)
+		return nil
+	})
 	s.Require().NoError(err)
-	protoassert.SlicesEqual(s.T(), []*storage.Alert{fakeAlert}, alerts)
 }
 
 func (s *alertDataStoreTestSuite) TestUpsert_PlatformComponentAndEntityTypeAssignment() {
