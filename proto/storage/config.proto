@@ -62,7 +62,7 @@ message ReportRetentionConfig {
   uint32 downloadable_report_global_retention_bytes = 3;
 }
 
-// next available tag:9
+// next available tag:10
 message PrivateConfig {
   oneof alert_retention {
     // will be deprecated after migration is ready
@@ -77,6 +77,8 @@ message PrivateConfig {
   VulnerabilityExceptionConfig vulnerability_exception_config = 7;
 
   AdministrationEventsConfig administration_events_config = 8;
+
+  PrometheusMetricsConfig prometheus_metrics_config = 9;
 }
 
 message PlatformComponentConfig {
@@ -120,4 +122,19 @@ message AdministrationEventsConfig {
 message DayOption {
   uint32 num_days = 1;
   bool enabled = 2;
+}
+
+message PrometheusMetricsConfig {
+  message Expressions {
+    repeated Expression expression = 1;
+  }
+  message Expression {
+    string operator = 1;
+    string argument = 2;
+  }
+  message LabelExpressions {
+    map<string, Expressions> label_expressions = 1;
+  }
+  uint32 gathering_period_hours = 1;
+  map<string, LabelExpressions> metric_labels = 2;
 }

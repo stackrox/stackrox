@@ -187,6 +187,40 @@
         }
       }
     },
+    "PrometheusMetricsConfigExpression": {
+      "type": "object",
+      "properties": {
+        "operator": {
+          "type": "string"
+        },
+        "argument": {
+          "type": "string"
+        }
+      }
+    },
+    "PrometheusMetricsConfigExpressions": {
+      "type": "object",
+      "properties": {
+        "expression": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/PrometheusMetricsConfigExpression"
+          }
+        }
+      }
+    },
+    "PrometheusMetricsConfigLabelExpressions": {
+      "type": "object",
+      "properties": {
+        "labelExpressions": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/PrometheusMetricsConfigExpressions"
+          }
+        }
+      }
+    },
     "RuleNamespaceRule": {
       "type": "object",
       "properties": {
@@ -388,9 +422,27 @@
         },
         "administrationEventsConfig": {
           "$ref": "#/definitions/storageAdministrationEventsConfig"
+        },
+        "prometheusMetricsConfig": {
+          "$ref": "#/definitions/storagePrometheusMetricsConfig"
         }
       },
-      "title": "next available tag:9"
+      "title": "next available tag:10"
+    },
+    "storagePrometheusMetricsConfig": {
+      "type": "object",
+      "properties": {
+        "gatheringPeriodHours": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "metricLabels": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/PrometheusMetricsConfigLabelExpressions"
+          }
+        }
+      }
     },
     "storagePublicConfig": {
       "type": "object",

@@ -1,6 +1,7 @@
 package metrics
 
 import (
+	"strings"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -270,6 +271,8 @@ var (
 		Name:      "signature_verification_reprocessor_duration_seconds",
 		Help:      "Duration of the signature verification reprocessor loop in seconds",
 	})
+
+	aggregatedVulnMetrics = make(map[string]*prometheus.GaugeVec)
 )
 
 func startTimeToMS(t time.Time) float64 {
@@ -471,4 +474,30 @@ func SetReprocessorDuration(start time.Time) {
 // SetSignatureVerificationReprocessorDuration registers how long a signature verification reprocessing step took.
 func SetSignatureVerificationReprocessorDuration(start time.Time) {
 	signatureVerificationReprocessorDurationGauge.Set(time.Since(start).Seconds())
+}
+
+// RegisterVulnAggregatedMetric registers user-defined custom vulnerability
+// aggregated metric according to the ROX_AGGREGATE_VULN_METRICS variable value.
+func RegisterVulnAggregatedMetric(name string, period time.Duration, labels []string, userRegistry *prometheus.Registry) {
+	metric := prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      name,
+		Help: "The total number of discovered CVEs aggregated by " + strings.Join(labels, ",") +
+			" and gathered every " + period.String(),
+	}, labels)
+	aggregatedVulnMetrics[name] = metric
+
+	// Register the metric on the default Prometheus endpoint.
+	prometheus.MustRegister(metric)
+
+	if userRegistry != nil {
+		userRegistry.MustRegister(metric)
+	}
+}
+
+// SetAggregatedVulnCount registers the metric vector with the values,
+// aggregated according to the ROX_AGGREGATE_VULN_METRICS variable value.
+func SetAggregatedVulnCount(metricName string, labels prometheus.Labels, total int) {
+	aggregatedVulnMetrics[metricName].With(labels).Set(float64(total))
 }
