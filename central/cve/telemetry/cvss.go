@@ -8,18 +8,22 @@ import (
 )
 
 func (h *trackImpl) trackCvssMetrics(ctx context.Context) {
+	aggregated := map[string]int{}
 	_ = h.ds.WalkByQuery(ctx, search.EmptyQuery(), func(deployment *storage.Deployment) error {
-		return h.trackDeployment(ctx, deployment)
+		return h.trackDeployment(ctx, aggregated, deployment)
 	})
+	h.aggregated(aggregated)
 }
 
-func (h *trackImpl) trackDeployment(ctx context.Context, deployment *storage.Deployment) error {
+func (h *trackImpl) trackDeployment(ctx context.Context, aggregated map[string]int, deployment *storage.Deployment) error {
 	images, err := h.ds.GetImagesForDeployment(ctx, deployment)
 	if err != nil {
 		return nil
 	}
 
 	forEachVuln(images, func(image *storage.Image, name *storage.ImageName, vuln *storage.EmbeddedVulnerability) {
+		aggregated[vuln.GetSeverity().String()]++
+
 		metric := makeCvssMetric(image, name, vuln,
 			deployment.GetClusterName(), deployment.GetNamespace())
 		h.cvssGauge(metric, float64(vuln.GetCvss()))

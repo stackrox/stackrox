@@ -16,8 +16,9 @@ var instance *trackImpl
 func Singleton() *trackImpl {
 	once.Do(func() {
 		instance = &trackImpl{
-			ds:        deploymentDS.Singleton(),
-			cvssGauge: metrics.SetImageVulnCVSS,
+			ds:         deploymentDS.Singleton(),
+			aggregated: metrics.SetImageVulnBySeverity,
+			cvssGauge:  metrics.SetImageVulnCVSS,
 		}
 	})
 	return instance
@@ -27,7 +28,8 @@ type trackImpl struct {
 	ds         deploymentDS.DataStore
 	stopSignal chan bool
 
-	cvssGauge func(map[string]string, float64)
+	aggregated func(map[string]int)
+	cvssGauge  func(map[string]string, float64)
 }
 
 func (h *trackImpl) Start() {
