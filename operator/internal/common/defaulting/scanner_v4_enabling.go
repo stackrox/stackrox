@@ -34,7 +34,7 @@ func ScannerV4ComponentPolicy(logger logr.Logger, status *platform.CentralStatus
 	}
 
 	if status.DeployedRelease == nil {
-		// It seems that even though status is nil, a previous installation attempt was not successful, hence we still
+		// It seems that even though status is not nil, a previous installation attempt was not successful, hence we still
 		// assume that the current reconcilliation run is a fresh installation.
 		logger.Info("ScannerV4ComponentPolicy: assuming new installation due to empty deployedRelease status.")
 		return defaultForNewInstallations
