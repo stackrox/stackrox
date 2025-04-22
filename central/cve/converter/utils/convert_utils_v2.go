@@ -53,7 +53,6 @@ func EmbeddedVulnerabilityToImageCVEV2(imageID string, componentID string, from 
 			if score.GetCvssv3() != nil {
 				nvdCvss = score.GetCvssv3().GetScore()
 				nvdVersion = storage.CvssScoreVersion_V3
-
 			} else if score.GetCvssv2() != nil {
 				nvdCvss = score.GetCvssv2().GetScore()
 				nvdVersion = storage.CvssScoreVersion_V2

@@ -14,7 +14,7 @@ func splitComponentsV2(parts ImageParts) ([]ComponentParts, error) {
 			return nil, err
 		}
 
-		cves, err := splitCVEsV2(parts.Image.Id, generatedComponentV2.GetId(), component)
+		cves, err := splitCVEsV2(parts.Image.GetId(), generatedComponentV2.GetId(), component)
 		if err != nil {
 			return nil, err
 		}
