@@ -38,7 +38,8 @@ export PGSETUP_INITDB_OPTIONS="--auth-host=scram-sha-256 \
                                --data-checksums"
 
 # Initialize DB if it does not exist
-if [ ! -s "$PGDATA/PG_VERSION" ]; then
+if [ ! -s "${PGDATA}/PG_VERSION" ]; then
+  # shellcheck disable=SC2086
   initdb $PGSETUP_INITDB_OPTIONS
 else
     # Verify if we need to perform major version upgrade
@@ -86,7 +87,7 @@ else
 
         # Not sure how it works now, but during the upgrade group permissions
         # are rejected.
-        chmod 0700 $PGDATA
+        chmod 0700 "${PGDATA}"
 
         # Try to restart cluster temporary to make sure it was shutdown properly
         "${OLD_BINARIES}/pg_ctl" start -w --timeout 86400 -o "-h 127.0.0.1"
@@ -114,26 +115,27 @@ else
             # cluster.
             echo "Backup..."
             mkdir -p "${BACKUP_DIR}"
-            tar -cf "${BACKUP_DIR}/backup.tar" -C $PGDATA --checkpoint=1000 .
-            sync $BACKUP_DIR/backup.tar
+            tar -cf "${BACKUP_DIR}/backup.tar" -C "${PGDATA}" --checkpoint=1000 .
+            sync "${BACKUP_DIR}/backup.tar"
         fi
 
         echo "Verify backup..."
         BACKUP_VERIFY_PGDATA="${BACKUP_DIR}/backup-restore-test"
-        mkdir -p $BACKUP_VERIFY_PGDATA
-        tar -xvf $BACKUP_DIR/backup.tar -C $BACKUP_VERIFY_PGDATA
+        mkdir -p "${BACKUP_VERIFY_PGDATA}"
+        tar -xvf "${BACKUP_DIR}/backup.tar" -C "${BACKUP_VERIFY_PGDATA}"
 
         "${OLD_BINARIES}/pg_ctl" \
-            -D $BACKUP_VERIFY_PGDATA \
+            -D "${BACKUP_VERIFY_PGDATA}" \
             -w start -o "-h 127.0.0.1"
         "${OLD_BINARIES}/pg_ctl" \
-            -D $BACKUP_VERIFY_PGDATA \
+            -D "${BACKUP_VERIFY_PGDATA}" \
             -w stop
 
-        rm -rf $BACKUP_VERIFY_PGDATA
+        rm -rf "${BACKUP_VERIFY_PGDATA}"
 
         echo "Upgrade..."
         # Good idea to --check first
+        # shellcheck disable=SC2086
         "${NEW_BINARIES}/initdb" $PGSETUP_INITDB_OPTIONS "${PGDATA_NEW}"
 
         PGPASSWORD=$(cat /run/secrets/stackrox.io/secrets/password) \
@@ -167,10 +169,7 @@ else
         fi
 
         mv "${PGDATA}"/*.conf "${PGDATA_NEW}"
-        rm -rf "$PGDATA"
-        mv "$PGDATA_NEW" "$PGDATA"
-
-        # Need to update statistics afterwards
-        # vacuumdb --all --analyze-in-stages
+        rm -rf "${PGDATA}"
+        mv "${PGDATA_NEW}" "${PGDATA}"
     fi
 fi
