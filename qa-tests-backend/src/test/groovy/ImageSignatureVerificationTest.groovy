@@ -57,7 +57,6 @@ class ImageSignatureVerificationTest extends BaseSpecification {
             KEYLESS_SIGSTORE_UNVERIFIABLE,
     ]
 
-
     // Public keys used within signature integrations.
     static final private NO_PUBLIC_KEYS = [:]
     static final private Map<String, String> DISTROLESS_PUBLIC_KEY = [
@@ -302,7 +301,11 @@ nzTe7BpOmVwmqLkIefEJe5L4PSXtp2KFLZqGO/kY5A==
         // issuer and identity.
         String byopkiWildcardSignatureIntegrationID = createSignatureIntegration(
             BYOPKI_WILDCARD, NO_PUBLIC_KEYS,
-            [chain: BYOPKI_ROOT_CA, identity: BYOPKI_WILDCARD_IDENTITY, issuer: BYOPKI_WILDCARD_ISSUER]
+            new CertificateVerificationArgs(
+                chain: BYOPKI_ROOT_CA,
+                identity: BYOPKI_WILDCARD_IDENTITY,
+                issuer: BYOPKI_WILDCARD_ISSUER,
+            ),
         )
         assert byopkiWildcardSignatureIntegrationID
         CREATED_SIGNATURE_INTEGRATIONS.put(BYOPKI_WILDCARD, byopkiWildcardSignatureIntegrationID)
@@ -311,7 +314,11 @@ nzTe7BpOmVwmqLkIefEJe5L4PSXtp2KFLZqGO/kY5A==
         // and issuer.
         String byopkiMatchingSignatureIntegrationID = createSignatureIntegration(
             BYOPKI_MATCHING, NO_PUBLIC_KEYS,
-            [chain: BYOPKI_ROOT_CA, identity: BYOPKI_MATCHING_IDENTITY, issuer: BYOPKI_MATCHING_ISSUER]
+            new CertificateVerificationArgs(
+                chain: BYOPKI_ROOT_CA,
+                identity: BYOPKI_MATCHING_IDENTITY,
+                issuer: BYOPKI_MATCHING_ISSUER,
+            ),
         )
         assert byopkiMatchingSignatureIntegrationID
         CREATED_SIGNATURE_INTEGRATIONS.put(BYOPKI_MATCHING, byopkiMatchingSignatureIntegrationID)
@@ -320,7 +327,11 @@ nzTe7BpOmVwmqLkIefEJe5L4PSXtp2KFLZqGO/kY5A==
         // identity and issuer.
         String byopkiUnverifiableSignatureIntegrationID = createSignatureIntegration(
             BYOPKI_UNVERIFIABLE, NO_PUBLIC_KEYS,
-            [chain: BYOPKI_ROOT_CA, identity: BYOPKI_UNVERIFIABLE_IDENTITY, issuer: BYOPKI_UNVERIFIABLE_ISSUER]
+            new CertificateVerificationArgs(
+                chain: BYOPKI_ROOT_CA,
+                identity: BYOPKI_UNVERIFIABLE_IDENTITY,
+                issuer: BYOPKI_UNVERIFIABLE_ISSUER,
+            ),
         )
         assert byopkiUnverifiableSignatureIntegrationID
         CREATED_SIGNATURE_INTEGRATIONS.put(BYOPKI_UNVERIFIABLE, byopkiUnverifiableSignatureIntegrationID)
@@ -337,7 +348,11 @@ nzTe7BpOmVwmqLkIefEJe5L4PSXtp2KFLZqGO/kY5A==
         // Signature integartion "BYOPKI-Wildcard+Tekton" which holds both BYOPKI wildcard and Tekton.
         String byopkiWildcardAndTektonSignatureIntegrationID = createSignatureIntegration(
             BYOPKI_WILDCARD_AND_TEKTON, TEKTON_COSIGN_PUBLIC_KEY,
-            [chain: BYOPKI_ROOT_CA, identity: BYOPKI_WILDCARD_IDENTITY, issuer: BYOPKI_WILDCARD_ISSUER]
+            new CertificateVerificationArgs(
+                chain: BYOPKI_ROOT_CA,
+                identity: BYOPKI_WILDCARD_IDENTITY,
+                issuer: BYOPKI_WILDCARD_ISSUER,
+            ),
         )
         assert byopkiWildcardAndTektonSignatureIntegrationID
         CREATED_SIGNATURE_INTEGRATIONS.put(BYOPKI_WILDCARD_AND_TEKTON, byopkiWildcardAndTektonSignatureIntegrationID)
@@ -346,9 +361,13 @@ nzTe7BpOmVwmqLkIefEJe5L4PSXtp2KFLZqGO/kY5A==
         // and enables transparency log validation.
         String keylessSigstoreMatchingSignatureIntegrationID = createSignatureIntegration(
             KEYLESS_SIGSTORE_MATCHING, NO_PUBLIC_KEYS,
-            [chain: "", identity: KEYLESS_SIGSTORE_IDENTITY, issuer: KEYLESS_SIGSTORE_ISSUER,
-            ctlogEnabled: true],
-            [enabled: true, url: "https://rekor.sigstore.dev"]
+            new CertificateVerificationArgs(
+                chain: "",
+                identity: KEYLESS_SIGSTORE_IDENTITY,
+                issuer: KEYLESS_SIGSTORE_ISSUER,
+                ctlogEnabled: true,
+            ),
+            new TransparencyLogVerificationArgs(enabled: true, url: "https://rekor.sigstore.dev"),
         )
         assert keylessSigstoreMatchingSignatureIntegrationID
         CREATED_SIGNATURE_INTEGRATIONS.put(KEYLESS_SIGSTORE_MATCHING, keylessSigstoreMatchingSignatureIntegrationID)
@@ -358,9 +377,13 @@ nzTe7BpOmVwmqLkIefEJe5L4PSXtp2KFLZqGO/kY5A==
         // by Fulcio has expired and can only be verified with the timestamp from the transparency log entry.
         String keylessSigstoreUnverifiableSignatureIntegrationID = createSignatureIntegration(
             KEYLESS_SIGSTORE_UNVERIFIABLE, NO_PUBLIC_KEYS,
-            [chain: "", identity: KEYLESS_SIGSTORE_IDENTITY, issuer: KEYLESS_SIGSTORE_ISSUER,
-            ctlogEnabled: true],
-            [enabled: false]
+            new CertificateVerificationArgs(
+                chain: "",
+                identity: KEYLESS_SIGSTORE_IDENTITY,
+                issuer: KEYLESS_SIGSTORE_ISSUER,
+                ctlogEnabled: true,
+            ),
+            new TransparencyLogVerificationArgs(enabled: false, url: "https://rekor.sigstore.dev"),
         )
         assert keylessSigstoreUnverifiableSignatureIntegrationID
         CREATED_SIGNATURE_INTEGRATIONS.put(KEYLESS_SIGSTORE_UNVERIFIABLE,
@@ -575,8 +598,8 @@ nzTe7BpOmVwmqLkIefEJe5L4PSXtp2KFLZqGO/kY5A==
     private static String createSignatureIntegration(
             String integrationName,
             Map<String, String> namedPublicKeys,
-            CertificateVerificationArgs certVerification = null,
-            TransparencyLogVerificationArgs tlogVerification = null) {
+            CertificateVerificationArgs certVerification = new CertificateVerificationArgs(),
+            TransparencyLogVerificationArgs tlogVerification = new TransparencyLogVerificationArgs()) {
         SignatureIntegration.Builder builder = SignatureIntegration.newBuilder()
             .setName(integrationName)
 
@@ -592,13 +615,13 @@ nzTe7BpOmVwmqLkIefEJe5L4PSXtp2KFLZqGO/kY5A==
             )
         }
 
-        if (certVerification?.identity && certVerification?.issuer) {
+        if (certVerification.identity && certVerification.issuer) {
             CosignCertificateVerification verification = CosignCertificateVerification.newBuilder()
-                .setCertificateChainPemEnc(certVerification?.chain ?: "")
-                .setCertificateIdentity(certVerification?.identity ?: "")
-                .setCertificateOidcIssuer(certVerification?.issuer ?: "")
+                .setCertificateChainPemEnc(certVerification.chain)
+                .setCertificateIdentity(certVerification.identity)
+                .setCertificateOidcIssuer(certVerification.issuer)
                 .setCertificateTransparencyLog(CertificateTransparencyLogVerification.newBuilder()
-                    .setEnabled(certVerification?.ctlogEnabled)
+                    .setEnabled(certVerification.ctlogEnabled)
                     .build()
                 )
                 .build()
@@ -607,8 +630,8 @@ nzTe7BpOmVwmqLkIefEJe5L4PSXtp2KFLZqGO/kY5A==
         }
 
         builder.setTransparencyLog(TransparencyLogVerification.newBuilder()
-            .setEnabled(tlogVerification?.enabled)
-            .setUrl(tlogVerification?.url ?: "")
+            .setEnabled(tlogVerification.enabled)
+            .setUrl(tlogVerification.url)
             .build()
         )
 

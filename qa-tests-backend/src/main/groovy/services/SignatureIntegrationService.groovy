@@ -12,16 +12,29 @@ import util.Timer
 
 @CompileStatic
 class CertificateVerificationArgs {
+    Boolean ctlogEnabled
     String chain
     String identity
     String issuer
-    Boolean ctlogEnabled
+
+    CertificateVerificationArgs(String chain = "", String identity = "", String issuer = "",
+        Boolean ctlogEnabled = false) {
+        this.ctlogEnabled = ctlogEnabled
+        this.chain = chain
+        this.identity = identity
+        this.issuer = issuer
+    }
 }
 
 @CompileStatic
 class TransparencyLogVerificationArgs {
     Boolean enabled
     String url
+
+    TransparencyLogVerificationArgs(Boolean enabled = false, String url = "") {
+        this.enabled = enabled
+        this.url = url
+    }
 }
 
 @CompileStatic
