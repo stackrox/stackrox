@@ -598,7 +598,7 @@ nzTe7BpOmVwmqLkIefEJe5L4PSXtp2KFLZqGO/kY5A==
                 .setCertificateIdentity(certVerification?.identity ?: "")
                 .setCertificateOidcIssuer(certVerification?.issuer ?: "")
                 .setCertificateTransparencyLog(CertificateTransparencyLogVerification.newBuilder()
-                    .setEnabled(certVerification?.ctlogEnabled ?: false)
+                    .setEnabled(certVerification?.ctlogEnabled)
                     .build()
                 )
                 .build()
@@ -607,7 +607,7 @@ nzTe7BpOmVwmqLkIefEJe5L4PSXtp2KFLZqGO/kY5A==
         }
 
         builder.setTransparencyLog(TransparencyLogVerification.newBuilder()
-            .setEnabled(tlogVerification?.enabled ?: false)
+            .setEnabled(tlogVerification?.enabled)
             .setUrl(tlogVerification?.url ?: "")
             .build()
         )
