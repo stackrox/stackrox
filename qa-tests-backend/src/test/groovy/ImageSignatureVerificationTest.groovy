@@ -57,7 +57,9 @@ class ImageSignatureVerificationTest extends BaseSpecification {
             KEYLESS_SIGSTORE_UNVERIFIABLE,
     ]
 
+
     // Public keys used within signature integrations.
+    static final private NO_PUBLIC_KEYS = [:]
     static final private Map<String, String> DISTROLESS_PUBLIC_KEY = [
             // Source: https://vault.bitwarden.com/#/vault?itemId=95313e19-de46-4533-b160-af620120452a.
             "Distroless": """\
@@ -299,7 +301,7 @@ nzTe7BpOmVwmqLkIefEJe5L4PSXtp2KFLZqGO/kY5A==
         // Signature integration "BYOPKI_WILDCARD" which holds the root CA + wildcard regex for
         // issuer and identity.
         String byopkiWildcardSignatureIntegrationID = createSignatureIntegration(
-            BYOPKI_WILDCARD, [:],
+            BYOPKI_WILDCARD, NO_PUBLIC_KEYS,
             [chain: BYOPKI_ROOT_CA, identity: BYOPKI_WILDCARD_IDENTITY, issuer: BYOPKI_WILDCARD_ISSUER]
         )
         assert byopkiWildcardSignatureIntegrationID
@@ -308,7 +310,7 @@ nzTe7BpOmVwmqLkIefEJe5L4PSXtp2KFLZqGO/kY5A==
         // Signature integration "BYOPKI_MATCHING" which holds the root CA + matching identity
         // and issuer.
         String byopkiMatchingSignatureIntegrationID = createSignatureIntegration(
-            BYOPKI_MATCHING, [:],
+            BYOPKI_MATCHING, NO_PUBLIC_KEYS,
             [chain: BYOPKI_ROOT_CA, identity: BYOPKI_MATCHING_IDENTITY, issuer: BYOPKI_MATCHING_ISSUER]
         )
         assert byopkiMatchingSignatureIntegrationID
@@ -317,7 +319,7 @@ nzTe7BpOmVwmqLkIefEJe5L4PSXtp2KFLZqGO/kY5A==
         // Signature integration "BYOPKI_UNVERIFIABLE" which holds the root CA + a non-matching
         // identity and issuer.
         String byopkiUnverifiableSignatureIntegrationID = createSignatureIntegration(
-            BYOPKI_UNVERIFIABLE, [:],
+            BYOPKI_UNVERIFIABLE, NO_PUBLIC_KEYS,
             [chain: BYOPKI_ROOT_CA, identity: BYOPKI_UNVERIFIABLE_IDENTITY, issuer: BYOPKI_UNVERIFIABLE_ISSUER]
         )
         assert byopkiUnverifiableSignatureIntegrationID
@@ -343,7 +345,7 @@ nzTe7BpOmVwmqLkIefEJe5L4PSXtp2KFLZqGO/kY5A==
         // Signature integration "Keyless-Sigstore-Matching" which holds the default Sigstore CAs
         // and enables transparency log validation.
         String keylessSigstoreMatchingSignatureIntegrationID = createSignatureIntegration(
-            KEYLESS_SIGSTORE_MATCHING, [:],
+            KEYLESS_SIGSTORE_MATCHING, NO_PUBLIC_KEYS,
             [chain: "", identity: KEYLESS_SIGSTORE_IDENTITY, issuer: KEYLESS_SIGSTORE_ISSUER,
             ctlogEnabled: true],
             [enabled: true, url: "https://rekor.sigstore.dev"]
@@ -355,7 +357,7 @@ nzTe7BpOmVwmqLkIefEJe5L4PSXtp2KFLZqGO/kY5A==
         // and disables transparency log validation. Verification must fail because the certificate issued
         // by Fulcio has expired and can only be verified with the timestamp from the transparency log entry.
         String keylessSigstoreUnverifiableSignatureIntegrationID = createSignatureIntegration(
-            KEYLESS_SIGSTORE_UNVERIFIABLE, [:],
+            KEYLESS_SIGSTORE_UNVERIFIABLE, NO_PUBLIC_KEYS,
             [chain: "", identity: KEYLESS_SIGSTORE_IDENTITY, issuer: KEYLESS_SIGSTORE_ISSUER,
             ctlogEnabled: true],
             [enabled: false]
