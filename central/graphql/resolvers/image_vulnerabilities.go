@@ -208,7 +208,7 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 		for _, cveFlat := range cveFlatData {
 			normalizedVulns = append(normalizedVulns, foundVulns[cveFlat.GetCVE()])
 		}
-		cveResolvers, err := resolver.wrapImageCVEV2sFlatWithContext(ctx, vulns, cveFlatData, err)
+		cveResolvers, err := resolver.wrapImageCVEV2sFlatWithContext(ctx, normalizedVulns, cveFlatData, err)
 		if err != nil {
 			return nil, err
 		}

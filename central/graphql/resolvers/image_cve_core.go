@@ -7,6 +7,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/graphql/resolvers/inputtypes"
+	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/views"
 	"github.com/stackrox/rox/central/views/imagecve"
@@ -181,7 +182,32 @@ func (resolver *imageCVECoreResolver) DistroTuples(ctx context.Context) ([]Image
 			Query: pointers.String(search.NewQueryBuilder().AddExactMatches(search.CVEID, resolver.data.GetCVEIDs()...).
 				Query()),
 		}
-		return resolver.root.ImageVulnerabilities(ctx, q)
+
+		// cast query
+		query, err := q.AsV1QueryOrEmpty()
+		if err != nil {
+			return nil, err
+		}
+
+		// get loader
+		loader, err := loaders.GetImageCVEV2Loader(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		vulns, err := loader.FromQuery(ctx, query)
+
+		cveResolvers := make([]*imageCVEV2Resolver, len(vulns))
+		for i, v := range vulns {
+			cveResolvers[i] = &imageCVEV2Resolver{ctx: ctx, root: resolver.root, data: v, flatData: nil}
+		}
+
+		// cast as return type
+		ret := make([]ImageVulnerabilityResolver, 0, len(cveResolvers))
+		for _, res := range cveResolvers {
+			ret = append(ret, res)
+		}
+		return ret, nil
 	}
 	// ImageVulnerabilities resolver filters out snoozed CVEs when no explicit filter by CVESuppressed is provided.
 	// When ImageVulnerabilities resolver is called from here, it is to get the details of a single CVE which cannot be
