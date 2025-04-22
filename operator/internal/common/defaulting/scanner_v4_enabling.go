@@ -68,11 +68,3 @@ func ScannerV4ComponentPolicyEnabled(status *platform.CentralStatus, spec *platf
 	componentPolicy := ScannerV4ComponentPolicy(logr.Discard(), status, spec)
 	return componentPolicy == platform.ScannerV4ComponentEnabled
 }
-
-// Mutating version of the above function. Updates a given spec by filling in the computed setting.
-// This will be called during value translations.
-func ScannerV4DefaultsApply(status *platform.CentralStatus, spec *platform.ScannerV4Spec) {
-	// assert spec != nil
-	val := ScannerV4ComponentPolicy(logr.Discard(), status, spec)
-	spec.ScannerComponent = &val
-}
