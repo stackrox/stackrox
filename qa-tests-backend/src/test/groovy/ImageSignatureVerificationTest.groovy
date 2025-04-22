@@ -16,6 +16,8 @@ import objects.Deployment
 import services.ImageService
 import services.PolicyService
 import services.SignatureIntegrationService
+import services.CertificateVerificationArgs
+import services.TransparencyLogVerificationArgs
 
 import spock.lang.Shared
 import spock.lang.Tag
@@ -167,7 +169,7 @@ nzTe7BpOmVwmqLkIefEJe5L4PSXtp2KFLZqGO/kY5A==
     static final private Deployment DISTROLESS_DEPLOYMENT = new Deployment()
             .setName("with-signature-verified-by-distroless")
             // quay.io/rhacs-eng/qa-signatures:distroless-base-multiarch
-            .setImage("quay.io/rhacs-eng/qa-signatures:distroless-base-multiarch@" + DISTROLESS_IMAGE_DIGEST)
+            .setImage("quay.io/rhacs-eng/qa-signatures:distroless-base-multiarch@$DISTROLESS_IMAGE_DIGEST")
             .addLabel("app", "image-with-signature-distroless-test")
             .setCommand(["sleep", "6000"])
             .setNamespace(SIGNATURE_TESTING_NAMESPACE)
@@ -176,7 +178,7 @@ nzTe7BpOmVwmqLkIefEJe5L4PSXtp2KFLZqGO/kY5A==
     static final private Deployment TEKTON_DEPLOYMENT = new Deployment()
             .setName("with-signature-verified-by-tekton")
             // quay.io/rhacs-eng/qa-signatures:tekton-multiarch
-            .setImage("quay.io/rhacs-eng/qa-signatures:tekton-multiarch@" + TEKTON_IMAGE_DIGEST)
+            .setImage("quay.io/rhacs-eng/qa-signatures:tekton-multiarch@$TEKTON_IMAGE_DIGEST")
             .addLabel("app", "image-with-signature-tekton-test")
             .setCommand(["/bin/sh", "-c", "/bin/sleep 600"])
             .setNamespace(SIGNATURE_TESTING_NAMESPACE)
@@ -185,7 +187,7 @@ nzTe7BpOmVwmqLkIefEJe5L4PSXtp2KFLZqGO/kY5A==
     static final private Deployment UNVERIFIABLE_DEPLOYMENT = new Deployment()
             .setName("with-signature-unverifiable")
             // quay.io/rhacs-eng/qa-signatures:centos9-multiarch
-            .setImage("quay.io/rhacs-eng/qa-signatures:centos9-multiarch@" + UNVERIFIABLE_IMAGE_DIGEST)
+            .setImage("quay.io/rhacs-eng/qa-signatures:centos9-multiarch@$UNVERIFIABLE_IMAGE_DIGEST")
             .addLabel("app", "image-with-unverifiable-signature-test")
             .setCommand(["/bin/sh", "-c", "/bin/sleep 600"])
             .setNamespace(SIGNATURE_TESTING_NAMESPACE)
@@ -194,7 +196,7 @@ nzTe7BpOmVwmqLkIefEJe5L4PSXtp2KFLZqGO/kY5A==
     static final private Deployment WITHOUT_SIGNATURE_DEPLOYMENT = new Deployment()
             .setName("without-signature")
             // quay.io/rhacs-eng/qa-multi-arch:nginx-204a9a8
-            .setImage("quay.io/rhacs-eng/qa-multi-arch@" + WITHOUT_SIGNATURE_IMAGE_DIGEST)
+            .setImage("quay.io/rhacs-eng/qa-multi-arch@$WITHOUT_SIGNATURE_IMAGE_DIGEST")
             .addLabel("app", "image-without-signature")
             .setNamespace(SIGNATURE_TESTING_NAMESPACE)
 
@@ -203,7 +205,7 @@ nzTe7BpOmVwmqLkIefEJe5L4PSXtp2KFLZqGO/kY5A==
     static final private Deployment SAME_DIGEST_NO_SIGNATURE = new Deployment()
             .setName("same-digest-without-signature")
             // quay.io/rhacs-eng/qa--multi-arch:enforcement
-            .setImage("quay.io/rhacs-eng/qa-multi-arch@" + SAME_DIGEST_NO_SIGNATURE_IMAGE_DIGEST)
+            .setImage("quay.io/rhacs-eng/qa-multi-arch@$SAME_DIGEST_NO_SIGNATURE_IMAGE_DIGEST")
             .addLabel("app", "image-same-digest-without-signature")
             .setNamespace(SIGNATURE_TESTING_NAMESPACE)
 
@@ -212,7 +214,7 @@ nzTe7BpOmVwmqLkIefEJe5L4PSXtp2KFLZqGO/kY5A==
     static final private Deployment SAME_DIGEST_WITH_SIGNATURE = new Deployment()
             .setName("same-digest-with-signature")
             // quay.io/rhacs-eng/qa-signatures:nginx-multiarch
-            .setImage("quay.io/rhacs-eng/qa-signatures:nginx-multiarch@" + SAME_DIGEST_WITH_SIGNATURE_IMAGE_DIGEST)
+            .setImage("quay.io/rhacs-eng/qa-signatures:nginx-multiarch@$SAME_DIGEST_WITH_SIGNATURE_IMAGE_DIGEST")
             .addLabel("app", "image-same-digest-with-signature")
             .setNamespace(SIGNATURE_TESTING_NAMESPACE)
 
@@ -220,7 +222,7 @@ nzTe7BpOmVwmqLkIefEJe5L4PSXtp2KFLZqGO/kY5A==
     // also has a certificate and certificate chain attached, which can be used to verify the signature.
     static final private Deployment BYOPKI_DEPLOYMENT = new Deployment()
             .setName("byopki")
-            .setImage("quay.io/rhacs-eng/qa-signatures:byopki@" + BYOPKI_IMAGE_DIGEST)
+            .setImage("quay.io/rhacs-eng/qa-signatures:byopki@$BYOPKI_IMAGE_DIGEST")
             .addLabel("app", "image-with-byopki")
             .setCommand(["sleep", "600"])
             .setNamespace(SIGNATURE_TESTING_NAMESPACE)
@@ -228,7 +230,7 @@ nzTe7BpOmVwmqLkIefEJe5L4PSXtp2KFLZqGO/kY5A==
     // Deployment holding an image signed by keyless Cosign using public Sigstore instances.
     static final private Deployment KEYLESS_SIGSTORE_DEPLOYMENT = new Deployment()
             .setName("keyless-sigstore")
-            .setImage("quay.io/rhacs-eng/qa-signatures:keyless-sigstore@" + KEYLESS_SIGSTORE_IMAGE_DIGEST)
+            .setImage("quay.io/rhacs-eng/qa-signatures:keyless-sigstore@$KEYLESS_SIGSTORE_IMAGE_DIGEST")
             .addLabel("app", "image-with-keyless-sigstore")
             .setCommand(["sleep", "600"])
             .setNamespace(SIGNATURE_TESTING_NAMESPACE)
@@ -565,18 +567,6 @@ nzTe7BpOmVwmqLkIefEJe5L4PSXtp2KFLZqGO/kY5A==
                 PolicyOuterClass.PolicySection.newBuilder().addPolicyGroups(policyGroup.build()).build()
         )
         return policyBuilder
-    }
-
-    class CertificateVerificationArgs {
-        String chain
-        String identity
-        String issuer
-        Boolean ctlogEnabled
-    }
-
-    class TransparencyLogVerificationArgs {
-        Boolean enabled
-        String url
     }
 
     // Helper to create a signature integration with given name, public keys, chain, identity, and issuer.

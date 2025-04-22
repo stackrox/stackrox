@@ -11,6 +11,20 @@ import io.stackrox.proto.storage.SignatureIntegrationOuterClass
 import util.Timer
 
 @CompileStatic
+class CertificateVerificationArgs {
+    String chain
+    String identity
+    String issuer
+    Boolean ctlogEnabled
+}
+
+@CompileStatic
+class TransparencyLogVerificationArgs {
+    Boolean enabled
+    String url
+}
+
+@CompileStatic
 @Slf4j
 class SignatureIntegrationService extends BaseService {
     static SignatureIntegrationServiceGrpc.SignatureIntegrationServiceBlockingStub getSignatureIntegrationClient() {
