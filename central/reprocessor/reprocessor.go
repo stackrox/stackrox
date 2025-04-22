@@ -334,6 +334,7 @@ func (l *loopImpl) reprocessImage(id string, fetchOpt imageEnricher.FetchOption,
 		log.Errorw("Error enriching image", logging.ImageName(image.GetName().GetFullName()), logging.Err(err))
 		return nil, false
 	}
+	log.Infof("reprocessingFunc result: %v", result)
 	if result.ImageUpdated {
 		if err := l.risk.CalculateRiskAndUpsertImage(image); err != nil {
 			log.Errorw("Error upserting image into datastore",
@@ -419,6 +420,7 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 
 			for clusterID := range clusterIDs {
 				conn := l.connManager.GetConnection(clusterID)
+				log.Infof("clusterID: %v, conn: %v", clusterID, conn)
 				if conn == nil {
 					log.Info("here")
 					continue
