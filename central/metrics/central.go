@@ -270,6 +270,25 @@ var (
 		Name:      "signature_verification_reprocessor_duration_seconds",
 		Help:      "Duration of the signature verification reprocessor loop in seconds",
 	})
+
+	cvssVectorGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "vulnerabilities",
+		Help:      "The discovered CVE",
+	}, []string{
+		"CVE",
+		"Cluster",
+		"DeploymentCount",
+		"ImageId",
+		"Namespace",
+		"OperatingSystem",
+		"SeverityV2",
+		"SeverityV3",
+		"ImageRegistry",
+		"ImageRemote",
+		"ImageTag",
+	})
 )
 
 func startTimeToMS(t time.Time) float64 {
@@ -471,4 +490,9 @@ func SetReprocessorDuration(start time.Time) {
 // SetSignatureVerificationReprocessorDuration registers how long a signature verification reprocessing step took.
 func SetSignatureVerificationReprocessorDuration(start time.Time) {
 	signatureVerificationReprocessorDurationGauge.Set(time.Since(start).Seconds())
+}
+
+// SetImageVulnCVSS increments the count of the identified vulnerability.
+func SetImageVulnCVSS(labels map[string]string, severity float64) {
+	cvssVectorGauge.With(labels).Set(severity)
 }
