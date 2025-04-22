@@ -582,8 +582,8 @@ type ScannerComponentSpec struct {
 type ScannerV4Spec struct {
 	// Can be specified as "Enabled" or "Disabled".
 	// If this field is not specified, the following defaulting takes place:
-	// For new installations, Scanner V4 is enabled starting with ACS 4.8.
-	// For upgrades to 4.8 the current enablement state of Scanner V4 will be retained.
+	// for new installations, Scanner V4 is enabled starting with ACS 4.8;
+	// for upgrades to 4.8 from previous releases, Scanner V4 is disabled.
 	// TODO: Let the docs team describe this in better words.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,displayName="Scanner V4 component"
 	ScannerComponent *ScannerV4ComponentPolicy `json:"scannerComponent,omitempty"`
