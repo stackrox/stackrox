@@ -27,6 +27,9 @@ var (
 	SecureMetricsClientCAKey = RegisterSetting("ROX_SECURE_METRICS_CLIENT_CA_KEY", WithDefault("client-ca-file"))
 	// SecureMetricsClientCertCN has the expected subject common name of the client cert.
 	SecureMetricsClientCertCN = RegisterSetting("ROX_SECURE_METRICS_CLIENT_CERT_CN", WithDefault("system:serviceaccount:openshift-monitoring:prometheus-k8s"))
+
+	// EnableCVSSMetrics enables reporting of all CVEs CVSS in addition to the numbers of the CVEs aggregated by severity.
+	EnableCVSSMetrics = RegisterBooleanSetting("ROX_ENABLE_CVSS_METRICS", false)
 )
 
 // MetricsEnabled returns true if the metrics/debug http server should be started.

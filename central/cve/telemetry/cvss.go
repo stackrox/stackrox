@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -21,12 +22,15 @@ func (h *trackImpl) trackDeployment(ctx context.Context, aggregated map[string]i
 		return nil
 	}
 
+	reportCVSS := env.EnableCVSSMetrics.BooleanSetting()
 	forEachVuln(images, func(image *storage.Image, name *storage.ImageName, vuln *storage.EmbeddedVulnerability) {
 		aggregated[vuln.GetSeverity().String()]++
 
-		metric := makeCvssMetric(image, name, vuln,
-			deployment.GetClusterName(), deployment.GetNamespace())
-		h.cvssGauge(metric, float64(vuln.GetCvss()))
+		if reportCVSS {
+			metric := makeCvssMetric(image, name, vuln,
+				deployment.GetClusterName(), deployment.GetNamespace())
+			h.cvssGauge(metric, float64(vuln.GetCvss()))
+		}
 	})
 
 	return nil
