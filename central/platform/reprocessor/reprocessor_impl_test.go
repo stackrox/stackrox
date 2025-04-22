@@ -7,6 +7,7 @@ import (
 	alertDSMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
 	deploymentDSMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	platformmatcher "github.com/stackrox/rox/central/platform/matcher"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sac"
@@ -50,7 +51,7 @@ func (s *platformReprocessorImplTestSuite) TestRunReprocessing() {
 	ctx := sac.WithAllAccess(context.Background())
 
 	// Case: Needs reprocessing is false for both alerts and deployments
-	s.alertDatastore.EXPECT().GetByQuery(gomock.Any(), gomock.Any()).Return(nil, nil).Times(1)
+	s.alertDatastore.EXPECT().WalkByQuery(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
 	s.deploymentDatastore.EXPECT().SearchRawDeployments(gomock.Any(), gomock.Any()).Return(nil, nil).Times(1)
 
 	s.reprocessor.runReprocessing()
@@ -61,8 +62,8 @@ func (s *platformReprocessorImplTestSuite) TestRunReprocessing() {
 	// Case: Alerts and deployments are updated
 
 	// Mock calls made by alert reprocessing loop
-	s.alertDatastore.EXPECT().GetByQuery(ctx, gomock.Any()).Return(alerts, nil).Times(1)
-	s.alertDatastore.EXPECT().GetByQuery(ctx, gomock.Any()).Return(nil, nil).Times(1)
+	s.alertDatastore.EXPECT().WalkByQuery(gomock.Any(), ctx, gomock.Any()).Return(alerts, nil).Times(1)
+	s.alertDatastore.EXPECT().WalkByQuery(gomock.Any(), ctx, gomock.Any()).Return(nil, nil).Times(1)
 	s.alertDatastore.EXPECT().UpsertAlerts(ctx, expectedAlerts()).Return(nil).Times(1)
 
 	// Mock calls made by deployment reprocessing loop
@@ -85,7 +86,16 @@ func (s *platformReprocessorImplTestSuite) TestStartAndStop() {
 	// Mock calls made by alert reprocessing loop
 	proceedAlertLoop := concurrency.NewSignal()
 	inAlertLoop := concurrency.NewSignal()
-	s.alertDatastore.EXPECT().GetByQuery(gomock.Any(), gomock.Any()).Return(testAlerts(), nil).Times(1)
+	s.alertDatastore.EXPECT().WalkByQuery(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(ctx context.Context, query *v1.Query, fn func(*storage.Alert) error) error {
+			for _, a := range testAlerts() {
+				err := fn(a)
+				if err != nil {
+					return err
+				}
+			}
+			return nil
+		}).Times(1)
 	s.alertDatastore.EXPECT().UpsertAlerts(gomock.Any(), expectedAlerts()).Do(func(_, _ any) {
 		inAlertLoop.Signal()
 		proceedAlertLoop.Wait()
@@ -105,8 +115,17 @@ func (s *platformReprocessorImplTestSuite) TestStartAndStop() {
 	proceedAlertLoop.Signal()
 
 	// Alert reprocessing loop completes successfully. Mock calls made by alert reprocessing loop
-	s.alertDatastore.EXPECT().GetByQuery(gomock.Any(), gomock.Any()).Return(testAlerts(), nil).Times(1)
-	s.alertDatastore.EXPECT().GetByQuery(gomock.Any(), gomock.Any()).Return(nil, nil).Times(1)
+	s.alertDatastore.EXPECT().WalkByQuery(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(ctx context.Context, query *v1.Query, fn func(*storage.Alert) error) error {
+			for _, a := range testAlerts() {
+				err := fn(a)
+				if err != nil {
+					return err
+				}
+			}
+			return nil
+		}).Times(1)
+	s.alertDatastore.EXPECT().WalkByQuery(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
 	s.alertDatastore.EXPECT().UpsertAlerts(gomock.Any(), expectedAlerts()).Return(nil).Times(1)
 
 	proceedDeploymentLoop := concurrency.NewSignal()
