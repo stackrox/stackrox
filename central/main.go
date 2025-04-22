@@ -678,10 +678,11 @@ func registerDelayedIntegrations(integrationsInput []iiStore.DelayedIntegration)
 			newCVEDataModelFirstStart = true
 		}
 	}
+	log.Infof("newCVEDataModelFirstStart: %v", newCVEDataModelFirstStart)
 	for len(integrations) > 0 {
 		for idx, integration := range integrations {
 			_, exists, _ := ds.GetImageIntegration(imageIntegrationContext, integration.Integration.GetId())
-			if exists && !newCVEDataModelFirstStart {
+			if exists { // && !newCVEDataModelFirstStart
 				delete(integrations, idx)
 				continue
 			}

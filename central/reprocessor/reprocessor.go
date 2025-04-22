@@ -60,7 +60,7 @@ var (
 	imageClusterIDFieldPath = imageMapping.ImageDeploymentOptions.MustGet(search.ClusterID.String()).GetFieldPath()
 
 	allImagesQuery = search.NewQueryBuilder().AddStringsHighlighted(search.ClusterID, search.WildcardString).
-			ProtoQuery()
+		ProtoQuery()
 
 	imagesWithSignaturesQuery = search.NewQueryBuilder().
 		// We take all images into account irrespective whether they have a cluster associated with them
@@ -316,6 +316,7 @@ func (l *loopImpl) runReprocessingForObjects(entityType string, getIDsFunc func(
 
 func (l *loopImpl) reprocessImage(id string, fetchOpt imageEnricher.FetchOption,
 	reprocessingFunc imageReprocessingFunc) (*storage.Image, bool) {
+	log.Info("here")
 	image, exists, err := l.images.GetImage(allAccessCtx, id)
 	if err != nil {
 		log.Errorw("Error fetching image from database", logging.ImageID(id), logging.Err(err))
@@ -337,6 +338,7 @@ func (l *loopImpl) reprocessImage(id string, fetchOpt imageEnricher.FetchOption,
 		if err := l.risk.CalculateRiskAndUpsertImage(image); err != nil {
 			log.Errorw("Error upserting image into datastore",
 				logging.ImageName(image.GetName().GetFullName()), logging.Err(err))
+			log.Info("here")
 			return nil, false
 		}
 		// We need to fetch the image again to make sure all fields are populated.
@@ -345,14 +347,17 @@ func (l *loopImpl) reprocessImage(id string, fetchOpt imageEnricher.FetchOption,
 		newImage, exists, err := l.images.GetImage(allAccessCtx, id)
 		if err != nil {
 			log.Errorw("Error fetching image from database", logging.ImageName(image.GetName().GetFullName()), logging.Err(err))
+			log.Info("here")
 			return nil, false
 		}
 		if !exists {
 			log.Errorw("The image was not found after enrichement", logging.ImageName(image.GetName().GetFullName()))
 			return nil, false
 		}
+		log.Info("here")
 		return newImage, true
 	}
+	log.Info("here")
 	return image, true
 }
 
@@ -368,12 +373,15 @@ func (l *loopImpl) getActiveImageIDs() ([]string, error) {
 
 func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.FetchOption,
 	imgReprocessingFunc imageReprocessingFunc, imageQuery *v1.Query) {
+	log.Info("here")
 	if l.stopSig.IsDone() {
 		return
 	}
+	log.Info("here")
 	results, err := l.images.Search(allAccessCtx, imageQuery)
 	if err != nil {
 		log.Errorw("Error searching for active image IDs", logging.Err(err))
+		log.Info("here")
 		return
 	}
 
@@ -389,6 +397,7 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 		wg.Add(1)
 		if err := sema.Acquire(concurrency.AsContext(&l.stopSig), 1); err != nil {
 			log.Errorw("Reprocessing stopped", logging.Err(err))
+			log.Info("here")
 			return
 		}
 		// Duplicates can exist if the image is within multiple deployments
@@ -397,7 +406,9 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 			defer sema.Release(1)
 			defer wg.Add(-1)
 
+			log.Info("here")
 			image, successfullyProcessed := l.reprocessImage(id, fetchOpt, imgReprocessingFunc)
+			log.Info("here")
 			if !successfullyProcessed {
 				return
 			}
@@ -409,6 +420,7 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 			for clusterID := range clusterIDs {
 				conn := l.connManager.GetConnection(clusterID)
 				if conn == nil {
+					log.Info("here")
 					continue
 				}
 				err := conn.InjectMessage(concurrency.AsContext(&l.stopSig), &central.MsgToSensor{
@@ -525,6 +537,7 @@ func (l *loopImpl) reprocessWatchedImages() {
 }
 
 func (l *loopImpl) runReprocessing(imageFetchOpt imageEnricher.FetchOption) {
+	log.Info("here")
 	// In case the current reprocessing run takes longer than the ticker (i.e. > 4 hours when using a high number of
 	// images), we shouldn't trigger a parallel reprocessing run.
 	if l.reprocessingInProgress.TestAndSet(true) {
@@ -560,6 +573,7 @@ func (l *loopImpl) forceEnrichImageSignatureVerificationResults(ctx context.Cont
 
 func (l *loopImpl) enrichImage(ctx context.Context, enrichCtx imageEnricher.EnrichmentContext,
 	image *storage.Image) (imageEnricher.EnrichmentResult, error) {
+	log.Info("here")
 	return l.imageEnricher.EnrichImage(ctx, enrichCtx, image)
 }
 

@@ -225,9 +225,12 @@ func (e *enricherImpl) updateImageWithExistingImage(image *storage.Image, existi
 // EnrichImage enriches an image with the integration set present.
 func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext EnrichmentContext, image *storage.Image) (EnrichmentResult, error) {
 	shouldDelegate, err := e.delegateEnrichImage(ctx, enrichContext, image)
+	log.Info("here")
 	var delegateErr error
 	if shouldDelegate {
+		log.Info("here")
 		if err == nil {
+			log.Info("here")
 			return EnrichmentResult{ImageUpdated: true, ScanResult: ScanSucceeded}, nil
 		}
 		if errors.Is(err, delegatedregistry.ErrNoClusterSpecified) {
@@ -236,6 +239,7 @@ func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext Enrichment
 			delegateErr = errors.New("no cluster specified for delegated scanning and Central scan attempt failed")
 		} else {
 			// This enrichment should have been delegated, short circuit.
+			log.Info("here")
 			return EnrichmentResult{ImageUpdated: false, ScanResult: ScanNotDone}, err
 		}
 	} else if err != nil {
@@ -266,6 +270,7 @@ func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext Enrichment
 	// here.
 	if err != nil {
 		errorList.AddErrors(err, delegateErr)
+		log.Info("here")
 		return EnrichmentResult{ImageUpdated: didUpdateMetadata, ScanResult: ScanNotDone}, errorList.ToError()
 	}
 
@@ -310,6 +315,11 @@ func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext Enrichment
 		errorList.AddError(delegateErr)
 	}
 
+	log.Info("here")
+	log.Infof("result: %v", EnrichmentResult{
+		ImageUpdated: updated,
+		ScanResult:   scanResult,
+	})
 	return EnrichmentResult{
 		ImageUpdated: updated,
 		ScanResult:   scanResult,
