@@ -13,7 +13,7 @@ import (
 
 type image storage.Image
 
-func (i *image) withCVE(cve string, severity storage.CVSSV3_Severity) *image {
+func (i *image) withCVE(cve string, severityV3 storage.CVSSV3_Severity, severity storage.VulnerabilitySeverity) *image {
 	if i.Scan == nil {
 		i.Scan = &storage.ImageScan{
 			OperatingSystem: "os",
@@ -24,8 +24,9 @@ func (i *image) withCVE(cve string, severity storage.CVSSV3_Severity) *image {
 		Cve:  cve,
 		Cvss: 2.5,
 		CvssV3: &storage.CVSSV3{
-			Severity: severity,
+			Severity: severityV3,
 		},
+		Severity: severity,
 	})
 	return i
 }
@@ -58,16 +59,24 @@ func Test_fetchMetrics(t *testing.T) {
 
 	images := map[string][]*storage.Image{
 		"deployment-1": {
-			(*storage.Image)(makeTestImage("image-1").withTags("tag").withCVE("cve-1", storage.CVSSV3_CRITICAL)),
+			(*storage.Image)(makeTestImage("image-1").withTags("tag").withCVE(
+				"cve-1", storage.CVSSV3_CRITICAL,
+				storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY)),
 		},
 		"deployment-2": {
-			(*storage.Image)(makeTestImage("image-2").withTags("tag").withCVE("cve-1", storage.CVSSV3_CRITICAL)),
+			(*storage.Image)(makeTestImage("image-2").withTags("tag").withCVE(
+				"cve-1", storage.CVSSV3_CRITICAL,
+				storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY)),
 		},
 		"deployment-3": {
-			(*storage.Image)(makeTestImage("image-2").withTags("tag").withCVE("cve-1", storage.CVSSV3_CRITICAL)),
+			(*storage.Image)(makeTestImage("image-2").withTags("tag").withCVE(
+				"cve-1", storage.CVSSV3_CRITICAL,
+				storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY)),
 		},
 		"deployment-4": {
-			(*storage.Image)(makeTestImage("image-3").withTags("tag1", "tag2").withCVE("cve-2", storage.CVSSV3_HIGH)),
+			(*storage.Image)(makeTestImage("image-3").withTags("tag1", "tag2").withCVE(
+				"cve-2", storage.CVSSV3_HIGH,
+				storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY)),
 		},
 	}
 
@@ -88,13 +97,25 @@ func Test_fetchMetrics(t *testing.T) {
 	type labels = map[string]string
 
 	results := []labels{}
-	severitySum := 0.0
-	i := &trackImpl{ds: ds, cvssGauge: func(l labels, f float64) {
-		results = append(results, l)
-		severitySum += f
-	}}
+	var severitySum float64
+	var aggregated map[string]int
+	i := &trackImpl{ds: ds,
+		aggregated: func(a map[string]int) {
+			aggregated = a
+		},
+		cvssGauge: func(l labels, f float64) {
+			results = append(results, l)
+			severitySum += f
+		}}
 
 	i.trackCvssMetrics(context.Background())
+	assert.Equal(t, map[string]int{
+		"LOW_VULNERABILITY_SEVERITY":       1,
+		"MODERATE_VULNERABILITY_SEVERITY":  1,
+		"IMPORTANT_VULNERABILITY_SEVERITY": 1,
+		"CRITICAL_VULNERABILITY_SEVERITY":  2,
+	}, aggregated)
+
 	assert.Equal(t, 12.5, severitySum)
 	assert.Equal(t, []labels{
 		{
