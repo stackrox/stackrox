@@ -286,7 +286,7 @@ func (p *process) deleteUpgraderDeploymentIfNecessary(ctx context.Context, force
 func (p *process) createUpgraderDeploymentIfNecessary() error {
 	if err := p.deleteUpgraderDeploymentIfNecessary(p.ctx(), false); err != nil {
 		if p.doneSig.IsDone() {
-			return p.doneSig.Err()
+			return errors.Wrap(p.doneSig.Err(), "signal errored")
 		}
 		return err
 	}
