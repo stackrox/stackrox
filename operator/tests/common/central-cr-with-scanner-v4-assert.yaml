@@ -30,7 +30,7 @@ collectors:
 - command: retry-kubectl.sh describe pod -n $NAMESPACE -l app=scanner-v4-matcher
 - command: retry-kubectl.sh describe pod -n $NAMESPACE -l app=scanner-v4-db
 # Please keep the above lists in sync with pods-debug.yaml
-timeout: 1500
+timeout: 3600 # Need to account for vuln definition load
 ---
 apiVersion: platform.stackrox.io/v1alpha1
 kind: Central

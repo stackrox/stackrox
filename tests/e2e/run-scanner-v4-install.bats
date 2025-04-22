@@ -946,7 +946,8 @@ verify_scannerV4_matcher_deployed() {
     wait_for_object_to_appear "$namespace" deploy/scanner-v4-db 600
     wait_for_object_to_appear "$namespace" deploy/scanner-v4-matcher 300
     wait_for_ready_pods "${namespace}" "scanner-v4-db" 600
-    wait_for_ready_pods "${namespace}" "scanner-v4-matcher" 600
+    # Longer timeout due to vuln load
+    wait_for_ready_pods "${namespace}" "scanner-v4-matcher" 3600
     info "** Scanner V4 Matcher is deployed in namespace ${namespace}"
 }
 
