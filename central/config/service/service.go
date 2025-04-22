@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/config/datastore"
 	"github.com/stackrox/rox/central/convert/storagetov1"
 	"github.com/stackrox/rox/central/convert/v1tostorage"
+	"github.com/stackrox/rox/central/cve/telemetry"
 	"github.com/stackrox/rox/central/platform/matcher"
 	"github.com/stackrox/rox/central/platform/reprocessor"
 	"github.com/stackrox/rox/central/telemetry/centralclient"
@@ -170,6 +171,10 @@ func (s *serviceImpl) PutConfig(ctx context.Context, req *v1.PutConfigRequest) (
 	}
 	matcher.Singleton().SetRegexes(regexes)
 	go reprocessor.Singleton().RunReprocessor()
+
+	if err := telemetry.ReloadConfig(req.GetConfig().GetPrivateConfig().GetPrometheusMetricsConfig()); err != nil {
+		return nil, err
+	}
 	return req.GetConfig(), nil
 }
 
