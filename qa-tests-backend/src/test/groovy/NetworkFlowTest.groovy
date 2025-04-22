@@ -485,10 +485,13 @@ class NetworkFlowTest extends BaseSpecification {
         log.info "Checking for edge from ${EXTERNALDESTINATION} to external target"
         List<Edge> edges = NetworkGraphUtil.checkForEdge(deploymentUid, Constants.INTERNET_EXTERNAL_SOURCE_ID)
         def graph = NetworkGraphService.getNetworkGraph(null, null)
+        def node = NetworkGraphUtil.findDeploymentNode(graph, deploymentUid)
         then:
         "There should be an edge from A to external entities and it should be the only edge"
         assert edges
         assert edges.size() == 1
+        assert node
+        assert node.outEdgesMap.size() == 1
 
         when: "External IPs is enabled"
         CollectorUtil.enableExternalIps(orchestrator)
@@ -496,7 +499,7 @@ class NetworkFlowTest extends BaseSpecification {
 
         edges = NetworkGraphUtil.checkForEdge(deploymentUid, Constants.INTERNET_EXTERNAL_SOURCE_ID)
         graph = NetworkGraphService.getNetworkGraph()
-        def node = NetworkGraphUtil.findDeploymentNode(graph, deploymentUid)
+        node = NetworkGraphUtil.findDeploymentNode(graph, deploymentUid)
         then:
         "The edge should still be there and it should still be the only edge from A"
         assert edges
