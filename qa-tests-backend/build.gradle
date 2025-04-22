@@ -12,6 +12,7 @@ codenarc.reportFormat = 'text'
 
 // In this section you declare where to find the dependencies of your project
 repositories {
+    mavenLocal()
     mavenCentral()
 }
 
@@ -117,6 +118,8 @@ dependencies {
     implementation group: 'org.picocontainer', name: 'picocontainer', version: '2.15.2'
 
     implementation 'commons-codec:commons-codec:1.18.0'
+
+    implementation project(":annotations")
 }
 
 // Apply some base attributes to all the test tasks.

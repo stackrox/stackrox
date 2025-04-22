@@ -1,4 +1,4 @@
-package util
+package io.stackrox.annotations
 
 import java.lang.annotation.Documented
 import java.lang.annotation.ElementType
@@ -16,10 +16,14 @@ import org.codehaus.groovy.ast.VariableScope
 import org.codehaus.groovy.ast.expr.ArgumentListExpression
 import org.codehaus.groovy.ast.expr.ClosureExpression
 import org.codehaus.groovy.ast.expr.ConstantExpression
+import org.codehaus.groovy.ast.expr.Expression
 import org.codehaus.groovy.ast.expr.MethodCallExpression
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression
 import org.codehaus.groovy.ast.expr.VariableExpression
+import org.codehaus.groovy.ast.stmt.BlockStatement
+import org.codehaus.groovy.ast.stmt.ExpressionStatement
 import org.codehaus.groovy.ast.stmt.ReturnStatement
+import org.codehaus.groovy.ast.stmt.Statement
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.transform.AbstractASTTransformation
 import org.codehaus.groovy.transform.GroovyASTTransformation
@@ -29,7 +33,7 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass
  * Retry the method in case of exception. Using Helpers.evaluateWithRetry
  */
 @Documented
-@Retention(RetentionPolicy.RUNTIME)
+@Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.METHOD)
 @GroovyASTTransformationClass(classes = RetryASTTransformation)
 @interface Retry {
@@ -81,18 +85,20 @@ class RetryASTTransformation extends AbstractASTTransformation {
         }
         closureExpression.setVariableScope(variableScope)
 
-        def retryCall = new ReturnStatement(
-                new StaticMethodCallExpression(
-                        ClassHelper.make(Helpers),
-                        "evaluateWithRetry",
-                        new ArgumentListExpression(
-                                new ConstantExpression(attempts),
-                                new ConstantExpression(delay),
-                                new ConstantExpression("${clazz.name}.${method.name}".toString()),
-                                closureExpression
-                        )
-                ))
+        StaticMethodCallExpression retryCall = new StaticMethodCallExpression(
+                ClassHelper.make("util.Helpers"),
+                "evaluateWithRetry",
+                new ArgumentListExpression(
+                        new ConstantExpression(attempts),
+                        new ConstantExpression(delay),
+                        new ConstantExpression("${clazz.name}.${method.name}".toString()),
+                        closureExpression
+                )
+        )
 
-        method.setCode(retryCall)
+        Statement call = method.voidMethod
+                ? new ExpressionStatement(retryCall)
+                : new ReturnStatement(retryCall)
+        method.setCode(call)
     }
 }
