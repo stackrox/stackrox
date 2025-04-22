@@ -567,12 +567,24 @@ nzTe7BpOmVwmqLkIefEJe5L4PSXtp2KFLZqGO/kY5A==
         return policyBuilder
     }
 
+    class CertificateVerificationArgs {
+        String chain
+        String identity
+        String issuer
+        Boolean ctlogEnabled
+    }
+
+    class TransparencyLogVerificationArgs {
+        Boolean enabled
+        String url
+    }
+
     // Helper to create a signature integration with given name, public keys, chain, identity, and issuer.
     private static String createSignatureIntegration(
             String integrationName,
             Map<String, String> namedPublicKeys,
-            Map<String, String> certVerification = [:],
-            Map<String, String> tlogVerification = [:]) {
+            CertificateVerificationArgs certVerification = null,
+            TransparencyLogVerificationArgs tlogVerification = null) {
         SignatureIntegration.Builder builder = SignatureIntegration.newBuilder()
             .setName(integrationName)
 
@@ -588,13 +600,13 @@ nzTe7BpOmVwmqLkIefEJe5L4PSXtp2KFLZqGO/kY5A==
             )
         }
 
-        if (certVerification["identity"] && certVerification["issuer"]) {
+        if (certVerification?.identity && certVerification?.issuer) {
             CosignCertificateVerification verification = CosignCertificateVerification.newBuilder()
-                .setCertificateChainPemEnc(certVerification["chain"] ?: "")
-                .setCertificateIdentity(certVerification["identity"] ?: "")
-                .setCertificateOidcIssuer(certVerification["issuer"] ?: "")
+                .setCertificateChainPemEnc(certVerification?.chain ?: "")
+                .setCertificateIdentity(certVerification?.identity ?: "")
+                .setCertificateOidcIssuer(certVerification?.issuer ?: "")
                 .setCertificateTransparencyLog(CertificateTransparencyLogVerification.newBuilder()
-                    .setEnabled(certVerification["ctlogEnabled"] ?: false)
+                    .setEnabled(certVerification?.ctlogEnabled ?: false)
                     .build()
                 )
                 .build()
@@ -603,8 +615,8 @@ nzTe7BpOmVwmqLkIefEJe5L4PSXtp2KFLZqGO/kY5A==
         }
 
         builder.setTransparencyLog(TransparencyLogVerification.newBuilder()
-            .setEnabled(tlogVerification["enabled"] ?: false)
-            .setUrl(tlogVerification["url"] ?: "")
+            .setEnabled(tlogVerification?.enabled ?: false)
+            .setUrl(tlogVerification?.url ?: "")
             .build()
         )
 
