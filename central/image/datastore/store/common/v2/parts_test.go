@@ -13,8 +13,63 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var (
+	ts = protocompat.TimestampNow()
+
+	testComponents = []*storage.EmbeddedImageScanComponent{
+		{
+			Name:    "comp1",
+			Version: "ver1",
+		},
+		{
+			Name:    "comp1",
+			Version: "ver2",
+		},
+		{
+			Name:    "comp2",
+			Version: "ver1",
+		},
+	}
+
+	testCVEs = map[string]*storage.EmbeddedVulnerability{
+		"cve1comp1": {
+			Cve:                   "cve1",
+			VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+			VulnerabilityTypes:    []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
+			FirstImageOccurrence:  ts,
+			FirstSystemOccurrence: ts,
+		},
+		"cve2comp1": {
+			Cve:                "cve2",
+			VulnerabilityType:  storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+			VulnerabilityTypes: []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
+			SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
+				FixedBy: "ver3",
+			},
+			FirstImageOccurrence:  ts,
+			FirstSystemOccurrence: ts,
+		},
+		"cve1comp2": {
+			Cve:                "cve1",
+			VulnerabilityType:  storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+			VulnerabilityTypes: []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
+			SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
+				FixedBy: "ver2",
+			},
+			FirstImageOccurrence:  ts,
+			FirstSystemOccurrence: ts,
+		},
+		"cve2comp2": {
+			Cve:                   "cve2",
+			VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+			VulnerabilityTypes:    []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
+			FirstImageOccurrence:  ts,
+			FirstSystemOccurrence: ts,
+		},
+	}
+)
+
 func TestSplitAndMergeImage(t *testing.T) {
-	ts := protocompat.TimestampNow()
 	image := &storage.Image{
 		Id: "sha",
 		Name: &storage.ImageName{
@@ -53,10 +108,11 @@ func TestSplitAndMergeImage(t *testing.T) {
 					},
 					Vulns: []*storage.EmbeddedVulnerability{
 						{
-							Cve:                  "cve1",
-							VulnerabilityType:    storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
-							VulnerabilityTypes:   []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
-							FirstImageOccurrence: ts,
+							Cve:                   "cve1",
+							VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+							VulnerabilityTypes:    []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
+							FirstImageOccurrence:  ts,
+							FirstSystemOccurrence: ts,
 						},
 						{
 							Cve:                "cve2",
@@ -65,7 +121,8 @@ func TestSplitAndMergeImage(t *testing.T) {
 							SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
 								FixedBy: "ver3",
 							},
-							FirstImageOccurrence: ts,
+							FirstImageOccurrence:  ts,
+							FirstSystemOccurrence: ts,
 						},
 					},
 				},
@@ -83,13 +140,15 @@ func TestSplitAndMergeImage(t *testing.T) {
 							SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
 								FixedBy: "ver2",
 							},
-							FirstImageOccurrence: ts,
+							FirstImageOccurrence:  ts,
+							FirstSystemOccurrence: ts,
 						},
 						{
-							Cve:                  "cve2",
-							VulnerabilityType:    storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
-							VulnerabilityTypes:   []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
-							FirstImageOccurrence: ts,
+							Cve:                   "cve2",
+							VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+							VulnerabilityTypes:    []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
+							FirstImageOccurrence:  ts,
+							FirstSystemOccurrence: ts,
 						},
 					},
 				},
@@ -141,7 +200,7 @@ func TestSplitAndMergeImage(t *testing.T) {
 					Version: "ver1",
 				},
 				ComponentV2: &storage.ImageComponentV2{
-					Id:      scancomponent.ComponentIDV2("comp1", "ver1", "", "sha"),
+					Id:      getTestComponentID(testComponents[0], "sha"),
 					Name:    "comp1",
 					Version: "ver1",
 					ImageId: "sha",
@@ -166,7 +225,7 @@ func TestSplitAndMergeImage(t *testing.T) {
 					Version: "ver2",
 				},
 				ComponentV2: &storage.ImageComponentV2{
-					Id:      scancomponent.ComponentIDV2("comp1", "ver2", "", "sha"),
+					Id:      getTestComponentID(testComponents[1], "sha"),
 					Name:    "comp1",
 					Version: "ver2",
 					ImageId: "sha",
@@ -187,7 +246,8 @@ func TestSplitAndMergeImage(t *testing.T) {
 						CVE: &storage.ImageCVE{
 							Id: cve.ID("cve1", ""),
 							CveBaseInfo: &storage.CVEInfo{
-								Cve: "cve1",
+								Cve:       "cve1",
+								CreatedAt: ts,
 							},
 							NvdScoreVersion: storage.CvssScoreVersion_UNKNOWN_VERSION,
 						},
@@ -197,21 +257,23 @@ func TestSplitAndMergeImage(t *testing.T) {
 							ImageCveId:       cve.ID("cve1", ""),
 						},
 						CVEV2: &storage.ImageCVEV2{
-							Id:      cve.IDV2("cve1", scancomponent.ComponentIDV2("comp1", "ver2", "", "sha"), "0"),
+							Id:      getTestCVEID(testCVEs["cve1comp1"], getTestComponentID(testComponents[1], "sha")),
 							ImageId: "sha",
 							CveBaseInfo: &storage.CVEInfo{
-								Cve: "cve1",
+								Cve:       "cve1",
+								CreatedAt: ts,
 							},
 							NvdScoreVersion:      storage.CvssScoreVersion_UNKNOWN_VERSION,
 							FirstImageOccurrence: ts,
-							ComponentId:          scancomponent.ComponentIDV2("comp1", "ver2", "", "sha"),
+							ComponentId:          getTestComponentID(testComponents[1], "sha"),
 						},
 					},
 					{
 						CVE: &storage.ImageCVE{
 							Id: cve.ID("cve2", ""),
 							CveBaseInfo: &storage.CVEInfo{
-								Cve: "cve2",
+								Cve:       "cve2",
+								CreatedAt: ts,
 							},
 							NvdScoreVersion: storage.CvssScoreVersion_UNKNOWN_VERSION,
 						},
@@ -225,10 +287,11 @@ func TestSplitAndMergeImage(t *testing.T) {
 							IsFixable: true,
 						},
 						CVEV2: &storage.ImageCVEV2{
-							Id:      cve.IDV2("cve2", scancomponent.ComponentIDV2("comp1", "ver2", "", "sha"), "1"),
+							Id:      getTestCVEID(testCVEs["cve2comp1"], getTestComponentID(testComponents[1], "sha")),
 							ImageId: "sha",
 							CveBaseInfo: &storage.CVEInfo{
-								Cve: "cve2",
+								Cve:       "cve2",
+								CreatedAt: ts,
 							},
 							NvdScoreVersion: storage.CvssScoreVersion_UNKNOWN_VERSION,
 							HasFixedBy: &storage.ImageCVEV2_FixedBy{
@@ -236,7 +299,7 @@ func TestSplitAndMergeImage(t *testing.T) {
 							},
 							IsFixable:            true,
 							FirstImageOccurrence: ts,
-							ComponentId:          scancomponent.ComponentIDV2("comp1", "ver2", "", "sha"),
+							ComponentId:          getTestComponentID(testComponents[1], "sha"),
 						},
 					},
 				},
@@ -248,7 +311,7 @@ func TestSplitAndMergeImage(t *testing.T) {
 					Version: "ver1",
 				},
 				ComponentV2: &storage.ImageComponentV2{
-					Id:      scancomponent.ComponentIDV2("comp2", "ver1", "", "sha"),
+					Id:      getTestComponentID(testComponents[2], "sha"),
 					Name:    "comp2",
 					Version: "ver1",
 					ImageId: "sha",
@@ -269,7 +332,8 @@ func TestSplitAndMergeImage(t *testing.T) {
 						CVE: &storage.ImageCVE{
 							Id: cve.ID("cve1", ""),
 							CveBaseInfo: &storage.CVEInfo{
-								Cve: "cve1",
+								Cve:       "cve1",
+								CreatedAt: ts,
 							},
 							NvdScoreVersion: storage.CvssScoreVersion_UNKNOWN_VERSION,
 						},
@@ -283,10 +347,11 @@ func TestSplitAndMergeImage(t *testing.T) {
 							IsFixable: true,
 						},
 						CVEV2: &storage.ImageCVEV2{
-							Id:      cve.IDV2("cve1", scancomponent.ComponentIDV2("comp2", "ver1", "", "sha"), "0"),
+							Id:      getTestCVEID(testCVEs["cve1comp2"], getTestComponentID(testComponents[1], "sha")),
 							ImageId: "sha",
 							CveBaseInfo: &storage.CVEInfo{
-								Cve: "cve1",
+								Cve:       "cve1",
+								CreatedAt: ts,
 							},
 							NvdScoreVersion: storage.CvssScoreVersion_UNKNOWN_VERSION,
 							HasFixedBy: &storage.ImageCVEV2_FixedBy{
@@ -294,14 +359,15 @@ func TestSplitAndMergeImage(t *testing.T) {
 							},
 							IsFixable:            true,
 							FirstImageOccurrence: ts,
-							ComponentId:          scancomponent.ComponentIDV2("comp2", "ver1", "", "sha"),
+							ComponentId:          getTestComponentID(testComponents[2], "sha"),
 						},
 					},
 					{
 						CVE: &storage.ImageCVE{
 							Id: cve.ID("cve2", ""),
 							CveBaseInfo: &storage.CVEInfo{
-								Cve: "cve2",
+								Cve:       "cve2",
+								CreatedAt: ts,
 							},
 							NvdScoreVersion: storage.CvssScoreVersion_UNKNOWN_VERSION,
 						},
@@ -311,14 +377,15 @@ func TestSplitAndMergeImage(t *testing.T) {
 							ImageCveId:       cve.ID("cve2", ""),
 						},
 						CVEV2: &storage.ImageCVEV2{
-							Id:      cve.IDV2("cve2", scancomponent.ComponentIDV2("comp2", "ver1", "", "sha"), "1"),
+							Id:      getTestCVEID(testCVEs["cve2comp2"], getTestComponentID(testComponents[1], "sha")),
 							ImageId: "sha",
 							CveBaseInfo: &storage.CVEInfo{
-								Cve: "cve2",
+								Cve:       "cve2",
+								CreatedAt: ts,
 							},
 							NvdScoreVersion:      storage.CvssScoreVersion_UNKNOWN_VERSION,
 							FirstImageOccurrence: ts,
-							ComponentId:          scancomponent.ComponentIDV2("comp2", "ver1", "", "sha"),
+							ComponentId:          getTestComponentID(testComponents[2], "sha"),
 						},
 					},
 				},
@@ -326,7 +393,8 @@ func TestSplitAndMergeImage(t *testing.T) {
 		},
 	}
 
-	splitActual := Split(image, true)
+	splitActual, err := Split(image, true)
+	assert.NoError(t, err)
 	if !features.FlattenCVEData.Enabled() {
 		protoassert.MapEqual(t, splitExpected.ImageCVEEdges, splitActual.ImageCVEEdges)
 	}
@@ -367,4 +435,16 @@ func TestSplitAndMergeImage(t *testing.T) {
 		imageActual = Merge(splitActual)
 	}
 	protoassert.Equal(t, image, imageActual)
+}
+
+func getTestComponentID(testComponent *storage.EmbeddedImageScanComponent, imageID string) string {
+	id, _ := scancomponent.ComponentIDV2(testComponent, imageID)
+
+	return id
+}
+
+func getTestCVEID(testCVE *storage.EmbeddedVulnerability, componentID string) string {
+	id, _ := cve.IDV2(testCVE, componentID)
+
+	return id
 }

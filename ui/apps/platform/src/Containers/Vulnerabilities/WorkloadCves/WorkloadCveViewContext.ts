@@ -9,6 +9,7 @@ export type WorkloadCveView = {
     pageTitle: string;
     overviewEntityTabs: NonEmptyArray<WorkloadEntityTab>;
     pageTitleDescription?: string;
+    viewContext: string;
 };
 
 /**

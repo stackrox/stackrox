@@ -910,6 +910,66 @@ func TestTranslate(t *testing.T) {
 			},
 		},
 
+		"reencrypt route with custom hostname and trust bundle": {
+			args: args{
+				c: platform.Central{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "stackrox",
+					},
+					Spec: platform.CentralSpec{
+						Central: &platform.CentralComponentSpec{
+							Exposure: &platform.Exposure{
+								Route: &platform.ExposureRoute{
+									Enabled: &truth,
+									Reencrypt: &platform.ExposureRouteReencrypt{
+										Host: pointer.String("custom-route.stackrox.io"),
+										TLS: &platform.ExposureRouteReencryptTLS{
+											CaCertificate:            pointer.String("custom CA"),
+											Certificate:              pointer.String("custom cert"),
+											DestinationCACertificate: pointer.String("custom dest CA"),
+											Key:                      pointer.String("custom key"),
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				pvcs: []*corev1.PersistentVolumeClaim{defaultPvc},
+			},
+			want: chartutil.Values{
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": true,
+					},
+				},
+				"central": map[string]interface{}{
+					"exposure": map[string]interface{}{
+						"route": map[string]interface{}{
+							"enabled": true,
+							"reencrypt": map[string]interface{}{
+								"host": "custom-route.stackrox.io",
+								"tls": map[string]interface{}{
+									"caCertificate":            "custom CA",
+									"certificate":              "custom cert",
+									"destinationCACertificate": "custom dest CA",
+									"key":                      "custom key",
+								},
+							},
+						},
+					},
+					"exposeMonitoring": false,
+					"db": map[string]interface{}{
+						"persistence": map[string]interface{}{
+							"persistentVolumeClaim": map[string]interface{}{
+								"createClaim": false,
+							},
+						},
+					},
+				},
+			},
+		},
+
 		"add managed service setting": {
 			args: args{
 				c: platform.Central{

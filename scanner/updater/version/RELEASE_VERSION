@@ -1,8 +1,11 @@
-# This file serves as a list of StackRox versions.
-# As Scanner V4 and StackRox versions are aligned, the vulnerability updaters are responsible for updating vulnerability data across all versions listed in this file.
-# Subsequently, this updated data is uploaded to Google Cloud Storage.
-# For each individual version of Scanner V4's vulnerability updater, corresponding vulnerability data is collected and then seamlessly uploaded to Google Cloud Storage.
-# This process ensures that each version's vulnerability data is accurately captured and maintained in accordance with its respective version.
+# This file serves as a list of StackRox releases to which we should generate
+# vulnerability bundles.
+#
+# Notice that offline bundles have one bundle per release. However, online
+# bundles are published per vulnerability schema (eg. v1, v2, etc). If a release
+# is not specified in this file, then the vulnerability updater workflow (a.)
+# won't take into account its vulnerability schema, and (b.) won't create the
+# offline bundle for that release.
 4.4.0
 4.4.1
 4.4.2
@@ -21,11 +24,13 @@
 4.5.6
 4.5.7
 4.5.8
+4.5.9
 4.6.0
 4.6.1
 4.6.2
 4.6.3
 4.6.4
+4.6.5
 4.7.0
 4.7.1
 4.7.2

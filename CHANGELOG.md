@@ -25,6 +25,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-28263: New `roxctl` help formatting.
 - ROX-24500: Certificate validation failure in `roxctl` is now an error.
 - ROX-27885: Aligned data in old Compliance across tables and widgets
+- ROX-28574: Fixed a Sensor race condition that would occasionally disable delegated scanning when Sensor reconnected to Central.
 
 ## [4.7.0]
 

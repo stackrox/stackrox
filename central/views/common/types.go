@@ -10,6 +10,7 @@ type ResourceCountByCVESeverity interface {
 	GetImportantSeverityCount() ResourceCountByFixability
 	GetModerateSeverityCount() ResourceCountByFixability
 	GetLowSeverityCount() ResourceCountByFixability
+	GetUnknownSeverityCount() ResourceCountByFixability
 }
 
 // ResourceCountByFixability provides functionality to retrieve the count of resources affected by cve distributed over fixable property.
@@ -27,4 +28,5 @@ type ResourceTotalCountByCVESeverity interface {
 	GetImportantSeverityCount() int
 	GetModerateSeverityCount() int
 	GetLowSeverityCount() int
+	GetUnknownSeverityCount() int
 }

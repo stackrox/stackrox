@@ -11,7 +11,7 @@ import (
 // DataStore for auth machine to machine configs.
 type DataStore interface {
 	GetAuthM2MConfig(ctx context.Context, id string) (*storage.AuthMachineToMachineConfig, bool, error)
-	ListAuthM2MConfigs(ctx context.Context) ([]*storage.AuthMachineToMachineConfig, error)
+	ForEachAuthM2MConfig(ctx context.Context, fn func(obj *storage.AuthMachineToMachineConfig) error) error
 	UpsertAuthM2MConfig(ctx context.Context, config *storage.AuthMachineToMachineConfig) (*storage.AuthMachineToMachineConfig, error)
 	RemoveAuthM2MConfig(ctx context.Context, id string) error
 

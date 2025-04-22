@@ -19,6 +19,8 @@ type nodeCVECoreResponse struct {
 	FixableNodesWithModerateSeverity  int        `db:"fixable_moderate_severity_count"`
 	NodesWithLowSeverity              int        `db:"low_severity_count"`
 	FixableNodesWithLowSeverity       int        `db:"fixable_low_severity_count"`
+	ImagesWithUnknownSeverity         int        `db:"unknown_severity_count"`
+	FixableImagesWithUnknownSeverity  int        `db:"fixable_unknown_severity_count"`
 	NodeIDs                           []string   `db:"node_id"`
 	OperatingSystemCount              int        `db:"operating_system_count"`
 	FirstDiscoveredInSystem           *time.Time `db:"cve_created_time_min"`
@@ -55,6 +57,8 @@ func (c *nodeCVECoreResponse) GetNodeCountBySeverity() common.ResourceCountByCVE
 		FixableModerateSeverityCount:  c.FixableNodesWithModerateSeverity,
 		LowSeverityCount:              c.NodesWithLowSeverity,
 		FixableLowSeverityCount:       c.FixableNodesWithLowSeverity,
+		UnknownSeverityCount:          c.ImagesWithUnknownSeverity,
+		FixableUnknownSeverityCount:   c.FixableImagesWithUnknownSeverity,
 	}
 }
 
@@ -86,6 +90,8 @@ type countByNodeCVESeverity struct {
 	FixableModerateSeverityCount  int `db:"fixable_moderate_severity_count"`
 	LowSeverityCount              int `db:"low_severity_count"`
 	FixableLowSeverityCount       int `db:"fixable_low_severity_count"`
+	UnknownSeverityCount          int `db:"unknown_severity_count"`
+	FixableUnknownSeverityCount   int `db:"fixable_unknown_severity_count"`
 }
 
 // NewCountByNodeCVESeverity creates and returns a node resource count by CVE severity.
@@ -93,7 +99,7 @@ func NewCountByNodeCVESeverity(
 	critical, fixableCritical,
 	important, fixableImportant,
 	moderate, fixableModerate,
-	low, fixableLow int) common.ResourceCountByCVESeverity {
+	low, fixableLow, unknown, fixableUnknown int) common.ResourceCountByCVESeverity {
 	return &countByNodeCVESeverity{
 		CriticalSeverityCount:         critical,
 		FixableCriticalSeverityCount:  fixableCritical,
@@ -103,6 +109,8 @@ func NewCountByNodeCVESeverity(
 		FixableModerateSeverityCount:  fixableModerate,
 		LowSeverityCount:              low,
 		FixableLowSeverityCount:       fixableLow,
+		UnknownSeverityCount:          unknown,
+		FixableUnknownSeverityCount:   fixableUnknown,
 	}
 }
 
@@ -131,6 +139,13 @@ func (c *countByNodeCVESeverity) GetLowSeverityCount() common.ResourceCountByFix
 	return &resourceCountByFixability{
 		total:   c.LowSeverityCount,
 		fixable: c.FixableLowSeverityCount,
+	}
+}
+
+func (c *countByNodeCVESeverity) GetUnknownSeverityCount() common.ResourceCountByFixability {
+	return &resourceCountByFixability{
+		total:   c.UnknownSeverityCount,
+		fixable: c.FixableUnknownSeverityCount,
 	}
 }
 

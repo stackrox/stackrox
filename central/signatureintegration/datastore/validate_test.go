@@ -49,6 +49,25 @@ var (
 			CertificateIdentity:   "a(b",
 		},
 	}
+
+	invalidCTLogPublicKeyConfig = []*storage.CosignCertificateVerification{
+		{
+			CertificateTransparencyLog: &storage.CertificateTransparencyLogVerification{
+				Enabled:         true,
+				PublicKeyPemEnc: "@@@",
+			},
+		},
+	}
+
+	invalidRekorPublicKeyConfig = &storage.TransparencyLogVerification{
+		Enabled:         true,
+		PublicKeyPemEnc: "@@@",
+	}
+
+	invalidRekorURLConfig = &storage.TransparencyLogVerification{
+		Enabled: true,
+		Url:     "invalid-url",
+	}
 )
 
 func TestValidateSignatureIntegration_Failure(t *testing.T) {
@@ -94,6 +113,21 @@ func TestValidateSignatureIntegration_Failure(t *testing.T) {
 			Id:                 goodID,
 			Name:               goodName,
 			CosignCertificates: invalidCosignCertificateVerificationConfig,
+		},
+		"invalid ctlog public key": {
+			Id:                 goodID,
+			Name:               goodName,
+			CosignCertificates: invalidCTLogPublicKeyConfig,
+		},
+		"invalid rekor public key": {
+			Id:              goodID,
+			Name:            goodName,
+			TransparencyLog: invalidRekorPublicKeyConfig,
+		},
+		"invalid rekor url": {
+			Id:              goodID,
+			Name:            goodName,
+			TransparencyLog: invalidRekorURLConfig,
 		},
 	}
 

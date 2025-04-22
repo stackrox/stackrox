@@ -26,17 +26,12 @@ import {
     IntegrationSource,
     IntegrationType,
     getIsAPIToken,
-    getIsClusterInitBundle,
 } from '../utils/integrationUtils';
 import tableColumnDescriptor from '../utils/tableColumnDescriptor';
-import DownloadCAConfigBundle from './DownloadCAConfigBundle';
 
 function getNewButtonText(type) {
     if (type === 'apitoken') {
         return 'Generate token';
-    }
-    if (type === 'clusterInitBundle') {
-        return 'Generate bundle';
     }
     if (type === 'machineAccess') {
         return 'Create configuration';
@@ -82,7 +77,6 @@ function IntegrationsTable({
     });
 
     const isAPIToken = getIsAPIToken(source, type);
-    const isClusterInitBundle = getIsClusterInitBundle(source, type);
 
     function onDeleteIntegrationHandler() {
         const ids = getSelectedIds();
@@ -116,11 +110,6 @@ function IntegrationsTable({
                                         </Button>
                                     </FlexItem>
                                 )}
-                            {isClusterInitBundle && (
-                                <FlexItem>
-                                    <DownloadCAConfigBundle />
-                                </FlexItem>
-                            )}
                             {permissions[source].write && !isReadOnly && (
                                 <FlexItem>
                                     <Button
@@ -186,7 +175,7 @@ function IntegrationsTable({
                                                 Edit integration
                                             </Link>
                                         ),
-                                        isHidden: isAPIToken || isClusterInitBundle,
+                                        isHidden: isAPIToken,
                                     },
                                     {
                                         title: (

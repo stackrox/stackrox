@@ -180,12 +180,6 @@ func (a *aggregateExternalConnByNameImpl) Aggregate(flows []*storage.NetworkFlow
 			continue
 		}
 
-		// If the entity is discovered, anonymize it to avoid overloading
-		// the graph with many nodes (external IP details are still accessible
-		// via other APIs)
-		flowProps.SrcEntity = anonymizeDiscoveredEntity(flowProps.SrcEntity)
-		flowProps.DstEntity = anonymizeDiscoveredEntity(flowProps.DstEntity)
-
 		srcEntity, dstEntity = flowProps.SrcEntity, flowProps.DstEntity
 
 		// If both endpoints are not known external sources, skip processing.
@@ -193,6 +187,12 @@ func (a *aggregateExternalConnByNameImpl) Aggregate(flows []*storage.NetworkFlow
 			ret = append(ret, flow)
 			continue
 		}
+
+		// If the entity is discovered, anonymize it to avoid overloading
+		// the graph with many nodes (external IP details are still accessible
+		// via other APIs)
+		flowProps.SrcEntity = anonymizeDiscoveredEntity(flowProps.SrcEntity)
+		flowProps.DstEntity = anonymizeDiscoveredEntity(flowProps.DstEntity)
 
 		updateDupNameExtSrcTracker(srcEntity, dupNameExtSrcTracker)
 		updateDupNameExtSrcTracker(dstEntity, dupNameExtSrcTracker)
@@ -219,6 +219,43 @@ func (a *aggregateExternalConnByNameImpl) Aggregate(flows []*storage.NetworkFlow
 			normalizeDupNameExtSrcs(conn.GetProps().GetDstEntity())
 		}
 
+		ret = append(ret, conn)
+	}
+
+	return ret
+}
+
+type aggregateLatestTimestampImpl struct{}
+
+// Aggregate aggregates flows by their latest timestamp. For one or more similar flows,
+// only the most recent is returned.
+func (a *aggregateLatestTimestampImpl) Aggregate(flows []*storage.NetworkFlow) []*storage.NetworkFlow {
+	normalizedConns := make(map[networkgraph.NetworkConnIndicator]*storage.NetworkFlow)
+	ret := make([]*storage.NetworkFlow, 0, len(flows))
+
+	for _, flow := range flows {
+		if flow.GetProps() == nil {
+			continue
+		}
+
+		srcEntity, dstEntity := flow.GetProps().GetSrcEntity(), flow.GetProps().GetDstEntity()
+		// This is essentially an invalid connection.
+		if srcEntity == nil || dstEntity == nil {
+			utils.Should(errors.Errorf("network flow %s without endpoints is unexpected", networkgraph.GetNetworkConnIndicator(flow).String()))
+			continue
+		}
+
+		connID := networkgraph.GetNetworkConnIndicator(flow)
+		if storedFlow := normalizedConns[connID]; storedFlow != nil {
+			if protocompat.CompareTimestamps(storedFlow.GetLastSeenTimestamp(), flow.GetLastSeenTimestamp()) < 0 {
+				storedFlow.LastSeenTimestamp = flow.GetLastSeenTimestamp()
+			}
+		} else {
+			normalizedConns[connID] = flow
+		}
+	}
+
+	for _, conn := range normalizedConns {
 		ret = append(ret, conn)
 	}
 

@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
+	"github.com/stackrox/rox/operator/internal/common"
 	commonExtensions "github.com/stackrox/rox/operator/internal/common/extensions"
 	commonLabels "github.com/stackrox/rox/operator/internal/common/labels"
 	"github.com/stackrox/rox/operator/internal/types"
@@ -64,7 +65,7 @@ func (r *createCentralTLSExtensionRun) Execute(ctx context.Context) error {
 		// reconcileInitBundleSecrets not called due to ROX-9023. TODO(ROX-9969): call after the init-bundle cert rotation stabilization.
 	}
 
-	if err := r.EnsureSecret(ctx, "central-tls", r.validateAndConsumeCentralTLSData, r.generateCentralTLSData, commonLabels.TLSSecretLabels()); err != nil {
+	if err := r.EnsureSecret(ctx, common.CentralTLSSecretName, r.validateAndConsumeCentralTLSData, r.generateCentralTLSData, commonLabels.TLSSecretLabels()); err != nil {
 		return errors.Wrap(err, "reconciling central-tls secret failed")
 	}
 

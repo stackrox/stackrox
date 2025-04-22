@@ -95,7 +95,11 @@ func (s *serviceImpl) GetNotifier(ctx context.Context, request *v1.ResourceByID)
 
 // GetNotifiers retrieves all notifiers that match the request filters
 func (s *serviceImpl) GetNotifiers(ctx context.Context, _ *v1.GetNotifiersRequest) (*v1.GetNotifiersResponse, error) {
-	scrubbedNotifiers, err := s.storage.GetScrubbedNotifiers(ctx)
+	var scrubbedNotifiers []*storage.Notifier
+	err := s.storage.ForEachScrubbedNotifier(ctx, func(n *storage.Notifier) error {
+		scrubbedNotifiers = append(scrubbedNotifiers, n)
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}

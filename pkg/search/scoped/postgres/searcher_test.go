@@ -22,7 +22,7 @@ func TestScoping(t *testing.T) {
 	query := search.NewQueryBuilder().AddExactMatches(search.DeploymentName, "dep").ProtoQuery()
 	scopes := []scoped.Scope{
 		{
-			ID:    "c1",
+			IDs:   []string{"c1"},
 			Level: v1.SearchCategory_CLUSTERS,
 		},
 	}
@@ -36,18 +36,18 @@ func TestScoping(t *testing.T) {
 
 	scopes = []scoped.Scope{
 		{
-			ID:    "c1",
+			IDs:   []string{"c1"},
 			Level: v1.SearchCategory_CLUSTERS,
 		},
 		{
-			ID:    "n1",
+			IDs:   []string{"n1", "n2"},
 			Level: v1.SearchCategory_NAMESPACES,
 		},
 	}
 	expected = search.ConjunctionQuery(
 		query,
 		search.NewQueryBuilder().AddExactMatches(search.ClusterID, "c1").ProtoQuery(),
-		search.NewQueryBuilder().AddExactMatches(search.NamespaceID, "n1").ProtoQuery(),
+		search.NewQueryBuilder().AddExactMatches(search.NamespaceID, "n1", "n2").ProtoQuery(),
 	)
 	actual, err = scopeQuery(query, scopes)
 	assert.NoError(t, err)

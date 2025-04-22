@@ -129,7 +129,7 @@ func (h *HandlerImpl) GetScopeContext(ctx context.Context, query *v1.Query) (con
 
 		// Add searchWrapper only if we get exactly one match. Currently only scoping by one resource is supported in search.
 		if len(result) == 1 {
-			return scoped.Context(ctx, scoped.Scope{Level: searchWrapper.category, ID: result[0].ID}), nil
+			return scoped.Context(ctx, scoped.Scope{Level: searchWrapper.category, IDs: []string{result[0].ID}}), nil
 		}
 	}
 	return ctx, nil

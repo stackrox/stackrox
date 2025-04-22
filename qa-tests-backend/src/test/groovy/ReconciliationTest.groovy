@@ -1,14 +1,13 @@
 import static Services.getViolationsWithTimeout
-
 import static util.Helpers.withRetry
 
 import orchestratormanager.OrchestratorTypes
 
 import io.fabric8.kubernetes.api.model.Pod
-import io.fabric8.kubernetes.api.model.apps.Deployment as OrchestratorDeployment
 
 import io.stackrox.proto.storage.AlertOuterClass
 
+import common.Constants
 import objects.Deployment
 import objects.NetworkPolicy
 import objects.NetworkPolicyTypes
@@ -20,7 +19,6 @@ import services.MetadataService
 import services.NamespaceService
 import services.NetworkPolicyService
 import services.SecretService
-import util.Timer
 import util.Env
 
 import spock.lang.IgnoreIf
@@ -97,9 +95,7 @@ class ReconciliationTest extends BaseSpecification {
         when:
         "Get Sensor and counts"
 
-        OrchestratorDeployment sensorOrchestratorDeployment =
-                orchestrator.getOrchestratorDeployment("stackrox", "sensor")
-        Deployment sensorDeployment = new Deployment().setNamespace("stackrox").setName("sensor")
+        Deployment sensorDeployment = new Deployment().setNamespace(Constants.STACKROX_NAMESPACE).setName("sensor")
 
         List<AlertOuterClass.ListAlert> violations = []
         Deployment busyboxDeployment
@@ -122,7 +118,7 @@ class ReconciliationTest extends BaseSpecification {
 
             // Wait is builtin
             secretID = orchestrator.createSecret("testing123", ns)
-            SecretService.waitForSecret(secretID, 10)
+            SecretService.waitForSecret(secretID)
 
             busyboxDeployment = new Deployment()
                     .setNamespace(ns)
@@ -154,9 +150,14 @@ class ReconciliationTest extends BaseSpecification {
                 log.info pod
             }
 
-            orchestrator.deleteAndWaitForDeploymentDeletion(sensorDeployment)
+            List<Pod> pods = orchestrator.getPodsByLabel(Constants.STACKROX_NAMESPACE, ["app": "sensor"])
+            assert pods.size() == 1
+            orchestrator.scaleDeployment(Constants.STACKROX_NAMESPACE, "sensor", 0)
+            // In case the pod gets stuck in `Terminating` state after the scale down,
+            // delete Sensor's pod (not deployment) without grace period.
+            orchestrator.deletePod(Constants.STACKROX_NAMESPACE, pods[0].getMetadata().getName(), 0)
 
-            orchestrator.waitForAllPodsToBeRemoved("stackrox", ["app": "sensor"], 30, 5)
+            orchestrator.waitForAllPodsToBeRemoved(Constants.STACKROX_NAMESPACE, ["app": "sensor"], 30, 5)
 
             orchestrator.identity {
                 // Delete objects from k8s
@@ -181,45 +182,36 @@ class ReconciliationTest extends BaseSpecification {
             log.info pod
         }
 
-        // Recreate sensor
-        try {
-            orchestrator.createOrchestratorDeployment(sensorOrchestratorDeployment)
-        } catch (Exception e) {
-            log.error("Error re-creating the sensor: ", e)
-            throw e
-        }
+        // Scale sensor up
+        orchestrator.scaleDeployment(Constants.STACKROX_NAMESPACE, "sensor", 1)
         Services.waitForDeployment(sensorDeployment)
 
-        def maxWaitForSync = 100
+        def maxWaitForSync = 200
         def interval = 1
 
         then:
         "Verify that we don't have references to resources removed when sensor was gone"
         // Get the resources from central and make sure the values exist
         int retries = (int) (maxWaitForSync / interval)
-        Timer t = new Timer(retries, interval)
         int numDeployments = -1
         int numPods = -1
         int numNamespaces = -1
         int numNetworkPolicies = -1
         int numSecrets = -1
-        while (t.IsValid()) {
+        withRetry(retries, interval) {
+            log.info "Waiting for all resources to be reconciled"
             numDeployments = Services.getDeployments().findAll { it.name == busyboxDeployment.getName() }.size()
             numPods = Services.getPods().findAll { it.deploymentId == busyboxDeployment.getDeploymentUid() }.size()
             numNamespaces = NamespaceService.getNamespaces().findAll { it.metadata.name == ns }.size()
             numNetworkPolicies = NetworkPolicyService.getNetworkPolicies().findAll { it.id == networkPolicyID }.size()
             numSecrets = SecretService.getSecrets().findAll { it.id == secretID }.size()
 
-            if (numDeployments + numPods + numNamespaces + numNetworkPolicies + numSecrets == 0) {
-                break
-            }
-            log.info "Waiting for all resources to be reconciled"
+            assert numDeployments == 0
+            assert numPods == 0
+            assert numNamespaces == 0
+            assert numNetworkPolicies == 0
+            assert numSecrets == 0
         }
-        assert numDeployments == 0
-        assert numPods == 0
-        assert numNamespaces == 0
-        assert numNetworkPolicies == 0
-        assert numSecrets == 0
 
         // It is possible that more pods will be deleted in the observation period (e.g., Scanner being scaled down).
         // We want to make sure that the pods from the list are gone, so we do not assert on the total number of

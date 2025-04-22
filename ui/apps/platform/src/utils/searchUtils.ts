@@ -1,12 +1,7 @@
 import qs from 'qs';
 
-import {
-    SearchEntry,
-    ApiSortOption,
-    GraphQLSortOption,
-    SearchFilter,
-    ApiSortOptionSingle,
-} from 'types/search';
+import { ApiSortOption, GraphQLSortOption, SearchFilter, ApiSortOptionSingle } from 'types/search';
+import { RestSearchOption } from 'services/searchOptionsToQuery';
 import { Pagination } from 'services/types';
 import { ValueOf } from './type.utils';
 import { safeGeneratePath } from './urlUtils';
@@ -37,24 +32,8 @@ export function getViewStateFromSearch(
     ); // and the value of the search for that key cannot be false or the string "false", see https://stack-rox.atlassian.net/browse/ROX-4278
 }
 
-export function filterAllowedSearch(
-    allowed: string[] = [],
-    currentSearch: SearchFilter = {}
-): Record<string, string> {
-    const filtered = Object.keys(currentSearch)
-        .filter((key) => allowed.includes(key))
-        .reduce((newSearch, key) => {
-            return {
-                ...newSearch,
-                [key]: currentSearch[key],
-            };
-        }, {});
-
-    return filtered;
-}
-
-export function convertToRestSearch(workflowSearch: Record<string, string>): SearchEntry[] {
-    const emptyArray: SearchEntry[] = [];
+export function convertToRestSearch(workflowSearch: SearchFilter): RestSearchOption[] {
+    const emptyArray: RestSearchOption[] = [];
     if (!workflowSearch) {
         return emptyArray;
     }
@@ -63,7 +42,7 @@ export function convertToRestSearch(workflowSearch: Record<string, string>): Sea
         const keyWithColon = `${key}:`;
         const value = workflowSearch[key];
 
-        const searchOption: SearchEntry = {
+        const searchOption: RestSearchOption = {
             label: keyWithColon,
             value: keyWithColon,
             type: 'categoryOption',
@@ -93,33 +72,6 @@ export function convertSortToRestFormat(
         field: graphqlSort[0]?.id,
         reversed: graphqlSort[0]?.desc,
     };
-}
-
-/**
- * Function to convert the legacy SearchEntry array format to the
- * SearchFilter format.
- */
-export function searchOptionsToSearchFilter(searchOptions: SearchEntry[]): SearchFilter {
-    const searchFilter = {};
-    let currentOption = '';
-    searchOptions.forEach(({ value, type }) => {
-        if (type === 'categoryOption') {
-            // categoryOption represents the key of a search filter
-            const option = value.replace(':', '');
-            searchFilter[option] = '';
-            currentOption = option;
-        } else if (searchFilter[currentOption].length === 0) {
-            // If this is the first search value for this category, store it as a string
-            searchFilter[currentOption] = value;
-        } else if (!Array.isArray(searchFilter[currentOption])) {
-            // If this is not the first search value for this category, store it in a new array
-            searchFilter[currentOption] = [searchFilter[currentOption], value];
-        } else {
-            // If we already have an array, simply add the next value
-            searchFilter[currentOption].push(value);
-        }
-    });
-    return searchFilter;
 }
 
 /**

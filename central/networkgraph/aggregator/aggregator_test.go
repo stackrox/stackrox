@@ -57,12 +57,12 @@ func TestSubnetToSupernetAggregator(t *testing.T) {
 	id5, _ := externalsrcs.NewClusterScopedID("1", cidr5)
 	id6, _ := externalsrcs.NewClusterScopedID("1", cidr6)
 
-	e1 := testutils.GetExtSrcNetworkEntityInfo(id1.String(), "1", cidr1, true)  // -> e2
-	e2 := testutils.GetExtSrcNetworkEntityInfo(id2.String(), "2", cidr2, false) // -> e3
-	e3 := testutils.GetExtSrcNetworkEntityInfo(id3.String(), "3", cidr3, false) // -> internet
-	e4 := testutils.GetExtSrcNetworkEntityInfo(id4.String(), "4", cidr4, true)  // -> e1
-	e5 := testutils.GetExtSrcNetworkEntityInfo(id5.String(), "5", cidr5, false) // -> e6
-	e6 := testutils.GetExtSrcNetworkEntityInfo(id6.String(), "6", cidr6, true)  // -> internet
+	e1 := testutils.GetExtSrcNetworkEntityInfo(id1.String(), "1", cidr1, true, false)  // -> e2
+	e2 := testutils.GetExtSrcNetworkEntityInfo(id2.String(), "2", cidr2, false, false) // -> e3
+	e3 := testutils.GetExtSrcNetworkEntityInfo(id3.String(), "3", cidr3, false, false) // -> internet
+	e4 := testutils.GetExtSrcNetworkEntityInfo(id4.String(), "4", cidr4, true, false)  // -> e1
+	e5 := testutils.GetExtSrcNetworkEntityInfo(id5.String(), "5", cidr5, false, false) // -> e6
+	e6 := testutils.GetExtSrcNetworkEntityInfo(id6.String(), "6", cidr6, true, false)  // -> internet
 
 	tree1, err := tree.NewNetworkTreeWrapper([]*storage.NetworkEntityInfo{e2, e3})
 	assert.NoError(t, err)
@@ -157,12 +157,12 @@ func TestHideDefaultExtSrcsAggregator(t *testing.T) {
 	id5, _ := externalsrcs.NewClusterScopedID("1", cidr5)
 	id6, _ := externalsrcs.NewGlobalScopedScopedID(cidr6)
 
-	e1 := testutils.GetExtSrcNetworkEntityInfo(id1.String(), "1", cidr1, true)
-	e2 := testutils.GetExtSrcNetworkEntityInfo(id2.String(), "2", cidr2, false)
-	e3 := testutils.GetExtSrcNetworkEntityInfo(id3.String(), "3", cidr3, false)
-	e4 := testutils.GetExtSrcNetworkEntityInfo(id4.String(), "4", cidr4, true)
-	e5 := testutils.GetExtSrcNetworkEntityInfo(id5.String(), "5", cidr5, false)
-	e6 := testutils.GetExtSrcNetworkEntityInfo(id6.String(), "6", cidr6, true)
+	e1 := testutils.GetExtSrcNetworkEntityInfo(id1.String(), "1", cidr1, true, false)
+	e2 := testutils.GetExtSrcNetworkEntityInfo(id2.String(), "2", cidr2, false, false)
+	e3 := testutils.GetExtSrcNetworkEntityInfo(id3.String(), "3", cidr3, false, false)
+	e4 := testutils.GetExtSrcNetworkEntityInfo(id4.String(), "4", cidr4, true, false)
+	e5 := testutils.GetExtSrcNetworkEntityInfo(id5.String(), "5", cidr5, false, false)
+	e6 := testutils.GetExtSrcNetworkEntityInfo(id6.String(), "6", cidr6, true, false)
 	internet := networkgraph.InternetEntity().ToProto()
 
 	networkTree, err := tree.NewNetworkTreeWrapper([]*storage.NetworkEntityInfo{e1, e2, e3, e4, e5, e6})
@@ -234,6 +234,38 @@ func TestHideDefaultExtSrcsAggregator(t *testing.T) {
 	protoassert.ElementsMatch(t, expected, actual)
 }
 
+func TestLatestTimestampAggregator(t *testing.T) {
+	d1 := testutils.GetDeploymentNetworkEntity("d1", "d1")
+	d2 := testutils.GetDeploymentNetworkEntity("d2", "d2")
+
+	cidr := "35.187.144.0/32"
+
+	id, _ := externalsrcs.NewGlobalScopedScopedID(cidr)
+	e := testutils.GetExtSrcNetworkEntityInfo(id.String(), "1", cidr, true, false)
+	internet := networkgraph.InternetEntity().ToProto()
+
+	ts1 := time.Now()
+	ts2 := ts1.Add(1000 * time.Second)
+	ts3 := ts1.Add(2000 * time.Second)
+	ts4 := ts1.Add(3000 * time.Second)
+
+	f1 := testutils.GetNetworkFlow(d1, e, 8000, storage.L4Protocol_L4_PROTOCOL_TCP, &ts1)
+	f2 := testutils.GetNetworkFlow(d1, e, 8000, storage.L4Protocol_L4_PROTOCOL_TCP, &ts2)
+	f3 := testutils.GetNetworkFlow(internet, d1, 8000, storage.L4Protocol_L4_PROTOCOL_UNKNOWN, &ts1)
+	f4 := testutils.GetNetworkFlow(d1, d2, 8000, storage.L4Protocol_L4_PROTOCOL_TCP, &ts2)
+	f5 := testutils.GetNetworkFlow(d1, d2, 8000, storage.L4Protocol_L4_PROTOCOL_TCP, &ts1)
+	f6 := testutils.GetNetworkFlow(d1, d2, 8001, storage.L4Protocol_L4_PROTOCOL_TCP, &ts3)
+	f7 := testutils.GetNetworkFlow(d1, d2, 8001, storage.L4Protocol_L4_PROTOCOL_UDP, &ts4)
+
+	flows := []*storage.NetworkFlow{f1, f2, f3, f4, f5, f6, f7}
+
+	expected := []*storage.NetworkFlow{f2, f3, f4, f6, f7}
+
+	aggr := NewLatestTimestampAggregator()
+	actual := aggr.Aggregate(flows)
+	protoassert.ElementsMatch(t, expected, actual)
+}
+
 func TestAggregateExtConnsByName(t *testing.T) {
 	ts1 := time.Now()
 	ts2 := ts1.Add(1000 * time.Second)
@@ -241,12 +273,12 @@ func TestAggregateExtConnsByName(t *testing.T) {
 	d1 := testutils.GetDeploymentNetworkEntity("d1", "d1")
 	d2 := testutils.GetDeploymentNetworkEntity("d2", "d2")
 
-	e1 := testutils.GetExtSrcNetworkEntityInfo("cluster1__e1", "google", "net1", false)
-	e2 := testutils.GetExtSrcNetworkEntityInfo("cluster1__e2", "google", "net2", false)
-	e3 := testutils.GetExtSrcNetworkEntityInfo("cluster1__e3", "google", "net3", false)
-	e4 := testutils.GetExtSrcNetworkEntityInfo("cluster1__id4", "e4", "", false)
-	e5 := testutils.GetExtSrcNetworkEntityInfo("cluster1__nameless", "", "", false)
-	e6 := testutils.GetExtSrcNetworkEntityInfo("cluster1__e6", "extSrc6", "net6", false)
+	e1 := testutils.GetExtSrcNetworkEntityInfo("cluster1__e1", "google", "net1", false, false)
+	e2 := testutils.GetExtSrcNetworkEntityInfo("cluster1__e2", "google", "net2", false, false)
+	e3 := testutils.GetExtSrcNetworkEntityInfo("cluster1__e3", "google", "net3", false, false)
+	e4 := testutils.GetExtSrcNetworkEntityInfo("cluster1__id4", "e4", "", false, false)
+	e5 := testutils.GetExtSrcNetworkEntityInfo("cluster1__nameless", "", "", false, false)
+	e6 := testutils.GetExtSrcNetworkEntityInfo("cluster1__e6", "extSrc6", "net6", false, false)
 
 	f1 := testutils.GetNetworkFlow(d1, e1, 8000, storage.L4Protocol_L4_PROTOCOL_TCP, &ts1)
 	f2 := testutils.GetNetworkFlow(d1, e2, 8000, storage.L4Protocol_L4_PROTOCOL_TCP, &ts2)
@@ -273,7 +305,7 @@ func TestAggregateExtConnsByName(t *testing.T) {
 			},
 		},
 	}
-	e5x := testutils.GetExtSrcNetworkEntityInfo("cluster1__nameless", "unnamed external source #1", "", false)
+	e5x := testutils.GetExtSrcNetworkEntityInfo("cluster1__nameless", "unnamed external source #1", "", false, false)
 
 	/*
 		f1 -> f2x
@@ -301,23 +333,41 @@ func TestAggregateExtConnsByName(t *testing.T) {
 
 func TestAggregateExtConnsByNameAnonymizeDiscoveredExtEntities(t *testing.T) {
 	ts1 := time.Now()
+	ts2 := ts1.Add(-1000 * time.Second)
 
 	d1 := testutils.GetDeploymentNetworkEntity("d1", "d1")
 
-	discovered_entity := networkgraph.DiscoveredExternalEntity(net.IPNetworkFromCIDRBytes([]byte{35, 187, 144, 4, 32})).ToProto()
+	discovered_entity1 := networkgraph.DiscoveredExternalEntity(net.IPNetworkFromCIDRBytes([]byte{35, 187, 144, 4, 32})).ToProto()
+	discovered_entity2 := networkgraph.DiscoveredExternalEntity(net.IPNetworkFromCIDRBytes([]byte{35, 187, 144, 5, 32})).ToProto()
 	internet := networkgraph.InternetEntity().ToProto()
 
-	detailed_flow := testutils.GetNetworkFlow(d1, discovered_entity, 8000, storage.L4Protocol_L4_PROTOCOL_TCP, &ts1)
+	detailed_flow1 := testutils.GetNetworkFlow(d1, discovered_entity1, 8000, storage.L4Protocol_L4_PROTOCOL_TCP, &ts1)
+	detailed_flow2 := testutils.GetNetworkFlow(d1, discovered_entity2, 8000, storage.L4Protocol_L4_PROTOCOL_TCP, &ts2)
 	anonymized_flow := testutils.GetNetworkFlow(d1, internet, 8000, storage.L4Protocol_L4_PROTOCOL_TCP, &ts1)
 
-	flows := []*storage.NetworkFlow{detailed_flow}
+	for _, testCase := range []struct {
+		name     string
+		flows    []*storage.NetworkFlow
+		expected []*storage.NetworkFlow
+	}{
+		{
+			name:     "Single flow with discovered entity",
+			flows:    []*storage.NetworkFlow{detailed_flow1},
+			expected: []*storage.NetworkFlow{anonymized_flow},
+		},
+		{
+			name:     "Two flows with discovered entities are aggregated",
+			flows:    []*storage.NetworkFlow{detailed_flow1, detailed_flow2},
+			expected: []*storage.NetworkFlow{anonymized_flow},
+		},
+	} {
+		t.Run(testCase.name, func(t *testing.T) {
+			actual := NewDuplicateNameExtSrcConnAggregator().Aggregate(testCase.flows)
 
-	expected := []*storage.NetworkFlow{anonymized_flow}
-
-	actual := NewDuplicateNameExtSrcConnAggregator().Aggregate(flows)
-
-	assert.Len(t, actual, len(expected))
-	protoassert.ElementsMatch(t, expected, actual)
+			assert.Len(t, actual, len(testCase.expected))
+			protoassert.ElementsMatch(t, testCase.expected, actual)
+		})
+	}
 }
 
 func TestAnonymizeDiscoveredEntity(t *testing.T) {
@@ -335,8 +385,8 @@ func TestAnonymizeDiscoveredEntity(t *testing.T) {
 		},
 		{
 			name:     "NonDiscoveredExternalEntity",
-			input:    testutils.GetExtSrcNetworkEntityInfo("cluster1__e1", "google", "net1", false),
-			expected: testutils.GetExtSrcNetworkEntityInfo("cluster1__e1", "google", "net1", false),
+			input:    testutils.GetExtSrcNetworkEntityInfo("cluster1__e1", "google", "net1", false, false),
+			expected: testutils.GetExtSrcNetworkEntityInfo("cluster1__e1", "google", "net1", false, false),
 		},
 		{
 			name:     "DiscoveredExternalEntity",

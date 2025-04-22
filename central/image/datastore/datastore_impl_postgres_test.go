@@ -173,7 +173,7 @@ func (s *ImagePostgresDataStoreTestSuite) TestSearchWithPostgres() {
 
 	// Scope search by image.
 	scopedCtx := scoped.Context(ctx, scoped.Scope{
-		ID:    image.GetId(),
+		IDs:   []string{image.GetId()},
 		Level: v1.SearchCategory_IMAGES,
 	})
 	results, err = s.datastore.Search(scopedCtx, pkgSearch.EmptyQuery())
@@ -183,7 +183,7 @@ func (s *ImagePostgresDataStoreTestSuite) TestSearchWithPostgres() {
 
 	// Scope search by vulns.
 	scopedCtx = scoped.Context(ctx, scoped.Scope{
-		ID:    "cve3#blah",
+		IDs:   []string{"cve3#blah"},
 		Level: v1.SearchCategory_IMAGE_VULNERABILITIES,
 	})
 	results, err = s.datastore.Search(scopedCtx, pkgSearch.EmptyQuery())

@@ -60,7 +60,7 @@ const opnameForEntities = {
 };
 
 const opnameForEntity = {
-    clusters: 'getCluster',
+    clusters: 'getClusterName',
     deployments: 'getDeployment',
     namespaces: 'getNamespace',
     nodes: 'getNode',

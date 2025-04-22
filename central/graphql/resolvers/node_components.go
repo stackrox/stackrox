@@ -156,7 +156,7 @@ func (resolver *nodeComponentResolver) nodeComponentScopeContext(ctx context.Con
 	}
 	return scoped.Context(resolver.ctx, scoped.Scope{
 		Level: v1.SearchCategory_NODE_COMPONENTS,
-		ID:    resolver.data.GetId(),
+		IDs:   []string{resolver.data.GetId()},
 	})
 }
 

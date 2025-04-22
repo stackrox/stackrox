@@ -116,7 +116,7 @@ func (bts *ReportGeneratorBenchmarkTestSuite) setupTestSuite() {
 
 	bts.reportGenerator = newReportGeneratorImpl(bts.testDB, nil, bts.resolver.DeploymentDataStore,
 		bts.watchedImageDatastore, bts.collectionQueryResolver, nil, nil, bts.clusterDatastore,
-		bts.namespaceDatastore, imageCVEDatastore, bts.schema)
+		bts.namespaceDatastore, imageCVEDatastore, bts.resolver.ImageCVEV2DataStore, bts.schema)
 }
 
 func (bts *ReportGeneratorBenchmarkTestSuite) upsertManyImages(images []*storage.Image) {

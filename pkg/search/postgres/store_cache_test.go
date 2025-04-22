@@ -322,19 +322,6 @@ func TestCachedWalkByQueryContextCancelation(t *testing.T) {
 	assert.ErrorIs(t, err, context.Canceled)
 }
 
-func TestCachedGetAll(t *testing.T) {
-	testDB := pgtest.ForT(t)
-	store := newCachedStore(testDB)
-	require.NotNil(t, store)
-
-	testObjects := sampleCachedTestSingleKeyStructArray("GetAll")
-	assert.NoError(t, store.UpsertMany(cachedStoreCtx, testObjects))
-
-	fetchedObjects, err := store.GetAll(cachedStoreCtx)
-	assert.NoError(t, err)
-	protoassert.ElementsMatch(t, fetchedObjects, testObjects)
-}
-
 func TestCachedGetIDs(t *testing.T) {
 	testDB := pgtest.ForT(t)
 	store := newCachedStore(testDB)

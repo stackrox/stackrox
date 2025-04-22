@@ -69,6 +69,13 @@ func getNewObservationPeriodEnd() timestamp.MicroTS {
 	return timestamp.Now().Add(observationDuration)
 }
 
+func anonymizeDiscoveredExternal(entity networkgraph.Entity) networkgraph.Entity {
+	if entity.Type == storage.NetworkEntityInfo_EXTERNAL_SOURCE && entity.Discovered {
+		return networkgraph.InternetEntity()
+	}
+	return entity
+}
+
 // shouldUpdate -- looks at the baselines and flows to determine if the flow should be added to the baseline.
 func (m *manager) shouldUpdate(conn *networkgraph.NetworkConnIndicator, updateTS timestamp.MicroTS, initialLoad bool) bool {
 	var atLeastOneBaselineInObservationPeriod bool
@@ -252,11 +259,12 @@ func (m *manager) processFlowUpdate(flows map[networkgraph.NetworkConnIndicator]
 			continue
 		}
 		if conn.SrcEntity.Type == storage.NetworkEntityInfo_DEPLOYMENT {
-			peer := m.lookUpPeerInfo(conn.DstEntity)
+			anonymizedDst := anonymizeDiscoveredExternal(conn.DstEntity)
+			peer := m.lookUpPeerInfo(anonymizedDst)
 			if peer.name != "" {
 				m.maybeAddPeer(conn.SrcEntity.ID, &networkbaseline.Peer{
 					IsIngress: false,
-					Entity:    conn.DstEntity,
+					Entity:    anonymizedDst,
 					Name:      peer.name,
 					DstPort:   conn.DstPort,
 					Protocol:  conn.Protocol,
@@ -265,11 +273,12 @@ func (m *manager) processFlowUpdate(flows map[networkgraph.NetworkConnIndicator]
 			}
 		}
 		if conn.DstEntity.Type == storage.NetworkEntityInfo_DEPLOYMENT {
-			peer := m.lookUpPeerInfo(conn.SrcEntity)
+			anonymizedSrc := anonymizeDiscoveredExternal(conn.SrcEntity)
+			peer := m.lookUpPeerInfo(anonymizedSrc)
 			if peer.name != "" {
 				m.maybeAddPeer(conn.DstEntity.ID, &networkbaseline.Peer{
 					IsIngress: true,
-					Entity:    conn.SrcEntity,
+					Entity:    anonymizedSrc,
 					Name:      peer.name,
 					DstPort:   conn.DstPort,
 					Protocol:  conn.Protocol,

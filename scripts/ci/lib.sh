@@ -33,7 +33,7 @@ ci_export() {
     fi
 }
 
-# set_ci_shared_export() - for openshift-ci this is state shared between steps.
+# set_ci_shared_export() - for openshift-ci and GHA this is state shared between steps.
 set_ci_shared_export() {
     if [[ "$#" -ne 2 ]]; then
         die "missing args. usage: set_ci_shared_export <env-name> <env-value>"
@@ -44,7 +44,8 @@ set_ci_shared_export() {
     local env_name="$1"
     local env_value="$2"
 
-    echo "export ${env_name}=${env_value}" | tee -a "${SHARED_DIR:-/tmp}/shared_env"
+    echo "export ${env_name}=${env_value}" >> "${SHARED_DIR:-/tmp}/shared_env"
+    echo "${env_name}=${env_value}" >> "${GITHUB_ENV:-/dev/null}"
 }
 
 ci_exit_trap() {
@@ -153,7 +154,9 @@ get_central_debug_dump() {
 
     require_environment "API_ENDPOINT"
     require_environment "ROX_ADMIN_PASSWORD"
-    roxctl -e "${API_ENDPOINT}" --insecure-skip-tls-verify central debug dump --output-dir "${output_dir}"
+    ROX_SERVER_NAME="" roxctl -e "${API_ENDPOINT}" \
+        central debug dump --output-dir "${output_dir}" \
+        --insecure-skip-tls-verify
     ls -l "${output_dir}"
 }
 
@@ -213,7 +216,9 @@ get_central_diagnostics() {
 
     require_environment "API_ENDPOINT"
     require_environment "ROX_ADMIN_PASSWORD"
-    roxctl -e "${API_ENDPOINT}" central debug download-diagnostics --output-dir "${output_dir}" --insecure-skip-tls-verify
+    ROX_SERVER_NAME="" roxctl -e "${API_ENDPOINT}" \
+        central debug download-diagnostics --output-dir "${output_dir}" \
+        --insecure-skip-tls-verify
     ls -l "${output_dir}"
 }
 
@@ -1103,11 +1108,16 @@ is_openshift_CI_rehearse_PR() {
     [[ "$(get_repo_full_name)" == "openshift/release" ]]
 }
 
-get_base_ref() {
+get_branch_name() {
+    # Returns the PR branch name (sometimes that's called PR source branch), e.g. 'johndoe/ROX-23456-fix-branch-name'.
+    # For non-PRs, returns branch name where the commit happened, e.g. 'master'.
     if is_OPENSHIFT_CI; then
-        if [[ -n "${PULL_BASE_REF:-}" ]]; then
-            # presubmit, postsubmit and batch runs
-            # (ref: https://github.com/kubernetes/test-infra/blob/master/prow/jobs.md#job-environment-variables)
+        # Prow variables doc: https://docs.prow.k8s.io/docs/jobs/#job-environment-variables
+        if [[ -n "${PULL_HEAD_REF:-}" ]]; then
+            # presubmit runs
+            echo "${PULL_HEAD_REF}"
+        elif [[ -n "${PULL_BASE_REF:-}" ]]; then
+            # postsubmit and batch runs
             echo "${PULL_BASE_REF}"
         elif [[ -n "${CLONEREFS_OPTIONS:-}" ]]; then
             # periodics - CLONEREFS_OPTIONS exists in binary_build_commands and images.
@@ -1118,10 +1128,15 @@ get_base_ref() {
             fi
             echo "${base_ref}"
         else
-            die "Expect PULL_BASE_REF or CLONEREFS_OPTIONS"
+            die "Expected PULL_HEAD_REF or PULL_BASE_REF or CLONEREFS_OPTIONS"
         fi
     elif is_GITHUB_ACTIONS; then
-        echo "${GITHUB_BASE_REF}"
+        # GHA doc: https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/store-information-in-variables#default-environment-variables
+        local ref="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME:-}}"
+        if [[ -z "${ref}" ]]; then
+            die "Expected GITHUB_HEAD_REF or GITHUB_REF_NAME"
+        fi
+        echo "${ref}"
     else
         die "unsupported"
     fi
@@ -1129,8 +1144,8 @@ get_base_ref() {
 
 get_repo_full_name() {
     if is_GITHUB_ACTIONS; then
-        [[ -n "${GITHUB_ACTION_REPOSITORY:-}" ]] || die "expect: GITHUB_ACTION_REPOSITORY"
-        echo "${GITHUB_ACTION_REPOSITORY}"
+        [[ -n "${GITHUB_REPOSITORY:-}" ]] || die "expect: GITHUB_REPOSITORY"
+        echo "${GITHUB_REPOSITORY}"
     elif is_OPENSHIFT_CI; then
         if [[ -n "${REPO_OWNER:-}" ]]; then
             # presubmit, postsubmit and batch runs

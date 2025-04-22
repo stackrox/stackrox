@@ -19,7 +19,7 @@ type ContainerSecretInfoProps = {
     secrets: EmbeddedSecret[];
 };
 
-function ContainerSecretInfo({ secrets }: ContainerSecretInfoProps) {
+function ContainerSecretsInfo({ secrets }: ContainerSecretInfoProps) {
     const initialToggleValues = Array.from({ length: secrets.length }, () => true);
     const [secretToggles, setSecretToggles] = useState(initialToggleValues);
 
@@ -67,4 +67,4 @@ function ContainerSecretInfo({ secrets }: ContainerSecretInfoProps) {
     );
 }
 
-export default ContainerSecretInfo;
+export default ContainerSecretsInfo;

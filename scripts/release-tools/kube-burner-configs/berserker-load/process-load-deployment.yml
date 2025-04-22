@@ -1,0 +1,50 @@
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: process-load-{{.Replica}}
+spec:
+  replicas: {{.podReplicas}}
+  selector:
+    matchLabels:
+      app: process-load-{{.Replica}}
+  template:
+    metadata:
+      labels:
+        app: process-load-{{.Replica}}
+    spec:
+      imagePullSecrets:
+        - name: {{.JobName}}-{{.Replica}}
+      containers:
+      - args:
+        - sleep
+        - infinity
+        image: quay.io/rhacs-eng/qa:berserker-1.0-63-g7b0a20bf5f
+        resources:
+          requests:
+            memory: "100Mi"
+            cpu: "25m"
+          limits:
+            memory: "100Mi"
+            cpu: "25m"
+        imagePullPolicy: IfNotPresent
+        name: berserker
+        env:
+        - name: BERSERKER__WORKLOAD__ARRIVAL_RATE
+          value: "1"
+        downwardAPI:
+          items:
+            - path: "labels"
+              fieldRef:
+                fieldPath: metadata.labels
+      # Add not-ready/unreachable tolerations for 15 minutes so that node
+      # failure doesn't trigger pod deletion.
+      tolerations:
+      - key: "node.kubernetes.io/not-ready"
+        operator: "Exists"
+        effect: "NoExecute"
+        tolerationSeconds: 900
+      - key: "node.kubernetes.io/unreachable"
+        operator: "Exists"
+        effect: "NoExecute"
+        tolerationSeconds: 900

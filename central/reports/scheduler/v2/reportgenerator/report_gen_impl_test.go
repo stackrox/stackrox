@@ -90,7 +90,7 @@ func (s *EnhancedReportingTestSuite) SetupSuite() {
 	s.blobStore = blobDS.NewTestDatastore(s.T(), s.testDB.DB)
 	s.reportGenerator = newReportGeneratorImpl(s.testDB, nil, s.resolver.DeploymentDataStore,
 		s.watchedImageDatastore, s.collectionQueryResolver, nil, s.blobStore, s.clusterDatastore,
-		s.namespaceDatastore, imageCVEDatastore, s.schema)
+		s.namespaceDatastore, imageCVEDatastore, s.resolver.ImageCVEV2DataStore, s.schema)
 }
 
 func (s *EnhancedReportingTestSuite) TearDownTest() {

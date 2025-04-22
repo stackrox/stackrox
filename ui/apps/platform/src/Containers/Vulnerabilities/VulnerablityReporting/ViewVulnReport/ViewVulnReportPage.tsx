@@ -27,8 +27,8 @@ import {
 } from '@patternfly/react-core/deprecated';
 import { CaretDownIcon } from '@patternfly/react-icons';
 
-import { vulnerabilityReportPath } from 'Containers/Vulnerabilities/VulnerablityReporting/pathsForVulnerabilityReporting';
-import { vulnerabilityReportsPath } from 'routePaths';
+import { vulnerabilityConfigurationReportDetailsPath } from 'Containers/Vulnerabilities/VulnerablityReporting/pathsForVulnerabilityReporting';
+import { vulnerabilityConfigurationReportsPath } from 'routePaths';
 import { getReportFormValuesFromConfiguration } from 'Containers/Vulnerabilities/VulnerablityReporting/utils';
 import useFetchReport from 'Containers/Vulnerabilities/VulnerablityReporting/api/useFetchReport';
 import useDeleteModal, {
@@ -90,7 +90,7 @@ function ViewVulnReportPage() {
         deleteResults,
     } = useDeleteModal({
         onCompleted: () => {
-            navigate(vulnerabilityReportsPath);
+            navigate(vulnerabilityConfigurationReportsPath);
         },
     });
 
@@ -131,12 +131,12 @@ function ViewVulnReportPage() {
                 title="Error fetching the report configuration"
                 message={fetchError || 'No data available'}
                 actionText="Go to reports"
-                url={vulnerabilityReportsPath}
+                url={vulnerabilityConfigurationReportsPath}
             />
         );
     }
 
-    const vulnReportPageURL = generatePath(vulnerabilityReportPath, {
+    const vulnReportPageURL = generatePath(vulnerabilityConfigurationReportDetailsPath, {
         reportId: reportConfiguration.id,
     });
 
@@ -173,7 +173,7 @@ function ViewVulnReportPage() {
             <PageTitle title="View vulnerability report" />
             <PageSection variant="light" className="pf-v5-u-py-md">
                 <Breadcrumb>
-                    <BreadcrumbItemLink to={vulnerabilityReportsPath}>
+                    <BreadcrumbItemLink to={vulnerabilityConfigurationReportsPath}>
                         Vulnerability reporting
                     </BreadcrumbItemLink>
                     <BreadcrumbItem isActive>{reportConfiguration.name}</BreadcrumbItem>

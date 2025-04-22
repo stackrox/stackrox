@@ -709,7 +709,7 @@ func TestSelectQueries(t *testing.T) {
 		{
 			desc: "base schema; select w/ where; image scope",
 			ctx: scoped.Context(context.Background(), scoped.Scope{
-				ID:    "fake-image",
+				IDs:   []string{"fake-image"},
 				Level: v1.SearchCategory_IMAGES,
 			}),
 			q: search.NewQueryBuilder().
@@ -723,10 +723,10 @@ func TestSelectQueries(t *testing.T) {
 		{
 			desc: "base schema; select w/ multiple scopes",
 			ctx: scoped.Context(context.Background(), scoped.Scope{
-				ID:    uuid.NewV4().String(),
+				IDs:   []string{uuid.NewV4().String()},
 				Level: v1.SearchCategory_NAMESPACES,
 				Parent: &scoped.Scope{
-					ID:    uuid.NewV4().String(),
+					IDs:   []string{uuid.NewV4().String()},
 					Level: v1.SearchCategory_CLUSTERS,
 				},
 			}),
@@ -933,7 +933,7 @@ func TestDeleteQueries(t *testing.T) {
 		{
 			desc: "base schema; delete w/ where; image scope",
 			ctx: scoped.Context(context.Background(), scoped.Scope{
-				ID:    "fake-image",
+				IDs:   []string{"fake-image"},
 				Level: v1.SearchCategory_IMAGES,
 			}),
 			q: search.NewQueryBuilder().
@@ -945,10 +945,10 @@ func TestDeleteQueries(t *testing.T) {
 		{
 			desc: "base schema; delete w/ multiple scopes",
 			ctx: scoped.Context(context.Background(), scoped.Scope{
-				ID:    uuid.NewV4().String(),
+				IDs:   []string{uuid.NewV4().String()},
 				Level: v1.SearchCategory_NAMESPACES,
 				Parent: &scoped.Scope{
-					ID:    uuid.NewV4().String(),
+					IDs:   []string{uuid.NewV4().String()},
 					Level: v1.SearchCategory_CLUSTERS,
 				},
 			}),
@@ -1098,7 +1098,7 @@ func TestDeleteReturningIDsQueries(t *testing.T) {
 		{
 			desc: "base schema; delete w/ where; image scope",
 			ctx: scoped.Context(context.Background(), scoped.Scope{
-				ID:    "fake-image",
+				IDs:   []string{"fake-image"},
 				Level: v1.SearchCategory_IMAGES,
 			}),
 			q: search.NewQueryBuilder().
@@ -1111,10 +1111,10 @@ func TestDeleteReturningIDsQueries(t *testing.T) {
 		{
 			desc: "base schema; delete w/ multiple scopes",
 			ctx: scoped.Context(context.Background(), scoped.Scope{
-				ID:    uuid.NewV4().String(),
+				IDs:   []string{uuid.NewV4().String()},
 				Level: v1.SearchCategory_NAMESPACES,
 				Parent: &scoped.Scope{
-					ID:    uuid.NewV4().String(),
+					IDs:   []string{uuid.NewV4().String()},
 					Level: v1.SearchCategory_CLUSTERS,
 				},
 			}),

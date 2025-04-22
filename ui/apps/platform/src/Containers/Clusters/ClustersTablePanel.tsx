@@ -49,7 +49,7 @@ import { Cluster } from 'types/cluster.proto';
 import { ClusterIdToRetentionInfo } from 'types/clusterService.proto';
 import { toggleRow, toggleSelectAll } from 'utils/checkboxUtils';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import { filterAllowedSearch, convertToRestSearch, getHasSearchApplied } from 'utils/searchUtils';
+import { convertToRestSearch, getHasSearchApplied } from 'utils/searchUtils';
 import {
     clustersBasePath,
     clustersDelegatedScanningPath,
@@ -57,6 +57,7 @@ import {
     clustersInitBundlesPath,
     clustersSecureClusterPath,
     clustersSecureClusterCrsPath,
+    clustersClusterRegistrationSecretsPath,
 } from 'routePaths';
 
 import AutoUpgradeToggle from './Components/AutoUpgradeToggle';
@@ -214,8 +215,8 @@ function ClustersTablePanel({
             });
     }
 
-    const filteredSearch = filterAllowedSearch(searchOptions, searchFilter || {});
-    const restSearch = convertToRestSearch(filteredSearch || {});
+    const restSearch = convertToRestSearch(searchFilter || {});
+
     useDeepCompareEffect(() => {
         refreshClusterList(restSearch);
     }, [restSearch, pollingCount]);
@@ -250,7 +251,7 @@ function ClustersTablePanel({
         );
     }
 
-    const hasSearchApplied = getHasSearchApplied(filteredSearch);
+    const hasSearchApplied = getHasSearchApplied(searchFilter);
 
     // PatternFly clusters page: reconsider whether to factor out minimal common heading.
     //
@@ -369,7 +370,11 @@ function ClustersTablePanel({
                 <Toolbar inset={{ default: 'insetNone' }} className="pf-v5-u-pb-0">
                     <ToolbarContent>
                         <Title headingLevel="h1">Clusters</Title>
-                        <ToolbarGroup variant="button-group" align={{ default: 'alignRight' }}>
+                        <ToolbarGroup
+                            className="pf-v5-u-flex-wrap"
+                            variant="button-group"
+                            align={{ default: 'alignRight' }}
+                        >
                             {hasReadAccessForAdministration && (
                                 <ToolbarItem>
                                     <Button
@@ -400,6 +405,17 @@ function ClustersTablePanel({
                                         href={clustersInitBundlesPath}
                                     >
                                         Init bundles
+                                    </Button>
+                                </ToolbarItem>
+                            )}
+                            {hasAdminRole && (
+                                <ToolbarItem>
+                                    <Button
+                                        variant="secondary"
+                                        component={LinkShim}
+                                        href={clustersClusterRegistrationSecretsPath}
+                                    >
+                                        Cluster registration secrets
                                     </Button>
                                 </ToolbarItem>
                             )}

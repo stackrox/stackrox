@@ -654,5 +654,5 @@ module.exports = {
     corePlugins: {
         container: false,
     },
-    purge: ['./src/**/*.{js,ts,tsx}'],
+    purge: ['./src/**/*.{js,jsx,ts,tsx}'],
 };

@@ -18,11 +18,11 @@ type Store interface {
 	Exists(ctx context.Context, id string) (bool, error)
 
 	Get(ctx context.Context, id string) (*storage.Image, bool, error)
-	GetMany(ctx context.Context, ids []string) ([]*storage.Image, []int, error)
+	GetByIDs(ctx context.Context, ids []string) ([]*storage.Image, error)
 
 	// GetImageMetadata and GetImageMetadata returns the image without scan/component data.
 	GetImageMetadata(ctx context.Context, id string) (*storage.Image, bool, error)
-	GetManyImageMetadata(ctx context.Context, id []string) ([]*storage.Image, []int, error)
+	GetManyImageMetadata(ctx context.Context, id []string) ([]*storage.Image, error)
 	WalkByQuery(ctx context.Context, q *v1.Query, fn func(img *storage.Image) error) error
 
 	Upsert(ctx context.Context, image *storage.Image) error

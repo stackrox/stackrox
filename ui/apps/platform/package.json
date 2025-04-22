@@ -15,9 +15,7 @@
     "dependencies": {
         "@apollo/client": "^3.6.3",
         "@lifeomic/axios-fetch": "^3.1.0",
-        "@monaco-editor/react": "^4.7.0",
         "@patternfly/react-charts": "^7.2.2",
-        "@patternfly/react-code-editor": "^5.2.2",
         "@patternfly/react-component-groups": "^5.2.0",
         "@patternfly/react-core": "^5.2.2",
         "@patternfly/react-icons": "^5.2.1",
@@ -50,9 +48,6 @@
         "lodash": "^4.17.21",
         "mobx": "^6.9.0",
         "mobx-react": "^7.6.0",
-        "monaco-editor": "^0.34.1",
-        "monaco-editor-webpack-plugin": "^7.1.0",
-        "monaco-yaml": "^5.1.1",
         "object-resolve-path": "^1.1.1",
         "pluralize": "^8.0.0",
         "prop-types": "^15.7.2",
@@ -77,6 +72,7 @@
         "react-router-hash-link": "^2.4.3",
         "react-select": "^2.0.0",
         "react-spinners": "^0.10.4",
+        "react-syntax-highlighter": "^15.6.1",
         "react-table-6": "^6.11.0",
         "react-toastify": "^7.0.3",
         "react-transition-group": "^4.4.1",
@@ -104,7 +100,7 @@
         "lint": "eslint --quiet .",
         "lint:fix": "eslint --fix --quiet .",
         "tsc": "tsc",
-        "cypress-open": "DISABLE_ESLINT_PLUGIN=true ./scripts/cypress.sh open --config defaultCommandTimeout=8000",
+        "cypress-open": "DISABLE_ESLINT_PLUGIN=true ./scripts/cypress.sh open --e2e --config defaultBrowser=chrome defaultCommandTimeout=8000",
         "cypress-spec": "DISABLE_ESLINT_PLUGIN=true ./scripts/cypress.sh run --spec",
         "cypress-component": "DISABLE_ESLINT_PLUGIN=true ./scripts/cypress-component.sh open --component",
         "test-e2e": "DISABLE_ESLINT_PLUGIN=true ./scripts/cypress.sh run --reporter mocha-multi-reporters --reporter-options configFile=cypress/mocha.config.js",
@@ -192,9 +188,6 @@
         "jest": "^29.7.0",
         "jest-resolve": "^29.7.0",
         "jest-watch-typeahead": "^2.2.2",
-        "monaco-yaml": {
-            "monaco-editor": "0.34.1"
-        },
         "react": "^18.2.0",
         "react-dom": "^18.2.0",
         "react-scripts": {

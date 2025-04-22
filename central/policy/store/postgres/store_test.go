@@ -92,9 +92,6 @@ func (s *PoliciesStoreSuite) TestStore() {
 	}
 
 	s.NoError(store.UpsertMany(ctx, policys))
-	allPolicy, err := store.GetAll(ctx)
-	s.NoError(err)
-	protoassert.ElementsMatch(s.T(), policys, allPolicy)
 
 	policyCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

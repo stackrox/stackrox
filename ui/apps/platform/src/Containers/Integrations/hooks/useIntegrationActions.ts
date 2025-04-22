@@ -11,7 +11,6 @@ import {
 } from 'services/IntegrationsService';
 import { IntegrationSource, IntegrationType } from 'Containers/Integrations/utils/integrationUtils';
 import { generateAPIToken } from 'services/APITokensService';
-import { generateClusterInitBundle } from 'services/ClustersService';
 import { getAxiosErrorMessage, isTimeoutError } from 'utils/responseErrorUtils';
 
 import { FormResponseMessage } from 'Components/PatternFly/FormMessage';
@@ -51,14 +50,12 @@ function useIntegrationActions(): UseIntegrationActionsResult {
                 navigate(integrationsListPath);
             } else if (type === 'apitoken') {
                 responseData = await generateAPIToken(data);
-            } else if (type === 'clusterInitBundle') {
-                responseData = await generateClusterInitBundle(data);
             } else if (type === 'machineAccess') {
                 responseData = await createMachineAccessConfig(data);
                 navigate(-1);
             } else {
                 responseData = await createIntegration(source, data);
-                // we only want to redirect when creating a new (non-apitoken and non-clusterinitbundle) integration
+                // we only want to redirect when creating a new non-apitoken integration
                 navigate(-1);
             }
 

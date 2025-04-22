@@ -52,20 +52,19 @@ func (ds *datastoreImpl) GetImageIntegrations(ctx context.Context, request *v1.G
 		return nil, nil
 	}
 
-	integrations, err := ds.storage.GetAll(ctx)
-	if err != nil {
-		return nil, err
+	if request.GetCluster() != "" {
+		return nil, nil
 	}
 
-	integrationSlice := integrations[:0]
-	for _, integration := range integrations {
-		if request.GetCluster() != "" {
-			continue
+	var integrationSlice []*storage.ImageIntegration
+	err := ds.storage.Walk(ctx, func(integration *storage.ImageIntegration) error {
+		if request.GetName() == "" || request.GetName() == integration.GetName() {
+			integrationSlice = append(integrationSlice, integration)
 		}
-		if request.GetName() != "" && request.GetName() != integration.GetName() {
-			continue
-		}
-		integrationSlice = append(integrationSlice, integration)
+		return nil
+	})
+	if err != nil {
+		return nil, err
 	}
 	return integrationSlice, nil
 }

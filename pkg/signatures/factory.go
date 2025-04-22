@@ -123,7 +123,8 @@ func FetchImageSignaturesWithRetries(ctx context.Context, fetcher SignatureFetch
 		fetchedSignatures, err = fetchAndAppendSignatures(ctx, fetcher, image, fullImageName, registry, fetchedSignatures)
 		return err
 	},
-		retry.Tries(2),
+		retry.WithContext(ctx),
+		retry.Tries(5),
 		retry.OnlyRetryableErrors(),
 		retry.BetweenAttempts(func(_ int) {
 			time.Sleep(500 * time.Millisecond)

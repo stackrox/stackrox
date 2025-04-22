@@ -12,7 +12,7 @@ import (
 
 // Scope hold an id and scope level for scoping searches.
 type Scope struct {
-	ID     string
+	IDs    []string
 	Level  v1.SearchCategory
 	Parent *Scope
 }
@@ -102,8 +102,10 @@ func GetQueryForAllScopes(ctx context.Context) (*v1.Query, error) {
 			return nil, err
 		}
 		idField := schema.ID()
-		conjuncts = append(conjuncts, searchPkg.NewQueryBuilder().
-			AddExactMatches(searchPkg.FieldLabel(idField.Search.FieldName), scope.ID).ProtoQuery())
+		if len(scope.IDs) > 0 {
+			conjuncts = append(conjuncts, searchPkg.NewQueryBuilder().
+				AddExactMatches(searchPkg.FieldLabel(idField.Search.FieldName), scope.IDs...).ProtoQuery())
+		}
 	}
 	return searchPkg.ConjunctionQuery(conjuncts...), nil
 }

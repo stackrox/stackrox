@@ -37,12 +37,33 @@ run-name: >-
     format('Create clusters for {0}', inputs.version)
   }}
 
-# Ensure that only a single release automation workflow can run at a time.
-concurrency: Release automation
+# Ensure that only a single automation workflow can run at a time for each release.
+concurrency: Release automation ${{ inputs.version }}
 
 jobs:
+  trim-cluster-names:
+    runs-on: ubuntu-latest
+    outputs:
+      cluster-with-fake-load-name-cleaned: ${{ steps.cluster-names.outputs.cluster-with-fake-load-name-cleaned }}
+      cluster-with-real-load-name-cleaned: ${{ steps.cluster-names.outputs.cluster-with-real-load-name-cleaned }}
+    env:
+      CLUSTER_WITH_FAKE_LOAD_NAME: lfl-${{ github.event.inputs.version }}
+      CLUSTER_WITH_REAL_LOAD_NAME: lrl-${{ github.event.inputs.version }}
+    steps:
+      - name: Trim and clean cluster names
+        id: cluster-names
+        run: |
+          # Cluster names are cropped to infra's max length and dots replaced with dashes.
+          # Latter is to avoid informing release engineers of incorrect cluster names.
+          CLEANED_CLUSTER_WITH_FAKE_LOAD_NAME="$(echo "${CLUSTER_WITH_FAKE_LOAD_NAME:0:28}" | tr '.' '-')"
+          echo "cluster-with-fake-load-name-cleaned=${CLEANED_CLUSTER_WITH_FAKE_LOAD_NAME}" >> "${GITHUB_OUTPUT}"
+
+          CLEANED_CLUSTER_WITH_REAL_LOAD_NAME="$(echo "${CLUSTER_WITH_REAL_LOAD_NAME:0:28}" | tr '.' '-')"
+          echo "cluster-with-real-load-name-cleaned=${CLEANED_CLUSTER_WITH_REAL_LOAD_NAME}" >> "${GITHUB_OUTPUT}"
+
   clusters:
     name: Setup demo clusters
+    needs: trim-cluster-names
     uses: stackrox/actions/.github/workflows/create-demo-clusters.yml@v1
     secrets: inherit
     with:
@@ -54,5 +75,5 @@ jobs:
       workflow-ref: v1
       kube-burner-config-ref: ${{ github.event.inputs.version }}
       kube-burner-config-repo: stackrox
-      cluster-with-fake-load-name: long-fake-load-${{ github.event.inputs.version }}
-      cluster-with-real-load-name: long-real-load-${{ github.event.inputs.version }}
+      cluster-with-fake-load-name: ${{ needs.trim-cluster-names.outputs.cluster-with-fake-load-name-cleaned }}
+      cluster-with-real-load-name: ${{ needs.trim-cluster-names.outputs.cluster-with-real-load-name-cleaned }}
