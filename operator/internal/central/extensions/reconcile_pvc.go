@@ -35,12 +35,6 @@ const (
 // PVCTarget specifies which deployment should attach the PVC
 type PVCTarget string
 
-// DefaultPVCValues specifies a set of default values used when reconciling the PVC.
-type DefaultPVCValues struct {
-	ClaimName string
-	Size      resource.Quantity
-}
-
 const (
 	// PVCTargetCentral is for any PVC that would be attached to the Central deployment
 	PVCTargetCentral PVCTarget = "central"
@@ -154,7 +148,7 @@ func getPersistenceByTarget(central *platform.Central, target PVCTarget,
 // On uninstall the owner reference is removed from the PVC objects.
 func ReconcilePVCExtension(
 	client ctrlClient.Client, direct ctrlClient.Reader, target PVCTarget,
-	defaults DefaultPVCValues) extensions.ReconcileExtension {
+	defaultClaimName string, opts ...Option) extensions.ReconcileExtension {
 
 	fn := func(ctx context.Context, central *platform.Central, client ctrlClient.Client, direct ctrlClient.Reader, _ func(statusFunc updateStatusFunc), log logr.Logger) error {
 		persistence, err := getPersistenceByTarget(central, target, log)
@@ -162,7 +156,7 @@ func ReconcilePVCExtension(
 			return err
 		}
 
-		return reconcilePVC(ctx, central, persistence, target, defaults, client, log)
+		return reconcilePVC(ctx, central, persistence, target, defaultClaimName, client, log, opts...)
 	}
 	return wrapExtension(fn, client, direct)
 }
@@ -170,30 +164,44 @@ func ReconcilePVCExtension(
 func reconcilePVC(
 	ctx context.Context, central *platform.Central,
 	persistence *platform.Persistence, target PVCTarget,
-	defaults DefaultPVCValues, client ctrlClient.Client, log logr.Logger) error {
+	defaultClaimName string, client ctrlClient.Client, log logr.Logger,
+	opts ...Option) error {
 	ext := reconcilePVCExtensionRun{
-		ctx:         ctx,
-		namespace:   central.GetNamespace(),
-		client:      client,
-		centralObj:  central,
-		persistence: persistence,
-		target:      target,
-		defaults:    defaults,
-		log:         log.WithValues("pvcReconciler", target),
+		ctx:              ctx,
+		namespace:        central.GetNamespace(),
+		client:           client,
+		centralObj:       central,
+		persistence:      persistence,
+		target:           target,
+		defaultClaimName: defaultClaimName,
+		log:              log.WithValues("pvcReconciler", target),
+	}
+
+	for _, option := range opts {
+		option(&ext)
 	}
 
 	return ext.Execute()
 }
 
 type reconcilePVCExtensionRun struct {
-	ctx         context.Context
-	namespace   string
-	client      ctrlClient.Client
-	centralObj  *platform.Central
-	persistence *platform.Persistence
-	defaults    DefaultPVCValues
-	target      PVCTarget
-	log         logr.Logger
+	ctx              context.Context
+	namespace        string
+	client           ctrlClient.Client
+	centralObj       *platform.Central
+	persistence      *platform.Persistence
+	defaultClaimSize resource.Quantity
+	defaultClaimName string
+	target           PVCTarget
+	log              logr.Logger
+}
+
+type Option func(*reconcilePVCExtensionRun)
+
+func WithDefaultClaimSize(value resource.Quantity) Option {
+	return func(r *reconcilePVCExtensionRun) {
+		r.defaultClaimSize = value
+	}
 }
 
 func (r *reconcilePVCExtensionRun) Execute() error {
@@ -213,7 +221,7 @@ func (r *reconcilePVCExtensionRun) Execute() error {
 		pvcConfig = &platform.PersistentVolumeClaim{}
 	}
 
-	claimName := pointer.StringDeref(pvcConfig.ClaimName, r.defaults.ClaimName)
+	claimName := pointer.StringDeref(pvcConfig.ClaimName, r.defaultClaimName)
 	key := ctrlClient.ObjectKey{Namespace: r.namespace, Name: claimName}
 	pvc := &corev1.PersistentVolumeClaim{}
 	if err := r.client.Get(r.ctx, key, pvc); err != nil {
@@ -289,7 +297,7 @@ func (r *reconcilePVCExtensionRun) handleCreate(claimName string, pvcConfig *pla
 		}
 	}
 
-	size, err := parseResourceQuantityOr(pvcConfig.Size, r.defaults.Size)
+	size, err := parseResourceQuantityOr(pvcConfig.Size, r.defaultClaimSize)
 	if err != nil {
 		return errors.Wrap(err, "invalid PVC size")
 	}

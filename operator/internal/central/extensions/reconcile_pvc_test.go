@@ -27,6 +27,12 @@ const (
 	testPVCName       = "central-db-test"
 )
 
+// DefaultPVCValues specifies a set of default values used when reconciling the PVC.
+type DefaultPVCValues struct {
+	ClaimName string
+	Size      resource.Quantity
+}
+
 type pvcReconciliationTestCase struct {
 	Central      *platform.Central
 	Target       PVCTarget
@@ -579,14 +585,15 @@ func newReconcilePVCExtensionRun(testCase pvcReconciliationTestCase, client ctrl
 	persistence, _ := getPersistenceByTarget(testCase.Central, testCase.Target, logr.Discard())
 
 	return reconcilePVCExtensionRun{
-		ctx:         context.Background(),
-		namespace:   "stackrox",
-		client:      client,
-		centralObj:  testCase.Central,
-		target:      testCase.Target,
-		defaults:    testCase.Defaults,
-		persistence: persistence,
-		log:         logr.Discard(),
+		ctx:              context.Background(),
+		namespace:        "stackrox",
+		client:           client,
+		centralObj:       testCase.Central,
+		target:           testCase.Target,
+		defaultClaimName: testCase.Defaults.ClaimName,
+		defaultClaimSize: testCase.Defaults.Size,
+		persistence:      persistence,
+		log:              logr.Discard(),
 	}
 }
 
