@@ -22,7 +22,8 @@ func readFile(openFn OpenFunc) ([]byte, error) {
 	}
 	defer utils.IgnoreError(reader.Close)
 
-	return io.ReadAll(reader)
+	all, err := io.ReadAll(reader)
+	return all, errors.Wrap(err, "reading file")
 }
 
 func createDynamicObject(objDesc common.DynamicBundleObjectDesc, bundleContents Contents) (*unstructured.Unstructured, error) {
