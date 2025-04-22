@@ -193,11 +193,9 @@ func (m *manager) GetConnection(clusterID string) SensorConnection {
 	m.connectionsByClusterIDMutex.RLock()
 	defer m.connectionsByClusterIDMutex.RUnlock()
 
-	conn := m.connectionsByClusterID[clusterID].connection
-	if conn == nil {
-		return nil
-	}
-	return conn
+	log.Infof("GetConnection for cluster %s", clusterID)
+	log.Infof("m.connectionsByClusterID: %v", m.connectionsByClusterID)
+	return m.connectionsByClusterID[clusterID].connection
 }
 
 func (m *manager) replaceConnection(ctx context.Context, cluster *storage.Cluster, newConnection *sensorConnection) (oldConnection *sensorConnection, err error) {
