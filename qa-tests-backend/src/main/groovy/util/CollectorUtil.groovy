@@ -91,7 +91,7 @@ class CollectorUtil {
     }
 
     static private setExternalIps(Kubernetes orchestrator, String state) {
-        // TODO(ROX-29045): Use a yaml serializer 
+        // TODO(ROX-29045): Use a yaml serializer
         String runtimeConfig = """|
                                   |networking:
                                   |  externalIps:
