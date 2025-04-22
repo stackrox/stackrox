@@ -39,7 +39,7 @@ if [[ "$arch" == "s390x" ]]; then
   mv /tmp/postgresql-private-libs-*.rpm "${output_dir}/rpms/postgres-libs.rpm"
   mv /tmp/postgresql-*.rpm "${output_dir}/rpms/postgres.rpm"
 else
-  postgres_major=13
+  postgres_major=15
   pg_rhel_major=8
   postgres_repo_url="https://download.postgresql.org/pub/repos/yum/reporpms/EL-${pg_rhel_major}-${arch}/pgdg-redhat-repo-latest.noarch.rpm"
   dnf install --disablerepo='*' -y "${postgres_repo_url}"

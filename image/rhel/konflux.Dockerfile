@@ -16,7 +16,7 @@ RUN /tmp/.konflux/subscription-manager-bro.sh register "$FINAL_STAGE_PATH"
 
 # Install packages for the final stage.
 RUN dnf -y --installroot="$FINAL_STAGE_PATH" upgrade --nobest && \
-    dnf -y --installroot="$FINAL_STAGE_PATH" module enable postgresql:13 && \
+    dnf -y --installroot="$FINAL_STAGE_PATH" module enable postgresql:15 && \
     # find is used in /stackrox/import-additional-cas \
     dnf -y --installroot="$FINAL_STAGE_PATH" install findutils postgresql && \
     # We can do usual cleanup while we're here: remove packages that would trigger violations. \

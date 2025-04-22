@@ -1,4 +1,4 @@
-ARG PG_VERSION=13
+ARG PG_VERSION=15
 FROM quay.io/sclorg/postgresql-${PG_VERSION}-c8s:latest AS final
 
 USER root
