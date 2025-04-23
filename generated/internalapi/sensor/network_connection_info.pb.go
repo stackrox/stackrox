@@ -99,8 +99,10 @@ type NetworkConnection struct {
 	// If this connection was closed, this gives the timestamp when it was closed. If this is unset, we treat it as an
 	// open connection.
 	CloseTimestamp *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=close_timestamp,json=closeTimestamp,proto3" json:"close_timestamp,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// NetworkConnection origin, either an inspector event or scraper
+	Scraped       bool `protobuf:"varint,12,opt,name=scraped,proto3" json:"scraped,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *NetworkConnection) Reset() {
@@ -180,6 +182,13 @@ func (x *NetworkConnection) GetCloseTimestamp() *timestamppb.Timestamp {
 		return x.CloseTimestamp
 	}
 	return nil
+}
+
+func (x *NetworkConnection) GetScraped() bool {
+	if x != nil {
+		return x.Scraped
+	}
+	return false
 }
 
 type NetworkEndpoint struct {
@@ -340,7 +349,7 @@ const file_internalapi_sensor_network_connection_info_proto_rawDesc = "" +
 	"\x15NetworkConnectionInfo\x12J\n" +
 	"\x13updated_connections\x18\x01 \x03(\v2\x19.sensor.NetworkConnectionR\x12updatedConnections\x12D\n" +
 	"\x11updated_endpoints\x18\x03 \x03(\v2\x17.sensor.NetworkEndpointR\x10updatedEndpoints\x12.\n" +
-	"\x04time\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x04time\"\x91\x03\n" +
+	"\x04time\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x04time\"\xab\x03\n" +
 	"\x11NetworkConnection\x129\n" +
 	"\rsocket_family\x18\x01 \x01(\x0e2\x14.sensor.SocketFamilyR\fsocketFamily\x12;\n" +
 	"\rlocal_address\x18\x02 \x01(\v2\x16.sensor.NetworkAddressR\flocalAddress\x12=\n" +
@@ -348,7 +357,8 @@ const file_internalapi_sensor_network_connection_info_proto_rawDesc = "" +
 	"\bprotocol\x18\x04 \x01(\x0e2\x13.storage.L4ProtocolR\bprotocol\x12,\n" +
 	"\x04role\x18\x05 \x01(\x0e2\x18.sensor.ClientServerRoleR\x04role\x12!\n" +
 	"\fcontainer_id\x18\x06 \x01(\tR\vcontainerId\x12C\n" +
-	"\x0fclose_timestamp\x18\v \x01(\v2\x1a.google.protobuf.TimestampR\x0ecloseTimestamp\"\xe6\x02\n" +
+	"\x0fclose_timestamp\x18\v \x01(\v2\x1a.google.protobuf.TimestampR\x0ecloseTimestamp\x12\x18\n" +
+	"\ascraped\x18\f \x01(\bR\ascraped\"\xe6\x02\n" +
 	"\x0fNetworkEndpoint\x129\n" +
 	"\rsocket_family\x18\x01 \x01(\x0e2\x14.sensor.SocketFamilyR\fsocketFamily\x12/\n" +
 	"\bprotocol\x18\x02 \x01(\x0e2\x13.storage.L4ProtocolR\bprotocol\x12=\n" +

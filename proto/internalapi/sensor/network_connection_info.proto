@@ -34,6 +34,9 @@ message NetworkConnection {
   // If this connection was closed, this gives the timestamp when it was closed. If this is unset, we treat it as an
   // open connection.
   google.protobuf.Timestamp close_timestamp = 11;
+
+  // NetworkConnection origin, either an inspector event or scraper
+  bool scraped = 12;
 }
 
 message NetworkEndpoint {
