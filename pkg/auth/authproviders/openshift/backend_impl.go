@@ -21,6 +21,7 @@ import (
 
 const (
 	openshiftAPIUrl    = "https://openshift.default.svc"
+	kubernetesAPIUrl   = "https://kubernetes.default.svc"
 	roxTokenExpiration = 5 * time.Minute
 )
 
@@ -107,7 +108,12 @@ func createOpenshiftConnector() (callbackAndRefreshConnector, error) {
 
 	openshiftConnector, err := dexCfg.Open()
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create dex openshiftConnector for OpenShift's OAuth Server")
+		log.Warnf("%s failed. trying %s", openshiftAPIUrl, kubernetesAPIUrl)
+		dexCfg.Issuer = kubernetesAPIUrl
+		openshiftConnector, err = dexCfg.Open()
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to create dex openshiftConnector for OpenShift's OAuth Server")
+		}
 	}
 
 	return openshiftConnector, nil
