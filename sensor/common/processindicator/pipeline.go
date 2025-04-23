@@ -94,7 +94,7 @@ func (p *Pipeline) Shutdown() {
 	p.cancelEnricherCtx(errors.New("pipeline shutdown"))
 	defer func() {
 		close(p.enrichedIndicators)
-		close(p.indicators)
+		defer close(p.indicators)
 		_ = p.enricher.Stopped().Wait()
 		_ = p.stopper.Client().Stopped().Wait()
 	}()
