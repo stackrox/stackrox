@@ -130,7 +130,7 @@ I8+UmQtwa0MOOcoUeXXJXjGagodO6A22hzjwQyf5e87eeLA1FfwtGYNLjoA=
         getInputByLabel('Enable transparency log validation').uncheck();
         getInputByLabel('Enable certificate transparency log validation').uncheck();
 
-        getHelperElementByLabel('Rekor URL').should('be.disabled');
+        getInputByLabel('Rekor URL').should('be.disabled');
         getInputByLabel('Validate in offline mode').should('be.disabled');
         getInputByLabel('Rekor public key').should('be.disabled');
         getInputByLabel('Certificate transparency log public key').should('be.disabled');
