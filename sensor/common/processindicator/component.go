@@ -55,6 +55,11 @@ func (c *componentImpl) Start() error {
 
 func (c *componentImpl) Stop(_ error) {
 	c.processPipeline.Shutdown()
+	if !c.stopper.Client().Stopped().IsDone() {
+		defer func() {
+			_ = c.stopper.Client().Stopped().Wait()
+		}()
+	}
 	c.stopper.Client().Stop()
 }
 
