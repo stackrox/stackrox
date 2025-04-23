@@ -47,4 +47,4 @@ allowNonstandardReleaseName: true
 allowNonstandardNamespace: true
 # This setting causes the config.stackrox.io CRD to be omitted when processing chart templates.
 # Instead we use OLM to install it together with the platform.stackrox.io CRDs.
-allowUnsupportedMultipleCentralsUsingHelm: documentationWasReadAndUnderstood
+allowUnsupportedMultipleCentrals: documentationWasReadAndUnderstood

@@ -240,4 +240,6 @@ There is an option to exclude the CRD from the template, but there are a few oth
 
 If, after understanding these risks, you still want to install multiple Central installations on the same cluster using Helm, it can be done with the following flag:
 
-    --set allowUnsupportedMultipleCentralsUsingHelm=documentationWasReadAndUnderstood
+    --set allowUnsupportedMultipleCentrals=documentationWasReadAndUnderstood
+
+Note that installing multiple Centrals is fully supported by default using the ACS operator.

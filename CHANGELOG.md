@@ -9,7 +9,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ## [NEXT RELEASE]
 
-**HELM USERS**: Please see the ROX-27622 under "technical changes" to avoid upgrade failures!
+**HELM USERS**: Please see ROX-27622 under "technical changes" to avoid upgrade failures!
 
 ### Added Features
 

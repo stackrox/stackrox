@@ -62,7 +62,7 @@
   {{ if $._rox.allowNonstandardNamespace }}
     {{ include "srox.note" (list $ (printf "You have chosen to deploy to namespace '%s'." $.Release.Namespace)) }}
   {{ else }}
-    {{ include "srox.fail" (printf "You have chosen to deploy to namespace '%s', not 'stackrox'. If this was accidental, please re-run helm with the '-n stackrox' option. Otherwise, if you need to deploy into this namespace, set the 'allowNonstandardNamespace' configuration value to true. NOTE: Please review the section of the readme titled 'Multiple Installations of Central' if you encounter installation errors regarding a CustomResourceDefinition." $.Release.Namespace) }}
+    {{ include "srox.fail" (printf "You have chosen to deploy to namespace '%s', not 'stackrox'. If this was accidental, please re-run helm with the '-n stackrox' option. Otherwise, if you need to deploy into this namespace, set the 'allowNonstandardNamespace' configuration value to true. NOTE: Please review the section of this chart's README titled 'Multiple Installations of Central' if you encounter installation errors regarding a CustomResourceDefinition." $.Release.Namespace) }}
   {{ end }}
 {{ end }}
 

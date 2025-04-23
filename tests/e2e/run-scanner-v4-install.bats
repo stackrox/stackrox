@@ -257,7 +257,7 @@ setup() {
     _end
 }
 
-# CRD needs to be owned by Helm if upgrading to 4.7+ from 4.6.x via Helm
+# CRD needs to be owned by Helm if upgrading to 4.8+ from 4.7.x via Helm
 apply_crd_ownership_for_upgrade() {
     local namespace={$1:-stackrox}
     "${ORCH_CMD}" </dev/null annotate crd/securitypolicies.config.stackrox.io meta.helm.sh/release-name=stackrox-central-services || true

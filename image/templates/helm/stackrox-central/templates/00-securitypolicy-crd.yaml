@@ -1,4 +1,4 @@
 {{- include "srox.init" . -}}
-{{ if ne (._rox.allowUnsupportedMultipleCentralsUsingHelm | toString) "documentationWasReadAndUnderstood" -}}
+{{- if ne (._rox.allowUnsupportedMultipleCentrals | toString) "documentationWasReadAndUnderstood" -}}
 {{ $.Files.Get "internal/config.stackrox.io_securitypolicies.yaml" }}
-{{- end -}}
+{{- end }}
