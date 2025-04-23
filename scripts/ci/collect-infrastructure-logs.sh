@@ -1,5 +1,6 @@
 #!/bin/sh
 set -eu
+set -x
 
 # Collect k8s infrastructure Logs script
 #
@@ -34,9 +35,16 @@ proxy_pid=$!
 
 sleep 5 # Let kubectl proxy stabilize
 mkdir -p "${log_dir}"/infrastructure
-curl -s http://localhost:8001/logs/kube-apiserver.log > "${log_dir}"/infrastructure/kube-apiserver.log
+# exit code 18 = download incomplete
+# last retry wait 2^8=256s
+# -C -  : continue if retrying an interrupted download
+curl -s http://localhost:8001/logs/kube-apiserver.log > "${log_dir}"/infrastructure/kube-apiserver.log \
+  || curl -v --retry 8 --retry-max-time 30 -C - -s http://localhost:8001/logs/kube-apiserver.log -o "${log_dir}"/infrastructure/kube-apiserver.log \
+  || curl -v --retry 3 -C - -s http://localhost:8001/logs/kube-apiserver.log -o "${log_dir}"/infrastructure/kube-apiserver.log \
+  || curl -v --retry 3 -s http://localhost:8001/logs/kube-apiserver.log -o "${log_dir}"/infrastructure/kube-apiserver.log
+  || curl -v --ignore-content-length --retry 3 -s http://localhost:8001/logs/kube-apiserver.log -o "${log_dir}"/infrastructure/kube-apiserver.log
 
-kill $proxy_pid
+kill $proxy_pid || true
 
 echo "$(date) Attempting to collect kube API server metrics"
 # Ref https://kubernetes.io/docs/tasks/debug/debug-cluster/resource-metrics-pipeline/
