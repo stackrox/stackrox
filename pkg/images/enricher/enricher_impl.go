@@ -358,7 +358,7 @@ func (e *enricherImpl) updateImageFromDatabase(ctx context.Context, img *storage
 func (e *enricherImpl) enrichWithMetadata(ctx context.Context, enrichmentContext EnrichmentContext, image *storage.Image) (bool, error) {
 	// Attempt to short-circuit before checking registries.
 	metadataOutOfDate := metadataIsOutOfDate(image.GetMetadata())
-	if !metadataOutOfDate {
+	if !metadataOutOfDate && !features.FlattenCVEData.Enabled() {
 		log.Infof("metadata was not out of date for image: %s", image.GetName())
 		return false, nil
 	}
