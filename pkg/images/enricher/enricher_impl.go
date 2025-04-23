@@ -359,6 +359,7 @@ func (e *enricherImpl) enrichWithMetadata(ctx context.Context, enrichmentContext
 	// Attempt to short-circuit before checking registries.
 	metadataOutOfDate := metadataIsOutOfDate(image.GetMetadata())
 	if !metadataOutOfDate {
+		log.Infof("metadata was not out of date for image: %s", image.GetName())
 		return false, nil
 	}
 
@@ -993,7 +994,6 @@ func (e *enricherImpl) enrichImageWithScanner(ctx context.Context, image *storag
 	}
 
 	enrichImage(image, scan, imageScanner.DataSource())
-
 	return ScanSucceeded, nil
 }
 
