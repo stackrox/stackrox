@@ -20,6 +20,7 @@ import (
 	"github.com/sigstore/cosign/v2/pkg/oci"
 	"github.com/sigstore/cosign/v2/pkg/oci/static"
 	rekorClient "github.com/sigstore/rekor/pkg/client"
+	sigTuf "github.com/sigstore/sigstore-go/pkg/tuf"
 	"github.com/sigstore/sigstore/pkg/cryptoutils"
 	"github.com/sigstore/sigstore/pkg/signature"
 	"github.com/sigstore/sigstore/pkg/signature/payload"
@@ -96,8 +97,6 @@ func IsValidPublicKeyPEMBlock(keyBlock *pem.Block, rest []byte) bool {
 // MUST be valid PEM encoded ones.
 // It will return an error if the provided public keys could not be parsed.
 func newCosignSignatureVerifier(config *storage.SignatureIntegration) (*cosignSignatureVerifier, error) {
-	setupTufRootDir()
-
 	publicKeys := config.GetCosign().GetPublicKeys()
 	parsedKeys := make([]crypto.PublicKey, 0, len(publicKeys))
 	for _, publicKey := range publicKeys {
@@ -153,6 +152,24 @@ func newCosignSignatureVerifier(config *storage.SignatureIntegration) (*cosignSi
 		url:             tlog.GetUrl(),
 		validateOffline: tlog.GetValidateOffline(),
 		publicKey:       tlog.GetPublicKeyPemEnc(),
+	}
+
+	trustRoot := config.GetCosignTrustRoot()
+	tufClient, err := sigTuf.New(sigTuf.DefaultOptions().
+		WithCachePath("/tmp/tuf-roots").
+		WithRepositoryBaseURL(trustRoot.GetTufUrl()).
+		WithRoot([]byte(trustRoot.GetInitialRoot())),
+	)
+	log.Infof("initial root: %+s", trustRoot.GetInitialRoot())
+	if err != nil {
+		log.Errorf("Failed to create tufClient: %+s", err.Error())
+	}
+	if tufClient != nil {
+		pubs, err := tufClient.GetTarget("rekor.pub")
+		if err != nil {
+			log.Errorf("Failed to get Rekor public key: %+s", err.Error())
+		}
+		log.Infof("Rekor public key: %+v", string(pubs))
 	}
 
 	return &cosignSignatureVerifier{

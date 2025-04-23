@@ -28,6 +28,7 @@ type SignatureIntegration struct {
 	Cosign             *CosignPublicKeyVerification     `protobuf:"bytes,3,opt,name=cosign,proto3" json:"cosign,omitempty"`
 	CosignCertificates []*CosignCertificateVerification `protobuf:"bytes,4,rep,name=cosign_certificates,json=cosignCertificates,proto3" json:"cosign_certificates,omitempty"`
 	TransparencyLog    *TransparencyLogVerification     `protobuf:"bytes,5,opt,name=transparency_log,json=transparencyLog,proto3" json:"transparency_log,omitempty"`
+	CosignTrustRoot    *CosignTrustRoot                 `protobuf:"bytes,6,opt,name=cosign_trust_root,json=cosignTrustRoot,proto3" json:"cosign_trust_root,omitempty"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -93,6 +94,13 @@ func (x *SignatureIntegration) GetCosignCertificates() []*CosignCertificateVerif
 func (x *SignatureIntegration) GetTransparencyLog() *TransparencyLogVerification {
 	if x != nil {
 		return x.TransparencyLog
+	}
+	return nil
+}
+
+func (x *SignatureIntegration) GetCosignTrustRoot() *CosignTrustRoot {
+	if x != nil {
+		return x.CosignTrustRoot
 	}
 	return nil
 }
@@ -378,6 +386,60 @@ func (x *TransparencyLogVerification) GetPublicKeyPemEnc() string {
 	return ""
 }
 
+// Holds the information to establish a trusted root for Cosign certificate
+// authorities and public keys.
+type CosignTrustRoot struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	TufUrl        string                 `protobuf:"bytes,1,opt,name=tuf_url,json=tufUrl,proto3" json:"tuf_url,omitempty"`
+	InitialRoot   string                 `protobuf:"bytes,2,opt,name=initial_root,json=initialRoot,proto3" json:"initial_root,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CosignTrustRoot) Reset() {
+	*x = CosignTrustRoot{}
+	mi := &file_storage_signature_integration_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CosignTrustRoot) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CosignTrustRoot) ProtoMessage() {}
+
+func (x *CosignTrustRoot) ProtoReflect() protoreflect.Message {
+	mi := &file_storage_signature_integration_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CosignTrustRoot.ProtoReflect.Descriptor instead.
+func (*CosignTrustRoot) Descriptor() ([]byte, []int) {
+	return file_storage_signature_integration_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *CosignTrustRoot) GetTufUrl() string {
+	if x != nil {
+		return x.TufUrl
+	}
+	return ""
+}
+
+func (x *CosignTrustRoot) GetInitialRoot() string {
+	if x != nil {
+		return x.InitialRoot
+	}
+	return ""
+}
+
 type CosignPublicKeyVerification_PublicKey struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
 	Name            string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
@@ -388,7 +450,7 @@ type CosignPublicKeyVerification_PublicKey struct {
 
 func (x *CosignPublicKeyVerification_PublicKey) Reset() {
 	*x = CosignPublicKeyVerification_PublicKey{}
-	mi := &file_storage_signature_integration_proto_msgTypes[5]
+	mi := &file_storage_signature_integration_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -400,7 +462,7 @@ func (x *CosignPublicKeyVerification_PublicKey) String() string {
 func (*CosignPublicKeyVerification_PublicKey) ProtoMessage() {}
 
 func (x *CosignPublicKeyVerification_PublicKey) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_signature_integration_proto_msgTypes[5]
+	mi := &file_storage_signature_integration_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -434,13 +496,14 @@ var File_storage_signature_integration_proto protoreflect.FileDescriptor
 
 const file_storage_signature_integration_proto_rawDesc = "" +
 	"\n" +
-	"#storage/signature_integration.proto\x12\astorage\"\xa2\x02\n" +
+	"#storage/signature_integration.proto\x12\astorage\"\xe8\x02\n" +
 	"\x14SignatureIntegration\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12<\n" +
 	"\x06cosign\x18\x03 \x01(\v2$.storage.CosignPublicKeyVerificationR\x06cosign\x12W\n" +
 	"\x13cosign_certificates\x18\x04 \x03(\v2&.storage.CosignCertificateVerificationR\x12cosignCertificates\x12O\n" +
-	"\x10transparency_log\x18\x05 \x01(\v2$.storage.TransparencyLogVerificationR\x0ftransparencyLog\"\xbc\x01\n" +
+	"\x10transparency_log\x18\x05 \x01(\v2$.storage.TransparencyLogVerificationR\x0ftransparencyLog\x12D\n" +
+	"\x11cosign_trust_root\x18\x06 \x01(\v2\x18.storage.CosignTrustRootR\x0fcosignTrustRoot\"\xbc\x01\n" +
 	"\x1bCosignPublicKeyVerification\x12O\n" +
 	"\vpublic_keys\x18\x03 \x03(\v2..storage.CosignPublicKeyVerification.PublicKeyR\n" +
 	"publicKeys\x1aL\n" +
@@ -460,7 +523,10 @@ const file_storage_signature_integration_proto_rawDesc = "" +
 	"\aenabled\x18\x01 \x01(\bR\aenabled\x12\x10\n" +
 	"\x03url\x18\x02 \x01(\tR\x03url\x12)\n" +
 	"\x10validate_offline\x18\x03 \x01(\bR\x0fvalidateOffline\x12+\n" +
-	"\x12public_key_pem_enc\x18\x04 \x01(\tR\x0fpublicKeyPemEncB.\n" +
+	"\x12public_key_pem_enc\x18\x04 \x01(\tR\x0fpublicKeyPemEnc\"M\n" +
+	"\x0fCosignTrustRoot\x12\x17\n" +
+	"\atuf_url\x18\x01 \x01(\tR\x06tufUrl\x12!\n" +
+	"\finitial_root\x18\x02 \x01(\tR\vinitialRootB.\n" +
 	"\x19io.stackrox.proto.storageZ\x11./storage;storageb\x06proto3"
 
 var (
@@ -475,26 +541,28 @@ func file_storage_signature_integration_proto_rawDescGZIP() []byte {
 	return file_storage_signature_integration_proto_rawDescData
 }
 
-var file_storage_signature_integration_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_storage_signature_integration_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_storage_signature_integration_proto_goTypes = []any{
 	(*SignatureIntegration)(nil),                   // 0: storage.SignatureIntegration
 	(*CosignPublicKeyVerification)(nil),            // 1: storage.CosignPublicKeyVerification
 	(*CosignCertificateVerification)(nil),          // 2: storage.CosignCertificateVerification
 	(*CertificateTransparencyLogVerification)(nil), // 3: storage.CertificateTransparencyLogVerification
 	(*TransparencyLogVerification)(nil),            // 4: storage.TransparencyLogVerification
-	(*CosignPublicKeyVerification_PublicKey)(nil),  // 5: storage.CosignPublicKeyVerification.PublicKey
+	(*CosignTrustRoot)(nil),                        // 5: storage.CosignTrustRoot
+	(*CosignPublicKeyVerification_PublicKey)(nil),  // 6: storage.CosignPublicKeyVerification.PublicKey
 }
 var file_storage_signature_integration_proto_depIdxs = []int32{
 	1, // 0: storage.SignatureIntegration.cosign:type_name -> storage.CosignPublicKeyVerification
 	2, // 1: storage.SignatureIntegration.cosign_certificates:type_name -> storage.CosignCertificateVerification
 	4, // 2: storage.SignatureIntegration.transparency_log:type_name -> storage.TransparencyLogVerification
-	5, // 3: storage.CosignPublicKeyVerification.public_keys:type_name -> storage.CosignPublicKeyVerification.PublicKey
-	3, // 4: storage.CosignCertificateVerification.certificate_transparency_log:type_name -> storage.CertificateTransparencyLogVerification
-	5, // [5:5] is the sub-list for method output_type
-	5, // [5:5] is the sub-list for method input_type
-	5, // [5:5] is the sub-list for extension type_name
-	5, // [5:5] is the sub-list for extension extendee
-	0, // [0:5] is the sub-list for field type_name
+	5, // 3: storage.SignatureIntegration.cosign_trust_root:type_name -> storage.CosignTrustRoot
+	6, // 4: storage.CosignPublicKeyVerification.public_keys:type_name -> storage.CosignPublicKeyVerification.PublicKey
+	3, // 5: storage.CosignCertificateVerification.certificate_transparency_log:type_name -> storage.CertificateTransparencyLogVerification
+	6, // [6:6] is the sub-list for method output_type
+	6, // [6:6] is the sub-list for method input_type
+	6, // [6:6] is the sub-list for extension type_name
+	6, // [6:6] is the sub-list for extension extendee
+	0, // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_storage_signature_integration_proto_init() }
@@ -508,7 +576,7 @@ func file_storage_signature_integration_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_storage_signature_integration_proto_rawDesc), len(file_storage_signature_integration_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

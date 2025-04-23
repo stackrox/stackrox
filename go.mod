@@ -122,6 +122,7 @@ require (
 	github.com/sigstore/cosign/v2 v2.5.0
 	github.com/sigstore/rekor v1.3.10
 	github.com/sigstore/sigstore v1.9.3
+	github.com/sigstore/sigstore-go v0.7.2
 	github.com/sourcegraph/conc v0.3.0
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/pflag v1.0.6
@@ -434,7 +435,6 @@ require (
 	github.com/shopspring/decimal v1.4.0 // indirect
 	github.com/sigstore/fulcio v1.6.6 // indirect
 	github.com/sigstore/protobuf-specs v0.4.1 // indirect
-	github.com/sigstore/sigstore-go v0.7.1 // indirect
 	github.com/sigstore/timestamp-authority v1.2.5 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/skeema/knownhosts v1.3.0 // indirect
@@ -542,6 +542,8 @@ replace github.com/operator-framework/helm-operator-plugins => github.com/stackr
 
 // @stackrox/sensor-ecosystem
 replace (
+	github.com/theupdateframework/go-tuf/v2 => github.com/stehessel/go-tuf/v2 v2.0.3-0.20250421231116-7038c08ad45a
+
 	// Our fok has following features:
 	// - console log field ordering
 	// - not verbose error logging
