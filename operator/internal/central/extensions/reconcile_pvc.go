@@ -148,7 +148,7 @@ func getPersistenceByTarget(central *platform.Central, target PVCTarget,
 // On uninstall the owner reference is removed from the PVC objects.
 func ReconcilePVCExtension(
 	client ctrlClient.Client, direct ctrlClient.Reader, target PVCTarget,
-	defaultClaimName string, opts ...Option) extensions.ReconcileExtension {
+	defaultClaimName string, opts ...PVCOption) extensions.ReconcileExtension {
 
 	fn := func(ctx context.Context, central *platform.Central, client ctrlClient.Client, direct ctrlClient.Reader, _ func(statusFunc updateStatusFunc), log logr.Logger) error {
 		persistence, err := getPersistenceByTarget(central, target, log)
@@ -165,7 +165,7 @@ func reconcilePVC(
 	ctx context.Context, central *platform.Central,
 	persistence *platform.Persistence, target PVCTarget,
 	defaultClaimName string, client ctrlClient.Client, log logr.Logger,
-	opts ...Option) error {
+	opts ...PVCOption) error {
 	ext := reconcilePVCExtensionRun{
 		ctx:              ctx,
 		namespace:        central.GetNamespace(),
@@ -174,6 +174,7 @@ func reconcilePVC(
 		persistence:      persistence,
 		target:           target,
 		defaultClaimName: defaultClaimName,
+		defaultClaimSize: DefaultPVCSize,
 		log:              log.WithValues("pvcReconciler", target),
 	}
 
@@ -196,9 +197,9 @@ type reconcilePVCExtensionRun struct {
 	log              logr.Logger
 }
 
-type Option func(*reconcilePVCExtensionRun)
+type PVCOption func(*reconcilePVCExtensionRun)
 
-func WithDefaultClaimSize(value resource.Quantity) Option {
+func WithDefaultClaimSize(value resource.Quantity) PVCOption {
 	return func(r *reconcilePVCExtensionRun) {
 		r.defaultClaimSize = value
 	}
