@@ -48,9 +48,9 @@ function DelegatedImageScanningForm({
         resetForm,
         setFieldValue,
         setSubmitting,
-        // setTouched,
+        setTouched,
         submitForm,
-        // touched,
+        touched,
         values,
     } = formik;
 
@@ -89,7 +89,6 @@ function DelegatedImageScanningForm({
             values.registries.filter((_, index) => index !== indexToDelete)
         ).then(() => {
             // Formik updates errors but not touched.
-            /*
             setTouched(
                 {
                     registries: Array.isArray(touched.registries)
@@ -100,7 +99,6 @@ function DelegatedImageScanningForm({
             ).catch(() => {
                 // @typescript-eslint/no-floating-promises
             });
-            */
         });
     }
 
