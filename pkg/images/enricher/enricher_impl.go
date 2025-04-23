@@ -280,6 +280,7 @@ func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext Enrichment
 	// This makes sure that we fetch any existing image only once from database.
 	useExistingScanIfPossible := e.updateImageFromDatabase(ctx, image, enrichContext.FetchOpt)
 
+	log.Infof("useExistingScanIfPossible: %v", useExistingScanIfPossible)
 	scanResult, err := e.enrichWithScan(ctx, enrichContext, image, useExistingScanIfPossible)
 	errorList.AddError(err)
 	if scanResult == ScanNotDone && image.GetScan() == nil {
