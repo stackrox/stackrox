@@ -30,6 +30,8 @@ echo "$(date) Attempting to collect kube API server audit logs"
 (cd "${log_dir}" && oc version && oc adm must-gather --timeout=7m -- /usr/bin/gather_audit_logs && du -sh must-gather*) || true
 
 echo "$(date) Attempting to collect kube API server log"
+# default address 127.0.0.1 (accepts localhost also)
+# default port 8001
 kubectl proxy &
 proxy_pid=$!
 
@@ -41,8 +43,9 @@ mkdir -p "${log_dir}"/infrastructure
 curl -s http://localhost:8001/logs/kube-apiserver.log > "${log_dir}"/infrastructure/kube-apiserver.log \
   || curl -v --retry 8 --retry-max-time 30 -C - -s http://localhost:8001/logs/kube-apiserver.log -o "${log_dir}"/infrastructure/kube-apiserver.log \
   || curl -v --retry 3 -C - -s http://localhost:8001/logs/kube-apiserver.log -o "${log_dir}"/infrastructure/kube-apiserver.log \
-  || curl -v --retry 3 -s http://localhost:8001/logs/kube-apiserver.log -o "${log_dir}"/infrastructure/kube-apiserver.log
-  || curl -v --ignore-content-length --retry 3 -s http://localhost:8001/logs/kube-apiserver.log -o "${log_dir}"/infrastructure/kube-apiserver.log
+  || curl -v --retry 3 -s http://localhost:8001/logs/kube-apiserver.log -o "${log_dir}"/infrastructure/kube-apiserver.log \
+  || curl -v --ignore-content-length --retry 3 -s http://localhost:8001/logs/kube-apiserver.log -o "${log_dir}"/infrastructure/kube-apiserver.log \
+  || true
 
 kill $proxy_pid || true
 
