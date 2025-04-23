@@ -63,6 +63,13 @@ func (s *centralSenderImpl) send(stream central.SensorService_CommunicateClient,
 				log.Warn(err)
 			}
 		}
+		// We need to wait for the buffered stream to stop (errC is closed)
+		// before signaling that the centralSender is finished. Otherwise,
+		// we can have a race between CloseSend and Send.
+		// CentralCommunication closes the inner gRPC stream (CloseSend) once
+		// centralSender and centralReceiver are finished. If this happens
+		// before the buffered stream is stopped,  the buffered stream could
+		// call Send after CloseSend is called.
 		s.finished.Done()
 	}()
 

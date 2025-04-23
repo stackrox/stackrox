@@ -38,7 +38,13 @@ func (s bufferedStream) Send(msg *central.MsgFromSensor) error {
 	return nil
 }
 
-func NewBufferedStream(stream messagestream.SensorMessageStream, msgC chan *central.MsgFromSensor, stopC concurrency.ReadOnlyErrorSignal) (messagestream.SensorMessageStream, <-chan error, func() error) {
+// NewBufferedStream returns a SensorMessageStream 'buffStream' that implements a buffer for MsgFromSensor messages.
+// If the buffer limit is reached, new messages will be dropped.
+// buffStream is the bufferedStream.
+// errC is a channel containing errors coming from the internal Send function.
+// onStop is a function that waits for errC to be closed. This is needed to
+// avoid races between the Send and the CloseSend functions.
+func NewBufferedStream(stream messagestream.SensorMessageStream, msgC chan *central.MsgFromSensor, stopC concurrency.ReadOnlyErrorSignal) (buffStream messagestream.SensorMessageStream, errC <-chan error, onStop func() error) {
 	// if the capacity of the buffer is zero then we just return the inner stream
 	if cap(msgC) == 0 {
 		return stream, nil, nil
@@ -48,7 +54,7 @@ func NewBufferedStream(stream messagestream.SensorMessageStream, msgC chan *cent
 		stopC:  stopC,
 		stream: stream,
 	}
-	errC := ret.run()
+	errC = ret.run()
 	return ret, errC, func() error {
 		for {
 			select {
