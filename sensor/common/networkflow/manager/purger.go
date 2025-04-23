@@ -170,6 +170,7 @@ func purgeHostConns(mutex *sync.Mutex, maxAge time.Duration, enrichmentQueue map
 func purgeHostConnsNoLock(maxAge time.Duration, conns *hostConnections, store EntityStore) (numPurgedEps, numPurgedConns int) {
 	numPurgedEps = 0
 	numPurgedConns = 0
+	cutOff := timestamp.Now().Add(-maxAge)
 	for endpoint, status := range conns.endpoints {
 		// remove if the endpoint is not in the store (also not in history)
 		if len(store.LookupByEndpoint(endpoint.endpoint)) == 0 {
@@ -180,7 +181,6 @@ func purgeHostConnsNoLock(maxAge time.Duration, conns *hostConnections, store En
 		}
 		if maxAge > 0 {
 			// finally, remove all that didn't get any update from collector for a given time
-			cutOff := timestamp.Now().Add(-maxAge)
 			if cutOff.After(status.tsAdded) {
 				flowMetrics.PurgerEvents.WithLabelValues("hostEndpoint", "max-age-reached").Inc()
 				delete(conns.endpoints, endpoint)
@@ -199,7 +199,6 @@ func purgeHostConnsNoLock(maxAge time.Duration, conns *hostConnections, store En
 		}
 		if maxAge > 0 {
 			// finally, remove all that didn't get any update from collector for a given time
-			cutOff := timestamp.Now().Add(-maxAge)
 			if cutOff.After(status.tsAdded) {
 				flowMetrics.PurgerEvents.WithLabelValues("hostConnection", "max-age-reached").Inc()
 				delete(conns.connections, conn)
@@ -223,6 +222,7 @@ func purgeActiveEndpointsNoLock(maxAge time.Duration,
 	endpoints map[containerEndpoint]*containerEndpointIndicatorWithAge,
 	store EntityStore) int {
 	numPurged := 0
+	cutOff := timestamp.Now().Add(-maxAge)
 	for endpoint, age := range endpoints {
 		// Remove if the endpoint is not in the store (also not in history)
 		if len(store.LookupByEndpoint(endpoint.endpoint)) == 0 {
@@ -241,7 +241,6 @@ func purgeActiveEndpointsNoLock(maxAge time.Duration,
 		}
 		if maxAge > 0 {
 			// finally, remove all that didn't get any update from collector for a given time
-			cutOff := timestamp.Now().Add(-maxAge)
 			if cutOff.After(age.lastUpdate) {
 				flowMetrics.PurgerEvents.WithLabelValues("activeEndpoint", "max-age-reached").Inc()
 				delete(endpoints, endpoint)
@@ -265,6 +264,7 @@ func purgeActiveConnectionsNoLock(maxAge time.Duration,
 	conns map[connection]*networkConnIndicatorWithAge,
 	store EntityStore) int {
 	numPurged := 0
+	cutOff := timestamp.Now().Add(-maxAge)
 	for conn, age := range conns {
 		// Remove if the related container is not found (but keep historical)
 		_, found, _ := store.LookupByContainerID(conn.containerID)
@@ -276,7 +276,6 @@ func purgeActiveConnectionsNoLock(maxAge time.Duration,
 		}
 		if maxAge > 0 {
 			// finally, remove all that didn't get any update from collector for a given time
-			cutOff := timestamp.Now().Add(-maxAge)
 			if cutOff.After(age.lastUpdate) {
 				flowMetrics.PurgerEvents.WithLabelValues("activeConnection", "max-age-reached").Inc()
 				delete(conns, conn)
