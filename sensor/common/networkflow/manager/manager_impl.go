@@ -379,7 +379,7 @@ func (m *networkFlowManager) Start() error {
 	go m.publicIPs.Run(m.stopper.LowLevel().GetStopRequestSignal(), m.clusterEntities)
 	if m.purger != nil {
 		if err := m.purger.Start(); err != nil {
-			return errors.Wrap(err, "unable to start network flow purger")
+			return errors.Wrap(err, "unable to run network flow purger")
 		}
 	}
 	return nil
@@ -403,12 +403,17 @@ func (m *networkFlowManager) Capabilities() []centralsensor.SensorCapability {
 
 func (m *networkFlowManager) Notify(e common.SensorComponentEvent) {
 	log.Info(common.LogSensorComponentEvent(e, "NetworkFlowManager"))
+	// Ensure that the sub-components are notified after this manager processes the notification.
+	defer func() {
+		if m.purger != nil {
+			m.purger.Notify(e)
+		}
+	}()
 	switch e {
 	case common.SensorComponentEventResourceSyncFinished:
 		if features.SensorCapturesIntermediateEvents.Enabled() {
 			if m.initialSync.CompareAndSwap(false, true) {
 				m.enricherTicker.Reset(enricherCycle)
-
 			}
 			return
 		}
@@ -422,9 +427,6 @@ func (m *networkFlowManager) Notify(e common.SensorComponentEvent) {
 		}
 		m.centralReady.Reset()
 		m.enricherTicker.Stop()
-	}
-	if m.purger != nil {
-		m.purger.Notify(e)
 	}
 }
 

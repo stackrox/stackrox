@@ -21,6 +21,23 @@ type NetworkFlowPurgerTestSuite struct {
 	suite.Suite
 }
 
+func (s *NetworkFlowPurgerTestSuite) TestPurgerStartWithTicker() {
+	mockCtrl := gomock.NewController(s.T())
+	enrichTickerC := make(chan time.Time)
+	defer close(enrichTickerC)
+	defer mockCtrl.Finish()
+	s.T().Setenv(env.EnrichmentPurgerTickerCycle.EnvVar(), "1s")
+	s.Equal(time.Second, nonZeroPurgerCycle())
+
+	m, mockEntityStore, _, _ := createManager(mockCtrl, enrichTickerC)
+	purger := NewNetworkFlowPurger(mockEntityStore, time.Hour, m)
+	s.NoError(purger.Start())
+	// Enable the ticker after going online - send the same signal that activates the manager
+	purger.Notify(common.SensorComponentEventResourceSyncFinished)
+	// purgingDone should be signaled even if the purger does nothing
+	s.Eventually(purger.purgingDone.IsDone, 5*time.Second, 100*time.Millisecond)
+}
+
 func (s *NetworkFlowPurgerTestSuite) TestDisabledPurger() {
 	purgerTickerC := make(chan time.Time)
 	defer close(purgerTickerC)
@@ -115,7 +132,7 @@ func (s *NetworkFlowPurgerTestSuite) TestPurgerWithManager() {
 			s.Require().NoError(purger.Start())
 			// Cycle through online-offline modes
 			purger.Notify(common.SensorComponentEventOfflineMode)
-			purger.Notify(common.SensorComponentEventCentralReachable)
+			purger.Notify(common.SensorComponentEventResourceSyncFinished)
 
 			purgerTickerC <- time.Now()
 			// wait until purger is done

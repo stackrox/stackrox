@@ -14,16 +14,9 @@ import (
 	flowMetrics "github.com/stackrox/rox/sensor/common/networkflow/metrics"
 )
 
-var (
-	// How often purger should run. The Purger removes old endpoints from activeEndpoints slice.
-	// This is important for cases when Collector or the orchestrator never reports a given endpoint
-	// as deleted, because there is no other mechanism that would remove an endpoint from memory.
-	purgerCycleSetting = env.EnrichmentPurgerTickerCycle.DurationSetting()
-)
-
 type PurgerOption func(purger *NetworkFlowPurger)
 
-// WithPurgerTicker overrides the default enrichment ticker
+// WithPurgerTicker overrides the default enrichment ticker - use only for testing!
 func WithPurgerTicker(ticker <-chan time.Time) PurgerOption {
 	return func(purger *NetworkFlowPurger) {
 		if ticker != nil {
@@ -76,11 +69,12 @@ func (p *NetworkFlowPurger) Start() error {
 	}
 	// Allow starting the purger without a manager. This is done to prevent blocking of the entire component when
 	// `purgerTickerC` receives a message
-	go p.start()
+	go p.run()
 	return err
 }
 
 func (p *NetworkFlowPurger) Stop(_ error) {
+	p.purgerTicker.Stop()
 	if !p.stopper.Client().Stopped().IsDone() {
 		defer func() {
 			_ = p.stopper.Client().Stopped().Wait()
@@ -91,6 +85,10 @@ func (p *NetworkFlowPurger) Stop(_ error) {
 
 // nonZeroPurgerCycle delivers a non-zero duration to be used in timers (they panic when set with 0 duration)
 func nonZeroPurgerCycle() time.Duration {
+	// How often purger should run. The Purger removes old endpoints from activeEndpoints slice.
+	// This is important for cases when Collector or the orchestrator never reports a given endpoint
+	// as deleted, because there is no other mechanism that would remove an endpoint from memory.
+	purgerCycleSetting := env.EnrichmentPurgerTickerCycle.DurationSetting()
 	if purgerCycleSetting > 0 {
 		return purgerCycleSetting
 	}
@@ -107,7 +105,9 @@ func (p *NetworkFlowPurger) Notify(e common.SensorComponentEvent) {
 	// Purger could start earlier than this, but we stick to the `SensorComponentEventResourceSyncFinished` as it also
 	// enables the networkFlowManager.
 	case common.SensorComponentEventResourceSyncFinished:
-		p.purgerTicker.Reset(nonZeroPurgerCycle())
+		d := nonZeroPurgerCycle()
+		p.purgerTicker.Reset(d)
+		log.Debugf("NetworkFlowPurger will execute in %s", d.String())
 	case common.SensorComponentEventOfflineMode:
 		if !features.SensorCapturesIntermediateEvents.Enabled() {
 			p.purgerTicker.Stop()
@@ -115,7 +115,7 @@ func (p *NetworkFlowPurger) Notify(e common.SensorComponentEvent) {
 	}
 }
 
-func (p *NetworkFlowPurger) start() {
+func (p *NetworkFlowPurger) run() {
 	defer p.stopper.Flow().ReportStopped()
 	for {
 		select {
