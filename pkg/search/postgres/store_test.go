@@ -265,19 +265,6 @@ func TestWalkByQuery(t *testing.T) {
 	protoassert.ElementsMatch(t, expectedObjects, walkedObjects)
 }
 
-func TestGetAll(t *testing.T) {
-	testDB := pgtest.ForT(t)
-	store := newStore(testDB)
-	require.NotNil(t, store)
-
-	testObjects := sampleTestSingleKeyStructArray("GetAll")
-	assert.NoError(t, store.UpsertMany(ctx, testObjects))
-
-	fetchedObjects, err := store.GetAll(ctx)
-	assert.NoError(t, err)
-	protoassert.ElementsMatch(t, fetchedObjects, testObjects)
-}
-
 func TestGetIDs(t *testing.T) {
 	testDB := pgtest.ForT(t)
 	store := newStore(testDB)

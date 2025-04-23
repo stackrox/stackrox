@@ -10,6 +10,7 @@ runs:
     - name: Recover docker image cache space
       run: |
         df --si /
+        printf 'Docker prune: '
         docker system prune --force --all
         df --si /
       shell: bash
@@ -54,9 +55,8 @@ runs:
         shell: bash
         run: >
           source scripts/ci/lib.sh;
-          create_job_record "${{ github.job }}" ;
+          create_job_record "${{ github.job }}" "gha";
         post: >
           source scripts/ci/lib.sh;
-          export METRICS_JOB_ID=$GITHUB_RUN_ID;
           update_job_record outcome "${{ job.status }}" stopped_at "CURRENT_TIMESTAMP()";
           df --si /;

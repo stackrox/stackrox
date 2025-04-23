@@ -18,7 +18,7 @@ type Store interface {
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 	Get(ctx context.Context, id string) (*storage.Policy, bool, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.Policy, []int, error)
-	GetAll(ctx context.Context) ([]*storage.Policy, error)
+	Walk(ctx context.Context, fn func(obj *storage.Policy) error) error
 	GetIDs(ctx context.Context) ([]string, error)
 
 	Upsert(ctx context.Context, obj *storage.Policy) error

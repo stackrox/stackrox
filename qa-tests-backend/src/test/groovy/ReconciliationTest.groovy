@@ -118,7 +118,7 @@ class ReconciliationTest extends BaseSpecification {
 
             // Wait is builtin
             secretID = orchestrator.createSecret("testing123", ns)
-            SecretService.waitForSecret(secretID, 10)
+            SecretService.waitForSecret(secretID)
 
             busyboxDeployment = new Deployment()
                     .setNamespace(ns)

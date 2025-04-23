@@ -12,7 +12,6 @@ import (
 	imagesView "github.com/stackrox/rox/central/views/images"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/cve"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
@@ -38,18 +37,6 @@ const (
 )
 
 var (
-	cveIDMap = map[string]string{
-		cve111: cve.IDV2("cve-2018-1", componentIDMap[comp11], "0"),
-		cve121: cve.IDV2("cve-2018-1", componentIDMap[comp21], "0"),
-		cve231: cve.IDV2("cve-2019-1", componentIDMap[comp31], "0"),
-		cve331: cve.IDV2("cve-2019-2", componentIDMap[comp31], "1"),
-		cve112: cve.IDV2("cve-2018-1", componentIDMap[comp12], "0"),
-		cve232: cve.IDV2("cve-2019-1", componentIDMap[comp32], "0"),
-		cve332: cve.IDV2("cve-2019-2", componentIDMap[comp32], "1"),
-		cve442: cve.IDV2("cve-2017-1", componentIDMap[comp42], "0"),
-		cve542: cve.IDV2("cve-2017-2", componentIDMap[comp42], "1"),
-	}
-
 	distinctCVEs = []string{"cve-2018-1", "cve-2019-1", "cve-2019-2", "cve-2017-1", "cve-2017-2"}
 )
 
@@ -77,6 +64,9 @@ type GraphQLImageVulnerabilityV2TestSuite struct {
 	ctx      context.Context
 	testDB   *pgtest.TestPostgres
 	resolver *Resolver
+
+	cveIDMap       map[string]string
+	componentIDMap map[string]string
 }
 
 func (s *GraphQLImageVulnerabilityV2TestSuite) SetupSuite() {
@@ -87,12 +77,14 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) SetupSuite() {
 	s.ctx = loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
 	mockCtrl := gomock.NewController(s.T())
 	s.testDB = pgtest.ForT(s.T())
+	vulnReqDatastore, err := TestVulnReqDatastore(s.T(), s.testDB)
+	s.Require().NoError(err)
 	resolver, _ := SetupTestResolver(s.T(),
 		imagesView.NewImageView(s.testDB.DB),
 		CreateTestImageV2Datastore(s.T(), s.testDB, mockCtrl),
 		CreateTestImageComponentV2Datastore(s.T(), s.testDB, mockCtrl),
 		CreateTestImageCVEV2Datastore(s.T(), s.testDB),
-		TestVulnReqDatastore(s.T(), s.testDB),
+		vulnReqDatastore,
 		imagecveflat.NewCVEFlatView(s.testDB.DB),
 	)
 	s.resolver = resolver
@@ -129,6 +121,9 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) SetupSuite() {
 	} {
 		s.NoError(s.resolver.vulnReqStore.AddRequest(s.ctx, vulnReq))
 	}
+
+	s.componentIDMap = s.getComponentIDMap()
+	s.cveIDMap = s.getIDMap()
 }
 
 func (s *GraphQLImageVulnerabilityV2TestSuite) TestUnauthorizedImageVulnerabilityEndpoint() {
@@ -232,23 +227,36 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilitiesNonFixabl
 	s.Equal(expected, count)
 }
 
+func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageDiscoveredAt() {
+	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
+
+	vulns, err := s.resolver.ImageVulnerabilities(ctx, PaginatedQuery{})
+	s.NoError(err)
+
+	for _, vuln := range vulns {
+		discovered, err := vuln.DiscoveredAtImage(ctx, RawQuery{})
+		s.NoError(err)
+		s.NotNil(discovered)
+	}
+}
+
 func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilitiesFixedByVersion() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
 	scopedCtx := scoped.Context(ctx, scoped.Scope{
 		Level: v1.SearchCategory_IMAGE_COMPONENTS_V2,
-		ID:    componentIDMap[comp11],
+		IDs:   []string{s.componentIDMap[comp11]},
 	})
-	vuln := s.getImageVulnerabilityResolver(scopedCtx, cveIDMap[cve111])
+	vuln := s.getImageVulnerabilityResolver(scopedCtx, s.cveIDMap[cve111])
 	fixedBy, err := vuln.FixedByVersion(ctx)
 	s.NoError(err)
 	s.Equal("1.1", fixedBy)
 
 	scopedCtx = scoped.Context(ctx, scoped.Scope{
 		Level: v1.SearchCategory_IMAGE_COMPONENTS_V2,
-		ID:    componentIDMap[comp21],
+		IDs:   []string{s.componentIDMap[comp21]},
 	})
-	vuln = s.getImageVulnerabilityResolver(scopedCtx, cveIDMap[cve121])
+	vuln = s.getImageVulnerabilityResolver(scopedCtx, s.cveIDMap[cve121])
 
 	fixedBy, err = vuln.FixedByVersion(ctx)
 	s.NoError(err)
@@ -256,9 +264,9 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilitiesFixedByVe
 
 	scopedCtx = scoped.Context(ctx, scoped.Scope{
 		Level: v1.SearchCategory_IMAGE_COMPONENTS_V2,
-		ID:    componentIDMap[comp42],
+		IDs:   []string{s.componentIDMap[comp42]},
 	})
-	vuln = s.getImageVulnerabilityResolver(scopedCtx, cveIDMap[cve442])
+	vuln = s.getImageVulnerabilityResolver(scopedCtx, s.cveIDMap[cve442])
 
 	fixedBy, err = vuln.FixedByVersion(ctx)
 	s.NoError(err)
@@ -318,7 +326,7 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityMiss() {
 func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityHit() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
-	vulnID := graphql.ID(cveIDMap[cve111])
+	vulnID := graphql.ID(s.cveIDMap[cve111])
 
 	vuln, err := s.resolver.ImageVulnerability(ctx, IDQuery{ID: &vulnID})
 	s.NoError(err)
@@ -337,7 +345,7 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestTopImageVulnerability() {
 
 	image := s.getImageResolver(ctx, "sha1")
 
-	expected := graphql.ID(cveIDMap[cve231])
+	expected := graphql.ID(s.cveIDMap[cve231])
 	topVuln, err := image.TopImageVulnerability(ctx, RawQuery{})
 	s.NoError(err)
 	s.Equal(expected, topVuln.Id(ctx))
@@ -346,7 +354,7 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestTopImageVulnerability() {
 func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityImages() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
-	vuln := s.getImageVulnerabilityResolver(ctx, cveIDMap[cve111])
+	vuln := s.getImageVulnerabilityResolver(ctx, s.cveIDMap[cve111])
 
 	images, err := vuln.Images(ctx, PaginatedQuery{})
 	s.NoError(err)
@@ -358,7 +366,7 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityImages() {
 	s.NoError(err)
 	s.Equal(int32(len(images)), count)
 
-	vuln = s.getImageVulnerabilityResolver(ctx, cveIDMap[cve442])
+	vuln = s.getImageVulnerabilityResolver(ctx, s.cveIDMap[cve442])
 
 	images, err = vuln.Images(ctx, PaginatedQuery{})
 	s.NoError(err)
@@ -374,25 +382,25 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityImages() {
 func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityImageComponents() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
-	vuln := s.getImageVulnerabilityResolver(ctx, cveIDMap[cve111])
+	vuln := s.getImageVulnerabilityResolver(ctx, s.cveIDMap[cve111])
 
 	comps, err := vuln.ImageComponents(ctx, PaginatedQuery{})
 	s.NoError(err)
 	s.Equal(1, len(comps))
 	idList := getIDList(ctx, comps)
-	s.ElementsMatch([]string{componentIDMap[comp11]}, idList)
+	s.ElementsMatch([]string{s.componentIDMap[comp11]}, idList)
 
 	count, err := vuln.ImageComponentCount(ctx, RawQuery{})
 	s.NoError(err)
 	s.Equal(int32(len(comps)), count)
 
-	vuln = s.getImageVulnerabilityResolver(ctx, cveIDMap[cve442])
+	vuln = s.getImageVulnerabilityResolver(ctx, s.cveIDMap[cve442])
 
 	comps, err = vuln.ImageComponents(ctx, PaginatedQuery{})
 	s.NoError(err)
 	s.Equal(1, len(comps))
 	idList = getIDList(ctx, comps)
-	s.ElementsMatch([]string{componentIDMap[comp42]}, idList)
+	s.ElementsMatch([]string{s.componentIDMap[comp42]}, idList)
 
 	count, err = vuln.ImageComponentCount(ctx, RawQuery{})
 	s.NoError(err)
@@ -533,7 +541,7 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityExceptionCo
 
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 	ctx = scoped.Context(ctx, scoped.Scope{
-		ID:    "sha1",
+		IDs:   []string{"sha1"},
 		Level: v1.SearchCategory_IMAGES,
 	})
 	args := struct {
@@ -569,7 +577,7 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityExceptionCo
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 	status := []*string{pointers.String(storage.RequestStatus_PENDING.String())}
 	ctx = scoped.Context(ctx, scoped.Scope{
-		ID:    "sha1",
+		IDs:   []string{"sha1"},
 		Level: v1.SearchCategory_IMAGES,
 	})
 	args := struct {
@@ -607,7 +615,7 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityExceptionCo
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 	status := []*string{pointers.String(storage.RequestStatus_APPROVED.String())}
 	ctx = scoped.Context(ctx, scoped.Scope{
-		ID:    "sha1",
+		IDs:   []string{"sha1"},
 		Level: v1.SearchCategory_IMAGES,
 	})
 	args := struct {
@@ -643,7 +651,7 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityExceptionCo
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 	status := []*string{pointers.String(storage.RequestStatus_APPROVED_PENDING_UPDATE.String())}
 	ctx = scoped.Context(ctx, scoped.Scope{
-		ID:    "sha2",
+		IDs:   []string{"sha2"},
 		Level: v1.SearchCategory_IMAGES,
 	})
 	args := struct {
@@ -691,7 +699,7 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityExceptionCo
 	s.Equal(int32(1), count)
 
 	ctx = scoped.Context(ctx, scoped.Scope{
-		ID:    "sha1",
+		IDs:   []string{"sha1"},
 		Level: v1.SearchCategory_IMAGES,
 	})
 
@@ -702,7 +710,7 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityExceptionCo
 
 	ctx = SetAuthorizerOverride(s.ctx, allow.Anonymous())
 	ctx = scoped.Context(ctx, scoped.Scope{
-		ID:    "sha3",
+		IDs:   []string{"sha3"},
 		Level: v1.SearchCategory_IMAGES,
 	})
 
@@ -738,4 +746,60 @@ func getCVEList(ctx context.Context, vulns []ImageVulnerabilityResolver) []strin
 		cveList = append(cveList, vuln.CVE(ctx))
 	}
 	return cveList
+}
+
+func (s *GraphQLImageVulnerabilityV2TestSuite) getIDMap() map[string]string {
+	return map[string]string{
+		cve111: getTestCVEID(s.T(), &storage.EmbeddedVulnerability{Cve: "cve-2018-1",
+			SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
+				FixedBy: "1.1",
+			},
+			Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
+		}, s.componentIDMap[comp11]),
+		cve121: getTestCVEID(s.T(), &storage.EmbeddedVulnerability{Cve: "cve-2018-1",
+			SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
+				FixedBy: "1.5",
+			},
+			Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
+		}, s.componentIDMap[comp21]),
+		cve231: getTestCVEID(s.T(), &storage.EmbeddedVulnerability{Cve: "cve-2019-1",
+			Cvss:     4,
+			Severity: storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
+		}, s.componentIDMap[comp31]),
+		cve331: getTestCVEID(s.T(), &storage.EmbeddedVulnerability{Cve: "cve-2019-2",
+			Cvss:     3,
+			Severity: storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
+		}, s.componentIDMap[comp31]),
+		cve112: getTestCVEID(s.T(), &storage.EmbeddedVulnerability{Cve: "cve-2018-1",
+			SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
+				FixedBy: "1.1",
+			},
+			Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
+		}, s.componentIDMap[comp12]),
+		cve232: getTestCVEID(s.T(), &storage.EmbeddedVulnerability{Cve: "cve-2019-1",
+			Severity: storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
+			Cvss:     4,
+		}, s.componentIDMap[comp32]),
+		cve332: getTestCVEID(s.T(), &storage.EmbeddedVulnerability{Cve: "cve-2019-2",
+			Severity: storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
+			Cvss:     3,
+		}, s.componentIDMap[comp32]),
+		cve442: getTestCVEID(s.T(), &storage.EmbeddedVulnerability{Cve: "cve-2017-1",
+			Severity: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
+		}, s.componentIDMap[comp42]),
+		cve542: getTestCVEID(s.T(), &storage.EmbeddedVulnerability{Cve: "cve-2017-2",
+			Severity: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
+		}, s.componentIDMap[comp42]),
+	}
+}
+
+func (s *GraphQLImageVulnerabilityV2TestSuite) getComponentIDMap() map[string]string {
+	return map[string]string{
+		comp11: getTestComponentID(s.T(), testImages()[0].GetScan().GetComponents()[0], "sha1"),
+		comp12: getTestComponentID(s.T(), testImages()[1].GetScan().GetComponents()[0], "sha2"),
+		comp21: getTestComponentID(s.T(), testImages()[0].GetScan().GetComponents()[1], "sha1"),
+		comp31: getTestComponentID(s.T(), testImages()[0].GetScan().GetComponents()[2], "sha1"),
+		comp32: getTestComponentID(s.T(), testImages()[1].GetScan().GetComponents()[1], "sha2"),
+		comp42: getTestComponentID(s.T(), testImages()[1].GetScan().GetComponents()[2], "sha2"),
+	}
 }

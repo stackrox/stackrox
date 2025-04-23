@@ -99,6 +99,9 @@ func (v *imageCVECoreViewImpl) CountBySeverity(ctx context.Context, q *v1.Query)
 
 		LowSeverityCount:        results[0].LowSeverityCount,
 		FixableLowSeverityCount: results[0].FixableLowSeverityCount,
+
+		UnknownSeverityCount:        results[0].UnknownSeverityCount,
+		FixableUnknownSeverityCount: results[0].FixableUnknownSeverityCount,
 	}, nil
 }
 

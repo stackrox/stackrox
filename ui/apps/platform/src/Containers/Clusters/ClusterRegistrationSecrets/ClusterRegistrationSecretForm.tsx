@@ -1,4 +1,4 @@
-import React, { ReactElement, useState } from 'react';
+import React, { ReactElement } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     ActionGroup,
@@ -15,7 +15,8 @@ import * as yup from 'yup';
 
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
 import useAnalytics, { DOWNLOAD_CLUSTER_REGISTRATION_SECRET } from 'hooks/useAnalytics';
-import { generateClusterRegistrationSecret } from 'services/ClustersService'; // ClusterRegistrationSecret
+import useRestMutation from 'hooks/useRestMutation';
+import { generateClusterRegistrationSecret } from 'services/ClustersService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import ClusterRegistrationSecretsHeader from './ClusterRegistrationSecretsHeader';
@@ -47,7 +48,17 @@ const validationSchema: yup.ObjectSchema<ClusterRegistrationSecretFormValues> = 
 function ClusterRegistrationSecretForm(): ReactElement {
     const { analyticsTrack } = useAnalytics();
     const navigate = useNavigate();
-    const [errorMessage, setErrorMessage] = useState('');
+
+    const { mutate, error } = useRestMutation(
+        (name: string) => generateClusterRegistrationSecret({ name }),
+        {
+            onSuccess: (response) => {
+                downloadClusterRegistrationSecret(values.name, response);
+                goBack();
+            },
+            onSettled: () => setSubmitting(false),
+        }
+    );
     const {
         errors,
         handleBlur,
@@ -57,32 +68,20 @@ function ClusterRegistrationSecretForm(): ReactElement {
         submitForm,
         touched,
         values,
+        setSubmitting,
     } = useFormik({
         initialValues,
         onSubmit: (values, { setSubmitting }) => {
             setSubmitting(true);
-            const { name } = values;
-            generateClusterRegistrationSecret({ name })
-                .then(({ response }) => {
-                    setErrorMessage('');
-                    downloadClusterRegistrationSecret(name, response); // TODO try catch?
-                    setSubmitting(false);
-                    goBack();
-                })
-                .catch((error) => {
-                    setErrorMessage(getAxiosErrorMessage(error));
-                    setSubmitting(false);
-                });
+            mutate(values.name);
         },
         validateOnMount: true, // disable Next when Name is empty
         validationSchema,
     });
 
     function goBack() {
-        navigate(-1); // to InputBundlesTable or NoClustersPage
+        navigate(-1); // to ClusterRegistrationSecrets Table
     }
-
-    // return setWhatever solves problem reported by typescript-eslint no-floating-promises
 
     function onChangeTextInput(value, event) {
         return setFieldValue(event.target.id, value);
@@ -120,14 +119,14 @@ function ClusterRegistrationSecretForm(): ReactElement {
                         </p>
                         <p>Store the YAML file securely because it contains secrets.</p>
                     </Alert>
-                    {errorMessage && (
+                    {error !== undefined && (
                         <Alert
                             variant="danger"
                             isInline
                             title="Unable to create or download cluster registration secret"
                             component="p"
                         >
-                            {errorMessage}
+                            {getAxiosErrorMessage(error)}
                         </Alert>
                     )}
                     <ActionGroup>

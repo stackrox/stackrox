@@ -81,6 +81,11 @@ spec:
           - name: grafana-dashboards-volume
             mountPath: /etc/grafana/provisioning/dashboards
             readOnly: true
+          - name: grafana-plugins-volume
+            mountPath: /etc/grafana/provisioning/plugins
+          - name: grafana-notifiers-volume
+            mountPath: /etc/grafana/provisioning/notifiers
+            readOnly: true
           - name: monitoring-ui-volume
             mountPath: /run/secrets/stackrox.io/monitoring/certs/
             readOnly: true
@@ -128,6 +133,12 @@ spec:
           name: grafana-dashboards
       - name: grafana-var-volume
         emptyDir: {}
+      - name: grafana-notifiers-volume
+        emptyDir: {}
+      - name: grafana-plugins-volume
+        configMap:
+          defaultMode: 420
+          name: grafana-plugins
       - name: prometheus-config-volume
         configMap:
           name: prometheus

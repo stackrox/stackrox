@@ -59,19 +59,19 @@ func (mr *MockregistryStoreMockRecorder) GetCentralRegistries(arg0 any) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCentralRegistries", reflect.TypeOf((*MockregistryStore)(nil).GetCentralRegistries), arg0)
 }
 
-// GetGlobalRegistry mocks base method.
-func (m *MockregistryStore) GetGlobalRegistry(arg0 *storage.ImageName) (types.ImageRegistry, error) {
+// GetGlobalRegistries mocks base method.
+func (m *MockregistryStore) GetGlobalRegistries(arg0 *storage.ImageName) ([]types.ImageRegistry, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetGlobalRegistry", arg0)
-	ret0, _ := ret[0].(types.ImageRegistry)
+	ret := m.ctrl.Call(m, "GetGlobalRegistries", arg0)
+	ret0, _ := ret[0].([]types.ImageRegistry)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetGlobalRegistry indicates an expected call of GetGlobalRegistry.
-func (mr *MockregistryStoreMockRecorder) GetGlobalRegistry(arg0 any) *gomock.Call {
+// GetGlobalRegistries indicates an expected call of GetGlobalRegistries.
+func (mr *MockregistryStoreMockRecorder) GetGlobalRegistries(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGlobalRegistry", reflect.TypeOf((*MockregistryStore)(nil).GetGlobalRegistry), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGlobalRegistries", reflect.TypeOf((*MockregistryStore)(nil).GetGlobalRegistries), arg0)
 }
 
 // GetPullSecretRegistries mocks base method.

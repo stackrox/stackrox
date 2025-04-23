@@ -55,8 +55,8 @@ run-name: >-
     )
   }}
 
-# Ensure that only a single release automation workflow can run at a time.
-concurrency: Release automation
+# Ensure that only a single automation workflow can run at a time for each release.
+concurrency: Release automation ${{ inputs.version }}
 
 jobs:
   properties:
@@ -299,10 +299,30 @@ jobs:
                   text: |
                     :arrow_right: Once all checks pass and you're ready for release, run the <${{ github.server_url }}/${{ github.repository }}/actions/workflows/finish-release.yml|Finish Release> workflow and delete the `${{ needs.variables.outputs.next-milestone }}` milestone to avoid confusion.
 
+  trim-cluster-names:
+    runs-on: ubuntu-latest
+    outputs:
+      cluster-with-fake-load-name-cleaned: ${{ steps.cluster-names.outputs.cluster-with-fake-load-name-cleaned }}
+      cluster-with-real-load-name-cleaned: ${{ steps.cluster-names.outputs.cluster-with-real-load-name-cleaned }}
+    env:
+      CLUSTER_WITH_FAKE_LOAD_NAME: lfl-${{ github.event.inputs.version }}
+      CLUSTER_WITH_REAL_LOAD_NAME: lrl-${{ github.event.inputs.version }}
+    steps:
+      - name: Trim and clean cluster names
+        id: cluster-names
+        run: |
+          # Cluster names are cropped to infra's max length and dots replaced with dashes.
+          # Latter is to avoid informing release engineers of incorrect cluster names.
+          CLEANED_CLUSTER_WITH_FAKE_LOAD_NAME="$(echo "${CLUSTER_WITH_FAKE_LOAD_NAME:0:28}" | tr '.' '-')"
+          echo "cluster-with-fake-load-name-cleaned=${CLEANED_CLUSTER_WITH_FAKE_LOAD_NAME}" >> "${GITHUB_OUTPUT}"
+
+          CLEANED_CLUSTER_WITH_REAL_LOAD_NAME="$(echo "${CLUSTER_WITH_REAL_LOAD_NAME:0:28}" | tr '.' '-')"
+          echo "cluster-with-real-load-name-cleaned=${CLEANED_CLUSTER_WITH_REAL_LOAD_NAME}" >> "${GITHUB_OUTPUT}"
+
   clusters:
     name: Setup demo clusters
     secrets: inherit
-    needs: [variables, cut-rc]
+    needs: [variables, cut-rc, trim-cluster-names]
     uses: stackrox/actions/.github/workflows/create-demo-clusters.yml@v1
     if: >- # Skip if no clusters are going to be created. Checking unequal with "false" because closed milestones have unset input values.
       github.event.inputs.create-k8s-cluster != 'false' ||
@@ -318,5 +338,5 @@ jobs:
       workflow-ref: v1
       kube-burner-config-ref: ${{needs.variables.outputs.milestone}}
       kube-burner-config-repo: stackrox
-      cluster-with-fake-load-name: long-fake-load-${{ needs.variables.outputs.milestone }}
-      cluster-with-real-load-name: long-real-load-${{ needs.variables.outputs.milestone }}
+      cluster-with-fake-load-name: ${{ needs.trim-cluster-names.outputs.cluster-with-fake-load-name-cleaned }}
+      cluster-with-real-load-name: ${{ needs.trim-cluster-names.outputs.cluster-with-real-load-name-cleaned }}

@@ -354,7 +354,7 @@ func (evr *EmbeddedVulnerabilityResolver) getEnvImpactComponentsForNodes(ctx con
 
 func (evr *EmbeddedVulnerabilityResolver) scopeContext(ctx context.Context) context.Context {
 	return scoped.Context(ctx, scoped.Scope{
-		ID:    evr.data.GetCve(),
+		IDs:   []string{evr.data.GetCve()},
 		Level: v1.SearchCategory_VULNERABILITIES,
 	})
 }

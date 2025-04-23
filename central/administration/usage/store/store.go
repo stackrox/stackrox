@@ -12,5 +12,5 @@ import (
 //go:generate mockgen-wrapper
 type Store interface {
 	Upsert(ctx context.Context, obj *storage.SecuredUnits) error
-	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.SecuredUnits, error)
+	WalkByQuery(ctx context.Context, query *v1.Query, fn func(obj *storage.SecuredUnits) error) error
 }

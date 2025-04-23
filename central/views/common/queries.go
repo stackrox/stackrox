@@ -105,6 +105,27 @@ func WithCountBySeverityAndFixabilityQuery(q *v1.Query, countOn search.FieldLabe
 					).
 					AddBools(search.Fixable, true).ProtoQuery(),
 			).Proto(),
+		search.NewQuerySelect(countOn).
+			Distinct().
+			AggrFunc(aggregatefunc.Count).
+			Filter(search.UnknownSeverityCount.Alias(),
+				search.NewQueryBuilder().
+					AddExactMatches(
+						search.Severity,
+						storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY.String(),
+					).ProtoQuery(),
+			).Proto(),
+		search.NewQuerySelect(countOn).
+			Distinct().
+			AggrFunc(aggregatefunc.Count).
+			Filter(search.FixableUnknownSeverityCount.Alias(),
+				search.NewQueryBuilder().
+					AddExactMatches(
+						search.Severity,
+						storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY.String(),
+					).
+					AddBools(search.Fixable, true).ProtoQuery(),
+			).Proto(),
 	)
 	return cloned
 }
@@ -120,6 +141,8 @@ func IsSortBySeverityCounts(q *v1.Query) bool {
 		search.FixableModerateSeverityCount.String(),
 		search.LowSeverityCount.String(),
 		search.FixableLowSeverityCount.String(),
+		search.UnknownSeverityCount.String(),
+		search.FixableUnknownSeverityCount.String(),
 	}
 
 	// Check to see if a severity sort is in the query

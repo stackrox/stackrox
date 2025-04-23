@@ -66,7 +66,7 @@ const routeMatcherMapForAuthenticatedRoutes = {
  * @param {Record<string, RouteMatcherOptions>} [routeMatcherMap]
  * @param {Record<string, RouteHandler>} [staticResponseMap]
  * @param {WaitOptions} [waitOptions]
- * @returns {{ request: Record<string, unknown>, response: Record<string, unknown>}[]}
+ * @returns {Cypress.Chainable<Interception[] | Interception}
  */
 export function visit(pageUrl, routeMatcherMap, staticResponseMap, waitOptions) {
     interceptRequests(routeMatcherMapForAuthenticatedRoutes);

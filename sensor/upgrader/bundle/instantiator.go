@@ -2,7 +2,6 @@ package bundle
 
 import (
 	"bufio"
-	"bytes"
 	"io"
 	"strings"
 
@@ -89,14 +88,9 @@ func (i *instantiator) loadObjectsFromYAML(openFn func() (io.ReadCloser, error))
 	}
 	defer utils.IgnoreError(reader.Close)
 
-	contents, err := io.ReadAll(reader)
-	if err != nil {
-		return nil, err
-	}
-
 	var objects []*unstructured.Unstructured
 
-	yamlReader := yaml.NewYAMLReader(bufio.NewReader(bytes.NewBuffer(contents)))
+	yamlReader := yaml.NewYAMLReader(bufio.NewReader(reader))
 	yamlDoc, err := yamlReader.Read()
 	for ; err == nil; yamlDoc, err = yamlReader.Read() {
 		// First, test if the document is empty. We cannot simply trim spaces and check for an empty slice,

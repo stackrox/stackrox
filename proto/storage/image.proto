@@ -130,7 +130,7 @@ message EmbeddedImageScanComponent {
   oneof set_top_cvss {
     float top_cvss = 9;
   }
-  float risk_score = 10; // @gotags: search:"Component Risk Score,hidden"
+  float risk_score = 10; // @gotags: search:"Component Risk Score,hidden" hash:"ignore"
   // Component version that fixes all the fixable vulnerabilities in this component.
   string fixed_by = 11;
   message Executable {
@@ -194,6 +194,7 @@ message CosignSignature {
   bytes signature_payload = 2;
   bytes cert_pem = 3;
   bytes cert_chain_pem = 4;
+  bytes rekor_bundle = 5;
 }
 
 message V2Metadata {

@@ -69,7 +69,7 @@ func (s *searcherImplV2) SearchRawImages(ctx context.Context, q *v1.Query) ([]*s
 		return nil, err
 	}
 
-	images, _, err := s.storage.GetMany(ctx, search.ResultsToIDs(results))
+	images, err := s.storage.GetByIDs(ctx, search.ResultsToIDs(results))
 	if err != nil {
 		return nil, err
 	}

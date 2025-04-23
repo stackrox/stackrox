@@ -10,13 +10,12 @@ import (
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/views/imagecveflat"
 	imagesView "github.com/stackrox/rox/central/views/images"
-	"github.com/stackrox/rox/pkg/cve"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -30,17 +29,6 @@ const (
 	comp31 = "comp3image1"
 	comp32 = "comp3image2"
 	comp42 = "comp4image2"
-)
-
-var (
-	componentIDMap = map[string]string{
-		comp11: scancomponent.ComponentIDV2("comp1", "0.9", "", "sha1"),
-		comp12: scancomponent.ComponentIDV2("comp1", "0.9", "", "sha2"),
-		comp21: scancomponent.ComponentIDV2("comp2", "1.1", "", "sha1"),
-		comp31: scancomponent.ComponentIDV2("comp3", "1.0", "", "sha1"),
-		comp32: scancomponent.ComponentIDV2("comp3", "1.0", "", "sha2"),
-		comp42: scancomponent.ComponentIDV2("comp4", "1.0", "", "sha2"),
-	}
 )
 
 func TestGraphQLImageComponentV2Endpoints(t *testing.T) {
@@ -62,9 +50,10 @@ Remaining TODO tasks:
 type GraphQLImageComponentV2TestSuite struct {
 	suite.Suite
 
-	ctx      context.Context
-	testDB   *pgtest.TestPostgres
-	resolver *Resolver
+	ctx            context.Context
+	testDB         *pgtest.TestPostgres
+	resolver       *Resolver
+	componentIDMap map[string]string
 }
 
 func (s *GraphQLImageComponentV2TestSuite) SetupSuite() {
@@ -98,6 +87,8 @@ func (s *GraphQLImageComponentV2TestSuite) SetupSuite() {
 		err := s.resolver.ImageDataStore.UpsertImage(s.ctx, image)
 		s.NoError(err)
 	}
+
+	s.componentIDMap = s.getComponentIDMap()
 }
 
 func (s *GraphQLImageComponentV2TestSuite) TearDownSuite() {
@@ -124,12 +115,12 @@ func (s *GraphQLImageComponentV2TestSuite) TestImageComponents() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
 	expectedIDs := []string{
-		componentIDMap[comp11],
-		componentIDMap[comp12],
-		componentIDMap[comp21],
-		componentIDMap[comp31],
-		componentIDMap[comp32],
-		componentIDMap[comp42],
+		s.componentIDMap[comp11],
+		s.componentIDMap[comp12],
+		s.componentIDMap[comp21],
+		s.componentIDMap[comp31],
+		s.componentIDMap[comp32],
+		s.componentIDMap[comp42],
 	}
 	expectedCount := int32(len(expectedIDs))
 
@@ -168,18 +159,18 @@ func (s *GraphQLImageComponentV2TestSuite) TestImageComponentsScoped() {
 			"sha1",
 			"sha1",
 			[]string{
-				componentIDMap[comp11],
-				componentIDMap[comp21],
-				componentIDMap[comp31],
+				s.componentIDMap[comp11],
+				s.componentIDMap[comp21],
+				s.componentIDMap[comp31],
 			},
 		},
 		{
 			"sha2",
 			"sha2",
 			[]string{
-				componentIDMap[comp12],
-				componentIDMap[comp32],
-				componentIDMap[comp42],
+				s.componentIDMap[comp12],
+				s.componentIDMap[comp32],
+				s.componentIDMap[comp42],
 			},
 		},
 	}
@@ -218,14 +209,14 @@ func (s *GraphQLImageComponentV2TestSuite) TestImageComponentsScopeTree() {
 			"sha1",
 			map[string][]string{
 				"cve-2018-1": {
-					componentIDMap[comp11],
-					componentIDMap[comp21],
+					s.componentIDMap[comp11],
+					s.componentIDMap[comp21],
 				},
 				"cve-2019-1": {
-					componentIDMap[comp31],
+					s.componentIDMap[comp31],
 				},
 				"cve-2019-2": {
-					componentIDMap[comp31],
+					s.componentIDMap[comp31],
 				},
 			},
 		},
@@ -234,19 +225,19 @@ func (s *GraphQLImageComponentV2TestSuite) TestImageComponentsScopeTree() {
 			"sha2",
 			map[string][]string{
 				"cve-2018-1": {
-					componentIDMap[comp12],
+					s.componentIDMap[comp12],
 				},
 				"cve-2019-1": {
-					componentIDMap[comp32],
+					s.componentIDMap[comp32],
 				},
 				"cve-2019-2": {
-					componentIDMap[comp32],
+					s.componentIDMap[comp32],
 				},
 				"cve-2017-1": {
-					componentIDMap[comp42],
+					s.componentIDMap[comp42],
 				},
 				"cve-2017-2": {
-					componentIDMap[comp42],
+					s.componentIDMap[comp42],
 				},
 			},
 		},
@@ -292,7 +283,7 @@ func (s *GraphQLImageComponentV2TestSuite) TestImageComponentMiss() {
 func (s *GraphQLImageComponentV2TestSuite) TestImageComponentHit() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
-	compID := graphql.ID(componentIDMap[comp11])
+	compID := graphql.ID(s.componentIDMap[comp11])
 
 	comp, err := s.resolver.ImageComponent(ctx, IDQuery{ID: &compID})
 	assert.NoError(s.T(), err)
@@ -309,32 +300,32 @@ func (s *GraphQLImageComponentV2TestSuite) TestImageComponentImages() {
 	}{
 		{
 			"comp1image1",
-			componentIDMap[comp11],
+			s.componentIDMap[comp11],
 			[]string{"sha1"},
 		},
 		{
 			"comp1image2",
-			componentIDMap[comp12],
+			s.componentIDMap[comp12],
 			[]string{"sha2"},
 		},
 		{
 			"comp2image1",
-			componentIDMap[comp21],
+			s.componentIDMap[comp21],
 			[]string{"sha1"},
 		},
 		{
 			"comp3image1",
-			componentIDMap[comp31],
+			s.componentIDMap[comp31],
 			[]string{"sha1"},
 		},
 		{
 			"comp3image2",
-			componentIDMap[comp32],
+			s.componentIDMap[comp32],
 			[]string{"sha2"},
 		},
 		{
 			"comp4image2",
-			componentIDMap[comp42],
+			s.componentIDMap[comp42],
 			[]string{"sha2"},
 		},
 	}
@@ -367,9 +358,14 @@ func (s *GraphQLImageComponentV2TestSuite) TestImageComponentImageVulnerabilitie
 	}{
 		{
 			"comp1os1",
-			componentIDMap[comp11],
+			s.componentIDMap[comp11],
 			[]string{
-				cve.IDV2("cve-2018-1", componentIDMap[comp11], "0"),
+				getTestCVEID(s.T(), &storage.EmbeddedVulnerability{Cve: "cve-2018-1",
+					SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
+						FixedBy: "1.1",
+					},
+					Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
+				}, s.componentIDMap[comp11]),
 			},
 			&VulnerabilityCounterResolver{
 				all:       &VulnerabilityFixableCounterResolver{0, 1},
@@ -381,9 +377,14 @@ func (s *GraphQLImageComponentV2TestSuite) TestImageComponentImageVulnerabilitie
 		},
 		{
 			"comp2os1",
-			componentIDMap[comp21],
+			s.componentIDMap[comp21],
 			[]string{
-				cve.IDV2("cve-2018-1", componentIDMap[comp21], "0"),
+				getTestCVEID(s.T(), &storage.EmbeddedVulnerability{Cve: "cve-2018-1",
+					SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
+						FixedBy: "1.5",
+					},
+					Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
+				}, s.componentIDMap[comp21]),
 			},
 			&VulnerabilityCounterResolver{
 				all:       &VulnerabilityFixableCounterResolver{0, 1},
@@ -395,10 +396,16 @@ func (s *GraphQLImageComponentV2TestSuite) TestImageComponentImageVulnerabilitie
 		},
 		{
 			"comp3os1",
-			componentIDMap[comp31],
+			s.componentIDMap[comp31],
 			[]string{
-				cve.IDV2("cve-2019-1", componentIDMap[comp31], "0"),
-				cve.IDV2("cve-2019-2", componentIDMap[comp31], "1"),
+				getTestCVEID(s.T(), &storage.EmbeddedVulnerability{Cve: "cve-2019-1",
+					Cvss:     4,
+					Severity: storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
+				}, s.componentIDMap[comp31]),
+				getTestCVEID(s.T(), &storage.EmbeddedVulnerability{Cve: "cve-2019-2",
+					Cvss:     3,
+					Severity: storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
+				}, s.componentIDMap[comp31]),
 			},
 			&VulnerabilityCounterResolver{
 				all:       &VulnerabilityFixableCounterResolver{0, 0},
@@ -410,9 +417,14 @@ func (s *GraphQLImageComponentV2TestSuite) TestImageComponentImageVulnerabilitie
 		},
 		{
 			"comp1os2",
-			componentIDMap[comp12],
+			s.componentIDMap[comp12],
 			[]string{
-				cve.IDV2("cve-2018-1", componentIDMap[comp12], "0"),
+				getTestCVEID(s.T(), &storage.EmbeddedVulnerability{Cve: "cve-2018-1",
+					SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
+						FixedBy: "1.1",
+					},
+					Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
+				}, s.componentIDMap[comp12]),
 			},
 			&VulnerabilityCounterResolver{
 				all:       &VulnerabilityFixableCounterResolver{0, 1},
@@ -424,10 +436,16 @@ func (s *GraphQLImageComponentV2TestSuite) TestImageComponentImageVulnerabilitie
 		},
 		{
 			"comp3os2",
-			componentIDMap[comp32],
+			s.componentIDMap[comp32],
 			[]string{
-				cve.IDV2("cve-2019-1", componentIDMap[comp32], "0"),
-				cve.IDV2("cve-2019-2", componentIDMap[comp32], "1"),
+				getTestCVEID(s.T(), &storage.EmbeddedVulnerability{Cve: "cve-2019-1",
+					Cvss:     4,
+					Severity: storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
+				}, s.componentIDMap[comp32]),
+				getTestCVEID(s.T(), &storage.EmbeddedVulnerability{Cve: "cve-2019-2",
+					Cvss:     3,
+					Severity: storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
+				}, s.componentIDMap[comp32]),
 			},
 			&VulnerabilityCounterResolver{
 				all:       &VulnerabilityFixableCounterResolver{0, 0},
@@ -439,10 +457,16 @@ func (s *GraphQLImageComponentV2TestSuite) TestImageComponentImageVulnerabilitie
 		},
 		{
 			"comp4os2",
-			componentIDMap[comp42],
+			s.componentIDMap[comp42],
 			[]string{
-				cve.IDV2("cve-2017-1", componentIDMap[comp42], "0"),
-				cve.IDV2("cve-2017-2", componentIDMap[comp42], "1"),
+				getTestCVEID(s.T(), &storage.EmbeddedVulnerability{
+					Cve:      "cve-2017-1",
+					Severity: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
+				}, s.componentIDMap[comp42]),
+				getTestCVEID(s.T(), &storage.EmbeddedVulnerability{
+					Cve:      "cve-2017-2",
+					Severity: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
+				}, s.componentIDMap[comp42]),
 			},
 			&VulnerabilityCounterResolver{
 				all:       &VulnerabilityFixableCounterResolver{0, 0},
@@ -486,32 +510,32 @@ func (s *GraphQLImageComponentV2TestSuite) TestImageComponentDeployments() {
 	}{
 		{
 			"comp1os1",
-			componentIDMap[comp11],
+			s.componentIDMap[comp11],
 			[]string{fixtureconsts.Deployment1, fixtureconsts.Deployment2},
 		},
 		{
 			"comp2os1",
-			componentIDMap[comp21],
+			s.componentIDMap[comp21],
 			[]string{fixtureconsts.Deployment1, fixtureconsts.Deployment2},
 		},
 		{
 			"comp3os1",
-			componentIDMap[comp31],
+			s.componentIDMap[comp31],
 			[]string{fixtureconsts.Deployment1, fixtureconsts.Deployment2},
 		},
 		{
 			"comp1os2",
-			componentIDMap[comp12],
+			s.componentIDMap[comp12],
 			[]string{fixtureconsts.Deployment1, fixtureconsts.Deployment3},
 		},
 		{
 			"comp3os2",
-			componentIDMap[comp32],
+			s.componentIDMap[comp32],
 			[]string{fixtureconsts.Deployment1, fixtureconsts.Deployment3},
 		},
 		{
 			"comp4os2",
-			componentIDMap[comp42],
+			s.componentIDMap[comp42],
 			[]string{fixtureconsts.Deployment1, fixtureconsts.Deployment3},
 		},
 	}
@@ -536,9 +560,12 @@ func (s *GraphQLImageComponentV2TestSuite) TestImageComponentDeployments() {
 func (s *GraphQLImageComponentV2TestSuite) TestTopImageVulnerability() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
-	comp := s.getImageComponentResolver(ctx, componentIDMap[comp31])
+	comp := s.getImageComponentResolver(ctx, s.componentIDMap[comp31])
 
-	expectedID := graphql.ID(cve.IDV2("cve-2019-1", componentIDMap[comp31], "0"))
+	expectedID := graphql.ID(getTestCVEID(s.T(), &storage.EmbeddedVulnerability{Cve: "cve-2019-1",
+		Cvss:     4,
+		Severity: storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
+	}, s.componentIDMap[comp31]))
 
 	vuln, err := comp.TopImageVulnerability(ctx)
 	assert.NoError(s.T(), err)
@@ -556,9 +583,19 @@ func (s *GraphQLImageComponentV2TestSuite) getImageResolver(ctx context.Context,
 
 func (s *GraphQLImageComponentV2TestSuite) getImageComponentResolver(ctx context.Context, id string) ImageComponentResolver {
 	vulnID := graphql.ID(id)
-
 	vuln, err := s.resolver.ImageComponent(ctx, IDQuery{ID: &vulnID})
 	assert.NoError(s.T(), err)
 	assert.Equal(s.T(), vulnID, vuln.Id(ctx))
 	return vuln
+}
+
+func (s *GraphQLImageComponentV2TestSuite) getComponentIDMap() map[string]string {
+	return map[string]string{
+		comp11: getTestComponentID(s.T(), testImages()[0].GetScan().GetComponents()[0], "sha1"),
+		comp12: getTestComponentID(s.T(), testImages()[1].GetScan().GetComponents()[0], "sha2"),
+		comp21: getTestComponentID(s.T(), testImages()[0].GetScan().GetComponents()[1], "sha1"),
+		comp31: getTestComponentID(s.T(), testImages()[0].GetScan().GetComponents()[2], "sha1"),
+		comp32: getTestComponentID(s.T(), testImages()[1].GetScan().GetComponents()[1], "sha2"),
+		comp42: getTestComponentID(s.T(), testImages()[1].GetScan().GetComponents()[2], "sha2"),
+	}
 }

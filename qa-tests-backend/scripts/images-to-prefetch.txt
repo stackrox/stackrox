@@ -68,10 +68,11 @@ quay.io/rhacs-eng/qa:struts-app
 quay.io/rhacs-eng/qa:syslog_server_1_0
 
 # For qa-tests-backend/src/test/groovy/ImageSignatureVerificationTest.groovy
-quay.io/rhacs-eng/qa-signatures:distroless-base-multiarch@sha256:bc217643f9c04fc8131878d6440dd88cf4444385d45bb25995c8051c29687766
-quay.io/rhacs-eng/qa-signatures:tekton-multiarch@sha256:d12d420438235ccee3f4fcb72cf9e5b2b79f60f713595fe1ada254d10167dfc6
-quay.io/rhacs-eng/qa-signatures:centos9-multiarch@sha256:743cf31b5c29c227aa1371eddd9f9313b2a0487f39ccfc03ec5c89a692c4a0c7
 quay.io/rhacs-eng/qa-multi-arch@sha256:b73f527d86e3461fd652f62cf47e7b375196063bbbd503e853af5be16597cb2e
 quay.io/rhacs-eng/qa-multi-arch@sha256:dd2d0ac3fff2f007d99e033b64854be0941e19a2ad51f174d9240dda20d9f534
-quay.io/rhacs-eng/qa-signatures:nginx-multiarch@sha256:dd2d0ac3fff2f007d99e033b64854be0941e19a2ad51f174d9240dda20d9f534
 quay.io/rhacs-eng/qa-signatures:byopki@sha256:7b3ccabffc97de872a30dfd234fd972a66d247c8cfc69b0550f276481852627c
+quay.io/rhacs-eng/qa-signatures:centos9-multiarch@sha256:743cf31b5c29c227aa1371eddd9f9313b2a0487f39ccfc03ec5c89a692c4a0c7
+quay.io/rhacs-eng/qa-signatures:distroless-base-multiarch@sha256:bc217643f9c04fc8131878d6440dd88cf4444385d45bb25995c8051c29687766
+quay.io/rhacs-eng/qa-signatures:keyless-sigstore@sha256:37f7b378a29ceb4c551b1b5582e27747b855bbfaa73fa11914fe0df028dc581f
+quay.io/rhacs-eng/qa-signatures:nginx-multiarch@sha256:dd2d0ac3fff2f007d99e033b64854be0941e19a2ad51f174d9240dda20d9f534
+quay.io/rhacs-eng/qa-signatures:tekton-multiarch@sha256:d12d420438235ccee3f4fcb72cf9e5b2b79f60f713595fe1ada254d10167dfc6

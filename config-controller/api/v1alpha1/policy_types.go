@@ -137,11 +137,31 @@ type MitreAttackVectors struct {
 	Techniques []string `json:"techniques,omitempty"`
 }
 
-// SecurityPolicyStatus defines the observed state of SecurityPolicy
+type SecurityPolicyConditionType string
+
+const (
+	// CentralDataFresh indicates that all caches were successfully updated from Central
+	CentralDataFresh SecurityPolicyConditionType = "CentralDataFresh"
+	// PolicyValidated indicates that the policy was successfully validated and transformed into a protobuf, ready to
+	// be persisted to Central
+	PolicyValidated SecurityPolicyConditionType = "PolicyValidated"
+	// AcceptedByCentral indicates that the policy was persisted successfully in Central
+	AcceptedByCentral SecurityPolicyConditionType = "AcceptedByCentral"
+)
+
+// SecurityPolicyCondition defines the observed state of SecurityPolicy
+type SecurityPolicyCondition struct {
+	Type               SecurityPolicyConditionType `json:"type"`
+	Status             string                      `json:"status"`
+	Message            string                      `json:"message"`
+	LastTransitionTime metav1.Time                 `json:"lastTransitionTime"`
+}
+
+type SecurityPolicyConditions []SecurityPolicyCondition
+
 type SecurityPolicyStatus struct {
-	Accepted bool   `json:"accepted"`
-	Message  string `json:"message"`
-	PolicyId string `json:"policyId"`
+	Conditions SecurityPolicyConditions `json:"conditions"`
+	PolicyId   string                   `json:"policyId"`
 }
 
 // IsValid runs validation checks against the SecurityPolicy spec
@@ -249,13 +269,15 @@ func (p SecurityPolicySpec) ToProtobuf(caches map[CacheType]map[string]string) (
 
 			scope := exclusion.Deployment.Scope
 			if scope != (Scope{}) {
-				clusterID, err := getClusterID(scope.Cluster, caches)
-				if err != nil {
-					return nil, errors.New(fmt.Sprintf("Cluster '%s' does not exist", scope.Cluster))
-				}
 				protoExclusion.Deployment.Scope = &storage.Scope{
-					Cluster:   clusterID,
 					Namespace: scope.Namespace,
+				}
+				if scope.Cluster != "" {
+					clusterID, err := getClusterID(scope.Cluster, caches)
+					if err != nil {
+						return nil, errors.New(fmt.Sprintf("Cluster '%s' does not exist", scope.Cluster))
+					}
+					protoExclusion.Deployment.Scope.Cluster = clusterID
 				}
 			}
 
@@ -272,13 +294,15 @@ func (p SecurityPolicySpec) ToProtobuf(caches map[CacheType]map[string]string) (
 	}
 
 	for _, scope := range p.Scope {
-		clusterID, err := getClusterID(scope.Cluster, caches)
-		if err != nil {
-			return nil, errors.New(fmt.Sprintf("Cluster '%s' does not exist", scope.Cluster))
-		}
 		protoScope := &storage.Scope{
-			Cluster:   clusterID,
 			Namespace: scope.Namespace,
+		}
+		if scope.Cluster != "" {
+			clusterID, err := getClusterID(scope.Cluster, caches)
+			if err != nil {
+				return nil, errors.New(fmt.Sprintf("Cluster '%s' does not exist", scope.Cluster))
+			}
+			protoScope.Cluster = clusterID
 		}
 
 		if scope.Label != (Label{}) {
@@ -345,4 +369,39 @@ func (p SecurityPolicySpec) ToProtobuf(caches map[CacheType]map[string]string) (
 	}
 
 	return &proto, nil
+}
+
+func (s *SecurityPolicyConditions) UpdateCondition(newCondition SecurityPolicyCondition) {
+	for i, st := range *s {
+		if st.Type != newCondition.Type {
+			continue
+		}
+		newCondition.LastTransitionTime = st.LastTransitionTime
+		if st.Status != newCondition.Status {
+			newCondition.LastTransitionTime = metav1.Now()
+		}
+		(*s)[i] = newCondition
+		return
+	}
+}
+
+func (s *SecurityPolicyConditions) GetCondition(sType SecurityPolicyConditionType) *SecurityPolicyCondition {
+	for _, st := range *s {
+		if st.Type == sType {
+			return &st
+		}
+	}
+	return nil
+}
+
+func (s *SecurityPolicyConditions) IsCentralDataFresh() bool {
+	return s.GetCondition(CentralDataFresh).Status == "True"
+}
+
+func (s *SecurityPolicyConditions) IsPolicyValidated() bool {
+	return s.GetCondition(PolicyValidated).Status == "True"
+}
+
+func (s *SecurityPolicyConditions) IsAcceptedByCentral() bool {
+	return s.GetCondition(AcceptedByCentral).Status == "True"
 }

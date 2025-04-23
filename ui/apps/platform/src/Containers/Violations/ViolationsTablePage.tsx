@@ -38,7 +38,7 @@ import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import FilteredWorkflowViewSelector from 'Components/FilteredWorkflowViewSelector/FilteredWorkflowViewSelector';
 import useFilteredWorkflowViewURLState from 'Components/FilteredWorkflowViewSelector/useFilteredWorkflowViewURLState';
 import ViolationsTablePanel from './ViolationsTablePanel';
-import getTableColumnDescriptors from './violationTableColumnDescriptors';
+import { getViolationsTableColumnDescriptors } from './violationsTableColumnDescriptors';
 import { ViolationStateTab, violationStateTabs } from './types';
 
 import './ViolationsTablePage.css';
@@ -144,7 +144,7 @@ function ViolationsTablePage(): ReactElement {
     const [pollEpoch, setPollEpoch] = useState(0);
 
     // To handle sort options.
-    const columns = getTableColumnDescriptors(filteredWorkflowView);
+    const columns = getViolationsTableColumnDescriptors(filteredWorkflowView);
     const sortFields = columns.flatMap(({ sortField }) => (sortField ? [sortField] : []));
 
     const defaultSortOption: SortOption = {

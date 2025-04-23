@@ -289,30 +289,13 @@ export const apiTokenDescriptor: AuthProviderDescriptor = {
     type: 'apitoken',
 };
 
-export const clusterInitBundleDescriptor: AuthProviderDescriptor = {
-    image: logo,
-    label: 'Cluster Init Bundle',
-    type: 'clusterInitBundle',
-};
-
-export const clusterRegistrationSecretDescriptor: AuthProviderDescriptor = {
-    image: logo,
-    label: 'Cluster Registration Secret',
-    type: 'clusterRegistrationSecret',
-};
-
 export const machineAccessDescriptor: AuthProviderDescriptor = {
     image: logo,
     label: 'Machine access configuration',
     type: 'machineAccess',
 };
 
-const authenticationTokensDescriptors = [
-    apiTokenDescriptor,
-    clusterInitBundleDescriptor,
-    clusterRegistrationSecretDescriptor,
-    machineAccessDescriptor,
-];
+const authenticationTokensDescriptors = [apiTokenDescriptor, machineAccessDescriptor];
 
 export const cloudSourcesSource = 'cloudSources';
 

@@ -166,30 +166,29 @@ func (*ImageComponent_TopCvss) isImageComponent_SetTopCvss() {}
 type ImageComponentV2 struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// ID will be form of Name+version+arch+imageID
-	Id        string     `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Component ID,store,hidden" sql:"pk,id"`           // @gotags: search:"Component ID,store,hidden" sql:"pk,id"
-	Name      string     `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Component,store"`       // @gotags: search:"Component,store"
-	Version   string     `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty" search:"Component Version,store"` // @gotags: search:"Component Version,store"
-	License   *License   `protobuf:"bytes,4,opt,name=license,proto3" json:"license,omitempty"`
-	Priority  int64      `protobuf:"varint,5,opt,name=priority,proto3" json:"priority,omitempty" search:"Component Risk Priority,hidden"`                     // @gotags: search:"Component Risk Priority,hidden"
-	Source    SourceType `protobuf:"varint,6,opt,name=source,proto3,enum=storage.SourceType" json:"source,omitempty" search:"Component Source,store"` // @gotags: search:"Component Source,store"
-	RiskScore float32    `protobuf:"fixed32,7,opt,name=risk_score,json=riskScore,proto3" json:"risk_score,omitempty" search:"Component Risk Score,hidden"` // @gotags: search:"Component Risk Score,hidden"
+	Id        string     `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Component ID,store,hidden" sql:"pk,id"`                                  // @gotags: search:"Component ID,store,hidden" sql:"pk,id"
+	Name      string     `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Component,store"`                              // @gotags: search:"Component,store"
+	Version   string     `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty" search:"Component Version,store"`                        // @gotags: search:"Component Version,store"
+	Priority  int64      `protobuf:"varint,4,opt,name=priority,proto3" json:"priority,omitempty" search:"Component Risk Priority,hidden"`                     // @gotags: search:"Component Risk Priority,hidden"
+	Source    SourceType `protobuf:"varint,5,opt,name=source,proto3,enum=storage.SourceType" json:"source,omitempty" search:"Component Source,store"` // @gotags: search:"Component Source,store"
+	RiskScore float32    `protobuf:"fixed32,6,opt,name=risk_score,json=riskScore,proto3" json:"risk_score,omitempty" search:"Component Risk Score,hidden"` // @gotags: search:"Component Risk Score,hidden"
 	// Types that are valid to be assigned to SetTopCvss:
 	//
 	//	*ImageComponentV2_TopCvss
 	SetTopCvss isImageComponentV2_SetTopCvss `protobuf_oneof:"set_top_cvss"`
 	// Component version that fixes all the fixable vulnerabilities in this component.
-	FixedBy         string `protobuf:"bytes,9,opt,name=fixed_by,json=fixedBy,proto3" json:"fixed_by,omitempty"`
-	OperatingSystem string `protobuf:"bytes,10,opt,name=operating_system,json=operatingSystem,proto3" json:"operating_system,omitempty" search:"Operating System"` // @gotags: search:"Operating System"
+	FixedBy         string `protobuf:"bytes,8,opt,name=fixed_by,json=fixedBy,proto3" json:"fixed_by,omitempty"`
+	OperatingSystem string `protobuf:"bytes,9,opt,name=operating_system,json=operatingSystem,proto3" json:"operating_system,omitempty" search:"Operating System"` // @gotags: search:"Operating System"
 	// was hash index, making it btree
-	ImageId string `protobuf:"bytes,11,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty" sql:"fk(Image:id),index=btree"` // @gotags: sql:"fk(Image:id),index=btree"
+	ImageId string `protobuf:"bytes,10,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty" sql:"fk(Image:id),index=btree"` // @gotags: sql:"fk(Image:id),index=btree"
 	// / Layer that contains this component
 	//
 	// Types that are valid to be assigned to HasLayerIndex:
 	//
 	//	*ImageComponentV2_LayerIndex
 	HasLayerIndex isImageComponentV2_HasLayerIndex `protobuf_oneof:"has_layer_index"`
-	Location      string                           `protobuf:"bytes,13,opt,name=location,proto3" json:"location,omitempty" search:"Component Location,store,hidden"` // @gotags: search:"Component Location,store,hidden"
-	Architecture  string                           `protobuf:"bytes,14,opt,name=architecture,proto3" json:"architecture,omitempty"`
+	Location      string                           `protobuf:"bytes,12,opt,name=location,proto3" json:"location,omitempty" search:"Component Location,store,hidden"` // @gotags: search:"Component Location,store,hidden"
+	Architecture  string                           `protobuf:"bytes,13,opt,name=architecture,proto3" json:"architecture,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -243,13 +242,6 @@ func (x *ImageComponentV2) GetVersion() string {
 		return x.Version
 	}
 	return ""
-}
-
-func (x *ImageComponentV2) GetLicense() *License {
-	if x != nil {
-		return x.License
-	}
-	return nil
 }
 
 func (x *ImageComponentV2) GetPriority() int64 {
@@ -345,7 +337,7 @@ type isImageComponentV2_SetTopCvss interface {
 }
 
 type ImageComponentV2_TopCvss struct {
-	TopCvss float32 `protobuf:"fixed32,8,opt,name=top_cvss,json=topCvss,proto3,oneof" search:"Component Top CVSS,store"` // @gotags: search:"Component Top CVSS,store"
+	TopCvss float32 `protobuf:"fixed32,7,opt,name=top_cvss,json=topCvss,proto3,oneof" search:"Component Top CVSS,store"` // @gotags: search:"Component Top CVSS,store"
 }
 
 func (*ImageComponentV2_TopCvss) isImageComponentV2_SetTopCvss() {}
@@ -355,7 +347,7 @@ type isImageComponentV2_HasLayerIndex interface {
 }
 
 type ImageComponentV2_LayerIndex struct {
-	LayerIndex int32 `protobuf:"varint,12,opt,name=layer_index,json=layerIndex,proto3,oneof"`
+	LayerIndex int32 `protobuf:"varint,11,opt,name=layer_index,json=layerIndex,proto3,oneof"`
 }
 
 func (*ImageComponentV2_LayerIndex) isImageComponentV2_HasLayerIndex() {}
@@ -378,25 +370,24 @@ const file_storage_image_component_proto_rawDesc = "" +
 	"\bfixed_by\x18\t \x01(\tR\afixedBy\x12)\n" +
 	"\x10operating_system\x18\n" +
 	" \x01(\tR\x0foperatingSystem:\x02\x18\x01B\x0e\n" +
-	"\fset_top_cvss\"\xe8\x03\n" +
+	"\fset_top_cvss\"\xbc\x03\n" +
 	"\x10ImageComponentV2\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x18\n" +
-	"\aversion\x18\x03 \x01(\tR\aversion\x12*\n" +
-	"\alicense\x18\x04 \x01(\v2\x10.storage.LicenseR\alicense\x12\x1a\n" +
-	"\bpriority\x18\x05 \x01(\x03R\bpriority\x12+\n" +
-	"\x06source\x18\x06 \x01(\x0e2\x13.storage.SourceTypeR\x06source\x12\x1d\n" +
+	"\aversion\x18\x03 \x01(\tR\aversion\x12\x1a\n" +
+	"\bpriority\x18\x04 \x01(\x03R\bpriority\x12+\n" +
+	"\x06source\x18\x05 \x01(\x0e2\x13.storage.SourceTypeR\x06source\x12\x1d\n" +
 	"\n" +
-	"risk_score\x18\a \x01(\x02R\triskScore\x12\x1b\n" +
-	"\btop_cvss\x18\b \x01(\x02H\x00R\atopCvss\x12\x19\n" +
-	"\bfixed_by\x18\t \x01(\tR\afixedBy\x12)\n" +
-	"\x10operating_system\x18\n" +
-	" \x01(\tR\x0foperatingSystem\x12\x19\n" +
-	"\bimage_id\x18\v \x01(\tR\aimageId\x12!\n" +
-	"\vlayer_index\x18\f \x01(\x05H\x01R\n" +
+	"risk_score\x18\x06 \x01(\x02R\triskScore\x12\x1b\n" +
+	"\btop_cvss\x18\a \x01(\x02H\x00R\atopCvss\x12\x19\n" +
+	"\bfixed_by\x18\b \x01(\tR\afixedBy\x12)\n" +
+	"\x10operating_system\x18\t \x01(\tR\x0foperatingSystem\x12\x19\n" +
+	"\bimage_id\x18\n" +
+	" \x01(\tR\aimageId\x12!\n" +
+	"\vlayer_index\x18\v \x01(\x05H\x01R\n" +
 	"layerIndex\x12\x1a\n" +
-	"\blocation\x18\r \x01(\tR\blocation\x12\"\n" +
-	"\farchitecture\x18\x0e \x01(\tR\farchitectureB\x0e\n" +
+	"\blocation\x18\f \x01(\tR\blocation\x12\"\n" +
+	"\farchitecture\x18\r \x01(\tR\farchitectureB\x0e\n" +
 	"\fset_top_cvssB\x11\n" +
 	"\x0fhas_layer_indexB.\n" +
 	"\x19io.stackrox.proto.storageZ\x11./storage;storageb\x06proto3"
@@ -423,13 +414,12 @@ var file_storage_image_component_proto_goTypes = []any{
 var file_storage_image_component_proto_depIdxs = []int32{
 	2, // 0: storage.ImageComponent.license:type_name -> storage.License
 	3, // 1: storage.ImageComponent.source:type_name -> storage.SourceType
-	2, // 2: storage.ImageComponentV2.license:type_name -> storage.License
-	3, // 3: storage.ImageComponentV2.source:type_name -> storage.SourceType
-	4, // [4:4] is the sub-list for method output_type
-	4, // [4:4] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	3, // 2: storage.ImageComponentV2.source:type_name -> storage.SourceType
+	3, // [3:3] is the sub-list for method output_type
+	3, // [3:3] is the sub-list for method input_type
+	3, // [3:3] is the sub-list for extension type_name
+	3, // [3:3] is the sub-list for extension extendee
+	0, // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_storage_image_component_proto_init() }

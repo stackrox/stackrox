@@ -372,7 +372,7 @@ func (resolver *namespaceResolver) Policies(ctx context.Context, args PaginatedQ
 	for _, policyResolver := range policyResolvers {
 		policyResolver.ctx = scoped.Context(ctx, scoped.Scope{
 			Level: v1.SearchCategory_NAMESPACES,
-			ID:    resolver.data.GetMetadata().GetId(),
+			IDs:   []string{resolver.data.GetMetadata().GetId()},
 		})
 	}
 
@@ -423,7 +423,7 @@ func (resolver *namespaceResolver) PolicyStatus(ctx context.Context, args RawQue
 
 	scopedCtx := scoped.Context(ctx, scoped.Scope{
 		Level: v1.SearchCategory_NAMESPACES,
-		ID:    resolver.data.GetMetadata().GetId(),
+		IDs:   []string{resolver.data.GetMetadata().GetId()},
 	})
 
 	if len(alerts) == 0 {
@@ -505,7 +505,7 @@ func (resolver *namespaceResolver) namespaceScopeContext(ctx context.Context) co
 	}
 	return scoped.Context(resolver.ctx, scoped.Scope{
 		Level: v1.SearchCategory_NAMESPACES,
-		ID:    resolver.data.GetMetadata().GetId(),
+		IDs:   []string{resolver.data.GetMetadata().GetId()},
 	})
 }
 

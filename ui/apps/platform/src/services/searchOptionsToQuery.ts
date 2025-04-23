@@ -1,6 +1,6 @@
 // Import from utils/searchUtils when it is written in TypeScript.
 export type RestSearchOption = {
-    label?: string;
+    label?: string | string[];
     type?: string; // for example, 'categoryOption'
     value: string | string[];
 };

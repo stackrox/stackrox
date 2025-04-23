@@ -439,7 +439,11 @@ func (s *storeImpl) upsert(ctx context.Context, obj *storage.Image) error {
 		}
 	}
 
-	imageParts := getPartsAsSlice(common.Split(obj, scanUpdated))
+	splitParts, err := common.Split(obj, scanUpdated)
+	if err != nil {
+		return err
+	}
+	imageParts := getPartsAsSlice(splitParts)
 	keys := gatherKeys(imageParts)
 
 	return s.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(keys...), func() error {
@@ -561,7 +565,7 @@ func (s *storeImpl) populateImage(ctx context.Context, tx *postgres.Tx, image *s
 			cveParts = append(cveParts, cvePart)
 		}
 
-		// TODO(ROX-27399):  Adding the index of where the vuln appeared in the component
+		// TODO(remove when hashing cve):  Adding the index of where the vuln appeared in the component
 		// is not likely sustainable.  We cannot easily guarantee the order is the same when
 		// we pull the data out.  This sort is temporary to keep moving, and will be
 		// removed when the ID of the CVE is adjusted to no longer use the index of where
@@ -694,60 +698,48 @@ func (s *storeImpl) deleteImageComponents(ctx context.Context, tx *postgres.Tx, 
 	return nil
 }
 
-// GetMany returns the objects specified by the IDs or the index in the missing indices slice
-func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Image, []int, error) {
+// GetByIDs returns the objects specified by the IDs or the index in the missing indices slice
+func (s *storeImpl) GetByIDs(ctx context.Context, ids []string) ([]*storage.Image, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "Image")
 
-	return pgutils.Retry3(ctx, func() ([]*storage.Image, []int, error) {
-		return s.retryableGetMany(ctx, ids)
+	return pgutils.Retry2(ctx, func() ([]*storage.Image, error) {
+		return s.retryableGetByIDs(ctx, ids)
 	})
 }
 
-func (s *storeImpl) retryableGetMany(ctx context.Context, ids []string) ([]*storage.Image, []int, error) {
+func (s *storeImpl) retryableGetByIDs(ctx context.Context, ids []string) ([]*storage.Image, error) {
 	conn, release, err := s.acquireConn(ctx, ops.GetMany, "Image")
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	defer release()
 
 	tx, err := conn.Begin(ctx)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	resultsByID := make(map[string]*storage.Image)
+	elems := make([]*storage.Image, 0, len(ids))
 	for _, id := range ids {
 		msg, found, err := s.getFullImage(ctx, tx, id)
 		if err != nil {
 			// No changes are made to the database, so COMMIT or ROLLBACK have the same effect.
 			if err := tx.Commit(ctx); err != nil {
-				return nil, nil, err
+				return nil, err
 			}
-			return nil, nil, err
+			return nil, err
 		}
 		if !found {
 			continue
 		}
-		resultsByID[msg.GetId()] = msg
+		elems = append(elems, msg)
 	}
 
 	// No changes are made to the database, so COMMIT or ROLLBACK have the same effect.
 	if err := tx.Commit(ctx); err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-
-	missingIndices := make([]int, 0, len(ids)-len(resultsByID))
-	// It is important that the elems are populated in the same order as the input ids
-	// slice, since some calling code relies on that to maintain order.
-	elems := make([]*storage.Image, 0, len(resultsByID))
-	for i, id := range ids {
-		if result, ok := resultsByID[id]; !ok {
-			missingIndices = append(missingIndices, i)
-		} else {
-			elems = append(elems, result)
-		}
-	}
-	return elems, missingIndices, nil
+	return elems, nil
 }
 
 // WalkByQuery returns the objects specified by the query
@@ -817,48 +809,21 @@ func (s *storeImpl) retryableGetImageMetadata(ctx context.Context, id string) (*
 }
 
 // GetManyImageMetadata returns images without scan/component data.
-func (s *storeImpl) GetManyImageMetadata(ctx context.Context, ids []string) ([]*storage.Image, []int, error) {
+func (s *storeImpl) GetManyImageMetadata(ctx context.Context, ids []string) ([]*storage.Image, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "Image")
 
-	return pgutils.Retry3(ctx, func() ([]*storage.Image, []int, error) {
+	return pgutils.Retry2(ctx, func() ([]*storage.Image, error) {
 		return s.retryableGetManyImageMetadata(ctx, ids)
 	})
 }
 
-func (s *storeImpl) retryableGetManyImageMetadata(ctx context.Context, ids []string) ([]*storage.Image, []int, error) {
+func (s *storeImpl) retryableGetManyImageMetadata(ctx context.Context, ids []string) ([]*storage.Image, error) {
 	if len(ids) == 0 {
-		return nil, nil, nil
+		return nil, nil
 	}
 
 	q := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, ids...).ProtoQuery()
-
-	rows, err := pgSearch.RunGetManyQueryForSchema[storage.Image](ctx, schema, q, s.db)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			missingIndices := make([]int, 0, len(ids))
-			for i := range ids {
-				missingIndices = append(missingIndices, i)
-			}
-			return nil, missingIndices, nil
-		}
-		return nil, nil, err
-	}
-	resultsByID := make(map[string]*storage.Image, len(rows))
-	for _, msg := range rows {
-		resultsByID[msg.GetId()] = msg
-	}
-	missingIndices := make([]int, 0, len(ids)-len(resultsByID))
-	// It is important that the elems are populated in the same order as the input ids
-	// slice, since some calling code relies on that to maintain order.
-	elems := make([]*storage.Image, 0, len(resultsByID))
-	for i, id := range ids {
-		if result, ok := resultsByID[id]; !ok {
-			missingIndices = append(missingIndices, i)
-		} else {
-			elems = append(elems, result)
-		}
-	}
-	return elems, missingIndices, nil
+	return pgSearch.RunGetManyQueryForSchema[storage.Image](ctx, schema, q, s.db)
 }
 
 func (s *storeImpl) UpdateVulnState(ctx context.Context, cve string, imageIDs []string, state storage.VulnerabilityState) error {

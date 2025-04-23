@@ -225,7 +225,7 @@ func (resolver *imageComponentResolver) imageComponentScopeContext(ctx context.C
 	}
 	return scoped.Context(resolver.ctx, scoped.Scope{
 		Level: v1.SearchCategory_IMAGE_COMPONENTS,
-		ID:    resolver.data.GetId(),
+		IDs:   []string{resolver.data.GetId()},
 	})
 }
 
@@ -255,7 +255,10 @@ func getDeploymentIDFromQuery(q *v1.Query) string {
 func getDeploymentScope(scopeQuery *v1.Query, contexts ...context.Context) string {
 	for _, ctx := range contexts {
 		if scope, ok := scoped.GetScope(ctx); ok && scope.Level == v1.SearchCategory_DEPLOYMENTS {
-			return scope.ID
+			if len(scope.IDs) != 1 {
+				return ""
+			}
+			return scope.IDs[0]
 		} else if deploymentID := deploymentctx.FromContext(ctx); deploymentID != "" {
 			return deploymentID
 		}
@@ -271,7 +274,10 @@ func getImageIDFromScope(contexts ...context.Context) string {
 	var hasScope bool
 	for _, ctx := range contexts {
 		if scope, hasScope = scoped.GetScopeAtLevel(ctx, v1.SearchCategory_IMAGES); hasScope {
-			return scope.ID
+			if len(scope.IDs) != 1 {
+				return ""
+			}
+			return scope.IDs[0]
 		}
 	}
 	return ""
@@ -326,13 +332,20 @@ func getImageCVEV2Resolvers(ctx context.Context, root *Resolver, imageID string,
 		return nil, err
 	}
 
-	componentID := scancomponent.ComponentIDV2(component.GetName(), component.GetVersion(), component.GetArchitecture(), imageID)
+	componentID, err := scancomponent.ComponentIDV2(component, imageID)
+	if err != nil {
+		return nil, err
+	}
 	resolvers := make([]ImageVulnerabilityResolver, 0, len(component.GetVulns()))
-	for idx, vuln := range component.GetVulns() {
+	for _, vuln := range component.GetVulns() {
 		if !predicate.Matches(vuln) {
 			continue
 		}
-		converted := cveConverter.EmbeddedVulnerabilityToImageCVEV2(imageID, componentID, idx, vuln)
+		converted, err := cveConverter.EmbeddedVulnerabilityToImageCVEV2(imageID, componentID, vuln)
+		if err != nil {
+			return nil, err
+		}
+
 		resolver, err := root.wrapImageCVEV2(converted, true, nil)
 		if err != nil {
 			return nil, err
@@ -573,7 +586,7 @@ func (resolver *imageComponentResolver) LayerIndex() (*int32, error) {
 		return nil, err
 	}
 	if len(edges) == 0 || len(edges) > 1 {
-		return nil, errors.Errorf("Unexpected number of image-component edge matched for image %s and component %s. Expected 1 edge.", scope.ID, resolver.data.GetId())
+		return nil, errors.Errorf("Unexpected number of image-component edge matched for image %s and component %s. Expected 1 edge.", scope.IDs, resolver.data.GetId())
 	}
 
 	w, ok := edges[0].GetHasLayerIndex().(*storage.ImageComponentEdge_LayerIndex)
@@ -695,20 +708,24 @@ func (resolver *imageComponentV2Resolver) TopImageVulnerability(ctx context.Cont
 	// Short path. Full image is embedded when image scan resolver is called.
 	if embeddedComponent := embeddedobjs.ComponentFromContext(resolver.ctx); embeddedComponent != nil {
 		var topVuln *storage.EmbeddedVulnerability
-		var topIndex int
-		for idx, vuln := range embeddedComponent.GetVulns() {
+		for _, vuln := range embeddedComponent.GetVulns() {
 			if topVuln == nil || vuln.GetCvss() > topVuln.GetCvss() {
 				topVuln = vuln
-				topIndex = idx
 			}
 		}
 		if topVuln == nil {
 			return nil, nil
 		}
-		componentID := scancomponent.ComponentIDV2(embeddedComponent.GetName(), embeddedComponent.GetVersion(), embeddedComponent.GetArchitecture(), resolver.ImageId(resolver.ctx))
-		return resolver.root.wrapImageCVEV2WithContext(resolver.ctx,
-			cveConverter.EmbeddedVulnerabilityToImageCVEV2(resolver.ImageId(resolver.ctx), componentID, topIndex, topVuln), true, nil,
-		)
+		componentID, err := scancomponent.ComponentIDV2(embeddedComponent, resolver.ImageId(resolver.ctx))
+		if err != nil {
+			return nil, err
+		}
+
+		convertedTopVuln, err := cveConverter.EmbeddedVulnerabilityToImageCVEV2(resolver.ImageId(resolver.ctx), componentID, topVuln)
+		if err != nil {
+			return nil, err
+		}
+		return resolver.root.wrapImageCVEV2WithContext(resolver.ctx, convertedTopVuln, true, nil)
 	}
 
 	return resolver.root.TopImageVulnerability(resolver.imageComponentScopeContext(ctx), RawQuery{})
@@ -742,6 +759,10 @@ func (resolver *imageComponentV2Resolver) FixedIn(_ context.Context) string {
 	return resolver.data.GetFixedBy()
 }
 
+func (resolver *imageComponentV2Resolver) License(ctx context.Context) (*licenseResolver, error) {
+	return nil, nil
+}
+
 /*
 Utility Functions
 */
@@ -758,6 +779,6 @@ func (resolver *imageComponentV2Resolver) imageComponentScopeContext(ctx context
 	}
 	return scoped.Context(resolver.ctx, scoped.Scope{
 		Level: v1.SearchCategory_IMAGE_COMPONENTS_V2,
-		ID:    resolver.data.GetId(),
+		IDs:   []string{resolver.data.GetId()},
 	})
 }

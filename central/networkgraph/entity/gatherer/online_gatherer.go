@@ -134,10 +134,10 @@ func (g *defaultExtSrcsGathererImpl) reconcileDefaultExternalSrcs() error {
 
 	inserted, err := updateInStorage(g.networkEntityDS, lastSeenIDs, entities...)
 	if err != nil {
-		return errors.Wrapf(err, "updated %d/%d networks", len(inserted), len(entities))
+		return errors.Wrapf(err, "updated %d/%d networks", inserted, len(entities))
 	}
 
-	log.Infof("Found %d external networks in DB. Successfully stored %d/%d new external networks", len(lastSeenIDs), len(inserted), len(entities))
+	log.Infof("Found %d external networks in DB. Successfully stored %d/%d new external networks", len(lastSeenIDs), inserted, len(entities))
 
 	// Update checksum only if all the pulled data is successfully written.
 	if err := g.writeLocalChecksum(g.blobStore, remoteChecksum); err != nil {

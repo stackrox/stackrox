@@ -15,7 +15,7 @@ import {
     getScopeQuery,
 } from '../VulnMgmtPolicyQueryUtil';
 
-const VulnMgmtNamespace = ({
+const VulnMgmtEntityNamespace = ({
     entityId,
     entityListType,
     search,
@@ -97,7 +97,7 @@ const VulnMgmtNamespace = ({
     );
 };
 
-VulnMgmtNamespace.propTypes = workflowEntityPropTypes;
-VulnMgmtNamespace.defaultProps = workflowEntityDefaultProps;
+VulnMgmtEntityNamespace.propTypes = workflowEntityPropTypes;
+VulnMgmtEntityNamespace.defaultProps = workflowEntityDefaultProps;
 
-export default VulnMgmtNamespace;
+export default VulnMgmtEntityNamespace;

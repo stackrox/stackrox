@@ -204,7 +204,7 @@ export function getComponentTableColumns(workflowState, isFeatureFlagEnabled) {
     return removeEntityContextColumns(componentColumnsBasedOnContext, workflowState);
 }
 
-const VulnMgmtComponents = ({ selectedRowId, search, sort, page, data, totalResults }) => {
+const VulnMgmtListComponents = ({ selectedRowId, search, sort, page, data, totalResults }) => {
     const query = gql`
         query getComponents($query: String, $pagination: Pagination) {
             results: components(query: $query, pagination: $pagination) {
@@ -240,7 +240,7 @@ const VulnMgmtComponents = ({ selectedRowId, search, sort, page, data, totalResu
     );
 };
 
-VulnMgmtComponents.propTypes = workflowListPropTypes;
-VulnMgmtComponents.defaultProps = workflowListDefaultProps;
+VulnMgmtListComponents.propTypes = workflowListPropTypes;
+VulnMgmtListComponents.defaultProps = workflowListDefaultProps;
 
-export default VulnMgmtComponents;
+export default VulnMgmtListComponents;

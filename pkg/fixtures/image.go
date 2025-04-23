@@ -35,11 +35,7 @@ func GetImage() *storage.Image {
 		componentsPerImage = append(componentsPerImage, &storage.EmbeddedImageScanComponent{
 			Name:    "name",
 			Version: "1.2.3.4",
-			License: &storage.License{
-				Name: "blah",
-				Type: "GPL",
-			},
-			Vulns: getVulnsPerComponent(i, 5, storage.EmbeddedVulnerability_IMAGE_VULNERABILITY),
+			Vulns:   getVulnsPerComponent(i, 5, storage.EmbeddedVulnerability_IMAGE_VULNERABILITY),
 		})
 	}
 	return getImageWithComponents(componentsPerImage)
@@ -52,11 +48,7 @@ func GetImageWithUniqueComponents(numComponents int) *storage.Image {
 		componentsPerImage = append(componentsPerImage, &storage.EmbeddedImageScanComponent{
 			Name:    fmt.Sprintf("name-%d", i),
 			Version: fmt.Sprintf("%d.2.3.4", i),
-			License: &storage.License{
-				Name: "blah",
-				Type: "GPL",
-			},
-			Vulns: getVulnsPerComponent(i, 5, storage.EmbeddedVulnerability_IMAGE_VULNERABILITY),
+			Vulns:   getVulnsPerComponent(i, 5, storage.EmbeddedVulnerability_IMAGE_VULNERABILITY),
 		})
 	}
 	return getImageWithComponents(componentsPerImage)

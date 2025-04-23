@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/operator/internal/legacy"
 	"github.com/stackrox/rox/operator/internal/proxy"
 	"github.com/stackrox/rox/operator/internal/reconciler"
+	"github.com/stackrox/rox/operator/internal/route"
 	"github.com/stackrox/rox/operator/internal/utils"
 	"github.com/stackrox/rox/operator/internal/values/translation"
 	"github.com/stackrox/rox/pkg/version"
@@ -59,7 +60,9 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 			// owned by the operator so we can't guarantee labels for cache
 			// are set properly.
 			legacy.NewImagePullSecretReferenceInjector(mgr.GetAPIReader(), "imagePullSecrets",
-				"stackrox", "stackrox-scanner", "stackrox-scanner-v4")),
+				"stackrox", "stackrox-scanner", "stackrox-scanner-v4"),
+			route.NewRouteInjector(mgr.GetClient(), mgr.GetAPIReader(), mgr.GetLogger()),
+		),
 		opts...,
 	)
 }

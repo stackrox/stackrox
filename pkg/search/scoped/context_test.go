@@ -20,19 +20,19 @@ type scopedContextTestSuite struct {
 func (s *scopedContextTestSuite) TestGetScopeAtLevel() {
 	ctx := context.Background()
 	ctx = Context(ctx, Scope{
-		ID:    "image-1",
+		IDs:   []string{"image-1"},
 		Level: v1.SearchCategory_IMAGES,
 	})
 
 	ctx = Context(ctx, Scope{
-		ID:    "component-1",
+		IDs:   []string{"component-1"},
 		Level: v1.SearchCategory_IMAGE_COMPONENTS,
 	})
 
 	imageScope, hasImageScope := GetScopeAtLevel(ctx, v1.SearchCategory_IMAGES)
 	s.Equal(true, hasImageScope)
 	s.Equal(Scope{
-		ID:     "image-1",
+		IDs:    []string{"image-1"},
 		Level:  v1.SearchCategory_IMAGES,
 		Parent: nil,
 	}, imageScope)
@@ -40,10 +40,10 @@ func (s *scopedContextTestSuite) TestGetScopeAtLevel() {
 	componentScope, hasCompScope := GetScopeAtLevel(ctx, v1.SearchCategory_IMAGE_COMPONENTS)
 	s.Equal(true, hasCompScope)
 	s.Equal(Scope{
-		ID:    "component-1",
+		IDs:   []string{"component-1"},
 		Level: v1.SearchCategory_IMAGE_COMPONENTS,
 		Parent: &Scope{
-			ID:     "image-1",
+			IDs:    []string{"image-1"},
 			Level:  v1.SearchCategory_IMAGES,
 			Parent: nil,
 		},
@@ -57,11 +57,11 @@ func (s *scopedContextTestSuite) TestGetScopeAtLevel() {
 func (s *scopedContextTestSuite) TestGetAllScopes() {
 	ctx := context.Background()
 	clusterScope := Scope{
-		ID:    "c1",
+		IDs:   []string{"c1"},
 		Level: v1.SearchCategory_CLUSTERS,
 	}
 	nsScope := Scope{
-		ID:    "n1",
+		IDs:   []string{"n1"},
 		Level: v1.SearchCategory_NAMESPACES,
 	}
 
@@ -78,7 +78,7 @@ func (s *scopedContextTestSuite) TestGetAllScopes() {
 	s.ElementsMatch([]Scope{clusterScope, nsScope}, scopes)
 
 	deploymentScope := Scope{
-		ID:    "d1",
+		IDs:   []string{"d1"},
 		Level: v1.SearchCategory_DEPLOYMENTS,
 	}
 	depCtx := Context(nsCtx, deploymentScope)

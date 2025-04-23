@@ -26,7 +26,7 @@ type ImportPolicyJSONErrorProps = {
     setDuplicateResolution: (duplicateResolution) => void;
 };
 
-function ImportPolicyJSONError({
+function ImportPolicyJSONModalError({
     handleCancelModal,
     startImportPolicies,
     policies,
@@ -118,4 +118,4 @@ function ImportPolicyJSONError({
     );
 }
 
-export default ImportPolicyJSONError;
+export default ImportPolicyJSONModalError;

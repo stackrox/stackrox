@@ -50,7 +50,6 @@ function ClusterRegistrationSecretsTable({
                             {hasWriteAccessForClusterRegistrationSecrets && (
                                 <Td isActionCell>
                                     <ActionsColumn
-                                        // menuAppendTo={() => document.body}
                                         items={[
                                             {
                                                 title: 'Revoke cluster registration secret',

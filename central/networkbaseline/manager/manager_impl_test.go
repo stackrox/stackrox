@@ -213,7 +213,8 @@ func (suite *ManagerTestSuite) assertBaselinesAre(baselines ...*storage.NetworkB
 		cloned.ObservationPeriodEnd = nil
 		baselinesWithoutObsPeriod = append(baselinesWithoutObsPeriod, cloned)
 	}
-	protoassert.ElementsMatch(suite.T(), baselinesWithoutObsPeriod, baselines)
+
+	protoassert.ElementsMatch(suite.T(), baselines, baselinesWithoutObsPeriod)
 }
 
 func (suite *ManagerTestSuite) TestFlowsUpdateForOtherEntityTypes() {
@@ -239,6 +240,7 @@ func (suite *ManagerTestSuite) TestFlowsUpdateForOtherEntityTypes() {
 				},
 			},
 		}, true, nil)
+
 	suite.processFlowUpdate([]networkgraph.NetworkConnIndicator{
 		// This conn is valid and should get incorporated into the baseline.
 		{
@@ -252,6 +254,21 @@ func (suite *ManagerTestSuite) TestFlowsUpdateForOtherEntityTypes() {
 			},
 			Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 			DstPort:  1,
+		},
+		// This conn is valid and should get incorporated into the baseline
+		// and should be anonymised to the internet
+		{
+			SrcEntity: networkgraph.Entity{
+				Type: storage.NetworkEntityInfo_DEPLOYMENT,
+				ID:   depID(1),
+			},
+			DstEntity: networkgraph.Entity{
+				Type:       storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+				ID:         extSrcID(11),
+				Discovered: true,
+			},
+			Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+			DstPort:  12,
 		},
 		// This conn is valid and should get incorporated into the baseline.
 		{
@@ -334,6 +351,13 @@ func (suite *ManagerTestSuite) TestFlowsUpdateForOtherEntityTypes() {
 					Id:   "INTERNETTZZ",
 				}},
 				Properties: []*storage.NetworkBaselineConnectionProperties{properties(false, 13)},
+			},
+			&storage.NetworkBaselinePeer{
+				Entity: &storage.NetworkEntity{Info: &storage.NetworkEntityInfo{
+					Type: storage.NetworkEntityInfo_INTERNET,
+					Id:   networkgraph.InternetEntity().ID,
+				}},
+				Properties: []*storage.NetworkBaselineConnectionProperties{properties(false, 12)},
 			},
 		),
 		baselineWithPeers(2, depPeer(1, properties(true, 52))),

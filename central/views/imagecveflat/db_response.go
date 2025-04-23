@@ -15,10 +15,10 @@ type imageCVEFlatResponse struct {
 	FirstDiscoveredInSystem *time.Time                     `db:"cve_created_time_min"`
 	Published               *time.Time                     `db:"cve_published_on_min"`
 	TopNVDCVSS              *float32                       `db:"nvd_cvss_max"`
-	EpssProbability         *float32                       `db:"cvebaseinfo_epss_epssprobability_max"`
-	ImpactScore             *float32                       `db:"impactscore_max"`
-	FirstImageOccurrence    *time.Time                     `db:"firstimageoccurrence_min"`
-	State                   *storage.VulnerabilityState    `db:"state_max"`
+	EpssProbability         *float32                       `db:"epss_probability_max"`
+	ImpactScore             *float32                       `db:"impact_score_max"`
+	FirstImageOccurrence    *time.Time                     `db:"first_image_occurrence_timestamp_min"`
+	State                   *storage.VulnerabilityState    `db:"vulnerability_state_max"`
 }
 
 func (c *imageCVEFlatResponse) GetCVE() string {

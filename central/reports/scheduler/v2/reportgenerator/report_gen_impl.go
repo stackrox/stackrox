@@ -10,6 +10,7 @@ import (
 	blobDS "github.com/stackrox/rox/central/blob/datastore"
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	imageCVEDS "github.com/stackrox/rox/central/cve/image/datastore"
+	imageCVE2DS "github.com/stackrox/rox/central/cve/image/v2/datastore"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/graphql/resolvers"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
@@ -21,12 +22,14 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/notifier"
 	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/postgres"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sac"
@@ -42,7 +45,7 @@ var (
 	reportGenCtx = resolvers.SetAuthorizerOverride(loaders.WithLoaderContext(sac.WithAllAccess(context.Background())), allow.Anonymous())
 
 	deployedImagesQueryParts = &ReportQueryParts{
-		Schema: pkgSchema.ImageCvesSchema,
+		Schema: selectSchema(),
 		Selects: []*v1.QuerySelect{
 			search.NewQuerySelect(search.ImageName).Proto(),
 			search.NewQuerySelect(search.Component).Proto(),
@@ -65,7 +68,7 @@ var (
 	}
 
 	watchedImagesQueryParts = &ReportQueryParts{
-		Schema: pkgSchema.ImageCvesSchema,
+		Schema: selectSchema(),
 		Selects: []*v1.QuerySelect{
 			search.NewQuerySelect(search.ImageName).Proto(),
 			search.NewQuerySelect(search.Component).Proto(),
@@ -94,9 +97,15 @@ type reportGeneratorImpl struct {
 	clusterDatastore        clusterDS.DataStore
 	namespaceDatastore      namespaceDS.DataStore
 	imageCVEDatastore       imageCVEDS.DataStore
+	imageCVE2Datastore      imageCVE2DS.DataStore
 	db                      postgres.DB
 
 	Schema *graphql.Schema
+}
+
+type ImageCVEInterface interface {
+	GetId() string
+	GetCveBaseInfo() *storage.CVEInfo
 }
 
 func (rg *reportGeneratorImpl) ProcessReportRequest(req *ReportRequest) {
@@ -385,9 +394,24 @@ func (rg *reportGeneratorImpl) withCVEReferenceLinks(imageCVEResponses []*ImageC
 		}
 	}
 
-	cves, err := rg.imageCVEDatastore.GetBatch(reportGenCtx, cveIDs.AsSlice())
-	if err != nil {
-		return nil, err
+	var cves []ImageCVEInterface
+	if features.FlattenCVEData.Enabled() {
+		imageCVEV2, err := rg.imageCVE2Datastore.GetBatch(reportGenCtx, cveIDs.AsSlice())
+		if err != nil {
+			return nil, err
+		}
+		for _, v2 := range imageCVEV2 {
+			cves = append(cves, v2)
+		}
+	} else {
+		imageCVE, err := rg.imageCVEDatastore.GetBatch(reportGenCtx, cveIDs.AsSlice())
+		if err != nil {
+			return nil, err
+		}
+		for _, v2 := range imageCVE {
+			cves = append(cves, v2)
+		}
+
 	}
 
 	cveRefLinks := make(map[string]string)
@@ -434,4 +458,11 @@ func filterOnImageType(imageTypes []storage.VulnerabilityReportFilters_ImageType
 		}
 	}
 	return false
+}
+
+func selectSchema() *walker.Schema {
+	if features.FlattenCVEData.Enabled() {
+		return pkgSchema.ImageCvesV2Schema
+	}
+	return pkgSchema.ImageCvesSchema
 }

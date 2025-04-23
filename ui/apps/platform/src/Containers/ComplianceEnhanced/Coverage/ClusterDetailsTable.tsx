@@ -12,6 +12,7 @@ import {
 import { ExpandableRowContent, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
+import { makeFilterChipDescriptors } from 'Components/CompoundSearchFilter/utils/utils';
 import { CompoundSearchFilterConfig, OnSearchPayload } from 'Components/CompoundSearchFilter/types';
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
@@ -22,13 +23,14 @@ import { TableUIState } from 'utils/getTableUIState';
 import { SearchFilter } from 'types/search';
 
 import { DETAILS_TAB, TAB_NAV_QUERY } from './CheckDetailsPage';
-import { CHECK_NAME_QUERY, CHECK_STATUS_QUERY } from './compliance.coverage.constants';
+import { CHECK_NAME_QUERY } from './compliance.coverage.constants';
 import { coverageCheckDetailsPath } from './compliance.coverage.routes';
 import { getClusterResultsStatusObject } from './compliance.coverage.utils';
 import CheckStatusDropdown from './components/CheckStatusDropdown';
 import ControlLabels from './components/ControlLabels';
 import StatusIcon from './components/StatusIcon';
 import useScanConfigRouter from './hooks/useScanConfigRouter';
+import { complianceStatusFilterChipDescriptors } from '../searchFilterConfig';
 
 export type ClusterDetailsTableProps = {
     checkResultsCount: number;
@@ -77,6 +79,8 @@ function ClusterDetailsTable({
         setExpandedRows([]);
     }, [page, perPage, tableState]);
 
+    const filterChipGroupDescriptors = makeFilterChipDescriptors(searchFilterConfig);
+
     return (
         <>
             <Toolbar>
@@ -110,14 +114,8 @@ function ClusterDetailsTable({
                             searchFilter={searchFilter}
                             onFilterChange={onFilterChange}
                             filterChipGroupDescriptors={[
-                                {
-                                    displayName: 'Profile Check',
-                                    searchFilterName: CHECK_NAME_QUERY,
-                                },
-                                {
-                                    displayName: 'Compliance Status',
-                                    searchFilterName: CHECK_STATUS_QUERY,
-                                },
+                                ...filterChipGroupDescriptors,
+                                complianceStatusFilterChipDescriptors,
                             ]}
                         />
                     </ToolbarGroup>

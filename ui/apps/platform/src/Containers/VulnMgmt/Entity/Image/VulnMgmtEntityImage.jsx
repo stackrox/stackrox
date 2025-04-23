@@ -19,7 +19,7 @@ import {
     getScopeQuery,
 } from '../VulnMgmtPolicyQueryUtil';
 
-const VulnMgmtImage = ({
+const VulnMgmtEntityImage = ({
     entityId,
     entityListType,
     search,
@@ -135,7 +135,7 @@ const VulnMgmtImage = ({
     );
 };
 
-VulnMgmtImage.propTypes = workflowEntityPropTypes;
-VulnMgmtImage.defaultProps = workflowEntityDefaultProps;
+VulnMgmtEntityImage.propTypes = workflowEntityPropTypes;
+VulnMgmtEntityImage.defaultProps = workflowEntityDefaultProps;
 
-export default VulnMgmtImage;
+export default VulnMgmtEntityImage;

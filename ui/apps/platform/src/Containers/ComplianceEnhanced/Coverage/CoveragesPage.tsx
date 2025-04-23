@@ -17,6 +17,10 @@ import ComplianceUsageDisclaimer, {
     COMPLIANCE_DISCLAIMER_KEY,
 } from 'Components/ComplianceUsageDisclaimer';
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
+import {
+    makeFilterChipDescriptors,
+    onURLSearch,
+} from 'Components/CompoundSearchFilter/utils/utils';
 import { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
 import PageTitle from 'Components/PageTitle';
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
@@ -29,13 +33,6 @@ import {
 } from 'services/ComplianceResultsStatsService';
 import { defaultChartHeight } from 'utils/chartUtils';
 
-import { onURLSearch } from 'Components/CompoundSearchFilter/utils/utils';
-import { clusterSearchFilterConfig } from 'Containers/Vulnerabilities/searchFilterConfig';
-import {
-    CHECK_NAME_QUERY,
-    CHECK_STATUS_QUERY,
-    CLUSTER_QUERY,
-} from './compliance.coverage.constants';
 import { coverageProfileChecksPath } from './compliance.coverage.routes';
 import { createScanConfigFilter } from './compliance.coverage.utils';
 import { ComplianceProfilesContext } from './ComplianceProfilesProvider';
@@ -49,7 +46,11 @@ import ProfilesToggleGroup from './ProfilesToggleGroup';
 import ProfileChecksPage from './ProfileChecksPage';
 import ProfileClustersPage from './ProfileClustersPage';
 import { ScanConfigurationsContext } from './ScanConfigurationsProvider';
-import { profileCheckSearchFilterConfig } from '../searchFilterConfig';
+import {
+    clusterSearchFilterConfig,
+    complianceStatusFilterChipDescriptors,
+    profileCheckSearchFilterConfig,
+} from '../searchFilterConfig';
 
 const searchFilterConfig = [profileCheckSearchFilterConfig, clusterSearchFilterConfig];
 
@@ -67,6 +68,8 @@ function CoveragesPage() {
     const [selectedProfileStats, setSelectedProfileStats] = useState<
         undefined | ComplianceProfileScanStats
     >(undefined);
+
+    const filterChipGroupDescriptors = makeFilterChipDescriptors(searchFilterConfig);
 
     const { searchFilter, setSearchFilter } = useURLSearch();
 
@@ -200,18 +203,8 @@ function CoveragesPage() {
                                             searchFilter={searchFilter}
                                             onFilterChange={setSearchFilter}
                                             filterChipGroupDescriptors={[
-                                                {
-                                                    displayName: 'Profile Check',
-                                                    searchFilterName: CHECK_NAME_QUERY,
-                                                },
-                                                {
-                                                    displayName: 'Cluster',
-                                                    searchFilterName: CLUSTER_QUERY,
-                                                },
-                                                {
-                                                    displayName: 'Compliance Status',
-                                                    searchFilterName: CHECK_STATUS_QUERY,
-                                                },
+                                                ...filterChipGroupDescriptors,
+                                                complianceStatusFilterChipDescriptors,
                                             ]}
                                         />
                                     </ToolbarGroup>

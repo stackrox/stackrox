@@ -243,20 +243,14 @@ func (ds *dataStoreImpl) CreateExternalNetworkEntity(ctx context.Context, entity
 	return nil
 }
 
-func (ds *dataStoreImpl) CreateExtNetworkEntitiesForCluster(ctx context.Context, cluster string, entities ...*storage.NetworkEntity) ([]string, error) {
+func (ds *dataStoreImpl) CreateExtNetworkEntitiesForCluster(ctx context.Context, cluster string, entities ...*storage.NetworkEntity) (int, error) {
 	var errs errorhelpers.ErrorList
 
-	skipList := set.NewStringSet()
+	allowed := make(map[string]bool)
+	toInsert := make([]*storage.NetworkEntity, 0, len(entities))
 	for _, e := range entities {
 		if err := validateExternalNetworkEntity(e); err != nil {
 			errs.AddError(err)
-			skipList.Add(e.GetInfo().GetId())
-		}
-	}
-
-	allowed := make(map[string]bool)
-	for _, e := range entities {
-		if skipList.Contains(e.GetInfo().GetId()) {
 			continue
 		}
 
@@ -267,7 +261,6 @@ func (ds *dataStoreImpl) CreateExtNetworkEntitiesForCluster(ctx context.Context,
 			ok, err = ds.writeAllowed(ctx, e.GetInfo().GetId())
 			if err != nil {
 				errs.AddError(err)
-				skipList.Add(e.GetInfo().GetId())
 				continue
 			}
 			allowed[clusterID] = ok
@@ -276,25 +269,34 @@ func (ds *dataStoreImpl) CreateExtNetworkEntitiesForCluster(ctx context.Context,
 		if !ok {
 			errs.AddError(errors.Errorf("permission denied to create entity %s (CIDR=%s)",
 				e.GetInfo().GetExternalSource().GetName(), e.GetInfo().GetExternalSource().GetCidr()))
-			skipList.Add(e.GetInfo().GetId())
 		}
+		toInsert = append(toInsert, e)
 	}
 
-	inserted := make([]string, 0, len(entities)-len(skipList))
-	for _, entity := range entities {
-		if skipList.Contains(entity.GetInfo().GetId()) {
-			continue
-		}
+	if err := ds.createMany(ctx, toInsert); err != nil {
+		errs.AddError(err)
+	}
 
-		inserted = append(inserted, entity.GetInfo().GetId())
-		if err := ds.create(ctx, entity); err != nil {
+	for _, e := range toInsert {
+		if err := ds.getNetworkTree(ctx, cluster, true).Insert(e.GetInfo()); err != nil {
 			errs.AddError(err)
 		}
 	}
 
 	go ds.doPushExternalNetworkEntitiesToSensor(cluster)
 
-	return inserted, errs.ToError()
+	return len(toInsert), errs.ToError()
+}
+
+func (ds *dataStoreImpl) createMany(ctx context.Context, entities []*storage.NetworkEntity) error {
+	ds.netEntityLock.Lock()
+	defer ds.netEntityLock.Unlock()
+
+	if err := ds.storage.UpsertMany(ctx, entities); err != nil {
+		return errors.Wrapf(err, "upserting %d network entities into storage", len(entities))
+	}
+
+	return nil
 }
 
 func (ds *dataStoreImpl) create(ctx context.Context, entity *storage.NetworkEntity) error {

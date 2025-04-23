@@ -11,13 +11,7 @@ const titleClassName =
     'border-b border-base-300 leading-normal cursor-pointer flex justify-between h-14';
 const headerClassName = 'hover:bg-primary-200 hover:border-primary-300';
 
-function ProcessesDiscoveryCardHeader({
-    icon,
-    deploymentId,
-    process,
-    processEpoch,
-    setProcessEpoch,
-}) {
+function DiscoveryCardHeader({ icon, deploymentId, process, processEpoch, setProcessEpoch }) {
     const { name, containerName, suspicious } = process;
 
     function addBaseline(evt) {
@@ -75,7 +69,7 @@ function ProcessesDiscoveryCardHeader({
     );
 }
 
-ProcessesDiscoveryCardHeader.propTypes = {
+DiscoveryCardHeader.propTypes = {
     icon: PropTypes.node.isRequired,
     deploymentId: PropTypes.string.isRequired,
     process: PropTypes.shape({
@@ -88,4 +82,4 @@ ProcessesDiscoveryCardHeader.propTypes = {
     setProcessEpoch: PropTypes.func.isRequired,
 };
 
-export default ProcessesDiscoveryCardHeader;
+export default DiscoveryCardHeader;

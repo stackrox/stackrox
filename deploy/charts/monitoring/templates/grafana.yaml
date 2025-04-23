@@ -51,6 +51,17 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
+  name: grafana-plugins
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: stackrox
+data:
+  sample.yaml: |-
+    apiVersion: 1
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
   name: grafana-dashboards
   namespace: {{ .Release.Namespace }}
   labels:
