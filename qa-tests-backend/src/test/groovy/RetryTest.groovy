@@ -7,11 +7,12 @@ import io.stackrox.annotations.Retry
 import spock.lang.Specification
 
 @ASTTest(
-        phase = CompilePhase.CANONICALIZATION,
-        value = {
-            assert node.methods*.name.any { it == 'fail_with_retry' }
-            assert SecretService.methods*.name.any { it == 'getSecret_with_retry' }
-        })
+    phase = CompilePhase.CANONICALIZATION,
+    value = {
+        assert node.methods*.name.any { it == 'fail_with_retry' }
+        assert SecretService.methods*.name.any { it == 'getSecret_with_retry' }
+    }
+)
 class RetryTest extends Specification {
     def test() {
         expect:
