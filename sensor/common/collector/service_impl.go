@@ -57,29 +57,41 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 func (s *serviceImpl) Communicate(server sensor.CollectorService_CommunicateServer) error {
 	for {
-		msg, err := server.Recv()
-		if err != nil {
-			log.Error("error dequeueing collector message, event: ", err)
-			return err
-		}
-
 		select {
 		case <-server.Context().Done():
 			return nil
 		default:
-			metrics.CollectorChannelInc(msg)
-			switch msg.GetMsg().(type) {
-			case *sensor.MsgFromCollector_ProcessSignal:
-				s.queue <- msg.GetProcessSignal()
-			case *sensor.MsgFromCollector_Register:
-				log.Infof("got register: %+v", msg.GetRegister())
-			case *sensor.MsgFromCollector_Info:
-				log.Infof("got network info: %+v", msg.GetInfo())
-			default:
-				log.Errorf("got unknown message type %T", msg.GetMsg())
+			err := s.communicate(server)
+			if err != nil {
+				return err
 			}
 		}
 	}
+}
+
+func (s *serviceImpl) communicate(server sensor.CollectorService_CommunicateServer) error {
+	msg, err := server.Recv()
+	if err != nil {
+		log.Error("error dequeueing collector message, event: ", err)
+		return err
+	}
+
+	metrics.CollectorChannelInc(msg)
+	switch msg.GetMsg().(type) {
+	case *sensor.MsgFromCollector_ProcessSignal:
+		select {
+		case s.queue <- msg.GetProcessSignal():
+		case <-server.Context().Done():
+			return nil
+		}
+	case *sensor.MsgFromCollector_Register:
+		log.Debugf("got register: %+v", msg.GetRegister())
+	case *sensor.MsgFromCollector_Info:
+		log.Debugf("got network info: %+v", msg.GetInfo())
+	default:
+		log.Errorf("got unknown message type %T", msg.GetMsg())
+	}
+	return nil
 }
 
 func (s *serviceImpl) RegisterServiceServer(server *grpc.Server) {

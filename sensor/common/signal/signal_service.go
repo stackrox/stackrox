@@ -83,7 +83,6 @@ func (s *serviceImpl) receiveMessages(stream sensorAPI.SignalService_PushSignals
 
 		signal, err := unwrapSignal(signalStreamMsg)
 		if err != nil {
-			metrics.IncrementTotalProcessesDroppedCounter()
 			return err
 		}
 
@@ -91,8 +90,15 @@ func (s *serviceImpl) receiveMessages(stream sensorAPI.SignalService_PushSignals
 		case <-stream.Context().Done():
 			return nil
 		default:
-			metrics.IncrementTotalProcessesReceivedCounter()
-			s.queue <- signal
+			select {
+			case s.queue <- signal:
+				metrics.IncrementTotalProcessesReceivedCounter()
+			case <-stream.Context().Done():
+				metrics.IncrementTotalProcessesDroppedCounter()
+				return nil
+			default:
+				metrics.IncrementTotalProcessesDroppedCounter()
+			}
 		}
 	}
 }

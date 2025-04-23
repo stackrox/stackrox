@@ -129,19 +129,12 @@ var (
 		Help:      "A counter of the total number of processes sent to Central by Sensor",
 	})
 
-	totalProcessesReceivedCounter = prometheus.NewCounter(prometheus.CounterOpts{
+	totalProcessesCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "total_processes_received_counter",
-		Help:      "A counter of the total number of processes received by Sensor from Collector",
-	})
-
-	totalProcessesDroppedCounter = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "total_processes_dropped_counter",
+		Name:      "collector_processes_total",
 		Help:      "A counter of the total number of processes dropped by Sensor from Collector",
-	})
+	}, []string{"Operation"})
 
 	processSignalBufferGauge = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
@@ -302,14 +295,14 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "num_messages_waiting_for_transmission_to_central",
-		Help:      "A counter that tracks the operations in the responses channel",
+		Help:      "A gauge that tracks the operations in the responses channel",
 	}, []string{"Operation", "MessageType"})
 
 	// collectorChannelMessagesCount a counter to track the messages received from collector
 	collectorChannelMessagesCount = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "num_messages_received_collector",
+		Name:      "messages_received_collector_total",
 		Help:      "A counter that tracks number of messages received from collector",
 	}, []string{"MessageType"})
 )
@@ -404,12 +397,16 @@ func IncrementTotalProcessesSentCounter(numberOfProcesses int) {
 
 // IncrementTotalProcessesReceivedCounter increments the total number of processes received
 func IncrementTotalProcessesReceivedCounter() {
-	totalProcessesReceivedCounter.Inc()
+	totalProcessesCounter.With(prometheus.Labels{
+		"Operation": "added",
+	}).Inc()
 }
 
 // IncrementTotalProcessesReceivedCounter increments the total number of processes dropped
 func IncrementTotalProcessesDroppedCounter() {
-	totalProcessesDroppedCounter.Inc()
+	totalProcessesCounter.With(prometheus.Labels{
+		"Operation": "dropped",
+	}).Inc()
 }
 
 // SetProcessSignalBufferSizeGauge set process signal buffer size gauge.

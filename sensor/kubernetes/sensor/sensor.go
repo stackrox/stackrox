@@ -15,7 +15,6 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/pods"
 	"github.com/stackrox/rox/pkg/protoutils"
-	"github.com/stackrox/rox/pkg/sensor/queue"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/admissioncontroller"
 	"github.com/stackrox/rox/sensor/common/certdistribution"
@@ -31,7 +30,6 @@ import (
 	"github.com/stackrox/rox/sensor/common/image/cache"
 	"github.com/stackrox/rox/sensor/common/installmethod"
 	"github.com/stackrox/rox/sensor/common/internalmessage"
-	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/networkflow/manager"
 	"github.com/stackrox/rox/sensor/common/networkflow/service"
 	"github.com/stackrox/rox/sensor/common/processfilter"
@@ -113,22 +111,17 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	complianceCommandHandler := compliance.NewCommandHandler(complianceService)
 
 	var signalSrv signalService.Service
-	if cfg.signalServiceAuthFuncOverride != nil && cfg.localSensor {
-		signalSrv = signalService.NewService(signalService.WithAuthFuncOverride(cfg.signalServiceAuthFuncOverride))
-	} else {
-		signalSrv = signalService.NewService()
-	}
-
 	var collectorSrv collector.Service
 	if cfg.signalServiceAuthFuncOverride != nil && cfg.localSensor {
+		signalSrv = signalService.NewService(signalService.WithAuthFuncOverride(cfg.signalServiceAuthFuncOverride))
 		collectorSrv = collector.NewService(collector.WithAuthFuncOverride(cfg.signalServiceAuthFuncOverride))
 	} else {
+		signalSrv = signalService.NewService()
 		collectorSrv = collector.NewService()
 	}
 
 	// Create Process Pipeline
-	indicators := make(chan *message.ExpiringMessage, queue.ScaleSizeOnNonDefault(env.ProcessIndicatorBufferSize))
-	processPipeline := processindicator.NewProcessPipeline(indicators, storeProvider.Entities(), processfilter.Singleton(), policyDetector)
+	processPipeline := processindicator.NewProcessPipeline(storeProvider.Entities(), processfilter.Singleton(), policyDetector)
 
 	signalCmp := processindicator.New(processPipeline, signalSrv.GetMessagesC(), collectorSrv.GetMessagesC(), processindicator.WithTraceWriter(cfg.processIndicatorWriter))
 

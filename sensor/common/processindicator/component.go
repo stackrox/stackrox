@@ -59,7 +59,7 @@ func (c *componentImpl) Stop(_ error) {
 }
 
 func (c *componentImpl) Notify(e common.SensorComponentEvent) {
-	log.Info(common.LogSensorComponentEvent(e))
+	log.Info(common.LogSensorComponentEvent(e, "processindicator"))
 	c.processPipeline.Notify(e)
 }
 
@@ -99,23 +99,22 @@ func (c *componentImpl) processMsg(signal *storage.ProcessSignal) {
 	if c.writer != nil {
 		if data, err := signal.MarshalVT(); err == nil {
 			if _, err := c.writer.Write(data); err != nil {
-				log.Warnf("Error writing msg: %v", err)
+				log.Warnf("Error writing ProcessSignal data: %v", err)
 			}
 		} else {
-			log.Warnf("Error marshalling  msg: %v", err)
+			log.Warnf("Error marshalling ProcessSignal: %v", err)
 		}
 	}
 
 	c.processPipeline.Process(signal)
 }
 
-// TODO(ROX-3281) this is a workaround for these collector issues
 func isProcessSignalValid(signal *storage.ProcessSignal) bool {
 	// Example: <NA> or sometimes a truncated variant
-	if signal.GetExecFilePath() == "" || signal.GetExecFilePath()[0] == '<' {
+	if signal.GetExecFilePath() == "" || strings.HasPrefix(signal.GetExecFilePath(), "<") {
 		return false
 	}
-	if signal.GetName() == "" || signal.GetName()[0] == '<' {
+	if signal.GetName() == "" || strings.HasPrefix(signal.GetName(), "<") {
 		return false
 	}
 	if strings.HasPrefix(signal.GetExecFilePath(), "/proc/self") {
