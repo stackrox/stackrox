@@ -147,7 +147,8 @@ spec:
       volumes:
       - name: disk
         {{- toYaml ._rox.central.db.persistence._volumeCfg | nindent 8 }}
-      {{- if ._rox.central.db.persistence.backup }}
+      {{- if and (eq ._rox.env.installMethod "operator")
+                 ._rox.central.db.persistence.backup }}
       - name: backup
         {{- toYaml ._rox.central.db.persistence._backupVolumeCfg | nindent 8 }}
       {{- end }}
