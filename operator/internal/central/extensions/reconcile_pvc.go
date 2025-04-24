@@ -55,8 +55,7 @@ var (
 	DefaultBackupPVCSize = resource.MustParse("200Gi")
 )
 
-func convertDBPersistenceToPersistence(p *platform.DBPersistence,
-	target PVCTarget, log logr.Logger) (*platform.Persistence, error) {
+func convertDBPersistenceToPersistence(p *platform.DBPersistence, target PVCTarget, log logr.Logger) (*platform.Persistence, error) {
 	if p == nil {
 		return nil, nil
 	}
@@ -74,7 +73,7 @@ func convertDBPersistenceToPersistence(p *platform.DBPersistence,
 	pvcSize := pvc.Size
 
 	if target == PVCTargetCentralDBBackup {
-		if pvc.ClaimName != nil {
+		if claimName != nil {
 			// If a ClaimName is specified, derive the backup PVC ClamName from
 			// it as well. We don't want to modify the pointer in place, make a
 			// copy instead -- otherwise the next reconciliation will repeat the
@@ -83,7 +82,7 @@ func convertDBPersistenceToPersistence(p *platform.DBPersistence,
 			claimName = &backupName
 		}
 
-		if pvc.Size != nil {
+		if pvcSize != nil {
 			// If a Size is specified, derive the backup PVC Size from it as
 			// well, the rule of thumb is that it should be twice as large, to
 			// accomodate the backup and one restore copy.
@@ -94,8 +93,7 @@ func convertDBPersistenceToPersistence(p *platform.DBPersistence,
 			quantity, err := resource.ParseQuantity(*pvcSize)
 
 			if err != nil {
-				log.Error(err, "failed to calculate backup volume size")
-				return nil, err
+				return nil, errors.Wrap(err, "failed to calculate backup volume size")
 			} else {
 				quantity.Mul(2)
 				backupSize := quantity.String()
@@ -123,8 +121,7 @@ func convertDBPersistenceToPersistence(p *platform.DBPersistence,
 //     database backups
 //
 // A nil return value indicates that no persistent volume should be provisioned for the respective target.
-func getPersistenceByTarget(central *platform.Central, target PVCTarget,
-	log logr.Logger) (*platform.Persistence, error) {
+func getPersistenceByTarget(central *platform.Central, target PVCTarget, log logr.Logger) (*platform.Persistence, error) {
 	switch target {
 	case PVCTargetCentral:
 		return nil, nil
@@ -146,9 +143,7 @@ func getPersistenceByTarget(central *platform.Central, target PVCTarget,
 // ReconcilePVCExtension reconciles PVCs created by the operator. The PVC is not managed by a Helm chart
 // because if a user uninstalls StackRox, it should keep the data, preventing to unintentionally erasing data.
 // On uninstall the owner reference is removed from the PVC objects.
-func ReconcilePVCExtension(
-	client ctrlClient.Client, direct ctrlClient.Reader, target PVCTarget,
-	defaultClaimName string, opts ...PVCOption) extensions.ReconcileExtension {
+func ReconcilePVCExtension(client ctrlClient.Client, direct ctrlClient.Reader, target PVCTarget, defaultClaimName string, opts ...PVCOption) extensions.ReconcileExtension {
 
 	fn := func(ctx context.Context, central *platform.Central, client ctrlClient.Client, direct ctrlClient.Reader, _ func(statusFunc updateStatusFunc), log logr.Logger) error {
 		persistence, err := getPersistenceByTarget(central, target, log)
@@ -161,11 +156,7 @@ func ReconcilePVCExtension(
 	return wrapExtension(fn, client, direct)
 }
 
-func reconcilePVC(
-	ctx context.Context, central *platform.Central,
-	persistence *platform.Persistence, target PVCTarget,
-	defaultClaimName string, client ctrlClient.Client, log logr.Logger,
-	opts ...PVCOption) error {
+func reconcilePVC(ctx context.Context, central *platform.Central, persistence *platform.Persistence, target PVCTarget, defaultClaimName string, client ctrlClient.Client, log logr.Logger, opts ...PVCOption) error {
 	ext := reconcilePVCExtensionRun{
 		ctx:              ctx,
 		namespace:        central.GetNamespace(),
@@ -288,13 +279,17 @@ func (r *reconcilePVCExtensionRun) handleCreate(claimName string, pvcConfig *pla
 	// Note that to make this check less disruptive, in case if we face an
 	// error we still try to create a PVC.
 	hasDefault, err := utils.HasDefaultStorageClass(r.ctx, r.client)
-	if err == nil && !hasDefault && pvcConfig.StorageClassName == nil {
-		// For the backup PVC it's a hard stop
-		if r.target == PVCTargetCentralDBBackup {
-			r.log.Info("No default storage class or explicit storage class found, skip PVC creation")
-			return nil
-		} else {
-			r.log.Info("No default storage class or explicit storage class found, proceed")
+	if err != nil {
+		r.log.Error(err, fmt.Sprintf("cannot find the default storage class, but proceeding with %q PVC creation", claimName))
+	} else {
+		if !hasDefault && pvcConfig.StorageClassName == nil {
+			// For the backup PVC it's a hard stop
+			if r.target == PVCTargetCentralDBBackup {
+				r.log.Info(fmt.Sprintf("No default storage class or explicit storage class found, skip %q PVC creation", claimName))
+				return nil
+			} else {
+				r.log.Info(fmt.Sprintf("No default storage class or explicit storage class found, but proceeding with %q PVC creation", claimName))
+			}
 		}
 	}
 
