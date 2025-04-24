@@ -10,6 +10,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -21,6 +22,8 @@ import (
 
 var (
 	queryTimeout = env.PostgresVMStatementTimeout.DurationSetting()
+
+	log = logging.LoggerForModule()
 )
 
 type imageCVEFlatViewImpl struct {
@@ -29,6 +32,7 @@ type imageCVEFlatViewImpl struct {
 }
 
 func (v *imageCVEFlatViewImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
+	log.Infof("SHREWS -- FLAT Count")
 	if err := common.ValidateQuery(q); err != nil {
 		return 0, err
 	}
@@ -55,10 +59,12 @@ func (v *imageCVEFlatViewImpl) Count(ctx context.Context, q *v1.Query) (int, err
 		utils.Should(err)
 		return 0, err
 	}
+	log.Infof("SHREWS -- FLAT Count -- DONE")
 	return results[0].CVECount, nil
 }
 
 func (v *imageCVEFlatViewImpl) Get(ctx context.Context, q *v1.Query, options views.ReadOptions) ([]CveFlat, error) {
+	log.Infof("SHREWS -- FLAT Get")
 	if err := common.ValidateQuery(q); err != nil {
 		return nil, err
 	}
@@ -88,6 +94,7 @@ func (v *imageCVEFlatViewImpl) Get(ctx context.Context, q *v1.Query, options vie
 		})
 		ret = append(ret, r)
 	}
+	log.Infof("SHREWS -- FLAT Get -- DONE")
 	return ret, nil
 }
 
