@@ -4,16 +4,17 @@ import (
 	"slices"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/glob"
 )
 
 // APICallCampaignCriterion defines a criterion for an API interception of a
 // telemetry campaign. Requests parameters need to match all fields for the
 // request to be tracked. Any request matches empty criterion.
 type APICallCampaignCriterion struct {
-	Path    *Pattern           `json:"path,omitempty"`
-	Method  *Pattern           `json:"method,omitempty"`
-	Codes   []int32            `json:"codes,omitempty"`
-	Headers map[string]Pattern `json:"headers,omitempty"`
+	Path    *glob.Pattern           `json:"path,omitempty"`
+	Method  *glob.Pattern           `json:"method,omitempty"`
+	Codes   []int32                 `json:"codes,omitempty"`
+	Headers map[string]glob.Pattern `json:"headers,omitempty"`
 }
 
 // APICallCampaign defines an API interception telemetry campaign as a list of
@@ -27,14 +28,14 @@ func (c *APICallCampaignCriterion) Compile() error {
 		return nil
 	}
 	for _, pattern := range c.Headers {
-		if err := pattern.compile(); err != nil {
+		if err := pattern.Compile(); err != nil {
 			return errors.WithMessage(err, "error parsing header pattern")
 		}
 	}
-	if err := c.Path.compile(); err != nil {
+	if err := c.Path.Compile(); err != nil {
 		return errors.WithMessage(err, "error parsing path pattern")
 	}
-	if err := c.Method.compile(); err != nil {
+	if err := c.Method.Compile(); err != nil {
 		return errors.WithMessage(err, "error parsing methods pattern")
 	}
 	return nil

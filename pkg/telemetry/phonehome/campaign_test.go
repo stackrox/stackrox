@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/stackrox/rox/pkg/glob"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -68,39 +69,39 @@ func TestCampaignFulfilled(t *testing.T) {
 			},
 			"Method": []*APICallCampaignCriterion{
 				{
-					Method: Pattern("GET").Ptr(),
+					Method: glob.Pattern("GET").Ptr(),
 				},
 			},
 			"Methods": []*APICallCampaignCriterion{
 				{
-					Method: Pattern("{POST,GET,PUT}").Ptr(),
+					Method: glob.Pattern("{POST,GET,PUT}").Ptr(),
 				},
 			},
 			"PathPattern": []*APICallCampaignCriterion{
 				{
-					Path: Pattern("/some/test*").Ptr(),
+					Path: glob.Pattern("/some/test*").Ptr(),
 				},
 			},
 			"PathPatterns": []*APICallCampaignCriterion{
 				{
-					Path: Pattern("{/x,/some/test*,/y}").Ptr(),
+					Path: glob.Pattern("{/x,/some/test*,/y}").Ptr(),
 				},
 			},
 			"UserAgent": []*APICallCampaignCriterion{
 				{
-					Headers: map[string]Pattern{
+					Headers: map[string]glob.Pattern{
 						"User-Agent": "*test*",
 					},
 				},
 			},
 			"UserAgents": []*APICallCampaignCriterion{
 				{
-					Headers: map[string]Pattern{"User-Agent": "*x*"},
+					Headers: map[string]glob.Pattern{"User-Agent": "*x*"},
 				},
 				{
-					Headers: map[string]Pattern{"User-Agent": "*test*"},
+					Headers: map[string]glob.Pattern{"User-Agent": "*test*"},
 				}, {
-					Headers: map[string]Pattern{"User-Agent": "*y*"},
+					Headers: map[string]glob.Pattern{"User-Agent": "*y*"},
 				},
 			},
 		}
@@ -143,10 +144,10 @@ func TestCampaignFulfilled(t *testing.T) {
 		}
 		campaign := APICallCampaign{
 			{
-				Path: Pattern("/v1/test*").Ptr(),
+				Path: glob.Pattern("/v1/test*").Ptr(),
 			},
 			{
-				Method: Pattern("GET").Ptr(),
+				Method: glob.Pattern("GET").Ptr(),
 			},
 		}
 		require.NoError(t, campaign.Compile())
@@ -156,27 +157,27 @@ func TestCampaignFulfilled(t *testing.T) {
 		campaign := APICallCampaign{
 			{
 				Codes:   []int32{200, 400},
-				Method:  Pattern("{GET,POST}").Ptr(),
-				Path:    Pattern("{/v1/test*,/v2/test*}").Ptr(),
-				Headers: map[string]Pattern{"User-Agent": "*test*"},
+				Method:  glob.Pattern("{GET,POST}").Ptr(),
+				Path:    glob.Pattern("{/v1/test*,/v2/test*}").Ptr(),
+				Headers: map[string]glob.Pattern{"User-Agent": "*test*"},
 			},
 			{
 				Codes:   []int32{200, 400},
-				Method:  Pattern("{GET,POST}").Ptr(),
-				Path:    Pattern("{/v1/test*,/v2/test*}").Ptr(),
-				Headers: map[string]Pattern{"User-Agent": "*toast*"},
+				Method:  glob.Pattern("{GET,POST}").Ptr(),
+				Path:    glob.Pattern("{/v1/test*,/v2/test*}").Ptr(),
+				Headers: map[string]glob.Pattern{"User-Agent": "*toast*"},
 			},
 			{
 				Codes:   []int32{300, 500},
-				Method:  Pattern("{DELETE,OPTIONS}").Ptr(),
-				Path:    Pattern("{/v3/test*,/v4/test*}").Ptr(),
-				Headers: map[string]Pattern{"User-Agent": "{*tooth*,*teeth*}"},
+				Method:  glob.Pattern("{DELETE,OPTIONS}").Ptr(),
+				Path:    glob.Pattern("{/v3/test*,/v4/test*}").Ptr(),
+				Headers: map[string]glob.Pattern{"User-Agent": "{*tooth*,*teeth*}"},
 			},
 			{
 				Codes:  []int32{100},
-				Method: Pattern("PUT").Ptr(),
-				Path:   Pattern("/v5/*").Ptr(),
-				Headers: map[string]Pattern{
+				Method: glob.Pattern("PUT").Ptr(),
+				Path:   glob.Pattern("/v5/*").Ptr(),
+				Headers: map[string]glob.Pattern{
 					"User-Agent": "*another*",
 					"header":     "val*",
 				},
@@ -279,7 +280,7 @@ func TestCompile(t *testing.T) {
 		},
 		{
 			criterion: APICallCampaignCriterion{
-				Path: Pattern("[b-a]").Ptr(),
+				Path: glob.Pattern("[b-a]").Ptr(),
 			},
 			errorMessage: `error parsing path pattern: failed to compile "[b-a]": hi character 'a' should be greater than lo 'b'`,
 		},
