@@ -174,20 +174,8 @@ func (resolver *imageCVECoreResolver) Deployments(ctx context.Context, args stru
 
 func (resolver *imageCVECoreResolver) DistroTuples(ctx context.Context) ([]ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVECore, "DistroTuples")
-	var q PaginatedQuery
-	log.Infof("SHREWS -- DistroTuples -- %v", ctx)
 	if features.FlattenCVEData.Enabled() {
-		// Suppressed is no longer valid in the flattened model
-		q = PaginatedQuery{
-			Query: pointers.String(search.NewQueryBuilder().AddExactMatches(search.CVEID, resolver.data.GetCVEIDs()...).
-				Query()),
-		}
-
-		// cast query
-		query, err := q.AsV1QueryOrEmpty()
-		if err != nil {
-			return nil, err
-		}
+		query := search.NewQueryBuilder().AddExactMatches(search.CVEID, resolver.data.GetCVEIDs()...).ProtoQuery()
 
 		// get loader
 		loader, err := loaders.GetImageCVEV2Loader(ctx)
@@ -202,7 +190,7 @@ func (resolver *imageCVECoreResolver) DistroTuples(ctx context.Context) ([]Image
 			cveResolvers[i] = &imageCVEV2Resolver{ctx: ctx, root: resolver.root, data: v, flatData: nil}
 		}
 
-		// cast as return type
+		// cast cves to the resolver
 		ret := make([]ImageVulnerabilityResolver, 0, len(cveResolvers))
 		for _, res := range cveResolvers {
 			ret = append(ret, res)
@@ -213,7 +201,7 @@ func (resolver *imageCVECoreResolver) DistroTuples(ctx context.Context) ([]Image
 	// When ImageVulnerabilities resolver is called from here, it is to get the details of a single CVE which cannot be
 	// obtained via SQF. So, the auto removal of snoozed CVEs is unintentional here. Hence, we add explicit filter with
 	// CVESuppressed == true OR false
-	q = PaginatedQuery{
+	q := PaginatedQuery{
 		Query: pointers.String(search.NewQueryBuilder().AddExactMatches(search.CVEID, resolver.data.GetCVEIDs()...).
 			AddBools(search.CVESuppressed, true, false).
 			Query()),

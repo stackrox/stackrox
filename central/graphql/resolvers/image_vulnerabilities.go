@@ -195,7 +195,7 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 		vulnQuery := search.NewQueryBuilder().AddExactMatches(search.CVEID, cveIDs...).ProtoQuery()
 		vulns, err := loader.FromQuery(ctx, vulnQuery)
 
-		// Stash a single instance of a CVE to aid in normalizing.  This is to provide the
+		// Stash a single instance of a CVE to aid in normalizing
 		foundVulns := make(map[string]*storage.ImageCVEV2)
 		for _, vuln := range vulns {
 			if _, ok := foundVulns[vuln.GetCveBaseInfo().GetCve()]; !ok {
