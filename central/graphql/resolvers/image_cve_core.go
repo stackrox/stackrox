@@ -114,7 +114,7 @@ func (resolver *Resolver) ImageCVEs(ctx context.Context, q PaginatedQuery) ([]*i
 	if err != nil {
 		return nil, err
 	}
-	log.Info("SHREWS -- %v", cves)
+
 	ret, err := resolver.wrapImageCVECoresWithContext(ctx, cves, err)
 	if err != nil {
 		return nil, err
