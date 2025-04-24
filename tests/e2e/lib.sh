@@ -1387,18 +1387,8 @@ record_upgrade_test_progess() {
     record_progress_step "${UPGRADE_PROGRESS_UPGRADER}" "${UPGRADE_PROGRESS_SENSOR_BUNDLE}" \
         "postgres_sensor_run" "bin/upgrader tests"
 
-    # tests/upgrade/legacy_to_postgres_run.sh
-    record_progress_step "${UPGRADE_PROGRESS_LEGACY_PREP}" "${UPGRADE_PROGRESS_UPGRADER}" \
-        "legacy_to_postgres_run" "Preparation for legacy to postgres testing"
-    record_progress_step "${UPGRADE_PROGRESS_LEGACY_ROCKSDB_CENTRAL}" "${UPGRADE_PROGRESS_LEGACY_PREP}" \
-        "legacy_to_postgres_run" "Deployed an earlier rocksdb central"
-    record_progress_step "${UPGRADE_PROGRESS_LEGACY_TO_RELEASE}" "${UPGRADE_PROGRESS_LEGACY_ROCKSDB_CENTRAL}" \
-        "legacy_to_postgres_run" "Helm upgrade to latest postgres release from rocksdb"
-    record_progress_step "${UPGRADE_PROGRESS_RELEASE_BACK_TO_LEGACY}" "${UPGRADE_PROGRESS_LEGACY_TO_RELEASE}" \
-        "legacy_to_postgres_run" "Rollback to rocksdb"
-
     # tests/upgrade/postgres_run.sh
-    record_progress_step "${UPGRADE_PROGRESS_POSTGRES_PREP}" "${UPGRADE_PROGRESS_RELEASE_BACK_TO_LEGACY}" \
+    record_progress_step "${UPGRADE_PROGRESS_POSTGRES_PREP}" "${UPGRADE_PROGRESS_UPGRADER}" \
         "postgres_run" "Preparation for postgres testing"
     record_progress_step "${UPGRADE_PROGRESS_POSTGRES_EARLIER_CENTRAL}" "${UPGRADE_PROGRESS_POSTGRES_PREP}" \
         "postgres_run" "Deployed earlier postgres central"
