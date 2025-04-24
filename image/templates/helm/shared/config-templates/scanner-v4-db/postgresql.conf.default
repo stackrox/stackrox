@@ -50,8 +50,19 @@ min_wal_size = 80MB
 # REPORTING AND LOGGING
 #------------------------------------------------------------------------------
 
+# - When to Log -
+
+log_min_duration_statement = 500
+
 # - What to Log -
 
+log_autovacuum_min_duration = 500
+log_checkpoints = 'on'
+log_connections = 'on'
+log_disconnections = 'on'
+log_lock_waits = 'on'
+log_parameter_max_length = 0
+log_temp_files = 1024
 log_timezone = 'Etc/UTC'
 
 #------------------------------------------------------------------------------
