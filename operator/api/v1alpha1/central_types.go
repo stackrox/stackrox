@@ -422,6 +422,14 @@ type DBPersistentVolumeClaim struct {
 	StorageClassName *string `json:"storageClassName,omitempty"`
 }
 
+// GetClaimName returns the ClaimName for PVC
+func (pvc *DBPersistentVolumeClaim) GetClaimName() *string {
+	if pvc == nil {
+		return nil
+	}
+	return pvc.ClaimName
+}
+
 // Exposure defines how Central is exposed.
 type Exposure struct {
 	// Expose Central through an OpenShift route.

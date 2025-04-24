@@ -56,7 +56,7 @@ var (
 	defaultPVCSize = resource.MustParse("100Gi")
 )
 
-func convertDBPersistenceToPersistence(p *platform.DBPersistence) *platform.Persistence {
+func convertDBPersistenceToPersistence(p *platform.DBPersistence, target PVCTarget) *platform.Persistence {
 	if p == nil {
 		return nil
 	}
@@ -69,9 +69,21 @@ func convertDBPersistenceToPersistence(p *platform.DBPersistence) *platform.Pers
 	if pvc == nil {
 		return &platform.Persistence{}
 	}
+
+	claimName := pvc.ClaimName
+
+	if target == PVCTargetCentralDBBackup && pvc.ClaimName != nil {
+		// If a ClaimName is specified, derive the backup PVC ClamName from
+		// it as well. We don't want to modify the pointer in place, make a
+		// copy instead -- otherwise the next reconciliation will repeat the
+		// modification, duplicating the suffix.
+		backupName := fmt.Sprintf("%s-backup", *claimName)
+		claimName = &backupName
+	}
+
 	return &platform.Persistence{
 		PersistentVolumeClaim: &platform.PersistentVolumeClaim{
-			ClaimName:        pvc.ClaimName,
+			ClaimName:        claimName,
 			Size:             pvc.Size,
 			StorageClassName: pvc.StorageClassName,
 		},
@@ -101,12 +113,7 @@ func getPersistenceByTarget(central *platform.Central, target PVCTarget) *platfo
 			dbPersistence = &platform.DBPersistence{}
 		}
 
-		if target == PVCTargetCentralDBBackup {
-			claimName := dbPersistence.PersistentVolumeClaim.ClaimName
-			backupName := fmt.Sprintf("%s-backup", *claimName)
-			dbPersistence.PersistentVolumeClaim.ClaimName = &backupName
-		}
-		return convertDBPersistenceToPersistence(dbPersistence)
+		return convertDBPersistenceToPersistence(dbPersistence, target)
 	default:
 		panic(errors.Errorf("unknown pvc target %q", target))
 	}
