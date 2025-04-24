@@ -45,7 +45,7 @@ func Test_fetchMetrics(t *testing.T) {
 	ds := deploymentDS.NewMockDataStore(ctrl)
 
 	globCache = make(map[string]glob.Glob)
-	keysMap = parseAggregationKeys("Severity|Cluster,Namespace,Severity|Deployment=*4,ImageTag=latest")
+	metricsMap = parseAggregationKeys("Severity|Cluster,Namespace,Severity|Deployment=*4,ImageTag=latest")
 
 	deployments := []*storage.Deployment{
 		{Id: "deployment-1", Name: "D1", Namespace: "namespace-1", ClusterName: "cluster-1"},
@@ -107,19 +107,19 @@ func Test_fetchMetrics(t *testing.T) {
 
 	i.trackCvssMetrics(context.Background())
 	assert.Equal(t, map[aggregationKey]map[keyInstance]int{
-		"Severity": map[string]int{
+		"Severity_total": map[string]int{
 			"CRITICAL_VULNERABILITY_SEVERITY": 3,
 			"LOW_VULNERABILITY_SEVERITY":      2,
 			"MODERATE_VULNERABILITY_SEVERITY": 4,
 		},
-		"Cluster,Namespace,Severity": map[string]int{
+		"Cluster_Namespace_Severity_total": map[string]int{
 			"cluster-1|namespace-1|CRITICAL_VULNERABILITY_SEVERITY": 1,
 			"cluster-1|namespace-2|CRITICAL_VULNERABILITY_SEVERITY": 2,
 			"cluster-1|namespace-2|MODERATE_VULNERABILITY_SEVERITY": 2,
 			"cluster-2|namespace-2|LOW_VULNERABILITY_SEVERITY":      2,
 			"cluster-2|namespace-2|MODERATE_VULNERABILITY_SEVERITY": 2,
 		},
-		"Deployment=*4,ImageTag=latest": map[string]int{
+		"Deployment_eq__4_ImageTag_eq_latest_total": map[string]int{
 			"D4|latest": 2,
 		},
 	}, aggregated)

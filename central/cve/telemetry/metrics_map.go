@@ -6,12 +6,36 @@ import (
 
 type expression = string
 
-var keysMap map[aggregationKey][]expression
+var metricsMap map[aggregationKey][]expression
+
+var opNames = map[rune]string{
+	'=': "_eq_",
+	'!': "_not_",
+	'>': "_gt_",
+	'<': "_lt_",
+}
+
+func makeMetricName(key aggregationKey) string {
+	result := strings.Builder{}
+	for _, u := range key {
+		if u >= 'a' && u <= 'z' || u >= 'A' && u <= 'Z' || u >= '0' && u <= '9' {
+			result.WriteRune(u)
+		} else {
+			if op, ok := opNames[u]; ok {
+				result.WriteString(op)
+			} else {
+				result.WriteRune('_')
+			}
+		}
+	}
+	result.WriteString("_total")
+	return result.String()
+}
 
 func parseAggregationKeys(setting string) map[aggregationKey][]expression {
 	result := make(map[aggregationKey][]expression)
 	for _, key := range strings.Split(setting, "|") {
-		result[key] = strings.Split(key, ",")
+		result[makeMetricName(key)] = strings.Split(key, ",")
 	}
 	return result
 }
@@ -35,7 +59,7 @@ func makeAggregationKeyInstance(expressions []expression, metric map[keyInstance
 	return sb.String()
 }
 
-func getMetricNames(expressions []expression) []string {
+func getMetricLabels(expressions []expression) []string {
 	var labels []string
 	for _, expression := range expressions {
 		label, _, _ := splitExpression(expression)

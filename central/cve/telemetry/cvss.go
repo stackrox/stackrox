@@ -10,7 +10,7 @@ import (
 
 func (h *trackImpl) trackCvssMetrics(ctx context.Context) {
 	aggregated := map[aggregationKey]map[keyInstance]int{}
-	for key := range keysMap {
+	for key := range metricsMap {
 		aggregated[key] = make(map[keyInstance]int)
 	}
 	_ = h.ds.WalkByQuery(ctx, search.EmptyQuery(), func(deployment *storage.Deployment) error {
@@ -31,7 +31,7 @@ func (h *trackImpl) trackDeployment(ctx context.Context, aggregated map[string]m
 			deployment.GetNamespace(),
 			deployment.GetName())
 
-		for key, expressions := range keysMap {
+		for key, expressions := range metricsMap {
 			if k := makeAggregationKeyInstance(expressions, metric); k != "" {
 				aggregated[key][k]++
 			}

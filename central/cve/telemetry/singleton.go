@@ -16,13 +16,13 @@ var instance *trackImpl
 
 func Singleton() *trackImpl {
 	once.Do(func() {
-		keysMap = parseAggregationKeys(env.AggregateCVSSMetrics.Setting())
+		metricsMap = parseAggregationKeys(env.AggregateCVSSMetrics.Setting())
 		instance = &trackImpl{
 			ds:         deploymentDS.Singleton(),
 			aggregated: metrics.SetAggregatedVulnCount,
 		}
-		for metricName, expressions := range keysMap {
-			labels := getMetricNames(expressions)
+		for metricName, expressions := range metricsMap {
+			labels := getMetricLabels(expressions)
 			metrics.RegisterVulnAggregatedMetric(metricName, labels)
 		}
 	})
