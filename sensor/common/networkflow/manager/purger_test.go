@@ -45,17 +45,21 @@ func (s *NetworkFlowPurgerTestSuite) TestDisabledPurger() {
 	enrichTickerC := make(chan time.Time)
 	defer close(enrichTickerC)
 	defer mockCtrl.Finish()
+	// Disabling the purger
 	s.T().Setenv(env.EnrichmentPurgerTickerCycle.EnvVar(), "0s")
 
 	m, mockEntityStore, _, _ := createManager(mockCtrl, enrichTickerC)
 	purger := NewNetworkFlowPurger(mockEntityStore, time.Hour, WithManager(m), WithPurgerTicker(s.T(), purgerTickerC))
 
-	s.NoError(purger.Start())
-	// ticking should not block
-	purgerTickerC <- time.Now()
-	// purgingDone should be signaled even if the purger does nothing
-	s.Eventually(purger.purgingDone.IsDone, 500*time.Millisecond, 100*time.Millisecond)
+	s.ErrorContains(purger.Start(), "purger is disabled")
 
+	select {
+	case purgerTickerC <- time.Now():
+		s.Fail("purger ticker should block")
+	case <-time.After(500 * time.Millisecond):
+	}
+	// purgingDone should not be signalled for disabled purger
+	s.Never(purger.purgingDone.IsDone, 500*time.Millisecond, 100*time.Millisecond)
 	purger.Stop(nil)
 }
 
@@ -67,14 +71,17 @@ func (s *NetworkFlowPurgerTestSuite) TestPurgerWithoutManager() {
 	defer close(enrichTickerC)
 	defer mockCtrl.Finish()
 	_, mockEntityStore, _, _ := createManager(mockCtrl, enrichTickerC)
-	// Set manager to nil to explicitly simulate disconnected purger
+	// Don't set manager to explicitly simulate disconnected purger
 	purger := NewNetworkFlowPurger(mockEntityStore, time.Hour, WithPurgerTicker(s.T(), purgerTickerC))
 
-	s.Error(purger.Start())
-	// Trigger the purger - shall not block despite the manager is missing
-	purgerTickerC <- time.Now()
-	// purgingDone should be signaled even if the purger does nothing
-	s.Eventually(purger.purgingDone.IsDone, 500*time.Millisecond, 100*time.Millisecond)
+	s.ErrorContains(purger.Start(), "not bound to a network flow manager")
+	select {
+	case purgerTickerC <- time.Now():
+		s.Fail("purger ticker should block")
+	case <-time.After(500 * time.Millisecond):
+	}
+	// purgingDone should not be signalled for unstarted purger
+	s.Never(purger.purgingDone.IsDone, 500*time.Millisecond, 100*time.Millisecond)
 	purger.Stop(nil)
 }
 

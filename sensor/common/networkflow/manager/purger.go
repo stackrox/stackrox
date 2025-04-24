@@ -71,14 +71,19 @@ func NewNetworkFlowPurger(clusterEntities EntityStore, maxAge time.Duration, opt
 }
 
 func (p *NetworkFlowPurger) Start() error {
-	var err error
 	if p.manager == nil {
-		err = errors.New("programmer error: network flow purger is not bound to a network flow manager")
+		p.stopper.Flow().ReportStopped() // to ensure that Stop doesn't block
+		return errors.New("programmer error: network flow purger is not bound to a network flow manager")
 	}
+	if env.EnrichmentPurgerTickerCycle.DurationSetting() == 0 {
+		p.stopper.Flow().ReportStopped() // to ensure that Stop doesn't block
+		return errors.New("network flow purger is disabled")
+	}
+
 	// Allow starting the purger without a manager. This is done to prevent blocking of the entire component when
 	// `purgerTickerC` receives a message
 	go p.run()
-	return err
+	return nil
 }
 
 func (p *NetworkFlowPurger) Stop(_ error) {
@@ -138,14 +143,6 @@ func (p *NetworkFlowPurger) run() {
 }
 
 func (p *NetworkFlowPurger) runPurger() {
-	if env.EnrichmentPurgerTickerCycle.DurationSetting() == 0 {
-		// purger is disabled, but we still want to consume the messages from purgerTickerC
-		return
-	}
-	if p.manager == nil {
-		log.Warn("Programmer error: network flow purger is not bound to a network flow manager. Not purging.")
-		return
-	}
 	numPurgedActiveEp := purgeActiveEndpoints(&p.manager.activeEndpointsMutex, p.maxAge, p.manager.activeEndpoints, p.clusterEntities)
 	numPurgedActiveConn := purgeActiveConnections(&p.manager.activeConnectionsMutex, p.maxAge, p.manager.activeConnections, p.clusterEntities)
 	numPurgedHostEp, numPurgedHostConn := purgeHostConns(&p.manager.connectionsByHostMutex, p.maxAge, p.manager.connectionsByHost, p.clusterEntities)

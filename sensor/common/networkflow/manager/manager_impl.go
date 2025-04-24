@@ -374,7 +374,7 @@ func (m *networkFlowManager) Start() error {
 	go m.publicIPs.Run(m.stopper.LowLevel().GetStopRequestSignal(), m.clusterEntities)
 	if m.purger != nil {
 		if err := m.purger.Start(); err != nil {
-			return errors.Wrap(err, "unable to start network flow purger")
+			log.Warnf("Not starting network flow purger: %s", err)
 		}
 	}
 	return nil
