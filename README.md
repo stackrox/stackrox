@@ -117,7 +117,8 @@ helm upgrade --install -n stackrox --create-namespace stackrox-central-services 
 If you're deploying StackRox on nodes with limited resources such as a local development cluster, run the following command to reduce StackRox resource requirements. Keep in mind that these reduced resource settings are not suited for a production setup.
 
 ```sh
-helm upgrade -n stackrox stackrox-central-services stackrox/stackrox-central-services \
+helm upgrade --install -n stackrox --create-namespace stackrox-central-services \
+  stackrox/stackrox-central-services \
   --set central.resources.requests.memory=1Gi \
   --set central.resources.requests.cpu=1 \
   --set central.resources.limits.memory=4Gi \
