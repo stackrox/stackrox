@@ -296,7 +296,13 @@ func NewManager(
 		stopper:           concurrency.NewStopper(),
 		pubSub:            pubSub,
 	}
-	mgr.purger = NewNetworkFlowPurger(clusterEntities, env.EnrichmentPurgerTickerMaxAge.DurationSetting(), mgr)
+	maxAgeSetting := env.EnrichmentPurgerTickerMaxAge.DurationSetting()
+	if maxAgeSetting <= enricherCycle {
+		log.Warnf("ROX_ENRICHMENT_PURGER_MAX_AGE (%s) must be higher than enricher cycle (%s). "+
+			"Applying default of 4 hours", maxAgeSetting, enricherCycle)
+		maxAgeSetting = 4 * time.Hour
+	}
+	mgr.purger = NewNetworkFlowPurger(clusterEntities, maxAgeSetting, mgr)
 
 	enricherTicker.Stop()
 	if features.SensorCapturesIntermediateEvents.Enabled() {
