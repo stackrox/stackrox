@@ -1,10 +1,9 @@
 package glob
 
 import (
-	"sync"
-
 	"github.com/gobwas/glob"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 type Pattern string
