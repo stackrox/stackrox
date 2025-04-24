@@ -41,25 +41,30 @@ mkdir -p "${log_dir}"/infrastructure
 declare -a waiters
 ( curl -s http://localhost:8001/logs/kube-apiserver.log > "${log_dir}"/infrastructure/kube-apiserver.log 2>&1 \
   || { echo "curl exitcode:$?"; echo 'Can we just ignore exitcode 18? downloaded log file tail:'; tail "${log_dir}"/infrastructure/kube-apiserver.log; } ) &
+waiters+=($!)
+
+( curl --retry 5 -s http://localhost:8001/logs/kube-apiserver.log -o "${log_dir}"/infrastructure/kube-apiserver-o.log 2>&1 | sed 's/^/-o: /' \
+  || { echo "curl exitcode:$?"; echo 'Can we just ignore exitcode 18? downloaded log file tail:'; tail "${log_dir}"/infrastructure/kube-apiserver-o.log; } ) &
+waiters+=($!)
 
 ( curl -v \
     --retry 5 \
     -s http://localhost:8001/logs/kube-apiserver.log \
-    -o "${log_dir}"/infrastructure/kube-apiserver-retry.log 2>&1 | sed 's/^/none: /' ) &
+    -o "${log_dir}"/infrastructure/kube-apiserver-retry.log 2>&1 | sed 's/^/none: /'; echo $? ) &
 waiters+=($!)
 
 ( curl -v \
     --retry 5 \
     --range 0-99999999,-99999999 \
     -s http://localhost:8001/logs/kube-apiserver.log \
-    -o "${log_dir}"/infrastructure/kube-apiserver-range.log 2>&1 | sed 's/^/range: /' ) &
+    -o "${log_dir}"/infrastructure/kube-apiserver-range.log 2>&1 | sed 's/^/range: /'; echo $? ) &
 waiters+=($!)
 
-( timeout 5s curl -v \
+( timeout 120s curl -v \
     --retry 5 \
     --ignore-content-length \
     -s http://localhost:8001/logs/kube-apiserver.log \
-    -o "${log_dir}"/infrastructure/kube-apiserver-range-ignorelength.log 2>&1 | sed 's/^/ignore-len: /' ) &
+    -o "${log_dir}"/infrastructure/kube-apiserver-range-ignorelength.log 2>&1 | sed 's/^/ignore-len: /'; echo $? ) &
 waiters+=($!)
 
 ( retry 5 true curl -v \
@@ -67,16 +72,20 @@ waiters+=($!)
     --retry-all-errors \
     --continue-at - \
     -s http://localhost:8001/logs/kube-apiserver.log \
-    -o "${log_dir}"/infrastructure/kube-apiserver-breakfix.log 2>&1 | sed 's/^/breakfix: /' ) &
+    -o "${log_dir}"/infrastructure/kube-apiserver-breakfix.log 2>&1 | sed 's/^/breakfix: /'; echo $? ) &
 waiters+=($!)
 
 ( retry 5 true curl -v \
     --continue-at - \
     -s http://localhost:8001/logs/kube-apiserver.log \
-    -o "${log_dir}"/infrastructure/kube-apiserver-continue.log 2>&1 | sed 's/^/continue: /' ) &
+    -o "${log_dir}"/infrastructure/kube-apiserver-continue.log 2>&1 | sed 's/^/continue: /'; echo $? ) &
 waiters+=($!)
 
 wait ${waiters[*]}
+for testlogfile in "${log_dir}"/infrastructure/kube-apiserver-*log; do
+  echo ">>> ${testlogfile}"
+  tail -3 "$testlogfile"
+done
 
 kill $proxy_pid
 
