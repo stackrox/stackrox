@@ -31,6 +31,25 @@ const (
 	InitBundleReconcilePeriod = 1 * time.Hour
 )
 
+// CARotationAction represents the possible actions to take during CA rotation.
+type CARotationAction int
+
+const (
+	// CARotateNoAction indicates that no action needs to be taken at this time
+	CARotateNoAction CARotationAction = iota
+
+	// CARotateAddSecondary indicates that the CA has passed a threshold (e.g., 3/5 of its validity)
+	// and a secondary CA should be generated and added.
+	CARotateAddSecondary
+
+	// CARotatePromoteSecondary indicates that the secondary CA should become the new primary CA,
+	// typically when the primary is nearing the end of its validity (e.g., last year).
+	CARotatePromoteSecondary
+
+	// CARotateDeleteSecondary indicates that the secondary CA has expired and should be removed.
+	CARotateDeleteSecondary
+)
+
 // ReconcileCentralTLSExtensions returns an extension that takes care of creating the central-tls and related
 // secrets ahead of time.
 func ReconcileCentralTLSExtensions(client ctrlClient.Client, direct ctrlClient.Reader) extensions.ReconcileExtension {
@@ -49,9 +68,10 @@ func reconcileCentralTLS(ctx context.Context, c *platform.Central, client ctrlCl
 type createCentralTLSExtensionRun struct {
 	*commonExtensions.SecretReconciliator
 
-	ca          mtls.CA
-	centralObj  *platform.Central
-	currentTime time.Time
+	ca               mtls.CA // primary CA, used to issue Central-services certificates
+	caRotationAction CARotationAction
+	centralObj       *platform.Central
+	currentTime      time.Time
 }
 
 func (r *createCentralTLSExtensionRun) Execute(ctx context.Context) error {
@@ -142,6 +162,29 @@ func (r *createCentralTLSExtensionRun) validateAndConsumeCentralTLSData(fileMap 
 	if err := r.ca.CheckProperties(); err != nil {
 		return errors.Wrap(err, "loaded service CA certificate is invalid")
 	}
+
+	// the presence of a secondary CA certificate is optional
+	secondaryCA, err := certgen.LoadSecondaryCAFromFileMap(fileMap)
+	var secondaryCACert *x509.Certificate = nil
+	if err != nil && !errors.Is(err, certgen.ErrNoCACert) {
+		return errors.Wrap(err, "loading secondary CA failed")
+	}
+	if secondaryCA != nil {
+		if err := secondaryCA.CheckProperties(); err != nil {
+			return errors.Wrap(err, "loaded secondary service CA certificate is invalid")
+		}
+		secondaryCACert = secondaryCA.Certificate()
+	}
+
+	r.caRotationAction, err = r.checkCARotation(r.ca.Certificate(), secondaryCACert)
+	if err != nil {
+		// this should only happen if the primary CA is invalid
+		return errors.Wrap(err, "checking CA rotation failed")
+	}
+	if r.caRotationAction != CARotateNoAction {
+		return errors.New("CA rotation action needed")
+	}
+
 	if err := r.validateServiceTLSData(storage.ServiceType_CENTRAL_SERVICE, "", fileMap); err != nil {
 		return errors.Wrap(err, "verifying existing central service TLS certificate failed")
 	}
@@ -158,8 +201,22 @@ func (r *createCentralTLSExtensionRun) generateCentralTLSData(old types.SecretDa
 		return nil, err
 	}
 
-	if err := certgen.IssueCentralCert(newFileMap, r.ca, mtls.WithNamespace(r.centralObj.GetNamespace())); err != nil {
-		return nil, errors.Wrap(err, "issuing central service certificate failed")
+	if err = validateSecondaryCA(old, newFileMap); err != nil {
+		return nil, err
+	}
+
+	reissueCentralCert, err := r.handleCARotation(newFileMap)
+	if err != nil {
+		return nil, errors.Wrapf(err, "performing CA rotation action: %v", r.caRotationAction)
+	}
+
+	if reissueCentralCert {
+		if err := certgen.IssueCentralCert(newFileMap, r.ca, mtls.WithNamespace(r.centralObj.GetNamespace())); err != nil {
+			return nil, errors.Wrap(err, "issuing central service certificate failed")
+		}
+	} else {
+		newFileMap[mtls.ServiceCertFileName] = old[mtls.ServiceCertFileName]
+		newFileMap[mtls.ServiceKeyFileName] = old[mtls.ServiceKeyFileName]
 	}
 
 	if oldJWTKey, oldJWTKeyOK := old[certgen.JWTKeyPEMFileName]; oldJWTKeyOK {
@@ -191,7 +248,7 @@ func validateOrGenerateCA(oldCA mtls.CA, oldFileMap types.SecretDataMap) (mtls.C
 	caCert, caCertPresent := oldFileMap[mtls.CACertFileName]
 	caKey, caKeyPresent := oldFileMap[mtls.CAKeyFileName]
 	if caCertPresent && caKeyPresent {
-		// There is an existing CA in the secret. Avoid changing at all cost it, as doing so would immediately cause
+		// There is an existing CA in the secret. Avoid changing it at all cost, as doing so would immediately cause
 		// all previously issued certificates (including sensor certificates and init bundles) to become invalid,
 		// and this is very unlikely to result in a working state.
 		newFileMap[mtls.CACertFileName] = caCert
@@ -216,6 +273,103 @@ func validateOrGenerateCA(oldCA mtls.CA, oldFileMap types.SecretDataMap) (mtls.C
 		return nil, nil, fmt.Errorf(msg, mtls.CAKeyFileName, mtls.CACertFileName)
 	}
 	return nil, nil, fmt.Errorf(msg, mtls.CACertFileName, mtls.CAKeyFileName)
+}
+
+func validateSecondaryCA(oldFileMap, newFileMap types.SecretDataMap) error {
+	caCert, caCertPresent := oldFileMap[mtls.SecondaryCACertFileName]
+	caKey, caKeyPresent := oldFileMap[mtls.SecondaryCAKeyFileName]
+
+	if caCertPresent && caKeyPresent {
+		_, err := certgen.LoadSecondaryCAFromFileMap(oldFileMap)
+		if err != nil {
+			// Secured Clusters might already be using the secondary CA to connect to Central, so re-creating it will
+			// not fix things.
+			return errors.Wrap(err, "invalid secondary CA in the existing secret, please delete it to allow re-generation")
+		}
+
+		newFileMap[mtls.SecondaryCACertFileName] = caCert
+		newFileMap[mtls.SecondaryCAKeyFileName] = caKey
+		return nil
+	} else if caCertPresent || caKeyPresent {
+		const msg = "malformed secret (%s present but %s missing), please delete it to allow re-generation"
+		if !caCertPresent {
+			return fmt.Errorf(msg, mtls.CAKeyFileName, mtls.CACertFileName)
+		}
+		return fmt.Errorf(msg, mtls.CACertFileName, mtls.CAKeyFileName)
+	}
+
+	return nil
+}
+
+func (r *createCentralTLSExtensionRun) checkCARotation(primary, secondary *x509.Certificate) (CARotationAction, error) {
+	if primary == nil {
+		return CARotateNoAction, errors.New("primary CA must not be nil")
+	}
+
+	startTime := primary.NotBefore
+	endTime := primary.NotAfter
+	if !endTime.After(startTime) {
+		return CARotateNoAction, fmt.Errorf("certificate expires at %s before it begins to be valid at %s", endTime, startTime)
+	}
+	if r.currentTime.Before(startTime) {
+		return CARotateNoAction, fmt.Errorf("certificate lifetime start %s is in the future", startTime)
+	}
+	if r.currentTime.After(endTime) {
+		return CARotateNoAction, fmt.Errorf("certificate expired at %s", endTime)
+	}
+
+	validityDuration := endTime.Sub(startTime)
+	fifthOfValidityDuration := time.Duration(validityDuration.Nanoseconds()/5) * time.Nanosecond
+
+	// Add secondary CA after 3/5 of validity
+	addSecondaryCATime := startTime.Add(3 * fifthOfValidityDuration)
+	if r.currentTime.After(addSecondaryCATime) && secondary == nil {
+		return CARotateAddSecondary, nil
+	}
+
+	// Promote secondary to primary in final year
+	promoteSecondaryCATime := startTime.Add(4 * fifthOfValidityDuration)
+	if r.currentTime.After(promoteSecondaryCATime) {
+		return CARotatePromoteSecondary, nil
+	}
+
+	// Delete expired secondary
+	if secondary != nil && r.currentTime.After(secondary.NotAfter) {
+		return CARotateDeleteSecondary, nil
+	}
+
+	return CARotateNoAction, nil
+}
+
+func (r *createCentralTLSExtensionRun) handleCARotation(fileMap types.SecretDataMap) (bool, error) {
+	reissueCentralCert := false
+	switch r.caRotationAction {
+	case CARotateAddSecondary:
+		ca, err := certgen.GenerateCA()
+		if err != nil {
+			return false, errors.Wrap(err, "creating secondary CA failed")
+		}
+		certgen.AddSecondaryCAToFileMap(fileMap, ca)
+
+	case CARotateDeleteSecondary:
+		certgen.RemoveSecondaryCA(fileMap)
+
+	case CARotatePromoteSecondary:
+		certgen.PromoteSecondaryCA(fileMap)
+		newPrimaryCa, err := certgen.LoadCAFromFileMap(fileMap)
+		if err != nil {
+			return false, errors.Wrap(err, "loading new primary CA failed")
+		}
+		r.ca = newPrimaryCa
+		reissueCentralCert = true // need to reissue because the primary CA has changed
+
+	case CARotateNoAction:
+		// no rotation was done, but if this function was called it means that validateAndConsumeCentralTLSData
+		// failed, so let's reissue the Central service certificate
+		reissueCentralCert = true
+	}
+
+	return reissueCentralCert, nil
 }
 
 func (r *createCentralTLSExtensionRun) reconcileCentralDBTLSSecret(ctx context.Context) error {

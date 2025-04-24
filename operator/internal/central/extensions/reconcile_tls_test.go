@@ -73,6 +73,18 @@ func generateInvalidCA() (mtls.CA, error) {
 	return mtls.LoadCAForSigning(caCert, caKey)
 }
 
+func generateTestCertWithValidity(t *testing.T, notBeforeStr, notAfterStr string) *x509.Certificate {
+	t.Helper()
+	notBefore, err := time.Parse(time.RFC3339, notBeforeStr)
+	require.NoError(t, err)
+	notAfter, err := time.Parse(time.RFC3339, notAfterStr)
+	require.NoError(t, err)
+	return &x509.Certificate{
+		NotBefore: notBefore,
+		NotAfter:  notAfter,
+	}
+}
+
 func TestCreateCentralTLS(t *testing.T) {
 	testCA, err := certgen.GenerateCA()
 	require.NoError(t, err)
@@ -564,19 +576,226 @@ func Test_checkCertRenewal(t *testing.T) {
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			notBefore, err := time.Parse(time.RFC3339, c.notBefore)
-			require.NoError(t, err)
-			notAfter, err := time.Parse(time.RFC3339, c.notAfter)
-			require.NoError(t, err)
-			cert := &x509.Certificate{
-				NotBefore: notBefore,
-				NotAfter:  notAfter,
-			}
+			cert := generateTestCertWithValidity(t, c.notBefore, c.notAfter)
 			now, err := time.Parse(time.RFC3339, c.now)
 			require.NoError(t, err)
 			r := &createCentralTLSExtensionRun{currentTime: now}
 
 			c.wantErr(t, r.checkCertRenewal(cert), fmt.Sprintf("checkCertRenewal(%v, %v)", cert, now))
+		})
+	}
+}
+
+func Test_checkCARotation(t *testing.T) {
+	cases := map[string]struct {
+		now                string
+		primaryNotBefore   string
+		primaryNotAfter    string
+		secondaryNotBefore string
+		secondaryNotAfter  string
+		wantAction         CARotationAction
+		wantErr            assert.ErrorAssertionFunc
+	}{
+		"should return error if primary is nil": {
+			now:        "2026-01-01T00:00:00Z",
+			wantAction: CARotateNoAction,
+			wantErr: func(t assert.TestingT, err error, _ ...interface{}) bool {
+				return assert.ErrorContains(t, err, "primary CA must not be nil")
+			},
+		},
+		"should return error if primary has invalid validity range": {
+			now:              "2026-01-01T00:00:00Z",
+			primaryNotBefore: "2030-01-01T00:00:00Z",
+			primaryNotAfter:  "2025-01-01T00:00:00Z",
+			wantAction:       CARotateNoAction,
+			wantErr: func(t assert.TestingT, err error, _ ...interface{}) bool {
+				return assert.ErrorContains(t, err, "certificate expires at")
+			},
+		},
+		"should return error if primary is not yet valid": {
+			now:              "2024-01-01T00:00:00Z",
+			primaryNotBefore: "2025-01-01T00:00:00Z",
+			primaryNotAfter:  "2030-01-01T00:00:00Z",
+			wantAction:       CARotateNoAction,
+			wantErr: func(t assert.TestingT, err error, _ ...interface{}) bool {
+				return assert.ErrorContains(t, err, "certificate lifetime start")
+			},
+		},
+		"should return error if primary is expired": {
+			now:              "2031-01-01T00:00:00Z",
+			primaryNotBefore: "2025-01-01T00:00:00Z",
+			primaryNotAfter:  "2030-01-01T00:00:00Z",
+			wantAction:       CARotateNoAction,
+			wantErr: func(t assert.TestingT, err error, _ ...interface{}) bool {
+				return assert.ErrorContains(t, err, "certificate expired")
+			},
+		},
+		"should return no action in first 3/5 of validity": {
+			now:              "2026-06-01T00:00:00Z",
+			primaryNotBefore: "2025-01-01T00:00:00Z",
+			primaryNotAfter:  "2030-01-01T00:00:00Z",
+			wantAction:       CARotateNoAction,
+			wantErr:          assert.NoError,
+		},
+		"should add secondary after 3/5 of validity": {
+			now:              "2028-01-02T00:00:00Z",
+			primaryNotBefore: "2025-01-01T00:00:00Z",
+			primaryNotAfter:  "2030-01-01T00:00:00Z",
+			wantAction:       CARotateAddSecondary,
+			wantErr:          assert.NoError,
+		},
+		"should promote secondary after 4/5 of validity": {
+			now:                "2029-01-02T00:00:00Z",
+			primaryNotBefore:   "2025-01-01T00:00:00Z",
+			primaryNotAfter:    "2030-01-01T00:00:00Z",
+			secondaryNotBefore: "2028-01-01T00:00:00Z",
+			secondaryNotAfter:  "2033-01-01T00:00:00Z",
+			wantAction:         CARotatePromoteSecondary,
+			wantErr:            assert.NoError,
+		},
+		"should delete expired secondary": {
+			now:                "2031-01-02T00:00:00Z",
+			primaryNotBefore:   "2028-01-01T00:00:00Z",
+			primaryNotAfter:    "2033-01-01T00:00:00Z",
+			secondaryNotBefore: "2025-01-01T00:00:00Z",
+			secondaryNotAfter:  "2030-01-01T00:00:00Z",
+			wantAction:         CARotateDeleteSecondary,
+			wantErr:            assert.NoError,
+		},
+	}
+
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			now, err := time.Parse(time.RFC3339, c.now)
+			require.NoError(t, err)
+
+			var primary *x509.Certificate
+			if c.primaryNotBefore != "" && c.primaryNotAfter != "" {
+				primary = generateTestCertWithValidity(t, c.primaryNotBefore, c.primaryNotAfter)
+			}
+
+			var secondary *x509.Certificate
+			if c.secondaryNotBefore != "" && c.secondaryNotAfter != "" {
+				secondary = generateTestCertWithValidity(t, c.secondaryNotBefore, c.secondaryNotAfter)
+			}
+
+			r := &createCentralTLSExtensionRun{currentTime: now}
+			action, err := r.checkCARotation(primary, secondary)
+
+			assert.Equal(t, c.wantAction, action)
+			c.wantErr(t, err)
+		})
+	}
+}
+
+func TestGenerateCentralTLSData_Rotation(t *testing.T) {
+	type testCase struct {
+		name            string
+		action          CARotationAction
+		additionalSetup func(t *testing.T, old types.SecretDataMap)
+		assert          func(t *testing.T, old, new types.SecretDataMap)
+	}
+
+	cases := []testCase{
+		{
+			name:   "add secondary CA",
+			action: CARotateAddSecondary,
+			assert: func(t *testing.T, old, new types.SecretDataMap) {
+				require.Contains(t, new, mtls.SecondaryCACertFileName, "secondary CA cert should be present")
+				require.Contains(t, new, mtls.SecondaryCAKeyFileName, "secondary CA key should be present")
+				require.Equal(t, old[mtls.CACertFileName], new[mtls.CACertFileName], "primary CA should be unchanged")
+			},
+		},
+		{
+			name:   "promote secondary CA",
+			action: CARotatePromoteSecondary,
+			additionalSetup: func(t *testing.T, old types.SecretDataMap) {
+				secondary, err := certgen.GenerateCA()
+				require.NoError(t, err)
+				certgen.AddSecondaryCAToFileMap(old, secondary)
+			},
+			assert: func(t *testing.T, old, new types.SecretDataMap) {
+				require.Contains(t, new, mtls.SecondaryCACertFileName, "secondary CA cert should be present")
+				require.Contains(t, new, mtls.SecondaryCAKeyFileName, "secondary CA key should be present")
+
+				require.NotEqual(t, old[mtls.CACertFileName], new[mtls.CACertFileName], "primary CA should have changed")
+				require.Contains(t, new, mtls.ServiceCertFileName, "central cert should be present")
+				require.Contains(t, new, mtls.ServiceKeyFileName, "central cert should be present")
+			},
+		},
+		{
+			name:   "delete secondary CA",
+			action: CARotateDeleteSecondary,
+			additionalSetup: func(t *testing.T, old types.SecretDataMap) {
+				secondary, err := certgen.GenerateCA()
+				require.NoError(t, err)
+				certgen.AddSecondaryCAToFileMap(old, secondary)
+			},
+			assert: func(t *testing.T, old, new types.SecretDataMap) {
+				require.NotContains(t, new, mtls.SecondaryCACertFileName, "secondary CA cert should be removed")
+				require.NotContains(t, new, mtls.SecondaryCAKeyFileName, "secondary CA key should be removed")
+				require.Equal(t, old[mtls.ServiceCertFileName], new[mtls.ServiceCertFileName], "central cert should be unchanged")
+				require.Equal(t, old[mtls.ServiceKeyFileName], new[mtls.ServiceKeyFileName], "central key should be unchanged")
+			},
+		},
+		{
+			name:   "no rotation action, secondary CA not present",
+			action: CARotateNoAction,
+			assert: func(t *testing.T, old, new types.SecretDataMap) {
+				require.Equal(t, old[mtls.CACertFileName], new[mtls.CACertFileName], "primary CA cert should be unchanged")
+				require.Equal(t, old[mtls.CAKeyFileName], new[mtls.CAKeyFileName], "primary CA key should be unchanged")
+				require.NotContains(t, new, mtls.SecondaryCACertFileName, "secondary CA cert should be present")
+				require.NotContains(t, new, mtls.SecondaryCAKeyFileName, "secondary CA key should be present")
+				require.NotEqual(t, old[mtls.ServiceCertFileName], new[mtls.ServiceCertFileName], "central cert should be reissued")
+				require.NotEqual(t, old[mtls.ServiceKeyFileName], new[mtls.ServiceKeyFileName], "central key should be reissued")
+			},
+		},
+		{
+			name:   "no rotation action, secondary CA present",
+			action: CARotateNoAction,
+			additionalSetup: func(t *testing.T, old types.SecretDataMap) {
+				secondary, err := certgen.GenerateCA()
+				require.NoError(t, err)
+				certgen.AddSecondaryCAToFileMap(old, secondary)
+			},
+			assert: func(t *testing.T, old, new types.SecretDataMap) {
+				require.Equal(t, old[mtls.CACertFileName], new[mtls.CACertFileName], "primary CA cert should be unchanged")
+				require.Equal(t, old[mtls.CAKeyFileName], new[mtls.CAKeyFileName], "primary CA key should be unchanged")
+				require.Equal(t, old[mtls.SecondaryCACertFileName], new[mtls.SecondaryCACertFileName], "secondary CA cert should be unchanged")
+				require.Equal(t, old[mtls.SecondaryCAKeyFileName], new[mtls.SecondaryCAKeyFileName], "secondary CA key should be unchanged")
+				require.NotEqual(t, old[mtls.ServiceCertFileName], new[mtls.ServiceCertFileName], "central cert should be reissued")
+				require.NotEqual(t, old[mtls.ServiceKeyFileName], new[mtls.ServiceKeyFileName], "central key should be reissued")
+			},
+		},
+	}
+
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			primary, err := certgen.GenerateCA()
+			require.NoError(t, err)
+			oldFileMap := make(types.SecretDataMap)
+			certgen.AddCAToFileMap(oldFileMap, primary)
+			err = certgen.IssueCentralCert(oldFileMap, primary, mtls.WithNamespace("stackrox"))
+			require.NoError(t, err)
+
+			if tt.additionalSetup != nil {
+				tt.additionalSetup(t, oldFileMap)
+			}
+
+			r := &createCentralTLSExtensionRun{
+				centralObj:       &platform.Central{ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"}},
+				currentTime:      time.Now(),
+				caRotationAction: tt.action,
+				ca:               primary,
+			}
+
+			newFileMap, err := r.generateCentralTLSData(oldFileMap)
+			require.NoError(t, err)
+			require.NotNil(t, newFileMap)
+
+			tt.assert(t, oldFileMap, newFileMap)
 		})
 	}
 }
@@ -766,6 +985,70 @@ func Test_createCentralTLSExtensionRun_validateAndConsumeCentralTLSData(t *testi
 				mtls.CAKeyFileName:       ca1.KeyPEM(),
 				mtls.ServiceCertFileName: centralCertFromCA1.CertPEM,
 				mtls.ServiceKeyFileName:  centralCertFromCA1.KeyPEM,
+			},
+			assert: func(t *testing.T, err error) {
+				assert.NoError(t, err)
+			},
+		},
+		"should fail when the secondary CA key is missing": {
+			fileMap: types.SecretDataMap{
+				mtls.CACertFileName:          ca1.CertPEM(),
+				mtls.CAKeyFileName:           ca1.KeyPEM(),
+				mtls.ServiceCertFileName:     centralCertFromCA1.CertPEM,
+				mtls.ServiceKeyFileName:      centralCertFromCA1.KeyPEM,
+				mtls.SecondaryCACertFileName: ca2.CertPEM(),
+			},
+			assert: func(t *testing.T, err error) {
+				assert.ErrorContains(t, err, "no CA key in file map")
+			},
+		},
+		"should fail when the secondary CA key is invalid": {
+			fileMap: types.SecretDataMap{
+				mtls.CACertFileName:          ca1.CertPEM(),
+				mtls.CAKeyFileName:           ca1.KeyPEM(),
+				mtls.ServiceCertFileName:     centralCertFromCA1.CertPEM,
+				mtls.ServiceKeyFileName:      centralCertFromCA1.KeyPEM,
+				mtls.SecondaryCACertFileName: ca2.CertPEM(),
+				mtls.SecondaryCAKeyFileName:  []byte("invalid"),
+			},
+			assert: func(t *testing.T, err error) {
+				assert.ErrorContains(t, err, "failed to find any PEM data in key input")
+			},
+		},
+		"should fail when the secondary CA cert is invalid": {
+			fileMap: types.SecretDataMap{
+				mtls.CACertFileName:          ca1.CertPEM(),
+				mtls.CAKeyFileName:           ca1.KeyPEM(),
+				mtls.ServiceCertFileName:     centralCertFromCA1.CertPEM,
+				mtls.ServiceKeyFileName:      centralCertFromCA1.KeyPEM,
+				mtls.SecondaryCACertFileName: []byte("invalid"),
+				mtls.SecondaryCAKeyFileName:  ca2.KeyPEM(),
+			},
+			assert: func(t *testing.T, err error) {
+				assert.ErrorContains(t, err, "failed to find any PEM data in certificate input")
+			},
+		},
+		"should fail when the secondary CA has an invalid common name": {
+			fileMap: types.SecretDataMap{
+				mtls.CACertFileName:          ca1.CertPEM(),
+				mtls.CAKeyFileName:           ca1.KeyPEM(),
+				mtls.ServiceCertFileName:     centralCertFromCA1.CertPEM,
+				mtls.ServiceKeyFileName:      centralCertFromCA1.KeyPEM,
+				mtls.SecondaryCACertFileName: caNotFromACS.CertPEM(),
+				mtls.SecondaryCAKeyFileName:  caNotFromACS.KeyPEM(),
+			},
+			assert: func(t *testing.T, err error) {
+				assert.ErrorContains(t, err, "invalid certificate common name")
+			},
+		},
+		"should succeed when the primary and secondary CAs are valid": {
+			fileMap: types.SecretDataMap{
+				mtls.CACertFileName:          ca1.CertPEM(),
+				mtls.CAKeyFileName:           ca1.KeyPEM(),
+				mtls.ServiceCertFileName:     centralCertFromCA1.CertPEM,
+				mtls.ServiceKeyFileName:      centralCertFromCA1.KeyPEM,
+				mtls.SecondaryCACertFileName: ca2.CertPEM(),
+				mtls.SecondaryCAKeyFileName:  ca2.KeyPEM(),
 			},
 			assert: func(t *testing.T, err error) {
 				assert.NoError(t, err)

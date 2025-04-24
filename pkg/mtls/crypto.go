@@ -29,6 +29,13 @@ const (
 	// CAKeyFileName is the canonical file name (basename) of the file storing the CA certificate private key.
 	CAKeyFileName = "ca-key.pem"
 
+	// SecondaryCACertFileName is the file name of the secondary CA certificate.
+	// Operator installations use two CA certificates in parallel to enable CA certificate rotation.
+	SecondaryCACertFileName = "ca-secondary.pem"
+
+	// SecondaryCAKeyFileName is the file name of the secondary CA private key.
+	SecondaryCAKeyFileName = "ca-secondary-key.pem"
+
 	// ServiceCertFileName is the canonical file name (basename) of the file storing the public part of
 	// an internal service certificate. Note that if files for several services are stored in the same
 	// location (directory or file map), it is common to prefix the file name with the service name in
