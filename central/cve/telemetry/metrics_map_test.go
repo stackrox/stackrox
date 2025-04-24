@@ -3,7 +3,6 @@ package telemetry
 import (
 	"testing"
 
-	"github.com/gobwas/glob"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -34,7 +33,6 @@ func Test_makeAggregationKeyInstance(t *testing.T) {
 		"number": "7.4",
 		"bool":   "false",
 	}
-	globCache = make(map[string]glob.Glob)
 	assert.Equal(t, "value|7.4|false", makeAggregationKeyInstance(
 		[]expression{"string=*al*", "number>5", "bool"}, metric))
 }

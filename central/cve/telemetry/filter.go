@@ -4,12 +4,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/gobwas/glob"
+	"github.com/stackrox/rox/pkg/glob"
 )
 
 var ops = []string{"!=", "=", "<=", ">=", "<", ">"} // The order matters!
-
-var globCache map[string]glob.Glob
 
 func getKey(key string) string {
 	for i, r := range key {
@@ -41,14 +39,9 @@ func filter(expr expression, metric map[keyInstance]string) (string, bool) {
 	case "!=":
 		fallthrough
 	case "=":
-		e := globCache[arg]
-		if e == nil {
-			if e, err = glob.Compile(arg); err != nil {
-				return key, false
-			}
-			globCache[arg] = e
-		}
-		return key, op == "=" && e.Match(metric[key]) || op == "!=" && !e.Match(metric[key])
+		pattern := glob.Pattern(arg)
+		return key, op == "=" && pattern.Match(metric[key]) ||
+			op == "!=" && !pattern.Match(metric[key])
 	case ">":
 		fallthrough
 	case ">=":

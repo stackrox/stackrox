@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/gobwas/glob"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -44,7 +43,6 @@ func Test_fetchMetrics(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	ds := deploymentDS.NewMockDataStore(ctrl)
 
-	globCache = make(map[string]glob.Glob)
 	metricsMap = parseAggregationKeys("Severity|Cluster,Namespace,Severity|Deployment=*4,ImageTag=latest")
 
 	deployments := []*storage.Deployment{

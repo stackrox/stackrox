@@ -3,7 +3,6 @@ package telemetry
 import (
 	"testing"
 
-	"github.com/gobwas/glob"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -22,7 +21,6 @@ func Test_splitKey(t *testing.T) {
 }
 
 func Test_filter(t *testing.T) {
-	globCache = make(map[string]glob.Glob)
 	metric := map[string]string{
 		"string": "value",
 		"number": "3.4",
