@@ -94,8 +94,6 @@ func Test_fetchMetrics(t *testing.T) {
 		ds.EXPECT().GetImagesForDeployment(gomock.Any(), deployment).
 			Times(1).Return(deploymentImages[deployment.Id], nil)
 	}
-	type cve = string
-	type labels = map[string]string
 
 	var aggregated map[aggregationKey]map[keyInstance]int
 	i := &trackImpl{ds: ds,
