@@ -2,6 +2,7 @@ package networkbaseline
 
 import (
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/networkbaseline"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -70,7 +71,20 @@ func (e *networkBaselineEvaluator) checkPeerInBaselineForEntity(
 		// If no baseline exists then we do not mark it as anomalous
 		return true
 	}
-	peer := networkbaseline.PeerFromNetworkEntityInfo(peerEntity, peerEntityName, dstPort, protocol, isIngressToBaselineEntity)
+	var peer networkbaseline.Peer
+	if peerEntity.GetType() == storage.NetworkEntityInfo_EXTERNAL_SOURCE &&
+		peerEntity.GetExternalSource().GetDiscovered() {
+		peer = networkbaseline.Peer{
+			IsIngress: isIngressToBaselineEntity,
+			DstPort:   dstPort,
+			Protocol:  protocol,
+			Name:      networkgraph.InternalEntitiesName,
+			Entity:    networkgraph.InternetEntity(),
+		}
+	} else {
+		peer = networkbaseline.PeerFromNetworkEntityInfo(peerEntity, peerEntityName, dstPort, protocol, isIngressToBaselineEntity)
+	}
+
 	_, peerInBaseline := baselineInfo.BaselinePeers[peer]
 	return peerInBaseline
 }
