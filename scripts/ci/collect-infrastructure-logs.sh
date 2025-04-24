@@ -17,6 +17,10 @@ set -eu
 # - Logs are saved under /tmp/k8s-service-logs/ by default
 
 
+SCRIPTS_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
+# shellcheck source=../../scripts/ci/lib.sh
+source "$SCRIPTS_ROOT/scripts/lib.sh"
+
 if [ $# -gt 0 ]; then
     log_dir="$1"
 else
@@ -34,10 +38,9 @@ proxy_pid=$!
 
 sleep 5 # Let kubectl proxy stabilize
 mkdir -p "${log_dir}"/infrastructure
-curl -v --retry 8 --retry-connrefused --retry-max-time 120 --continue-at - \
-  -s http://localhost:8001/logs/kube-apiserver.log \
-  -o "${log_dir}"/infrastructure/kube-apiserver.log \
-  || true
+retry 5 true curl -v --retry 2 --retry-all-errors --continue-at - \
+    -s http://localhost:8001/logs/kube-apiserver.log \
+    -o "${log_dir}"/infrastructure/kube-apiserver.log
 
 kill $proxy_pid
 
