@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/cenkalti/backoff/v4"
 	"github.com/pkg/errors"
 	activeComponentsUpdater "github.com/stackrox/rox/central/activecomponent/updater"
 	administrationEvents "github.com/stackrox/rox/central/administration/events"
@@ -419,17 +420,26 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 			utils.StripCVEDescriptionsNoClone(image)
 
 			for clusterID := range clusterIDs {
-				conn := l.connManager.GetConnection(clusterID)
-				log.Infof("clusterID: %v, conn: %v", clusterID, conn)
-				if conn == nil {
-					log.Info("here")
-					continue
-				}
-				err := conn.InjectMessage(concurrency.AsContext(&l.stopSig), &central.MsgToSensor{
-					Msg: &central.MsgToSensor_UpdatedImage{
-						UpdatedImage: image,
-					},
-				})
+				b := backoff.NewExponentialBackOff()
+				b.InitialInterval = time.Second
+				b.RandomizationFactor = 0.25
+				b.MaxInterval = time.Second * 5
+				b.Multiplier = 2
+				b.MaxElapsedTime = time.Second * 10
+				err = backoff.Retry(func() error {
+					conn := l.connManager.GetConnection(clusterID)
+					log.Infof("clusterID: %v, conn: %v", clusterID, conn)
+					if conn == nil {
+						log.Info("here")
+						return errors.New("connection unavailable")
+					}
+					err := conn.InjectMessage(concurrency.AsContext(&l.stopSig), &central.MsgToSensor{
+						Msg: &central.MsgToSensor_UpdatedImage{
+							UpdatedImage: image,
+						},
+					})
+					return err
+				}, b)
 				if err != nil {
 					log.Errorw("Error sending updated image to sensor "+clusterID,
 						logging.ImageName(image.GetName().GetFullName()), logging.Err(err))
