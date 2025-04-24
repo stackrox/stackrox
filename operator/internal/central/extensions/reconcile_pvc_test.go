@@ -8,6 +8,7 @@ import (
 	"github.com/go-logr/logr"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	"github.com/stackrox/rox/operator/internal/central/common"
+	"github.com/stackrox/rox/operator/internal/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -489,7 +490,7 @@ func TestReconcilePVCExtension(t *testing.T) {
 						Namespace: "stackrox",
 						Name:      "new-storage-class",
 						Annotations: map[string]string{
-							defaultStorageClassAnnotation: "true",
+							utils.DefaultStorageClassAnnotationKey: "true",
 						},
 					},
 				})
