@@ -2,7 +2,7 @@ ARG FINAL_STAGE_PATH="/mnt/final"
 
 # TODO(ROX-20312): we can't pin image tag or digest because currently there's no mechanism to auto-update that.
 FROM registry.access.redhat.com/ubi8/ubi:latest AS ubi-base
-FROM registry.access.redhat.com/ubi8/ubi-minimal:latest AS final-base
+FROM registry.access.redhat.com/ubi8/ubi-micro:latest AS final-base
 
 
 # TODO(ROX-20651): use content sets instead of subscription manager for access to RHEL RPMs once available. Move dnf commands to respective stages.
