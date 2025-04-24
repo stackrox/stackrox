@@ -3,8 +3,8 @@ package centralclient
 import (
 	"strings"
 
-	"github.com/gobwas/glob"
 	"github.com/stackrox/rox/pkg/clientconn"
+	"github.com/stackrox/rox/pkg/glob"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 )
@@ -18,11 +18,11 @@ const (
 )
 
 var (
-	ignoredPaths = glob.MustCompile("{/v1/ping,/v1.PingService/Ping,/v1/metadata,/static/*}")
+	ignoredPaths = glob.Pattern("{/v1/ping,/v1.PingService/Ping,/v1/metadata,/static/*}")
 
 	permanentTelemetryCampaign = phonehome.APICallCampaign{
 		{
-			Headers: map[string]phonehome.Pattern{
+			Headers: map[string]glob.Pattern{
 				userAgentHeaderKey:                  "*roxctl*",
 				clientconn.RoxctlCommandHeader:      phonehome.NoHeaderOrAnyValue,
 				clientconn.RoxctlCommandIndexHeader: phonehome.NoHeaderOrAnyValue,
@@ -30,8 +30,8 @@ var (
 			},
 		},
 		{
-			Path: phonehome.Pattern("/v1/clusters").Ptr(),
-			Headers: map[string]phonehome.Pattern{
+			Path: glob.Pattern("/v1/clusters").Ptr(),
+			Headers: map[string]glob.Pattern{
 				// ServiceNow default User-Agent includes "ServiceNow", but
 				// customers are free to change it.
 				// See https://support.servicenow.com/kb?id=kb_article_view&sysparm_article=KB1511513.
@@ -43,19 +43,19 @@ var (
 			// Capture requests from GitHub action user agents.
 			// See https://github.com/stackrox/central-login/blob/68785c129f3faba128d820cfe767558287be53a3/src/main.ts#L73
 			// and https://github.com/stackrox/roxctl-installer-action/blob/47fb4f5b275066b8322369e6e33fa010915b0d13/action.yml#L59.
-			Headers: map[string]phonehome.Pattern{
-				userAgentHeaderKey: phonehome.Pattern("*-GHA*"),
+			Headers: map[string]glob.Pattern{
+				userAgentHeaderKey: glob.Pattern("*-GHA*"),
 			},
 		},
 		{
 			// Capture SBOM generation requests. Corresponding handler in central/image/service/http_handler.go.
-			Path:    phonehome.Pattern("/api/v1/images/sbom").Ptr(),
-			Method:  phonehome.Pattern("POST").Ptr(),
-			Headers: map[string]phonehome.Pattern{userAgentHeaderKey: phonehome.NoHeaderOrAnyValue},
+			Path:    glob.Pattern("/api/v1/images/sbom").Ptr(),
+			Method:  glob.Pattern("POST").Ptr(),
+			Headers: map[string]glob.Pattern{userAgentHeaderKey: phonehome.NoHeaderOrAnyValue},
 		},
 		{
 			// Capture Jenkins Plugin requests
-			Headers: map[string]phonehome.Pattern{
+			Headers: map[string]glob.Pattern{
 				userAgentHeaderKey: "*stackrox-container-image-scanner*",
 			},
 		},
@@ -75,8 +75,8 @@ var (
 func apiPathsCampaign() *phonehome.APICallCampaignCriterion {
 	if pattern := apiWhiteList.Setting(); pattern != "" {
 		return &phonehome.APICallCampaignCriterion{
-			Path: phonehome.Pattern("{" + pattern + "}").Ptr(),
-			Headers: map[string]phonehome.Pattern{
+			Path: glob.Pattern("{" + pattern + "}").Ptr(),
+			Headers: map[string]glob.Pattern{
 				userAgentHeaderKey: phonehome.NoHeaderOrAnyValue,
 			},
 		}
@@ -89,8 +89,8 @@ func apiPathsCampaign() *phonehome.APICallCampaignCriterion {
 func userAgentsCampaign() *phonehome.APICallCampaignCriterion {
 	if pattern := userAgentsList.Setting(); pattern != "" {
 		return &phonehome.APICallCampaignCriterion{
-			Headers: map[string]phonehome.Pattern{
-				userAgentHeaderKey: phonehome.Pattern("{" + pattern + "}"),
+			Headers: map[string]glob.Pattern{
+				userAgentHeaderKey: glob.Pattern("{" + pattern + "}"),
 			},
 		}
 	}

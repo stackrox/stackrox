@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/pkg/clientconn"
+	"github.com/stackrox/rox/pkg/glob"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -138,7 +139,7 @@ func Test_apiCall(t *testing.T) {
 	}
 	require.NoError(t, permanentTelemetryCampaign.Compile())
 	anyTestEndpoint := &phonehome.APICallCampaignCriterion{
-		Path: phonehome.Pattern("*test*").Ptr(),
+		Path: glob.Pattern("*test*").Ptr(),
 	}
 	appendRuntimeCampaign(&phonehome.RuntimeConfig{
 		APICallCampaign: phonehome.APICallCampaign{anyTestEndpoint},
@@ -217,7 +218,7 @@ func Test_addCustomHeaders(t *testing.T) {
 	})
 	t.Run("add header from the single criterion", func(t *testing.T) {
 		tc = append(tc, &phonehome.APICallCampaignCriterion{
-			Headers: map[string]phonehome.Pattern{"Custom-Header": ""},
+			Headers: map[string]glob.Pattern{"Custom-Header": ""},
 		})
 		require.NoError(t, tc.Compile())
 		rp := &phonehome.RequestParams{
