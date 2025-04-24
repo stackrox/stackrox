@@ -171,9 +171,9 @@ func purgeHostConnsNoLock(maxAge time.Duration, conns *hostConnections, store En
 	for endpoint, status := range conns.endpoints {
 		// remove if the endpoint is not in the store (also not in history)
 		if len(store.LookupByEndpoint(endpoint.endpoint)) == 0 {
+			flowMetrics.PurgerEvents.WithLabelValues("hostEndpoint", "endpoint-gone").Inc()
 			delete(conns.endpoints, endpoint)
 			numPurgedEps++
-			flowMetrics.PurgerEvents.WithLabelValues("hostEndpoint", "endpoint-gone").Inc()
 			continue
 		}
 		if maxAge > 0 {
@@ -189,8 +189,8 @@ func purgeHostConnsNoLock(maxAge time.Duration, conns *hostConnections, store En
 		// Remove if the related container is not found (but keep historical)
 		_, found, _ := store.LookupByContainerID(conn.containerID)
 		if !found {
-			delete(conns.connections, conn)
 			flowMetrics.PurgerEvents.WithLabelValues("hostConnection", "containerID-gone").Inc()
+			delete(conns.connections, conn)
 			numPurgedConns++
 			continue
 		}
@@ -231,9 +231,9 @@ func purgeActiveEndpointsNoLock(maxAge time.Duration,
 		// Remove if the related container is not found (but keep historical)
 		_, found, _ := store.LookupByContainerID(endpoint.containerID)
 		if !found {
+			flowMetrics.PurgerEvents.WithLabelValues("activeEndpoint", "containerID-gone").Inc()
 			delete(endpoints, endpoint)
 			numPurged++
-			flowMetrics.PurgerEvents.WithLabelValues("activeEndpoint", "containerID-gone").Inc()
 			continue
 		}
 		if maxAge > 0 {
@@ -266,9 +266,9 @@ func purgeActiveConnectionsNoLock(maxAge time.Duration,
 		// Remove if the related container is not found (but keep historical)
 		_, found, _ := store.LookupByContainerID(conn.containerID)
 		if !found {
+			flowMetrics.PurgerEvents.WithLabelValues("activeConnection", "containerID-gone").Inc()
 			delete(conns, conn)
 			numPurged++
-			flowMetrics.PurgerEvents.WithLabelValues("activeConnection", "containerID-gone").Inc()
 			continue
 		}
 		if maxAge > 0 {
