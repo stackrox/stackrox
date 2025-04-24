@@ -2,21 +2,48 @@ package telemetry
 
 import (
 	"context"
+	"strings"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/search"
 )
 
+var keysMap map[aggregationKey][]string
+
+func parseAggregationKeys(setting string) map[aggregationKey][]string {
+	result := make(map[aggregationKey][]string)
+	for _, key := range strings.Split(setting, "|") {
+		result[key] = strings.Split(key, ",")
+	}
+	return result
+}
+
 func (h *trackImpl) trackCvssMetrics(ctx context.Context) {
-	aggregated := map[string]int{}
+	aggregated := map[aggregationKey]map[keyInstance]int{}
+	for key := range keysMap {
+		aggregated[key] = make(map[keyInstance]int)
+	}
 	_ = h.ds.WalkByQuery(ctx, search.EmptyQuery(), func(deployment *storage.Deployment) error {
 		return h.trackDeployment(ctx, aggregated, deployment)
 	})
 	h.aggregated(aggregated)
 }
 
-func (h *trackImpl) trackDeployment(ctx context.Context, aggregated map[string]int, deployment *storage.Deployment) error {
+func makeAggregationKeyInstance(keys []aggregationKey, metric map[keyInstance]string) string {
+	sb := strings.Builder{}
+	for i, key := range keys {
+		if v := metric[key]; v != "" {
+			if i > 0 {
+				sb.WriteRune('|')
+			}
+			sb.WriteString(v)
+		}
+	}
+	return sb.String()
+}
+
+func (h *trackImpl) trackDeployment(ctx context.Context, aggregated map[string]map[string]int, deployment *storage.Deployment) error {
 	images, err := h.ds.GetImagesForDeployment(ctx, deployment)
 	if err != nil {
 		return nil
@@ -24,11 +51,14 @@ func (h *trackImpl) trackDeployment(ctx context.Context, aggregated map[string]i
 
 	reportCVSS := env.EnableCVSSMetrics.BooleanSetting()
 	forEachVuln(images, func(image *storage.Image, name *storage.ImageName, vuln *storage.EmbeddedVulnerability) {
-		aggregated[vuln.GetSeverity().String()]++
+		metric := makeCvssMetric(image, name, vuln,
+			deployment.GetClusterName(), deployment.GetNamespace())
 
+		for key, keys := range keysMap {
+			k := makeAggregationKeyInstance(keys, metric)
+			aggregated[key][k]++
+		}
 		if reportCVSS {
-			metric := makeCvssMetric(image, name, vuln,
-				deployment.GetClusterName(), deployment.GetNamespace())
 			h.cvssGauge(metric, float64(vuln.GetCvss()))
 		}
 	})
@@ -65,6 +95,7 @@ func makeCvssMetric(image *storage.Image, name *storage.ImageName, vuln *storage
 		"ImageTag":        name.GetTag(),
 		"OperatingSystem": image.GetScan().GetOperatingSystem(),
 		"CVE":             vuln.GetCve(),
+		"Severity":        vuln.GetSeverity().String(),
 		"SeverityV2":      vuln.GetCvssV2().GetSeverity().String(),
 		"SeverityV3":      vuln.GetCvssV3().GetSeverity().String(),
 		"IsFixable":       isFixable(vuln),

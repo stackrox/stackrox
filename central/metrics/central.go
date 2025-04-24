@@ -271,7 +271,7 @@ var (
 		Help:      "Duration of the signature verification reprocessor loop in seconds",
 	})
 
-	aggregatedCVEsBySeverityVectorGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+	aggregatedCVEsVectorGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "severities",
@@ -501,11 +501,13 @@ func SetSignatureVerificationReprocessorDuration(start time.Time) {
 	signatureVerificationReprocessorDurationGauge.Set(time.Since(start).Seconds())
 }
 
-func SetImageVulnBySeverity(aggregated map[string]int) {
-	for severityName, count := range aggregated {
-		aggregatedCVEsBySeverityVectorGauge.With(prometheus.Labels{
-			"Severity": severityName,
-		}).Set(float64(count))
+func SetAggregatedImageVuln(aggregated map[string]map[string]int) {
+	for metricName, aggregated := range aggregated {
+		for keyValue, count := range aggregated {
+			aggregatedCVEsVectorGauge.With(prometheus.Labels{
+				metricName: keyValue,
+			}).Set(float64(count))
+		}
 	}
 }
 
