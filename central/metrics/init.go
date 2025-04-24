@@ -40,6 +40,5 @@ func init() {
 		signatureVerificationReprocessorDurationGauge,
 		pruningDurationHistogramVec,
 		storeCacheOperationHistogramVec,
-		aggregatedCVEsVectorGauge,
 	)
 }

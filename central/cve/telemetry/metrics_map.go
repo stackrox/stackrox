@@ -34,3 +34,12 @@ func makeAggregationKeyInstance(expressions []expression, metric map[keyInstance
 	}
 	return sb.String()
 }
+
+func getMetricNames(expressions []expression) []string {
+	var labels []string
+	for _, expression := range expressions {
+		label, _, _ := splitExpression(expression)
+		labels = append(labels, label)
+	}
+	return labels
+}
