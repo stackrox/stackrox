@@ -30,8 +30,6 @@ const (
 	DefaultCentralDBBackupPVCName = "central-db-backup"
 
 	pvcTargetLabelKey = "target.pvc.stackrox.io"
-
-	defaultStorageClassAnnotation = "storageclass.kubernetes.io/is-default-class"
 )
 
 // PVCTarget specifies which deployment should attach the PVC
@@ -275,8 +273,13 @@ func (r *reconcilePVCExtensionRun) handleCreate(claimName string, pvcConfig *pla
 	// error we still try to create a PVC.
 	hasDefault, err := utils.HasDefaultStorageClass(r.ctx, r.client)
 	if err == nil && !hasDefault && pvcConfig.StorageClassName == nil {
-		r.log.Info("No default storage class or explicit storage class found, skip PVC creation")
-		return nil
+		// For the backup PVC it's a hard stop
+		if r.target == PVCTargetCentralDBBackup {
+			r.log.Info("No default storage class or explicit storage class found, skip PVC creation")
+			return nil
+		} else {
+			r.log.Info("No default storage class or explicit storage class found, proceed")
+		}
 	}
 
 	size, err := parseResourceQuantityOr(pvcConfig.Size, r.defaults.Size)

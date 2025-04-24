@@ -13,6 +13,8 @@ const (
 	DefaultStorageClassAnnotationKey = "storageclass.kubernetes.io/is-default-class"
 )
 
+// HasDefaultStorageClass tells whether there is a StorageClass marked as a
+// default one. Return false if an error occurs when talking to K8s API.
 func HasDefaultStorageClass(ctx context.Context, client ctrlClient.Reader) (bool, error) {
 	storageClassList := storagev1.StorageClassList{}
 	if err := client.List(ctx, &storageClassList); err != nil {
