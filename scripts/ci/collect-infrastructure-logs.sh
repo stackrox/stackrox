@@ -34,10 +34,9 @@ proxy_pid=$!
 
 sleep 5 # Let kubectl proxy stabilize
 mkdir -p "${log_dir}"/infrastructure
-curl -s http://localhost:8001/logs/kube-apiserver.log > "${log_dir}"/infrastructure/kube-apiserver.log \
-  || curl -v --retry 8 --retry-max-time 30 --continue-at - \
-      -s http://localhost:8001/logs/kube-apiserver.log \
-      -o "${log_dir}"/infrastructure/kube-apiserver.log \
+curl -v --retry 8 --retry-max-time 30 --continue-at - \
+  -s http://localhost:8001/logs/kube-apiserver.log \
+  -o "${log_dir}"/infrastructure/kube-apiserver.log \
   || true
 
 kill $proxy_pid
