@@ -274,29 +274,25 @@ var (
 	aggregatedCVEsVectorGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
-		Name:      "severities",
-		Help:      "Aggregated CVEs by Severity",
-	}, []string{
-		"Severity",
-	})
-
-	cvssVectorGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "vulnerabilities",
-		Help:      "The discovered CVE",
+		Help:      "The discovered CVEs",
 	}, []string{
-		"CVE",
+		// Unique Key:
 		"Cluster",
-		"DeploymentCount",
-		"ImageId",
 		"Namespace",
-		"OperatingSystem",
-		"SeverityV2",
-		"SeverityV3",
+		"Deployment",
+		"ImageId",
 		"ImageRegistry",
 		"ImageRemote",
 		"ImageTag",
+
+		// Value:
+		"CVE",
+		"CVSS",
+		"OperatingSystem",
+		"Severity",
+		"SeverityV2",
+		"SeverityV3",
 	})
 )
 
@@ -509,9 +505,4 @@ func SetAggregatedImageVuln(aggregated map[string]map[string]int) {
 			}).Set(float64(count))
 		}
 	}
-}
-
-// SetImageVulnCVSS increments the count of the identified vulnerability.
-func SetImageVulnCVSS(labels map[string]string, severity float64) {
-	cvssVectorGauge.With(labels).Set(severity)
 }

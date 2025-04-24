@@ -29,10 +29,8 @@ var (
 	SecureMetricsClientCertCN = RegisterSetting("ROX_SECURE_METRICS_CLIENT_CERT_CN", WithDefault("system:serviceaccount:openshift-monitoring:prometheus-k8s"))
 
 	// AggregateCVSSMetrics enables aggregation by the specified fields of all CVEs CVSS.
-	AggregateCVSSMetrics = RegisterSetting("ROX_AGGREGATE_CVSS_METRICS", AllowEmpty(), WithDefault("Severity"))
-
-	// EnableCVSSMetrics enables reporting of all CVEs CVSS in addition to the numbers of the CVEs aggregated by severity.
-	EnableCVSSMetrics = RegisterBooleanSetting("ROX_ENABLE_CVSS_METRICS", false)
+	AggregateCVSSMetrics = RegisterSetting("ROX_AGGREGATE_CVSS_METRICS", AllowEmpty(),
+		WithDefault("Cluster,Namespace,Severity"))
 )
 
 // MetricsEnabled returns true if the metrics/debug http server should be started.
