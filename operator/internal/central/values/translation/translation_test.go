@@ -972,6 +972,7 @@ func TestTranslate(t *testing.T) {
 					"exposeMonitoring": false,
 					"db": map[string]interface{}{
 						"persistence": map[string]interface{}{
+							"backup": true,
 							"persistentVolumeClaim": map[string]interface{}{
 								"createClaim": false,
 							},
