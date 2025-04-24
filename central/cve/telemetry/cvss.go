@@ -25,9 +25,11 @@ func (h *trackImpl) trackDeployment(ctx context.Context, aggregated map[string]m
 		return nil
 	}
 
-	forEachVuln(images, func(image *storage.Image, name *storage.ImageName, vuln *storage.EmbeddedVulnerability) {
-		metric := makeCvssMetric(image, name, vuln,
-			deployment.GetClusterName(), deployment.GetNamespace(), deployment.GetName())
+	forEachVuln(images, func(image *storage.Image, imageName *storage.ImageName, vuln *storage.EmbeddedVulnerability) {
+		metric := makeCvssMetric(image, imageName, vuln,
+			deployment.GetClusterName(),
+			deployment.GetNamespace(),
+			deployment.GetName())
 
 		for key, expressions := range keysMap {
 			if k := makeAggregationKeyInstance(expressions, metric); k != "" {

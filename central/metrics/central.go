@@ -271,29 +271,7 @@ var (
 		Help:      "Duration of the signature verification reprocessor loop in seconds",
 	})
 
-	aggregatedCVEsVectorGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.CentralSubsystem.String(),
-		Name:      "vulnerabilities",
-		Help:      "The discovered CVEs",
-	}, []string{
-		// Unique Key:
-		"Cluster",
-		"Namespace",
-		"Deployment",
-		"ImageId",
-		"ImageRegistry",
-		"ImageRemote",
-		"ImageTag",
-
-		// Value:
-		"CVE",
-		"CVSS",
-		"OperatingSystem",
-		"Severity",
-		"SeverityV2",
-		"SeverityV3",
-	})
+	aggregatedVulnMetrics map[string]*prometheus.GaugeVec
 )
 
 func startTimeToMS(t time.Time) float64 {
@@ -497,10 +475,45 @@ func SetSignatureVerificationReprocessorDuration(start time.Time) {
 	signatureVerificationReprocessorDurationGauge.Set(time.Since(start).Seconds())
 }
 
-func SetAggregatedImageVuln(aggregated map[string]map[string]int) {
+// RegisterVulnAggregatedMetric registers user-defined custom vulnerability
+// aggregated metric according to the ROX_AGGREGATE_CVSS_METRICS variable value.
+func RegisterVulnAggregatedMetric(name string, labels []string) {
+	metric := prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      name,
+		Help:      "The discovered CVEs",
+	}, labels)
+	aggregatedVulnMetrics[name] = metric
+	prometheus.MustRegister(metric)
+	/*
+		 []string{
+			// Unique Key:
+			"Cluster",
+			"Namespace",
+			"Deployment",
+			"ImageId",
+			"ImageRegistry",
+			"ImageRemote",
+			"ImageTag",
+
+			// Value:
+			"CVE",
+			"CVSS",
+			"Severity",
+			"SeverityV2",
+			"SeverityV3",
+			"OperatingSystem",
+		})*/
+}
+
+// SetAggregatedVulnCount registers the metric vector with the values,
+// aggregated according to the ROX_AGGREGATE_CVSS_METRICS variable value.
+func SetAggregatedVulnCount(aggregated map[string]map[string]int) {
 	for metricName, aggregated := range aggregated {
+		metric := aggregatedVulnMetrics[metricName]
 		for keyValue, count := range aggregated {
-			aggregatedCVEsVectorGauge.With(prometheus.Labels{
+			metric.With(prometheus.Labels{
 				metricName: keyValue,
 			}).Set(float64(count))
 		}

@@ -23,5 +23,16 @@ func Test_makeAggregationKeyInstance(t *testing.T) {
 		"bool":   "false",
 	}
 	globCache = make(map[string]glob.Glob)
-	assert.Equal(t, "string=value|number=7.4|bool=false", makeAggregationKeyInstance([]expression{"string=*al*", "number>5", "bool"}, metric))
+	assert.Equal(t, "value|7.4|false", makeAggregationKeyInstance(
+		[]expression{"string=*al*", "number>5", "bool"}, metric))
+}
+
+func Test_getMetricNames(t *testing.T) {
+	assert.Equal(t, []string(nil), getMetricNames([]expression{}))
+	assert.Equal(t, []string{"a"}, getMetricNames([]expression{
+		"a=b",
+	}))
+	assert.Equal(t, []string{"a", "b", "c"}, getMetricNames([]expression{
+		"a", "b=x", "c>4",
+	}))
 }
