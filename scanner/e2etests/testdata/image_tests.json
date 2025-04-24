@@ -54,12 +54,12 @@
                 "Name": "cron",
                 "NamespaceName": "ubuntu:14.04",
                 "Version": "3.0pl1-124ubuntu2",
-                "Arch": "x86_64",
+                "Arch": "amd64",
                 "Vulnerabilities": [
                     {
                         "Name": "CVE-2017-9525",
                         "NamespaceName": "ubuntu:14.04",
-                        "Description": "In the cron package through 3.0pl1-128 on Debian, and through 3.0pl1-128ubuntu2 on Ubuntu, the postinst maintainer script allows for group-crontab-to-root privilege escalation via symlink attacks against unsafe usage of the chown and chmod programs.",
+                        "Description": "In the cron package through 3.0pl1-128 on Debian, and through3.0pl1-128ubuntu2 on Ubuntu, the postinst maintainer script allows forgroup-crontab-to-root privilege escalation via symlink attacks againstunsafe usage of the chown and chmod programs.",
                         "Link": "https://ubuntu.com/security/CVE-2017-9525",
                         "Severity": "Low",
                         "Metadata": {
@@ -71,16 +71,14 @@
                                 "CVSSv3": {
                                     "Score": 6.7,
                                     "Vectors": "CVSS:3.1/AV:L/AC:L/PR:H/UI:N/S:U/C:H/I:H/A:H"
-                                },
-                                "LastModifiedDateTime": "2019-03-21T23:29Z",
-                                "PublishedDateTime": "2017-06-09T16:29Z"
+                                }
                             }
                         }
                     },
                     {
                         "Name": "CVE-2019-9704",
                         "NamespaceName": "ubuntu:14.04",
-                        "Description": "Vixie Cron before the 3.0pl1-133 Debian package allows local users to cause a denial of service (daemon crash) via a large crontab file because the calloc return value is not checked.",
+                        "Description": "Vixie Cron before the 3.0pl1-133 Debian package allows local users to causea denial of service (daemon crash) via a large crontab file because thecalloc return value is not checked.",
                         "Link": "https://ubuntu.com/security/CVE-2019-9704",
                         "Severity": "Low",
                         "Metadata": {
@@ -92,16 +90,14 @@
                                 "CVSSv3": {
                                     "Score": 5.5,
                                     "Vectors": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H"
-                                },
-                                "LastModifiedDateTime": "2021-11-30T19:53Z",
-                                "PublishedDateTime": "2019-03-12T01:29Z"
+                                }
                             }
                         }
                     },
                     {
                         "Name": "CVE-2019-9705",
                         "NamespaceName": "ubuntu:14.04",
-                        "Description": "Vixie Cron before the 3.0pl1-133 Debian package allows local users to cause a denial of service (memory consumption) via a large crontab file because an unlimited number of lines is accepted.",
+                        "Description": "Vixie Cron before the 3.0pl1-133 Debian package allows local users to causea denial of service (memory consumption) via a large crontab file becausean unlimited number of lines is accepted.",
                         "Link": "https://ubuntu.com/security/CVE-2019-9705",
                         "Severity": "Low",
                         "Metadata": {
@@ -113,16 +109,14 @@
                                 "CVSSv3": {
                                     "Score": 5.5,
                                     "Vectors": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H"
-                                },
-                                "LastModifiedDateTime": "2021-11-30T18:50Z",
-                                "PublishedDateTime": "2019-03-12T01:29Z"
+                                }
                             }
                         }
                     },
                     {
                         "Name": "CVE-2019-9706",
                         "NamespaceName": "ubuntu:14.04",
-                        "Description": "Vixie Cron before the 3.0pl1-133 Debian package allows local users to cause a denial of service (use-after-free and daemon crash) because of a force_rescan_user error.",
+                        "Description": "Vixie Cron before the 3.0pl1-133 Debian package allows local users to causea denial of service (use-after-free and daemon crash) because of aforce_rescan_user error.",
                         "Link": "https://ubuntu.com/security/CVE-2019-9706",
                         "Severity": "Low",
                         "Metadata": {
@@ -134,14 +128,13 @@
                                 "CVSSv3": {
                                     "Score": 5.5,
                                     "Vectors": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H"
-                                },
-                                "LastModifiedDateTime": "2021-11-30T18:50Z",
-                                "PublishedDateTime": "2019-03-12T01:29Z"
+                                }
                             }
                         }
                     }
                 ],
-                "AddedBy": "sha256:bae382666908fd87a3a3646d7eb7176fa42226027d3256cac38ee0b79bdb0491"
+                "AddedBy": "sha256:bae382666908fd87a3a3646d7eb7176fa42226027d3256cac38ee0b79bdb0491",
+                "Location": "var/lib/dpkg/status"
             }
         ],
         "unexpected_features": null,
@@ -168,7 +161,7 @@
                         "Metadata": {
                             "NVD": {
                                 "CVSSv3": {
-                                    "Score": 0.0,
+                                    "Score": 8.1,
                                     "Vectors": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:H"
                                 }
                             }
@@ -183,7 +176,7 @@
                         "Metadata": {
                             "NVD": {
                                 "CVSSv3": {
-                                    "Score": 0.0,
+                                    "Score": 8.1,
                                     "Vectors": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:H"
                                 }
                             }
@@ -198,7 +191,7 @@
                         "Metadata": {
                             "NVD": {
                                 "CVSSv3": {
-                                    "Score": 0.0,
+                                    "Score": 8.1,
                                     "Vectors": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:H"
                                 }
                             }
@@ -213,7 +206,7 @@
                         "Metadata": {
                             "NVD": {
                                 "CVSSv3": {
-                                    "Score": 0.0,
+                                    "Score": 8.1,
                                     "Vectors": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:H"
                                 }
                             }
@@ -228,7 +221,7 @@
                         "Metadata": {
                             "NVD": {
                                 "CVSSv3": {
-                                    "Score": 0.0,
+                                    "Score": 8.1,
                                     "Vectors": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:H"
                                 }
                             }
@@ -243,7 +236,7 @@
                         "Metadata": {
                             "NVD": {
                                 "CVSSv3": {
-                                    "Score": 0.0,
+                                    "Score": 8.1,
                                     "Vectors": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:H"
                                 }
                             }
@@ -258,7 +251,7 @@
                         "Metadata": {
                             "NVD": {
                                 "CVSSv3": {
-                                    "Score": 0.0,
+                                    "Score": 7.5,
                                     "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N"
                                 }
                             }
@@ -273,7 +266,7 @@
                         "Metadata": {
                             "NVD": {
                                 "CVSSv3": {
-                                    "Score": 0.0,
+                                    "Score": 8.1,
                                     "Vectors": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:H"
                                 }
                             }
@@ -288,7 +281,7 @@
                         "Metadata": {
                             "NVD": {
                                 "CVSSv3": {
-                                    "Score": 0.0,
+                                    "Score": 8.1,
                                     "Vectors": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:H"
                                 }
                             }
@@ -303,7 +296,7 @@
                         "Metadata": {
                             "NVD": {
                                 "CVSSv3": {
-                                    "Score": 0.0,
+                                    "Score": 7.5,
                                     "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
                                 }
                             }
@@ -384,7 +377,7 @@
                     {
                         "Name": "RHSA-2020:4173",
                         "NamespaceName": "rhel:7",
-                        "Description": "The jackson-databind package provides general data-binding functionality for Jackson, which works on top of Jackson core streaming API.\n\nSecurity Fix(es):\n\n* jackson-databind: Serialization gadgets in com.pastdev.httpcomponents.configuration.JndiConfiguration (CVE-2020-24750)\n\nFor more details about the security issue(s), including the impact, a CVSS score, acknowledgments, and other related information, refer to the CVE page(s) listed in the References section.",
+                        "Description": "Red Hat Security Advisory: rh-maven35-jackson-databind security update",
                         "Link": "https://access.redhat.com/errata/RHSA-2020:4173",
                         "Severity": "Important",
                         "Metadata": {
@@ -411,7 +404,7 @@
                     {
                         "Name": "CVE-2017-1000382",
                         "NamespaceName": "rhel:7",
-                        "Description": "DOCUMENTATION: It was found that vim applies the opened file read permissions to the swap file, overriding the process' umask. An attacker might search for vim swap files that were not deleted properly, in order to retrieve sensitive data.\n            STATEMENT: Red Hat Product Security has rated this issue as having Low security impact. This issue is not currently planned to be addressed in future updates. For additional information, refer to the Issue Severity Classification: https://access.redhat.com/security/updates/classification/.",
+                        "Description": "It was found that vim applies the opened file read permissions to the swap file, overriding the process' umask. An attacker might search for vim swap files that were not deleted properly, in order to retrieve sensitive data.",
                         "Link": "https://access.redhat.com/security/cve/CVE-2017-1000382",
                         "Severity": "Low",
                         "Metadata": {
@@ -461,7 +454,7 @@
                     {
                         "Name": "RHSA-2020:4173",
                         "NamespaceName": "rhel:7",
-                        "Description": "The jackson-databind package provides general data-binding functionality for Jackson, which works on top of Jackson core streaming API.\n\nSecurity Fix(es):\n\n* jackson-databind: Serialization gadgets in com.pastdev.httpcomponents.configuration.JndiConfiguration (CVE-2020-24750)\n\nFor more details about the security issue(s), including the impact, a CVSS score, acknowledgments, and other related information, refer to the CVE page(s) listed in the References section.",
+                        "Description": "Red Hat Security Advisory: rh-maven35-jackson-databind security update",
                         "Link": "https://access.redhat.com/errata/RHSA-2020:4173",
                         "Severity": "Important",
                         "Metadata": {
@@ -488,7 +481,7 @@
                     {
                         "Name": "CVE-2017-1000382",
                         "NamespaceName": "rhel:7",
-                        "Description": "DOCUMENTATION: It was found that vim applies the opened file read permissions to the swap file, overriding the process' umask. An attacker might search for vim swap files that were not deleted properly, in order to retrieve sensitive data.\n            STATEMENT: Red Hat Product Security has rated this issue as having Low security impact. This issue is not currently planned to be addressed in future updates. For additional information, refer to the Issue Severity Classification: https://access.redhat.com/security/updates/classification/.",
+                        "Description": "It was found that vim applies the opened file read permissions to the swap file, overriding the process' umask. An attacker might search for vim swap files that were not deleted properly, in order to retrieve sensitive data.",
                         "Link": "https://access.redhat.com/security/cve/CVE-2017-1000382",
                         "Severity": "Low",
                         "Metadata": {
@@ -530,7 +523,7 @@
                     {
                         "Name": "RHSA-2021:0548",
                         "NamespaceName": "rhel:8",
-                        "Description": "Node.js is a software development platform for building fast and scalable network applications in the JavaScript programming language. \n\nThe following packages have been upgraded to a later upstream version: nodejs (10.23.1).\n\nSecurity Fix(es):\n\n* libuv: buffer overflow in realpath (CVE-2020-8252)\n\n* nodejs-npm-user-validate: improper input validation when validating user emails leads to ReDoS (CVE-2020-7754)\n\n* nodejs-y18n: prototype pollution vulnerability (CVE-2020-7774)\n\n* nodejs-ini: prototype pollution via malicious INI file (CVE-2020-7788)\n\n* nodejs-dot-prop: prototype pollution (CVE-2020-8116)\n\n* nodejs: use-after-free in the TLS implementation (CVE-2020-8265)\n\n* npm: sensitive information exposure through logs (CVE-2020-15095)\n\n* nodejs-ajv: prototype pollution via crafted JSON schema in ajv.validate function (CVE-2020-15366)\n\n* nodejs-yargs-parser: prototype pollution vulnerability (CVE-2020-7608)\n\n* nodejs: HTTP request smuggling via two copies of a header field in an http request (CVE-2020-8287)\n\nFor more details about the security issue(s), including the impact, a CVSS score, acknowledgments, and other related information, refer to the CVE page(s) listed in the References section.",
+                        "Description": "Red Hat Security Advisory: nodejs:10 security update",
                         "Link": "https://access.redhat.com/errata/RHSA-2021:0548",
                         "Severity": "Moderate",
                         "Metadata": {
@@ -546,7 +539,7 @@
                     {
                         "Name": "RHSA-2021:0735",
                         "NamespaceName": "rhel:8",
-                        "Description": "Node.js is a software development platform for building fast and scalable network applications in the JavaScript programming language. \n\nThe following packages have been upgraded to a later upstream version: nodejs (10.24.0).\n\nSecurity Fix(es):\n\n* nodejs: HTTP2 'unknownProtocol' cause DoS by resource exhaustion (CVE-2021-22883)\n\n* nodejs: DNS rebinding in --inspect (CVE-2021-22884)\n\nFor more details about the security issue(s), including the impact, a CVSS score, acknowledgments, and other related information, refer to the CVE page(s) listed in the References section.",
+                        "Description": "Red Hat Security Advisory: nodejs:10 security update",
                         "Link": "https://access.redhat.com/errata/RHSA-2021:0735",
                         "Severity": "Important",
                         "Metadata": {
@@ -573,7 +566,7 @@
                     {
                         "Name": "RHSA-2020:4952",
                         "NamespaceName": "rhel:8",
-                        "Description": "FreeType is a free, high-quality, portable font engine that can open and manage font files. FreeType loads, hints, and renders individual glyphs efficiently.\n\nSecurity Fix(es):\n\n* freetype: Heap-based buffer overflow due to integer truncation in Load_SBit_Png (CVE-2020-15999)\n\nFor more details about the security issue(s), including the impact, a CVSS score, acknowledgments, and other related information, refer to the CVE page(s) listed in the References section.",
+                        "Description": "Red Hat Security Advisory: freetype security update",
                         "Link": "https://access.redhat.com/errata/RHSA-2020:4952",
                         "Severity": "Important",
                         "Metadata": {
@@ -588,7 +581,7 @@
                     }
                 ],
                 "AddedBy": "sha256:35ad9b4fba1fa6b00a6f266303348dc0cf9a7c341616e800c2738030c0f64167",
-                "FixedBy": "0:2.9.1-9.el8",
+                "FixedBy": "0:2.9.1-10.el8_10",
                 "Location": "bdb:var/lib/rpm"
             },
             {
@@ -600,7 +593,7 @@
                     {
                         "Name": "RHSA-2020:4508",
                         "NamespaceName": "rhel:8",
-                        "Description": "The libsolv packages provide a library for resolving package dependencies using a satisfiability algorithm.\n\nThe following packages have been upgraded to a later upstream version: libsolv (0.7.11). (BZ#1809106)\n\nSecurity Fix(es):\n\n* libsolv: out-of-bounds read in repodata_schema2id in repodata.c (CVE-2019-20387)\n\nFor more details about the security issue(s), including the impact, a CVSS score, acknowledgments, and other related information, refer to the CVE page(s) listed in the References section.\n\nAdditional Changes:\n\nFor detailed information on changes in this release, see the Red Hat Enterprise Linux 8.3 Release Notes linked from the References section.",
+                        "Description": "Red Hat Security Advisory: libsolv security, bug fix, and enhancement update",
                         "Link": "https://access.redhat.com/errata/RHSA-2020:4508",
                         "Severity": "Moderate",
                         "Metadata": {
@@ -616,7 +609,7 @@
                     {
                         "Name": "RHSA-2021:4060",
                         "NamespaceName": "rhel:8",
-                        "Description": "The libsolv packages provide a library for resolving package dependencies using a satisfiability algorithm.\n\nSecurity Fix(es):\n\n* libsolv: heap-based buffer overflow in pool_installable() in src/repo.h (CVE-2021-33928)\n\n* libsolv: heap-based buffer overflow in pool_disabled_solvable() in src/repo.h (CVE-2021-33929)\n\n* libsolv: heap-based buffer overflow in pool_installable_whatprovides() in src/repo.h (CVE-2021-33930)\n\n* libsolv: heap-based buffer overflow in prune_to_recommended() in src/policy.c (CVE-2021-33938)\n\nFor more details about the security issue(s), including the impact, a CVSS score, acknowledgments, and other related information, refer to the CVE page(s) listed in the References section.",
+                        "Description": "Red Hat Security Advisory: libsolv security update",
                         "Link": "https://access.redhat.com/errata/RHSA-2021:4060",
                         "Severity": "Moderate",
                         "Metadata": {
@@ -632,7 +625,7 @@
                     {
                         "Name": "RHSA-2021:4408",
                         "NamespaceName": "rhel:8",
-                        "Description": "The libsolv packages provide a library for resolving package dependencies using a satisfiability algorithm.\n\nSecurity Fix(es):\n\n* libsolv: heap-based buffer overflow in testcase_read() in src/testcase.c (CVE-2021-3200)\n\nFor more details about the security issue(s), including the impact, a CVSS score, acknowledgments, and other related information, refer to the CVE page(s) listed in the References section.\n\nAdditional Changes:\n\nFor detailed information on changes in this release, see the Red Hat Enterprise Linux 8.5 Release Notes linked from the References section.",
+                        "Description": "Red Hat Security Advisory: libsolv security and bug fix update",
                         "Link": "https://access.redhat.com/errata/RHSA-2021:4408",
                         "Severity": "Low",
                         "Metadata": {
@@ -703,7 +696,7 @@
                         "Name": "CVE-2021-30139",
                         "NamespaceName": "alpine:v3.13",
                         "Description": "In Alpine Linux apk-tools before 2.12.5, the tarball parser allows a buffer overflow and crash.",
-                        "Link": "https://www.cve.org/CVERecord?id=CVE-2021-30139",
+                        "Link": "https://security.alpinelinux.org/vuln/CVE-2021-30139",
                         "Severity": "Unspecified",
                         "Metadata": {
                             "NVD": {
@@ -723,7 +716,7 @@
                         "Name": "CVE-2021-36159",
                         "NamespaceName": "alpine:v3.13",
                         "Description": "libfetch before 2021-07-26, as used in apk-tools, xbps, and other products, mishandles numeric strings for the FTP and HTTP protocols. The FTP passive mode implementation allows an out-of-bounds read because strtol is used to parse the relevant numbers into address bytes. It does not check if the line ends prematurely. If it does, the for-loop condition checks for the '\\0' terminator one byte too late.",
-                        "Link": "https://www.cve.org/CVERecord?id=CVE-2021-36159",
+                        "Link": "https://security.alpinelinux.org/vuln/CVE-2021-36159",
                         "Severity": "Unspecified",
                         "Metadata": {
                             "NVD": {
@@ -754,7 +747,7 @@
                         "Name": "CVE-2021-28831",
                         "NamespaceName": "alpine:v3.13",
                         "Description": "decompress_gunzip.c in BusyBox through 1.32.1 mishandles the error bit on the huft_build result pointer, with a resultant invalid free or segmentation fault, via malformed gzip data.",
-                        "Link": "https://www.cve.org/CVERecord?id=CVE-2021-28831",
+                        "Link": "https://security.alpinelinux.org/vuln/CVE-2021-28831",
                         "Severity": "Unspecified",
                         "Metadata": {
                             "NVD": {
@@ -797,7 +790,7 @@
                         "Name": "CVE-2021-36159",
                         "NamespaceName": "alpine:v3.14",
                         "Description": "libfetch before 2021-07-26, as used in apk-tools, xbps, and other products, mishandles numeric strings for the FTP and HTTP protocols. The FTP passive mode implementation allows an out-of-bounds read because strtol is used to parse the relevant numbers into address bytes. It does not check if the line ends prematurely. If it does, the for-loop condition checks for the '\\0' terminator one byte too late.",
-                        "Link": "https://www.cve.org/CVERecord?id=CVE-2021-36159",
+                        "Link": "https://security.alpinelinux.org/vuln/CVE-2021-36159",
                         "Severity": "Unspecified",
                         "Metadata": {
                             "NVD": {
@@ -886,7 +879,7 @@
                         "Name": "CVE-2022-30065",
                         "NamespaceName": "alpine:v3.16",
                         "Description": "A use-after-free in Busybox 1.35-x's awk applet leads to denial of service and possibly code execution when processing a crafted awk pattern in the copyvar function.",
-                        "Link": "https://www.cve.org/CVERecord?id=CVE-2022-30065",
+                        "Link": "https://security.alpinelinux.org/vuln/CVE-2022-30065",
                         "Severity": "Unspecified",
                         "Metadata": {
                             "NVD": {
@@ -904,7 +897,7 @@
                     }
                 ],
                 "AddedBy": "sha256:2408cc74d12b6cd092bb8b516ba7d5e290f485d3eb9672efc00f0583730179e8",
-                "FixedBy": "1.35.0-r15",
+                "FixedBy": "1.35.0-r18",
                 "Location": "lib/apk/db/installed"
             },
             {
@@ -917,7 +910,7 @@
                         "Name": "CVE-2022-2097",
                         "NamespaceName": "alpine:v3.16",
                         "Description": "AES OCB mode for 32-bit x86 platforms using the AES-NI assembly optimised implementation will not encrypt the entirety of the data under some circumstances. This could reveal sixteen bytes of data that was preexisting in the memory that wasn't written. In the special case of \"in place\" encryption, sixteen bytes of the plaintext would be revealed. Since OpenSSL does not support OCB based cipher suites for TLS and DTLS, they are both unaffected. Fixed in OpenSSL 3.0.5 (Affected 3.0.0-3.0.4). Fixed in OpenSSL 1.1.1q (Affected 1.1.1-1.1.1p).",
-                        "Link": "https://www.cve.org/CVERecord?id=CVE-2022-2097",
+                        "Link": "https://security.alpinelinux.org/vuln/CVE-2022-2097",
                         "Severity": "Unspecified",
                         "Metadata": {
                             "NVD": {
@@ -1027,7 +1020,7 @@
                         "Metadata": {
                             "NVD": {
                                 "CVSSv3": {
-                                    "Score": 0.0,
+                                    "Score": 3.7,
                                     "Vectors": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:L/I:N/A:N"
                                 }
                             }
@@ -1042,7 +1035,7 @@
                         "Metadata": {
                             "NVD": {
                                 "CVSSv3": {
-                                    "Score": 0.0,
+                                    "Score": 6.6,
                                     "Vectors": "CVSS:3.1/AV:N/AC:H/PR:H/UI:N/S:U/C:H/I:H/A:H"
                                 }
                             }
@@ -1057,7 +1050,7 @@
                         "Metadata": {
                             "NVD": {
                                 "CVSSv3": {
-                                    "Score": 0.0,
+                                    "Score": 8.6,
                                     "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:N/I:N/A:H"
                                 }
                             }
@@ -1094,10 +1087,6 @@
                         "Severity": "Critical",
                         "Metadata": {
                             "NVD": {
-                                "CVSSv2": {
-                                    "Score": 7.5,
-                                    "Vectors": "AV:N/AC:L/Au:N/C:P/I:P/A:P"
-                                },
                                 "CVSSv3": {
                                     "Score": 9.8,
                                     "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
@@ -1136,10 +1125,6 @@
                         "Severity": "Critical",
                         "Metadata": {
                             "NVD": {
-                                "CVSSv2": {
-                                    "Score": 7.5,
-                                    "Vectors": "AV:N/AC:L/Au:N/C:P/I:P/A:P"
-                                },
                                 "CVSSv3": {
                                     "Score": 9.8,
                                     "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
@@ -1269,8 +1254,7 @@
                 "Vulnerabilities": [
                     {
                         "Name": "RHSA-2022:7288",
-                        "NamespaceName": "rhel:9",
-                        "Description": "OpenSSL is a toolkit that implements the Secure Sockets Layer (SSL) and Transport Layer Security (TLS) protocols, as well as a full strength general purpose cryptography library.\n\nSecurity Fix(es):\n\n* OpenSSL: X.509 Email Address Buffer Overflow (CVE-2022-3602)\n\n* OpenSSL: X.509 Email Address Variable Length Buffer Overflow (CVE-2022-3786)\n\nFor more details about the security issue(s), including the impact, a CVSS score, acknowledgments, and other related information, refer to the CVE page(s) listed in the References section.",
+                        "Description": "Red Hat Security Advisory: openssl security update",
                         "Link": "https://access.redhat.com/errata/RHSA-2022:7288",
                         "Severity": "Important",
                         "Metadata": {
@@ -1285,7 +1269,7 @@
                     }
                 ],
                 "AddedBy": "sha256:2412e60e610160d090f7e974a208c6ffd26b2d530361b7c9aa8967e160ac7996",
-                "FixedBy": "1:3.0.7-25.el9_3",
+                "FixedBy": "1:3.2.2-6.el9_5.1",
                 "Location": "sqlite:var/lib/rpm"
             },
             {
@@ -1296,8 +1280,7 @@
                 "Vulnerabilities": [
                     {
                         "Name": "RHSA-2022:7288",
-                        "NamespaceName": "rhel:9",
-                        "Description": "OpenSSL is a toolkit that implements the Secure Sockets Layer (SSL) and Transport Layer Security (TLS) protocols, as well as a full strength general purpose cryptography library.\n\nSecurity Fix(es):\n\n* OpenSSL: X.509 Email Address Buffer Overflow (CVE-2022-3602)\n\n* OpenSSL: X.509 Email Address Variable Length Buffer Overflow (CVE-2022-3786)\n\nFor more details about the security issue(s), including the impact, a CVSS score, acknowledgments, and other related information, refer to the CVE page(s) listed in the References section.",
+                        "Description": "Red Hat Security Advisory: openssl security update",
                         "Link": "https://access.redhat.com/errata/RHSA-2022:7288",
                         "Severity": "Important",
                         "Metadata": {
@@ -1312,7 +1295,7 @@
                     }
                 ],
                 "AddedBy": "sha256:2412e60e610160d090f7e974a208c6ffd26b2d530361b7c9aa8967e160ac7996",
-                "FixedBy": "1:3.0.7-25.el9_3",
+                "FixedBy": "1:3.2.2-6.el9_5.1",
                 "Location": "sqlite:var/lib/rpm"
             },
             {
@@ -1321,6 +1304,7 @@
                 "Version": "1.26.5-3.el9",
                 "Arch": "noarch",
                 "AddedBy": "sha256:2412e60e610160d090f7e974a208c6ffd26b2d530361b7c9aa8967e160ac7996",
+                "FixedBy": "0:1.26.5-5.el9_4.1",
                 "Location": "sqlite:var/lib/rpm"
             },
             {
@@ -1331,8 +1315,7 @@
                 "Vulnerabilities": [
                     {
                         "Name": "RHSA-2022:5942",
-                        "NamespaceName": "rhel:9",
-                        "Description": "Vim (Vi IMproved) is an updated and improved version of the vi editor.\n\nSecurity Fix(es):\n\n* vim: Out-of-bounds Write (CVE-2022-1785)\n\n* vim: out-of-bounds write in vim_regsub_both() in regexp.c (CVE-2022-1897)\n\n* vim: buffer over-read in utf_ptr2char() in mbyte.c (CVE-2022-1927)\n\nFor more details about the security issue(s), including the impact, a CVSS score, acknowledgments, and other related information, refer to the CVE page(s) listed in the References section.",
+                        "Description": "Red Hat Security Advisory: vim security update",
                         "Link": "https://access.redhat.com/errata/RHSA-2022:5942",
                         "Severity": "Moderate",
                         "Metadata": {
@@ -1347,7 +1330,7 @@
                     }
                 ],
                 "AddedBy": "sha256:2412e60e610160d090f7e974a208c6ffd26b2d530361b7c9aa8967e160ac7996",
-                "FixedBy": "2:8.2.2637-20.el9_1",
+                "FixedBy": "2:8.2.2637-21.el9",
                 "Location": "sqlite:var/lib/rpm"
             }
         ],
@@ -1376,8 +1359,7 @@
                 "Vulnerabilities": [
                     {
                         "Name": "RHBA-2022:5747",
-                        "NamespaceName": "rhel:8",
-                        "Description": ".NET Core is a managed-software framework. It implements a subset of the .NET\nframework APIs and several new APIs, and it includes a CLR implementation.\n\nBug Fix(es) and Enhancement(s):\n\n* Update .NET 6.0 to SDK 6.0.107 and Runtime 6.0.7 [rhel-8.6.0.z] (BZ#2105397)",
+                        "Description": "Red Hat Bug Fix Advisory: .NET 6.0 bugfix update",
                         "Link": "https://access.redhat.com/errata/RHBA-2022:5747",
                         "Severity": "Moderate",
                         "Metadata": {
@@ -1403,8 +1385,7 @@
                 "Vulnerabilities": [
                     {
                         "Name": "RHBA-2022:5747",
-                        "NamespaceName": "rhel:8",
-                        "Description": ".NET Core is a managed-software framework. It implements a subset of the .NET\nframework APIs and several new APIs, and it includes a CLR implementation.\n\nBug Fix(es) and Enhancement(s):\n\n* Update .NET 6.0 to SDK 6.0.107 and Runtime 6.0.7 [rhel-8.6.0.z] (BZ#2105397)",
+                        "Description": "Red Hat Bug Fix Advisory: .NET 6.0 bugfix update",
                         "Link": "https://access.redhat.com/errata/RHBA-2022:5747",
                         "Severity": "Moderate",
                         "Metadata": {
@@ -1447,7 +1428,7 @@
                         "Metadata": {
                             "NVD": {
                                 "CVSSv3": {
-                                    "Score": 0,
+                                    "Score": 9.8,
                                     "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
                                 }
                             }
@@ -1512,7 +1493,7 @@
                 ],
                 "AddedBy": "sha256:8862c07555c9317d3dd31b6d8a755244a5e215737e45f67fa4c4ec7e03ca3b37",
                 "Location": "var/lib/dpkg/status",
-                "FixedBy": "0:3.0.2-0ubuntu1.14"
+                "FixedBy": "0:3.0.2-0ubuntu1.19"
             }
         ],
         "unexpected_features": null,
@@ -1555,7 +1536,7 @@
                     {
                         "Name": "CVE-2021-26291",
                         "NamespaceName": "rhel:8",
-                        "Description": "DOCUMENTATION: A flaw was found in maven. Repositories that are defined in a dependency’s Project Object Model (pom), which may be unknown to users, are used by default resulting in potential risk if a malicious actor takes over that repository or is able to insert themselves into a position to pretend to be that repository. The highest threat from this vulnerability is to data confidentiality and integrity. \n            \n            MITIGATION: To avoid possible man-in-the-middle related attacks with this flaw, ensure any linked repositories in maven POMs use https and not http.",
+                        "Description": "A flaw was found in maven. Repositories that are defined in a dependency’s Project Object Model (pom), which may be unknown to users, are used by default resulting in potential risk if a malicious actor takes over that repository or is able to insert themselves into a position to pretend to be that repository. The highest threat from this vulnerability is to data confidentiality and integrity.",
                         "Link": "https://access.redhat.com/security/cve/CVE-2021-26291",
                         "Severity": "Moderate",
                         "Metadata": {
@@ -1570,7 +1551,7 @@
                     {
                         "Name": "RHSA-2022:6531",
                         "NamespaceName": "rhel:8",
-                        "Description": "Red Hat OpenShift Container Platform is Red Hat's cloud computing\nKubernetes application platform solution designed for on-premise or private\ncloud deployments.\n\nThis advisory contains the RPM packages for Red Hat OpenShift Container Platform 4.10.33. See the following advisory for the container images for this release:\n\nhttps://access.redhat.com/errata/RHBA-2022:6532\n\nSecurity Fix(es):\n\n* jenkins-plugin: Arbitrary file write vulnerability in Pipeline Input Step\nPlugin (CVE-2022-34177)\n\nFor more details about the security issue(s), including the impact, a CVSS\nscore, acknowledgments, and other related information, refer to the CVE\npage(s)\nlisted in the References section.\n\nAll OpenShift Container Platform 4.10 users are advised to upgrade to these updated packages and images when they are available in the appropriate release channel. To check for available updates, use the OpenShift Console or the CLI oc command. Instructions for upgrading a cluster are available at https://docs.openshift.com/container-platform/4.10/updating/updating-cluster-cli.html",
+                        "Description": "Red Hat Security Advisory: OpenShift Container Platform 4.10.33 packages and security update",
                         "Link": "https://access.redhat.com/errata/RHSA-2022:6531",
                         "Severity": "Important",
                         "Metadata": {
@@ -1634,7 +1615,7 @@
                         "Metadata": {
                             "NVD": {
                                 "CVSSv3": {
-                                    "Score": 0.0,
+                                    "Score": 9.8,
                                     "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
                                 }
                             }
@@ -1668,19 +1649,16 @@
                         "Name": "CVE-2022-29885",
                         "Description": "The documentation of Apache Tomcat 10.1.0-M1 to 10.1.0-M14, 10.0.0-M1 to 10.0.20, 9.0.13 to 9.0.62 and 8.5.38 to 8.5.78 for the EncryptInterceptor incorrectly stated it enabled Tomcat clustering to run over an untrusted network. This was not correct. While the EncryptInterceptor does provide confidentiality and integrity protection, it does not protect against all risks associated with running over any untrusted network, particularly DoS risks.",
                         "Link": "https://nvd.nist.gov/vuln/detail/CVE-2022-29885",
-                        "Severity": "Important",
+                        "Severity": "Unspecified",
                         "Metadata": {
                             "NVD": {
-                                "CVSSv2": {
-                                    "Score": 5,
-                                    "Vectors": "AV:N/AC:L/Au:N/C:N/I:N/A:P"
-                                },
                                 "CVSSv3": {
                                     "Score": 7.5,
                                     "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
                                 }
                             }
-                        }
+                        },
+                        "FixedBy": "introduced=9.0.13&lastAffected=9.0.62"
                     },
                     {
                         "Name": "CVE-2023-28708",
@@ -1804,7 +1782,7 @@
                         "Name": "CVE-2023-3138",
                         "NamespaceName": "alpine:v3.17",
                         "Description": "A vulnerability was found in libX11. The security flaw occurs because the functions in src/InitExt.c in libX11 do not check that the values provided for the Request, Event, or Error IDs are within the bounds of the arrays that those functions write to, using those IDs as array indexes. They trust that they were called with values provided by an Xserver adhering to the bounds specified in the X11 protocol, as all X servers provided by X.Org do. As the protocol only specifies a single byte for these values, an out-of-bounds value provided by a malicious server (or a malicious proxy-in-the-middle) can only overwrite other portions of the Display structure and not write outside the bounds of the Display structure itself, possibly causing the client to crash with this memory corruption.",
-                        "Link": "https://www.cve.org/CVERecord?id=CVE-2023-3138",
+                        "Link": "https://security.alpinelinux.org/vuln/CVE-2023-3138",
                         "Severity": "Unspecified",
                         "Metadata": {
                             "NVD": {
@@ -1814,12 +1792,12 @@
                                 }
                             }
                         },
-                        "FixedBy": "1.8.7-r0"
+                        "FixedBy": "1.8.4-r1"
                     }
                 ],
                 "AddedBy": "sha256:4aacde79cec42c8d0c5886185e70a16b107ae8c6b1a67d63d6efdb6d6978ed97",
                 "Location": "lib/apk/db/installed",
-                "FixedBy": "1.8.4-r1"
+                "FixedBy": "1.8.7-r0"
             },
             {
                 "Name": "nghttp2-libs",
@@ -1831,7 +1809,7 @@
                         "Name": "CVE-2023-35945",
                         "NamespaceName": "alpine:v3.17",
                         "Description": "Envoy is a cloud-native high-performance edge/middle/service proxy. Envoy’s HTTP/2 codec may leak a header map and bookkeeping structures upon receiving `RST_STREAM` immediately followed by the `GOAWAY` frames from an upstream server. In nghttp2, cleanup of pending requests due to receipt of the `GOAWAY` frame skips de-allocation of the bookkeeping structure and pending compressed header. The error return [code path] is taken if connection is already marked for not sending more requests due to `GOAWAY` frame. The clean-up code is right after the return statement, causing memory leak. Denial of service through memory exhaustion. This vulnerability was patched in versions(s) 1.26.3, 1.25.8, 1.24.9, 1.23.11.",
-                        "Link": "https://www.cve.org/CVERecord?id=CVE-2023-35945",
+                        "Link": "https://security.alpinelinux.org/vuln/CVE-2023-35945",
                         "Severity": "Unspecified",
                         "Metadata": {
                             "NVD": {
@@ -1895,7 +1873,7 @@
                 "Version": "v0.14.0",
                 "Location": "go:scanner",
                 "AddedBy": "sha256:46ad2a8a3b7838accbc76931558700cb013aa77cb3a65e4bafcae30fad23eb80",
-                "FixedBy": "0.17.0",
+                "FixedBy": "0.35.0",
                 "Vulnerabilities": [
                     {
                         "Name": "CVE-2023-48795",
@@ -1906,7 +1884,7 @@
                         "Metadata": {
                             "NVD": {
                                 "CVSSv3": {
-                                    "Score": 0,
+                                    "Score": 5.9,
                                     "Vectors": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:H/A:N"
                                 }
                             }
@@ -1918,6 +1896,52 @@
                         "Link": "https://go.dev/issue/64784",
                         "Severity": "Unspecified",
                         "FixedBy": "0.17.0"
+                    },
+                    {
+                        "Name": "GO-2025-3487",
+                        "Description": "Potential denial of service in golang.org/x/crypto",
+                        "Link": "https://go.dev/cl/652135",
+                        "Severity": "Unspecified",
+                        "Metadata": null,
+                        "FixedBy": "0.35.0"
+                    },
+                    {
+                        "Name": "CVE-2024-45337",
+                        "Description": "Misuse of ServerConfig.PublicKeyCallback may cause authorization bypass in golang.org/x/crypto",
+                        "Link": "https://nvd.nist.gov/vuln/detail/CVE-2024-45337",
+                        "Severity": "Critical",
+                        "Metadata": {
+                            "": {
+                                "CVSSv3": {
+                                    "Score": 9.1,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:N"
+                                }
+                            }
+                        },
+                        "FixedBy": "0.31.0"
+                    },
+                    {
+                        "Name": "GO-2024-3321",
+                        "Description": "Misuse of connection.serverAuthenticate may cause authorization bypass in golang.org/x/crypto",
+                        "Link": "https://github.com/golang/crypto/commit/b4f1988a35dee11ec3e05d6bf3e90b695fbd8909",
+                        "Severity": "Unspecified",
+                        "Metadata": null,
+                        "FixedBy": "0.31.0"
+                    },
+                    {
+                        "Name": "CVE-2025-22869",
+                        "Description": "golang.org/x/crypto Vulnerable to Denial of Service (DoS) via Slow or Incomplete Key Exchange",
+                        "Link": "https://nvd.nist.gov/vuln/detail/CVE-2025-22869",
+                        "Severity": "Important",
+                        "Metadata": {
+                            "": {
+                                "CVSSv3": {
+                                    "Score": 7.5,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+                                }
+                            }
+                        },
+                        "FixedBy": "0.35.0"
                     }
                 ]
             },
@@ -1949,7 +1973,7 @@
                         "Metadata": {
                             "": {
                                 "CVSSv3": {
-                                    "Score": 0.0,
+                                    "Score": 9.8,
                                     "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
                                 }
                             }
@@ -1964,12 +1988,12 @@
                         "Metadata": {
                             "": {
                                 "CVSSv3": {
-                                    "Score": 0,
+                                    "Score": 7.5,
                                     "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N"
                                 }
                             }
                         },
-                        "FixedBy": ""
+                        "FixedBy": "0:1.26.5-5.el9_4.1"
                     }
                 ],
                 "FixedBy": "1.1.9"
@@ -1986,7 +2010,7 @@
                 "Version": "1.8.5-7.el8_6",
                 "Arch": "x86_64",
                 "Location": "bdb:var/lib/rpm",
-                "AddedBy": "sha256:60ccddb6218556f1d6ac035de7505a87c53b2c8653569d2a57dfc1b53c745588",
+                "AddedBy": "sha256:e198ceced898a56d9a661e15048ed0ee31744f30be88f061bcf4455493edda67",
                 "FixedBy": "10:1.8.5-7.el8_6_fips",
                 "Vulnerabilities": [
                     {
