@@ -4,10 +4,10 @@ import (
 	"context"
 	"testing"
 
+	"github.com/gobwas/glob"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 )
@@ -44,14 +44,14 @@ func Test_fetchMetrics(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	ds := deploymentDS.NewMockDataStore(ctrl)
 
-	t.Setenv(env.EnableCVSSMetrics.EnvVar(), "true")
-	keysMap = parseAggregationKeys("Severity|Cluster,Namespace,Severity")
+	globCache = make(map[string]glob.Glob)
+	keysMap = parseAggregationKeys("Severity|Cluster,Namespace,Severity|Deployment=*4,ImageTag=latest")
 
 	deployments := []*storage.Deployment{
-		{Id: "deployment-1", Namespace: "namespace-1", ClusterName: "cluster-1"},
-		{Id: "deployment-2", Namespace: "namespace-2", ClusterName: "cluster-1"},
-		{Id: "deployment-3", Namespace: "namespace-2", ClusterName: "cluster-1"},
-		{Id: "deployment-4", Namespace: "namespace-2", ClusterName: "cluster-2"},
+		{Id: "deployment-1", Name: "D1", Namespace: "namespace-1", ClusterName: "cluster-1"},
+		{Id: "deployment-2", Name: "D2", Namespace: "namespace-2", ClusterName: "cluster-1"},
+		{Id: "deployment-3", Name: "D3", Namespace: "namespace-2", ClusterName: "cluster-1"},
+		{Id: "deployment-4", Name: "D4", Namespace: "namespace-2", ClusterName: "cluster-2"},
 	}
 
 	cves := []*storage.EmbeddedVulnerability{
@@ -99,16 +99,10 @@ func Test_fetchMetrics(t *testing.T) {
 	type cve = string
 	type labels = map[string]string
 
-	results := []labels{}
-	var severitySum float64
 	var aggregated map[aggregationKey]map[keyInstance]int
 	i := &trackImpl{ds: ds,
 		aggregated: func(a map[aggregationKey]map[keyInstance]int) {
 			aggregated = a
-		},
-		cvssGauge: func(l labels, f float64) {
-			results = append(results, l)
-			severitySum += f
 		}}
 
 	i.trackCvssMetrics(context.Background())
@@ -125,137 +119,8 @@ func Test_fetchMetrics(t *testing.T) {
 			"cluster-2|namespace-2|LOW_VULNERABILITY_SEVERITY":      2,
 			"cluster-2|namespace-2|MODERATE_VULNERABILITY_SEVERITY": 2,
 		},
+		"Deployment=*4,ImageTag=latest": map[string]int{
+			"D4|latest": 2,
+		},
 	}, aggregated)
-
-	assert.Equal(t, 48.5, severitySum)
-	assert.Equal(t, []labels{
-		{
-			"CVE":             "cve-0",
-			"Cluster":         "cluster-1",
-			"ImageId":         "image-0",
-			"ImageRegistry":   "registry",
-			"ImageRemote":     "remote",
-			"ImageTag":        "tag",
-			"IsFixable":       "false",
-			"Namespace":       "namespace-1",
-			"OperatingSystem": "os",
-			"Severity":        "CRITICAL_VULNERABILITY_SEVERITY",
-			"SeverityV2":      "UNKNOWN",
-			"SeverityV3":      "CRITICAL",
-		}, {
-			"CVE":             "cve-0",
-			"Cluster":         "cluster-1",
-			"ImageId":         "image-0",
-			"ImageRegistry":   "registry",
-			"ImageRemote":     "remote",
-			"ImageTag":        "tag",
-			"IsFixable":       "false",
-			"Namespace":       "namespace-2",
-			"OperatingSystem": "os",
-			"Severity":        "CRITICAL_VULNERABILITY_SEVERITY",
-			"SeverityV2":      "UNKNOWN",
-			"SeverityV3":      "CRITICAL",
-		}, {
-			"CVE":             "cve-0",
-			"Cluster":         "cluster-1",
-			"ImageId":         "image-1",
-			"ImageRegistry":   "registry",
-			"ImageRemote":     "remote",
-			"ImageTag":        "tag",
-			"IsFixable":       "false",
-			"Namespace":       "namespace-2",
-			"OperatingSystem": "os",
-			"Severity":        "CRITICAL_VULNERABILITY_SEVERITY",
-			"SeverityV2":      "UNKNOWN",
-			"SeverityV3":      "CRITICAL",
-		}, {
-			"CVE":             "cve-1",
-			"Cluster":         "cluster-1",
-			"ImageId":         "image-1",
-			"ImageRegistry":   "registry",
-			"ImageRemote":     "remote",
-			"ImageTag":        "tag",
-			"IsFixable":       "false",
-			"Namespace":       "namespace-2",
-			"OperatingSystem": "os",
-			"Severity":        "MODERATE_VULNERABILITY_SEVERITY",
-			"SeverityV2":      "UNKNOWN",
-			"SeverityV3":      "MEDIUM",
-		}, {
-			"CVE":             "cve-1",
-			"Cluster":         "cluster-1",
-			"ImageId":         "image-2",
-			"ImageRegistry":   "registry",
-			"ImageRemote":     "remote",
-			"ImageTag":        "tag",
-			"IsFixable":       "false",
-			"Namespace":       "namespace-2",
-			"OperatingSystem": "os",
-			"Severity":        "MODERATE_VULNERABILITY_SEVERITY",
-			"SeverityV2":      "UNKNOWN",
-			"SeverityV3":      "MEDIUM",
-		}, {
-			"CVE":             "cve-1",
-			"Cluster":         "cluster-2",
-			"ImageId":         "image-3",
-			"ImageRegistry":   "registry",
-			"ImageRemote":     "remote",
-			"ImageTag":        "tag",
-			"IsFixable":       "false",
-			"Namespace":       "namespace-2",
-			"OperatingSystem": "os",
-			"Severity":        "MODERATE_VULNERABILITY_SEVERITY",
-			"SeverityV2":      "UNKNOWN",
-			"SeverityV3":      "MEDIUM",
-		},
-		{
-			"CVE":             "cve-1",
-			"Cluster":         "cluster-2",
-			"ImageId":         "image-3",
-			"ImageRegistry":   "registry",
-			"ImageRemote":     "remote",
-			"ImageTag":        "latest",
-			"IsFixable":       "false",
-			"Namespace":       "namespace-2",
-			"OperatingSystem": "os",
-			"Severity":        "MODERATE_VULNERABILITY_SEVERITY",
-			"SeverityV2":      "UNKNOWN",
-			"SeverityV3":      "MEDIUM",
-		}, {
-			"CVE":             "cve-2",
-			"Cluster":         "cluster-2",
-			"ImageId":         "image-3",
-			"ImageRegistry":   "registry",
-			"ImageRemote":     "remote",
-			"ImageTag":        "tag",
-			"IsFixable":       "false",
-			"Namespace":       "namespace-2",
-			"OperatingSystem": "os",
-			"Severity":        "LOW_VULNERABILITY_SEVERITY",
-			"SeverityV2":      "UNKNOWN",
-			"SeverityV3":      "LOW",
-		}, {
-			"CVE":             "cve-2",
-			"Cluster":         "cluster-2",
-			"ImageId":         "image-3",
-			"ImageRegistry":   "registry",
-			"ImageRemote":     "remote",
-			"ImageTag":        "latest",
-			"IsFixable":       "false",
-			"Namespace":       "namespace-2",
-			"OperatingSystem": "os",
-			"Severity":        "LOW_VULNERABILITY_SEVERITY",
-			"SeverityV2":      "UNKNOWN",
-			"SeverityV3":      "LOW",
-		},
-	}, results)
-}
-
-func Test_keysMap(t *testing.T) {
-	keys := parseAggregationKeys("Namespace,Severity,IsFixable|Cluster|SeverityV3")
-	assert.Equal(t, map[aggregationKey][]string{
-		"Cluster":                      {"Cluster"},
-		"Namespace,Severity,IsFixable": {"Namespace", "Severity", "IsFixable"},
-		"SeverityV3":                   {"SeverityV3"},
-	}, keys)
 }

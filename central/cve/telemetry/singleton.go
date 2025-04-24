@@ -20,7 +20,6 @@ func Singleton() *trackImpl {
 		instance = &trackImpl{
 			ds:         deploymentDS.Singleton(),
 			aggregated: metrics.SetAggregatedImageVuln,
-			cvssGauge:  metrics.SetImageVulnCVSS,
 		}
 	})
 	return instance
@@ -34,7 +33,6 @@ type trackImpl struct {
 	stopSignal chan bool
 
 	aggregated func(map[aggregationKey]map[keyInstance]int)
-	cvssGauge  func(map[string]string, float64)
 }
 
 func (h *trackImpl) Start() {
