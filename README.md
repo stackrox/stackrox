@@ -1,4 +1,3 @@
-# Dummy change, blah!
 
 ## Table of Contents
 
