@@ -75,6 +75,7 @@ func (s *ImagesStoreSuite) TestCountCVEs() {
 	s.NoError(err)
 	s.True(exists)
 	cveCount, err := s.cvePgStore.Count(s.ctx, search.EmptyQuery())
+	s.NoError(err, "Query to get CVE Count failed")
 	s.Equal(cveCount, 252)
 }
 func (s *ImagesStoreSuite) TestStore() {
