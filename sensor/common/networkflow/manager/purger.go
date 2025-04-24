@@ -1,6 +1,7 @@
 package manager
 
 import (
+	"testing"
 	"time"
 
 	"github.com/pkg/errors"
@@ -17,11 +18,18 @@ import (
 type PurgerOption func(purger *NetworkFlowPurger)
 
 // WithPurgerTicker overrides the default enrichment ticker - use only for testing!
-func WithPurgerTicker(ticker <-chan time.Time) PurgerOption {
+func WithPurgerTicker(_ *testing.T, ticker <-chan time.Time) PurgerOption {
 	return func(purger *NetworkFlowPurger) {
 		if ticker != nil {
 			purger.purgerTickerC = ticker
 		}
+	}
+}
+
+// WithManager binds the purger to the network flow manager
+func WithManager(mgr *networkFlowManager) PurgerOption {
+	return func(purger *NetworkFlowPurger) {
+		purger.manager = mgr
 	}
 }
 
@@ -43,13 +51,13 @@ type NetworkFlowPurger struct {
 // is done by using the `WithPurger` option when constructing the manager: `manager.NewManager(..., manager.WithPurger(purger))`.
 // The purger is designed to always consume the messages from `purgerTickerC` - even if the binding to networkFlowManager
 // fails or the purger is explicitly disabled using env var.
-func NewNetworkFlowPurger(clusterEntities EntityStore, maxAge time.Duration, mgr *networkFlowManager, opts ...PurgerOption) *NetworkFlowPurger {
+func NewNetworkFlowPurger(clusterEntities EntityStore, maxAge time.Duration, opts ...PurgerOption) *NetworkFlowPurger {
 	purgerTicker := time.NewTicker(nonZeroPurgerCycle())
 	defer purgerTicker.Stop()
 
 	p := &NetworkFlowPurger{
 		clusterEntities: clusterEntities,
-		manager:         mgr,
+		manager:         nil,
 		purgerTicker:    purgerTicker,
 		purgerTickerC:   purgerTicker.C,
 		maxAge:          maxAge,

@@ -30,7 +30,7 @@ func (s *NetworkFlowPurgerTestSuite) TestPurgerStartWithTicker() {
 	s.Equal(time.Second, nonZeroPurgerCycle())
 
 	m, mockEntityStore, _, _ := createManager(mockCtrl, enrichTickerC)
-	purger := NewNetworkFlowPurger(mockEntityStore, time.Hour, m)
+	purger := NewNetworkFlowPurger(mockEntityStore, time.Hour, WithManager(m))
 	s.NoError(purger.Start())
 	// Enable the ticker after going online - send the same signal that activates the manager
 	purger.Notify(common.SensorComponentEventResourceSyncFinished)
@@ -48,7 +48,7 @@ func (s *NetworkFlowPurgerTestSuite) TestDisabledPurger() {
 	s.T().Setenv(env.EnrichmentPurgerTickerCycle.EnvVar(), "0s")
 
 	m, mockEntityStore, _, _ := createManager(mockCtrl, enrichTickerC)
-	purger := NewNetworkFlowPurger(mockEntityStore, time.Hour, m, WithPurgerTicker(purgerTickerC))
+	purger := NewNetworkFlowPurger(mockEntityStore, time.Hour, WithManager(m), WithPurgerTicker(s.T(), purgerTickerC))
 
 	s.NoError(purger.Start())
 	// ticking should not block
@@ -68,7 +68,7 @@ func (s *NetworkFlowPurgerTestSuite) TestPurgerWithoutManager() {
 	defer mockCtrl.Finish()
 	_, mockEntityStore, _, _ := createManager(mockCtrl, enrichTickerC)
 	// Set manager to nil to explicitly simulate disconnected purger
-	purger := NewNetworkFlowPurger(mockEntityStore, time.Hour, nil, WithPurgerTicker(purgerTickerC))
+	purger := NewNetworkFlowPurger(mockEntityStore, time.Hour, WithPurgerTicker(s.T(), purgerTickerC))
 
 	s.Error(purger.Start())
 	// Trigger the purger - shall not block despite the manager is missing
@@ -116,7 +116,7 @@ func (s *NetworkFlowPurgerTestSuite) TestPurgerWithManager() {
 			lastUpdateTS := timestamp.FromGoTime(now.Add(-tc.lastUpdateTime))
 
 			m, mockEntityStore, _, _ := createManager(mockCtrl, enrichTickerC)
-			purger := NewNetworkFlowPurger(mockEntityStore, tc.purgerMaxAge, m, WithPurgerTicker(purgerTickerC))
+			purger := NewNetworkFlowPurger(mockEntityStore, tc.purgerMaxAge, WithManager(m), WithPurgerTicker(s.T(), purgerTickerC))
 
 			expectationsEndpointPurger(mockEntityStore, tc.isKnownEndpoint, true, false)
 			ep := createEndpointPair(timestamp.FromGoTime(now.Add(-tc.firstSeen)), lastUpdateTS)

@@ -261,17 +261,6 @@ func WithEnrichTicker(ticker <-chan time.Time) Option {
 	}
 }
 
-// WithPurger binds the manager with the purger.
-// Note that `networkFlowManager` being unexported prevents us from implementing it the other way round:
-// `NewPurger(..., ForManager(manager))`.
-func WithPurger(purger *NetworkFlowPurger) Option {
-	return func(manager *networkFlowManager) {
-		if purger != nil {
-			purger.manager = manager
-		}
-	}
-}
-
 // NewManager creates a new instance of network flow manager
 func NewManager(
 	clusterEntities EntityStore,
@@ -302,7 +291,7 @@ func NewManager(
 			"Applying default of 4 hours", maxAgeSetting, enricherCycle)
 		maxAgeSetting = 4 * time.Hour
 	}
-	mgr.purger = NewNetworkFlowPurger(clusterEntities, maxAgeSetting, mgr)
+	mgr.purger = NewNetworkFlowPurger(clusterEntities, maxAgeSetting, WithManager(mgr))
 
 	enricherTicker.Stop()
 	if features.SensorCapturesIntermediateEvents.Enabled() {
