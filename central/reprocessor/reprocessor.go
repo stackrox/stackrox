@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/cenkalti/backoff/v4"
+	"github.com/cenkalti/backoff/v3"
 	"github.com/pkg/errors"
 	activeComponentsUpdater "github.com/stackrox/rox/central/activecomponent/updater"
 	administrationEvents "github.com/stackrox/rox/central/administration/events"
