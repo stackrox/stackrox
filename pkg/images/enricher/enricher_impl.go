@@ -985,6 +985,7 @@ func (e *enricherImpl) enrichImageWithScanner(ctx context.Context, image *storag
 
 	scanStartTime := time.Now()
 	scan, err := scanner.GetScan(image)
+	log.Infof("Scan result: %v, %v", scan, err)
 	e.metrics.SetScanDurationTime(scanStartTime, scanner.Name(), err)
 	if err != nil {
 		return ScanNotDone, errors.Wrapf(err, "scanning %q with scanner %q", image.GetName().GetFullName(), scanner.Name())
