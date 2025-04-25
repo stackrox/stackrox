@@ -69,8 +69,7 @@ spec:
     db:
       resources:
         requests:
-          cpu: "200m"
+          cpu: "1000m"
           memory: "2Gi"
         limits:
-          cpu: "1000m"
-          memory: "2500Mi"
+          memory: "4Gi"

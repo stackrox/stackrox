@@ -1,4 +1,4 @@
-//go:build test_e2e
+//go:build scanner_e2e
 
 package tests
 
@@ -176,6 +176,24 @@ func (ts *DelegatedScanningSuite) SetupSuite() {
 	// Verify the StackRox installation supports delegated scanning, Central and Sensor
 	// must have an active connection for this check to succeed, so wait for that connection.
 	ts.waitForHealthyCentralSensorConn()
+
+	matcherReady := func() error {
+		notReadyMessage := "initial load for the vulnerability store is in progress"
+		conn := centralgrpc.GRPCConnectionToCentral(t)
+		service := v1.NewImageServiceClient(conn)
+		_, err := service.ScanImage(ctx, &v1.ScanImageRequest{
+			ImageName: ts.ubi9Image.TagRef(),
+			Force:     true,
+			Cluster:   ts.remoteCluster.GetId(),
+		})
+
+		if err != nil && strings.Contains(err.Error(), notReadyMessage) {
+			return err
+		}
+		return nil
+	}
+
+	mustEventually(t, ctx, matcherReady, 30*time.Second, "Waiting for initial vuln load to complete")
 
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 	service := v1.NewDelegatedRegistryConfigServiceClient(conn)
