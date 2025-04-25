@@ -13,7 +13,7 @@ import (
 
 var (
 	// Default headers to use when printing tabular output.
-	defaultImageScanHeaders = []string{"COMPONENT", "VERSION", "CVE", "SEVERITY", "LINK", "FIXED_VERSION"}
+	defaultImageScanHeaders = []string{"COMPONENT", "VERSION", "CVE", "SEVERITY", "LINK", "FIXED_VERSION", "ADVISORY", "ADVISORY_LINK"}
 	defaultColumnsToMerge   = []string{"COMPONENT", "VERSION"}
 
 	imageScanHeaderToJSONPathMap = map[string]string{
@@ -23,15 +23,21 @@ var (
 		"SEVERITY":      "result.vulnerabilities.#.cveSeverity",
 		"LINK":          "result.vulnerabilities.#.cveInfo",
 		"FIXED_VERSION": "result.vulnerabilities.#.componentFixedVersion",
+		"ADVISORY":      "result.vulnerabilities.#.advisoryId",
+		"ADVISORY_LINK": "result.vulnerabilities.#.advisoryInfo",
 	}
 
 	// Default JSON path expression representing a row within tabular output, based on the mapping above.
-	defaultImageScanJSONPathExpression = "{result.vulnerabilities.#.componentName," +
-		"result.vulnerabilities.#.componentVersion," +
-		"result.vulnerabilities.#.cveId," +
-		"result.vulnerabilities.#.cveSeverity," +
-		"result.vulnerabilities.#.cveInfo," +
-		"result.vulnerabilities.#.componentFixedVersion}"
+	defaultImageScanJSONPathExpression = `{
+result.vulnerabilities.#.componentName,
+result.vulnerabilities.#.componentVersion,
+result.vulnerabilities.#.cveId,
+result.vulnerabilities.#.cveSeverity,
+result.vulnerabilities.#.cveInfo,
+result.vulnerabilities.#.componentFixedVersion,
+result.vulnerabilities.#.advisoryId,
+result.vulnerabilities.#.advisoryInfo
+}`
 )
 
 // TabularPrinterFactory holds all configuration options of tabular printers, specifically CSVPrinter and TablePrinter
