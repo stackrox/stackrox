@@ -16,3 +16,4 @@ include 'services:webservice'
 */
 
 rootProject.name = 'qa-tests-backend'
+include 'annotations'
