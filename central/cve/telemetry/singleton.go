@@ -7,6 +7,7 @@ import (
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -68,7 +69,8 @@ func (h *vulnerabilityMetricsImpl) Stop() {
 func (h *vulnerabilityMetricsImpl) run() {
 	ticker := time.NewTicker(env.AggregateVulnMetricsPeriod.DurationSetting())
 	defer ticker.Stop()
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(
+		sac.WithAllAccess(context.Background()))
 	h.track(ctx)
 	defer cancel()
 	for {
