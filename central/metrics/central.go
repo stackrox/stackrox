@@ -271,7 +271,7 @@ var (
 		Help:      "Duration of the signature verification reprocessor loop in seconds",
 	})
 
-	aggregatedVulnMetrics map[string]*prometheus.GaugeVec
+	aggregatedVulnMetrics = make(map[string]*prometheus.GaugeVec)
 )
 
 func startTimeToMS(t time.Time) float64 {
