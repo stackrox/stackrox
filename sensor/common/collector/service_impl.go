@@ -81,8 +81,11 @@ func (s *serviceImpl) communicate(server sensor.CollectorService_CommunicateServ
 	case *sensor.MsgFromCollector_ProcessSignal:
 		select {
 		case s.queue <- msg.GetProcessSignal():
+			metrics.IncrementTotalProcessesAddedCounter()
 		case <-server.Context().Done():
 			return nil
+		default:
+			metrics.IncrementTotalProcessesDroppedCounter()
 		}
 	case *sensor.MsgFromCollector_Register:
 		log.Debugf("got register: %+v", msg.GetRegister())

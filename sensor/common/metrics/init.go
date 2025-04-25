@@ -23,6 +23,7 @@ func init() {
 		totalNetworkEndpointsSentCounter,
 		totalNetworkEndpointsReceivedCounter,
 		totalProcessesSentCounter,
+		totalProcessesSignalCounter,
 		totalProcessesCounter,
 		processSignalBufferGauge,
 		processSignalDroppedCount,
