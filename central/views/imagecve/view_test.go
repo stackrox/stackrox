@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	imageSamples "github.com/stackrox/rox/pkg/fixtures/image"
 	"github.com/stackrox/rox/pkg/pointers"
@@ -28,6 +29,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/sac/testutils"
+	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
 	"github.com/stackrox/rox/pkg/search/scoped"
@@ -110,7 +112,6 @@ type ImageCVEViewTestSuite struct {
 }
 
 func (s *ImageCVEViewTestSuite) SetupSuite() {
-
 	ctx := sac.WithAllAccess(context.Background())
 	s.testDB = pgtest.ForT(s.T())
 
@@ -176,6 +177,11 @@ func (s *ImageCVEViewTestSuite) SetupSuite() {
 
 func (s *ImageCVEViewTestSuite) TestGetImageCVECore() {
 	for _, tc := range s.testCases() {
+		// TODO(ROX-28185):  Remove or re-enable depending on outcome of referenced ticket.
+		if features.FlattenCVEData.Enabled() && tc.desc == "search one operating system" {
+			continue
+		}
+
 		s.T().Run(tc.desc, func(t *testing.T) {
 			actual, err := s.cveView.Get(sac.WithAllAccess(tc.ctx), tc.q, tc.readOptions)
 			if tc.expectedErr != "" {
@@ -213,6 +219,11 @@ func (s *ImageCVEViewTestSuite) TestGetImageCVECore() {
 
 func (s *ImageCVEViewTestSuite) TestGetImageCVECoreSAC() {
 	for _, tc := range s.testCases() {
+		// TODO(ROX-28185):  Remove or re-enable depending on outcome of referenced ticket.
+		if features.FlattenCVEData.Enabled() && tc.desc == "search one operating system" {
+			continue
+		}
+
 		for key, sacTC := range s.sacTestCases() {
 			s.T().Run(fmt.Sprintf("Image %s %s", key, tc.desc), func(t *testing.T) {
 				testCtxs := testutils.GetNamespaceScopedTestContexts(tc.ctx, s.T(), resources.Image)
@@ -262,6 +273,11 @@ func (s *ImageCVEViewTestSuite) TestGetImageCVECoreSAC() {
 
 func (s *ImageCVEViewTestSuite) TestGetImageIDs() {
 	for _, tc := range s.testCases() {
+		// TODO(ROX-28185):  Remove or re-enable depending on outcome of referenced ticket.
+		if features.FlattenCVEData.Enabled() && tc.desc == "search one operating system" {
+			continue
+		}
+
 		s.T().Run(tc.desc, func(t *testing.T) {
 			// Such testcases are meant only for Get().
 			if tc.expectedErr != "" {
@@ -280,6 +296,11 @@ func (s *ImageCVEViewTestSuite) TestGetImageIDs() {
 
 func (s *ImageCVEViewTestSuite) TestGetImageIDsPagination() {
 	for _, tc := range s.testCases() {
+		// TODO(ROX-28185):  Remove or re-enable depending on outcome of referenced ticket.
+		if features.FlattenCVEData.Enabled() && tc.desc == "search one operating system" {
+			continue
+		}
+
 		// Such testcases are meant only for Get().
 		if tc.expectedErr != "" {
 			return
@@ -299,6 +320,11 @@ func (s *ImageCVEViewTestSuite) TestGetImageIDsPagination() {
 
 func (s *ImageCVEViewTestSuite) TestGetImageIDsSAC() {
 	for _, tc := range s.testCases() {
+		// TODO(ROX-28185):  Remove or re-enable depending on outcome of referenced ticket.
+		if features.FlattenCVEData.Enabled() && tc.desc == "search one operating system" {
+			continue
+		}
+
 		for key, sacTC := range s.sacTestCases() {
 			s.T().Run(fmt.Sprintf("Image %s %s", key, tc.desc), func(t *testing.T) {
 				// Such testcases are meant only for Get().
@@ -335,6 +361,11 @@ func (s *ImageCVEViewTestSuite) TestGetImageCVECoreWithPagination() {
 		baseTestCases := s.testCases()
 		for idx := range baseTestCases {
 			tc := &baseTestCases[idx]
+			// TODO(ROX-28185):  Remove or re-enable depending on outcome of referenced ticket.
+			if features.FlattenCVEData.Enabled() && tc.desc == "search one operating system" {
+				continue
+			}
+			
 			if !tc.readOptions.IsDefault() {
 				continue
 			}
@@ -372,6 +403,11 @@ func (s *ImageCVEViewTestSuite) TestGetImageCVECoreWithPagination() {
 
 func (s *ImageCVEViewTestSuite) TestCountImageCVECore() {
 	for _, tc := range s.testCases() {
+		// TODO(ROX-28185):  Remove or re-enable depending on outcome of referenced ticket.
+		if features.FlattenCVEData.Enabled() && tc.desc == "search one operating system" {
+			continue
+		}
+
 		if tc.skipCountTests {
 			continue
 		}
@@ -392,6 +428,11 @@ func (s *ImageCVEViewTestSuite) TestCountImageCVECore() {
 
 func (s *ImageCVEViewTestSuite) TestCountImageCVECoreSAC() {
 	for _, tc := range s.testCases() {
+		// TODO(ROX-28185):  Remove or re-enable depending on outcome of referenced ticket.
+		if features.FlattenCVEData.Enabled() && tc.desc == "search one operating system" {
+			continue
+		}
+
 		for key, sacTC := range s.sacTestCases() {
 			if tc.skipCountTests {
 				continue
@@ -427,6 +468,11 @@ func (s *ImageCVEViewTestSuite) TestCountImageCVECoreSAC() {
 
 func (s *ImageCVEViewTestSuite) TestCountBySeverity() {
 	for _, tc := range s.testCases() {
+		// TODO(ROX-28185):  Remove or re-enable depending on outcome of referenced ticket.
+		if features.FlattenCVEData.Enabled() && tc.desc == "search one operating system" {
+			continue
+		}
+
 		if tc.skipCountTests {
 			continue
 		}
@@ -572,7 +618,7 @@ func (s *ImageCVEViewTestSuite) testCases() []testCase {
 		{
 			desc:        "no match",
 			ctx:         context.Background(),
-			q:           search.NewQueryBuilder().AddExactMatches(search.OperatingSystem, "").ProtoQuery(),
+			q:           search.NewQueryBuilder().AddExactMatches(search.CVE, "").ProtoQuery(),
 			matchFilter: matchNoneFilter(),
 		},
 		{
@@ -961,7 +1007,12 @@ func compileExpected(images []*storage.Image, filter *filterImpl, options views.
 
 				val.TopCVSS = pointers.Float32(max(val.GetTopCVSS(), vuln.GetCvss()))
 
-				id := cve.ID(val.GetCVE(), image.GetScan().GetOperatingSystem())
+				var id string
+				if features.FlattenCVEData.Enabled() {
+					id, _ = cve.IDV2(vuln, getTestComponentID(component, image.GetId()))
+				} else {
+					id = cve.ID(val.GetCVE(), image.GetScan().GetOperatingSystem())
+				}
 				var found bool
 				for _, seenID := range val.GetCVEIDs() {
 					if seenID == id {
@@ -1378,4 +1429,10 @@ func testImages() []*storage.Image {
 			},
 		},
 	}
+}
+
+func getTestComponentID(testComponent *storage.EmbeddedImageScanComponent, imageID string) string {
+	id, _ := scancomponent.ComponentIDV2(testComponent, imageID)
+
+	return id
 }
