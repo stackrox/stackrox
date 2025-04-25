@@ -133,7 +133,7 @@ func (gc *grpcClient) ListNotifiers(ctx context.Context) ([]*storage.Notifier, e
 		return []*storage.Notifier{}, errors.Wrap(err, "Failed to list notifiers from grpc client")
 	}
 
-	return allNotifiers.Notifiers, err
+	return allNotifiers.Notifiers, nil
 }
 
 func (gc *grpcClient) ListClusters(ctx context.Context) ([]*storage.Cluster, error) {
@@ -142,7 +142,7 @@ func (gc *grpcClient) ListClusters(ctx context.Context) ([]*storage.Cluster, err
 		return []*storage.Cluster{}, errors.Wrap(err, "Failed to list clusters from grpc client")
 	}
 
-	return allClusters.Clusters, err
+	return allClusters.Clusters, nil
 }
 
 func (gc *grpcClient) ListPolicies(ctx context.Context) ([]*storage.ListPolicy, error) {
@@ -151,7 +151,7 @@ func (gc *grpcClient) ListPolicies(ctx context.Context) ([]*storage.ListPolicy, 
 		return []*storage.ListPolicy{}, errors.Wrap(err, "Failed to list policies from grpc client")
 	}
 
-	return allPolicies.Policies, err
+	return allPolicies.Policies, nil
 }
 
 func (gc *grpcClient) GetPolicy(ctx context.Context, id string) (*storage.Policy, error) {
