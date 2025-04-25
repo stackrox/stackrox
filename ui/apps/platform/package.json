@@ -93,6 +93,7 @@
     "scripts": {
         "clean": "rm -rf ./test-results ./cypress/test-results",
         "start": "DISABLE_ESLINT_PLUGIN=true HTTPS=true react-app-rewired start",
+        "prebuild": "mkdir -p ./public/openapi && swagger2openapi ../../../image/rhel/docs/api/v1/swagger.json -o ./public/openapi/v1.json && swagger2openapi ../../../image/rhel/docs/api/v2/swagger.json -o ./public/openapi/v2.json",
         "build": "DISABLE_ESLINT_PLUGIN=true CI=false GENERATE_SOURCEMAP=false react-app-rewired build",
         "test": "JEST_JUNIT_UNIQUE_OUTPUT_NAME=true JEST_JUNIT_OUTPUT_DIR=${TEST_RESULTS_OUTPUT_DIR:-test-results}/reports react-app-rewired test --verbose=true --slowTestThreshold=1 --coverage=false --reporters=default --reporters=jest-junit",
         "test-coverage": "JEST_JUNIT_UNIQUE_OUTPUT_NAME=true JEST_JUNIT_OUTPUT_DIR=${TEST_RESULTS_OUTPUT_DIR:-test-results}/reports react-app-rewired test --verbose=true --slowTestThreshold=1 --coverage --reporters=default --reporters=jest-junit",
