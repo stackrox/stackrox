@@ -365,7 +365,6 @@ func (s *ImageCVEViewTestSuite) TestGetImageCVECoreWithPagination() {
 			if features.FlattenCVEData.Enabled() && tc.desc == "search one operating system" {
 				continue
 			}
-			
 			if !tc.readOptions.IsDefault() {
 				continue
 			}
