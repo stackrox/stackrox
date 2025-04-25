@@ -53,15 +53,29 @@ func (s *centralSenderImpl) forwardResponses(from <-chan *message.ExpiringMessag
 }
 
 func (s *centralSenderImpl) send(stream central.SensorService_CommunicateClient, sendUnchangedIDs bool, onStops ...func(error)) {
+	var onBufferedStreamStop func() error
 	defer func() {
 		s.stopper.Flow().ReportStopped()
 		runAll(s.stopper.Client().Stopped().Err(), onStops...)
+		// This will block until the buffered stream is stopped
+		if onBufferedStreamStop != nil {
+			if err := onBufferedStreamStop(); err != nil {
+				log.Warn(err)
+			}
+		}
+		// We need to wait for the buffered stream to stop (errC is closed)
+		// before signaling that the centralSender is finished. Otherwise,
+		// we can have a race between CloseSend and Send.
+		// CentralCommunication closes the inner gRPC stream (CloseSend) once
+		// centralSender and centralReceiver are finished. If this happens
+		// before the buffered stream is stopped,  the buffered stream could
+		// call Send after CloseSend is called.
 		s.finished.Done()
 	}()
 
 	bufferedC := make(chan *central.MsgFromSensor, env.ResponsesChannelBufferSize.IntegerSetting())
 	defer close(bufferedC)
-	wrappedStream, streamErrC := NewBufferedStream(stream, bufferedC, s.stopper.LowLevel().GetStopRequestSignal())
+	wrappedStream, streamErrC, onBufferedStreamStop := NewBufferedStream(stream, bufferedC, s.stopper.LowLevel().GetStopRequestSignal())
 	wrappedStream = metrics.NewSizingEventStream(wrappedStream)
 	wrappedStream = metrics.NewCountingEventStream(wrappedStream, "unique")
 	wrappedStream = metrics.NewTimingEventStream(wrappedStream, "unique")
