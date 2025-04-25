@@ -22,7 +22,7 @@ Feature Flags usage: https://github.com/stackrox/stackrox/blob/master/pkg/featur
 -->
 
 - [ ] the change is production ready: the change is [GA](https://github.com/stackrox/stackrox/blob/master/PR_GA.md), or otherwise the functionality is gated by a [feature flag](https://github.com/stackrox/stackrox/blob/master/pkg/features/README.md)
-- [ ] CI results are inspected
+- [ ] CI results are [inspected](https://docs.google.com/document/d/1d5ga073jkv4CO1kAJqp8MPGpC6E1bwyrCGZ7S5wKg3w/edit?tab=t.0#heading=h.w4ercgtcg0xp)
 
 #### Automated testing
 
