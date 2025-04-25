@@ -184,6 +184,9 @@ func (resolver *imageCVECoreResolver) DistroTuples(ctx context.Context) ([]Image
 		}
 
 		vulns, err := loader.FromQuery(ctx, query)
+		if err != nil {
+			return nil, err
+		}
 
 		cveResolvers := make([]*imageCVEV2Resolver, len(vulns))
 		for i, v := range vulns {
