@@ -99,6 +99,7 @@ deploy_earlier_postgres_central() {
     helm install -n stackrox --create-namespace stackrox-central-services /tmp/early-stackrox-central-services-chart \
          --set central.adminPassword.value="${ROX_ADMIN_PASSWORD}" \
          --set central.db.enabled=true \
+         --set central.db.persistence.persistentVolumeClaim.size="${PVC_SIZE:-100Gi}" \
          --set central.persistence.none=true \
          --set central.exposure.loadBalancer.enabled=true \
          --set system.enablePodSecurityPolicies=false \

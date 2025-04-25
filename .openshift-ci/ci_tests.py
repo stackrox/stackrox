@@ -67,6 +67,12 @@ class UpgradeTest(BaseTest):
             post_start_hook=set_dirs_after_start,
         )
 
+        self.run_with_graceful_kill(
+            ["tests/upgrade/postgres_upgrade_run.sh", UpgradeTest.TEST_OUTPUT_DIR],
+            UpgradeTest.TEST_TIMEOUT,
+            post_start_hook=set_dirs_after_start,
+        )
+
 
 class OperatorE2eTest(BaseTest):
     OLM_SETUP_TIMEOUT_SEC = 60 * 10
