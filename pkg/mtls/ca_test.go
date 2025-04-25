@@ -52,3 +52,50 @@ func Test_CA_IssueCertForSubject(t *testing.T) {
 		})
 	}
 }
+
+func Test_CA_LoadForValidation(t *testing.T) {
+	certPEM, _, keyPEM, err := initca.New(&csr.CertificateRequest{
+		CN: "Fake CA",
+	})
+	require.NoError(t, err)
+
+	ca, err := LoadCAForValidation(certPEM)
+	require.NoError(t, err)
+	require.NotNil(t, ca.Certificate(), "expected CA certificate to be present")
+	assert.Equal(t, "Fake CA", ca.Certificate().Subject.CommonName)
+
+	certPool := ca.CertPool()
+	require.NotNil(t, certPool, "expected non-nil certificate pool")
+
+	assert.Nil(t, ca.PrivateKey(), "expected PrivateKey to be nil for validation-only CA")
+	assert.Nil(t, ca.KeyPEM(), "expected KeyPEM to be nil for validation-only CA")
+
+	_, err = ca.IssueCertForSubject(CentralSubject)
+	require.Error(t, err, "expected signing to fail for validation-only CA")
+
+	// issue a leaf certificate and validate it
+	signingCA, err := LoadCAForSigning(certPEM, keyPEM)
+	require.NoError(t, err)
+
+	issuedCert, err := signingCA.IssueCertForSubject(CentralSubject)
+	require.NoError(t, err)
+
+	subject, err := ca.ValidateAndExtractSubject(issuedCert.X509Cert)
+	require.NoError(t, err, "expected certificate to be valid")
+	assert.Equal(t, CentralSubject, subject, "extracted subject should match issued one")
+
+	// issue a leaf certificate with an unrelated CA and try to validate it
+	unrelatedCertPEM, _, unrelatedKeyPEM, err := initca.New(&csr.CertificateRequest{
+		CN: "Unrelated CA",
+	})
+	require.NoError(t, err)
+
+	unrelatedSigningCA, err := LoadCAForSigning(unrelatedCertPEM, unrelatedKeyPEM)
+	require.NoError(t, err)
+
+	unrelatedIssuedCert, err := unrelatedSigningCA.IssueCertForSubject(CentralSubject)
+	require.NoError(t, err)
+
+	_, err = ca.ValidateAndExtractSubject(unrelatedIssuedCert.X509Cert)
+	require.Error(t, err, "expected validation to fail for unrelated CA")
+}

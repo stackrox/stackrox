@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/central/cve/converter/v2"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/cve"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/grpc/authn"
@@ -18,6 +19,7 @@ import (
 	nodeConverter "github.com/stackrox/rox/pkg/nodes/converter"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/utils"
@@ -749,4 +751,18 @@ func contextWithClusterPerm(t testing.TB, ctrl *gomock.Controller) context.Conte
 	id := mockIdentity.NewMockIdentity(ctrl)
 	id.EXPECT().Permissions().Return(map[string]storage.Access{"Cluster": storage.Access_READ_ACCESS}).AnyTimes()
 	return authn.ContextWithIdentity(sac.WithAllAccess(loaders.WithLoaderContext(context.Background())), id, t)
+}
+
+func getTestComponentID(t *testing.T, testComponent *storage.EmbeddedImageScanComponent, imageID string) string {
+	id, err := scancomponent.ComponentIDV2(testComponent, imageID)
+	require.NoError(t, err)
+
+	return id
+}
+
+func getTestCVEID(t *testing.T, testCVE *storage.EmbeddedVulnerability, componentID string) string {
+	id, err := cve.IDV2(testCVE, componentID)
+	require.NoError(t, err)
+
+	return id
 }
