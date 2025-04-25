@@ -298,7 +298,8 @@ setup() {
 
 # CRD needs to be owned by Helm if upgrading to 4.8+ from 4.7.x via Helm
 apply_crd_ownership_for_upgrade() {
-    local namespace={$1:-stackrox}
+    local namespace=$1
+    echo "Making sure that SecurityPolicies CRD has the correct metadata..."
     "${ORCH_CMD}" </dev/null annotate crd/securitypolicies.config.stackrox.io meta.helm.sh/release-name=stackrox-central-services || true
     "${ORCH_CMD}" </dev/null annotate crd/securitypolicies.config.stackrox.io meta.helm.sh/release-namespace="$namespace" || true
     "${ORCH_CMD}" </dev/null label crd/securitypolicies.config.stackrox.io app.kubernetes.io/managed-by=Helm || true
@@ -426,9 +427,6 @@ EOT
     _step "verify-scanner-V4-not-deployed"
     verify_scannerV2_deployed "$CUSTOM_CENTRAL_NAMESPACE"
     verify_no_scannerV4_deployed "$CUSTOM_CENTRAL_NAMESPACE"
-
-    _step "patching-crd"
-    apply_crd_ownership_for_upgrade "$CUSTOM_CENTRAL_NAMESPACE"
 
     _begin "enable-scanner-V4-in-central"
     deploy_central_with_helm "$CUSTOM_CENTRAL_NAMESPACE" "$MAIN_IMAGE_TAG" "" \
@@ -1118,8 +1116,7 @@ deploy_central_with_helm() {
 
     if [[ "${CI:-}" != "true" ]]; then
         info "Creating namespace and image pull secrets..."
-        echo '{ "apiVersion": "v1", "kind": "Namespace", "metadata": { "name": "$central_namespace" } }' | "${ORCH_CMD}" apply -f -
-
+        echo "{ \"apiVersion\": \"v1\", \"kind\": \"Namespace\", \"metadata\": { \"name\": \"$central_namespace\" } }" | "${ORCH_CMD}" apply -f -
         "${ROOT}/deploy/common/pull-secret.sh" stackrox quay.io | "${ORCH_CMD}" -n "$central_namespace" apply -f -
     fi
 
@@ -1157,6 +1154,7 @@ EOT
             > "$helm_generated_values_file"
         command=("upgrade" "--install" "--reuse-values" "-f" "$helm_generated_values_file")
         upgrade="true"
+        apply_crd_ownership_for_upgrade "$central_namespace"
     else
         base_helm_values=$(cat <<EOT
 central:
