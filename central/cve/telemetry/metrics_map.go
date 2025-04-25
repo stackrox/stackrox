@@ -73,14 +73,13 @@ func parseAggregationExpressions(keys string) map[metricName][]expression {
 	return result
 }
 
-// makeAggregationKeyInstance computes an aggregation key from the provided
-// metric values, and the map of the requested labels and their values.
+// makeAggregationKeyInstance computes an aggregation key according to the
+// labels from the provided expressions, and the map of the requested labels
+// to their values.
 //
 // Example:
 //
-//	 makeAggregationKeyInstance([]expression{"Cluster=*prod", "Namespace"},
-//		map[string]string{"Cluster": "pre-prod", "Namespace": "backend"})) ==
-//		"prod|backend",
+//	"Cluster=*prod,Deployment" => "pre-prod|backend", {"Cluster": "pre-prod", "Deployment": "backend")}
 func makeAggregationKeyInstance(expressions []expression, labelsGetter func(string) string) (metricKey, map[string]string) {
 	sb := strings.Builder{}
 	labels := make(map[string]string)
@@ -106,8 +105,7 @@ func makeAggregationKeyInstance(expressions []expression, labelsGetter func(stri
 //
 // Example:
 //
-//	getMetricsLabels([]expression{"Cluster=*prod", "Namespace"}) ==
-//	  []expression{"Cluster", "Namespace"}
+//	"Cluster=*prod,Namespace" => {"Cluster", "Namespace"}
 func getMetricLabels(expressions []expression) []string {
 	var labels []string
 	for _, expression := range expressions {

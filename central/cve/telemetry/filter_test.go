@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_splitExpression(t *testing.T) {
+func Test_makeExpression(t *testing.T) {
 	cases := map[string]expression{
 		"no_expr":      {"no_expr", "", ""},
 		"a=b":          {"a", "=", "b"},
@@ -16,6 +16,10 @@ func Test_splitExpression(t *testing.T) {
 		"b>something":  {"b", ">", "something"},
 		"AbX_Ze>=5.43": {"AbX_Ze", ">=", "5.43"},
 		"abc!def":      {"abc", "", "!def"},
+		"=":            {"", "=", ""},
+		"=arg":         {"", "=", "arg"},
+		"label=":       {"label", "=", ""},
+		"":             {"", "", ""},
 	}
 	for expr, result := range cases {
 		assert.Equal(t, result, makeExpression(expr), expr)

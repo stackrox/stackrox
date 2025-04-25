@@ -17,7 +17,7 @@ var ops = []string{"!=", "=", "<=", ">=", "<", ">"} // The order matters!
 func getLabel(expr string) string {
 	if i := strings.IndexFunc(expr, func(r rune) bool {
 		return !(r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' || r == '_' || r == '.')
-	}); i > 0 {
+	}); i >= 0 {
 		return expr[:i]
 	}
 	return expr

@@ -66,9 +66,10 @@ func (h *vulnerabilityMetricsImpl) Stop() {
 }
 
 func (h *vulnerabilityMetricsImpl) run() {
-	ticker := time.NewTicker(time.Hour)
+	ticker := time.NewTicker(env.AggregateVulnMetricsPeriod.DurationSetting())
 	defer ticker.Stop()
 	ctx, cancel := context.WithCancel(context.Background())
+	h.track(ctx)
 	defer cancel()
 	for {
 		select {

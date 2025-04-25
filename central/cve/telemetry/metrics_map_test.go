@@ -18,7 +18,7 @@ func Test_makeMetricName(t *testing.T) {
 	}
 }
 
-func str3expr(expr ...string) []expression {
+func str2expr(expr ...string) []expression {
 	result := make([]expression, 0, len(expr))
 	for _, e := range expr {
 		result = append(result, makeExpression(e))
@@ -30,27 +30,27 @@ func Test_parseAggregationExpressions(t *testing.T) {
 	cases := map[string]map[metricName][]expression{
 		// Default case:
 		"Cluster,Namespace,Severity": {
-			"Cluster_Namespace_Severity_total": str3expr("Cluster", "Namespace", "Severity"),
+			"Cluster_Namespace_Severity_total": str2expr("Cluster", "Namespace", "Severity"),
 		},
 		// Normal case:
 		"Namespace=abc, Severity, IsFixable=true | Cluster | SeverityV3": {
-			"Cluster_total": str3expr("Cluster"),
-			"Namespace_eq_abc_Severity_IsFixable_eq_true_total": str3expr(
+			"Cluster_total": str2expr("Cluster"),
+			"Namespace_eq_abc_Severity_IsFixable_eq_true_total": str2expr(
 				"Namespace=abc",
 				"Severity",
 				"IsFixable=true"),
-			"SeverityV3_total": str3expr("SeverityV3"),
+			"SeverityV3_total": str2expr("SeverityV3"),
 		},
 
 		// Weird cases:
 		"":  nil,
 		",": nil,
 		"key,": {
-			"key_total": str3expr("key"),
+			"key_total": str2expr("key"),
 		},
 		", key1 = x ,,||, key2  > 3|": {
-			"key1_eq_x_total": str3expr("key1=x"),
-			"key2_gt_3_total": str3expr("key2>3"),
+			"key1_eq_x_total": str2expr("key1=x"),
+			"key2_gt_3_total": str2expr("key2>3"),
 		},
 	}
 	for input, expressions := range cases {
@@ -69,7 +69,7 @@ func Test_makeAggregationKeyInstance(t *testing.T) {
 		return testMetric[label]
 	}
 	key, labels := makeAggregationKeyInstance(
-		str3expr("string=*al*", "number>5", "bool"), labelsGetter)
+		str2expr("string=*al*", "number>5", "bool"), labelsGetter)
 	assert.Equal(t, "value|7.4|false", key)
 	assert.Equal(t, map[string]string{
 		"string": "value",
@@ -88,11 +88,11 @@ func Test_getMetricNames(t *testing.T) {
 			[]string(nil),
 		},
 		{
-			str3expr("a=b"),
+			str2expr("a=b"),
 			[]string{"a"},
 		},
 		{
-			str3expr("a", "b=x", "c>4"),
+			str2expr("a", "b=x", "c>4"),
 			[]string{"a", "b", "c"},
 		},
 	}
