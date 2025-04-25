@@ -1221,23 +1221,31 @@ func FindName(vuln *claircore.Vulnerability, p *regexp.Regexp) (string, bool) {
 // advisory returns the vulnerability's related advisory.
 //
 // Only Red Hat advisories (RHSA/RHBA/RHEA) are supported at this time.
-func advisory(vuln *claircore.Vulnerability) string {
+func advisory(vuln *claircore.Vulnerability) *v4.VulnerabilityReport_Advisory {
 	// Do not return an advisory if we do not want to separate
 	// CVEs and Red Hat advisories.
 	if !features.ScannerV4RedHatCVEs.Enabled() {
-		return ""
+		return nil
 	}
 
 	// If the vulnerability is not from Red Hat's VEX data,
 	// then it's definitely not an advisory we support at this time.
 	if !strings.EqualFold(vuln.Updater, RedHatUpdaterName) {
-		return ""
+		return nil
 	}
 
 	// The advisory name will be found in the vulnerability's links,
 	// if it exists, so just return what we get when looking for
 	// valid Red Hat advisory patterns in the links.
-	return RedHatAdvisoryPattern.FindString(vuln.Links)
+	name := RedHatAdvisoryPattern.FindString(vuln.Links)
+	if name == "" {
+		return nil
+	}
+
+	return &v4.VulnerabilityReport_Advisory{
+		Name: name,
+		Link: redhatErrataURLPrefix + name,
+	}
 }
 
 // dedupeVulns deduplicates repeat vulnerabilities out of vulnIDs and returns the result.
