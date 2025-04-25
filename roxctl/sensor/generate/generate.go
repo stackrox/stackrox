@@ -116,7 +116,7 @@ func (s *sensorGenerateCommand) setClusterDefaults(envDefaults *util.CentralEnv)
 func (s *sensorGenerateCommand) fullClusterCreation() error {
 	conn, err := s.env.GRPCConnection()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to create GRPC connection")
 	}
 	service := v1.NewClustersServiceClient(conn)
 
@@ -191,7 +191,7 @@ func (s *sensorGenerateCommand) createCluster(ctx context.Context, svc v1.Cluste
 
 	response, err := svc.PostCluster(ctx, s.cluster)
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "error creating cluster")
 	}
 	return response.GetCluster().GetId(), nil
 }
