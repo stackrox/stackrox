@@ -516,7 +516,7 @@ gendocs: $(GENERATED_API_DOCS)
 # We don't need to do anything here, because the $(MERGED_API_SWAGGER_SPEC) and $(MERGED_API_SWAGGER_SPEC_V2) targets
 # already perform validation.
 .PHONY: swagger-docs
-swagger-docs: $(MERGED_API_SWAGGER_SPEC) $(MERGED_API_SWAGGER_SPEC_V2)
+swagger-docs: $(MERGED_API_SWAGGER_SPEC) $(MERGED_API_SWAGGER_SPEC_V2) $(MERGED_API_OPENAPI_SPEC) $(MERGED_API_OPENAPI_SPEC_V2)
 	@echo "+ $@"
 
 UNIT_TEST_PACKAGES ?= ./...
@@ -623,7 +623,7 @@ junit-reports/report.xml: $(GO_TEST_OUTPUT_PATH) $(GO_JUNIT_REPORT_BIN)
 image: main-image
 
 .PHONY: all-builds
-all-builds: cli main-build clean-image $(MERGED_API_SWAGGER_SPEC) $(MERGED_API_SWAGGER_SPEC_V2) ui-build
+all-builds: cli main-build clean-image swagger-docs ui-build
 
 .PHONY: main-image
 main-image: all-builds

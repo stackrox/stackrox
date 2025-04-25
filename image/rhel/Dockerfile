@@ -77,6 +77,9 @@ COPY ./docs/api/v2/swagger.json /stackrox/static-data/docs/api/v2/swagger.json
 COPY THIRD_PARTY_NOTICES /THIRD_PARTY_NOTICES/
 
 COPY ui /ui
+RUN mkdir -p ui/openapi
+COPY ./docs/api/v1/openapi.json /ui/openapi/v1.json
+COPY ./docs/api/v2/openapi.json /ui/openapi/v2.json
 
 COPY bin/compliance         /stackrox/bin/compliance
 COPY bin/kubernetes-sensor  /stackrox/bin/kubernetes-sensor
