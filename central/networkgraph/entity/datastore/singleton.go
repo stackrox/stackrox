@@ -18,7 +18,8 @@ var (
 func Singleton() EntityDataStore {
 	once.Do(func() {
 		storage := pgStore.New(globaldb.GetPostgres())
-		ds = NewEntityDataStore(storage, graphConfigDS.Singleton(), networktree.Singleton(), connection.ManagerSingleton())
+		dataPusher := newNetworkEntityPusher(connection.ManagerSingleton())
+		ds = newEntityDataStore(storage, graphConfigDS.Singleton(), networktree.Singleton(), dataPusher)
 	})
 	return ds
 }
