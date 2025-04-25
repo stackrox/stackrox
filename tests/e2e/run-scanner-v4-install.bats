@@ -142,9 +142,9 @@ EOT
     info "Using MAIN_IMAGE_TAG=$MAIN_IMAGE_TAG"
 
     export CURRENT_MAIN_IMAGE_TAG=${CURRENT_MAIN_IMAGE_TAG:-} # Setting a tag can be useful for local testing.
-    export EARLIER_CHART_VERSION="4.3.0"
+    export EARLIER_CHART_VERSION="4.6.0"
     export EARLIER_MAIN_IMAGE_TAG=$EARLIER_CHART_VERSION
-    export USE_LOCAL_ROXCTL=true
+    export USE_LOCAL_ROXCTL="${USE_LOCAL_ROXCTL:-true}"
     export ROX_PRODUCT_BRANDING=RHACS_BRANDING
     export CI=${CI:-false}
     OS="$(uname | tr '[:upper:]' '[:lower:]')"
@@ -156,6 +156,10 @@ EOT
     if [[ "${ORCHESTRATOR_FLAVOR:-}" == "openshift" ]]; then
       export ROX_OPENSHIFT_VERSION=4
     fi
+    if [[ -z "${ROX_ADMIN_PASSWORD:-}" ]]; then
+        ROX_ADMIN_PASSWORD="$(openssl rand -base64 20 | tr -d '/=+')"
+    fi
+    export ROX_ADMIN_PASSWORD
 
     if ! command -v roxctl >/dev/null; then
         die "roxctl not found, please make sure it can be resolved via PATH."
@@ -210,7 +214,42 @@ EOT
     # have any logs for investigation the situation.
     export BATS_TEST_TIMEOUT=1800 # Seconds
 
+   if [[ -z "${HEAD_HELM_CHART_CENTRAL_SERVICES_DIR:-}" ]]; then
+        HEAD_HELM_CHART_CENTRAL_SERVICES_DIR=$(mktemp -d)
+        echo "Rendering fresh central-services Helm chart and writing to ${HEAD_HELM_CHART_CENTRAL_SERVICES_DIR}..."
+        roxctl helm output central-services \
+            --debug --debug-path="${ROOT}/image" \
+            --output-dir="${HEAD_HELM_CHART_CENTRAL_SERVICES_DIR}" --remove
+        export HEAD_HELM_CHART_CENTRAL_SERVICES_DIR
+    fi
+
+   if [[ -z "${HEAD_HELM_CHART_SECURED_CLUSTER_SERVICES_DIR:-}" ]]; then
+        HEAD_HELM_CHART_SECURED_CLUSTER_SERVICES_DIR=$(mktemp -d)
+        echo "Rendering fresh secured-cluster-services Helm chart and writing to ${HEAD_HELM_CHART_SECURED_CLUSTER_SERVICES_DIR}..."
+        roxctl helm output secured-cluster-services \
+            --debug --debug-path="${ROOT}/image" \
+            --output-dir="${HEAD_HELM_CHART_SECURED_CLUSTER_SERVICES_DIR}" --remove
+        export HEAD_HELM_CHART_SECURED_CLUSTER_SERVICES_DIR
+    fi
+
+    # For installation testing we don't need to deploy collector per-node, it is sufficient to deploy
+    # collector on a single node.
+    local _worker; _worker=$(select_worker_node)
+
+    echo "Patching node ${_worker} to include label run-collector=true"
+    "${ORCH_CMD}" </dev/null label node "$_worker" run-collector=true
+    echo "collector will only be scheduled on node ${_worker}"
+
     _end
+}
+
+select_worker_node() {
+    local select_filter="true"
+    if [[ "$ORCHESTRATOR_FLAVOR" == "openshift" ]]; then
+        select_filter=".metadata.labels[\"node-role.kubernetes.io/worker\"] != null"
+    fi
+
+    "${ORCH_CMD}" </dev/null get nodes -o json | jq -r ".items | map(select(${select_filter})) | map(.metadata.name) | sort | first"
 }
 
 teardown_file() {
@@ -259,7 +298,8 @@ setup() {
 
 # CRD needs to be owned by Helm if upgrading to 4.8+ from 4.7.x via Helm
 apply_crd_ownership_for_upgrade() {
-    local namespace={$1:-stackrox}
+    local namespace=$1
+    echo "Making sure that SecurityPolicies CRD has the correct metadata..."
     "${ORCH_CMD}" </dev/null annotate crd/securitypolicies.config.stackrox.io meta.helm.sh/release-name=stackrox-central-services || true
     "${ORCH_CMD}" </dev/null annotate crd/securitypolicies.config.stackrox.io meta.helm.sh/release-namespace="$namespace" || true
     "${ORCH_CMD}" </dev/null label crd/securitypolicies.config.stackrox.io app.kubernetes.io/managed-by=Helm || true
@@ -360,51 +400,73 @@ teardown() {
 @test "Upgrade from old Helm chart to HEAD Helm chart with Scanner v4 enabled" {
     init
 
-    # shellcheck disable=SC2030,SC2031
-    export OUTPUT_FORMAT=helm
-    export ROX_DEPLOY_SENSOR_WITH_CRS=false
-
     local main_image_tag="${MAIN_IMAGE_TAG}"
 
     # Deploy earlier version without Scanner V4.
-    local _CENTRAL_CHART_DIR_OVERRIDE="${CHART_REPOSITORY}${CHART_BASE}/${EARLIER_CHART_VERSION}/central-services"
+    local old_central_chart="${CHART_REPOSITORY}${CHART_BASE}/${EARLIER_CHART_VERSION}/central-services"
+    local old_sensor_chart="${CHART_REPOSITORY}${CHART_BASE}/${EARLIER_CHART_VERSION}/secured-cluster-services"
 
-    _begin "deploying-stackrox"
-
-    info "Deploying StackRox services using chart ${_CENTRAL_CHART_DIR_OVERRIDE}"
-
-    if [[ -n "${EARLIER_MAIN_IMAGE_TAG:-}" ]]; then
-        MAIN_IMAGE_TAG=$EARLIER_MAIN_IMAGE_TAG
-        info "Overriding MAIN_IMAGE_TAG=$EARLIER_MAIN_IMAGE_TAG"
-    fi
-    local _ROX_CENTRAL_EXTRA_HELM_VALUES_FILE
-    _ROX_CENTRAL_EXTRA_HELM_VALUES_FILE=$(mktemp)
-    cat <<EOF >"$_ROX_CENTRAL_EXTRA_HELM_VALUES_FILE"
+    _begin "deploy-old-central"
+    info "Deploying StackRox central-services using chart ${old_central_chart}"
+    deploy_central_with_helm "$CUSTOM_CENTRAL_NAMESPACE" "$EARLIER_MAIN_IMAGE_TAG" "$old_central_chart" \
+        -f <(cat <<EOT
 central:
-  persistence:
-    none: true
-EOF
-    ROX_CENTRAL_EXTRA_HELM_VALUES_FILE="${_ROX_CENTRAL_EXTRA_HELM_VALUES_FILE}" CENTRAL_CHART_DIR_OVERRIDE="${_CENTRAL_CHART_DIR_OVERRIDE}" _deploy_stackrox
+  adminPassword:
+    value: "$ROX_ADMIN_PASSWORD"
+EOT
+    )
 
-    _step "upgrading-stackrox"
+    _step "verify-scanner-V4-not-deployed"
+    verify_scannerV2_deployed "$CUSTOM_CENTRAL_NAMESPACE"
+    verify_no_scannerV4_deployed "$CUSTOM_CENTRAL_NAMESPACE"
 
-    # Upgrade to HEAD chart without explicit disabling of Scanner V4.
-    info "Upgrading StackRox using HEAD Helm chart"
-    MAIN_IMAGE_TAG="${main_image_tag}"
+    _begin "upgrade-to-HEAD-central"
+    deploy_central_with_helm "$CUSTOM_CENTRAL_NAMESPACE" "$MAIN_IMAGE_TAG" "" \
+        --reuse-values
 
-    # shellcheck disable=SC2030,SC2031
-    export SENSOR_SCANNER_V4_SUPPORT=true
+    _step "verify-scanner-V4-not-deployed"
+    verify_scannerV2_deployed "$CUSTOM_CENTRAL_NAMESPACE"
+    verify_no_scannerV4_deployed "$CUSTOM_CENTRAL_NAMESPACE"
 
-    apply_crd_ownership_for_upgrade "stackrox"
-    _deploy_stackrox
+    _begin "enable-scanner-V4-in-central"
+    deploy_central_with_helm "$CUSTOM_CENTRAL_NAMESPACE" "$MAIN_IMAGE_TAG" "" \
+        --reuse-values \
+        --set scannerV4.disable=false
 
-    _step "verify"
+    _step "verify-scanners-deployed"
+    verify_scannerV2_deployed "$CUSTOM_CENTRAL_NAMESPACE"
+    verify_scannerV4_deployed "$CUSTOM_CENTRAL_NAMESPACE"
+    verify_deployment_scannerV4_env_var_set "$CUSTOM_CENTRAL_NAMESPACE" "central"
 
-    # Verify that Scanner V2 and V4 are up.
-    verify_scannerV2_deployed "stackrox"
-    verify_scannerV4_deployed "stackrox"
-    verify_deployment_scannerV4_env_var_set "stackrox" "central"
-    verify_deployment_scannerV4_env_var_set "stackrox" "sensor"
+    _begin "deploy-old-sensor"
+    info "Deploying StackRox secured-cluster-services using chart ${old_sensor_chart}"
+    local central_endpoint="$(get_central_endpoint "$CUSTOM_CENTRAL_NAMESPACE")"
+    local secured_cluster_name="$(get_cluster_name)"
+    deploy_sensor_with_helm "$CUSTOM_CENTRAL_NAMESPACE" "$CUSTOM_SENSOR_NAMESPACE" \
+        "$EARLIER_MAIN_IMAGE_TAG" "$old_sensor_chart" \
+        "$secured_cluster_name" "$ROX_ADMIN_PASSWORD" "$central_endpoint"
+
+    _step "verify-scanner-V4-not-deployed"
+    verify_no_scannerV4_deployed "$CUSTOM_SENSOR_NAMESPACE"
+
+    _step "upgrade-to-HEAD-sensor"
+    deploy_sensor_with_helm "$CUSTOM_CENTRAL_NAMESPACE" "$CUSTOM_SENSOR_NAMESPACE" "" "" "" "" ""
+
+    _step "verify-scanner-not-deployed"
+    verify_no_scannerV4_deployed "$CUSTOM_SENSOR_NAMESPACE"
+
+    _begin "enable-scanner-V4-in-secured-cluster"
+    # Without creating the scanner-db-password secret manually Scanner V2 doesn't come up.
+    # Let's just reuse an existing password for this for simplicity.
+    "$ORCH_CMD" </dev/null -n "$CUSTOM_SENSOR_NAMESPACE" create secret generic scanner-db-password \
+        --from-file=password=<(echo "$ROX_ADMIN_PASSWORD")
+
+    deploy_sensor_with_helm "$CUSTOM_CENTRAL_NAMESPACE" "$CUSTOM_SENSOR_NAMESPACE" "" "" "" "" "" \
+        --set scannerV4.disable=false \
+        --set scanner.disable=false
+
+    _step "verify-scanner-V4-deployed"
+    verify_scannerV4_indexer_deployed "$CUSTOM_SENSOR_NAMESPACE"
 
     _end
 }
@@ -664,7 +726,7 @@ EOF
 
     wait_until_central_validation_webhook_is_ready "${CUSTOM_CENTRAL_NAMESPACE}"
 
-    _step "patching-central"
+    _step "patch-central"
 
     # Enable Scanner V4 on central side.
     info "Patching Central"
@@ -710,7 +772,7 @@ EOT
     sleep 60
     "${ORCH_CMD}" </dev/null -n "${CUSTOM_CENTRAL_NAMESPACE}" wait --for=condition=Ready pods -l app=central || true
 
-    _step "patching-secured-cluster"
+    _step "patch-secured-cluster"
 
     info "Patching SecuredCluster"
     # Enable Scanner V4 on secured-cluster side
@@ -809,7 +871,7 @@ EOT
     _end
 }
 
-@test "Upgrade from old version without Scanner V4 support to the version which supports Scanner V4" {
+@test "Upgrade from old version without Scanner V4 to HEAD with Scanner V4 enabled" {
     _begin "deploy-stackrox"
 
     if [[ "$CI" = "true" ]]; then
@@ -820,7 +882,7 @@ EOT
     # shellcheck disable=SC2030,SC2031
     export OUTPUT_FORMAT=""
     info "Using roxctl executable ${EARLIER_ROXCTL_PATH}/roxctl for generating pre-Scanner V4 deployment bundles"
-    PATH="${EARLIER_ROXCTL_PATH}:${PATH}" MAIN_IMAGE_TAG="${EARLIER_MAIN_IMAGE_TAG}" _deploy_stackrox
+    PATH="${EARLIER_ROXCTL_PATH}:${PATH}" MAIN_IMAGE_TAG="${EARLIER_MAIN_IMAGE_TAG}" ROX_SCANNER_V4=false _deploy_stackrox
 
     _step "verify"
 
@@ -832,7 +894,7 @@ EOT
     _step "upgrade-stackrox"
 
     info "Upgrading StackRox using HEAD deployment bundles"
-    _deploy_stackrox
+    ROX_SCANNER_V4=true _deploy_stackrox
 
     _step "verify"
 
@@ -843,6 +905,19 @@ EOT
 
     _end
 }
+
+get_central_endpoint() {
+    local namespace="$1"
+    local central_ip="$("${ORCH_CMD}" -n "$CUSTOM_CENTRAL_NAMESPACE" </dev/null get service central-loadbalancer \
+        -o json | service_get_endpoint)"
+    echo "${central_ip}:443"
+}
+
+get_cluster_name() {
+    local prefix="${1:-sc}"
+    echo "${prefix}-${RANDOM}"
+}
+
 
 verify_deployment_deletion() {
     local deployment_names_file="$1"; shift
@@ -855,7 +930,7 @@ verify_deployment_deletion() {
 
     local deleted
     while [[ -s "$deployment_names_file" ]]; do
-        active_deployments=$("${ORCH_CMD}" -n "$namespace" get deployments -o json)
+        active_deployments=$("${ORCH_CMD}" </dev/null -n "$namespace" get deployments -o json)
         deployment_names=$(cat "$deployment_names_file")
 
         for deployment_name in $deployment_names; do
@@ -1023,6 +1098,294 @@ _deploy_central() {
     fi
     deploy_central "${central_namespace}"
     patch_down_central "${central_namespace}"
+}
+
+# shellcheck disable=SC2120
+# deploy_central_with_helm "<central namespace>" "<main image tag>" "<helm chart dir overwrite>" [ additional args for helm ... ]
+deploy_central_with_helm() {
+    echo "Deploying central-services via Helm..."
+    local central_namespace="$1"; shift
+    local main_image_tag="$1"; shift
+    local helm_chart_dir="$HEAD_HELM_CHART_CENTRAL_SERVICES_DIR"
+    local use_default_chart="true"
+    if [[ -n "$1" ]]; then
+        # overwrite Helm chart path.
+        helm_chart_dir="$1"
+        use_default_chart="false"
+    fi; shift
+
+    if [[ "${CI:-}" != "true" ]]; then
+        info "Creating namespace and image pull secrets..."
+        echo "{ \"apiVersion\": \"v1\", \"kind\": \"Namespace\", \"metadata\": { \"name\": \"$central_namespace\" } }" | "${ORCH_CMD}" apply -f -
+        "${ROOT}/deploy/common/pull-secret.sh" stackrox quay.io | "${ORCH_CMD}" -n "$central_namespace" apply -f -
+    fi
+
+    local image_overwrites=""
+    local base_helm_values=""
+    local upgrade="false"
+
+    if [[ "$use_default_chart" == "true" ]]; then
+        image_overwrites=$(cat <<EOT
+image:
+  registry: "$DEFAULT_IMAGE_REGISTRY"
+central:
+  db:
+    image:
+      tag: "$main_image_tag"
+  image:
+    tag: "$main_image_tag"
+
+scannerV4:
+  image:
+    tag: "$main_image_tag"
+  db:
+    image:
+      tag: "$main_image_tag"
+EOT
+        )
+    fi
+
+    command=("install" "--create-namespace")
+    if helm list -n "$central_namespace" -o json | jq -e '.[] | select(.name == "stackrox-central-services")' > /dev/null 2>&1; then
+        helm_generated_values_file=$(mktemp)
+        "${ORCH_CMD}" -n "$central_namespace" get secrets -o json \
+            </dev/null \
+            | jq -r '.items[] | select(.metadata.name | startswith("stackrox-generated-")) | .data["generated-values.yaml"] | @base64d' \
+            > "$helm_generated_values_file"
+        command=("upgrade" "--install" "--reuse-values" "-f" "$helm_generated_values_file")
+        upgrade="true"
+        apply_crd_ownership_for_upgrade "$central_namespace"
+    else
+        base_helm_values=$(cat <<EOT
+central:
+  resources:
+    requests:
+      cpu: 500m
+      memory: 2Gi
+    limits:
+      cpu: 2000m
+      memory: 4Gi
+  telemetry:
+    enabled: false
+  exposure:
+    loadBalancer:
+      enabled: true
+  db:
+    resources:
+      requests:
+        cpu: 500m
+        memory: 1Gi
+      limits:
+        cpu: 2000m
+        memory: 4Gi
+
+scanner:
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "500Mi"
+    limits:
+      cpu: "2000m"
+      memory: "2500Mi"
+  dbResources:
+    requests:
+      cpu: "400m"
+      memory: "512Mi"
+    limits:
+      cpu: "2000m"
+      memory: "4Gi"
+  replicas: 1
+  autoscaling:
+    disable: true
+
+scannerV4:
+  indexer:
+    replicas: 1
+    autoscaling:
+      disable: true
+  matcher:
+    replicas: 1
+    autoscaling:
+      disable: true
+
+allowNonstandardNamespace: true
+EOT
+        )
+    fi
+
+    echo "Deploying stackrox-central-services Helm chart \"${helm_chart_dir}\" into namespace ${central_namespace} with the following settings:"
+    if [[ -n "$base_helm_values" ]]; then
+        echo "base Helm values:"
+        echo "$base_helm_values" | sed -e 's/^/  |/;'
+    fi
+    if [[ -n "$image_overwrites" ]]; then
+        echo "image overwrites:"
+        echo "$image_overwrites" | sed -e 's/^/  |/;'
+    fi
+    echo "additional arguments:"
+    echo "  | $*"
+
+    helm -n "${central_namespace}" "${command[@]}" \
+        -f <(echo "$image_overwrites") \
+        -f <(echo "$base_helm_values") \
+        "$@" \
+        stackrox-central-services "${helm_chart_dir}"
+
+    if [[ "$upgrade" == "true" ]]; then
+        # TODO(ROX-28903): For some reason pods don't always terminate smoothly after an upgrade.
+        bounce_pods "${central_namespace}"
+    fi
+
+    echo "Waiting for API..."
+    wait_for_api "${central_namespace}"
+
+    if [[ "$upgrade" == "false" ]]; then
+        echo "Setting up client TLS certs..."
+        setup_client_TLS_certs ""
+        echo "Recording build info..."
+        record_build_info "${central_namespace}"
+    fi
+}
+
+# shellcheck disable=SC2120
+# deploy_sensor_with_helm "<central namespace>" "<sensor namespace>"
+#   "<main image tag>" "<helm chart dir overwrite>"
+#   "<cluster name>" "<central admin password>" "<central endpoint>" [ additional args for helm ... ]
+deploy_sensor_with_helm() {
+    echo "Deploying secured-cluster-services via Helm..."
+    local central_namespace="$1"; shift
+    local sensor_namespace="$1"; shift
+    local main_image_tag="${1:-$MAIN_IMAGE_TAG}"; shift
+    local helm_chart_dir="$HEAD_HELM_CHART_SECURED_CLUSTER_SERVICES_DIR"
+    local use_default_chart="true"
+    if [[ -n "$1" ]]; then
+        # overwrite Helm chart path.
+        helm_chart_dir="$1"
+        use_default_chart="false"
+    fi; shift
+    local cluster_name="$1"; shift
+    local central_password="$1"; shift
+    local central_endpoint="$1"; shift
+
+    local image_overwrites=""
+    local base_helm_values=""
+    local upgrade="false"
+
+    if [[ "$use_default_chart" == "true" ]]; then
+        image_overwrites=$(cat <<EOT
+image:
+  registry: "$DEFAULT_IMAGE_REGISTRY"
+  main:
+    tag: "$main_image_tag"
+  scannerV4:
+    tag: "$main_image_tag"
+  scannerV4DB:
+    tag: "$main_image_tag"
+
+EOT
+        )
+    fi
+
+    command=("install" "--create-namespace")
+    if helm list -n "$sensor_namespace" -o json | jq -e '.[] | select(.name == "stackrox-secured-cluster-services")' > /dev/null 2>&1; then
+        command=("upgrade" "--install" "--reuse-values")
+        upgrade="true"
+    else
+        # Later this will be replaced by CRS.
+        echo "Retrieving init-bundle from Central..."
+        init_bundle="$("${ORCH_CMD}" </dev/null -n "$central_namespace" exec deploy/central -- roxctl \
+            --insecure-skip-tls-verify \
+            -p "$central_password" \
+            -e "central.${central_namespace}.svc:443" \
+            central init-bundles generate "$cluster_name" --output=-)"
+
+        if [[ "${CI:-}" != "true" ]]; then
+            info "Creating image pull secrets..."
+            "${ORCH_CMD}" </dev/null create namespace "$sensor_namespace" || true
+            "${ROOT}/deploy/common/pull-secret.sh" stackrox quay.io | "${ORCH_CMD}" -n "$sensor_namespace" apply -f -
+            "${ROOT}/deploy/common/pull-secret.sh" collector-stackrox quay.io | "${ORCH_CMD}" -n "$sensor_namespace" apply -f -
+        fi
+        base_helm_values=$(cat <<EOT
+clusterName: "$cluster_name"
+centralEndpoint: "$central_endpoint"
+
+scanner:
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "500Mi"
+    limits:
+      cpu: "2000m"
+      memory: "2500Mi"
+  dbResources:
+    requests:
+      cpu: "400m"
+      memory: "512Mi"
+    limits:
+      cpu: "2000m"
+      memory: "4Gi"
+  replicas: 1
+  autoscaling:
+    disable: true
+
+scannerV4:
+  indexer:
+    replicas: 1
+    autoscaling:
+      disable: true
+  matcher:
+    replicas: 1
+    autoscaling:
+      disable: true
+  db:
+    persistence:
+      none: true
+
+admissionControl:
+  replicas: 1
+
+collector:
+  nodeSelector:
+    run-collector: "true"
+
+allowNonstandardNamespace: true
+EOT
+        )
+    fi
+
+    echo "Deploying stackrox-secured-cluster-services Helm chart \"${helm_chart_dir}\" into namespace ${sensor_namespace} with the following settings:"
+    if [[ -n "$base_helm_values" ]]; then
+        echo "base Helm values:"
+        echo "$base_helm_values" | sed -e 's/^/  |/;'
+    fi
+    if [[ -n "$image_overwrites" ]]; then
+        echo "image overwrites:"
+        echo "$image_overwrites" | sed -e 's/^/  |/;'
+    fi
+    echo "additional arguments:"
+    echo "  | $*"
+
+    helm -n "${sensor_namespace}" "${command[@]}" \
+        -f <(echo "$image_overwrites") \
+        -f <(echo "$base_helm_values") \
+        -f <(echo "$init_bundle") \
+        "$@" \
+        stackrox-secured-cluster-services "${helm_chart_dir}"
+
+    if [[ "$upgrade" == "true" ]]; then
+        # TODO(ROX-28903): For some reason pods don't always terminate smoothly after an upgrade.
+        bounce_pods "${sensor_namespace}"
+    fi
+
+    echo "Sensor deployed. Waiting for sensor to be up"
+    sensor_wait "${sensor_namespace}"
+    wait_for_collectors_to_be_operational "${sensor_namespace}"
+}
+
+bounce_pods() {
+    local namespace="$1"
+    echo "Bouncing all workload pods..."
+    "${ORCH_CMD}" </dev/null -n "$namespace" delete pod --all --force --grace-period=0
 }
 
 patch_down_central() {
