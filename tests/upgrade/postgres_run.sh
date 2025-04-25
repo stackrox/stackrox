@@ -167,6 +167,10 @@ test_upgrade_paths() {
 
     touch "${UPGRADE_PROGRESS_POSTGRES_CENTRAL_DB_BOUNCE}"
 
+    # Since central gets upgraded, connection with sensor will be terminated several times.
+    # To avoid sensor restarts we will scale it down.
+    kubectl -n stackrox patch deploy/sensor -p '{ "spec": { "replicas": 0 } }';
+
     ########################################################################################
     # Upgrade back to latest to run the smoke tests by first walking previous releases     #
     ########################################################################################
