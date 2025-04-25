@@ -100,6 +100,7 @@ func (s *storeImpl) insertIntoImages(
 	// Grab all CVEs for the image.
 	existingCVEs, err := getImageCVEs(ctx, tx, parts.image.GetId())
 	if err != nil {
+		log.Info("Exiting here")
 		return err
 	}
 
@@ -125,6 +126,7 @@ func (s *storeImpl) insertIntoImages(
 	}
 	serialized, marshalErr := cloned.MarshalVT()
 	if marshalErr != nil {
+		log.Info("Exiting here")
 		return marshalErr
 	}
 
@@ -156,6 +158,7 @@ func (s *storeImpl) insertIntoImages(
 	finalStr := "INSERT INTO " + imagesTable + " (Id, Name_Registry, Name_Remote, Name_Tag, Name_FullName, Metadata_V1_Created, Metadata_V1_User, Metadata_V1_Command, Metadata_V1_Entrypoint, Metadata_V1_Volumes, Metadata_V1_Labels, Scan_ScanTime, Scan_OperatingSystem, Signature_Fetched, Components, Cves, FixableCves, LastUpdated, Priority, RiskScore, TopCvss, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name_Registry = EXCLUDED.Name_Registry, Name_Remote = EXCLUDED.Name_Remote, Name_Tag = EXCLUDED.Name_Tag, Name_FullName = EXCLUDED.Name_FullName, Metadata_V1_Created = EXCLUDED.Metadata_V1_Created, Metadata_V1_User = EXCLUDED.Metadata_V1_User, Metadata_V1_Command = EXCLUDED.Metadata_V1_Command, Metadata_V1_Entrypoint = EXCLUDED.Metadata_V1_Entrypoint, Metadata_V1_Volumes = EXCLUDED.Metadata_V1_Volumes, Metadata_V1_Labels = EXCLUDED.Metadata_V1_Labels, Scan_ScanTime = EXCLUDED.Scan_ScanTime, Scan_OperatingSystem = EXCLUDED.Scan_OperatingSystem, Signature_Fetched = EXCLUDED.Signature_Fetched, Components = EXCLUDED.Components, Cves = EXCLUDED.Cves, FixableCves = EXCLUDED.FixableCves, LastUpdated = EXCLUDED.LastUpdated, Priority = EXCLUDED.Priority, RiskScore = EXCLUDED.RiskScore, TopCvss = EXCLUDED.TopCvss, serialized = EXCLUDED.serialized"
 	_, err = tx.Exec(ctx, finalStr, values...)
 	if err != nil {
+		log.Info("Exiting here")
 		return err
 	}
 
@@ -163,6 +166,7 @@ func (s *storeImpl) insertIntoImages(
 	if metadataUpdated {
 		for childIdx, child := range cloned.GetMetadata().GetV1().GetLayers() {
 			if err := insertIntoImagesLayers(ctx, tx, child, cloned.GetId(), childIdx); err != nil {
+				log.Info("Exiting here")
 				return err
 			}
 		}
@@ -170,6 +174,7 @@ func (s *storeImpl) insertIntoImages(
 		query = "DELETE FROM images_Layers WHERE images_Id = $1 AND idx >= $2"
 		_, err = tx.Exec(ctx, query, cloned.GetId(), len(cloned.GetMetadata().GetV1().GetLayers()))
 		if err != nil {
+			log.Info("Exiting here")
 			return err
 		}
 	}
@@ -178,12 +183,14 @@ func (s *storeImpl) insertIntoImages(
 	// exist.
 	if !scanUpdated {
 		common.SensorEventsDeduperCounter.With(prometheus.Labels{"status": "deduped"}).Inc()
+		log.Info("Scan was not updated, skipping image component and cve writes")
 		return nil
 	}
 	common.SensorEventsDeduperCounter.With(prometheus.Labels{"status": "passed"}).Inc()
 
 	err = s.copyFromImageComponentsV2(ctx, tx, parts.image.GetId(), parts.componentsV2...)
 	if err != nil {
+		log.Info("Exiting here")
 		return err
 	}
 
@@ -227,6 +234,7 @@ func insertIntoImagesLayers(ctx context.Context, tx *postgres.Tx, obj *storage.I
 func (s *storeImpl) copyFromImageComponentsV2(ctx context.Context, tx *postgres.Tx, imageID string, objs ...*storage.ImageComponentV2) error {
 	// Each scan is complete replacement.  So first thing we do is remove the old components and CVEs for an image.
 	if err := s.deleteImageComponents(ctx, tx, imageID); err != nil {
+		log.Info("Exiting here")
 		return err
 	}
 	batchSize := pgSearch.MaxBatchSize
@@ -252,6 +260,7 @@ func (s *storeImpl) copyFromImageComponentsV2(ctx context.Context, tx *postgres.
 	for idx, obj := range objs {
 		serialized, marshalErr := obj.MarshalVT()
 		if marshalErr != nil {
+			log.Info("Exiting here")
 			return marshalErr
 		}
 
@@ -326,6 +335,7 @@ func copyFromImageComponentV2Cves(ctx context.Context, tx *postgres.Tx, iTime ti
 
 		serialized, marshalErr := obj.MarshalVT()
 		if marshalErr != nil {
+			log.Info("Exiting here")
 			return marshalErr
 		}
 
@@ -355,6 +365,7 @@ func copyFromImageComponentV2Cves(ctx context.Context, tx *postgres.Tx, iTime ti
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 			if _, err := tx.CopyFrom(ctx, pgx.Identifier{imageComponentsV2CVEsTable}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+				log.Info("Exiting here")
 				return err
 			}
 			// clear the input rows for the next batch
