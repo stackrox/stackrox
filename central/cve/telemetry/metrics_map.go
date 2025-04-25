@@ -5,7 +5,11 @@ import (
 )
 
 type aggregationKey string // e.g. "Severity|IsFixable"
-type expression string     // e.g. "a=b"
+type expression struct {
+	label string
+	op    string
+	arg   string
+}
 
 var opNames = map[rune]string{
 	'=': "_eq_",
@@ -56,7 +60,7 @@ func parseAggregationExpressions(keys string) map[metricName][]expression {
 		var expressions []expression
 		for _, expr := range strings.Split(key, ",") {
 			if len(expr) > 0 {
-				expressions = append(expressions, expression(expr))
+				expressions = append(expressions, makeExpression(expr))
 			}
 		}
 		if len(expressions) > 0 {
@@ -81,7 +85,7 @@ func makeAggregationKeyInstance(expressions []expression, labelsGetter func(stri
 	sb := strings.Builder{}
 	labels := make(map[string]string)
 	for i, expr := range expressions {
-		label, value, ok := filter(expr, labelsGetter)
+		value, ok := filter(expr, labelsGetter)
 		if !ok {
 			return "", nil
 		}
@@ -90,7 +94,7 @@ func makeAggregationKeyInstance(expressions []expression, labelsGetter func(stri
 				sb.WriteRune('|')
 			}
 			sb.WriteString(v)
-			labels[label] = value
+			labels[expr.label] = value
 		} else {
 			return "", nil
 		}
@@ -107,8 +111,7 @@ func makeAggregationKeyInstance(expressions []expression, labelsGetter func(stri
 func getMetricLabels(expressions []expression) []string {
 	var labels []string
 	for _, expression := range expressions {
-		label, _, _ := splitExpression(expression)
-		labels = append(labels, label)
+		labels = append(labels, expression.label)
 	}
 	return labels
 }

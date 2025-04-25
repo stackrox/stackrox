@@ -18,28 +18,39 @@ func Test_makeMetricName(t *testing.T) {
 	}
 }
 
+func str3expr(expr ...string) []expression {
+	result := make([]expression, 0, len(expr))
+	for _, e := range expr {
+		result = append(result, makeExpression(e))
+	}
+	return result
+}
+
 func Test_parseAggregationExpressions(t *testing.T) {
 	cases := map[string]map[metricName][]expression{
 		// Default case:
 		"Cluster,Namespace,Severity": {
-			"Cluster_Namespace_Severity_total": {"Cluster", "Namespace", "Severity"},
+			"Cluster_Namespace_Severity_total": str3expr("Cluster", "Namespace", "Severity"),
 		},
 		// Normal case:
 		"Namespace=abc, Severity, IsFixable=true | Cluster | SeverityV3": {
-			"Cluster_total": {"Cluster"},
-			"Namespace_eq_abc_Severity_IsFixable_eq_true_total": {"Namespace=abc", "Severity", "IsFixable=true"},
-			"SeverityV3_total": {"SeverityV3"},
+			"Cluster_total": str3expr("Cluster"),
+			"Namespace_eq_abc_Severity_IsFixable_eq_true_total": str3expr(
+				"Namespace=abc",
+				"Severity",
+				"IsFixable=true"),
+			"SeverityV3_total": str3expr("SeverityV3"),
 		},
 
 		// Weird cases:
 		"":  nil,
 		",": nil,
 		"key,": {
-			"key_total": {"key"},
+			"key_total": str3expr("key"),
 		},
 		", key1 = x ,,||, key2  > 3|": {
-			"key1_eq_x_total": {"key1=x"},
-			"key2_gt_3_total": {"key2>3"},
+			"key1_eq_x_total": str3expr("key1=x"),
+			"key2_gt_3_total": str3expr("key2>3"),
 		},
 	}
 	for input, expressions := range cases {
@@ -58,7 +69,7 @@ func Test_makeAggregationKeyInstance(t *testing.T) {
 		return testMetric[label]
 	}
 	key, labels := makeAggregationKeyInstance(
-		[]expression{"string=*al*", "number>5", "bool"}, labelsGetter)
+		str3expr("string=*al*", "number>5", "bool"), labelsGetter)
 	assert.Equal(t, "value|7.4|false", key)
 	assert.Equal(t, map[string]string{
 		"string": "value",
@@ -77,11 +88,11 @@ func Test_getMetricNames(t *testing.T) {
 			[]string(nil),
 		},
 		{
-			[]expression{"a=b"},
+			str3expr("a=b"),
 			[]string{"a"},
 		},
 		{
-			[]expression{"a", "b=x", "c>4"},
+			str3expr("a", "b=x", "c>4"),
 			[]string{"a", "b", "c"},
 		},
 	}

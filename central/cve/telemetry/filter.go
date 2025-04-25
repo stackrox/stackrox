@@ -14,45 +14,46 @@ var ops = []string{"!=", "=", "<=", ">=", "<", ">"} // The order matters!
 // Example:
 //
 //	getLabel("a=b") == "a"
-func getLabel(expr expression) string {
-	if i := strings.IndexFunc(string(expr), func(r rune) bool {
+func getLabel(expr string) string {
+	if i := strings.IndexFunc(expr, func(r rune) bool {
 		return !(r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' || r == '_' || r == '.')
 	}); i > 0 {
-		return string(expr)[:i]
+		return expr[:i]
 	}
-	return string(expr)
+	return expr
 }
 
-// splitExpression splits an expression to the label, operator and argument.
+// makeExpression splits an expression to the label, operator and argument.
 //
 // Example:
 //
 //	"a=b": ("a", "=", "b")
-func splitExpression(expr expression) (string, string, string) {
+func makeExpression(expr string) expression {
 	label := getLabel(expr)
 	if len(expr) == len(label) {
-		return label, "", ""
+		return expression{label, "", ""}
 	}
 	opArg := string(expr[len(label):])
 	for _, op := range ops {
 		if strings.HasPrefix(opArg, op) {
-			return label, op, opArg[len(op):]
+			return expression{label, op, opArg[len(op):]}
 		}
 	}
-	return label, "", opArg
+	return expression{label, "", opArg}
 }
 
-func filter(expr expression, labels func(string) string) (string, string, bool) {
-	label, op, arg := splitExpression(expr)
-	value := labels(label)
+func filter(expr expression, labels func(string) string) (string, bool) {
+	value := labels(expr.label)
 	var err error
-	switch op {
+	switch expr.op {
+	case "":
+		return value, value != "" && expr.arg == ""
 	case "!=":
 		fallthrough
 	case "=":
-		pattern := glob.Pattern(arg)
-		return label, value, op == "=" && pattern.Match(value) ||
-			op == "!=" && !pattern.Match(value)
+		pattern := glob.Pattern(expr.arg)
+		return value, expr.op == "=" && pattern.Match(value) ||
+			expr.op == "!=" && !pattern.Match(value)
 	case ">":
 		fallthrough
 	case ">=":
@@ -61,24 +62,24 @@ func filter(expr expression, labels func(string) string) (string, string, bool) 
 		fallthrough
 	case "<=":
 		argument := 0.0
-		argument, err = strconv.ParseFloat(arg, 32)
+		argument, err = strconv.ParseFloat(expr.arg, 32)
 		if err != nil {
-			return label, value, false
+			return value, false
 		}
 		number, err := strconv.ParseFloat(value, 32)
 		if err != nil {
-			return label, value, false
+			return value, false
 		}
-		switch op {
+		switch expr.op {
 		case ">":
-			return label, value, number > argument
+			return value, number > argument
 		case ">=":
-			return label, value, number >= argument
+			return value, number >= argument
 		case "<":
-			return label, value, number < argument
+			return value, number < argument
 		case "<=":
-			return label, value, number <= argument
+			return value, number <= argument
 		}
 	}
-	return label, value, value != ""
+	return value, value != ""
 }
