@@ -111,6 +111,10 @@ func (resolver *Resolver) ImageCVEs(ctx context.Context, q PaginatedQuery) ([]*i
 	}
 
 	cves, err := resolver.ImageCVEView.Get(ctx, query, views.ReadOptions{})
+	if err != nil {
+		return nil, err
+	}
+
 	ret, err := resolver.wrapImageCVECoresWithContext(ctx, cves, err)
 	if err != nil {
 		return nil, err
