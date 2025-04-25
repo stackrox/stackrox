@@ -486,25 +486,6 @@ func RegisterVulnAggregatedMetric(name string, labels []string) {
 	}, labels)
 	aggregatedVulnMetrics[name] = metric
 	prometheus.MustRegister(metric)
-	/*
-		 []string{
-			// Unique Key:
-			"Cluster",
-			"Namespace",
-			"Deployment",
-			"ImageId",
-			"ImageRegistry",
-			"ImageRemote",
-			"ImageTag",
-
-			// Value:
-			"CVE",
-			"CVSS",
-			"Severity",
-			"SeverityV2",
-			"SeverityV3",
-			"OperatingSystem",
-		})*/
 }
 
 // SetAggregatedVulnCount registers the metric vector with the values,
