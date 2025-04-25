@@ -46,7 +46,7 @@ var (
 //
 //go:generate mockgen-wrapper
 type NetworkEntityPusher interface {
-	DoPushExternalNetworkEntitiesToSensor(clusters []string)
+	PushExternalNetworkEntitiesToSensor(clusters []string)
 }
 
 type dataStoreImpl struct {
@@ -470,7 +470,7 @@ func (ds *dataStoreImpl) getNetworkTree(ctx context.Context, clusterID string, c
 }
 
 func (ds *dataStoreImpl) doPushExternalNetworkEntitiesToSensor(clusters ...string) {
-	ds.dataPusher.DoPushExternalNetworkEntitiesToSensor(clusters)
+	ds.dataPusher.PushExternalNetworkEntitiesToSensor(clusters)
 }
 
 func (ds *dataStoreImpl) readAllowed(ctx context.Context, id string) (bool, error) {
@@ -556,7 +556,7 @@ func newNetworkEntityPusher(sensorConnMgr connection.Manager) NetworkEntityPushe
 	}
 }
 
-func (p *networkEntityPusherImpl) DoPushExternalNetworkEntitiesToSensor(clusters []string) {
+func (p *networkEntityPusherImpl) PushExternalNetworkEntitiesToSensor(clusters []string) {
 	go p.doPushExternalNetworkEntitiesToSensor(clusters)
 }
 

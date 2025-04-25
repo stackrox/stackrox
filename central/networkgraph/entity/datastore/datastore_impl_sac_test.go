@@ -150,7 +150,7 @@ func (s *NetworkEntityDataStoreSACTestSuite) setupSACReadTest() {
 
 	var insertedCount int
 	s.treeMgr.EXPECT().GetNetworkTree(gomock.Any(), testconsts.Cluster1).Return(tree.NewDefaultNetworkTreeWrapper())
-	s.dataPusher.EXPECT().DoPushExternalNetworkEntitiesToSensor([]string{testconsts.Cluster1})
+	s.dataPusher.EXPECT().PushExternalNetworkEntitiesToSensor([]string{testconsts.Cluster1})
 	insertedCount, err = s.ds.CreateExtNetworkEntitiesForCluster(ctx, testconsts.Cluster1, cluster1Entity)
 	s.Require().NoError(err)
 	s.Require().Equal(1, insertedCount)
@@ -555,7 +555,7 @@ func (s *NetworkEntityDataStoreSACTestSuite) TestCreateExternalNetworkEntitySAC(
 				Return(tree.NewDefaultNetworkTreeWrapper()).
 				AnyTimes()
 			s.dataPusher.EXPECT().
-				DoPushExternalNetworkEntitiesToSensor([]string{""}).
+				PushExternalNetworkEntitiesToSensor([]string{""}).
 				AnyTimes()
 			testErr := s.ds.CreateExternalNetworkEntity(ctx, globalEntity, false)
 			s.ErrorIs(testErr, tc.expectedError)
@@ -573,7 +573,7 @@ func (s *NetworkEntityDataStoreSACTestSuite) TestCreateExternalNetworkEntitySAC(
 				Return(tree.NewDefaultNetworkTreeWrapper()).
 				AnyTimes()
 			s.dataPusher.EXPECT().
-				DoPushExternalNetworkEntitiesToSensor([]string{testconsts.Cluster1}).
+				PushExternalNetworkEntitiesToSensor([]string{testconsts.Cluster1}).
 				AnyTimes()
 			testErr := s.ds.CreateExternalNetworkEntity(ctx, cluster1Entity, false)
 			s.ErrorIs(testErr, tc.expectedError)
@@ -607,7 +607,7 @@ func (s *NetworkEntityDataStoreSACTestSuite) TestUpdateExternalNetworkEntitySAC(
 				Return(tree.NewDefaultNetworkTreeWrapper()).
 				AnyTimes()
 			s.dataPusher.EXPECT().
-				DoPushExternalNetworkEntitiesToSensor([]string{""}).
+				PushExternalNetworkEntitiesToSensor([]string{""}).
 				AnyTimes()
 			creationErr := s.ds.CreateExternalNetworkEntity(creationCtx, globalEntity, false)
 			s.NoError(creationErr)
@@ -627,7 +627,7 @@ func (s *NetworkEntityDataStoreSACTestSuite) TestUpdateExternalNetworkEntitySAC(
 				Return(tree.NewDefaultNetworkTreeWrapper()).
 				AnyTimes()
 			s.dataPusher.EXPECT().
-				DoPushExternalNetworkEntitiesToSensor([]string{testconsts.Cluster1}).
+				PushExternalNetworkEntitiesToSensor([]string{testconsts.Cluster1}).
 				AnyTimes()
 			createErr := s.ds.CreateExternalNetworkEntity(creationCtx, cluster1Entity, false)
 			s.NoError(createErr)
@@ -657,7 +657,7 @@ func (s *NetworkEntityDataStoreSACTestSuite) TestCreateExtNetworkEntitiesForClus
 				Return(tree.NewDefaultNetworkTreeWrapper()).
 				Times(1)
 			s.dataPusher.EXPECT().
-				DoPushExternalNetworkEntitiesToSensor([]string{testconsts.Cluster1}).
+				PushExternalNetworkEntitiesToSensor([]string{testconsts.Cluster1}).
 				AnyTimes()
 			// cleanup
 			s.treeMgr.EXPECT().
@@ -665,7 +665,7 @@ func (s *NetworkEntityDataStoreSACTestSuite) TestCreateExtNetworkEntitiesForClus
 				Return(tree.NewDefaultNetworkTreeWrapper()).
 				AnyTimes()
 			s.dataPusher.EXPECT().
-				DoPushExternalNetworkEntitiesToSensor([]string{""}).
+				PushExternalNetworkEntitiesToSensor([]string{""}).
 				AnyTimes()
 			_, testErr := s.ds.CreateExtNetworkEntitiesForCluster(ctx, testconsts.Cluster1, globalEntity)
 			if tc.expectedError != nil {
@@ -686,7 +686,7 @@ func (s *NetworkEntityDataStoreSACTestSuite) TestCreateExtNetworkEntitiesForClus
 				Return(tree.NewDefaultNetworkTreeWrapper()).
 				AnyTimes()
 			s.dataPusher.EXPECT().
-				DoPushExternalNetworkEntitiesToSensor([]string{""}).
+				PushExternalNetworkEntitiesToSensor([]string{""}).
 				AnyTimes()
 			// cleanup
 			s.treeMgr.EXPECT().
@@ -694,7 +694,7 @@ func (s *NetworkEntityDataStoreSACTestSuite) TestCreateExtNetworkEntitiesForClus
 				Return(tree.NewDefaultNetworkTreeWrapper()).
 				AnyTimes()
 			s.dataPusher.EXPECT().
-				DoPushExternalNetworkEntitiesToSensor([]string{""}).
+				PushExternalNetworkEntitiesToSensor([]string{""}).
 				AnyTimes()
 			_, testErr := s.ds.CreateExtNetworkEntitiesForCluster(ctx, testconsts.Cluster1, cluster1Entity)
 			if tc.expectedError != nil {
@@ -727,7 +727,7 @@ func (s *NetworkEntityDataStoreSACTestSuite) TestDeleteExternalNetworkEntitySAC(
 				Return(tree.NewDefaultNetworkTreeWrapper()).
 				AnyTimes()
 			s.dataPusher.EXPECT().
-				DoPushExternalNetworkEntitiesToSensor([]string{""}).
+				PushExternalNetworkEntitiesToSensor([]string{""}).
 				AnyTimes()
 			creationErr := s.ds.CreateExternalNetworkEntity(createCtx, globalEntity, false)
 			s.NoError(creationErr)
@@ -747,7 +747,7 @@ func (s *NetworkEntityDataStoreSACTestSuite) TestDeleteExternalNetworkEntitySAC(
 				Return(tree.NewDefaultNetworkTreeWrapper()).
 				AnyTimes()
 			s.dataPusher.EXPECT().
-				DoPushExternalNetworkEntitiesToSensor([]string{testconsts.Cluster1}).
+				PushExternalNetworkEntitiesToSensor([]string{testconsts.Cluster1}).
 				AnyTimes()
 			creationErr := s.ds.CreateExternalNetworkEntity(createCtx, cluster1Entity, false)
 			s.NoError(creationErr)
