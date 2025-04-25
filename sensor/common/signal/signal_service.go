@@ -95,12 +95,11 @@ func (s *serviceImpl) receiveMessages(stream sensorAPI.SignalService_PushSignals
 		default:
 			select {
 			case s.queue <- signal:
-				metrics.IncrementTotalProcessesReceivedCounter()
+				metrics.IncrementTotalProcessesSignalAddedCounter()
 			case <-stream.Context().Done():
-				metrics.IncrementTotalProcessesDroppedCounter()
 				return nil
 			default:
-				metrics.IncrementTotalProcessesDroppedCounter()
+				metrics.IncrementTotalProcessesSignalDroppedCounter()
 			}
 		}
 	}

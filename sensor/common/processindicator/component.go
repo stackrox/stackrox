@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/common/metrics"
 )
 
 type componentImpl struct {
@@ -85,8 +86,10 @@ func (c *componentImpl) run() {
 	for {
 		select {
 		case msg := <-c.processMessages:
+			metrics.IncrementTotalProcessesSignalRemovedCounter()
 			c.processMsg(sensorIntoStorageSignal(msg))
 		case msg := <-c.signalMessages:
+			metrics.IncrementTotalProcessesSignalRemovedCounter()
 			c.processMsg(msg)
 		case <-c.stopper.Flow().StopRequested():
 			log.Info("Shutting down signal component")

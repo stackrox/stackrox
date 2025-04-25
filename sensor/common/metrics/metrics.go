@@ -129,11 +129,18 @@ var (
 		Help:      "A counter of the total number of processes sent to Central by Sensor",
 	})
 
+	totalProcessesSignalCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "collector_processes_signal_total",
+		Help:      "Total operations of processes signal received from Collector",
+	}, []string{"Operation"})
+
 	totalProcessesCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "collector_processes_total",
-		Help:      "A counter of the total number of processes dropped by Sensor from Collector",
+		Help:      "Total operations of processes received from Collector",
 	}, []string{"Operation"})
 
 	processSignalBufferGauge = prometheus.NewGauge(prometheus.GaugeOpts{
@@ -395,17 +402,45 @@ func IncrementTotalProcessesSentCounter(numberOfProcesses int) {
 	totalProcessesSentCounter.Add(float64(numberOfProcesses))
 }
 
-// IncrementTotalProcessesReceivedCounter increments the total number of processes received
-func IncrementTotalProcessesReceivedCounter() {
-	totalProcessesCounter.With(prometheus.Labels{
-		"Operation": "added",
+// IncrementTotalProcessesSignalAddedCounter increments the total number of processes received
+func IncrementTotalProcessesSignalAddedCounter() {
+	totalProcessesSignalCounter.With(prometheus.Labels{
+		"Operation": metrics.Add.String(),
 	}).Inc()
 }
 
-// IncrementTotalProcessesReceivedCounter increments the total number of processes dropped
+// IncrementTotalProcessesSignalRemovedCounter increments the total number of processes removed
+func IncrementTotalProcessesSignalRemovedCounter() {
+	totalProcessesSignalCounter.With(prometheus.Labels{
+		"Operation": metrics.Remove.String(),
+	}).Inc()
+}
+
+// IncrementTotalProcessesSignalDroppedCounter increments the total number of processes dropped
+func IncrementTotalProcessesSignalDroppedCounter() {
+	totalProcessesSignalCounter.With(prometheus.Labels{
+		"Operation": metrics.Dropped.String(),
+	}).Inc()
+}
+
+// IncrementTotalProcessesAddedCounter increments the total number of processes received
+func IncrementTotalProcessesAddedCounter() {
+	totalProcessesCounter.With(prometheus.Labels{
+		"Operation": metrics.Add.String(),
+	}).Inc()
+}
+
+// IncrementTotalProcessesRemovedCounter increments the total number of processes removed
+func IncrementTotalProcessesRemovedCounter() {
+	totalProcessesCounter.With(prometheus.Labels{
+		"Operation": metrics.Remove.String(),
+	}).Inc()
+}
+
+// IncrementTotalProcessesDroppedCounter increments the total number of processes dropped
 func IncrementTotalProcessesDroppedCounter() {
 	totalProcessesCounter.With(prometheus.Labels{
-		"Operation": "dropped",
+		"Operation": metrics.Dropped.String(),
 	}).Inc()
 }
 
