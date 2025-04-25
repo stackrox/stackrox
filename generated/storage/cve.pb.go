@@ -1533,6 +1533,7 @@ type ImageCVEV2 struct {
 	HasFixedBy    isImageCVEV2_HasFixedBy `protobuf_oneof:"has_fixed_by"`
 	ComponentId   string                  `protobuf:"bytes,13,opt,name=component_id,json=componentId,proto3" json:"component_id,omitempty" sql:"fk(ImageComponentV2:id),index=btree"` // @gotags: sql:"fk(ImageComponentV2:id),index=btree"
 	Advisory      string                  `protobuf:"bytes,14,opt,name=advisory,proto3" json:"advisory,omitempty" search:"Advisory"`                          // @gotags: search:"Advisory"
+	AdvisoryLink  string                  `protobuf:"bytes,15,opt,name=advisory_link,json=advisoryLink,proto3" json:"advisory_link,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1670,6 +1671,13 @@ func (x *ImageCVEV2) GetComponentId() string {
 func (x *ImageCVEV2) GetAdvisory() string {
 	if x != nil {
 		return x.Advisory
+	}
+	return ""
+}
+
+func (x *ImageCVEV2) GetAdvisoryLink() string {
+	if x != nil {
+		return x.AdvisoryLink
 	}
 	return ""
 }
@@ -2552,7 +2560,7 @@ const file_storage_cve_proto_rawDesc = "" +
 	"\anvdcvss\x18\n" +
 	" \x01(\x02R\anvdcvss\x125\n" +
 	"\fcvss_metrics\x18\v \x03(\v2\x12.storage.CVSSScoreR\vcvssMetrics\x12E\n" +
-	"\x11nvd_score_version\x18\f \x01(\x0e2\x19.storage.CvssScoreVersionR\x0fnvdScoreVersion:\x02\x18\x01\"\xd1\x04\n" +
+	"\x11nvd_score_version\x18\f \x01(\x0e2\x19.storage.CvssScoreVersionR\x0fnvdScoreVersion:\x02\x18\x01\"\xf6\x04\n" +
 	"\n" +
 	"ImageCVEV2\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x19\n" +
@@ -2570,7 +2578,8 @@ const file_storage_cve_proto_rawDesc = "" +
 	"is_fixable\x18\v \x01(\bR\tisFixable\x12\x1b\n" +
 	"\bfixed_by\x18\f \x01(\tH\x00R\afixedBy\x12!\n" +
 	"\fcomponent_id\x18\r \x01(\tR\vcomponentId\x12\x1a\n" +
-	"\badvisory\x18\x0e \x01(\tR\badvisoryB\x0e\n" +
+	"\badvisory\x18\x0e \x01(\tR\badvisory\x12#\n" +
+	"\radvisory_link\x18\x0f \x01(\tR\fadvisoryLinkB\x0e\n" +
 	"\fhas_fixed_by\"\xe4\x03\n" +
 	"\aNodeCVE\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x124\n" +
