@@ -19,7 +19,7 @@ compatibility-tests:
 .PHONY: scanner-e2e-tests
 scanner-e2e-tests:
 	@echo "+ $@"
-	@GOTAGS=$(GOTAGS),test,test_e2e,scanner_e2e ../scripts/go-test.sh -cover -v -run TestDelegatedScanning 2>&1 | tee test.log
+	@GOTAGS=$(GOTAGS),test,test_e2e,scanner_e2e ../scripts/go-test.sh -cover $(TESTFLAGS) -v -run TestDelegatedScanning 2>&1 | tee test.log
 	@$(MAKE) report JUNIT_OUT=scanner-e2e-tests-results
 
 .PHONY: destructive-tests
