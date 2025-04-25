@@ -62,6 +62,10 @@ var (
 				Expression: "result.vulnerabilities.#.cveSeverity",
 			},
 			gjson.Expression{
+				Key:        "CVSS",
+				Expression: "result.vulnerabilities.#.cveCvss",
+			},
+			gjson.Expression{
 				Key:        "Component",
 				Expression: "result.vulnerabilities.#.componentName",
 			},
@@ -72,6 +76,14 @@ var (
 			gjson.Expression{
 				Key:        "Fixed Version",
 				Expression: "result.vulnerabilities.#.componentFixedVersion",
+			},
+			gjson.Expression{
+				Key:        "Advisory",
+				Expression: "result.vulnerabilities.#.advisoryId",
+			},
+			gjson.Expression{
+				Key:        "Advisory Link",
+				Expression: "result.vulnerabilities.#.advisoryInfo",
 			},
 		),
 		printers.SarifSeverityJSONPathExpressionKey: "result.vulnerabilities.#.cveSeverity",
