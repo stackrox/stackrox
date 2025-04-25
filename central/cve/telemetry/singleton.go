@@ -10,18 +10,19 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 )
 
-var once sync.Once
+var (
+	once     sync.Once
+	instance *vulnerabilityMetricsImpl
+)
 
-var instance *trackImpl
-
-func Singleton() *trackImpl {
+func Singleton() *vulnerabilityMetricsImpl {
 	once.Do(func() {
-		metricsMap = parseAggregationKeys(env.AggregateCVSSMetrics.Setting())
-		instance = &trackImpl{
-			ds:         deploymentDS.Singleton(),
-			aggregated: metrics.SetAggregatedVulnCount,
+		instance = &vulnerabilityMetricsImpl{
+			ds:                deploymentDS.Singleton(),
+			metricExpressions: parseAggregationExpressions(env.AggregateCVSSMetrics.Setting()),
+			trackFunc:         metrics.SetAggregatedVulnCount,
 		}
-		for metricName, expressions := range metricsMap {
+		for metricName, expressions := range instance.metricExpressions {
 			labels := getMetricLabels(expressions)
 			metrics.RegisterVulnAggregatedMetric(metricName, labels)
 		}
@@ -29,25 +30,31 @@ func Singleton() *trackImpl {
 	return instance
 }
 
-type aggregationKey = string // e.g. Severity|IsFixable
-type keyInstance = string    // e.g. IMPORTANT_VULNERABILITY_SEVERITY|true
+type metricName = string
+type metricKey = string // e.g. IMPORTANT_VULNERABILITY_SEVERITY|true
 
-type trackImpl struct {
+type vulnerabilityMetricsImpl struct {
 	ds         deploymentDS.DataStore
 	stopSignal chan bool
 
-	aggregated func(map[aggregationKey]map[keyInstance]int)
+	// metricExpressions associates a metric name to the list of expressions.
+	//
+	// Example:
+	//
+	//   "Namespace_eq_abc_Severity_total": {"Namespace=abc", "Severity"},
+	metricExpressions map[metricName][]expression
+	trackFunc         func(metricName string, labels map[string]string, total int)
 }
 
-func (h *trackImpl) Start() {
-	go h.track()
+func (h *vulnerabilityMetricsImpl) Start() {
+	go h.run()
 }
 
-func (h *trackImpl) Stop() {
+func (h *vulnerabilityMetricsImpl) Stop() {
 	close(h.stopSignal)
 }
 
-func (h *trackImpl) track() {
+func (h *vulnerabilityMetricsImpl) run() {
 	ticker := time.NewTicker(time.Hour)
 	defer ticker.Stop()
 	ctx, cancel := context.WithCancel(context.Background())
@@ -55,9 +62,17 @@ func (h *trackImpl) track() {
 	for {
 		select {
 		case <-ticker.C:
-			h.trackCvssMetrics(ctx)
+			h.track(ctx)
 		case <-h.stopSignal:
 			return
+		}
+	}
+}
+
+func (h *vulnerabilityMetricsImpl) track(ctx context.Context) {
+	for metric, records := range h.trackVulnerabilityMetrics(ctx) {
+		for _, rec := range records {
+			h.trackFunc(metric, rec.labels, rec.total)
 		}
 	}
 }

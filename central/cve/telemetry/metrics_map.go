@@ -4,9 +4,8 @@ import (
 	"strings"
 )
 
-type expression = string
-
-var metricsMap map[aggregationKey][]expression
+type aggregationKey string // e.g. "Severity|IsFixable"
+type expression string     // e.g. "a=b"
 
 var opNames = map[rune]string{
 	'=': "_eq_",
@@ -15,7 +14,13 @@ var opNames = map[rune]string{
 	'<': "_lt_",
 }
 
-func makeMetricName(key aggregationKey) string {
+// makeMetricName sanitizes the metric key according to the Prometheus naming
+// rules, which is [a-zA-Z0-9_]+ (no colon).
+//
+// Example:
+//
+//	"CVSS>5,Cluster=*prod": "CVSS_gt_5_Cluster_eq__prod_total"
+func makeMetricName(key aggregationKey) metricName {
 	result := strings.Builder{}
 	for _, u := range key {
 		if u >= 'a' && u <= 'z' || u >= 'A' && u <= 'Z' || u >= '0' && u <= '9' {
@@ -32,33 +37,63 @@ func makeMetricName(key aggregationKey) string {
 	return result.String()
 }
 
-func parseAggregationKeys(setting string) map[aggregationKey][]expression {
-	result := make(map[aggregationKey][]expression)
-	for _, key := range strings.Split(setting, "|") {
-		result[makeMetricName(key)] = strings.Split(key, ",")
+// parseAggregationExpressions parses the aggregation configuraion, and builds a
+// map, that associates every aggregation key to the list of vulnerability
+// filtering expressions.
+//
+// Example:
+//
+//	"Namespace=abc,Severity": map[metricName][]expression{
+//	  "Namespace_eq_abc_Severity_total": {"Namespace=abc", "Severity"},
+//	}
+func parseAggregationExpressions(formulas string) map[metricName][]expression {
+	result := make(map[metricName][]expression)
+	for _, key := range strings.Split(formulas, "|") {
+		key = strings.ReplaceAll(key, " ", "")
+		var expressions []expression
+		for _, expr := range strings.Split(key, ",") {
+			expressions = append(expressions, expression(expr))
+		}
+		result[makeMetricName(aggregationKey(key))] = expressions
 	}
 	return result
 }
 
-func makeAggregationKeyInstance(expressions []expression, metric map[keyInstance]string) string {
+// makeAggregationKeyInstance computes an aggregation key from the provided
+// metric values, and the map of the requested labels and their values.
+//
+// Example:
+//
+//	 makeAggregationKeyInstance([]expression{"Cluster=*prod", "Namespace"},
+//		map[string]string{"Cluster": "pre-prod", "Namespace": "backend"})) ==
+//		"prod|backend",
+func makeAggregationKeyInstance(expressions []expression, labelsGetter func(string) string) (metricKey, map[string]string) {
 	sb := strings.Builder{}
+	labels := make(map[string]string)
 	for i, expr := range expressions {
-		key, ok := filter(expr, metric)
+		label, value, ok := filter(expr, labelsGetter)
 		if !ok {
-			return ""
+			return "", nil
 		}
-		if v := metric[key]; v != "" {
+		if v := value; v != "" {
 			if i > 0 {
 				sb.WriteRune('|')
 			}
 			sb.WriteString(v)
+			labels[label] = value
 		} else {
-			return ""
+			return "", nil
 		}
 	}
-	return sb.String()
+	return sb.String(), labels
 }
 
+// getMetricLabels extracts the metric labels from the filter expressions.
+//
+// Example:
+//
+//	getMetricsLabels([]expression{"Cluster=*prod", "Namespace"}) ==
+//	  []expression{"Cluster", "Namespace"}
 func getMetricLabels(expressions []expression) []string {
 	var labels []string
 	for _, expression := range expressions {

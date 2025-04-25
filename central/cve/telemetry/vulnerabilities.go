@@ -2,38 +2,62 @@ package telemetry
 
 import (
 	"context"
+	"maps"
+	"slices"
 	"strconv"
+	"strings"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
 )
 
-func (h *trackImpl) trackCvssMetrics(ctx context.Context) {
-	aggregated := map[aggregationKey]map[keyInstance]int{}
-	for key := range metricsMap {
-		aggregated[key] = make(map[keyInstance]int)
-	}
-	_ = h.ds.WalkByQuery(ctx, search.EmptyQuery(), func(deployment *storage.Deployment) error {
-		return h.trackDeployment(ctx, aggregated, deployment)
-	})
-	h.aggregated(aggregated)
+type record struct {
+	labels map[string]string
+	total  int
 }
 
-func (h *trackImpl) trackDeployment(ctx context.Context, aggregated map[string]map[string]int, deployment *storage.Deployment) error {
+func (r *record) String() string {
+	values := strings.Join(slices.Collect(maps.Values(r.labels)), ", ")
+	return values + ": " + strconv.FormatInt(int64(r.total), 10)
+}
+
+type result map[metricName]map[metricKey]*record
+
+func (h *vulnerabilityMetricsImpl) trackVulnerabilityMetrics(ctx context.Context) result {
+	metrics := make(result)
+	for metric := range h.metricExpressions {
+		metrics[metric] = make(map[metricKey]*record)
+	}
+	// Optimization opportunity:
+	// The resource filter is known at this point, so a more precise query could be constructed here.
+	_ = h.ds.WalkByQuery(ctx, search.EmptyQuery(), func(deployment *storage.Deployment) error {
+		return h.trackDeployment(ctx, metrics, deployment)
+	})
+	return metrics
+}
+
+func (h *vulnerabilityMetricsImpl) trackDeployment(ctx context.Context, aggregated result, deployment *storage.Deployment) error {
 	images, err := h.ds.GetImagesForDeployment(ctx, deployment)
 	if err != nil {
 		return nil
 	}
 
 	forEachVuln(images, func(image *storage.Image, imageName *storage.ImageName, vuln *storage.EmbeddedVulnerability) {
-		metric := makeCvssMetric(image, imageName, vuln,
+		labelGetter := makeVulnerabilityLabels(image, imageName, vuln,
 			deployment.GetClusterName(),
 			deployment.GetNamespace(),
 			deployment.GetName())
 
-		for key, expressions := range metricsMap {
-			if k := makeAggregationKeyInstance(expressions, metric); k != "" {
-				aggregated[key][k]++
+		for metric, expressions := range h.metricExpressions {
+			if key, labels := makeAggregationKeyInstance(expressions, labelGetter); key != "" {
+				if rec, ok := aggregated[metric][key]; ok {
+					rec.total++
+				} else {
+					aggregated[metric][key] = &record{
+						labels: labels,
+						total:  1,
+					}
+				}
 			}
 		}
 	})
@@ -60,22 +84,41 @@ func isFixable(vuln *storage.EmbeddedVulnerability) string {
 	return "true"
 }
 
-func makeCvssMetric(image *storage.Image, name *storage.ImageName, vuln *storage.EmbeddedVulnerability, clusterName string, namespaceName string, deploymentName string) map[string]string {
-	return map[string]string{
-		"Cluster":       clusterName,
-		"Namespace":     namespaceName,
-		"Deployment":    deploymentName,
-		"ImageId":       image.GetId(),
-		"ImageRegistry": name.GetRegistry(),
-		"ImageRemote":   name.GetRemote(),
-		"ImageTag":      name.GetTag(),
-
-		"CVE":             vuln.GetCve(),
-		"CVSS":            strconv.FormatFloat(float64(vuln.GetCvss()), 'f', 1, 32),
-		"OperatingSystem": image.GetScan().GetOperatingSystem(),
-		"Severity":        vuln.GetSeverity().String(),
-		"SeverityV2":      vuln.GetCvssV2().GetSeverity().String(),
-		"SeverityV3":      vuln.GetCvssV3().GetSeverity().String(),
-		"IsFixable":       isFixable(vuln),
+func makeVulnerabilityLabels(image *storage.Image, name *storage.ImageName, vuln *storage.EmbeddedVulnerability, clusterName string, namespaceName string, deploymentName string) func(string) string {
+	return func(label string) string {
+		switch label {
+		// Unique resource key (no component):
+		case "Cluster":
+			return clusterName
+		case "Namespace":
+			return namespaceName
+		case "Deployment":
+			return deploymentName
+		case "ImageId":
+			return image.GetId()
+		case "ImageRegistry":
+			return name.GetRegistry()
+		case "ImageRemote":
+			return name.GetRemote()
+		case "ImageTag":
+			return name.GetTag()
+		// Values:
+		case "CVE":
+			return vuln.GetCve()
+		case "CVSS":
+			return strconv.FormatFloat(float64(vuln.GetCvss()), 'f', 1, 32)
+		case "OperatingSystem":
+			return image.GetScan().GetOperatingSystem()
+		case "Severity":
+			return vuln.GetSeverity().String()
+		case "SeverityV2":
+			return vuln.GetCvssV2().GetSeverity().String()
+		case "SeverityV3":
+			return vuln.GetCvssV3().GetSeverity().String()
+		case "IsFixable":
+			return isFixable(vuln)
+		default:
+			return ""
+		}
 	}
 }

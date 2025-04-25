@@ -509,13 +509,6 @@ func RegisterVulnAggregatedMetric(name string, labels []string) {
 
 // SetAggregatedVulnCount registers the metric vector with the values,
 // aggregated according to the ROX_AGGREGATE_CVSS_METRICS variable value.
-func SetAggregatedVulnCount(aggregated map[string]map[string]int) {
-	for metricName, aggregated := range aggregated {
-		metric := aggregatedVulnMetrics[metricName]
-		for keyValue, count := range aggregated {
-			metric.With(prometheus.Labels{
-				metricName: keyValue,
-			}).Set(float64(count))
-		}
-	}
+func SetAggregatedVulnCount(metricName string, labels map[string]string, total int) {
+	aggregatedVulnMetrics[metricName].With(labels).Set(float64(total))
 }

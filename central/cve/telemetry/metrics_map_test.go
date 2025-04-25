@@ -7,7 +7,7 @@ import (
 )
 
 func Test_makeMetricName(t *testing.T) {
-	cases := map[aggregationKey]string{
+	cases := map[aggregationKey]metricName{
 		"":                       "_total",
 		"Severity":               "Severity_total",
 		"Cluster=*prod*,CVSS>=5": "Cluster_eq__prod__CVSS_gt__eq_5_total",
@@ -19,8 +19,8 @@ func Test_makeMetricName(t *testing.T) {
 }
 
 func Test_parseAggregationKeys(t *testing.T) {
-	keys := parseAggregationKeys("Namespace=abc,Severity,IsFixable=true|Cluster|SeverityV3")
-	assert.Equal(t, map[aggregationKey][]string{
+	keys := parseAggregationExpressions("Namespace=abc, Severity, IsFixable=true | Cluster | SeverityV3")
+	assert.Equal(t, map[metricName][]expression{
 		"Cluster_total": {"Cluster"},
 		"Namespace_eq_abc_Severity_IsFixable_eq_true_total": {"Namespace=abc", "Severity", "IsFixable=true"},
 		"SeverityV3_total": {"SeverityV3"},
@@ -28,21 +28,44 @@ func Test_parseAggregationKeys(t *testing.T) {
 }
 
 func Test_makeAggregationKeyInstance(t *testing.T) {
-	metric := map[string]string{
+	testMetric := map[string]string{
+		"string":  "value",
+		"number":  "7.4",
+		"bool":    "false",
+		"another": "value",
+	}
+	labelsGetter := func(label string) string {
+		return testMetric[label]
+	}
+	key, labels := makeAggregationKeyInstance(
+		[]expression{"string=*al*", "number>5", "bool"}, labelsGetter)
+	assert.Equal(t, "value|7.4|false", key)
+	assert.Equal(t, map[string]string{
 		"string": "value",
 		"number": "7.4",
 		"bool":   "false",
-	}
-	assert.Equal(t, "value|7.4|false", makeAggregationKeyInstance(
-		[]expression{"string=*al*", "number>5", "bool"}, metric))
+	}, labels)
 }
 
 func Test_getMetricNames(t *testing.T) {
-	assert.Equal(t, []string(nil), getMetricLabels([]expression{}))
-	assert.Equal(t, []string{"a"}, getMetricLabels([]expression{
-		"a=b",
-	}))
-	assert.Equal(t, []string{"a", "b", "c"}, getMetricLabels([]expression{
-		"a", "b=x", "c>4",
-	}))
+	cases := []struct {
+		expressions []expression
+		names       []string
+	}{
+		{
+			[]expression{},
+			[]string(nil),
+		},
+		{
+			[]expression{"a=b"},
+			[]string{"a"},
+		},
+		{
+			[]expression{"a", "b=x", "c>4"},
+			[]string{"a", "b", "c"},
+		},
+	}
+	for _, c := range cases {
+		assert.Equal(t, c.names, getMetricLabels(c.expressions), c.expressions)
+	}
 }

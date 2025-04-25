@@ -39,19 +39,7 @@ func (i *image) withTags(tags ...string) *image {
 	return i
 }
 
-func Test_fetchMetrics(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	ds := deploymentDS.NewMockDataStore(ctrl)
-
-	metricsMap = parseAggregationKeys("Severity|Cluster,Namespace,Severity|Deployment=*4,ImageTag=latest")
-
-	deployments := []*storage.Deployment{
-		{Id: "deployment-1", Name: "D1", Namespace: "namespace-1", ClusterName: "cluster-1"},
-		{Id: "deployment-2", Name: "D2", Namespace: "namespace-2", ClusterName: "cluster-1"},
-		{Id: "deployment-3", Name: "D3", Namespace: "namespace-2", ClusterName: "cluster-1"},
-		{Id: "deployment-4", Name: "D4", Namespace: "namespace-2", ClusterName: "cluster-2"},
-	}
-
+func getTestData() ([]*storage.Deployment, map[string][]*storage.Image) {
 	cves := []*storage.EmbeddedVulnerability{
 		{Cve: "cve-0", Cvss: 7.5,
 			CvssV3:   &storage.CVSSV3{Severity: storage.CVSSV3_CRITICAL},
@@ -74,12 +62,27 @@ func Test_fetchMetrics(t *testing.T) {
 		(*storage.Image)(makeTestImage("image-3").withTags("tag", "latest").withCVE(cves[1], cves[2])),
 	}
 
-	deploymentImages := map[string][]*storage.Image{
-		"deployment-1": {images[0]},
-		"deployment-2": {images[0], images[1]},
-		"deployment-3": {images[2]},
-		"deployment-4": {images[3]},
+	deployments := []*storage.Deployment{
+		{Id: "deployment-0", Name: "D0", Namespace: "namespace-1", ClusterName: "cluster-1"},
+		{Id: "deployment-1", Name: "D1", Namespace: "namespace-2", ClusterName: "cluster-1"},
+		{Id: "deployment-2", Name: "D2", Namespace: "namespace-2", ClusterName: "cluster-1"},
+		{Id: "deployment-3", Name: "D3", Namespace: "namespace-2", ClusterName: "cluster-2"},
 	}
+
+	deploymentImages := map[string][]*storage.Image{
+		deployments[0].Id: {images[0]},
+		deployments[1].Id: {images[0], images[1]},
+		deployments[2].Id: {images[2]},
+		deployments[3].Id: {images[3]},
+	}
+	return deployments, deploymentImages
+}
+
+func Test_trackVulnerabilityMetrics(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	ds := deploymentDS.NewMockDataStore(ctrl)
+
+	deployments, deploymentImages := getTestData()
 
 	ds.EXPECT().WalkByQuery(gomock.Any(), gomock.Any(), gomock.Any()).
 		Times(1).
@@ -95,28 +98,46 @@ func Test_fetchMetrics(t *testing.T) {
 			Times(1).Return(deploymentImages[deployment.Id], nil)
 	}
 
-	var aggregated map[aggregationKey]map[keyInstance]int
-	i := &trackImpl{ds: ds,
-		aggregated: func(a map[aggregationKey]map[keyInstance]int) {
-			aggregated = a
-		}}
+	var aggregated = make(map[metricName][]*record)
 
-	i.trackCvssMetrics(context.Background())
-	assert.Equal(t, map[aggregationKey]map[keyInstance]int{
-		"Severity_total": map[string]int{
-			"CRITICAL_VULNERABILITY_SEVERITY": 3,
-			"LOW_VULNERABILITY_SEVERITY":      2,
-			"MODERATE_VULNERABILITY_SEVERITY": 4,
+	i := &vulnerabilityMetricsImpl{ds: ds,
+		metricExpressions: parseAggregationExpressions(
+			"Severity|Cluster,Namespace,Severity|Deployment=*3,ImageTag=latest"),
+		trackFunc: func(metricName string, labels map[string]string, total int) {
+			aggregated[metricName] = append(aggregated[metricName],
+				&record{
+					labels: labels,
+					total:  total,
+				})
 		},
-		"Cluster_Namespace_Severity_total": map[string]int{
-			"cluster-1|namespace-1|CRITICAL_VULNERABILITY_SEVERITY": 1,
-			"cluster-1|namespace-2|CRITICAL_VULNERABILITY_SEVERITY": 2,
-			"cluster-1|namespace-2|MODERATE_VULNERABILITY_SEVERITY": 2,
-			"cluster-2|namespace-2|LOW_VULNERABILITY_SEVERITY":      2,
-			"cluster-2|namespace-2|MODERATE_VULNERABILITY_SEVERITY": 2,
+	}
+
+	i.track(context.Background())
+
+	expected := map[metricName][]*record{
+		"Severity_total": {
+			{map[string]string{"Severity": "CRITICAL_VULNERABILITY_SEVERITY"}, 3},
+			{map[string]string{"Severity": "MODERATE_VULNERABILITY_SEVERITY"}, 4},
+			{map[string]string{"Severity": "LOW_VULNERABILITY_SEVERITY"}, 2},
 		},
-		"Deployment_eq__4_ImageTag_eq_latest_total": map[string]int{
-			"D4|latest": 2,
+		"Cluster_Namespace_Severity_total": {
+			{map[string]string{"Cluster": "cluster-1", "Namespace": "namespace-1", "Severity": "CRITICAL_VULNERABILITY_SEVERITY"}, 1},
+			{map[string]string{"Cluster": "cluster-1", "Namespace": "namespace-2", "Severity": "CRITICAL_VULNERABILITY_SEVERITY"}, 2},
+			{map[string]string{"Cluster": "cluster-1", "Namespace": "namespace-2", "Severity": "MODERATE_VULNERABILITY_SEVERITY"}, 2},
+			{map[string]string{"Cluster": "cluster-2", "Namespace": "namespace-2", "Severity": "MODERATE_VULNERABILITY_SEVERITY"}, 2},
+			{map[string]string{"Cluster": "cluster-2", "Namespace": "namespace-2", "Severity": "LOW_VULNERABILITY_SEVERITY"}, 2},
 		},
-	}, aggregated)
+		"Deployment_eq__3_ImageTag_eq_latest_total": {
+			{map[string]string{"Deployment": "D3", "ImageTag": "latest"}, 2},
+		},
+	}
+	if assert.Len(t, expected, len(aggregated)) {
+		for metric, records := range aggregated {
+			if assert.Len(t, expected[metric], len(records), metric) {
+				for i, record := range records {
+					assert.Contains(t, expected[metric], record, "metric: %s, record: %d", metric, i)
+				}
+			}
+		}
+	}
 }

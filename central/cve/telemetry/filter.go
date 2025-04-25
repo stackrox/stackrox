@@ -9,39 +9,50 @@ import (
 
 var ops = []string{"!=", "=", "<=", ">=", "<", ">"} // The order matters!
 
-func getKey(key string) string {
-	for i, r := range key {
-		if !(r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' || r == '_' || r == '.') {
-			return key[:i]
-		}
+// getLabel returns the labels key from the provided expression.
+//
+// Example:
+//
+//	getLabel("a=b") == "a"
+func getLabel(expr expression) string {
+	if i := strings.IndexFunc(string(expr), func(r rune) bool {
+		return !(r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' || r == '_' || r == '.')
+	}); i > 0 {
+		return string(expr)[:i]
 	}
-	return key
+	return string(expr)
 }
 
-func splitExpression(s string) (string, string, string) {
-	key := getKey(s)
-	if len(s) == len(key) {
-		return key, "", ""
+// splitExpression splits an expression to the label, operator and argument.
+//
+// Example:
+//
+//	"a=b": ("a", "=", "b")
+func splitExpression(expr expression) (string, string, string) {
+	label := getLabel(expr)
+	if len(expr) == len(label) {
+		return label, "", ""
 	}
-	opExpr := s[len(key):]
+	opArg := string(expr[len(label):])
 	for _, op := range ops {
-		if strings.HasPrefix(opExpr, op) {
-			return key, op, opExpr[len(op):]
+		if strings.HasPrefix(opArg, op) {
+			return label, op, opArg[len(op):]
 		}
 	}
-	return key, "", opExpr
+	return label, "", opArg
 }
 
-func filter(expr expression, metric map[keyInstance]string) (string, bool) {
-	key, op, arg := splitExpression(expr)
+func filter(expr expression, labels func(string) string) (string, string, bool) {
+	label, op, arg := splitExpression(expr)
+	value := labels(label)
 	var err error
 	switch op {
 	case "!=":
 		fallthrough
 	case "=":
 		pattern := glob.Pattern(arg)
-		return key, op == "=" && pattern.Match(metric[key]) ||
-			op == "!=" && !pattern.Match(metric[key])
+		return label, value, op == "=" && pattern.Match(value) ||
+			op == "!=" && !pattern.Match(value)
 	case ">":
 		fallthrough
 	case ">=":
@@ -52,22 +63,22 @@ func filter(expr expression, metric map[keyInstance]string) (string, bool) {
 		argument := 0.0
 		argument, err = strconv.ParseFloat(arg, 32)
 		if err != nil {
-			return key, false
+			return label, value, false
 		}
-		value, err := strconv.ParseFloat(metric[key], 32)
+		number, err := strconv.ParseFloat(value, 32)
 		if err != nil {
-			return key, false
+			return label, value, false
 		}
 		switch op {
 		case ">":
-			return key, value > argument
+			return label, value, number > argument
 		case ">=":
-			return key, value >= argument
+			return label, value, number >= argument
 		case "<":
-			return key, value < argument
+			return label, value, number < argument
 		case "<=":
-			return key, value <= argument
+			return label, value, number <= argument
 		}
 	}
-	return key, metric[key] != ""
+	return label, value, value != ""
 }
