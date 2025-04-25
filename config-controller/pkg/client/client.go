@@ -385,7 +385,7 @@ func (c *client) FlushCache(ctx context.Context) error {
 func (c *client) EnsureFresh(ctx context.Context) error {
 	// Make sure token isn't expired before flushing cache
 	if err := c.centralSvc.TokenExchange(ctx); err != nil {
-		return err
+		return errors.Wrap(err, "could not exchange token")
 	}
 
 	if time.Since(c.lastUpdated).Minutes() > 5.0 {
