@@ -40,7 +40,7 @@ sleep 5 # Let kubectl proxy stabilize
 mkdir -p "${log_dir}"/infrastructure
 declare -a waiters
 
-{ timeout 120s time kubectl -v logs -l component=kube-apiserver -n kube-system --insecure-skip-tls-verify-backend=true --ignore-errors=true > "${log_dir}"/infrastructure/kube-apiserver-kubectl.log \
+{ timeout 120s kubectl logs -l component=kube-apiserver -n kube-system --insecure-skip-tls-verify-backend=true --ignore-errors=true > "${log_dir}"/infrastructure/kube-apiserver-kubectl.log \
       2>&1; echo $?; ls -latr "${log_dir}"/infrastructure/kube-apiserver-kubectl.log; tail -3 "${log_dir}"/infrastructure/kube-apiserver-kubectl.log; } | sed 's/^/kubectl: /' &
 waiters+=($!)
 
