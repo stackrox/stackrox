@@ -2,10 +2,7 @@ package telemetry
 
 import (
 	"context"
-	"maps"
-	"slices"
 	"strconv"
-	"strings"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
@@ -14,11 +11,6 @@ import (
 type record struct {
 	labels map[string]string
 	total  int
-}
-
-func (r *record) String() string {
-	values := strings.Join(slices.Collect(maps.Values(r.labels)), ", ")
-	return values + ": " + strconv.FormatInt(int64(r.total), 10)
 }
 
 type result map[metricName]map[metricKey]*record
