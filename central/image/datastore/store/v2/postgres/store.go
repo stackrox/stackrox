@@ -412,6 +412,7 @@ func populateImageScanHash(scan *storage.ImageScan) error {
 }
 
 func (s *storeImpl) upsert(ctx context.Context, obj *storage.Image) error {
+	log.Info("In v2 store upsert")
 	iTime := time.Now()
 
 	if !s.noUpdateTimestamps {
@@ -424,6 +425,8 @@ func (s *storeImpl) upsert(ctx context.Context, obj *storage.Image) error {
 	}
 
 	metadataUpdated, scanUpdated, err := s.isUpdated(oldImage, obj)
+	log.Infof("metadataUpdated: %v", metadataUpdated)
+	log.Infof("scanUpdated: %v", scanUpdated)
 	if err != nil {
 		return err
 	}
