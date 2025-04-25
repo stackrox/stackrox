@@ -1,4 +1,5 @@
 ARG FINAL_STAGE_PATH="/mnt/final"
+ARG PG_VERSION=15
 
 # TODO(ROX-20312): we can't pin image tag or digest because currently there's no mechanism to auto-update that.
 FROM registry.access.redhat.com/ubi8/ubi:latest AS ubi-base
@@ -9,6 +10,7 @@ FROM registry.access.redhat.com/ubi8/ubi-minimal:latest AS final-base
 FROM ubi-base AS rpm-installer
 
 ARG FINAL_STAGE_PATH
+ARG PG_VERSION
 COPY --from=final-base / "$FINAL_STAGE_PATH"
 
 COPY ./.konflux/scripts/subscription-manager/* /tmp/.konflux/
@@ -16,7 +18,7 @@ RUN /tmp/.konflux/subscription-manager-bro.sh register "$FINAL_STAGE_PATH"
 
 # Install packages for the final stage.
 RUN dnf -y --installroot="$FINAL_STAGE_PATH" upgrade --nobest && \
-    dnf -y --installroot="$FINAL_STAGE_PATH" module enable postgresql:15 && \
+    dnf -y --installroot="$FINAL_STAGE_PATH" module enable postgresql:${PG_VERSION} && \
     # find is used in /stackrox/import-additional-cas \
     dnf -y --installroot="$FINAL_STAGE_PATH" install findutils postgresql && \
     # We can do usual cleanup while we're here: remove packages that would trigger violations. \

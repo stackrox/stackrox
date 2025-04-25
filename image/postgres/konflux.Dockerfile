@@ -1,4 +1,5 @@
-FROM registry.redhat.io/rhel8/postgresql-15:latest AS final
+ARG PG_VERSION=15
+FROM registry.redhat.io/rhel8/postgresql-${PG_VERSION}:latest AS final
 
 USER root
 
