@@ -68,6 +68,8 @@ type cveVulnerabilityJSON struct {
 	CveID                 string      `json:"cveId"`
 	CveSeverity           cveSeverity `json:"cveSeverity"`
 	CveInfo               string      `json:"cveInfo"`
+	AdvisoryID            string      `json:"advisoryId"`
+	AdvisoryInfo          string      `json:"advisoryInfo"`
 	ComponentName         string      `json:"componentName"`
 	ComponentVersion      string      `json:"componentVersion"`
 	ComponentFixedVersion string      `json:"componentFixedVersion"`
@@ -119,6 +121,8 @@ func getVulnerabilityJSON(vulnerabilities []*storage.EmbeddedVulnerability, comp
 			CveID:                 vulnerability.GetCve(),
 			CveSeverity:           severity,
 			CveInfo:               vulnerability.GetLink(),
+			AdvisoryID:            "TODO",
+			AdvisoryInfo:          "TODO",
 			ComponentName:         comp.GetName(),
 			ComponentVersion:      comp.GetVersion(),
 			ComponentFixedVersion: vulnerability.GetFixedBy(),
