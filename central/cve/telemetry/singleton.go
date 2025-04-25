@@ -2,12 +2,12 @@ package telemetry
 
 import (
 	"context"
-	"sync"
 	"time"
 
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (
@@ -17,9 +17,16 @@ var (
 
 func Singleton() *vulnerabilityMetricsImpl {
 	once.Do(func() {
+		if env.AggregateVulnMetrics.Setting() == "" {
+			return
+		}
+		metricExpressions := parseAggregationExpressions(env.AggregateVulnMetrics.Setting())
+		if metricExpressions == nil {
+			return
+		}
 		instance = &vulnerabilityMetricsImpl{
 			ds:                deploymentDS.Singleton(),
-			metricExpressions: parseAggregationExpressions(env.AggregateCVSSMetrics.Setting()),
+			metricExpressions: metricExpressions,
 			trackFunc:         metrics.SetAggregatedVulnCount,
 		}
 		for metricName, expressions := range instance.metricExpressions {
@@ -47,11 +54,15 @@ type vulnerabilityMetricsImpl struct {
 }
 
 func (h *vulnerabilityMetricsImpl) Start() {
-	go h.run()
+	if h != nil {
+		go h.run()
+	}
 }
 
 func (h *vulnerabilityMetricsImpl) Stop() {
-	close(h.stopSignal)
+	if h != nil {
+		close(h.stopSignal)
+	}
 }
 
 func (h *vulnerabilityMetricsImpl) run() {

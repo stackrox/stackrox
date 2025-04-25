@@ -46,15 +46,25 @@ func makeMetricName(key aggregationKey) metricName {
 //	"Namespace=abc,Severity": map[metricName][]expression{
 //	  "Namespace_eq_abc_Severity_total": {"Namespace=abc", "Severity"},
 //	}
-func parseAggregationExpressions(formulas string) map[metricName][]expression {
+func parseAggregationExpressions(keys string) map[metricName][]expression {
 	result := make(map[metricName][]expression)
-	for _, key := range strings.Split(formulas, "|") {
-		key = strings.ReplaceAll(key, " ", "")
+	for _, key := range strings.Split(strings.Trim(keys, "|"), "|") {
+		key = strings.ReplaceAll(strings.Trim(key, ","), " ", "")
+		if key == "" {
+			continue
+		}
 		var expressions []expression
 		for _, expr := range strings.Split(key, ",") {
-			expressions = append(expressions, expression(expr))
+			if len(expr) > 0 {
+				expressions = append(expressions, expression(expr))
+			}
 		}
-		result[makeMetricName(aggregationKey(key))] = expressions
+		if len(expressions) > 0 {
+			result[makeMetricName(aggregationKey(key))] = expressions
+		}
+	}
+	if len(result) == 0 {
+		return nil
 	}
 	return result
 }

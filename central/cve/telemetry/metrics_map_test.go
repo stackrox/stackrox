@@ -18,13 +18,33 @@ func Test_makeMetricName(t *testing.T) {
 	}
 }
 
-func Test_parseAggregationKeys(t *testing.T) {
-	keys := parseAggregationExpressions("Namespace=abc, Severity, IsFixable=true | Cluster | SeverityV3")
-	assert.Equal(t, map[metricName][]expression{
-		"Cluster_total": {"Cluster"},
-		"Namespace_eq_abc_Severity_IsFixable_eq_true_total": {"Namespace=abc", "Severity", "IsFixable=true"},
-		"SeverityV3_total": {"SeverityV3"},
-	}, keys)
+func Test_parseAggregationExpressions(t *testing.T) {
+	cases := map[string]map[metricName][]expression{
+		// Default case:
+		"Cluster,Namespace,Severity": {
+			"Cluster_Namespace_Severity_total": {"Cluster", "Namespace", "Severity"},
+		},
+		// Normal case:
+		"Namespace=abc, Severity, IsFixable=true | Cluster | SeverityV3": {
+			"Cluster_total": {"Cluster"},
+			"Namespace_eq_abc_Severity_IsFixable_eq_true_total": {"Namespace=abc", "Severity", "IsFixable=true"},
+			"SeverityV3_total": {"SeverityV3"},
+		},
+
+		// Weird cases:
+		"":  nil,
+		",": nil,
+		"key,": {
+			"key_total": {"key"},
+		},
+		", key1 = x ,,||, key2  > 3|": {
+			"key1_eq_x_total": {"key1=x"},
+			"key2_gt_3_total": {"key2>3"},
+		},
+	}
+	for input, expressions := range cases {
+		assert.Equal(t, expressions, parseAggregationExpressions(input))
+	}
 }
 
 func Test_makeAggregationKeyInstance(t *testing.T) {
