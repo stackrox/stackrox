@@ -547,6 +547,7 @@ type VulnerabilityReportFilters struct {
 	CvesSince              isVulnerabilityReportFilters_CvesSince `protobuf_oneof:"cves_since"`
 	IncludeNvdCvss         bool                                   `protobuf:"varint,7,opt,name=include_nvd_cvss,json=includeNvdCvss,proto3" json:"include_nvd_cvss,omitempty"`
 	IncludeEpssProbability bool                                   `protobuf:"varint,8,opt,name=include_epss_probability,json=includeEpssProbability,proto3" json:"include_epss_probability,omitempty"`
+	IncludeAdvisory        bool                                   `protobuf:"varint,9,opt,name=include_advisory,json=includeAdvisory,proto3" json:"include_advisory,omitempty"`
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
@@ -646,6 +647,13 @@ func (x *VulnerabilityReportFilters) GetIncludeNvdCvss() bool {
 func (x *VulnerabilityReportFilters) GetIncludeEpssProbability() bool {
 	if x != nil {
 		return x.IncludeEpssProbability
+	}
+	return false
+}
+
+func (x *VulnerabilityReportFilters) GetIncludeAdvisory() bool {
+	if x != nil {
+		return x.IncludeAdvisory
 	}
 	return false
 }
@@ -1796,7 +1804,7 @@ const file_api_v2_report_service_proto_rawDesc = "" +
 	"\n" +
 	"ReportType\x12\x11\n" +
 	"\rVULNERABILITY\x10\x00B\b\n" +
-	"\x06filter\"\xd5\x06\n" +
+	"\x06filter\"\x80\a\n" +
 	"\x1aVulnerabilityReportFilters\x12I\n" +
 	"\n" +
 	"fixability\x18\x01 \x01(\x0e2).v2.VulnerabilityReportFilters.FixabilityR\n" +
@@ -1810,7 +1818,8 @@ const file_api_v2_report_service_proto_rawDesc = "" +
 	" since_last_sent_scheduled_report\x18\x05 \x01(\bH\x00R\x1csinceLastSentScheduledReport\x12F\n" +
 	"\x10since_start_date\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampH\x00R\x0esinceStartDate\x12(\n" +
 	"\x10include_nvd_cvss\x18\a \x01(\bR\x0eincludeNvdCvss\x128\n" +
-	"\x18include_epss_probability\x18\b \x01(\bR\x16includeEpssProbability\"4\n" +
+	"\x18include_epss_probability\x18\b \x01(\bR\x16includeEpssProbability\x12)\n" +
+	"\x10include_advisory\x18\t \x01(\bR\x0fincludeAdvisory\"4\n" +
 	"\n" +
 	"Fixability\x12\b\n" +
 	"\x04BOTH\x10\x00\x12\v\n" +
