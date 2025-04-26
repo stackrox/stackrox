@@ -73,6 +73,7 @@ func (m *VulnerabilityReportFilters) CloneVT() *VulnerabilityReportFilters {
 	r.Fixability = m.Fixability
 	r.IncludeNvdCvss = m.IncludeNvdCvss
 	r.IncludeEpssProbability = m.IncludeEpssProbability
+	r.IncludeAdvisory = m.IncludeAdvisory
 	if rhs := m.Severities; rhs != nil {
 		tmpContainer := make([]VulnerabilityReportFilters_VulnerabilitySeverity, len(rhs))
 		copy(tmpContainer, rhs)
@@ -680,6 +681,9 @@ func (this *VulnerabilityReportFilters) EqualVT(that *VulnerabilityReportFilters
 		return false
 	}
 	if this.IncludeEpssProbability != that.IncludeEpssProbability {
+		return false
+	}
+	if this.IncludeAdvisory != that.IncludeAdvisory {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -1553,6 +1557,16 @@ func (m *VulnerabilityReportFilters) MarshalToSizedBufferVT(dAtA []byte) (int, e
 			return 0, err
 		}
 		i -= size
+	}
+	if m.IncludeAdvisory {
+		i--
+		if m.IncludeAdvisory {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x48
 	}
 	if m.IncludeEpssProbability {
 		i--
@@ -2847,6 +2861,9 @@ func (m *VulnerabilityReportFilters) SizeVT() (n int) {
 	if m.IncludeEpssProbability {
 		n += 2
 	}
+	if m.IncludeAdvisory {
+		n += 2
+	}
 	n += len(m.unknownFields)
 	return n
 }
@@ -3932,6 +3949,26 @@ func (m *VulnerabilityReportFilters) UnmarshalVT(dAtA []byte) error {
 				}
 			}
 			m.IncludeEpssProbability = bool(v != 0)
+		case 9:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IncludeAdvisory", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.IncludeAdvisory = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -6997,6 +7034,26 @@ func (m *VulnerabilityReportFilters) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			}
 			m.IncludeEpssProbability = bool(v != 0)
+		case 9:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IncludeAdvisory", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.IncludeAdvisory = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
