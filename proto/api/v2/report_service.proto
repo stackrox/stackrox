@@ -58,6 +58,7 @@ message VulnerabilityReportFilters {
   }
   bool include_nvd_cvss = 7;
   bool include_epss_probability = 8;
+  bool include_advisory = 9;
 }
 
 message ReportSchedule {
