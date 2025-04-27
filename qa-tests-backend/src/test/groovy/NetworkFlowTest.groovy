@@ -1,6 +1,9 @@
 import static io.restassured.RestAssured.given
 import static util.Helpers.withRetry
 
+import java.time.LocalDateTime
+import java.time.Duration
+
 import io.grpc.StatusRuntimeException
 import io.restassured.response.Response
 import orchestratormanager.OrchestratorTypes
@@ -484,6 +487,9 @@ class NetworkFlowTest extends BaseSpecification {
 
         log.info "Checking for edge from ${EXTERNALDESTINATION} to external target"
         List<Edge> edges = NetworkGraphUtil.checkForEdge(deploymentUid, Constants.INTERNET_EXTERNAL_SOURCE_ID)
+        // Get the current time, because the network graph was just updated and we need to know when
+        // other updates happen.
+        def updateTime = LocalDateTime.now()
         def graph = NetworkGraphService.getNetworkGraph(null, null)
         def node = NetworkGraphUtil.findDeploymentNode(graph, deploymentUid)
         then:
@@ -495,7 +501,8 @@ class NetworkFlowTest extends BaseSpecification {
 
         when: "External IPs is enabled"
         CollectorUtil.enableExternalIps(orchestrator)
-        sleep 65000 // Wait for the collector scrape interval and for sensor to send connections to sensor
+        sleep 30000 // Wait for the collector scrape interval
+        waitForUpdate(updateTime, 30) // Wait for a network graph update
 
         edges = NetworkGraphUtil.checkForEdge(deploymentUid, Constants.INTERNET_EXTERNAL_SOURCE_ID)
         graph = NetworkGraphService.getNetworkGraph()
@@ -516,7 +523,8 @@ class NetworkFlowTest extends BaseSpecification {
         when: "External IPs is disabled after being enabled"
         // Disable external IPs at the end of the test and check the relevant edge
         CollectorUtil.disableExternalIps(orchestrator)
-        sleep 65000 // Wait for the collector scrape interval and for sensor to send connections to sensor
+        sleep 30000 // Wait for the collector scrape interval
+        waitForUpdate(updateTime, 30) // Wait for a network graph update
 
         edges = NetworkGraphUtil.checkForEdge(deploymentUid, Constants.INTERNET_EXTERNAL_SOURCE_ID)
         graph = NetworkGraphService.getNetworkGraph()
@@ -1045,6 +1053,16 @@ class NetworkFlowTest extends BaseSpecification {
         "Undo applied policies"
         NetworkPolicyService.applyGeneratedNetworkPolicy(
                 NetworkPolicyService.undoGeneratedNetworkPolicy().undoModification)
+    }
+
+    // Assuming that an update occurs at once every intervalSeconds and an update
+    // occured at updateTime, waits until the next update, with a safety margin.
+    private waitForUpdate(LocalDateTime updateTime, int intervalSeconds, int safetyMargin = 5) {
+        def now = LocalDateTime.now()
+        def duration = Duration.between(updateTime, now).seconds
+        def numIntervals = duration.intdiv(intervalSeconds) + 1
+        def waitTime = (numIntervals * intervalSeconds - duration + safetyMargin) * 1000
+        sleep waitTime
     }
 
     private static getNode(String deploymentId, boolean withListenPorts, int timeoutSeconds = 90) {
