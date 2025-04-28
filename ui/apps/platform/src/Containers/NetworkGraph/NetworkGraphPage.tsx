@@ -16,7 +16,7 @@ import {
 import useDeepCompareEffect from 'use-deep-compare-effect';
 
 import { nonGlobalResourceNamesForNetworkGraph } from 'routePaths';
-import { timeWindows } from 'constants/timeWindows';
+import { timeWindows, TimeWindow } from 'constants/timeWindows';
 import useFetchClustersForPermissions from 'hooks/useFetchClustersForPermissions';
 import useFetchDeploymentCount from 'hooks/useFetchDeploymentCount';
 import usePermissions from 'hooks/usePermissions';
@@ -96,7 +96,7 @@ function NetworkGraphPage() {
     );
 
     const [isLoading, setIsLoading] = useState(false);
-    const [timeWindow, setTimeWindow] = useState<(typeof timeWindows)[number]>(timeWindows[0]);
+    const [timeWindow, setTimeWindow] = useState<TimeWindow>(timeWindows[0]);
     const [lastUpdatedTime, setLastUpdatedTime] = useState<string>('');
     const [isCIDRBlockFormOpen, setIsCIDRBlockFormOpen] = useState(false);
     const [isBannerDismissed, setIsBannerDismissed] = useState(false);
@@ -439,6 +439,7 @@ function NetworkGraphPage() {
                         simulation={simulation}
                         clusterDeploymentCount={deploymentCount || 0}
                         scopeHierarchy={scopeHierarchy}
+                        timeWindow={timeWindow}
                     />
                 )}
                 <CIDRFormModal

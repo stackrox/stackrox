@@ -496,6 +496,7 @@ export function getExternalIpsFlowsMetadata(
     clusterId,
     namespaces,
     deployments,
+    fromTimestamp,
     { sortOption, page, perPage, advancedFilters }
 ) {
     const searchFilter = {
@@ -510,8 +511,11 @@ export function getExternalIpsFlowsMetadata(
         ...advancedFilters,
     };
     const params = getListQueryParams({ searchFilter, sortOption, page, perPage });
+    const sinceParam = fromTimestamp.toISOString();
     return axios
-        .get(`${networkFlowBaseUrl}/cluster/${clusterId}/externalentities/metadata?${params}`)
+        .get(
+            `${networkFlowBaseUrl}/cluster/${clusterId}/externalentities/metadata?since=${sinceParam}&${params}`
+        )
         .then((response) => response.data);
 }
 
