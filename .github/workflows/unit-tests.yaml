@@ -283,7 +283,6 @@ jobs:
     name: Post failure message to Slack
     runs-on: ubuntu-latest
     needs:
-      - go
       - go-bench
       - go-postgres
       - local-roxctl-tests
