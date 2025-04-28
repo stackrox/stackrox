@@ -30,6 +30,7 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 				// Only appearance and disappearance of a SecuredCluster resource can influence whether
 				// an init bundle should be created by the Central controller.
 				utils.CreateAndDeleteOnlyPredicate[*platform.SecuredCluster]{})),
+		pkgReconciler.WithPreExtension(extensions.ReconcileScannerV4FeatureDefaultsExtension(mgr.GetClient())),
 		pkgReconciler.WithPreExtension(extensions.ReconcileCentralTLSExtensions(mgr.GetClient(), mgr.GetAPIReader())),
 		pkgReconciler.WithPreExtension(extensions.ReconcileCentralDBPasswordExtension(mgr.GetClient(), mgr.GetAPIReader())),
 		pkgReconciler.WithPreExtension(extensions.ReconcileScannerDBPasswordExtension(mgr.GetClient(), mgr.GetAPIReader())),
