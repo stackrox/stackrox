@@ -5,15 +5,6 @@ import (
 )
 
 type aggregationKey string // e.g. "Severity|IsFixable"
-type expression struct {
-	label string
-	op    string
-	arg   string
-}
-
-func (e *expression) String() string {
-	return e.label + e.op + e.arg
-}
 
 var opNames = map[rune]string{
 	'=': "_eq_",
@@ -54,11 +45,11 @@ func makeMetricName(key aggregationKey) metricName {
 //	"Namespace=abc,Severity": map[metricName][]expression{
 //	  "Namespace_eq_abc_Severity_total": {"Namespace=abc", "Severity"},
 //	}
-func parseAggregationExpressions(keys string) map[metricName][]expression {
-	result := make(map[metricName][]expression)
+func parseAggregationExpressions(keys string) map[metricName][]*expression {
+	result := make(map[metricName][]*expression)
 
 	for _, key := range strings.FieldsFunc(keys, func(r rune) bool { return r == '|' }) {
-		var expressions []expression
+		var expressions []*expression
 		var keys []string
 		for _, expr := range strings.FieldsFunc(key, func(r rune) bool { return r == ',' }) {
 			expr := makeExpression(expr)
@@ -85,11 +76,11 @@ func parseAggregationExpressions(keys string) map[metricName][]expression {
 // Example:
 //
 //	"Cluster=*prod,Deployment" => "pre-prod|backend", {"Cluster": "pre-prod", "Deployment": "backend")}
-func makeAggregationKeyInstance(expressions []expression, labelsGetter func(string) string) (metricKey, map[string]string) {
+func makeAggregationKeyInstance(expressions []*expression, labelsGetter func(string) string) (metricKey, map[string]string) {
 	sb := strings.Builder{}
 	labels := make(map[string]string)
 	for i, expr := range expressions {
-		value, ok := filter(expr, labelsGetter)
+		value, ok := expr.match(labelsGetter)
 		if !ok {
 			return "", nil
 		}
@@ -111,7 +102,7 @@ func makeAggregationKeyInstance(expressions []expression, labelsGetter func(stri
 // Example:
 //
 //	"Cluster=*prod,Namespace" => {"Cluster", "Namespace"}
-func getMetricLabels(expressions []expression) []string {
+func getMetricLabels(expressions []*expression) []string {
 	var labels []string
 	for _, expression := range expressions {
 		labels = append(labels, expression.label)

@@ -50,7 +50,7 @@ type vulnerabilityMetricsImpl struct {
 	// Example:
 	//
 	//   "Namespace_eq_abc_Severity_total": {"Namespace=abc", "Severity"},
-	metricExpressions map[metricName][]expression
+	metricExpressions map[metricName][]*expression
 	trackFunc         func(metricName string, labels map[string]string, total int)
 }
 

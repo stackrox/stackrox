@@ -18,8 +18,8 @@ func Test_makeMetricName(t *testing.T) {
 	}
 }
 
-func str2expr(expr ...string) []expression {
-	result := make([]expression, 0, len(expr))
+func str2expr(expr ...string) []*expression {
+	result := make([]*expression, 0, len(expr))
 	for _, e := range expr {
 		result = append(result, makeExpression(e))
 	}
@@ -27,7 +27,7 @@ func str2expr(expr ...string) []expression {
 }
 
 func Test_parseAggregationExpressions(t *testing.T) {
-	cases := map[string]map[metricName][]expression{
+	cases := map[string]map[metricName][]*expression{
 		// Default case:
 		"Cluster,Namespace,Severity": {
 			"Cluster_Namespace_Severity_total": str2expr("Cluster", "Namespace", "Severity"),
@@ -87,11 +87,11 @@ func Test_makeAggregationKeyInstance(t *testing.T) {
 
 func Test_getMetricNames(t *testing.T) {
 	cases := []struct {
-		expressions []expression
+		expressions []*expression
 		names       []string
 	}{
 		{
-			[]expression{},
+			[]*expression{},
 			[]string(nil),
 		},
 		{

@@ -34,8 +34,8 @@ func (h *vulnerabilityMetricsImpl) trackDeployment(ctx context.Context, aggregat
 		return nil
 	}
 
-	forEachVuln(images, func(image *storage.Image, imageName *storage.ImageName, vuln *storage.EmbeddedVulnerability) {
-		labelGetter := makeVulnerabilityLabels(image, imageName, vuln,
+	forEachVuln(images, func(image *storage.Image, imageName *storage.ImageName, component *storage.EmbeddedImageScanComponent, vuln *storage.EmbeddedVulnerability) {
+		labelGetter := makeVulnerabilityLabels(image, imageName, component, vuln,
 			deployment.GetClusterName(),
 			deployment.GetNamespace(),
 			deployment.GetName())
@@ -57,12 +57,12 @@ func (h *vulnerabilityMetricsImpl) trackDeployment(ctx context.Context, aggregat
 	return nil
 }
 
-func forEachVuln(images []*storage.Image, f func(*storage.Image, *storage.ImageName, *storage.EmbeddedVulnerability)) {
+func forEachVuln(images []*storage.Image, f func(*storage.Image, *storage.ImageName, *storage.EmbeddedImageScanComponent, *storage.EmbeddedVulnerability)) {
 	for _, image := range images {
 		for _, component := range image.GetScan().GetComponents() {
 			for _, vuln := range component.GetVulns() {
 				for _, name := range image.GetNames() {
-					f(image, name, vuln)
+					f(image, name, component, vuln)
 				}
 			}
 		}
@@ -76,7 +76,7 @@ func isFixable(vuln *storage.EmbeddedVulnerability) string {
 	return "true"
 }
 
-func makeVulnerabilityLabels(image *storage.Image, name *storage.ImageName, vuln *storage.EmbeddedVulnerability, clusterName string, namespaceName string, deploymentName string) func(string) string {
+func makeVulnerabilityLabels(image *storage.Image, name *storage.ImageName, component *storage.EmbeddedImageScanComponent, vuln *storage.EmbeddedVulnerability, clusterName string, namespaceName string, deploymentName string) func(string) string {
 	return func(label string) string {
 		switch label {
 		// Unique resource key (no component):
@@ -94,6 +94,10 @@ func makeVulnerabilityLabels(image *storage.Image, name *storage.ImageName, vuln
 			return name.GetRemote()
 		case "ImageTag":
 			return name.GetTag()
+		case "Component":
+			return component.GetName()
+		case "ComponentVersion":
+			return component.GetVersion()
 		// Values:
 		case "CVE":
 			return vuln.GetCve()

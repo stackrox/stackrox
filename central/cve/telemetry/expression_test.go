@@ -7,7 +7,7 @@ import (
 )
 
 func Test_makeExpression(t *testing.T) {
-	cases := map[string]expression{
+	cases := map[string]*expression{
 		"no_expr":      {"no_expr", "", ""},
 		"a=b":          {"a", "=", "b"},
 		"a!=b":         {"a", "!=", "b"},
@@ -15,18 +15,18 @@ func Test_makeExpression(t *testing.T) {
 		"b<something":  {"b", "<", "something"},
 		"b>something":  {"b", ">", "something"},
 		"AbX_Ze>=5.43": {"AbX_Ze", ">=", "5.43"},
-		"abc!def":      {"abc", "", "!def"},
-		"=":            {"", "=", ""},
-		"=arg":         {"", "=", "arg"},
-		"label=":       {"label", "=", ""},
-		"":             {"", "", ""},
+		"abc!def":      nil,
+		"=":            nil,
+		"=arg":         nil,
+		"label=":       nil,
+		"":             nil,
 	}
 	for expr, result := range cases {
 		assert.Equal(t, result, makeExpression(expr), expr)
 	}
 }
 
-func Test_filter(t *testing.T) {
+func Test_expression_match(t *testing.T) {
 	testLabels := map[string]string{
 		"string": "value",
 		"number": "3.4",
@@ -39,31 +39,31 @@ func Test_filter(t *testing.T) {
 	}
 
 	t.Run("test label and value", func(t *testing.T) {
-		value, ok := filter(makeExpression("string=value"), labels)
+		value, ok := makeExpression("string=value").match(labels)
 		assert.True(t, ok)
 		assert.Equal(t, "value", value)
 
-		value, ok = filter(makeExpression("number>=1.0"), labels)
+		value, ok = makeExpression("number>=1.0").match(labels)
 		assert.True(t, ok)
 		assert.Equal(t, "3.4", value)
 	})
 
 	t.Run("test missing label", func(t *testing.T) {
-		value, ok := filter(makeExpression("nonexistent=value"), labels)
+		value, ok := makeExpression("nonexistent=value").match(labels)
 		assert.Equal(t, "", value)
 		assert.False(t, ok)
 	})
 	t.Run("test empty label value", func(t *testing.T) {
-		value, ok := filter(makeExpression("empty=value"), labels)
+		value, ok := makeExpression("empty=value").match(labels)
 		assert.Equal(t, "", value)
 		assert.False(t, ok)
 
-		value, ok = filter(makeExpression("empty="), labels)
+		value, ok = makeExpression("empty=").match(labels)
 		assert.Equal(t, "", value)
-		assert.True(t, ok)
+		assert.False(t, ok)
 	})
 	t.Run("test expression with only label", func(t *testing.T) {
-		value, ok := filter(makeExpression("string"), labels)
+		value, ok := makeExpression("string").match(labels)
 		assert.Equal(t, "value", value)
 		assert.True(t, ok)
 	})
@@ -72,19 +72,19 @@ func Test_filter(t *testing.T) {
 		for _, expr := range []string{
 			"string=value",
 			"string=*alu?",
-			"number=3.4",
+			"number=3.40",
 			"bool=false",
 		} {
-			_, ok := filter(makeExpression(expr), labels)
+			_, ok := makeExpression(expr).match(labels)
 			assert.True(t, ok, expr)
 		}
 		for _, expr := range []string{
 			"string=value1",
 			"string=*2",
-			"number=3.40", // Compared as string.
+			"number=3.40.1",
 			"bool=true",
 		} {
-			_, ok := filter(makeExpression(expr), labels)
+			_, ok := makeExpression(expr).match(labels)
 			assert.False(t, ok, expr)
 		}
 	})
@@ -96,7 +96,7 @@ func Test_filter(t *testing.T) {
 			"number!=3.5",
 			"bool!=true",
 		} {
-			_, ok := filter(makeExpression(expr), labels)
+			_, ok := makeExpression(expr).match(labels)
 			assert.True(t, ok, expr)
 		}
 		for _, expr := range []string{
@@ -105,7 +105,7 @@ func Test_filter(t *testing.T) {
 			"number!=3.4",
 			"bool!=false",
 		} {
-			_, ok := filter(makeExpression(expr), labels)
+			_, ok := makeExpression(expr).match(labels)
 			assert.False(t, ok, expr)
 		}
 	})
@@ -117,7 +117,7 @@ func Test_filter(t *testing.T) {
 			"number>-1",
 			"number>=3.4",
 		} {
-			_, ok := filter(makeExpression(expr), labels)
+			_, ok := makeExpression(expr).match(labels)
 			assert.True(t, ok, expr)
 		}
 		for _, expr := range []string{
@@ -126,7 +126,7 @@ func Test_filter(t *testing.T) {
 			"number>+4334",
 			"number>=3.41",
 		} {
-			_, ok := filter(makeExpression(expr), labels)
+			_, ok := makeExpression(expr).match(labels)
 			assert.False(t, ok, expr)
 		}
 	})
@@ -138,7 +138,7 @@ func Test_filter(t *testing.T) {
 			"number<+4334",
 			"number<=3.4",
 		} {
-			_, ok := filter(makeExpression(expr), labels)
+			_, ok := makeExpression(expr).match(labels)
 			assert.True(t, ok, expr)
 		}
 		for _, expr := range []string{
@@ -147,20 +147,31 @@ func Test_filter(t *testing.T) {
 			"number<-1",
 			"number<=3.3",
 		} {
-			_, ok := filter(makeExpression(expr), labels)
+			_, ok := makeExpression(expr).match(labels)
 			assert.False(t, ok, expr)
+		}
+	})
+
+	t.Run("string comparison", func(t *testing.T) {
+		for _, expr := range []string{
+			"number<3.a",
+			"number!=3,4",
+			"string>val",
+			"string<=value1",
+			"number<>3.4", // {"number", "<", ">3.4"}
+		} {
+			_, ok := makeExpression(expr).match(labels)
+			assert.True(t, ok, expr)
 		}
 	})
 
 	t.Run("bad op", func(t *testing.T) {
 		for _, expr := range []string{
-			"number<a",
 			"number<",
 			"<34",
-			"number<>3.4",
 			"number~a",
 		} {
-			_, ok := filter(makeExpression(expr), labels)
+			_, ok := makeExpression(expr).match(labels)
 			assert.False(t, ok, expr)
 		}
 	})
