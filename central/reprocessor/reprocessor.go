@@ -61,7 +61,7 @@ var (
 	imageClusterIDFieldPath = imageMapping.ImageDeploymentOptions.MustGet(search.ClusterID.String()).GetFieldPath()
 
 	allImagesQuery = search.NewQueryBuilder().AddStringsHighlighted(search.ClusterID, search.WildcardString).
-		ProtoQuery()
+			ProtoQuery()
 
 	imagesWithSignaturesQuery = search.NewQueryBuilder().
 		// We take all images into account irrespective whether they have a cluster associated with them
