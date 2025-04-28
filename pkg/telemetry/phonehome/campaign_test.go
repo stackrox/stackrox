@@ -57,53 +57,17 @@ func TestCampaignFulfilled(t *testing.T) {
 
 	t.Run("Single criterion", func(t *testing.T) {
 		campaigns := map[string]APICallCampaign{
-			"Code": []*APICallCampaignCriterion{
-				{
-					Codes: []int32{202},
-				},
-			},
-			"Codes": []*APICallCampaignCriterion{
-				{
-					Codes: []int32{100, 202, 400},
-				},
-			},
-			"Method": []*APICallCampaignCriterion{
-				{
-					Method: glob.Pattern("GET").Ptr(),
-				},
-			},
-			"Methods": []*APICallCampaignCriterion{
-				{
-					Method: glob.Pattern("{POST,GET,PUT}").Ptr(),
-				},
-			},
-			"PathPattern": []*APICallCampaignCriterion{
-				{
-					Path: glob.Pattern("/some/test*").Ptr(),
-				},
-			},
-			"PathPatterns": []*APICallCampaignCriterion{
-				{
-					Path: glob.Pattern("{/x,/some/test*,/y}").Ptr(),
-				},
-			},
-			"UserAgent": []*APICallCampaignCriterion{
-				{
-					Headers: map[string]glob.Pattern{
-						"User-Agent": "*test*",
-					},
-				},
-			},
-			"UserAgents": []*APICallCampaignCriterion{
-				{
-					Headers: map[string]glob.Pattern{"User-Agent": "*x*"},
-				},
-				{
-					Headers: map[string]glob.Pattern{"User-Agent": "*test*"},
-				}, {
-					Headers: map[string]glob.Pattern{"User-Agent": "*y*"},
-				},
-			},
+			"Code":         {(Codes(202))},
+			"Codes":        {Codes(100, 202, 400)},
+			"Method":       {MethodPattern("GET")},
+			"Methods":      {MethodPattern("{POST,GET,PUT}")},
+			"PathPattern":  {PathPattern("/some/test*")},
+			"PathPatterns": {PathPattern("{/x,/some/test*,/y}")},
+			"UserAgent":    {HeaderPattern("User-Agent", "*test*")},
+			"UserAgents": {
+				HeaderPattern("User-Agent", "*x*"),
+				HeaderPattern("User-Agent", "*test*"),
+				HeaderPattern("User-Agent", "*y*")},
 		}
 
 		t.Run("Test fulfilled", func(t *testing.T) {
@@ -279,9 +243,7 @@ func TestCompile(t *testing.T) {
 			errorMessage: "",
 		},
 		{
-			criterion: APICallCampaignCriterion{
-				Path: glob.Pattern("[b-a]").Ptr(),
-			},
+			criterion:    *PathPattern("[b-a]"),
 			errorMessage: `error parsing path pattern: failed to compile "[b-a]": hi character 'a' should be greater than lo 'b'`,
 		},
 	}

@@ -70,3 +70,27 @@ func (c APICallCampaign) CountFulfilled(rp *RequestParams, f func(cc *APICallCam
 	}
 	return fulfilled
 }
+
+// Codes builds a codes list criterion.
+func Codes(codes ...int32) *APICallCampaignCriterion {
+	return &APICallCampaignCriterion{Codes: codes}
+}
+
+// MethodPattern builds a method pattern criterion.
+func MethodPattern(pattern string) *APICallCampaignCriterion {
+	return &APICallCampaignCriterion{Method: glob.Pattern(pattern).Ptr()}
+}
+
+// PathPattern builds a path pattern criterion.
+func PathPattern(pattern string) *APICallCampaignCriterion {
+	return &APICallCampaignCriterion{Path: glob.Pattern(pattern).Ptr()}
+}
+
+// HeaderPattern builds a header pattern criterion.
+func HeaderPattern(header string, pattern string) *APICallCampaignCriterion {
+	return &APICallCampaignCriterion{
+		Headers: map[string]glob.Pattern{
+			header: glob.Pattern(pattern),
+		},
+	}
+}

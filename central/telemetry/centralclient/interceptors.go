@@ -39,26 +39,18 @@ var (
 				snowIntegrationHeader: phonehome.NoHeaderOrAnyValue,
 			},
 		},
-		{
-			// Capture requests from GitHub action user agents.
-			// See https://github.com/stackrox/central-login/blob/68785c129f3faba128d820cfe767558287be53a3/src/main.ts#L73
-			// and https://github.com/stackrox/roxctl-installer-action/blob/47fb4f5b275066b8322369e6e33fa010915b0d13/action.yml#L59.
-			Headers: map[string]glob.Pattern{
-				userAgentHeaderKey: glob.Pattern("*-GHA*"),
-			},
-		},
+		// Capture requests from GitHub action user agents.
+		// See https://github.com/stackrox/central-login/blob/68785c129f3faba128d820cfe767558287be53a3/src/main.ts#L73
+		// and https://github.com/stackrox/roxctl-installer-action/blob/47fb4f5b275066b8322369e6e33fa010915b0d13/action.yml#L59.
+		phonehome.HeaderPattern(userAgentHeaderKey, "*-GHA*"),
 		{
 			// Capture SBOM generation requests. Corresponding handler in central/image/service/http_handler.go.
 			Path:    glob.Pattern("/api/v1/images/sbom").Ptr(),
 			Method:  glob.Pattern("POST").Ptr(),
 			Headers: map[string]glob.Pattern{userAgentHeaderKey: phonehome.NoHeaderOrAnyValue},
 		},
-		{
-			// Capture Jenkins Plugin requests
-			Headers: map[string]glob.Pattern{
-				userAgentHeaderKey: "*stackrox-container-image-scanner*",
-			},
-		},
+		// Capture Jenkins Plugin requests
+		phonehome.HeaderPattern(userAgentHeaderKey, "*stackrox-container-image-scanner*"),
 		apiPathsCampaign(),
 		userAgentsCampaign(),
 	}
@@ -88,11 +80,7 @@ func apiPathsCampaign() *phonehome.APICallCampaignCriterion {
 // environment variable.
 func userAgentsCampaign() *phonehome.APICallCampaignCriterion {
 	if pattern := userAgentsList.Setting(); pattern != "" {
-		return &phonehome.APICallCampaignCriterion{
-			Headers: map[string]glob.Pattern{
-				userAgentHeaderKey: glob.Pattern("{" + pattern + "}"),
-			},
-		}
+		return phonehome.HeaderPattern(userAgentHeaderKey, "{"+pattern+"}")
 	}
 	return nil
 }
