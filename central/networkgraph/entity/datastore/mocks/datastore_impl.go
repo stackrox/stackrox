@@ -39,18 +39,14 @@ func (m *MockNetworkEntityPusher) EXPECT() *MockNetworkEntityPusherMockRecorder 
 	return m.recorder
 }
 
-// DoPushExternalNetworkEntitiesToSensor mocks base method.
-func (m *MockNetworkEntityPusher) DoPushExternalNetworkEntitiesToSensor(clusters ...string) {
+// PushExternalNetworkEntitiesToSensor mocks base method.
+func (m *MockNetworkEntityPusher) PushExternalNetworkEntitiesToSensor(clusters []string) {
 	m.ctrl.T.Helper()
-	varargs := []any{}
-	for _, a := range clusters {
-		varargs = append(varargs, a)
-	}
-	m.ctrl.Call(m, "DoPushExternalNetworkEntitiesToSensor", varargs...)
+	m.ctrl.Call(m, "PushExternalNetworkEntitiesToSensor", clusters)
 }
 
-// DoPushExternalNetworkEntitiesToSensor indicates an expected call of DoPushExternalNetworkEntitiesToSensor.
-func (mr *MockNetworkEntityPusherMockRecorder) DoPushExternalNetworkEntitiesToSensor(clusters ...any) *gomock.Call {
+// PushExternalNetworkEntitiesToSensor indicates an expected call of PushExternalNetworkEntitiesToSensor.
+func (mr *MockNetworkEntityPusherMockRecorder) PushExternalNetworkEntitiesToSensor(clusters any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DoPushExternalNetworkEntitiesToSensor", reflect.TypeOf((*MockNetworkEntityPusher)(nil).DoPushExternalNetworkEntitiesToSensor), clusters...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PushExternalNetworkEntitiesToSensor", reflect.TypeOf((*MockNetworkEntityPusher)(nil).PushExternalNetworkEntitiesToSensor), clusters)
 }
