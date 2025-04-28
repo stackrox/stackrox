@@ -1,10 +1,14 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import FailedPoliciesAcrossDeployment from 'Containers/ConfigManagement/Entity/widgets/FailedPoliciesAcrossDeployment';
 import ViolationsAcrossThisDeployment from 'Containers/Workflow/widgets/ViolationsAcrossThisDeployment';
 import entityTypes from 'constants/entityTypes';
 
-const DeploymentFindings = ({ entityContext = {}, deploymentID }) => {
+export type DeploymentFindingsProps = {
+    deploymentID: string;
+    entityContext?: Partial<Record<string, string>>;
+};
+
+function DeploymentFindings({ entityContext = {}, deploymentID }: DeploymentFindingsProps) {
     if (entityContext[entityTypes.POLICY]) {
         return (
             <ViolationsAcrossThisDeployment
@@ -19,15 +23,6 @@ const DeploymentFindings = ({ entityContext = {}, deploymentID }) => {
             <FailedPoliciesAcrossDeployment deploymentID={deploymentID} />
         </div>
     );
-};
-
-DeploymentFindings.propTypes = {
-    entityContext: PropTypes.shape({}),
-    deploymentID: PropTypes.string.isRequired,
-};
-
-DeploymentFindings.defaultProps = {
-    entityContext: {},
-};
+}
 
 export default DeploymentFindings;
