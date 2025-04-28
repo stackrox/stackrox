@@ -96,8 +96,6 @@ import (
 	"github.com/stackrox/rox/central/helmcharts"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	imageService "github.com/stackrox/rox/central/image/service"
-	imageComponentDataStore "github.com/stackrox/rox/central/imagecomponent/datastore"
-	imageComponentV2DataStore "github.com/stackrox/rox/central/imagecomponent/v2/datastore"
 	"github.com/stackrox/rox/central/imageintegration"
 	iiDatastore "github.com/stackrox/rox/central/imageintegration/datastore"
 	imageintegrationsDS "github.com/stackrox/rox/central/imageintegration/datastore"
@@ -222,7 +220,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/observe"
 	"github.com/stackrox/rox/pkg/sac/resources"
-	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	pkgVersion "github.com/stackrox/rox/pkg/version"
@@ -661,28 +658,10 @@ func registerDelayedIntegrations(integrationsInput []iiStore.DelayedIntegration)
 		integrations[k] = v
 	}
 	ds := iiDatastore.Singleton()
-	newCVEDataModelFirstStart := false
-	if features.FlattenCVEData.Enabled() {
-		ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Image),
-		))
-		log.Info("ROX_FLATTEN_CVE_DATA was set to true")
-		v1ComponentDataStore := imageComponentDataStore.Singleton()
-		v2ComponentDataStore := imageComponentV2DataStore.Singleton()
-		count, err := v1ComponentDataStore.Count(ctx, pkgSearch.EmptyQuery())
-		v2Count, v2Err := v2ComponentDataStore.Count(ctx, pkgSearch.EmptyQuery())
-		if err == nil && v2Err == nil && count > 0 && v2Count == 0 {
-			log.Info("This is the first time starting Central with the flattened CVE data model, we will reprocess all image integrations")
-			// If there is an error, carry on, as this rescan check is best effort
-			newCVEDataModelFirstStart = true
-		}
-	}
-	log.Infof("newCVEDataModelFirstStart: %v", newCVEDataModelFirstStart)
 	for len(integrations) > 0 {
 		for idx, integration := range integrations {
 			_, exists, _ := ds.GetImageIntegration(imageIntegrationContext, integration.Integration.GetId())
-			if exists { // && !newCVEDataModelFirstStart
+			if exists {
 				delete(integrations, idx)
 				continue
 			}

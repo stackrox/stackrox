@@ -193,8 +193,6 @@ func (m *manager) GetConnection(clusterID string) SensorConnection {
 	m.connectionsByClusterIDMutex.RLock()
 	defer m.connectionsByClusterIDMutex.RUnlock()
 
-	log.Infof("GetConnection for cluster %s", clusterID)
-	log.Infof("m.connectionsByClusterID: %v", m.connectionsByClusterID)
 	conn := m.connectionsByClusterID[clusterID].connection
 	if conn == nil {
 		return nil
@@ -259,8 +257,6 @@ func (m *manager) CloseConnection(clusterID string) {
 func (m *manager) HandleConnection(ctx context.Context, sensorHello *central.SensorHello, cluster *storage.Cluster, eventPipeline pipeline.ClusterPipeline, server central.SensorService_CommunicateServer) error {
 	clusterID := cluster.GetId()
 	clusterName := cluster.GetName()
-
-	log.Info("Handling connection from cluster %s", clusterID)
 
 	if !m.initSyncMgr.Add(clusterID) {
 		return errors.Wrap(errox.ResourceExhausted, "Central has reached the maximum number of allowed Sensors in init sync state")

@@ -225,12 +225,9 @@ func (e *enricherImpl) updateImageWithExistingImage(image *storage.Image, existi
 // EnrichImage enriches an image with the integration set present.
 func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext EnrichmentContext, image *storage.Image) (EnrichmentResult, error) {
 	shouldDelegate, err := e.delegateEnrichImage(ctx, enrichContext, image)
-	log.Info("here")
 	var delegateErr error
 	if shouldDelegate {
-		log.Info("here")
 		if err == nil {
-			log.Info("here")
 			return EnrichmentResult{ImageUpdated: true, ScanResult: ScanSucceeded}, nil
 		}
 		if errors.Is(err, delegatedregistry.ErrNoClusterSpecified) {
@@ -239,7 +236,6 @@ func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext Enrichment
 			delegateErr = errors.New("no cluster specified for delegated scanning and Central scan attempt failed")
 		} else {
 			// This enrichment should have been delegated, short circuit.
-			log.Info("here")
 			return EnrichmentResult{ImageUpdated: false, ScanResult: ScanNotDone}, err
 		}
 	} else if err != nil {
@@ -270,7 +266,6 @@ func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext Enrichment
 	// here.
 	if err != nil {
 		errorList.AddErrors(err, delegateErr)
-		log.Info("here")
 		return EnrichmentResult{ImageUpdated: didUpdateMetadata, ScanResult: ScanNotDone}, errorList.ToError()
 	}
 
@@ -280,7 +275,6 @@ func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext Enrichment
 	// This makes sure that we fetch any existing image only once from database.
 	useExistingScanIfPossible := e.updateImageFromDatabase(ctx, image, enrichContext.FetchOpt)
 
-	log.Infof("useExistingScanIfPossible: %v", useExistingScanIfPossible)
 	scanResult, err := e.enrichWithScan(ctx, enrichContext, image, useExistingScanIfPossible)
 	errorList.AddError(err)
 	if scanResult == ScanNotDone && image.GetScan() == nil {
@@ -316,11 +310,6 @@ func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext Enrichment
 		errorList.AddError(delegateErr)
 	}
 
-	log.Info("here")
-	log.Infof("result: %v", EnrichmentResult{
-		ImageUpdated: updated,
-		ScanResult:   scanResult,
-	})
 	return EnrichmentResult{
 		ImageUpdated: updated,
 		ScanResult:   scanResult,
@@ -358,8 +347,7 @@ func (e *enricherImpl) updateImageFromDatabase(ctx context.Context, img *storage
 func (e *enricherImpl) enrichWithMetadata(ctx context.Context, enrichmentContext EnrichmentContext, image *storage.Image) (bool, error) {
 	// Attempt to short-circuit before checking registries.
 	metadataOutOfDate := metadataIsOutOfDate(image.GetMetadata())
-	if !metadataOutOfDate && !features.FlattenCVEData.Enabled() {
-		log.Infof("metadata was not out of date for image: %s", image.GetName())
+	if !metadataOutOfDate {
 		return false, nil
 	}
 
@@ -985,7 +973,6 @@ func (e *enricherImpl) enrichImageWithScanner(ctx context.Context, image *storag
 
 	scanStartTime := time.Now()
 	scan, err := scanner.GetScan(image)
-	log.Infof("Scan result: %v, %v", scan, err)
 	e.metrics.SetScanDurationTime(scanStartTime, scanner.Name(), err)
 	if err != nil {
 		return ScanNotDone, errors.Wrapf(err, "scanning %q with scanner %q", image.GetName().GetFullName(), scanner.Name())

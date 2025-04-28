@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/cenkalti/backoff/v3"
 	"github.com/pkg/errors"
 	activeComponentsUpdater "github.com/stackrox/rox/central/activecomponent/updater"
 	administrationEvents "github.com/stackrox/rox/central/administration/events"
@@ -317,7 +316,6 @@ func (l *loopImpl) runReprocessingForObjects(entityType string, getIDsFunc func(
 
 func (l *loopImpl) reprocessImage(id string, fetchOpt imageEnricher.FetchOption,
 	reprocessingFunc imageReprocessingFunc) (*storage.Image, bool) {
-	log.Info("here")
 	image, exists, err := l.images.GetImage(allAccessCtx, id)
 	if err != nil {
 		log.Errorw("Error fetching image from database", logging.ImageID(id), logging.Err(err))
@@ -335,12 +333,10 @@ func (l *loopImpl) reprocessImage(id string, fetchOpt imageEnricher.FetchOption,
 		log.Errorw("Error enriching image", logging.ImageName(image.GetName().GetFullName()), logging.Err(err))
 		return nil, false
 	}
-	log.Infof("reprocessingFunc result: %v", result)
 	if result.ImageUpdated {
 		if err := l.risk.CalculateRiskAndUpsertImage(image); err != nil {
 			log.Errorw("Error upserting image into datastore",
 				logging.ImageName(image.GetName().GetFullName()), logging.Err(err))
-			log.Info("here")
 			return nil, false
 		}
 		// We need to fetch the image again to make sure all fields are populated.
@@ -349,17 +345,14 @@ func (l *loopImpl) reprocessImage(id string, fetchOpt imageEnricher.FetchOption,
 		newImage, exists, err := l.images.GetImage(allAccessCtx, id)
 		if err != nil {
 			log.Errorw("Error fetching image from database", logging.ImageName(image.GetName().GetFullName()), logging.Err(err))
-			log.Info("here")
 			return nil, false
 		}
 		if !exists {
 			log.Errorw("The image was not found after enrichement", logging.ImageName(image.GetName().GetFullName()))
 			return nil, false
 		}
-		log.Info("here")
 		return newImage, true
 	}
-	log.Info("here")
 	return image, true
 }
 
@@ -375,15 +368,12 @@ func (l *loopImpl) getActiveImageIDs() ([]string, error) {
 
 func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.FetchOption,
 	imgReprocessingFunc imageReprocessingFunc, imageQuery *v1.Query) {
-	log.Info("here")
 	if l.stopSig.IsDone() {
 		return
 	}
-	log.Info("here")
 	results, err := l.images.Search(allAccessCtx, imageQuery)
 	if err != nil {
 		log.Errorw("Error searching for active image IDs", logging.Err(err))
-		log.Info("here")
 		return
 	}
 
@@ -399,7 +389,6 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 		wg.Add(1)
 		if err := sema.Acquire(concurrency.AsContext(&l.stopSig), 1); err != nil {
 			log.Errorw("Reprocessing stopped", logging.Err(err))
-			log.Info("here")
 			return
 		}
 		// Duplicates can exist if the image is within multiple deployments
@@ -408,9 +397,7 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 			defer sema.Release(1)
 			defer wg.Add(-1)
 
-			log.Info("here")
 			image, successfullyProcessed := l.reprocessImage(id, fetchOpt, imgReprocessingFunc)
-			log.Info("here")
 			if !successfullyProcessed {
 				return
 			}
@@ -420,26 +407,15 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 			utils.StripCVEDescriptionsNoClone(image)
 
 			for clusterID := range clusterIDs {
-				b := backoff.NewExponentialBackOff()
-				b.InitialInterval = time.Second
-				b.RandomizationFactor = 0.25
-				b.MaxInterval = time.Second * 5
-				b.Multiplier = 2
-				b.MaxElapsedTime = time.Second * 10
-				err = backoff.Retry(func() error {
-					conn := l.connManager.GetConnection(clusterID)
-					log.Infof("clusterID: %v, conn: %v", clusterID, conn)
-					if conn == nil {
-						log.Info("here")
-						return errors.New("connection unavailable")
-					}
-					err := conn.InjectMessage(concurrency.AsContext(&l.stopSig), &central.MsgToSensor{
-						Msg: &central.MsgToSensor_UpdatedImage{
-							UpdatedImage: image,
-						},
-					})
-					return err
-				}, b)
+				conn := l.connManager.GetConnection(clusterID)
+				if conn == nil {
+					continue
+				}
+				err := conn.InjectMessage(concurrency.AsContext(&l.stopSig), &central.MsgToSensor{
+					Msg: &central.MsgToSensor_UpdatedImage{
+						UpdatedImage: image,
+					},
+				})
 				if err != nil {
 					log.Errorw("Error sending updated image to sensor "+clusterID,
 						logging.ImageName(image.GetName().GetFullName()), logging.Err(err))
@@ -549,7 +525,6 @@ func (l *loopImpl) reprocessWatchedImages() {
 }
 
 func (l *loopImpl) runReprocessing(imageFetchOpt imageEnricher.FetchOption) {
-	log.Info("here")
 	// In case the current reprocessing run takes longer than the ticker (i.e. > 4 hours when using a high number of
 	// images), we shouldn't trigger a parallel reprocessing run.
 	if l.reprocessingInProgress.TestAndSet(true) {
@@ -585,7 +560,6 @@ func (l *loopImpl) forceEnrichImageSignatureVerificationResults(ctx context.Cont
 
 func (l *loopImpl) enrichImage(ctx context.Context, enrichCtx imageEnricher.EnrichmentContext,
 	image *storage.Image) (imageEnricher.EnrichmentResult, error) {
-	log.Info("here")
 	return l.imageEnricher.EnrichImage(ctx, enrichCtx, image)
 }
 
