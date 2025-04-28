@@ -140,14 +140,16 @@ func getPersistenceByTarget(central *platform.Central, target PVCTarget, log log
 	}
 }
 
-func getDefaultPVCSizeByTarget(target PVCTarget) (*resource.Quantity, error) {
+func getDefaultPVCSizeByTarget(target PVCTarget) (resource.Quantity, error) {
 	switch target {
+	case PVCTargetCentral:
+		return resource.MustParse("0"), nil
 	case PVCTargetCentralDB:
-		return &DefaultPVCSize, nil
+		return DefaultPVCSize, nil
 	case PVCTargetCentralDBBackup:
-		return &DefaultBackupPVCSize, nil
+		return DefaultBackupPVCSize, nil
 	default:
-		return nil, errors.Errorf("unknown pvc target %q", target)
+		return resource.MustParse("0"), errors.Errorf("unknown pvc target %q", target)
 	}
 }
 
@@ -181,7 +183,7 @@ func reconcilePVC(ctx context.Context, central *platform.Central, persistence *p
 		persistence:      persistence,
 		target:           target,
 		defaultClaimName: defaultClaimName,
-		defaultClaimSize: *defaultPVCSize,
+		defaultClaimSize: defaultPVCSize,
 		log:              log.WithValues("pvcReconciler", target),
 	}
 
