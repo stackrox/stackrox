@@ -325,7 +325,7 @@ func getImageCVEResolvers(ctx context.Context, root *Resolver, os string, vulns 
 	return paginate(query.GetPagination(), resolverI, nil)
 }
 
-func getImageCVEV2Resolvers(ctx context.Context, root *Resolver, imageID string, component *storage.EmbeddedImageScanComponent, query *v1.Query) ([]ImageVulnerabilityResolver, error) {
+func getImageCVEV2Resolvers(ctx context.Context, root *Resolver, imageID string, os string, component *storage.EmbeddedImageScanComponent, query *v1.Query) ([]ImageVulnerabilityResolver, error) {
 	query, _ = search.FilterQueryWithMap(query, mappings.VulnerabilityOptionsMap)
 	predicate, err := vulnPredicateFactory.GeneratePredicate(query)
 	if err != nil {
@@ -341,7 +341,7 @@ func getImageCVEV2Resolvers(ctx context.Context, root *Resolver, imageID string,
 		if !predicate.Matches(vuln) {
 			continue
 		}
-		converted, err := cveConverter.EmbeddedVulnerabilityToImageCVEV2(imageID, componentID, vuln)
+		converted, err := cveConverter.EmbeddedVulnerabilityToImageCVEV2(imageID, os, componentID, vuln)
 		if err != nil {
 			return nil, err
 		}
@@ -662,7 +662,7 @@ func (resolver *imageComponentV2Resolver) ImageVulnerabilities(ctx context.Conte
 	if err != nil {
 		return nil, err
 	}
-	return getImageCVEV2Resolvers(resolver.ctx, resolver.root, resolver.ImageId(resolver.ctx), embeddedComponent, query)
+	return getImageCVEV2Resolvers(resolver.ctx, resolver.root, resolver.ImageId(resolver.ctx), resolver.OperatingSystem(resolver.ctx), embeddedComponent, query)
 }
 
 func (resolver *imageComponentV2Resolver) LastScanned(ctx context.Context) (*graphql.Time, error) {
@@ -721,7 +721,7 @@ func (resolver *imageComponentV2Resolver) TopImageVulnerability(ctx context.Cont
 			return nil, err
 		}
 
-		convertedTopVuln, err := cveConverter.EmbeddedVulnerabilityToImageCVEV2(resolver.ImageId(resolver.ctx), componentID, topVuln)
+		convertedTopVuln, err := cveConverter.EmbeddedVulnerabilityToImageCVEV2(resolver.ImageId(resolver.ctx), resolver.OperatingSystem(resolver.ctx), componentID, topVuln)
 		if err != nil {
 			return nil, err
 		}

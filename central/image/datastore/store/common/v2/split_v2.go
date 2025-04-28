@@ -9,12 +9,12 @@ import (
 func splitComponentsV2(parts ImageParts) ([]ComponentParts, error) {
 	ret := make([]ComponentParts, 0, len(parts.Image.GetScan().GetComponents()))
 	for _, component := range parts.Image.GetScan().GetComponents() {
-		generatedComponentV2, err := GenerateImageComponentV2(parts.Image.GetScan().GetOperatingSystem(), parts.Image, component)
+		generatedComponentV2, err := GenerateImageComponentV2(parts.Image, component)
 		if err != nil {
 			return nil, err
 		}
 
-		cves, err := splitCVEsV2(parts.Image.GetId(), generatedComponentV2.GetId(), component)
+		cves, err := splitCVEsV2(parts.Image, generatedComponentV2.GetId(), component)
 		if err != nil {
 			return nil, err
 		}
@@ -30,10 +30,10 @@ func splitComponentsV2(parts ImageParts) ([]ComponentParts, error) {
 	return ret, nil
 }
 
-func splitCVEsV2(imageID string, componentID string, embedded *storage.EmbeddedImageScanComponent) ([]CVEParts, error) {
+func splitCVEsV2(image *storage.Image, componentID string, embedded *storage.EmbeddedImageScanComponent) ([]CVEParts, error) {
 	ret := make([]CVEParts, 0, len(embedded.GetVulns()))
 	for _, cve := range embedded.GetVulns() {
-		convertedCVE, err := utils.EmbeddedVulnerabilityToImageCVEV2(imageID, componentID, cve)
+		convertedCVE, err := utils.EmbeddedVulnerabilityToImageCVEV2(image.GetId(), image.GetScan().GetOperatingSystem(), componentID, cve)
 		if err != nil {
 			return nil, err
 		}
@@ -48,7 +48,7 @@ func splitCVEsV2(imageID string, componentID string, embedded *storage.EmbeddedI
 }
 
 // GenerateImageComponentV2 returns top-level image component from embedded component.
-func GenerateImageComponentV2(os string, image *storage.Image, from *storage.EmbeddedImageScanComponent) (*storage.ImageComponentV2, error) {
+func GenerateImageComponentV2(image *storage.Image, from *storage.EmbeddedImageScanComponent) (*storage.ImageComponentV2, error) {
 	componentID, err := scancomponent.ComponentIDV2(from, image.GetId())
 	if err != nil {
 		return nil, err
@@ -62,7 +62,7 @@ func GenerateImageComponentV2(os string, image *storage.Image, from *storage.Emb
 		FixedBy:         from.GetFixedBy(),
 		RiskScore:       from.GetRiskScore(),
 		Priority:        from.GetPriority(),
-		OperatingSystem: os,
+		OperatingSystem: image.GetScan().GetOperatingSystem(),
 		ImageId:         image.GetId(),
 		Location:        from.GetLocation(),
 		Architecture:    from.GetArchitecture(),
