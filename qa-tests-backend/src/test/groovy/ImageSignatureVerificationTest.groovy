@@ -40,6 +40,8 @@ class ImageSignatureVerificationTest extends BaseSpecification {
     static final private String BYOPKI_WILDCARD_AND_TEKTON = "BOYPKI-Wildcard+Tekton"
     static final private String KEYLESS_SIGSTORE_MATCHING = "Keyless-Sigstore-Matching"
     static final private String KEYLESS_SIGSTORE_UNVERIFIABLE = "Keyless-Sigstore-Unverifiable"
+    static final private String KEYLESS_RHTAS_MATCHING = "Keyless-RHTAS-Matching"
+    static final private String KEYLESS_RHTAS_UNVERIFIABLE = "Keyless-RHTAS-Unverifiable"
 
     // List of integration names used within tests.
     // NOTE: If you add a new name, make sure to add it here.
@@ -55,6 +57,8 @@ class ImageSignatureVerificationTest extends BaseSpecification {
             BYOPKI_WILDCARD_AND_TEKTON,
             KEYLESS_SIGSTORE_MATCHING,
             KEYLESS_SIGSTORE_UNVERIFIABLE,
+            KEYLESS_RHTAS_MATCHING,
+            KEYLESS_RHTAS_UNVERIFIABLE,
     ]
 
     // Public keys used within signature integrations.
@@ -137,6 +141,37 @@ nzTe7BpOmVwmqLkIefEJe5L4PSXtp2KFLZqGO/kY5A==
 
     static final private String KEYLESS_SIGSTORE_ISSUER = "https://github.com/login/oauth"
     static final private String KEYLESS_SIGSTORE_IDENTITY = ".*@redhat.com"
+    static final private String KEYLESS_SIGSTORE_REKOR_URL = "https://rekor.sigstore.dev"
+
+    static final private String KEYLESS_RHTAS_ISSUER = "https://accounts.google.com"
+    static final private String KEYLESS_RHTAS_IDENTITY = ".*@redhat.com"
+    static final private String KEYLESS_RHTAS_FULCIO_CHAIN = """\
+-----BEGIN CERTIFICATE-----
+MIICBDCCAYqgAwIBAgIUNo8BCDFZXeig9JJONBUirNKTPW0wCgYIKoZIzj0EAwMw
+LDEQMA4GA1UEChMHUmVkIEhhdDEYMBYGA1UEAxMPZnVsY2lvLmhvc3RuYW1lMB4X
+DTI1MDQwOTE1MzgzMFoXDTM1MDQwNzE1MzgzMFowLDEQMA4GA1UEChMHUmVkIEhh
+dDEYMBYGA1UEAxMPZnVsY2lvLmhvc3RuYW1lMHYwEAYHKoZIzj0CAQYFK4EEACID
+YgAEBUJFBeglXU9zgd34suFRG8FIWz3eNChxgd5vcAI22LJvT0dhDLxOE/W1h0f+
+jRa9jM9V0EeYRpMQ6SKhbOu5mv9dTJ1d36f0e1iHQAPKDXq09D5mDcwZmR7uiaE8
+rMPjo20wazAOBgNVHQ8BAf8EBAMCAQYwDwYDVR0TAQH/BAUwAwEB/zAdBgNVHQ4E
+FgQUNoDRLK7bVIxt7tLbETIvDzdJ5hAwKQYDVR0RBCIwIIEeYWNzLXRlYW0tYXV0
+b21hdGlvbkByZWRoYXQuY29tMAoGCCqGSM49BAMDA2gAMGUCMG8sro032ep9lnOx
+XaZsqx+Vjb6dGmJmFQbPZX9EZxgZxG1n50EnLi/xTMxR98z4HgIxAI4ViQ6pd+6r
+ceLzLr4eKGR5yqqoWWciLF5Che/Cfqgma3jSRxbiL2urMRS3Y7038g==
+-----END CERTIFICATE-----"""
+    static final private String KEYLESS_RHTAS_CTLOG_PUBLIC_KEY = """\
+-----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEHOWcrgffC8A4CwsPqmfy+unEU1km
+SgPCnfCzwRToJ9263qyEp+3aaCv0T4QicC31fsokxoUIGzK0Ftrt3SoXDw==
+-----END PUBLIC KEY-----"""
+    static final private String KEYLESS_RHTAS_REKOR_URL =
+            "https://rekor-server-trusted-artifact-signer.apps.staging-central.services.rox.systems"
+    static final private String KEYLESS_RHTAS_REKOR_PUBLIC_KEY = """\
+-----BEGIN PUBLIC KEY-----
+MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAECsUdy4SYw0Wey6iYiJ7uArUqHhKTwpRn
+YTuoC8lh1tt0nLkIQpdAJMuWndZJkRHcZriW1Qc2l3Mau0DtuYK17uz7pEwci+tK
+5mll4EcDCwjeQyH0cXjCdn9gXfIDFjg/
+-----END PUBLIC KEY-----"""
 
     static final private String DISTROLESS_IMAGE_DIGEST =
             "sha256:bc217643f9c04fc8131878d6440dd88cf4444385d45bb25995c8051c29687766"
@@ -154,6 +189,8 @@ nzTe7BpOmVwmqLkIefEJe5L4PSXtp2KFLZqGO/kY5A==
             "sha256:7b3ccabffc97de872a30dfd234fd972a66d247c8cfc69b0550f276481852627c"
     static final private String KEYLESS_SIGSTORE_IMAGE_DIGEST =
             "sha256:37f7b378a29ceb4c551b1b5582e27747b855bbfaa73fa11914fe0df028dc581f"
+    static final private String KEYLESS_RHTAS_IMAGE_DIGEST =
+            "sha256:e246aa22ad2cbdfbd19e2a6ca2b275e26245a21920e2b2d0666324cee3f15549"
 
     static final private List<String> IMAGE_DIGESTS = [
             DISTROLESS_IMAGE_DIGEST,
@@ -164,6 +201,7 @@ nzTe7BpOmVwmqLkIefEJe5L4PSXtp2KFLZqGO/kY5A==
             SAME_DIGEST_WITH_SIGNATURE_IMAGE_DIGEST,
             BYOPKI_IMAGE_DIGEST,
             KEYLESS_SIGSTORE_IMAGE_DIGEST,
+            KEYLESS_RHTAS_IMAGE_DIGEST,
     ]
 
     // Deployment holding an image which has a cosign signature that is verifiable with the DISTROLESS_PUBLIC_KEY.
@@ -236,6 +274,14 @@ nzTe7BpOmVwmqLkIefEJe5L4PSXtp2KFLZqGO/kY5A==
             .setCommand(["sleep", "600"])
             .setNamespace(SIGNATURE_TESTING_NAMESPACE)
 
+    // Deployment holding an image signed by keyless Cosign using the staging-central RHTAS instance.
+    static final private Deployment KEYLESS_RHTAS_DEPLOYMENT = new Deployment()
+            .setName("keyless-rhtas")
+            .setImage("quay.io/rhacs-eng/qa-signatures:keyless@$KEYLESS_RHTAS_IMAGE_DIGEST")
+            .addLabel("app", "image-with-keyless-rhtas")
+            .setCommand(["sleep", "600"])
+            .setNamespace(SIGNATURE_TESTING_NAMESPACE)
+
     // List of deployments used within the tests. This will be used during setup of the spec / teardown to create /
     // delete all deployments.
     // NOTE: If you add another deployment, make sure to add it here as well.
@@ -248,6 +294,7 @@ nzTe7BpOmVwmqLkIefEJe5L4PSXtp2KFLZqGO/kY5A==
             SAME_DIGEST_WITH_SIGNATURE,
             BYOPKI_DEPLOYMENT,
             KEYLESS_SIGSTORE_DEPLOYMENT,
+            KEYLESS_RHTAS_DEPLOYMENT,
     ]
 
     // Base policy which will be used for creating subsequent policies that have signature integration IDs as values.
@@ -367,7 +414,7 @@ nzTe7BpOmVwmqLkIefEJe5L4PSXtp2KFLZqGO/kY5A==
                 issuer: KEYLESS_SIGSTORE_ISSUER,
                 ctlogEnabled: true,
             ),
-            new TransparencyLogVerificationArgs(enabled: true, url: "https://rekor.sigstore.dev"),
+            new TransparencyLogVerificationArgs(enabled: true, url: KEYLESS_SIGSTORE_REKOR_URL),
         )
         assert keylessSigstoreMatchingSignatureIntegrationID
         CREATED_SIGNATURE_INTEGRATIONS.put(KEYLESS_SIGSTORE_MATCHING, keylessSigstoreMatchingSignatureIntegrationID)
@@ -383,11 +430,53 @@ nzTe7BpOmVwmqLkIefEJe5L4PSXtp2KFLZqGO/kY5A==
                 issuer: KEYLESS_SIGSTORE_ISSUER,
                 ctlogEnabled: true,
             ),
-            new TransparencyLogVerificationArgs(enabled: false, url: "https://rekor.sigstore.dev"),
+            new TransparencyLogVerificationArgs(enabled: false, url: KEYLESS_SIGSTORE_REKOR_URL),
         )
         assert keylessSigstoreUnverifiableSignatureIntegrationID
         CREATED_SIGNATURE_INTEGRATIONS.put(KEYLESS_SIGSTORE_UNVERIFIABLE,
             keylessSigstoreUnverifiableSignatureIntegrationID)
+
+        // Signature integration "Keyless-RHTAS-Matching" which holds the staging-central RHTAS CAs
+        // and enables transparency log validation.
+        String keylessRHTASMatchingSignatureIntegrationID = createSignatureIntegration(
+            KEYLESS_RHTAS_MATCHING, NO_PUBLIC_KEYS,
+            new CertificateVerificationArgs(
+                chain: KEYLESS_RHTAS_FULCIO_CHAIN,
+                identity: KEYLESS_RHTAS_IDENTITY,
+                issuer: KEYLESS_RHTAS_ISSUER,
+                ctlogEnabled: true,
+                ctlogPublicKey: KEYLESS_RHTAS_CTLOG_PUBLIC_KEY,
+            ),
+            new TransparencyLogVerificationArgs(
+                enabled: true,
+                publicKey: KEYLESS_RHTAS_REKOR_PUBLIC_KEY,
+                url: KEYLESS_RHTAS_REKOR_URL,
+            ),
+        )
+        assert keylessRHTASMatchingSignatureIntegrationID
+        CREATED_SIGNATURE_INTEGRATIONS.put(KEYLESS_RHTAS_MATCHING, keylessRHTASMatchingSignatureIntegrationID)
+
+        // Signature integration "Keyless-RHTAS-Unverifiable" which holds the staging-central RHTAS CAs
+        // and disables transparency log validation. Verification must fail because the certificate issued
+        // by Fulcio has expired and can only be verified with the timestamp from the transparency log entry.
+        String keylessRHTASUnverifiableSignatureIntegrationID = createSignatureIntegration(
+            KEYLESS_RHTAS_UNVERIFIABLE, NO_PUBLIC_KEYS,
+            new CertificateVerificationArgs(
+                chain: KEYLESS_RHTAS_FULCIO_CHAIN,
+                identity: KEYLESS_RHTAS_IDENTITY,
+                issuer: KEYLESS_RHTAS_ISSUER,
+                ctlogEnabled: true,
+                ctlogPublicKey: KEYLESS_RHTAS_CTLOG_PUBLIC_KEY,
+            ),
+            new TransparencyLogVerificationArgs(
+                enabled: false,
+                publicKey: KEYLESS_RHTAS_REKOR_PUBLIC_KEY,
+                url: KEYLESS_RHTAS_REKOR_URL,
+            ),
+        )
+        assert keylessRHTASUnverifiableSignatureIntegrationID
+        CREATED_SIGNATURE_INTEGRATIONS.put(KEYLESS_RHTAS_UNVERIFIABLE,
+            keylessRHTASUnverifiableSignatureIntegrationID)
 
         // Create all required deployments.
         orchestrator.batchCreateDeployments(DEPLOYMENTS)
@@ -466,6 +555,7 @@ nzTe7BpOmVwmqLkIefEJe5L4PSXtp2KFLZqGO/kY5A==
         // Distroless should create alerts for all deployments except those using distroless images.
         DISTROLESS                                 | BYOPKI_DEPLOYMENT            | true
         DISTROLESS                                 | DISTROLESS_DEPLOYMENT        | false
+        DISTROLESS                                 | KEYLESS_RHTAS_DEPLOYMENT     | true
         DISTROLESS                                 | KEYLESS_SIGSTORE_DEPLOYMENT  | true
         DISTROLESS                                 | SAME_DIGEST_NO_SIGNATURE     | true
         DISTROLESS                                 | SAME_DIGEST_WITH_SIGNATURE   | true
@@ -475,6 +565,7 @@ nzTe7BpOmVwmqLkIefEJe5L4PSXtp2KFLZqGO/kY5A==
         // Tekton should create alerts for all deployments except those using tekton images.
         TEKTON                                     | BYOPKI_DEPLOYMENT            | true
         TEKTON                                     | DISTROLESS_DEPLOYMENT        | true
+        TEKTON                                     | KEYLESS_RHTAS_DEPLOYMENT     | true
         TEKTON                                     | KEYLESS_SIGSTORE_DEPLOYMENT  | true
         TEKTON                                     | SAME_DIGEST_NO_SIGNATURE     | true
         TEKTON                                     | SAME_DIGEST_WITH_SIGNATURE   | true
@@ -484,6 +575,7 @@ nzTe7BpOmVwmqLkIefEJe5L4PSXtp2KFLZqGO/kY5A==
         // Unverifiable should create alerts for all deployments.
         UNVERIFIABLE                               | BYOPKI_DEPLOYMENT            | true
         UNVERIFIABLE                               | DISTROLESS_DEPLOYMENT        | true
+        UNVERIFIABLE                               | KEYLESS_RHTAS_DEPLOYMENT     | true
         UNVERIFIABLE                               | KEYLESS_SIGSTORE_DEPLOYMENT  | true
         UNVERIFIABLE                               | SAME_DIGEST_NO_SIGNATURE     | true
         UNVERIFIABLE                               | SAME_DIGEST_WITH_SIGNATURE   | true
@@ -493,6 +585,7 @@ nzTe7BpOmVwmqLkIefEJe5L4PSXtp2KFLZqGO/kY5A==
         // Distroless and tekton should create alerts for all deployments except those using distroless / tekton images.
         DISTROLESS_AND_TEKTON                      | BYOPKI_DEPLOYMENT            | true
         DISTROLESS_AND_TEKTON                      | DISTROLESS_DEPLOYMENT        | false
+        DISTROLESS_AND_TEKTON                      | KEYLESS_RHTAS_DEPLOYMENT     | true
         DISTROLESS_AND_TEKTON                      | KEYLESS_SIGSTORE_DEPLOYMENT  | true
         DISTROLESS_AND_TEKTON                      | SAME_DIGEST_NO_SIGNATURE     | true
         DISTROLESS_AND_TEKTON                      | SAME_DIGEST_WITH_SIGNATURE   | true
@@ -503,6 +596,7 @@ nzTe7BpOmVwmqLkIefEJe5L4PSXtp2KFLZqGO/kY5A==
         // tekton images.
         POLICY_WITH_DISTROLESS_TEKTON_UNVERIFIABLE | BYOPKI_DEPLOYMENT            | true
         POLICY_WITH_DISTROLESS_TEKTON_UNVERIFIABLE | DISTROLESS_DEPLOYMENT        | false
+        POLICY_WITH_DISTROLESS_TEKTON_UNVERIFIABLE | KEYLESS_RHTAS_DEPLOYMENT     | true
         POLICY_WITH_DISTROLESS_TEKTON_UNVERIFIABLE | KEYLESS_SIGSTORE_DEPLOYMENT  | true
         POLICY_WITH_DISTROLESS_TEKTON_UNVERIFIABLE | SAME_DIGEST_NO_SIGNATURE     | true
         POLICY_WITH_DISTROLESS_TEKTON_UNVERIFIABLE | SAME_DIGEST_WITH_SIGNATURE   | true
@@ -512,6 +606,7 @@ nzTe7BpOmVwmqLkIefEJe5L4PSXtp2KFLZqGO/kY5A==
         // Same digest should create alerts for all deployments except those using alt-nginx image.
         SAME_DIGEST                                | BYOPKI_DEPLOYMENT            | true
         SAME_DIGEST                                | DISTROLESS_DEPLOYMENT        | true
+        SAME_DIGEST                                | KEYLESS_RHTAS_DEPLOYMENT     | true
         SAME_DIGEST                                | KEYLESS_SIGSTORE_DEPLOYMENT  | true
         SAME_DIGEST                                | SAME_DIGEST_NO_SIGNATURE     | true
         SAME_DIGEST                                | SAME_DIGEST_WITH_SIGNATURE   | false
@@ -521,6 +616,7 @@ nzTe7BpOmVwmqLkIefEJe5L4PSXtp2KFLZqGO/kY5A==
         // BYOPKI wildcard should create alerts for all deployments except the BYOPKI deployment one.
         BYOPKI_WILDCARD                            | BYOPKI_DEPLOYMENT            | false
         BYOPKI_WILDCARD                            | DISTROLESS_DEPLOYMENT        | true
+        BYOPKI_WILDCARD                            | KEYLESS_RHTAS_DEPLOYMENT     | true
         BYOPKI_WILDCARD                            | KEYLESS_SIGSTORE_DEPLOYMENT  | true
         BYOPKI_WILDCARD                            | SAME_DIGEST_NO_SIGNATURE     | true
         BYOPKI_WILDCARD                            | SAME_DIGEST_WITH_SIGNATURE   | true
@@ -530,6 +626,7 @@ nzTe7BpOmVwmqLkIefEJe5L4PSXtp2KFLZqGO/kY5A==
         // BYOPKI matching should create alerts for all deployments except the BYOPKI deployment one.
         BYOPKI_MATCHING                            | BYOPKI_DEPLOYMENT            | false
         BYOPKI_MATCHING                            | DISTROLESS_DEPLOYMENT        | true
+        BYOPKI_MATCHING                            | KEYLESS_RHTAS_DEPLOYMENT     | true
         BYOPKI_MATCHING                            | KEYLESS_SIGSTORE_DEPLOYMENT  | true
         BYOPKI_MATCHING                            | SAME_DIGEST_NO_SIGNATURE     | true
         BYOPKI_MATCHING                            | SAME_DIGEST_WITH_SIGNATURE   | true
@@ -539,6 +636,7 @@ nzTe7BpOmVwmqLkIefEJe5L4PSXtp2KFLZqGO/kY5A==
         // BYOPKI unverifiable should create alerts for all deployments.
         BYOPKI_UNVERIFIABLE                        | BYOPKI_DEPLOYMENT            | true
         BYOPKI_UNVERIFIABLE                        | DISTROLESS_DEPLOYMENT        | true
+        BYOPKI_UNVERIFIABLE                        | KEYLESS_RHTAS_DEPLOYMENT     | true
         BYOPKI_UNVERIFIABLE                        | KEYLESS_SIGSTORE_DEPLOYMENT  | true
         BYOPKI_UNVERIFIABLE                        | SAME_DIGEST_NO_SIGNATURE     | true
         BYOPKI_UNVERIFIABLE                        | SAME_DIGEST_WITH_SIGNATURE   | true
@@ -549,6 +647,7 @@ nzTe7BpOmVwmqLkIefEJe5L4PSXtp2KFLZqGO/kY5A==
         // BYOPKI one and the Tekton one.
         BYOPKI_WILDCARD_AND_TEKTON                 | BYOPKI_DEPLOYMENT            | false
         BYOPKI_WILDCARD_AND_TEKTON                 | DISTROLESS_DEPLOYMENT        | true
+        BYOPKI_WILDCARD_AND_TEKTON                 | KEYLESS_RHTAS_DEPLOYMENT     | true
         BYOPKI_WILDCARD_AND_TEKTON                 | KEYLESS_SIGSTORE_DEPLOYMENT  | true
         BYOPKI_WILDCARD_AND_TEKTON                 | SAME_DIGEST_NO_SIGNATURE     | true
         BYOPKI_WILDCARD_AND_TEKTON                 | SAME_DIGEST_WITH_SIGNATURE   | true
@@ -559,6 +658,7 @@ nzTe7BpOmVwmqLkIefEJe5L4PSXtp2KFLZqGO/kY5A==
         // one running the keyless Sigstore signed image.
         KEYLESS_SIGSTORE_MATCHING                  | BYOPKI_DEPLOYMENT            | true
         KEYLESS_SIGSTORE_MATCHING                  | DISTROLESS_DEPLOYMENT        | true
+        KEYLESS_SIGSTORE_MATCHING                  | KEYLESS_RHTAS_DEPLOYMENT     | true
         KEYLESS_SIGSTORE_MATCHING                  | KEYLESS_SIGSTORE_DEPLOYMENT  | false
         KEYLESS_SIGSTORE_MATCHING                  | SAME_DIGEST_NO_SIGNATURE     | true
         KEYLESS_SIGSTORE_MATCHING                  | SAME_DIGEST_WITH_SIGNATURE   | true
@@ -568,12 +668,34 @@ nzTe7BpOmVwmqLkIefEJe5L4PSXtp2KFLZqGO/kY5A==
         // Keyless Sigstore unverifiable should create alerts for all deployments.
         KEYLESS_SIGSTORE_UNVERIFIABLE              | BYOPKI_DEPLOYMENT            | true
         KEYLESS_SIGSTORE_UNVERIFIABLE              | DISTROLESS_DEPLOYMENT        | true
+        KEYLESS_SIGSTORE_UNVERIFIABLE              | KEYLESS_RHTAS_DEPLOYMENT     | true
         KEYLESS_SIGSTORE_UNVERIFIABLE              | KEYLESS_SIGSTORE_DEPLOYMENT  | true
         KEYLESS_SIGSTORE_UNVERIFIABLE              | SAME_DIGEST_NO_SIGNATURE     | true
         KEYLESS_SIGSTORE_UNVERIFIABLE              | SAME_DIGEST_WITH_SIGNATURE   | true
         KEYLESS_SIGSTORE_UNVERIFIABLE              | TEKTON_DEPLOYMENT            | true
         KEYLESS_SIGSTORE_UNVERIFIABLE              | UNVERIFIABLE_DEPLOYMENT      | true
         KEYLESS_SIGSTORE_UNVERIFIABLE              | WITHOUT_SIGNATURE_DEPLOYMENT | true
+        // Keyless RHTAS matching should create alerts for all deployments except the
+        // one running the keyless RHTAS signed image.
+        KEYLESS_RHTAS_MATCHING                     | BYOPKI_DEPLOYMENT            | true
+        KEYLESS_RHTAS_MATCHING                     | DISTROLESS_DEPLOYMENT        | true
+        KEYLESS_RHTAS_MATCHING                     | KEYLESS_RHTAS_DEPLOYMENT     | false
+        KEYLESS_RHTAS_MATCHING                     | KEYLESS_SIGSTORE_DEPLOYMENT  | true
+        KEYLESS_RHTAS_MATCHING                     | SAME_DIGEST_NO_SIGNATURE     | true
+        KEYLESS_RHTAS_MATCHING                     | SAME_DIGEST_WITH_SIGNATURE   | true
+        KEYLESS_RHTAS_MATCHING                     | TEKTON_DEPLOYMENT            | true
+        KEYLESS_RHTAS_MATCHING                     | UNVERIFIABLE_DEPLOYMENT      | true
+        KEYLESS_RHTAS_MATCHING                     | WITHOUT_SIGNATURE_DEPLOYMENT | true
+        // Keyless RHTAS unverifiable should create alerts for all deployments.
+        KEYLESS_RHTAS_UNVERIFIABLE                 | BYOPKI_DEPLOYMENT            | true
+        KEYLESS_RHTAS_UNVERIFIABLE                 | DISTROLESS_DEPLOYMENT        | true
+        KEYLESS_RHTAS_UNVERIFIABLE                 | KEYLESS_RHTAS_DEPLOYMENT     | true
+        KEYLESS_RHTAS_UNVERIFIABLE                 | KEYLESS_SIGSTORE_DEPLOYMENT  | true
+        KEYLESS_RHTAS_UNVERIFIABLE                 | SAME_DIGEST_NO_SIGNATURE     | true
+        KEYLESS_RHTAS_UNVERIFIABLE                 | SAME_DIGEST_WITH_SIGNATURE   | true
+        KEYLESS_RHTAS_UNVERIFIABLE                 | TEKTON_DEPLOYMENT            | true
+        KEYLESS_RHTAS_UNVERIFIABLE                 | UNVERIFIABLE_DEPLOYMENT      | true
+        KEYLESS_RHTAS_UNVERIFIABLE                 | WITHOUT_SIGNATURE_DEPLOYMENT | true
     }
 
     // Helper which creates a policy builder for a policy which uses the image signature policy criteria.
@@ -622,6 +744,7 @@ nzTe7BpOmVwmqLkIefEJe5L4PSXtp2KFLZqGO/kY5A==
                 .setCertificateOidcIssuer(certVerification.issuer)
                 .setCertificateTransparencyLog(CertificateTransparencyLogVerification.newBuilder()
                     .setEnabled(certVerification.ctlogEnabled)
+                    .setPublicKeyPemEnc(certVerification.ctlogPublicKey)
                     .build()
                 )
                 .build()
@@ -631,6 +754,7 @@ nzTe7BpOmVwmqLkIefEJe5L4PSXtp2KFLZqGO/kY5A==
 
         builder.setTransparencyLog(TransparencyLogVerification.newBuilder()
             .setEnabled(tlogVerification.enabled)
+            .setPublicKeyPemEnc(tlogVerification.publicKey)
             .setUrl(tlogVerification.url)
             .build()
         )

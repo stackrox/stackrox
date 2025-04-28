@@ -13,13 +13,15 @@ import util.Timer
 @CompileStatic
 class CertificateVerificationArgs {
     Boolean ctlogEnabled
+    String ctlogPublicKey
     String chain
     String identity
     String issuer
 
     CertificateVerificationArgs(String chain = "", String identity = "", String issuer = "",
-        Boolean ctlogEnabled = false) {
+        Boolean ctlogEnabled = false, String ctlogPublicKey = "") {
         this.ctlogEnabled = ctlogEnabled
+        this.ctlogPublicKey = ctlogPublicKey
         this.chain = chain
         this.identity = identity
         this.issuer = issuer
@@ -29,10 +31,12 @@ class CertificateVerificationArgs {
 @CompileStatic
 class TransparencyLogVerificationArgs {
     Boolean enabled
+    String publicKey
     String url
 
-    TransparencyLogVerificationArgs(Boolean enabled = false, String url = "") {
+    TransparencyLogVerificationArgs(Boolean enabled = false, String publicKey = "", String url = "") {
         this.enabled = enabled
+        this.publicKey = publicKey
         this.url = url
     }
 }
