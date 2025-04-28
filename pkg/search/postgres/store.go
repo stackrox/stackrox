@@ -268,21 +268,15 @@ func (s *genericStore[T, PT]) GetMany(ctx context.Context, identifiers []string)
 
 	q := search.NewQueryBuilder().AddDocIDs(identifiers...).ProtoQuery()
 
-	rows, err := RunGetManyQueryForSchema[T, PT](ctx, s.schema, q, s.db)
+	resultsByID := make(map[string]PT, len(identifiers))
+	err := RunQueryForSchemaFn(ctx, s.schema, q, s.db, func(msg PT) error {
+		resultsByID[s.pkGetter(msg)] = msg
+		return nil
+	})
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			missingIndices := make([]int, 0, len(identifiers))
-			for i := range identifiers {
-				missingIndices = append(missingIndices, i)
-			}
-			return nil, missingIndices, nil
-		}
 		return nil, nil, err
 	}
-	resultsByID := make(map[string]PT, len(rows))
-	for _, msg := range rows {
-		resultsByID[s.pkGetter(msg)] = msg
-	}
+
 	missingIndices := make([]int, 0, len(identifiers)-len(resultsByID))
 	// It is important that the elems are populated in the same order as the input identifiers
 	// slice, since some calling code relies on that to maintain order.
