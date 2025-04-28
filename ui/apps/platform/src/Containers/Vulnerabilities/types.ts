@@ -87,3 +87,18 @@ export type ObservedCveMode = (typeof observedCveModeValues)[number];
 export function isObservedCveMode(value: unknown): value is ObservedCveMode {
     return observedCveModeValues.some((mode) => mode === value);
 }
+
+export type VerifiedStatus =
+    | 'CORRUPTED_SIGNATURE'
+    | 'FAILED_VERIFICATION'
+    | 'GENERIC_ERROR'
+    | 'INVALID_SIGNATURE_ALGO'
+    | 'UNSET'
+    | 'VERIFIED';
+
+export type SignatureVerificationResult = {
+    status: VerifiedStatus;
+    verificationTime: string;
+    verifiedImageReferences: string[];
+    verifierId: string;
+};
