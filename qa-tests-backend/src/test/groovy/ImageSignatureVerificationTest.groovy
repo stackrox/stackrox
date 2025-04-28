@@ -277,7 +277,7 @@ YTuoC8lh1tt0nLkIQpdAJMuWndZJkRHcZriW1Qc2l3Mau0DtuYK17uz7pEwci+tK
     // Deployment holding an image signed by keyless Cosign using the staging-central RHTAS instance.
     static final private Deployment KEYLESS_RHTAS_DEPLOYMENT = new Deployment()
             .setName("keyless-rhtas")
-            .setImage("quay.io/rhacs-eng/qa-signatures:keyless@" + KEYLESS_RHTAS_IMAGE_DIGEST)
+            .setImage("quay.io/rhacs-eng/qa-signatures:keyless@$KEYLESS_RHTAS_IMAGE_DIGEST")
             .addLabel("app", "image-with-keyless-rhtas")
             .setCommand(["sleep", "600"])
             .setNamespace(SIGNATURE_TESTING_NAMESPACE)
