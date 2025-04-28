@@ -72,7 +72,7 @@ func TestGetResourceType(t *testing.T) {
 		{typ: &storage.ImageCVE{}, resourceType: indirectlyScoped},
 		{typ: &storage.ImageCVEEdge{}, resourceType: indirectlyScoped},
 		{typ: &storage.ImageIntegration{}, resourceType: globallyScoped},
-		{typ: &storage.InitBundleMeta{}, resourceType: permissionChecker, permissionChecker: true}, // globallyScoped
+		{typ: &storage.InitBundleMeta{}, resourceType: globallyScoped},
 		{typ: &storage.IntegrationHealth{}, resourceType: globallyScoped},
 		{typ: &storage.K8SRole{}, resourceType: directlyScoped},
 		{typ: &storage.K8SRoleBinding{}, resourceType: directlyScoped},
