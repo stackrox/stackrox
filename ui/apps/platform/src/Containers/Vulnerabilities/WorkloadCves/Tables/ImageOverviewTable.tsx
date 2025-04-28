@@ -25,8 +25,9 @@ import GenerateSbomModal, {
 } from '../../components/GenerateSbomModal';
 import ImageNameLink from '../components/ImageNameLink';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
-import { VulnerabilitySeverityLabel, WatchStatus } from '../../types';
+import { SignatureVerificationResult, VulnerabilitySeverityLabel, WatchStatus } from '../../types';
 import ImageScanningIncompleteLabel from '../components/ImageScanningIncompleteLabelLayout';
+import VerifiedSignatureLabel from '../components/VerifiedSignatureLabelLayout';
 import getImageScanMessage from '../utils/getImageScanMessage';
 import { getSeveritySortOptions } from '../../utils/sortUtils';
 
@@ -90,6 +91,13 @@ export const imageListQuery = gql`
             scanTime
             scanNotes
             notes
+            signatureVerificationData {
+                results {
+                    status
+                    verifiedImageReferences
+                    verifierId
+                }
+            }
         }
     }
 `;
@@ -119,6 +127,9 @@ export type Image = {
     scanTime: string | null;
     scanNotes: string[];
     notes: string[];
+    signatureVerificationData: {
+        results: SignatureVerificationResult[];
+    } | null;
 };
 
 export type ImageOverviewTableProps = {
@@ -220,6 +231,7 @@ function ImageOverviewTable({
                             scanTime,
                             scanNotes,
                             notes,
+                            signatureVerificationData,
                         } = image;
                         const criticalCount = imageCVECountBySeverity.critical.total;
                         const importantCount = imageCVECountBySeverity.important.total;
@@ -232,6 +244,11 @@ function ImageOverviewTable({
 
                         const scanMessage = getImageScanMessage(notes, scanNotes);
                         const hasScanMessage = !isEmpty(scanMessage);
+
+                        const verifiedSignatureResults = signatureVerificationData?.results?.filter(
+                            (result) => result.status === 'VERIFIED'
+                        );
+                        const hasVerifiedSignature = !!verifiedSignatureResults?.length;
 
                         const rowActions: IAction[] = [];
 
@@ -273,6 +290,11 @@ function ImageOverviewTable({
                                     <Td dataLabel="Image">
                                         {name ? (
                                             <ImageNameLink name={name} id={id}>
+                                                {hasVerifiedSignature && (
+                                                    <VerifiedSignatureLabel
+                                                        results={verifiedSignatureResults}
+                                                    />
+                                                )}
                                                 {isWatchedImage && (
                                                     <Label
                                                         isCompact
