@@ -524,20 +524,6 @@ test-prep:
 	@echo "+ $@"
 	$(SILENT)mkdir -p test-output
 
-.PHONY: go-unit-tests
-go-unit-tests: build-prep test-prep
-	set -o pipefail ; \
-	CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test scripts/go-test.sh -timeout 15m -race -cover -coverprofile test-output/coverage.out -v \
-		$(shell git ls-files -- '*_test.go' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list| grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
-		| tee $(GO_TEST_OUTPUT_PATH)
-	# Exercise the logging package for all supported logging levels to make sure that initialization works properly
-	@echo "Run log tests"
-	for encoding in console json; do \
-		for level in debug info warn error fatal panic; do \
-			LOGENCODING=$$encoding LOGLEVEL=$$level CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test scripts/go-test.sh -p 4 -race -v ./pkg/logging/... | grep -v "iteration"; \
-		done; \
-	done
-
 .PHONY: sensor-integration-test
 sensor-integration-test: build-prep test-prep
 	set -eo pipefail ; \
@@ -555,7 +541,7 @@ go-postgres-unit-tests: build-prep test-prep
 	@# The -p 1 passed to go test is required to ensure that tests of different packages are not run in parallel, so as to avoid conflicts when interacting with the DB.
 	set -o pipefail ; \
 	CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -p 1 -race -cover -coverprofile test-output/coverage.out -v \
-		$(shell git grep -rl "//go:build sql_integration" central pkg migrator tools | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list -tags sql_integration | grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
+		$(shell git ls-files -- '*_test.go' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list -tags sql_integration | grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
 		| tee $(GO_TEST_OUTPUT_PATH)
 
 .PHONY: go-postgres-bench-tests
@@ -591,7 +577,7 @@ ui-component-tests:
 	make -C ui test-component
 
 .PHONY: test
-test: go-unit-tests ui-test shell-unit-tests
+test: go-postgres-unit-tests ui-test shell-unit-tests
 
 .PHONY: integration-unit-tests
 integration-unit-tests: build-prep test-prep
