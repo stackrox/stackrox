@@ -717,8 +717,15 @@ func TestGenerateCentralTLSData_Rotation(t *testing.T) {
 			assert: func(t *testing.T, old, new types.SecretDataMap) {
 				require.Contains(t, new, mtls.SecondaryCACertFileName, "secondary CA cert should be present")
 				require.Contains(t, new, mtls.SecondaryCAKeyFileName, "secondary CA key should be present")
-
 				require.NotEqual(t, old[mtls.CACertFileName], new[mtls.CACertFileName], "primary CA should have changed")
+				require.Equal(t, new[mtls.SecondaryCACertFileName], old[mtls.CACertFileName],
+					"secondary CA cert should be the old primary CA cert")
+				require.Equal(t, new[mtls.SecondaryCAKeyFileName], old[mtls.CAKeyFileName],
+					"secondary CA key should be the old primary CA key")
+				require.Equal(t, new[mtls.CACertFileName], old[mtls.SecondaryCACertFileName],
+					"primary CA cert should be the old secondary CA cert")
+				require.Equal(t, new[mtls.CAKeyFileName], old[mtls.SecondaryCAKeyFileName],
+					"primary CA key should be the old secondary CA key")
 				require.Contains(t, new, mtls.ServiceCertFileName, "central cert should be present")
 				require.Contains(t, new, mtls.ServiceKeyFileName, "central cert should be present")
 			},
@@ -732,10 +739,10 @@ func TestGenerateCentralTLSData_Rotation(t *testing.T) {
 				certgen.AddSecondaryCAToFileMap(old, secondary)
 			},
 			assert: func(t *testing.T, old, new types.SecretDataMap) {
+				require.Equal(t, old[mtls.CACertFileName], new[mtls.CACertFileName], "primary CA cert should be unchanged")
+				require.Equal(t, old[mtls.CAKeyFileName], new[mtls.CAKeyFileName], "primary CA key should be unchanged")
 				require.NotContains(t, new, mtls.SecondaryCACertFileName, "secondary CA cert should be removed")
 				require.NotContains(t, new, mtls.SecondaryCAKeyFileName, "secondary CA key should be removed")
-				require.Equal(t, old[mtls.ServiceCertFileName], new[mtls.ServiceCertFileName], "central cert should be unchanged")
-				require.Equal(t, old[mtls.ServiceKeyFileName], new[mtls.ServiceKeyFileName], "central key should be unchanged")
 			},
 		},
 		{
