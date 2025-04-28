@@ -586,7 +586,59 @@ func Test_checkCertRenewal(t *testing.T) {
 	}
 }
 
-func Test_checkCARotation(t *testing.T) {
+func Test_checkCertificateTimeValidity(t *testing.T) {
+	cases := map[string]struct {
+		now             string
+		notBefore       string
+		notAfter        string
+		wantErrContains string
+	}{
+		"should return error if validity range is invalid": {
+			now:             "2026-01-01T00:00:00Z",
+			notBefore:       "2030-01-01T00:00:00Z",
+			notAfter:        "2025-01-01T00:00:00Z",
+			wantErrContains: "certificate expires at",
+		},
+		"should return error if certificate is not yet valid": {
+			now:             "2024-01-01T00:00:00Z",
+			notBefore:       "2025-01-01T00:00:00Z",
+			notAfter:        "2030-01-01T00:00:00Z",
+			wantErrContains: "certificate lifetime start",
+		},
+		"should return error if certificate is expired": {
+			now:             "2031-01-01T00:00:00Z",
+			notBefore:       "2025-01-01T00:00:00Z",
+			notAfter:        "2030-01-01T00:00:00Z",
+			wantErrContains: "certificate expired",
+		},
+		"should return no error for valid certificate": {
+			now:       "2026-06-01T00:00:00Z",
+			notBefore: "2025-01-01T00:00:00Z",
+			notAfter:  "2030-01-01T00:00:00Z",
+		},
+	}
+
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			now, err := time.Parse(time.RFC3339, c.now)
+			require.NoError(t, err)
+
+			cert := generateTestCertWithValidity(t, c.notBefore, c.notAfter)
+			r := &createCentralTLSExtensionRun{currentTime: now}
+
+			err = r.checkCertificateTimeValidity(cert)
+
+			if c.wantErrContains != "" {
+				require.Error(t, err)
+				assert.ErrorContains(t, err, c.wantErrContains)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+func Test_determineCARotationAction(t *testing.T) {
 	cases := map[string]struct {
 		now                string
 		primaryNotBefore   string
@@ -594,55 +646,18 @@ func Test_checkCARotation(t *testing.T) {
 		secondaryNotBefore string
 		secondaryNotAfter  string
 		wantAction         CARotationAction
-		wantErr            assert.ErrorAssertionFunc
 	}{
-		"should return error if primary is nil": {
-			now:        "2026-01-01T00:00:00Z",
-			wantAction: CARotateNoAction,
-			wantErr: func(t assert.TestingT, err error, _ ...interface{}) bool {
-				return assert.ErrorContains(t, err, "primary CA must not be nil")
-			},
-		},
-		"should return error if primary has invalid validity range": {
-			now:              "2026-01-01T00:00:00Z",
-			primaryNotBefore: "2030-01-01T00:00:00Z",
-			primaryNotAfter:  "2025-01-01T00:00:00Z",
-			wantAction:       CARotateNoAction,
-			wantErr: func(t assert.TestingT, err error, _ ...interface{}) bool {
-				return assert.ErrorContains(t, err, "certificate expires at")
-			},
-		},
-		"should return error if primary is not yet valid": {
-			now:              "2024-01-01T00:00:00Z",
-			primaryNotBefore: "2025-01-01T00:00:00Z",
-			primaryNotAfter:  "2030-01-01T00:00:00Z",
-			wantAction:       CARotateNoAction,
-			wantErr: func(t assert.TestingT, err error, _ ...interface{}) bool {
-				return assert.ErrorContains(t, err, "certificate lifetime start")
-			},
-		},
-		"should return error if primary is expired": {
-			now:              "2031-01-01T00:00:00Z",
-			primaryNotBefore: "2025-01-01T00:00:00Z",
-			primaryNotAfter:  "2030-01-01T00:00:00Z",
-			wantAction:       CARotateNoAction,
-			wantErr: func(t assert.TestingT, err error, _ ...interface{}) bool {
-				return assert.ErrorContains(t, err, "certificate expired")
-			},
-		},
 		"should return no action in first 3/5 of validity": {
 			now:              "2026-06-01T00:00:00Z",
 			primaryNotBefore: "2025-01-01T00:00:00Z",
 			primaryNotAfter:  "2030-01-01T00:00:00Z",
 			wantAction:       CARotateNoAction,
-			wantErr:          assert.NoError,
 		},
 		"should add secondary after 3/5 of validity": {
 			now:              "2028-01-02T00:00:00Z",
 			primaryNotBefore: "2025-01-01T00:00:00Z",
 			primaryNotAfter:  "2030-01-01T00:00:00Z",
 			wantAction:       CARotateAddSecondary,
-			wantErr:          assert.NoError,
 		},
 		"should promote secondary after 4/5 of validity": {
 			now:                "2029-01-02T00:00:00Z",
@@ -651,7 +666,6 @@ func Test_checkCARotation(t *testing.T) {
 			secondaryNotBefore: "2028-01-01T00:00:00Z",
 			secondaryNotAfter:  "2033-01-01T00:00:00Z",
 			wantAction:         CARotatePromoteSecondary,
-			wantErr:            assert.NoError,
 		},
 		"should delete expired secondary": {
 			now:                "2031-01-02T00:00:00Z",
@@ -660,7 +674,6 @@ func Test_checkCARotation(t *testing.T) {
 			secondaryNotBefore: "2025-01-01T00:00:00Z",
 			secondaryNotAfter:  "2030-01-01T00:00:00Z",
 			wantAction:         CARotateDeleteSecondary,
-			wantErr:            assert.NoError,
 		},
 	}
 
@@ -680,10 +693,8 @@ func Test_checkCARotation(t *testing.T) {
 			}
 
 			r := &createCentralTLSExtensionRun{currentTime: now}
-			action, err := r.checkCARotation(primary, secondary)
-
+			action := r.determineCARotationAction(primary, secondary)
 			assert.Equal(t, c.wantAction, action)
-			c.wantErr(t, err)
 		})
 	}
 }

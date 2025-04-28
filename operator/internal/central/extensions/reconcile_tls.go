@@ -162,6 +162,9 @@ func (r *createCentralTLSExtensionRun) validateAndConsumeCentralTLSData(fileMap 
 	if err := r.ca.CheckProperties(); err != nil {
 		return errors.Wrap(err, "loaded service CA certificate is invalid")
 	}
+	if err := r.checkCertificateTimeValidity(r.ca.Certificate()); err != nil {
+		return errors.Wrap(err, "primary CA is not valid at the present time")
+	}
 
 	// the presence of a secondary CA certificate is optional
 	secondaryCA, err := certgen.LoadSecondaryCAFromFileMap(fileMap)
@@ -176,11 +179,7 @@ func (r *createCentralTLSExtensionRun) validateAndConsumeCentralTLSData(fileMap 
 		secondaryCACert = secondaryCA.Certificate()
 	}
 
-	r.caRotationAction, err = r.checkCARotation(r.ca.Certificate(), secondaryCACert)
-	if err != nil {
-		// this should only happen if the primary CA is invalid
-		return errors.Wrap(err, "checking CA rotation failed")
-	}
+	r.caRotationAction = r.determineCARotationAction(r.ca.Certificate(), secondaryCACert)
 	if r.caRotationAction != CARotateNoAction {
 		return errors.New("CA rotation action needed")
 	}
@@ -294,44 +293,45 @@ func validateSecondaryCA(oldFileMap, newFileMap types.SecretDataMap) error {
 	return nil
 }
 
-func (r *createCentralTLSExtensionRun) checkCARotation(primary, secondary *x509.Certificate) (CARotationAction, error) {
-	if primary == nil {
-		return CARotateNoAction, errors.New("primary CA must not be nil")
-	}
-
-	startTime := primary.NotBefore
-	endTime := primary.NotAfter
+func (r *createCentralTLSExtensionRun) checkCertificateTimeValidity(certificate *x509.Certificate) error {
+	startTime := certificate.NotBefore
+	endTime := certificate.NotAfter
 	if !endTime.After(startTime) {
-		return CARotateNoAction, fmt.Errorf("certificate expires at %s before it begins to be valid at %s", endTime, startTime)
+		return fmt.Errorf("certificate expires at %s before it begins to be valid at %s", endTime, startTime)
 	}
 	if r.currentTime.Before(startTime) {
-		return CARotateNoAction, fmt.Errorf("certificate lifetime start %s is in the future", startTime)
+		return fmt.Errorf("certificate lifetime start %s is in the future", startTime)
 	}
 	if r.currentTime.After(endTime) {
-		return CARotateNoAction, fmt.Errorf("certificate expired at %s", endTime)
+		return fmt.Errorf("certificate expired at %s", endTime)
 	}
 
-	validityDuration := endTime.Sub(startTime)
+	return nil
+}
+
+func (r *createCentralTLSExtensionRun) determineCARotationAction(primary, secondary *x509.Certificate) CARotationAction {
+	startTime := primary.NotBefore
+	validityDuration := primary.NotAfter.Sub(primary.NotBefore)
 	fifthOfValidityDuration := time.Duration(validityDuration.Nanoseconds()/5) * time.Nanosecond
 
 	// Add secondary CA after 3/5 of validity
 	addSecondaryCATime := startTime.Add(3 * fifthOfValidityDuration)
 	if r.currentTime.After(addSecondaryCATime) && secondary == nil {
-		return CARotateAddSecondary, nil
+		return CARotateAddSecondary
 	}
 
 	// Promote secondary to primary in final year
 	promoteSecondaryCATime := startTime.Add(4 * fifthOfValidityDuration)
 	if r.currentTime.After(promoteSecondaryCATime) {
-		return CARotatePromoteSecondary, nil
+		return CARotatePromoteSecondary
 	}
 
 	// Delete expired secondary
 	if secondary != nil && r.currentTime.After(secondary.NotAfter) {
-		return CARotateDeleteSecondary, nil
+		return CARotateDeleteSecondary
 	}
 
-	return CARotateNoAction, nil
+	return CARotateNoAction
 }
 
 func (r *createCentralTLSExtensionRun) handleCARotation(fileMap types.SecretDataMap) error {
@@ -411,17 +411,11 @@ func (r *createCentralTLSExtensionRun) validateServiceTLSData(serviceType storag
 }
 
 func (r *createCentralTLSExtensionRun) checkCertRenewal(certificate *x509.Certificate) error {
+	if err := r.checkCertificateTimeValidity(certificate); err != nil {
+		return err
+	}
 	startTime := certificate.NotBefore
 	endTime := certificate.NotAfter
-	if !endTime.After(startTime) {
-		return fmt.Errorf("certificate expires at %s before it begins to be valid at %s", endTime, startTime)
-	}
-	if r.currentTime.Before(startTime) {
-		return fmt.Errorf("certificate lifetime start %s is in the future", startTime)
-	}
-	if r.currentTime.After(endTime) {
-		return fmt.Errorf("certificate expired at %s", endTime)
-	}
 	validityDuration := endTime.Sub(startTime)
 	halfOfValidityDuration := time.Duration(validityDuration.Nanoseconds()/2) * time.Nanosecond
 	refreshTime := startTime.Add(halfOfValidityDuration)
