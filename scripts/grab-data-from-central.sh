@@ -29,6 +29,7 @@ main() {
 
     dest="$1"
 
+    set -vx
     local api_endpoint
     if [ -n "${API_ENDPOINT}" ]; then
         api_endpoint="${API_ENDPOINT}"
@@ -37,6 +38,7 @@ main() {
     else
         api_hostname=localhost
         api_port=8000
+        kubectl -n stackrox get svc/central-loadbalancer -o json
         lb_ip=$(kubectl -n stackrox get svc/central-loadbalancer -o json | jq -r '.status.loadBalancer.ingress[0] | .ip // .hostname' || true)
         if [ -n "${lb_ip}" ]; then
             api_hostname="${lb_ip}"
@@ -46,7 +48,11 @@ main() {
     fi
 
     mkdir -p "${dest}"
-    roxctl -e "${api_endpoint}" --insecure-skip-tls-verify central backup --output "${dest}"
+    set | grep '^ROX' | true
+    roxctl -e "${api_endpoint}" --insecure-skip-tls-verify central backup --output "${dest}" \
+      || ROX_CA_CERT_FILE= roxctl -e "${api_endpoint}" --insecure-skip-tls-verify central backup --output "${dest}"
+
+    set +vx
 
     # Pull some data not found from the database
     set +e
