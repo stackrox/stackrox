@@ -28,7 +28,7 @@ function ClusterNameWithTypeIcon({ cluster }: ClusterNameWithTypeIconProps) {
             flexWrap={{ default: 'nowrap' }}
             data-testid="cluster-name"
         >
-            <Link to={cluster.id} className="">
+            <Link to={cluster.id} className="pf-v5-u-text-break-word">
                 {cluster.name}
             </Link>
             {isHelmManaged(cluster) && <HelmIndicator />}
