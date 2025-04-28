@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
+// Pattern is expected to be a string with a glob pattern.
 type Pattern string
 
 var globCache = sync.Map{}
