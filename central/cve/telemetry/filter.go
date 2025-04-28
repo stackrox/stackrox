@@ -29,14 +29,15 @@ func getLabel(expr string) string {
 //
 //	"a=b": ("a", "=", "b")
 func makeExpression(expr string) expression {
+	expr = strings.Trim(expr, " ")
 	label := getLabel(expr)
 	if len(expr) == len(label) {
 		return expression{label, "", ""}
 	}
-	opArg := string(expr[len(label):])
+	opArg := strings.Trim(string(expr[len(label):]), " ")
 	for _, op := range ops {
 		if strings.HasPrefix(opArg, op) {
-			return expression{label, op, opArg[len(op):]}
+			return expression{label, op, strings.Trim(opArg[len(op):], " ")}
 		}
 	}
 	return expression{label, "", opArg}

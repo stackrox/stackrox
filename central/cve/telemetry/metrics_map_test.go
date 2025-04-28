@@ -76,6 +76,13 @@ func Test_makeAggregationKeyInstance(t *testing.T) {
 		"number": "7.4",
 		"bool":   "false",
 	}, labels)
+
+	key, labels = makeAggregationKeyInstance(
+		str2expr("string=missing", "number>5", "bool"),
+		labelsGetter,
+	)
+	assert.Equal(t, "", key)
+	assert.Nil(t, labels)
 }
 
 func Test_getMetricNames(t *testing.T) {

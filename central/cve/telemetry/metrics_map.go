@@ -11,6 +11,10 @@ type expression struct {
 	arg   string
 }
 
+func (e *expression) String() string {
+	return e.label + e.op + e.arg
+}
+
 var opNames = map[rune]string{
 	'=': "_eq_",
 	'!': "_not_",
@@ -29,7 +33,7 @@ func makeMetricName(key aggregationKey) metricName {
 	for _, u := range key {
 		if u >= 'a' && u <= 'z' || u >= 'A' && u <= 'Z' || u >= '0' && u <= '9' {
 			result.WriteRune(u)
-		} else {
+		} else if u != ' ' {
 			if op, ok := opNames[u]; ok {
 				result.WriteString(op)
 			} else {
@@ -52,19 +56,20 @@ func makeMetricName(key aggregationKey) metricName {
 //	}
 func parseAggregationExpressions(keys string) map[metricName][]expression {
 	result := make(map[metricName][]expression)
-	for _, key := range strings.Split(strings.Trim(keys, "|"), "|") {
-		key = strings.ReplaceAll(strings.Trim(key, ","), " ", "")
-		if key == "" {
-			continue
-		}
+
+	for _, key := range strings.FieldsFunc(keys, func(r rune) bool { return r == '|' }) {
 		var expressions []expression
-		for _, expr := range strings.Split(key, ",") {
-			if len(expr) > 0 {
-				expressions = append(expressions, makeExpression(expr))
+		var keys []string
+		for _, expr := range strings.FieldsFunc(key, func(r rune) bool { return r == ',' }) {
+			expr := makeExpression(expr)
+			if expr.label != "" {
+				expressions = append(expressions, expr)
+				// reconstruct the sanitized expression:
+				keys = append(keys, expr.String())
 			}
 		}
 		if len(expressions) > 0 {
-			result[makeMetricName(aggregationKey(key))] = expressions
+			result[makeMetricName(aggregationKey(strings.Join(keys, "|")))] = expressions
 		}
 	}
 	if len(result) == 0 {

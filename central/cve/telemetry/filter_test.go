@@ -31,6 +31,7 @@ func Test_filter(t *testing.T) {
 		"string": "value",
 		"number": "3.4",
 		"bool":   "false",
+		"empty":  "",
 	}
 
 	labels := func(label string) string {
@@ -45,6 +46,26 @@ func Test_filter(t *testing.T) {
 		value, ok = filter(makeExpression("number>=1.0"), labels)
 		assert.True(t, ok)
 		assert.Equal(t, "3.4", value)
+	})
+
+	t.Run("test missing label", func(t *testing.T) {
+		value, ok := filter(makeExpression("nonexistent=value"), labels)
+		assert.Equal(t, "", value)
+		assert.False(t, ok)
+	})
+	t.Run("test empty label value", func(t *testing.T) {
+		value, ok := filter(makeExpression("empty=value"), labels)
+		assert.Equal(t, "", value)
+		assert.False(t, ok)
+
+		value, ok = filter(makeExpression("empty="), labels)
+		assert.Equal(t, "", value)
+		assert.True(t, ok)
+	})
+	t.Run("test expression with only label", func(t *testing.T) {
+		value, ok := filter(makeExpression("string"), labels)
+		assert.Equal(t, "value", value)
+		assert.True(t, ok)
 	})
 
 	t.Run("=", func(t *testing.T) {
