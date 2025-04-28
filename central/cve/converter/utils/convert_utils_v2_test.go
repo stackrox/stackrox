@@ -144,7 +144,7 @@ func TestImageCVEV2ToEmbeddedCVEs(t *testing.T) {
 func TestEmbeddedCVEToImageCVEV2(t *testing.T) {
 	for idx, embeddedVuln := range testVulns {
 		componentInfo := getComponentInfo(t)
-		convertedVuln, err := EmbeddedVulnerabilityToImageCVEV2(componentInfo[idx].imageID, componentInfo[idx].componentID, embeddedVuln)
+		convertedVuln, err := EmbeddedVulnerabilityToImageCVEV2(componentInfo[idx].imageID, "", componentInfo[idx].componentID, embeddedVuln)
 		assert.NoError(t, err)
 		protoassert.Equal(t, getTestCVEs(t)[idx], convertedVuln)
 	}
