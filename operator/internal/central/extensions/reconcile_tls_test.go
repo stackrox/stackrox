@@ -1007,6 +1007,7 @@ func Test_createCentralTLSExtensionRun_validateAndConsumeCentralTLSData(t *testi
 			},
 			assert: func(t *testing.T, err error) {
 				assert.ErrorContains(t, err, "no CA key in file map")
+				assert.ErrorContains(t, err, "loading secondary CA failed")
 			},
 		},
 		"should fail when the secondary CA key is invalid": {
@@ -1020,6 +1021,7 @@ func Test_createCentralTLSExtensionRun_validateAndConsumeCentralTLSData(t *testi
 			},
 			assert: func(t *testing.T, err error) {
 				assert.ErrorContains(t, err, "failed to find any PEM data in key input")
+				assert.ErrorContains(t, err, "loading secondary CA failed")
 			},
 		},
 		"should fail when the secondary CA cert is invalid": {
@@ -1033,6 +1035,7 @@ func Test_createCentralTLSExtensionRun_validateAndConsumeCentralTLSData(t *testi
 			},
 			assert: func(t *testing.T, err error) {
 				assert.ErrorContains(t, err, "failed to find any PEM data in certificate input")
+				assert.ErrorContains(t, err, "loading secondary CA failed")
 			},
 		},
 		"should fail when the secondary CA has an invalid common name": {
