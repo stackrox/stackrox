@@ -168,6 +168,7 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 	if err != nil {
 		return nil, err
 	}
+	query = tryUnsuppressedQuery(query)
 
 	if features.FlattenCVEData.Enabled() {
 		// Get the flattened data
@@ -186,9 +187,6 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 		if err != nil {
 			return nil, err
 		}
-
-		// TODO(ROX-27780): figure out what to do with this
-		//  query = tryUnsuppressedQuery(query)
 
 		// Get the CVEs themselves.  This will be denormalized.  So use the IDs to get them, but use
 		// the data returned from CVE Flat View to keep order and set just 1 instance of a CVE
@@ -228,7 +226,6 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 	}
 
 	// get values
-	query = tryUnsuppressedQuery(query)
 	vulns, err := loader.FromQuery(ctx, query)
 	cveResolvers, err := resolver.wrapImageCVEsWithContext(ctx, vulns, err)
 	if err != nil {
