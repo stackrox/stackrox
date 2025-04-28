@@ -982,6 +982,7 @@ func (e *enricherImpl) enrichImageWithScanner(ctx context.Context, image *storag
 	}
 
 	enrichImage(image, scan, imageScanner.DataSource())
+
 	return ScanSucceeded, nil
 }
 

@@ -221,9 +221,7 @@ func (e *managerImpl) calculateAndUpsertImageRisk(image *storage.Image) error {
 
 // CalculateRiskAndUpsertImage will reprocess risk of the passed image and save the results.
 func (e *managerImpl) CalculateRiskAndUpsertImage(image *storage.Image) error {
-	log.Info("In CalculateRiskAndUpsertImage")
 	if skip, err := e.skipImageUpsert(image); skip || err != nil {
-		log.Info("Skipping upsert")
 		return err
 	}
 
