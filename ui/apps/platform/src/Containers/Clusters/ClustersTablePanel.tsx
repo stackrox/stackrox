@@ -528,6 +528,7 @@ function ClustersTablePanel({
                 )}
                 {isClustersPageMigrationEnabled ? (
                     <ClustersTable
+                        centralVersion={metadata.version}
                         clusterIdToRetentionInfo={clusterIdToRetentionInfo}
                         tableState={tableState}
                         selectedClusterIds={checkedClusterIds}

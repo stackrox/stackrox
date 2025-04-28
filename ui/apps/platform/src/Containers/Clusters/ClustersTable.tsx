@@ -1,6 +1,4 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Flex } from '@patternfly/react-core';
 import {
     ActionsColumn,
     ExpandableRowContent,
@@ -13,7 +11,6 @@ import {
 } from '@patternfly/react-table';
 
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
-import useMetadata from 'hooks/useMetadata';
 import { Cluster } from 'types/cluster.proto';
 import { ClusterIdToRetentionInfo } from 'types/clusterService.proto';
 import { TableUIState } from 'utils/getTableUIState';
@@ -21,13 +18,13 @@ import { TableUIState } from 'utils/getTableUIState';
 import { formatCloudProvider } from './cluster.helpers';
 import { CertExpiryStatus, ClusterHealthStatus } from './clusterTypes';
 import ClusterDeletion from './Components/ClusterDeletion';
+import ClusterNameWithTypeIcon from './Components/ClusterNameWithTypeIcon';
 import ClusterStatus from './Components/ClusterStatus';
 import CredentialExpiration from './Components/CredentialExpiration';
-import HelmIndicator from './Components/HelmIndicator';
-import OperatorIndicator from './Components/OperatorIndicator';
 import SensorUpgrade from './Components/SensorUpgrade';
 
 export type ClustersTableProps = {
+    centralVersion: string;
     clusterIdToRetentionInfo: ClusterIdToRetentionInfo;
     tableState: TableUIState<Cluster>;
     selectedClusterIds: string[];
@@ -37,15 +34,16 @@ export type ClustersTableProps = {
     toggleCluster: (clusterId) => void;
 };
 
-export const COL = {
+export const EXPANDABLE_COLUMN = {
     STATUS: 'status',
     SENSOR: 'sensor',
 } as const;
-type ColId = (typeof COL)[keyof typeof COL];
+type ExpandableColumnId = (typeof EXPANDABLE_COLUMN)[keyof typeof EXPANDABLE_COLUMN];
 
-type ExpansionMap = Record<string, ColId | null>;
+type ExpansionMap = Record<string, ExpandableColumnId | null>;
 
 function ClustersTable({
+    centralVersion,
     clusterIdToRetentionInfo,
     tableState,
     selectedClusterIds,
@@ -54,33 +52,21 @@ function ClustersTable({
     toggleAllClusters,
     toggleCluster,
 }: ClustersTableProps) {
-    const metadata = useMetadata();
     const [expanded, setExpanded] = useState<ExpansionMap>({});
 
-    function toggle(clusterId: string, col: ColId) {
+    function toggle(clusterId: string, col: ExpandableColumnId) {
         setExpanded((prev) => ({
             ...prev,
             [clusterId]: prev[clusterId] === col ? null : col,
         }));
     }
 
-    function isCellExpanded(clusterId: string, col: ColId) {
+    function isCellExpanded(clusterId: string, col: ExpandableColumnId) {
         return expanded[clusterId] === col;
     }
 
     function isRowExpanded(clusterId: string) {
         return expanded[clusterId] != null;
-    }
-
-    function isHelmManaged(cluster: Cluster) {
-        return (
-            cluster.managedBy === 'MANAGER_TYPE_HELM_CHART' ||
-            (cluster.managedBy === 'MANAGER_TYPE_UNKNOWN' && !!cluster.helmConfig)
-        );
-    }
-
-    function isOperatorManaged(cluster: Cluster) {
-        return cluster.managedBy === 'MANAGER_TYPE_KUBERNETES_OPERATOR';
     }
 
     const colSpan = 9;
@@ -108,6 +94,9 @@ function ClustersTable({
             <TbodyUnified
                 tableState={tableState}
                 colSpan={colSpan}
+                emptyProps={{
+                    title: 'No clusters found',
+                }}
                 errorProps={{
                     title: 'There was an error loading cluster information',
                 }}
@@ -121,7 +110,7 @@ function ClustersTable({
                             const clusterId = clusterInfo.id;
                             return (
                                 <Tbody isExpanded={isRowExpanded(clusterId)} key={clusterInfo.id}>
-                                    <Tr key={clusterInfo.id}>
+                                    <Tr>
                                         <Td
                                             select={{
                                                 rowIndex,
@@ -130,26 +119,18 @@ function ClustersTable({
                                             }}
                                         />
                                         <Td dataLabel="Cluster">
-                                            <Flex
-                                                alignItems={{ default: 'alignItemsCenter' }}
-                                                columnGap={{ default: 'columnGapXs' }}
-                                                flexWrap={{ default: 'nowrap' }}
-                                            >
-                                                <Link to={clusterId} className="">
-                                                    {clusterInfo.name}
-                                                </Link>
-                                                {isHelmManaged(clusterInfo) && <HelmIndicator />}
-                                                {isOperatorManaged(clusterInfo) && (
-                                                    <OperatorIndicator />
-                                                )}
-                                            </Flex>
+                                            <ClusterNameWithTypeIcon cluster={clusterInfo} />
                                         </Td>
                                         <Td dataLabel="Provider (Region)">{provider}</Td>
                                         <Td
                                             dataLabel="Status"
                                             compoundExpand={{
-                                                isExpanded: isCellExpanded(clusterId, COL.STATUS),
-                                                onToggle: () => toggle(clusterId, COL.STATUS),
+                                                isExpanded: isCellExpanded(
+                                                    clusterId,
+                                                    EXPANDABLE_COLUMN.STATUS
+                                                ),
+                                                onToggle: () =>
+                                                    toggle(clusterId, EXPANDABLE_COLUMN.STATUS),
                                                 rowIndex,
                                                 columnIndex: 3,
                                             }}
@@ -164,8 +145,12 @@ function ClustersTable({
                                         <Td
                                             dataLabel="Sensor upgrade status"
                                             compoundExpand={{
-                                                isExpanded: isCellExpanded(clusterId, COL.SENSOR),
-                                                onToggle: () => toggle(clusterId, COL.SENSOR),
+                                                isExpanded: isCellExpanded(
+                                                    clusterId,
+                                                    EXPANDABLE_COLUMN.SENSOR
+                                                ),
+                                                onToggle: () =>
+                                                    toggle(clusterId, EXPANDABLE_COLUMN.SENSOR),
                                                 rowIndex,
                                                 columnIndex: 4,
                                             }}
@@ -173,7 +158,7 @@ function ClustersTable({
                                             {/* TODO: needs update for upgrade */}
                                             <SensorUpgrade
                                                 upgradeStatus={clusterInfo.status?.upgradeStatus}
-                                                centralVersion={metadata.version}
+                                                centralVersion={centralVersion}
                                                 sensorVersion={clusterInfo.status?.sensorVersion}
                                                 isList
                                             />
@@ -211,7 +196,7 @@ function ClustersTable({
                                             />
                                         </Td>
                                     </Tr>
-                                    {isCellExpanded(clusterId, COL.STATUS) && (
+                                    {isCellExpanded(clusterId, EXPANDABLE_COLUMN.STATUS) && (
                                         <Tr isExpanded>
                                             <Td colSpan={colSpan}>
                                                 <ExpandableRowContent>
@@ -222,7 +207,7 @@ function ClustersTable({
                                             </Td>
                                         </Tr>
                                     )}
-                                    {isCellExpanded(clusterId, COL.SENSOR) && (
+                                    {isCellExpanded(clusterId, EXPANDABLE_COLUMN.SENSOR) && (
                                         <Tr isExpanded>
                                             <Td colSpan={colSpan}>
                                                 <ExpandableRowContent>
