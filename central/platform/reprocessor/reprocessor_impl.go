@@ -110,6 +110,7 @@ func (pr *platformReprocessorImpl) reprocessAlerts() error {
 		if err != nil {
 			return err
 		}
+		alerts = alerts[:0]
 	}
 	log.Info("Done reprocessing alerts with platform rules")
 	return nil

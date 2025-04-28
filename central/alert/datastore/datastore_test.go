@@ -239,7 +239,7 @@ func (s *alertDataStoreTestSuite) TestGetByQuery() {
 		DoAndReturn(func(ctx context.Context, query *v1.Query, fn func(*storage.Alert) error) error {
 			return fn(fakeAlert)
 		}).Times(1)
-	err := s.dataStore.WalkByQuery(s.hasWriteCtx, search.EmptyQuery(), func(a *storage.Alert) error {
+	err := s.dataStore.WalkByQuery(s.hasReadCtx, search.EmptyQuery(), func(a *storage.Alert) error {
 		protoassert.Equal(s.T(), fakeAlert, a)
 		return nil
 	})

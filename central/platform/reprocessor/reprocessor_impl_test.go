@@ -62,8 +62,17 @@ func (s *platformReprocessorImplTestSuite) TestRunReprocessing() {
 	// Case: Alerts and deployments are updated
 
 	// Mock calls made by alert reprocessing loop
-	s.alertDatastore.EXPECT().WalkByQuery(gomock.Any(), ctx, gomock.Any()).Return(alerts, nil).Times(1)
-	s.alertDatastore.EXPECT().WalkByQuery(gomock.Any(), ctx, gomock.Any()).Return(nil, nil).Times(1)
+	s.alertDatastore.EXPECT().WalkByQuery(ctx, gomock.Any(), gomock.Any()).DoAndReturn(
+		func(_ context.Context, _ *v1.Query, fn func(*storage.Alert) error) error {
+			for _, alert := range alerts {
+				err := fn(alert)
+				if err != nil {
+					return err
+				}
+			}
+			return nil
+		}).Times(1)
+	s.alertDatastore.EXPECT().WalkByQuery(ctx, gomock.Any(), gomock.Any()).Return(nil).Times(1)
 	s.alertDatastore.EXPECT().UpsertAlerts(ctx, expectedAlerts()).Return(nil).Times(1)
 
 	// Mock calls made by deployment reprocessing loop
