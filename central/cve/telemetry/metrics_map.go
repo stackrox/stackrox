@@ -76,9 +76,9 @@ func parseAggregationExpressions(keys string) map[metricName][]*expression {
 // Example:
 //
 //	"Cluster=*prod,Deployment" => "pre-prod|backend", {"Cluster": "pre-prod", "Deployment": "backend")}
-func makeAggregationKeyInstance(expressions []*expression, labelsGetter func(string) string) (metricKey, map[string]string) {
+func makeAggregationKeyInstance(expressions []*expression, labelsGetter func(Label) string) (metricKey, map[Label]string) {
 	sb := strings.Builder{}
-	labels := make(map[string]string)
+	labels := make(map[Label]string)
 	for i, expr := range expressions {
 		value, ok := expr.match(labelsGetter)
 		if !ok {
@@ -102,8 +102,8 @@ func makeAggregationKeyInstance(expressions []*expression, labelsGetter func(str
 // Example:
 //
 //	"Cluster=*prod,Namespace" => {"Cluster", "Namespace"}
-func getMetricLabels(expressions []*expression) []string {
-	var labels []string
+func getMetricLabels(expressions []*expression) []Label {
+	var labels []Label
 	for _, expression := range expressions {
 		labels = append(labels, expression.label)
 	}

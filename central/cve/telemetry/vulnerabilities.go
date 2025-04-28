@@ -8,8 +8,30 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 )
 
+// Label is an alias because the central/metrics package cannot import it.
+type Label = string
+
+const (
+	ClusterLabel          Label = "Cluster"
+	NamespaceLabel        Label = "Namespace"
+	DeploymentLabel       Label = "Deployment"
+	ImageIdLabel          Label = "ImageId"
+	ImageRegistryLabel    Label = "ImageRegistry"
+	ImageRemoteLabel      Label = "ImageRemote"
+	ImageTagLabel         Label = "ImageTag"
+	ComponentLabel        Label = "Component"
+	ComponentVersionLabel Label = "ComponentVersion"
+	CVELabel              Label = "CVE"
+	CVSSLabel             Label = "CVSS"
+	OperatingSystemLabel  Label = "OperatingSystem"
+	SeverityLabel         Label = "Severity"
+	SeverityV2Label       Label = "SeverityV2"
+	SeverityV3Label       Label = "SeverityV3"
+	IsFixableLabel        Label = "IsFixable"
+)
+
 type record struct {
-	labels map[string]string
+	labels map[Label]string
 	total  int
 }
 
@@ -35,7 +57,7 @@ func (h *vulnerabilityMetricsImpl) trackDeployment(ctx context.Context, aggregat
 	}
 
 	forEachVuln(images, func(image *storage.Image, imageName *storage.ImageName, component *storage.EmbeddedImageScanComponent, vuln *storage.EmbeddedVulnerability) {
-		labelGetter := makeVulnerabilityLabels(image, imageName, component, vuln,
+		labelGetter := makeLabelGetter(image, imageName, component, vuln,
 			deployment.GetClusterName(),
 			deployment.GetNamespace(),
 			deployment.GetName())
@@ -76,45 +98,70 @@ func isFixable(vuln *storage.EmbeddedVulnerability) string {
 	return "true"
 }
 
-func makeVulnerabilityLabels(image *storage.Image, name *storage.ImageName, component *storage.EmbeddedImageScanComponent, vuln *storage.EmbeddedVulnerability, clusterName string, namespaceName string, deploymentName string) func(string) string {
-	return func(label string) string {
+func makeLabelGetter(image *storage.Image, name *storage.ImageName, component *storage.EmbeddedImageScanComponent, vuln *storage.EmbeddedVulnerability, clusterName string, namespaceName string, deploymentName string) func(Label) string {
+	return func(label Label) string {
 		switch label {
-		// Unique resource key (no component):
-		case "Cluster":
-			return clusterName
-		case "Namespace":
-			return namespaceName
-		case "Deployment":
-			return deploymentName
-		case "ImageId":
-			return image.GetId()
-		case "ImageRegistry":
-			return name.GetRegistry()
-		case "ImageRemote":
-			return name.GetRemote()
-		case "ImageTag":
-			return name.GetTag()
-		case "Component":
-			return component.GetName()
-		case "ComponentVersion":
-			return component.GetVersion()
-		// Values:
-		case "CVE":
-			return vuln.GetCve()
-		case "CVSS":
-			return strconv.FormatFloat(float64(vuln.GetCvss()), 'f', 1, 32)
-		case "OperatingSystem":
-			return image.GetScan().GetOperatingSystem()
-		case "Severity":
-			return vuln.GetSeverity().String()
-		case "SeverityV2":
-			return vuln.GetCvssV2().GetSeverity().String()
-		case "SeverityV3":
-			return vuln.GetCvssV3().GetSeverity().String()
-		case "IsFixable":
-			return isFixable(vuln)
+		case ClusterLabel, NamespaceLabel, DeploymentLabel:
+			return getResourceLabel(label, clusterName, namespaceName, deploymentName)
+		case ImageIdLabel, ImageRegistryLabel, ImageRemoteLabel, ImageTagLabel, ComponentLabel, ComponentVersionLabel:
+			return getImageComponentLabel(label, image, name, component)
+		case CVELabel, CVSSLabel, OperatingSystemLabel, SeverityLabel, SeverityV2Label, SeverityV3Label, IsFixableLabel:
+			return getVulnerabilityLabel(label, image, vuln)
 		default:
 			return ""
 		}
+	}
+}
+
+func getResourceLabel(label Label, clusterName, namespaceName, deploymentName string) string {
+	switch label {
+	case ClusterLabel:
+		return clusterName
+	case NamespaceLabel:
+		return namespaceName
+	case DeploymentLabel:
+		return deploymentName
+	default:
+		return ""
+	}
+}
+
+func getImageComponentLabel(label Label, image *storage.Image, name *storage.ImageName, component *storage.EmbeddedImageScanComponent) string {
+	switch label {
+	case ImageIdLabel:
+		return image.GetId()
+	case ImageRegistryLabel:
+		return name.GetRegistry()
+	case ImageRemoteLabel:
+		return name.GetRemote()
+	case ImageTagLabel:
+		return name.GetTag()
+	case ComponentLabel:
+		return component.GetName()
+	case ComponentVersionLabel:
+		return component.GetVersion()
+	default:
+		return ""
+	}
+}
+
+func getVulnerabilityLabel(label Label, image *storage.Image, vuln *storage.EmbeddedVulnerability) string {
+	switch label {
+	case CVELabel:
+		return vuln.GetCve()
+	case CVSSLabel:
+		return strconv.FormatFloat(float64(vuln.GetCvss()), 'f', 1, 32)
+	case OperatingSystemLabel:
+		return image.GetScan().GetOperatingSystem()
+	case SeverityLabel:
+		return vuln.GetSeverity().String()
+	case SeverityV2Label:
+		return vuln.GetCvssV2().GetSeverity().String()
+	case SeverityV3Label:
+		return vuln.GetCvssV3().GetSeverity().String()
+	case IsFixableLabel:
+		return isFixable(vuln)
+	default:
+		return ""
 	}
 }

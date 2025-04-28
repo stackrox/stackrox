@@ -11,7 +11,7 @@ import (
 var ops = []string{"!=", "=", "<=", ">=", "<", ">"} // The order matters!
 
 type expression struct {
-	label string
+	label Label
 	op    string
 	arg   string
 }
@@ -21,13 +21,13 @@ type expression struct {
 // Example:
 //
 //	getLabel("a=b") == "a"
-func getLabel(expr string) string {
+func getLabel(expr string) Label {
 	if i := strings.IndexFunc(expr, func(r rune) bool {
 		return !(r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' || r == '_' || r == '.')
 	}); i >= 0 {
-		return expr[:i]
+		return Label(expr[:i])
 	}
-	return expr
+	return Label(expr)
 }
 
 // makeExpression splits an expression to the label, operator and argument.
@@ -58,12 +58,12 @@ func makeExpression(expr string) *expression {
 }
 
 func (e *expression) String() string {
-	return e.label + e.op + e.arg
+	return string(e.label) + e.op + e.arg
 }
 
 // match returns whether the labels match the expression and the matched label
 // value, if matched.
-func (e *expression) match(labels func(string) string) (string, bool) {
+func (e *expression) match(labels func(Label) string) (string, bool) {
 	if e == nil {
 		return "", false
 	}

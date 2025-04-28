@@ -27,14 +27,14 @@ func Test_makeExpression(t *testing.T) {
 }
 
 func Test_expression_match(t *testing.T) {
-	testLabels := map[string]string{
+	testLabels := map[Label]string{
 		"string": "value",
 		"number": "3.4",
 		"bool":   "false",
 		"empty":  "",
 	}
 
-	labels := func(label string) string {
+	labels := func(label Label) string {
 		return testLabels[label]
 	}
 

@@ -59,13 +59,13 @@ func Test_parseAggregationExpressions(t *testing.T) {
 }
 
 func Test_makeAggregationKeyInstance(t *testing.T) {
-	testMetric := map[string]string{
+	testMetric := map[Label]string{
 		"string":  "value",
 		"number":  "7.4",
 		"bool":    "false",
 		"another": "value",
 	}
-	labelsGetter := func(label string) string {
+	labelsGetter := func(label Label) string {
 		return testMetric[label]
 	}
 	key, labels := makeAggregationKeyInstance(

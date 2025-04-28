@@ -103,7 +103,7 @@ func Test_trackVulnerabilityMetrics(t *testing.T) {
 	i := &vulnerabilityMetricsImpl{ds: ds,
 		metricExpressions: parseAggregationExpressions(
 			"Severity|Cluster,Namespace,Severity|Deployment=*3,ImageTag=latest"),
-		trackFunc: func(metricName string, labels map[string]string, total int) {
+		trackFunc: func(metricName string, labels map[Label]string, total int) {
 			aggregated[metricName] = append(aggregated[metricName],
 				&record{
 					labels: labels,
@@ -116,19 +116,19 @@ func Test_trackVulnerabilityMetrics(t *testing.T) {
 
 	expected := map[metricName][]*record{
 		"Severity_total": {
-			{map[string]string{"Severity": "CRITICAL_VULNERABILITY_SEVERITY"}, 3},
-			{map[string]string{"Severity": "MODERATE_VULNERABILITY_SEVERITY"}, 4},
-			{map[string]string{"Severity": "LOW_VULNERABILITY_SEVERITY"}, 2},
+			{map[Label]string{SeverityLabel: "CRITICAL_VULNERABILITY_SEVERITY"}, 3},
+			{map[Label]string{SeverityLabel: "MODERATE_VULNERABILITY_SEVERITY"}, 4},
+			{map[Label]string{SeverityLabel: "LOW_VULNERABILITY_SEVERITY"}, 2},
 		},
 		"Cluster_Namespace_Severity_total": {
-			{map[string]string{"Cluster": "cluster-1", "Namespace": "namespace-1", "Severity": "CRITICAL_VULNERABILITY_SEVERITY"}, 1},
-			{map[string]string{"Cluster": "cluster-1", "Namespace": "namespace-2", "Severity": "CRITICAL_VULNERABILITY_SEVERITY"}, 2},
-			{map[string]string{"Cluster": "cluster-1", "Namespace": "namespace-2", "Severity": "MODERATE_VULNERABILITY_SEVERITY"}, 2},
-			{map[string]string{"Cluster": "cluster-2", "Namespace": "namespace-2", "Severity": "MODERATE_VULNERABILITY_SEVERITY"}, 2},
-			{map[string]string{"Cluster": "cluster-2", "Namespace": "namespace-2", "Severity": "LOW_VULNERABILITY_SEVERITY"}, 2},
+			{map[Label]string{ClusterLabel: "cluster-1", NamespaceLabel: "namespace-1", SeverityLabel: "CRITICAL_VULNERABILITY_SEVERITY"}, 1},
+			{map[Label]string{ClusterLabel: "cluster-1", NamespaceLabel: "namespace-2", SeverityLabel: "CRITICAL_VULNERABILITY_SEVERITY"}, 2},
+			{map[Label]string{ClusterLabel: "cluster-1", NamespaceLabel: "namespace-2", SeverityLabel: "MODERATE_VULNERABILITY_SEVERITY"}, 2},
+			{map[Label]string{ClusterLabel: "cluster-2", NamespaceLabel: "namespace-2", SeverityLabel: "MODERATE_VULNERABILITY_SEVERITY"}, 2},
+			{map[Label]string{ClusterLabel: "cluster-2", NamespaceLabel: "namespace-2", SeverityLabel: "LOW_VULNERABILITY_SEVERITY"}, 2},
 		},
 		"Deployment_eq__3_ImageTag_eq_latest_total": {
-			{map[string]string{"Deployment": "D3", "ImageTag": "latest"}, 2},
+			{map[Label]string{"Deployment": "D3", "ImageTag": "latest"}, 2},
 		},
 	}
 	if assert.Len(t, expected, len(aggregated)) {
