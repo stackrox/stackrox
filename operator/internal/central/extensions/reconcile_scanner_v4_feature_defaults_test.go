@@ -96,7 +96,7 @@ func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
 				annotationKey: string(platform.ScannerV4ComponentDisabled),
 			},
 		},
-		"upgrade: pick up previously persisted default (else)": {
+		"upgrade: ignoring bogus persisted default": {
 			Status: nonEmptyStatus,
 			Annotations: map[string]string{
 				annotationKey: "foo",
@@ -105,7 +105,7 @@ func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
 				ScannerComponent: &platform.ScannerV4Disabled,
 			},
 			ExpectedAnnotations: map[string]string{
-				annotationKey: "foo",
+				annotationKey: string(platform.ScannerV4ComponentDisabled),
 			},
 		},
 		"previously persisted default is picked up even if status is empty": {
