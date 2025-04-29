@@ -449,7 +449,7 @@ func (s *storeImpl) upsert(ctx context.Context, obj *storage.Image) error {
 		return err
 	}
 
-	if components, err := getImageComponents(ctx, tx, obj.GetId()); err == nil && len(components) > 0 {
+	if components, err := getImageComponents(ctx, tx, obj.GetId()); err == nil && len(components) == 0 {
 		scanUpdated = true
 	}
 
