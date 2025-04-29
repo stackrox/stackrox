@@ -63,13 +63,6 @@ $centralAdditionalCAIndented
         limits:
           cpu: "6000m"
           memory: "2000Mi"
-    db:
-      resources:
-        requests:
-          cpu: "1000m"
-          memory: "2Gi"
-        limits:
-          memory: "4Gi"
 ---
 apiVersion: v1
 kind: Secret
