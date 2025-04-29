@@ -224,8 +224,8 @@ spec:
       - description: |-
           Can be specified as "Enabled" or "Disabled".
           If this field is not specified, the following defaulting takes place:
-          for new installations, Scanner V4 is enabled starting with ACS 4.8;
-          for upgrades to 4.8 from previous releases, Scanner V4 is disabled.
+          * for new installations, Scanner V4 is enabled starting with ACS 4.8;
+          * for upgrades to 4.8 from previous releases, Scanner V4 is disabled.
         displayName: Scanner V4 component
         path: scannerV4.scannerComponent
       - description: |-
