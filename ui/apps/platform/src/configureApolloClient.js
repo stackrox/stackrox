@@ -17,8 +17,8 @@ const httpLink = new HttpLink({
         //   - testability: easier to mock and wait for the request in e2e tests
         const { operationName } = JSON.parse(config.data);
 
-        // set a long timeout for GraphQL requests, as an escape hatch for slow queries
-        const modifiedConfig = { ...config, timeout: 60000 };
+        // set a loooong timeout for GraphQL requests, as an escape hatch for slow queries
+        const modifiedConfig = { ...config, timeout: 180000 };
 
         return {
             ...modifiedConfig,
