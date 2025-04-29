@@ -15,7 +15,7 @@ const (
 	ClusterLabel          Label = "Cluster"
 	NamespaceLabel        Label = "Namespace"
 	DeploymentLabel       Label = "Deployment"
-	ImageIdLabel          Label = "ImageId"
+	ImageIDLabel          Label = "ImageID"
 	ImageRegistryLabel    Label = "ImageRegistry"
 	ImageRemoteLabel      Label = "ImageRemote"
 	ImageTagLabel         Label = "ImageTag"
@@ -103,7 +103,7 @@ func makeLabelGetter(image *storage.Image, name *storage.ImageName, component *s
 		switch label {
 		case ClusterLabel, NamespaceLabel, DeploymentLabel:
 			return getResourceLabel(label, clusterName, namespaceName, deploymentName)
-		case ImageIdLabel, ImageRegistryLabel, ImageRemoteLabel, ImageTagLabel, ComponentLabel, ComponentVersionLabel:
+		case ImageIDLabel, ImageRegistryLabel, ImageRemoteLabel, ImageTagLabel, ComponentLabel, ComponentVersionLabel:
 			return getImageComponentLabel(label, image, name, component)
 		case CVELabel, CVSSLabel, OperatingSystemLabel, SeverityLabel, SeverityV2Label, SeverityV3Label, IsFixableLabel:
 			return getVulnerabilityLabel(label, image, vuln)
@@ -128,7 +128,7 @@ func getResourceLabel(label Label, clusterName, namespaceName, deploymentName st
 
 func getImageComponentLabel(label Label, image *storage.Image, name *storage.ImageName, component *storage.EmbeddedImageScanComponent) string {
 	switch label {
-	case ImageIdLabel:
+	case ImageIDLabel:
 		return image.GetId()
 	case ImageRegistryLabel:
 		return name.GetRegistry()

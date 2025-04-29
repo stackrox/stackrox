@@ -5,6 +5,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/reflectutils"
 	"github.com/stackrox/rox/pkg/sensor/event"
@@ -477,12 +478,13 @@ func SetSignatureVerificationReprocessorDuration(start time.Time) {
 
 // RegisterVulnAggregatedMetric registers user-defined custom vulnerability
 // aggregated metric according to the ROX_AGGREGATE_VULN_METRICS variable value.
-func RegisterVulnAggregatedMetric(name string, labels []string) {
+func RegisterVulnAggregatedMetric(name string, labels []string, aggregationExpression string) {
 	metric := prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      name,
-		Help:      "The discovered CVEs",
+		Help: "The total number of discovered CVEs aggregated by " + aggregationExpression +
+			" and gathered every " + env.AggregateVulnMetricsPeriod.DurationSetting().String(),
 	}, labels)
 	aggregatedVulnMetrics[name] = metric
 	prometheus.MustRegister(metric)

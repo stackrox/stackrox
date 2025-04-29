@@ -86,7 +86,7 @@ func Test_trackVulnerabilityMetrics(t *testing.T) {
 
 	ds.EXPECT().WalkByQuery(gomock.Any(), gomock.Any(), gomock.Any()).
 		Times(1).
-		Do(func(ctx context.Context, q *v1.Query, f func(deployment *storage.Deployment) error) {
+		Do(func(_ context.Context, _ *v1.Query, f func(deployment *storage.Deployment) error) {
 			for _, deployment := range deployments {
 				_ = f(deployment)
 			}
