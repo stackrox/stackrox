@@ -935,21 +935,16 @@ function launch_sensor {
       kubectl -n "${sensor_namespace}" set env ds/collector ROX_NON_AGGREGATED_NETWORKS="${ROX_NON_AGGREGATED_NETWORKS}"
     fi
 
-    # For local installations (e.g. on Colima): hotload binary and update resource requests
+    # For local installations (e.g. on Colima): hotload binary
     if [[ "$(local_dev)" == "true" ]]; then
         if [[ "${ROX_HOTRELOAD}" == "true" ]]; then
             hotload_binary bin/kubernetes-sensor kubernetes sensor "${sensor_namespace}"
         fi
-        if [[ -z "${IS_RACE_BUILD}" ]]; then
-           kubectl -n "${sensor_namespace}" patch deploy/sensor --patch '{"spec":{"template":{"spec":{"containers":[{"name":"sensor","resources":{"limits":{"cpu":"500m","memory":"500Mi"},"requests":{"cpu":"500m","memory":"500Mi"}}}]}}}}'
-        fi
     fi
 
-    # When running CI steps or when SENSOR_DEV_RESOURCES is set to true: only update resource requests
-    if [[ -n "${CI}" || "${SENSOR_DEV_RESOURCES}" == "true" ]]; then
-        if [[ -z "${IS_RACE_BUILD}" ]]; then
-            kubectl -n "${sensor_namespace}" patch deploy/sensor --patch '{"spec":{"template":{"spec":{"containers":[{"name":"sensor","resources":{"limits":{"cpu":"500m","memory":"500Mi"},"requests":{"cpu":"500m","memory":"500Mi"}}}]}}}}'
-        fi
+    # When running CI steps, local installations, or when SENSOR_DEV_RESOURCES is set to true: only update resource requests
+    if [[ -n "${CI}" || "$(local_dev)" == "true" || "${SENSOR_DEV_RESOURCES}" == "true" ]]; then
+        ${ORCH_CMD} -n "${sensor_namespace}" patch deploy/sensor --patch "$(cat "${common_dir}/sensor-local-patch.yaml")"
     fi
 
     if [[ "$MONITORING_SUPPORT" == "true" || ( "$(local_dev)" != "true" && -z "$MONITORING_SUPPORT" ) ]]; then
