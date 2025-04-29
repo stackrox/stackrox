@@ -50,7 +50,13 @@ main() {
     mkdir -p "${dest}"
     set | grep '^ROX' | true
     roxctl -e "${api_endpoint}" --insecure-skip-tls-verify central backup --output "${dest}" \
-      || ROX_CA_CERT_FILE= roxctl -e "${api_endpoint}" --insecure-skip-tls-verify central backup --output "${dest}"
+      || {
+      # If api_endpoint fails, try localhost forwarding:
+      kubectl -n stackrox port-forward "$(kubectl get pod -n stackrox --selector 'app=central' -o name)" 8000:8443 &
+      forward_pid=$!
+      roxctl -e "localhost:8000" --insecure-skip-tls-verify central backup --output "${dest}"
+      kill -9 "${forward_pid}";
+    } || echo "Failed to connect to Central endpoint:${api_endpoint}"
 
     set +vx
 
