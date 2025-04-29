@@ -32,6 +32,10 @@ var (
 	}
 )
 
+func init() {
+	runningInTest = true
+}
+
 func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
 	cases := map[string]scannerV4StatusDefaultsReconcilliationTestCase{
 		"install: enabled by default": {
