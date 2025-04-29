@@ -31,7 +31,7 @@ func assertOnFileExistence(t *testing.T, path string, shouldExist bool) {
 	assert.Equal(t, shouldExist, exists)
 }
 
-// TODO(ROX-29099):
+// TODO(ROX-29099): Make its pass with Scanner V4 enabled
 //
 // func TestUpdate(t *testing.T) {
 // 	filePath := filepath.Join(t.TempDir(), "dump.zip")
