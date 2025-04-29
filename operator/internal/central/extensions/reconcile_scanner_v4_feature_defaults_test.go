@@ -108,6 +108,17 @@ func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
 				annotationKey: "foo",
 			},
 		},
+		"previously persisted default is picked up even if status is empty": {
+			Annotations: map[string]string{
+				annotationKey: string(platform.ScannerV4ComponentDisabled),
+			},
+			ExpectedScannerV4Spec: platform.ScannerV4Spec{
+				ScannerComponent: &platform.ScannerV4Disabled,
+			},
+			ExpectedAnnotations: map[string]string{
+				annotationKey: string(platform.ScannerV4ComponentDisabled),
+			},
+		},
 	}
 
 	for name, c := range cases {
