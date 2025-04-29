@@ -92,7 +92,7 @@ func (ds *dataStoreImpl) initNetworkTrees(ctx context.Context) {
 	// If network tree for a cluster is not found, it means it must orphan which shall be cleaned at next garbage collection.
 	walkFn := func() error {
 		entitiesByCluster = make(map[string][]*storage.NetworkEntityInfo)
-		storeCtx := getStoreAccessContext(ctx, storage.Access_READ_ACCESS)
+		storeCtx := getStoreReadContext(ctx)
 		return ds.storage.Walk(storeCtx, func(obj *storage.NetworkEntity) error {
 			entitiesByCluster[obj.GetScope().GetClusterId()] = append(entitiesByCluster[obj.GetScope().GetClusterId()], obj.GetInfo())
 			return nil
@@ -118,12 +118,12 @@ func (ds *dataStoreImpl) Exists(ctx context.Context, id string) (bool, error) {
 	if ok, err := ds.readAllowed(ctx, id); err != nil || !ok {
 		return false, err
 	}
-	storeCtx := getStoreAccessContext(ctx, storage.Access_READ_ACCESS)
+	storeCtx := getStoreReadContext(ctx)
 	return ds.storage.Exists(storeCtx, id)
 }
 
 func (ds *dataStoreImpl) GetIDs(ctx context.Context) ([]string, error) {
-	storeCtx := getStoreAccessContext(ctx, storage.Access_READ_ACCESS)
+	storeCtx := getStoreReadContext(ctx)
 	ids, err := ds.storage.GetIDs(storeCtx)
 	if err != nil {
 		return nil, err
@@ -158,7 +158,7 @@ func (ds *dataStoreImpl) GetEntity(ctx context.Context, id string) (*storage.Net
 	if ok, err := ds.readAllowed(ctx, id); err != nil || !ok {
 		return nil, false, err
 	}
-	storeCtx := getStoreAccessContext(ctx, storage.Access_READ_ACCESS)
+	storeCtx := getStoreReadContext(ctx)
 	return ds.storage.Get(storeCtx, id)
 }
 
@@ -204,7 +204,7 @@ func (ds *dataStoreImpl) GetAllMatchingEntities(ctx context.Context, pred func(e
 	walkFn := func() error {
 		entities = entities[:0]
 		allowed = make(map[string]bool)
-		storeCtx := getStoreAccessContext(ctx, storage.Access_READ_ACCESS)
+		storeCtx := getStoreReadContext(ctx)
 		return ds.storage.Walk(storeCtx, func(entity *storage.NetworkEntity) error {
 			if !pred(entity) {
 				return nil
@@ -236,7 +236,7 @@ func (ds *dataStoreImpl) GetAllMatchingEntities(ctx context.Context, pred func(e
 }
 
 func (ds *dataStoreImpl) GetEntityByQuery(ctx context.Context, query *v1.Query) ([]*storage.NetworkEntity, error) {
-	storeCtx := getStoreAccessContext(ctx, storage.Access_READ_ACCESS)
+	storeCtx := getStoreReadContext(ctx)
 	return ds.storage.GetByQuery(storeCtx, query)
 }
 
@@ -308,7 +308,7 @@ func (ds *dataStoreImpl) CreateExtNetworkEntitiesForCluster(ctx context.Context,
 }
 
 func (ds *dataStoreImpl) createMany(ctx context.Context, entities []*storage.NetworkEntity) error {
-	storeCtx := getStoreAccessContext(ctx, storage.Access_READ_WRITE_ACCESS)
+	storeCtx := getStoreWriteContext(ctx)
 	ds.netEntityLock.Lock()
 	defer ds.netEntityLock.Unlock()
 
@@ -324,7 +324,7 @@ func (ds *dataStoreImpl) create(ctx context.Context, entity *storage.NetworkEnti
 	if err != nil {
 		return err
 	}
-	storeCtx := getStoreAccessContext(ctx, storage.Access_READ_WRITE_ACCESS)
+	storeCtx := getStoreWriteContext(ctx)
 
 	ds.netEntityLock.Lock()
 	defer ds.netEntityLock.Unlock()
@@ -357,7 +357,7 @@ func (ds *dataStoreImpl) UpdateExternalNetworkEntity(ctx context.Context, entity
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
-	storeCtx := getStoreAccessContext(ctx, storage.Access_READ_WRITE_ACCESS)
+	storeCtx := getStoreWriteContext(ctx)
 
 	ds.netEntityLock.Lock()
 	defer ds.netEntityLock.Unlock()
@@ -386,7 +386,7 @@ func (ds *dataStoreImpl) DeleteExternalNetworkEntity(ctx context.Context, id str
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
-	storeCtx := getStoreAccessContext(ctx, storage.Access_READ_WRITE_ACCESS)
+	storeCtx := getStoreWriteContext(ctx)
 
 	ds.netEntityLock.Lock()
 	defer ds.netEntityLock.Unlock()
@@ -428,7 +428,7 @@ func (ds *dataStoreImpl) DeleteExternalNetworkEntitiesForCluster(ctx context.Con
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
-	storeCtx := getStoreAccessContext(ctx, storage.Access_READ_WRITE_ACCESS)
+	storeCtx := getStoreWriteContext(ctx)
 
 	ds.netEntityLock.Lock()
 	defer ds.netEntityLock.Unlock()
@@ -460,7 +460,7 @@ func (ds *dataStoreImpl) DeleteExternalNetworkEntitiesForCluster(ctx context.Con
 // region helpers
 
 func (ds *dataStoreImpl) validateNoCIDRUpdate(ctx context.Context, newEntity *storage.NetworkEntity) (bool, error) {
-	storeCtx := getStoreAccessContext(ctx, storage.Access_READ_ACCESS)
+	storeCtx := getStoreReadContext(ctx)
 	old, found, err := ds.storage.Get(storeCtx, newEntity.GetInfo().GetId())
 	if err != nil {
 		return false, err
@@ -515,6 +515,14 @@ func getStoreAccessContext(ctx context.Context, mode storage.Access) context.Con
 			sac.ResourceScopeKeys(resources.NetworkGraph, resources.NetworkEntity),
 		),
 	)
+}
+
+func getStoreReadContext(ctx context.Context) context.Context {
+	return getStoreAccessContext(ctx, storage.Access_READ_ACCESS)
+}
+
+func getStoreWriteContext(ctx context.Context) context.Context {
+	return getStoreAccessContext(ctx, storage.Access_READ_WRITE_ACCESS)
 }
 
 func validateExternalNetworkEntity(entity *storage.NetworkEntity) error {
