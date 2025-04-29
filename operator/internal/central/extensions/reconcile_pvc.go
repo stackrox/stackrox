@@ -52,7 +52,7 @@ var (
 	errMultipleOwnedPVCs = errors.New("operator is only allowed to have 1 owned PVC")
 
 	DefaultPVCSize       = resource.MustParse("100Gi")
-	DefaultBackupPVCSize = resource.MustParse("200Gi")
+	DefaultBackupPVCSize = resource.MustParse("200Gi") // 2*DefaultPVCSize
 )
 
 func convertDBPersistenceToPersistence(p *platform.DBPersistence, target PVCTarget, log logr.Logger) (*platform.Persistence, error) {
