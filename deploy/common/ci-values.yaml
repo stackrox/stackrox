@@ -4,11 +4,14 @@ central:
   db:
     resources:
       limits:
-        cpu: 8
+        cpu: null
         memory: 16Gi
       requests:
         cpu: 1
         memory: 1Gi
+  resources:
+    limits:
+      cpu: null
 
   telemetry:
     enabled: false
@@ -26,7 +29,7 @@ scannerV4:
         cpu: "800m"
       limits:
         memory: "4Gi"
-        cpu: "2000m"
+        cpu: null
   indexer:
     resources:
       requests:
@@ -34,7 +37,7 @@ scannerV4:
         cpu: "800m"
       limits:
         memory: "4Gi"
-        cpu: "2000m"
+        cpu: null
   db:
     resources:
       requests:
@@ -42,4 +45,4 @@ scannerV4:
         cpu: "500m"
       limits:
         memory: "4Gi"
-        cpu: "2000m"
+        cpu: null

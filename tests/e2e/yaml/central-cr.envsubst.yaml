@@ -22,11 +22,14 @@ spec:
     db:
       resources:
         limits:
-          cpu: 8
+          cpu: null
           memory: 16Gi
         requests:
           cpu: 1
           memory: 1Gi
+    resources:
+      limits:
+        cpu: null
 ${disableSpecTLS}  tls:
 ${disableSpecTLS}    additionalCAs:
 ${disableSpecTLS}    - name: additional-ca

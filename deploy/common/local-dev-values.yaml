@@ -8,7 +8,7 @@ central:
       cpu: 500m
       memory: 1Gi
     limits:
-      cpu: 1
+      cpu: null
       memory: 4Gi
 
   db:
@@ -17,7 +17,7 @@ central:
         cpu: 500m
         memory: 1Gi
       limits:
-        cpu: 1
+        cpu: null
         memory: 4Gi
 
   telemetry:
@@ -34,11 +34,11 @@ scanner:
       cpu: "500m"
     limits:
       memory: "2500Mi"
-      cpu: "2000m"
+      cpu: null
   dbResources:
     requests:
       cpu: "400m"
       memory: "512Mi"
     limits:
-      cpu: "2000m"
+      cpu: null
       memory: "4Gi"
