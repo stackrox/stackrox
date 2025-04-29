@@ -7,6 +7,17 @@ Entries in this file should be limited to:
 - Obscure side-effects that are not obviously apparent based on the JIRA associated with the changes.
 Please avoid adding duplicate information across this changelog and JIRA/doc input pages.
 
+## [4.7.3]
+
+### Added Features
+
+### Removed Features
+
+### Deprecated Features
+
+### Technical Changes
+- ROX-27669: Users approving globally scoped Vulnerability exception requests will now require READ access to all images across all known namespaces. Note that this will be in addition to the already required WRITE permission to the "VulnerabilityManagementApprovals" resource.
+
 ## [4.7.2]
 
 ### Added Features
