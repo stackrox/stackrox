@@ -146,6 +146,7 @@ function launch_central {
     local central_namespace=${CENTRAL_NAMESPACE:-stackrox}
     local common_dir="${k8s_dir}/../common"
 
+    echo "LOAD_BALANCER: ${LOAD_BALANCER:-}"
     verify_orch
     if [[ -z "$CI" ]]; then
         prompt_if_central_exists "${central_namespace}"
