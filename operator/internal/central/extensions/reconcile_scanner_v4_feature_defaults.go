@@ -53,7 +53,7 @@ func reconcileScannerV4FeatureDefaults(
 		// We do this immediately during (first-time) execution of this extension to make sure
 		// that this information is already persisted in the Kubernetes resource before we
 		// can realistically end up in a situation where reconcilliation might need to be retried.
-		err := updateCentralAnnotation(ctx, client, central, annotationKey, string(componentPolicy))
+		err := patchCentralAnnotation(ctx, client, central, annotationKey, string(componentPolicy))
 		if err != nil {
 			return err
 		}
@@ -74,11 +74,11 @@ func initializedDeepCopy(spec *platform.ScannerV4Spec) *platform.ScannerV4Spec {
 func patchCentralAnnotation(ctx context.Context, client ctrlClient.Client, central *platform.Central, key string, val string) error {
 	// Only patch the annotation, no changes to the Central spec will be patched on the cluster.
 	centralPatchBase := ctrlClient.MergeFrom(central.DeepCopy())
-	central.Annotations[annotationKey] = annotationVal
+	central.Annotations[annotationKey] = val
 	err := client.Patch(ctx, central, centralPatchBase)
 	if err != nil {
 		return errors.Wrapf(err, "patching Central object with annotation %s=%s",
-			annotationKey, annotationVal)
+			annotationKey, val)
 	}
 	return nil
 }
