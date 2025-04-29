@@ -20,6 +20,9 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-28153: Support for Cosign keyless signing and verification of image signatures.
 - ROX-28306: When using the central-services Helm chart for new installations Scanner V4 will be installed unless explicitly disabled (opt-out).
   For upgrades using the new chart version Scanner V4 continues to be not installed by default (opt-in).
+- ROX-28655: When managing a Central installation using the operator
+  * Scanner V4 will be enabled for new installations unless explicitly disabled (opt-out) and
+  * Scanner V4 will remain to be disabled for upgrades unless explicitly enabled (opt-in).
 
 ### Removed Features
 
