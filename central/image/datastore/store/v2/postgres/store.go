@@ -439,7 +439,7 @@ func (s *storeImpl) upsert(ctx context.Context, obj *storage.Image) error {
 		}
 	}
 
-	componentsEmpty, err := s.componentsTableEmpty(ctx, obj)
+	componentsEmpty, err := s.isComponentsTableEmpty(ctx, obj)
 	if err != nil {
 		return err
 	}
@@ -966,7 +966,7 @@ func getCVEComponentIndex(s string) int {
 	return index
 }
 
-func (s *storeImpl) componentsTableEmpty(ctx context.Context, obj *storage.Image) (bool, error) {
+func (s *storeImpl) isComponentsTableEmpty(ctx context.Context, obj *storage.Image) (bool, error) {
 	conn, release, err := s.acquireConn(ctx, ops.Get, "Image")
 	if err != nil {
 		return false, err
