@@ -32,6 +32,15 @@ func ScannerV4ComponentPolicy(logger logr.Logger, status *platform.CentralStatus
 	// User is relying on defaulting.
 	// This includes the case spec.ScannerComponent == "Default".
 
+	// A default entry exists already, use recorded value.
+	recordedDefault := platform.ScannerV4ComponentPolicy(annotations[FeatureDefaultKeyScannerV4])
+	if recordedDefault == platform.ScannerV4Enabled || recordedDefault == platform.ScannerV4Disabled {
+		logger.Info(fmt.Sprintf("ScannerV4ComponentPolicy: using previously recorded ScannerV4 componentPolicy %v.", recordedDefault))
+		return recordedDefault
+	}
+
+	// No default set in the annotations.
+
 	if centralStatusUninitialized(status) {
 		// Install / Green field.
 		logger.Info("ScannerV4ComponentPolicy: assuming new installation due to empty status.")
@@ -46,13 +55,6 @@ func ScannerV4ComponentPolicy(logger logr.Logger, status *platform.CentralStatus
 		// statusDefaults with a ScannerV4ComponentPolicy.
 		logger.Info(fmt.Sprintf("ScannerV4ComponentPolicy: using ScannerV4 componentPolicy %v.", defaultForUpgrades))
 		return defaultForUpgrades
-	}
-
-	// A default entry exists already, use recorded value.
-	recordedDefault := platform.ScannerV4ComponentPolicy(annotations[FeatureDefaultKeyScannerV4])
-	if recordedDefault == platform.ScannerV4Enabled || recordedDefault == platform.ScannerV4Disabled {
-		logger.Info(fmt.Sprintf("ScannerV4ComponentPolicy: using previously recorded ScannerV4 componentPolicy %v.", recordedDefault))
-		return recordedDefault
 	}
 
 	// This should not happen, since we only store Enabled|Disabled, but just in case something unexpected happened
