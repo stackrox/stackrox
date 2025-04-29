@@ -69,7 +69,6 @@ func init() {
 		&storage.LogImbue{}:                                     resources.Administration,
 		&storage.NamespaceMetadata{}:                            resources.Namespace,
 		&storage.NetworkBaseline{}:                              resources.DeploymentExtension,
-		&storage.NetworkEntity{}:                                resources.NetworkGraph,
 		&storage.NetworkFlow{}:                                  resources.NetworkGraph,
 		&storage.NetworkGraphConfig{}:                           resources.Administration,
 		&storage.NetworkPolicyApplicationUndoDeploymentRecord{}: resources.NetworkPolicy,
