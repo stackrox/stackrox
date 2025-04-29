@@ -8,7 +8,9 @@ import (
 	"github.com/stackrox/rox/pkg/glob"
 )
 
-var ops = []string{"!=", "=", "<=", ">=", "<", ">"} // The order matters!
+var ops = []string{"=", "!=", "<=", ">=", "<", ">"} // The order matters, as the
+// parser goes through this list to find the first matching operator, and the
+// pairs (<,<=) and (>,>=) start with the same rune.
 
 type expression struct {
 	label Label
