@@ -21,6 +21,8 @@ import (
 // RegisterNewReconciler registers a new helm reconciler in the given k8s controller manager
 func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 	proxyEnv := proxy.GetProxyEnvVars() // fix at startup time
+	// IMPORTANT: reconciler preExtensions that implement feature-defaulting logic (such as ReconcileScannerV4FeatureDefaultsExtension)
+	// must be executed first. Hence, they need to be first in order when registering extensions using WithPreExtension!
 	opts := []pkgReconciler.Option{
 		pkgReconciler.WithExtraWatch(
 			source.Kind[*platform.SecuredCluster](
