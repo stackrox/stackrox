@@ -20,12 +20,15 @@ const (
 // Only returns Enabled or Disabled.
 // Derive component policy based on status Defaults and spec.
 // This will be called from the preExtension to record the current setting.
-func ScannerV4ComponentPolicy(logger logr.Logger, status *platform.CentralStatus, annotations map[string]string, spec *platform.ScannerV4Spec) platform.ScannerV4ComponentPolicy {
+//
+// Second return value is `true`, if defaulting has been applied due to lack of explicit setting.
+func ScannerV4ComponentPolicy(logger logr.Logger, status *platform.CentralStatus,
+	annotations map[string]string, spec *platform.ScannerV4Spec) (platform.ScannerV4ComponentPolicy, bool) {
 	if spec != nil && spec.ScannerComponent != nil {
 		comp := *spec.ScannerComponent
 		if comp == platform.ScannerV4ComponentEnabled || comp == platform.ScannerV4ComponentDisabled {
 			logger.Info(fmt.Sprintf("ScannerV4ComponentPolicy: using ScannerV4 componentPolicy %v set in CR", comp))
-			return comp
+			return comp, false
 		}
 	}
 
@@ -36,7 +39,7 @@ func ScannerV4ComponentPolicy(logger logr.Logger, status *platform.CentralStatus
 	recordedDefault := platform.ScannerV4ComponentPolicy(annotations[FeatureDefaultKeyScannerV4])
 	if recordedDefault == platform.ScannerV4Enabled || recordedDefault == platform.ScannerV4Disabled {
 		logger.Info(fmt.Sprintf("ScannerV4ComponentPolicy: using previously recorded ScannerV4 componentPolicy %v.", recordedDefault))
-		return recordedDefault
+		return recordedDefault, true
 	}
 
 	// No default set in the annotations.
@@ -44,7 +47,7 @@ func ScannerV4ComponentPolicy(logger logr.Logger, status *platform.CentralStatus
 	if centralStatusUninitialized(status) {
 		// Install / Green field.
 		logger.Info("ScannerV4ComponentPolicy: assuming new installation due to empty status.")
-		return defaultForNewInstallations
+		return defaultForNewInstallations, true
 	}
 
 	// Upgrade.
@@ -54,13 +57,13 @@ func ScannerV4ComponentPolicy(logger logr.Logger, status *platform.CentralStatus
 		// No entry in the statusDefaults yet -> preserve defaulting behavior of versions which did not populate
 		// statusDefaults with a ScannerV4ComponentPolicy.
 		logger.Info(fmt.Sprintf("ScannerV4ComponentPolicy: using ScannerV4 componentPolicy %v.", defaultForUpgrades))
-		return defaultForUpgrades
+		return defaultForUpgrades, true
 	}
 
 	// This should not happen, since we only store Enabled|Disabled, but just in case something unexpected happened
 	// and we need to make some decisions...
 	logger.Info(fmt.Sprintf("ScannerV4ComponentPolicy: detected previously recorded ScannerV4 componentPolicy %v, using %v instead.", recordedDefault, defaultForUpgrades))
-	return defaultForUpgrades
+	return defaultForUpgrades, true
 }
 
 // centralStatusUninitialized checks if the provided Central status is uninitialized.

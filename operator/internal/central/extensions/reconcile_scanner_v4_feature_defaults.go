@@ -2,6 +2,7 @@ package extensions
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/go-logr/logr"
 	"github.com/operator-framework/helm-operator-plugins/pkg/extensions"
@@ -30,21 +31,15 @@ func reconcileScannerV4FeatureDefaults(
 	_ func(updateStatusFunc), logger logr.Logger) error {
 	scannerV4Spec := initializedDeepCopy(central.Spec.ScannerV4)
 
-	var scannerComp platform.ScannerV4ComponentPolicy
-	if scannerV4Spec.ScannerComponent != nil {
-		scannerComp = *scannerV4Spec.ScannerComponent
-	}
-
-	if scannerComp == platform.ScannerV4ComponentEnabled || scannerComp == platform.ScannerV4ComponentDisabled {
+	componentPolicy, usedDefaulting := defaulting.ScannerV4ComponentPolicy(logger, &central.Status, central.GetAnnotations(), scannerV4Spec)
+	if !usedDefaulting {
 		// User provided an explicit choice, nothing to do in this extension.
 		return nil
 	}
 
 	// User is relying on defaults. Compute default and persist corresponding annotation.
 
-	componentPolicy := defaulting.ScannerV4ComponentPolicy(logger, &central.Status, central.GetAnnotations(), scannerV4Spec)
 	scannerV4Spec.ScannerComponent = &componentPolicy
-
 	if central.Annotations == nil {
 		central.Annotations = make(map[string]string)
 	}
@@ -53,6 +48,7 @@ func reconcileScannerV4FeatureDefaults(
 		// We do this immediately during (first-time) execution of this extension to make sure
 		// that this information is already persisted in the Kubernetes resource before we
 		// can realistically end up in a situation where reconcilliation might need to be retried.
+		logger.Info(fmt.Sprintf("patching Central metadata to include annotation %s=%s", annotationKey, componentPolicy))
 		err := patchCentralAnnotation(ctx, client, central, annotationKey, string(componentPolicy))
 		if err != nil {
 			return err
