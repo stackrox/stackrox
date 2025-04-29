@@ -1,0 +1,24 @@
+packages:
+- make
+- automake
+- gcc
+- gcc-c++
+- coreutils-single
+- binutils
+- diffutils
+- zlib-devel
+- bzip2-devel
+- lz4-devel
+- cmake
+- jq
+contentOrigin:
+  repofiles: ["redhat.repo"]
+context:
+  containerfile:
+    file: ../../../../image/rhel/konflux.Dockerfile
+    stageName: go-builder
+arches:
+- aarch64
+- ppc64le
+- s390x
+- x86_64
