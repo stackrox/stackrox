@@ -439,7 +439,12 @@ func (s *storeImpl) upsert(ctx context.Context, obj *storage.Image) error {
 		}
 	}
 
-	scanUpdated = scanUpdated || s.componentsTableEmpty(ctx, obj)
+	componentsEmpty, err := s.componentsTableEmpty(ctx, obj)
+	if err != nil {
+		return err
+	}
+
+	scanUpdated = scanUpdated || componentsEmpty
 
 	splitParts, err := common.Split(obj, scanUpdated)
 	if err != nil {
@@ -961,21 +966,21 @@ func getCVEComponentIndex(s string) int {
 	return index
 }
 
-func (s *storeImpl) componentsTableEmpty(ctx context.Context, obj *storage.Image) bool {
+func (s *storeImpl) componentsTableEmpty(ctx context.Context, obj *storage.Image) (bool, error) {
 	conn, release, err := s.acquireConn(ctx, ops.Get, "Image")
 	if err != nil {
-		return false
+		return false, err
 	}
 	defer release()
 
 	tx, err := conn.Begin(ctx)
 	if err != nil {
-		return false
+		return false, err
 	}
 
 	if components, err := getImageComponents(ctx, tx, obj.GetId()); err == nil && len(components) == 0 {
-		return true
+		return true, nil
 	}
-	return false
+	return false, nil
 
 }
