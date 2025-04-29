@@ -439,21 +439,7 @@ func (s *storeImpl) upsert(ctx context.Context, obj *storage.Image) error {
 		}
 	}
 
-	conn, release, err := s.acquireConn(ctx, ops.Get, "Image")
-	if err != nil {
-		return err
-	}
-
-	tx, err := conn.Begin(ctx)
-	if err != nil {
-		return err
-	}
-
-	if components, err := getImageComponents(ctx, tx, obj.GetId()); err == nil && len(components) == 0 {
-		scanUpdated = true
-	}
-
-	release()
+	scanUpdated = scanUpdated || s.componentsTableEmpty(ctx, obj)
 
 	splitParts, err := common.Split(obj, scanUpdated)
 	if err != nil {
@@ -463,13 +449,13 @@ func (s *storeImpl) upsert(ctx context.Context, obj *storage.Image) error {
 	keys := gatherKeys(imageParts)
 
 	return s.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(keys...), func() error {
-		conn, release, err = s.acquireConn(ctx, ops.Get, "Image")
+		conn, release, err := s.acquireConn(ctx, ops.Get, "Image")
 		if err != nil {
 			return err
 		}
 		defer release()
 
-		tx, err = conn.Begin(ctx)
+		tx, err := conn.Begin(ctx)
 		if err != nil {
 			return err
 		}
@@ -973,4 +959,23 @@ func getCVEComponentIndex(s string) int {
 		return 0
 	}
 	return index
+}
+
+func (s *storeImpl) componentsTableEmpty(ctx context.Context, obj *storage.Image) bool {
+	conn, release, err := s.acquireConn(ctx, ops.Get, "Image")
+	if err != nil {
+		return false
+	}
+	defer release()
+
+	tx, err := conn.Begin(ctx)
+	if err != nil {
+		return false
+	}
+
+	if components, err := getImageComponents(ctx, tx, obj.GetId()); err == nil && len(components) == 0 {
+		return true
+	}
+	return false
+
 }
