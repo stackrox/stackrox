@@ -439,7 +439,7 @@ func (s *storeImpl) upsert(ctx context.Context, obj *storage.Image) error {
 		}
 	}
 
-	componentsEmpty, err := s.isComponentsTableEmpty(ctx, obj)
+	componentsEmpty, err := s.isComponentsTableEmpty(ctx, obj.GetId())
 	if err != nil {
 		return err
 	}
@@ -966,21 +966,11 @@ func getCVEComponentIndex(s string) int {
 	return index
 }
 
-func (s *storeImpl) isComponentsTableEmpty(ctx context.Context, obj *storage.Image) (bool, error) {
-	conn, release, err := s.acquireConn(ctx, ops.Get, "Image")
+func (s *storeImpl) isComponentsTableEmpty(ctx context.Context, imageID string) (bool, error) {
+	q := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, imageID).ProtoQuery()
+	count, err := pgSearch.RunCountRequestForSchema(ctx, pkgSchema.ImageComponentV2Schema, q, s.db)
 	if err != nil {
 		return false, err
 	}
-	defer release()
-
-	tx, err := conn.Begin(ctx)
-	if err != nil {
-		return false, err
-	}
-
-	if components, err := getImageComponents(ctx, tx, obj.GetId()); err == nil && len(components) == 0 {
-		return true, nil
-	}
-	return false, nil
-
+	return count < 1, nil
 }
