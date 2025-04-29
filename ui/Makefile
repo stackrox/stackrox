@@ -56,3 +56,10 @@ clean:
 	rm -f lint
 	rm -rf build
 	rm -rf node_modules apps/*/node_modules
+
+# utility for generating openapi v3 json from swagger json
+.PHONY: swagger2openapi
+swagger2openapi:
+	@echo "+ $@"
+	npm run swagger2openapi -- "$(SWAGGER_FILE)" -o "$(OPENAPI_FILE)"
+

@@ -21,6 +21,7 @@
         "connect": "../scripts/connect-ui.sh ${1}",
         "deploy": "../deploy/k8s/deploy.sh",
         "deploy-local": "../deploy/k8s/deploy-local.sh",
-        "forward": "../scripts/port-forward-ui.sh"
+        "forward": "../scripts/port-forward-ui.sh",
+        "swagger2openapi": "swagger2openapi"
     }
 }
