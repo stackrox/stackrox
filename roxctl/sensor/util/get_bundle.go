@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/apiparams"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/zipdownload"
@@ -29,9 +30,9 @@ func GetBundle(params apiparams.ClusterZip, outputDir string, timeout time.Durat
 	path := "/api/extensions/clusters/zip"
 	body, err := json.Marshal(&params)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "could not marshal zip params")
 	}
-	return zipdownload.GetZip(zipdownload.GetZipOptions{
+	err = zipdownload.GetZip(zipdownload.GetZipOptions{
 		Path:       path,
 		Method:     http.MethodPost,
 		Body:       body,
@@ -40,4 +41,5 @@ func GetBundle(params apiparams.ClusterZip, outputDir string, timeout time.Durat
 		ExpandZip:  true,
 		OutputDir:  outputDir,
 	}, env)
+	return errors.Wrap(err, "could not download zip")
 }
