@@ -55,7 +55,7 @@ var (
 	DefaultBackupPVCSize = resource.MustParse("200Gi") // 2*DefaultPVCSize
 )
 
-func convertDBPersistenceToPersistence(p *platform.DBPersistence, target PVCTarget, log logr.Logger) (*platform.Persistence, error) {
+func convertDBPersistenceToPersistence(p *platform.DBPersistence, target PVCTarget) (*platform.Persistence, error) {
 	if p == nil {
 		return nil, nil
 	}
