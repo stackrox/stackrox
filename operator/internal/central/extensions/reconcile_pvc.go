@@ -303,7 +303,7 @@ func (r *reconcilePVCExtensionRun) handleCreate(claimName string, pvcConfig *pla
 		if !hasDefault && pvcConfig.StorageClassName == nil {
 			// For the backup PVC it's a hard stop
 			if r.target == PVCTargetCentralDBBackup {
-				r.log.Info(fmt.Sprintf("No default storage class or explicit storage class found, skip %q PVC creation", claimName))
+				r.log.Info(fmt.Sprintf("No default storage class or explicit storage class found, skipping %q PVC creation", claimName))
 				return nil
 			} else {
 				r.log.Info(fmt.Sprintf("No default storage class or explicit storage class found, but proceeding with %q PVC creation", claimName))
