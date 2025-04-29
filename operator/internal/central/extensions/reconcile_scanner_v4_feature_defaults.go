@@ -44,7 +44,7 @@ func reconcileScannerV4FeatureDefaults(
 	if central.Annotations == nil {
 		central.Annotations = make(map[string]string)
 	}
-	if central.Annotations[annotationKey] == "" {
+	if central.Annotations[annotationKey] != string(componentPolicy) {
 		// Update feature default setting.
 		// We do this immediately during (first-time) execution of this extension to make sure
 		// that this information is already persisted in the Kubernetes resource before we
