@@ -89,7 +89,7 @@ func (e EnrichmentContext) FetchOnlyIfMetadataEmpty() bool {
 
 // FetchOnlyIfScanEmpty will use the scan that exists in the image unless the fetch opts prohibit it
 func (e EnrichmentContext) FetchOnlyIfScanEmpty() bool {
-	return false // e.FetchOpt != IgnoreExistingImages && !e.FetchOpt.forceRefetchCachedValues() && e.FetchOpt != ForceRefetchScansOnly
+	return e.FetchOpt != IgnoreExistingImages && !e.FetchOpt.forceRefetchCachedValues() && e.FetchOpt != ForceRefetchScansOnly
 }
 
 // EnrichmentResult denotes possible return values of the EnrichImage function.
