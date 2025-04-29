@@ -9,7 +9,6 @@ import {
 } from 'Components/Table';
 import TableCellLink from 'Components/TableCellLink';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
-import entityTypes from 'constants/entityTypes';
 import { serviceAccountSortFields } from 'constants/sortFields';
 import useWorkflowMatch from 'hooks/useWorkflowMatch';
 import { SERVICE_ACCOUNTS_QUERY } from 'queries/serviceAccount';
@@ -60,7 +59,7 @@ const buildTableColumns = (match, location, entityContext) => {
             accessor: 'clusterAdmin',
             sortable: false,
         },
-        entityContext && entityContext[entityTypes.CLUSTER]
+        entityContext && entityContext.CLUSTER
             ? null
             : {
                   Header: `Cluster`,
@@ -71,7 +70,7 @@ const buildTableColumns = (match, location, entityContext) => {
                       const { clusterName, clusterId, id } = original;
                       const url = URLService.getURL(match, location)
                           .push(id)
-                          .push(entityTypes.CLUSTER, clusterId)
+                          .push('CLUSTER', clusterId)
                           .url();
                       return (
                           <TableCellLink pdf={pdf} url={url}>
@@ -82,7 +81,7 @@ const buildTableColumns = (match, location, entityContext) => {
                   id: serviceAccountSortFields.CLUSTER,
                   sortField: serviceAccountSortFields.CLUSTER,
               },
-        entityContext && entityContext[entityTypes.NAMESPACE]
+        entityContext && entityContext.NAMESPACE
             ? null
             : {
                   Header: `Namespace`,
@@ -100,7 +99,7 @@ const buildTableColumns = (match, location, entityContext) => {
                       const { name, id: namespaceId } = metadata;
                       const url = URLService.getURL(match, location)
                           .push(id)
-                          .push(entityTypes.NAMESPACE, namespaceId)
+                          .push('NAMESPACE', namespaceId)
                           .url();
                       return (
                           <TableCellLink pdf={pdf} url={url}>
@@ -121,10 +120,7 @@ const buildTableColumns = (match, location, entityContext) => {
                 if (!length) {
                     return 'No Roles';
                 }
-                const url = URLService.getURL(match, location)
-                    .push(id)
-                    .push(entityTypes.ROLE)
-                    .url();
+                const url = URLService.getURL(match, location).push(id).push('ROLE').url();
                 if (length > 1) {
                     const text = `${length} ${pluralize('Roles', length)}`;
                     return (
@@ -148,10 +144,7 @@ const buildTableColumns = (match, location, entityContext) => {
                 if (!deploymentCount) {
                     return 'No Deployments';
                 }
-                const url = URLService.getURL(match, location)
-                    .push(id)
-                    .push(entityTypes.DEPLOYMENT)
-                    .url();
+                const url = URLService.getURL(match, location).push(id).push('DEPLOYMENT').url();
                 const text = `${deploymentCount} ${pluralize('Deployment', deploymentCount)}`;
                 return (
                     <TableCellLink pdf={pdf} url={url}>
@@ -168,7 +161,7 @@ const buildTableColumns = (match, location, entityContext) => {
 
 const createTableRows = (data) => data.results;
 
-const ServiceAccounts = ({
+const ConfigManagementListServiceAccounts = ({
     className,
     selectedRowId,
     onRowClick,
@@ -188,7 +181,7 @@ const ServiceAccounts = ({
             className={className}
             query={SERVICE_ACCOUNTS_QUERY}
             variables={variables}
-            entityType={entityTypes.SERVICE_ACCOUNT}
+            entityType="SERVICE_ACCOUNT"
             tableColumns={tableColumns}
             createTableRows={createTableRows}
             onRowClick={onRowClick}
@@ -201,7 +194,7 @@ const ServiceAccounts = ({
         />
     );
 };
-ServiceAccounts.propTypes = entityListPropTypes;
-ServiceAccounts.defaultProps = entityListDefaultprops;
+ConfigManagementListServiceAccounts.propTypes = entityListPropTypes;
+ConfigManagementListServiceAccounts.defaultProps = entityListDefaultprops;
 
-export default ServiceAccounts;
+export default ConfigManagementListServiceAccounts;
