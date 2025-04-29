@@ -71,7 +71,7 @@ func initializedDeepCopy(spec *platform.ScannerV4Spec) *platform.ScannerV4Spec {
 	return spec.DeepCopy()
 }
 
-func updateCentralAnnotation(ctx context.Context, client ctrlClient.Client, central *platform.Central, annotationKey string, annotationVal string) error {
+func patchCentralAnnotation(ctx context.Context, client ctrlClient.Client, central *platform.Central, key string, val string) error {
 	// Only patch the annotation, no changes to the Central spec will be patched on the cluster.
 	centralPatchBase := ctrlClient.MergeFrom(central.DeepCopy())
 	central.Annotations[annotationKey] = annotationVal
