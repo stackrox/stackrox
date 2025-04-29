@@ -134,7 +134,7 @@ func getPersistenceByTarget(central *platform.Central, target PVCTarget, log log
 			dbPersistence = &platform.DBPersistence{}
 		}
 
-		return convertDBPersistenceToPersistence(dbPersistence, target, log)
+		return convertDBPersistenceToPersistence(dbPersistence, target)
 	default:
 		return nil, errors.Errorf("unknown pvc target %q", target)
 	}
