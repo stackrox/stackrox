@@ -49,7 +49,7 @@ func wrapExtension(runFn func(ctx context.Context, central *platform.Central, cl
 		}
 
 		// Keep potentially mutated central spec.
-		// The ReconcileScannerV4StatusDefaultsExtension mutates the central spec.
+		// The ReconcileScannerV4StatusDefaultsExtension mutates the central spec to populate defaults for the translator.
 		obj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&c)
 		if err != nil {
 			return errors.Wrap(err, "converting Central to unstructured object after extension execution")
