@@ -222,14 +222,16 @@ func (s *genericStore[T, PT]) Get(ctx context.Context, id string) (PT, bool, err
 func (s *genericStore[T, PT]) GetByQuery(ctx context.Context, query *v1.Query) ([]*T, error) {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.GetByQuery)
 
-	rows, err := RunGetManyQueryForSchema[T, PT](ctx, s.schema, query, s.db)
+	limit := max(batchAfter, min(batchAfter, query.GetPagination().GetLimit()))
+	rows := make([]*T, 0, limit)
+	err := RunQueryForSchemaFn(ctx, s.schema, query, s.db, func(obj PT) error {
+		rows = append(rows, obj)
+		return nil
+	})
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, nil
-		}
 		return nil, err
 	}
-	return rows, nil
+	return rows[0:len(rows):len(rows)], nil
 }
 
 func (s *genericStore[T, PT]) fetchIDsByQuery(ctx context.Context, query *v1.Query) ([]string, error) {
