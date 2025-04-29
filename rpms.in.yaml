@@ -1,4 +1,5 @@
 packages:
+# builder stage in image/rhel/konflux.Dockerfile
 - make
 - automake
 - gcc
@@ -11,12 +12,15 @@ packages:
 - lz4-devel
 - cmake
 - jq
+# final stage in image/rhel/konflux.Dockerfile
+- findutils
+- postgresql
+moduleEnable:
+- postgresql:15
 contentOrigin:
-  repofiles: ["redhat.repo"]
+  repofiles: [ "rpms.rhel.repo" ]
 context:
-  containerfile:
-    file: ../../../../image/rhel/konflux.Dockerfile
-    stageName: go-builder
+  bare: true
 arches:
 - aarch64
 - ppc64le
