@@ -162,7 +162,7 @@ func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
 
 			// Verify that reconcileScannerV4FeatureDefaults has modified baseCentral.Spec as expected.
 			assert.Equal(t, baseCentral.Spec.ScannerV4, &c.ExpectedScannerV4Spec,
-				"central annotations to not match expected annotations")
+				"ScannerV4Spec does not match expected ScannerV4Spec")
 
 			// Verify that the expected annotations have been persisted via the provided client.
 			assert.Equal(t, central.Annotations, c.ExpectedAnnotations,
