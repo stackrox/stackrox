@@ -306,6 +306,7 @@ func (c *cachedStore[T, PT]) GetMany(ctx context.Context, identifiers []string) 
 
 // WalkByQuery iterates over all the objects scoped by the query applies the closure.
 func (c *cachedStore[T, PT]) WalkByQuery(ctx context.Context, query *v1.Query, fn func(obj PT) error) error {
+	defer c.setCacheOperationDurationTime(time.Now(), ops.WalkByQuery)
 	return c.getByQueryFn(ctx, query, fn)
 }
 
@@ -325,7 +326,7 @@ func (c *cachedStore[T, PT]) GetByQueryFn(ctx context.Context, query *v1.Query, 
 // GetByQuery returns the objects from the store matching the query.
 func (c *cachedStore[T, PT]) GetByQuery(ctx context.Context, query *v1.Query) ([]*T, error) {
 	defer c.setCacheOperationDurationTime(time.Now(), ops.GetByQuery)
-	results := make([]*T, 0, query.GetPagination().GetLimit())
+	results := make([]*T, 0, batchAfter)
 	err := c.getByQueryFn(ctx, query, func(obj PT) error {
 		results = append(results, obj)
 		return nil
@@ -385,6 +386,9 @@ func (c *cachedStore[T, PT]) getByQueryFn(ctx context.Context, query *v1.Query, 
 	c.cacheLock.RLock()
 	defer c.cacheLock.RUnlock()
 	for _, id := range identifiers {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
 		obj, found := c.cache[id]
 		if !found {
 			log.Warnf("Object %q not found in store cache", id)
@@ -393,7 +397,7 @@ func (c *cachedStore[T, PT]) getByQueryFn(ctx context.Context, query *v1.Query, 
 		if !c.isReadAllowed(ctx, obj) {
 			continue
 		}
-		if err := fn(obj); err != nil {
+		if err := fn(obj.CloneVT()); err != nil {
 			return err
 		}
 	}
@@ -408,7 +412,7 @@ func (c *cachedStore[T, PT]) walkCacheNoLock(ctx context.Context, fn func(obj PT
 		if !c.isReadAllowed(ctx, obj) {
 			continue
 		}
-		err := fn(obj)
+		err := fn(obj.CloneVT())
 		if err != nil {
 			return err
 		}
