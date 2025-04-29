@@ -1,16 +1,5 @@
 packages:
 # builder stage in image/rhel/konflux.Dockerfile
-- make
-- automake
-- gcc
-- gcc-c++
-- coreutils-single
-- binutils
-- diffutils
-- zlib-devel
-- bzip2-devel
-- lz4-devel
-- cmake
 - jq
 # final stage in image/rhel/konflux.Dockerfile
 - findutils
