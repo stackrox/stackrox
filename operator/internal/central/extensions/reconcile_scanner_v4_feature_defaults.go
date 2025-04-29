@@ -17,6 +17,15 @@ const (
 	fieldOwner    = "stackrox-operator"
 )
 
+var (
+	// Unfortunately the fake client we are using in the unit tests for this extension does not
+	// support server-side-apply patches. At the same time these are the modern alternative
+	// to strategic-merge patches.
+	// Thus, the next best thing would be to use different patching implementations depending
+	// on whether running inside or outside of tests.
+	runningUnderTest = false
+)
+
 // This extension's purpose is to
 //
 //   1. apply defaults by mutating the Central spec as a prerequisite for the value translator
@@ -68,6 +77,10 @@ func initializedDeepCopy(spec *platform.ScannerV4Spec) *platform.ScannerV4Spec {
 }
 
 func patchCentralAnnotation(ctx context.Context, logger logr.Logger, client ctrlClient.Client, central *platform.Central, key string, val string) error {
+	if runningUnderTest {
+		return mergePatchCentralAnnotation(ctx, logger, client, central, key, val)
+	}
+
 	// Create a server-side-apply (SSA) patch which only patches the feature-default annotation.
 	kind, apiVersion := getCentralKindAndVersion(central)
 	centralPatch := &unstructured.Unstructured{
@@ -105,4 +118,16 @@ func getCentralKindAndVersion(central *platform.Central) (kind, version string) 
 	kind = gvk.Kind
 	version = gvk.GroupVersion().String()
 	return
+}
+
+func mergePatchCentralAnnotation(ctx context.Context, _ logr.Logger, client ctrlClient.Client, central *platform.Central, key string, val string) error {
+	// Only patch the annotation, no changes to the Central spec will be patched on the cluster.
+	centralPatchBase := ctrlClient.MergeFrom(central.DeepCopy())
+	central.Annotations[key] = val
+	err := client.Patch(ctx, central, centralPatchBase)
+	if err != nil {
+		return err
+	}
+	central.Annotations[key] = val
+	return nil
 }
