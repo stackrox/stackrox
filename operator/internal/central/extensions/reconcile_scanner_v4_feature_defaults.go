@@ -78,7 +78,7 @@ func patchCentralAnnotation(ctx context.Context, client ctrlClient.Client, centr
 	err := client.Patch(ctx, central, centralPatchBase)
 	if err != nil {
 		return errors.Wrapf(err, "patching Central object with annotation %s=%s",
-			annotationKey, central.Annotations[annotationKey])
+			annotationKey, annotationVal)
 	}
 	return nil
 }
