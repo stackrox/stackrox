@@ -1,31 +1,3 @@
-[codeready-builder-for-rhel-8-$basearch-rpms]
-name = Red Hat CodeReady Linux Builder for RHEL 8 $basearch (RPMs)
-baseurl = https://cdn.redhat.com/content/dist/rhel8/$releasever/$basearch/codeready-builder/os
-enabled = 1
-gpgcheck = 1
-gpgkey = file:///etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release
-sslverify = 1
-sslcacert = /etc/rhsm/ca/redhat-uep.pem
-sslclientkey = $SSL_CLIENT_KEY
-sslclientcert = $SSL_CLIENT_CERT
-sslverifystatus = 1
-metadata_expire = 86400
-enabled_metadata = 0
-
-[codeready-builder-for-rhel-8-$basearch-source-rpms]
-name = Red Hat CodeReady Linux Builder for RHEL 8 $basearch (Source RPMs)
-baseurl = https://cdn.redhat.com/content/dist/rhel8/$releasever/$basearch/codeready-builder/source/SRPMS
-enabled = 1
-gpgcheck = 1
-gpgkey = file:///etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release
-sslverify = 1
-sslcacert = /etc/rhsm/ca/redhat-uep.pem
-sslclientkey = $SSL_CLIENT_KEY
-sslclientcert = $SSL_CLIENT_CERT
-sslverifystatus = 1
-metadata_expire = 86400
-enabled_metadata = 0
-
 [rhel-8-for-$basearch-appstream-rpms]
 name = Red Hat Enterprise Linux 8 for $basearch - AppStream (RPMs)
 baseurl = https://cdn.redhat.com/content/dist/rhel8/$releasever/$basearch/appstream/os
