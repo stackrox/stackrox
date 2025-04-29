@@ -356,6 +356,7 @@ var (
 	ComplianceLastScanMax = newDerivedFieldLabel("Compliance Scan Last Executed Time Max", ComplianceOperatorScanLastExecutedTime, MaxDerivationType)
 	SeverityMax           = newDerivedFieldLabel("Severity Max", Severity, MaxDerivationType)
 	CVSSMax               = newDerivedFieldLabel("CVSS Max", CVSS, MaxDerivationType)
+	CVECreatedTimeMin     = newDerivedFieldLabel("CVE Created Time", CVECreatedTime, MinDerivationType)
 
 	// External network sources fields
 	DefaultExternalSource    = newFieldLabel("Default External Source")
@@ -612,4 +613,5 @@ const (
 	SimpleReverseSortDerivationType
 	MaxDerivationType
 	CustomFieldType
+	MinDerivationType
 )

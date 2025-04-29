@@ -138,6 +138,9 @@ func withSelectCVECoreResponseQuery(q *v1.Query, options views.ReadOptions) *v1.
 		if sortOption.Field == search.CVSS.String() {
 			sortOption.Field = search.CVSSMax.String()
 		}
+		if sortOption.Field == search.CVECreatedTime.String() {
+			sortOption.Field = search.CVSSMax.String()
+		}
 	}
 
 	return cloned
