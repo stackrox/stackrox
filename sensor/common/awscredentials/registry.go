@@ -207,12 +207,12 @@ func getRegion(ctx context.Context) (string, error) {
 		}),
 	)
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "getting region from EC2 metadata service failed")
 	}
 	imdsClient := imds.NewFromConfig(imdsConfig)
 	regionOutput, err := imdsClient.GetRegion(ctx, &imds.GetRegionInput{})
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "getting region from EC2 metadata service failed")
 	}
 	return regionOutput.Region, nil
 }

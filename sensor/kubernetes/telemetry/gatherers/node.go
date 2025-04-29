@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/telemetry/data"
 	v1 "k8s.io/api/core/v1"
@@ -25,7 +26,7 @@ func newNodeGatherer(k8sClient kubernetes.Interface) *nodeGatherer {
 func (c *nodeGatherer) Gather(ctx context.Context) ([]*data.NodeInfo, error) {
 	nodesList, err := c.k8sClient.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "listing Kubernetes nodes")
 	}
 
 	nodeInfoList := make([]*data.NodeInfo, 0, len(nodesList.Items))
