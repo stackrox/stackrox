@@ -10,9 +10,9 @@ import ComplianceList from 'Containers/Compliance/List/List';
 import searchContext from 'Containers/searchContext';
 import useWorkflowMatch from 'hooks/useWorkflowMatch';
 import ComplianceSearchInput from '../ComplianceSearchInput';
-import Header from './Header';
+import ListHeader from './ListHeader';
 
-const ComplianceListPage = () => {
+const ListPage = () => {
     const [isExporting, setIsExporting] = useState(false);
     const location = useLocation();
     const match = useWorkflowMatch();
@@ -24,7 +24,7 @@ const ComplianceListPage = () => {
     return (
         <>
             <section className="flex flex-col h-full relative" id="capture-list">
-                <Header
+                <ListHeader
                     entityType={pageEntityListType}
                     searchComponent={
                         <ComplianceSearchInput
@@ -52,14 +52,14 @@ const ComplianceListPage = () => {
     );
 };
 
-ComplianceListPage.propTypes = {
+ListPage.propTypes = {
     params: PropTypes.shape({
         entityType: PropTypes.string.isRequired,
     }),
 };
 
-ComplianceListPage.defaultProps = {
+ListPage.defaultProps = {
     params: null,
 };
 
-export default ComplianceListPage;
+export default ListPage;

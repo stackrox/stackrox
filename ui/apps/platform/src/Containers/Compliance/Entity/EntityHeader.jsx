@@ -5,8 +5,6 @@ import pluralize from 'pluralize';
 import PageHeader from 'Components/PageHeader';
 import ScanButton from 'Containers/Compliance/ScanButton';
 import ExportButton from 'Components/ExportButton';
-import useCaseTypes from 'constants/useCaseTypes';
-import entityTypes from 'constants/entityTypes';
 import usePermissions from 'hooks/usePermissions';
 
 import { entityNounSentenceCaseSingular } from '../entitiesForCompliance';
@@ -32,8 +30,8 @@ const EntityHeader = ({
     exportFilename = `${exportFilename} Report`;
     const pdfId = listEntityType ? 'capture-list' : 'capture-dashboard';
 
-    const scanCluster = entityType === entityTypes.CLUSTER ? entityId : '*';
-    const scanStandard = entityType === entityTypes.STANDARD ? entityId : '*';
+    const scanCluster = entityType === 'CLUSTER' ? entityId : '*';
+    const scanStandard = entityType === 'STANDARD' ? entityId : '*';
 
     return (
         <PageHeader classes="bg-base-100" header={header} subHeader={subHeader}>
@@ -45,7 +43,7 @@ const EntityHeader = ({
                 <ExportButton
                     fileName={exportFilename}
                     type={entityType}
-                    page={useCaseTypes.COMPLIANCE}
+                    page="compliance"
                     id={entityId}
                     pdfId={pdfId}
                     isExporting={isExporting}

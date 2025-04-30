@@ -170,7 +170,7 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
         path: complianceEnhancedSchedulesPath,
     },
     compliance: {
-        component: asyncComponent(() => import('Containers/Compliance/Page')),
+        component: asyncComponent(() => import('Containers/Compliance/ComplianceRoutes')),
         path: complianceBasePath,
     },
     configmanagement: {

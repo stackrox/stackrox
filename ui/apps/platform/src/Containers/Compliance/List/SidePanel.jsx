@@ -6,39 +6,40 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Query from 'Components/CacheFirstQuery';
 import CloseButton from 'Components/CloseButton';
 import { PanelNew, PanelBody, PanelHead, PanelHeadEnd } from 'Components/Panel';
-import { resourceTypes, standardEntityTypes } from 'constants/entityTypes';
-// TODO: this exception will be unnecessary once Compliance pages are re-structured like Config Management
-/* eslint-disable import/no-cycle */
-import ControlPage from 'Containers/Compliance/Entity/Control';
 import useWorkflowMatch from 'hooks/useWorkflowMatch';
 import URLService from 'utils/URLService';
 import getEntityName from 'utils/getEntityName';
 import { entityNameQueryMap } from 'utils/queryMap';
 import { truncate } from 'utils/textUtils';
-import NamespacePage from '../Entity/Namespace';
-import ClusterPage from '../Entity/Cluster';
-import NodePage from '../Entity/Node';
-import DeploymentPage from '../Entity/Deployment';
+
+// TODO: this exception will be unnecessary once Compliance pages are re-structured like Config Management
+/* eslint-disable import/no-cycle */
+import ComplianceEntityCluster from '../Entity/ComplianceEntityCluster';
+import ComplianceEntityControl from '../Entity/ComplianceEntityControl';
+import ComplianceEntityDeployment from '../Entity/ComplianceEntityDeployment';
+import ComplianceEntityNamespace from '../Entity/ComplianceEntityNamespace';
+import ComplianceEntityNode from '../Entity/ComplianceEntityNode';
+/* eslint-enable import/no-cycle */
 
 const MAX_CONTROL_TITLE = 120;
 
-const ComplianceListSidePanel = ({ entityType, entityId }) => {
+const SidePanel = ({ entityType, entityId }) => {
     const navigate = useNavigate();
     const location = useLocation();
     const match = useWorkflowMatch();
 
     function getEntityPage() {
         switch (entityType) {
-            case resourceTypes.NODE:
-                return <NodePage entityId={entityId} sidePanelMode />;
-            case resourceTypes.NAMESPACE:
-                return <NamespacePage entityId={entityId} sidePanelMode />;
-            case resourceTypes.CLUSTER:
-                return <ClusterPage entityId={entityId} sidePanelMode />;
-            case resourceTypes.DEPLOYMENT:
-                return <DeploymentPage entityId={entityId} sidePanelMode />;
-            case standardEntityTypes.CONTROL:
-                return <ControlPage entityId={entityId} sidePanelMode />;
+            case 'CLUSTER':
+                return <ComplianceEntityCluster entityId={entityId} sidePanelMode />;
+            case 'CONTROL':
+                return <ComplianceEntityControl entityId={entityId} sidePanelMode />;
+            case 'DEPLOYMENT':
+                return <ComplianceEntityDeployment entityId={entityId} sidePanelMode />;
+            case 'NAMESPACE':
+                return <ComplianceEntityNamespace entityId={entityId} sidePanelMode />;
+            case 'NODE':
+                return <ComplianceEntityNode entityId={entityId} sidePanelMode />;
             default:
                 return null;
         }
@@ -97,9 +98,9 @@ const ComplianceListSidePanel = ({ entityType, entityId }) => {
     );
 };
 
-ComplianceListSidePanel.propTypes = {
+SidePanel.propTypes = {
     entityType: PropTypes.string.isRequired,
     entityId: PropTypes.string.isRequired,
 };
 
-export default ComplianceListSidePanel;
+export default SidePanel;
