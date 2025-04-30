@@ -83,6 +83,9 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	httputil.WriteGRPCStyleError(w, codes.Internal, errors.New("dummy error"))
+	return
+
 	var params apiparams.ClusterZip
 	err := json.NewDecoder(r.Body).Decode(&params)
 	if err != nil {

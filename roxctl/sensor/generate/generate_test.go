@@ -37,8 +37,8 @@ type mockClustersServiceServer struct {
 }
 
 type getKernelSupportFn func() (*v1.KernelSupportAvailableResponse, error)
-type postClusterFn func(cluster *storage.Cluster) (*v1.ClusterResponse, error)
-type getDefaultsFn func() (*v1.ClusterDefaultsResponse, error)
+type postClusterFn      func(cluster *storage.Cluster) (*v1.ClusterResponse, error)
+type getDefaultsFn      func() (*v1.ClusterDefaultsResponse, error)
 
 func (m *mockClustersServiceServer) GetClusterDefaultValues(_ context.Context, _ *v1.Empty) (*v1.ClusterDefaultsResponse, error) {
 	return m.getDefaultsInjectedFn()
@@ -130,7 +130,7 @@ func (s *sensorGenerateTestSuite) SetupTest() {
 	testutils.SetExampleVersion(s.T())
 }
 
-var emptyGetBundle = func(params apiparams.ClusterZip, _ string, _ time.Duration, _ environment.Environment) error {
+var emptyGetBundle = func(params apiparams.ClusterZip, _ string, _ time.Duration, _ int, _ time.Duration, _ environment.Environment) error {
 	return nil
 }
 
@@ -225,7 +225,7 @@ func (s *sensorGenerateTestSuite) TestHandleClusterAlreadyExists() {
 			generateCmd.continueIfExists = testCase.continueIfExistsFlag
 			generateCmd.cluster.Name = testCase.clusterName
 			getBundleCalled := false
-			generateCmd.getBundleFn = func(_ apiparams.ClusterZip, _ string, _ time.Duration, _ environment.Environment) error {
+			generateCmd.getBundleFn = func(_ apiparams.ClusterZip, _ string, _ time.Duration, _ int, _ time.Duration, _ environment.Environment) error {
 				getBundleCalled = true
 				return nil
 			}
@@ -361,7 +361,7 @@ func (s *sensorGenerateTestSuite) TestSlimCollectorSelection() {
 			}
 			generateCmd.timeout = time.Duration(5) * time.Second
 			var slimCollectorRequested *bool
-			generateCmd.getBundleFn = func(params apiparams.ClusterZip, _ string, _ time.Duration, _ environment.Environment) error {
+			generateCmd.getBundleFn = func(params apiparams.ClusterZip, _ string, _ time.Duration, _ int, _ time.Duration, _ environment.Environment) error {
 				slimCollectorRequested = params.SlimCollector
 				return nil
 			}

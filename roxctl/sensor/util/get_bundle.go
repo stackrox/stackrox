@@ -7,6 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/apiparams"
+	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/zipdownload"
 )
@@ -23,10 +24,13 @@ When central is deployed in offline mode, a matching kernel support package need
 
 // GetBundleFn is the interface function for GetBundle. This is allows code that requires GetBundle to conveniently
 // inject this in unit tests.
-type GetBundleFn func(params apiparams.ClusterZip, outputDir string, timeout time.Duration, env environment.Environment) error
+type GetBundleFn func(params apiparams.ClusterZip, outputDir string, timeout time.Duration,
+	retryCount int, retryDelay time.Duration, env environment.Environment) error
 
 // GetBundle downloads the sensor bundle for the cluster with the given ID to the specified output directory.
-func GetBundle(params apiparams.ClusterZip, outputDir string, timeout time.Duration, env environment.Environment) error {
+func GetBundle(params apiparams.ClusterZip, outputDir string, timeout time.Duration,
+	retryCount int, retryDelay time.Duration, env environment.Environment,
+) error {
 	path := "/api/extensions/clusters/zip"
 	body, err := json.Marshal(&params)
 	if err != nil {
@@ -40,6 +44,11 @@ func GetBundle(params apiparams.ClusterZip, outputDir string, timeout time.Durat
 		BundleType: "sensor",
 		ExpandZip:  true,
 		OutputDir:  outputDir,
+		HttpClientOptions: []common.HttpClientOption{
+			common.WithRetryCount(retryCount),
+			common.WithRetryDelay(retryDelay),
+			common.WithReturnErrorResponseBody(true),
+		},
 	}, env)
 	return errors.Wrap(err, "could not download zip")
 }

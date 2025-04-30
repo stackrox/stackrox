@@ -25,7 +25,7 @@ Use --slim-collector=false if that is not desired.`
 Use --slim-collector if that is not desired.`
 )
 
-func downloadBundle(outputDir, clusterIDOrName string, timeout time.Duration,
+func downloadBundle(outputDir, clusterIDOrName string, timeout time.Duration, retryCount int, retryDelay time.Duration,
 	createUpgraderSA bool, slimCollectorP *bool, istioVersion string, env environment.Environment,
 ) error {
 	conn, err := env.GRPCConnection()
@@ -68,7 +68,7 @@ func downloadBundle(outputDir, clusterIDOrName string, timeout time.Duration,
 		IstioVersion:     istioVersion,
 	}
 
-	if err := util.GetBundle(params, outputDir, timeout, env); err != nil {
+	if err := util.GetBundle(params, outputDir, timeout, retryCount, retryDelay, env); err != nil {
 		return errors.Wrap(err, "error getting cluster zip file")
 	}
 
@@ -97,7 +97,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		Short: "Download a bundle with the files to deploy StackRox services into a cluster",
 		Long:  "Download a bundle with the required YAML configuration files to deploy StackRox Sensor, Collector, and Admission controller (optional).",
 		RunE: func(c *cobra.Command, args []string) error {
-			if err := downloadBundle(outputDir, args[0], flags.Timeout(c), createUpgraderSA, slimCollector, istioVersion, cliEnvironment); err != nil {
+			if err := downloadBundle(outputDir, args[0], flags.Timeout(c), flags.RetryCount(c), flags.RetryDelay(c), createUpgraderSA, slimCollector, istioVersion, cliEnvironment); err != nil {
 				return errors.Wrap(err, "error downloading sensor bundle")
 			}
 			return nil
@@ -111,6 +111,8 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 			"Generate deployment files supporting the given Istio version. Valid versions: %s.",
 			strings.Join(istioutils.ListKnownIstioVersions(), ", ")))
 
+	flags.AddRetryCount(c)
+	flags.AddRetryDelay(c)
 	flags.AddTimeoutWithDefault(c, 5*time.Minute)
 
 	autobool.NewFlag(c.PersistentFlags(), &slimCollector, "slim-collector", "Use slim collector in deployment bundle")

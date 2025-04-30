@@ -8,7 +8,8 @@ import (
 )
 
 const (
-	retryTimeoutFlagName = "retry-timeout"
+	retryTimeoutDefaultValue = 20 * time.Second
+	retryTimeoutFlagName     = "retry-timeout"
 )
 
 // AddRetryTimeoutWithDefault adds a retry timeout flag to the given command with the given default.
@@ -18,7 +19,7 @@ func AddRetryTimeoutWithDefault(c *cobra.Command, defaultDuration time.Duration)
 
 // AddRetryTimeout adds a retry timeout flag to the given command with the global default value.
 func AddRetryTimeout(c *cobra.Command) {
-	AddRetryTimeoutWithDefault(c, 20*time.Second)
+	AddRetryTimeoutWithDefault(c, retryTimeoutDefaultValue)
 }
 
 // RetryTimeout returns the set retry timeout.

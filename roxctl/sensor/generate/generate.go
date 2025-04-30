@@ -50,6 +50,8 @@ type sensorGenerateCommand struct {
 	istioVersion     string
 	outputDir        string
 	slimCollectorP   *bool
+	retryCount       int
+	retryDelay       time.Duration
 	timeout          time.Duration
 
 	enablePodSecurityPolicies bool
@@ -72,6 +74,8 @@ func defaultCluster() *storage.Cluster {
 }
 
 func (s *sensorGenerateCommand) Construct(cmd *cobra.Command) error {
+	s.retryCount = flags.RetryCount(cmd)
+	s.retryDelay = flags.RetryDelay(cmd)
 	s.timeout = flags.Timeout(cmd)
 	// Migration process for renaming "--create-admission-controller" parameter to "--admission-controller-listen-on-creates".
 	// Can be removed in a future release.
@@ -167,7 +171,7 @@ func (s *sensorGenerateCommand) fullClusterCreation() error {
 
 		DisablePodSecurityPolicies: !s.enablePodSecurityPolicies,
 	}
-	if err := s.getBundleFn(params, s.outputDir, s.timeout, s.env); err != nil {
+	if err := s.getBundleFn(params, s.outputDir, s.timeout, s.retryCount, s.retryDelay, s.env); err != nil {
 		return errors.Wrap(err, "error getting cluster zip file")
 	}
 
@@ -250,6 +254,8 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c.PersistentFlags().BoolVar(&ac.Enabled, "admission-controller-enforce-on-creates", false, "Dynamic enable for enforcing on object creates in the admission controller.")
 	c.PersistentFlags().BoolVar(&ac.EnforceOnUpdates, "admission-controller-enforce-on-updates", false, "Dynamic enable for enforcing on object updates in the admission controller.")
 
+	flags.AddRetryCount(c)
+	flags.AddRetryDelay(c)
 	flags.AddTimeoutWithDefault(c, 5*time.Minute)
 
 	c.AddCommand(k8s(generateCmd))

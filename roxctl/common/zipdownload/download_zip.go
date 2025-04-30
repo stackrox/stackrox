@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/roxctl"
 	"github.com/stackrox/rox/pkg/utils"
 	pkgZip "github.com/stackrox/rox/pkg/zip"
+	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/download"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/logger"
@@ -79,6 +80,7 @@ type GetZipOptions struct {
 	ExpandZip                bool
 	OutputDir                string
 	OutputFileName           string
+	HttpClientOptions        []common.HttpClientOption
 }
 
 func storeZipFile(respBody io.Reader, fileName, outputDir, bundleType string, log logger.Logger) error {
@@ -109,7 +111,7 @@ func storeZipFile(respBody io.Reader, fileName, outputDir, bundleType string, lo
 // GetZip downloads a zip from the given endpoint.
 // bundleType is used for logging.
 func GetZip(opts GetZipOptions, env environment.Environment) error {
-	client, err := env.HTTPClient(opts.Timeout)
+	client, err := env.HTTPClient(opts.Timeout, opts.HttpClientOptions...)
 	if err != nil {
 		return errors.Wrap(err, "creating HTTP client")
 	}

@@ -80,13 +80,15 @@ func GetRoxctlHTTPClient(config *HttpClientConfig) (RoxctlHTTPClient, error) {
 	retryClient := retryablehttp.NewClient()
 	retryClient.CheckRetry = func(ctx context.Context, resp *http.Response, err error) (bool, error) {
 		retry, err := retryablehttp.DefaultRetryPolicy(ctx, resp, err)
-		if !retry || err == nil || status.Code(err) == codes.PermissionDenied {
+		if !retry || status.Code(err) == codes.PermissionDenied {
 			return false, err //nolint:wrapcheck
 		}
-		if resp != nil {
-			config.Logger.ErrfLn("%d %s: %v", resp.StatusCode, resp.Status, err)
-		} else {
-			config.Logger.ErrfLn(err.Error())
+		if err != nil {
+			if resp != nil {
+				config.Logger.ErrfLn("%d %s: %v", resp.StatusCode, resp.Status, err)
+			} else {
+				config.Logger.ErrfLn(err.Error())
+			}
 		}
 		return true, err //nolint:wrapcheck
 	}
@@ -96,6 +98,11 @@ func GetRoxctlHTTPClient(config *HttpClientConfig) (RoxctlHTTPClient, error) {
 	retryClient.RetryWaitMin = config.RetryDelay
 	// Silence the default log output of the HTTP retry client to not pollute output.
 	retryClient.Logger = nil
+	retryClient.RequestLogHook = func(_ retryablehttp.Logger, _ *http.Request, attempt int) {
+		if attempt > 0 {
+			config.Logger.InfofLn("Retrying request: attempt %d out of %d", attempt, retryClient.RetryMax)
+		}
+	}
 
 	if !config.RetryExponentialBackoff {
 		// Disable the exponential backoff, in some scenarios the backoff makes roxctl appear
