@@ -2,7 +2,6 @@ package telemetry
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
@@ -34,14 +33,8 @@ func Singleton() interface {
 			metricExpressions: metricExpressions,
 			trackFunc:         metrics.SetAggregatedVulnCount,
 		}
-		for metricName, expressions := range instance.metricExpressions {
-			labels := getMetricLabels(expressions)
-			var expressionStrings []string
-			for _, expr := range expressions {
-				expressionStrings = append(expressionStrings, expr.String())
-			}
-			metrics.RegisterVulnAggregatedMetric(metricName, labels,
-				strings.Join(expressionStrings, ","))
+		for metricName, labels := range instance.metricExpressions {
+			metrics.RegisterVulnAggregatedMetric(metricName, labels)
 		}
 	})
 	return instance
@@ -59,7 +52,7 @@ type vulnerabilityMetricsImpl struct {
 	// Example:
 	//
 	//   "Namespace_eq_abc_Severity_total": {"Namespace=abc", "Severity"},
-	metricExpressions map[metricName][]*expression
+	metricExpressions map[metricName][]Label
 	trackFunc         func(metricName string, labels map[Label]string, total int)
 }
 

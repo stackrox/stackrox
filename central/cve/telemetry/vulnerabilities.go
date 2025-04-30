@@ -11,24 +11,24 @@ import (
 // Label is an alias because the central/metrics package cannot import it.
 type Label = string
 
-const (
-	ClusterLabel          Label = "Cluster"
-	NamespaceLabel        Label = "Namespace"
-	DeploymentLabel       Label = "Deployment"
-	ImageIDLabel          Label = "ImageID"
-	ImageRegistryLabel    Label = "ImageRegistry"
-	ImageRemoteLabel      Label = "ImageRemote"
-	ImageTagLabel         Label = "ImageTag"
-	ComponentLabel        Label = "Component"
-	ComponentVersionLabel Label = "ComponentVersion"
-	CVELabel              Label = "CVE"
-	CVSSLabel             Label = "CVSS"
-	OperatingSystemLabel  Label = "OperatingSystem"
-	SeverityLabel         Label = "Severity"
-	SeverityV2Label       Label = "SeverityV2"
-	SeverityV3Label       Label = "SeverityV3"
-	IsFixableLabel        Label = "IsFixable"
-)
+var labelOrder = map[Label]int{
+	"Cluster":          0,
+	"Namespace":        1,
+	"Deployment":       2,
+	"ImageID":          3,
+	"ImageRegistry":    4,
+	"ImageRemote":      5,
+	"ImageTag":         6,
+	"Component":        7,
+	"ComponentVersion": 8,
+	"CVE":              9,
+	"CVSS":             10,
+	"OperatingSystem":  11,
+	"Severity":         12,
+	"SeverityV2":       13,
+	"SeverityV3":       14,
+	"IsFixable":        15,
+}
 
 type record struct {
 	labels map[Label]string
@@ -101,11 +101,11 @@ func isFixable(vuln *storage.EmbeddedVulnerability) string {
 func makeLabelGetter(image *storage.Image, name *storage.ImageName, component *storage.EmbeddedImageScanComponent, vuln *storage.EmbeddedVulnerability, clusterName string, namespaceName string, deploymentName string) func(Label) string {
 	return func(label Label) string {
 		switch label {
-		case ClusterLabel, NamespaceLabel, DeploymentLabel:
+		case "Cluster", "Namespace", "Deployment":
 			return getResourceLabel(label, clusterName, namespaceName, deploymentName)
-		case ImageIDLabel, ImageRegistryLabel, ImageRemoteLabel, ImageTagLabel, ComponentLabel, ComponentVersionLabel:
+		case "ImageID", "ImageRegistry", "ImageRemote", "ImageTag", "Component", "ComponentVersion":
 			return getImageComponentLabel(label, image, name, component)
-		case CVELabel, CVSSLabel, OperatingSystemLabel, SeverityLabel, SeverityV2Label, SeverityV3Label, IsFixableLabel:
+		case "CVE", "CVSS", "OperatingSystem", "Severity", "SeverityV2", "SeverityV3", "IsFixable":
 			return getVulnerabilityLabel(label, image, vuln)
 		default:
 			return ""
@@ -115,11 +115,11 @@ func makeLabelGetter(image *storage.Image, name *storage.ImageName, component *s
 
 func getResourceLabel(label Label, clusterName, namespaceName, deploymentName string) string {
 	switch label {
-	case ClusterLabel:
+	case "Cluster":
 		return clusterName
-	case NamespaceLabel:
+	case "Namespace":
 		return namespaceName
-	case DeploymentLabel:
+	case "Deployment":
 		return deploymentName
 	default:
 		return ""
@@ -128,17 +128,17 @@ func getResourceLabel(label Label, clusterName, namespaceName, deploymentName st
 
 func getImageComponentLabel(label Label, image *storage.Image, name *storage.ImageName, component *storage.EmbeddedImageScanComponent) string {
 	switch label {
-	case ImageIDLabel:
+	case "ImageID":
 		return image.GetId()
-	case ImageRegistryLabel:
+	case "ImageRegistry":
 		return name.GetRegistry()
-	case ImageRemoteLabel:
+	case "ImageRemote":
 		return name.GetRemote()
-	case ImageTagLabel:
+	case "ImageTag":
 		return name.GetTag()
-	case ComponentLabel:
+	case "Component":
 		return component.GetName()
-	case ComponentVersionLabel:
+	case "ComponentVersion":
 		return component.GetVersion()
 	default:
 		return ""
@@ -147,19 +147,19 @@ func getImageComponentLabel(label Label, image *storage.Image, name *storage.Ima
 
 func getVulnerabilityLabel(label Label, image *storage.Image, vuln *storage.EmbeddedVulnerability) string {
 	switch label {
-	case CVELabel:
+	case "CVE":
 		return vuln.GetCve()
-	case CVSSLabel:
+	case "CVSS":
 		return strconv.FormatFloat(float64(vuln.GetCvss()), 'f', 1, 32)
-	case OperatingSystemLabel:
+	case "OperatingSystem":
 		return image.GetScan().GetOperatingSystem()
-	case SeverityLabel:
+	case "Severity":
 		return vuln.GetSeverity().String()
-	case SeverityV2Label:
+	case "SeverityV2":
 		return vuln.GetCvssV2().GetSeverity().String()
-	case SeverityV3Label:
+	case "SeverityV3":
 		return vuln.GetCvssV3().GetSeverity().String()
-	case IsFixableLabel:
+	case "IsFixable":
 		return isFixable(vuln)
 	default:
 		return ""

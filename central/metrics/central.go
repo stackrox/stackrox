@@ -1,6 +1,7 @@
 package metrics
 
 import (
+	"strings"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -478,12 +479,12 @@ func SetSignatureVerificationReprocessorDuration(start time.Time) {
 
 // RegisterVulnAggregatedMetric registers user-defined custom vulnerability
 // aggregated metric according to the ROX_AGGREGATE_VULN_METRICS variable value.
-func RegisterVulnAggregatedMetric(name string, labels []string, aggregationExpression string) {
+func RegisterVulnAggregatedMetric(name string, labels []string) {
 	metric := prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      name,
-		Help: "The total number of discovered CVEs aggregated by " + aggregationExpression +
+		Help: "The total number of discovered CVEs aggregated by " + strings.Join(labels, ",") +
 			" and gathered every " + env.AggregateVulnMetricsPeriod.DurationSetting().String(),
 	}, labels)
 	aggregatedVulnMetrics[name] = metric

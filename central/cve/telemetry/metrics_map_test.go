@@ -7,50 +7,31 @@ import (
 )
 
 func Test_makeMetricName(t *testing.T) {
-	cases := map[aggregationKey]metricName{
-		"":                       "_total",
-		"Severity":               "Severity_total",
-		"Cluster=*prod*,CVSS>=5": "Cluster_eq__prod__CVSS_gt__eq_5_total",
-	}
-
-	for key, name := range cases {
-		assert.Equal(t, name, makeMetricName(key))
-	}
-}
-
-func str2expr(expr ...string) []*expression {
-	result := make([]*expression, 0, len(expr))
-	for _, e := range expr {
-		result = append(result, makeExpression(e))
-	}
-	return result
+	assert.Equal(t, "_total",
+		makeMetricName([]Label{""}))
+	assert.Equal(t, "Namespace_total",
+		makeMetricName([]Label{"Namespace"}))
+	assert.Equal(t, "Cluster_Namespace_Severity_total",
+		makeMetricName([]Label{"Severity", "Namespace", "Cluster"}))
+	assert.Equal(t, "bad label_total",
+		makeMetricName([]Label{"bad label"}))
 }
 
 func Test_parseAggregationExpressions(t *testing.T) {
-	cases := map[string]map[metricName][]*expression{
+	cases := map[string]map[metricName][]Label{
 		// Default case:
 		"Cluster,Namespace,Severity": {
-			"Cluster_Namespace_Severity_total": str2expr("Cluster", "Namespace", "Severity"),
+			"Cluster_Namespace_Severity_total": {"Cluster", "Namespace", "Severity"},
 		},
-		// Normal case:
-		"Namespace=abc, Severity, IsFixable=true | Cluster | SeverityV3": {
-			"Cluster_total": str2expr("Cluster"),
-			"Namespace_eq_abc_Severity_IsFixable_eq_true_total": str2expr(
-				"Namespace=abc",
-				"Severity",
-				"IsFixable=true"),
-			"SeverityV3_total": str2expr("SeverityV3"),
-		},
-
 		// Weird cases:
 		"":  nil,
 		",": nil,
 		"key,": {
-			"key_total": str2expr("key"),
+			"key_total": {"key"},
 		},
-		", key1 = x ,,||, key2  > 3|": {
-			"key1_eq_x_total": str2expr("key1=x"),
-			"key2_gt_3_total": str2expr("key2>3"),
+		", key1  ,,||, key2  |": {
+			"key1_total": {"key1"},
+			"key2_total": {"key2"},
 		},
 	}
 	for input, expressions := range cases {
@@ -68,42 +49,26 @@ func Test_makeAggregationKeyInstance(t *testing.T) {
 	labelsGetter := func(label Label) string {
 		return testMetric[label]
 	}
-	key, labels := makeAggregationKeyInstance(
-		str2expr("string=*al*", "number>5", "bool"), labelsGetter)
-	assert.Equal(t, "value|7.4|false", key)
-	assert.Equal(t, map[string]string{
-		"string": "value",
-		"number": "7.4",
-		"bool":   "false",
-	}, labels)
-
-	key, labels = makeAggregationKeyInstance(
-		str2expr("string=missing", "number>5", "bool"),
-		labelsGetter,
-	)
-	assert.Equal(t, "", key)
-	assert.Nil(t, labels)
-}
-
-func Test_getMetricNames(t *testing.T) {
-	cases := []struct {
-		expressions []*expression
-		names       []string
-	}{
-		{
-			[]*expression{},
-			[]string(nil),
-		},
-		{
-			str2expr("a=b"),
-			[]string{"a"},
-		},
-		{
-			str2expr("a", "b=x", "c>4"),
-			[]string{"a", "b", "c"},
-		},
-	}
-	for _, c := range cases {
-		assert.Equal(t, c.names, getMetricLabels(c.expressions), c.expressions)
-	}
+	t.Run("matching", func(t *testing.T) {
+		key, labels := makeAggregationKeyInstance(
+			[]Label{"string", "number", "bool"}, labelsGetter)
+		assert.Equal(t, "value|7.4|false", key)
+		assert.Equal(t, map[string]string{
+			"string": "value",
+			"number": "7.4",
+			"bool":   "false",
+		}, labels)
+	})
+	t.Run("missing", func(t *testing.T) {
+		key, labels := makeAggregationKeyInstance(
+			[]Label{"one", "two", "bool"},
+			labelsGetter,
+		)
+		assert.Equal(t, "||false", key)
+		assert.Equal(t, map[string]string{
+			"one":  "",
+			"two":  "",
+			"bool": "false",
+		}, labels)
+	})
 }
