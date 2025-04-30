@@ -563,6 +563,22 @@ func (m *networkFlowManager) currentEnrichedConnsAndEndpoints() (
 	return enrichedConnections, enrichedEndpoints, enrichedProcesses
 }
 
+func isUpdated(prevTS, currTS timestamp.MicroTS, found bool) bool {
+	// Connection has not been seen in the last tick.
+	if !found {
+		return true
+	}
+	// Collector saw this connection more recently.
+	if currTS > prevTS {
+		return true
+	}
+	// Connection was active (unclosed) in the last tick, now it is closed.
+	if prevTS == timestamp.InfiniteFuture && currTS != timestamp.InfiniteFuture {
+		return true
+	}
+	return false
+}
+
 func computeUpdatedConns(current map[networkConnIndicator]timestamp.MicroTS, previous map[networkConnIndicator]timestamp.MicroTS, previousMutex *sync.RWMutex) []*storage.NetworkFlow {
 	previousMutex.RLock()
 	defer previousMutex.RUnlock()
@@ -570,7 +586,7 @@ func computeUpdatedConns(current map[networkConnIndicator]timestamp.MicroTS, pre
 
 	for conn, currTS := range current {
 		prevTS, ok := previous[conn]
-		if !ok || currTS > prevTS {
+		if isUpdated(prevTS, currTS, ok) {
 			updates = append(updates, conn.toProto(currTS))
 		}
 	}
@@ -591,7 +607,7 @@ func computeUpdatedEndpoints(current map[containerEndpointIndicator]timestamp.Mi
 
 	for ep, currTS := range current {
 		prevTS, ok := previous[ep]
-		if !ok || currTS > prevTS {
+		if isUpdated(prevTS, currTS, ok) {
 			updates = append(updates, ep.toProto(currTS))
 		}
 	}
@@ -721,7 +737,6 @@ func (m *networkFlowManager) UnregisterCollector(hostname string, sequenceID int
 
 func (h *hostConnections) Process(networkInfo *sensor.NetworkConnectionInfo, nowTimestamp timestamp.MicroTS, sequenceID int64) error {
 	flowMetrics.NetworkConnectionInfoMessagesRcvd.With(prometheus.Labels{"Hostname": h.hostname}).Inc()
-	now := timestamp.Now()
 
 	updatedConnections := getUpdatedConnections(networkInfo)
 	updatedEndpoints := getUpdatedContainerEndpoints(networkInfo)
@@ -749,50 +764,40 @@ func (h *hostConnections) Process(networkInfo *sensor.NetworkConnectionInfo, now
 		}
 		h.connectionsSequenceID = sequenceID
 	}
-
-	for c, t := range updatedConnections {
-		// timestamp = zero implies the connection is newly added. Add new connections, update existing ones to mark them closed
-		if t != timestamp.InfiniteFuture { // adjust timestamp if not zero.
-			t += tsOffset
-		}
-		status := h.connections[c]
-		if status == nil {
-			flowMetrics.HostConnectionsOperations.WithLabelValues("add", "connections").Inc()
-			status = &connStatus{
-				tsAdded:   now,
-				firstSeen: now,
-			}
-			if t < status.firstSeen {
-				status.firstSeen = t
-			}
-			h.connections[c] = status
-		}
-		status.lastSeen = t
-	}
-	h.lastKnownTimestamp = nowTimestamp
-
-	for ep, t := range updatedEndpoints {
-		// timestamp = zero implies the endpoint is newly added. Add new endpoints, update existing ones to mark them closed
-		if t != timestamp.InfiniteFuture { // adjust timestamp if not zero.
-			t += tsOffset
-		}
-		status := h.endpoints[ep]
-		if status == nil {
-			flowMetrics.HostConnectionsOperations.WithLabelValues("add", "endpoints").Inc()
-			status = &connStatus{
-				tsAdded:   now,
-				firstSeen: now,
-			}
-			if t < status.firstSeen {
-				status.firstSeen = t
-			}
-			h.endpoints[ep] = status
-		}
-		status.lastSeen = t
-	}
-
+	h.updateConnectionsStatusNoLock(updatedConnections, tsOffset, nowTimestamp)
+	h.updateEndpointsStatusNoLock(updatedEndpoints, tsOffset, nowTimestamp)
 	h.lastKnownTimestamp = nowTimestamp
 	return nil
+}
+
+func (h *hostConnections) updateConnectionsStatusNoLock(updatedConnections map[connection]timestamp.MicroTS, tsOffset, nowTimestamp timestamp.MicroTS) {
+	updateStatusNoLock(h.connections, updatedConnections, tsOffset, nowTimestamp)
+}
+
+func (h *hostConnections) updateEndpointsStatusNoLock(updatedEndpoints map[containerEndpoint]timestamp.MicroTS, tsOffset, nowTimestamp timestamp.MicroTS) {
+	updateStatusNoLock(h.endpoints, updatedEndpoints, tsOffset, nowTimestamp)
+}
+
+func updateStatusNoLock[T comparable](current map[T]*connStatus, updated map[T]timestamp.MicroTS, tsOffset, nowTimestamp timestamp.MicroTS) {
+	for c, t := range updated {
+		// timestamp = zero implies the connection/endpoint is newly added.
+		// Add new current, update existing ones to mark them closed
+		if t != timestamp.InfiniteFuture { // adjust timestamp if not zero.
+			t += tsOffset
+		}
+		status := current[c]
+		if status == nil {
+			status = &connStatus{
+				firstSeen: nowTimestamp,
+				tsAdded:   nowTimestamp,
+			}
+			if t < status.firstSeen {
+				status.firstSeen = t
+			}
+			current[c] = status
+		}
+		status.lastSeen = t
+	}
 }
 
 func getProcessKey(originator *storage.NetworkProcessUniqueKey) processInfo {
@@ -852,6 +857,9 @@ func processConnection(conn *sensor.NetworkConnection) (*connection, error) {
 	return c, nil
 }
 
+// getUpdatedConnections returns a map of connections to timestamp.
+// The timestamp set to +infinity means that the connection is open;
+// any other value >0 means that the connection is closed.
 func getUpdatedConnections(networkInfo *sensor.NetworkConnectionInfo) map[connection]timestamp.MicroTS {
 	updatedConnections := make(map[connection]timestamp.MicroTS)
 

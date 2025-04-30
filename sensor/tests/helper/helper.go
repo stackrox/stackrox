@@ -841,6 +841,7 @@ type Config struct {
 	RealCerts                   bool
 	NetworkFlowTraceWriter      io.Writer
 	ProcessIndicatorTraceWriter io.Writer
+	NetworkFlowTicker <-chan time.Time
 }
 
 func (c *TestContext) startSensorInstance(t *testing.T, env *envconf.Config, cfg Config) {
@@ -881,6 +882,9 @@ func (c *TestContext) startSensorInstance(t *testing.T, env *envconf.Config, cfg
 	}
 	if cfg.ProcessIndicatorTraceWriter != nil {
 		sensorConfig.WithProcessIndicatorTraceWriter(cfg.ProcessIndicatorTraceWriter)
+	}
+	if cfg.NetworkFlowTicker != nil {
+		sensorConfig.WithNetworkFlowTicker(cfg.NetworkFlowTicker)
 	}
 
 	s, err := sensor.CreateSensor(sensorConfig)
