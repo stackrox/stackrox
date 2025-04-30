@@ -152,6 +152,7 @@ func (s *serviceImpl) PutConfig(ctx context.Context, req *v1.PutConfigRequest) (
 	} else {
 		centralclient.Disable()
 	}
+	go reprocessor.Singleton().RunReprocessor()
 	return req.GetConfig(), nil
 }
 
