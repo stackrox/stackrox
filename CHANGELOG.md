@@ -18,7 +18,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-28716: New policy criterion "Days Since CVE Was Published" to allow creation of a policy that offers a grace period to teams to fix vulnerabilities within the number of days from when the CVE was published in the vulnerability feeds.
 - ROX-28296: Support for an OpenShift reencrypt route to expose Central (`central.exposure.route.reencrypt.enabled: true`).
 - ROX-28153: Support for Cosign keyless signing and verification of image signatures.
-- ROX-28306: When using the central-services Helm chart for new installations Scanner V4 will be enabled unless explicitly disabled (opt-out).
+- ROX-28306: When using the central-services Helm chart for new installations Scanner V4 will be installed unless explicitly disabled (opt-out).
   For upgrades using the new chart version Scanner V4 continues to be not installed by default (opt-in).
 
 ### Removed Features
