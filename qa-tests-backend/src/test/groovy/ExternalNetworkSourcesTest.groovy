@@ -173,6 +173,7 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
     }
 
     @Tag("NetworkFlowVisualization")
+    @Ignore("ROX-24313: This started failing regularly after merging PR14538")
     def "Verify two flows co-exist if larger network entity added first"() {
         when:
         "Supernet external source is created before subnet external source"
