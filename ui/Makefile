@@ -23,7 +23,10 @@ lint: deps $(SOURCES)
 	npm run lint
 	@touch lint
 
-build: deps $(SOURCES)
+print-npm-logs:
+	@bash -c 'shopt -s nullglob; for f in /opt/app-root/src/.npm/_logs/*; do cat "$$f"; done'
+
+build: deps print-npm-logs $(SOURCES)
 	@echo "+ $@"
 	npm run build
 	@touch build
