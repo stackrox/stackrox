@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
-	"math"
 
 	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/mailru/easyjson"
@@ -18,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -203,7 +203,7 @@ func (r *repository) init(ctx context.Context, domain framework.ComplianceDomain
 
 	clusterQuery := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
 	infPagination := &v1.QueryPagination{
-		Limit: math.MaxInt32,
+		Limit: paginated.Unlimited,
 	}
 	clusterQuery.Pagination = infPagination
 

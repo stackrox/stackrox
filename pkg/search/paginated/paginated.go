@@ -8,6 +8,8 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 )
 
+const Unlimited = 0
+
 // WithDefaultSortOption is a higher order function that makes sure results are sorted.
 func WithDefaultSortOption(searcher search.Searcher, defaultSortOption *v1.QuerySortOption) search.Searcher {
 	return search.FuncSearcher{
@@ -85,7 +87,7 @@ func FillPagination(query *v1.Query, pagination *v1.Pagination, maxLimit int32) 
 	queryPagination := &v1.QueryPagination{}
 
 	// Fill in limit, and check boundaries.
-	if pagination.GetLimit() == 0 || pagination.GetLimit() > maxLimit {
+	if pagination.GetLimit() == Unlimited || pagination.GetLimit() > maxLimit {
 		queryPagination.Limit = maxLimit
 	} else {
 		queryPagination.Limit = pagination.GetLimit()

@@ -16,7 +16,7 @@ import (
 
 func emptyPaginatedQuery() *v1.Query {
 	q := search.EmptyQuery()
-	paginated.FillPagination(q, nil, math.MaxInt32)
+	paginated.FillPagination(q, nil, paginated.Unlimited)
 	return q
 }
 

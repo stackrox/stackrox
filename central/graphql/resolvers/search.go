@@ -41,14 +41,14 @@ func (r *PaginatedQuery) AsV1QueryOrEmpty() (*v1.Query, error) {
 	var q *v1.Query
 	if r == nil || r.Query == nil {
 		q := search.EmptyQuery()
-		paginated.FillPagination(q, r.Pagination.AsV1Pagination(), math.MaxInt32)
+		paginated.FillPagination(q, r.Pagination.AsV1Pagination(), paginated.Unlimited)
 		return q, nil
 	}
 	q, err := search.ParseQuery(*r.Query, search.MatchAllIfEmpty())
 	if err != nil {
 		return nil, err
 	}
-	paginated.FillPagination(q, r.Pagination.AsV1Pagination(), math.MaxInt32)
+	paginated.FillPagination(q, r.Pagination.AsV1Pagination(), paginated.Unlimited)
 	return q, nil
 }
 
