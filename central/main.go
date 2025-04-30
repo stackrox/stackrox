@@ -957,7 +957,7 @@ func waitForTerminationSignal() {
 		{gcp.Singleton(), "GCP cloud credentials manager"},
 		{cloudSourcesManager.Singleton(), "cloud sources manager"},
 		{administrationEventHandler.Singleton(), "administration events handler"},
-		{cvemetrics.Singleton(), "CVSS metric gatherer"},
+		{cvemetrics.Singleton(), "CVE metric gatherer"},
 	}
 
 	stoppables = append(stoppables,
