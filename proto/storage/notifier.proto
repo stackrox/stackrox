@@ -92,6 +92,7 @@ message Email {
   AuthMethod startTLSAuthMethod = 8;
   // Set to true to allow unauthenticated SMTP
   bool allow_unauthenticated_smtp = 9; // @gotags: scrub:"disableDependentIfTrue"
+  bool skipTLSVerify = 10;
 }
 
 message Splunk {

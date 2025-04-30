@@ -29,6 +29,7 @@ export type EmailIntegration = {
         from: string;
         sender: string;
         disableTLS: boolean;
+        skipTLSVerify: boolean;
         startTLSAuthMethod: 'DISABLED' | 'PLAIN' | 'LOGIN';
         allowUnauthenticatedSmtp: boolean;
     };
@@ -121,6 +122,7 @@ export const defaultValues: EmailIntegrationFormValues = {
             from: '',
             sender: '',
             disableTLS: false,
+            skipTLSVerify: false,
             startTLSAuthMethod: 'DISABLED',
             allowUnauthenticatedSmtp: false,
         },
@@ -426,7 +428,7 @@ function EmailIntegrationForm({
                     </FormLabelGroup>
                     <FormLabelGroup label="" fieldId="notifier.email.disableTLS" errors={errors}>
                         <Checkbox
-                            label="Disable TLS certificate validation (insecure)"
+                            label="Disable TLS (insecure)"
                             id="notifier.email.disableTLS"
                             isChecked={values.notifier.email.disableTLS}
                             onChange={(event, value) =>
@@ -454,6 +456,20 @@ function EmailIntegrationForm({
                                 </SelectOption>
                             ))}
                         </SelectSingle>
+                    </FormLabelGroup>
+                    <FormLabelGroup label="" fieldId="notifier.email.skipTLSVerify" errors={errors}>
+                        <Checkbox
+                            label="Skip TLS verification"
+                            id="notifier.email.skipTLSVerify"
+                            isChecked={values.notifier.email.skipTLSVerify}
+                            onBlur={handleBlur}
+                            onChange={(event, value) => onChange(value, event)}
+                            isDisabled={
+                                !isEditable ||
+                                (values.notifier.email.disableTLS &&
+                                    values.notifier.email.startTLSAuthMethod === 'DISABLED')
+                            }
+                        />
                     </FormLabelGroup>
                 </Form>
             </PageSection>
