@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/csv"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/search"
@@ -48,6 +49,21 @@ func initialize() {
 }
 
 func newHandler(resolver *resolvers.Resolver) *csvCommon.HandlerImpl {
+	if features.FlattenCVEData.Enabled() {
+		return csvCommon.NewCSVHandler(
+			resolver,
+			// CVEs must be scoped from lowest entities to highest entities. DO NOT CHANGE THE ORDER.
+			[]*csvCommon.SearchWrapper{
+				csvCommon.NewSearchWrapper(v1.SearchCategory_IMAGE_COMPONENTS_V2, schema.ImageComponentV2Schema.OptionsMap,
+					resolver.ImageComponentV2DataStore),
+				csvCommon.NewSearchWrapper(v1.SearchCategory_IMAGES, csvCommon.ImageOnlyOptionsMap, resolver.ImageDataStore),
+				csvCommon.NewSearchWrapper(v1.SearchCategory_DEPLOYMENTS, csvCommon.DeploymentOnlyOptionsMap, resolver.DeploymentDataStore),
+				csvCommon.NewSearchWrapper(v1.SearchCategory_NAMESPACES, csvCommon.NamespaceOnlyOptionsMap, resolver.NamespaceDataStore),
+				csvCommon.NewSearchWrapper(v1.SearchCategory_CLUSTERS, schema.ClustersSchema.OptionsMap, resolver.ClusterDataStore),
+			},
+		)
+	}
+
 	return csvCommon.NewCSVHandler(
 		resolver,
 		// CVEs must be scoped from lowest entities to highest entities. DO NOT CHANGE THE ORDER.
