@@ -10,6 +10,7 @@ import services.ClusterService
 import services.NetworkGraphService
 import util.NetworkGraphUtil
 
+import spock.lang.Ignore
 import spock.lang.Tag
 
 @Tag("PZ")
