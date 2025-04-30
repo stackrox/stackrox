@@ -205,7 +205,6 @@ defaults:
       tag: [< required "" .ScannerImageTag >]
 
   scannerV4:
-    disable: true
     image:
       name: [< required "" .ScannerV4ImageRemote >]
       tag: [< required "" .ScannerV4ImageTag >]
