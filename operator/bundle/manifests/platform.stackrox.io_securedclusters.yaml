@@ -1668,8 +1668,6 @@ spec:
                 description: StackRoxRelease describes the Helm "release" that was
                   most recently applied.
                 properties:
-                  name:
-                    type: string
                   version:
                     type: string
                 type: object
