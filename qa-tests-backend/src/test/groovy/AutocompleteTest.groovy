@@ -9,7 +9,7 @@ import spock.lang.Unroll
 
 @Tag("PZ")
 class AutocompleteTest extends BaseSpecification {
-    private static final SearchCategory VULNERABILITY_SEARCH_CATEGORY = SearchCategory.IMAGE_VULNERABILITIES
+    private static final SearchCategory VULNERABILITY_SEARCH_CATEGORY = SearchCategory.IMAGE_VULNERABILITIES_V2
     private static final String GROUP_AUTOCOMPLETE = "GROUP"
 
     @Tag("BAT")
@@ -58,7 +58,7 @@ class AutocompleteTest extends BaseSpecification {
                                                 "Image Tag", "Dockerfile Instruction Keyword", "CVE", "Component"]
         VULNERABILITY_SEARCH_CATEGORY        | ["Cluster", "Deployment",
                                                 "Image Tag", "Dockerfile Instruction Keyword", "CVE", "Component"]
-        SearchCategory.IMAGE_COMPONENTS      | ["Cluster", "Deployment",
+        SearchCategory.IMAGE_COMPONENTS_V2      | ["Cluster", "Deployment",
                                                 "Image Tag", "Dockerfile Instruction Keyword", "CVE", "Component"]
         SearchCategory.PODS                  | ["Namespace"]
         SearchCategory.POLICIES              | ["Policy"]
