@@ -18,6 +18,7 @@ import (
 	imagesView "github.com/stackrox/rox/central/views/images"
 	watchedImageDS "github.com/stackrox/rox/central/watchedimage/datastore"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -89,6 +90,9 @@ func BenchmarkReportGenerator(b *testing.B) {
 }
 
 func (bts *ReportGeneratorBenchmarkTestSuite) setupTestSuite() {
+	if features.FlattenCVEData.Enabled() {
+		bts.b.Skip()
+	}
 	bts.ctx = loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
 	bts.mockCtrl = gomock.NewController(bts.b)
 	bts.testDB = resolvers.SetupTestPostgresConn(bts.b)

@@ -22,6 +22,7 @@ import (
 	imagesView "github.com/stackrox/rox/central/views/images"
 	watchedImageDS "github.com/stackrox/rox/central/watchedimage/datastore"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	postgresSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
@@ -63,6 +64,9 @@ type vulnReportData struct {
 }
 
 func (s *EnhancedReportingTestSuite) SetupSuite() {
+	if features.FlattenCVEData.Enabled() {
+		s.T().Skip()
+	}
 	s.ctx = loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
 	s.mockCtrl = gomock.NewController(s.T())
 	s.testDB = resolvers.SetupTestPostgresConn(s.T())

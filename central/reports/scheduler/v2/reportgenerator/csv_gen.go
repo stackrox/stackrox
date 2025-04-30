@@ -94,6 +94,7 @@ func addOptionalColumnstoHeader(optionalColumns *storage.VulnerabilityReportFilt
 	}
 	if optionalColumns.GetIncludeAdvisory() {
 		csvHeaderClone = append(csvHeaderClone, "Advisory")
+		csvHeaderClone = append(csvHeaderClone, "Advisory Reference")
 	}
 	return csvHeaderClone
 }
@@ -111,6 +112,8 @@ func addOptionalColumnstoRow(optionalColumns *storage.VulnerabilityReportFilters
 		}
 	}
 	if optionalColumns.GetIncludeAdvisory() {
-		csvWriter.AppendToValue(row, resp.GetAdvisory())
+		advisory := resp.GetAdvisory()
+		csvWriter.AppendToValue(row, advisory.GetName())
+		csvWriter.AppendToValue(row, advisory.GetLink())
 	}
 }
