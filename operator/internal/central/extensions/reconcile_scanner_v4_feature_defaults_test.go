@@ -33,7 +33,7 @@ var (
 )
 
 func init() {
-	runningInTest = true
+	runningUnderTest = true
 }
 
 func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
