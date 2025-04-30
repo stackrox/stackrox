@@ -19,8 +19,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-28296: Support for an OpenShift reencrypt route to expose Central (`central.exposure.route.reencrypt.enabled: true`).
 - ROX-28153: Support for Cosign keyless signing and verification of image signatures.
 - ROX-28655: When managing a Central installation using the operator
-  * Scanner V4 will be enabled for new installations unless explicitly disabled (opt-out) and
-  * Scanner V4 will remain to be disabled for upgrades unless explicitly enabled (opt-in).
+  * Scanner V4 will be installed for new installations unless explicitly disabled (opt-out) and
+  * Scanner V4 will remain not installed for upgrades unless explicitly enabled (opt-in).
 
 ### Removed Features
 
