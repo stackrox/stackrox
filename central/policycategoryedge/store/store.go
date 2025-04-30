@@ -20,7 +20,9 @@ type Store interface {
 	GetIDs(ctx context.Context) ([]string, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.PolicyCategoryEdge, []int, error)
 	DeleteMany(ctx context.Context, ids []string) error
+	// Deprecated: use GetByQueryFn instead
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.PolicyCategoryEdge, error)
+	GetByQueryFn(ctx context.Context, query *v1.Query, fn func(obj *storage.PolicyCategoryEdge) error) error
 	DeleteByQuery(ctx context.Context, q *v1.Query) ([]string, error)
 
 	Walk(ctx context.Context, fn func(obj *storage.PolicyCategoryEdge) error) error
