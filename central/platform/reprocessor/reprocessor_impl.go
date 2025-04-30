@@ -56,8 +56,7 @@ func New(alertDatastore alertDS.DataStore,
 		platformMatcher:     platformMatcher,
 		semaphore:           semaphore.NewWeighted(1),
 		stopSignal:          concurrency.NewSignal(),
-
-		customized: features.CustomizablePlatformComponents.Enabled(),
+		customized:          features.CustomizablePlatformComponents.Enabled(),
 	}
 }
 
@@ -104,14 +103,21 @@ func (pr *platformReprocessorImpl) RunReprocessor() {
 		}
 		if pr.customized {
 			err = pr.configDatastore.MarkPCCReevaluated(reprocessorCtx)
-			log.Errorf("Error marking platform component config as reevaluated: %v", err)
+			if err != nil {
+				log.Errorf("Error marking platform component config as reevaluated: %v", err)
+			}
 		}
 	}
 	pr.semaphore.Release(1)
 }
 
 func (pr *platformReprocessorImpl) reprocessAlerts() error {
-	q := unsetPlatformComponentQuery.CloneVT()
+	var q *v1.Query
+	if pr.customized {
+		q = search.EmptyQuery()
+	} else {
+		q = unsetPlatformComponentQuery
+	}
 	q.Pagination = &v1.QueryPagination{
 		Limit: batchSize,
 	}
@@ -150,7 +156,12 @@ func (pr *platformReprocessorImpl) reprocessAlerts() error {
 }
 
 func (pr *platformReprocessorImpl) reprocessDeployments() error {
-	q := unsetPlatformComponentQuery.CloneVT()
+	var q *v1.Query
+	if pr.customized {
+		q = search.EmptyQuery()
+	} else {
+		q = unsetPlatformComponentQuery
+	}
 	q.Pagination = &v1.QueryPagination{
 		Limit: batchSize,
 	}
