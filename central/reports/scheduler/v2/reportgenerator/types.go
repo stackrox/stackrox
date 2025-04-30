@@ -41,7 +41,7 @@ type ImageCVEQueryResponse struct {
 	NVDCVSS           *float64                       `db:"nvd_cvss"`
 	EPSSProbability   *float64                       `db:"epss_probability"`
 	DiscoveredAtImage *time.Time                     `db:"first_image_occurrence_timestamp"`
-	Advisory          *string                        `db:"advisory"`
+	Advisory          *storage.Advisory              `db:"advisory"`
 
 	Link string
 }
@@ -134,7 +134,7 @@ func (res *ImageCVEQueryResponse) GetEPSSProbability() *float64 {
 	return res.EPSSProbability
 }
 
-func (res *ImageCVEQueryResponse) GetAdvisory() string {
+func (res *ImageCVEQueryResponse) GetAdvisory() storage.Advisory {
 	return *res.Advisory
 }
 

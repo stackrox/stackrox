@@ -45,45 +45,16 @@ var (
 	reportGenCtx = resolvers.SetAuthorizerOverride(loaders.WithLoaderContext(sac.WithAllAccess(context.Background())), allow.Anonymous())
 
 	deployedImagesQueryParts = &ReportQueryParts{
-		Schema: selectSchema(),
-		Selects: []*v1.QuerySelect{
-			search.NewQuerySelect(search.ImageName).Proto(),
-			search.NewQuerySelect(search.Component).Proto(),
-			search.NewQuerySelect(search.CVEID).Proto(),
-			search.NewQuerySelect(search.CVE).Proto(),
-			search.NewQuerySelect(search.Fixable).Proto(),
-			search.NewQuerySelect(search.FixedBy).Proto(),
-			search.NewQuerySelect(search.Severity).Proto(),
-			search.NewQuerySelect(search.CVSS).Proto(),
-			search.NewQuerySelect(search.NVDCVSS).Proto(),
-			search.NewQuerySelect(search.FirstImageOccurrenceTimestamp).Proto(),
-			search.NewQuerySelect(search.Cluster).Proto(),
-			search.NewQuerySelect(search.Namespace).Proto(),
-			search.NewQuerySelect(search.DeploymentName).Proto(),
-			search.NewQuerySelect(search.EPSSProbablity).Proto(),
-			search.NewQuerySelect(search.Advisory).Proto(),
-		},
+		Schema:  selectSchema(),
+		Selects: getSelectsDeployedImages(),
 		Pagination: search.NewPagination().
 			AddSortOption(search.NewSortOption(search.Cluster)).
 			AddSortOption(search.NewSortOption(search.Namespace)).Proto(),
 	}
 
 	watchedImagesQueryParts = &ReportQueryParts{
-		Schema: selectSchema(),
-		Selects: []*v1.QuerySelect{
-			search.NewQuerySelect(search.ImageName).Proto(),
-			search.NewQuerySelect(search.Component).Proto(),
-			search.NewQuerySelect(search.CVEID).Proto(),
-			search.NewQuerySelect(search.CVE).Proto(),
-			search.NewQuerySelect(search.Fixable).Proto(),
-			search.NewQuerySelect(search.FixedBy).Proto(),
-			search.NewQuerySelect(search.Severity).Proto(),
-			search.NewQuerySelect(search.CVSS).Proto(),
-			search.NewQuerySelect(search.NVDCVSS).Proto(),
-			search.NewQuerySelect(search.FirstImageOccurrenceTimestamp).Proto(),
-			search.NewQuerySelect(search.EPSSProbablity).Proto(),
-			search.NewQuerySelect(search.Advisory).Proto(),
-		},
+		Schema:  selectSchema(),
+		Selects: getSelectsWatchedImages(),
 		Pagination: search.NewPagination().
 			AddSortOption(search.NewSortOption(search.ImageName)).Proto(),
 	}
@@ -467,4 +438,47 @@ func selectSchema() *walker.Schema {
 		return pkgSchema.ImageCvesV2Schema
 	}
 	return pkgSchema.ImageCvesSchema
+}
+
+func getSelectsWatchedImages() []*v1.QuerySelect {
+	ret := []*v1.QuerySelect{
+		search.NewQuerySelect(search.ImageName).Proto(),
+		search.NewQuerySelect(search.Component).Proto(),
+		search.NewQuerySelect(search.CVEID).Proto(),
+		search.NewQuerySelect(search.CVE).Proto(),
+		search.NewQuerySelect(search.Fixable).Proto(),
+		search.NewQuerySelect(search.FixedBy).Proto(),
+		search.NewQuerySelect(search.Severity).Proto(),
+		search.NewQuerySelect(search.CVSS).Proto(),
+		search.NewQuerySelect(search.NVDCVSS).Proto(),
+		search.NewQuerySelect(search.FirstImageOccurrenceTimestamp).Proto(),
+		search.NewQuerySelect(search.EPSSProbablity).Proto(),
+	}
+	if features.FlattenCVEData.Enabled() {
+		ret = append(ret, search.NewQuerySelect(search.Advisory).Proto())
+	}
+	return ret
+}
+
+func getSelectsDeployedImages() []*v1.QuerySelect {
+	ret := []*v1.QuerySelect{
+		search.NewQuerySelect(search.ImageName).Proto(),
+		search.NewQuerySelect(search.Component).Proto(),
+		search.NewQuerySelect(search.CVEID).Proto(),
+		search.NewQuerySelect(search.CVE).Proto(),
+		search.NewQuerySelect(search.Fixable).Proto(),
+		search.NewQuerySelect(search.FixedBy).Proto(),
+		search.NewQuerySelect(search.Severity).Proto(),
+		search.NewQuerySelect(search.CVSS).Proto(),
+		search.NewQuerySelect(search.NVDCVSS).Proto(),
+		search.NewQuerySelect(search.FirstImageOccurrenceTimestamp).Proto(),
+		search.NewQuerySelect(search.Cluster).Proto(),
+		search.NewQuerySelect(search.Namespace).Proto(),
+		search.NewQuerySelect(search.DeploymentName).Proto(),
+		search.NewQuerySelect(search.EPSSProbablity).Proto(),
+	}
+	if features.FlattenCVEData.Enabled() {
+		ret = append(ret, search.NewQuerySelect(search.Advisory).Proto())
+	}
+	return ret
 }
