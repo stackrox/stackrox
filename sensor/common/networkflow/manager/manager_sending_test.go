@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/protoconv"
@@ -123,7 +124,7 @@ func (b *sendNetflowsSuite) TestCloseOldConnectionFailedLookup() {
 	b.expectDetections(1)
 
 	pair := createConnectionPair().
-		firstSeen(timestamp.Now().Add(-maxContainerResolutionWaitPeriod * 2)).
+		firstSeen(timestamp.Now().Add(-env.ContainerIDResolutionGracePeriod.DurationSetting() * 2)).
 		lastSeen(timestamp.Now())
 	b.m.activeConnections[*pair.conn] = &networkConnIndicatorWithAge{}
 	b.updateConn(pair)
@@ -151,7 +152,7 @@ func (b *sendNetflowsSuite) TestCloseOldEndpointFailedLookup() {
 	b.expectFailedLookup(1)
 
 	pair := createEndpointPair(
-		timestamp.Now().Add(-maxContainerResolutionWaitPeriod*2), timestamp.Now()).
+		timestamp.Now().Add(-env.ContainerIDResolutionGracePeriod.DurationSetting()*2), timestamp.Now()).
 		lastSeen(timestamp.Now())
 	b.m.activeEndpoints[*pair.endpoint] = &containerEndpointIndicatorWithAge{}
 	b.updateEp(pair)

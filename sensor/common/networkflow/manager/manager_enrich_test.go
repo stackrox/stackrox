@@ -45,7 +45,7 @@ func (s *TestNetworkFlowManagerEnrichmentTestSuite) TestEnrichConnection() {
 		expectedAction              PostEnrichmentAction
 	}{
 		"Rotten connection should return rotten status": {
-			connPair: createConnectionPair().incoming().external().firstSeen(timestamp.Now().Add(-maxContainerResolutionWaitPeriod * 2)),
+			connPair: createConnectionPair().incoming().external().firstSeen(timestamp.Now().Add(-env.ContainerIDResolutionGracePeriod.DurationSetting() * 2)),
 			expectEntityLookupContainer: func() {
 				mockEntityStore.EXPECT().LookupByContainerID(gomock.Any()).Times(1).DoAndReturn(func(_ any) (clusterentities.ContainerMetadata, bool, bool) {
 					return clusterentities.ContainerMetadata{}, false, false
@@ -470,7 +470,7 @@ func (s *TestNetworkFlowManagerEnrichmentTestSuite) TestEnrichContainerEndpoint(
 				s.Fail("Test case invalid: Impossible to make ts older than 2 minutes and younger than 10s")
 			}
 			if tc.isPastContainerResolutionDeadline { // must be older than 2min
-				firstSeen = firstSeen.Add(-maxContainerResolutionWaitPeriod * 2) // first seen 4 minutes ago
+				firstSeen = firstSeen.Add(-env.ContainerIDResolutionGracePeriod.DurationSetting() * 2) // first seen 4 minutes ago
 			} else if !tc.isFresh { // must be younger than 2min, but older than 10s
 				firstSeen = firstSeen.Add(-clusterEntityResolutionWaitPeriod * 2) // first seen 20s ago
 			}

@@ -11,8 +11,6 @@ import (
 const (
 	// Wait at least this long before determining that an unresolvable IP is "outside of the cluster".
 	clusterEntityResolutionWaitPeriod = 10 * time.Second
-	// Wait at least this long before giving up on resolving the container for a connection
-	maxContainerResolutionWaitPeriod = 2 * time.Minute
 )
 
 type EnrichmentResult string
@@ -82,7 +80,7 @@ func (c *connStatus) isFresh(now timestamp.MicroTS) bool {
 	return c.timeElapsedSinceFirstSeen(now) < clusterEntityResolutionWaitPeriod
 }
 func (c *connStatus) pastContainerResolutionDeadline(now timestamp.MicroTS) bool {
-	return c.timeElapsedSinceFirstSeen(now) > maxContainerResolutionWaitPeriod
+	return c.timeElapsedSinceFirstSeen(now) > env.ContainerIDResolutionGracePeriod.DurationSetting()
 }
 func (c *connStatus) setIsExternal(isExternal bool) {
 	c.isExternal = strconv.FormatBool(isExternal)
