@@ -168,7 +168,6 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 	if err != nil {
 		return nil, err
 	}
-	query = tryUnsuppressedQuery(query)
 
 	if features.FlattenCVEData.Enabled() {
 		// Get the flattened data
@@ -226,6 +225,7 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 	}
 
 	// get values
+	query = tryUnsuppressedQuery(query)
 	vulns, err := loader.FromQuery(ctx, query)
 	cveResolvers, err := resolver.wrapImageCVEsWithContext(ctx, vulns, err)
 	if err != nil {
