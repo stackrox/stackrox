@@ -18,10 +18,10 @@ os.environ["ROX_ACTIVE_VULN_MGMT"] = "true"
 
 # delegated scanning support in the secured cluster
 os.environ["SENSOR_SCANNER_SUPPORT"] = "true"
+os.environ["ROX_SCANNER_V4"] = "true"
 
 # Enable new CRS-based flow for registering secured clusters
 os.environ["ROX_DEPLOY_SENSOR_WITH_CRS"] = "true"
-os.environ["ROX_SCANNER_V4"] = "true"
 os.environ["SENSOR_HELM_MANAGED"] = "true"
 
 ClusterTestRunner(
