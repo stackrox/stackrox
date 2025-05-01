@@ -30,6 +30,7 @@ main() {
     dest="$1"
 
     set -vx
+    set +e
     local api_endpoint
     if [ -n "${API_ENDPOINT}" ]; then
         api_endpoint="${API_ENDPOINT}"
@@ -52,12 +53,20 @@ main() {
     set | grep '^ROX' | true
     roxctl -e "${api_endpoint}" --insecure-skip-tls-verify central backup --output "${dest}" \
       || {
+      echo "ROX_USE_KUBECONTEXT:$ROX_USE_KUBECONTEXT"
+      roxctl --use-current-k8s-context central backup --output "${dest}"
+      roxctl --use-current-k8s-context --insecure-skip-tls-verify central backup --output "${dest}"
+      export ROX_USE_KUBECONTEXT='true'
+      roxctl central backup --output "${dest}" \
+      roxctl --insecure-skip-tls-verify central backup --output "${dest}" \
+        || {
       # If api_endpoint fails, try localhost forwarding:
       kubectl -n stackrox port-forward "$(kubectl get pod -n stackrox --selector 'app=central' -o name)" 8000:8443 &
       forward_pid=$!
       roxctl -e "localhost:8000" --insecure-skip-tls-verify central backup --output "${dest}"
       kill -9 "${forward_pid}";
-    } || echo "Failed to connect to Central endpoint:${api_endpoint}"
+      } || echo "Failed to connect to Central endpoint:${api_endpoint}";
+    }
 
     set +vx
 

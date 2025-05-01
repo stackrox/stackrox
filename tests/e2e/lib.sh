@@ -513,8 +513,10 @@ export_central_cert() {
     central_cert="$(mktemp -d)/central_cert.pem"
     info "Storing central certificate in ${central_cert} for ${API_ENDPOINT}"
 
+    set -x
     roxctl -e "$API_ENDPOINT" \
         central cert --insecure-skip-tls-verify 1>"$central_cert"
+    set +x
 
     ci_export ROX_CA_CERT_FILE "$central_cert"
     openssl x509 -in "${ROX_CA_CERT_FILE}" -subject -issuer -ext subjectAltName -noout
