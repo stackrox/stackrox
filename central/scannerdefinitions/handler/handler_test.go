@@ -11,6 +11,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -34,67 +35,27 @@ const (
 	content1 = "Hello, world!"
 	content2 = "Papaya"
 
-	v2ManifestContent = `{
-  "since": "yesterday",
-  "until": "today"
+	v2UUID            = "e799c68a-671f-44db-9682-f24248cd0ffe"
+	v2ManifestContent = `{"since":"yesterday","until":"today"}`
+	v4Dev             = "dev"
+	v4V1              = "v1"
+
+	name2repos = `{
+	"data": {
+		"sample": ["sample"]
+	}
+}`
+	repo2cpe = `{
+	"data": {
+		"sample": {
+			"cpes": ["cpe"],
+			"repo_relative_urls": ["url"]
+		}
+	}
 }`
 )
 
-type handlerTestSuite struct {
-	suite.Suite
-	ctx       context.Context
-	datastore datastore.Datastore
-	testDB    *pgtest.TestPostgres
-}
-
-func TestHandler(t *testing.T) {
-	suite.Run(t, new(handlerTestSuite))
-}
-
-func (s *handlerTestSuite) SetupSuite() {
-	s.ctx = sac.WithAllAccess(context.Background())
-	s.testDB = pgtest.ForT(s.T())
-	blobStore := store.New(s.testDB.DB)
-	s.datastore = datastore.NewDatastore(blobStore, nil)
-	s.T().Setenv("TMPDIR", s.T().TempDir())
-}
-
-func (s *handlerTestSuite) SetupTest() {
-	tag, err := s.testDB.Exec(s.ctx, "TRUNCATE blobs CASCADE")
-	s.T().Log("blobs", tag)
-	s.NoError(err)
-}
-
-func (s *handlerTestSuite) postRequestV2() *http.Request {
-	var manifestBuf bytes.Buffer
-	zw := zip.NewWriter(&manifestBuf)
-	file, err := zw.CreateHeader(&zip.FileHeader{
-		Name:               "manifest.json",
-		Comment:            "Scanner V2 manifest",
-		UncompressedSize64: uint64(len(v2ManifestContent)),
-	})
-	s.Require().NoError(err)
-	_, err = file.Write([]byte(v2ManifestContent))
-	s.Require().NoError(err)
-	s.Require().NoError(zw.Close())
-
-	var buf bytes.Buffer
-	zw = zip.NewWriter(&buf)
-	file, err = zw.CreateHeader(&zip.FileHeader{
-		Name:               "scanner-defs.zip",
-		Comment:            "Scanner V2 content",
-		UncompressedSize64: uint64(manifestBuf.Len()),
-	})
-	s.Require().NoError(err)
-	_, err = file.Write(manifestBuf.Bytes())
-	s.Require().NoError(err)
-	s.Require().NoError(zw.Close())
-
-	req, err := http.NewRequestWithContext(s.ctx, http.MethodPost, "https://central.stackrox.svc/scannerdefinitions", &buf)
-	s.Require().NoError(err)
-
-	return req
-}
+var april2025 = time.Date(2025, time.April, 30, 0, 0, 0, 0, time.UTC)
 
 type zipBuilder struct {
 	buf *bytes.Buffer
@@ -129,13 +90,108 @@ func (b *zipBuilder) buildBuffer(s *handlerTestSuite) *bytes.Buffer {
 	return buf
 }
 
+type handlerTestSuite struct {
+	suite.Suite
+	ctx       context.Context
+	datastore datastore.Datastore
+	testDB    *pgtest.TestPostgres
+}
+
+func TestHandler(t *testing.T) {
+	suite.Run(t, new(handlerTestSuite))
+}
+
+func (s *handlerTestSuite) SetupSuite() {
+	s.ctx = sac.WithAllAccess(context.Background())
+	s.testDB = pgtest.ForT(s.T())
+	blobStore := store.New(s.testDB.DB)
+	s.datastore = datastore.NewDatastore(blobStore, nil)
+	s.T().Setenv("TMPDIR", s.T().TempDir())
+}
+
+func (s *handlerTestSuite) SetupTest() {
+	tag, err := s.testDB.Exec(s.ctx, "TRUNCATE blobs CASCADE")
+	s.T().Log("blobs", tag)
+	s.NoError(err)
+}
+
+// mustCreateV2Bundle creates a ZIP file mimicking a Scanner v2 diff.zip.
+// This ZIP contains at least one file called manifest.json.
+func (s *handlerTestSuite) mustCreateV2Bundle() *bytes.Buffer {
+	bundle := newZipBuilder().
+		addFile(s, "manifest.json", "Scanner v2 manifest", []byte(v2ManifestContent)).
+		buildBuffer(s)
+	return bundle
+}
+
+// mustCreateV4MappingBundle creates a ZIP file mimicking a Scanner V4 mapping.zip.
+func (s *handlerTestSuite) mustCreateV4MappingBundle() *bytes.Buffer {
+	bundle := newZipBuilder().
+		addFile(s, "repomapping/container-name-repos-map.json", "name2repos", []byte(name2repos)).
+		addFile(s, "repomapping/repository-to-cpe.json", "repo2cpe", []byte(repo2cpe)).
+		buildBuffer(s)
+	return bundle
+}
+
+// startMockDefinitionsStackRoxIO mocks definitions.stackrox.io.
+func (s *handlerTestSuite) startMockDefinitionsStackRoxIO() {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+		}
+
+		var bundle *bytes.Buffer
+		switch r.RequestURI {
+		case fmt.Sprintf("/%s/diff.zip", v2UUID):
+			bundle = s.mustCreateV2Bundle()
+		case fmt.Sprintf("/v4/vulnerability-bundles/%s/vulnerabilities.zip", v4Dev),
+			fmt.Sprintf("/v4/vulnerability-bundles/%s/vulnerabilities.zip", v4V1):
+			bundle = newZipBuilder().
+				addFile(s, "Scanner V4", "Scanner V4", []byte("")).
+				buildBuffer(s)
+		case "/v4/redhat-repository-mappings/mapping.zip":
+			bundle = s.mustCreateV4MappingBundle()
+		default:
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/zip")
+		w.Header().Set("Last-Modified", april2025.Format(http.TimeFormat))
+		_, err := io.Copy(w, bundle)
+		s.Require().NoError(err)
+	}))
+	// Replace definitions.stackrox.io with the mock server.
+	originalURL := scannerUpdateBaseURL
+	scannerUpdateBaseURL, _ = url.Parse(srv.URL)
+	s.T().Cleanup(func() {
+		srv.Close()
+		// Revert URL change.
+		scannerUpdateBaseURL = originalURL
+	})
+}
+
+func (s *handlerTestSuite) postRequestV2() *http.Request {
+	v2Bundle := s.mustCreateV2Bundle()
+	// This mimics a real offline-bundle, which is a ZIP of ZIPs.
+	// This one solely contains scanner-defs.zip, as that's all that's needed
+	// for StackRox Scanner.
+	bundle := newZipBuilder().
+		addFile(s, "scanner-defs.zip", "Scanner v2 content", v2Bundle.Bytes()).
+		buildBuffer(s)
+	req, err := http.NewRequestWithContext(s.ctx, http.MethodPost, "https://central.stackrox.svc/scannerdefinitions", bundle)
+	s.Require().NoError(err)
+
+	return req
+}
+
 func (s *handlerTestSuite) postRequestV4(body io.Reader) *http.Request {
 	req, err := http.NewRequestWithContext(s.ctx, http.MethodPost, "https://central.stackrox.svc/scannerdefinitions", body)
 	s.Require().NoError(err)
 	return req
 }
 
-func (s *handlerTestSuite) mustWriteBlob(content string, modTime time.Time) {
+func (s *handlerTestSuite) mustWriteV2Blob(content string, modTime time.Time) {
 	modifiedTime, err := protocompat.ConvertTimeToTimestampOrError(modTime)
 	s.Require().NoError(err)
 	blob := &storage.Blob{
@@ -148,7 +204,7 @@ func (s *handlerTestSuite) mustWriteBlob(content string, modTime time.Time) {
 }
 
 func (s *handlerTestSuite) getRequestUUID() *http.Request {
-	centralURL := "https://central.stackrox.svc/scannerdefinitions?uuid=e799c68a-671f-44db-9682-f24248cd0ffe"
+	centralURL := "https://central.stackrox.svc/scannerdefinitions?uuid=" + v2UUID
 	req, err := http.NewRequestWithContext(s.ctx, http.MethodGet, centralURL, nil)
 	s.Require().NoError(err)
 
@@ -172,7 +228,7 @@ func (s *handlerTestSuite) getRequestVersion(v string) *http.Request {
 }
 
 func (s *handlerTestSuite) getRequestUUIDAndFile(file string) *http.Request {
-	centralURL := fmt.Sprintf("https://central.stackrox.svc/scannerdefinitions?uuid=e799c68a-671f-44db-9682-f24248cd0ffe&file=%s", file)
+	centralURL := fmt.Sprintf("https://central.stackrox.svc/scannerdefinitions?uuid=%s&file=%s", v2UUID, file)
 	req, err := http.NewRequestWithContext(s.ctx, http.MethodGet, centralURL, nil)
 	s.Require().NoError(err)
 
@@ -187,7 +243,7 @@ func (s *handlerTestSuite) getRequestBadUUID() *http.Request {
 	return req
 }
 
-func (s *handlerTestSuite) mockHandleDefsFile(zipF *zip.File, blobName string) error {
+func (s *handlerTestSuite) upsertBlob(zipF *zip.File, blobName string) error {
 	r, err := zipF.Open()
 	s.Require().NoError(err)
 	defer utils.IgnoreError(r.Close)
@@ -202,13 +258,13 @@ func (s *handlerTestSuite) mockHandleDefsFile(zipF *zip.File, blobName string) e
 	return s.datastore.Upsert(s.ctx, b, r)
 }
 
-func (s *handlerTestSuite) mockHandleZipContents(zipPath string) error {
+func (s *handlerTestSuite) upsertV4ZipFile(zipPath string) error {
 	zipR, err := zip.OpenReader(zipPath)
 	s.Require().NoError(err)
 	defer utils.IgnoreError(zipR.Close)
 	for _, zipF := range zipR.File {
 		if strings.HasPrefix(zipF.Name, scannerV4DefsPrefix) {
-			err = s.mockHandleDefsFile(zipF, offlineScannerV4DefsBlobName)
+			err = s.upsertBlob(zipF, offlineScannerV4DefsBlobName)
 			s.Require().NoError(err)
 			return nil
 		}
@@ -224,21 +280,21 @@ func (s *handlerTestSuite) TestServeHTTP_Invalid() {
 	req, err := http.NewRequestWithContext(s.ctx, http.MethodPut, "https://central.stackrox.svc/scannerdefinitions", nil)
 	s.Require().NoError(err)
 	h.ServeHTTP(w, req)
-	s.Equal(http.StatusMethodNotAllowed, w.Code)
+	s.Equal(http.StatusMethodNotAllowed, w.Result().StatusCode)
 
 	// There are no query params to identify the file to GET.
 	req, err = http.NewRequestWithContext(s.ctx, http.MethodGet, "https://central.stackrox.svc/scannerdefinitions", nil)
 	s.Require().NoError(err)
 	w = httptest.NewRecorder()
 	h.ServeHTTP(w, req)
-	s.Equal(http.StatusBadRequest, w.Code)
+	s.Equal(http.StatusBadRequest, w.Result().StatusCode)
 
 	// There is no request body to POST.
 	req, err = http.NewRequestWithContext(s.ctx, http.MethodPost, "https://central.stackrox.svc/scannerdefinitions", nil)
 	s.Require().NoError(err)
 	w = httptest.NewRecorder()
 	h.ServeHTTP(w, req)
-	s.Equal(http.StatusBadRequest, w.Code)
+	s.Equal(http.StatusBadRequest, w.Result().StatusCode)
 }
 
 func (s *handlerTestSuite) TestServeHTTP_Offline_Post_V2() {
@@ -250,7 +306,7 @@ func (s *handlerTestSuite) TestServeHTTP_Offline_Post_V2() {
 
 	req := s.postRequestV2()
 	h.ServeHTTP(w, req)
-	s.Equal(http.StatusOK, w.Code)
+	s.Equal(http.StatusOK, w.Result().StatusCode)
 }
 
 func (s *handlerTestSuite) TestServeHTTP_Offline_Get_V2() {
@@ -263,40 +319,45 @@ func (s *handlerTestSuite) TestServeHTTP_Offline_Get_V2() {
 	// No scanner-defs found.
 	getReq := s.getRequestUUID()
 	h.ServeHTTP(w, getReq)
-	s.Equal(http.StatusNotFound, w.Code)
+	s.Equal(http.StatusNotFound, w.Result().StatusCode)
 
 	// Post scanner-defs.
 	postReq := s.postRequestV2()
 	w = httptest.NewRecorder()
 	h.ServeHTTP(w, postReq)
-	s.Require().Equal(http.StatusOK, w.Code)
+	s.Require().Equal(http.StatusOK, w.Result().StatusCode)
 
 	// Bad request after data is uploaded should give offline data.
 	getReq = s.getRequestBadUUID()
 	w = httptest.NewRecorder()
 	h.ServeHTTP(w, getReq)
-	s.Equal(http.StatusOK, w.Code)
-	s.Equal("application/zip", w.Header().Get("Content-Type"))
+	s.Equal(http.StatusOK, w.Result().StatusCode)
+	s.Equal("application/zip", w.Result().Header.Get("Content-Type"))
 
 	// Get offline data again with good UUID.
 	getReq = s.getRequestUUID()
 	w = httptest.NewRecorder()
 	h.ServeHTTP(w, getReq)
-	s.Equal(http.StatusOK, w.Code)
-	s.Equal("application/zip", w.Header().Get("Content-Type"))
+	s.Equal(http.StatusOK, w.Result().StatusCode)
+	s.Equal("application/zip", w.Result().Header.Get("Content-Type"))
 	s.Greater(w.Body.Len(), 0)
 
 	// Should get file from offline data.
 	getReq = s.getRequestUUIDAndFile("manifest.json")
 	w = httptest.NewRecorder()
 	h.ServeHTTP(w, getReq)
-	s.Equal(http.StatusOK, w.Code)
-	s.Equal("application/json", w.Header().Get("Content-Type"))
+	s.Equal(http.StatusOK, w.Result().StatusCode)
+	s.Equal("application/json", w.Result().Header.Get("Content-Type"))
 	s.Equal(v2ManifestContent, w.Body.String())
 }
 
 func (s *handlerTestSuite) TestServeHTTP_Online_Get_V2() {
 	s.T().Setenv(features.ScannerV4.EnvVar(), "false")
+
+	// As great as it would be to test with real data,
+	// it's more reliable to keep everything local,
+	// so start a local server to mimic definitions.stackrox.io.
+	s.startMockDefinitionsStackRoxIO()
 
 	h := New(s.datastore, handlerOpts{})
 	w := httptest.NewRecorder()
@@ -304,55 +365,57 @@ func (s *handlerTestSuite) TestServeHTTP_Online_Get_V2() {
 	// Should not get anything with bad UUID.
 	req := s.getRequestBadUUID()
 	h.ServeHTTP(w, req)
-	s.Equal(http.StatusNotFound, w.Code)
+	s.Equal(http.StatusNotFound, w.Result().StatusCode)
 
 	// Should get online vulns.
 	req = s.getRequestUUID()
 	w = httptest.NewRecorder()
 	h.ServeHTTP(w, req)
-	s.Equal(http.StatusOK, w.Code)
-	s.Equal("application/zip", w.Header().Get("Content-Type"))
+	s.Equal(http.StatusOK, w.Result().StatusCode, w.Body.String())
+	s.Equal("application/zip", w.Result().Header.Get("Content-Type"))
 	s.Greater(w.Body.Len(), 0)
 
-	// Should get file from online update.
+	// Should get the specified file from online update.
 	req = s.getRequestUUIDAndFile("manifest.json")
 	w = httptest.NewRecorder()
 	h.ServeHTTP(w, req)
-	s.Equal(http.StatusOK, w.Code)
-	s.Equal("application/json", w.Header().Get("Content-Type"))
-	s.Regexp(`{"since":".*","until":".*"}`, w.Body.String())
+	s.Equal(http.StatusOK, w.Result().StatusCode, w.Body.String())
+	s.Equal("application/json", w.Result().Header.Get("Content-Type"))
+	s.Equal(v2ManifestContent, w.Body.String())
 
 	// Write offline definitions, directly.
 	// Set the offline dump's modified time to later than the online update's.
-	s.mustWriteBlob(content1, time.Now().Add(time.Hour))
+	s.mustWriteV2Blob(content1, time.Now().Add(time.Hour))
 
 	// Serve the offline dump, as it is more recent.
 	req = s.getRequestUUID()
 	w = httptest.NewRecorder()
 	h.ServeHTTP(w, req)
-	s.Equal(http.StatusOK, w.Code)
+	s.Equal(http.StatusOK, w.Result().StatusCode, w.Body.String())
 	s.Equal(content1, w.Body.String())
 
 	// Set the offline dump's modified time to earlier than the online update's.
-	s.mustWriteBlob(content2, nov23)
+	s.mustWriteV2Blob(content2, nov23)
 
 	// Serve the online dump, as it is now more recent.
 	w = httptest.NewRecorder()
 	h.ServeHTTP(w, req)
-	s.Equal(http.StatusOK, w.Code)
+	s.Equal(http.StatusOK, w.Result().StatusCode, w.Body.String())
+	s.NotEqual(content1, w.Body.String())
 	s.NotEqual(content2, w.Body.String())
 
 	// File is unmodified.
 	req.Header.Set(ifModifiedSinceHeader, time.Now().UTC().Format(http.TimeFormat))
 	w = httptest.NewRecorder()
 	h.ServeHTTP(w, req)
-	s.Equal(http.StatusNotModified, w.Code)
+	s.Equal(http.StatusNotModified, w.Result().StatusCode, w.Body.String())
 	s.Empty(w.Body.String())
 }
 
 func (s *handlerTestSuite) TestServeHTTP_Offline_Post_V4() {
 	s.T().Setenv(env.OfflineModeEnv.EnvVar(), "true")
 	s.T().Setenv(features.ScannerV4.EnvVar(), "true")
+
 	s.T().Run("single v4 definition", func(t *testing.T) {
 		h := New(s.datastore, handlerOpts{})
 		w := httptest.NewRecorder()
@@ -371,7 +434,7 @@ func (s *handlerTestSuite) TestServeHTTP_Offline_Post_V4() {
 				buildBuffer(s).Bytes()).
 			buildBuffer(s))
 		h.ServeHTTP(w, req)
-		s.Equalf(http.StatusOK, w.Code, "body: %s", w.Body.String())
+		s.Equalf(http.StatusOK, w.Result().StatusCode, "body: %s", w.Body.String())
 	})
 	s.T().Run("missing v4 definition", func(t *testing.T) {
 		h := New(s.datastore, handlerOpts{})
@@ -381,7 +444,7 @@ func (s *handlerTestSuite) TestServeHTTP_Offline_Post_V4() {
 			addFile(s, "scanner-defs.zip", "Scanner V2 content", []byte(content1)).
 			buildBuffer(s))
 		h.ServeHTTP(w, req)
-		s.Equalf(http.StatusBadRequest, w.Code, "body: %s", w.Body.String())
+		s.Equalf(http.StatusBadRequest, w.Result().StatusCode, "body: %s", w.Body.String())
 		s.Contains(w.Body.String(), "the uploaded bundle is incompatible with release version number")
 	})
 	s.T().Run("missing v2 definition", func(t *testing.T) {
@@ -397,7 +460,7 @@ func (s *handlerTestSuite) TestServeHTTP_Offline_Post_V4() {
 				buildBuffer(s).Bytes()).
 			buildBuffer(s))
 		h.ServeHTTP(w, req)
-		s.Equalf(http.StatusBadRequest, w.Code, "body: %s", w.Body.String())
+		s.Equalf(http.StatusBadRequest, w.Result().StatusCode, "body: %s", w.Body.String())
 		s.Contains(w.Body.String(), "the uploaded bundle is incompatible with release version number")
 	})
 	s.T().Run("v4 definition with unsupported release", func(t *testing.T) {
@@ -418,7 +481,7 @@ func (s *handlerTestSuite) TestServeHTTP_Offline_Post_V4() {
 				buildBuffer(s).Bytes()).
 			buildBuffer(s))
 		h.ServeHTTP(w, req)
-		s.Equalf(http.StatusBadRequest, w.Code, "body: %s", w.Body.String())
+		s.Equalf(http.StatusBadRequest, w.Result().StatusCode, "body: %s", w.Body.String())
 		s.Contains(w.Body.String(), "the uploaded bundle is incompatible with release version number")
 	})
 	s.T().Run("latest bundle with multiple v4 definitions", func(t *testing.T) {
@@ -447,12 +510,12 @@ func (s *handlerTestSuite) TestServeHTTP_Offline_Post_V4() {
 				buildBuffer(s).Bytes()).
 			buildBuffer(s))
 		h.ServeHTTP(w, req)
-		s.Equalf(http.StatusOK, w.Code, "body: %s", w.Body.String())
+		s.Equalf(http.StatusOK, w.Result().StatusCode, "body: %s", w.Body.String())
 
 		req = s.getRequestVersion("v2")
 		w = httptest.NewRecorder()
 		h.ServeHTTP(w, req)
-		s.Equal(http.StatusOK, w.Code)
+		s.Equal(http.StatusOK, w.Result().StatusCode, w.Body.String())
 
 	})
 	s.T().Run("latest bundle with multiple v4 definitions without supported", func(t *testing.T) {
@@ -478,7 +541,7 @@ func (s *handlerTestSuite) TestServeHTTP_Offline_Post_V4() {
 					}`)).buildBuffer(s).Bytes()).
 			buildBuffer(s))
 		h.ServeHTTP(w, req)
-		s.Equalf(http.StatusBadRequest, w.Code, "body: %s", w.Body.String())
+		s.Equalf(http.StatusBadRequest, w.Result().StatusCode, "body: %s", w.Body.String())
 		s.Contains(w.Body.String(), "the uploaded bundle is incompatible with release version number")
 	})
 }
@@ -493,19 +556,19 @@ func (s *handlerTestSuite) TestServeHTTP_Offline_Get_V4() {
 	// No scanner defs found.
 	req := s.getRequestVersion("4.5.0")
 	h.ServeHTTP(w, req)
-	s.Equal(http.StatusNotFound, w.Code)
+	s.Equal(http.StatusNotFound, w.Result().StatusCode)
 
 	// No mapping json file
 	req = s.getRequestFile("name2repos")
 	w = httptest.NewRecorder()
 	h.ServeHTTP(w, req)
-	s.Equal(http.StatusNotFound, w.Code)
+	s.Equal(http.StatusNotFound, w.Result().StatusCode)
 
 	// No mapping json file
 	req = s.getRequestFile("repo2cpe")
 	w = httptest.NewRecorder()
 	h.ServeHTTP(w, req)
-	s.Equal(http.StatusNotFound, w.Code)
+	s.Equal(http.StatusNotFound, w.Result().StatusCode)
 
 	filePath := filepath.Join(s.T().TempDir(), "test.zip")
 	outFile, err := os.Create(filePath)
@@ -531,7 +594,7 @@ func (s *handlerTestSuite) TestServeHTTP_Offline_Get_V4() {
 	utils.IgnoreError(outFile.Close)
 
 	// Upload offline vulns, directly.
-	err = s.mockHandleZipContents(filePath)
+	err = s.upsertV4ZipFile(filePath)
 	s.Require().NoError(err)
 
 	s.T().Run("get 4.5", func(t *testing.T) {
@@ -540,9 +603,9 @@ func (s *handlerTestSuite) TestServeHTTP_Offline_Get_V4() {
 		h.ServeHTTP(w, req)
 		// This fails on release builds because checks don't happen on dev builds.
 		if buildinfo.ReleaseBuild {
-			s.Equalf(http.StatusNotFound, w.Code, "body: %s", w.Body.String())
+			s.Equalf(http.StatusNotFound, w.Result().StatusCode, "body: %s", w.Body.String())
 		} else {
-			s.Equal(http.StatusOK, w.Code, "body: %s", w.Body.String())
+			s.Equal(http.StatusOK, w.Result().StatusCode, "body: %s", w.Body.String())
 			s.Equal(content2, w.Body.String())
 		}
 	})
@@ -552,15 +615,15 @@ func (s *handlerTestSuite) TestServeHTTP_Offline_Get_V4() {
 		w = httptest.NewRecorder()
 		h.ServeHTTP(w, req)
 		// This fails on release builds because checks don't happen on dev builds.
-		s.Equal(http.StatusOK, w.Code)
+		s.Equal(http.StatusOK, w.Result().StatusCode)
 	})
 
 	s.T().Run("get repo2cpe", func(t *testing.T) {
 		req = s.getRequestFile("repo2cpe")
 		w = httptest.NewRecorder()
 		h.ServeHTTP(w, req)
-		s.Equal(http.StatusOK, w.Code)
-		s.Equal("application/json", w.Header().Get("Content-Type"))
+		s.Equal(http.StatusOK, w.Result().StatusCode)
+		s.Equal("application/json", w.Result().Header.Get("Content-Type"))
 		s.Greater(w.Body.Len(), 0)
 		s.Equal(`{}`, w.Body.String())
 	})
@@ -569,7 +632,7 @@ func (s *handlerTestSuite) TestServeHTTP_Offline_Get_V4() {
 		req = s.getRequestFile("name2repos")
 		w = httptest.NewRecorder()
 		h.ServeHTTP(w, req)
-		s.Equal(http.StatusOK, w.Code)
+		s.Equal(http.StatusOK, w.Result().StatusCode)
 		s.Greater(w.Body.Len(), 0)
 		s.Equal(content1, w.Body.String())
 	})
@@ -578,57 +641,69 @@ func (s *handlerTestSuite) TestServeHTTP_Offline_Get_V4() {
 		req = s.getRequestFile("invalid")
 		w = httptest.NewRecorder()
 		h.ServeHTTP(w, req)
-		s.Equal(http.StatusNotFound, w.Code)
+		s.Equal(http.StatusNotFound, w.Result().StatusCode)
 	})
 }
 
 func (s *handlerTestSuite) TestServeHTTP_Online_Get_V4() {
+	// As great as it would be to test with real data,
+	// it's more reliable to keep everything local,
+	// so start a local server to mimic definitions.stackrox.io.
+	s.startMockDefinitionsStackRoxIO()
+
 	h := New(s.datastore, handlerOpts{})
 	w := httptest.NewRecorder()
 
 	s.T().Run("not found", func(t *testing.T) {
 		req := s.getRequestVersion("randomName")
 		h.ServeHTTP(w, req)
-		s.Equal(http.StatusNotFound, w.Code)
+		s.Equal(http.StatusNotFound, w.Result().StatusCode)
 	})
-	s.T().Run("should get dev zstd file from online update", func(t *testing.T) {
-		req := s.getRequestVersion("dev")
+	s.T().Run("should get dev zip file from online update", func(t *testing.T) {
+		req := s.getRequestVersion(v4Dev)
 		w = httptest.NewRecorder()
 		h.ServeHTTP(w, req)
-		s.Equal(http.StatusOK, w.Code)
-		s.Equal("application/zip", w.Header().Get("Content-Type"))
+		s.Equal(http.StatusOK, w.Result().StatusCode)
+		s.Equal("application/zip", w.Result().Header.Get("Content-Type"))
 		s.Greater(w.Body.Len(), 0)
 	})
 	s.T().Run("release version", func(t *testing.T) {
-		req := s.getRequestVersion("v1")
+		req := s.getRequestVersion(v4V1)
 		w = httptest.NewRecorder()
 		h.ServeHTTP(w, req)
-		s.Equal(http.StatusOK, w.Code)
-		s.Equal("application/zip", w.Header().Get("Content-Type"))
+		s.Equal(http.StatusOK, w.Result().StatusCode)
+		s.Equal("application/zip", w.Result().Header.Get("Content-Type"))
 		s.Greater(w.Body.Len(), 0)
 	})
 }
 
 func (s *handlerTestSuite) TestServeHTTP_Online_Get_V4_Mappings() {
+	// As great as it would be to test with real data,
+	// it's more reliable to keep everything local,
+	// so start a local server to mimic definitions.stackrox.io.
+	s.startMockDefinitionsStackRoxIO()
+
 	h := New(s.datastore, handlerOpts{})
 	w := httptest.NewRecorder()
 
 	// Nothing should be found
 	req := s.getRequestFile("randomName")
 	h.ServeHTTP(w, req)
-	s.Equal(http.StatusNotFound, w.Code)
+	s.Equal(http.StatusNotFound, w.Result().StatusCode)
 
 	// Should get mapping json file from online update.
 	req = s.getRequestFile("name2repos")
 	w = httptest.NewRecorder()
 	h.ServeHTTP(w, req)
-	s.Equal(http.StatusOK, w.Code)
-	s.Equal("application/json", w.Header().Get("Content-Type"))
+	s.Equal(http.StatusOK, w.Result().StatusCode)
+	s.Equal("application/json", w.Result().Header.Get("Content-Type"))
+	s.Equal(name2repos, w.Body.String())
 
 	// Should get mapping json file from online update.
 	req = s.getRequestFile("repo2cpe")
 	w = httptest.NewRecorder()
 	h.ServeHTTP(w, req)
-	s.Equal(http.StatusOK, w.Code)
-	s.Equal("application/json", w.Header().Get("Content-Type"))
+	s.Equal(http.StatusOK, w.Result().StatusCode)
+	s.Equal("application/json", w.Result().Header.Get("Content-Type"))
+	s.Equal(repo2cpe, w.Body.String())
 }
