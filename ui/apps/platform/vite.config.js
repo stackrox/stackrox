@@ -97,8 +97,9 @@ export default defineConfig(async () => {
             'process.env.VITE_ROX_PRODUCT_BRANDING': JSON.stringify(
                 process.env.VITE_ROX_PRODUCT_BRANDING
             ),
-            // Define `global` here due to redoc's usage of this NodeJS module
-            global: {},
+            // Define `global` here for compatibility with modules that assign to the top level
+            // scope with `global` instead of `window`
+            global: 'window',
         },
         plugins: [react(), svgr(), ...(sslOptions?.basicSsl ? [sslOptions.basicSsl()] : [])],
         resolve: {
