@@ -1,6 +1,5 @@
 import React from 'react';
 import { Trash2 } from 'react-feather';
-import { Link } from 'react-router-dom';
 
 import RowActionButton from 'Components/RowActionButton';
 import {
@@ -9,15 +8,13 @@ import {
     wrapClassName,
     rtTrActionsClassName,
 } from 'Components/Table';
-import { clustersBasePath } from 'routePaths';
 
 import { formatCloudProvider } from './cluster.helpers';
 import ClusterDeletion from './Components/ClusterDeletion';
+import ClusterNameWithTypeIcon from './Components/ClusterNameWithTypeIcon';
 import ClusterStatus from './Components/ClusterStatus';
 import CredentialExpiration from './Components/CredentialExpiration';
 import SensorUpgrade from './Components/SensorUpgrade';
-import HelmIndicator from './Components/HelmIndicator';
-import OperatorIndicator from './Components/OperatorIndicator';
 
 export function getColumnsForClusters({
     clusterIdToRetentionInfo,
@@ -46,23 +43,7 @@ export function getColumnsForClusters({
             Header: 'Name',
             headerClassName: `w-1/7 ${defaultHeaderClassName}`,
             className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`,
-            Cell: ({ original }) => (
-                <span className="flex items-center" data-testid="cluster-name">
-                    <Link to={`${clustersBasePath}/${original.id}`}>{original.name}</Link>
-                    {(original.managedBy === 'MANAGER_TYPE_HELM_CHART' ||
-                        (original.managedBy === 'MANAGER_TYPE_UNKNOWN' &&
-                            !!original.helmConfig)) && (
-                        <span className="pl-2">
-                            <HelmIndicator />
-                        </span>
-                    )}
-                    {original.managedBy === 'MANAGER_TYPE_KUBERNETES_OPERATOR' && (
-                        <span className="pl-2">
-                            <OperatorIndicator />
-                        </span>
-                    )}
-                </span>
-            ),
+            Cell: ({ original }) => <ClusterNameWithTypeIcon cluster={original} />,
         },
         {
             Header: 'Cloud Provider',
