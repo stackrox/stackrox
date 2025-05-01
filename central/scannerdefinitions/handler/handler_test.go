@@ -11,7 +11,6 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -34,61 +33,7 @@ import (
 const (
 	content1 = "Hello, world!"
 	content2 = "Papaya"
-
-	v2UUID            = "e799c68a-671f-44db-9682-f24248cd0ffe"
-	v2ManifestContent = `{"since":"yesterday","until":"today"}`
-	v4Dev             = "dev"
-	v4V1              = "v1"
-
-	name2repos = `{
-	"data": {
-		"sample": ["sample"]
-	}
-}`
-	repo2cpe = `{
-	"data": {
-		"sample": {
-			"cpes": ["cpe"],
-			"repo_relative_urls": ["url"]
-		}
-	}
-}`
 )
-
-var april2025 = time.Date(2025, time.April, 30, 0, 0, 0, 0, time.UTC)
-
-type zipBuilder struct {
-	buf *bytes.Buffer
-	zw  *zip.Writer
-}
-
-func newZipBuilder() *zipBuilder {
-	var buf bytes.Buffer
-	return &zipBuilder{
-		buf: &buf,
-		zw:  zip.NewWriter(&buf),
-	}
-}
-
-func (b *zipBuilder) addFile(s *handlerTestSuite, name, comment string, content []byte) *zipBuilder {
-	s.Require().NotNil(b.buf)
-	file, err := b.zw.CreateHeader(&zip.FileHeader{
-		Name:               name,
-		Comment:            comment,
-		UncompressedSize64: uint64(len(content)),
-	})
-	s.Require().NoError(err)
-	_, err = file.Write(content)
-	s.Require().NoError(err)
-	return b
-}
-
-func (b *zipBuilder) buildBuffer(s *handlerTestSuite) *bytes.Buffer {
-	s.Require().NoError(b.zw.Close())
-	buf := b.buf
-	*b = zipBuilder{}
-	return buf
-}
 
 type handlerTestSuite struct {
 	suite.Suite
@@ -115,70 +60,14 @@ func (s *handlerTestSuite) SetupTest() {
 	s.NoError(err)
 }
 
-// mustCreateV2Bundle creates a ZIP file mimicking a Scanner v2 diff.zip.
-// This ZIP contains at least one file called manifest.json.
-func (s *handlerTestSuite) mustCreateV2Bundle() *bytes.Buffer {
-	bundle := newZipBuilder().
-		addFile(s, "manifest.json", "Scanner v2 manifest", []byte(v2ManifestContent)).
-		buildBuffer(s)
-	return bundle
-}
-
-// mustCreateV4MappingBundle creates a ZIP file mimicking a Scanner V4 mapping.zip.
-func (s *handlerTestSuite) mustCreateV4MappingBundle() *bytes.Buffer {
-	bundle := newZipBuilder().
-		addFile(s, "repomapping/container-name-repos-map.json", "name2repos", []byte(name2repos)).
-		addFile(s, "repomapping/repository-to-cpe.json", "repo2cpe", []byte(repo2cpe)).
-		buildBuffer(s)
-	return bundle
-}
-
-// startMockDefinitionsStackRoxIO mocks definitions.stackrox.io.
-func (s *handlerTestSuite) startMockDefinitionsStackRoxIO() {
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodGet {
-			w.WriteHeader(http.StatusMethodNotAllowed)
-		}
-
-		var bundle *bytes.Buffer
-		switch r.RequestURI {
-		case fmt.Sprintf("/%s/diff.zip", v2UUID):
-			bundle = s.mustCreateV2Bundle()
-		case fmt.Sprintf("/v4/vulnerability-bundles/%s/vulnerabilities.zip", v4Dev),
-			fmt.Sprintf("/v4/vulnerability-bundles/%s/vulnerabilities.zip", v4V1):
-			bundle = newZipBuilder().
-				addFile(s, "Scanner V4", "Scanner V4", []byte("")).
-				buildBuffer(s)
-		case "/v4/redhat-repository-mappings/mapping.zip":
-			bundle = s.mustCreateV4MappingBundle()
-		default:
-			w.WriteHeader(http.StatusNotFound)
-			return
-		}
-
-		w.Header().Set("Content-Type", "application/zip")
-		w.Header().Set("Last-Modified", april2025.Format(http.TimeFormat))
-		_, err := io.Copy(w, bundle)
-		s.Require().NoError(err)
-	}))
-	// Replace definitions.stackrox.io with the mock server.
-	originalURL := scannerUpdateBaseURL
-	scannerUpdateBaseURL, _ = url.Parse(srv.URL)
-	s.T().Cleanup(func() {
-		srv.Close()
-		// Revert URL change.
-		scannerUpdateBaseURL = originalURL
-	})
-}
-
 func (s *handlerTestSuite) postRequestV2() *http.Request {
-	v2Bundle := s.mustCreateV2Bundle()
+	v2Bundle := mustCreateV2Bundle(s.T())
 	// This mimics a real offline-bundle, which is a ZIP of ZIPs.
 	// This one solely contains scanner-defs.zip, as that's all that's needed
 	// for StackRox Scanner.
-	bundle := newZipBuilder().
-		addFile(s, "scanner-defs.zip", "Scanner v2 content", v2Bundle.Bytes()).
-		buildBuffer(s)
+	bundle := newZipBuilder(s.T()).
+		addFile("scanner-defs.zip", "Scanner v2 content", v2Bundle.Bytes()).
+		buildBuffer()
 	req, err := http.NewRequestWithContext(s.ctx, http.MethodPost, "https://central.stackrox.svc/scannerdefinitions", bundle)
 	s.Require().NoError(err)
 
@@ -357,7 +246,7 @@ func (s *handlerTestSuite) TestServeHTTP_Online_Get_V2() {
 	// As great as it would be to test with real data,
 	// it's more reliable to keep everything local,
 	// so start a local server to mimic definitions.stackrox.io.
-	s.startMockDefinitionsStackRoxIO()
+	startMockDefinitionsStackRoxIO(s.T())
 
 	h := New(s.datastore, handlerOpts{})
 	w := httptest.NewRecorder()
@@ -424,15 +313,15 @@ func (s *handlerTestSuite) TestServeHTTP_Offline_Post_V4() {
 		t.Cleanup(func() {
 			mainVersionVariants = prev
 		})
-		req := s.postRequestV4(newZipBuilder().
-			addFile(s, "scanner-defs.zip", "Scanner V2 content", []byte(content1)).
-			addFile(s, "v4-definitions-dev.zip", "Scanner V4 content", newZipBuilder().
-				addFile(s, "manifest.json", "Scanner V4 manifest", []byte(`{
+		req := s.postRequestV4(newZipBuilder(t).
+			addFile("scanner-defs.zip", "Scanner V2 content", []byte(content1)).
+			addFile("v4-definitions-dev.zip", "Scanner V4 content", newZipBuilder(t).
+				addFile("manifest.json", "Scanner V4 manifest", []byte(`{
   "version": "dev",
   "release_versions": "development"
 }`)).
-				buildBuffer(s).Bytes()).
-			buildBuffer(s))
+				buildBuffer().Bytes()).
+			buildBuffer())
 		h.ServeHTTP(w, req)
 		s.Equalf(http.StatusOK, w.Result().StatusCode, "body: %s", w.Body.String())
 	})
@@ -440,9 +329,9 @@ func (s *handlerTestSuite) TestServeHTTP_Offline_Post_V4() {
 		h := New(s.datastore, handlerOpts{})
 		w := httptest.NewRecorder()
 
-		req := s.postRequestV4(newZipBuilder().
-			addFile(s, "scanner-defs.zip", "Scanner V2 content", []byte(content1)).
-			buildBuffer(s))
+		req := s.postRequestV4(newZipBuilder(t).
+			addFile("scanner-defs.zip", "Scanner V2 content", []byte(content1)).
+			buildBuffer())
 		h.ServeHTTP(w, req)
 		s.Equalf(http.StatusBadRequest, w.Result().StatusCode, "body: %s", w.Body.String())
 		s.Contains(w.Body.String(), "the uploaded bundle is incompatible with release version number")
@@ -451,14 +340,14 @@ func (s *handlerTestSuite) TestServeHTTP_Offline_Post_V4() {
 		h := New(s.datastore, handlerOpts{})
 		w := httptest.NewRecorder()
 
-		req := s.postRequestV4(newZipBuilder().
-			addFile(s, "v4-definitions-dev.zip", "Scanner V4 content", newZipBuilder().
-				addFile(s, "manifest.json", "Scanner V4 manifest", []byte(`{
+		req := s.postRequestV4(newZipBuilder(t).
+			addFile("v4-definitions-dev.zip", "Scanner V4 content", newZipBuilder(t).
+				addFile("manifest.json", "Scanner V4 manifest", []byte(`{
   "version": "dev",
   "release_versions": "development"
 }`)).
-				buildBuffer(s).Bytes()).
-			buildBuffer(s))
+				buildBuffer().Bytes()).
+			buildBuffer())
 		h.ServeHTTP(w, req)
 		s.Equalf(http.StatusBadRequest, w.Result().StatusCode, "body: %s", w.Body.String())
 		s.Contains(w.Body.String(), "the uploaded bundle is incompatible with release version number")
@@ -471,15 +360,15 @@ func (s *handlerTestSuite) TestServeHTTP_Offline_Post_V4() {
 		t.Cleanup(func() {
 			mainVersionVariants = prev
 		})
-		req := s.postRequestV4(newZipBuilder().
-			addFile(s, "scanner-defs.zip", "Scanner V2 content", []byte(content1)).
-			addFile(s, "v4-definitions-dev.zip", "Scanner V4 content", newZipBuilder().
-				addFile(s, "manifest.json", "Scanner V4 manifest", []byte(`{
+		req := s.postRequestV4(newZipBuilder(t).
+			addFile("scanner-defs.zip", "Scanner V2 content", []byte(content1)).
+			addFile("v4-definitions-dev.zip", "Scanner V4 content", newZipBuilder(t).
+				addFile("manifest.json", "Scanner V4 manifest", []byte(`{
   "version": "dev",
   "release_versions": "unsupported release"
 }`)).
-				buildBuffer(s).Bytes()).
-			buildBuffer(s))
+				buildBuffer().Bytes()).
+			buildBuffer())
 		h.ServeHTTP(w, req)
 		s.Equalf(http.StatusBadRequest, w.Result().StatusCode, "body: %s", w.Body.String())
 		s.Contains(w.Body.String(), "the uploaded bundle is incompatible with release version number")
@@ -493,22 +382,22 @@ func (s *handlerTestSuite) TestServeHTTP_Offline_Post_V4() {
 			mainVersionVariants = prev
 		})
 
-		req := s.postRequestV4(newZipBuilder().
-			addFile(s, "scanner-defs.zip", "Scanner V2 content", []byte(content1)).
-			addFile(s, "v4-definitions-v1.zip", "Scanner V4 content", newZipBuilder().
-				addFile(s, "manifest.json", "Scanner V4 manifest", []byte(`{
+		req := s.postRequestV4(newZipBuilder(t).
+			addFile("scanner-defs.zip", "Scanner V2 content", []byte(content1)).
+			addFile("v4-definitions-v1.zip", "Scanner V4 content", newZipBuilder(t).
+				addFile("manifest.json", "Scanner V4 manifest", []byte(`{
 					  "version": "v1",
 					  "release_versions": "unsupported"
 					}`)).
-				buildBuffer(s).Bytes()).
-			addFile(s, "v4-definitions-v2.zip", "Scanner V4 content", newZipBuilder().
-				addFile(s, "manifest.json", "Scanner V4 manifest", []byte(`{
+				buildBuffer().Bytes()).
+			addFile("v4-definitions-v2.zip", "Scanner V4 content", newZipBuilder(t).
+				addFile("manifest.json", "Scanner V4 manifest", []byte(`{
 					  "version": "v2",
 					  "release_versions": "development"
 					}`)).
-				addFile(s, "vulnerabilities.zip", "Scanner V4 vulnerabilities", []byte(content2)).
-				buildBuffer(s).Bytes()).
-			buildBuffer(s))
+				addFile("vulnerabilities.zip", "Scanner V4 vulnerabilities", []byte(content2)).
+				buildBuffer().Bytes()).
+			buildBuffer())
 		h.ServeHTTP(w, req)
 		s.Equalf(http.StatusOK, w.Result().StatusCode, "body: %s", w.Body.String())
 
@@ -527,19 +416,19 @@ func (s *handlerTestSuite) TestServeHTTP_Offline_Post_V4() {
 			mainVersionVariants = prev
 		})
 
-		req := s.postRequestV4(newZipBuilder().
-			addFile(s, "scanner-defs.zip", "Scanner V2 content", []byte(content1)).
-			addFile(s, "v4-definitions-v1.zip", "Scanner V4 content", newZipBuilder().
-				addFile(s, "manifest.json", "Scanner V4 manifest", []byte(`{
+		req := s.postRequestV4(newZipBuilder(t).
+			addFile("scanner-defs.zip", "Scanner V2 content", []byte(content1)).
+			addFile("v4-definitions-v1.zip", "Scanner V4 content", newZipBuilder(t).
+				addFile("manifest.json", "Scanner V4 manifest", []byte(`{
 					  "version": "v1",
 					  "release_versions": "unsupported"
-					}`)).buildBuffer(s).Bytes()).
-			addFile(s, "v4-definitions-v2.zip", "Scanner V4 content", newZipBuilder().
-				addFile(s, "manifest.json", "Scanner V4 manifest", []byte(`{
+					}`)).buildBuffer().Bytes()).
+			addFile("v4-definitions-v2.zip", "Scanner V4 content", newZipBuilder(t).
+				addFile("manifest.json", "Scanner V4 manifest", []byte(`{
 					  "version": "v2",
 					  "release_versions": "another unsupported"
-					}`)).buildBuffer(s).Bytes()).
-			buildBuffer(s))
+					}`)).buildBuffer().Bytes()).
+			buildBuffer())
 		h.ServeHTTP(w, req)
 		s.Equalf(http.StatusBadRequest, w.Result().StatusCode, "body: %s", w.Body.String())
 		s.Contains(w.Body.String(), "the uploaded bundle is incompatible with release version number")
@@ -573,23 +462,23 @@ func (s *handlerTestSuite) TestServeHTTP_Offline_Get_V4() {
 	filePath := filepath.Join(s.T().TempDir(), "test.zip")
 	outFile, err := os.Create(filePath)
 	s.Require().NoError(err)
-	_, err = io.Copy(outFile, newZipBuilder().
-		addFile(s, "scanner-defs.zip", "Scanner V2 content", []byte(content1)).
-		addFile(s, "scanner-v4-defs-4.5.zip", "Scanner V4 4.5", newZipBuilder().
-			addFile(s, "manifest.json", "Scanner V4 manifest", []byte(`{
+	_, err = io.Copy(outFile, newZipBuilder(s.T()).
+		addFile("scanner-defs.zip", "Scanner V2 content", []byte(content1)).
+		addFile("scanner-v4-defs-4.5.zip", "Scanner V4 4.5", newZipBuilder(s.T()).
+			addFile("manifest.json", "Scanner V4 manifest", []byte(`{
 					  "version": "4.5",
 					  "release_versions": "some-release"
-					}`)).buildBuffer(s).Bytes()).
-		addFile(s, "v4-definitions-v2.zip", "Scanner V4 v2", newZipBuilder().
-			addFile(s, "manifest.json", "Scanner V4 manifest", []byte(`{
+					}`)).buildBuffer().Bytes()).
+		addFile("v4-definitions-v2.zip", "Scanner V4 v2", newZipBuilder(s.T()).
+			addFile("manifest.json", "Scanner V4 manifest", []byte(`{
 					  "version": "v2",
 					  "release_versions": "some-release"
 					}`)).
-			addFile(s, "vulnerabilities.zip", "Scanner V4 vulnerabilities", []byte(content2)).
-			addFile(s, "container-name-repos-map.json", "Scanner V4 repo-to-name map", []byte(content1)).
-			addFile(s, "repository-to-cpe.json", "Scanner V4 repo-to-cpe map", []byte(`{}`)).
-			buildBuffer(s).Bytes()).
-		buildBuffer(s))
+			addFile("vulnerabilities.zip", "Scanner V4 vulnerabilities", []byte(content2)).
+			addFile("container-name-repos-map.json", "Scanner V4 repo-to-name map", []byte(content1)).
+			addFile("repository-to-cpe.json", "Scanner V4 repo-to-cpe map", []byte(`{}`)).
+			buildBuffer().Bytes()).
+		buildBuffer())
 	s.Require().NoError(err)
 	utils.IgnoreError(outFile.Close)
 
@@ -649,7 +538,7 @@ func (s *handlerTestSuite) TestServeHTTP_Online_Get_V4() {
 	// As great as it would be to test with real data,
 	// it's more reliable to keep everything local,
 	// so start a local server to mimic definitions.stackrox.io.
-	s.startMockDefinitionsStackRoxIO()
+	startMockDefinitionsStackRoxIO(s.T())
 
 	h := New(s.datastore, handlerOpts{})
 	w := httptest.NewRecorder()
@@ -681,7 +570,7 @@ func (s *handlerTestSuite) TestServeHTTP_Online_Get_V4_Mappings() {
 	// As great as it would be to test with real data,
 	// it's more reliable to keep everything local,
 	// so start a local server to mimic definitions.stackrox.io.
-	s.startMockDefinitionsStackRoxIO()
+	startMockDefinitionsStackRoxIO(s.T())
 
 	h := New(s.datastore, handlerOpts{})
 	w := httptest.NewRecorder()
