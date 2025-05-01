@@ -17,7 +17,11 @@ jobs:
       fail-fast: false
       matrix:
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
-        runner: [ubuntu-24.04, ubuntu-24.04-arm]
+        include:
+          - arch: amd64
+            runner: ubuntu24.04
+          - arch: arm64
+            runner: ubuntu24.04-arm
     runs-on: ${{ matrix.runner }}
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
@@ -40,7 +44,9 @@ jobs:
       uses: ./.github/actions/cache-go-dependencies
 
     - name: Go Unit Tests
-      run: ${{ matrix.gotags }} make go-unit-tests
+      run: |
+        uname -m
+        ${{ matrix.gotags }} make go-unit-tests
 
     - uses: codecov/codecov-action@v3
       with:
