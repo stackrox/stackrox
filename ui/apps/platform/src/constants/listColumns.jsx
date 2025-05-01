@@ -2,8 +2,7 @@ import React from 'react';
 import { defaultHeaderClassName, defaultColumnClassName, wrapClassName } from 'Components/Table';
 import entityTypes, { resourceTypes } from 'constants/entityTypes';
 import PolicyStatusIconText from 'Components/PatternFly/IconText/PolicyStatusIconText';
-import { format } from 'date-fns';
-import dateTimeFormat from 'constants/dateTimeFormat';
+import { getDateTime } from 'utils/dateUtils';
 
 const nodesAcrossControlsColumns = [
     {
@@ -65,7 +64,7 @@ const imageColumns = [
         align: 'right',
         widthClassName: `text-left pr-3 ${wrapClassName} ${defaultHeaderClassName}`,
         className: `text-left pr-3 ${wrapClassName} ${defaultColumnClassName}`,
-        Cell: ({ original }) => format(original.created, dateTimeFormat),
+        Cell: ({ original }) => getDateTime(original.created),
     },
     {
         accessor: 'components.length',
@@ -123,7 +122,7 @@ const getDeploymentViolationsColumns = (entityContext) => {
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             accessor: 'violationTime',
-            Cell: ({ original }) => format(original.time, dateTimeFormat),
+            Cell: ({ original }) => getDateTime(original.time),
         },
     ];
     return columns.filter((col) => col);

@@ -1,7 +1,6 @@
 import React from 'react';
 import { useLocation } from 'react-router-dom';
 import { gql } from '@apollo/client';
-import { format } from 'date-fns';
 import pluralize from 'pluralize';
 
 import {
@@ -10,10 +9,10 @@ import {
     nonSortableHeaderClassName,
 } from 'Components/Table';
 import TableCellLink from 'Components/TableCellLink';
-import dateTimeFormat from 'constants/dateTimeFormat';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
 import { nodeSortFields } from 'constants/sortFields';
 import useWorkflowMatch from 'hooks/useWorkflowMatch';
+import { getDateTime } from 'utils/dateUtils';
 import queryService from 'utils/queryService';
 import URLService from 'utils/URLService';
 import { getConfigMgmtPathForEntitiesAndId } from '../entities';
@@ -96,7 +95,7 @@ const buildTableColumns = (match, location, entityContext) => {
                 if (!joinedAt) {
                     return null;
                 }
-                return format(joinedAt, dateTimeFormat);
+                return getDateTime(joinedAt);
             },
             accessor: 'joinedAt',
             id: nodeSortFields.NODE_JOIN_TIME,

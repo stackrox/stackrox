@@ -1,8 +1,6 @@
 import React, { useContext } from 'react';
 import { gql } from '@apollo/client';
-import { format } from 'date-fns';
 
-import dateTimeFormat from 'constants/dateTimeFormat';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
@@ -18,6 +16,7 @@ import searchContext from 'Containers/searchContext';
 import { standardLabels } from 'messages/standards';
 import { CONTROL_FRAGMENT } from 'queries/controls';
 import { sortVersion } from 'sorters/sorters';
+import { getDateTime } from 'utils/dateUtils';
 import isGQLLoading from 'utils/gqlLoading';
 import queryService from 'utils/queryService';
 import getControlsWithStatus from '../List/utilities/getControlsWithStatus';
@@ -117,7 +116,7 @@ const ConfigManagementEntityNode = ({
                     },
                     {
                         key: 'Join time',
-                        value: joinedAt ? format(joinedAt, dateTimeFormat) : 'N/A',
+                        value: joinedAt ? getDateTime(joinedAt) : 'N/A',
                     },
                 ];
 

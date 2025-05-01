@@ -1,5 +1,4 @@
 import React, { ReactElement, useState } from 'react';
-import { format } from 'date-fns';
 import {
     Card,
     CardHeader,
@@ -10,8 +9,8 @@ import {
 } from '@patternfly/react-core';
 
 import DescriptionListItem from 'Components/DescriptionListItem';
-import dateTimeFormat from 'constants/dateTimeFormat';
 import { NetworkFlowInfo } from 'types/alert.proto';
+import { getDateTime } from 'utils/dateUtils';
 
 export type NetworkFlowCardProps = {
     networkFlowInfo: NetworkFlowInfo;
@@ -95,7 +94,7 @@ function NetworkFlowCard({ networkFlowInfo, message, time }: NetworkFlowCardProp
                             <DescriptionListItem term="Protocol" desc={networkFlowInfo.protocol} />
                             <DescriptionListItem
                                 term="Time"
-                                desc={time ? format(time, dateTimeFormat) : 'N/A'}
+                                desc={time ? getDateTime(time) : 'N/A'}
                             />
                         </DescriptionList>
                     </CardBody>

@@ -1,6 +1,5 @@
 import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
-import { format } from 'date-fns';
 import pluralize from 'pluralize';
 import { gql } from '@apollo/client';
 
@@ -13,10 +12,10 @@ import RelatedEntityListCount from 'Components/RelatedEntityListCount';
 import Metadata from 'Components/Metadata';
 import CollapsibleRow from 'Components/CollapsibleRow';
 import Widget from 'Components/Widget';
-import dateTimeFormat from 'constants/dateTimeFormat';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
 import searchContext from 'Containers/searchContext';
 import { getConfigMgmtCountQuery } from 'Containers/ConfigManagement/ConfigMgmt.utils';
+import { getDateTime } from 'utils/dateUtils';
 import getSubListFromEntity from 'utils/getSubListFromEntity';
 import isGQLLoading from 'utils/gqlLoading';
 import queryService from 'utils/queryService';
@@ -42,11 +41,11 @@ const SecretDataMetadata = ({ metadata }) => {
             >
                 <div>
                     <span className="font-700 mr-4">Start Date:</span>
-                    <span>{startDate ? format(startDate, dateTimeFormat) : 'N/A'}</span>
+                    <span>{startDate ? getDateTime(startDate) : 'N/A'}</span>
                 </div>
                 <div>
                     <span className="font-700 mr-4">End Date:</span>
-                    <span>{endDate ? format(endDate, dateTimeFormat) : 'N/A'}</span>
+                    <span>{endDate ? getDateTime(endDate) : 'N/A'}</span>
                 </div>
             </Widget>
             <Widget
@@ -266,7 +265,7 @@ const ConfigManagementEntitySecret = ({
                 const metadataKeyValuePairs = [
                     {
                         key: 'Created',
-                        value: createdAt ? format(createdAt, dateTimeFormat) : 'N/A',
+                        value: createdAt ? getDateTime(createdAt) : 'N/A',
                     },
                 ];
 

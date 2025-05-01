@@ -2,13 +2,12 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import find from 'lodash/find';
-import dateFns from 'date-fns';
 import { Tooltip } from '@patternfly/react-core';
 import { CheckIcon, ExclamationCircleIcon } from '@patternfly/react-icons';
 
-import dateTimeFormat from 'constants/dateTimeFormat';
 import { sortValue, sortDate } from 'sorters/sorters';
 import { riskBasePath } from 'routePaths';
+import { getDateTime } from 'utils/dateUtils';
 
 function DeploymentNameColumn({ original }) {
     const isSuspicious = find(original.baselineStatuses, {
@@ -58,7 +57,7 @@ const riskTableColumnDescriptors = [
         Header: 'Created',
         accessor: 'deployment.created',
         searchField: 'Created',
-        Cell: ({ value }) => <span>{dateFns.format(value, dateTimeFormat)}</span>,
+        Cell: ({ value }) => <span>{getDateTime(value)}</span>,
         sortMethod: sortDate,
     },
     {
