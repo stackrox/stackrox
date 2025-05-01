@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { ActionGroup, Alert, Button, Flex, Form } from '@patternfly/react-core';
+import { ActionGroup, Alert, Button, Flex, Form, FormGroup } from '@patternfly/react-core';
+import { PlusCircleIcon } from '@patternfly/react-icons';
 import { useFormik } from 'formik';
+import * as yup from 'yup';
 
 import {
     DelegatedRegistryCluster,
@@ -9,9 +11,13 @@ import {
 } from 'services/DelegatedRegistryConfigService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
-import DelegatedRegistriesList from './Components/DelegatedRegistriesList';
+import DelegatedRegistriesTable, { registriesSchema } from './Components/DelegatedRegistriesTable';
 import DelegatedScanningSettings from './Components/DelegatedScanningSettings';
 import ToggleDelegatedScanning from './Components/ToggleDelegatedScanning';
+
+const validationSchema = yup.object({
+    registries: registriesSchema,
+});
 
 export type DelegatedImageScanningFormProps = {
     delegatedRegistryClusters: DelegatedRegistryCluster[];
@@ -30,39 +36,43 @@ function DelegatedImageScanningForm({
 }) {
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+    const formik = useFormik<DelegatedRegistryConfig>({
+        initialValues: delegatedRegistryConfig,
+        onSubmit,
+        validationSchema,
+    });
     const {
         dirty,
-        // errors,
         isSubmitting,
         isValid,
         resetForm,
         setFieldValue,
         setSubmitting,
+        setTouched,
         submitForm,
+        touched,
         values,
-    } = useFormik<DelegatedRegistryConfig>({
-        initialValues: delegatedRegistryConfig,
-        // validationSchema,
-        onSubmit: (valuesToSubmit) => {
-            updateDelegatedRegistryConfig(valuesToSubmit)
-                .then((delegatedRegistryConfigUpdated) => {
-                    // Reset form state from response although in theory, same as payload.
-                    resetForm({ values: delegatedRegistryConfigUpdated });
-                    // Because Page renders Form after initial request,
-                    // the following update to its state, although consistent,
-                    // seems redundant with update of form state.
-                    setDelegatedRegistryConfig(delegatedRegistryConfigUpdated);
-                    setErrorMessage(null);
-                    setIsNotEditing();
-                })
-                .catch((error) => {
-                    setErrorMessage(getAxiosErrorMessage(error));
-                })
-                .finally(() => {
-                    setSubmitting(false);
-                });
-        },
-    });
+    } = formik;
+
+    function onSubmit(valuesToSubmit: DelegatedRegistryConfig) {
+        updateDelegatedRegistryConfig(valuesToSubmit)
+            .then((delegatedRegistryConfigUpdated) => {
+                // Reset form state from response although in theory, same as payload.
+                resetForm({ values: delegatedRegistryConfigUpdated });
+                // Because Page renders Form after initial request,
+                // the following update to its state, although consistent,
+                // seems redundant with update of form state.
+                setDelegatedRegistryConfig(delegatedRegistryConfigUpdated);
+                setErrorMessage(null);
+                setIsNotEditing();
+            })
+            .catch((error) => {
+                setErrorMessage(getAxiosErrorMessage(error));
+            })
+            .finally(() => {
+                setSubmitting(false);
+            });
+    }
 
     function onCancel() {
         resetForm();
@@ -77,7 +87,19 @@ function DelegatedImageScanningForm({
         return setFieldValue(
             'registries',
             values.registries.filter((_, index) => index !== indexToDelete)
-        );
+        ).then(() => {
+            // Formik updates errors but not touched.
+            setTouched(
+                {
+                    registries: Array.isArray(touched.registries)
+                        ? touched.registries.filter((_, index) => index !== indexToDelete)
+                        : [],
+                },
+                false // does not affect validation
+            ).catch(() => {
+                // @typescript-eslint/no-floating-promises
+            });
+        });
     }
 
     function setRegistryClusterId(indexToSet: number, clusterId: string) {
@@ -126,16 +148,35 @@ function DelegatedImageScanningForm({
                                 setFieldValue('defaultClusterId', defaultClusterId)
                             }
                         />
-                        <DelegatedRegistriesList
-                            addRegistry={addRegistry}
-                            clusters={delegatedRegistryClusters}
-                            defaultClusterId={values.defaultClusterId}
-                            deleteRegistry={deleteRegistry}
-                            isEditing={isEditing}
-                            registries={values.registries}
-                            setRegistryPath={setRegistryPath}
-                            setRegistryClusterId={setRegistryClusterId}
-                        />
+                        <FormGroup label="Registries">
+                            {values.registries.length > 0 ? (
+                                <>
+                                    <DelegatedRegistriesTable
+                                        clusters={delegatedRegistryClusters}
+                                        defaultClusterId={values.defaultClusterId}
+                                        deleteRegistry={deleteRegistry}
+                                        formik={formik}
+                                        isEditing={isEditing}
+                                        registries={values.registries}
+                                        setRegistryClusterId={setRegistryClusterId}
+                                        setRegistryPath={setRegistryPath}
+                                    />
+                                </>
+                            ) : (
+                                <p>No registries specified.</p>
+                            )}
+                            {isEditing && (
+                                <Button
+                                    variant="link"
+                                    isInline
+                                    icon={<PlusCircleIcon />}
+                                    onClick={addRegistry}
+                                    className="pf-v5-u-mt-md"
+                                >
+                                    Add registry
+                                </Button>
+                            )}
+                        </FormGroup>
                     </>
                 )}
                 {isEditing && (
