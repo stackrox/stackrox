@@ -33,6 +33,7 @@ import useAnalytics, {
     CRS_SECURE_A_CLUSTER_LINK_CLICKED,
 } from 'hooks/useAnalytics';
 import useAuthStatus from 'hooks/useAuthStatus';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import useInterval from 'hooks/useInterval';
 import useMetadata from 'hooks/useMetadata';
 import usePermissions from 'hooks/usePermissions';
@@ -48,6 +49,7 @@ import { RestSearchOption } from 'services/searchOptionsToQuery';
 import { Cluster } from 'types/cluster.proto';
 import { ClusterIdToRetentionInfo } from 'types/clusterService.proto';
 import { toggleRow, toggleSelectAll } from 'utils/checkboxUtils';
+import { getTableUIState } from 'utils/getTableUIState';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { convertToRestSearch, getHasSearchApplied } from 'utils/searchUtils';
 import {
@@ -60,6 +62,7 @@ import {
     clustersClusterRegistrationSecretsPath,
 } from 'routePaths';
 
+import ClustersTable from './ClustersTable';
 import AutoUpgradeToggle from './Components/AutoUpgradeToggle';
 import SecureClusterModal from './InitBundles/SecureClusterModal';
 import { clusterTablePollingInterval, getUpgradeableClusters } from './cluster.helpers';
@@ -77,6 +80,9 @@ function ClustersTablePanel({
 }: ClustersTablePanelProps): ReactElement {
     const { analyticsTrack } = useAnalytics();
     const navigate = useNavigate();
+
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isClustersPageMigrationEnabled = isFeatureFlagEnabled('ROX_CLUSTERS_PAGE_MIGRATION_UI');
 
     const { hasReadAccess, hasReadWriteAccess } = usePermissions();
     const hasReadAccessForAdministration = hasReadAccess('Administration');
@@ -216,6 +222,13 @@ function ClustersTablePanel({
     }
 
     const restSearch = convertToRestSearch(searchFilter || {});
+
+    const tableState = getTableUIState({
+        isLoading: false,
+        data: currentClusters,
+        error: errorMessage ? new Error(errorMessage) : undefined,
+        searchFilter,
+    });
 
     useDeepCompareEffect(() => {
         refreshClusterList(restSearch);
@@ -513,21 +526,34 @@ function ClustersTablePanel({
                         {messages}
                     </div>
                 )}
-                <CheckboxTable
-                    ref={(table) => {
-                        setTableRef(table);
-                    }}
-                    rows={currentClusters}
-                    columns={clusterColumns}
-                    onRowClick={setSelectedClusterId}
-                    toggleRow={toggleCluster}
-                    toggleSelectAll={toggleAllClusters}
-                    selection={checkedClusterIds}
-                    selectedRowId={selectedClusterId}
-                    noDataText="No clusters to show."
-                    minRows={20}
-                    pageSize={pageSize}
-                />
+                {isClustersPageMigrationEnabled ? (
+                    <ClustersTable
+                        centralVersion={metadata.version}
+                        clusterIdToRetentionInfo={clusterIdToRetentionInfo}
+                        tableState={tableState}
+                        selectedClusterIds={checkedClusterIds}
+                        onClearFilters={() => setSearchFilter({})}
+                        onDeleteCluster={onDeleteHandler}
+                        toggleAllClusters={toggleAllClusters}
+                        toggleCluster={toggleCluster}
+                    />
+                ) : (
+                    <CheckboxTable
+                        ref={(table) => {
+                            setTableRef(table);
+                        }}
+                        rows={currentClusters}
+                        columns={clusterColumns}
+                        onRowClick={setSelectedClusterId}
+                        toggleRow={toggleCluster}
+                        toggleSelectAll={toggleAllClusters}
+                        selection={checkedClusterIds}
+                        selectedRowId={selectedClusterId}
+                        noDataText="No clusters to show."
+                        minRows={20}
+                        pageSize={pageSize}
+                    />
+                )}
             </PageSection>
             <Dialog
                 className="w-1/3"

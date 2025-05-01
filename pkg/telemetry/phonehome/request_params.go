@@ -5,11 +5,12 @@ import (
 	"net/http"
 	"slices"
 
+	"github.com/stackrox/rox/pkg/glob"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 )
 
 // NoHeaderOrAnyValue pattern allows no header or a header with any value.
-const NoHeaderOrAnyValue Pattern = ""
+const NoHeaderOrAnyValue glob.Pattern = ""
 
 // RequestParams holds intercepted call parameters.
 type RequestParams struct {
@@ -26,7 +27,7 @@ type RequestParams struct {
 // HasHeader returns true if for each header pattern there is at least one
 // request header with at least one matching value. A request without the
 // expected header matches NoHeaderOrAnyValue pattern for this header.
-func (rp *RequestParams) HasHeader(patterns map[string]Pattern) bool {
+func (rp *RequestParams) HasHeader(patterns map[string]glob.Pattern) bool {
 	for header, expression := range patterns {
 		if expression == NoHeaderOrAnyValue {
 			continue

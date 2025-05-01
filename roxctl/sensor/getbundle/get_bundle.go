@@ -30,7 +30,7 @@ func downloadBundle(outputDir, clusterIDOrName string, timeout time.Duration,
 ) error {
 	conn, err := env.GRPCConnection()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "could not create GRPC connection")
 	}
 	service := v1.NewClustersServiceClient(conn)
 

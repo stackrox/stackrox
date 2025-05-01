@@ -305,8 +305,8 @@ jobs:
       cluster-with-fake-load-name-cleaned: ${{ steps.cluster-names.outputs.cluster-with-fake-load-name-cleaned }}
       cluster-with-real-load-name-cleaned: ${{ steps.cluster-names.outputs.cluster-with-real-load-name-cleaned }}
     env:
-      CLUSTER_WITH_FAKE_LOAD_NAME: lfl-${{ github.event.inputs.version }}
-      CLUSTER_WITH_REAL_LOAD_NAME: lrl-${{ github.event.inputs.version }}
+      CLUSTER_WITH_FAKE_LOAD_NAME: lfl-${{format('{0}{1}', github.event.milestone.title, github.event.inputs.version)}}
+      CLUSTER_WITH_REAL_LOAD_NAME: lrl-${{format('{0}{1}', github.event.milestone.title, github.event.inputs.version)}}
     steps:
       - name: Trim and clean cluster names
         id: cluster-names

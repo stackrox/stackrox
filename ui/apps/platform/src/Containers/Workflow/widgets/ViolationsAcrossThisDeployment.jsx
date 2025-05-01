@@ -48,7 +48,7 @@ const ViolationsAcrossThisDeployment = ({ deploymentID, policyID, message }) => 
 
 ViolationsAcrossThisDeployment.propTypes = {
     deploymentID: PropTypes.string.isRequired,
-    policyID: PropTypes.string.isRequired,
+    policyID: PropTypes.string,
     message: PropTypes.string.isRequired,
 };
 

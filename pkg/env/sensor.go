@@ -76,7 +76,7 @@ var (
 	// 20000 * 1000 = 20 MB
 	// Notice: the actual size of each item is ~40 bytes since it holds pointers to the actual objects.
 	// Multiple items can hold a pointer to the same object (e.g. same Deployment) so these numbers are pessimistic because we assume all items hold different objects.
-	DetectorDeploymentBufferSize = RegisterIntegerSetting("ROX_SENSOR_DETECTOR_DEPLOYMENT_BUFFER_SIZE", 0)
+	DetectorDeploymentBufferSize = RegisterIntegerSetting("ROX_SENSOR_DETECTOR_DEPLOYMENT_BUFFER_SIZE", 20000)
 
 	// BufferScaleCeiling sets the upper limit queue.ScaleSize will scale buffers and queues to.
 	// In its default, the ceiling is defined as triple the relative size.
@@ -92,5 +92,15 @@ var (
 
 	// ResponsesChannelBufferSize defines how many messages to central are we buffering before dropping messages
 	// Setting this variable to zero will disable this feature.
-	ResponsesChannelBufferSize = RegisterIntegerSetting("ROX_RESPONSES_CHANNEL_BUFFER_SIZE", 0)
+	ResponsesChannelBufferSize = RegisterIntegerSetting("ROX_RESPONSES_CHANNEL_BUFFER_SIZE", 100000)
+
+	// EnrichmentPurgerTickerMaxAge controls the max age of collector updates (network flows & container endpoints)
+	// for keeping them in  Sensor's memory. Entries that has not been enriched (due to a bug or error)
+	// will stay in Sensors memory until restart. Purger cleans all those entries based on rules.
+	// The max-age is a rule of last resort (when all other rules do not apply) and is used to protect Sensor from OOM kills.
+	// Set to zero to not purge based on max-age (other purger rules will be executed).
+	EnrichmentPurgerTickerMaxAge = registerDurationSetting("ROX_ENRICHMENT_PURGER_MAX_AGE", 4*time.Hour, WithDurationZeroAllowed())
+	// EnrichmentPurgerTickerCycle controls how frequently purger is run to check for collector updates
+	// (network flows & container endpoints) that stuck in Sensor's memory. Set to zero to completely disable the purger.
+	EnrichmentPurgerTickerCycle = registerDurationSetting("ROX_ENRICHMENT_PURGER_UPDATE_CYCLE", 30*time.Minute, WithDurationZeroAllowed())
 )

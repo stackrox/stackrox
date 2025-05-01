@@ -26,21 +26,21 @@ func downloadCerts(env environment.Environment, outputDir, clusterIDOrName strin
 ) error {
 	clusterID, err := util.ResolveClusterID(clusterIDOrName, timeout, retryTimeout, env)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "could not resolve cluster ID")
 	}
 
 	body, err := json.Marshal(&apiparams.ClusterCertGen{ID: clusterID})
 	if err != nil {
-		return err
+		return errors.Wrap(err, "could not marshal cluster cert gen params")
 	}
 
 	client, err := env.HTTPClient(timeout)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "could not create HTTP client")
 	}
 	resp, err := client.DoReqAndVerifyStatusCode("/api/extensions/certgen/cluster", http.MethodPost, http.StatusOK, bytes.NewReader(body))
 	if err != nil {
-		return err
+		return errors.Wrap(err, "could not download certgen cluster")
 	}
 	defer utils.IgnoreError(resp.Body.Close)
 

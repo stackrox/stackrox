@@ -1,40 +1,38 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import entityTypes from 'constants/entityTypes';
-import useCases from 'constants/useCaseTypes';
-
 import PageNotFound from 'Components/PageNotFound';
-import Namespaces from './Namespaces';
-import Subjects from './Subjects';
-import ServiceAccounts from './ServiceAccounts';
-import Clusters from './Clusters';
-import Nodes from './Nodes';
-import Deployments from './Deployments';
-import Secrets from './Secrets';
-import Roles from './Roles';
-import Images from './Images';
-import Policies from './Policies';
-import CISControls from './CISControls';
+
+import ConfigManagementListClusters from './ConfigManagementListClusters';
+import ConfigManagementListControls from './ConfigManagementListControls';
+import ConfigManagementListDeployments from './ConfigManagementListDeployments';
+import ConfigManagementListImages from './ConfigManagementListImages';
+import ConfigManagementListNamespaces from './ConfigManagementListNamespaces';
+import ConfigManagementListNodes from './ConfigManagementListNodes';
+import ConfigManagementListPolicies from './ConfigManagementListPolicies';
+import ConfigManagementListRoles from './ConfigManagementListRoles';
+import ConfigManagementListSecrets from './ConfigManagementListSecrets';
+import ConfigManagementListServiceAccounts from './ConfigManagementListServiceAccounts';
+import ConfigManagementListSubjects from './ConfigManagementListSubjects';
 
 const entityComponentMap = {
-    [entityTypes.SUBJECT]: Subjects,
-    [entityTypes.SERVICE_ACCOUNT]: ServiceAccounts,
-    [entityTypes.CLUSTER]: Clusters,
-    [entityTypes.NAMESPACE]: Namespaces,
-    [entityTypes.NODE]: Nodes,
-    [entityTypes.DEPLOYMENT]: Deployments,
-    [entityTypes.IMAGE]: Images,
-    [entityTypes.SECRET]: Secrets,
-    [entityTypes.ROLE]: Roles,
-    [entityTypes.POLICY]: Policies,
-    [entityTypes.CONTROL]: CISControls,
+    CLUSTER: ConfigManagementListClusters,
+    CONTROL: ConfigManagementListControls,
+    DEPLOYMENT: ConfigManagementListDeployments,
+    IMAGE: ConfigManagementListImages,
+    NAMESPACE: ConfigManagementListNamespaces,
+    NODE: ConfigManagementListNodes,
+    POLICY: ConfigManagementListPolicies,
+    ROLE: ConfigManagementListRoles,
+    SECRET: ConfigManagementListSecrets,
+    SERVICE_ACCOUNT: ConfigManagementListServiceAccounts,
+    SUBJECT: ConfigManagementListSubjects,
 };
 
 const EntityList = ({ entityListType, entityId, ...rest }) => {
     const Component = entityComponentMap[entityListType];
     if (!Component) {
-        return <PageNotFound resourceType={entityListType} useCase={useCases.CONFIG_MANAGEMENT} />;
+        return <PageNotFound resourceType={entityListType} useCase="configmanagement" />;
     }
     return <Component selectedRowId={entityId} {...rest} />;
 };

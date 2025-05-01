@@ -42,6 +42,7 @@ case "$github_login" in
 'ebensh')           slack_user='U01Q7HTJ126' ;;
 'erthalion')        slack_user='U02SV8VE3K3' ;;
 'gaurav-nelson')    slack_user='U01P6PMFGKF' ;;
+'guzalv')           slack_user='U08NQKQJH4N' ;;
 'house-d')          slack_user='U03H69TFKH9' ;;
 'janisz')           slack_user='U0218FUVDMJ' ;;
 'johannes94')       slack_user='U03E2SD2ZPB' ;;

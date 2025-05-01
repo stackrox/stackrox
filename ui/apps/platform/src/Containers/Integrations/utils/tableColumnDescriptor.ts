@@ -112,6 +112,9 @@ const tableColumnDescriptor: Readonly<IntegrationTableColumnDescriptorMap> = {
                     if (type === 'GITHUB_ACTIONS') {
                         return 'GitHub action';
                     }
+                    if (type === 'KUBE_SERVICE_ACCOUNT') {
+                        return 'Kubernetes service account';
+                    }
                     return 'Unknown';
                 },
                 Header: 'Configuration',

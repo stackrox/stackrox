@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/stackrox/rox/pkg/glob"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -56,53 +57,17 @@ func TestCampaignFulfilled(t *testing.T) {
 
 	t.Run("Single criterion", func(t *testing.T) {
 		campaigns := map[string]APICallCampaign{
-			"Code": []*APICallCampaignCriterion{
-				{
-					Codes: []int32{202},
-				},
-			},
-			"Codes": []*APICallCampaignCriterion{
-				{
-					Codes: []int32{100, 202, 400},
-				},
-			},
-			"Method": []*APICallCampaignCriterion{
-				{
-					Method: Pattern("GET").Ptr(),
-				},
-			},
-			"Methods": []*APICallCampaignCriterion{
-				{
-					Method: Pattern("{POST,GET,PUT}").Ptr(),
-				},
-			},
-			"PathPattern": []*APICallCampaignCriterion{
-				{
-					Path: Pattern("/some/test*").Ptr(),
-				},
-			},
-			"PathPatterns": []*APICallCampaignCriterion{
-				{
-					Path: Pattern("{/x,/some/test*,/y}").Ptr(),
-				},
-			},
-			"UserAgent": []*APICallCampaignCriterion{
-				{
-					Headers: map[string]Pattern{
-						"User-Agent": "*test*",
-					},
-				},
-			},
-			"UserAgents": []*APICallCampaignCriterion{
-				{
-					Headers: map[string]Pattern{"User-Agent": "*x*"},
-				},
-				{
-					Headers: map[string]Pattern{"User-Agent": "*test*"},
-				}, {
-					Headers: map[string]Pattern{"User-Agent": "*y*"},
-				},
-			},
+			"Code":         {(Codes(202))},
+			"Codes":        {Codes(100, 202, 400)},
+			"Method":       {MethodPattern("GET")},
+			"Methods":      {MethodPattern("{POST,GET,PUT}")},
+			"PathPattern":  {PathPattern("/some/test*")},
+			"PathPatterns": {PathPattern("{/x,/some/test*,/y}")},
+			"UserAgent":    {HeaderPattern("User-Agent", "*test*")},
+			"UserAgents": {
+				HeaderPattern("User-Agent", "*x*"),
+				HeaderPattern("User-Agent", "*test*"),
+				HeaderPattern("User-Agent", "*y*")},
 		}
 
 		t.Run("Test fulfilled", func(t *testing.T) {
@@ -143,10 +108,10 @@ func TestCampaignFulfilled(t *testing.T) {
 		}
 		campaign := APICallCampaign{
 			{
-				Path: Pattern("/v1/test*").Ptr(),
+				Path: glob.Pattern("/v1/test*").Ptr(),
 			},
 			{
-				Method: Pattern("GET").Ptr(),
+				Method: glob.Pattern("GET").Ptr(),
 			},
 		}
 		require.NoError(t, campaign.Compile())
@@ -156,27 +121,27 @@ func TestCampaignFulfilled(t *testing.T) {
 		campaign := APICallCampaign{
 			{
 				Codes:   []int32{200, 400},
-				Method:  Pattern("{GET,POST}").Ptr(),
-				Path:    Pattern("{/v1/test*,/v2/test*}").Ptr(),
-				Headers: map[string]Pattern{"User-Agent": "*test*"},
+				Method:  glob.Pattern("{GET,POST}").Ptr(),
+				Path:    glob.Pattern("{/v1/test*,/v2/test*}").Ptr(),
+				Headers: map[string]glob.Pattern{"User-Agent": "*test*"},
 			},
 			{
 				Codes:   []int32{200, 400},
-				Method:  Pattern("{GET,POST}").Ptr(),
-				Path:    Pattern("{/v1/test*,/v2/test*}").Ptr(),
-				Headers: map[string]Pattern{"User-Agent": "*toast*"},
+				Method:  glob.Pattern("{GET,POST}").Ptr(),
+				Path:    glob.Pattern("{/v1/test*,/v2/test*}").Ptr(),
+				Headers: map[string]glob.Pattern{"User-Agent": "*toast*"},
 			},
 			{
 				Codes:   []int32{300, 500},
-				Method:  Pattern("{DELETE,OPTIONS}").Ptr(),
-				Path:    Pattern("{/v3/test*,/v4/test*}").Ptr(),
-				Headers: map[string]Pattern{"User-Agent": "{*tooth*,*teeth*}"},
+				Method:  glob.Pattern("{DELETE,OPTIONS}").Ptr(),
+				Path:    glob.Pattern("{/v3/test*,/v4/test*}").Ptr(),
+				Headers: map[string]glob.Pattern{"User-Agent": "{*tooth*,*teeth*}"},
 			},
 			{
 				Codes:  []int32{100},
-				Method: Pattern("PUT").Ptr(),
-				Path:   Pattern("/v5/*").Ptr(),
-				Headers: map[string]Pattern{
+				Method: glob.Pattern("PUT").Ptr(),
+				Path:   glob.Pattern("/v5/*").Ptr(),
+				Headers: map[string]glob.Pattern{
 					"User-Agent": "*another*",
 					"header":     "val*",
 				},
@@ -278,9 +243,7 @@ func TestCompile(t *testing.T) {
 			errorMessage: "",
 		},
 		{
-			criterion: APICallCampaignCriterion{
-				Path: Pattern("[b-a]").Ptr(),
-			},
+			criterion:    *PathPattern("[b-a]"),
 			errorMessage: `error parsing path pattern: failed to compile "[b-a]": hi character 'a' should be greater than lo 'b'`,
 		},
 	}

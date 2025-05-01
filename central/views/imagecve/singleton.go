@@ -19,7 +19,7 @@ var (
 func NewCVEView(db postgres.DB) CveView {
 	cveSchema := schema.ImageCvesSchema
 	if features.FlattenCVEData.Enabled() {
-		cveSchema = schema.ImageComponentV2Schema
+		cveSchema = schema.ImageCvesV2Schema
 	}
 
 	return &imageCVECoreViewImpl{

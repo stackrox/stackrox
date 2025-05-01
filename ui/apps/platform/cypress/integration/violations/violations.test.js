@@ -99,27 +99,22 @@ describe('Violations', () => {
     it('should contain correct action buttons for the lifecycle stage', () => {
         visitViolationsWithFixture('alerts/alerts.json');
 
+        const { actions } = selectors;
+        const { btn, excludeDeploymentBtn, resolveAndAddToBaselineBtn, resolveBtn } = actions;
+
         // Lifecycle: Runtime
-        cy.get(`tbody tr:nth-child(1) ${selectors.actions.btn}`).click(); // click kabob to open actions menu
-        cy.get('tbody tr:nth-child(1)')
-            .get(selectors.actions.excludeDeploymentBtn)
-            .should('exist')
-            .get(selectors.actions.resolveBtn)
-            .should('exist')
-            .get(selectors.actions.resolveAndAddToBaselineBtn)
-            .should('exist');
-        cy.get(`tbody tr:nth-child(1) ${selectors.actions.btn}`).click(); // click kabob to close actions menu
+        cy.get(`tbody tr:nth-child(1) ${btn}`).click(); // click kabob to open actions menu
+        cy.get(`tbody tr:nth-child(1) ${excludeDeploymentBtn}`).should('exist');
+        cy.get(`tbody tr:nth-child(1) ${resolveBtn}`).should('exist');
+        cy.get(`tbody tr:nth-child(1) ${resolveAndAddToBaselineBtn}`).should('exist');
+        cy.get(`tbody tr:nth-child(1) ${btn}`).click(); // click kabob to close actions menu
 
         // Lifecycle: Deploy
-        cy.get(`tbody tr:nth-child(3) ${selectors.actions.btn}`).click(); // click kabob to open actions menu
-        cy.get('tbody tr:nth-child(3)')
-            .get(selectors.actions.resolveBtn)
-            .should('not.exist')
-            .get(selectors.actions.resolveAndAddToBaselineBtn)
-            .should('not.exist')
-            .get(selectors.actions.excludeDeploymentBtn)
-            .should('exist');
-        cy.get(`tbody tr:nth-child(3) ${selectors.actions.btn}`).click(); // click kabob to close actions menu
+        cy.get(`tbody tr:nth-child(3) ${btn}`).click(); // click kabob to open actions menu
+        cy.get(`tbody tr:nth-child(3) ${resolveBtn}`).should('not.exist');
+        cy.get(`tbody tr:nth-child(3) ${resolveAndAddToBaselineBtn}`).should('not.exist');
+        cy.get(`tbody tr:nth-child(3) ${excludeDeploymentBtn}`).should('exist');
+        cy.get(`tbody tr:nth-child(3) ${btn}`).click(); // click kabob to close actions menu
     });
 
     // TODO test of bulk actions

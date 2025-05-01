@@ -9,8 +9,7 @@ import io.stackrox.proto.api.v1.SecretServiceGrpc
 import io.stackrox.proto.api.v1.SecretServiceOuterClass
 import io.stackrox.proto.storage.SecretOuterClass
 import io.stackrox.proto.storage.SecretOuterClass.ListSecret
-
-import util.Retry
+import io.stackrox.annotations.Retry
 
 @Slf4j
 @CompileStatic

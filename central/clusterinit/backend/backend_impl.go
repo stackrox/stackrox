@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 )
 
 const (
@@ -33,8 +34,9 @@ func (b *backendImpl) GetAll(ctx context.Context) ([]*storage.InitBundleMeta, er
 	if err := access.CheckAccess(ctx, storage.Access_READ_ACCESS); err != nil {
 		return nil, err
 	}
+	storeCtx := getStoreReadContext(ctx)
 
-	allBundleMetas, err := b.store.GetAll(ctx)
+	allBundleMetas, err := b.store.GetAll(storeCtx)
 	if err != nil {
 		return nil, errors.Wrap(err, "retrieving all init bundles")
 	}
@@ -45,8 +47,9 @@ func (b *backendImpl) GetAllCRS(ctx context.Context) ([]*storage.InitBundleMeta,
 	if err := access.CheckAccess(ctx, storage.Access_READ_ACCESS); err != nil {
 		return nil, err
 	}
+	storeCtx := getStoreReadContext(ctx)
 
-	allBundleMetas, err := b.store.GetAllCRS(ctx)
+	allBundleMetas, err := b.store.GetAllCRS(storeCtx)
 	if err != nil {
 		return nil, errors.Wrap(err, "retrieving all CRSs")
 	}
@@ -105,6 +108,7 @@ func (b *backendImpl) Issue(ctx context.Context, name string) (*InitBundleWithMe
 	if err := access.CheckAccess(ctx, storage.Access_READ_WRITE_ACCESS); err != nil {
 		return nil, err
 	}
+	storeCtx := getStoreReadWriteContext(ctx)
 
 	if err := validateName(name); err != nil {
 		return nil, err
@@ -139,7 +143,7 @@ func (b *backendImpl) Issue(ctx context.Context, name string) (*InitBundleWithMe
 		ExpiresAt: expiryTimestamp,
 	}
 
-	if err := b.store.Add(ctx, meta); err != nil {
+	if err := b.store.Add(storeCtx, meta); err != nil {
 		return nil, errors.Wrap(err, "adding new init bundle to data store")
 	}
 
@@ -156,6 +160,7 @@ func (b *backendImpl) IssueCRS(ctx context.Context, name string) (*CRSWithMeta, 
 	if err := access.CheckAccess(ctx, storage.Access_READ_WRITE_ACCESS); err != nil {
 		return nil, err
 	}
+	storeCtx := getStoreReadWriteContext(ctx)
 
 	if err := validateName(name); err != nil {
 		return nil, err
@@ -192,7 +197,7 @@ func (b *backendImpl) IssueCRS(ctx context.Context, name string) (*CRSWithMeta, 
 		Version:   storage.InitBundleMeta_CRS,
 	}
 
-	if err := b.store.Add(ctx, meta); err != nil {
+	if err := b.store.Add(storeCtx, meta); err != nil {
 		return nil, errors.Wrap(err, "adding new CRS metadata to data store")
 	}
 
@@ -226,8 +231,9 @@ func (b *backendImpl) Revoke(ctx context.Context, id string) error {
 	if err := access.CheckAccess(ctx, storage.Access_READ_WRITE_ACCESS); err != nil {
 		return err
 	}
+	storeCtx := getStoreReadWriteContext(ctx)
 
-	if err := b.store.Revoke(ctx, id); err != nil {
+	if err := b.store.Revoke(storeCtx, id); err != nil {
 		return errors.Wrapf(err, "revoking init bundle %q", id)
 	}
 
@@ -238,8 +244,9 @@ func (b *backendImpl) CheckRevoked(ctx context.Context, id string) error {
 	if err := access.CheckAccess(ctx, storage.Access_READ_ACCESS); err != nil {
 		return err
 	}
+	storeCtx := getStoreReadContext(ctx)
 
-	bundleMeta, err := b.store.Get(ctx, id)
+	bundleMeta, err := b.store.Get(storeCtx, id)
 	if err != nil {
 		return errors.Wrapf(err, "retrieving init bundle %q", id)
 	}
@@ -279,4 +286,26 @@ func (b *backendImpl) ValidateClientCertificate(ctx context.Context, chain []mtl
 	}
 
 	return nil
+}
+
+func getStoreContext(ctx context.Context, accessMode storage.Access) context.Context {
+	accessLevels := []storage.Access{accessMode}
+	if accessMode == storage.Access_READ_WRITE_ACCESS {
+		accessLevels = append(accessLevels, storage.Access_READ_ACCESS)
+	}
+	return sac.WithGlobalAccessScopeChecker(
+		ctx,
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(accessLevels...),
+			sac.ResourceScopeKeys(resources.InitBundleMeta),
+		),
+	)
+}
+
+func getStoreReadContext(ctx context.Context) context.Context {
+	return getStoreContext(ctx, storage.Access_READ_ACCESS)
+}
+
+func getStoreReadWriteContext(ctx context.Context) context.Context {
+	return getStoreContext(ctx, storage.Access_READ_WRITE_ACCESS)
 }

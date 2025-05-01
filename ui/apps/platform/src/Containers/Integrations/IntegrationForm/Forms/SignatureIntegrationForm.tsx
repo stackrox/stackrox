@@ -448,7 +448,9 @@ function SignatureIntegrationForm({
                                                                                         OIDC issuer
                                                                                         as specified
                                                                                         by cosign.{' '}
-                                                                                        {re2syntax}{' '}
+                                                                                        {
+                                                                                            re2syntax
+                                                                                        }{' '}
                                                                                     </>
                                                                                 }
                                                                                 ariaLabel="Help for certificate issuer"
@@ -496,7 +498,9 @@ function SignatureIntegrationForm({
                                                                                         identity as
                                                                                         specified by
                                                                                         cosign.{' '}
-                                                                                        {re2syntax}{' '}
+                                                                                        {
+                                                                                            re2syntax
+                                                                                        }{' '}
                                                                                     </>
                                                                                 }
                                                                                 ariaLabel="Help for certificate identity"

@@ -1,6 +1,7 @@
 package generate
 
 import (
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/generated/storage"
 	clusterValidation "github.com/stackrox/rox/pkg/cluster"
@@ -68,7 +69,7 @@ func openshift(generateCmd *sensorGenerateCommand) *cobra.Command {
 			}
 
 			if err := clusterValidation.ValidatePartial(openshiftCommand.cluster).ToError(); err != nil {
-				return err
+				return errors.Wrap(err, "cluster validation failed")
 			}
 			return openshiftCommand.fullClusterCreation()
 		}),

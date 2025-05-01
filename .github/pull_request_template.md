@@ -11,18 +11,13 @@ change me!
 
 ### User-facing documentation
 
-- [ ] CHANGELOG is updated **OR** update is not needed
+- [ ] [CHANGELOG.md](https://github.com/stackrox/stackrox/blob/master/CHANGELOG.md) is updated **OR** update is not needed
 - [ ] [documentation PR](https://spaces.redhat.com/display/StackRox/Submitting+a+User+Documentation+Pull+Request) is created and is linked above **OR** is not needed
 
 ### Testing and quality
 
-<!--
-General Availability requirements: https://github.com/stackrox/stackrox/blob/master/PR_GA.md
-Feature Flags usage: https://github.com/stackrox/stackrox/blob/master/pkg/features/README.md
--->
-
-- [ ] the change is production ready: the change is GA or otherwise the functionality is gated by a feature flag
-- [ ] CI results are inspected
+- [ ] the change is production ready: the change is [GA](https://github.com/stackrox/stackrox/blob/master/PR_GA.md), or otherwise the functionality is gated by a [feature flag](https://github.com/stackrox/stackrox/blob/master/pkg/features/README.md)
+- [ ] CI results are [inspected](https://docs.google.com/document/d/1d5ga073jkv4CO1kAJqp8MPGpC6E1bwyrCGZ7S5wKg3w/edit?tab=t.0#heading=h.w4ercgtcg0xp)
 
 #### Automated testing
 

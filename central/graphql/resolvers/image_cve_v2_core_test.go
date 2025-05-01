@@ -34,7 +34,7 @@ type ImageCVEV2CoreResolverTestSuite struct {
 
 func (s *ImageCVEV2CoreResolverTestSuite) SetupSuite() {
 	if !features.FlattenCVEData.Enabled() {
-		s.T().Skip()
+		s.T().Setenv(features.FlattenCVEData.EnvVar(), "true")
 	}
 
 	s.mockCtrl = gomock.NewController(s.T())

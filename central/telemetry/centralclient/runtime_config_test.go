@@ -40,8 +40,8 @@ func Test_getRuntimeConfig(t *testing.T) {
 	assert.Equal(t, &phonehome.RuntimeConfig{
 		Key: "remotekey",
 		APICallCampaign: phonehome.APICallCampaign{
-			{Method: phonehome.Pattern("{put,delete}").Ptr()},
-			{Headers: map[string]phonehome.Pattern{"Accept-Encoding": phonehome.Pattern("*json*")}},
+			phonehome.MethodPattern("{put,delete}"),
+			phonehome.HeaderPattern("Accept-Encoding", "*json*"),
 		},
 	}, cfg)
 }
@@ -87,8 +87,8 @@ func Test_reloadConfig(t *testing.T) {
 		assert.True(t, enable)
 		assert.Equal(t, rc.Key, config.StorageKey)
 		assert.Equal(t, append(permanentTelemetryCampaign,
-			&phonehome.APICallCampaignCriterion{Method: phonehome.Pattern("{put,delete}").Ptr()},
-			&phonehome.APICallCampaignCriterion{Headers: map[string]phonehome.Pattern{"Accept-Encoding": phonehome.Pattern("*json*")}},
+			phonehome.MethodPattern("{put,delete}"),
+			phonehome.HeaderPattern("Accept-Encoding", "*json*"),
 		), telemetryCampaign)
 	})
 
@@ -104,8 +104,8 @@ func Test_reloadConfig(t *testing.T) {
 		assert.True(t, enable)
 		assert.Equal(t, "anotherKey", config.StorageKey)
 		assert.Equal(t, append(permanentTelemetryCampaign,
-			&phonehome.APICallCampaignCriterion{Method: phonehome.Pattern("GET").Ptr()},
-			&phonehome.APICallCampaignCriterion{Path: phonehome.Pattern("*splunk*").Ptr()},
+			phonehome.MethodPattern("GET"),
+			phonehome.PathPattern("*splunk*"),
 		), telemetryCampaign)
 	})
 	t.Run("reload corrupted config", func(t *testing.T) {
@@ -116,8 +116,8 @@ func Test_reloadConfig(t *testing.T) {
 		assert.False(t, enable)
 		assert.Equal(t, "anotherKey", config.StorageKey)
 		assert.Equal(t, append(permanentTelemetryCampaign,
-			&phonehome.APICallCampaignCriterion{Method: phonehome.Pattern("GET").Ptr()},
-			&phonehome.APICallCampaignCriterion{Path: phonehome.Pattern("*splunk*").Ptr()},
+			phonehome.MethodPattern("GET"),
+			phonehome.PathPattern("*splunk*"),
 		), telemetryCampaign)
 	})
 	t.Run("reload config with DISABLED key", func(t *testing.T) {

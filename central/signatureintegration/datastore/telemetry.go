@@ -31,6 +31,7 @@ func computeTelemetryProperties(ctx context.Context, integrations []*storage.Sig
 
 	totalPublicKeys, totalCertificates := 0, 0
 	totalCertsWithCustomChain, totalCertsWithIntermediateCert := 0, 0
+	totalCtlogEnabled, totalTlogEnabled, totalCustomRekorURL, totalValidateOffline := 0, 0, 0, 0
 	for _, i := range integrations {
 		totalPublicKeys += len(i.GetCosign().GetPublicKeys())
 		totalCertificates += len(i.GetCosignCertificates())
@@ -40,6 +41,18 @@ func computeTelemetryProperties(ctx context.Context, integrations []*storage.Sig
 			}
 			if len(cert.GetCertificatePemEnc()) > 0 {
 				totalCertsWithIntermediateCert++
+			}
+			if cert.GetCertificateTransparencyLog().GetEnabled() {
+				totalCtlogEnabled++
+			}
+		}
+		if tlog := i.GetTransparencyLog(); tlog.GetEnabled() {
+			totalTlogEnabled++
+			if tlog.GetUrl() != "" && tlog.GetUrl() != "https://rekor.sigstore.dev" {
+				totalCustomRekorURL++
+			}
+			if tlog.GetValidateOffline() {
+				totalValidateOffline++
 			}
 		}
 	}
@@ -55,5 +68,13 @@ func computeTelemetryProperties(ctx context.Context, integrations []*storage.Sig
 		"Signature Integration With Custom Certificate", phonehome.Constant(totalCertsWithIntermediateCert))
 	_ = phonehome.AddTotal(ctx, totals,
 		"Signature Integration With Custom Chain", phonehome.Constant(totalCertsWithCustomChain))
+	_ = phonehome.AddTotal(ctx, totals,
+		"Signature Integration With Certificate Transparency Log Validation", phonehome.Constant(totalCtlogEnabled))
+	_ = phonehome.AddTotal(ctx, totals,
+		"Signature Integration With Transparency Log Validation", phonehome.Constant(totalTlogEnabled))
+	_ = phonehome.AddTotal(ctx, totals,
+		"Signature Integration With Transparency Log Custom Rekor URL", phonehome.Constant(totalCustomRekorURL))
+	_ = phonehome.AddTotal(ctx, totals,
+		"Signature Integration With Transparency Log Offline Validation", phonehome.Constant(totalValidateOffline))
 	return totals
 }

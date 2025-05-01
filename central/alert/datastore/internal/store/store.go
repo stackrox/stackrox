@@ -19,7 +19,9 @@ type Store interface {
 	GetIDs(ctx context.Context) ([]string, error)
 	Get(ctx context.Context, id string) (*storage.Alert, bool, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.Alert, []int, error)
+	// Deprecated: use GetByQueryFn instead
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.Alert, error)
+	GetByQueryFn(ctx context.Context, query *v1.Query, fn func(obj *storage.Alert) error) error
 	Upsert(ctx context.Context, alert *storage.Alert) error
 	UpsertMany(ctx context.Context, alerts []*storage.Alert) error
 	Delete(ctx context.Context, id string) error

@@ -64,7 +64,9 @@ type Store[T any, PT pgutils.Unmarshaler[T]] interface {
 	Walk(ctx context.Context, fn func(obj PT) error) error
 	WalkByQuery(ctx context.Context, q *v1.Query, fn func(obj PT) error) error
 	Get(ctx context.Context, id string) (PT, bool, error)
+	// Deprecated: use GetByQueryFn instead
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*T, error)
+	GetByQueryFn(ctx context.Context, query *v1.Query, fn func(obj PT) error) error
 	GetIDs(ctx context.Context) ([]string, error)
 	GetIDsByQuery(ctx context.Context, query *v1.Query) ([]string, error)
 	GetMany(ctx context.Context, identifiers []string) ([]PT, []int, error)
@@ -218,18 +220,30 @@ func (s *genericStore[T, PT]) Get(ctx context.Context, id string) (PT, bool, err
 	return data, true, nil
 }
 
+// GetByQueryFn iterates over all the objects scoped by the query and applies the closure.
+// The main difference between GetByQueryFn and WalkByQuery or Walk is cursor usage. Prefer GetByQueryFn when
+// results set is limited or tables are small.
+// TODO(ROX-28999): merge with WalkByQuery if cursor is removed
+func (s *genericStore[T, PT]) GetByQueryFn(ctx context.Context, query *v1.Query, fn func(obj PT) error) error {
+	defer s.setPostgresOperationDurationTime(time.Now(), ops.GetByQuery)
+	return RunQueryForSchemaFn[T, PT](ctx, s.schema, query, s.db, fn)
+}
+
 // GetByQuery returns the objects from the store matching the query.
+// Deprecated: Use GetByQueryFn instead
 func (s *genericStore[T, PT]) GetByQuery(ctx context.Context, query *v1.Query) ([]*T, error) {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.GetByQuery)
 
-	rows, err := RunGetManyQueryForSchema[T, PT](ctx, s.schema, query, s.db)
+	limit := max(batchAfter, min(batchAfter, query.GetPagination().GetLimit()))
+	rows := make([]*T, 0, limit)
+	err := RunQueryForSchemaFn(ctx, s.schema, query, s.db, func(obj PT) error {
+		rows = append(rows, obj)
+		return nil
+	})
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, nil
-		}
 		return nil, err
 	}
-	return rows, nil
+	return rows[0:len(rows):len(rows)], nil
 }
 
 func (s *genericStore[T, PT]) fetchIDsByQuery(ctx context.Context, query *v1.Query) ([]string, error) {
@@ -268,21 +282,15 @@ func (s *genericStore[T, PT]) GetMany(ctx context.Context, identifiers []string)
 
 	q := search.NewQueryBuilder().AddDocIDs(identifiers...).ProtoQuery()
 
-	rows, err := RunGetManyQueryForSchema[T, PT](ctx, s.schema, q, s.db)
+	resultsByID := make(map[string]PT, len(identifiers))
+	err := RunQueryForSchemaFn(ctx, s.schema, q, s.db, func(msg PT) error {
+		resultsByID[s.pkGetter(msg)] = msg
+		return nil
+	})
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			missingIndices := make([]int, 0, len(identifiers))
-			for i := range identifiers {
-				missingIndices = append(missingIndices, i)
-			}
-			return nil, missingIndices, nil
-		}
 		return nil, nil, err
 	}
-	resultsByID := make(map[string]PT, len(rows))
-	for _, msg := range rows {
-		resultsByID[s.pkGetter(msg)] = msg
-	}
+
 	missingIndices := make([]int, 0, len(identifiers)-len(resultsByID))
 	// It is important that the elems are populated in the same order as the input identifiers
 	// slice, since some calling code relies on that to maintain order.
