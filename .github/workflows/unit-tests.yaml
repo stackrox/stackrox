@@ -19,9 +19,9 @@ jobs:
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
         include:
           - arch: amd64
-            runner: ubuntu24.04
+            runner: ubuntu-24.04
           - arch: arm64
-            runner: ubuntu24.04-arm
+            runner: ubuntu-24.04-arm
     runs-on: ${{ matrix.runner }}
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
