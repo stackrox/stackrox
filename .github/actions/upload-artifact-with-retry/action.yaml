@@ -1,6 +1,5 @@
 name: Upload artifact and retry
 description: Retry wrapper of upload-artifact
-# See https://github.com/actions/upload-artifact/blob/main/action.yml
 inputs:
   name:
     description: 'Artifact name'
@@ -17,9 +16,6 @@ inputs:
         error: Fail the action with an error message
         ignore: Do not output any warnings or errors, the action does not fail
     default: 'warn'
-  compression-level:
-    description: The level of compression for Zlib to be applied to the artifact archive, from 0 (no) to 9 (best).
-    default: '6'
 runs:
   using: composite
   steps:
@@ -29,7 +25,6 @@ runs:
         name: ${{ inputs.name }}
         path: ${{ inputs.path }}
         if-no-files-found: ${{ inputs.if-no-files-found }}
-        compression-level: ${{ inputs.compression-level }}
       continue-on-error: true
     - id: upload-artifact-try2
       if: steps.upload-artifact-try1.outcome == 'failure'
@@ -38,7 +33,6 @@ runs:
         name: ${{ inputs.name }}
         path: ${{ inputs.path }}
         if-no-files-found: ${{ inputs.if-no-files-found }}
-        compression-level: ${{ inputs.compression-level }}
       continue-on-error: true
     - if: steps.upload-artifact-try2.outcome == 'failure'
       uses: actions/upload-artifact@v4
@@ -46,4 +40,3 @@ runs:
         name: ${{ inputs.name }}
         path: ${{ inputs.path }}
         if-no-files-found: ${{ inputs.if-no-files-found }}
-        compression-level: ${{ inputs.compression-level }}
