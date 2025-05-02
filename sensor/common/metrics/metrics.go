@@ -345,16 +345,6 @@ func IncrementTotalNetworkFlowsReceivedCounter(numberOfFlows int) {
 	totalNetworkFlowsReceivedCounter.Add(float64(numberOfFlows))
 }
 
-// IncrementTotalNetworkEndpointsReceivedCounter increments the total number of endpoints received
-func IncrementTotalNetworkEndpointsReceivedCounter(numberOfEndpoints int) {
-	totalNetworkEndpointsReceivedCounter.Add(float64(numberOfEndpoints))
-}
-
-// IncrementTotalProcessesReceivedCounter increments the total number of endpoints received
-func IncrementTotalProcessesReceivedCounter(numberOfProcesses int) {
-	totalProcessesReceivedCounter.Add(float64(numberOfProcesses))
-}
-
 // SetProcessSignalBufferSizeGauge set process signal buffer size gauge.
 func SetProcessSignalBufferSizeGauge(number int) {
 	processSignalBufferGauge.Set(float64(number))
