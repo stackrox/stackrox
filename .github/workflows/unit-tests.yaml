@@ -259,9 +259,6 @@ jobs:
     - name: UI Component Tests
       run: make ui-component-tests
 
-    - name: print size
-      run: du -hs ui/apps/platform/cypress/test-results/
-
     - name: Upload Cypress test result artifacts
       uses: ./.github/actions/upload-artifact-with-retry
       if: always()
