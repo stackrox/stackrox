@@ -861,7 +861,7 @@ prometheus-metric-parser: $(PROMETHEUS_METRIC_PARSER_BIN)
 	@echo $(PROMETHEUS_METRIC_PARSER_BIN)
 
 DEV_VERSION = 4.8.x-nightly-20250307
-DEV_LD_FLAGS = '-ldflags=-X "github.com/stackrox/rox/pkg/version/internal.MainVersion=$(DEV_VERSION)" -X "github.com/stackrox/rox/pkg/version/internal.CollectorVersion=$(DEV_VERSION)" -X "github.com/stackrox/rox/pkg/version/internal.ScannerVersion=$(DEV_VERSION)" -X "github.com/stackrox/rox/pkg/version/internal.GitShortSha=$(DEV_VERSION)"'
+DEV_LD_FLAGS = -buildvcs=false '-ldflags=-X "github.com/stackrox/rox/pkg/version/internal.MainVersion=$(DEV_VERSION)" -X "github.com/stackrox/rox/pkg/version/internal.CollectorVersion=$(DEV_VERSION)" -X "github.com/stackrox/rox/pkg/version/internal.ScannerVersion=$(DEV_VERSION)" -X "github.com/stackrox/rox/pkg/version/internal.GitShortSha=$(DEV_VERSION)"'
 
 pkg := $(shell find pkg -name *.go)
 
