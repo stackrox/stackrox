@@ -176,6 +176,7 @@ export type SyslogBase = {
     messageFormat?: SyslogCEFOptions;
     localFacility?: SyslogLocalFacility;
     extraFields: KeyValuePair[];
+    maxMessageSize: number;
 };
 
 export type SyslogLocalFacility =

@@ -201,4 +201,5 @@ message Syslog {
     CEF = 1;
   }
   MessageFormat message_format = 4;
+  int32 max_message_size = 5;
 }
