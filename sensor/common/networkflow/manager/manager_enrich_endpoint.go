@@ -192,7 +192,21 @@ func (m *networkFlowManager) handleEndpointEnrichmentResult(
 	resultNG EnrichmentResult, resultPLOP EnrichmentResult,
 	reasonNG EnrichmentReasonEp, reasonPLOP EnrichmentReasonEp,
 	ep *containerEndpoint) PostEnrichmentAction {
-	// TODO: handle PLOP!
+
+	// Currently, PLoP enrichment result alone would never cause a RetryLater action, as the part of the code
+	// that may lead to retries is shared.
+	// All actions in PLoP enrichment path lead currently to PostEnrichmentActionRemove, so it is sufficient that
+	// the final action is computed based on `resultNG`.
+	// Here, we analyze `resultPLOP` to provide informative debug logs.
+	switch resultPLOP {
+	case EnrichmentResultSuccess:
+		log.Debugf("PLoP enrichment succeeded")
+	case EnrichmentResultSkipped:
+		log.Debugf("PLoP enrichment skipped: %s", reasonPLOP)
+	case EnrichmentResultInvalidInput:
+		log.Debugf("Incomplete data for PLoP enrichment: %s", reasonPLOP)
+	}
+
 	switch resultNG {
 	case EnrichmentResultContainerIDMissMarkRotten:
 		// Endpoint cannot be expired (not contIDfound in activeConnections) and ContainerID is unknown.
