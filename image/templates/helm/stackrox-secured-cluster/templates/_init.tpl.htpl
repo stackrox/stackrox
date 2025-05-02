@@ -135,8 +135,15 @@
 {{ include "srox.getStorageClasses" (list $) }}
 {{ include "srox.getPVCs" (list $) }}
 
-{{ include "srox.scannerV4Defaulting" (list .Release $._rox.scannerV4) }}
+[<- if not .KubectlOutput >]
+{{ $_ := include "srox.scannerV4Defaulting" (list .Release $._rox.scannerV4) }}
 {{ include "srox.scannerDefaulting" (list .Release $._rox.scanner) }}
+{{ if ne $._rox.scanner.mode "slim" }}
+  {{ include "srox.fail" (print "Only scanner slim mode is allowed in Secured Cluster. To solve this, set to slim mode: scanner.mode=slim.") }}
+{{ end }}
+{{ $_ := set $._rox.scanner "slimImage" $._rox.image.scanner }}
+{{ $_ := set $._rox.scanner "slimDBImage" $._rox.image.scannerDb }}
+[<- end >]
 
 {{/* Expand applicable config values */}}
 {{ $expandables := $.Files.Get "internal/expandables.yaml" | fromYaml }}
@@ -326,75 +333,53 @@ The following block checks for the validity of the provided init bundle. (`helm 
   {{ include "srox.fail" "A CA certificate must be specified (please make sure that either an init bundle or a cluster registration secret has been provided)" }}
 {{- end }}
 
-[< if (not .KubectlOutput) ->]
+[<- if not .KubectlOutput ->]
+{{/*
+   Scanner setup.
+  */}}
 
 {{ $imagePullSecretNames := list }}
 
-{{ if eq ._rox.scanner.disable false }}
-{{/*
-   Local scanner setup.
-  */}}
+{{ $anyScannerEnabled := or (eq ._rox.scanner.disable false) (eq ._rox.scannerV4.disable false) }}
+{{ if $anyScannerEnabled }}
+  {{/* Check for sibling central in the same namespace. */}}
   {{ $centralDeployment := dict }}
   {{ include "srox.safeLookup" (list $ $centralDeployment "apps/v1" "Deployment" $.Release.Namespace "central") }}
   {{ if $centralDeployment.result }}
     {{ include "srox.note" (list $ "Detected central running in the same namespace. Not deploying scanner from this chart and configuring sensor to use existing scanner instance, if any.") }}
     {{ $_ := set $._rox.scanner "disable" true }}
-  {{ end }}
-
-  {{ if ne ._rox.scanner.mode "slim" }}
-    {{ include "srox.fail" (print "Only scanner slim mode is allowed in Secured Cluster. To solve this, set to slim mode: scanner.mode=slim.") }}
+    {{ $_ := set $._rox.scannerV4 "disable" true }}
   {{ end }}
 
   {{ $_ := set $._rox.sensor.localImageScanning "enabled" "true" }}
-  {{ $_ := set $._rox.scanner "slimImage" ._rox.image.scanner }}
-  {{ $_ := set $._rox.scanner "slimDBImage" ._rox.image.scannerDb }}
-  {{ include "srox.scannerInit" (list $ $._rox.scanner) }}
+{{ end }}
 
+{{ if eq ._rox.scanner.disable false }}
+  {{ include "srox.scannerInit" (list $ $._rox.scanner) }}
   {{ $imagePullSecretNames = append $imagePullSecretNames "stackrox-scanner" }}
 {{ end }}
 
-{{/*
-   Local Scanner v4 Indexer setup.
-  */}}
-
 {{ $scannerV4Cfg := $._rox.scannerV4 }}
+{{ if eq $scannerV4Cfg.disable false }}
+  {{/* Copy secured-cluster-style image configuration to what the Scanner V4 configuration machinery expects. */}}
+  {{ $_ := set $._rox.scannerV4 "image" $._rox.image.scannerV4 }}
+  {{ $_ := set $._rox.scannerV4.db "image" $._rox.image.scannerV4DB }}
 
-[</*
+  {{ include "srox.scannerV4Init" (list $ $scannerV4Cfg) }}
+  {{ if ._rox.scannerV4._dbEnabled }}
+    {{ include "srox.scannerV4Volume" $ }}
+  {{ end }}
 
-This can be activated again when Scanner V4 becomes the default scanner:
+  {{ if ._rox.scannerV4._indexerEnabled }}
+    {{ $imagePullSecretNames = append $imagePullSecretNames "stackrox-scanner-v4" }}
+  {{ end }}
 
-To establish a smooth and automated activation of Scanner v4 in situations where Scanner v2 is
-already activated, we let `scanner.disable: false` have the implicit side-effect of
-`scannerV4.disable: false` if the latter has not been explicitly set.
-
-{{- if eq $.Chart.Name "stackrox-secured-cluster-services" -}}
-  {{- if kindIs "invalid" $scannerV4Cfg.disable -}}
-    {{- $_ = set $scannerV4Cfg "disable" $._rox.scanner.disable -}}
-  {{- end -}}
-{{- end -}}
-
-*/>]
-
-{{/* Disable scanner v4 always in kubectl outputs */}}
-
-{{/* Copy secured-cluster-style image configuration to what the Scanner V4 configuration machinery expects. */}}
-{{ $_ := set $._rox.scannerV4 "image" $._rox.image.scannerV4 }}
-{{ $_ := set $._rox.scannerV4.db "image" $._rox.image.scannerV4DB }}
-
-{{ include "srox.scannerV4Init" (list $ $scannerV4Cfg) }}
-{{ if ._rox.scannerV4._dbEnabled }}
-  {{ include "srox.scannerV4Volume" $ }}
-{{ end }}
-
-{{ if ._rox.scannerV4._indexerEnabled }}
-  {{ $imagePullSecretNames = append $imagePullSecretNames "stackrox-scanner-v4" }}
-{{ end }}
-
-{{ if not (empty $imagePullSecretNames) }}
-  {{ $imagePullSecretNames = append $imagePullSecretNames "stackrox" }}
-  {{/* Note: This must happen late, as we rely on "srox.configureImage" to collect the
-       set of all referenced images first. */}}
-  {{ include "srox.configureImagePullSecrets" (list $ "imagePullSecrets" $._rox.imagePullSecrets "secured-cluster-services-main" $imagePullSecretNames $.Release.Namespace) }}
+  {{ if not (empty $imagePullSecretNames) }}
+    {{ $imagePullSecretNames = append $imagePullSecretNames "stackrox" }}
+    {{/* Note: This must happen late, as we rely on "srox.configureImage" to collect the
+        set of all referenced images first. */}}
+    {{ include "srox.configureImagePullSecrets" (list $ "imagePullSecrets" $._rox.imagePullSecrets "secured-cluster-services-main" $imagePullSecretNames $.Release.Namespace) }}
+  {{ end }}
 {{ end }}
 
 [<- end >]

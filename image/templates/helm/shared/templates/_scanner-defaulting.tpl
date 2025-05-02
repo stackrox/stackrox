@@ -2,7 +2,7 @@
   srox.scannerDefaulting <Helm .Release> <Scanner configuration>
 
   Encapsulates the Scanner defaulting logic.
-  
+
   Can be removed later, together with StackRox Scanner.
 */}}
 
