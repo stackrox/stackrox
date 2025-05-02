@@ -5,25 +5,14 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/operator-framework/helm-operator-plugins/pkg/extensions"
-	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	"github.com/stackrox/rox/operator/internal/common/defaulting"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
 	annotationKey = defaulting.FeatureDefaultKeyScannerV4
 	fieldOwner    = "stackrox-operator"
-)
-
-var (
-	// Unfortunately the fake client we are using in the unit tests for this extension does not
-	// support server-side-apply patches. At the same time these are the modern alternative
-	// to strategic-merge patches.
-	// Thus, the next best thing would be to use different patching implementations depending
-	// on whether running inside or outside of tests.
-	runningUnderTest = false
 )
 
 // This extension's purpose is to
@@ -77,57 +66,23 @@ func initializedDeepCopy(spec *platform.ScannerV4Spec) *platform.ScannerV4Spec {
 }
 
 func patchCentralAnnotation(ctx context.Context, logger logr.Logger, client ctrlClient.Client, central *platform.Central, key string, val string) error {
-	if runningUnderTest {
-		return mergePatchCentralAnnotation(ctx, logger, client, central, key, val)
-	}
-
-	// Create a server-side-apply (SSA) patch which only patches the feature-default annotation.
-	kind, apiVersion := getCentralKindAndVersion(central)
-	centralPatch := &unstructured.Unstructured{
-		Object: map[string]interface{}{
-			"kind":       kind,
-			"apiVersion": apiVersion,
-			"metadata": map[string]interface{}{
-				"name":            central.GetName(),
-				"namespace":       central.GetNamespace(),
-				"resourceVersion": central.GetResourceVersion(),
-				"annotations": map[string]interface{}{
-					key: val,
-				},
-			},
-		},
-	}
-	err := client.Patch(ctx, centralPatch, ctrlClient.Apply, ctrlClient.ForceOwnership, ctrlClient.FieldOwner(fieldOwner))
-	if err != nil {
-		return errors.Wrapf(err, "patching Central object with annotation %s=%s", key, val)
-	}
-	logger.Info("patched Central object annotation",
-		"namespace", central.GetNamespace(),
-		"central", central.GetName(),
-		"annotationKey", key,
-		"annotationValue", val,
-		"oldResourceVersion", central.GetResourceVersion(),
-		"newResourceVersion", centralPatch.GetResourceVersion())
-	central.Annotations[key] = val
-	central.SetResourceVersion(centralPatch.GetResourceVersion())
-	return nil
-}
-
-func getCentralKindAndVersion(central *platform.Central) (kind, version string) {
-	gvk := central.GetObjectKind().GroupVersionKind()
-	kind = gvk.Kind
-	version = gvk.GroupVersion().String()
-	return
-}
-
-func mergePatchCentralAnnotation(ctx context.Context, _ logr.Logger, client ctrlClient.Client, central *platform.Central, key string, val string) error {
-	// Only patch the annotation, no changes to the Central spec will be patched on the cluster.
-	centralPatchBase := ctrlClient.MergeFrom(central.DeepCopy())
+	// MergeFromWithOptimisticLock causes the resourceVersion to be checked prior to patching.
+	origCentral := central.DeepCopy()
+	centralPatchBase := ctrlClient.MergeFromWithOptions(origCentral, ctrlClient.MergeFromWithOptimisticLock{})
 	central.Annotations[key] = val
 	err := client.Patch(ctx, central, centralPatchBase)
 	if err != nil {
 		return err
 	}
+	central.Annotations[key] = val
+
+	logger.Info("patched Central object annotation",
+		"namespace", central.GetNamespace(),
+		"central", central.GetName(),
+		"annotationKey", key,
+		"annotationValue", val,
+		"oldResourceVersion", origCentral.GetResourceVersion(),
+		"newResourceVersion", central.GetResourceVersion())
 	central.Annotations[key] = val
 	return nil
 }
