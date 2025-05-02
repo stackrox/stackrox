@@ -262,6 +262,14 @@ jobs:
     - name: print size
       run: du -hs ui/apps/platform/cypress/test-results/
 
+    - name: Upload Cypress test result artifacts
+      uses: ./.github/actions/upload-artifact-with-retry
+      if: always()
+      with:
+        name: Cypress test results
+        path: ui/apps/platform/cypress/test-results/
+        compression-level: '6'
+
     - name: Publish Test Report
       uses: test-summary/action@v2
       if: always()
