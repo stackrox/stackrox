@@ -493,6 +493,11 @@ func TestToProtoV4VulnerabilityReport_FilterRHCCLayers(t *testing.T) {
 						Name:    "my python egg",
 						Version: "2",
 					},
+					"3": {
+						ID:      "3",
+						Name:    "my ruby gem",
+						Version: "3",
+					},
 				},
 				Repositories: map[string]*claircore.Repository{
 					"0": {
@@ -525,11 +530,18 @@ func TestToProtoV4VulnerabilityReport_FilterRHCCLayers(t *testing.T) {
 							IntroducedIn:  layerA,
 						},
 					},
+					"3": {
+						{
+							RepositoryIDs: []string{"1"},
+							IntroducedIn:  layerB,
+						},
+					},
 				},
 				PackageVulnerabilities: map[string][]string{
 					"0": {"2", "0", "3", "1"},
 					"1": {"1", "2"},
 					"2": {"2", "3"},
+					"3": {"0", "1", "2", "3"},
 				},
 			},
 			want: &v4.VulnerabilityReport{
@@ -560,6 +572,9 @@ func TestToProtoV4VulnerabilityReport_FilterRHCCLayers(t *testing.T) {
 					"1": {
 						Values: []string{"1", "2"},
 					},
+					"3": {
+						Values: []string{"0", "1", "2", "3"},
+					},
 				},
 				Contents: &v4.Contents{
 					Packages: []*v4.Package{
@@ -585,6 +600,15 @@ func TestToProtoV4VulnerabilityReport_FilterRHCCLayers(t *testing.T) {
 							Id:      "2",
 							Name:    "my python egg",
 							Version: "2",
+							NormalizedVersion: &v4.NormalizedVersion{
+								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+							},
+							Cpe: emptyCPE,
+						},
+						{
+							Id:      "3",
+							Name:    "my ruby gem",
+							Version: "3",
 							NormalizedVersion: &v4.NormalizedVersion{
 								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 							},
@@ -627,6 +651,14 @@ func TestToProtoV4VulnerabilityReport_FilterRHCCLayers(t *testing.T) {
 								{
 									RepositoryIds: []string{"0"},
 									IntroducedIn:  layerA.String(),
+								},
+							},
+						},
+						"3": {
+							Environments: []*v4.Environment{
+								{
+									RepositoryIds: []string{"1"},
+									IntroducedIn:  layerB.String(),
 								},
 							},
 						},
