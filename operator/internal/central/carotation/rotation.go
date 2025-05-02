@@ -37,7 +37,9 @@ func DetermineAction(primary, secondary *x509.Certificate, current time.Time) Ac
 		return AddSecondary
 	}
 
-	// Promote secondary to primary in final year
+	// Promote secondary to primary in the final year
+	// If we're in the final year and no secondary CA exists, the rotation will be done in two steps
+	// (first reconcile - AddSecondary, subsequent reconcile - PromoteSecondary)
 	promoteSecondaryCATime := startTime.Add(4 * fifthOfValidityDuration)
 	if current.After(promoteSecondaryCATime) {
 		return PromoteSecondary

@@ -680,6 +680,8 @@ func TestGenerateCentralTLSData_Rotation(t *testing.T) {
 					"primary CA key should be the old secondary CA key")
 				require.Contains(t, new, mtls.ServiceCertFileName, "central cert should be present")
 				require.Contains(t, new, mtls.ServiceKeyFileName, "central cert should be present")
+				require.NotEqual(t, old[mtls.ServiceCertFileName], new[mtls.ServiceCertFileName], "central cert should be reissued")
+				require.NotEqual(t, old[mtls.ServiceKeyFileName], new[mtls.ServiceKeyFileName], "central key should be reissued")
 			},
 		},
 		{

@@ -157,20 +157,11 @@ func (r *createCentralTLSExtensionRun) validateAndConsumeCentralTLSData(fileMap 
 	}
 
 	if centralCARotationEnabled.BooleanSetting() {
-		// the presence of a secondary CA certificate is optional
-		secondaryCA, err := certgen.LoadSecondaryCAFromFileMap(fileMap)
-		var secondaryCACert *x509.Certificate = nil
-		if err != nil && !errors.Is(err, certgen.ErrNoCACert) {
-			return errors.Wrap(err, "loading secondary CA failed")
+		rotationAction, err := r.handleCARotation(fileMap)
+		if err != nil {
+			return err
 		}
-		if secondaryCA != nil {
-			if err := secondaryCA.CheckProperties(); err != nil {
-				return errors.Wrap(err, "loaded secondary service CA certificate is invalid")
-			}
-			secondaryCACert = secondaryCA.Certificate()
-		}
-
-		r.caRotationAction = carotation.DetermineAction(r.ca.Certificate(), secondaryCACert, r.currentTime)
+		r.caRotationAction = rotationAction
 		if r.caRotationAction != carotation.NoAction {
 			return errors.New("CA rotation action needed")
 		}
@@ -180,6 +171,23 @@ func (r *createCentralTLSExtensionRun) validateAndConsumeCentralTLSData(fileMap 
 		return errors.Wrap(err, "verifying existing central service TLS certificate failed")
 	}
 	return nil
+}
+
+func (r *createCentralTLSExtensionRun) handleCARotation(fileMap types.SecretDataMap) (carotation.Action, error) {
+	secondaryCA, err := certgen.LoadSecondaryCAFromFileMap(fileMap)
+	var secondaryCACert *x509.Certificate
+	// the presence of a secondary CA certificate is optional
+	if err != nil && !errors.Is(err, certgen.ErrNoCACert) {
+		return carotation.NoAction, errors.Wrap(err, "loading secondary CA failed")
+	}
+	if secondaryCA != nil {
+		if err := secondaryCA.CheckProperties(); err != nil {
+			return carotation.NoAction, errors.Wrap(err, "loaded secondary service CA certificate is invalid")
+		}
+		secondaryCACert = secondaryCA.Certificate()
+	}
+
+	return carotation.DetermineAction(r.ca.Certificate(), secondaryCACert, r.currentTime), nil
 }
 
 func (r *createCentralTLSExtensionRun) generateCentralTLSData(old types.SecretDataMap) (types.SecretDataMap, error) {
