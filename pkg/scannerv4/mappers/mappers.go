@@ -995,7 +995,7 @@ var (
 )
 
 // rhccLayers returns a set of SHAs for the layers in official Red Hat images.
-// TODO(TODO): account for images built via Konflux, as they do not contain the same identifiers
+// TODO(ROX-29158): account for images built via Konflux, as they do not contain the same identifiers
 // as the old build system.
 func rhccLayers(report *claircore.VulnerabilityReport) set.FrozenStringSet {
 	layers := set.NewStringSet()
