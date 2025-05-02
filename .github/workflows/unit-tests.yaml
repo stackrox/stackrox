@@ -265,7 +265,7 @@ jobs:
       with:
         name: Cypress test results
         path: ui/apps/platform/cypress/test-results/
-        compression-level: '6'
+        compression-level: '9'
 
     - name: Publish Test Report
       uses: test-summary/action@v2
