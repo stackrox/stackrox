@@ -206,7 +206,7 @@ fragment cveFields on ImageVulnerability {
         "Data inputs are: "
         imageDigest | component | componentID | severity | cvss
         RHEL_IMAGE_DIGEST   | "glib2" | getRHELComponentID()   |
-                VulnerabilitySeverity.LOW_VULNERABILITY_SEVERITY | 4.4 
+                VulnerabilitySeverity.LOW_VULNERABILITY_SEVERITY | 4.4
         UBUNTU_IMAGE_DIGEST | "glib2.0"      | getUbuntuComponentID() |
                 VulnerabilitySeverity.MODERATE_VULNERABILITY_SEVERITY      | 7.5
     }
