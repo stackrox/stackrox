@@ -25,7 +25,8 @@ const (
 	DeleteSecondary
 )
 
-// DetermineAction selects a rotation action based on the current time and the validity of the primary CA certificate
+// DetermineAction selects a rotation action based on the current time, and the validity of the primary CA certificate
+// Important: The function assumes that input certificates have valid time ranges
 func DetermineAction(primary, secondary *x509.Certificate, current time.Time) Action {
 	startTime := primary.NotBefore
 	validityDuration := primary.NotAfter.Sub(primary.NotBefore)
