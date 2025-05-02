@@ -119,7 +119,7 @@ export type RequestExpiresProps = {
     context: RequestContext;
 };
 
-export function getExpiresDate(exception: VulnerabilityException, context: RequestContext): string {
+export function getExpiresDate(exception: VulnerabilityException, context: RequestContext) {
     if (isDeferralException(exception)) {
         const shouldUseUpdatedRequest = getShouldUseUpdatedRequest(exception, context);
         const exceptionExpiry: ExceptionExpiry =

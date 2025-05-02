@@ -4,8 +4,6 @@ import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table
 import { gql } from '@apollo/client';
 import queryService from 'utils/queryService';
 import { sortSeverity } from 'sorters/sorters';
-import { format } from 'date-fns';
-import dateTimeFormat from 'constants/dateTimeFormat';
 import { BasePolicy } from 'types/policy.proto';
 
 import NoResultsMessage from 'Components/NoResultsMessage';
@@ -14,6 +12,7 @@ import Loader from 'Components/Loader';
 import PolicySeverityIconText from 'Components/PatternFly/IconText/PolicySeverityIconText';
 import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 import { formatLifecycleStages } from 'Containers/Policies/policies.utils';
+import { getDateTime } from 'utils/dateUtils';
 import TableWidget from './TableWidget';
 
 type FailedPolicy = Pick<
@@ -158,7 +157,7 @@ function FailedPoliciesAcrossDeployment({ deploymentID }: FailedPoliciesAcrossDe
                         Header: 'Violation Time',
                         headerClassName: `w-1/8 ${defaultHeaderClassName}`,
                         className: `w-1/8 ${defaultColumnClassName}`,
-                        Cell: ({ original }) => format(original.time, dateTimeFormat),
+                        Cell: ({ original }) => getDateTime(original.time),
                         accessor: 'time',
                     },
                 ];

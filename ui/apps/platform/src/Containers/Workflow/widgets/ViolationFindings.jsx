@@ -1,10 +1,9 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { format } from 'date-fns';
 
-import dateTimeFormat from 'constants/dateTimeFormat';
 import Widget from 'Components/Widget';
 import NoResultsMessage from 'Components/NoResultsMessage';
+import { getDateTime } from 'utils/dateUtils';
 
 const processData = (data) => {
     if (!data.violations || !data.violations.length) {
@@ -24,7 +23,7 @@ const ViolationFindings = ({ data, message }) => {
                     className="s-1"
                     bodyClassName="flex flex-col p-4 leading-normal"
                 >
-                    {format(policyViolation.time, dateTimeFormat)}
+                    {getDateTime(policyViolation.time)}
                 </Widget>
                 <Widget
                     header="Enforcement"

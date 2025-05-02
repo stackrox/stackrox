@@ -1,6 +1,8 @@
 import { distanceInWordsStrict, format } from 'date-fns';
 
-import dateTimeFormat, { dateFormat, timeFormat } from 'constants/dateTimeFormat';
+const timeFormat = 'h:mm:ssA';
+const dateFormat = 'MM/DD/YYYY';
+const dateTimeFormat = `${dateFormat} | ${timeFormat}`;
 
 type DateLike = string | number | Date;
 
