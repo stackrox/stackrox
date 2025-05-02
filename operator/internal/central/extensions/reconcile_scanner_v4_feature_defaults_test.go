@@ -27,14 +27,10 @@ type scannerV4StatusDefaultsReconcilliationTestCase struct {
 var (
 	nonEmptyStatus = platform.CentralStatus{
 		DeployedRelease: &platform.StackRoxRelease{
-			Name: "release-name",
+			Version: "some-version-string",
 		},
 	}
 )
-
-func init() {
-	runningUnderTest = true
-}
 
 func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
 	cases := map[string]scannerV4StatusDefaultsReconcilliationTestCase{
