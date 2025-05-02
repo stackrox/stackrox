@@ -46,3 +46,24 @@ func wrapExtension(runFn func(ctx context.Context, securedCluster *platform.Secu
 		return runFn(ctx, &c, client, direct, wrappedStatusUpdater, log)
 	}
 }
+
+func patchSecuredClusterAnnotation(ctx context.Context, logger logr.Logger, client ctrlClient.Client, securedCluster *platform.SecuredCluster, key string, val string) error {
+	// MergeFromWithOptimisticLock causes the resourceVersion to be checked prior to patching.
+	origSecuredCluster := securedCluster.DeepCopy()
+	securedClusterPatchBase := ctrlClient.MergeFromWithOptions(origSecuredCluster, ctrlClient.MergeFromWithOptimisticLock{})
+	securedCluster.Annotations[key] = val
+	err := client.Patch(ctx, securedCluster, securedClusterPatchBase)
+	if err != nil {
+		return err
+	}
+
+	logger.Info("patched Central object annotation",
+		"namespace", securedCluster.GetNamespace(),
+		"central", securedCluster.GetName(),
+		"annotationKey", key,
+		"annotationValue", val,
+		"oldResourceVersion", origSecuredCluster.GetResourceVersion(),
+		"newResourceVersion", securedCluster.GetResourceVersion())
+	securedCluster.Annotations[key] = val
+	return nil
+}

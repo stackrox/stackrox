@@ -10,11 +10,6 @@ import (
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const (
-	annotationKey = defaulting.FeatureDefaultKeyScannerV4
-	fieldOwner    = "stackrox-operator"
-)
-
 // This extension's purpose is to
 //
 //   1. apply defaults by mutating the Central spec as a prerequisite for the value translator
@@ -42,12 +37,12 @@ func reconcileScannerV4FeatureDefaults(
 	if central.Annotations == nil {
 		central.Annotations = make(map[string]string)
 	}
-	if central.Annotations[annotationKey] != string(componentPolicy) {
+	if central.Annotations[defaulting.FeatureDefaultKeyScannerV4] != string(componentPolicy) {
 		// Update feature default setting.
 		// We do this immediately during (first-time) execution of this extension to make sure
 		// that this information is already persisted in the Kubernetes resource before we
 		// can realistically end up in a situation where reconcilliation might need to be retried.
-		err := patchCentralAnnotation(ctx, logger, client, central, annotationKey, string(componentPolicy))
+		err := patchCentralAnnotation(ctx, logger, client, central, defaulting.FeatureDefaultKeyScannerV4, string(componentPolicy))
 		if err != nil {
 			return err
 		}

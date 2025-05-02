@@ -476,4 +476,10 @@ func init() {
 var (
 	// SecuredClusterGVK is the GVK for the SecuredCluster type.
 	SecuredClusterGVK = GroupVersion.WithKind("SecuredCluster")
+
+	SecuredClusterScannerV4AutoSense = LocalScannerV4ComponentAutoSense
+	SecuredClusterScannerV4Disabled  = LocalScannerV4ComponentDisabled
+
+	SecuredClusterScannerAutoSense = LocalScannerComponentAutoSense
+	SecuredClusterScannerDisabled  = LocalScannerComponentDisabled
 )
