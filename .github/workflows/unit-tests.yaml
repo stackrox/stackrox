@@ -236,6 +236,45 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         directory: 'ui/apps/platform/test-results/reports'
 
+  ui-component:
+    runs-on: ubuntu-latest
+    outputs:
+      new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
+      volumes:  # job-preamble deletes unused host runner files under /mnt
+      - /usr:/mnt/usr
+      - /opt:/mnt/opt
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - uses: ./.github/actions/job-preamble
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+    - name: Cache UI dependencies
+      uses: ./.github/actions/cache-ui-dependencies
+
+    - name: UI Unit Tests
+      run: make ui-test
+
+    - name: Publish Test Report
+      uses: test-summary/action@v2
+      if: always()
+      with:
+        paths: 'ui/apps/platform/test-results/reports/*.xml'
+
+    - name: Report junit failures in jira
+      if: (!cancelled())
+      id: junit2jira
+      uses: ./.github/actions/junit2jira
+      with:
+        create-jiras: ${{ github.event_name == 'push' }}
+        jira-token: ${{ secrets.JIRA_TOKEN }}
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+        directory: 'ui/apps/platform/test-results/reports'
+
   local-roxctl-tests:
     runs-on: ubuntu-latest
     outputs:
