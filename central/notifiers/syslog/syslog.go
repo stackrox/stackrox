@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
 	"os"
 	"strconv"
 	"strings"
@@ -310,8 +311,14 @@ func (s *syslog) AuditLoggingEnabled() bool {
 }
 
 func (s *syslog) sendSyslog(severity int, timestamp time.Time, messageID, unstructuredData string) error {
-	syslog := s.wrapSyslogUnstructuredData(severity, timestamp, messageID, unstructuredData)
-	return s.sender.SendSyslog([]byte(syslog))
+	syslog := []byte(s.wrapSyslogUnstructuredData(severity, timestamp, messageID, unstructuredData))
+	for len(syslog) != 0 {
+		if err := s.sender.SendSyslog(syslog[0:s.maxMessageSize]); err != nil {
+			return err
+		}
+		syslog = syslog[int(math.Min(float64(s.maxMessageSize), float64(len(syslog)))):]
+	}
+	return nil
 }
 
 func init() {
