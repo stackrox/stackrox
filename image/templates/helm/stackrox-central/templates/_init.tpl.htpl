@@ -162,7 +162,7 @@
 {{ $_ = set $rox "_defaults" $defaultsCfg }}
 {{ $_ = include "srox.mergeInto" (list $rox $defaultsCfg.defaults) }}
 
-{{ $_ = include "srox.scannerV4CentralDefaulting" (list .Release $rox.scannerV4) }}
+{{ $_ = include "srox.scannerV4Defaulting" (list .Release $rox.scannerV4) }}
 
 {{/* Expand applicable config values */}}
 {{ $expandables := $.Files.Get "internal/expandables.yaml" | fromYaml }}
