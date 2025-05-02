@@ -241,7 +241,7 @@ jobs:
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
+      image: quay.io/stackrox-io/apollo-ci:stackrox-ui-test-0.4.8
       volumes:  # job-preamble deletes unused host runner files under /mnt
       - /usr:/mnt/usr
       - /opt:/mnt/opt
@@ -256,14 +256,14 @@ jobs:
     - name: Cache UI dependencies
       uses: ./.github/actions/cache-ui-dependencies
 
-    - name: UI Unit Tests
-      run: make ui-test
+    - name: UI Component Tests
+      run: make ui-component-tests
 
     - name: Publish Test Report
       uses: test-summary/action@v2
       if: always()
       with:
-        paths: 'ui/apps/platform/test-results/reports/*.xml'
+        paths: 'ui/apps/platform/cypress/test-results/reports/**/*.xml'
 
     - name: Report junit failures in jira
       if: (!cancelled())
@@ -273,7 +273,7 @@ jobs:
         create-jiras: ${{ github.event_name == 'push' }}
         jira-token: ${{ secrets.JIRA_TOKEN }}
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-        directory: 'ui/apps/platform/test-results/reports'
+        directory: 'ui/apps/platform/cypress/test-results/reports'
 
   local-roxctl-tests:
     runs-on: ubuntu-latest
