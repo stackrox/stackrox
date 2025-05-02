@@ -1,6 +1,6 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`CveType default style should show a Kubernetes CVE type in default style 1`] = `
+exports[`CveType > default style > should show a Kubernetes CVE type in default style 1`] = `
 <DocumentFragment>
   <span>
     <div
@@ -16,7 +16,7 @@ exports[`CveType default style should show a Kubernetes CVE type in default styl
 </DocumentFragment>
 `;
 
-exports[`CveType default style should show a Kubernetes and OpenShift CVE type in default style 1`] = `
+exports[`CveType > default style > should show a Kubernetes and OpenShift CVE type in default style 1`] = `
 <DocumentFragment>
   <span>
     <div
@@ -37,7 +37,7 @@ exports[`CveType default style should show a Kubernetes and OpenShift CVE type i
 </DocumentFragment>
 `;
 
-exports[`CveType default style should show a Node and Kubernetes CVE type in default style 1`] = `
+exports[`CveType > default style > should show a Node and Kubernetes CVE type in default style 1`] = `
 <DocumentFragment>
   <span>
     <div
@@ -58,7 +58,7 @@ exports[`CveType default style should show a Node and Kubernetes CVE type in def
 </DocumentFragment>
 `;
 
-exports[`CveType default style should show a node CVE type in default style 1`] = `
+exports[`CveType > default style > should show a node CVE type in default style 1`] = `
 <DocumentFragment>
   <span>
     <div
@@ -74,7 +74,7 @@ exports[`CveType default style should show a node CVE type in default style 1`] 
 </DocumentFragment>
 `;
 
-exports[`CveType default style should show an Image and Node CVE type in default style 1`] = `
+exports[`CveType > default style > should show an Image and Node CVE type in default style 1`] = `
 <DocumentFragment>
   <span>
     <div
@@ -95,7 +95,7 @@ exports[`CveType default style should show an Image and Node CVE type in default
 </DocumentFragment>
 `;
 
-exports[`CveType default style should show an Istio CVE type in default style 1`] = `
+exports[`CveType > default style > should show an Istio CVE type in default style 1`] = `
 <DocumentFragment>
   <span>
     <div
@@ -111,7 +111,7 @@ exports[`CveType default style should show an Istio CVE type in default style 1`
 </DocumentFragment>
 `;
 
-exports[`CveType default style should show an OpenShift CVE type in default style 1`] = `
+exports[`CveType > default style > should show an OpenShift CVE type in default style 1`] = `
 <DocumentFragment>
   <span>
     <div
@@ -127,7 +127,7 @@ exports[`CveType default style should show an OpenShift CVE type in default styl
 </DocumentFragment>
 `;
 
-exports[`CveType default style should show an image CVE type in default style 1`] = `
+exports[`CveType > default style > should show an image CVE type in default style 1`] = `
 <DocumentFragment>
   <span>
     <div

@@ -3,7 +3,7 @@ import AccessTokenManager from './AccessTokenManager';
 
 describe('AccessTokenManager', () => {
     beforeEach(() => {
-        jest.useFakeTimers();
+        vi.useFakeTimers();
     });
 
     it('should store and then return stored token', () => {
@@ -39,18 +39,18 @@ describe('AccessTokenManager', () => {
     });
 
     it('should invoke refresh token routine 30 sec before token expires', () => {
-        const refreshToken = jest.fn().mockResolvedValue();
+        const refreshToken = vi.fn().mockResolvedValue();
         const m = new AccessTokenManager({ refreshToken });
         const tokenInfo = { expiry: new Date(Date.now() + 31000).toISOString() };
 
         m.setToken('my-token', tokenInfo);
         expect(refreshToken).not.toHaveBeenCalled();
-        jest.advanceTimersByTime(1000);
+        vi.advanceTimersByTime(1000);
         expect(refreshToken).toHaveBeenCalledWith(tokenInfo);
     });
 
     it('should clear timeout on refresh token invocation', () => {
-        const timeoutSpy = jest.spyOn(global, 'clearTimeout');
+        const timeoutSpy = vi.spyOn(global, 'clearTimeout');
         const m = new AccessTokenManager();
         const tokenInfo = { expiry: new Date(Date.now() + 31000).toISOString() };
         m.setToken('my-token', tokenInfo);
@@ -59,7 +59,7 @@ describe('AccessTokenManager', () => {
     });
 
     it('should store new token info after refresh', () => {
-        const refreshToken = jest
+        const refreshToken = vi
             .fn()
             .mockResolvedValue({ token: 'my-token-2', info: { d: 'data' } });
         const m = new AccessTokenManager({ refreshToken });
@@ -74,7 +74,7 @@ describe('AccessTokenManager', () => {
     });
 
     it('should notify attached listener about token being refreshed', () => {
-        const refreshToken = jest.fn().mockRejectedValue();
+        const refreshToken = vi.fn().mockRejectedValue();
         let opPromiseToTest = null;
         const refreshTokenListener = (opPromise) => {
             opPromiseToTest = opPromise;
@@ -84,14 +84,14 @@ describe('AccessTokenManager', () => {
 
         m.onRefreshTokenStarted(refreshTokenListener);
         m.setToken('my-token', tokenInfo);
-        jest.runAllTimers();
+        vi.runAllTimers();
         expect(m.getRefreshTokenOpPromise()).toEqual(opPromiseToTest);
         return expect(opPromiseToTest).resolves.toBe(undefined);
     });
 
     it('should not notify removed refresh token listener', () => {
-        const refreshToken = jest.fn().mockResolvedValue();
-        const refreshTokenListener = jest.fn();
+        const refreshToken = vi.fn().mockResolvedValue();
+        const refreshTokenListener = vi.fn();
         const m = new AccessTokenManager({ refreshToken });
 
         m.onRefreshTokenStarted(refreshTokenListener);
@@ -108,8 +108,8 @@ describe('AccessTokenManager', () => {
     });
 
     it('should not notify refresh token listener if previous token refresh is in progress', () => {
-        const refreshToken = jest.fn().mockResolvedValue();
-        const refreshTokenListener = jest.fn();
+        const refreshToken = vi.fn().mockResolvedValue();
+        const refreshTokenListener = vi.fn();
         const m = new AccessTokenManager({ refreshToken });
 
         m.onRefreshTokenStarted(refreshTokenListener);

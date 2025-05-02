@@ -4,7 +4,7 @@ import { Provider } from 'react-redux';
 import { BrowserRouter } from 'react-router-dom';
 import { ApolloProvider } from '@apollo/client';
 
-import configureApolloClient from 'configureApolloClient';
+import configureApolloClient from 'init/configureApolloClient';
 
 export type ComponentTestProviderProps = {
     children: React.ReactNode;
