@@ -135,6 +135,9 @@
 {{ include "srox.getStorageClasses" (list $) }}
 {{ include "srox.getPVCs" (list $) }}
 
+{{ include "srox.scannerV4Defaulting" (list .Release $._rox.scannerV4) }}
+{{ include "srox.scannerDefaulting" (list .Release $._rox.scanner) }}
+
 {{/* Expand applicable config values */}}
 {{ $expandables := $.Files.Get "internal/expandables.yaml" | fromYaml }}
 {{ include "srox.expandAll" (list $ $rox $expandables) }}
