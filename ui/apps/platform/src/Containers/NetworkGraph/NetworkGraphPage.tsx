@@ -24,7 +24,6 @@ import useAnalytics, { CIDR_BLOCK_FORM_OPENED } from 'hooks/useAnalytics';
 import useURLSearch from 'hooks/useURLSearch';
 import { fetchNetworkFlowGraph, fetchNodeUpdates } from 'services/NetworkService';
 import queryService from 'utils/queryService';
-import timeWindowToDate from 'utils/timeWindows';
 import { isCompleteSearchFilter } from 'utils/searchUtils';
 
 import { CodeViewerThemeProvider } from 'Components/CodeViewer';
@@ -51,6 +50,7 @@ import {
 import { getPropertiesForAnalytics } from './utils/networkGraphURLUtils';
 import getSimulation from './utils/getSimulation';
 import { getSearchFilterFromScopeHierarchy } from './utils/simulatorUtils';
+import { timeWindowToISO } from './utils/timeWindow';
 import CIDRFormModal from './components/CIDRFormModal';
 
 import './NetworkGraphPage.css';
@@ -190,7 +190,7 @@ function NetworkGraphPage() {
             setIsLoading(true);
 
             const queryToUse = queryService.objectToWhereClause(remainingQuery);
-            const timestampToUse = timeWindowToDate(timeWindow);
+            const sinceTimestamp = timeWindowToISO(timeWindow);
 
             Promise.all([
                 // fetch the network graph data used for the active graph
@@ -199,7 +199,7 @@ function NetworkGraphPage() {
                     namespacesFromUrl,
                     deploymentsFromUrl,
                     queryToUse,
-                    timestampToUse || undefined,
+                    sinceTimestamp,
                     includePorts,
                     ALWAYS_SHOW_ORCHESTRATOR_COMPONENTS
                 ),
@@ -378,8 +378,8 @@ function NetworkGraphPage() {
                                     </ToolbarItem>
                                     <ToolbarItem>
                                         <TimeWindowSelector
-                                            activeTimeWindow={timeWindow}
-                                            setActiveTimeWindow={setTimeWindow}
+                                            timeWindow={timeWindow}
+                                            setTimeWindow={setTimeWindow}
                                             isDisabled={isLoading || !hasClusterNamespaceSelected}
                                         />
                                     </ToolbarItem>

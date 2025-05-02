@@ -216,7 +216,7 @@ export function fetchNetworkPolicyGraph(
  * @param {String[]} namespaces
  * @param {String[]} deployments
  * @param {String} query
- * @param {Date} date
+ * @param {String} sinceTimestamp
  * @param {boolean} includePorts
  * @param {boolean} includeOrchestratorComponents
  *
@@ -227,7 +227,7 @@ export function fetchNetworkFlowGraph(
     namespaces,
     deployments,
     query = '',
-    date = null,
+    sinceTimestamp = '',
     includePorts = false,
     includeOrchestratorComponents = false,
     includePolicies = false
@@ -241,8 +241,8 @@ export function fetchNetworkFlowGraph(
             : '';
     urlParams.query = query ? `${query}+${namespaceQuery}` : namespaceQuery;
     urlParams.query = deploymentQuery ? `${urlParams.query}+${deploymentQuery}` : urlParams.query;
-    if (date) {
-        urlParams.since = date.toISOString();
+    if (sinceTimestamp) {
+        urlParams.since = sinceTimestamp;
     }
     if (includePorts) {
         urlParams.includePorts = true;
@@ -496,7 +496,7 @@ export function getExternalIpsFlowsMetadata(
     clusterId,
     namespaces,
     deployments,
-    fromTimestamp,
+    sinceTimestamp,
     { sortOption, page, perPage, advancedFilters }
 ) {
     const searchFilter = {
@@ -511,10 +511,9 @@ export function getExternalIpsFlowsMetadata(
         ...advancedFilters,
     };
     const params = getListQueryParams({ searchFilter, sortOption, page, perPage });
-    const sinceParam = fromTimestamp.toISOString();
     return axios
         .get(
-            `${networkFlowBaseUrl}/cluster/${clusterId}/externalentities/metadata?since=${sinceParam}&${params}`
+            `${networkFlowBaseUrl}/cluster/${clusterId}/externalentities/metadata?since=${sinceTimestamp}&${params}`
         )
         .then((response) => response.data);
 }

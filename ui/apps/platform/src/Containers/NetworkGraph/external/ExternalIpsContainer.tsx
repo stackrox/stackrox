@@ -7,10 +7,10 @@ import { UseUrlSearchReturn } from 'hooks/useURLSearch';
 import { getExternalIpsFlowsMetadata } from 'services/NetworkService';
 import { ExternalNetworkFlowsMetadataResponse } from 'types/networkFlow.proto';
 import { getTableUIState } from 'utils/getTableUIState';
-import timeWindowToDate from 'utils/timeWindows';
 
 import ExternalIpsTable from './ExternalIpsTable';
 import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
+import { timeWindowToISO } from '../utils/timeWindow';
 
 type ExternalIpsContainerProps = {
     scopeHierarchy: NetworkScopeHierarchy;
@@ -33,7 +33,7 @@ function ExternalIpsContainer({
     const { page, perPage } = urlPagination;
     const fetchExternalIpsFlowsMetadata =
         useCallback((): Promise<ExternalNetworkFlowsMetadataResponse> => {
-            const fromTimestamp = timeWindowToDate(timeWindow);
+            const fromTimestamp = timeWindowToISO(timeWindow);
             return getExternalIpsFlowsMetadata(clusterId, namespaces, deployments, fromTimestamp, {
                 sortOption: {},
                 page,
