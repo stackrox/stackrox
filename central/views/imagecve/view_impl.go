@@ -10,7 +10,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -22,7 +21,6 @@ import (
 
 var (
 	queryTimeout = env.PostgresVMStatementTimeout.DurationSetting()
-	log          = logging.LoggerForModule()
 )
 
 type imageCVECoreViewImpl struct {
@@ -136,13 +134,10 @@ func (v *imageCVECoreViewImpl) Get(ctx context.Context, q *v1.Query, options vie
 	defer cancel()
 
 	var results []*imageCVECoreResponse
-	log.Infof("SHREWS -- core")
 	results, err = pgSearch.RunSelectRequestForSchema[imageCVECoreResponse](queryCtx, v.db, v.schema, withSelectCVECoreResponseQuery(cloned, cveIDsToFilter, options))
 	if err != nil {
-		log.Infof("SHREWS -- core %v", err)
 		return nil, err
 	}
-	log.Infof("SHREWS -- core -- after query")
 
 	ret := make([]CveCore, 0, len(results))
 	for _, r := range results {

@@ -10,7 +10,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -22,7 +21,6 @@ import (
 
 var (
 	queryTimeout = env.PostgresVMStatementTimeout.DurationSetting()
-	log          = logging.LoggerForModule()
 )
 
 type imageCVEFlatViewImpl struct {
@@ -76,15 +74,12 @@ func (v *imageCVEFlatViewImpl) Get(ctx context.Context, q *v1.Query, options vie
 	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
 	defer cancel()
 
-	log.Infof("SHREWS -- IN flat")
 	var results []*imageCVEFlatResponse
 	results, err = pgSearch.RunSelectRequestForSchema[imageCVEFlatResponse](queryCtx, v.db, v.schema, withSelectCVECoreResponseQuery(cloned, options))
 	if err != nil {
-		log.Infof("SHREWS -- IN flat %v", err)
 		return nil, err
 	}
 
-	log.Infof("SHREWS -- IN flat after query")
 	ret := make([]CveFlat, 0, len(results))
 	for _, r := range results {
 		// For each record, sort the IDs so that result looks consistent.
