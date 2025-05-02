@@ -12,6 +12,7 @@ import (
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	clusterCVEMocks "github.com/stackrox/rox/central/cve/cluster/datastore/mocks"
 	imageCVEMocks "github.com/stackrox/rox/central/cve/image/datastore/mocks"
+	imageCVEV2Mocks "github.com/stackrox/rox/central/cve/image/v2/datastore/mocks"
 	nodeCVEMocks "github.com/stackrox/rox/central/cve/node/datastore/mocks"
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	"github.com/stackrox/rox/central/graphql/resolvers/inputtypes"
@@ -19,6 +20,7 @@ import (
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	imageMocks "github.com/stackrox/rox/central/image/datastore/mocks"
 	imageComponentMocks "github.com/stackrox/rox/central/imagecomponent/datastore/mocks"
+	imageComponentV2Mocks "github.com/stackrox/rox/central/imagecomponent/v2/datastore/mocks"
 	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	npsMocks "github.com/stackrox/rox/central/networkpolicies/datastore/mocks"
 	nodeMocks "github.com/stackrox/rox/central/node/datastore/mocks"
@@ -63,24 +65,26 @@ func TestSearchCategories(t *testing.T) {
 	components := imageComponentMocks.NewMockDataStore(ctrl)
 
 	resolver := &Resolver{
-		ClusterDataStore:         cluster,
-		DeploymentDataStore:      deployment,
-		PolicyDataStore:          policies,
-		NamespaceDataStore:       namespace,
-		SecretsDataStore:         secret,
-		NetworkPoliciesStore:     nps,
-		ViolationsDataStore:      violations,
-		ImageDataStore:           images,
-		ServiceAccountsDataStore: serviceAccounts,
-		NodeDataStore:            nodes,
-		K8sRoleBindingStore:      rolebindings,
-		K8sRoleStore:             roles,
-		ImageComponentDataStore:  components,
-		PolicyCategoryDataStore:  policyCategoryMocks.NewMockDataStore(ctrl),
-		ImageCVEDataStore:        imageCVEMocks.NewMockDataStore(ctrl),
-		NodeCVEDataStore:         nodeCVEMocks.NewMockDataStore(ctrl),
-		ClusterCVEDataStore:      clusterCVEMocks.NewMockDataStore(ctrl),
-		NodeComponentDataStore:   nodeComponentMocks.NewMockDataStore(ctrl),
+		ClusterDataStore:          cluster,
+		DeploymentDataStore:       deployment,
+		PolicyDataStore:           policies,
+		NamespaceDataStore:        namespace,
+		SecretsDataStore:          secret,
+		NetworkPoliciesStore:      nps,
+		ViolationsDataStore:       violations,
+		ImageDataStore:            images,
+		ServiceAccountsDataStore:  serviceAccounts,
+		NodeDataStore:             nodes,
+		K8sRoleBindingStore:       rolebindings,
+		K8sRoleStore:              roles,
+		ImageComponentDataStore:   components,
+		PolicyCategoryDataStore:   policyCategoryMocks.NewMockDataStore(ctrl),
+		ImageCVEDataStore:         imageCVEMocks.NewMockDataStore(ctrl),
+		NodeCVEDataStore:          nodeCVEMocks.NewMockDataStore(ctrl),
+		ClusterCVEDataStore:       clusterCVEMocks.NewMockDataStore(ctrl),
+		NodeComponentDataStore:    nodeComponentMocks.NewMockDataStore(ctrl),
+		ImageComponentV2DataStore: imageComponentV2Mocks.NewMockDataStore(ctrl),
+		ImageCVEV2DataStore:       imageCVEV2Mocks.NewMockDataStore(ctrl),
 	}
 
 	searchCategories := resolver.getAutoCompleteSearchers()
