@@ -29,7 +29,7 @@ const (
 func DetermineAction(primary, secondary *x509.Certificate, current time.Time) Action {
 	startTime := primary.NotBefore
 	validityDuration := primary.NotAfter.Sub(primary.NotBefore)
-	fifthOfValidityDuration := time.Duration(validityDuration.Nanoseconds()/5) * time.Nanosecond
+	fifthOfValidityDuration := validityDuration / 5
 
 	// Add secondary CA after 3/5 of validity
 	addSecondaryCATime := startTime.Add(3 * fifthOfValidityDuration)
