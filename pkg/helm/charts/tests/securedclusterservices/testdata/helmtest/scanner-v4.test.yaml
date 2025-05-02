@@ -36,12 +36,37 @@ tests:
     set:
       env.openshift: 3
 
-- name: "scanner V4 disabled should not be installed by default"
+- name: "scanner V4 should be installed by default for new installations"
+  release: { "isInstall": true, "isUpgrade": false }
+  set:
+    imagePullSecrets.allowNone: true
+  expect: |
+    .deployments["scanner-v4-indexer"] | assertThat(. != null)
+    .deployments["scanner-v4-db"] | assertThat(. != null)
+
+- name: "scanner V4 should not be installed by default for upgrades"
+  release: { "isInstall": false, "isUpgrade": true}
   set:
     imagePullSecrets.allowNone: true
   expect: |
     .deployments["scanner-v4-indexer"] | assertThat(. == null)
     .deployments["scanner-v4-db"] | assertThat(. == null)
+
+- name: "scanner V2 should be installed by default for new installations"
+  release: { "isInstall": true, "isUpgrade": false }
+  set:
+    imagePullSecrets.allowNone: true
+  expect: |
+    .deployments["scanner"] | assertThat(. != null)
+    .deployments["scanner-db"] | assertThat(. != null)
+
+- name: "scanner V2 should be not installed by default for upgrades"
+  release: { "isInstall": false, "isUpgrade": true}
+  set:
+    imagePullSecrets.allowNone: true
+  expect: |
+    .deployments["scanner"] | assertThat(. == null)
+    .deployments["scanner-db"] | assertThat(. == null)
 
 - name: "scanner V4 enabled should only deploy indexer and db"
   set:
@@ -209,14 +234,14 @@ tests:
   expect: |
     envVars(.deployments["scanner-v4-indexer"]; "indexer")["FOO"] | assertThat(. == "bar")
 
-- name: "Enabling scanner v2 does not automatically enable scanner v4 as well"
+- name: "Disbaling scanner V2 does not automatically enable scanner V4 as well"
   values:
     scanner:
-      disable: false
+      disable: true
     imagePullSecrets:
       allowNone: true
   expect: |
-    .deployments["scanner-v4-indexer"] | assertThat(. == null)
+    .deployments["scanner-v4-indexer"] | assertThat(. != null)
 
 - name: "Enabling scanner v2 does not enable scanner v4 if it has been explicitly disabled"
   values:
@@ -361,11 +386,11 @@ tests:
     scanner:
       disable: false
   tests:
-  - name: "no reference to Scanner V4 if Scanner V4 is not enabled"
-    expect: |
-      .notes | assertThat(contains("Scanner V4 is enabled") | not)
-  - name: "reference to Scanner V4 if Scanner V4 is enabled"
-    set:
-      scannerV4.disable: false
+  - name: "reference to Scanner V4 if Scanner V4 is not disabled"
     expect: |
       .notes | assertThat(contains("Scanner V4 is enabled"))
+  - name: "no reference to Scanner V4 if Scanner V4 is disabled"
+    set:
+      scannerV4.disable: true
+    expect: |
+      .notes | assertThat(contains("Scanner V4 is enabled") | not)
