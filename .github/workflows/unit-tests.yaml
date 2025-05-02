@@ -270,7 +270,7 @@ jobs:
       id: junit2jira
       uses: ./.github/actions/junit2jira
       with:
-        create-jiras: ${{ github.event_name == 'push' }}
+        create-jiras: ${{ github.event_name != 'push' }}
         jira-token: ${{ secrets.JIRA_TOKEN }}
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         directory: 'ui/apps/platform/cypress/test-results/reports'
