@@ -130,6 +130,41 @@ func NewGenericStore[T any, PT ClonedUnmarshaler[T]](
 	}
 }
 
+// NewGloballyScopedGenericStore returns new subStore implementation for given resource.
+// subStore implements subset of Store operations.
+func NewGloballyScopedGenericStore[T any, PT ClonedUnmarshaler[T]](
+	db postgres.DB,
+	schema *walker.Schema,
+	pkGetter primaryKeyGetter[T, PT],
+	insertInto inserter[T, PT],
+	copyFromObj copier[T, PT],
+	setAcquireDBConnDuration durationTimeSetter,
+	setPostgresOperationDurationTime durationTimeSetter,
+	targetResource permissions.ResourceMetadata,
+) Store[T, PT] {
+	return &genericStore[T, PT]{
+		db:          db,
+		schema:      schema,
+		pkGetter:    pkGetter,
+		insertInto:  insertInto,
+		copyFromObj: copyFromObj,
+		setAcquireDBConnDuration: func() durationTimeSetter {
+			if setAcquireDBConnDuration == nil {
+				return doNothingDurationTimeSetter
+			}
+			return setAcquireDBConnDuration
+		}(),
+		setPostgresOperationDurationTime: func() durationTimeSetter {
+			if setPostgresOperationDurationTime == nil {
+				return doNothingDurationTimeSetter
+			}
+			return setPostgresOperationDurationTime
+		}(),
+		upsertAllowed:  GloballyScopedUpsertChecker[T, PT](targetResource),
+		targetResource: targetResource,
+	}
+}
+
 // NewGenericStoreWithPermissionChecker returns new subStore implementation for given resource.
 // subStore implements subset of Store operations.
 func NewGenericStoreWithPermissionChecker[T any, PT ClonedUnmarshaler[T]](
