@@ -55,10 +55,10 @@ export const validationSchema = yup.object().shape({
         }),
         maxMessageSize: yup
             .number()
-            .required('Message size is required')
+            .required('Maximum message size is required')
             .test(
-                'message-size-test',
-                'Message size must be between 1 and 1048576',
+                'max-message-size-test',
+                'Maximum message size must be between 1 and 1048576',
                 (value = 0) => value >= 1 && value <= 1048576
             ),
     }),

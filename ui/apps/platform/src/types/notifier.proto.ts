@@ -91,6 +91,7 @@ export type Generic = {
     endpoint: string; // scrub:dependent validate:nolocalendpoint
     skipTLSVerify: boolean;
     caCert: string;
+    maxMessageSize: number;
     username: string; // scrub:dependent
     password: string; // scrub:always
     headers: KeyValuePair[];
