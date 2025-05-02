@@ -1530,7 +1530,7 @@ wait_for_log_line() {
     local waitInterval=20
     local tries=$(( delay / waitInterval ))
     local count=0
-    until kubectl -n "$namespace" log "$object" -c "${container}" | grep "${log_line}"; do
+    until kubectl logs -n "$namespace" "$object" -c "${container}" | grep "${log_line}"; do
         count=$((count + 1))
         if [[ $count -ge "$tries" ]]; then
             info "$namespace $object did not log ${log_line} after $count tries"

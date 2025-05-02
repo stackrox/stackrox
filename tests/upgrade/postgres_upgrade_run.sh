@@ -202,7 +202,7 @@ test_not_enough_disk_space() {
     ########################################################################################
     # Deploy older central using small PVC to face disk space shortage                     #
     ########################################################################################
-    PVC_SIZE="10Gi"
+    PVC_SIZE="1Gi"
     deploy_earlier_postgres_central
     wait_for_api
     setup_client_TLS_certs
@@ -245,8 +245,13 @@ test_not_enough_disk_space() {
         deploy/central "*=${REGISTRY}/main:${CURRENT_TAG}"
     kubectl -n stackrox set image \
         deploy/central-db "*=${REGISTRY}/central-db:${CURRENT_TAG}"
-    wait_for_log_line stackrox central-db init-db \
+    wait_for_log_line stackrox deployment/central-db init-db \
         "Not enough disk space, upgrade is cancelled"
+
+    kubectl -n stackrox patch pvc/central-db -p \
+        '{"spec": {"resources": {"requests": {"storage": "4Gi"}}}}'
+    kubectl rollout restart deployment/central-db
+    wait_for_api
 
     collect_and_check_stackrox_logs "$log_output_dir" "04_final"
 }
@@ -289,6 +294,8 @@ deploy_scaled_workload() {
 
     PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl helm output secured-cluster-services --image-defaults opensource --output-dir /tmp/early-stackrox-secured-services-chart --remove
 
+    # Make sure no init bundle from previous runs is there
+    rm -f /tmp/cluster-init-bundle.yaml
     PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl -e "$API_ENDPOINT" central init-bundles generate scale-remote --output /tmp/cluster-init-bundle.yaml
 
     helm install -n stackrox --create-namespace \
