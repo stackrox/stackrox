@@ -151,6 +151,7 @@ tests:
         namespace: stackrox
   set:
     scannerV4.disable: false
+    scanner.disable: true
   expect: |
     assumeThat(.error == null) | .serviceaccounts["scanner-v4"] | saRefersTo(["secured-cluster-services-main", "stackrox", "stackrox-scanner-v4"])
     assumeThat(.error == null) | .serviceaccounts["scanner-v4"] | saNotRefersTo(["secured-cluster-services-collector", "collector-stackrox"])
