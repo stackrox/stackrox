@@ -160,7 +160,7 @@ func NewGloballyScopedGenericStore[T any, PT ClonedUnmarshaler[T]](
 			}
 			return setPostgresOperationDurationTime
 		}(),
-		upsertAllowed:  GloballyScopedUpsertChecker[T, PT](targetResource),
+		upsertAllowed:  globallyScopedUpsertChecker[T, PT](targetResource),
 		targetResource: targetResource,
 	}
 }
@@ -564,8 +564,8 @@ func (s *genericStore[T, PT]) deleteMany(ctx context.Context, identifiers []stri
 	return nil
 }
 
-// GloballyScopedUpsertChecker returns upsertChecker for globally scoped objects
-func GloballyScopedUpsertChecker[T any, PT ClonedUnmarshaler[T]](targetResource permissions.ResourceMetadata) upsertChecker[T, PT] {
+// globallyScopedUpsertChecker returns upsertChecker for globally scoped objects
+func globallyScopedUpsertChecker[T any, PT ClonedUnmarshaler[T]](targetResource permissions.ResourceMetadata) upsertChecker[T, PT] {
 	return func(ctx context.Context, objs ...PT) error {
 		scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
 		if !scopeChecker.IsAllowed() {

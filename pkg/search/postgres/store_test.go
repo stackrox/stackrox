@@ -43,7 +43,21 @@ func TestNewGenericStore(t *testing.T) {
 		copyFromTestSingleKeyStructs,
 		doNothingDurationTimeSetter,
 		doNothingDurationTimeSetter,
-		GloballyScopedUpsertChecker[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct](resources.Namespace),
+		globallyScopedUpsertChecker[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct](resources.Namespace),
+		resources.Namespace,
+	))
+}
+
+func TestNewGloballyScopedGenericStore(t *testing.T) {
+	testDB := pgtest.ForT(t)
+	assert.NotNil(t, NewGloballyScopedGenericStore[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct](
+		testDB.DB,
+		pkgSchema.TestSingleKeyStructsSchema,
+		pkGetter,
+		insertIntoTestSingleKeyStructs,
+		copyFromTestSingleKeyStructs,
+		doNothingDurationTimeSetter,
+		doNothingDurationTimeSetter,
 		resources.Namespace,
 	))
 }
@@ -532,7 +546,7 @@ func newStore(testDB *pgtest.TestPostgres) Store[storage.TestSingleKeyStruct, *s
 		copyFromTestSingleKeyStructs,
 		doNothingDurationTimeSetter,
 		doNothingDurationTimeSetter,
-		GloballyScopedUpsertChecker[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct](resources.Namespace),
+		globallyScopedUpsertChecker[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct](resources.Namespace),
 		resources.Namespace,
 	)
 }
