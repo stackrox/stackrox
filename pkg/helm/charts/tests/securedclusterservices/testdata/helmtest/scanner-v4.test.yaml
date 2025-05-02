@@ -200,6 +200,10 @@ tests:
     - name: "if localImageScanningScanner is enabled"
       set:
         sensor.localImageScanning.enabled: true
+    - name: "if StackRox Scanner is disabled and Scanner V4 is enabled"
+      set:
+        scanner.disable: true
+        scannerV4.disable: false
   - name: "disabled"
     expect: |
       envVars(.deployments.sensor; "sensor")["ROX_LOCAL_IMAGE_SCANNING_ENABLED"] | assertThat(. != "true")
@@ -208,10 +212,6 @@ tests:
       set:
         scanner.disable: true
         scannerV4.disable: true
-    - name: "if StackRox Scanner is disabled and Scanner V4 is enabled"
-      set:
-        scanner.disable: true
-        scannerV4.disable: false
 - name: "sensor connects to local scanner using the correct gRPC endpoint"
   release:
     namespace: custom-ns
