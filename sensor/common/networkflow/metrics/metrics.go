@@ -22,7 +22,7 @@ func init() {
 		activeEndpointsCurrent,
 		PurgerEvents,
 		ActiveEndpointsPurgerDuration,
-		NumUpdatedConnectionsEndpoints,
+		NumUpdatesSentToCentral,
 
 		// Other
 		NetworkEntityFlowCounter, // flow directions and graph entities
@@ -100,9 +100,9 @@ var (
 		Help:      "Total number of internal flows observed by Sensor enrichment",
 	}, []string{"direction", "namespace"})
 
-	// NumUpdatedConnectionsEndpoints - 5. An update is calculated between the states in consecutive enrichment ticks and the
+	// NumUpdatesSentToCentral - 5. An update is calculated between the states in consecutive enrichment ticks and the
 	// difference is treated as new updates. That updates are sent to central.
-	NumUpdatedConnectionsEndpoints = prometheus.NewCounterVec(prometheus.CounterOpts{
+	NumUpdatesSentToCentral = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      netFlowManagerPrefix + "num_sent_to_central_total",

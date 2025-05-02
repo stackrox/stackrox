@@ -485,25 +485,19 @@ func (m *networkFlowManager) enrichAndSend() {
 	updatedConns := computeUpdatedConns(currentConns, m.enrichedConnsLastSentState, &m.lastSentStateMutex)
 	updatedEndpoints := computeUpdatedEndpoints(currentEndpoints, m.enrichedEndpointsLastSentState, &m.lastSentStateMutex)
 	updatedProcesses := computeUpdatedProcesses(currentProcesses, m.enrichedProcessesLastSentState, &m.lastSentStateMutex)
-	flowMetrics.NumUpdatedConnectionsEndpoints.WithLabelValues("connections").Add(float64(len(updatedConns)))
-	flowMetrics.NumUpdatedConnectionsEndpoints.WithLabelValues("endpoints").Add(float64(len(updatedEndpoints)))
-	flowMetrics.NumUpdatedConnectionsEndpoints.WithLabelValues("processes").Add(float64(len(updatedProcesses)))
+	flowMetrics.NumUpdatesSentToCentral.WithLabelValues("connections").Add(float64(len(updatedConns)))
+	flowMetrics.NumUpdatesSentToCentral.WithLabelValues("endpoints").Add(float64(len(updatedEndpoints)))
+	flowMetrics.NumUpdatesSentToCentral.WithLabelValues("processes").Add(float64(len(updatedProcesses)))
 
-	// TODO: There are always two separate messages being sent to central - check possibility of merging into one msg.
 	if len(updatedConns)+len(updatedEndpoints) > 0 {
 		if sent := m.sendConnsEps(updatedConns, updatedEndpoints); sent {
 			m.updateConnectionStates(currentConns, currentEndpoints)
-			// TODO: Metric duplication
-			metrics.IncrementTotalNetworkFlowsSentCounter(len(updatedConns))
-			metrics.IncrementTotalNetworkEndpointsSentCounter(len(updatedEndpoints))
 		}
 		metrics.SetNetworkFlowBufferSizeGauge(len(m.sensorUpdates))
 	}
 	if env.ProcessesListeningOnPort.BooleanSetting() && len(updatedProcesses) > 0 {
 		if sent := m.sendProcesses(updatedProcesses); sent {
 			m.updateProcessesState(currentProcesses)
-			// TODO: Metric duplication
-			metrics.IncrementTotalProcessesSentCounter(len(updatedProcesses))
 		}
 	}
 }
