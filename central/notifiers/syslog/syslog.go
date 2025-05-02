@@ -82,6 +82,7 @@ type syslog struct {
 	*storage.Notifier
 
 	metadataGetter notifiers.MetadataGetter
+	messageSize    int
 
 	sender   syslogSender
 	pid      int
@@ -123,12 +124,15 @@ func NewSyslog(notifier *storage.Notifier, metadataGetter notifiers.MetadataGett
 
 	facility := 8 * (int(notifier.GetSyslog().GetLocalFacility()) + 16)
 
+	messageSize := int(notifier.GetSyslog().GetMaxMessageSize())
+
 	return &syslog{
 		sender:         sender,
 		Notifier:       notifier,
 		metadataGetter: metadataGetter,
 		pid:            pid,
 		facility:       facility,
+		messageSize:    messageSize,
 	}, nil
 }
 
