@@ -188,8 +188,8 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
         String deploymentUid = DEP_EXTERNALCONNECTION.deploymentUid
         assert deploymentUid != null
 
-        List<String> conflictingCIDRs = getConflictingCIDRs([CF_CIDR_30,CF_CIDR_31])
-        assert conflictingCIDRs.size() == 0 : "found existing CIDR blocks ${conflictingCIDRs} that conflict with this test case."
+        List<String> conflictingCIDRs = getConflictingCIDRs([CF_CIDR_30, CF_CIDR_31])
+        assert conflictingCIDRs.size() == 0: "found existing CIDR blocks ${conflictingCIDRs} that conflict with this test case."
 
         String externalSource30Name = generateNameWithPrefix("external-source-30")
         log.info("Creating external source '${externalSource30Name}' with CIDR ${CF_CIDR_30}")
@@ -242,8 +242,8 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
         }
 
         cleanup:
-          deleteNetworkEntity(externalSource30ID)
-          deleteNetworkEntity(externalSource31ID)
+        deleteNetworkEntity(externalSource30ID)
+        deleteNetworkEntity(externalSource31ID)
 
     }
 
