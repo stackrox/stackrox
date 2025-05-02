@@ -399,6 +399,7 @@ jobs:
       - openshift-ci-unit-tests
       - shell-unit-tests
       - ui
+      - ui-component
     permissions:
       actions: read
     steps:
