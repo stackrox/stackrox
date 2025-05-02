@@ -3,6 +3,7 @@ import static util.Helpers.withRetry
 import com.google.protobuf.Timestamp
 
 import io.stackrox.proto.api.v1.Common
+import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass
 import io.stackrox.proto.storage.NetworkFlowOuterClass.NetworkEntity
 
 import objects.Deployment
@@ -10,7 +11,6 @@ import services.ClusterService
 import services.NetworkGraphService
 import util.NetworkGraphUtil
 
-import spock.lang.Ignore
 import spock.lang.Tag
 
 @Tag("PZ")
@@ -29,14 +29,14 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
     static final private RANDOM = new Random()
 
     static final private Deployment DEP_EXTERNALCONNECTION =
-            createAndRegisterDeployment()
-                    .setName(EXT_CONN_DEPLOYMENT_NAME)
-                    .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1-19-alpine")
-                    .addLabel("app", EXT_CONN_DEPLOYMENT_NAME)
-                    .setCommand(["/bin/sh", "-c",])
-                    .setArgs(["while sleep ${NetworkGraphUtil.NETWORK_FLOW_UPDATE_CADENCE_IN_SECONDS / 10}; " +
-                                      "do wget -S ${CF_IP_ADDRESS}; " +
-                                      "done" as String,])
+        createAndRegisterDeployment()
+            .setName(EXT_CONN_DEPLOYMENT_NAME)
+            .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1-19-alpine")
+            .addLabel("app", EXT_CONN_DEPLOYMENT_NAME)
+            .setCommand(["/bin/sh", "-c",])
+            .setArgs(["while sleep ${NetworkGraphUtil.NETWORK_FLOW_UPDATE_CADENCE_IN_SECONDS / 10}; " +
+                          "do wget -S ${CF_IP_ADDRESS}; " +
+                          "done" as String,])
 
     private static createAndRegisterDeployment() {
         Deployment deployment = new Deployment()
@@ -174,20 +174,32 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
     }
 
     @Tag("NetworkFlowVisualization")
-    @Ignore("ROX-24313: This started failing regularly after merging PR14538")
+    /*
+    This test case creates the "external-connection" deployment and two external sources representing
+    an endpoint within CIDRs 1.1.1.1/30 and 1.1.1.1/31. The /30 is added first, then /31 follows.
+    It ensures that network graph has an edge between the "external-connection" deployment and the /30 CIDR, and then
+    between "external-connection" deployment and the /31 CIDR.
+    Next, it looks only at the network graph generated for the last 60s and expects that the edge to /30 disappears,
+    while the edge to /31 is still present.
+    */
     def "Verify two flows co-exist if larger network entity added first"() {
         when:
         "Supernet external source is created before subnet external source"
         String deploymentUid = DEP_EXTERNALCONNECTION.deploymentUid
         assert deploymentUid != null
 
+        List<String> conflictingCIDRs = getConflictingCIDRs([CF_CIDR_30,CF_CIDR_31])
+        assert conflictingCIDRs.size() == 0 : "found existing CIDR blocks ${conflictingCIDRs} that conflict with this test case."
+
         String externalSource30Name = generateNameWithPrefix("external-source-30")
+        log.info("Creating external source '${externalSource30Name}' with CIDR ${CF_CIDR_30}")
         NetworkEntity externalSource30 = createNetworkEntityExternalSource(externalSource30Name, CF_CIDR_30)
         String externalSource30ID = externalSource30?.getInfo()?.getId()
+        assert externalSource30 != null
         assert externalSource30ID != null
 
-        log.info "Verify edge exists from deployment to supernet external source"
-        withRetry(4, 30) {
+        log.info "Verify edge exists from deployment 'external-connection' to supernet external source '$externalSource30Name'"
+        withRetry(0, 30) {
             assert NetworkGraphUtil.checkForEdge(deploymentUid, externalSource30ID)
         }
 
@@ -198,32 +210,59 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
         assert externalSource31ID != null
 
         then:
-        "Verify edge exists from deployment to subnet external source"
+        "Verify edge exists from deployment 'external-connection' to supernet external source '$externalSource31Name'"
         withRetry(4, 30) {
             assert NetworkGraphUtil.checkForEdge(deploymentUid, externalSource31ID, null, 180)
         }
 
         and:
-        "Verify edge from deployment to supernet exists in older network graph"
+        "Verify edge from deployment 'external-connection' to supernet external source '$externalSource30Name' exists in network graph for last 60 minutes"
         withRetry(4, 30) {
             assert NetworkGraphUtil.checkForEdge(
-                    deploymentUid,
-                    externalSource30ID,
-                    Timestamp.newBuilder().setSeconds(System.currentTimeSeconds() - 60*60).build())
+                deploymentUid,
+                externalSource30ID,
+                Timestamp.newBuilder().setSeconds(System.currentTimeSeconds() - 60 * 60).build())
         }
 
         and:
-        "Verify no edge from deployment to supernet exists in recent network graph"
-        withRetry(4, 30) {
+        "Verify no edge exists from deployment 'external-connection' to supernet external source '$externalSource30Name' in network graph for last 60 seconds"
+        withRetry(20, 30) {
+            // We need to wait for at least (i.e., the sum of all the following):
+            // - another enrichment to happen - at least 30s.
+            // - old connection being closed by Collector - at least 5 min with the default afterglow setting.
+            // - the time-scope of the network graph - here 60s.
+            // Waiting for 6 min and 30s is a minimum here, however the edge may disappear sooner.
+            // Manually observing this test-case confirmed that there are two updates for "externalSource30ID"
+            // sent to Central, the second exactly 5min30s after the first one.
+            // We set the retries to cover 10 minutes to account for unpredictable issues.
             assert verifyNoEdge(
-                    deploymentUid,
-                    externalSource30ID,
-                    Timestamp.newBuilder().setSeconds(System.currentTimeSeconds() - 60).build())
+                deploymentUid,
+                externalSource30ID,
+                Timestamp.newBuilder().setSeconds(System.currentTimeSeconds() - 60).build())
         }
 
         cleanup:
-        deleteNetworkEntity(externalSource30ID)
-        deleteNetworkEntity(externalSource31ID)
+          deleteNetworkEntity(externalSource30ID)
+          deleteNetworkEntity(externalSource31ID)
+
+    }
+
+    private static List<String> getConflictingCIDRs(List<String> cidrs) {
+        def clusterId = ClusterService.getClusterId()
+        assert clusterId
+        def request = NetworkGraphServiceOuterClass.GetExternalNetworkEntitiesRequest
+            .newBuilder()
+            .setClusterId(clusterId)
+            .build()
+        def response = NetworkGraphService.getNetworkGraphClient().getExternalNetworkEntities(request)
+
+        def existingCidrs = response.getEntitiesList().findAll {
+            it.getInfo().hasExternalSource()
+        }.collect {
+            it.getInfo().getExternalSource().cidr
+        } as Set
+
+        return cidrs.findAll { cidr -> cidr in existingCidrs }
     }
 
     private static createNetworkEntityExternalSource(String name, String cidr) {
@@ -241,9 +280,9 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
     private verifyNoEdge(String entityID1, String entityID2, Timestamp since) {
         // Shorter timeout for verifying no edge to save test time
         return !NetworkGraphUtil.checkForEdge(
-                entityID1,
-                entityID2,
-                since,
-                10)
+            entityID1,
+            entityID2,
+            since,
+            10)
     }
 }
