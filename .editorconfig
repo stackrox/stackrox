@@ -9,6 +9,10 @@ indent_size = 4
 indent_style = space
 indent_size = 2
 
+[**.groovy]
+indent_style = space
+indent_size = 4
+
 [{*.go,*.go2}]
 # ij_ settings meaning can be mapped from https://www.jetbrains.com/help/idea/code-style-go.html
 indent_style = tab
