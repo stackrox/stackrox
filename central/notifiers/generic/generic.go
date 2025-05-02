@@ -49,10 +49,11 @@ var (
 type generic struct {
 	*storage.Notifier
 
-	client      *http.Client
-	creds       string
-	cryptoKey   string
-	cryptoCodec cryptocodec.CryptoCodec
+	client         *http.Client
+	creds          string
+	cryptoKey      string
+	cryptoCodec    cryptocodec.CryptoCodec
+	maxMessageSize int
 
 	fullyQualifiedEndpoint string
 	extraFieldsJSONPrefix  string
@@ -138,6 +139,8 @@ func newGeneric(notifier *storage.Notifier, cryptoCodec cryptocodec.CryptoCodec,
 		return nil, err
 	}
 
+	maxMessageSize := int(notifier.GetGeneric().GetMaxMessageSize())
+
 	return &generic{
 		Notifier: notifier,
 
@@ -156,6 +159,7 @@ func newGeneric(notifier *storage.Notifier, cryptoCodec cryptocodec.CryptoCodec,
 		cryptoCodec:            cryptoCodec,
 		fullyQualifiedEndpoint: fullyQualifiedEndpoint,
 		extraFieldsJSONPrefix:  extraFieldsJSON,
+		maxMessageSize:         maxMessageSize,
 	}, nil
 }
 
