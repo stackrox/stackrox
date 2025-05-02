@@ -33,7 +33,7 @@ func (m *networkFlowManager) enrichHostConnections(now timestamp.MicroTS, hostCo
 	hostConns.mutex.Lock()
 	defer hostConns.mutex.Unlock()
 
-	flowMetrics.FlowEnrichments.WithLabelValues("connection").Add(float64(len(hostConns.connections)))
+	flowMetrics.HostConnectionsOperations.WithLabelValues("enrich", "connections").Add(float64(len(hostConns.connections)))
 	for conn, status := range hostConns.connections {
 		result, reason := m.enrichConnection(now, &conn, status, enrichedConnections)
 		action := m.handleConnectionEnrichmentResult(result, reason, conn)

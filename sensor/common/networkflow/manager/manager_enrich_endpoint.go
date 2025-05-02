@@ -31,10 +31,8 @@ func (m *networkFlowManager) enrichHostContainerEndpoints(now timestamp.MicroTS,
 	hostConns.mutex.Lock()
 	defer hostConns.mutex.Unlock()
 
-	flowMetrics.FlowEnrichments.WithLabelValues("endpoint").Add(float64(len(hostConns.endpoints)))
-	// TODO: Metric duplication
 	flowMetrics.HostProcessesEvents.WithLabelValues("add").Add(float64(len(hostConns.endpoints)))
-
+	flowMetrics.HostConnectionsOperations.WithLabelValues("enrich", "endpoints").Add(float64(len(hostConns.endpoints)))
 	for ep, status := range hostConns.endpoints {
 		resultNG, resultPLOP, reasonNG, reasonPLOP := m.enrichContainerEndpoint(now, &ep, status, enrichedEndpoints, processesListening, timestamp.Now())
 		action := m.handleEndpointEnrichmentResult(resultNG, resultPLOP, reasonNG, reasonPLOP, &ep)

@@ -14,7 +14,6 @@ func init() {
 		IncomingConnectionsEndpoints,
 
 		// Network Flows Manager
-		FlowEnrichments,
 		FlowEnrichmentEventsEndpoint,
 		FlowEnrichmentEventsConnection,
 		ExternalFlowCounter,
@@ -72,15 +71,6 @@ var (
 	}, []string{"object", "closedTS"})
 	// End of processing of the networkConnectionInfo message
 
-	// FlowEnrichments - 4. All connections and endpoints kept in memory are enriched
-	FlowEnrichments = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      netFlowManagerPrefix + "enrichments_total",
-		Help: "Total number of enrichments started for a given object " +
-			"(allows to calculate the percentage of events being enriched for " +
-			"network_flow_manager_enrichment_endpoint_events_total and network_flow_manager_enrichment_connection_events_total)",
-	}, []string{"object"})
 	// FlowEnrichmentEventsEndpoint - 4a. Enrichment can have various outcomes. This metric stores the details about the outcomes for endpoints.
 	FlowEnrichmentEventsEndpoint = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
