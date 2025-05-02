@@ -3,7 +3,6 @@ package services
 import com.google.protobuf.Timestamp
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
-import io.grpc.StatusRuntimeException
 
 import io.stackrox.proto.api.v1.Common.ResourceByID
 import io.stackrox.proto.api.v1.NetworkGraphServiceGrpc
@@ -47,7 +46,6 @@ class NetworkGraphService extends BaseService {
     }
 
     static createNetworkEntity(String clusterId, String name, String cidr, Boolean isSystemGenerated) {
-        NetworkEntity result = null
         try {
             if (clusterId == null) {
                 throw new RuntimeException("Cluster ID is required to create a network entity")
@@ -74,11 +72,7 @@ class NetworkGraphService extends BaseService {
                             .setEntity(entity)
                             .build()
 
-            result = getNetworkGraphClient().createExternalNetworkEntity(request)
-            return result
-        } catch (StatusRuntimeException ge) {
-            log.info("Resource already exists", ge)
-            return result
+            return getNetworkGraphClient().createExternalNetworkEntity(request)
         } catch (Exception e) {
             log.error("Exception while creating network entity", e)
         }
