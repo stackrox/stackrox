@@ -236,6 +236,52 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         directory: 'ui/apps/platform/test-results/reports'
 
+  ui-component:
+    runs-on: ubuntu-latest
+    outputs:
+      new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-ui-test-0.4.8
+      volumes:  # job-preamble deletes unused host runner files under /mnt
+      - /usr:/mnt/usr
+      - /opt:/mnt/opt
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - uses: ./.github/actions/job-preamble
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+    - name: Cache UI dependencies
+      uses: ./.github/actions/cache-ui-dependencies
+
+    - name: UI Component Tests
+      run: make ui-component-tests
+
+    - name: Upload Cypress test result artifacts
+      uses: ./.github/actions/upload-artifact-with-retry
+      if: always()
+      with:
+        name: Cypress test results
+        path: ui/apps/platform/cypress/test-results/
+
+    - name: Publish Test Report
+      uses: test-summary/action@v2
+      if: always()
+      with:
+        paths: 'ui/apps/platform/cypress/test-results/reports/**/*.xml'
+
+    - name: Report junit failures in jira
+      if: (!cancelled())
+      id: junit2jira
+      uses: ./.github/actions/junit2jira
+      with:
+        create-jiras: ${{ github.event_name == 'push' }}
+        jira-token: ${{ secrets.JIRA_TOKEN }}
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+        directory: 'ui/apps/platform/cypress/test-results/reports'
+
   local-roxctl-tests:
     runs-on: ubuntu-latest
     outputs:
@@ -360,6 +406,7 @@ jobs:
       - openshift-ci-unit-tests
       - shell-unit-tests
       - ui
+      - ui-component
     permissions:
       actions: read
     steps:
