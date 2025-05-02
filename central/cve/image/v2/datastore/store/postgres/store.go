@@ -105,7 +105,6 @@ func insertIntoImageCvesV2(batch *pgx.Batch, obj *storage.ImageCVEV2) error {
 		protocompat.NilOrTime(obj.GetCveBaseInfo().GetPublishedOn()),
 		protocompat.NilOrTime(obj.GetCveBaseInfo().GetCreatedAt()),
 		obj.GetCveBaseInfo().GetEpss().GetEpssProbability(),
-		obj.GetOperatingSystem(),
 		obj.GetCvss(),
 		obj.GetSeverity(),
 		obj.GetImpactScore(),
@@ -119,7 +118,7 @@ func insertIntoImageCvesV2(batch *pgx.Batch, obj *storage.ImageCVEV2) error {
 		serialized,
 	}
 
-	finalStr := "INSERT INTO image_cves_v2 (Id, ImageId, CveBaseInfo_Cve, CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt, CveBaseInfo_Epss_EpssProbability, OperatingSystem, Cvss, Severity, ImpactScore, Nvdcvss, FirstImageOccurrence, State, IsFixable, FixedBy, ComponentId, Advisory, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ImageId = EXCLUDED.ImageId, CveBaseInfo_Cve = EXCLUDED.CveBaseInfo_Cve, CveBaseInfo_PublishedOn = EXCLUDED.CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt = EXCLUDED.CveBaseInfo_CreatedAt, CveBaseInfo_Epss_EpssProbability = EXCLUDED.CveBaseInfo_Epss_EpssProbability, OperatingSystem = EXCLUDED.OperatingSystem, Cvss = EXCLUDED.Cvss, Severity = EXCLUDED.Severity, ImpactScore = EXCLUDED.ImpactScore, Nvdcvss = EXCLUDED.Nvdcvss, FirstImageOccurrence = EXCLUDED.FirstImageOccurrence, State = EXCLUDED.State, IsFixable = EXCLUDED.IsFixable, FixedBy = EXCLUDED.FixedBy, ComponentId = EXCLUDED.ComponentId, Advisory = EXCLUDED.Advisory, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO image_cves_v2 (Id, ImageId, CveBaseInfo_Cve, CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt, CveBaseInfo_Epss_EpssProbability, Cvss, Severity, ImpactScore, Nvdcvss, FirstImageOccurrence, State, IsFixable, FixedBy, ComponentId, Advisory, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ImageId = EXCLUDED.ImageId, CveBaseInfo_Cve = EXCLUDED.CveBaseInfo_Cve, CveBaseInfo_PublishedOn = EXCLUDED.CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt = EXCLUDED.CveBaseInfo_CreatedAt, CveBaseInfo_Epss_EpssProbability = EXCLUDED.CveBaseInfo_Epss_EpssProbability, Cvss = EXCLUDED.Cvss, Severity = EXCLUDED.Severity, ImpactScore = EXCLUDED.ImpactScore, Nvdcvss = EXCLUDED.Nvdcvss, FirstImageOccurrence = EXCLUDED.FirstImageOccurrence, State = EXCLUDED.State, IsFixable = EXCLUDED.IsFixable, FixedBy = EXCLUDED.FixedBy, ComponentId = EXCLUDED.ComponentId, Advisory = EXCLUDED.Advisory, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -143,7 +142,6 @@ func copyFromImageCvesV2(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 		"cvebaseinfo_publishedon",
 		"cvebaseinfo_createdat",
 		"cvebaseinfo_epss_epssprobability",
-		"operatingsystem",
 		"cvss",
 		"severity",
 		"impactscore",
@@ -175,7 +173,6 @@ func copyFromImageCvesV2(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 			protocompat.NilOrTime(obj.GetCveBaseInfo().GetPublishedOn()),
 			protocompat.NilOrTime(obj.GetCveBaseInfo().GetCreatedAt()),
 			obj.GetCveBaseInfo().GetEpss().GetEpssProbability(),
-			obj.GetOperatingSystem(),
 			obj.GetCvss(),
 			obj.GetSeverity(),
 			obj.GetImpactScore(),

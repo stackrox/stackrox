@@ -224,11 +224,6 @@ func (resolver *imageCVEV2Resolver) Nvdcvss(ctx context.Context) float64 {
 	return float64(value)
 }
 
-func (resolver *imageCVEV2Resolver) OperatingSystem(ctx context.Context) string {
-	value := resolver.data.GetOperatingSystem()
-	return value
-}
-
 func (resolver *imageCVEV2Resolver) Severity(ctx context.Context) string {
 	value := resolver.data.GetSeverity()
 	return value.String()

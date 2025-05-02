@@ -6062,62 +6062,57 @@
               },
               {
                 "id": 4,
-                "name": "operating_system",
-                "type": "string"
-              },
-              {
-                "id": 5,
                 "name": "cvss",
                 "type": "float"
               },
               {
-                "id": 6,
+                "id": 5,
                 "name": "severity",
                 "type": "VulnerabilitySeverity"
               },
               {
-                "id": 7,
+                "id": 6,
                 "name": "impact_score",
                 "type": "float"
               },
               {
-                "id": 8,
+                "id": 7,
                 "name": "nvdcvss",
                 "type": "float"
               },
               {
-                "id": 9,
+                "id": 8,
                 "name": "nvd_score_version",
                 "type": "CvssScoreVersion"
               },
               {
-                "id": 10,
+                "id": 9,
                 "name": "first_image_occurrence",
                 "type": "google.protobuf.Timestamp"
               },
               {
-                "id": 11,
+                "id": 10,
                 "name": "state",
                 "type": "VulnerabilityState"
               },
               {
-                "id": 12,
+                "id": 11,
                 "name": "is_fixable",
                 "type": "bool"
               },
               {
-                "id": 13,
+                "id": 12,
                 "name": "fixed_by",
                 "type": "string",
                 "oneof_parent": "has_fixed_by"
               },
               {
-                "id": 14,
+                "id": 13,
                 "name": "component_id",
                 "type": "string"
               },
               {
-                "id": 15,
+                "id": 14,
                 "name": "advisory",
                 "type": "string"
               }
