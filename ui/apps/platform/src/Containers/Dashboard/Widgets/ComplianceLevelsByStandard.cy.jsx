@@ -68,7 +68,7 @@ describe(Cypress.spec.relative, () => {
         cy.findAllByText(titlesRegex).eq(-3).should('have.text', 'NIST SP 800-190');
         cy.findAllByText(titlesRegex).eq(-4).should('have.text', 'NIST SP 800-53');
         cy.findAllByText(titlesRegex).eq(-5).should('have.text', 'PCI DSS 3.2.1');
-        cy.findAllByText(titlesRegex).eq(-6).should('have.text', 'ocp4-cis');
+        cy.findAllByText(titlesRegex).eq(-6).should('have.text', 'ocp00000003434344-cis');
 
         // Sort by descending
         cy.findByLabelText('Options').click();
