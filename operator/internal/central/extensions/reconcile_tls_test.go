@@ -700,6 +700,7 @@ func Test_determineCARotationAction(t *testing.T) {
 }
 
 func TestGenerateCentralTLSData_Rotation(t *testing.T) {
+	t.Setenv(envCentralCARotationEnabled, "true")
 	type testCase struct {
 		name            string
 		action          CARotationAction
@@ -821,8 +822,9 @@ func TestGenerateCentralTLSData_Rotation(t *testing.T) {
 func Test_createCentralTLSExtensionRun_validateAndConsumeCentralTLSData(t *testing.T) {
 
 	type testCase struct {
-		fileMap types.SecretDataMap
-		assert  func(t *testing.T, err error)
+		fileMap          types.SecretDataMap
+		assert           func(t *testing.T, err error)
+		enableCARotation bool
 	}
 
 	randomCA := func() (mtls.CA, error) {
@@ -1020,6 +1022,7 @@ func Test_createCentralTLSExtensionRun_validateAndConsumeCentralTLSData(t *testi
 				assert.ErrorContains(t, err, "no CA key in file map")
 				assert.ErrorContains(t, err, "loading secondary CA failed")
 			},
+			enableCARotation: true,
 		},
 		"should fail when the secondary CA key is invalid": {
 			fileMap: types.SecretDataMap{
@@ -1034,6 +1037,7 @@ func Test_createCentralTLSExtensionRun_validateAndConsumeCentralTLSData(t *testi
 				assert.ErrorContains(t, err, "failed to find any PEM data in key input")
 				assert.ErrorContains(t, err, "loading secondary CA failed")
 			},
+			enableCARotation: true,
 		},
 		"should fail when the secondary CA cert is invalid": {
 			fileMap: types.SecretDataMap{
@@ -1048,6 +1052,7 @@ func Test_createCentralTLSExtensionRun_validateAndConsumeCentralTLSData(t *testi
 				assert.ErrorContains(t, err, "failed to find any PEM data in certificate input")
 				assert.ErrorContains(t, err, "loading secondary CA failed")
 			},
+			enableCARotation: true,
 		},
 		"should fail when the secondary CA has an invalid common name": {
 			fileMap: types.SecretDataMap{
@@ -1061,6 +1066,7 @@ func Test_createCentralTLSExtensionRun_validateAndConsumeCentralTLSData(t *testi
 			assert: func(t *testing.T, err error) {
 				assert.ErrorContains(t, err, "invalid certificate common name")
 			},
+			enableCARotation: true,
 		},
 		"should succeed when the primary and secondary CAs are valid": {
 			fileMap: types.SecretDataMap{
@@ -1074,6 +1080,7 @@ func Test_createCentralTLSExtensionRun_validateAndConsumeCentralTLSData(t *testi
 			assert: func(t *testing.T, err error) {
 				assert.NoError(t, err)
 			},
+			enableCARotation: true,
 		},
 		// TODO(ROX-16206) Discuss tests around ca/service cert expiration, as well as "NotBefore".
 		// Currently these verifications are only done for the init bundle secret reconciliation,
@@ -1082,6 +1089,9 @@ func Test_createCentralTLSExtensionRun_validateAndConsumeCentralTLSData(t *testi
 
 	for name, tt := range cases {
 		t.Run(name, func(t *testing.T) {
+			if tt.enableCARotation {
+				t.Setenv(envCentralCARotationEnabled, "true")
+			}
 			r := &createCentralTLSExtensionRun{currentTime: time.Now()}
 			err := r.validateAndConsumeCentralTLSData(tt.fileMap, true)
 			tt.assert(t, err)

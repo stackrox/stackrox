@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/operator/internal/types"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/certgen"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/services"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -28,7 +29,14 @@ const (
 	// InitBundleReconcilePeriod is the maximum period required for reconciliation of an init bundle.
 	// It must be sufficient to renew an ephemeral init bundle certificate which has relatively short lifetime (within a matter of hours).
 	// NB: keep in sync with crypto.ephemeralProfileWithExpirationInHoursCertLifetime
-	InitBundleReconcilePeriod = 1 * time.Hour
+	InitBundleReconcilePeriod   = 1 * time.Hour
+	envCentralCARotationEnabled = "CENTRAL_CA_ROTATION_ENABLED"
+)
+
+var (
+	// centralCARotationEnabled is a feature flag for the Central CA rotation feature. Defaults to false because
+	// the feature is still under active development.
+	centralCARotationEnabled = env.RegisterBooleanSetting(envCentralCARotationEnabled, false)
 )
 
 // CARotationAction represents the possible actions to take during CA rotation.
@@ -166,22 +174,24 @@ func (r *createCentralTLSExtensionRun) validateAndConsumeCentralTLSData(fileMap 
 		return errors.Wrap(err, "primary CA is not valid at the present time")
 	}
 
-	// the presence of a secondary CA certificate is optional
-	secondaryCA, err := certgen.LoadSecondaryCAFromFileMap(fileMap)
-	var secondaryCACert *x509.Certificate = nil
-	if err != nil && !errors.Is(err, certgen.ErrNoCACert) {
-		return errors.Wrap(err, "loading secondary CA failed")
-	}
-	if secondaryCA != nil {
-		if err := secondaryCA.CheckProperties(); err != nil {
-			return errors.Wrap(err, "loaded secondary service CA certificate is invalid")
+	if centralCARotationEnabled.BooleanSetting() {
+		// the presence of a secondary CA certificate is optional
+		secondaryCA, err := certgen.LoadSecondaryCAFromFileMap(fileMap)
+		var secondaryCACert *x509.Certificate = nil
+		if err != nil && !errors.Is(err, certgen.ErrNoCACert) {
+			return errors.Wrap(err, "loading secondary CA failed")
 		}
-		secondaryCACert = secondaryCA.Certificate()
-	}
+		if secondaryCA != nil {
+			if err := secondaryCA.CheckProperties(); err != nil {
+				return errors.Wrap(err, "loaded secondary service CA certificate is invalid")
+			}
+			secondaryCACert = secondaryCA.Certificate()
+		}
 
-	r.caRotationAction = r.determineCARotationAction(r.ca.Certificate(), secondaryCACert)
-	if r.caRotationAction != CARotateNoAction {
-		return errors.New("CA rotation action needed")
+		r.caRotationAction = r.determineCARotationAction(r.ca.Certificate(), secondaryCACert)
+		if r.caRotationAction != CARotateNoAction {
+			return errors.New("CA rotation action needed")
+		}
 	}
 
 	if err := r.validateServiceTLSData(storage.ServiceType_CENTRAL_SERVICE, "", fileMap); err != nil {
@@ -199,12 +209,15 @@ func (r *createCentralTLSExtensionRun) generateCentralTLSData(old types.SecretDa
 	if err != nil {
 		return nil, err
 	}
-	if err = validateSecondaryCA(old, newFileMap); err != nil {
-		return nil, err
-	}
 
-	if err = r.handleCARotation(newFileMap); err != nil {
-		return nil, errors.Wrapf(err, "performing CA rotation action: %v", r.caRotationAction)
+	if centralCARotationEnabled.BooleanSetting() {
+		if err = validateSecondaryCA(old, newFileMap); err != nil {
+			return nil, err
+		}
+
+		if err = r.handleCARotation(newFileMap); err != nil {
+			return nil, errors.Wrapf(err, "performing CA rotation action: %v", r.caRotationAction)
+		}
 	}
 
 	if err := certgen.IssueCentralCert(newFileMap, r.ca, mtls.WithNamespace(r.centralObj.GetNamespace())); err != nil {
