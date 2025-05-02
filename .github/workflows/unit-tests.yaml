@@ -259,6 +259,9 @@ jobs:
     - name: UI Component Tests
       run: make ui-component-tests
 
+    - name: print size
+      run: du -hs ui/apps/platform/cypress/test-results/
+
     - name: Publish Test Report
       uses: test-summary/action@v2
       if: always()
