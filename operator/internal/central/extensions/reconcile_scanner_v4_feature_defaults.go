@@ -74,7 +74,6 @@ func patchCentralAnnotation(ctx context.Context, logger logr.Logger, client ctrl
 	if err != nil {
 		return err
 	}
-	central.Annotations[key] = val
 
 	logger.Info("patched Central object annotation",
 		"namespace", central.GetNamespace(),
