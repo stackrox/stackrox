@@ -189,7 +189,8 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
         assert deploymentUid != null
 
         List<String> conflictingCIDRs = getConflictingCIDRs([CF_CIDR_30, CF_CIDR_31])
-        assert conflictingCIDRs.size() == 0: "found existing CIDR blocks ${conflictingCIDRs} that conflict with this test case."
+        assert conflictingCIDRs.size() == 0:
+            "found existing CIDR blocks ${conflictingCIDRs} that conflict with this test case."
 
         String externalSource30Name = generateNameWithPrefix("external-source-30")
         log.info("Creating external source '${externalSource30Name}' with CIDR ${CF_CIDR_30}")
@@ -198,7 +199,8 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
         assert externalSource30 != null
         assert externalSource30ID != null
 
-        log.info "Verify edge exists from deployment 'external-connection' to supernet external source '$externalSource30Name'"
+        log.info "Verify edge exists from deployment 'external-connection' to " +
+            "supernet external source '$externalSource30Name'"
         withRetry(0, 30) {
             assert NetworkGraphUtil.checkForEdge(deploymentUid, externalSource30ID)
         }
@@ -216,7 +218,8 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
         }
 
         and:
-        "Verify edge from deployment 'external-connection' to supernet external source '$externalSource30Name' exists in network graph for last 60 minutes"
+        "Verify edge from deployment 'external-connection' to supernet external source '$externalSource30Name' exists " +
+            "in the network graph for last 60 minutes"
         withRetry(4, 30) {
             assert NetworkGraphUtil.checkForEdge(
                 deploymentUid,
@@ -225,7 +228,8 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
         }
 
         and:
-        "Verify no edge exists from deployment 'external-connection' to supernet external source '$externalSource30Name' in network graph for last 60 seconds"
+        "Verify no edge exists from 'external-connection' to supernet external source '$externalSource30Name' " +
+            "in the network graph for last 60 seconds"
         withRetry(20, 30) {
             // We need to wait for at least (i.e., the sum of all the following):
             // - another enrichment to happen - at least 30s.
@@ -244,7 +248,6 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
         cleanup:
         deleteNetworkEntity(externalSource30ID)
         deleteNetworkEntity(externalSource31ID)
-
     }
 
     private static List<String> getConflictingCIDRs(List<String> cidrs) {
