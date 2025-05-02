@@ -172,7 +172,7 @@ function launch_central {
       fi
 
       local images_to_check=("${MAIN_IMAGE}" "${CENTRAL_DB_IMAGE}")
-      if [[ "$SCANNER_SUPPORT" == "true" && "$ROX_SCANNER_V4" == "true" ]]; then
+      if [[ "$SCANNER_SUPPORT" == "true" && "$ROX_SCANNER_V4" != "false" ]]; then
         images_to_check+=("${DEFAULT_IMAGE_REGISTRY}/scanner-v4:${MAIN_IMAGE_TAG}" "${DEFAULT_IMAGE_REGISTRY}/scanner-v4-db:${MAIN_IMAGE_TAG}")
       fi
 
@@ -410,9 +410,9 @@ function launch_central {
       fi
 
       if [[ -n "$ROX_SCANNER_V4" ]]; then
-        local _disable=true
-        if [[ "$ROX_SCANNER_V4" == "true" ]]; then
-          _disable=false
+        local _disable=false
+        if [[ "$ROX_SCANNER_V4" == "false" ]]; then
+          _disable=true
         fi
         helm_args+=(
           --set scannerV4.disable="${_disable}"
@@ -927,12 +927,22 @@ function launch_sensor {
       NAMESPACE="${sensor_namespace}" "${k8s_dir}/sensor-deploy/sensor.sh"
     fi
 
+    collector_env=()
+
     if [[ -n "${ROX_AFTERGLOW_PERIOD}" ]]; then
-       kubectl -n "${sensor_namespace}" set env ds/collector ROX_AFTERGLOW_PERIOD="${ROX_AFTERGLOW_PERIOD}"
+      collector_env+=("ROX_AFTERGLOW_PERIOD=${ROX_AFTERGLOW_PERIOD}")
     fi
 
     if [[ -n "${ROX_NON_AGGREGATED_NETWORKS}" ]]; then
-      kubectl -n "${sensor_namespace}" set env ds/collector ROX_NON_AGGREGATED_NETWORKS="${ROX_NON_AGGREGATED_NETWORKS}"
+      collector_env+=("ROX_NON_AGGREGATED_NETWORKS=${ROX_NON_AGGREGATED_NETWORKS}")
+    fi
+
+    if [[ -n "${ROX_COLLECTOR_INTROSPECTION_ENABLE}" ]]; then
+      collector_env+=("ROX_COLLECTOR_INTROSPECTION_ENABLE=${ROX_COLLECTOR_INTROSPECTION_ENABLE}")
+    fi
+
+    if [[ "${#collector_env[@]}" -gt 0 ]]; then
+      kubectl -n "${sensor_namespace}" set env ds/collector "${collector_env[@]}"
     fi
 
     # For local installations (e.g. on Colima): hotload binary

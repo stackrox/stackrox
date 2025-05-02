@@ -2,6 +2,13 @@ values:
   ca:
     cert: ""
     key: ""
+  central:
+    serviceTLS:
+      cert: ""
+      key: ""
+    jwtSigner:
+      cert: ""
+      key: ""
   imagePullSecrets:
     allowNone: true
   scannerV4:
@@ -227,13 +234,34 @@ tests:
     expect: |
       .configmaps["scanner-v4-matcher-config"].data.["config.yaml"] | fromyaml | .matcher.vulnerabilities_url | assertThat(. == "https://central.stackrox.svc/api/extensions/scannerdefinitions?version=ROX_VERSION")
 
-- name: "Scanner V4 is not installed by default"
+- name: "Scanner V4 defaults to"
   set:
     scannerV4.disable: null
-  expect: |
-    .deployments["scanner-v4-indexer"] | assertThat(. == null)
-    .deployments["scanner-v4-matcher"] | assertThat(. == null)
-    .deployments["scanner-v4-db"] | assertThat(. == null)
+  tests:
+  - name: "installed"
+    expect: |
+      .deployments["scanner-v4-indexer"] | assertThat(. != null)
+      .deployments["scanner-v4-matcher"] | assertThat(. != null)
+      .deployments["scanner-v4-db"] | assertThat(. != null)
+    tests:
+    - name: "on new installation with scanner V2 defaults"
+      release: { "isInstall": true, "isUpgrade": false }
+    - name: "on new installation with scanner V2 enabled explicitly"
+      release: { "isInstall": true, "isUpgrade": false }
+      set:
+        scannerV2.disable: false
+    - name: "on new installation with scanner V2 disabled explicitly"
+      release: { "isInstall": true, "isUpgrade": false }
+      set:
+        scanner.disable: true
+  - name: "not installed"
+    expect: |
+      .deployments["scanner-v4-indexer"] | assertThat(. == null)
+      .deployments["scanner-v4-matcher"] | assertThat(. == null)
+      .deployments["scanner-v4-db"] | assertThat(. == null)
+    tests:
+    - name: "on upgrade"
+      release: { "isInstall": false, "isUpgrade": true }
 
 - name: "Scanner V4 can be disabled without impacting Scanner V2"
   set:

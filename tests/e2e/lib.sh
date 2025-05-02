@@ -176,7 +176,6 @@ export_test_environment() {
     ci_export ROX_COMPLIANCE_ENHANCEMENTS "${ROX_COMPLIANCE_ENHANCEMENTS:-true}"
     ci_export ROX_POLICY_CRITERIA_MODAL "${ROX_POLICY_CRITERIA_MODAL:-true}"
     ci_export ROX_TELEMETRY_STORAGE_KEY_V1 "DISABLED"
-    ci_export ROX_SCANNER_V4 "${ROX_SCANNER_V4:-false}"
     ci_export ROX_AUTH_MACHINE_TO_MACHINE "${ROX_AUTH_MACHINE_TO_MACHINE:-true}"
     ci_export ROX_COMPLIANCE_REPORTING "${ROX_COMPLIANCE_REPORTING:-true}"
     ci_export ROX_REGISTRY_RESPONSE_TIMEOUT "${ROX_REGISTRY_RESPONSE_TIMEOUT:-90s}"
@@ -186,7 +185,7 @@ export_test_environment() {
     ci_export ROX_CVE_ADVISORY_SEPARATION "${ROX_CVE_ADVISORY_SEPARATION:-true}"
     ci_export ROX_EPSS_SCORE "${ROX_EPSS_SCORE:-true}"
     ci_export ROX_SBOM_GENERATION "${ROX_SBOM_GENERATION:-true}"
-    ci_export ROX_CLUSTERS_PAGE_MIGRATION_UI "${ROX_CLUSTERS_PAGE_MIGRATION_UI:-true}"
+    ci_export ROX_CLUSTERS_PAGE_MIGRATION_UI "${ROX_CLUSTERS_PAGE_MIGRATION_UI:-false}"
     ci_export ROX_EXTERNAL_IPS "${ROX_EXTERNAL_IPS:-true}"
     ci_export ROX_NETWORK_GRAPH_EXTERNAL_IPS "${ROX_NETWORK_GRAPH_EXTERNAL_IPS:-false}"
     ci_export ROX_FLATTEN_CVE_DATA "${ROX_FLATTEN_CVE_DATA:-false}"
@@ -325,7 +324,7 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n      - name: ROX_EPSS_SCORE'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_CLUSTERS_PAGE_MIGRATION_UI'
-    customize_envVars+=$'\n        value: "true"'
+    customize_envVars+=$'\n        value: "false"'
     customize_envVars+=$'\n      - name: ROX_EXTERNAL_IPS'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_NETWORK_GRAPH_EXTERNAL_IPS'
@@ -372,6 +371,7 @@ deploy_sensor() {
     info "Deploying sensor into namespace ${sensor_namespace} (central is expected in namespace ${central_namespace})"
 
     ci_export ROX_AFTERGLOW_PERIOD "15"
+    ci_export ROX_COLLECTOR_INTROSPECTION_ENABLE "true"
 
     if [[ "${DEPLOY_STACKROX_VIA_OPERATOR}" == "true" ]]; then
         deploy_sensor_via_operator "${sensor_namespace}" "${central_namespace}"
@@ -458,13 +458,23 @@ deploy_sensor_via_operator() {
     wait_for_object_to_appear "${sensor_namespace}" deploy/sensor 300
     wait_for_object_to_appear "${sensor_namespace}" ds/collector 300
 
+    collector_envs=()
+
     if [[ -n "${ROX_AFTERGLOW_PERIOD:-}" ]]; then
-       kubectl -n "${sensor_namespace}" set env ds/collector ROX_AFTERGLOW_PERIOD="${ROX_AFTERGLOW_PERIOD}"
+       collector_envs+=("ROX_AFTERGLOW_PERIOD=${ROX_AFTERGLOW_PERIOD}")
+    fi
+
+    if [[ -n "${ROX_COLLECTOR_INTROSPECTION_ENABLE:-}" ]]; then
+       collector_envs+=("ROX_COLLECTOR_INTROSPECTION_ENABLE=${ROX_COLLECTOR_INTROSPECTION_ENABLE}")
     fi
 
     if [[ -n "${ROX_PROCESSES_LISTENING_ON_PORT:-}" ]]; then
        kubectl -n "${sensor_namespace}" set env deployment/sensor ROX_PROCESSES_LISTENING_ON_PORT="${ROX_PROCESSES_LISTENING_ON_PORT}"
-       kubectl -n "${sensor_namespace}" set env ds/collector ROX_PROCESSES_LISTENING_ON_PORT="${ROX_PROCESSES_LISTENING_ON_PORT}"
+       collector_envs+=("ROX_PROCESSES_LISTENING_ON_PORT=${ROX_PROCESSES_LISTENING_ON_PORT}")
+    fi
+
+    if [[ ${#collector_envs[@]} -gt 0 ]]; then
+        kubectl -n "${sensor_namespace}" set env ds/collector "${collector_envs[@]}"
     fi
 }
 

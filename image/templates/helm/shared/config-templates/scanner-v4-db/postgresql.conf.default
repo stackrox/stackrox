@@ -30,8 +30,6 @@ ssl_key_file = '/run/secrets/stackrox.io/certs/server.key'
 
 # - Memory -
 
-# Keep this in sync with the shared-memory volume in the
-# templates/02-scanner-v4-07-db-deployment.yaml
 shared_buffers = 750MB
 work_mem = 16MB
 maintenance_work_mem = 128MB
