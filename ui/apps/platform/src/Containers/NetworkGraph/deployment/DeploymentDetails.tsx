@@ -26,6 +26,7 @@ import { ListenPort } from 'types/networkFlow.proto';
 import { getDateTime } from 'utils/dateUtils';
 import { NetworkPolicyState } from 'Containers/NetworkGraph/types/topology.type';
 
+import DateTimeUTCTooltip from 'Components/DateTimeWithUTCTooltip';
 import DeploymentPortConfig from 'Components/DeploymentPortConfig';
 import DeploymentContainerConfig from 'Components/DeploymentContainerConfig';
 
@@ -296,7 +297,9 @@ function DeploymentDetails({
                                     <DescriptionListGroup>
                                         <DescriptionListTerm>Created</DescriptionListTerm>
                                         <DescriptionListDescription>
-                                            {getDateTime(deployment.created)}
+                                            <DateTimeUTCTooltip datetime={deployment.created}>
+                                                {getDateTime(deployment.created)}
+                                            </DateTimeUTCTooltip>
                                         </DescriptionListDescription>
                                     </DescriptionListGroup>
                                     <DescriptionListGroup>

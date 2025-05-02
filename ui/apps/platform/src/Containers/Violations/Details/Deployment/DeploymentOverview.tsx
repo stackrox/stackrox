@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { DescriptionList } from '@patternfly/react-core';
 
 import DescriptionListItem from 'Components/DescriptionListItem';
+import DateTimeUTCTooltip from 'Components/DateTimeWithUTCTooltip';
 import {
     vulnerabilitiesPlatformPath,
     vulnerabilitiesUserWorkloadsPath,
@@ -55,7 +56,13 @@ function DeploymentOverview({
                     <DescriptionListItem
                         term="Created"
                         desc={
-                            deployment.created ? getDateTime(deployment.created) : 'not available'
+                            deployment.created ? (
+                                <DateTimeUTCTooltip datetime={deployment.created}>
+                                    {getDateTime(deployment.created)}
+                                </DateTimeUTCTooltip>
+                            ) : (
+                                'not available'
+                            )
                         }
                     />
                     <DescriptionListItem

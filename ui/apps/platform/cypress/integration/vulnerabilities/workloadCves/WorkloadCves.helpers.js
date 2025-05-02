@@ -1,4 +1,4 @@
-import { addDays, format } from 'date-fns';
+import { addDays } from 'date-fns';
 import { hasFeatureFlag } from '../../../helpers/features';
 import { getDescriptionListGroup } from '../../../helpers/formHelpers';
 import {
@@ -10,7 +10,11 @@ import { selectors } from './WorkloadCves.selectors';
 import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
 
 export function getDateString(date) {
-    return format(date, 'MM/DD/YYYY');
+    return Intl.DateTimeFormat(undefined, {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+    }).format(date);
 }
 
 /**

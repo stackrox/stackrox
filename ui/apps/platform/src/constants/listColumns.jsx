@@ -1,6 +1,7 @@
 import React from 'react';
 import { defaultHeaderClassName, defaultColumnClassName, wrapClassName } from 'Components/Table';
 import entityTypes, { resourceTypes } from 'constants/entityTypes';
+import DateTimeUTCTooltip from 'Components/DateTimeWithUTCTooltip';
 import PolicyStatusIconText from 'Components/PatternFly/IconText/PolicyStatusIconText';
 import { getDateTime } from 'utils/dateUtils';
 
@@ -64,7 +65,11 @@ const imageColumns = [
         align: 'right',
         widthClassName: `text-left pr-3 ${wrapClassName} ${defaultHeaderClassName}`,
         className: `text-left pr-3 ${wrapClassName} ${defaultColumnClassName}`,
-        Cell: ({ original }) => getDateTime(original.created),
+        Cell: ({ original }) => (
+            <DateTimeUTCTooltip datetime={original.created}>
+                {getDateTime(original.created)}
+            </DateTimeUTCTooltip>
+        ),
     },
     {
         accessor: 'components.length',
@@ -122,7 +127,11 @@ const getDeploymentViolationsColumns = (entityContext) => {
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             accessor: 'violationTime',
-            Cell: ({ original }) => getDateTime(original.time),
+            Cell: ({ original }) => (
+                <DateTimeUTCTooltip datetime={original.time}>
+                    {getDateTime(original.time)}
+                </DateTimeUTCTooltip>
+            ),
         },
     ];
     return columns.filter((col) => col);

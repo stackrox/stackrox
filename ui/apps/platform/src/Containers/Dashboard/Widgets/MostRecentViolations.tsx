@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Flex, Title, Truncate } from '@patternfly/react-core';
 import { Table, Tbody, Tr, Td } from '@patternfly/react-table';
 
+import DateTimeUTCTooltip from 'Components/DateTimeWithUTCTooltip';
 import ResourceIcon from 'Components/PatternFly/ResourceIcon';
 import { policySeverityIconMap } from 'Components/PatternFly/SeverityIcons';
 import { Alert, isDeploymentAlert, isResourceAlert } from 'types/alert.proto';
@@ -74,7 +75,9 @@ function MostRecentViolations({ alerts }: MostRecentViolationsProps) {
                                         className="pf-v5-u-pr-0 pf-v5-u-text-align-right-on-md"
                                         dataLabel="Time of last violation occurrence"
                                     >
-                                        {getDateTime(time)}
+                                        <DateTimeUTCTooltip datetime={time}>
+                                            {getDateTime(time)}
+                                        </DateTimeUTCTooltip>
                                     </Td>
                                 </Tr>
                             );

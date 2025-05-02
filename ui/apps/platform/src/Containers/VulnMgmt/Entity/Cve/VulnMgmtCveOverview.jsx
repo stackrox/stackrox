@@ -3,6 +3,7 @@ import React from 'react';
 
 import CollapsibleSection from 'Components/CollapsibleSection';
 import CveType from 'Components/CveType';
+import DateTimeUTCTooltip from 'Components/DateTimeWithUTCTooltip';
 import Metadata from 'Components/Metadata';
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import entityTypes from 'constants/entityTypes';
@@ -84,15 +85,33 @@ const VulnMgmtCveOverview = ({ data, entityContext }) => {
     const scanningDetails = [
         {
             key: 'Discovered Time',
-            value: createdAt ? getDateTime(createdAt) : 'N/A',
+            value: createdAt ? (
+                <DateTimeUTCTooltip datetime={createdAt}>
+                    {getDateTime(createdAt)}
+                </DateTimeUTCTooltip>
+            ) : (
+                'N/A'
+            ),
         },
         {
             key: 'Published',
-            value: publishedOn ? getDateTime(publishedOn) : 'N/A',
+            value: publishedOn ? (
+                <DateTimeUTCTooltip datetime={publishedOn}>
+                    {getDateTime(publishedOn)}
+                </DateTimeUTCTooltip>
+            ) : (
+                'N/A'
+            ),
         },
         {
             key: 'Last modified',
-            value: lastModified ? getDateTime(lastModified) : 'N/A',
+            value: lastModified ? (
+                <DateTimeUTCTooltip datetime={lastModified}>
+                    {getDateTime(lastModified)}
+                </DateTimeUTCTooltip>
+            ) : (
+                'N/A'
+            ),
         },
         {
             key: 'Scoring version',

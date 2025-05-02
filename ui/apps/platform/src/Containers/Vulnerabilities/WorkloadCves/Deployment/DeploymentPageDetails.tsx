@@ -15,10 +15,10 @@ import {
 } from '@patternfly/react-core';
 import { gql, useQuery } from '@apollo/client';
 
-import { getDateTime } from 'utils/dateUtils';
-
 import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 import KeyValueListModal from 'Components/KeyValueListModal';
+import DateTimeUTCTooltip from 'Components/DateTimeWithUTCTooltip';
+import { getDateTime } from 'utils/dateUtils';
 
 export type DeploymentPageDetailsProps = {
     deploymentId: string;
@@ -142,9 +142,15 @@ function DeploymentPageDetails({ deploymentId }: DeploymentPageDetailsProps) {
                                     <DescriptionListGroup>
                                         <DescriptionListTerm>Created</DescriptionListTerm>
                                         <DescriptionListDescription>
-                                            {deploymentDetailsData.created
-                                                ? getDateTime(deploymentDetailsData.created)
-                                                : '-'}
+                                            {deploymentDetailsData.created ? (
+                                                <DateTimeUTCTooltip
+                                                    datetime={deploymentDetailsData.created}
+                                                >
+                                                    {getDateTime(deploymentDetailsData.created)}
+                                                </DateTimeUTCTooltip>
+                                            ) : (
+                                                '-'
+                                            )}
                                         </DescriptionListDescription>
                                     </DescriptionListGroup>
                                     <DescriptionListGroup>

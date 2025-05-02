@@ -13,6 +13,7 @@ import {
 } from '@patternfly/react-core';
 
 import { exceptionManagementPath } from 'routePaths';
+import DateTimeUTCTooltip from 'Components/DateTimeWithUTCTooltip';
 import {
     ExceptionExpiry,
     VulnerabilityException,
@@ -111,7 +112,7 @@ export type RequestCreatedAtProps = {
     createdAt: VulnerabilityException['createdAt'];
 };
 export function RequestCreatedAt({ createdAt }: RequestCreatedAtProps) {
-    return <div>{getDate(createdAt)}</div>;
+    return <DateTimeUTCTooltip datetime={createdAt}>{getDate(createdAt)}</DateTimeUTCTooltip>;
 }
 
 export type RequestExpiresProps = {
@@ -127,7 +128,11 @@ export function getExpiresDate(exception: VulnerabilityException, context: Reque
                 ? exception.deferralUpdate.expiry
                 : exception.deferralRequest.expiry;
         if (exceptionExpiry.expiryType === 'TIME' && exceptionExpiry.expiresOn) {
-            return getDate(exceptionExpiry.expiresOn);
+            return (
+                <DateTimeUTCTooltip datetime={exceptionExpiry.expiresOn}>
+                    {getDate(exceptionExpiry.expiresOn)}
+                </DateTimeUTCTooltip>
+            );
         }
     }
     return '-';
@@ -184,7 +189,11 @@ export function RequestComment({ comment }: RequestCommentProps) {
         <Flex direction={{ default: 'column' }}>
             <Flex direction={{ default: 'row' }} spaceItems={{ default: 'spaceItemsSm' }}>
                 <Text className="pf-v5-u-font-weight-bold">{comment.user.name}</Text>
-                <Text component={TextVariants.small}>({getDateTime(comment.createdAt)})</Text>
+                <Text component={TextVariants.small}>
+                    <DateTimeUTCTooltip datetime={comment.createdAt}>
+                        {getDateTime(comment.createdAt)}
+                    </DateTimeUTCTooltip>
+                </Text>
             </Flex>
             <FlexItem>{comment.message}</FlexItem>
         </Flex>

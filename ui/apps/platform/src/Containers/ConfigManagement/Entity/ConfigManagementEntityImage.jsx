@@ -2,6 +2,7 @@ import React, { useContext } from 'react';
 import { gql } from '@apollo/client';
 import cloneDeep from 'lodash/cloneDeep';
 
+import DateTimeUTCTooltip from 'Components/DateTimeWithUTCTooltip';
 import Query from 'Components/ThrowingQuery';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import Loader from 'Components/Loader';
@@ -136,7 +137,13 @@ const ConfigManagementEntityImage = ({
                 const metadataKeyValuePairs = [
                     {
                         key: 'Last Scanned',
-                        value: lastUpdated ? getDateTime(lastUpdated) : 'N/A',
+                        value: lastUpdated ? (
+                            <DateTimeUTCTooltip datetime={lastUpdated}>
+                                {getDateTime(lastUpdated)}
+                            </DateTimeUTCTooltip>
+                        ) : (
+                            'N/A'
+                        ),
                     },
                 ];
 

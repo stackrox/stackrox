@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { gql } from '@apollo/client';
 import pluralize from 'pluralize';
 
+import DateTimeUTCTooltip from 'Components/DateTimeWithUTCTooltip';
 import {
     defaultHeaderClassName,
     defaultColumnClassName,
@@ -95,7 +96,11 @@ const buildTableColumns = (match, location, entityContext) => {
                 if (!joinedAt) {
                     return null;
                 }
-                return getDateTime(joinedAt);
+                return (
+                    <DateTimeUTCTooltip datetime={joinedAt}>
+                        {getDateTime(joinedAt)}
+                    </DateTimeUTCTooltip>
+                );
             },
             accessor: 'joinedAt',
             id: nodeSortFields.NODE_JOIN_TIME,

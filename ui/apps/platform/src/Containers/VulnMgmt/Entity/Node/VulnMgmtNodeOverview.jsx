@@ -1,6 +1,7 @@
 import React, { useContext } from 'react';
 import { Link } from 'react-router-dom';
 
+import DateTimeUTCTooltip from 'Components/DateTimeWithUTCTooltip';
 import CollapsibleSection from 'Components/CollapsibleSection';
 import Metadata from 'Components/Metadata';
 import RiskScore from 'Components/RiskScore';
@@ -84,7 +85,11 @@ const VulnMgmtNodeOverview = ({ data, entityContext }) => {
         },
         {
             key: 'Join Time',
-            value: joinedAt ? getDateTime(joinedAt) : 'N/A',
+            value: joinedAt ? (
+                <DateTimeUTCTooltip datetime={joinedAt}>{getDateTime(joinedAt)}</DateTimeUTCTooltip>
+            ) : (
+                'N/A'
+            ),
         },
     ];
 

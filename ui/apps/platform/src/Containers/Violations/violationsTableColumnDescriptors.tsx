@@ -5,6 +5,7 @@ import startCase from 'lodash/startCase';
 import { Flex, FlexItem, Tooltip } from '@patternfly/react-core';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
 
+import DateTimeUTCTooltip from 'Components/DateTimeWithUTCTooltip';
 import IconText from 'Components/PatternFly/IconText/IconText';
 import PolicySeverityIconText from 'Components/PatternFly/IconText/PolicySeverityIconText';
 import { lifecycleStageLabels } from 'messages/common';
@@ -154,7 +155,9 @@ export function getViolationsTableColumnDescriptors(filteredWorkflowView: Filter
             Header: 'Time',
             accessor: 'time',
             sortField: 'Violation Time',
-            Cell: ({ value }) => getDateTime(value),
+            Cell: ({ value }) => (
+                <DateTimeUTCTooltip datetime={value}>{getDateTime(value)}</DateTimeUTCTooltip>
+            ),
         },
     ];
 }

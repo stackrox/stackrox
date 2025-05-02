@@ -130,6 +130,8 @@ export function clickNextPageInEventTimelineWithoutRequest() {
 export function getFormattedEventTimeById(id, fixtureForDeploymentEventTimeline) {
     return cy.fixture(fixtureForDeploymentEventTimeline).then((json) => {
         const eventTime = json.data.pods[0].events.find((event) => event.id === id).timestamp;
+        // DV 2025-04-30 This datetime format might cause issues with tests due to internationalized formatting
+        // but all callers of this util are in disabled tests. If these tests are re-enabled, we may need to update this.
         return `Event time: ${format(eventTime, 'MM/DD/YYYY | h:mm:ssA')}`;
     });
 }

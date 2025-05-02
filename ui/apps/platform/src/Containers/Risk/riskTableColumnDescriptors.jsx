@@ -5,6 +5,7 @@ import find from 'lodash/find';
 import { Tooltip } from '@patternfly/react-core';
 import { CheckIcon, ExclamationCircleIcon } from '@patternfly/react-icons';
 
+import DateTimeUTCTooltip from 'Components/DateTimeWithUTCTooltip';
 import { sortValue, sortDate } from 'sorters/sorters';
 import { riskBasePath } from 'routePaths';
 import { getDateTime } from 'utils/dateUtils';
@@ -57,7 +58,9 @@ const riskTableColumnDescriptors = [
         Header: 'Created',
         accessor: 'deployment.created',
         searchField: 'Created',
-        Cell: ({ value }) => <span>{getDateTime(value)}</span>,
+        Cell: ({ value }) => (
+            <DateTimeUTCTooltip datetime={value}>{getDateTime(value)}</DateTimeUTCTooltip>
+        ),
         sortMethod: sortDate,
     },
     {

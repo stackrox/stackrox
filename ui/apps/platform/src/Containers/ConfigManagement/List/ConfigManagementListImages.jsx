@@ -2,6 +2,7 @@ import React from 'react';
 import { useLocation } from 'react-router-dom';
 import pluralize from 'pluralize';
 
+import DateTimeUTCTooltip from 'Components/DateTimeWithUTCTooltip';
 import {
     defaultHeaderClassName,
     defaultColumnClassName,
@@ -58,7 +59,11 @@ const buildTableColumns = (match, location, entityContext) => {
                 if (!metadata) {
                     return '-';
                 }
-                return getDateTime(metadata.v1.created);
+                return (
+                    <DateTimeUTCTooltip datetime={metadata.v1.created}>
+                        {getDateTime(metadata.v1.created)}
+                    </DateTimeUTCTooltip>
+                );
             },
             id: imageSortFields.CREATED_TIME,
             sortField: imageSortFields.CREATED_TIME,

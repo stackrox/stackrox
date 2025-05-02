@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import uniq from 'lodash/uniq';
 import pluralize from 'pluralize';
 
+import DateTimeUTCTooltip from 'Components/DateTimeWithUTCTooltip';
 import {
     defaultHeaderClassName,
     defaultColumnClassName,
@@ -71,7 +72,11 @@ const buildTableColumns = (match, location, entityContext) => {
             className: `w-1/8 ${defaultColumnClassName}`,
             Cell: ({ original }) => {
                 const { createdAt } = original;
-                return getDateTime(createdAt);
+                return (
+                    <DateTimeUTCTooltip datetime={createdAt}>
+                        {getDateTime(createdAt)}
+                    </DateTimeUTCTooltip>
+                );
             },
             accessor: 'createdAt',
             id: secretSortFields.CREATED,

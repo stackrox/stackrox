@@ -1,7 +1,7 @@
 import React from 'react';
-import { Tooltip } from '@patternfly/react-core';
 
-import { getDateTime, getDistanceStrict, getDistanceStrictAsPhrase } from 'utils/dateUtils';
+import { getDistanceStrict, getDistanceStrictAsPhrase } from 'utils/dateUtils';
+import DateTimeUTCTooltip from './DateTimeWithUTCTooltip';
 
 export type DateDistanceProps = {
     date: string | number | Date | null | undefined;
@@ -13,13 +13,13 @@ function DateDistance({ date, asPhrase = true }: DateDistanceProps) {
         return null;
     }
     return (
-        <Tooltip content={getDateTime(date)}>
+        <DateTimeUTCTooltip datetime={date}>
             <span>
                 {asPhrase
                     ? getDistanceStrictAsPhrase(date, new Date())
                     : getDistanceStrict(date, new Date())}
             </span>
-        </Tooltip>
+        </DateTimeUTCTooltip>
     );
 }
 

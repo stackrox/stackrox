@@ -1,6 +1,7 @@
 import React, { useContext } from 'react';
 import { gql } from '@apollo/client';
 
+import DateTimeUTCTooltip from 'Components/DateTimeWithUTCTooltip';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
@@ -116,7 +117,13 @@ const ConfigManagementEntityNode = ({
                     },
                     {
                         key: 'Join time',
-                        value: joinedAt ? getDateTime(joinedAt) : 'N/A',
+                        value: joinedAt ? (
+                            <DateTimeUTCTooltip datetime={joinedAt}>
+                                {getDateTime(joinedAt)}
+                            </DateTimeUTCTooltip>
+                        ) : (
+                            'N/A'
+                        ),
                     },
                 ];
 
