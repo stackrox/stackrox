@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
+	"github.com/stackrox/rox/operator/internal/central/carotation"
 	"github.com/stackrox/rox/operator/internal/common"
 	commonExtensions "github.com/stackrox/rox/operator/internal/common/extensions"
 	commonLabels "github.com/stackrox/rox/operator/internal/common/labels"
@@ -39,25 +40,6 @@ var (
 	centralCARotationEnabled = env.RegisterBooleanSetting(envCentralCARotationEnabled, false)
 )
 
-// CARotationAction represents the possible actions to take during CA rotation.
-type CARotationAction int
-
-const (
-	// CARotateNoAction indicates that no action needs to be taken at this time
-	CARotateNoAction CARotationAction = iota
-
-	// CARotateAddSecondary indicates that the CA has passed a threshold (e.g., 3/5 of its validity)
-	// and a secondary CA should be generated and added.
-	CARotateAddSecondary
-
-	// CARotatePromoteSecondary indicates that the secondary CA should become the new primary CA,
-	// typically when the primary is nearing the end of its validity (e.g., last year).
-	CARotatePromoteSecondary
-
-	// CARotateDeleteSecondary indicates that the secondary CA has expired and should be removed.
-	CARotateDeleteSecondary
-)
-
 // ReconcileCentralTLSExtensions returns an extension that takes care of creating the central-tls and related
 // secrets ahead of time.
 func ReconcileCentralTLSExtensions(client ctrlClient.Client, direct ctrlClient.Reader) extensions.ReconcileExtension {
@@ -77,7 +59,7 @@ type createCentralTLSExtensionRun struct {
 	*commonExtensions.SecretReconciliator
 
 	ca               mtls.CA // primary CA, used to issue Central-services certificates
-	caRotationAction CARotationAction
+	caRotationAction carotation.Action
 	centralObj       *platform.Central
 	currentTime      time.Time
 }
@@ -188,8 +170,8 @@ func (r *createCentralTLSExtensionRun) validateAndConsumeCentralTLSData(fileMap 
 			secondaryCACert = secondaryCA.Certificate()
 		}
 
-		r.caRotationAction = r.determineCARotationAction(r.ca.Certificate(), secondaryCACert)
-		if r.caRotationAction != CARotateNoAction {
+		r.caRotationAction = carotation.DetermineAction(r.ca.Certificate(), secondaryCACert, r.currentTime)
+		if r.caRotationAction != carotation.NoAction {
 			return errors.New("CA rotation action needed")
 		}
 	}
@@ -215,8 +197,16 @@ func (r *createCentralTLSExtensionRun) generateCentralTLSData(old types.SecretDa
 			return nil, err
 		}
 
-		if err = r.handleCARotation(newFileMap); err != nil {
+		if err = carotation.Handle(r.caRotationAction, newFileMap); err != nil {
 			return nil, errors.Wrapf(err, "performing CA rotation action: %v", r.caRotationAction)
+		}
+
+		if r.caRotationAction == carotation.PromoteSecondary {
+			primaryCA, err := certgen.LoadCAFromFileMap(newFileMap)
+			if err != nil {
+				return nil, errors.Wrap(err, "reloading new primary CA failed")
+			}
+			r.ca = primaryCA
 		}
 	}
 
@@ -317,55 +307,6 @@ func (r *createCentralTLSExtensionRun) checkCertificateTimeValidity(certificate 
 	}
 	if r.currentTime.After(endTime) {
 		return fmt.Errorf("certificate expired at %s", endTime)
-	}
-
-	return nil
-}
-
-func (r *createCentralTLSExtensionRun) determineCARotationAction(primary, secondary *x509.Certificate) CARotationAction {
-	startTime := primary.NotBefore
-	validityDuration := primary.NotAfter.Sub(primary.NotBefore)
-	fifthOfValidityDuration := time.Duration(validityDuration.Nanoseconds()/5) * time.Nanosecond
-
-	// Add secondary CA after 3/5 of validity
-	addSecondaryCATime := startTime.Add(3 * fifthOfValidityDuration)
-	if r.currentTime.After(addSecondaryCATime) && secondary == nil {
-		return CARotateAddSecondary
-	}
-
-	// Promote secondary to primary in final year
-	promoteSecondaryCATime := startTime.Add(4 * fifthOfValidityDuration)
-	if r.currentTime.After(promoteSecondaryCATime) {
-		return CARotatePromoteSecondary
-	}
-
-	// Delete expired secondary
-	if secondary != nil && r.currentTime.After(secondary.NotAfter) {
-		return CARotateDeleteSecondary
-	}
-
-	return CARotateNoAction
-}
-
-func (r *createCentralTLSExtensionRun) handleCARotation(fileMap types.SecretDataMap) error {
-	switch r.caRotationAction {
-	case CARotateAddSecondary:
-		ca, err := certgen.GenerateCA()
-		if err != nil {
-			return errors.Wrap(err, "creating secondary CA failed")
-		}
-		certgen.AddSecondaryCAToFileMap(fileMap, ca)
-
-	case CARotateDeleteSecondary:
-		certgen.RemoveSecondaryCA(fileMap)
-
-	case CARotatePromoteSecondary:
-		certgen.PromoteSecondaryCA(fileMap)
-		newPrimaryCa, err := certgen.LoadCAFromFileMap(fileMap)
-		if err != nil {
-			return errors.Wrap(err, "loading new primary CA failed")
-		}
-		r.ca = newPrimaryCa
 	}
 
 	return nil

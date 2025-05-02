@@ -14,6 +14,7 @@ import (
 	pkgErrors "github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
+	"github.com/stackrox/rox/operator/internal/central/carotation"
 	commonLabels "github.com/stackrox/rox/operator/internal/common/labels"
 	"github.com/stackrox/rox/operator/internal/types"
 	"github.com/stackrox/rox/operator/internal/utils/testutils"
@@ -638,72 +639,11 @@ func Test_checkCertificateTimeValidity(t *testing.T) {
 	}
 }
 
-func Test_determineCARotationAction(t *testing.T) {
-	cases := map[string]struct {
-		now                string
-		primaryNotBefore   string
-		primaryNotAfter    string
-		secondaryNotBefore string
-		secondaryNotAfter  string
-		wantAction         CARotationAction
-	}{
-		"should return no action in first 3/5 of validity": {
-			now:              "2026-06-01T00:00:00Z",
-			primaryNotBefore: "2025-01-01T00:00:00Z",
-			primaryNotAfter:  "2030-01-01T00:00:00Z",
-			wantAction:       CARotateNoAction,
-		},
-		"should add secondary after 3/5 of validity": {
-			now:              "2028-01-02T00:00:00Z",
-			primaryNotBefore: "2025-01-01T00:00:00Z",
-			primaryNotAfter:  "2030-01-01T00:00:00Z",
-			wantAction:       CARotateAddSecondary,
-		},
-		"should promote secondary after 4/5 of validity": {
-			now:                "2029-01-02T00:00:00Z",
-			primaryNotBefore:   "2025-01-01T00:00:00Z",
-			primaryNotAfter:    "2030-01-01T00:00:00Z",
-			secondaryNotBefore: "2028-01-01T00:00:00Z",
-			secondaryNotAfter:  "2033-01-01T00:00:00Z",
-			wantAction:         CARotatePromoteSecondary,
-		},
-		"should delete expired secondary": {
-			now:                "2031-01-02T00:00:00Z",
-			primaryNotBefore:   "2028-01-01T00:00:00Z",
-			primaryNotAfter:    "2033-01-01T00:00:00Z",
-			secondaryNotBefore: "2025-01-01T00:00:00Z",
-			secondaryNotAfter:  "2030-01-01T00:00:00Z",
-			wantAction:         CARotateDeleteSecondary,
-		},
-	}
-
-	for name, c := range cases {
-		t.Run(name, func(t *testing.T) {
-			now, err := time.Parse(time.RFC3339, c.now)
-			require.NoError(t, err)
-
-			var primary *x509.Certificate
-			if c.primaryNotBefore != "" && c.primaryNotAfter != "" {
-				primary = generateTestCertWithValidity(t, c.primaryNotBefore, c.primaryNotAfter)
-			}
-
-			var secondary *x509.Certificate
-			if c.secondaryNotBefore != "" && c.secondaryNotAfter != "" {
-				secondary = generateTestCertWithValidity(t, c.secondaryNotBefore, c.secondaryNotAfter)
-			}
-
-			r := &createCentralTLSExtensionRun{currentTime: now}
-			action := r.determineCARotationAction(primary, secondary)
-			assert.Equal(t, c.wantAction, action)
-		})
-	}
-}
-
 func TestGenerateCentralTLSData_Rotation(t *testing.T) {
 	t.Setenv(envCentralCARotationEnabled, "true")
 	type testCase struct {
 		name            string
-		action          CARotationAction
+		action          carotation.Action
 		additionalSetup func(t *testing.T, old types.SecretDataMap)
 		assert          func(t *testing.T, old, new types.SecretDataMap)
 	}
@@ -711,7 +651,7 @@ func TestGenerateCentralTLSData_Rotation(t *testing.T) {
 	cases := []testCase{
 		{
 			name:   "add secondary CA",
-			action: CARotateAddSecondary,
+			action: carotation.AddSecondary,
 			assert: func(t *testing.T, old, new types.SecretDataMap) {
 				require.Contains(t, new, mtls.SecondaryCACertFileName, "secondary CA cert should be present")
 				require.Contains(t, new, mtls.SecondaryCAKeyFileName, "secondary CA key should be present")
@@ -720,7 +660,7 @@ func TestGenerateCentralTLSData_Rotation(t *testing.T) {
 		},
 		{
 			name:   "promote secondary CA",
-			action: CARotatePromoteSecondary,
+			action: carotation.PromoteSecondary,
 			additionalSetup: func(t *testing.T, old types.SecretDataMap) {
 				secondary, err := certgen.GenerateCA()
 				require.NoError(t, err)
@@ -744,7 +684,7 @@ func TestGenerateCentralTLSData_Rotation(t *testing.T) {
 		},
 		{
 			name:   "delete secondary CA",
-			action: CARotateDeleteSecondary,
+			action: carotation.DeleteSecondary,
 			additionalSetup: func(t *testing.T, old types.SecretDataMap) {
 				secondary, err := certgen.GenerateCA()
 				require.NoError(t, err)
@@ -759,7 +699,7 @@ func TestGenerateCentralTLSData_Rotation(t *testing.T) {
 		},
 		{
 			name:   "no rotation action, secondary CA not present",
-			action: CARotateNoAction,
+			action: carotation.NoAction,
 			assert: func(t *testing.T, old, new types.SecretDataMap) {
 				require.Equal(t, old[mtls.CACertFileName], new[mtls.CACertFileName], "primary CA cert should be unchanged")
 				require.Equal(t, old[mtls.CAKeyFileName], new[mtls.CAKeyFileName], "primary CA key should be unchanged")
@@ -771,7 +711,7 @@ func TestGenerateCentralTLSData_Rotation(t *testing.T) {
 		},
 		{
 			name:   "no rotation action, secondary CA present",
-			action: CARotateNoAction,
+			action: carotation.NoAction,
 			additionalSetup: func(t *testing.T, old types.SecretDataMap) {
 				secondary, err := certgen.GenerateCA()
 				require.NoError(t, err)
