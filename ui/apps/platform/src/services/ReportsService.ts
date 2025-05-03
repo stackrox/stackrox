@@ -7,8 +7,8 @@ import {
     ReportSnapshot,
     RunReportResponse,
 } from 'services/ReportsService.types';
-import { ApiSortOption } from 'types/search';
-import { getPaginationParams } from 'utils/searchUtils';
+import { ApiSortOption, SearchFilter } from 'types/search';
+import { getListQueryParams, getPaginationParams } from 'utils/searchUtils';
 import { ReportNotificationMethod, ReportStatus } from 'types/reportJob';
 import axios from './instance';
 import { Empty } from './types';
@@ -84,7 +84,7 @@ export function fetchReportLastRunStatus(id: string): Promise<ReportStatus | nul
         });
 }
 
-export type FetchReportHistoryServiceProps = {
+export type FetchReportHistoryServiceParams = {
     id: string;
     query: string;
     page: number;
@@ -100,7 +100,7 @@ export function fetchReportHistory({
     perPage,
     sortOption,
     showMyHistory,
-}: FetchReportHistoryServiceProps): Promise<ReportSnapshot[]> {
+}: FetchReportHistoryServiceParams): Promise<ReportSnapshot[]> {
     const params = queryString.stringify(
         {
             reportParamQuery: {
@@ -119,8 +119,8 @@ export function fetchReportHistory({
         });
 }
 
-export type FetchOnDemandReportHistoryServiceProps = {
-    query: string;
+export type FetchOnDemandReportHistoryServiceParams = {
+    searchFilter: SearchFilter;
     page: number;
     perPage: number;
     sortOption: ApiSortOption;
@@ -129,25 +129,17 @@ export type FetchOnDemandReportHistoryServiceProps = {
 
 // @TODO: Pass API query information and set up API call to endpoint
 export function fetchOnDemandReportHistory({
-    query,
+    searchFilter,
     page,
     perPage,
     sortOption,
     // @TODO: Use the showMyHistory value to determine which endpoint to use
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     showMyHistory,
-}: FetchOnDemandReportHistoryServiceProps): Promise<OnDemandReportSnapshot[]> {
+}: FetchOnDemandReportHistoryServiceParams): Promise<OnDemandReportSnapshot[]> {
     // @TODO: Use the params in the future API call
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const params = queryString.stringify(
-        {
-            reportParamQuery: {
-                query,
-                pagination: getPaginationParams({ page, perPage, sortOption }),
-            },
-        },
-        { arrayFormat: 'repeat', allowDots: true }
-    );
+    const params = getListQueryParams({ searchFilter, sortOption, page, perPage });
 
     const mockOnDemandReportJobs: OnDemandReportSnapshot[] = [
         {

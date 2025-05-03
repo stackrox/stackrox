@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
     Card,
     CardBody,
@@ -13,7 +13,7 @@ import {
 
 import { getTableUIState } from 'utils/getTableUIState';
 import { ensureBoolean, ensureStringArray } from 'utils/ensure';
-import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import { toggleItemInArray } from 'utils/arrayUtils';
 import useRestQuery from 'hooks/useRestQuery';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
@@ -70,23 +70,24 @@ function OnDemandReportsTab() {
         'true',
     ]);
 
-    const reportJobStatusFilters = ensureStringArray(searchFilter['Report Job Status']);
+    const reportJobStatusFilters = useMemo(() => {
+        return ensureStringArray(searchFilter['Report Job Status']);
+    }, [searchFilter]);
 
-    const query = getRequestQueryStringForSearchFilter({
-        ...createQueryFromReportJobStatusFilters(reportJobStatusFilters),
-    });
+    const fetchOnDemandReportsHistoryCallback = useCallback(() => {
+        const modifiedSearchFilter = {
+            ...createQueryFromReportJobStatusFilters(reportJobStatusFilters),
+        };
 
-    const fetchOnDemandReportsHistoryCallback = useCallback(
-        () =>
-            fetchOnDemandReportHistory({
-                query,
-                page,
-                perPage,
-                sortOption,
-                showMyHistory: isViewingOnlyMyJobs === 'true',
-            }),
-        [query, page, perPage, sortOption, isViewingOnlyMyJobs]
-    );
+        return fetchOnDemandReportHistory({
+            searchFilter: modifiedSearchFilter,
+            page,
+            perPage,
+            sortOption,
+            showMyHistory: isViewingOnlyMyJobs === 'true',
+        });
+    }, [reportJobStatusFilters, page, perPage, sortOption, isViewingOnlyMyJobs]);
+
     const { data, isLoading, error, refetch } = useRestQuery(fetchOnDemandReportsHistoryCallback, {
         clearErrorBeforeRequest: false,
     });
@@ -102,15 +103,14 @@ function OnDemandReportsTab() {
     });
 
     const onReportJobStatusFilterChange = (_checked: boolean, selectedStatus: ReportJobStatus) => {
-        const isStatusIncluded = reportJobStatusFilters.includes(selectedStatus);
-        const newFilters = isStatusIncluded
-            ? ensureReportJobStatuses(
-                  reportJobStatusFilters.filter((status) => status !== selectedStatus)
-              )
-            : ensureReportJobStatuses([...reportJobStatusFilters, selectedStatus]);
+        const newFilters = toggleItemInArray(
+            reportJobStatusFilters,
+            selectedStatus,
+            (a, b) => a === b
+        );
         setSearchFilter({
             ...searchFilter,
-            'Report Job Status': newFilters,
+            'Report Job Status': ensureReportJobStatuses(newFilters),
         });
         setPage(1);
     };
@@ -157,6 +157,7 @@ function OnDemandReportsTab() {
                                     />
                                 </ToolbarItem>
                                 <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
+                                    {/* TODO: Change this to determinate pagination pattern */}
                                     <Pagination
                                         toggleTemplate={({ firstIndex, lastIndex }) => (
                                             <span>
