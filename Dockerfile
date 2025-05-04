@@ -13,7 +13,7 @@ COPY bundle/genesis-dump.zip /
 
 COPY data /stackrox-data
 COPY image/rhel/docs /stackrox/static-data/docs
-COPY bin/* /stackrox
+COPY ./bin/* /stackrox
 RUN mkdir -p /stackrox/bin && \
     ln -s /stackrox/migrator /stackrox/bin/migrator && \
     ln -s /stackrox/self-checks /usr/local/bin/self-checks
