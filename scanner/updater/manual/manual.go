@@ -4,6 +4,8 @@ package manual
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"net/http"
@@ -102,24 +104,47 @@ func (u *updater) Fetch(ctx context.Context, fingerprint driver.Fingerprint) (io
 		Str("filename", out.Name()).
 		Msg("opened temporary file for output")
 
+	// Remove the file, as we do not need it anymore. We just need the pointer.
 	utils.IgnoreError(func() error {
 		return os.RemoveAll(out.Name())
 	})
-	_, err = io.Copy(out, resp.Body)
 
+	// doClose specifies if we should close the temp file.
+	// This flag ensures the file is always closed upon error (+ when the fingerprint matches).
+	doClose := true
+	defer func() {
+		if doClose {
+			utils.IgnoreError(out.Close)
+		}
+	}()
+
+	hash := sha256.New()
+	tr := io.TeeReader(resp.Body, hash)
+
+	_, err = io.Copy(out, tr)
 	if err != nil {
-		utils.IgnoreError(out.Close)
 		return nil, "", fmt.Errorf("failed to write to temporary file: %w", err)
 	}
 
+	algo := "sha256:"
+	checksum := make([]byte, len(algo)+hex.EncodedLen(sha256.Size))
+	copy(checksum, algo)
+	hex.Encode(checksum[len(algo):], hash.Sum(nil))
+
+	if string(checksum) == string(fingerprint) {
+		// Nothing has changed, so don't bother updating.
+		return nil, fingerprint, driver.Unchanged
+	}
+
 	if _, err = out.Seek(0, io.SeekStart); err != nil {
-		utils.IgnoreError(out.Close)
 		return nil, "", fmt.Errorf("seek failed: %w", err)
 	}
+
 	zlog.Info(ctx).
-		Str("dir", out.Name()).
+		Str("filename", out.Name()).
 		Msg("fetched manual vulnerability yaml file")
-	return out, "", nil
+	doClose = false
+	return out, driver.Fingerprint(checksum), nil
 }
 
 // Parse parsing the fetched yaml file into vulnerabilities.
