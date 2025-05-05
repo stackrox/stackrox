@@ -94,4 +94,4 @@ func (h *vulnerabilityMetricsImpl) track(ctx context.Context) {
 	}
 }
 
-var Problemetrics = &prometheus.Registry{}
+var Problemetrics = prometheus.NewRegistry()
