@@ -138,8 +138,12 @@ class CSVTest extends BaseSpecification {
         return "openssl#1.1.1d-0+deb10u7#debian:10"
     }
 
+    def getComponentName() {
+            return "openssl"
+        }
+
     def getComponentQuery() {
-        return "COMPONENT ID:" + getComponentId() + "+Fixable:true"
+        return "COMPONENT:" + getComponentId() + "+Fixable:true"
     }
 
     def getCVETypeImageQuery() {
@@ -211,6 +215,7 @@ class CSVTest extends BaseSpecification {
         }
 
         log.info "Number of CVEs received from CSV endpoint: " + lines.size()
+        log.info "The lines: " + lines
 
         def csvCVEs = new ArrayList<CVE>()
         for (int i = 1; i < lines.size(); i++) {
@@ -241,7 +246,7 @@ class CSVTest extends BaseSpecification {
 
         description                        | id                           | query
         "FIXABLE_CVES_IN_IMAGE_QUERY"      | TEST_IMAGE_SHA               | "Image Sha:${TEST_IMAGE_SHA}+Fixable:true"
-        "FIXABLE_CVES_IN_COMPONENT_QUERY"  | getComponentId()             | getComponentQuery()
+        "FIXABLE_CVES_IN_COMPONENT_QUERY"  | getComponentName()             | getComponentQuery()
         "FIXABLE_CVES_IN_DEPLOYMENT_QUERY" | CVE_DEPLOYMENT.deploymentUid |
                 "Deployment ID:${CVE_DEPLOYMENT.deploymentUid}+Fixable:true"
     }
