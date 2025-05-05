@@ -21,14 +21,9 @@ func log(msg string, params ...interface{}) {
 
 func main() {
 	configPath := flag.String("conf", "./installer.yaml", "Path to installer's configuration file.")
-	var kubeconfig *string
-	if os.Getenv("KUBECONFIG") != "" {
-		kubeconfig = flag.String("kubeconfig", os.Getenv("KUBECONFIG"), "(optional) absolute path to the kubeconfig file")
-	} else if home := homedir.HomeDir(); home != "" {
-		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
-	} else {
-		kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
-	}
+	// kubeconfig = flag.String("kubeconfig", os.Getenv("KUBECONFIG"), "(optional) absolute path to the kubeconfig file")
+	// kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
+	kubeconfigFlag := flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
 	flag.Parse()
 
 	action := flag.Arg(0)
@@ -36,15 +31,31 @@ func main() {
 
 	var config *rest.Config
 	var err error
-	if *kubeconfig == "" {
+
+	kubeconfig := os.Getenv("KUBECONFIG")
+
+	if kubeconfig == "" {
+		kubeconfig = *kubeconfigFlag
+	}
+
+	if kubeconfig == "" {
 		config, err = rest.InClusterConfig()
+		if err != nil {
+			home := homedir.HomeDir()
+			config, err = clientcmd.BuildConfigFromFlags("", filepath.Join(home, ".kube", "config"))
+			if err != nil {
+				println(err.Error())
+				return
+			}
+		}
 	} else {
-		config, err = clientcmd.BuildConfigFromFlags("", *kubeconfig)
+		config, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
+		if err != nil {
+			println(err.Error())
+			return
+		}
 	}
-	if err != nil {
-		println(err.Error())
-		return
-	}
+
 	cfg, err := manifest.ReadConfig(*configPath)
 	if err != nil {
 		fmt.Printf("failed to load configuration %q: %v\n", *configPath, err)
