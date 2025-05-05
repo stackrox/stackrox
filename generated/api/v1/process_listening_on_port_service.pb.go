@@ -26,6 +26,7 @@ const (
 type GetProcessesListeningOnPortsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	DeploymentId  string                 `protobuf:"bytes,1,opt,name=deployment_id,json=deploymentId,proto3" json:"deployment_id,omitempty"`
+	Pagination    *Pagination            `protobuf:"bytes,2,opt,name=pagination,proto3" json:"pagination,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -65,6 +66,13 @@ func (x *GetProcessesListeningOnPortsRequest) GetDeploymentId() string {
 		return x.DeploymentId
 	}
 	return ""
+}
+
+func (x *GetProcessesListeningOnPortsRequest) GetPagination() *Pagination {
+	if x != nil {
+		return x.Pagination
+	}
+	return nil
 }
 
 type GetProcessesListeningOnPortsResponse struct {
@@ -115,9 +123,12 @@ var File_api_v1_process_listening_on_port_service_proto protoreflect.FileDescrip
 
 const file_api_v1_process_listening_on_port_service_proto_rawDesc = "" +
 	"\n" +
-	".api/v1/process_listening_on_port_service.proto\x12\x02v1\x1a\x1cgoogle/api/annotations.proto\x1a'storage/process_listening_on_port.proto\"J\n" +
+	".api/v1/process_listening_on_port_service.proto\x12\x02v1\x1a\x1cgoogle/api/annotations.proto\x1a\x17api/v1/pagination.proto\x1a'storage/process_listening_on_port.proto\"z\n" +
 	"#GetProcessesListeningOnPortsRequest\x12#\n" +
-	"\rdeployment_id\x18\x01 \x01(\tR\fdeploymentId\"x\n" +
+	"\rdeployment_id\x18\x01 \x01(\tR\fdeploymentId\x12.\n" +
+	"\n" +
+	"pagination\x18\x02 \x01(\v2\x0e.v1.PaginationR\n" +
+	"pagination\"x\n" +
 	"$GetProcessesListeningOnPortsResponse\x12P\n" +
 	"\x13listening_endpoints\x18\x01 \x03(\v2\x1f.storage.ProcessListeningOnPortR\x12listeningEndpoints2\xc4\x01\n" +
 	"\x19ListeningEndpointsService\x12\xa6\x01\n" +
@@ -140,17 +151,19 @@ var file_api_v1_process_listening_on_port_service_proto_msgTypes = make([]protoi
 var file_api_v1_process_listening_on_port_service_proto_goTypes = []any{
 	(*GetProcessesListeningOnPortsRequest)(nil),  // 0: v1.GetProcessesListeningOnPortsRequest
 	(*GetProcessesListeningOnPortsResponse)(nil), // 1: v1.GetProcessesListeningOnPortsResponse
-	(*storage.ProcessListeningOnPort)(nil),       // 2: storage.ProcessListeningOnPort
+	(*Pagination)(nil),                           // 2: v1.Pagination
+	(*storage.ProcessListeningOnPort)(nil),       // 3: storage.ProcessListeningOnPort
 }
 var file_api_v1_process_listening_on_port_service_proto_depIdxs = []int32{
-	2, // 0: v1.GetProcessesListeningOnPortsResponse.listening_endpoints:type_name -> storage.ProcessListeningOnPort
-	0, // 1: v1.ListeningEndpointsService.GetListeningEndpoints:input_type -> v1.GetProcessesListeningOnPortsRequest
-	1, // 2: v1.ListeningEndpointsService.GetListeningEndpoints:output_type -> v1.GetProcessesListeningOnPortsResponse
-	2, // [2:3] is the sub-list for method output_type
-	1, // [1:2] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	2, // 0: v1.GetProcessesListeningOnPortsRequest.pagination:type_name -> v1.Pagination
+	3, // 1: v1.GetProcessesListeningOnPortsResponse.listening_endpoints:type_name -> storage.ProcessListeningOnPort
+	0, // 2: v1.ListeningEndpointsService.GetListeningEndpoints:input_type -> v1.GetProcessesListeningOnPortsRequest
+	1, // 3: v1.ListeningEndpointsService.GetListeningEndpoints:output_type -> v1.GetProcessesListeningOnPortsResponse
+	3, // [3:4] is the sub-list for method output_type
+	2, // [2:3] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_api_v1_process_listening_on_port_service_proto_init() }
@@ -158,6 +171,7 @@ func file_api_v1_process_listening_on_port_service_proto_init() {
 	if File_api_v1_process_listening_on_port_service_proto != nil {
 		return
 	}
+	file_api_v1_pagination_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
