@@ -1,16 +1,15 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { format } from 'date-fns';
 import { DescriptionList, Flex, Divider } from '@patternfly/react-core';
 
-import dateTimeFormat from 'constants/dateTimeFormat';
 import DescriptionListItem from 'Components/DescriptionListItem';
 import KeyValue from 'Components/KeyValue';
+import { getDateTime } from 'utils/dateUtils';
 
 function ProcessCardContent({ process }) {
     const { time, args, execFilePath, containerId, lineage, uid } = process.signal;
     const processTime = new Date(time);
-    const timeFormat = format(processTime, dateTimeFormat);
+    const timeFormat = getDateTime(processTime);
     let ancestors = null;
     if (Array.isArray(lineage) && lineage.length) {
         ancestors = (

@@ -70,7 +70,7 @@ function MostRecentViolations({ alerts }: MostRecentViolationsProps) {
                                         </Flex>
                                     </Td>
                                     <Td
-                                        width={35}
+                                        modifier="nowrap"
                                         className="pf-v5-u-pr-0 pf-v5-u-text-align-right-on-md"
                                         dataLabel="Time of last violation occurrence"
                                     >

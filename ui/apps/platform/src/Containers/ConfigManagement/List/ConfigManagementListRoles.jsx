@@ -1,7 +1,6 @@
 import React from 'react';
 import { useLocation } from 'react-router-dom';
 import pluralize from 'pluralize';
-import { format } from 'date-fns';
 
 import {
     defaultHeaderClassName,
@@ -9,11 +8,11 @@ import {
     nonSortableHeaderClassName,
 } from 'Components/Table';
 import TableCellLink from 'Components/TableCellLink';
-import dateTimeFormat from 'constants/dateTimeFormat';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
 import { roleSortFields } from 'constants/sortFields';
 import useWorkflowMatch from 'hooks/useWorkflowMatch';
 import { K8S_ROLES_QUERY } from 'queries/role';
+import { getDateTime } from 'utils/dateUtils';
 import queryService from 'utils/queryService';
 import URLService from 'utils/URLService';
 import { getConfigMgmtPathForEntitiesAndId } from '../entities';
@@ -78,7 +77,7 @@ const buildTableColumns = (match, location, entityContext) => {
             className: `w-1/8 ${defaultColumnClassName}`,
             Cell: ({ original }) => {
                 const { createdAt } = original;
-                return format(createdAt, dateTimeFormat);
+                return getDateTime(createdAt);
             },
             accessor: 'createdAt',
             sortable: false,

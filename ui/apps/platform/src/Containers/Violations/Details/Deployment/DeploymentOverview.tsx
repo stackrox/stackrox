@@ -1,9 +1,7 @@
 import React, { ReactElement } from 'react';
 import { Link } from 'react-router-dom';
-import dateFns from 'date-fns';
 import { DescriptionList } from '@patternfly/react-core';
 
-import dateTimeFormat from 'constants/dateTimeFormat';
 import DescriptionListItem from 'Components/DescriptionListItem';
 import {
     vulnerabilitiesPlatformPath,
@@ -13,6 +11,7 @@ import {
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import { AlertDeployment } from 'types/alert.proto';
 import { Deployment } from 'types/deployment.proto';
+import { getDateTime } from 'utils/dateUtils';
 
 import FlatObjectDescriptionList from './FlatObjectDescriptionList';
 
@@ -56,9 +55,7 @@ function DeploymentOverview({
                     <DescriptionListItem
                         term="Created"
                         desc={
-                            deployment.created
-                                ? dateFns.format(deployment.created, dateTimeFormat)
-                                : 'not available'
+                            deployment.created ? getDateTime(deployment.created) : 'not available'
                         }
                     />
                     <DescriptionListItem

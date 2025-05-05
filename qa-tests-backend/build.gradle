@@ -23,7 +23,7 @@ def grpcVersion = '1.69.0'
 // If the proto versions are changed, be sure it is also changed in make/protogen.mk.
 def protobufVersion = '4.30.2'
 def nettyTcNativeVersion = '2.0.61.Final'
-def fabric8Version = '7.1.0'
+def fabric8Version = '7.2.0'
 def jacksonVersion = '2.14.2'
 
 protobuf {
@@ -63,7 +63,7 @@ sourceSets.each { ss ->
 dependencies {
     // grpc and protobuf
     implementation 'com.google.code.gson:gson:2.13.1'
-    implementation "com.google.api.grpc:proto-google-common-protos:2.55.2"
+    implementation "com.google.api.grpc:proto-google-common-protos:2.55.3"
     implementation "io.grpc:grpc-alts:${grpcVersion}"
     implementation "io.grpc:grpc-netty:${grpcVersion}"
     implementation "io.grpc:grpc-protobuf:${grpcVersion}"

@@ -1,5 +1,4 @@
 import React, { useContext } from 'react';
-import { format } from 'date-fns';
 import { gql } from '@apollo/client';
 
 import Query from 'Components/ThrowingQuery';
@@ -9,11 +8,11 @@ import CollapsibleSection from 'Components/CollapsibleSection';
 import RelatedEntityListCount from 'Components/RelatedEntityListCount';
 import RelatedEntity from 'Components/RelatedEntity';
 import Metadata from 'Components/Metadata';
-import dateTimeFormat from 'constants/dateTimeFormat';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
 import DeploymentsWithFailedPolicies from 'Containers/ConfigManagement/Entity/widgets/DeploymentsWithFailedPolicies';
 import searchContext from 'Containers/searchContext';
 import { getConfigMgmtCountQuery } from 'Containers/ConfigManagement/ConfigMgmt.utils';
+import { getDateTime } from 'utils/dateUtils';
 import getSubListFromEntity from 'utils/getSubListFromEntity';
 import isGQLLoading from 'utils/gqlLoading';
 import queryService from 'utils/queryService';
@@ -128,7 +127,7 @@ const ConfigManagementEntityNamespace = ({
                 const metadataKeyValuePairs = [
                     {
                         key: 'Created',
-                        value: creationTime ? format(creationTime, dateTimeFormat) : 'N/A',
+                        value: creationTime ? getDateTime(creationTime) : 'N/A',
                     },
                 ];
 

@@ -1,7 +1,6 @@
 import React, { useState, useContext } from 'react';
 import PropTypes from 'prop-types';
 import { gql, useQuery } from '@apollo/client';
-import { format } from 'date-fns';
 
 import workflowStateContext from 'Containers/workflowStateContext';
 import Loader from 'Components/Loader';
@@ -10,9 +9,9 @@ import TextSelect from 'Components/TextSelect';
 import Widget from 'Components/Widget';
 import CVEStackedPill from 'Components/CVEStackedPill';
 import NoComponentVulnMessage from 'Components/NoComponentVulnMessage';
+import { getDateTime } from 'utils/dateUtils';
 import { checkForPermissionErrorMessage } from 'utils/permissionUtils';
 import queryService from 'utils/queryService';
-import dateTimeFormat from 'constants/dateTimeFormat';
 import entityTypes from 'constants/entityTypes';
 import { WIDGET_PAGINATION_START_OFFSET } from 'constants/workflowPages.constants';
 import { entitySortFieldsMap } from 'constants/sortFields';
@@ -269,7 +268,7 @@ const processData = (data, entityType, workflowState) => {
             const { critical, important, moderate, low } = vulnCounter;
 
             const scanTimeToUse = scan?.scanTime || lastScanned;
-            const formattedDate = format(scanTimeToUse, dateTimeFormat);
+            const formattedDate = getDateTime(scanTimeToUse);
             const tooltipTitle =
                 formattedDate && formattedDate !== 'Invalid Date'
                     ? formattedDate

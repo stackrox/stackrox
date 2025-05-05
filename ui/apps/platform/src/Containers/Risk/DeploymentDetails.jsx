@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
-import dateFns from 'date-fns';
 import { Alert } from '@patternfly/react-core';
 
-import dateTimeFormat from 'constants/dateTimeFormat';
 import { fetchDeployment } from 'services/DeploymentsService';
 import CollapsibleCard from 'Components/CollapsibleCard';
+import { getDateTime } from 'utils/dateUtils';
 import { portExposureLabels } from 'messages/common';
 import SecurityContext from './SecurityContext';
 import ContainerConfigurations from './ContainerConfigurations';
@@ -31,8 +30,7 @@ const deploymentDetailsMap = {
     replicas: { label: 'Replicas' },
     created: {
         label: 'Created',
-        formatValue: (timestamp) =>
-            timestamp ? dateFns.format(timestamp, dateTimeFormat) : 'not available',
+        formatValue: (timestamp) => (timestamp ? getDateTime(timestamp) : 'not available'),
     },
     labels: { label: 'Labels' },
     annotations: { label: 'Annotations' },

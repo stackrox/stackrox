@@ -1,7 +1,6 @@
 import React from 'react';
 import { useLocation } from 'react-router-dom';
 import pluralize from 'pluralize';
-import { format } from 'date-fns';
 
 import {
     defaultHeaderClassName,
@@ -9,11 +8,11 @@ import {
     nonSortableHeaderClassName,
 } from 'Components/Table';
 import TableCellLink from 'Components/TableCellLink';
-import dateTimeFormat from 'constants/dateTimeFormat';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
 import { imageSortFields } from 'constants/sortFields';
 import useWorkflowMatch from 'hooks/useWorkflowMatch';
 import { IMAGES_QUERY } from 'queries/image';
+import { getDateTime } from 'utils/dateUtils';
 import queryService from 'utils/queryService';
 import URLService from 'utils/URLService';
 import { getConfigMgmtPathForEntitiesAndId } from '../entities';
@@ -59,7 +58,7 @@ const buildTableColumns = (match, location, entityContext) => {
                 if (!metadata) {
                     return '-';
                 }
-                return format(metadata.v1.created, dateTimeFormat);
+                return getDateTime(metadata.v1.created);
             },
             id: imageSortFields.CREATED_TIME,
             sortField: imageSortFields.CREATED_TIME,

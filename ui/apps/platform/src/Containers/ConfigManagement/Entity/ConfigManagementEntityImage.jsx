@@ -1,6 +1,5 @@
 import React, { useContext } from 'react';
 import { gql } from '@apollo/client';
-import { format } from 'date-fns';
 import cloneDeep from 'lodash/cloneDeep';
 
 import Query from 'Components/ThrowingQuery';
@@ -10,12 +9,12 @@ import PageNotFound from 'Components/PageNotFound';
 import CollapsibleSection from 'Components/CollapsibleSection';
 import RelatedEntityListCount from 'Components/RelatedEntityListCount';
 import Metadata from 'Components/Metadata';
-import dateTimeFormat from 'constants/dateTimeFormat';
 import { entityToColumns } from 'constants/listColumns';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
 import CVETable from 'Containers/Images/CVETable';
 import searchContext from 'Containers/searchContext';
 import { getConfigMgmtCountQuery } from 'Containers/ConfigManagement/ConfigMgmt.utils';
+import { getDateTime } from 'utils/dateUtils';
 import getSubListFromEntity from 'utils/getSubListFromEntity';
 import isGQLLoading from 'utils/gqlLoading';
 import queryService from 'utils/queryService';
@@ -137,7 +136,7 @@ const ConfigManagementEntityImage = ({
                 const metadataKeyValuePairs = [
                     {
                         key: 'Last Scanned',
-                        value: lastUpdated ? format(lastUpdated, dateTimeFormat) : 'N/A',
+                        value: lastUpdated ? getDateTime(lastUpdated) : 'N/A',
                     },
                 ];
 

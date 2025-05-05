@@ -1,5 +1,4 @@
 import React, { useContext } from 'react';
-import { format } from 'date-fns';
 import { gql } from '@apollo/client';
 
 import Query from 'Components/ThrowingQuery';
@@ -9,12 +8,12 @@ import CollapsibleSection from 'Components/CollapsibleSection';
 import RelatedEntity from 'Components/RelatedEntity';
 import RelatedEntityListCount from 'Components/RelatedEntityListCount';
 import Metadata from 'Components/Metadata';
-import dateTimeFormat from 'constants/dateTimeFormat';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
 import ClusterScopedPermissions from 'Containers/ConfigManagement/Entity/widgets/ClusterScopedPermissions';
 import NamespaceScopedPermissions from 'Containers/ConfigManagement/Entity/widgets/NamespaceScopedPermissions';
 import searchContext from 'Containers/searchContext';
 import { getConfigMgmtCountQuery } from 'Containers/ConfigManagement/ConfigMgmt.utils';
+import { getDateTime } from 'utils/dateUtils';
 import getSubListFromEntity from 'utils/getSubListFromEntity';
 import isGQLLoading from 'utils/gqlLoading';
 import queryService from 'utils/queryService';
@@ -158,7 +157,7 @@ const ConfigManagementEntityServiceAccount = ({
                     { key: 'Automounted', value: automountToken.toString() },
                     {
                         key: 'Created',
-                        value: createdAt ? format(createdAt, dateTimeFormat) : 'N/A',
+                        value: createdAt ? getDateTime(createdAt) : 'N/A',
                     },
                 ];
 

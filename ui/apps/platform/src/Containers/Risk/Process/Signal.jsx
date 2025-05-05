@@ -1,7 +1,5 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import dateFns from 'date-fns';
-import dateTimeFormat from 'constants/dateTimeFormat';
 
 import Table, {
     defaultHeaderClassName,
@@ -9,12 +7,13 @@ import Table, {
     wrapClassName,
 } from 'Components/Table';
 import NoResultsMessage from 'Components/NoResultsMessage';
+import { getDateTime } from 'utils/dateUtils';
 
 const columns = [
     {
         Header: 'Time',
         id: 'time',
-        accessor: (d) => dateFns.format(d.signal.time, dateTimeFormat),
+        accessor: (d) => getDateTime(d.signal.time),
         headerClassName: `${defaultHeaderClassName} w-1/4 pointer-events-none`,
         className: `${wrapClassName} ${defaultColumnClassName} w-1/4 cursor-auto`,
     },

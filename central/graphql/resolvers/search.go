@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/central/rbac/service"
 	searchService "github.com/stackrox/rox/central/search/service"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/utils"
@@ -122,7 +123,30 @@ func (r RawQuery) IsEmpty() bool {
 }
 
 func (resolver *Resolver) getAutoCompleteSearchers() map[v1.SearchCategory]search.Searcher {
-	searchers := map[v1.SearchCategory]search.Searcher{
+	if features.FlattenCVEData.Enabled() {
+		return map[v1.SearchCategory]search.Searcher{
+			v1.SearchCategory_ALERTS:                   &alertDataStore.DefaultStateAlertDataStoreImpl{DataStore: &resolver.ViolationsDataStore},
+			v1.SearchCategory_CLUSTERS:                 resolver.ClusterDataStore,
+			v1.SearchCategory_DEPLOYMENTS:              resolver.DeploymentDataStore,
+			v1.SearchCategory_IMAGES:                   resolver.ImageDataStore,
+			v1.SearchCategory_POLICIES:                 resolver.PolicyDataStore,
+			v1.SearchCategory_SECRETS:                  resolver.SecretsDataStore,
+			v1.SearchCategory_NAMESPACES:               resolver.NamespaceDataStore,
+			v1.SearchCategory_NODES:                    resolver.NodeDataStore,
+			v1.SearchCategory_COMPLIANCE:               resolver.ComplianceAggregator,
+			v1.SearchCategory_SERVICE_ACCOUNTS:         resolver.ServiceAccountsDataStore,
+			v1.SearchCategory_ROLES:                    resolver.K8sRoleStore,
+			v1.SearchCategory_ROLEBINDINGS:             resolver.K8sRoleBindingStore,
+			v1.SearchCategory_SUBJECTS:                 service.NewSubjectSearcher(resolver.K8sRoleBindingStore),
+			v1.SearchCategory_NODE_VULNERABILITIES:     searchers.NewNonOrphanedNodeCVESearcher(resolver.NodeCVEDataStore),
+			v1.SearchCategory_CLUSTER_VULNERABILITIES:  resolver.ClusterCVEDataStore,
+			v1.SearchCategory_NODE_COMPONENTS:          resolver.NodeComponentDataStore,
+			v1.SearchCategory_POLICY_CATEGORIES:        resolver.PolicyCategoryDataStore,
+			v1.SearchCategory_IMAGE_COMPONENTS_V2:      resolver.ImageComponentV2DataStore,
+			v1.SearchCategory_IMAGE_VULNERABILITIES_V2: resolver.ImageCVEV2DataStore,
+		}
+	}
+	return map[v1.SearchCategory]search.Searcher{
 		v1.SearchCategory_ALERTS:                  &alertDataStore.DefaultStateAlertDataStoreImpl{DataStore: &resolver.ViolationsDataStore},
 		v1.SearchCategory_CLUSTERS:                resolver.ClusterDataStore,
 		v1.SearchCategory_DEPLOYMENTS:             resolver.DeploymentDataStore,
@@ -143,13 +167,33 @@ func (resolver *Resolver) getAutoCompleteSearchers() map[v1.SearchCategory]searc
 		v1.SearchCategory_NODE_COMPONENTS:         resolver.NodeComponentDataStore,
 		v1.SearchCategory_POLICY_CATEGORIES:       resolver.PolicyCategoryDataStore,
 	}
-
-	return searchers
 }
 
 func (resolver *Resolver) getSearchFuncs() map[v1.SearchCategory]searchService.SearchFunc {
+	if features.FlattenCVEData.Enabled() {
+		return map[v1.SearchCategory]searchService.SearchFunc{
+			v1.SearchCategory_ALERTS:                   resolver.ViolationsDataStore.SearchAlerts,
+			v1.SearchCategory_CLUSTERS:                 resolver.ClusterDataStore.SearchResults,
+			v1.SearchCategory_DEPLOYMENTS:              resolver.DeploymentDataStore.SearchDeployments,
+			v1.SearchCategory_IMAGES:                   resolver.ImageDataStore.SearchImages,
+			v1.SearchCategory_POLICIES:                 resolver.PolicyDataStore.SearchPolicies,
+			v1.SearchCategory_SECRETS:                  resolver.SecretsDataStore.SearchSecrets,
+			v1.SearchCategory_NAMESPACES:               resolver.NamespaceDataStore.SearchResults,
+			v1.SearchCategory_NODES:                    resolver.NodeDataStore.SearchNodes,
+			v1.SearchCategory_SERVICE_ACCOUNTS:         resolver.ServiceAccountsDataStore.SearchServiceAccounts,
+			v1.SearchCategory_ROLES:                    resolver.K8sRoleStore.SearchRoles,
+			v1.SearchCategory_ROLEBINDINGS:             resolver.K8sRoleBindingStore.SearchRoleBindings,
+			v1.SearchCategory_SUBJECTS:                 service.NewSubjectSearcher(resolver.K8sRoleBindingStore).SearchSubjects,
+			v1.SearchCategory_NODE_VULNERABILITIES:     searchers.NewNonOrphanedNodeCVESearcher(resolver.NodeCVEDataStore).SearchNodeCVEs,
+			v1.SearchCategory_CLUSTER_VULNERABILITIES:  resolver.ClusterCVEDataStore.SearchClusterCVEs,
+			v1.SearchCategory_NODE_COMPONENTS:          resolver.NodeComponentDataStore.SearchNodeComponents,
+			v1.SearchCategory_POLICY_CATEGORIES:        resolver.PolicyCategoryDataStore.SearchPolicyCategories,
+			v1.SearchCategory_IMAGE_COMPONENTS_V2:      resolver.ImageComponentV2DataStore.SearchImageComponents,
+			v1.SearchCategory_IMAGE_VULNERABILITIES_V2: resolver.ImageCVEV2DataStore.SearchImageCVEs,
+		}
+	}
 
-	searchfuncs := map[v1.SearchCategory]searchService.SearchFunc{
+	return map[v1.SearchCategory]searchService.SearchFunc{
 		v1.SearchCategory_ALERTS:                  resolver.ViolationsDataStore.SearchAlerts,
 		v1.SearchCategory_CLUSTERS:                resolver.ClusterDataStore.SearchResults,
 		v1.SearchCategory_DEPLOYMENTS:             resolver.DeploymentDataStore.SearchDeployments,
@@ -169,8 +213,6 @@ func (resolver *Resolver) getSearchFuncs() map[v1.SearchCategory]searchService.S
 		v1.SearchCategory_NODE_COMPONENTS:         resolver.NodeComponentDataStore.SearchNodeComponents,
 		v1.SearchCategory_POLICY_CATEGORIES:       resolver.PolicyCategoryDataStore.SearchPolicyCategories,
 	}
-
-	return searchfuncs
 }
 
 type searchRequest struct {

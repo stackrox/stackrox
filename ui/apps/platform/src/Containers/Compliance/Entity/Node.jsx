@@ -1,5 +1,4 @@
 import React, { useContext, useState } from 'react';
-import { format } from 'date-fns';
 import pluralize from 'pluralize';
 
 import entityTypes from 'constants/entityTypes';
@@ -24,6 +23,7 @@ import PageNotFound from 'Components/PageNotFound';
 import { entityPagePropTypes, entityPageDefaultProps } from 'constants/entityPageProps';
 import useCases from 'constants/useCaseTypes';
 import isGQLLoading from 'utils/gqlLoading';
+import { getDateTime, getDistanceStrictAsPhrase } from 'utils/dateUtils';
 import searchContext from 'Containers/searchContext';
 
 import Header from './Header';
@@ -40,9 +40,6 @@ function processData(data) {
     const [ipAddress] = result.internalIpAddresses;
     result.ipAddress = ipAddress;
 
-    const joinedAt = new Date(result.joinedAt);
-    result.joinedAtDate = format(joinedAt, 'MM/DD/YYYY');
-    result.joinedAtTime = format(joinedAt, 'h:mm:ss:A');
     return result;
 }
 
@@ -81,8 +78,7 @@ const NodePage = ({
                     clusterName,
                     osImage,
                     ipAddress,
-                    joinedAtDate,
-                    joinedAtTime,
+                    joinedAt,
                     kernelVersion,
                     labels,
                 } = node;
@@ -172,8 +168,12 @@ const NodePage = ({
                                     <div className="md:pl-3 pb-3">
                                         <InfoWidget
                                             title="Node Join Time"
-                                            headline={joinedAtDate}
-                                            description={joinedAtTime}
+                                            headline={getDistanceStrictAsPhrase(
+                                                joinedAt,
+                                                new Date()
+                                            )}
+                                            description={getDateTime(joinedAt)}
+                                            textSizeClass="text-base"
                                             loading={loading}
                                         />
                                     </div>

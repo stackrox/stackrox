@@ -1,13 +1,12 @@
 /* eslint-disable no-nested-ternary */
 import React from 'react';
-import { format } from 'date-fns';
 
 import CollapsibleSection from 'Components/CollapsibleSection';
 import CveType from 'Components/CveType';
 import Metadata from 'Components/Metadata';
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
-import dateTimeFormat from 'constants/dateTimeFormat';
 import entityTypes from 'constants/entityTypes';
+import { getDateTime } from 'utils/dateUtils';
 import { isValidURL } from 'utils/urlUtils';
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 
@@ -85,15 +84,15 @@ const VulnMgmtCveOverview = ({ data, entityContext }) => {
     const scanningDetails = [
         {
             key: 'Discovered Time',
-            value: createdAt ? format(createdAt, dateTimeFormat) : 'N/A',
+            value: createdAt ? getDateTime(createdAt) : 'N/A',
         },
         {
             key: 'Published',
-            value: publishedOn ? format(publishedOn, dateTimeFormat) : 'N/A',
+            value: publishedOn ? getDateTime(publishedOn) : 'N/A',
         },
         {
             key: 'Last modified',
-            value: lastModified ? format(lastModified, dateTimeFormat) : 'N/A',
+            value: lastModified ? getDateTime(lastModified) : 'N/A',
         },
         {
             key: 'Scoring version',
