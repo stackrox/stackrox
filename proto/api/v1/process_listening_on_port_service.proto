@@ -3,6 +3,7 @@ syntax = "proto3";
 package v1;
 
 import weak "google/api/annotations.proto";
+import "api/v1/pagination.proto";
 import "storage/process_listening_on_port.proto";
 
 option go_package = "./api/v1;v1";
@@ -10,6 +11,7 @@ option java_package = "io.stackrox.proto.api.v1";
 
 message GetProcessesListeningOnPortsRequest {
   string deployment_id = 1;
+  Pagination pagination = 2;
 }
 
 message GetProcessesListeningOnPortsResponse {

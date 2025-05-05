@@ -6,6 +6,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	datastore "github.com/stackrox/rox/central/processlisteningonport/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -48,11 +49,16 @@ func (s *serviceImpl) GetListeningEndpoints(
 	req *v1.GetProcessesListeningOnPortsRequest,
 ) (*v1.GetProcessesListeningOnPortsResponse, error) {
 	deployment := req.GetDeploymentId()
+	page := req.GetPagination()
 	processesListeningOnPorts, err := s.dataStore.GetProcessListeningOnPort(ctx, deployment)
 
 	if err != nil {
 		return nil, err
 	}
+
+	if page != nil {
+                processesListeningOnPorts = paginated.PaginateSlice(int(page.GetOffset()), int(page.GetLimit()), processesListeningOnPorts)
+        }
 
 	return &v1.GetProcessesListeningOnPortsResponse{
 		ListeningEndpoints: processesListeningOnPorts,
