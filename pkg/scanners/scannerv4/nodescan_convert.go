@@ -9,144 +9,79 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/utils"
 )
 
-var (
-	rhcosOSImageRegexp = regexp.MustCompile(`(Red Hat Enterprise Linux) (CoreOS) ([\d])([\d]+)`)
-)
+const rhcosFullName = "Red Hat Enterprise Linux CoreOS"
 
-const (
-	rhcosFullName = "Red Hat Enterprise Linux CoreOS"
-)
+var rhcosOSImagePattern = regexp.MustCompile(`(Red Hat Enterprise Linux) (CoreOS) (\d)(\d+)`)
 
-func toNodeScan(r *v4.VulnerabilityReport, osImageRef string) *storage.NodeScan {
-	// TODO(ROX-26593): Instead of fixing notes here, add RHCOS DistributionScanner to ClairCore
-	fixedNotes := fixNotes(toStorageNotes(r.Notes), osImageRef)
-
-	convertedOS := toOperatingSystem(osImageRef)
-	if convertedOS == "" {
-		log.Warnf("Could not determine operating system from OSimage ref %s", osImageRef)
-	}
-
+func nodeScan(osImage string, vr *v4.VulnerabilityReport) *storage.NodeScan {
 	return &storage.NodeScan{
-		ScanTime:        protocompat.TimestampNow(),
-		Components:      toStorageComponents(r),
-		Notes:           fixedNotes,
 		ScannerVersion:  storage.NodeScan_SCANNER_V4,
-		OperatingSystem: convertedOS,
+		ScanTime:        protocompat.TimestampNow(),
+		OperatingSystem: nodeOS(osImage),
+		Components:      nodeComponents(vr),
+		Notes:           nodeNotes(vr, osImage),
 	}
 }
 
-func toOperatingSystem(ref string) string {
-	r := rhcosOSImageRegexp.FindStringSubmatch(ref)
+func nodeOS(osImage string) string {
+	r := rhcosOSImagePattern.FindStringSubmatch(osImage)
 	if len(r) != 5 {
-		return ""
+		return "unknown"
 	}
 	return fmt.Sprintf("rhcos:%s.%s", r[3], r[4])
 }
 
-func toStorageComponents(r *v4.VulnerabilityReport) []*storage.EmbeddedNodeScanComponent {
-	packages := r.GetContents().GetPackages()
-	result := make([]*storage.EmbeddedNodeScanComponent, 0, len(packages))
+func nodeComponents(report *v4.VulnerabilityReport) []*storage.EmbeddedNodeScanComponent {
+	pkgs := report.GetContents().GetPackages()
+	components := make([]*storage.EmbeddedNodeScanComponent, 0, len(pkgs))
+	for _, pkg := range pkgs {
+		id := pkg.GetId()
+		vulnIDs := report.GetPackageVulnerabilities()[id].GetValues()
 
-	for _, pkg := range packages {
-		vulns := getPackageVulns(pkg.GetId(), r)
-		result = append(result, createEmbeddedComponent(pkg, vulns))
-	}
-	return result
-}
-
-func getPackageVulns(packageID string, r *v4.VulnerabilityReport) []*storage.EmbeddedVulnerability {
-	vulns := make([]*storage.EmbeddedVulnerability, 0)
-	mapping, ok := r.GetPackageVulnerabilities()[packageID]
-	if !ok {
-		// No vulnerabilities for this package, skip
-		return vulns
-	}
-	processedVulns := set.NewStringSet()
-	for _, vulnID := range mapping.GetValues() {
-		if !processedVulns.Add(vulnID) {
-			// Already processed this vulnerability, skip it
-			continue
+		component := &storage.EmbeddedNodeScanComponent{
+			Name:    pkg.GetName(),
+			Version: pkg.GetVersion(),
+			Vulns:   vulnerabilities(vulnIDs, report.GetVulnerabilities(), storage.EmbeddedVulnerability_NODE_VULNERABILITY),
 		}
-		vulnerability, ok := r.Vulnerabilities[vulnID]
-		if !ok {
-			log.Debugf("Mapping for package %s contains a vulnerability with unknown ID %s. This vulnerability won't be stored", packageID, vulnID)
-			continue
-		}
-		vulns = append(vulns, convertVulnerability(vulnerability))
+
+		components = append(components, component)
 	}
-	return vulns
+	return components
 }
 
-func convertVulnerability(v *v4.VulnerabilityReport_Vulnerability) *storage.EmbeddedVulnerability {
-	converted := &storage.EmbeddedVulnerability{
-		Cve:               v.GetName(),
-		Summary:           v.GetDescription(),
-		VulnerabilityType: storage.EmbeddedVulnerability_NODE_VULNERABILITY,
-		Severity:          normalizedSeverity(v.GetNormalizedSeverity()),
-		Link:              link(v.GetLink()),
-		PublishedOn:       v.GetIssued(),
-	}
-
-	if err := setScoresAndScoreVersions(converted, v.GetCvssMetrics()); err != nil {
-		utils.Should(err)
-	}
-	maybeOverwriteSeverity(converted)
-	if v.GetFixedInVersion() != "" {
-		converted.SetFixedBy = &storage.EmbeddedVulnerability_FixedBy{
-			FixedBy: v.GetFixedInVersion(),
-		}
-	}
-
-	return converted
-}
-
-func createEmbeddedComponent(pkg *v4.Package, vulns []*storage.EmbeddedVulnerability) *storage.EmbeddedNodeScanComponent {
-	return &storage.EmbeddedNodeScanComponent{
-		Name:    pkg.GetName(),
-		Version: pkg.GetVersion(),
-		Vulns:   vulns,
-	}
-}
-
-func toStorageNotes(notes []v4.VulnerabilityReport_Note) []storage.NodeScan_Note {
-	if notes == nil {
-		return nil
-	}
-	convertedNotes := make([]storage.NodeScan_Note, 0, len(notes))
-	for _, n := range notes {
-		switch n {
-		case v4.VulnerabilityReport_NOTE_OS_UNKNOWN:
-			convertedNotes = append(convertedNotes, storage.NodeScan_UNSUPPORTED)
-		case v4.VulnerabilityReport_NOTE_OS_UNSUPPORTED:
-			convertedNotes = append(convertedNotes, storage.NodeScan_UNSUPPORTED)
+func nodeNotes(report *v4.VulnerabilityReport, osImage string) []storage.NodeScan_Note {
+	notes := set.NewSet[storage.NodeScan_Note]()
+	for _, note := range report.GetNotes() {
+		switch note {
 		case v4.VulnerabilityReport_NOTE_UNSPECIFIED:
-			convertedNotes = append(convertedNotes, storage.NodeScan_UNSET)
+			notes.Add(storage.NodeScan_UNSET)
+		case v4.VulnerabilityReport_NOTE_OS_UNKNOWN, v4.VulnerabilityReport_NOTE_OS_UNSUPPORTED:
+			notes.Add(storage.NodeScan_UNSUPPORTED)
 		default:
-			log.Warnf("encountered unknown Vulnerability Report Note type while converting: %s", n.String())
+			// Ignore unknown/unsupported note.
+			log.Warnf("encountered unknown node note (%v); skipping...", note)
 		}
 	}
-	return convertedNotes
+	return filterNodeNotes(notes.AsSlice(), osImage)
 }
 
-// TODO(ROX-26593): Instead of fixing notes here, add RHCOS DistributionScanner to ClairCore
+// TODO(ROX-26593): Instead of fixing notes here, add RHCOS DistributionScanner to Claircore
 // All nodes currently get the note UNSUPPORTED assigned to them because the IndexReport does not contain
 // Distribution information. To include it there, a specialized RHCOS DistributionScanner needs to be added
 // to ClairCore and then called in Compliances' IndexNode function where the IndexReport is created.
-func fixNotes(notes []storage.NodeScan_Note, osImageRef string) []storage.NodeScan_Note {
-	if !strings.HasPrefix(osImageRef, rhcosFullName) {
-		// Keep notes as they are for nodes other than RHCOS
+func filterNodeNotes(notes []storage.NodeScan_Note, osImage string) []storage.NodeScan_Note {
+	if !strings.HasPrefix(osImage, rhcosFullName) {
+		// Keep notes as they are for nodes other than RHCOS.
 		return notes
 	}
-	fixedNotes := make([]storage.NodeScan_Note, 0)
+	filtered := notes[:0]
 	for _, note := range notes {
-		switch note {
-		case storage.NodeScan_UNSUPPORTED:
-		default:
-			fixedNotes = append(fixedNotes, note)
+		if note == storage.NodeScan_UNSUPPORTED {
+			continue
 		}
+		filtered = append(filtered, note)
 	}
-	return fixedNotes
+	return filtered
 }
