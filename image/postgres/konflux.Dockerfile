@@ -25,8 +25,7 @@ LABEL \
     # We also set it to not inherit one from a base stage in case it's RHEL or UBI.
     release="1"
 
-RUN dnf upgrade -y --nobest && \
-    localedef -f UTF-8 -i en_US en_US.UTF-8 && \
+RUN localedef -f UTF-8 -i en_US en_US.UTF-8 && \
     mkdir -p /var/lib/postgresql && \
     groupmod -g 70 postgres && \
     usermod -u 70 postgres -d /var/lib/postgresql && \
