@@ -140,19 +140,6 @@ func getPersistenceByTarget(central *platform.Central, target PVCTarget, log log
 	}
 }
 
-func getDefaultPVCSizeByTarget(target PVCTarget) (resource.Quantity, error) {
-	switch target {
-	case PVCTargetCentral:
-		return resource.MustParse("0"), nil
-	case PVCTargetCentralDB:
-		return DefaultPVCSize, nil
-	case PVCTargetCentralDBBackup:
-		return DefaultBackupPVCSize, nil
-	default:
-		return resource.MustParse("0"), errors.Errorf("unknown pvc target %q", target)
-	}
-}
-
 // ReconcilePVCExtension reconciles PVCs created by the operator. The PVC is not managed by a Helm chart
 // because if a user uninstalls StackRox, it should keep the data, preventing to unintentionally erasing data.
 // On uninstall the owner reference is removed from the PVC objects.
@@ -170,11 +157,6 @@ func ReconcilePVCExtension(client ctrlClient.Client, direct ctrlClient.Reader, t
 }
 
 func reconcilePVC(ctx context.Context, central *platform.Central, persistence *platform.Persistence, target PVCTarget, defaultClaimName string, client ctrlClient.Client, log logr.Logger, opts ...PVCOption) error {
-	defaultPVCSize, err := getDefaultPVCSizeByTarget(target)
-	if err != nil {
-		return errors.Wrapf(err, "Could not get default PVC size")
-	}
-
 	ext := reconcilePVCExtensionRun{
 		ctx:              ctx,
 		namespace:        central.GetNamespace(),
@@ -183,7 +165,7 @@ func reconcilePVC(ctx context.Context, central *platform.Central, persistence *p
 		persistence:      persistence,
 		target:           target,
 		defaultClaimName: defaultClaimName,
-		defaultClaimSize: defaultPVCSize,
+		defaultClaimSize: DefaultPVCSize,
 		log:              log.WithValues("pvcReconciler", target),
 	}
 
