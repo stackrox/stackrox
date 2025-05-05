@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
 
@@ -33,7 +34,13 @@ func main() {
 	action := flag.Arg(0)
 	generatorSet := flag.Arg(1)
 
-	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
+	var config *rest.Config
+	var err error
+	if *kubeconfig == "" {
+		config, err = rest.InClusterConfig()
+	} else {
+		config, err = clientcmd.BuildConfigFromFlags("", *kubeconfig)
+	}
 	if err != nil {
 		println(err.Error())
 		return
