@@ -13,7 +13,6 @@ type ResourceType int
 const (
 	unknown ResourceType = iota
 	joinTable
-	unused1 // was permission checker
 	globallyScoped
 	directlyScoped
 	indirectlyScoped
