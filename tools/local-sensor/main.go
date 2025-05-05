@@ -36,6 +36,7 @@ import (
 	"github.com/stackrox/rox/sensor/debugger/message"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stackrox/rox/sensor/kubernetes/fake"
+	"github.com/stackrox/rox/sensor/kubernetes/heritage"
 	"github.com/stackrox/rox/sensor/kubernetes/sensor"
 	"github.com/stackrox/rox/sensor/testutils"
 	"google.golang.org/grpc"
@@ -388,6 +389,13 @@ func main() {
 
 	go s.Start()
 	go registerHostKillSignals(startTime, spyCentral, !localConfig.NoMemProfile, localConfig.CentralOutput, localConfig.OutputFormat, cancelFunc, s)
+
+	log.Printf("Storing heritage data")
+	hctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	hm := heritage.NewHeritageManager("stackrox", k8sClient)
+	// Feature not crucial for Sensor - errors may be ignored
+	_ = hm.Write(hctx, "1.1.1.99", "current-container-id", time.Now())
 
 	if spyCentral != nil {
 		spyCentral.ConnectionStarted.Wait()
