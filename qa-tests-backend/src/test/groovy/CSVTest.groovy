@@ -143,7 +143,7 @@ class CSVTest extends BaseSpecification {
         }
 
     def getComponentQuery() {
-        return "COMPONENT:" + getComponentId() + "+Fixable:true"
+        return "COMPONENT:" + getComponentName() + "+Fixable:true"
     }
 
     def getCVETypeImageQuery() {
