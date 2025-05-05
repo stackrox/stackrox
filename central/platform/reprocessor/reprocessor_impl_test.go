@@ -56,22 +56,12 @@ func (s *platformReprocessorImplTestSuite) TestRunReprocessing() {
 
 	s.reprocessor.runReprocessing()
 
-	alerts := testAlerts()
 	deployments := testDeployments()
 
 	// Case: Alerts and deployments are updated
 
 	// Mock calls made by alert reprocessing loop
-	s.alertDatastore.EXPECT().WalkByQuery(ctx, gomock.Any(), gomock.Any()).DoAndReturn(
-		func(_ context.Context, _ *v1.Query, fn func(*storage.Alert) error) error {
-			for _, alert := range alerts {
-				err := fn(alert)
-				if err != nil {
-					return err
-				}
-			}
-			return nil
-		}).Times(1)
+	s.alertDatastore.EXPECT().WalkByQuery(ctx, gomock.Any(), gomock.Any()).DoAndReturn(walk()).Times(1)
 	s.alertDatastore.EXPECT().WalkByQuery(ctx, gomock.Any(), gomock.Any()).Return(nil).Times(1)
 	s.alertDatastore.EXPECT().UpsertAlerts(ctx, expectedAlerts()).Return(nil).Times(1)
 
@@ -96,15 +86,7 @@ func (s *platformReprocessorImplTestSuite) TestStartAndStop() {
 	proceedAlertLoop := concurrency.NewSignal()
 	inAlertLoop := concurrency.NewSignal()
 	s.alertDatastore.EXPECT().WalkByQuery(gomock.Any(), gomock.Any(), gomock.Any()).
-		DoAndReturn(func(ctx context.Context, query *v1.Query, fn func(*storage.Alert) error) error {
-			for _, a := range testAlerts() {
-				err := fn(a)
-				if err != nil {
-					return err
-				}
-			}
-			return nil
-		}).Times(1)
+		DoAndReturn(walk()).Times(1)
 	s.alertDatastore.EXPECT().UpsertAlerts(gomock.Any(), expectedAlerts()).Do(func(_, _ any) {
 		inAlertLoop.Signal()
 		proceedAlertLoop.Wait()
@@ -125,15 +107,7 @@ func (s *platformReprocessorImplTestSuite) TestStartAndStop() {
 
 	// Alert reprocessing loop completes successfully. Mock calls made by alert reprocessing loop
 	s.alertDatastore.EXPECT().WalkByQuery(gomock.Any(), gomock.Any(), gomock.Any()).
-		DoAndReturn(func(ctx context.Context, query *v1.Query, fn func(*storage.Alert) error) error {
-			for _, a := range testAlerts() {
-				err := fn(a)
-				if err != nil {
-					return err
-				}
-			}
-			return nil
-		}).Times(1)
+		DoAndReturn(walk()).Times(1)
 	s.alertDatastore.EXPECT().WalkByQuery(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
 	s.alertDatastore.EXPECT().UpsertAlerts(gomock.Any(), expectedAlerts()).Return(nil).Times(1)
 
@@ -318,5 +292,17 @@ func expectedDeployments() []*storage.Deployment {
 			Namespace:         "open-cluster-management",
 			PlatformComponent: true,
 		},
+	}
+}
+
+func walk() func(_ context.Context, _ *v1.Query, fn func(*storage.Alert) error) error {
+	return func(_ context.Context, _ *v1.Query, fn func(*storage.Alert) error) error {
+		for _, alert := range testAlerts() {
+			err := fn(alert)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
 	}
 }
