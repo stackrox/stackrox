@@ -1,3 +1,4 @@
+import Raven from 'raven-js';
 import { distanceInWordsStrict } from 'date-fns';
 
 export type DateLike = string | number | Date;
@@ -29,8 +30,12 @@ function formatLocalizedDateTime(
     dateLike: DateLike,
     locales: Intl.LocalesArgument = undefined,
     dateTimeFormatOptions: Intl.DateTimeFormatOptions = {}
-) {
+): string {
     const date = convertDateLikeToDate(dateLike);
+    if (date.toString() === 'Invalid Date') {
+        Raven.captureException(new Error(`Invalid date: ${String(dateLike)}`));
+        return String(dateLike);
+    }
     return new Intl.DateTimeFormat(locales, {
         ...dateTimeFormatOptions,
     }).format(date);
@@ -42,7 +47,12 @@ function formatLocalizedDateTime(
  * @returns An ISO 8601 string representation of the date
  */
 export function displayDateTimeAsISO8601(dateLike: DateLike) {
-    return convertDateLikeToDate(dateLike).toISOString();
+    const date = convertDateLikeToDate(dateLike);
+    if (date.toString() === 'Invalid Date') {
+        Raven.captureException(new Error(`Invalid date: ${String(dateLike)}`));
+        return String(dateLike);
+    }
+    return date.toISOString();
 }
 
 /**
