@@ -169,7 +169,7 @@ func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
 				"persisted central annotations do not match expected annotations")
 
 			// Verify that the modified Central Spec has not been persisted.
-			assert.Equal(t, central.Spec.ScannerV4, &c.ScannerV4Spec, "persisted central spec is unmodified")
+			assert.Equal(t, central.Spec.ScannerV4, &c.ScannerV4Spec, "persisted central spec is modified")
 		})
 	}
 }
