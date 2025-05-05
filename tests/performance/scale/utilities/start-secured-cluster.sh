@@ -47,4 +47,4 @@ fi
 
 echo "Running: helm install ${settings[@]}"
 
-helm install "${settings[@]}"
+helm install "${settings[@]}" --version ${HELM_VERSION}

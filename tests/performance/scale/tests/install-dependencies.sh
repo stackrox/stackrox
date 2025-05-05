@@ -3,7 +3,7 @@ set -eoux pipefail
 
 git clone https://github.com/stackrox/stackrox.git
 cd "${HOME}/stackrox"
-git checkout jv-automate-perf-tests-stable
+git checkout jv-automate-perf-tests-stable-use-correct-helm
 cd "${HOME}"
 
 git clone https://github.com/stackrox/workflow.git
@@ -29,7 +29,8 @@ helm repo add rhacs https://mirror.openshift.com/pub/rhacs/charts
 helm repo update
 
 arch="$(uname -m | sed "s/x86_64//")"; arch="${arch:+-$arch}"
-curl -f -o roxctl "https://mirror.openshift.com/pub/rhacs/assets/4.4.2/bin/Linux/roxctl${arch}"
+roxctl_version=4.6.5
+curl -f -o roxctl "https://mirror.openshift.com/pub/rhacs/assets/${roxctl_version}/bin/Linux/roxctl${arch}"
 chmod +x roxctl
 sudo cp roxctl /usr/local/bin
 
