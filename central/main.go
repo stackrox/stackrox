@@ -863,7 +863,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			Compression:   true,
 		},
 		{
-			Route:         "/problemetrics/",
+			Route:         "/problemetrics",
 			Authorizer:    user.With(permissions.View(resources.Administration)),
 			ServerHandler: promhttp.HandlerFor(cvemetrics.Problemetrics, promhttp.HandlerOpts{}),
 			Compression:   true,
