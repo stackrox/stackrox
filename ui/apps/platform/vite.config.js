@@ -66,7 +66,6 @@ export default defineConfig(async () => {
     const sslOptions = getSslOptions();
     return {
         build: {
-            cacheDir: process.env.VITE_CACHE_DIR,
             assetsDir: './static',
             outDir: 'build',
             rollupOptions: {
