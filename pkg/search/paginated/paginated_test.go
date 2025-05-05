@@ -2,6 +2,8 @@ package paginated
 
 import (
 	"context"
+	"fmt"
+	"math"
 	"testing"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -89,6 +91,26 @@ func (s *paginationTestSuite) TestHandlesOffSetAndLimit() {
 	})
 	s.NoError(err, "expected no error, should return nil without access")
 	s.Equal(fakeResults[1:4], results, "results should use offset and limit")
+}
+
+func (s *paginationTestSuite) TestGetLimit() {
+	const whenUnlimited = 10
+	for given, expected := range map[int32]int32{
+		0:                 whenUnlimited,
+		math.MaxInt32:     whenUnlimited,
+		math.MinInt32:     whenUnlimited,
+		-1:                whenUnlimited,
+		1:                 1,
+		math.MaxInt32 - 1: math.MaxInt32 - 1,
+		whenUnlimited:     whenUnlimited,
+		whenUnlimited + 1: whenUnlimited + 1,
+		whenUnlimited - 1: whenUnlimited - 1,
+	} {
+		s.T().Run(fmt.Sprintf("%d %d", given, expected), func(t *testing.T) {
+			actual := GetLimit(given, whenUnlimited)
+			s.Equal(expected, actual)
+		})
+	}
 }
 
 var fakeResults = []search.Result{
