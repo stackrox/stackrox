@@ -224,6 +224,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	pkgVersion "github.com/stackrox/rox/pkg/version"
+	"github.com/travelaudience/go-promhttp"
 )
 
 var (
@@ -859,6 +860,12 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			Route:         "/api/extensions/certs/backup",
 			Authorizer:    user.With(permissions.View(resources.Administration)),
 			ServerHandler: certHandler.BackupCerts(listener.Singleton()),
+			Compression:   true,
+		},
+		{
+			Route:         "/problemetrics/",
+			Authorizer:    user.With(permissions.View(resources.Administration)),
+			ServerHandler: promhttp.HandlerFor(cvemetrics.Problemetrics, promhttp.HandlerOpts{}),
 			Compression:   true,
 		},
 	}

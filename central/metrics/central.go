@@ -479,7 +479,7 @@ func SetSignatureVerificationReprocessorDuration(start time.Time) {
 
 // RegisterVulnAggregatedMetric registers user-defined custom vulnerability
 // aggregated metric according to the ROX_AGGREGATE_VULN_METRICS variable value.
-func RegisterVulnAggregatedMetric(name string, labels []string) {
+func RegisterVulnAggregatedMetric(name string, labels []string, userRegistry *prometheus.Registry) {
 	metric := prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
@@ -488,7 +488,13 @@ func RegisterVulnAggregatedMetric(name string, labels []string) {
 			" and gathered every " + env.AggregateVulnMetricsPeriod.DurationSetting().String(),
 	}, labels)
 	aggregatedVulnMetrics[name] = metric
+
+	// Register the metric on the default Prometheus endpoint.
 	prometheus.MustRegister(metric)
+
+	if userRegistry != nil {
+		userRegistry.MustRegister(metric)
+	}
 }
 
 // SetAggregatedVulnCount registers the metric vector with the values,

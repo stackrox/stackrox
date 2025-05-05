@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/pkg/env"
@@ -34,7 +35,7 @@ func Singleton() interface {
 			trackFunc:         metrics.SetAggregatedVulnCount,
 		}
 		for metricName, labels := range instance.metricExpressions {
-			metrics.RegisterVulnAggregatedMetric(metricName, labels)
+			metrics.RegisterVulnAggregatedMetric(metricName, labels, Problemetrics)
 		}
 	})
 	return instance
@@ -92,3 +93,5 @@ func (h *vulnerabilityMetricsImpl) track(ctx context.Context) {
 		}
 	}
 }
+
+var Problemetrics = &prometheus.Registry{}
