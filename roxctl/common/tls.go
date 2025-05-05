@@ -10,49 +10,8 @@ import (
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/netutil"
-	"github.com/stackrox/rox/pkg/tlscheck"
 	"github.com/stackrox/rox/roxctl/common/flags"
-	"github.com/stackrox/rox/roxctl/common/logger"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
-
-const errorMsg = `The remote endpoint failed TLS validation: %v
-
-  Do one of the following:
-  1. Obtain a valid certificate for your Central instance/Load Balancer.
-  2. Use the --ca option to specify a custom CA certificate (PEM format).
-     This certificate can be obtained by running "roxctl central cert".
-  3. Use the --insecure-skip-tls-verify option to suppress this error
-     and not validate TLS certificates (NOT RECOMMENDED).
-`
-
-type grpcPermissionDenied struct{ error }
-
-func (p *grpcPermissionDenied) GRPCStatus() *status.Status {
-	return status.New(codes.PermissionDenied, p.Error())
-}
-
-type insecureVerifierWithError struct {
-	logger logger.Logger
-}
-
-func (v *insecureVerifierWithError) VerifyPeerCertificate(leaf *x509.Certificate, chainRest []*x509.Certificate, conf *tls.Config) error {
-	verifyOpts := x509.VerifyOptions{
-		DNSName:       conf.ServerName,
-		Intermediates: tlscheck.NewCertPool(chainRest...),
-		Roots:         conf.RootCAs,
-	}
-	v.logger.InfofLn("trying to verify cert for %s, signed by %s (CA %v)", leaf.Subject, leaf.Issuer, leaf.IsCA)
-	for i, c := range chainRest {
-		v.logger.InfofLn("%d cert in chain %s, signed by %s (CA %v)", i, c.Subject, c.Issuer, c.IsCA)
-	}
-	if _, err := leaf.Verify(verifyOpts); err != nil {
-		v.logger.ErrfLn(errorMsg, err)
-		return &grpcPermissionDenied{err}
-	}
-	return nil
-}
 
 // ConnectNames returns the endpoint and (SNI) server name given by the
 // --endpoint and --server-name flags respectively and information about plaintext.
@@ -87,20 +46,18 @@ func getServerName(endpoint string) (string, error) {
 	return serverName, nil
 }
 
-func tlsConfigOptsForCentral(logger logger.Logger) (*clientconn.TLSConfigOptions, error) {
+func tlsConfigOptsForCentral() (*clientconn.TLSConfigOptions, error) {
 	_, serverName, _, err := ConnectNames()
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing central endpoint")
 	}
 
 	opts := &clientconn.TLSConfigOptions{
-		ServerName: serverName,
+		ServerName:         serverName,
+		InsecureSkipVerify: flags.SkipTLSValidation() != nil && *flags.SkipTLSValidation(),
 	}
 
-	if flags.SkipTLSValidation() != nil && *flags.SkipTLSValidation() {
-		opts.InsecureSkipVerify = true
-		opts.CustomCertVerifier = &insecureVerifierWithError{logger: logger}
-	} else {
+	if !opts.InsecureSkipVerify {
 		if opts.RootCAs, err = getCertPool(); err != nil {
 			return nil, err
 		}
@@ -138,8 +95,8 @@ func getCertPool() (*x509.CertPool, error) {
 	return roots, nil
 }
 
-func tlsConfigForCentral(logger logger.Logger) (*tls.Config, error) {
-	opts, err := tlsConfigOptsForCentral(logger)
+func tlsConfigForCentral() (*tls.Config, error) {
+	opts, err := tlsConfigOptsForCentral()
 	if err != nil {
 		return nil, err
 	}
