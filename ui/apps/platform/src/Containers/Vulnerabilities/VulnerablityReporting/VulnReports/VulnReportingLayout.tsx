@@ -20,7 +20,7 @@ const tabs = [
 
 function VulnReportingLayout() {
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isOnDemandReportsEnabled = isFeatureFlagEnabled('ROX_VULNERABILITY_ON_DEMAND_REPORTS');
+    const isOnDemandReportsEnabled = !isFeatureFlagEnabled('ROX_VULNERABILITY_ON_DEMAND_REPORTS');
 
     const location = useLocation();
     const navigate = useNavigate();
