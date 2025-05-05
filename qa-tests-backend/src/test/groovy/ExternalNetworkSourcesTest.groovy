@@ -1,5 +1,6 @@
 import static util.Helpers.withRetry
 
+import com.google.common.collect.Sets
 import com.google.protobuf.Timestamp
 
 import io.stackrox.proto.api.v1.Common
@@ -188,8 +189,8 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
         String deploymentUid = DEP_EXTERNALCONNECTION.deploymentUid
         assert deploymentUid != null
 
-        List<String> conflictingCIDRs = getConflictingCIDRs([CF_CIDR_30, CF_CIDR_31])
-        if (conflictingCIDRs.size() > 0) {
+        Sets.SetView<String> conflictingCIDRs = getConflictingCIDRs([CF_CIDR_30, CF_CIDR_31] as Set<String>)
+        if (!conflictingCIDRs.isEmpty()) {
             log.warn("found existing CIDR blocks ${conflictingCIDRs} that conflict with this test case." +
                 "Check the cleanup of other tests if the interference causes this test to fail.")
         }
@@ -252,7 +253,7 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
         deleteNetworkEntity(externalSource31ID)
     }
 
-    private static List<String> getConflictingCIDRs(List<String> cidrs) {
+    private static Sets.SetView<String> getConflictingCIDRs(Set<String> cidrs) {
         def clusterId = ClusterService.getClusterId()
         assert clusterId
         def request = NetworkGraphServiceOuterClass.GetExternalNetworkEntitiesRequest
@@ -261,13 +262,13 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
             .build()
         def response = NetworkGraphService.getNetworkGraphClient().getExternalNetworkEntities(request)
 
-        def existingCidrs = response.getEntitiesList().findAll {
+        Set<String> existingCidrs = response.getEntitiesList().findAll {
             it.getInfo().hasExternalSource()
         }.collect {
             it.getInfo().getExternalSource().cidr
         } as Set
 
-        return cidrs.findAll { cidr -> cidr in existingCidrs }
+        return Sets.intersection(cidrs, existingCidrs)
     }
 
     private static createNetworkEntityExternalSource(String name, String cidr) {
