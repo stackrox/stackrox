@@ -94,7 +94,7 @@ func (c *cliEnvironmentImpl) GRPCConnection(connectionOpts ...common.GRPCOption)
 	if err != nil {
 		return nil, errors.Wrap(err, "determining auth method")
 	}
-	connection, err := common.GetGRPCConnection(am, c.Logger(), connectionOpts...)
+	connection, err := common.GetGRPCConnection(am, connectionOpts...)
 	return connection, errors.WithStack(err)
 }
 
