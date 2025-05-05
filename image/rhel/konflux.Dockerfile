@@ -1,6 +1,12 @@
+<<<<<<< HEAD
 ARG FINAL_STAGE_PATH="/mnt/final"
+=======
+ARG PG_VERSION=15
+>>>>>>> d55ccf80a2 (ROX-27880, ROX-20234: Prefetch RPMs and enable hermetic builds (#15114))
+
 
 # TODO(ROX-20312): we can't pin image tag or digest because currently there's no mechanism to auto-update that.
+<<<<<<< HEAD
 FROM registry.access.redhat.com/ubi8/ubi:latest AS ubi-base
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest AS final-base
 
@@ -27,6 +33,8 @@ RUN dnf -y --installroot="$FINAL_STAGE_PATH" upgrade --nobest && \
 RUN /tmp/.konflux/subscription-manager-bro.sh cleanup
 
 
+=======
+>>>>>>> d55ccf80a2 (ROX-27880, ROX-20234: Prefetch RPMs and enable hermetic builds (#15114))
 FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_1.23 AS go-builder
 
 RUN dnf -y install --allowerasing jq
@@ -80,10 +88,16 @@ ENV UI_PKG_INSTALL_EXTRA_ARGS="--ignore-scripts"
 RUN make -C ui build
 
 
-FROM scratch
+FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
 
-ARG FINAL_STAGE_PATH
-COPY --from=rpm-installer "$FINAL_STAGE_PATH" /
+ARG PG_VERSION
+
+RUN microdnf -y module enable postgresql:${PG_VERSION} && \
+    # find is used in /stackrox/import-additional-cas \
+    microdnf -y install findutils postgresql && \
+    microdnf -y clean all && \
+    rpm --verbose -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
+    rm -rf /var/cache/dnf /var/cache/yum
 
 COPY --from=ui-builder /go/src/github.com/stackrox/rox/app/ui/build /ui/
 

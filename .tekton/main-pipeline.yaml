@@ -252,6 +252,11 @@ spec:
       value: $(params.output-image-repo):konflux-$(params.revision).prefetch
     - name: ociArtifactExpiresAfter
       value: $(params.oci-artifact-expires-after)
+    - name: ACTIVATION_KEY
+      value: subscription-manager-activation-key-prod
+    # Required for the RPM prefetching support.
+    - name: dev-package-managers
+      value: "true"
     taskRef:
       params:
       - name: name
@@ -288,8 +293,6 @@ spec:
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
-    - name: ACTIVATION_KEY
-      value: subscription-manager-activation-key-prod
     taskRef:
       params:
       - name: name
@@ -329,8 +332,6 @@ spec:
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
-    - name: ACTIVATION_KEY
-      value: subscription-manager-activation-key-prod
     taskRef:
       params:
       - name: name
@@ -371,8 +372,6 @@ spec:
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
-    - name: ACTIVATION_KEY
-      value: subscription-manager-activation-key-prod
     taskRef:
       params:
       - name: name
@@ -413,8 +412,6 @@ spec:
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
-    - name: ACTIVATION_KEY
-      value: subscription-manager-activation-key-prod
     taskRef:
       params:
       - name: name
