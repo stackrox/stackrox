@@ -177,11 +177,6 @@ func (s *ImageCVEViewTestSuite) SetupSuite() {
 
 func (s *ImageCVEViewTestSuite) TestGetImageCVECore() {
 	for _, tc := range s.testCases() {
-		// TODO(ROX-28185):  Remove or re-enable depending on outcome of referenced ticket.
-		if features.FlattenCVEData.Enabled() && tc.desc == "search one operating system" {
-			continue
-		}
-
 		s.T().Run(tc.desc, func(t *testing.T) {
 			actual, err := s.cveView.Get(sac.WithAllAccess(tc.ctx), tc.q, tc.readOptions)
 			if tc.expectedErr != "" {
@@ -219,11 +214,6 @@ func (s *ImageCVEViewTestSuite) TestGetImageCVECore() {
 
 func (s *ImageCVEViewTestSuite) TestGetImageCVECoreSAC() {
 	for _, tc := range s.testCases() {
-		// TODO(ROX-28185):  Remove or re-enable depending on outcome of referenced ticket.
-		if features.FlattenCVEData.Enabled() && tc.desc == "search one operating system" {
-			continue
-		}
-
 		for key, sacTC := range s.sacTestCases() {
 			s.T().Run(fmt.Sprintf("Image %s %s", key, tc.desc), func(t *testing.T) {
 				testCtxs := testutils.GetNamespaceScopedTestContexts(tc.ctx, s.T(), resources.Image)
@@ -273,11 +263,6 @@ func (s *ImageCVEViewTestSuite) TestGetImageCVECoreSAC() {
 
 func (s *ImageCVEViewTestSuite) TestGetImageIDs() {
 	for _, tc := range s.testCases() {
-		// TODO(ROX-28185):  Remove or re-enable depending on outcome of referenced ticket.
-		if features.FlattenCVEData.Enabled() && tc.desc == "search one operating system" {
-			continue
-		}
-
 		s.T().Run(tc.desc, func(t *testing.T) {
 			// Such testcases are meant only for Get().
 			if tc.expectedErr != "" {
@@ -296,11 +281,6 @@ func (s *ImageCVEViewTestSuite) TestGetImageIDs() {
 
 func (s *ImageCVEViewTestSuite) TestGetImageIDsPagination() {
 	for _, tc := range s.testCases() {
-		// TODO(ROX-28185):  Remove or re-enable depending on outcome of referenced ticket.
-		if features.FlattenCVEData.Enabled() && tc.desc == "search one operating system" {
-			continue
-		}
-
 		// Such testcases are meant only for Get().
 		if tc.expectedErr != "" {
 			return
@@ -320,11 +300,6 @@ func (s *ImageCVEViewTestSuite) TestGetImageIDsPagination() {
 
 func (s *ImageCVEViewTestSuite) TestGetImageIDsSAC() {
 	for _, tc := range s.testCases() {
-		// TODO(ROX-28185):  Remove or re-enable depending on outcome of referenced ticket.
-		if features.FlattenCVEData.Enabled() && tc.desc == "search one operating system" {
-			continue
-		}
-
 		for key, sacTC := range s.sacTestCases() {
 			s.T().Run(fmt.Sprintf("Image %s %s", key, tc.desc), func(t *testing.T) {
 				// Such testcases are meant only for Get().
@@ -361,10 +336,6 @@ func (s *ImageCVEViewTestSuite) TestGetImageCVECoreWithPagination() {
 		baseTestCases := s.testCases()
 		for idx := range baseTestCases {
 			tc := &baseTestCases[idx]
-			// TODO(ROX-28185):  Remove or re-enable depending on outcome of referenced ticket.
-			if features.FlattenCVEData.Enabled() && tc.desc == "search one operating system" {
-				continue
-			}
 			if !tc.readOptions.IsDefault() {
 				continue
 			}
@@ -402,11 +373,6 @@ func (s *ImageCVEViewTestSuite) TestGetImageCVECoreWithPagination() {
 
 func (s *ImageCVEViewTestSuite) TestCountImageCVECore() {
 	for _, tc := range s.testCases() {
-		// TODO(ROX-28185):  Remove or re-enable depending on outcome of referenced ticket.
-		if features.FlattenCVEData.Enabled() && tc.desc == "search one operating system" {
-			continue
-		}
-
 		if tc.skipCountTests {
 			continue
 		}
@@ -427,11 +393,6 @@ func (s *ImageCVEViewTestSuite) TestCountImageCVECore() {
 
 func (s *ImageCVEViewTestSuite) TestCountImageCVECoreSAC() {
 	for _, tc := range s.testCases() {
-		// TODO(ROX-28185):  Remove or re-enable depending on outcome of referenced ticket.
-		if features.FlattenCVEData.Enabled() && tc.desc == "search one operating system" {
-			continue
-		}
-
 		for key, sacTC := range s.sacTestCases() {
 			if tc.skipCountTests {
 				continue
@@ -467,11 +428,6 @@ func (s *ImageCVEViewTestSuite) TestCountImageCVECoreSAC() {
 
 func (s *ImageCVEViewTestSuite) TestCountBySeverity() {
 	for _, tc := range s.testCases() {
-		// TODO(ROX-28185):  Remove or re-enable depending on outcome of referenced ticket.
-		if features.FlattenCVEData.Enabled() && tc.desc == "search one operating system" {
-			continue
-		}
-
 		if tc.skipCountTests {
 			continue
 		}
