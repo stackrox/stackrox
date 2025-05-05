@@ -959,7 +959,7 @@ func normalizeVulnerabilities(scan *storage.ImageScan) {
 }
 
 func (e *enricherImpl) acquireSemaphore(ctx context.Context, scanner types.Scanner, sema *semaphore.Weighted) error {
-	scanMetrics.ImageScanSemaphoreQueueSize()
+	e.metrics.IncrementEnricherSemaphoreQueueSize()
 	defer e.metrics.DecrementEnricherSemaphoreQueueSize()
 	return sema.Acquire(ctx, 1)
 }
