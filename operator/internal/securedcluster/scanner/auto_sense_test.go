@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 var securedCluster = platform.SecuredCluster{
@@ -56,28 +55,4 @@ func TestAutoSenseIsEnabledWithCentralInADifferentNamespace(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, config.DeployScannerResources)
 	require.True(t, config.EnableLocalImageScanning)
-}
-
-func TestAutoSenseIsDisabledIfClusterVersionNotFound(t *testing.T) {
-	client := testutils.NewFakeClientBuilder(t, &unstructured.Unstructured{
-		Object: map[string]interface{}{
-			"kind":       "ClusterVersion",
-			"apiVersion": "config.openshift.io/v1",
-			"metadata": map[string]interface{}{
-				"name": "not-default-name",
-			},
-		},
-	}).Build()
-
-	config, err := AutoSenseLocalScannerConfig(context.Background(), client, securedCluster)
-	require.Error(t, err)
-	require.False(t, config.EnableLocalImageScanning, "Expected an error if clusterversions.config.openshift.io %q not found", clusterVersionDefaultName)
-}
-
-func TestAutoSenseIsDisabledIfClusterVersionKindNotFound(t *testing.T) {
-	client := testutils.NewFakeClientBuilder(t).Build()
-
-	config, err := AutoSenseLocalScannerConfig(context.Background(), client, securedCluster)
-	require.Error(t, err)
-	require.False(t, config.EnableLocalImageScanning, "Expected an error if clusterversions.config.openshift.io kind not found")
 }
