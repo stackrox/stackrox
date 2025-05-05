@@ -1,5 +1,5 @@
 # TODO(ROX-26860): remove this file and use just requirements.txt once the GHA operator build runs with Python 3.9.
 # PyYAML > 6.0 requires Python > 3.6.
 PyYAML==6.0
-# pytest==7.0.1 is the latest available for the quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8 job container's Python.
+# pytest==7.0.1 is the latest available for the quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8-3-g679cfb72eb job container's Python.
 pytest==7.0.1
