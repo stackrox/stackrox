@@ -36,7 +36,7 @@ func reconcileScannerV4FeatureDefaults(
 		return nil
 	}
 
-	// User is relying on defaults. Compute default and persist corresponding annotation.
+	// User is relying on defaults. Set in-memory default and persist corresponding annotation.
 
 	scannerV4Spec.ScannerComponent = &componentPolicy
 	if central.Annotations == nil {
