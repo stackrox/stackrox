@@ -439,6 +439,8 @@ func (s *storeImpl) upsert(ctx context.Context, obj *storage.Image) error {
 		}
 	}
 
+	// This check ensures that if the components table was empty, we attempt to upsert the related components
+	// so that the new data model tables are populated in the event this image has data in the scan.
 	componentsEmpty, err := s.isComponentsTableEmpty(ctx, obj.GetId())
 	if err != nil {
 		return err
