@@ -93,6 +93,27 @@ func addCommandHeaderStreamInterceptor(ctx context.Context, desc *grpc.StreamDes
 	return streamer(makeCtxWithCommandHeader(ctx), desc, cc, method, opts...)
 }
 
+func shouldRetry(err error) bool {
+	if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) {
+		return false // Do not retry on context errors.
+	}
+	if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
+		return true // Retry on timeout errors.
+	}
+	if strings.Contains(err.Error(), "x509: certificate") {
+		return false // Do not retry on certificate errors.
+	}
+	if grpcErr, ok := status.FromError(err); ok {
+		if grpcErr.Code() == codes.Unavailable {
+			return true // Retry on Unavailable errors (e.g., connection refused).
+		}
+		if grpcErr.Code() == codes.Unauthenticated || grpcErr.Code() == codes.PermissionDenied {
+			return false // Do not retry on authentication/authorization errors.
+		}
+	}
+	return false // Default: do not retry.
+}
+
 func createGRPCConn(c grpcConfig) (*grpc.ClientConn, error) {
 	const initialBackoffDuration = 100 * time.Millisecond
 	retryOpts := []grpc_retry.CallOption{
@@ -100,26 +121,7 @@ func createGRPCConn(c grpcConfig) (*grpc.ClientConn, error) {
 		// First retry after 100ms, last retry after 51.2s.
 		grpc_retry.WithMax(10),
 		grpc_retry.WithPerRetryTimeout(c.retryTimeout),
-		grpc_retry.WithRetriable(func(err error) bool {
-			if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) {
-				return false // Do not retry on context errors.
-			}
-			if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
-				return true // Retry on timeout errors.
-			}
-			if strings.Contains(err.Error(), "x509: certificate") {
-				return false // Do not retry on certificate errors.
-			}
-			if grpcErr, ok := status.FromError(err); ok {
-				if grpcErr.Code() == codes.Unavailable {
-					return true // Retry on Unavailable errors (e.g., connection refused).
-				}
-				if grpcErr.Code() == codes.Unauthenticated || grpcErr.Code() == codes.PermissionDenied {
-					return false // Do not retry on authentication/authorization errors.
-				}
-			}
-			return false // Default: do not retry.
-		}),
+		grpc_retry.WithRetriable(shouldRetry),
 	}
 
 	grpcDialOpts := []grpc.DialOption{
