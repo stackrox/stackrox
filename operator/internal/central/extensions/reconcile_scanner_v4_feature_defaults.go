@@ -38,24 +38,22 @@ func reconcileScannerV4FeatureDefaults(
 
 	// User is relying on defaults. Set in-memory default and persist corresponding annotation.
 
-	if central.Annotations == nil {
-		central.Annotations = make(map[string]string)
-	}
-	if central.Annotations[annotationKey] != string(componentPolicy) {
-		// Update feature default setting.
-		// We do this immediately during (first-time) execution of this extension to make sure
-		// that this information is already persisted in the Kubernetes resource before we
-		// can realistically end up in a situation where reconcilliation might need to be retried.
-		err := patchCentralAnnotation(ctx, logger, client, central, annotationKey, string(componentPolicy))
-		if err != nil {
-			return err
-		}
-	}
-
 	// Mutates Central spec for the following reconciler extensions and for the translator -- this is not persisted on the cluster.
 	scannerV4Spec.ScannerComponent = &componentPolicy
 	central.Spec.ScannerV4 = scannerV4Spec
-	return nil
+
+	if central.Annotations == nil {
+		central.Annotations = make(map[string]string)
+	}
+	if central.Annotations[annotationKey] == string(componentPolicy) {
+		return nil
+	}
+
+	// Update feature default setting.
+	// We do this immediately during (first-time) execution of this extension to make sure
+	// that this information is already persisted in the Kubernetes resource before we
+	// can realistically end up in a situation where reconcilliation might need to be retried.
+	return patchCentralAnnotation(ctx, logger, client, central, annotationKey, string(componentPolicy))
 }
 
 func initializedDeepCopy(spec *platform.ScannerV4Spec) *platform.ScannerV4Spec {
