@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
-	"net"
 	"os"
 
 	"github.com/pkg/errors"
@@ -94,59 +93,49 @@ func tlsConfigOptsForCentral(logger logger.Logger) (*clientconn.TLSConfigOptions
 		return nil, errors.Wrap(err, "parsing central endpoint")
 	}
 
-	var dialContext func(ctx context.Context, addr string) (net.Conn, error)
+	opts := &clientconn.TLSConfigOptions{
+		ServerName: serverName,
+	}
 
-	skipVerify := flags.SkipTLSValidation() != nil && *flags.SkipTLSValidation()
-	var roots *x509.CertPool
-	var customVerifier tlscheck.TLSCertVerifier
-	var ca []byte
-	if skipVerify {
-		if flags.CAFile() != "" {
-			logger.WarnfLn("--insecure-skip-tls-verify has no effect when --ca is set")
-		}
+	if flags.SkipTLSValidation() != nil && *flags.SkipTLSValidation() {
+		opts.InsecureSkipVerify = true
+		opts.CustomCertVerifier = &insecureVerifierWithError{logger: logger}
 	} else {
-		customVerifier = &insecureVerifierWithError{
-			logger: logger,
-		}
-		if flags.CAFile() != "" {
-			var err error
-			if ca, err = os.ReadFile(flags.CAFile()); err != nil {
-				return nil, errors.Wrap(err, "failed to parse CA certificates from file")
-			}
-		} else {
-			// Read the CA from the central secret.
-			if flags.UseKubeContext() {
-				_, core, namespace, err := getConfigs()
-				if err != nil {
-					return nil, err
-				}
-				var warn error
-				// Proceed with no CA on error. Return the error as warning later.
-				ca, warn = getCentralCA(context.Background(), core, namespace)
-				if warn != nil {
-					logger.WarnfLn("Failed to read the central CA: %v", warn)
-				}
-			}
+		if opts.RootCAs, err = getCertPool(); err != nil {
+			return nil, err
 		}
 	}
 
-	if ca != nil {
-		roots = x509.NewCertPool()
-		if !roots.AppendCertsFromPEM(ca) {
-			return nil, errors.Errorf("CA certificates file %s contains no certificates!", flags.CAFile())
-		}
-	}
 	if flags.UseKubeContext() {
-		dialContext = getForwardingDialContext()
+		opts.DialContext = getForwardingDialContext()
 	}
 
-	return &clientconn.TLSConfigOptions{
-		ServerName:         serverName,
-		InsecureSkipVerify: skipVerify,
-		CustomCertVerifier: customVerifier,
-		RootCAs:            roots,
-		DialContext:        dialContext,
-	}, nil
+	return opts, nil
+}
+
+func getCertPool() (*x509.CertPool, error) {
+	roots := x509.NewCertPool()
+	if flags.CAFile() != "" {
+		if ca, err := os.ReadFile(flags.CAFile()); err != nil {
+			return nil, errors.Wrap(err, "failed to parse CA certificates from file")
+		} else if !roots.AppendCertsFromPEM(ca) {
+			return nil, errors.Errorf("CA certificates file %s contains no certificates", flags.CAFile())
+		}
+	} else
+	// Read the CA from the central secret.
+	if flags.UseKubeContext() {
+		_, core, namespace, err := getConfigs()
+		if err != nil {
+			return nil, err
+		}
+		ca, err := getCentralCA(context.Background(), core, namespace)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to read the central CA from the central-tls secret")
+		} else if !roots.AppendCertsFromPEM(ca) {
+			return nil, errors.New("central-tls secret contains no certificates")
+		}
+	}
+	return roots, nil
 }
 
 func tlsConfigForCentral(logger logger.Logger) (*tls.Config, error) {
