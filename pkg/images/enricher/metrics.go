@@ -5,7 +5,12 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/stackrox/rox/pkg/images"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
+)
+
+var (
+	enricherScanMetricsName = prometheus.Labels{"location": "image-enricher"}
 )
 
 // This interface encapsulates the metrics this package needs.
@@ -26,9 +31,6 @@ type metricsImpl struct {
 
 	scanTimeDuration           *prometheus.HistogramVec
 	imageVulnRetrievalDuration *prometheus.HistogramVec
-
-	enricherSemaphoreQueueSize   prometheus.Gauge
-	enricherSemaphoreHoldingSize prometheus.Gauge
 }
 
 func (m *metricsImpl) IncrementMetadataCacheHit() {
@@ -40,19 +42,19 @@ func (m *metricsImpl) IncrementMetadataCacheMiss() {
 }
 
 func (m *metricsImpl) IncrementEnricherSemaphoreQueueSize() {
-	m.enricherSemaphoreQueueSize.Inc()
+	images.ScanSemaphoreQueueSize.With(enricherScanMetricsName).Inc()
 }
 
 func (m *metricsImpl) DecrementEnricherSemaphoreQueueSize() {
-	m.enricherSemaphoreQueueSize.Dec()
+	images.ScanSemaphoreQueueSize.With(enricherScanMetricsName).Dec()
 }
 
 func (m *metricsImpl) IncrementEnricherSemaphoreHoldingSize() {
-	m.enricherSemaphoreHoldingSize.Inc()
+	images.ScanSemaphoreHoldingSize.With(enricherScanMetricsName).Inc()
 }
 
 func (m *metricsImpl) DecrementEnricherSemaphoreHoldingSize() {
-	m.enricherSemaphoreHoldingSize.Dec()
+	images.ScanSemaphoreHoldingSize.With(enricherScanMetricsName).Dec()
 }
 
 func startTimeToMS(t time.Time) float64 {
@@ -95,18 +97,6 @@ func newMetrics(subsystem pkgMetrics.Subsystem) metrics {
 			Help:      "Amount of time it's taken to retrieve vulns for an image in ms",
 			Buckets:   prometheus.ExponentialBuckets(4, 2, 16),
 		}, []string{"Scanner", "Error"}),
-		enricherSemaphoreQueueSize: prometheus.NewGauge(prometheus.GaugeOpts{
-			Namespace: pkgMetrics.PrometheusNamespace,
-			Subsystem: subsystem.String(),
-			Name:      "enricher_semaphore_queue_size",
-			Help:      "A counter that tracks the size of the queues for the scan semaphores used in image scans.",
-		}),
-		enricherSemaphoreHoldingSize: prometheus.NewGauge(prometheus.GaugeOpts{
-			Namespace: pkgMetrics.PrometheusNamespace,
-			Subsystem: subsystem.String(),
-			Name:      "enricher_semaphore_holding_size",
-			Help:      "A counter that tracks the number of requests successfully holding scanner semaphores",
-		}),
 	}
 
 	pkgMetrics.EmplaceCollector(
@@ -114,8 +104,6 @@ func newMetrics(subsystem pkgMetrics.Subsystem) metrics {
 		m.metadataCacheMisses,
 		m.scanTimeDuration,
 		m.imageVulnRetrievalDuration,
-		m.enricherSemaphoreQueueSize,
-		m.enricherSemaphoreHoldingSize,
 	)
 
 	return m
