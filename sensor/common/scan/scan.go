@@ -8,11 +8,13 @@ import (
 	"time"
 
 	pkgErrors "github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/images"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
@@ -22,7 +24,6 @@ import (
 	"github.com/stackrox/rox/pkg/registrymirror"
 	"github.com/stackrox/rox/pkg/signatures"
 	"github.com/stackrox/rox/pkg/tlscheck"
-	"github.com/stackrox/rox/sensor/common/scan/metrics"
 	"github.com/stackrox/rox/sensor/common/scannerclient"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	"golang.org/x/sync/semaphore"
@@ -48,6 +49,8 @@ var (
 	ErrEnrichNotStarted = errors.New("enrich was not started")
 
 	log = logging.LoggerForModule()
+
+	sensorScanMetricsName = prometheus.Labels{"location": "sensor-scan"}
 )
 
 // LocalScan wraps the functions required for enriching local images. This allows us to inject different values for testing purposes.
@@ -150,8 +153,8 @@ func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClie
 	if err := acquireSemaphore(semaphoreCtx, scanLimitSemaphore); err != nil {
 		return nil, errors.Join(err, ErrTooManyParallelScans, ErrEnrichNotStarted)
 	}
-	metrics.SensorScanSemaphoreHoldingSize.Inc()
-	defer metrics.SensorScanSemaphoreHoldingSize.Dec()
+	images.ScanSemaphoreHoldingSize.With(sensorScanMetricsName).Inc()
+	defer images.ScanSemaphoreHoldingSize.With(sensorScanMetricsName).Dec()
 	defer scanLimitSemaphore.Release(1)
 
 	srcImage := req.Image
@@ -202,8 +205,8 @@ func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClie
 }
 
 func acquireSemaphore(ctx context.Context, sema *semaphore.Weighted) error {
-	metrics.SensorScanSemaphoreQueueSize.Inc()
-	defer metrics.SensorScanSemaphoreQueueSize.Dec()
+	images.ScanSemaphoreQueueSize.With(sensorScanMetricsName).Inc()
+	defer images.ScanSemaphoreQueueSize.With(sensorScanMetricsName).Dec()
 	return sema.Acquire(ctx, 1)
 }
 

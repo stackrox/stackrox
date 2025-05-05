@@ -8,9 +8,9 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 	clusterUtil "github.com/stackrox/rox/central/cluster/util"
 	"github.com/stackrox/rox/central/image/datastore"
-	"github.com/stackrox/rox/central/image/metrics"
 	iiStore "github.com/stackrox/rox/central/imageintegration/store"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/role/sachelper"
@@ -28,6 +28,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	images "github.com/stackrox/rox/pkg/images"
 	"github.com/stackrox/rox/pkg/images/cache"
 	"github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/images/types"
@@ -87,6 +88,8 @@ var (
 	reprocessInterval = env.ReprocessInterval.DurationSetting()
 
 	delegateScanPermissions = []string{"Image"}
+
+	imageScanMetricsName = prometheus.Labels{"location": "image-scan"}
 )
 
 // serviceImpl provides APIs for alerts.
@@ -479,15 +482,15 @@ func (s *serviceImpl) GetImageVulnerabilitiesInternal(ctx context.Context, reque
 
 func (s *serviceImpl) releaseFromScanSemaphore() {
 	s.internalScanSemaphore.Release(1)
-	metrics.ImageScanSemaphoreHoldingSize.Dec()
+	images.ScanSemaphoreHoldingSize.With(imageScanMetricsName).Dec()
 }
 
 func (s *serviceImpl) acquireScanSemaphore(ctx context.Context) error {
 	semaphoreCtx, cancel := context.WithTimeout(ctx, maxSemaphoreWaitTime)
 	defer cancel()
-	metrics.ImageScanSemaphoreQueueSize.Inc()
-	defer metrics.ImageScanSemaphoreQueueSize.Dec()
-	defer metrics.ImageScanSemaphoreHoldingSize.Inc()
+	images.ScanSemaphoreQueueSize.With(imageScanMetricsName).Inc()
+	defer images.ScanSemaphoreQueueSize.With(imageScanMetricsName).Dec()
+	defer images.ScanSemaphoreHoldingSize.With(imageScanMetricsName).Inc()
 	if err := s.internalScanSemaphore.Acquire(semaphoreCtx, 1); err != nil {
 		wrappedErr := errors.Wrap(err, "acquiring scan semaphore")
 
