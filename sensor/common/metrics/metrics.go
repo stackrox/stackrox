@@ -133,14 +133,14 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "collector_processes_signal_total",
-		Help:      "Total operations of processes signal received from Collector",
+		Help:      "Number of queue-related operations for the `SignalStreamMessage`s received from Collector",
 	}, []string{"Operation"})
 
 	totalProcessesCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "collector_processes_total",
-		Help:      "Total operations of processes received from Collector",
+		Help:      "Number of queue-related operations for the `ProcessSignal` messages received from Collector",
 	}, []string{"Operation"})
 
 	processSignalBufferGauge = prometheus.NewGauge(prometheus.GaugeOpts{
@@ -309,8 +309,8 @@ var (
 	collectorChannelMessagesCount = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "messages_received_collector_total",
-		Help:      "A counter that tracks number of messages received from collector",
+		Name:      "messages_received_from_collector_total",
+		Help:      "A counter that tracks number of messages received from the collector internal service",
 	}, []string{"MessageType"})
 )
 

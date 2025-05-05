@@ -3,13 +3,11 @@ package signal
 import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/sensor/queue"
 )
 
 func NewService(opts ...Option) Service {
-	queueSize := queue.ScaleSizeOnNonDefault(env.ProcessSignalQueueSize)
 	srv := &serviceImpl{
-		queue:            make(chan *storage.ProcessSignal, queueSize),
+		queue:            make(chan *storage.ProcessSignal, env.ProcessSignalChannelBufferSize.IntegerSetting()),
 		authFuncOverride: authFuncOverride,
 	}
 
