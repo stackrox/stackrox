@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/sensor/queue"
 	"github.com/stackrox/rox/sensor/common/metrics"
 	"google.golang.org/grpc"
 )
@@ -35,9 +34,8 @@ type serviceImpl struct {
 }
 
 func newService(opts ...Option) Service {
-	queueSize := env.CollectorIServiceQueueSize
 	s := &serviceImpl{
-		queue:            make(chan *sensor.ProcessSignal, queue.ScaleSizeOnNonDefault(queueSize)),
+		queue:            make(chan *sensor.ProcessSignal, env.CollectorIServiceChannelBufferSize.IntegerSetting()),
 		authFuncOverride: authFuncOverride,
 	}
 
@@ -61,8 +59,8 @@ func (s *serviceImpl) Communicate(server sensor.CollectorService_CommunicateServ
 		case <-server.Context().Done():
 			return nil
 		default:
-			err := s.communicate(server)
-			if err != nil {
+			if err := s.communicate(server); err != nil {
+				log.Error("error dequeueing collector message, event: ", err)
 				return err
 			}
 		}
@@ -72,7 +70,6 @@ func (s *serviceImpl) Communicate(server sensor.CollectorService_CommunicateServ
 func (s *serviceImpl) communicate(server sensor.CollectorService_CommunicateServer) error {
 	msg, err := server.Recv()
 	if err != nil {
-		log.Error("error dequeueing collector message, event: ", err)
 		return err
 	}
 
@@ -88,11 +85,9 @@ func (s *serviceImpl) communicate(server sensor.CollectorService_CommunicateServ
 			metrics.IncrementTotalProcessesDroppedCounter()
 		}
 	case *sensor.MsgFromCollector_Register:
-		log.Debugf("got register: %+v", msg.GetRegister())
 	case *sensor.MsgFromCollector_Info:
-		log.Debugf("got network info: %+v", msg.GetInfo())
 	default:
-		log.Errorf("got unknown message type %T", msg.GetMsg())
+		log.Errorf("got unknown message from Collector: %T", msg.GetMsg())
 	}
 	return nil
 }
