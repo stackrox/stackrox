@@ -70,10 +70,10 @@ const EntityCompliance = ({ entityType, entityName, clusterName }) => {
         <Query query={AGGREGATED_RESULTS} variables={variables}>
             {({ loading, data }) => {
                 let contents = <Loader />;
-                if (!loading && data && data.results) {
-                    // Frontend filtering of results.
+                if (!loading && data && data.controls) {
+                    // Frontend filtering of control results.
                     const { complianceStandards } = data;
-                    const results = data.results.results.filter((result) => {
+                    const results = data.controls.results.filter((result) => {
                         const standardId = result.aggregationKeys[0].id;
                         return complianceStandards.some(({ id }) => id === standardId);
                     });
