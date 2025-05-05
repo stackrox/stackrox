@@ -11,7 +11,10 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/alert/convert"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
 )
+
+const whenUnlimited = 100
 
 type AlertSearcher interface {
 	Search(ctx context.Context, q *v1.Query, excludeResolved bool) ([]search.Result, error)
@@ -42,7 +45,7 @@ func (ds *searcherImpl) SearchListAlerts(ctx context.Context, q *v1.Query, exclu
 	if excludeResolved {
 		q = applyDefaultState(q)
 	}
-	listAlerts := make([]*storage.ListAlert, 0, q.GetPagination().GetLimit())
+	listAlerts := make([]*storage.ListAlert, 0, paginated.GetLimit(q.GetPagination().GetLimit(), whenUnlimited))
 	err := ds.storage.GetByQueryFn(ctx, q, func(alert *storage.Alert) error {
 		listAlerts = append(listAlerts, convert.AlertToListAlert(alert))
 		return nil
@@ -59,7 +62,7 @@ func (ds *searcherImpl) SearchRawAlerts(ctx context.Context, q *v1.Query, exclud
 	if excludeResolved {
 		q = applyDefaultState(q)
 	}
-	alerts := make([]*storage.Alert, 0, q.GetPagination().GetLimit())
+	alerts := make([]*storage.Alert, 0, paginated.GetLimit(q.GetPagination().GetLimit(), whenUnlimited))
 	err := ds.storage.GetByQueryFn(ctx, q, func(alert *storage.Alert) error {
 		alerts = append(alerts, alert)
 		return nil
