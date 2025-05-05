@@ -96,6 +96,10 @@ var (
 	// `4.6.x`, the variants would eventually allow us to accept the bundle when
 	// comparing `4.6.x-nightly-20241004`, `4.6.x-nightly` and finally `4.6.x`.
 	mainVersionVariants map[string]bool
+
+	// errNotModified is used to inform the http handler that the requested file
+	// has not be modified.
+	errNotModified = errors.New("not modified")
 )
 
 type requestedUpdater struct {
@@ -213,6 +217,8 @@ type openOpts struct {
 	vulnBundle string
 	// offlineBlobName is the name of the offline blob to use.
 	offlineBlobName string
+	// modifiedSince is the parsed value of the If-Modified-Since header.
+	modifiedSince *time.Time
 }
 
 func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
@@ -225,6 +231,7 @@ func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
 
 	var uType updaterType
 	var opts openOpts
+	opts.modifiedSince = h.parseModifiedSinceHeader(r)
 
 	switch {
 	case uuid != "":
@@ -262,6 +269,11 @@ func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
 
 	f, err := h.openDefinitions(ctx, uType, opts)
 	if err != nil {
+		if errors.Is(err, errNotModified) {
+			writeNotModified(w)
+			return
+		}
+
 		writeErrorForFile(w, err, opts.name)
 		return
 	}
@@ -273,6 +285,27 @@ func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
 	serveContent(w, r, f.Name(), f.modTime, f)
 }
 
+// parseModifiedSinceHeader will extract a time from the If-Modified-Since header
+// Logic inspired by the stdlib: https://cs.opensource.google/go/go/+/refs/tags/go1.23.7:src/net/http/fs.go;l=557
+func (h *httpHandler) parseModifiedSinceHeader(r *http.Request) *time.Time {
+	// Ignore the header if the request is not GET or HEAD.
+	if r.Method != "GET" && r.Method != "HEAD" {
+		return nil
+	}
+
+	ims := r.Header.Get("If-Modified-Since")
+	if ims == "" {
+		return nil
+	}
+
+	t, err := http.ParseTime(ims)
+	if err != nil {
+		return nil
+	}
+
+	return &t
+}
+
 func (h *httpHandler) openDefinitions(ctx context.Context, t updaterType, opts openOpts) (*vulDefFile, error) {
 	log.Debugf("Fetching scanner data (online: %t): type %s: options: %#v", h.online, t, opts)
 
@@ -280,7 +313,15 @@ func (h *httpHandler) openDefinitions(ctx context.Context, t updaterType, opts o
 	// This is ok, and we account for this.
 	offline, err := h.openOfflineDefinitions(ctx, t, opts)
 	if err != nil {
-		return nil, err
+		if !h.online {
+			// If offline mode, all errors should be returned.
+			return nil, err
+		}
+
+		// Ignore not modified errors when in online mode, a newer file may be available.
+		if !errors.Is(err, errNotModified) {
+			return nil, err
+		}
 	}
 	// If we are in offline-mode, do not bother fetching the latest online data.
 	if !h.online {
@@ -314,7 +355,7 @@ func (h *httpHandler) openDefinitions(ctx context.Context, t updaterType, opts o
 // If the offline file does not exist, it is not an error, and (nil, nil) is returned.
 func (h *httpHandler) openOfflineDefinitions(ctx context.Context, t updaterType, opts openOpts) (*vulDefFile, error) {
 	log.Debugf("Fetching offline data for updater: type %s: options: %#v", t, opts)
-	offlineBlob, err := h.openOfflineBlob(ctx, opts.offlineBlobName)
+	offlineBlob, err := h.openOfflineBlob(ctx, opts.offlineBlobName, opts.modifiedSince)
 	if err != nil {
 		return nil, fmt.Errorf("opening offline definitions: %s: %w", opts.offlineBlobName, err)
 	}
@@ -387,21 +428,52 @@ func (h *httpHandler) openOfflineDefinitions(ctx context.Context, t updaterType,
 
 // openOfflineBlob opens the offline scanner data identified by the given blobName.
 // If the blob does not exist, then no file nor error is returned (nil, nil).
-func (h *httpHandler) openOfflineBlob(ctx context.Context, blobName string) (*vulDefFile, error) {
-	snap, err := snapshot.TakeBlobSnapshot(sac.WithAllAccess(ctx), h.blobStore, blobName)
+// If the blob exists but has not been modified, errNotModified is returned.
+func (h *httpHandler) openOfflineBlob(ctx context.Context, blobName string, modifiedSince *time.Time) (*vulDefFile, error) {
+	allAccessCtx := sac.WithAllAccess(ctx)
+
+	// Do not take blob snapshot if it has NOT been modified.
+	if modifiedSince != nil {
+		blob, exists, err := h.blobStore.GetMetadata(allAccessCtx, blobName)
+		if err != nil {
+			log.Warnf("Cannot test if Blob has been modified %q: %v", blobName, err)
+			return nil, err
+		}
+		if !exists {
+			return nil, nil
+		}
+		// Inspired by: https://cs.opensource.google/go/go/+/refs/tags/go1.23.7:src/net/http/fs.go;l=571
+		if blobModifiedTime(blob).Truncate(time.Second).Compare(*modifiedSince) <= 0 {
+			return nil, errNotModified
+		}
+	}
+
+	snap, err := snapshot.TakeBlobSnapshot(allAccessCtx, h.blobStore, blobName)
 	if err != nil {
 		// If the blob does not exist, return no reader.
 		if errors.Is(err, snapshot.ErrBlobNotExist) {
 			return nil, nil
 		}
-		log.Warnf("Cannnot take a snapshot of Blob %q: %v", blobName, err)
+		log.Warnf("Cannot take a snapshot of Blob %q: %v", blobName, err)
 		return nil, err
 	}
+
+	return &vulDefFile{snap.File, blobModifiedTime(snap.GetBlob()), snap.Close}, nil
+}
+
+// blobModifiedTime will convert a blob modified time to a time.Time. If the
+// blob's modified time is nil, will return the zero time.
+func blobModifiedTime(blob *storage.Blob) time.Time {
 	modTime := time.Time{}
-	if t := protocompat.NilOrTime(snap.GetBlob().ModifiedTime); t != nil {
+	if blob == nil {
+		return modTime
+	}
+
+	if t := protocompat.NilOrTime(blob.ModifiedTime); t != nil {
 		modTime = *t
 	}
-	return &vulDefFile{snap.File, modTime, snap.Close}, nil
+
+	return modTime
 }
 
 // errNotExist is a wrapper meant to turn an error into a fs.ErrNotExist error.
@@ -763,6 +835,23 @@ func readV4Manifest(mf io.Reader) (*manifest, error) {
 func serveContent(w http.ResponseWriter, r *http.Request, name string, modTime time.Time, content io.ReadSeeker) {
 	log.Debugf("Serving vulnerability definitions from %s", filepath.Base(name))
 	http.ServeContent(w, r, name, modTime, content)
+}
+
+// writeNotModified inspired by https://cs.opensource.google/go/go/+/refs/tags/go1.23.7:src/net/http/fs.go;l=622;
+func writeNotModified(w http.ResponseWriter) {
+	// RFC 7232 section 4.1:
+	// a sender SHOULD NOT generate representation metadata other than the
+	// above listed fields unless said metadata exists for the purpose of
+	// guiding cache updates (e.g., Last-Modified might be useful if the
+	// response does not have an ETag field).
+	h := w.Header()
+	delete(h, "Content-Type")
+	delete(h, "Content-Length")
+	delete(h, "Content-Encoding")
+	if h.Get("Etag") != "" {
+		delete(h, "Last-Modified")
+	}
+	w.WriteHeader(http.StatusNotModified)
 }
 
 func writeErrorNotFound(w http.ResponseWriter) {
