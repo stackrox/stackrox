@@ -53,6 +53,9 @@ func reconcileScannerV4FeatureDefaults(
 	}
 
 	// Mutates Central spec for the following reconciler extensions and for the translator -- this is not persisted on the cluster.
+	// Note that we need to mutate Central's spec after the patching, because otherwise it would be overwritten again,
+	// when -- as part of the patching -- the resulting cluster resource gets pulled and the provided `central` is updated based on the
+	// cluster version.
 	scannerV4Spec.ScannerComponent = &componentPolicy
 	central.Spec.ScannerV4 = scannerV4Spec
 	return nil
