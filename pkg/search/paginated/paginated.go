@@ -194,7 +194,7 @@ func PaginateSlice[T any](offset, limit int, slice []T) []T {
 
 // GetLimit returns pagination limit or a value if it's unlimited
 func GetLimit(paginationLimit int32, whenUnlimited int32) int32 {
-	if paginationLimit == 0 || paginationLimit == math.MaxInt32 {
+	if paginationLimit <= 0 || paginationLimit == math.MaxInt32 {
 		return whenUnlimited
 	}
 	return paginationLimit
