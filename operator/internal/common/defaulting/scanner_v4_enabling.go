@@ -21,8 +21,7 @@ const (
 // This will be called from the preExtension to record the current setting.
 //
 // Second return value is `true`, if defaulting has been applied due to lack of explicit setting.
-func ScannerV4ComponentPolicy(logger logr.Logger, status *platform.CentralStatus,
-	annotations map[string]string, spec *platform.ScannerV4Spec) (platform.ScannerV4ComponentPolicy, bool) {
+func ScannerV4ComponentPolicy(logger logr.Logger, status *platform.CentralStatus, annotations map[string]string, spec *platform.ScannerV4Spec) (platform.ScannerV4ComponentPolicy, bool) {
 	logger = logger.WithName("scanner-v4-defaulting")
 
 	if spec != nil && spec.ScannerComponent != nil {
@@ -47,12 +46,12 @@ func ScannerV4ComponentPolicy(logger logr.Logger, status *platform.CentralStatus
 
 	if centralStatusUninitialized(status) {
 		// Install / Green field.
-		logger.Info("ScannerV4ComponentPolicy: assuming new installation due to empty status.")
+		logger.Info("assuming new installation due to empty status.")
 		return defaultForNewInstallations, true
 	}
 
 	// Upgrade.
-	logger.Info("ScannerV4ComponentPolicy: assuming upgrade.")
+	logger.Info("assuming upgrade")
 
 	if annotations[FeatureDefaultKeyScannerV4] == "" {
 		// No entry in the statusDefaults yet -> preserve defaulting behavior of versions which did not populate

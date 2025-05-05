@@ -38,7 +38,6 @@ func reconcileScannerV4FeatureDefaults(
 
 	// User is relying on defaults. Compute default and persist corresponding annotation.
 
-	scannerV4Spec.ScannerComponent = &componentPolicy
 	if central.Annotations == nil {
 		central.Annotations = make(map[string]string)
 	}
@@ -54,6 +53,7 @@ func reconcileScannerV4FeatureDefaults(
 	}
 
 	// Mutates Central spec for the following reconciler extensions and for the translator -- this is not persisted on the cluster.
+	scannerV4Spec.ScannerComponent = &componentPolicy
 	central.Spec.ScannerV4 = scannerV4Spec
 	return nil
 }
@@ -68,20 +68,17 @@ func initializedDeepCopy(spec *platform.ScannerV4Spec) *platform.ScannerV4Spec {
 func patchCentralAnnotation(ctx context.Context, logger logr.Logger, client ctrlClient.Client, central *platform.Central, key string, val string) error {
 	// MergeFromWithOptimisticLock causes the resourceVersion to be checked prior to patching.
 	origCentral := central.DeepCopy()
-	centralPatchBase := ctrlClient.MergeFromWithOptions(origCentral, ctrlClient.MergeFromWithOptimisticLock{})
+	centralPatch := ctrlClient.MergeFromWithOptions(origCentral, ctrlClient.MergeFromWithOptimisticLock{})
 	central.Annotations[key] = val
-	err := client.Patch(ctx, central, centralPatchBase)
+	err := client.Patch(ctx, central, centralPatch)
 	if err != nil {
 		return err
 	}
 
 	logger.Info("patched Central object annotation",
-		"namespace", central.GetNamespace(),
-		"central", central.GetName(),
 		"annotationKey", key,
 		"annotationValue", val,
 		"oldResourceVersion", origCentral.GetResourceVersion(),
 		"newResourceVersion", central.GetResourceVersion())
-	central.Annotations[key] = val
 	return nil
 }
