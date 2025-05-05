@@ -116,6 +116,12 @@ function useURLParameter(keyPrefix: string, defaultValue: QueryValue): UseURLPar
     const { addUrlParameterUpdate } = useContext(UrlParameterUpdateContext);
     const location = useLocation();
     const navigate = useNavigate();
+
+    // Using `useRef` for `location` to prevent re-creation of the callback on every render,
+    // ensuring the latest `location` value is used without causing unnecessary re-renders.
+    const locationRef = useRef(location);
+    locationRef.current = location;
+
     // We use an internal Ref here so that calling code that depends on the
     // value returned by this hook can detect updates. e.g. When used in the
     // dependency array of a `useEffect`.
@@ -125,14 +131,15 @@ function useURLParameter(keyPrefix: string, defaultValue: QueryValue): UseURLPar
 
     const setValue = useCallback(
         (newValue: QueryValue, historyAction: HistoryAction = 'push') => {
+            const { search, pathname } = locationRef.current;
             addUrlParameterUpdate(
                 { historyAction, keyPrefix, newValue },
-                location.search,
-                location.pathname,
+                search,
+                pathname,
                 navigate
             );
         },
-        [addUrlParameterUpdate, keyPrefix, location.search, location.pathname, navigate]
+        [addUrlParameterUpdate, keyPrefix, navigate]
     );
 
     const nextValue = getQueryObject(location.search)[keyPrefix] || defaultValue;

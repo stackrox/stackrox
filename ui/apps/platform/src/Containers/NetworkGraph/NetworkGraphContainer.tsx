@@ -1,6 +1,7 @@
 import React from 'react';
 import { useParams } from 'react-router-dom';
 
+import { TimeWindow } from 'constants/timeWindows';
 import relatedEntitySVG from 'images/network-graph/related-entity.svg';
 import filteredEntitySVG from 'images/network-graph/filtered-entity.svg';
 
@@ -281,6 +282,7 @@ type NetworkGraphContainerProps = {
     simulation: Simulation;
     clusterDeploymentCount: number;
     scopeHierarchy: NetworkScopeHierarchy;
+    timeWindow: TimeWindow;
 };
 
 // the order of model modification is as follows:
@@ -299,6 +301,7 @@ function NetworkGraphContainer({
     simulation,
     clusterDeploymentCount,
     scopeHierarchy,
+    timeWindow,
 }: NetworkGraphContainerProps) {
     const { simulator, setNetworkPolicyModification } = useNetworkPolicySimulator({
         simulation,
@@ -379,6 +382,7 @@ function NetworkGraphContainer({
             edgeState={edgeState}
             scopeHierarchy={scopeHierarchy}
             isSimulating={isSimulating}
+            timeWindow={timeWindow}
         />
     );
 }

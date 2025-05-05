@@ -1,6 +1,8 @@
 import React, { useMemo } from 'react';
 import { Visualization, VisualizationProvider } from '@patternfly/react-topology';
 
+import { TimeWindow } from 'constants/timeWindows';
+
 import stylesComponentFactory from './components/stylesComponentFactory';
 import defaultLayoutFactory from './layouts/defaultLayoutFactory';
 import defaultComponentFactory from './components/defaultComponentFactory';
@@ -27,6 +29,7 @@ export type NetworkGraphProps = {
     setNetworkPolicyModification: SetNetworkPolicyModification;
     scopeHierarchy: NetworkScopeHierarchy;
     isSimulating: boolean;
+    timeWindow: TimeWindow;
 };
 function NetworkGraph({
     isReadyForVisualization,
@@ -38,6 +41,7 @@ function NetworkGraph({
     setNetworkPolicyModification,
     scopeHierarchy,
     isSimulating,
+    timeWindow,
 }: NetworkGraphProps) {
     const controller = useMemo(() => {
         const newController = new Visualization();
@@ -59,6 +63,7 @@ function NetworkGraph({
                     setNetworkPolicyModification={setNetworkPolicyModification}
                     edgeState={edgeState}
                     scopeHierarchy={scopeHierarchy}
+                    timeWindow={timeWindow}
                 />
             </VisualizationProvider>
         </SimulationFrame>

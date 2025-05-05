@@ -5,21 +5,17 @@ import { timeWindows } from 'constants/timeWindows';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 
 type TimeWindowSelectorProps = {
-    setActiveTimeWindow: (timeWindow) => void;
-    activeTimeWindow: string;
+    setTimeWindow: (timeWindow) => void;
+    timeWindow: string;
     isDisabled: boolean;
 };
 
-function TimeWindowSelector({
-    setActiveTimeWindow,
-    activeTimeWindow,
-    isDisabled,
-}: TimeWindowSelectorProps) {
+function TimeWindowSelector({ setTimeWindow, timeWindow, isDisabled }: TimeWindowSelectorProps) {
     const { closeSelect, isOpen, onToggle } = useSelectToggle();
 
     function selectTimeWindow(_event, selection) {
         closeSelect();
-        setActiveTimeWindow(selection);
+        setTimeWindow(selection);
     }
 
     return (
@@ -27,7 +23,7 @@ function TimeWindowSelector({
             isOpen={isOpen}
             onToggle={(_e, v) => onToggle(v)}
             onSelect={selectTimeWindow}
-            selections={activeTimeWindow}
+            selections={timeWindow}
             isDisabled={isDisabled}
         >
             {timeWindows.map((window) => (
