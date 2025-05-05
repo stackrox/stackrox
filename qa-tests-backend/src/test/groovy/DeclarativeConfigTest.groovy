@@ -4,6 +4,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 
+import groovy.json.JsonOutput
 import io.grpc.StatusRuntimeException
 
 import io.stackrox.proto.api.v1.AuthproviderService
@@ -270,7 +271,6 @@ splunk:
     @Tag("BAT")
     def "Check successful creation, update, and deletion of declarative resources"() {
         when:
-
         def configMapUID = createDefaultSetOfResources(CONFIGMAP_NAME, DEFAULT_NAMESPACE)
         log.debug "created declarative configuration configMap $configMapUID"
 
@@ -491,6 +491,9 @@ splunk:
                         .newBuilder().build())
                 .notifiersList.find { it.getName() == VALID_NOTIFIER.getName() }
         assert notifierAfterDeletion == null
+
+        cleanup:
+        outputAdditionalDebugInfo()
     }
 
     @Tag("BAT")
@@ -567,6 +570,9 @@ splunk:
             assert configMapHealth.getErrorMessage() == ""
             assert configMapHealth.getStatus() == Status.HEALTHY
         }
+
+        cleanup:
+        outputAdditionalDebugInfo()
     }
 
     @Tag("BAT")
@@ -785,6 +791,9 @@ splunk:
             assert configMapHealth.getErrorMessage() == ""
             assert configMapHealth.getStatus() == Status.HEALTHY
         }
+
+        cleanup:
+        outputAdditionalDebugInfo()
     }
 
     // Helpers
@@ -817,6 +826,28 @@ splunk:
         def configMap = orchestrator.getConfigMap(configMapName, namespace)
         configMap.data.remove(key)
         orchestrator.createConfigMap(configMap)
+    }
+
+    // outputAdditionalDebugInfo collects additional information on test failure:
+    // - content of applied ConfigMap with declarative configuration
+    // - list of mounted files from ConfigMap in a container
+    private void outputAdditionalDebugInfo() {
+        try {
+            log.info("Get ConfigMap from cluster")
+            log.info(JsonOutput.toJson(orchestrator.getConfigMap(CONFIGMAP_NAME, DEFAULT_NAMESPACE)))
+        } catch (Exception e) {
+            log.warn("Failed to get ConfigMap from cluster", e)
+        }
+
+        try {
+            log.info("Get mounted files from ConfigMap in central container")
+            def pods = orchestrator.getPods(DEFAULT_NAMESPACE, "central")
+            assert pods.size() > 0
+            String[] cmd = ["ls", "-al", "/run/stackrox.io/declarative-configuration/declarative-configurations/"]
+            assert orchestrator.execInContainerByPodName(pods[0].getMetadata().getName(), DEFAULT_NAMESPACE, cmd, 10)
+        } catch (Exception e) {
+            log.warn("Failed to get mounted files from ConfigMap in central container", e)
+        }
     }
 
     // verifyDeclarativeRole will verify that the expected role exists within the API and shares the same values.
