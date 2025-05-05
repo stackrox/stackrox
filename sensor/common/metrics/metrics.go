@@ -6,7 +6,6 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/branding"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/version"
@@ -305,13 +304,13 @@ var (
 		Help:      "A gauge that tracks the operations in the responses channel",
 	}, []string{"Operation", "MessageType"})
 
-	// collectorChannelMessagesCount a counter to track the messages received from collector
-	collectorChannelMessagesCount = prometheus.NewCounterVec(prometheus.CounterOpts{
+	// collectorProcessChannelMessagesCount a counter to track the messages received from collector
+	collectorProcessChannelMessagesCount = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "messages_received_from_collector_total",
 		Help:      "A counter that tracks number of messages received from the collector internal service",
-	}, []string{"MessageType"})
+	})
 )
 
 // IncrementEntityNotFound increments an instance of entity not found
@@ -528,18 +527,8 @@ func ResponsesChannelDrop(msg *central.MsgFromSensor) {
 	responsesChannelOperationCount.With(getResponsesChannelLabel(metrics.Dropped.String(), msg)).Inc()
 }
 
-func getCollectorChannelLabel(msg *sensor.MsgFromCollector) prometheus.Labels {
-	msgType := "nil"
-	if msg.GetMsg() != nil {
-		msgType = strings.TrimPrefix(reflect.TypeOf(msg.GetMsg()).String(), "*sensor.MsgFromCollector_")
-	}
-	return prometheus.Labels{
-		"MessageType": msgType,
-	}
-}
-
-func CollectorChannelInc(msg *sensor.MsgFromCollector) {
-	collectorChannelMessagesCount.With(getCollectorChannelLabel(msg)).Inc()
+func CollectorChannelInc() {
+	collectorProcessChannelMessagesCount.Inc()
 }
 
 // SetTelemetryMetrics sets the cluster metrics for the telemetry metrics.
