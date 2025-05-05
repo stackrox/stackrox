@@ -189,8 +189,10 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
         assert deploymentUid != null
 
         List<String> conflictingCIDRs = getConflictingCIDRs([CF_CIDR_30, CF_CIDR_31])
-        assert conflictingCIDRs.size() == 0:
-            "found existing CIDR blocks ${conflictingCIDRs} that conflict with this test case."
+        if (conflictingCIDRs.size() > 0) {
+            log.warn("found existing CIDR blocks ${conflictingCIDRs} that conflict with this test case." +
+                "Check the cleanup of other tests if the interference causes this test to fail.")
+        }
 
         String externalSource30Name = generateNameWithPrefix("external-source-30")
         log.info("Creating external source '${externalSource30Name}' with CIDR ${CF_CIDR_30}")
@@ -218,8 +220,8 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
         }
 
         and:
-        "Verify edge from deployment 'external-connection' to supernet external source '$externalSource30Name' exists " +
-            "in the network graph for last 60 minutes"
+        "Verify edge from deployment 'external-connection' to supernet external source '$externalSource30Name' exists" +
+            " in the network graph for last 60 minutes"
         withRetry(4, 30) {
             assert NetworkGraphUtil.checkForEdge(
                 deploymentUid,
