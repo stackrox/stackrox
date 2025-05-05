@@ -504,11 +504,11 @@ func TestReconcilePVCExtension(t *testing.T) {
 
 			client := fake.NewClientBuilder().WithObjects(allExisting...).Build()
 
-			rFirstRun := newReconcilePVCExtensionRun(testCase, client)
+			rFirstRun := newReconcilePVCExtensionRun(t, testCase, client)
 			executeAndVerify(t, testCase, rFirstRun)
 
 			// Run it a second time to verify cluster state does not change after first reconciliation was executed
-			rSecondRun := newReconcilePVCExtensionRun(testCase, client)
+			rSecondRun := newReconcilePVCExtensionRun(t, testCase, client)
 			executeAndVerify(t, testCase, rSecondRun)
 		})
 	}
@@ -581,7 +581,7 @@ func makePVC(owner *platform.Central, name string, size resource.Quantity, stora
 	}
 }
 
-func newReconcilePVCExtensionRun(testCase pvcReconciliationTestCase, client ctrlClient.Client) reconcilePVCExtensionRun {
+func newReconcilePVCExtensionRun(t *testing.T, testCase pvcReconciliationTestCase, client ctrlClient.Client) reconcilePVCExtensionRun {
 	persistence, err := getPersistenceByTarget(testCase.Central, testCase.Target, logr.Discard())
 	require.NoError(t, err)
 
