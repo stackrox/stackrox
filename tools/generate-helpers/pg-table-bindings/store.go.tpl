@@ -89,6 +89,10 @@ type Store interface {
         pgSearch.NewGenericStoreWithCacheAndPermissionChecker
     {{- else if (.PermissionChecker) -}}
         pgSearch.NewGenericStoreWithPermissionChecker
+    {{- else if and (.CachedStore) (not .Obj.IsDirectlyScoped) -}}
+        pgSearch.NewGloballyScopedGenericStoreWithCache
+    {{- else if and (not .CachedStore) (not .Obj.IsDirectlyScoped) -}}
+        pgSearch.NewGloballyScopedGenericStore
     {{- else if .CachedStore -}}
         pgSearch.NewGenericStoreWithCache
     {{- else -}}
@@ -122,13 +126,15 @@ func New(db postgres.DB) Store {
             metricsSetPostgresOperationDurationTime,
             {{- if .CachedStore }}
             metricsSetCacheOperationDurationTime,
-            {{ end -}}
-            {{- if or (.Obj.IsGloballyScoped) (.Obj.IsIndirectlyScoped) }}
-            pgSearch.GloballyScopedUpsertChecker[storeType, *storeType](targetResource),
-            {{- else if .Obj.IsDirectlyScoped }}
+            {{- end }}
+            {{- if .Obj.IsDirectlyScoped }}
             isUpsertAllowed,
             {{- end }}
-            {{ if .PermissionChecker }}{{ .PermissionChecker }}{{ else }}targetResource{{ end }},
+            {{- if .PermissionChecker }}
+            {{ .PermissionChecker }}
+            {{- else }}
+            targetResource
+            {{- end }},
     )
 }
 
