@@ -89,7 +89,6 @@ type genericStore[T any, PT ClonedUnmarshaler[T]] struct {
 	copyFromObj                      copier[T, PT]
 	setAcquireDBConnDuration         durationTimeSetter
 	setPostgresOperationDurationTime durationTimeSetter
-	permissionChecker                walker.PermissionChecker
 	upsertAllowed                    upsertChecker[T, PT]
 	targetResource                   permissions.ResourceMetadata
 }
@@ -162,40 +161,6 @@ func NewGloballyScopedGenericStore[T any, PT ClonedUnmarshaler[T]](
 		}(),
 		upsertAllowed:  GloballyScopedUpsertChecker[T, PT](targetResource),
 		targetResource: targetResource,
-	}
-}
-
-// NewGenericStoreWithPermissionChecker returns new subStore implementation for given resource.
-// subStore implements subset of Store operations.
-func NewGenericStoreWithPermissionChecker[T any, PT ClonedUnmarshaler[T]](
-	db postgres.DB,
-	schema *walker.Schema,
-	pkGetter primaryKeyGetter[T, PT],
-	insertInto inserter[T, PT],
-	copyFromObj copier[T, PT],
-	setAcquireDBConnDuration durationTimeSetter,
-	setPostgresOperationDurationTime durationTimeSetter,
-	checker walker.PermissionChecker,
-) Store[T, PT] {
-	return &genericStore[T, PT]{
-		db:          db,
-		schema:      schema,
-		pkGetter:    pkGetter,
-		copyFromObj: copyFromObj,
-		insertInto:  insertInto,
-		setAcquireDBConnDuration: func() durationTimeSetter {
-			if setAcquireDBConnDuration == nil {
-				return doNothingDurationTimeSetter
-			}
-			return setAcquireDBConnDuration
-		}(),
-		setPostgresOperationDurationTime: func() durationTimeSetter {
-			if setPostgresOperationDurationTime == nil {
-				return doNothingDurationTimeSetter
-			}
-			return setPostgresOperationDurationTime
-		}(),
-		permissionChecker: checker,
 	}
 }
 
@@ -395,12 +360,7 @@ func (s *genericStore[T, PT]) PruneMany(ctx context.Context, identifiers []strin
 func (s *genericStore[T, PT]) Upsert(ctx context.Context, obj PT) error {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.Upsert)
 
-	if s.hasPermissionsChecker() {
-		err := s.permissionCheckerAllowsUpsert(ctx)
-		if err != nil {
-			return err
-		}
-	} else if err := s.upsertAllowed(ctx, obj); err != nil {
+	if err := s.upsertAllowed(ctx, obj); err != nil {
 		return err
 	}
 
@@ -413,12 +373,7 @@ func (s *genericStore[T, PT]) Upsert(ctx context.Context, obj PT) error {
 func (s *genericStore[T, PT]) UpsertMany(ctx context.Context, objs []PT) error {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.UpdateMany)
 
-	if s.hasPermissionsChecker() {
-		err := s.permissionCheckerAllowsUpsert(ctx)
-		if err != nil {
-			return err
-		}
-	} else if err := s.upsertAllowed(ctx, objs...); err != nil {
+	if err := s.upsertAllowed(ctx, objs...); err != nil {
 		return err
 	}
 
@@ -452,24 +407,6 @@ func (s *genericStore[T, PT]) acquireConn(ctx context.Context, op ops.Op) (*post
 		return nil, errors.Wrap(err, "could not acquire connection")
 	}
 	return conn, nil
-}
-
-func (s *genericStore[T, PT]) hasPermissionsChecker() bool {
-	return s.permissionChecker != nil
-}
-
-func (s *genericStore[T, PT]) permissionCheckerAllowsUpsert(ctx context.Context) error {
-	if !s.hasPermissionsChecker() {
-		return utils.ShouldErr(errInvalidOperation)
-	}
-	allowed, err := s.permissionChecker.WriteAllowed(ctx)
-	if err != nil {
-		return err
-	}
-	if !allowed {
-		return sac.ErrResourceAccessDenied
-	}
-	return nil
 }
 
 func (s *genericStore[T, PT]) upsert(ctx context.Context, objs ...PT) error {

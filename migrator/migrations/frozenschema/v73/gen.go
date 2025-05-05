@@ -32,7 +32,7 @@ go:generate pg-schema-migration-helper --type=storage.ImageCVEEdge --search-cate
 go:generate pg-schema-migration-helper --type=storage.ImageComponent --search-category IMAGE_COMPONENTS --search-scope IMAGE_VULNERABILITIES,COMPONENT_VULN_EDGE,IMAGE_COMPONENTS,IMAGE_COMPONENT_EDGE,IMAGE_VULN_EDGE,IMAGES,DEPLOYMENTS,NAMESPACES,CLUSTERS
 go:generate pg-schema-migration-helper --type=storage.ImageComponentEdge --search-category IMAGE_COMPONENT_EDGE --references=storage.Image,storage.ImageComponent --read-only-store --search-scope IMAGE_VULNERABILITIES,COMPONENT_VULN_EDGE,IMAGE_COMPONENTS,IMAGE_COMPONENT_EDGE,IMAGE_VULN_EDGE,IMAGES,DEPLOYMENTS,NAMESPACES,CLUSTERS
 go:generate pg-schema-migration-helper --type=storage.ImageIntegration --search-category IMAGE_INTEGRATIONS --get-all-func
-go:generate pg-schema-migration-helper --type=storage.InitBundleMeta --table=cluster_init_bundles --permission-checker permissionCheckerSingleton()
+go:generate pg-schema-migration-helper --type=storage.InitBundleMeta --table=cluster_init_bundles
 go:generate pg-schema-migration-helper --type=storage.InstallationInfo --singleton
 go:generate pg-schema-migration-helper --type=storage.IntegrationHealth
 go:generate pg-schema-migration-helper --type=storage.K8SRole --registered-type=storage.K8sRole --table=k8s_roles --search-category ROLES
@@ -40,7 +40,7 @@ go:generate pg-schema-migration-helper --type=storage.K8SRoleBinding --registere
 go:generate pg-schema-migration-helper --type=storage.LogImbue --get-all-func
 go:generate pg-schema-migration-helper --type=storage.NamespaceMetadata --table=namespaces --search-category NAMESPACES --references=storage.Cluster --search-scope IMAGE_VULNERABILITIES,COMPONENT_VULN_EDGE,IMAGE_COMPONENTS,IMAGE_COMPONENT_EDGE,IMAGE_VULN_EDGE,IMAGES,DEPLOYMENTS,NAMESPACES,CLUSTERS
 go:generate pg-schema-migration-helper --type=storage.NetworkBaseline --search-category NETWORK_BASELINE
-go:generate pg-schema-migration-helper --type=storage.NetworkEntity --search-category NETWORK_ENTITY --permission-checker permissionCheckerSingleton()
+go:generate pg-schema-migration-helper --type=storage.NetworkEntity --search-category NETWORK_ENTITY
 go:generate pg-schema-migration-helper --type=storage.NetworkGraphConfig
 go:generate pg-schema-migration-helper --type=storage.NetworkPolicy --table=networkpolicies --search-category NETWORK_POLICIES
 go:generate pg-schema-migration-helper --type=storage.NetworkPolicyApplicationUndoDeploymentRecord --table=networkpoliciesundodeployments
@@ -69,7 +69,7 @@ go:generate pg-schema-migration-helper --type=storage.ServiceIdentity --get-all-
 go:generate pg-schema-migration-helper --type=storage.SignatureIntegration
 go:generate pg-schema-migration-helper --type=storage.SimpleAccessScope
 go:generate pg-schema-migration-helper --type=storage.TokenMetadata --table=api_tokens
-go:generate pg-schema-migration-helper --type=storage.VulnerabilityRequest --search-category VULN_REQUEST --permission-checker permissionCheckerSingleton()
+go:generate pg-schema-migration-helper --type=storage.VulnerabilityRequest --search-category VULN_REQUEST
 go:generate pg-schema-migration-helper --type=storage.WatchedImage
 go:generate sh -c "rm ./convert_*.go"
 */

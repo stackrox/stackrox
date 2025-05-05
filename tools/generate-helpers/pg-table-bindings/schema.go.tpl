@@ -76,8 +76,6 @@ var (
 
         {{- if or (.Obj.IsGloballyScoped) (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
             schema.ScopingResource = resources.{{.Type | storageToResource}}
-        {{- else if .PermissionChecker }}
-            schema.PermissionChecker = {{ .PermissionChecker }}
         {{- end }}
         {{- if .RegisterSchema }}
         RegisterTable(schema, {{template "createTableStmtVar" .Schema }}{{ if .FeatureFlag }}, features.{{.FeatureFlag}}.Enabled {{ end }})
