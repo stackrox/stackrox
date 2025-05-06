@@ -70,7 +70,7 @@ spec:
               fieldPath: metadata.namespace
         {{- if ._rox.env.centralServices }}
         - name: ROX_CENTRAL_ENDPOINT
-          value: {{ ._rox.centralEndpoint }}
+          value: central.{{ .Release.Namespace }}.svc
         {{- else }}
         - name: ROX_SENSOR_ENDPOINT
           value: {{ ._rox.sensor.endpoint }}
