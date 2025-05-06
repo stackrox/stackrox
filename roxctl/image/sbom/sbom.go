@@ -81,8 +81,6 @@ func (i *imageSBOMCommand) construct(cobraCmd *cobra.Command) error {
 		flags.Timeout(cobraCmd),
 		// Disable exponential backoff so that roxctl does not appear stuck.
 		common.WithRetryExponentialBackoff(false),
-		// Ensure error response is made available for troubleshooting failures.
-		common.WithReturnErrorResponseBody(true),
 		common.WithRetryDelay(time.Duration(i.retryDelay)*time.Second),
 		common.WithRetryCount(i.retryCount),
 	)
