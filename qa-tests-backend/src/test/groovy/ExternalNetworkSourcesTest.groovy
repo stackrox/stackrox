@@ -5,6 +5,7 @@ import com.google.protobuf.Timestamp
 
 import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass
+import io.stackrox.proto.storage.NetworkFlowOuterClass
 import io.stackrox.proto.storage.NetworkFlowOuterClass.NetworkEntity
 
 import objects.Deployment
@@ -190,16 +191,26 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
         assert deploymentUid != null
 
         Set<String> potentiallyConflictingCIDRs = [CF_CIDR_30, CF_CIDR_31, "1.1.1.0/30", "1.1.1.0/31"] as Set<String>
-        Sets.SetView<String> allCIDRs = getAllCIDRs()
-        Sets.SetView<String> conflictingCIDRs = Sets.intersection(potentiallyConflictingCIDRs, allCIDRs)
-        if (!conflictingCIDRs.isEmpty()) {
+        Set<String> allCIDRs = getAllCIDRs()
+        Set<String> similarCIDRs = allCIDRs.findAll{it.startsWith("1.1.")}
+        Sets.SetView<String> conflictingCIDRs = Sets.intersection(potentiallyConflictingCIDRs, similarCIDRs)
+        if (conflictingCIDRs.isEmpty()) {
+            log.debug("Found no CIDRs conflicting with ${potentiallyConflictingCIDRs}." +
+                "All custom CIDRs currently in Central: ${similarCIDRs}")
+        } else {
             log.warn("found existing CIDR blocks ${conflictingCIDRs} that conflict with this test case." +
                 "Check the cleanup of other tests if the interference causes this test to fail." +
-                "All custom CIDRs currently in Central: ${allCIDRs}")
-        } else {
-            log.debug("Found no CIDRs conflicting with ${potentiallyConflictingCIDRs}." +
-                "All custom CIDRs currently in Central: ${allCIDRs}")
+                "All custom CIDRs currently in Central: ${similarCIDRs}")
         }
+
+        deleteConflictingCIDRs("1.1.1.").forEach {it ->
+            log.warn("Deleting conflicting CIDR " +
+                "id: ${it.getId()}, " +
+                "name: ${it.getExternalSource().name}, " +
+                "cidr: ${it.getExternalSource().cidr}")
+            deleteNetworkEntity(it.getId())
+        }
+        log.info("All conflicting external entities deleted")
 
         String externalSource30Name = generateNameWithPrefix("external-source-30")
         log.info("Creating external source '${externalSource30Name}' with CIDR ${CF_CIDR_30}")
@@ -260,7 +271,7 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
         deleteNetworkEntity(externalSource31ID)
     }
 
-    private static Sets.SetView<String> getAllCIDRs() {
+    private static Set<String> getAllCIDRs() {
         def clusterId = ClusterService.getClusterId()
         assert clusterId
         def request = NetworkGraphServiceOuterClass.GetExternalNetworkEntitiesRequest
@@ -276,6 +287,22 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
         } as Set
 
         return existingCidrs
+    }
+
+    private static Set<NetworkFlowOuterClass.NetworkEntityInfo> deleteConflictingCIDRs(String prefix) {
+        def clusterId = ClusterService.getClusterId()
+        assert clusterId
+        def request = NetworkGraphServiceOuterClass.GetExternalNetworkEntitiesRequest
+            .newBuilder()
+            .setClusterId(clusterId)
+            .build()
+        def response = NetworkGraphService.getNetworkGraphClient().getExternalNetworkEntities(request)
+
+        return response.getEntitiesList().findAll {
+            it.getInfo().hasExternalSource() && it.getInfo().getExternalSource().cidr.startsWith(prefix)
+        }.collect {
+            it.getInfo()
+        } as Set
     }
 
     private static createNetworkEntityExternalSource(String name, String cidr) {
