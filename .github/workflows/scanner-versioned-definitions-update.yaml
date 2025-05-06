@@ -239,8 +239,7 @@ jobs:
 
     - name: Run updater (multi bundle)
       run: |
-        # TODO: DELETE
-        scanner/bin/updater export --manual-url "https://raw.githubusercontent.com/stackrox/stackrox/cve-2025-24813/scanner/updater/manual/vulns.yaml" --split bundles
+        scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" --split bundles
         zip definitions/${{ github.event.pull_request.number }}/vulnerabilities.zip bundles/*.json.zst
 
     # PR owner is responsible for verifying vulnerability bundles are generated
