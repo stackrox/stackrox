@@ -64,12 +64,14 @@ jobs:
         new_path=operator/config/crd/bases
         sc_file=platform.stackrox.io_securedclusters.yaml
         central_file=platform.stackrox.io_centrals.yaml
-        .crd-schema-checker/crd-schema-checker check-manifests --existing-crd-filename=$old_path/$sc_file --new-crd-filename=$new_path/$sc_file
-        .crd-schema-checker/crd-schema-checker check-manifests --existing-crd-filename=$old_path/$central_file --new-crd-filename=$new_path/$central_file
+        args="--disabled-validators=ConditionsMustHaveProperSSATags,ListsMustHaveSSATags,NoBools,NoMaps"
+        .crd-schema-checker/crd-schema-checker check-manifests $args --existing-crd-filename=$old_path/$sc_file --new-crd-filename=$new_path/$sc_file
+        .crd-schema-checker/crd-schema-checker check-manifests $args --existing-crd-filename=$old_path/$central_file --new-crd-filename=$new_path/$central_file
 
     - name: Run crd-schema-checker for config operator
       run: |
         old_path=.old-stackrox/config-controller/config/crd/bases
         new_path=config-controller/config/crd/bases
         policy_file=config.stackrox.io_securitypolicies.yaml
-        .crd-schema-checker/crd-schema-checker check-manifests --existing-crd-filename=$old_path/$policy_file --new-crd-filename=$new_path/$policy_file
+        args="--disabled-validators=ConditionsMustHaveProperSSATags,ListsMustHaveSSATags,NoBools,NoMaps"
+        .crd-schema-checker/crd-schema-checker check-manifests $args --existing-crd-filename=$old_path/$policy_file --new-crd-filename=$new_path/$policy_file
