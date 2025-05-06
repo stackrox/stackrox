@@ -38,7 +38,7 @@ jobs:
       with:
         repository: openshift/crd-schema-checker
         path: .crd-schema-checker
-        ref: master
+        ref: 9c9f5f57c9f9ea4dba41d9eec5c365a622f08417 # 2025-04-08
 
     - name: Build crd-schema-checker
       run: |
