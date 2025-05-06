@@ -642,9 +642,10 @@ func startGRPCServer() {
 	}
 
 	server := pkgGRPC.NewAPI(config)
-	server.Register(servicesToRegister()...)
 
-	startServices()
+	go server.Register(servicesToRegister()...)
+
+	go startServices()
 	startedSig := server.Start()
 
 	go watchdog(startedSig, grpcServerWatchdogTimeout)
