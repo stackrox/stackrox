@@ -189,10 +189,16 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
         String deploymentUid = DEP_EXTERNALCONNECTION.deploymentUid
         assert deploymentUid != null
 
-        Sets.SetView<String> conflictingCIDRs = getConflictingCIDRs([CF_CIDR_30, CF_CIDR_31] as Set<String>)
+        Set<String> potentiallyConflictingCIDRs = [CF_CIDR_30, CF_CIDR_31, "1.1.1.0/30", "1.1.1.0/31"] as Set<String>
+        Sets.SetView<String> allCIDRs = getAllCIDRs()
+        Sets.SetView<String> conflictingCIDRs = Sets.intersection(potentiallyConflictingCIDRs, allCIDRs)
         if (!conflictingCIDRs.isEmpty()) {
             log.warn("found existing CIDR blocks ${conflictingCIDRs} that conflict with this test case." +
-                "Check the cleanup of other tests if the interference causes this test to fail.")
+                "Check the cleanup of other tests if the interference causes this test to fail." +
+                "All custom CIDRs currently in Central: ${allCIDRs}")
+        } else {
+            log.debug("Found no CIDRs conflicting with ${potentiallyConflictingCIDRs}." +
+                "All custom CIDRs currently in Central: ${allCIDRs}")
         }
 
         String externalSource30Name = generateNameWithPrefix("external-source-30")
@@ -216,7 +222,7 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
         assert externalSource31ID != null
 
         then:
-        "Verify edge exists from deployment 'external-connection' to supernet external source '$externalSource31Name'"
+        "Verify edge exists from deployment 'external-connection' to subnet external source '$externalSource31Name'"
         withRetry(4, 30) {
             assert NetworkGraphUtil.checkForEdge(deploymentUid, externalSource31ID, null, 180)
         }
@@ -254,7 +260,7 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
         deleteNetworkEntity(externalSource31ID)
     }
 
-    private static Sets.SetView<String> getConflictingCIDRs(Set<String> cidrs) {
+    private static Sets.SetView<String> getAllCIDRs() {
         def clusterId = ClusterService.getClusterId()
         assert clusterId
         def request = NetworkGraphServiceOuterClass.GetExternalNetworkEntitiesRequest
@@ -269,7 +275,7 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
             it.getInfo().getExternalSource().cidr
         } as Set
 
-        return Sets.intersection(cidrs, existingCidrs)
+        return existingCidrs
     }
 
     private static createNetworkEntityExternalSource(String name, String cidr) {
