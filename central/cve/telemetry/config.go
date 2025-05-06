@@ -51,8 +51,8 @@ func parseConfig() (map[metricName][]*expression, time.Duration, error) {
 		for _, label := range metric.GetLabels() {
 			expr := &expression{
 				label: label.GetName(),
-				op:    operator(label.GetExpression().Operator),
-				arg:   label.GetExpression().Argument,
+				op:    operator(label.GetExpression().GetOperator()),
+				arg:   label.GetExpression().GetArgument(),
 			}
 			if err := expr.validate(); err != nil {
 				return nil, 0, errox.InvalidArgs.CausedByf( //nolint:wrapcheck
