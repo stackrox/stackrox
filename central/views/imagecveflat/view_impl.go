@@ -115,19 +115,6 @@ func withSelectCVEIdentifiersQuery(q *v1.Query) *v1.Query {
 		Fields: []string{search.CVE.String()},
 	}
 
-	// For pagination and sort to work properly, the filter query to get the CVEs needs to
-	// include the fields we are sorting on.  At this time custom code is required when
-	// sorting on custom sort fields.  For instance counts on the Severity column based on
-	// a value of that column
-	// TODO(ROX-26310): Update the search framework to inject required select.
-	// Add the severity selects if severity is a sort option to ensure we have the filtered
-	// list of CVEs ordered appropriately.
-	if common.IsSortBySeverityCounts(cloned) {
-		cloned.Selects = append(cloned.Selects,
-			common.WithCountBySeverityAndFixabilityQuery(q, search.ImageSHA).Selects...,
-		)
-	}
-
 	return cloned
 }
 
