@@ -616,6 +616,12 @@ func startGRPCServer() {
 		centralSAC.GetEnricher().GetPreAuthContextEnricher(authzTraceSink),
 	)
 
+	server := pkgGRPC.NewAPI(config)
+	server.Register(servicesToRegister()...)
+	startedSig := server.Start()
+
+	go watchdog(startedSig, grpcServerWatchdogTimeout)
+
 	if cds, err := configDS.Singleton().GetPublicConfig(); err == nil || cds == nil {
 		if t := cds.GetTelemetry(); t == nil || t.GetEnabled() {
 			if cfg := centralclient.Enable(); cfg.Enabled() {
@@ -640,14 +646,7 @@ func startGRPCServer() {
 			}
 		}
 	}
-
-	server := pkgGRPC.NewAPI(config)
-	server.Register(servicesToRegister()...)
-	startedSig := server.Start()
-
 	go startServices()
-
-	go watchdog(startedSig, grpcServerWatchdogTimeout)
 }
 
 func registerDelayedIntegrations(integrationsInput []iiStore.DelayedIntegration) {
