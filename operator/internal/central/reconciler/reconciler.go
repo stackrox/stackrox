@@ -49,7 +49,7 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 		return err
 	}
 
-	opts = commonExtensions.AddMapKubeAPIsExtensionIfMapFileExists(opts)
+	opts = commonExtensions.AddMapKubeAPIsExtensionIfMapFileExists(opts, mgr.GetRESTMapper())
 
 	return reconciler.SetupReconcilerWithManager(
 		mgr, platform.CentralGVK, image.CentralServicesChartPrefix,
