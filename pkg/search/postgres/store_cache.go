@@ -106,56 +106,11 @@ func NewGloballyScopedGenericStoreWithCache[T any, PT ClonedUnmarshaler[T]](
 	return store
 }
 
-// NewGenericStoreWithCacheAndPermissionChecker returns new subStore implementation for given resource.
-// subStore implements subset of Store operations.
-func NewGenericStoreWithCacheAndPermissionChecker[T any, PT ClonedUnmarshaler[T]](
-	db postgres.DB,
-	schema *walker.Schema,
-	pkGetter primaryKeyGetter[T, PT],
-	insertInto inserter[T, PT],
-	copyFromObj copier[T, PT],
-	setAcquireDBConnDuration durationTimeSetter,
-	setPostgresOperationDurationTime durationTimeSetter,
-	setCacheOperationDurationTime durationTimeSetter,
-	checker walker.PermissionChecker,
-) Store[T, PT] {
-	underlyingStore := NewGenericStoreWithPermissionChecker[T, PT](
-		db,
-		schema,
-		pkGetter,
-		insertInto,
-		copyFromObj,
-		setAcquireDBConnDuration,
-		setPostgresOperationDurationTime,
-		checker,
-	)
-	store := &cachedStore[T, PT]{
-		schema:            schema,
-		pkGetter:          pkGetter,
-		permissionChecker: checker,
-		cache:             make(map[string]PT),
-		underlyingStore:   underlyingStore,
-
-		setCacheOperationDurationTime: setCacheOperationDurationTime,
-	}
-	// Initial population of the cache. Make sure it is in sync with the DB.
-	err := store.populateCache()
-	if err != nil {
-		// Failed to populate the cache, return the store connected to the DB
-		// in order to avoid serving data from a cache not consistent with
-		// the underlying database.
-		log.Errorf("Failed to populate store cache, using direct store access instead: %v", err)
-		return underlyingStore
-	}
-	return store
-}
-
 // cachedStore implements subset of Store interface for resources with single ID.
 type cachedStore[T any, PT ClonedUnmarshaler[T]] struct {
 	schema                        *walker.Schema
 	pkGetter                      primaryKeyGetter[T, PT]
 	setCacheOperationDurationTime durationTimeSetter
-	permissionChecker             walker.PermissionChecker
 	targetResource                permissions.ResourceMetadata
 	underlyingStore               Store[T, PT]
 	cache                         map[string]PT
@@ -473,22 +428,6 @@ func (c *cachedStore[T, PT]) isWriteAllowed(ctx context.Context, obj PT) bool {
 }
 
 func (c *cachedStore[T, PT]) isActionAllowed(ctx context.Context, action storage.Access, obj PT) bool {
-	if c.hasPermissionsChecker() {
-		var allowed bool
-		var err error
-		switch action {
-		case storage.Access_READ_ACCESS:
-			allowed, err = c.permissionChecker.ReadAllowed(ctx)
-		case storage.Access_READ_WRITE_ACCESS:
-			allowed, err = c.permissionChecker.WriteAllowed(ctx)
-		default:
-			return false
-		}
-		if err != nil {
-			return false
-		}
-		return allowed
-	}
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(action).Resource(c.targetResource)
 	var interfaceObj interface{} = obj
 	switch c.targetResource.GetScope() {
@@ -510,10 +449,6 @@ func (c *cachedStore[T, PT]) isActionAllowed(ctx context.Context, action storage
 		}
 	}
 	return scopeChecker.IsAllowed()
-}
-
-func (c *cachedStore[T, PT]) hasPermissionsChecker() bool {
-	return c.permissionChecker != nil
 }
 
 func (c *cachedStore[T, PT]) populateCache() error {

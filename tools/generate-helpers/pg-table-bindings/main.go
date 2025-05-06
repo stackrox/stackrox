@@ -66,8 +66,6 @@ type properties struct {
 	Singular       string
 	WriteOptions   bool
 
-	PermissionChecker string
-
 	// Refs indicate the additional referentiol relationships. Each string is [<table_name>:]<proto_type>.
 	// These are non-embedding relations, that is, this table is not embedded into referenced table to
 	// construct the proto message.
@@ -127,7 +125,6 @@ func main() {
 
 	c.Flags().StringVar(&props.Singular, "singular", "", "the singular name of the object")
 	c.Flags().StringVar(&props.SearchCategory, "search-category", "", "the search category to index under")
-	c.Flags().StringVar(&props.PermissionChecker, "permission-checker", "", "the permission checker that should be used")
 	c.Flags().StringSliceVar(&props.Refs, "references", []string{}, "additional foreign key references, comma seperated of <[table_name:]type>")
 	c.Flags().BoolVar(&props.JoinTable, "read-only-store", false, "if set to true, creates read-only store")
 	c.Flags().BoolVar(&props.NoCopyFrom, "no-copy-from", false, "if true, indicates that the store should not use Postgres copyFrom operation")
@@ -159,7 +156,6 @@ func main() {
 			log.Fatal("Multiple primary keys defined, please check relevant proto file and ensure a primary key is specified once using the \"sql:\"pk\"\" tag")
 		}
 
-		permissionCheckerEnabled := props.PermissionChecker != ""
 		var searchCategory string
 		if props.SearchCategory != "" {
 			if asInt, err := strconv.Atoi(props.SearchCategory); err == nil {
@@ -191,17 +187,15 @@ func main() {
 		}
 
 		templateMap := map[string]interface{}{
-			"Type":              props.Type,
-			"TrimmedType":       trimmedType,
-			"Table":             props.Table,
-			"Schema":            schema,
-			"SearchCategory":    searchCategory,
-			"JoinTable":         props.JoinTable,
-			"PermissionChecker": props.PermissionChecker,
+			"Type":           props.Type,
+			"TrimmedType":    trimmedType,
+			"Table":          props.Table,
+			"Schema":         schema,
+			"SearchCategory": searchCategory,
+			"JoinTable":      props.JoinTable,
 			"Obj": object{
-				storageType:              props.Type,
-				permissionCheckerEnabled: permissionCheckerEnabled,
-				schema:                   schema,
+				storageType: props.Type,
+				schema:      schema,
 			},
 			"NoCopyFrom":     props.NoCopyFrom,
 			"Cycle":          embeddedFK != "",

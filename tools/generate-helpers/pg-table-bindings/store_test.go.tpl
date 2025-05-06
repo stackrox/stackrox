@@ -74,7 +74,7 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 	s.Nil(found{{.TrimmedType|upperCamelCase}})
 
 	{{if and (not .JoinTable) (eq (len .Schema.RelationshipsToDefineAsForeignKeys) 0) -}}
-	{{- if or (.Obj.IsGloballyScoped) (.Obj.HasPermissionChecker) (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
+	{{- if or (.Obj.IsGloballyScoped) (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
 	withNoAccessCtx := sac.WithNoAccess(ctx)
 	{{- end }}
 
@@ -88,7 +88,7 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(1, {{$name}}Count)
 
-	{{- if or (.Obj.IsGloballyScoped) (.Obj.HasPermissionChecker) (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
+	{{- if or (.Obj.IsGloballyScoped) (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
 	{{$name}}Count, err = store.Count(withNoAccessCtx, search.EmptyQuery())
 	s.NoError(err)
 	s.Zero({{$name}}Count)
@@ -98,7 +98,7 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 	s.NoError(err)
 	s.True({{$name}}Exists)
 	s.NoError(store.Upsert(ctx, {{$name}}))
-	{{- if or (.Obj.IsGloballyScoped) (.Obj.HasPermissionChecker) (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
+	{{- if or (.Obj.IsGloballyScoped) (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
 	s.ErrorIs(store.Upsert(withNoAccessCtx, {{$name}}), sac.ErrResourceAccessDenied)
 	{{- end }}
 
@@ -108,7 +108,7 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(found{{.TrimmedType|upperCamelCase}})
 
-	{{- if or (.Obj.IsGloballyScoped) (.Obj.HasPermissionChecker) }}
+	{{- if .Obj.IsGloballyScoped }}
 	s.ErrorIs(store.Delete(withNoAccessCtx, {{$paramList}}), sac.ErrResourceAccessDenied)
 	{{- else }}
 	s.NoError(store.Delete(withNoAccessCtx, {{$paramList}}))

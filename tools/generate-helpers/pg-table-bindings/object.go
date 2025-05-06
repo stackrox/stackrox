@@ -6,10 +6,9 @@ import (
 )
 
 type object struct {
-	storageType              string
-	permissionCheckerEnabled bool
-	isJoinTable              bool
-	schema                   *walker.Schema
+	storageType string
+	isJoinTable bool
+	schema      *walker.Schema
 }
 
 func (o object) GetID(name string) string {
@@ -40,10 +39,6 @@ func (o object) IsJoinTable() bool {
 	return o.isJoinTable
 }
 
-func (o object) HasPermissionChecker() bool {
-	return o.permissionCheckerEnabled
-}
-
 func (o object) IsNamespaceScope() bool {
 	return o.isScope(permissions.NamespaceScope)
 }
@@ -53,7 +48,7 @@ func (o object) IsClusterScope() bool {
 }
 
 func (o object) isScope(scope permissions.ResourceScope) bool {
-	if o.isJoinTable || o.permissionCheckerEnabled {
+	if o.isJoinTable {
 		return false
 	}
 	resource := storageToResource(o.storageType)
@@ -62,5 +57,5 @@ func (o object) isScope(scope permissions.ResourceScope) bool {
 }
 
 func (o object) isResourceType(resourceType ResourceType) bool {
-	return getResourceType(o.storageType, o.schema, o.permissionCheckerEnabled, o.isJoinTable) == resourceType
+	return getResourceType(o.storageType, o.schema, o.isJoinTable) == resourceType
 }

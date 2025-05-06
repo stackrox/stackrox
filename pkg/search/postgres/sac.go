@@ -20,14 +20,6 @@ func enrichQueryWithSACFilter(ctx context.Context, q *v1.Query, schema *walker.S
 	switch queryType {
 	// DELETE is expected to be the only Write use case for the query generator
 	case DELETE:
-		if schema.PermissionChecker != nil {
-			if ok, err := schema.PermissionChecker.WriteAllowed(ctx); err != nil {
-				return nil, err
-			} else if !ok {
-				return nil, sac.ErrResourceAccessDenied
-			}
-			return q, nil
-		}
 		sacFilter, err := GetReadWriteSACQuery(ctx, schema.ScopingResource)
 		if err != nil {
 			return nil, err
@@ -40,14 +32,6 @@ func enrichQueryWithSACFilter(ctx context.Context, q *v1.Query, schema *walker.S
 		query.Pagination = pagination
 		return query, nil
 	default:
-		if schema.PermissionChecker != nil {
-			if ok, err := schema.PermissionChecker.ReadAllowed(ctx); err != nil {
-				return nil, err
-			} else if !ok {
-				return getMatchNoneQuery(), nil
-			}
-			return q, nil
-		}
 		sacFilter, err := GetReadSACQuery(ctx, schema.ScopingResource)
 		if err != nil {
 			return nil, err
