@@ -752,9 +752,15 @@ func TestGenerateCentralTLSData_Rotation(t *testing.T) {
 				ca:               primary,
 			}
 
+			oldFileMapCopy := make(types.SecretDataMap, len(oldFileMap))
+			for k, v := range oldFileMap {
+				oldFileMapCopy[k] = v
+			}
+
 			newFileMap, err := r.generateCentralTLSData(oldFileMap)
 			require.NoError(t, err)
 			require.NotNil(t, newFileMap)
+			require.Equal(t, oldFileMapCopy, oldFileMap)
 
 			tt.assert(t, oldFileMap, newFileMap)
 		})
