@@ -3,6 +3,7 @@
 
   // After making changes to this file, you can validate it by running something like this in the root of the repo:
   // $ docker run --rm -it --entrypoint=renovate-config-validator -v "$(pwd)":/mnt -w /mnt renovate/renovate --strict
+  // Note: ignore errors about the config for `rpm`. This is to be addressed with https://issues.redhat.com/browse/CWFHEALTH-4117
   // There are more validation options, see https://docs.renovatebot.com/config-validation/
 
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
@@ -28,9 +29,17 @@
   "updateNotScheduled": false,
   "tekton": {
     "schedule": [
-      // For some reason, Konflux config defines custom schedule on each type of dependency manager and that takes
-      // precedence over the global/default schedule. We want our own schedule and hence need to make this override.
+      // Override Konflux custom schedule for this manager to our intended one.
       "after 3am and before 7am",
+    ],
+    "packageRules": [
+      // Note: the packageRules from the Konflux config (find URL in comments above) get merged with these.
+      {
+        "groupName": "StackRox custom Konflux Tasks",
+        "matchPackageNames": [
+          "/^quay.io/rhacs-eng/konflux-tasks/",
+        ],
+      },
     ],
   },
   "dockerfile": {
@@ -39,10 +48,27 @@
       // to have less PR noise.
       "**/*konflux*.Dockerfile",
     ],
+    "schedule": [
+      // Override Konflux custom schedule for this manager to our intended one.
+      "after 3am and before 7am",
+    ],
+    "postUpgradeTasks": {
+      "commands": [
+        // Refresh the rpm lockfile after updating image references in the dockerfile.
+        "rpm-lockfile-prototype rpms.in.yaml",
+      ],
+    },
+  },
+  "rpm": {
+    "schedule": [
+      // Override Konflux custom schedule for this manager to our intended one.
+      "after 3am and before 7am",
+    ],
   },
   "enabledManagers": [
     // Restrict Renovate focus on Konflux things since we rely on GitHub's dependabot for everything else.
     "tekton",
     "dockerfile",
+    "rpm",
   ],
 }
