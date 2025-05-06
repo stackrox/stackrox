@@ -422,7 +422,7 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPastIPs() {
 }
 
 func (s *ClusterEntitiesStoreTestSuite) TestChangingIPsAndExternalEntities() {
-	entityStore := NewStore(&mockHeritageData{})
+	entityStore := NewStore(&heritage.MockData{})
 	type expectation struct {
 		ip           string
 		port         uint16
