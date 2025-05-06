@@ -16,7 +16,10 @@ jobs:
   check-crd-compatibility:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.61
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
+      volumes:  # job-preamble deletes unused host runner files under /mnt
+      - /usr:/mnt/usr
+      - /opt:/mnt/opt
     outputs:
       release_branch: ${{ steps.get_previous_release_branch.outputs.release_branch }}
     steps:
@@ -27,6 +30,8 @@ jobs:
         ref: ${{ github.event.pull_request.head.sha }}
 
     - uses: ./.github/actions/job-preamble
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Checkout crd-schema-checker
       uses: actions/checkout@v4
