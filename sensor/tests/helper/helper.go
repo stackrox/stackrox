@@ -67,6 +67,9 @@ const (
 
 	// certID is the id in the certificate which is sent on the hello message
 	certID = "00000000-0000-4000-A000-000000000000"
+
+	// defaultNamespaceCreateTimeout maximum time the test will retry to create a namespace
+	defaultNamespaceCreateTimeout = 10 * time.Minute
 )
 
 // K8sResourceInfo is a test file in YAML or a struct
@@ -264,8 +267,22 @@ func (c *TestContext) createTestNs(ctx context.Context, t *testing.T, name strin
 	})
 	nsObj := v1.Namespace{}
 	nsObj.Name = name
-	if err := c.r.Create(ctx, &nsObj); err != nil {
-		return nil, nil, err
+
+	err := execWithRetry(defaultNamespaceCreateTimeout, defaultCreationTimeout, func() error {
+		if errCreate := c.r.Create(ctx, &nsObj); errCreate != nil {
+			t.Logf("failed to create %q %q: %v\n", nsObj.Kind, nsObj.Name, errCreate)
+			return errCreate
+		}
+
+		return nil
+	})
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "namespace create")
+	}
+
+	waitForNs := v1.NamespaceList{Items: []v1.Namespace{nsObj}}
+	if errWait := wait.For(conditions.New(c.r).ResourcesFound(&waitForNs)); errWait != nil {
+		return nil, nil, errors.Wrap(errWait, "wait for namespace")
 	}
 	return &nsObj, func() error {
 		return c.deleteNs(ctx, t, name)
