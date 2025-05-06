@@ -33,6 +33,8 @@ spec:
       name: external-destination-source
       namespace: qa
     spec:
+      imagePullSecrets:
+        - name: qa
       containers:
       - args:
         - while sleep 30; do wget -S -T 2 http://www.google.com; done
