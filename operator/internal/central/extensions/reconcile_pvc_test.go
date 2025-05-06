@@ -412,13 +412,13 @@ func TestReconcilePVCExtension(t *testing.T) {
 			DefaultStorageClass: true,
 			Central:             emptyCentral,
 			Defaults: DefaultPVCValues{
-				ClaimName: DefaultCentralDBBackupPVCName,
+				ClaimName: common.DefaultCentralDBBackupPVCName,
 				Size:      DefaultBackupPVCSize,
 			},
 			Target:       PVCTargetCentralDBBackup,
 			ExistingPVCs: nil,
 			ExpectedPVCs: map[string]pvcVerifyFunc{
-				DefaultCentralDBBackupPVCName: verifyMultiple(
+				common.DefaultCentralDBBackupPVCName: verifyMultiple(
 					ownedBy(emptyCentral),
 					withSize(DefaultBackupPVCSize),
 					withStorageClass(emptyStorageClass)),
@@ -431,7 +431,7 @@ func TestReconcilePVCExtension(t *testing.T) {
 			DefaultStorageClass: false,
 			Central:             emptyCentral,
 			Defaults: DefaultPVCValues{
-				ClaimName: DefaultCentralDBBackupPVCName,
+				ClaimName: common.DefaultCentralDBBackupPVCName,
 				Size:      DefaultBackupPVCSize,
 			},
 			Target:       PVCTargetCentralDBBackup,
@@ -447,13 +447,13 @@ func TestReconcilePVCExtension(t *testing.T) {
 			DefaultStorageClass: false,
 			Central:             changedPVCSizeAndStorageClassCentral,
 			Defaults: DefaultPVCValues{
-				ClaimName: DefaultCentralDBBackupPVCName,
+				ClaimName: common.DefaultCentralDBBackupPVCName,
 				Size:      DefaultBackupPVCSize,
 			},
 			Target:       PVCTargetCentralDBBackup,
 			ExistingPVCs: nil,
 			ExpectedPVCs: map[string]pvcVerifyFunc{
-				DefaultCentralDBBackupPVCName: verifyMultiple(
+				common.DefaultCentralDBBackupPVCName: verifyMultiple(
 					ownedBy(changedPVCSizeAndStorageClassCentral),
 					withSize(resource.MustParse("1000Gi")),
 					withStorageClass("new-storage-class")),
@@ -466,7 +466,7 @@ func TestReconcilePVCExtension(t *testing.T) {
 			DefaultStorageClass: true,
 			Central:             changedPVCNameCentral,
 			Defaults: DefaultPVCValues{
-				ClaimName: DefaultCentralDBBackupPVCName,
+				ClaimName: common.DefaultCentralDBBackupPVCName,
 				Size:      DefaultBackupPVCSize,
 			},
 			Target:       PVCTargetCentralDBBackup,
@@ -504,11 +504,11 @@ func TestReconcilePVCExtension(t *testing.T) {
 
 			client := fake.NewClientBuilder().WithObjects(allExisting...).Build()
 
-			rFirstRun := newReconcilePVCExtensionRun(testCase, client)
+			rFirstRun := newReconcilePVCExtensionRun(t, testCase, client)
 			executeAndVerify(t, testCase, rFirstRun)
 
 			// Run it a second time to verify cluster state does not change after first reconciliation was executed
-			rSecondRun := newReconcilePVCExtensionRun(testCase, client)
+			rSecondRun := newReconcilePVCExtensionRun(t, testCase, client)
 			executeAndVerify(t, testCase, rSecondRun)
 		})
 	}
@@ -581,7 +581,7 @@ func makePVC(owner *platform.Central, name string, size resource.Quantity, stora
 	}
 }
 
-func newReconcilePVCExtensionRun(testCase pvcReconciliationTestCase, client ctrlClient.Client) reconcilePVCExtensionRun {
+func newReconcilePVCExtensionRun(t *testing.T, testCase pvcReconciliationTestCase, client ctrlClient.Client) reconcilePVCExtensionRun {
 	persistence, err := getPersistenceByTarget(testCase.Central, testCase.Target, logr.Discard())
 	require.NoError(t, err)
 

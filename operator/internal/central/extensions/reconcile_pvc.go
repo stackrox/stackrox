@@ -10,6 +10,7 @@ import (
 	"github.com/operator-framework/helm-operator-plugins/pkg/extensions"
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
+	"github.com/stackrox/rox/operator/internal/central/common"
 	utils "github.com/stackrox/rox/operator/internal/utils"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	corev1 "k8s.io/api/core/v1"
@@ -25,9 +26,6 @@ const (
 	DefaultCentralPVCName = "stackrox-db"
 	// DefaultCentralDBPVCName is the default name for Central DB PVC
 	DefaultCentralDBPVCName = "central-db"
-
-	// DefaultCentralDBBackupPVCName is the default name for Central DB backup PVC
-	DefaultCentralDBBackupPVCName = "central-db-backup"
 
 	pvcTargetLabelKey = "target.pvc.stackrox.io"
 )
@@ -78,7 +76,7 @@ func convertDBPersistenceToPersistence(p *platform.DBPersistence, target PVCTarg
 			// it as well. We don't want to modify the pointer in place, make a
 			// copy instead -- otherwise the next reconciliation will repeat the
 			// modification, duplicating the suffix.
-			backupName := fmt.Sprintf("%s-backup", *claimName)
+			backupName := common.GetBackupClaimName(*claimName)
 			claimName = &backupName
 		}
 
@@ -140,19 +138,6 @@ func getPersistenceByTarget(central *platform.Central, target PVCTarget, log log
 	}
 }
 
-func getDefaultPVCSizeByTarget(target PVCTarget) (resource.Quantity, error) {
-	switch target {
-	case PVCTargetCentral:
-		return resource.MustParse("0"), nil
-	case PVCTargetCentralDB:
-		return DefaultPVCSize, nil
-	case PVCTargetCentralDBBackup:
-		return DefaultBackupPVCSize, nil
-	default:
-		return resource.MustParse("0"), errors.Errorf("unknown pvc target %q", target)
-	}
-}
-
 // ReconcilePVCExtension reconciles PVCs created by the operator. The PVC is not managed by a Helm chart
 // because if a user uninstalls StackRox, it should keep the data, preventing to unintentionally erasing data.
 // On uninstall the owner reference is removed from the PVC objects.
@@ -170,11 +155,6 @@ func ReconcilePVCExtension(client ctrlClient.Client, direct ctrlClient.Reader, t
 }
 
 func reconcilePVC(ctx context.Context, central *platform.Central, persistence *platform.Persistence, target PVCTarget, defaultClaimName string, client ctrlClient.Client, log logr.Logger, opts ...PVCOption) error {
-	defaultPVCSize, err := getDefaultPVCSizeByTarget(target)
-	if err != nil {
-		return errors.Wrapf(err, "Could not get default PVC size")
-	}
-
 	ext := reconcilePVCExtensionRun{
 		ctx:              ctx,
 		namespace:        central.GetNamespace(),
@@ -183,7 +163,7 @@ func reconcilePVC(ctx context.Context, central *platform.Central, persistence *p
 		persistence:      persistence,
 		target:           target,
 		defaultClaimName: defaultClaimName,
-		defaultClaimSize: defaultPVCSize,
+		defaultClaimSize: DefaultPVCSize,
 		log:              log.WithValues("pvcReconciler", target),
 	}
 
@@ -294,20 +274,28 @@ func (r *reconcilePVCExtensionRun) handleCreate(claimName string, pvcConfig *pla
 	// collecting this information at the start and passing it into the
 	// extension.
 	//
-	// Note that to make this check less disruptive, in case if we face an
-	// error we still try to create a PVC.
+	// Note that to make this check less disruptive, an error is a hard stop
+	// for the backup volume only, not for the main data volume.
 	hasDefault, err := utils.HasDefaultStorageClass(r.ctx, r.client)
 	if err != nil {
-		r.log.Error(err, fmt.Sprintf("cannot find the default storage class, but proceeding with %q PVC creation", claimName))
-	} else {
-		if !hasDefault && pvcConfig.StorageClassName == nil {
-			// For the backup PVC it's a hard stop
-			if r.target == PVCTargetCentralDBBackup {
-				r.log.Info(fmt.Sprintf("No default storage class or explicit storage class found, skipping %q PVC creation", claimName))
-				return nil
-			} else {
-				r.log.Info(fmt.Sprintf("No default storage class or explicit storage class found, but proceeding with %q PVC creation", claimName))
-			}
+		if r.target == PVCTargetCentralDBBackup {
+			return errors.Wrapf(err, "cannot find the default storage class, abort %q PVC creation", claimName)
+		} else {
+			r.log.Error(err, fmt.Sprintf("cannot find the default storage class, but proceeding with %q PVC creation", claimName))
+		}
+	}
+
+	// No error, verify the result. If no default storage class found and no
+	// storage class is specified, refuse to create a backup volume, but
+	// proceed with the main data volume (again, the principle of less
+	// disruption).
+	if !hasDefault && pvcConfig.StorageClassName == nil {
+		// For the backup PVC it's a hard stop
+		if r.target == PVCTargetCentralDBBackup {
+			r.log.Info(fmt.Sprintf("No default storage class or explicit storage class found, skipping %q PVC creation", claimName))
+			return nil
+		} else {
+			r.log.Info(fmt.Sprintf("No default storage class or explicit storage class found, but proceeding with %q PVC creation", claimName))
 		}
 	}
 

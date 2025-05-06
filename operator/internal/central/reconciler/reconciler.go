@@ -4,6 +4,7 @@ import (
 	pkgReconciler "github.com/operator-framework/helm-operator-plugins/pkg/reconciler"
 	"github.com/stackrox/rox/image"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
+	"github.com/stackrox/rox/operator/internal/central/common"
 	"github.com/stackrox/rox/operator/internal/central/extensions"
 	centralTranslation "github.com/stackrox/rox/operator/internal/central/values/translation"
 	commonExtensions "github.com/stackrox/rox/operator/internal/common/extensions"
@@ -40,7 +41,7 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 		pkgReconciler.WithPreExtension(extensions.ReconcileAdminPasswordExtension(mgr.GetClient(), mgr.GetAPIReader())),
 		pkgReconciler.WithPreExtension(extensions.ReconcilePVCExtension(mgr.GetClient(), mgr.GetAPIReader(), extensions.PVCTargetCentral, extensions.DefaultCentralPVCName)),
 		pkgReconciler.WithPreExtension(extensions.ReconcilePVCExtension(mgr.GetClient(), mgr.GetAPIReader(), extensions.PVCTargetCentralDB, extensions.DefaultCentralDBPVCName)),
-		pkgReconciler.WithPreExtension(extensions.ReconcilePVCExtension(mgr.GetClient(), mgr.GetAPIReader(), extensions.PVCTargetCentralDBBackup, extensions.DefaultCentralDBBackupPVCName)),
+		pkgReconciler.WithPreExtension(extensions.ReconcilePVCExtension(mgr.GetClient(), mgr.GetAPIReader(), extensions.PVCTargetCentralDBBackup, common.DefaultCentralDBBackupPVCName, extensions.WithDefaultClaimSize(extensions.DefaultBackupPVCSize))),
 		pkgReconciler.WithPreExtension(proxy.ReconcileProxySecretExtension(mgr.GetClient(), mgr.GetAPIReader(), proxyEnv)),
 		pkgReconciler.WithPreExtension(commonExtensions.CheckForbiddenNamespacesExtension(commonExtensions.IsSystemNamespace)),
 		pkgReconciler.WithPreExtension(commonExtensions.ReconcileProductVersionStatusExtension(version.GetMainVersion())),
