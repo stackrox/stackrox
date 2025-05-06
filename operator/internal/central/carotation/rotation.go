@@ -13,7 +13,7 @@ import (
 type Action int
 
 const (
-	// NoAction indicates that no action needs to be taken at this time
+	// NoAction indicates that no action needs to be taken at this time.
 	NoAction Action = iota
 	// AddSecondary indicates that the CA has passed a threshold (e.g., 3/5 of its validity)
 	// and a secondary CA should be generated and added.
@@ -25,8 +25,8 @@ const (
 	DeleteSecondary
 )
 
-// DetermineAction selects a rotation action based on the current time, and the validity of the primary CA certificate
-// Important: The function assumes that input certificates have valid time ranges
+// DetermineAction selects a rotation action based on the current time, and the validity of the primary CA certificate.
+// Important: The function assumes that input certificates have valid time ranges.
 func DetermineAction(primary, secondary *x509.Certificate, current time.Time) Action {
 	startTime := primary.NotBefore
 	validityDuration := primary.NotAfter.Sub(primary.NotBefore)
@@ -38,9 +38,9 @@ func DetermineAction(primary, secondary *x509.Certificate, current time.Time) Ac
 		return AddSecondary
 	}
 
-	// Promote secondary to primary in the final year
-	// If we're in the final year and no secondary CA exists, the rotation will be done in two steps
-	// (first reconcile - AddSecondary, subsequent reconcile - PromoteSecondary)
+	// Promote secondary to primary after 4/5 of the primary's validity period has elapsed.
+	// If no secondary CA exists at this point, the rotation will be done in two steps:
+	// first reconcile - AddSecondary, subsequent reconcile - PromoteSecondary
 	promoteSecondaryCATime := startTime.Add(4 * fifthOfValidityDuration)
 	if current.After(promoteSecondaryCATime) {
 		return PromoteSecondary

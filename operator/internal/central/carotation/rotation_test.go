@@ -66,18 +66,12 @@ func Test_DetermineAction(t *testing.T) {
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
 			now, err := time.Parse(time.RFC3339, c.now)
 			require.NoError(t, err)
 
-			var primary *x509.Certificate
-			if c.primaryNotBefore != "" && c.primaryNotAfter != "" {
-				primary = generateTestCertWithValidity(t, c.primaryNotBefore, c.primaryNotAfter)
-			}
-
-			var secondary *x509.Certificate
-			if c.secondaryNotBefore != "" && c.secondaryNotAfter != "" {
-				secondary = generateTestCertWithValidity(t, c.secondaryNotBefore, c.secondaryNotAfter)
-			}
+			primary := generateTestCertWithValidity(t, c.primaryNotBefore, c.primaryNotAfter)
+			secondary := generateTestCertWithValidity(t, c.secondaryNotBefore, c.secondaryNotAfter)
 
 			action := DetermineAction(primary, secondary, now)
 			assert.Equal(t, c.wantAction, action)
@@ -148,8 +142,8 @@ func TestGenerateCentralTLSData_Rotation(t *testing.T) {
 			assert: func(t *testing.T, old, new types.SecretDataMap) {
 				require.Equal(t, old[mtls.CACertFileName], new[mtls.CACertFileName], "primary CA cert should be unchanged")
 				require.Equal(t, old[mtls.CAKeyFileName], new[mtls.CAKeyFileName], "primary CA key should be unchanged")
-				require.NotContains(t, new, mtls.SecondaryCACertFileName, "secondary CA cert should be present")
-				require.NotContains(t, new, mtls.SecondaryCAKeyFileName, "secondary CA key should be present")
+				require.NotContains(t, new, mtls.SecondaryCACertFileName, "secondary CA cert should be absent")
+				require.NotContains(t, new, mtls.SecondaryCAKeyFileName, "secondary CA key should be absent")
 			},
 		},
 		{
@@ -195,6 +189,9 @@ func TestGenerateCentralTLSData_Rotation(t *testing.T) {
 
 func generateTestCertWithValidity(t *testing.T, notBeforeStr, notAfterStr string) *x509.Certificate {
 	t.Helper()
+	if notBeforeStr == "" && notAfterStr == "" {
+		return nil
+	}
 	notBefore, err := time.Parse(time.RFC3339, notBeforeStr)
 	require.NoError(t, err)
 	notAfter, err := time.Parse(time.RFC3339, notAfterStr)

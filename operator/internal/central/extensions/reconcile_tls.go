@@ -37,6 +37,7 @@ const (
 var (
 	// centralCARotationEnabled is a feature flag for the Central CA rotation feature. Defaults to false because
 	// the feature is still under active development.
+	// TODO: Remove when epic ROX-20262 is complete.
 	centralCARotationEnabled = env.RegisterBooleanSetting(envCentralCARotationEnabled, false)
 )
 
@@ -152,12 +153,13 @@ func (r *createCentralTLSExtensionRun) validateAndConsumeCentralTLSData(fileMap 
 	if err := r.ca.CheckProperties(); err != nil {
 		return errors.Wrap(err, "loaded service CA certificate is invalid")
 	}
-	if err := r.checkCertificateTimeValidity(r.ca.Certificate()); err != nil {
-		return errors.Wrap(err, "primary CA is not valid at the present time")
-	}
 
 	if centralCARotationEnabled.BooleanSetting() {
-		rotationAction, err := r.handleCARotation(fileMap)
+		if err := r.checkCertificateTimeValidity(r.ca.Certificate()); err != nil {
+			return errors.Wrap(err, "primary CA is not valid at the present time")
+		}
+
+		rotationAction, err := r.determineCARotationAction(fileMap)
 		if err != nil {
 			return err
 		}
@@ -173,7 +175,7 @@ func (r *createCentralTLSExtensionRun) validateAndConsumeCentralTLSData(fileMap 
 	return nil
 }
 
-func (r *createCentralTLSExtensionRun) handleCARotation(fileMap types.SecretDataMap) (carotation.Action, error) {
+func (r *createCentralTLSExtensionRun) determineCARotationAction(fileMap types.SecretDataMap) (carotation.Action, error) {
 	secondaryCA, err := certgen.LoadSecondaryCAFromFileMap(fileMap)
 	var secondaryCACert *x509.Certificate
 	// the presence of a secondary CA certificate is optional

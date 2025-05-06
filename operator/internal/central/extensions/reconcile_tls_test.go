@@ -705,8 +705,8 @@ func TestGenerateCentralTLSData_Rotation(t *testing.T) {
 			assert: func(t *testing.T, old, new types.SecretDataMap) {
 				require.Equal(t, old[mtls.CACertFileName], new[mtls.CACertFileName], "primary CA cert should be unchanged")
 				require.Equal(t, old[mtls.CAKeyFileName], new[mtls.CAKeyFileName], "primary CA key should be unchanged")
-				require.NotContains(t, new, mtls.SecondaryCACertFileName, "secondary CA cert should be present")
-				require.NotContains(t, new, mtls.SecondaryCAKeyFileName, "secondary CA key should be present")
+				require.NotContains(t, new, mtls.SecondaryCACertFileName, "secondary CA cert should be absent")
+				require.NotContains(t, new, mtls.SecondaryCAKeyFileName, "secondary CA key should be absent")
 				require.NotEqual(t, old[mtls.ServiceCertFileName], new[mtls.ServiceCertFileName], "central cert should be reissued")
 				require.NotEqual(t, old[mtls.ServiceKeyFileName], new[mtls.ServiceKeyFileName], "central key should be reissued")
 			},
