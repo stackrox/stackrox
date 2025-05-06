@@ -73,7 +73,7 @@ func (h *Manager) loadCacheNoLock(ctx context.Context) error {
 		h.cachePopulated.Store(false)
 		return err
 	}
-	log.Infof("Sensor heritage data with %d entries loaded to memory", len(data))
+	log.Infof("Sensor heritage data with %d entries loaded to memory: %v", len(data), data)
 	h.cache = append(h.cache, data...)
 	h.cachePopulated.Store(true)
 	return nil
@@ -220,7 +220,7 @@ func configMapToPastSensorData(cm *v1.ConfigMap) ([]PastSensor, error) {
 		if err := json.Unmarshal([]byte(jsonStr), &entries); err != nil {
 			return nil, errors.Wrapf(err, "unmarshalling data %v", jsonStr)
 		}
-		data = append(data, PastSensor{})
+		data = append(data, entries...)
 	}
 	return data, nil
 }
