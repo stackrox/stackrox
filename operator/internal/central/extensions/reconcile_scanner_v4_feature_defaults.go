@@ -28,8 +28,14 @@ func ReconcileScannerV4FeatureDefaultsExtension(client ctrlClient.Client) extens
 func reconcileScannerV4FeatureDefaults(
 	ctx context.Context, central *platform.Central, client ctrlClient.Client, _ ctrlClient.Reader,
 	_ func(updateStatusFunc), logger logr.Logger) error {
-	scannerV4Spec := initializedDeepCopy(central.Spec.ScannerV4)
+	logger = logger.WithName("extension-feature-defaults") // Already using a generic log name due to the planned generalization of the feature-defaults extension.
 
+	if central.GetDeletionTimestamp() != nil {
+		logger.Info("skipping extension run due to deletionTimestamp being present on Central custom resource")
+		return nil
+	}
+
+	scannerV4Spec := initializedDeepCopy(central.Spec.ScannerV4)
 	componentPolicy, usedDefaulting := defaulting.ScannerV4ComponentPolicy(logger, &central.Status, central.GetAnnotations(), scannerV4Spec)
 	if !usedDefaulting {
 		// User provided an explicit choice, nothing to do in this extension.
