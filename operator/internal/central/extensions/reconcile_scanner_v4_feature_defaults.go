@@ -52,8 +52,7 @@ func reconcileScannerV4FeatureDefaults(
 		// We do this immediately during (first-time) execution of this extension to make sure
 		// that this information is already persisted in the Kubernetes resource before we
 		// can realistically end up in a situation where reconcilliation might need to be retried.
-		err := patchCentralAnnotation(ctx, logger, client, central, annotationKey, string(componentPolicy))
-		if err != nil {
+		if err := patchCentralAnnotation(ctx, logger, client, central, annotationKey, string(componentPolicy)); err != nil {
 			return err
 		}
 	}
