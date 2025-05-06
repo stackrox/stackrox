@@ -8,6 +8,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	v1 "k8s.io/api/core/v1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -35,6 +36,14 @@ type Manager struct {
 	k8sClient client.Interface
 	namespace string
 
+	mutex sync.Mutex
+
+	// Cache the data for the current instance of Sensor
+	currentIP               string
+	currentContainerID      string
+	lastUpdateOfCurrentData time.Time
+
+	// Cache the data from the ConfigMap about the past instances of Sensor
 	cachePopulated atomic.Bool
 	cache          []PastSensor
 }
@@ -49,7 +58,7 @@ func NewHeritageManager(ns string, client client.Interface) *Manager {
 	return m
 }
 
-func (h *Manager) loadCache(ctx context.Context) error {
+func (h *Manager) loadCacheNoLock(ctx context.Context) error {
 	if h.cachePopulated.Load() {
 		return nil
 	}
@@ -71,22 +80,63 @@ func (h *Manager) loadCache(ctx context.Context) error {
 }
 
 func (h *Manager) GetData(ctx context.Context) []PastSensor {
-	if err := h.loadCache(ctx); err != nil {
+	h.mutex.Lock()
+	defer h.mutex.Unlock()
+	if err := h.loadCacheNoLock(ctx); err != nil {
 		log.Warnf("%v", err)
 	}
 	return h.cache
 }
 
-func (h *Manager) Write(ctx context.Context, currentIP, currentContainerID string, now time.Time) error {
-	if err := h.loadCache(ctx); err != nil {
+func (h *Manager) HasCurrentSensorData() bool {
+	return h.currentIP != "" && h.currentContainerID != ""
+}
+
+func (h *Manager) SetCurrentSensorData(currentIP, currentContainerID string) {
+	h.currentIP = currentIP
+	h.currentContainerID = currentContainerID
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	if err := h.UpsertConfigMap(ctx, time.Now()); err != nil {
+		log.Warnf("Failed to update heritage data in the configMap: %v", err)
+	}
+}
+
+// updateCacheNoLock updates the timestamp if container ID and IP already exist in the heritage.
+// The size of h.cache is expected to be <10 in most of the cases.
+func (h *Manager) updateCacheNoLock(now time.Time) bool {
+	for _, entry := range h.cache {
+		if entry.ContainerID == h.currentContainerID && entry.PodIP == h.currentIP {
+			entry.Timestamp = now
+			return true
+		}
+	}
+	return false
+}
+
+func (h *Manager) UpsertConfigMap(ctx context.Context, now time.Time) error {
+	if ctx == nil {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+	}
+	h.mutex.Lock()
+	defer h.mutex.Unlock()
+	if err := h.loadCacheNoLock(ctx); err != nil {
 		log.Warnf("%v", err)
 	}
-	data := append(h.cache, PastSensor{
-		ContainerID: currentContainerID,
-		PodIP:       currentIP,
-		Timestamp:   now,
-	})
-	return h.write(ctx, data...)
+
+	// TODO: Implement purging old heritage (old = will not be reported by collector afterglow anymore =~20 minutes)
+	if !h.updateCacheNoLock(now) {
+		h.cache = append(h.cache, PastSensor{
+			ContainerID: h.currentContainerID,
+			PodIP:       h.currentIP,
+			Timestamp:   now,
+		})
+	}
+	h.lastUpdateOfCurrentData = now
+	return h.write(ctx, h.cache...)
 }
 
 func (h *Manager) write(ctx context.Context, data ...PastSensor) error {
@@ -95,7 +145,7 @@ func (h *Manager) write(ctx context.Context, data ...PastSensor) error {
 		return errors.Wrapf(err, "converting past sensor data to config map")
 	}
 	log.Infof("Writing Heritage data %v to ConfigMap %s/%s", data, h.namespace, cmName)
-	if errWr := h.writeCM(ctx, cm); errWr != nil {
+	if errWr := h.writeConfigMap(ctx, cm); errWr != nil {
 		if apiErrors.IsNotFound(errWr) {
 			log.Infof("Creating ConfigMap %s/%s", h.namespace, cmName)
 			if _, errCr := h.k8sClient.Kubernetes().CoreV1().ConfigMaps(h.namespace).
@@ -111,7 +161,7 @@ func (h *Manager) write(ctx context.Context, data ...PastSensor) error {
 	return nil
 }
 
-func (h *Manager) writeCM(ctx context.Context, cm *v1.ConfigMap) error {
+func (h *Manager) writeConfigMap(ctx context.Context, cm *v1.ConfigMap) error {
 	if _, err := h.k8sClient.Kubernetes().CoreV1().ConfigMaps(h.namespace).
 		Update(ctx, cm, metav1.UpdateOptions{}); err != nil {
 		return errors.Wrapf(err, "updating config map %s/%s", h.namespace, cmName)

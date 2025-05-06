@@ -48,6 +48,7 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/enforcer"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline"
 	"github.com/stackrox/rox/sensor/kubernetes/helm"
+	"github.com/stackrox/rox/sensor/kubernetes/heritage"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 	"github.com/stackrox/rox/sensor/kubernetes/networkpolicies"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestrator"
@@ -63,7 +64,8 @@ var (
 func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	log.Info("Running sensor with Kubernetes re-sync disabled")
 
-	storeProvider := resources.InitializeStore()
+	hm := heritage.NewHeritageManager(pods.GetPodNamespace(), cfg.k8sClient)
+	storeProvider := resources.InitializeStore(hm)
 	admCtrlSettingsMgr := admissioncontroller.NewSettingsManager(storeProvider.Deployments(), storeProvider.Pods())
 
 	helmManagedConfig, err := helm.GetHelmManagedConfig(storage.ServiceType_SENSOR_SERVICE)
