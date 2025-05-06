@@ -1,13 +1,10 @@
 package resources
 
 import (
-	"context"
-
 	"github.com/stackrox/rox/pkg/registrymirror"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/store"
-	"github.com/stackrox/rox/sensor/kubernetes/heritage"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/rbac"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
 )
@@ -36,14 +33,8 @@ type CleanableStore interface {
 	Cleanup()
 }
 
-type heritageData interface {
-	GetData(ctx context.Context) []heritage.PastSensor
-	HasCurrentSensorData() bool
-	SetCurrentSensorData(currentIP, currentContainerID string)
-}
-
 // InitializeStore creates the store instances
-func InitializeStore(hm heritageData) *StoreProvider {
+func InitializeStore(hm clusterentities.HeritageData) *StoreProvider {
 	memSizeSetting := pastClusterEntitiesMemorySize.IntegerSetting()
 	if memSizeSetting < 0 {
 		memSizeSetting = pastClusterEntitiesMemorySize.DefaultValue()

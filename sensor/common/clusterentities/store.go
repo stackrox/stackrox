@@ -104,7 +104,7 @@ type Store struct {
 	callbackChannel chan<- ContainerMetadata
 
 	// pastSensors provides data about past Sensor IPs and container IDs
-	pastSensors heritageData
+	pastSensors HeritageData
 
 	// memorySize defines how many ticks old endpoint data should be remembered after removal request
 	// Set to 0 to disable memory
@@ -116,19 +116,19 @@ type Store struct {
 	trace      map[string]string
 }
 
-type heritageData interface {
+type HeritageData interface {
 	GetData(ctx context.Context) []heritage.PastSensor
 	HasCurrentSensorData() bool
 	SetCurrentSensorData(currentIP, currentContainerID string)
 }
 
 // NewStore creates and returns a new store instance.
-func NewStore(hm heritageData) *Store {
+func NewStore(hm HeritageData) *Store {
 	return NewStoreWithMemory(0, hm, false)
 }
 
 // NewStoreWithMemory returns store that remembers past IPs of an endpoint for a given number of ticks
-func NewStoreWithMemory(numTicks uint16, hm heritageData, debugMode bool) *Store {
+func NewStoreWithMemory(numTicks uint16, hm HeritageData, debugMode bool) *Store {
 	store := &Store{
 		endpointsStore:    newEndpointsStoreWithMemory(numTicks),
 		podIPsStore:       newPodIPsStoreWithMemory(numTicks),
@@ -178,7 +178,7 @@ func (e *Store) Apply(updates map[string]*EntityData, incremental bool, auxInfo 
 	}
 
 	// We want to catch the data about the Sensor itself and store it.
-	// This block is executed only once per Sensor restart.
+	// This block is executed only few times per Sensor restart (as long as the update contains data about sensor).
 	if !e.pastSensors.HasCurrentSensorData() {
 		// TODO: Implement better way of discovering these data.
 		sensorPodIP := ""
@@ -194,8 +194,10 @@ func (e *Store) Apply(updates map[string]*EntityData, incremental bool, auxInfo 
 				}
 			}
 		}
-		e.pastSensors.SetCurrentSensorData(sensorPodIP, sensorContainerID)
-		log.Infof("Adding podIP=%q and containerID=%q to Sensor heritage", sensorPodIP, sensorContainerID)
+		if sensorPodIP != "" && sensorContainerID != "" {
+			e.pastSensors.SetCurrentSensorData(sensorPodIP, sensorContainerID)
+			log.Infof("Adding podIP=%q and containerID=%q to Sensor heritage", sensorPodIP, sensorContainerID)
+		}
 	}
 
 	// Order matters: Endpoints must be applied before IPs, as the IP store may query the endpoints store to check

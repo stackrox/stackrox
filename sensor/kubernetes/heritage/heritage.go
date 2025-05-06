@@ -52,7 +52,7 @@ func NewHeritageManager(ns string, client client.Interface) *Manager {
 	m := &Manager{
 		cachePopulated: atomic.Bool{},
 		k8sClient:      client,
-		cache:          make([]PastSensor, 0),
+		cache:          []PastSensor{},
 		namespace:      ns,
 	}
 	return m
