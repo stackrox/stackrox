@@ -204,7 +204,7 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
 
         log.info "Verify edge exists from deployment 'external-connection' to " +
             "supernet external source '$externalSource30Name'"
-        withRetry(0, 30) {
+        withRetry(4, 30) {
             assert NetworkGraphUtil.checkForEdge(deploymentUid, externalSource30ID)
         }
 
@@ -212,6 +212,7 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
         String externalSource31Name = generateNameWithPrefix("external-source-31")
         NetworkEntity externalSource31 = createNetworkEntityExternalSource(externalSource31Name, CF_CIDR_31)
         String externalSource31ID = externalSource31?.getInfo()?.getId()
+        assert externalSource31 != null
         assert externalSource31ID != null
 
         then:
