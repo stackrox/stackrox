@@ -1,7 +1,5 @@
 package env
 
-import "time"
-
 const (
 	// TLSCertFileName is the tls certificate filename.
 	TLSCertFileName = "tls.crt"
@@ -29,12 +27,6 @@ var (
 	SecureMetricsClientCAKey = RegisterSetting("ROX_SECURE_METRICS_CLIENT_CA_KEY", WithDefault("client-ca-file"))
 	// SecureMetricsClientCertCN has the expected subject common name of the client cert.
 	SecureMetricsClientCertCN = RegisterSetting("ROX_SECURE_METRICS_CLIENT_CERT_CN", WithDefault("system:serviceaccount:openshift-monitoring:prometheus-k8s"))
-
-	// AggregateVulnMetrics configures the aggregation key for exposed vulnerability metrics.
-	AggregateVulnMetrics = RegisterSetting("ROX_AGGREGATE_VULN_METRICS", AllowEmpty(), WithDefault("Cluster,Namespace,Severity"))
-
-	// AggregateVulnMetricsPeriod sets the metric collection period.
-	AggregateVulnMetricsPeriod = registerDurationSetting("ROX_AGGREGATE_VULN_METRICS_PERIOD", time.Hour)
 )
 
 // MetricsEnabled returns true if the metrics/debug http server should be started.

@@ -176,6 +176,32 @@
       ],
       "default": "UNSET"
     },
+    "PrometheusMetricsConfigFilterExpression": {
+      "type": "object",
+      "properties": {
+        "operator": {
+          "type": "string"
+        },
+        "argument": {
+          "type": "string"
+        }
+      }
+    },
+    "PrometheusMetricsConfigMetric": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "labels": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/storagePrometheusMetricsConfigLabel"
+          }
+        }
+      }
+    },
     "googlerpcStatus": {
       "type": "object",
       "properties": {
@@ -351,9 +377,39 @@
         },
         "administrationEventsConfig": {
           "$ref": "#/definitions/storageAdministrationEventsConfig"
+        },
+        "prometheusMetricsConfig": {
+          "$ref": "#/definitions/storagePrometheusMetricsConfig"
         }
       },
-      "title": "next available tag:9"
+      "title": "next available tag:10"
+    },
+    "storagePrometheusMetricsConfig": {
+      "type": "object",
+      "properties": {
+        "gatheringPeriodHours": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "metrics": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/PrometheusMetricsConfigMetric"
+          }
+        }
+      }
+    },
+    "storagePrometheusMetricsConfigLabel": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "expression": {
+          "$ref": "#/definitions/PrometheusMetricsConfigFilterExpression"
+        }
+      }
     },
     "storagePublicConfig": {
       "type": "object",

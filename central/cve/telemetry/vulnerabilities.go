@@ -39,7 +39,7 @@ type result map[metricName]map[metricKey]*record
 
 func (h *vulnerabilityMetricsImpl) trackVulnerabilityMetrics(ctx context.Context) result {
 	metrics := make(result)
-	for metric := range h.metricExpressions {
+	for metric := range h.metrics {
 		metrics[metric] = make(map[metricKey]*record)
 	}
 	// Optimization opportunity:
@@ -62,7 +62,7 @@ func (h *vulnerabilityMetricsImpl) trackDeployment(ctx context.Context, aggregat
 			deployment.GetNamespace(),
 			deployment.GetName())
 
-		for metric, expressions := range h.metricExpressions {
+		for metric, expressions := range h.metrics {
 			if key, labels := makeAggregationKeyInstance(expressions, labelGetter); key != "" {
 				if rec, ok := aggregated[metric][key]; ok {
 					rec.total++

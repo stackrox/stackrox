@@ -5,9 +5,11 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	configDS "github.com/stackrox/rox/central/config/datastore"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -22,23 +24,45 @@ func Singleton() interface {
 	Stop()
 } {
 	once.Do(func() {
-		if env.AggregateVulnMetrics.Setting() == "" {
+
+		systemPrivateConfig, err := configDS.Singleton().GetPrivateConfig(context.Background())
+		if err != nil {
+			logging.LoggerForModule().Errorw("Failed to read Prometheus metrics configuration", logging.Err(err))
 			return
 		}
-		metricExpressions := parseAggregationExpressions(env.AggregateVulnMetrics.Setting())
-		if metricExpressions == nil {
-			return
-		}
+
+		metricsConfig := systemPrivateConfig.GetPrometheusMetricsConfig()
+
 		instance = &vulnerabilityMetricsImpl{
-			ds:                deploymentDS.Singleton(),
-			metricExpressions: metricExpressions,
-			trackFunc:         metrics.SetAggregatedVulnCount,
+			ds:        deploymentDS.Singleton(),
+			metrics:   parseConfig(metricsConfig),
+			period:    time.Hour * time.Duration(metricsConfig.GetGatheringPeriodHours()),
+			trackFunc: metrics.SetAggregatedVulnCount,
 		}
-		for metricName, labels := range instance.metricExpressions {
-			metrics.RegisterVulnAggregatedMetric(metricName, labels, Problemetrics)
+		if instance.period == 0 {
+			return
+		}
+		for metric, expressions := range instance.metrics {
+			metrics.RegisterVulnAggregatedMetric(metric, instance.period,
+				getMetricLabels(expressions), Problemetrics)
 		}
 	})
 	return instance
+}
+
+func parseConfig(config *storage.PrometheusMetricsConfig) map[metricName][]*expression {
+	result := make(map[metricName][]*expression)
+	for _, metric := range config.GetMetrics() {
+		for _, label := range metric.GetLabels() {
+			result[metric.GetName()] = append(result[metric.GetName()],
+				&expression{
+					label: label.GetName(),
+					op:    label.GetExpression().Operator,
+					arg:   label.GetExpression().Argument,
+				})
+		}
+	}
+	return result
 }
 
 type metricName = string
@@ -48,13 +72,9 @@ type vulnerabilityMetricsImpl struct {
 	ds         deploymentDS.DataStore
 	stopSignal chan bool
 
-	// metricExpressions associates a metric name to the list of expressions.
-	//
-	// Example:
-	//
-	//   "Namespace_eq_abc_Severity_total": {"Namespace=abc", "Severity"},
-	metricExpressions map[metricName][]Label
-	trackFunc         func(metricName string, labels map[Label]string, total int)
+	period    time.Duration
+	metrics   map[metricName][]*expression
+	trackFunc func(metricName string, labels map[Label]string, total int)
 }
 
 func (h *vulnerabilityMetricsImpl) Start() {
@@ -70,7 +90,7 @@ func (h *vulnerabilityMetricsImpl) Stop() {
 }
 
 func (h *vulnerabilityMetricsImpl) run() {
-	ticker := time.NewTicker(env.AggregateVulnMetricsPeriod.DurationSetting())
+	ticker := time.NewTicker(h.period)
 	defer ticker.Stop()
 	ctx, cancel := context.WithCancel(
 		sac.WithAllAccess(context.Background()))

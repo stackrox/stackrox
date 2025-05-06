@@ -78,7 +78,7 @@ func getTestData() ([]*storage.Deployment, map[string][]*storage.Image) {
 	return deployments, deploymentImages
 }
 
-func Test_trackVulnerabilityMetrics(t *testing.T) {
+func Test_track(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	ds := deploymentDS.NewMockDataStore(ctrl)
 
@@ -98,13 +98,23 @@ func Test_trackVulnerabilityMetrics(t *testing.T) {
 			Times(1).Return(deploymentImages[deployment.Id], nil)
 	}
 
-	var aggregated = make(map[metricName][]*record)
+	var actual = make(map[metricName][]*record)
+	metricExpressions := map[metricName][]*expression{
+		"Severity_total": {{label: "Severity"}},
+		"Cluster_Namespace_Severity_total": {
+			{label: "Cluster"},
+			{label: "Namespace"},
+			{label: "Severity"}},
+		"Deployment_ImageTag_total": {
+			{"Deployment", "=", "*3"},
+			{"ImageTag", "=", "latest"}},
+	}
 
-	i := &vulnerabilityMetricsImpl{ds: ds,
-		metricExpressions: parseAggregationExpressions(
-			"Severity|Cluster,Namespace,Severity"),
+	i := &vulnerabilityMetricsImpl{
+		ds:      ds,
+		metrics: metricExpressions,
 		trackFunc: func(metricName string, labels map[Label]string, total int) {
-			aggregated[metricName] = append(aggregated[metricName],
+			actual[metricName] = append(actual[metricName],
 				&record{
 					labels: labels,
 					total:  total,
@@ -127,13 +137,18 @@ func Test_trackVulnerabilityMetrics(t *testing.T) {
 			{map[Label]string{"Cluster": "cluster-2", "Namespace": "namespace-2", "Severity": "MODERATE_VULNERABILITY_SEVERITY"}, 2},
 			{map[Label]string{"Cluster": "cluster-2", "Namespace": "namespace-2", "Severity": "LOW_VULNERABILITY_SEVERITY"}, 2},
 		},
+		"Deployment_ImageTag_total": {
+			{map[Label]string{"Deployment": "D3", "ImageTag": "latest"}, 2},
+		},
 	}
-	if assert.Len(t, expected, len(aggregated)) {
-		for metric, records := range aggregated {
-			if assert.Len(t, expected[metric], len(records), metric) {
-				for i, record := range records {
-					assert.Contains(t, expected[metric], record, "metric: %s, record: %d", metric, i)
-				}
+
+	for metric := range expected {
+		assert.Contains(t, actual, metric)
+	}
+	for metric, records := range actual {
+		if assert.Len(t, expected[metric], len(records), metric) {
+			for i, record := range records {
+				assert.Contains(t, expected[metric], record, "metric: %s, record: %d", metric, i)
 			}
 		}
 	}
