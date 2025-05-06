@@ -162,6 +162,7 @@ func Test_validate(t *testing.T) {
 		{expression{label: "CVE", op: "?", arg: "arg"}, "unknown operator in \"CVE?arg\""},
 		{expression{label: "CVE", op: "=", arg: "[a-"}, "cannot parse the argument in \"CVE=[a-\""},
 		// OK:
+		{expression{label: "CVE"}, ""},
 		{expression{label: "CVE", op: "=", arg: "arg"}, ""},
 		{expression{label: "CVE", op: ">=", arg: "4.5"}, ""},
 		{expression{label: "CVE", op: "=", arg: "def"}, ""},

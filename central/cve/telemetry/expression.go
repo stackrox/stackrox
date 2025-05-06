@@ -30,15 +30,20 @@ type expression struct {
 
 func (e *expression) validate() error {
 	switch {
+	// Test label:
 	case len(e.label) == 0:
 		return fmt.Errorf("empty label in %q", e)
 	case labelOrder[e.label] == 0:
 		return fmt.Errorf("unknown label in %q", e)
-	case e.op == opZ && len(e.arg) > 0:
-		return fmt.Errorf("missing operator in %q", e)
+	// Test operator:
+	case e.op == opZ:
+		if len(e.arg) > 0 {
+			return fmt.Errorf("missing operator in %q", e)
+		}
 	case !slices.Contains([]operator{opEQ, opNE, opGT, opGE, opLT, opLE}, e.op):
 		return fmt.Errorf("unknown operator in %q", e)
-	case len(e.op) > 0 && len(e.arg) == 0:
+	// Test argument:
+	case len(e.arg) == 0:
 		return fmt.Errorf("missing argument in %q", e)
 	case !e.isFloatArg() && !e.isGlobArg():
 		return fmt.Errorf("cannot parse the argument in %q", e)
