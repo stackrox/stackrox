@@ -1465,7 +1465,6 @@ spec:
                         type: string
                     type: object
                   scannerComponent:
-                    default: Default
                     description: If you want to enable the Scanner V4 component set
                       this to "AutoSense"
                     enum:
