@@ -364,7 +364,6 @@ type LocalScannerComponentSpec struct {
 // LocalScannerV4ComponentSpec defines settings for the "Scanner V4" component in SecuredClusters
 type LocalScannerV4ComponentSpec struct {
 	// If you want to enable the Scanner V4 component set this to "AutoSense"
-	//+kubebuilder:default=Default
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Scanner V4 component",order=1
 	ScannerComponent *LocalScannerV4ComponentPolicy `json:"scannerComponent,omitempty"`
 
