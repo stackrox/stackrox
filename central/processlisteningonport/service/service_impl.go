@@ -6,6 +6,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	datastore "github.com/stackrox/rox/central/processlisteningonport/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -21,6 +22,8 @@ var (
 			v1.ListeningEndpointsService_GetListeningEndpoints_FullMethodName,
 		},
 	})
+
+	log     = logging.LoggerForModule()
 )
 
 type serviceImpl struct {
@@ -52,6 +55,8 @@ func (s *serviceImpl) GetListeningEndpoints(
 	page := req.GetPagination()
 	processesListeningOnPorts, err := s.dataStore.GetProcessListeningOnPort(ctx, deployment)
 
+	log.Infof("len(processesListeningOnPorts)= %d", len(processesListeningOnPorts))
+
 	if err != nil {
 		return nil, err
 	}
@@ -59,6 +64,8 @@ func (s *serviceImpl) GetListeningEndpoints(
 	if page != nil {
                 processesListeningOnPorts = paginated.PaginateSlice(int(page.GetOffset()), int(page.GetLimit()), processesListeningOnPorts)
         }
+
+	log.Infof("len(processesListeningOnPorts)= %d", len(processesListeningOnPorts))
 
 	return &v1.GetProcessesListeningOnPortsResponse{
 		ListeningEndpoints: processesListeningOnPorts,
