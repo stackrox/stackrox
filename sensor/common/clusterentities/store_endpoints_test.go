@@ -251,7 +251,7 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPastEndpoints() {
 	}
 	for name, tCase := range cases {
 		s.Run(name, func() {
-			store := NewStoreWithMemory(tCase.numTicksToRemember, true)
+			store := NewStoreWithMemory(tCase.numTicksToRemember, &fakeHeritageData{}, true)
 			ipListener := newTestPublicIPsListener(s.T())
 			store.RegisterPublicIPsListener(ipListener)
 			defer func() {

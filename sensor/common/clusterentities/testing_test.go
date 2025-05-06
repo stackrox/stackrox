@@ -1,11 +1,14 @@
 package clusterentities
 
 import (
+	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/sensor/kubernetes/heritage"
 	"golang.org/x/exp/maps"
 )
 
@@ -77,3 +80,20 @@ func (p *testPublicIPsListener) OnUpdate(ips set.Set[net.IPAddress]) {
 	p.data = ips
 	p.t.Logf("Updated public IPs to %s", p.String())
 }
+
+type fakeHeritageData struct {
+}
+
+func (f *fakeHeritageData) GetData(_ context.Context) []heritage.PastSensor {
+	return []heritage.PastSensor{
+		{
+			ContainerID: "abc",
+			PodIP:       "192.168.1.1",
+			Timestamp:   time.Now(),
+		},
+	}
+}
+func (f *fakeHeritageData) HasCurrentSensorData() bool {
+	return true
+}
+func (f *fakeHeritageData) SetCurrentSensorData(_, _ string) {}
