@@ -1,11 +1,11 @@
 package carotation
 
 import (
-	"crypto/x509"
 	"testing"
 	"time"
 
 	"github.com/stackrox/rox/operator/internal/types"
+	"github.com/stackrox/rox/operator/internal/utils/testutils"
 	"github.com/stackrox/rox/pkg/certgen"
 	"github.com/stackrox/rox/pkg/maputil"
 	"github.com/stackrox/rox/pkg/mtls"
@@ -70,8 +70,8 @@ func Test_DetermineAction(t *testing.T) {
 			now, err := time.Parse(time.RFC3339, c.now)
 			require.NoError(t, err)
 
-			primary := generateTestCertWithValidity(t, c.primaryNotBefore, c.primaryNotAfter)
-			secondary := generateTestCertWithValidity(t, c.secondaryNotBefore, c.secondaryNotAfter)
+			primary := testutils.GenerateTestCertWithValidity(t, c.primaryNotBefore, c.primaryNotAfter)
+			secondary := testutils.GenerateTestCertWithValidity(t, c.secondaryNotBefore, c.secondaryNotAfter)
 
 			action := DetermineAction(primary, secondary, now)
 			assert.Equal(t, c.wantAction, action)
@@ -184,20 +184,5 @@ func TestGenerateCentralTLSData_Rotation(t *testing.T) {
 
 			tt.assert(t, oldFileMap, fileMap)
 		})
-	}
-}
-
-func generateTestCertWithValidity(t *testing.T, notBeforeStr, notAfterStr string) *x509.Certificate {
-	t.Helper()
-	if notBeforeStr == "" && notAfterStr == "" {
-		return nil
-	}
-	notBefore, err := time.Parse(time.RFC3339, notBeforeStr)
-	require.NoError(t, err)
-	notAfter, err := time.Parse(time.RFC3339, notAfterStr)
-	require.NoError(t, err)
-	return &x509.Certificate{
-		NotBefore: notBefore,
-		NotAfter:  notAfter,
 	}
 }

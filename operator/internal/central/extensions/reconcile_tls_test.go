@@ -2,7 +2,6 @@ package extensions
 
 import (
 	"context"
-	"crypto/x509"
 	"errors"
 	"fmt"
 	"strings"
@@ -72,18 +71,6 @@ func generateInvalidCA() (mtls.CA, error) {
 		return nil, pkgErrors.Wrap(err, "could not generate keypair")
 	}
 	return mtls.LoadCAForSigning(caCert, caKey)
-}
-
-func generateTestCertWithValidity(t *testing.T, notBeforeStr, notAfterStr string) *x509.Certificate {
-	t.Helper()
-	notBefore, err := time.Parse(time.RFC3339, notBeforeStr)
-	require.NoError(t, err)
-	notAfter, err := time.Parse(time.RFC3339, notAfterStr)
-	require.NoError(t, err)
-	return &x509.Certificate{
-		NotBefore: notBefore,
-		NotAfter:  notAfter,
-	}
 }
 
 func TestCreateCentralTLS(t *testing.T) {
@@ -577,7 +564,7 @@ func Test_checkCertRenewal(t *testing.T) {
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			cert := generateTestCertWithValidity(t, c.notBefore, c.notAfter)
+			cert := testutils.GenerateTestCertWithValidity(t, c.notBefore, c.notAfter)
 			now, err := time.Parse(time.RFC3339, c.now)
 			require.NoError(t, err)
 			r := &createCentralTLSExtensionRun{currentTime: now}
@@ -624,7 +611,7 @@ func Test_checkCertificateTimeValidity(t *testing.T) {
 			now, err := time.Parse(time.RFC3339, c.now)
 			require.NoError(t, err)
 
-			cert := generateTestCertWithValidity(t, c.notBefore, c.notAfter)
+			cert := testutils.GenerateTestCertWithValidity(t, c.notBefore, c.notAfter)
 			r := &createCentralTLSExtensionRun{currentTime: now}
 
 			err = r.checkCertificateTimeValidity(cert)
