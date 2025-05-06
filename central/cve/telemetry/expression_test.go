@@ -145,3 +145,35 @@ func Test_expression_match(t *testing.T) {
 		}
 	})
 }
+
+func Test_validate(t *testing.T) {
+	type testCase struct {
+		expr expression
+		err  string
+	}
+	cases := []testCase{
+		// NOK:
+		{expression{label: ""}, "empty label in \"\""},
+		{expression{label: "a b"}, "unknown label in \"a b\""},
+		{expression{label: "ab", op: "op"}, "unknown label in \"abop\""},
+		{expression{label: "CVE", op: "op"}, "unknown operator in \"CVEop\""},
+		{expression{label: "CVE", op: "="}, "missing argument in \"CVE=\""},
+		{expression{label: "", op: "=", arg: "arg"}, "empty label in \"=arg\""},
+		{expression{label: "CVE", op: "?", arg: "arg"}, "unknown operator in \"CVE?arg\""},
+		{expression{label: "CVE", op: "=", arg: "[a-"}, "cannot parse the argument in \"CVE=[a-\""},
+		// OK:
+		{expression{label: "CVE", op: "=", arg: "arg"}, ""},
+		{expression{label: "CVE", op: ">=", arg: "4.5"}, ""},
+		{expression{label: "CVE", op: "=", arg: "def"}, ""},
+	}
+	for _, c := range cases {
+		t.Run("expr: "+string(c.expr.label)+string(c.expr.op)+c.expr.arg, func(t *testing.T) {
+			err := c.expr.validate()
+			if err == nil {
+				assert.Empty(t, c.err)
+			} else {
+				assert.Equal(t, c.err, err.Error())
+			}
+		})
+	}
+}

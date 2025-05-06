@@ -1,25 +1,62 @@
 package telemetry
 
 import (
+	"fmt"
 	"math"
+	"slices"
 	"strconv"
 	"strings"
 
 	"github.com/stackrox/rox/pkg/glob"
 )
 
+type operator string
+
+const (
+	opZ  operator = ""
+	opEQ operator = "="
+	opNE operator = "!="
+	opGT operator = ">"
+	opGE operator = ">="
+	opLT operator = "<"
+	opLE operator = "<="
+)
+
 type expression struct {
 	label Label
-	op    string
+	op    operator
 	arg   string
 }
 
-func (e *expression) String() string {
-	return string(e.label) + e.op + e.arg
+func (e *expression) validate() error {
+	switch {
+	case len(e.label) == 0:
+		return fmt.Errorf("empty label in %q", e)
+	case labelOrder[e.label] == 0:
+		return fmt.Errorf("unknown label in %q", e)
+	case e.op == opZ && len(e.arg) > 0:
+		return fmt.Errorf("missing operator in %q", e)
+	case !slices.Contains([]operator{opEQ, opNE, opGT, opGE, opLT, opLE}, e.op):
+		return fmt.Errorf("unknown operator in %q", e)
+	case len(e.op) > 0 && len(e.arg) == 0:
+		return fmt.Errorf("missing argument in %q", e)
+	case !e.isFloatArg() && !e.isGlobArg():
+		return fmt.Errorf("cannot parse the argument in %q", e)
+	}
+	return nil
 }
 
-func (e expression) Equal(s any) bool {
-	return e.String() == s
+func (e *expression) String() string {
+	return string(e.label) + string(e.op) + e.arg
+}
+
+func (e *expression) isFloatArg() bool {
+	_, err := strconv.ParseFloat(e.arg, 32)
+	return err == nil
+}
+
+func (e *expression) isGlobArg() bool {
+	return glob.Pattern(e.arg).Ptr().Compile() == nil
 }
 
 // match returns whether the labels match the expression and the matched label
@@ -41,18 +78,18 @@ func (e *expression) compareStrings(a, b string) bool {
 	switch e.op {
 	case "":
 		return a != "" && b == ""
-	case "=":
+	case opEQ:
 		return glob.Pattern(b).Ptr().Match(a)
-	case "!=":
+	case opNE:
 		return !glob.Pattern(b).Ptr().Match(a)
-	case ">":
+	case opGT:
 		return strings.Compare(a, b) > 0
-	case ">=":
+	case opGE:
 		return strings.EqualFold(a, b) ||
 			strings.Compare(a, b) > 0
-	case "<":
+	case opLT:
 		return strings.Compare(a, b) < 0
-	case "<=":
+	case opLE:
 		return strings.EqualFold(a, b) ||
 			strings.Compare(a, b) < 0
 	}
@@ -62,17 +99,17 @@ func (e *expression) compareStrings(a, b string) bool {
 func (e *expression) compareFloats(a, b float64) bool {
 	const epsilon = 1e-9
 	switch e.op {
-	case "=":
+	case opEQ:
 		return math.Abs(a-b) <= epsilon
-	case "!=":
+	case opNE:
 		return math.Abs(a-b) > epsilon
-	case ">":
+	case opGT:
 		return a > b
-	case ">=":
+	case opGE:
 		return a >= b
-	case "<":
+	case opLT:
 		return a < b
-	case "<=":
+	case opLE:
 		return a <= b
 	}
 	return false

@@ -2,13 +2,13 @@ package telemetry
 
 import (
 	"context"
+
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	configDS "github.com/stackrox/rox/central/config/datastore"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/generated/storage"
+
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
@@ -17,6 +17,8 @@ import (
 var (
 	once     sync.Once
 	instance *vulnerabilityMetricsImpl
+
+	Problemetrics = prometheus.NewRegistry()
 )
 
 func Singleton() interface {
@@ -24,45 +26,29 @@ func Singleton() interface {
 	Stop()
 } {
 	once.Do(func() {
-
-		systemPrivateConfig, err := configDS.Singleton().GetPrivateConfig(context.Background())
+		log := logging.LoggerForModule()
+		metricsConfig, period, err := parseConfig()
 		if err != nil {
-			logging.LoggerForModule().Errorw("Failed to read Prometheus metrics configuration", logging.Err(err))
+			log.Errorw("Failed to parse Prometheus metrics configuration", logging.Err(err))
 			return
 		}
-
-		metricsConfig := systemPrivateConfig.GetPrometheusMetricsConfig()
-
+		if period == 0 {
+			return
+		}
 		instance = &vulnerabilityMetricsImpl{
 			ds:        deploymentDS.Singleton(),
-			metrics:   parseConfig(metricsConfig),
-			period:    time.Hour * time.Duration(metricsConfig.GetGatheringPeriodHours()),
+			metrics:   metricsConfig,
+			period:    period,
 			trackFunc: metrics.SetAggregatedVulnCount,
-		}
-		if instance.period == 0 {
-			return
 		}
 		for metric, expressions := range instance.metrics {
 			metrics.RegisterVulnAggregatedMetric(metric, instance.period,
 				getMetricLabels(expressions), Problemetrics)
+
+			log.Infof("Registered Prometheus metric %q", metric)
 		}
 	})
 	return instance
-}
-
-func parseConfig(config *storage.PrometheusMetricsConfig) map[metricName][]*expression {
-	result := make(map[metricName][]*expression)
-	for _, metric := range config.GetMetrics() {
-		for _, label := range metric.GetLabels() {
-			result[metric.GetName()] = append(result[metric.GetName()],
-				&expression{
-					label: label.GetName(),
-					op:    label.GetExpression().Operator,
-					arg:   label.GetExpression().Argument,
-				})
-		}
-	}
-	return result
 }
 
 type metricName = string
@@ -113,5 +99,3 @@ func (h *vulnerabilityMetricsImpl) track(ctx context.Context) {
 		}
 	}
 }
-
-var Problemetrics = prometheus.NewRegistry()

@@ -12,22 +12,22 @@ import (
 type Label = string
 
 var labelOrder = map[Label]int{
-	"Cluster":          0,
-	"Namespace":        1,
-	"Deployment":       2,
-	"ImageID":          3,
-	"ImageRegistry":    4,
-	"ImageRemote":      5,
-	"ImageTag":         6,
-	"Component":        7,
-	"ComponentVersion": 8,
-	"CVE":              9,
-	"CVSS":             10,
-	"OperatingSystem":  11,
-	"Severity":         12,
-	"SeverityV2":       13,
-	"SeverityV3":       14,
-	"IsFixable":        15,
+	"Cluster":          1,
+	"Namespace":        2,
+	"Deployment":       3,
+	"ImageID":          4,
+	"ImageRegistry":    5,
+	"ImageRemote":      6,
+	"ImageTag":         7,
+	"Component":        8,
+	"ComponentVersion": 9,
+	"CVE":              10,
+	"CVSS":             11,
+	"OperatingSystem":  12,
+	"Severity":         13,
+	"SeverityV2":       14,
+	"SeverityV3":       15,
+	"IsFixable":        16,
 }
 
 type record struct {
