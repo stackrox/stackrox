@@ -1513,27 +1513,26 @@ type ImageCVEV2 struct {
 	// within the component
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"CVE ID,hidden" sql:"pk,id"` // @gotags: search:"CVE ID,hidden" sql:"pk,id"
 	// was hash index, making it btree
-	ImageId         string   `protobuf:"bytes,2,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty" sql:"fk(Image:id),index=btree"` // @gotags: sql:"fk(Image:id),index=btree"
-	CveBaseInfo     *CVEInfo `protobuf:"bytes,3,opt,name=cve_base_info,json=cveBaseInfo,proto3" json:"cve_base_info,omitempty"`
-	OperatingSystem string   `protobuf:"bytes,4,opt,name=operating_system,json=operatingSystem,proto3" json:"operating_system,omitempty" search:"Operating System"` // @gotags: search:"Operating System"
+	ImageId     string   `protobuf:"bytes,2,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty" sql:"fk(Image:id),index=btree"` // @gotags: sql:"fk(Image:id),index=btree"
+	CveBaseInfo *CVEInfo `protobuf:"bytes,3,opt,name=cve_base_info,json=cveBaseInfo,proto3" json:"cve_base_info,omitempty"`
 	// cvss stores ACS preferred cvss score
-	Cvss        float32               `protobuf:"fixed32,5,opt,name=cvss,proto3" json:"cvss,omitempty" search:"CVSS,store"`                                           // @gotags: search:"CVSS,store"
-	Severity    VulnerabilitySeverity `protobuf:"varint,6,opt,name=severity,proto3,enum=storage.VulnerabilitySeverity" json:"severity,omitempty" search:"Severity" sql:"index=btree"` // @gotags: search:"Severity" sql:"index=btree"
-	ImpactScore float32               `protobuf:"fixed32,7,opt,name=impact_score,json=impactScore,proto3" json:"impact_score,omitempty" search:"Impact Score"`          // @gotags: search:"Impact Score"
+	Cvss        float32               `protobuf:"fixed32,4,opt,name=cvss,proto3" json:"cvss,omitempty" search:"CVSS,store"`                                           // @gotags: search:"CVSS,store"
+	Severity    VulnerabilitySeverity `protobuf:"varint,5,opt,name=severity,proto3,enum=storage.VulnerabilitySeverity" json:"severity,omitempty" search:"Severity" sql:"index=btree"` // @gotags: search:"Severity" sql:"index=btree"
+	ImpactScore float32               `protobuf:"fixed32,6,opt,name=impact_score,json=impactScore,proto3" json:"impact_score,omitempty" search:"Impact Score"`          // @gotags: search:"Impact Score"
 	// nvdcvss stores cvss score for a cve from NVD
-	Nvdcvss              float32                `protobuf:"fixed32,8,opt,name=nvdcvss,proto3" json:"nvdcvss,omitempty" search:"NVD CVSS,store"` // @gotags: search:"NVD CVSS,store"
-	NvdScoreVersion      CvssScoreVersion       `protobuf:"varint,9,opt,name=nvd_score_version,json=nvdScoreVersion,proto3,enum=storage.CvssScoreVersion" json:"nvd_score_version,omitempty"`
-	FirstImageOccurrence *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=first_image_occurrence,json=firstImageOccurrence,proto3" json:"first_image_occurrence,omitempty" search:"First Image Occurrence Timestamp,hidden"` // @gotags: search:"First Image Occurrence Timestamp,hidden"
-	State                VulnerabilityState     `protobuf:"varint,11,opt,name=state,proto3,enum=storage.VulnerabilityState" json:"state,omitempty" search:"Vulnerability State" sql:"index=btree"`                            // @gotags: search:"Vulnerability State" sql:"index=btree"
-	IsFixable            bool                   `protobuf:"varint,12,opt,name=is_fixable,json=isFixable,proto3" json:"is_fixable,omitempty" search:"Fixable,store"`                                   // @gotags: search:"Fixable,store"
+	Nvdcvss              float32                `protobuf:"fixed32,7,opt,name=nvdcvss,proto3" json:"nvdcvss,omitempty" search:"NVD CVSS,store"` // @gotags: search:"NVD CVSS,store"
+	NvdScoreVersion      CvssScoreVersion       `protobuf:"varint,8,opt,name=nvd_score_version,json=nvdScoreVersion,proto3,enum=storage.CvssScoreVersion" json:"nvd_score_version,omitempty"`
+	FirstImageOccurrence *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=first_image_occurrence,json=firstImageOccurrence,proto3" json:"first_image_occurrence,omitempty" search:"First Image Occurrence Timestamp,hidden"` // @gotags: search:"First Image Occurrence Timestamp,hidden"
+	State                VulnerabilityState     `protobuf:"varint,10,opt,name=state,proto3,enum=storage.VulnerabilityState" json:"state,omitempty" search:"Vulnerability State" sql:"index=btree"`                           // @gotags: search:"Vulnerability State" sql:"index=btree"
+	IsFixable            bool                   `protobuf:"varint,11,opt,name=is_fixable,json=isFixable,proto3" json:"is_fixable,omitempty" search:"Fixable,store"`                                  // @gotags: search:"Fixable,store"
 	// Whether there is a version the CVE is fixed in the component.
 	//
 	// Types that are valid to be assigned to HasFixedBy:
 	//
 	//	*ImageCVEV2_FixedBy
 	HasFixedBy    isImageCVEV2_HasFixedBy `protobuf_oneof:"has_fixed_by"`
-	ComponentId   string                  `protobuf:"bytes,14,opt,name=component_id,json=componentId,proto3" json:"component_id,omitempty" sql:"fk(ImageComponentV2:id),index=btree"` // @gotags: sql:"fk(ImageComponentV2:id),index=btree"
-	Advisory      string                  `protobuf:"bytes,15,opt,name=advisory,proto3" json:"advisory,omitempty" search:"Advisory"`                          // @gotags: search:"Advisory"
+	ComponentId   string                  `protobuf:"bytes,13,opt,name=component_id,json=componentId,proto3" json:"component_id,omitempty" sql:"fk(ImageComponentV2:id),index=btree"` // @gotags: sql:"fk(ImageComponentV2:id),index=btree"
+	Advisory      string                  `protobuf:"bytes,14,opt,name=advisory,proto3" json:"advisory,omitempty" search:"Advisory"`                          // @gotags: search:"Advisory"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1587,13 +1586,6 @@ func (x *ImageCVEV2) GetCveBaseInfo() *CVEInfo {
 		return x.CveBaseInfo
 	}
 	return nil
-}
-
-func (x *ImageCVEV2) GetOperatingSystem() string {
-	if x != nil {
-		return x.OperatingSystem
-	}
-	return ""
 }
 
 func (x *ImageCVEV2) GetCvss() float32 {
@@ -1687,7 +1679,7 @@ type isImageCVEV2_HasFixedBy interface {
 }
 
 type ImageCVEV2_FixedBy struct {
-	FixedBy string `protobuf:"bytes,13,opt,name=fixed_by,json=fixedBy,proto3,oneof" search:"Fixed By,store,hidden"` // @gotags: search:"Fixed By,store,hidden"
+	FixedBy string `protobuf:"bytes,12,opt,name=fixed_by,json=fixedBy,proto3,oneof" search:"Fixed By,store,hidden"` // @gotags: search:"Fixed By,store,hidden"
 }
 
 func (*ImageCVEV2_FixedBy) isImageCVEV2_HasFixedBy() {}
@@ -2560,26 +2552,25 @@ const file_storage_cve_proto_rawDesc = "" +
 	"\anvdcvss\x18\n" +
 	" \x01(\x02R\anvdcvss\x125\n" +
 	"\fcvss_metrics\x18\v \x03(\v2\x12.storage.CVSSScoreR\vcvssMetrics\x12E\n" +
-	"\x11nvd_score_version\x18\f \x01(\x0e2\x19.storage.CvssScoreVersionR\x0fnvdScoreVersion:\x02\x18\x01\"\xfc\x04\n" +
+	"\x11nvd_score_version\x18\f \x01(\x0e2\x19.storage.CvssScoreVersionR\x0fnvdScoreVersion:\x02\x18\x01\"\xd1\x04\n" +
 	"\n" +
 	"ImageCVEV2\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x19\n" +
 	"\bimage_id\x18\x02 \x01(\tR\aimageId\x124\n" +
-	"\rcve_base_info\x18\x03 \x01(\v2\x10.storage.CVEInfoR\vcveBaseInfo\x12)\n" +
-	"\x10operating_system\x18\x04 \x01(\tR\x0foperatingSystem\x12\x12\n" +
-	"\x04cvss\x18\x05 \x01(\x02R\x04cvss\x12:\n" +
-	"\bseverity\x18\x06 \x01(\x0e2\x1e.storage.VulnerabilitySeverityR\bseverity\x12!\n" +
-	"\fimpact_score\x18\a \x01(\x02R\vimpactScore\x12\x18\n" +
-	"\anvdcvss\x18\b \x01(\x02R\anvdcvss\x12E\n" +
-	"\x11nvd_score_version\x18\t \x01(\x0e2\x19.storage.CvssScoreVersionR\x0fnvdScoreVersion\x12P\n" +
-	"\x16first_image_occurrence\x18\n" +
-	" \x01(\v2\x1a.google.protobuf.TimestampR\x14firstImageOccurrence\x121\n" +
-	"\x05state\x18\v \x01(\x0e2\x1b.storage.VulnerabilityStateR\x05state\x12\x1d\n" +
+	"\rcve_base_info\x18\x03 \x01(\v2\x10.storage.CVEInfoR\vcveBaseInfo\x12\x12\n" +
+	"\x04cvss\x18\x04 \x01(\x02R\x04cvss\x12:\n" +
+	"\bseverity\x18\x05 \x01(\x0e2\x1e.storage.VulnerabilitySeverityR\bseverity\x12!\n" +
+	"\fimpact_score\x18\x06 \x01(\x02R\vimpactScore\x12\x18\n" +
+	"\anvdcvss\x18\a \x01(\x02R\anvdcvss\x12E\n" +
+	"\x11nvd_score_version\x18\b \x01(\x0e2\x19.storage.CvssScoreVersionR\x0fnvdScoreVersion\x12P\n" +
+	"\x16first_image_occurrence\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\x14firstImageOccurrence\x121\n" +
+	"\x05state\x18\n" +
+	" \x01(\x0e2\x1b.storage.VulnerabilityStateR\x05state\x12\x1d\n" +
 	"\n" +
-	"is_fixable\x18\f \x01(\bR\tisFixable\x12\x1b\n" +
-	"\bfixed_by\x18\r \x01(\tH\x00R\afixedBy\x12!\n" +
-	"\fcomponent_id\x18\x0e \x01(\tR\vcomponentId\x12\x1a\n" +
-	"\badvisory\x18\x0f \x01(\tR\badvisoryB\x0e\n" +
+	"is_fixable\x18\v \x01(\bR\tisFixable\x12\x1b\n" +
+	"\bfixed_by\x18\f \x01(\tH\x00R\afixedBy\x12!\n" +
+	"\fcomponent_id\x18\r \x01(\tR\vcomponentId\x12\x1a\n" +
+	"\badvisory\x18\x0e \x01(\tR\badvisoryB\x0e\n" +
 	"\fhas_fixed_by\"\xe4\x03\n" +
 	"\aNodeCVE\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x124\n" +

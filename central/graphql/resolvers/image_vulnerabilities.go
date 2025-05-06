@@ -1206,6 +1206,27 @@ func (resolver *imageCVEV2Resolver) Advisory(ctx context.Context) (string, error
 	return cves[0].GetAdvisory(), nil
 }
 
+func (resolver *imageCVEV2Resolver) OperatingSystem(ctx context.Context) string {
+	if resolver.ctx == nil {
+		resolver.ctx = ctx
+	}
+
+	scope, hasScope := scoped.GetScope(resolver.ctx)
+	if !hasScope {
+		return ""
+	}
+	if scope.Level != v1.SearchCategory_IMAGE_COMPONENTS_V2 {
+		return ""
+	}
+
+	query := search.NewQueryBuilder().AddExactMatches(search.ComponentID, resolver.data.GetComponentId()).ProtoQuery()
+	component, err := resolver.root.ImageComponentV2DataStore.SearchRawImageComponents(resolver.ctx, query)
+	if err != nil || len(component) == 0 {
+		return ""
+	}
+	return component[0].GetOperatingSystem()
+}
+
 func (resolver *imageCVEV2Resolver) imageVulnerabilityScopeContext(ctx context.Context) context.Context {
 	if ctx == nil {
 		err := utils.ShouldErr(errors.New("argument 'ctx' is nil"))
