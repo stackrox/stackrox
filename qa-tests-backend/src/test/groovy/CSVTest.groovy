@@ -50,7 +50,7 @@ class CSVTest extends BaseSpecification {
         """
 
     private static final FIXABLE_CVES_IN_COMPONENT_QUERY = """
-        query getFixableCvesInComponent(\$id: ID!, \$query: String, \$scopeQuery: String, \$vulnQuery: String,
+        query getFixableCvesInComponent(\$query: String, \$scopeQuery: String, \$vulnQuery: String,
          \$vulnPagination: Pagination) {
           result: imageComponent(id: \$id) {
             id
@@ -153,7 +153,7 @@ class CSVTest extends BaseSpecification {
     Map<String, Object> payload(String id) {
         def pagination = new Pagination(0, 0, new SortOption("cvss", true))
         return [
-                id            : id,
+//                 id            : id,
                 query         : "",
                 scopeQuery    : "",
                 vulnQuery     : "Fixable:true",
@@ -173,7 +173,7 @@ class CSVTest extends BaseSpecification {
         def gqlService = new GraphQLService()
         def ret = gqlService.Call(graphQLQuery, graphQLPayload)
         assert ret.getCode() == 200
-//         assert ret.value.result.vulnerabilities.toList().size() > 0
+        assert ret.value.result.vulnerabilities.toList().size() > 0
 
 //         def graphQLCVEs = ret.value.result.vulnerabilities.collect { def vuln ->
 //             new CVE(vuln.id, vuln.cvss, vuln.deploymentCount, vuln.imageCount, vuln.componentCount)
