@@ -21,7 +21,7 @@ jobs:
       - /usr:/mnt/usr
       - /opt:/mnt/opt
     outputs:
-      release_branch: ${{ steps.get_previous_release_branch.outputs.release_branch }}
+      released_version: ${{ steps.get_previous_released_version.outputs.released_version }}
     steps:
     - name: Checkout stackrox/stackrox
       uses: actions/checkout@v4
@@ -44,19 +44,18 @@ jobs:
       run: |
         make -C .crd-schema-checker
 
-    - name: Get previous release branch
-      id: get_previous_release_branch
+    - name: Get previous released version
+      id: get_previous_released_version
       run: |
-        version="$(make tag)"
-        version_number="${version%%.x*}"
-        release_branch=release-"${version_number}"
-        echo "release_branch=$release_branch" >> "$GITHUB_OUTPUT"
+        make -C operator bundle-post-process
+        released_version="$(make --no-print-directory -C operator replaced-version)"
+        echo "released_version=$released_version" >> "$GITHUB_OUTPUT"
 
-    - name: Checkout previous release branch
+    - name: Checkout previous released version
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
-        ref: ${{ steps.get_previous_release_branch.outputs.release_branch }}
+        ref: ${{ steps.get_previous_released_version.outputs.released_version }}
         path: .old-stackrox
 
     - name: Run crd-schema-checker
