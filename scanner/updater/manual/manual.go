@@ -142,6 +142,7 @@ func (u *updater) Fetch(ctx context.Context, fingerprint driver.Fingerprint) (io
 
 	zlog.Info(ctx).
 		Str("filename", out.Name()).
+		Str("fingerprint", string(checksum)).
 		Msg("fetched manual vulnerability yaml file")
 	doClose = false
 	return out, driver.Fingerprint(checksum), nil
