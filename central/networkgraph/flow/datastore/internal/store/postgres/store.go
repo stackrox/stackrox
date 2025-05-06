@@ -117,12 +117,15 @@ const (
 	// deletion candidates for the external entities table, and then if any of
 	// those are no longer referenced by a network flow, they are deleted.
 	pruneOrphanExternalNetworkEntitiesStmt = `DELETE FROM network_entities entity
-		WHERE entity.Info_Id = ANY($1) AND entity.Info_ExternalSource_Discovered = true AND
+		WHERE entity.Info_Id = ANY($1) AND entity.Info_ExternalSource_Discovered = true
+		AND
 		NOT EXISTS
 		(SELECT 1 FROM %s flow WHERE
-			    (flow.Props_SrcEntity_Type = 4 AND flow.Props_SrcEntity_Id = entity.Info_Id)
-			OR  (flow.Props_DstEntity_Type = 4 AND flow.Props_DstEntity_Id = entity.Info_Id)
-		);`
+			flow.Props_SrcEntity_Type = 4 AND flow.Props_SrcEntity_Id = entity.Info_Id)
+		AND
+		NOT EXISTS
+		(SELECT 1 FROM %s flow WHERE
+			flow.Props_DstEntity_Type = 4 AND flow.Props_DstEntity_Id = entity.Info_Id);`
 )
 
 var (
@@ -713,7 +716,7 @@ func (s *flowStoreImpl) pruneOrphanExternalEntities(ctx context.Context, srcFlow
 				entities = append(entities, flow.GetProps().GetDstEntity().GetId())
 			}
 
-			pruneStmt := fmt.Sprintf(pruneOrphanExternalNetworkEntitiesStmt, s.partitionName)
+			pruneStmt := fmt.Sprintf(pruneOrphanExternalNetworkEntitiesStmt, s.partitionName, s.partitionName)
 			return s.pruneEntities(ctx, pruneStmt, entities)
 		})
 		if err != nil {
@@ -730,7 +733,7 @@ func (s *flowStoreImpl) pruneOrphanExternalEntities(ctx context.Context, srcFlow
 				entities = append(entities, flow.GetProps().GetSrcEntity().GetId())
 			}
 
-			pruneStmt := fmt.Sprintf(pruneOrphanExternalNetworkEntitiesStmt, s.partitionName)
+			pruneStmt := fmt.Sprintf(pruneOrphanExternalNetworkEntitiesStmt, s.partitionName, s.partitionName)
 			return s.pruneEntities(ctx, pruneStmt, entities)
 		})
 		if err != nil {
