@@ -38,10 +38,14 @@ const (
 	DefaultDownloadableReportGlobalRetentionBytes = 500 * 1024 * 1024
 	// DefaultAdministrationEventsRetention is the number of days to retain administration events.
 	DefaultAdministrationEventsRetention = 4
-	// PlatformComponentSystemRuleName is the name of the system defined rule for matching platform components
+	// PlatformComponentSystemRuleName is the name of the system defined rule for matching openshift and kube workloads
 	PlatformComponentSystemRuleName = "system rule"
-	// PlatformComponentDefaultNamespaceRegex is the default system defined namespace regex for matching platform components
-	PlatformComponentDefaultNamespaceRegex = `^kube-.*|^openshift-.*|^stackrox$|^rhacs-operator$|^open-cluster-management$|^multicluster-engine$|^aap$|^hive$|^nvidia-gpu-operator$`
+	// PlatformComponentSystemRegex is the system defined regex for matching kube and openshift workloads
+	PlatformComponentSystemRegex = `^kube-.*|^openshift-.*`
+	// PlatformComponentLayeredProductsRuleName is the name of the system defined rule for matching workloads created by Red hat layered products
+	PlatformComponentLayeredProductsRuleName = "red hat layered products"
+	// PlatformComponentLayeredProductsDefaultRegex is the default regex for matching workloads created by Red hat layered products
+	PlatformComponentLayeredProductsDefaultRegex = `^stackrox$|^rhacs-operator$|^open-cluster-management$|^multicluster-engine$|^aap$|^hive$`
 )
 
 var (
@@ -111,7 +115,13 @@ var (
 	defaultPlatformConfigSystemRule = &storage.PlatformComponentConfig_Rule{
 		Name: PlatformComponentSystemRuleName,
 		NamespaceRule: &storage.PlatformComponentConfig_Rule_NamespaceRule{
-			Regex: PlatformComponentDefaultNamespaceRegex,
+			Regex: PlatformComponentSystemRegex,
+		},
+	}
+	defaultPlatformConfigLayeredProductsRule = &storage.PlatformComponentConfig_Rule{
+		Name: PlatformComponentLayeredProductsRuleName,
+		NamespaceRule: &storage.PlatformComponentConfig_Rule_NamespaceRule{
+			Regex: PlatformComponentLayeredProductsDefaultRegex,
 		},
 	}
 )
@@ -163,7 +173,7 @@ func validateConfigAndPopulateMissingDefaults(datastore DataStore) {
 		needsUpsert = true
 	}
 
-	if features.CustomizablePlatformComponents.Enabled() && populateDefaultSystemRuleIfMissing(config) {
+	if features.CustomizablePlatformComponents.Enabled() && populateDefaultSystemRulesIfMissing(config) {
 		needsUpsert = true
 	}
 
@@ -173,23 +183,43 @@ func validateConfigAndPopulateMissingDefaults(datastore DataStore) {
 	}
 }
 
-// populateDefaultSystemRuleIfMissing returns true if the platform component config's system rule was updated
-func populateDefaultSystemRuleIfMissing(config *storage.Config) bool {
+// populateDefaultSystemRuleIfMissing returns true if the platform component config's system or layered products rules were updated
+func populateDefaultSystemRulesIfMissing(config *storage.Config) bool {
 	if config.GetPlatformComponentConfig() == nil {
 		config.PlatformComponentConfig = &storage.PlatformComponentConfig{
-			Rules: []*storage.PlatformComponentConfig_Rule{defaultPlatformConfigSystemRule},
+			Rules: []*storage.PlatformComponentConfig_Rule{
+				defaultPlatformConfigSystemRule,
+				defaultPlatformConfigLayeredProductsRule},
 		}
 		return true
 	}
+	hasSystemRule := false
+	hasLayeredProductsRule := false
 	for _, rule := range config.GetPlatformComponentConfig().GetRules() {
 		if rule.GetName() == PlatformComponentSystemRuleName {
-			return false
+			hasSystemRule = true
+		} else if rule.GetName() == PlatformComponentLayeredProductsRuleName {
+			hasLayeredProductsRule = true
 		}
 	}
-	config.GetPlatformComponentConfig().Rules = append(
-		config.GetPlatformComponentConfig().Rules,
-		defaultPlatformConfigSystemRule,
-	)
+
+	if hasSystemRule && hasLayeredProductsRule {
+		return false
+	}
+
+	if !hasSystemRule {
+		config.GetPlatformComponentConfig().Rules = append(
+			config.GetPlatformComponentConfig().Rules,
+			defaultPlatformConfigSystemRule,
+		)
+	}
+	if !hasLayeredProductsRule {
+		config.GetPlatformComponentConfig().Rules = append(
+			config.GetPlatformComponentConfig().Rules,
+			defaultPlatformConfigLayeredProductsRule,
+		)
+	}
+
 	return true
 }
 
