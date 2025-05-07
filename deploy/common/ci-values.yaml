@@ -43,3 +43,8 @@ scannerV4:
       limits:
         memory: "4Gi"
         cpu: "2000m"
+
+customize:
+  scanner-v4-matcher:
+    envVars:
+      SCANNER_V4_MATCHER_READINESS: vulnerability
