@@ -169,7 +169,7 @@ helm upgrade --install --create-namespace -n stackrox stackrox-secured-cluster-s
 If you're installing on a single node cluster, or the default installation results in pending resources, use the following command instead to reduce stackrox-secured-cluster-services resource requirements. Keep in mind that these reduced resource settings are not suited for a production setup.
 
 ```sh
-helm install -n stackrox stackrox-secured-cluster-services stackrox/stackrox-secured-cluster-services \
+helm upgrade --install --create-namespace -n stackrox stackrox-secured-cluster-services stackrox/stackrox-secured-cluster-services \
   -f stackrox-init-bundle.yaml \
   --set clusterName="$CLUSTER_NAME" \
   --set centralEndpoint="central.stackrox.svc:443" \
