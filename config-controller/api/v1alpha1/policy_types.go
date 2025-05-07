@@ -75,6 +75,16 @@ type SecurityPolicySpec struct {
 	// PolicySections define the violation criteria for this policy.
 	PolicySections     []PolicySection      `json:"policySections"`
 	MitreAttackVectors []MitreAttackVectors `json:"mitreAttackVectors,omitempty"`
+
+	// +optional
+	// CriteriaLocked is unused and deprecated
+	CriteriaLocked bool `json:"criteriaLocked,omitempty"`
+	// +optional
+	// IsDefault is unused
+	IsDefault bool `json:"isDefault,omitempty"`
+	// +optional
+	// MitreVetorsLocked is unused and deprecated
+	MitreVectorsLocked bool `json:"mitreVectorsLocked,omitempty"`
 }
 
 type Exclusion struct {
@@ -151,17 +161,29 @@ const (
 
 // SecurityPolicyCondition defines the observed state of SecurityPolicy
 type SecurityPolicyCondition struct {
-	Type               SecurityPolicyConditionType `json:"type"`
-	Status             string                      `json:"status"`
-	Message            string                      `json:"message"`
-	LastTransitionTime metav1.Time                 `json:"lastTransitionTime"`
+	// +optional
+	Type SecurityPolicyConditionType `json:"type,omitempty"`
+	// +optional
+	Status string `json:"status,omitempty"`
+	// +optional
+	Message string `json:"message,omitempty"`
+	// +optional
+	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty"`
 }
 
 type SecurityPolicyConditions []SecurityPolicyCondition
 
 type SecurityPolicyStatus struct {
-	Conditions SecurityPolicyConditions `json:"conditions"`
-	PolicyId   string                   `json:"policyId"`
+	// +optional
+	Conditions SecurityPolicyConditions `json:"conditions,omitempty"`
+	// +optional
+	PolicyId string `json:"policyId,omitempty"`
+	// +optional
+	// Accepted is deprecated in favor of conditions
+	Accepted bool `json:"accepted,omitempty"`
+	// +optional
+	// Message is deprecated in favor of conditions
+	Message string `json:"messge,omitempty"`
 }
 
 // IsValid runs validation checks against the SecurityPolicy spec
