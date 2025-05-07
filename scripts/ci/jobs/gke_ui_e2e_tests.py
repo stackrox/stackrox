@@ -18,6 +18,9 @@ os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
 os.environ["OUTPUT_FORMAT"] = "helm"
 os.environ["SENSOR_SCANNER_SUPPORT"] = "true"
 
+# TODO(ROX-29095)
+os.environ["ROX_SCANNER_V4"] = "false"
+
 ClusterTestRunner(
     cluster=GKECluster("ui-e2e-test"),
     pre_test=PreSystemTests(),

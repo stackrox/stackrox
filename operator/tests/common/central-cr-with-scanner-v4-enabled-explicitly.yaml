@@ -28,6 +28,7 @@ spec:
     telemetry:
       enabled: false
   scannerV4:
+    scannerComponent: Enabled
     indexer:
       scaling:
         autoScaling: Disabled

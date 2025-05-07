@@ -21,6 +21,8 @@ import (
 // RegisterNewReconciler registers a new helm reconciler in the given k8s controller manager
 func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 	proxyEnv := proxy.GetProxyEnvVars() // fix at startup time
+	// IMPORTANT: reconciler preExtensions that implement feature-defaulting logic (such as ReconcileScannerV4FeatureDefaultsExtension)
+	// must be executed first. Hence, they need to be first in order when registering extensions using WithPreExtension!
 	opts := []pkgReconciler.Option{
 		pkgReconciler.WithExtraWatch(
 			source.Kind[*platform.SecuredCluster](
@@ -30,6 +32,7 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 				// Only appearance and disappearance of a SecuredCluster resource can influence whether
 				// an init bundle should be created by the Central controller.
 				utils.CreateAndDeleteOnlyPredicate[*platform.SecuredCluster]{})),
+		pkgReconciler.WithPreExtension(extensions.ReconcileScannerV4FeatureDefaultsExtension(mgr.GetClient())),
 		pkgReconciler.WithPreExtension(extensions.ReconcileCentralTLSExtensions(mgr.GetClient(), mgr.GetAPIReader())),
 		pkgReconciler.WithPreExtension(extensions.ReconcileCentralDBPasswordExtension(mgr.GetClient(), mgr.GetAPIReader())),
 		pkgReconciler.WithPreExtension(extensions.ReconcileScannerDBPasswordExtension(mgr.GetClient(), mgr.GetAPIReader())),
