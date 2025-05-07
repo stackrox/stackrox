@@ -40,26 +40,26 @@ func parseConfig() (map[metricName][]*expression, time.Duration, error) {
 		return nil, period, nil
 	}
 	result := make(map[metricName][]*expression)
-	for _, metric := range config.GetMetrics() {
-		if metric == nil {
+	for metric, labels := range config.GetMetricLabels() {
+		if len(metric) == 0 {
 			continue
 		}
-		if err := validateMetricName(metric.GetName()); err != nil {
+		if err := validateMetricName(metric); err != nil {
 			return nil, 0, errox.InvalidArgs.CausedByf(
-				"invalid metric name %q: %v", metric.GetName(), err)
+				"invalid metric name %q: %v", metric, err)
 		}
-		for _, label := range metric.GetLabels() {
+		for _, labelExpression := range labels.GetLabelExpressions() {
 			expr := &expression{
-				label: label.GetName(),
-				op:    operator(label.GetExpression().GetOperator()),
-				arg:   label.GetExpression().GetArgument(),
+				label: labelExpression.GetLabel(),
+				op:    operator(labelExpression.GetExpression().GetOperator()),
+				arg:   labelExpression.GetExpression().GetArgument(),
 			}
 			if err := expr.validate(); err != nil {
 				return nil, 0, errox.InvalidArgs.CausedByf(
 					"failed to parse expression for metric %q: %v",
-					metric.GetName(), err)
+					metric, err)
 			}
-			result[metric.GetName()] = append(result[metric.GetName()], expr)
+			result[metric] = append(result[metric], expr)
 		}
 	}
 	if len(result) == 0 {

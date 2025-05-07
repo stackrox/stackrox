@@ -112,18 +112,17 @@ message DayOption {
 }
 
 message PrometheusMetricsConfig {
-  message Label {
-    string name = 1;
+  message LabelExpression {
+    string label = 1;
     FilterExpression expression = 2;
   }
   message FilterExpression {
     string operator = 1;
     string argument = 2;
   }
-  message Metric {
-    string name = 1;
-    repeated Label labels = 2;
+  message LabelExpressions {
+    repeated LabelExpression label_expressions = 1;
   }
   uint32 gathering_period_hours = 1;
-  repeated Metric metrics = 2;
+  map<string, LabelExpressions> metric_labels = 2;
 }

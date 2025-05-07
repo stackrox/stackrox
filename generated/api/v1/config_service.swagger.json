@@ -187,17 +187,25 @@
         }
       }
     },
-    "PrometheusMetricsConfigMetric": {
+    "PrometheusMetricsConfigLabelExpression": {
       "type": "object",
       "properties": {
-        "name": {
+        "label": {
           "type": "string"
         },
-        "labels": {
+        "expression": {
+          "$ref": "#/definitions/PrometheusMetricsConfigFilterExpression"
+        }
+      }
+    },
+    "PrometheusMetricsConfigLabelExpressions": {
+      "type": "object",
+      "properties": {
+        "labelExpressions": {
           "type": "array",
           "items": {
             "type": "object",
-            "$ref": "#/definitions/storagePrometheusMetricsConfigLabel"
+            "$ref": "#/definitions/PrometheusMetricsConfigLabelExpression"
           }
         }
       }
@@ -391,23 +399,11 @@
           "type": "integer",
           "format": "int64"
         },
-        "metrics": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/PrometheusMetricsConfigMetric"
+        "metricLabels": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/PrometheusMetricsConfigLabelExpressions"
           }
-        }
-      }
-    },
-    "storagePrometheusMetricsConfigLabel": {
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "expression": {
-          "$ref": "#/definitions/PrometheusMetricsConfigFilterExpression"
         }
       }
     },
