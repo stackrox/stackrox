@@ -58,6 +58,7 @@ type Store interface {
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*storeType, error)
 	GetByQueryFn(ctx context.Context, query *v1.Query, fn callback) error
 	GetMany(ctx context.Context, identifiers []string) ([]*storeType, []int, error)
+	GetByIDs(ctx context.Context, identifiers []string) ([]*storeType, error)
 	GetIDs(ctx context.Context) ([]string, error)
 
 	Walk(ctx context.Context, fn callback) error
