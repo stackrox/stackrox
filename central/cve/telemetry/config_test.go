@@ -2,7 +2,9 @@ package telemetry
 
 import (
 	"testing"
+	"time"
 
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -23,4 +25,47 @@ func Test_validateMetricName(t *testing.T) {
 			}
 		})
 	}
+}
+
+func Test_parseConfig(t *testing.T) {
+	config := &storage.PrometheusMetricsConfig{
+		GatheringPeriodHours: 42,
+		MetricLabels: map[string]*storage.PrometheusMetricsConfig_LabelExpressions{
+			"metric1": {
+				LabelExpressions: map[string]*storage.PrometheusMetricsConfig_Expressions{
+					"Severity": {
+						Expression: []*storage.PrometheusMetricsConfig_Expression{
+							{
+								Operator: "=",
+								Argument: "CRITICAL*",
+							}, {
+								Operator: "=",
+								Argument: "HIGH*",
+							}, {
+								Operator: "OR",
+							}, {
+								Operator: "=",
+								Argument: "LOW*",
+							},
+						},
+					},
+					"Cluster": nil,
+				},
+			},
+		},
+	}
+	labelExpressions, period, err := ParseConfig(config)
+	assert.NoError(t, err)
+	assert.Equal(t, 42*time.Hour, period)
+	assert.Equal(t, map[metricName]map[Label][]*expression{
+		"metric1": {
+			"Severity": {
+				{"=", "CRITICAL*"},
+				{"=", "HIGH*"},
+				{op: "OR"},
+				{"=", "LOW*"},
+			},
+			"Cluster": nil,
+		},
+	}, labelExpressions)
 }

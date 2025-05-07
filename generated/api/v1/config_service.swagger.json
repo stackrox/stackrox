@@ -176,7 +176,7 @@
       ],
       "default": "UNSET"
     },
-    "PrometheusMetricsConfigFilterExpression": {
+    "PrometheusMetricsConfigExpression": {
       "type": "object",
       "properties": {
         "operator": {
@@ -187,14 +187,15 @@
         }
       }
     },
-    "PrometheusMetricsConfigLabelExpression": {
+    "PrometheusMetricsConfigExpressions": {
       "type": "object",
       "properties": {
-        "label": {
-          "type": "string"
-        },
         "expression": {
-          "$ref": "#/definitions/PrometheusMetricsConfigFilterExpression"
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/PrometheusMetricsConfigExpression"
+          }
         }
       }
     },
@@ -202,10 +203,9 @@
       "type": "object",
       "properties": {
         "labelExpressions": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/PrometheusMetricsConfigLabelExpression"
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/PrometheusMetricsConfigExpressions"
           }
         }
       }

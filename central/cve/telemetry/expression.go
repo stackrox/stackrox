@@ -1,6 +1,7 @@
 package telemetry
 
 import (
+	"errors"
 	"fmt"
 	"math"
 	"slices"
@@ -20,29 +21,30 @@ const (
 	opGE operator = ">="
 	opLT operator = "<"
 	opLE operator = "<="
+
+	opOR operator = "OR"
 )
 
 type expression struct {
-	label Label
-	op    operator
-	arg   string
+	op  operator
+	arg string
 }
 
 func (e *expression) validate() error {
 	switch {
-	// Test label:
-	case len(e.label) == 0:
-		return fmt.Errorf("empty label in %q", e)
-	case labelOrder[e.label] == 0:
-		return fmt.Errorf("unknown label in %q", e)
 	// Test operator:
 	case e.op == opZ:
 		if len(e.arg) > 0 {
 			return fmt.Errorf("missing operator in %q", e)
 		}
-	case !slices.Contains([]operator{opEQ, opNE, opGT, opGE, opLT, opLE}, e.op):
+		return errors.New("empty operator")
+	case !slices.Contains([]operator{opEQ, opNE, opGT, opGE, opLT, opLE, opOR}, e.op):
 		return fmt.Errorf("unknown operator in %q", e)
 	// Test argument:
+	case e.op == opOR:
+		if len(e.arg) > 0 {
+			return fmt.Errorf("unexpected argument in %q", e)
+		}
 	case len(e.arg) == 0:
 		return fmt.Errorf("missing argument in %q", e)
 	case !e.isFloatArg() && !e.isGlobArg():
@@ -52,7 +54,7 @@ func (e *expression) validate() error {
 }
 
 func (e *expression) String() string {
-	return string(e.label) + string(e.op) + e.arg
+	return string(e.op) + e.arg
 }
 
 func (e *expression) isFloatArg() bool {
@@ -66,11 +68,11 @@ func (e *expression) isGlobArg() bool {
 
 // match returns whether the labels match the expression and the matched label
 // value, if matched.
-func (e *expression) match(labels func(Label) string) (string, bool) {
+func (e *expression) match(label Label, labels func(Label) string) (string, bool) {
 	if e == nil {
 		return "", true
 	}
-	value := labels(e.label)
+	value := labels(label)
 	if argument, err := strconv.ParseFloat(e.arg, 32); err == nil {
 		if numericValue, err := strconv.ParseFloat(value, 32); err == nil {
 			return value, e.compareFloats(numericValue, argument)

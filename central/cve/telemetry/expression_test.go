@@ -19,131 +19,93 @@ func Test_expression_match(t *testing.T) {
 	}
 
 	t.Run("test label and value", func(t *testing.T) {
-		value, ok := (&expression{"string", "=", "value"}).match(labels)
+		value, ok := (&expression{"=", "value"}).match("string", labels)
 		assert.True(t, ok)
 		assert.Equal(t, "value", value)
 
-		value, ok = (&expression{"number", ">=", "1.0"}).match(labels)
+		value, ok = (&expression{">=", "1.0"}).match("number", labels)
 		assert.True(t, ok)
 		assert.Equal(t, "3.4", value)
 	})
 
 	t.Run("test missing label", func(t *testing.T) {
-		value, ok := (&expression{"nonexistent", "=", "value"}).match(labels)
+		value, ok := (&expression{"=", "value"}).match("nonexistent", labels)
 		assert.Equal(t, "", value)
 		assert.False(t, ok)
 	})
 	t.Run("test empty label value", func(t *testing.T) {
-		value, ok := (&expression{"empty", "=", "value"}).match(labels)
+		value, ok := (&expression{"=", "value"}).match("empty", labels)
 		assert.Equal(t, "", value)
 		assert.False(t, ok)
 
-		value, ok = (*expression)(nil).match(labels)
+		value, ok = (*expression)(nil).match("label", labels)
 		assert.Equal(t, "", value)
 		assert.True(t, ok)
 	})
 	t.Run("test expression with only label", func(t *testing.T) {
-		value, ok := (&expression{"string", "", ""}).match(labels)
+		value, ok := (&expression{"", ""}).match("string", labels)
 		assert.Equal(t, "value", value)
 		assert.True(t, ok)
 	})
 
-	t.Run("=", func(t *testing.T) {
-		for _, expr := range []*expression{
-			{"string", "=", "value"},
-			{"string", "=", "*alu?"},
-			{"number", "=", "3.40"},
-			{"bool", "=", "false"},
-		} {
-			_, ok := expr.match(labels)
-			assert.True(t, ok, expr)
-		}
-		for _, expr := range []*expression{
-			{"string", "=", "value1"},
-			{"string", "=", "*2"},
-			{"number", "=", "3.40.1"},
-			{"bool", "=", "true"},
-		} {
-			_, ok := expr.match(labels)
-			assert.False(t, ok, expr)
-		}
-	})
+	type testCase struct {
+		label Label
+		expr  expression
 
-	t.Run("!=", func(t *testing.T) {
-		for _, expr := range []*expression{
-			{"string", "!=", "value1"},
-			{"string", "!=", "*2"},
-			{"number", "!=", "3.5"},
-			{"bool", "!=", "true"},
-		} {
-			_, ok := expr.match(labels)
-			assert.True(t, ok, expr)
-		}
-		for _, expr := range []*expression{
-			{"string", "!=", "value"},
-			{"string", "!=", "*alu?"},
-			{"number", "!=", "3.4"},
-			{"bool", "!=", "false"},
-		} {
-			_, ok := expr.match(labels)
-			assert.False(t, ok, expr)
-		}
-	})
+		match bool
+	}
 
-	t.Run(">", func(t *testing.T) {
-		for _, expr := range []*expression{
-			{"number", ">", "3.0"},
-			{"number", ">", "0"},
-			{"number", ">", "-1"},
-			{"number", ">=", "3.4"},
-		} {
-			_, ok := expr.match(labels)
-			assert.True(t, ok, expr)
-		}
-		for _, expr := range []*expression{
-			{"number", ">", "3.4"},
-			{"number", ">", "34"},
-			{"number", ">", "+4334"},
-			{"number", ">=", "3.41"},
-		} {
-			_, ok := expr.match(labels)
-			assert.False(t, ok, expr)
-		}
-	})
+	for i, c := range []testCase{
+		{"string", expression{"=", "value"}, true},
+		{"string", expression{"=", "*alu?"}, true},
+		{"number", expression{"=", "3.40"}, true},
+		{"bool", expression{"=", "false"}, true},
 
-	t.Run("<", func(t *testing.T) {
-		for _, expr := range []*expression{
-			{"number", "<", "3.41"},
-			{"number", "<", "34"},
-			{"number", "<", "+4334"},
-			{"number", "<=", "3.4"},
-		} {
-			_, ok := expr.match(labels)
-			assert.True(t, ok, expr)
-		}
-		for _, expr := range []*expression{
-			{"number", "<", "3.4"},
-			{"number", "<", "0"},
-			{"number", "<", "-1"},
-			{"number", "<=", "3.3"},
-		} {
-			_, ok := expr.match(labels)
-			assert.False(t, ok, expr)
-		}
-	})
+		{"string", expression{"=", "value1"}, false},
+		{"string", expression{"=", "*2"}, false},
+		{"number", expression{"=", "3.40.1"}, false},
+		{"bool", expression{"=", "true"}, false},
 
-	t.Run("string comparison", func(t *testing.T) {
-		for _, expr := range []*expression{
-			{"number", "<", "3.a"},
-			{"number", "!=", "3,4"},
-			{"string", ">", "val"},
-			{"string", "<=", "value1"},
-			{"number", "<", ">3.4"},
-		} {
-			_, ok := expr.match(labels)
-			assert.True(t, ok, expr)
-		}
-	})
+		{"string", expression{"!=", "value1"}, true},
+		{"string", expression{"!=", "*2"}, true},
+		{"number", expression{"!=", "3.5"}, true},
+		{"bool", expression{"!=", "true"}, true},
+
+		{"string", expression{"!=", "value"}, false},
+		{"string", expression{"!=", "*alu?"}, false},
+		{"number", expression{"!=", "3.4"}, false},
+		{"bool", expression{"!=", "false"}, false},
+
+		{"number", expression{">", "3.0"}, true},
+		{"number", expression{">", "0"}, true},
+		{"number", expression{">", "-1"}, true},
+		{"number", expression{">=", "3.4"}, true},
+
+		{"number", expression{">", "3.4"}, false},
+		{"number", expression{">", "34"}, false},
+		{"number", expression{">", "+4334"}, false},
+		{"number", expression{">=", "3.41"}, false},
+
+		{"number", expression{"<", "3.41"}, true},
+		{"number", expression{"<", "34"}, true},
+		{"number", expression{"<", "+4334"}, true},
+		{"number", expression{"<=", "3.4"}, true},
+
+		{"number", expression{"<", "3.4"}, false},
+		{"number", expression{"<", "0"}, false},
+		{"number", expression{"<", "-1"}, false},
+		{"number", expression{"<=", "3.3"}, false},
+
+		// string comparison:
+		{"number", expression{"<", "3.a"}, true},
+		{"number", expression{"!=", "3,4"}, true},
+		{"string", expression{">", "val"}, true},
+		{"string", expression{"<=", "value1"}, true},
+		{"number", expression{"<", ">3.4"}, true},
+	} {
+		_, actual := c.expr.match(c.label, labels)
+		assert.Equal(t, c.match, actual, "test #%d %s %s", i, c.label, c.expr.String())
+	}
 }
 
 func Test_validate(t *testing.T) {
@@ -153,22 +115,20 @@ func Test_validate(t *testing.T) {
 	}
 	cases := []testCase{
 		// NOK:
-		{expression{label: ""}, "empty label in \"\""},
-		{expression{label: "a b"}, "unknown label in \"a b\""},
-		{expression{label: "ab", op: "op"}, "unknown label in \"abop\""},
-		{expression{label: "CVE", op: "op"}, "unknown operator in \"CVEop\""},
-		{expression{label: "CVE", op: "="}, "missing argument in \"CVE=\""},
-		{expression{label: "", op: "=", arg: "arg"}, "empty label in \"=arg\""},
-		{expression{label: "CVE", op: "?", arg: "arg"}, "unknown operator in \"CVE?arg\""},
-		{expression{label: "CVE", op: "=", arg: "[a-"}, "cannot parse the argument in \"CVE=[a-\""},
+		{expression{op: "op"}, "unknown operator in \"op\""},
+		{expression{op: "OR", arg: "arg"}, "unexpected argument in \"ORarg\""},
+		{expression{op: "="}, "missing argument in \"=\""},
+		{expression{op: "?", arg: "arg"}, "unknown operator in \"?arg\""},
+		{expression{op: "=", arg: "[a-"}, "cannot parse the argument in \"=[a-\""},
 		// OK:
-		{expression{label: "CVE"}, ""},
-		{expression{label: "CVE", op: "=", arg: "arg"}, ""},
-		{expression{label: "CVE", op: ">=", arg: "4.5"}, ""},
-		{expression{label: "CVE", op: "=", arg: "def"}, ""},
+		{expression{}, "empty operator"},
+		{expression{op: "OR"}, ""},
+		{expression{op: "=", arg: "arg"}, ""},
+		{expression{op: ">=", arg: "4.5"}, ""},
+		{expression{op: "=", arg: "def"}, ""},
 	}
 	for _, c := range cases {
-		t.Run("expr: "+string(c.expr.label)+string(c.expr.op)+c.expr.arg, func(t *testing.T) {
+		t.Run("expr: "+string(c.expr.op)+c.expr.arg, func(t *testing.T) {
 			err := c.expr.validate()
 			if err == nil {
 				assert.Empty(t, c.err)

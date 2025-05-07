@@ -498,6 +498,6 @@ func RegisterVulnAggregatedMetric(name string, period time.Duration, labels []st
 
 // SetAggregatedVulnCount registers the metric vector with the values,
 // aggregated according to the ROX_AGGREGATE_VULN_METRICS variable value.
-func SetAggregatedVulnCount(metricName string, labels map[string]string, total int) {
+func SetAggregatedVulnCount(metricName string, labels prometheus.Labels, total int) {
 	aggregatedVulnMetrics[metricName].With(labels).Set(float64(total))
 }

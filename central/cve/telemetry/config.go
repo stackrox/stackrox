@@ -1,15 +1,12 @@
 package telemetry
 
 import (
-	"context"
 	"errors"
-	"fmt"
 	"regexp"
 	"time"
 
-	configDS "github.com/stackrox/rox/central/config/datastore"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/sac"
 )
 
 var metricNamePattern = regexp.MustCompile("^[a-zA-Z0-9_]+$")
@@ -24,43 +21,42 @@ func validateMetricName(s string) error {
 	return nil
 }
 
-func parseConfig() (map[metricName][]*expression, time.Duration, error) {
+// ParseConfig converts the storage object to the usable map, validating the values.
+func ParseConfig(config *storage.PrometheusMetricsConfig) (map[metricName]map[Label][]*expression, time.Duration, error) {
 
-	systemPrivateConfig, err := configDS.Singleton().GetPrivateConfig(
-		sac.WithAllAccess(context.Background()))
-	if err != nil {
-		return nil, 0, fmt.Errorf("failed to get metrics configuration from the database: %w", err)
-	}
-	config := systemPrivateConfig.GetPrometheusMetricsConfig()
-	if config == nil {
-		return nil, 0, nil
-	}
 	period := time.Hour * time.Duration(config.GetGatheringPeriodHours())
 	if period == 0 {
 		return nil, period, nil
 	}
-	result := make(map[metricName][]*expression)
+	result := make(map[metricName]map[Label][]*expression)
 	for metric, labels := range config.GetMetricLabels() {
-		if len(metric) == 0 {
-			continue
-		}
 		if err := validateMetricName(metric); err != nil {
 			return nil, 0, errox.InvalidArgs.CausedByf(
 				"invalid metric name %q: %v", metric, err)
 		}
-		for _, labelExpression := range labels.GetLabelExpressions() {
-			expr := &expression{
-				label: labelExpression.GetLabel(),
-				op:    operator(labelExpression.GetExpression().GetOperator()),
-				arg:   labelExpression.GetExpression().GetArgument(),
+		metricLabels := make(map[Label][]*expression)
+		for label, expressions := range labels.GetLabelExpressions() {
+
+			if _, knownLabel := labelOrder[Label(label)]; !knownLabel {
+				return nil, 0, errox.InvalidArgs.CausedByf("unknown label %q for metric %q", label, metric)
 			}
-			if err := expr.validate(); err != nil {
-				return nil, 0, errox.InvalidArgs.CausedByf(
-					"failed to parse expression for metric %q: %v",
-					metric, err)
+
+			var exprs []*expression
+			for _, expr := range expressions.GetExpression() {
+				expr := &expression{
+					op:  operator(expr.GetOperator()),
+					arg: expr.GetArgument(),
+				}
+				if err := expr.validate(); err != nil {
+					return nil, 0, errox.InvalidArgs.CausedByf(
+						"failed to parse expression for metric %q with label %q: %v",
+						metric, label, err)
+				}
+				exprs = append(exprs, expr)
 			}
-			result[metric] = append(result[metric], expr)
+			metricLabels[Label(label)] = exprs
 		}
+		result[metricName(metric)] = metricLabels
 	}
 	if len(result) == 0 {
 		return nil, 0, nil

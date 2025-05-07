@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	configDS "github.com/stackrox/rox/central/config/datastore"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/pkg/logging"
@@ -25,12 +26,20 @@ func Singleton() interface {
 } {
 	once.Do(func() {
 		log := logging.LoggerForModule()
-		metricsConfig, period, err := parseConfig()
+
+		systemPrivateConfig, err := configDS.Singleton().GetPrivateConfig(
+			sac.WithAllAccess(context.Background()))
+		if err != nil {
+			log.Errorw("Failed to get Prometheus metrics configuration", logging.Err(err))
+			return
+		}
+		metricsConfig, period, err := ParseConfig(systemPrivateConfig.GetPrometheusMetricsConfig())
 		if err != nil {
 			log.Errorw("Failed to parse Prometheus metrics configuration", logging.Err(err))
 			return
 		}
 		if period == 0 {
+			log.Info("No configured Prometheus metrics")
 			return
 		}
 		instance = &vulnerabilityMetricsImpl{
@@ -39,8 +48,8 @@ func Singleton() interface {
 			period:    period,
 			trackFunc: metrics.SetAggregatedVulnCount,
 		}
-		for metric, expressions := range instance.metrics {
-			metrics.RegisterVulnAggregatedMetric(metric, instance.period,
+		for metric, expressions := range metricsConfig {
+			metrics.RegisterVulnAggregatedMetric(string(metric), instance.period,
 				getMetricLabels(expressions), Problemetrics)
 
 			log.Infof("Registered Prometheus metric %q", metric)
@@ -49,16 +58,16 @@ func Singleton() interface {
 	return instance
 }
 
-type metricName = string
-type metricKey = string // e.g. IMPORTANT_VULNERABILITY_SEVERITY|true
+type metricName string
+type metricKey string // e.g. IMPORTANT_VULNERABILITY_SEVERITY|true
 
 type vulnerabilityMetricsImpl struct {
 	ds         deploymentDS.DataStore
 	stopSignal chan bool
 
 	period    time.Duration
-	metrics   map[metricName][]*expression
-	trackFunc func(metricName string, labels map[Label]string, total int)
+	metrics   map[metricName]map[Label][]*expression
+	trackFunc func(metricName string, labels prometheus.Labels, total int)
 }
 
 func (h *vulnerabilityMetricsImpl) Start() {
@@ -93,7 +102,7 @@ func (h *vulnerabilityMetricsImpl) run() {
 func (h *vulnerabilityMetricsImpl) track(ctx context.Context) {
 	for metric, records := range h.trackVulnerabilityMetrics(ctx) {
 		for _, rec := range records {
-			h.trackFunc(metric, rec.labels, rec.total)
+			h.trackFunc(string(metric), rec.labels, rec.total)
 		}
 	}
 }

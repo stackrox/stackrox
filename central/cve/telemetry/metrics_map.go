@@ -1,9 +1,43 @@
 package telemetry
 
 import (
+	"iter"
 	"slices"
 	"strings"
+
+	"github.com/prometheus/client_golang/prometheus"
 )
+
+// matchingLabels yields the labels and the values that match the expressions.
+func matchingLabels(expressions map[Label][]*expression, labelsGetter func(Label) string) iter.Seq2[Label, string] {
+	return func(yield func(Label, string) bool) {
+		for label, expressions := range expressions {
+			if len(expressions) == 0 {
+				if !yield(label, labelsGetter(label)) {
+					return
+				}
+				continue
+			}
+			skip := false
+			for _, expr := range expressions {
+				if skip {
+					skip = expr.op != opOR
+					continue
+				}
+				if value, ok := expr.match(label, labelsGetter); ok {
+					if !yield(label, value) {
+						return
+					}
+					break
+				}
+				skip = true
+			}
+			if skip {
+				return
+			}
+		}
+	}
+}
 
 // makeAggregationKeyInstance computes an aggregation key according to the
 // labels from the provided expressions, and the map of the requested labels
@@ -12,49 +46,42 @@ import (
 // Example:
 //
 //	"Cluster=*prod,Deployment" => "pre-prod|backend", {"Cluster": "pre-prod", "Deployment": "backend")}
-func makeAggregationKeyInstance(expressions []*expression, labelsGetter func(Label) string) (metricKey, map[Label]string) {
+func makeAggregationKeyInstance(expressions map[Label][]*expression, labelsGetter func(Label) string) (metricKey, prometheus.Labels) {
+	labels := make(prometheus.Labels)
+	type valueOrder struct {
+		int
+		string
+	}
+	values := []valueOrder{}
+	for label, value := range matchingLabels(expressions, labelsGetter) {
+		labels[string(label)] = value
+		values = append(values, valueOrder{labelOrder[label], value})
+	}
+	if len(labels) != len(expressions) {
+		return "", nil
+	}
+	slices.SortFunc(values, func(a, b valueOrder) int {
+		return a.int - b.int
+	})
 	sb := strings.Builder{}
-	labels := make(map[Label]string)
-	for i := 0; i < len(expressions); i++ {
-		expr := expressions[i]
-		if expr == nil {
-			break
+	for _, value := range values {
+		if sb.Len() > 0 {
+			sb.WriteRune('|')
 		}
-		value, ok := expr.match(labelsGetter)
-		if !ok {
-			for i++; i < len(expressions) && expressions[i] != nil; i++ {
-			}
-			if i == len(expressions) {
-				return "", nil
-			}
-			continue
-		}
-		if value != "" {
-			if sb.Len() > 0 {
-				sb.WriteRune('|')
-			}
-			sb.WriteString(value)
-			labels[expr.label] = value
-		} else {
-			return "", nil
-		}
+		sb.WriteString(value.string)
 	}
 	return metricKey(sb.String()), labels
 }
 
 // getMetricLabels extracts the metric labels from the filter expressions and
 // sort them according to the labelOrder map values.
-//
-// Example:
-//
-//	"Cluster=*prod,Namespace" => {"Cluster", "Namespace"}
-func getMetricLabels(expressions []*expression) []Label {
-	var labels []Label
-	for _, expression := range expressions {
-		labels = append(labels, expression.label)
+func getMetricLabels(expressions map[Label][]*expression) []string {
+	var labels []string
+	for label := range expressions {
+		labels = append(labels, string(label))
 	}
-	slices.SortFunc(labels, func(a, b Label) int {
-		return labelOrder[a] - labelOrder[b]
+	slices.SortFunc(labels, func(a, b string) int {
+		return labelOrder[Label(a)] - labelOrder[Label(b)]
 	})
 	return labels
 }

@@ -4,12 +4,13 @@ import (
 	"context"
 	"strconv"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
 )
 
 // Label is an alias because the central/metrics package cannot import it.
-type Label = string
+type Label string
 
 var labelOrder = map[Label]int{
 	"Cluster":          1,
@@ -31,7 +32,7 @@ var labelOrder = map[Label]int{
 }
 
 type record struct {
-	labels map[Label]string
+	labels prometheus.Labels
 	total  int
 }
 
