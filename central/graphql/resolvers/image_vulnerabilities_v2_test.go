@@ -637,7 +637,7 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityExceptionCo
 		RequestStatus: &status,
 	}
 
-	//sha2 all tags
+	// sha2 all tags
 	vuln := s.getImageVulnerabilityResolver(ctx, s.cveIDMap[cve542])
 	count, err := vuln.ExceptionCount(ctx, args)
 	s.NoError(err)
