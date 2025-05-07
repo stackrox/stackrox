@@ -1,49 +1,137 @@
-import { distanceInWordsStrict, format } from 'date-fns';
+import Raven from 'raven-js';
+import { distanceInWordsStrict } from 'date-fns';
 
-const timeFormat = 'h:mm:ssA';
-const dateFormat = 'MM/DD/YYYY';
-const dateTimeFormat = `${dateFormat} | ${timeFormat}`;
+export type DateLike = string | number | Date;
 
-type DateLike = string | number | Date;
+const defaultDateFormatOptions: Readonly<Intl.DateTimeFormatOptions> = {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+};
+
+const defaultTimeFormatOptions: Readonly<Intl.DateTimeFormatOptions> = {
+    hour: 'numeric',
+    minute: 'numeric',
+    second: 'numeric',
+};
+
+const defaultDateTimeFormatOptions: Readonly<Intl.DateTimeFormatOptions> = {
+    ...defaultDateFormatOptions,
+    ...defaultTimeFormatOptions,
+    timeZoneName: 'short',
+};
+
+function convertDateLikeToDate(dateLike: DateLike): Date {
+    const dateOrTimestamp = typeof dateLike === 'string' ? Date.parse(dateLike) : dateLike;
+    return new Date(dateOrTimestamp);
+}
+
+function formatLocalizedDateTime(
+    dateLike: DateLike,
+    locales: Intl.LocalesArgument = undefined,
+    dateTimeFormatOptions: Intl.DateTimeFormatOptions = {}
+): string {
+    try {
+        const date = convertDateLikeToDate(dateLike);
+        return new Intl.DateTimeFormat(locales, {
+            ...dateTimeFormatOptions,
+        }).format(date);
+    } catch (e: unknown) {
+        Raven.captureException(e);
+        return String(dateLike);
+    }
+}
 
 /**
- * Returns a formatted date and time
- * @param {DateLike} timestamp - The timestamp for the date and time
+ * Formats a date in ISO 8601 standard
+ * @param dateLike - A timestamp, formatted date string, or Date object
+ * @returns An ISO 8601 string representation of the date
+ */
+export function displayDateTimeAsISO8601(dateLike: DateLike) {
+    try {
+        const date = convertDateLikeToDate(dateLike);
+        return date.toISOString();
+    } catch (e: unknown) {
+        Raven.captureException(e);
+        return String(dateLike);
+    }
+}
+
+/**
+ * Returns a formatted date and time, defaulted to the current locale's format
+ * @param dateLike - A timestamp, formatted date string, or Date object
+ * @param locales - THe locale or locales to use for formatting. `undefined` uses the browsers current locale
+ * @param dateTimeFormatOptionOverrides - Format override options for the returned datetime string
  * @returns {string} - returns a formatted string for the date time
  */
-export function getDateTime(timestamp: DateLike) {
-    return format(timestamp, dateTimeFormat);
+export function getDateTime(
+    dateLike: DateLike,
+    locales: Intl.LocalesArgument = undefined,
+    dateTimeFormatOptionOverrides: Intl.DateTimeFormatOptions = {}
+) {
+    return formatLocalizedDateTime(dateLike, locales, {
+        ...defaultDateTimeFormatOptions,
+        ...dateTimeFormatOptionOverrides,
+    });
 }
 
 /**
  * Returns a formatted date
- * @param {DateLike} timestamp - The timestamp for the date
- * @returns {string} - returns a formatted string for the date
+ * @param timestamp - The timestamp for the date
+ * @param locales - THe locale or locales to use for formatting. `undefined` uses the browsers current locale
+ * @param dateTimeFormatOptionOverrides - Format override options for the returned datetime string
+ * @returns returns a formatted string for the date
  */
-export function getDate(timestamp: DateLike) {
-    return format(timestamp, dateFormat);
+export function getDate(
+    dateLike: DateLike,
+    locales: Intl.LocalesArgument = undefined,
+    dateTimeFormatOptionOverrides: Intl.DateTimeFormatOptions = {}
+): string {
+    return formatLocalizedDateTime(dateLike, locales, {
+        ...defaultDateFormatOptions,
+        ...dateTimeFormatOptionOverrides,
+    });
 }
 
 /**
  * Returns a formatted time
- * @param {DateLike} timestamp - The timestamp for the date
- * @returns {string} - returns a formatted string for the time
+ * @param timestamp - The timestamp for the date
+ * @param locales - THe locale or locales to use for formatting. `undefined` uses the browsers current locale
+ * @param dateTimeFormatOptionOverrides - Format override options for the returned datetime string
+ * @returns - returns a formatted string for the time
  */
-export function getTime(timestamp: DateLike) {
-    return format(timestamp, timeFormat);
+export function getTime(
+    dateLike: DateLike,
+    locales: Intl.LocalesArgument = undefined,
+    dateTimeFormatOptionOverrides: Intl.DateTimeFormatOptions = {}
+): string {
+    return formatLocalizedDateTime(dateLike, locales, {
+        ...defaultTimeFormatOptions,
+        ...dateTimeFormatOptionOverrides,
+    });
 }
 
 /**
  * Returns a formatted time with hours and minutes but without seconds.
- * @param {DateLike} timestamp - The timestamp for the date
- * @returns {string} - returns a formatted string for the time
+ * @param timestamp - The timestamp for the date
+ * @param locales - THe locale or locales to use for formatting. `undefined` uses the browsers current locale
+ * @param dateTimeFormatOptionOverrides - Format override options for the returned datetime string
+ * @returns - returns a formatted string for the time
  */
-export function getTimeHoursMinutes(timestamp: DateLike) {
-    return format(timestamp, 'h:mm A');
+export function getTimeHoursMinutes(
+    timestamp: DateLike,
+    locales: Intl.LocalesArgument = undefined,
+    dateTimeFormatOptionOverrides: Intl.DateTimeFormatOptions = {}
+): string {
+    return getTime(timestamp, locales, {
+        hour: 'numeric',
+        second: undefined,
+        ...dateTimeFormatOptionOverrides,
+    });
 }
 
 export function addBrandedTimestampToString(str: string) {
-    return `StackRox:${str}-${format(new Date(), dateFormat)}`;
+    return `StackRox:${str}-${getDate(new Date())}`;
 }
 
 const daysOfWeek = [
@@ -74,7 +162,6 @@ export const getDistanceStrict: typeof distanceInWordsStrict = (
     currentDatetime,
     options
 ) => distanceInWordsStrict(dataDatetime, currentDatetime, options);
-//
 /*
  * Given an ISO 8601 string and Date instance, return the time difference:
  * if currentDatetime is in X units
