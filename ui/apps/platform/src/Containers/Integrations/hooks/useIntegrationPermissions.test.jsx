@@ -4,7 +4,7 @@ import { renderHook } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { HistoryRouter as Router } from 'redux-first-history/rr6';
 
-import configureStore from 'store/configureStore';
+import configureStore from 'init/configureStore';
 import useIntegrationPermissions from './useIntegrationPermissions';
 
 const initialStoreWrite = {

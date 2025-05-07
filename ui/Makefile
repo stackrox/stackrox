@@ -7,7 +7,7 @@ all: deps lint test test-component build
 SOURCES := $(shell find apps -type d \( -name node_modules \) -prune -o -print)
 
 ROX_PRODUCT_BRANDING ?= $(shell $(MAKE) --quiet --no-print-directory -C .. product-branding)
-export REACT_APP_ROX_PRODUCT_BRANDING := $(ROX_PRODUCT_BRANDING)
+export ROX_PRODUCT_BRANDING := $(ROX_PRODUCT_BRANDING)
 
 deps: apps/platform/package.json apps/platform/package-lock.json
 	cd apps/platform && npm ci --prefer-offline --fetch-timeout=$(UI_PKG_INSTALL_NETWORK_TIMEOUT) --no-audit --no-fund $(UI_PKG_INSTALL_EXTRA_ARGS) && npm audit --omit=dev || true
@@ -23,7 +23,10 @@ lint: deps $(SOURCES)
 	npm run lint
 	@touch lint
 
-build: deps $(SOURCES)
+print-npm-logs:
+	@bash -c 'shopt -s nullglob; for f in /opt/app-root/src/.npm/_logs/*; do cat "$$f"; done'
+
+build: deps print-npm-logs $(SOURCES)
 	@echo "+ $@"
 	npm run build
 	@touch build
