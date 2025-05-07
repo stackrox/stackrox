@@ -40,6 +40,7 @@ class NullTest(BaseTest):
 class UpgradeTest(BaseTest):
     TEST_TIMEOUT = 60 * 60 * 2
     TEST_OUTPUT_DIR = "/tmp/postgres-upgrade-test-logs"
+    TEST_PG_UPGRADE_OUTPUT_DIR = "/tmp/postgres-version-upgrade-test-logs"
     TEST_SENSOR_OUTPUT_DIR = "/tmp/postgres-sensor-upgrade-test-logs"
 
     def run(self):
@@ -50,6 +51,7 @@ class UpgradeTest(BaseTest):
             self.test_outputs = [
                 UpgradeTest.TEST_SENSOR_OUTPUT_DIR,
                 UpgradeTest.TEST_OUTPUT_DIR,
+                UpgradeTest.TEST_PG_UPGRADE_OUTPUT_DIR,
             ]
 
         self.run_with_graceful_kill(

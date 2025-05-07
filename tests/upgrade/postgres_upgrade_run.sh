@@ -155,7 +155,7 @@ test_upgrade_path() {
     checkForPostgresAccessScopes
 
     validate_upgrade "01-bounce-after-upgrade" "bounce after postgres upgrade" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
-    collect_and_check_stackrox_logs "$log_output_dir" "01_post_bounce"
+    collect_and_check_stackrox_logs "$log_output_dir" "upgrade_01_post_bounce"
 
     touch "${UPGRADE_PROGRESS_POSTGRES_CENTRAL_BOUNCE}"
 
@@ -175,14 +175,14 @@ test_upgrade_path() {
 
     validate_upgrade "02-bounce-db-after-upgrade" "bounce central db after postgres upgrade" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
 
-    collect_and_check_stackrox_logs "$log_output_dir" "02_post_bounce-db"
+    collect_and_check_stackrox_logs "$log_output_dir" "upgrade_02_post_bounce-db"
 
     # Ensure central is ready for requests after any previous tests
     wait_for_api
 
     touch "${UPGRADE_PROGRESS_POSTGRES_CENTRAL_DB_BOUNCE}"
 
-    collect_and_check_stackrox_logs "$log_output_dir" "04_final"
+    collect_and_check_stackrox_logs "$log_output_dir" "upgrade_03_final"
 }
 
 # Verify the upgrade will not proceed without having enough disk space
@@ -262,7 +262,7 @@ test_not_enough_disk_space() {
     kubectl rollout restart deployment/central-db
     wait_for_api
 
-    collect_and_check_stackrox_logs "$log_output_dir" "04_final"
+    collect_and_check_stackrox_logs "$log_output_dir" "disk_space_01_final"
 }
 
 # Make sure we can restore logical backups after the upgrade, even if they were
@@ -340,7 +340,7 @@ test_restore_pg_dump_after_upgrade() {
     restore_4_1_backup
     wait_for_api
 
-    collect_and_check_stackrox_logs "$log_output_dir" "04_final"
+    collect_and_check_stackrox_logs "$log_output_dir" "restore_01_final"
 }
 
 force_rollback_to_previous_postgres() {
