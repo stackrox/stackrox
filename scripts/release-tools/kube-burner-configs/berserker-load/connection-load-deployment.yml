@@ -37,8 +37,6 @@ spec:
             value: "{{ $ip }}"
           - name: BERSERKER__WORKLOAD__ADDRESS
             value: "{{ $berserker_address }}"
-          - name: RUST_LOG
-            value: "debug"
         volumeMounts:
         - name: config
           mountPath: "/etc/berserker"
