@@ -119,6 +119,8 @@ If you're installing on a single node cluster, or the default installation resul
 ```sh
 helm upgrade --install -n stackrox --create-namespace stackrox-central-services \
   stackrox/stackrox-central-services \
+  --set central.adminPassword.value="${ROX_ADMIN_PASSWORD}" \
+  --set central.persistence.none="true" \
   --set central.resources.requests.memory=1Gi \
   --set central.resources.requests.cpu=1 \
   --set central.resources.limits.memory=4Gi \
@@ -132,9 +134,7 @@ helm upgrade --install -n stackrox --create-namespace stackrox-central-services 
   --set scanner.resources.requests.memory=500Mi \
   --set scanner.resources.requests.cpu=500m \
   --set scanner.resources.limits.memory=2500Mi \
-  --set scanner.resources.limits.cpu=2000m \
-  --set central.adminPassword.value="${ROX_ADMIN_PASSWORD}" \
-  --set central.persistence.none="true"
+  --set scanner.resources.limits.cpu=2000m
 ```
 
 </details>
