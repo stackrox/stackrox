@@ -203,14 +203,14 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
                 "All custom CIDRs currently in Central: ${similarCIDRs}")
         }
 
-        deleteConflictingCIDRs("1.1.1.").forEach {it ->
+        getMatchingCIDRs(CF_CIDR_30).forEach { it ->
             log.warn("Deleting conflicting CIDR " +
                 "id: ${it.getId()}, " +
                 "name: ${it.getExternalSource().name}, " +
                 "cidr: ${it.getExternalSource().cidr}")
             deleteNetworkEntity(it.getId())
         }
-        log.info("All conflicting external entities deleted")
+        log.info("All external entities conflicting with ${CF_CIDR_30} have been deleted")
 
         String externalSource30Name = generateNameWithPrefix("external-source-30")
         log.info("Creating external source '${externalSource30Name}' with CIDR ${CF_CIDR_30}")
@@ -226,6 +226,16 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
         }
 
         log.info "Add smaller subnet subnet external source"
+
+        getMatchingCIDRs(CF_CIDR_31).forEach { it ->
+            log.warn("Deleting conflicting CIDR " +
+                "id: ${it.getId()}, " +
+                "name: ${it.getExternalSource().name}, " +
+                "cidr: ${it.getExternalSource().cidr}")
+            deleteNetworkEntity(it.getId())
+        }
+        log.info("All external entities conflicting with ${CF_CIDR_31} have been deleted")
+
         String externalSource31Name = generateNameWithPrefix("external-source-31")
         NetworkEntity externalSource31 = createNetworkEntityExternalSource(externalSource31Name, CF_CIDR_31)
         String externalSource31ID = externalSource31?.getInfo()?.getId()
@@ -289,7 +299,7 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
         return existingCidrs
     }
 
-    private static Set<NetworkFlowOuterClass.NetworkEntityInfo> deleteConflictingCIDRs(String prefix) {
+    private static Set<NetworkFlowOuterClass.NetworkEntityInfo> getMatchingCIDRs(String prefix) {
         def clusterId = ClusterService.getClusterId()
         assert clusterId
         def request = NetworkGraphServiceOuterClass.GetExternalNetworkEntitiesRequest
