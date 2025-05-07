@@ -90,7 +90,6 @@ Deploying using Helm consists of 4 steps
 
 <details><summary>Install StackRox Central Services</summary>
 
-#### Default Central Installation
 First, the StackRox Central Services will be added to your Kubernetes cluster. This includes the UI and Scanner. To start, add the [stackrox/helm-charts/opensource](https://github.com/stackrox/helm-charts/tree/main/opensource) repository to Helm.
 
 ```sh
@@ -105,6 +104,9 @@ To install stackrox-central-services, you will need a secure password. This pass
 ROX_ADMIN_PASSWORD="$(openssl rand -base64 20 | tr -d '/=+')"
 ```
 From here, you can install stackrox-central-services to get Central and Scanner components deployed on your cluster. Note that you need only one deployed instance of stackrox-central-services even if you plan to secure multiple clusters.
+
+If you're installing on a reasonably sized cluster, use the default installation command:
+
 ```sh
 helm upgrade --install -n stackrox --create-namespace stackrox-central-services \
   stackrox/stackrox-central-services \
@@ -112,9 +114,7 @@ helm upgrade --install -n stackrox --create-namespace stackrox-central-services 
   --set central.persistence.none="true"
 ```
 
-#### Install Central in Clusters With Limited Resources
-
-If you're deploying StackRox on nodes with limited resources such as a local development cluster, run the following command to reduce StackRox resource requirements. Keep in mind that these reduced resource settings are not suited for a production setup.
+If you're installing on a single node cluster, or the default installation results in pending resources, use the following command instead to reduce stackrox-central-services resource requirements. Keep in mind that these reduced resource settings are not suited for a production setup.
 
 ```sh
 helm upgrade --install -n stackrox --create-namespace stackrox-central-services \
@@ -141,7 +141,6 @@ helm upgrade --install -n stackrox --create-namespace stackrox-central-services 
 
 <details><summary>Install StackRox Secured Cluster Services</summary>
 
-#### Default Secured Cluster Installation
 Next, the secured cluster component will need to be deployed to collect information on from the Kubernetes nodes.
 
 Generate an init bundle containing initialization secrets. The init bundle will be saved in `stackrox-init-bundle.yaml`, and you will use it to provision secured clusters as shown below.
@@ -154,17 +153,20 @@ Set a meaningful cluster name for your secured cluster in the `CLUSTER_NAME` she
 ```sh
 CLUSTER_NAME="my-secured-cluster"
 ```
-Then install stackrox-secured-cluster-services (with the init bundle you generated earlier) using this command:
+Then install stackrox-secured-cluster-services (with the init bundle you generated earlier).
+
+When deploying stackrox-secured-cluster-services on a different cluster than the one where stackrox-central-services is deployed, you will also need to specify the endpoint (address and port number) of Central via `--set centralEndpoint=<endpoint_of_central_service>` command-line argument.
+
+If you're installing on a reasonably sized cluster, use the default installation command:
+
 ```sh
 helm upgrade --install --create-namespace -n stackrox stackrox-secured-cluster-services stackrox/stackrox-secured-cluster-services \
   -f stackrox-init-bundle.yaml \
   --set clusterName="$CLUSTER_NAME" \
   --set centralEndpoint="central.stackrox.svc:443"
 ```
-When deploying stackrox-secured-cluster-services on a different cluster than the one where stackrox-central-services is deployed, you will also need to specify the endpoint (address and port number) of Central via `--set centralEndpoint=<endpoint_of_central_service>` command-line argument.
 
-#### Install Secured Cluster with Limited Resources
-When deploying StackRox Secured Cluster Services on a small node, you can install with additional options. This should reduce stackrox-secured-cluster-services resource requirements. Keep in mind that these reduced resource settings are not recommended for a production setup.
+If you're installing on a single node cluster, or the default installation results in pending resources, use the following command instead to reduce stackrox-secured-cluster-services resource requirements. Keep in mind that these reduced resource settings are not suited for a production setup.
 
 ```sh
 helm install -n stackrox stackrox-secured-cluster-services stackrox/stackrox-secured-cluster-services \
