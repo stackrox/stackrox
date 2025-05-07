@@ -111,7 +111,7 @@ func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
 				ReportStatus: &storage.ComplianceOperatorReportStatus{},
 			}, true, nil)
 		s.resultsAggregator.EXPECT().GetReportData(gomock.Any()).Times(1).Return(&report.Results{})
-		s.formatter.EXPECT().FormatCSVReport(gomock.Any()).Times(1)
+		s.formatter.EXPECT().FormatCSVReport(gomock.Any(), gomock.Any()).Times(1)
 		s.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).Times(1).
 			DoAndReturn(func(_ any, snapshot *storage.ComplianceOperatorReportSnapshotV2) error {
 				s.Require().Equal(storage.ComplianceOperatorReportStatus_GENERATED, snapshot.GetReportStatus().GetRunState())
@@ -128,7 +128,7 @@ func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
 				ReportStatus: &storage.ComplianceOperatorReportStatus{},
 			}, true, nil)
 		s.resultsAggregator.EXPECT().GetReportData(gomock.Any()).Times(1).Return(&report.Results{})
-		s.formatter.EXPECT().FormatCSVReport(gomock.Any()).Times(1)
+		s.formatter.EXPECT().FormatCSVReport(gomock.Any(), gomock.Any()).Times(1)
 		gomock.InOrder(
 			s.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).Times(1).
 				DoAndReturn(func(_ any, snapshot *storage.ComplianceOperatorReportSnapshotV2) error {
@@ -170,7 +170,7 @@ func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
 				ReportStatus: &storage.ComplianceOperatorReportStatus{},
 			}, true, nil)
 		s.resultsAggregator.EXPECT().GetReportData(gomock.Any()).Times(1).Return(&report.Results{})
-		s.formatter.EXPECT().FormatCSVReport(gomock.Any()).Times(1)
+		s.formatter.EXPECT().FormatCSVReport(gomock.Any(), gomock.Any()).Times(1)
 		gomock.InOrder(
 			s.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).Times(1).
 				DoAndReturn(func(_ any, snapshot *storage.ComplianceOperatorReportSnapshotV2) error {
