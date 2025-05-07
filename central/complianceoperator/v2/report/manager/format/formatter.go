@@ -8,6 +8,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/complianceoperator/v2/report"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/csv"
 )
 
@@ -26,6 +27,12 @@ var (
 		"Remediation",
 		"Rationale",
 		"Instructions",
+	}
+	failedClusterCSVHeader = []string{
+		"Cluster ID",
+		"Cluster Name",
+		"Reason",
+		"Compliance Operator Version",
 	}
 )
 
@@ -53,7 +60,7 @@ func NewFormatter() *FormatterImpl {
 	}
 }
 
-func (f *FormatterImpl) FormatCSVReport(results map[string][]*report.ResultRow) (buffRet *bytes.Buffer, errRet error) {
+func (f *FormatterImpl) FormatCSVReport(results map[string][]*report.ResultRow, failedClusters map[string]*storage.ComplianceOperatorReportSnapshotV2_FailedCluster) (buffRet *bytes.Buffer, errRet error) {
 	var buf bytes.Buffer
 	zipWriter := f.newZipWriter(&buf)
 	defer func() {
@@ -64,6 +71,13 @@ func (f *FormatterImpl) FormatCSVReport(results map[string][]*report.ResultRow) 
 	}()
 	for clusterID, res := range results {
 		fileName := fmt.Sprintf("cluster_%s.csv", clusterID)
+		if failedCluster, ok := failedClusters[clusterID]; ok {
+			fileName = fmt.Sprintf("failed_%s", fileName)
+			if err := f.createFailedClusterFileInZip(zipWriter, fileName, failedCluster); err != nil {
+				return nil, errors.Wrap(err, "error creating failed cluster report")
+			}
+			continue
+		}
 		err := f.createCSVInZip(zipWriter, fileName, res)
 		if err != nil {
 			return nil, errors.Wrap(err, "error creating csv report")
@@ -99,6 +113,25 @@ func generateRecord(row *report.ResultRow) []string {
 		row.Remediation,
 		row.Rationale,
 		row.Instructions,
+	}
+}
+
+func (f *FormatterImpl) createFailedClusterFileInZip(zipWriter ZipWriter, filename string, failedCluster *storage.ComplianceOperatorReportSnapshotV2_FailedCluster) error {
+	w, err := zipWriter.Create(filename)
+	if err != nil {
+		return err
+	}
+	csvWriter := f.newCSVWriter(failedClusterCSVHeader, true)
+	csvWriter.AddValue(generateFailRecord(failedCluster))
+	return csvWriter.WriteCSV(w)
+}
+
+func generateFailRecord(failedCluster *storage.ComplianceOperatorReportSnapshotV2_FailedCluster) []string {
+	return []string{
+		failedCluster.GetClusterId(),
+		failedCluster.GetClusterName(),
+		failedCluster.GetReason(),
+		failedCluster.GetOperatorVersion(),
 	}
 }
 
