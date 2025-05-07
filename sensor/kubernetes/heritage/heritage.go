@@ -25,7 +25,7 @@ type PastSensor struct {
 }
 
 // ReverseCompare sorts so that younger entries are at the beginning of the slice
-func (a *PastSensor) ReverseCompare(b PastSensor) int {
+func (a *PastSensor) ReverseCompare(b *PastSensor) int {
 	if n := a.LatestUpdate.Compare(b.LatestUpdate); n != 0 {
 		return n * -1
 	}
@@ -70,14 +70,14 @@ type Manager struct {
 
 	// Cache the data from the ConfigMap about the past instances of Sensor
 	cachePopulated atomic.Bool
-	cache          []PastSensor
+	cache          []*PastSensor
 }
 
 func NewHeritageManager(ns string, client client.Interface) *Manager {
 	m := &Manager{
 		cachePopulated: atomic.Bool{},
 		k8sClient:      client,
-		cache:          []PastSensor{},
+		cache:          []*PastSensor{},
 		namespace:      ns,
 	}
 	return m
@@ -104,7 +104,7 @@ func (h *Manager) loadCacheNoLock(ctx context.Context) error {
 	return nil
 }
 
-func (h *Manager) GetData(ctx context.Context) []PastSensor {
+func (h *Manager) GetData(ctx context.Context) []*PastSensor {
 	h.mutex.Lock()
 	defer h.mutex.Unlock()
 	if err := h.loadCacheNoLock(ctx); err != nil {
@@ -156,7 +156,7 @@ func (h *Manager) UpsertConfigMap(ctx context.Context, now time.Time) error {
 	}
 
 	if !h.updateCacheNoLock(now) {
-		h.cache = append(h.cache, PastSensor{
+		h.cache = append(h.cache, &PastSensor{
 			ContainerID:  h.currentContainerID,
 			PodIP:        h.currentIP,
 			SensorStart:  now,
@@ -169,7 +169,7 @@ func (h *Manager) UpsertConfigMap(ctx context.Context, now time.Time) error {
 	return h.write(ctx, h.cache...)
 }
 
-func (h *Manager) write(ctx context.Context, data ...PastSensor) error {
+func (h *Manager) write(ctx context.Context, data ...*PastSensor) error {
 	cm, err := pastSensorDataToConfigMap(data...)
 	if err != nil {
 		return errors.Wrapf(err, "converting past sensor data to config map")
@@ -199,19 +199,19 @@ func (h *Manager) writeConfigMap(ctx context.Context, cm *v1.ConfigMap) error {
 	return nil
 }
 
-func (h *Manager) read(ctx context.Context) ([]PastSensor, error) {
+func (h *Manager) read(ctx context.Context) ([]*PastSensor, error) {
 	cm, err := h.k8sClient.Kubernetes().CoreV1().ConfigMaps(h.namespace).Get(ctx, cmName, metav1.GetOptions{})
 	if err != nil {
-		return []PastSensor{}, errors.Wrapf(err, "retrieving config map %s/%s", h.namespace, cmName)
+		return []*PastSensor{}, errors.Wrapf(err, "retrieving config map %s/%s", h.namespace, cmName)
 	}
 	data, err := configMapToPastSensorData(cm)
 	if err != nil {
-		return []PastSensor{}, errors.Wrapf(err, "converting config map to past sensor data")
+		return []*PastSensor{}, errors.Wrapf(err, "converting config map to past sensor data")
 	}
 	return data, nil
 }
 
-func pastSensorDataToConfigMap(data ...PastSensor) (*v1.ConfigMap, error) {
+func pastSensorDataToConfigMap(data ...*PastSensor) (*v1.ConfigMap, error) {
 	if data == nil {
 		return nil, nil
 	}
@@ -237,11 +237,11 @@ func pastSensorDataToConfigMap(data ...PastSensor) (*v1.ConfigMap, error) {
 	}, nil
 }
 
-func configMapToPastSensorData(cm *v1.ConfigMap) ([]PastSensor, error) {
+func configMapToPastSensorData(cm *v1.ConfigMap) ([]*PastSensor, error) {
 	if cm == nil {
 		return nil, nil
 	}
-	data := make([]PastSensor, 0, len(cm.Data))
+	data := make([]*PastSensor, 0, len(cm.Data))
 	for key, jsonStr := range cm.Data {
 		if key != configMapKey {
 			continue
@@ -250,12 +250,14 @@ func configMapToPastSensorData(cm *v1.ConfigMap) ([]PastSensor, error) {
 		if err := json.Unmarshal([]byte(jsonStr), &entries); err != nil {
 			return nil, errors.Wrapf(err, "unmarshalling data %v", jsonStr)
 		}
-		data = append(data, entries...)
+		for _, entry := range entries {
+			data = append(data, &entry)
+		}
 	}
 	return data, nil
 }
 
-func cleanupHeritageData(in []PastSensor, now time.Time, maxAge time.Duration, minSize, maxSize int) []PastSensor {
+func cleanupHeritageData(in []*PastSensor, now time.Time, maxAge time.Duration, minSize, maxSize int) []*PastSensor {
 	if len(in) <= minSize {
 		return in
 	}
@@ -266,7 +268,7 @@ func cleanupHeritageData(in []PastSensor, now time.Time, maxAge time.Duration, m
 	if maxSize == 0 && maxAge == 0 {
 		return in
 	}
-	in = slices.SortedFunc[PastSensor](slices.Values(in), func(a PastSensor, b PastSensor) int {
+	in = slices.SortedFunc[*PastSensor](slices.Values(in), func(a *PastSensor, b *PastSensor) int {
 		return a.ReverseCompare(b)
 	})
 	if maxSize > 0 && len(in) > maxSize {
@@ -277,8 +279,8 @@ func cleanupHeritageData(in []PastSensor, now time.Time, maxAge time.Duration, m
 	}
 	return removeOlderThan(in, now, minSize, maxAge)
 }
-func removeOlderThan(in []PastSensor, now time.Time, minSize int, maxAge time.Duration) []PastSensor {
-	if !slices.IsSortedFunc(in, func(a PastSensor, b PastSensor) int {
+func removeOlderThan(in []*PastSensor, now time.Time, minSize int, maxAge time.Duration) []*PastSensor {
+	if !slices.IsSortedFunc(in, func(a *PastSensor, b *PastSensor) int {
 		return a.ReverseCompare(b)
 	}) {
 		log.Errorf("Programmer error: cannot cleanup heritage data for unsorted slice")

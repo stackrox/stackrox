@@ -273,8 +273,18 @@ func Test_cleanupHeritageData(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := cleanupHeritageData(tt.args.in, tt.args.now, tt.args.maxAge, tt.args.minSize, tt.args.maxSize)
-			if !reflect.DeepEqual(got, tt.want) {
+			input := make([]*PastSensor, len(tt.args.in))
+			// copy to convert []PastSensor into []*PastSensor
+			for i, entry := range tt.args.in {
+				input[i] = &entry
+			}
+			got := cleanupHeritageData(input, tt.args.now, tt.args.maxAge, tt.args.minSize, tt.args.maxSize)
+			gotValues := make([]PastSensor, len(got))
+			// Copy to convert []*PastSensor into []PastSensor, for DeepEqual assertion
+			for i, entry := range got {
+				gotValues[i] = *entry
+			}
+			if !reflect.DeepEqual(gotValues, tt.want) {
 				t.Errorf("\ngot  = %v\nwant = %v", got, tt.want)
 			}
 		})
