@@ -133,6 +133,7 @@ helm upgrade --install -n stackrox --create-namespace stackrox-central-services 
   --set scanner.resources.requests.cpu=500m \
   --set scanner.resources.limits.memory=2500Mi \
   --set scanner.resources.limits.cpu=2000m \
+  --set central.adminPassword.value="${ROX_ADMIN_PASSWORD}" \
   --set central.persistence.none="true"
 ```
 
