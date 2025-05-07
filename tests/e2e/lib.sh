@@ -529,7 +529,7 @@ export_central_cert() {
     echo "ROX_SERVER_NAME:$ROX_SERVER_NAME"
     roxctl -e "$API_ENDPOINT" \
         central cert --insecure-skip-tls-verify 1>"$central_cert" \
-      || echo 'Ignore failure when ROX_SERVER_NAME is not un-set'
+        || \
     ROX_SERVER_NAME='' roxctl -e "$API_ENDPOINT" \
         central cert --insecure-skip-tls-verify 1>"$central_cert"
     set +x
@@ -581,7 +581,7 @@ setup_client_CA_auth_provider() {
     echo "ROX_SERVER_NAME:$ROX_SERVER_NAME"
     roxctl -e "$API_ENDPOINT" \
         central userpki create test-userpki -r Analyst -c "$CLIENT_CA_PATH" \
-      || echo 'Ignore failure when ROX_SERVER_NAME is not un-set'
+        || \
     ROX_SERVER_NAME='' roxctl -e "$API_ENDPOINT" \
         central userpki create test-userpki -r Analyst -c "$CLIENT_CA_PATH"
     set +x
@@ -605,7 +605,7 @@ setup_generated_certs_for_test() {
     echo "ROX_SERVER_NAME:$ROX_SERVER_NAME"
     roxctl -e "$API_ENDPOINT" \
         sensor generate-certs remote --output-dir "$dir" \
-      || echo 'Ignore failure when ROX_SERVER_NAME is not un-set'
+        || \
     ROX_SERVER_NAME='' roxctl -e "$API_ENDPOINT" \
         sensor generate-certs remote --output-dir "$dir" \
     set +x
@@ -1348,7 +1348,7 @@ restore_4_1_postgres_backup() {
     echo "ROX_SERVER_NAME:$ROX_SERVER_NAME"
     roxctl -e "$API_ENDPOINT" \
         central db restore --timeout 5m postgres_db_4_1.sql.zip \
-      || echo 'Ignore failure when ROX_SERVER_NAME is not un-set'
+        || \
     ROX_SERVER_NAME='' roxctl -e "$API_ENDPOINT" \
         central db restore --timeout 5m postgres_db_4_1.sql.zip
     set +x
@@ -1385,8 +1385,8 @@ db_backup_and_restore_test() {
     echo "API_ENDPOINT:$API_ENDPOINT"
     echo "ROX_SERVER_NAME:$ROX_SERVER_NAME"
     roxctl -e "$API_ENDPOINT" \
-        central backup --output "$output_dir" || { touch DB_TEST_FAIL \
-      && echo 'Ignore failure when ROX_SERVER_NAME is not un-set'; }
+        central backup --output "$output_dir" \
+        || \
     ROX_SERVER_NAME='' roxctl -e "$API_ENDPOINT" \
         central backup --output "$output_dir" || touch DB_TEST_FAIL
     set +x
@@ -1400,8 +1400,8 @@ db_backup_and_restore_test() {
         echo "API_ENDPOINT:$API_ENDPOINT"
         echo "ROX_SERVER_NAME:$ROX_SERVER_NAME"
         roxctl -e "$API_ENDPOINT" \
-            central db restore "$output_dir"/postgres_db_* || { touch DB_TEST_FAIL \
-          && echo 'Ignore failure when ROX_SERVER_NAME is not un-set'; }
+            central db restore "$output_dir"/postgres_db_* \
+            || \
         ROX_SERVER_NAME='' roxctl -e "$API_ENDPOINT" \
             central db restore "$output_dir"/postgres_db_* || touch DB_TEST_FAIL
         set +x

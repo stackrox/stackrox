@@ -160,7 +160,7 @@ get_central_debug_dump() {
     roxctl -e "${API_ENDPOINT}" \
         central debug dump --output-dir "${output_dir}" \
         --insecure-skip-tls-verify \
-      || echo 'Ignore failure when ROX_SERVER_NAME is not un-set'
+      || \
     ROX_SERVER_NAME="" roxctl -e "${API_ENDPOINT}" \
         central debug dump --output-dir "${output_dir}" \
         --insecure-skip-tls-verify
@@ -230,7 +230,7 @@ get_central_diagnostics() {
     roxctl -e "${API_ENDPOINT}" \
         central debug download-diagnostics --output-dir "${output_dir}" \
         --insecure-skip-tls-verify \
-      || echo 'Ignore failure when ROX_SERVER_NAME is not un-set'
+      || \
     ROX_SERVER_NAME="" roxctl -e "${API_ENDPOINT}" \
         central debug download-diagnostics --output-dir "${output_dir}" \
         --insecure-skip-tls-verify
