@@ -29,10 +29,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
-func verifyCentralCert(t *testing.T, data types.SecretDataMap) {
+func verifyCentralCert(t *testing.T, data types.SecretDataMap, verificationTime *time.Time) {
 	ca, err := certgen.LoadCAFromFileMap(data)
 	require.NoError(t, err)
-	assert.NoError(t, certgen.VerifyServiceCertAndKey(data, "", ca, storage.ServiceType_CENTRAL_SERVICE))
+	assert.NoError(t, certgen.VerifyServiceCertAndKey(data, "", ca, storage.ServiceType_CENTRAL_SERVICE,
+		verificationTime))
 
 	_, err = certgen.LoadJWTSigningKeyFromFileMap(data)
 	assert.NoError(t, err)
@@ -47,11 +48,11 @@ func verifySecuredClusterServiceCert(serviceType storage.ServiceType) secretVeri
 }
 
 func verifyServiceCert(serviceType storage.ServiceType, fileNamePrefix string) secretVerifyFunc {
-	return func(t *testing.T, data types.SecretDataMap) {
+	return func(t *testing.T, data types.SecretDataMap, atTime *time.Time) {
 		validatingCA, err := mtls.LoadCAForValidation(data["ca.pem"])
 		require.NoError(t, err)
 
-		assert.NoError(t, certgen.VerifyServiceCertAndKey(data, fileNamePrefix, validatingCA, serviceType))
+		assert.NoError(t, certgen.VerifyServiceCertAndKey(data, fileNamePrefix, validatingCA, serviceType, atTime))
 	}
 }
 
@@ -733,10 +734,12 @@ func TestGenerateCentralTLSData_Rotation(t *testing.T) {
 			}
 
 			r := &createCentralTLSExtensionRun{
-				centralObj:       &platform.Central{ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"}},
-				currentTime:      time.Now(),
-				caRotationAction: tt.action,
-				ca:               primary,
+				centralObj:         &platform.Central{ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"}},
+				currentTime:        time.Now(),
+				caRotationAction:   tt.action,
+				ca:                 primary,
+				issueCentralCertFn: certgen.IssueCentralCert,
+				issueServiceCertFn: certgen.IssueServiceCert,
 			}
 
 			oldFileMapCopy := make(types.SecretDataMap, len(oldFileMap))

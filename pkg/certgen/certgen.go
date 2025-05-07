@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
+	"time"
 
 	"github.com/cloudflare/cfssl/helpers"
 	"github.com/pkg/errors"
@@ -45,7 +46,7 @@ func IssueOtherServiceCerts(fileMap map[string][]byte, ca mtls.CA, subjs []mtls.
 // map) is a valid service certificate for the given serviceType, relative to the given CA.
 // It also verifies that the associated private key in the file map also matches the certificate.
 func VerifyServiceCertAndKey(fileMap map[string][]byte, fileNamePrefix string, ca mtls.CA, serviceType storage.ServiceType,
-	extraValidations ...func(certificate *x509.Certificate) error) error {
+	verificationTime *time.Time, extraValidations ...func(certificate *x509.Certificate) error) error {
 	certPEM := fileMap[fileNamePrefix+mtls.ServiceCertFileName]
 	if len(certPEM) == 0 {
 		return fmt.Errorf("no service certificate for %s in file map", serviceType.String())
@@ -55,7 +56,11 @@ func VerifyServiceCertAndKey(fileMap map[string][]byte, fileNamePrefix string, c
 		return errors.New("unparseable certificate in file map")
 	}
 
-	subjFromCert, err := ca.ValidateAndExtractSubject(cert)
+	var verifyOpts []mtls.VerifyCertOption
+	if verificationTime != nil {
+		verifyOpts = append(verifyOpts, mtls.WithCurrentTime(*verificationTime))
+	}
+	subjFromCert, err := ca.ValidateAndExtractSubject(cert, verifyOpts...)
 	if err != nil {
 		return errors.Wrap(err, "failed to validate certificate and extract subject")
 	}

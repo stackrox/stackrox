@@ -3,6 +3,7 @@ package extensions
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/go-logr/logr"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
@@ -19,7 +20,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
-type secretVerifyFunc func(t *testing.T, data types.SecretDataMap)
+type secretVerifyFunc func(t *testing.T, data types.SecretDataMap, atTime *time.Time)
 type statusVerifyFunc func(t *testing.T, status *platform.CentralStatus)
 
 type secretReconciliationTestCase struct {
@@ -85,7 +86,7 @@ func testSecretReconciliation(t *testing.T, runFn func(ctx context.Context, cent
 	secretsList, secretsByName := listSecrets(t, client)
 	verifyUnmanagedSecretsNotChanged(t, c.Existing, secretsByName)
 	verifyNotCreatedSecrets(t, c.ExpectedNotExistingSecrets, secretsByName)
-	verifyCreatedSecrets(t, c.ExpectedCreatedSecrets, secretsByName, central.Name)
+	verifyCreatedSecrets(t, c.ExpectedCreatedSecrets, secretsByName, central.Name, nil)
 	assert.Empty(t, secretsByName, "one or more unexpected secrets exist")
 
 	// Verify that a second invocation does not further change the cluster state
@@ -106,6 +107,48 @@ func testSecretReconciliation(t *testing.T, runFn func(ctx context.Context, cent
 	_, postDeletionSecretsByName := listSecrets(t, client)
 	verifyUnmanagedSecretsNotChanged(t, c.Existing, postDeletionSecretsByName)
 	assert.Empty(t, postDeletionSecretsByName, "newly created secrets remain after deletion")
+}
+
+func testSecretReconciliationAtTime(
+	t *testing.T,
+	central *platform.Central,
+	client ctrlClient.Client,
+	runFn func(ctx context.Context, central *platform.Central, client ctrlClient.Client, direct ctrlClient.Reader, statusUpdater func(updateStatusFunc), log logr.Logger, at time.Time) error,
+	c secretReconciliationTestCase,
+	reconcileTime time.Time,
+) {
+	statusUpdater := func(statusFunc updateStatusFunc) {
+		statusFunc(&central.Status)
+	}
+
+	// Verify that an initial invocation does not touch any of the existing unmanaged secrets, and creates
+	// the expected managed ones
+	err := runFn(context.Background(), central.DeepCopy(), client, client, statusUpdater, logr.Discard(), reconcileTime)
+	if c.ExpectedError == "" {
+		require.NoError(t, err)
+	} else {
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), c.ExpectedError)
+		return
+	}
+
+	if c.VerifyStatus != nil {
+		c.VerifyStatus(t, &central.Status)
+	}
+
+	secretsList, secretsByName := listSecrets(t, client)
+	verifyUnmanagedSecretsNotChanged(t, c.Existing, secretsByName)
+	verifyNotCreatedSecrets(t, c.ExpectedNotExistingSecrets, secretsByName)
+	verifyCreatedSecrets(t, c.ExpectedCreatedSecrets, secretsByName, central.Name, &reconcileTime)
+	assert.Empty(t, secretsByName, "one or more unexpected secrets exist")
+
+	// Verify that a second invocation does not further change the cluster state at the same point in time
+	err = runFn(context.Background(), central.DeepCopy(), client, client, statusUpdater, logr.Discard(), reconcileTime)
+	assert.NoError(t, err, "second invocation of reconciliation function failed")
+	if c.VerifyStatus != nil {
+		c.VerifyStatus(t, &central.Status)
+	}
+	verifySecretsMatch(t, client, secretsList)
 }
 
 func buildFakeCentral(c secretReconciliationTestCase) *platform.Central {
@@ -191,6 +234,7 @@ func verifyCreatedSecrets(
 	expectedCreatedSecrets map[string]secretVerifyFunc,
 	secretsByName map[string]v1.Secret,
 	ownerName string,
+	atTime *time.Time,
 ) {
 	for name, verifyFunc := range expectedCreatedSecrets {
 		found, ok := secretsByName[name]
@@ -204,7 +248,7 @@ func verifyCreatedSecrets(
 			}
 		}
 		assert.Truef(t, hasOwnerRef, "newly created secret %s is missing owner reference", name)
-		verifyFunc(t, found.Data)
+		verifyFunc(t, found.Data, atTime)
 		delete(secretsByName, name)
 	}
 }
