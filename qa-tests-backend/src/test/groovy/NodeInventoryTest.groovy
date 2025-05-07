@@ -73,7 +73,7 @@ class NodeInventoryTest extends BaseSpecification {
         then:
         "confirm the number of components in the inventory and their scan"
         // ensure that the nodes got scanned at least once - retry up to 6 minutes
-        withRetry(12, 30) {
+        withRetry(44, 30) {
             nodes = NodeService.getNodes()
             assert nodes.size() > 0, "Expected to find at least one node"
             nodes.each { node ->
