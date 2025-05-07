@@ -31,6 +31,14 @@ func reconcileScannerV4FeatureDefaults(
 	logger = logger.WithName("extension-feature-defaults") // Already using a generic log name due to the planned generalization of the feature-defaults extension.
 
 	if central.GetDeletionTimestamp() != nil {
+		// IMPORTANT NOTE:
+		//
+		// Since this extension potentially *mutates* the central spec, we need to be extra-careful to not enter any code path, which
+		// causes this modified spec to be applied to the cluster. The modified spec is only required to live in-memory until the translator has
+		// had a change to use it for deriving Helm values.
+		//
+		// Currently the only code path which might apply the spec changes to the cluster is taken at deletion time (deletion of the custom resource).
+		// Therefore the following early-return is not an optimization, but it is actually required that we don't touch the spec here.
 		logger.Info("skipping extension run due to deletionTimestamp being present on Central custom resource")
 		return nil
 	}
