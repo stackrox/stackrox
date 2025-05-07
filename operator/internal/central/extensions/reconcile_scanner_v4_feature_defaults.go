@@ -12,7 +12,6 @@ import (
 
 const (
 	annotationKey = defaulting.FeatureDefaultKeyScannerV4
-	fieldOwner    = "stackrox-operator"
 )
 
 // This extension's purpose is to
