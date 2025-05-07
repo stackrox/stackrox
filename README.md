@@ -160,7 +160,7 @@ Then install stackrox-secured-cluster-services (with the init bundle you generat
 If you're installing on a reasonably sized cluster, use the default installation command:
 
 ```sh
-helm upgrade --install --create-namespace -n stackrox stackrox-secured-cluster-services \
+helm upgrade --install -n stackrox --create-namespace stackrox-secured-cluster-services \
   stackrox/stackrox-secured-cluster-services \
   -f stackrox-init-bundle.yaml \
   --set clusterName="$CLUSTER_NAME" \
@@ -170,7 +170,7 @@ helm upgrade --install --create-namespace -n stackrox stackrox-secured-cluster-s
 If you're installing on a single node cluster, or the default installation results in pending resources, use the following command instead to reduce stackrox-secured-cluster-services resource requirements. Keep in mind that these reduced resource settings are not suited for a production setup.
 
 ```sh
-helm upgrade --install --create-namespace -n stackrox stackrox-secured-cluster-services \
+helm upgrade --install -n stackrox --create-namespace stackrox-secured-cluster-services \
   stackrox/stackrox-secured-cluster-services \
   -f stackrox-init-bundle.yaml \
   --set clusterName="$CLUSTER_NAME" \
