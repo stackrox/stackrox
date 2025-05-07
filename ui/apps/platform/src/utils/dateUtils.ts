@@ -3,23 +3,23 @@ import { distanceInWordsStrict } from 'date-fns';
 
 export type DateLike = string | number | Date;
 
-const defaultDateFormatOptions = {
+const defaultDateFormatOptions: Readonly<Intl.DateTimeFormatOptions> = {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
-} as const;
+};
 
-const defaultTimeFormatOptions = {
+const defaultTimeFormatOptions: Readonly<Intl.DateTimeFormatOptions> = {
     hour: 'numeric',
     minute: 'numeric',
     second: 'numeric',
-} as const;
+};
 
-const defaultDateTimeFormatOptions = {
+const defaultDateTimeFormatOptions: Readonly<Intl.DateTimeFormatOptions> = {
     ...defaultDateFormatOptions,
     ...defaultTimeFormatOptions,
     timeZoneName: 'short',
-} as const;
+};
 
 function convertDateLikeToDate(dateLike: DateLike): Date {
     const dateOrTimestamp = typeof dateLike === 'string' ? Date.parse(dateLike) : dateLike;
@@ -31,14 +31,15 @@ function formatLocalizedDateTime(
     locales: Intl.LocalesArgument = undefined,
     dateTimeFormatOptions: Intl.DateTimeFormatOptions = {}
 ): string {
-    const date = convertDateLikeToDate(dateLike);
-    if (date.toString() === 'Invalid Date') {
-        Raven.captureException(new Error(`Invalid date: ${String(dateLike)}`));
+    try {
+        const date = convertDateLikeToDate(dateLike);
+        return new Intl.DateTimeFormat(locales, {
+            ...dateTimeFormatOptions,
+        }).format(date);
+    } catch (e: unknown) {
+        Raven.captureException(e);
         return String(dateLike);
     }
-    return new Intl.DateTimeFormat(locales, {
-        ...dateTimeFormatOptions,
-    }).format(date);
 }
 
 /**
@@ -47,12 +48,13 @@ function formatLocalizedDateTime(
  * @returns An ISO 8601 string representation of the date
  */
 export function displayDateTimeAsISO8601(dateLike: DateLike) {
-    const date = convertDateLikeToDate(dateLike);
-    if (date.toString() === 'Invalid Date') {
-        Raven.captureException(new Error(`Invalid date: ${String(dateLike)}`));
+    try {
+        const date = convertDateLikeToDate(dateLike);
+        return date.toISOString();
+    } catch (e: unknown) {
+        Raven.captureException(e);
         return String(dateLike);
     }
-    return date.toISOString();
 }
 
 /**

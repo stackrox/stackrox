@@ -29,36 +29,36 @@ describe('dateUtils', () => {
 
 describe('displayDateTimeAsISO8601', () => {
     it('should return compliant ISO string with Z', () => {
-        const date = new Date('2024-01-01T12:34:56Z');
+        const date = new Date('2024-01-04T12:34:56Z');
         const result = displayDateTimeAsISO8601(date);
-        expect(result).toBe('2024-01-01T12:34:56.000Z');
+        expect(result).toBe('2024-01-04T12:34:56.000Z');
     });
 });
 
 describe('getDateTime', () => {
     it('should format a datetime string with timezone', () => {
-        const result = getDateTime(new Date('2024-01-01T12:34:56Z'), 'en-US');
-        expect(result).toBe('01/01/2024, 12:34:56 PM UTC');
+        const result = getDateTime(new Date('2024-01-04T12:34:56Z'), 'en-US');
+        expect(result).toBe('01/04/2024, 12:34:56 PM UTC');
     });
 });
 
 describe('getDate', () => {
     it('should format only the date portion', () => {
-        const result = getDate(new Date('2024-01-01T00:00:00Z'), 'en-US');
-        expect(result).toBe('01/01/2024');
+        const result = getDate(new Date('2024-01-04T00:00:00Z'), 'en-US');
+        expect(result).toBe('01/04/2024');
     });
 });
 
 describe('getTime', () => {
     it('should format only the time portion', () => {
-        const result = getTime(new Date('2024-01-01T13:45:30Z'), 'en-US');
+        const result = getTime(new Date('2024-01-04T13:45:30Z'), 'en-US');
         expect(result).toBe('1:45:30 PM');
     });
 });
 
 describe('getTimeHoursMinutes', () => {
     it('should return only hours and minutes', () => {
-        const result = getTimeHoursMinutes(new Date('2024-01-01T08:22:00Z'), 'en-US');
+        const result = getTimeHoursMinutes(new Date('2024-01-04T08:22:59Z'), 'en-US');
         expect(result).toBe('8:22 AM');
     });
 });
