@@ -47,7 +47,12 @@ main() {
 
     mkdir -p "${dest}"
     set -x
-    set | grep '^ROX' | true
+    echo "API_ENDPOINT:$API_ENDPOINT"
+    echo "ROX_SERVER_NAME:$ROX_SERVER_NAME"
+    roxctl -e "${api_endpoint}" \
+      central backup --output "${dest}" \
+      --insecure-skip-tls-verify \
+      || echo 'Ignore failure when ROX_SERVER_NAME is not un-set'
     echo 'central backup without ROX_SERVER_NAME'
     ROX_SERVER_NAME="" roxctl -e "${api_endpoint}" \
       central backup --output "${dest}" \

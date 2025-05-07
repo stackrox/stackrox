@@ -622,8 +622,14 @@ function export_central_cert {
     echo "Storing central certificate in ${central_cert}"
 
     export LOGLEVEL=debug
+    set -x
+    echo "API_ENDPOINT:${API_ENDPOINT:-}"
+    echo "ROX_SERVER_NAME:${ROX_SERVER_NAME:-}"
     roxctl -e "$API_ENDPOINT" \
+        central cert --insecure-skip-tls-verify 1>"$central_cert" \
+      || ROX_SERVER_NAME='' roxctl -e "$API_ENDPOINT" \
         central cert --insecure-skip-tls-verify 1>"$central_cert"
+    set +x
 
     ROX_CA_CERT_FILE="$central_cert"
     export ROX_CA_CERT_FILE
