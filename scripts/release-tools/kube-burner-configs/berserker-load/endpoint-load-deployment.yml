@@ -35,6 +35,9 @@ spec:
         - containerPort: 8443
           protocol: TCP
         name: berserker
+        env:
+        - name: RUST_LOG
+          value: error
       volumes:
       - name: config
         configMap:
