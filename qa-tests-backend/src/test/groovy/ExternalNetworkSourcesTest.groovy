@@ -192,7 +192,7 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
 
         Set<String> potentiallyConflictingCIDRs = [CF_CIDR_30, CF_CIDR_31, "1.1.1.0/30", "1.1.1.0/31"] as Set<String>
         Set<String> allCIDRs = getAllCIDRs()
-        Set<String> similarCIDRs = allCIDRs.findAll{it.startsWith("1.1.")}
+        Set<String> similarCIDRs = allCIDRs.findAll{ it.startsWith("1.1.")}
         Sets.SetView<String> conflictingCIDRs = Sets.intersection(potentiallyConflictingCIDRs, similarCIDRs)
         if (conflictingCIDRs.isEmpty()) {
             log.debug("Found no CIDRs conflicting with ${potentiallyConflictingCIDRs}." +
@@ -308,11 +308,9 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
             .build()
         def response = NetworkGraphService.getNetworkGraphClient().getExternalNetworkEntities(request)
 
-        return response.getEntitiesList().findAll {
+        return response.getEntitiesList().findAll({
             it.getInfo().hasExternalSource() && it.getInfo().getExternalSource().cidr.startsWith(prefix)
-        }.collect {
-            it.getInfo()
-        } as Set
+        })*.getInfo() as Set
     }
 
     private static createNetworkEntityExternalSource(String name, String cidr) {
