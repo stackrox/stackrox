@@ -228,6 +228,8 @@ func purgeActiveEndpointsNoLock(maxAge time.Duration,
 	for endpoint, age := range endpoints {
 		// Remove if the endpoint is not in the store (also not in history)
 		if len(store.LookupByEndpoint(endpoint.endpoint)) == 0 {
+			log.Debugf("Could not find endpoint: %v", endpoint.endpoint)
+			store.DumpEndpointStore()
 			delete(endpoints, endpoint)
 			numPurged++
 			flowMetrics.PurgerEvents.WithLabelValues("activeEndpoint", "endpoint-gone").Inc()
