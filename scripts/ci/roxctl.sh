@@ -27,7 +27,7 @@ main() {
     fi
     api_endpoint="${api_hostname}:${api_port}"
 
-    roxctl -e "${api_endpoint}" --insecure-skip-tls-verify "$@"
+    roxctl -s "" -e "${api_endpoint}" --insecure-skip-tls-verify "$@"
 }
 
 main "$@"
