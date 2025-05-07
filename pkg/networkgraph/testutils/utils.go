@@ -18,7 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-func AnyFlow(toID string, toType storage.NetworkEntityInfo_Type, fromID string, fromType storage.NetworkEntityInfo_Type) *storage.NetworkFlow {
+func AnyFlow(toID string, toType storage.NetworkEntityInfo_Type, fromID string, fromType storage.NetworkEntityInfo_Type, clusterId string) *storage.NetworkFlow {
 	return &storage.NetworkFlow{
 		Props: &storage.NetworkFlowProperties{
 			SrcEntity: &storage.NetworkEntityInfo{
@@ -30,15 +30,16 @@ func AnyFlow(toID string, toType storage.NetworkEntityInfo_Type, fromID string, 
 				Id:   toID,
 			},
 		},
+		ClusterId: clusterId,
 	}
 }
 
-func ExtFlow(toID, fromID string) *storage.NetworkFlow {
-	return AnyFlow(toID, storage.NetworkEntityInfo_EXTERNAL_SOURCE, fromID, storage.NetworkEntityInfo_DEPLOYMENT)
+func ExtFlow(toID, fromID string, clusterId string) *storage.NetworkFlow {
+	return AnyFlow(toID, storage.NetworkEntityInfo_EXTERNAL_SOURCE, fromID, storage.NetworkEntityInfo_DEPLOYMENT, clusterId)
 }
 
 func DepFlow(toID, fromID string) *storage.NetworkFlow {
-	return AnyFlow(toID, storage.NetworkEntityInfo_DEPLOYMENT, fromID, storage.NetworkEntityInfo_DEPLOYMENT)
+	return AnyFlow(toID, storage.NetworkEntityInfo_DEPLOYMENT, fromID, storage.NetworkEntityInfo_DEPLOYMENT, "")
 }
 
 func ListenFlow(depID string, port uint32) *storage.NetworkFlow {
