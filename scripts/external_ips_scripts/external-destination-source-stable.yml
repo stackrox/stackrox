@@ -36,7 +36,7 @@ spec:
         - name: qa
       containers:
       - args:
-        - while sleep 30; do dig @8.8.8.8 google.com; done
+        - while sleep 30; do nc -zv 8.8.8.8 53; done
         command:
         - /bin/sh
         - -c
