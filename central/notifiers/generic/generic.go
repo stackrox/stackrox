@@ -184,6 +184,7 @@ func (g *generic) Test(ctx context.Context) *notifiers.NotifierError {
 
 func (g *generic) constructJSON(message protocompat.Message, msgKey string) (io.Reader, error) {
 	msgStr, err := jsonutil.MarshalToCompactString(message)
+	fmt.Println("Message JSON:", msgStr)
 	if err != nil {
 		return nil, err
 	}
