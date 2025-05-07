@@ -173,7 +173,7 @@ func validateConfigAndPopulateMissingDefaults(datastore DataStore) {
 		needsUpsert = true
 	}
 
-	if features.CustomizablePlatformComponents.Enabled() && populateDefaultSystemRulesIfMissing(config) {
+	if features.CustomizablePlatformComponents.Enabled() && populateDefaultSystemRuleIfMissing(config) {
 		needsUpsert = true
 	}
 
