@@ -8,7 +8,7 @@ pg_rhel_major=8
 
 arch="$(uname -m)"
 dnf_list_args=()
-if [[ "$arch" == "arm64" ]]; then
+if [[ "$arch" == "arm64" || "$arch" == "aarch64" ]]; then
   arch="aarch64"
   # Workaround for ARM64 build failures due to "Error: Failed to download metadata for repo 'pgdg15': repomd.xml GPG signature verification error: Bad GPG signature"
   dnf_list_args=('--nogpgcheck')
