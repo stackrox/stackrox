@@ -17,6 +17,7 @@ import spock.lang.Tag
 import spock.lang.Unroll
 
 @Unroll
+@Tag("PZDebug")
 @Tag("BAT")
 //ROX-20525 Disable test for ppc64le and s390x until Fix is availble
 //@Tag("PZ")
