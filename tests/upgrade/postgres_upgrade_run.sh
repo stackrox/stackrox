@@ -72,6 +72,10 @@ test_upgrade() {
     remove_existing_stackrox_resources
 
     test_restore_pg_dump_after_upgrade "$log_output_dir"
+
+    remove_existing_stackrox_resources
+
+    test_run_as_old_after_upgrade "$log_output_dir"
 }
 
 test_upgrade_path() {
@@ -220,8 +224,8 @@ test_not_enough_disk_space() {
     restore_4_1_backup
     wait_for_api
 
-    # Run with some scale to have data populated to migrate
-    deploy_scaled_workload
+    # Smaller load to fit into 1Gi
+    deploy_scaled_workload 10
 
     # Get the API_TOKEN for the upgrades
     export API_TOKEN="$(roxcurl /v1/apitokens/generate -d '{"name": "helm-upgrade-test", "role": "Admin"}' | jq -r '.token')"
@@ -343,6 +347,84 @@ test_restore_pg_dump_after_upgrade() {
     collect_and_check_stackrox_logs "$log_output_dir" "restore_01_final"
 }
 
+# Make sure we can restore from a physical backup and run with old binaries
+# after upgrade if needed.
+test_run_as_old_after_upgrade() {
+    info "Testing running with old binaries after upgrade"
+
+    if [[ "$#" -ne 1 ]]; then
+        die "missing args. usage: test_upgrade_paths <log-output-dir>"
+    fi
+
+    local log_output_dir="$1"
+
+    FORCE_ROLLBACK_VERSION="4.7.2"
+
+    cd "$REPO_FOR_TIME_TRAVEL"
+    git checkout "$EARLIER_SHA"
+
+    # There is an issue on gke v1.24 for these older releases where we may have a
+    # timeout trying to get the metadata for the cloud provider.  Rather than extend
+    # the general wait_for_api time period and potentially hide issues from other
+    # tests we will extend the wait period for these tests.
+    export MAX_WAIT_SECONDS=600
+
+    ########################################################################################
+    # Deploy older central using small PVC to face disk space shortage                     #
+    ########################################################################################
+    deploy_earlier_postgres_central
+    wait_for_api
+    setup_client_TLS_certs
+    export_central_cert
+
+    # It's damn fiddly, restore is needed because later test will search for a
+    # default secured cluster, created by it :(
+    restore_4_1_backup
+    wait_for_api
+
+    # Run with some scale to have data populated to migrate
+    deploy_scaled_workload
+
+    # Get the API_TOKEN for the upgrades
+    export API_TOKEN="$(roxcurl /v1/apitokens/generate -d '{"name": "helm-upgrade-test", "role": "Admin"}' | jq -r '.token')"
+
+    cd "$TEST_ROOT"
+
+    # This test does a lot of upgrades and bounces.  If things take a little longer to bounce we can get entries in
+    # logs indicating communication problems.  Those need to be allowed in the case of this test ONLY.
+    cp scripts/ci/logcheck/allowlist-patterns /tmp/allowlist-patterns
+    echo "# postgres was bounced, may see some connection errors" >> /tmp/allowlist-patterns
+    echo "FATAL: terminating connection due to administrator command \(SQLSTATE 57P01\)" >> /tmp/allowlist-patterns
+    echo "Unable to connect to Sensor at" >> /tmp/allowlist-patterns
+    echo "No suitable kernel object downloaded for kernel" >> /tmp/allowlist-patterns
+    echo "Unexpected HTTP request failure" >> /tmp/allowlist-patterns
+    echo "UNEXPECTED:  Unknown message type" >> /tmp/allowlist-patterns
+    # bouncing the database can result in this error
+    echo "FATAL: the database system is shutting down" >> /tmp/allowlist-patterns
+    # Using ci_export so the post tests have this as well
+    ci_export ALLOWLIST_FILE "/tmp/allowlist-patterns"
+
+    # Add some Postgres Access Scopes.  These should not survive a rollback.
+    createPostgresScopes
+    checkForPostgresAccessScopes
+
+    touch "${UPGRADE_PROGRESS_POSTGRES_EARLIER_CENTRAL}"
+
+    # Upgrade the image to PG15
+    info "Upgrade ${EARLIER_TAG} => ${CURRENT_TAG}"
+    kubectl -n stackrox set image \
+        deploy/central "*=${REGISTRY}/main:${CURRENT_TAG}"
+    kubectl -n stackrox set image \
+        deploy/central-db "*=${REGISTRY}/central-db:${CURRENT_TAG}"
+    wait_for_api
+
+    kubectl -n stackrox set env deploy/central-db RESTORE_BACKUP=true
+    kubectl -n stackrox set env deploy/central-db FORCE_OLD_BINARIES=true
+    wait_for_api
+
+    collect_and_check_stackrox_logs "$log_output_dir" "old_binaries_01_final"
+}
+
 force_rollback_to_previous_postgres() {
     info "Forcing a rollback to $FORCE_ROLLBACK_VERSION"
 
@@ -376,6 +458,7 @@ force_rollback_to_previous_postgres() {
 
 deploy_scaled_workload() {
     info "Deploying a scaled workload"
+    WAIT_ITERATIONS="${1:-150}"
 
     PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl version
 
@@ -401,7 +484,7 @@ deploy_scaled_workload() {
 
     info "Sleep for a bit to let the scale build"
     # shellcheck disable=SC2034
-    for i in $(seq 1 150); do
+    for i in $(seq 1 $WAIT_ITERATIONS); do
         echo -n .
         sleep 5
     done
