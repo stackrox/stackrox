@@ -82,6 +82,13 @@ var (
 		// Catchall
 		regexp.MustCompile(`[A-Z]+-\d{4}[-:]\d+`),
 	}
+
+	// vexUpdater is the name of the Red Hat VEX updater used by Claircore.
+	vexUpdater = (*vex.Updater)(nil).Name()
+	// rhccRepoName is the name of the "Gold Repository".
+	rhccRepoName = rhcc.GoldRepo.Name
+	// rhccRepoURI is the URI of the "Gold Repository".
+	rhccRepoURI = rhcc.GoldRepo.URI
 )
 
 // ToProtoV4IndexReport maps claircore.IndexReport to v4.IndexReport.
@@ -984,15 +991,6 @@ func filterVulnerabilities(report *claircore.VulnerabilityReport) {
 		}
 	}
 }
-
-var (
-	// vexUpdater is the name of the Red Hat VEX updater used by Claircore.
-	vexUpdater = (*vex.Updater)(nil).Name()
-	// rhccRepoName is the name of the "Gold Repository".
-	rhccRepoName = rhcc.GoldRepo.Name
-	// rhccRepoURI is the URI of the "Gold Repository".
-	rhccRepoURI = rhcc.GoldRepo.URI
-)
 
 // rhccLayers returns a set of SHAs for the layers in official Red Hat images.
 // TODO(ROX-29158): account for images built via Konflux, as they do not contain the same identifiers
