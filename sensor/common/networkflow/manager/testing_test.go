@@ -63,6 +63,7 @@ func expectationsEndpointPurger(mockEntityStore *mocksManager.MockEntityStore, i
 			return []clusterentities.LookupResult{}
 		})
 	mockEntityStore.EXPECT().RegisterPublicIPsListener(gomock.Any()).AnyTimes()
+	mockEntityStore.EXPECT().DumpEndpointStore().AnyTimes()
 
 }
 
