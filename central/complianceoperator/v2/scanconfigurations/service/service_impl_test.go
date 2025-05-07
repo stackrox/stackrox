@@ -11,6 +11,7 @@ import (
 	benchmarkMocks "github.com/stackrox/rox/central/complianceoperator/v2/benchmarks/datastore/mocks"
 	managerMocks "github.com/stackrox/rox/central/complianceoperator/v2/compliancemanager/mocks"
 	profileDatastore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore/mocks"
+	"github.com/stackrox/rox/central/complianceoperator/v2/report"
 	snapshotMocks "github.com/stackrox/rox/central/complianceoperator/v2/report/datastore/mocks"
 	reportManagerMocks "github.com/stackrox/rox/central/complianceoperator/v2/report/manager/mocks"
 	scanConfigMocks "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore/mocks"
@@ -730,6 +731,14 @@ func (s *ComplianceScanConfigServiceTestSuite) TestGetReportHistory() {
 					StartedAt:                now,
 					CompletedAt:              now,
 				},
+				FailedClusters: []*storage.ComplianceOperatorReportSnapshotV2_FailedCluster{
+					{
+						ClusterId:       "cluster-1",
+						ClusterName:     "cluster-1",
+						OperatorVersion: "v1.6.0",
+						Reasons:         []string{report.INTERNAL_ERROR},
+					},
+				},
 			},
 		}
 		sc := &storage.ComplianceOperatorScanConfigurationV2{
@@ -754,6 +763,14 @@ func (s *ComplianceScanConfigServiceTestSuite) TestGetReportHistory() {
 						ReportNotificationMethod: v2.NotificationMethod_EMAIL,
 						StartedAt:                now,
 						CompletedAt:              now,
+						FailedClusters: []*v2.FailedCluster{
+							{
+								ClusterId:       "cluster-1",
+								ClusterName:     "cluster-1",
+								OperatorVersion: "v1.6.0",
+								Reason:          report.INTERNAL_ERROR,
+							},
+						},
 					},
 					ReportData: &v2.ComplianceScanConfigurationStatus{
 						Id:       scanConfigID,
