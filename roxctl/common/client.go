@@ -81,13 +81,17 @@ func GetRoxctlHTTPClient(config *HttpClientConfig) (RoxctlHTTPClient, error) {
 	retryClient.CheckRetry = func(ctx context.Context, resp *http.Response, err error) (bool, error) {
 		retry, err := retryablehttp.ErrorPropagatedRetryPolicy(ctx, resp, err)
 		if !retry || status.Code(err) == codes.PermissionDenied {
-			return false, err //nolint:wrapcheck
+			return false, nil
 		}
 		if err != nil {
 			config.Logger.WarnfLn(err.Error())
 		}
-		return true, err //nolint:wrapcheck
+		return true, nil
 	}
+	// Allows callers to extract the error message from response body.
+	// Without this only a generic message "request failed after X attempts"
+	// is surfaced.
+	retryClient.ErrorHandler = retryablehttp.PassthroughErrorHandler
 	retryClient.RetryMax = config.RetryCount
 	retryClient.HTTPClient.Transport = transport
 	retryClient.HTTPClient.Timeout = config.Timeout
