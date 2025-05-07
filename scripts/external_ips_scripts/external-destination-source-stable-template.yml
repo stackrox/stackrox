@@ -5,9 +5,9 @@ metadata:
     deployment.kubernetes.io/revision: "1"
   generation: 1
   labels:
-    app: external-destination-source-stable
-    name: external-destination-source-stable
-  name: external-destination-source-stable
+    app: external-destination-source-${NAME}
+    name: external-destination-source-${NAME}
+  name: external-destination-source-${NAME}
   namespace: qa
 spec:
   minReadySeconds: 15
@@ -16,8 +16,8 @@ spec:
   revisionHistoryLimit: 10
   selector:
     matchLabels:
-      app: external-destination-source-stable
-      name: external-destination-source-stable
+      app: external-destination-source-${NAME}
+      name: external-destination-source-${NAME}
   strategy:
     rollingUpdate:
       maxSurge: 25%
@@ -26,17 +26,17 @@ spec:
   template:
     metadata:
       labels:
-        app: external-destination-source-stable
-        deployment: external-destination-source-stable
-        name: external-destination-source-stable
-      name: external-destination-source-stable
+        app: external-destination-source-${NAME}
+        deployment: external-destination-source-${NAME}
+        name: external-destination-source-${NAME}
+      name: external-destination-source-${NAME}
       namespace: qa
     spec:
       imagePullSecrets:
         - name: qa
       containers:
       - args:
-        - while sleep 30; do nc -zv 8.8.8.8 53; done
+        - while sleep 30; do nc -zv "${TARGET_IP}" "${PORT}"; done
         command:
         - /bin/sh
         - -c
