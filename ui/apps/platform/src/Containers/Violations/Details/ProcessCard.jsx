@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
-import { getTime, format } from 'date-fns';
+import { getTime } from 'date-fns';
 import {
     Card,
     CardHeader,
@@ -10,7 +10,7 @@ import {
 } from '@patternfly/react-core';
 
 import DescriptionListItem from 'Components/DescriptionListItem';
-import dateTimeFormat from 'constants/dateTimeFormat';
+import { getDateTime } from 'utils/dateUtils';
 import ProcessCardContent from './ProcessCardContent';
 
 function ProcessCard({ processes, message }) {
@@ -49,11 +49,11 @@ function ProcessCard({ processes, message }) {
                     >
                         <DescriptionListItem
                             term="First occurrence"
-                            desc={format(firstOccurrenceTimestamp, dateTimeFormat)}
+                            desc={getDateTime(firstOccurrenceTimestamp)}
                         />
                         <DescriptionListItem
                             term="Last occurrence"
-                            desc={format(lastOccurrenceTimestamp, dateTimeFormat)}
+                            desc={getDateTime(lastOccurrenceTimestamp)}
                         />
                     </DescriptionList>
                     {processes.map((process) => (

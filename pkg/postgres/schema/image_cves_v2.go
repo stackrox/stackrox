@@ -68,7 +68,6 @@ type ImageCvesV2 struct {
 	CveBaseInfoPublishedOn         *time.Time                    `gorm:"column:cvebaseinfo_publishedon;type:timestamp"`
 	CveBaseInfoCreatedAt           *time.Time                    `gorm:"column:cvebaseinfo_createdat;type:timestamp"`
 	CveBaseInfoEpssEpssProbability float32                       `gorm:"column:cvebaseinfo_epss_epssprobability;type:numeric"`
-	OperatingSystem                string                        `gorm:"column:operatingsystem;type:varchar"`
 	Cvss                           float32                       `gorm:"column:cvss;type:numeric"`
 	Severity                       storage.VulnerabilitySeverity `gorm:"column:severity;type:integer;index:imagecvesv2_severity,type:btree"`
 	ImpactScore                    float32                       `gorm:"column:impactscore;type:numeric"`

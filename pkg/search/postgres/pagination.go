@@ -76,6 +76,9 @@ func populatePagination(querySoFar *query, pagination *v1.QueryPagination, schem
 			case searchPkg.MaxDerivationType:
 				selectField = selectQueryField(so.GetField(), dbField, false, aggregatefunc.Max, "")
 				descending = so.GetReversed()
+			case searchPkg.MinDerivationType:
+				selectField = selectQueryField(so.GetField(), dbField, false, aggregatefunc.Min, "")
+				descending = so.GetReversed()
 			case searchPkg.CustomFieldType:
 				aliasString := strings.Join(strings.Fields(so.GetField()), "_")
 				if _, exists := selectMap[aliasString]; !exists {

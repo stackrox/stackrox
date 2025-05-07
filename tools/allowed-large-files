@@ -1,4 +1,5 @@
 **/go.sum
+**/zz_generated.deepcopy.go
 CHANGELOG.md
 central/alert/datastore/internal/store/postgres/store.go
 central/cluster/datastore/datastore_impl_test.go
@@ -42,6 +43,7 @@ qa-tests-backend/src/main/**/*.groovy
 qa-tests-backend/src/test/**/*.groovy
 qa-tests-backend/test-images/registry-image/tomcat-files/web.xml
 roxctl/helm/derivelocalvalues/testdata/k8s-resources/*.yaml
+rpms.lock.yaml
 scale/image/fixtures/scrape.json
 scanner/cmd/scannerctl/fixtures/images.json
 scanner/e2etests/testdata/image_tests.json

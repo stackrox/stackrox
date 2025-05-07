@@ -14,6 +14,7 @@ import {
     VisualizationSurface,
 } from '@patternfly/react-topology';
 
+import { TimeWindow } from 'constants/timeWindows';
 import { networkBasePath } from 'routePaths';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import usePermissions from 'hooks/usePermissions';
@@ -75,6 +76,7 @@ export type TopologyComponentProps = {
     setNetworkPolicyModification: SetNetworkPolicyModification;
     edgeState: EdgeState;
     scopeHierarchy: NetworkScopeHierarchy;
+    timeWindow: TimeWindow;
 };
 
 const TopologyComponent = ({
@@ -86,6 +88,7 @@ const TopologyComponent = ({
     setNetworkPolicyModification,
     edgeState,
     scopeHierarchy,
+    timeWindow,
 }: TopologyComponentProps) => {
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isNetworkGraphExternalIpsEnabled = isFeatureFlagEnabled('ROX_NETWORK_GRAPH_EXTERNAL_IPS');
@@ -301,6 +304,7 @@ const TopologyComponent = ({
                                 selectedExternalIP={selectedExternalIP}
                                 onNodeSelect={onNodeSelect}
                                 onExternalIPSelect={onExternalIPSelect}
+                                timeWindow={timeWindow}
                                 urlPagination={urlPagination}
                                 urlSearchFiltering={urlSearchFiltering}
                             />

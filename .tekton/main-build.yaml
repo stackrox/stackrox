@@ -43,14 +43,14 @@ spec:
     value: '{{revision}}'
   - name: rebuild
     value: 'true'
-  # TODO(ROX-20234): Enable hermetic builds
-  # - name: hermetic
-  #   value: "true"
+  - name: hermetic
+    value: "true"
   - name: prefetch-input
     value: |
       [
         { "type": "npm", "path": "ui/apps/platform" },
-        { "type": "gomod", "path": "." }
+        { "type": "gomod", "path": "." },
+        { "type": "rpm", "path": "." }
       ]
   - name: build-source-image
     value: 'true'

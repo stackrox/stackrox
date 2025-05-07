@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { CLUSTER_VERSION_QUERY as QUERY } from 'queries/cluster';
 import { clusterVersionLabels } from 'messages/common';
-import { format as dateFormat } from 'date-fns';
+import { getDate } from 'utils/dateUtils';
 import NoResultsMessage from 'Components/NoResultsMessage';
 
 import Widget from 'Components/Widget';
@@ -42,7 +42,7 @@ const ClusterVersion = ({ clusterId }) => {
                                 </div>
                                 <div>
                                     Build date:&nbsp;
-                                    {dateFormat(orchestratorMetadata.buildDate, 'MMMM DD, YYYY')}
+                                    {getDate(orchestratorMetadata.buildDate)}
                                 </div>
                             </div>
                         );

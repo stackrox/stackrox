@@ -1,8 +1,6 @@
 import React, { useContext } from 'react';
-import { format } from 'date-fns';
 import { gql } from '@apollo/client';
 
-import dateTimeFormat from 'constants/dateTimeFormat';
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
 import CollapsibleSection from 'Components/CollapsibleSection';
@@ -15,6 +13,7 @@ import isGQLLoading from 'utils/gqlLoading';
 import queryService from 'utils/queryService';
 import searchContext from 'Containers/searchContext';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
+import { getDateTime } from 'utils/dateUtils';
 import getSubListFromEntity from 'utils/getSubListFromEntity';
 import { getConfigMgmtCountQuery } from 'Containers/ConfigManagement/ConfigMgmt.utils';
 import EntityList from '../List/EntityList';
@@ -135,7 +134,7 @@ const ConfigManagementEntityRole = ({
                     { key: 'Role Type', value: type },
                     {
                         key: 'Created',
-                        value: createdAt ? format(createdAt, dateTimeFormat) : 'N/A',
+                        value: createdAt ? getDateTime(createdAt) : 'N/A',
                     },
                 ];
 

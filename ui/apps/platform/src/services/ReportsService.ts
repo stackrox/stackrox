@@ -1,13 +1,14 @@
 import queryString from 'qs';
 
 import {
+    OnDemandReportSnapshot,
     ReportConfiguration,
     ReportHistoryResponse,
     ReportSnapshot,
     RunReportResponse,
 } from 'services/ReportsService.types';
-import { ApiSortOption } from 'types/search';
-import { getPaginationParams } from 'utils/searchUtils';
+import { ApiSortOption, SearchFilter } from 'types/search';
+import { getListQueryParams, getPaginationParams } from 'utils/searchUtils';
 import { ReportNotificationMethod, ReportStatus } from 'types/reportJob';
 import axios from './instance';
 import { Empty } from './types';
@@ -83,7 +84,7 @@ export function fetchReportLastRunStatus(id: string): Promise<ReportStatus | nul
         });
 }
 
-export type FetchReportHistoryServiceProps = {
+export type FetchReportHistoryServiceParams = {
     id: string;
     query: string;
     page: number;
@@ -99,7 +100,7 @@ export function fetchReportHistory({
     perPage,
     sortOption,
     showMyHistory,
-}: FetchReportHistoryServiceProps): Promise<ReportSnapshot[]> {
+}: FetchReportHistoryServiceParams): Promise<ReportSnapshot[]> {
     const params = queryString.stringify(
         {
             reportParamQuery: {
@@ -116,6 +117,59 @@ export function fetchReportHistory({
         .then((response) => {
             return response.data?.reportSnapshots ?? [];
         });
+}
+
+export type FetchOnDemandReportHistoryServiceParams = {
+    searchFilter: SearchFilter;
+    page: number;
+    perPage: number;
+    sortOption: ApiSortOption;
+    showMyHistory: boolean;
+};
+
+// @TODO: Pass API query information and set up API call to endpoint
+export function fetchOnDemandReportHistory({
+    searchFilter,
+    page,
+    perPage,
+    sortOption,
+    // @TODO: Use the showMyHistory value to determine which endpoint to use
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    showMyHistory,
+}: FetchOnDemandReportHistoryServiceParams): Promise<OnDemandReportSnapshot[]> {
+    // @TODO: Use the params in the future API call
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const params = getListQueryParams({ searchFilter, sortOption, page, perPage });
+
+    const mockOnDemandReportJobs: OnDemandReportSnapshot[] = [
+        {
+            reportJobId: '3dde30b0-179b-49b4-922d-0d05606c21fb',
+            isOnDemand: true,
+            name: '',
+            requestName: 'SC-040925-01',
+            areaOfConcern: 'User workloads',
+            vulnReportFilters: {
+                imageTypes: ['DEPLOYED'],
+                includeNvdCvss: false,
+                includeEpssProbability: false,
+                query: '',
+            },
+            reportStatus: {
+                runState: 'GENERATED',
+                completedAt: '2024-11-13T18:45:32.997367670Z',
+                errorMsg: '',
+                reportRequestType: 'ON_DEMAND',
+                reportNotificationMethod: 'DOWNLOAD',
+            },
+            user: {
+                id: 'sso:4df1b98c-24ed-4073-a9ad-356aec6bb62d:admin',
+                name: 'admin',
+            },
+            isDownloadAvailable: true,
+        },
+    ];
+
+    return Promise.resolve(mockOnDemandReportJobs);
 }
 
 export function createReportConfiguration(

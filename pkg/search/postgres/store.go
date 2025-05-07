@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -88,7 +89,6 @@ type genericStore[T any, PT ClonedUnmarshaler[T]] struct {
 	copyFromObj                      copier[T, PT]
 	setAcquireDBConnDuration         durationTimeSetter
 	setPostgresOperationDurationTime durationTimeSetter
-	permissionChecker                walker.PermissionChecker
 	upsertAllowed                    upsertChecker[T, PT]
 	targetResource                   permissions.ResourceMetadata
 }
@@ -129,9 +129,9 @@ func NewGenericStore[T any, PT ClonedUnmarshaler[T]](
 	}
 }
 
-// NewGenericStoreWithPermissionChecker returns new subStore implementation for given resource.
+// NewGloballyScopedGenericStore returns new subStore implementation for given resource.
 // subStore implements subset of Store operations.
-func NewGenericStoreWithPermissionChecker[T any, PT ClonedUnmarshaler[T]](
+func NewGloballyScopedGenericStore[T any, PT ClonedUnmarshaler[T]](
 	db postgres.DB,
 	schema *walker.Schema,
 	pkGetter primaryKeyGetter[T, PT],
@@ -139,14 +139,14 @@ func NewGenericStoreWithPermissionChecker[T any, PT ClonedUnmarshaler[T]](
 	copyFromObj copier[T, PT],
 	setAcquireDBConnDuration durationTimeSetter,
 	setPostgresOperationDurationTime durationTimeSetter,
-	checker walker.PermissionChecker,
+	targetResource permissions.ResourceMetadata,
 ) Store[T, PT] {
 	return &genericStore[T, PT]{
 		db:          db,
 		schema:      schema,
 		pkGetter:    pkGetter,
-		copyFromObj: copyFromObj,
 		insertInto:  insertInto,
+		copyFromObj: copyFromObj,
 		setAcquireDBConnDuration: func() durationTimeSetter {
 			if setAcquireDBConnDuration == nil {
 				return doNothingDurationTimeSetter
@@ -159,7 +159,8 @@ func NewGenericStoreWithPermissionChecker[T any, PT ClonedUnmarshaler[T]](
 			}
 			return setPostgresOperationDurationTime
 		}(),
-		permissionChecker: checker,
+		upsertAllowed:  globallyScopedUpsertChecker[T, PT](targetResource),
+		targetResource: targetResource,
 	}
 }
 
@@ -234,8 +235,7 @@ func (s *genericStore[T, PT]) GetByQueryFn(ctx context.Context, query *v1.Query,
 func (s *genericStore[T, PT]) GetByQuery(ctx context.Context, query *v1.Query) ([]*T, error) {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.GetByQuery)
 
-	limit := max(batchAfter, min(batchAfter, query.GetPagination().GetLimit()))
-	rows := make([]*T, 0, limit)
+	rows := make([]*T, 0, paginated.GetLimit(query.GetPagination().GetLimit(), batchAfter))
 	err := RunQueryForSchemaFn(ctx, s.schema, query, s.db, func(obj PT) error {
 		rows = append(rows, obj)
 		return nil
@@ -360,12 +360,7 @@ func (s *genericStore[T, PT]) PruneMany(ctx context.Context, identifiers []strin
 func (s *genericStore[T, PT]) Upsert(ctx context.Context, obj PT) error {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.Upsert)
 
-	if s.hasPermissionsChecker() {
-		err := s.permissionCheckerAllowsUpsert(ctx)
-		if err != nil {
-			return err
-		}
-	} else if err := s.upsertAllowed(ctx, obj); err != nil {
+	if err := s.upsertAllowed(ctx, obj); err != nil {
 		return err
 	}
 
@@ -378,12 +373,7 @@ func (s *genericStore[T, PT]) Upsert(ctx context.Context, obj PT) error {
 func (s *genericStore[T, PT]) UpsertMany(ctx context.Context, objs []PT) error {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.UpdateMany)
 
-	if s.hasPermissionsChecker() {
-		err := s.permissionCheckerAllowsUpsert(ctx)
-		if err != nil {
-			return err
-		}
-	} else if err := s.upsertAllowed(ctx, objs...); err != nil {
+	if err := s.upsertAllowed(ctx, objs...); err != nil {
 		return err
 	}
 
@@ -417,24 +407,6 @@ func (s *genericStore[T, PT]) acquireConn(ctx context.Context, op ops.Op) (*post
 		return nil, errors.Wrap(err, "could not acquire connection")
 	}
 	return conn, nil
-}
-
-func (s *genericStore[T, PT]) hasPermissionsChecker() bool {
-	return s.permissionChecker != nil
-}
-
-func (s *genericStore[T, PT]) permissionCheckerAllowsUpsert(ctx context.Context) error {
-	if !s.hasPermissionsChecker() {
-		return utils.ShouldErr(errInvalidOperation)
-	}
-	allowed, err := s.permissionChecker.WriteAllowed(ctx)
-	if err != nil {
-		return err
-	}
-	if !allowed {
-		return sac.ErrResourceAccessDenied
-	}
-	return nil
 }
 
 func (s *genericStore[T, PT]) upsert(ctx context.Context, objs ...PT) error {
@@ -529,8 +501,8 @@ func (s *genericStore[T, PT]) deleteMany(ctx context.Context, identifiers []stri
 	return nil
 }
 
-// GloballyScopedUpsertChecker returns upsertChecker for globally scoped objects
-func GloballyScopedUpsertChecker[T any, PT ClonedUnmarshaler[T]](targetResource permissions.ResourceMetadata) upsertChecker[T, PT] {
+// globallyScopedUpsertChecker returns upsertChecker for globally scoped objects
+func globallyScopedUpsertChecker[T any, PT ClonedUnmarshaler[T]](targetResource permissions.ResourceMetadata) upsertChecker[T, PT] {
 	return func(ctx context.Context, objs ...PT) error {
 		scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
 		if !scopeChecker.IsAllowed() {

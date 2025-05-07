@@ -131,12 +131,8 @@ EOT
     bats_require_minimum_version 1.5.0
     require_environment "ORCHESTRATOR_FLAVOR"
 
-    # Use
-    #   export CHART_BASE="/rhacs"
-    #   export DEFAULT_IMAGE_REGISTRY="quay.io/rhacs-eng"
-    # for the RHACS flavor.
-    export CHART_BASE=""
-    export DEFAULT_IMAGE_REGISTRY="quay.io/stackrox-io"
+    export DEFAULT_IMAGE_REGISTRY="quay.io/rhacs-eng"
+    export DEFAULT_IMAGE_REGISTRY_HOST=$(cut -d / -f 1 <<<"$DEFAULT_IMAGE_REGISTRY")
 
     export MAIN_IMAGE_TAG="${MAIN_IMAGE_TAG:-$(make --quiet --no-print-directory -C "${ROOT}" tag)}"
     info "Using MAIN_IMAGE_TAG=$MAIN_IMAGE_TAG"
@@ -403,8 +399,8 @@ teardown() {
     local main_image_tag="${MAIN_IMAGE_TAG}"
 
     # Deploy earlier version without Scanner V4.
-    local old_central_chart="${CHART_REPOSITORY}${CHART_BASE}/${EARLIER_CHART_VERSION}/central-services"
-    local old_sensor_chart="${CHART_REPOSITORY}${CHART_BASE}/${EARLIER_CHART_VERSION}/secured-cluster-services"
+    local old_central_chart="${CHART_REPOSITORY}/${EARLIER_CHART_VERSION}/central-services"
+    local old_sensor_chart="${CHART_REPOSITORY}/${EARLIER_CHART_VERSION}/secured-cluster-services"
 
     _begin "deploy-old-central"
     info "Deploying StackRox central-services using chart ${old_central_chart}"
@@ -1134,11 +1130,7 @@ _deploy_stackrox() {
 # shellcheck disable=SC2120
 _deploy_central() {
     local central_namespace=${1:-stackrox}
-    if [[ "${CI:-}" != "true" ]]; then
-        info "Creating namespace and image pull secrets..."
-        "${ORCH_CMD}" </dev/null create namespace "$central_namespace" || true
-        "${ROOT}/deploy/common/pull-secret.sh" stackrox quay.io | "${ORCH_CMD}" -n "$central_namespace" apply -f -
-    fi
+    create_central_pull_secrets "$central_namespace"
     deploy_central "${central_namespace}"
     patch_down_central "${central_namespace}"
 }
@@ -1156,12 +1148,6 @@ deploy_central_with_helm() {
         helm_chart_dir="$1"
         use_default_chart="false"
     fi; shift
-
-    if [[ "${CI:-}" != "true" ]]; then
-        info "Creating namespace and image pull secrets..."
-        echo "{ \"apiVersion\": \"v1\", \"kind\": \"Namespace\", \"metadata\": { \"name\": \"$central_namespace\" } }" | "${ORCH_CMD}" apply -f -
-        "${ROOT}/deploy/common/pull-secret.sh" stackrox quay.io | "${ORCH_CMD}" -n "$central_namespace" apply -f -
-    fi
 
     local image_overwrites=""
     local base_helm_values=""
@@ -1199,6 +1185,8 @@ EOT
         upgrade="true"
         apply_crd_ownership_for_upgrade "$central_namespace"
     else
+        create_central_pull_secrets "$central_namespace"
+
         base_helm_values=$(cat <<EOT
 central:
   resources:
@@ -1342,12 +1330,8 @@ EOT
             -e "central.${central_namespace}.svc:443" \
             central init-bundles generate "$cluster_name" --output=-)"
 
-        if [[ "${CI:-}" != "true" ]]; then
-            info "Creating image pull secrets..."
-            "${ORCH_CMD}" </dev/null create namespace "$sensor_namespace" || true
-            "${ROOT}/deploy/common/pull-secret.sh" stackrox quay.io | "${ORCH_CMD}" -n "$sensor_namespace" apply -f -
-            "${ROOT}/deploy/common/pull-secret.sh" collector-stackrox quay.io | "${ORCH_CMD}" -n "$sensor_namespace" apply -f -
-        fi
+        create_sensor_pull_secrets "$sensor_namespace"
+
         base_helm_values=$(cat <<EOT
 clusterName: "$cluster_name"
 centralEndpoint: "$central_endpoint"
@@ -1479,12 +1463,7 @@ EOF
 _deploy_sensor() {
     local sensor_namespace=${1:-stackrox}
     local central_namespace=${2:-stackrox}
-    if [[ "${CI:-}" != "true" ]]; then
-        info "Creating image pull secrets..."
-        "${ORCH_CMD}" </dev/null create namespace "$sensor_namespace" || true
-        "${ROOT}/deploy/common/pull-secret.sh" stackrox quay.io | "${ORCH_CMD}" -n "$sensor_namespace" apply -f -
-        "${ROOT}/deploy/common/pull-secret.sh" collector-stackrox quay.io | "${ORCH_CMD}" -n "$sensor_namespace" apply -f -
-    fi
+    create_sensor_pull_secrets "$sensor_namespace"
     deploy_sensor "${sensor_namespace}" "${central_namespace}"
     patch_down_sensor "${sensor_namespace}"
 }
@@ -1619,4 +1598,19 @@ test_identifier_from_description() {
     # Substitute all whitespaces with underscores
     identifier="${identifier// /_}"
     echo "$identifier"
+}
+
+create_central_pull_secrets() {
+    local namespace="$1"
+    info "Creating image pull secrets for central in namespace $namespace..."
+    echo "{ \"apiVersion\": \"v1\", \"kind\": \"Namespace\", \"metadata\": { \"name\": \"$namespace\" } }" | "${ORCH_CMD}" apply -f -
+    "${ROOT}/deploy/common/pull-secret.sh" stackrox "$DEFAULT_IMAGE_REGISTRY_HOST" | "${ORCH_CMD}" -n "$central_namespace" apply -f -
+}
+
+create_sensor_pull_secrets() {
+    local namespace="$1"
+    info "Creating image pull secrets for secured cluster in namespace $namespace..."
+    echo "{ \"apiVersion\": \"v1\", \"kind\": \"Namespace\", \"metadata\": { \"name\": \"$namespace\" } }" | "${ORCH_CMD}" apply -f -
+    "${ROOT}/deploy/common/pull-secret.sh" stackrox "$DEFAULT_IMAGE_REGISTRY_HOST" | "${ORCH_CMD}" -n "$namespace" apply -f -
+    "${ROOT}/deploy/common/pull-secret.sh" collector-stackrox "$DEFAULT_IMAGE_REGISTRY_HOST" | "${ORCH_CMD}" -n "$namespace" apply -f -
 }

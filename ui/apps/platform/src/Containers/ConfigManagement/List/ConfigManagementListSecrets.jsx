@@ -1,7 +1,6 @@
 import React from 'react';
 import { useLocation } from 'react-router-dom';
 import uniq from 'lodash/uniq';
-import { format } from 'date-fns';
 import pluralize from 'pluralize';
 
 import {
@@ -10,11 +9,11 @@ import {
     nonSortableHeaderClassName,
 } from 'Components/Table';
 import TableCellLink from 'Components/TableCellLink';
-import dateTimeFormat from 'constants/dateTimeFormat';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
 import useWorkflowMatch from 'hooks/useWorkflowMatch';
 import { SECRETS_QUERY } from 'queries/secret';
 import { secretSortFields } from 'constants/sortFields';
+import { getDateTime } from 'utils/dateUtils';
 import queryService from 'utils/queryService';
 import URLService from 'utils/URLService';
 import { getConfigMgmtPathForEntitiesAndId } from '../entities';
@@ -72,7 +71,7 @@ const buildTableColumns = (match, location, entityContext) => {
             className: `w-1/8 ${defaultColumnClassName}`,
             Cell: ({ original }) => {
                 const { createdAt } = original;
-                return format(createdAt, dateTimeFormat);
+                return getDateTime(createdAt);
             },
             accessor: 'createdAt',
             id: secretSortFields.CREATED,

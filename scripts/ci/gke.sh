@@ -140,7 +140,7 @@ create_cluster() {
     POD_SECURITY_POLICIES="${POD_SECURITY_POLICIES:-false}"
     GKE_RELEASE_CHANNEL="${GKE_RELEASE_CHANNEL:-stable}"
     MACHINE_TYPE="${MACHINE_TYPE:-e2-standard-4}"
-    DISK_SIZE_GB=${DISK_SIZE_GB:-40}
+    DISK_SIZE_GB=${DISK_SIZE_GB:-80}
 
     echo "Creating ${NUM_NODES} node cluster with image type \"${GCP_IMAGE_TYPE}\" and ${DISK_SIZE_GB}GB disks."
 

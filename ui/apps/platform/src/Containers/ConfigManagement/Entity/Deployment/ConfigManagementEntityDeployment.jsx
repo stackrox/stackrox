@@ -1,5 +1,4 @@
 import React, { useContext } from 'react';
-import { format } from 'date-fns';
 import { gql } from '@apollo/client';
 
 import Query from 'Components/ThrowingQuery';
@@ -9,7 +8,7 @@ import CollapsibleSection from 'Components/CollapsibleSection';
 import RelatedEntity from 'Components/RelatedEntity';
 import RelatedEntityListCount from 'Components/RelatedEntityListCount';
 import Metadata from 'Components/Metadata';
-import dateTimeFormat from 'constants/dateTimeFormat';
+import { getDateTime } from 'utils/dateUtils';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
 import searchContext from 'Containers/searchContext';
 import { getConfigMgmtCountQuery } from 'Containers/ConfigManagement/ConfigMgmt.utils';
@@ -156,7 +155,7 @@ const ConfigManagementEntityDeployment = ({
                 const metadataKeyValuePairs = [
                     {
                         key: 'Created',
-                        value: created ? format(created, dateTimeFormat) : 'N/A',
+                        value: created ? getDateTime(created) : 'N/A',
                     },
                     {
                         key: 'Deployment Type',

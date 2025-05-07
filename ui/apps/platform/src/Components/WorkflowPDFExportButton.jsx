@@ -3,9 +3,10 @@ import PropTypes from 'prop-types';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import dateFns from 'date-fns';
 import computedStyleToInlineStyle from 'computed-style-to-inline-style';
 import { Button } from '@patternfly/react-core';
+
+import { getDate } from 'utils/dateUtils';
 import { enhanceWordBreak } from 'utils/pdfUtils';
 import { getProductBranding } from 'constants/productBranding';
 
@@ -65,7 +66,7 @@ class WorkflowPDFExportButton extends Component {
             <img alt="stackrox-logo" src=${getProductBranding().logoSvg} class="h-20 pl-2" />
             <div class="pr-4 text-right">
                 <div class="text-2xl">${this.props.pdfTitle}</div>
-                <div class="pt-2 text-xl">${dateFns.format(new Date(), 'MM/DD/YYYY')}</div>
+                <div class="pt-2 text-xl">${getDate(new Date())}</div>
             </div>
         </div>`;
         const header = document.createElement('header');

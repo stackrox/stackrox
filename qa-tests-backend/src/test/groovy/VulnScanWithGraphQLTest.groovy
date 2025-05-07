@@ -158,7 +158,7 @@ class VulnScanWithGraphQLTest extends BaseSpecification {
         where:
         "Data inputs are :"
         CVEID            | OS         | imageToBeVerified
-        "CVE-2017-12611" | "ubuntu:20.04" | STRUTS_DEP.getImage()
+        "CVE-2017-5638" | "ubuntu:20.04" | STRUTS_DEP.getImage()
     }
 
     private GraphQLService.Response waitForImagesTobeFetched(String cveId, String os,

@@ -85,10 +85,10 @@ type Store interface {
 {{ define "defineScopeChecker" }}scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_{{ . }}_ACCESS).Resource(targetResource){{ end }}
 
 {{ define "storeCreator" -}}
-    {{- if and (.PermissionChecker) (.CachedStore) -}}
-        pgSearch.NewGenericStoreWithCacheAndPermissionChecker
-    {{- else if (.PermissionChecker) -}}
-        pgSearch.NewGenericStoreWithPermissionChecker
+    {{- if and (.CachedStore) (not .Obj.IsDirectlyScoped) -}}
+        pgSearch.NewGloballyScopedGenericStoreWithCache
+    {{- else if and (not .CachedStore) (not .Obj.IsDirectlyScoped) -}}
+        pgSearch.NewGloballyScopedGenericStore
     {{- else if .CachedStore -}}
         pgSearch.NewGenericStoreWithCache
     {{- else -}}
@@ -122,13 +122,11 @@ func New(db postgres.DB) Store {
             metricsSetPostgresOperationDurationTime,
             {{- if .CachedStore }}
             metricsSetCacheOperationDurationTime,
-            {{ end -}}
-            {{- if or (.Obj.IsGloballyScoped) (.Obj.IsIndirectlyScoped) }}
-            pgSearch.GloballyScopedUpsertChecker[storeType, *storeType](targetResource),
-            {{- else if .Obj.IsDirectlyScoped }}
+            {{- end }}
+            {{- if .Obj.IsDirectlyScoped }}
             isUpsertAllowed,
             {{- end }}
-            {{ if .PermissionChecker }}{{ .PermissionChecker }}{{ else }}targetResource{{ end }},
+            targetResource,
     )
 }
 
