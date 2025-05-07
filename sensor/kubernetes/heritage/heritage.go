@@ -1,8 +1,10 @@
 package heritage
 
 import (
+	"cmp"
 	"context"
 	"encoding/json"
+	"slices"
 	"sync/atomic"
 	"time"
 
@@ -16,9 +18,27 @@ import (
 )
 
 type PastSensor struct {
-	ContainerID string    `json:"containerID"`
-	PodIP       string    `json:"podIP"`
-	Timestamp   time.Time `json:"timestamp"`
+	ContainerID  string    `json:"containerID"`
+	PodIP        string    `json:"podIP"`
+	SensorStart  time.Time `json:"sensorStart"`
+	LatestUpdate time.Time `json:"latestUpdate"`
+}
+
+// ReverseCompare sorts so that younger entries are at the beginning of the slice
+func (a *PastSensor) ReverseCompare(b PastSensor) int {
+	if n := a.LatestUpdate.Compare(b.LatestUpdate); n != 0 {
+		return n * -1
+	}
+	if n := a.SensorStart.Compare(b.SensorStart); n != 0 {
+		return n * -1
+	}
+	if n := cmp.Compare(a.PodIP, b.PodIP); n != 0 {
+		return n
+	}
+	if n := cmp.Compare(a.ContainerID, b.ContainerID); n != 0 {
+		return n
+	}
+	return 0
 }
 
 const (
@@ -26,6 +46,11 @@ const (
 	configMapKey       = "heritage"
 	annotationInfoKey  = `stackrox.io/past-sensors-info`
 	annotationInfoText = `This data is for sensor to recognize its past pod instances.`
+
+	// TODO: parametrize with env vars?
+	heritageMaxSize = 50
+	heritageMinSize = 2
+	heritageMaxAge  = time.Hour
 )
 
 var (
@@ -108,7 +133,10 @@ func (h *Manager) SetCurrentSensorData(currentIP, currentContainerID string) {
 func (h *Manager) updateCacheNoLock(now time.Time) bool {
 	for _, entry := range h.cache {
 		if entry.ContainerID == h.currentContainerID && entry.PodIP == h.currentIP {
-			entry.Timestamp = now
+			if entry.SensorStart.IsZero() {
+				entry.SensorStart = now
+			}
+			entry.LatestUpdate = now
 			return true
 		}
 	}
@@ -127,14 +155,16 @@ func (h *Manager) UpsertConfigMap(ctx context.Context, now time.Time) error {
 		log.Warnf("%v", err)
 	}
 
-	// TODO: Implement purging old heritage (old = will not be reported by collector afterglow anymore =~20 minutes)
 	if !h.updateCacheNoLock(now) {
 		h.cache = append(h.cache, PastSensor{
-			ContainerID: h.currentContainerID,
-			PodIP:       h.currentIP,
-			Timestamp:   now,
+			ContainerID:  h.currentContainerID,
+			PodIP:        h.currentIP,
+			SensorStart:  now,
+			LatestUpdate: now,
 		})
 	}
+	h.cache = cleanupHeritageData(h.cache, now, heritageMaxAge, heritageMinSize, heritageMaxSize)
+
 	h.lastUpdateOfCurrentData = now
 	return h.write(ctx, h.cache...)
 }
@@ -223,4 +253,45 @@ func configMapToPastSensorData(cm *v1.ConfigMap) ([]PastSensor, error) {
 		data = append(data, entries...)
 	}
 	return data, nil
+}
+
+func cleanupHeritageData(in []PastSensor, now time.Time, maxAge time.Duration, minSize, maxSize int) []PastSensor {
+	if len(in) <= minSize {
+		return in
+	}
+	if maxSize > 0 && minSize > 0 && maxSize < minSize {
+		log.Warnf("Heritage cleanup misconfigured: maxSize < minSize")
+		return in
+	}
+	if maxSize == 0 && maxAge == 0 {
+		return in
+	}
+	in = slices.SortedFunc[PastSensor](slices.Values(in), func(a PastSensor, b PastSensor) int {
+		return a.ReverseCompare(b)
+	})
+	if maxSize > 0 && len(in) > maxSize {
+		in = in[:maxSize]
+	}
+	if maxAge == 0 {
+		return in
+	}
+	return removeOlderThan(in, now, minSize, maxAge)
+}
+func removeOlderThan(in []PastSensor, now time.Time, minSize int, maxAge time.Duration) []PastSensor {
+	if !slices.IsSortedFunc(in, func(a PastSensor, b PastSensor) int {
+		return a.ReverseCompare(b)
+	}) {
+		log.Errorf("Programmer error: cannot cleanup heritage data for unsorted slice")
+		return in
+	}
+	// The slice is sorted by LastestUpdate
+	cutOff := now.Add(-maxAge)
+	for idx, entry := range in {
+		// We assume that LatestUpdate cannot be zero, as in the worst case we'd have LatestUpdate==SensorStart
+		if idx < minSize || entry.LatestUpdate.After(cutOff) {
+			continue
+		}
+		return in[:idx]
+	}
+	return in
 }
