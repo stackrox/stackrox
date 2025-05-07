@@ -45,6 +45,7 @@ type reportRequest struct {
 	ctx                context.Context
 	snapshotID         string
 	notificationMethod storage.ComplianceOperatorReportStatus_NotificationMethod
+	failedClusters     map[string]*storage.ComplianceOperatorReportSnapshotV2_FailedCluster
 }
 
 type managerImpl struct {
@@ -207,6 +208,7 @@ func (m *managerImpl) generateReportNoLock(req *reportRequest) {
 		Ctx:                req.ctx,
 		SnapshotID:         req.snapshotID,
 		NotificationMethod: req.notificationMethod,
+		FailedClusters:     req.failedClusters,
 	}
 	log.Infof("Executing report request for scan config %q", req.scanConfig.GetId())
 	if err := m.reportGen.ProcessReportRequest(repRequest); err != nil {
@@ -534,15 +536,27 @@ func (m *managerImpl) generateReportsFromWatcherResults(result *watcher.ScanConf
 }
 
 func (m *managerImpl) generateSingleReportFromWatcherResults(result *watcher.ScanConfigWatcherResults, snapshot *storage.ComplianceOperatorReportSnapshotV2) error {
-	if _, err := watcher.ValidateScanConfigResults(m.automaticReportingCtx, result, m.integrationDataStore); err != nil {
-		if dbErr := helpers.UpdateSnapshotOnError(m.automaticReportingCtx, snapshot, err, m.snapshotDataStore); dbErr != nil {
-			return errors.Errorf("%v; %v", err, errors.Wrapf(dbErr, "unable to upsert the snapshot %s", snapshot.GetReportId()))
-		}
-		return err
-	}
+	failedClusters, err := watcher.ValidateScanConfigResults(m.automaticReportingCtx, result, m.integrationDataStore)
 	snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_PREPARING
+	if err != nil {
+		snapshot.GetReportStatus().ErrorMsg = err.Error()
+	}
+	log.Infof("Snapshot for ScanConfig %s: %+v -- %+v", result.ScanConfig.GetScanConfigName(), snapshot.GetReportStatus(), snapshot.GetFailedClusters())
 	// Update ReportData
 	snapshot.ReportData = m.getReportData(result.ScanConfig)
+	// Add failed clusters to the report
+	if len(failedClusters) > 0 {
+		for _, cluster := range snapshot.ReportData.GetClusterStatus() {
+			if failedCluster, ok := failedClusters[cluster.GetClusterId()]; ok {
+				failedCluster.ClusterName = cluster.GetClusterName()
+			}
+		}
+		failedClustersSlice := make([]*storage.ComplianceOperatorReportSnapshotV2_FailedCluster, 0, len(failedClusters))
+		for _, failedCluster := range failedClusters {
+			failedClustersSlice = append(failedClustersSlice, failedCluster)
+		}
+		snapshot.FailedClusters = failedClustersSlice
+	}
 	if err := m.snapshotDataStore.UpsertSnapshot(m.automaticReportingCtx, snapshot); err != nil {
 		return errors.Wrapf(err, "unable to upsert the snapshot %s", snapshot.GetReportId())
 	}
@@ -551,6 +565,7 @@ func (m *managerImpl) generateSingleReportFromWatcherResults(result *watcher.Sca
 		scanConfig:         result.ScanConfig,
 		snapshotID:         snapshot.GetReportId(),
 		notificationMethod: snapshot.GetReportStatus().GetReportNotificationMethod(),
+		failedClusters:     failedClusters,
 	}
 	isOnDemand := snapshot.GetReportStatus().GetReportRequestType() == storage.ComplianceOperatorReportStatus_ON_DEMAND
 	if err := m.handleReportScheduled(generateReportReq, isOnDemand); err != nil {
