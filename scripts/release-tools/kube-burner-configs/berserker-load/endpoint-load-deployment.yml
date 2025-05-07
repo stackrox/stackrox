@@ -37,7 +37,7 @@ spec:
         name: berserker
         env:
         - name: RUST_LOG
-          value: error
+          value: "error"
       volumes:
       - name: config
         configMap:
