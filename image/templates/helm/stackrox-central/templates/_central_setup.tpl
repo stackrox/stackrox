@@ -64,7 +64,7 @@
     {{ include "srox.warn" (list $ "You have selected host path persistence, but not specified a node selector. This is unlikely to work reliably.") }}
   {{ end }}
   {{ $_ := set $dbVolumeCfg "hostPath" (dict "path" $centralDBCfg.persistence.hostPath) }}
-  {{ $_ := set $dbBackupVolumeCfg "hostPath" (clean (printf "%s/../backup" (dict "path" $centralDBCfg.persistence.hostPath))) }}
+  {{ $_ := set $dbBackupVolumeCfg "hostPath" (clean (printf "%s/backup" (dict "path" $centralDBCfg.persistence.hostPath))) }}
 {{ end }}
 {{/* Configure PVC if either any of the settings in `centralDB.persistence.persistentVolumeClaim` are provided,
      or no other persistence backend has been configured yet. */}}

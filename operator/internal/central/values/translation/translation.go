@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/version"
 	"helm.sh/helm/v3/pkg/chartutil"
 	corev1 "k8s.io/api/core/v1"
+	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/pointer"
@@ -183,21 +184,25 @@ func getCentralDBPersistenceValues(ctx context.Context, p *platform.DBPersistenc
 		pvcBuilder.SetBoolValue("createClaim", false)
 
 		// Search for a backup PVC, if it exists, allow to mount it.
-		claimName := common.DefaultCentralDBBackupPVCName
+		backupClaimName := common.DefaultCentralDBBackupPVCName
 		if pvc := p.GetPersistentVolumeClaim(); pvc != nil {
-			claimName = common.GetBackupClaimName(*pvc.ClaimName)
+			if pvc.ClaimName != nil {
+				backupClaimName = common.GetBackupClaimName(*pvc.ClaimName)
+			}
 			pvcBuilder.SetString("claimName", pvc.ClaimName)
 		}
 
 		key := ctrlClient.ObjectKey{
 			Namespace: namespace,
-			Name:      claimName,
+			Name:      backupClaimName,
 		}
 		pvc := &corev1.PersistentVolumeClaim{}
-		if client.Get(ctx, key, pvc) == nil {
-			// If faced error of any kind (object not found or a transient
-			// error), assume we're not able to mount a backup volume.
-			persistence.SetBoolValue("backup", true)
+		if err := client.Get(ctx, key, pvc); err == nil {
+			persistence.SetBoolValue("_backup", true)
+		} else {
+			if !apiErrors.IsNotFound(err) {
+				persistence.SetError(fmt.Errorf("could not find backup PVC, %w", err))
+			}
 		}
 
 		persistence.AddChild("persistentVolumeClaim", &pvcBuilder)

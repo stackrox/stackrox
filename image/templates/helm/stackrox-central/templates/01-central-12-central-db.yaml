@@ -93,7 +93,7 @@ spec:
         - name: disk
           mountPath: /var/lib/postgresql/data
         {{- if and (eq ._rox.env.installMethod "operator")
-                    ._rox.central.db.persistence.backup }}
+                    ._rox.central.db.persistence._backup }}
         - name: backup
           mountPath: /var/lib/postgresql/backup
         {{- end }}
@@ -148,7 +148,7 @@ spec:
       - name: disk
         {{- toYaml ._rox.central.db.persistence._volumeCfg | nindent 8 }}
       {{- if and (eq ._rox.env.installMethod "operator")
-                  ._rox.central.db.persistence.backup }}
+                  ._rox.central.db.persistence._backup }}
       - name: backup
         {{- toYaml ._rox.central.db.persistence._backupVolumeCfg | nindent 8 }}
       {{- end }}
