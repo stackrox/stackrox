@@ -167,7 +167,7 @@ class VulnScanWithGraphQLTest extends BaseSpecification {
         def objId = cveId + "#" + os
         def graphQLQuery = GET_IMAGE_INFO_FROM_VULN_QUERY
         while (t.IsValid()) {
-            def result2Ret = gqlService.Call(graphQLQuery, [id: objId])
+            def result2Ret = gqlService.Call(graphQLQuery, [id: cveId])
             assert result2Ret.getCode() == 200
             if (result2Ret.getValue().result != null) {
                 log.info "images fetched from cve"
