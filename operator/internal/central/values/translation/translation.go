@@ -85,10 +85,6 @@ func (t Translator) translate(ctx context.Context, c platform.Central) (chartuti
 
 	monitoring := c.Spec.Monitoring
 	v.AddChild("monitoring", translation.GetGlobalMonitoring(monitoring))
-
-	// Similar to Scanner, pass the namespace and the client all the way down,
-	// to support cases when the current state of the cluster has to be
-	// inspected.
 	central, err := getCentralComponentValues(ctx, centralSpec, c.GetNamespace(), t.client)
 	if err != nil {
 		return nil, err
