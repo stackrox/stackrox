@@ -33,7 +33,7 @@ spec:
         - name: BERSERKER__WORKLOAD__ARRIVAL_RATE
           value: "1"
         - name: RUST_LOG
-          value: error
+          value: "error"
         downwardAPI:
           items:
             - path: "labels"
