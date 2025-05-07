@@ -3,16 +3,18 @@
 
   // After making changes to this file, you can validate it by running something like this in the root of the repo:
   // $ docker run --rm -it --entrypoint=renovate-config-validator -v "$(pwd)":/mnt -w /mnt renovate/renovate --strict
+  // Note: ignore errors about the config for `rpm`. This is to be addressed with https://issues.redhat.com/browse/CWFHEALTH-4117
   // There are more validation options, see https://docs.renovatebot.com/config-validation/
 
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    // This inherits the base Konflux config.
-    // Clickable link https://github.com/konflux-ci/mintmaker/blob/main/config/renovate/renovate.json
-    // The following was used as example (we may want to check it if the base config gets suddenly moved):
+    // Note that the base Konflux's MintMaker config gets inherited/included automatically per
+    // https://redhat-internal.slack.com/archives/C04PZ7H0VA8/p1745492139282819?thread_ts=1745309786.090319&cid=C04PZ7H0VA8
+    // The config is: https://github.com/konflux-ci/mintmaker/blob/main/config/renovate/renovate.json
+    // We found out about it here (we may want to check that location if the base config gets suddenly moved):
     // https://github.com/enterprise-contract/ec-cli/blob/407847910ad420850385eea1db78e2a2e49c7e25/renovate.json#L1C1-L7C2
-    "github>konflux-ci/mintmaker//config/renovate/renovate.json",
-    // This tells Renovate to combine all updates in one PR so that we have less PRs to deal with.
+
+    // This tells Renovate to combine all updates in one PR so that we have fewer PRs to deal with.
     "group:all",
   ],
   "timezone": "Etc/UTC",
@@ -27,9 +29,17 @@
   "updateNotScheduled": false,
   "tekton": {
     "schedule": [
-      // For some reason, Konflux config defines custom schedule on each type of dependency manager and that takes
-      // precedence over the global/default schedule. We want our own schedule and hence need to make this override.
+      // Override Konflux custom schedule for this manager to our intended one.
       "after 3am and before 7am",
+    ],
+    "packageRules": [
+      // Note: the packageRules from the Konflux config (find URL in comments above) get merged with these.
+      {
+        "groupName": "StackRox custom Konflux Tasks",
+        "matchPackageNames": [
+          "/^quay.io/rhacs-eng/konflux-tasks/",
+        ],
+      },
     ],
   },
   "dockerfile": {
@@ -38,10 +48,27 @@
       // to have less PR noise.
       "**/*konflux*.Dockerfile",
     ],
+    "schedule": [
+      // Override Konflux custom schedule for this manager to our intended one.
+      "after 3am and before 7am",
+    ],
+    "postUpgradeTasks": {
+      "commands": [
+        // Refresh the rpm lockfile after updating image references in the dockerfile.
+        "rpm-lockfile-prototype rpms.in.yaml",
+      ],
+    },
+  },
+  "rpm": {
+    "schedule": [
+      // Override Konflux custom schedule for this manager to our intended one.
+      "after 3am and before 7am",
+    ],
   },
   "enabledManagers": [
     // Restrict Renovate focus on Konflux things since we rely on GitHub's dependabot for everything else.
     "tekton",
     "dockerfile",
+    "rpm",
   ],
 }
