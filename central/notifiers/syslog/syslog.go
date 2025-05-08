@@ -313,6 +313,7 @@ func (s *syslog) AuditLoggingEnabled() bool {
 func (s *syslog) sendSyslog(severity int, timestamp time.Time, messageID, unstructuredData string) error {
 	syslog := []byte(s.wrapSyslogUnstructuredData(severity, timestamp, messageID, unstructuredData))
 	for len(syslog) != 0 {
+		log.Infof("Sending syslog: %v", syslog[0:s.maxMessageSize])
 		if err := s.sender.SendSyslog(syslog[0:s.maxMessageSize]); err != nil {
 			return err
 		}
