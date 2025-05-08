@@ -13,10 +13,11 @@ import {
     Text,
 } from '@patternfly/react-core';
 
-import './PlatformComponentsConfigDetails.css';
 import { PlatformComponentRule, PlatformComponentsConfig } from 'types/config.proto';
 
-// @TODO: Remove hardcoded value and add platformComponentsConfig as prop
+import './PlatformComponentsConfigDetails.css';
+
+// @TODO: Remove hardcoded value and add platformComponentsConfig as a prop
 const platformComponentsConfig: PlatformComponentsConfig = {
     needsReevaluation: false,
     rules: [
