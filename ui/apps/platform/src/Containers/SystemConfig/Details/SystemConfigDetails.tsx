@@ -10,13 +10,13 @@ import {
     Text,
     Title,
 } from '@patternfly/react-core';
+import { OutlinedQuestionCircleIcon } from '@patternfly/react-icons';
 
 import { SystemConfig } from 'types/config.proto';
 import { selectors } from 'reducers';
-
-import { OutlinedQuestionCircleIcon } from '@patternfly/react-icons';
-import PopoverBodyContent from 'Components/PopoverBodyContent';
 import useFeatureFlags from 'hooks/useFeatureFlags';
+
+import PopoverBodyContent from 'Components/PopoverBodyContent';
 import PrivateConfigDataRetentionDetails from './PrivateConfigDataRetentionDetails';
 import PublicConfigBannerDetails from './PublicConfigBannerDetails';
 import PublicConfigLoginDetails from './PublicConfigLoginDetails';
