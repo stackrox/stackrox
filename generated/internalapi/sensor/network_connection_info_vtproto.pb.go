@@ -66,6 +66,7 @@ func (m *NetworkConnection) CloneVT() *NetworkConnection {
 	r.Role = m.Role
 	r.ContainerId = m.ContainerId
 	r.CloseTimestamp = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.CloseTimestamp).CloneVT())
+	r.Scraped = m.Scraped
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -212,6 +213,9 @@ func (this *NetworkConnection) EqualVT(that *NetworkConnection) bool {
 		return false
 	}
 	if !(*timestamppb1.Timestamp)(this.CloseTimestamp).EqualVT((*timestamppb1.Timestamp)(that.CloseTimestamp)) {
+		return false
+	}
+	if this.Scraped != that.Scraped {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -385,6 +389,16 @@ func (m *NetworkConnection) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.Scraped {
+		i--
+		if m.Scraped {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x60
 	}
 	if m.CloseTimestamp != nil {
 		size, err := (*timestamppb1.Timestamp)(m.CloseTimestamp).MarshalToSizedBufferVT(dAtA[:i])
@@ -641,6 +655,9 @@ func (m *NetworkConnection) SizeVT() (n int) {
 	if m.CloseTimestamp != nil {
 		l = (*timestamppb1.Timestamp)(m.CloseTimestamp).SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.Scraped {
+		n += 2
 	}
 	n += len(m.unknownFields)
 	return n
@@ -1086,6 +1103,26 @@ func (m *NetworkConnection) UnmarshalVT(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 12:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Scraped", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.Scraped = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -1868,6 +1905,26 @@ func (m *NetworkConnection) UnmarshalVTUnsafe(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 12:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Scraped", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.Scraped = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
