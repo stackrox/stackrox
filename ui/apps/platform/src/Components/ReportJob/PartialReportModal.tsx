@@ -4,14 +4,13 @@ import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import sortBy from 'lodash/sortBy';
 
 import { FailedCluster } from 'types/reportJob';
-import {isUndefined} from "lodash";
 
 export type PartialReportModalProps = {
     failedClusters?: FailedCluster[];
     onConfirm?: () => void;
 };
 
-function PartialReportModal({ failedClusters = [], onConfirm}: PartialReportModalProps) {
+function PartialReportModal({ failedClusters = [], onConfirm }: PartialReportModalProps) {
     const [isModalOpen, setIsModalOpen] = React.useState(false);
 
     const handleModalToggle = () => {
@@ -20,26 +19,26 @@ function PartialReportModal({ failedClusters = [], onConfirm}: PartialReportModa
 
     const sortedFailedClusters = sortBy(failedClusters, 'clusterName');
 
-    const buttonText = isUndefined(onConfirm) ? "Partial report sent" : "Partial report"
-    const actions = isUndefined(onConfirm) ? [
-        <Button key="cancel" variant="link" onClick={handleModalToggle}>
-        Cancel
-        </Button>,
-    ] : [
-        <Button
-            key="confirm"
-            variant="primary"
-            onClick={() => {
-                handleModalToggle();
-                onConfirm();
-            }}
-        >
-            Download partial report
-        </Button>,
+    const actions = [
         <Button key="cancel" variant="link" onClick={handleModalToggle}>
             Cancel
         </Button>,
-    ]
+    ];
+
+    if (onConfirm) {
+        actions.unshift(
+            <Button
+                key="confirm"
+                variant="primary"
+                onClick={() => {
+                    handleModalToggle();
+                    onConfirm();
+                }}
+            >
+                Download partial report
+            </Button>
+        );
+    }
 
     return (
         <React.Fragment>
@@ -49,14 +48,14 @@ function PartialReportModal({ failedClusters = [], onConfirm}: PartialReportModa
                 className="pf-v5-u-primary-color-100"
                 onClick={handleModalToggle}
             >
-                {buttonText}
+                {!onConfirm ? 'Partial report sent' : 'Partial report'}
             </Button>
             <Modal
                 variant="medium"
                 title="Partial report generated"
                 isOpen={isModalOpen}
                 onClose={handleModalToggle}
-                actions={{actions}}
+                actions={{ actions }}
             >
                 <Flex>
                     <FlexItem>
