@@ -10,7 +10,6 @@ import services.ClusterService
 import services.NetworkGraphService
 import util.NetworkGraphUtil
 
-import spock.lang.Ignore
 import spock.lang.Tag
 
 @Tag("PZ")
@@ -213,7 +212,8 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
         }
 
         and:
-        "Verify no edge from deployment ${deploymentUid} to supernet ${externalSource30ID} exists in recent network graph"
+        "Verify no edge from deployment ${deploymentUid} to supernet ${externalSource30ID} " +
+            "exists in recent network graph"
         withRetry(20, 30) {
             assert verifyNoEdge(
                     deploymentUid,
