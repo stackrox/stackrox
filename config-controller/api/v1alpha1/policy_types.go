@@ -183,7 +183,7 @@ type SecurityPolicyStatus struct {
 	Accepted bool `json:"accepted,omitempty"`
 	// +optional
 	// Message is deprecated in favor of conditions
-	Message string `json:"messge,omitempty"`
+	Message string `json:"message,omitempty"`
 }
 
 // IsValid runs validation checks against the SecurityPolicy spec
