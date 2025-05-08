@@ -601,6 +601,12 @@ Now Central has been deployed. Use the UI to deploy Sensor.
 
 </details>
 
+> [!NOTE]
+> Will it work **here**?
+> If using a host mount, you need to allow the container to access it by using
+> `sudo chcon -Rt svirt_sandbox_file_t <full volume path>`
+
+
 <details><summary>OpenShift</summary>
 
 > [!NOTE]
