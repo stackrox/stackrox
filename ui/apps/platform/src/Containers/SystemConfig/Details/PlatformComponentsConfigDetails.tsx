@@ -14,12 +14,57 @@ import {
 } from '@patternfly/react-core';
 
 import './PlatformComponentsConfigDetails.css';
+import { PlatformComponentRule, PlatformComponentsConfig } from 'types/config.proto';
 
-// @TODO: Add platformComponentsConfig as prop
+// @TODO: Remove hardcoded value and add platformComponentsConfig as prop
+const platformComponentsConfig: PlatformComponentsConfig = {
+    needsReevaluation: false,
+    rules: [
+        {
+            name: 'system rule',
+            namespaceRule: {
+                regex: '^kube-.*|^openshift-.*',
+            },
+        },
+        {
+            name: 'red hat layered products',
+            namespaceRule: {
+                regex: '^stackrox$|^rhacs-operator$|^open-cluster-management$|^multicluster-engine$|^aap$|^hive$`',
+            },
+        },
+        {
+            name: 'custom platform component 1',
+            namespaceRule: {
+                regex: '^my-application$|^custom-test$|^something-else$',
+            },
+        },
+        {
+            name: 'custom platform component 2',
+            namespaceRule: {
+                regex: '^nvidia$',
+            },
+        },
+    ],
+};
+
 const PlatformComponentsConfigDetails = (): ReactElement => {
+    let coreSystemRule: PlatformComponentRule | undefined;
+    let redHatLayeredProductsRule: PlatformComponentRule | undefined;
+    const customRules: PlatformComponentRule[] = [];
+
+    platformComponentsConfig.rules.forEach((rule) => {
+        if (rule.name === 'system rule') {
+            coreSystemRule = rule;
+        } else if (rule.name === 'red hat layered products') {
+            redHatLayeredProductsRule = rule;
+        } else {
+            customRules.push(rule);
+        }
+    });
+
     return (
-        <Grid hasGutter md={3}>
-            <GridItem span={4}>
+        <Grid hasGutter>
+            <GridItem sm={12} md={6} lg={4}>
                 <Card isFlat>
                     <CardTitle>Core system</CardTitle>
                     <CardBody>
@@ -32,12 +77,12 @@ const PlatformComponentsConfigDetails = (): ReactElement => {
                             <Text component="small" className="pf-v5-u-color-200">
                                 Namespaces match (Regex)
                             </Text>
-                            <CodeBlock>^kube-.*|^openshift-.*</CodeBlock>
+                            <CodeBlock>{coreSystemRule?.namespaceRule.regex}</CodeBlock>
                         </Stack>
                     </CardBody>
                 </Card>
             </GridItem>
-            <GridItem span={4}>
+            <GridItem sm={12} md={6} lg={4}>
                 <Card isFlat>
                     <CardTitle>Red Hat layered products</CardTitle>
                     <CardBody>
@@ -52,17 +97,19 @@ const PlatformComponentsConfigDetails = (): ReactElement => {
                             </Text>
                             <CodeBlock>
                                 <div className="truncate-multiline">
-                                    ^stackrox$|^rhacs-operator$|^open-cluster-management$|^multicluster-engine$|^aap$|^hive$`
+                                    {redHatLayeredProductsRule?.namespaceRule.regex}
                                 </div>
-                                <Button variant="link" isInline className="pf-v5-u-mt-sm">
-                                    Show more
-                                </Button>
                             </CodeBlock>
+                            <StackItem className="pf-v5-u-text-align-center pf-v5-u-mt-sm">
+                                <Button variant="link" isInline>
+                                    View more
+                                </Button>
+                            </StackItem>
                         </Stack>
                     </CardBody>
                 </Card>
             </GridItem>
-            <GridItem span={4}>
+            <GridItem sm={12} md={6} lg={4}>
                 <Card isFlat>
                     <CardTitle>Custom components</CardTitle>
                     <CardBody>
@@ -72,9 +119,27 @@ const PlatformComponentsConfigDetails = (): ReactElement => {
                                 applications and products.
                             </Text>
                             <Divider component="div" />
-                            <Button variant="link" isInline className="pf-v5-u-mt-sm">
-                                Show 3 custom components
-                            </Button>
+                            <Text component="small" className="pf-v5-u-color-200">
+                                Namespaces match (Regex)
+                            </Text>
+                            {customRules.length === 0 && <CodeBlock>None</CodeBlock>}
+                            {customRules.length >= 1 && (
+                                <CodeBlock>
+                                    <Text component="small" className="pf-v5-u-color-200">
+                                        {customRules[0].name}
+                                    </Text>
+                                    <div className="truncate-multiline">
+                                        {customRules[0].namespaceRule.regex}
+                                    </div>
+                                </CodeBlock>
+                            )}
+                            {customRules.length > 1 && (
+                                <StackItem className="pf-v5-u-text-align-center pf-v5-u-mt-sm">
+                                    <Button variant="link" isInline>
+                                        View more
+                                    </Button>
+                                </StackItem>
+                            )}
                         </Stack>
                     </CardBody>
                 </Card>

@@ -61,14 +61,16 @@ export type PrivateConfig = {
     administrationEventsConfig: AdministrationEventsConfig;
 };
 
-export type PlatformComponentConfig = {
+export type PlatformComponentRule = {
+    name: string;
+    namespaceRule: {
+        regex: string;
+    };
+};
+
+export type PlatformComponentsConfig = {
     needsReevaluation: boolean;
-    rules: {
-        name: string;
-        namespaceRule: {
-            regex: string;
-        };
-    }[];
+    rules: PlatformComponentRule[];
 };
 
 export type SystemConfig = {
