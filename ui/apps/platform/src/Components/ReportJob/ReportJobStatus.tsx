@@ -96,6 +96,14 @@ function ReportJobStatus({
                 onConfirm={onDownload}
             />
         );
+    } else if (!isDownload && reportStatus.runState === 'PARTIAL_ERROR') {
+        statusIcon = (
+            <ExclamationTriangleIcon
+                title="Report was sent with partial errors"
+                className="pf-v5-u-warning-color-100"
+            />
+        );
+        statusText = <PartialReportModal failedClusters={reportStatus.failedClusters} />;
     } else if (isDownload && isDownloadAvailable && !areDownloadActionsDisabled) {
         statusColorClass = 'pf-v5-u-primary-color-100';
         statusIcon = <DownloadIcon title="Report download was successfully prepared" />;

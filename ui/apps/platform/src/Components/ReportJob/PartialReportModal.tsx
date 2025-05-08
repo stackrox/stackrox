@@ -7,7 +7,7 @@ import { FailedCluster } from 'types/reportJob';
 
 export type PartialReportModalProps = {
     failedClusters?: FailedCluster[];
-    onConfirm: () => void;
+    onConfirm?: () => void;
 };
 
 function PartialReportModal({ failedClusters = [], onConfirm }: PartialReportModalProps) {
@@ -19,6 +19,27 @@ function PartialReportModal({ failedClusters = [], onConfirm }: PartialReportMod
 
     const sortedFailedClusters = sortBy(failedClusters, 'clusterName');
 
+    const actions = [
+        <Button key="cancel" variant="link" onClick={handleModalToggle}>
+            Cancel
+        </Button>,
+    ];
+
+    if (onConfirm) {
+        actions.unshift(
+            <Button
+                key="confirm"
+                variant="primary"
+                onClick={() => {
+                    handleModalToggle();
+                    onConfirm();
+                }}
+            >
+                Download partial report
+            </Button>
+        );
+    }
+
     return (
         <React.Fragment>
             <Button
@@ -27,28 +48,14 @@ function PartialReportModal({ failedClusters = [], onConfirm }: PartialReportMod
                 className="pf-v5-u-primary-color-100"
                 onClick={handleModalToggle}
             >
-                Partial report
+                {!onConfirm ? 'Partial report sent' : 'Partial report'}
             </Button>
             <Modal
                 variant="medium"
                 title="Partial report generated"
                 isOpen={isModalOpen}
                 onClose={handleModalToggle}
-                actions={[
-                    <Button
-                        key="confirm"
-                        variant="primary"
-                        onClick={() => {
-                            handleModalToggle();
-                            onConfirm();
-                        }}
-                    >
-                        Download partial report
-                    </Button>,
-                    <Button key="cancel" variant="link" onClick={handleModalToggle}>
-                        Cancel
-                    </Button>,
-                ]}
+                actions={{ actions }}
             >
                 <Flex>
                     <FlexItem>
