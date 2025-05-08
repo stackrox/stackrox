@@ -105,7 +105,7 @@ ROX_ADMIN_PASSWORD="$(openssl rand -base64 20 | tr -d '/=+')"
 ```
 From here, you can install stackrox-central-services to get Central and Scanner components deployed on your cluster.
 
-> [!NOTE]
+> **Note:**
 > You need only one deployed instance of stackrox-central-services even if you plan to secure multiple clusters.
 
 If you're installing on a reasonably sized cluster, use the default installation command:
@@ -158,7 +158,7 @@ CLUSTER_NAME="my-secured-cluster"
 ```
 Then install stackrox-secured-cluster-services (with the init bundle you generated earlier).
 
-> [!NOTE]
+> **Note:**
 > When deploying stackrox-secured-cluster-services on a different cluster than the one where stackrox-central-services is deployed, you will also need to specify the endpoint (address and port number) of Central via `--set centralEndpoint=<endpoint_of_central_service>` command-line argument.
 
 If you're installing on a reasonably sized cluster, use the default installation command:
@@ -229,7 +229,7 @@ After a few minutes, all resources should be deployed.
 
 **Credentials for the 'admin' user can be found in the `./deploy/k8s/central-deploy/password` file.**
 
-> [!NOTE]
+> **Note:**
 > While the password file is stored in plaintext on your local filesystem, the Kubernetes Secret StackRox uses is encrypted, and you will not be able to alter the secret at runtime. If you lose the password, you will have to redeploy central.
 
 </details>
@@ -254,7 +254,7 @@ After a few minutes, all resources should be deployed. The process will complete
 
 **Credentials for the 'admin' user can be found in the `./deploy/openshift/central-deploy/password` file.**
 
-> [!NOTE]
+> **Note:**
 > While the password file is stored in plaintext on your local filesystem, the Kubernetes Secret StackRox uses is encrypted, and you will not be able to alter the secret at runtime. If you loose the password, you will have to redeploy central.
 
 </details>
@@ -388,7 +388,7 @@ Now, you need to bring up a Kubernetes cluster *yourself* before proceeding.
 Development can either happen in GCP or locally with
 [Docker Desktop](https://docs.docker.com/desktop/kubernetes/), [Colima](https://github.com/abiosoft/colima#kubernetes), [minikube](https://minikube.sigs.k8s.io/docs/start/).
 
-> [!NOTE]
+> **Note:**
 > Docker Desktop and Colima are more suited for macOS development, because the cluster will have access to images built with `make image` locally without additional configuration. Also, Collector has better support for these than minikube where drivers may not be available.
 
 ```bash
@@ -584,15 +584,9 @@ Now Central has been deployed. Use the UI to deploy Sensor.
 
 </details>
 
-> [!NOTE]
-> Will it work **here**?
-> If using a host mount, you need to allow the container to access it by using
-> `sudo chcon -Rt svirt_sandbox_file_t <full volume path>`
-
-
 <details><summary>OpenShift</summary>
 
-> [!NOTE]
+> **Note:**
 > If using a host mount, you need to allow the container to access it by using
 > `sudo chcon -Rt svirt_sandbox_file_t <full volume path>`
 
