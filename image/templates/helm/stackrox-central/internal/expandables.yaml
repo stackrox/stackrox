@@ -10,7 +10,6 @@ ca:
 central:
   config: true
   endpointsConfig: true
-  endpoint: true
   nodeSelector: true
   jwtSigner:
     key: true
