@@ -4,10 +4,11 @@ values:
   sensor:
     localImageScanning:
       enabled: false
-  scannerV4:
-    disable: true
 tests:
-- name: sensor should not allow any scanner traffic by default
+- name: sensor should not allow any scanner traffic if scanner is disabled
+  set:
+    scanner.disable: true
+    scannerV4.disable: true
   expect: |
     .networkpolicys["sensor"].spec.ingress | assertThat(length == 2)
     .networkpolicys["sensor"].spec.ingress[0].from | assertThat(length == 3)
@@ -20,7 +21,7 @@ tests:
     sensor.localImageScanning.enabled: true
   expect: |
     .networkpolicys["sensor"].spec.ingress | assertThat(length == 2)
-    .networkpolicys["sensor"].spec.ingress[0].from | assertThat(length == 4)
+    .networkpolicys["sensor"].spec.ingress[0].from | assertThat(length == 5)
     .networkpolicys["sensor"].spec.ingress[0] | .from[0].podSelector.matchLabels.app | assertThat(. == "collector")
     .networkpolicys["sensor"].spec.ingress[0] | .from[1].podSelector.matchLabels.service | assertThat(. == "collector")
     .networkpolicys["sensor"].spec.ingress[0] | .from[2].podSelector.matchLabels.app | assertThat(. == "admission-control")
