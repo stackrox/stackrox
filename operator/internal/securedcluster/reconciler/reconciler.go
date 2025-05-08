@@ -20,32 +20,35 @@ import (
 // RegisterNewReconciler registers a new helm reconciler in the given k8s controller manager
 func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 	proxyEnv := proxy.GetProxyEnvVars() // fix at startup time
-	// IMPORTANT: reconciler preExtensions that implement feature-defaulting logic (such as ReconcileScannerV4FeatureDefaultsExtension)
-	// must be executed first. Hence, they need to be first in order when registering extensions using WithPreExtension!
-	opts := []pkgReconciler.Option{
-		pkgReconciler.WithExtraWatch(
-			source.Kind[*platform.Central](
-				mgr.GetCache(),
-				&platform.Central{},
-				reconciler.HandleSiblings[*platform.Central](platform.SecuredClusterGVK, mgr),
-				// Only appearance and disappearance of a Central resource can influence whether
-				// a local scanner should be deployed by the SecuredCluster controller.
-				utils.CreateAndDeleteOnlyPredicate[*platform.Central]{})),
-		pkgReconciler.WithPreExtension(extensions.ReconcileScannerV4FeatureDefaultsExtension(mgr.GetClient())),
+	extraEventWatcher := pkgReconciler.WithExtraWatch(
+		source.Kind[*platform.Central](
+			mgr.GetCache(),
+			&platform.Central{},
+			reconciler.HandleSiblings[*platform.Central](platform.SecuredClusterGVK, mgr),
+			// Only appearance and disappearance of a Central resource can influence whether
+			// a local scanner should be deployed by the SecuredCluster controller.
+			utils.CreateAndDeleteOnlyPredicate[*platform.Central]{}))
+
+	otherPreExtensions := []pkgReconciler.Option{
 		pkgReconciler.WithPreExtension(extensions.CheckClusterNameExtension()),
 		pkgReconciler.WithPreExtension(proxy.ReconcileProxySecretExtension(mgr.GetClient(), mgr.GetAPIReader(), proxyEnv)),
 		pkgReconciler.WithPreExtension(commonExtensions.CheckForbiddenNamespacesExtension(commonExtensions.IsSystemNamespace)),
 		pkgReconciler.WithPreExtension(commonExtensions.ReconcileProductVersionStatusExtension(version.GetMainVersion())),
 		pkgReconciler.WithPreExtension(extensions.ReconcileLocalScannerDBPasswordExtension(mgr.GetClient(), mgr.GetAPIReader())),
 		pkgReconciler.WithPreExtension(extensions.ReconcileLocalScannerV4DBPasswordExtension(mgr.GetClient(), mgr.GetAPIReader())),
-		pkgReconciler.WithPauseReconcileAnnotation(commonExtensions.PauseReconcileAnnotation),
 	}
 
+	// IMPORTANT: reconciler preExtensions that implement feature-defaulting logic (such as ReconcileScannerV4FeatureDefaultsExtension)
+	// must be executed first. Hence, they need to be first in order when registering extensions using WithPreExtension!
+	opts := make([]pkgReconciler.Option, 0, len(otherPreExtensions)+4)
+	opts = append(opts, extraEventWatcher)
+	opts = append(opts, pkgReconciler.WithPreExtension(extensions.ReconcileScannerV4FeatureDefaultsExtension(mgr.GetClient())))
+	opts = append(opts, otherPreExtensions...)
+	opts = append(opts, pkgReconciler.WithPauseReconcileAnnotation(commonExtensions.PauseReconcileAnnotation))
 	opts, err := commonExtensions.AddSelectorOptionIfNeeded(selector, opts)
 	if err != nil {
 		return err
 	}
-
 	opts = commonExtensions.AddMapKubeAPIsExtensionIfMapFileExists(opts)
 
 	// Using uncached UncachedClient since this is reading secrets not
