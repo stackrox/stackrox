@@ -18,7 +18,7 @@ import searchContext from 'Containers/searchContext';
 import { entityNounSentenceCaseSingular } from '../entitiesForCompliance';
 import VerticalBarChart from './VerticalBarChart';
 
-const EntityCompliance = ({ entityType, entityName, clusterName }) => {
+const EntityCompliance = ({ entityId, entityType, entityName, clusterName }) => {
     const entityTypeLabel = entityNounSentenceCaseSingular[entityType];
     const searchParam = useContext(searchContext);
     const match = useWorkflowMatch();
@@ -60,7 +60,7 @@ const EntityCompliance = ({ entityType, entityName, clusterName }) => {
         navigate(URL);
     }
 
-    const whereClause = { [entityType]: entityName, [entityTypes.CLUSTER]: clusterName };
+    const whereClause = { [`${entityType} ID`]: entityId, [entityTypes.CLUSTER]: clusterName };
     const variables = {
         unit: entityTypes.CHECK,
         groupBy: [entityTypes.STANDARD, entityType],
@@ -117,6 +117,7 @@ const EntityCompliance = ({ entityType, entityName, clusterName }) => {
     );
 };
 EntityCompliance.propTypes = {
+    entityId: PropTypes.string.isRequired,
     entityType: PropTypes.string.isRequired,
     entityName: PropTypes.string,
     clusterName: PropTypes.string,
