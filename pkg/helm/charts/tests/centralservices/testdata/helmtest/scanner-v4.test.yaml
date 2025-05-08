@@ -67,9 +67,9 @@ tests:
     scannerV4.disable: false
   expect: |
     .deployments["scanner-v4-indexer"].spec.template.spec.containers[0].env[] |
-          select(.name == "ROX_CENTRAL_ENDPOINT") | assertThat(.value == "central.stackrox.svc:443")
+          select(.name == "ROX_CENTRAL_ENDPOINT") | assertThat(.value == "central.stackrox.svc")
     .deployments["scanner-v4-matcher"].spec.template.spec.containers[0].env[] |
-          select(.name == "ROX_CENTRAL_ENDPOINT") | assertThat(.value == "central.stackrox.svc:443")
+          select(.name == "ROX_CENTRAL_ENDPOINT") | assertThat(.value == "central.stackrox.svc")
 
 - name: "scanner V4 indexer and matcher skip gRPC health probes on Kubernetes < 1.24.0"
   set:
