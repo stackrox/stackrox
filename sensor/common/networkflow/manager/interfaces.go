@@ -11,7 +11,6 @@ import (
 type EntityStore interface {
 	LookupByContainerID(string) (metadata clusterentities.ContainerMetadata, found bool, isHistorical bool)
 	LookupByEndpoint(net.NumericEndpoint) []clusterentities.LookupResult
-	DumpEndpointStore()
 	RegisterPublicIPsListener(clusterentities.PublicIPsListener) bool
 	UnregisterPublicIPsListener(clusterentities.PublicIPsListener) bool
 	RecordTick()

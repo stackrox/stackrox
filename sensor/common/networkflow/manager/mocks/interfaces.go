@@ -41,18 +41,6 @@ func (m *MockEntityStore) EXPECT() *MockEntityStoreMockRecorder {
 	return m.recorder
 }
 
-// DumpEndpointStore mocks base method.
-func (m *MockEntityStore) DumpEndpointStore() {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "DumpEndpointStore")
-}
-
-// DumpEndpointStore indicates an expected call of DumpEndpointStore.
-func (mr *MockEntityStoreMockRecorder) DumpEndpointStore() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DumpEndpointStore", reflect.TypeOf((*MockEntityStore)(nil).DumpEndpointStore))
-}
-
 // LookupByContainerID mocks base method.
 func (m *MockEntityStore) LookupByContainerID(arg0 string) (clusterentities.ContainerMetadata, bool, bool) {
 	m.ctrl.T.Helper()

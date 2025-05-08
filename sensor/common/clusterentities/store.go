@@ -254,24 +254,14 @@ func (e *Store) LookupByEndpoint(endpoint net.NumericEndpoint) []LookupResult {
 	// Return early to avoid potential duplicates... not sure if duplicates are bad here.
 	if len(current)+len(historical) > 0 {
 		e.track("LookupByEndpoint(%s): found=true, foundIn=endpointsStore", endpoint.String())
-		log.Debugf("LookupByEndpoint(%s): found=true, foundIn=endpointsStore", endpoint.String())
 		return append(current, historical...)
 	}
 	if len(ipLookup)+len(ipLookupHistorical) > 0 {
 		e.track("LookupByEndpoint(%s): found=true, foundIn=ipLookup", endpoint.String())
-		log.Debugf("LookupByEndpoint(%s): found=true, foundIn=ipLookup", endpoint.String())
 		return append(ipLookupHistorical, ipLookup...)
 	}
 	e.track("LookupByEndpoint(%s): found=false", endpoint.String())
-	log.Debugf("LookupByEndpoint(%s): found=false", endpoint.String())
 	return []LookupResult{}
-}
-
-func (e *Store) DumpEndpointStore() {
-	log.Debug("Dumping e.endpointsStore.endpointMap")
-	for numericEndpoint, m := range e.endpointsStore.endpointMap {
-		log.Debugf("endpointMap[%s]: %v", numericEndpoint.String(), m)
-	}
 }
 
 // LookupByContainerID retrieves the deployment ID by a container ID.
