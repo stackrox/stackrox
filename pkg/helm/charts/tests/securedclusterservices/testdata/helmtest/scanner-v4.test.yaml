@@ -235,7 +235,7 @@ tests:
   expect: |
     envVars(.deployments["scanner-v4-indexer"]; "indexer")["FOO"] | assertThat(. == "bar")
 
-- name: "Disbaling scanner V2 does not automatically enable scanner V4 as well"
+- name: "Disabling scanner V2 does not automatically enable scanner V4 as well"
   values:
     scanner:
       disable: true
