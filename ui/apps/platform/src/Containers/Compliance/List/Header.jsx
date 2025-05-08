@@ -17,10 +17,7 @@ const ListHeader = ({ entityType, searchComponent, standard, isExporting, setIsE
     const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForCompliance = hasReadWriteAccess('Compliance');
 
-    // ROX-25189: Comment out, because standardLabels prevents Download Evidence as CSV for compliance operator standards.
     const standardId = findKey(standardLabels, (key) => key === standard) || standard;
-    // const standardId = standard;
-    console.log(standard)
 
     // ROX-25189: Add nullish coalescing to include compliance operator standard id:
     // in page header
