@@ -286,7 +286,7 @@ func NewManager(
 		pubSub:            pubSub,
 	}
 	maxAgeSetting := env.EnrichmentPurgerTickerMaxAge.DurationSetting()
-	if maxAgeSetting <= enricherCycle {
+	if maxAgeSetting > 0 && maxAgeSetting <= enricherCycle {
 		log.Warnf("ROX_ENRICHMENT_PURGER_MAX_AGE (%s) must be higher than enricher cycle (%s). "+
 			"Applying default of 4 hours", maxAgeSetting, enricherCycle)
 		maxAgeSetting = 4 * time.Hour
