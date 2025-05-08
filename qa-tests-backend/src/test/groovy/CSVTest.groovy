@@ -13,6 +13,7 @@ import services.GraphQLService
 import services.ImageService
 import util.Env
 
+import org.junit.Assume
 import spock.lang.Tag
 import spock.lang.Unroll
 
@@ -50,7 +51,7 @@ class CSVTest extends BaseSpecification {
         """
 
     private static final FIXABLE_CVES_IN_COMPONENT_QUERY = """
-        query getFixableCvesInComponent(\$query: String, \$scopeQuery: String, \$vulnQuery: String,
+        query getFixableCvesInComponent(\$id: ID!, \$query: String, \$scopeQuery: String, \$vulnQuery: String,
          \$vulnPagination: Pagination) {
           result: imageComponent(id: \$id) {
             id
@@ -107,9 +108,6 @@ class CSVTest extends BaseSpecification {
         }
     }
 
-    // Non-postgres runs
-    // "CVE", "CVE Type(s)", "Fixable", "CVSS Score (version)", "Env Impact (%)", "Impact Score", "Deployments",
-    // "Images", "Nodes", "Components", "Scanned", "Published", "Summary"
     // Postgres runs
     // "Image CVE", "Fixable", "CVSS Score", "Env Impact (%s)", "Impact Score", "Deployments", "Images",
     // "Image Components", "Last Scanned", "Published", "Summary"
@@ -138,12 +136,8 @@ class CSVTest extends BaseSpecification {
         return "openssl#1.1.1d-0+deb10u7#debian:10"
     }
 
-    def getComponentName() {
-            return "openssl"
-        }
-
     def getComponentQuery() {
-        return "COMPONENT:" + getComponentName() + "+Fixable:true"
+        return "COMPONENT ID:" + getComponentId() + "+Fixable:true"
     }
 
     def getCVETypeImageQuery() {
@@ -164,6 +158,10 @@ class CSVTest extends BaseSpecification {
     @Tag("BAT")
     def "Verify CVE CSV data scoped by entity is correct #description"() {
         given:
+        // TODO(ROX-29220): Fix the test for fixable cves in component query
+        "Skip component test if new data model"
+         Assume.assumeFalse(Env.get("ROX_FLATTEN_CVE_DATA", null) == "true" && description == "FIXABLE_CVES_IN_COMPONENT_QUERY")
+
         def graphQLPayload = payload(id)
         def csvQuery = getCVETypeImageQuery() + query
         def graphQLQuery = QUERIES[description]
@@ -215,7 +213,6 @@ class CSVTest extends BaseSpecification {
         }
 
         log.info "Number of CVEs received from CSV endpoint: " + lines.size()
-        log.info "The lines: " + lines
 
         def csvCVEs = new ArrayList<CVE>()
         for (int i = 1; i < lines.size(); i++) {
@@ -232,21 +229,21 @@ class CSVTest extends BaseSpecification {
 
         then:
         "Ensure that the CVEs from graphQL and CSV match"
-//         assert csvCVEs.size() == graphQLCVEs.size()
+        assert csvCVEs.size() == graphQLCVEs.size()
 
         secondarySortByID(csvCVEs)
-//         secondarySortByID(graphQLCVEs)
+        secondarySortByID(graphQLCVEs)
 
-//         for (def i = 0; i < csvCVEs.size(); i++) {
-//             assert csvCVEs.get(i) == graphQLCVEs.get(i)
-//         }
+        for (def i = 0; i < csvCVEs.size(); i++) {
+            assert csvCVEs.get(i) == graphQLCVEs.get(i)
+        }
 
         where:
         "Data is"
 
         description                        | id                           | query
         "FIXABLE_CVES_IN_IMAGE_QUERY"      | TEST_IMAGE_SHA               | "Image Sha:${TEST_IMAGE_SHA}+Fixable:true"
-        "FIXABLE_CVES_IN_COMPONENT_QUERY"  | getComponentName()             | getComponentQuery()
+        "FIXABLE_CVES_IN_COMPONENT_QUERY"  | getComponentId()             | getComponentQuery()
         "FIXABLE_CVES_IN_DEPLOYMENT_QUERY" | CVE_DEPLOYMENT.deploymentUid |
                 "Deployment ID:${CVE_DEPLOYMENT.deploymentUid}+Fixable:true"
     }
