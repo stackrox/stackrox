@@ -365,3 +365,57 @@ vulnerabilities:
   Repo:
     Name: maven
     URI: https://repo1.maven.apache.org/maven2
+
+# Vuln: CVE-2025-24813/GHSA-83qj-6fr2-vhqg
+# Reason: The Tomcat JAR does not contain a pom.properties file, so cannot match the finding to OSV's data.
+# Source: https://osv.dev/vulnerability/GHSA-83qj-6fr2-vhqg
+- Name: CVE-2025-24813
+  Description: 'Apache Tomcat: Potential RCE and/or information disclosure and/or information corruption with partial PUT'
+  Issued: '2025-03-10T18:31:56Z'
+  Links: https://nvd.nist.gov/vuln/detail/CVE-2025-24813
+  Severity: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+  NormalizedSeverity: Critical
+  Package:
+    Name: org.apache.tomcat-embed-core:tomcat-embed-core
+    Kind: Binary
+    RepositoryHint: Maven
+  FixedInVersion: introduced=9.0.0.M1&fixed=9.0.99
+  Repo:
+    Name: maven
+    URI: https://repo1.maven.apache.org/maven2
+
+# Vuln: CVE-2025-24813/GHSA-83qj-6fr2-vhqg
+# Reason: Same as previous entry but with different vulnerable range.
+# Source: https://osv.dev/vulnerability/GHSA-83qj-6fr2-vhqg
+- Name: CVE-2025-24813
+  Description: 'Apache Tomcat: Potential RCE and/or information disclosure and/or information corruption with partial PUT'
+  Issued: '2025-03-10T18:31:56Z'
+  Links: https://nvd.nist.gov/vuln/detail/CVE-2025-24813
+  Severity: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+  NormalizedSeverity: Critical
+  Package:
+    Name: org.apache.tomcat-embed-core:tomcat-embed-core
+    Kind: Binary
+    RepositoryHint: Maven
+  FixedInVersion: introduced=10.1.0-M1&fixed=10.1.35
+  Repo:
+    Name: maven
+    URI: https://repo1.maven.apache.org/maven2
+
+# Vuln: CVE-2025-24813/GHSA-83qj-6fr2-vhqg
+# Reason: Same as previous entry but with different vulnerable range.
+# Source: https://osv.dev/vulnerability/GHSA-83qj-6fr2-vhqg
+- Name: CVE-2025-24813
+  Description: 'Apache Tomcat: Potential RCE and/or information disclosure and/or information corruption with partial PUT'
+  Issued: '2025-03-10T18:31:56Z'
+  Links: https://nvd.nist.gov/vuln/detail/CVE-2025-24813
+  Severity: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+  NormalizedSeverity: Critical
+  Package:
+    Name: org.apache.tomcat-embed-core:tomcat-embed-core
+    Kind: Binary
+    RepositoryHint: Maven
+  FixedInVersion: introduced=11.0.0-M1&fixed=11.0.3
+  Repo:
+    Name: maven
+    URI: https://repo1.maven.apache.org/maven2
