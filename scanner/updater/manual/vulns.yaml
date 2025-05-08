@@ -367,7 +367,10 @@ vulnerabilities:
     URI: https://repo1.maven.apache.org/maven2
 
 # Vuln: CVE-2025-24813/GHSA-83qj-6fr2-vhqg
-# Reason: The Tomcat JAR does not contain a pom.properties file, so cannot match the finding to OSV's data.
+# Reason: The Tomcat JAR does not contain a pom.properties file, so cannot
+#  match the finding to OSV's data. This entry and next entry have the same
+#  Package.Version but not the same Package.Name. This is due to older 9.X.Y
+#  tomcat-embed-core packages containing different MANIFEST.MF than the rest.
 # Source: https://osv.dev/vulnerability/GHSA-83qj-6fr2-vhqg
 - Name: CVE-2025-24813
   Description: 'Apache Tomcat: Potential RCE and/or information disclosure and/or information corruption with partial PUT'
