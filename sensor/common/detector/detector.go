@@ -665,6 +665,15 @@ func (d *detectorImpl) getNetworkFlowEntityDetails(info *storage.NetworkEntityIn
 	case storage.NetworkEntityInfo_EXTERNAL_SOURCE:
 		extsrc := d.extSrcsStore.LookupByID(info.GetId())
 		if extsrc == nil {
+			if info.GetExternalSource().GetDiscovered() {
+				// extSrcStore will contain entities provided by Central
+				// but for discovered entities, they may not exist in this store
+				// yet. In this case, we can still perform detection, but using
+				// the live data from the flow
+				return networkEntityDetails{
+					name: info.GetExternalSource().GetName(),
+				}, nil
+			}
 			return networkEntityDetails{}, errors.Wrapf(externalEntityNotFoundErr, "External source with ID: %q not found while trying to run network flow policy", info.GetId())
 		}
 		return networkEntityDetails{
