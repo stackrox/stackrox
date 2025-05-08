@@ -153,7 +153,6 @@ fragment cveFields on ImageVulnerability {
         def gqlService = new GraphQLService()
 
         def query="CVE:CVE-2019-13012"
-        def componentQuery = "COMPONENT:" + component + "+Operating System:" + os
 
         def embeddedImageRes = gqlService.Call(getEmbeddedImageQuery(),
                 [id: imageDigest, query: query])
@@ -178,9 +177,8 @@ fragment cveFields on ImageVulnerability {
         def fixableCVEImageResVuln = fixableCVEImageRes.value.result.vulnerabilities[0]
 
         def fixableCVEComponentRes = gqlService.Call(getComponentFixableCVEQuery(),
-                [query: componentQuery, vulnQuery: query, scopeQuery: "Image SHA:${imageDigest}"])
+                [id: componentID, vulnQuery: query, scopeQuery: "Image SHA:${imageDigest}"])
         assert fixableCVEComponentRes.hasNoErrors()
-        log.info "Component stuff: " + fixableCVEComponentRes
         def fixableCVEComponentResVuln = fixableCVEComponentRes.value.result.vulnerabilities[0]
 
         def subCVEComponentRes = gqlService.Call(getComponentSubCVEQuery(),
@@ -206,10 +204,10 @@ fragment cveFields on ImageVulnerability {
 
         where:
         "Data inputs are: "
-        imageDigest | component | componentID | severity | cvss | os
+        imageDigest | component | componentID | severity | cvss
         RHEL_IMAGE_DIGEST   | "glib2" | getRHELComponentID()   |
-                VulnerabilitySeverity.LOW_VULNERABILITY_SEVERITY | 4.4 | "centos:7"
-        UBUNTU_IMAGE_DIGEST | "glib2.0" | getUbuntuComponentID() |
-                VulnerabilitySeverity.MODERATE_VULNERABILITY_SEVERITY | 7.5 | "ubuntu:14.04"
+                VulnerabilitySeverity.LOW_VULNERABILITY_SEVERITY | 4.4
+        UBUNTU_IMAGE_DIGEST | "glib2.0"      | getUbuntuComponentID() |
+                VulnerabilitySeverity.MODERATE_VULNERABILITY_SEVERITY      | 7.5
     }
 }
