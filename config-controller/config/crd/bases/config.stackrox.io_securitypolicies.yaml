@@ -280,7 +280,7 @@ spec:
                       type: string
                   type: object
                 type: array
-              messge:
+              message:
                 description: Message is deprecated in favor of conditions
                 type: string
               policyId:
