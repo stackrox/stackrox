@@ -364,6 +364,9 @@ type LocalScannerComponentSpec struct {
 // LocalScannerV4ComponentSpec defines settings for the "Scanner V4" component in SecuredClusters
 type LocalScannerV4ComponentSpec struct {
 	// If you want to enable the Scanner V4 component set this to "AutoSense"
+	// If this field is not specified or set to "Default", the following defaulting takes place:
+	// * for new installations, Scanner V4 is enabled starting with ACS 4.8;
+	// * for upgrades to 4.8 from previous releases, Scanner V4 is disabled.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Scanner V4 component",order=1
 	ScannerComponent *LocalScannerV4ComponentPolicy `json:"scannerComponent,omitempty"`
 
