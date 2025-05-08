@@ -317,7 +317,6 @@ func (s *syslog) sendSyslog(severity int, timestamp time.Time, messageID, unstru
 			return err
 		}
 		syslog = syslog[int(math.Min(float64(s.maxMessageSize), float64(len(syslog)))):]
-		time.Sleep(5 * time.Second)
 	}
 	return nil
 }
