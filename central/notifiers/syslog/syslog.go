@@ -311,14 +311,17 @@ func (s *syslog) AuditLoggingEnabled() bool {
 }
 
 func (s *syslog) sendSyslog(severity int, timestamp time.Time, messageID, unstructuredData string) error {
-	syslog := []byte(s.wrapSyslogUnstructuredData(severity, timestamp, messageID, unstructuredData))
-	for len(syslog) != 0 {
-		if err := s.sender.SendSyslog(syslog[0:s.maxMessageSize]); err != nil {
-			return err
+	go func() {
+		syslog := []byte(s.wrapSyslogUnstructuredData(severity, timestamp, messageID, unstructuredData))
+		for len(syslog) != 0 {
+			if err := s.sender.SendSyslog(syslog[0:s.maxMessageSize]); err != nil {
+				return
+			}
+			syslog = syslog[int(math.Min(float64(s.maxMessageSize), float64(len(syslog)))):]
+			time.Sleep(5 * time.Second)
 		}
-		syslog = syslog[int(math.Min(float64(s.maxMessageSize), float64(len(syslog)))):]
-		time.Sleep(5 * time.Second)
-	}
+		return
+	}()
 	return nil
 }
 
