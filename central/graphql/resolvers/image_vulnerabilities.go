@@ -187,9 +187,6 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 			return nil, err
 		}
 
-		// TODO(ROX-27780): figure out what to do with this
-		//  query = tryUnsuppressedQuery(query)
-
 		// Get the CVEs themselves.  This will be denormalized.  So use the IDs to get them, but use
 		// the data returned from CVE Flat View to keep order and set just 1 instance of a CVE
 		vulnQuery := search.NewQueryBuilder().AddExactMatches(search.CVEID, cveIDs...).ProtoQuery()

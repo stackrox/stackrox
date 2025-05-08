@@ -41,6 +41,34 @@ func GetImage() *storage.Image {
 	return getImageWithComponents(componentsPerImage)
 }
 
+func GetImagewithDulicateVulnerabilities() *storage.Image {
+	numComponentsPerImage := 50
+	componentsPerImage := make([]*storage.EmbeddedImageScanComponent, 0, numComponentsPerImage)
+	for i := 0; i < numComponentsPerImage; i++ {
+		componentsPerImage = append(componentsPerImage, &storage.EmbeddedImageScanComponent{
+			Name:    "name",
+			Version: "1.2.3.4",
+			Vulns:   getVulnsPerComponent(i, 5, storage.EmbeddedVulnerability_IMAGE_VULNERABILITY),
+		})
+	}
+	cveName := fmt.Sprintf("CVE-Duplicate-2025-%04d", rand.Intn(10_000))
+	duplicateVuln := &storage.EmbeddedVulnerability{
+		Cve:               cveName,
+		Cvss:              5,
+		VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+		Severity:          storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
+		Summary:           "Duplicate CVE for testing",
+		Link:              fmt.Sprintf("https://nvd.nist.gov/vuln/detail/%s", cveName),
+		SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
+			FixedBy: "abcdefg",
+		},
+	}
+	componentsPerImage[0].Vulns = append(componentsPerImage[0].Vulns, duplicateVuln)
+	componentsPerImage[1].Vulns = append(componentsPerImage[1].Vulns, duplicateVuln)
+
+	return getImageWithComponents(componentsPerImage)
+}
+
 // GetImageWithUniqueComponents returns a Mock Image where each component is unique
 func GetImageWithUniqueComponents(numComponents int) *storage.Image {
 	componentsPerImage := make([]*storage.EmbeddedImageScanComponent, 0, numComponents)
