@@ -95,6 +95,8 @@ class ExportButton extends Component {
             let queryStr = '';
             let value = null;
 
+            console.log(id, fileName)
+
             // Support for StandardId & ClusterId only
             if (queryParamMap[type]) {
                 if (id) {
