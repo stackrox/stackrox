@@ -16,4 +16,5 @@ type Request struct {
 	Ctx                context.Context
 	SnapshotID         string
 	NotificationMethod storage.ComplianceOperatorReportStatus_NotificationMethod
+	FailedClusters     map[string]*storage.ComplianceOperatorReportSnapshotV2_FailedCluster
 }
