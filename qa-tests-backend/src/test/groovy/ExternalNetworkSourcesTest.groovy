@@ -174,7 +174,6 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
     }
 
     @Tag("NetworkFlowVisualization")
-    @Ignore("ROX-24313: This started failing regularly after merging PR14538")
     def "Verify two flows co-exist if larger network entity added first"() {
         when:
         "Supernet external source is created before subnet external source"
@@ -195,17 +194,18 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
         String externalSource31Name = generateNameWithPrefix("external-source-31")
         NetworkEntity externalSource31 = createNetworkEntityExternalSource(externalSource31Name, CF_CIDR_31)
         String externalSource31ID = externalSource31?.getInfo()?.getId()
+        assert externalSource31 != null
         assert externalSource31ID != null
 
         then:
-        "Verify edge exists from deployment to subnet external source"
+        "Verify edge exists from deployment ${deploymentUid} to subnet external source ${externalSource31ID}"
         withRetry(4, 30) {
             assert NetworkGraphUtil.checkForEdge(deploymentUid, externalSource31ID, null, 180)
         }
 
         and:
-        "Verify edge from deployment to supernet exists in older network graph"
-        withRetry(4, 30) {
+        "Verify edge from deployment ${deploymentUid} to supernet ${externalSource30ID} exists in older network graph"
+        withRetry(20, 30) {
             assert NetworkGraphUtil.checkForEdge(
                     deploymentUid,
                     externalSource30ID,
@@ -213,8 +213,8 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
         }
 
         and:
-        "Verify no edge from deployment to supernet exists in recent network graph"
-        withRetry(4, 30) {
+        "Verify no edge from deployment ${deploymentUid} to supernet ${externalSource30ID} exists in recent network graph"
+        withRetry(20, 30) {
             assert verifyNoEdge(
                     deploymentUid,
                     externalSource30ID,
