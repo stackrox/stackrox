@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/stackrox/rox/central/complianceoperator/v2/compliancemanager"
 	countMetrics "github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/sensor/service/common"
@@ -15,6 +16,8 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/metrics"
 )
+
+const minimalComplianceOperatorVersion = "v1.6.0"
 
 var (
 	_ pipeline.Fragment = (*pipelineImpl)(nil)
@@ -72,7 +75,16 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 
 	// if not ready, add it to the status errors
 	if readyPods < desiredPods {
-		operatorErrors = append(operatorErrors, fmt.Sprintf("compliance operator not ready.  Only %d pods are ready when %d are desired.", readyPods, desiredPods))
+		operatorErrors = append(operatorErrors, fmt.Sprintf("compliance operator not ready. Only %d pods are ready when %d are desired.", readyPods, desiredPods))
+	}
+
+	// we support only newer versions of compliance operator
+	minVersion, _ := semver.NewVersion(minimalComplianceOperatorVersion)
+	complianceOperatorVersion, err := semver.NewVersion(operatorInfo.GetVersion())
+	if complianceOperatorVersion == nil || err != nil {
+		operatorErrors = append(operatorErrors, fmt.Sprintf("invalid compliance operator version %q", operatorInfo.GetVersion()))
+	} else if complianceOperatorVersion.LessThan(minVersion) {
+		operatorErrors = append(operatorErrors, fmt.Sprintf("compliance operator version %q is not supported. Minimal required version is %q", operatorInfo.GetVersion(), minimalComplianceOperatorVersion))
 	}
 
 	operatorInfo.StatusErrors = operatorErrors
