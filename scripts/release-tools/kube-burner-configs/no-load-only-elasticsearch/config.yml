@@ -1,0 +1,9 @@
+---
+global:
+  gc: true
+  indexerConfig:
+    enabled: true
+    type: elastic
+    esServers: [ {{ env "ELASTICSEARCH_URL" }} ]
+    defaultIndex: kube-burner-long-running-test
+  measurements: []
