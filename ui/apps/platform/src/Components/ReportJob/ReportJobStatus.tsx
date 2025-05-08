@@ -96,6 +96,20 @@ function ReportJobStatus({
                 onConfirm={onDownload}
             />
         );
+    } else if (!isDownload && reportStatus.runState === 'PARTIAL_ERROR') {
+        statusIcon = (
+            <ExclamationTriangleIcon
+                title="Report was sent with partial errors"
+                className="pf-v5-u-warning-color-100"
+            />
+        );
+        statusText = (
+            <PartialReportModal
+                failedClusters={reportStatus.failedClusters}
+            />
+        );
+        statusText =
+            <p className="pf-v5-u-success-color-100">Successfully sent</p>;
     } else if (isDownload && isDownloadAvailable && !areDownloadActionsDisabled) {
         statusColorClass = 'pf-v5-u-primary-color-100';
         statusIcon = <DownloadIcon title="Report download was successfully prepared" />;
@@ -131,8 +145,9 @@ function ReportJobStatus({
         );
     } else if (reportStatus.runState === 'DELIVERED') {
         statusColorClass = 'pf-v5-u-success-color-100';
-        statusIcon = <CheckCircleIcon title="Report was successfully sent" />;
-        statusText = <p className="pf-v5-u-success-color-100">Successfully sent</p>;
+        statusIcon = <CheckCircleIcon title="Report was successfully sent"/>;
+        statusText =
+            <p className="pf-v5-u-success-color-100">Successfully sent</p>;
     } else {
         statusColorClass = 'pf-v5-u-warning-color-100';
         statusIcon = (
