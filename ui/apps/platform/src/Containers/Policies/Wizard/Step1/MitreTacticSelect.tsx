@@ -43,6 +43,7 @@ function MitreTacticSelect({
             onToggle={(_event, val) => setIsOpen(val)}
             placeholderText={label}
             selections={tacticId}
+            maxHeight="300px"
         >
             {mitreAttackVectors.map(({ tactic: { id, name } }) => {
                 // See MitreAttackVectorsFormSection.css for name and id style rules.
