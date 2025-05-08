@@ -46,14 +46,14 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
         return deployment
     }
 
-    def setup() {
+    def setupSpec() {
         orchestrator.batchCreateDeployments(DEPLOYMENTS)
         for (Deployment deployment : DEPLOYMENTS) {
             assert Services.waitForDeployment(deployment)
         }
     }
 
-    def cleanup() {
+    def cleanupSpec() {
         for (Deployment deployment : DEPLOYMENTS) {
             orchestrator.deleteDeployment(deployment)
         }
@@ -203,7 +203,7 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
                 "All custom CIDRs currently in Central: ${similarCIDRs}")
         }
 
-        getMatchingCIDRs(CF_CIDR_30).forEach { it ->
+        matchingCIDRs.forEach { it ->
             log.warn("Deleting conflicting CIDR " +
                 "id: ${it.getId()}, " +
                 "name: ${it.getExternalSource().name}, " +
@@ -227,7 +227,7 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
 
         log.info "Add smaller subnet subnet external source"
 
-        getMatchingCIDRs(CF_CIDR_31).forEach { it ->
+        matchingCIDRs.forEach { it ->
             log.warn("Deleting conflicting CIDR " +
                 "id: ${it.getId()}, " +
                 "name: ${it.getExternalSource().name}, " +
@@ -299,7 +299,7 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
         return existingCidrs
     }
 
-    private static Set<NetworkFlowOuterClass.NetworkEntityInfo> getMatchingCIDRs(String prefix) {
+    private static Set<NetworkFlowOuterClass.NetworkEntityInfo> getMatchingCIDRs() {
         def clusterId = ClusterService.getClusterId()
         assert clusterId
         def request = NetworkGraphServiceOuterClass.GetExternalNetworkEntitiesRequest
@@ -309,7 +309,7 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
         def response = NetworkGraphService.getNetworkGraphClient().getExternalNetworkEntities(request)
 
         return response.getEntitiesList().findAll({
-            it.getInfo().hasExternalSource() && it.getInfo().getExternalSource().cidr.startsWith(prefix)
+            it.getInfo().hasExternalSource() && it.getInfo().getExternalSource().cidr.startsWith("1.1.1.")
         })*.getInfo() as Set
     }
 
