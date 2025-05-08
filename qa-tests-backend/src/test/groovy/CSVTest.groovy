@@ -160,7 +160,7 @@ class CSVTest extends BaseSpecification {
         given:
         // TODO(ROX-29220): Fix the test for fixable cves in component query
         "Skip component test if new data model"
-         Assume.assumeFalse(Env.get("ROX_FLATTEN_CVE_DATA", null) == "true" &&
+        Assume.assumeFalse(Env.get("ROX_FLATTEN_CVE_DATA", null) == "true" &&
             description == "FIXABLE_CVES_IN_COMPONENT_QUERY")
 
         def graphQLPayload = payload(id)
