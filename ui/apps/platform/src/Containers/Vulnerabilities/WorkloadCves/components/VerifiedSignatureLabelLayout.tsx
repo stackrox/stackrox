@@ -1,6 +1,6 @@
 import React, { CSSProperties } from 'react';
 import { Button, Flex, FlexItem, Label, List, ListItem, Popover } from '@patternfly/react-core';
-import { CheckSquareIcon } from '@patternfly/react-icons';
+import { CheckCircleIcon } from '@patternfly/react-icons';
 
 import PopoverBodyContent from 'Components/PopoverBodyContent';
 import { SignatureVerificationResult } from '../../types';
@@ -51,7 +51,7 @@ function VerifiedSignatureLabel({ results }: VerifiedSignatureLabelProps) {
                         variant="outline"
                         color="green"
                         className="pf-v5-u-mt-xs"
-                        icon={<CheckSquareIcon />}
+                        icon={<CheckCircleIcon />}
                     >
                         Verified signature
                     </Label>
