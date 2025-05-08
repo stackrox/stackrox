@@ -71,14 +71,18 @@ func (e *networkBaselineEvaluator) checkPeerInBaselineForEntity(
 		// If no baseline exists then we do not mark it as anomalous
 		return true
 	}
+
 	var peer networkbaseline.Peer
 	if peerEntity.GetType() == storage.NetworkEntityInfo_EXTERNAL_SOURCE &&
 		peerEntity.GetExternalSource().GetDiscovered() {
+		// If a peer is a discovered external entity, we must anonymize it
+		// to the Internet, as the baselines do not currently store or monitor IP
+		// information.
 		peer = networkbaseline.Peer{
 			IsIngress: isIngressToBaselineEntity,
 			DstPort:   dstPort,
 			Protocol:  protocol,
-			Name:      networkgraph.InternalEntitiesName,
+			Name:      networkgraph.InternetExternalSourceName,
 			Entity:    networkgraph.InternetEntity(),
 		}
 	} else {
