@@ -65,7 +65,6 @@ function getSrcAliases() {
 export default defineConfig(async () => {
     const sslOptions = getSslOptions();
     return {
-        cacheDir: process.env.VITE_CACHE_DIR,
         build: {
             assetsDir: './static',
             outDir: 'build',
