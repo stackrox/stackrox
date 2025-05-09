@@ -5,5 +5,13 @@
   },
   "upstream": {
     "branch": "git-spice-pr-2"
+  },
+  "change": {
+    "github": {
+      "pr": {
+        "number": 15250,
+        "gqlID": "PR_kwDOGd6UEM6VitJ2"
+      }
+    }
   }
 }
