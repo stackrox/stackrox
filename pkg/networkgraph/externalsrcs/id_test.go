@@ -8,55 +8,70 @@ import (
 
 func TestNewClusterScopedID(t *testing.T) {
 	testCases := []struct {
-		cluster, cidr, expected string
-		expectedError           string
+		description, cluster, cidr, expected, expectedError string
 	}{
 		{
-			cluster:  "cluster1",
-			cidr:     "10.0.0.0/24",
-			expected: "cluster1__MTAuMC4wLjAvMjQ",
+			description: "happy path",
+			cluster:     "cluster1",
+			cidr:        "10.0.0.0/24",
+			expected:    "cluster1__MTAuMC4wLjAvMjQ",
 		},
 		{
-			cluster:  "cluster1",
-			cidr:     "1.1.1.1/30",
-			expected: "cluster1__MS4xLjEuMC8zMA",
+			description: "cidr from IP",
+			cluster:     "cluster1",
+			cidr:        "1.1.1.1/30",
+			expected:    "cluster1__MS4xLjEuMC8zMA",
 		},
 		{
-			cluster:  "cluster1",
-			cidr:     "1.1.1.0/30",
-			expected: "cluster1__MS4xLjEuMC8zMA",
+			description: "cidr from network",
+			cluster:     "cluster1",
+			cidr:        "1.1.1.0/30",
+			expected:    "cluster1__MS4xLjEuMC8zMA",
 		},
 		{
+			description:   "wrong cidr",
+			cluster:       "cluster1",
+			cidr:          "1.1.1.0/99",
+			expected:      "__",
+			expectedError: "CIDR 1.1.1.0/99 is invalid",
+		},
+		{
+			description:   "IP instead of CIDR",
 			cluster:       "cluster1",
 			cidr:          "1.1.1.1",
 			expected:      "__",
 			expectedError: "CIDR 1.1.1.1 is invalid",
 		},
 		{
+			description:   "wrong cidr and no cluster",
 			cluster:       "",
 			cidr:          "1.1.1.1",
 			expected:      "__",
 			expectedError: "CIDR 1.1.1.1 is invalid",
 		},
 		{
+			description:   "invalid cluster and invalid cidr",
 			cluster:       "_",
 			cidr:          "1.1.1.1",
 			expected:      "__",
 			expectedError: "CIDR 1.1.1.1 is invalid",
 		},
 		{
+			description:   "invalid cluster and no cidr",
 			cluster:       "_",
 			cidr:          "",
 			expected:      "__",
 			expectedError: "CIDR must be provided",
 		},
 		{
+			description:   "no cluster",
 			cluster:       "",
 			cidr:          "1.1.1.0/30",
 			expected:      "__",
 			expectedError: "cluster ID must be specified",
 		},
 		{
+			description:   "invalid cluster",
 			cluster:       "_",
 			cidr:          "1.1.1.0/30",
 			expected:      "__",
@@ -64,7 +79,7 @@ func TestNewClusterScopedID(t *testing.T) {
 		},
 	}
 	for _, tc := range testCases {
-		t.Run(tc.expected+tc.expectedError, func(t *testing.T) {
+		t.Run(tc.description, func(t *testing.T) {
 			actual, err := NewClusterScopedID(tc.cluster, tc.cidr)
 			if tc.expectedError == "" {
 				assert.NoError(t, err)
@@ -101,7 +116,7 @@ func TestNewGlobalScopedID(t *testing.T) {
 		},
 	}
 	for _, tc := range testCases {
-		t.Run(tc.expected+tc.expectedError, func(t *testing.T) {
+		t.Run(tc.cidr+tc.expectedError, func(t *testing.T) {
 			actual, err := NewGlobalScopedScopedID(tc.cidr)
 			if tc.expectedError == "" {
 				assert.NoError(t, err)
