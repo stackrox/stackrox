@@ -65,6 +65,7 @@ function CustomPlatformComponentsCard({ customRules }: CustomPlatformComponentsC
                 description="View all namespace matches (Regex) for custom components"
                 isOpen={isModalOpen}
                 onClose={closeModal}
+                tabIndex={0} // enables keyboard-accessible scrolling of a modal’s content
             >
                 <Stack hasGutter>
                     <Title headingLevel="h2" className="pf-v5-u-color-100">
