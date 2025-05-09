@@ -1184,7 +1184,7 @@ func (resolver *imageCVEV2Resolver) Advisory(ctx context.Context) (string, error
 
 	// Short path. Full image is embedded when image scan resolver is called.
 	if embeddedVuln := embeddedobjs.VulnFromContext(resolver.ctx); embeddedVuln != nil {
-		return embeddedVuln.GetAdvisory(), nil
+		return embeddedVuln.GetAdvisory().GetName(), nil
 	}
 
 	scope, hasScope := scoped.GetScope(resolver.ctx)
