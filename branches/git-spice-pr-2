@@ -2,5 +2,8 @@
   "base": {
     "name": "git-spice-pr-1",
     "hash": "b785881cc83757fe538779b81ca06cbb07f64482"
+  },
+  "upstream": {
+    "branch": "git-spice-pr-2"
   }
 }
