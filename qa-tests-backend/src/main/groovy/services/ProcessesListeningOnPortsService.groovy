@@ -25,11 +25,11 @@ class ProcessesListeningOnPortsService extends BaseService {
                         .setDeploymentId(deploymentId)
 
         if (pagination != null) {
-           PaginationOuterClass.Pagination.Builder pbuilder =
+            PaginationOuterClass.Pagination.Builder pbuilder =
                PaginationOuterClass.Pagination.newBuilder()
                    .setOffset(pagination.offset)
                    .setLimit(pagination.limit)
-               request.setPagination(pbuilder.build())
+            request.setPagination(pbuilder.build())
         }
 
         def processesListeningOnPorts = getProcessesListeningOnPortsService()
