@@ -1,6 +1,10 @@
 package matcher
 
-import "github.com/stackrox/rox/generated/storage"
+import (
+	"regexp"
+
+	"github.com/stackrox/rox/generated/storage"
+)
 
 // PlatformMatcher matches alerts and deployments against platform rules
 //
@@ -10,6 +14,7 @@ type PlatformMatcher interface {
 	MatchAlert(alert *storage.Alert) (bool, error)
 	// MatchDeployment returns true if the given deployment matches platform rules
 	MatchDeployment(deployment *storage.Deployment) (bool, error)
+	SetRegexes(regexes []*regexp.Regexp)
 }
 
 func New() PlatformMatcher {

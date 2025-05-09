@@ -3,12 +3,14 @@ package datastore
 import (
 	"context"
 	"reflect"
+	"regexp"
 	"testing"
 	"time"
 
 	"github.com/hashicorp/golang-lru/v2/expirable"
 	"github.com/stackrox/rox/central/config/store"
 	pgStore "github.com/stackrox/rox/central/config/store/postgres"
+	"github.com/stackrox/rox/central/platform/matcher"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -33,6 +35,7 @@ type DataStore interface {
 	UpsertPlatformComponentConfigRule(context.Context, *storage.PlatformComponentConfig_Rule) error
 	UpsertPlatformComponentConfigRules(context.Context, []*storage.PlatformComponentConfig_Rule) (*storage.PlatformComponentConfig, error)
 	DeletePlatformComponentConfigRules(context.Context, ...string) error
+	MarkPCCReevaluated(context.Context) error
 }
 
 const (
@@ -274,8 +277,31 @@ func (d *datastoreImpl) UpsertPlatformComponentConfigRule(ctx context.Context, r
 	if config.PlatformComponentConfig.Rules == nil {
 		config.PlatformComponentConfig.Rules = make([]*storage.PlatformComponentConfig_Rule, 0)
 	}
-	config.PlatformComponentConfig.Rules = append(config.PlatformComponentConfig.Rules, rule)
-	return d.store.Upsert(ctx, config)
+	wasPreexisting := false
+	for idx, existingRule := range config.PlatformComponentConfig.Rules {
+		if existingRule.Name == rule.Name {
+			config.PlatformComponentConfig.Rules[idx] = rule
+			wasPreexisting = true
+			break
+		}
+	}
+	if !wasPreexisting {
+		config.PlatformComponentConfig.Rules = append(config.PlatformComponentConfig.Rules, rule)
+	}
+	regexes := make([]*regexp.Regexp, 0)
+	for _, rule := range config.PlatformComponentConfig.Rules {
+		regex, compileErr := regexp.Compile(rule.GetNamespaceRule().Regex)
+		if compileErr != nil {
+			return compileErr
+		}
+		regexes = append(regexes, regex)
+	}
+	err = d.store.Upsert(ctx, config)
+	if err != nil {
+		return err
+	}
+	matcher.Singleton().SetRegexes(regexes)
+	return nil
 }
 
 func (d *datastoreImpl) UpsertPlatformComponentConfigRules(ctx context.Context, rules []*storage.PlatformComponentConfig_Rule) (*storage.PlatformComponentConfig, error) {
@@ -293,10 +319,19 @@ func (d *datastoreImpl) UpsertPlatformComponentConfigRules(ctx context.Context, 
 		config.PlatformComponentConfig.NeedsReevaluation = true
 	}
 	config.PlatformComponentConfig.Rules = rules
+	regexes := make([]*regexp.Regexp, 0)
+	for _, rule := range config.PlatformComponentConfig.Rules {
+		regex, compileErr := regexp.Compile(rule.GetNamespaceRule().Regex)
+		if compileErr != nil {
+			return nil, compileErr
+		}
+		regexes = append(regexes, regex)
+	}
 	err = d.store.Upsert(ctx, config)
 	if err != nil {
 		return nil, err
 	}
+	matcher.Singleton().SetRegexes(regexes)
 	return config.PlatformComponentConfig, nil
 }
 
@@ -324,5 +359,21 @@ func (d *datastoreImpl) DeletePlatformComponentConfigRules(ctx context.Context, 
 		newRules = append(newRules, rule)
 	}
 	config.PlatformComponentConfig.Rules = newRules
+	return d.store.Upsert(ctx, config)
+}
+
+func (d *datastoreImpl) MarkPCCReevaluated(ctx context.Context) error {
+	if ok, err := administrationSAC.WriteAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return nil
+	}
+
+	config, found, err := d.store.Get(ctx)
+	if !found || err != nil {
+		return err
+	}
+
+	config.GetPlatformComponentConfig().NeedsReevaluation = false
 	return d.store.Upsert(ctx, config)
 }
