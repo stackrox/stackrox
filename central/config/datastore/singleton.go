@@ -38,6 +38,14 @@ const (
 	DefaultDownloadableReportGlobalRetentionBytes = 500 * 1024 * 1024
 	// DefaultAdministrationEventsRetention is the number of days to retain administration events.
 	DefaultAdministrationEventsRetention = 4
+	// PlatformComponentSystemRuleName is the name of the system defined rule for matching openshift and kube workloads
+	PlatformComponentSystemRuleName = "system rule"
+	// PlatformComponentSystemRegex is the system defined regex for matching kube and openshift workloads
+	PlatformComponentSystemRegex = `^kube-.*|^openshift-.*`
+	// PlatformComponentLayeredProductsRuleName is the name of the system defined rule for matching workloads created by Red hat layered products
+	PlatformComponentLayeredProductsRuleName = "red hat layered products"
+	// PlatformComponentLayeredProductsDefaultRegex is the default regex for matching workloads created by Red hat layered products
+	PlatformComponentLayeredProductsDefaultRegex = `^stackrox$|^rhacs-operator$|^open-cluster-management$|^multicluster-engine$|^aap$|^hive$`
 )
 
 var (
@@ -103,6 +111,19 @@ var (
 	defaultAdministrationEventsConfig = &storage.AdministrationEventsConfig{
 		RetentionDurationDays: DefaultAdministrationEventsRetention,
 	}
+
+	defaultPlatformConfigSystemRule = &storage.PlatformComponentConfig_Rule{
+		Name: PlatformComponentSystemRuleName,
+		NamespaceRule: &storage.PlatformComponentConfig_Rule_NamespaceRule{
+			Regex: PlatformComponentSystemRegex,
+		},
+	}
+	defaultPlatformConfigLayeredProductsRule = &storage.PlatformComponentConfig_Rule{
+		Name: PlatformComponentLayeredProductsRuleName,
+		NamespaceRule: &storage.PlatformComponentConfig_Rule_NamespaceRule{
+			Regex: PlatformComponentLayeredProductsDefaultRegex,
+		},
+	}
 )
 
 func validateConfigAndPopulateMissingDefaults(datastore DataStore) {
@@ -114,6 +135,9 @@ func validateConfigAndPopulateMissingDefaults(datastore DataStore) {
 	config, err := datastore.GetConfig(ctx)
 	if err != nil {
 		panic(err)
+	}
+	if config == nil {
+		config = &storage.Config{}
 	}
 
 	// See the note next to the publicConfigCache variable in datastore.go for
@@ -149,12 +173,54 @@ func validateConfigAndPopulateMissingDefaults(datastore DataStore) {
 		needsUpsert = true
 	}
 
-	if needsUpsert {
-		utils.Must(datastore.UpsertConfig(ctx, &storage.Config{
-			PublicConfig:  config.GetPublicConfig(),
-			PrivateConfig: privateConfig,
-		}))
+	if features.CustomizablePlatformComponents.Enabled() && populateDefaultSystemRulesIfMissing(config) {
+		needsUpsert = true
 	}
+
+	if needsUpsert {
+		config.PrivateConfig = privateConfig
+		utils.Must(datastore.UpsertConfig(ctx, config))
+	}
+}
+
+// populateDefaultSystemRuleIfMissing returns true if the platform component config's system or layered products rules were updated
+func populateDefaultSystemRulesIfMissing(config *storage.Config) bool {
+	if config.GetPlatformComponentConfig() == nil {
+		config.PlatformComponentConfig = &storage.PlatformComponentConfig{
+			Rules: []*storage.PlatformComponentConfig_Rule{
+				defaultPlatformConfigSystemRule,
+				defaultPlatformConfigLayeredProductsRule},
+		}
+		return true
+	}
+	hasSystemRule := false
+	hasLayeredProductsRule := false
+	for _, rule := range config.GetPlatformComponentConfig().GetRules() {
+		if rule.GetName() == PlatformComponentSystemRuleName {
+			hasSystemRule = true
+		} else if rule.GetName() == PlatformComponentLayeredProductsRuleName {
+			hasLayeredProductsRule = true
+		}
+	}
+
+	if hasSystemRule && hasLayeredProductsRule {
+		return false
+	}
+
+	if !hasSystemRule {
+		config.GetPlatformComponentConfig().Rules = append(
+			config.GetPlatformComponentConfig().Rules,
+			defaultPlatformConfigSystemRule,
+		)
+	}
+	if !hasLayeredProductsRule {
+		config.GetPlatformComponentConfig().Rules = append(
+			config.GetPlatformComponentConfig().Rules,
+			defaultPlatformConfigLayeredProductsRule,
+		)
+	}
+
+	return true
 }
 
 func initialize() {
