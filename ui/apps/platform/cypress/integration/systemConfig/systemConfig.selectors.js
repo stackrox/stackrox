@@ -41,7 +41,7 @@ export const selectors = {
         banner: '[data-testid="login-notice"]',
     },
     dataRetention: {
-        widget: '[data-testid="data-retention-config"]',
+        widget: '[data-testid="private-data-retention-config"]',
         allRuntimeViolationsBox: '.pf-v5-c-card:contains("All runtime violations")',
         deletedRuntimeViolationsBox:
             '.pf-v5-c-card:contains("Runtime violations for deleted deployments")',
