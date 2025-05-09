@@ -546,6 +546,21 @@ func (ds *datastoreImpl) RemovePlopsByPod(ctx context.Context, id string) error 
 	return storeErr
 }
 
+func (ds *datastoreImpl) RemovePlopsByPods(ctx context.Context, ids []string) error {
+	if ok, err := plopSAC.WriteAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
+	}
+
+	ds.mutex.Lock()
+	defer ds.mutex.Unlock()
+
+	q := search.NewQueryBuilder().AddExactMatches(search.PodUID, ids...).ProtoQuery()
+	_, storeErr := ds.storage.DeleteByQuery(ctx, q)
+	return storeErr
+}
+
 // PruneOrphanedPLOPs prunes old closed PLOPs and those without deployments or pods
 func (ds *datastoreImpl) PruneOrphanedPLOPs(ctx context.Context, orphanWindow time.Duration) int64 {
 	ds.mutex.Lock()
