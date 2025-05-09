@@ -24,4 +24,3 @@ scannerV4:
 collector:
   nodeSelector:
     kubernetes.io/arch: arm64
-
