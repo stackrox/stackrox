@@ -130,7 +130,6 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
     }
 
     @Tag("NetworkFlowVisualization")
-    @Ignore
     def "Verify flow re-maps to larger subnet when smaller subnet deleted"() {
         when:
         "Supernet is added after subnet followed by subnet deletion"
