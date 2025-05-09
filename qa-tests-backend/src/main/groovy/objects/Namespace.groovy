@@ -1,10 +1,13 @@
 package objects
 
+import groovy.transform.CompileStatic
+
+@CompileStatic
 class Namespace {
-    def uid
-    def name
-    def labels
-    def deploymentCount
-    def secretsCount
-    def networkPolicyCount
+    String uid
+    String name
+    Map<String, String> labels
+    List<String> deploymentCount
+    int secretsCount
+    int networkPolicyCount
 }

@@ -74,12 +74,14 @@ class NamespaceTest extends BaseSpecification {
                     log.info javers.compare(stackroxDeploymentNames, orchestratorNamespaceDetails.deploymentCount)
                             .prettyPrint()
                 }
-                assert stackroxNamespaceDetails.numDeployments == orchestratorNamespaceDetails.deploymentCount.size()
-                assert stackroxNamespaceDetails.metadata.clusterId == ClusterService.getClusterId()
-                assert stackroxNamespaceDetails.metadata.name == orchestratorNamespaceDetails.name
-                assert stackroxNamespaceDetails.metadata.labelsMap == orchestratorNamespaceDetails.labels
-                assert stackroxNamespaceDetails.numSecrets == orchestratorNamespaceDetails.secretsCount
-                assert stackroxNamespaceDetails.numNetworkPolicies == orchestratorNamespaceDetails.networkPolicyCount
+                verifyAll(stackroxNamespaceDetails) {
+                    numDeployments == orchestratorNamespaceDetails.deploymentCount.size()
+                    metadata.clusterId == ClusterService.getClusterId()
+                    metadata.name == orchestratorNamespaceDetails.name
+                    metadata.labelsMap == orchestratorNamespaceDetails.labels
+                    numSecrets == orchestratorNamespaceDetails.secretsCount
+                    numNetworkPolicies == orchestratorNamespaceDetails.networkPolicyCount
+                }
             }
         }
     }
