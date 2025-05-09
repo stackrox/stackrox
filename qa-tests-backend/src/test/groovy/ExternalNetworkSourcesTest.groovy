@@ -75,7 +75,7 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
 
         log.info "Create a external source containing Cloudflare's IP address"
         String externalSourceName = generateNameWithPrefix("external-source")
-        NetworkEntity externalSource = createNetworkEntityExternalSource(externalSourceName, CF_CIDR_31)
+        NetworkEntity externalSource = createNetworkEntityExternalSource(log, externalSourceName, CF_CIDR_31)
         String externalSourceID = externalSource?.getInfo()?.getId()
         assert externalSourceID != null
 
@@ -101,7 +101,7 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
 
         log.info "Create a smaller network external source containing Cloudflare's IP address"
         String externalSource31Name = generateNameWithPrefix("external-source-31")
-        NetworkEntity externalSource31 = createNetworkEntityExternalSource(externalSource31Name, CF_CIDR_31)
+        NetworkEntity externalSource31 = createNetworkEntityExternalSource(log,externalSource31Name, CF_CIDR_31)
         String externalSource31ID = externalSource31?.getInfo()?.getId()
         assert externalSource31ID != null
 
@@ -112,7 +112,7 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
 
         log.info "Create a supernet external source containing Cloudflare's IP address"
         String externalSource30Name = generateNameWithPrefix("external-source-30")
-        NetworkEntity externalSource30 = createNetworkEntityExternalSource(externalSource30Name, CF_CIDR_30)
+        NetworkEntity externalSource30 = createNetworkEntityExternalSource(log,externalSource30Name, CF_CIDR_30)
         String externalSource30ID = externalSource30?.getInfo()?.getId()
         assert externalSource30ID != null
 
@@ -146,7 +146,7 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
 
         log.info "Create a smaller subnet network entities with Cloudflare's IP address"
         String externalSource31Name = generateNameWithPrefix("external-source-31")
-        NetworkEntity externalSource31 = createNetworkEntityExternalSource(externalSource31Name, CF_CIDR_31)
+        NetworkEntity externalSource31 = createNetworkEntityExternalSource(log, externalSource31Name, CF_CIDR_31)
         String externalSource31ID = externalSource31?.getInfo()?.getId()
         assert externalSource31ID != null
 
@@ -158,7 +158,7 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
 
         log.info "Add supernet and remove subnet"
         String externalSource30Name = generateNameWithPrefix("external-source-30")
-        NetworkEntity externalSource30 = createNetworkEntityExternalSource(externalSource30Name, CF_CIDR_30)
+        NetworkEntity externalSource30 = createNetworkEntityExternalSource(log, externalSource30Name, CF_CIDR_30)
         String externalSource30ID = externalSource30?.getInfo()?.getId()
         assert externalSource30ID != null
 
@@ -221,8 +221,7 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
         log.info("All external entities conflicting with ${CF_CIDR_30} have been deleted")
 
         String externalSource30Name = generateNameWithPrefix("external-source-30")
-        log.info("Creating external source '${externalSource30Name}' with CIDR ${CF_CIDR_30}")
-        NetworkEntity externalSource30 = createNetworkEntityExternalSource(externalSource30Name, CF_CIDR_30)
+        NetworkEntity externalSource30 = createNetworkEntityExternalSource(log, externalSource30Name, CF_CIDR_30)
         String externalSource30ID = externalSource30?.getInfo()?.getId()
         assert externalSource30 != null
         assert externalSource30ID != null
@@ -245,7 +244,7 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
         log.info("All external entities conflicting with ${CF_CIDR_31} have been deleted")
 
         String externalSource31Name = generateNameWithPrefix("external-source-31")
-        NetworkEntity externalSource31 = createNetworkEntityExternalSource(externalSource31Name, CF_CIDR_31)
+        NetworkEntity externalSource31 = createNetworkEntityExternalSource(log, externalSource31Name, CF_CIDR_31)
         String externalSource31ID = externalSource31?.getInfo()?.getId()
         assert externalSource31 != null
         assert externalSource31ID != null
@@ -323,16 +322,20 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
         })*.getInfo() as Set
     }
 
-    private static createNetworkEntityExternalSource(String name, String cidr) {
+    private static createNetworkEntityExternalSource(def log, String name, String cidr) {
         String clusterId = ClusterService.getClusterId()
+        log.info("Creating external source '${name}' with CIDR ${cidr}")
         NetworkGraphService.createNetworkEntity(clusterId, name, cidr, false)
         return NetworkGraphService.waitForNetworkEntityOfExternalSource(clusterId, name)
     }
 
     private static deleteNetworkEntity(String entityID) {
+        String clusterId = ClusterService.getClusterId()
         // Use network graph client without the wrapper because we need the test to fail if the deletion fails.
-        NetworkGraphService.getNetworkGraphClient()
+        def obj = NetworkGraphService.getNetworkGraphClient()
             .deleteExternalNetworkEntity(Common.ResourceByID.newBuilder().setId(entityID).build())
+        NetworkGraphService.waitForNetworkEntityOfExternalSourceToBeGone(clusterId, entityID)
+        return obj
     }
 
     private verifyNoEdge(String entityID1, String entityID2, Timestamp since) {

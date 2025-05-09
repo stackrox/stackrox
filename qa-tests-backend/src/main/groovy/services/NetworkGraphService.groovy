@@ -87,6 +87,40 @@ class NetworkGraphService extends BaseService {
         }
     }
 
+    static NetworkEntity getNetworkEntityByName(String clusterId, String entityName) {
+        GetExternalNetworkEntitiesRequest request =
+            GetExternalNetworkEntitiesRequest.newBuilder().setClusterId(clusterId).build()
+        GetExternalNetworkEntitiesResponse response =
+            getNetworkGraphClient().getExternalNetworkEntities(request)
+
+        // Calling response.getEntitiesList() may cause io.grpc.StatusRuntimeException: RESOURCE_EXHAUSTED
+        NetworkEntity matchingEntity =
+            response
+                .getEntitiesList()
+                .find {
+                    NetworkEntity it -> it.getInfo().hasExternalSource() &&
+                        it.getInfo().getExternalSource().name == entityName
+                }
+        return matchingEntity
+    }
+
+    static NetworkEntity getNetworkEntityById(String clusterId, String entityID) {
+        GetExternalNetworkEntitiesRequest request =
+            GetExternalNetworkEntitiesRequest.newBuilder().setClusterId(clusterId).build()
+        GetExternalNetworkEntitiesResponse response =
+            getNetworkGraphClient().getExternalNetworkEntities(request)
+
+        // Calling response.getEntitiesList() may cause io.grpc.StatusRuntimeException: RESOURCE_EXHAUSTED
+        NetworkEntity matchingEntity =
+            response
+                .getEntitiesList()
+                .find {
+                    NetworkEntity it -> it.getInfo().hasExternalSource() &&
+                        it.getInfo().getId() == entityID
+                }
+        return matchingEntity
+    }
+
     static waitForNetworkEntityOfExternalSource(String clusterId, String entityName) {
         int intervalInSeconds = 5
         int timeoutInSeconds = 120
@@ -94,19 +128,7 @@ class NetworkGraphService extends BaseService {
         Timer t = new Timer(retries, intervalInSeconds)
         while (t.IsValid()) {
             try {
-                GetExternalNetworkEntitiesRequest request =
-                        GetExternalNetworkEntitiesRequest.newBuilder().setClusterId(clusterId).build()
-                GetExternalNetworkEntitiesResponse response =
-                        getNetworkGraphClient().getExternalNetworkEntities(request)
-
-                // Calling response.getEntitiesList() may cause io.grpc.StatusRuntimeException: RESOURCE_EXHAUSTED
-                NetworkEntity matchingEntity =
-                        response
-                                .getEntitiesList()
-                                .find {
-                                    NetworkEntity it -> it.getInfo().hasExternalSource() &&
-                                            it.getInfo().getExternalSource().name == entityName
-                                }
+                NetworkEntity matchingEntity = getNetworkEntityByName(clusterId, entityName)
                 if (matchingEntity != null) {
                     return matchingEntity
                 }
@@ -115,5 +137,27 @@ class NetworkGraphService extends BaseService {
             }
         }
         log.warn "Failed to get network entity with name ${entityName} under cluster ${clusterId}"
+    }
+
+    static waitForNetworkEntityOfExternalSourceToBeGone(String clusterId, String entityID) {
+        int intervalInSeconds = 5
+        int timeoutInSeconds = 120
+        int retries = (timeoutInSeconds / intervalInSeconds) as int
+        Timer t = new Timer(retries, intervalInSeconds)
+        while (t.IsValid()) {
+            try {
+                log.debug("Waiting for network entity with ID ${entityID} to be gone...")
+                NetworkEntity matchingEntity = getNetworkEntityById(clusterId, entityID)
+                if (matchingEntity == null) {
+                    log.debug("Network entity with ID ${entityID} is gone!")
+                    return // success, the entity is gone
+                }
+                log.debug("Network entity with ID ${entityID} still exists.")
+            } catch (Exception e) {
+                log.debug("Exception while waiting for network entity with ID ${entityID} to be gone, " +
+                    "retrying...", e)
+            }
+        }
+        log.warn "Failed to wait for network entity with ID ${entityID} in cluster ${clusterId} to be gone."
     }
 }
