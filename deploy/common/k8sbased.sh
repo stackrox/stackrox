@@ -456,7 +456,7 @@ function launch_central {
       # Add a custom values file to Helm
       if [[ -n "$ROX_CENTRAL_EXTRA_HELM_VALUES_FILE" ]]; then
         helm_args+=(
-          -f "$ROX_CENTRAL_EXTRA_HELM_VALUES_FILE"
+          -f "${COMMON_DIR}/${ROX_CENTRAL_EXTRA_HELM_VALUES_FILE}"
         )
       fi
 
@@ -854,7 +854,7 @@ function launch_sensor {
       # Add a custom values file to Helm
       if [[ -n "$ROX_SENSOR_EXTRA_HELM_VALUES_FILE" ]]; then
         helm_args+=(
-          -f "$ROX_SENSOR_EXTRA_HELM_VALUES_FILE"
+          -f "${COMMON_DIR}/${ROX_SENSOR_EXTRA_HELM_VALUES_FILE}"
         )
       fi
 
