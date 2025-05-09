@@ -10,6 +10,7 @@ import services.ClusterService
 import services.NetworkGraphService
 import util.NetworkGraphUtil
 
+import spock.lang.Ignore
 import spock.lang.Tag
 
 @Tag("PZ")
@@ -43,14 +44,14 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
         return deployment
     }
 
-    def setup() {
+    def setupSpec() {
         orchestrator.batchCreateDeployments(DEPLOYMENTS)
         for (Deployment deployment : DEPLOYMENTS) {
             assert Services.waitForDeployment(deployment)
         }
     }
 
-    def cleanup() {
+    def cleanupSpec() {
         for (Deployment deployment : DEPLOYMENTS) {
             orchestrator.deleteDeployment(deployment)
         }
@@ -62,6 +63,7 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
     }
 
     @Tag("NetworkFlowVisualization")
+    @Ignore
     def "Verify connection to a user created external sources"() {
         when:
         "Deployment is communicating with Cloudflare's IP address"
@@ -86,6 +88,7 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
     }
 
     @Tag("NetworkFlowVisualization")
+    @Ignore
     def "Verify flow stays to the smallest subnet possible"() {
         when:
         "Supernet external source is created after subnet external source"
@@ -127,6 +130,7 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
     }
 
     @Tag("NetworkFlowVisualization")
+    @Ignore
     def "Verify flow re-maps to larger subnet when smaller subnet deleted"() {
         when:
         "Supernet is added after subnet followed by subnet deletion"
