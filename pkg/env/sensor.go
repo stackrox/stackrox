@@ -103,4 +103,8 @@ var (
 	// EnrichmentPurgerTickerCycle controls how frequently purger is run to check for collector updates
 	// (network flows & container endpoints) that stuck in Sensor's memory. Set to zero to completely disable the purger.
 	EnrichmentPurgerTickerCycle = registerDurationSetting("ROX_ENRICHMENT_PURGER_UPDATE_CYCLE", 30*time.Minute, WithDurationZeroAllowed())
+
+	// ContainerIDResolutionGracePeriod defines a time period in which it is "okay" to not find the container ID in
+	// cluster entities store in Sensor. If that
+	ContainerIDResolutionGracePeriod = registerDurationSetting("ROX_CONTAINER_ID_RESOLUTION_GRACE_PERIOD", 2*time.Minute)
 )
