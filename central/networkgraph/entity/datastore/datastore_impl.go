@@ -2,8 +2,11 @@ package datastore
 
 import (
 	"context"
+	"runtime/debug"
+	"strings"
 	"testing"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/pkg/errors"
 	graphConfigDS "github.com/stackrox/rox/central/networkgraph/config/datastore"
 	"github.com/stackrox/rox/central/networkgraph/entity/datastore/internal/store"
@@ -312,6 +315,8 @@ func (ds *dataStoreImpl) createMany(ctx context.Context, entities []*storage.Net
 	ds.netEntityLock.Lock()
 	defer ds.netEntityLock.Unlock()
 
+	debugCF(entities...)
+
 	if err := ds.storage.UpsertMany(storeCtx, entities); err != nil {
 		return errors.Wrapf(err, "upserting %d network entities into storage", len(entities))
 	}
@@ -320,6 +325,8 @@ func (ds *dataStoreImpl) createMany(ctx context.Context, entities []*storage.Net
 }
 
 func (ds *dataStoreImpl) create(ctx context.Context, entity *storage.NetworkEntity) error {
+	debugCF(entity)
+
 	network, err := externalsrcs.NetworkFromID(entity.GetInfo().GetId())
 	if err != nil {
 		return err
@@ -348,6 +355,8 @@ func (ds *dataStoreImpl) create(ctx context.Context, entity *storage.NetworkEnti
 }
 
 func (ds *dataStoreImpl) UpdateExternalNetworkEntity(ctx context.Context, entity *storage.NetworkEntity, skipPush bool) error {
+	debugCF(entity)
+
 	if err := validateExternalNetworkEntity(entity); err != nil {
 		return err
 	}
@@ -613,6 +622,25 @@ func (p *networkEntityPusherImpl) doPushExternalNetworkEntitiesToSensor(clusters
 		if err := p.sensorConnMgr.PushExternalNetworkEntitiesToSensor(elevateCtx, cluster); err != nil {
 			log.Errorf("failed to sync external networks with cluster %s: %v", cluster, err)
 		}
+	}
+}
+
+func debugCF(entities ...*storage.NetworkEntity) {
+	for _, entity := range entities {
+		if entity == nil {
+			continue
+		}
+		network, err := externalsrcs.NetworkFromID(entity.GetInfo().GetId())
+		if err != nil {
+			continue
+		}
+		if strings.HasPrefix(network, "1.1.") {
+			println("BEGIN------------------------------------------------")
+			spew.Dump(entity)
+			debug.PrintStack()
+			println("END------------------------------------------------")
+		}
+
 	}
 }
 

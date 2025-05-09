@@ -10,7 +10,6 @@ import services.ClusterService
 import services.NetworkGraphService
 import util.NetworkGraphUtil
 
-import spock.lang.Ignore
 import spock.lang.Tag
 
 @Tag("PZ")
@@ -174,7 +173,6 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
     }
 
     @Tag("NetworkFlowVisualization")
-    @Ignore("ROX-24313: This started failing regularly after merging PR14538")
     def "Verify two flows co-exist if larger network entity added first"() {
         when:
         "Supernet external source is created before subnet external source"
@@ -209,7 +207,7 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
             assert NetworkGraphUtil.checkForEdge(
                     deploymentUid,
                     externalSource30ID,
-                    Timestamp.newBuilder().setSeconds(System.currentTimeSeconds() - 60*60).build())
+                    Timestamp.newBuilder().setSeconds(System.currentTimeSeconds() - 60 * 60).build())
         }
 
         and:
@@ -235,7 +233,7 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
     private static deleteNetworkEntity(String entityID) {
         // Use network graph client without the wrapper because we need the test to fail if the deletion fails.
         NetworkGraphService.getNetworkGraphClient()
-            .deleteExternalNetworkEntity(Common.ResourceByID.newBuilder().setId(entityID).build())
+                .deleteExternalNetworkEntity(Common.ResourceByID.newBuilder().setId(entityID).build())
     }
 
     private verifyNoEdge(String entityID1, String entityID2, Timestamp since) {
