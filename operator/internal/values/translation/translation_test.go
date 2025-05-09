@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
+	"github.com/stackrox/rox/operator/internal/utils"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -461,7 +462,7 @@ func TestSetScannerV4DBValues(t *testing.T) {
 					ObjectMeta: v1.ObjectMeta{
 						Name: "test-sc2",
 						Annotations: map[string]string{
-							DefaultStorageClassAnnotationKey: "true",
+							utils.DefaultStorageClassAnnotationKey: "true",
 						},
 					},
 				},
@@ -489,7 +490,7 @@ func TestSetScannerV4DBValues(t *testing.T) {
 					ObjectMeta: v1.ObjectMeta{
 						Name: "test-sc2",
 						Annotations: map[string]string{
-							DefaultStorageClassAnnotationKey: "false",
+							utils.DefaultStorageClassAnnotationKey: "false",
 						},
 					},
 				},
