@@ -10,6 +10,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"reflect"
 	"time"
 
 	"github.com/pkg/errors"
@@ -49,10 +50,11 @@ var (
 type generic struct {
 	*storage.Notifier
 
-	client      *http.Client
-	creds       string
-	cryptoKey   string
-	cryptoCodec cryptocodec.CryptoCodec
+	client         *http.Client
+	creds          string
+	cryptoKey      string
+	cryptoCodec    cryptocodec.CryptoCodec
+	maxMessageSize int
 
 	fullyQualifiedEndpoint string
 	extraFieldsJSONPrefix  string
@@ -138,6 +140,8 @@ func newGeneric(notifier *storage.Notifier, cryptoCodec cryptocodec.CryptoCodec,
 		return nil, err
 	}
 
+	maxMessageSize := int(notifier.GetGeneric().GetMaxMessageSize())
+
 	return &generic{
 		Notifier: notifier,
 
@@ -156,6 +160,7 @@ func newGeneric(notifier *storage.Notifier, cryptoCodec cryptocodec.CryptoCodec,
 		cryptoCodec:            cryptoCodec,
 		fullyQualifiedEndpoint: fullyQualifiedEndpoint,
 		extraFieldsJSONPrefix:  extraFieldsJSON,
+		maxMessageSize:         maxMessageSize,
 	}, nil
 }
 
@@ -182,6 +187,14 @@ func (g *generic) constructJSON(message protocompat.Message, msgKey string) (io.
 	msgStr, err := jsonutil.MarshalToCompactString(message)
 	if err != nil {
 		return nil, err
+	}
+
+	s := reflect.ValueOf(&message).Elem()
+	typeOfT := s.Type()
+	for i := 0; i < s.NumField(); i++ {
+		f := s.Field(i)
+		fmt.Printf("%d: %s %s = %v\n", i,
+			typeOfT.Field(i).Name, f.Type(), f.Interface())
 	}
 
 	var strJSON string

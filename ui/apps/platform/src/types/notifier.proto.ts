@@ -91,6 +91,7 @@ export type Generic = {
     endpoint: string; // scrub:dependent validate:nolocalendpoint
     skipTLSVerify: boolean;
     caCert: string;
+    maxMessageSize: number;
     username: string; // scrub:dependent
     password: string; // scrub:always
     headers: KeyValuePair[];
@@ -176,6 +177,7 @@ export type SyslogBase = {
     messageFormat?: SyslogCEFOptions;
     localFacility?: SyslogLocalFacility;
     extraFields: KeyValuePair[];
+    maxMessageSize: number;
 };
 
 export type SyslogLocalFacility =

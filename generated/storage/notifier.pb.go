@@ -962,6 +962,7 @@ type Generic struct {
 	Headers             []*KeyValuePair `protobuf:"bytes,6,rep,name=headers,proto3" json:"headers,omitempty"`
 	ExtraFields         []*KeyValuePair `protobuf:"bytes,7,rep,name=extra_fields,json=extraFields,proto3" json:"extra_fields,omitempty"`
 	AuditLoggingEnabled bool            `protobuf:"varint,8,opt,name=audit_logging_enabled,json=auditLoggingEnabled,proto3" json:"audit_logging_enabled,omitempty"`
+	MaxMessageSize      int32           `protobuf:"varint,9,opt,name=max_message_size,json=maxMessageSize,proto3" json:"max_message_size,omitempty"`
 	unknownFields       protoimpl.UnknownFields
 	sizeCache           protoimpl.SizeCache
 }
@@ -1050,6 +1051,13 @@ func (x *Generic) GetAuditLoggingEnabled() bool {
 		return x.AuditLoggingEnabled
 	}
 	return false
+}
+
+func (x *Generic) GetMaxMessageSize() int32 {
+	if x != nil {
+		return x.MaxMessageSize
+	}
+	return 0
 }
 
 type SumoLogic struct {
@@ -1221,11 +1229,12 @@ type Syslog struct {
 	// Types that are valid to be assigned to Endpoint:
 	//
 	//	*Syslog_TcpConfig
-	Endpoint      isSyslog_Endpoint    `protobuf_oneof:"endpoint"`
-	ExtraFields   []*KeyValuePair      `protobuf:"bytes,3,rep,name=extra_fields,json=extraFields,proto3" json:"extra_fields,omitempty"`
-	MessageFormat Syslog_MessageFormat `protobuf:"varint,4,opt,name=message_format,json=messageFormat,proto3,enum=storage.Syslog_MessageFormat" json:"message_format,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Endpoint       isSyslog_Endpoint    `protobuf_oneof:"endpoint"`
+	ExtraFields    []*KeyValuePair      `protobuf:"bytes,3,rep,name=extra_fields,json=extraFields,proto3" json:"extra_fields,omitempty"`
+	MessageFormat  Syslog_MessageFormat `protobuf:"varint,4,opt,name=message_format,json=messageFormat,proto3,enum=storage.Syslog_MessageFormat" json:"message_format,omitempty"`
+	MaxMessageSize int32                `protobuf:"varint,5,opt,name=max_message_size,json=maxMessageSize,proto3" json:"max_message_size,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *Syslog) Reset() {
@@ -1293,6 +1302,13 @@ func (x *Syslog) GetMessageFormat() Syslog_MessageFormat {
 		return x.MessageFormat
 	}
 	return Syslog_LEGACY
+}
+
+func (x *Syslog) GetMaxMessageSize() int32 {
+	if x != nil {
+		return x.MaxMessageSize
+	}
+	return 0
 }
 
 type isSyslog_Endpoint interface {
@@ -1688,7 +1704,7 @@ const file_storage_notifier_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B \n" +
 	"\x1ederived_source_type_deprecated\"$\n" +
 	"\tPagerDuty\x12\x17\n" +
-	"\aapi_key\x18\x01 \x01(\tR\x06apiKey\"\xbb\x02\n" +
+	"\aapi_key\x18\x01 \x01(\tR\x06apiKey\"\xe5\x02\n" +
 	"\aGeneric\x12\x1a\n" +
 	"\bendpoint\x18\x01 \x01(\tR\bendpoint\x12$\n" +
 	"\rskipTLSVerify\x18\x02 \x01(\bR\rskipTLSVerify\x12\x17\n" +
@@ -1697,7 +1713,8 @@ const file_storage_notifier_proto_rawDesc = "" +
 	"\bpassword\x18\x05 \x01(\tR\bpassword\x12/\n" +
 	"\aheaders\x18\x06 \x03(\v2\x15.storage.KeyValuePairR\aheaders\x128\n" +
 	"\fextra_fields\x18\a \x03(\v2\x15.storage.KeyValuePairR\vextraFields\x122\n" +
-	"\x15audit_logging_enabled\x18\b \x01(\bR\x13auditLoggingEnabled\"a\n" +
+	"\x15audit_logging_enabled\x18\b \x01(\bR\x13auditLoggingEnabled\x12(\n" +
+	"\x10max_message_size\x18\t \x01(\x05R\x0emaxMessageSize\"a\n" +
 	"\tSumoLogic\x12.\n" +
 	"\x13http_source_address\x18\x01 \x01(\tR\x11httpSourceAddress\x12$\n" +
 	"\rskipTLSVerify\x18\x02 \x01(\bR\rskipTLSVerify\"\xfc\x05\n" +
@@ -1720,13 +1737,14 @@ const file_storage_notifier_proto_rawDesc = "" +
 	"\vclient_cert\x18\x01 \x01(\tR\n" +
 	"clientCert\x12\x1f\n" +
 	"\vprivate_key\x18\x02 \x01(\tR\n" +
-	"privateKey\"\xab\x04\n" +
+	"privateKey\"\xd5\x04\n" +
 	"\x06Syslog\x12D\n" +
 	"\x0elocal_facility\x18\x01 \x01(\x0e2\x1d.storage.Syslog.LocalFacilityR\rlocalFacility\x12:\n" +
 	"\n" +
 	"tcp_config\x18\x02 \x01(\v2\x19.storage.Syslog.TCPConfigH\x00R\ttcpConfig\x128\n" +
 	"\fextra_fields\x18\x03 \x03(\v2\x15.storage.KeyValuePairR\vextraFields\x12D\n" +
-	"\x0emessage_format\x18\x04 \x01(\x0e2\x1d.storage.Syslog.MessageFormatR\rmessageFormat\x1a|\n" +
+	"\x0emessage_format\x18\x04 \x01(\x0e2\x1d.storage.Syslog.MessageFormatR\rmessageFormat\x12(\n" +
+	"\x10max_message_size\x18\x05 \x01(\x05R\x0emaxMessageSize\x1a|\n" +
 	"\tTCPConfig\x12\x1a\n" +
 	"\bhostname\x18\x01 \x01(\tR\bhostname\x12\x12\n" +
 	"\x04port\x18\x02 \x01(\x05R\x04port\x12&\n" +

@@ -337,6 +337,7 @@ func (m *Generic) CloneVT() *Generic {
 	r.Username = m.Username
 	r.Password = m.Password
 	r.AuditLoggingEnabled = m.AuditLoggingEnabled
+	r.MaxMessageSize = m.MaxMessageSize
 	if rhs := m.Headers; rhs != nil {
 		tmpContainer := make([]*KeyValuePair, len(rhs))
 		for k, v := range rhs {
@@ -468,6 +469,7 @@ func (m *Syslog) CloneVT() *Syslog {
 	r := new(Syslog)
 	r.LocalFacility = m.LocalFacility
 	r.MessageFormat = m.MessageFormat
+	r.MaxMessageSize = m.MaxMessageSize
 	if m.Endpoint != nil {
 		r.Endpoint = m.Endpoint.(interface{ CloneVT() isSyslog_Endpoint }).CloneVT()
 	}
@@ -1141,6 +1143,9 @@ func (this *Generic) EqualVT(that *Generic) bool {
 	if this.AuditLoggingEnabled != that.AuditLoggingEnabled {
 		return false
 	}
+	if this.MaxMessageSize != that.MaxMessageSize {
+		return false
+	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
@@ -1325,6 +1330,9 @@ func (this *Syslog) EqualVT(that *Syslog) bool {
 		}
 	}
 	if this.MessageFormat != that.MessageFormat {
+		return false
+	}
+	if this.MaxMessageSize != that.MaxMessageSize {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -2319,6 +2327,11 @@ func (m *Generic) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.MaxMessageSize != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.MaxMessageSize))
+		i--
+		dAtA[i] = 0x48
+	}
 	if m.AuditLoggingEnabled {
 		i--
 		if m.AuditLoggingEnabled {
@@ -2752,6 +2765,11 @@ func (m *Syslog) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 			return 0, err
 		}
 		i -= size
+	}
+	if m.MaxMessageSize != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.MaxMessageSize))
+		i--
+		dAtA[i] = 0x28
 	}
 	if m.MessageFormat != 0 {
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.MessageFormat))
@@ -3252,6 +3270,9 @@ func (m *Generic) SizeVT() (n int) {
 	if m.AuditLoggingEnabled {
 		n += 2
 	}
+	if m.MaxMessageSize != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.MaxMessageSize))
+	}
 	n += len(m.unknownFields)
 	return n
 }
@@ -3396,6 +3417,9 @@ func (m *Syslog) SizeVT() (n int) {
 	}
 	if m.MessageFormat != 0 {
 		n += 1 + protohelpers.SizeOfVarint(uint64(m.MessageFormat))
+	}
+	if m.MaxMessageSize != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.MaxMessageSize))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -5904,6 +5928,25 @@ func (m *Generic) UnmarshalVT(dAtA []byte) error {
 				}
 			}
 			m.AuditLoggingEnabled = bool(v != 0)
+		case 9:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MaxMessageSize", wireType)
+			}
+			m.MaxMessageSize = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.MaxMessageSize |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -6866,6 +6909,25 @@ func (m *Syslog) UnmarshalVT(dAtA []byte) error {
 				b := dAtA[iNdEx]
 				iNdEx++
 				m.MessageFormat |= Syslog_MessageFormat(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MaxMessageSize", wireType)
+			}
+			m.MaxMessageSize = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.MaxMessageSize |= int32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -9513,6 +9575,25 @@ func (m *Generic) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			}
 			m.AuditLoggingEnabled = bool(v != 0)
+		case 9:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MaxMessageSize", wireType)
+			}
+			m.MaxMessageSize = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.MaxMessageSize |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -10515,6 +10596,25 @@ func (m *Syslog) UnmarshalVTUnsafe(dAtA []byte) error {
 				b := dAtA[iNdEx]
 				iNdEx++
 				m.MessageFormat |= Syslog_MessageFormat(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MaxMessageSize", wireType)
+			}
+			m.MaxMessageSize = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.MaxMessageSize |= int32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}

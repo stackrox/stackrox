@@ -667,6 +667,10 @@
         },
         "auditLoggingEnabled": {
           "type": "boolean"
+        },
+        "maxMessageSize": {
+          "type": "integer",
+          "format": "int32"
         }
       }
     },
@@ -887,6 +891,10 @@
         },
         "messageFormat": {
           "$ref": "#/definitions/SyslogMessageFormat"
+        },
+        "maxMessageSize": {
+          "type": "integer",
+          "format": "int32"
         }
       }
     },
