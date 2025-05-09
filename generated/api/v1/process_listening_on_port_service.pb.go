@@ -123,7 +123,7 @@ var File_api_v1_process_listening_on_port_service_proto protoreflect.FileDescrip
 
 const file_api_v1_process_listening_on_port_service_proto_rawDesc = "" +
 	"\n" +
-	".api/v1/process_listening_on_port_service.proto\x12\x02v1\x1a\x1cgoogle/api/annotations.proto\x1a\x17api/v1/pagination.proto\x1a'storage/process_listening_on_port.proto\"z\n" +
+	".api/v1/process_listening_on_port_service.proto\x12\x02v1\x1a\x17api/v1/pagination.proto\x1a\x1cgoogle/api/annotations.proto\x1a'storage/process_listening_on_port.proto\"z\n" +
 	"#GetProcessesListeningOnPortsRequest\x12#\n" +
 	"\rdeployment_id\x18\x01 \x01(\tR\fdeploymentId\x12.\n" +
 	"\n" +
@@ -133,7 +133,7 @@ const file_api_v1_process_listening_on_port_service_proto_rawDesc = "" +
 	"\x13listening_endpoints\x18\x01 \x03(\v2\x1f.storage.ProcessListeningOnPortR\x12listeningEndpoints2\xc4\x01\n" +
 	"\x19ListeningEndpointsService\x12\xa6\x01\n" +
 	"\x15GetListeningEndpoints\x12'.v1.GetProcessesListeningOnPortsRequest\x1a(.v1.GetProcessesListeningOnPortsResponse\":\x82\xd3\xe4\x93\x024\x122/v1/listening_endpoints/deployment/{deployment_id}B'\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1X\x00b\x06proto3"
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1X\x01b\x06proto3"
 
 var (
 	file_api_v1_process_listening_on_port_service_proto_rawDescOnce sync.Once
