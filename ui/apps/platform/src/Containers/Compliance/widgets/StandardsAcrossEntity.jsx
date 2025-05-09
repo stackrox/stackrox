@@ -57,7 +57,7 @@ const StandardsAcrossEntity = ({ entityType, bodyClassName, className }) => {
     const headerText = `Passing standards across ${entityNounOrdinaryCasePlural[entityType]}`;
 
     function processData(data, type) {
-        if (!data || !data.results || !data.results.results.length) {
+        if (!data || !data.controls || !data.controls.results.length) {
             return [];
         }
         const standardsMapping = merge(
@@ -67,9 +67,9 @@ const StandardsAcrossEntity = ({ entityType, bodyClassName, className }) => {
         );
 
         const barData = Object.keys(standardsMapping).map((standardId) => {
-            const { checks } = standardsMapping[standardId];
-            const { passing: passingChecks, total: totalChecks } = checks;
-            const percentagePassing = Math.round((passingChecks / totalChecks) * 100) || 0;
+            const { controls } = standardsMapping[standardId];
+            const { passing: passingControls, total: totalControls } = controls;
+            const percentagePassing = Math.round((passingControls / totalControls) * 100) || 0;
             const link = URLService.getURL(match, location)
                 .base(entityTypes.CONTROL)
                 .query({
