@@ -168,6 +168,15 @@ function ReportParametersForm({ title, formik }: ReportParametersFormParams): Re
                                 <VulnerabilitySeverityIconText severity="LOW_VULNERABILITY_SEVERITY" />
                             </Flex>
                         </SelectOption>
+                        <SelectOption value="UNKNOWN_VULNERABILITY_SEVERITY">
+                            <Flex
+                                className="pf-v5-u-mx-sm"
+                                spaceItems={{ default: 'spaceItemsSm' }}
+                                alignItems={{ default: 'alignItemsCenter' }}
+                            >
+                                <VulnerabilitySeverityIconText severity="UNKNOWN_VULNERABILITY_SEVERITY" />
+                            </Flex>
+                        </SelectOption>
                     </CheckboxSelect>
                 </FormLabelGroup>
                 <FormLabelGroup
