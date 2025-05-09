@@ -79,7 +79,7 @@ func (s *securedClusterCertGenSuite) TestValidateServiceCertificate() {
 			s.Require().NoError(err)
 			validatingCA, err := mtls.LoadCAForValidation(certMap["ca.pem"])
 			s.Require().NoError(err)
-			s.NoError(certgen.VerifyServiceCertAndKey(certMap, "", validatingCA, serviceType))
+			s.NoError(certgen.VerifyServiceCertAndKey(certMap, "", validatingCA, serviceType, nil))
 		})
 	}
 }

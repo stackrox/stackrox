@@ -118,7 +118,7 @@ func ConvertFileMapToTypedServiceCertificateSet(fileMap map[string][]byte) (*sto
 				mtls.ServiceCertFileName: serviceCertMap[serviceType].CertPem,
 				mtls.ServiceKeyFileName:  serviceCertMap[serviceType].KeyPem,
 			}
-			err = certgen.VerifyServiceCertAndKey(keyAndCert, "", ca, serviceType)
+			err = certgen.VerifyServiceCertAndKey(keyAndCert, "", ca, serviceType, nil)
 			if err != nil {
 				return nil, nil, errors.Wrapf(err, "verifying service certificate for service %s", serviceType.String())
 			}

@@ -2,6 +2,7 @@ package extensions
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stackrox/rox/operator/internal/types"
 	"github.com/stackrox/rox/operator/internal/utils/testutils"
@@ -10,7 +11,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func verifyScannerDBPassword(t *testing.T, data types.SecretDataMap) {
+func verifyScannerDBPassword(t *testing.T, data types.SecretDataMap, _ *time.Time) {
 	assert.NotEmpty(t, data[scannerDBPasswordKey])
 }
 
