@@ -237,6 +237,7 @@ func (s *serviceImpl) saveImage(img *storage.Image) error {
 // ScanImageInternal handles an image request from Sensor and Admission Controller.
 func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanImageInternalRequest) (*v1.ScanImageInternalResponse, error) {
 	err := s.acquireScanSemaphore(ctx)
+	defer s.releaseFromScanSemaphore()
 	if err != nil {
 		log.Errorw("Failed to acquire scan semaphore",
 			logging.FromContext(ctx),
@@ -246,7 +247,6 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 		)
 		return nil, err
 	}
-	defer s.releaseFromScanSemaphore()
 
 	var (
 		img       *storage.Image
@@ -430,6 +430,7 @@ func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageReques
 // This is meant to be called by Sensor.
 func (s *serviceImpl) GetImageVulnerabilitiesInternal(ctx context.Context, request *v1.GetImageVulnerabilitiesInternalRequest) (*v1.ScanImageInternalResponse, error) {
 	err := s.acquireScanSemaphore(ctx)
+	defer s.releaseFromScanSemaphore()
 	if err != nil {
 		log.Errorw("Failed to acquire scan semaphore",
 			logging.FromContext(ctx),
@@ -439,7 +440,6 @@ func (s *serviceImpl) GetImageVulnerabilitiesInternal(ctx context.Context, reque
 		)
 		return nil, err
 	}
-	defer s.releaseFromScanSemaphore()
 
 	imgID := request.GetImageId()
 
@@ -517,6 +517,7 @@ func (s *serviceImpl) acquireScanSemaphore(ctx context.Context) error {
 
 func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.EnrichLocalImageInternalRequest) (*v1.ScanImageInternalResponse, error) {
 	err := s.acquireScanSemaphore(ctx)
+	defer s.releaseFromScanSemaphore()
 	if err != nil {
 		log.Errorw("Failed to acquire scan semaphore",
 			logging.FromContext(ctx),
@@ -527,9 +528,7 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 		)
 		return nil, err
 	}
-
-	defer s.releaseFromScanSemaphore()
-
+	
 	imgID := request.GetImageId()
 	var hasErrors bool
 	if request.Error != "" {
