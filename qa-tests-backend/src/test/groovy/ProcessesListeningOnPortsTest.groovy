@@ -1,6 +1,8 @@
 import static util.Helpers.evaluateWithRetry
 
 import objects.Deployment
+import objects.DaemonSet
+import objects.Pagination
 import util.Env
 
 import spock.lang.IgnoreIf
@@ -252,6 +254,81 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         assert list.size() == 1
 
         destroyDeployments()
+    }
+
+    def "Verify listening endpoints for collector are reported"() {
+        given:
+
+        String collectorUid = orchestrator.getDaemonSetId(new DaemonSet(name: "collector", namespace: "stackrox"))
+        log.info "collectorUid= ${collectorUid}"
+
+        def processesListeningOnPorts = evaluateWithRetry(10, 10) {
+                def temp = ProcessesListeningOnPortsService
+                        .getProcessesListeningOnPortsResponse(collectorUid)
+                return temp
+        }
+
+        // First check that the listening endpoint appears in the API
+        assert processesListeningOnPorts
+
+        def list = processesListeningOnPorts.listeningEndpointsList
+        // The size of the list depends upon the number of colletors
+        // which can vary based upon the environment
+        assert list.size() > 1
+
+        def endpoint1 = list.find { it.endpoint.port == 8080 }
+
+        assert endpoint1
+        assert endpoint1.deploymentId
+        assert endpoint1.podId
+        assert endpoint1.podUid
+        assert endpoint1.clusterId
+        assert endpoint1.Namespace
+        assert endpoint1.containerName == "collector"
+        assert endpoint1.signal.name == "collector"
+        assert endpoint1.signal.execFilePath == "/usr/local/bin/collector"
+
+        def endpoint2 = list.find { it.endpoint.port == 9090 }
+
+        assert endpoint2
+        assert endpoint2.deploymentId
+        assert endpoint2.podId
+        assert endpoint2.podUid
+        assert endpoint2.clusterId
+        assert endpoint2.Namespace
+        assert endpoint2.containerName == "collector"
+        assert endpoint2.signal.name == "collector"
+        assert endpoint2.signal.execFilePath == "/usr/local/bin/collector"
+
+        def pagination = new Pagination(1, 0)
+        def processesListeningOnPortsPaginated = evaluateWithRetry(10, 10) {
+                def temp = ProcessesListeningOnPortsService
+                        .getProcessesListeningOnPortsResponse(collectorUid, pagination)
+                return temp
+        }
+
+        def listPaginated = processesListeningOnPortsPaginated.listeningEndpointsList
+        assert listPaginated.size() == 1
+
+        pagination = new Pagination(1, 1)
+        processesListeningOnPortsPaginated = evaluateWithRetry(10, 10) {
+                def temp = ProcessesListeningOnPortsService
+                        .getProcessesListeningOnPortsResponse(collectorUid, pagination)
+                return temp
+        }
+
+        listPaginated = processesListeningOnPortsPaginated.listeningEndpointsList
+        assert listPaginated.size() == 1
+
+        pagination = new Pagination(2, 0)
+        processesListeningOnPortsPaginated = evaluateWithRetry(10, 10) {
+                def temp = ProcessesListeningOnPortsService
+                        .getProcessesListeningOnPortsResponse(collectorUid, pagination)
+                return temp
+        }
+
+        listPaginated = processesListeningOnPortsPaginated.listeningEndpointsList
+        assert listPaginated.size() == 2
     }
 
     private waitForResponseToHaveNumElements(int numElements,
