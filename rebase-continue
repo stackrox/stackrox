@@ -1,11 +1,3 @@
 {
-  "continuations": [
-    {
-      "command": [
-        "upstack",
-        "restack"
-      ],
-      "branch": "git-spice-pr-1"
-    }
-  ]
+  "continuations": null
 }
