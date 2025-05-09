@@ -2,8 +2,8 @@ syntax = "proto3";
 
 package v1;
 
-import weak "google/api/annotations.proto";
 import "api/v1/pagination.proto";
+import weak "google/api/annotations.proto";
 import "storage/process_listening_on_port.proto";
 
 option go_package = "./api/v1;v1";
