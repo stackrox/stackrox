@@ -27,7 +27,13 @@ main() {
     fi
     api_endpoint="${api_hostname}:${api_port}"
 
-    roxctl -e "${api_endpoint}" --insecure-skip-tls-verify "$@"
+    set -x
+    echo "api_endpoint:$api_endpoint"
+    echo "API_ENDPOINT:$API_ENDPOINT"
+    echo "ROX_SERVER_NAME:$ROX_SERVER_NAME"
+    roxctl -e "${api_endpoint}" --insecure-skip-tls-verify "$@" \
+      || { echo 'retry without ROX_SERVER_NAME'; ROX_SERVER_NAME='' roxctl -e "${api_endpoint}" --insecure-skip-tls-verify "$@"; }
+    set +x
 }
 
 main "$@"
