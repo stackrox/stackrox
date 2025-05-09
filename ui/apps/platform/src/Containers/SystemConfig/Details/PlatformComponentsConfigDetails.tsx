@@ -1,6 +1,5 @@
 import React, { ReactElement } from 'react';
 import {
-    Button,
     Card,
     CardBody,
     CardTitle,
@@ -9,13 +8,14 @@ import {
     Grid,
     GridItem,
     Stack,
-    StackItem,
     Text,
 } from '@patternfly/react-core';
 
 import { PlatformComponentRule, PlatformComponentsConfig } from 'types/config.proto';
 
 import './PlatformComponentsConfigDetails.css';
+import RedHatLayeredProductsCard from './components/RedHatLayeredProductsCard';
+import CustomPlatformComponentsCard from './components/CustomPlatformComponentsCard';
 
 // @TODO: Remove hardcoded value and add platformComponentsConfig as a prop
 const platformComponentsConfig: PlatformComponentsConfig = {
@@ -84,66 +84,10 @@ const PlatformComponentsConfigDetails = (): ReactElement => {
                 </Card>
             </GridItem>
             <GridItem sm={12} md={6} lg={4}>
-                <Card isFlat>
-                    <CardTitle>Red Hat layered products</CardTitle>
-                    <CardBody>
-                        <Stack hasGutter>
-                            <Text>
-                                Components found in Red Hat layered and partner product namespaces
-                                are included in the platform definition by default.
-                            </Text>
-                            <Divider component="div" />
-                            <Text component="small" className="pf-v5-u-color-200">
-                                Namespaces match (Regex)
-                            </Text>
-                            <CodeBlock>
-                                <div className="truncate-multiline">
-                                    {redHatLayeredProductsRule?.namespaceRule.regex}
-                                </div>
-                            </CodeBlock>
-                            <StackItem className="pf-v5-u-text-align-center pf-v5-u-mt-sm">
-                                <Button variant="link" isInline>
-                                    View more
-                                </Button>
-                            </StackItem>
-                        </Stack>
-                    </CardBody>
-                </Card>
+                <RedHatLayeredProductsCard rule={redHatLayeredProductsRule} />
             </GridItem>
             <GridItem sm={12} md={6} lg={4}>
-                <Card isFlat>
-                    <CardTitle>Custom components</CardTitle>
-                    <CardBody>
-                        <Stack hasGutter>
-                            <Text>
-                                Extend the platform definition by defining namespaces for additional
-                                applications and products.
-                            </Text>
-                            <Divider component="div" />
-                            <Text component="small" className="pf-v5-u-color-200">
-                                Namespaces match (Regex)
-                            </Text>
-                            {customRules.length === 0 && <CodeBlock>None</CodeBlock>}
-                            {customRules.length >= 1 && (
-                                <CodeBlock>
-                                    <Text component="small" className="pf-v5-u-color-200">
-                                        {customRules[0].name}
-                                    </Text>
-                                    <div className="truncate-multiline">
-                                        {customRules[0].namespaceRule.regex}
-                                    </div>
-                                </CodeBlock>
-                            )}
-                            {customRules.length > 1 && (
-                                <StackItem className="pf-v5-u-text-align-center pf-v5-u-mt-sm">
-                                    <Button variant="link" isInline>
-                                        View more
-                                    </Button>
-                                </StackItem>
-                            )}
-                        </Stack>
-                    </CardBody>
-                </Card>
+                <CustomPlatformComponentsCard customRules={customRules} />
             </GridItem>
         </Grid>
     );
