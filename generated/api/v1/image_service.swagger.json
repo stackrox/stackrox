@@ -802,6 +802,17 @@
       ],
       "default": "UNSET_SOURCE_TYPE"
     },
+    "storageAdvisory": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "link": {
+          "type": "string"
+        }
+      }
+    },
     "storageCVSSScore": {
       "type": "object",
       "properties": {
@@ -1125,7 +1136,7 @@
           "type": "string"
         },
         "advisory": {
-          "type": "string"
+          "$ref": "#/definitions/storageAdvisory"
         },
         "cvss": {
           "type": "number",
