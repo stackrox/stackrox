@@ -39,7 +39,7 @@ func (suite *PipelineTestSuite) SetupTest() {
 
 	suite.manager = managerMocks.NewMockManager(suite.mockCtrl)
 	suite.coIntegrationDS = coIntegrationMocks.NewMockDataStore(suite.mockCtrl)
-	suite.pipeline = NewPipeline(suite.manager).(*pipelineImpl)
+	suite.pipeline = NewPipeline(suite.manager, &CoTelemetry{}).(*pipelineImpl)
 }
 
 func (suite *PipelineTestSuite) TearDownTest() {
