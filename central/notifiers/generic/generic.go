@@ -10,6 +10,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"reflect"
 	"time"
 
 	"github.com/pkg/errors"
@@ -184,9 +185,16 @@ func (g *generic) Test(ctx context.Context) *notifiers.NotifierError {
 
 func (g *generic) constructJSON(message protocompat.Message, msgKey string) (io.Reader, error) {
 	msgStr, err := jsonutil.MarshalToCompactString(message)
-	fmt.Println("Message JSON:", msgStr)
 	if err != nil {
 		return nil, err
+	}
+
+	s := reflect.ValueOf(&message).Elem()
+	typeOfT := s.Type()
+	for i := 0; i < s.NumField(); i++ {
+		f := s.Field(i)
+		fmt.Printf("%d: %s %s = %v\n", i,
+			typeOfT.Field(i).Name, f.Type(), f.Interface())
 	}
 
 	var strJSON string
