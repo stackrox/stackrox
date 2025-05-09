@@ -164,6 +164,7 @@ func (s *NetworkFlowPurgerTestSuite) TestPurgerHostConnsEndpoints() {
 		lastUpdateTime    time.Duration
 		purgerMaxAge      time.Duration
 		isKnownEndpoint   bool
+		foundContainerID  bool
 		expectedEndpoint  *containerEndpointIndicator
 		expectedPurgedEps int
 	}{
@@ -181,10 +182,27 @@ func (s *NetworkFlowPurgerTestSuite) TestPurgerHostConnsEndpoints() {
 			isKnownEndpoint:   true,
 			expectedPurgedEps: 0,
 		},
-		"Endpoints-endpoint-gone: should remove unknown endpoints": {
+		"Endpoints: should keep endpoints related to known containers but unknown endpoints": {
 			firstSeen:         time.Minute,
 			lastUpdateTime:    time.Minute,
 			purgerMaxAge:      time.Hour,
+			foundContainerID:  true,
+			isKnownEndpoint:   false,
+			expectedPurgedEps: 0,
+		},
+		"Endpoints: should keep endpoints related to unknown containers but known endpoints": {
+			firstSeen:         time.Minute,
+			lastUpdateTime:    time.Minute,
+			purgerMaxAge:      time.Hour,
+			foundContainerID:  false,
+			isKnownEndpoint:   true,
+			expectedPurgedEps: 0,
+		},
+		"Endpoints-endpoint-gone: should remove endpoints with unknown endpoints and unknown containerID": {
+			firstSeen:         time.Minute,
+			lastUpdateTime:    time.Minute,
+			purgerMaxAge:      time.Hour,
+			foundContainerID:  false,
 			isKnownEndpoint:   false,
 			expectedPurgedEps: 1,
 		},
@@ -195,7 +213,7 @@ func (s *NetworkFlowPurgerTestSuite) TestPurgerHostConnsEndpoints() {
 			lastUpdateTS := timestamp.FromGoTime(now.Add(-tc.lastUpdateTime))
 
 			m, mockEntityStore, _, _ := createManager(mockCtrl, enrichTickerC)
-			expectationsEndpointPurger(mockEntityStore, tc.isKnownEndpoint, true, false)
+			expectationsEndpointPurger(mockEntityStore, tc.isKnownEndpoint, tc.foundContainerID, false)
 			ep := createEndpointPair(timestamp.FromGoTime(now.Add(-tc.firstSeen)), lastUpdateTS)
 			concurrency.WithLock(&m.connectionsByHostMutex, func() {
 				m.connectionsByHost[hostname] = &hostConnections{
@@ -386,19 +404,29 @@ func (s *NetworkFlowPurgerTestSuite) TestPurgerActiveEndpoints() {
 			isKnownEndpoint:       true,
 			expectedPurgedEps:     0,
 		},
-		"Endpoints-containerID-gone: should purge endpoints related to unknown containers": {
+		"Endpoints: should keep endpoints related to known containers but unknown endpoints": {
+			firstSeen:             time.Minute,
+			lastUpdateTime:        time.Minute,
+			purgerMaxAge:          time.Hour,
+			foundContainerID:      true,
+			containerIDHistorical: false,
+			isKnownEndpoint:       false,
+			expectedPurgedEps:     0,
+		},
+		"Endpoints: should keep endpoints related to unknown containers but known endpoints": {
 			firstSeen:             time.Minute,
 			lastUpdateTime:        time.Minute,
 			purgerMaxAge:          time.Hour,
 			foundContainerID:      false,
 			containerIDHistorical: false,
 			isKnownEndpoint:       true,
-			expectedPurgedEps:     1,
+			expectedPurgedEps:     0,
 		},
-		"Endpoints-endpoint-gone: should remove endpoints with unknown endpoints": {
+		"Endpoints-endpoint-gone: should remove endpoints with unknown endpoints and unknown containerID": {
 			firstSeen:         time.Minute,
 			lastUpdateTime:    time.Minute,
 			purgerMaxAge:      time.Hour,
+			foundContainerID:  false,
 			isKnownEndpoint:   false,
 			expectedPurgedEps: 1,
 		},

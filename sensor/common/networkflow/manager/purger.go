@@ -174,9 +174,14 @@ func purgeHostConnsNoLock(maxAge time.Duration, conns *hostConnections, store En
 	numPurgedConns = 0
 	cutOff := timestamp.Now().Add(-maxAge)
 	for endpoint, status := range conns.endpoints {
-		// remove if the endpoint is not in the store (also not in history)
-		if len(store.LookupByEndpoint(endpoint.endpoint)) == 0 {
-			flowMetrics.PurgerEvents.WithLabelValues("hostEndpoint", "endpoint-gone").Inc()
+		// Remove if the related container is not found (but keep historical) and endpoint is unknown
+		_, contIDfound, _ := store.LookupByContainerID(endpoint.containerID)
+		endpointFound := len(store.LookupByEndpoint(endpoint.endpoint)) > 0
+		if !contIDfound && !endpointFound {
+			// Make sure that Sensor knows absolutely nothing about that endpoint.
+			// There is still a chance that endpoint maybe unknown, but we know the container ID
+			// and this is sufficient to make the plop feature work.
+			flowMetrics.PurgerEvents.WithLabelValues("hostEndpoint", "endpoint-&-containerID-gone").Inc()
 			delete(conns.endpoints, endpoint)
 			numPurgedEps++
 			continue
@@ -226,17 +231,14 @@ func purgeActiveEndpointsNoLock(maxAge time.Duration,
 	numPurged := 0
 	cutOff := timestamp.Now().Add(-maxAge)
 	for endpoint, age := range endpoints {
-		// Remove if the endpoint is not in the store (also not in history)
-		if len(store.LookupByEndpoint(endpoint.endpoint)) == 0 {
-			delete(endpoints, endpoint)
-			numPurged++
-			flowMetrics.PurgerEvents.WithLabelValues("activeEndpoint", "endpoint-gone").Inc()
-			continue
-		}
-		// Remove if the related container is not found (but keep historical)
-		_, found, _ := store.LookupByContainerID(endpoint.containerID)
-		if !found {
-			flowMetrics.PurgerEvents.WithLabelValues("activeEndpoint", "containerID-gone").Inc()
+		// Remove if the related container is not found (but keep historical) and endpoint is unknown
+		_, contIDfound, _ := store.LookupByContainerID(endpoint.containerID)
+		endpointFound := len(store.LookupByEndpoint(endpoint.endpoint)) > 0
+		if !contIDfound && !endpointFound {
+			// Make sure that Sensor knows absolutely nothing about that endpoint.
+			// There is still a chance that endpoint maybe unknown, but we know the container ID
+			// and this is sufficient to make the plop feature work.
+			flowMetrics.PurgerEvents.WithLabelValues("activeEndpoint", "endpoint-&-containerID-gone").Inc()
 			delete(endpoints, endpoint)
 			numPurged++
 			continue
