@@ -7,11 +7,6 @@ import (
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 )
 
-var (
-	defaultForUpgrades         = platform.ScannerV4Disabled
-	defaultForNewInstallations = platform.ScannerV4Enabled
-)
-
 const (
 	FeatureDefaultKeyScannerV4 = "feature-defaults.platform.stackrox.io/scannerV4"
 )
@@ -21,7 +16,9 @@ const (
 // This will be called from the preExtension to record the current setting.
 //
 // Second return value is `true`, if defaulting has been applied due to lack of explicit setting.
-func ScannerV4ComponentPolicy(logger logr.Logger, status *platform.CentralStatus, annotations map[string]string, spec *platform.ScannerV4Spec) (platform.ScannerV4ComponentPolicy, bool) {
+func CentralScannerV4ComponentPolicy(logger logr.Logger, status *platform.CentralStatus, annotations map[string]string, spec *platform.ScannerV4Spec) (platform.ScannerV4ComponentPolicy, bool) {
+	defaultForUpgrades := platform.ScannerV4Disabled
+	defaultForNewInstallations := platform.ScannerV4Enabled
 	logger = logger.WithName("scanner-v4-defaulting")
 
 	if spec != nil && spec.ScannerComponent != nil {
