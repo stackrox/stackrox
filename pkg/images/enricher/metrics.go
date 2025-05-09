@@ -5,13 +5,22 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/stackrox/rox/pkg/images"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
+)
+
+var (
+	enricherScanMetricsName = prometheus.Labels{"location": "image-enricher"}
 )
 
 // This interface encapsulates the metrics this package needs.
 type metrics interface {
 	IncrementMetadataCacheHit()
 	IncrementMetadataCacheMiss()
+	IncrementEnricherSemaphoreQueueSize()
+	DecrementEnricherSemaphoreQueueSize()
+	IncrementEnricherSemaphoreHoldingSize()
+	DecrementEnricherSemaphoreHoldingSize()
 	SetScanDurationTime(start time.Time, scanner string, err error)
 	SetImageVulnerabilityRetrievalTime(start time.Time, scanner string, err error)
 }
@@ -30,6 +39,22 @@ func (m *metricsImpl) IncrementMetadataCacheHit() {
 
 func (m *metricsImpl) IncrementMetadataCacheMiss() {
 	m.metadataCacheMisses.Inc()
+}
+
+func (m *metricsImpl) IncrementEnricherSemaphoreQueueSize() {
+	images.ScanSemaphoreQueueSize.With(enricherScanMetricsName).Inc()
+}
+
+func (m *metricsImpl) DecrementEnricherSemaphoreQueueSize() {
+	images.ScanSemaphoreQueueSize.With(enricherScanMetricsName).Dec()
+}
+
+func (m *metricsImpl) IncrementEnricherSemaphoreHoldingSize() {
+	images.ScanSemaphoreHoldingSize.With(enricherScanMetricsName).Inc()
+}
+
+func (m *metricsImpl) DecrementEnricherSemaphoreHoldingSize() {
+	images.ScanSemaphoreHoldingSize.With(enricherScanMetricsName).Dec()
 }
 
 func startTimeToMS(t time.Time) float64 {
