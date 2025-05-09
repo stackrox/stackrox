@@ -315,11 +315,9 @@ func main() {
 	versionUtils.SetCurrentVersionPostgres(globaldb.GetPostgres())
 
 	features.LogFeatureFlags()
-	// Register telemetry prometheus metrics.
-	telemetry.Singleton().Start()
-	// Start the prometheus metrics server
-	pkgMetrics.NewServer(pkgMetrics.CentralSubsystem, pkgMetrics.NewTLSConfigurerFromEnv()).RunForever()
-	pkgMetrics.GatherThrottleMetricsForever(pkgMetrics.CentralSubsystem.String())
+
+	go startGRPCServer()
+	go startTelemetryServer()
 
 	if env.ManagedCentral.BooleanSetting() {
 		clusterInternalServer := internal.NewHTTPServer(metrics.HTTPSingleton())
@@ -327,9 +325,15 @@ func main() {
 		clusterInternalServer.RunForever()
 	}
 
-	go startGRPCServer()
-
 	waitForTerminationSignal()
+}
+
+func startTelemetryServer() {
+	// Register telemetry prometheus metrics.
+	telemetry.Singleton().Start()
+	// Start the prometheus metrics server
+	pkgMetrics.NewServer(pkgMetrics.CentralSubsystem, pkgMetrics.NewTLSConfigurerFromEnv()).RunForever()
+	pkgMetrics.GatherThrottleMetricsForever(pkgMetrics.CentralSubsystem.String())
 }
 
 // clusterInternalRoutes returns list of route-handler pairs to be served on "cluster-internal" port.
@@ -365,6 +369,7 @@ func ensureDB(ctx context.Context) {
 }
 
 func startServices() {
+	log.Info("DEBUG: Starting critical services ... ")
 	reprocessor.Singleton().Start()
 	suppress.Singleton().Start()
 	pruning.Singleton().Start()
@@ -646,7 +651,12 @@ func startGRPCServer() {
 			}
 		}
 	}
+
 	go startServices()
+
+	log.Info("DEBUG: Sleeping for 5 minutes ... ")
+	time.Sleep(5 * time.Minute)
+
 }
 
 func registerDelayedIntegrations(integrationsInput []iiStore.DelayedIntegration) {
