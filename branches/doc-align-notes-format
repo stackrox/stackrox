@@ -2,5 +2,16 @@
   "base": {
     "name": "doc-unify-helm-install-cmds",
     "hash": "02dd4ffb366cb0cf93198ec4a3c2e23e56a4ec5b"
+  },
+  "upstream": {
+    "branch": "doc-align-notes-format"
+  },
+  "change": {
+    "github": {
+      "pr": {
+        "number": 15238,
+        "gqlID": "PR_kwDOGd6UEM6VcKjj"
+      }
+    }
   }
 }
