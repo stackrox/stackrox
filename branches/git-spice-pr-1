@@ -2,5 +2,16 @@
   "base": {
     "name": "master",
     "hash": "81a7b3a08d29065e104d0f3439d757ce744ae350"
+  },
+  "upstream": {
+    "branch": "git-spice-pr-1"
+  },
+  "change": {
+    "github": {
+      "pr": {
+        "number": 15249,
+        "gqlID": "PR_kwDOGd6UEM6Vis8T"
+      }
+    }
   }
 }
