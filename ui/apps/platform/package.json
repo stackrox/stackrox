@@ -23,7 +23,7 @@
         "@patternfly/react-table": "^5.2.2",
         "@patternfly/react-topology": "^5.2.1",
         "@patternfly/react-user-feedback": "^5.0.0",
-        "axios": "^1.7.7",
+        "axios": "^1.9.0",
         "computed-style-to-inline-style": "^3.0.0",
         "core-js": "^3.41.0",
         "d3-axis": "^1.0.12",
