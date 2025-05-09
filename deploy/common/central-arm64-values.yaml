@@ -12,6 +12,8 @@ configController:
 scanner:
   nodeSelector:
     kubernetes.io/arch: arm64
+  dbNodeSelector:
+    kubernetes.io/arch: arm64
 
 scannerV4:
   indexer:
