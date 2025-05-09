@@ -36,13 +36,13 @@ export const imageSearchFilterConfig: CompoundSearchFilterEntity = {
 
 export const imageCVESearchFilterConfig: CompoundSearchFilterEntity = {
     displayName: 'CVE',
-    searchCategory: 'IMAGE_VULNERABILITIES',
+    searchCategory: 'IMAGE_VULNERABILITIES_V2',
     attributes: imageCVEAttributes,
 };
 
 export const imageComponentSearchFilterConfig: CompoundSearchFilterEntity = {
     displayName: 'Image component',
-    searchCategory: 'IMAGE_COMPONENTS',
+    searchCategory: 'IMAGE_COMPONENTS_V2',
     attributes: imageComponentAttributes,
 };
 

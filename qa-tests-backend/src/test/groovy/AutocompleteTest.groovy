@@ -9,8 +9,21 @@ import spock.lang.Unroll
 
 @Tag("PZ")
 class AutocompleteTest extends BaseSpecification {
-    private static final SearchCategory VULNERABILITY_SEARCH_CATEGORY = SearchCategory.IMAGE_VULNERABILITIES
     private static final String GROUP_AUTOCOMPLETE = "GROUP"
+
+    def getVulnSearchCategore() {
+        if (Env.get("ROX_FLATTEN_CVE_DATA", null) == "true") {
+            return SearchCategory.IMAGE_VULNERABILITIES_V2
+        }
+        return SearchCategory.IMAGE_VULNERABILITIES
+    }
+
+    def getComponentSearchCategory() {
+        if (Env.get("ROX_FLATTEN_CVE_DATA", null) == "true") {
+            return SearchCategory.IMAGE_COMPONENTS_V2
+        }
+        return SearchCategory.IMAGE_COMPONENTS
+    }
 
     @Tag("BAT")
     @Tag("COMPATIBILITY")
@@ -56,9 +69,9 @@ class AutocompleteTest extends BaseSpecification {
                                                 "Image Tag", "Dockerfile Instruction Keyword", "CVE", "Component"]
         SearchCategory.IMAGES                | ["Cluster", "Deployment",
                                                 "Image Tag", "Dockerfile Instruction Keyword", "CVE", "Component"]
-        VULNERABILITY_SEARCH_CATEGORY        | ["Cluster", "Deployment",
+        getVulnSearchCategore()              | ["Cluster", "Deployment",
                                                 "Image Tag", "Dockerfile Instruction Keyword", "CVE", "Component"]
-        SearchCategory.IMAGE_COMPONENTS      | ["Cluster", "Deployment",
+        getComponentSearchCategory()         | ["Cluster", "Deployment",
                                                 "Image Tag", "Dockerfile Instruction Keyword", "CVE", "Component"]
         SearchCategory.PODS                  | ["Namespace"]
         SearchCategory.POLICIES              | ["Policy"]
