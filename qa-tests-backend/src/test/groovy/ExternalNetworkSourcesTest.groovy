@@ -57,6 +57,8 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
         for (Deployment deployment : DEPLOYMENTS) {
             orchestrator.deleteDeployment(deployment)
         }
+        Set<String> similarCIDRs = getAllCIDRs().findAll { it.startsWith("1.1.") }
+        log.info("Post-cleanup state of similar CIDRs: ${similarCIDRs}")
     }
 
     private static String generateNameWithPrefix(String prefix) {
@@ -84,6 +86,8 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
         }
 
         cleanup:
+        Set<String> similarCIDRs = getAllCIDRs().findAll { it.startsWith("1.1.") }
+        log.info("Pre-case-cleanup state of similar CIDRs: ${similarCIDRs}")
         "Remove the external source and associated deployments"
         deleteNetworkEntity(externalSourceID)
     }
@@ -125,6 +129,8 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
         }
 
         cleanup:
+        Set<String> similarCIDRs = getAllCIDRs().findAll { it.startsWith("1.1.") }
+        log.info("Pre-case-cleanup state of similar CIDRs: ${similarCIDRs}")
         deleteNetworkEntity(externalSource30ID)
         deleteNetworkEntity(externalSource31ID)
     }
@@ -172,6 +178,8 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
         }
 
         cleanup:
+        Set<String> similarCIDRs = getAllCIDRs().findAll { it.startsWith("1.1.") }
+        log.info("Pre-case-cleanup state of similar CIDRs: ${similarCIDRs}")
         deleteNetworkEntity(externalSource30ID)
     }
 
@@ -277,6 +285,8 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
         }
 
         cleanup:
+        Set<String> similarCIDRs2 = getAllCIDRs().findAll { it.startsWith("1.1.") }
+        log.info("Pre-case-cleanup state of similar CIDRs: ${similarCIDRs2}")
         deleteNetworkEntity(externalSource30ID)
         deleteNetworkEntity(externalSource31ID)
     }
