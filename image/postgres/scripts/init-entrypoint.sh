@@ -48,6 +48,36 @@ else
 
     PG_DATA_VERSION=$(cat "${PGDATA}/PG_VERSION")
 
+    if [[ -v RESTORE_BACKUP && "${RESTORE_BACKUP}" == "true" ]]; then
+        # Note that we use $POSTGRESQL_PREV_VERSION instead of PG_DATA_VERSION,
+        # since we could be asked to restore a backup after an upgrade.
+        # $POSTGRESQL_PREV_VERSION is an env variable set by the
+        # postgresql-container image itself.
+        BACKUP_DIR="/backups/$POSTGRESQL_PREV_VERSION-$PG_BINARY_VERSION/"
+
+        # Do not care about symlinks yet
+        if [ ! -d "${BACKUP_DIR}" ]; then
+          echo "An upgrade backup directory ${BACKUP_DIR} does not exist, skip."
+          BACKUP_DIR="${PGDATA}/../backups/$POSTGRESQL_PREV_VERSION-$PG_BINARY_VERSION/"
+
+          if [ ! -d "${BACKUP_DIR}" ]; then
+              echo "An upgrade backup directory ${BACKUP_DIR} does not exist, skip."
+              exit 1
+          fi
+        fi
+
+        PGDATA_NEW="${PGDATA}-new"
+        mkdir -p "${PGDATA_NEW}"
+        tar -xvf "${BACKUP_DIR}/backup.tar" -C "${PGDATA_NEW}" --checkpoint=1000
+        rm -rf "${PGDATA}"
+        mv "${PGDATA_NEW}" "${PGDATA}"
+    fi
+
+    if [[ -v FORCE_OLD_BINARIES && "${FORCE_OLD_BINARIES}" == "true" ]]; then
+        echo "Using old binaries, no upgrade needed"
+        exit 0
+    fi
+
     if [ "$PG_DATA_VERSION" -lt "$PG_BINARY_VERSION" ]; then
         # Binaries version is newer, upgrade the data
         PGDATA_NEW="${PGDATA}-new"
