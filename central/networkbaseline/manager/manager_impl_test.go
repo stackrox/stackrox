@@ -18,8 +18,10 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/networkbaseline"
+	"github.com/stackrox/rox/pkg/networkgraph/testutils"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
@@ -852,6 +854,67 @@ func (suite *ManagerTestSuite) TestBaselineSyncMsg() {
 	// And locked state should be updated
 	afterLockUpdateState = suite.mustGetBaseline(1).GetLocked()
 	suite.False(afterLockUpdateState)
+}
+
+func (suite *ManagerTestSuite) TestGetExternalNetworkPeers() {
+	suite.mustInitManager()
+	suite.deploymentDS.EXPECT().GetDeployment(gomock.Any(), gomock.Any()).Return(
+		&storage.Deployment{
+			Id:        fixtureconsts.Deployment1,
+			ClusterId: fixtureconsts.Cluster1,
+		}, true, nil,
+	)
+
+	entities := []*storage.NetworkEntity{
+		testutils.GetExtSrcNetworkEntity("entity1", "1.2.3.4", "1.2.3.4/32", false, fixtureconsts.Cluster1, true),
+		testutils.GetExtSrcNetworkEntity("entity2", "1.2.3.5", "1.2.3.5/32", false, fixtureconsts.Cluster1, true),
+		testutils.GetExtSrcNetworkEntity("entity3", "1.2.3.6", "1.2.3.6/32", false, fixtureconsts.Cluster1, false),
+		testutils.GetExtSrcNetworkEntity("entity4", "1.2.3.7", "1.2.3.7/32", false, fixtureconsts.Cluster1, false),
+	}
+
+	flows := []*storage.NetworkFlow{
+		testutils.ExtFlow("entity1", fixtureconsts.Deployment1),
+		testutils.ExtFlow("entity2", fixtureconsts.Deployment1),
+		testutils.ExtFlow("entity3", fixtureconsts.Deployment1),
+	}
+
+	suite.networkEntities.EXPECT().GetEntityByQuery(gomock.Any(), gomock.Any()).Return(entities, nil)
+	suite.clusterFlows.EXPECT().GetFlowStore(gomock.Any(), fixtureconsts.Cluster1).Return(suite.flowStore, nil).AnyTimes()
+	suite.flowStore.EXPECT().GetMatchingFlows(gomock.Any(), gomock.Any(), gomock.Any()).Return(flows, nil, nil).AnyTimes()
+
+	expectedPeers := []*v1.NetworkBaselineStatusPeer{
+		{
+			Entity: &v1.NetworkBaselinePeerEntity{
+				Id:         "entity1",
+				Type:       storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+				Name:       "1.2.3.4",
+				Discovered: true,
+			},
+		},
+
+		{
+			Entity: &v1.NetworkBaselinePeerEntity{
+				Id:         "entity2",
+				Type:       storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+				Name:       "1.2.3.5",
+				Discovered: true,
+			},
+		},
+
+		{
+			Entity: &v1.NetworkBaselinePeerEntity{
+				Id:         "entity3",
+				Type:       storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+				Name:       "1.2.3.6",
+				Discovered: false,
+			},
+		},
+	}
+
+	result, err := suite.m.GetExternalNetworkPeers(allAllowedCtx, fixtureconsts.Deployment1, "", nil)
+	suite.Nil(err)
+
+	protoassert.ElementsMatch(suite.T(), expectedPeers, result)
 }
 
 ///// Helper functions to make test code less verbose.
