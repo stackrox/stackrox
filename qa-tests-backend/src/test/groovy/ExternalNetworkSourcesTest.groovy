@@ -18,8 +18,8 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
     // For now we use the one belonging to CloudFlare
     // in hopes it doesn't disappear.
     static final private String CF_IP_ADDRESS = "1.1.1.1"
-    static final private String CF_CIDR_30 = "$CF_IP_ADDRESS/30"
     static final private String CF_CIDR_31 = "$CF_IP_ADDRESS/31"
+    static final private String CF_CIDR_32 = "$CF_IP_ADDRESS/32"
 
     static final private String EXT_CONN_DEPLOYMENT_NAME = "external-connection"
 
@@ -70,7 +70,7 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
 
         log.info "Create a external source containing Cloudflare's IP address"
         String externalSourceName = generateNameWithPrefix("external-source")
-        NetworkEntity externalSource = createNetworkEntityExternalSource(externalSourceName, CF_CIDR_31)
+        NetworkEntity externalSource = createNetworkEntityExternalSource(externalSourceName, CF_CIDR_32)
         String externalSourceID = externalSource?.getInfo()?.getId()
         assert externalSourceID != null
 
@@ -94,7 +94,7 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
 
         log.info "Create a smaller network external source containing Cloudflare's IP address"
         String externalSource31Name = generateNameWithPrefix("external-source-31")
-        NetworkEntity externalSource31 = createNetworkEntityExternalSource(externalSource31Name, CF_CIDR_31)
+        NetworkEntity externalSource31 = createNetworkEntityExternalSource(externalSource31Name, CF_CIDR_32)
         String externalSource31ID = externalSource31?.getInfo()?.getId()
         assert externalSource31ID != null
 
@@ -105,7 +105,7 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
 
         log.info "Create a supernet external source containing Cloudflare's IP address"
         String externalSource30Name = generateNameWithPrefix("external-source-30")
-        NetworkEntity externalSource30 = createNetworkEntityExternalSource(externalSource30Name, CF_CIDR_30)
+        NetworkEntity externalSource30 = createNetworkEntityExternalSource(externalSource30Name, CF_CIDR_31)
         String externalSource30ID = externalSource30?.getInfo()?.getId()
         assert externalSource30ID != null
 
@@ -137,7 +137,7 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
 
         log.info "Create a smaller subnet network entities with Cloudflare's IP address"
         String externalSource31Name = generateNameWithPrefix("external-source-31")
-        NetworkEntity externalSource31 = createNetworkEntityExternalSource(externalSource31Name, CF_CIDR_31)
+        NetworkEntity externalSource31 = createNetworkEntityExternalSource(externalSource31Name, CF_CIDR_32)
         String externalSource31ID = externalSource31?.getInfo()?.getId()
         assert externalSource31ID != null
 
@@ -149,7 +149,7 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
 
         log.info "Add supernet and remove subnet"
         String externalSource30Name = generateNameWithPrefix("external-source-30")
-        NetworkEntity externalSource30 = createNetworkEntityExternalSource(externalSource30Name, CF_CIDR_30)
+        NetworkEntity externalSource30 = createNetworkEntityExternalSource(externalSource30Name, CF_CIDR_31)
         String externalSource30ID = externalSource30?.getInfo()?.getId()
         assert externalSource30ID != null
 
@@ -180,7 +180,7 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
         assert deploymentUid != null
 
         String externalSource30Name = generateNameWithPrefix("external-source-30")
-        NetworkEntity externalSource30 = createNetworkEntityExternalSource(externalSource30Name, CF_CIDR_30)
+        NetworkEntity externalSource30 = createNetworkEntityExternalSource(externalSource30Name, CF_CIDR_31)
         String externalSource30ID = externalSource30?.getInfo()?.getId()
         assert externalSource30ID != null
 
@@ -191,7 +191,7 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
 
         log.info "Add smaller subnet subnet external source"
         String externalSource31Name = generateNameWithPrefix("external-source-31")
-        NetworkEntity externalSource31 = createNetworkEntityExternalSource(externalSource31Name, CF_CIDR_31)
+        NetworkEntity externalSource31 = createNetworkEntityExternalSource(externalSource31Name, CF_CIDR_32)
         String externalSource31ID = externalSource31?.getInfo()?.getId()
         assert externalSource31ID != null
 
