@@ -684,6 +684,55 @@ func TestTranslate(t *testing.T) {
 			},
 		},
 
+		"set _backup": {
+			args: args{
+				c: platform.Central{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "stackrox",
+					},
+					Spec: platform.CentralSpec{
+						Central: &platform.CentralComponentSpec{
+							DB: &platform.CentralDBSpec{
+								Persistence: &platform.DBPersistence{
+									PersistentVolumeClaim: &platform.DBPersistentVolumeClaim{
+										ClaimName: pointer.String("central-db-custom"),
+										Size:      pointer.String("50Gi"),
+									},
+								},
+							},
+						},
+					},
+				},
+				pvcs: []*corev1.PersistentVolumeClaim{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Namespace: "stackrox",
+							Name:      "central-db-custom-backup",
+						},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": true,
+					},
+				},
+				"central": map[string]interface{}{
+					"exposeMonitoring": false,
+					"db": map[string]interface{}{
+						"persistence": map[string]interface{}{
+							"_backup": true,
+							"persistentVolumeClaim": map[string]interface{}{
+								"claimName":   "central-db-custom",
+								"createClaim": false,
+							},
+						},
+					},
+				},
+			},
+		},
+
 		"with configured DB PVC": {
 			args: args{
 				c: platform.Central{
