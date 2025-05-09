@@ -1,7 +1,4 @@
-nodeSelector:
-  kubernetes.io/arch: arm64
-
-collector:
+sensor:
   nodeSelector:
     kubernetes.io/arch: arm64
 
@@ -9,6 +6,22 @@ admissionControl:
   nodeSelector:
     kubernetes.io/arch: arm64
 
-sensor:
+scanner:
   nodeSelector:
     kubernetes.io/arch: arm64
+
+scannerV4:
+  indexer:
+    nodeSelector:
+      kubernetes.io/arch: arm64
+  matcher:
+    nodeSelector:
+      kubernetes.io/arch: arm64
+  db:
+    nodeSelector:
+      kubernetes.io/arch: arm64
+
+collector:
+  nodeSelector:
+    kubernetes.io/arch: arm64
+
