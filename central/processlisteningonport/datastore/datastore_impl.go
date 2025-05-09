@@ -253,23 +253,6 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 	}
 
 	// Save new PLOP objects
-	log.Info("")
-	log.Info("")
-	log.Info("")
-	log.Info("")
-	log.Infof("len(newPlopObjects)= %d", len(newPlopObjects))
-	for _, newPlop := range newPlopObjects {
-		log.Infof("newPlop= %+v", newPlop)
-	}
-	log.Info("")
-	log.Info("")
-	log.Info("")
-	log.Info("")
-	log.Infof("len(updatePlopObjects)= %d", len(updatePlopObjects))
-	for _, updatePlop := range updatePlopObjects {
-		log.Infof("updatePlop= %+v", updatePlop)
-	}
-
 	err = ds.storage.UpsertMany(ctx, newPlopObjects)
 	if err != nil {
 		return err
