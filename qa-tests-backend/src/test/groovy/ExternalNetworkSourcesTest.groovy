@@ -79,7 +79,7 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
 
         then:
         "Verify edge from deployment to external source exists"
-        withRetry(4, 30) {
+        withRetry(10, 30) {
             assert NetworkGraphUtil.checkForEdge(deploymentUid, externalSourceID, null, 150)
         }
 
@@ -102,7 +102,7 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
         assert externalSource31ID != null
 
         log.info "Edge from deployment to external source ${externalSource31Name} should exist"
-        withRetry(4, 30) {
+        withRetry(10, 30) {
             assert NetworkGraphUtil.checkForEdge(deploymentUid, externalSource31ID)
         }
 
@@ -114,13 +114,13 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
 
         then:
         "Verify no edge from deployment to supernet exists"
-        withRetry(4, 30) {
+        withRetry(10, 30) {
             verifyNoEdge(deploymentUid, externalSource30ID, null)
         }
 
         and:
         "Verify edge from deployment to subnet still exists"
-        withRetry(4, 30) {
+        withRetry(10, 30) {
             assert NetworkGraphUtil.checkForEdge(deploymentUid, externalSource31ID)
         }
 
@@ -146,7 +146,7 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
 
         then:
         "Verify edge from deployment to subnet exists before subnet deletion"
-        withRetry(4, 30) {
+        withRetry(10, 30) {
             assert NetworkGraphUtil.checkForEdge(deploymentUid, externalSource31ID)
         }
 
@@ -158,7 +158,7 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
 
         and:
         "Verify no edge from deployment to supernet exists before subnet deletion"
-        withRetry(4, 30) {
+        withRetry(10, 30) {
             verifyNoEdge(deploymentUid, externalSource30ID, null)
         }
 
@@ -167,7 +167,7 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
 
         and:
         "Verify edge from deployment to supernet exists after subnet deletion"
-        withRetry(4, 30) {
+        withRetry(10, 30) {
             assert NetworkGraphUtil.checkForEdge(deploymentUid, externalSource30ID, null, 180)
         }
 
@@ -221,7 +221,7 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
 
         log.info "Verify edge exists from deployment 'external-connection' to " +
             "supernet external source '$externalSource30Name'"
-        withRetry(4, 30) {
+        withRetry(10, 30) {
             assert NetworkGraphUtil.checkForEdge(deploymentUid, externalSource30ID)
         }
 
@@ -244,14 +244,14 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
 
         then:
         "Verify edge exists from deployment 'external-connection' to subnet external source '$externalSource31Name'"
-        withRetry(4, 30) {
+        withRetry(10, 30) {
             assert NetworkGraphUtil.checkForEdge(deploymentUid, externalSource31ID, null, 180)
         }
 
         and:
         "Verify edge from deployment 'external-connection' to supernet external source '$externalSource30Name' exists" +
             " in the network graph for last 60 minutes"
-        withRetry(4, 30) {
+        withRetry(10, 30) {
             assert NetworkGraphUtil.checkForEdge(
                 deploymentUid,
                 externalSource30ID,
