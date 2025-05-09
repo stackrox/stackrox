@@ -130,6 +130,30 @@ func withSelectCVEIdentifiersQuery(q *v1.Query) *v1.Query {
 			cloned.Selects = append(cloned.Selects, search.NewQuerySelect(search.CVECreatedTime).AggrFunc(aggregatefunc.Min).Proto())
 			sortOption.Field = search.CVECreatedTimeMin.String()
 		}
+		if sortOption.Field == search.EPSSProbablity.String() {
+			cloned.Selects = append(cloned.Selects, search.NewQuerySelect(search.EPSSProbablity).AggrFunc(aggregatefunc.Max).Proto())
+			sortOption.Field = search.EPSSProbablityMax.String()
+		}
+		if sortOption.Field == search.ImpactScore.String() {
+			cloned.Selects = append(cloned.Selects, search.NewQuerySelect(search.ImpactScore).AggrFunc(aggregatefunc.Max).Proto())
+			sortOption.Field = search.ImpactScoreMax.String()
+		}
+		if sortOption.Field == search.FirstImageOccurrenceTimestamp.String() {
+			cloned.Selects = append(cloned.Selects, search.NewQuerySelect(search.FirstImageOccurrenceTimestamp).AggrFunc(aggregatefunc.Min).Proto())
+			sortOption.Field = search.FirstImageOccurrenceTimestampMin.String()
+		}
+		if sortOption.Field == search.CVEPublishedOn.String() {
+			cloned.Selects = append(cloned.Selects, search.NewQuerySelect(search.CVEPublishedOn).AggrFunc(aggregatefunc.Min).Proto())
+			sortOption.Field = search.CVEPublishedOnMin.String()
+		}
+		if sortOption.Field == search.VulnerabilityState.String() {
+			cloned.Selects = append(cloned.Selects, search.NewQuerySelect(search.VulnerabilityState).AggrFunc(aggregatefunc.Max).Proto())
+			sortOption.Field = search.VulnerabilityStateMax.String()
+		}
+		if sortOption.Field == search.NVDCVSS.String() {
+			cloned.Selects = append(cloned.Selects, search.NewQuerySelect(search.NVDCVSS).AggrFunc(aggregatefunc.Max).Proto())
+			sortOption.Field = search.NVDCVSSMax.String()
+		}
 	}
 
 	return cloned
