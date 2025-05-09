@@ -88,7 +88,7 @@ func (s *ImagesStoreSuite) TestStore() {
 			vuln.SuppressActivation = nil
 			vuln.SuppressExpiry = nil
 			// TODO(ROX-27402) remove this
-			vuln.Advisory = ""
+			vuln.Advisory = nil
 		}
 		comp.License = nil
 	}

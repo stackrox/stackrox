@@ -2039,7 +2039,7 @@ func Test_advisory(t *testing.T) {
 	}
 	for name, testcase := range testcases {
 		t.Run(name, func(t *testing.T) {
-			assert.Equal(t, testcase.expected, advisory(testcase.vuln))
+			protoassert.Equal(t, testcase.expected, advisory(testcase.vuln))
 		})
 	}
 }
