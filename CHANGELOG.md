@@ -25,6 +25,14 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-28655: When managing a Central installation using the operator
   * Scanner V4 will be installed for new installations unless explicitly disabled (opt-out) and
   * Scanner V4 will remain not installed for upgrades unless explicitly enabled (opt-in).
+- ROX-27443: Scanner V4 may now only show vulnerability data from Red Hat security data sources for official Red Hat container images
+  found in the [Red Hat Container Catalog](https://catalog.redhat.com/software/containers/explore) when the environment variable `ROX_SCANNER_V4_RED_HAT_LAYERS_RED_HAT_VULNS_ONLY` is set in Scanner V4 Matcher.
+  - Previously, those who used Scanner V4 would see vulnerability data from various sources for all layers in their images.
+    This led to confusion when users scanned official Red Hat images or images based on official Red Hat images.
+    Scanner V4 claimed the images contained vulnerabilities which the official Red Hat CVE pages claimed did not exist in the same image.
+  - This arose for non-RPM content in official Red Hat container images, such as Go binaries in OpenShift images.
+  - When the variable is set (which it is by default), Scanner V4 will continue to show non-RPM content in official Red Hat container images but will no longer
+    output vulnerabilities from non-Red Hat security data sources for these images.
 
 ### Removed Features
 
