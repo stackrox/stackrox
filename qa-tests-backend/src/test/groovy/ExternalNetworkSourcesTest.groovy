@@ -101,7 +101,7 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
 
         log.info "Create a smaller network external source containing Cloudflare's IP address"
         String externalSource31Name = generateNameWithPrefix("external-source-31")
-        NetworkEntity externalSource31 = createNetworkEntityExternalSource(log,externalSource31Name, CF_CIDR_31)
+        NetworkEntity externalSource31 = createNetworkEntityExternalSource(log, externalSource31Name, CF_CIDR_31)
         String externalSource31ID = externalSource31?.getInfo()?.getId()
         assert externalSource31ID != null
 
@@ -112,7 +112,7 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
 
         log.info "Create a supernet external source containing Cloudflare's IP address"
         String externalSource30Name = generateNameWithPrefix("external-source-30")
-        NetworkEntity externalSource30 = createNetworkEntityExternalSource(log,externalSource30Name, CF_CIDR_30)
+        NetworkEntity externalSource30 = createNetworkEntityExternalSource(log, externalSource30Name, CF_CIDR_30)
         String externalSource30ID = externalSource30?.getInfo()?.getId()
         assert externalSource30ID != null
 
