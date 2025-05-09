@@ -24,6 +24,8 @@ const (
 	ConfigService_GetPrivateConfig_FullMethodName                   = "/v1.ConfigService/GetPrivateConfig"
 	ConfigService_GetVulnerabilityExceptionConfig_FullMethodName    = "/v1.ConfigService/GetVulnerabilityExceptionConfig"
 	ConfigService_UpdateVulnerabilityExceptionConfig_FullMethodName = "/v1.ConfigService/UpdateVulnerabilityExceptionConfig"
+	ConfigService_GetPlatformComponentConfig_FullMethodName         = "/v1.ConfigService/GetPlatformComponentConfig"
+	ConfigService_UpdatePlatformComponentConfig_FullMethodName      = "/v1.ConfigService/UpdatePlatformComponentConfig"
 	ConfigService_GetConfig_FullMethodName                          = "/v1.ConfigService/GetConfig"
 	ConfigService_PutConfig_FullMethodName                          = "/v1.ConfigService/PutConfig"
 )
@@ -38,6 +40,8 @@ type ConfigServiceClient interface {
 	GetPrivateConfig(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*storage.PrivateConfig, error)
 	GetVulnerabilityExceptionConfig(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetVulnerabilityExceptionConfigResponse, error)
 	UpdateVulnerabilityExceptionConfig(ctx context.Context, in *UpdateVulnerabilityExceptionConfigRequest, opts ...grpc.CallOption) (*UpdateVulnerabilityExceptionConfigResponse, error)
+	GetPlatformComponentConfig(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*storage.PlatformComponentConfig, error)
+	UpdatePlatformComponentConfig(ctx context.Context, in *PutPlatformComponentConfigRequest, opts ...grpc.CallOption) (*storage.PlatformComponentConfig, error)
 	GetConfig(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*storage.Config, error)
 	PutConfig(ctx context.Context, in *PutConfigRequest, opts ...grpc.CallOption) (*storage.Config, error)
 }
@@ -90,6 +94,26 @@ func (c *configServiceClient) UpdateVulnerabilityExceptionConfig(ctx context.Con
 	return out, nil
 }
 
+func (c *configServiceClient) GetPlatformComponentConfig(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*storage.PlatformComponentConfig, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(storage.PlatformComponentConfig)
+	err := c.cc.Invoke(ctx, ConfigService_GetPlatformComponentConfig_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *configServiceClient) UpdatePlatformComponentConfig(ctx context.Context, in *PutPlatformComponentConfigRequest, opts ...grpc.CallOption) (*storage.PlatformComponentConfig, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(storage.PlatformComponentConfig)
+	err := c.cc.Invoke(ctx, ConfigService_UpdatePlatformComponentConfig_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *configServiceClient) GetConfig(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*storage.Config, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(storage.Config)
@@ -120,6 +144,8 @@ type ConfigServiceServer interface {
 	GetPrivateConfig(context.Context, *Empty) (*storage.PrivateConfig, error)
 	GetVulnerabilityExceptionConfig(context.Context, *Empty) (*GetVulnerabilityExceptionConfigResponse, error)
 	UpdateVulnerabilityExceptionConfig(context.Context, *UpdateVulnerabilityExceptionConfigRequest) (*UpdateVulnerabilityExceptionConfigResponse, error)
+	GetPlatformComponentConfig(context.Context, *Empty) (*storage.PlatformComponentConfig, error)
+	UpdatePlatformComponentConfig(context.Context, *PutPlatformComponentConfigRequest) (*storage.PlatformComponentConfig, error)
 	GetConfig(context.Context, *Empty) (*storage.Config, error)
 	PutConfig(context.Context, *PutConfigRequest) (*storage.Config, error)
 }
@@ -142,6 +168,12 @@ func (UnimplementedConfigServiceServer) GetVulnerabilityExceptionConfig(context.
 }
 func (UnimplementedConfigServiceServer) UpdateVulnerabilityExceptionConfig(context.Context, *UpdateVulnerabilityExceptionConfigRequest) (*UpdateVulnerabilityExceptionConfigResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateVulnerabilityExceptionConfig not implemented")
+}
+func (UnimplementedConfigServiceServer) GetPlatformComponentConfig(context.Context, *Empty) (*storage.PlatformComponentConfig, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetPlatformComponentConfig not implemented")
+}
+func (UnimplementedConfigServiceServer) UpdatePlatformComponentConfig(context.Context, *PutPlatformComponentConfigRequest) (*storage.PlatformComponentConfig, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdatePlatformComponentConfig not implemented")
 }
 func (UnimplementedConfigServiceServer) GetConfig(context.Context, *Empty) (*storage.Config, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetConfig not implemented")
@@ -241,6 +273,42 @@ func _ConfigService_UpdateVulnerabilityExceptionConfig_Handler(srv interface{}, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ConfigService_GetPlatformComponentConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ConfigServiceServer).GetPlatformComponentConfig(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ConfigService_GetPlatformComponentConfig_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ConfigServiceServer).GetPlatformComponentConfig(ctx, req.(*Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ConfigService_UpdatePlatformComponentConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PutPlatformComponentConfigRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ConfigServiceServer).UpdatePlatformComponentConfig(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ConfigService_UpdatePlatformComponentConfig_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ConfigServiceServer).UpdatePlatformComponentConfig(ctx, req.(*PutPlatformComponentConfigRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _ConfigService_GetConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
@@ -299,6 +367,14 @@ var ConfigService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateVulnerabilityExceptionConfig",
 			Handler:    _ConfigService_UpdateVulnerabilityExceptionConfig_Handler,
+		},
+		{
+			MethodName: "GetPlatformComponentConfig",
+			Handler:    _ConfigService_GetPlatformComponentConfig_Handler,
+		},
+		{
+			MethodName: "UpdatePlatformComponentConfig",
+			Handler:    _ConfigService_UpdatePlatformComponentConfig_Handler,
 		},
 		{
 			MethodName: "GetConfig",

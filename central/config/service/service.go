@@ -42,10 +42,12 @@ var (
 		user.With(permissions.View(resources.Administration)): {
 			v1.ConfigService_GetConfig_FullMethodName,
 			v1.ConfigService_GetPrivateConfig_FullMethodName,
+			v1.ConfigService_GetPlatformComponentConfig_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.Administration)): {
 			v1.ConfigService_PutConfig_FullMethodName,
 			v1.ConfigService_UpdateVulnerabilityExceptionConfig_FullMethodName,
+			v1.ConfigService_UpdatePlatformComponentConfig_FullMethodName,
 		},
 	})
 )
@@ -198,6 +200,28 @@ func (s *serviceImpl) UpdateVulnerabilityExceptionConfig(ctx context.Context, re
 	return &v1.UpdateVulnerabilityExceptionConfigResponse{
 		Config: req.GetConfig(),
 	}, nil
+}
+
+func (s *serviceImpl) GetPlatformComponentConfig(ctx context.Context, _ *v1.Empty) (*storage.PlatformComponentConfig, error) {
+	if !features.CustomizablePlatformComponents.Enabled() {
+		return nil, errors.Errorf("Cannot fulfill request. Environment variable %s=false", features.CustomizablePlatformComponents.EnvVar())
+	}
+	config, found, err := s.datastore.GetPlatformComponentConfig(ctx)
+	if !found || err != nil {
+		return nil, err
+	}
+	return config, nil
+}
+
+func (s *serviceImpl) UpdatePlatformComponentConfig(ctx context.Context, req *v1.PutPlatformComponentConfigRequest) (*storage.PlatformComponentConfig, error) {
+	if !features.CustomizablePlatformComponents.Enabled() {
+		return nil, errors.Errorf("Cannot fulfill request. Environment variable %s=false", features.CustomizablePlatformComponents.EnvVar())
+	}
+	config, err := s.datastore.UpsertPlatformComponentConfigRules(ctx, req.Rules)
+	if err != nil {
+		return nil, err
+	}
+	return config, nil
 }
 
 func validateExceptionConfigReq(config *storage.VulnerabilityExceptionConfig) error {
