@@ -473,6 +473,7 @@ type VulnerabilityReportFilters struct {
 	AccessScopeRules       []*SimpleAccessScope_Rules             `protobuf:"bytes,8,rep,name=access_scope_rules,json=accessScopeRules,proto3" json:"access_scope_rules,omitempty"`
 	IncludeNvdCvss         bool                                   `protobuf:"varint,9,opt,name=include_nvd_cvss,json=includeNvdCvss,proto3" json:"include_nvd_cvss,omitempty"`
 	IncludeEpssProbability bool                                   `protobuf:"varint,10,opt,name=include_epss_probability,json=includeEpssProbability,proto3" json:"include_epss_probability,omitempty"`
+	IncludeAdvisory        bool                                   `protobuf:"varint,11,opt,name=include_advisory,json=includeAdvisory,proto3" json:"include_advisory,omitempty"`
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
@@ -586,6 +587,13 @@ func (x *VulnerabilityReportFilters) GetIncludeNvdCvss() bool {
 func (x *VulnerabilityReportFilters) GetIncludeEpssProbability() bool {
 	if x != nil {
 		return x.IncludeEpssProbability
+	}
+	return false
+}
+
+func (x *VulnerabilityReportFilters) GetIncludeAdvisory() bool {
+	if x != nil {
+		return x.IncludeAdvisory
 	}
 	return false
 }
@@ -711,7 +719,7 @@ const file_storage_report_configuration_proto_rawDesc = "" +
 	"\terror_msg\x18\x03 \x01(\tR\berrorMsg\"%\n" +
 	"\tRunStatus\x12\v\n" +
 	"\aSUCCESS\x10\x00\x12\v\n" +
-	"\aFAILURE\x10\x01\"\xf7\x05\n" +
+	"\aFAILURE\x10\x01\"\xa2\x06\n" +
 	"\x1aVulnerabilityReportFilters\x12N\n" +
 	"\n" +
 	"fixability\x18\x01 \x01(\x0e2..storage.VulnerabilityReportFilters.FixabilityR\n" +
@@ -728,7 +736,8 @@ const file_storage_report_configuration_proto_rawDesc = "" +
 	"\x12access_scope_rules\x18\b \x03(\v2 .storage.SimpleAccessScope.RulesR\x10accessScopeRules\x12(\n" +
 	"\x10include_nvd_cvss\x18\t \x01(\bR\x0eincludeNvdCvss\x128\n" +
 	"\x18include_epss_probability\x18\n" +
-	" \x01(\bR\x16includeEpssProbability\"4\n" +
+	" \x01(\bR\x16includeEpssProbability\x12)\n" +
+	"\x10include_advisory\x18\v \x01(\bR\x0fincludeAdvisory\"4\n" +
 	"\n" +
 	"Fixability\x12\b\n" +
 	"\x04BOTH\x10\x00\x12\v\n" +
