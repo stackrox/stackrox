@@ -39,6 +39,7 @@ type Filter interface {
 	UpdateByGivenContainers(deploymentID string, liveContainerSet set.StringSet)
 	Delete(deploymentID string)
 	DeleteByPod(pod *storage.Pod)
+	DeleteByPods(pods []*storage.Pod)
 }
 
 type level struct {
@@ -180,6 +181,25 @@ func (f *filterImpl) DeleteByPod(pod *storage.Pod) {
 	for k := range containersMap {
 		if containerSet.Contains(k) {
 			delete(containersMap, k)
+		}
+	}
+}
+
+func (f *filterImpl) DeleteByPods(pods []*storage.Pod) {
+	f.rootLock.Lock()
+	defer f.rootLock.Unlock()
+
+	for _, pod := range pods {
+		containerSet := set.NewStringSet()
+		for _, instance := range pod.GetLiveInstances() {
+			containerSet.Add(containerid.ShortContainerIDFromInstance(instance))
+		}
+
+		containersMap := f.containersInDeployment[pod.GetDeploymentId()]
+		for k := range containersMap {
+			if containerSet.Contains(k) {
+				delete(containersMap, k)
+			}
 		}
 	}
 }
