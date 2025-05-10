@@ -235,11 +235,12 @@ func (m *ManagerTestSuite) TestFailedReportWithWatcherRunningAndNoNotifiers() {
 		m.snapshotDataStore.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).
 			Times(1).
 			DoAndReturn(func(_ any, snapshot *storage.ComplianceOperatorReportSnapshotV2) error {
-				assert.Equal(m.T(), storage.ComplianceOperatorReportStatus_FAILURE, snapshot.GetReportStatus().GetRunState())
+				assert.Equal(m.T(), storage.ComplianceOperatorReportStatus_PREPARING, snapshot.GetReportStatus().GetRunState())
 				wg.Add(-1)
 				return nil
 			}),
 	)
+	m.reportGen.EXPECT().ProcessReportRequest(gomock.Any()).Times(1)
 	err := manager.SubmitReportRequest(ctx, scanConfig, storage.ComplianceOperatorReportStatus_DOWNLOAD)
 	m.Require().NoError(err)
 

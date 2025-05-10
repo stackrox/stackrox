@@ -94,18 +94,18 @@ func (m *MockFormatter) EXPECT() *MockFormatterMockRecorder {
 }
 
 // FormatCSVReport mocks base method.
-func (m *MockFormatter) FormatCSVReport(arg0 map[string][]*report.ResultRow) (*bytes.Buffer, error) {
+func (m *MockFormatter) FormatCSVReport(arg0 map[string][]*report.ResultRow, arg1 map[string]*storage.ComplianceOperatorReportSnapshotV2_FailedCluster) (*bytes.Buffer, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FormatCSVReport", arg0)
+	ret := m.ctrl.Call(m, "FormatCSVReport", arg0, arg1)
 	ret0, _ := ret[0].(*bytes.Buffer)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // FormatCSVReport indicates an expected call of FormatCSVReport.
-func (mr *MockFormatterMockRecorder) FormatCSVReport(arg0 any) *gomock.Call {
+func (mr *MockFormatterMockRecorder) FormatCSVReport(arg0, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FormatCSVReport", reflect.TypeOf((*MockFormatter)(nil).FormatCSVReport), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FormatCSVReport", reflect.TypeOf((*MockFormatter)(nil).FormatCSVReport), arg0, arg1)
 }
 
 // MockResultsAggregator is a mock of ResultsAggregator interface.

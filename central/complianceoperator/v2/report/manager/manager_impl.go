@@ -29,6 +29,7 @@ import (
 	"github.com/stackrox/rox/pkg/queue"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
@@ -46,6 +47,7 @@ type reportRequest struct {
 	ctx                context.Context
 	snapshotID         string
 	notificationMethod storage.ComplianceOperatorReportStatus_NotificationMethod
+	failedClusters     map[string]*storage.ComplianceOperatorReportSnapshotV2_FailedCluster
 }
 
 type managerImpl struct {
@@ -124,6 +126,7 @@ func (m *managerImpl) SubmitReportRequest(ctx context.Context, scanConfig *stora
 		scanConfig:         scanConfig,
 		ctx:                context.WithoutCancel(ctx),
 		notificationMethod: method,
+		failedClusters:     make(map[string]*storage.ComplianceOperatorReportSnapshotV2_FailedCluster),
 	}
 	log.Infof("Submitting report for scan config %s at %s with method %s", scanConfig.GetScanConfigName(), time.Now().Format(time.RFC822), method.String())
 	select {
@@ -208,6 +211,7 @@ func (m *managerImpl) generateReportNoLock(req *reportRequest) {
 		Ctx:                req.ctx,
 		SnapshotID:         req.snapshotID,
 		NotificationMethod: req.notificationMethod,
+		FailedClusters:     req.failedClusters,
 	}
 	log.Infof("Executing report request for scan config %q", req.scanConfig.GetId())
 	if err := m.reportGen.ProcessReportRequest(repRequest); err != nil {
@@ -535,15 +539,27 @@ func (m *managerImpl) generateReportsFromWatcherResults(result *watcher.ScanConf
 }
 
 func (m *managerImpl) generateSingleReportFromWatcherResults(result *watcher.ScanConfigWatcherResults, snapshot *storage.ComplianceOperatorReportSnapshotV2) error {
-	if err := m.validateScanConfigResults(result); err != nil {
-		if dbErr := helpers.UpdateSnapshotOnError(m.automaticReportingCtx, snapshot, err, m.snapshotDataStore); dbErr != nil {
-			return errors.Errorf("%v; %v", err, errors.Wrapf(dbErr, "unable to upsert the snapshot %s", snapshot.GetReportId()))
-		}
-		return err
-	}
+	failedClusters, err := m.validateScanConfigResults(result)
 	snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_PREPARING
+	if err != nil {
+		snapshot.GetReportStatus().ErrorMsg = err.Error()
+	}
+	log.Infof("Snapshot for ScanConfig %s: %+v -- %+v", result.ScanConfig.GetScanConfigName(), snapshot.GetReportStatus(), snapshot.GetFailedClusters())
 	// Update ReportData
 	snapshot.ReportData = m.getReportData(result.ScanConfig)
+	// Add failed clusters to the report
+	if len(failedClusters) > 0 {
+		for _, cluster := range snapshot.ReportData.GetClusterStatus() {
+			if failedCluster, ok := failedClusters[cluster.GetClusterId()]; ok {
+				failedCluster.ClusterName = cluster.GetClusterName()
+			}
+		}
+		failedClustersSlice := make([]*storage.ComplianceOperatorReportSnapshotV2_FailedCluster, 0, len(failedClusters))
+		for _, failedCluster := range failedClusters {
+			failedClustersSlice = append(failedClustersSlice, failedCluster)
+		}
+		snapshot.FailedClusters = failedClustersSlice
+	}
 	if err := m.snapshotDataStore.UpsertSnapshot(m.automaticReportingCtx, snapshot); err != nil {
 		return errors.Wrapf(err, "unable to upsert the snapshot %s", snapshot.GetReportId())
 	}
@@ -552,6 +568,7 @@ func (m *managerImpl) generateSingleReportFromWatcherResults(result *watcher.Sca
 		scanConfig:         result.ScanConfig,
 		snapshotID:         snapshot.GetReportId(),
 		notificationMethod: snapshot.GetReportStatus().GetReportNotificationMethod(),
+		failedClusters:     failedClusters,
 	}
 	isOnDemand := snapshot.GetReportStatus().GetReportRequestType() == storage.ComplianceOperatorReportStatus_ON_DEMAND
 	if err := m.handleReportScheduled(generateReportReq, isOnDemand); err != nil {
@@ -577,45 +594,93 @@ func (m *managerImpl) handleReportScheduled(request *reportRequest, isOnDemand b
 	return nil
 }
 
-func (m *managerImpl) validateScanConfigResults(result *watcher.ScanConfigWatcherResults) error {
+func (m *managerImpl) validateScanConfigResults(result *watcher.ScanConfigWatcherResults) (map[string]*storage.ComplianceOperatorReportSnapshotV2_FailedCluster, error) {
+	failedClusters := make(map[string]*storage.ComplianceOperatorReportSnapshotV2_FailedCluster)
+	errList := errorhelpers.NewErrorList("failed clusters")
+	clusterSet := set.NewStringSet()
+	for _, scanResult := range result.ScanResults {
+		clusterSet.Add(scanResult.Scan.GetClusterId())
+		clusterInfo := m.validateScanResults(scanResult)
+		if clusterInfo != nil {
+			errList.AddError(errors.New(fmt.Sprintf("cluster %s failed", clusterInfo.GetClusterId())))
+			failedClusters[clusterInfo.GetClusterId()] = clusterInfo
+		}
+	}
+	// If we have less results than the number of clusters in the scan configuration,
+	// we need to add those missing clusters as failed clusters.
+	if len(result.ScanConfig.GetClusters()) > len(result.ScanResults) {
+		for _, cluster := range result.ScanConfig.GetClusters() {
+			if !clusterSet.Contains(cluster.GetClusterId()) {
+				clusterInfo := m.validateClusterHealth(cluster.GetClusterId())
+				if clusterInfo != nil {
+					errList.AddError(errors.New(fmt.Sprintf("cluster %s failed", clusterInfo.GetClusterId())))
+					failedClusters[clusterInfo.GetClusterId()] = clusterInfo
+				}
+			}
+		}
+	}
 	if result.Error != nil {
 		if errors.Is(result.Error, watcher.ErrScanConfigTimeout) {
-			return report.ErrScanConfigWatcherTimeout
+			return failedClusters, report.ErrScanConfigWatcherTimeout
 		}
-		return report.ErrScanWatchersFailed
+		return failedClusters, report.ErrScanWatchersFailed
 	}
-
-	errList := errorhelpers.NewErrorList("Scan result errors")
-	for _, scanResult := range result.ScanResults {
-		if scanResult.Error != nil {
-			// To not overwhelm the UI we only report a max number of errors
-			if len(errList.Errors()) > env.ComplianceMaxNumberOfErrorsInReport.IntegerSetting() {
-				break
-			}
-			err := errors.Errorf("The report for the scan %s in cluster %s could not be generated.", scanResult.Scan.GetScanName(), scanResult.Scan.GetClusterId())
-			if errors.Is(scanResult.Error, watcher.ErrScanTimeout) {
-				healthErr := watcher.IsComplianceOperatorHealthy(m.automaticReportingCtx, scanResult.Scan.GetClusterId(), m.integrationDataStore)
-				if errors.Is(healthErr, watcher.ErrComplianceOperatorNotInstalled) {
-					errList.AddError(errors.Wrap(err, watcher.ErrComplianceOperatorNotInstalled.Error()))
-					continue
-				}
-				if errors.Is(healthErr, watcher.ErrComplianceOperatorVersion) {
-					errList.AddError(errors.Wrap(err, "compliance operator version is not 1.6.0 or greater"))
-					continue
-				}
-
-				err = errors.Wrap(err, "scan timeout")
-				select {
-				case <-scanResult.SensorCtx.Done():
-					err = errors.Wrap(err, "Sensor disconnected during the scan")
-				default:
-				}
-			}
-			errList.AddErrors(err)
-		}
+	if len(failedClusters) > 0 {
+		return failedClusters, errList.ToError()
 	}
+	return failedClusters, nil
+}
 
-	return errList.ToError()
+func (m *managerImpl) validateScanResults(result *watcher.ScanWatcherResults) *storage.ComplianceOperatorReportSnapshotV2_FailedCluster {
+	if result.Error == nil {
+		return nil
+	}
+	ret := m.validateClusterHealth(result.Scan.GetClusterId())
+	if ret.Reason != report.INTERNAL_ERROR || ret.OperatorVersion == report.INTERNAL_ERROR {
+		return ret
+	}
+	if errors.Is(result.Error, watcher.ErrScanRemoved) {
+		ret.Reason = fmt.Sprintf(report.SCAN_REMOVED, result.Scan.GetScanName())
+		return ret
+	}
+	if errors.Is(result.Error, watcher.ErrScanTimeout) {
+		ret.Reason = fmt.Sprintf(report.SCAN_TIMEOUT, result.Scan.GetScanName())
+	}
+	if checkContextIsDone(result.SensorCtx) {
+		ret.Reason = fmt.Sprintf(report.SCAN_TIMEOUT_SENSOR_DISCONNECTED, result.Scan.GetScanName())
+	}
+	return ret
+}
+
+func (m *managerImpl) validateClusterHealth(clusterID string) *storage.ComplianceOperatorReportSnapshotV2_FailedCluster {
+	ret := &storage.ComplianceOperatorReportSnapshotV2_FailedCluster{
+		ClusterId:       clusterID,
+		OperatorVersion: report.INTERNAL_ERROR,
+		Reason:          report.INTERNAL_ERROR,
+	}
+	coStatus, err := watcher.IsComplianceOperatorHealthy(m.automaticReportingCtx, clusterID, m.integrationDataStore)
+	if errors.Is(err, watcher.ErrComplianceOperatorIntegrationDataStore) || errors.Is(err, watcher.ErrComplianceOperatorIntegrationZeroIntegrations) {
+		return ret
+	}
+	ret.OperatorVersion = coStatus.GetVersion()
+	if errors.Is(err, watcher.ErrComplianceOperatorNotInstalled) {
+		ret.Reason = report.COMPLIANCE_NOT_INSTALLED
+		return ret
+	}
+	if errors.Is(err, watcher.ErrComplianceOperatorVersion) {
+		ret.Reason = report.COMPLIANCE_VERSION_ERROR
+		return ret
+	}
+	return ret
+}
+
+func checkContextIsDone(ctx context.Context) bool {
+	select {
+	case <-ctx.Done():
+		return true
+	default:
+	}
+	return false
 }
 
 func (m *managerImpl) getReportData(scanConfig *storage.ComplianceOperatorScanConfigurationV2) *storage.ComplianceOperatorReportData {
