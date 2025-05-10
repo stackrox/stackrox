@@ -48,7 +48,12 @@ export function isVulnMgmtLocalStorage(value: unknown): value is VulnMgmtLocalSt
     }
 }
 
-export const detailsTabValues = ['Vulnerabilities', 'Details', 'Resources'] as const;
+export const detailsTabValues = [
+    'Vulnerabilities',
+    'Details',
+    'Resources',
+    'Signature verification',
+] as const;
 
 export type DetailsTab = (typeof detailsTabValues)[number];
 
@@ -81,3 +86,31 @@ export type ObservedCveMode = (typeof observedCveModeValues)[number];
 export function isObservedCveMode(value: unknown): value is ObservedCveMode {
     return observedCveModeValues.some((mode) => mode === value);
 }
+
+export type CosignSignature = {
+    rawSignature: string;
+    signaturePayload: string;
+    certPem: string | null;
+    certChainPem: string | null;
+    rekorBundle: string | null;
+};
+
+export type Signature = {
+    signature: CosignSignature | null;
+};
+
+export type VerifiedStatus =
+    | 'CORRUPTED_SIGNATURE'
+    | 'FAILED_VERIFICATION'
+    | 'GENERIC_ERROR'
+    | 'INVALID_SIGNATURE_ALGO'
+    | 'UNSET'
+    | 'VERIFIED';
+
+export type SignatureVerificationResult = {
+    description: string | undefined;
+    status: VerifiedStatus;
+    verificationTime: string; // ISO 8601 formatted date time.
+    verifiedImageReferences: string[];
+    verifierId: string; // Signature integration id of the form `io.stackrox.signatureintegration.<uuid>`.
+};

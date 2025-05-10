@@ -48,6 +48,7 @@ import getImageScanMessage from '../utils/getImageScanMessage';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import { getImageBaseNameDisplay } from '../utils/images';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
+import ImagePageSignatureVerification from './ImagePageSignatureVerification';
 
 export const imageDetailsQuery = gql`
     ${imageDetailsFragment}
@@ -259,6 +260,15 @@ function ImagePage() {
                             title={<TabTitleText>Resources</TabTitleText>}
                         >
                             <ImagePageResources imageId={imageId} pagination={pagination} />
+                        </Tab>
+                        <Tab
+                            className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
+                            eventKey="Signature verification"
+                            title={<TabTitleText>Signature verification</TabTitleText>}
+                        >
+                            <ImagePageSignatureVerification
+                                results={imageData?.signatureVerificationData?.results}
+                            />
                         </Tab>
                     </Tabs>
                 </PageSection>
