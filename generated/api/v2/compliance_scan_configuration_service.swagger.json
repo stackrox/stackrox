@@ -890,6 +890,13 @@
         },
         "reportNotificationMethod": {
           "$ref": "#/definitions/v2NotificationMethod"
+        },
+        "failedClusters": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2FailedCluster"
+          }
         }
       }
     },
@@ -908,7 +915,8 @@
         "PREPARING",
         "GENERATED",
         "DELIVERED",
-        "FAILURE"
+        "FAILURE",
+        "PARTIAL_ERROR"
       ],
       "default": "WAITING"
     },
@@ -1027,6 +1035,23 @@
     },
     "v2Empty": {
       "type": "object"
+    },
+    "v2FailedCluster": {
+      "type": "object",
+      "properties": {
+        "clusterId": {
+          "type": "string"
+        },
+        "clusterName": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "operatorVersion": {
+          "type": "string"
+        }
+      }
     },
     "v2ListComplianceScanConfigsClusterProfileResponse": {
       "type": "object",
