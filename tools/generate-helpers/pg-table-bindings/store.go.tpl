@@ -76,6 +76,7 @@ type Store interface {
     GetByQueryFn(ctx context.Context, query *v1.Query, fn callback) error
 {{- end }}
     GetMany(ctx context.Context, identifiers []{{$primaryKeyType}}) ([]*storeType, []int, error)
+    GetByIDs(ctx context.Context, identifiers []{{$primaryKeyType}}) ([]*storeType, error)
     GetIDs(ctx context.Context) ([]{{$primaryKeyType}}, error)
 
     Walk(ctx context.Context, fn callback) error
