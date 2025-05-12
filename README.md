@@ -153,9 +153,14 @@ Set a meaningful cluster name for your secured cluster in the `CLUSTER_NAME` she
 ```sh
 CLUSTER_NAME="my-secured-cluster"
 ```
-Then install stackrox-secured-cluster-services (with the init bundle you generated earlier).
 
-**Note:** When deploying stackrox-secured-cluster-services on a different cluster than the one where stackrox-central-services is deployed, you will also need to specify the endpoint (address and port number) of Central via `--set centralEndpoint=<endpoint_of_central_service>` command-line argument.
+Set the endpoint of Central the Secured Cluster Services should communicate to. If you're deploying stackrox-secured-cluster-services on the same cluster as stackrox-central-services, leave it as shown, otherwise change the value to the endpoint through which Central is accessible.
+
+```sh
+CENTRAL_ENDPOINT="central.stackrox.svc:443"
+```
+
+Then install stackrox-secured-cluster-services (with the init bundle you generated earlier).
 
 If you're installing on a reasonably sized cluster, use the default installation command:
 
@@ -164,7 +169,7 @@ helm upgrade --install -n stackrox --create-namespace stackrox-secured-cluster-s
   stackrox/stackrox-secured-cluster-services \
   -f stackrox-init-bundle.yaml \
   --set clusterName="$CLUSTER_NAME" \
-  --set centralEndpoint="central.stackrox.svc:443"
+  --set centralEndpoint="$CENTRAL_ENDPOINT"
 ```
 
 If you're installing on a single node cluster, or the default installation results in pods stuck pending due to lack of resources, use the following command instead to reduce stackrox-secured-cluster-services resource requirements. Keep in mind that these reduced resource settings are not suited for a production setup.
@@ -174,7 +179,7 @@ helm upgrade --install -n stackrox --create-namespace stackrox-secured-cluster-s
   stackrox/stackrox-secured-cluster-services \
   -f stackrox-init-bundle.yaml \
   --set clusterName="$CLUSTER_NAME" \
-  --set centralEndpoint="central.stackrox.svc:443" \
+  --set centralEndpoint="$CENTRAL_ENDPOINT" \
   --set sensor.resources.requests.memory=500Mi \
   --set sensor.resources.requests.cpu=500m \
   --set sensor.resources.limits.memory=500Mi \
