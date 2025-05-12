@@ -1277,7 +1277,7 @@ class Kubernetes {
                         uid: ns.metadata.uid,
                         name: ns.metadata.name,
                         labels: ns.metadata.labels,
-                        deploymentCount: getDeploymentCount(ns.metadata.name) +
+                        deployments: getDeploymentCount(ns.metadata.name) +
                                 getDaemonSetCount(ns.metadata.name) +
                                 getStaticPodCount(ns.metadata.name) +
                                 getStatefulSetCount(ns.metadata.name) +

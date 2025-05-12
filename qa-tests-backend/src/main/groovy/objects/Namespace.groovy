@@ -7,7 +7,7 @@ class Namespace {
     String uid
     String name
     Map<String, String> labels
-    List<String> deploymentCount
+    List<String> deployments
     int secretsCount
     int networkPolicyCount
 }

@@ -57,10 +57,10 @@ class NamespaceTest extends BaseSpecification {
                 def stackroxNamespaceDetails = NamespaceService.getNamespace(stackroxNamespaces.get(ns))
 
                 log.info "Comparing namespace ${ns}"
-                if (stackroxNamespaceDetails.numDeployments != orchestratorNamespaceDetails.deploymentCount.size()) {
+                if (stackroxNamespaceDetails.numDeployments != orchestratorNamespaceDetails.deployments.size()) {
                     log.info "There is a difference in the deployment count for namespace ${ns}"
                     log.info "Stackrox has ${stackroxNamespaceDetails.numDeployments}, " +
-                            "the orchestrator has ${orchestratorNamespaceDetails.deploymentCount.size()}"
+                            "the orchestrator has ${orchestratorNamespaceDetails.deployments.size()}"
                     log.info "This diff may help with debug, however deployment names may be different between APIs"
                     log.info "In this diff, 'removed' means 'missing in orchestrator but given in ACS', " +
                             "whereas 'added' - the other way round"
@@ -71,11 +71,11 @@ class NamespaceTest extends BaseSpecification {
                     Javers javers = JaversBuilder.javers()
                             .withListCompareAlgorithm(ListCompareAlgorithm.AS_SET)
                             .build()
-                    log.info javers.compare(stackroxDeploymentNames, orchestratorNamespaceDetails.deploymentCount)
+                    log.info javers.compare(stackroxDeploymentNames, orchestratorNamespaceDetails.deployments)
                             .prettyPrint()
                 }
                 verifyAll(stackroxNamespaceDetails) {
-                    numDeployments == orchestratorNamespaceDetails.deploymentCount.size()
+                    numDeployments == orchestratorNamespaceDetails.deployments.size()
                     metadata.clusterId == ClusterService.getClusterId()
                     metadata.name == orchestratorNamespaceDetails.name
                     metadata.labelsMap == orchestratorNamespaceDetails.labels
