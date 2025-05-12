@@ -734,12 +734,10 @@ func TestGenerateCentralTLSData_Rotation(t *testing.T) {
 			}
 
 			r := &createCentralTLSExtensionRun{
-				centralObj:         &platform.Central{ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"}},
-				currentTime:        time.Now(),
-				caRotationAction:   tt.action,
-				ca:                 primary,
-				issueCentralCertFn: certgen.IssueCentralCert,
-				issueServiceCertFn: certgen.IssueServiceCert,
+				centralObj:       &platform.Central{ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"}},
+				currentTime:      time.Now(),
+				caRotationAction: tt.action,
+				ca:               primary,
 			}
 
 			oldFileMapCopy := make(types.SecretDataMap, len(oldFileMap))

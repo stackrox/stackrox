@@ -52,8 +52,6 @@ func reconcileCentralTLS(ctx context.Context, c *platform.Central, client ctrlCl
 		SecretReconciliator: commonExtensions.NewSecretReconciliator(client, direct, c),
 		centralObj:          c,
 		currentTime:         time.Now(),
-		issueCentralCertFn:  certgen.IssueCentralCert,
-		issueServiceCertFn:  certgen.IssueServiceCert,
 	}
 
 	return run.Execute(ctx)
@@ -62,13 +60,11 @@ func reconcileCentralTLS(ctx context.Context, c *platform.Central, client ctrlCl
 type createCentralTLSExtensionRun struct {
 	*commonExtensions.SecretReconciliator
 
-	ca               mtls.CA // primary CA, used to issue Central-services certificates
-	caRotationAction carotation.Action
-	centralObj       *platform.Central
-	currentTime      time.Time
-
-	issueCentralCertFn func(map[string][]byte, mtls.CA, ...mtls.IssueCertOption) error
-	issueServiceCertFn func(map[string][]byte, mtls.CA, mtls.Subject, string, ...mtls.IssueCertOption) error
+	ca                    mtls.CA // primary CA, used to issue Central-services certificates
+	caRotationAction      carotation.Action
+	centralObj            *platform.Central
+	currentTime           time.Time
+	extraIssueCertOptions []mtls.IssueCertOption
 }
 
 func (r *createCentralTLSExtensionRun) Execute(ctx context.Context) error {
@@ -226,7 +222,11 @@ func (r *createCentralTLSExtensionRun) generateCentralTLSData(old types.SecretDa
 		}
 	}
 
-	if err := r.issueCentralCertFn(newFileMap, r.ca, mtls.WithNamespace(r.centralObj.GetNamespace())); err != nil {
+	opts := append(
+		[]mtls.IssueCertOption{mtls.WithNamespace(r.centralObj.GetNamespace())},
+		r.extraIssueCertOptions...,
+	)
+	if err := certgen.IssueCentralCert(newFileMap, r.ca, opts...); err != nil {
 		return nil, errors.Wrap(err, "issuing central service certificate failed")
 	}
 
@@ -397,7 +397,8 @@ func (r *createCentralTLSExtensionRun) checkCertRenewal(certificate *x509.Certif
 
 func (r *createCentralTLSExtensionRun) generateServiceTLSData(subj mtls.Subject, fileNamePrefix string, fileMap types.SecretDataMap, opts ...mtls.IssueCertOption) error {
 	allOpts := append([]mtls.IssueCertOption{mtls.WithNamespace(r.centralObj.GetNamespace())}, opts...)
-	if err := r.issueServiceCertFn(fileMap, r.ca, subj, fileNamePrefix, allOpts...); err != nil {
+	allOpts = append(allOpts, r.extraIssueCertOptions...)
+	if err := certgen.IssueServiceCert(fileMap, r.ca, subj, fileNamePrefix, allOpts...); err != nil {
 		return err
 	}
 	certgen.AddCACertToFileMap(fileMap, r.ca)

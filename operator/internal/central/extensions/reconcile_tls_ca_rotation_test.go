@@ -32,21 +32,13 @@ func TestCentralCARotation(t *testing.T) {
 	central := buildFakeCentral(baseCase)
 	client := buildFakeClient(t, baseCase, central)
 
-	// wrap reconcileCentralTLS so we can inject a custom currentTime
-	runAt := func(ctx context.Context, central *platform.Central, c ctrlClient.Client, d ctrlClient.Reader, statusUpdater func(updateStatusFunc), log logr.Logger, at time.Time) error {
-		certificateNotBefore := at.Add(-5 * time.Minute)
+	// similar to reconcileCentralTLS, but injects a custom currentTime
+	runAt := func(ctx context.Context, central *platform.Central, c ctrlClient.Client, d ctrlClient.Reader, statusUpdater func(updateStatusFunc), log logr.Logger, currentTime time.Time) error {
 		run := &createCentralTLSExtensionRun{
-			SecretReconciliator: commonExtensions.NewSecretReconciliator(c, d, central),
-			centralObj:          central,
-			currentTime:         at,
-			issueCentralCertFn: func(m map[string][]byte, ca mtls.CA, opts ...mtls.IssueCertOption) error {
-				opts = append(opts, mtls.WithValidityNotBefore(certificateNotBefore))
-				return certgen.IssueCentralCert(m, ca, opts...)
-			},
-			issueServiceCertFn: func(m map[string][]byte, ca mtls.CA, subject mtls.Subject, s string, opts ...mtls.IssueCertOption) error {
-				opts = append(opts, mtls.WithValidityNotBefore(certificateNotBefore))
-				return certgen.IssueServiceCert(m, ca, subject, s, opts...)
-			},
+			SecretReconciliator:   commonExtensions.NewSecretReconciliator(c, d, central),
+			centralObj:            central,
+			currentTime:           currentTime,
+			extraIssueCertOptions: []mtls.IssueCertOption{mtls.WithValidityNotBefore(currentTime)},
 		}
 		return run.Execute(ctx)
 	}

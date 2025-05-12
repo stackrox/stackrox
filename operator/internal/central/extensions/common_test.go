@@ -113,7 +113,7 @@ func testSecretReconciliationAtTime(
 	t *testing.T,
 	central *platform.Central,
 	client ctrlClient.Client,
-	runFn func(ctx context.Context, central *platform.Central, client ctrlClient.Client, direct ctrlClient.Reader, statusUpdater func(updateStatusFunc), log logr.Logger, at time.Time) error,
+	runFn func(ctx context.Context, central *platform.Central, client ctrlClient.Client, direct ctrlClient.Reader, statusUpdater func(updateStatusFunc), log logr.Logger, atTime time.Time) error,
 	c secretReconciliationTestCase,
 	reconcileTime time.Time,
 ) {
