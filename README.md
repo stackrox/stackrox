@@ -114,7 +114,7 @@ helm upgrade --install -n stackrox --create-namespace stackrox-central-services 
   --set central.persistence.none="true"
 ```
 
-If you're installing on a single node cluster, or the default installation results in pending resources, use the following command instead to reduce stackrox-central-services resource requirements. Keep in mind that these reduced resource settings are not suited for a production setup.
+If you're installing on a single node cluster, or the default installation results in pods stuck pending due to lack of resources, use the following command instead to reduce stackrox-central-services resource requirements. Keep in mind that these reduced resource settings are not suited for a production setup.
 
 ```sh
 helm upgrade --install -n stackrox --create-namespace stackrox-central-services \
@@ -167,7 +167,7 @@ helm upgrade --install -n stackrox --create-namespace stackrox-secured-cluster-s
   --set centralEndpoint="central.stackrox.svc:443"
 ```
 
-If you're installing on a single node cluster, or the default installation results in pending resources, use the following command instead to reduce stackrox-secured-cluster-services resource requirements. Keep in mind that these reduced resource settings are not suited for a production setup.
+If you're installing on a single node cluster, or the default installation results in pods stuck pending due to lack of resources, use the following command instead to reduce stackrox-secured-cluster-services resource requirements. Keep in mind that these reduced resource settings are not suited for a production setup.
 
 ```sh
 helm upgrade --install -n stackrox --create-namespace stackrox-secured-cluster-services \
