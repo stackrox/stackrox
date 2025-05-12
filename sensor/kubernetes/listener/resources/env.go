@@ -25,7 +25,4 @@ var (
 	// Allowing those IPs to be stored should visibly decrease the number of cases where we must show "Internal Entities"
 	// on the network graph because the deployment owning a given IP could not be found.
 	allowHostNetworkPodIPsInEntitiesStore = env.RegisterBooleanSetting("ROX_ALLOW_HOST_NETWORK_POD_IPS_IN_ENTITIES_STORE", false)
-	debugEmptyDockerCfg = env.RegisterBooleanSetting("ROX_DEBUG_EMPTY_DOCKERCFG", false)
-	debugBrokenDockerCfg = env.RegisterBooleanSetting("ROX_DEBUG_BROKEN_DOCKERCFG", false)
-
 )
