@@ -110,7 +110,7 @@ To perform the installation, choose one of the following commands depending on y
 
 #### Default Central Installation
 
-If you're installing on a reasonably sized cluster, use the default installation command:
+If you're installing in a reasonably sized cluster, use the default installation command:
 
 ```sh
 helm upgrade --install -n stackrox --create-namespace stackrox-central-services \
@@ -121,7 +121,7 @@ helm upgrade --install -n stackrox --create-namespace stackrox-central-services 
 
 #### Central Installation in Clusters With Limited Resources
 
-If you're installing on a single node cluster, or the default installation results in pods stuck pending due to lack of resources, use the following command instead to reduce stackrox-central-services resource requirements. Keep in mind that these reduced resource settings are not suited for a production setup.
+If you're installing in a single node cluster, or the default installation results in pods stuck pending due to lack of resources, use the following command instead to reduce stackrox-central-services resource requirements. Keep in mind that these reduced resource settings are not suited for a production setup.
 
 ```sh
 helm upgrade --install -n stackrox --create-namespace stackrox-central-services \
@@ -174,7 +174,7 @@ To perform the installation, choose one of the following commands depending on y
 
 #### Default Secured Cluster Services Installation
 
-If you're installing on a reasonably sized cluster, use the default installation command:
+If you're installing in a reasonably sized cluster, use the default installation command:
 
 ```sh
 helm upgrade --install -n stackrox --create-namespace stackrox-secured-cluster-services \
@@ -186,7 +186,7 @@ helm upgrade --install -n stackrox --create-namespace stackrox-secured-cluster-s
 
 #### Secured Cluster Services Installation in Clusters With Limited Resources
 
-If you're installing on a single node cluster, or the default installation results in pods stuck pending due to lack of resources, use the following command instead to reduce stackrox-secured-cluster-services resource requirements. Keep in mind that these reduced resource settings are not suited for a production setup.
+If you're installing in a single node cluster, or the default installation results in pods stuck pending due to lack of resources, use the following command instead to reduce stackrox-secured-cluster-services resource requirements. Keep in mind that these reduced resource settings are not suited for a production setup.
 
 ```sh
 helm upgrade --install -n stackrox --create-namespace stackrox-secured-cluster-services \
