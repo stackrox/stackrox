@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     Button,
     Card,
@@ -12,7 +12,6 @@ import {
     Text,
 } from '@patternfly/react-core';
 
-import useModal from 'hooks/useModal';
 import { PlatformComponentRule } from 'types/config.proto';
 
 export type RedHatLayeredProductsCardProps = {
@@ -20,7 +19,11 @@ export type RedHatLayeredProductsCardProps = {
 };
 
 function RedHatLayeredProductsCard({ rule }: RedHatLayeredProductsCardProps) {
-    const { isModalOpen, openModal, closeModal } = useModal();
+    const [isModalOpen, setIsModalOpen] = useState(false);
+
+    function toggleModal() {
+        setIsModalOpen((value) => !value);
+    }
 
     return (
         <>
@@ -40,7 +43,7 @@ function RedHatLayeredProductsCard({ rule }: RedHatLayeredProductsCardProps) {
                             <div className="truncate-multiline">{rule?.namespaceRule.regex}</div>
                         </CodeBlock>
                         <StackItem className="pf-v5-u-text-align-center pf-v5-u-mt-sm">
-                            <Button variant="link" isInline onClick={openModal}>
+                            <Button variant="link" isInline onClick={toggleModal}>
                                 View more
                             </Button>
                         </StackItem>
@@ -52,7 +55,7 @@ function RedHatLayeredProductsCard({ rule }: RedHatLayeredProductsCardProps) {
                 title="All Red Hat layered products"
                 description="View all namespace matches (Regex) in Red Hat layered products"
                 isOpen={isModalOpen}
-                onClose={closeModal}
+                onClose={toggleModal}
             >
                 <CodeBlock>{rule?.namespaceRule.regex}</CodeBlock>
             </Modal>

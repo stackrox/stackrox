@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     Button,
     Card,
@@ -14,7 +14,6 @@ import {
     Title,
 } from '@patternfly/react-core';
 
-import useModal from 'hooks/useModal';
 import { PlatformComponentRule } from 'types/config.proto';
 
 export type CustomPlatformComponentsCardProps = {
@@ -22,7 +21,11 @@ export type CustomPlatformComponentsCardProps = {
 };
 
 function CustomPlatformComponentsCard({ customRules }: CustomPlatformComponentsCardProps) {
-    const { isModalOpen, openModal, closeModal } = useModal();
+    const [isModalOpen, setIsModalOpen] = useState(false);
+
+    function toggleModal() {
+        setIsModalOpen((value) => !value);
+    }
 
     return (
         <>
@@ -51,7 +54,7 @@ function CustomPlatformComponentsCard({ customRules }: CustomPlatformComponentsC
                         )}
                         {customRules.length > 1 && (
                             <StackItem className="pf-v5-u-text-align-center pf-v5-u-mt-sm">
-                                <Button variant="link" isInline onClick={openModal}>
+                                <Button variant="link" isInline onClick={toggleModal}>
                                     View more
                                 </Button>
                             </StackItem>
@@ -64,7 +67,7 @@ function CustomPlatformComponentsCard({ customRules }: CustomPlatformComponentsC
                 title="All custom components"
                 description="View all namespace matches (Regex) for custom components"
                 isOpen={isModalOpen}
-                onClose={closeModal}
+                onClose={toggleModal}
                 tabIndex={0} // enables keyboard-accessible scrolling of a modal’s content
             >
                 <Stack hasGutter>
@@ -73,7 +76,7 @@ function CustomPlatformComponentsCard({ customRules }: CustomPlatformComponentsC
                     </Title>
                     {customRules.map((rule) => {
                         return (
-                            <CodeBlock>
+                            <CodeBlock key={rule.name}>
                                 <Text component="small" className="pf-v5-u-color-200">
                                     {rule.name}
                                 </Text>
