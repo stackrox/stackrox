@@ -44,6 +44,10 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"scanInline: Boolean!",
 		"timeoutSeconds: Int!",
 	}))
+	utils.Must(builder.AddType("Advisory", []string{
+		"link: String!",
+		"name: String!",
+	}))
 	utils.Must(builder.AddInput("AggregateBy", []string{
 		"aggregateFunc: String",
 		"distinct: Boolean",
@@ -1858,6 +1862,58 @@ func (resolver *admissionControllerConfigResolver) ScanInline(ctx context.Contex
 
 func (resolver *admissionControllerConfigResolver) TimeoutSeconds(ctx context.Context) int32 {
 	value := resolver.data.GetTimeoutSeconds()
+	return value
+}
+
+type advisoryResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.Advisory
+}
+
+func (resolver *Resolver) wrapAdvisory(value *storage.Advisory, ok bool, err error) (*advisoryResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &advisoryResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapAdvisories(values []*storage.Advisory, err error) ([]*advisoryResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*advisoryResolver, len(values))
+	for i, v := range values {
+		output[i] = &advisoryResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapAdvisoryWithContext(ctx context.Context, value *storage.Advisory, ok bool, err error) (*advisoryResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &advisoryResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapAdvisoriesWithContext(ctx context.Context, values []*storage.Advisory, err error) ([]*advisoryResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*advisoryResolver, len(values))
+	for i, v := range values {
+		output[i] = &advisoryResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *advisoryResolver) Link(ctx context.Context) string {
+	value := resolver.data.GetLink()
+	return value
+}
+
+func (resolver *advisoryResolver) Name(ctx context.Context) string {
+	value := resolver.data.GetName()
 	return value
 }
 
