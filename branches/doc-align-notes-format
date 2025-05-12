@@ -1,7 +1,7 @@
 {
   "base": {
     "name": "doc-unify-helm-install-cmds",
-    "hash": "02dd4ffb366cb0cf93198ec4a3c2e23e56a4ec5b"
+    "hash": "6f14cdd25496dbcd79d204e204883200db1835bb"
   },
   "upstream": {
     "branch": "doc-align-notes-format"
