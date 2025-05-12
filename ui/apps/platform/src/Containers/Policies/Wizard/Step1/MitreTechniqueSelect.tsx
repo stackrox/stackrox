@@ -40,6 +40,7 @@ function MitreTechniqueSelect({
             onToggle={(_event, val) => setIsOpen(val)}
             placeholderText={label}
             selections={techniqueId}
+            maxHeight="300px"
         >
             {mitreTechniques.map(({ id, name }) => {
                 const optionClassName = id.includes('.')

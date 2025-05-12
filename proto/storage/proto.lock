@@ -6115,6 +6115,11 @@
                 "id": 14,
                 "name": "advisory",
                 "type": "string"
+              },
+              {
+                "id": 15,
+                "name": "advisory_link",
+                "type": "string"
               }
             ]
           },
@@ -18221,7 +18226,7 @@
               {
                 "id": 24,
                 "name": "advisory",
-                "type": "string"
+                "type": "Advisory"
               },
               {
                 "id": 2,
@@ -18374,6 +18379,21 @@
                 "id": 7,
                 "name": "snooze_expiry",
                 "type": "google.protobuf.Timestamp"
+              }
+            ]
+          },
+          {
+            "name": "Advisory",
+            "fields": [
+              {
+                "id": 1,
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "link",
+                "type": "string"
               }
             ]
           }

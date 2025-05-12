@@ -102,21 +102,6 @@ func (mr *MockStoreMockRecorder) Get(ctx, id any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockStore)(nil).Get), ctx, id)
 }
 
-// GetByQuery mocks base method.
-func (m *MockStore) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.Alert, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetByQuery", ctx, query)
-	ret0, _ := ret[0].([]*storage.Alert)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetByQuery indicates an expected call of GetByQuery.
-func (mr *MockStoreMockRecorder) GetByQuery(ctx, query any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByQuery", reflect.TypeOf((*MockStore)(nil).GetByQuery), ctx, query)
-}
-
 // GetByQueryFn mocks base method.
 func (m *MockStore) GetByQueryFn(ctx context.Context, query *v1.Query, fn func(*storage.Alert) error) error {
 	m.ctrl.T.Helper()

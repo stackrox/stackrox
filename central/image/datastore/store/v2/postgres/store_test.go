@@ -68,6 +68,16 @@ func (s *ImagesStoreSuite) TearDownSuite() {
 	s.T().Setenv("ROX_FLATTEN_CVE_DATA", "false")
 }
 
+func (s *ImagesStoreSuite) TestCountCVEs() {
+	image := fixtures.GetImagewithDulicateVulnerabilities()
+	s.NoError(s.store.Upsert(s.ctx, image))
+	_, exists, err := s.store.Get(s.ctx, image.GetId())
+	s.NoError(err)
+	s.True(exists)
+	cveCount, err := s.cvePgStore.Count(s.ctx, search.EmptyQuery())
+	s.NoError(err, "Query to get CVE Count failed")
+	s.Equal(cveCount, 252)
+}
 func (s *ImagesStoreSuite) TestStore() {
 	image := fixtures.GetImage()
 	s.NoError(testutils.FullInit(image, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
@@ -77,8 +87,7 @@ func (s *ImagesStoreSuite) TestStore() {
 			vuln.Suppressed = false
 			vuln.SuppressActivation = nil
 			vuln.SuppressExpiry = nil
-			// TODO(ROX-27402) remove this
-			vuln.Advisory = ""
+			vuln.Advisory = nil
 		}
 		comp.License = nil
 	}

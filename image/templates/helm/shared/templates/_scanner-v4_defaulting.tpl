@@ -1,10 +1,10 @@
 {{/*
-  srox.scannerV4CentralDefaulting <Helm .Release> <Scanner V4 configuration>
+  srox.scannerV4Defaulting <Helm .Release> <Scanner V4 configuration>
 
-  Encapsulates the Scanner V4 defaulting logic for central-services.
+  Encapsulates the Scanner V4 defaulting logic.
 */}}
 
-{{- define "srox.scannerV4CentralDefaulting" -}}
+{{- define "srox.scannerV4Defaulting" -}}
 
 {{- $helmRelease := index . 0 -}}
 {{- $scannerV4 := index . 1 -}}

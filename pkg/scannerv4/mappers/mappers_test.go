@@ -1731,9 +1731,12 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 			enableRedHatCVEs: true,
 			want: map[string]*v4.VulnerabilityReport_Vulnerability{
 				"foo": {
-					Id:                 "foo",
-					Name:               "CVE-2021-44228",
-					Advisory:           "RHSA-2021:5132",
+					Id:   "foo",
+					Name: "CVE-2021-44228",
+					Advisory: &v4.VulnerabilityReport_Advisory{
+						Name: "RHSA-2021:5132",
+						Link: "https://access.redhat.com/errata/RHSA-2021:5132",
+					},
 					Link:               "https://access.redhat.com/security/cve/CVE-2021-44228 https://access.redhat.com/errata/RHSA-2021:5132",
 					Issued:             protoNow,
 					Severity:           "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
@@ -2007,33 +2010,36 @@ func Test_advisory(t *testing.T) {
 	testutils.MustUpdateFeature(t, features.ScannerV4RedHatCVEs, true)
 	testcases := map[string]struct {
 		vuln     *claircore.Vulnerability
-		expected string
+		expected *v4.VulnerabilityReport_Advisory
 	}{
 		"non-VEX": {
 			vuln: &claircore.Vulnerability{
 				Links:   "https://access.redhat.com/security/cve/CVE-2023-25761 https://access.redhat.com/errata/RHSA-2023:1866 https://access.redhat.com/security/cve/CVE-2023-25762",
 				Updater: "not-vex",
 			},
-			expected: "",
+			expected: nil,
 		},
 		"no RHSA": {
 			vuln: &claircore.Vulnerability{
 				Links:   "https://access.redhat.com/security/cve/CVE-2023-25761 https://access.redhat.com/security/cve/CVE-2023-25762",
 				Updater: "rhel-vex",
 			},
-			expected: "",
+			expected: nil,
 		},
 		"RHSA": {
 			vuln: &claircore.Vulnerability{
 				Links:   "https://access.redhat.com/security/cve/CVE-2023-25761 https://access.redhat.com/errata/RHSA-2023:1866 https://access.redhat.com/security/cve/CVE-2023-25762",
 				Updater: "rhel-vex",
 			},
-			expected: "RHSA-2023:1866",
+			expected: &v4.VulnerabilityReport_Advisory{
+				Name: "RHSA-2023:1866",
+				Link: "https://access.redhat.com/errata/RHSA-2023:1866",
+			},
 		},
 	}
 	for name, testcase := range testcases {
 		t.Run(name, func(t *testing.T) {
-			assert.Equal(t, testcase.expected, advisory(testcase.vuln))
+			protoassert.Equal(t, testcase.expected, advisory(testcase.vuln))
 		})
 	}
 }

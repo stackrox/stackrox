@@ -51,6 +51,7 @@ function PolicyCategoriesSelectField(): ReactElement {
                 onToggle={(_event, isOpen) => onCategoriesToggle(isOpen)}
                 onClear={clearSelection}
                 isCreatable={false}
+                maxHeight="300px"
             >
                 {policyCategories.map(({ id, name }) => (
                     <SelectOption key={id} value={name} />
