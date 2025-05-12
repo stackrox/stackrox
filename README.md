@@ -103,7 +103,12 @@ To install stackrox-central-services, you will need a secure password. This pass
 ```sh
 ROX_ADMIN_PASSWORD="$(openssl rand -base64 20 | tr -d '/=+')"
 ```
+
 From here, you can install stackrox-central-services to get Central and Scanner components deployed on your cluster. Note that you need only one deployed instance of stackrox-central-services even if you plan to secure multiple clusters.
+
+To perform the installation, choose one of the following commands depending on your cluster size.
+
+#### Default Central Installation
 
 If you're installing on a reasonably sized cluster, use the default installation command:
 
@@ -113,6 +118,8 @@ helm upgrade --install -n stackrox --create-namespace stackrox-central-services 
   --set central.adminPassword.value="${ROX_ADMIN_PASSWORD}" \
   --set central.persistence.none="true"
 ```
+
+#### Central Installation in Clusters With Limited Resources
 
 If you're installing on a single node cluster, or the default installation results in pods stuck pending due to lack of resources, use the following command instead to reduce stackrox-central-services resource requirements. Keep in mind that these reduced resource settings are not suited for a production setup.
 
@@ -163,6 +170,10 @@ kubectl -n stackrox exec -i deploy/central -- bash -c 'ROX_ADMIN_PASSWORD=$(cat)
 
 Then install stackrox-secured-cluster-services (with the init bundle you just generated).
 
+To perform the installation, choose one of the following commands depending on your cluster size.
+
+#### Default Secured Cluster Services Installation
+
 If you're installing on a reasonably sized cluster, use the default installation command:
 
 ```sh
@@ -172,6 +183,8 @@ helm upgrade --install -n stackrox --create-namespace stackrox-secured-cluster-s
   --set clusterName="$CLUSTER_NAME" \
   --set centralEndpoint="$CENTRAL_ENDPOINT"
 ```
+
+#### Secured Cluster Services Installation in Clusters With Limited Resources
 
 If you're installing on a single node cluster, or the default installation results in pods stuck pending due to lack of resources, use the following command instead to reduce stackrox-secured-cluster-services resource requirements. Keep in mind that these reduced resource settings are not suited for a production setup.
 
