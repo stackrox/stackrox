@@ -74,6 +74,9 @@ spec:
         requests:
           cpu: 2
 
+  taskRunTemplate:
+    serviceAccountName: build-pipeline-operator
+
   # IMPORTANT: when changing timeouts here, read and follow timeout instructions in operator-bundle-build.yaml.
   timeouts:
     # The tasks regularly takes 1h to finish.

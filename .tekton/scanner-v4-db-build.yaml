@@ -70,3 +70,6 @@ spec:
     # Reserve time for final tasks to run.
     finally: 10m
     pipeline: 1h10m
+
+  taskRunTemplate:
+    serviceAccountName: build-pipeline-scanner-v4-db

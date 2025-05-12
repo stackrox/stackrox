@@ -51,3 +51,6 @@ spec:
     # Reserve time for final tasks to run.
     finally: 10m
     pipeline: 40m
+
+  taskRunTemplate:
+    serviceAccountName: build-pipeline-scanner

@@ -63,6 +63,9 @@ spec:
   pipelineRef:
     name: basic-component-pipeline
 
+  taskRunTemplate:
+    serviceAccountName: build-pipeline-central-db
+
   # IMPORTANT: when changing timeouts here, read and follow timeout instructions in operator-bundle-build.yaml.
   timeouts:
     # The tasks regularly takes 1h30m to finish.
