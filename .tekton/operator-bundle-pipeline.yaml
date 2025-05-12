@@ -729,7 +729,9 @@ spec:
     - prefetch-dependencies
     - push-dockerfile
     - rpms-signature-scan
+    - sast-shell-check
     - sast-snyk-check
+    - sast-unicode-check
     - wait-for-central-db-image
     - wait-for-collector-image
     - wait-for-main-image
