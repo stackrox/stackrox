@@ -9,12 +9,12 @@ export type VerifiedSignatureLabelProps = {
     results: SignatureVerificationResult[];
 };
 
-function VerifiedSignatureLabel({ results }: VerifiedSignatureLabelProps) {
-    // Separate list from the title with same margin-top as second list item from the first.
-    const styleList = {
-        marginTop: 'var(--pf-v5-c-list--li--MarginTop)',
-    } as CSSProperties;
+// Separate list from the title with same margin-top as second list item from the first.
+const styleList = {
+    marginTop: 'var(--pf-v5-c-list--li--MarginTop)',
+} as CSSProperties;
 
+function VerifiedSignatureLabel({ results }: VerifiedSignatureLabelProps) {
     return (
         <>
             <Popover
