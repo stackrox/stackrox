@@ -152,6 +152,7 @@ func (pr *platformReprocessorImpl) reprocessAlerts() error {
 			return err
 		}
 		alerts = alerts[:0]
+		q.Pagination.Offset += batchSize
 	}
 	log.Info("Done reprocessing alerts with platform rules")
 	return nil
@@ -191,6 +192,8 @@ func (pr *platformReprocessorImpl) reprocessDeployments() error {
 				return err
 			}
 		}
+
+		q.Pagination.Offset += batchSize
 	}
 	log.Info("Done reprocessing deployments with platform rules")
 	return nil
