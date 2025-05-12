@@ -18,8 +18,8 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
     // For now we use the one belonging to CloudFlare
     // in hopes it doesn't disappear.
     static final private String CF_IP_ADDRESS = "1.1.1.1"
-    static final private String CF_CIDR_31 = "$CF_IP_ADDRESS/31"
-    static final private String CF_CIDR_32 = "$CF_IP_ADDRESS/32"
+     static final private String CF_CIDR_31 = "$CF_IP_ADDRESS/28"
+    static final private String CF_CIDR_32 = "$CF_IP_ADDRESS/29"
 
     static final private String EXT_CONN_DEPLOYMENT_NAME = "external-connection"
 
