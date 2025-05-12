@@ -79,7 +79,7 @@ Finally, the script will automatically open the browser and log you into StackRo
 
 ### Manual Installation using Helm
 
-StackRox offers quick installation via Helm Charts. Follow the [Helm Installation Guide](https://helm.sh/docs/intro/install/) to get the `helm` CLI on your system.
+Follow the [Helm Installation Guide](https://helm.sh/docs/intro/install/) to get the `helm` CLI on your system.
 
 Deploying using Helm consists of 4 steps
 
