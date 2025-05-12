@@ -51,8 +51,8 @@ const (
 	// scannerV4DefsPrefix helps to search the v4 offline zip bundle for CVEs
 	scannerV4DefsPrefix    = "v4-definitions-"
 	scannerV4ManifestFile  = "manifest.json"
-	scannerV4VulnSubDir    = "scanner-v4-test/vulnerability-bundles"
-	scannerV4MappingSubDir = "scanner-v4-test/vulnerability-bundles"
+	scannerV4VulnSubDir    = "v4/vulnerability-bundles"
+	scannerV4MappingSubDir = "v4/redhat-repository-mappings"
 	scannerV4MappingFile   = "mapping.zip"
 	// offlineScannerV4DefsBlobName represents the blob name of offline/fallback data file for Scanner V4.
 	offlineScannerV4DefsBlobName = "/offline/scanner/v4/scanner-v4-defs.zip"
@@ -138,7 +138,7 @@ type httpHandler struct {
 
 func init() {
 	var err error
-	scannerUpdateBaseURL, err = url.Parse("https://storage.googleapis.com/scanner-v4-test/vulnerability-bundles")
+	scannerUpdateBaseURL, err = url.Parse("https://definitions.stackrox.io")
 	utils.CrashOnError(err) // This is very unexpected.
 
 	// Parse the main version number variants, continue in a broken state if version
@@ -219,7 +219,7 @@ func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
 	// URL parameters.
 	uuid := r.URL.Query().Get(`uuid`)
 	fileName := r.URL.Query().Get(`file`)
-	v := "yli3-updateMnlEntry"
+	v := r.URL.Query().Get(`version`)
 
 	ctx := r.Context()
 
@@ -489,7 +489,6 @@ func (h *httpHandler) getUpdater(t updaterType, urlPath string) (*requestedUpdat
 		default:
 			return nil, fmt.Errorf("unknown updater type: %s", t)
 		}
-		log.Infof("current update URL %s", updateURL)
 		filePath := filepath.Join(h.dataDir, fileName)
 		updater = &requestedUpdater{
 			updater: newUpdater(file.New(filePath), client, updateURL.String(), h.updaterInterval),

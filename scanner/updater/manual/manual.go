@@ -44,7 +44,7 @@ type Vulnerability struct {
 
 const (
 	// DefaultURL Default URL to fetch the vulnerabilities JSON.
-	DefaultURL = "https://raw.githubusercontent.com/stackrox/stackrox/master/scanner/updater/manual/vulns.yaml"
+	DefaultURL = "https://raw.githubusercontent.com/stackrox/stackrox/37a2e1436910d33ffba8825ca767a7bff0f887a9/scanner/updater/manual/vulns.yaml"
 )
 
 var client = &http.Client{
