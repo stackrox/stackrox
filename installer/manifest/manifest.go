@@ -94,6 +94,7 @@ func (m *manifestGenerator) Export(ctx context.Context, generators []Generator) 
 			labels, exists := objMap["labels"]
 			if !exists {
 				labels = map[string]string{}
+				objMap["labels"] = labels
 			}
 			labels.(map[string]string)["system"] = "stackrox"
 
