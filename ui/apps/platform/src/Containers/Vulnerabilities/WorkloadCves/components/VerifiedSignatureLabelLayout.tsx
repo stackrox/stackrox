@@ -31,7 +31,7 @@ function VerifiedSignatureLabel({ results }: VerifiedSignatureLabelProps) {
                                     <FlexItem key={result.verifierId}>
                                         <strong>{result.verifierId}</strong>
                                         <List style={styleList}>
-                                            {result.verifiedImageReferences.map((name) => (
+                                            {result.verifiedImageReferences?.map((name) => (
                                                 <ListItem key={name}>{name}</ListItem>
                                             ))}
                                         </List>
