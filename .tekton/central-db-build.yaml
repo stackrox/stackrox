@@ -55,11 +55,6 @@ spec:
   - name: clone-fetch-tags
     value: 'true'
 
-  workspaces:
-  - name: git-auth
-    secret:
-      secretName: '{{ git_auth_secret }}'
-
   pipelineRef:
     name: basic-component-pipeline
 
@@ -73,3 +68,8 @@ spec:
     # Reserve time for final tasks to run.
     finally: 10m
     pipeline: 1h40m
+
+  workspaces:
+  - name: git-auth
+    secret:
+      secretName: '{{ git_auth_secret }}'

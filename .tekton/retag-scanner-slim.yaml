@@ -38,13 +38,11 @@ spec:
   - name: input-image-tag-makefile-target
     value: scanner-tag
 
-  workspaces:
-  - name: git-auth
-    secret:
-      secretName: '{{ git_auth_secret }}'
-
   pipelineRef:
     name: retag-pipeline
+
+  taskRunTemplate:
+    serviceAccountName: build-pipeline-scanner-slim
 
   timeouts:
     tasks: 30m
@@ -52,5 +50,7 @@ spec:
     finally: 10m
     pipeline: 40m
 
-  taskRunTemplate:
-    serviceAccountName: build-pipeline-scanner-slim
+  workspaces:
+  - name: git-auth
+    secret:
+      secretName: '{{ git_auth_secret }}'

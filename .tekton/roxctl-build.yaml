@@ -54,11 +54,6 @@ spec:
   - name: clone-fetch-tags
     value: 'true'
 
-  workspaces:
-  - name: git-auth
-    secret:
-      secretName: '{{ git_auth_secret }}'
-
   pipelineRef:
     name: basic-component-pipeline
 
@@ -74,6 +69,9 @@ spec:
         requests:
           cpu: 2
 
+  taskRunTemplate:
+    serviceAccountName: build-pipeline-roxctl
+
   # IMPORTANT: when changing timeouts here, read and follow timeout instructions in operator-bundle-build.yaml.
   timeouts:
     # The tasks regularly takes 1h to finish.
@@ -82,5 +80,7 @@ spec:
     finally: 10m
     pipeline: 1h10m
 
-  taskRunTemplate:
-    serviceAccountName: build-pipeline-roxctl
+  workspaces:
+  - name: git-auth
+    secret:
+      secretName: '{{ git_auth_secret }}'

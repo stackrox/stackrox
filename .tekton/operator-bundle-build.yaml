@@ -55,11 +55,6 @@ spec:
   - name: clone-fetch-tags
     value: 'true'
 
-  workspaces:
-  - name: git-auth
-    secret:
-      secretName: '{{ git_auth_secret }}'
-
   pipelineRef:
     name: operator-bundle-pipeline
 
@@ -85,3 +80,8 @@ spec:
     tasks: 3h10m
     finally: 10m
     pipeline: 3h20m
+
+  workspaces:
+  - name: git-auth
+    secret:
+      secretName: '{{ git_auth_secret }}'
