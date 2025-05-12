@@ -124,7 +124,6 @@ message Generic {
   repeated KeyValuePair headers = 6;
   repeated KeyValuePair extra_fields = 7;
   bool audit_logging_enabled = 8;
-  int32 max_message_size = 9;
 }
 
 message SumoLogic {
