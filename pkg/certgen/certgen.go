@@ -45,8 +45,9 @@ func IssueOtherServiceCerts(fileMap map[string][]byte, ca mtls.CA, subjs []mtls.
 // VerifyServiceCertAndKey verifies that the service certificate (stored with the given fileNamePrefix in the file
 // map) is a valid service certificate for the given serviceType, relative to the given CA.
 // It also verifies that the associated private key in the file map also matches the certificate.
+// If currentTime is non-nil, it is used as the reference time for certificate validity; otherwise, the current system time is used.
 func VerifyServiceCertAndKey(fileMap map[string][]byte, fileNamePrefix string, ca mtls.CA, serviceType storage.ServiceType,
-	verificationTime *time.Time, extraValidations ...func(certificate *x509.Certificate) error) error {
+	currentTime *time.Time, extraValidations ...func(certificate *x509.Certificate) error) error {
 	certPEM := fileMap[fileNamePrefix+mtls.ServiceCertFileName]
 	if len(certPEM) == 0 {
 		return fmt.Errorf("no service certificate for %s in file map", serviceType.String())
@@ -57,8 +58,8 @@ func VerifyServiceCertAndKey(fileMap map[string][]byte, fileNamePrefix string, c
 	}
 
 	var verifyOpts []mtls.VerifyCertOption
-	if verificationTime != nil {
-		verifyOpts = append(verifyOpts, mtls.WithCurrentTime(*verificationTime))
+	if currentTime != nil {
+		verifyOpts = append(verifyOpts, mtls.WithCurrentTime(*currentTime))
 	}
 	subjFromCert, err := ca.ValidateAndExtractSubject(cert, verifyOpts...)
 	if err != nil {
