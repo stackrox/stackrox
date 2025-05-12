@@ -45,36 +45,42 @@ func TestCentralCARotation(t *testing.T) {
 
 	baseTime := time.Now()
 
-	// Year 0: should create central-tls secret
-	tc := baseCase
-	tc.ExpectedCreatedSecrets = map[string]secretVerifyFunc{
-		"central-tls":            verifyCentralCert,
-		"central-db-tls":         verifyCentralServiceCert(storage.ServiceType_CENTRAL_DB_SERVICE),
-		"scanner-tls":            verifyCentralServiceCert(storage.ServiceType_SCANNER_SERVICE),
-		"scanner-db-tls":         verifyCentralServiceCert(storage.ServiceType_SCANNER_DB_SERVICE),
-		"scanner-v4-indexer-tls": verifyCentralServiceCert(storage.ServiceType_SCANNER_V4_INDEXER_SERVICE),
-		"scanner-v4-matcher-tls": verifyCentralServiceCert(storage.ServiceType_SCANNER_V4_MATCHER_SERVICE),
-		"scanner-v4-db-tls":      verifyCentralServiceCert(storage.ServiceType_SCANNER_V4_DB_SERVICE),
+	type timepoint struct {
+		offset                  time.Duration
+		verifyCentralFunc       secretVerifyFunc
+		fixSecondaryCANotBefore bool
 	}
-	testSecretReconciliationAtTime(
-		t,
-		central,
-		client,
-		runAt,
-		tc,
-		baseTime,
-	)
 
-	// Year 3: should add a secondary CA
-	tc = baseCase
-	currentTime := baseTime.Add(3*365*24*time.Hour + time.Hour)
-	tc.ExpectedCreatedSecrets = map[string]secretVerifyFunc{
-		"central-tls": func(t *testing.T, fileMap types.SecretDataMap, atTime *time.Time) {
-			verifyCentralCert(t, fileMap, atTime)
-			_, err := certgen.LoadSecondaryCAFromFileMap(fileMap)
-			require.NoError(t, err)
-
+	timepoints := []timepoint{
+		{
+			// Year 1: should have one CA
+			offset:            0,
+			verifyCentralFunc: verifyCentralCertNoSecondaryCA,
 		},
+		{
+			// Year 2: should have one CA still
+			offset:            2*365*24*time.Hour + time.Hour,
+			verifyCentralFunc: verifyCentralCertNoSecondaryCA,
+		},
+		{
+			// Year 3: should add a secondary CA
+			offset:                  3*365*24*time.Hour + time.Hour,
+			verifyCentralFunc:       verifyCentralCertWithSecondaryCA,
+			fixSecondaryCANotBefore: true,
+		},
+		{
+			// Year 4: still two CAs
+			offset:            4*365*24*time.Hour + time.Hour,
+			verifyCentralFunc: verifyCentralCertWithSecondaryCA,
+		},
+		{
+			// Year 5: original CA is now expired, should only have 1 CA again
+			offset:            5*365*24*time.Hour + time.Hour,
+			verifyCentralFunc: verifyCentralCertNoSecondaryCA,
+		},
+	}
+
+	commonSecrets := map[string]secretVerifyFunc{
 		"central-db-tls":         verifyCentralServiceCert(storage.ServiceType_CENTRAL_DB_SERVICE),
 		"scanner-tls":            verifyCentralServiceCert(storage.ServiceType_SCANNER_SERVICE),
 		"scanner-db-tls":         verifyCentralServiceCert(storage.ServiceType_SCANNER_DB_SERVICE),
@@ -82,19 +88,46 @@ func TestCentralCARotation(t *testing.T) {
 		"scanner-v4-matcher-tls": verifyCentralServiceCert(storage.ServiceType_SCANNER_V4_MATCHER_SERVICE),
 		"scanner-v4-db-tls":      verifyCentralServiceCert(storage.ServiceType_SCANNER_V4_DB_SERVICE),
 	}
-	testSecretReconciliationAtTime(
-		t,
-		central,
-		client,
-		runAt,
-		tc,
-		currentTime,
-	)
 
-	// Hack: certgen.GenerateCA() can only generate a CA starting from time.Now(), and plugging in a customized
-	// notBefore is not straightforward.
-	// This means that the secondary CA that was generated in the previous step is valid from time.Now() instead of the
-	// simulated currentTime. We'll update the NotBefore field to match the required time, and resign the certificate.
+	for _, tp := range timepoints {
+		currentTime := baseTime.Add(tp.offset)
+
+		tc := baseCase
+		tc.ExpectedCreatedSecrets = map[string]secretVerifyFunc{
+			"central-tls": tp.verifyCentralFunc,
+		}
+		for k, v := range commonSecrets {
+			tc.ExpectedCreatedSecrets[k] = v
+		}
+
+		testSecretReconciliationAtTime(t, central, client, runAt, tc, currentTime)
+
+		if tp.fixSecondaryCANotBefore {
+			// Hack: certgen.GenerateCA() can only generate a CA starting from time.Now(), and plugging in a customized
+			// NotBefore value is not straightforward.
+			// This function updates the NotBefore property of CA certificate to the desired time.
+			updateSecondaryCANotBefore(t, client, baseTime.Add(3*365*24*time.Hour+time.Hour))
+		}
+	}
+}
+
+func verifyCentralCertNoSecondaryCA(t *testing.T, fileMap types.SecretDataMap, atTime *time.Time) {
+	t.Helper()
+	verifyCentralCert(t, fileMap, atTime)
+	_, err := certgen.LoadSecondaryCAFromFileMap(fileMap)
+	require.Error(t, err)
+}
+
+func verifyCentralCertWithSecondaryCA(t *testing.T, fileMap types.SecretDataMap, atTime *time.Time) {
+	t.Helper()
+	verifyCentralCert(t, fileMap, atTime)
+	_, err := certgen.LoadSecondaryCAFromFileMap(fileMap)
+	require.NoError(t, err)
+}
+
+func updateSecondaryCANotBefore(t *testing.T, client ctrlClient.Client, currentTime time.Time) {
+	t.Helper()
+
 	secret := &coreV1.Secret{}
 	key := ctrlClient.ObjectKey{Namespace: testutils.TestNamespace, Name: "central-tls"}
 	err := utils.GetWithFallbackToUncached(context.Background(), client, client, key, secret)
@@ -102,74 +135,24 @@ func TestCentralCARotation(t *testing.T) {
 
 	secondaryCA, err := certgen.LoadSecondaryCAFromFileMap(secret.Data)
 	require.NoError(t, err)
+
 	privateKey, err := helpers.ParsePrivateKeyPEM(secondaryCA.KeyPEM())
 	require.NoError(t, err)
-	updatedSecondaryCACert, err := UpdateCertificateNotBefore(secondaryCA.Certificate(), privateKey, currentTime)
+
+	updatedCert, err := updateCertificateNotBefore(secondaryCA.Certificate(), privateKey, currentTime)
 	require.NoError(t, err)
 
-	updatedSecondaryCA, err := mtls.LoadCAForSigning(updatedSecondaryCACert, secondaryCA.KeyPEM())
+	updatedCA, err := mtls.LoadCAForSigning(updatedCert, secondaryCA.KeyPEM())
 	require.NoError(t, err)
 
-	certgen.AddSecondaryCAToFileMap(secret.Data, updatedSecondaryCA)
+	certgen.AddSecondaryCAToFileMap(secret.Data, updatedCA)
 	err = client.Update(context.Background(), secret)
 	require.NoError(t, err)
-
-	// Year 4: should add a secondary CA
-	tc = baseCase
-	currentTime = baseTime.Add(4*365*24*time.Hour + time.Hour)
-	tc.ExpectedCreatedSecrets = map[string]secretVerifyFunc{
-		"central-tls": func(t *testing.T, fileMap types.SecretDataMap, atTime *time.Time) {
-			verifyCentralCert(t, fileMap, atTime)
-			_, err := certgen.LoadSecondaryCAFromFileMap(fileMap)
-			require.NoError(t, err)
-
-		},
-		"central-db-tls":         verifyCentralServiceCert(storage.ServiceType_CENTRAL_DB_SERVICE),
-		"scanner-tls":            verifyCentralServiceCert(storage.ServiceType_SCANNER_SERVICE),
-		"scanner-db-tls":         verifyCentralServiceCert(storage.ServiceType_SCANNER_DB_SERVICE),
-		"scanner-v4-indexer-tls": verifyCentralServiceCert(storage.ServiceType_SCANNER_V4_INDEXER_SERVICE),
-		"scanner-v4-matcher-tls": verifyCentralServiceCert(storage.ServiceType_SCANNER_V4_MATCHER_SERVICE),
-		"scanner-v4-db-tls":      verifyCentralServiceCert(storage.ServiceType_SCANNER_V4_DB_SERVICE),
-	}
-	testSecretReconciliationAtTime(
-		t,
-		central,
-		client,
-		runAt,
-		tc,
-		currentTime,
-	)
-
-	// Year 5: original CA is now expired, should only have 1 CA again
-	tc = baseCase
-	currentTime = baseTime.Add(5*365*24*time.Hour + time.Hour)
-	tc.ExpectedCreatedSecrets = map[string]secretVerifyFunc{
-		"central-tls": func(t *testing.T, fileMap types.SecretDataMap, atTime *time.Time) {
-			verifyCentralCert(t, fileMap, atTime)
-			_, err := certgen.LoadSecondaryCAFromFileMap(fileMap)
-			require.Error(t, err)
-
-		},
-		"central-db-tls":         verifyCentralServiceCert(storage.ServiceType_CENTRAL_DB_SERVICE),
-		"scanner-tls":            verifyCentralServiceCert(storage.ServiceType_SCANNER_SERVICE),
-		"scanner-db-tls":         verifyCentralServiceCert(storage.ServiceType_SCANNER_DB_SERVICE),
-		"scanner-v4-indexer-tls": verifyCentralServiceCert(storage.ServiceType_SCANNER_V4_INDEXER_SERVICE),
-		"scanner-v4-matcher-tls": verifyCentralServiceCert(storage.ServiceType_SCANNER_V4_MATCHER_SERVICE),
-		"scanner-v4-db-tls":      verifyCentralServiceCert(storage.ServiceType_SCANNER_V4_DB_SERVICE),
-	}
-	testSecretReconciliationAtTime(
-		t,
-		central,
-		client,
-		runAt,
-		tc,
-		currentTime,
-	)
 }
 
-// UpdateCertificateNotBefore copies a CA certificate, updates the NotBefore and NotAfter fields,
+// updateCertificateNotBefore copies a CA certificate, updates the NotBefore and NotAfter fields,
 // and then re-signs the certificate.
-func UpdateCertificateNotBefore(ca *x509.Certificate, priv crypto.Signer, notBefore time.Time) (cert []byte, err error) {
+func updateCertificateNotBefore(ca *x509.Certificate, priv crypto.Signer, notBefore time.Time) (cert []byte, err error) {
 	copy, err := x509.ParseCertificate(ca.Raw)
 	if err != nil {
 		return
