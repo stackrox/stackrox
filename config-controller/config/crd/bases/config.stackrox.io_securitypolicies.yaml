@@ -48,6 +48,9 @@ spec:
                   type: string
                 minItems: 1
                 type: array
+              criteriaLocked:
+                description: CriteriaLocked is unused and deprecated
+                type: boolean
               description:
                 description: Description is a free-form text description of this policy.
                 pattern: ^[^\$]{0,800}$
@@ -120,6 +123,9 @@ spec:
                       type: string
                   type: object
                 type: array
+              isDefault:
+                description: IsDefault is unused
+                type: boolean
               lifecycleStages:
                 description: LifecycleStages describes which policy lifecylce stages
                   this policy applies to.  Choices are DEPLOY, BUILD, and RUNTIME.
@@ -142,6 +148,9 @@ spec:
                       type: array
                   type: object
                 type: array
+              mitreVectorsLocked:
+                description: MitreVetorsLocked is unused and deprecated
+                type: boolean
               notifiers:
                 description: Notifiers is a list of IDs or names of the notifiers
                   that should be triggered when a violation from this policy is identified.  IDs
@@ -252,6 +261,9 @@ spec:
             type: object
           status:
             properties:
+              accepted:
+                description: Accepted is deprecated in favor of conditions
+                type: boolean
               conditions:
                 items:
                   description: SecurityPolicyCondition defines the observed state
@@ -266,18 +278,13 @@ spec:
                       type: string
                     type:
                       type: string
-                  required:
-                  - lastTransitionTime
-                  - message
-                  - status
-                  - type
                   type: object
                 type: array
+              message:
+                description: Message is deprecated in favor of conditions
+                type: string
               policyId:
                 type: string
-            required:
-            - conditions
-            - policyId
             type: object
         type: object
     served: true
