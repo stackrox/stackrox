@@ -143,12 +143,6 @@ helm upgrade --install -n stackrox --create-namespace stackrox-central-services 
 
 Next, the secured cluster component will need to be deployed to collect information on from the Kubernetes nodes.
 
-Generate an init bundle containing initialization secrets. The init bundle will be saved in `stackrox-init-bundle.yaml`, and you will use it to provision secured clusters as shown below.
-```sh
-echo "$ROX_ADMIN_PASSWORD" | \
-kubectl -n stackrox exec -i deploy/central -- bash -c 'ROX_ADMIN_PASSWORD=$(cat) roxctl --insecure-skip-tls-verify \
-  central init-bundles generate stackrox-init-bundle --output -' > stackrox-init-bundle.yaml
-```
 Set a meaningful cluster name for your secured cluster in the `CLUSTER_NAME` shell variable. The cluster will be identified by this name in the clusters list of the StackRox UI.
 ```sh
 CLUSTER_NAME="my-secured-cluster"
@@ -160,7 +154,14 @@ Set the endpoint of Central the Secured Cluster Services should communicate to. 
 CENTRAL_ENDPOINT="central.stackrox.svc:443"
 ```
 
-Then install stackrox-secured-cluster-services (with the init bundle you generated earlier).
+Generate an init bundle containing initialization secrets. The init bundle will be saved in `stackrox-init-bundle.yaml`, and you will use it to provision secured clusters as shown below.
+```sh
+echo "$ROX_ADMIN_PASSWORD" | \
+kubectl -n stackrox exec -i deploy/central -- bash -c 'ROX_ADMIN_PASSWORD=$(cat) roxctl --insecure-skip-tls-verify \
+  central init-bundles generate stackrox-init-bundle --output -' > stackrox-init-bundle.yaml
+```
+
+Then install stackrox-secured-cluster-services (with the init bundle you just generated).
 
 If you're installing on a reasonably sized cluster, use the default installation command:
 
