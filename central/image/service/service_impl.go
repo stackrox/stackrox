@@ -528,7 +528,7 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 		)
 		return nil, err
 	}
-	
+
 	imgID := request.GetImageId()
 	var hasErrors bool
 	if request.Error != "" {
