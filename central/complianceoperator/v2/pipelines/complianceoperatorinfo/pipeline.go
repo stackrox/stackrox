@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Masterminds/semver/v3"
+	"github.com/Masterminds/semver"
 	"github.com/stackrox/rox/central/complianceoperator/v2/compliancemanager"
 	countMetrics "github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/sensor/service/common"
@@ -13,11 +13,10 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/metrics"
 )
-
-const minimalComplianceOperatorVersion = "v1.6.0"
 
 var (
 	_ pipeline.Fragment = (*pipelineImpl)(nil)
@@ -75,16 +74,15 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 
 	// if not ready, add it to the status errors
 	if readyPods < desiredPods {
-		operatorErrors = append(operatorErrors, fmt.Sprintf("compliance operator not ready. Only %d pods are ready when %d are desired.", readyPods, desiredPods))
+		operatorErrors = append(operatorErrors, fmt.Sprintf("Compliance operator not ready. Only %d out of desired %d are ready.", readyPods, desiredPods))
 	}
 
 	// we support only newer versions of compliance operator
-	minVersion, _ := semver.NewVersion(minimalComplianceOperatorVersion)
 	complianceOperatorVersion, err := semver.NewVersion(operatorInfo.GetVersion())
 	if complianceOperatorVersion == nil || err != nil {
-		operatorErrors = append(operatorErrors, fmt.Sprintf("invalid compliance operator version %q", operatorInfo.GetVersion()))
-	} else if complianceOperatorVersion.LessThan(minVersion) {
-		operatorErrors = append(operatorErrors, fmt.Sprintf("compliance operator version %q is not supported. Minimal required version is %q", operatorInfo.GetVersion(), minimalComplianceOperatorVersion))
+		operatorErrors = append(operatorErrors, fmt.Sprintf("The installed compliance operator version %q is invalid.", operatorInfo.GetVersion()))
+	} else if complianceOperatorVersion.LessThan(env.ComplianceMinimalSupportedVersion.VersionSetting()) {
+		operatorErrors = append(operatorErrors, fmt.Sprintf("The installed compliance operator version %q is unsupported. The minimum required version is %q.", complianceOperatorVersion.String(), env.ComplianceMinimalSupportedVersion.VersionSetting().String()))
 	}
 
 	operatorInfo.StatusErrors = operatorErrors
