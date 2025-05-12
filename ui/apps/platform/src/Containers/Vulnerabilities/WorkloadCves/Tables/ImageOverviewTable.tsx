@@ -245,11 +245,6 @@ function ImageOverviewTable({
                         const scanMessage = getImageScanMessage(notes, scanNotes);
                         const hasScanMessage = !isEmpty(scanMessage);
 
-                        const verifiedSignatureResults = signatureVerificationData?.results?.filter(
-                            (result) => result.status === 'VERIFIED'
-                        );
-                        const hasVerifiedSignature = !!verifiedSignatureResults?.length;
-
                         const rowActions: IAction[] = [];
 
                         if (hasWriteAccessForWatchedImage && name?.tag) {
@@ -290,11 +285,12 @@ function ImageOverviewTable({
                                     <Td dataLabel="Image">
                                         {name ? (
                                             <ImageNameLink name={name} id={id}>
-                                                {hasVerifiedSignature && (
-                                                    <VerifiedSignatureLabel
-                                                        results={verifiedSignatureResults}
-                                                    />
-                                                )}
+                                                <VerifiedSignatureLabel
+                                                    results={signatureVerificationData?.results}
+                                                    className="pf-v5-u-mt-xs"
+                                                    isCompact
+                                                    variant="outline"
+                                                />
                                                 {isWatchedImage && (
                                                     <Label
                                                         isCompact
