@@ -263,15 +263,15 @@ func shouldCreateSourcedIntegration(secret *v1.Secret) bool {
 
 func validateSecret(registryAddr string, dce config.DockerConfigEntry, secName, ns string) error {
 	if !utf8.ValidString(registryAddr) {
-		return fmt.Errorf("registry address %q contains not valid UTF-8. Correct the contents of secret %s/%s",
-			registryAddr, ns, secName)
+		return fmt.Errorf("registry address %q contains invalid UTF-8 characters. "+
+			"Correct the contents of secret %s/%s", registryAddr, ns, secName)
 	}
 	if !utf8.ValidString(dce.Username) {
-		return fmt.Errorf("username %q contains not valid UTF-8. Correct the contents of secret %s/%s",
-			registryAddr, ns, secName)
+		return fmt.Errorf("username %q contains invalid UTF-8 characters. "+
+			"Correct the contents of secret %s/%s", registryAddr, ns, secName)
 	}
 	if !utf8.ValidString(dce.Password) {
-		return fmt.Errorf("the registry password located secret %s/%s contains not valid UTF-8",
+		return fmt.Errorf("the registry password located secret %s/%s contains invalid UTF-8 characters",
 			ns, secName)
 	}
 	return nil
