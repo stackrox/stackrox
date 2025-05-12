@@ -1,7 +1,6 @@
 Scan results for image: nginx:test
 (TOTAL-COMPONENTS: 0, TOTAL-VULNERABILITIES: 0, LOW: 0, MODERATE: 0, IMPORTANT: 0, CRITICAL: 0)
 
-+-----------+---------+-----+----------+------+---------------+
-| COMPONENT | VERSION | CVE | SEVERITY | LINK | FIXED VERSION |
-+-----------+---------+-----+----------+------+---------------+
-+-----------+---------+-----+----------+------+---------------+
++-----------+---------+-----+----------+------+-----------------+
+| COMPONENT | VERSION | CVE | SEVERITY | LINK | FIXED   VERSION |
++-----------+---------+-----+----------+------+-----------------+

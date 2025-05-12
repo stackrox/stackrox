@@ -7,7 +7,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/printers"
-	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -45,14 +44,12 @@ type TabularPrinterFactory struct {
 	NoHeader              bool
 	// HeaderAsComment only applies to the "csv" format and prints headers as comment lines in the CSV output
 	HeaderAsComment bool
-	// columnsToMerge is a slice of columns names to merge. Names must match with headers.
-	// If set to nil and Merge set to true then all columns will be merged.
-	columnsToMerge []string
 }
 
 // NewTabularPrinterFactory creates new TabularPrinterFactory with the injected default values
 func NewTabularPrinterFactory(headers []string, rowJSONPathExpression string) *TabularPrinterFactory {
 	return &TabularPrinterFactory{
+		Merge:                 true,
 		Headers:               headers,
 		RowJSONPathExpression: rowJSONPathExpression,
 	}
@@ -64,7 +61,6 @@ func NewTabularPrinterFactoryWithAutoMerge() *TabularPrinterFactory {
 		Merge:                 true,
 		Headers:               defaultImageScanHeaders,
 		RowJSONPathExpression: defaultImageScanJSONPathExpression,
-		columnsToMerge:        defaultColumnsToMerge,
 	}
 }
 
@@ -150,14 +146,10 @@ func (t *TabularPrinterFactory) CreatePrinter(format string) (ObjectPrinter, err
 	if err != nil {
 		return nil, errox.InvalidArgs.Newf("Failed to propagate custom headers: %v", err)
 	}
-	// If not column is specified by merge is enabled then set all columns to merge.
-	if t.columnsToMerge == nil && t.Merge {
-		t.columnsToMerge = t.Headers
-	}
 	switch strings.ToLower(format) {
 	case "table":
 		return printers.NewTablePrinter(t.RowJSONPathExpression,
-			printers.WithTableHeadersOption(t.Headers, t.columnsToMerge, t.NoHeader),
+			printers.WithTableHeadersOption(t.Headers, t.Merge, t.NoHeader),
 			printers.WithTableHideUnpopulatedRowsOption(requiredHeadersJSON)), nil
 	case "csv":
 		return printers.NewCSVPrinter(t.RowJSONPathExpression,
@@ -174,12 +166,6 @@ func (t *TabularPrinterFactory) validate() error {
 	if t.NoHeader && t.HeaderAsComment {
 		return errox.InvalidArgs.New("cannot specify both --no-header as well as " +
 			"--headers-as-comment flags. Choose only one of them")
-	}
-	headers := set.NewStringSet(t.Headers...)
-	columnsToMerge := set.NewStringSet(t.columnsToMerge...)
-	intersect := headers.Intersect(columnsToMerge)
-	if !intersect.Equal(columnsToMerge) {
-		return errox.InvalidArgs.Newf("undefined columns to merge: %s", columnsToMerge.Difference(intersect).ElementsString(", "))
 	}
 	return nil
 }
