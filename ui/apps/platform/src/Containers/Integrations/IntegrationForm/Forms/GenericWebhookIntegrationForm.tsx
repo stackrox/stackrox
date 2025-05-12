@@ -40,14 +40,6 @@ export const validationSchema = yup.object().shape({
             endpoint: yup.string().trim().required('Endpoint is required'),
             skipTlsVerify: yup.bool(),
             auditLoggingEnabled: yup.bool(),
-            maxMessageSize: yup
-                .number()
-                .required('Maximum message size is required')
-                .test(
-                    'max-message-size-test',
-                    'Maximum message size must be between 1 and 1048576',
-                    (value = 0) => value >= 1 && value <= 1048576
-                ),
             username: yup
                 .string()
                 .test(
@@ -96,7 +88,6 @@ export const defaultValues: GenericWebhookIntegrationFormValues = {
             skipTLSVerify: false,
             auditLoggingEnabled: false,
             caCert: '',
-            maxMessageSize: 32768,
             username: '',
             password: '',
             headers: [],
@@ -234,24 +225,6 @@ function GenericWebhookIntegrationForm({
                                 type="text"
                                 id="notifier.generic.caCert"
                                 value={values.notifier.generic.caCert}
-                                onChange={(event, value) => onChange(value, event)}
-                                onBlur={handleBlur}
-                                isDisabled={!isEditable}
-                            />
-                        </FormLabelGroup>
-                        <FormLabelGroup
-                            isRequired
-                            label="Maximum message size"
-                            fieldId="notifier.generic.maxMessageSize"
-                            touched={touched}
-                            errors={errors}
-                            helperText="A number of bytes between 0 and 1048576"
-                        >
-                            <TextInput
-                                isRequired
-                                type="number"
-                                id="notifier.generic.maxMessageSize"
-                                value={values.notifier.generic.maxMessageSize}
                                 onChange={(event, value) => onChange(value, event)}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
