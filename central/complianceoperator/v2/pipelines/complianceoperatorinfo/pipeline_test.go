@@ -3,15 +3,17 @@ package complianceoperatorinfo
 import (
 	"context"
 	"fmt"
+	"os"
 	"testing"
 
-	"github.com/Masterminds/semver/v3"
 	managerMocks "github.com/stackrox/rox/central/complianceoperator/v2/compliancemanager/mocks"
 	coIntegrationMocks "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore/mocks"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -50,7 +52,7 @@ func (suite *PipelineTestSuite) TearDownTest() {
 
 func (suite *PipelineTestSuite) TestComplianceInfoMsgFromSensor() {
 	complianceMsg := &central.ComplianceOperatorInfo{
-		Version:   minimalComplianceOperatorVersion,
+		Version:   env.ComplianceMinimalSupportedVersion.VersionSetting().String(),
 		Namespace: fixtureconsts.Namespace1,
 		TotalDesiredPodsOpt: &central.ComplianceOperatorInfo_TotalDesiredPods{
 			TotalDesiredPods: 5,
@@ -60,9 +62,9 @@ func (suite *PipelineTestSuite) TestComplianceInfoMsgFromSensor() {
 		},
 	}
 
-	statusErrors := []string{"compliance operator not ready. Only 2 pods are ready when 5 are desired."}
+	statusErrors := []string{"Compliance operator not ready. Only 2 out of desired 5 are ready."}
 	expectedInfo := &storage.ComplianceIntegration{
-		Version:             minimalComplianceOperatorVersion,
+		Version:             env.ComplianceMinimalSupportedVersion.VersionSetting().String(),
 		ClusterId:           fixtureconsts.Cluster1,
 		ComplianceNamespace: fixtureconsts.Namespace1,
 		StatusErrors:        statusErrors,
@@ -80,56 +82,78 @@ func (suite *PipelineTestSuite) TestComplianceInfoMsgFromSensor() {
 }
 
 func (suite *PipelineTestSuite) TestComplianceInfoMinimalRequiredVersion() {
-	minVersion, err := semver.NewVersion(minimalComplianceOperatorVersion)
-	suite.NoError(err)
-	suite.NotNil(minVersion)
+	minVersion := env.ComplianceMinimalSupportedVersion.VersionSetting()
+
+	patchVersion := minVersion.IncPatch()
+	minorVersion := minVersion.IncMinor()
+	majorVersion := minVersion.IncMajor()
 
 	testCases := map[string]struct {
-		version        string
-		expectedStatus storage.COStatus
-		expectedErrors []string
+		operatorVersion string
+		envVersion      string
+		expectedStatus  storage.COStatus
+		expectedErrors  []string
 	}{
-		"invalid version": {
-			version:        "not-valid",
-			expectedStatus: storage.COStatus_UNHEALTHY,
-			expectedErrors: []string{"invalid compliance operator version \"not-valid\""},
+		"invalid operatorVersion": {
+			operatorVersion: "not-valid",
+			expectedStatus:  storage.COStatus_UNHEALTHY,
+			expectedErrors:  []string{"The installed compliance operator version \"not-valid\" is invalid."},
 		},
-		"older version": {
-			version:        "v1.5.1",
-			expectedStatus: storage.COStatus_UNHEALTHY,
-			expectedErrors: []string{fmt.Sprintf("compliance operator version \"v1.5.1\" is not supported. Minimal required version is %q", minimalComplianceOperatorVersion)},
+		"older operatorVersion": {
+			operatorVersion: "v1.5.1",
+			expectedStatus:  storage.COStatus_UNHEALTHY,
+			expectedErrors:  []string{fmt.Sprintf("The installed compliance operator version \"1.5.1\" is unsupported. The minimum required version is %q.", minVersion.String())},
 		},
-		"min version": {
-			version:        minimalComplianceOperatorVersion,
-			expectedStatus: storage.COStatus_HEALTHY,
+		"min operatorVersion": {
+			operatorVersion: minVersion.String(),
+			expectedStatus:  storage.COStatus_HEALTHY,
 		},
-		"newer patch version": {
-			version:        minVersion.IncPatch().String(),
-			expectedStatus: storage.COStatus_HEALTHY,
+		"newer patch operatorVersion": {
+			operatorVersion: patchVersion.String(),
+			expectedStatus:  storage.COStatus_HEALTHY,
 		},
-		"newer minor version": {
-			version:        minVersion.IncMinor().String(),
-			expectedStatus: storage.COStatus_HEALTHY,
+		"newer minor operatorVersion": {
+			operatorVersion: minorVersion.String(),
+			expectedStatus:  storage.COStatus_HEALTHY,
 		},
-		"newer major version": {
-			version:        minVersion.IncMajor().String(),
-			expectedStatus: storage.COStatus_HEALTHY,
+		"newer major operatorVersion": {
+			operatorVersion: majorVersion.String(),
+			expectedStatus:  storage.COStatus_HEALTHY,
 		},
-		"older version without prefix": {
-			version:        "1.5.1",
-			expectedStatus: storage.COStatus_UNHEALTHY,
-			expectedErrors: []string{fmt.Sprintf("compliance operator version \"1.5.1\" is not supported. Minimal required version is %q", minimalComplianceOperatorVersion)},
+		"older operatorVersion without prefix": {
+			operatorVersion: "1.5.1",
+			expectedStatus:  storage.COStatus_UNHEALTHY,
+			expectedErrors:  []string{fmt.Sprintf("The installed compliance operator version \"1.5.1\" is unsupported. The minimum required version is %q.", minVersion.String())},
 		},
-		"newer version without prefix": {
-			version:        "99.99.99",
-			expectedStatus: storage.COStatus_HEALTHY,
+		"newer operatorVersion without prefix": {
+			operatorVersion: "99.99.99",
+			expectedStatus:  storage.COStatus_HEALTHY,
+		},
+		"invalid env version": {
+			operatorVersion: "v1.2.0",
+			envVersion:      "not-valid",
+			expectedStatus:  storage.COStatus_UNHEALTHY,
+			expectedErrors:  []string{fmt.Sprintf("The installed compliance operator version \"1.2.0\" is unsupported. The minimum required version is %q.", minVersion.String())},
+		},
+		"newer operatorVersion from env version": {
+			operatorVersion: "v1.2.0",
+			envVersion:      "v1.1.0",
+			expectedStatus:  storage.COStatus_HEALTHY,
+		},
+		"older operatorVersion from env version": {
+			operatorVersion: "v1.1.0",
+			envVersion:      "v1.2.0",
+			expectedStatus:  storage.COStatus_UNHEALTHY,
+			expectedErrors:  []string{"The installed compliance operator version \"1.1.0\" is unsupported. The minimum required version is \"1.2.0\"."},
 		},
 	}
 
 	for name, tc := range testCases {
 		suite.T().Run(name, func(tt *testing.T) {
+			assert.NoError(tt, os.Setenv("ROX_COMPLIANCE_MINIMAL_SUPPORTED_OPERATOR_VERSION", tc.envVersion))
+
 			complianceMsg := &central.ComplianceOperatorInfo{
-				Version:   tc.version,
+				Version:   tc.operatorVersion,
 				Namespace: fixtureconsts.Namespace1,
 				TotalDesiredPodsOpt: &central.ComplianceOperatorInfo_TotalDesiredPods{
 					TotalDesiredPods: 1,
@@ -140,7 +164,7 @@ func (suite *PipelineTestSuite) TestComplianceInfoMinimalRequiredVersion() {
 			}
 
 			expectedInfo := &storage.ComplianceIntegration{
-				Version:             tc.version,
+				Version:             tc.operatorVersion,
 				ClusterId:           fixtureconsts.Cluster1,
 				ComplianceNamespace: fixtureconsts.Namespace1,
 				StatusErrors:        tc.expectedErrors,

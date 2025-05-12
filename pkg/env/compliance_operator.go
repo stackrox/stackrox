@@ -25,4 +25,9 @@ var (
 	// ComplianceMaxNumberOfErrorsInReport defines the max number of errors that a report will store. This is done to avoid overwhelming the UI with many errors.
 	// The default is 4
 	ComplianceMaxNumberOfErrorsInReport = RegisterIntegerSetting("ROX_COMPLIANCE_MAX_NUMBER_OF_ERRORS_IN_REPORT", 4)
+
+	// ComplianceMinimalSupportedVersion specifies the minimum version of the compliance operator that is supported by StackRox.
+	// This value can be customized via the ROX_COMPLIANCE_MINIMAL_SUPPORTED_OPERATOR_VERSION environment variable.
+	// If the environment variable is unset or contains an invalid version, the default value "v1.6.0" will be used.
+	ComplianceMinimalSupportedVersion = RegisterVersionSetting("ROX_COMPLIANCE_MINIMAL_SUPPORTED_OPERATOR_VERSION", "v1.6.0")
 )
