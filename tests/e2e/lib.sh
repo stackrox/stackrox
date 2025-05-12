@@ -47,6 +47,8 @@ deploy_stackrox() {
     local central_namespace=${2:-stackrox}
     local sensor_namespace=${3:-stackrox}
 
+    info "About to deploy StackRox (Central + Sensor)."
+
     setup_podsecuritypolicies_config
 
     deploy_stackrox_operator
@@ -72,6 +74,10 @@ deploy_stackrox() {
     wait_for_collectors_to_be_operational "${sensor_namespace}"
 
     pause_stackrox_operator_reconcile "${central_namespace}" "${sensor_namespace}"
+
+    if kubectl -n "${central_namespace}" get deployment scanner-v4-indexer >/dev/null 2>&1; then
+        wait_for_scanner_V4 "${central_namespace}"
+    fi
 
     touch "${STATE_DEPLOYED}"
 }
@@ -184,6 +190,7 @@ export_test_environment() {
     ci_export ROX_NETWORK_GRAPH_EXTERNAL_IPS "${ROX_NETWORK_GRAPH_EXTERNAL_IPS:-false}"
     ci_export ROX_FLATTEN_CVE_DATA "${ROX_FLATTEN_CVE_DATA:-false}"
     ci_export ROX_VULNERABILITY_ON_DEMAND_REPORTS "${ROX_VULNERABILITY_ON_DEMAND_REPORTS:-true}"
+    ci_export ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS "${ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS:-true}"
 
     if is_in_PR_context && pr_has_label ci-fail-fast; then
         ci_export FAIL_FAST "true"
@@ -329,13 +336,19 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: "false"'
     customize_envVars+=$'\n      - name: ROX_VULNERABILITY_ON_DEMAND_REPORTS'
     customize_envVars+=$'\n        value: "true"'
+    customize_envVars+=$'\n      - name: ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS'
+    customize_envVars+=$'\n        value: "true"'
+
+    local scannerV4ScannerComponent="Default"
+    case "${ROX_SCANNER_V4:-}" in
+        true)  scannerV4ScannerComponent="Enabled"  ;;
+        false) scannerV4ScannerComponent="Disabled" ;;
+    esac
 
     CENTRAL_YAML_PATH="tests/e2e/yaml/central-cr.envsubst.yaml"
     # Different yaml for midstream images
     if [[ "${USE_MIDSTREAM_IMAGES}" == "true" ]]; then
         CENTRAL_YAML_PATH="tests/e2e/yaml/central-cr-midstream.envsubst.yaml"
-    elif [[ "${ROX_SCANNER_V4:-false}" == "true" ]]; then
-        CENTRAL_YAML_PATH="tests/e2e/yaml/central-cr-with-scanner-v4.envsubst.yaml"
     fi
     env - \
       centralAdminPasswordBase64="$centralAdminPasswordBase64" \
@@ -346,6 +359,7 @@ deploy_central_via_operator() {
       central_exposure_loadBalancer_enabled="$central_exposure_loadBalancer_enabled" \
       central_exposure_route_enabled="$central_exposure_route_enabled" \
       customize_envVars="$customize_envVars" \
+      scannerV4ScannerComponent="$scannerV4ScannerComponent" \
     "${envsubst}" \
       < "${CENTRAL_YAML_PATH}" | kubectl apply -n "${central_namespace}" -f -
 
@@ -1095,6 +1109,61 @@ remove_compliance_operator_resources() {
     fi
 }
 
+
+wait_for_ready_deployment() {
+    local namespace="$1"
+    local deployment_name="$2"
+    local max_seconds="$3"
+
+    info "Waiting for deployment ${deployment_name} to be ready in namespace ${namespace}"
+
+    start_time="$(date '+%s')"
+    while true; do
+        deployment_json="$(kubectl -n "${namespace}" get "deploy/${deployment_name}" -o json)"
+        replicas="$(jq '.status.replicas' <<<"$deployment_json")"
+        ready_replicas="$(jq '.status.readyReplicas' <<<"$deployment_json")"
+        curr_time="$(date '+%s')"
+        elapsed_seconds=$(( curr_time - start_time ))
+
+        # Ready case. First we need to make sure that "$replicas" is an integer and not
+        # something like "null", which would cause an execution error while
+        # evaluating [[ "$replicas" -gt 0 ]].
+        if [[ "$replicas" =~ ^[0-9]+$ && "$replicas" -gt 0 && "$replicas" == "$ready_replicas" ]]; then
+            sleep 10
+            break
+        fi
+
+        # Timeout case
+        if (( elapsed_seconds > max_seconds )); then
+            kubectl -n "${namespace}" get pod -o wide
+            kubectl -n "${namespace}" get deploy -o wide
+            die "wait_for_ready_deployment() timeout after $max_seconds seconds."
+        fi
+
+        # Otherwise report and retry
+        info "Still waiting (${elapsed_seconds}s/${max_seconds}s)..."
+        sleep 5
+    done
+
+    info "Deployment ${deployment_name} is ready in namespace ${namespace}."
+}
+
+# shellcheck disable=SC2120
+wait_for_scanner_V4() {
+    local namespace="$1"
+    local max_seconds=${MAX_WAIT_SECONDS:-300}
+    info "Waiting for Scanner V4 to become ready..."
+    if [[ "${ORCHESTRATOR_FLAVOR:-}" == "openshift" ]]; then
+        # OCP Interop tests are run on minimal instances and will take longer
+        # Allow override with MAX_WAIT_SECONDS
+        max_seconds=${MAX_WAIT_SECONDS:-600}
+        info "Waiting ${max_seconds}s (increased for openshift-ci provisioned clusters) for central api and $(( max_seconds * 6 )) for ingress..."
+    fi
+
+    wait_for_ready_deployment "$namespace" "scanner-v4-indexer" "$max_seconds"
+    wait_for_ready_deployment "$namespace" "scanner-v4-matcher" "$max_seconds"
+}
+
 # shellcheck disable=SC2120
 wait_for_api() {
     local central_namespace=${1:-stackrox}
@@ -1110,31 +1179,7 @@ wait_for_api() {
     fi
     max_ingress_seconds=$(( max_seconds * 6 ))
 
-    while true; do
-        central_json="$(kubectl -n "${central_namespace}" get deploy/central -o json)"
-        replicas="$(jq '.status.replicas' <<<"$central_json")"
-        ready_replicas="$(jq '.status.readyReplicas' <<<"$central_json")"
-        curr_time="$(date '+%s')"
-        elapsed_seconds=$(( curr_time - start_time ))
-
-        # Ready case
-        if [[ "$replicas" == 1 && "$ready_replicas" == 1 ]]; then
-            sleep 30
-            break
-        fi
-
-        # Timeout case
-        if (( elapsed_seconds > max_seconds )); then
-            kubectl -n "${central_namespace}" get pod -o wide
-            kubectl -n "${central_namespace}" get deploy -o wide
-            die "wait_for_api() timeout after $max_seconds seconds."
-        fi
-
-        # Otherwise report and retry
-        info "Still waiting (${elapsed_seconds}s/${max_seconds}s)..."
-        sleep 5
-    done
-
+    wait_for_ready_deployment "$central_namespace" "central" "$max_seconds"
     info "Central deployment is ready in namespace ${central_namespace}."
     info "Waiting for Central API endpoint"
 

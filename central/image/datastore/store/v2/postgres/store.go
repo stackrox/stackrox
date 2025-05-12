@@ -437,6 +437,15 @@ func (s *storeImpl) upsert(ctx context.Context, obj *storage.Image) error {
 		}
 	}
 
+	// This check ensures that if the components table was empty, we attempt to upsert the related components
+	// so that the new data model tables are populated in the event this image has data in the scan.
+	componentsEmpty, err := s.isComponentsTableEmpty(ctx, obj.GetId())
+	if err != nil {
+		return err
+	}
+
+	scanUpdated = scanUpdated || componentsEmpty
+
 	splitParts, err := common.Split(obj, scanUpdated)
 	if err != nil {
 		return err
@@ -954,4 +963,13 @@ func getCVEComponentIndex(s string) int {
 		return 0
 	}
 	return index
+}
+
+func (s *storeImpl) isComponentsTableEmpty(ctx context.Context, imageID string) (bool, error) {
+	q := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, imageID).ProtoQuery()
+	count, err := pgSearch.RunCountRequestForSchema(ctx, pkgSchema.ImageComponentV2Schema, q, s.db)
+	if err != nil {
+		return false, err
+	}
+	return count < 1, nil
 }

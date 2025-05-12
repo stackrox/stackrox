@@ -43,6 +43,8 @@ func TestTranslate(t *testing.T) {
 	scannerComponentPolicy := platform.ScannerComponentEnabled
 	scannerAutoScalingPolicy := platform.ScannerAutoScalingEnabled
 	scannerV4ComponentDefault := platform.ScannerV4ComponentDefault
+	scannerV4ComponentEnabled := platform.ScannerV4ComponentEnabled
+	scannerV4ComponentDisabled := platform.ScannerV4ComponentDisabled
 	monitoringExposeEndpointEnabled := platform.ExposeEndpointEnabled
 	monitoringExposeEndpointDisabled := platform.ExposeEndpointDisabled
 	configAsCodeComponentEnabled := platform.ConfigAsCodeComponentEnabled
@@ -682,6 +684,55 @@ func TestTranslate(t *testing.T) {
 			},
 		},
 
+		"set _backup": {
+			args: args{
+				c: platform.Central{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "stackrox",
+					},
+					Spec: platform.CentralSpec{
+						Central: &platform.CentralComponentSpec{
+							DB: &platform.CentralDBSpec{
+								Persistence: &platform.DBPersistence{
+									PersistentVolumeClaim: &platform.DBPersistentVolumeClaim{
+										ClaimName: pointer.String("central-db-custom"),
+										Size:      pointer.String("50Gi"),
+									},
+								},
+							},
+						},
+					},
+				},
+				pvcs: []*corev1.PersistentVolumeClaim{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Namespace: "stackrox",
+							Name:      "central-db-custom-backup",
+						},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": true,
+					},
+				},
+				"central": map[string]interface{}{
+					"exposeMonitoring": false,
+					"db": map[string]interface{}{
+						"persistence": map[string]interface{}{
+							"_backup": true,
+							"persistentVolumeClaim": map[string]interface{}{
+								"claimName":   "central-db-custom",
+								"createClaim": false,
+							},
+						},
+					},
+				},
+			},
+		},
+
 		"with configured DB PVC": {
 			args: args{
 				c: platform.Central{
@@ -1143,6 +1194,74 @@ func TestTranslate(t *testing.T) {
 					"openshift": map[string]interface{}{
 						"enabled": true,
 					},
+				},
+			},
+		},
+		"enabled Scanner V4 explicitly": {
+			args: args{
+				c: platform.Central{
+					ObjectMeta: v1.ObjectMeta{
+						Namespace: "stackrox",
+					},
+					Spec: platform.CentralSpec{
+						ScannerV4: &platform.ScannerV4Spec{
+							ScannerComponent: &scannerV4ComponentEnabled,
+						},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"central": map[string]interface{}{
+					"exposeMonitoring": false,
+					"db": map[string]interface{}{
+						"persistence": map[string]interface{}{
+							"persistentVolumeClaim": map[string]interface{}{
+								"createClaim": false,
+							},
+						},
+					},
+				},
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": true,
+					},
+				},
+				"scannerV4": map[string]interface{}{
+					"disable": false,
+				},
+			},
+		},
+		"disabled Scanner V4 explicitly": {
+			args: args{
+				c: platform.Central{
+					ObjectMeta: v1.ObjectMeta{
+						Namespace: "stackrox",
+					},
+					Spec: platform.CentralSpec{
+						ScannerV4: &platform.ScannerV4Spec{
+							ScannerComponent: &scannerV4ComponentDisabled,
+						},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"central": map[string]interface{}{
+					"exposeMonitoring": false,
+					"db": map[string]interface{}{
+						"persistence": map[string]interface{}{
+							"persistentVolumeClaim": map[string]interface{}{
+								"createClaim": false,
+							},
+						},
+					},
+				},
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": true,
+					},
+				},
+				"scannerV4": map[string]interface{}{
+					"disable": true,
 				},
 			},
 		},

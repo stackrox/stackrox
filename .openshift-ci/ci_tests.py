@@ -269,6 +269,7 @@ class SensorIntegration(BaseTest):
 
 class SensorIntegrationOCP(SensorIntegration):
     def run(self):
+        # TODO(ROX-17875): make them work on OCP.
         print("Skipping the Sensor Integration Tests for OCP")
 
 

@@ -1,7 +1,5 @@
 [<- if not .KubectlOutput >]
 scannerV4:
-  [</* On secured-clusters local scanners (irregardless of the version) require explicit activation. */>]
-  disable: true
   indexer:
     disable: false
     replicas: 2

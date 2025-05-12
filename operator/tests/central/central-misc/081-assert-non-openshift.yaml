@@ -41,6 +41,8 @@ spec:
               value: "false"
             - name: ROX_INSTALL_METHOD
               value: "operator"
+            - name: ROX_SCANNER_V4
+              value: "true"
             - name: NO_PROXY
               valueFrom:
                 secretKeyRef:

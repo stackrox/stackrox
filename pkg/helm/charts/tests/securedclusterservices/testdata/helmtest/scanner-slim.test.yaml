@@ -2,8 +2,6 @@ values:
   monitoring:
     openshift:
       enabled: false
-  scannerV4:
-    disable: true
 server:
   visibleSchemas:
   - openshift-4.1.0
@@ -25,13 +23,22 @@ tests:
     set:
       env.openshift: 3
 
-- name: "scanner is disabled by default, neither deployments nor SA should be created"
+- name: "scanner is enabled by default"
   set:
     imagePullSecrets.allowNone: true
   expect: |
-    .deployments["scanner"] | assertThat(. == null)
-    .deployments["scanner-db"] | assertThat(. == null)
-    .serviceaccounts["scanner"] | assertThat(. == null)
+    .deployments["scanner"] | assertThat(. != null)
+    .deployments["scanner-db"] | assertThat(. != null)
+    .serviceaccounts["scanner"] | assertThat(. != null)
+
+- name: "scanner V4 is enabled by default"
+  set:
+    imagePullSecrets.allowNone: true
+  expect: |
+    .deployments["scanner-v4-indexer"] | assertThat(. != null)
+    .deployments["scanner-v4-db"] | assertThat(. != null)
+    .serviceaccounts["scanner-v4"] | assertThat(. != null)
+
 
 - name: "scanner can override image config"
   set:
@@ -148,9 +155,15 @@ tests:
       scanner.disable: false
     expect: |
       envVars(.deployments.sensor; "sensor")["ROX_LOCAL_IMAGE_SCANNING_ENABLED"] | assertThat(. == "true")
+  - name: "local scanner enabled"
+    set:
+      scannerV4.disable: false
+    expect: |
+      envVars(.deployments.sensor; "sensor")["ROX_LOCAL_IMAGE_SCANNING_ENABLED"] | assertThat(. == "true")
   - name: "local scanner disabled"
     set:
       scanner.disable: true
+      scannerV4.disable: true
     expect: |
       envVars(.deployments.sensor; "sensor")| assertThat(has("ROX_LOCAL_IMAGE_SCANNING_ENABLED") == false)
 

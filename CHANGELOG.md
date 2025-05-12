@@ -13,6 +13,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ### Added Features
 
+- ROX-29152: When using the secured-cluster-services Helm chart for new installations StackRox Scanner and Scanner V4 will be installed unless explicitly disabled (opt-out).
+  For upgrades using the new chart version scanners continue to be not installed by default (opt-in).
 - ROX-13493: Support for scale subresource in the admission controller to enable policy detection and enforcement on admission review requests on the scale subresource.
 - RHPF-98: Log creation of API token. The token creation log message will trigger an administration event.
 - ROX-28716: New policy criterion "Days Since CVE Was Published" to allow creation of a policy that offers a grace period to teams to fix vulnerabilities within the number of days from when the CVE was published in the vulnerability feeds.
@@ -20,6 +22,9 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-28153: Support for Cosign keyless signing and verification of image signatures.
 - ROX-28306: When using the central-services Helm chart for new installations Scanner V4 will be installed unless explicitly disabled (opt-out).
   For upgrades using the new chart version Scanner V4 continues to be not installed by default (opt-in).
+- ROX-28655: When managing a Central installation using the operator
+  * Scanner V4 will be installed for new installations unless explicitly disabled (opt-out) and
+  * Scanner V4 will remain not installed for upgrades unless explicitly enabled (opt-in).
 
 ### Removed Features
 

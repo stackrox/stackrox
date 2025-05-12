@@ -140,17 +140,17 @@ require (
 	go.uber.org/goleak v1.3.0
 	go.uber.org/mock v0.5.2
 	go.uber.org/zap v1.27.0
-	golang.org/x/crypto v0.37.0
+	golang.org/x/crypto v0.38.0
 	golang.org/x/exp v0.0.0-20250305212735-054e65f0b394
 	golang.org/x/mod v0.24.0
-	golang.org/x/net v0.39.0
+	golang.org/x/net v0.40.0
 	golang.org/x/oauth2 v0.29.0
-	golang.org/x/sync v0.13.0
+	golang.org/x/sync v0.14.0
 	golang.org/x/sys v0.33.0
-	golang.org/x/term v0.31.0
-	golang.org/x/text v0.24.0
+	golang.org/x/term v0.32.0
+	golang.org/x/text v0.25.0
 	golang.org/x/time v0.11.0
-	golang.org/x/tools v0.32.0
+	golang.org/x/tools v0.33.0
 	golang.stackrox.io/grpc-http1 v0.4.0
 	google.golang.org/api v0.231.0
 	google.golang.org/genproto v0.0.0-20250303144028-a0af3efb3deb
@@ -163,7 +163,7 @@ require (
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5
 	gopkg.in/yaml.v3 v3.0.1
 	gorm.io/driver/postgres v1.5.11
-	gorm.io/gorm v1.26.0
+	gorm.io/gorm v1.26.1
 	helm.sh/helm/v3 v3.17.3
 	k8s.io/api v0.32.4
 	k8s.io/apiextensions-apiserver v0.32.4
