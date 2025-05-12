@@ -88,8 +88,17 @@ func (m *manifestGenerator) Export(ctx context.Context, generators []Generator) 
 				panic(err)
 			}
 
+			md := objMap["metadata"].(map[string]interface{})
+
+			// Add a label to make it easier to clean up all the resources
+			labels, exists := objMap["labels"]
+			if !exists {
+				labels = map[string]string{}
+			}
+			labels.(map[string]string)["system"] = "stackrox"
+
+			delete(md, "creationTimestamp")
 			delete(objMap, "status")
-			delete(objMap["metadata"].(map[string]interface{}), "creationTimestamp")
 
 			var buf bytes.Buffer
 			encoder := yaml.NewEncoder(&buf)
