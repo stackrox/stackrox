@@ -167,6 +167,10 @@ test_upgrade_paths() {
 
     touch "${UPGRADE_PROGRESS_POSTGRES_CENTRAL_DB_BOUNCE}"
 
+    # Since central gets upgraded, connection with sensor will be terminated several times.
+    # To avoid sensor restarts we will scale it down.
+    kubectl -n stackrox patch deploy/sensor -p '{ "spec": { "replicas": 0 } }';
+
     ########################################################################################
     # Upgrade back to latest to run the smoke tests by first walking previous releases     #
     ########################################################################################
@@ -287,7 +291,9 @@ force_rollback_to_previous_postgres() {
 
     kubectl -n stackrox patch configmap/central-config -p "$config_patch"
     kubectl -n stackrox set image deploy/central "central=$REGISTRY/main:$FORCE_ROLLBACK_VERSION"
-    kubectl -n stackrox set image deploy/central-db "*=$REGISTRY/central-db:$FORCE_ROLLBACK_VERSION"
+
+    # Do not rollback central-db image, since downgrade from PG15 to PG13 is
+    # not possible.
 }
 
 deploy_scaled_workload() {

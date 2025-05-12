@@ -2,20 +2,10 @@ package scanner
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
-	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/meta"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
-	ctrlLog "sigs.k8s.io/controller-runtime/pkg/log"
-)
-
-const (
-	// clusterVersionDefaultName is a default name for the auto created ClusterVersion k8s custom resource on OpenShift.
-	clusterVersionDefaultName = "version"
 )
 
 // AutoSenseResult represents the configurations which can be auto-sensed.
@@ -76,41 +66,11 @@ func autoSense(ctx context.Context, client ctrlClient.Client, namespace string) 
 	if err != nil {
 		return AutoSenseResult{}, errors.Wrap(err, "detecting presence of a Central CR in the same namespace")
 	}
-	isOpenShift, err := isRunningOnOpenShift(ctx, client)
-	if err != nil {
-		return AutoSenseResult{}, errors.Wrap(err, "cannot fetch OpenShift ClusterVersion resource")
-	}
-	if !isOpenShift {
-		return AutoSenseResult{}, nil
-	}
 	return AutoSenseResult{
 		// Only deploy scanner resource if Central is not available in the same namespace.
 		DeployScannerResources:   !siblingCentralPresent,
 		EnableLocalImageScanning: true,
 	}, nil
-}
-
-func isRunningOnOpenShift(ctx context.Context, client ctrlClient.Client) (bool, error) {
-	log := ctrlLog.FromContext(ctx)
-
-	clusterVersion := &unstructured.Unstructured{}
-	clusterVersion.SetKind("ClusterVersion")
-	clusterVersion.SetAPIVersion("config.openshift.io/v1")
-	key := ctrlClient.ObjectKey{Name: clusterVersionDefaultName}
-
-	err := client.Get(ctx, key, clusterVersion)
-	if err != nil && k8sErrors.IsNotFound(err) {
-		log.Info(fmt.Sprintf("OpenShift ClusterVersion kind is present, but its %q object was not found (cluster not ready?)", clusterVersionDefaultName))
-		return false, err
-	} else if err != nil && meta.IsNoMatchError(err) {
-		log.Info("Running on Kubernetes, OpenShift ClusterVersion kind does not exist")
-		return false, nil
-	} else if err != nil {
-		log.Error(err, "Failed to get ClusterVersion")
-		return false, err
-	}
-
-	return true, nil
 }
 
 func isSiblingCentralPresent(ctx context.Context, client ctrlClient.Client, namespace string) (bool, error) {

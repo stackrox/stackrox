@@ -1,4 +1,5 @@
-FROM registry.redhat.io/rhel8/postgresql-13:latest AS final
+ARG PG_VERSION=15
+FROM registry.redhat.io/rhel8/postgresql-${PG_VERSION}:latest@sha256:0576206b44a5cb073b6364f7af104a4a17994f9bb8c7a948da9588d6b4bbf1e8 AS final
 
 USER root
 
@@ -24,8 +25,7 @@ LABEL \
     # We also set it to not inherit one from a base stage in case it's RHEL or UBI.
     release="1"
 
-RUN dnf upgrade -y --nobest && \
-    localedef -f UTF-8 -i en_US en_US.UTF-8 && \
+RUN localedef -f UTF-8 -i en_US en_US.UTF-8 && \
     mkdir -p /var/lib/postgresql && \
     groupmod -g 70 postgres && \
     usermod -u 70 postgres -d /var/lib/postgresql && \

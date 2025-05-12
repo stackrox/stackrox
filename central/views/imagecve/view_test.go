@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	imageSamples "github.com/stackrox/rox/pkg/fixtures/image"
 	"github.com/stackrox/rox/pkg/pointers"
@@ -28,6 +29,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/sac/testutils"
+	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
 	"github.com/stackrox/rox/pkg/search/scoped"
@@ -110,7 +112,6 @@ type ImageCVEViewTestSuite struct {
 }
 
 func (s *ImageCVEViewTestSuite) SetupSuite() {
-
 	ctx := sac.WithAllAccess(context.Background())
 	s.testDB = pgtest.ForT(s.T())
 
@@ -572,7 +573,7 @@ func (s *ImageCVEViewTestSuite) testCases() []testCase {
 		{
 			desc:        "no match",
 			ctx:         context.Background(),
-			q:           search.NewQueryBuilder().AddExactMatches(search.OperatingSystem, "").ProtoQuery(),
+			q:           search.NewQueryBuilder().AddExactMatches(search.CVE, "").ProtoQuery(),
 			matchFilter: matchNoneFilter(),
 		},
 		{
@@ -961,7 +962,12 @@ func compileExpected(images []*storage.Image, filter *filterImpl, options views.
 
 				val.TopCVSS = pointers.Float32(max(val.GetTopCVSS(), vuln.GetCvss()))
 
-				id := cve.ID(val.GetCVE(), image.GetScan().GetOperatingSystem())
+				var id string
+				if features.FlattenCVEData.Enabled() {
+					id, _ = cve.IDV2(vuln, getTestComponentID(component, image.GetId()))
+				} else {
+					id = cve.ID(val.GetCVE(), image.GetScan().GetOperatingSystem())
+				}
 				var found bool
 				for _, seenID := range val.GetCVEIDs() {
 					if seenID == id {
@@ -1378,4 +1384,10 @@ func testImages() []*storage.Image {
 			},
 		},
 	}
+}
+
+func getTestComponentID(testComponent *storage.EmbeddedImageScanComponent, imageID string) string {
+	id, _ := scancomponent.ComponentIDV2(testComponent, imageID)
+
+	return id
 }

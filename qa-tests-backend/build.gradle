@@ -4,7 +4,10 @@ plugins {
     id "codenarc"
 }
 
-sourceCompatibility = 1.11
+java {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+}
 version = '1.0'
 
 codenarc.configFile = file("./codenarc-rules.groovy")
@@ -12,6 +15,7 @@ codenarc.reportFormat = 'text'
 
 // In this section you declare where to find the dependencies of your project
 repositories {
+    mavenLocal()
     mavenCentral()
 }
 
@@ -19,7 +23,7 @@ def grpcVersion = '1.69.0'
 // If the proto versions are changed, be sure it is also changed in make/protogen.mk.
 def protobufVersion = '4.30.2'
 def nettyTcNativeVersion = '2.0.61.Final'
-def fabric8Version = '7.1.0'
+def fabric8Version = '7.2.0'
 def jacksonVersion = '2.14.2'
 
 protobuf {
@@ -58,8 +62,8 @@ sourceSets.each { ss ->
 
 dependencies {
     // grpc and protobuf
-    implementation 'com.google.code.gson:gson:2.13.0'
-    implementation "com.google.api.grpc:proto-google-common-protos:2.54.1"
+    implementation 'com.google.code.gson:gson:2.13.1'
+    implementation "com.google.api.grpc:proto-google-common-protos:2.56.0"
     implementation "io.grpc:grpc-alts:${grpcVersion}"
     implementation "io.grpc:grpc-netty:${grpcVersion}"
     implementation "io.grpc:grpc-protobuf:${grpcVersion}"
@@ -90,7 +94,7 @@ dependencies {
     implementation group: 'commons-httpclient', name: 'commons-httpclient', version: '3.1'
     implementation group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.14'
 
-    implementation group: 'com.opencsv', name: 'opencsv', version: '5.10'
+    implementation group: 'com.opencsv', name: 'opencsv', version: '5.11'
 
     implementation group: 'commons-cli', name: 'commons-cli', version: '1.9.0'
 
@@ -117,6 +121,8 @@ dependencies {
     implementation group: 'org.picocontainer', name: 'picocontainer', version: '2.15.2'
 
     implementation 'commons-codec:commons-codec:1.18.0'
+
+    implementation project(":annotations")
 }
 
 // Apply some base attributes to all the test tasks.

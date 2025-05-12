@@ -11,12 +11,14 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
+	"github.com/stackrox/rox/operator/internal/central/carotation"
 	"github.com/stackrox/rox/operator/internal/common"
 	commonExtensions "github.com/stackrox/rox/operator/internal/common/extensions"
 	commonLabels "github.com/stackrox/rox/operator/internal/common/labels"
 	"github.com/stackrox/rox/operator/internal/types"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/certgen"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/services"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -28,7 +30,15 @@ const (
 	// InitBundleReconcilePeriod is the maximum period required for reconciliation of an init bundle.
 	// It must be sufficient to renew an ephemeral init bundle certificate which has relatively short lifetime (within a matter of hours).
 	// NB: keep in sync with crypto.ephemeralProfileWithExpirationInHoursCertLifetime
-	InitBundleReconcilePeriod = 1 * time.Hour
+	InitBundleReconcilePeriod   = 1 * time.Hour
+	envCentralCARotationEnabled = "CENTRAL_CA_ROTATION_ENABLED"
+)
+
+var (
+	// centralCARotationEnabled is a feature flag for the Central CA rotation feature. Defaults to false because
+	// the feature is still under active development.
+	// TODO: Remove when epic ROX-20262 is complete.
+	centralCARotationEnabled = env.RegisterBooleanSetting(envCentralCARotationEnabled, false)
 )
 
 // ReconcileCentralTLSExtensions returns an extension that takes care of creating the central-tls and related
@@ -49,9 +59,10 @@ func reconcileCentralTLS(ctx context.Context, c *platform.Central, client ctrlCl
 type createCentralTLSExtensionRun struct {
 	*commonExtensions.SecretReconciliator
 
-	ca          mtls.CA
-	centralObj  *platform.Central
-	currentTime time.Time
+	ca               mtls.CA // primary CA, used to issue Central-services certificates
+	caRotationAction carotation.Action
+	centralObj       *platform.Central
+	currentTime      time.Time
 }
 
 func (r *createCentralTLSExtensionRun) Execute(ctx context.Context) error {
@@ -142,10 +153,43 @@ func (r *createCentralTLSExtensionRun) validateAndConsumeCentralTLSData(fileMap 
 	if err := r.ca.CheckProperties(); err != nil {
 		return errors.Wrap(err, "loaded service CA certificate is invalid")
 	}
+
+	if centralCARotationEnabled.BooleanSetting() {
+		if err := r.checkCertificateTimeValidity(r.ca.Certificate()); err != nil {
+			return errors.Wrap(err, "primary CA is not valid at the present time")
+		}
+
+		rotationAction, err := r.determineCARotationAction(fileMap)
+		if err != nil {
+			return err
+		}
+		r.caRotationAction = rotationAction
+		if r.caRotationAction != carotation.NoAction {
+			return errors.New("CA rotation action needed")
+		}
+	}
+
 	if err := r.validateServiceTLSData(storage.ServiceType_CENTRAL_SERVICE, "", fileMap); err != nil {
 		return errors.Wrap(err, "verifying existing central service TLS certificate failed")
 	}
 	return nil
+}
+
+func (r *createCentralTLSExtensionRun) determineCARotationAction(fileMap types.SecretDataMap) (carotation.Action, error) {
+	secondaryCA, err := certgen.LoadSecondaryCAFromFileMap(fileMap)
+	var secondaryCACert *x509.Certificate
+	// the presence of a secondary CA certificate is optional
+	if err != nil && !errors.Is(err, certgen.ErrNoCACert) {
+		return carotation.NoAction, errors.Wrap(err, "loading secondary CA failed")
+	}
+	if secondaryCA != nil {
+		if err := secondaryCA.CheckProperties(); err != nil {
+			return carotation.NoAction, errors.Wrap(err, "loaded secondary service CA certificate is invalid")
+		}
+		secondaryCACert = secondaryCA.Certificate()
+	}
+
+	return carotation.DetermineAction(r.ca.Certificate(), secondaryCACert, r.currentTime), nil
 }
 
 func (r *createCentralTLSExtensionRun) generateCentralTLSData(old types.SecretDataMap) (types.SecretDataMap, error) {
@@ -156,6 +200,24 @@ func (r *createCentralTLSExtensionRun) generateCentralTLSData(old types.SecretDa
 	r.ca, newFileMap, err = validateOrGenerateCA(r.ca, old)
 	if err != nil {
 		return nil, err
+	}
+
+	if centralCARotationEnabled.BooleanSetting() {
+		if err = validateSecondaryCA(old, newFileMap); err != nil {
+			return nil, err
+		}
+
+		if err = carotation.Handle(r.caRotationAction, newFileMap); err != nil {
+			return nil, errors.Wrapf(err, "performing CA rotation action: %v", r.caRotationAction)
+		}
+
+		if r.caRotationAction == carotation.PromoteSecondary {
+			primaryCA, err := certgen.LoadCAFromFileMap(newFileMap)
+			if err != nil {
+				return nil, errors.Wrap(err, "reloading new primary CA failed")
+			}
+			r.ca = primaryCA
+		}
 	}
 
 	if err := certgen.IssueCentralCert(newFileMap, r.ca, mtls.WithNamespace(r.centralObj.GetNamespace())); err != nil {
@@ -191,7 +253,7 @@ func validateOrGenerateCA(oldCA mtls.CA, oldFileMap types.SecretDataMap) (mtls.C
 	caCert, caCertPresent := oldFileMap[mtls.CACertFileName]
 	caKey, caKeyPresent := oldFileMap[mtls.CAKeyFileName]
 	if caCertPresent && caKeyPresent {
-		// There is an existing CA in the secret. Avoid changing at all cost it, as doing so would immediately cause
+		// There is an existing CA in the secret. Avoid changing it at all cost, as doing so would immediately cause
 		// all previously issued certificates (including sensor certificates and init bundles) to become invalid,
 		// and this is very unlikely to result in a working state.
 		newFileMap[mtls.CACertFileName] = caCert
@@ -216,6 +278,48 @@ func validateOrGenerateCA(oldCA mtls.CA, oldFileMap types.SecretDataMap) (mtls.C
 		return nil, nil, fmt.Errorf(msg, mtls.CAKeyFileName, mtls.CACertFileName)
 	}
 	return nil, nil, fmt.Errorf(msg, mtls.CACertFileName, mtls.CAKeyFileName)
+}
+
+func validateSecondaryCA(oldFileMap, newFileMap types.SecretDataMap) error {
+	caCert, caCertPresent := oldFileMap[mtls.SecondaryCACertFileName]
+	caKey, caKeyPresent := oldFileMap[mtls.SecondaryCAKeyFileName]
+
+	if caCertPresent && caKeyPresent {
+		_, err := certgen.LoadSecondaryCAFromFileMap(oldFileMap)
+		if err != nil {
+			// Secured Clusters might already be using the secondary CA to connect to Central, so re-creating it will
+			// not fix things.
+			return errors.Wrap(err, "invalid secondary CA in the existing secret, please delete it to allow re-generation")
+		}
+
+		newFileMap[mtls.SecondaryCACertFileName] = caCert
+		newFileMap[mtls.SecondaryCAKeyFileName] = caKey
+		return nil
+	} else if caCertPresent || caKeyPresent {
+		const msg = "malformed secret (%s present but %s missing), please delete it to allow re-generation"
+		if !caCertPresent {
+			return fmt.Errorf(msg, mtls.CAKeyFileName, mtls.CACertFileName)
+		}
+		return fmt.Errorf(msg, mtls.CACertFileName, mtls.CAKeyFileName)
+	}
+
+	return nil
+}
+
+func (r *createCentralTLSExtensionRun) checkCertificateTimeValidity(certificate *x509.Certificate) error {
+	startTime := certificate.NotBefore
+	endTime := certificate.NotAfter
+	if !endTime.After(startTime) {
+		return fmt.Errorf("certificate expires at %s before it begins to be valid at %s", endTime, startTime)
+	}
+	if r.currentTime.Before(startTime) {
+		return fmt.Errorf("certificate lifetime start %s is in the future", startTime)
+	}
+	if r.currentTime.After(endTime) {
+		return fmt.Errorf("certificate expired at %s", endTime)
+	}
+
+	return nil
 }
 
 func (r *createCentralTLSExtensionRun) reconcileCentralDBTLSSecret(ctx context.Context) error {
@@ -271,17 +375,11 @@ func (r *createCentralTLSExtensionRun) validateServiceTLSData(serviceType storag
 }
 
 func (r *createCentralTLSExtensionRun) checkCertRenewal(certificate *x509.Certificate) error {
+	if err := r.checkCertificateTimeValidity(certificate); err != nil {
+		return err
+	}
 	startTime := certificate.NotBefore
 	endTime := certificate.NotAfter
-	if !endTime.After(startTime) {
-		return fmt.Errorf("certificate expires at %s before it begins to be valid at %s", endTime, startTime)
-	}
-	if r.currentTime.Before(startTime) {
-		return fmt.Errorf("certificate lifetime start %s is in the future", startTime)
-	}
-	if r.currentTime.After(endTime) {
-		return fmt.Errorf("certificate expired at %s", endTime)
-	}
 	validityDuration := endTime.Sub(startTime)
 	halfOfValidityDuration := time.Duration(validityDuration.Nanoseconds()/2) * time.Nanosecond
 	refreshTime := startTime.Add(halfOfValidityDuration)

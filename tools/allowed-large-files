@@ -1,4 +1,5 @@
 **/go.sum
+**/zz_generated.deepcopy.go
 CHANGELOG.md
 central/alert/datastore/internal/store/postgres/store.go
 central/cluster/datastore/datastore_impl_test.go
@@ -42,6 +43,7 @@ qa-tests-backend/src/main/**/*.groovy
 qa-tests-backend/src/test/**/*.groovy
 qa-tests-backend/test-images/registry-image/tomcat-files/web.xml
 roxctl/helm/derivelocalvalues/testdata/k8s-resources/*.yaml
+rpms.lock.yaml
 scale/image/fixtures/scrape.json
 scanner/cmd/scannerctl/fixtures/images.json
 scanner/e2etests/testdata/image_tests.json
@@ -49,9 +51,11 @@ scanner/e2etests/testdata/image_tests.orig.json
 scanner/enricher/csaf/testdata/*
 scanner/enricher/nvd/testdata/feed.json
 scripts/ci/lib.sh
+sensor/common/networkflow/manager/manager_impl.go
 sensor/tests/data/policies.json
 sensor/upgrader/preflight/testdata/k8s-1.22.json.gz
 tests/e2e/lib.sh
+tests/e2e/run-scanner-v4-install.bats
 tests/performance/load/package-lock.json
 tests/performance/scale/config/metrics-acs.yml
 tests/performance/scale/config/metrics-full.yml

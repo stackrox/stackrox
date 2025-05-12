@@ -4,6 +4,7 @@ import (
 	pkgReconciler "github.com/operator-framework/helm-operator-plugins/pkg/reconciler"
 	"github.com/stackrox/rox/image"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
+	"github.com/stackrox/rox/operator/internal/central/common"
 	"github.com/stackrox/rox/operator/internal/central/extensions"
 	centralTranslation "github.com/stackrox/rox/operator/internal/central/values/translation"
 	commonExtensions "github.com/stackrox/rox/operator/internal/common/extensions"
@@ -21,6 +22,8 @@ import (
 // RegisterNewReconciler registers a new helm reconciler in the given k8s controller manager
 func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 	proxyEnv := proxy.GetProxyEnvVars() // fix at startup time
+	// IMPORTANT: reconciler preExtensions that implement feature-defaulting logic (such as ReconcileScannerV4FeatureDefaultsExtension)
+	// must be executed first. Hence, they need to be first in order when registering extensions using WithPreExtension!
 	opts := []pkgReconciler.Option{
 		pkgReconciler.WithExtraWatch(
 			source.Kind[*platform.SecuredCluster](
@@ -30,6 +33,7 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 				// Only appearance and disappearance of a SecuredCluster resource can influence whether
 				// an init bundle should be created by the Central controller.
 				utils.CreateAndDeleteOnlyPredicate[*platform.SecuredCluster]{})),
+		pkgReconciler.WithPreExtension(extensions.ReconcileScannerV4FeatureDefaultsExtension(mgr.GetClient())),
 		pkgReconciler.WithPreExtension(extensions.ReconcileCentralTLSExtensions(mgr.GetClient(), mgr.GetAPIReader())),
 		pkgReconciler.WithPreExtension(extensions.ReconcileCentralDBPasswordExtension(mgr.GetClient(), mgr.GetAPIReader())),
 		pkgReconciler.WithPreExtension(extensions.ReconcileScannerDBPasswordExtension(mgr.GetClient(), mgr.GetAPIReader())),
@@ -37,6 +41,7 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 		pkgReconciler.WithPreExtension(extensions.ReconcileAdminPasswordExtension(mgr.GetClient(), mgr.GetAPIReader())),
 		pkgReconciler.WithPreExtension(extensions.ReconcilePVCExtension(mgr.GetClient(), mgr.GetAPIReader(), extensions.PVCTargetCentral, extensions.DefaultCentralPVCName)),
 		pkgReconciler.WithPreExtension(extensions.ReconcilePVCExtension(mgr.GetClient(), mgr.GetAPIReader(), extensions.PVCTargetCentralDB, extensions.DefaultCentralDBPVCName)),
+		pkgReconciler.WithPreExtension(extensions.ReconcilePVCExtension(mgr.GetClient(), mgr.GetAPIReader(), extensions.PVCTargetCentralDBBackup, common.DefaultCentralDBBackupPVCName, extensions.WithDefaultClaimSize(extensions.DefaultBackupPVCSize))),
 		pkgReconciler.WithPreExtension(proxy.ReconcileProxySecretExtension(mgr.GetClient(), mgr.GetAPIReader(), proxyEnv)),
 		pkgReconciler.WithPreExtension(commonExtensions.CheckForbiddenNamespacesExtension(commonExtensions.IsSystemNamespace)),
 		pkgReconciler.WithPreExtension(commonExtensions.ReconcileProductVersionStatusExtension(version.GetMainVersion())),

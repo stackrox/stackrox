@@ -43,7 +43,22 @@ func TestNewGenericCachedStore(t *testing.T) {
 		doNothingDurationTimeSetter,
 		doNothingDurationTimeSetter,
 		doNothingDurationTimeSetter,
-		GloballyScopedUpsertChecker[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct](resources.Namespace),
+		globallyScopedUpsertChecker[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct](resources.Namespace),
+		resources.Namespace,
+	))
+}
+
+func TestNewGloballyScopedGenericCachedStore(t *testing.T) {
+	testDB := pgtest.ForT(t)
+	assert.NotNil(t, NewGloballyScopedGenericStoreWithCache[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct](
+		testDB.DB,
+		pkgSchema.TestSingleKeyStructsSchema,
+		pkGetterForCache,
+		insertIntoTestSingleKeyStructsWithCache,
+		copyFromTestSingleKeyStructsWithCache,
+		doNothingDurationTimeSetter,
+		doNothingDurationTimeSetter,
+		doNothingDurationTimeSetter,
 		resources.Namespace,
 	))
 }
@@ -268,6 +283,40 @@ func TestCachedWalkContextCancelation(t *testing.T) {
 	assert.ErrorIs(t, err, context.Canceled)
 }
 
+func TestCachedGetByQueryDoesNotModifyTheObject(t *testing.T) {
+	testDB := pgtest.ForT(t)
+	store := newCachedStore(testDB)
+	require.NotNil(t, store)
+
+	testObjects := sampleCachedTestSingleKeyStructArray("WalkByQuery")
+	err := store.UpsertMany(cachedStoreCtx, testObjects)
+	require.NoError(t, err)
+
+	query2 := getCachedMatchFieldQuery("Test Name", "Test WalkByQuery 2")
+	query4 := getCachedMatchFieldQuery("Test Key", "TestWalkByQuery4")
+	query := getCachedDisjunctionQuery(query2, query4)
+
+	walkedNames := make([]string, 0, len(testObjects))
+	walkFn := func(obj *storage.TestSingleKeyStruct) error {
+		walkedNames = append(walkedNames, obj.Name)
+		obj.Name = "changed"
+		return nil
+	}
+	err = store.GetByQueryFn(cachedStoreCtx, query, walkFn)
+	require.NoError(t, err)
+
+	expectedNames := []string{
+		"Test WalkByQuery 2",
+		"Test WalkByQuery 4",
+	}
+	assert.ElementsMatch(t, expectedNames, walkedNames)
+
+	walkedNames = make([]string, 0, len(testObjects))
+	err = store.GetByQueryFn(cachedStoreCtx, nil, walkFn)
+	assert.NoError(t, err)
+	assert.Subset(t, walkedNames, expectedNames)
+}
+
 func TestCachedWalkByQuery(t *testing.T) {
 	testDB := pgtest.ForT(t)
 	store := newCachedStore(testDB)
@@ -318,6 +367,11 @@ func TestCachedWalkByQueryContextCancelation(t *testing.T) {
 		return nil
 	}
 	err = store.WalkByQuery(ctx, nil, walkFn)
+
+	assert.ErrorIs(t, err, context.Canceled)
+
+	q := getCachedMatchFieldQuery("Test Name", "Test WalkByQuery 2")
+	err = store.WalkByQuery(ctx, q, walkFn)
 
 	assert.ErrorIs(t, err, context.Canceled)
 }
@@ -508,7 +562,7 @@ func newCachedStore(testDB *pgtest.TestPostgres) Store[storage.TestSingleKeyStru
 		doNothingDurationTimeSetter,
 		doNothingDurationTimeSetter,
 		doNothingDurationTimeSetter,
-		GloballyScopedUpsertChecker[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct](resources.Namespace),
+		globallyScopedUpsertChecker[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct](resources.Namespace),
 		resources.Namespace,
 	)
 }

@@ -137,9 +137,7 @@ func Test_apiCall(t *testing.T) {
 		},
 	}
 	require.NoError(t, permanentTelemetryCampaign.Compile())
-	anyTestEndpoint := &phonehome.APICallCampaignCriterion{
-		Path: phonehome.Pattern("*test*").Ptr(),
-	}
+	anyTestEndpoint := phonehome.PathPattern("*test*")
 	appendRuntimeCampaign(&phonehome.RuntimeConfig{
 		APICallCampaign: phonehome.APICallCampaign{anyTestEndpoint},
 	})
@@ -216,9 +214,7 @@ func Test_addCustomHeaders(t *testing.T) {
 		}, props)
 	})
 	t.Run("add header from the single criterion", func(t *testing.T) {
-		tc = append(tc, &phonehome.APICallCampaignCriterion{
-			Headers: map[string]phonehome.Pattern{"Custom-Header": ""},
-		})
+		tc = append(tc, phonehome.HeaderPattern("Custom-Header", ""))
 		require.NoError(t, tc.Compile())
 		rp := &phonehome.RequestParams{
 			Method: "GET",

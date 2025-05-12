@@ -31,7 +31,10 @@ var (
 	targetResource = resources.Integration
 )
 
-type storeType = storage.SignatureIntegration
+type (
+	storeType = storage.SignatureIntegration
+	callback  = func(obj *storeType) error
+)
 
 // Store is the interface to interact with the storage for storage.SignatureIntegration
 type Store interface {
@@ -50,16 +53,16 @@ type Store interface {
 	GetMany(ctx context.Context, identifiers []string) ([]*storeType, []int, error)
 	GetIDs(ctx context.Context) ([]string, error)
 
-	Walk(ctx context.Context, fn func(obj *storeType) error) error
-	WalkByQuery(ctx context.Context, query *v1.Query, fn func(obj *storeType) error) error
+	Walk(ctx context.Context, fn callback) error
+	WalkByQuery(ctx context.Context, query *v1.Query, fn callback) error
 }
 
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB) Store {
-	// Use of pgSearch.NewGenericStoreWithCache can be dangerous with high cardinality stores,
+	// Use of pgSearch.NewGloballyScopedGenericStoreWithCache can be dangerous with high cardinality stores,
 	// and be the source of memory pressure. Think twice about the need for in-memory caching
 	// of the whole store.
-	return pgSearch.NewGenericStoreWithCache[storeType, *storeType](
+	return pgSearch.NewGloballyScopedGenericStoreWithCache[storeType, *storeType](
 		db,
 		schema,
 		pkGetter,
@@ -68,8 +71,6 @@ func New(db postgres.DB) Store {
 		metricsSetAcquireDBConnDuration,
 		metricsSetPostgresOperationDurationTime,
 		metricsSetCacheOperationDurationTime,
-
-		pgSearch.GloballyScopedUpsertChecker[storeType, *storeType](targetResource),
 		targetResource,
 	)
 }

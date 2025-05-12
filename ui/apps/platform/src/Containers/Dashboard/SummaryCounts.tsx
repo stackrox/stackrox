@@ -11,6 +11,7 @@ import {
     vulnerabilitiesWorkloadCvesPath,
 } from 'routePaths';
 import { resourceTypes } from 'constants/entityTypes';
+import { getDateTime } from 'utils/dateUtils';
 import { generatePathWithQuery } from 'utils/searchUtils';
 
 import SummaryCount from './SummaryCount';
@@ -44,10 +45,6 @@ const tileNouns: Record<TileResource, string> = {
     Image: 'Image',
     Secret: 'Secret',
 };
-
-const locale = window.navigator.language ?? 'en-US';
-const dateFormatter = new Intl.DateTimeFormat(locale);
-const timeFormatter = new Intl.DateTimeFormat(locale, { hour: 'numeric', minute: 'numeric' });
 
 export type SummaryCountsProps = {
     hasReadAccessForResource: Record<TileResource, boolean>;
@@ -131,9 +128,7 @@ function SummaryCounts({ hasReadAccessForResource }: SummaryCountsProps): ReactE
                 </Split>
             </SplitItem>
             <div className="pf-v5-u-color-200 pf-v5-u-font-size-sm pf-v5-u-mr-md pf-v5-u-mr-lg-on-lg">
-                {`Last updated ${dateFormatter.format(lastUpdate)} at ${timeFormatter.format(
-                    lastUpdate
-                )}`}
+                {`Last updated ${getDateTime(lastUpdate)}`}
             </div>
         </Split>
     );

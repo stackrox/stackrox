@@ -1,14 +1,12 @@
 import React, { ReactElement } from 'react';
 import { Link } from 'react-router-dom';
 import pluralize from 'pluralize';
-import dateFns from 'date-fns';
 import startCase from 'lodash/startCase';
 import { Flex, FlexItem, Tooltip } from '@patternfly/react-core';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
 
 import IconText from 'Components/PatternFly/IconText/IconText';
 import PolicySeverityIconText from 'Components/PatternFly/IconText/PolicySeverityIconText';
-import dateTimeFormat from 'constants/dateTimeFormat';
 import { lifecycleStageLabels } from 'messages/common';
 import {
     BLOCKING_ENFORCEMENT_ACTIONS,
@@ -19,6 +17,7 @@ import LIFECYCLE_STAGES from 'constants/lifecycleStages';
 import { violationsBasePath } from 'routePaths';
 import { ListAlert } from 'types/alert.proto';
 import { FilteredWorkflowView } from 'Components/FilteredWorkflowViewSelector/types';
+import { getDateTime } from 'utils/dateUtils';
 
 type EntityTableCellProps = {
     // original: ListAlert;
@@ -155,7 +154,7 @@ export function getViolationsTableColumnDescriptors(filteredWorkflowView: Filter
             Header: 'Time',
             accessor: 'time',
             sortField: 'Violation Time',
-            Cell: ({ value }): string => dateFns.format(value, dateTimeFormat),
+            Cell: ({ value }) => getDateTime(value),
         },
     ];
 }

@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import {
     Button,
+    FormHelperText,
+    HelperText,
+    HelperTextItem,
     MenuToggleElement,
     MenuToggle,
     Select,
@@ -9,18 +12,32 @@ import {
 } from '@patternfly/react-core';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { MinusCircleIcon } from '@patternfly/react-icons';
+import { FormikContextType } from 'formik';
+import get from 'lodash/get';
+import * as yup from 'yup';
 
 import {
     DelegatedRegistry,
     DelegatedRegistryCluster,
+    DelegatedRegistryConfig,
 } from 'services/DelegatedRegistryConfigService';
 
 import { getClusterName } from '../cluster';
+
+export const pathRequiredMessage = 'Source registry is required';
+
+// Limit validation to property that corresponds to TextInput element.
+export const registriesSchema = yup.array().of(
+    yup.object({
+        path: yup.string().trim().required(pathRequiredMessage),
+    })
+);
 
 type DelegatedRegistriesTableProps = {
     clusters: DelegatedRegistryCluster[];
     defaultClusterId: string;
     deleteRegistry: (indexToDelete: number) => void;
+    formik: FormikContextType<DelegatedRegistryConfig>;
     isEditing: boolean;
     registries: DelegatedRegistry[];
     setRegistryClusterId: (indexToSet: number, clusterId: string) => void;
@@ -31,6 +48,7 @@ function DelegatedRegistriesTable({
     clusters,
     defaultClusterId,
     deleteRegistry,
+    formik,
     isEditing,
     registries,
     setRegistryClusterId,
@@ -48,6 +66,8 @@ function DelegatedRegistriesTable({
     const defaultClusterName =
         defaultClusterId === '' ? 'None' : getClusterName(clusters, defaultClusterId);
     const defaultClusterItem = `Default cluster: ${defaultClusterName}`;
+
+    const { errors, handleBlur, touched } = formik;
 
     return (
         <Table aria-label="Delegated registry exceptions table">
@@ -80,6 +100,22 @@ function DelegatedRegistriesTable({
                             );
                         });
 
+                    // Source reqistry helper text:
+                    // no text if TextInput has valid (non-empty trimmed) value.
+                    // pathErrorMessage with default validation variant if not yet touched
+                    // pathErrorMessage with error validation variant if has been touched
+                    // theoretical: any other validation error independent of touched
+                    //
+                    // Why lodash get instead of optional chaining?
+                    // Unlike touched below, errors has TS2339 error (pardon pun) for array of objects.
+                    const pathErrorMessage = get(errors, `registries[${rowIndex}].path`);
+                    const pathValidatedVariant =
+                        pathErrorMessage &&
+                        (pathErrorMessage !== pathRequiredMessage ||
+                            touched.registries?.[rowIndex]?.path)
+                            ? 'error'
+                            : 'default';
+
                     // Even path and clusterId combined is not a unique key.
                     /* eslint-disable react/no-array-index-key */
                     return (
@@ -89,10 +125,20 @@ function DelegatedRegistriesTable({
                                     aria-label="registry"
                                     isRequired
                                     isDisabled={!isEditing}
+                                    name={`registries[${rowIndex}].path`}
                                     type="text"
+                                    validated={pathValidatedVariant}
                                     value={registry.path}
+                                    onBlur={handleBlur}
                                     onChange={(_event, value) => setRegistryPath(rowIndex, value)}
                                 />
+                                <FormHelperText>
+                                    <HelperText>
+                                        <HelperTextItem variant={pathValidatedVariant}>
+                                            {pathErrorMessage}
+                                        </HelperTextItem>
+                                    </HelperText>
+                                </FormHelperText>
                             </Td>
                             <Td dataLabel="Destination cluster (CLI/API only)">
                                 <Select
@@ -137,7 +183,7 @@ function DelegatedRegistriesTable({
             </Tbody>
         </Table>
     );
-    /* eslint-ensable react/no-array-index-key */
+    /* eslint-enable react/no-array-index-key */
 }
 
 export default DelegatedRegistriesTable;

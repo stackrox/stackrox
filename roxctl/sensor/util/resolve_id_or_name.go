@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/errox"
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
@@ -23,7 +24,7 @@ func ResolveClusterID(idOrName string, timeout time.Duration, retryTimeout time.
 
 	conn, err := env.GRPCConnection(common.WithRetryTimeout(retryTimeout))
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "could not create GRPC connection")
 	}
 
 	service := v1.NewClustersServiceClient(conn)
@@ -35,7 +36,7 @@ func ResolveClusterID(idOrName string, timeout time.Duration, retryTimeout time.
 		Query: fmt.Sprintf("%s:%s", search.Cluster, idOrName),
 	})
 	if err != nil {
-		return "", err
+		return "", errors.Wrapf(err, "could not get cluster: %q", idOrName)
 	}
 
 	for _, cluster := range clusters.GetClusters() {

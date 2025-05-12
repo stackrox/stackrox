@@ -1,33 +1,7 @@
-ARG FINAL_STAGE_PATH="/mnt/final"
-
-# TODO(ROX-20312): we can't pin image tag or digest because currently there's no mechanism to auto-update that.
-FROM registry.access.redhat.com/ubi8/ubi:latest AS ubi-base
-FROM registry.access.redhat.com/ubi8/ubi-minimal:latest AS final-base
+ARG PG_VERSION=15
 
 
-# TODO(ROX-20651): use content sets instead of subscription manager for access to RHEL RPMs once available. Move dnf commands to respective stages.
-FROM ubi-base AS rpm-installer
-
-ARG FINAL_STAGE_PATH
-COPY --from=final-base / "$FINAL_STAGE_PATH"
-
-COPY ./.konflux/scripts/subscription-manager/* /tmp/.konflux/
-RUN /tmp/.konflux/subscription-manager-bro.sh register "$FINAL_STAGE_PATH"
-
-# Install packages for the final stage.
-RUN dnf -y --installroot="$FINAL_STAGE_PATH" upgrade --nobest && \
-    dnf -y --installroot="$FINAL_STAGE_PATH" module enable postgresql:13 && \
-    # find is used in /stackrox/import-additional-cas \
-    dnf -y --installroot="$FINAL_STAGE_PATH" install findutils postgresql && \
-    # We can do usual cleanup while we're here: remove packages that would trigger violations. \
-    dnf -y --installroot="$FINAL_STAGE_PATH" clean all && \
-    rpm --root="$FINAL_STAGE_PATH" --verbose -e --nodeps $(rpm --root="$FINAL_STAGE_PATH" -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
-    rm -rf "$FINAL_STAGE_PATH/var/cache/dnf" "$FINAL_STAGE_PATH/var/cache/yum"
-
-RUN /tmp/.konflux/subscription-manager-bro.sh cleanup
-
-
-FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_1.23 AS go-builder
+FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_1.23@sha256:0a070e4a8f2698b6aba3630a49eb995ff1b0a182d0c5fa264888acf9d535f384 AS go-builder
 
 RUN dnf -y install --allowerasing jq
 
@@ -58,7 +32,7 @@ RUN mkdir -p image/rhel/docs/api/v1 && \
 RUN make copy-go-binaries-to-image-dir
 
 
-FROM registry.access.redhat.com/ubi8/nodejs-20:latest AS ui-builder
+FROM registry.access.redhat.com/ubi9/nodejs-20:latest@sha256:8cbfbca4dbbbd98b0d87dd7f29f44723e3d76f376948463a9be69375fec010b4 AS ui-builder
 
 WORKDIR /go/src/github.com/stackrox/rox/app
 
@@ -80,10 +54,16 @@ ENV UI_PKG_INSTALL_EXTRA_ARGS="--ignore-scripts"
 RUN make -C ui build
 
 
-FROM scratch
+FROM registry.access.redhat.com/ubi8/ubi-minimal:latest@sha256:b2a1bec3dfbc7a14a1d84d98934dfe8fdde6eb822a211286601cf109cbccb075
 
-ARG FINAL_STAGE_PATH
-COPY --from=rpm-installer "$FINAL_STAGE_PATH" /
+ARG PG_VERSION
+
+RUN microdnf -y module enable postgresql:${PG_VERSION} && \
+    # find is used in /stackrox/import-additional-cas \
+    microdnf -y install findutils postgresql && \
+    microdnf -y clean all && \
+    rpm --verbose -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
+    rm -rf /var/cache/dnf /var/cache/yum
 
 COPY --from=ui-builder /go/src/github.com/stackrox/rox/app/ui/build /ui/
 

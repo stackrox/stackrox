@@ -76,10 +76,18 @@ func (suite *NetworkEntityDataStoreTestSuite) SetupSuite() {
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.NetworkGraph)))
 
-	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.db = pgtest.ForT(suite.T())
-
 	suite.store = postgres.New(suite.db.DB)
+}
+
+func (suite *NetworkEntityDataStoreTestSuite) TearDownTest() {
+	suite.mockCtrl.Finish()
+}
+
+func (suite *NetworkEntityDataStoreTestSuite) SetupTest() {
+	ctx := sac.WithAllAccess(context.Background())
+	_, err := suite.db.Exec(ctx, "TRUNCATE TABLE network_entities CASCADE")
+	suite.Require().NoError(err)
 
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.graphConfig = graphConfigMocks.NewMockDataStore(suite.mockCtrl)
@@ -87,11 +95,8 @@ func (suite *NetworkEntityDataStoreTestSuite) SetupSuite() {
 	suite.connMgr = connMocks.NewMockManager(suite.mockCtrl)
 
 	suite.treeMgr.EXPECT().Initialize(gomock.Any())
-	suite.ds = NewEntityDataStore(suite.store, suite.graphConfig, suite.treeMgr, suite.connMgr)
-}
-
-func (suite *NetworkEntityDataStoreTestSuite) TearDownSuite() {
-	suite.mockCtrl.Finish()
+	dataPusher := newNetworkEntityPusher(suite.connMgr)
+	suite.ds = newEntityDataStore(suite.store, suite.graphConfig, suite.treeMgr, dataPusher)
 }
 
 func (suite *NetworkEntityDataStoreTestSuite) TestNetworkEntities() {

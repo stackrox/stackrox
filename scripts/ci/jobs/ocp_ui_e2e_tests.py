@@ -15,6 +15,9 @@ os.environ["DEPLOY_STACKROX_VIA_OPERATOR"] = "true"
 os.environ["INSTALL_COMPLIANCE_OPERATOR"] = "true"
 os.environ["ORCHESTRATOR_FLAVOR"] = "openshift"
 
+# TODO(ROX-29095)
+os.environ["ROX_SCANNER_V4"] = "false"
+
 ClusterTestRunner(
     cluster=AutomationFlavorsCluster(),
     pre_test=PreSystemTests(),

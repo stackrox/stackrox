@@ -62,7 +62,7 @@
   {{ if $._rox.allowNonstandardNamespace }}
     {{ include "srox.note" (list $ (printf "You have chosen to deploy to namespace '%s'." $.Release.Namespace)) }}
   {{ else }}
-    {{ include "srox.fail" (printf "You have chosen to deploy to namespace '%s', not 'stackrox'. If this was accidental, please re-run helm with the '-n stackrox' option. Otherwise, if you need to deploy into this namespace, set the 'allowNonstandardNamespace' configuration value to true." $.Release.Namespace) }}
+    {{ include "srox.fail" (printf "You have chosen to deploy to namespace '%s', not 'stackrox'. If this was accidental, please re-run helm with the '-n stackrox' option. Otherwise, if you need to deploy into this namespace, set the 'allowNonstandardNamespace' configuration value to true. NOTE: Please review the section of this chart's README titled 'Multiple Installations of Central' if you encounter installation errors regarding a CustomResourceDefinition." $.Release.Namespace) }}
   {{ end }}
 {{ end }}
 
@@ -162,6 +162,7 @@
 {{ $_ = set $rox "_defaults" $defaultsCfg }}
 {{ $_ = include "srox.mergeInto" (list $rox $defaultsCfg.defaults) }}
 
+{{ $_ = include "srox.scannerV4Defaulting" (list .Release $rox.scannerV4) }}
 
 {{/* Expand applicable config values */}}
 {{ $expandables := $.Files.Get "internal/expandables.yaml" | fromYaml }}

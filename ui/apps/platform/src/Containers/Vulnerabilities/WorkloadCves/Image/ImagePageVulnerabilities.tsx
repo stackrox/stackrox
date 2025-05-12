@@ -198,6 +198,8 @@ function ImagePageVulnerabilities({
     // Omit for 4.7 release until CVE/advisory separatipn is available in 4.8 release.
     // const isEpssProbabilityColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
     const isEpssProbabilityColumnEnabled = false;
+    // totalAdvisories out of scope for MVP
+    /*
     const isAdvisoryColumnEnabled =
         isFeatureFlagEnabled('ROX_SCANNER_V4') &&
         isFeatureFlagEnabled('ROX_CVE_ADVISORY_SEPARATION');
@@ -207,6 +209,13 @@ function ImagePageVulnerabilities({
             (key !== 'nvdCvss' || isNvdCvssColumnEnabled) &&
             (key !== 'epssProbability' || isEpssProbabilityColumnEnabled) &&
             (key !== 'totalAdvisories' || isAdvisoryColumnEnabled)
+    );
+    */
+    const filteredColumns = filterManagedColumns(
+        defaultColumns,
+        (key) =>
+            (key !== 'nvdCvss' || isNvdCvssColumnEnabled) &&
+            (key !== 'epssProbability' || isEpssProbabilityColumnEnabled)
     );
     const managedColumnState = useManagedColumns(tableId, filteredColumns);
 

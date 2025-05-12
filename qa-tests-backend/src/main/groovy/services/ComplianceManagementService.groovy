@@ -4,11 +4,12 @@ import com.google.protobuf.Timestamp
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 
+import io.stackrox.annotations.Retry
 import io.stackrox.proto.api.v1.ComplianceManagementServiceGrpc
-import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass
 import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass.ComplianceRun
 import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass.ComplianceRunSelection
 import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass.GetComplianceRunStatusesRequest
+import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass.GetComplianceRunStatusesResponse
 import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass.GetRecentComplianceRunsRequest
 import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass.TriggerComplianceRunsRequest
 
@@ -30,6 +31,7 @@ class ComplianceManagementService extends BaseService {
         ).startedRunsList
     }
 
+    @Retry
     static Map<String, String> triggerComplianceRunsAndWait(String standardId = null, String clusterId = null) {
         List<ComplianceRun> complianceRuns = triggerComplianceRuns(standardId, clusterId)
         log.debug "triggered ${standardId ?: "all"} compliance run${standardId ? "" : "s"}"
@@ -45,7 +47,7 @@ class ComplianceManagementService extends BaseService {
         return complianceRuns.collectEntries { [(it.standardId): it.id] }
     }
 
-    static ComplianceManagementServiceOuterClass.GetComplianceRunStatusesResponse getRunStatuses(List<String> runIds) {
+    private static GetComplianceRunStatusesResponse getRunStatuses(List<String> runIds) {
         return getComplianceManagementClient().getRunStatuses(
                 GetComplianceRunStatusesRequest.newBuilder()
                         .addAllRunIds(runIds)

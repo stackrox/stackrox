@@ -47,6 +47,8 @@ deploy_stackrox() {
     local central_namespace=${2:-stackrox}
     local sensor_namespace=${3:-stackrox}
 
+    info "About to deploy StackRox (Central + Sensor)."
+
     setup_podsecuritypolicies_config
 
     deploy_stackrox_operator
@@ -72,6 +74,10 @@ deploy_stackrox() {
     wait_for_collectors_to_be_operational "${sensor_namespace}"
 
     pause_stackrox_operator_reconcile "${central_namespace}" "${sensor_namespace}"
+
+    if kubectl -n "${central_namespace}" get deployment scanner-v4-indexer >/dev/null 2>&1; then
+        wait_for_scanner_V4 "${central_namespace}"
+    fi
 
     touch "${STATE_DEPLOYED}"
 }
@@ -170,7 +176,6 @@ export_test_environment() {
     ci_export ROX_COMPLIANCE_ENHANCEMENTS "${ROX_COMPLIANCE_ENHANCEMENTS:-true}"
     ci_export ROX_POLICY_CRITERIA_MODAL "${ROX_POLICY_CRITERIA_MODAL:-true}"
     ci_export ROX_TELEMETRY_STORAGE_KEY_V1 "DISABLED"
-    ci_export ROX_SCANNER_V4 "${ROX_SCANNER_V4:-false}"
     ci_export ROX_AUTH_MACHINE_TO_MACHINE "${ROX_AUTH_MACHINE_TO_MACHINE:-true}"
     ci_export ROX_COMPLIANCE_REPORTING "${ROX_COMPLIANCE_REPORTING:-true}"
     ci_export ROX_REGISTRY_RESPONSE_TIMEOUT "${ROX_REGISTRY_RESPONSE_TIMEOUT:-90s}"
@@ -180,11 +185,12 @@ export_test_environment() {
     ci_export ROX_CVE_ADVISORY_SEPARATION "${ROX_CVE_ADVISORY_SEPARATION:-true}"
     ci_export ROX_EPSS_SCORE "${ROX_EPSS_SCORE:-true}"
     ci_export ROX_SBOM_GENERATION "${ROX_SBOM_GENERATION:-true}"
-    ci_export ROX_CLUSTERS_PAGE_MIGRATION_UI "${ROX_CLUSTERS_PAGE_MIGRATION_UI:-true}"
+    ci_export ROX_CLUSTERS_PAGE_MIGRATION_UI "${ROX_CLUSTERS_PAGE_MIGRATION_UI:-false}"
     ci_export ROX_EXTERNAL_IPS "${ROX_EXTERNAL_IPS:-true}"
     ci_export ROX_NETWORK_GRAPH_EXTERNAL_IPS "${ROX_NETWORK_GRAPH_EXTERNAL_IPS:-false}"
     ci_export ROX_FLATTEN_CVE_DATA "${ROX_FLATTEN_CVE_DATA:-false}"
     ci_export ROX_VULNERABILITY_ON_DEMAND_REPORTS "${ROX_VULNERABILITY_ON_DEMAND_REPORTS:-true}"
+    ci_export ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS "${ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS:-true}"
 
     if is_in_PR_context && pr_has_label ci-fail-fast; then
         ci_export FAIL_FAST "true"
@@ -319,7 +325,7 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n      - name: ROX_EPSS_SCORE'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_CLUSTERS_PAGE_MIGRATION_UI'
-    customize_envVars+=$'\n        value: "true"'
+    customize_envVars+=$'\n        value: "false"'
     customize_envVars+=$'\n      - name: ROX_EXTERNAL_IPS'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_NETWORK_GRAPH_EXTERNAL_IPS'
@@ -330,13 +336,19 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: "false"'
     customize_envVars+=$'\n      - name: ROX_VULNERABILITY_ON_DEMAND_REPORTS'
     customize_envVars+=$'\n        value: "true"'
+    customize_envVars+=$'\n      - name: ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS'
+    customize_envVars+=$'\n        value: "true"'
+
+    local scannerV4ScannerComponent="Default"
+    case "${ROX_SCANNER_V4:-}" in
+        true)  scannerV4ScannerComponent="Enabled"  ;;
+        false) scannerV4ScannerComponent="Disabled" ;;
+    esac
 
     CENTRAL_YAML_PATH="tests/e2e/yaml/central-cr.envsubst.yaml"
     # Different yaml for midstream images
     if [[ "${USE_MIDSTREAM_IMAGES}" == "true" ]]; then
         CENTRAL_YAML_PATH="tests/e2e/yaml/central-cr-midstream.envsubst.yaml"
-    elif [[ "${ROX_SCANNER_V4:-false}" == "true" ]]; then
-        CENTRAL_YAML_PATH="tests/e2e/yaml/central-cr-with-scanner-v4.envsubst.yaml"
     fi
     env - \
       centralAdminPasswordBase64="$centralAdminPasswordBase64" \
@@ -347,6 +359,7 @@ deploy_central_via_operator() {
       central_exposure_loadBalancer_enabled="$central_exposure_loadBalancer_enabled" \
       central_exposure_route_enabled="$central_exposure_route_enabled" \
       customize_envVars="$customize_envVars" \
+      scannerV4ScannerComponent="$scannerV4ScannerComponent" \
     "${envsubst}" \
       < "${CENTRAL_YAML_PATH}" | kubectl apply -n "${central_namespace}" -f -
 
@@ -361,6 +374,7 @@ deploy_sensor() {
     info "Deploying sensor into namespace ${sensor_namespace} (central is expected in namespace ${central_namespace})"
 
     ci_export ROX_AFTERGLOW_PERIOD "15"
+    ci_export ROX_COLLECTOR_INTROSPECTION_ENABLE "true"
 
     if [[ "${DEPLOY_STACKROX_VIA_OPERATOR}" == "true" ]]; then
         deploy_sensor_via_operator "${sensor_namespace}" "${central_namespace}"
@@ -447,13 +461,23 @@ deploy_sensor_via_operator() {
     wait_for_object_to_appear "${sensor_namespace}" deploy/sensor 300
     wait_for_object_to_appear "${sensor_namespace}" ds/collector 300
 
+    collector_envs=()
+
     if [[ -n "${ROX_AFTERGLOW_PERIOD:-}" ]]; then
-       kubectl -n "${sensor_namespace}" set env ds/collector ROX_AFTERGLOW_PERIOD="${ROX_AFTERGLOW_PERIOD}"
+       collector_envs+=("ROX_AFTERGLOW_PERIOD=${ROX_AFTERGLOW_PERIOD}")
+    fi
+
+    if [[ -n "${ROX_COLLECTOR_INTROSPECTION_ENABLE:-}" ]]; then
+       collector_envs+=("ROX_COLLECTOR_INTROSPECTION_ENABLE=${ROX_COLLECTOR_INTROSPECTION_ENABLE}")
     fi
 
     if [[ -n "${ROX_PROCESSES_LISTENING_ON_PORT:-}" ]]; then
        kubectl -n "${sensor_namespace}" set env deployment/sensor ROX_PROCESSES_LISTENING_ON_PORT="${ROX_PROCESSES_LISTENING_ON_PORT}"
-       kubectl -n "${sensor_namespace}" set env ds/collector ROX_PROCESSES_LISTENING_ON_PORT="${ROX_PROCESSES_LISTENING_ON_PORT}"
+       collector_envs+=("ROX_PROCESSES_LISTENING_ON_PORT=${ROX_PROCESSES_LISTENING_ON_PORT}")
+    fi
+
+    if [[ ${#collector_envs[@]} -gt 0 ]]; then
+        kubectl -n "${sensor_namespace}" set env ds/collector "${collector_envs[@]}"
     fi
 }
 
@@ -1044,6 +1068,7 @@ remove_existing_stackrox_resources() {
         done
 
         kubectl delete "${global_resource_types}" -l "app.kubernetes.io/name=stackrox" --wait
+        kubectl delete crd securitypolicies.config.stackrox.io --wait
 
         helm list -o json | jq -r '.[] | .name' | while read -r name; do
             case "$name" in
@@ -1084,6 +1109,61 @@ remove_compliance_operator_resources() {
     fi
 }
 
+
+wait_for_ready_deployment() {
+    local namespace="$1"
+    local deployment_name="$2"
+    local max_seconds="$3"
+
+    info "Waiting for deployment ${deployment_name} to be ready in namespace ${namespace}"
+
+    start_time="$(date '+%s')"
+    while true; do
+        deployment_json="$(kubectl -n "${namespace}" get "deploy/${deployment_name}" -o json)"
+        replicas="$(jq '.status.replicas' <<<"$deployment_json")"
+        ready_replicas="$(jq '.status.readyReplicas' <<<"$deployment_json")"
+        curr_time="$(date '+%s')"
+        elapsed_seconds=$(( curr_time - start_time ))
+
+        # Ready case. First we need to make sure that "$replicas" is an integer and not
+        # something like "null", which would cause an execution error while
+        # evaluating [[ "$replicas" -gt 0 ]].
+        if [[ "$replicas" =~ ^[0-9]+$ && "$replicas" -gt 0 && "$replicas" == "$ready_replicas" ]]; then
+            sleep 10
+            break
+        fi
+
+        # Timeout case
+        if (( elapsed_seconds > max_seconds )); then
+            kubectl -n "${namespace}" get pod -o wide
+            kubectl -n "${namespace}" get deploy -o wide
+            die "wait_for_ready_deployment() timeout after $max_seconds seconds."
+        fi
+
+        # Otherwise report and retry
+        info "Still waiting (${elapsed_seconds}s/${max_seconds}s)..."
+        sleep 5
+    done
+
+    info "Deployment ${deployment_name} is ready in namespace ${namespace}."
+}
+
+# shellcheck disable=SC2120
+wait_for_scanner_V4() {
+    local namespace="$1"
+    local max_seconds=${MAX_WAIT_SECONDS:-300}
+    info "Waiting for Scanner V4 to become ready..."
+    if [[ "${ORCHESTRATOR_FLAVOR:-}" == "openshift" ]]; then
+        # OCP Interop tests are run on minimal instances and will take longer
+        # Allow override with MAX_WAIT_SECONDS
+        max_seconds=${MAX_WAIT_SECONDS:-600}
+        info "Waiting ${max_seconds}s (increased for openshift-ci provisioned clusters) for central api and $(( max_seconds * 6 )) for ingress..."
+    fi
+
+    wait_for_ready_deployment "$namespace" "scanner-v4-indexer" "$max_seconds"
+    wait_for_ready_deployment "$namespace" "scanner-v4-matcher" "$max_seconds"
+}
+
 # shellcheck disable=SC2120
 wait_for_api() {
     local central_namespace=${1:-stackrox}
@@ -1099,31 +1179,7 @@ wait_for_api() {
     fi
     max_ingress_seconds=$(( max_seconds * 6 ))
 
-    while true; do
-        central_json="$(kubectl -n "${central_namespace}" get deploy/central -o json)"
-        replicas="$(jq '.status.replicas' <<<"$central_json")"
-        ready_replicas="$(jq '.status.readyReplicas' <<<"$central_json")"
-        curr_time="$(date '+%s')"
-        elapsed_seconds=$(( curr_time - start_time ))
-
-        # Ready case
-        if [[ "$replicas" == 1 && "$ready_replicas" == 1 ]]; then
-            sleep 30
-            break
-        fi
-
-        # Timeout case
-        if (( elapsed_seconds > max_seconds )); then
-            kubectl -n "${central_namespace}" get pod -o wide
-            kubectl -n "${central_namespace}" get deploy -o wide
-            die "wait_for_api() timeout after $max_seconds seconds."
-        fi
-
-        # Otherwise report and retry
-        info "Still waiting (${elapsed_seconds}s/${max_seconds}s)..."
-        sleep 5
-    done
-
+    wait_for_ready_deployment "$central_namespace" "central" "$max_seconds"
     info "Central deployment is ready in namespace ${central_namespace}."
     info "Waiting for Central API endpoint"
 
@@ -1386,18 +1442,8 @@ record_upgrade_test_progess() {
     record_progress_step "${UPGRADE_PROGRESS_UPGRADER}" "${UPGRADE_PROGRESS_SENSOR_BUNDLE}" \
         "postgres_sensor_run" "bin/upgrader tests"
 
-    # tests/upgrade/legacy_to_postgres_run.sh
-    record_progress_step "${UPGRADE_PROGRESS_LEGACY_PREP}" "${UPGRADE_PROGRESS_UPGRADER}" \
-        "legacy_to_postgres_run" "Preparation for legacy to postgres testing"
-    record_progress_step "${UPGRADE_PROGRESS_LEGACY_ROCKSDB_CENTRAL}" "${UPGRADE_PROGRESS_LEGACY_PREP}" \
-        "legacy_to_postgres_run" "Deployed an earlier rocksdb central"
-    record_progress_step "${UPGRADE_PROGRESS_LEGACY_TO_RELEASE}" "${UPGRADE_PROGRESS_LEGACY_ROCKSDB_CENTRAL}" \
-        "legacy_to_postgres_run" "Helm upgrade to latest postgres release from rocksdb"
-    record_progress_step "${UPGRADE_PROGRESS_RELEASE_BACK_TO_LEGACY}" "${UPGRADE_PROGRESS_LEGACY_TO_RELEASE}" \
-        "legacy_to_postgres_run" "Rollback to rocksdb"
-
     # tests/upgrade/postgres_run.sh
-    record_progress_step "${UPGRADE_PROGRESS_POSTGRES_PREP}" "${UPGRADE_PROGRESS_RELEASE_BACK_TO_LEGACY}" \
+    record_progress_step "${UPGRADE_PROGRESS_POSTGRES_PREP}" "${UPGRADE_PROGRESS_UPGRADER}" \
         "postgres_run" "Preparation for postgres testing"
     record_progress_step "${UPGRADE_PROGRESS_POSTGRES_EARLIER_CENTRAL}" "${UPGRADE_PROGRESS_POSTGRES_PREP}" \
         "postgres_run" "Deployed earlier postgres central"

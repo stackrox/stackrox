@@ -14,7 +14,7 @@ import common.Constants
 import util.Env
 import util.Helpers
 import util.MailServer
-import util.Retry
+import io.stackrox.annotations.Retry
 
 @Slf4j
 @CompileStatic
