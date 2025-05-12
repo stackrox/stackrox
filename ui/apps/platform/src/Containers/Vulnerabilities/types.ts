@@ -98,7 +98,7 @@ export type VerifiedStatus =
 
 export type SignatureVerificationResult = {
     status: VerifiedStatus;
-    verificationTime: string; // ISO 8601 formatted date time.
+    verificationTime: string | undefined; // ISO 8601 formatted date time.
     verifiedImageReferences: string[];
     verifierId: string; // Signature integration id of the form `io.stackrox.signatureintegration.<uuid>`.
 };
