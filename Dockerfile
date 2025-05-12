@@ -1,10 +1,7 @@
-FROM quay.io/fedora/fedora:latest
+FROM quay.io/klape/stackrox-base:latest
 
-RUN mkdir -p /stackrox/static-data && dnf install -y postgresql elfutils-libelf libbpf nodejs npm
-RUN curl -L "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" > /usr/bin/kubectl && \
-    chmod +x /usr/bin/kubectl
 COPY image/rhel/static-bin/* /usr/bin
-RUN save-dir-contents /etc/pki/ca-trust /etc/ssl
+RUN mkdir -p /stackrox/static-data && save-dir-contents /etc/pki/ca-trust /etc/ssl
 
 COPY bundle/nvd_definitions /nvd_definitions
 COPY bundle/k8s_definitions /k8s_definitions
