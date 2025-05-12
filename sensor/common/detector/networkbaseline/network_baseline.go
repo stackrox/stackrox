@@ -78,13 +78,13 @@ func (e *networkBaselineEvaluator) checkPeerInBaselineForEntity(
 		// If a peer is a discovered external entity, we must anonymize it
 		// to the Internet, as the baselines do not currently store or monitor IP
 		// information.
-		peer = networkbaseline.Peer{
-			IsIngress: isIngressToBaselineEntity,
-			DstPort:   dstPort,
-			Protocol:  protocol,
-			Name:      networkgraph.InternetExternalSourceName,
-			Entity:    networkgraph.InternetEntity(),
-		}
+		peer = networkbaseline.PeerFromNetworkEntity(
+			networkgraph.InternetEntity(),
+			networkgraph.InternetExternalSourceName,
+			dstPort,
+			protocol,
+			isIngressToBaselineEntity,
+		)
 	} else {
 		peer = networkbaseline.PeerFromNetworkEntityInfo(peerEntity, peerEntityName, dstPort, protocol, isIngressToBaselineEntity)
 	}

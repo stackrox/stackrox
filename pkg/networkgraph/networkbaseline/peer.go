@@ -201,15 +201,27 @@ func PeerFromNetworkEntityInfo(
 	protocol storage.L4Protocol,
 	isIngressToBaselineEntity bool,
 ) Peer {
+	entity := networkgraph.Entity{
+		Type: info.GetType(),
+		ID:   info.GetId(),
+	}
+	return PeerFromNetworkEntity(entity, peerName, dstPort, protocol, isIngressToBaselineEntity)
+}
+
+// PeerFromNetworkEntity converts peer from networkgraph.Entity
+func PeerFromNetworkEntity(
+	entity networkgraph.Entity,
+	peerName string,
+	dstPort uint32,
+	protocol storage.L4Protocol,
+	isIngressToBaselineEntity bool,
+) Peer {
 	return Peer{
 		IsIngress: isIngressToBaselineEntity,
-		Entity: networkgraph.Entity{
-			Type: info.GetType(),
-			ID:   info.GetId(),
-		},
-		Name:     peerName,
-		DstPort:  dstPort,
-		Protocol: protocol,
+		Entity:    entity,
+		Name:      peerName,
+		DstPort:   dstPort,
+		Protocol:  protocol,
 	}
 }
 
