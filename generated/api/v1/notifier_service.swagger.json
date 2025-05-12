@@ -667,10 +667,6 @@
         },
         "auditLoggingEnabled": {
           "type": "boolean"
-        },
-        "maxMessageSize": {
-          "type": "integer",
-          "format": "int32"
         }
       }
     },
