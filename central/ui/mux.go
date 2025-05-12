@@ -1,14 +1,26 @@
 package ui
 
 import (
+	"crypto/tls"
 	"net/http"
+	"net/http/httputil"
+	"net/url"
 )
 
 // Mux returns a HTTP Handler that knows how to serve the UI assets,
 // including Javascript, HTML, and other items.
 func Mux() http.Handler {
+	targetURL, err := url.Parse("https://localhost:3000")
+	if err != nil {
+		panic(err)
+	}
+	proxy := httputil.NewSingleHostReverseProxy(targetURL)
+	proxy.Transport = &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: true,
+		},
+	}
 	mux := http.NewServeMux()
-	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("/ui/static"))))
 	mux.Handle("/openapi/", http.StripPrefix("/openapi/", http.FileServer(http.Dir("/ui/openapi"))))
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		headers := map[string]string{
@@ -36,7 +48,7 @@ func Mux() http.Handler {
 		for key, value := range headers {
 			w.Header().Set(key, value)
 		}
-		http.ServeFile(w, r, "/ui/index.html")
+		proxy.ServeHTTP(w, r)
 	})
 	return mux
 }

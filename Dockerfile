@@ -1,6 +1,6 @@
 FROM quay.io/fedora/fedora:latest
 
-RUN mkdir -p /stackrox/static-data && dnf install -y postgresql elfutils-libelf libbpf
+RUN mkdir -p /stackrox/static-data && dnf install -y postgresql elfutils-libelf libbpf nodejs npm
 RUN curl -L "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" > /usr/bin/kubectl && \
     chmod +x /usr/bin/kubectl
 COPY image/rhel/static-bin/* /usr/bin
@@ -19,4 +19,7 @@ COPY bin/* /stackrox
 RUN mkdir -p /stackrox/bin && \
     ln -s /stackrox/migrator /stackrox/bin/migrator && \
     ln -s /stackrox/self-checks /usr/local/bin/self-checks
-COPY ui/build /ui
+COPY ./ui /ui
+RUN mkdir -p /ui/openapi; rm -rf /ui/build; cd /ui/apps/platform; npm i
+COPY ./image/rhel/docs/api/v1/openapi.json /ui/openapi/v1.json
+COPY ./image/rhel/docs/api/v2/openapi.json /ui/openapi/v2.json

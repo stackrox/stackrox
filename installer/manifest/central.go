@@ -199,6 +199,15 @@ func (g *CentralGenerator) createCentralDeployment(m *manifestGenerator) Resourc
 								},
 							},
 						},
+					}, {
+						Name:            "nodejs",
+						Image:           m.Config.Images.Central,
+						ImagePullPolicy: v1.PullAlways,
+						Command: []string{
+							"sh",
+							"-c",
+							"cd /ui; npm run start",
+						},
 					}},
 				},
 			},

@@ -957,4 +957,4 @@ push-combined-image-local: build-combined-image
 	podman push --tls-verify=false localhost:5001/stackrox/stackrox:latest
 
 .PHONY: combined-image
-combined-image: $(GENERATED_API_DOCS) all-binaries download ui/build push-combined-image-local
+combined-image: $(GENERATED_API_DOCS) swagger-docs all-binaries download push-combined-image-local
