@@ -278,27 +278,29 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
 
         def endpoint1 = list.find { it.endpoint.port == 8080 }
 
-        assert endpoint1
-        assert endpoint1.deploymentId
-        assert endpoint1.podId
-        assert endpoint1.podUid
-        assert endpoint1.clusterId
-        assert endpoint1.Namespace
-        assert endpoint1.containerName == "collector"
-        assert endpoint1.signal.name == "collector"
-        assert endpoint1.signal.execFilePath == "/usr/local/bin/collector"
+	verifyAll(endpoint1) {
+                deploymentId
+                podId
+                podUid
+                clusterId
+                Namespace
+                containerName == "collector"
+                signal.name == "collector"
+                signal.execFilePath == "/usr/local/bin/collector"
+        }
 
         def endpoint2 = list.find { it.endpoint.port == 9090 }
 
-        assert endpoint2
-        assert endpoint2.deploymentId
-        assert endpoint2.podId
-        assert endpoint2.podUid
-        assert endpoint2.clusterId
-        assert endpoint2.Namespace
-        assert endpoint2.containerName == "collector"
-        assert endpoint2.signal.name == "collector"
-        assert endpoint2.signal.execFilePath == "/usr/local/bin/collector"
+	verifyAll(endpoint2) {
+                deploymentId
+                podId
+                podUid
+                clusterId
+                Namespace
+                containerName == "collector"
+                signal.name == "collector"
+                signal.execFilePath == "/usr/local/bin/collector"
+        }
 
         def pagination = new Pagination(1, 0)
         def processesListeningOnPortsPaginated = evaluateWithRetry(10, 10) {
