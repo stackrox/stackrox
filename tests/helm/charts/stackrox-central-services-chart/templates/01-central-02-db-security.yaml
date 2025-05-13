@@ -1,0 +1,44 @@
+{{- include "srox.init" . -}}
+
+{{- if ._rox.env.openshift }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: use-central-db-scc
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "role" "use-central-db-scc") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "role" "use-central-db-scc") | nindent 4 }}
+rules:
+- apiGroups:
+  - security.openshift.io
+  resources:
+  - securitycontextconstraints
+  resourceNames:
+  - nonroot-v2
+  {{- if ._rox.central.db.persistence.hostPath }}
+  - hostmount-anyuid
+  {{- end }}
+  verbs:
+  - use
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: central-db-use-scc
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "rolebinding" "central-db-use-scc") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "rolebinding" "central-db-use-scc") | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: use-central-db-scc
+subjects:
+- kind: ServiceAccount
+  name: central-db
+  namespace: {{.Release.Namespace}}
+{{- end }}
