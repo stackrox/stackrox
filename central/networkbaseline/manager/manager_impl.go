@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/central/deployment/queue"
 	"github.com/stackrox/rox/central/networkbaseline/datastore"
 	networkEntityDS "github.com/stackrox/rox/central/networkgraph/entity/datastore"
+	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
 	networkFlowDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	"github.com/stackrox/rox/central/sensor/service/connection"
@@ -23,6 +24,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/networkbaseline"
+	"github.com/stackrox/rox/pkg/networkgraph/tree"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/schema"
@@ -57,6 +59,7 @@ type manager struct {
 	networkPolicyDS   networkPolicyDS.DataStore
 	clusterFlows      networkFlowDS.ClusterDataStore
 	connectionManager connection.Manager
+	treeManager       networktree.Manager
 
 	baselinesByDeploymentID map[string]*networkbaseline.BaselineInfo
 	seenNetworkPolicies     set.Set[uint64]
@@ -858,6 +861,33 @@ func (m *manager) addBaseline(deploymentID, deploymentName, clusterID, namespace
 		return err
 	}
 
+	networkTree := tree.NewMultiNetworkTree(
+		m.treeManager.GetReadOnlyNetworkTree(managerCtx, clusterID),
+		m.treeManager.GetDefaultNetworkTree(managerCtx),
+	)
+
+	listDeploymentMap := map[string]*storage.ListDeployment{
+		deploymentID: &storage.ListDeployment{
+			Name:      deploymentName,
+			Id:        deploymentID,
+			ClusterId: clusterID,
+			Namespace: namespace,
+		},
+	}
+
+	flows, missingInfoFlows := networkgraph.UpdateFlowsWithEntityDesc(flows, listDeploymentMap,
+		func(id string) *storage.NetworkEntityInfo {
+			if networkTree == nil {
+				return nil
+			}
+			return networkTree.Get(id)
+		},
+	)
+
+	// There's not a lot we can do about flows with no info, so just process them
+	// as normal
+	flows = append(flows, missingInfoFlows...)
+
 	// If we have flows then process them.  If we don't persist an empty baseline
 	if len(flows) > 0 {
 		// package them into a map of flows like comes in
@@ -1059,6 +1089,7 @@ func New(
 	networkPolicyDS networkPolicyDS.DataStore,
 	clusterFlows networkFlowDS.ClusterDataStore,
 	connectionManager connection.Manager,
+	treeManager networktree.Manager,
 ) (Manager, error) {
 	m := &manager{
 		ds:                         ds,
@@ -1067,6 +1098,7 @@ func New(
 		networkPolicyDS:            networkPolicyDS,
 		clusterFlows:               clusterFlows,
 		connectionManager:          connectionManager,
+		treeManager:                treeManager,
 		seenNetworkPolicies:        set.NewSet[uint64](),
 		deploymentObservationQueue: queue.New(),
 		baselineFlushTicker:        time.NewTicker(baselineFlushTickerDuration),
@@ -1102,5 +1134,5 @@ func GetTestPostgresManager(t testing.TB, pool postgres.DB) (Manager, error) {
 		return nil, err
 	}
 	sensorCnxMgr := connection.ManagerSingleton()
-	return New(networkBaselineStore, networkEntityStore, deploymentStore, networkPolicyStore, networkFlowClusterStore, sensorCnxMgr)
+	return New(networkBaselineStore, networkEntityStore, deploymentStore, networkPolicyStore, networkFlowClusterStore, sensorCnxMgr, networktree.Singleton())
 }
