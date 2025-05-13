@@ -992,17 +992,13 @@ func (suite *ManagerTestSuite) TestAddBaselineAnonymizeDiscoveredExternalSource(
 	suite.Require().NotNil(baseline)
 	suite.Require().NotEmpty(baseline.GetPeers(), "Baseline should have peers")
 
-	internetEntity := networkgraph.InternetEntity() // Get the canonical Internet entity
-
 	var foundAnonymizedPeer bool
 	for _, peer := range baseline.GetPeers() {
 		info := peer.GetEntity().GetInfo()
-		if info.GetId() == internetEntity.ID && info.GetType() == storage.NetworkEntityInfo_INTERNET {
+		if info.GetId() == networkgraph.InternetExternalSourceID && info.GetType() == storage.NetworkEntityInfo_INTERNET {
 			foundAnonymizedPeer = true
 			// Check that the name also matches the standard Internet name
 			suite.Assert().Equal(networkgraph.InternetExternalSourceID, info.GetId())
-			// Check the entire entity info for good measure
-			// protoassert.Equal(suite.T(), expectedPeerEntityInfo, peer.GetEntity().GetInfo())
 			suite.Assert().Equal(uint32(443), peer.GetProperties()[0].GetPort())
 			suite.Assert().False(peer.GetProperties()[0].GetIngress()) // Egress from our deployment
 			break
