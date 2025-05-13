@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { Button, Icon, Popover, SimpleList, SimpleListItem } from '@patternfly/react-core';
+import { Button, Icon, Popover, List, ListItem } from '@patternfly/react-core';
 import { CheckCircleIcon, ExclamationCircleIcon } from '@patternfly/react-icons';
 
 import IconText from 'Components/PatternFly/IconText/IconText';
@@ -37,11 +37,11 @@ function ComplianceClusterStatus({ errors }: ComplianceClusterStatusProps) {
 
     function getErrorsList(errors: string[]): ReactElement {
         return (
-            <SimpleList>
+            <List isPlain>
                 {errors.map((error) => {
-                    return <SimpleListItem key={error}>{error}</SimpleListItem>;
+                    return <ListItem key={error}>{error}</ListItem>;
                 })}
-            </SimpleList>
+            </List>
         );
     }
 
