@@ -3,6 +3,7 @@ package services
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 
+import io.stackrox.annotations.Retry
 import io.stackrox.proto.api.v1.PaginationOuterClass
 import io.stackrox.proto.api.v1.ListeningEndpointsServiceGrpc
 import io.stackrox.proto.api.v1.ProcessListeningOnPortService.GetProcessesListeningOnPortsRequest
@@ -17,6 +18,7 @@ class ProcessesListeningOnPortsService extends BaseService {
         return ListeningEndpointsServiceGrpc.newBlockingStub(getChannel())
     }
 
+    @Retry
     static GetProcessesListeningOnPortsResponse getProcessesListeningOnPortsResponse(
         String deploymentId, Pagination pagination = null) {
 
