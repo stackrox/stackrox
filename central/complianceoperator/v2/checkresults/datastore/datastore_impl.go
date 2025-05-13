@@ -447,7 +447,7 @@ func (d *datastoreImpl) withCountByResultSelectQuery(q *v1.Query, countOn search
 }
 
 func (d *datastoreImpl) DeleteOldResults(ctx context.Context, lastStartedTimestamp *timestamppb.Timestamp, scanRefIDs string, includeCurrent bool) error {
-	lastStartedTimestampColumnName := "laststartedtimestamp"
+	lastStartedTimestampColumnName := "laststartedtime"
 	scanRefIDColumnName := "scanrefid"
 	deleteFmt := "DELETE FROM %s WHERE %s = $1 AND (%s < $2 OR %s IS NULL)"
 	if includeCurrent {
