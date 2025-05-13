@@ -1,6 +1,7 @@
 package grpc
 
 import (
+	"github.com/pkg/errors"
 	"google.golang.org/grpc/encoding"
 	"google.golang.org/grpc/encoding/proto"
 	"google.golang.org/grpc/mem"
@@ -24,13 +25,18 @@ var defaultBufferPool = mem.DefaultBufferPool()
 func (c *codec) Marshal(v any) (mem.BufferSlice, error) {
 	m, ok := v.(vtprotoMessage)
 	if !ok {
-		return c.CodecV2.Marshal(v)
+		return c.fallback(v, errors.Errorf("type %t does not support VT", v))
 	}
 	vt, err := c.marshalVT(m)
 	if err != nil {
-		return c.CodecV2.Marshal(v)
+		return c.fallback(v, err)
 	}
 	return vt, nil
+}
+
+func (c *codec) fallback(v any, err error) (mem.BufferSlice, error) {
+	out, fallBackError := c.CodecV2.Marshal(v)
+	return out, errors.Wrapf(fallBackError, "codec failed %q; fallback failed", err)
 }
 
 func (c *codec) marshalVT(m vtprotoMessage) (mem.BufferSlice, error) {
@@ -55,13 +61,14 @@ func (c *codec) marshalVT(m vtprotoMessage) (mem.BufferSlice, error) {
 func (c *codec) Unmarshal(data mem.BufferSlice, v any) error {
 	m, ok := v.(vtprotoMessage)
 	if !ok {
-		return c.CodecV2.Unmarshal(data, v)
+		return errors.Wrapf(c.CodecV2.Unmarshal(data, v),
+			"type %t does not support VT; fallback failed", v)
 	}
 	buf := data.MaterializeToBuffer(defaultBufferPool)
 	defer buf.Free()
 	err := m.UnmarshalVT(buf.ReadOnlyData())
 	if err != nil {
-		return c.CodecV2.Unmarshal(data, v)
+		return errors.Wrapf(c.CodecV2.Unmarshal(data, v), "error %q occured; fallback failed", err)
 	}
 	return nil
 }
