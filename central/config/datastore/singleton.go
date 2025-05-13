@@ -183,13 +183,16 @@ func validateConfigAndPopulateMissingDefaults(datastore DataStore) {
 	}
 }
 
-// populateDefaultSystemRuleIfMissing returns true if the platform component config's system or layered products rules were updated
+// populateDefaultSystemRuleIfMissing initializes platform component config's system and layered products rules if they are not already initialized.
+// It returns true if either of the rules were initialized
 func populateDefaultSystemRulesIfMissing(config *storage.Config) bool {
+	// If there is no platform component config, initialize both system and layered product rules and return
 	if config.GetPlatformComponentConfig() == nil {
 		config.PlatformComponentConfig = &storage.PlatformComponentConfig{
 			Rules: []*storage.PlatformComponentConfig_Rule{
 				defaultPlatformConfigSystemRule,
-				defaultPlatformConfigLayeredProductsRule},
+				defaultPlatformConfigLayeredProductsRule,
+			},
 		}
 		return true
 	}
@@ -204,22 +207,24 @@ func populateDefaultSystemRulesIfMissing(config *storage.Config) bool {
 	}
 
 	if hasSystemRule && hasLayeredProductsRule {
+		// If both system and layered products rules exist, no need to initialize anything
 		return false
 	}
 
 	if !hasSystemRule {
+		// if system rule is missing, initialize it
 		config.GetPlatformComponentConfig().Rules = append(
 			config.GetPlatformComponentConfig().Rules,
 			defaultPlatformConfigSystemRule,
 		)
 	}
 	if !hasLayeredProductsRule {
+		// if layered products rule is missing, initialize it
 		config.GetPlatformComponentConfig().Rules = append(
 			config.GetPlatformComponentConfig().Rules,
 			defaultPlatformConfigLayeredProductsRule,
 		)
 	}
-
 	return true
 }
 
