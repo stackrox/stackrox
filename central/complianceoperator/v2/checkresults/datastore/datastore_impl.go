@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
@@ -19,6 +20,7 @@ import (
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
 	"github.com/stackrox/rox/pkg/utils"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 var (
@@ -464,4 +466,24 @@ func (d *datastoreImpl) withCountByResultSelectQuery(q *v1.Query, countOn search
 			).Proto(),
 	)
 	return cloned
+}
+
+func (d *datastoreImpl) DeleteOldResults(ctx context.Context, lastStartedTimestamp *timestamppb.Timestamp, scanRefIDs string, includeCurrent bool) error {
+	lastStartedTimestampColumnName := "laststartedtimestamp"
+	scanRefIDColumnName := "scanrefid"
+	deleteFmt := "DELETE FROM %s WHERE %s = $1 AND (%s < $2 OR %s IS NULL)"
+	if includeCurrent {
+		deleteFmt = "DELETE FROM %s WHERE %s = $1 AND (%s <= $2 OR %s IS NULL)"
+	}
+	deleteStmt := fmt.Sprintf(deleteFmt,
+		schema.ComplianceOperatorCheckResultV2TableName,
+		scanRefIDColumnName,
+		lastStartedTimestampColumnName,
+		lastStartedTimestampColumnName,
+	)
+	_, err := d.db.Exec(ctx, deleteStmt, scanRefIDs, lastStartedTimestamp.AsTime())
+	if err != nil {
+		return err
+	}
+	return nil
 }
