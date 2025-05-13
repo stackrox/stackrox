@@ -40,7 +40,7 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 
 	// IMPORTANT: reconciler preExtensions that implement feature-defaulting logic (such as ReconcileScannerV4FeatureDefaultsExtension)
 	// must be executed first. Hence, they need to be first in order when registering extensions using WithPreExtension!
-	opts := make([]pkgReconciler.Option, 0, len(otherPreExtensions)+4)
+	opts := make([]pkgReconciler.Option, 0, len(otherPreExtensions)+5)
 	opts = append(opts, extraEventWatcher)
 	opts = append(opts, pkgReconciler.WithPreExtension(extensions.ReconcileScannerV4FeatureDefaultsExtension(mgr.GetClient())))
 	opts = append(opts, otherPreExtensions...)
