@@ -68,7 +68,7 @@ func (c *codec) Unmarshal(data mem.BufferSlice, v any) error {
 	defer buf.Free()
 	err := m.UnmarshalVT(buf.ReadOnlyData())
 	if err != nil {
-		return errors.Wrapf(c.CodecV2.Unmarshal(data, v), "error %q occured; fallback failed", err)
+		return errors.Wrapf(c.CodecV2.Unmarshal(data, v), "error %q occurred; fallback failed", err)
 	}
 	return nil
 }
