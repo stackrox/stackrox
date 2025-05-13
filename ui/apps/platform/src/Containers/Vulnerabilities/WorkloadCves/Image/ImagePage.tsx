@@ -39,6 +39,7 @@ import useInvalidateVulnerabilityQueries from '../../hooks/useInvalidateVulnerab
 import useHasGenerateSbomAbility from '../../hooks/useHasGenerateSBOMAbility';
 import ImagePageVulnerabilities from './ImagePageVulnerabilities';
 import ImagePageResources from './ImagePageResources';
+import ImagePageSignatureVerification from './ImagePageSignatureVerification';
 import { detailsTabValues } from '../../types';
 import ImageDetailBadges, {
     ImageDetails,
@@ -259,6 +260,15 @@ function ImagePage() {
                             title={<TabTitleText>Resources</TabTitleText>}
                         >
                             <ImagePageResources imageId={imageId} pagination={pagination} />
+                        </Tab>
+                        <Tab
+                            className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
+                            eventKey="Signature verification"
+                            title={<TabTitleText>Signature verification</TabTitleText>}
+                        >
+                            <ImagePageSignatureVerification
+                                results={imageData?.signatureVerificationData?.results}
+                            />
                         </Tab>
                     </Tabs>
                 </PageSection>

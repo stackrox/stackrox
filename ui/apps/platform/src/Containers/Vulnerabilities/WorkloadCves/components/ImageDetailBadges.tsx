@@ -40,7 +40,9 @@ export const imageDetailsFragment = gql`
         notes
         signatureVerificationData {
             results {
+                description
                 status
+                verificationTime
                 verifiedImageReferences
                 verifierId
             }
