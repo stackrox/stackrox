@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
+	complianceCheckResultDS "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
+	"github.com/stackrox/rox/central/complianceoperator/v2/checkresults/utils"
 	profileDatastore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
 	snapshotDS "github.com/stackrox/rox/central/complianceoperator/v2/report/datastore"
 	scanConfigurationDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
@@ -27,6 +29,19 @@ var (
 // GetScanConfigFromScan returns the ScanConfiguration associated with the given scan
 func GetScanConfigFromScan(ctx context.Context, scan *storage.ComplianceOperatorScanV2, scanConfigDS scanConfigurationDS.DataStore) (*storage.ComplianceOperatorScanConfigurationV2, error) {
 	return scanConfigDS.GetScanConfigurationByName(ctx, scan.GetScanConfigName())
+}
+
+func OnFailureDeleteOldResults(ctx context.Context, results *ScanConfigWatcherResults, resultDS complianceCheckResultDS.DataStore, scanDS scan.DataStore, profileDS profileDatastore.DataStore) error {
+	errList := errorhelpers.NewErrorList("delete old CheckResults from scan config watcher results")
+	for _, r := range results.ScanResults {
+		if r.Error == nil {
+			continue
+		}
+		if err := utils.DeleteOldResults(ctx, r.Scan.GetProfile().GetProfileRefId(), resultDS, scanDS, profileDS); err != nil {
+			errList.AddError(err)
+		}
+	}
+	return errList.ToError()
 }
 
 // ScanConfigWatcher determines if a ScanConfiguration has running scans or has completed
