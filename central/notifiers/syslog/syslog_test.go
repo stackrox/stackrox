@@ -48,6 +48,7 @@ func (s *SyslogNotifierTestSuite) makeSyslog(notifier *storage.Notifier) *syslog
 		sender:         s.mockSender,
 		pid:            1,
 		facility:       (int(notifier.GetSyslog().GetLocalFacility()) + 16) * 8,
+		maxMessageSize: 32768,
 	}
 }
 
@@ -274,13 +275,12 @@ func (s *SyslogNotifierTestSuite) TestSendAuditLog() {
 func (s *SyslogNotifierTestSuite) TestAlerts() {
 	syslog := s.makeSyslog(makeNotifier())
 	testAlert := fixtures.GetAlert()
-	s.mockSender.EXPECT().SendSyslog(gomock.Any()).Return(nil)
+	s.mockSender.EXPECT().SendSyslog(gomock.Any()).Return(nil).AnyTimes()
 	s.setupMockMetadataGetterForAlert(testAlert)
 	s.Require().NoError(syslog.AlertNotify(context.Background(), testAlert))
 
 	// Ensure it doesn't panic with nil timestamps
 	testAlert.FirstOccurred = nil
-	s.mockSender.EXPECT().SendSyslog(gomock.Any()).Return(nil)
 	s.setupMockMetadataGetterForAlert(testAlert)
 	s.Require().NoError(syslog.AlertNotify(context.Background(), testAlert))
 }
