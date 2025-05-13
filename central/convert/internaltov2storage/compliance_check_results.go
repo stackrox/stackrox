@@ -4,6 +4,11 @@ import (
 	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protocompat"
+)
+
+const (
+	LastScannedAnnotationKey = "compliance.openshift.io/last-scanned-timestamp"
 )
 
 var (
@@ -30,25 +35,27 @@ var (
 
 // ComplianceOperatorCheckResult converts internal api V2 check result to a V2 storage check result
 func ComplianceOperatorCheckResult(sensorData *central.ComplianceOperatorCheckResultV2, clusterID string, clusterName string) *storage.ComplianceOperatorCheckResultV2 {
+	lastStartedTimestamp, _ := protocompat.ParseRFC3339NanoTimestamp(sensorData.GetAnnotations()[LastScannedAnnotationKey])
 	return &storage.ComplianceOperatorCheckResultV2{
-		Id:             sensorData.GetId(),
-		CheckId:        sensorData.GetCheckId(),
-		CheckName:      sensorData.GetCheckName(),
-		ClusterId:      clusterID,
-		ClusterName:    clusterName,
-		Status:         statusToV2[sensorData.GetStatus()],
-		Severity:       severityToV2[sensorData.GetSeverity()],
-		Description:    sensorData.GetDescription(),
-		Instructions:   sensorData.GetInstructions(),
-		Labels:         sensorData.GetLabels(),
-		Annotations:    sensorData.GetAnnotations(),
-		CreatedTime:    sensorData.GetCreatedTime(),
-		ScanName:       sensorData.GetScanName(),
-		ScanConfigName: sensorData.GetSuiteName(),
-		Rationale:      sensorData.GetRationale(),
-		ValuesUsed:     sensorData.GetValuesUsed(),
-		Warnings:       sensorData.GetWarnings(),
-		ScanRefId:      BuildNameRefID(clusterID, sensorData.GetScanName()),
-		RuleRefId:      BuildNameRefID(clusterID, sensorData.GetAnnotations()[v1alpha1.RuleIDAnnotationKey]),
+		Id:              sensorData.GetId(),
+		CheckId:         sensorData.GetCheckId(),
+		CheckName:       sensorData.GetCheckName(),
+		ClusterId:       clusterID,
+		ClusterName:     clusterName,
+		Status:          statusToV2[sensorData.GetStatus()],
+		Severity:        severityToV2[sensorData.GetSeverity()],
+		Description:     sensorData.GetDescription(),
+		Instructions:    sensorData.GetInstructions(),
+		Labels:          sensorData.GetLabels(),
+		Annotations:     sensorData.GetAnnotations(),
+		CreatedTime:     sensorData.GetCreatedTime(),
+		ScanName:        sensorData.GetScanName(),
+		ScanConfigName:  sensorData.GetSuiteName(),
+		Rationale:       sensorData.GetRationale(),
+		ValuesUsed:      sensorData.GetValuesUsed(),
+		Warnings:        sensorData.GetWarnings(),
+		ScanRefId:       BuildNameRefID(clusterID, sensorData.GetScanName()),
+		RuleRefId:       BuildNameRefID(clusterID, sensorData.GetAnnotations()[v1alpha1.RuleIDAnnotationKey]),
+		LastStartedTime: lastStartedTimestamp,
 	}
 }
