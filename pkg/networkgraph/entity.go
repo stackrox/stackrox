@@ -1,6 +1,10 @@
 package networkgraph
 
 import (
+	"runtime/debug"
+	"strings"
+
+	"github.com/davecgh/go-spew/spew"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/net"
@@ -42,7 +46,7 @@ type Entity struct {
 // ToProto converts the Entity struct to a storage.NetworkEntityInfo proto.
 func (e Entity) ToProto() *storage.NetworkEntityInfo {
 	if e.Discovered && e.Type == storage.NetworkEntityInfo_EXTERNAL_SOURCE {
-		return &storage.NetworkEntityInfo{
+		info := &storage.NetworkEntityInfo{
 			Type: e.Type,
 			Id:   e.ID,
 			Desc: &storage.NetworkEntityInfo_ExternalSource_{
@@ -56,6 +60,8 @@ func (e Entity) ToProto() *storage.NetworkEntityInfo {
 				},
 			},
 		}
+		debugEntity(info)
+		return info
 	}
 	return &storage.NetworkEntityInfo{
 		Type: e.Type,
@@ -70,6 +76,8 @@ func EntityFromProto(protoEnt *storage.NetworkEntityInfo) Entity {
 	if discovered {
 		extAddr = net.IPNetworkFromCIDR(protoEnt.GetExternalSource().GetCidr())
 	}
+
+	debugEntity(protoEnt)
 
 	return Entity{
 		Type:                  protoEnt.GetType(),
@@ -108,6 +116,8 @@ func InternalEntities() Entity {
 func DiscoveredExternalEntity(address net.IPNetwork) Entity {
 	id, err := externalsrcs.NewGlobalScopedScopedID(address.String())
 	utils.Should(errors.Wrapf(err, "generating id for network %s", address.String()))
+
+	debugCF(address.String())
 
 	return Entity{
 		Type:                  storage.NetworkEntityInfo_EXTERNAL_SOURCE,
@@ -154,5 +164,33 @@ func InternetProtoWithDesc(family net.Family) *storage.NetworkEntityInfo {
 				},
 			},
 		},
+	}
+}
+
+func debugCF(addr string) {
+	if strings.HasPrefix(addr, "1.1.") {
+		println("BEGIN------------------------------------------------")
+		spew.Dump(addr)
+		debug.PrintStack()
+		println("END------------------------------------------------")
+	}
+}
+
+func debugEntity(entities ...*storage.NetworkEntityInfo) {
+	for _, entity := range entities {
+		if entity == nil {
+			continue
+		}
+		network, err := externalsrcs.NetworkFromID(entity.GetId())
+		if err != nil {
+			continue
+		}
+		if strings.HasPrefix(network, "1.1.") {
+			println("BEGIN------------------------------------------------")
+			spew.Dump(entity)
+			debug.PrintStack()
+			println("END------------------------------------------------")
+		}
+
 	}
 }
