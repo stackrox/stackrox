@@ -14,6 +14,11 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
+const (
+	clusterID1 = "cluster-1"
+	clusterID2 = "cluster-2"
+)
+
 func TestComplianceReportingFormatter(t *testing.T) {
 	suite.Run(t, new(ComplianceReportingFormatterSuite))
 }
@@ -32,7 +37,7 @@ func (s *ComplianceReportingFormatterSuite) Test_FormatCSVReportNoError() {
 		matcher := &valueMatcher{
 			data: getFakeReportData(),
 		}
-		s.zipWriter.EXPECT().Create(gomock.Any()).Times(1).Return(nil, nil)
+		s.zipWriter.EXPECT().Create(fmt.Sprintf(successfulClusterFmt, clusterID1)).Times(1).Return(nil, nil)
 		s.csvWriter.EXPECT().AddValue(matcher).Times(2).Do(func(_ any) {
 			matcher.recordNumber++
 		})
@@ -47,7 +52,7 @@ func (s *ComplianceReportingFormatterSuite) Test_FormatCSVReportNoError() {
 		matcher := &valueMatcher{
 			data: getFakeReportData(),
 		}
-		s.zipWriter.EXPECT().Create(gomock.Any()).Times(1).Return(nil, nil)
+		s.zipWriter.EXPECT().Create(fmt.Sprintf(successfulClusterFmt, clusterID1)).Times(1).Return(nil, nil)
 		s.csvWriter.EXPECT().AddValue(matcher).Times(2).Do(func(_ any) {
 			matcher.recordNumber++
 		})
@@ -63,7 +68,10 @@ func (s *ComplianceReportingFormatterSuite) Test_FormatCSVReportNoError() {
 func (s *ComplianceReportingFormatterSuite) Test_FormatCSVReportWithFailedClusterNoError() {
 	matcher := &failedClusterValueMatcher{}
 	matcher.data, matcher.failed = getFakeReportDataWithFailedCluster()
-	s.zipWriter.EXPECT().Create(gomock.Any()).Times(2).Return(nil, nil)
+	gomock.InOrder(
+		s.zipWriter.EXPECT().Create(fmt.Sprintf(failedClusterFmt, clusterID2)).Times(1).Return(nil, nil),
+		s.zipWriter.EXPECT().Create(fmt.Sprintf(successfulClusterFmt, clusterID1)).Times(1).Return(nil, nil),
+	)
 	s.csvWriter.EXPECT().AddValue(matcher).Times(3)
 	s.csvWriter.EXPECT().WriteCSV(gomock.Any()).Times(2).Return(nil)
 	s.zipWriter.EXPECT().Close().Times(1).Return(nil)
@@ -75,7 +83,7 @@ func (s *ComplianceReportingFormatterSuite) Test_FormatCSVReportWithFailedCluste
 
 func (s *ComplianceReportingFormatterSuite) Test_FormatCSVReportCreateError() {
 	s.Run("report data", func() {
-		s.zipWriter.EXPECT().Create(gomock.Any()).Times(1).Return(nil, errors.New("error"))
+		s.zipWriter.EXPECT().Create(fmt.Sprintf(successfulClusterFmt, clusterID1)).Times(1).Return(nil, errors.New("error"))
 		s.zipWriter.EXPECT().Close().Times(1).Return(nil)
 
 		buf, err := s.formatter.FormatCSVReport(getFakeReportData(), getFakeEmptyFailedClusters())
@@ -83,7 +91,7 @@ func (s *ComplianceReportingFormatterSuite) Test_FormatCSVReportCreateError() {
 		s.Require().Nil(buf)
 	})
 	s.Run("failed cluster data", func() {
-		s.zipWriter.EXPECT().Create(gomock.Any()).Times(1).Return(nil, errors.New("error"))
+		s.zipWriter.EXPECT().Create(fmt.Sprintf(failedClusterFmt, clusterID2)).Times(1).Return(nil, errors.New("error"))
 		s.zipWriter.EXPECT().Close().Times(1).Return(nil)
 
 		buf, err := s.formatter.FormatCSVReport(getFakeReportDataOnlyFailedCluster())
@@ -93,8 +101,8 @@ func (s *ComplianceReportingFormatterSuite) Test_FormatCSVReportCreateError() {
 }
 
 func (s *ComplianceReportingFormatterSuite) Test_FormatCSVReportWriteError() {
-	s.Run("report date", func() {
-		s.zipWriter.EXPECT().Create(gomock.Any()).Times(1).Return(nil, nil)
+	s.Run("report data", func() {
+		s.zipWriter.EXPECT().Create(fmt.Sprintf(successfulClusterFmt, clusterID1)).Times(1).Return(nil, nil)
 		s.csvWriter.EXPECT().AddValue(gomock.Any()).Times(2)
 		s.csvWriter.EXPECT().WriteCSV(gomock.Any()).Times(1).Return(errors.New("error"))
 		s.zipWriter.EXPECT().Close().Times(1).Return(nil)
@@ -103,10 +111,10 @@ func (s *ComplianceReportingFormatterSuite) Test_FormatCSVReportWriteError() {
 		s.Require().Error(err)
 		s.Require().Nil(buf)
 	})
-	s.Run("failed cluster date", func() {
+	s.Run("failed cluster data", func() {
 		matcher := &failedClusterValueMatcher{}
 		matcher.data, matcher.failed = getFakeReportDataOnlyFailedCluster()
-		s.zipWriter.EXPECT().Create(gomock.Any()).Times(1).Return(nil, nil)
+		s.zipWriter.EXPECT().Create(fmt.Sprintf(failedClusterFmt, clusterID2)).Times(1).Return(nil, nil)
 		s.csvWriter.EXPECT().AddValue(matcher).Times(1)
 		s.csvWriter.EXPECT().WriteCSV(gomock.Any()).Times(1).Return(errors.New("error"))
 		s.zipWriter.EXPECT().Close().Times(1).Return(nil)
@@ -118,7 +126,7 @@ func (s *ComplianceReportingFormatterSuite) Test_FormatCSVReportWriteError() {
 }
 
 func (s *ComplianceReportingFormatterSuite) Test_FormatCSVReportCloseError() {
-	s.zipWriter.EXPECT().Create(gomock.Any()).Times(1).Return(nil, nil)
+	s.zipWriter.EXPECT().Create(fmt.Sprintf(successfulClusterFmt, clusterID1)).Times(1).Return(nil, nil)
 	s.csvWriter.EXPECT().AddValue(gomock.Any()).Times(2)
 	s.csvWriter.EXPECT().WriteCSV(gomock.Any()).Times(1).Return(nil)
 	s.zipWriter.EXPECT().Close().Times(1).Return(errors.New("error"))
@@ -129,7 +137,7 @@ func (s *ComplianceReportingFormatterSuite) Test_FormatCSVReportCloseError() {
 }
 
 func (s *ComplianceReportingFormatterSuite) Test_FormatCSVReportEmptyReportNoError() {
-	s.zipWriter.EXPECT().Create(gomock.Any()).Times(1).Return(nil, nil)
+	s.zipWriter.EXPECT().Create(fmt.Sprintf(successfulClusterFmt, clusterID1)).Times(1).Return(nil, nil)
 	s.csvWriter.EXPECT().AddValue(&emptyValueMatcher{
 		value: EmptyValue,
 		data:  getFakeEmptyReportData(),
@@ -173,7 +181,7 @@ func getFakeEmptyReportData() map[string][]*report.ResultRow {
 
 func getFakeReportData() map[string][]*report.ResultRow {
 	results := make(map[string][]*report.ResultRow)
-	results["cluster-1"] = []*report.ResultRow{
+	results[clusterID1] = []*report.ResultRow{
 		{
 			ClusterName: "test_cluster-1",
 			CheckName:   "test_check-1",
@@ -198,27 +206,25 @@ func getFakeReportData() map[string][]*report.ResultRow {
 
 func getFakeReportDataWithFailedCluster() (map[string][]*report.ResultRow, map[string]*storage.ComplianceOperatorReportSnapshotV2_FailedCluster) {
 	failedClusters := make(map[string]*storage.ComplianceOperatorReportSnapshotV2_FailedCluster)
-	failedClusters["cluster-2"] = &storage.ComplianceOperatorReportSnapshotV2_FailedCluster{
+	failedClusters[clusterID2] = &storage.ComplianceOperatorReportSnapshotV2_FailedCluster{
 		ClusterName:     "test_cluster-2",
 		ClusterId:       "test_cluster-2-id",
 		Reason:          "timeout",
 		OperatorVersion: "v1.6.0",
 	}
 	results := getFakeReportData()
-	results["cluster-2"] = []*report.ResultRow{}
 	return results, failedClusters
 }
 
 func getFakeReportDataOnlyFailedCluster() (map[string][]*report.ResultRow, map[string]*storage.ComplianceOperatorReportSnapshotV2_FailedCluster) {
 	failedClusters := make(map[string]*storage.ComplianceOperatorReportSnapshotV2_FailedCluster)
-	failedClusters["cluster-2"] = &storage.ComplianceOperatorReportSnapshotV2_FailedCluster{
+	failedClusters[clusterID2] = &storage.ComplianceOperatorReportSnapshotV2_FailedCluster{
 		ClusterName:     "test_cluster-2",
 		ClusterId:       "test_cluster-2-id",
 		Reason:          "timeout",
 		OperatorVersion: "v1.6.0",
 	}
 	results := make(map[string][]*report.ResultRow)
-	results["cluster-2"] = []*report.ResultRow{}
 	return results, failedClusters
 }
 

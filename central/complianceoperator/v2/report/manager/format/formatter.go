@@ -13,7 +13,9 @@ import (
 )
 
 const (
-	EmptyValue = "Data not found for the cluster"
+	EmptyValue           = "Data not found for the cluster"
+	successfulClusterFmt = "cluster_%s.csv"
+	failedClusterFmt     = "failed_cluster_%s.csv"
 )
 
 var (
@@ -69,15 +71,14 @@ func (f *FormatterImpl) FormatCSVReport(results map[string][]*report.ResultRow, 
 			errRet = errors.Wrap(err, "unable to create a zip file of the compliance report")
 		}
 	}()
-	for clusterID, res := range results {
-		fileName := fmt.Sprintf("cluster_%s.csv", clusterID)
-		if failedCluster, ok := failedClusters[clusterID]; ok {
-			fileName = fmt.Sprintf("failed_%s", fileName)
-			if err := f.createFailedClusterFileInZip(zipWriter, fileName, failedCluster); err != nil {
-				return nil, errors.Wrap(err, "error creating failed cluster report")
-			}
-			continue
+	for clusterID, failedCluster := range failedClusters {
+		fileName := fmt.Sprintf(failedClusterFmt, clusterID)
+		if err := f.createFailedClusterFileInZip(zipWriter, fileName, failedCluster); err != nil {
+			return nil, errors.Wrap(err, "error creating failed cluster report")
 		}
+	}
+	for clusterID, res := range results {
+		fileName := fmt.Sprintf(successfulClusterFmt, clusterID)
 		err := f.createCSVInZip(zipWriter, fileName, res)
 		if err != nil {
 			return nil, errors.Wrap(err, "error creating csv report")
