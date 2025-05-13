@@ -1,4 +1,4 @@
-import React, { ReactElement, ReactNode, useEffect, useState } from 'react';
+import React, { ReactElement, useEffect, useState } from 'react';
 import { Bullseye, Spinner } from '@patternfly/react-core';
 
 /*
@@ -62,15 +62,14 @@ const SystemConfigPage = (): ReactElement => {
         setIsEditing(false);
     }
 
-    let content: ReactNode = null;
-
     if (isLoading) {
-        content = (
+        return (
             <Bullseye>
                 <Spinner />
             </Bullseye>
         );
-    } else if (!isEditing || !systemConfig) {
+    }
+    if (!isEditing || !systemConfig) {
         return (
             <SystemConfigDetails
                 systemConfig={systemConfig}
@@ -81,17 +80,14 @@ const SystemConfigPage = (): ReactElement => {
                 isCustomizingPlatformComponentsEnabled={isCustomizingPlatformComponentsEnabled}
             />
         );
-    } else {
-        return (
-            <SystemConfigForm
-                systemConfig={systemConfig}
-                setSystemConfig={setSystemConfig}
-                onCancelEditConfig={onCancelEditConfig}
-            />
-        );
     }
-
-    return content;
+    return (
+        <SystemConfigForm
+            systemConfig={systemConfig}
+            setSystemConfig={setSystemConfig}
+            onCancelEditConfig={onCancelEditConfig}
+        />
+    );
 };
 
 export default SystemConfigPage;
