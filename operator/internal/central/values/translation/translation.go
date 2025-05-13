@@ -10,12 +10,15 @@ import (
 
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
+	"github.com/stackrox/rox/operator/internal/central/common"
 	"github.com/stackrox/rox/operator/internal/values/translation"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
 	"helm.sh/helm/v3/pkg/chartutil"
+	corev1 "k8s.io/api/core/v1"
+	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/pointer"
@@ -83,7 +86,7 @@ func (t Translator) translate(ctx context.Context, c platform.Central) (chartuti
 
 	monitoring := c.Spec.Monitoring
 	v.AddChild("monitoring", translation.GetGlobalMonitoring(monitoring))
-	central, err := getCentralComponentValues(centralSpec)
+	central, err := getCentralComponentValues(ctx, centralSpec, c.GetNamespace(), t.client)
 	if err != nil {
 		return nil, err
 	}
@@ -172,15 +175,34 @@ func getExposureRouteValues(r *platform.ExposureRoute) *translation.ValuesBuilde
 	return &route
 }
 
-func getCentralDBPersistenceValues(p *platform.DBPersistence) *translation.ValuesBuilder {
+func getCentralDBPersistenceValues(ctx context.Context, p *platform.DBPersistence, namespace string, client ctrlClient.Client) *translation.ValuesBuilder {
 	persistence := translation.NewValuesBuilder()
 	if hostPath := p.GetHostPath(); hostPath != "" {
 		persistence.SetStringValue("hostPath", hostPath)
 	} else {
 		pvcBuilder := translation.NewValuesBuilder()
 		pvcBuilder.SetBoolValue("createClaim", false)
+
+		// Search for a backup PVC, if it exists, allow to mount it.
+		backupClaimName := common.DefaultCentralDBBackupPVCName
 		if pvc := p.GetPersistentVolumeClaim(); pvc != nil {
+			if pvc.ClaimName != nil {
+				backupClaimName = common.GetBackupClaimName(*pvc.ClaimName)
+			}
 			pvcBuilder.SetString("claimName", pvc.ClaimName)
+		}
+
+		key := ctrlClient.ObjectKey{
+			Namespace: namespace,
+			Name:      backupClaimName,
+		}
+		pvc := &corev1.PersistentVolumeClaim{}
+		if err := client.Get(ctx, key, pvc); err == nil {
+			persistence.SetBoolValue("_backup", true)
+		} else {
+			if !apiErrors.IsNotFound(err) {
+				persistence.SetError(fmt.Errorf("could not find backup PVC, %w", err))
+			}
 		}
 
 		persistence.AddChild("persistentVolumeClaim", &pvcBuilder)
@@ -188,7 +210,7 @@ func getCentralDBPersistenceValues(p *platform.DBPersistence) *translation.Value
 	return &persistence
 }
 
-func getCentralComponentValues(c *platform.CentralComponentSpec) (*translation.ValuesBuilder, error) {
+func getCentralComponentValues(ctx context.Context, c *platform.CentralComponentSpec, namespace string, client ctrlClient.Client) (*translation.ValuesBuilder, error) {
 	cv := translation.NewValuesBuilder()
 
 	cv.AddChild(translation.ResourcesKey, translation.GetResources(c.Resources))
@@ -223,7 +245,7 @@ func getCentralComponentValues(c *platform.CentralComponentSpec) (*translation.V
 		cv.AddAllFrom(translation.GetHostAliases(translation.HostAliasesKey, c.HostAliases))
 	}
 
-	cv.AddChild("db", getCentralDBComponentValues(c.DB))
+	cv.AddChild("db", getCentralDBComponentValues(ctx, c.DB, namespace, client))
 	cv.AddChild("telemetry", getTelemetryValues(c.Telemetry))
 
 	cv.AddChild("declarativeConfiguration", getDeclarativeConfigurationValues(c.DeclarativeConfiguration))
@@ -237,7 +259,7 @@ func getCentralComponentValues(c *platform.CentralComponentSpec) (*translation.V
 	return &cv, nil
 }
 
-func getCentralDBComponentValues(c *platform.CentralDBSpec) *translation.ValuesBuilder {
+func getCentralDBComponentValues(ctx context.Context, c *platform.CentralDBSpec, namespace string, client ctrlClient.Client) *translation.ValuesBuilder {
 	cv := translation.NewValuesBuilder()
 	if c == nil {
 		c = &platform.CentralDBSpec{}
@@ -276,7 +298,7 @@ func getCentralDBComponentValues(c *platform.CentralDBSpec) *translation.ValuesB
 	cv.AddChild(translation.ResourcesKey, translation.GetResources(c.Resources))
 	cv.SetStringMap("nodeSelector", c.NodeSelector)
 	cv.AddAllFrom(translation.GetTolerations(translation.TolerationsKey, c.Tolerations))
-	cv.AddChild("persistence", getCentralDBPersistenceValues(c.GetPersistence()))
+	cv.AddChild("persistence", getCentralDBPersistenceValues(ctx, c.GetPersistence(), namespace, client))
 	if len(c.HostAliases) > 0 {
 		cv.AddAllFrom(translation.GetHostAliases(translation.HostAliasesKey, c.HostAliases))
 	}

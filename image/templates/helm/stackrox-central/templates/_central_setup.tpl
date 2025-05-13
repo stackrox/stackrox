@@ -52,16 +52,19 @@
     Central's DB PVC config setup
   */}}
 {{ $dbVolumeCfg := dict }}
+{{ $dbBackupVolumeCfg := dict }}
 {{ if not $centralDBCfg.external }}
 {{ if $centralDBCfg.persistence.none }}
   {{ include "srox.warn" (list $ "You have selected no persistence backend. Every deletion of the StackRox Central DB pod will cause you to lose all your data. This is STRONGLY recommended against.") }}
   {{ $_ := set $dbVolumeCfg "emptyDir" dict }}
+  {{ $_ := set $dbBackupVolumeCfg "emptyDir" dict }}
 {{ end }}
 {{ if $centralDBCfg.persistence.hostPath }}
   {{ if not $centralDBCfg.nodeSelector }}
     {{ include "srox.warn" (list $ "You have selected host path persistence, but not specified a node selector. This is unlikely to work reliably.") }}
   {{ end }}
   {{ $_ := set $dbVolumeCfg "hostPath" (dict "path" $centralDBCfg.persistence.hostPath) }}
+  {{ $_ := set $dbBackupVolumeCfg "hostPath" (clean (printf "%s/backup" (dict "path" $centralDBCfg.persistence.hostPath))) }}
 {{ end }}
 {{/* Configure PVC if either any of the settings in `centralDB.persistence.persistentVolumeClaim` are provided,
      or no other persistence backend has been configured yet. */}}
@@ -69,6 +72,7 @@
   {{ $dbPVCCfg := $centralDBCfg.persistence.persistentVolumeClaim }}
   {{ $_ := include "srox.mergeInto" (list $dbPVCCfg $._rox._defaults.dbPVCDefaults (dict "createClaim" (or .Release.IsInstall (eq $._rox._renderMode "centralDBOnly")))) }}
   {{ $_ = set $dbVolumeCfg "persistentVolumeClaim" (dict "claimName" $dbPVCCfg.claimName) }}
+  {{ $_ = set $dbBackupVolumeCfg "persistentVolumeClaim" (dict "claimName" (printf "%s-backup" $dbPVCCfg.claimName)) }}
   {{ if $dbPVCCfg.createClaim }}
     {{ $_ = set $centralDBCfg.persistence "_pvcCfg" $dbPVCCfg }}
   {{ end }}
@@ -80,6 +84,7 @@
 
 {{ if not $centralDBCfg.external }}
 {{ $_ = set $centralDBCfg.persistence "_volumeCfg" $dbVolumeCfg }}
+{{ $_ = set $centralDBCfg.persistence "_backupVolumeCfg" $dbBackupVolumeCfg }}
 {{ end }}
 
 {{/* Endpoint configuration */}}

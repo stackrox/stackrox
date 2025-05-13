@@ -75,8 +75,7 @@ func (s *ImagesStoreSuite) TestStore() {
 			vuln.FirstSystemOccurrence = foundImage.GetLastUpdated()
 			vuln.FirstImageOccurrence = foundImage.GetLastUpdated()
 			vuln.Epss = nil
-			// TODO(ROX-27402) remove this
-			vuln.Advisory = ""
+			vuln.Advisory = nil
 		}
 	}
 

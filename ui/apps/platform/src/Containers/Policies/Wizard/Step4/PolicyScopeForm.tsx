@@ -200,6 +200,7 @@ function PolicyScopeForm() {
                             isDisabled={hasAuditLogEventSource || !hasBuildLifecycle}
                             onClear={() => setFieldValue('excludedImageNames', [])}
                             placeholderText="Select images to exclude"
+                            maxHeight="300px"
                         >
                             {images?.map((image) => (
                                 <SelectOption key={image.name} value={image.name}>

@@ -2,6 +2,8 @@ package mappers
 
 import (
 	"context"
+	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -434,6 +436,260 @@ func Test_ToProtoV4VulnerabilityReport_FilterNodeJS(t *testing.T) {
 			} else {
 				assert.ErrorContains(t, err, tt.wantErr)
 			}
+			protoassert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestToProtoV4VulnerabilityReport_FilterRHCCLayers(t *testing.T) {
+	testutils.MustUpdateFeature(t, features.ScannerV4RedHatLayers, true)
+
+	layerA := claircore.MustParseDigest("sha256:" + strings.Repeat("a", 64))
+	layerB := claircore.MustParseDigest("sha256:" + strings.Repeat("b", 64))
+
+	tests := map[string]struct {
+		arg     *claircore.VulnerabilityReport
+		want    *v4.VulnerabilityReport
+		wantErr string
+	}{
+		"filter non-RPM packages in Red Hat layers": {
+			arg: &claircore.VulnerabilityReport{
+				Hash: claircore.MustParseDigest("sha256:9124cd5256c6d674f6b11a4d01fea8148259be1f66ca2cf9dfbaafc83c31874e"),
+				Vulnerabilities: map[string]*claircore.Vulnerability{
+					"0": {
+						ID:      "0",
+						Name:    "0",
+						Updater: "rhel-vex",
+					},
+					"1": {
+						ID:      "1",
+						Name:    "1",
+						Updater: "rhel-vex",
+					},
+					"2": {
+						ID:      "2",
+						Name:    "2",
+						Updater: "something else",
+					},
+					"3": {
+						ID:      "3",
+						Name:    "3",
+						Updater: "something different",
+					},
+				},
+				Packages: map[string]*claircore.Package{
+					"0": {
+						ID:      "0",
+						Name:    "my go binary",
+						Version: "0",
+					},
+					"1": {
+						ID:      "1",
+						Name:    "my java jar",
+						Version: "1",
+					},
+					"2": {
+						ID:      "2",
+						Name:    "my python egg",
+						Version: "2",
+					},
+					"3": {
+						ID:      "3",
+						Name:    "my ruby gem",
+						Version: "3",
+					},
+				},
+				Repositories: map[string]*claircore.Repository{
+					"0": {
+						ID:   "0",
+						Name: "Red Hat Container Catalog",
+						URI:  `https://catalog.redhat.com/software/containers/explore`,
+					},
+					"1": {
+						ID:   "1",
+						Name: "something else",
+						URI:  "somethingelse.com",
+					},
+				},
+				Environments: map[string][]*claircore.Environment{
+					"0": {
+						{
+							RepositoryIDs: []string{"0", "1"},
+							IntroducedIn:  layerA,
+						},
+					},
+					"1": {
+						{
+							RepositoryIDs: []string{"1"},
+							IntroducedIn:  layerB,
+						},
+					},
+					"2": {
+						{
+							RepositoryIDs: []string{"0"},
+							IntroducedIn:  layerA,
+						},
+					},
+					"3": {
+						{
+							RepositoryIDs: []string{"1"},
+							IntroducedIn:  layerB,
+						},
+					},
+				},
+				PackageVulnerabilities: map[string][]string{
+					"0": {"2", "0", "3", "1"},
+					"1": {"1", "2"},
+					"2": {"2", "3"},
+					"3": {"0", "1", "2", "3"},
+				},
+			},
+			want: &v4.VulnerabilityReport{
+				// Converter doesn't set HashId to empty.
+				HashId: "",
+				Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+					"0": {
+						Id:   "0",
+						Name: "0",
+					},
+					"1": {
+						Id:   "1",
+						Name: "1",
+					},
+					"2": {
+						Id:   "2",
+						Name: "2",
+					},
+					"3": {
+						Id:   "3",
+						Name: "3",
+					},
+				},
+				PackageVulnerabilities: map[string]*v4.StringList{
+					"0": {
+						Values: []string{"0", "1"},
+					},
+					"1": {
+						Values: []string{"1", "2"},
+					},
+					"3": {
+						Values: []string{"0", "1", "2", "3"},
+					},
+				},
+				Contents: &v4.Contents{
+					Packages: []*v4.Package{
+						{
+							Id:      "0",
+							Name:    "my go binary",
+							Version: "0",
+							NormalizedVersion: &v4.NormalizedVersion{
+								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+							},
+							Cpe: emptyCPE,
+						},
+						{
+							Id:      "1",
+							Name:    "my java jar",
+							Version: "1",
+							NormalizedVersion: &v4.NormalizedVersion{
+								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+							},
+							Cpe: emptyCPE,
+						},
+						{
+							Id:      "2",
+							Name:    "my python egg",
+							Version: "2",
+							NormalizedVersion: &v4.NormalizedVersion{
+								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+							},
+							Cpe: emptyCPE,
+						},
+						{
+							Id:      "3",
+							Name:    "my ruby gem",
+							Version: "3",
+							NormalizedVersion: &v4.NormalizedVersion{
+								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+							},
+							Cpe: emptyCPE,
+						},
+					},
+					Repositories: []*v4.Repository{
+						{
+							Id:   "0",
+							Name: "Red Hat Container Catalog",
+							Uri:  `https://catalog.redhat.com/software/containers/explore`,
+							Cpe:  emptyCPE,
+						},
+						{
+							Id:   "1",
+							Name: "something else",
+							Uri:  "somethingelse.com",
+							Cpe:  emptyCPE,
+						},
+					},
+					Environments: map[string]*v4.Environment_List{
+						"0": {
+							Environments: []*v4.Environment{
+								{
+									RepositoryIds: []string{"0", "1"},
+									IntroducedIn:  layerA.String(),
+								},
+							},
+						},
+						"1": {
+							Environments: []*v4.Environment{
+								{
+									RepositoryIds: []string{"1"},
+									IntroducedIn:  layerB.String(),
+								},
+							},
+						},
+						"2": {
+							Environments: []*v4.Environment{
+								{
+									RepositoryIds: []string{"0"},
+									IntroducedIn:  layerA.String(),
+								},
+							},
+						},
+						"3": {
+							Environments: []*v4.Environment{
+								{
+									RepositoryIds: []string{"1"},
+									IntroducedIn:  layerB.String(),
+								},
+							},
+						},
+					},
+				},
+			},
+			wantErr: "",
+		},
+	}
+	ctx := context.Background()
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			got, err := ToProtoV4VulnerabilityReport(ctx, tt.arg)
+			if tt.wantErr != "" {
+				assert.ErrorContains(t, err, tt.wantErr)
+				return
+			}
+			assert.NoError(t, err)
+
+			// The assert library cannot compare elements in slices like the ones below
+			// while ignoring order. So, sort each slice.
+			for _, pkgVulns := range got.GetPackageVulnerabilities() {
+				slices.Sort(pkgVulns.GetValues())
+			}
+			slices.SortFunc(got.GetContents().GetPackages(), func(a, b *v4.Package) int {
+				return strings.Compare(a.GetId(), b.GetId())
+			})
+			slices.SortFunc(got.GetContents().GetRepositories(), func(a, b *v4.Repository) int {
+				return strings.Compare(a.GetId(), b.GetId())
+			})
+
 			protoassert.Equal(t, tt.want, got)
 		})
 	}
@@ -1731,9 +1987,12 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 			enableRedHatCVEs: true,
 			want: map[string]*v4.VulnerabilityReport_Vulnerability{
 				"foo": {
-					Id:                 "foo",
-					Name:               "CVE-2021-44228",
-					Advisory:           "RHSA-2021:5132",
+					Id:   "foo",
+					Name: "CVE-2021-44228",
+					Advisory: &v4.VulnerabilityReport_Advisory{
+						Name: "RHSA-2021:5132",
+						Link: "https://access.redhat.com/errata/RHSA-2021:5132",
+					},
 					Link:               "https://access.redhat.com/security/cve/CVE-2021-44228 https://access.redhat.com/errata/RHSA-2021:5132",
 					Issued:             protoNow,
 					Severity:           "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
@@ -2007,33 +2266,36 @@ func Test_advisory(t *testing.T) {
 	testutils.MustUpdateFeature(t, features.ScannerV4RedHatCVEs, true)
 	testcases := map[string]struct {
 		vuln     *claircore.Vulnerability
-		expected string
+		expected *v4.VulnerabilityReport_Advisory
 	}{
 		"non-VEX": {
 			vuln: &claircore.Vulnerability{
 				Links:   "https://access.redhat.com/security/cve/CVE-2023-25761 https://access.redhat.com/errata/RHSA-2023:1866 https://access.redhat.com/security/cve/CVE-2023-25762",
 				Updater: "not-vex",
 			},
-			expected: "",
+			expected: nil,
 		},
 		"no RHSA": {
 			vuln: &claircore.Vulnerability{
 				Links:   "https://access.redhat.com/security/cve/CVE-2023-25761 https://access.redhat.com/security/cve/CVE-2023-25762",
 				Updater: "rhel-vex",
 			},
-			expected: "",
+			expected: nil,
 		},
 		"RHSA": {
 			vuln: &claircore.Vulnerability{
 				Links:   "https://access.redhat.com/security/cve/CVE-2023-25761 https://access.redhat.com/errata/RHSA-2023:1866 https://access.redhat.com/security/cve/CVE-2023-25762",
 				Updater: "rhel-vex",
 			},
-			expected: "RHSA-2023:1866",
+			expected: &v4.VulnerabilityReport_Advisory{
+				Name: "RHSA-2023:1866",
+				Link: "https://access.redhat.com/errata/RHSA-2023:1866",
+			},
 		},
 	}
 	for name, testcase := range testcases {
 		t.Run(name, func(t *testing.T) {
-			assert.Equal(t, testcase.expected, advisory(testcase.vuln))
+			protoassert.Equal(t, testcase.expected, advisory(testcase.vuln))
 		})
 	}
 }

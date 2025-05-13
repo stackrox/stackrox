@@ -121,6 +121,8 @@ function PolicyScopeCard({
                                     isOpen={isClusterSelectOpen}
                                     selections={value.cluster || scope?.cluster}
                                     placeholderText="Select a cluster"
+                                    hasInlineFilter
+                                    maxHeight="300px"
                                 >
                                     {clusters.map((cluster) => (
                                         <SelectOption key={cluster.name} value={cluster.id}>
@@ -155,6 +157,8 @@ function PolicyScopeCard({
                                         selections={value.name}
                                         placeholderText="Select a deployment"
                                         isDisabled={hasAuditLogEventSource}
+                                        hasInlineFilter
+                                        maxHeight="300px"
                                     >
                                         {deployments.map((deployment) => (
                                             <SelectOption

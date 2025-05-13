@@ -20,12 +20,12 @@ import { entityNounOrdinaryCaseSingular } from '../entitiesForCompliance';
 import VerticalClusterBar from './VerticalClusterBar';
 
 function processData(match, location, data, entityType, searchParam) {
-    if (!data || !data.results.results.length || !data.entityList) {
+    if (!data || !data.controls.results.length || !data.entityList) {
         return [];
     }
     const standardsGrouping = {};
-    const { results, entityList, complianceStandards } = data;
-    results.results.forEach((result) => {
+    const { controls, entityList, complianceStandards } = data;
+    controls.results.forEach((result) => {
         const entity = entityList.find(
             (entityObject) => entityObject.id === result.aggregationKeys[1].id
         );
