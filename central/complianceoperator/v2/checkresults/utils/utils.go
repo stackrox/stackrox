@@ -5,8 +5,11 @@ import (
 
 	"github.com/pkg/errors"
 	benchmarkDS "github.com/stackrox/rox/central/complianceoperator/v2/benchmarks/datastore"
+	complianceCheckResultDS "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
+	complianceProfileDS "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
 	complianceRuleDS "github.com/stackrox/rox/central/complianceoperator/v2/rules/datastore"
 	complianceScanDS "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	types "github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
@@ -56,4 +59,28 @@ func GetControlsForScanResults(ctx context.Context, ruleDS complianceRuleDS.Data
 		return nil, errors.Wrap(err, "could not receive controls by rule controls")
 	}
 	return controls, nil
+}
+
+func DeleteOldResults(ctx context.Context, profileRefID string, resultDS complianceCheckResultDS.DataStore, scanDS complianceScanDS.DataStore, profileDS complianceProfileDS.DataStore) error {
+	scanRefQuery := search.NewQueryBuilder().
+		AddExactMatches(
+			search.ComplianceOperatorProfileRef,
+			profileRefID,
+		).ProtoQuery()
+	// Find all the Scans that are associated with this profile
+	scans, err := scanDS.SearchScans(ctx, scanRefQuery)
+	if err != nil {
+		return errors.Wrapf(err, "unable to retrieve scans with profile ref %q", profileRefID)
+	}
+	if len(scans) == 0 {
+		return errors.Errorf("unable to find scans asociated with profile ref %q", profileRefID)
+	}
+	errList := errorhelpers.NewErrorList("delete old CheckResults")
+	for _, s := range scans {
+		// If the scan failed we delete the last CheckResults too
+		if err := resultDS.DeleteOldResults(ctx, s.GetLastStartedTime(), s.GetScanRefId(), true); err != nil {
+			errList.AddError(errors.Wrapf(err, "unable to delete results for scan ref %q", s.GetScanRefId()))
+		}
+	}
+	return errList.ToError()
 }
