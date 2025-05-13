@@ -57,16 +57,17 @@ const (
 
 // ComplianceOperatorCheckResultV2 holds the Gorm model for Postgres table `compliance_operator_check_result_v2`.
 type ComplianceOperatorCheckResultV2 struct {
-	ID             string                                              `gorm:"column:id;type:varchar;primaryKey"`
-	CheckID        string                                              `gorm:"column:checkid;type:varchar"`
-	CheckName      string                                              `gorm:"column:checkname;type:varchar"`
-	ClusterID      string                                              `gorm:"column:clusterid;type:uuid;index:complianceoperatorcheckresultv2_sac_filter,type:hash"`
-	Status         storage.ComplianceOperatorCheckResultV2_CheckStatus `gorm:"column:status;type:integer"`
-	Severity       storage.RuleSeverity                                `gorm:"column:severity;type:integer"`
-	CreatedTime    *time.Time                                          `gorm:"column:createdtime;type:timestamp"`
-	ScanConfigName string                                              `gorm:"column:scanconfigname;type:varchar"`
-	Rationale      string                                              `gorm:"column:rationale;type:varchar"`
-	ScanRefID      string                                              `gorm:"column:scanrefid;type:uuid"`
-	RuleRefID      string                                              `gorm:"column:rulerefid;type:uuid"`
-	Serialized     []byte                                              `gorm:"column:serialized;type:bytea"`
+	ID              string                                              `gorm:"column:id;type:varchar;primaryKey"`
+	CheckID         string                                              `gorm:"column:checkid;type:varchar"`
+	CheckName       string                                              `gorm:"column:checkname;type:varchar"`
+	ClusterID       string                                              `gorm:"column:clusterid;type:uuid;index:complianceoperatorcheckresultv2_sac_filter,type:hash"`
+	Status          storage.ComplianceOperatorCheckResultV2_CheckStatus `gorm:"column:status;type:integer"`
+	Severity        storage.RuleSeverity                                `gorm:"column:severity;type:integer"`
+	CreatedTime     *time.Time                                          `gorm:"column:createdtime;type:timestamp"`
+	ScanConfigName  string                                              `gorm:"column:scanconfigname;type:varchar"`
+	Rationale       string                                              `gorm:"column:rationale;type:varchar"`
+	ScanRefID       string                                              `gorm:"column:scanrefid;type:uuid"`
+	RuleRefID       string                                              `gorm:"column:rulerefid;type:uuid"`
+	LastStartedTime *time.Time                                          `gorm:"column:laststartedtime;type:timestamp"`
+	Serialized      []byte                                              `gorm:"column:serialized;type:bytea"`
 }
