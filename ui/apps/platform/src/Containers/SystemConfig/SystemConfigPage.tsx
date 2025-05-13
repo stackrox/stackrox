@@ -1,19 +1,11 @@
 import React, { ReactElement, ReactNode, useEffect, useState } from 'react';
-import {
-    Alert,
-    Bullseye,
-    Button,
-    Flex,
-    FlexItem,
-    PageSection,
-    Spinner,
-    Title,
-} from '@patternfly/react-core';
+import { Bullseye, Spinner } from '@patternfly/react-core';
 
 /*
 import { clustersBasePath, getIsRoutePathRendered } from 'routePaths';
 */
 import usePermissions from 'hooks/usePermissions';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import { fetchSystemConfig } from 'services/SystemConfigService';
 import { SystemConfig } from 'types/config.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
@@ -34,6 +26,11 @@ const SystemConfigPage = (): ReactElement => {
     })(clustersBasePath);
     */
     const isClustersRoutePathRendered = true; // TODO replace with the preceding after #2105 has been merged
+
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isCustomizingPlatformComponentsEnabled = isFeatureFlagEnabled(
+        'ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS'
+    );
 
     const [isEditing, setIsEditing] = useState(false);
 
@@ -57,11 +54,11 @@ const SystemConfigPage = (): ReactElement => {
             });
     }, []);
 
-    function onClickEdit() {
+    function onEditConfig() {
         setIsEditing(true);
     }
 
-    function setIsNotEditing() {
+    function onCancelEditConfig() {
         setIsEditing(false);
     }
 
@@ -73,57 +70,28 @@ const SystemConfigPage = (): ReactElement => {
                 <Spinner />
             </Bullseye>
         );
-    } else if (systemConfig) {
-        content = isEditing ? (
-            <PageSection variant="light">
-                <SystemConfigForm
-                    systemConfig={systemConfig}
-                    setSystemConfig={setSystemConfig}
-                    setIsNotEditing={setIsNotEditing}
-                />
-            </PageSection>
-        ) : (
+    } else if (!isEditing || !systemConfig) {
+        return (
             <SystemConfigDetails
-                isClustersRoutePathRendered={isClustersRoutePathRendered}
                 systemConfig={systemConfig}
+                errorMessage={errorMessage}
+                onEditConfig={onEditConfig}
+                isClustersRoutePathRendered={isClustersRoutePathRendered}
+                hasReadWriteAccessForAdministration={hasReadWriteAccessForAdministration}
+                isCustomizingPlatformComponentsEnabled={isCustomizingPlatformComponentsEnabled}
             />
         );
     } else {
-        content = (
-            <Alert
-                variant="warning"
-                isInline
-                title="Failed to get system configuration"
-                component="p"
-            >
-                {errorMessage}
-            </Alert>
+        return (
+            <SystemConfigForm
+                systemConfig={systemConfig}
+                setSystemConfig={setSystemConfig}
+                onCancelEditConfig={onCancelEditConfig}
+            />
         );
     }
 
-    return (
-        <>
-            <PageSection variant="light">
-                <Flex>
-                    <FlexItem flex={{ default: 'flex_1' }}>
-                        <Title headingLevel="h1">System Configuration</Title>
-                    </FlexItem>
-                    {hasReadWriteAccessForAdministration && (
-                        <FlexItem align={{ default: 'alignRight' }}>
-                            <Button
-                                variant="primary"
-                                isDisabled={isEditing || isLoading}
-                                onClick={onClickEdit}
-                            >
-                                Edit
-                            </Button>
-                        </FlexItem>
-                    )}
-                </Flex>
-            </PageSection>
-            {content}
-        </>
-    );
+    return content;
 };
 
 export default SystemConfigPage;

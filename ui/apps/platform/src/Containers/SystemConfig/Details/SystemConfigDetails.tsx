@@ -1,8 +1,11 @@
 import React, { ReactElement } from 'react';
 import { useSelector } from 'react-redux';
 import {
+    Alert,
     Button,
+    Divider,
     Flex,
+    FlexItem,
     Grid,
     GridItem,
     PageSection,
@@ -14,7 +17,6 @@ import { OutlinedQuestionCircleIcon } from '@patternfly/react-icons';
 
 import { SystemConfig } from 'types/config.proto';
 import { selectors } from 'reducers';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 
 import PopoverBodyContent from 'Components/PopoverBodyContent';
 import PrivateConfigDataRetentionDetails from './PrivateConfigDataRetentionDetails';
@@ -24,95 +26,136 @@ import PublicConfigTelemetryDetails from './PublicConfigTelemetryDetails';
 import PlatformComponentsConfigDetails from './PlatformComponentsConfigDetails';
 
 export type SystemConfigDetailsProps = {
+    systemConfig: SystemConfig | null;
+    errorMessage: string;
+    onEditConfig: () => void;
     isClustersRoutePathRendered: boolean;
-    systemConfig: SystemConfig;
+    hasReadWriteAccessForAdministration: boolean;
+    isCustomizingPlatformComponentsEnabled: boolean;
 };
 
 function SystemConfigDetails({
-    isClustersRoutePathRendered,
     systemConfig,
+    errorMessage,
+    onEditConfig,
+    isClustersRoutePathRendered,
+    hasReadWriteAccessForAdministration,
+    isCustomizingPlatformComponentsEnabled,
 }: SystemConfigDetailsProps): ReactElement {
     const isTelemetryConfigured = useSelector(selectors.getIsTelemetryConfigured);
+    let content = <div />;
 
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isCustomizingPlatformComponentsEnabled = isFeatureFlagEnabled(
-        'ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS'
-    );
-
-    return (
-        <>
-            {isCustomizingPlatformComponentsEnabled && (
-                <PageSection data-testid="platform-components-config">
-                    <Flex direction={{ default: 'row' }} spaceItems={{ default: 'spaceItemsMd' }}>
-                        <Title headingLevel="h2" className="pf-v5-u-mb-md">
-                            Platform components configuration
-                        </Title>
-                        <Popover
-                            aria-label="Platform components config info"
-                            bodyContent={
-                                <PopoverBodyContent
-                                    headerContent="What is a platform component?"
-                                    bodyContent="Platform components include the underlying infrastructure, operators, and third-party services that support application development. Defining these components allow for categorization of security findings and segments them by area of responsibility."
-                                />
-                            }
+    if (errorMessage || !systemConfig) {
+        content = (
+            <Alert
+                variant="warning"
+                isInline
+                title="Failed to get system configuration"
+                component="p"
+            >
+                {errorMessage}
+            </Alert>
+        );
+    } else {
+        content = (
+            <PageSection padding={{ default: 'noPadding' }}>
+                {isCustomizingPlatformComponentsEnabled && (
+                    <PageSection data-testid="platform-components-config">
+                        <Flex
+                            direction={{ default: 'row' }}
+                            spaceItems={{ default: 'spaceItemsMd' }}
                         >
-                            <Button
-                                variant="plain"
-                                isInline
-                                aria-label="Show platform components config info"
-                                className="pf-v5-u-p-0"
+                            <Title headingLevel="h2" className="pf-v5-u-mb-md">
+                                Platform components configuration
+                            </Title>
+                            <Popover
+                                aria-label="Platform components config info"
+                                bodyContent={
+                                    <PopoverBodyContent
+                                        headerContent="What is a platform component?"
+                                        bodyContent="Platform components include the underlying infrastructure, operators, and third-party services that support application development. Defining these components allow for categorization of security findings and segments them by area of responsibility."
+                                    />
+                                }
                             >
-                                <OutlinedQuestionCircleIcon />
-                            </Button>
-                        </Popover>
-                    </Flex>
-                    <Text>
-                        Define platform components using namespaces to segment platform security
-                        findings from user workloads
-                    </Text>
-                    <div className="pf-v5-u-mt-lg">
-                        <PlatformComponentsConfigDetails />
-                    </div>
+                                <Button
+                                    variant="plain"
+                                    isInline
+                                    aria-label="Show platform components config info"
+                                    className="pf-v5-u-p-0"
+                                >
+                                    <OutlinedQuestionCircleIcon />
+                                </Button>
+                            </Popover>
+                        </Flex>
+                        <Text>
+                            Define platform components using namespaces to segment platform security
+                            findings from user workloads
+                        </Text>
+                        <div className="pf-v5-u-mt-lg">
+                            <PlatformComponentsConfigDetails />
+                        </div>
+                    </PageSection>
+                )}
+                <PageSection data-testid="private-data-retention-config">
+                    <Title headingLevel="h2" className="pf-v5-u-mb-md">
+                        Private data retention configuration
+                    </Title>
+                    <PrivateConfigDataRetentionDetails
+                        isClustersRoutePathRendered={isClustersRoutePathRendered}
+                        privateConfig={systemConfig?.privateConfig}
+                    />
                 </PageSection>
-            )}
-            <PageSection data-testid="private-data-retention-config">
-                <Title headingLevel="h2" className="pf-v5-u-mb-md">
-                    Private data retention configuration
-                </Title>
-                <PrivateConfigDataRetentionDetails
-                    isClustersRoutePathRendered={isClustersRoutePathRendered}
-                    privateConfig={systemConfig?.privateConfig}
-                />
-            </PageSection>
-            <PageSection data-testid="public-config">
-                <Title headingLevel="h2" className="pf-v5-u-mb-md">
-                    Public configuration
-                </Title>
-                <Grid hasGutter>
-                    <GridItem sm={12} md={6}>
-                        <PublicConfigBannerDetails
-                            type="header"
-                            publicConfig={systemConfig?.publicConfig}
-                        />
-                    </GridItem>
-                    <GridItem sm={12} md={6}>
-                        <PublicConfigBannerDetails
-                            type="footer"
-                            publicConfig={systemConfig?.publicConfig}
-                        />
-                    </GridItem>
-                    <GridItem sm={12} md={6}>
-                        <PublicConfigLoginDetails publicConfig={systemConfig?.publicConfig} />
-                    </GridItem>
-                    {isTelemetryConfigured && (
+                <PageSection data-testid="public-config">
+                    <Title headingLevel="h2" className="pf-v5-u-mb-md">
+                        Public configuration
+                    </Title>
+                    <Grid hasGutter>
                         <GridItem sm={12} md={6}>
-                            <PublicConfigTelemetryDetails
+                            <PublicConfigBannerDetails
+                                type="header"
                                 publicConfig={systemConfig?.publicConfig}
                             />
                         </GridItem>
-                    )}
-                </Grid>
+                        <GridItem sm={12} md={6}>
+                            <PublicConfigBannerDetails
+                                type="footer"
+                                publicConfig={systemConfig?.publicConfig}
+                            />
+                        </GridItem>
+                        <GridItem sm={12} md={6}>
+                            <PublicConfigLoginDetails publicConfig={systemConfig?.publicConfig} />
+                        </GridItem>
+                        {isTelemetryConfigured && (
+                            <GridItem sm={12} md={6}>
+                                <PublicConfigTelemetryDetails
+                                    publicConfig={systemConfig?.publicConfig}
+                                />
+                            </GridItem>
+                        )}
+                    </Grid>
+                </PageSection>
             </PageSection>
+        );
+    }
+
+    return (
+        <>
+            <PageSection variant="light">
+                <Flex>
+                    <FlexItem flex={{ default: 'flex_1' }}>
+                        <Title headingLevel="h1">System Configuration</Title>
+                    </FlexItem>
+                    {hasReadWriteAccessForAdministration && (
+                        <FlexItem align={{ default: 'alignRight' }}>
+                            <Button variant="primary" onClick={onEditConfig}>
+                                Edit
+                            </Button>
+                        </FlexItem>
+                    )}
+                </Flex>
+            </PageSection>
+            <Divider component="div" />
+            {content}
         </>
     );
 }
