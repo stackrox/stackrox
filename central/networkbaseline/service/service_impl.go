@@ -109,8 +109,13 @@ func (s *serviceImpl) GetNetworkBaselineStatusForExternalFlows(ctx context.Conte
 
 	statuses := s.getStatusesForPeers(baseline, peers)
 
-	anomalousFlows := make([]*v1.NetworkBaselinePeerStatus, 0)
-	baselineFlows := make([]*v1.NetworkBaselinePeerStatus, 0)
+	// setting capacity here to the maxmimum in both cases,
+	// which means the worst case we allocate twice as much memory as
+	// we need (when the statuses are all anomalous or all baseline)
+	// but we avoid repeated copies/reallocation when appending to the
+	// slices below.
+	anomalousFlows := make([]*v1.NetworkBaselinePeerStatus, 0, len(statuses))
+	baselineFlows := make([]*v1.NetworkBaselinePeerStatus, 0, len(statuses))
 
 	for _, status := range statuses {
 		switch status.GetStatus() {
@@ -216,15 +221,13 @@ func (s *serviceImpl) getStatusesForPeers(
 
 // anonymizedPeerKey anonymizes discovered external peers to the internet
 // for the purposes of looking up matching baseline peers.
+//
+// Always returns an entity with only Type and ID populated, to be used
+// for map lookups
 func (s *serviceImpl) anonymizedPeerKey(peer *v1.NetworkBaselineStatusPeer) networkgraph.Entity {
 	entity := peer.GetEntity()
 	if entity.GetType() == storage.NetworkEntityInfo_EXTERNAL_SOURCE && entity.GetDiscovered() {
-		internet := networkgraph.InternetEntity()
-		// removing some fields for map keying
-		return networkgraph.Entity{
-			Type: internet.Type,
-			ID:   internet.ID,
-		}
+		return networkgraph.InternetEntity()
 	}
 
 	return networkgraph.Entity{
