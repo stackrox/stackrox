@@ -370,6 +370,8 @@ func ensureDB(ctx context.Context) {
 
 func startServices() {
 	log.Info("DEBUG: Starting critical services ... ")
+	go cloudSourcesManager.Singleton().Start()
+
 	reprocessor.Singleton().Start()
 	suppress.Singleton().Start()
 	pruning.Singleton().Start()
@@ -560,8 +562,6 @@ func startGRPCServer() {
 	if env.DeclarativeConfiguration.BooleanSetting() {
 		declarativeconfig.ManagerSingleton().ReconcileDeclarativeConfigurations()
 	}
-
-	cloudSourcesManager.Singleton().Start()
 
 	clusterInitBackend := backend.Singleton()
 	serviceMTLSExtractor, err := service.NewExtractorWithCertValidation(clusterInitBackend)
