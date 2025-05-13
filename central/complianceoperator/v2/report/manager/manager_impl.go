@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	checkResults "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	complianceIntegrationDS "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore"
 	profileDatastore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
 	"github.com/stackrox/rox/central/complianceoperator/v2/report"
@@ -399,6 +400,9 @@ func (m *managerImpl) handleReadyScan() {
 				concurrency.WithLock(&m.watchingScansLock, func() {
 					delete(m.watchingScans, scanWatcherResult.WatcherID)
 				})
+				if err := watcher.OnSuccessDeleteOldResults(m.automaticReportingCtx, scanWatcherResult, checkResults.Singleton()); err != nil {
+					log.Errorf("unable to delete old CheckResults: %v", err)
+				}
 				if errors.Is(scanWatcherResult.Error, watcher.ErrScanRemoved) {
 					log.Debugf("Scan %s was removed", scanWatcherResult.Scan.GetScanName())
 					continue
@@ -515,6 +519,9 @@ func (m *managerImpl) handleReadyScanConfig() {
 				concurrency.WithLock(&m.watchingScanConfigsLock, func() {
 					delete(m.watchingScanConfigs, scanConfigWatcherResult.WatcherID)
 				})
+				if err := watcher.OnFailureDeleteOldResults(m.automaticReportingCtx, scanConfigWatcherResult, checkResults.Singleton(), m.scanDataStore, m.profileDataStore); err != nil {
+					log.Errorf("unable to delete old CheckResults: %v", err)
+				}
 				m.generateReportsFromWatcherResults(scanConfigWatcherResult)
 			}
 		}
