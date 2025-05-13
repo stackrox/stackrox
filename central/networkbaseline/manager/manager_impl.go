@@ -861,32 +861,7 @@ func (m *manager) addBaseline(deploymentID, deploymentName, clusterID, namespace
 		return err
 	}
 
-	networkTree := tree.NewMultiNetworkTree(
-		m.treeManager.GetReadOnlyNetworkTree(managerCtx, clusterID),
-		m.treeManager.GetDefaultNetworkTree(managerCtx),
-	)
-
-	listDeploymentMap := map[string]*storage.ListDeployment{
-		deploymentID: &storage.ListDeployment{
-			Name:      deploymentName,
-			Id:        deploymentID,
-			ClusterId: clusterID,
-			Namespace: namespace,
-		},
-	}
-
-	flows, missingInfoFlows := networkgraph.UpdateFlowsWithEntityDesc(flows, listDeploymentMap,
-		func(id string) *storage.NetworkEntityInfo {
-			if networkTree == nil {
-				return nil
-			}
-			return networkTree.Get(id)
-		},
-	)
-
-	// There's not a lot we can do about flows with no info, so just process them
-	// as normal
-	flows = append(flows, missingInfoFlows...)
+	flows = m.enrichFlows(clusterID, deploymentID, deploymentName, namespace, flows)
 
 	// If we have flows then process them.  If we don't persist an empty baseline
 	if len(flows) > 0 {
@@ -1079,6 +1054,35 @@ func (m *manager) putFlowsInMap(newFlows []*storage.NetworkFlow) map[networkgrap
 		out[networkgraph.GetNetworkConnIndicator(newFlow)] = t
 	}
 	return out
+}
+
+func (m *manager) enrichFlows(clusterID, deploymentID, deploymentName, namespace string, flows []*storage.NetworkFlow) []*storage.NetworkFlow {
+	networkTree := tree.NewMultiNetworkTree(
+		m.treeManager.GetReadOnlyNetworkTree(managerCtx, clusterID),
+		m.treeManager.GetDefaultNetworkTree(managerCtx),
+	)
+
+	listDeploymentMap := map[string]*storage.ListDeployment{
+		deploymentID: &storage.ListDeployment{
+			Name:      deploymentName,
+			Id:        deploymentID,
+			ClusterId: clusterID,
+			Namespace: namespace,
+		},
+	}
+
+	flows, missingInfoFlows := networkgraph.UpdateFlowsWithEntityDesc(flows, listDeploymentMap,
+		func(id string) *storage.NetworkEntityInfo {
+			if networkTree == nil {
+				return nil
+			}
+			return networkTree.Get(id)
+		},
+	)
+
+	// There's not a lot we can do about flows with no info, so just process them
+	// as normal
+	return append(flows, missingInfoFlows...)
 }
 
 // New returns an initialized manager, and starts the manager's processing loop in the background.
