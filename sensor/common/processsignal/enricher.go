@@ -117,7 +117,7 @@ func (e *enricher) processLoop(ctx context.Context) {
 		// unresolved indicators
 		case <-ticker.C:
 			for _, containerID := range e.lru.Keys() {
-				if metadata, ok, _ := e.clusterEntities.LookupByContainerID(containerID); ok {
+				if metadata, ok := e.clusterEntities.LookupByContainerID(containerID); ok {
 					e.scanAndEnrich(metadata)
 				}
 			}
