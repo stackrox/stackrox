@@ -142,6 +142,13 @@ message CVEInfo {
   EPSS epss = 12;
 }
 
+
+message Advisory {
+  string name = 1;// @gotags: search:"Advisory"
+  string link = 2;
+}
+
+
 // This proto is deprecated and replaced by ImageCVEV2.
 message ImageCVE {
   option deprecated = true;
@@ -188,8 +195,7 @@ message ImageCVEV2 {
   }
 
   string component_id = 13; // @gotags: sql:"fk(ImageComponentV2:id),index=btree"
-  string advisory = 14; // @gotags: search:"Advisory"
-  string advisory_link = 15;
+  storage.Advisory advisory = 14;
 }
 
 message NodeCVE {

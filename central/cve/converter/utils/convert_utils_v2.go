@@ -40,10 +40,10 @@ func ImageCVEV2ToEmbeddedVulnerability(vuln *storage.ImageCVEV2) *storage.Embedd
 		}
 	}
 
-	if vuln.GetAdvisory() != "" {
+	if vuln.GetAdvisory() != nil {
 		ret.Advisory = &storage.Advisory{
-			Name: vuln.GetAdvisory(),
-			Link: vuln.GetAdvisoryLink(),
+			Name: vuln.GetAdvisory().GetName(),
+			Link: vuln.GetAdvisory().GetLink(),
 		}
 	}
 
@@ -116,8 +116,7 @@ func EmbeddedVulnerabilityToImageCVEV2(imageID string, componentID string, from 
 		State:                from.GetState(),
 		IsFixable:            from.GetFixedBy() != "",
 		ImpactScore:          impactScore,
-		Advisory:             from.GetAdvisory().GetName(),
-		AdvisoryLink:         from.GetAdvisory().GetLink(),
+		Advisory:             from.GetAdvisory(),
 	}
 
 	if from.GetFixedBy() != "" {
