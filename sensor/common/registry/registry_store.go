@@ -487,6 +487,7 @@ func (rs *Store) upsertSecretByName(namespace, secretName string, dockerConfig c
 		)
 
 		if hasBoundServiceAccount {
+			log.Infof("upsert cluster local registry host (%s/%s): %s", namespace, secretName, registryAddr)
 			// Registries found in any `dockercfg` secret bound a service account
 			// are assumed to reference the OCP internal registry.
 			rs.upsertPullSecretByNameNoLock(namespace, secretName, registryAddr, host, dce)
@@ -594,6 +595,8 @@ func (rs *Store) GetPullSecretRegistries(image *storage.ImageName, namespace str
 
 	rs.storeMutux.RLock()
 	defer rs.storeMutux.RUnlock()
+
+	log.Infof("get pull secret registry for namespace %s: %+v", namespace, imagePullSecrets)
 
 	secretNameToHost, ok := rs.storeByName[namespace]
 	if !ok {
