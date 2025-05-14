@@ -51,7 +51,6 @@ import (
 	v2ComplianceStats "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/stats/service"
 	v2ComplianceMgr "github.com/stackrox/rox/central/complianceoperator/v2/compliancemanager"
 	complianceOperatorIntegrationService "github.com/stackrox/rox/central/complianceoperator/v2/integration/service"
-	"github.com/stackrox/rox/central/complianceoperator/v2/pipelines/complianceoperatorinfo"
 	v2ComplianceProfiles "github.com/stackrox/rox/central/complianceoperator/v2/profiles/service"
 	complianceReportManager "github.com/stackrox/rox/central/complianceoperator/v2/report/manager"
 	v2ComplianceRules "github.com/stackrox/rox/central/complianceoperator/v2/rules/service"
@@ -638,7 +637,6 @@ func startGRPCServer() {
 				gs.AddGatherer(notifierDS.Gather)
 				gs.AddGatherer(roleDataStore.Gather)
 				gs.AddGatherer(signatureIntegrationDS.Gather)
-				gs.AddGatherer(complianceoperatorinfo.Gather())
 			}
 		}
 	}

@@ -13,31 +13,27 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 )
 
 var (
-	_   pipeline.Fragment = (*pipelineImpl)(nil)
-	log                   = logging.LoggerForModule()
+	_ pipeline.Fragment = (*pipelineImpl)(nil)
 )
 
 // GetPipeline returns an instantiation of this compliance operator info pipeline.
 func GetPipeline() pipeline.Fragment {
-	return NewPipeline(compliancemanager.Singleton(), TelemetrySingleton())
+	return NewPipeline(compliancemanager.Singleton())
 }
 
 // NewPipeline returns a new instance of Pipeline.
-func NewPipeline(manager compliancemanager.Manager, cot telemetry) pipeline.Fragment {
+func NewPipeline(manager compliancemanager.Manager) pipeline.Fragment {
 	return &pipelineImpl{
 		manager: manager,
-		cot:     cot,
 	}
 }
 
 type pipelineImpl struct {
 	manager compliancemanager.Manager
-	cot     telemetry
 }
 
 func (s *pipelineImpl) Capabilities() []centralsensor.CentralCapability {
@@ -65,9 +61,6 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 		ClusterId:           clusterID,
 		ComplianceNamespace: msg.GetComplianceOperatorInfo().GetNamespace(),
 		OperatorInstalled:   msg.GetComplianceOperatorInfo().GetIsInstalled(),
-	}
-	if updated := s.cot.TrackVersion(operatorInfo.GetVersion()); updated {
-		log.Info("Updating telemetry for version of the compliance operator: %s", operatorInfo.GetVersion())
 	}
 
 	if msg.GetComplianceOperatorInfo().GetStatusError() != "" {
