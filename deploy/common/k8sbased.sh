@@ -618,7 +618,7 @@ function export_central_cert {
       ROX_SERVER_NAME="central.${CENTRAL_NAMESPACE:-stackrox}"
       export ROX_SERVER_NAME
     fi
-  
+
     local central_cert
     central_cert="$(mktemp -d)/central_cert.pem"
     echo "Storing central certificate in ${central_cert}"
