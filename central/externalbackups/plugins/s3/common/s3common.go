@@ -39,14 +39,17 @@ var log = logging.LoggerForModule(option.EnableAdministrationEvents())
 
 // S3Common holds the data for a s3 or compatible backup integration
 type S3Common struct {
-	config configWrapper
+	config ConfigWrapper
 	bucket string
 
 	client   *s3.Client
 	uploader *manager.Uploader
 }
 
-type configWrapper interface {
+// ConfigWrapper is an interface to extract relevant configuration parameters
+// from a storage.ExternalBackup object to later instantiate a S3Common backup
+// integration instance.
+type ConfigWrapper interface {
 	GetUrlStyle() storage.S3URLStyle
 	GetEndpoint() string
 	GetRegion() string
@@ -60,13 +63,15 @@ type configWrapper interface {
 	GetSecretAccessKey() string
 
 	GetName() string
-	GetErrorCode() string
+	GetPluginType() string
 	GetBackupsToKeep() int32
 
 	Validate() error
 }
 
-func NewS3Client(cfg configWrapper) (*S3Common, error) {
+// NewS3Client creates an external backup plugin based on the provided
+// S3 or compatible configuration.
+func NewS3Client(cfg ConfigWrapper) (types.ExternalBackup, error) {
 	err := cfg.Validate()
 	if err != nil {
 		return nil, err
@@ -184,8 +189,8 @@ func (s *S3Common) prefixKey(key string) string {
 	return filepath.Join(s.config.GetObjectPrefix(), key)
 }
 
-func isBaseS3Config(cfg configWrapper) bool {
-	return cfg.GetErrorCode() == types.S3Type
+func isBaseS3Config(cfg ConfigWrapper) bool {
+	return cfg.GetPluginType() == types.S3Type
 }
 
 func (s *S3Common) getLogPrefix() string {
@@ -209,7 +214,7 @@ func (s *S3Common) createError(msg string, err error) error {
 	log.Errorw(msg,
 		logging.BackupName(s.config.GetName()),
 		logging.Err(err),
-		logging.ErrCode(s.config.GetErrorCode()),
+		logging.ErrCode(s.config.GetPluginType()),
 		logging.String("bucket", s.bucket),
 		logging.String("object-prefix", s.config.GetObjectPrefix()),
 	)

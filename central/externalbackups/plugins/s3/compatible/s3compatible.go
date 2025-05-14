@@ -82,9 +82,7 @@ func (c *s3compatibleConfigWrapper) GetName() string {
 	return c.integration.GetName()
 }
 
-func (c *s3compatibleConfigWrapper) GetErrorCode() string {
-	return types.S3CompatibleType
-}
+func (c *s3compatibleConfigWrapper) GetPluginType() string { return types.S3CompatibleType }
 
 func (c *s3compatibleConfigWrapper) GetBackupsToKeep() int32 {
 	return c.integration.GetBackupsToKeep()
