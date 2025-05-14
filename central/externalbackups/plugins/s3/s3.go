@@ -3,8 +3,10 @@ package s3
 import (
 	"context"
 	"fmt"
+	"github.com/stackrox/rox/pkg/urlfmt"
 	"io"
 	"net/http"
+	"net/url"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -85,6 +87,15 @@ func validate(conf *storage.S3Config) error {
 	return errorList.ToError()
 }
 
+func validateEndpoint(endpoint string) (string, error) {
+	// The aws-sdk-go-v2 package does not add a default scheme to the endpoint.
+	sanitizedEndpoint := urlfmt.FormatURL(endpoint, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
+	if _, err := url.Parse(sanitizedEndpoint); err != nil {
+		return "", errors.Wrapf(err, "invalid URL %q", endpoint)
+	}
+	return sanitizedEndpoint, nil
+}
+
 func newS3(integration *storage.ExternalBackup) (*s3, error) {
 	s3Config, ok := integration.Config.(*storage.ExternalBackup_S3)
 	if !ok {
@@ -121,6 +132,10 @@ func newS3(integration *storage.ExternalBackup) (*s3, error) {
 	var clientOpts []func(*sdkS3.Options)
 	endpoint := conf.GetEndpoint()
 	if endpoint != "" {
+		endpoint, err := validateEndpoint(endpoint)
+		if err != nil {
+			return nil, err
+		}
 		clientOpts = append(clientOpts, func(options *sdkS3.Options) {
 			options.BaseEndpoint = aws.String(endpoint)
 		})
