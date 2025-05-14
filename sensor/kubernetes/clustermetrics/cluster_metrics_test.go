@@ -37,7 +37,7 @@ func (s *ClusterMetricsTestSuite) SetupTest() {
 }
 
 func (s *ClusterMetricsTestSuite) TestZeroNodes() {
-	expected := &central.ClusterMetrics{NodeCount: 0, CpuCapacity: 0}
+	expected := &central.ClusterMetrics{NodeCount: 0, CpuCapacity: 0, CoVersion: "not installed"}
 
 	metrics := s.getClusterMetrics()
 
@@ -45,7 +45,7 @@ func (s *ClusterMetricsTestSuite) TestZeroNodes() {
 }
 
 func (s *ClusterMetricsTestSuite) TestSingleNode() {
-	expected := &central.ClusterMetrics{NodeCount: 1, CpuCapacity: 10}
+	expected := &central.ClusterMetrics{NodeCount: 1, CpuCapacity: 10, CoVersion: "not installed"}
 	s.addNode("node-1", *resource.NewQuantity(expected.CpuCapacity, resource.DecimalSI))
 
 	metrics := s.getClusterMetrics()
@@ -54,7 +54,7 @@ func (s *ClusterMetricsTestSuite) TestSingleNode() {
 }
 
 func (s *ClusterMetricsTestSuite) TestMultipleNodes() {
-	expected := &central.ClusterMetrics{NodeCount: 3, CpuCapacity: 10}
+	expected := &central.ClusterMetrics{NodeCount: 3, CpuCapacity: 10, CoVersion: "not installed"}
 	s.addNode("node-1", *resource.NewQuantity(5, resource.DecimalSI))
 	s.addNode("node-2", *resource.NewQuantity(3, resource.DecimalSI))
 	s.addNode("node-3", *resource.NewQuantity(2, resource.DecimalSI))
