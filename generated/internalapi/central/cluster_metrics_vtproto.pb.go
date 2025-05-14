@@ -27,7 +27,7 @@ func (m *ClusterMetrics) CloneVT() *ClusterMetrics {
 	r := new(ClusterMetrics)
 	r.NodeCount = m.NodeCount
 	r.CpuCapacity = m.CpuCapacity
-	r.CoVersion = m.CoVersion
+	r.ComplianceOperatorVersion = m.ComplianceOperatorVersion
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -51,7 +51,7 @@ func (this *ClusterMetrics) EqualVT(that *ClusterMetrics) bool {
 	if this.CpuCapacity != that.CpuCapacity {
 		return false
 	}
-	if this.CoVersion != that.CoVersion {
+	if this.ComplianceOperatorVersion != that.ComplianceOperatorVersion {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -94,10 +94,10 @@ func (m *ClusterMetrics) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if len(m.CoVersion) > 0 {
-		i -= len(m.CoVersion)
-		copy(dAtA[i:], m.CoVersion)
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.CoVersion)))
+	if len(m.ComplianceOperatorVersion) > 0 {
+		i -= len(m.ComplianceOperatorVersion)
+		copy(dAtA[i:], m.ComplianceOperatorVersion)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.ComplianceOperatorVersion)))
 		i--
 		dAtA[i] = 0x1a
 	}
@@ -126,7 +126,7 @@ func (m *ClusterMetrics) SizeVT() (n int) {
 	if m.CpuCapacity != 0 {
 		n += 1 + protohelpers.SizeOfVarint(uint64(m.CpuCapacity))
 	}
-	l = len(m.CoVersion)
+	l = len(m.ComplianceOperatorVersion)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
@@ -203,7 +203,7 @@ func (m *ClusterMetrics) UnmarshalVT(dAtA []byte) error {
 			}
 		case 3:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field CoVersion", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ComplianceOperatorVersion", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -231,7 +231,7 @@ func (m *ClusterMetrics) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.CoVersion = string(dAtA[iNdEx:postIndex])
+			m.ComplianceOperatorVersion = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -324,7 +324,7 @@ func (m *ClusterMetrics) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 		case 3:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field CoVersion", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ComplianceOperatorVersion", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -356,7 +356,7 @@ func (m *ClusterMetrics) UnmarshalVTUnsafe(dAtA []byte) error {
 			if intStringLen > 0 {
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
-			m.CoVersion = stringValue
+			m.ComplianceOperatorVersion = stringValue
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

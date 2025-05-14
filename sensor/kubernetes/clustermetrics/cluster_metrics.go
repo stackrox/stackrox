@@ -166,5 +166,5 @@ func (cm *clusterMetricsImpl) collectMetrics() (*central.ClusterMetrics, error) 
 		// Remember the compliance operator namespace to accelerate future searches
 		cm.lastKnownComplianceOperatorNamespace = namespace
 	}
-	return &central.ClusterMetrics{NodeCount: nodeCount, CpuCapacity: capacity, CoVersion: coVersion}, nil
+	return &central.ClusterMetrics{NodeCount: nodeCount, CpuCapacity: capacity, ComplianceOperatorVersion: coVersion}, nil
 }
