@@ -154,7 +154,7 @@ func (s *S3Common) Backup(reader io.ReadCloser) error {
 		return s.createError(fmt.Sprintf("creating backup in bucket %q with key %q",
 			s.bucket, formattedKey), err)
 	}
-	log.Info("Successfully backed up to %s store", s.getLogPrefix())
+	log.Infof("Successfully backed up to %s store", s.getLogPrefix())
 	return s.pruneBackupsIfNecessary(ctx)
 }
 

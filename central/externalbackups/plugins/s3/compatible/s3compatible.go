@@ -54,7 +54,10 @@ func (c *s3compatibleConfigWrapper) GetEndpoint() string {
 }
 
 func (c *s3compatibleConfigWrapper) GetValidatedEndpoint() (string, error) {
-	endpoint := c.GetEndpoint()
+	return validateEndpoint(c.GetEndpoint())
+}
+
+func validateEndpoint(endpoint string) (string, error) {
 	// The aws-sdk-go-v2 package does not add a default scheme to the endpoint.
 	sanitizedEndpoint := urlfmt.FormatURL(endpoint, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
 	if _, err := url.Parse(sanitizedEndpoint); err != nil {
