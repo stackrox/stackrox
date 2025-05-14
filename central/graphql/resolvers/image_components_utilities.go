@@ -4,8 +4,15 @@ import (
 	"context"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/stackrox/rox/central/views/imagecomponentflat"
 	"github.com/stackrox/rox/generated/storage"
 )
+
+type normalizedImageComponent struct {
+	name    string
+	version string
+	os      string
+}
 
 type imageComponentResolver struct {
 	ctx  context.Context
@@ -98,6 +105,8 @@ type imageComponentV2Resolver struct {
 	ctx  context.Context
 	root *Resolver
 	data *storage.ImageComponentV2
+
+	flatData imagecomponentflat.ComponentFlat
 }
 
 func (resolver *Resolver) wrapImageComponentV2(value *storage.ImageComponentV2, ok bool, err error) (*imageComponentV2Resolver, error) {
@@ -136,52 +145,86 @@ func (resolver *Resolver) wrapImageComponentV2sWithContext(ctx context.Context, 
 	return output, nil
 }
 
-func (resolver *imageComponentV2Resolver) Architecture(ctx context.Context) string {
+func (resolver *Resolver) wrapImageComponentV2FlatWithContext(ctx context.Context, value *storage.ImageComponentV2, flatData imagecomponentflat.ComponentFlat, ok bool, err error) (*imageComponentV2Resolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &imageComponentV2Resolver{ctx: ctx, root: resolver, data: value, flatData: flatData}, nil
+}
+
+func (resolver *Resolver) wrapImageComponentV2sFlatWithContext(ctx context.Context, values []*storage.ImageComponentV2, flatData []imagecomponentflat.ComponentFlat, err error) ([]*imageComponentV2Resolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	coreMap := make(map[normalizedImageComponent]imagecomponentflat.ComponentFlat)
+	for _, res := range flatData {
+		normalized := normalizedImageComponent{
+			name:    res.GetComponent(),
+			version: res.GetVersion(),
+			os:      res.GetOperatingSystem(),
+		}
+		if _, ok := coreMap[normalized]; !ok {
+			coreMap[normalized] = res
+		}
+	}
+	output := make([]*imageComponentV2Resolver, len(values))
+	for i, v := range values {
+		normalized := normalizedImageComponent{
+			name:    v.GetName(),
+			version: v.GetVersion(),
+			os:      v.GetOperatingSystem(),
+		}
+		output[i] = &imageComponentV2Resolver{ctx: ctx, root: resolver, data: v, flatData: coreMap[normalized]}
+	}
+	return output, nil
+}
+
+func (resolver *imageComponentV2Resolver) Architecture(_ context.Context) string {
 	value := resolver.data.GetArchitecture()
 	return value
 }
 
-func (resolver *imageComponentV2Resolver) FixedBy(ctx context.Context) string {
+func (resolver *imageComponentV2Resolver) FixedBy(_ context.Context) string {
 	value := resolver.data.GetFixedBy()
 	return value
 }
 
-func (resolver *imageComponentV2Resolver) Id(ctx context.Context) graphql.ID {
+func (resolver *imageComponentV2Resolver) Id(_ context.Context) graphql.ID {
 	value := resolver.data.GetId()
 	return graphql.ID(value)
 }
 
-func (resolver *imageComponentV2Resolver) ImageId(ctx context.Context) string {
+func (resolver *imageComponentV2Resolver) ImageId(_ context.Context) string {
 	value := resolver.data.GetImageId()
 	return value
 }
 
-func (resolver *imageComponentV2Resolver) Name(ctx context.Context) string {
+func (resolver *imageComponentV2Resolver) Name(_ context.Context) string {
 	value := resolver.data.GetName()
 	return value
 }
 
-func (resolver *imageComponentV2Resolver) OperatingSystem(ctx context.Context) string {
+func (resolver *imageComponentV2Resolver) OperatingSystem(_ context.Context) string {
 	value := resolver.data.GetOperatingSystem()
 	return value
 }
 
-func (resolver *imageComponentV2Resolver) Priority(ctx context.Context) int32 {
+func (resolver *imageComponentV2Resolver) Priority(_ context.Context) int32 {
 	value := resolver.data.GetPriority()
 	return int32(value)
 }
 
-func (resolver *imageComponentV2Resolver) RiskScore(ctx context.Context) float64 {
+func (resolver *imageComponentV2Resolver) RiskScore(_ context.Context) float64 {
 	value := resolver.data.GetRiskScore()
 	return float64(value)
 }
 
-func (resolver *imageComponentV2Resolver) Source(ctx context.Context) string {
+func (resolver *imageComponentV2Resolver) Source(_ context.Context) string {
 	value := resolver.data.GetSource()
 	return value.String()
 }
 
-func (resolver *imageComponentV2Resolver) Version(ctx context.Context) string {
+func (resolver *imageComponentV2Resolver) Version(_ context.Context) string {
 	value := resolver.data.GetVersion()
 	return value
 }
