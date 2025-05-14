@@ -7,6 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	clusterDatastoreMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
+	resultsMocks "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/mocks"
 	"github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore/mocks"
 	profileMocks "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore/mocks"
 	scanConfigMocks "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore/mocks"
@@ -66,6 +67,7 @@ type complianceManagerTestSuite struct {
 	integrationDS    *mocks.MockDataStore
 	scanConfigDS     *scanConfigMocks.MockDataStore
 	profileDS        *profileMocks.MockDataStore
+	resultsDS        *resultsMocks.MockDataStore
 	connectionMgr    *sensorMocks.MockManager
 	clusterDatastore *clusterDatastoreMocks.MockDataStore
 	manager          Manager
@@ -94,7 +96,7 @@ func (suite *complianceManagerTestSuite) SetupTest() {
 	suite.connectionMgr = sensorMocks.NewMockManager(suite.mockCtrl)
 	suite.clusterDatastore = clusterDatastoreMocks.NewMockDataStore(suite.mockCtrl)
 	suite.profileDS = profileMocks.NewMockDataStore(suite.mockCtrl)
-	suite.manager = New(suite.connectionMgr, suite.integrationDS, suite.scanConfigDS, suite.clusterDatastore, suite.profileDS)
+	suite.manager = New(suite.connectionMgr, suite.integrationDS, suite.scanConfigDS, suite.clusterDatastore, suite.profileDS, suite.resultsDS)
 }
 
 func (suite *complianceManagerTestSuite) TearDownTest() {

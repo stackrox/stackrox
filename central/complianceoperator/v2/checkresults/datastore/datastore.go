@@ -44,6 +44,12 @@ type DataStore interface {
 	// DeleteResultsByCluster scan results associated with cluster
 	DeleteResultsByCluster(ctx context.Context, clusterID string) error
 
+	// DeleteResultsByScanConfigAndCluster deletes scan results associated with scan config and cluster
+	DeleteResultsByScanConfigAndCluster(ctx context.Context, scanConfigName string, clusterIDs []string) error
+
+	// DeleteResultsByScanConfigAndRules deletes scan results associated with scan config and rules reference IDs
+	DeleteResultsByScanConfigAndRules(ctx context.Context, scanConfigName string, ruleRefIds []string) error
+
 	// GetComplianceCheckResult returns the instance of the result specified by ID
 	GetComplianceCheckResult(ctx context.Context, complianceResultID string) (*storage.ComplianceOperatorCheckResultV2, bool, error)
 
