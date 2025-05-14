@@ -44,6 +44,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
       kubectl label crd/securitypolicies.config.stackrox.io app.kubernetes.io/managed-by=Helm
 
   The above values will need to be updated to match your release name (i.e. "stackrox-central-services") or namespace (i.e. "stackrox") in case you had used different ones.
+- ROX-22597: The S3 backup integration is migrated to the AWS go SDK v2. GCS buckets are not supported anymore by the S3 integration type, as announced in 4.5.0, users should use dedicated GCS integrations for these.
 
 ## [4.7.0]
 
