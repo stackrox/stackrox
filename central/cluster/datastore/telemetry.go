@@ -94,6 +94,7 @@ func UpdateSecuredClusterIdentity(ctx context.Context, clusterID string, metrics
 	props := makeClusterProperties(cluster)
 	props["Total Nodes"] = metrics.NodeCount
 	props["CPU Capacity"] = metrics.CpuCapacity
+	props["Compliance Operator Version"] = metrics.CoVersion
 
 	if pmd := cluster.GetStatus().GetProviderMetadata(); pmd.GetProvider() != nil {
 		switch pmd.GetProvider().(type) {

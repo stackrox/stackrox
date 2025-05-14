@@ -9,4 +9,5 @@ option go_package = "./internalapi/central;central";
 message ClusterMetrics {
   int64 node_count = 1; // The number of nodes in the cluster accessible by Sensor.
   int64 cpu_capacity = 2; // The total cpu capacity of all nodes accessible by Sensor.
+  string co_version = 3; // ComplianceOperator version discovered by this Sensor.
 }

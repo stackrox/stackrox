@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
@@ -12,17 +13,26 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
 	metricsPkg "github.com/stackrox/rox/sensor/common/metrics"
+	"github.com/stackrox/rox/sensor/kubernetes/complianceoperator"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
-var log = logging.LoggerForModule()
+var (
+	log = logging.LoggerForModule()
+	// Interval for querying cluster metrics from Kubernetes and sending to Central.
+	defaultInterval = 5 * time.Minute
+	// Timeout for querying cluster metrics from Kubernetes.
+	defaultTimeout = 10 * time.Second
+)
 
-// Interval for querying cluster metrics from Kubernetes and sending to Central.
-var defaultInterval = 5 * time.Minute
-
-// Timeout for querying cluster metrics from Kubernetes.
-var defaultTimeout = 10 * time.Second
+const (
+	// coAvailableInUnknownVersion is value used in telemetry
+	// when we find Compliance Operator but are unable to extract its version
+	coAvailableInUnknownVersion = "CO available in unknown version"
+	// coUnavailable is value used in telemetry when we do not find Compliance Operator deployment
+	coUnavailable = "CO unavailable"
+)
 
 // ClusterMetrics collects metrics from secured clusters and sends them to Central.
 type ClusterMetrics interface {
@@ -49,6 +59,8 @@ func NewWithInterval(k8sClient kubernetes.Interface, pollInterval time.Duration)
 }
 
 type clusterMetricsImpl struct {
+	coNamespaceCache string
+
 	output          chan *message.ExpiringMessage
 	stopper         concurrency.Stopper
 	pollingInterval time.Duration
@@ -139,5 +151,18 @@ func (cm *clusterMetricsImpl) collectMetrics() (*central.ClusterMetrics, error) 
 		}
 	}
 
-	return &central.ClusterMetrics{NodeCount: nodeCount, CpuCapacity: capacity}, nil
+	// If cm.coNamespaceCache is empty, the CO deployment will be searched for in all candidate namespaces
+	coVersion, namespace, err := complianceoperator.GetInstalledVersion(cm.coNamespaceCache, cm.k8sClient, ctx)
+	if err != nil {
+		if errors.Is(err, complianceoperator.ErrUnableToExtractVersion) {
+			coVersion = coAvailableInUnknownVersion
+			cm.coNamespaceCache = namespace
+		} else {
+			coVersion = coUnavailable
+		}
+	} else {
+		// Remember the CO namespace to accelerate future searches
+		cm.coNamespaceCache = namespace
+	}
+	return &central.ClusterMetrics{NodeCount: nodeCount, CpuCapacity: capacity, CoVersion: coVersion}, nil
 }

@@ -27,6 +27,7 @@ type ClusterMetrics struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	NodeCount     int64                  `protobuf:"varint,1,opt,name=node_count,json=nodeCount,proto3" json:"node_count,omitempty"`       // The number of nodes in the cluster accessible by Sensor.
 	CpuCapacity   int64                  `protobuf:"varint,2,opt,name=cpu_capacity,json=cpuCapacity,proto3" json:"cpu_capacity,omitempty"` // The total cpu capacity of all nodes accessible by Sensor.
+	CoVersion     string                 `protobuf:"bytes,3,opt,name=co_version,json=coVersion,proto3" json:"co_version,omitempty"`        // ComplianceOperator version discovered by this Sensor.
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -75,15 +76,24 @@ func (x *ClusterMetrics) GetCpuCapacity() int64 {
 	return 0
 }
 
+func (x *ClusterMetrics) GetCoVersion() string {
+	if x != nil {
+		return x.CoVersion
+	}
+	return ""
+}
+
 var File_internalapi_central_cluster_metrics_proto protoreflect.FileDescriptor
 
 const file_internalapi_central_cluster_metrics_proto_rawDesc = "" +
 	"\n" +
-	")internalapi/central/cluster_metrics.proto\x12\acentral\"R\n" +
+	")internalapi/central/cluster_metrics.proto\x12\acentral\"q\n" +
 	"\x0eClusterMetrics\x12\x1d\n" +
 	"\n" +
 	"node_count\x18\x01 \x01(\x03R\tnodeCount\x12!\n" +
-	"\fcpu_capacity\x18\x02 \x01(\x03R\vcpuCapacityB\x1fZ\x1d./internalapi/central;centralb\x06proto3"
+	"\fcpu_capacity\x18\x02 \x01(\x03R\vcpuCapacity\x12\x1d\n" +
+	"\n" +
+	"co_version\x18\x03 \x01(\tR\tcoVersionB\x1fZ\x1d./internalapi/central;centralb\x06proto3"
 
 var (
 	file_internalapi_central_cluster_metrics_proto_rawDescOnce sync.Once

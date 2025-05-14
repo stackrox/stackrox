@@ -20,9 +20,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/kubernetes/telemetry"
-	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/authorization/v1"
-	kubeAPIErr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -189,7 +187,7 @@ func (u *updaterImpl) collectInfoAndSendResponse() bool {
 }
 
 func (u *updaterImpl) getComplianceOperatorInfo() *central.ComplianceOperatorInfo {
-	complianceOperatorDeployment, err := u.searchComplianceOperatorDeployment()
+	complianceOperatorDeployment, err := searchForDeployment(u.complianceOperatorNS, u.client, u.ctx())
 	if err != nil {
 		return &central.ComplianceOperatorInfo{
 			StatusError: err.Error(),
@@ -257,39 +255,6 @@ func checkWriteAccess(client kubernetes.Interface) error {
 		return errors.New("Sensor cannot write compliance.openshift.io API group resources. Please check Sensor's RBAC permissions.")
 	}
 	return nil
-}
-
-func (u *updaterImpl) searchComplianceOperatorDeployment() (*appsv1.Deployment, error) {
-	// Use cached namespace, if compliance operator deployment was not found search again in all namespaces.
-	if u.complianceOperatorNS != "" {
-		if complianceOperator, err := u.getComplianceOperatorDeployment(u.complianceOperatorNS); err == nil {
-			return complianceOperator, nil
-		}
-	}
-
-	// List all namespaces to begin the lookup for compliance operator.
-	namespaceList, err := u.client.CoreV1().Namespaces().List(u.ctx(), metav1.ListOptions{})
-	if err != nil {
-		return nil, err
-	}
-
-	for _, namespace := range namespaceList.Items {
-		complianceOperator, err := u.getComplianceOperatorDeployment(namespace.GetName())
-		if err == nil {
-			return complianceOperator, nil
-		}
-		// Until we check all namespaces, we cannot determine if compliance operator is installed or not.
-		if kubeAPIErr.IsNotFound(err) {
-			continue
-		}
-		return nil, err
-	}
-
-	return nil, errors.Errorf("deployment %s not found in any namespace", complianceoperator.Name)
-}
-
-func (u *updaterImpl) getComplianceOperatorDeployment(ns string) (*appsv1.Deployment, error) {
-	return u.client.AppsV1().Deployments(ns).Get(u.ctx(), complianceoperator.Name, metav1.GetOptions{})
 }
 
 func (u *updaterImpl) ctx() context.Context {
