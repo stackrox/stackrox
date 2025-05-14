@@ -732,7 +732,7 @@ func (s *serviceImpl) DeleteImages(ctx context.Context, request *v1.DeleteImages
 	if err != nil {
 		return nil, errors.Wrapf(errox.InvalidArgs, "error parsing query: %v", err)
 	}
-	paginated.FillPagination(query, request.GetQuery().GetPagination(), math.MaxInt32)
+	paginated.FillPagination(query, request.GetQuery().GetPagination(), paginated.Unlimited)
 
 	results, err := s.datastore.Search(ctx, query)
 	if err != nil {

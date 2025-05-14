@@ -85,7 +85,7 @@ func (s *ImageCVEV2CoreResolverTestSuite) TestGetImageCVEsWithQuery() {
 		Query: pointers.String("CVE:cve-2022-xyz"),
 	}
 	expectedQ := search.NewQueryBuilder().AddStrings(search.CVE, "cve-2022-xyz").
-		WithPagination(search.NewPagination().Limit(math.MaxInt32)).ProtoQuery()
+		WithPagination(search.NewPagination().Limit(paginated.Unlimited)).ProtoQuery()
 
 	expected := []imagecve.CveCore{
 		imageCVEViewMock.NewMockCveCore(s.mockCtrl),
@@ -113,7 +113,7 @@ func (s *ImageCVEV2CoreResolverTestSuite) TestImageCVEsWithPaginatedQuery() {
 	expectedQ := search.NewQueryBuilder().WithPagination(
 		search.NewPagination().AddSortOption(
 			search.NewSortOption(search.CVSS).AggregateBy(aggregatefunc.Max, false),
-		).Limit(math.MaxInt32),
+		).Limit(paginated.Unlimited),
 	).ProtoQuery()
 
 	s.imageCVEView.EXPECT().Get(s.ctx, expectedQ, views.ReadOptions{}).Return(nil, nil)

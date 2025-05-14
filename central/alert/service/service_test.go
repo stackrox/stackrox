@@ -346,7 +346,7 @@ func (s *getAlertsGroupsTests) testGetAlertsGroupFor(fakeListAlertSlice []*stora
 	fakeContext := context.Background()
 	protoQuery := search.NewQueryBuilder().ProtoQuery()
 	protoQuery.Pagination = &v1.QueryPagination{
-		Limit: math.MaxInt32,
+		Limit: paginated.Unlimited,
 	}
 	s.datastoreMock.EXPECT().SearchListAlerts(fakeContext, protoQuery, true).Return(fakeListAlertSlice, nil)
 
@@ -362,7 +362,7 @@ func (s *getAlertsGroupsTests) TestGetAlertsGroupWhenTheDataAccessLayerFails() {
 	fakeContext := context.Background()
 	protoQuery := search.NewQueryBuilder().ProtoQuery()
 	protoQuery.Pagination = &v1.QueryPagination{
-		Limit: math.MaxInt32,
+		Limit: paginated.Unlimited,
 	}
 	s.datastoreMock.EXPECT().SearchListAlerts(fakeContext, protoQuery, true).Return(nil, errFake)
 
@@ -863,7 +863,7 @@ func (s *getAlertTimeseriesTests) TestGetAlertTimeseries() {
 		},
 	}
 	fakeContext := context.Background()
-	protoQuery := search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(math.MaxInt32)).ProtoQuery()
+	protoQuery := search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(paginated.Unlimited)).ProtoQuery()
 	s.datastoreMock.EXPECT().SearchListAlerts(fakeContext, protoQuery, true).Return(alerts, nil)
 
 	result, err := s.service.GetAlertTimeseries(fakeContext, &v1.ListAlertsRequest{
@@ -876,7 +876,7 @@ func (s *getAlertTimeseriesTests) TestGetAlertTimeseries() {
 
 func (s *getAlertTimeseriesTests) TestGetAlertTimeseriesWhenTheDataAccessLayerFails() {
 	fakeContext := context.Background()
-	protoQuery := search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(math.MaxInt32)).ProtoQuery()
+	protoQuery := search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(paginated.Unlimited)).ProtoQuery()
 	s.datastoreMock.EXPECT().SearchListAlerts(fakeContext, protoQuery, true).Return(nil, errFake)
 
 	result, err := s.service.GetAlertTimeseries(fakeContext, &v1.ListAlertsRequest{
@@ -971,7 +971,7 @@ func (s *baseSuite) TestDeleteAlerts() {
 		AddStrings(search.ViolationState, storage.ViolationState_RESOLVED.String())
 	expectedQuery := expectedQueryBuilder.ProtoQuery()
 	expectedQuery.Pagination = &v1.QueryPagination{
-		Limit: math.MaxInt32,
+		Limit: paginated.Unlimited,
 	}
 
 	s.datastoreMock.EXPECT().Search(context.Background(), expectedQuery, true).Return([]search.Result{}, nil)

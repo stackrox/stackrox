@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/k8srbac"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -28,7 +29,7 @@ func getSubjectFromStores(ctx context.Context, subjectName string, roleDS k8sRol
 			[]string{search.ExactMatchString(subjectName), search.ExactMatchString(storage.SubjectKind_GROUP.String())}).ProtoQuery(),
 	)
 	bindingsQuery.Pagination = &v1.QueryPagination{
-		Limit: math.MaxInt32,
+		Limit: paginated.Unlimited,
 	}
 	relevantBindings, err := bindingDS.SearchRawRoleBindings(ctx, bindingsQuery)
 	if err != nil || len(relevantBindings) == 0 {
@@ -65,7 +66,7 @@ func getSubjectFromStores(ctx context.Context, subjectName string, roleDS k8sRol
 
 	rolesQuery := search.NewQueryBuilder().AddExactMatches(search.RoleID, roleIDs.AsSlice()...).ProtoQuery()
 	rolesQuery.Pagination = &v1.QueryPagination{
-		Limit: math.MaxInt32,
+		Limit: paginated.Unlimited,
 	}
 	relevantRoles, err := roleDS.SearchRawRoles(ctx, rolesQuery)
 	if err != nil {
