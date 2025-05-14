@@ -154,7 +154,7 @@ get_central_debug_dump() {
 
     require_environment "API_ENDPOINT"
     require_environment "ROX_ADMIN_PASSWORD"
-    # TODO(ROX-28673): Temporary reset the serve name to fix the CI:
+    # TODO(PR#15173): Temporarily reset the server name to fix CI:
     roxctl -s "" -e "${API_ENDPOINT}" \
         central debug dump --output-dir "${output_dir}" \
         --insecure-skip-tls-verify
@@ -217,7 +217,7 @@ get_central_diagnostics() {
 
     require_environment "API_ENDPOINT"
     require_environment "ROX_ADMIN_PASSWORD"
-    # TODO(ROX-28673): Temporary reset the serve name to fix the CI:
+    # TODO(PR#15173): Temporarily reset the server name to fix CI:
     roxctl -s "" -e "${API_ENDPOINT}" \
         central debug download-diagnostics --output-dir "${output_dir}" \
         --insecure-skip-tls-verify
