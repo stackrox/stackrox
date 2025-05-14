@@ -126,6 +126,7 @@ describe('getSeveritySortOptions', () => {
             { field: 'Important Severity Count' },
             { field: 'Moderate Severity Count' },
             { field: 'Low Severity Count' },
+            { field: 'Unknown Severity Count' },
         ]);
     });
 
