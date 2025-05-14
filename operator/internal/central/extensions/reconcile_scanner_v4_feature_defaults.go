@@ -43,7 +43,7 @@ func reconcileScannerV4FeatureDefaults(
 	}
 
 	scannerV4Spec := initializedDeepCopy(central.Spec.ScannerV4)
-	componentPolicy, usedDefaulting := defaulting.ScannerV4ComponentPolicy(logger, &central.Status, central.GetAnnotations(), scannerV4Spec)
+	componentPolicy, usedDefaulting := defaulting.CentralScannerV4ComponentPolicy(logger, &central.Status, central.GetAnnotations(), scannerV4Spec)
 	if !usedDefaulting {
 		// User provided an explicit choice, nothing to do in this extension.
 		return nil
