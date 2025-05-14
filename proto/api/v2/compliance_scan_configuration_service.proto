@@ -107,6 +107,13 @@ message ComplianceReportSnapshot {
   bool is_download_available = 8;
 }
 
+message FailedCluster {
+  string cluster_id = 1;
+  string cluster_name = 2;
+  string reason = 3;
+  string operator_version = 4;
+}
+
 message ComplianceReportStatus {
   enum RunState {
     WAITING = 0;
@@ -114,6 +121,7 @@ message ComplianceReportStatus {
     GENERATED = 2;
     DELIVERED = 3;
     FAILURE = 4;
+    PARTIAL_ERROR = 5;
   }
   enum ReportMethod {
     ON_DEMAND = 0;
@@ -125,6 +133,7 @@ message ComplianceReportStatus {
   string error_msg = 4;
   ReportMethod report_request_type = 5;
   NotificationMethod report_notification_method = 6;
+  repeated FailedCluster failed_clusters = 7;
 }
 
 message ListComplianceScanConfigsProfileResponse {
