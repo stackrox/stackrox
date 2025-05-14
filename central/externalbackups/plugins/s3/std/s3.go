@@ -9,6 +9,27 @@ import (
 	"github.com/stackrox/rox/pkg/errorhelpers"
 )
 
+// s3 plugin for the AWS S3 backup integration.
+// As the official AWS S3 is deprecating the path-style bucket addressing but
+// this style is still used in non-AWS S3 compatible providers, we decided to
+// implement a new plugin for the latter.
+// Having the two plugins allows for a clear separation between official AWS
+// and non-AWS features.
+// Having the S3 compatible plugin separate will also give us more freedom to
+// change to a different package if the aws-sdk decides to drop the path-style
+// option in the future.
+//
+// The s3 plugin used to use the aws-go-sdk v1 to allow backwards compatibility
+// for customers who were using the s3 backup integration with GCS buckets.
+// This is not possible anymore now that the s3 plugins uses the aws-go-sdk-v2
+// because GCS alters the Accept-Encoding header, which breaks the v2 request
+// signature. See:
+// https://github.com/aws/aws-sdk-go-v2/issues/1816
+// Tested here:
+// https://github.com/stackrox/stackrox/pull/11761
+// Using the S3 backup integration interoperability with GCS has been deprecated
+// in 4.5.
+
 type s3configWrapper struct {
 	integration *storage.ExternalBackup
 }
