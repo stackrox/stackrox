@@ -29,6 +29,7 @@ main() {
 
     dest="$1"
 
+    echo "DBG 0: ${API_ENDPOINT}"
     if [ -z "${API_ENDPOINT}" ]; then
         if [ -n "${API_HOSTNAME}" ] && [ -n "${API_PORT}" ]; then
             API_ENDPOINT="${API_HOSTNAME}:${API_PORT}"
@@ -50,7 +51,8 @@ main() {
     fi
 
     mkdir -p "${dest}"
-    roxctl central backup --output "${dest}"
+    echo "DBG 1: ${ROX_ENDPOINT}"
+    roxctl -e "${API_ENDPOINT}" central backup --output "${dest}"
 
     # Pull some data not found from the database
     set +e

@@ -34,7 +34,7 @@ main() {
         ROX_INSECURE_CLIENT_SKIP_TLS_VERIFY="true"
     fi
 
-    roxctl "$@"
+    roxctl -e "${ROX_ENDPOINT}" "$@"
 }
 
 main "$@"
