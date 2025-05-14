@@ -28,10 +28,11 @@ var (
 
 const (
 	// coAvailableInUnknownVersion is value used in telemetry
-	// when we find Compliance Operator but are unable to extract its version
-	coAvailableInUnknownVersion = "CO available in unknown version"
+	// when we find Compliance Operator but are unable to extract its version.
+	// The value will be displayed as: Compliance Operator Version = <value of coAvailableInUnknownVersion>
+	coAvailableInUnknownVersion = "installed; version unknown"
 	// coUnavailable is value used in telemetry when we do not find Compliance Operator deployment
-	coUnavailable = "CO unavailable"
+	coUnavailable = "not installed"
 )
 
 // ClusterMetrics collects metrics from secured clusters and sends them to Central.
