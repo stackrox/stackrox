@@ -72,6 +72,21 @@ class NodeInventoryTest extends BaseSpecification {
 
         then:
         "confirm the number of components in the inventory and their scan"
+        withRetry(22, 30) {
+            nodes.each { node ->
+                assert node.getScan(), "Expected to find a nodeScan on the node"
+                log.info("Node ${node.getName()} scan contains ${node.getScan().getComponentsList().size()} components")
+
+                if (!nodeInventoryContainerAvailable) {
+                    // No RHCOS node scanning on this cluster
+                    assert node.getScan().getComponentsList().size() == 4,
+                        "Expected to find exactly 4 components on non-RHCOS node"
+                    return
+                }
+                assert node.getScan().getComponentsList().size() > 4,
+                    "Expected to find more than 4 components on RHCOS node"
+            }
+        }
         // ensure that the nodes got scanned at least once - retry up to 6 minutes
         withRetry(44, 30) {
             nodes = NodeService.getNodes()
@@ -79,19 +94,6 @@ class NodeInventoryTest extends BaseSpecification {
             nodes.each { node ->
                 assert node.getScan().getComponentsList().size() >= 4, "Expected to find at least 4 node components"
             }
-        }
-        nodes.each { node ->
-            assert node.getScan(), "Expected to find a nodeScan on the node"
-            log.info("Node ${node.getName()} scan contains ${node.getScan().getComponentsList().size()} components")
-
-            if (!nodeInventoryContainerAvailable) {
-                // No RHCOS node scanning on this cluster
-                assert node.getScan().getComponentsList().size() == 4,
-                    "Expected to find exactly 4 components on non-RHCOS node"
-                return
-            }
-            assert node.getScan().getComponentsList().size() > 4,
-                "Expected to find more than 4 components on RHCOS node"
         }
     }
 }
