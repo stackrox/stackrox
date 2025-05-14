@@ -37,6 +37,7 @@ func OnFailureDeleteOldResults(ctx context.Context, results *ScanConfigWatcherRe
 		if r.Error == nil {
 			continue
 		}
+		log.Debugf("deleting CheckResults from scan %q and any associated scan", r.Scan.GetScanName())
 		if err := utils.DeleteOldResults(ctx, r.Scan.GetProfile().GetProfileRefId(), resultDS, scanDS, profileDS); err != nil {
 			errList.AddError(err)
 		}
