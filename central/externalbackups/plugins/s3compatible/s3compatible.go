@@ -55,18 +55,6 @@ func init() {
 // Having the S3 compatible plugin separate will also give us more freedom to
 // change to a different package if the aws-sdk decides to drop the path-style
 // option in the future.
-//
-// Additionally, this new S3 compatible plugin already uses the aws-sdk-v2
-// while the S3 plugin still uses v1.
-// This is to allow backwards compatibility for customers that are using the S3
-// backup integration with GCS buckets. This is not possible to do with v2
-// because GCS alters the Accept-Encoding header, which breaks the v2 request
-// signature. See:
-// https://github.com/aws/aws-sdk-go-v2/issues/1816
-// Tested here:
-// https://github.com/stackrox/stackrox/pull/11761
-// Using the S3 backup integration interoperability with GCS has been deprecated
-// in 4.5.
 type s3Compatible struct {
 	integration *storage.ExternalBackup
 	bucket      string

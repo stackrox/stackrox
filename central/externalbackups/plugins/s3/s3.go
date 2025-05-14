@@ -37,6 +37,26 @@ const (
 
 var log = logging.LoggerForModule(option.EnableAdministrationEvents())
 
+// s3 plugin for the AWS S3 backup integration.
+// As the official AWS S3 is deprecating the path-style bucket addressing but
+// this style is still used in non-AWS S3 compatible providers, we decided to
+// implement a new plugin for the latter.
+// Having the two plugins allows for a clear separation between official AWS
+// and non-AWS features.
+// Having the S3 compatible plugin separate will also give us more freedom to
+// change to a different package if the aws-sdk decides to drop the path-style
+// option in the future.
+//
+// The s3 plugin used to use the aws-go-sdk v1 to allow backwards compatibility
+// for customers who were using the s3 backup integration with GCS buckets.
+// This is not possible anymore now that the s3 plugins uses the aws-go-sdk-v2
+// because GCS alters the Accept-Encoding header, which breaks the v2 request
+// signature. See:
+// https://github.com/aws/aws-sdk-go-v2/issues/1816
+// Tested here:
+// https://github.com/stackrox/stackrox/pull/11761
+// Using the S3 backup integration interoperability with GCS has been deprecated
+// in 4.5.
 type s3 struct {
 	integration *storage.ExternalBackup
 	bucket      string
@@ -115,29 +135,7 @@ func newS3(integration *storage.ExternalBackup) (*s3, error) {
 	}, nil
 }
 
-func (s *s3) upload(duration time.Duration, key string, body io.Reader) error {
-	ctx, cancel := context.WithTimeout(context.Background(), duration)
-	defer cancel()
-
-	input := &sdkS3.PutObjectInput{
-		Bucket: aws.String(s.bucket),
-		Key:    aws.String(key),
-		Body:   body,
-	}
-	_, err := s.awsUploader.Upload(ctx, input)
-	return err
-}
-
-func (s *s3) delete(key string) error {
-	deleteInput := &sdkS3.DeleteObjectInput{
-		Bucket: aws.String(s.bucket),
-		Key:    aws.String(key),
-	}
-	_, err := s.awsClient.DeleteObject(context.Background(), deleteInput)
-	return err
-}
-
-func sortS3Objects(objects []*s3Types.Object) {
+func sortS3Objects(objects []s3Types.Object) {
 	sort.SliceStable(objects, func(i, j int) bool {
 		o1, o2 := objects[i], objects[j]
 		if o2.LastModified == nil {
@@ -151,8 +149,8 @@ func sortS3Objects(objects []*s3Types.Object) {
 	})
 }
 
-func (s *s3) pruneBackupsIfNecessary() error {
-	listedBackups, err := s.awsClient.ListObjects(context.Background(), &sdkS3.ListObjectsInput{
+func (s *s3) pruneBackupsIfNecessary(ctx context.Context) error {
+	listedBackups, err := s.awsClient.ListObjectsV2(context.Background(), &sdkS3.ListObjectsV2Input{
 		Bucket: aws.String(s.integration.GetS3().GetBucket()),
 		Prefix: aws.String(s.prefixKey("backup")),
 	})
@@ -160,26 +158,22 @@ func (s *s3) pruneBackupsIfNecessary() error {
 		return s.createError(fmt.Sprintf("listing objects in s3 bucket %q", s.bucket), err)
 	}
 
-	backups := make([]*s3Types.Object, 0, len(listedBackups.Contents))
-	for _, b := range listedBackups.Contents {
-		backups = append(backups, &b)
-	}
-	sortS3Objects(backups)
+	sortS3Objects(listedBackups.Contents)
 
-	var objectsToRemove []*s3Types.Object
-	if len(backups) > int(s.integration.GetBackupsToKeep()) {
-		objectsToRemove = backups[s.integration.GetBackupsToKeep():]
+	var objectsToRemove []s3Types.Object
+	if len(listedBackups.Contents) > int(s.integration.GetBackupsToKeep()) {
+		objectsToRemove = listedBackups.Contents[s.integration.GetBackupsToKeep():]
 	}
 
 	errorList := errorhelpers.NewErrorList("remove objects in s3 store")
 	for _, o := range objectsToRemove {
-		err = s.delete(*o.Key)
+		_, err := s.awsClient.DeleteObject(ctx, &sdkS3.DeleteObjectInput{
+			Bucket: aws.String(s.integration.GetS3().GetBucket()),
+			Key:    o.Key,
+		})
 		if err != nil {
-			errorList.AddError(
-				s.createError(
-					fmt.Sprintf("deleting object %q from bucket %q", *o.Key, s.bucket),
-					err,
-				),
+			errorList.AddError(s.createError(
+				fmt.Sprintf("deleting object %q from bucket %q", *o.Key, s.bucket), err),
 			)
 		}
 	}
@@ -201,51 +195,52 @@ func (s *s3) Backup(reader io.ReadCloser) error {
 	formattedTime := time.Now().Format("2006-01-02T15:04:05")
 	key := fmt.Sprintf("backup_%s.zip", formattedTime)
 	formattedKey := s.prefixKey(key)
-	if err := s.upload(backupMaxTimeout, formattedKey, reader); err != nil {
-		return s.createError(
-			fmt.Sprintf("creating backup in bucket %q with key %q", s.bucket, formattedKey),
-			err,
-		)
+	ui := &sdkS3.PutObjectInput{
+		Bucket: aws.String(s.bucket),
+		Key:    aws.String(formattedKey),
+		Body:   reader,
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), backupMaxTimeout)
+	defer cancel()
+	if _, err := s.awsUploader.Upload(ctx, ui); err != nil {
+		return s.createError(fmt.Sprintf("creating backup in bucket %q with key %q",
+			s.bucket, formattedKey), err)
 	}
 	log.Info("Successfully backed up to S3")
-	return s.pruneBackupsIfNecessary()
+	return s.pruneBackupsIfNecessary(ctx)
 }
 
 func (s *s3) Test() error {
+	ctx, cancel := context.WithTimeout(context.Background(), testMaxTimeout)
+	defer cancel()
 	formattedKey := s.prefixKey("test")
-	testBody := strings.NewReader("This is a test of the StackRox integration with this bucket")
-	if err := s.upload(testMaxTimeout, formattedKey, testBody); err != nil {
-		return s.createError(
-			fmt.Sprintf("error creating test object %q in bucket %q", formattedKey, s.bucket),
-			err,
-		)
+	ui := &sdkS3.PutObjectInput{
+		Bucket: aws.String(s.bucket),
+		Key:    aws.String(formattedKey),
+		Body:   strings.NewReader("This is a test of the StackRox integration with this bucket"),
+	}
+	if _, err := s.awsUploader.Upload(ctx, ui); err != nil {
+		return s.createError(fmt.Sprintf("error creating test object %q in bucket %q",
+			formattedKey, s.bucket), err)
 	}
 
-	if err := s.delete(formattedKey); err != nil {
-		return s.createError(
-			fmt.Sprintf("deleting test object %q from bucket %q", formattedKey, s.bucket),
-			err,
-		)
+	if _, err := s.awsClient.DeleteObject(ctx, &sdkS3.DeleteObjectInput{
+		Bucket: aws.String(s.bucket),
+		Key:    aws.String(formattedKey),
+	}); err != nil {
+		return s.createError(fmt.Sprintf("deleting test object %q from bucket %q",
+			formattedKey, s.bucket), err)
 	}
 	return nil
 }
 
 func (s *s3) createError(msg string, err error) error {
-	var apiErr smithy.APIError
-	if errors.As(err, &apiErr) {
-		if apiErr.ErrorMessage() != "" {
-			msg = fmt.Sprintf(
-				"S3 backup: %s (code: %s; message: %s)",
-				msg,
-				apiErr.ErrorCode(),
-				apiErr.ErrorMessage(),
-			)
+	var awsErr smithy.APIError
+	if errors.As(err, &awsErr) {
+		if awsErr.ErrorMessage() != "" {
+			msg = fmt.Sprintf("S3 backup: %s (code: %s; message: %s)", msg, awsErr.ErrorCode(), awsErr.ErrorMessage())
 		} else {
-			msg = fmt.Sprintf(
-				"S3 backup: %s (code: %s)",
-				msg,
-				apiErr.ErrorCode(),
-			)
+			msg = fmt.Sprintf("S3 backup: %s (code: %s)", msg, awsErr.ErrorCode())
 		}
 	}
 	log.Errorw(msg,
