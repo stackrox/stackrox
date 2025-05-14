@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { Button, Icon, Popover } from '@patternfly/react-core';
+import { Button, Icon, Popover, List, ListItem } from '@patternfly/react-core';
 import { CheckCircleIcon, ExclamationCircleIcon } from '@patternfly/react-icons';
 
 import IconText from 'Components/PatternFly/IconText/IconText';
@@ -35,6 +35,16 @@ function ComplianceClusterStatus({ errors }: ComplianceClusterStatusProps) {
               };
     }
 
+    function getErrorsList(errors: string[]): ReactElement {
+        return (
+            <List isPlain>
+                {errors.map((error) => {
+                    return <ListItem key={error}>{error}</ListItem>;
+                })}
+            </List>
+        );
+    }
+
     const statusObj = getClusterStatusObject(errors);
 
     return statusObj.statusText === 'Healthy' ? (
@@ -45,7 +55,7 @@ function ComplianceClusterStatus({ errors }: ComplianceClusterStatusProps) {
             bodyContent={
                 <PopoverBodyContent
                     headerContent={errors.length === 1 ? 'Error' : 'Errors'}
-                    bodyContent={errors.join(', ')}
+                    bodyContent={getErrorsList(errors)}
                 />
             }
         >

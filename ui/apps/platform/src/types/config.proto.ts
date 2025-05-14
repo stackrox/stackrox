@@ -61,10 +61,23 @@ export type PrivateConfig = {
     administrationEventsConfig: AdministrationEventsConfig;
 };
 
+export type PlatformComponentRule = {
+    name: string;
+    namespaceRule: {
+        regex: string;
+    };
+};
+
+export type PlatformComponentsConfig = {
+    needsReevaluation: boolean;
+    rules: PlatformComponentRule[];
+};
+
 export type SystemConfig = {
     /*
      * GET /v1/config response can have publicConfig: null if uninitialized.
      */
     publicConfig: PublicConfig | null;
     privateConfig: PrivateConfig;
+    // @TODO: Add platform components config here
 };

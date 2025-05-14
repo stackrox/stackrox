@@ -45,4 +45,5 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_207_to_m_208_initialize_nvd_cvss"
 	_ "github.com/stackrox/rox/migrator/migrations/m_208_to_m_209_policy_updates_for_4_6"
 	_ "github.com/stackrox/rox/migrator/migrations/m_209_to_m_210_add_updated_at_to_network_flows_v2"
+	_ "github.com/stackrox/rox/migrator/migrations/m_210_to_m_211_post_upgrade"
 )

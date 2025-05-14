@@ -43,6 +43,18 @@ func wrapExtension(runFn func(ctx context.Context, securedCluster *platform.Secu
 				return true
 			})
 		}
-		return runFn(ctx, &c, client, direct, wrappedStatusUpdater, log)
+		err = runFn(ctx, &c, client, direct, wrappedStatusUpdater, log)
+		if err != nil {
+			return err
+		}
+
+		// Keep potentially mutated SecuredCluster spec.
+		// The ReconcileScannerV4FeatureDefaultsExtension mutates the SecuredCluster spec.
+		obj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&c)
+		if err != nil {
+			return errors.Wrap(err, "converting SecuredCluster to unstructured object after extension execution")
+		}
+		u.Object = obj
+		return nil
 	}
 }
