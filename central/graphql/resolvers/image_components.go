@@ -135,15 +135,53 @@ func (resolver *Resolver) ImageComponents(ctx context.Context, q PaginatedQuery)
 	}
 
 	if features.FlattenCVEData.Enabled() {
+		// Get the flattened data
+		componentFlatData, err := resolver.ImageComponentFlatView.Get(ctx, query)
+		if err != nil {
+			return nil, err
+		}
+
+		componentIDs := make([]string, 0, len(componentFlatData))
+		for _, componentFlat := range componentFlatData {
+			componentIDs = append(componentIDs, componentFlat.GetComponentIDs()...)
+		}
+
 		// get loader
 		loader, err := loaders.GetComponentV2Loader(ctx)
 		if err != nil {
 			return nil, err
 		}
 
-		// get values
-		comps, err := loader.FromQuery(ctx, query)
-		componentResolvers, err := resolver.wrapImageComponentV2sWithContext(ctx, comps, err)
+		// Get the Components themselves.  This will be denormalized.  So use the IDs to get them, but use
+		// the data returned from Component Flat View to keep order and set just 1 instance of a Component
+		componentQuery := search.NewQueryBuilder().AddExactMatches(search.ComponentID, componentIDs...).ProtoQuery()
+		comps, err := loader.FromQuery(ctx, componentQuery)
+
+		// Stash a single instance of a Component to aid in normalizing
+		foundComponent := make(map[normalizedImageComponent]*storage.ImageComponentV2)
+		for _, comp := range comps {
+			normalized := normalizedImageComponent{
+				name:    comp.GetName(),
+				version: comp.GetVersion(),
+				os:      comp.GetOperatingSystem(),
+			}
+			if _, ok := foundComponent[normalized]; !ok {
+				foundComponent[normalized] = comp
+			}
+		}
+
+		// Normalize the Components based on the flat view to keep them in the correct paging and sort order
+		normalizedVulns := make([]*storage.ImageComponentV2, 0, len(componentFlatData))
+		for _, cveFlat := range componentFlatData {
+			normalized := normalizedImageComponent{
+				name:    cveFlat.GetComponent(),
+				version: cveFlat.GetVersion(),
+				os:      cveFlat.GetOperatingSystem(),
+			}
+			normalizedVulns = append(normalizedVulns, foundComponent[normalized])
+		}
+
+		componentResolvers, err := resolver.wrapImageComponentV2sFlatWithContext(ctx, comps, componentFlatData, err)
 		if err != nil {
 			return nil, err
 		}
@@ -192,13 +230,8 @@ func (resolver *Resolver) ImageComponentCount(ctx context.Context, args RawQuery
 	}
 
 	if features.FlattenCVEData.Enabled() {
-		// get loader
-		loader, err := loaders.GetComponentV2Loader(ctx)
-		if err != nil {
-			return 0, err
-		}
-
-		return loader.CountFromQuery(ctx, query)
+		componentCount, err := resolver.ImageComponentFlatView.Count(ctx, query)
+		return int32(componentCount), err
 	}
 	// get loader
 	loader, err := loaders.GetComponentLoader(ctx)
