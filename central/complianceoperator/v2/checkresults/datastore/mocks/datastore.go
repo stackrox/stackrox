@@ -162,6 +162,34 @@ func (mr *MockDataStoreMockRecorder) DeleteResultsByCluster(ctx, clusterID any) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteResultsByCluster", reflect.TypeOf((*MockDataStore)(nil).DeleteResultsByCluster), ctx, clusterID)
 }
 
+// DeleteResultsByScanConfigAndCluster mocks base method.
+func (m *MockDataStore) DeleteResultsByScanConfigAndCluster(ctx context.Context, scanConfigName string, clusterIDs []string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteResultsByScanConfigAndCluster", ctx, scanConfigName, clusterIDs)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteResultsByScanConfigAndCluster indicates an expected call of DeleteResultsByScanConfigAndCluster.
+func (mr *MockDataStoreMockRecorder) DeleteResultsByScanConfigAndCluster(ctx, scanConfigName, clusterIDs any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteResultsByScanConfigAndCluster", reflect.TypeOf((*MockDataStore)(nil).DeleteResultsByScanConfigAndCluster), ctx, scanConfigName, clusterIDs)
+}
+
+// DeleteResultsByScanConfigAndRules mocks base method.
+func (m *MockDataStore) DeleteResultsByScanConfigAndRules(ctx context.Context, scanConfigName string, ruleRefIds []string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteResultsByScanConfigAndRules", ctx, scanConfigName, ruleRefIds)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteResultsByScanConfigAndRules indicates an expected call of DeleteResultsByScanConfigAndRules.
+func (mr *MockDataStoreMockRecorder) DeleteResultsByScanConfigAndRules(ctx, scanConfigName, ruleRefIds any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteResultsByScanConfigAndRules", reflect.TypeOf((*MockDataStore)(nil).DeleteResultsByScanConfigAndRules), ctx, scanConfigName, ruleRefIds)
+}
+
 // GetComplianceCheckResult mocks base method.
 func (m *MockDataStore) GetComplianceCheckResult(ctx context.Context, complianceResultID string) (*storage.ComplianceOperatorCheckResultV2, bool, error) {
 	m.ctrl.T.Helper()
