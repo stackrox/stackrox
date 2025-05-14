@@ -63,13 +63,16 @@ tests:
     .objects | map(select(.kind == "StorageClass" and .metadata.name == "stackrox-gke-ssd")) | assertThat(length == 1)
 
 - name: "Scanner V4 Indexer and Matcher can find Central"
+  release:
+    namespace: "rhacs-test"
   set:
     scannerV4.disable: false
+    allowNonstandardNamespace: true
   expect: |
     .deployments["scanner-v4-indexer"].spec.template.spec.containers[0].env[] |
-          select(.name == "ROX_CENTRAL_ENDPOINT") | assertThat(.value == "central.stackrox.svc")
+          select(.name == "ROX_CENTRAL_ENDPOINT") | assertThat(.value == "central.rhacs-test.svc")
     .deployments["scanner-v4-matcher"].spec.template.spec.containers[0].env[] |
-          select(.name == "ROX_CENTRAL_ENDPOINT") | assertThat(.value == "central.stackrox.svc")
+          select(.name == "ROX_CENTRAL_ENDPOINT") | assertThat(.value == "central.rhacs-test.svc")
 
 - name: "scanner V4 indexer and matcher skip gRPC health probes on Kubernetes < 1.24.0"
   set:
