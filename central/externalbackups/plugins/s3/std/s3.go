@@ -74,9 +74,7 @@ func (c *s3configWrapper) GetName() string {
 	return c.integration.GetName()
 }
 
-func (c *s3configWrapper) GetErrorCode() string {
-	return types.S3Type
-}
+func (c *s3configWrapper) GetPluginType() string { return types.S3Type }
 
 func (c *s3configWrapper) GetBackupsToKeep() int32 {
 	return c.integration.GetBackupsToKeep()
