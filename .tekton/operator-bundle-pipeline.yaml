@@ -577,9 +577,9 @@ spec:
   - name: sast-shell-check
     params:
     - name: image-digest
-      value: $(tasks.build-image-index.results.IMAGE_DIGEST)
+      value: $(tasks.build-container.results.IMAGE_DIGEST)
     - name: image-url
-      value: $(tasks.build-image-index.results.IMAGE_URL)
+      value: $(tasks.build-container.results.IMAGE_URL)
     - name: SOURCE_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
@@ -601,9 +601,9 @@ spec:
   - name: sast-unicode-check
     params:
     - name: image-digest
-      value: $(tasks.build-image-index.results.IMAGE_DIGEST)
+      value: $(tasks.build-container.results.IMAGE_DIGEST)
     - name: image-url
-      value: $(tasks.build-image-index.results.IMAGE_URL)
+      value: $(tasks.build-container.results.IMAGE_URL)
     - name: SOURCE_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
