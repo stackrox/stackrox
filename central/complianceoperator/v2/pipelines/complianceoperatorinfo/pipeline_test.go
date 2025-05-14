@@ -62,7 +62,7 @@ func (suite *PipelineTestSuite) TestComplianceInfoMsgFromSensor() {
 		},
 	}
 
-	statusErrors := []string{"Compliance operator not ready. Only 2 out of desired 5 are ready."}
+	statusErrors := []string{"Compliance operator is not ready. Only 2 pods out of desired 5 are ready."}
 	expectedInfo := &storage.ComplianceIntegration{
 		Version:             env.ComplianceMinimalSupportedVersion.VersionSetting().String(),
 		ClusterId:           fixtureconsts.Cluster1,
@@ -82,7 +82,7 @@ func (suite *PipelineTestSuite) TestComplianceInfoMsgFromSensor() {
 }
 
 func (suite *PipelineTestSuite) TestComplianceInfoMinimalRequiredVersion() {
-	minVersion := env.ComplianceMinimalSupportedVersion.VersionSetting()
+	minVersion := env.ComplianceMinimalSupportedVersion.DefaultValue()
 
 	patchVersion := minVersion.IncPatch()
 	minorVersion := minVersion.IncMinor()

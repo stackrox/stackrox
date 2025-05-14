@@ -26,7 +26,7 @@ func (s *VersionSetting) DefaultValue() *semver.Version {
 
 // Setting returns the string form of the version environment variable
 func (s *VersionSetting) Setting() string {
-	return fmt.Sprintf("%s", s.VersionSetting().String())
+	return s.VersionSetting().String()
 }
 
 // VersionSetting returns the semver.Version object represented by the environment variable
@@ -48,7 +48,7 @@ func (s *VersionSetting) VersionSetting() *semver.Version {
 func RegisterVersionSetting(envVar string, defaultValue string) *VersionSetting {
 	defaultVersion, err := semver.NewVersion(defaultValue)
 	if err != nil {
-		panic.HardPanic(fmt.Sprintf("%+v", err))
+		panic.HardPanic(fmt.Sprintf("Incorrect default value of %s: %v", envVar, err))
 	}
 
 	s := &VersionSetting{
