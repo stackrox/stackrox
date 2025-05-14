@@ -27,12 +27,12 @@ var (
 )
 
 const (
-	// coAvailableInUnknownVersion is value used in telemetry
+	// complianceOperAvailableInUnknownVersion is value used in telemetry
 	// when we find Compliance Operator but are unable to extract its version.
-	// The value will be displayed as: Compliance Operator Version = <value of coAvailableInUnknownVersion>
-	coAvailableInUnknownVersion = "installed; version unknown"
-	// coUnavailable is value used in telemetry when we do not find Compliance Operator deployment
-	coUnavailable = "not installed"
+	// The value will be displayed as: Compliance Operator Version = <value of complianceOperAvailableInUnknownVersion>
+	complianceOperAvailableInUnknownVersion = "installed; version unknown"
+	// complianceOperUnavailable is value used in telemetry when we do not find Compliance Operator deployment
+	complianceOperUnavailable = "not installed"
 )
 
 // ClusterMetrics collects metrics from secured clusters and sends them to Central.
@@ -60,7 +60,7 @@ func NewWithInterval(k8sClient kubernetes.Interface, pollInterval time.Duration)
 }
 
 type clusterMetricsImpl struct {
-	coNamespaceCache string
+	lastKnownComplianceOperatorNamespace string
 
 	output          chan *message.ExpiringMessage
 	stopper         concurrency.Stopper
@@ -152,18 +152,19 @@ func (cm *clusterMetricsImpl) collectMetrics() (*central.ClusterMetrics, error) 
 		}
 	}
 
-	// If cm.coNamespaceCache is empty, the CO deployment will be searched for in all candidate namespaces
-	coVersion, namespace, err := complianceoperator.GetInstalledVersion(cm.coNamespaceCache, cm.k8sClient, ctx)
+	// If cm.lastKnownComplianceOperatorNamespace is empty or not containing the compliance operator anymore,
+	// then the compliance operator deployment will be searched for in all namespaces.
+	coVersion, namespace, err := complianceoperator.GetInstalledVersion(cm.lastKnownComplianceOperatorNamespace, cm.k8sClient, ctx)
 	if err != nil {
 		if errors.Is(err, complianceoperator.ErrUnableToExtractVersion) {
-			coVersion = coAvailableInUnknownVersion
-			cm.coNamespaceCache = namespace
+			coVersion = complianceOperAvailableInUnknownVersion
+			cm.lastKnownComplianceOperatorNamespace = namespace
 		} else {
-			coVersion = coUnavailable
+			coVersion = complianceOperUnavailable
 		}
 	} else {
-		// Remember the CO namespace to accelerate future searches
-		cm.coNamespaceCache = namespace
+		// Remember the compliance operator namespace to accelerate future searches
+		cm.lastKnownComplianceOperatorNamespace = namespace
 	}
 	return &central.ClusterMetrics{NodeCount: nodeCount, CpuCapacity: capacity, CoVersion: coVersion}, nil
 }
