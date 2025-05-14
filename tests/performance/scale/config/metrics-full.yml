@@ -142,37 +142,30 @@
 - query: sum( node_cpu_seconds_total and on (instance) label_replace(kube_node_role{role="worker",role!="infra"}, "instance", "$1", "node", "(.+)") ) by (mode)
   metricName: nodeCPUSeconds-Workers
   instant: true
-  captureStart: true
 
 - query: sum( node_cpu_seconds_total and on (instance) label_replace(kube_node_role{role="master"}, "instance", "$1", "node", "(.+)") ) by (mode)
   metricName: nodeCPUSeconds-Masters
   instant: true
-  captureStart: true
 
 - query: sum( node_cpu_seconds_total and on (instance) label_replace(kube_node_role{role="infra"}, "instance", "$1", "node", "(.+)") ) by (mode)
   metricName: nodeCPUSeconds-Infra
   instant: true
-  captureStart: true
 
 - query: sum (  container_cpu_usage_seconds_total {  id =~ "/system.slice|/system.slice/kubelet.service|/system.slice/ovs-vswitchd.service|/system.slice/crio.service|/kubepods.slice" } and on (node) kube_node_role{ role = "worker",role != "infra" } )  by   (   id  )
   metricName: cgroupCPUSeconds-Workers
   instant: true
-  captureStart: true
 
 - query: sum (  container_cpu_usage_seconds_total {  id =~ "/system.slice|/system.slice/kubelet.service|/system.slice/ovs-vswitchd.service|/system.slice/crio.service|/kubepods.slice" }  and on (node) kube_node_role{ role = "master" } )  by   (   id  )
   metricName: cgroupCPUSeconds-Masters
   instant: true
-  captureStart: true
 
 - query: sum (  container_cpu_usage_seconds_total {  id =~ "/system.slice|/system.slice/kubelet.service|/system.slice/ovs-vswitchd.service|/system.slice/crio.service|/kubepods.slice" }  and on (node) kube_node_role{ role = "infra" } )  by   (   id  )
   metricName: cgroupCPUSeconds-Infra
   instant: true
-  captureStart: true
 
 - query: sum( container_cpu_usage_seconds_total{container!~"POD|",namespace=~"openshift-.*"} )  by (namespace)
   metricName: cgroupCPUSeconds-namespaces
   instant: true
-  captureStart: true
 
 # File: metrics-acs-base.yml
 
