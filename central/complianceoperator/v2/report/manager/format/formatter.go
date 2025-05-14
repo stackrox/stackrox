@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	EmptyValue           = "Data not found for the cluster"
+	emptyValue           = "Data not found for the cluster"
 	successfulClusterFmt = "cluster_%s.csv"
 	failedClusterFmt     = "failed_cluster_%s.csv"
 )
@@ -62,6 +62,10 @@ func NewFormatter() *FormatterImpl {
 	}
 }
 
+// FormatCSVReport generates zip data containing CSV files (one per cluster).
+// If a cluster fails, the generated CSV file will contain the reason for the reason but (no check results).
+// If a cluster success, the generated CSV file will contain all the check results with enhanced information (e.g. remediation, associated profile, etc)
+// The results parameter is expected to contain the clusters that succeed (no failed clusters should be passed in results).
 func (f *FormatterImpl) FormatCSVReport(results map[string][]*report.ResultRow, failedClusters map[string]*storage.ComplianceOperatorReportSnapshotV2_FailedCluster) (buffRet *bytes.Buffer, errRet error) {
 	var buf bytes.Buffer
 	zipWriter := f.newZipWriter(&buf)
@@ -78,6 +82,10 @@ func (f *FormatterImpl) FormatCSVReport(results map[string][]*report.ResultRow, 
 		}
 	}
 	for clusterID, res := range results {
+		// We should not receive results from a failed cluster
+		if _, ok := failedClusters[clusterID]; ok {
+			continue
+		}
 		fileName := fmt.Sprintf(successfulClusterFmt, clusterID)
 		err := f.createCSVInZip(zipWriter, fileName, res)
 		if err != nil {
@@ -98,12 +106,13 @@ func (f *FormatterImpl) createCSVInZip(zipWriter ZipWriter, filename string, clu
 			csvWriter.AddValue(generateRecord(checkRes))
 		}
 	} else {
-		csvWriter.AddValue([]string{EmptyValue})
+		csvWriter.AddValue([]string{emptyValue})
 	}
 	return csvWriter.WriteCSV(w)
 }
 
 func generateRecord(row *report.ResultRow) []string {
+	// The order in the slice needs to match the order defined in `csvHeader`
 	return []string{
 		row.ControlRef,
 		row.CheckName,
@@ -128,6 +137,7 @@ func (f *FormatterImpl) createFailedClusterFileInZip(zipWriter ZipWriter, filena
 }
 
 func generateFailRecord(failedCluster *storage.ComplianceOperatorReportSnapshotV2_FailedCluster) []string {
+	// The order in the slice needs to match the order defined in `failedClusterCSVHeader`
 	return []string{
 		failedCluster.GetClusterId(),
 		failedCluster.GetClusterName(),
