@@ -72,12 +72,12 @@ func tlsConfigOptsForCentral() (*clientconn.TLSConfigOptions, error) {
 
 func getCertPool() (*x509.CertPool, error) {
 	roots := x509.NewCertPool()
-	if flags.CAFile() != "" {
+	if caFile := flags.CAFile(); caFile != "" {
 		// Read the CA from the given file.
-		if ca, err := os.ReadFile(flags.CAFile()); err != nil {
+		if ca, err := os.ReadFile(caFile); err != nil {
 			return nil, errors.Wrap(err, "failed to parse CA certificates from file")
 		} else if !roots.AppendCertsFromPEM(ca) {
-			return nil, errors.Errorf("CA certificates file %s contains no certificates", flags.CAFile())
+			return nil, errors.Errorf("CA certificates file %s contains no certificates", caFile)
 		}
 	} else if flags.UseKubeContext() {
 		// Read the CA from the central secret.
