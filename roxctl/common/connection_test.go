@@ -90,6 +90,11 @@ func Test_shouldRetry(t *testing.T) {
 			expected: true,
 		},
 		{
+			name:     "GRPC Resource Exhausted Error",
+			err:      status.Error(codes.ResourceExhausted, "resource exhausted"),
+			expected: true,
+		},
+		{
 			name:     "GRPC Unauthenticated Error",
 			err:      status.Error(codes.Unauthenticated, "unauthenticated"),
 			expected: false,
@@ -102,7 +107,7 @@ func Test_shouldRetry(t *testing.T) {
 		{
 			name:     "Unknown Error",
 			err:      errors.New("unknown error"),
-			expected: false,
+			expected: true,
 		},
 	}
 
