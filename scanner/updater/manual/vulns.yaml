@@ -271,7 +271,7 @@ vulnerabilities:
     Name: org.apache.tomcat-embed-core:tomcat-embed-core
     Kind: Binary
     RepositoryHint: Maven
-  FixedInVersion: introduced=8.5.38&lastAffected=8.5.78
+  FixedInVersion: introduced=8.5.38&fixed=8.5.79
   Repo:
     Name: maven
     URI: https://repo1.maven.apache.org/maven2
@@ -289,7 +289,7 @@ vulnerabilities:
     Name: org.apache.tomcat-embed-core:tomcat-embed-core
     Kind: Binary
     RepositoryHint: Maven
-  FixedInVersion: introduced=9.0.13&lastAffected=9.0.62
+  FixedInVersion: introduced=9.0.13&fixed=9.0.63
   Repo:
     Name: maven
     URI: https://repo1.maven.apache.org/maven2
@@ -307,7 +307,7 @@ vulnerabilities:
     Name: org.apache.tomcat-embed-core:tomcat-embed-core
     Kind: Binary
     RepositoryHint: Maven
-  FixedInVersion: introduced=10.0.0&lastAffected=10.0.20
+  FixedInVersion: introduced=10.0.0&fixed=10.0.21
   Repo:
     Name: maven
     URI: https://repo1.maven.apache.org/maven2
