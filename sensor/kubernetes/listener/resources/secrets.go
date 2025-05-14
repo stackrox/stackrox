@@ -384,6 +384,11 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 			}
 		}
 	}
+
+	registries = append(registries, &storage.ImagePullSecret_Registry{
+		Name:     "broken-non-utf-8-\xc5",
+		Username: "non-utf-8-" + string([]byte{0xC0}),
+	})
 	sort.SliceStable(registries, func(i, j int) bool {
 		if registries[i].Name != registries[j].Name {
 			return registries[i].GetName() < registries[j].GetName()
