@@ -37,8 +37,8 @@ const (
 
 var log = logging.LoggerForModule(option.EnableAdministrationEvents())
 
-// S3Common holds the data for a s3 or compatible backup integration
-type S3Common struct {
+// s3Common holds the data for a s3 or compatible backup integration
+type s3Common struct {
 	config ConfigWrapper
 	bucket string
 
@@ -129,7 +129,7 @@ func NewS3Client(cfg ConfigWrapper) (types.ExternalBackup, error) {
 
 	awsClient := s3.NewFromConfig(awsCfg, clientOpts...)
 
-	return &S3Common{
+	return &s3Common{
 		config: cfg,
 		bucket: cfg.GetBucket(),
 
@@ -138,7 +138,7 @@ func NewS3Client(cfg ConfigWrapper) (types.ExternalBackup, error) {
 	}, nil
 }
 
-func (s *S3Common) Backup(reader io.ReadCloser) error {
+func (s *s3Common) Backup(reader io.ReadCloser) error {
 	defer func() {
 		if err := reader.Close(); err != nil {
 			log.Errorf("closing reader: %+v", err)
@@ -151,11 +151,7 @@ func (s *S3Common) Backup(reader io.ReadCloser) error {
 	formattedTime := time.Now().Format(timeFormat)
 	key := fmt.Sprintf("backup_%s.zip", formattedTime)
 	formattedKey := s.prefixKey(key)
-	if _, err := s.uploader.Upload(ctx, &s3.PutObjectInput{
-		Bucket: aws.String(s.bucket),
-		Key:    aws.String(formattedKey),
-		Body:   reader,
-	}); err != nil {
+	if err := s.upload(ctx, formattedKey, reader); err != nil {
 		return s.createError(fmt.Sprintf("creating backup in bucket %q with key %q",
 			s.bucket, formattedKey), err)
 	}
@@ -163,29 +159,23 @@ func (s *S3Common) Backup(reader io.ReadCloser) error {
 	return s.pruneBackupsIfNecessary(ctx)
 }
 
-func (s *S3Common) Test() error {
+func (s *s3Common) Test() error {
 	ctx, cancel := context.WithTimeout(context.Background(), testMaxTimeout)
 	defer cancel()
 	formattedKey := s.prefixKey("test")
-	if _, err := s.uploader.Upload(ctx, &s3.PutObjectInput{
-		Bucket: aws.String(s.bucket),
-		Key:    aws.String(formattedKey),
-		Body:   strings.NewReader("This is a test of the StackRox integration with this bucket"),
-	}); err != nil {
+	testBody := strings.NewReader("This is a test of the StackRox integration with this bucket")
+	if err := s.upload(ctx, formattedKey, testBody); err != nil {
 		return s.createError(fmt.Sprintf("creating test object %q in bucket %q",
 			formattedKey, s.bucket), err)
 	}
-	if _, err := s.client.DeleteObject(ctx, &s3.DeleteObjectInput{
-		Bucket: aws.String(s.bucket),
-		Key:    aws.String(formattedKey),
-	}); err != nil {
+	if err := s.delete(ctx, formattedKey); err != nil {
 		return s.createError(fmt.Sprintf("deleting test object %q from bucket %q",
 			formattedKey, s.bucket), err)
 	}
 	return nil
 }
 
-func (s *S3Common) prefixKey(key string) string {
+func (s *s3Common) prefixKey(key string) string {
 	return filepath.Join(s.config.GetObjectPrefix(), key)
 }
 
@@ -193,14 +183,14 @@ func isBaseS3Config(cfg ConfigWrapper) bool {
 	return cfg.GetPluginType() == types.S3Type
 }
 
-func (s *S3Common) getLogPrefix() string {
+func (s *s3Common) getLogPrefix() string {
 	if isBaseS3Config(s.config) {
 		return "S3"
 	}
 	return "S3 compatible"
 }
 
-func (s *S3Common) createError(msg string, err error) error {
+func (s *s3Common) createError(msg string, err error) error {
 	var apiErr smithy.APIError
 	if errors.As(err, &apiErr) {
 		if apiErr.ErrorMessage() != "" {
@@ -235,11 +225,8 @@ func sortS3Objects(objects []s3Types.Object) {
 	})
 }
 
-func (s *S3Common) pruneBackupsIfNecessary(ctx context.Context) error {
-	objects, err := s.client.ListObjectsV2(ctx, &s3.ListObjectsV2Input{
-		Bucket: aws.String(s.bucket),
-		Prefix: aws.String(s.prefixKey("backup")),
-	})
+func (s *s3Common) pruneBackupsIfNecessary(ctx context.Context) error {
+	objects, err := s.listObjects(ctx)
 	if err != nil {
 		return s.createError(fmt.Sprintf("listing objects in %s bucket %q", s.getLogPrefix(), s.bucket), err)
 	}
@@ -253,10 +240,7 @@ func (s *S3Common) pruneBackupsIfNecessary(ctx context.Context) error {
 
 	errorList := errorhelpers.NewErrorList(fmt.Sprintf("remove objects in %s store", s.getLogPrefix()))
 	for _, objToRemove := range objects.Contents[s.config.GetBackupsToKeep():] {
-		_, err = s.client.DeleteObject(ctx, &s3.DeleteObjectInput{
-			Bucket: aws.String(s.bucket),
-			Key:    objToRemove.Key,
-		})
+		err = s.delete(ctx, *objToRemove.Key)
 		if err != nil {
 			errorList.AddError(s.createError(
 				fmt.Sprintf("deleting object %q from bucket %q", *objToRemove.Key, s.bucket), err),
@@ -264,4 +248,28 @@ func (s *S3Common) pruneBackupsIfNecessary(ctx context.Context) error {
 		}
 	}
 	return errorList.ToError()
+}
+
+func (s *s3Common) listObjects(ctx context.Context) (*s3.ListObjectsV2Output, error) {
+	return s.client.ListObjectsV2(ctx, &s3.ListObjectsV2Input{
+		Bucket: aws.String(s.bucket),
+		Prefix: aws.String(s.prefixKey("backup")),
+	})
+}
+
+func (s *s3Common) delete(ctx context.Context, key string) error {
+	_, err := s.client.DeleteObject(ctx, &s3.DeleteObjectInput{
+		Bucket: aws.String(s.bucket),
+		Key:    aws.String(key),
+	})
+	return err
+}
+
+func (s *s3Common) upload(ctx context.Context, key string, data io.Reader) error {
+	_, err := s.uploader.Upload(ctx, &s3.PutObjectInput{
+		Bucket: aws.String(s.bucket),
+		Key:    aws.String(key),
+		Body:   data,
+	})
+	return err
 }
