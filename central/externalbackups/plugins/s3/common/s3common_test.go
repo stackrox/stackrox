@@ -122,6 +122,9 @@ func TestNewS3Client(t *testing.T) {
 			pluginType:  "s3compatible",
 			valid:       true,
 		},
+		"broken config": {
+			valid: false,
+		},
 	} {
 		t.Run(name, func(it *testing.T) {
 			client, err := NewS3Client(cfg)
