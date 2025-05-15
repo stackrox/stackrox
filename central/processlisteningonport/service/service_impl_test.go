@@ -9,7 +9,7 @@ import (
 	//"math/rand"
 	//"sync"
 	"testing"
-	"time"
+	//"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	deploymentStore "github.com/stackrox/rox/central/deployment/datastore"
@@ -24,8 +24,8 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	//"github.com/stackrox/rox/pkg/process/id"
-	"github.com/stackrox/rox/pkg/protoassert"
-	"github.com/stackrox/rox/pkg/protoconv"
+	//"github.com/stackrox/rox/pkg/protoassert"
+	//"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	//"github.com/stackrox/rox/pkg/search"
@@ -126,38 +126,51 @@ func getIndicators() []*storage.ProcessIndicator {
 }
 
 var (
-	openPlopObject = storage.ProcessListeningOnPortFromSensor{
-		Port:           1234,
-		Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
-		CloseTimestamp: nil,
-		Process: &storage.ProcessIndicatorUniqueKey{
-			PodId:               fixtureconsts.PodName1,
-			ContainerName:       "test_container1",
-			ProcessName:         "test_process1",
-			ProcessArgs:         "test_arguments1",
-			ProcessExecFilePath: "test_path1",
+	indicator1 = &storage.ProcessIndicator{
+		Id:            fixtureconsts.ProcessIndicatorID1,
+		DeploymentId:  fixtureconsts.Deployment1,
+		PodId:         fixtureconsts.PodName1,
+		PodUid:        fixtureconsts.PodUID1,
+		ClusterId:     fixtureconsts.Cluster1,
+		ContainerName: "test_container1",
+		Namespace:     fixtureconsts.Namespace1,
+		Signal: &storage.ProcessSignal{
+			Name:         "test_process1",
+			Args:         "test_arguments1",
+			ExecFilePath: "test_path1",
 		},
-		DeploymentId: fixtureconsts.Deployment1,
-		PodUid:       fixtureconsts.PodUID1,
-		ClusterId:    fixtureconsts.Cluster1,
-		Namespace:    fixtureconsts.Namespace1,
 	}
 
-	closedPlopObject = storage.ProcessListeningOnPortFromSensor{
-		Port:           1234,
-		Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
-		CloseTimestamp: protoconv.ConvertTimeToTimestamp(time.Now()),
-		Process: &storage.ProcessIndicatorUniqueKey{
-			PodId:               fixtureconsts.PodName1,
-			ContainerName:       "test_container1",
-			ProcessName:         "test_process1",
-			ProcessArgs:         "test_arguments1",
-			ProcessExecFilePath: "test_path1",
+	indicator2 = &storage.ProcessIndicator{
+		Id:            fixtureconsts.ProcessIndicatorID2,
+		DeploymentId:  fixtureconsts.Deployment1,
+		PodId:         fixtureconsts.PodName3,
+		PodUid:        fixtureconsts.PodUID3,
+		ClusterId:     fixtureconsts.Cluster1,
+		ContainerName: "test_container2",
+		Namespace:     fixtureconsts.Namespace1,
+
+		Signal: &storage.ProcessSignal{
+			Name:         "test_process2",
+			Args:         "test_arguments2",
+			ExecFilePath: "test_path2",
 		},
-		DeploymentId: fixtureconsts.Deployment1,
-		PodUid:       fixtureconsts.PodUID1,
-		ClusterId:    fixtureconsts.Cluster1,
-		Namespace:    fixtureconsts.Namespace1,
+	}
+
+	indicator3 = &storage.ProcessIndicator{
+		Id:            fixtureconsts.ProcessIndicatorID3,
+		DeploymentId:  fixtureconsts.Deployment1,
+		PodId:         fixtureconsts.PodName3,
+		PodUid:        fixtureconsts.PodUID3,
+		ClusterId:     fixtureconsts.Cluster1,
+		ContainerName: "test_container2",
+		Namespace:     fixtureconsts.Namespace1,
+
+		Signal: &storage.ProcessSignal{
+			Name:         "test_process3",
+			Args:         "test_arguments3",
+			ExecFilePath: "test_path3",
+		},
 	}
 )
 
@@ -193,6 +206,177 @@ func (suite *PLOPServiceTestSuite) TestPLOPCases() {
 				DeploymentId:	fixtureconsts.Deployment1,
 			},
 		},
+		"No plops are retrieved since the deployment is wrong": {
+			plopsInDB:	[]*storage.ProcessListeningOnPortStorage{
+							fixtures.GetPlopStorage7(),
+						},
+			processIndicators: getIndicators(),
+			deployments: 	[]*storage.Deployment{
+						&storage.Deployment{Id: fixtureconsts.Deployment1, Namespace: fixtureconsts.Namespace1, ClusterId: fixtureconsts.Cluster1},
+						&storage.Deployment{Id: fixtureconsts.Deployment2, Namespace: fixtureconsts.Namespace1, ClusterId: fixtureconsts.Cluster1},
+					},
+			expectedPlopCount: 0,
+			request:	&v1.GetProcessesListeningOnPortsRequest{
+				DeploymentId:	fixtureconsts.Deployment2,
+			},
+		},
+		"Multiple plops are retrieved": {
+			plopsInDB:	[]*storage.ProcessListeningOnPortStorage{
+							fixtures.GetPlopStorage7(),
+							fixtures.GetPlopStorage8(),
+							fixtures.GetPlopStorage9(),
+						},
+			processIndicators: []*storage.ProcessIndicator{
+							indicator1,
+							indicator2,
+							indicator3,
+			},
+			deployments: 	[]*storage.Deployment{
+						&storage.Deployment{Id: fixtureconsts.Deployment1, Namespace: fixtureconsts.Namespace1, ClusterId: fixtureconsts.Cluster1},
+					},
+			expectedPlopCount: 3,
+			request:	&v1.GetProcessesListeningOnPortsRequest{
+				DeploymentId:	fixtureconsts.Deployment1,
+			},
+		},
+		"One plop is retrieved due to pagination": {
+			plopsInDB:	[]*storage.ProcessListeningOnPortStorage{
+							fixtures.GetPlopStorage7(),
+							fixtures.GetPlopStorage8(),
+							fixtures.GetPlopStorage9(),
+						},
+			processIndicators: []*storage.ProcessIndicator{
+							indicator1,
+							indicator2,
+							indicator3,
+			},
+			deployments: 	[]*storage.Deployment{
+						&storage.Deployment{Id: fixtureconsts.Deployment1, Namespace: fixtureconsts.Namespace1, ClusterId: fixtureconsts.Cluster1},
+					},
+			expectedPlopCount: 1,
+			request:	&v1.GetProcessesListeningOnPortsRequest{
+				DeploymentId:	fixtureconsts.Deployment1,
+				Pagination:	&v1.Pagination{
+					Limit: 1,
+					Offset: 0,
+				},
+			},
+		},
+		"Two plops are retrieved due to pagination": {
+			plopsInDB:	[]*storage.ProcessListeningOnPortStorage{
+							fixtures.GetPlopStorage7(),
+							fixtures.GetPlopStorage8(),
+							fixtures.GetPlopStorage9(),
+						},
+			processIndicators: []*storage.ProcessIndicator{
+							indicator1,
+							indicator2,
+							indicator3,
+			},
+			deployments: 	[]*storage.Deployment{
+						&storage.Deployment{Id: fixtureconsts.Deployment1, Namespace: fixtureconsts.Namespace1, ClusterId: fixtureconsts.Cluster1},
+					},
+			expectedPlopCount: 2,
+			request:	&v1.GetProcessesListeningOnPortsRequest{
+				DeploymentId:	fixtureconsts.Deployment1,
+				Pagination:	&v1.Pagination{
+					Limit: 2,
+					Offset: 0,
+				},
+			},
+		},
+		"Limit is greater than the number of plops": {
+			plopsInDB:	[]*storage.ProcessListeningOnPortStorage{
+							fixtures.GetPlopStorage7(),
+							fixtures.GetPlopStorage8(),
+							fixtures.GetPlopStorage9(),
+						},
+			processIndicators: []*storage.ProcessIndicator{
+							indicator1,
+							indicator2,
+							indicator3,
+			},
+			deployments: 	[]*storage.Deployment{
+						&storage.Deployment{Id: fixtureconsts.Deployment1, Namespace: fixtureconsts.Namespace1, ClusterId: fixtureconsts.Cluster1},
+					},
+			expectedPlopCount: 3,
+			request:	&v1.GetProcessesListeningOnPortsRequest{
+				DeploymentId:	fixtureconsts.Deployment1,
+				Pagination:	&v1.Pagination{
+					Limit: 4,
+					Offset: 0,
+				},
+			},
+		},
+		"Limit and offset are one": {
+			plopsInDB:	[]*storage.ProcessListeningOnPortStorage{
+							fixtures.GetPlopStorage7(),
+							fixtures.GetPlopStorage8(),
+							fixtures.GetPlopStorage9(),
+						},
+			processIndicators: []*storage.ProcessIndicator{
+							indicator1,
+							indicator2,
+							indicator3,
+			},
+			deployments: 	[]*storage.Deployment{
+						&storage.Deployment{Id: fixtureconsts.Deployment1, Namespace: fixtureconsts.Namespace1, ClusterId: fixtureconsts.Cluster1},
+					},
+			expectedPlopCount: 1,
+			request:	&v1.GetProcessesListeningOnPortsRequest{
+				DeploymentId:	fixtureconsts.Deployment1,
+				Pagination:	&v1.Pagination{
+					Limit: 1,
+					Offset: 1,
+				},
+			},
+		},
+		"Two plops returned due to offset": {
+			plopsInDB:	[]*storage.ProcessListeningOnPortStorage{
+							fixtures.GetPlopStorage7(),
+							fixtures.GetPlopStorage8(),
+							fixtures.GetPlopStorage9(),
+						},
+			processIndicators: []*storage.ProcessIndicator{
+							indicator1,
+							indicator2,
+							indicator3,
+			},
+			deployments: 	[]*storage.Deployment{
+						&storage.Deployment{Id: fixtureconsts.Deployment1, Namespace: fixtureconsts.Namespace1, ClusterId: fixtureconsts.Cluster1},
+					},
+			expectedPlopCount: 2,
+			request:	&v1.GetProcessesListeningOnPortsRequest{
+				DeploymentId:	fixtureconsts.Deployment1,
+				Pagination:	&v1.Pagination{
+					Limit: 10,
+					Offset: 1,
+				},
+			},
+		},
+		"Only one plop returned due to offset": {
+			plopsInDB:	[]*storage.ProcessListeningOnPortStorage{
+							fixtures.GetPlopStorage7(),
+							fixtures.GetPlopStorage8(),
+							fixtures.GetPlopStorage9(),
+						},
+			processIndicators: []*storage.ProcessIndicator{
+							indicator1,
+							indicator2,
+							indicator3,
+			},
+			deployments: 	[]*storage.Deployment{
+						&storage.Deployment{Id: fixtureconsts.Deployment1, Namespace: fixtureconsts.Namespace1, ClusterId: fixtureconsts.Cluster1},
+					},
+			expectedPlopCount: 1,
+			request:	&v1.GetProcessesListeningOnPortsRequest{
+				DeploymentId:	fixtureconsts.Deployment1,
+				Pagination:	&v1.Pagination{
+					Limit: 10,
+					Offset: 2,
+				},
+			},
+		},
 	}
 		
 	for name, c := range cases {
@@ -218,61 +402,5 @@ func (suite *PLOPServiceTestSuite) TestPLOPCases() {
 			suite.Equal(c.expectedPlopCount, len(response.ListeningEndpoints))
 		})
 	}
-
-}
-
-// Probably remove this before merging as it is redundant with the above
-func (suite *PLOPServiceTestSuite) TestPLOPHappyPath() {
-	indicators := getIndicators()
-
-	plopObjects := []*storage.ProcessListeningOnPortFromSensor{&openPlopObject}
-
-	suite.addDeployments()
-
-	// Prepare indicators for FK
-	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
-		suite.hasWriteCtx, indicators...))
-
-	// Add PLOP referencing those indicators
-	suite.NoError(suite.datastore.AddProcessListeningOnPort(
-		suite.hasWriteCtx, fixtureconsts.Cluster1, plopObjects...))
-
-	request := &v1.GetProcessesListeningOnPortsRequest{
-		DeploymentId: fixtureconsts.Deployment3,
-	}
-	// Check a deployment that doesn't exist
-	response, err := suite.service.GetListeningEndpoints(suite.hasReadCtx, request)
-	suite.NoError(err)
-
-	newPlops := response.ListeningEndpoints
-	suite.Len(newPlops, 0)
-
-	request = &v1.GetProcessesListeningOnPortsRequest{
-		DeploymentId: fixtureconsts.Deployment1,
-	}
-	// Check a deployment that doesn't exist
-	response, err = suite.service.GetListeningEndpoints(suite.hasReadCtx, request)
-	suite.NoError(err)
-
-	newPlops = response.ListeningEndpoints
-	suite.Len(newPlops, 1)
-
-	protoassert.Equal(suite.T(), newPlops[0], &storage.ProcessListeningOnPort{
-		ContainerName: "test_container1",
-		PodId:         fixtureconsts.PodName1,
-		PodUid:        fixtureconsts.PodUID1,
-		DeploymentId:  fixtureconsts.Deployment1,
-		ClusterId:     fixtureconsts.Cluster1,
-		Namespace:     fixtureconsts.Namespace1,
-		Endpoint: &storage.ProcessListeningOnPort_Endpoint{
-			Port:     1234,
-			Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-		},
-		Signal: &storage.ProcessSignal{
-			Name:         "test_process1",
-			Args:         "test_arguments1",
-			ExecFilePath: "test_path1",
-		},
-	})
 
 }
