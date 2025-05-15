@@ -2,6 +2,7 @@ package grpc
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"testing"
@@ -12,9 +13,73 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/encoding"
+	"google.golang.org/grpc/encoding/proto"
 	"google.golang.org/grpc/test/bufconn"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
+
+func TestCodecFallback(t *testing.T) {
+	c := encoding.GetCodecV2(proto.Name)
+
+	nonVtMessage := durationpb.New(1)
+
+	data, err := c.Marshal(nonVtMessage)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, data)
+
+	err = c.Unmarshal(data, nonVtMessage)
+	assert.NoError(t, err)
+
+	_, err = c.Marshal(nil)
+	assert.EqualError(t, err, "codec failed: type <nil> does not support VT; fallback failed: proto: failed to marshal, message is <nil>, want proto.Message")
+
+	err = c.Unmarshal(data, nil)
+	assert.EqualError(t, err, "type <nil> does not support VT; fallback failed: failed to unmarshal, message is <nil>, want proto.Message")
+
+	_, err = c.Marshal(fakeVtMsg{})
+	assert.EqualError(t, err, "codec failed: some error; fallback failed: proto: failed to marshal, message is grpc.fakeVtMsg, want proto.Message")
+
+	err = c.Unmarshal(data, fakeVtMsg{})
+	assert.EqualError(t, err, "codec failed: some error; fallback failed: failed to unmarshal, message is grpc.fakeVtMsg, want proto.Message")
+
+	_, err = c.Marshal(errVtMsg{nonVtMessage})
+	assert.NoError(t, err)
+
+	err = c.Unmarshal(data, errVtMsg{nonVtMessage})
+	assert.NoError(t, err)
+}
+
+type fakeVtMsg struct {
+}
+
+func (fakeVtMsg) MarshalToSizedBufferVT(_ []byte) (int, error) {
+	return 0, errors.New("some error")
+}
+
+func (fakeVtMsg) UnmarshalVT([]byte) error {
+	return errors.New("some error")
+}
+
+func (fakeVtMsg) SizeVT() int {
+	return 0
+}
+
+type errVtMsg struct {
+	*durationpb.Duration
+}
+
+func (errVtMsg) MarshalToSizedBufferVT(_ []byte) (int, error) {
+	return 0, errors.New("some error")
+}
+
+func (errVtMsg) UnmarshalVT([]byte) error {
+	return errors.New("some error")
+}
+
+func (errVtMsg) SizeVT() int {
+	return 0
+}
 
 func TestCodec(t *testing.T) {
 	svc := getClientForServer(t)
