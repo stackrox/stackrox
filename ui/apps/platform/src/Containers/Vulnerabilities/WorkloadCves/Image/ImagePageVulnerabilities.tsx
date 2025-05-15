@@ -33,8 +33,8 @@ import { createFilterTracker } from 'utils/analyticsEventTracking';
 import useAnalytics, { WORKLOAD_CVE_FILTER_APPLIED } from 'hooks/useAnalytics';
 import useHasRequestExceptionsAbility from 'Containers/Vulnerabilities/hooks/useHasRequestExceptionsAbility';
 import {
-    imageComponentSearchFilterConfig,
-    imageCVESearchFilterConfig,
+    flattenImageComponentSearchFilterConfig,
+    flattenImageCVESearchFilterConfig,
 } from 'Containers/Vulnerabilities/searchFilterConfig';
 import { filterManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
 import ColumnManagementButton from 'Components/ColumnManagementButton';
@@ -92,18 +92,6 @@ export const imageVulnerabilitiesQuery = gql`
 `;
 
 const defaultSortFields = ['CVE', 'CVSS', 'Severity'];
-
-const searchFilterConfigWithFeatureFlagDependency = [
-    // Omit EPSSProbability for 4.7 release until CVE/advisory separatipn is available in 4.8 release.
-    // imageCVESearchFilterConfig,
-    {
-        ...imageCVESearchFilterConfig,
-        attributes: imageCVESearchFilterConfig.attributes.filter(
-            ({ searchTerm }) => searchTerm !== 'EPSS Probability'
-        ),
-    },
-    imageComponentSearchFilterConfig,
-];
 
 export type ImagePageVulnerabilitiesProps = {
     imageId: string;
@@ -218,6 +206,20 @@ function ImagePageVulnerabilities({
             (key !== 'epssProbability' || isEpssProbabilityColumnEnabled)
     );
     const managedColumnState = useManagedColumns(tableId, filteredColumns);
+
+    const isFlattenCveDataEnabled = isFeatureFlagEnabled('ROX_FLATTEN_CVE_DATA');
+    const imageCVESearchFilterConfig = flattenImageCVESearchFilterConfig(isFlattenCveDataEnabled);
+    const searchFilterConfigWithFeatureFlagDependency = [
+        // Omit EPSSProbability for 4.7 release until CVE/advisory separatipn is available in 4.8 release.
+        // imageCVESearchFilterConfig,
+        {
+            ...imageCVESearchFilterConfig,
+            attributes: imageCVESearchFilterConfig.attributes.filter(
+                ({ searchTerm }) => searchTerm !== 'EPSS Probability'
+            ),
+        },
+        flattenImageComponentSearchFilterConfig(isFlattenCveDataEnabled),
+    ];
 
     const searchFilterConfig = getSearchFilterConfigWithFeatureFlagDependency(
         isFeatureFlagEnabled,

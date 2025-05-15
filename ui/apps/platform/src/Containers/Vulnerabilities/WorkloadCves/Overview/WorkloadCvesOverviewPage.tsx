@@ -51,8 +51,8 @@ import { createFilterTracker } from 'utils/analyticsEventTracking';
 import {
     clusterSearchFilterConfig,
     deploymentSearchFilterConfig,
-    imageCVESearchFilterConfig,
-    imageComponentSearchFilterConfig,
+    flattenImageCVESearchFilterConfig,
+    flattenImageComponentSearchFilterConfig,
     imageSearchFilterConfig,
     namespaceSearchFilterConfig,
 } from 'Containers/Vulnerabilities/searchFilterConfig';
@@ -145,15 +145,6 @@ const descriptionForVulnerabilityStateMap: Record<VulnerabilityState, string> = 
     FALSE_POSITIVE:
         'View workload vulnerabilities identified as false positives and excluded from active prioritization',
 };
-
-const searchFilterConfigWithFeatureFlagDependency = [
-    imageSearchFilterConfig,
-    imageCVESearchFilterConfig,
-    imageComponentSearchFilterConfig,
-    deploymentSearchFilterConfig,
-    namespaceSearchFilterConfig,
-    clusterSearchFilterConfig,
-];
 
 const defaultStorage: VulnMgmtLocalStorage = {
     preferences: {
@@ -362,6 +353,16 @@ function WorkloadCvesOverviewPage() {
     function onWatchedImagesChange() {
         return apolloClient.refetchQueries({ include: [imageListQuery] });
     }
+
+    const isFlattenCveDataEnabled = isFeatureFlagEnabled('ROX_FLATTEN_CVE_DATA');
+    const searchFilterConfigWithFeatureFlagDependency = [
+        imageSearchFilterConfig,
+        flattenImageCVESearchFilterConfig(isFlattenCveDataEnabled),
+        flattenImageComponentSearchFilterConfig(isFlattenCveDataEnabled),
+        deploymentSearchFilterConfig,
+        namespaceSearchFilterConfig,
+        clusterSearchFilterConfig,
+    ];
 
     const searchFilterConfig = getSearchFilterConfigWithFeatureFlagDependency(
         isFeatureFlagEnabled,

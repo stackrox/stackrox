@@ -40,11 +40,31 @@ export const imageCVESearchFilterConfig: CompoundSearchFilterEntity = {
     attributes: imageCVEAttributes,
 };
 
+export function flattenImageCVESearchFilterConfig(
+    isFlattenCveDataEnabled: boolean // ROX_FLATTEN_CVE_DATA
+): CompoundSearchFilterEntity {
+    if (isFlattenCveDataEnabled) {
+        return { ...imageCVESearchFilterConfig, searchCategory: 'IMAGE_VULNERABILITIES_V2' };
+    }
+
+    return imageCVESearchFilterConfig;
+}
+
 export const imageComponentSearchFilterConfig: CompoundSearchFilterEntity = {
     displayName: 'Image component',
     searchCategory: 'IMAGE_COMPONENTS',
     attributes: imageComponentAttributes,
 };
+
+export function flattenImageComponentSearchFilterConfig(
+    isFlattenCveDataEnabled: boolean // ROX_FLATTEN_CVE_DATA
+): CompoundSearchFilterEntity {
+    if (isFlattenCveDataEnabled) {
+        return { ...imageComponentSearchFilterConfig, searchCategory: 'IMAGE_COMPONENTS_V2' };
+    }
+
+    return imageComponentSearchFilterConfig;
+}
 
 export const deploymentSearchFilterConfig: CompoundSearchFilterEntity = {
     displayName: 'Deployment',
