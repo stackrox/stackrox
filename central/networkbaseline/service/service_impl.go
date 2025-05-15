@@ -98,7 +98,7 @@ func (s *serviceImpl) GetNetworkBaselineStatusForExternalFlows(ctx context.Conte
 
 	since := protocompat.ConvertTimestampToTimeOrNil(request.GetSince())
 	if since == nil {
-		t := time.Now().Add(defaultSince)
+		t := protocompat.TimestampNow().AsTime().Add(defaultSince)
 		since = &t
 	}
 

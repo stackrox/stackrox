@@ -1026,7 +1026,7 @@ func (m *manager) getEntitiesByQuery(ctx context.Context, clusterId, query strin
 
 	// Retrieves entities where the cluster ID matches the request cluster OR where the cluster ID is empty indicating global entities.
 	clusterMatch := search.DisjunctionQuery(
-		search.MatchFieldQuery(search.ClusterID.String(), search.ExactMatchString(""), false),
+		search.NewQueryBuilder().AddNullField(search.ClusterID).ProtoQuery(),
 		search.MatchFieldQuery(search.ClusterID.String(), search.ExactMatchString(clusterId), false),
 	)
 

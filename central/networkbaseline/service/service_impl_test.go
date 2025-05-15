@@ -7,11 +7,10 @@ import (
 	deploymentUtils "github.com/stackrox/rox/central/deployment/utils"
 	networkBaselineDSMocks "github.com/stackrox/rox/central/networkbaseline/datastore/mocks"
 	networkBaselineMocks "github.com/stackrox/rox/central/networkbaseline/manager/mocks"
+	"github.com/stackrox/rox/central/networkbaseline/testutils"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/fixtures"
-	"github.com/stackrox/rox/pkg/grpc/testutils"
-	"github.com/stackrox/rox/pkg/networkgraph"
+	grpcUtils "github.com/stackrox/rox/pkg/grpc/testutils"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
@@ -52,79 +51,12 @@ func (s *NetworkBaselineServiceTestSuite) TearDownTest() {
 	s.mockCtrl.Finish()
 }
 
-func (s *NetworkBaselineServiceTestSuite) getBaselineWithCustomFlow(
-	entityID, entityClusterID string,
-	entityType storage.NetworkEntityInfo_Type,
-	flowIsIngress bool,
-	flowPort uint32,
-) *storage.NetworkBaseline {
-	baseline := fixtures.GetNetworkBaseline()
-	baseline.Peers = []*storage.NetworkBaselinePeer{
-		{
-			Entity: &storage.NetworkEntity{
-				Info: &storage.NetworkEntityInfo{
-					Type: entityType,
-					Id:   entityID,
-					Desc: &storage.NetworkEntityInfo_Deployment_{
-						Deployment: &storage.NetworkEntityInfo_Deployment{
-							Name: testPeerDeploymentName,
-						},
-					},
-				},
-				Scope: &storage.NetworkEntity_Scope{ClusterId: entityClusterID},
-			},
-			Properties: []*storage.NetworkBaselineConnectionProperties{
-				{
-					Ingress:  flowIsIngress,
-					Port:     flowPort,
-					Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-				},
-			},
-		},
-	}
-
-	return baseline
-}
-
-func (s *NetworkBaselineServiceTestSuite) getBaselineWithInternet(
-	entityClusterID string,
-	flowIsIngress bool,
-	flowPort uint32,
-) *storage.NetworkBaseline {
-	baseline := fixtures.GetNetworkBaseline()
-	baseline.Peers = []*storage.NetworkBaselinePeer{
-		{
-			Entity: &storage.NetworkEntity{
-				Info: &storage.NetworkEntityInfo{
-					Type: storage.NetworkEntityInfo_INTERNET,
-					Id:   networkgraph.InternetExternalSourceID,
-					Desc: &storage.NetworkEntityInfo_ExternalSource_{
-						ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
-							Name: testPeerDeploymentName,
-						},
-					},
-				},
-				Scope: &storage.NetworkEntity_Scope{ClusterId: entityClusterID},
-			},
-			Properties: []*storage.NetworkBaselineConnectionProperties{
-				{
-					Ingress:  flowIsIngress,
-					Port:     flowPort,
-					Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-				},
-			},
-		},
-	}
-
-	return baseline
-}
-
 func (s *NetworkBaselineServiceTestSuite) getBaselineWithSampleFlow() *storage.NetworkBaseline {
 	entityID, entityClusterID := "entity-id", "another-cluster"
 	entityType := storage.NetworkEntityInfo_DEPLOYMENT
 	flowIsIngress := true
 	flowPort := uint32(8080)
-	return s.getBaselineWithCustomFlow(entityID, entityClusterID, entityType, flowIsIngress, flowPort)
+	return testutils.GetBaselineWithCustomDeploymentFlow(testPeerDeploymentName, entityID, entityClusterID, entityType, flowIsIngress, flowPort)
 }
 
 func (s *NetworkBaselineServiceTestSuite) TestGetNetworkBaselineStatusForFlows() {
@@ -177,7 +109,8 @@ func (s *NetworkBaselineServiceTestSuite) TestGetNetworkBaselineStatusForFlows()
 
 	// If we change some baseline details, then the flow should be marked as anomaly
 	baseline =
-		s.getBaselineWithCustomFlow(
+		testutils.GetBaselineWithCustomDeploymentFlow(
+			testPeerDeploymentName,
 			entityID,
 			baseline.GetClusterId(),
 			peer.GetEntity().GetInfo().GetType(),
@@ -220,7 +153,7 @@ func (s *NetworkBaselineServiceTestSuite) TestLockBaseline() {
 }
 
 func (s *NetworkBaselineServiceTestSuite) TestGetNetworkBaselineStatusForExternalFlows() {
-	baseline := s.getBaselineWithInternet("cluster", true, 1234)
+	baseline := testutils.GetBaselineWithInternet("cluster", true, 1234)
 
 	externalPeers := []*v1.NetworkBaselineStatusPeer{
 		// In the baseline
@@ -401,5 +334,5 @@ func (s *NetworkBaselineServiceTestSuite) TestGetNetworkBaselineStatusForExterna
 }
 
 func TestAuthz(t *testing.T) {
-	testutils.AssertAuthzWorks(t, &serviceImpl{})
+	grpcUtils.AssertAuthzWorks(t, &serviceImpl{})
 }
