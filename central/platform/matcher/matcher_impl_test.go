@@ -4,9 +4,11 @@ import (
 	"regexp"
 	"testing"
 
+	configDatastoreMocks "github.com/stackrox/rox/central/config/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 func TestPlatformMatcher(t *testing.T) {
@@ -20,7 +22,26 @@ type platformMatcherTestSuite struct {
 }
 
 func (s *platformMatcherTestSuite) SetupSuite() {
-	s.matcher = New()
+	mockCtrl := gomock.NewController(s.T())
+	mockConfigDatastore := configDatastoreMocks.NewMockDataStore(mockCtrl)
+	mockConfigDatastore.EXPECT().GetPlatformComponentConfig(gomock.Any()).Return(&storage.PlatformComponentConfig{
+		NeedsReevaluation: false,
+		Rules: []*storage.PlatformComponentConfig_Rule{
+			{
+				Name: "system rule",
+				NamespaceRule: &storage.PlatformComponentConfig_Rule_NamespaceRule{
+					Regex: `^kube-.*|^openshift-.*`,
+				},
+			},
+			{
+				Name: "red hat layered products",
+				NamespaceRule: &storage.PlatformComponentConfig_Rule_NamespaceRule{
+					Regex: `^stackrox$|^rhacs-operator$|^open-cluster-management$|^multicluster-engine$|^aap$|^hive$`,
+				},
+			},
+		},
+	}, true, nil).Times(1)
+	s.matcher = New(mockConfigDatastore)
 }
 
 func (s *platformMatcherTestSuite) TestMatchAlert() {
