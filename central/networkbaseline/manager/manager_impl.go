@@ -25,6 +25,7 @@ import (
 	"github.com/stackrox/rox/pkg/networkgraph/networkbaseline"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -917,6 +918,123 @@ func (m *manager) CreateNetworkBaseline(deploymentID string) error {
 	}
 
 	return nil
+}
+
+func (m *manager) GetExternalNetworkPeers(ctx context.Context, deploymentID string, query string, since *time.Time) ([]*v1.NetworkBaselineStatusPeer, error) {
+	deployment, found, err := m.deploymentDS.GetDeployment(ctx, deploymentID)
+	if err != nil {
+		return nil, err
+	}
+
+	if !found {
+		return nil, errors.Wrapf(errox.NotFound, "deployment with id %q does not exist", deploymentID)
+	}
+
+	entities, err := m.getEntitiesByQuery(ctx, deployment.GetClusterId(), query)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get matching entities")
+	}
+
+	entitiesMap := make(map[string]*storage.NetworkEntityInfo)
+	entityFilter := set.NewStringSet()
+	for _, entity := range entities {
+		info := entity.GetInfo()
+		entityFilter.Add(info.GetId())
+
+		// store enriched entities data for lookup later
+		entitiesMap[info.GetId()] = info
+	}
+
+	pred := func(props *storage.NetworkFlowProperties) bool {
+		src := props.GetSrcEntity()
+		dst := props.GetDstEntity()
+
+		if src.GetId() != deploymentID && dst.GetId() != deploymentID {
+			return false
+		}
+
+		if !networkgraph.AnyExternal(src, dst) || networkgraph.AllExternal(src, dst) {
+			// only looking for external flows, and not external pairs
+			return false
+		}
+
+		if !networkgraph.AnyExternalInFilter(src, dst, entityFilter) {
+			return false
+		}
+
+		return true
+	}
+
+	flowStore, err := m.getFlowStore(ctx, deployment.GetClusterId())
+	if err != nil {
+		return nil, err
+	}
+
+	flows, _, err := flowStore.GetMatchingFlows(ctx, pred, since)
+	if err != nil {
+		return nil, err
+	}
+
+	peers := make([]*v1.NetworkBaselineStatusPeer, 0, len(flows))
+
+	for _, flow := range flows {
+		peers = append(peers, m.mapFlowToPeer(flow, entitiesMap))
+	}
+
+	return peers, nil
+}
+
+func (m *manager) mapFlowToPeer(flow *storage.NetworkFlow, entitiesMap map[string]*storage.NetworkEntityInfo) *v1.NetworkBaselineStatusPeer {
+	var entity *v1.NetworkBaselinePeerEntity
+	ingress := false
+
+	props := flow.GetProps()
+	src, dst := props.GetSrcEntity(), props.GetDstEntity()
+
+	if src.GetType() == storage.NetworkEntityInfo_DEPLOYMENT {
+		info := entitiesMap[dst.GetId()]
+		entity = &v1.NetworkBaselinePeerEntity{
+			Id:         dst.GetId(),
+			Type:       dst.GetType(),
+			Name:       info.GetExternalSource().GetName(),
+			Discovered: info.GetExternalSource().GetDiscovered(),
+		}
+	} else {
+		info := entitiesMap[src.GetId()]
+		entity = &v1.NetworkBaselinePeerEntity{
+			Id:         src.GetId(),
+			Type:       src.GetType(),
+			Name:       info.GetExternalSource().GetName(),
+			Discovered: info.GetExternalSource().GetDiscovered(),
+		}
+		ingress = true
+	}
+
+	return &v1.NetworkBaselineStatusPeer{
+		Entity:   entity,
+		Port:     props.GetDstPort(),
+		Protocol: props.GetL4Protocol(),
+		Ingress:  ingress,
+	}
+}
+
+func (m *manager) getEntitiesByQuery(ctx context.Context, clusterId, query string) ([]*storage.NetworkEntity, error) {
+	q, err := search.ParseQuery(query, search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+	}
+
+	// Retrieves entities where the cluster ID matches the request cluster OR where the cluster ID is empty indicating global entities.
+	clusterMatch := search.DisjunctionQuery(
+		search.NewQueryBuilder().AddNullField(search.ClusterID).ProtoQuery(),
+		search.MatchFieldQuery(search.ClusterID.String(), search.ExactMatchString(clusterId), false),
+	)
+
+	q = search.ConjunctionQuery(q, clusterMatch)
+
+	q, _ = search.FilterQueryWithMap(q, schema.NetworkEntitiesSchema.OptionsMap)
+
+	return m.networkEntities.GetEntityByQuery(ctx, q)
 }
 
 func (m *manager) putFlowsInMap(newFlows []*storage.NetworkFlow) map[networkgraph.NetworkConnIndicator]timestamp.MicroTS {

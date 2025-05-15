@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
@@ -16,15 +17,19 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/networkgraph"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	"google.golang.org/grpc"
 )
 
 var (
-	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
+	defaultSince = -1 * time.Hour
+	authorizer   = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.DeploymentExtension)): {
 			v1.NetworkBaselineService_GetNetworkBaseline_FullMethodName,
 			v1.NetworkBaselineService_GetNetworkBaselineStatusForFlows_FullMethodName,
+			v1.NetworkBaselineService_GetNetworkBaselineStatusForExternalFlows_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.DeploymentExtension)): {
 			v1.NetworkBaselineService_ModifyBaselineStatusForPeers_FullMethodName,
@@ -78,6 +83,66 @@ func (s *serviceImpl) GetNetworkBaselineStatusForFlows(
 	return &v1.NetworkBaselineStatusResponse{Statuses: statuses}, nil
 }
 
+func (s *serviceImpl) GetNetworkBaselineStatusForExternalFlows(ctx context.Context, request *v1.NetworkBaselineExternalStatusRequest) (*v1.NetworkBaselineExternalStatusResponse, error) {
+	baseline, found, err := s.datastore.GetNetworkBaseline(ctx, request.GetDeploymentId())
+	if err != nil {
+		return nil, err
+	}
+
+	if !found {
+		baseline, err = s.createBaseline(ctx, request.GetDeploymentId())
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	since := protocompat.ConvertTimestampToTimeOrNil(request.GetSince())
+	if since == nil {
+		t := protocompat.TimestampNow().AsTime().Add(defaultSince)
+		since = &t
+	}
+
+	peers, err := s.manager.GetExternalNetworkPeers(ctx, request.GetDeploymentId(), request.GetQuery(), since)
+	if err != nil {
+		return nil, err
+	}
+
+	statuses := s.getStatusesForPeers(baseline, peers)
+
+	// setting capacity here to the maxmimum in both cases,
+	// which means the worst case we allocate twice as much memory as
+	// we need (when the statuses are all anomalous or all baseline)
+	// but we avoid repeated copies/reallocation when appending to the
+	// slices below.
+	anomalousFlows := make([]*v1.NetworkBaselinePeerStatus, 0, len(statuses))
+	baselineFlows := make([]*v1.NetworkBaselinePeerStatus, 0, len(statuses))
+
+	for _, status := range statuses {
+		switch status.GetStatus() {
+		case v1.NetworkBaselinePeerStatus_ANOMALOUS:
+			anomalousFlows = append(anomalousFlows, status)
+		case v1.NetworkBaselinePeerStatus_BASELINE:
+			baselineFlows = append(baselineFlows, status)
+		}
+	}
+
+	totalAnomalous := len(anomalousFlows)
+	totalBaseline := len(baselineFlows)
+
+	pg := request.GetPagination()
+	if pg != nil {
+		anomalousFlows = paginated.PaginateSlice(int(pg.Offset), int(pg.Limit), anomalousFlows)
+		baselineFlows = paginated.PaginateSlice(int(pg.Offset), int(pg.Limit), baselineFlows)
+	}
+
+	return &v1.NetworkBaselineExternalStatusResponse{
+		Anomalous:      anomalousFlows,
+		TotalAnomalous: int32(totalAnomalous),
+		Baseline:       baselineFlows,
+		TotalBaseline:  int32(totalBaseline),
+	}, nil
+}
+
 // GetNetworkBaseline gets the network baseline associated with the deployment.
 func (s *serviceImpl) GetNetworkBaseline(
 	ctx context.Context,
@@ -128,10 +193,9 @@ func (s *serviceImpl) getStatusesForPeers(
 	statuses := make([]*v1.NetworkBaselinePeerStatus, 0, len(examinedPeers))
 	for _, examinedPeer := range examinedPeers {
 		status := v1.NetworkBaselinePeerStatus_ANOMALOUS
-		examinedPeerKey := networkgraph.Entity{
-			Type: examinedPeer.GetEntity().GetType(),
-			ID:   examinedPeer.GetEntity().GetId(),
-		}
+
+		examinedPeerKey := s.anonymizedPeerKey(examinedPeer)
+
 		if baselinePeer, ok := baselinePeerByID[examinedPeerKey]; ok {
 			for _, baselineProperty := range baselinePeer.GetProperties() {
 				if examinedPeer.GetProtocol() == baselineProperty.GetProtocol() &&
@@ -153,6 +217,23 @@ func (s *serviceImpl) getStatusesForPeers(
 	}
 
 	return statuses
+}
+
+// anonymizedPeerKey anonymizes discovered external peers to the internet
+// for the purposes of looking up matching baseline peers.
+//
+// Always returns an entity with only Type and ID populated, to be used
+// for map lookups
+func (s *serviceImpl) anonymizedPeerKey(peer *v1.NetworkBaselineStatusPeer) networkgraph.Entity {
+	entity := peer.GetEntity()
+	if entity.GetType() == storage.NetworkEntityInfo_EXTERNAL_SOURCE && entity.GetDiscovered() {
+		return networkgraph.InternetEntity()
+	}
+
+	return networkgraph.Entity{
+		Type: entity.GetType(),
+		ID:   entity.GetId(),
+	}
 }
 
 // getBaselinePeerByEntityID indexes the peers from the provided baseline
