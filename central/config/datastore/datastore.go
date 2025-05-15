@@ -3,7 +3,6 @@ package datastore
 import (
 	"context"
 	"reflect"
-	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -270,8 +269,6 @@ func (d *datastoreImpl) UpsertPlatformComponentConfigRules(ctx context.Context, 
 	if !found || err != nil {
 		return nil, err
 	}
-	slices.SortFunc(config.PlatformComponentConfig.Rules, ruleNameSortFunc)
-	slices.SortFunc(rules, ruleNameSortFunc)
 	if !protoutils.SlicesEqual(config.PlatformComponentConfig.Rules, rules) {
 		config.PlatformComponentConfig.NeedsReevaluation = true
 	}
