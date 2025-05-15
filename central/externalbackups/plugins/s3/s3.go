@@ -165,7 +165,7 @@ func sortS3Objects(objects []s3Types.Object) {
 }
 
 func (s *s3) pruneBackupsIfNecessary(ctx context.Context) error {
-	listedBackups, err := s.awsClient.ListObjectsV2(context.Background(), &sdkS3.ListObjectsV2Input{
+	listedBackups, err := s.awsClient.ListObjectsV2(ctx, &sdkS3.ListObjectsV2Input{
 		Bucket: aws.String(s.integration.GetS3().GetBucket()),
 		Prefix: aws.String(s.prefixKey("backup")),
 	})
