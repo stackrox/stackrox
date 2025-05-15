@@ -3,8 +3,10 @@ package s3common
 import (
 	"context"
 	"fmt"
+	"github.com/stackrox/rox/pkg/urlfmt"
 	"io"
 	"net/http"
+	"net/url"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -55,8 +57,6 @@ type ConfigWrapper interface {
 	GetRegion() string
 	GetBucket() string
 	GetObjectPrefix() string
-
-	GetValidatedEndpoint() (string, error)
 
 	GetUseIam() bool
 	GetAccessKeyId() string
@@ -118,7 +118,7 @@ func NewS3Client(cfg ConfigWrapper) (types.ExternalBackup, error) {
 	}
 	endpoint := cfg.GetEndpoint()
 	if endpoint != "" {
-		validatedEndpoint, validationErr := cfg.GetValidatedEndpoint()
+		validatedEndpoint, validationErr := validateEndpoint(endpoint)
 		if validationErr != nil {
 			return nil, validationErr
 		}
@@ -136,6 +136,15 @@ func NewS3Client(cfg ConfigWrapper) (types.ExternalBackup, error) {
 		client:   awsClient,
 		uploader: manager.NewUploader(awsClient),
 	}, nil
+}
+
+func validateEndpoint(endpoint string) (string, error) {
+	// The aws-sdk-go-v2 package does not add a default scheme to the endpoint.
+	sanitizedEndpoint := urlfmt.FormatURL(endpoint, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
+	if _, err := url.Parse(sanitizedEndpoint); err != nil {
+		return "", errors.Wrapf(err, "invalid URL %q", endpoint)
+	}
+	return sanitizedEndpoint, nil
 }
 
 func (s *s3Common) Backup(reader io.ReadCloser) error {

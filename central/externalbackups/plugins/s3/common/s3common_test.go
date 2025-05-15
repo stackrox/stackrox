@@ -1,4 +1,4 @@
-package s3compatible
+package s3common
 
 import (
 	"testing"
