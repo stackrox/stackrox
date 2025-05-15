@@ -3,7 +3,6 @@ package datastore
 import (
 	"context"
 	"reflect"
-	"strings"
 	"testing"
 	"time"
 
@@ -278,8 +277,4 @@ func (d *datastoreImpl) UpsertPlatformComponentConfigRules(ctx context.Context, 
 		return nil, err
 	}
 	return config.PlatformComponentConfig, nil
-}
-
-func ruleNameSortFunc(a *storage.PlatformComponentConfig_Rule, b *storage.PlatformComponentConfig_Rule) int {
-	return strings.Compare(a.Name, b.Name)
 }
