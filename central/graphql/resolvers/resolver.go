@@ -185,12 +185,12 @@ func New() *Resolver {
 		NodeComponentDataStore:        nodeComponentDataStore.Singleton(),
 		PolicyCategoryDataStore:       policyCategoryDatastore.Singleton(),
 		ImageComponentV2DataStore:     imageComponentV2DataStore.Singleton(),
+		ImageCVEV2DataStore:           imageCVEV2DataStore.Singleton(),
+
+		// Views
 		ImageComponentFlatView: func() imagecomponentflat.ComponentFlatView {
 			return imagecomponentflat.Singleton()
 		}(),
-		ImageCVEV2DataStore: imageCVEV2DataStore.Singleton(),
-
-		// Views
 		ImageCVEView: func() imagecve.CveView {
 			return imagecve.Singleton()
 		}(),
