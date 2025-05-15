@@ -22,14 +22,14 @@ import (
 //
 //go:generate mockgen-wrapper
 type DataStore interface {
-	GetConfig(context.Context) (*storage.Config, error)
-	GetPrivateConfig(context.Context) (*storage.PrivateConfig, error)
+	GetConfig(ctx context.Context) (*storage.Config, error)
+	GetPrivateConfig(ctx context.Context) (*storage.PrivateConfig, error)
 	GetVulnerabilityExceptionConfig(ctx context.Context) (*storage.VulnerabilityExceptionConfig, error)
 	GetPublicConfig() (*storage.PublicConfig, error)
-	UpsertConfig(context.Context, *storage.Config) error
+	UpsertConfig(ctx context.Context, config *storage.Config) error
 
-	GetPlatformComponentConfig(context.Context) (*storage.PlatformComponentConfig, bool, error)
-	UpsertPlatformComponentConfigRules(context.Context, []*storage.PlatformComponentConfig_Rule) (*storage.PlatformComponentConfig, error)
+	GetPlatformComponentConfig(ctx context.Context) (*storage.PlatformComponentConfig, bool, error)
+	UpsertPlatformComponentConfigRules(ctx context.Context, rules []*storage.PlatformComponentConfig_Rule) (*storage.PlatformComponentConfig, error)
 }
 
 const (
