@@ -1,5 +1,5 @@
 import React from 'react';
-import { Divider, Label, PageSection, Text } from '@patternfly/react-core';
+import { Divider, Flex, FlexItem, Label, PageSection, Text } from '@patternfly/react-core';
 import { Table, TableText, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
 import { CheckCircleIcon, ExclamationCircleIcon } from '@patternfly/react-icons';
 
@@ -21,18 +21,27 @@ const renderedStatus = new Map<VerifiedStatus, string>([
 function getStatusMessage({ status, description }: SignatureVerificationResult) {
     if (status === 'VERIFIED') {
         return (
-            <Label color="green" icon={<CheckCircleIcon />}>
-                Verified
-            </Label>
+            <Flex direction={{ default: 'column' }}>
+                <FlexItem>
+                    <Label color="green" icon={<CheckCircleIcon />}>
+                        Verified
+                    </Label>
+                </FlexItem>
+            </Flex>
         );
     }
 
     return (
-        <Label color="red" icon={<ExclamationCircleIcon />}>
-            <TableText wrapModifier="wrap">
-                {renderedStatus.get(status) ?? status}: {description}
-            </TableText>
-        </Label>
+        <Flex direction={{ default: 'column' }}>
+            <FlexItem>
+                <Label color="red" icon={<ExclamationCircleIcon />}>
+                    {renderedStatus.get(status) ?? status}
+                </Label>
+            </FlexItem>
+            <FlexItem>
+                <TableText wrapModifier="wrap">{description}</TableText>
+            </FlexItem>
+        </Flex>
     );
 }
 
