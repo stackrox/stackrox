@@ -89,7 +89,7 @@ var (
 
 	delegateScanPermissions = []string{"Image"}
 
-	imageScanMetricsName = prometheus.Labels{"location": "image-scan"}
+	imageScanMetricsName = prometheus.Labels{"entity": "central-service"}
 )
 
 // serviceImpl provides APIs for alerts.

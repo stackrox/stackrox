@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	enricherScanMetricsName = prometheus.Labels{"location": "image-enricher"}
+	enricherScanMetricsName = prometheus.Labels{"entity": "enricher"}
 )
 
 // This interface encapsulates the metrics this package needs.

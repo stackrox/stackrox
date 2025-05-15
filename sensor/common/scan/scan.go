@@ -50,7 +50,7 @@ var (
 
 	log = logging.LoggerForModule()
 
-	sensorScanMetricsName = prometheus.Labels{"location": "sensor-scan"}
+	sensorScanMetricsName = prometheus.Labels{"entity": "sensor"}
 )
 
 // LocalScan wraps the functions required for enriching local images. This allows us to inject different values for testing purposes.
