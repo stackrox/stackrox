@@ -205,12 +205,12 @@ func GetPlopStorage7() *storage.ProcessListeningOnPortStorage {
 func GetPlopStorage8() *storage.ProcessListeningOnPortStorage {
 	return &storage.ProcessListeningOnPortStorage{
 		Id:                 fixtureconsts.PlopUID2,
-		Port:               1234,
+		Port:               4321,
 		Protocol:           storage.L4Protocol_L4_PROTOCOL_TCP,
 		ProcessIndicatorId: fixtureconsts.ProcessIndicatorID2,
 		CloseTimestamp:     nil,
 		Closed:             false,
-		DeploymentId:       fixtureconsts.Deployment5,
+		DeploymentId:       fixtureconsts.Deployment1,
 		PodUid:             fixtureconsts.PodUID3,
 	}
 }
@@ -219,12 +219,12 @@ func GetPlopStorage8() *storage.ProcessListeningOnPortStorage {
 func GetPlopStorage9() *storage.ProcessListeningOnPortStorage {
 	return &storage.ProcessListeningOnPortStorage{
 		Id:                 fixtureconsts.PlopUID3,
-		Port:               1234,
+		Port:               80,
 		Protocol:           storage.L4Protocol_L4_PROTOCOL_TCP,
 		ProcessIndicatorId: fixtureconsts.ProcessIndicatorID3,
 		CloseTimestamp:     nil,
 		Closed:             false,
-		DeploymentId:       fixtureconsts.Deployment3,
+		DeploymentId:       fixtureconsts.Deployment1,
 		PodUid:             fixtureconsts.PodUID3,
 	}
 }
