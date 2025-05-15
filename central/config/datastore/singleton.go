@@ -2,9 +2,11 @@ package datastore
 
 import (
 	"context"
+	"regexp"
 
 	pgStore "github.com/stackrox/rox/central/config/store/postgres"
 	"github.com/stackrox/rox/central/globaldb"
+	"github.com/stackrox/rox/central/platform/matcher"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
@@ -225,6 +227,15 @@ func populateDefaultSystemRulesIfMissing(config *storage.Config) bool {
 			defaultPlatformConfigLayeredProductsRule,
 		)
 	}
+	regexes := []*regexp.Regexp{}
+	for _, rule := range config.GetPlatformComponentConfig().GetRules() {
+		regex, err := regexp.Compile(rule.GetName())
+		if err != nil {
+			return false
+		}
+		regexes = append(regexes, regex)
+	}
+	matcher.Singleton().SetRegexes(regexes)
 	return true
 }
 
