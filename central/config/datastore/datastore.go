@@ -18,7 +18,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sync"
-	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 // DataStore is the entry point for modifying Config data.
@@ -32,9 +31,7 @@ type DataStore interface {
 	UpsertConfig(context.Context, *storage.Config) error
 
 	GetPlatformComponentConfig(context.Context) (*storage.PlatformComponentConfig, bool, error)
-	UpsertPlatformComponentConfigRule(context.Context, *storage.PlatformComponentConfig_Rule) error
 	UpsertPlatformComponentConfigRules(context.Context, []*storage.PlatformComponentConfig_Rule) (*storage.PlatformComponentConfig, error)
-	DeletePlatformComponentConfigRules(context.Context, ...string) error
 }
 
 const (
@@ -262,24 +259,6 @@ func (d *datastoreImpl) GetPlatformComponentConfig(ctx context.Context) (*storag
 	return config.GetPlatformComponentConfig(), found && config.GetPlatformComponentConfig() != nil, err
 }
 
-func (d *datastoreImpl) UpsertPlatformComponentConfigRule(ctx context.Context, rule *storage.PlatformComponentConfig_Rule) error {
-	if ok, err := administrationSAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return nil
-	}
-
-	config, found, err := d.store.Get(ctx)
-	if !found || err != nil {
-		return err
-	}
-	if config.PlatformComponentConfig.Rules == nil {
-		config.PlatformComponentConfig.Rules = make([]*storage.PlatformComponentConfig_Rule, 0)
-	}
-	config.PlatformComponentConfig.Rules = append(config.PlatformComponentConfig.Rules, rule)
-	return d.store.Upsert(ctx, config)
-}
-
 func (d *datastoreImpl) UpsertPlatformComponentConfigRules(ctx context.Context, rules []*storage.PlatformComponentConfig_Rule) (*storage.PlatformComponentConfig, error) {
 	if ok, err := administrationSAC.WriteAllowed(ctx); err != nil {
 		return nil, err
@@ -302,33 +281,6 @@ func (d *datastoreImpl) UpsertPlatformComponentConfigRules(ctx context.Context, 
 		return nil, err
 	}
 	return config.PlatformComponentConfig, nil
-}
-
-func (d *datastoreImpl) DeletePlatformComponentConfigRules(ctx context.Context, rules ...string) error {
-	if ok, err := administrationSAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return nil
-	}
-
-	config, found, err := d.store.Get(ctx)
-	if !found || err != nil {
-		return err
-	}
-	if config.PlatformComponentConfig.Rules == nil {
-		config.PlatformComponentConfig.Rules = make([]*storage.PlatformComponentConfig_Rule, 0)
-	}
-
-	ruleNameSet := sets.NewString(rules...)
-	newRules := make([]*storage.PlatformComponentConfig_Rule, 0)
-	for _, rule := range config.PlatformComponentConfig.Rules {
-		if ruleNameSet.Has(rule.GetName()) {
-			continue
-		}
-		newRules = append(newRules, rule)
-	}
-	config.PlatformComponentConfig.Rules = newRules
-	return d.store.Upsert(ctx, config)
 }
 
 func ruleNameSortFunc(a *storage.PlatformComponentConfig_Rule, b *storage.PlatformComponentConfig_Rule) int {
