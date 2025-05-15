@@ -51,7 +51,10 @@ main() {
     fi
 
     mkdir -p "${dest}"
-    echo "DBG 1: ${ROX_ENDPOINT}"
+    echo "DBG 0.5 API_ENDPOINT: ${API_ENDPOINT}"
+    echo "DBG 1 ROX_ENDPOINT: ${ROX_ENDPOINT}"
+    echo "DBG 2 ROX_CA_CERT_FILE: ${ROX_CA_CERT_FILE}"
+    echo "DBG 3 ROX_SERVER_NAME: ${ROX_SERVER_NAME}"
     roxctl -e "${API_ENDPOINT}" central backup --output "${dest}"
 
     # Pull some data not found from the database

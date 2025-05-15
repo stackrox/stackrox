@@ -155,6 +155,11 @@ get_central_debug_dump() {
     require_environment "API_ENDPOINT"
     require_environment "ROX_ADMIN_PASSWORD"
 
+    echo "DBG 0.5 API_ENDPOINT: ${API_ENDPOINT}"
+    echo "DBG 1 ROX_ENDPOINT: ${ROX_ENDPOINT}"
+    echo "DBG 2 ROX_CA_CERT_FILE: ${ROX_CA_CERT_FILE}"
+    echo "DBG 3 ROX_SERVER_NAME: ${ROX_SERVER_NAME}"
+
     roxctl -e "${API_ENDPOINT}" \
         central debug dump --output-dir "${output_dir}" \
         --insecure-skip-tls-verify
