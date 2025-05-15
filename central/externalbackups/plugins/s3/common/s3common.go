@@ -44,8 +44,9 @@ type s3Common struct {
 	config ConfigWrapper
 	bucket string
 
-	client   *s3.Client
-	uploader *manager.Uploader
+	now func() time.Time
+
+	clientWrapper s3Wrapper
 }
 
 // ConfigWrapper is an interface to extract relevant configuration parameters
@@ -133,8 +134,13 @@ func NewS3Client(cfg ConfigWrapper) (types.ExternalBackup, error) {
 		config: cfg,
 		bucket: cfg.GetBucket(),
 
-		client:   awsClient,
-		uploader: manager.NewUploader(awsClient),
+		now: time.Now,
+
+		clientWrapper: &s3WrapperImpl{
+			bucket:   cfg.GetBucket(),
+			client:   awsClient,
+			uploader: manager.NewUploader(awsClient),
+		},
 	}, nil
 }
 
@@ -157,10 +163,10 @@ func (s *s3Common) Backup(reader io.ReadCloser) error {
 	log.Infof("Starting %s backup", s.getLogPrefix())
 	ctx, cancel := context.WithTimeout(context.Background(), backupMaxTimeout)
 	defer cancel()
-	formattedTime := time.Now().Format(timeFormat)
+	formattedTime := s.now().Format(timeFormat)
 	key := fmt.Sprintf("backup_%s.zip", formattedTime)
 	formattedKey := s.prefixKey(key)
-	if err := s.upload(ctx, formattedKey, reader); err != nil {
+	if err := s.clientWrapper.Upload(ctx, formattedKey, reader); err != nil {
 		return s.createError(fmt.Sprintf("creating backup in bucket %q with key %q",
 			s.bucket, formattedKey), err)
 	}
@@ -173,11 +179,11 @@ func (s *s3Common) Test() error {
 	defer cancel()
 	formattedKey := s.prefixKey("test")
 	testBody := strings.NewReader("This is a test of the StackRox integration with this bucket")
-	if err := s.upload(ctx, formattedKey, testBody); err != nil {
+	if err := s.clientWrapper.Upload(ctx, formattedKey, testBody); err != nil {
 		return s.createError(fmt.Sprintf("creating test object %q in bucket %q",
 			formattedKey, s.bucket), err)
 	}
-	if err := s.delete(ctx, formattedKey); err != nil {
+	if err := s.clientWrapper.Delete(ctx, formattedKey); err != nil {
 		return s.createError(fmt.Sprintf("deleting test object %q from bucket %q",
 			formattedKey, s.bucket), err)
 	}
@@ -235,7 +241,7 @@ func sortS3Objects(objects []s3Types.Object) {
 }
 
 func (s *s3Common) pruneBackupsIfNecessary(ctx context.Context) error {
-	objects, err := s.listObjects(ctx)
+	objects, err := s.clientWrapper.ListObjects(ctx, s.prefixKey("backup"))
 	if err != nil {
 		return s.createError(fmt.Sprintf("listing objects in %s bucket %q", s.getLogPrefix(), s.bucket), err)
 	}
@@ -249,7 +255,7 @@ func (s *s3Common) pruneBackupsIfNecessary(ctx context.Context) error {
 
 	errorList := errorhelpers.NewErrorList(fmt.Sprintf("remove objects in %s store", s.getLogPrefix()))
 	for _, objToRemove := range objects.Contents[s.config.GetBackupsToKeep():] {
-		err = s.delete(ctx, *objToRemove.Key)
+		err = s.clientWrapper.Delete(ctx, *objToRemove.Key)
 		if err != nil {
 			errorList.AddError(s.createError(
 				fmt.Sprintf("deleting object %q from bucket %q", *objToRemove.Key, s.bucket), err),
@@ -259,24 +265,39 @@ func (s *s3Common) pruneBackupsIfNecessary(ctx context.Context) error {
 	return errorList.ToError()
 }
 
-func (s *s3Common) listObjects(ctx context.Context) (*s3.ListObjectsV2Output, error) {
-	return s.client.ListObjectsV2(ctx, &s3.ListObjectsV2Input{
-		Bucket: aws.String(s.bucket),
-		Prefix: aws.String(s.prefixKey("backup")),
+// s3Wrapper defines an interface for interactions with the s3 bucket
+//
+//go:generate mockgen-wrapper
+type s3Wrapper interface {
+	ListObjects(ctx context.Context, keyPrefix string) (*s3.ListObjectsV2Output, error)
+	Delete(ctx context.Context, key string) error
+	Upload(ctx context.Context, key string, data io.Reader) error
+}
+
+type s3WrapperImpl struct {
+	bucket   string
+	client   *s3.Client
+	uploader *manager.Uploader
+}
+
+func (w *s3WrapperImpl) ListObjects(ctx context.Context, keyPrefix string) (*s3.ListObjectsV2Output, error) {
+	return w.client.ListObjectsV2(ctx, &s3.ListObjectsV2Input{
+		Bucket: aws.String(w.bucket),
+		Prefix: aws.String(keyPrefix),
 	})
 }
 
-func (s *s3Common) delete(ctx context.Context, key string) error {
-	_, err := s.client.DeleteObject(ctx, &s3.DeleteObjectInput{
-		Bucket: aws.String(s.bucket),
+func (w *s3WrapperImpl) Delete(ctx context.Context, key string) error {
+	_, err := w.client.DeleteObject(ctx, &s3.DeleteObjectInput{
+		Bucket: aws.String(w.bucket),
 		Key:    aws.String(key),
 	})
 	return err
 }
 
-func (s *s3Common) upload(ctx context.Context, key string, data io.Reader) error {
-	_, err := s.uploader.Upload(ctx, &s3.PutObjectInput{
-		Bucket: aws.String(s.bucket),
+func (w *s3WrapperImpl) Upload(ctx context.Context, key string, data io.Reader) error {
+	_, err := w.uploader.Upload(ctx, &s3.PutObjectInput{
+		Bucket: aws.String(w.bucket),
 		Key:    aws.String(key),
 		Body:   data,
 	})
