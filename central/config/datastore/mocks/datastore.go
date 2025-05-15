@@ -41,25 +41,6 @@ func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 	return m.recorder
 }
 
-// DeletePlatformComponentConfigRules mocks base method.
-func (m *MockDataStore) DeletePlatformComponentConfigRules(arg0 context.Context, arg1 ...string) error {
-	m.ctrl.T.Helper()
-	varargs := []any{arg0}
-	for _, a := range arg1 {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "DeletePlatformComponentConfigRules", varargs...)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeletePlatformComponentConfigRules indicates an expected call of DeletePlatformComponentConfigRules.
-func (mr *MockDataStoreMockRecorder) DeletePlatformComponentConfigRules(arg0 any, arg1 ...any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]any{arg0}, arg1...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePlatformComponentConfigRules", reflect.TypeOf((*MockDataStore)(nil).DeletePlatformComponentConfigRules), varargs...)
-}
-
 // GetConfig mocks base method.
 func (m *MockDataStore) GetConfig(ctx context.Context) (*storage.Config, error) {
 	m.ctrl.T.Helper()
@@ -179,20 +160,6 @@ func (m *MockDataStore) UpsertPlatformComponentConfigRules(ctx context.Context, 
 func (mr *MockDataStoreMockRecorder) UpsertPlatformComponentConfigRules(ctx, rules any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertPlatformComponentConfigRules", reflect.TypeOf((*MockDataStore)(nil).UpsertPlatformComponentConfigRules), ctx, rules)
-}
-
-// UpsertPlatformComponentConfigRule mocks base method.
-func (m *MockDataStore) UpsertPlatformComponentConfigRule(arg0 context.Context, arg1 *storage.PlatformComponentConfig_Rule) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpsertPlatformComponentConfigRule", arg0, arg1)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UpsertPlatformComponentConfigRule indicates an expected call of UpsertPlatformComponentConfigRule.
-func (mr *MockDataStoreMockRecorder) UpsertPlatformComponentConfigRule(arg0, arg1 any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertPlatformComponentConfigRule", reflect.TypeOf((*MockDataStore)(nil).UpsertPlatformComponentConfigRule), arg0, arg1)
 }
 
 // UpsertPlatformComponentConfigRules mocks base method.
