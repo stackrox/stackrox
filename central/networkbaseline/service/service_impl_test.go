@@ -53,10 +53,9 @@ func (s *NetworkBaselineServiceTestSuite) TearDownTest() {
 
 func (s *NetworkBaselineServiceTestSuite) getBaselineWithSampleFlow() *storage.NetworkBaseline {
 	entityID, entityClusterID := "entity-id", "another-cluster"
-	entityType := storage.NetworkEntityInfo_DEPLOYMENT
 	flowIsIngress := true
 	flowPort := uint32(8080)
-	return testutils.GetBaselineWithCustomDeploymentFlow(testPeerDeploymentName, entityID, entityClusterID, entityType, flowIsIngress, flowPort)
+	return testutils.GetBaselineWithCustomDeploymentFlow(testPeerDeploymentName, entityID, entityClusterID, flowIsIngress, flowPort)
 }
 
 func (s *NetworkBaselineServiceTestSuite) TestGetNetworkBaselineStatusForFlows() {
@@ -113,7 +112,6 @@ func (s *NetworkBaselineServiceTestSuite) TestGetNetworkBaselineStatusForFlows()
 			testPeerDeploymentName,
 			entityID,
 			baseline.GetClusterId(),
-			peer.GetEntity().GetInfo().GetType(),
 			!isIngress,
 			port)
 	s.baselines.EXPECT().GetNetworkBaseline(gomock.Any(), gomock.Any()).Return(baseline, true, nil)

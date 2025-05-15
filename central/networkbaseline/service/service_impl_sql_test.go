@@ -41,6 +41,8 @@ var (
 		"1.1.1.4",
 		"1.1.1.5",
 	}
+
+	nonDiscoveredCIDR = "2.2.0.0/16"
 )
 
 func TestNetworkBaselinePostgres(t *testing.T) {
@@ -95,6 +97,44 @@ func (s *networkBaselineServiceSuite) SetupTest() {
 	s.NoError(err)
 
 	s.service = New(s.baselineDataStore, s.manager)
+}
+
+func (s *networkBaselineServiceSuite) setupTablesExternalFlowsWithDefaultEntity() {
+	s.setupTablesExternalFlows()
+
+	nonDiscoveredID, err := externalsrcs.NewGlobalScopedScopedID(nonDiscoveredCIDR)
+	s.NoError(err)
+
+	nonDiscoveredEntity := networkgraphTestutils.GetExtSrcNetworkEntity(
+		nonDiscoveredID.String(),
+		"Global CIDR",
+		nonDiscoveredCIDR,
+		true,
+		fixtureconsts.Cluster1,
+		false,
+	)
+
+	_, err = s.entityDataStore.CreateExtNetworkEntitiesForCluster(allAllowedCtx, fixtureconsts.Cluster1, nonDiscoveredEntity)
+	s.NoError(err)
+
+	ts := time.Now().Add(-10 * time.Minute)
+
+	flow := networkgraphTestutils.GetNetworkFlow(
+		&storage.NetworkEntityInfo{
+			Id:   fixtureconsts.Deployment1,
+			Type: storage.NetworkEntityInfo_DEPLOYMENT,
+		},
+		nonDiscoveredEntity.Info,
+		1234,
+		storage.L4Protocol_L4_PROTOCOL_TCP,
+		&ts,
+	)
+
+	fs, err := s.flowDataStore.GetFlowStore(allAllowedCtx, fixtureconsts.Cluster1)
+	s.NoError(err)
+
+	err = fs.UpsertFlows(allAllowedCtx, []*storage.NetworkFlow{flow}, timestamp.FromGoTime(ts))
+	s.NoError(err)
 }
 
 func (s *networkBaselineServiceSuite) setupTablesExternalFlows() {
@@ -277,7 +317,7 @@ func (s *networkBaselineServiceSuite) TestExternalStatusCIDRFilter() {
 	// empty query should return everything
 	req = &v1.NetworkBaselineExternalStatusRequest{
 		DeploymentId: fixtureconsts.Deployment1,
-		Query:        "", // non existent
+		Query:        "",
 	}
 
 	resp, err = s.service.GetNetworkBaselineStatusForExternalFlows(allAllowedCtx, req)
@@ -319,4 +359,20 @@ func (s *networkBaselineServiceSuite) TestExternalStatusSince() {
 	s.Equal(len(externalIps), len(resp.Baseline))
 	s.Equal(int32(len(externalIps)), resp.TotalAnomalous)
 	s.Equal(int32(len(externalIps)), resp.TotalBaseline)
+}
+
+func (s *networkBaselineServiceSuite) TestExternalStatusWithDefaultCIDRFlow() {
+	s.setupTablesExternalFlowsWithDefaultEntity()
+
+	req := &v1.NetworkBaselineExternalStatusRequest{
+		DeploymentId: fixtureconsts.Deployment1,
+	}
+
+	resp, err := s.service.GetNetworkBaselineStatusForExternalFlows(allAllowedCtx, req)
+	s.NoError(err)
+
+	s.Equal(6, len(resp.Anomalous))
+	s.Equal(5, len(resp.Baseline))
+	s.Equal(int32(6), resp.TotalAnomalous)
+	s.Equal(int32(5), resp.TotalBaseline)
 }

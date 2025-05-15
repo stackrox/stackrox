@@ -9,7 +9,6 @@ import (
 func GetBaselineWithCustomDeploymentFlow(
 	deploymentName string,
 	entityID, entityClusterID string,
-	entityType storage.NetworkEntityInfo_Type,
 	flowIsIngress bool,
 	flowPort uint32,
 ) *storage.NetworkBaseline {
@@ -18,7 +17,7 @@ func GetBaselineWithCustomDeploymentFlow(
 		{
 			Entity: &storage.NetworkEntity{
 				Info: &storage.NetworkEntityInfo{
-					Type: entityType,
+					Type: storage.NetworkEntityInfo_DEPLOYMENT,
 					Id:   entityID,
 					Desc: &storage.NetworkEntityInfo_Deployment_{
 						Deployment: &storage.NetworkEntityInfo_Deployment{
