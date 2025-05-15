@@ -7,8 +7,6 @@ import (
 	"github.com/stackrox/rox/central/externalbackups/plugins/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/urlfmt"
-	"net/url"
 )
 
 // s3 plugin for the AWS S3 backup integration.
@@ -42,19 +40,6 @@ func (c *s3configWrapper) GetUrlStyle() storage.S3URLStyle {
 
 func (c *s3configWrapper) GetEndpoint() string {
 	return c.integration.GetS3().GetEndpoint()
-}
-
-func (c *s3configWrapper) GetValidatedEndpoint() (string, error) {
-	return validateEndpoint(c.GetEndpoint())
-}
-
-func validateEndpoint(endpoint string) (string, error) {
-	// The aws-sdk-go-v2 package does not add a default scheme to the endpoint.
-	sanitizedEndpoint := urlfmt.FormatURL(endpoint, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
-	if _, err := url.Parse(sanitizedEndpoint); err != nil {
-		return "", errors.Wrapf(err, "invalid URL %q", endpoint)
-	}
-	return sanitizedEndpoint, nil
 }
 
 func (c *s3configWrapper) GetRegion() string {
