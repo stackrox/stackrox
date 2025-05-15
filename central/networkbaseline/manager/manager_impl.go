@@ -861,7 +861,14 @@ func (m *manager) addBaseline(deploymentID, deploymentName, clusterID, namespace
 		return err
 	}
 
-	flows = m.enrichFlows(clusterID, deploymentID, deploymentName, namespace, flows)
+	listDeployment := &storage.ListDeployment{
+		Name:      deploymentName,
+		Id:        deploymentID,
+		ClusterId: clusterID,
+		Namespace: namespace,
+	}
+
+	flows = m.enrichFlows(listDeployment, flows)
 
 	// If we have flows then process them.  If we don't persist an empty baseline
 	if len(flows) > 0 {
@@ -1056,19 +1063,14 @@ func (m *manager) putFlowsInMap(newFlows []*storage.NetworkFlow) map[networkgrap
 	return out
 }
 
-func (m *manager) enrichFlows(clusterID, deploymentID, deploymentName, namespace string, flows []*storage.NetworkFlow) []*storage.NetworkFlow {
+func (m *manager) enrichFlows(listDeployment *storage.ListDeployment, flows []*storage.NetworkFlow) []*storage.NetworkFlow {
 	networkTree := tree.NewMultiNetworkTree(
-		m.treeManager.GetReadOnlyNetworkTree(managerCtx, clusterID),
+		m.treeManager.GetReadOnlyNetworkTree(managerCtx, listDeployment.ClusterId),
 		m.treeManager.GetDefaultNetworkTree(managerCtx),
 	)
 
 	listDeploymentMap := map[string]*storage.ListDeployment{
-		deploymentID: &storage.ListDeployment{
-			Name:      deploymentName,
-			Id:        deploymentID,
-			ClusterId: clusterID,
-			Namespace: namespace,
-		},
+		listDeployment.Id: listDeployment,
 	}
 
 	flows, missingInfoFlows := networkgraph.UpdateFlowsWithEntityDesc(flows, listDeploymentMap,
