@@ -45,11 +45,11 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
     @Shared
     private int mask = 0
 
-    private String getBigCIDR() {
+    private String getSupernetCIDR() {
         return "$CF_IP_ADDRESS/${15+mask}"
     }
 
-    private String getSmallCIDR() {
+    private String getSubnetCIDR() {
         return "$CF_IP_ADDRESS/${30-mask}"
     }
 
@@ -81,7 +81,7 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
 
         log.info "Create a external source containing Cloudflare's IP address"
         String externalSourceName = generateNameWithPrefix("external-source")
-        NetworkEntity externalSource = createNetworkEntityExternalSource(externalSourceName, smallCIDR)
+        NetworkEntity externalSource = createNetworkEntityExternalSource(externalSourceName, subnetCIDR)
         String externalSourceID = externalSource?.getInfo()?.getId()
         assert externalSourceID != null
 
@@ -104,37 +104,37 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
         assert deploymentUid != null
 
         log.info "Create a smaller network external source containing Cloudflare's IP address"
-        String smallExternalSourceName = generateNameWithPrefix("external-source-small")
-        NetworkEntity smallExternalSource = createNetworkEntityExternalSource(smallExternalSourceName, smallCIDR)
-        String smallExternalSourceID = smallExternalSource?.getInfo()?.getId()
-        assert smallExternalSourceID != null
+        String subnetName = generateNameWithPrefix("external-source-subnet")
+        NetworkEntity subnet = createNetworkEntityExternalSource(subnetName, subnetCIDR)
+        String subnetID = subnet?.getInfo()?.getId()
+        assert subnetID != null
 
-        log.info "Edge from deployment to external source ${smallExternalSourceName} should exist"
+        log.info "Edge from deployment to external source ${subnetName} should exist"
         withRetry(4, 30) {
-            assert NetworkGraphUtil.checkForEdge(deploymentUid, smallExternalSourceID)
+            assert NetworkGraphUtil.checkForEdge(deploymentUid, subnetID)
         }
 
         log.info "Create a supernet external source containing Cloudflare's IP address"
-        String bigExternalSourceName = generateNameWithPrefix("external-source-big")
-        NetworkEntity bigExternalSource = createNetworkEntityExternalSource(bigExternalSourceName, bigCIDR)
-        String bigExternalSourceID = bigExternalSource?.getInfo()?.getId()
-        assert bigExternalSourceID != null
+        String supernetName = generateNameWithPrefix("external-source-supernet")
+        NetworkEntity supernet = createNetworkEntityExternalSource(supernetName, supernetCIDR)
+        String supernetID = supernet?.getInfo()?.getId()
+        assert supernetID != null
 
         then:
         "Verify no edge from deployment to supernet exists"
         withRetry(4, 30) {
-            verifyNoEdge(deploymentUid, bigExternalSourceID, null)
+            verifyNoEdge(deploymentUid, supernetID, null)
         }
 
         and:
         "Verify edge from deployment to subnet still exists"
         withRetry(4, 30) {
-            assert NetworkGraphUtil.checkForEdge(deploymentUid, smallExternalSourceID)
+            assert NetworkGraphUtil.checkForEdge(deploymentUid, subnetID)
         }
 
         cleanup:
-        deleteNetworkEntity(bigExternalSourceID)
-        deleteNetworkEntity(smallExternalSourceID)
+        deleteNetworkEntity(supernetID)
+        deleteNetworkEntity(subnetID)
     }
 
     @Tag("NetworkFlowVisualization")
@@ -147,40 +147,40 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
         assert deploymentUid != null
 
         log.info "Create a smaller subnet network entities with Cloudflare's IP address"
-        String smallExternalSourceName = generateNameWithPrefix("external-source-small")
-        NetworkEntity smallExternalSource = createNetworkEntityExternalSource(smallExternalSourceName, smallCIDR)
-        String smallExternalSourceID = smallExternalSource?.getInfo()?.getId()
-        assert smallExternalSourceID != null
+        String subnetName = generateNameWithPrefix("external-source-subnet")
+        NetworkEntity subnet = createNetworkEntityExternalSource(subnetName, subnetCIDR)
+        String subnetID = subnet?.getInfo()?.getId()
+        assert subnetID != null
 
         then:
         "Verify edge from deployment to subnet exists before subnet deletion"
         withRetry(4, 30) {
-            assert NetworkGraphUtil.checkForEdge(deploymentUid, smallExternalSourceID)
+            assert NetworkGraphUtil.checkForEdge(deploymentUid, subnetID)
         }
 
         log.info "Add supernet and remove subnet"
-        String bigExternalSourceName = generateNameWithPrefix("external-source-big")
-        NetworkEntity bigExternalSource = createNetworkEntityExternalSource(bigExternalSourceName, bigCIDR)
-        String bigExternalSourceID = bigExternalSource?.getInfo()?.getId()
-        assert bigExternalSourceID != null
+        String supernetName = generateNameWithPrefix("external-source-supernet")
+        NetworkEntity supernet = createNetworkEntityExternalSource(supernetName, supernetCIDR)
+        String supernetID = supernet?.getInfo()?.getId()
+        assert supernetID != null
 
         and:
         "Verify no edge from deployment to supernet exists before subnet deletion"
         withRetry(4, 30) {
-            verifyNoEdge(deploymentUid, bigExternalSourceID, null)
+            verifyNoEdge(deploymentUid, supernetID, null)
         }
 
         "Remove the smaller subnet should add an edge to the larger subnet"
-        deleteNetworkEntity(smallExternalSourceID)
+        deleteNetworkEntity(subnetID)
 
         and:
         "Verify edge from deployment to supernet exists after subnet deletion"
         withRetry(4, 30) {
-            assert NetworkGraphUtil.checkForEdge(deploymentUid, bigExternalSourceID, null, 180)
+            assert NetworkGraphUtil.checkForEdge(deploymentUid, supernetID, null, 180)
         }
 
         cleanup:
-        deleteNetworkEntity(bigExternalSourceID)
+        deleteNetworkEntity(supernetID)
     }
 
     @Tag("NetworkFlowVisualization")
@@ -190,26 +190,26 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
         String deploymentUid = DEP_EXTERNALCONNECTION.deploymentUid
         assert deploymentUid != null
 
-        String bigExternalSourceName = generateNameWithPrefix("external-source-big")
-        NetworkEntity bigExternalSource = createNetworkEntityExternalSource(bigExternalSourceName, bigCIDR)
-        String bigExternalSourceID = bigExternalSource?.getInfo()?.getId()
-        assert bigExternalSourceID != null
+        String supernetName = generateNameWithPrefix("external-source-supernet")
+        NetworkEntity supernet = createNetworkEntityExternalSource(supernetName, supernetCIDR)
+        String supernetID = supernet?.getInfo()?.getId()
+        assert supernetID != null
 
         log.info "Verify edge exists from deployment to supernet external source"
         withRetry(4, 30) {
-            assert NetworkGraphUtil.checkForEdge(deploymentUid, bigExternalSourceID)
+            assert NetworkGraphUtil.checkForEdge(deploymentUid, supernetID)
         }
 
         log.info "Add smaller subnet subnet external source"
-        String smallExternalSourceName = generateNameWithPrefix("external-source-small")
-        NetworkEntity smallExternalSource = createNetworkEntityExternalSource(smallExternalSourceName, smallCIDR)
-        String smallExternalSourceID = smallExternalSource?.getInfo()?.getId()
-        assert smallExternalSourceID != null
+        String subnetName = generateNameWithPrefix("external-source-subnet")
+        NetworkEntity subnet = createNetworkEntityExternalSource(subnetName, subnetCIDR)
+        String subnetID = subnet?.getInfo()?.getId()
+        assert subnetID != null
 
         then:
         "Verify edge exists from deployment to subnet external source"
         withRetry(4, 30) {
-            assert NetworkGraphUtil.checkForEdge(deploymentUid, smallExternalSourceID, null, 180)
+            assert NetworkGraphUtil.checkForEdge(deploymentUid, subnetID, null, 180)
         }
 
         and:
@@ -217,7 +217,7 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
         withRetry(4, 30) {
             assert NetworkGraphUtil.checkForEdge(
                     deploymentUid,
-                    bigExternalSourceID,
+                    supernetID,
                     Timestamp.newBuilder().setSeconds(System.currentTimeSeconds() - 60*60).build())
         }
 
@@ -226,13 +226,13 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
         withRetry(4, 30) {
             assert verifyNoEdge(
                     deploymentUid,
-                    bigExternalSourceID,
+                    supernetID,
                     Timestamp.newBuilder().setSeconds(System.currentTimeSeconds() - 60).build())
         }
 
         cleanup:
-        deleteNetworkEntity(bigExternalSourceID)
-        deleteNetworkEntity(smallExternalSourceID)
+        deleteNetworkEntity(supernetID)
+        deleteNetworkEntity(subnetID)
     }
 
     private static NetworkEntity createNetworkEntityExternalSource(String name, String cidr) {
