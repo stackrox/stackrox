@@ -84,47 +84,6 @@ func (suite *PLOPServiceTestSuite) SetupTest() {
 	}
 }
 
-func getIndicators() []*storage.ProcessIndicator {
-	indicators := []*storage.ProcessIndicator{
-		{
-			Id:            fixtureconsts.ProcessIndicatorID1,
-			DeploymentId:  fixtureconsts.Deployment1,
-			PodId:         fixtureconsts.PodName1,
-			PodUid:        fixtureconsts.PodUID1,
-			ClusterId:     fixtureconsts.Cluster1,
-			ContainerName: "test_container1",
-			Namespace:     fixtureconsts.Namespace1,
-
-			Signal: &storage.ProcessSignal{
-				Name:         "test_process1",
-				Args:         "test_arguments1",
-				ExecFilePath: "test_path1",
-			},
-		},
-		{
-			Id:            fixtureconsts.ProcessIndicatorID2,
-			DeploymentId:  fixtureconsts.Deployment2,
-			PodId:         fixtureconsts.PodName2,
-			PodUid:        fixtureconsts.PodUID2,
-			ClusterId:     fixtureconsts.Cluster1,
-			ContainerName: "test_container2",
-			Namespace:     fixtureconsts.Namespace1,
-
-			Signal: &storage.ProcessSignal{
-				Name:         "test_process2",
-				Args:         "test_arguments2",
-				ExecFilePath: "test_path2",
-			},
-		},
-	}
-	// Uncomment or remove before merging
-	//for _, indicator := range indicators {
-	//	id.SetIndicatorID(indicator)
-	//}
-
-	return indicators
-}
-
 var (
 	indicator1 = &storage.ProcessIndicator{
 		Id:            fixtureconsts.ProcessIndicatorID1,
@@ -174,13 +133,6 @@ var (
 	}
 )
 
-func (suite *PLOPServiceTestSuite) addDeployments() {
-	deploymentDS, err := deploymentStore.GetTestPostgresDataStore(suite.T(), suite.postgres.DB)
-	suite.Nil(err)
-	suite.NoError(deploymentDS.UpsertDeployment(suite.hasAllCtx, &storage.Deployment{Id: fixtureconsts.Deployment1, Namespace: fixtureconsts.Namespace1, ClusterId: fixtureconsts.Cluster1}))
-	suite.NoError(deploymentDS.UpsertDeployment(suite.hasAllCtx, &storage.Deployment{Id: fixtureconsts.Deployment2, Namespace: fixtureconsts.Namespace1, ClusterId: fixtureconsts.Cluster1}))
-}
-
 func (suite *PLOPServiceTestSuite) TestPLOPCases() {
 	cases := map[string]struct{
 		plopsInDB		[]*storage.ProcessListeningOnPortStorage
@@ -196,7 +148,7 @@ func (suite *PLOPServiceTestSuite) TestPLOPCases() {
 			plopsInDB:	[]*storage.ProcessListeningOnPortStorage{
 							fixtures.GetPlopStorage7(),
 						},
-			processIndicators: getIndicators(),
+			processIndicators: []*storage.ProcessIndicator{indicator1, indicator2},
 			deployments: 	[]*storage.Deployment{
 						&storage.Deployment{Id: fixtureconsts.Deployment1, Namespace: fixtureconsts.Namespace1, ClusterId: fixtureconsts.Cluster1},
 						&storage.Deployment{Id: fixtureconsts.Deployment2, Namespace: fixtureconsts.Namespace1, ClusterId: fixtureconsts.Cluster1},
@@ -210,7 +162,7 @@ func (suite *PLOPServiceTestSuite) TestPLOPCases() {
 			plopsInDB:	[]*storage.ProcessListeningOnPortStorage{
 							fixtures.GetPlopStorage7(),
 						},
-			processIndicators: getIndicators(),
+			processIndicators: []*storage.ProcessIndicator{indicator1, indicator2},
 			deployments: 	[]*storage.Deployment{
 						&storage.Deployment{Id: fixtureconsts.Deployment1, Namespace: fixtureconsts.Namespace1, ClusterId: fixtureconsts.Cluster1},
 						&storage.Deployment{Id: fixtureconsts.Deployment2, Namespace: fixtureconsts.Namespace1, ClusterId: fixtureconsts.Cluster1},
