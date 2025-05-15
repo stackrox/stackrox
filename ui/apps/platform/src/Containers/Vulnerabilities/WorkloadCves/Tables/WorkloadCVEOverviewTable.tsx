@@ -93,7 +93,6 @@ export const cveListQuery = gql`
         $pagination: Pagination
         $statusesForExceptionCount: [String!]
     ) {
-        imageCVECount(query: $query)
         imageCVEs(query: $query, pagination: $pagination) {
             cve
             affectedImageCountBySeverity {
@@ -140,7 +139,6 @@ export const unfilteredImageCountQuery = gql`
 `;
 
 export type CVEListQueryResult = {
-    imageCVECount: number;
     imageCVEs: ImageCVE[];
 };
 
