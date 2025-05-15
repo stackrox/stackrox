@@ -171,17 +171,17 @@ func (resolver *Resolver) ImageComponents(ctx context.Context, q PaginatedQuery)
 		}
 
 		// Normalize the Components based on the flat view to keep them in the correct paging and sort order
-		normalizedVulns := make([]*storage.ImageComponentV2, 0, len(componentFlatData))
+		normalizedComponents := make([]*storage.ImageComponentV2, 0, len(componentFlatData))
 		for _, cveFlat := range componentFlatData {
 			normalized := normalizedImageComponent{
 				name:    cveFlat.GetComponent(),
 				version: cveFlat.GetVersion(),
 				os:      cveFlat.GetOperatingSystem(),
 			}
-			normalizedVulns = append(normalizedVulns, foundComponent[normalized])
+			normalizedComponents = append(normalizedComponents, foundComponent[normalized])
 		}
 
-		componentResolvers, err := resolver.wrapImageComponentV2sFlatWithContext(ctx, comps, componentFlatData, err)
+		componentResolvers, err := resolver.wrapImageComponentV2sFlatWithContext(ctx, normalizedComponents, componentFlatData, err)
 		if err != nil {
 			return nil, err
 		}
