@@ -46,7 +46,7 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
     private int mask = 0
 
     private String getBigCIDR() {
-        return "$CF_IP_ADDRESS/${20+mask}"
+        return "$CF_IP_ADDRESS/${15+mask}"
     }
 
     private String getSmallCIDR() {
