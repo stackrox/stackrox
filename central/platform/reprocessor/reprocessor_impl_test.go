@@ -28,6 +28,7 @@ type platformReprocessorImplTestSuite struct {
 	alertDatastore      *alertDSMocks.MockDataStore
 	configDatastore     *configDatastoreMocks.MockDataStore
 	deploymentDatastore *deploymentDSMocks.MockDataStore
+	matcher             platformmatcher.PlatformMatcher
 
 	mockCtrl *gomock.Controller
 }
@@ -37,11 +38,30 @@ func (s *platformReprocessorImplTestSuite) SetupTest() {
 	s.alertDatastore = alertDSMocks.NewMockDataStore(s.mockCtrl)
 	s.configDatastore = configDatastoreMocks.NewMockDataStore(s.mockCtrl)
 	s.deploymentDatastore = deploymentDSMocks.NewMockDataStore(s.mockCtrl)
+	mockConfigDatastore := configDatastoreMocks.NewMockDataStore(s.mockCtrl)
+	mockConfigDatastore.EXPECT().GetPlatformComponentConfig(gomock.Any()).Return(&storage.PlatformComponentConfig{
+		NeedsReevaluation: false,
+		Rules: []*storage.PlatformComponentConfig_Rule{
+			{
+				Name: "system rule",
+				NamespaceRule: &storage.PlatformComponentConfig_Rule_NamespaceRule{
+					Regex: `^kube-.*|^openshift-.*`,
+				},
+			},
+			{
+				Name: "red hat layered products",
+				NamespaceRule: &storage.PlatformComponentConfig_Rule_NamespaceRule{
+					Regex: `^stackrox$|^rhacs-operator$|^open-cluster-management$|^multicluster-engine$|^aap$|^hive$`,
+				},
+			},
+		},
+	}, true, nil).Times(1)
+	s.matcher = platformmatcher.New(mockConfigDatastore)
 
 	s.reprocessor = &platformReprocessorImpl{
 		alertDatastore:      s.alertDatastore,
 		deploymentDatastore: s.deploymentDatastore,
-		platformMatcher:     platformmatcher.Singleton(),
+		platformMatcher:     s.matcher,
 		stopSignal:          concurrency.NewSignal(),
 		semaphore:           semaphore.NewWeighted(1),
 	}
@@ -101,7 +121,7 @@ func (s *platformReprocessorImplTestSuite) TestStartAndStop() {
 	s.deploymentDatastore.EXPECT().SearchRawDeployments(gomock.Any(), gomock.Any()).Times(0)
 	s.deploymentDatastore.EXPECT().UpsertDeployment(gomock.Any(), gomock.Any()).Times(0)
 
-	reprocessor := New(s.alertDatastore, s.configDatastore, s.deploymentDatastore, platformmatcher.Singleton())
+	reprocessor := New(s.alertDatastore, s.configDatastore, s.deploymentDatastore, s.matcher)
 	reprocessor.Start()
 	// Wait until execution has entered alert reprocessing loop. The loop will pause waiting for proceedAlertLoop signal
 	inAlertLoop.Wait()
@@ -126,7 +146,7 @@ func (s *platformReprocessorImplTestSuite) TestStartAndStop() {
 		proceedDeploymentLoop.Wait()
 	}).Return(nil).Times(1)
 
-	reprocessor = New(s.alertDatastore, s.configDatastore, s.deploymentDatastore, platformmatcher.Singleton())
+	reprocessor = New(s.alertDatastore, s.configDatastore, s.deploymentDatastore, s.matcher)
 	reprocessor.Start()
 	// Wait until execution has entered deployment reprocessing loop. The loop will pause waiting for proceedAlertLoop signal
 	inDeploymentLoop.Wait()
