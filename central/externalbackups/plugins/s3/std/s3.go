@@ -34,6 +34,8 @@ type s3configWrapper struct {
 	integration *storage.ExternalBackup
 }
 
+var _ s3common.ConfigWrapper = (*s3configWrapper)(nil)
+
 func (c *s3configWrapper) GetUrlStyle() storage.S3URLStyle {
 	return storage.S3URLStyle_S3_URL_STYLE_UNSPECIFIED
 }
