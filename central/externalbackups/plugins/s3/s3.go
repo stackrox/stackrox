@@ -132,12 +132,12 @@ func newS3(integration *storage.ExternalBackup) (*s3, error) {
 	var clientOpts []func(*sdkS3.Options)
 	endpoint := conf.GetEndpoint()
 	if endpoint != "" {
-		endpoint, err := validateEndpoint(endpoint)
-		if err != nil {
-			return nil, err
+		validatedEndpoint, validationErr := validateEndpoint(endpoint)
+		if validationErr != nil {
+			return nil, validationErr
 		}
 		clientOpts = append(clientOpts, func(options *sdkS3.Options) {
-			options.BaseEndpoint = aws.String(endpoint)
+			options.BaseEndpoint = aws.String(validatedEndpoint)
 		})
 	}
 	awsClient := sdkS3.NewFromConfig(awsCfg, clientOpts...)
@@ -180,7 +180,7 @@ func (s *s3) pruneBackupsIfNecessary(ctx context.Context) error {
 		objectsToRemove = listedBackups.Contents[s.integration.GetBackupsToKeep():]
 	}
 
-	errorList := errorhelpers.NewErrorList("remove objects in s3 store")
+	errorList := errorhelpers.NewErrorList("remove objects in S3 store")
 	for _, o := range objectsToRemove {
 		_, err := s.awsClient.DeleteObject(ctx, &sdkS3.DeleteObjectInput{
 			Bucket: aws.String(s.integration.GetS3().GetBucket()),
