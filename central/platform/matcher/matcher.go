@@ -20,10 +20,10 @@ type PlatformMatcher interface {
 	SetRegexes(regexes []*regexp.Regexp)
 }
 
-func New() PlatformMatcher {
+func New(configDatastore configDS.DataStore) PlatformMatcher {
 	allAccessCtx := sac.WithAllAccess(context.Background())
 	regexes := []*regexp.Regexp{}
-	config, _, _ := configDS.Singleton().GetPlatformComponentConfig(allAccessCtx)
+	config, _, _ := configDatastore.GetPlatformComponentConfig(allAccessCtx)
 	for _, rule := range config.GetRules() {
 		regex, _ := regexp.Compile(rule.GetName())
 		regexes = append(regexes, regex)

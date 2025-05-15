@@ -7,7 +7,7 @@ import (
 	"github.com/pkg/errors"
 	searcherMocks "github.com/stackrox/rox/central/deployment/datastore/internal/search/mocks"
 	storeMocks "github.com/stackrox/rox/central/deployment/datastore/internal/store/mocks"
-	platformmatcher "github.com/stackrox/rox/central/platform/matcher"
+	matcherMocks "github.com/stackrox/rox/central/platform/matcher/mocks"
 	"github.com/stackrox/rox/central/ranking"
 	riskMocks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
@@ -28,6 +28,7 @@ func TestDeploymentDatastoreSuite(t *testing.T) {
 type DeploymentDataStoreTestSuite struct {
 	suite.Suite
 
+	matcher   *matcherMocks.MockPlatformMatcher
 	storage   *storeMocks.MockStore
 	searcher  *searcherMocks.MockSearcher
 	riskStore *riskMocks.MockDataStore
@@ -47,6 +48,7 @@ func (suite *DeploymentDataStoreTestSuite) SetupTest() {
 	suite.searcher = searcherMocks.NewMockSearcher(mockCtrl)
 	suite.riskStore = riskMocks.NewMockDataStore(mockCtrl)
 	suite.filter = filter.NewFilter(5, 5, []int{5, 4, 3, 2, 1})
+	suite.matcher = matcherMocks.NewMockPlatformMatcher(mockCtrl)
 }
 
 func (suite *DeploymentDataStoreTestSuite) TearDownTest() {
@@ -58,7 +60,7 @@ func (suite *DeploymentDataStoreTestSuite) TestInitializeRanker() {
 	nsRanker := ranking.NewRanker()
 	deploymentRanker := ranking.NewRanker()
 
-	ds := newDatastoreImpl(suite.storage, suite.searcher, nil, nil, nil, suite.riskStore, nil, suite.filter, clusterRanker, nsRanker, deploymentRanker, platformmatcher.Singleton())
+	ds := newDatastoreImpl(suite.storage, suite.searcher, nil, nil, nil, suite.riskStore, nil, suite.filter, clusterRanker, nsRanker, deploymentRanker, suite.matcher)
 
 	deployments := []*storage.Deployment{
 		{
@@ -107,7 +109,7 @@ func (suite *DeploymentDataStoreTestSuite) TestInitializeRanker() {
 }
 
 func (suite *DeploymentDataStoreTestSuite) TestMergeCronJobs() {
-	ds := newDatastoreImpl(suite.storage, suite.searcher, nil, nil, nil, suite.riskStore, nil, suite.filter, nil, nil, nil, platformmatcher.Singleton())
+	ds := newDatastoreImpl(suite.storage, suite.searcher, nil, nil, nil, suite.riskStore, nil, suite.filter, nil, nil, nil, suite.matcher)
 	ctx := sac.WithAllAccess(context.Background())
 
 	// Not a cronjob so no merging
@@ -177,7 +179,7 @@ func (suite *DeploymentDataStoreTestSuite) TestUpsert_PlatformComponentAssignmen
 		suite.T().Skip("Skip test when ROX_PLATFORM_COMPONENTS disabled")
 		suite.T().SkipNow()
 	}
-	ds := newDatastoreImpl(suite.storage, suite.searcher, nil, nil, nil, suite.riskStore, nil, suite.filter, nil, nil, ranking.NewRanker(), platformmatcher.Singleton())
+	ds := newDatastoreImpl(suite.storage, suite.searcher, nil, nil, nil, suite.riskStore, nil, suite.filter, nil, nil, ranking.NewRanker(), suite.matcher)
 	ctx := sac.WithAllAccess(context.Background())
 	suite.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, false, nil).AnyTimes()
 
@@ -193,6 +195,7 @@ func (suite *DeploymentDataStoreTestSuite) TestUpsert_PlatformComponentAssignmen
 	}
 
 	suite.storage.EXPECT().Upsert(gomock.Any(), expectedDeployment).Return(nil).Times(1)
+	suite.matcher.EXPECT().MatchDeployment(deployment).Return(false, nil).Times(1)
 	err := ds.UpsertDeployment(ctx, deployment)
 	suite.Require().NoError(err)
 
@@ -208,6 +211,7 @@ func (suite *DeploymentDataStoreTestSuite) TestUpsert_PlatformComponentAssignmen
 	}
 
 	suite.storage.EXPECT().Upsert(gomock.Any(), expectedDeployment).Return(nil).Times(1)
+	suite.matcher.EXPECT().MatchDeployment(deployment).Return(true, nil).Times(1)
 	err = ds.UpsertDeployment(ctx, deployment)
 	suite.Require().NoError(err)
 }
