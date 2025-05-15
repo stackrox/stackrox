@@ -29,8 +29,6 @@ import (
 )
 
 var (
-	testEntityId = "entity-1"
-
 	// the idea is to have some IPs across a filterable
 	// range, to test queries against both 1.1.0.0/16
 	// and 1.1.1.0/24
@@ -97,6 +95,7 @@ func (s *networkBaselineServiceSuite) SetupTest() {
 	s.NoError(err)
 
 	s.service = New(s.baselineDataStore, s.manager)
+	s.db = db
 }
 
 func (s *networkBaselineServiceSuite) setupTablesExternalFlowsWithDefaultEntity() {
