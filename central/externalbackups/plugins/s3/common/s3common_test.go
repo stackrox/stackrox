@@ -6,6 +6,8 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -101,4 +103,97 @@ func TestSortS3Objects(t *testing.T) {
 			assert.Equal(it, tc.expectedOutput, objects)
 		})
 	}
+}
+
+func TestNewS3Client(t *testing.T) {
+	// smoke tests for the constructor logic
+	for name, cfg := range map[string]*fakeConfigWrapper{
+		"s3 with IAM and empty endpoint": {
+			endpoint:   "",
+			useIam:     true,
+			pluginType: "s3",
+			valid:      true,
+		},
+		"s3 compatible with filled endpoint": {
+			endpoint:    "s3compatible.example.com",
+			useIam:      false,
+			accessKeyID: "access-key-id",
+			accessKey:   "access-key",
+			pluginType:  "s3compatible",
+			valid:       true,
+		},
+	} {
+		t.Run(name, func(it *testing.T) {
+			client, err := NewS3Client(cfg)
+			if cfg.valid {
+				assert.NoError(it, err)
+				assert.NotNil(it, client)
+			} else {
+				assert.ErrorIs(it, err, errox.InvalidArgs)
+				assert.Nil(it, client)
+			}
+		})
+	}
+}
+
+type fakeConfigWrapper struct {
+	endpoint    string
+	useIam      bool
+	accessKeyID string
+	accessKey   string
+	pluginType  string
+	valid       bool
+}
+
+var _ ConfigWrapper = (*fakeConfigWrapper)(nil)
+
+func (w *fakeConfigWrapper) GetUrlStyle() storage.S3URLStyle {
+	return storage.S3URLStyle_S3_URL_STYLE_UNSPECIFIED
+}
+
+func (w *fakeConfigWrapper) GetEndpoint() string {
+	return w.endpoint
+}
+
+func (w *fakeConfigWrapper) GetRegion() string {
+	return "us-east-1"
+}
+
+func (w *fakeConfigWrapper) GetBucket() string {
+	return "test-bucket"
+}
+
+func (w *fakeConfigWrapper) GetObjectPrefix() string {
+	return ""
+}
+
+func (w *fakeConfigWrapper) GetUseIam() bool {
+	return w.useIam
+}
+
+func (w *fakeConfigWrapper) GetAccessKeyId() string {
+	return w.accessKeyID
+}
+
+func (w *fakeConfigWrapper) GetSecretAccessKey() string {
+	return w.accessKey
+}
+
+func (w *fakeConfigWrapper) GetName() string {
+	return "Test Backup Plugin"
+}
+
+func (w *fakeConfigWrapper) GetPluginType() string {
+	return w.pluginType
+}
+
+func (w *fakeConfigWrapper) GetBackupsToKeep() int32 {
+	return 1
+}
+
+func (w *fakeConfigWrapper) Validate() error {
+	if w.valid {
+		return nil
+	}
+	return errox.InvalidArgs
 }
