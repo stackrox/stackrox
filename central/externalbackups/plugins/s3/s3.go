@@ -3,7 +3,6 @@ package s3
 import (
 	"context"
 	"fmt"
-	"github.com/stackrox/rox/pkg/urlfmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -28,6 +27,7 @@ import (
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/urlfmt"
 )
 
 const (
