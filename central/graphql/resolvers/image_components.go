@@ -29,17 +29,6 @@ import (
 
 func init() {
 	schema := getBuilder()
-	utils.Must(schema.AddType("ImageComponent", []string{
-		"fixedBy: String!",
-		"id: ID!",
-		"license: License",
-		"name: String!",
-		"operatingSystem: String!",
-		"priority: Int!",
-		"riskScore: Float!",
-		"source: SourceType!",
-		"version: String!",
-	}))
 	utils.Must(schema.AddType("ImageComponentV2", []string{
 		"architecture: String!",
 		"fixedBy: String!",
@@ -60,6 +49,8 @@ func init() {
 			"activeState(query: String): ActiveState",
 			"deploymentCount(query: String, scopeQuery: String): Int!",
 			"deployments(query: String, scopeQuery: String, pagination: Pagination): [Deployment!]!",
+			"fixedBy: String!",
+			"id: ID!",
 			"imageCount(query: String, scopeQuery: String): Int!",
 			"images(query: String, scopeQuery: String, pagination: Pagination): [Image!]!",
 			"imageVulnerabilityCount(query: String, scopeQuery: String): Int!",
@@ -67,10 +58,17 @@ func init() {
 			"imageVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [ImageVulnerability]!",
 			"lastScanned: Time",
 			"layerIndex: Int",
+			"license: License",
 			"location(query: String): String!",
+			"name: String!",
+			"operatingSystem: String!",
 			"plottedImageVulnerabilities(query: String): PlottedImageVulnerabilities!",
+			"priority: Int!",
+			"riskScore: Float!",
+			"source: SourceType!",
 			"topImageVulnerability: ImageVulnerability",
 			"unusedVarSink(query: String): Int",
+			"version: String!",
 
 			// deprecated functions
 			"fixedIn: String! @deprecated(reason: \"use 'fixedBy'\")",
