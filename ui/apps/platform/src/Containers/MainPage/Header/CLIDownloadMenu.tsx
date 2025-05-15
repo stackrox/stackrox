@@ -1,12 +1,30 @@
 import React, { useState, ReactElement } from 'react';
 import { connect } from 'react-redux';
 import { DownloadIcon } from '@patternfly/react-icons';
-import { Flex, FlexItem } from '@patternfly/react-core';
-import { ApplicationLauncher, ApplicationLauncherItem } from '@patternfly/react-core/deprecated';
+import {
+    Dropdown,
+    DropdownItem,
+    DropdownList,
+    Flex,
+    FlexItem,
+    MenuToggle,
+} from '@patternfly/react-core';
 import Raven from 'raven-js';
 
 import { actions } from 'reducers/notifications';
 import downloadCLI from 'services/CLIService';
+
+const cliDownloadOptions = [
+    { os: 'darwin-amd64', display: 'Mac x86_64' },
+    { os: 'darwin-arm64', display: 'Mac arm_64' },
+    { os: 'linux-amd64', display: 'Linux x86_64' },
+    { os: 'linux-arm64', display: 'Linux arm_64' },
+    { os: 'linux-ppc64le', display: 'Linux ppc64le' },
+    { os: 'linux-s390x', display: 'Linux s390x' },
+    { os: 'windows-amd64', display: 'Windows x86_64' },
+] as const;
+
+type AvailableOS = (typeof cliDownloadOptions)[number]['os'];
 
 type CLIDownloadMenuProps = {
     addToast: (msg) => void;
@@ -16,95 +34,61 @@ type CLIDownloadMenuProps = {
 function CLIDownloadMenu({ addToast, removeToast }: CLIDownloadMenuProps): ReactElement {
     const [isCLIMenuOpen, setIsCLIMenuOpen] = useState(false);
 
-    function handleDownloadCLI(os: string) {
+    function handleDownloadCLI(os: AvailableOS) {
         return () => {
+            setIsCLIMenuOpen(false);
+            addToast(`Downloading roxctl for ${os}`);
             downloadCLI(os)
-                .then(() => {
-                    setIsCLIMenuOpen(false);
-                })
                 .catch((err) => {
                     addToast(`Error while downloading roxctl for ${os}`);
                     removeToast();
                     Raven.captureException(err);
+                })
+                .finally(() => {
+                    removeToast();
                 });
         };
     }
 
-    const appLauncherItems = [
-        <ApplicationLauncherItem
-            key="app-launcher-item-cli-mac-amd64"
-            component="button"
-            onClick={handleDownloadCLI('darwin-amd64')}
-        >
-            Mac x86_64
-        </ApplicationLauncherItem>,
-        <ApplicationLauncherItem
-            key="app-launcher-item-cli-mac-arm64"
-            component="button"
-            onClick={handleDownloadCLI('darwin-arm64')}
-        >
-            Mac arm_64
-        </ApplicationLauncherItem>,
-        <ApplicationLauncherItem
-            key="app-launcher-item-cli-linux-amd64"
-            component="button"
-            onClick={handleDownloadCLI('linux-amd64')}
-        >
-            Linux x86_64
-        </ApplicationLauncherItem>,
-        <ApplicationLauncherItem
-            key="app-launcher-item-cli-linux-arm64"
-            component="button"
-            onClick={handleDownloadCLI('linux-arm64')}
-        >
-            Linux arm_64
-        </ApplicationLauncherItem>,
-        <ApplicationLauncherItem
-            key="app-launcher-item-cli-linux-ppc64le"
-            component="button"
-            onClick={handleDownloadCLI('linux-ppc64le')}
-        >
-            Linux ppc64le
-        </ApplicationLauncherItem>,
-        <ApplicationLauncherItem
-            key="app-launcher-item-cli-linux-s390x"
-            component="button"
-            onClick={handleDownloadCLI('linux-s390x')}
-        >
-            Linux s390x
-        </ApplicationLauncherItem>,
-        <ApplicationLauncherItem
-            key="app-launcher-item-cli-windows-amd64"
-            component="button"
-            onClick={handleDownloadCLI('windows-amd64')}
-        >
-            Windows x86_64
-        </ApplicationLauncherItem>,
-    ];
-
-    function toggleCLIMenu() {
-        setIsCLIMenuOpen(!isCLIMenuOpen);
-    }
-
-    const CLIDownloadIcon = (
-        <Flex alignItems={{ default: 'alignItemsCenter' }} spaceItems={{ default: 'spaceItemsSm' }}>
-            <FlexItem>
-                <DownloadIcon alt="" />
-            </FlexItem>
-            <FlexItem>CLI</FlexItem>
-        </Flex>
-    );
-
     return (
-        <ApplicationLauncher
-            aria-label="CLI Download Menu"
-            onToggle={toggleCLIMenu}
+        <Dropdown
             isOpen={isCLIMenuOpen}
-            items={appLauncherItems}
-            position="right"
-            data-quickstart-id="qs-masthead-climenu"
-            toggleIcon={CLIDownloadIcon}
-        />
+            onOpenChange={(isOpen) => setIsCLIMenuOpen(isOpen)}
+            onOpenChangeKeys={['Escape', 'Tab']}
+            popperProps={{ position: 'right' }}
+            toggle={(toggleRef) => (
+                <MenuToggle
+                    aria-label="CLI Download Menu"
+                    ref={toggleRef}
+                    variant="plain"
+                    onClick={() => setIsCLIMenuOpen((wasOpen) => !wasOpen)}
+                    isExpanded={isCLIMenuOpen}
+                >
+                    <Flex
+                        alignItems={{ default: 'alignItemsCenter' }}
+                        spaceItems={{ default: 'spaceItemsSm' }}
+                    >
+                        <FlexItem>
+                            <DownloadIcon alt="Download roxctl" />
+                        </FlexItem>
+                        <FlexItem>CLI</FlexItem>
+                    </Flex>
+                </MenuToggle>
+            )}
+        >
+            <DropdownList>
+                {cliDownloadOptions.map(({ os, display }) => (
+                    <DropdownItem
+                        id={`app-launcher-item-cli-${os}`}
+                        value={`app-launcher-item-cli-${os}`}
+                        key={os}
+                        onClick={handleDownloadCLI(os)}
+                    >
+                        {display}
+                    </DropdownItem>
+                ))}
+            </DropdownList>
+        </Dropdown>
     );
 }
 
