@@ -2,6 +2,7 @@ package resources
 
 import (
 	"context"
+	"encoding/base64"
 	"strconv"
 	"testing"
 
@@ -440,41 +441,36 @@ func parseSecretYAML(t *testing.T, yamlData []byte) *v1.Secret {
 	return &secret
 }
 
-func Test_secretDispatcher_processDockerConfigEvent(t *testing.T) {
-	var badSecretYaml = []byte(`
+func buildSecretYaml(base64data string) []byte {
+	return []byte(`
 apiVersion: v1
 data:
-  .dockercfg: ewogICAgImV4YW1wbGUuY29tIjogewogICAgICAgICJhdXRoIjoibnVsbE9wN3BaUT09IgogICAgfQp9
+  .dockercfg: ` + base64data + `
 kind: Secret
 metadata:
-  name: badsec
+  name: secret1
 type: kubernetes.io/dockercfg
 `)
-	var goodSecretYaml = []byte(`
-apiVersion: v1
-data:
-  .dockerconfigjson: eyJhdXRocyI6eyJleGFtcGxlLmNvbSI6eyJ1c2VybmFtZSI6InVzZXIxIiwicGFzc3dvcmQiOiJxd2ZwYiIsImVtYWlsIjoiYWRtaW5AZXhhbXBsZS5jb20iLCJhdXRoIjoiZFhObGNqRTZjWGRtY0dJPSJ9fX0=
-kind: Secret
-metadata:
-  name: good-registry
-type: kubernetes.io/dockerconfigjson
-`)
+}
 
+func Test_secretDispatcher_processDockerConfigEvent(t *testing.T) {
 	tests := map[string]struct {
-		secret        *v1.Secret
-		oldSecret     *v1.Secret
+		secretData    string
 		action        central.ResourceAction
 		wantNumEvents int
 	}{
-		"bad secret": {
-			secret:        parseSecretYAML(t, badSecretYaml),
-			oldSecret:     nil,
+		"bad secret with non-utf auth (nu\\x00Op\\x07pZQ)": {
+			secretData:    `{"example.com":{"auth":"nullOp7pZQ=="}}`,
+			action:        central.ResourceAction_CREATE_RESOURCE,
+			wantNumEvents: 0,
+		},
+		"bad secret with non-utf in auth (user\\xc5name)": {
+			secretData:    `{"example.com":{"auth":"dXNlcspuYW1lOnBhc3N3b3Jk"}}`,
 			action:        central.ResourceAction_CREATE_RESOURCE,
 			wantNumEvents: 0,
 		},
 		"good secret": {
-			secret:        parseSecretYAML(t, goodSecretYaml),
-			oldSecret:     nil,
+			secretData:    `{"auths":{"example.com":{"auth":"dXNlcjE6cXdmcGI="}}}`,
 			action:        central.ResourceAction_CREATE_RESOURCE,
 			wantNumEvents: 2, // secret + image integration
 		},
@@ -484,7 +480,8 @@ type: kubernetes.io/dockerconfigjson
 			s := newSecretDispatcher(registry.NewRegistryStore(func(ctx context.Context, origAddr string) (bool, error) {
 				return true, nil
 			}))
-			got := s.processDockerConfigEvent(tt.secret, tt.oldSecret, tt.action)
+			secret := parseSecretYAML(t, buildSecretYaml(base64.StdEncoding.EncodeToString([]byte(tt.secretData))))
+			got := s.processDockerConfigEvent(secret, nil, tt.action)
 			if tt.wantNumEvents == 0 {
 				assert.Nil(t, got)
 			} else {
