@@ -18,6 +18,7 @@ import (
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/yaml"
 )
 
 var (
@@ -429,4 +430,66 @@ func TestSkipIntegrationCreate(t *testing.T) {
 		assert.True(t, skipIntegrationCreate(globalPullSecretDupe))
 		assert.False(t, skipIntegrationCreate(someOtherSecret))
 	})
+}
+
+// parseSecretYAML parses YAML into a Kubernetes *v1.Secret object.
+func parseSecretYAML(t *testing.T, yamlData []byte) *v1.Secret {
+	var secret v1.Secret
+	err := yaml.Unmarshal(yamlData, &secret)
+	require.NoError(t, err)
+	return &secret
+}
+
+func Test_secretDispatcher_processDockerConfigEvent(t *testing.T) {
+	var badSecretYaml = []byte(`
+apiVersion: v1
+data:
+  .dockercfg: ewogICAgImV4YW1wbGUuY29tIjogewogICAgICAgICJhdXRoIjoibnVsbE9wN3BaUT09IgogICAgfQp9
+kind: Secret
+metadata:
+  name: badsec
+type: kubernetes.io/dockercfg
+`)
+	var goodSecretYaml = []byte(`
+apiVersion: v1
+data:
+  .dockerconfigjson: eyJhdXRocyI6eyJleGFtcGxlLmNvbSI6eyJ1c2VybmFtZSI6InVzZXIxIiwicGFzc3dvcmQiOiJxd2ZwYiIsImVtYWlsIjoiYWRtaW5AZXhhbXBsZS5jb20iLCJhdXRoIjoiZFhObGNqRTZjWGRtY0dJPSJ9fX0=
+kind: Secret
+metadata:
+  name: good-registry
+type: kubernetes.io/dockerconfigjson
+`)
+
+	tests := map[string]struct {
+		secret        *v1.Secret
+		oldSecret     *v1.Secret
+		action        central.ResourceAction
+		wantNumEvents int
+	}{
+		"bad secret": {
+			secret:        parseSecretYAML(t, badSecretYaml),
+			oldSecret:     nil,
+			action:        central.ResourceAction_CREATE_RESOURCE,
+			wantNumEvents: 0,
+		},
+		"good secret": {
+			secret:        parseSecretYAML(t, goodSecretYaml),
+			oldSecret:     nil,
+			action:        central.ResourceAction_CREATE_RESOURCE,
+			wantNumEvents: 2, // secret + image integration
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			s := newSecretDispatcher(registry.NewRegistryStore(func(ctx context.Context, origAddr string) (bool, error) {
+				return true, nil
+			}))
+			got := s.processDockerConfigEvent(tt.secret, tt.oldSecret, tt.action)
+			if tt.wantNumEvents == 0 {
+				assert.Nil(t, got)
+			} else {
+				assert.Len(t, got.ForwardMessages, tt.wantNumEvents)
+			}
+		})
+	}
 }

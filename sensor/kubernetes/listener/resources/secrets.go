@@ -267,11 +267,11 @@ func validateSecret(registryAddr string, dce config.DockerConfigEntry, secName, 
 			"Correct the contents of secret %s/%s", registryAddr, ns, secName)
 	}
 	if !utf8.ValidString(dce.Username) {
-		return fmt.Errorf("username %q contains invalid UTF-8 characters. "+
+		return fmt.Errorf("registry username %q contains invalid UTF-8 characters. "+
 			"Correct the contents of secret %s/%s", registryAddr, ns, secName)
 	}
 	if !utf8.ValidString(dce.Password) {
-		return fmt.Errorf("the registry password located secret %s/%s contains invalid UTF-8 characters",
+		return fmt.Errorf("registry password located in secret %s/%s contains invalid UTF-8 characters",
 			ns, secName)
 	}
 	return nil
@@ -308,7 +308,7 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 		}
 
 		if err := validateSecret(registryAddr, dce, secret.GetNamespace(), secret.GetName()); err != nil {
-			log.Warnf("Skipping dockerConfig secret: %v", err)
+			log.Warnf("Not adding registry %s from dockerConfig secret: %v", registryAddr, err)
 			continue
 		}
 
@@ -384,11 +384,11 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 			}
 		}
 	}
+	// No need to send event if there are 0 valid registries
+	if len(registries) == 0 {
+		return nil
+	}
 
-	registries = append(registries, &storage.ImagePullSecret_Registry{
-		Name:     "broken-non-utf-8-\xc5",
-		Username: "non-utf-8-" + string([]byte{0xC0}),
-	})
 	sort.SliceStable(registries, func(i, j int) bool {
 		if registries[i].Name != registries[j].Name {
 			return registries[i].GetName() < registries[j].GetName()
