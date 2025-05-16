@@ -16,35 +16,45 @@ import (
 func ValidateScanConfigResults(ctx context.Context, results *ScanConfigWatcherResults, integrationDataStore complianceIntegrationDS.DataStore) (map[string]*storage.ComplianceOperatorReportSnapshotV2_FailedCluster, error) {
 	failedClusters := make(map[string]*storage.ComplianceOperatorReportSnapshotV2_FailedCluster)
 	errList := errorhelpers.NewErrorList("failed clusters")
-	clusterSet := set.NewStringSet()
+	failedClusterSet := set.NewStringSet()
+	successfulClusterSet := set.NewStringSet()
 	for _, scanResult := range results.ScanResults {
-		clusterSet.Add(scanResult.Scan.GetClusterId())
-		clusterInfo := ValidateScanResults(ctx, scanResult, integrationDataStore)
-		if clusterInfo != nil {
+		failedClusterSet.Add(scanResult.Scan.GetClusterId())
+		failedClusterInfo, isInstallationError := ValidateScanResults(ctx, scanResult, integrationDataStore)
+		if failedClusterInfo == nil {
+			successfulClusterSet.Add(scanResult.Scan.GetClusterId())
+			continue
+		}
+		errList.AddError(errors.New(fmt.Sprintf("scan %s failed in cluster %s", scanResult.Scan.GetScanName(), failedClusterInfo.GetClusterId())))
+		if previousFailedInfo, ok := failedClusters[failedClusterInfo.GetClusterId()]; ok && !isInstallationError {
+			previousFailedInfo.Reasons = append(previousFailedInfo.GetReasons(), failedClusterInfo.GetReasons()...)
+			continue
+		}
+		failedClusters[failedClusterInfo.GetClusterId()] = failedClusterInfo
+
+	}
+	// If we have less results than the number of clusters*profiles in the scan configuration,
+	// we need to add those missing clusters as failed clusters. *len(results.ScanConfig.GetProfiles())
+	if len(results.ScanConfig.GetClusters()) > len(failedClusters)+len(successfulClusterSet) {
+		for _, cluster := range results.ScanConfig.GetClusters() {
+			if failedClusterSet.Contains(cluster.GetClusterId()) || successfulClusterSet.Contains(cluster.GetClusterId()) {
+				continue
+			}
+			clusterInfo := ValidateClusterHealth(ctx, cluster.GetClusterId(), integrationDataStore)
+			if clusterInfo == nil {
+				continue
+			}
 			errList.AddError(errors.New(fmt.Sprintf("cluster %s failed", clusterInfo.GetClusterId())))
+			if len(clusterInfo.Reasons) == 0 {
+				clusterInfo.Reasons = []string{report.INTERNAL_ERROR}
+			}
 			failedClusters[clusterInfo.GetClusterId()] = clusterInfo
 		}
 	}
-	// If we have less results than the number of clusters in the scan configuration,
-	// we need to add those missing clusters as failed clusters.
-	if len(results.ScanConfig.GetClusters()) > len(results.ScanResults) {
-		for _, cluster := range results.ScanConfig.GetClusters() {
-			if !clusterSet.Contains(cluster.GetClusterId()) {
-				clusterInfo := ValidateClusterHealth(ctx, cluster.GetClusterId(), integrationDataStore)
-				if clusterInfo != nil {
-					errList.AddError(errors.New(fmt.Sprintf("cluster %s failed", clusterInfo.GetClusterId())))
-					if len(clusterInfo.Reasons) == 0 {
-						clusterInfo.Reasons = []string{report.INTERNAL_ERROR}
-					}
-					failedClusters[clusterInfo.GetClusterId()] = clusterInfo
-				}
-			}
-		}
+	if results.Error != nil && errors.Is(results.Error, ErrScanConfigTimeout) {
+		return failedClusters, report.ErrScanConfigWatcherTimeout
 	}
 	if results.Error != nil {
-		if errors.Is(results.Error, ErrScanConfigTimeout) {
-			return failedClusters, report.ErrScanConfigWatcherTimeout
-		}
 		return failedClusters, report.ErrScanWatchersFailed
 	}
 	if len(failedClusters) > 0 {
@@ -54,26 +64,26 @@ func ValidateScanConfigResults(ctx context.Context, results *ScanConfigWatcherRe
 }
 
 // ValidateScanResults if there are no errors in the scan results, it returns nil; otherwise it returns the failed cluster information
-func ValidateScanResults(ctx context.Context, results *ScanWatcherResults, integrationDataStore complianceIntegrationDS.DataStore) *storage.ComplianceOperatorReportSnapshotV2_FailedCluster {
+func ValidateScanResults(ctx context.Context, results *ScanWatcherResults, integrationDataStore complianceIntegrationDS.DataStore) (failedCluster *storage.ComplianceOperatorReportSnapshotV2_FailedCluster, isInstallationError bool) {
 	if results.Error == nil {
-		return nil
+		return nil, false
 	}
 	ret := ValidateClusterHealth(ctx, results.Scan.GetClusterId(), integrationDataStore)
 	if len(ret.Reasons) > 0 {
-		return ret
+		return ret, true
 	}
 	ret.Reasons = []string{report.INTERNAL_ERROR}
 	if errors.Is(results.Error, ErrScanRemoved) {
-		ret.Reasons = []string{fmt.Sprintf(report.SCAN_REMOVED, results.Scan.GetScanName())}
-		return ret
+		ret.Reasons = []string{fmt.Sprintf(report.SCAN_REMOVED_FMT, results.Scan.GetScanName())}
+		return ret, false
 	}
 	if errors.Is(results.Error, ErrScanTimeout) {
-		ret.Reasons = []string{fmt.Sprintf(report.SCAN_TIMEOUT, results.Scan.GetScanName())}
+		ret.Reasons = []string{fmt.Sprintf(report.SCAN_TIMEOUT_FMT, results.Scan.GetScanName())}
 	}
 	if checkContextIsDone(results.SensorCtx) {
-		ret.Reasons = []string{fmt.Sprintf(report.SCAN_TIMEOUT_SENSOR_DISCONNECTED, results.Scan.GetScanName())}
+		ret.Reasons = []string{fmt.Sprintf(report.SCAN_TIMEOUT_SENSOR_DISCONNECTED_FMT, results.Scan.GetScanName())}
 	}
-	return ret
+	return ret, false
 }
 
 // ValidateClusterHealth returns the health status of the Compliance Operator Integration
@@ -87,11 +97,11 @@ func ValidateClusterHealth(ctx context.Context, clusterID string, integrationDat
 		ret.Reasons = []string{report.INTERNAL_ERROR}
 		return ret
 	}
-	ret.OperatorVersion = coStatus.GetVersion()
 	if errors.Is(err, ErrComplianceOperatorNotInstalled) {
 		ret.Reasons = []string{report.COMPLIANCE_NOT_INSTALLED}
 		return ret
 	}
+	ret.OperatorVersion = coStatus.GetVersion()
 	if errors.Is(err, ErrComplianceOperatorVersion) {
 		ret.Reasons = []string{report.COMPLIANCE_VERSION_ERROR}
 		return ret

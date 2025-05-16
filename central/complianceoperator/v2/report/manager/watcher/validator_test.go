@@ -40,12 +40,12 @@ func TestValidateScanConfigResults(t *testing.T) {
 		expectedExactError     error
 	}{
 		"no error": {
-			results:                getScanConfigResults(2, 0, 0, nil),
+			results:                getScanConfigResults(2, 0, 0, 1, nil),
 			expectFn:               withExpectCall(nil),
 			expectedFailedClusters: make(map[string]*storage.ComplianceOperatorReportSnapshotV2_FailedCluster),
 		},
 		"two failed clusters": {
-			results: getScanConfigResults(2, 2, 0, nil),
+			results: getScanConfigResults(2, 2, 0, 1, nil),
 			expectFn: withExpectCall(func(ds *mocksComplianceIntegrationDS.MockDataStore) {
 				ds.EXPECT().GetComplianceIntegrationByCluster(ctx, newClusterIdMatcher(2, 2)).
 					Times(2).Return([]*storage.ComplianceIntegration{
@@ -56,11 +56,26 @@ func TestValidateScanConfigResults(t *testing.T) {
 					},
 				}, nil)
 			}),
-			expectedFailedClusters: getFailedClusters(2, 2),
+			expectedFailedClusters: getFailedClusters(2, 2, 1),
+			expectedError:          true,
+		},
+		"two failed clusters with two scans": {
+			results: getScanConfigResults(2, 2, 0, 2, nil),
+			expectFn: withExpectCall(func(ds *mocksComplianceIntegrationDS.MockDataStore) {
+				ds.EXPECT().GetComplianceIntegrationByCluster(ctx, newClusterIdMatcher(2, 2)).
+					Times(4).Return([]*storage.ComplianceIntegration{
+					{
+						OperatorInstalled: true,
+						Version:           minimumComplianceOperatorVersion,
+						OperatorStatus:    storage.COStatus_HEALTHY,
+					},
+				}, nil)
+			}),
+			expectedFailedClusters: getFailedClusters(2, 2, 2),
 			expectedError:          true,
 		},
 		"two failed clusters scan config watcher timeout": {
-			results: getScanConfigResults(2, 2, 0, ErrScanConfigTimeout),
+			results: getScanConfigResults(2, 2, 0, 1, ErrScanConfigTimeout),
 			expectFn: withExpectCall(func(ds *mocksComplianceIntegrationDS.MockDataStore) {
 				ds.EXPECT().GetComplianceIntegrationByCluster(ctx, newClusterIdMatcher(2, 2)).
 					Times(2).Return([]*storage.ComplianceIntegration{
@@ -71,12 +86,12 @@ func TestValidateScanConfigResults(t *testing.T) {
 					},
 				}, nil)
 			}),
-			expectedFailedClusters: getFailedClusters(2, 2),
+			expectedFailedClusters: getFailedClusters(2, 2, 1),
 			expectedError:          true,
 			expectedExactError:     report.ErrScanConfigWatcherTimeout,
 		},
 		"two failed clusters scan config watcher failed": {
-			results: getScanConfigResults(2, 2, 0, errors.New("some error")),
+			results: getScanConfigResults(2, 2, 0, 1, errors.New("some error")),
 			expectFn: withExpectCall(func(ds *mocksComplianceIntegrationDS.MockDataStore) {
 				ds.EXPECT().GetComplianceIntegrationByCluster(ctx, newClusterIdMatcher(2, 2)).
 					Times(2).Return([]*storage.ComplianceIntegration{
@@ -87,12 +102,12 @@ func TestValidateScanConfigResults(t *testing.T) {
 					},
 				}, nil)
 			}),
-			expectedFailedClusters: getFailedClusters(2, 2),
+			expectedFailedClusters: getFailedClusters(2, 2, 1),
 			expectedError:          true,
 			expectedExactError:     report.ErrScanWatchersFailed,
 		},
 		"two missing clusters": {
-			results: getScanConfigResults(2, 0, 2, nil),
+			results: getScanConfigResults(2, 0, 2, 1, nil),
 			expectFn: withExpectCall(func(ds *mocksComplianceIntegrationDS.MockDataStore) {
 				ds.EXPECT().GetComplianceIntegrationByCluster(ctx, newClusterIdMatcher(2, 2)).
 					Times(2).Return([]*storage.ComplianceIntegration{
@@ -103,11 +118,11 @@ func TestValidateScanConfigResults(t *testing.T) {
 					},
 				}, nil)
 			}),
-			expectedFailedClusters: getFailedClusters(2, 2),
+			expectedFailedClusters: getFailedClusters(2, 2, 1),
 			expectedError:          true,
 		},
 		"two missing clusters and two failed clusters": {
-			results: getScanConfigResults(2, 2, 2, nil),
+			results: getScanConfigResults(2, 2, 2, 1, nil),
 			expectFn: withExpectCall(func(ds *mocksComplianceIntegrationDS.MockDataStore) {
 				ds.EXPECT().GetComplianceIntegrationByCluster(ctx, newClusterIdMatcher(2, 4)).
 					Times(4).Return([]*storage.ComplianceIntegration{
@@ -118,7 +133,7 @@ func TestValidateScanConfigResults(t *testing.T) {
 					},
 				}, nil)
 			}),
-			expectedFailedClusters: getFailedClusters(2, 4),
+			expectedFailedClusters: getFailedClusters(2, 4, 1),
 			expectedError:          true,
 		},
 	}
@@ -151,16 +166,18 @@ func TestValidateScanResults(t *testing.T) {
 	canceledCtx, canceledCtxCancelFn := context.WithCancel(context.Background())
 	canceledCtxCancelFn()
 	cases := map[string]struct {
-		operatorStatus        []*storage.ComplianceIntegration
-		expectDSError         error
-		results               *ScanWatcherResults
-		expectedFailedCluster *storage.ComplianceOperatorReportSnapshotV2_FailedCluster
+		operatorStatus            []*storage.ComplianceIntegration
+		expectDSError             error
+		results                   *ScanWatcherResults
+		expectedFailedCluster     *storage.ComplianceOperatorReportSnapshotV2_FailedCluster
+		expectedInstallationError bool
 	}{
 		"no error": {
 			results: &ScanWatcherResults{
 				Error: nil,
 			},
-			expectedFailedCluster: nil,
+			expectedFailedCluster:     nil,
+			expectedInstallationError: false,
 		},
 		"internal error due to data store error": {
 			results: &ScanWatcherResults{
@@ -175,6 +192,7 @@ func TestValidateScanResults(t *testing.T) {
 				OperatorVersion: "",
 				Reasons:         []string{report.INTERNAL_ERROR},
 			},
+			expectedInstallationError: true,
 		},
 		"internal error due to no integration retrieved from data store": {
 			results: &ScanWatcherResults{
@@ -190,8 +208,9 @@ func TestValidateScanResults(t *testing.T) {
 				OperatorVersion: "",
 				Reasons:         []string{report.INTERNAL_ERROR},
 			},
+			expectedInstallationError: true,
 		},
-		"operator not installer": {
+		"operator not installed": {
 			results: &ScanWatcherResults{
 				Scan: &storage.ComplianceOperatorScanV2{
 					ClusterId: clusterID,
@@ -209,6 +228,7 @@ func TestValidateScanResults(t *testing.T) {
 				OperatorVersion: "",
 				Reasons:         []string{report.COMPLIANCE_NOT_INSTALLED},
 			},
+			expectedInstallationError: true,
 		},
 		"operator old version": {
 			results: &ScanWatcherResults{
@@ -230,6 +250,7 @@ func TestValidateScanResults(t *testing.T) {
 				OperatorVersion: oldVersion,
 				Reasons:         []string{report.COMPLIANCE_VERSION_ERROR},
 			},
+			expectedInstallationError: true,
 		},
 		"scan removed error": {
 			results: &ScanWatcherResults{
@@ -250,7 +271,7 @@ func TestValidateScanResults(t *testing.T) {
 			expectedFailedCluster: &storage.ComplianceOperatorReportSnapshotV2_FailedCluster{
 				ClusterId:       clusterID,
 				OperatorVersion: minimumComplianceOperatorVersion,
-				Reasons:         []string{fmt.Sprintf(report.SCAN_REMOVED, scanName)},
+				Reasons:         []string{fmt.Sprintf(report.SCAN_REMOVED_FMT, scanName)},
 			},
 		},
 		"scan timeout error": {
@@ -273,7 +294,7 @@ func TestValidateScanResults(t *testing.T) {
 			expectedFailedCluster: &storage.ComplianceOperatorReportSnapshotV2_FailedCluster{
 				ClusterId:       clusterID,
 				OperatorVersion: minimumComplianceOperatorVersion,
-				Reasons:         []string{fmt.Sprintf(report.SCAN_TIMEOUT, scanName)},
+				Reasons:         []string{fmt.Sprintf(report.SCAN_TIMEOUT_FMT, scanName)},
 			},
 		},
 		"sensor context canceled error": {
@@ -296,7 +317,7 @@ func TestValidateScanResults(t *testing.T) {
 			expectedFailedCluster: &storage.ComplianceOperatorReportSnapshotV2_FailedCluster{
 				ClusterId:       clusterID,
 				OperatorVersion: minimumComplianceOperatorVersion,
-				Reasons:         []string{fmt.Sprintf(report.SCAN_TIMEOUT_SENSOR_DISCONNECTED, scanName)},
+				Reasons:         []string{fmt.Sprintf(report.SCAN_TIMEOUT_SENSOR_DISCONNECTED_FMT, scanName)},
 			},
 		},
 		"internal error due context canceled error": {
@@ -330,8 +351,9 @@ func TestValidateScanResults(t *testing.T) {
 				coIntegrationDS.EXPECT().GetComplianceIntegrationByCluster(ctx, clusterID).Times(1).
 					Return(tCase.operatorStatus, tCase.expectDSError)
 			}
-			res := ValidateScanResults(ctx, tCase.results, coIntegrationDS)
+			res, isInstallationError := ValidateScanResults(ctx, tCase.results, coIntegrationDS)
 			protoassert.Equal(tt, tCase.expectedFailedCluster, res)
+			assert.Equal(tt, tCase.expectedInstallationError, isInstallationError)
 		})
 	}
 }
@@ -407,7 +429,7 @@ func getMockedIntegration(t *testing.T) *mocksComplianceIntegrationDS.MockDataSt
 	return mocksComplianceIntegrationDS.NewMockDataStore(ctrl)
 }
 
-func getScanConfigResults(numSuccessfulClusters, numFailedClusters, numMissingClusters int, err error) *ScanConfigWatcherResults {
+func getScanConfigResults(numSuccessfulClusters, numFailedClusters, numMissingClusters, numScansPerCluster int, err error) *ScanConfigWatcherResults {
 	scanResults := make(map[string]*ScanWatcherResults)
 	var clusters []*storage.ComplianceOperatorScanConfigurationV2_Cluster
 	for i := 0; i < numSuccessfulClusters; i++ {
@@ -415,10 +437,13 @@ func getScanConfigResults(numSuccessfulClusters, numFailedClusters, numMissingCl
 		clusters = append(clusters, &storage.ComplianceOperatorScanConfigurationV2_Cluster{
 			ClusterId: id,
 		})
-		scanResults[id] = &ScanWatcherResults{
-			Scan: &storage.ComplianceOperatorScanV2{
-				ClusterId: id,
-			},
+		for j := 0; j < numScansPerCluster; j++ {
+			resultsID := fmt.Sprintf("%s:scan-%d", id, j)
+			scanResults[resultsID] = &ScanWatcherResults{
+				Scan: &storage.ComplianceOperatorScanV2{
+					ClusterId: id,
+				},
+			}
 		}
 	}
 	for i := numSuccessfulClusters; i < numSuccessfulClusters+numFailedClusters; i++ {
@@ -426,12 +451,15 @@ func getScanConfigResults(numSuccessfulClusters, numFailedClusters, numMissingCl
 		clusters = append(clusters, &storage.ComplianceOperatorScanConfigurationV2_Cluster{
 			ClusterId: id,
 		})
-		scanResults[id] = &ScanWatcherResults{
-			Scan: &storage.ComplianceOperatorScanV2{
-				ClusterId: id,
-			},
-			SensorCtx: context.Background(),
-			Error:     errors.New("some error"),
+		for j := 0; j < numScansPerCluster; j++ {
+			resultsID := fmt.Sprintf("%s:scan-%d", id, j)
+			scanResults[resultsID] = &ScanWatcherResults{
+				Scan: &storage.ComplianceOperatorScanV2{
+					ClusterId: id,
+				},
+				SensorCtx: context.Background(),
+				Error:     errors.New("some error"),
+			}
 		}
 	}
 	for i := numSuccessfulClusters + numFailedClusters; i < numSuccessfulClusters+numFailedClusters+numMissingClusters; i++ {
@@ -449,7 +477,7 @@ func getScanConfigResults(numSuccessfulClusters, numFailedClusters, numMissingCl
 	}
 }
 
-func getFailedClusters(idx, numClusters int) map[string]*storage.ComplianceOperatorReportSnapshotV2_FailedCluster {
+func getFailedClusters(idx, numClusters, numScans int) map[string]*storage.ComplianceOperatorReportSnapshotV2_FailedCluster {
 	ret := make(map[string]*storage.ComplianceOperatorReportSnapshotV2_FailedCluster)
 	for i := idx; i < idx+numClusters; i++ {
 		id := fmt.Sprintf("cluster-%d", i)
@@ -458,6 +486,11 @@ func getFailedClusters(idx, numClusters int) map[string]*storage.ComplianceOpera
 			OperatorVersion: minimumComplianceOperatorVersion,
 			Reasons:         []string{report.INTERNAL_ERROR},
 		}
+		var reasons []string
+		for j := 0; j < numScans; j++ {
+			reasons = append(reasons, report.INTERNAL_ERROR)
+		}
+		ret[id].Reasons = reasons
 	}
 	return ret
 }
