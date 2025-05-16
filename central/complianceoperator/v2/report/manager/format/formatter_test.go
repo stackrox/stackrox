@@ -261,7 +261,7 @@ func getFakeReportDataWithFailedCluster() (map[string][]*report.ResultRow, map[s
 	failedClusters[clusterID2] = &storage.ComplianceOperatorReportSnapshotV2_FailedCluster{
 		ClusterName:     "test_cluster-2",
 		ClusterId:       "test_cluster-2-id",
-		Reason:          "timeout",
+		Reasons:         []string{"timeout"},
 		OperatorVersion: "v1.6.0",
 	}
 	results := getFakeReportData()
@@ -273,7 +273,7 @@ func getFakeReportDataOnlyFailedCluster() (map[string][]*report.ResultRow, map[s
 	failedClusters[clusterID2] = &storage.ComplianceOperatorReportSnapshotV2_FailedCluster{
 		ClusterName:     "test_cluster-2",
 		ClusterId:       "test_cluster-2-id",
-		Reason:          "timeout",
+		Reasons:         []string{"timeout"},
 		OperatorVersion: "v1.6.0",
 	}
 	results := make(map[string][]*report.ResultRow)

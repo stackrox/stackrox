@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/complianceoperator/v2/report"
@@ -141,7 +142,7 @@ func generateFailRecord(failedCluster *storage.ComplianceOperatorReportSnapshotV
 	return []string{
 		failedCluster.GetClusterId(),
 		failedCluster.GetClusterName(),
-		failedCluster.GetReason(),
+		strings.Join(failedCluster.GetReasons(), ", "),
 		failedCluster.GetOperatorVersion(),
 	}
 }
