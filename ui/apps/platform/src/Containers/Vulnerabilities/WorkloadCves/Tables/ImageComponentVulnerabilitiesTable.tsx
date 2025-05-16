@@ -21,20 +21,28 @@ import AdvisoryLinkOrText from './AdvisoryLinkOrText';
 export { imageMetadataContextFragment };
 export type { ImageMetadataContext, ImageComponentVulnerability };
 
-export const imageComponentVulnerabilitiesFragment = gql`
-    fragment ImageComponentVulnerabilities on ImageComponent {
-        name
-        version
-        location
-        source
-        layerIndex
-        imageVulnerabilities(query: $query) {
-            severity
-            fixedByVersion
-            pendingExceptionCount: exceptionCount(requestStatus: $statusesForExceptionCount)
+// After release, replace temporary function
+// with imageComponentVulnerabilitiesFragment
+// that has unconditional advisory property.
+export function convertToFlatImageComponentVulnerabilitiesFragment(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    isFlattenCveDataEnabled: boolean // ROX_FLATTEN_CVE_DATA
+) {
+    return gql`
+        fragment ImageComponentVulnerabilities on ImageComponent {
+            name
+            version
+            location
+            source
+            layerIndex
+            imageVulnerabilities(query: $query) {
+                severity
+                fixedByVersion
+                pendingExceptionCount: exceptionCount(requestStatus: $statusesForExceptionCount)
+            }
         }
-    }
-`;
+    `;
+}
 
 const sortFields = ['Component'];
 const defaultSortOption = { field: 'Component', direction: 'asc' } as const;
