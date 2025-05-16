@@ -261,18 +261,18 @@ func shouldCreateSourcedIntegration(secret *v1.Secret) bool {
 		(env.AutogenerateGlobalPullSecRegistries.BooleanSetting() && openshift.GlobalPullSecret(secret.GetNamespace(), secret.GetName()))
 }
 
-func validateSecret(registryAddr string, dce config.DockerConfigEntry, secName, ns string) error {
+func validateSecret(registryAddr string, dce config.DockerConfigEntry, namespace, secretName string) error {
 	if !utf8.ValidString(registryAddr) {
 		return fmt.Errorf("registry address %q contains invalid UTF-8 characters. "+
-			"Correct the contents of secret %s/%s", registryAddr, ns, secName)
+			"Correct the contents of secret %s/%s", registryAddr, namespace, secretName)
 	}
 	if !utf8.ValidString(dce.Username) {
 		return fmt.Errorf("registry username %q contains invalid UTF-8 characters. "+
-			"Correct the contents of secret %s/%s", registryAddr, ns, secName)
+			"Correct the contents of secret %s/%s", registryAddr, namespace, secretName)
 	}
 	if !utf8.ValidString(dce.Password) {
 		return fmt.Errorf("registry password located in secret %s/%s contains invalid UTF-8 characters",
-			ns, secName)
+			namespace, secretName)
 	}
 	return nil
 }
