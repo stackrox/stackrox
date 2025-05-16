@@ -3,6 +3,7 @@ package vulnerabilities
 import (
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/central/metrics/aggregator/common"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
@@ -13,28 +14,29 @@ const vulnerabilitiesCategory = "vulnerabilities"
 
 var log = logging.LoggerForModule()
 
-func Reconfigure(cfg *storage.PrometheusMetricsConfig_Vulnerabilities) (*common.Tracker, error) {
-	vulnTracker := common.MakeTracker(vulnerabilitiesCategory, "aggregated CVEs", labelOrder)
+// Reconfigure updates the vulnerability tracker configuration.
+func Reconfigure(registry *prometheus.Registry, cfg *storage.PrometheusMetricsConfig_Vulnerabilities) (*common.TrackerConfig, error) {
+	trackerConfig := common.MakeTrackerConfig(vulnerabilitiesCategory, "aggregated CVEs", labelOrder)
 	metricsConfig, period, err := parseVulnerabilitiesConfig(cfg)
 	if err != nil {
 		log.Errorw("Failed to parse vulnerability metrics configuration", logging.Err(err))
-		return vulnTracker, err
+		return trackerConfig, err
 	}
 	if period == 0 {
 		log.Info("Vulnerability metrics collection is disabled")
 	}
-	vulnTracker.Reconfigure(metricsConfig, period)
-	return vulnTracker, nil
+	trackerConfig.Reconfigure(registry, metricsConfig, period)
+	return trackerConfig, nil
 }
 
 // parseVulnerabilitiesConfig converts the storage object to the usable map, validating the values.
-func parseVulnerabilitiesConfig(config *storage.PrometheusMetricsConfig_Vulnerabilities) (common.MetricsConfig, time.Duration, error) {
+func parseVulnerabilitiesConfig(config *storage.PrometheusMetricsConfig_Vulnerabilities) (common.MetricLabelExpressions, time.Duration, error) {
 
 	period := time.Hour * time.Duration(config.GetGatheringPeriodHours())
 	if period == 0 {
 		return nil, period, nil
 	}
-	result := make(common.MetricsConfig)
+	result := make(common.MetricLabelExpressions)
 	for metric, labels := range config.GetMetricLabels() {
 		if err := common.ValidateMetricName(metric); err != nil {
 			return nil, 0, errox.InvalidArgs.CausedByf(

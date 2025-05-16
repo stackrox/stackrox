@@ -14,7 +14,7 @@ func Test_parseVulnerabilitiesConfig(t *testing.T) {
 	labelExpressions, period, err := parseVulnerabilitiesConfig(config)
 	assert.NoError(t, err)
 	assert.Equal(t, 42*time.Hour, period)
-	assert.Equal(t, common.MetricsConfig{
+	assert.Equal(t, common.MetricLabelExpressions{
 		"metric1": {
 			"Severity": {
 				common.MustMakeExpression("=", "CRITICAL*"),
@@ -27,8 +27,8 @@ func Test_parseVulnerabilitiesConfig(t *testing.T) {
 	}, labelExpressions)
 }
 
-func Test_reloadVulnerabilityTrackerConfig(t *testing.T) {
-	tracker, err := Reconfigure(nil)
+func TestReconfigure(t *testing.T) {
+	tracker, err := Reconfigure(nil, nil)
 	assert.NotNil(t, tracker)
 	assert.NoError(t, err)
 }

@@ -4,8 +4,10 @@ import (
 	"context"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	configDS "github.com/stackrox/rox/central/config/datastore"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
+	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/metrics/aggregator/common"
 	"github.com/stackrox/rox/central/metrics/aggregator/vulnerabilities"
 	"github.com/stackrox/rox/generated/storage"
@@ -15,6 +17,8 @@ import (
 )
 
 var (
+	Registry = prometheus.NewRegistry()
+
 	once     sync.Once
 	instance *aggregatorRunner
 
@@ -22,11 +26,11 @@ var (
 )
 
 type aggregatorRunner struct {
-	stopCh   chan bool
-	stopOnce sync.Once
-	mux      sync.RWMutex
+	stopCh      chan bool
+	stopOnce    sync.Once
+	trackersMux sync.RWMutex
 
-	vulnerabilities     *common.Tracker
+	vulnerabilities     *common.TrackerConfig
 	vulnerabilitiesOnce sync.Once
 }
 
@@ -53,11 +57,11 @@ func Singleton() interface {
 }
 
 func (ar *aggregatorRunner) Reconfigure(cfg *storage.PrometheusMetricsConfig) error {
-	ar.mux.Lock()
-	defer ar.mux.Unlock()
+	ar.trackersMux.Lock()
+	defer ar.trackersMux.Unlock()
 
 	// Vulnerabilties metrics:
-	vulnTracker, err := vulnerabilities.Reconfigure(cfg.GetVulnerabilities())
+	vulnTracker, err := vulnerabilities.Reconfigure(Registry, cfg.GetVulnerabilities())
 	if err == nil || instance.vulnerabilities == nil {
 		instance.vulnerabilities = vulnTracker
 	}
@@ -69,14 +73,19 @@ func (ar *aggregatorRunner) Reconfigure(cfg *storage.PrometheusMetricsConfig) er
 }
 
 func (ar *aggregatorRunner) Start() {
+	ar.trackersMux.RLock()
+	defer ar.trackersMux.RUnlock()
+
 	// Run the periodic vulnerabilities aggregation.
 	ar.vulnerabilitiesOnce.Do(func() {
-		if vulnTracker := ar.vulnerabilities; vulnTracker != nil {
-			tw := common.MakeTrackWrapper(
-				deploymentDS.Singleton(),
-				vulnTracker.GetMetricsConfig,
-				vulnerabilities.TrackVulnerabilityMetrics)
-			go ar.run(vulnTracker.GetPeriodCh(), tw.Track)
+		if ar.vulnerabilities != nil {
+			go ar.run(ar.vulnerabilities.GetPeriodCh(),
+				common.MakeTrackFunc(
+					deploymentDS.Singleton(),
+					ar.vulnerabilities.GetMetricLabelExpressions,
+					vulnerabilities.TrackVulnerabilityMetrics,
+					metrics.SetCustomAggregatedCount,
+				))
 		}
 	})
 }
