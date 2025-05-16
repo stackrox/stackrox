@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# This script determines where quay.io/rhacs-eng/* images should be built and pushed and communicates that via stdout.
+#
 # For non-release branches, PRs and tags we want to build both:
 # 1. quay.io/rhacs-eng/<image>:<tag> in GHA, and
 # 2. quay.io/rhacs-eng/<image>:<tag>-fast in Konflux.
@@ -11,10 +13,8 @@
 # We want the same for PRs targeting release branches because we want E2E tests run against Konflux-built images just as
 # it happens for release branch pushes.
 #
-# Additionally, it's possible to get the same behavior in any PR when PR source branch has 'konflux-release-like' in its
-# name.
-#
-# This is what this script determines and communicates via stdout.
+# Additionally, it's possible to get the same behavior in any PR when th PR source branch has 'konflux-release-like' in
+# its name.
 #
 # Note: this script is called by https://github.com/stackrox/konflux-tasks/blob/main/tasks/determine-image-tag-task.yaml
 
@@ -25,38 +25,45 @@ function log() {
 }
 
 if [[ ( -z "${SOURCE_BRANCH:-}" || -z "${TARGET_BRANCH:-}" ) && -z "${GITHUB_REF:-}" ]]; then
-    log "Either SOURCE_BRANCH&TARGET_BRANCH or GITHUB_REF must be set"
+    log "Either SOURCE_BRANCH+TARGET_BRANCH or GITHUB_REF must be set"
     exit 2
 fi
 
 # Branch or tag name when in Konflux CI.
-# Note that $TARGET_BRANCH must be manually exposed as the environment variable by/in the Tekton step.
-# '<branch_name>' for branch push, 'refs/tags/<tag_name>' for tag push. For PRs this is the name of the branch where the
-# PR is targeted to be merged. For pushes this is branch or tag that was pushed.
+# '<branch_name>' for branch push, 'refs/tags/<tag_name>' for tag push. For PRs this is '<branch_name>' where the PR is
+# targeted to be merged.
 log "Konflux TARGET_BRANCH: ${TARGET_BRANCH:-}"
 
-# Same value as $TARGET_BRANCH for tag and branch pushes. For PRs this is '<branch_name>' of the PR branch.
+# Same value as $TARGET_BRANCH for tag and branch pushes. For PRs this is '<branch_name>' of the PR source branch.
 log "Konflux SOURCE_BRANCH: ${SOURCE_BRANCH:-}"
+
+# Note that $TARGET_BRANCH and $SOURCE_BRANCH must be explicitly made available as environment variables by/in the
+# Tekton step, i.e. they are not provided out of the box unlike the GITHUB_* variables in GHA.
 
 # Branch or tag name when in GHA CI.
 # 'refs/heads/<branch_name>' for branch push, 'refs/pull/<pr_number>/merge' for PR, 'refs/tags/<tag_name>' for tag push.
 log "GitHub GITHUB_REF: ${GITHUB_REF:-}"
 
-# Name of the target branch of PR when it's a PR in GHA CI. '<branch_name>'.
+# Name of the PR target branch when it's in GHA CI. '<branch_name>'.
 log "GitHub GITHUB_BASE_REF: ${GITHUB_BASE_REF:-}"
 
-the_ref="${TARGET_BRANCH:-${GITHUB_REF}}"
+# Name of the PR source branch when it's in GHA CI. '<branch_name>'.
+log "GitHub GITHUB_HEAD_REF: ${GITHUB_HEAD_REF:-}"
 
-if [[ "${the_ref}" == refs/pull/*/merge ]]; then
+the_ref="${TARGET_BRANCH:-${GITHUB_REF}}"
+pr_source_branch="${SOURCE_BRANCH:-}"
+
+if [[ "${GITHUB_REF:-}" == refs/pull/*/merge ]]; then
     if [[ -z "${GITHUB_BASE_REF:-}" || -z "${GITHUB_HEAD_REF:-}" ]]; then
         log "Both GITHUB_BASE_REF and GITHUB_HEAD_REF must be set for PRs"
         exit 3
     fi
 
     the_ref="${GITHUB_BASE_REF}"
+    pr_source_branch="${GITHUB_HEAD_REF}"
 fi
 
-if [[ "${SOURCE_BRANCH:-}" == *konflux-release-like* ]]; then
+if [[ "${pr_source_branch}" == *konflux-release-like* ]]; then
     log "This looks like a PR branch containing magic string. GHA quay.io/rhacs-eng/* builds must be suppressed in favor of the Konflux ones."
     echo "BUILD_AND_PUSH_ONLY_KONFLUX"
     exit
