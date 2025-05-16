@@ -6,7 +6,6 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -23,7 +22,7 @@ type platformMatcherTestSuite struct {
 
 func (s *platformMatcherTestSuite) SetupSuite() {
 	mockCtrl := gomock.NewController(s.T())
-	s.matcher = fixtures.GetPlatformMatcherWithDefaultPlatformComponentConfig(mockCtrl)
+	s.matcher = GetTestPlatformMatcherWithDefaultPlatformComponentConfig(mockCtrl)
 }
 
 func (s *platformMatcherTestSuite) TestMatchAlert() {

@@ -11,7 +11,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"go.uber.org/mock/gomock"
@@ -63,5 +62,5 @@ func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) DataStore {
 	searcher := search.New(alertStore)
 	mockCtrl := gomock.NewController(t)
 
-	return New(alertStore, searcher, fixtures.GetPlatformMatcherWithDefaultPlatformComponentConfig(mockCtrl))
+	return New(alertStore, searcher, platformmatcher.GetTestPlatformMatcherWithDefaultPlatformComponentConfig(mockCtrl))
 }
