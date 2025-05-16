@@ -8,6 +8,7 @@ function setup() {
     unset GITHUB_BASE_REF
     unset GITHUB_HEAD_REF
     unset GITHUB_REF
+    bats_require_minimum_version 1.5.0
 }
 
 function run_cmd() {
