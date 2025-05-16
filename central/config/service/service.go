@@ -8,7 +8,7 @@ import (
 	"github.com/stackrox/rox/central/config/datastore"
 	"github.com/stackrox/rox/central/convert/storagetov1"
 	"github.com/stackrox/rox/central/convert/v1tostorage"
-	"github.com/stackrox/rox/central/cve/telemetry"
+	"github.com/stackrox/rox/central/metrics/aggregator"
 	"github.com/stackrox/rox/central/telemetry/centralclient"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -150,7 +150,7 @@ func (s *serviceImpl) PutConfig(ctx context.Context, req *v1.PutConfigRequest) (
 	} else {
 		centralclient.Disable()
 	}
-	if err := telemetry.ReloadConfig(req.GetConfig().GetPrivateConfig().GetPrometheusMetricsConfig()); err != nil {
+	if err := aggregator.ReloadConfig(req.GetConfig().GetPrivateConfig().GetPrometheusMetricsConfig()); err != nil {
 		return nil, err
 	}
 	return req.GetConfig(), nil

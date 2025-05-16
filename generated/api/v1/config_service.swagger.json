@@ -176,6 +176,29 @@
       ],
       "default": "UNSET"
     },
+    "ExpressionsExpression": {
+      "type": "object",
+      "properties": {
+        "operator": {
+          "type": "string"
+        },
+        "argument": {
+          "type": "string"
+        }
+      }
+    },
+    "LabelExpressionsExpressions": {
+      "type": "object",
+      "properties": {
+        "expression": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/ExpressionsExpression"
+          }
+        }
+      }
+    },
     "PlatformComponentConfigRule": {
       "type": "object",
       "properties": {
@@ -187,36 +210,28 @@
         }
       }
     },
-    "PrometheusMetricsConfigExpression": {
-      "type": "object",
-      "properties": {
-        "operator": {
-          "type": "string"
-        },
-        "argument": {
-          "type": "string"
-        }
-      }
-    },
-    "PrometheusMetricsConfigExpressions": {
-      "type": "object",
-      "properties": {
-        "expression": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/PrometheusMetricsConfigExpression"
-          }
-        }
-      }
-    },
     "PrometheusMetricsConfigLabelExpressions": {
       "type": "object",
       "properties": {
         "labelExpressions": {
           "type": "object",
           "additionalProperties": {
-            "$ref": "#/definitions/PrometheusMetricsConfigExpressions"
+            "$ref": "#/definitions/LabelExpressionsExpressions"
+          }
+        }
+      }
+    },
+    "PrometheusMetricsConfigVulnerabilities": {
+      "type": "object",
+      "properties": {
+        "gatheringPeriodHours": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "metricLabels": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/PrometheusMetricsConfigLabelExpressions"
           }
         }
       }
@@ -432,15 +447,8 @@
     "storagePrometheusMetricsConfig": {
       "type": "object",
       "properties": {
-        "gatheringPeriodHours": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "metricLabels": {
-          "type": "object",
-          "additionalProperties": {
-            "$ref": "#/definitions/PrometheusMetricsConfigLabelExpressions"
-          }
+        "vulnerabilities": {
+          "$ref": "#/definitions/PrometheusMetricsConfigVulnerabilities"
         }
       }
     },

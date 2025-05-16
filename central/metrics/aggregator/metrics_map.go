@@ -1,4 +1,4 @@
-package telemetry
+package aggregator
 
 import (
 	"iter"
@@ -24,7 +24,7 @@ func matchingLabels(expressions map[Label][]*expression, labelsGetter func(Label
 					skip = expr.op != opOR
 					continue
 				}
-				if value, ok := expr.match(label, labelsGetter); ok {
+				if value := labelsGetter(label); expr.match(value) {
 					if !yield(label, value) {
 						return
 					}

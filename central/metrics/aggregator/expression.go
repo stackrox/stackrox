@@ -1,4 +1,4 @@
-package telemetry
+package aggregator
 
 import (
 	"errors"
@@ -68,17 +68,16 @@ func (e *expression) isGlobArg() bool {
 
 // match returns whether the labels match the expression and the matched label
 // value, if matched.
-func (e *expression) match(label Label, labels func(Label) string) (string, bool) {
+func (e *expression) match(value string) bool {
 	if e == nil {
-		return "", true
+		return true
 	}
-	value := labels(label)
 	if argument, err := strconv.ParseFloat(e.arg, 32); err == nil {
 		if numericValue, err := strconv.ParseFloat(value, 32); err == nil {
-			return value, e.compareFloats(numericValue, argument)
+			return e.compareFloats(numericValue, argument)
 		}
 	}
-	return value, e.compareStrings(value, e.arg)
+	return e.compareStrings(value, e.arg)
 }
 
 func (e *expression) compareStrings(a, b string) bool {
