@@ -2,7 +2,7 @@
 
 load "../test_helpers.bats"
 
-CMD="${BATS_TEST_DIRNAME}/build-in-konflux-instead-of-gha.sh"
+CMD="${BATS_TEST_DIRNAME}/should-konflux-replace-gha-build.sh"
 
 function setup() {
     unset TARGET_BRANCH
