@@ -237,7 +237,6 @@ func (s *serviceImpl) saveImage(img *storage.Image) error {
 // ScanImageInternal handles an image request from Sensor and Admission Controller.
 func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanImageInternalRequest) (*v1.ScanImageInternalResponse, error) {
 	err := s.acquireScanSemaphore(ctx)
-	defer s.releaseFromScanSemaphore()
 	if err != nil {
 		log.Errorw("Failed to acquire scan semaphore",
 			logging.FromContext(ctx),
@@ -247,6 +246,8 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 		)
 		return nil, err
 	}
+	defer s.releaseFromScanSemaphore()
+	defer images.ScanSemaphoreHoldingSize.With(imageScanMetricsLabel).Dec()
 
 	var (
 		img       *storage.Image
@@ -430,7 +431,6 @@ func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageReques
 // This is meant to be called by Sensor.
 func (s *serviceImpl) GetImageVulnerabilitiesInternal(ctx context.Context, request *v1.GetImageVulnerabilitiesInternalRequest) (*v1.ScanImageInternalResponse, error) {
 	err := s.acquireScanSemaphore(ctx)
-	defer s.releaseFromScanSemaphore()
 	if err != nil {
 		log.Errorw("Failed to acquire scan semaphore",
 			logging.FromContext(ctx),
@@ -440,6 +440,8 @@ func (s *serviceImpl) GetImageVulnerabilitiesInternal(ctx context.Context, reque
 		)
 		return nil, err
 	}
+	defer s.releaseFromScanSemaphore()
+	defer images.ScanSemaphoreHoldingSize.With(imageScanMetricsLabel).Dec()
 
 	imgID := request.GetImageId()
 
@@ -482,7 +484,6 @@ func (s *serviceImpl) GetImageVulnerabilitiesInternal(ctx context.Context, reque
 
 func (s *serviceImpl) releaseFromScanSemaphore() {
 	s.internalScanSemaphore.Release(1)
-	images.ScanSemaphoreHoldingSize.With(imageScanMetricsLabel).Dec()
 }
 
 func (s *serviceImpl) acquireScanSemaphore(ctx context.Context) error {
@@ -490,7 +491,6 @@ func (s *serviceImpl) acquireScanSemaphore(ctx context.Context) error {
 	defer cancel()
 	images.ScanSemaphoreQueueSize.With(imageScanMetricsLabel).Inc()
 	defer images.ScanSemaphoreQueueSize.With(imageScanMetricsLabel).Dec()
-	defer images.ScanSemaphoreHoldingSize.With(imageScanMetricsLabel).Inc()
 	if err := s.internalScanSemaphore.Acquire(semaphoreCtx, 1); err != nil {
 		wrappedErr := errors.Wrap(err, "acquiring scan semaphore")
 
@@ -512,12 +512,12 @@ func (s *serviceImpl) acquireScanSemaphore(ctx context.Context) error {
 		}
 		return s.Err()
 	}
+	images.ScanSemaphoreHoldingSize.With(imageScanMetricsLabel).Inc()
 	return nil
 }
 
 func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.EnrichLocalImageInternalRequest) (*v1.ScanImageInternalResponse, error) {
 	err := s.acquireScanSemaphore(ctx)
-	defer s.releaseFromScanSemaphore()
 	if err != nil {
 		log.Errorw("Failed to acquire scan semaphore",
 			logging.FromContext(ctx),
@@ -528,6 +528,8 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 		)
 		return nil, err
 	}
+	defer s.releaseFromScanSemaphore()
+	defer images.ScanSemaphoreHoldingSize.With(imageScanMetricsLabel).Dec()
 
 	imgID := request.GetImageId()
 	var hasErrors bool
