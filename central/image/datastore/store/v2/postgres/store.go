@@ -932,7 +932,7 @@ func (s *storeImpl) insertIntoImageComponentV2Cves(batch *pgx.Batch, obj *storag
 		obj.GetIsFixable(),
 		obj.GetFixedBy(),
 		obj.GetComponentId(),
-		obj.GetAdvisory(),
+		obj.GetAdvisory().GetName(),
 		serialized,
 	}
 

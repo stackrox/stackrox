@@ -142,12 +142,10 @@ message CVEInfo {
   EPSS epss = 12;
 }
 
-
 message Advisory {
-  string name = 1;// @gotags: search:"Advisory"
+  string name = 1; // @gotags: search:"Advisory,store"
   string link = 2;
 }
-
 
 // This proto is deprecated and replaced by ImageCVEV2.
 message ImageCVE {
