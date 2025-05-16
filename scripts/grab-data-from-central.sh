@@ -47,9 +47,6 @@ main() {
 
     mkdir -p "${dest}"
     # TODO(PR#15173): Temporarily reset the server name to fix CI:
-    echo "DBG: api_endpoint=${api_endpoint}"
-    echo "DBG: ROX_SERVER_NAME=${ROX_SERVER_NAME}"
-    echo "DBG: ROX_CA_CERT_FILE=${ROX_CA_CERT_FILE}"
     roxctl -s "" --ca="" -e "${api_endpoint}" --insecure-skip-tls-verify central backup --output "${dest}"
 
     # Pull some data not found from the database
