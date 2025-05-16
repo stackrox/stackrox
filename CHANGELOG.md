@@ -28,13 +28,13 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-29151: When managing a SecuredCluster installation using the operator
   * Scanner V4 will be installed for new installations unless explicitly disabled (opt-out) and
   * Scanner V4 will remain not installed for upgrades unless explicitly enabled (opt-in).
-- ROX-27443: Scanner V4 may now only show vulnerability data from Red Hat security data sources for official Red Hat container images
+- ROX-27443: Scanner V4 now has the ability to only show vulnerability data from Red Hat security data sources for official Red Hat container images
   found in the [Red Hat Container Catalog](https://catalog.redhat.com/software/containers/explore) when the environment variable `ROX_SCANNER_V4_RED_HAT_LAYERS_RED_HAT_VULNS_ONLY` is set in Scanner V4 Matcher.
-  - Previously, those who used Scanner V4 would see vulnerability data from various sources for all layers in their images.
-    This led to confusion when users scanned official Red Hat images or images based on official Red Hat images.
-    Scanner V4 claimed the images contained vulnerabilities which the official Red Hat CVE pages claimed did not exist in the same image.
-  - This arose for non-RPM content in official Red Hat container images, such as Go binaries in OpenShift images.
-  - When the variable is set (which it is by default), Scanner V4 will continue to show non-RPM content in official Red Hat container images but will no longer
+  - Currently, those who use Scanner V4 will see vulnerability data from various sources for all layers in their images.
+    This may lead to confusion when users scan official Red Hat images or images based on official Red Hat images.
+Scanner V4 claims the images contain vulnerabilities which the official Red Hat CVE pages claim do not exist in the same image.
+  - This arises from non-RPM content in official Red Hat container images, such as Go binaries in OpenShift images.
+  - When the variable is set, Scanner V4 will continue to show non-RPM content in official Red Hat container images but will no longer
     output vulnerabilities from non-Red Hat security data sources for these images.
 
 ### Removed Features
