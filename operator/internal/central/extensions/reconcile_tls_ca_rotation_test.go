@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"crypto/x509"
 	"encoding/pem"
+	"maps"
 	"testing"
 	"time"
 
@@ -51,6 +52,7 @@ func TestCentralCARotation(t *testing.T) {
 		fixSecondaryCANotBefore bool
 	}
 
+	year := 365 * 24 * time.Hour
 	timepoints := []timepoint{
 		{
 			// Year 1: should have one CA
@@ -59,23 +61,23 @@ func TestCentralCARotation(t *testing.T) {
 		},
 		{
 			// Year 2: should have one CA still
-			offset:            2*365*24*time.Hour + time.Hour,
+			offset:            2*year + time.Hour,
 			verifyCentralFunc: verifyCentralCertNoSecondaryCA,
 		},
 		{
 			// Year 3: should add a secondary CA
-			offset:                  3*365*24*time.Hour + time.Hour,
+			offset:                  3*year + time.Hour,
 			verifyCentralFunc:       verifyCentralCertWithSecondaryCA,
 			fixSecondaryCANotBefore: true,
 		},
 		{
 			// Year 4: still two CAs
-			offset:            4*365*24*time.Hour + time.Hour,
+			offset:            4*year + time.Hour,
 			verifyCentralFunc: verifyCentralCertWithSecondaryCA,
 		},
 		{
 			// Year 5: original CA is now expired, should only have 1 CA again
-			offset:            5*365*24*time.Hour + time.Hour,
+			offset:            5*year + time.Hour,
 			verifyCentralFunc: verifyCentralCertNoSecondaryCA,
 		},
 	}
@@ -96,9 +98,7 @@ func TestCentralCARotation(t *testing.T) {
 		tc.ExpectedCreatedSecrets = map[string]secretVerifyFunc{
 			"central-tls": tp.verifyCentralFunc,
 		}
-		for k, v := range commonSecrets {
-			tc.ExpectedCreatedSecrets[k] = v
-		}
+		maps.Copy(tc.ExpectedCreatedSecrets, commonSecrets)
 
 		testSecretReconciliationAtTime(t, central, client, runAt, tc, currentTime)
 
@@ -106,7 +106,7 @@ func TestCentralCARotation(t *testing.T) {
 			// Hack: certgen.GenerateCA() can only generate a CA starting from time.Now(), and plugging in a customized
 			// NotBefore value is not straightforward.
 			// This function updates the NotBefore property of CA certificate to the desired time.
-			updateSecondaryCANotBefore(t, client, baseTime.Add(3*365*24*time.Hour+time.Hour))
+			updateSecondaryCANotBefore(t, client, currentTime)
 		}
 	}
 }
