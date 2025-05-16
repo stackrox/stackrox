@@ -614,13 +614,11 @@ EOT
     fi
 
     # shellcheck disable=SC2030,SC2031
-    export ROX_SCANNER_V4="true"
+    export ROX_SCANNER_V4="" # Relying on new defaulting for Scanner V4 installation.
     # shellcheck disable=SC2030,SC2031
     export DEPLOY_STACKROX_VIA_OPERATOR="true"
     # shellcheck disable=SC2030,SC2031
     export SENSOR_SCANNER_SUPPORT=true
-    # shellcheck disable=SC2030,SC2031
-    export SENSOR_SCANNER_V4_SUPPORT=true
 
     _begin "deploy-stackrox"
 
@@ -648,13 +646,11 @@ EOT
     fi
 
     # shellcheck disable=SC2030,SC2031
-    export ROX_SCANNER_V4="true"
+    export ROX_SCANNER_V4="" # Relying on new defaulting for Scanner V4 installation.
     # shellcheck disable=SC2030,SC2031
     export DEPLOY_STACKROX_VIA_OPERATOR="true"
     # shellcheck disable=SC2030,SC2031
     export SENSOR_SCANNER_SUPPORT=true
-    # shellcheck disable=SC2030,SC2031
-    export SENSOR_SCANNER_V4_SUPPORT=true
 
     _begin "deploy-stackrox"
 
