@@ -2,7 +2,6 @@ package complianceoperator
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -187,7 +186,7 @@ func (u *updaterImpl) collectInfoAndSendResponse() bool {
 }
 
 func (u *updaterImpl) getComplianceOperatorInfo() *central.ComplianceOperatorInfo {
-	complianceOperatorDeployment, err := searchForDeployment(u.complianceOperatorNS, u.client, u.ctx())
+	complianceOperatorDeployment, err := searchForDeployment(u.ctx(), u.complianceOperatorNS, u.client)
 	if err != nil {
 		return &central.ComplianceOperatorInfo{
 			StatusError: err.Error(),
@@ -195,14 +194,7 @@ func (u *updaterImpl) getComplianceOperatorInfo() *central.ComplianceOperatorInf
 		}
 	}
 
-	var version string
-	for key, val := range complianceOperatorDeployment.Labels {
-		// Info: This label is set by OLM, if a custom compliance operator build was deployed via e.g. Helm, this label does not exist.
-		if strings.HasSuffix(key, "owner") {
-			version = strings.TrimPrefix(val, complianceoperator.Name+".")
-		}
-	}
-
+	version := extractVersionFromLabels(complianceOperatorDeployment.Labels)
 	info := &central.ComplianceOperatorInfo{
 		Namespace: complianceOperatorDeployment.GetNamespace(),
 		TotalDesiredPodsOpt: &central.ComplianceOperatorInfo_TotalDesiredPods{

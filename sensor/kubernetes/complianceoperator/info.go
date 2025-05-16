@@ -15,25 +15,28 @@ import (
 var ErrUnableToExtractVersion = errors.New("compliance operator found " +
 	"but labels required for extracting the version are missing")
 
-func GetInstalledVersion(ns string, cli kubernetes.Interface, ctx context.Context) (ver, namespace string, err error) {
-	complianceOperatorDeployment, err := searchForDeployment(ns, cli, ctx)
+func GetInstalledVersion(ctx context.Context, ns string, cli kubernetes.Interface) (ver, namespace string, err error) {
+	complianceOperatorDeployment, err := searchForDeployment(ctx, ns, cli)
 	if err != nil {
 		return "", ns, errors.Wrapf(err, "could not find compliance operator deployment %q", ns)
 	}
 
-	var version string
 	foundInNamespace := complianceOperatorDeployment.GetNamespace()
-	for key, val := range complianceOperatorDeployment.Labels {
-		// Info: This label is set by OLM, if a custom compliance operator build was deployed via e.g. Helm, this label does not exist.
-		if strings.HasSuffix(key, "owner") {
-			version = strings.TrimPrefix(val, complianceoperator.Name+".")
-			return version, foundInNamespace, nil
-		}
-	}
+	version := extractVersionFromLabels(complianceOperatorDeployment.Labels)
 	return version, foundInNamespace, ErrUnableToExtractVersion
 }
 
-func searchForDeployment(ns string, cli kubernetes.Interface, ctx context.Context) (*appsv1.Deployment, error) {
+func extractVersionFromLabels(labels map[string]string) string {
+	for key, val := range labels {
+		// Info: This label is set by OLM, if a custom compliance operator build was deployed via e.g. Helm, this label does not exist.
+		if strings.HasSuffix(key, "owner") {
+			return strings.TrimPrefix(val, complianceoperator.Name+".")
+		}
+	}
+	return ""
+}
+
+func searchForDeployment(ctx context.Context, ns string, cli kubernetes.Interface) (*appsv1.Deployment, error) {
 	// Use cached namespace, if compliance operator deployment was not found search again in all namespaces.
 	if ns != "" {
 		if complianceOperator, err := getComplianceOperatorDeployment(ns, cli, ctx); err == nil {

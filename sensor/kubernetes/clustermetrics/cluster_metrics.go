@@ -154,17 +154,14 @@ func (cm *clusterMetricsImpl) collectMetrics() (*central.ClusterMetrics, error) 
 
 	// If cm.lastKnownComplianceOperatorNamespace is empty or not containing the compliance operator anymore,
 	// then the compliance operator deployment will be searched for in all namespaces.
-	coVersion, namespace, err := complianceoperator.GetInstalledVersion(cm.lastKnownComplianceOperatorNamespace, cm.k8sClient, ctx)
+	coVersion, namespace, err := complianceoperator.GetInstalledVersion(ctx, cm.lastKnownComplianceOperatorNamespace, cm.k8sClient)
+	cm.lastKnownComplianceOperatorNamespace = namespace
 	if err != nil {
 		if errors.Is(err, complianceoperator.ErrUnableToExtractVersion) {
 			coVersion = complianceOperAvailableInUnknownVersion
-			cm.lastKnownComplianceOperatorNamespace = namespace
 		} else {
 			coVersion = complianceOperUnavailable
 		}
-	} else {
-		// Remember the compliance operator namespace to accelerate future searches
-		cm.lastKnownComplianceOperatorNamespace = namespace
 	}
 	return &central.ClusterMetrics{NodeCount: nodeCount, CpuCapacity: capacity, ComplianceOperatorVersion: coVersion}, nil
 }
