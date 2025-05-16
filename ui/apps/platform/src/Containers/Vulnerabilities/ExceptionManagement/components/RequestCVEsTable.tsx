@@ -10,7 +10,7 @@ import {
     ToolbarItem,
 } from '@patternfly/react-core';
 import { ExpandableRowContent, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
-import { useQuery } from '@apollo/client';
+import { gql, useQuery } from '@apollo/client';
 import { Link } from 'react-router-dom';
 import pluralize from 'pluralize';
 
@@ -49,6 +49,12 @@ import SeverityCountLabels from '../../components/SeverityCountLabels';
 
 import { getImageScopeSearchValue } from '../utils';
 
+const imageCVECountQuery = gql`
+    query getImageCVECount($query: String) {
+        imageCVECount(query: $query)
+    }
+`;
+
 type RequestCVEsTableProps = {
     cves: string[];
     scope: VulnerabilityExceptionScope;
@@ -75,6 +81,10 @@ function RequestCVEsTable({
     };
 
     const query = getRequestQueryStringForSearchFilter(queryObject);
+
+    const countQuery = useQuery<{ imageCVECount: number }>(imageCVECountQuery, {
+        variables: { query },
+    });
 
     const {
         error,
@@ -103,12 +113,12 @@ function RequestCVEsTable({
                     <ToolbarContent className="pf-v5-u-justify-content-space-between">
                         <ToolbarItem variant="label">
                             <Title headingLevel="h2">
-                                {data?.imageCVECount || 0} results found
+                                {countQuery.data?.imageCVECount || 0} results found
                             </Title>
                         </ToolbarItem>
                         <ToolbarItem variant="pagination">
                             <Pagination
-                                itemCount={data?.imageCVECount}
+                                itemCount={countQuery.data?.imageCVECount}
                                 perPage={perPage}
                                 page={page}
                                 onSetPage={(_, newPage) => setPage(newPage)}
