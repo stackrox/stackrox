@@ -1,5 +1,5 @@
 ARG PG_VERSION=15
-FROM quay.io/sclorg/postgresql-${PG_VERSION}-c8s:latest AS final
+FROM quay.io/sclorg/postgresql-${PG_VERSION}-c9s:latest AS final
 
 USER root
 
@@ -37,7 +37,7 @@ RUN dnf upgrade -y --nobest && \
     rm -rf /var/cache/dnf /var/cache/yum && \
     mkdir /docker-entrypoint-initdb.d
 
-COPY scripts \
+COPY --chown=postgres:postgres scripts \
     /usr/local/bin/
 
 ENV LANG="en_US.utf8"

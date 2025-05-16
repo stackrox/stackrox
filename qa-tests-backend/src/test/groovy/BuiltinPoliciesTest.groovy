@@ -8,11 +8,14 @@ import objects.SecretKeyRef
 import objects.Volume
 import services.PolicyService
 
+import spock.lang.IgnoreIf
 import spock.lang.Shared
 import spock.lang.Tag
 import spock.lang.Unroll
 import util.Env
 
+// TODO add arm64 layers to all test images
+@IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "arm64" })
 @Tag("PZ")
 class BuiltinPoliciesTest extends BaseSpecification {
     static final private String TRIGGER_MOST = "trigger-most"
@@ -116,6 +119,7 @@ class BuiltinPoliciesTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
+    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "arm64" })
     def "Verify policy '#policyName' is triggered"(String policyName, String deploymentName) {
         when:
         "An existing policy"

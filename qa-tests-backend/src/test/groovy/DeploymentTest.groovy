@@ -74,8 +74,8 @@ class DeploymentTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
-    // ROX-16332: scannings issues with MA images
-    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
+    // ROX-16332: scanning issues with non-x86_64 images
+    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH != "x86_64" })
     def "Verify deployment -> image links #query"() {
         when:
         Timer t = new Timer(3, 10)
@@ -106,8 +106,8 @@ class DeploymentTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
-    // ROX-16332: scanning issues with MA images
-    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
+    // ROX-16332: scanning issues with non-x86_64 images
+    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH != "x86_64" })
     def "Verify image -> deployment links #query"() {
         when:
         Timer t = new Timer(3, 10)
