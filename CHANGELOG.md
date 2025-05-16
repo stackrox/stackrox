@@ -32,7 +32,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   found in the [Red Hat Container Catalog](https://catalog.redhat.com/software/containers/explore) when the environment variable `ROX_SCANNER_V4_RED_HAT_LAYERS_RED_HAT_VULNS_ONLY` is set in Scanner V4 Matcher.
   - Currently, those who use Scanner V4 will see vulnerability data from various sources for all layers in their images.
     This may lead to confusion when users scan official Red Hat images or images based on official Red Hat images.
-    Scanner V4 claims the images contain vulnerabilities which the official Red Hat CVE pages claims do not exist in the same image.
+Scanner V4 claims the images contain vulnerabilities which the official Red Hat CVE pages claim do not exist in the same image.
   - This arises from non-RPM content in official Red Hat container images, such as Go binaries in OpenShift images.
   - When the variable is set, Scanner V4 will continue to show non-RPM content in official Red Hat container images but will no longer
     output vulnerabilities from non-Red Hat security data sources for these images.
