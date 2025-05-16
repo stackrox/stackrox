@@ -15,7 +15,7 @@ os.environ["ROX_ACTIVE_VULN_MGMT"] = "true"
 os.environ["ROX_RISK_REPROCESSING_INTERVAL"] = "15s"
 os.environ["ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL"] = "30s"
 
-### TODO BEFORE COMMIT create gke_qa_e2e_arm64_tests.py with below config
+# tbd: restore this file and create gke_qa_e2e_arm64_tests.py with below config
 # deploy via helm to set node selectors for running on GKE arm64 nodes
 os.environ["REMOTE_CLUSTER_ARCH"] = "arm64"
 os.environ["OUTPUT_FORMAT"] = "helm"
