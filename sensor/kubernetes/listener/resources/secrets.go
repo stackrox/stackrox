@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/cloudflare/cfssl/certinfo"
 	"github.com/pkg/errors"
@@ -260,6 +261,22 @@ func shouldCreateSourcedIntegration(secret *v1.Secret) bool {
 		(env.AutogenerateGlobalPullSecRegistries.BooleanSetting() && openshift.GlobalPullSecret(secret.GetNamespace(), secret.GetName()))
 }
 
+func validateSecret(registryAddr string, dce config.DockerConfigEntry, namespace, secretName string) error {
+	if !utf8.ValidString(registryAddr) {
+		return fmt.Errorf("registry address %q contains invalid UTF-8 characters. "+
+			"Correct the contents of secret %s/%s", registryAddr, namespace, secretName)
+	}
+	if !utf8.ValidString(dce.Username) {
+		return fmt.Errorf("registry username %q contains invalid UTF-8 characters. "+
+			"Correct the contents of secret %s/%s", registryAddr, namespace, secretName)
+	}
+	if !utf8.ValidString(dce.Password) {
+		return fmt.Errorf("registry password located in secret %s/%s contains invalid UTF-8 characters",
+			namespace, secretName)
+	}
+	return nil
+}
+
 func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret, action central.ResourceAction) *component.ResourceEvent {
 	dockerConfig := getDockerConfigFromSecret(secret)
 	if len(dockerConfig) == 0 {
@@ -288,6 +305,11 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 		if registryAddr != registryAddress {
 			log.Warnf("Spaces have been trimmed from registry address %q found in secret %s/%s",
 				registryAddress, secret.GetNamespace(), secret.GetName())
+		}
+
+		if err := validateSecret(registryAddr, dce, secret.GetNamespace(), secret.GetName()); err != nil {
+			log.Warnf("Not adding registry %s from dockerConfig secret: %v", registryAddr, err)
+			continue
 		}
 
 		registries = append(registries, &storage.ImagePullSecret_Registry{
@@ -362,6 +384,11 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 			}
 		}
 	}
+	// No need to send event if there are 0 valid registries
+	if len(registries) == 0 {
+		return nil
+	}
+
 	sort.SliceStable(registries, func(i, j int) bool {
 		if registries[i].Name != registries[j].Name {
 			return registries[i].GetName() < registries[j].GetName()
