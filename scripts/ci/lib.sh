@@ -154,10 +154,18 @@ get_central_debug_dump() {
 
     require_environment "API_ENDPOINT"
     require_environment "ROX_ADMIN_PASSWORD"
+    set -x
+    echo "API_ENDPOINT:$API_ENDPOINT"
+    echo "ROX_SERVER_NAME:$ROX_SERVER_NAME"
+    roxctl -e "${API_ENDPOINT}" \
+        central debug dump --output-dir "${output_dir}" \
+        --insecure-skip-tls-verify \
+      || \
     ROX_SERVER_NAME="" roxctl -e "${API_ENDPOINT}" \
         central debug dump --output-dir "${output_dir}" \
         --insecure-skip-tls-verify
     ls -l "${output_dir}"
+    set +x
 }
 
 process_central_metrics() {
@@ -216,9 +224,17 @@ get_central_diagnostics() {
 
     require_environment "API_ENDPOINT"
     require_environment "ROX_ADMIN_PASSWORD"
+    set -x
+    echo "API_ENDPOINT:$API_ENDPOINT"
+    echo "ROX_SERVER_NAME:$ROX_SERVER_NAME"
+    roxctl -e "${API_ENDPOINT}" \
+        central debug download-diagnostics --output-dir "${output_dir}" \
+        --insecure-skip-tls-verify \
+      || \
     ROX_SERVER_NAME="" roxctl -e "${API_ENDPOINT}" \
         central debug download-diagnostics --output-dir "${output_dir}" \
         --insecure-skip-tls-verify
+    set +x
     ls -l "${output_dir}"
 }
 
