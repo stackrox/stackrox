@@ -1357,14 +1357,14 @@ db_backup_and_restore_test() {
     info "Backing up to ${output_dir}"
     mkdir -p "$output_dir"
     # TODO(PR#15173): Temporarily reset the server name to fix CI:
-    roxctl -s "" -e "${API_ENDPOINT}" central backup --output "$output_dir" || touch DB_TEST_FAIL
+    roxctl --insecure-skip-tls-verify -s "" --ca="" -e "${API_ENDPOINT}" central backup --output "$output_dir" || touch DB_TEST_FAIL
 
     info "Updating public config"
     update_public_config
 
     if [[ ! -e DB_TEST_FAIL ]]; then
         info "Restoring from ${output_dir}/postgres_db_*"
-        roxctl -e "${API_ENDPOINT}" central db restore "$output_dir"/postgres_db_* || touch DB_TEST_FAIL
+        roxctl --insecure-skip-tls-verify -s "" --ca="" -e "${API_ENDPOINT}" central db restore "$output_dir"/postgres_db_* || touch DB_TEST_FAIL
     fi
 
     wait_for_api "${central_namespace}"
