@@ -197,17 +197,26 @@ func (c *cosignSignatureVerifier) VerifySignature(ctx context.Context,
 	// OR
 	// verifier_N(sig_1) OR ... OR verifier_N(sig_N)
 	verifiedImageReferences := set.NewStringSet()
+	var mutex sync.Mutex
+	var wg sync.WaitGroup
 	for _, opts := range c.verifierOpts {
 		for _, sig := range sigs {
-			verifierRefs, err := verifyImageSignature(ctx, sig, hash, image, opts)
-			if err != nil {
-				allVerifyErrs = multierror.Append(allVerifyErrs, err)
-				continue
-			}
-			// Successful verification. Keep the image references.
-			verifiedImageReferences.AddAll(verifierRefs...)
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				verifierRefs, err := verifyImageSignature(ctx, sig, hash, image, opts)
+				mutex.Lock()
+				defer mutex.Unlock()
+				if err != nil {
+					allVerifyErrs = multierror.Append(allVerifyErrs, err)
+					return
+				}
+				// Successful verification. Keep the image references.
+				verifiedImageReferences.AddAll(verifierRefs...)
+			}()
 		}
 	}
+	wg.Wait()
 
 	if len(verifiedImageReferences) > 0 {
 		verifiedRefSlice := verifiedImageReferences.AsSortedSlice(
