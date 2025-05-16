@@ -47,6 +47,25 @@ func NewTestDataStore(
 	}
 	deploymentStore := pgStore.FullStoreWrap(pgStore.New(testDB.DB))
 	searcher := search.NewV2(deploymentStore)
+	mockCtrl := gomock.NewController(t)
+	mockConfigDatastore := configDatastoreMocks.NewMockDataStore(mockCtrl)
+	mockConfigDatastore.EXPECT().GetPlatformComponentConfig(gomock.Any()).Return(&storage.PlatformComponentConfig{
+		NeedsReevaluation: false,
+		Rules: []*storage.PlatformComponentConfig_Rule{
+			{
+				Name: "system rule",
+				NamespaceRule: &storage.PlatformComponentConfig_Rule_NamespaceRule{
+					Regex: `^kube-.*|^openshift-.*`,
+				},
+			},
+			{
+				Name: "red hat layered products",
+				NamespaceRule: &storage.PlatformComponentConfig_Rule_NamespaceRule{
+					Regex: `^stackrox$|^rhacs-operator$|^open-cluster-management$|^multicluster-engine$|^aap$|^hive$`,
+				},
+			},
+		},
+	}, true, nil).Times(1)
 	ds := newDatastoreImpl(
 		deploymentStore,
 		searcher,
@@ -59,7 +78,7 @@ func NewTestDataStore(
 		storeParams.ClusterRanker,
 		storeParams.NamespaceRanker,
 		storeParams.DeploymentRanker,
-		platformmatcher.Singleton(),
+		platformmatcher.New(mockConfigDatastore),
 	)
 
 	ds.initializeRanker()
