@@ -1,4 +1,4 @@
-package aggregator
+package common
 
 import (
 	"testing"
@@ -7,7 +7,17 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_makeAggregationKeyInstance(t *testing.T) {
+var testLabelsOrder = map[Label]int{
+	"test":      1,
+	"Cluster":   2,
+	"Namespace": 3,
+	"CVE":       4,
+	"Severity":  5,
+	"CVSS":      6,
+	"IsFixable": 7,
+}
+
+func TestMakeAggregationKeyInstance(t *testing.T) {
 	testMetric := map[Label]string{
 		"Cluster":   "value",
 		"CVSS":      "7.4",
@@ -18,14 +28,14 @@ func Test_makeAggregationKeyInstance(t *testing.T) {
 		return testMetric[label]
 	}
 	t.Run("matching", func(t *testing.T) {
-		key, labels := makeAggregationKeyInstance(
-			map[Label][]*expression{
+		key, labels := MakeAggregationKeyInstance(
+			map[Label][]*Expression{
 				"Cluster":   {{"=", "*al*"}},
 				"CVSS":      {{">", "5"}},
 				"IsFixable": {{"", ""}},
 			},
-			labelsGetter)
-		assert.Equal(t, metricKey("value|7.4|false"), key)
+			labelsGetter, testLabelsOrder)
+		assert.Equal(t, MetricKey("value|7.4|false"), key)
 		assert.Equal(t, prometheus.Labels{
 			"Cluster":   "value",
 			"CVSS":      "7.4",
@@ -33,20 +43,19 @@ func Test_makeAggregationKeyInstance(t *testing.T) {
 		}, labels)
 	})
 	t.Run("not matching", func(t *testing.T) {
-		key, labels := makeAggregationKeyInstance(
-			map[Label][]*expression{
+		key, labels := MakeAggregationKeyInstance(
+			map[Label][]*Expression{
 				"Cluster":   {{"=", "missing"}},
 				"CVSS":      {{">", "5"}},
 				"IsFixable": {{"", ""}},
 			},
-			labelsGetter,
-		)
-		assert.Equal(t, metricKey(""), key)
+			labelsGetter, testLabelsOrder)
+		assert.Equal(t, MetricKey(""), key)
 		assert.Nil(t, labels)
 	})
 	t.Run("matching second", func(t *testing.T) {
-		key, labels := makeAggregationKeyInstance(
-			map[Label][]*expression{
+		key, labels := MakeAggregationKeyInstance(
+			map[Label][]*Expression{
 				"Cluster": {
 					{"=", "nope"},
 					{"=", "nape"},
@@ -58,8 +67,8 @@ func Test_makeAggregationKeyInstance(t *testing.T) {
 				"CVSS":      {{">", "5"}},
 				"IsFixable": {{"", ""}},
 			},
-			labelsGetter)
-		assert.Equal(t, metricKey("value|7.4|false"), key)
+			labelsGetter, testLabelsOrder)
+		assert.Equal(t, MetricKey("value|7.4|false"), key)
 		assert.Equal(t, prometheus.Labels{
 			"Cluster":   "value",
 			"CVSS":      "7.4",
@@ -67,8 +76,8 @@ func Test_makeAggregationKeyInstance(t *testing.T) {
 		}, labels)
 	})
 	t.Run("no matching with OR", func(t *testing.T) {
-		key, labels := makeAggregationKeyInstance(
-			map[Label][]*expression{
+		key, labels := MakeAggregationKeyInstance(
+			map[Label][]*Expression{
 				"Cluster": {
 					{"=", "nope"},
 					{"=", "nape"},
@@ -80,28 +89,28 @@ func Test_makeAggregationKeyInstance(t *testing.T) {
 				"CVSS":      {{">", "5"}},
 				"IsFixable": nil,
 			},
-			labelsGetter)
-		assert.Equal(t, metricKey(""), key)
+			labelsGetter, testLabelsOrder)
+		assert.Equal(t, MetricKey(""), key)
 		assert.Equal(t, prometheus.Labels(nil), labels)
 	})
 }
 
 func Test_getMetricLabels(t *testing.T) {
 	cases := []struct {
-		expressions map[Label][]*expression
+		expressions map[Label][]*Expression
 		labels      []string
 	}{
 		{
-			map[Label][]*expression{},
+			map[Label][]*Expression{},
 			[]string(nil),
 		},
 		{
-			map[Label][]*expression{
+			map[Label][]*Expression{
 				"a": {{"=", "b"}}},
 			[]string{"a"},
 		},
 		{
-			map[Label][]*expression{
+			map[Label][]*Expression{
 				"CVE":      {{"", ""}},
 				"Severity": {{"=", "x"}},
 				"Cluster":  {{">", "4"}},
@@ -110,6 +119,6 @@ func Test_getMetricLabels(t *testing.T) {
 		},
 	}
 	for _, c := range cases {
-		assert.Equal(t, c.labels, getMetricLabels(c.expressions), c.expressions)
+		assert.Equal(t, c.labels, getMetricLabels(c.expressions, testLabelsOrder), c.expressions)
 	}
 }

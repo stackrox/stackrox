@@ -1,15 +1,16 @@
-package aggregator
+package vulnerabilities
 
 import (
 	"context"
 	"strconv"
 
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
+	"github.com/stackrox/rox/central/metrics/aggregator/common"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
 )
 
-var labelOrder = map[Label]int{
+var labelOrder = map[common.Label]int{
 	"Cluster":          1,
 	"Namespace":        2,
 	"Deployment":       3,
@@ -28,10 +29,10 @@ var labelOrder = map[Label]int{
 	"IsFixable":        16,
 }
 
-func trackVulnerabilityMetrics(ctx context.Context, ds deploymentDS.DataStore, mc metricsConfig) result {
-	aggregated := make(result)
+func TrackVulnerabilityMetrics(ctx context.Context, ds deploymentDS.DataStore, mc common.MetricsConfig) common.Result {
+	aggregated := make(common.Result)
 	for metric := range mc {
-		aggregated[metric] = make(map[metricKey]*record)
+		aggregated[metric] = make(map[common.MetricKey]*common.Record)
 	}
 	// Optimization opportunity:
 	// The resource filter is known at this point, so a more precise query could be constructed here.
@@ -45,7 +46,7 @@ func trackVulnerabilityMetrics(ctx context.Context, ds deploymentDS.DataStore, m
 	return aggregated
 }
 
-func trackDeployment(mc metricsConfig, aggregated result, deployment *storage.Deployment, images []*storage.Image) error {
+func trackDeployment(mc common.MetricsConfig, aggregated common.Result, deployment *storage.Deployment, images []*storage.Image) error {
 
 	forEachVuln(images, func(image *storage.Image, imageName *storage.ImageName, component *storage.EmbeddedImageScanComponent, vuln *storage.EmbeddedVulnerability) {
 		labelGetter := makeLabelGetter(image, imageName, component, vuln,
@@ -54,14 +55,11 @@ func trackDeployment(mc metricsConfig, aggregated result, deployment *storage.De
 			deployment.GetName())
 
 		for metric, expressions := range mc {
-			if key, labels := makeAggregationKeyInstance(expressions, labelGetter); key != "" {
+			if key, labels := common.MakeAggregationKeyInstance(expressions, labelGetter, labelOrder); key != "" {
 				if rec, ok := aggregated[metric][key]; ok {
-					rec.total++
+					rec.Inc()
 				} else {
-					aggregated[metric][key] = &record{
-						labels: labels,
-						total:  1,
-					}
+					aggregated[metric][key] = common.MakeRecord(labels, 1)
 				}
 			}
 		}
@@ -89,8 +87,17 @@ func isFixable(vuln *storage.EmbeddedVulnerability) string {
 	return "true"
 }
 
-func makeLabelGetter(image *storage.Image, name *storage.ImageName, component *storage.EmbeddedImageScanComponent, vuln *storage.EmbeddedVulnerability, clusterName string, namespaceName string, deploymentName string) func(Label) string {
-	return func(label Label) string {
+func makeLabelGetter(
+	image *storage.Image,
+	name *storage.ImageName,
+	component *storage.EmbeddedImageScanComponent,
+	vuln *storage.EmbeddedVulnerability,
+	clusterName string,
+	namespaceName string,
+	deploymentName string,
+) func(common.Label) string {
+
+	return func(label common.Label) string {
 		switch label {
 		case "Cluster", "Namespace", "Deployment":
 			return getResourceLabel(label, clusterName, namespaceName, deploymentName)
@@ -104,7 +111,7 @@ func makeLabelGetter(image *storage.Image, name *storage.ImageName, component *s
 	}
 }
 
-func getResourceLabel(label Label, clusterName, namespaceName, deploymentName string) string {
+func getResourceLabel(label common.Label, clusterName, namespaceName, deploymentName string) string {
 	switch label {
 	case "Cluster":
 		return clusterName
@@ -117,7 +124,7 @@ func getResourceLabel(label Label, clusterName, namespaceName, deploymentName st
 	}
 }
 
-func getImageComponentLabel(label Label, image *storage.Image, name *storage.ImageName, component *storage.EmbeddedImageScanComponent) string {
+func getImageComponentLabel(label common.Label, image *storage.Image, name *storage.ImageName, component *storage.EmbeddedImageScanComponent) string {
 	switch label {
 	case "ImageID":
 		return image.GetId()
@@ -136,7 +143,7 @@ func getImageComponentLabel(label Label, image *storage.Image, name *storage.Ima
 	}
 }
 
-func getVulnerabilityLabel(label Label, image *storage.Image, vuln *storage.EmbeddedVulnerability) string {
+func getVulnerabilityLabel(label common.Label, image *storage.Image, vuln *storage.EmbeddedVulnerability) string {
 	switch label {
 	case "CVE":
 		return vuln.GetCve()

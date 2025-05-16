@@ -1,4 +1,4 @@
-package aggregator
+package common
 
 import (
 	"iter"
@@ -9,7 +9,7 @@ import (
 )
 
 // matchingLabels yields the labels and the values that match the expressions.
-func matchingLabels(expressions map[Label][]*expression, labelsGetter func(Label) string) iter.Seq2[Label, string] {
+func matchingLabels(expressions map[Label][]*Expression, labelsGetter func(Label) string) iter.Seq2[Label, string] {
 	return func(yield func(Label, string) bool) {
 		for label, expressions := range expressions {
 			if len(expressions) == 0 {
@@ -39,14 +39,14 @@ func matchingLabels(expressions map[Label][]*expression, labelsGetter func(Label
 	}
 }
 
-// makeAggregationKeyInstance computes an aggregation key according to the
+// MakeAggregationKeyInstance computes an aggregation key according to the
 // labels from the provided expressions, and the map of the requested labels
 // to their values.
 //
 // Example:
 //
 //	"Cluster=*prod,Deployment" => "pre-prod|backend", {"Cluster": "pre-prod", "Deployment": "backend")}
-func makeAggregationKeyInstance(expressions map[Label][]*expression, labelsGetter func(Label) string) (metricKey, prometheus.Labels) {
+func MakeAggregationKeyInstance(expressions map[Label][]*Expression, labelsGetter func(Label) string, labelOrder map[Label]int) (MetricKey, prometheus.Labels) {
 	labels := make(prometheus.Labels)
 	type valueOrder struct {
 		int
@@ -70,12 +70,12 @@ func makeAggregationKeyInstance(expressions map[Label][]*expression, labelsGette
 		}
 		sb.WriteString(value.string)
 	}
-	return metricKey(sb.String()), labels
+	return MetricKey(sb.String()), labels
 }
 
 // getMetricLabels extracts the metric labels from the filter expressions and
 // sort them according to the labelOrder map values.
-func getMetricLabels(expressions map[Label][]*expression) []string {
+func getMetricLabels(expressions map[Label][]*Expression, labelOrder map[Label]int) []string {
 	var labels []string
 	for label := range expressions {
 		labels = append(labels, string(label))
