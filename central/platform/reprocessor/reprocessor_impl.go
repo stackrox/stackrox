@@ -78,6 +78,7 @@ func (pr *platformReprocessorImpl) Stop() {
 
 func (pr *platformReprocessorImpl) RunReprocessor() {
 	err := pr.semaphore.Acquire(reprocessorCtx, 1)
+	defer pr.semaphore.Release(1)
 	if err != nil {
 		log.Errorf("Failed to acquire platform reprocessor semaphore: %v", err)
 		return
@@ -107,7 +108,6 @@ func (pr *platformReprocessorImpl) RunReprocessor() {
 			}
 		}
 	}
-	pr.semaphore.Release(1)
 }
 
 func (pr *platformReprocessorImpl) reprocessAlerts() error {
