@@ -51,6 +51,7 @@ func (s *serviceImpl) GetListeningEndpoints(
 	deployment := req.GetDeploymentId()
 	page := req.GetPagination()
 	processesListeningOnPorts, err := s.dataStore.GetProcessListeningOnPort(ctx, deployment)
+	totalListeningEndpoints := len(processesListeningOnPorts)
 
 	if err != nil {
 		return nil, err
@@ -62,5 +63,6 @@ func (s *serviceImpl) GetListeningEndpoints(
 
 	return &v1.GetProcessesListeningOnPortsResponse{
 		ListeningEndpoints: processesListeningOnPorts,
+		TotalListeningEndpoints: int32(totalListeningEndpoints),
 	}, nil
 }
