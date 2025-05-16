@@ -48,6 +48,11 @@ log "GitHub GITHUB_BASE_REF: ${GITHUB_BASE_REF:-}"
 the_ref="${TARGET_BRANCH:-${GITHUB_REF}}"
 
 if [[ "${the_ref}" == refs/pull/*/merge ]]; then
+    if [[ -z "${GITHUB_BASE_REF:-}" || -z "${GITHUB_HEAD_REF:-}" ]]; then
+        log "Both GITHUB_BASE_REF and GITHUB_HEAD_REF must be set for PRs"
+        exit 3
+    fi
+
     the_ref="${GITHUB_BASE_REF}"
 fi
 

@@ -6,6 +6,7 @@ function setup() {
     unset SOURCE_BRANCH
     unset TARGET_BRANCH
     unset GITHUB_BASE_REF
+    unset GITHUB_HEAD_REF
     unset GITHUB_REF
 }
 
@@ -50,43 +51,43 @@ function assert_stderr_contains() {
 
 # When executing in Konflux
 
-@test "should tell only Konflux when rc tag pushed" {
+@test "Konflux: should tell only Konflux when rc tag pushed" {
     export SOURCE_BRANCH=refs/tags/4.10.56-rc.172
     export TARGET_BRANCH=refs/tags/4.10.56-rc.172
     check_gha_suppressed
 }
 
-@test "should tell Both when a different tag pushed" {
+@test "Konflux: should tell Both when a different tag pushed" {
     export SOURCE_BRANCH=refs/tags/4.10.56-nightly.20250515
     export TARGET_BRANCH=refs/tags/4.10.56-nightly.20250515
     check_both_go
 }
 
-@test "should tell only Konflux when release-like branch pushed" {
+@test "Konflux: should tell only Konflux when release-like branch pushed" {
     export SOURCE_BRANCH=release-4.8
     export TARGET_BRANCH=release-4.8
     check_gha_suppressed
 }
 
-@test "should tell Both when non-release branch pushed" {
+@test "Konflux: should tell Both when non-release branch pushed" {
     export SOURCE_BRANCH=author/ROX-27716-useful-feature
     export TARGET_BRANCH=author/ROX-27716-useful-feature
     check_both_go
 }
 
-@test "should tell only Konflux when PR branch name includes magic" {
+@test "Konflux: should tell only Konflux when PR branch name includes magic" {
     export SOURCE_BRANCH=author/konflux-release-like
     export TARGET_BRANCH=master
     check_gha_suppressed_for_pr
 }
 
-@test "should tell Both when PR branch name is not magic" {
+@test "Konflux: should tell Both when PR branch name is not magic" {
     export SOURCE_BRANCH=author/my-useful-feature
     export TARGET_BRANCH=master
     check_both_go
 }
 
-@test "should tell only Konflux when PR branch name is not magic but targets release branch" {
+@test "Konflux: should tell only Konflux when PR branch name is not magic but targets release branch" {
     export SOURCE_BRANCH=author/my-useful-feature
     export TARGET_BRANCH=release-4.8
     check_gha_suppressed
@@ -94,40 +95,42 @@ function assert_stderr_contains() {
 
 # When executing in GHA
 
-@test "should tell only Konflux when github_ref is release tag" {
+@test "GHA: should tell only Konflux when release tag pushed" {
     export GITHUB_REF=refs/tags/24.58.60
     check_gha_suppressed
 }
 
-@test "should tell Both when github_ref is a different tag" {
+@test "GHA: should tell Both when different tag pushed" {
     export GITHUB_REF=refs/tags/0.0.0-author-testing
     check_both_go
 }
 
-@test "should tell only Konflux when github_ref is release-like" {
+@test "GHA: should tell only Konflux when release-like branch pushed" {
     export GITHUB_REF=refs/heads/release-x.y
     check_gha_suppressed
 }
 
-@test "should tell Both when github_ref is other" {
+@test "GHA: should tell Both when non-release branch pushed" {
     export GITHUB_REF=refs/heads/many-funky/parts/with-useful/slashes
     check_both_go
 }
 
-@test "should tell only Konflux when PR and github_base_ref is release-like" {
-    export GITHUB_REF="refs/pull/15309/merge"
-    export GITHUB_BASE_REF="release-x.y"
+@test "GHA: should fail when PR but variables are not set" {
+    export GITHUB_REF=refs/pull/1005006/merge
+    run_cmd
+    assert_failure 3
+}
+
+@test "GHA: should tell only Konflux when PR targets release-like branch" {
+    export GITHUB_REF=refs/pull/15309/merge
+    export GITHUB_BASE_REF=release-x.y
+    export GITHUB_HEAD_REF=author/my-useful-feature
     check_gha_suppressed
 }
 
-@test "should tell Both when PR and github_base_ref is other" {
-    export GITHUB_REF="refs/pull/15309/merge"
-    export GITHUB_BASE_REF="master"
+@test "GHA: should tell Both when PR targets non-release branch" {
+    export GITHUB_REF=refs/pull/15309/merge
+    export GITHUB_BASE_REF=master
+    export GITHUB_HEAD_REF=author/my-useful-feature
     check_both_go
-}
-
-@test "should fail when GITHUB_BASE_REF should be set but it's not" {
-    export GITHUB_REF="refs/pull/1005006/merge"
-    run_cmd
-    assert_failure
 }
