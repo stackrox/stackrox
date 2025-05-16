@@ -11,6 +11,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -38,25 +39,7 @@ func (s *platformReprocessorImplTestSuite) SetupTest() {
 	s.alertDatastore = alertDSMocks.NewMockDataStore(s.mockCtrl)
 	s.configDatastore = configDatastoreMocks.NewMockDataStore(s.mockCtrl)
 	s.deploymentDatastore = deploymentDSMocks.NewMockDataStore(s.mockCtrl)
-	mockConfigDatastore := configDatastoreMocks.NewMockDataStore(s.mockCtrl)
-	mockConfigDatastore.EXPECT().GetPlatformComponentConfig(gomock.Any()).Return(&storage.PlatformComponentConfig{
-		NeedsReevaluation: false,
-		Rules: []*storage.PlatformComponentConfig_Rule{
-			{
-				Name: "system rule",
-				NamespaceRule: &storage.PlatformComponentConfig_Rule_NamespaceRule{
-					Regex: `^kube-.*|^openshift-.*`,
-				},
-			},
-			{
-				Name: "red hat layered products",
-				NamespaceRule: &storage.PlatformComponentConfig_Rule_NamespaceRule{
-					Regex: `^stackrox$|^rhacs-operator$|^open-cluster-management$|^multicluster-engine$|^aap$|^hive$`,
-				},
-			},
-		},
-	}, true, nil).Times(1)
-	s.matcher = platformmatcher.New(mockConfigDatastore)
+	s.matcher = fixtures.GetPlatformMatcherWithDefaultPlatformComponentConfig(s.mockCtrl)
 
 	s.reprocessor = &platformReprocessorImpl{
 		alertDatastore:      s.alertDatastore,
