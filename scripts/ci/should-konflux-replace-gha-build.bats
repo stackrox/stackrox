@@ -16,7 +16,7 @@ function run_cmd() {
 function check_both() {
     run_cmd
     assert_success
-    assert_output "build and push both"
+    assert_output "BUILD_AND_PUSH_BOTH"
     assert_stderr_contains "does not look like"
     assert_stderr_contains "release"
     assert_stderr_contains "branch or tag"
@@ -25,7 +25,7 @@ function check_both() {
 function check_gha_suppressed() {
     run_cmd
     assert_success
-    assert_output "build and push only Konflux"
+    assert_output "BUILD_AND_PUSH_ONLY_KONFLUX"
     assert_stderr_contains "looks like"
     assert_stderr_contains "release"
     assert_stderr_contains "branch or tag"
