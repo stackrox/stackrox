@@ -1,17 +1,16 @@
-package fixtures
+package matcher
 
 import (
 	configDatastoreMocks "github.com/stackrox/rox/central/config/datastore/mocks"
-	platformmatcher "github.com/stackrox/rox/central/platform/matcher"
 	"github.com/stackrox/rox/generated/storage"
 	"go.uber.org/mock/gomock"
 )
 
-func GetPlatformMatcherWithDefaultPlatformComponentConfig(mockCtrl *gomock.Controller) platformmatcher.PlatformMatcher {
+func GetTestPlatformMatcherWithDefaultPlatformComponentConfig(mockCtrl *gomock.Controller) PlatformMatcher {
 	mockConfigDatastore := configDatastoreMocks.NewMockDataStore(mockCtrl)
 	mockConfigDatastore.EXPECT().GetPlatformComponentConfig(gomock.Any()).Return(GetDefaultPlatformComponentConfig(), true, nil).Times(1)
 
-	return platformmatcher.New(mockConfigDatastore)
+	return New(mockConfigDatastore)
 }
 
 func GetDefaultPlatformComponentConfig() *storage.PlatformComponentConfig {

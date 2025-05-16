@@ -9,11 +9,11 @@ import (
 	pgStore "github.com/stackrox/rox/central/deployment/datastore/internal/store/postgres"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	nfDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
+	platformmatcher "github.com/stackrox/rox/central/platform/matcher"
 	pbDS "github.com/stackrox/rox/central/processbaseline/datastore"
 	processIndicatorFilter "github.com/stackrox/rox/central/processindicator/filter"
 	"github.com/stackrox/rox/central/ranking"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
-	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/process/filter"
@@ -58,7 +58,7 @@ func NewTestDataStore(
 		storeParams.ClusterRanker,
 		storeParams.NamespaceRanker,
 		storeParams.DeploymentRanker,
-		fixtures.GetPlatformMatcherWithDefaultPlatformComponentConfig(mockCtrl),
+		platformmatcher.GetTestPlatformMatcherWithDefaultPlatformComponentConfig(mockCtrl),
 	)
 
 	ds.initializeRanker()
@@ -93,6 +93,6 @@ func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) (DataStore, error)
 		clusterRanker,
 		namespaceRanker,
 		deploymentRanker,
-		fixtures.GetPlatformMatcherWithDefaultPlatformComponentConfig(mockCtrl),
+		platformmatcher.GetTestPlatformMatcherWithDefaultPlatformComponentConfig(mockCtrl),
 	), nil
 }
