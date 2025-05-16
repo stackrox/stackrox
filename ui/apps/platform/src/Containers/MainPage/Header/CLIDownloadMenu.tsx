@@ -69,7 +69,7 @@ function CLIDownloadMenu({ addToast, removeToast }: CLIDownloadMenuProps): React
                         spaceItems={{ default: 'spaceItemsSm' }}
                     >
                         <FlexItem>
-                            <DownloadIcon alt="Download roxctl" />
+                            <DownloadIcon />
                         </FlexItem>
                         <FlexItem>CLI</FlexItem>
                     </Flex>
@@ -78,12 +78,7 @@ function CLIDownloadMenu({ addToast, removeToast }: CLIDownloadMenuProps): React
         >
             <DropdownList>
                 {cliDownloadOptions.map(({ os, display }) => (
-                    <DropdownItem
-                        id={`app-launcher-item-cli-${os}`}
-                        value={`app-launcher-item-cli-${os}`}
-                        key={os}
-                        onClick={handleDownloadCLI(os)}
-                    >
+                    <DropdownItem key={os} onClick={handleDownloadCLI(os)}>
                         {display}
                     </DropdownItem>
                 ))}
