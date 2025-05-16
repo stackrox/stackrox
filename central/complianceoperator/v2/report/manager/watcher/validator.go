@@ -33,8 +33,8 @@ func ValidateScanConfigResults(ctx context.Context, results *ScanConfigWatcherRe
 				clusterInfo := ValidateClusterHealth(ctx, cluster.GetClusterId(), integrationDataStore)
 				if clusterInfo != nil {
 					errList.AddError(errors.New(fmt.Sprintf("cluster %s failed", clusterInfo.GetClusterId())))
-					if clusterInfo.Reason == "" {
-						clusterInfo.Reason = report.INTERNAL_ERROR
+					if len(clusterInfo.Reasons) == 0 {
+						clusterInfo.Reasons = []string{report.INTERNAL_ERROR}
 					}
 					failedClusters[clusterInfo.GetClusterId()] = clusterInfo
 				}
@@ -59,19 +59,19 @@ func ValidateScanResults(ctx context.Context, results *ScanWatcherResults, integ
 		return nil
 	}
 	ret := ValidateClusterHealth(ctx, results.Scan.GetClusterId(), integrationDataStore)
-	if ret.Reason != "" {
+	if len(ret.Reasons) > 0 {
 		return ret
 	}
-	ret.Reason = report.INTERNAL_ERROR
+	ret.Reasons = []string{report.INTERNAL_ERROR}
 	if errors.Is(results.Error, ErrScanRemoved) {
-		ret.Reason = fmt.Sprintf(report.SCAN_REMOVED, results.Scan.GetScanName())
+		ret.Reasons = []string{fmt.Sprintf(report.SCAN_REMOVED, results.Scan.GetScanName())}
 		return ret
 	}
 	if errors.Is(results.Error, ErrScanTimeout) {
-		ret.Reason = fmt.Sprintf(report.SCAN_TIMEOUT, results.Scan.GetScanName())
+		ret.Reasons = []string{fmt.Sprintf(report.SCAN_TIMEOUT, results.Scan.GetScanName())}
 	}
 	if checkContextIsDone(results.SensorCtx) {
-		ret.Reason = fmt.Sprintf(report.SCAN_TIMEOUT_SENSOR_DISCONNECTED, results.Scan.GetScanName())
+		ret.Reasons = []string{fmt.Sprintf(report.SCAN_TIMEOUT_SENSOR_DISCONNECTED, results.Scan.GetScanName())}
 	}
 	return ret
 }
@@ -81,20 +81,19 @@ func ValidateClusterHealth(ctx context.Context, clusterID string, integrationDat
 	ret := &storage.ComplianceOperatorReportSnapshotV2_FailedCluster{
 		ClusterId:       clusterID,
 		OperatorVersion: "",
-		Reason:          "",
 	}
 	coStatus, err := IsComplianceOperatorHealthy(ctx, clusterID, integrationDataStore)
 	if errors.Is(err, ErrComplianceOperatorIntegrationDataStore) || errors.Is(err, ErrComplianceOperatorIntegrationZeroIntegrations) {
-		ret.Reason = report.INTERNAL_ERROR
+		ret.Reasons = []string{report.INTERNAL_ERROR}
 		return ret
 	}
 	ret.OperatorVersion = coStatus.GetVersion()
 	if errors.Is(err, ErrComplianceOperatorNotInstalled) {
-		ret.Reason = report.COMPLIANCE_NOT_INSTALLED
+		ret.Reasons = []string{report.COMPLIANCE_NOT_INSTALLED}
 		return ret
 	}
 	if errors.Is(err, ErrComplianceOperatorVersion) {
-		ret.Reason = report.COMPLIANCE_VERSION_ERROR
+		ret.Reasons = []string{report.COMPLIANCE_VERSION_ERROR}
 		return ret
 	}
 	return ret
