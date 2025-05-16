@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoutils"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/retry"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (
@@ -90,11 +91,16 @@ func VerifyAgainstSignatureIntegrations(ctx context.Context, integrations []*sto
 		return nil
 	}
 
-	var results []*storage.ImageSignatureVerificationResult
-	for _, integration := range integrations {
-		verificationResults := VerifyAgainstSignatureIntegration(ctx, integration, image)
-		results = append(results, verificationResults)
+	results := make([]*storage.ImageSignatureVerificationResult, len(integrations))
+	var wg sync.WaitGroup
+	for index, integration := range integrations {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			results[index] = VerifyAgainstSignatureIntegration(ctx, integration, image)
+		}()
 	}
+	wg.Wait()
 	return results
 }
 
