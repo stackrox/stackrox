@@ -1,12 +1,14 @@
 package common
 
 import (
+	"context"
 	"testing"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_validateMetricName(t *testing.T) {
+func TestValidateMetricName(t *testing.T) {
 	tests := map[string]string{
 		"good":             "",
 		"not good":         "bad characters",
@@ -23,4 +25,57 @@ func Test_validateMetricName(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestMakeTrackFunc(t *testing.T) {
+	type myDS struct{}
+	result := make(map[string][]*Record)
+	track := MakeTrackFunc(
+		myDS{},
+		func() MetricLabelExpressions {
+			return MetricLabelExpressions{}
+		},
+		func(ctx context.Context, md myDS, mle MetricLabelExpressions) Result {
+			return Result{
+				"metric1": map[MetricKey]*Record{
+					MetricKey("abc"): {
+						prometheus.Labels{"label1": "value1"},
+						37,
+					},
+					MetricKey("def"): {
+						prometheus.Labels{"label1": "value1"},
+						73,
+					},
+				},
+				"metric2": map[MetricKey]*Record{
+					MetricKey("abc"): {
+						prometheus.Labels{"label1": "value1"},
+						44,
+					},
+				},
+			}
+		},
+		func(metricName string, labels prometheus.Labels, total int) {
+			result[metricName] = append(result[metricName], &Record{labels, total})
+		},
+	)
+	track(context.Background())
+	assert.Equal(t, map[string][]*Record{
+		"metric1": {
+			{
+				prometheus.Labels{"label1": "value1"},
+				37,
+			},
+			{
+				prometheus.Labels{"label1": "value1"},
+				73,
+			},
+		},
+		"metric2": {
+			{
+				prometheus.Labels{"label1": "value1"},
+				44,
+			},
+		},
+	}, result)
 }

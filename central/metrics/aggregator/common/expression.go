@@ -30,6 +30,7 @@ type Expression struct {
 	arg string
 }
 
+// MakeExpression constructs an expression.
 func MakeExpression(op, arg string) (*Expression, error) {
 	expr := &Expression{operator(op), arg}
 	if err := expr.validate(); err != nil {
@@ -38,6 +39,7 @@ func MakeExpression(op, arg string) (*Expression, error) {
 	return expr, nil
 }
 
+// MustMakeExpression constructs an expression and panics on error.
 func MustMakeExpression(op, arg string) *Expression {
 	expr, err := MakeExpression(op, arg)
 	if err != nil {

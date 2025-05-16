@@ -81,7 +81,7 @@ func getTestData() ([]*storage.Deployment, map[string][]*storage.Image) {
 	return deployments, deploymentImages
 }
 
-func Test_track(t *testing.T) {
+func TestTrack(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	ds := deploymentMockDS.NewMockDataStore(ctrl)
 
@@ -117,17 +117,16 @@ func Test_track(t *testing.T) {
 		},
 	}
 
-	a := common.MakeTrackWrapper[deploymentDS.DataStore](
+	track := common.MakeTrackFunc[deploymentDS.DataStore](
 		ds,
-		func() common.MetricsConfig {
+		func() common.MetricLabelExpressions {
 			return metricExpressions
 		},
-		TrackVulnerabilityMetrics)
-	a.TrackFunc = func(metric string, labels prometheus.Labels, total int) {
-		actual[common.MetricName(metric)] = append(actual[common.MetricName(metric)], common.MakeRecord(labels, total))
-	}
-
-	a.Track(context.Background())
+		TrackVulnerabilityMetrics,
+		func(metric string, labels prometheus.Labels, total int) {
+			actual[common.MetricName(metric)] = append(actual[common.MetricName(metric)], common.MakeRecord(labels, total))
+		})
+	track(context.Background())
 
 	expected := map[common.MetricName][]*common.Record{
 		"Severity_total": {
