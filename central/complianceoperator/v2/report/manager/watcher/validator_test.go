@@ -173,7 +173,7 @@ func TestValidateScanResults(t *testing.T) {
 			expectedFailedCluster: &storage.ComplianceOperatorReportSnapshotV2_FailedCluster{
 				ClusterId:       clusterID,
 				OperatorVersion: "",
-				Reason:          report.INTERNAL_ERROR,
+				Reasons:         []string{report.INTERNAL_ERROR},
 			},
 		},
 		"internal error due to no integration retrieved from data store": {
@@ -188,7 +188,7 @@ func TestValidateScanResults(t *testing.T) {
 			expectedFailedCluster: &storage.ComplianceOperatorReportSnapshotV2_FailedCluster{
 				ClusterId:       clusterID,
 				OperatorVersion: "",
-				Reason:          report.INTERNAL_ERROR,
+				Reasons:         []string{report.INTERNAL_ERROR},
 			},
 		},
 		"operator not installer": {
@@ -207,7 +207,7 @@ func TestValidateScanResults(t *testing.T) {
 			expectedFailedCluster: &storage.ComplianceOperatorReportSnapshotV2_FailedCluster{
 				ClusterId:       clusterID,
 				OperatorVersion: "",
-				Reason:          report.COMPLIANCE_NOT_INSTALLED,
+				Reasons:         []string{report.COMPLIANCE_NOT_INSTALLED},
 			},
 		},
 		"operator old version": {
@@ -228,7 +228,7 @@ func TestValidateScanResults(t *testing.T) {
 			expectedFailedCluster: &storage.ComplianceOperatorReportSnapshotV2_FailedCluster{
 				ClusterId:       clusterID,
 				OperatorVersion: oldVersion,
-				Reason:          report.COMPLIANCE_VERSION_ERROR,
+				Reasons:         []string{report.COMPLIANCE_VERSION_ERROR},
 			},
 		},
 		"scan removed error": {
@@ -250,7 +250,7 @@ func TestValidateScanResults(t *testing.T) {
 			expectedFailedCluster: &storage.ComplianceOperatorReportSnapshotV2_FailedCluster{
 				ClusterId:       clusterID,
 				OperatorVersion: minimumComplianceOperatorVersion,
-				Reason:          fmt.Sprintf(report.SCAN_REMOVED, scanName),
+				Reasons:         []string{fmt.Sprintf(report.SCAN_REMOVED, scanName)},
 			},
 		},
 		"scan timeout error": {
@@ -273,7 +273,7 @@ func TestValidateScanResults(t *testing.T) {
 			expectedFailedCluster: &storage.ComplianceOperatorReportSnapshotV2_FailedCluster{
 				ClusterId:       clusterID,
 				OperatorVersion: minimumComplianceOperatorVersion,
-				Reason:          fmt.Sprintf(report.SCAN_TIMEOUT, scanName),
+				Reasons:         []string{fmt.Sprintf(report.SCAN_TIMEOUT, scanName)},
 			},
 		},
 		"sensor context canceled error": {
@@ -296,7 +296,7 @@ func TestValidateScanResults(t *testing.T) {
 			expectedFailedCluster: &storage.ComplianceOperatorReportSnapshotV2_FailedCluster{
 				ClusterId:       clusterID,
 				OperatorVersion: minimumComplianceOperatorVersion,
-				Reason:          fmt.Sprintf(report.SCAN_TIMEOUT_SENSOR_DISCONNECTED, scanName),
+				Reasons:         []string{fmt.Sprintf(report.SCAN_TIMEOUT_SENSOR_DISCONNECTED, scanName)},
 			},
 		},
 		"internal error due context canceled error": {
@@ -319,7 +319,7 @@ func TestValidateScanResults(t *testing.T) {
 			expectedFailedCluster: &storage.ComplianceOperatorReportSnapshotV2_FailedCluster{
 				ClusterId:       clusterID,
 				OperatorVersion: minimumComplianceOperatorVersion,
-				Reason:          report.INTERNAL_ERROR,
+				Reasons:         []string{report.INTERNAL_ERROR},
 			},
 		},
 	}
@@ -342,7 +342,7 @@ func TestValidateClusterHealth(t *testing.T) {
 	cases := map[string]struct {
 		operatorStatus []*storage.ComplianceIntegration
 		expectDSError  error
-		expectedReason string
+		expectedReason []string
 	}{
 		"no error": {
 			operatorStatus: []*storage.ComplianceIntegration{
@@ -352,8 +352,7 @@ func TestValidateClusterHealth(t *testing.T) {
 					Version:           minimumComplianceOperatorVersion,
 				},
 			},
-			expectDSError:  nil,
-			expectedReason: "",
+			expectDSError: nil,
 		},
 		"unsupported version": {
 			operatorStatus: []*storage.ComplianceIntegration{
@@ -364,7 +363,7 @@ func TestValidateClusterHealth(t *testing.T) {
 				},
 			},
 			expectDSError:  nil,
-			expectedReason: report.COMPLIANCE_VERSION_ERROR,
+			expectedReason: []string{report.COMPLIANCE_VERSION_ERROR},
 		},
 		"operator not installed": {
 			operatorStatus: []*storage.ComplianceIntegration{
@@ -373,15 +372,15 @@ func TestValidateClusterHealth(t *testing.T) {
 				},
 			},
 			expectDSError:  nil,
-			expectedReason: report.COMPLIANCE_NOT_INSTALLED,
+			expectedReason: []string{report.COMPLIANCE_NOT_INSTALLED},
 		},
 		"internal error due to data store error": {
 			expectDSError:  errors.New("some error"),
-			expectedReason: report.INTERNAL_ERROR,
+			expectedReason: []string{report.INTERNAL_ERROR},
 		},
 		"internal error due to no integration retrieved from data store": {
 			expectDSError:  nil,
-			expectedReason: report.INTERNAL_ERROR,
+			expectedReason: []string{report.INTERNAL_ERROR},
 		},
 	}
 	for tName, tCase := range cases {
@@ -392,7 +391,7 @@ func TestValidateClusterHealth(t *testing.T) {
 			res := ValidateClusterHealth(ctx, clusterID, coIntegrationDS)
 			require.NotNil(tt, res)
 			assert.Equal(tt, clusterID, res.GetClusterId())
-			assert.Equal(tt, tCase.expectedReason, res.GetReason())
+			assert.Equal(tt, tCase.expectedReason, res.GetReasons())
 			if len(tCase.operatorStatus) > 0 {
 				assert.Equal(tt, tCase.operatorStatus[0].GetVersion(), res.GetOperatorVersion())
 			}
@@ -457,7 +456,7 @@ func getFailedClusters(idx, numClusters int) map[string]*storage.ComplianceOpera
 		ret[id] = &storage.ComplianceOperatorReportSnapshotV2_FailedCluster{
 			ClusterId:       id,
 			OperatorVersion: minimumComplianceOperatorVersion,
-			Reason:          report.INTERNAL_ERROR,
+			Reasons:         []string{report.INTERNAL_ERROR},
 		}
 	}
 	return ret
