@@ -14,7 +14,7 @@ function run_cmd() {
     run --separate-stderr "${CMD}"
 }
 
-function check_both() {
+function check_both_go() {
     run_cmd
     assert_success
     assert_output "BUILD_AND_PUSH_BOTH"
@@ -54,12 +54,12 @@ function assert_stderr_contains() {
 
 @test "should tell both GHA and Konflux when TARGET_BRANCH is other" {
     export TARGET_BRANCH=author/ROX-27716-take-konflux-on-release
-    check_both
+    check_both_go
 }
 
 @test "should tell both GHA and Konflux when github_ref is other" {
     export GITHUB_REF=refs/heads/many-funky/parts/with-useful/slashes
-    check_both
+    check_both_go
 }
 
 @test "should tell only Konflux when TARGET_BRANCH is rc tag" {
@@ -74,12 +74,12 @@ function assert_stderr_contains() {
 
 @test "should tell both GHA and Konflux when TARGET_BRANCH is a different tag" {
     export TARGET_BRANCH=refs/tags/4.10.56-nightly.20250515
-    check_both
+    check_both_go
 }
 
 @test "should tell both GHA and Konflux when github_ref is a different tag" {
     export GITHUB_REF=refs/tags/author-testing
-    check_both
+    check_both_go
 }
 
 @test "should tell only Konflux when PR and github_base_ref is release-like" {
@@ -91,5 +91,5 @@ function assert_stderr_contains() {
 @test "should tell both GHA and Konflux when PR and github_base_ref is other" {
     export GITHUB_REF="refs/pull/15309/merge"
     export GITHUB_BASE_REF="master"
-    check_both
+    check_both_go
 }
