@@ -35,6 +35,8 @@ const (
 	initialConfigurationMaxTimeout = 5 * time.Minute
 
 	timeFormat = "2006-01-02T15:04:05"
+
+	testPayload = "This is a test of the StackRox integration with this bucket"
 )
 
 var log = logging.LoggerForModule(option.EnableAdministrationEvents())
@@ -178,7 +180,7 @@ func (s *s3Common) Test() error {
 	ctx, cancel := context.WithTimeout(context.Background(), testMaxTimeout)
 	defer cancel()
 	formattedKey := s.prefixKey("test")
-	testBody := strings.NewReader("This is a test of the StackRox integration with this bucket")
+	testBody := strings.NewReader(testPayload)
 	if err := s.clientWrapper.Upload(ctx, formattedKey, testBody); err != nil {
 		return s.createError(fmt.Sprintf("creating test object %q in bucket %q",
 			formattedKey, s.bucket), err)
