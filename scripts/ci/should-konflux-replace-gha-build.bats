@@ -11,7 +11,8 @@ function setup() {
 }
 
 function run_cmd() {
-    run --separate-stderr "${BATS_TEST_DIRNAME}/should-konflux-replace-gha-build.sh"
+    cp -a "${BATS_TEST_DIRNAME}/should-konflux-replace-gha-build.sh" "${BATS_TEST_TMPDIR}/our-script.sh"
+    run --separate-stderr "${BATS_TEST_TMPDIR}/our-script.sh"
 }
 
 function check_both_go() {
@@ -140,4 +141,27 @@ function assert_stderr_contains() {
     export GITHUB_BASE_REF=master
     export GITHUB_HEAD_REF=author/konflux-release-like
     check_gha_suppressed_for_pr
+}
+
+# Holdfile logic
+
+@test "should respect holdfile when release push" {
+    export SOURCE_BRANCH=release-4.8
+    export TARGET_BRANCH=release-4.8
+    create_holdfile
+    run_cmd
+    assert_success
+    assert_output "BUILD_AND_PUSH_BOTH"
+    assert_stderr_contains "holdfile"
+}
+
+@test "should ignore holdfile when PR with magic branch" {
+    export SOURCE_BRANCH=author/konflux-release-like
+    export TARGET_BRANCH=master
+    create_holdfile
+    check_gha_suppressed_for_pr
+}
+
+function create_holdfile() {
+    touch "${BATS_TEST_TMPDIR}/should-konflux-replace-gha-build.hold"
 }

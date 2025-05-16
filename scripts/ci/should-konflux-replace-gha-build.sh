@@ -24,6 +24,9 @@ function log() {
     >&2 echo "$@"
 }
 
+script_dir="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+holdfile="${script_dir}/should-konflux-replace-gha-build.hold"
+
 if [[ ( -z "${SOURCE_BRANCH:-}" || -z "${TARGET_BRANCH:-}" ) && -z "${GITHUB_REF:-}" ]]; then
     log "Either SOURCE_BRANCH+TARGET_BRANCH or GITHUB_REF must be set"
     exit 2
@@ -71,7 +74,12 @@ fi
 
 if grep -qE '^((refs/heads/)?release-[0-9a-z]+\.[0-9a-z]+|refs/tags/[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?)$' <<< "${the_ref}"; then
     log "This looks like a release branch or tag push. GHA quay.io/rhacs-eng/* builds must be suppressed in favor of the Konflux ones."
-    echo "BUILD_AND_PUSH_ONLY_KONFLUX"
+    if [[ -f "${holdfile}" ]]; then
+        log "... would have done that but the 'holdfile' ${holdfile} exists and so not suppressing GHA."
+        echo "BUILD_AND_PUSH_BOTH"
+    else
+        echo "BUILD_AND_PUSH_ONLY_KONFLUX"
+    fi
 else
     log "This does not look like a release branch or tag push. Both GHA and Konflux should build and push quay.io/rhacs-eng/* images (with different tags)."
     echo "BUILD_AND_PUSH_BOTH"
