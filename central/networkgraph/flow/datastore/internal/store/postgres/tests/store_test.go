@@ -22,7 +22,6 @@ import (
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-
 	"gorm.io/gorm"
 )
 
