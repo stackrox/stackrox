@@ -50,7 +50,7 @@ var (
 
 	log = logging.LoggerForModule()
 
-	sensorScanMetricsName = prometheus.Labels{"entity": "sensor"}
+	sensorScanMetricsLabel = prometheus.Labels{"entity": "sensor"}
 )
 
 // LocalScan wraps the functions required for enriching local images. This allows us to inject different values for testing purposes.
@@ -153,8 +153,8 @@ func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClie
 	if err := acquireSemaphore(semaphoreCtx, scanLimitSemaphore); err != nil {
 		return nil, errors.Join(err, ErrTooManyParallelScans, ErrEnrichNotStarted)
 	}
-	images.ScanSemaphoreHoldingSize.With(sensorScanMetricsName).Inc()
-	defer images.ScanSemaphoreHoldingSize.With(sensorScanMetricsName).Dec()
+	images.ScanSemaphoreHoldingSize.With(sensorScanMetricsLabel).Inc()
+	defer images.ScanSemaphoreHoldingSize.With(sensorScanMetricsLabel).Dec()
 	defer scanLimitSemaphore.Release(1)
 
 	srcImage := req.Image
@@ -205,8 +205,8 @@ func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClie
 }
 
 func acquireSemaphore(ctx context.Context, sema *semaphore.Weighted) error {
-	images.ScanSemaphoreQueueSize.With(sensorScanMetricsName).Inc()
-	defer images.ScanSemaphoreQueueSize.With(sensorScanMetricsName).Dec()
+	images.ScanSemaphoreQueueSize.With(sensorScanMetricsLabel).Inc()
+	defer images.ScanSemaphoreQueueSize.With(sensorScanMetricsLabel).Dec()
 	return sema.Acquire(ctx, 1)
 }
 

@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	enricherScanMetricsName = prometheus.Labels{"entity": "enricher"}
+	enricherScanMetricsLabel = prometheus.Labels{"entity": "enricher"}
 )
 
 // This interface encapsulates the metrics this package needs.
@@ -42,19 +42,19 @@ func (m *metricsImpl) IncrementMetadataCacheMiss() {
 }
 
 func (m *metricsImpl) IncrementEnricherSemaphoreQueueSize() {
-	images.ScanSemaphoreQueueSize.With(enricherScanMetricsName).Inc()
+	images.ScanSemaphoreQueueSize.With(enricherScanMetricsLabel).Inc()
 }
 
 func (m *metricsImpl) DecrementEnricherSemaphoreQueueSize() {
-	images.ScanSemaphoreQueueSize.With(enricherScanMetricsName).Dec()
+	images.ScanSemaphoreQueueSize.With(enricherScanMetricsLabel).Dec()
 }
 
 func (m *metricsImpl) IncrementEnricherSemaphoreHoldingSize() {
-	images.ScanSemaphoreHoldingSize.With(enricherScanMetricsName).Inc()
+	images.ScanSemaphoreHoldingSize.With(enricherScanMetricsLabel).Inc()
 }
 
 func (m *metricsImpl) DecrementEnricherSemaphoreHoldingSize() {
-	images.ScanSemaphoreHoldingSize.With(enricherScanMetricsName).Dec()
+	images.ScanSemaphoreHoldingSize.With(enricherScanMetricsLabel).Dec()
 }
 
 func startTimeToMS(t time.Time) float64 {

@@ -89,7 +89,7 @@ var (
 
 	delegateScanPermissions = []string{"Image"}
 
-	imageScanMetricsName = prometheus.Labels{"entity": "central-service"}
+	imageScanMetricsLabel = prometheus.Labels{"entity": "central-service"}
 )
 
 // serviceImpl provides APIs for alerts.
@@ -482,15 +482,15 @@ func (s *serviceImpl) GetImageVulnerabilitiesInternal(ctx context.Context, reque
 
 func (s *serviceImpl) releaseFromScanSemaphore() {
 	s.internalScanSemaphore.Release(1)
-	images.ScanSemaphoreHoldingSize.With(imageScanMetricsName).Dec()
+	images.ScanSemaphoreHoldingSize.With(imageScanMetricsLabel).Dec()
 }
 
 func (s *serviceImpl) acquireScanSemaphore(ctx context.Context) error {
 	semaphoreCtx, cancel := context.WithTimeout(ctx, maxSemaphoreWaitTime)
 	defer cancel()
-	images.ScanSemaphoreQueueSize.With(imageScanMetricsName).Inc()
-	defer images.ScanSemaphoreQueueSize.With(imageScanMetricsName).Dec()
-	defer images.ScanSemaphoreHoldingSize.With(imageScanMetricsName).Inc()
+	images.ScanSemaphoreQueueSize.With(imageScanMetricsLabel).Inc()
+	defer images.ScanSemaphoreQueueSize.With(imageScanMetricsLabel).Dec()
+	defer images.ScanSemaphoreHoldingSize.With(imageScanMetricsLabel).Inc()
 	if err := s.internalScanSemaphore.Acquire(semaphoreCtx, 1); err != nil {
 		wrappedErr := errors.Wrap(err, "acquiring scan semaphore")
 
