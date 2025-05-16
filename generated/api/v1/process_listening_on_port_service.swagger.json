@@ -292,6 +292,10 @@
             "type": "object",
             "$ref": "#/definitions/storageProcessListeningOnPort"
           }
+        },
+        "totalListeningEndpoints": {
+          "type": "integer",
+          "format": "int32"
         }
       }
     },
