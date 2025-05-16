@@ -7,6 +7,7 @@ CMD="${BATS_TEST_DIRNAME}/should-konflux-replace-gha-build.sh"
 function setup() {
     unset TARGET_BRANCH
     unset GITHUB_REF
+    unset GITHUB_BASE_REF
 }
 
 function run_cmd() {
@@ -57,7 +58,7 @@ function assert_stderr_contains() {
 }
 
 @test "should tell both GHA and Konflux when github_ref is other" {
-    export GITHUB_REF=refs/heads/many-funky/components/with-useful/slashes
+    export GITHUB_REF=refs/heads/many-funky/parts/with-useful/slashes
     check_both
 }
 
@@ -78,5 +79,17 @@ function assert_stderr_contains() {
 
 @test "should tell both GHA and Konflux when github_ref is a different tag" {
     export GITHUB_REF=refs/tags/author-testing
+    check_both
+}
+
+@test "should tell only Konflux when PR and github_base_ref is release-like" {
+    export GITHUB_REF="refs/pull/15309/merge"
+    export GITHUB_BASE_REF="release-x.y"
+    check_gha_suppressed
+}
+
+@test "should tell both GHA and Konflux when PR and github_base_ref is other" {
+    export GITHUB_REF="refs/pull/15309/merge"
+    export GITHUB_BASE_REF="master"
     check_both
 }

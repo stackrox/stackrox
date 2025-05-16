@@ -40,7 +40,14 @@ log "Konflux TARGET_BRANCH: ${TARGET_BRANCH:-}"
 # 'refs/heads/<branch_name>' for branch push, 'refs/pull/<pr_number>/merge' for PR, 'refs/tags/<tag_name>' for tag push.
 log "GitHub GITHUB_REF: ${GITHUB_REF:-}"
 
+# Name of the target branch of PR when it's a PR in GHA CI. '<branch_name>'.
+log "GitHub GITHUB_BASE_REF: ${GITHUB_BASE_REF:-}"
+
 the_ref="${TARGET_BRANCH:-${GITHUB_REF}}"
+
+if [[ "${the_ref}" == refs/pull/*/merge ]]; then
+    the_ref="${GITHUB_BASE_REF}"
+fi
 
 if grep -qE '^((refs/heads/)?release-[0-9a-z]+\.[0-9a-z]+|refs/tags/[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?)$' <<< "${the_ref}"; then
     log "This looks like a release branch or tag push, GHA quay.io/rhacs-eng/* builds must be suppressed in favor of the Konflux ones."
