@@ -4,6 +4,7 @@ import (
 	"errors"
 	"testing"
 
+	configDatastoreMocks "github.com/stackrox/rox/central/config/datastore/mocks"
 	"github.com/stackrox/rox/central/deployment/cache"
 	"github.com/stackrox/rox/central/deployment/datastore/internal/search"
 	pgStore "github.com/stackrox/rox/central/deployment/datastore/internal/store/postgres"
@@ -14,9 +15,11 @@ import (
 	processIndicatorFilter "github.com/stackrox/rox/central/processindicator/filter"
 	"github.com/stackrox/rox/central/ranking"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/process/filter"
+	"go.uber.org/mock/gomock"
 )
 
 // DeploymentTestStoreParams is a structure wrapping around the input
@@ -78,6 +81,25 @@ func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) (DataStore, error)
 	clusterRanker := ranking.ClusterRanker()
 	namespaceRanker := ranking.NamespaceRanker()
 	deploymentRanker := ranking.DeploymentRanker()
+	mockCtrl := gomock.NewController(t)
+	mockConfigDatastore := configDatastoreMocks.NewMockDataStore(mockCtrl)
+	mockConfigDatastore.EXPECT().GetPlatformComponentConfig(gomock.Any()).Return(&storage.PlatformComponentConfig{
+		NeedsReevaluation: false,
+		Rules: []*storage.PlatformComponentConfig_Rule{
+			{
+				Name: "system rule",
+				NamespaceRule: &storage.PlatformComponentConfig_Rule_NamespaceRule{
+					Regex: `^kube-.*|^openshift-.*`,
+				},
+			},
+			{
+				Name: "red hat layered products",
+				NamespaceRule: &storage.PlatformComponentConfig_Rule_NamespaceRule{
+					Regex: `^stackrox$|^rhacs-operator$|^open-cluster-management$|^multicluster-engine$|^aap$|^hive$`,
+				},
+			},
+		},
+	}, true, nil).Times(1)
 	return newDatastoreImpl(
 		dbStore,
 		searcher,
@@ -90,6 +112,6 @@ func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) (DataStore, error)
 		clusterRanker,
 		namespaceRanker,
 		deploymentRanker,
-		platformmatcher.Singleton(),
+		platformmatcher.New(mockConfigDatastore),
 	), nil
 }
