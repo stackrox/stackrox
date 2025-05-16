@@ -200,6 +200,148 @@ func GetValidS3ConfigUsingIAM(_ testing.TB) *storage.ExternalBackup {
 	}
 }
 
+// GetBrokenS3ConfigNoBucket returns a proto container for s3 and compatible
+// config wrapper tests.
+func GetBrokenS3ConfigNoBucket(_ testing.TB) *storage.ExternalBackup {
+	return &storage.ExternalBackup{
+		Id:            "ValidS3ConfigID",
+		Name:          S3IntegrationName,
+		Type:          "S3",
+		BackupsToKeep: TestKeepThreeBackups,
+		Config: &storage.ExternalBackup_S3{
+			S3: &storage.S3Config{
+				UseIam:       true,
+				Region:       TestRegion,
+				ObjectPrefix: S3ObjectPrefix,
+				Endpoint:     S3Endpoint,
+			},
+		},
+	}
+}
+
+// GetBrokenS3ConfigUsingIAMAndAccessKeyID returns a proto container for s3 and compatible
+// config wrapper tests.
+func GetBrokenS3ConfigUsingIAMAndAccessKeyID(_ testing.TB) *storage.ExternalBackup {
+	return &storage.ExternalBackup{
+		Id:            "ValidS3ConfigID",
+		Name:          S3IntegrationName,
+		Type:          "S3",
+		BackupsToKeep: TestKeepThreeBackups,
+		Config: &storage.ExternalBackup_S3{
+			S3: &storage.S3Config{
+				Bucket:       S3Bucket,
+				UseIam:       true,
+				AccessKeyId:  TestAccessKeyID,
+				Region:       TestRegion,
+				ObjectPrefix: S3ObjectPrefix,
+				Endpoint:     S3Endpoint,
+			},
+		},
+	}
+}
+
+// GetBrokenS3ConfigUsingIAMAndAccessSecret returns a proto container for s3 and compatible
+// config wrapper tests.
+func GetBrokenS3ConfigUsingIAMAndAccessSecret(_ testing.TB) *storage.ExternalBackup {
+	return &storage.ExternalBackup{
+		Id:            "ValidS3ConfigID",
+		Name:          S3IntegrationName,
+		Type:          "S3",
+		BackupsToKeep: TestKeepThreeBackups,
+		Config: &storage.ExternalBackup_S3{
+			S3: &storage.S3Config{
+				Bucket:          S3Bucket,
+				UseIam:          true,
+				SecretAccessKey: TestSecretAccessKey,
+				Region:          TestRegion,
+				ObjectPrefix:    S3ObjectPrefix,
+				Endpoint:        S3Endpoint,
+			},
+		},
+	}
+}
+
+// GetBrokenS3ConfigNoIAMNoAccessKeyID returns a proto container for s3 and compatible
+// config wrapper tests.
+func GetBrokenS3ConfigNoIAMNoAccessKeyID(_ testing.TB) *storage.ExternalBackup {
+	return &storage.ExternalBackup{
+		Id:            "ValidS3ConfigID",
+		Name:          S3IntegrationName,
+		Type:          "S3",
+		BackupsToKeep: TestKeepThreeBackups,
+		Config: &storage.ExternalBackup_S3{
+			S3: &storage.S3Config{
+				Bucket:          S3Bucket,
+				UseIam:          false,
+				SecretAccessKey: TestSecretAccessKey,
+				Region:          TestRegion,
+				ObjectPrefix:    S3ObjectPrefix,
+				Endpoint:        S3Endpoint,
+			},
+		},
+	}
+}
+
+// GetBrokenS3ConfigNoIAMNoAccessSecret returns a proto container for s3 and compatible
+// config wrapper tests.
+func GetBrokenS3ConfigNoIAMNoAccessSecret(_ testing.TB) *storage.ExternalBackup {
+	return &storage.ExternalBackup{
+		Id:            "ValidS3ConfigID",
+		Name:          S3IntegrationName,
+		Type:          "S3",
+		BackupsToKeep: TestKeepThreeBackups,
+		Config: &storage.ExternalBackup_S3{
+			S3: &storage.S3Config{
+				Bucket:       S3Bucket,
+				UseIam:       false,
+				AccessKeyId:  TestAccessKeyID,
+				Region:       TestRegion,
+				ObjectPrefix: S3ObjectPrefix,
+				Endpoint:     S3Endpoint,
+			},
+		},
+	}
+}
+
+// GetBrokenS3ConfigNoIAMNoAccessData returns a proto container for s3 and compatible
+// config wrapper tests.
+func GetBrokenS3ConfigNoIAMNoAccessData(_ testing.TB) *storage.ExternalBackup {
+	return &storage.ExternalBackup{
+		Id:            "ValidS3ConfigID",
+		Name:          S3IntegrationName,
+		Type:          "S3",
+		BackupsToKeep: TestKeepThreeBackups,
+		Config: &storage.ExternalBackup_S3{
+			S3: &storage.S3Config{
+				Bucket:       S3Bucket,
+				UseIam:       false,
+				Region:       TestRegion,
+				ObjectPrefix: S3ObjectPrefix,
+				Endpoint:     S3Endpoint,
+			},
+		},
+	}
+}
+
+// GetBrokenS3ConfigNoRegion returns a proto container for s3 and compatible
+// config wrapper tests.
+func GetBrokenS3ConfigNoRegion(_ testing.TB) *storage.ExternalBackup {
+	return &storage.ExternalBackup{
+		Id:            "ValidS3ConfigID",
+		Name:          S3IntegrationName,
+		Type:          "S3",
+		BackupsToKeep: TestKeepThreeBackups,
+		Config: &storage.ExternalBackup_S3{
+			S3: &storage.S3Config{
+				Bucket:       S3Bucket,
+				UseIam:       true,
+				ObjectPrefix: S3ObjectPrefix,
+				Endpoint:     S3Endpoint,
+			},
+		},
+	}
+}
+
 // GetValidS3CompatibleConfigVirtualHosted returns a proto container for s3 and compatible
 // config wrapper tests.
 func GetValidS3CompatibleConfigVirtualHosted(_ testing.TB) *storage.ExternalBackup {
@@ -236,6 +378,89 @@ func GetValidS3CompatibleConfigPathStyleBucket(_ testing.TB) *storage.ExternalBa
 				AccessKeyId:     TestAccessKeyID,
 				SecretAccessKey: TestSecretAccessKey,
 				Region:          TestRegion,
+				ObjectPrefix:    S3CompatibleObjectPrefix,
+				Endpoint:        S3CompatibleEndpoint,
+				UrlStyle:        storage.S3URLStyle_S3_URL_STYLE_PATH,
+			},
+		},
+	}
+}
+
+// GetBrokenS3CompatibleConfigNoAccessID returns a proto container for s3 and compatible
+// config wrapper tests.
+func GetBrokenS3CompatibleConfigNoAccessID(_ testing.TB) *storage.ExternalBackup {
+	return &storage.ExternalBackup{
+		Id:            "ValidS3CompatibleConfigID",
+		Name:          S3CompatibleIntegrationName,
+		Type:          "S3Compatible",
+		BackupsToKeep: TestKeepThreeBackups,
+		Config: &storage.ExternalBackup_S3Compatible{
+			S3Compatible: &storage.S3Compatible{
+				Bucket:          S3CompatibleBucket,
+				SecretAccessKey: TestSecretAccessKey,
+				Region:          TestRegion,
+				ObjectPrefix:    S3CompatibleObjectPrefix,
+				Endpoint:        S3CompatibleEndpoint,
+				UrlStyle:        storage.S3URLStyle_S3_URL_STYLE_PATH,
+			},
+		},
+	}
+}
+
+// GetBrokenS3CompatibleConfigNoAccessSecret returns a proto container for s3 and compatible
+// config wrapper tests.
+func GetBrokenS3CompatibleConfigNoAccessSecret(_ testing.TB) *storage.ExternalBackup {
+	return &storage.ExternalBackup{
+		Id:            "ValidS3CompatibleConfigID",
+		Name:          S3CompatibleIntegrationName,
+		Type:          "S3Compatible",
+		BackupsToKeep: TestKeepThreeBackups,
+		Config: &storage.ExternalBackup_S3Compatible{
+			S3Compatible: &storage.S3Compatible{
+				Bucket:       S3CompatibleBucket,
+				AccessKeyId:  TestAccessKeyID,
+				Region:       TestRegion,
+				ObjectPrefix: S3CompatibleObjectPrefix,
+				Endpoint:     S3CompatibleEndpoint,
+				UrlStyle:     storage.S3URLStyle_S3_URL_STYLE_PATH,
+			},
+		},
+	}
+}
+
+// GetBrokenS3CompatibleConfigNoAccessData returns a proto container for s3 and compatible
+// config wrapper tests.
+func GetBrokenS3CompatibleConfigNoAccessData(_ testing.TB) *storage.ExternalBackup {
+	return &storage.ExternalBackup{
+		Id:            "ValidS3CompatibleConfigID",
+		Name:          S3CompatibleIntegrationName,
+		Type:          "S3Compatible",
+		BackupsToKeep: TestKeepThreeBackups,
+		Config: &storage.ExternalBackup_S3Compatible{
+			S3Compatible: &storage.S3Compatible{
+				Bucket:       S3CompatibleBucket,
+				Region:       TestRegion,
+				ObjectPrefix: S3CompatibleObjectPrefix,
+				Endpoint:     S3CompatibleEndpoint,
+				UrlStyle:     storage.S3URLStyle_S3_URL_STYLE_PATH,
+			},
+		},
+	}
+}
+
+// GetBrokenS3CompatibleConfigNoRegion returns a proto container for s3 and compatible
+// config wrapper tests.
+func GetBrokenS3CompatibleConfigNoRegion(_ testing.TB) *storage.ExternalBackup {
+	return &storage.ExternalBackup{
+		Id:            "ValidS3CompatibleConfigID",
+		Name:          S3CompatibleIntegrationName,
+		Type:          "S3Compatible",
+		BackupsToKeep: TestKeepThreeBackups,
+		Config: &storage.ExternalBackup_S3Compatible{
+			S3Compatible: &storage.S3Compatible{
+				Bucket:          S3CompatibleBucket,
+				AccessKeyId:     TestAccessKeyID,
+				SecretAccessKey: TestSecretAccessKey,
 				ObjectPrefix:    S3CompatibleObjectPrefix,
 				Endpoint:        S3CompatibleEndpoint,
 				UrlStyle:        storage.S3URLStyle_S3_URL_STYLE_PATH,

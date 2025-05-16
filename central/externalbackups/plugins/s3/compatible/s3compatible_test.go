@@ -1,12 +1,14 @@
 package s3compatible
 
 import (
+	"errors"
 	"testing"
 
 	s3common "github.com/stackrox/rox/central/externalbackups/plugins/s3/common"
 	"github.com/stackrox/rox/central/externalbackups/plugins/s3/testdata"
 	"github.com/stackrox/rox/central/externalbackups/plugins/types"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stretchr/testify/assert"
 )
 
 func getAccessorTestCases(t *testing.T) map[string]testdata.PluginConfigTestCase {
@@ -68,4 +70,43 @@ func TestS3CompatibleWrapperAccessors(t *testing.T) {
 		return &s3compatibleConfigWrapper{integration: integration}
 	}
 	testdata.TestAccessors(t, configWrapperFactory, getAccessorTestCases(t))
+}
+
+func TestValidate(t *testing.T) {
+	for name, tc := range map[string]testdata.PluginConfigTestCase{
+		"Valid config returns no error": {
+			InputConfig:             testdata.GetValidS3CompatibleConfigPathStyleBucket(t),
+			ExpectedValidationError: nil,
+		},
+		"Wrong config type returns an error": {
+			InputConfig:             testdata.GetValidS3ConfigNoIAM(t),
+			ExpectedValidationError: errors.New("S3 Compatible configuration required"),
+		},
+		"S3 compatible config missing access key ID returns an error": {
+			InputConfig:             testdata.GetBrokenS3CompatibleConfigNoAccessID(t),
+			ExpectedValidationError: errors.New("S3 Compatible Validation error: Access Key ID must be specified"),
+		},
+		"S3 compatible config missing access secret returns an error": {
+			InputConfig:             testdata.GetBrokenS3CompatibleConfigNoAccessSecret(t),
+			ExpectedValidationError: errors.New("S3 Compatible Validation error: Secret Access Key must be specified"),
+		},
+		"S3 compatible config missing access data returns an error": {
+			InputConfig:             testdata.GetBrokenS3CompatibleConfigNoAccessData(t),
+			ExpectedValidationError: errors.New("S3 Compatible Validation errors: [Access Key ID must be specified, Secret Access Key must be specified]"),
+		},
+		"S3 compatible config missing region returns an error": {
+			InputConfig:             testdata.GetBrokenS3CompatibleConfigNoRegion(t),
+			ExpectedValidationError: errors.New("S3 Compatible Validation error: Region must be specified"),
+		},
+	} {
+		t.Run(name, func(it *testing.T) {
+			wrapper := &s3compatibleConfigWrapper{integration: tc.InputConfig}
+			err := wrapper.Validate()
+			if tc.ExpectedValidationError == nil {
+				assert.NoError(it, err)
+			} else {
+				assert.ErrorContains(it, err, tc.ExpectedValidationError.Error())
+			}
+		})
+	}
 }
