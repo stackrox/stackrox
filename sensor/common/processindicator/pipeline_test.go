@@ -1,4 +1,4 @@
-package processsignal
+package processindicator
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/sync"
@@ -25,11 +26,12 @@ const (
 	deploymentID1     = "mock-deployment-1"
 	deploymentID2     = "mock-deployment-2"
 	deploymentID3     = "mock-deployment-3"
-	outputChannelSize = 2
+	outputChannelSize = "2"
 )
 
 func TestProcessPipelineOfflineV3(t *testing.T) {
 	t.Setenv(features.SensorCapturesIntermediateEvents.EnvVar(), "true")
+	t.Setenv(env.ProcessIndicatorBufferSize.EnvVar(), outputChannelSize)
 	// In v3 going from online to offline and vice-versa won't do anything.
 	// The tests add the functions online and offline to illustrate how the pipeline would be called in a real scenario.
 	cases := map[string]struct {
@@ -94,10 +96,9 @@ func TestProcessPipelineOfflineV3(t *testing.T) {
 	defer mockCtrl.Finish()
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			sensorEvents := make(chan *message.ExpiringMessage, outputChannelSize)
 			mockStore := clusterentities.NewStore()
 			mockDetector := mocks.NewMockDetector(mockCtrl)
-			pipeline := NewProcessPipeline(sensorEvents, mockStore,
+			pipeline := NewProcessPipeline(mockStore,
 				filter.NewFilter(5, 5, []int{3, 3, 3}),
 				mockDetector)
 			t.Cleanup(func() {
@@ -105,7 +106,6 @@ func TestProcessPipelineOfflineV3(t *testing.T) {
 				for _, entity := range tc.entities {
 					deleteStore(entity.DeploymentID, mockStore)
 				}
-				close(sensorEvents)
 			})
 			mockDetector.EXPECT().ProcessIndicator(gomock.Any(), gomock.Any()).AnyTimes()
 			for _, entity := range tc.entities {
@@ -290,13 +290,10 @@ func TestProcessPipelineOfflineV1(t *testing.T) {
 		},
 	}
 
-	sensorEvents := make(chan *message.ExpiringMessage, 10)
-	defer close(sensorEvents)
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	testCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	actualEvents := forwardEvents(testCtx, sensorEvents)
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -317,10 +314,12 @@ func TestProcessPipelineOfflineV1(t *testing.T) {
 						ind.GetDeploymentId())
 				})
 
-			p := NewProcessPipeline(sensorEvents, mockStore,
+			p := NewProcessPipeline(mockStore,
 				filter.NewFilter(5, 5, []int{3, 3, 3}),
 				mockDetector)
 			defer p.Shutdown()
+
+			actualEvents := forwardEvents(testCtx, p.indicators)
 
 			metadataWg := &sync.WaitGroup{}
 			metadataWg.Add(1)
@@ -411,21 +410,19 @@ func collectEventsFor(ctx context.Context, ch <-chan *message.ExpiringMessage, t
 }
 
 func TestProcessPipelineOnline(t *testing.T) {
-	sensorEvents := make(chan *message.ExpiringMessage, 10)
-
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
 	mockStore := clusterentities.NewStore()
 	mockDetector := mocks.NewMockDetector(mockCtrl)
 
-	p := NewProcessPipeline(sensorEvents, mockStore, filter.NewFilter(5, 5, []int{10, 10, 10}),
+	p := NewProcessPipeline(mockStore, filter.NewFilter(5, 5, []int{10, 10, 10}),
 		mockDetector)
 	p.Notify(common.SensorComponentEventCentralReachable)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	actualEvents := forwardEvents(ctx, sensorEvents)
+	actualEvents := forwardEvents(ctx, p.indicators)
 
 	containerID := "fe43ac4f61f9"
 	deploymentID := "mock-deployment"
