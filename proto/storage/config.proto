@@ -125,16 +125,22 @@ message DayOption {
 }
 
 message PrometheusMetricsConfig {
-  message Expressions {
-    repeated Expression expression = 1;
-  }
-  message Expression {
-    string operator = 1;
-    string argument = 2;
-  }
+  
   message LabelExpressions {
+    message Expressions {
+      message Expression {
+        string operator = 1;
+        string argument = 2;
+      }
+      repeated Expression expression = 1;
+    }
     map<string, Expressions> label_expressions = 1;
   }
-  uint32 gathering_period_hours = 1;
-  map<string, LabelExpressions> metric_labels = 2;
+
+  message Vulnerabilities {
+    uint32 gathering_period_hours = 1;
+    map<string, LabelExpressions> metric_labels = 2;
+  }
+
+  Vulnerabilities vulnerabilities = 1;
 }

@@ -1,4 +1,4 @@
-package telemetry
+package aggregator
 
 import (
 	"testing"
@@ -7,43 +7,45 @@ import (
 )
 
 func Test_expression_match(t *testing.T) {
-	testLabels := map[Label]string{
+	labels := map[Label]string{
 		"string": "value",
 		"number": "3.4",
 		"bool":   "false",
 		"empty":  "",
 	}
 
-	labels := func(label Label) string {
-		return testLabels[label]
-	}
-
 	t.Run("test label and value", func(t *testing.T) {
-		value, ok := (&expression{"=", "value"}).match("string", labels)
+		value := labels["string"]
+		ok := (&expression{"=", "value"}).match(value)
 		assert.True(t, ok)
 		assert.Equal(t, "value", value)
 
-		value, ok = (&expression{">=", "1.0"}).match("number", labels)
+		value = labels["number"]
+		ok = (&expression{">=", "1.0"}).match(value)
 		assert.True(t, ok)
 		assert.Equal(t, "3.4", value)
 	})
 
 	t.Run("test missing label", func(t *testing.T) {
-		value, ok := (&expression{"=", "value"}).match("nonexistent", labels)
+		value := labels["nonexistent"]
+		ok := (&expression{"=", "value"}).match(value)
 		assert.Equal(t, "", value)
 		assert.False(t, ok)
 	})
 	t.Run("test empty label value", func(t *testing.T) {
-		value, ok := (&expression{"=", "value"}).match("empty", labels)
+		value := labels["empty"]
+		ok := (&expression{"=", "value"}).match(value)
 		assert.Equal(t, "", value)
 		assert.False(t, ok)
 
-		value, ok = (*expression)(nil).match("label", labels)
+		value = labels["label"]
+		ok = (*expression)(nil).match(value)
 		assert.Equal(t, "", value)
 		assert.True(t, ok)
 	})
 	t.Run("test expression with only label", func(t *testing.T) {
-		value, ok := (&expression{"", ""}).match("string", labels)
+		value := labels["string"]
+		ok := (&expression{"", ""}).match(value)
 		assert.Equal(t, "value", value)
 		assert.True(t, ok)
 	})
@@ -103,7 +105,8 @@ func Test_expression_match(t *testing.T) {
 		{"string", expression{"<=", "value1"}, true},
 		{"number", expression{"<", ">3.4"}, true},
 	} {
-		_, actual := c.expr.match(c.label, labels)
+		value := labels[c.label]
+		actual := c.expr.match(value)
 		assert.Equal(t, c.match, actual, "test #%d %s %s", i, c.label, c.expr.String())
 	}
 }
