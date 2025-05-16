@@ -15,7 +15,8 @@ function run_cmd() {
 
 function check_independent() {
     run_cmd
-    assert_failure 6
+    assert_success
+    assert_output "build and push both"
     assert_stderr_contains "does not look like"
     assert_stderr_contains "release"
     assert_stderr_contains "branch or tag"
@@ -24,6 +25,7 @@ function check_independent() {
 function check_gha_suppressed() {
     run_cmd
     assert_success
+    assert_output "build and push only Konflux"
     assert_stderr_contains "looks like"
     assert_stderr_contains "release"
     assert_stderr_contains "branch or tag"
@@ -77,20 +79,4 @@ function assert_stderr_contains() {
 @test "should build both GHA and Konflux when github_ref is a different tag" {
     export GITHUB_REF=refs/tags/author-testing
     check_independent
-}
-
-@test "should not produce any stdout" {
-    # The command should not print to stdout so that it can be used in places where stdout is used for passing data.
-
-    export GITHUB_REF=refs/heads/ordinary-branch
-    run --separate-stderr "${CMD}"
-    assert_failure 6
-    assert_output ''
-    assert [ "${#stderr_lines[@]}" -gt 0 ]
-
-    export GITHUB_REF=refs/heads/release-4.8
-    run --separate-stderr "${CMD}"
-    assert_success
-    assert_output ''
-    assert [ "${#stderr_lines[@]}" -gt 0 ]
 }

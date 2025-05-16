@@ -44,8 +44,8 @@ the_ref="${TARGET_BRANCH:-${GITHUB_REF}}"
 
 if grep -qE '^((refs/heads/)?release-[0-9a-z]+\.[0-9a-z]+|refs/tags/[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?)$' <<< "${the_ref}"; then
     log "This looks like a release branch or tag push, GHA quay.io/rhacs-eng/* builds must be suppressed in favor of the Konflux ones."
-    exit 0
+    echo "build and push only Konflux"
 else
     log "This does not look like a release branch or tag push, both GHA and Konflux should build and push quay.io/rhacs-eng/* images (with different tags)."
-    exit 6
+    echo "build and push both"
 fi
