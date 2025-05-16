@@ -57,11 +57,11 @@ autovacuum_max_workers = 2
 
 # - When to Log -
 
-log_min_duration_statement = 500
+log_min_duration_statement = 1min
 
 # - What to Log -
 
-log_autovacuum_min_duration = 500
+log_autovacuum_min_duration = 500ms
 log_checkpoints = 'on'
 log_connections = 'on'
 log_disconnections = 'on'
