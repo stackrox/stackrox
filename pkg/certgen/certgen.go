@@ -57,7 +57,7 @@ func VerifyServiceCertAndKey(fileMap map[string][]byte, fileNamePrefix string, c
 		return errors.New("unparseable certificate in file map")
 	}
 
-	var verifyOpts []mtls.VerifyCertOption
+	verifyOpts := make([]mtls.VerifyCertOption, 0, 1)
 	if currentTime != nil {
 		verifyOpts = append(verifyOpts, mtls.WithCurrentTime(*currentTime))
 	}

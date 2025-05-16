@@ -158,9 +158,9 @@ func updateCertificateNotBefore(ca *x509.Certificate, priv crypto.Signer, notBef
 		return
 	}
 
-	validity := ca.NotAfter.Sub(ca.NotBefore)
+	validityDuration := ca.NotAfter.Sub(ca.NotBefore)
 	copy.NotBefore = notBefore.Add(-5 * time.Minute)
-	copy.NotAfter = copy.NotBefore.Add(validity)
+	copy.NotAfter = copy.NotBefore.Add(validityDuration)
 	cert, err = x509.CreateCertificate(rand.Reader, copy, copy, priv.Public(), priv)
 	if err != nil {
 		return
