@@ -5,7 +5,8 @@ import (
 	"testing"
 
 	"github.com/prometheus/client_golang/prometheus"
-	deploymentDS "github.com/stackrox/rox/central/deployment/datastore/mocks"
+	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
+	deploymentMockDS "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
@@ -81,7 +82,7 @@ func getTestData() ([]*storage.Deployment, map[string][]*storage.Image) {
 
 func Test_track(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	ds := deploymentDS.NewMockDataStore(ctrl)
+	ds := deploymentMockDS.NewMockDataStore(ctrl)
 
 	deployments, deploymentImages := getTestData()
 
@@ -115,8 +116,12 @@ func Test_track(t *testing.T) {
 		},
 	}
 
-	a := vulnAggregator{
-		ds: ds,
+	a := trackWrapper[deploymentDS.DataStore]{
+		ds:         ds,
+		gatherFunc: trackVulnerabilityMetrics,
+		cfgGetter: func() metricsConfig {
+			return metricExpressions
+		},
 		trackFunc: func(metric string, labels prometheus.Labels, total int) {
 			actual[metricName(metric)] = append(actual[metricName(metric)],
 				&record{
@@ -126,7 +131,7 @@ func Test_track(t *testing.T) {
 		},
 	}
 
-	a.track(context.Background(), metricExpressions)
+	a.track(context.Background())
 
 	expected := map[metricName][]*record{
 		"Severity_total": {

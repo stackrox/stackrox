@@ -1,50 +1,27 @@
 package aggregator
 
 import (
-	"sync"
 	"time"
 
-	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
-	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
-type vulnerabilityMetricsTracker struct {
-	aggregator *vulnAggregator
+const vulnerabilitiesCategory = "vulnerabilities"
 
-	metricsConfig    metricsConfig
-	metricsConfigMux sync.RWMutex
-
-	periodCh chan time.Duration
-}
-
-func makeVulnerabilitiesTracker() *vulnerabilityMetricsTracker {
-	return &vulnerabilityMetricsTracker{
-		aggregator: &vulnAggregator{
-			ds:        deploymentDS.Singleton(),
-			trackFunc: metrics.SetAggregatedVulnCount,
-		},
-		periodCh: make(chan time.Duration, 1),
-	}
-}
-
-func (mt *vulnerabilityMetricsTracker) reloadConfig(cfg *storage.PrometheusMetricsConfig_Vulnerabilities) error {
+func reloadVulnerabilityTrackerConfig(cfg *storage.PrometheusMetricsConfig_Vulnerabilities) (*tracker, error) {
+	vulnTracker := makeTracker(vulnerabilitiesCategory)
 	metricsConfig, period, err := parseVulnerabilitiesConfig(cfg)
 	if err != nil {
-		log.Errorw("Failed to parse Prometheus metrics configuration", logging.Err(err))
-		return err
+		log.Errorw("Failed to parse vulnerability metrics configuration", logging.Err(err))
+		return vulnTracker, err
 	}
 	if period == 0 {
-		log.Info("No configured Prometheus metrics")
+		log.Info("Vulnerability metrics collection is disabled")
 	}
-
-	mt.metricsConfig = metricsConfig
-	mt.periodCh <- period
-
-	registerMetrics(metricsConfig, period)
-	return nil
+	vulnTracker.reloadConfig(metricsConfig, period)
+	return vulnTracker, nil
 }
 
 // parseVulnerabilitiesConfig converts the storage object to the usable map, validating the values.
@@ -88,22 +65,4 @@ func parseVulnerabilitiesConfig(config *storage.PrometheusMetricsConfig_Vulnerab
 		return nil, 0, nil
 	}
 	return result, period, nil
-}
-
-func (mt *vulnerabilityMetricsTracker) getMetricsConfig() metricsConfig {
-	if mt != nil {
-		mt.metricsConfigMux.RLock()
-		defer mt.metricsConfigMux.RUnlock()
-		return mt.metricsConfig
-	}
-	return nil
-}
-
-func registerMetrics(metricsConfig metricsConfig, period time.Duration) {
-	for metric, expressions := range metricsConfig {
-		metrics.RegisterVulnAggregatedMetric(string(metric), period,
-			getMetricLabels(expressions), Problemetrics)
-
-		log.Infof("Registered Prometheus metric %q", metric)
-	}
 }

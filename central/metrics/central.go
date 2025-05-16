@@ -272,7 +272,9 @@ var (
 		Help:      "Duration of the signature verification reprocessor loop in seconds",
 	})
 
-	aggregatedVulnMetrics = make(map[string]*prometheus.GaugeVec)
+	// Those are dynamically defined metrics, configured by users via the system
+	// private configuration.
+	customAggregatedMetrics = make(map[string]*prometheus.GaugeVec)
 )
 
 func startTimeToMS(t time.Time) float64 {
@@ -476,17 +478,17 @@ func SetSignatureVerificationReprocessorDuration(start time.Time) {
 	signatureVerificationReprocessorDurationGauge.Set(time.Since(start).Seconds())
 }
 
-// RegisterVulnAggregatedMetric registers user-defined custom vulnerability
-// aggregated metric according to the ROX_AGGREGATE_VULN_METRICS variable value.
-func RegisterVulnAggregatedMetric(name string, period time.Duration, labels []string, userRegistry *prometheus.Registry) {
+// RegisterCustomAggregatedMetric registers user-defined aggregated metrics
+// according to the system private configuration.
+func RegisterCustomAggregatedMetric(name string, description string, period time.Duration, labels []string, userRegistry *prometheus.Registry) {
 	metric := prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      name,
-		Help: "The total number of discovered CVEs aggregated by " + strings.Join(labels, ",") +
+		Help: "The total number of " + description + " aggregated by " + strings.Join(labels, ",") +
 			" and gathered every " + period.String(),
 	}, labels)
-	aggregatedVulnMetrics[name] = metric
+	customAggregatedMetrics[name] = metric
 
 	// Register the metric on the default Prometheus endpoint.
 	prometheus.MustRegister(metric)
@@ -496,8 +498,8 @@ func RegisterVulnAggregatedMetric(name string, period time.Duration, labels []st
 	}
 }
 
-// SetAggregatedVulnCount registers the metric vector with the values,
-// aggregated according to the ROX_AGGREGATE_VULN_METRICS variable value.
-func SetAggregatedVulnCount(metricName string, labels prometheus.Labels, total int) {
-	aggregatedVulnMetrics[metricName].With(labels).Set(float64(total))
+// SetCustomAggregatedCount registers the metric vector with the values,
+// according to the system private configuration.
+func SetCustomAggregatedCount(metricName string, labels prometheus.Labels, total int) {
+	customAggregatedMetrics[metricName].With(labels).Set(float64(total))
 }

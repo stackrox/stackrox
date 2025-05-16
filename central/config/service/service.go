@@ -170,7 +170,7 @@ func (s *serviceImpl) PutConfig(ctx context.Context, req *v1.PutConfigRequest) (
 		go reprocessor.Singleton().RunReprocessor()
 	}
 
-	if err := aggregator.ReloadConfig(req.GetConfig().GetPrivateConfig().GetPrometheusMetricsConfig()); err != nil {
+	if err := aggregator.Singleton().ReloadConfig(req.GetConfig().GetPrivateConfig().GetPrometheusMetricsConfig()); err != nil {
 		return nil, err
 	}
 	return req.GetConfig(), nil

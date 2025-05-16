@@ -4,8 +4,7 @@ import (
 	"context"
 	"strconv"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/stackrox/rox/central/deployment/datastore"
+	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -29,26 +28,7 @@ var labelOrder = map[Label]int{
 	"IsFixable":        16,
 }
 
-type vulnAggregator struct {
-	ds        datastore.DataStore
-	trackFunc func(metricName string, labels prometheus.Labels, total int)
-}
-
-func (a *vulnAggregator) getTracker(cfgGetter func() metricsConfig) func(context.Context) {
-	return func(ctx context.Context) {
-		a.track(ctx, cfgGetter())
-	}
-}
-
-func (a *vulnAggregator) track(ctx context.Context, mc metricsConfig) {
-	for metric, records := range trackVulnerabilityMetrics(ctx, a.ds, mc) {
-		for _, rec := range records {
-			a.trackFunc(string(metric), rec.labels, rec.total)
-		}
-	}
-}
-
-func trackVulnerabilityMetrics(ctx context.Context, ds datastore.DataStore, mc metricsConfig) result {
+func trackVulnerabilityMetrics(ctx context.Context, ds deploymentDS.DataStore, mc metricsConfig) result {
 	aggregated := make(result)
 	for metric := range mc {
 		aggregated[metric] = make(map[metricKey]*record)
