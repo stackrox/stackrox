@@ -10,6 +10,7 @@ import (
 	queueMocks "github.com/stackrox/rox/central/deployment/queue/mocks"
 	"github.com/stackrox/rox/central/networkbaseline/datastore"
 	networkEntityDSMock "github.com/stackrox/rox/central/networkgraph/entity/datastore/mocks"
+	treeMocks "github.com/stackrox/rox/central/networkgraph/entity/networktree/mocks"
 	networkFlowDSMocks "github.com/stackrox/rox/central/networkgraph/flow/datastore/mocks"
 	networkPolicyMocks "github.com/stackrox/rox/central/networkpolicies/datastore/mocks"
 	connectionMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
@@ -22,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/networkbaseline"
 	"github.com/stackrox/rox/pkg/networkgraph/testutils"
+	"github.com/stackrox/rox/pkg/networkgraph/tree"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
@@ -94,6 +96,7 @@ type ManagerTestSuite struct {
 	flowStore                  *networkFlowDSMocks.MockFlowDataStore
 	connectionManager          *connectionMocks.MockManager
 	deploymentObservationQueue *queueMocks.MockDeploymentObservationQueue
+	treeManager                *treeMocks.MockManager
 
 	m             Manager
 	currTestStart timestamp.MicroTS
@@ -110,6 +113,7 @@ func (suite *ManagerTestSuite) SetupTest() {
 	suite.flowStore = networkFlowDSMocks.NewMockFlowDataStore(suite.mockCtrl)
 	suite.connectionManager = connectionMocks.NewMockManager(suite.mockCtrl)
 	suite.deploymentObservationQueue = queueMocks.NewMockDeploymentObservationQueue(suite.mockCtrl)
+	suite.treeManager = treeMocks.NewMockManager(suite.mockCtrl)
 }
 
 func (suite *ManagerTestSuite) TearDownTest() {
@@ -124,7 +128,7 @@ func (suite *ManagerTestSuite) mustInitManager(initialBaselines ...*storage.Netw
 	}
 	var err error
 	suite.networkPolicyDS.EXPECT().GetNetworkPolicies(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
-	suite.m, err = New(suite.ds, suite.networkEntities, suite.deploymentDS, suite.networkPolicyDS, suite.clusterFlows, suite.connectionManager)
+	suite.m, err = New(suite.ds, suite.networkEntities, suite.deploymentDS, suite.networkPolicyDS, suite.clusterFlows, suite.connectionManager, suite.treeManager)
 	suite.Require().NoError(err)
 }
 
@@ -165,6 +169,7 @@ func (suite *ManagerTestSuite) mustGetObserationPeriod(baselineID int) timestamp
 }
 
 func (suite *ManagerTestSuite) initBaselinesForDeployments(ids ...int) {
+	suite.treeManager.EXPECT().GetDefaultNetworkTree(gomock.Any()).Return(nil).AnyTimes()
 	for _, id := range ids {
 		suite.deploymentDS.EXPECT().GetDeployment(gomock.Any(), depID(id)).Return(
 			&storage.Deployment{
@@ -176,6 +181,7 @@ func (suite *ManagerTestSuite) initBaselinesForDeployments(ids ...int) {
 		).AnyTimes()
 		suite.clusterFlows.EXPECT().GetFlowStore(gomock.Any(), clusterID(id)).Return(suite.flowStore, nil).AnyTimes()
 		suite.flowStore.EXPECT().GetFlowsForDeployment(gomock.Any(), depID(id), false).Return(nil, nil).AnyTimes()
+		suite.treeManager.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), clusterID(id)).Return(nil).AnyTimes()
 		suite.Require().NoError(suite.m.ProcessDeploymentCreate(depID(id), depName(id), clusterID(id), ns(id)))
 		suite.Require().NoError(suite.m.CreateNetworkBaseline(depID(id)))
 
@@ -915,6 +921,100 @@ func (suite *ManagerTestSuite) TestGetExternalNetworkPeers() {
 	suite.Nil(err)
 
 	protoassert.ElementsMatch(suite.T(), expectedPeers, result)
+}
+
+func (suite *ManagerTestSuite) TestAddBaselineAnonymizeDiscoveredExternalSource() {
+	discoveredExtSourceID := "discovered-external-src-1"
+
+	mockDeployment := &storage.Deployment{
+		Id:        fixtureconsts.Deployment1,
+		Name:      "deployment1",
+		ClusterId: fixtureconsts.Cluster1,
+		Namespace: fixtureconsts.Namespace1,
+		PodLabels: map[string]string{"app": "anonymize-test"},
+	}
+
+	suite.deploymentDS.EXPECT().GetDeployment(gomock.Any(), fixtureconsts.Deployment1).Return(mockDeployment, true, nil).Times(1)
+
+	mockFlows := []*storage.NetworkFlow{
+		{
+			Props: &storage.NetworkFlowProperties{
+				SrcEntity: &storage.NetworkEntityInfo{
+					Type: storage.NetworkEntityInfo_DEPLOYMENT,
+					Id:   fixtureconsts.Deployment1,
+				},
+				DstEntity: &storage.NetworkEntityInfo{
+					Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+					Id:   discoveredExtSourceID,
+				},
+				DstPort:    443,
+				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+			},
+			LastSeenTimestamp: protoconv.ConvertMicroTSToProtobufTS(timestamp.Now()),
+		},
+	}
+
+	suite.clusterFlows.EXPECT().GetFlowStore(gomock.Any(), fixtureconsts.Cluster1).Return(suite.flowStore, nil).Times(1)
+	suite.flowStore.EXPECT().GetFlowsForDeployment(gomock.Any(), fixtureconsts.Deployment1, false).Return(mockFlows, nil).Times(1)
+
+	// Note: The 'Discovered' flag on the flow's DstEntity is what triggers anonymization.
+	// The tree provides the descriptive info for the original (pre-anonymization) entity.
+	discoveredEntityInfoFromTree := &storage.NetworkEntityInfo{
+		Id:   discoveredExtSourceID,
+		Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+		Desc: &storage.NetworkEntityInfo_ExternalSource_{
+			ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
+				Name: "8.8.8.8/32",
+				Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
+					Cidr: "8.8.8.8/32", // Example CIDR
+				},
+				Discovered: true,
+			},
+		},
+	}
+
+	defaultTree := tree.NewDefaultNetworkTreeWrapper()
+	readOnlyTree, err := tree.NewNetworkTreeWrapper([]*storage.NetworkEntityInfo{discoveredEntityInfoFromTree})
+	suite.Require().NoError(err)
+
+	suite.treeManager.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), fixtureconsts.Cluster1).Return(readOnlyTree).Times(1)
+	suite.treeManager.EXPECT().GetDefaultNetworkTree(gomock.Any()).Return(defaultTree).Times(1)
+
+	suite.connectionManager.EXPECT().SendMessage(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+
+	suite.mustInitManager()
+	err = suite.m.CreateNetworkBaseline(fixtureconsts.Deployment1)
+	suite.Require().NoError(err)
+
+	baseline, found, err := suite.ds.GetNetworkBaseline(managerCtx, fixtureconsts.Deployment1)
+	suite.Require().NoError(err)
+	suite.Require().True(found)
+	suite.Require().NotNil(baseline)
+	suite.Require().NotEmpty(baseline.GetPeers(), "Baseline should have peers")
+
+	var foundAnonymizedPeer bool
+	for _, peer := range baseline.GetPeers() {
+		info := peer.GetEntity().GetInfo()
+		if info.GetId() == networkgraph.InternetExternalSourceID && info.GetType() == storage.NetworkEntityInfo_INTERNET {
+			foundAnonymizedPeer = true
+			// Check that the name also matches the standard Internet name
+			suite.Assert().Equal(networkgraph.InternetExternalSourceID, info.GetId())
+			suite.Assert().Equal(uint32(443), peer.GetProperties()[0].GetPort())
+			suite.Assert().False(peer.GetProperties()[0].GetIngress()) // Egress from our deployment
+			break
+		}
+	}
+	suite.Require().True(foundAnonymizedPeer, "Expected anonymized Internet peer not found in baseline")
+
+	// Also assert that the original discoveredExtSourceID is NOT present as a peer
+	var foundOriginalDiscoveredPeer bool
+	for _, peer := range baseline.GetPeers() {
+		if peer.GetEntity().GetInfo().GetId() == discoveredExtSourceID {
+			foundOriginalDiscoveredPeer = true
+			break
+		}
+	}
+	suite.Require().False(foundOriginalDiscoveredPeer, "Original discovered external source ID should not be a peer")
 }
 
 ///// Helper functions to make test code less verbose.
