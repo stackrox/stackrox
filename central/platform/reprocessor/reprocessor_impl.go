@@ -78,11 +78,11 @@ func (pr *platformReprocessorImpl) Stop() {
 
 func (pr *platformReprocessorImpl) RunReprocessor() {
 	err := pr.semaphore.Acquire(reprocessorCtx, 1)
-	defer pr.semaphore.Release(1)
 	if err != nil {
 		log.Errorf("Failed to acquire platform reprocessor semaphore: %v", err)
 		return
 	}
+	defer pr.semaphore.Release(1)
 	flag := true
 	if pr.customized {
 		config, _, err := pr.configDatastore.GetPlatformComponentConfig(reprocessorCtx)
