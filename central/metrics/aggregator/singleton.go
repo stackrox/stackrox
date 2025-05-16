@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
 	configDS "github.com/stackrox/rox/central/config/datastore"
+	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
@@ -13,77 +13,84 @@ import (
 )
 
 var (
-	once        sync.Once
-	instance    *aggregatorRunner
-	instanceMux sync.RWMutex
+	once     sync.Once
+	instance *aggregatorRunner
 
-	log           = logging.LoggerForModule()
-	Problemetrics = prometheus.NewRegistry()
+	log = logging.LoggerForModule()
 )
 
 type aggregatorRunner struct {
-	stopCh          chan bool
-	vulnerabilities *vulnerabilityMetricsTracker
+	stopCh   chan bool
+	stopOnce sync.Once
+	mux      sync.RWMutex
+
+	vulnerabilities     *tracker
+	vulnerabilitiesOnce sync.Once
 }
 
 func Singleton() interface {
 	Start()
 	Stop()
+	ReloadConfig(*storage.PrometheusMetricsConfig) error
 } {
 	once.Do(func() {
+		instance = &aggregatorRunner{
+			stopCh: make(chan bool),
+		}
 		systemPrivateConfig, err := configDS.Singleton().GetPrivateConfig(
 			sac.WithAllAccess(context.Background()))
 		if err != nil {
 			log.Errorw("Failed to get Prometheus metrics configuration", logging.Err(err))
 			return
 		}
-		_ = ReloadConfig(systemPrivateConfig.GetPrometheusMetricsConfig())
+		// Ignore error on start, as there's nothing we can do.
+		_ = instance.ReloadConfig(systemPrivateConfig.GetPrometheusMetricsConfig())
 	})
-	instanceMux.RLock()
-	defer instanceMux.RUnlock()
 	return instance
 }
 
-func ReloadConfig(cfg *storage.PrometheusMetricsConfig) error {
-	instanceMux.Lock()
-	defer instanceMux.Unlock()
+func (ar *aggregatorRunner) ReloadConfig(cfg *storage.PrometheusMetricsConfig) error {
+	ar.mux.Lock()
+	defer ar.mux.Unlock()
 
-	if instance == nil {
-		instance = &aggregatorRunner{
-			stopCh: make(chan bool),
-		}
+	// Vulnerabilties metrics:
+	vulnTracker, err := reloadVulnerabilityTrackerConfig(cfg.GetVulnerabilities())
+	if err == nil || instance.vulnerabilities == nil {
+		instance.vulnerabilities = vulnTracker
+	}
+	if err != nil {
+		return err
 	}
 
-	if instance.vulnerabilities == nil {
-		instance.vulnerabilities = makeVulnerabilitiesTracker()
-	}
-
-	return instance.vulnerabilities.reloadConfig(cfg.GetVulnerabilities())
+	return nil
 }
 
 func (ar *aggregatorRunner) Start() {
-	if ar != nil {
-		v := ar.vulnerabilities
-		go ar.run(v.periodCh,
-			v.aggregator.getTracker(v.getMetricsConfig))
-	}
+	// Run the periodic vulnerabilities aggregation.
+	ar.vulnerabilitiesOnce.Do(func() {
+		if v := ar.vulnerabilities; v != nil {
+			tw := makeTrackWrapper(
+				deploymentDS.Singleton(),
+				ar.vulnerabilities.getMetricsConfig,
+				trackVulnerabilityMetrics)
+			go ar.run(v.periodCh, tw.track)
+		}
+	})
 }
 
 func (ar *aggregatorRunner) Stop() {
-	if ar != nil {
+	ar.stopOnce.Do(func() {
 		close(ar.stopCh)
-	}
+	})
 }
 
 func (ar *aggregatorRunner) run(periodCh <-chan time.Duration, track func(context.Context)) {
-	ticker := time.NewTicker(<-periodCh)
-	defer ticker.Stop()
+	var ticker *time.Ticker
 
 	ctx, cancel := context.WithCancel(
 		sac.WithAllAccess(context.Background()))
-
-	track(ctx)
 	defer cancel()
+
 	for {
 		select {
 		case <-ticker.C:
@@ -92,9 +99,17 @@ func (ar *aggregatorRunner) run(periodCh <-chan time.Duration, track func(contex
 			return
 		case period := <-periodCh:
 			if period > 0 {
-				ticker.Reset(period)
+				track(ctx)
+				if ticker == nil {
+					ticker = time.NewTicker(period)
+					defer ticker.Stop()
+				} else {
+					ticker.Reset(period)
+				}
 			} else {
-				ticker.Stop()
+				if ticker != nil {
+					ticker.Stop()
+				}
 			}
 		}
 	}
