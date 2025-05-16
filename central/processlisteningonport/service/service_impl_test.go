@@ -131,6 +131,9 @@ var (
 			ExecFilePath: "test_path3",
 		},
 	}
+
+	deployment1 = &storage.Deployment{Id: fixtureconsts.Deployment1, Namespace: fixtureconsts.Namespace1, ClusterId: fixtureconsts.Cluster1}
+	deployment2 = &storage.Deployment{Id: fixtureconsts.Deployment2, Namespace: fixtureconsts.Namespace1, ClusterId: fixtureconsts.Cluster1}
 )
 
 func (suite *PLOPServiceTestSuite) TestPLOPCases() {
@@ -145,66 +148,36 @@ func (suite *PLOPServiceTestSuite) TestPLOPCases() {
 		request 		*v1.GetProcessesListeningOnPortsRequest
 	} {
 		"One plop is retrieved": {
-			plopsInDB:	[]*storage.ProcessListeningOnPortStorage{
-							fixtures.GetPlopStorage7(),
-						},
+			plopsInDB:	[]*storage.ProcessListeningOnPortStorage{fixtures.GetPlopStorage7()},
 			processIndicators: []*storage.ProcessIndicator{indicator1, indicator2},
-			deployments: 	[]*storage.Deployment{
-						&storage.Deployment{Id: fixtureconsts.Deployment1, Namespace: fixtureconsts.Namespace1, ClusterId: fixtureconsts.Cluster1},
-						&storage.Deployment{Id: fixtureconsts.Deployment2, Namespace: fixtureconsts.Namespace1, ClusterId: fixtureconsts.Cluster1},
-					},
+			deployments: 	[]*storage.Deployment{deployment1, deployment2},
 			expectedPlopCount: 1,
 			request:	&v1.GetProcessesListeningOnPortsRequest{
 				DeploymentId:	fixtureconsts.Deployment1,
 			},
 		},
 		"No plops are retrieved since the deployment is wrong": {
-			plopsInDB:	[]*storage.ProcessListeningOnPortStorage{
-							fixtures.GetPlopStorage7(),
-						},
+			plopsInDB:	[]*storage.ProcessListeningOnPortStorage{fixtures.GetPlopStorage7()},
 			processIndicators: []*storage.ProcessIndicator{indicator1, indicator2},
-			deployments: 	[]*storage.Deployment{
-						&storage.Deployment{Id: fixtureconsts.Deployment1, Namespace: fixtureconsts.Namespace1, ClusterId: fixtureconsts.Cluster1},
-						&storage.Deployment{Id: fixtureconsts.Deployment2, Namespace: fixtureconsts.Namespace1, ClusterId: fixtureconsts.Cluster1},
-					},
+			deployments: 	[]*storage.Deployment{deployment1, deployment2},
 			expectedPlopCount: 0,
 			request:	&v1.GetProcessesListeningOnPortsRequest{
 				DeploymentId:	fixtureconsts.Deployment2,
 			},
 		},
 		"Multiple plops are retrieved": {
-			plopsInDB:	[]*storage.ProcessListeningOnPortStorage{
-							fixtures.GetPlopStorage7(),
-							fixtures.GetPlopStorage8(),
-							fixtures.GetPlopStorage9(),
-						},
-			processIndicators: []*storage.ProcessIndicator{
-							indicator1,
-							indicator2,
-							indicator3,
-			},
-			deployments: 	[]*storage.Deployment{
-						&storage.Deployment{Id: fixtureconsts.Deployment1, Namespace: fixtureconsts.Namespace1, ClusterId: fixtureconsts.Cluster1},
-					},
+			plopsInDB:	[]*storage.ProcessListeningOnPortStorage{fixtures.GetPlopStorage7(), fixtures.GetPlopStorage8(), fixtures.GetPlopStorage9()},
+			processIndicators: []*storage.ProcessIndicator{indicator1, indicator2, indicator3},
+			deployments: 	[]*storage.Deployment{deployment1},
 			expectedPlopCount: 3,
 			request:	&v1.GetProcessesListeningOnPortsRequest{
 				DeploymentId:	fixtureconsts.Deployment1,
 			},
 		},
 		"One plop is retrieved due to pagination": {
-			plopsInDB:	[]*storage.ProcessListeningOnPortStorage{
-							fixtures.GetPlopStorage7(),
-							fixtures.GetPlopStorage8(),
-							fixtures.GetPlopStorage9(),
-						},
-			processIndicators: []*storage.ProcessIndicator{
-							indicator1,
-							indicator2,
-							indicator3,
-			},
-			deployments: 	[]*storage.Deployment{
-						&storage.Deployment{Id: fixtureconsts.Deployment1, Namespace: fixtureconsts.Namespace1, ClusterId: fixtureconsts.Cluster1},
-					},
+			plopsInDB:	[]*storage.ProcessListeningOnPortStorage{fixtures.GetPlopStorage7(), fixtures.GetPlopStorage8(), fixtures.GetPlopStorage9()},
+			processIndicators: []*storage.ProcessIndicator{indicator1, indicator2, indicator3},
+			deployments: 	[]*storage.Deployment{deployment1},
 			expectedPlopCount: 1,
 			request:	&v1.GetProcessesListeningOnPortsRequest{
 				DeploymentId:	fixtureconsts.Deployment1,
@@ -215,19 +188,9 @@ func (suite *PLOPServiceTestSuite) TestPLOPCases() {
 			},
 		},
 		"Two plops are retrieved due to pagination": {
-			plopsInDB:	[]*storage.ProcessListeningOnPortStorage{
-							fixtures.GetPlopStorage7(),
-							fixtures.GetPlopStorage8(),
-							fixtures.GetPlopStorage9(),
-						},
-			processIndicators: []*storage.ProcessIndicator{
-							indicator1,
-							indicator2,
-							indicator3,
-			},
-			deployments: 	[]*storage.Deployment{
-						&storage.Deployment{Id: fixtureconsts.Deployment1, Namespace: fixtureconsts.Namespace1, ClusterId: fixtureconsts.Cluster1},
-					},
+			plopsInDB:	[]*storage.ProcessListeningOnPortStorage{fixtures.GetPlopStorage7(), fixtures.GetPlopStorage8(), fixtures.GetPlopStorage9()},
+			processIndicators: []*storage.ProcessIndicator{indicator1, indicator2, indicator3},
+			deployments: 	[]*storage.Deployment{deployment1},
 			expectedPlopCount: 2,
 			request:	&v1.GetProcessesListeningOnPortsRequest{
 				DeploymentId:	fixtureconsts.Deployment1,
@@ -238,19 +201,9 @@ func (suite *PLOPServiceTestSuite) TestPLOPCases() {
 			},
 		},
 		"Limit is greater than the number of plops": {
-			plopsInDB:	[]*storage.ProcessListeningOnPortStorage{
-							fixtures.GetPlopStorage7(),
-							fixtures.GetPlopStorage8(),
-							fixtures.GetPlopStorage9(),
-						},
-			processIndicators: []*storage.ProcessIndicator{
-							indicator1,
-							indicator2,
-							indicator3,
-			},
-			deployments: 	[]*storage.Deployment{
-						&storage.Deployment{Id: fixtureconsts.Deployment1, Namespace: fixtureconsts.Namespace1, ClusterId: fixtureconsts.Cluster1},
-					},
+			plopsInDB:	[]*storage.ProcessListeningOnPortStorage{fixtures.GetPlopStorage7(), fixtures.GetPlopStorage8(), fixtures.GetPlopStorage9()},
+			processIndicators: []*storage.ProcessIndicator{indicator1, indicator2, indicator3},
+			deployments: 	[]*storage.Deployment{deployment1},
 			expectedPlopCount: 3,
 			request:	&v1.GetProcessesListeningOnPortsRequest{
 				DeploymentId:	fixtureconsts.Deployment1,
@@ -261,19 +214,9 @@ func (suite *PLOPServiceTestSuite) TestPLOPCases() {
 			},
 		},
 		"Limit and offset are one": {
-			plopsInDB:	[]*storage.ProcessListeningOnPortStorage{
-							fixtures.GetPlopStorage7(),
-							fixtures.GetPlopStorage8(),
-							fixtures.GetPlopStorage9(),
-						},
-			processIndicators: []*storage.ProcessIndicator{
-							indicator1,
-							indicator2,
-							indicator3,
-			},
-			deployments: 	[]*storage.Deployment{
-						&storage.Deployment{Id: fixtureconsts.Deployment1, Namespace: fixtureconsts.Namespace1, ClusterId: fixtureconsts.Cluster1},
-					},
+			plopsInDB:	[]*storage.ProcessListeningOnPortStorage{fixtures.GetPlopStorage7(), fixtures.GetPlopStorage8(), fixtures.GetPlopStorage9()},
+			processIndicators: []*storage.ProcessIndicator{indicator1, indicator2, indicator3},
+			deployments: 	[]*storage.Deployment{deployment1},
 			expectedPlopCount: 1,
 			request:	&v1.GetProcessesListeningOnPortsRequest{
 				DeploymentId:	fixtureconsts.Deployment1,
@@ -284,19 +227,9 @@ func (suite *PLOPServiceTestSuite) TestPLOPCases() {
 			},
 		},
 		"Two plops returned due to offset": {
-			plopsInDB:	[]*storage.ProcessListeningOnPortStorage{
-							fixtures.GetPlopStorage7(),
-							fixtures.GetPlopStorage8(),
-							fixtures.GetPlopStorage9(),
-						},
-			processIndicators: []*storage.ProcessIndicator{
-							indicator1,
-							indicator2,
-							indicator3,
-			},
-			deployments: 	[]*storage.Deployment{
-						&storage.Deployment{Id: fixtureconsts.Deployment1, Namespace: fixtureconsts.Namespace1, ClusterId: fixtureconsts.Cluster1},
-					},
+			plopsInDB:	[]*storage.ProcessListeningOnPortStorage{fixtures.GetPlopStorage7(), fixtures.GetPlopStorage8(), fixtures.GetPlopStorage9()},
+			processIndicators: []*storage.ProcessIndicator{indicator1, indicator2, indicator3},
+			deployments: 	[]*storage.Deployment{deployment1},
 			expectedPlopCount: 2,
 			request:	&v1.GetProcessesListeningOnPortsRequest{
 				DeploymentId:	fixtureconsts.Deployment1,
@@ -307,19 +240,9 @@ func (suite *PLOPServiceTestSuite) TestPLOPCases() {
 			},
 		},
 		"Only one plop returned due to offset": {
-			plopsInDB:	[]*storage.ProcessListeningOnPortStorage{
-							fixtures.GetPlopStorage7(),
-							fixtures.GetPlopStorage8(),
-							fixtures.GetPlopStorage9(),
-						},
-			processIndicators: []*storage.ProcessIndicator{
-							indicator1,
-							indicator2,
-							indicator3,
-			},
-			deployments: 	[]*storage.Deployment{
-						&storage.Deployment{Id: fixtureconsts.Deployment1, Namespace: fixtureconsts.Namespace1, ClusterId: fixtureconsts.Cluster1},
-					},
+			plopsInDB:	[]*storage.ProcessListeningOnPortStorage{fixtures.GetPlopStorage7(), fixtures.GetPlopStorage8(), fixtures.GetPlopStorage9()},
+			processIndicators: []*storage.ProcessIndicator{indicator1, indicator2, indicator3},
+			deployments: 	[]*storage.Deployment{deployment1},
 			expectedPlopCount: 1,
 			request:	&v1.GetProcessesListeningOnPortsRequest{
 				DeploymentId:	fixtureconsts.Deployment1,
