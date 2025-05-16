@@ -30,8 +30,8 @@ import AdvancedFiltersToolbar from 'Containers/Vulnerabilities/components/Advanc
 import { createFilterTracker } from 'utils/analyticsEventTracking';
 import useAnalytics, { WORKLOAD_CVE_FILTER_APPLIED } from 'hooks/useAnalytics';
 import {
-    imageComponentSearchFilterConfig,
-    imageCVESearchFilterConfig,
+    convertToFlatImageComponentSearchFilterConfig, // imageComponentSearchFilterConfig
+    convertToFlatImageCveSearchFilterConfig, // imageCVESearchFilterConfig
     imageSearchFilterConfig,
 } from 'Containers/Vulnerabilities/searchFilterConfig';
 import { filterManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
@@ -93,19 +93,6 @@ export const deploymentVulnerabilitiesQuery = gql`
 `;
 
 const defaultSortFields = ['CVE', 'Severity'];
-
-const searchFilterConfigWithFeatureFlagDependency = [
-    imageSearchFilterConfig,
-    // Omit EPSSProbability for 4.7 release until CVE/advisory separatipn is available in 4.8 release.
-    // imageCVESearchFilterConfig,
-    {
-        ...imageCVESearchFilterConfig,
-        attributes: imageCVESearchFilterConfig.attributes.filter(
-            ({ searchTerm }) => searchTerm !== 'EPSS Probability'
-        ),
-    },
-    imageComponentSearchFilterConfig,
-];
 
 export type DeploymentPageVulnerabilitiesProps = {
     deploymentId: string;
@@ -192,7 +179,7 @@ function DeploymentPageVulnerabilities({
         },
     });
 
-    // Omit for 4.7 release until CVE/advisory separatipn is available in 4.8 release.
+    // Omit for 4.7 release until CVE/advisory separation is available in 4.8 release.
     // const isEpssProbabilityColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
     const isEpssProbabilityColumnEnabled = false;
     const filteredColumns = filterManagedColumns(
@@ -200,6 +187,24 @@ function DeploymentPageVulnerabilities({
         (key) => key !== 'epssProbability' || isEpssProbabilityColumnEnabled
     );
     const managedColumnState = useManagedColumns(tableId, filteredColumns);
+
+    // Although we will delete conditional code for EPSS and flatten after release,
+    // keep searchFilterConfigWithFeatureFlagDependency for Advisory in the future.
+    const isFlattenCveDataEnabled = isFeatureFlagEnabled('ROX_FLATTEN_CVE_DATA');
+    const imageCVESearchFilterConfig =
+        convertToFlatImageCveSearchFilterConfig(isFlattenCveDataEnabled);
+    const searchFilterConfigWithFeatureFlagDependency = [
+        imageSearchFilterConfig,
+        // Omit EPSSProbability for 4.7 release until CVE/advisory separation is available in 4.8 release.
+        // imageCVESearchFilterConfig,
+        {
+            ...imageCVESearchFilterConfig,
+            attributes: imageCVESearchFilterConfig.attributes.filter(
+                ({ searchTerm }) => searchTerm !== 'EPSS Probability'
+            ),
+        },
+        convertToFlatImageComponentSearchFilterConfig(isFlattenCveDataEnabled),
+    ];
 
     const searchFilterConfig = getSearchFilterConfigWithFeatureFlagDependency(
         isFeatureFlagEnabled,
