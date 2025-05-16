@@ -5,28 +5,33 @@ load "../test_helpers.bats"
 CMD="${BATS_TEST_DIRNAME}/build-in-konflux-instead-of-gha.sh"
 
 function setup() {
-    unset SOURCE_BRANCH
+    unset TARGET_BRANCH
     unset GITHUB_REF
 }
 
 function run_cmd() {
-    run "${CMD}"
+    run --separate-stderr "${CMD}"
 }
 
 function check_independent() {
     run_cmd
     assert_failure 6
-    assert_output --partial 'does not look like'
-    assert_output --partial 'release'
-    assert_output --partial 'branch or tag'
+    assert_stderr_contains "does not look like"
+    assert_stderr_contains "release"
+    assert_stderr_contains "branch or tag"
 }
 
 function check_gha_suppressed() {
     run_cmd
     assert_success
-    assert_output --partial 'looks like'
-    assert_output --partial 'release'
-    assert_output --partial 'branch or tag'
+    assert_stderr_contains "looks like"
+    assert_stderr_contains "release"
+    assert_stderr_contains "branch or tag"
+}
+
+# BATS libraries in our builder image don't have assert_stderr.
+function assert_stderr_contains() {
+    assert grep -F "$1" <<< "${stderr_lines[@]}"
 }
 
 @test "should fail when no values are set" {
@@ -34,8 +39,8 @@ function check_gha_suppressed() {
     assert_failure 2
 }
 
-@test "should build only in Konflux when source_branch is release-like" {
-    export SOURCE_BRANCH=release-4.8
+@test "should build only in Konflux when TARGET_BRANCH is release-like" {
+    export TARGET_BRANCH=release-4.8
     check_gha_suppressed
 }
 
@@ -44,8 +49,8 @@ function check_gha_suppressed() {
     check_gha_suppressed
 }
 
-@test "should build both GHA and Konflux when source_branch is other" {
-    export SOURCE_BRANCH=author/ROX-27716-take-konflux-on-release
+@test "should build both GHA and Konflux when TARGET_BRANCH is other" {
+    export TARGET_BRANCH=author/ROX-27716-take-konflux-on-release
     check_independent
 }
 
@@ -54,8 +59,8 @@ function check_gha_suppressed() {
     check_independent
 }
 
-@test "should build only in Konflux when source_branch is rc tag" {
-    export SOURCE_BRANCH=refs/tags/4.10.56-rc.172
+@test "should build only in Konflux when TARGET_BRANCH is rc tag" {
+    export TARGET_BRANCH=refs/tags/4.10.56-rc.172
     check_gha_suppressed
 }
 
@@ -64,8 +69,8 @@ function check_gha_suppressed() {
     check_gha_suppressed
 }
 
-@test "should build both GHA and Konflux when source_branch is a different tag" {
-    export SOURCE_BRANCH=refs/tags/4.10.56-nightly.20250515
+@test "should build both GHA and Konflux when TARGET_BRANCH is a different tag" {
+    export TARGET_BRANCH=refs/tags/4.10.56-nightly.20250515
     check_independent
 }
 
