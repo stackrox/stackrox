@@ -67,7 +67,6 @@ import (
 	nodeCveCsv "github.com/stackrox/rox/central/cve/node/csv"
 	nodeCVEService "github.com/stackrox/rox/central/cve/node/service"
 	"github.com/stackrox/rox/central/cve/suppress"
-	cvemetrics "github.com/stackrox/rox/central/cve/telemetry"
 	debugService "github.com/stackrox/rox/central/debug/service"
 	"github.com/stackrox/rox/central/declarativeconfig"
 	declarativeConfigHealthService "github.com/stackrox/rox/central/declarativeconfig/health/service"
@@ -108,6 +107,7 @@ import (
 	"github.com/stackrox/rox/central/jwt"
 	logimbueHandler "github.com/stackrox/rox/central/logimbue/handler"
 	metadataService "github.com/stackrox/rox/central/metadata/service"
+	customMetrics "github.com/stackrox/rox/central/metrics/aggregator"
 	"github.com/stackrox/rox/central/metrics/telemetry"
 	mitreService "github.com/stackrox/rox/central/mitre/service"
 	namespaceService "github.com/stackrox/rox/central/namespace/service"
@@ -376,7 +376,7 @@ func startServices() {
 	administrationUsageInjector.Singleton().Start()
 	gcp.Singleton().Start()
 	administrationEventHandler.Singleton().Start()
-	cvemetrics.Singleton().Start()
+	customMetrics.Singleton().Start()
 	if features.PlatformComponents.Enabled() {
 		platformReprocessor.Singleton().Start()
 	}
@@ -865,7 +865,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		{
 			Route:         "/problemetrics",
 			Authorizer:    user.With(permissions.View(resources.Administration)),
-			ServerHandler: promhttp.HandlerFor(cvemetrics.Problemetrics, promhttp.HandlerOpts{}),
+			ServerHandler: promhttp.HandlerFor(customMetrics.Problemetrics, promhttp.HandlerOpts{}),
 			Compression:   true,
 		},
 	}
@@ -964,7 +964,7 @@ func waitForTerminationSignal() {
 		{gcp.Singleton(), "GCP cloud credentials manager"},
 		{cloudSourcesManager.Singleton(), "cloud sources manager"},
 		{administrationEventHandler.Singleton(), "administration events handler"},
-		{cvemetrics.Singleton(), "CVE metric gatherer"},
+		{customMetrics.Singleton(), "CVE metric gatherer"},
 	}
 
 	stoppables = append(stoppables,
