@@ -134,6 +134,7 @@ func (suite *PLOPServiceTestSuite) TestPLOPCases() {
 		// so we just check the number of PLOPs returned. When sorting is added
 		// we will also check the values. Add the sorting ticket here before merging.
 		expectedPlopCount int
+		expectedTotalListeningEndpoints int32
 		request           *v1.GetProcessesListeningOnPortsRequest
 	}{
 		"One plop is retrieved": {
@@ -141,6 +142,7 @@ func (suite *PLOPServiceTestSuite) TestPLOPCases() {
 			processIndicators: []*storage.ProcessIndicator{indicator1, indicator2},
 			deployments:       []*storage.Deployment{deployment1, deployment2},
 			expectedPlopCount: 1,
+			expectedTotalListeningEndpoints: 1,
 			request: &v1.GetProcessesListeningOnPortsRequest{
 				DeploymentId: fixtureconsts.Deployment1,
 			},
@@ -150,6 +152,7 @@ func (suite *PLOPServiceTestSuite) TestPLOPCases() {
 			processIndicators: []*storage.ProcessIndicator{indicator1, indicator2},
 			deployments:       []*storage.Deployment{deployment1, deployment2},
 			expectedPlopCount: 0,
+			expectedTotalListeningEndpoints: 0,
 			request: &v1.GetProcessesListeningOnPortsRequest{
 				DeploymentId: fixtureconsts.Deployment2,
 			},
@@ -159,6 +162,7 @@ func (suite *PLOPServiceTestSuite) TestPLOPCases() {
 			processIndicators: []*storage.ProcessIndicator{indicator1, indicator2, indicator3},
 			deployments:       []*storage.Deployment{deployment1},
 			expectedPlopCount: 3,
+			expectedTotalListeningEndpoints: 3,
 			request: &v1.GetProcessesListeningOnPortsRequest{
 				DeploymentId: fixtureconsts.Deployment1,
 			},
@@ -168,6 +172,7 @@ func (suite *PLOPServiceTestSuite) TestPLOPCases() {
 			processIndicators: []*storage.ProcessIndicator{indicator1, indicator2, indicator3},
 			deployments:       []*storage.Deployment{deployment1},
 			expectedPlopCount: 1,
+			expectedTotalListeningEndpoints: 3,
 			request: &v1.GetProcessesListeningOnPortsRequest{
 				DeploymentId: fixtureconsts.Deployment1,
 				Pagination: &v1.Pagination{
@@ -181,6 +186,7 @@ func (suite *PLOPServiceTestSuite) TestPLOPCases() {
 			processIndicators: []*storage.ProcessIndicator{indicator1, indicator2, indicator3},
 			deployments:       []*storage.Deployment{deployment1},
 			expectedPlopCount: 2,
+			expectedTotalListeningEndpoints: 3,
 			request: &v1.GetProcessesListeningOnPortsRequest{
 				DeploymentId: fixtureconsts.Deployment1,
 				Pagination: &v1.Pagination{
@@ -194,6 +200,7 @@ func (suite *PLOPServiceTestSuite) TestPLOPCases() {
 			processIndicators: []*storage.ProcessIndicator{indicator1, indicator2, indicator3},
 			deployments:       []*storage.Deployment{deployment1},
 			expectedPlopCount: 3,
+			expectedTotalListeningEndpoints: 3,
 			request: &v1.GetProcessesListeningOnPortsRequest{
 				DeploymentId: fixtureconsts.Deployment1,
 				Pagination: &v1.Pagination{
@@ -207,6 +214,7 @@ func (suite *PLOPServiceTestSuite) TestPLOPCases() {
 			processIndicators: []*storage.ProcessIndicator{indicator1, indicator2, indicator3},
 			deployments:       []*storage.Deployment{deployment1},
 			expectedPlopCount: 1,
+			expectedTotalListeningEndpoints: 3,
 			request: &v1.GetProcessesListeningOnPortsRequest{
 				DeploymentId: fixtureconsts.Deployment1,
 				Pagination: &v1.Pagination{
@@ -220,6 +228,7 @@ func (suite *PLOPServiceTestSuite) TestPLOPCases() {
 			processIndicators: []*storage.ProcessIndicator{indicator1, indicator2, indicator3},
 			deployments:       []*storage.Deployment{deployment1},
 			expectedPlopCount: 2,
+			expectedTotalListeningEndpoints: 3,
 			request: &v1.GetProcessesListeningOnPortsRequest{
 				DeploymentId: fixtureconsts.Deployment1,
 				Pagination: &v1.Pagination{
@@ -233,6 +242,7 @@ func (suite *PLOPServiceTestSuite) TestPLOPCases() {
 			processIndicators: []*storage.ProcessIndicator{indicator1, indicator2, indicator3},
 			deployments:       []*storage.Deployment{deployment1},
 			expectedPlopCount: 1,
+			expectedTotalListeningEndpoints: 3,
 			request: &v1.GetProcessesListeningOnPortsRequest{
 				DeploymentId: fixtureconsts.Deployment1,
 				Pagination: &v1.Pagination{
@@ -264,6 +274,7 @@ func (suite *PLOPServiceTestSuite) TestPLOPCases() {
 			suite.NoError(err)
 
 			suite.Equal(c.expectedPlopCount, len(response.ListeningEndpoints))
+			suite.Equal(c.expectedTotalListeningEndpoints, response.TotalListeningEndpoints)
 		})
 	}
 
