@@ -29,7 +29,7 @@ var labelOrder = map[common.Label]int{
 	"IsFixable":        16,
 }
 
-func TrackVulnerabilityMetrics(ctx context.Context, ds deploymentDS.DataStore, mc common.MetricsConfig) common.Result {
+func TrackVulnerabilityMetrics(ctx context.Context, ds deploymentDS.DataStore, mc common.MetricLabelExpressions) common.Result {
 	aggregated := make(common.Result)
 	for metric := range mc {
 		aggregated[metric] = make(map[common.MetricKey]*common.Record)
@@ -46,7 +46,7 @@ func TrackVulnerabilityMetrics(ctx context.Context, ds deploymentDS.DataStore, m
 	return aggregated
 }
 
-func trackDeployment(mc common.MetricsConfig, aggregated common.Result, deployment *storage.Deployment, images []*storage.Image) error {
+func trackDeployment(mc common.MetricLabelExpressions, aggregated common.Result, deployment *storage.Deployment, images []*storage.Image) error {
 
 	forEachVuln(images, func(image *storage.Image, imageName *storage.ImageName, component *storage.EmbeddedImageScanComponent, vuln *storage.EmbeddedVulnerability) {
 		labelGetter := makeLabelGetter(image, imageName, component, vuln,

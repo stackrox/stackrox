@@ -41,7 +41,8 @@ func matchingLabels(expressions map[Label][]*Expression, labelsGetter func(Label
 
 // MakeAggregationKeyInstance computes an aggregation key according to the
 // labels from the provided expressions, and the map of the requested labels
-// to their values.
+// to their values. The values in the key are sorted according to the provided
+// labelOrder map.
 //
 // Example:
 //
