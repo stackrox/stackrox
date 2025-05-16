@@ -131,7 +131,7 @@ describe('utils', () => {
 
             const text = getCVEsDiscoveredSinceText(reportParameters);
 
-            expect(text).toBe('10/02/2023');
+            expect(text).toBe('Oct 02, 2023');
         });
     });
 });

@@ -1,11 +1,13 @@
 import Raven from 'raven-js';
 import { distanceInWordsStrict } from 'date-fns';
 
+const userLanguages = navigator.languages;
+
 export type DateLike = string | number | Date;
 
 const defaultDateFormatOptions: Readonly<Intl.DateTimeFormatOptions> = {
     year: 'numeric',
-    month: '2-digit',
+    month: 'short',
     day: '2-digit',
 };
 
@@ -28,12 +30,15 @@ function convertDateLikeToDate(dateLike: DateLike): Date {
 
 function formatLocalizedDateTime(
     dateLike: DateLike,
-    locales: Intl.LocalesArgument = undefined,
+    locales: Intl.LocalesArgument = userLanguages,
     dateTimeFormatOptions: Intl.DateTimeFormatOptions = {}
 ): string {
     try {
+        const preferredLocale: string | Intl.Locale | undefined = Array.isArray(locales)
+            ? locales[0]
+            : locales;
         const date = convertDateLikeToDate(dateLike);
-        return new Intl.DateTimeFormat(locales, {
+        return new Intl.DateTimeFormat(preferredLocale, {
             ...dateTimeFormatOptions,
         }).format(date);
     } catch (e: unknown) {
@@ -66,7 +71,7 @@ export function displayDateTimeAsISO8601(dateLike: DateLike) {
  */
 export function getDateTime(
     dateLike: DateLike,
-    locales: Intl.LocalesArgument = undefined,
+    locales: Intl.LocalesArgument = userLanguages,
     dateTimeFormatOptionOverrides: Intl.DateTimeFormatOptions = {}
 ) {
     return formatLocalizedDateTime(dateLike, locales, {
@@ -84,7 +89,7 @@ export function getDateTime(
  */
 export function getDate(
     dateLike: DateLike,
-    locales: Intl.LocalesArgument = undefined,
+    locales: Intl.LocalesArgument = userLanguages,
     dateTimeFormatOptionOverrides: Intl.DateTimeFormatOptions = {}
 ): string {
     return formatLocalizedDateTime(dateLike, locales, {
@@ -102,7 +107,7 @@ export function getDate(
  */
 export function getTime(
     dateLike: DateLike,
-    locales: Intl.LocalesArgument = undefined,
+    locales: Intl.LocalesArgument = userLanguages,
     dateTimeFormatOptionOverrides: Intl.DateTimeFormatOptions = {}
 ): string {
     return formatLocalizedDateTime(dateLike, locales, {
@@ -120,7 +125,7 @@ export function getTime(
  */
 export function getTimeHoursMinutes(
     timestamp: DateLike,
-    locales: Intl.LocalesArgument = undefined,
+    locales: Intl.LocalesArgument = userLanguages,
     dateTimeFormatOptionOverrides: Intl.DateTimeFormatOptions = {}
 ): string {
     return getTime(timestamp, locales, {
