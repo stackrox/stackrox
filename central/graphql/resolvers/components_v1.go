@@ -21,6 +21,7 @@ import (
 /////////////////////////////////////
 
 func (resolver *imageScanResolver) Components(_ context.Context, args PaginatedQuery) ([]*EmbeddedImageScanComponentResolver, error) {
+	log.Infof("SHREWS -- in ComponentsV1")
 	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
@@ -39,6 +40,7 @@ func (resolver *imageScanResolver) Components(_ context.Context, args PaginatedQ
 }
 
 func (resolver *imageScanResolver) ComponentCount(ctx context.Context, args RawQuery) (int32, error) {
+	log.Infof("SHREWS -- in ComponentsV1Count")
 	resolvers, err := resolver.Components(ctx, PaginatedQuery{Query: args.Query})
 	if err != nil {
 		return 0, err
@@ -102,6 +104,7 @@ func (eicr *EmbeddedImageScanComponentResolver) FixedIn(_ context.Context) strin
 
 // RiskScore returns the risk score of the component.
 func (eicr *EmbeddedImageScanComponentResolver) RiskScore(_ context.Context) float64 {
+	log.Infof("SHREWS -- in ComponentsV1-RiskSCore")
 	return float64(eicr.data.GetRiskScore())
 }
 
