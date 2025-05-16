@@ -70,9 +70,9 @@ tests:
     allowNonstandardNamespace: true
   expect: |
     .deployments["scanner-v4-indexer"].spec.template.spec.containers[0].env[] |
-          select(.name == "ROX_CENTRAL_ENDPOINT") | assertThat(.value == "central.rhacs-test.svc")
+          select(.name == "ROX_CENTRAL_ENDPOINT") | assertThat(.value == "central.rhacs-test.svc:443")
     .deployments["scanner-v4-matcher"].spec.template.spec.containers[0].env[] |
-          select(.name == "ROX_CENTRAL_ENDPOINT") | assertThat(.value == "central.rhacs-test.svc")
+          select(.name == "ROX_CENTRAL_ENDPOINT") | assertThat(.value == "central.rhacs-test.svc:443")
 
 - name: "scanner V4 indexer and matcher skip gRPC health probes on Kubernetes < 1.24.0"
   set:

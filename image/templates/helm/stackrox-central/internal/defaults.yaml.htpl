@@ -14,6 +14,7 @@ defaults:
   central:
     config: "@config/central/config.yaml|config/central/config.yaml.default"
     endpointsConfig: "@config/central/endpoints.yaml|config/central/endpoints.yaml.default"
+    endpoint: "central.{{ required "unknown namespace" .Release.Namespace }}.svc:443"
 
     exposeMonitoring: false
 
