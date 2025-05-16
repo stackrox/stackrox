@@ -32,8 +32,8 @@ import (
 func verifyCentralCert(t *testing.T, data types.SecretDataMap, verificationTime *time.Time) {
 	ca, err := certgen.LoadCAFromFileMap(data)
 	require.NoError(t, err)
-	assert.NoError(t, certgen.VerifyServiceCertAndKey(data, "", ca, storage.ServiceType_CENTRAL_SERVICE,
-		verificationTime))
+	err = certgen.VerifyServiceCertAndKey(data, "", ca, storage.ServiceType_CENTRAL_SERVICE, verificationTime)
+	assert.NoError(t, err, "verification of Central service certificate failed")
 
 	_, err = certgen.LoadJWTSigningKeyFromFileMap(data)
 	assert.NoError(t, err)
@@ -52,7 +52,8 @@ func verifyServiceCert(serviceType storage.ServiceType, fileNamePrefix string) s
 		validatingCA, err := mtls.LoadCAForValidation(data["ca.pem"])
 		require.NoError(t, err)
 
-		assert.NoError(t, certgen.VerifyServiceCertAndKey(data, fileNamePrefix, validatingCA, serviceType, atTime))
+		err = certgen.VerifyServiceCertAndKey(data, fileNamePrefix, validatingCA, serviceType, atTime)
+		assert.NoError(t, err, "verification of certificate for service %v failed", serviceType)
 	}
 }
 
