@@ -55,7 +55,7 @@ import {
 } from '../Tables/table.utils';
 import DeploymentVulnerabilitiesTable, {
     defaultColumns,
-    deploymentWithVulnerabilitiesFragment,
+    convertToFlatDeploymentWithVulnerabilitiesFragment, // deploymentWithVulnerabilitiesFragment
     tableId,
 } from '../Tables/DeploymentVulnerabilitiesTable';
 import VulnerabilityStateTabs, {
@@ -76,21 +76,28 @@ const summaryQuery = gql`
     }
 `;
 
-export const deploymentVulnerabilitiesQuery = gql`
-    ${imageMetadataContextFragment}
-    ${deploymentWithVulnerabilitiesFragment}
-    query getCvesForDeployment(
-        $id: ID!
-        $query: String!
-        $pagination: Pagination!
-        $statusesForExceptionCount: [String!]
-    ) {
-        deployment(id: $id) {
-            imageVulnerabilityCount(query: $query)
-            ...DeploymentWithVulnerabilities
+// After release, replace temporary function
+// with deploymentVulnerabilitiesQuery
+// that has unconditional deploymentWithVulnerabilitiesFragment.
+export function convertToFlatDeploymentVulnerabilitiesQuery(
+    isFlattenCveDataEnabled: boolean // ROX_FLATTEN_CVE_DATA
+) {
+    return gql`
+        ${imageMetadataContextFragment}
+        ${convertToFlatDeploymentWithVulnerabilitiesFragment(isFlattenCveDataEnabled)}
+        query getCvesForDeployment(
+            $id: ID!
+            $query: String!
+            $pagination: Pagination!
+            $statusesForExceptionCount: [String!]
+        ) {
+            deployment(id: $id) {
+                imageVulnerabilityCount(query: $query)
+                ...DeploymentWithVulnerabilities
+            }
         }
-    }
-`;
+    `;
+}
 
 const defaultSortFields = ['CVE', 'Severity'];
 
@@ -154,6 +161,9 @@ function DeploymentPageVulnerabilities({
 
     const summaryData = summaryRequest.data ?? summaryRequest.previousData;
 
+    const isFlattenCveDataEnabled = isFeatureFlagEnabled('ROX_FLATTEN_CVE_DATA');
+    const deploymentVulnerabilitiesQuery =
+        convertToFlatDeploymentVulnerabilitiesQuery(isFlattenCveDataEnabled);
     const vulnerabilityRequest = useQuery<
         {
             deployment:
@@ -190,7 +200,6 @@ function DeploymentPageVulnerabilities({
 
     // Although we will delete conditional code for EPSS and flatten after release,
     // keep searchFilterConfigWithFeatureFlagDependency for Advisory in the future.
-    const isFlattenCveDataEnabled = isFeatureFlagEnabled('ROX_FLATTEN_CVE_DATA');
     const imageCVESearchFilterConfig =
         convertToFlatImageCveSearchFilterConfig(isFlattenCveDataEnabled);
     const searchFilterConfigWithFeatureFlagDependency = [

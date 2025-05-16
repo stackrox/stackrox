@@ -23,7 +23,7 @@ import {
 import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
 
 import DeploymentComponentVulnerabilitiesTable, {
-    deploymentComponentVulnerabilitiesFragment,
+    convertToFlatDeploymentComponentVulnerabilitiesFragment, // deploymentComponentVulnerabilitiesFragment
 } from './DeploymentComponentVulnerabilitiesTable';
 import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
 import PartialCVEDataAlert from '../../components/PartialCVEDataAlert';
@@ -63,34 +63,41 @@ export const defaultColumns = {
     },
 } as const;
 
-export const deploymentWithVulnerabilitiesFragment = gql`
-    ${deploymentComponentVulnerabilitiesFragment}
-    fragment DeploymentWithVulnerabilities on Deployment {
-        id
-        images(query: $query) {
-            ...ImageMetadataContext
-        }
-        imageVulnerabilities(query: $query, pagination: $pagination) {
-            vulnerabilityId: id
-            cve
-            cveBaseInfo {
-                epss {
-                    epssProbability
-                }
-            }
-            operatingSystem
-            publishedOn
-            summary
-            pendingExceptionCount: exceptionCount(requestStatus: $statusesForExceptionCount)
+// After release, replace temporary function
+// with deploymentWithVulnerabilitiesFragment
+// that has unconditional deploymentComponentVulnerabilitiesFragment.
+export function convertToFlatDeploymentWithVulnerabilitiesFragment(
+    isFlattenCveDataEnabled: boolean // ROX_FLATTEN_CVE_DATA
+) {
+    return gql`
+        ${convertToFlatDeploymentComponentVulnerabilitiesFragment(isFlattenCveDataEnabled)}
+        fragment DeploymentWithVulnerabilities on Deployment {
+            id
             images(query: $query) {
-                imageId: id
-                imageComponents(query: $query) {
-                    ...DeploymentComponentVulnerabilities
+                ...ImageMetadataContext
+            }
+            imageVulnerabilities(query: $query, pagination: $pagination) {
+                vulnerabilityId: id
+                cve
+                cveBaseInfo {
+                    epss {
+                        epssProbability
+                    }
+                }
+                operatingSystem
+                publishedOn
+                summary
+                pendingExceptionCount: exceptionCount(requestStatus: $statusesForExceptionCount)
+                images(query: $query) {
+                    imageId: id
+                    imageComponents(query: $query) {
+                        ...DeploymentComponentVulnerabilities
+                    }
                 }
             }
         }
-    }
-`;
+    `;
+}
 
 export type DeploymentVulnerabilitiesTableProps = {
     tableState: TableUIState<FormattedDeploymentVulnerability>;
