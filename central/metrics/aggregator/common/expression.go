@@ -1,4 +1,4 @@
-package aggregator
+package common
 
 import (
 	"errors"
@@ -25,12 +25,28 @@ const (
 	opOR operator = "OR"
 )
 
-type expression struct {
+type Expression struct {
 	op  operator
 	arg string
 }
 
-func (e *expression) validate() error {
+func MakeExpression(op, arg string) (*Expression, error) {
+	expr := &Expression{operator(op), arg}
+	if err := expr.validate(); err != nil {
+		return nil, err
+	}
+	return expr, nil
+}
+
+func MustMakeExpression(op, arg string) *Expression {
+	expr, err := MakeExpression(op, arg)
+	if err != nil {
+		panic(err)
+	}
+	return expr
+}
+
+func (e *Expression) validate() error {
 	switch {
 	// Test operator:
 	case e.op == opZ:
@@ -53,22 +69,22 @@ func (e *expression) validate() error {
 	return nil
 }
 
-func (e *expression) String() string {
+func (e *Expression) String() string {
 	return string(e.op) + e.arg
 }
 
-func (e *expression) isFloatArg() bool {
+func (e *Expression) isFloatArg() bool {
 	_, err := strconv.ParseFloat(e.arg, 32)
 	return err == nil
 }
 
-func (e *expression) isGlobArg() bool {
+func (e *Expression) isGlobArg() bool {
 	return glob.Pattern(e.arg).Ptr().Compile() == nil
 }
 
 // match returns whether the labels match the expression and the matched label
 // value, if matched.
-func (e *expression) match(value string) bool {
+func (e *Expression) match(value string) bool {
 	if e == nil {
 		return true
 	}
@@ -80,7 +96,7 @@ func (e *expression) match(value string) bool {
 	return e.compareStrings(value, e.arg)
 }
 
-func (e *expression) compareStrings(a, b string) bool {
+func (e *Expression) compareStrings(a, b string) bool {
 	switch e.op {
 	case "":
 		return a != "" && b == ""
@@ -102,7 +118,7 @@ func (e *expression) compareStrings(a, b string) bool {
 	return false
 }
 
-func (e *expression) compareFloats(a, b float64) bool {
+func (e *Expression) compareFloats(a, b float64) bool {
 	const epsilon = 1e-9
 	switch e.op {
 	case opEQ:

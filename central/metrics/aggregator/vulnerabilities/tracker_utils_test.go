@@ -1,4 +1,4 @@
-package aggregator
+package vulnerabilities
 
 import (
 	"context"
@@ -7,7 +7,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	deploymentMockDS "github.com/stackrox/rox/central/deployment/datastore/mocks"
-	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/central/metrics/aggregator/common"
+	v1api "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
@@ -88,7 +89,7 @@ func Test_track(t *testing.T) {
 
 	ds.EXPECT().WalkByQuery(gomock.Any(), gomock.Any(), gomock.Any()).
 		Times(1).
-		Do(func(_ context.Context, _ *v1.Query, f func(deployment *storage.Deployment) error) {
+		Do(func(_ context.Context, _ *v1api.Query, f func(deployment *storage.Deployment) error) {
 			for _, deployment := range deployments {
 				_ = f(deployment)
 			}
@@ -100,8 +101,8 @@ func Test_track(t *testing.T) {
 			Times(1).Return(deploymentImages[deployment.Id], nil)
 	}
 
-	var actual = make(map[metricName][]*record)
-	metricExpressions := map[metricName]map[Label][]*expression{
+	var actual = make(map[common.MetricName][]*common.Record)
+	metricExpressions := map[common.MetricName]map[common.Label][]*common.Expression{
 		"Severity_total": {
 			"Severity": nil,
 		},
@@ -111,43 +112,38 @@ func Test_track(t *testing.T) {
 			"Severity":  {},
 		},
 		"Deployment_ImageTag_total": {
-			"Deployment": {{"=", "*3"}},
-			"ImageTag":   {{"=", "latest"}},
+			"Deployment": {common.MustMakeExpression("=", "*3")},
+			"ImageTag":   {common.MustMakeExpression("=", "latest")},
 		},
 	}
 
-	a := trackWrapper[deploymentDS.DataStore]{
-		ds:         ds,
-		gatherFunc: trackVulnerabilityMetrics,
-		cfgGetter: func() metricsConfig {
+	a := common.MakeTrackWrapper[deploymentDS.DataStore](
+		ds,
+		func() common.MetricsConfig {
 			return metricExpressions
 		},
-		trackFunc: func(metric string, labels prometheus.Labels, total int) {
-			actual[metricName(metric)] = append(actual[metricName(metric)],
-				&record{
-					labels: labels,
-					total:  total,
-				})
-		},
+		TrackVulnerabilityMetrics)
+	a.TrackFunc = func(metric string, labels prometheus.Labels, total int) {
+		actual[common.MetricName(metric)] = append(actual[common.MetricName(metric)], common.MakeRecord(labels, total))
 	}
 
-	a.track(context.Background())
+	a.Track(context.Background())
 
-	expected := map[metricName][]*record{
+	expected := map[common.MetricName][]*common.Record{
 		"Severity_total": {
-			{prometheus.Labels{"Severity": "CRITICAL_VULNERABILITY_SEVERITY"}, 3},
-			{prometheus.Labels{"Severity": "MODERATE_VULNERABILITY_SEVERITY"}, 4},
-			{prometheus.Labels{"Severity": "LOW_VULNERABILITY_SEVERITY"}, 2},
+			common.MakeRecord(prometheus.Labels{"Severity": "CRITICAL_VULNERABILITY_SEVERITY"}, 3),
+			common.MakeRecord(prometheus.Labels{"Severity": "MODERATE_VULNERABILITY_SEVERITY"}, 4),
+			common.MakeRecord(prometheus.Labels{"Severity": "LOW_VULNERABILITY_SEVERITY"}, 2),
 		},
 		"Cluster_Namespace_Severity_total": {
-			{prometheus.Labels{"Cluster": "cluster-1", "Namespace": "namespace-1", "Severity": "CRITICAL_VULNERABILITY_SEVERITY"}, 1},
-			{prometheus.Labels{"Cluster": "cluster-1", "Namespace": "namespace-2", "Severity": "CRITICAL_VULNERABILITY_SEVERITY"}, 2},
-			{prometheus.Labels{"Cluster": "cluster-1", "Namespace": "namespace-2", "Severity": "MODERATE_VULNERABILITY_SEVERITY"}, 2},
-			{prometheus.Labels{"Cluster": "cluster-2", "Namespace": "namespace-2", "Severity": "MODERATE_VULNERABILITY_SEVERITY"}, 2},
-			{prometheus.Labels{"Cluster": "cluster-2", "Namespace": "namespace-2", "Severity": "LOW_VULNERABILITY_SEVERITY"}, 2},
+			common.MakeRecord(prometheus.Labels{"Cluster": "cluster-1", "Namespace": "namespace-1", "Severity": "CRITICAL_VULNERABILITY_SEVERITY"}, 1),
+			common.MakeRecord(prometheus.Labels{"Cluster": "cluster-1", "Namespace": "namespace-2", "Severity": "CRITICAL_VULNERABILITY_SEVERITY"}, 2),
+			common.MakeRecord(prometheus.Labels{"Cluster": "cluster-1", "Namespace": "namespace-2", "Severity": "MODERATE_VULNERABILITY_SEVERITY"}, 2),
+			common.MakeRecord(prometheus.Labels{"Cluster": "cluster-2", "Namespace": "namespace-2", "Severity": "MODERATE_VULNERABILITY_SEVERITY"}, 2),
+			common.MakeRecord(prometheus.Labels{"Cluster": "cluster-2", "Namespace": "namespace-2", "Severity": "LOW_VULNERABILITY_SEVERITY"}, 2),
 		},
 		"Deployment_ImageTag_total": {
-			{prometheus.Labels{"Deployment": "D3", "ImageTag": "latest"}, 2},
+			common.MakeRecord(prometheus.Labels{"Deployment": "D3", "ImageTag": "latest"}, 2),
 		},
 	}
 

@@ -108,6 +108,7 @@ import (
 	logimbueHandler "github.com/stackrox/rox/central/logimbue/handler"
 	metadataService "github.com/stackrox/rox/central/metadata/service"
 	customMetrics "github.com/stackrox/rox/central/metrics/aggregator"
+	customMetricsRegistry "github.com/stackrox/rox/central/metrics/aggregator/common"
 	"github.com/stackrox/rox/central/metrics/telemetry"
 	mitreService "github.com/stackrox/rox/central/mitre/service"
 	namespaceService "github.com/stackrox/rox/central/namespace/service"
@@ -865,7 +866,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		{
 			Route:         "/problemetrics",
 			Authorizer:    user.With(permissions.View(resources.Administration)),
-			ServerHandler: promhttp.HandlerFor(customMetrics.Problemetrics, promhttp.HandlerOpts{}),
+			ServerHandler: promhttp.HandlerFor(customMetricsRegistry.Problemetrics, promhttp.HandlerOpts{}),
 			Compression:   true,
 		},
 	}
