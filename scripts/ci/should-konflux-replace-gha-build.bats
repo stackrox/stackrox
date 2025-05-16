@@ -2,8 +2,6 @@
 
 load "../test_helpers.bats"
 
-CMD="${BATS_TEST_DIRNAME}/should-konflux-replace-gha-build.sh"
-
 function setup() {
     unset TARGET_BRANCH
     unset GITHUB_REF
@@ -11,7 +9,7 @@ function setup() {
 }
 
 function run_cmd() {
-    run --separate-stderr "${CMD}"
+    run --separate-stderr "${BATS_TEST_DIRNAME}/should-konflux-replace-gha-build.sh"
 }
 
 function check_both_go() {
@@ -92,4 +90,10 @@ function assert_stderr_contains() {
     export GITHUB_REF="refs/pull/15309/merge"
     export GITHUB_BASE_REF="master"
     check_both_go
+}
+
+@test "should fail when GITHUB_BASE_REF should be set but it's not" {
+    export GITHUB_REF="refs/pull/1005006/merge"
+    run_cmd
+    assert_failure
 }
