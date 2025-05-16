@@ -836,11 +836,13 @@ func (resolver *imageComponentV2Resolver) imageComponentScopeContext(ctx context
 		resolver.ctx = ctx
 	}
 	if features.FlattenCVEData.Enabled() && len(resolver.flatData.GetComponentIDs()) > 0 {
+		log.Infof("SHREWS -- context with IDs -- %v", resolver.flatData.GetComponentIDs())
 		return scoped.Context(resolver.ctx, scoped.Scope{
-			Level: v1.SearchCategory_IMAGE_COMPONENTS,
+			Level: v1.SearchCategory_IMAGE_COMPONENTS_V2,
 			IDs:   resolver.flatData.GetComponentIDs(),
 		})
 	}
+	log.Infof("SHREWS -- context with IDs -- %v", resolver.data.GetId())
 	return scoped.Context(resolver.ctx, scoped.Scope{
 		Level: v1.SearchCategory_IMAGE_COMPONENTS_V2,
 		IDs:   []string{resolver.data.GetId()},
