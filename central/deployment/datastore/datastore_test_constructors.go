@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/process/filter"
+	"go.uber.org/mock/gomock"
 )
 
 // DeploymentTestStoreParams is a structure wrapping around the input
@@ -44,6 +45,7 @@ func NewTestDataStore(
 	}
 	deploymentStore := pgStore.FullStoreWrap(pgStore.New(testDB.DB))
 	searcher := search.NewV2(deploymentStore)
+	mockCtrl := gomock.NewController(t)
 	ds := newDatastoreImpl(
 		deploymentStore,
 		searcher,
@@ -56,7 +58,7 @@ func NewTestDataStore(
 		storeParams.ClusterRanker,
 		storeParams.NamespaceRanker,
 		storeParams.DeploymentRanker,
-		platformmatcher.Singleton(),
+		platformmatcher.GetTestPlatformMatcherWithDefaultPlatformComponentConfig(mockCtrl),
 	)
 
 	ds.initializeRanker()
@@ -78,6 +80,7 @@ func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) (DataStore, error)
 	clusterRanker := ranking.ClusterRanker()
 	namespaceRanker := ranking.NamespaceRanker()
 	deploymentRanker := ranking.DeploymentRanker()
+	mockCtrl := gomock.NewController(t)
 	return newDatastoreImpl(
 		dbStore,
 		searcher,
@@ -90,6 +93,6 @@ func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) (DataStore, error)
 		clusterRanker,
 		namespaceRanker,
 		deploymentRanker,
-		platformmatcher.Singleton(),
+		platformmatcher.GetTestPlatformMatcherWithDefaultPlatformComponentConfig(mockCtrl),
 	), nil
 }
