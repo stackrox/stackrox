@@ -75,6 +75,42 @@ func TestTranslate(t *testing.T) {
 		args args
 		want chartutil.Values
 	}{
+		"defaults are being used": {
+			args: args{
+				c: platform.Central{
+					Spec: platform.CentralSpec{},
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "stackrox",
+					},
+					Defaults: platform.CentralSpec{
+						ScannerV4: &platform.ScannerV4Spec{
+							ScannerComponent: &platform.ScannerV4Enabled,
+						},
+					},
+				},
+				pvcs: []*corev1.PersistentVolumeClaim{defaultPvc},
+			},
+			want: chartutil.Values{
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": true,
+					},
+				},
+				"central": map[string]interface{}{
+					"exposeMonitoring": false,
+					"db": map[string]interface{}{
+						"persistence": map[string]interface{}{
+							"persistentVolumeClaim": map[string]interface{}{
+								"createClaim": false,
+							},
+						},
+					},
+				},
+				"scannerV4": map[string]interface{}{
+					"disable": false,
+				},
+			},
+		},
 		"empty spec": {
 			args: args{
 				c: platform.Central{
