@@ -44,7 +44,7 @@ function assert_stderr_contains() {
     assert grep -F "$1" <<< "${stderr_lines[@]}"
 }
 
-@test "should fail when no values are set" {
+@test "should fail when required values are not set" {
     run_cmd
     assert_failure 2
 }
@@ -87,7 +87,7 @@ function assert_stderr_contains() {
     check_both_go
 }
 
-@test "Konflux: should tell only Konflux when PR branch name is not magic but targets release branch" {
+@test "Konflux: should tell only Konflux when PR targets release branch" {
     export SOURCE_BRANCH=author/my-useful-feature
     export TARGET_BRANCH=release-4.8
     check_gha_suppressed
@@ -133,4 +133,11 @@ function assert_stderr_contains() {
     export GITHUB_BASE_REF=master
     export GITHUB_HEAD_REF=author/my-useful-feature
     check_both_go
+}
+
+@test "GHA: should tell only Konflux when PR branch name includes magic" {
+    export GITHUB_REF=refs/pull/15309/merge
+    export GITHUB_BASE_REF=master
+    export GITHUB_HEAD_REF=author/konflux-release-like
+    check_gha_suppressed_for_pr
 }
