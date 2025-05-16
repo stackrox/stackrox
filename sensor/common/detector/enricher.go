@@ -183,12 +183,12 @@ func (c *cacheValue) scanAndSet(ctx context.Context, svc v1.ImageServiceClient, 
 		// Ignore the error and set the image to something basic,
 		// so alerting can progress.
 		log.Errorf("Scan request failed for image %q (ID %q): %s", req.containerImage.GetName().GetFullName(), req.containerImage.GetId(), err)
-		c.image = types.ToImage(req.containerImage)
+		c.updateImageNoLock(types.ToImage(req.containerImage))
 		return
 	}
 
 	log.Debugf("Successful image scan for image %q (ID %q): %d components returned by scanner", req.containerImage.GetName().GetFullName(), req.containerImage.GetId(), len(scannedImage.GetImage().GetScan().GetComponents()))
-	c.image = scannedImage.GetImage()
+	c.updateImageNoLock(scannedImage.GetImage())
 }
 
 func (c *cacheValue) scanAndSetWithLock(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest) {
