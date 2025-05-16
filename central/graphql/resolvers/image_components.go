@@ -278,6 +278,7 @@ func (resolver *imageComponentResolver) imageComponentScopeContext(ctx context.C
 	if resolver.ctx == nil {
 		resolver.ctx = ctx
 	}
+
 	return scoped.Context(resolver.ctx, scoped.Scope{
 		Level: v1.SearchCategory_IMAGE_COMPONENTS,
 		IDs:   []string{resolver.data.GetId()},
@@ -693,11 +694,13 @@ func (resolver *imageComponentV2Resolver) Images(ctx context.Context, args Pagin
 
 func (resolver *imageComponentV2Resolver) ImageVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "ImageVulnerabilityCount")
+	log.Infof("SHREWS -- ImageVulnerabilityCount -- %v -- %v+", args, ctx)
 	return resolver.root.ImageVulnerabilityCount(resolver.imageComponentScopeContext(ctx), args)
 }
 
 func (resolver *imageComponentV2Resolver) ImageVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "ImageVulnerabilityCounter")
+	log.Infof("SHREWS -- ImageVulnerabilityCounter -- %v -- %v+", args, ctx)
 	return resolver.root.ImageVulnerabilityCounter(resolver.imageComponentScopeContext(ctx), args)
 }
 
@@ -831,6 +834,12 @@ func (resolver *imageComponentV2Resolver) imageComponentScopeContext(ctx context
 	}
 	if resolver.ctx == nil {
 		resolver.ctx = ctx
+	}
+	if features.FlattenCVEData.Enabled() && len(resolver.flatData.GetComponentIDs()) > 0 {
+		return scoped.Context(resolver.ctx, scoped.Scope{
+			Level: v1.SearchCategory_IMAGE_COMPONENTS,
+			IDs:   resolver.flatData.GetComponentIDs(),
+		})
 	}
 	return scoped.Context(resolver.ctx, scoped.Scope{
 		Level: v1.SearchCategory_IMAGE_COMPONENTS_V2,
