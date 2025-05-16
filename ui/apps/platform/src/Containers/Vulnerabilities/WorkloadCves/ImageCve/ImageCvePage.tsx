@@ -139,6 +139,7 @@ export const imageCveAffectedDeploymentsQuery = gql`
     query getDeploymentsForCVE(
         $query: String
         $pagination: Pagination
+        $unknownImageCountQuery: String
         $lowImageCountQuery: String
         $moderateImageCountQuery: String
         $importantImageCountQuery: String
@@ -173,6 +174,7 @@ const defaultSeveritySummary = {
         important: { total: 0 },
         moderate: { total: 0 },
         low: { total: 0 },
+        unknown: { total: 0 },
     },
     affectedImageCount: 0,
     topCVSS: 0,
@@ -269,6 +271,7 @@ function ImageCvePage() {
         { deploymentCount: number; deployments: DeploymentForCve[] },
         {
             query: string;
+            unknownImageCountQuery: string;
             lowImageCountQuery: string;
             moderateImageCountQuery: string;
             importantImageCountQuery: string;
@@ -279,6 +282,7 @@ function ImageCvePage() {
     >(imageCveAffectedDeploymentsQuery, {
         variables: {
             query: getDeploymentSearchQuery(),
+            unknownImageCountQuery: getDeploymentSearchQuery('UNKNOWN_VULNERABILITY_SEVERITY'),
             lowImageCountQuery: getDeploymentSearchQuery('LOW_VULNERABILITY_SEVERITY'),
             moderateImageCountQuery: getDeploymentSearchQuery('MODERATE_VULNERABILITY_SEVERITY'),
             importantImageCountQuery: getDeploymentSearchQuery('IMPORTANT_VULNERABILITY_SEVERITY'),

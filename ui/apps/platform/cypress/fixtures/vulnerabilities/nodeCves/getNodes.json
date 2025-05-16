@@ -21,6 +21,10 @@
                         "total": 15,
                         "__typename": "ResourceCountByFixability"
                     },
+                    "unknown": {
+                        "total": 2,
+                        "__typename": "ResourceCountByFixability"
+                    },
                     "__typename": "ResourceCountByCVESeverity"
                 },
                 "cluster": {
@@ -49,6 +53,10 @@
                     },
                     "low": {
                         "total": 15,
+                        "__typename": "ResourceCountByFixability"
+                    },
+                    "unknown": {
+                        "total": 2,
                         "__typename": "ResourceCountByFixability"
                     },
                     "__typename": "ResourceCountByCVESeverity"

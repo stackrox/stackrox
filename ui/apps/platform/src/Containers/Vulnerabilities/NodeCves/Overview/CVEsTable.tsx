@@ -158,7 +158,13 @@ function CVEsTable({
                     data.map((nodeCve, rowIndex) => {
                         const {
                             cve,
-                            affectedNodeCountBySeverity: { critical, important, moderate, low },
+                            affectedNodeCountBySeverity: {
+                                critical,
+                                important,
+                                moderate,
+                                low,
+                                unknown,
+                            },
                             distroTuples,
                             topCVSS,
                             affectedNodeCount,
@@ -197,6 +203,7 @@ function CVEsTable({
                                             importantCount={important.total}
                                             moderateCount={moderate.total}
                                             lowCount={low.total}
+                                            unknownCount={unknown.total}
                                             filteredSeverities={filteredSeverities}
                                             entity={'node'}
                                         />
