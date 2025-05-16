@@ -11,9 +11,10 @@
 # We want the same for PRs targeting release branches because we want E2E tests run against Konflux-built images just as
 # it happens for release branch pushes.
 #
-# This is what this script determines and communicates via its exit code.
-# 0 -> only Konflux without suffix, no GHA.
-# No-zero (6) -> both Konflux (with suffix) and GHA.
+# Additionally, it's possible to get the same behavior in any PR when PR source branch has 'konflux-release-like' in its
+# name.
+#
+# This is what this script determines and communicates via stdout.
 #
 # Note: this script is called by https://github.com/stackrox/konflux-tasks/blob/main/tasks/determine-image-tag-task.yaml
 
@@ -27,8 +28,6 @@ if [[ -z "${TARGET_BRANCH:-}" && -z "${GITHUB_REF:-}" ]]; then
     log "Either TARGET_BRANCH or GITHUB_REF must be set"
     exit 2
 fi
-
-# TODO: support pull requests
 
 # Branch or tag name when in Konflux CI.
 # Note that $TARGET_BRANCH must be manually exposed as the environment variable by/in the Tekton step.

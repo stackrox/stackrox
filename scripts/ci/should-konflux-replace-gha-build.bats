@@ -50,12 +50,12 @@ function assert_stderr_contains() {
     check_gha_suppressed
 }
 
-@test "should tell both GHA and Konflux when TARGET_BRANCH is other" {
+@test "should tell Both when TARGET_BRANCH is other" {
     export TARGET_BRANCH=author/ROX-27716-take-konflux-on-release
     check_both_go
 }
 
-@test "should tell both GHA and Konflux when github_ref is other" {
+@test "should tell Both when github_ref is other" {
     export GITHUB_REF=refs/heads/many-funky/parts/with-useful/slashes
     check_both_go
 }
@@ -70,12 +70,12 @@ function assert_stderr_contains() {
     check_gha_suppressed
 }
 
-@test "should tell both GHA and Konflux when TARGET_BRANCH is a different tag" {
+@test "should tell Both when TARGET_BRANCH is a different tag" {
     export TARGET_BRANCH=refs/tags/4.10.56-nightly.20250515
     check_both_go
 }
 
-@test "should tell both GHA and Konflux when github_ref is a different tag" {
+@test "should tell Both when github_ref is a different tag" {
     export GITHUB_REF=refs/tags/author-testing
     check_both_go
 }
@@ -86,7 +86,7 @@ function assert_stderr_contains() {
     check_gha_suppressed
 }
 
-@test "should tell both GHA and Konflux when PR and github_base_ref is other" {
+@test "should tell Both when PR and github_base_ref is other" {
     export GITHUB_REF="refs/pull/15309/merge"
     export GITHUB_BASE_REF="master"
     check_both_go
