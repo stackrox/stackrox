@@ -136,6 +136,7 @@ func (s *centralSenderImpl) send(stream central.SensorService_CommunicateClient,
 
 			if err := wrappedStream.Send(msg.MsgFromSensor); err != nil {
 				log.Errorf("unable to send to stream: %s", err)
+				log.Errorf("message that cause the problem: %+v", msg.MsgFromSensor)
 				s.stopper.Flow().StopWithError(err)
 				return
 			}
