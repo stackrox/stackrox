@@ -1,4 +1,4 @@
-package aggregator
+package common
 
 import (
 	"testing"
@@ -16,7 +16,7 @@ func Test_validateMetricName(t *testing.T) {
 	}
 	for name, expected := range tests {
 		t.Run(name, func(t *testing.T) {
-			if err := validateMetricName(name); err != nil {
+			if err := ValidateMetricName(name); err != nil {
 				assert.Equal(t, expected, err.Error())
 			} else {
 				assert.Empty(t, expected)

@@ -1,9 +1,10 @@
-package aggregator
+package vulnerabilities
 
 import (
 	"testing"
 	"time"
 
+	"github.com/stackrox/rox/central/metrics/aggregator/common"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
 )
@@ -13,17 +14,23 @@ func Test_parseVulnerabilitiesConfig(t *testing.T) {
 	labelExpressions, period, err := parseVulnerabilitiesConfig(config)
 	assert.NoError(t, err)
 	assert.Equal(t, 42*time.Hour, period)
-	assert.Equal(t, metricsConfig{
+	assert.Equal(t, common.MetricsConfig{
 		"metric1": {
 			"Severity": {
-				{"=", "CRITICAL*"},
-				{"=", "HIGH*"},
-				{op: "OR"},
-				{"=", "LOW*"},
+				common.MustMakeExpression("=", "CRITICAL*"),
+				common.MustMakeExpression("=", "HIGH*"),
+				common.MustMakeExpression("OR", ""),
+				common.MustMakeExpression("=", "LOW*"),
 			},
 			"Cluster": nil,
 		},
 	}, labelExpressions)
+}
+
+func Test_reloadVulnerabilityTrackerConfig(t *testing.T) {
+	tracker, err := Reconfigure(nil)
+	assert.NotNil(t, tracker)
+	assert.NoError(t, err)
 }
 
 func makeTestConfig_Vulnerabilities() *storage.PrometheusMetricsConfig_Vulnerabilities {

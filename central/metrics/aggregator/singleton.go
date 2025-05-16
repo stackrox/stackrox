@@ -6,6 +6,8 @@ import (
 
 	configDS "github.com/stackrox/rox/central/config/datastore"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
+	"github.com/stackrox/rox/central/metrics/aggregator/common"
+	"github.com/stackrox/rox/central/metrics/aggregator/vulnerabilities"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
@@ -24,14 +26,14 @@ type aggregatorRunner struct {
 	stopOnce sync.Once
 	mux      sync.RWMutex
 
-	vulnerabilities     *tracker
+	vulnerabilities     *common.Tracker
 	vulnerabilitiesOnce sync.Once
 }
 
 func Singleton() interface {
 	Start()
 	Stop()
-	ReloadConfig(*storage.PrometheusMetricsConfig) error
+	Reconfigure(*storage.PrometheusMetricsConfig) error
 } {
 	once.Do(func() {
 		instance = &aggregatorRunner{
@@ -40,21 +42,22 @@ func Singleton() interface {
 		systemPrivateConfig, err := configDS.Singleton().GetPrivateConfig(
 			sac.WithAllAccess(context.Background()))
 		if err != nil {
-			log.Errorw("Failed to get Prometheus metrics configuration", logging.Err(err))
+			log.Errorw("Failed to read Prometheus metrics configuration from the DB", logging.Err(err))
 			return
 		}
-		// Ignore error on start, as there's nothing we can do.
-		_ = instance.ReloadConfig(systemPrivateConfig.GetPrometheusMetricsConfig())
+		if err := instance.Reconfigure(systemPrivateConfig.GetPrometheusMetricsConfig()); err != nil {
+			log.Errorw("Failed to initialize Prometheus metrics configuration", logging.Err(err))
+		}
 	})
 	return instance
 }
 
-func (ar *aggregatorRunner) ReloadConfig(cfg *storage.PrometheusMetricsConfig) error {
+func (ar *aggregatorRunner) Reconfigure(cfg *storage.PrometheusMetricsConfig) error {
 	ar.mux.Lock()
 	defer ar.mux.Unlock()
 
 	// Vulnerabilties metrics:
-	vulnTracker, err := reloadVulnerabilityTrackerConfig(cfg.GetVulnerabilities())
+	vulnTracker, err := vulnerabilities.Reconfigure(cfg.GetVulnerabilities())
 	if err == nil || instance.vulnerabilities == nil {
 		instance.vulnerabilities = vulnTracker
 	}
@@ -68,12 +71,12 @@ func (ar *aggregatorRunner) ReloadConfig(cfg *storage.PrometheusMetricsConfig) e
 func (ar *aggregatorRunner) Start() {
 	// Run the periodic vulnerabilities aggregation.
 	ar.vulnerabilitiesOnce.Do(func() {
-		if v := ar.vulnerabilities; v != nil {
-			tw := makeTrackWrapper(
+		if vulnTracker := ar.vulnerabilities; vulnTracker != nil {
+			tw := common.MakeTrackWrapper(
 				deploymentDS.Singleton(),
-				ar.vulnerabilities.getMetricsConfig,
-				trackVulnerabilityMetrics)
-			go ar.run(v.periodCh, tw.track)
+				vulnTracker.GetMetricsConfig,
+				vulnerabilities.TrackVulnerabilityMetrics)
+			go ar.run(vulnTracker.GetPeriodCh(), tw.Track)
 		}
 	})
 }
