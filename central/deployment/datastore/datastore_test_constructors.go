@@ -4,18 +4,16 @@ import (
 	"errors"
 	"testing"
 
-	configDatastoreMocks "github.com/stackrox/rox/central/config/datastore/mocks"
 	"github.com/stackrox/rox/central/deployment/cache"
 	"github.com/stackrox/rox/central/deployment/datastore/internal/search"
 	pgStore "github.com/stackrox/rox/central/deployment/datastore/internal/store/postgres"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	nfDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
-	platformmatcher "github.com/stackrox/rox/central/platform/matcher"
 	pbDS "github.com/stackrox/rox/central/processbaseline/datastore"
 	processIndicatorFilter "github.com/stackrox/rox/central/processindicator/filter"
 	"github.com/stackrox/rox/central/ranking"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/process/filter"
@@ -48,24 +46,6 @@ func NewTestDataStore(
 	deploymentStore := pgStore.FullStoreWrap(pgStore.New(testDB.DB))
 	searcher := search.NewV2(deploymentStore)
 	mockCtrl := gomock.NewController(t)
-	mockConfigDatastore := configDatastoreMocks.NewMockDataStore(mockCtrl)
-	mockConfigDatastore.EXPECT().GetPlatformComponentConfig(gomock.Any()).Return(&storage.PlatformComponentConfig{
-		NeedsReevaluation: false,
-		Rules: []*storage.PlatformComponentConfig_Rule{
-			{
-				Name: "system rule",
-				NamespaceRule: &storage.PlatformComponentConfig_Rule_NamespaceRule{
-					Regex: `^kube-.*|^openshift-.*`,
-				},
-			},
-			{
-				Name: "red hat layered products",
-				NamespaceRule: &storage.PlatformComponentConfig_Rule_NamespaceRule{
-					Regex: `^stackrox$|^rhacs-operator$|^open-cluster-management$|^multicluster-engine$|^aap$|^hive$`,
-				},
-			},
-		},
-	}, true, nil).Times(1)
 	ds := newDatastoreImpl(
 		deploymentStore,
 		searcher,
@@ -78,7 +58,7 @@ func NewTestDataStore(
 		storeParams.ClusterRanker,
 		storeParams.NamespaceRanker,
 		storeParams.DeploymentRanker,
-		platformmatcher.New(mockConfigDatastore),
+		fixtures.GetPlatformMatcherWithDefaultPlatformComponentConfig(mockCtrl),
 	)
 
 	ds.initializeRanker()
@@ -101,24 +81,6 @@ func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) (DataStore, error)
 	namespaceRanker := ranking.NamespaceRanker()
 	deploymentRanker := ranking.DeploymentRanker()
 	mockCtrl := gomock.NewController(t)
-	mockConfigDatastore := configDatastoreMocks.NewMockDataStore(mockCtrl)
-	mockConfigDatastore.EXPECT().GetPlatformComponentConfig(gomock.Any()).Return(&storage.PlatformComponentConfig{
-		NeedsReevaluation: false,
-		Rules: []*storage.PlatformComponentConfig_Rule{
-			{
-				Name: "system rule",
-				NamespaceRule: &storage.PlatformComponentConfig_Rule_NamespaceRule{
-					Regex: `^kube-.*|^openshift-.*`,
-				},
-			},
-			{
-				Name: "red hat layered products",
-				NamespaceRule: &storage.PlatformComponentConfig_Rule_NamespaceRule{
-					Regex: `^stackrox$|^rhacs-operator$|^open-cluster-management$|^multicluster-engine$|^aap$|^hive$`,
-				},
-			},
-		},
-	}, true, nil).Times(1)
 	return newDatastoreImpl(
 		dbStore,
 		searcher,
@@ -131,6 +93,6 @@ func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) (DataStore, error)
 		clusterRanker,
 		namespaceRanker,
 		deploymentRanker,
-		platformmatcher.New(mockConfigDatastore),
+		fixtures.GetPlatformMatcherWithDefaultPlatformComponentConfig(mockCtrl),
 	), nil
 }
