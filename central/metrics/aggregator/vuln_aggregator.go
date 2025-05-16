@@ -1,4 +1,4 @@
-package telemetry
+package aggregator
 
 import (
 	"context"
@@ -9,9 +9,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
 )
-
-// Label is an alias because the central/metrics package cannot import it.
-type Label string
 
 var labelOrder = map[Label]int{
 	"Cluster":          1,
@@ -32,19 +29,18 @@ var labelOrder = map[Label]int{
 	"IsFixable":        16,
 }
 
-type record struct {
-	labels prometheus.Labels
-	total  int
-}
-
-type result map[metricName]map[metricKey]*record
-
-type aggregator struct {
+type vulnAggregator struct {
 	ds        datastore.DataStore
 	trackFunc func(metricName string, labels prometheus.Labels, total int)
 }
 
-func (a *aggregator) track(ctx context.Context, mc metricsConfig) {
+func (a *vulnAggregator) getTracker(cfgGetter func() metricsConfig) func(context.Context) {
+	return func(ctx context.Context) {
+		a.track(ctx, cfgGetter())
+	}
+}
+
+func (a *vulnAggregator) track(ctx context.Context, mc metricsConfig) {
 	for metric, records := range trackVulnerabilityMetrics(ctx, a.ds, mc) {
 		for _, rec := range records {
 			a.trackFunc(string(metric), rec.labels, rec.total)

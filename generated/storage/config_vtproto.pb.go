@@ -367,13 +367,31 @@ func (m *DayOption) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
-func (m *PrometheusMetricsConfig_Expressions) CloneVT() *PrometheusMetricsConfig_Expressions {
+func (m *PrometheusMetricsConfig_LabelExpressions_Expressions_Expression) CloneVT() *PrometheusMetricsConfig_LabelExpressions_Expressions_Expression {
 	if m == nil {
-		return (*PrometheusMetricsConfig_Expressions)(nil)
+		return (*PrometheusMetricsConfig_LabelExpressions_Expressions_Expression)(nil)
 	}
-	r := new(PrometheusMetricsConfig_Expressions)
+	r := new(PrometheusMetricsConfig_LabelExpressions_Expressions_Expression)
+	r.Operator = m.Operator
+	r.Argument = m.Argument
+	if len(m.unknownFields) > 0 {
+		r.unknownFields = make([]byte, len(m.unknownFields))
+		copy(r.unknownFields, m.unknownFields)
+	}
+	return r
+}
+
+func (m *PrometheusMetricsConfig_LabelExpressions_Expressions_Expression) CloneMessageVT() proto.Message {
+	return m.CloneVT()
+}
+
+func (m *PrometheusMetricsConfig_LabelExpressions_Expressions) CloneVT() *PrometheusMetricsConfig_LabelExpressions_Expressions {
+	if m == nil {
+		return (*PrometheusMetricsConfig_LabelExpressions_Expressions)(nil)
+	}
+	r := new(PrometheusMetricsConfig_LabelExpressions_Expressions)
 	if rhs := m.Expression; rhs != nil {
-		tmpContainer := make([]*PrometheusMetricsConfig_Expression, len(rhs))
+		tmpContainer := make([]*PrometheusMetricsConfig_LabelExpressions_Expressions_Expression, len(rhs))
 		for k, v := range rhs {
 			tmpContainer[k] = v.CloneVT()
 		}
@@ -386,25 +404,7 @@ func (m *PrometheusMetricsConfig_Expressions) CloneVT() *PrometheusMetricsConfig
 	return r
 }
 
-func (m *PrometheusMetricsConfig_Expressions) CloneMessageVT() proto.Message {
-	return m.CloneVT()
-}
-
-func (m *PrometheusMetricsConfig_Expression) CloneVT() *PrometheusMetricsConfig_Expression {
-	if m == nil {
-		return (*PrometheusMetricsConfig_Expression)(nil)
-	}
-	r := new(PrometheusMetricsConfig_Expression)
-	r.Operator = m.Operator
-	r.Argument = m.Argument
-	if len(m.unknownFields) > 0 {
-		r.unknownFields = make([]byte, len(m.unknownFields))
-		copy(r.unknownFields, m.unknownFields)
-	}
-	return r
-}
-
-func (m *PrometheusMetricsConfig_Expression) CloneMessageVT() proto.Message {
+func (m *PrometheusMetricsConfig_LabelExpressions_Expressions) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
@@ -414,7 +414,7 @@ func (m *PrometheusMetricsConfig_LabelExpressions) CloneVT() *PrometheusMetricsC
 	}
 	r := new(PrometheusMetricsConfig_LabelExpressions)
 	if rhs := m.LabelExpressions; rhs != nil {
-		tmpContainer := make(map[string]*PrometheusMetricsConfig_Expressions, len(rhs))
+		tmpContainer := make(map[string]*PrometheusMetricsConfig_LabelExpressions_Expressions, len(rhs))
 		for k, v := range rhs {
 			tmpContainer[k] = v.CloneVT()
 		}
@@ -431,11 +431,11 @@ func (m *PrometheusMetricsConfig_LabelExpressions) CloneMessageVT() proto.Messag
 	return m.CloneVT()
 }
 
-func (m *PrometheusMetricsConfig) CloneVT() *PrometheusMetricsConfig {
+func (m *PrometheusMetricsConfig_Vulnerabilities) CloneVT() *PrometheusMetricsConfig_Vulnerabilities {
 	if m == nil {
-		return (*PrometheusMetricsConfig)(nil)
+		return (*PrometheusMetricsConfig_Vulnerabilities)(nil)
 	}
-	r := new(PrometheusMetricsConfig)
+	r := new(PrometheusMetricsConfig_Vulnerabilities)
 	r.GatheringPeriodHours = m.GatheringPeriodHours
 	if rhs := m.MetricLabels; rhs != nil {
 		tmpContainer := make(map[string]*PrometheusMetricsConfig_LabelExpressions, len(rhs))
@@ -444,6 +444,23 @@ func (m *PrometheusMetricsConfig) CloneVT() *PrometheusMetricsConfig {
 		}
 		r.MetricLabels = tmpContainer
 	}
+	if len(m.unknownFields) > 0 {
+		r.unknownFields = make([]byte, len(m.unknownFields))
+		copy(r.unknownFields, m.unknownFields)
+	}
+	return r
+}
+
+func (m *PrometheusMetricsConfig_Vulnerabilities) CloneMessageVT() proto.Message {
+	return m.CloneVT()
+}
+
+func (m *PrometheusMetricsConfig) CloneVT() *PrometheusMetricsConfig {
+	if m == nil {
+		return (*PrometheusMetricsConfig)(nil)
+	}
+	r := new(PrometheusMetricsConfig)
+	r.Vulnerabilities = m.Vulnerabilities.CloneVT()
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -946,40 +963,7 @@ func (this *DayOption) EqualMessageVT(thatMsg proto.Message) bool {
 	}
 	return this.EqualVT(that)
 }
-func (this *PrometheusMetricsConfig_Expressions) EqualVT(that *PrometheusMetricsConfig_Expressions) bool {
-	if this == that {
-		return true
-	} else if this == nil || that == nil {
-		return false
-	}
-	if len(this.Expression) != len(that.Expression) {
-		return false
-	}
-	for i, vx := range this.Expression {
-		vy := that.Expression[i]
-		if p, q := vx, vy; p != q {
-			if p == nil {
-				p = &PrometheusMetricsConfig_Expression{}
-			}
-			if q == nil {
-				q = &PrometheusMetricsConfig_Expression{}
-			}
-			if !p.EqualVT(q) {
-				return false
-			}
-		}
-	}
-	return string(this.unknownFields) == string(that.unknownFields)
-}
-
-func (this *PrometheusMetricsConfig_Expressions) EqualMessageVT(thatMsg proto.Message) bool {
-	that, ok := thatMsg.(*PrometheusMetricsConfig_Expressions)
-	if !ok {
-		return false
-	}
-	return this.EqualVT(that)
-}
-func (this *PrometheusMetricsConfig_Expression) EqualVT(that *PrometheusMetricsConfig_Expression) bool {
+func (this *PrometheusMetricsConfig_LabelExpressions_Expressions_Expression) EqualVT(that *PrometheusMetricsConfig_LabelExpressions_Expressions_Expression) bool {
 	if this == that {
 		return true
 	} else if this == nil || that == nil {
@@ -994,8 +978,41 @@ func (this *PrometheusMetricsConfig_Expression) EqualVT(that *PrometheusMetricsC
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
-func (this *PrometheusMetricsConfig_Expression) EqualMessageVT(thatMsg proto.Message) bool {
-	that, ok := thatMsg.(*PrometheusMetricsConfig_Expression)
+func (this *PrometheusMetricsConfig_LabelExpressions_Expressions_Expression) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*PrometheusMetricsConfig_LabelExpressions_Expressions_Expression)
+	if !ok {
+		return false
+	}
+	return this.EqualVT(that)
+}
+func (this *PrometheusMetricsConfig_LabelExpressions_Expressions) EqualVT(that *PrometheusMetricsConfig_LabelExpressions_Expressions) bool {
+	if this == that {
+		return true
+	} else if this == nil || that == nil {
+		return false
+	}
+	if len(this.Expression) != len(that.Expression) {
+		return false
+	}
+	for i, vx := range this.Expression {
+		vy := that.Expression[i]
+		if p, q := vx, vy; p != q {
+			if p == nil {
+				p = &PrometheusMetricsConfig_LabelExpressions_Expressions_Expression{}
+			}
+			if q == nil {
+				q = &PrometheusMetricsConfig_LabelExpressions_Expressions_Expression{}
+			}
+			if !p.EqualVT(q) {
+				return false
+			}
+		}
+	}
+	return string(this.unknownFields) == string(that.unknownFields)
+}
+
+func (this *PrometheusMetricsConfig_LabelExpressions_Expressions) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*PrometheusMetricsConfig_LabelExpressions_Expressions)
 	if !ok {
 		return false
 	}
@@ -1017,10 +1034,10 @@ func (this *PrometheusMetricsConfig_LabelExpressions) EqualVT(that *PrometheusMe
 		}
 		if p, q := vx, vy; p != q {
 			if p == nil {
-				p = &PrometheusMetricsConfig_Expressions{}
+				p = &PrometheusMetricsConfig_LabelExpressions_Expressions{}
 			}
 			if q == nil {
-				q = &PrometheusMetricsConfig_Expressions{}
+				q = &PrometheusMetricsConfig_LabelExpressions_Expressions{}
 			}
 			if !p.EqualVT(q) {
 				return false
@@ -1037,7 +1054,7 @@ func (this *PrometheusMetricsConfig_LabelExpressions) EqualMessageVT(thatMsg pro
 	}
 	return this.EqualVT(that)
 }
-func (this *PrometheusMetricsConfig) EqualVT(that *PrometheusMetricsConfig) bool {
+func (this *PrometheusMetricsConfig_Vulnerabilities) EqualVT(that *PrometheusMetricsConfig_Vulnerabilities) bool {
 	if this == that {
 		return true
 	} else if this == nil || that == nil {
@@ -1065,6 +1082,25 @@ func (this *PrometheusMetricsConfig) EqualVT(that *PrometheusMetricsConfig) bool
 				return false
 			}
 		}
+	}
+	return string(this.unknownFields) == string(that.unknownFields)
+}
+
+func (this *PrometheusMetricsConfig_Vulnerabilities) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*PrometheusMetricsConfig_Vulnerabilities)
+	if !ok {
+		return false
+	}
+	return this.EqualVT(that)
+}
+func (this *PrometheusMetricsConfig) EqualVT(that *PrometheusMetricsConfig) bool {
+	if this == that {
+		return true
+	} else if this == nil || that == nil {
+		return false
+	}
+	if !this.Vulnerabilities.EqualVT(that.Vulnerabilities) {
+		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
@@ -2053,7 +2089,7 @@ func (m *DayOption) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *PrometheusMetricsConfig_Expressions) MarshalVT() (dAtA []byte, err error) {
+func (m *PrometheusMetricsConfig_LabelExpressions_Expressions_Expression) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -2066,57 +2102,12 @@ func (m *PrometheusMetricsConfig_Expressions) MarshalVT() (dAtA []byte, err erro
 	return dAtA[:n], nil
 }
 
-func (m *PrometheusMetricsConfig_Expressions) MarshalToVT(dAtA []byte) (int, error) {
+func (m *PrometheusMetricsConfig_LabelExpressions_Expressions_Expression) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *PrometheusMetricsConfig_Expressions) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
-	if m == nil {
-		return 0, nil
-	}
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.unknownFields != nil {
-		i -= len(m.unknownFields)
-		copy(dAtA[i:], m.unknownFields)
-	}
-	if len(m.Expression) > 0 {
-		for iNdEx := len(m.Expression) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.Expression[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-			i--
-			dAtA[i] = 0xa
-		}
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *PrometheusMetricsConfig_Expression) MarshalVT() (dAtA []byte, err error) {
-	if m == nil {
-		return nil, nil
-	}
-	size := m.SizeVT()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *PrometheusMetricsConfig_Expression) MarshalToVT(dAtA []byte) (int, error) {
-	size := m.SizeVT()
-	return m.MarshalToSizedBufferVT(dAtA[:size])
-}
-
-func (m *PrometheusMetricsConfig_Expression) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *PrometheusMetricsConfig_LabelExpressions_Expressions_Expression) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m == nil {
 		return 0, nil
 	}
@@ -2141,6 +2132,51 @@ func (m *PrometheusMetricsConfig_Expression) MarshalToSizedBufferVT(dAtA []byte)
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Operator)))
 		i--
 		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *PrometheusMetricsConfig_LabelExpressions_Expressions) MarshalVT() (dAtA []byte, err error) {
+	if m == nil {
+		return nil, nil
+	}
+	size := m.SizeVT()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *PrometheusMetricsConfig_LabelExpressions_Expressions) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *PrometheusMetricsConfig_LabelExpressions_Expressions) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	if m == nil {
+		return 0, nil
+	}
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.unknownFields != nil {
+		i -= len(m.unknownFields)
+		copy(dAtA[i:], m.unknownFields)
+	}
+	if len(m.Expression) > 0 {
+		for iNdEx := len(m.Expression) - 1; iNdEx >= 0; iNdEx-- {
+			size, err := m.Expression[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			i--
+			dAtA[i] = 0xa
+		}
 	}
 	return len(dAtA) - i, nil
 }
@@ -2200,7 +2236,7 @@ func (m *PrometheusMetricsConfig_LabelExpressions) MarshalToSizedBufferVT(dAtA [
 	return len(dAtA) - i, nil
 }
 
-func (m *PrometheusMetricsConfig) MarshalVT() (dAtA []byte, err error) {
+func (m *PrometheusMetricsConfig_Vulnerabilities) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -2213,12 +2249,12 @@ func (m *PrometheusMetricsConfig) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *PrometheusMetricsConfig) MarshalToVT(dAtA []byte) (int, error) {
+func (m *PrometheusMetricsConfig_Vulnerabilities) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *PrometheusMetricsConfig) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *PrometheusMetricsConfig_Vulnerabilities) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m == nil {
 		return 0, nil
 	}
@@ -2256,6 +2292,49 @@ func (m *PrometheusMetricsConfig) MarshalToSizedBufferVT(dAtA []byte) (int, erro
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.GatheringPeriodHours))
 		i--
 		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *PrometheusMetricsConfig) MarshalVT() (dAtA []byte, err error) {
+	if m == nil {
+		return nil, nil
+	}
+	size := m.SizeVT()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *PrometheusMetricsConfig) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *PrometheusMetricsConfig) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	if m == nil {
+		return 0, nil
+	}
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.unknownFields != nil {
+		i -= len(m.unknownFields)
+		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.Vulnerabilities != nil {
+		size, err := m.Vulnerabilities.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
@@ -2624,23 +2703,7 @@ func (m *DayOption) SizeVT() (n int) {
 	return n
 }
 
-func (m *PrometheusMetricsConfig_Expressions) SizeVT() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if len(m.Expression) > 0 {
-		for _, e := range m.Expression {
-			l = e.SizeVT()
-			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-		}
-	}
-	n += len(m.unknownFields)
-	return n
-}
-
-func (m *PrometheusMetricsConfig_Expression) SizeVT() (n int) {
+func (m *PrometheusMetricsConfig_LabelExpressions_Expressions_Expression) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -2653,6 +2716,22 @@ func (m *PrometheusMetricsConfig_Expression) SizeVT() (n int) {
 	l = len(m.Argument)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	n += len(m.unknownFields)
+	return n
+}
+
+func (m *PrometheusMetricsConfig_LabelExpressions_Expressions) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.Expression) > 0 {
+		for _, e := range m.Expression {
+			l = e.SizeVT()
+			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+		}
 	}
 	n += len(m.unknownFields)
 	return n
@@ -2681,7 +2760,7 @@ func (m *PrometheusMetricsConfig_LabelExpressions) SizeVT() (n int) {
 	return n
 }
 
-func (m *PrometheusMetricsConfig) SizeVT() (n int) {
+func (m *PrometheusMetricsConfig_Vulnerabilities) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -2702,6 +2781,20 @@ func (m *PrometheusMetricsConfig) SizeVT() (n int) {
 			mapEntrySize := 1 + len(k) + protohelpers.SizeOfVarint(uint64(len(k))) + l
 			n += mapEntrySize + 1 + protohelpers.SizeOfVarint(uint64(mapEntrySize))
 		}
+	}
+	n += len(m.unknownFields)
+	return n
+}
+
+func (m *PrometheusMetricsConfig) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Vulnerabilities != nil {
+		l = m.Vulnerabilities.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -5009,7 +5102,7 @@ func (m *DayOption) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *PrometheusMetricsConfig_Expressions) UnmarshalVT(dAtA []byte) error {
+func (m *PrometheusMetricsConfig_LabelExpressions_Expressions_Expression) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5032,95 +5125,10 @@ func (m *PrometheusMetricsConfig_Expressions) UnmarshalVT(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: PrometheusMetricsConfig_Expressions: wiretype end group for non-group")
+			return fmt.Errorf("proto: PrometheusMetricsConfig_LabelExpressions_Expressions_Expression: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: PrometheusMetricsConfig_Expressions: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Expression", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Expression = append(m.Expression, &PrometheusMetricsConfig_Expression{})
-			if err := m.Expression[len(m.Expression)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *PrometheusMetricsConfig_Expression) UnmarshalVT(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return protohelpers.ErrIntOverflow
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: PrometheusMetricsConfig_Expression: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: PrometheusMetricsConfig_Expression: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: PrometheusMetricsConfig_LabelExpressions_Expressions_Expression: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -5209,6 +5217,91 @@ func (m *PrometheusMetricsConfig_Expression) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
+func (m *PrometheusMetricsConfig_LabelExpressions_Expressions) UnmarshalVT(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return protohelpers.ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: PrometheusMetricsConfig_LabelExpressions_Expressions: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: PrometheusMetricsConfig_LabelExpressions_Expressions: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Expression", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Expression = append(m.Expression, &PrometheusMetricsConfig_LabelExpressions_Expressions_Expression{})
+			if err := m.Expression[len(m.Expression)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
 func (m *PrometheusMetricsConfig_LabelExpressions) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -5268,10 +5361,10 @@ func (m *PrometheusMetricsConfig_LabelExpressions) UnmarshalVT(dAtA []byte) erro
 				return io.ErrUnexpectedEOF
 			}
 			if m.LabelExpressions == nil {
-				m.LabelExpressions = make(map[string]*PrometheusMetricsConfig_Expressions)
+				m.LabelExpressions = make(map[string]*PrometheusMetricsConfig_LabelExpressions_Expressions)
 			}
 			var mapkey string
-			var mapvalue *PrometheusMetricsConfig_Expressions
+			var mapvalue *PrometheusMetricsConfig_LabelExpressions_Expressions
 			for iNdEx < postIndex {
 				entryPreIndex := iNdEx
 				var wire uint64
@@ -5345,7 +5438,7 @@ func (m *PrometheusMetricsConfig_LabelExpressions) UnmarshalVT(dAtA []byte) erro
 					if postmsgIndex > l {
 						return io.ErrUnexpectedEOF
 					}
-					mapvalue = &PrometheusMetricsConfig_Expressions{}
+					mapvalue = &PrometheusMetricsConfig_LabelExpressions_Expressions{}
 					if err := mapvalue.UnmarshalVT(dAtA[iNdEx:postmsgIndex]); err != nil {
 						return err
 					}
@@ -5389,7 +5482,7 @@ func (m *PrometheusMetricsConfig_LabelExpressions) UnmarshalVT(dAtA []byte) erro
 	}
 	return nil
 }
-func (m *PrometheusMetricsConfig) UnmarshalVT(dAtA []byte) error {
+func (m *PrometheusMetricsConfig_Vulnerabilities) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5412,10 +5505,10 @@ func (m *PrometheusMetricsConfig) UnmarshalVT(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: PrometheusMetricsConfig: wiretype end group for non-group")
+			return fmt.Errorf("proto: PrometheusMetricsConfig_Vulnerabilities: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: PrometheusMetricsConfig: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: PrometheusMetricsConfig_Vulnerabilities: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -5565,6 +5658,93 @@ func (m *PrometheusMetricsConfig) UnmarshalVT(dAtA []byte) error {
 				}
 			}
 			m.MetricLabels[mapkey] = mapvalue
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *PrometheusMetricsConfig) UnmarshalVT(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return protohelpers.ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: PrometheusMetricsConfig: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: PrometheusMetricsConfig: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Vulnerabilities", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Vulnerabilities == nil {
+				m.Vulnerabilities = &PrometheusMetricsConfig_Vulnerabilities{}
+			}
+			if err := m.Vulnerabilities.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -7922,7 +8102,7 @@ func (m *DayOption) UnmarshalVTUnsafe(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *PrometheusMetricsConfig_Expressions) UnmarshalVTUnsafe(dAtA []byte) error {
+func (m *PrometheusMetricsConfig_LabelExpressions_Expressions_Expression) UnmarshalVTUnsafe(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -7945,95 +8125,10 @@ func (m *PrometheusMetricsConfig_Expressions) UnmarshalVTUnsafe(dAtA []byte) err
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: PrometheusMetricsConfig_Expressions: wiretype end group for non-group")
+			return fmt.Errorf("proto: PrometheusMetricsConfig_LabelExpressions_Expressions_Expression: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: PrometheusMetricsConfig_Expressions: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Expression", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Expression = append(m.Expression, &PrometheusMetricsConfig_Expression{})
-			if err := m.Expression[len(m.Expression)-1].UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *PrometheusMetricsConfig_Expression) UnmarshalVTUnsafe(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return protohelpers.ErrIntOverflow
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: PrometheusMetricsConfig_Expression: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: PrometheusMetricsConfig_Expression: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: PrometheusMetricsConfig_LabelExpressions_Expressions_Expression: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -8130,6 +8225,91 @@ func (m *PrometheusMetricsConfig_Expression) UnmarshalVTUnsafe(dAtA []byte) erro
 	}
 	return nil
 }
+func (m *PrometheusMetricsConfig_LabelExpressions_Expressions) UnmarshalVTUnsafe(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return protohelpers.ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: PrometheusMetricsConfig_LabelExpressions_Expressions: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: PrometheusMetricsConfig_LabelExpressions_Expressions: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Expression", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Expression = append(m.Expression, &PrometheusMetricsConfig_LabelExpressions_Expressions_Expression{})
+			if err := m.Expression[len(m.Expression)-1].UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
 func (m *PrometheusMetricsConfig_LabelExpressions) UnmarshalVTUnsafe(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -8189,10 +8369,10 @@ func (m *PrometheusMetricsConfig_LabelExpressions) UnmarshalVTUnsafe(dAtA []byte
 				return io.ErrUnexpectedEOF
 			}
 			if m.LabelExpressions == nil {
-				m.LabelExpressions = make(map[string]*PrometheusMetricsConfig_Expressions)
+				m.LabelExpressions = make(map[string]*PrometheusMetricsConfig_LabelExpressions_Expressions)
 			}
 			var mapkey string
-			var mapvalue *PrometheusMetricsConfig_Expressions
+			var mapvalue *PrometheusMetricsConfig_LabelExpressions_Expressions
 			for iNdEx < postIndex {
 				entryPreIndex := iNdEx
 				var wire uint64
@@ -8270,7 +8450,7 @@ func (m *PrometheusMetricsConfig_LabelExpressions) UnmarshalVTUnsafe(dAtA []byte
 					if postmsgIndex > l {
 						return io.ErrUnexpectedEOF
 					}
-					mapvalue = &PrometheusMetricsConfig_Expressions{}
+					mapvalue = &PrometheusMetricsConfig_LabelExpressions_Expressions{}
 					if err := mapvalue.UnmarshalVTUnsafe(dAtA[iNdEx:postmsgIndex]); err != nil {
 						return err
 					}
@@ -8314,7 +8494,7 @@ func (m *PrometheusMetricsConfig_LabelExpressions) UnmarshalVTUnsafe(dAtA []byte
 	}
 	return nil
 }
-func (m *PrometheusMetricsConfig) UnmarshalVTUnsafe(dAtA []byte) error {
+func (m *PrometheusMetricsConfig_Vulnerabilities) UnmarshalVTUnsafe(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -8337,10 +8517,10 @@ func (m *PrometheusMetricsConfig) UnmarshalVTUnsafe(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: PrometheusMetricsConfig: wiretype end group for non-group")
+			return fmt.Errorf("proto: PrometheusMetricsConfig_Vulnerabilities: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: PrometheusMetricsConfig: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: PrometheusMetricsConfig_Vulnerabilities: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -8494,6 +8674,93 @@ func (m *PrometheusMetricsConfig) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			}
 			m.MetricLabels[mapkey] = mapvalue
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *PrometheusMetricsConfig) UnmarshalVTUnsafe(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return protohelpers.ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: PrometheusMetricsConfig: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: PrometheusMetricsConfig: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Vulnerabilities", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Vulnerabilities == nil {
+				m.Vulnerabilities = &PrometheusMetricsConfig_Vulnerabilities{}
+			}
+			if err := m.Vulnerabilities.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

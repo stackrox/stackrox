@@ -1,4 +1,4 @@
-package telemetry
+package aggregator
 
 import (
 	"context"
@@ -115,7 +115,7 @@ func Test_track(t *testing.T) {
 		},
 	}
 
-	a := aggregator{
+	a := vulnAggregator{
 		ds: ds,
 		trackFunc: func(metric string, labels prometheus.Labels, total int) {
 			actual[metricName(metric)] = append(actual[metricName(metric)],
