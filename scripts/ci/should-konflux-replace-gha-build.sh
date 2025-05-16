@@ -24,8 +24,8 @@ function log() {
     >&2 echo "$@"
 }
 
-if [[ -z "${TARGET_BRANCH:-}" && -z "${GITHUB_REF:-}" ]]; then
-    log "Either TARGET_BRANCH or GITHUB_REF must be set"
+if [[ ( -z "${SOURCE_BRANCH:-}" || -z "${TARGET_BRANCH:-}" ) && -z "${GITHUB_REF:-}" ]]; then
+    log "Either SOURCE_BRANCH&TARGET_BRANCH or GITHUB_REF must be set"
     exit 2
 fi
 
@@ -34,6 +34,9 @@ fi
 # '<branch_name>' for branch push, 'refs/tags/<tag_name>' for tag push. For PRs this is the name of the branch where the
 # PR is targeted to be merged. For pushes this is branch or tag that was pushed.
 log "Konflux TARGET_BRANCH: ${TARGET_BRANCH:-}"
+
+# Same as $TARGET_BRANCH for tag and branch pushes. For PRs this is the name of the PR branch.
+log "Konflux SOURCE_BRANCH: ${SOURCE_BRANCH:-}"
 
 # Branch or tag name when in GHA CI.
 # 'refs/heads/<branch_name>' for branch push, 'refs/pull/<pr_number>/merge' for PR, 'refs/tags/<tag_name>' for tag push.

@@ -3,9 +3,10 @@
 load "../test_helpers.bats"
 
 function setup() {
+    unset SOURCE_BRANCH
     unset TARGET_BRANCH
-    unset GITHUB_REF
     unset GITHUB_BASE_REF
+    unset GITHUB_REF
 }
 
 function run_cmd() {
@@ -40,9 +41,42 @@ function assert_stderr_contains() {
     assert_failure 2
 }
 
-@test "should tell only Konflux when TARGET_BRANCH is release-like" {
+# When executing in Konflux
+
+@test "should tell only Konflux when rc tag pushed" {
+    export SOURCE_BRANCH=refs/tags/4.10.56-rc.172
+    export TARGET_BRANCH=refs/tags/4.10.56-rc.172
+    check_gha_suppressed
+}
+
+@test "should tell Both when a different tag pushed" {
+    export SOURCE_BRANCH=refs/tags/4.10.56-nightly.20250515
+    export TARGET_BRANCH=refs/tags/4.10.56-nightly.20250515
+    check_both_go
+}
+
+@test "should tell only Konflux when release-like branch pushed" {
+    export SOURCE_BRANCH=release-4.8
     export TARGET_BRANCH=release-4.8
     check_gha_suppressed
+}
+
+@test "should tell Both when non-release branch pushed" {
+    export SOURCE_BRANCH=author/ROX-27716-useful-feature
+    export TARGET_BRANCH=author/ROX-27716-useful-feature
+    check_both_go
+}
+
+# When executing in GHA
+
+@test "should tell only Konflux when github_ref is release tag" {
+    export GITHUB_REF=refs/tags/24.58.60
+    check_gha_suppressed
+}
+
+@test "should tell Both when github_ref is a different tag" {
+    export GITHUB_REF=refs/tags/0.0.0-author-testing
+    check_both_go
 }
 
 @test "should tell only Konflux when github_ref is release-like" {
@@ -50,33 +84,8 @@ function assert_stderr_contains() {
     check_gha_suppressed
 }
 
-@test "should tell Both when TARGET_BRANCH is other" {
-    export TARGET_BRANCH=author/ROX-27716-take-konflux-on-release
-    check_both_go
-}
-
 @test "should tell Both when github_ref is other" {
     export GITHUB_REF=refs/heads/many-funky/parts/with-useful/slashes
-    check_both_go
-}
-
-@test "should tell only Konflux when TARGET_BRANCH is rc tag" {
-    export TARGET_BRANCH=refs/tags/4.10.56-rc.172
-    check_gha_suppressed
-}
-
-@test "should tell only Konflux when github_ref is release tag" {
-    export GITHUB_REF=refs/tags/24.58.60
-    check_gha_suppressed
-}
-
-@test "should tell Both when TARGET_BRANCH is a different tag" {
-    export TARGET_BRANCH=refs/tags/4.10.56-nightly.20250515
-    check_both_go
-}
-
-@test "should tell Both when github_ref is a different tag" {
-    export GITHUB_REF=refs/tags/author-testing
     check_both_go
 }
 
