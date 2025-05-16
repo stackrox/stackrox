@@ -35,7 +35,7 @@ fi
 # PR is targeted to be merged. For pushes this is branch or tag that was pushed.
 log "Konflux TARGET_BRANCH: ${TARGET_BRANCH:-}"
 
-# Same as $TARGET_BRANCH for tag and branch pushes. For PRs this is the name of the PR branch.
+# Same value as $TARGET_BRANCH for tag and branch pushes. For PRs this is '<branch_name>' of the PR branch.
 log "Konflux SOURCE_BRANCH: ${SOURCE_BRANCH:-}"
 
 # Branch or tag name when in GHA CI.
@@ -51,10 +51,16 @@ if [[ "${the_ref}" == refs/pull/*/merge ]]; then
     the_ref="${GITHUB_BASE_REF}"
 fi
 
+if [[ "${SOURCE_BRANCH:-}" == *konflux-release-like* ]]; then
+    log "This looks like a PR branch containing magic string. GHA quay.io/rhacs-eng/* builds must be suppressed in favor of the Konflux ones."
+    echo "BUILD_AND_PUSH_ONLY_KONFLUX"
+    exit
+fi
+
 if grep -qE '^((refs/heads/)?release-[0-9a-z]+\.[0-9a-z]+|refs/tags/[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?)$' <<< "${the_ref}"; then
-    log "This looks like a release branch or tag push, GHA quay.io/rhacs-eng/* builds must be suppressed in favor of the Konflux ones."
+    log "This looks like a release branch or tag push. GHA quay.io/rhacs-eng/* builds must be suppressed in favor of the Konflux ones."
     echo "BUILD_AND_PUSH_ONLY_KONFLUX"
 else
-    log "This does not look like a release branch or tag push, both GHA and Konflux should build and push quay.io/rhacs-eng/* images (with different tags)."
+    log "This does not look like a release branch or tag push. Both GHA and Konflux should build and push quay.io/rhacs-eng/* images (with different tags)."
     echo "BUILD_AND_PUSH_BOTH"
 fi

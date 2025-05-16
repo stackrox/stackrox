@@ -31,6 +31,13 @@ function check_gha_suppressed() {
     assert_stderr_contains "branch or tag"
 }
 
+function check_gha_suppressed_for_pr() {
+    run_cmd
+    assert_success
+    assert_output "BUILD_AND_PUSH_ONLY_KONFLUX"
+    assert_stderr_contains "magic"
+}
+
 # BATS libraries in our builder image don't have assert_stderr.
 function assert_stderr_contains() {
     assert grep -F "$1" <<< "${stderr_lines[@]}"
@@ -65,6 +72,24 @@ function assert_stderr_contains() {
     export SOURCE_BRANCH=author/ROX-27716-useful-feature
     export TARGET_BRANCH=author/ROX-27716-useful-feature
     check_both_go
+}
+
+@test "should tell only Konflux when PR branch name includes magic" {
+    export SOURCE_BRANCH=author/konflux-release-like
+    export TARGET_BRANCH=master
+    check_gha_suppressed_for_pr
+}
+
+@test "should tell Both when PR branch name is not magic" {
+    export SOURCE_BRANCH=author/my-useful-feature
+    export TARGET_BRANCH=master
+    check_both_go
+}
+
+@test "should tell only Konflux when PR branch name is not magic but targets release branch" {
+    export SOURCE_BRANCH=author/my-useful-feature
+    export TARGET_BRANCH=release-4.8
+    check_gha_suppressed
 }
 
 # When executing in GHA
