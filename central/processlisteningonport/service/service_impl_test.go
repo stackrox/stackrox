@@ -2,14 +2,9 @@
 
 package service
 
-// Uncomment or remove imports before merging
 import (
 	"context"
-	//"fmt"
-	//"math/rand"
-	//"sync"
 	"testing"
-	//"time"
 
 	deploymentStore "github.com/stackrox/rox/central/deployment/datastore"
 	processIndicatorDataStore "github.com/stackrox/rox/central/processindicator/datastore"
@@ -23,14 +18,8 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
-	//"github.com/stackrox/rox/pkg/process/id"
-	//"github.com/stackrox/rox/pkg/protoassert"
-	//"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
-	//"github.com/stackrox/rox/pkg/search"
-	//"github.com/stackrox/rox/pkg/set"
-	//"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
 
