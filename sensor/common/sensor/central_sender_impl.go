@@ -135,8 +135,10 @@ func (s *centralSenderImpl) send(stream central.SensorService_CommunicateClient,
 			}
 
 			if err := wrappedStream.Send(msg.MsgFromSensor); err != nil {
-				log.Errorf("unable to send to stream: %s. "+
-					"Message that caused the problem: %+v", err, msg.MsgFromSensor)
+				log.Errorf("unable to send to stream: %s. Triggered by message type: %T"+
+					"Enable debug logging to print the entire problematic message "+
+					"(it may containt sensitive information)", msg.MsgFromSensor.GetMsg(), err)
+				log.Debugf("Message that triggered the send to stream problem: %+v", msg.MsgFromSensor)
 				s.stopper.Flow().StopWithError(err)
 				return
 			}
