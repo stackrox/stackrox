@@ -119,7 +119,7 @@ func (c *connectionManager) forEach(fn func(node string, server sensor.Complianc
 func (s *serviceImpl) GetScrapeConfig(_ context.Context, nodeName string) (*sensor.MsgToCompliance_ScrapeConfig, error) {
 	nodeScrapeConfig, err := s.orchestrator.GetNodeScrapeConfig(nodeName)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "could not get node scrape config %q", nodeName)
 	}
 
 	rt, _ := k8sutil.ParseContainerRuntimeString(nodeScrapeConfig.ContainerRuntimeVersion)
@@ -232,7 +232,7 @@ func (s *serviceImpl) Communicate(server sensor.ComplianceService_CommunicateSer
 			log.Errorf("receiving from compliance %q: %v", hostname, err)
 			// Make sure the stopper stops if there is an error with the connection
 			stopper.Client().Stop()
-			return err
+			return errors.Wrapf(err, "receiving from compliance %q", hostname)
 		}
 		switch t := msg.Msg.(type) {
 		case *sensor.MsgFromCompliance_Return:

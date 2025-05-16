@@ -39,7 +39,7 @@ type admCtrlMsgForwarderImpl struct {
 func (h *admCtrlMsgForwarderImpl) Start() error {
 	for _, component := range h.components {
 		if err := component.Start(); err != nil {
-			return errors.Wrap(err, "starting admission control component failed")
+			return errors.Wrapf(err, "starting admission controller component %T failed", component)
 		}
 	}
 

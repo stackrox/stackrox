@@ -270,7 +270,7 @@ func (u *updaterImpl) searchComplianceOperatorDeployment() (*appsv1.Deployment, 
 	// List all namespaces to begin the lookup for compliance operator.
 	namespaceList, err := u.client.CoreV1().Namespaces().List(u.ctx(), metav1.ListOptions{})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "could not list namespaces")
 	}
 
 	for _, namespace := range namespaceList.Items {
@@ -289,7 +289,8 @@ func (u *updaterImpl) searchComplianceOperatorDeployment() (*appsv1.Deployment, 
 }
 
 func (u *updaterImpl) getComplianceOperatorDeployment(ns string) (*appsv1.Deployment, error) {
-	return u.client.AppsV1().Deployments(ns).Get(u.ctx(), complianceoperator.Name, metav1.GetOptions{})
+	get, err := u.client.AppsV1().Deployments(ns).Get(u.ctx(), complianceoperator.Name, metav1.GetOptions{})
+	return get, errors.Wrap(err, "could not get compliance operator deployment")
 }
 
 func (u *updaterImpl) ctx() context.Context {
@@ -299,7 +300,7 @@ func (u *updaterImpl) ctx() context.Context {
 func getResourceListForComplianceGroupVersion(client kubernetes.Interface) (*metav1.APIResourceList, error) {
 	resourceList, err := client.Discovery().ServerResourcesForGroupVersion(complianceoperator.GetGroupVersion().String())
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "could not discover resources for %q", complianceoperator.GetGroupVersion().String())
 	}
 	if resourceList == nil {
 		return nil, errors.Errorf("API group-version %q not found", complianceoperator.GetGroupVersion().String())

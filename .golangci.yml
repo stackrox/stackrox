@@ -155,18 +155,20 @@ linters:
       - -ST1023
     wrapcheck:
       ignore-sig-regexps:
-        - utils\.Should
+        - (*github.com/stackrox/rox/pkg/errorhelpers.ErrorList).ToError()
+        - backoff.Retry*
+        - concurrency\.WithLock.*
         - errox\..+\.CausedBy(f)?
+        - policy\.NewErr.*
         - retry\.MakeRetryable
         - retry\.WithRetry
-        - concurrency\.WithLock.*
-        - policy\.NewErr.*
+        - utils\.Should
   exclusions:
     generated: lax
     rules:
       - linters:
           - wrapcheck
-        path: ^(central|compliance|integration-tests|local|migrator|operator|pkg|roxctl/scanner|roxctl/central|scanner|tests|tools|scale)/
+        path: ^(central|compliance|integration-tests|local|migrator|operator|pkg|roxctl/scanner|roxctl/central|scanner|sensor/tests/helper|tests|tools|scale)/
       - linters:
           - forbidigo
         path: (central/graphql/schema/print|compliance|integration-tests|local|migrator|operator|pkg|scanner|sensor|tests|tools|scale|govulncheck)/
