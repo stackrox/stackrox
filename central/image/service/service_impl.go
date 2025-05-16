@@ -583,7 +583,7 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 		Id:   imgID,
 		Name: request.GetImageName(),
 		// 'Names' must be populated to enable cache hits in central AND sensor.
-		Names:          buildNames(request.GetImageName(), request.GetMetadata()),
+		Names:          buildNames(request.GetImageName(), existingImg.GetNames(), request.GetMetadata()),
 		Signature:      request.GetImageSignature(),
 		Metadata:       request.GetMetadata(),
 		Notes:          request.GetImageNotes(),
@@ -685,8 +685,9 @@ func shouldUpdateExistingScan(imgExists bool, existingImg *storage.Image, reques
 }
 
 // buildNames returns a slice containing the known image names from the various parameters.
-func buildNames(srcImage *storage.ImageName, metadata *storage.ImageMetadata) []*storage.ImageName {
-	names := []*storage.ImageName{srcImage}
+func buildNames(srcImageName *storage.ImageName, existingNames []*storage.ImageName, metadata *storage.ImageMetadata) []*storage.ImageName {
+	names := []*storage.ImageName{srcImageName}
+	names = append(names, existingNames...)
 
 	// Add a mirror name if exists.
 	if mirror := metadata.GetDataSource().GetMirror(); mirror != "" {
@@ -699,6 +700,7 @@ func buildNames(srcImage *storage.ImageName, metadata *storage.ImageMetadata) []
 		}
 	}
 
+	names = protoutils.SliceUnique(names)
 	return names
 }
 
