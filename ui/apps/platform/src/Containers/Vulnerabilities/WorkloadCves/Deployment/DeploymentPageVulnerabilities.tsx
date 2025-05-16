@@ -30,8 +30,8 @@ import AdvancedFiltersToolbar from 'Containers/Vulnerabilities/components/Advanc
 import { createFilterTracker } from 'utils/analyticsEventTracking';
 import useAnalytics, { WORKLOAD_CVE_FILTER_APPLIED } from 'hooks/useAnalytics';
 import {
-    flattenImageComponentSearchFilterConfig,
-    flattenImageCVESearchFilterConfig,
+    convertToFlatImageComponentSearchFilterConfig, // imageComponentSearchFilterConfig
+    convertToFlatImageCveSearchFilterConfig, // imageCVESearchFilterConfig
     imageSearchFilterConfig,
 } from 'Containers/Vulnerabilities/searchFilterConfig';
 import { filterManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
@@ -188,8 +188,11 @@ function DeploymentPageVulnerabilities({
     );
     const managedColumnState = useManagedColumns(tableId, filteredColumns);
 
+    // Although we will delete conditional code for EPSS and flatten after release,
+    // keep searchFilterConfigWithFeatureFlagDependency for Advisory in the future.
     const isFlattenCveDataEnabled = isFeatureFlagEnabled('ROX_FLATTEN_CVE_DATA');
-    const imageCVESearchFilterConfig = flattenImageCVESearchFilterConfig(isFlattenCveDataEnabled);
+    const imageCVESearchFilterConfig =
+        convertToFlatImageCveSearchFilterConfig(isFlattenCveDataEnabled);
     const searchFilterConfigWithFeatureFlagDependency = [
         imageSearchFilterConfig,
         // Omit EPSSProbability for 4.7 release until CVE/advisory separation is available in 4.8 release.
@@ -200,7 +203,7 @@ function DeploymentPageVulnerabilities({
                 ({ searchTerm }) => searchTerm !== 'EPSS Probability'
             ),
         },
-        flattenImageComponentSearchFilterConfig(isFlattenCveDataEnabled),
+        convertToFlatImageComponentSearchFilterConfig(isFlattenCveDataEnabled),
     ];
 
     const searchFilterConfig = getSearchFilterConfigWithFeatureFlagDependency(

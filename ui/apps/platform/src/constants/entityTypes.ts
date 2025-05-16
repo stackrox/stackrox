@@ -98,7 +98,7 @@ export const searchCategories: Record<string, SearchCategory> = {
 };
 
 // Replace searchCategories value (not key) for flat data model.
-export function flattenImageSearchCategory(
+export function convertToFlatImageSearchCategory(
     searchCategory: string,
     isFlattenCveDataEnabled: boolean // ROX_FLATTEN_CVE_DATA
 ) {

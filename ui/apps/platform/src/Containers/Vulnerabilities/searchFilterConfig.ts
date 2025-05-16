@@ -40,7 +40,8 @@ export const imageCVESearchFilterConfig: CompoundSearchFilterEntity = {
     attributes: imageCVEAttributes,
 };
 
-export function flattenImageCVESearchFilterConfig(
+// After release, update searchCategory property of the configuration.
+export function convertToFlatImageCveSearchFilterConfig(
     isFlattenCveDataEnabled: boolean // ROX_FLATTEN_CVE_DATA
 ): CompoundSearchFilterEntity {
     if (isFlattenCveDataEnabled) {
@@ -56,7 +57,8 @@ export const imageComponentSearchFilterConfig: CompoundSearchFilterEntity = {
     attributes: imageComponentAttributes,
 };
 
-export function flattenImageComponentSearchFilterConfig(
+// After release, update searchCategory property of the configuration.
+export function convertToFlatImageComponentSearchFilterConfig(
     isFlattenCveDataEnabled: boolean // ROX_FLATTEN_CVE_DATA
 ): CompoundSearchFilterEntity {
     if (isFlattenCveDataEnabled) {
