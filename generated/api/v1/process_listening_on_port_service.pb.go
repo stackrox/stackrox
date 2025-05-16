@@ -76,10 +76,11 @@ func (x *GetProcessesListeningOnPortsRequest) GetPagination() *Pagination {
 }
 
 type GetProcessesListeningOnPortsResponse struct {
-	state              protoimpl.MessageState            `protogen:"open.v1"`
-	ListeningEndpoints []*storage.ProcessListeningOnPort `protobuf:"bytes,1,rep,name=listening_endpoints,json=listeningEndpoints,proto3" json:"listening_endpoints,omitempty"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	state                   protoimpl.MessageState            `protogen:"open.v1"`
+	ListeningEndpoints      []*storage.ProcessListeningOnPort `protobuf:"bytes,1,rep,name=listening_endpoints,json=listeningEndpoints,proto3" json:"listening_endpoints,omitempty"`
+	TotalListeningEndpoints int32                             `protobuf:"varint,2,opt,name=total_listening_endpoints,json=totalListeningEndpoints,proto3" json:"total_listening_endpoints,omitempty"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *GetProcessesListeningOnPortsResponse) Reset() {
@@ -119,6 +120,13 @@ func (x *GetProcessesListeningOnPortsResponse) GetListeningEndpoints() []*storag
 	return nil
 }
 
+func (x *GetProcessesListeningOnPortsResponse) GetTotalListeningEndpoints() int32 {
+	if x != nil {
+		return x.TotalListeningEndpoints
+	}
+	return 0
+}
+
 var File_api_v1_process_listening_on_port_service_proto protoreflect.FileDescriptor
 
 const file_api_v1_process_listening_on_port_service_proto_rawDesc = "" +
@@ -128,9 +136,10 @@ const file_api_v1_process_listening_on_port_service_proto_rawDesc = "" +
 	"\rdeployment_id\x18\x01 \x01(\tR\fdeploymentId\x12.\n" +
 	"\n" +
 	"pagination\x18\x02 \x01(\v2\x0e.v1.PaginationR\n" +
-	"pagination\"x\n" +
+	"pagination\"\xb4\x01\n" +
 	"$GetProcessesListeningOnPortsResponse\x12P\n" +
-	"\x13listening_endpoints\x18\x01 \x03(\v2\x1f.storage.ProcessListeningOnPortR\x12listeningEndpoints2\xc4\x01\n" +
+	"\x13listening_endpoints\x18\x01 \x03(\v2\x1f.storage.ProcessListeningOnPortR\x12listeningEndpoints\x12:\n" +
+	"\x19total_listening_endpoints\x18\x02 \x01(\x05R\x17totalListeningEndpoints2\xc4\x01\n" +
 	"\x19ListeningEndpointsService\x12\xa6\x01\n" +
 	"\x15GetListeningEndpoints\x12'.v1.GetProcessesListeningOnPortsRequest\x1a(.v1.GetProcessesListeningOnPortsResponse\":\x82\xd3\xe4\x93\x024\x122/v1/listening_endpoints/deployment/{deployment_id}B'\n" +
 	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1X\x01b\x06proto3"
