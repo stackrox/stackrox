@@ -11,6 +11,9 @@ function setup() {
 }
 
 function run_cmd() {
+    # We copy the script to a temporary directory and run it from there so that it does not find
+    # should-konflux-replace-gha-build.hold file if that's present in the repo.
+
     cp -a "${BATS_TEST_DIRNAME}/should-konflux-replace-gha-build.sh" "${BATS_TEST_TMPDIR}/our-script.sh"
     run --separate-stderr "${BATS_TEST_TMPDIR}/our-script.sh"
 }

@@ -16,7 +16,7 @@
 # Additionally, it's possible to get the same behavior in any PR when th PR source branch has 'konflux-release-like' in
 # its name.
 #
-# Note: this script is called by https://github.com/stackrox/konflux-tasks/blob/main/tasks/determine-image-tag-task.yaml
+# Note: this script is also called by https://github.com/stackrox/konflux-tasks/blob/main/tasks/determine-image-tag-task.yaml
 
 set -euo pipefail
 
@@ -75,6 +75,7 @@ fi
 if grep -qE '^((refs/heads/)?release-[0-9a-z]+\.[0-9a-z]+|refs/tags/[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?)$' <<< "${the_ref}"; then
     log "This looks like a release branch or tag push. GHA quay.io/rhacs-eng/* builds must be suppressed in favor of the Konflux ones."
     if [[ -f "${holdfile}" ]]; then
+        # TODO(ROX-29357): remove the holdfile logic after our tests are happy with Konflux-built product.
         log "... would have done that but the 'holdfile' ${holdfile} exists and so not suppressing GHA."
         echo "BUILD_AND_PUSH_BOTH"
     else
