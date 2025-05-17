@@ -408,9 +408,9 @@ func (p *parsedPaginationQuery) AsSQL() string {
 	if len(p.OrderBys) > 0 {
 		orderByClauses := make([]string, 0, len(p.OrderBys))
 		for _, entry := range p.OrderBys {
-			orderByClauses = append(orderByClauses, fmt.Sprintf("%s %s", entry.Field.SelectPath, pkgUtils.IfThenElse(entry.Descending, "desc", "asc")))
+			orderByClauses = append(orderByClauses, fmt.Sprintf("%s %s nulls last", entry.Field.SelectPath, pkgUtils.IfThenElse(entry.Descending, "desc", "asc")))
 		}
-		paginationSB.WriteString(fmt.Sprintf("order by %s nulls last", strings.Join(orderByClauses, ", ")))
+		paginationSB.WriteString(fmt.Sprintf("order by %s", strings.Join(orderByClauses, ", ")))
 	}
 	if p.Limit > 0 {
 		paginationSB.WriteString(fmt.Sprintf(" LIMIT %d", p.Limit))
