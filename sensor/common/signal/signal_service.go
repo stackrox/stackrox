@@ -5,6 +5,8 @@ import (
 	"io"
 	"strings"
 
+	"github.com/pkg/errors"
+
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -63,7 +65,8 @@ type serviceImpl struct {
 }
 
 func authFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, idcheck.CollectorOnly().Authorized(ctx, fullMethodName)
+	err := idcheck.CollectorOnly().Authorized(ctx, fullMethodName)
+	return ctx, errors.Wrap(err, "collector authorization failed")
 }
 
 func (s *serviceImpl) Start() error {
@@ -136,7 +139,7 @@ func (s *serviceImpl) receiveMessages(stream sensorAPI.SignalService_PushSignals
 		signalStreamMsg, err := stream.Recv()
 		if err != nil {
 			log.Error("error dequeueing signalStreamMsg event: ", err)
-			return err
+			return errors.Wrap(err, "receiving signal stream message")
 		}
 
 		// Ignore the collector register request

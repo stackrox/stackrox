@@ -3,6 +3,7 @@ package gatherers
 import (
 	"context"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
@@ -74,10 +75,10 @@ func (c *ClusterGatherer) getOrchestrator(ctx context.Context) (*data.Orchestrat
 	if ctxErr := concurrency.DoInWaitable(ctx, func() {
 		serverVersion, err = c.k8sClient.Discovery().ServerVersion()
 	}); ctxErr != nil {
-		return nil, ctxErr
+		return nil, errors.Wrap(ctxErr, "getting Kubernetes server version (context cancelled)")
 	}
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "getting Kubernetes server version")
 	}
 	orchestrator := storage.ClusterType_KUBERNETES_CLUSTER.String()
 	if env.OpenshiftAPI.BooleanSetting() {

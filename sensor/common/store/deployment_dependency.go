@@ -2,6 +2,7 @@ package store
 
 import (
 	"github.com/mitchellh/hashstructure/v2"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/sensor/common/service"
@@ -17,9 +18,13 @@ type Dependencies struct {
 
 // GetHash generates a hash value for the Dependencies struct.
 func (d *Dependencies) GetHash() (uint64, error) {
-	return hashstructure.Hash(d, hashstructure.FormatV2, &hashstructure.HashOptions{
+	h, err := hashstructure.Hash(d, hashstructure.FormatV2, &hashstructure.HashOptions{
 		ZeroNil:         true,
 		IgnoreZeroValue: true,
 		SlicesAsSets:    true,
 	})
+	if err != nil {
+		return 0, errors.Wrap(err, "hashing dependencies")
+	}
+	return h, nil
 }

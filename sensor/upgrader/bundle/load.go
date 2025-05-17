@@ -11,7 +11,7 @@ import (
 func LoadBundle(path string) (Contents, error) {
 	f, err := os.Open(path)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "opening bundle path %s", path)
 	}
 	defer utils.IgnoreError(f.Close)
 
