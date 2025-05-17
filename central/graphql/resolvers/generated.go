@@ -1407,6 +1407,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("Syslog", []string{
 		"extraFields: [KeyValuePair]!",
 		"localFacility: Syslog_LocalFacility!",
+		"maxMessageSize: Int!",
 		"messageFormat: Syslog_MessageFormat!",
 		"tcpConfig: Syslog_TCPConfig",
 		"endpoint: SyslogEndpoint",
@@ -15203,6 +15204,11 @@ func (resolver *syslogResolver) ExtraFields(ctx context.Context) ([]*keyValuePai
 func (resolver *syslogResolver) LocalFacility(ctx context.Context) string {
 	value := resolver.data.GetLocalFacility()
 	return value.String()
+}
+
+func (resolver *syslogResolver) MaxMessageSize(ctx context.Context) int32 {
+	value := resolver.data.GetMaxMessageSize()
+	return value
 }
 
 func (resolver *syslogResolver) MessageFormat(ctx context.Context) string {

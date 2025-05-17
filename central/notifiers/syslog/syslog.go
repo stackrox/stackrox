@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
 	"os"
 	"strconv"
 	"strings"
@@ -82,6 +83,7 @@ type syslog struct {
 	*storage.Notifier
 
 	metadataGetter notifiers.MetadataGetter
+	maxMessageSize int
 
 	sender   syslogSender
 	pid      int
@@ -123,12 +125,15 @@ func NewSyslog(notifier *storage.Notifier, metadataGetter notifiers.MetadataGett
 
 	facility := 8 * (int(notifier.GetSyslog().GetLocalFacility()) + 16)
 
+	maxMessageSize := int(notifier.GetSyslog().GetMaxMessageSize())
+
 	return &syslog{
 		sender:         sender,
 		Notifier:       notifier,
 		metadataGetter: metadataGetter,
 		pid:            pid,
 		facility:       facility,
+		maxMessageSize: maxMessageSize,
 	}, nil
 }
 
@@ -306,8 +311,18 @@ func (s *syslog) AuditLoggingEnabled() bool {
 }
 
 func (s *syslog) sendSyslog(severity int, timestamp time.Time, messageID, unstructuredData string) error {
-	syslog := s.wrapSyslogUnstructuredData(severity, timestamp, messageID, unstructuredData)
-	return s.sender.SendSyslog([]byte(syslog))
+	syslog := []byte(s.wrapSyslogUnstructuredData(severity, timestamp, messageID, unstructuredData))
+	maxSize := s.maxMessageSize
+	if maxSize == 0 {
+		maxSize = 32768
+	}
+	for len(syslog) != 0 {
+		if err := s.sender.SendSyslog(syslog[0:int(math.Min(float64(maxSize), float64(len(syslog))))]); err != nil {
+			return err
+		}
+		syslog = syslog[int(math.Min(float64(maxSize), float64(len(syslog)))):]
+	}
+	return nil
 }
 
 func init() {
