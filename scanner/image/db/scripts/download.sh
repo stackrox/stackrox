@@ -1,6 +1,8 @@
 #!/bin/bash
 
 set -euo pipefail
+echo 'scanner/image/db/scripts/download.sh'
+set -x
 
 # If this is updated, be sure to update PG_MAJOR in the Dockerfile and the signature file.
 postgres_major=15
