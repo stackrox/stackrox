@@ -62,7 +62,7 @@ func (s *serviceImpl) GetListeningEndpoints(
 	}
 
 	return &v1.GetProcessesListeningOnPortsResponse{
-		ListeningEndpoints: processesListeningOnPorts,
+		ListeningEndpoints:      processesListeningOnPorts,
 		TotalListeningEndpoints: int32(totalListeningEndpoints),
 	}, nil
 }
