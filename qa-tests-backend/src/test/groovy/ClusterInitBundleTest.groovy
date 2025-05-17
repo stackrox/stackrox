@@ -1,6 +1,7 @@
 import static java.util.UUID.randomUUID
 
 import io.stackrox.proto.api.v1.ApiTokenService
+import io.stackrox.proto.storage.ClusterOuterClass
 
 import services.BaseService
 import services.ClusterInitBundleService
@@ -31,7 +32,7 @@ class ClusterInitBundleTest extends BaseSpecification {
         BaseService.useApiToken(adminToken.token)
 
         def cluster = ClusterService.getCluster()
-        Assume.assumeTrue(cluster.hasHelmConfig())
+        Assume.assumeTrue(cluster.getManagedBy() == ClusterOuterClass.ManagerType.MANAGER_TYPE_MANUAL)
 
         when:
         "making a request for the cluster init bundle"
