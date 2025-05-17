@@ -1,6 +1,7 @@
 #!/bin/bash
 
 set -euo pipefail
+set -x
 
 postgres_major=15
 pg_rhel_major=9
