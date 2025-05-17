@@ -112,7 +112,11 @@ collector:
   crio:
     enabled: {{ ne ._rox.env.openshift 0 }}
   runtimeConfig:
-    enabled: true
+    enabled: "AUTO"
+    networking:
+      externalIps:
+        enabled: "DISABLED"
+      maxConnectionsPerMinute: 1024
   [<- end >]
 
 auditLogs:
