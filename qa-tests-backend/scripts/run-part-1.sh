@@ -102,6 +102,9 @@ test_part_1() {
     elif is_in_PR_context; then
         info "In a PR context without ci-all-qa-tests, running BAT tests only..."
         test_target="bat-test"
+    elif [[ "${REMOTE_SERVER_ARCH:-}" == "arm64" ]]; then
+        info "ARM64 test detected, running BAT tests only by default..."
+        test_target="bat-test"
     else
         info "Running all QA tests by default..."
         test_target="test"

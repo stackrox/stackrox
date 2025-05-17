@@ -12,6 +12,7 @@ import org.bouncycastle.asn1.x500.style.BCStyle
 import org.bouncycastle.asn1.x500.style.IETFUtils
 import org.yaml.snakeyaml.Yaml
 
+import io.stackrox.proto.storage.ClusterOuterClass
 import io.stackrox.proto.storage.ClusterOuterClass.ClusterUpgradeStatus.UpgradeProcessStatus.UpgradeProcessType
 import io.stackrox.proto.storage.ClusterOuterClass.UpgradeProgress.UpgradeState
 
@@ -183,7 +184,7 @@ class CertRotationTest extends BaseSpecification {
         def cluster = ClusterService.getCluster()
         assert cluster
 
-        Assume.assumeFalse(cluster.hasHelmConfig())
+        Assume.assumeTrue(cluster.getManagedBy() == ClusterOuterClass.ManagerType.MANAGER_TYPE_MANUAL)
 
         and:
         "Fetch the current sensor-tls, collector-tls and admission-control-tls secrets, and trigger cert rotation"
@@ -235,7 +236,7 @@ class CertRotationTest extends BaseSpecification {
         def cluster = ClusterService.getCluster()
         assert cluster
 
-        Assume.assumeTrue(cluster.hasHelmConfig())
+        Assume.assumeFalse(cluster.getManagedBy() == ClusterOuterClass.ManagerType.MANAGER_TYPE_MANUAL)
 
         // The following can NOT be rephrased using `thrown()`, as that also catches the
         // AssumptionViolatedException generated if the assumption fails.
