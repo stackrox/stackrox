@@ -54,7 +54,7 @@ ENV CGO_ENABLED=0
 # Build the operator binary.
 RUN GOOS=$(go env GOOS) GOARCH=$(go env GOARCH) scripts/go-build-file.sh operator/cmd/main.go stackrox-operator
 
-FROM registry.access.redhat.com/ubi8-micro:latest
+FROM registry.access.redhat.com/ubi9-micro:latest
 
 ARG roxpath
 
