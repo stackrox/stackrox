@@ -285,7 +285,7 @@ func (u *updaterImpl) searchComplianceOperatorDeployment() (*appsv1.Deployment, 
 		return nil, err
 	}
 
-	return nil, errors.Errorf("deployment %s not found in any namespace", complianceoperator.Name)
+	return nil, errors.Errorf("The %q deployment was not found in any namespace.", complianceoperator.Name)
 }
 
 func (u *updaterImpl) getComplianceOperatorDeployment(ns string) (*appsv1.Deployment, error) {
