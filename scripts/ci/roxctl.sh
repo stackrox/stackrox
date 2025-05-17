@@ -18,16 +18,23 @@ main() {
         exit 1
     fi
 
-    api_hostname=localhost
-    api_port=8000
-    lb_ip=$(kubectl -n stackrox get svc/central-loadbalancer -o json | jq -r '.status.loadBalancer.ingress[0] | .ip // .hostname' || true)
-    if [ -n "${lb_ip}" ]; then
-        api_hostname="${lb_ip}"
-        api_port=443
+    if [ -z "${API_ENDPOINT}" ]; then
+        api_hostname=localhost
+        api_port=8000
+        lb_ip=$(kubectl -n stackrox get svc/central-loadbalancer -o json | jq -r '.status.loadBalancer.ingress[0] | .ip // .hostname' || true)
+        if [ -n "${lb_ip}" ]; then
+            api_hostname="${lb_ip}"
+            api_port=443
+        fi
+        API_ENDPOINT="${api_hostname}:${api_port}"
     fi
-    api_endpoint="${api_hostname}:${api_port}"
 
-    roxctl -e "${api_endpoint}" --insecure-skip-tls-verify "$@"
+    if [ -z "$ROX_CA_CERT_FILE" ]; then
+        # shellcheck disable=SC2034
+        ROX_INSECURE_CLIENT_SKIP_TLS_VERIFY="true"
+    fi
+
+    roxctl -e "${ROX_ENDPOINT}" "$@"
 }
 
 main "$@"

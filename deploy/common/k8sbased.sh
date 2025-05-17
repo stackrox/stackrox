@@ -612,9 +612,12 @@ EOT
 
 function export_central_cert {
     # Export the internal central TLS certificate for roxctl to access central
-    # through TLS-passthrough router by specifying the TLS server name.
-    ROX_SERVER_NAME="central.${CENTRAL_NAMESPACE:-stackrox}"
-    export ROX_SERVER_NAME
+    # through the TLS-passthrough router by specifying the TLS server name if
+    # the endpoint is an IPv4 address.
+    if (echo "$API_ENDPOINT" | grep -qE '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$'); then
+      ROX_SERVER_NAME="central.${CENTRAL_NAMESPACE:-stackrox}"
+      export ROX_SERVER_NAME
+    fi
 
     local central_cert
     central_cert="$(mktemp -d)/central_cert.pem"

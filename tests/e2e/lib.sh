@@ -517,8 +517,12 @@ export_central_basic_auth_creds() {
 
 export_central_cert() {
     # Export the internal central TLS certificate for roxctl to access central
-    # through TLS-passthrough router by specifying the TLS server name.
-    ci_export ROX_SERVER_NAME "central.${CENTRAL_NAMESPACE:-stackrox}"
+    # through the TLS-passthrough router by specifying the TLS server name if
+    # the endpoint is an IPv4 address.
+    if (echo "$API_ENDPOINT" | grep -qE '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$'); then
+        ROX_SERVER_NAME="central.${CENTRAL_NAMESPACE:-stackrox}"
+        export ROX_SERVER_NAME
+    fi
 
     require_environment "API_ENDPOINT"
     require_environment "ROX_ADMIN_PASSWORD"
