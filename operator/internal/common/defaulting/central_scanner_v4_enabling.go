@@ -7,6 +7,13 @@ import (
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 )
 
+var (
+	CentralScannerV4DefaultingFlow = CentralDefaultingFlow{
+		Name:           "scanner-V4",
+		DefaultingFunc: centralScannerV4Defaulting,
+	}
+)
+
 const (
 	FeatureDefaultKeyScannerV4 = "feature-defaults.platform.stackrox.io/scannerV4"
 )
@@ -69,4 +76,24 @@ func CentralScannerV4ComponentPolicy(logger logr.Logger, status *platform.Centra
 // centralStatusUninitialized checks if the provided Central status is uninitialized.
 func centralStatusUninitialized(status *platform.CentralStatus) bool {
 	return status == nil || reflect.DeepEqual(status, &platform.CentralStatus{})
+}
+
+func centralScannerV4Defaulting(logger logr.Logger, status *platform.CentralStatus, annotations map[string]string, spec *platform.CentralSpec, defaults *platform.CentralSpec) error {
+	scannerV4Spec := initializedDeepCopy(spec.ScannerV4)
+	componentPolicy, usedDefaulting := CentralScannerV4ComponentPolicy(logger, status, annotations, scannerV4Spec)
+	if !usedDefaulting {
+		// User provided an explicit choice, nothing to do in this extension.
+		return nil
+	}
+
+	// User is relying on defaults. Set in-memory default and persist corresponding annotation.
+
+	if annotations[FeatureDefaultKeyScannerV4] != string(componentPolicy) {
+		// Update feature default setting.
+		annotations[FeatureDefaultKeyScannerV4] = string(componentPolicy)
+	}
+
+	scannerV4Spec.ScannerComponent = &componentPolicy
+	defaults.ScannerV4 = scannerV4Spec
+	return nil
 }
