@@ -1,6 +1,8 @@
 import static util.Helpers.evaluateWithRetry
 
 import objects.Deployment
+import objects.DaemonSet
+import objects.Pagination
 import util.Env
 
 import spock.lang.IgnoreIf
@@ -252,6 +254,83 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         assert list.size() == 1
 
         destroyDeployments()
+    }
+
+    def "Verify listening endpoints for collector are reported"() {
+        given:
+
+        String collectorUid = orchestrator.getDaemonSetId(new DaemonSet(name: "collector", namespace: "stackrox"))
+        log.info "collectorUid= ${collectorUid}"
+
+        def processesListeningOnPorts = evaluateWithRetry(10, 10) {
+                def temp = ProcessesListeningOnPortsService
+                        .getProcessesListeningOnPortsResponse(collectorUid)
+                return temp
+        }
+
+        // First check that the listening endpoint appears in the API
+        assert processesListeningOnPorts
+
+        def list = processesListeningOnPorts.listeningEndpointsList
+        // The size of the list depends upon the number of colletors
+        // which can vary based upon the environment
+        assert list.size() > 1
+
+        def endpoint1 = list.find { it.endpoint.port == 8080 }
+
+	verifyAll(endpoint1) {
+                deploymentId
+                podId
+                podUid
+                clusterId
+                Namespace
+                containerName == "collector"
+                signal.name == "collector"
+                signal.execFilePath == "/usr/local/bin/collector"
+        }
+
+        def endpoint2 = list.find { it.endpoint.port == 9090 }
+
+	verifyAll(endpoint2) {
+                deploymentId
+                podId
+                podUid
+                clusterId
+                Namespace
+                containerName == "collector"
+                signal.name == "collector"
+                signal.execFilePath == "/usr/local/bin/collector"
+        }
+
+        def pagination = new Pagination(1, 0)
+        def processesListeningOnPortsPaginated = evaluateWithRetry(10, 10) {
+                def temp = ProcessesListeningOnPortsService
+                        .getProcessesListeningOnPortsResponse(collectorUid, pagination)
+                return temp
+        }
+
+        def listPaginated = processesListeningOnPortsPaginated.listeningEndpointsList
+        assert listPaginated.size() == 1
+
+        pagination = new Pagination(1, 1)
+        processesListeningOnPortsPaginated = evaluateWithRetry(10, 10) {
+                def temp = ProcessesListeningOnPortsService
+                        .getProcessesListeningOnPortsResponse(collectorUid, pagination)
+                return temp
+        }
+
+        listPaginated = processesListeningOnPortsPaginated.listeningEndpointsList
+        assert listPaginated.size() == 1
+
+        pagination = new Pagination(2, 0)
+        processesListeningOnPortsPaginated = evaluateWithRetry(10, 10) {
+                def temp = ProcessesListeningOnPortsService
+                        .getProcessesListeningOnPortsResponse(collectorUid, pagination)
+                return temp
+        }
+
+        listPaginated = processesListeningOnPortsPaginated.listeningEndpointsList
+        assert listPaginated.size() == 2
     }
 
     private waitForResponseToHaveNumElements(int numElements,
