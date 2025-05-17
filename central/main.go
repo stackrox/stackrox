@@ -67,6 +67,7 @@ import (
 	nodeCveCsv "github.com/stackrox/rox/central/cve/node/csv"
 	nodeCVEService "github.com/stackrox/rox/central/cve/node/service"
 	"github.com/stackrox/rox/central/cve/suppress"
+	cvemetrics "github.com/stackrox/rox/central/cve/telemetry"
 	debugService "github.com/stackrox/rox/central/debug/service"
 	"github.com/stackrox/rox/central/declarativeconfig"
 	declarativeConfigHealthService "github.com/stackrox/rox/central/declarativeconfig/health/service"
@@ -223,6 +224,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	pkgVersion "github.com/stackrox/rox/pkg/version"
+	"github.com/travelaudience/go-promhttp"
 )
 
 var (
@@ -374,7 +376,7 @@ func startServices() {
 	administrationUsageInjector.Singleton().Start()
 	gcp.Singleton().Start()
 	administrationEventHandler.Singleton().Start()
-
+	cvemetrics.Singleton().Start()
 	if features.PlatformComponents.Enabled() {
 		platformReprocessor.Singleton().Start()
 	}
@@ -860,6 +862,12 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			ServerHandler: certHandler.BackupCerts(listener.Singleton()),
 			Compression:   true,
 		},
+		{
+			Route:         "/problemetrics",
+			Authorizer:    user.With(permissions.View(resources.Administration)),
+			ServerHandler: promhttp.HandlerFor(cvemetrics.Problemetrics, promhttp.HandlerOpts{}),
+			Compression:   true,
+		},
 	}
 	scannerDefinitionsRoute := "/api/extensions/scannerdefinitions"
 	// Only grant compression to well-known content types. It should capture files
@@ -956,6 +964,7 @@ func waitForTerminationSignal() {
 		{gcp.Singleton(), "GCP cloud credentials manager"},
 		{cloudSourcesManager.Singleton(), "cloud sources manager"},
 		{administrationEventHandler.Singleton(), "administration events handler"},
+		{cvemetrics.Singleton(), "CVE metric gatherer"},
 	}
 
 	stoppables = append(stoppables,
