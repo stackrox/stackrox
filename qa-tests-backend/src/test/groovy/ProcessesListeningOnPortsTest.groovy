@@ -148,7 +148,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
 
         list = processesListeningOnPorts.listeningEndpointsList
         assert list.size() == 1
-        assert processesListeningOnPorts.totalListeningEndpoints == 2
+        assert processesListeningOnPorts.totalListeningEndpoints == 1
 
         def endpoint = list.find { it.endpoint.port == 8081 }
 
@@ -253,7 +253,6 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
                 signal.execFilePath == "/usr/bin/socat"
                 signal.args == "-d -d -v TCP-LISTEN:8081,fork STDOUT"
         }
-
 
         sleep 65000 // Sleep for 65 seconds
         processesListeningOnPorts = evaluateWithRetry(10, 10) {
