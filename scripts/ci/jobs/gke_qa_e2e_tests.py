@@ -19,7 +19,8 @@ os.environ["ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL"] = "30s"
 # deploy via helm to set node selectors for running on GKE arm64 nodes
 os.environ["REMOTE_CLUSTER_ARCH"] = "arm64"
 os.environ["OUTPUT_FORMAT"] = "helm"
-os.environ["SENSOR_HELM_MANAGED"] = "true"
+os.environ["SENSOR_HELM_DEPLOY"] = "true"
+os.environ["ROX_DEPLOY_SENSOR_WITH_CRS"] = "false"
 os.environ["ROX_CENTRAL_EXTRA_HELM_VALUES_FILE"] = "central-arm64-values.yaml"
 os.environ["ROX_SENSOR_EXTRA_HELM_VALUES_FILE"] = "sensor-arm64-values.yaml"
 
