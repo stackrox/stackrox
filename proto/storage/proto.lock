@@ -14439,6 +14439,11 @@
                 "id": 10,
                 "name": "include_epss_probability",
                 "type": "bool"
+              },
+              {
+                "id": 11,
+                "name": "include_advisory",
+                "type": "bool"
               }
             ]
           },
