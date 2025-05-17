@@ -27,7 +27,8 @@ main() {
     fi
     api_endpoint="${api_hostname}:${api_port}"
 
-    roxctl -e "${api_endpoint}" --insecure-skip-tls-verify "$@"
+    # TODO(PR#15173): Temporarily reset the server name to fix CI:
+    roxctl -s "" -e "${api_endpoint}" --insecure-skip-tls-verify "$@"
 }
 
 main "$@"
