@@ -21,6 +21,7 @@ class PostTestsConstants:
     STORE_TIMEOUT = 5 * 60
     FIXUP_TIMEOUT = 5 * 60
     ARTIFACTS_TIMEOUT = 3 * 60
+    MUST_GATHER_TIMEOUT = 10 * 60
     # QA_TEST_DEBUG_LOGS - where the QA tests store failure logs.
     QA_TEST_DEBUG_LOGS = os.getenv("QA_TEST_DEBUG_LOGS")
     QA_GRADLE_RESULTS = "qa-tests-backend/build/reports"
@@ -31,6 +32,7 @@ class PostTestsConstants:
     DIAGNOSTIC_OUTPUT = "diagnostic-bundle"
     CENTRAL_DATA_OUTPUT = "central-data"
     STACKROX_LOG_DIR = "/tmp/stackrox-logs"
+    MUST_GATHER_BUNDLE_DIR = "/tmp/must-gather-bundle"
 
 
 class NullPostTest:
@@ -182,6 +184,7 @@ class PostClusterTest(StoreArtifacts):
         self.collect_central_artifacts = collect_central_artifacts
 
     def run(self, test_outputs=None):
+        self.run_must_gather()
         if self._collect_collector_metrics:
             self.collect_collector_metrics()
         if self.collect_central_artifacts and self.wait_for_central_api():
@@ -201,6 +204,16 @@ class PostClusterTest(StoreArtifacts):
             ["tests/e2e/lib.sh", "wait_for_api"],
             timeout=PostTestsConstants.API_TIMEOUT,
         )
+
+    def run_must_gather(self):
+        self.run_with_best_effort(
+            [
+                "scripts/ci/run-must-gather.sh",
+                PostTestsConstants.MUST_GATHER_BUNDLE_DIR,
+            ],
+            timeout=PostTestsConstants.MUST_GATHER_TIMEOUT,
+        )
+        self.data_to_store.append(PostTestsConstants.MUST_GATHER_BUNDLE_DIR)
 
     def collect_service_logs(self):
         for namespace in self.k8s_namespaces + self.openshift_namespaces:
