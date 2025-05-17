@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sync"
@@ -21,11 +22,14 @@ import (
 //
 //go:generate mockgen-wrapper
 type DataStore interface {
-	GetConfig(context.Context) (*storage.Config, error)
-	GetPrivateConfig(context.Context) (*storage.PrivateConfig, error)
+	GetConfig(ctx context.Context) (*storage.Config, error)
+	GetPrivateConfig(ctx context.Context) (*storage.PrivateConfig, error)
 	GetVulnerabilityExceptionConfig(ctx context.Context) (*storage.VulnerabilityExceptionConfig, error)
 	GetPublicConfig() (*storage.PublicConfig, error)
-	UpsertConfig(context.Context, *storage.Config) error
+	UpsertConfig(ctx context.Context, config *storage.Config) error
+
+	GetPlatformComponentConfig(ctx context.Context) (*storage.PlatformComponentConfig, bool, error)
+	UpsertPlatformComponentConfigRules(ctx context.Context, rules []*storage.PlatformComponentConfig_Rule) (*storage.PlatformComponentConfig, error)
 }
 
 const (
@@ -194,6 +198,19 @@ func (d *datastoreImpl) UpsertConfig(ctx context.Context, config *storage.Config
 			clusterRetentionConf.LastUpdated = protocompat.TimestampNow()
 		}
 	}
+	if platformComponentConfig := config.GetPlatformComponentConfig(); platformComponentConfig != nil {
+		oldConf, _, err := d.GetPlatformComponentConfig(ctx)
+		if err != nil {
+			return err
+		}
+		if oldConf != nil {
+			if !protoutils.SlicesEqual(oldConf.GetRules(), config.GetPlatformComponentConfig().GetRules()) {
+				config.PlatformComponentConfig.NeedsReevaluation = true
+			} else {
+				config.PlatformComponentConfig.NeedsReevaluation = oldConf.NeedsReevaluation
+			}
+		}
+	}
 
 	upsertErr := d.store.Upsert(ctx, config)
 	if upsertErr != nil {
@@ -224,4 +241,40 @@ func clusterRetentionConfigsEqual(c1 *storage.DecommissionedClusterRetentionConf
 	}
 	return c1.GetRetentionDurationDays() == c2.GetRetentionDurationDays() &&
 		reflect.DeepEqual(c1.GetIgnoreClusterLabels(), c2.GetIgnoreClusterLabels())
+}
+
+func (d *datastoreImpl) GetPlatformComponentConfig(ctx context.Context) (*storage.PlatformComponentConfig, bool, error) {
+	if ok, err := administrationSAC.ReadAllowed(ctx); err != nil {
+		return nil, false, err
+	} else if !ok {
+		return nil, false, nil
+	}
+
+	config, found, err := d.store.Get(ctx)
+	if config == nil {
+		return nil, false, nil
+	}
+	return config.GetPlatformComponentConfig(), found && config.GetPlatformComponentConfig() != nil, err
+}
+
+func (d *datastoreImpl) UpsertPlatformComponentConfigRules(ctx context.Context, rules []*storage.PlatformComponentConfig_Rule) (*storage.PlatformComponentConfig, error) {
+	if ok, err := administrationSAC.WriteAllowed(ctx); err != nil {
+		return nil, err
+	} else if !ok {
+		return nil, nil
+	}
+
+	config, found, err := d.store.Get(ctx)
+	if !found || err != nil {
+		return nil, err
+	}
+	if !protoutils.SlicesEqual(config.PlatformComponentConfig.Rules, rules) {
+		config.PlatformComponentConfig.NeedsReevaluation = true
+	}
+	config.PlatformComponentConfig.Rules = rules
+	err = d.store.Upsert(ctx, config)
+	if err != nil {
+		return nil, err
+	}
+	return config.PlatformComponentConfig, nil
 }
