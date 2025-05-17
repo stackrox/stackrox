@@ -34,7 +34,7 @@ install_webhook_server() {
         helm_args+=(--set 'nodeSelector.kubernetes\.io/arch=arm64')
     fi
 
-    helm -n stackrox upgrade --install webhookserver chart/ "${helm_args[@]:-}"
+    helm -n stackrox upgrade --install webhookserver chart/ "${helm_args[@]}"
     popd
 }
 
