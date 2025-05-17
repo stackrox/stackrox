@@ -191,14 +191,14 @@ func (c *cosignSignatureVerifier) VerifySignature(ctx context.Context,
 	// Find the union of all image references from verified signatures. The resulting status
 	// is verified if at least one verification was successful.
 	//
-	// verifier_1(sig_1) OR ... OR verifier_1(sig_N)
+	// verifier_1(sig_1) OR ... OR verifier_N(sig_1)
 	// OR
 	// ...
 	// OR
-	// verifier_N(sig_1) OR ... OR verifier_N(sig_N)
+	// verifier_1(sig_N) OR ... OR verifier_N(sig_N)
 	verifiedImageReferences := set.NewStringSet()
-	for _, opts := range c.verifierOpts {
-		for _, sig := range sigs {
+	for _, sig := range sigs {
+		for _, opts := range c.verifierOpts {
 			verifierRefs, err := verifyImageSignature(ctx, sig, hash, image, opts)
 			if err != nil {
 				allVerifyErrs = multierror.Append(allVerifyErrs, err)
@@ -206,6 +206,9 @@ func (c *cosignSignatureVerifier) VerifySignature(ctx context.Context,
 			}
 			// Successful verification. Keep the image references.
 			verifiedImageReferences.AddAll(verifierRefs...)
+			// We can exit the inner loop early here because the verified references
+			// do not depend on the verifier.
+			break
 		}
 	}
 
