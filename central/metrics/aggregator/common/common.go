@@ -79,6 +79,9 @@ func validateMetricName(name string) error {
 }
 
 func registerMetrics(registry *prometheus.Registry, category string, description string, labelOrder map[Label]int, mle MetricLabelExpressions, period time.Duration) {
+	if period == 0 {
+		log.Infof("Metrics collection is disabled for %s", category)
+	}
 	for metric, labelExpressions := range mle {
 		metrics.RegisterCustomAggregatedMetric(string(metric), description, period,
 			getMetricLabels(labelExpressions, labelOrder), registry)
@@ -87,8 +90,9 @@ func registerMetrics(registry *prometheus.Registry, category string, description
 	}
 }
 
-// MakeTrackFunc calls trackFunc on every metric returned by gatherFunc.
-// cfgGetter returns the current configuration, which may dynamically change.
+// MakeTrackFunc returns a function that calls trackFunc on every metric
+// returned by gatherFunc. cfgGetter returns the current configuration, which
+// may dynamically change.
 func MakeTrackFunc[DS any](
 	ds DS,
 	cfgGetter func() MetricLabelExpressions,

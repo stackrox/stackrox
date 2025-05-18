@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 // TrackerConfig wraps various pieces of configuration required for tracking
@@ -31,27 +32,33 @@ func MakeTrackerConfig(category, description string, labelOrder map[Label]int) *
 	}
 }
 
-func (mt *TrackerConfig) GetPeriodCh() <-chan time.Duration {
-	return mt.periodCh
+func (tc *TrackerConfig) GetPeriodCh() <-chan time.Duration {
+	return tc.periodCh
 }
 
-func (mt *TrackerConfig) Reconfigure(registry *prometheus.Registry, mle MetricLabelExpressions, period time.Duration) {
-	mt.metricsConfigMux.Lock()
-	defer mt.metricsConfigMux.Unlock()
-	mt.metricsConfig = mle
+func (tc *TrackerConfig) Reconfigure(registry *prometheus.Registry, cfg map[string]*storage.PrometheusMetricsConfig_LabelExpressions, period time.Duration) error {
+	mle, err := parseMetricLabels(cfg, tc.labelOrder)
+	if err != nil {
+		log.Errorf("Failed to parse metrics configuration for %s: %v", tc.category, err)
+		return err
+	}
+	tc.metricsConfigMux.Lock()
+	defer tc.metricsConfigMux.Unlock()
+	tc.metricsConfig = mle
 	select {
-	case mt.periodCh <- period:
+	case tc.periodCh <- period:
 		break
 	default:
 		// If the period has not been read, read it now:
-		<-mt.periodCh
-		mt.periodCh <- period
+		<-tc.periodCh
+		tc.periodCh <- period
 	}
-	registerMetrics(registry, mt.category, mt.description, mt.labelOrder, mle, period)
+	registerMetrics(registry, tc.category, tc.description, tc.labelOrder, mle, period)
+	return nil
 }
 
-func (mt *TrackerConfig) GetMetricLabelExpressions() MetricLabelExpressions {
-	mt.metricsConfigMux.RLock()
-	defer mt.metricsConfigMux.RUnlock()
-	return mt.metricsConfig
+func (tc *TrackerConfig) GetMetricLabelExpressions() MetricLabelExpressions {
+	tc.metricsConfigMux.RLock()
+	defer tc.metricsConfigMux.RUnlock()
+	return tc.metricsConfig
 }
