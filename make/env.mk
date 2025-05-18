@@ -5,9 +5,15 @@ SHELL := /bin/bash
 colon := :
 comma := ,
 
-# GOPATH might actually be a colon-separated list of paths. For the purposes of this makefile,
-# work with the first element only.
+# GOPATH might not be exported in the current shell but is available in the
+# Go environment.
+ifndef $(GOPATH)
+    GOPATH=$(shell go env GOPATH)
+    export GOPATH
+endif
 
+# GOPATH might actually be a colon-separated list of paths. For the purposes of
+# this makefile, work with the first element only.
 ifeq ($(findstring :, $(GOPATH)), $(colon))
 GOPATH := $(firstword $(subst :, ,$(GOPATH)))
 endif
