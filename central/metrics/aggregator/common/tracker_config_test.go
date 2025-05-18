@@ -12,13 +12,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func nilGatherFunc(_ context.Context) iter.Seq[func(Label) string] {
-	return func(func(func(Label) string) bool) {}
+func nilGatherFunc(_ context.Context) iter.Seq[Finding] {
+	return func(func(Finding) bool) {}
 }
 
-func makeTestGatherFunc(data []map[Label]string) func(_ context.Context) iter.Seq[func(Label) string] {
-	return func(_ context.Context) iter.Seq[func(Label) string] {
-		return func(yield func(func(Label) string) bool) {
+func makeTestGatherFunc(data []map[Label]string) func(_ context.Context) iter.Seq[Finding] {
+	return func(_ context.Context) iter.Seq[Finding] {
+		return func(yield func(Finding) bool) {
 			for _, datum := range data {
 				if !yield(func(label Label) string {
 					return datum[label]
@@ -107,7 +107,7 @@ func TestTrackerConfig_Reconfigure(t *testing.T) {
 
 func TestMakeTrackFunc(t *testing.T) {
 	type myDS struct{}
-	result := make(map[string][]*Record)
+	result := make(map[string][]*record)
 	cfg := MakeTrackerConfig("test", "test",
 		testLabelOrder,
 		makeTestGatherFunc([]map[Label]string{
@@ -143,38 +143,39 @@ func TestMakeTrackFunc(t *testing.T) {
 			return makeTestMetricLabelExpressions(t)
 		},
 		func(metricName string, labels prometheus.Labels, total int) {
-			result[metricName] = append(result[metricName], &Record{labels, total})
+			result[metricName] = append(result[metricName], &record{labels, total})
 		},
 	)
 
 	track(context.Background())
 
-	if assert.Contains(t, result, "TestMakeTrackFunc_metric1") &&
+	if assert.Len(t, result, 2) &&
+		assert.Contains(t, result, "TestMakeTrackFunc_metric1") &&
 		assert.Contains(t, result, "TestMakeTrackFunc_metric2") {
 
 		assert.ElementsMatch(t, result["TestMakeTrackFunc_metric1"],
-			[]*Record{
-				MakeRecord(prometheus.Labels{
+			[]*record{
+				{prometheus.Labels{
 					"Severity": "CRITICAL",
 					"Cluster":  "cluster 1",
-				}, 2),
-				MakeRecord(prometheus.Labels{
+				}, 2},
+				{prometheus.Labels{
 					"Severity": "HIGH",
 					"Cluster":  "cluster 2",
-				}, 1),
+				}, 1},
 			})
 
 		assert.ElementsMatch(t, result["TestMakeTrackFunc_metric2"],
-			[]*Record{
-				MakeRecord(prometheus.Labels{
+			[]*record{
+				{prometheus.Labels{
 					"Namespace": "ns 1",
-				}, 1),
-				MakeRecord(prometheus.Labels{
+				}, 1},
+				{prometheus.Labels{
 					"Namespace": "ns 2",
-				}, 1),
-				MakeRecord(prometheus.Labels{
+				}, 1},
+				{prometheus.Labels{
 					"Namespace": "ns 3",
-				}, 3),
+				}, 3},
 			})
 	}
 }
