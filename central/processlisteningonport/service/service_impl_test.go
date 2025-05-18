@@ -130,9 +130,9 @@ func (suite *PLOPServiceTestSuite) TestPLOPCases() {
 		plopsInDB         []*storage.ProcessListeningOnPortStorage
 		processIndicators []*storage.ProcessIndicator
 		deployments       []*storage.Deployment
-		// For now we don't know which PLOP will be returned when doing pagination
-		// so we just check the number of PLOPs returned. When sorting is added
-		// we will also check the values. Add the sorting ticket here before merging.
+		// TODO(ROX-19888): For now we don't know which PLOPs will be returned
+		// when doing pagination so we just check the number of PLOPs returned.
+		// When sorting is added we will also check the values.
 		expectedPlopCount               int
 		expectedTotalListeningEndpoints int32
 		request                         *v1.GetProcessesListeningOnPortsRequest
