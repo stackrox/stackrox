@@ -269,7 +269,8 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         String collectorUid = orchestrator.getDaemonSetId(new DaemonSet(name: "collector", namespace: "stackrox"))
         log.info "collectorUid= ${collectorUid}"
 
-        def processesListeningOnPorts = ProcessesListeningOnPortsService.getProcessesListeningOnPortsResponse(collectorUid)
+        def processesListeningOnPorts = ProcessesListeningOnPortsService
+                                                .getProcessesListeningOnPortsResponse(collectorUid)
 
         // First check that the listening endpoint appears in the API
         assert processesListeningOnPorts
@@ -307,21 +308,24 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         }
 
         def pagination = new Pagination(1, 0)
-        def processesListeningOnPortsPaginated = ProcessesListeningOnPortsService.getProcessesListeningOnPortsResponse(collectorUid, pagination)
+        def processesListeningOnPortsPaginated = ProcessesListeningOnPortsService
+                                                         .getProcessesListeningOnPortsResponse(collectorUid, pagination)
 
         def listPaginated = processesListeningOnPortsPaginated.listeningEndpointsList
         assert listPaginated.size() == 1
         assert processesListeningOnPortsPaginated.totalListeningEndpoints >= 2
 
         pagination = new Pagination(1, 1)
-        processesListeningOnPortsPaginated = ProcessesListeningOnPortsService.getProcessesListeningOnPortsResponse(collectorUid, pagination)
+        processesListeningOnPortsPaginated = ProcessesListeningOnPortsService
+                                                     .getProcessesListeningOnPortsResponse(collectorUid, pagination)
 
         listPaginated = processesListeningOnPortsPaginated.listeningEndpointsList
         assert listPaginated.size() == 1
         assert processesListeningOnPortsPaginated.totalListeningEndpoints >= 2
 
         pagination = new Pagination(2, 0)
-        processesListeningOnPortsPaginated = ProcessesListeningOnPortsService.getProcessesListeningOnPortsResponse(collectorUid, pagination)
+        processesListeningOnPortsPaginated = ProcessesListeningOnPortsService
+                                                     .getProcessesListeningOnPortsResponse(collectorUid, pagination)
 
         listPaginated = processesListeningOnPortsPaginated.listeningEndpointsList
         assert listPaginated.size() == 2
@@ -335,7 +339,8 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         int waitTime
 
         for (waitTime = 0; waitTime <= timeoutSeconds / intervalSeconds; waitTime++) {
-            def processesListeningOnPorts = ProcessesListeningOnPortsService.getProcessesListeningOnPortsResponse(deploymentId)
+            def processesListeningOnPorts = ProcessesListeningOnPortsService
+                                                    .getProcessesListeningOnPortsResponse(deploymentId)
 
             def list = processesListeningOnPorts.listeningEndpointsList
 
