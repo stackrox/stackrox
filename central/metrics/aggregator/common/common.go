@@ -5,10 +5,8 @@ import (
 	"errors"
 	"iter"
 	"regexp"
-	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -27,6 +25,12 @@ type FindingIterator func(context.Context) iter.Seq[Finding]
 type MetricLabelExpressions map[MetricName]map[Label][]*Expression
 
 type metricKey string // e.g. IMPORTANT_VULNERABILITY_SEVERITY|true
+
+// record is a single gauge metric record.
+type record struct {
+	labels prometheus.Labels
+	total  int
+}
 
 // result is the aggregation result.
 type result struct {
@@ -47,22 +51,12 @@ func (r *result) count(finding Finding) {
 	for metric, expressions := range r.mle {
 		if key, labels := makeAggregationKeyInstance(expressions, finding, r.labelOrder); key != "" {
 			if rec, ok := r.aggregated[metric][key]; ok {
-				rec.Inc()
+				rec.total++
 			} else {
 				r.aggregated[metric][key] = &record{labels, 1}
 			}
 		}
 	}
-}
-
-// record is a single gauge metric record.
-type record struct {
-	labels prometheus.Labels
-	total  int
-}
-
-func (r *record) Inc() {
-	r.total++
 }
 
 // validateMetricName ensures the name is alnum_.
@@ -74,38 +68,4 @@ func validateMetricName(name string) error {
 		return errors.New("bad characters")
 	}
 	return nil
-}
-
-func registerMetrics(registry *prometheus.Registry, category string, description string, labelOrder map[Label]int, mle MetricLabelExpressions, period time.Duration) {
-	if period == 0 {
-		log.Infof("Metrics collection is disabled for %s", category)
-	}
-	for metric, labelExpressions := range mle {
-		metrics.RegisterCustomAggregatedMetric(string(metric), description, period,
-			getMetricLabels(labelExpressions, labelOrder), registry)
-
-		log.Infof("Registered %s Prometheus metric %q", category, metric)
-	}
-}
-
-// MakeTrackFunc returns a function that calls trackFunc on every metric
-// returned by gatherFunc. cfgGetter returns the current configuration, which
-// may dynamically change.
-func MakeTrackFunc(
-	cfg *TrackerConfig,
-	cfgGetter func() MetricLabelExpressions,
-	trackFunc func(metricName string, labels prometheus.Labels, total int),
-) func(context.Context) {
-
-	return func(ctx context.Context) {
-		result := makeResult(cfgGetter(), cfg.labelOrder)
-		for finding := range cfg.gather(ctx) {
-			result.count(finding)
-		}
-		for metric, records := range result.aggregated {
-			for _, rec := range records {
-				trackFunc(string(metric), rec.labels, rec.total)
-			}
-		}
-	}
 }
