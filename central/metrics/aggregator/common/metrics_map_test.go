@@ -24,7 +24,7 @@ func TestMakeAggregationKeyInstance(t *testing.T) {
 		"IsFixable": "false",
 		"Namespace": "value",
 	}
-	labelsGetter := func(label Label) string {
+	finding := func(label Label) string {
 		return testMetric[label]
 	}
 	t.Run("matching", func(t *testing.T) {
@@ -34,7 +34,7 @@ func TestMakeAggregationKeyInstance(t *testing.T) {
 				"CVSS":      {{">", "5"}},
 				"IsFixable": {{"", ""}},
 			},
-			labelsGetter, testLabelOrder)
+			finding, testLabelOrder)
 		assert.Equal(t, metricKey("value|7.4|false"), key)
 		assert.Equal(t, prometheus.Labels{
 			"Cluster":   "value",
@@ -49,7 +49,7 @@ func TestMakeAggregationKeyInstance(t *testing.T) {
 				"CVSS":      {{">", "5"}},
 				"IsFixable": {{"", ""}},
 			},
-			labelsGetter, testLabelOrder)
+			finding, testLabelOrder)
 		assert.Equal(t, metricKey(""), key)
 		assert.Nil(t, labels)
 	})
@@ -67,7 +67,7 @@ func TestMakeAggregationKeyInstance(t *testing.T) {
 				"CVSS":      {{">", "5"}},
 				"IsFixable": {{"", ""}},
 			},
-			labelsGetter, testLabelOrder)
+			finding, testLabelOrder)
 		assert.Equal(t, metricKey("value|7.4|false"), key)
 		assert.Equal(t, prometheus.Labels{
 			"Cluster":   "value",
@@ -89,7 +89,7 @@ func TestMakeAggregationKeyInstance(t *testing.T) {
 				"CVSS":      {{">", "5"}},
 				"IsFixable": nil,
 			},
-			labelsGetter, testLabelOrder)
+			finding, testLabelOrder)
 		assert.Equal(t, metricKey(""), key)
 		assert.Equal(t, prometheus.Labels(nil), labels)
 	})
