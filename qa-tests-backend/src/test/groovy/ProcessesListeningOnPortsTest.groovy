@@ -1,5 +1,3 @@
-import static util.Helpers.evaluateWithRetry
-
 import objects.Deployment
 import objects.DaemonSet
 import objects.Pagination
@@ -255,9 +253,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         }
 
         sleep 65000 // Sleep for 65 seconds
-        processesListeningOnPorts = evaluateWithRetry(10, 10) {
-            ProcessesListeningOnPortsService.getProcessesListeningOnPortsResponse(deploymentId2)
-        }
+        processesListeningOnPorts = ProcessesListeningOnPortsService.getProcessesListeningOnPortsResponse(deploymentId2)
 
         // Confirm that the listening endpoint still appears in the API 65 seconds later
         list = processesListeningOnPorts.listeningEndpointsList
@@ -273,11 +269,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         String collectorUid = orchestrator.getDaemonSetId(new DaemonSet(name: "collector", namespace: "stackrox"))
         log.info "collectorUid= ${collectorUid}"
 
-        def processesListeningOnPorts = evaluateWithRetry(10, 10) {
-                def temp = ProcessesListeningOnPortsService
-                        .getProcessesListeningOnPortsResponse(collectorUid)
-                return temp
-        }
+        def processesListeningOnPorts = ProcessesListeningOnPortsService.getProcessesListeningOnPortsResponse(collectorUid)
 
         // First check that the listening endpoint appears in the API
         assert processesListeningOnPorts
@@ -315,33 +307,21 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         }
 
         def pagination = new Pagination(1, 0)
-        def processesListeningOnPortsPaginated = evaluateWithRetry(10, 10) {
-                def temp = ProcessesListeningOnPortsService
-                        .getProcessesListeningOnPortsResponse(collectorUid, pagination)
-                return temp
-        }
+        def processesListeningOnPortsPaginated = ProcessesListeningOnPortsService.getProcessesListeningOnPortsResponse(collectorUid, pagination)
 
         def listPaginated = processesListeningOnPortsPaginated.listeningEndpointsList
         assert listPaginated.size() == 1
         assert processesListeningOnPortsPaginated.totalListeningEndpoints >= 2
 
         pagination = new Pagination(1, 1)
-        processesListeningOnPortsPaginated = evaluateWithRetry(10, 10) {
-                def temp = ProcessesListeningOnPortsService
-                        .getProcessesListeningOnPortsResponse(collectorUid, pagination)
-                return temp
-        }
+        processesListeningOnPortsPaginated = ProcessesListeningOnPortsService.getProcessesListeningOnPortsResponse(collectorUid, pagination)
 
         listPaginated = processesListeningOnPortsPaginated.listeningEndpointsList
         assert listPaginated.size() == 1
         assert processesListeningOnPortsPaginated.totalListeningEndpoints >= 2
 
         pagination = new Pagination(2, 0)
-        processesListeningOnPortsPaginated = evaluateWithRetry(10, 10) {
-                def temp = ProcessesListeningOnPortsService
-                        .getProcessesListeningOnPortsResponse(collectorUid, pagination)
-                return temp
-        }
+        processesListeningOnPortsPaginated = ProcessesListeningOnPortsService.getProcessesListeningOnPortsResponse(collectorUid, pagination)
 
         listPaginated = processesListeningOnPortsPaginated.listeningEndpointsList
         assert listPaginated.size() == 2
@@ -355,11 +335,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         int waitTime
 
         for (waitTime = 0; waitTime <= timeoutSeconds / intervalSeconds; waitTime++) {
-            def processesListeningOnPorts = evaluateWithRetry(10, 10) {
-                    def temp = ProcessesListeningOnPortsService
-                            .getProcessesListeningOnPortsResponse(deploymentId)
-                    return temp
-            }
+            def processesListeningOnPorts = ProcessesListeningOnPortsService.getProcessesListeningOnPortsResponse(deploymentId)
 
             def list = processesListeningOnPorts.listeningEndpointsList
 
