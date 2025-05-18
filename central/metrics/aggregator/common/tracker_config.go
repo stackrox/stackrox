@@ -1,10 +1,12 @@
 package common
 
 import (
+	"context"
 	"sync"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -55,7 +57,7 @@ func (tc *TrackerConfig) Reconfigure(registry *prometheus.Registry, cfg map[stri
 		<-tc.periodCh
 		tc.periodCh <- period
 	}
-	registerMetrics(registry, tc.category, tc.description, tc.labelOrder, mle, period)
+	tc.registerMetrics(registry, period)
 	return nil
 }
 
@@ -63,4 +65,38 @@ func (tc *TrackerConfig) GetMetricLabelExpressions() MetricLabelExpressions {
 	tc.metricsConfigMux.RLock()
 	defer tc.metricsConfigMux.RUnlock()
 	return tc.metricsConfig
+}
+
+func (tc *TrackerConfig) registerMetrics(registry *prometheus.Registry, period time.Duration) {
+	if period == 0 {
+		log.Infof("Metrics collection is disabled for %s", tc.category)
+	}
+	for metric, labelExpressions := range tc.metricsConfig {
+		metrics.RegisterCustomAggregatedMetric(string(metric), tc.description, period,
+			getMetricLabels(labelExpressions, tc.labelOrder), registry)
+
+		log.Infof("Registered %s Prometheus metric %q", tc.category, metric)
+	}
+}
+
+// MakeTrackFunc returns a function that calls trackFunc on every metric
+// returned by gatherFunc. cfgGetter returns the current configuration, which
+// may dynamically change.
+func MakeTrackFunc(
+	cfg *TrackerConfig,
+	cfgGetter func() MetricLabelExpressions,
+	trackFunc func(metricName string, labels prometheus.Labels, total int),
+) func(context.Context) {
+
+	return func(ctx context.Context) {
+		result := makeResult(cfgGetter(), cfg.labelOrder)
+		for finding := range cfg.gather(ctx) {
+			result.count(finding)
+		}
+		for metric, records := range result.aggregated {
+			for _, rec := range records {
+				trackFunc(string(metric), rec.labels, rec.total)
+			}
+		}
+	}
 }
