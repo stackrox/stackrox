@@ -155,7 +155,7 @@ func getGraphQLServer(testHelper *testutils.ExportServicePostgresTestHelper) (*h
 	resolver.ImageDataStore = testHelper.Images
 	// Override Deployment and Image loader to avoid panics
 	deploymentFactory := func() interface{} {
-		return loaders.NewDeploymentLoader(resolver.DeploymentDataStore)
+		return loaders.NewDeploymentLoader(resolver.DeploymentDataStore, testHelper.DeploymentView)
 	}
 	loaders.RegisterTypeFactory(reflect.TypeOf(storage.Deployment{}), deploymentFactory)
 	imageFactory := func() interface{} {

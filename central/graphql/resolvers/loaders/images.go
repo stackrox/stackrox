@@ -111,7 +111,7 @@ func (idl *imageLoaderImpl) FromQuery(ctx context.Context, query *v1.Query) ([]*
 	if err != nil {
 		return nil, err
 	}
-	return idl.FromIDs(ctx, responsesToIDs(responses))
+	return idl.FromIDs(ctx, responsesToImageIDs(responses))
 }
 
 func (idl *imageLoaderImpl) CountFromQuery(ctx context.Context, query *v1.Query) (int32, error) {
@@ -170,7 +170,7 @@ func (idl *imageLoaderImpl) readAll(ids []string) (images []*storage.Image, miss
 	return
 }
 
-func responsesToIDs(responses []imagesView.ImageCore) []string {
+func responsesToImageIDs(responses []imagesView.ImageCore) []string {
 	ids := make([]string, 0, len(responses))
 	for _, r := range responses {
 		ids = append(ids, r.GetImageID())
