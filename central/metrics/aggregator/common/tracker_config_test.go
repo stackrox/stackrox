@@ -1,16 +1,37 @@
 package common
 
 import (
+	"context"
+	"iter"
 	"testing"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stretchr/testify/assert"
 )
 
+func nilGatherFunc(_ context.Context) iter.Seq[func(Label) string] {
+	return func(func(func(Label) string) bool) {}
+}
+
+func makeTestGatherFunc(data []map[Label]string) func(_ context.Context) iter.Seq[func(Label) string] {
+	return func(_ context.Context) iter.Seq[func(Label) string] {
+		return func(yield func(func(Label) string) bool) {
+			for _, datum := range data {
+				if !yield(func(label Label) string {
+					return datum[label]
+				}) {
+					return
+				}
+			}
+		}
+	}
+}
+
 func TestMakeTrackerConfig(t *testing.T) {
-	tracker := MakeTrackerConfig("test", "test", testLabelOrder)
+	tracker := MakeTrackerConfig("test", "test", testLabelOrder, nilGatherFunc)
 	assert.NotNil(t, tracker)
 	assert.NotNil(t, tracker.periodCh)
 
@@ -21,14 +42,14 @@ func TestMakeTrackerConfig(t *testing.T) {
 func TestTrackerConfig_Reconfigure(t *testing.T) {
 
 	t.Run("test 0 period", func(t *testing.T) {
-		tracker := MakeTrackerConfig("test", "test", testLabelOrder)
+		tracker := MakeTrackerConfig("test", "test", testLabelOrder, nilGatherFunc)
 
 		assert.NoError(t, tracker.Reconfigure(nil, nil, 0))
 		assert.Nil(t, tracker.GetMetricLabelExpressions())
 	})
 
 	t.Run("test with good test configuration", func(t *testing.T) {
-		tracker := MakeTrackerConfig("test", "test", testLabelOrder)
+		tracker := MakeTrackerConfig("test", "test", testLabelOrder, nilGatherFunc)
 		assert.NoError(t, tracker.Reconfigure(nil, makeTestMetricLabels(t), 42*time.Hour))
 		mle := tracker.GetMetricLabelExpressions()
 		assert.NotNil(t, mle)
@@ -42,7 +63,7 @@ func TestTrackerConfig_Reconfigure(t *testing.T) {
 	})
 
 	t.Run("test with initial bad configuration", func(t *testing.T) {
-		tracker := MakeTrackerConfig("test", "test", testLabelOrder)
+		tracker := MakeTrackerConfig("test", "test", testLabelOrder, nilGatherFunc)
 		err := tracker.Reconfigure(nil, map[string]*storage.PrometheusMetricsConfig_LabelExpressions{
 			" ": nil,
 		}, 11*time.Hour)
@@ -59,7 +80,7 @@ func TestTrackerConfig_Reconfigure(t *testing.T) {
 	})
 
 	t.Run("test with bad reconfiguration", func(t *testing.T) {
-		tracker := MakeTrackerConfig("test", "test", testLabelOrder)
+		tracker := MakeTrackerConfig("test", "test", testLabelOrder, nilGatherFunc)
 		assert.NoError(t, tracker.Reconfigure(nil, makeTestMetricLabels(t), 42*time.Hour))
 
 		err := tracker.Reconfigure(nil, map[string]*storage.PrometheusMetricsConfig_LabelExpressions{
@@ -82,4 +103,78 @@ func TestTrackerConfig_Reconfigure(t *testing.T) {
 		}
 		assert.Equal(t, makeTestMetricLabelExpressions(t), mle)
 	})
+}
+
+func TestMakeTrackFunc(t *testing.T) {
+	type myDS struct{}
+	result := make(map[string][]*Record)
+	cfg := MakeTrackerConfig("test", "test",
+		testLabelOrder,
+		makeTestGatherFunc([]map[Label]string{
+			{
+				"Severity":  "CRITICAL",
+				"Cluster":   "cluster 1",
+				"Namespace": "ns 1",
+			}, {
+				"Severity":  "HIGH",
+				"Cluster":   "cluster 2",
+				"Namespace": "ns 2",
+			},
+			{
+				"Severity":  "LOW",
+				"Cluster":   "cluster 3",
+				"Namespace": "ns 3",
+			},
+			{
+				"Severity":  "CRITICAL",
+				"Cluster":   "cluster 1",
+				"Namespace": "ns 3",
+			},
+			{
+				"Severity":  "LOW",
+				"Cluster":   "cluster 5",
+				"Namespace": "ns 3",
+			},
+		}),
+	)
+	track := MakeTrackFunc(
+		cfg,
+		func() MetricLabelExpressions {
+			return makeTestMetricLabelExpressions(t)
+		},
+		func(metricName string, labels prometheus.Labels, total int) {
+			result[metricName] = append(result[metricName], &Record{labels, total})
+		},
+	)
+
+	track(context.Background())
+
+	if assert.Contains(t, result, "TestMakeTrackFunc_metric1") &&
+		assert.Contains(t, result, "TestMakeTrackFunc_metric2") {
+
+		assert.ElementsMatch(t, result["TestMakeTrackFunc_metric1"],
+			[]*Record{
+				MakeRecord(prometheus.Labels{
+					"Severity": "CRITICAL",
+					"Cluster":  "cluster 1",
+				}, 2),
+				MakeRecord(prometheus.Labels{
+					"Severity": "HIGH",
+					"Cluster":  "cluster 2",
+				}, 1),
+			})
+
+		assert.ElementsMatch(t, result["TestMakeTrackFunc_metric2"],
+			[]*Record{
+				MakeRecord(prometheus.Labels{
+					"Namespace": "ns 1",
+				}, 1),
+				MakeRecord(prometheus.Labels{
+					"Namespace": "ns 2",
+				}, 1),
+				MakeRecord(prometheus.Labels{
+					"Namespace": "ns 3",
+				}, 3),
+			})
+	}
 }
