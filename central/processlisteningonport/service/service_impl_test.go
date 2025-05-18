@@ -36,15 +36,12 @@ type PLOPServiceTestSuite struct {
 
 	postgres *pgtest.TestPostgres
 
-	hasNoneCtx  context.Context
 	hasReadCtx  context.Context
 	hasWriteCtx context.Context
 	hasAllCtx   context.Context
 }
 
 func (suite *PLOPServiceTestSuite) SetupSuite() {
-	suite.hasNoneCtx = sac.WithGlobalAccessScopeChecker(context.Background(), sac.DenyAllAccessScopeChecker())
-
 	suite.hasReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
