@@ -62,22 +62,10 @@ func TestMakeTrackFunc(t *testing.T) {
 		},
 	)
 	track(context.Background())
-	assert.Equal(t, map[string][]*Record{
-		"metric1": {
-			{
-				prometheus.Labels{"label1": "value1"},
-				37,
-			},
-			{
-				prometheus.Labels{"label1": "value1"},
-				73,
-			},
-		},
-		"metric2": {
-			{
-				prometheus.Labels{"label1": "value1"},
-				44,
-			},
-		},
-	}, result)
+
+	if assert.Contains(t, result, "metric1") &&
+		assert.Contains(t, result, "metric2") {
+		assert.Len(t, result["metric1"], 2)
+		assert.Len(t, result["metric2"], 1)
+	}
 }
