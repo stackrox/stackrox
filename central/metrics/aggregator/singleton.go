@@ -41,7 +41,8 @@ func Singleton() interface {
 } {
 	once.Do(func() {
 		instance = &aggregatorRunner{
-			stopCh: make(chan bool),
+			stopCh:          make(chan bool),
+			vulnerabilities: vulnerabilities.MakeTrackerConfig(),
 		}
 		systemPrivateConfig, err := configDS.Singleton().GetPrivateConfig(
 			sac.WithAllAccess(context.Background()))
@@ -49,9 +50,7 @@ func Singleton() interface {
 			log.Errorw("Failed to read Prometheus metrics configuration from the DB", logging.Err(err))
 			return
 		}
-		if err := instance.Reconfigure(systemPrivateConfig.GetPrometheusMetricsConfig()); err != nil {
-			log.Errorw("Failed to initialize Prometheus metrics configuration", logging.Err(err))
-		}
+		instance.Reconfigure(systemPrivateConfig.GetPrometheusMetricsConfig())
 	})
 	return instance
 }
@@ -60,16 +59,9 @@ func (ar *aggregatorRunner) Reconfigure(cfg *storage.PrometheusMetricsConfig) er
 	ar.trackersMux.Lock()
 	defer ar.trackersMux.Unlock()
 
-	// Vulnerabilties metrics:
-	vulnTracker, err := vulnerabilities.Reconfigure(Registry, cfg.GetVulnerabilities())
-	if err == nil || instance.vulnerabilities == nil {
-		instance.vulnerabilities = vulnTracker
-	}
-	if err != nil {
-		return err
-	}
-
-	return nil
+	vc := cfg.GetVulnerabilities()
+	period := time.Hour * time.Duration(vc.GetGatheringPeriodHours())
+	return instance.vulnerabilities.Reconfigure(Registry, vc.GetMetricLabels(), period)
 }
 
 func (ar *aggregatorRunner) Start() {

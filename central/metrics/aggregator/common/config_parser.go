@@ -1,28 +1,9 @@
 package common
 
 import (
-	"time"
-
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 )
-
-// Reconfigure updates the tracker configuration.
-func Reconfigure(registry *prometheus.Registry, category string, period time.Duration, cfg map[string]*storage.PrometheusMetricsConfig_LabelExpressions, labelOrder map[Label]int) (*TrackerConfig, error) {
-	trackerConfig := MakeTrackerConfig(category, "aggregated CVEs", labelOrder)
-
-	metricsConfig, err := parseMetricLabels(cfg, labelOrder)
-	if err != nil {
-		log.Errorf("Failed to parse %s metrics configuration: %v", category, err)
-		return trackerConfig, err
-	}
-	if period == 0 {
-		log.Infof("Metrics collection is disabled for %s", category)
-	}
-	trackerConfig.Reconfigure(registry, metricsConfig, period)
-	return trackerConfig, nil
-}
 
 // parseMetricLabels converts the storage object to the usable map, validating the values.
 func parseMetricLabels(config map[string]*storage.PrometheusMetricsConfig_LabelExpressions, labelOrder map[Label]int) (MetricLabelExpressions, error) {
