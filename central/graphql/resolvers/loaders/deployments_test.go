@@ -23,6 +23,10 @@ const (
 )
 
 func TestDeploymentLoader(t *testing.T) {
+	t.Setenv(features.FlattenCVEData.EnvVar(), "false")
+	if features.FlattenCVEData.Enabled() {
+		t.Skip("FlattenCVEData is enabled")
+	}
 	suite.Run(t, new(DeploymentLoaderTestSuite))
 }
 
