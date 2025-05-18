@@ -2,6 +2,7 @@ package vulnerabilities
 
 import (
 	"context"
+	"iter"
 	"strconv"
 
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
@@ -29,48 +30,46 @@ var labelOrder = map[common.Label]int{
 	"IsFixable":        16,
 }
 
-const Category = "vulnerabilities"
-
 func MakeTrackerConfig() *common.TrackerConfig {
-	return common.MakeTrackerConfig(Category, "aggregated CVEs", labelOrder)
-}
-
-func TrackVulnerabilityMetrics(ctx context.Context, ds deploymentDS.DataStore, mle common.MetricLabelExpressions) *common.Result {
-	result := common.MakeResult(mle, labelOrder)
-
-	// Optimization opportunity:
-	// The resource filter is known at this point, so a more precise query could be constructed here.
-	_ = ds.WalkByQuery(ctx, search.EmptyQuery(), func(deployment *storage.Deployment) error {
-		images, err := ds.GetImagesForDeployment(ctx, deployment)
-		if err != nil {
-			return nil
-		}
-
-		forEachVuln(images, func(image *storage.Image, imageName *storage.ImageName, component *storage.EmbeddedImageScanComponent, vuln *storage.EmbeddedVulnerability) {
-			result.Count(makeLabelGetter(
-				deployment.GetClusterName(),
-				deployment.GetNamespace(),
-				deployment.GetName(),
-				image,
-				imageName,
-				component,
-				vuln,
-			))
+	return common.MakeTrackerConfig("vulnerabilities", "aggregated CVEs",
+		labelOrder, func(ctx context.Context) iter.Seq[func(common.Label) string] {
+			return trackVulnerabilityMetrics(ctx, deploymentDS.Singleton())
 		})
-		return nil
-	})
-	return result
 }
 
-func forEachVuln(images []*storage.Image, f func(*storage.Image, *storage.ImageName, *storage.EmbeddedImageScanComponent, *storage.EmbeddedVulnerability)) {
-	for _, image := range images {
-		for _, component := range image.GetScan().GetComponents() {
-			for _, vuln := range component.GetVulns() {
-				for _, name := range image.GetNames() {
-					f(image, name, component, vuln)
+func trackVulnerabilityMetrics(ctx context.Context, ds deploymentDS.DataStore) iter.Seq[func(common.Label) string] {
+
+	return func(yield func(func(common.Label) string) bool) {
+		// Optimization opportunity:
+		// The resource filter is known at this point, so a more precise query could be constructed here.
+		_ = ds.WalkByQuery(ctx, search.EmptyQuery(), func(deployment *storage.Deployment) error {
+			images, err := ds.GetImagesForDeployment(ctx, deployment)
+			if err != nil {
+				return nil
+			}
+
+			for _, image := range images {
+				for _, component := range image.GetScan().GetComponents() {
+					for _, vuln := range component.GetVulns() {
+						for _, name := range image.GetNames() {
+
+							if !yield(makeLabelGetter(
+								deployment.GetClusterName(),
+								deployment.GetNamespace(),
+								deployment.GetName(),
+								image,
+								name,
+								component,
+								vuln,
+							)) {
+								return nil
+							}
+						}
+					}
 				}
 			}
-		}
+			return nil
+		})
 	}
 }
 

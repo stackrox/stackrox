@@ -6,7 +6,6 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	configDS "github.com/stackrox/rox/central/config/datastore"
-	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/metrics/aggregator/common"
 	"github.com/stackrox/rox/central/metrics/aggregator/vulnerabilities"
@@ -50,7 +49,9 @@ func Singleton() interface {
 			log.Errorw("Failed to read Prometheus metrics configuration from the DB", logging.Err(err))
 			return
 		}
-		instance.Reconfigure(systemPrivateConfig.GetPrometheusMetricsConfig())
+		if err := instance.Reconfigure(systemPrivateConfig.GetPrometheusMetricsConfig()); err != nil {
+			log.Errorw("Failed to configure Prometheus metrics", logging.Err(err))
+		}
 	})
 	return instance
 }
@@ -71,13 +72,12 @@ func (ar *aggregatorRunner) Start() {
 	// Run the periodic vulnerabilities aggregation.
 	ar.vulnerabilitiesOnce.Do(func() {
 		if ar.vulnerabilities != nil {
-			go ar.run(ar.vulnerabilities.GetPeriodCh(),
-				common.MakeTrackFunc(
-					deploymentDS.Singleton(),
-					ar.vulnerabilities.GetMetricLabelExpressions,
-					vulnerabilities.TrackVulnerabilityMetrics,
-					metrics.SetCustomAggregatedCount,
-				))
+			vulnTracker := common.MakeTrackFunc(
+				ar.vulnerabilities,
+				ar.vulnerabilities.GetMetricLabelExpressions,
+				metrics.SetCustomAggregatedCount,
+			)
+			go ar.run(ar.vulnerabilities.GetPeriodCh(), vulnTracker)
 		}
 	})
 }
