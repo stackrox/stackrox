@@ -28,7 +28,7 @@ func TestMakeAggregationKeyInstance(t *testing.T) {
 		return testMetric[label]
 	}
 	t.Run("matching", func(t *testing.T) {
-		key, labels := MakeAggregationKeyInstance(
+		key, labels := makeAggregationKeyInstance(
 			map[Label][]*Expression{
 				"Cluster":   {{"=", "*al*"}},
 				"CVSS":      {{">", "5"}},
@@ -43,7 +43,7 @@ func TestMakeAggregationKeyInstance(t *testing.T) {
 		}, labels)
 	})
 	t.Run("not matching", func(t *testing.T) {
-		key, labels := MakeAggregationKeyInstance(
+		key, labels := makeAggregationKeyInstance(
 			map[Label][]*Expression{
 				"Cluster":   {{"=", "missing"}},
 				"CVSS":      {{">", "5"}},
@@ -54,7 +54,7 @@ func TestMakeAggregationKeyInstance(t *testing.T) {
 		assert.Nil(t, labels)
 	})
 	t.Run("matching second", func(t *testing.T) {
-		key, labels := MakeAggregationKeyInstance(
+		key, labels := makeAggregationKeyInstance(
 			map[Label][]*Expression{
 				"Cluster": {
 					{"=", "nope"},
@@ -76,7 +76,7 @@ func TestMakeAggregationKeyInstance(t *testing.T) {
 		}, labels)
 	})
 	t.Run("no matching with OR", func(t *testing.T) {
-		key, labels := MakeAggregationKeyInstance(
+		key, labels := makeAggregationKeyInstance(
 			map[Label][]*Expression{
 				"Cluster": {
 					{"=", "nope"},

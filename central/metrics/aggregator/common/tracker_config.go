@@ -1,8 +1,6 @@
 package common
 
 import (
-	"context"
-	"iter"
 	"sync"
 	"time"
 
@@ -16,7 +14,7 @@ type TrackerConfig struct {
 	category    string
 	description string
 	labelOrder  map[Label]int
-	gatherFunc  func(context.Context) iter.Seq[func(Label) string]
+	gather      FindingIterator
 
 	// metricsConfig can be changed with an API call.
 	metricsConfig    MetricLabelExpressions
@@ -26,12 +24,12 @@ type TrackerConfig struct {
 	periodCh chan time.Duration
 }
 
-func MakeTrackerConfig(category, description string, labelOrder map[Label]int, gatherFunc func(context.Context) iter.Seq[func(Label) string]) *TrackerConfig {
+func MakeTrackerConfig(category, description string, labelOrder map[Label]int, gatherFunc FindingIterator) *TrackerConfig {
 	return &TrackerConfig{
 		category:    category,
 		description: description,
 		labelOrder:  labelOrder,
-		gatherFunc:  gatherFunc,
+		gather:      gatherFunc,
 
 		periodCh: make(chan time.Duration, 1),
 	}
@@ -44,7 +42,6 @@ func (tc *TrackerConfig) GetPeriodCh() <-chan time.Duration {
 func (tc *TrackerConfig) Reconfigure(registry *prometheus.Registry, cfg map[string]*storage.PrometheusMetricsConfig_LabelExpressions, period time.Duration) error {
 	mle, err := parseMetricLabels(cfg, tc.labelOrder)
 	if err != nil {
-		log.Errorf("Failed to parse metrics configuration for %s: %v", tc.category, err)
 		return err
 	}
 	tc.metricsConfigMux.Lock()

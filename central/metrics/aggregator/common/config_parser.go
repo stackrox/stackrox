@@ -5,6 +5,11 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 )
 
+func isKnownLabel(label string, labelOrder map[Label]int) bool {
+	_, ok := labelOrder[Label(label)]
+	return ok
+}
+
 // parseMetricLabels converts the storage object to the usable map, validating the values.
 func parseMetricLabels(config map[string]*storage.PrometheusMetricsConfig_LabelExpressions, labelOrder map[Label]int) (MetricLabelExpressions, error) {
 
@@ -17,7 +22,7 @@ func parseMetricLabels(config map[string]*storage.PrometheusMetricsConfig_LabelE
 		metricLabels := make(map[Label][]*Expression)
 		for label, expressions := range labels.GetLabelExpressions() {
 
-			if _, knownLabel := labelOrder[Label(label)]; !knownLabel {
+			if !isKnownLabel(label, labelOrder) {
 				return nil, errox.InvalidArgs.CausedByf("unknown label %q for metric %q", label, metric)
 			}
 
