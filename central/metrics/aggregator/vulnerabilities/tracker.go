@@ -30,15 +30,9 @@ var labelOrder = map[common.Label]int{
 	"IsFixable":        16,
 }
 
-func bindDS(ds deploymentDS.DataStore) func(ctx context.Context) iter.Seq[common.Finding] {
-	return func(ctx context.Context) iter.Seq[common.Finding] {
-		return trackVulnerabilityMetrics(ctx, ds)
-	}
-}
-
 func MakeTrackerConfig() *common.TrackerConfig {
 	return common.MakeTrackerConfig("vulnerabilities", "aggregated CVEs",
-		labelOrder, bindDS(deploymentDS.Singleton()))
+		labelOrder, common.Bind2nd(trackVulnerabilityMetrics, deploymentDS.Singleton()))
 }
 
 func trackVulnerabilityMetrics(ctx context.Context, ds deploymentDS.DataStore) iter.Seq[common.Finding] {
@@ -61,13 +55,13 @@ func trackVulnerabilityMetrics(ctx context.Context, ds deploymentDS.DataStore) i
 	}
 }
 
-func vulnerabitilies(images []*storage.Image, deployment *storage.Deployment) iter.Seq[func(common.Label) string] {
-	return func(yield func(func(common.Label) string) bool) {
+func vulnerabitilies(images []*storage.Image, deployment *storage.Deployment) iter.Seq[common.Finding] {
+	return func(yield func(common.Finding) bool) {
 		for _, image := range images {
 			for _, component := range image.GetScan().GetComponents() {
 				for _, vuln := range component.GetVulns() {
 					for _, name := range image.GetNames() {
-						finding := makeLabelGetter(
+						finding := makeFinding(
 							deployment.GetClusterName(),
 							deployment.GetNamespace(),
 							deployment.GetName(),
@@ -93,7 +87,7 @@ func isFixable(vuln *storage.EmbeddedVulnerability) string {
 	return "true"
 }
 
-func makeLabelGetter(
+func makeFinding(
 	clusterName string,
 	namespaceName string,
 	deploymentName string,
@@ -101,7 +95,7 @@ func makeLabelGetter(
 	name *storage.ImageName,
 	component *storage.EmbeddedImageScanComponent,
 	vuln *storage.EmbeddedVulnerability,
-) func(common.Label) string {
+) common.Finding {
 
 	return func(label common.Label) string {
 		switch label {
