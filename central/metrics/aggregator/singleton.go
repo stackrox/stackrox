@@ -60,9 +60,15 @@ func (ar *aggregatorRunner) Reconfigure(cfg *storage.PrometheusMetricsConfig) er
 	ar.trackersMux.Lock()
 	defer ar.trackersMux.Unlock()
 
-	vc := cfg.GetVulnerabilities()
-	period := time.Hour * time.Duration(vc.GetGatheringPeriodHours())
-	return instance.vulnerabilities.Reconfigure(Registry, vc.GetMetricLabels(), period)
+	{
+		vc := cfg.GetVulnerabilities()
+		period := time.Hour * time.Duration(vc.GetGatheringPeriodHours())
+		err := instance.vulnerabilities.Reconfigure(Registry, vc.GetMetricLabels(), period)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (ar *aggregatorRunner) Start() {
@@ -74,7 +80,6 @@ func (ar *aggregatorRunner) Start() {
 		if ar.vulnerabilities != nil {
 			vulnTracker := common.MakeTrackFunc(
 				ar.vulnerabilities,
-				ar.vulnerabilities.GetMetricLabelExpressions,
 				metrics.SetCustomAggregatedCount,
 			)
 			go ar.run(ar.vulnerabilities.GetPeriodCh(), vulnTracker)

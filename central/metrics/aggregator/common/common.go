@@ -19,7 +19,7 @@ var (
 type Label string               // Prometheus label.
 type MetricName string          // Prometheus metric name.
 type Finding func(Label) string // Lazy map.
-type FindingIterator func(context.Context) iter.Seq[Finding]
+type FindingGenerator func(context.Context) iter.Seq[Finding]
 
 // MetricLabelExpressions is the parsed aggregation configuration.
 type MetricLabelExpressions map[MetricName]map[Label][]*Expression
@@ -68,4 +68,11 @@ func validateMetricName(name string) error {
 		return errors.New("bad characters")
 	}
 	return nil
+}
+
+// Bind2nd binds the second argument for the future calls of f.
+func Bind2nd[A any, B any, RV any](f func(A, B) RV, b B) func(A) RV {
+	return func(a A) RV {
+		return f(a, b)
+	}
 }
