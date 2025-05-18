@@ -30,16 +30,20 @@ var labelOrder = map[common.Label]int{
 	"IsFixable":        16,
 }
 
-func MakeTrackerConfig() *common.TrackerConfig {
-	return common.MakeTrackerConfig("vulnerabilities", "aggregated CVEs",
-		labelOrder, func(ctx context.Context) iter.Seq[func(common.Label) string] {
-			return trackVulnerabilityMetrics(ctx, deploymentDS.Singleton())
-		})
+func bindDS(ds deploymentDS.DataStore) func(ctx context.Context) iter.Seq[common.Finding] {
+	return func(ctx context.Context) iter.Seq[common.Finding] {
+		return trackVulnerabilityMetrics(ctx, ds)
+	}
 }
 
-func trackVulnerabilityMetrics(ctx context.Context, ds deploymentDS.DataStore) iter.Seq[func(common.Label) string] {
+func MakeTrackerConfig() *common.TrackerConfig {
+	return common.MakeTrackerConfig("vulnerabilities", "aggregated CVEs",
+		labelOrder, bindDS(deploymentDS.Singleton()))
+}
 
-	return func(yield func(func(common.Label) string) bool) {
+func trackVulnerabilityMetrics(ctx context.Context, ds deploymentDS.DataStore) iter.Seq[common.Finding] {
+
+	return func(yield func(common.Finding) bool) {
 		// Optimization opportunity:
 		// The resource filter is known at this point, so a more precise query could be constructed here.
 		_ = ds.WalkByQuery(ctx, search.EmptyQuery(), func(deployment *storage.Deployment) error {
@@ -47,29 +51,38 @@ func trackVulnerabilityMetrics(ctx context.Context, ds deploymentDS.DataStore) i
 			if err != nil {
 				return nil
 			}
-
-			for _, image := range images {
-				for _, component := range image.GetScan().GetComponents() {
-					for _, vuln := range component.GetVulns() {
-						for _, name := range image.GetNames() {
-
-							if !yield(makeLabelGetter(
-								deployment.GetClusterName(),
-								deployment.GetNamespace(),
-								deployment.GetName(),
-								image,
-								name,
-								component,
-								vuln,
-							)) {
-								return nil
-							}
-						}
-					}
+			for finding := range vulnerabitilies(images, deployment) {
+				if !yield(finding) {
+					return nil
 				}
 			}
 			return nil
 		})
+	}
+}
+
+func vulnerabitilies(images []*storage.Image, deployment *storage.Deployment) iter.Seq[func(common.Label) string] {
+	return func(yield func(func(common.Label) string) bool) {
+		for _, image := range images {
+			for _, component := range image.GetScan().GetComponents() {
+				for _, vuln := range component.GetVulns() {
+					for _, name := range image.GetNames() {
+						finding := makeLabelGetter(
+							deployment.GetClusterName(),
+							deployment.GetNamespace(),
+							deployment.GetName(),
+							image,
+							name,
+							component,
+							vuln,
+						)
+						if !yield(finding) {
+							return
+						}
+					}
+				}
+			}
+		}
 	}
 }
 

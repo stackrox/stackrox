@@ -2,7 +2,6 @@ package vulnerabilities
 
 import (
 	"context"
-	"iter"
 	"testing"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -81,6 +80,11 @@ func getTestData() ([]*storage.Deployment, map[string][]*storage.Image) {
 	return deployments, deploymentImages
 }
 
+type labelsTotal struct {
+	labels prometheus.Labels
+	total  int
+}
+
 func TestTrack(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	ds := deploymentMockDS.NewMockDataStore(ctrl)
@@ -101,8 +105,8 @@ func TestTrack(t *testing.T) {
 			Times(1).Return(deploymentImages[deployment.Id], nil)
 	}
 
-	var actual = make(map[common.MetricName][]*common.Record)
-	metricExpressions := map[common.MetricName]map[common.Label][]*common.Expression{
+	var actual = make(map[string][]*labelsTotal)
+	metricExpressions := common.MetricLabelExpressions{
 		"Severity_total": {
 			"Severity": nil,
 		},
@@ -117,11 +121,8 @@ func TestTrack(t *testing.T) {
 		},
 	}
 
-	cfg := common.MakeTrackerConfig("vuln", "test", labelOrder,
-		func(ctx context.Context) iter.Seq[func(common.Label) string] {
-			return trackVulnerabilityMetrics(ctx, ds)
-		},
-	)
+	cfg := common.MakeTrackerConfig("vuln", "test",
+		labelOrder, bindDS(ds))
 
 	track := common.MakeTrackFunc(
 		cfg,
@@ -129,26 +130,26 @@ func TestTrack(t *testing.T) {
 			return metricExpressions
 		},
 		func(metric string, labels prometheus.Labels, total int) {
-			actual[common.MetricName(metric)] = append(actual[common.MetricName(metric)], common.MakeRecord(labels, total))
+			actual[metric] = append(actual[metric], &labelsTotal{labels, total})
 		})
 
 	track(context.Background())
 
-	expected := map[common.MetricName][]*common.Record{
+	expected := map[string][]*labelsTotal{
 		"Severity_total": {
-			common.MakeRecord(prometheus.Labels{"Severity": "CRITICAL_VULNERABILITY_SEVERITY"}, 3),
-			common.MakeRecord(prometheus.Labels{"Severity": "MODERATE_VULNERABILITY_SEVERITY"}, 4),
-			common.MakeRecord(prometheus.Labels{"Severity": "LOW_VULNERABILITY_SEVERITY"}, 2),
+			{prometheus.Labels{"Severity": "CRITICAL_VULNERABILITY_SEVERITY"}, 3},
+			{prometheus.Labels{"Severity": "MODERATE_VULNERABILITY_SEVERITY"}, 4},
+			{prometheus.Labels{"Severity": "LOW_VULNERABILITY_SEVERITY"}, 2},
 		},
 		"Cluster_Namespace_Severity_total": {
-			common.MakeRecord(prometheus.Labels{"Cluster": "cluster-1", "Namespace": "namespace-1", "Severity": "CRITICAL_VULNERABILITY_SEVERITY"}, 1),
-			common.MakeRecord(prometheus.Labels{"Cluster": "cluster-1", "Namespace": "namespace-2", "Severity": "CRITICAL_VULNERABILITY_SEVERITY"}, 2),
-			common.MakeRecord(prometheus.Labels{"Cluster": "cluster-1", "Namespace": "namespace-2", "Severity": "MODERATE_VULNERABILITY_SEVERITY"}, 2),
-			common.MakeRecord(prometheus.Labels{"Cluster": "cluster-2", "Namespace": "namespace-2", "Severity": "MODERATE_VULNERABILITY_SEVERITY"}, 2),
-			common.MakeRecord(prometheus.Labels{"Cluster": "cluster-2", "Namespace": "namespace-2", "Severity": "LOW_VULNERABILITY_SEVERITY"}, 2),
+			{prometheus.Labels{"Cluster": "cluster-1", "Namespace": "namespace-1", "Severity": "CRITICAL_VULNERABILITY_SEVERITY"}, 1},
+			{prometheus.Labels{"Cluster": "cluster-1", "Namespace": "namespace-2", "Severity": "CRITICAL_VULNERABILITY_SEVERITY"}, 2},
+			{prometheus.Labels{"Cluster": "cluster-1", "Namespace": "namespace-2", "Severity": "MODERATE_VULNERABILITY_SEVERITY"}, 2},
+			{prometheus.Labels{"Cluster": "cluster-2", "Namespace": "namespace-2", "Severity": "MODERATE_VULNERABILITY_SEVERITY"}, 2},
+			{prometheus.Labels{"Cluster": "cluster-2", "Namespace": "namespace-2", "Severity": "LOW_VULNERABILITY_SEVERITY"}, 2},
 		},
 		"Deployment_ImageTag_total": {
-			common.MakeRecord(prometheus.Labels{"Deployment": "D3", "ImageTag": "latest"}, 2),
+			{prometheus.Labels{"Deployment": "D3", "ImageTag": "latest"}, 2},
 		},
 	}
 
@@ -156,10 +157,6 @@ func TestTrack(t *testing.T) {
 		assert.Contains(t, actual, metric)
 	}
 	for metric, records := range actual {
-		if assert.Len(t, expected[metric], len(records), metric) {
-			for i, record := range records {
-				assert.Contains(t, expected[metric], record, "metric: %s, record: %d", metric, i)
-			}
-		}
+		assert.ElementsMatch(t, expected[metric], records)
 	}
 }
