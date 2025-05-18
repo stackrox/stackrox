@@ -12,20 +12,45 @@ import (
 )
 
 var (
-	log = logging.LoggerForModule()
+	log = logging.CreateLogger(logging.ModuleForName("central_metrics"), 1)
 
 	metricNamePattern = regexp.MustCompile("^[a-zA-Z0-9_]+$")
 )
 
 type Label string      // Prometheus label.
 type MetricName string // Prometheus metric name.
-type MetricKey string  // e.g. IMPORTANT_VULNERABILITY_SEVERITY|true
 
 // MetricLabelExpressions is the parsed aggregation configuration.
 type MetricLabelExpressions map[MetricName]map[Label][]*Expression
 
+type metricKey string // e.g. IMPORTANT_VULNERABILITY_SEVERITY|true
+
 // Result is the aggregation result.
-type Result map[MetricName]map[MetricKey]*Record
+type Result struct {
+	aggregated map[MetricName]map[metricKey]*Record
+	mc         MetricLabelExpressions
+	labelOrder map[Label]int
+}
+
+func MakeResult(mle MetricLabelExpressions, labelOrder map[Label]int) *Result {
+	aggregated := make(map[MetricName]map[metricKey]*Record)
+	for metric := range mle {
+		aggregated[metric] = make(map[metricKey]*Record)
+	}
+	return &Result{aggregated, mle, labelOrder}
+}
+
+func (r *Result) Count(labelGetter func(Label) string) {
+	for metric, expressions := range r.mc {
+		if key, labels := MakeAggregationKeyInstance(expressions, labelGetter, r.labelOrder); key != "" {
+			if rec, ok := r.aggregated[metric][key]; ok {
+				rec.Inc()
+			} else {
+				r.aggregated[metric][key] = MakeRecord(labels, 1)
+			}
+		}
+	}
+}
 
 // Record is a single gauge metric record.
 type Record struct {
@@ -42,8 +67,8 @@ func (r *Record) Inc() {
 	r.total++
 }
 
-// ValidateMetricName ensures the name is alnum_.
-func ValidateMetricName(name string) error {
+// validateMetricName ensures the name is alnum_.
+func validateMetricName(name string) error {
 	if len(name) == 0 {
 		return errors.New("empty")
 	}
@@ -67,12 +92,12 @@ func registerMetrics(registry *prometheus.Registry, category string, description
 func MakeTrackFunc[DS any](
 	ds DS,
 	cfgGetter func() MetricLabelExpressions,
-	gatherFunc func(context.Context, DS, MetricLabelExpressions) Result,
+	gatherFunc func(context.Context, DS, MetricLabelExpressions) *Result,
 	trackFunc func(metricName string, labels prometheus.Labels, total int),
 ) func(context.Context) {
 
 	return func(ctx context.Context) {
-		for metric, records := range gatherFunc(ctx, ds, cfgGetter()) {
+		for metric, records := range gatherFunc(ctx, ds, cfgGetter()).aggregated {
 			for _, rec := range records {
 				trackFunc(string(metric), rec.labels, rec.total)
 			}

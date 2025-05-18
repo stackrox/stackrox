@@ -47,7 +47,7 @@ func matchingLabels(expressions map[Label][]*Expression, labelsGetter func(Label
 // Example:
 //
 //	"Cluster=*prod,Deployment" => "pre-prod|backend", {"Cluster": "pre-prod", "Deployment": "backend")}
-func MakeAggregationKeyInstance(expressions map[Label][]*Expression, labelsGetter func(Label) string, labelOrder map[Label]int) (MetricKey, prometheus.Labels) {
+func MakeAggregationKeyInstance(expressions map[Label][]*Expression, labelsGetter func(Label) string, labelOrder map[Label]int) (metricKey, prometheus.Labels) {
 	labels := make(prometheus.Labels)
 	type valueOrder struct {
 		int
@@ -71,7 +71,7 @@ func MakeAggregationKeyInstance(expressions map[Label][]*Expression, labelsGette
 		}
 		sb.WriteString(value.string)
 	}
-	return MetricKey(sb.String()), labels
+	return metricKey(sb.String()), labels
 }
 
 // getMetricLabels extracts the metric labels from the filter expressions and

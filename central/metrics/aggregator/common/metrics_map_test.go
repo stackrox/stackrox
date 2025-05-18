@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var testLabelsOrder = map[Label]int{
+var testLabelOrder = map[Label]int{
 	"test":      1,
 	"Cluster":   2,
 	"Namespace": 3,
@@ -34,8 +34,8 @@ func TestMakeAggregationKeyInstance(t *testing.T) {
 				"CVSS":      {{">", "5"}},
 				"IsFixable": {{"", ""}},
 			},
-			labelsGetter, testLabelsOrder)
-		assert.Equal(t, MetricKey("value|7.4|false"), key)
+			labelsGetter, testLabelOrder)
+		assert.Equal(t, metricKey("value|7.4|false"), key)
 		assert.Equal(t, prometheus.Labels{
 			"Cluster":   "value",
 			"CVSS":      "7.4",
@@ -49,8 +49,8 @@ func TestMakeAggregationKeyInstance(t *testing.T) {
 				"CVSS":      {{">", "5"}},
 				"IsFixable": {{"", ""}},
 			},
-			labelsGetter, testLabelsOrder)
-		assert.Equal(t, MetricKey(""), key)
+			labelsGetter, testLabelOrder)
+		assert.Equal(t, metricKey(""), key)
 		assert.Nil(t, labels)
 	})
 	t.Run("matching second", func(t *testing.T) {
@@ -67,8 +67,8 @@ func TestMakeAggregationKeyInstance(t *testing.T) {
 				"CVSS":      {{">", "5"}},
 				"IsFixable": {{"", ""}},
 			},
-			labelsGetter, testLabelsOrder)
-		assert.Equal(t, MetricKey("value|7.4|false"), key)
+			labelsGetter, testLabelOrder)
+		assert.Equal(t, metricKey("value|7.4|false"), key)
 		assert.Equal(t, prometheus.Labels{
 			"Cluster":   "value",
 			"CVSS":      "7.4",
@@ -89,8 +89,8 @@ func TestMakeAggregationKeyInstance(t *testing.T) {
 				"CVSS":      {{">", "5"}},
 				"IsFixable": nil,
 			},
-			labelsGetter, testLabelsOrder)
-		assert.Equal(t, MetricKey(""), key)
+			labelsGetter, testLabelOrder)
+		assert.Equal(t, metricKey(""), key)
 		assert.Equal(t, prometheus.Labels(nil), labels)
 	})
 }
@@ -119,6 +119,6 @@ func Test_getMetricLabels(t *testing.T) {
 		},
 	}
 	for _, c := range cases {
-		assert.Equal(t, c.labels, getMetricLabels(c.expressions, testLabelsOrder), c.expressions)
+		assert.Equal(t, c.labels, getMetricLabels(c.expressions, testLabelOrder), c.expressions)
 	}
 }

@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestValidateMetricName(t *testing.T) {
+func Test_validateMetricName(t *testing.T) {
 	tests := map[string]string{
 		"good":             "",
 		"not good":         "bad characters",
@@ -18,7 +18,7 @@ func TestValidateMetricName(t *testing.T) {
 	}
 	for name, expected := range tests {
 		t.Run(name, func(t *testing.T) {
-			if err := ValidateMetricName(name); err != nil {
+			if err := validateMetricName(name); err != nil {
 				assert.Equal(t, expected, err.Error())
 			} else {
 				assert.Empty(t, expected)
@@ -35,22 +35,24 @@ func TestMakeTrackFunc(t *testing.T) {
 		func() MetricLabelExpressions {
 			return MetricLabelExpressions{}
 		},
-		func(ctx context.Context, md myDS, mle MetricLabelExpressions) Result {
-			return Result{
-				"metric1": map[MetricKey]*Record{
-					MetricKey("abc"): {
-						prometheus.Labels{"label1": "value1"},
-						37,
+		func(ctx context.Context, md myDS, mle MetricLabelExpressions) *Result {
+			return &Result{
+				aggregated: map[MetricName]map[metricKey]*Record{
+					"metric1": {
+						metricKey("abc"): {
+							prometheus.Labels{"label1": "value1"},
+							37,
+						},
+						metricKey("def"): {
+							prometheus.Labels{"label1": "value1"},
+							73,
+						},
 					},
-					MetricKey("def"): {
-						prometheus.Labels{"label1": "value1"},
-						73,
-					},
-				},
-				"metric2": map[MetricKey]*Record{
-					MetricKey("abc"): {
-						prometheus.Labels{"label1": "value1"},
-						44,
+					"metric2": {
+						metricKey("abc"): {
+							prometheus.Labels{"label1": "value1"},
+							44,
+						},
 					},
 				},
 			}

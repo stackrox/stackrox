@@ -8,7 +8,7 @@ import (
 )
 
 func TestTrackerConfig_GetMetricsConfig(t *testing.T) {
-	tracker := MakeTrackerConfig("test", "test", testLabelsOrder)
+	tracker := MakeTrackerConfig("test", "test", testLabelOrder)
 	assert.NotNil(t, tracker)
 	assert.NotNil(t, tracker.periodCh)
 
