@@ -93,15 +93,18 @@ func registerMetrics(registry *prometheus.Registry, category string, description
 // MakeTrackFunc returns a function that calls trackFunc on every metric
 // returned by gatherFunc. cfgGetter returns the current configuration, which
 // may dynamically change.
-func MakeTrackFunc[DS any](
-	ds DS,
+func MakeTrackFunc(
+	cfg *TrackerConfig,
 	cfgGetter func() MetricLabelExpressions,
-	gatherFunc func(context.Context, DS, MetricLabelExpressions) *Result,
 	trackFunc func(metricName string, labels prometheus.Labels, total int),
 ) func(context.Context) {
 
 	return func(ctx context.Context) {
-		for metric, records := range gatherFunc(ctx, ds, cfgGetter()).aggregated {
+		result := MakeResult(cfgGetter(), cfg.labelOrder)
+		for g := range cfg.gatherFunc(ctx) {
+			result.Count(g)
+		}
+		for metric, records := range result.aggregated {
 			for _, rec := range records {
 				trackFunc(string(metric), rec.labels, rec.total)
 			}

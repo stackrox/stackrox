@@ -2,10 +2,10 @@ package vulnerabilities
 
 import (
 	"context"
+	"iter"
 	"testing"
 
 	"github.com/prometheus/client_golang/prometheus"
-	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	deploymentMockDS "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	"github.com/stackrox/rox/central/metrics/aggregator/common"
 	v1api "github.com/stackrox/rox/generated/api/v1"
@@ -117,15 +117,21 @@ func TestTrack(t *testing.T) {
 		},
 	}
 
-	track := common.MakeTrackFunc[deploymentDS.DataStore](
-		ds,
+	cfg := common.MakeTrackerConfig("vuln", "test", labelOrder,
+		func(ctx context.Context) iter.Seq[func(common.Label) string] {
+			return trackVulnerabilityMetrics(ctx, ds)
+		},
+	)
+
+	track := common.MakeTrackFunc(
+		cfg,
 		func() common.MetricLabelExpressions {
 			return metricExpressions
 		},
-		TrackVulnerabilityMetrics,
 		func(metric string, labels prometheus.Labels, total int) {
 			actual[common.MetricName(metric)] = append(actual[common.MetricName(metric)], common.MakeRecord(labels, total))
 		})
+
 	track(context.Background())
 
 	expected := map[common.MetricName][]*common.Record{

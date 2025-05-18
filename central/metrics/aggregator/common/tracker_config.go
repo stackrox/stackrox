@@ -1,6 +1,8 @@
 package common
 
 import (
+	"context"
+	"iter"
 	"sync"
 	"time"
 
@@ -14,6 +16,7 @@ type TrackerConfig struct {
 	category    string
 	description string
 	labelOrder  map[Label]int
+	gatherFunc  func(context.Context) iter.Seq[func(Label) string]
 
 	// metricsConfig can be changed with an API call.
 	metricsConfig    MetricLabelExpressions
@@ -23,12 +26,14 @@ type TrackerConfig struct {
 	periodCh chan time.Duration
 }
 
-func MakeTrackerConfig(category, description string, labelOrder map[Label]int) *TrackerConfig {
+func MakeTrackerConfig(category, description string, labelOrder map[Label]int, gatherFunc func(context.Context) iter.Seq[func(Label) string]) *TrackerConfig {
 	return &TrackerConfig{
 		category:    category,
 		description: description,
 		labelOrder:  labelOrder,
-		periodCh:    make(chan time.Duration, 1),
+		gatherFunc:  gatherFunc,
+
+		periodCh: make(chan time.Duration, 1),
 	}
 }
 

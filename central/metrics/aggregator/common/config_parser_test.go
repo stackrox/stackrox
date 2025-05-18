@@ -26,13 +26,10 @@ func makeTestMetricLabels(t *testing.T) map[string]*storage.PrometheusMetricsCon
 							Operator: "=",
 							Argument: "CRITICAL*",
 						}, {
-							Operator: "=",
-							Argument: "HIGH*",
-						}, {
 							Operator: "OR",
 						}, {
 							Operator: "=",
-							Argument: "LOW*",
+							Argument: "HIGH*",
 						},
 					},
 				},
@@ -53,9 +50,8 @@ func makeTestMetricLabelExpressions(t *testing.T) MetricLabelExpressions {
 		pfx + "_metric1": {
 			"Severity": {
 				MustMakeExpression("=", "CRITICAL*"),
-				MustMakeExpression("=", "HIGH*"),
 				MustMakeExpression("OR", ""),
-				MustMakeExpression("=", "LOW*"),
+				MustMakeExpression("=", "HIGH*"),
 			},
 			"Cluster": nil,
 		},
