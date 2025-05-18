@@ -3,9 +3,7 @@ package vulnerabilities
 import (
 	"context"
 	"strconv"
-	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/metrics/aggregator/common"
 	"github.com/stackrox/rox/generated/storage"
@@ -31,16 +29,10 @@ var labelOrder = map[common.Label]int{
 	"IsFixable":        16,
 }
 
-const vulnerabilitiesCategory = "vulnerabilities"
+const Category = "vulnerabilities"
 
-func Reconfigure(registry *prometheus.Registry, cfg *storage.PrometheusMetricsConfig_Vulnerabilities) (*common.TrackerConfig, error) {
-	return common.Reconfigure(
-		registry,
-		vulnerabilitiesCategory,
-		time.Hour*time.Duration(cfg.GatheringPeriodHours),
-		cfg.GetMetricLabels(),
-		labelOrder,
-	)
+func MakeTrackerConfig() *common.TrackerConfig {
+	return common.MakeTrackerConfig(Category, "aggregated CVEs", labelOrder)
 }
 
 func TrackVulnerabilityMetrics(ctx context.Context, ds deploymentDS.DataStore, mle common.MetricLabelExpressions) *common.Result {

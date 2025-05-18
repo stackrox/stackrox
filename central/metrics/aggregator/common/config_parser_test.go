@@ -1,6 +1,7 @@
 package common
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -8,34 +9,16 @@ import (
 )
 
 func Test_parseMetricLabels(t *testing.T) {
-	config := makeTestMetricLabels()
+	config := makeTestMetricLabels(t)
 	labelExpressions, err := parseMetricLabels(config, testLabelOrder)
 	assert.NoError(t, err)
-	assert.Equal(t, MetricLabelExpressions{
-		"metric1": {
-			"Severity": {
-				MustMakeExpression("=", "CRITICAL*"),
-				MustMakeExpression("=", "HIGH*"),
-				MustMakeExpression("OR", ""),
-				MustMakeExpression("=", "LOW*"),
-			},
-			"Cluster": nil,
-		},
-		"metric2": {
-			"Namespace": nil,
-		},
-	}, labelExpressions)
+	assert.Equal(t, makeTestMetricLabelExpressions(t), labelExpressions)
 }
 
-func TestReconfigure(t *testing.T) {
-	tracker, err := Reconfigure(nil, "test", 0, nil, testLabelOrder)
-	assert.NotNil(t, tracker)
-	assert.NoError(t, err)
-}
-
-func makeTestMetricLabels() map[string]*storage.PrometheusMetricsConfig_LabelExpressions {
+func makeTestMetricLabels(t *testing.T) map[string]*storage.PrometheusMetricsConfig_LabelExpressions {
+	pfx := strings.ReplaceAll(t.Name(), "/", "_")
 	return map[string]*storage.PrometheusMetricsConfig_LabelExpressions{
-		"metric1": {
+		pfx + "_metric1": {
 			LabelExpressions: map[string]*storage.PrometheusMetricsConfig_LabelExpressions_Expressions{
 				"Severity": {
 					Expression: []*storage.PrometheusMetricsConfig_LabelExpressions_Expressions_Expression{
@@ -56,10 +39,28 @@ func makeTestMetricLabels() map[string]*storage.PrometheusMetricsConfig_LabelExp
 				"Cluster": nil,
 			},
 		},
-		"metric2": {
+		pfx + "_metric2": {
 			LabelExpressions: map[string]*storage.PrometheusMetricsConfig_LabelExpressions_Expressions{
 				"Namespace": {},
 			},
+		},
+	}
+}
+
+func makeTestMetricLabelExpressions(t *testing.T) MetricLabelExpressions {
+	pfx := MetricName(strings.ReplaceAll(t.Name(), "/", "_"))
+	return MetricLabelExpressions{
+		pfx + "_metric1": {
+			"Severity": {
+				MustMakeExpression("=", "CRITICAL*"),
+				MustMakeExpression("=", "HIGH*"),
+				MustMakeExpression("OR", ""),
+				MustMakeExpression("=", "LOW*"),
+			},
+			"Cluster": nil,
+		},
+		pfx + "_metric2": {
+			"Namespace": nil,
 		},
 	}
 }
