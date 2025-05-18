@@ -58,6 +58,7 @@ import (
 	k8srolebindingStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
 	mockRisks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	connMgrMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
+	deploymentsView "github.com/stackrox/rox/central/views/deployments"
 	"github.com/stackrox/rox/central/views/imagecomponentflat"
 	"github.com/stackrox/rox/central/views/imagecve"
 	"github.com/stackrox/rox/central/views/imagecveflat"
@@ -114,6 +115,13 @@ func SetupTestResolver(t testing.TB, datastores ...interface{}) (*Resolver, *gra
 			registerImageLoader(t, ds, imageView)
 			resolver.ImageDataStore = ds
 		case deploymentDatastore.DataStore:
+			var deploymentView deploymentsView.DeploymentView
+			for _, di := range datastores {
+				if view, ok := di.(deploymentsView.DeploymentView); ok {
+					deploymentView = view
+				}
+			}
+			registerDeploymentLoader(t, ds, deploymentView)
 			resolver.DeploymentDataStore = ds
 		case namespaceDataStore.DataStore:
 			resolver.NamespaceDataStore = ds
@@ -420,5 +428,11 @@ func registerNodeComponentLoader(_ testing.TB, ds nodeComponentDataStore.DataSto
 func registerNodeCVELoader(_ testing.TB, ds nodeCVEDataStore.DataStore) {
 	loaders.RegisterTypeFactory(reflect.TypeOf(storage.NodeCVE{}), func() interface{} {
 		return loaders.NewNodeCVELoader(ds)
+	})
+}
+
+func registerDeploymentLoader(_ testing.TB, ds deploymentDatastore.DataStore, view deploymentsView.DeploymentView) {
+	loaders.RegisterTypeFactory(reflect.TypeOf(storage.Deployment{}), func() interface{} {
+		return loaders.NewDeploymentLoader(ds, view)
 	})
 }
