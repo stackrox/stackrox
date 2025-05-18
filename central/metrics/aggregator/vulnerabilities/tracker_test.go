@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/prometheus/client_golang/prometheus"
+	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	deploymentMockDS "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	"github.com/stackrox/rox/central/metrics/aggregator/common"
 	v1api "github.com/stackrox/rox/generated/api/v1"
@@ -122,13 +123,10 @@ func TestTrack(t *testing.T) {
 	}
 
 	cfg := common.MakeTrackerConfig("vuln", "test",
-		labelOrder, bindDS(ds))
-
+		labelOrder, common.Bind2nd(trackVulnerabilityMetrics, deploymentDS.DataStore(ds)))
+	cfg.SetMetricLabelExpressions(metricExpressions)
 	track := common.MakeTrackFunc(
 		cfg,
-		func() common.MetricLabelExpressions {
-			return metricExpressions
-		},
 		func(metric string, labels prometheus.Labels, total int) {
 			actual[metric] = append(actual[metric], &labelsTotal{labels, total})
 		})

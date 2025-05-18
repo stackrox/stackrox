@@ -16,7 +16,7 @@ type TrackerConfig struct {
 	category    string
 	description string
 	labelOrder  map[Label]int
-	gather      FindingIterator
+	generator   FindingGenerator
 
 	// metricsConfig can be changed with an API call.
 	metricsConfig    MetricLabelExpressions
@@ -26,12 +26,14 @@ type TrackerConfig struct {
 	periodCh chan time.Duration
 }
 
-func MakeTrackerConfig(category, description string, labelOrder map[Label]int, gatherFunc FindingIterator) *TrackerConfig {
+// MakeTrackerConfig initializes a tracker configuration without any period or metric expressions.
+// Call Reconfigure to configure the period and the expressions.
+func MakeTrackerConfig(category, description string, labelOrder map[Label]int, generator FindingGenerator) *TrackerConfig {
 	return &TrackerConfig{
 		category:    category,
 		description: description,
 		labelOrder:  labelOrder,
-		gather:      gatherFunc,
+		generator:   generator,
 
 		periodCh: make(chan time.Duration, 1),
 	}
@@ -46,9 +48,7 @@ func (tc *TrackerConfig) Reconfigure(registry *prometheus.Registry, cfg map[stri
 	if err != nil {
 		return err
 	}
-	tc.metricsConfigMux.Lock()
-	defer tc.metricsConfigMux.Unlock()
-	tc.metricsConfig = mle
+	tc.SetMetricLabelExpressions(mle)
 	select {
 	case tc.periodCh <- period:
 		break
@@ -65,6 +65,12 @@ func (tc *TrackerConfig) GetMetricLabelExpressions() MetricLabelExpressions {
 	tc.metricsConfigMux.RLock()
 	defer tc.metricsConfigMux.RUnlock()
 	return tc.metricsConfig
+}
+
+func (tc *TrackerConfig) SetMetricLabelExpressions(mle MetricLabelExpressions) {
+	tc.metricsConfigMux.Lock()
+	defer tc.metricsConfigMux.Unlock()
+	tc.metricsConfig = mle
 }
 
 func (tc *TrackerConfig) registerMetrics(registry *prometheus.Registry, period time.Duration) {
@@ -84,13 +90,12 @@ func (tc *TrackerConfig) registerMetrics(registry *prometheus.Registry, period t
 // may dynamically change.
 func MakeTrackFunc(
 	cfg *TrackerConfig,
-	cfgGetter func() MetricLabelExpressions,
 	trackFunc func(metricName string, labels prometheus.Labels, total int),
 ) func(context.Context) {
 
 	return func(ctx context.Context) {
-		result := makeResult(cfgGetter(), cfg.labelOrder)
-		for finding := range cfg.gather(ctx) {
+		result := makeResult(cfg.GetMetricLabelExpressions(), cfg.labelOrder)
+		for finding := range cfg.generator(ctx) {
 			result.count(finding)
 		}
 		for metric, records := range result.aggregated {
