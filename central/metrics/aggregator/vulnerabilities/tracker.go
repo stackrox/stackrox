@@ -3,7 +3,9 @@ package vulnerabilities
 import (
 	"context"
 	"strconv"
+	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/metrics/aggregator/common"
 	"github.com/stackrox/rox/generated/storage"
@@ -29,11 +31,21 @@ var labelOrder = map[common.Label]int{
 	"IsFixable":        16,
 }
 
-func TrackVulnerabilityMetrics(ctx context.Context, ds deploymentDS.DataStore, mc common.MetricLabelExpressions) common.Result {
-	aggregated := make(common.Result)
-	for metric := range mc {
-		aggregated[metric] = make(map[common.MetricKey]*common.Record)
-	}
+const vulnerabilitiesCategory = "vulnerabilities"
+
+func Reconfigure(registry *prometheus.Registry, cfg *storage.PrometheusMetricsConfig_Vulnerabilities) (*common.TrackerConfig, error) {
+	return common.Reconfigure(
+		registry,
+		vulnerabilitiesCategory,
+		time.Hour*time.Duration(cfg.GatheringPeriodHours),
+		cfg.GetMetricLabels(),
+		labelOrder,
+	)
+}
+
+func TrackVulnerabilityMetrics(ctx context.Context, ds deploymentDS.DataStore, mle common.MetricLabelExpressions) *common.Result {
+	result := common.MakeResult(mle, labelOrder)
+
 	// Optimization opportunity:
 	// The resource filter is known at this point, so a more precise query could be constructed here.
 	_ = ds.WalkByQuery(ctx, search.EmptyQuery(), func(deployment *storage.Deployment) error {
@@ -41,31 +53,21 @@ func TrackVulnerabilityMetrics(ctx context.Context, ds deploymentDS.DataStore, m
 		if err != nil {
 			return nil
 		}
-		return trackDeployment(mc, aggregated, deployment, images)
+
+		forEachVuln(images, func(image *storage.Image, imageName *storage.ImageName, component *storage.EmbeddedImageScanComponent, vuln *storage.EmbeddedVulnerability) {
+			result.Count(makeLabelGetter(
+				deployment.GetClusterName(),
+				deployment.GetNamespace(),
+				deployment.GetName(),
+				image,
+				imageName,
+				component,
+				vuln,
+			))
+		})
+		return nil
 	})
-	return aggregated
-}
-
-func trackDeployment(mc common.MetricLabelExpressions, aggregated common.Result, deployment *storage.Deployment, images []*storage.Image) error {
-
-	forEachVuln(images, func(image *storage.Image, imageName *storage.ImageName, component *storage.EmbeddedImageScanComponent, vuln *storage.EmbeddedVulnerability) {
-		labelGetter := makeLabelGetter(image, imageName, component, vuln,
-			deployment.GetClusterName(),
-			deployment.GetNamespace(),
-			deployment.GetName())
-
-		for metric, expressions := range mc {
-			if key, labels := common.MakeAggregationKeyInstance(expressions, labelGetter, labelOrder); key != "" {
-				if rec, ok := aggregated[metric][key]; ok {
-					rec.Inc()
-				} else {
-					aggregated[metric][key] = common.MakeRecord(labels, 1)
-				}
-			}
-		}
-	})
-
-	return nil
+	return result
 }
 
 func forEachVuln(images []*storage.Image, f func(*storage.Image, *storage.ImageName, *storage.EmbeddedImageScanComponent, *storage.EmbeddedVulnerability)) {
@@ -88,13 +90,13 @@ func isFixable(vuln *storage.EmbeddedVulnerability) string {
 }
 
 func makeLabelGetter(
+	clusterName string,
+	namespaceName string,
+	deploymentName string,
 	image *storage.Image,
 	name *storage.ImageName,
 	component *storage.EmbeddedImageScanComponent,
 	vuln *storage.EmbeddedVulnerability,
-	clusterName string,
-	namespaceName string,
-	deploymentName string,
 ) func(common.Label) string {
 
 	return func(label common.Label) string {
