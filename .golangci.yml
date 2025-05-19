@@ -155,8 +155,8 @@ linters:
       - -ST1023
     wrapcheck:
       ignore-sig-regexps:
-        - (*github.com/stackrox/rox/pkg/errorhelpers.ErrorList).ToError()
-        - backoff.Retry*
+        - \(\*github\.com\/stackrox\/rox\/pkg\/errorhelpers\.ErrorList\)\.ToError\(\)
+        - backoff.Retry.*
         - concurrency\.WithLock.*
         - errox\..+\.CausedBy(f)?
         - policy\.NewErr.*
