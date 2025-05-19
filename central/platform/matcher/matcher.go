@@ -25,7 +25,7 @@ func New(configDatastore configDS.DataStore) PlatformMatcher {
 	regexes := []*regexp.Regexp{}
 	config, _, _ := configDatastore.GetPlatformComponentConfig(allAccessCtx)
 	for _, rule := range config.GetRules() {
-		regex, _ := regexp.Compile(rule.GetName())
+		regex, _ := regexp.Compile(rule.GetNamespaceRule().GetRegex())
 		regexes = append(regexes, regex)
 	}
 	return &platformMatcherImpl{
