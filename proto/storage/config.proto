@@ -125,7 +125,7 @@ message DayOption {
 }
 
 message PrometheusMetricsConfig {
-  
+
   message LabelExpressions {
     message Expressions {
       message Expression {
