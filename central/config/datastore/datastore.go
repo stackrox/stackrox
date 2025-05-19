@@ -3,7 +3,6 @@ package datastore
 import (
 	"context"
 	"reflect"
-	"regexp"
 	"slices"
 	"strings"
 	"testing"
@@ -13,7 +12,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/config/store"
 	pgStore "github.com/stackrox/rox/central/config/store/postgres"
-	"github.com/stackrox/rox/central/platform/matcher"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -288,7 +286,6 @@ func validateAndUpdatePlatformComponentConfig(config *storage.PlatformComponentC
 	systemRuleExists := false
 	layeredProductsRuleExists := false
 	parsedRules := make([]*storage.PlatformComponentConfig_Rule, 0)
-	regexes := make([]*regexp.Regexp, 0)
 	for _, rule := range rules {
 		if rule.Name == defaultPlatformConfigSystemRule.Name && !strings.EqualFold(rule.NamespaceRule.Regex, defaultPlatformConfigSystemRule.NamespaceRule.Regex) {
 			// Prevent override of system rule
@@ -308,11 +305,6 @@ func validateAndUpdatePlatformComponentConfig(config *storage.PlatformComponentC
 			layeredProductsRuleExists = true
 		}
 		parsedRules = append(parsedRules, rule)
-		regex, compileErr := regexp.Compile(rule.GetNamespaceRule().Regex)
-		if compileErr != nil {
-			return nil, compileErr
-		}
-		regexes = append(regexes, regex)
 	}
 	// Add back in default rules if they weren't passed in by the user
 	if !systemRuleExists {
@@ -334,7 +326,6 @@ func validateAndUpdatePlatformComponentConfig(config *storage.PlatformComponentC
 		}
 		config.Rules = parsedRules
 	}
-	matcher.Singleton().SetRegexes(regexes)
 	return config, nil
 }
 
