@@ -25,12 +25,10 @@ var (
 )
 
 type aggregatorRunner struct {
-	stopCh      chan bool
-	stopOnce    sync.Once
-	trackersMux sync.RWMutex
+	stopCh   chan bool
+	stopOnce sync.Once
 
-	vulnerabilities     *common.TrackerConfig
-	vulnerabilitiesOnce sync.Once
+	vulnerabilities *common.TrackerConfig
 }
 
 func Singleton() interface {
@@ -63,12 +61,9 @@ func vulnerabilitiesConfig(cfg *storage.PrometheusMetricsConfig) (map[string]*st
 }
 
 func (ar *aggregatorRunner) Reconfigure(cfg *storage.PrometheusMetricsConfig) error {
-	ar.trackersMux.Lock()
-	defer ar.trackersMux.Unlock()
-
 	{
 		mle, period := vulnerabilitiesConfig(cfg)
-		if err := runner.vulnerabilities.Reconfigure(Registry, mle, period); err != nil {
+		if err := ar.vulnerabilities.Reconfigure(Registry, mle, period); err != nil {
 			return err
 		}
 	}
@@ -76,18 +71,8 @@ func (ar *aggregatorRunner) Reconfigure(cfg *storage.PrometheusMetricsConfig) er
 }
 
 func (ar *aggregatorRunner) Start() {
-	ar.trackersMux.RLock()
-	defer ar.trackersMux.RUnlock()
-
-	// Run the periodic vulnerabilities aggregation.
-	ar.vulnerabilitiesOnce.Do(func() {
-		if ar.vulnerabilities != nil {
-			vulnTracker := common.MakeTrackFunc(
-				ar.vulnerabilities,
-				metrics.SetCustomAggregatedCount,
-			)
-			go ar.run(ar.vulnerabilities.GetPeriodCh(), vulnTracker)
-		}
+	ar.vulnerabilities.Do(func() {
+		go ar.run(ar.vulnerabilities, metrics.SetCustomAggregatedCount)
 	})
 }
 
@@ -97,7 +82,10 @@ func (ar *aggregatorRunner) Stop() {
 	})
 }
 
-func (ar *aggregatorRunner) run(periodCh <-chan time.Duration, track func(context.Context)) {
+func (ar *aggregatorRunner) run(tracker *common.TrackerConfig, gauge func(metricName string, labels prometheus.Labels, total int)) {
+	periodCh := tracker.GetPeriodCh()
+	track := tracker.MakeTrackFunc(gauge)
+
 	// The ticker will be reset immediately when reading from the periodCh.
 	ticker := time.NewTicker(1000 * time.Hour)
 	defer ticker.Stop()

@@ -125,8 +125,7 @@ func TestTrack(t *testing.T) {
 	cfg := common.MakeTrackerConfig("vuln", "test",
 		labelOrder, common.Bind2nd(trackVulnerabilityMetrics, deploymentDS.DataStore(ds)))
 	cfg.SetMetricLabelExpressions(metricExpressions)
-	track := common.MakeTrackFunc(
-		cfg,
+	track := cfg.MakeTrackFunc(
 		func(metric string, labels prometheus.Labels, total int) {
 			actual[metric] = append(actual[metric], &labelsTotal{labels, total})
 		})
