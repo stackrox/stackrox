@@ -480,7 +480,7 @@ func SetSignatureVerificationReprocessorDuration(start time.Time) {
 
 // RegisterCustomAggregatedMetric registers user-defined aggregated metrics
 // according to the system private configuration.
-func RegisterCustomAggregatedMetric(name string, description string, period time.Duration, labels []string, userRegistry *prometheus.Registry) {
+func RegisterCustomAggregatedMetric(name string, description string, period time.Duration, labels []string, userRegistry *prometheus.Registry) error {
 	metric := prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
@@ -491,11 +491,16 @@ func RegisterCustomAggregatedMetric(name string, description string, period time
 	customAggregatedMetrics[name] = metric
 
 	// Register the metric on the default Prometheus endpoint.
-	prometheus.MustRegister(metric)
+	if err := prometheus.Register(metric); err != nil {
+		return err
+	}
 
 	if userRegistry != nil {
-		userRegistry.MustRegister(metric)
+		if err := userRegistry.Register(metric); err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 // SetCustomAggregatedCount registers the metric vector with the values,

@@ -8,6 +8,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
 )
 
 // TrackerConfig wraps various pieces of configuration required for tracking
@@ -57,8 +58,13 @@ func (tc *TrackerConfig) Reconfigure(registry *prometheus.Registry, cfg map[stri
 		<-tc.periodCh
 		tc.periodCh <- period
 	}
-	tc.registerMetrics(registry, period)
-	return nil
+
+	if period == 0 {
+		log.Infof("Metrics collection is disabled for %s", tc.category)
+		return nil
+	}
+
+	return tc.registerMetrics(registry, period)
 }
 
 func (tc *TrackerConfig) GetMetricLabelExpressions() MetricLabelsExpressions {
@@ -73,16 +79,16 @@ func (tc *TrackerConfig) SetMetricLabelExpressions(mle MetricLabelsExpressions) 
 	tc.metricsConfig = mle
 }
 
-func (tc *TrackerConfig) registerMetrics(registry *prometheus.Registry, period time.Duration) {
-	if period == 0 {
-		log.Infof("Metrics collection is disabled for %s", tc.category)
-	}
+func (tc *TrackerConfig) registerMetrics(registry *prometheus.Registry, period time.Duration) error {
 	for metric, labelExpressions := range tc.metricsConfig {
-		metrics.RegisterCustomAggregatedMetric(string(metric), tc.description, period,
-			getMetricLabels(labelExpressions, tc.labelOrder), registry)
-
+		if err := metrics.RegisterCustomAggregatedMetric(string(metric), tc.description, period,
+			getMetricLabels(labelExpressions, tc.labelOrder), registry); err != nil {
+			log.Errorw("Failed to register metrics", logging.Err(err))
+			return err
+		}
 		log.Infof("Registered %s Prometheus metric %q", tc.category, metric)
 	}
+	return nil
 }
 
 // MakeTrackFunc returns a function that calls trackFunc on every metric
