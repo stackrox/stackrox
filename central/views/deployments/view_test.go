@@ -61,20 +61,6 @@ func matchAllFilter() *filterImpl {
 	}
 }
 
-func matchNoneFilter() *filterImpl {
-	return &filterImpl{
-		matchDeployment: func(dep *storage.Deployment) bool {
-			return false
-		},
-		matchImage: func(_ *storage.Image) bool {
-			return false
-		},
-		matchVuln: func(_ *storage.EmbeddedVulnerability) bool {
-			return false
-		},
-	}
-}
-
 func (f *filterImpl) withDeploymentFilter(fn func(dep *storage.Deployment) bool) *filterImpl {
 	f.matchDeployment = fn
 	return f
@@ -169,11 +155,13 @@ func (s *DeploymentViewTestSuite) SetupSuite() {
 		fixtures.GetDeploymentWithImage(testconsts.Cluster2, testconsts.NamespaceB, images[3]),
 		fixtures.GetDeploymentWithImage(testconsts.Cluster3, testconsts.NamespaceC, images[4]),
 	}
+
 	s.testDeploymentsMap = make(map[string]*storage.Deployment)
 	for _, d := range deployments {
 		s.Require().NoError(deploymentStore.UpsertDeployment(ctx, d))
 		s.testDeploymentsMap[d.GetId()] = d
 	}
+	s.testDeployments = deployments
 
 	s.scopeToDeploymentIDs = map[string]set.StringSet{
 		testutils.UnrestrictedReadWriteCtx: set.NewStringSet(
@@ -222,7 +210,9 @@ func (s *DeploymentViewTestSuite) TestGet() {
 			desc: "order by risk score",
 			query: search.NewQueryBuilder().
 				WithPagination(
-					search.NewPagination().AddSortOption(search.NewSortOption(search.ImageRiskScore).Reversed(true)),
+					search.NewPagination().
+						AddSortOption(search.NewSortOption(search.DeploymentRiskScore).Reversed(true)).
+						AddSortOption(search.NewSortOption(search.DeploymentID)),
 				).
 				ProtoQuery(),
 			matchFilter: matchAllFilter(),
@@ -243,7 +233,9 @@ func (s *DeploymentViewTestSuite) TestGet() {
 			query: search.NewQueryBuilder().
 				AddBools(search.Fixable, true).
 				WithPagination(
-					search.NewPagination().AddSortOption(search.NewSortOption(search.ImageRiskScore).Reversed(true)),
+					search.NewPagination().
+						AddSortOption(search.NewSortOption(search.DeploymentRiskScore).Reversed(true)).
+						AddSortOption(search.NewSortOption(search.DeploymentID)),
 				).
 				ProtoQuery(),
 			matchFilter: matchAllFilter().withVulnFilter(func(vuln *storage.EmbeddedVulnerability) bool {
@@ -265,7 +257,9 @@ func (s *DeploymentViewTestSuite) TestGet() {
 			desc: "order by number of critical CVEs",
 			query: search.NewQueryBuilder().
 				WithPagination(
-					search.NewPagination().AddSortOption(search.NewSortOption(search.CriticalSeverityCount).Reversed(true)),
+					search.NewPagination().
+						AddSortOption(search.NewSortOption(search.CriticalSeverityCount).Reversed(true)).
+						AddSortOption(search.NewSortOption(search.DeploymentID)),
 				).
 				ProtoQuery(),
 			hasSortBySeverityCounts: true,
@@ -288,7 +282,8 @@ func (s *DeploymentViewTestSuite) TestGet() {
 						AddSortOption(search.NewSortOption(search.CriticalSeverityCount).Reversed(true)).
 						AddSortOption(search.NewSortOption(search.ImportantSeverityCount).Reversed(true)).
 						AddSortOption(search.NewSortOption(search.ModerateSeverityCount).Reversed(true)).
-						AddSortOption(search.NewSortOption(search.LowSeverityCount).Reversed(true)),
+						AddSortOption(search.NewSortOption(search.LowSeverityCount).Reversed(true)).
+						AddSortOption(search.NewSortOption(search.DeploymentID)),
 				).
 				ProtoQuery(),
 			hasSortBySeverityCounts: true,
@@ -324,7 +319,8 @@ func (s *DeploymentViewTestSuite) TestGet() {
 						AddSortOption(search.NewSortOption(search.CriticalSeverityCount).Reversed(true)).
 						AddSortOption(search.NewSortOption(search.ImportantSeverityCount).Reversed(true)).
 						AddSortOption(search.NewSortOption(search.ModerateSeverityCount).Reversed(true)).
-						AddSortOption(search.NewSortOption(search.LowSeverityCount).Reversed(true)),
+						AddSortOption(search.NewSortOption(search.LowSeverityCount).Reversed(true)).
+						AddSortOption(search.NewSortOption(search.DeploymentID)),
 				).
 				ProtoQuery(),
 			hasSortBySeverityCounts: true,
@@ -369,7 +365,8 @@ func (s *DeploymentViewTestSuite) TestGet() {
 				WithPagination(
 					search.NewPagination().
 						AddSortOption(search.NewSortOption(search.ModerateSeverityCount).Reversed(true)).
-						AddSortOption(search.NewSortOption(search.LowSeverityCount).Reversed(true)),
+						AddSortOption(search.NewSortOption(search.LowSeverityCount).Reversed(true)).
+						AddSortOption(search.NewSortOption(search.DeploymentID)),
 				).
 				ProtoQuery(),
 			hasSortBySeverityCounts: true,
@@ -395,7 +392,8 @@ func (s *DeploymentViewTestSuite) TestGet() {
 				WithPagination(
 					search.NewPagination().
 						AddSortOption(search.NewSortOption(search.ModerateSeverityCount).Reversed(true)).
-						AddSortOption(search.NewSortOption(search.LowSeverityCount).Reversed(true)),
+						AddSortOption(search.NewSortOption(search.LowSeverityCount).Reversed(true)).
+						AddSortOption(search.NewSortOption(search.DeploymentID)),
 				).
 				ProtoQuery(),
 			hasSortBySeverityCounts: true,
@@ -463,7 +461,7 @@ func (s *DeploymentViewTestSuite) compileExpected(filter *filterImpl, less lessF
 	if less != nil {
 		sort.SliceStable(expected, less(expected))
 	}
-	ret := make([]DeploymentCore, len(expected))
+	ret := make([]DeploymentCore, 0, len(expected))
 	for _, r := range expected {
 		ret = append(ret, r)
 	}
@@ -494,35 +492,57 @@ func compileExpectedVulns(containers []*storage.Container, imageMap map[string]*
 }
 
 func gatherSeverityAndFixabilityCounts(val *deploymentResponse, vulns []*storage.EmbeddedVulnerability) {
+	criticalSevCVEs := set.NewStringSet()
+	criticalSevFixableCVEs := set.NewStringSet()
+	importantSevCVEs := set.NewStringSet()
+	importantSevFixableCVEs := set.NewStringSet()
+	moderateSevCVEs := set.NewStringSet()
+	moderateSevFixableCVEs := set.NewStringSet()
+	lowSevCVEs := set.NewStringSet()
+	lowSevFixableCVEs := set.NewStringSet()
+	unknownSevCVEs := set.NewStringSet()
+	unknownSevFixableCVEs := set.NewStringSet()
+
 	for _, vuln := range vulns {
 		switch vuln.GetSeverity() {
 		case storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY:
-			val.CriticalSeverityCount += 1
+			criticalSevCVEs.Add(vuln.GetCve())
 			if vuln.GetFixedBy() != "" {
-				val.FixableCriticalSeverityCount += 1
+				criticalSevFixableCVEs.Add(vuln.GetCve())
 			}
 		case storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY:
-			val.ImportantSeverityCount += 1
+			importantSevCVEs.Add(vuln.GetCve())
 			if vuln.GetFixedBy() != "" {
-				val.FixableImportantSeverityCount += 1
+				importantSevFixableCVEs.Add(vuln.GetCve())
 			}
 		case storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY:
-			val.ModerateSeverityCount += 1
+			moderateSevCVEs.Add(vuln.GetCve())
 			if vuln.GetFixedBy() != "" {
-				val.FixableModerateSeverityCount += 1
+				moderateSevFixableCVEs.Add(vuln.GetCve())
 			}
 		case storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY:
-			val.LowSeverityCount += 1
+			lowSevCVEs.Add(vuln.GetCve())
 			if vuln.GetFixedBy() != "" {
-				val.FixableLowSeverityCount += 1
+				lowSevFixableCVEs.Add(vuln.GetCve())
 			}
 		case storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY:
-			val.UnknownSeverityCount += 1
+			unknownSevCVEs.Add(vuln.GetCve())
 			if vuln.GetFixedBy() != "" {
-				val.FixableUnknownSeverityCount += 1
+				unknownSevFixableCVEs.Add(vuln.GetCve())
 			}
 		}
 	}
+
+	val.CriticalSeverityCount = criticalSevCVEs.Cardinality()
+	val.FixableCriticalSeverityCount = criticalSevFixableCVEs.Cardinality()
+	val.ImportantSeverityCount = importantSevCVEs.Cardinality()
+	val.FixableImportantSeverityCount = importantSevFixableCVEs.Cardinality()
+	val.ModerateSeverityCount = moderateSevCVEs.Cardinality()
+	val.FixableModerateSeverityCount = moderateSevFixableCVEs.Cardinality()
+	val.LowSeverityCount = lowSevCVEs.Cardinality()
+	val.FixableLowSeverityCount = lowSevFixableCVEs.Cardinality()
+	val.UnknownSeverityCount = unknownSevCVEs.Cardinality()
+	val.FixableUnknownSeverityCount = unknownSevFixableCVEs.Cardinality()
 }
 
 func standardizeImages(images ...*storage.Image) {
