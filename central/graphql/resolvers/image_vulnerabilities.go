@@ -273,7 +273,9 @@ func (resolver *Resolver) ImageVulnerabilityCount(ctx context.Context, args RawQ
 func (resolver *Resolver) ImageVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageVulnerabilityCounter")
 
+	scopeQ, _ := scoped.GetQueryForAllScopes(ctx)
 	log.Infof("SHREWS -- ImageVulnerabilityCounter -- %v", args)
+	log.Infof("SHREWS -- ImageVulnerabilityCounter -- %v", scopeQ)
 	// check permissions
 	if err := readImages(ctx); err != nil {
 		return nil, err
@@ -297,7 +299,9 @@ func (resolver *Resolver) ImageVulnerabilityCounter(ctx context.Context, args Ra
 
 		// get fixable vulns
 		fixableQuery := search.ConjunctionQuery(query, search.NewQueryBuilder().AddBools(search.Fixable, true).ProtoQuery())
+		log.Infof("SHREWS -- ImageVulnerabilityCounter -- %v", query)
 		fixableVulns, err := loader.FromQuery(ctx, fixableQuery)
+		log.Infof("SHREWS -- ImageVulnerabilityCounter -- fixable -- %v", fixableVulns)
 		if err != nil {
 			return nil, err
 		}
@@ -307,6 +311,7 @@ func (resolver *Resolver) ImageVulnerabilityCounter(ctx context.Context, args Ra
 		// get unfixable vulns
 		unFixableVulnsQuery := search.ConjunctionQuery(query, search.NewQueryBuilder().AddBools(search.Fixable, false).ProtoQuery())
 		unFixableVulns, err := loader.FromQuery(ctx, unFixableVulnsQuery)
+		log.Infof("SHREWS -- ImageVulnerabilityCounter -- unfixable -- %v", unFixableVulns)
 		if err != nil {
 			return nil, err
 		}
