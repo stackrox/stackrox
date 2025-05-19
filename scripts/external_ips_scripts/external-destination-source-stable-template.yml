@@ -36,11 +36,12 @@ spec:
         - name: qa
       containers:
       - args:
+        - /scripts/prepare-tap.sh -a "${TARGET_IP}/32" -o
         - while sleep 30; do nc -zv "${TARGET_IP}" "${PORT}"; done
         command:
         - /bin/sh
         - -c
-        image: quay.io/rhacs-eng/qa-multi-arch:nginx-1-15-4-alpine
+        image: quay.io/${REPOSITORY}/external-connection:${TAG}
         imagePullPolicy: IfNotPresent
         name: external-destination-source
         resources: {}
