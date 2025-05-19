@@ -55,13 +55,11 @@ spec:
   - name: clone-fetch-tags
     value: 'true'
 
-  workspaces:
-  - name: git-auth
-    secret:
-      secretName: '{{ git_auth_secret }}'
-
   pipelineRef:
     name: basic-component-pipeline
+
+  taskRunTemplate:
+    serviceAccountName: build-pipeline-scanner-v4-db
 
   # IMPORTANT: when changing timeouts here, read and follow timeout instructions in operator-bundle-build.yaml.
   timeouts:
@@ -70,3 +68,8 @@ spec:
     # Reserve time for final tasks to run.
     finally: 10m
     pipeline: 1h10m
+
+  workspaces:
+  - name: git-auth
+    secret:
+      secretName: '{{ git_auth_secret }}'
