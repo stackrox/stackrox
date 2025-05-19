@@ -15,6 +15,7 @@ import {
     Title,
 } from '@patternfly/react-core';
 
+import { TimeWindow } from 'constants/timeWindows';
 import useTabs from 'hooks/patternfly/useTabs';
 import useFetchDeployment from 'hooks/useFetchDeployment';
 import usePermissions from 'hooks/usePermissions';
@@ -52,6 +53,7 @@ type DeploymentSideBarProps = {
     defaultDeploymentTab: string;
     urlPagination: UseURLPaginationResult;
     urlSearchFiltering: UseUrlSearchReturn;
+    timeWindow: TimeWindow;
 };
 
 function DeploymentSideBar({
@@ -64,6 +66,7 @@ function DeploymentSideBar({
     defaultDeploymentTab,
     urlPagination,
     urlSearchFiltering,
+    timeWindow,
 }: DeploymentSideBarProps) {
     // component state
     const { hasReadAccess } = usePermissions();
@@ -236,6 +239,7 @@ function DeploymentSideBar({
                                     refetchFlows={refetchFlows}
                                     urlPagination={urlPagination}
                                     urlSearchFiltering={urlSearchFiltering}
+                                    timeWindow={timeWindow}
                                 />
                             )}
                         </TabContent>

@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Divider, Stack, StackItem, ToggleGroup, ToggleGroupItem } from '@patternfly/react-core';
+
+import { TimeWindow } from 'constants/timeWindows';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import { UseURLPaginationResult } from 'hooks/useURLPagination';
 import { UseUrlSearchReturn } from 'hooks/useURLSearch';
@@ -23,6 +25,7 @@ type DeploymentFlowsProps = {
     refetchFlows: () => void;
     urlPagination: UseURLPaginationResult;
     urlSearchFiltering: UseUrlSearchReturn;
+    timeWindow: TimeWindow;
 };
 
 function DeploymentFlows({
@@ -36,6 +39,7 @@ function DeploymentFlows({
     refetchFlows,
     urlPagination,
     urlSearchFiltering,
+    timeWindow,
 }: DeploymentFlowsProps) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isNetworkGraphExternalIpsEnabled = isFeatureFlagEnabled('ROX_NETWORK_GRAPH_EXTERNAL_IPS');
@@ -100,7 +104,7 @@ function DeploymentFlows({
                                 refetchFlows={refetchFlows}
                             />
                         ) : (
-                            <ExternalFlows deploymentId={deploymentId} />
+                            <ExternalFlows deploymentId={deploymentId} timeWindow={timeWindow} />
                         )}
                     </Stack>
                 </StackItem>

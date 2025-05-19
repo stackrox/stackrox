@@ -1,29 +1,32 @@
 import { useCallback } from 'react';
 
+import { TimeWindow } from 'constants/timeWindows';
 import useRestQuery from 'hooks/useRestQuery';
 import useURLPagination from 'hooks/useURLPagination';
 import { getNetworkBaselineExternalStatus } from 'services/NetworkService';
 import { NetworkBaselineExternalStatusResponse } from 'types/networkBaseline.proto';
 import { getTableUIState } from 'utils/getTableUIState';
 
+import { DEFAULT_NETWORK_GRAPH_PAGE_SIZE } from '../NetworkGraph.constants';
+import { timeWindowToISO } from '../utils/timeWindow';
+
 export function useNetworkBaselineStatus(
     deploymentId: string,
-    status: 'ANOMALOUS' | 'BASELINE',
-    initialPerPage = 10
+    timeWindow: TimeWindow,
+    status: 'ANOMALOUS' | 'BASELINE'
 ) {
-    const pagination = useURLPagination(initialPerPage, status.toLowerCase());
+    const pagination = useURLPagination(DEFAULT_NETWORK_GRAPH_PAGE_SIZE, status.toLowerCase());
     const { page, perPage } = pagination;
 
-    const fetch = useCallback(
-        (): Promise<NetworkBaselineExternalStatusResponse> =>
-            getNetworkBaselineExternalStatus(deploymentId, {
-                page,
-                perPage,
-                sortOption: {},
-                searchFilter: {},
-            }),
-        [deploymentId, page, perPage]
-    );
+    const fetch = useCallback((): Promise<NetworkBaselineExternalStatusResponse> => {
+        const fromTimestamp = timeWindowToISO(timeWindow);
+        return getNetworkBaselineExternalStatus(deploymentId, fromTimestamp, {
+            page,
+            perPage,
+            sortOption: {},
+            searchFilter: {},
+        });
+    }, [deploymentId, page, perPage, timeWindow]);
 
     const { data, isLoading, error } = useRestQuery(fetch);
 

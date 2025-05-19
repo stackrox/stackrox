@@ -520,12 +520,13 @@ export function getExternalIpsFlowsMetadata(
 
 export function getNetworkBaselineExternalStatus(
     deploymentId,
+    sinceTimestamp,
     { sortOption, page, perPage, searchFilter }
 ) {
     const params = getListQueryParams({ searchFilter, sortOption, page, perPage });
     return axios
         .get(
-            `${networkBaselineBaseUrl}/${deploymentId}/status/external?since=2014-12-01T06%3A00%3A00.000Z&${params}`
+            `${networkBaselineBaseUrl}/${deploymentId}/status/external?since=${sinceTimestamp}&${params}`
         )
         .then((response) => response.data);
 }

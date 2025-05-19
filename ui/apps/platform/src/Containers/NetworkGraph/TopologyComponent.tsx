@@ -267,6 +267,7 @@ const TopologyComponent = ({
                             defaultDeploymentTab={defaultDeploymentTab}
                             urlPagination={urlPagination}
                             urlSearchFiltering={urlSearchFiltering}
+                            timeWindow={timeWindow}
                         />
                     )}
                     {selectedNode && selectedNode?.data?.type === 'EXTERNAL_GROUP' && (

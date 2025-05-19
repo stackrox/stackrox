@@ -12,6 +12,7 @@ import {
 } from '@patternfly/react-core';
 import pluralize from 'pluralize';
 
+import { TimeWindow } from 'constants/timeWindows';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import { NetworkBaselinePeerStatus } from 'types/networkBaseline.proto';
 
@@ -23,11 +24,12 @@ import { getFlowKey } from '../utils/flowUtils';
 
 type ExternalFlowsProps = {
     deploymentId: string;
+    timeWindow: TimeWindow;
 };
 
-function ExternalFlows({ deploymentId }: ExternalFlowsProps) {
-    const anomalous = useNetworkBaselineStatus(deploymentId, 'ANOMALOUS');
-    const baseline = useNetworkBaselineStatus(deploymentId, 'BASELINE');
+function ExternalFlows({ deploymentId, timeWindow }: ExternalFlowsProps) {
+    const anomalous = useNetworkBaselineStatus(deploymentId, timeWindow, 'ANOMALOUS');
+    const baseline = useNetworkBaselineStatus(deploymentId, timeWindow, 'BASELINE');
 
     const [selectedAnomalous, setSelectedAnomalous] = useState<NetworkBaselinePeerStatus[]>([]);
     const [selectedBaseline, setSelectedBaseline] = useState<NetworkBaselinePeerStatus[]>([]);
