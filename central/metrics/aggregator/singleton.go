@@ -18,8 +18,8 @@ import (
 var (
 	Registry = prometheus.NewRegistry()
 
-	once     sync.Once
-	instance *aggregatorRunner
+	once   sync.Once
+	runner *aggregatorRunner
 
 	log = logging.LoggerForModule()
 )
@@ -39,7 +39,7 @@ func Singleton() interface {
 	Reconfigure(*storage.PrometheusMetricsConfig) error
 } {
 	once.Do(func() {
-		instance = &aggregatorRunner{
+		runner = &aggregatorRunner{
 			stopCh:          make(chan bool),
 			vulnerabilities: vulnerabilities.MakeTrackerConfig(),
 		}
@@ -49,11 +49,11 @@ func Singleton() interface {
 			log.Errorw("Failed to read Prometheus metrics configuration from the DB", logging.Err(err))
 			return
 		}
-		if err := instance.Reconfigure(systemPrivateConfig.GetPrometheusMetricsConfig()); err != nil {
+		if err := runner.Reconfigure(systemPrivateConfig.GetPrometheusMetricsConfig()); err != nil {
 			log.Errorw("Failed to configure Prometheus metrics", logging.Err(err))
 		}
 	})
-	return instance
+	return runner
 }
 
 func (ar *aggregatorRunner) Reconfigure(cfg *storage.PrometheusMetricsConfig) error {
@@ -63,7 +63,7 @@ func (ar *aggregatorRunner) Reconfigure(cfg *storage.PrometheusMetricsConfig) er
 	{
 		vc := cfg.GetVulnerabilities()
 		period := time.Hour * time.Duration(vc.GetGatheringPeriodHours())
-		err := instance.vulnerabilities.Reconfigure(Registry, vc.GetMetricLabels(), period)
+		err := runner.vulnerabilities.Reconfigure(Registry, vc.GetMetricLabels(), period)
 		if err != nil {
 			return err
 		}
@@ -94,7 +94,9 @@ func (ar *aggregatorRunner) Stop() {
 }
 
 func (ar *aggregatorRunner) run(periodCh <-chan time.Duration, track func(context.Context)) {
-	var ticker *time.Ticker
+	// The ticker will be reset immediately when reading from the periodCh.
+	ticker := time.NewTicker(1000 * time.Hour)
+	defer ticker.Stop()
 
 	ctx, cancel := context.WithCancel(
 		sac.WithAllAccess(context.Background()))
@@ -105,20 +107,14 @@ func (ar *aggregatorRunner) run(periodCh <-chan time.Duration, track func(contex
 		case <-ticker.C:
 			track(ctx)
 		case <-ar.stopCh:
+			ticker.Stop()
 			return
 		case period := <-periodCh:
 			if period > 0 {
 				track(ctx)
-				if ticker == nil {
-					ticker = time.NewTicker(period)
-					defer ticker.Stop()
-				} else {
-					ticker.Reset(period)
-				}
+				ticker.Reset(period)
 			} else {
-				if ticker != nil {
-					ticker.Stop()
-				}
+				ticker.Stop()
 			}
 		}
 	}
