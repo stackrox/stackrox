@@ -28,14 +28,14 @@ func TestMakeAggregationKeyInstance(t *testing.T) {
 		return testMetric[label]
 	}
 	t.Run("matching", func(t *testing.T) {
-		key, labels := makeAggregationKeyInstance(
+		key, labels := makeAggregationKey(
 			map[Label][]*Expression{
 				"Cluster":   {{"=", "*al*"}},
 				"CVSS":      {{">", "5"}},
 				"IsFixable": {{"", ""}},
 			},
 			finding, testLabelOrder)
-		assert.Equal(t, metricKey("value|7.4|false"), key)
+		assert.Equal(t, aggregationKey("value|7.4|false"), key)
 		assert.Equal(t, prometheus.Labels{
 			"Cluster":   "value",
 			"CVSS":      "7.4",
@@ -43,18 +43,18 @@ func TestMakeAggregationKeyInstance(t *testing.T) {
 		}, labels)
 	})
 	t.Run("not matching", func(t *testing.T) {
-		key, labels := makeAggregationKeyInstance(
+		key, labels := makeAggregationKey(
 			map[Label][]*Expression{
 				"Cluster":   {{"=", "missing"}},
 				"CVSS":      {{">", "5"}},
 				"IsFixable": {{"", ""}},
 			},
 			finding, testLabelOrder)
-		assert.Equal(t, metricKey(""), key)
+		assert.Equal(t, aggregationKey(""), key)
 		assert.Nil(t, labels)
 	})
 	t.Run("matching second", func(t *testing.T) {
-		key, labels := makeAggregationKeyInstance(
+		key, labels := makeAggregationKey(
 			map[Label][]*Expression{
 				"Cluster": {
 					{"=", "nope"},
@@ -68,7 +68,7 @@ func TestMakeAggregationKeyInstance(t *testing.T) {
 				"IsFixable": {{"", ""}},
 			},
 			finding, testLabelOrder)
-		assert.Equal(t, metricKey("value|7.4|false"), key)
+		assert.Equal(t, aggregationKey("value|7.4|false"), key)
 		assert.Equal(t, prometheus.Labels{
 			"Cluster":   "value",
 			"CVSS":      "7.4",
@@ -76,7 +76,7 @@ func TestMakeAggregationKeyInstance(t *testing.T) {
 		}, labels)
 	})
 	t.Run("no matching with OR", func(t *testing.T) {
-		key, labels := makeAggregationKeyInstance(
+		key, labels := makeAggregationKey(
 			map[Label][]*Expression{
 				"Cluster": {
 					{"=", "nope"},
@@ -90,7 +90,7 @@ func TestMakeAggregationKeyInstance(t *testing.T) {
 				"IsFixable": nil,
 			},
 			finding, testLabelOrder)
-		assert.Equal(t, metricKey(""), key)
+		assert.Equal(t, aggregationKey(""), key)
 		assert.Equal(t, prometheus.Labels(nil), labels)
 	})
 }

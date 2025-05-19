@@ -8,8 +8,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-// matchingLabels yields the labels and the values that match the expressions.
-func matchingLabels(expressions map[Label][]*Expression, finding Finding) iter.Seq2[Label, string] {
+// collectMatchingLabels returns an iterator over the labels and the values that
+// match the expressions.
+func collectMatchingLabels(expressions map[Label][]*Expression, finding Finding) iter.Seq2[Label, string] {
 	return func(yield func(Label, string) bool) {
 		for label, expressions := range expressions {
 			if len(expressions) == 0 {
@@ -39,7 +40,32 @@ func matchingLabels(expressions map[Label][]*Expression, finding Finding) iter.S
 	}
 }
 
-// makeAggregationKeyInstance computes an aggregation key according to the
+type valueOrder struct {
+	int
+	string
+}
+
+type orderedValues []valueOrder
+
+func (ov orderedValues) sort() {
+	slices.SortFunc(ov, func(a, b valueOrder) int {
+		return a.int - b.int
+	})
+}
+
+func (ov orderedValues) join(sep rune) string {
+	ov.sort()
+	sb := strings.Builder{}
+	for _, value := range ov {
+		if sb.Len() > 0 {
+			sb.WriteRune(sep)
+		}
+		sb.WriteString(value.string)
+	}
+	return sb.String()
+}
+
+// makeAggregationKey computes an aggregation key according to the
 // labels from the provided expressions, and the map of the requested labels
 // to their values. The values in the key are sorted according to the provided
 // labelOrder map.
@@ -47,35 +73,22 @@ func matchingLabels(expressions map[Label][]*Expression, finding Finding) iter.S
 // Example:
 //
 //	"Cluster=*prod,Deployment" => "pre-prod|backend", {"Cluster": "pre-prod", "Deployment": "backend")}
-func makeAggregationKeyInstance(expressions map[Label][]*Expression, finding Finding, labelOrder map[Label]int) (metricKey, prometheus.Labels) {
+func makeAggregationKey(expressions map[Label][]*Expression, finding Finding, labelOrder map[Label]int) (aggregationKey, prometheus.Labels) {
 	labels := make(prometheus.Labels)
-	type valueOrder struct {
-		int
-		string
-	}
-	values := []valueOrder{}
-	for label, value := range matchingLabels(expressions, finding) {
+	values := make(orderedValues, len(expressions))
+	for label, value := range collectMatchingLabels(expressions, finding) {
 		labels[string(label)] = value
 		values = append(values, valueOrder{labelOrder[label], value})
 	}
 	if len(labels) != len(expressions) {
 		return "", nil
 	}
-	slices.SortFunc(values, func(a, b valueOrder) int {
-		return a.int - b.int
-	})
-	sb := strings.Builder{}
-	for _, value := range values {
-		if sb.Len() > 0 {
-			sb.WriteRune('|')
-		}
-		sb.WriteString(value.string)
-	}
-	return metricKey(sb.String()), labels
+	return aggregationKey(values.join('|')), labels
 }
 
 // getMetricLabels extracts the metric labels from the filter expressions and
 // sort them according to the labelOrder map values.
+// This makes the labels to appear in the stable order in the Prometheus output.
 func getMetricLabels(expressions map[Label][]*Expression, labelOrder map[Label]int) []string {
 	var labels []string
 	for label := range expressions {

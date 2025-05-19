@@ -19,7 +19,7 @@ type TrackerConfig struct {
 	generator   FindingGenerator
 
 	// metricsConfig can be changed with an API call.
-	metricsConfig    MetricLabelExpressions
+	metricsConfig    MetricLabelsExpressions
 	metricsConfigMux sync.RWMutex
 
 	// periodCh allows for changing the period in runtime.
@@ -61,13 +61,13 @@ func (tc *TrackerConfig) Reconfigure(registry *prometheus.Registry, cfg map[stri
 	return nil
 }
 
-func (tc *TrackerConfig) GetMetricLabelExpressions() MetricLabelExpressions {
+func (tc *TrackerConfig) GetMetricLabelExpressions() MetricLabelsExpressions {
 	tc.metricsConfigMux.RLock()
 	defer tc.metricsConfigMux.RUnlock()
 	return tc.metricsConfig
 }
 
-func (tc *TrackerConfig) SetMetricLabelExpressions(mle MetricLabelExpressions) {
+func (tc *TrackerConfig) SetMetricLabelExpressions(mle MetricLabelsExpressions) {
 	tc.metricsConfigMux.Lock()
 	defer tc.metricsConfigMux.Unlock()
 	tc.metricsConfig = mle
@@ -94,11 +94,11 @@ func MakeTrackFunc(
 ) func(context.Context) {
 
 	return func(ctx context.Context) {
-		result := makeResult(cfg.GetMetricLabelExpressions(), cfg.labelOrder)
+		result := makeAggregator(cfg.GetMetricLabelExpressions(), cfg.labelOrder)
 		for finding := range cfg.generator(ctx) {
 			result.count(finding)
 		}
-		for metric, records := range result.aggregated {
+		for metric, records := range result.result {
 			for _, rec := range records {
 				trackFunc(string(metric), rec.labels, rec.total)
 			}
