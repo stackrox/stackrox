@@ -41,7 +41,7 @@ var (
 	// centralCARotationEnabled is a feature flag for the Central CA rotation feature. Defaults to false because
 	// the feature is still under active development.
 	// TODO: Remove when epic ROX-20262 is complete.
-	centralCARotationEnabled = env.RegisterBooleanSetting(envCentralCARotationEnabled, false)
+	centralCARotationEnabled = env.RegisterBooleanSetting(envCentralCARotationEnabled, true)
 )
 
 // ReconcileCentralTLSExtensions returns an extension that takes care of creating the central-tls and related
