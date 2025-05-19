@@ -78,7 +78,7 @@ func (ar *aggregatorRunner) Reconfigure(cfg *storage.PrometheusMetricsConfig) er
 	}
 	{
 		mle, period := violationsConfig(cfg)
-		if err := runner.violations.Reconfigure(Registry, mle, period); err != nil {
+		if err := ar.violations.Reconfigure(Registry, mle, period); err != nil {
 			return err
 		}
 	}
