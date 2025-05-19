@@ -792,6 +792,7 @@ func (s *flowStoreImpl) removeAndReturnSrcDstFlows(ctx context.Context, orphanWi
 }
 
 func (s *flowStoreImpl) pruneOrphanExternalEntities(ctx context.Context, entityIds []string) error {
+	var totalPruned int64 = 0
 
 	if len(entityIds) != 0 {
 		err := utils.BatchProcess(entityIds, orphanedEntitiesPruningBatchSize, func(entityIds []string) error {
@@ -799,11 +800,16 @@ func (s *flowStoreImpl) pruneOrphanExternalEntities(ctx context.Context, entityI
 			defer s.mutex.Unlock()
 
 			pruneStmt := fmt.Sprintf(pruneOrphanExternalNetworkEntitiesStmt, s.partitionName, s.partitionName)
-			return s.pruneEntities(ctx, pruneStmt, entityIds)
+			nbPruned, err := s.pruneEntities(ctx, pruneStmt, entityIds)
+
+			totalPruned += nbPruned
+			return err
 		})
 		if err != nil {
 			return err
 		}
+
+		log.Info("Pruned %d orphaned discovered entities", totalPruned)
 	}
 
 	return nil
@@ -847,22 +853,22 @@ func (s *flowStoreImpl) pruneAndReturnFlows(ctx context.Context, deleteStmt stri
 	return s.readIdsFromRows(rows)
 }
 
-func (s *flowStoreImpl) pruneEntities(ctx context.Context, deleteStmt string, entityIds []string) error {
-	conn, release, err := s.acquireConn(ctx, ops.Remove, "NetworkFlow")
+func (s *flowStoreImpl) pruneEntities(ctx context.Context, deleteStmt string, entityIds []string) (int64, error) {
+	conn, release, err := s.acquireConn(ctx, ops.RemoveMany, "DiscoveredNetworkEntity")
 	if err != nil {
-		return err
+		return 0, err
 	}
 	defer release()
 
 	ctx, cancel := context.WithTimeout(ctx, deleteTimeout)
 	defer cancel()
 
-	_, err = conn.Exec(ctx, deleteStmt, entityIds)
+	ct, err := conn.Exec(ctx, deleteStmt, entityIds)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
-	return nil
+	return ct.RowsAffected(), nil
 }
 
 // RemoveStaleFlows - remove stale duplicate network flows
