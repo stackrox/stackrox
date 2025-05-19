@@ -2,10 +2,10 @@ package common
 
 import (
 	"context"
-	"errors"
 	"iter"
 	"regexp"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -25,6 +25,8 @@ type MetricLabelsExpressions map[MetricName]map[Label][]*Expression
 
 type aggregationKey string // e.g. IMPORTANT_VULNERABILITY_SEVERITY|true
 
+var ErrStopIterator = errors.New("stopped")
+
 // validateMetricName ensures the name is alnum_.
 func validateMetricName(name string) error {
 	if len(name) == 0 {
@@ -41,4 +43,13 @@ func Bind2nd[A any, B any, RV any](f func(A, B) RV, b B) func(A) RV {
 	return func(a A) RV {
 		return f(a, b)
 	}
+}
+
+// MakeLabelOrderMap makes the label order lookup map.
+func MakeLabelOrderMap(labels []Label) map[Label]int {
+	result := make(map[Label]int, len(labels))
+	for i, label := range labels {
+		result[label] = i + 1
+	}
+	return result
 }

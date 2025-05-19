@@ -11,24 +11,24 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 )
 
-var labelOrder = map[common.Label]int{
-	"Cluster":          1,
-	"Namespace":        2,
-	"Deployment":       3,
-	"ImageID":          4,
-	"ImageRegistry":    5,
-	"ImageRemote":      6,
-	"ImageTag":         7,
-	"Component":        8,
-	"ComponentVersion": 9,
-	"CVE":              10,
-	"CVSS":             11,
-	"OperatingSystem":  12,
-	"Severity":         13,
-	"SeverityV2":       14,
-	"SeverityV3":       15,
-	"IsFixable":        16,
-}
+var labelOrder = common.MakeLabelOrderMap([]common.Label{
+	"Cluster",
+	"Namespace",
+	"Deployment",
+	"ImageID",
+	"ImageRegistry",
+	"ImageRemote",
+	"ImageTag",
+	"Component",
+	"ComponentVersion",
+	"CVE",
+	"CVSS",
+	"OperatingSystem",
+	"Severity",
+	"SeverityV2",
+	"SeverityV3",
+	"IsFixable",
+})
 
 func MakeTrackerConfig() *common.TrackerConfig {
 	return common.MakeTrackerConfig("vulnerabilities", "aggregated CVEs",
@@ -47,7 +47,7 @@ func trackVulnerabilityMetrics(ctx context.Context, ds deploymentDS.DataStore) i
 			}
 			for finding := range vulnerabitilies(images, deployment) {
 				if !yield(finding) {
-					return nil
+					return common.ErrStopIterator
 				}
 			}
 			return nil
