@@ -203,17 +203,11 @@ func (d *datastoreImpl) UpsertConfig(ctx context.Context, config *storage.Config
 		}
 	}
 	if platformComponentConfig := config.GetPlatformComponentConfig(); platformComponentConfig != nil {
-		oldConf, _, err := d.GetPlatformComponentConfig(ctx)
+		platformConfig, err := d.UpsertPlatformComponentConfigRules(ctx, config.GetPlatformComponentConfig().GetRules())
 		if err != nil {
 			return err
 		}
-		if oldConf != nil {
-			if !protoutils.SlicesEqual(oldConf.GetRules(), config.GetPlatformComponentConfig().GetRules()) {
-				config.PlatformComponentConfig.NeedsReevaluation = true
-			} else {
-				config.PlatformComponentConfig.NeedsReevaluation = oldConf.NeedsReevaluation
-			}
-		}
+		config.PlatformComponentConfig = platformConfig
 	}
 
 	upsertErr := d.store.Upsert(ctx, config)
