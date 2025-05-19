@@ -21,9 +21,9 @@ repositories {
 
 def grpcVersion = '1.69.0'
 // If the proto versions are changed, be sure it is also changed in make/protogen.mk.
-def protobufVersion = '4.30.2'
+def protobufVersion = '4.31.0'
 def nettyTcNativeVersion = '2.0.61.Final'
-def fabric8Version = '7.2.0'
+def fabric8Version = '7.3.0'
 def jacksonVersion = '2.14.2'
 
 protobuf {
@@ -76,7 +76,7 @@ dependencies {
     implementation platform("org.spockframework:spock-bom:2.3-groovy-4.0")
     implementation "org.spockframework:spock-core"
     implementation "org.spockframework:spock-junit4"
-    implementation 'io.rest-assured:rest-assured:5.5.1'
+    implementation 'io.rest-assured:rest-assured:5.5.2'
     testImplementation group: 'org.yaml', name: 'snakeyaml', version: '2.4'
     implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.5.18'
     testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: jacksonVersion

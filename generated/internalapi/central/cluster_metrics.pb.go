@@ -24,11 +24,12 @@ const (
 // ClusterMetrics defines a set of metrics, which are collected by Sensor and
 // send to Central.
 type ClusterMetrics struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	NodeCount     int64                  `protobuf:"varint,1,opt,name=node_count,json=nodeCount,proto3" json:"node_count,omitempty"`       // The number of nodes in the cluster accessible by Sensor.
-	CpuCapacity   int64                  `protobuf:"varint,2,opt,name=cpu_capacity,json=cpuCapacity,proto3" json:"cpu_capacity,omitempty"` // The total cpu capacity of all nodes accessible by Sensor.
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                     protoimpl.MessageState `protogen:"open.v1"`
+	NodeCount                 int64                  `protobuf:"varint,1,opt,name=node_count,json=nodeCount,proto3" json:"node_count,omitempty"`                                                  // The number of nodes in the cluster accessible by Sensor.
+	CpuCapacity               int64                  `protobuf:"varint,2,opt,name=cpu_capacity,json=cpuCapacity,proto3" json:"cpu_capacity,omitempty"`                                            // The total cpu capacity of all nodes accessible by Sensor.
+	ComplianceOperatorVersion string                 `protobuf:"bytes,3,opt,name=compliance_operator_version,json=complianceOperatorVersion,proto3" json:"compliance_operator_version,omitempty"` // Compliance operator version discovered by this Sensor.
+	unknownFields             protoimpl.UnknownFields
+	sizeCache                 protoimpl.SizeCache
 }
 
 func (x *ClusterMetrics) Reset() {
@@ -75,15 +76,23 @@ func (x *ClusterMetrics) GetCpuCapacity() int64 {
 	return 0
 }
 
+func (x *ClusterMetrics) GetComplianceOperatorVersion() string {
+	if x != nil {
+		return x.ComplianceOperatorVersion
+	}
+	return ""
+}
+
 var File_internalapi_central_cluster_metrics_proto protoreflect.FileDescriptor
 
 const file_internalapi_central_cluster_metrics_proto_rawDesc = "" +
 	"\n" +
-	")internalapi/central/cluster_metrics.proto\x12\acentral\"R\n" +
+	")internalapi/central/cluster_metrics.proto\x12\acentral\"\x92\x01\n" +
 	"\x0eClusterMetrics\x12\x1d\n" +
 	"\n" +
 	"node_count\x18\x01 \x01(\x03R\tnodeCount\x12!\n" +
-	"\fcpu_capacity\x18\x02 \x01(\x03R\vcpuCapacityB\x1fZ\x1d./internalapi/central;centralb\x06proto3"
+	"\fcpu_capacity\x18\x02 \x01(\x03R\vcpuCapacity\x12>\n" +
+	"\x1bcompliance_operator_version\x18\x03 \x01(\tR\x19complianceOperatorVersionB\x1fZ\x1d./internalapi/central;centralb\x06proto3"
 
 var (
 	file_internalapi_central_cluster_metrics_proto_rawDescOnce sync.Once

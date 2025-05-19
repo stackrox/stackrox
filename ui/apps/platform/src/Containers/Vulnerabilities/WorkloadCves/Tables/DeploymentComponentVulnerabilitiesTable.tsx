@@ -26,24 +26,32 @@ import AdvisoryLinkOrText from './AdvisoryLinkOrText';
 export { imageMetadataContextFragment };
 export type { ImageMetadataContext, DeploymentComponentVulnerability };
 
-export const deploymentComponentVulnerabilitiesFragment = gql`
-    fragment DeploymentComponentVulnerabilities on ImageComponent {
-        name
-        version
-        location
-        source
-        layerIndex
-        imageVulnerabilities(query: $query) {
-            severity
-            cvss
-            scoreVersion
-            fixedByVersion
-            discoveredAtImage
-            publishedOn
-            pendingExceptionCount: exceptionCount(requestStatus: $statusesForExceptionCount)
+// After release, replace temporary function
+// with deploymentComponentVulnerabilitiesFragment
+// that has unconditional advisory property.
+export function convertToFlatDeploymentComponentVulnerabilitiesFragment(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    isFlattenCveDataEnabled: boolean // ROX_FLATTEN_CVE_DATA
+) {
+    return gql`
+        fragment DeploymentComponentVulnerabilities on ImageComponent {
+            name
+            version
+            location
+            source
+            layerIndex
+            imageVulnerabilities(query: $query) {
+                severity
+                cvss
+                scoreVersion
+                fixedByVersion
+                discoveredAtImage
+                publishedOn
+                pendingExceptionCount: exceptionCount(requestStatus: $statusesForExceptionCount)
+            }
         }
-    }
-`;
+    `;
+}
 
 const sortFields = ['Image', 'Component'];
 const defaultSortOption = { field: 'Image', direction: 'asc' } as const;

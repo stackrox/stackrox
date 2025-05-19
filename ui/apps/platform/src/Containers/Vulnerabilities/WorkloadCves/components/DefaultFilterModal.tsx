@@ -18,6 +18,7 @@ function analyticsTrackDefaultFilters(
             SEVERITY_IMPORTANT: filters.SEVERITY.includes('Important') ? 1 : 0,
             SEVERITY_MODERATE: filters.SEVERITY.includes('Moderate') ? 1 : 0,
             SEVERITY_LOW: filters.SEVERITY.includes('Low') ? 1 : 0,
+            SEVERITY_UNKNOWN: filters.SEVERITY.includes('Unknown') ? 1 : 0,
             CVE_STATUS_FIXABLE: filters.FIXABLE.includes('Fixable') ? 1 : 0,
             CVE_STATUS_NOT_FIXABLE: filters.FIXABLE.includes('Not fixable') ? 1 : 0,
         },
@@ -137,6 +138,14 @@ function DefaultFilterModal({ defaultFilters, setLocalStorage }: DefaultFilterMo
                                 isChecked={severityValues.includes('Low')}
                                 onChange={(_event, isChecked) => {
                                     handleSeverityChange('Low', isChecked);
+                                }}
+                            />
+                            <Checkbox
+                                label="Unknown"
+                                id="unknown-severity"
+                                isChecked={severityValues.includes('Unknown')}
+                                onChange={(_event, isChecked) => {
+                                    handleSeverityChange('Unknown', isChecked);
                                 }}
                             />
                         </FormGroup>
