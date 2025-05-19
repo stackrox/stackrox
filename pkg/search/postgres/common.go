@@ -360,7 +360,8 @@ func (q *query) AsSQL() string {
 	if env.PostgresQueryLogger.BooleanSetting() {
 		log.Info(queryString)
 		if strings.Contains(queryString, "from image_components") {
-			panic("wrong tables")
+			log.Info("SHREWS STACK")
+			debug.Stack()
 		}
 	}
 	return queryString
