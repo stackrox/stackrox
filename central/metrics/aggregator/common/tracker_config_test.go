@@ -112,8 +112,7 @@ func TestMakeTrackFunc(t *testing.T) {
 		makeTestGatherFunc(testData),
 	)
 	cfg.metricsConfig = makeTestMetricLabelExpressions(t)
-	track := MakeTrackFunc(
-		cfg,
+	track := cfg.MakeTrackFunc(
 		func(metricName string, labels prometheus.Labels, total int) {
 			result[metricName] = append(result[metricName], &aggregatedRecord{labels, total})
 		},
