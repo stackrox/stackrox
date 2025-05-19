@@ -11,7 +11,8 @@ export const reportJobStatuses = {
     DOWNLOAD_GENERATED: 'DOWNLOAD_GENERATED',
     EMAIL_DELIVERED: 'EMAIL_DELIVERED',
     ERROR: 'ERROR',
-    PARTIAL_ERROR: 'PARTIAL_ERROR',
+    PARTIAL_SCAN_ERROR_DOWNLOAD: 'PARTIAL_SCAN_ERROR_DOWNLOAD',
+    PARTIAL_SCAN_ERROR_EMAIL: 'PARTIAL_SCAN_ERROR_EMAIL',
 } as const;
 
 export type ReportJobStatus = ValueOf<typeof reportJobStatuses>;
@@ -19,10 +20,11 @@ export type ReportJobStatus = ValueOf<typeof reportJobStatuses>;
 export const reportJobStatusLabels: Record<ReportJobStatus, string> = {
     WAITING: 'Waiting',
     PREPARING: 'Preparing',
-    DOWNLOAD_GENERATED: 'Download generated',
-    EMAIL_DELIVERED: 'Email delivered',
-    ERROR: 'Error',
-    PARTIAL_ERROR: 'Partial error',
+    DOWNLOAD_GENERATED: 'Report ready for download',
+    EMAIL_DELIVERED: 'Report successfully sent',
+    ERROR: 'Report failed to generate',
+    PARTIAL_SCAN_ERROR_DOWNLOAD: 'Partial report ready for download',
+    PARTIAL_SCAN_ERROR_EMAIL: 'Partial Report successfully sent',
 };
 
 function isReportJobStatus(value: string): value is ReportJobStatus {

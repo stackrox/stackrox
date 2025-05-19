@@ -66,8 +66,8 @@ function ReportJobsTable<T extends Snapshot>({
                     <Th width={25} sort={getSortParams('Compliance Report Completed Time')}>
                         Completed
                     </Th>
-                    <Th width={25}>Status</Th>
-                    <Th width={50}>Requester</Th>
+                    <Th>Status</Th>
+                    <Th>Requester</Th>
                     <Th>
                         <span className="pf-v5-screen-reader">Row actions</span>
                     </Th>
