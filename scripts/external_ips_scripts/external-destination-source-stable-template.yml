@@ -36,10 +36,11 @@ spec:
         - name: qa
       containers:
       - args:
-        - /scripts/prepare-tap.sh -a "${TARGET_IP}/32" -o
-        - nc -lk "${TARGET_IP}" "${PORT}" &
-        - sleep 2
-        - while sleep 30; do nc -zv "${TARGET_IP}" "${PORT}"; done
+          - |
+            /scripts/prepare-tap.sh -a "${TARGET_IP}/32" -o
+            nc -lk "${TARGET_IP}" "${PORT}" &
+            sleep 2
+            while sleep 30; do nc -zv "${TARGET_IP}" "${PORT}"; done
         command:
         - /bin/bash
         - -c
