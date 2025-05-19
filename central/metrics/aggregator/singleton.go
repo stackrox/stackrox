@@ -56,15 +56,19 @@ func Singleton() interface {
 	return runner
 }
 
+func vulnerabilitiesConfig(cfg *storage.PrometheusMetricsConfig) (map[string]*storage.PrometheusMetricsConfig_LabelExpressions, time.Duration) {
+	vc := cfg.GetVulnerabilities()
+	period := time.Hour * time.Duration(vc.GetGatheringPeriodHours())
+	return vc.GetMetricLabels(), period
+}
+
 func (ar *aggregatorRunner) Reconfigure(cfg *storage.PrometheusMetricsConfig) error {
 	ar.trackersMux.Lock()
 	defer ar.trackersMux.Unlock()
 
 	{
-		vc := cfg.GetVulnerabilities()
-		period := time.Hour * time.Duration(vc.GetGatheringPeriodHours())
-		err := runner.vulnerabilities.Reconfigure(Registry, vc.GetMetricLabels(), period)
-		if err != nil {
+		mle, period := vulnerabilitiesConfig(cfg)
+		if err := runner.vulnerabilities.Reconfigure(Registry, mle, period); err != nil {
 			return err
 		}
 	}
@@ -107,7 +111,6 @@ func (ar *aggregatorRunner) run(periodCh <-chan time.Duration, track func(contex
 		case <-ticker.C:
 			track(ctx)
 		case <-ar.stopCh:
-			ticker.Stop()
 			return
 		case period := <-periodCh:
 			if period > 0 {
