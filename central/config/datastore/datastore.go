@@ -261,7 +261,10 @@ func (d *datastoreImpl) UpsertPlatformComponentConfigRules(ctx context.Context, 
 		return nil, sac.ErrResourceAccessDenied
 	}
 
-	config, _, err := d.store.Get(ctx)
+	config, found, err := d.store.Get(ctx)
+	if !found {
+		config = &storage.Config{}
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -291,13 +294,13 @@ func (d *datastoreImpl) UpsertPlatformComponentConfigRules(ctx context.Context, 
 	}
 	slices.SortFunc(config.GetPlatformComponentConfig().GetRules(), ruleNameSortFunc)
 	slices.SortFunc(parsedRules, ruleNameSortFunc)
-	if !protoutils.SlicesEqual(config.GetPlatformComponentConfig().GetRules(), parsedRules) {
-		config.PlatformComponentConfig.NeedsReevaluation = true
-	} else if config.GetPlatformComponentConfig() == nil {
+	if config.GetPlatformComponentConfig() == nil {
 		config.PlatformComponentConfig = &storage.PlatformComponentConfig{
 			Rules:             parsedRules,
 			NeedsReevaluation: true,
 		}
+	} else if !protoutils.SlicesEqual(config.GetPlatformComponentConfig().GetRules(), parsedRules) {
+		config.PlatformComponentConfig.NeedsReevaluation = true
 	}
 	config.GetPlatformComponentConfig().Rules = parsedRules
 	err = d.store.Upsert(ctx, config)
