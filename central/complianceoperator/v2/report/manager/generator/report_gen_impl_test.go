@@ -165,7 +165,7 @@ func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
 		s.Assert().Contains(err.Error(), errUnableToUpdateSnapshotOnGenerationSuccessStr)
 	})
 
-	s.Run("Fail to upsert Snapshot (partial error)", func() {
+	s.Run("Fail to upsert Snapshot (partial error for email)", func() {
 		s.snapshotDS.EXPECT().GetSnapshot(gomock.Any(), gomock.Any()).Times(1).
 			Return(&storage.ComplianceOperatorReportSnapshotV2{
 				ReportStatus: &storage.ComplianceOperatorReportStatus{},
@@ -174,9 +174,29 @@ func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
 		s.formatter.EXPECT().FormatCSVReport(gomock.Any(), gomock.Any()).Times(1)
 		s.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(),
 			gomock.Cond[*storage.ComplianceOperatorReportSnapshotV2](func(target *storage.ComplianceOperatorReportSnapshotV2) bool {
-				return storage.ComplianceOperatorReportStatus_PARTIAL_ERROR == target.GetReportStatus().GetRunState()
+				return storage.ComplianceOperatorReportStatus_PARTIAL_SCAN_ERROR_EMAIL == target.GetReportStatus().GetRunState()
 			})).Times(1).Return(errors.New("some error"))
 		err := s.reportGen.ProcessReportRequest(newFakeRequestWithFailedCluster())
+		s.Require().Error(err)
+		s.Assert().Contains(err.Error(), errUnableToUpdateSnapshotOnGenerationSuccessStr)
+	})
+
+	s.Run("Fail to upsert Snapshot (partial error for download)", func() {
+		s.snapshotDS.EXPECT().GetSnapshot(gomock.Any(), gomock.Any()).Times(1).
+			Return(&storage.ComplianceOperatorReportSnapshotV2{
+				ReportStatus: &storage.ComplianceOperatorReportStatus{},
+			}, true, nil)
+		s.resultsAggregator.EXPECT().GetReportData(gomock.Any()).Times(1).Return(&report.Results{})
+		s.formatter.EXPECT().FormatCSVReport(gomock.Any(), gomock.Any()).Times(1)
+		s.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(),
+			gomock.Cond[*storage.ComplianceOperatorReportSnapshotV2](func(target *storage.ComplianceOperatorReportSnapshotV2) bool {
+				return storage.ComplianceOperatorReportStatus_PARTIAL_SCAN_ERROR_DOWNLOAD == target.GetReportStatus().GetRunState()
+			})).Times(1).Return(errors.New("some error"))
+		req := newFakeDownloadRequest()
+		req.FailedClusters = map[string]*storage.ComplianceOperatorReportSnapshotV2_FailedCluster{
+			"cluster-2": {},
+		}
+		err := s.reportGen.ProcessReportRequest(req)
 		s.Require().Error(err)
 		s.Assert().Contains(err.Error(), errUnableToUpdateSnapshotOnGenerationSuccessStr)
 	})
