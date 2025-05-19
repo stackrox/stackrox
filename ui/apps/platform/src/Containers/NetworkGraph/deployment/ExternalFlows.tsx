@@ -118,6 +118,10 @@ function ExternalFlows({ deploymentId, timeWindow }: ExternalFlowsProps) {
 
         try {
             await markNetworkBaselineStatuses({ deploymentId, networkBaselines: payload });
+
+            anomalous.pagination.setPage(1);
+            baseline.pagination.setPage(1);
+
             await Promise.all([anomalous.refetch(), baseline.refetch()]);
             setSelectedAnomalous([]);
             setSelectedBaseline([]);
