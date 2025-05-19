@@ -45,7 +45,7 @@ import CvesByStatusSummaryCard, {
 import ImageVulnerabilitiesTable, {
     ImageVulnerability,
     defaultColumns,
-    imageVulnerabilitiesFragment,
+    convertToFlatImageVulnerabilitiesFragment, // imageVulnerabilitiesFragment
     tableId,
 } from '../Tables/ImageVulnerabilitiesTable';
 import {
@@ -68,28 +68,35 @@ import CompletedExceptionRequestModal from '../../components/ExceptionRequestMod
 import useExceptionRequestModal from '../../hooks/useExceptionRequestModal';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 
-export const imageVulnerabilitiesQuery = gql`
-    ${imageMetadataContextFragment}
-    ${resourceCountByCveSeverityAndStatusFragment}
-    ${imageVulnerabilitiesFragment}
-    query getCVEsForImage(
-        $id: ID!
-        $query: String!
-        $pagination: Pagination!
-        $statusesForExceptionCount: [String!]
-    ) {
-        image(id: $id) {
-            ...ImageMetadataContext
-            imageVulnerabilityCount(query: $query)
-            imageCVECountBySeverity(query: $query) {
-                ...ResourceCountsByCVESeverityAndStatus
-            }
-            imageVulnerabilities(query: $query, pagination: $pagination) {
-                ...ImageVulnerabilityFields
+// After release, replace temporary function
+// with imageVulnerabilitiesQuery
+// that has unconditional imageVulnerabilitiesFragment.
+export function convertToFlatImageVulnerabilitiesQuery(
+    isFlattenCveDataEnabled: boolean // ROX_FLATTEN_CVE_DATA
+) {
+    return gql`
+        ${imageMetadataContextFragment}
+        ${resourceCountByCveSeverityAndStatusFragment}
+        ${convertToFlatImageVulnerabilitiesFragment(isFlattenCveDataEnabled)}
+        query getCVEsForImage(
+            $id: ID!
+            $query: String!
+            $pagination: Pagination!
+            $statusesForExceptionCount: [String!]
+        ) {
+            image(id: $id) {
+                ...ImageMetadataContext
+                imageVulnerabilityCount(query: $query)
+                imageCVECountBySeverity(query: $query) {
+                    ...ResourceCountsByCVESeverityAndStatus
+                }
+                imageVulnerabilities(query: $query, pagination: $pagination) {
+                    ...ImageVulnerabilityFields
+                }
             }
         }
-    }
-`;
+    `;
+}
 
 const defaultSortFields = ['CVE', 'CVSS', 'Severity'];
 
@@ -133,6 +140,9 @@ function ImagePageVulnerabilities({
     });
 
     // TODO Split metadata, counts, and vulnerabilities into separate queries
+    const isFlattenCveDataEnabled = isFeatureFlagEnabled('ROX_FLATTEN_CVE_DATA');
+    const imageVulnerabilitiesQuery =
+        convertToFlatImageVulnerabilitiesQuery(isFlattenCveDataEnabled);
     const { data, loading, error } = useQuery<
         {
             image: ImageMetadataContext & {
@@ -209,7 +219,6 @@ function ImagePageVulnerabilities({
 
     // Although we will delete conditional code for EPSS and flatten after release,
     // keep searchFilterConfigWithFeatureFlagDependency for Advisory in the future.
-    const isFlattenCveDataEnabled = isFeatureFlagEnabled('ROX_FLATTEN_CVE_DATA');
     const imageCVESearchFilterConfig =
         convertToFlatImageCveSearchFilterConfig(isFlattenCveDataEnabled);
     const searchFilterConfigWithFeatureFlagDependency = [
