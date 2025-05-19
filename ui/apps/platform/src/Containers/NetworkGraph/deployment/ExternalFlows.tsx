@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import {
+    Alert,
     DropdownItem,
     ExpandableSection,
     ExpandableSectionToggle,
@@ -14,7 +15,9 @@ import pluralize from 'pluralize';
 
 import { TimeWindow } from 'constants/timeWindows';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
-import { NetworkBaselinePeerStatus } from 'types/networkBaseline.proto';
+import { markNetworkBaselineStatuses } from 'services/NetworkService';
+import { NetworkBaselinePeerStatus, PeerStatus } from 'types/networkBaseline.proto';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import FlowsTableHeaderText from '../common/FlowsTableHeaderText';
 import { FlowBulkDropdown } from '../components/FlowBulkDropdown';
@@ -36,6 +39,8 @@ function ExternalFlows({ deploymentId, timeWindow }: ExternalFlowsProps) {
 
     const [isAnomalousBulkActionOpen, setIsAnomalousBulkActionOpen] = useState(false);
     const [isBaselineBulkActionOpen, setIsBaselineBulkActionOpen] = useState(false);
+
+    const [networkFlowError, setNetworkFlowError] = useState('');
 
     const { isOpen: isAnomalousFlowsExpanded, onToggle: toggleAnomalousFlowsExpandable } =
         useSelectToggle(true);
@@ -99,11 +104,50 @@ function ExternalFlows({ deploymentId, timeWindow }: ExternalFlowsProps) {
             return isSelecting ? [...withoutPage, ...flows] : withoutPage;
         });
     }
-    function markSelectedAsAnomalous() {}
-    function addSelectedToBaseline() {}
+
+    async function updateFlowsStatus(
+        flows: NetworkBaselinePeerStatus | NetworkBaselinePeerStatus[],
+        targetStatus: PeerStatus
+    ) {
+        const selected = Array.isArray(flows) ? flows : [flows];
+        if (!selected.length) {
+            return;
+        }
+
+        const payload = selected.map((f) => ({ ...f, status: targetStatus }));
+
+        try {
+            await markNetworkBaselineStatuses({ deploymentId, networkBaselines: payload });
+            await Promise.all([anomalous.refetch(), baseline.refetch()]);
+            setSelectedAnomalous([]);
+            setSelectedBaseline([]);
+            setNetworkFlowError('');
+        } catch (err) {
+            setNetworkFlowError(getAxiosErrorMessage(err));
+        }
+    }
+
+    async function markSelectedAsAnomalous() {
+        await updateFlowsStatus(selectedBaseline, 'ANOMALOUS');
+    }
+
+    async function addSelectedToBaseline() {
+        await updateFlowsStatus(selectedAnomalous, 'BASELINE');
+    }
 
     return (
         <Stack>
+            {networkFlowError && (
+                <StackItem>
+                    <Alert
+                        isInline
+                        variant="danger"
+                        title={networkFlowError}
+                        component="p"
+                        className="pf-v5-u-mb-sm"
+                    />
+                </StackItem>
+            )}
             <StackItem>
                 <Toolbar className="pf-v5-u-p-0">
                     <ToolbarContent className="pf-v5-u-px-0">
@@ -156,12 +200,12 @@ function ExternalFlows({ deploymentId, timeWindow }: ExternalFlowsProps) {
                                 onSelectAll={selectAllAnomalousFlows}
                                 isFlowSelected={isFlowSelected}
                                 onRowSelect={onSelectFlow}
-                                rowActions={[
+                                rowActions={(flow) => [
                                     {
                                         title: <span>Add to baseline</span>,
-                                        onClick: (event) => {
-                                            event.preventDefault();
-                                            // handle action
+                                        onClick: async (e) => {
+                                            e.preventDefault();
+                                            await updateFlowsStatus(flow, 'BASELINE');
                                         },
                                     },
                                 ]}
@@ -204,12 +248,12 @@ function ExternalFlows({ deploymentId, timeWindow }: ExternalFlowsProps) {
                                 onSelectAll={selectAllBaselineFlows}
                                 isFlowSelected={isFlowSelected}
                                 onRowSelect={onSelectFlow}
-                                rowActions={[
+                                rowActions={(flow) => [
                                     {
                                         title: <span>Mark as anomalous</span>,
-                                        onClick: (event) => {
-                                            event.preventDefault();
-                                            // handle action
+                                        onClick: async (e) => {
+                                            e.preventDefault();
+                                            await updateFlowsStatus(flow, 'ANOMALOUS');
                                         },
                                     },
                                 ]}

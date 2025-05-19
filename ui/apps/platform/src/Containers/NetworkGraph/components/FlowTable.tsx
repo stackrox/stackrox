@@ -16,7 +16,7 @@ type FlowTableProps = {
     tableState: TableUIState<NetworkBaselinePeerStatus>;
     selectedPageAll: boolean;
     onSelectAll: (sel: boolean) => void;
-    rowActions: IAction[];
+    rowActions: (flow: NetworkBaselinePeerStatus) => IAction[];
     isFlowSelected: (flow: NetworkBaselinePeerStatus) => boolean;
     onRowSelect: (flow: NetworkBaselinePeerStatus, rowIndex: number, select: boolean) => void;
 };
@@ -87,7 +87,7 @@ export function FlowTable({
                                         flow.peer.protocol === 'L4_PROTOCOL_TCP' ? 'TCP' : 'UDP'
                                     }`}</Td>
                                     <Td isActionCell>
-                                        <ActionsColumn items={rowActions} />
+                                        <ActionsColumn items={rowActions(flow)} />
                                     </Td>
                                 </Tr>
                             ))}

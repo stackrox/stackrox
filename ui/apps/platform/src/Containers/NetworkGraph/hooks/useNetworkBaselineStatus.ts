@@ -28,7 +28,7 @@ export function useNetworkBaselineStatus(
         });
     }, [deploymentId, page, perPage, timeWindow]);
 
-    const { data, isLoading, error } = useRestQuery(fetch);
+    const { data, isLoading, error, refetch } = useRestQuery(fetch);
 
     const tableState = getTableUIState({
         isLoading,
@@ -40,5 +40,5 @@ export function useNetworkBaselineStatus(
     const flows = status === 'ANOMALOUS' ? (data?.anomalous ?? []) : (data?.baseline ?? []);
     const total = status === 'ANOMALOUS' ? (data?.totalAnomalous ?? 0) : (data?.totalBaseline ?? 0);
 
-    return { flows, total, tableState, pagination };
+    return { flows, total, tableState, pagination, refetch };
 }
