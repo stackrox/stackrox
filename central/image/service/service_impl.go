@@ -685,9 +685,9 @@ func shouldUpdateExistingScan(imgExists bool, existingImg *storage.Image, reques
 }
 
 // buildNames returns a slice containing the known image names from the various parameters.
-func buildNames(srcImageName *storage.ImageName, existingNames []*storage.ImageName, metadata *storage.ImageMetadata) []*storage.ImageName {
-	names := []*storage.ImageName{srcImageName}
-	names = append(names, existingNames...)
+func buildNames(requestImageName *storage.ImageName, existingImageNames []*storage.ImageName, metadata *storage.ImageMetadata) []*storage.ImageName {
+	names := []*storage.ImageName{requestImageName}
+	names = append(names, existingImageNames...)
 
 	// Add a mirror name if exists.
 	if mirror := metadata.GetDataSource().GetMirror(); mirror != "" {
