@@ -11,7 +11,7 @@ import (
 
 // rhelCPE represents the expected pattern to identify a CPE which indicates a RHEL major version.
 // The purpose of this is to identify the major version represented by this CPE.
-var rhelCPE = regexp.MustCompile(`cpe:2\.3:o:redhat:enterprise_linux:(\d+)(?:\.\d+)*:\*:\*:\*:\*:\*:\*:\*`)
+var rhelCPE = regexp.MustCompile(`^cpe:2\.3:o:redhat:enterprise_linux:(\d+)(?:\.\d+)*:\*:\*:\*:\*:\*:\*:\*$`)
 
 // Distributions retrieves the currently known distributions from the database.
 //
