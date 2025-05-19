@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/central/config/store"
 	pgStore "github.com/stackrox/rox/central/config/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoutils"
@@ -262,10 +261,8 @@ func (d *datastoreImpl) UpsertPlatformComponentConfigRules(ctx context.Context, 
 		return nil, sac.ErrResourceAccessDenied
 	}
 
-	config, found, err := d.store.Get(ctx)
-	if !found {
-		return nil, errox.NotFound
-	} else if err != nil {
+	config, _, err := d.store.Get(ctx)
+	if err != nil {
 		return nil, err
 	}
 
