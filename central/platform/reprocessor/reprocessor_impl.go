@@ -2,6 +2,7 @@ package reprocessor
 
 import (
 	"context"
+	"fmt"
 	"sync/atomic"
 
 	"github.com/pkg/errors"
@@ -123,6 +124,7 @@ func (pr *platformReprocessorImpl) reprocessAlerts() error {
 
 	var alerts []*storage.Alert
 	for {
+		fmt.Println("Processing alerts")
 		if pr.stopSignal.IsDone() {
 			log.Info("Stop called, stopping platform reprocessor")
 			break
@@ -167,6 +169,7 @@ func (pr *platformReprocessorImpl) reprocessDeployments() error {
 	}
 
 	for {
+		fmt.Println("Processing deployments")
 		if pr.stopSignal.IsDone() {
 			log.Info("Stop called, stopping platform reprocessor")
 			break
