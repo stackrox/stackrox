@@ -2,7 +2,6 @@ package matcher
 
 import (
 	"context"
-	"fmt"
 	"regexp"
 
 	configDS "github.com/stackrox/rox/central/config/datastore"
@@ -25,9 +24,6 @@ func New(configDatastore configDS.DataStore) PlatformMatcher {
 	allAccessCtx := sac.WithAllAccess(context.Background())
 	regexes := []*regexp.Regexp{}
 	config, _, _ := configDatastore.GetPlatformComponentConfig(allAccessCtx)
-	fmt.Println(config)
-	fmt.Println(config.GetRules())
-	fmt.Println(config.NeedsReevaluation)
 	for _, rule := range config.GetRules() {
 		regex, _ := regexp.Compile(rule.GetName())
 		regexes = append(regexes, regex)
