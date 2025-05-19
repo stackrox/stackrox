@@ -9,9 +9,11 @@ import (
 	"time"
 
 	"github.com/hashicorp/golang-lru/v2/expirable"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/config/store"
 	pgStore "github.com/stackrox/rox/central/config/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoutils"
@@ -263,24 +265,55 @@ func (d *datastoreImpl) UpsertPlatformComponentConfigRules(ctx context.Context, 
 	if ok, err := administrationSAC.WriteAllowed(ctx); err != nil {
 		return nil, err
 	} else if !ok {
-		return nil, nil
+		return nil, sac.ErrResourceAccessDenied
 	}
 
 	config, found, err := d.store.Get(ctx)
-	if !found || err != nil {
+	if !found {
+		return nil, errox.NotFound
+	} else if err != nil {
 		return nil, err
 	}
-	slices.SortFunc(config.PlatformComponentConfig.Rules, ruleNameSortFunc)
-	slices.SortFunc(rules, ruleNameSortFunc)
-	if !protoutils.SlicesEqual(config.PlatformComponentConfig.Rules, rules) {
-		config.PlatformComponentConfig.NeedsReevaluation = true
+
+	systemRuleExists := false
+	layeredProductsRuleExists := false
+	parsedRules := make([]*storage.PlatformComponentConfig_Rule, 0)
+	for _, rule := range rules {
+		if rule.Name == defaultPlatformConfigSystemRule.Name && !strings.EqualFold(rule.NamespaceRule.Regex, defaultPlatformConfigSystemRule.NamespaceRule.Regex) {
+			// Prevent override of system rule
+			return nil, errors.New("System rule cannot be overwritten")
+		} else if rule.Name == defaultPlatformConfigSystemRule.Name && strings.EqualFold(rule.NamespaceRule.Regex, defaultPlatformConfigSystemRule.NamespaceRule.Regex) {
+			// If for some reason they're trying to duplicate the system rule, we prevent that
+			if systemRuleExists {
+				continue
+			}
+			systemRuleExists = true
+		}
+		if rule.Name == defaultPlatformConfigLayeredProductsRule.Name {
+			// If for some reason somebody makes a rule with an identical name to the layered products rule, we only take the first occurrence of it.
+			if layeredProductsRuleExists {
+				continue
+			}
+			layeredProductsRuleExists = true
+		}
+		parsedRules = append(parsedRules, rule)
 	}
-	config.PlatformComponentConfig.Rules = rules
+	slices.SortFunc(config.GetPlatformComponentConfig().GetRules(), ruleNameSortFunc)
+	slices.SortFunc(parsedRules, ruleNameSortFunc)
+	if !protoutils.SlicesEqual(config.GetPlatformComponentConfig().GetRules(), parsedRules) {
+		config.PlatformComponentConfig.NeedsReevaluation = true
+	} else if config.GetPlatformComponentConfig() == nil {
+		config.PlatformComponentConfig = &storage.PlatformComponentConfig{
+			Rules:             parsedRules,
+			NeedsReevaluation: true,
+		}
+	}
+	config.GetPlatformComponentConfig().Rules = parsedRules
 	err = d.store.Upsert(ctx, config)
 	if err != nil {
 		return nil, err
 	}
-	return config.PlatformComponentConfig, nil
+	return config.GetPlatformComponentConfig(), nil
 }
 
 func ruleNameSortFunc(a *storage.PlatformComponentConfig_Rule, b *storage.PlatformComponentConfig_Rule) int {
