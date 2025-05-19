@@ -33,13 +33,11 @@ const (
 // Important: The function assumes that input certificates have valid time ranges.
 func DetermineAction(primary, secondary *x509.Certificate, current time.Time) Action {
 	startTime := primary.NotBefore
-	validityDuration := primary.NotAfter.Sub(primary.NotBefore)
-	fifthOfValidityDuration := validityDuration / 5
 
-	// Add secondary CA after 3/5 of the primary's validity period has elapsed.
-	addSecondaryCATime := startTime.Add(3 * fifthOfValidityDuration)
-	// Promote secondary to primary after 4/5 of the primary's validity period has elapsed.
-	promoteSecondaryCATime := startTime.Add(4 * fifthOfValidityDuration)
+	// HACK: add secondary CA after 5 minutes (considering the 5 minute backdating)
+	addSecondaryCATime := startTime.Add(10 * time.Minute)
+	// HACK: promote secondary CA to primary after 10 minutes
+	promoteSecondaryCATime := startTime.Add(15 * time.Minute)
 
 	if secondary == nil {
 		if current.After(promoteSecondaryCATime) {
