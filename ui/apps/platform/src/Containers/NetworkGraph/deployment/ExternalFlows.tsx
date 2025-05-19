@@ -1,65 +1,101 @@
-import React, { useCallback } from 'react';
+import React from 'react';
 
-import { UseURLPaginationResult } from 'hooks/useURLPagination';
-import useRestQuery from 'hooks/useRestQuery';
-import { UseUrlSearchReturn } from 'hooks/useURLSearch';
-import { getExternalIpsFlowsMetadata } from 'services/NetworkService';
-import { ExternalNetworkFlowsMetadataResponse } from 'types/networkFlow.proto';
-import { getTableUIState } from 'utils/getTableUIState';
+import {
+    ExpandableSection,
+    ExpandableSectionToggle,
+    Stack,
+    StackItem,
+    Toolbar,
+    ToolbarContent,
+    ToolbarItem,
+} from '@patternfly/react-core';
+import pluralize from 'pluralize';
 
-import ExternalIpsTable from '../external/ExternalIpsTable';
-import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
+import { TimeWindow } from 'constants/timeWindows';
+import useSelectToggle from 'hooks/patternfly/useSelectToggle';
+
+import FlowsTableHeaderText from '../common/FlowsTableHeaderText';
+import { FlowTable } from '../components/FlowTable';
+import { useNetworkBaselineStatus } from '../hooks/useNetworkBaselineStatus';
 
 type ExternalFlowsProps = {
-    deploymentName: string;
-    scopeHierarchy: NetworkScopeHierarchy;
-    urlSearchFiltering: UseUrlSearchReturn;
-    urlPagination: UseURLPaginationResult;
-    onExternalIPSelect: (externalIP: string) => void;
+    deploymentId: string;
+    timeWindow: TimeWindow;
 };
 
-function ExternalFlows({
-    deploymentName,
-    scopeHierarchy,
-    urlSearchFiltering,
-    urlPagination,
-    onExternalIPSelect,
-}: ExternalFlowsProps) {
-    const clusterId = scopeHierarchy.cluster.id;
-    const { namespaces } = scopeHierarchy;
-    const { searchFilter } = urlSearchFiltering;
-    const { page, perPage } = urlPagination;
-    const fetchExternalIpsFlowsMetadata =
-        useCallback((): Promise<ExternalNetworkFlowsMetadataResponse> => {
-            return getExternalIpsFlowsMetadata(clusterId, namespaces, [deploymentName], {
-                sortOption: {},
-                page,
-                perPage,
-                advancedFilters: searchFilter,
-            });
-        }, [page, perPage, clusterId, deploymentName, namespaces, searchFilter]);
+function ExternalFlows({ deploymentId, timeWindow }: ExternalFlowsProps) {
+    const anomalous = useNetworkBaselineStatus(deploymentId, timeWindow, 'ANOMALOUS');
+    const baseline = useNetworkBaselineStatus(deploymentId, timeWindow, 'BASELINE');
 
-    const {
-        data: externalIpsFlowsMetadata,
-        isLoading,
-        error,
-    } = useRestQuery(fetchExternalIpsFlowsMetadata);
+    const { isOpen: isAnomalousFlowsExpanded, onToggle: toggleAnomalousFlowsExpandable } =
+        useSelectToggle(true);
+    const { isOpen: isBaselineFlowsExpanded, onToggle: toggleBaselineFlowsExpandable } =
+        useSelectToggle(true);
 
-    const tableState = getTableUIState({
-        isLoading,
-        data: externalIpsFlowsMetadata?.entities,
-        error,
-        searchFilter,
-    });
+    const totalAnomalous = anomalous.total;
+    const totalBaseline = baseline.total;
 
     return (
-        <ExternalIpsTable
-            onExternalIPSelect={onExternalIPSelect}
-            tableState={tableState}
-            totalEntities={externalIpsFlowsMetadata?.totalEntities ?? 0}
-            urlPagination={urlPagination}
-            urlSearchFiltering={urlSearchFiltering}
-        />
+        <Stack>
+            <StackItem>
+                <Toolbar className="pf-v5-u-p-0">
+                    <ToolbarContent className="pf-v5-u-px-0">
+                        <ToolbarItem>
+                            <FlowsTableHeaderText
+                                type={'total'}
+                                numFlows={anomalous.total + baseline.total}
+                            />
+                        </ToolbarItem>
+                    </ToolbarContent>
+                </Toolbar>
+            </StackItem>
+            <StackItem>
+                <Stack hasGutter>
+                    <StackItem>
+                        <ExpandableSectionToggle
+                            isExpanded={isAnomalousFlowsExpanded}
+                            onToggle={(isExpanded) => toggleAnomalousFlowsExpandable(isExpanded)}
+                            toggleId={'anomalous-expandable-toggle'}
+                            contentId={'anomalous-expandable-content'}
+                        >
+                            {`${totalAnomalous} anomalous ${pluralize('flow', totalAnomalous)}`}
+                        </ExpandableSectionToggle>
+                        <ExpandableSection
+                            isExpanded={isAnomalousFlowsExpanded}
+                            isDetached
+                            toggleId={'anomalous-expandable-toggle'}
+                            contentId={'anomalous-expandable-content'}
+                        >
+                            <FlowTable
+                                emptyStateMessage="No anomalous flows."
+                                tableState={anomalous.tableState}
+                            />
+                        </ExpandableSection>
+                    </StackItem>
+                    <StackItem>
+                        <ExpandableSectionToggle
+                            isExpanded={isBaselineFlowsExpanded}
+                            onToggle={(isExpanded) => toggleBaselineFlowsExpandable(isExpanded)}
+                            toggleId={'baseline-expandable-toggle'}
+                            contentId={'baseline-expandable-content'}
+                        >
+                            {`${totalBaseline} baseline ${pluralize('flow', totalBaseline)}`}
+                        </ExpandableSectionToggle>
+                        <ExpandableSection
+                            isDetached
+                            toggleId={'baseline-expandable-toggle'}
+                            contentId={'baseline-expandable-content'}
+                            isExpanded={isBaselineFlowsExpanded}
+                        >
+                            <FlowTable
+                                emptyStateMessage="No baseline flows."
+                                tableState={baseline.tableState}
+                            />
+                        </ExpandableSection>
+                    </StackItem>
+                </Stack>
+            </StackItem>
+        </Stack>
     );
 }
 

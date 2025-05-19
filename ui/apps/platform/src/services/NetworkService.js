@@ -518,6 +518,19 @@ export function getExternalIpsFlowsMetadata(
         .then((response) => response.data);
 }
 
+export function getNetworkBaselineExternalStatus(
+    deploymentId,
+    sinceTimestamp,
+    { sortOption, page, perPage, searchFilter }
+) {
+    const params = getListQueryParams({ searchFilter, sortOption, page, perPage });
+    return axios
+        .get(
+            `${networkBaselineBaseUrl}/${deploymentId}/status/external?since=${sinceTimestamp}&${params}`
+        )
+        .then((response) => response.data);
+}
+
 /**
  * Fetches currently configured CIDR blocks.
  *
