@@ -82,11 +82,11 @@ func (suite *PipelineTestSuite) TestComplianceInfoMsgFromSensor() {
 }
 
 func (suite *PipelineTestSuite) TestComplianceInfoMinimalRequiredVersion() {
-	minVersion := env.ComplianceMinimalSupportedVersion.DefaultValue()
+	defaultVersion := env.ComplianceMinimalSupportedVersion.DefaultValue()
 
-	patchVersion := minVersion.IncPatch()
-	minorVersion := minVersion.IncMinor()
-	majorVersion := minVersion.IncMajor()
+	patchVersion := defaultVersion.IncPatch()
+	minorVersion := defaultVersion.IncMinor()
+	majorVersion := defaultVersion.IncMajor()
 
 	testCases := map[string]struct {
 		operatorVersion string
@@ -102,10 +102,10 @@ func (suite *PipelineTestSuite) TestComplianceInfoMinimalRequiredVersion() {
 		"older operatorVersion": {
 			operatorVersion: "v1.5.1",
 			expectedStatus:  storage.COStatus_UNHEALTHY,
-			expectedErrors:  []string{fmt.Sprintf("The installed compliance operator version \"1.5.1\" is unsupported. The minimum required version is %q.", minVersion.String())},
+			expectedErrors:  []string{fmt.Sprintf("The installed compliance operator version \"1.5.1\" is unsupported. The minimum required version is %q.", defaultVersion.String())},
 		},
 		"min operatorVersion": {
-			operatorVersion: minVersion.String(),
+			operatorVersion: defaultVersion.String(),
 			expectedStatus:  storage.COStatus_HEALTHY,
 		},
 		"newer patch operatorVersion": {
@@ -123,7 +123,7 @@ func (suite *PipelineTestSuite) TestComplianceInfoMinimalRequiredVersion() {
 		"older operatorVersion without prefix": {
 			operatorVersion: "1.5.1",
 			expectedStatus:  storage.COStatus_UNHEALTHY,
-			expectedErrors:  []string{fmt.Sprintf("The installed compliance operator version \"1.5.1\" is unsupported. The minimum required version is %q.", minVersion.String())},
+			expectedErrors:  []string{fmt.Sprintf("The installed compliance operator version \"1.5.1\" is unsupported. The minimum required version is %q.", defaultVersion.String())},
 		},
 		"newer operatorVersion without prefix": {
 			operatorVersion: "99.99.99",
@@ -133,18 +133,24 @@ func (suite *PipelineTestSuite) TestComplianceInfoMinimalRequiredVersion() {
 			operatorVersion: "v1.2.0",
 			envVersion:      "not-valid",
 			expectedStatus:  storage.COStatus_UNHEALTHY,
-			expectedErrors:  []string{fmt.Sprintf("The installed compliance operator version \"1.2.0\" is unsupported. The minimum required version is %q.", minVersion.String())},
+			expectedErrors:  []string{fmt.Sprintf("The installed compliance operator version \"1.2.0\" is unsupported. The minimum required version is %q.", defaultVersion.String())},
 		},
 		"newer operatorVersion from env version": {
-			operatorVersion: "v1.2.0",
-			envVersion:      "v1.1.0",
+			operatorVersion: "v2.2.0",
+			envVersion:      "v2.1.0",
 			expectedStatus:  storage.COStatus_HEALTHY,
 		},
 		"older operatorVersion from env version": {
-			operatorVersion: "v1.1.0",
+			operatorVersion: "v2.1.0",
+			envVersion:      "v2.2.0",
+			expectedStatus:  storage.COStatus_UNHEALTHY,
+			expectedErrors:  []string{"The installed compliance operator version \"2.1.0\" is unsupported. The minimum required version is \"2.2.0\"."},
+		},
+		"env version below minimum uses default version": {
+			operatorVersion: "v1.2.0",
 			envVersion:      "v1.2.0",
 			expectedStatus:  storage.COStatus_UNHEALTHY,
-			expectedErrors:  []string{"The installed compliance operator version \"1.1.0\" is unsupported. The minimum required version is \"1.2.0\"."},
+			expectedErrors:  []string{fmt.Sprintf("The installed compliance operator version \"1.2.0\" is unsupported. The minimum required version is %q.", defaultVersion.String())},
 		},
 	}
 

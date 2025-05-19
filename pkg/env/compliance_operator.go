@@ -28,6 +28,6 @@ var (
 
 	// ComplianceMinimalSupportedVersion specifies the minimum version of the compliance operator that is supported by StackRox.
 	// This value can be customized via the ROX_COMPLIANCE_MINIMAL_SUPPORTED_OPERATOR_VERSION environment variable.
-	// If the environment variable is unset or contains an invalid version, the default value "v1.6.0" will be used.
-	ComplianceMinimalSupportedVersion = RegisterVersionSetting("ROX_COMPLIANCE_MINIMAL_SUPPORTED_OPERATOR_VERSION", "v1.6.0")
+	// If the environment variable is unset, contains an invalid version, or is lower than the default value, the default value "v1.6.0" will be used.
+	ComplianceMinimalSupportedVersion = RegisterVersionSetting("ROX_COMPLIANCE_MINIMAL_SUPPORTED_OPERATOR_VERSION", "v1.6.0", "v1.6.0")
 )
