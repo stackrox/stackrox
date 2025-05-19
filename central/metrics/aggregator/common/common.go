@@ -6,7 +6,6 @@ import (
 	"iter"
 	"regexp"
 
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -21,43 +20,10 @@ type MetricName string          // Prometheus metric name.
 type Finding func(Label) string // Lazy map.
 type FindingGenerator func(context.Context) iter.Seq[Finding]
 
-// MetricLabelExpressions is the parsed aggregation configuration.
-type MetricLabelExpressions map[MetricName]map[Label][]*Expression
+// MetricLabelsExpressions is the parsed aggregation configuration.
+type MetricLabelsExpressions map[MetricName]map[Label][]*Expression
 
-type metricKey string // e.g. IMPORTANT_VULNERABILITY_SEVERITY|true
-
-// record is a single gauge metric record.
-type record struct {
-	labels prometheus.Labels
-	total  int
-}
-
-// result is the aggregation result.
-type result struct {
-	aggregated map[MetricName]map[metricKey]*record
-	mle        MetricLabelExpressions
-	labelOrder map[Label]int
-}
-
-func makeResult(mle MetricLabelExpressions, labelOrder map[Label]int) *result {
-	aggregated := make(map[MetricName]map[metricKey]*record)
-	for metric := range mle {
-		aggregated[metric] = make(map[metricKey]*record)
-	}
-	return &result{aggregated, mle, labelOrder}
-}
-
-func (r *result) count(finding Finding) {
-	for metric, expressions := range r.mle {
-		if key, labels := makeAggregationKeyInstance(expressions, finding, r.labelOrder); key != "" {
-			if rec, ok := r.aggregated[metric][key]; ok {
-				rec.total++
-			} else {
-				r.aggregated[metric][key] = &record{labels, 1}
-			}
-		}
-	}
-}
+type aggregationKey string // e.g. IMPORTANT_VULNERABILITY_SEVERITY|true
 
 // validateMetricName ensures the name is alnum_.
 func validateMetricName(name string) error {

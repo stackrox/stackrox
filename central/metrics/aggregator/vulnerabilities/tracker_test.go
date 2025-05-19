@@ -107,7 +107,7 @@ func TestTrack(t *testing.T) {
 	}
 
 	var actual = make(map[string][]*labelsTotal)
-	metricExpressions := common.MetricLabelExpressions{
+	metricExpressions := common.MetricLabelsExpressions{
 		"Severity_total": {
 			"Severity": nil,
 		},
