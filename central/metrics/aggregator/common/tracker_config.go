@@ -25,6 +25,7 @@ type TrackerConfig struct {
 
 	// periodCh allows for changing the period in runtime.
 	periodCh chan time.Duration
+	sync.Once
 }
 
 // MakeTrackerConfig initializes a tracker configuration without any period or metric expressions.
@@ -40,7 +41,7 @@ func MakeTrackerConfig(category, description string, labelOrder map[Label]int, g
 	}
 }
 
-func (tc *TrackerConfig) GetPeriodCh() <-chan time.Duration {
+func (tc *TrackerConfig) GetPeriodCh() chan time.Duration {
 	return tc.periodCh
 }
 
@@ -94,8 +95,7 @@ func (tc *TrackerConfig) registerMetrics(registry *prometheus.Registry, period t
 // MakeTrackFunc returns a function that calls trackFunc on every metric
 // returned by gatherFunc. cfgGetter returns the current configuration, which
 // may dynamically change.
-func MakeTrackFunc(
-	cfg *TrackerConfig,
+func (cfg *TrackerConfig) MakeTrackFunc(
 	trackFunc func(metricName string, labels prometheus.Labels, total int),
 ) func(context.Context) {
 
