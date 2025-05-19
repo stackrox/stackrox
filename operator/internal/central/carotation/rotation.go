@@ -30,14 +30,14 @@ const (
 func DetermineAction(primary, secondary *x509.Certificate, current time.Time) Action {
 	startTime := primary.NotBefore
 
-	// HACK: add secondary CA after 5 minutes
-	addSecondaryCATime := startTime.Add(5 * time.Minute)
+	// HACK: add secondary CA after 5 minutes (considering the 5 minute backdating)
+	addSecondaryCATime := startTime.Add(10 * time.Minute)
 	if current.After(addSecondaryCATime) && secondary == nil {
 		return AddSecondary
 	}
 
 	// HACK: promote secondary CA to primary after 10 minutes
-	promoteSecondaryCATime := startTime.Add(10 * time.Minute)
+	promoteSecondaryCATime := startTime.Add(15 * time.Minute)
 	if current.After(promoteSecondaryCATime) {
 		return PromoteSecondary
 	}
