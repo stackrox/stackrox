@@ -848,7 +848,7 @@ func (s *flowStoreImpl) pruneAndReturnFlows(ctx context.Context, deleteStmt stri
 }
 
 func (s *flowStoreImpl) pruneEntities(ctx context.Context, deleteStmt string, entityIds []string) error {
-	conn, release, err := s.acquireConn(ctx, ops.Remove, "NetworkFlow")
+	conn, release, err := s.acquireConn(ctx, ops.RemoveMany, "DiscoveredNetworkEntity")
 	if err != nil {
 		return err
 	}
