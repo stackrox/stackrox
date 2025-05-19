@@ -1,5 +1,6 @@
 import uniq from 'lodash/uniq';
 
+import { NetworkBaselinePeerStatus } from 'types/networkBaseline.proto';
 import {
     ExternalNetworkFlowProperties,
     L4Protocol,
@@ -358,4 +359,15 @@ export function getDeploymentInfoForExternalEntity(
     }
 
     return null;
+}
+
+// Unique key used for tracking flow selection across pages
+export function getFlowKey(flow: NetworkBaselinePeerStatus): string {
+    const {
+        entity: { id },
+        port,
+        protocol,
+        ingress,
+    } = flow.peer;
+    return `${id}_${port}_${protocol}_${ingress ? 'ingress' : 'egress'}`;
 }

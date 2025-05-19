@@ -58,9 +58,9 @@ type NetworkBaselineStatusPeer = {
     ingress: boolean;
 };
 
-type PeerStatus = 'BASELINE' | 'ANOMALOUS';
+export type PeerStatus = 'BASELINE' | 'ANOMALOUS';
 
-type NetworkBaselinePeerStatus = {
+export type NetworkBaselinePeerStatus = {
     peer: NetworkBaselineStatusPeer;
     status: PeerStatus;
 };

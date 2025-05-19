@@ -1,100 +1,104 @@
-import React, { useCallback } from 'react';
+import React, { useState } from 'react';
 import {
+    DropdownItem,
+    ExpandableSection,
+    ExpandableSectionToggle,
+    Flex,
     Stack,
     StackItem,
     Toolbar,
     ToolbarContent,
     ToolbarItem,
-    ExpandableSection,
-    Pagination,
 } from '@patternfly/react-core';
-import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
-
-import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
-import useRestQuery from 'hooks/useRestQuery';
-import useSelectToggle from 'hooks/patternfly/useSelectToggle';
-import { getNetworkBaselineExternalStatus } from 'services/NetworkService';
-import { NetworkBaselineExternalStatusResponse } from 'types/networkBaseline.proto';
-import { getTableUIState } from 'utils/getTableUIState';
-
 import pluralize from 'pluralize';
-import useURLPagination from 'hooks/useURLPagination';
+
+import useSelectToggle from 'hooks/patternfly/useSelectToggle';
+import { NetworkBaselinePeerStatus } from 'types/networkBaseline.proto';
+
 import FlowsTableHeaderText from '../common/FlowsTableHeaderText';
+import { FlowBulkDropdown } from '../components/FlowBulkDropdown';
+import { FlowTable } from '../components/FlowTable';
+import { useNetworkBaselineStatus } from '../hooks/useNetworkBaselineStatus';
+import { getFlowKey } from '../utils/flowUtils';
 
 type ExternalFlowsProps = {
     deploymentId: string;
 };
 
 function ExternalFlows({ deploymentId }: ExternalFlowsProps) {
+    const anomalous = useNetworkBaselineStatus(deploymentId, 'ANOMALOUS');
+    const baseline = useNetworkBaselineStatus(deploymentId, 'BASELINE');
+
+    const [selectedAnomalous, setSelectedAnomalous] = useState<NetworkBaselinePeerStatus[]>([]);
+    const [selectedBaseline, setSelectedBaseline] = useState<NetworkBaselinePeerStatus[]>([]);
+
+    const [isAnomalousBulkActionOpen, setIsAnomalousBulkActionOpen] = useState(false);
+    const [isBaselineBulkActionOpen, setIsBaselineBulkActionOpen] = useState(false);
+
     const { isOpen: isAnomalousFlowsExpanded, onToggle: toggleAnomalousFlowsExpandable } =
         useSelectToggle(true);
     const { isOpen: isBaselineFlowsExpanded, onToggle: toggleBaselineFlowsExpandable } =
         useSelectToggle(true);
 
-    const {
-        page: anomalousPage,
-        perPage: anomalousPerPage,
-        setPage: anomalousSetPage,
-        setPerPage: anomalousSetPerPage,
-    } = useURLPagination(10, 'anomalous');
+    function setFlowSelected(flow: NetworkBaselinePeerStatus, isSelecting = true) {
+        const key = getFlowKey(flow);
+        const setter = flow.status === 'ANOMALOUS' ? setSelectedAnomalous : setSelectedBaseline;
 
-    const {
-        page: baselinePage,
-        perPage: baselinePerPage,
-        setPage: baselineSetPage,
-        setPerPage: baselineSetPerPage,
-    } = useURLPagination(10, 'baseline');
+        setter((prev) => {
+            const without = prev.filter((f) => getFlowKey(f) !== key);
+            return isSelecting ? [...without, flow] : without;
+        });
+    }
 
-    const fetchExternalFlowsAnomalous = useCallback(
-        (): Promise<NetworkBaselineExternalStatusResponse> =>
-            getNetworkBaselineExternalStatus(deploymentId, {
-                sortOption: {},
-                page: anomalousPage,
-                perPage: anomalousPerPage,
-                searchFilter: {},
-            }),
-        [anomalousPage, anomalousPerPage, deploymentId]
-    );
-    const {
-        data: responseAnomalous,
-        isLoading: isLoadingAnomalous,
-        error: anomalousError,
-    } = useRestQuery(fetchExternalFlowsAnomalous);
+    const totalAnomalous = anomalous.total;
+    const totalBaseline = baseline.total;
 
-    const fetchExternalFlowsBaseline = useCallback(
-        (): Promise<NetworkBaselineExternalStatusResponse> =>
-            getNetworkBaselineExternalStatus(deploymentId, {
-                sortOption: {},
-                page: baselinePage,
-                perPage: baselinePerPage,
-                searchFilter: {},
-            }),
-        [baselinePage, baselinePerPage, deploymentId]
-    );
-    const {
-        data: responseBaseline,
-        isLoading: isLoadingBaseline,
-        error: baselineError,
-    } = useRestQuery(fetchExternalFlowsBaseline);
+    const anomalousFlows = anomalous.flows;
+    const baselineFlows = baseline.flows;
 
-    const anomalousTableState = getTableUIState({
-        isLoading: isLoadingAnomalous,
-        data: responseAnomalous?.anomalous,
-        error: anomalousError,
-        searchFilter: {},
-    });
+    const areAllPageAnomalousSelected =
+        anomalousFlows.length > 0 && anomalousFlows.every(isFlowSelected);
+    const areAllPageBaselineSelected =
+        baselineFlows.length > 0 && baselineFlows.every(isFlowSelected);
 
-    const baselineTableState = getTableUIState({
-        isLoading: isLoadingBaseline,
-        data: responseBaseline?.baseline,
-        error: baselineError,
-        searchFilter: {},
-    });
+    function selectAllBaselineFlows(isSelecting = true) {
+        togglePageFlows(baselineFlows, isSelecting);
+    }
 
-    const totalAnomalous = responseAnomalous?.totalAnomalous ?? 0;
-    const totalBaseline = responseBaseline?.totalBaseline ?? 0;
+    function selectAllAnomalousFlows(isSelecting = true) {
+        togglePageFlows(anomalousFlows, isSelecting);
+    }
 
-    const totalFlows = totalAnomalous + totalBaseline;
+    function isFlowSelected(flow: NetworkBaselinePeerStatus) {
+        const key = getFlowKey(flow);
+        return (flow.status === 'ANOMALOUS' ? selectedAnomalous : selectedBaseline).some(
+            (f) => getFlowKey(f) === key
+        );
+    }
+
+    function onSelectFlow(
+        flow: NetworkBaselinePeerStatus,
+        _rowIndex: number,
+        isSelecting: boolean
+    ) {
+        setFlowSelected(flow, isSelecting);
+    }
+
+    function togglePageFlows(flows: NetworkBaselinePeerStatus[], isSelecting = true) {
+        if (!flows.length) {
+            return;
+        }
+
+        const setter = flows[0].status === 'ANOMALOUS' ? setSelectedAnomalous : setSelectedBaseline;
+
+        setter((prev) => {
+            const pageKeys = new Set(flows.map(getFlowKey));
+            const withoutPage = prev.filter((f) => !pageKeys.has(getFlowKey(f)));
+            return isSelecting ? [...withoutPage, ...flows] : withoutPage;
+        });
+    }
+    function markSelectedAsAnomalous() {}
+    function addSelectedToBaseline() {}
 
     return (
         <Stack>
@@ -102,7 +106,10 @@ function ExternalFlows({ deploymentId }: ExternalFlowsProps) {
                 <Toolbar className="pf-v5-u-p-0">
                     <ToolbarContent className="pf-v5-u-px-0">
                         <ToolbarItem>
-                            <FlowsTableHeaderText type={'total'} numFlows={totalFlows} />
+                            <FlowsTableHeaderText
+                                type={'total'}
+                                numFlows={anomalous.total + baseline.total}
+                            />
                         </ToolbarItem>
                     </ToolbarContent>
                 </Toolbar>
@@ -110,127 +117,101 @@ function ExternalFlows({ deploymentId }: ExternalFlowsProps) {
             <StackItem>
                 <Stack hasGutter>
                     <StackItem>
+                        <Flex justifyContent={{ default: 'justifyContentSpaceBetween' }}>
+                            <ExpandableSectionToggle
+                                isExpanded={isAnomalousFlowsExpanded}
+                                onToggle={(isExpanded) =>
+                                    toggleAnomalousFlowsExpandable(isExpanded)
+                                }
+                                toggleId={'anomalous-expandable-toggle'}
+                                contentId={'anomalous-expandable-content'}
+                            >
+                                {`${totalAnomalous} anomalous ${pluralize('flow', totalAnomalous)}`}
+                            </ExpandableSectionToggle>
+                            <FlowBulkDropdown
+                                selectedCount={selectedAnomalous.length}
+                                isOpen={isAnomalousBulkActionOpen}
+                                setOpen={setIsAnomalousBulkActionOpen}
+                                onClear={() => setSelectedAnomalous([])}
+                            >
+                                <DropdownItem onClick={addSelectedToBaseline}>
+                                    Add to baseline
+                                </DropdownItem>
+                            </FlowBulkDropdown>
+                        </Flex>
                         <ExpandableSection
-                            toggleText={`Anomalous ${pluralize('flow', totalAnomalous)}`}
-                            onToggle={(e, isExpanded) => toggleAnomalousFlowsExpandable(isExpanded)}
                             isExpanded={isAnomalousFlowsExpanded}
+                            isDetached
+                            toggleId={'anomalous-expandable-toggle'}
+                            contentId={'anomalous-expandable-content'}
                         >
-                            <ToolbarContent>
-                                <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
-                                    <Pagination
-                                        itemCount={totalAnomalous}
-                                        page={anomalousPage}
-                                        perPage={anomalousPerPage}
-                                        onSetPage={(_, newPage) => anomalousSetPage(newPage)}
-                                        onPerPageSelect={(_, newPerPage) =>
-                                            anomalousSetPerPage(newPerPage)
-                                        }
-                                        isCompact
-                                    />
-                                </ToolbarItem>
-                            </ToolbarContent>
-                            <Table variant="compact">
-                                <Thead>
-                                    <Tr>
-                                        <Th>Entity</Th>
-                                        <Th>Direction</Th>
-                                        <Th>Port / protocol</Th>
-                                    </Tr>
-                                </Thead>
-                                <TbodyUnified
-                                    tableState={anomalousTableState}
-                                    colSpan={3}
-                                    errorProps={{
-                                        title: 'There was an error',
-                                    }}
-                                    emptyProps={{
-                                        message: 'No anomalous flows.',
-                                    }}
-                                    renderer={({ data }) => (
-                                        <Tbody>
-                                            {data.map((flow) => {
-                                                return (
-                                                    <Tr key={flow.peer.entity.id}>
-                                                        <Td dataLabel="Entity">
-                                                            {flow.peer.entity.name}
-                                                        </Td>
-                                                        <Td dataLabel="Direction">
-                                                            {flow.peer.ingress
-                                                                ? `Ingress`
-                                                                : `Egress`}
-                                                        </Td>
-                                                        <Td dataLabel="Port / protocol">
-                                                            {`${flow.peer.port} / ${flow.peer.protocol === 'L4_PROTOCOL_TCP' ? 'TCP' : 'UDP'}`}
-                                                        </Td>
-                                                    </Tr>
-                                                );
-                                            })}
-                                        </Tbody>
-                                    )}
-                                />
-                            </Table>
+                            <FlowTable
+                                pagination={anomalous.pagination}
+                                flowCount={totalAnomalous}
+                                emptyStateMessage="No anomalous flows."
+                                tableState={anomalous.tableState}
+                                selectedPageAll={areAllPageAnomalousSelected}
+                                onSelectAll={selectAllAnomalousFlows}
+                                isFlowSelected={isFlowSelected}
+                                onRowSelect={onSelectFlow}
+                                rowActions={[
+                                    {
+                                        title: <span>Add to baseline</span>,
+                                        onClick: (event) => {
+                                            event.preventDefault();
+                                            // handle action
+                                        },
+                                    },
+                                ]}
+                            />
                         </ExpandableSection>
                     </StackItem>
                     <StackItem>
+                        <Flex justifyContent={{ default: 'justifyContentSpaceBetween' }}>
+                            <ExpandableSectionToggle
+                                isExpanded={isBaselineFlowsExpanded}
+                                onToggle={(isExpanded) => toggleBaselineFlowsExpandable(isExpanded)}
+                                toggleId={'baseline-expandable-toggle'}
+                                contentId={'baseline-expandable-content'}
+                            >
+                                {`${totalBaseline} baseline ${pluralize('flow', totalBaseline)}`}
+                            </ExpandableSectionToggle>
+                            <FlowBulkDropdown
+                                selectedCount={selectedBaseline.length}
+                                isOpen={isBaselineBulkActionOpen}
+                                setOpen={setIsBaselineBulkActionOpen}
+                                onClear={() => setSelectedBaseline([])}
+                            >
+                                <DropdownItem onClick={markSelectedAsAnomalous}>
+                                    Mark as anomalous
+                                </DropdownItem>
+                            </FlowBulkDropdown>
+                        </Flex>
                         <ExpandableSection
-                            toggleText={`Baseline ${pluralize('flow', totalBaseline)}`}
-                            onToggle={(e, isExpanded) => toggleBaselineFlowsExpandable(isExpanded)}
+                            isDetached
+                            toggleId={'baseline-expandable-toggle'}
+                            contentId={'baseline-expandable-content'}
                             isExpanded={isBaselineFlowsExpanded}
                         >
-                            <ToolbarContent>
-                                <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
-                                    <Pagination
-                                        itemCount={totalBaseline}
-                                        page={baselinePage}
-                                        perPage={baselinePerPage}
-                                        onSetPage={(_, newPage) => baselineSetPage(newPage)}
-                                        onPerPageSelect={(_, newPerPage) =>
-                                            baselineSetPerPage(newPerPage)
-                                        }
-                                        isCompact
-                                    />
-                                </ToolbarItem>
-                            </ToolbarContent>
-                            <Table variant="compact">
-                                <Thead>
-                                    <Tr>
-                                        <Th>Entity</Th>
-                                        <Th>Direction</Th>
-                                        <Th>Port / protocol</Th>
-                                    </Tr>
-                                </Thead>
-                                <TbodyUnified
-                                    tableState={baselineTableState}
-                                    colSpan={3}
-                                    errorProps={{
-                                        title: 'There was an error',
-                                    }}
-                                    emptyProps={{
-                                        message: 'No baseline flows.',
-                                    }}
-                                    renderer={({ data }) => (
-                                        <Tbody>
-                                            {data.map((flow) => {
-                                                return (
-                                                    <Tr key={flow.peer.entity.id}>
-                                                        <Td dataLabel="Entity">
-                                                            {flow.peer.entity.name}
-                                                        </Td>
-                                                        <Td dataLabel="Direction">
-                                                            {flow.peer.ingress
-                                                                ? `Ingress`
-                                                                : `Egress`}
-                                                        </Td>
-                                                        <Td dataLabel="Port / protocol">
-                                                            {`${flow.peer.port} / ${flow.peer.protocol === 'L4_PROTOCOL_TCP' ? 'TCP' : 'UDP'}`}
-                                                        </Td>
-                                                    </Tr>
-                                                );
-                                            })}
-                                        </Tbody>
-                                    )}
-                                />
-                            </Table>
+                            <FlowTable
+                                pagination={baseline.pagination}
+                                flowCount={totalBaseline}
+                                emptyStateMessage="No baseline flows."
+                                tableState={baseline.tableState}
+                                selectedPageAll={areAllPageBaselineSelected}
+                                onSelectAll={selectAllBaselineFlows}
+                                isFlowSelected={isFlowSelected}
+                                onRowSelect={onSelectFlow}
+                                rowActions={[
+                                    {
+                                        title: <span>Mark as anomalous</span>,
+                                        onClick: (event) => {
+                                            event.preventDefault();
+                                            // handle action
+                                        },
+                                    },
+                                ]}
+                            />
                         </ExpandableSection>
                     </StackItem>
                 </Stack>
