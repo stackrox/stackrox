@@ -151,3 +151,12 @@ func TestMakeTrackFunc(t *testing.T) {
 			})
 	}
 }
+
+func TestTrackerConfig_registerMetrics(t *testing.T) {
+	tc := MakeTrackerConfig("test", "test",
+		testLabelOrder, nil)
+	testRegistry := prometheus.NewRegistry()
+	tc.metricsConfig = makeTestMetricLabelExpressions(t)
+	assert.NoError(t, tc.registerMetrics(testRegistry, time.Hour))
+	assert.Error(t, tc.registerMetrics(testRegistry, time.Hour))
+}
