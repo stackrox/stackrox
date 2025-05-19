@@ -103,8 +103,8 @@ func TestVerifyAgainstSignatureIntegration(t *testing.T) {
 }
 
 func BenchmarkVerifyAgainstSignatureIntegrations(b *testing.B) {
-	numIntegrations := []int{1, 5, 10, 100, 200}
-	numSignatures := []int{1, 5, 10, 100, 200}
+	numIntegrations := []int{1, 5, 10, 100}
+	numSignatures := []int{1, 5, 10, 100}
 	withBundle := [][]byte{nil, testBundle}
 
 	for _, numInt := range numIntegrations {
