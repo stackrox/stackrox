@@ -1,13 +1,13 @@
 package common
 
 import (
-	"errors"
 	"fmt"
 	"math"
 	"slices"
 	"strconv"
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/glob"
 )
 
