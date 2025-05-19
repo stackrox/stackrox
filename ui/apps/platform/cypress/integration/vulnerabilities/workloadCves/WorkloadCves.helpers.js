@@ -10,7 +10,7 @@ import { selectors } from './WorkloadCves.selectors';
 import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
 
 export function getDateString(date) {
-    return format(date, 'MM/DD/YYYY');
+    return format(date, 'MMM DD, YYYY');
 }
 
 /**
