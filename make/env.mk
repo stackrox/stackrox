@@ -7,7 +7,7 @@ comma := ,
 
 # GOPATH might not be exported in the current shell but is available in the
 # Go environment.
-ifndef $(GOPATH)
+ifeq ($(GOPATH),)
     GOPATH=$(shell go env GOPATH)
     export GOPATH
 endif
