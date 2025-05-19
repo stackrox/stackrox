@@ -37,7 +37,7 @@ spec:
       containers:
       - args:
         - /scripts/prepare-tap.sh -a "${TARGET_IP}/32" -o
-        - nc -l "${TARGET_IP}" "${PORT}" &
+        - nc -lk "${TARGET_IP}" "${PORT}" &
         - sleep 2
         - while sleep 30; do nc -zv "${TARGET_IP}" "${PORT}"; done
         command:
