@@ -41,10 +41,10 @@ jobs:
           source './scripts/ci/lib.sh'
 
           matrix='{
-            "pre_build_go_binaries": { "name":[], "arch":[] },
-            "build_and_push_main": { "name":[], "arch":[] },
-            "push_main_multiarch_manifests": { "name":[] },
-            "build_and_push_operator": { "name":[] },
+            "pre_build_go_binaries": { "name":[], "arch":[], "exclude":[] },
+            "build_and_push_main": { "name":[], "arch":[], "exclude":[] },
+            "push_main_multiarch_manifests": { "name":[], "exclude":[] },
+            "build_and_push_operator": { "name":[], "exclude":[] },
             "scan_images_with_roxctl": { "name":[], "image":[], "exclude":[] }
           }'
 
@@ -90,6 +90,13 @@ jobs:
             matrix="$(jq '.build_and_push_main.exclude = [{ "name": "race-condition-debug", "arch": "arm64" }]' <<< "$matrix")"
             matrix="$(jq '.build_and_push_main.exclude += [{ "name": "race-condition-debug", "arch": "ppc64le" }]' <<< "$matrix")"
             matrix="$(jq '.build_and_push_main.exclude += [{ "name": "race-condition-debug", "arch": "s390x" }]' <<< "$matrix")"
+          fi
+
+          if [[ "$( scripts/ci/should-konflux-replace-gha-build.sh )" == "BUILD_AND_PUSH_ONLY_KONFLUX" ]]; then
+            matrix="$(jq '.build_and_push_main.exclude += [{ "name": "RHACS_BRANDING" }]' <<< "$matrix")"
+            matrix="$(jq '.push_main_multiarch_manifests.exclude += [{ "name": "RHACS_BRANDING" }]' <<< "$matrix")"
+            matrix="$(jq '.build_and_push_operator.exclude += [{ "name": "RHACS_BRANDING" }]' <<< "$matrix")"
+            matrix="$(jq '.scan_images_with_roxctl.exclude += [{ "name": "RHACS_BRANDING" }]' <<< "$matrix")"
           fi
 
           echo "Job matrix after conditionals:"
