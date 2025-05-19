@@ -107,41 +107,16 @@ func TestTrackerConfig_Reconfigure(t *testing.T) {
 
 func TestMakeTrackFunc(t *testing.T) {
 	type myDS struct{}
-	result := make(map[string][]*record)
+	result := make(map[string][]*aggregatedRecord)
 	cfg := MakeTrackerConfig("test", "test",
 		testLabelOrder,
-		makeTestGatherFunc([]map[Label]string{
-			{
-				"Severity":  "CRITICAL",
-				"Cluster":   "cluster 1",
-				"Namespace": "ns 1",
-			}, {
-				"Severity":  "HIGH",
-				"Cluster":   "cluster 2",
-				"Namespace": "ns 2",
-			},
-			{
-				"Severity":  "LOW",
-				"Cluster":   "cluster 3",
-				"Namespace": "ns 3",
-			},
-			{
-				"Severity":  "CRITICAL",
-				"Cluster":   "cluster 1",
-				"Namespace": "ns 3",
-			},
-			{
-				"Severity":  "LOW",
-				"Cluster":   "cluster 5",
-				"Namespace": "ns 3",
-			},
-		}),
+		makeTestGatherFunc(testData),
 	)
 	cfg.metricsConfig = makeTestMetricLabelExpressions(t)
 	track := MakeTrackFunc(
 		cfg,
 		func(metricName string, labels prometheus.Labels, total int) {
-			result[metricName] = append(result[metricName], &record{labels, total})
+			result[metricName] = append(result[metricName], &aggregatedRecord{labels, total})
 		},
 	)
 
@@ -152,7 +127,7 @@ func TestMakeTrackFunc(t *testing.T) {
 		assert.Contains(t, result, "TestMakeTrackFunc_metric2") {
 
 		assert.ElementsMatch(t, result["TestMakeTrackFunc_metric1"],
-			[]*record{
+			[]*aggregatedRecord{
 				{prometheus.Labels{
 					"Severity": "CRITICAL",
 					"Cluster":  "cluster 1",
@@ -164,7 +139,7 @@ func TestMakeTrackFunc(t *testing.T) {
 			})
 
 		assert.ElementsMatch(t, result["TestMakeTrackFunc_metric2"],
-			[]*record{
+			[]*aggregatedRecord{
 				{prometheus.Labels{
 					"Namespace": "ns 1",
 				}, 1},
