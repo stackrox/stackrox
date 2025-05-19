@@ -5178,6 +5178,11 @@
                 "id": 8,
                 "name": "administration_events_config",
                 "type": "AdministrationEventsConfig"
+              },
+              {
+                "id": 9,
+                "name": "prometheus_metrics_config",
+                "type": "PrometheusMetricsConfig"
               }
             ]
           },
@@ -5321,6 +5326,81 @@
                 "id": 2,
                 "name": "enabled",
                 "type": "bool"
+              }
+            ]
+          },
+          {
+            "name": "PrometheusMetricsConfig",
+            "fields": [
+              {
+                "id": 1,
+                "name": "vulnerabilities",
+                "type": "Vulnerabilities"
+              }
+            ],
+            "messages": [
+              {
+                "name": "LabelExpressions",
+                "maps": [
+                  {
+                    "key_type": "string",
+                    "field": {
+                      "id": 1,
+                      "name": "label_expressions",
+                      "type": "Expressions"
+                    }
+                  }
+                ],
+                "messages": [
+                  {
+                    "name": "Expressions",
+                    "fields": [
+                      {
+                        "id": 1,
+                        "name": "expression",
+                        "type": "Expression",
+                        "is_repeated": true
+                      }
+                    ],
+                    "messages": [
+                      {
+                        "name": "Expression",
+                        "fields": [
+                          {
+                            "id": 1,
+                            "name": "operator",
+                            "type": "string"
+                          },
+                          {
+                            "id": 2,
+                            "name": "argument",
+                            "type": "string"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "Vulnerabilities",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "gathering_period_hours",
+                    "type": "uint32"
+                  }
+                ],
+                "maps": [
+                  {
+                    "key_type": "string",
+                    "field": {
+                      "id": 2,
+                      "name": "metric_labels",
+                      "type": "LabelExpressions"
+                    }
+                  }
+                ]
               }
             ]
           }
