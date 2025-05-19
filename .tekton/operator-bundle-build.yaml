@@ -55,13 +55,11 @@ spec:
   - name: clone-fetch-tags
     value: 'true'
 
-  workspaces:
-  - name: git-auth
-    secret:
-      secretName: '{{ git_auth_secret }}'
-
   pipelineRef:
     name: operator-bundle-pipeline
+
+  taskRunTemplate:
+    serviceAccountName: build-pipeline-operator-bundle
 
   # When building the operator-bundle, we must resolve image digests for all other ACS product images in order to inject
   # these digests in the bundle's ClusterServiceVersion file. For this, the bundle pipeline waits for each image to be
@@ -82,3 +80,8 @@ spec:
     tasks: 3h10m
     finally: 10m
     pipeline: 3h20m
+
+  workspaces:
+  - name: git-auth
+    secret:
+      secretName: '{{ git_auth_secret }}'
