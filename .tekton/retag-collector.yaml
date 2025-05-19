@@ -38,16 +38,19 @@ spec:
   - name: input-image-tag-makefile-target
     value: collector-tag
 
-  workspaces:
-  - name: git-auth
-    secret:
-      secretName: '{{ git_auth_secret }}'
-
   pipelineRef:
     name: retag-pipeline
+
+  taskRunTemplate:
+    serviceAccountName: build-pipeline-collector
 
   timeouts:
     tasks: 30m
     # Reserve time for final tasks to run.
     finally: 10m
     pipeline: 40m
+
+  workspaces:
+  - name: git-auth
+    secret:
+      secretName: '{{ git_auth_secret }}'
