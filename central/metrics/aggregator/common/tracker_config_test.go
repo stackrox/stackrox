@@ -106,7 +106,6 @@ func TestTrackerConfig_Reconfigure(t *testing.T) {
 }
 
 func TestMakeTrackFunc(t *testing.T) {
-	type myDS struct{}
 	result := make(map[string][]*aggregatedRecord)
 	cfg := MakeTrackerConfig("test", "test",
 		testLabelOrder,
