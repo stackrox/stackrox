@@ -165,7 +165,7 @@ func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
 		s.formatter.EXPECT().FormatCSVReport(gomock.Any(), gomock.Any()).Times(1)
 		s.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).Times(1).
 			DoAndReturn(func(_ any, snapshot *storage.ComplianceOperatorReportSnapshotV2) error {
-				s.Require().Equal(storage.ComplianceOperatorReportStatus_PARTIAL_ERROR, snapshot.GetReportStatus().GetRunState())
+				s.Require().Equal(storage.ComplianceOperatorReportStatus_PARTIAL_SCAN_ERROR_EMAIL, snapshot.GetReportStatus().GetRunState())
 				return errors.New("some error")
 			})
 		s.Require().Error(s.reportGen.ProcessReportRequest(newFakeRequestWithFailedCluster()))

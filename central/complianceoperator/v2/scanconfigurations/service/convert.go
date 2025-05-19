@@ -43,12 +43,14 @@ var (
 	}
 
 	storageReportRunStateToV2 = map[storage.ComplianceOperatorReportStatus_RunState]v2.ComplianceReportStatus_RunState{
-		storage.ComplianceOperatorReportStatus_WAITING:       v2.ComplianceReportStatus_WAITING,
-		storage.ComplianceOperatorReportStatus_PREPARING:     v2.ComplianceReportStatus_PREPARING,
-		storage.ComplianceOperatorReportStatus_GENERATED:     v2.ComplianceReportStatus_GENERATED,
-		storage.ComplianceOperatorReportStatus_DELIVERED:     v2.ComplianceReportStatus_DELIVERED,
-		storage.ComplianceOperatorReportStatus_FAILURE:       v2.ComplianceReportStatus_FAILURE,
-		storage.ComplianceOperatorReportStatus_PARTIAL_ERROR: v2.ComplianceReportStatus_PARTIAL_ERROR,
+		storage.ComplianceOperatorReportStatus_WAITING:                     v2.ComplianceReportStatus_WAITING,
+		storage.ComplianceOperatorReportStatus_PREPARING:                   v2.ComplianceReportStatus_PREPARING,
+		storage.ComplianceOperatorReportStatus_GENERATED:                   v2.ComplianceReportStatus_GENERATED,
+		storage.ComplianceOperatorReportStatus_DELIVERED:                   v2.ComplianceReportStatus_DELIVERED,
+		storage.ComplianceOperatorReportStatus_FAILURE:                     v2.ComplianceReportStatus_FAILURE,
+		storage.ComplianceOperatorReportStatus_PARTIAL_ERROR:               v2.ComplianceReportStatus_PARTIAL_ERROR,
+		storage.ComplianceOperatorReportStatus_PARTIAL_SCAN_ERROR_DOWNLOAD: v2.ComplianceReportStatus_PARTIAL_SCAN_ERROR_DOWNLOAD,
+		storage.ComplianceOperatorReportStatus_PARTIAL_SCAN_ERROR_EMAIL:    v2.ComplianceReportStatus_PARTIAL_SCAN_ERROR_EMAIL,
 	}
 
 	storageReportRequestTypeToV2 = map[storage.ComplianceOperatorReportStatus_RunMethod]v2.ComplianceReportStatus_ReportMethod{
