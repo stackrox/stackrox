@@ -638,12 +638,13 @@ jobs:
           scripts/lib.sh retry 6 true make -C operator/ build docker-build
 
       - name: Check that Operator image is runnable
+        if: matrix.name == 'RHACS_BRANDING'
         run: docker run --rm "quay.io/rhacs-eng/stackrox-operator:$(make --quiet --no-print-directory -C operator tag)" --help
 
       - name: Push images
         # Skip for external contributions.
         if: |
-          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+          (github.event_name == 'push' || !github.event.pull_request.head.repo.fork) && matrix.name == 'RHACS_BRANDING'
         run: |
           make -C operator/ docker-push docker-push-bundle | cat
 
@@ -651,14 +652,14 @@ jobs:
       - name: Build index
         # Skip for external contributions as the build relies on the previous image to be pushed.
         if: |
-          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+          (github.event_name == 'push' || !github.event.pull_request.head.repo.fork) && matrix.name == 'RHACS_BRANDING'
         run: |
           make -C operator/ index-build
 
       - name: Push index image
         # Skip for external contributions.
         if: |
-          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+          (github.event_name == 'push' || !github.event.pull_request.head.repo.fork) && matrix.name == 'RHACS_BRANDING'
         run: |
           make -C operator/ docker-push-index | cat
 
