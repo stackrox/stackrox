@@ -916,7 +916,9 @@
         "GENERATED",
         "DELIVERED",
         "FAILURE",
-        "PARTIAL_ERROR"
+        "PARTIAL_ERROR",
+        "PARTIAL_SCAN_ERROR_DOWNLOAD",
+        "PARTIAL_SCAN_ERROR_EMAIL"
       ],
       "default": "WAITING"
     },

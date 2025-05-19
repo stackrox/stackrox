@@ -101,7 +101,10 @@ func (rg *complianceReportGeneratorImpl) ProcessReportRequest(req *report.Reques
 	if snapshot != nil {
 		snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_GENERATED
 		if req.NumFailedClusters > 0 {
-			snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_PARTIAL_ERROR
+			snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_PARTIAL_SCAN_ERROR_EMAIL
+			if req.NotificationMethod == storage.ComplianceOperatorReportStatus_DOWNLOAD {
+				snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_PARTIAL_SCAN_ERROR_DOWNLOAD
+			}
 			if req.NumFailedClusters == len(req.ClusterIDs) {
 				snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_FAILURE
 			}
