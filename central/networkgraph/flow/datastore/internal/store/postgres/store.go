@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
@@ -125,7 +126,8 @@ const (
 		AND
 		NOT EXISTS
 		(SELECT 1 FROM %s flow WHERE
-			flow.Props_DstEntity_Type = 4 AND flow.Props_DstEntity_Id = entity.Info_Id);`
+			flow.Props_DstEntity_Type = 4 AND flow.Props_DstEntity_Id = entity.Info_Id)
+		RETURNING entity.Info_Id;`
 )
 
 var (
@@ -409,6 +411,23 @@ func (s *flowStoreImpl) readRows(rows pgx.Rows, pred func(*storage.NetworkFlowPr
 
 	log.Debugf("Read returned %d flows", len(flows))
 	return flows, rows.Err()
+}
+
+func (s *flowStoreImpl) readIdFromRows(rows pgx.Rows) ([]string, error) {
+	var entityIds []string
+
+	for rows.Next() {
+		var id string
+
+		if err := rows.Scan(&id); err != nil {
+			return nil, pgutils.ErrNilIfNoRows(err)
+		}
+
+		entityIds = append(entityIds, id)
+	}
+
+	log.Debugf("Read returned %d entity IDs", len(entityIds))
+	return entityIds, rows.Err()
 }
 
 // RemoveFlowsForDeployment removes all flows where the source OR destination match the deployment id
@@ -789,8 +808,24 @@ func (s *flowStoreImpl) pruneEntities(ctx context.Context, deleteStmt string, en
 	ctx, cancel := context.WithTimeout(ctx, deleteTimeout)
 	defer cancel()
 
-	if _, err := conn.Exec(ctx, deleteStmt, entityIds); err != nil {
+	rows, err := conn.Query(ctx, deleteStmt, entityIds)
+	if err != nil {
 		return err
+	}
+
+	deletedIDs, err := s.readIdFromRows(rows)
+	if err != nil {
+		return err
+	}
+
+	// The networktree still has the pruned entities,
+	// so we need to propagate the removal.
+	// TODO: ROX-29450 will make this unnecessary
+	// and we can remove this logic.
+	if networktree := networktree.Singleton().GetNetworkTree(ctx, s.clusterID.String()); networktree != nil {
+		for _, id := range deletedIDs {
+			networktree.Remove(id)
+		}
 	}
 
 	return nil
