@@ -37,9 +37,11 @@ spec:
       containers:
       - args:
         - /scripts/prepare-tap.sh -a "${TARGET_IP}/32" -o
+        - nc -l "${TARGET_IP}" "${PORT}" &
+        - sleep 2
         - while sleep 30; do nc -zv "${TARGET_IP}" "${PORT}"; done
         command:
-        - /bin/sh
+        - /bin/bash
         - -c
         image: quay.io/${REPOSITORY}/external-connection:${TAG}
         imagePullPolicy: IfNotPresent
@@ -47,7 +49,7 @@ spec:
         resources: {}
         securityContext:
           capabilities: {}
-          privileged: false
+          privileged: true
           readOnlyRootFilesystem: false
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
