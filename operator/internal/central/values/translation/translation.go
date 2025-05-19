@@ -66,6 +66,12 @@ func (t Translator) Translate(ctx context.Context, u *unstructured.Unstructured)
 	}
 	c.Defaults = centralDefaults
 
+	// At this point we don't need the Defaults in the unstructured object anymore and simply get rid of it to prevent
+	// Kube API warnings of the form:
+	//
+	//   KubeAPIWarningLogger    unknown field "defaults"
+	delete(u.Object, "defaults")
+
 	valsFromCR, err := t.translate(ctx, c)
 	if err != nil {
 		return nil, err
