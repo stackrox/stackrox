@@ -2,10 +2,12 @@ import { useCallback } from 'react';
 
 import { TimeWindow } from 'constants/timeWindows';
 import useRestQuery from 'hooks/useRestQuery';
+import useURLPagination from 'hooks/useURLPagination';
 import { getNetworkBaselineExternalStatus } from 'services/NetworkService';
 import { NetworkBaselineExternalStatusResponse } from 'types/networkBaseline.proto';
 import { getTableUIState } from 'utils/getTableUIState';
 
+import { DEFAULT_NETWORK_GRAPH_PAGE_SIZE } from '../NetworkGraph.constants';
 import { timeWindowToISO } from '../utils/timeWindow';
 
 export function useNetworkBaselineStatus(
@@ -13,15 +15,18 @@ export function useNetworkBaselineStatus(
     timeWindow: TimeWindow,
     status: 'ANOMALOUS' | 'BASELINE'
 ) {
+    const pagination = useURLPagination(DEFAULT_NETWORK_GRAPH_PAGE_SIZE, status.toLowerCase());
+    const { page, perPage } = pagination;
+
     const fetch = useCallback((): Promise<NetworkBaselineExternalStatusResponse> => {
         const fromTimestamp = timeWindowToISO(timeWindow);
         return getNetworkBaselineExternalStatus(deploymentId, fromTimestamp, {
-            page: 1,
-            perPage: 1000,
+            page,
+            perPage,
             sortOption: {},
             searchFilter: {},
         });
-    }, [deploymentId, timeWindow]);
+    }, [deploymentId, page, perPage, timeWindow]);
 
     const { data, isLoading, error, refetch } = useRestQuery(fetch);
 
@@ -35,5 +40,5 @@ export function useNetworkBaselineStatus(
     const flows = status === 'ANOMALOUS' ? (data?.anomalous ?? []) : (data?.baseline ?? []);
     const total = status === 'ANOMALOUS' ? (data?.totalAnomalous ?? 0) : (data?.totalBaseline ?? 0);
 
-    return { flows, total, tableState, refetch };
+    return { flows, total, tableState, pagination, refetch };
 }

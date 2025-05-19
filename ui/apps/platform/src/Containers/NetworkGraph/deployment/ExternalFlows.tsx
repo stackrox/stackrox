@@ -67,6 +67,8 @@ function ExternalFlows({ deploymentId, timeWindow }: ExternalFlowsProps) {
                             contentId={'anomalous-expandable-content'}
                         >
                             <FlowTable
+                                pagination={anomalous.pagination}
+                                flowCount={totalAnomalous}
                                 emptyStateMessage="No anomalous flows."
                                 tableState={anomalous.tableState}
                             />
@@ -88,6 +90,8 @@ function ExternalFlows({ deploymentId, timeWindow }: ExternalFlowsProps) {
                             isExpanded={isBaselineFlowsExpanded}
                         >
                             <FlowTable
+                                pagination={baseline.pagination}
+                                flowCount={totalBaseline}
                                 emptyStateMessage="No baseline flows."
                                 tableState={baseline.tableState}
                             />
