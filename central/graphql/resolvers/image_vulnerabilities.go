@@ -273,6 +273,7 @@ func (resolver *Resolver) ImageVulnerabilityCount(ctx context.Context, args RawQ
 func (resolver *Resolver) ImageVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageVulnerabilityCounter")
 
+	log.Infof("SHREWS -- ImageVulnerabilityCounter -- %v", args)
 	// check permissions
 	if err := readImages(ctx); err != nil {
 		return nil, err
@@ -280,6 +281,7 @@ func (resolver *Resolver) ImageVulnerabilityCounter(ctx context.Context, args Ra
 
 	// cast query
 	query, err := args.AsV1QueryOrEmpty()
+	log.Infof("SHREWS -- ImageVulnerabilityCounter -- %v", query)
 	if err != nil {
 		return nil, err
 	}
@@ -287,6 +289,7 @@ func (resolver *Resolver) ImageVulnerabilityCounter(ctx context.Context, args Ra
 	logErrorOnQueryContainingField(query, search.Fixable, "ImageVulnerabilityCounter")
 
 	if features.FlattenCVEData.Enabled() {
+		log.Info("SHREWS -- ImageVulnerabilityCounter -- getting count stuff")
 		loader, err := loaders.GetImageCVEV2Loader(ctx)
 		if err != nil {
 			return nil, err
@@ -299,6 +302,7 @@ func (resolver *Resolver) ImageVulnerabilityCounter(ctx context.Context, args Ra
 			return nil, err
 		}
 		fixable := imageCveV2ToVulnerabilityWithSeverity(fixableVulns)
+		log.Infof("SHREWS -- ImageVulnerabilityCounter -- fixable -- %v", fixable)
 
 		// get unfixable vulns
 		unFixableVulnsQuery := search.ConjunctionQuery(query, search.NewQueryBuilder().AddBools(search.Fixable, false).ProtoQuery())
@@ -307,6 +311,7 @@ func (resolver *Resolver) ImageVulnerabilityCounter(ctx context.Context, args Ra
 			return nil, err
 		}
 		unfixable := imageCveV2ToVulnerabilityWithSeverity(unFixableVulns)
+		log.Infof("SHREWS -- ImageVulnerabilityCounter -- unfixable -- %v", unfixable)
 
 		return mapCVEsToVulnerabilityCounter(fixable, unfixable), nil
 	}
