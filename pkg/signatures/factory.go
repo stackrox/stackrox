@@ -120,7 +120,7 @@ func FetchImageSignaturesWithRetries(ctx context.Context, fetcher SignatureFetch
 	var fetchedSignatures []*storage.Signature
 	var err error
 	err = retry.WithRetry(func() error {
-		fetchedSignatures, err = fetchAndAppendSignatures(ctx, fetcher, image, fullImageName, registry, fetchedSignatures)
+		fetchedSignatures, err = fetchAndAppendSignatures(ctx, fetcher, image, fullImageName, registry)
 		return err
 	},
 		retry.WithContext(ctx),
@@ -134,7 +134,7 @@ func FetchImageSignaturesWithRetries(ctx context.Context, fetcher SignatureFetch
 }
 
 func fetchAndAppendSignatures(ctx context.Context, fetcher SignatureFetcher, image *storage.Image,
-	fullImageName string, registry registryTypes.Registry, fetchedSignatures []*storage.Signature) ([]*storage.Signature, error) {
+	fullImageName string, registry registryTypes.Registry) ([]*storage.Signature, error) {
 	sigFetchCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
@@ -142,11 +142,5 @@ func fetchAndAppendSignatures(ctx context.Context, fetcher SignatureFetcher, ima
 	if err != nil {
 		return nil, err
 	}
-
-	for _, sig := range sigs {
-		if !protoutils.SliceContains(sig, fetchedSignatures) {
-			fetchedSignatures = append(fetchedSignatures, sig)
-		}
-	}
-	return fetchedSignatures, nil
+	return protoutils.SliceUnique(sigs), nil
 }
