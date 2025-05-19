@@ -3,6 +3,7 @@ package signatures
 import (
 	"context"
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -10,6 +11,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// Signatures have been generated via cosign:
+// $ cosign generate-key-pair
+// $ cosign sign -y ttl.sh/88795dd4-270c-4eb7-b3d4-50241d5bc04c@sha256:f2e98ad37e4970f48e85946972ac4acb5574c39f27c624efbd9b17a3a402bfe4 --key=cosign.key
 const (
 	// pemMatchingPubKey matches the b64Signature.
 	pemMatchingPubKey = `-----BEGIN PUBLIC KEY-----
@@ -36,10 +40,10 @@ MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEWi3tSxvBH7S/WUmv408nKPxNSJx6
 		"c624efbd9b17a3a402bfe4"
 )
 
-var testBundle = []byte(`{"SignedEntryTimestamp":"MEUCIDStNB5vlCyLnF8Xr1vcGQ78Puw2xf72uUcFNOxrAMmUAiEAjv+IyBm9hd7IiodkmRvWL41CCenT58IYRdmRL+5W1MA=","Payload":{"body":"eyJhcGlWZXJzaW9uIjoiMC4wLjEiLCJraW5kIjoiaGFzaGVkcmVrb3JkIiwic3BlYyI6eyJkYXRhIjp7Imhhc2giOnsiYWxnb3JpdGhtIjoic2hhMjU2IiwidmFsdWUiOiJiOTY5NjUwZDI4YjQxYjNhNGM5NjQ0ZDM2NThkNDU5YmQ1NDZhOTdmNTVmZTU0M2ZhMzBhZDkwNTcyNDk3Mzk2In19LCJzaWduYXR1cmUiOnsiY29udGVudCI6Ik1FUUNJRHNGY2tmSWcvdXhxU0d2ZjRVQzRjOU16QVZodUh3enEzTm5Zb3Zib2JZZkFpQXczMS94ejU2aFM5eFJsL3hoUlY3K1JxT2wzaFhZaTdVS08rcTdxK2tPeFE9PSIsInB1YmxpY0tleSI6eyJjb250ZW50IjoiTFMwdExTMUNSVWRKVGlCUVZVSk1TVU1nUzBWWkxTMHRMUzBLVFVacmQwVjNXVWhMYjFwSmVtb3dRMEZSV1VsTGIxcEplbW93UkVGUlkwUlJaMEZGZDNvMllUaHZlRUo1U25FNWN6aHJRM2gyYXpkU1UzUjVaMjFFVmdvd2RWaFlOWEZaU0dKT05YTjRXVGhzWW14b1RHczVkVTl5TVc1R1QyaE9RVXAxWVRrMWVrdzJSWGREU1RKM1JubHJVbmR4WjBZeFFreG5QVDBLTFMwdExTMUZUa1FnVUZWQ1RFbERJRXRGV1MwdExTMHRDZz09In19fX0=","integratedTime":1747398492,"logIndex":214049199,"logID":"c0d23d6ad406973f9559f3ba2d1ca01f84147d8ffc5b8445c224f98b9591801d"}}`)
-
 func TestVerifyAgainstSignatureIntegration(t *testing.T) {
-	testImg, err := generateImageWithCosignSignature(imgString, b64Signature, b64SignaturePayload, nil, nil, testBundle)
+	bundle, err := os.ReadFile("testdata/bundle_bench_test.json")
+	require.NoError(t, err)
+	testImg, err := generateImageWithCosignSignature(imgString, b64Signature, b64SignaturePayload, nil, nil, bundle)
 	require.NoError(t, err, "creating test image")
 
 	successfulCosignConfig := &storage.CosignPublicKeyVerification{
@@ -105,7 +109,9 @@ func TestVerifyAgainstSignatureIntegration(t *testing.T) {
 func BenchmarkVerifyAgainstSignatureIntegrations(b *testing.B) {
 	numIntegrations := []int{1, 5, 10, 100}
 	numSignatures := []int{1, 5, 10, 100}
-	withBundle := [][]byte{nil, testBundle}
+	bundle, err := os.ReadFile("testdata/bundle_bench_test.json")
+	require.NoError(b, err)
+	withBundle := [][]byte{nil, bundle}
 
 	for _, numInt := range numIntegrations {
 		for _, numSig := range numSignatures {
