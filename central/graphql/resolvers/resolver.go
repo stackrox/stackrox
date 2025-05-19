@@ -65,6 +65,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	auditPkg "github.com/stackrox/rox/pkg/audit"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -150,9 +151,6 @@ func New() *Resolver {
 		DeploymentDataStore:           deploymentDatastore.Singleton(),
 		PodDataStore:                  podDatastore.Singleton(),
 		ImageDataStore:                imageDatastore.Singleton(),
-		ImageComponentDataStore:       imageComponentDataStore.Singleton(),
-		ImageComponentEdgeDataStore:   imageComponentEdgeDataStore.Singleton(),
-		ImageCVEEdgeDataStore:         imageCVEEdgeDataStore.Singleton(),
 		GroupDataStore:                groupDataStore.Singleton(),
 		NamespaceDataStore:            namespaceDataStore.Singleton(),
 		NetworkPoliciesStore:          npDS.Singleton(),
@@ -179,23 +177,14 @@ func New() *Resolver {
 		vulnReqStore:                  vulnReqDataStore.Singleton(),
 		AuditLogger:                   audit.New(processor.Singleton()),
 		ClusterCVEDataStore:           clusterCVEDataStore.Singleton(),
-		ImageCVEDataStore:             imageCVEDataStore.Singleton(),
 		NodeCVEDataStore:              nodeCVEDataStore.Singleton(),
 		NodeComponentCVEEdgeDataStore: nodeComponentCVEEdgeDataStore.Singleton(),
 		NodeComponentDataStore:        nodeComponentDataStore.Singleton(),
 		PolicyCategoryDataStore:       policyCategoryDatastore.Singleton(),
-		ImageComponentV2DataStore:     imageComponentV2DataStore.Singleton(),
-		ImageCVEV2DataStore:           imageCVEV2DataStore.Singleton(),
 
 		// Views
-		ImageComponentFlatView: func() imagecomponentflat.ComponentFlatView {
-			return imagecomponentflat.Singleton()
-		}(),
 		ImageCVEView: func() imagecve.CveView {
 			return imagecve.Singleton()
-		}(),
-		ImageCVEFlatView: func() imagecveflat.CveFlatView {
-			return imagecveflat.Singleton()
 		}(),
 		NodeCVEView: func() nodecve.CveView {
 			return nodecve.Singleton()
@@ -203,6 +192,22 @@ func New() *Resolver {
 		PlatformCVEView: func() platformcve.CveView {
 			return platformcve.Singleton()
 		}(),
+	}
+	if features.FlattenCVEData.Enabled() {
+		resolver.ImageCVEFlatView = func() imagecveflat.CveFlatView {
+			return imagecveflat.Singleton()
+		}()
+		resolver.ImageComponentFlatView = func() imagecomponentflat.ComponentFlatView {
+			return imagecomponentflat.Singleton()
+		}()
+
+		resolver.ImageComponentV2DataStore = imageComponentV2DataStore.Singleton()
+		resolver.ImageCVEV2DataStore = imageCVEV2DataStore.Singleton()
+	} else {
+		resolver.ImageComponentDataStore = imageComponentDataStore.Singleton()
+		resolver.ImageComponentEdgeDataStore = imageComponentEdgeDataStore.Singleton()
+		resolver.ImageCVEEdgeDataStore = imageCVEEdgeDataStore.Singleton()
+		resolver.ImageCVEDataStore = imageCVEDataStore.Singleton()
 	}
 
 	return resolver
