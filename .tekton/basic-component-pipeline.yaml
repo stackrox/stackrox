@@ -49,7 +49,7 @@ spec:
         - name: name
           value: post-bigquery-metrics
         - name: bundle
-          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:3d1fbc306175dab80e346f65d871a0be7bfd1c0a2c81ac075cfe516bcdb21e82
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:c1556378f6ffdeb4498fedf861ca0611505d7d056947ec7d59ec789863433ea7
         - name: kind
           value: task
       resolver: bundles
@@ -168,7 +168,7 @@ spec:
       - name: name
         value: determine-image-expiration
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:3d1fbc306175dab80e346f65d871a0be7bfd1c0a2c81ac075cfe516bcdb21e82
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:c1556378f6ffdeb4498fedf861ca0611505d7d056947ec7d59ec789863433ea7
       - name: kind
         value: task
       resolver: bundles
@@ -217,7 +217,7 @@ spec:
       - name: name
         value: determine-image-tag
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:3d1fbc306175dab80e346f65d871a0be7bfd1c0a2c81ac075cfe516bcdb21e82
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:c1556378f6ffdeb4498fedf861ca0611505d7d056947ec7d59ec789863433ea7
       - name: kind
         value: task
       resolver: bundles
@@ -537,6 +537,54 @@ spec:
     - input: $(params.skip-checks)
       operator: in
       values: ["false"]
+
+  - name: sast-shell-check
+    params:
+    - name: image-digest
+      value: $(tasks.build-image-index.results.IMAGE_DIGEST)
+    - name: image-url
+      value: $(tasks.build-image-index.results.IMAGE_URL)
+    - name: SOURCE_ARTIFACT
+      value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
+    - name: CACHI2_ARTIFACT
+      value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
+    taskRef:
+      params:
+      - name: name
+        value: sast-shell-check-oci-ta
+      - name: bundle
+        value: quay.io/konflux-ci/tekton-catalog/task-sast-shell-check-oci-ta:0.1@sha256:57b3262138eb06186ae7375f84ca53788bba2a66cfd03d39cb82c78df050aba5
+      - name: kind
+        value: task
+      resolver: bundles
+    when:
+    - input: $(params.skip-checks)
+      operator: in
+      values: [ "false" ]
+
+  - name: sast-unicode-check
+    params:
+    - name: image-digest
+      value: $(tasks.build-image-index.results.IMAGE_DIGEST)
+    - name: image-url
+      value: $(tasks.build-image-index.results.IMAGE_URL)
+    - name: SOURCE_ARTIFACT
+      value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
+    - name: CACHI2_ARTIFACT
+      value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
+    taskRef:
+      params:
+      - name: name
+        value: sast-unicode-check-oci-ta
+      - name: bundle
+        value: quay.io/konflux-ci/tekton-catalog/task-sast-unicode-check-oci-ta:0.2@sha256:df185dbe4e2852668f9c46f938dd752e90ea9c79696363378435a6499596c319
+      - name: kind
+        value: task
+      resolver: bundles
+    when:
+    - input: $(params.skip-checks)
+      operator: in
+      values: [ "false" ]
 
   - name: sast-snyk-check
     params:

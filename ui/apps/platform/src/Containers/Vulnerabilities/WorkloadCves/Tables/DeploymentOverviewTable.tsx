@@ -65,6 +65,9 @@ export const deploymentListQuery = gql`
                 low {
                     total
                 }
+                unknown {
+                    total
+                }
             }
             clusterName
             namespace
@@ -82,6 +85,7 @@ export type Deployment = {
         important: { total: number };
         moderate: { total: number };
         low: { total: number };
+        unknown: { total: number };
     };
     clusterName: string;
     namespace: string;
@@ -169,6 +173,7 @@ function DeploymentOverviewTable({
                         const importantCount = imageCVECountBySeverity.important.total;
                         const moderateCount = imageCVECountBySeverity.moderate.total;
                         const lowCount = imageCVECountBySeverity.low.total;
+                        const unknownCount = imageCVECountBySeverity.unknown.total;
                         return (
                             <Tbody
                                 key={id}
@@ -200,6 +205,7 @@ function DeploymentOverviewTable({
                                                 importantCount={importantCount}
                                                 moderateCount={moderateCount}
                                                 lowCount={lowCount}
+                                                unknownCount={unknownCount}
                                                 entity="deployment"
                                                 filteredSeverities={filteredSeverities}
                                             />

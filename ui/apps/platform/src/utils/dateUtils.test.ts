@@ -14,7 +14,6 @@ describe('dateUtils', () => {
     describe('addBrandedTimestampToString', () => {
         it('should return string with branding prepended, and current data appended', () => {
             const currentDate = new Date();
-            const month = `0${currentDate.getMonth() + 1}`.slice(-2);
             const dayOfMonth = `0${currentDate.getDate()}`.slice(-2);
             const year = currentDate.getFullYear();
 
@@ -22,7 +21,9 @@ describe('dateUtils', () => {
 
             const fileName = addBrandedTimestampToString(baseName);
 
-            expect(fileName).toEqual(`StackRox:${baseName}-${month}/${dayOfMonth}/${year}`);
+            expect(fileName).toMatch(
+                new RegExp(`StackRox:${baseName}-\\w{3} ${dayOfMonth}, ${year}`)
+            );
         });
     });
 });
@@ -38,14 +39,14 @@ describe('displayDateTimeAsISO8601', () => {
 describe('getDateTime', () => {
     it('should format a datetime string with timezone', () => {
         const result = getDateTime(new Date('2024-01-04T12:34:56Z'), 'en-US');
-        expect(result).toBe('01/04/2024, 12:34:56 PM UTC');
+        expect(result).toBe('Jan 04, 2024, 12:34:56 PM UTC');
     });
 });
 
 describe('getDate', () => {
     it('should format only the date portion', () => {
         const result = getDate(new Date('2024-01-04T00:00:00Z'), 'en-US');
-        expect(result).toBe('01/04/2024');
+        expect(result).toBe('Jan 04, 2024');
     });
 });
 
