@@ -1,6 +1,8 @@
 package reconciler
 
 import (
+	"time"
+
 	pkgReconciler "github.com/operator-framework/helm-operator-plugins/pkg/reconciler"
 	"github.com/stackrox/rox/image"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
@@ -45,7 +47,7 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 		pkgReconciler.WithPreExtension(proxy.ReconcileProxySecretExtension(mgr.GetClient(), mgr.GetAPIReader(), proxyEnv)),
 		pkgReconciler.WithPreExtension(commonExtensions.CheckForbiddenNamespacesExtension(commonExtensions.IsSystemNamespace)),
 		pkgReconciler.WithPreExtension(commonExtensions.ReconcileProductVersionStatusExtension(version.GetMainVersion())),
-		pkgReconciler.WithReconcilePeriod(extensions.InitBundleReconcilePeriod),
+		pkgReconciler.WithReconcilePeriod(time.Minute),
 		pkgReconciler.WithPauseReconcileAnnotation(commonExtensions.PauseReconcileAnnotation),
 	}
 
