@@ -319,11 +319,11 @@ func (m *managerImpl) HandleScan(sensorCtx context.Context, scan *storage.Compli
 	if err != nil {
 		if errors.Is(err, watcher.ErrComplianceOperatorScanMissingLastStartedFiled) {
 			log.Debugf("The scan is missing the LastStartedField: %v", err)
-			return nil
+			return err
 		}
 		if errors.Is(err, watcher.ErrScanAlreadyHandled) {
 			log.Debugf("Scan %s was already handled", scan.GetScanName())
-			return nil
+			return err
 		}
 		return err
 	}
@@ -371,15 +371,15 @@ func (m *managerImpl) HandleResult(sensorCtx context.Context, result *storage.Co
 	if err != nil {
 		if errors.Is(err, watcher.ErrComplianceOperatorReceivedOldCheckResult) {
 			log.Debugf("The CheckResult is older than the current scan in the store")
-			return nil
+			return err
 		}
 		if errors.Is(err, watcher.ErrComplianceOperatorScanMissingLastStartedFiled) {
 			log.Debugf("The scan is missing the LastStartedField: %v", err)
-			return nil
+			return err
 		}
 		if errors.Is(err, watcher.ErrScanAlreadyHandled) {
 			log.Debugf("The scan linked to the check result %s is already handled", result.GetCheckName())
-			return nil
+			return err
 		}
 		return err
 	}
