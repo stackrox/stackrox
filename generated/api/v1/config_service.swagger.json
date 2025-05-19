@@ -221,6 +221,21 @@
         }
       }
     },
+    "PrometheusMetricsConfigPolicyViolations": {
+      "type": "object",
+      "properties": {
+        "gatheringPeriodHours": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "metricLabels": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/PrometheusMetricsConfigLabelExpressions"
+          }
+        }
+      }
+    },
     "PrometheusMetricsConfigVulnerabilities": {
       "type": "object",
       "properties": {
@@ -449,6 +464,9 @@
       "properties": {
         "vulnerabilities": {
           "$ref": "#/definitions/PrometheusMetricsConfigVulnerabilities"
+        },
+        "policyViolations": {
+          "$ref": "#/definitions/PrometheusMetricsConfigPolicyViolations"
         }
       }
     },
