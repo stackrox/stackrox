@@ -7,6 +7,7 @@ import (
 	"github.com/operator-framework/helm-operator-plugins/pkg/extensions"
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
+	"github.com/stackrox/rox/pkg/reflectutils"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -31,6 +32,19 @@ func wrapExtension(runFn func(ctx context.Context, central *platform.Central, cl
 		if err != nil {
 			return errors.Wrap(err, "converting object to Central")
 		}
+
+		// refactor!
+		// For translation purposes, enrich Central with defaults, which are not implicitly marshalled/unmarshaled.
+		// and merge into spec to make them visible to the extensions (e.g. for creating scanner-v4-db-password).
+		centralDefaults := platform.CentralSpec{}
+		if defaultsObj, ok := u.Object["defaults"].(map[string]interface{}); ok {
+			err = runtime.DefaultUnstructuredConverter.FromUnstructured(defaultsObj, &centralDefaults)
+			if err != nil {
+				return errors.Wrap(err, "converting defaults from unstructured object")
+			}
+		}
+		c.Defaults = centralDefaults
+		mergeDefaultsIntoSpec(&c)
 
 		// Manually add the Central defaults as well.
 		if defaults, ok := u.Object["defaults"].(map[string]interface{}); ok {
@@ -59,4 +73,10 @@ func wrapExtension(runFn func(ctx context.Context, central *platform.Central, cl
 
 		return nil
 	}
+}
+
+// refactor!
+func mergeDefaultsIntoSpec(central *platform.Central) {
+	specWithDefaults := reflectutils.DeepMergeStructs(central.Defaults, central.Spec).(platform.CentralSpec)
+	central.Spec = specWithDefaults
 }
