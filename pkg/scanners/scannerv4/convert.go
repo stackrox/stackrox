@@ -174,8 +174,9 @@ func vulnerabilities(vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerab
 			Severity:          normalizedSeverity(ccVuln.GetNormalizedSeverity()),
 			Epss:              epss(ccVuln.GetEpssMetrics()),
 		}
-		if len(ccVuln.CvssMetrics) > 0 {
-			vuln.Link = link(ccVuln.GetCvssMetrics()[0].Url)
+		cvssMetrics := ccVuln.GetCvssMetrics()
+		if len(cvssMetrics) > 0 {
+			vuln.Link = link(cvssMetrics[0].Url)
 		}
 		if err := setScoresAndScoreVersions(vuln, ccVuln.GetCvssMetrics()); err != nil {
 			utils.Should(err)
