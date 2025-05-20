@@ -125,6 +125,12 @@ func (s *serviceImpl) TLSChallenge(_ context.Context, req *v1.TLSChallengeReques
 		return nil, errors.Errorf("reading additional CAs: %s", err)
 	}
 
+	// Add secondary CA cert to additional CAs, if it exists.
+	_, secondaryCACertDERBytes, err := mtls.SecondaryCACert()
+	if err == nil {
+		additionalCAs = append(additionalCAs, secondaryCACertDERBytes)
+	}
+
 	// add default leaf cert to additional CAs
 	defaultCertChain, err := tlsconfig.MaybeGetDefaultCertChain()
 	if err != nil {
