@@ -3,10 +3,10 @@ package watcher
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/pkg/errors"
-	complianceCheckResultDS "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
-	"github.com/stackrox/rox/central/complianceoperator/v2/checkresults/utils"
+	resultsDS "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	profileDatastore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
 	snapshotDS "github.com/stackrox/rox/central/complianceoperator/v2/report/datastore"
 	scanConfigurationDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
@@ -31,14 +31,31 @@ func GetScanConfigFromScan(ctx context.Context, scan *storage.ComplianceOperator
 	return scanConfigDS.GetScanConfigurationByName(ctx, scan.GetScanConfigName())
 }
 
-func OnFailureDeleteOldResults(ctx context.Context, results *ScanConfigWatcherResults, resultDS complianceCheckResultDS.DataStore, scanDS scan.DataStore, profileDS profileDatastore.DataStore) error {
-	errList := errorhelpers.NewErrorList("delete old CheckResults from scan config watcher results")
-	for _, r := range results.ScanResults {
-		if r.Error == nil {
+func DeleteOldResultsFromMissingScans(ctx context.Context, results *ScanConfigWatcherResults, profileDataStore profileDatastore.DataStore, scanDataStore scan.DataStore, resultsDataStore resultsDS.DataStore) error {
+	scans, err := GetScansFromScanConfiguration(ctx, results.ScanConfig, profileDataStore, scanDataStore)
+	if err != nil {
+		return err
+	}
+	for _, scanResults := range results.ScanResults {
+		scans.Remove(fmt.Sprintf("%s:%s", scanResults.Scan.GetClusterId(), scanResults.Scan.GetId()))
+	}
+	errList := errorhelpers.NewErrorList("delete old CheckResults from missing scans")
+	for scanWatcherID, _ := range scans {
+		parts := strings.Split(scanWatcherID, ":")
+		if len(parts) != 2 {
+			errList.AddError(errors.Errorf("unable to parse ScanID from %q", scanWatcherID))
 			continue
 		}
-		log.Debugf("deleting CheckResults from scan %q and any associated scan", r.Scan.GetScanName())
-		if err := utils.DeleteOldResults(ctx, r.Scan.GetProfile().GetProfileRefId(), resultDS, scanDS, profileDS); err != nil {
+		scan, found, err := scanDataStore.GetScan(ctx, parts[1])
+		if err != nil {
+			errList.AddError(err)
+			continue
+		}
+		if !found {
+			errList.AddError(errors.Errorf("unable to find Scan with ID %q", parts[1]))
+			continue
+		}
+		if err := resultsDataStore.DeleteOldResults(ctx, scan.GetLastStartedTime(), scan.GetScanRefId(), true); err != nil {
 			errList.AddError(err)
 		}
 	}
@@ -289,6 +306,7 @@ func GetScansFromScanConfiguration(ctx context.Context, scanConfig *storage.Comp
 			return nil, errors.Wrap(err, "unable to search the scans")
 		}
 		for _, s := range scans {
+			s.GetScanRefId()
 			log.Debugf("Adding scan to wait %s", s.GetScanName())
 			ret.Add(fmt.Sprintf("%s:%s", s.GetClusterId(), s.GetId()))
 		}
