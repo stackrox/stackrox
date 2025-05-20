@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/operator/internal/central/common"
 	"github.com/stackrox/rox/operator/internal/values/translation"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
-	"github.com/stackrox/rox/pkg/reflectutils"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
@@ -55,16 +54,10 @@ func (t Translator) Translate(ctx context.Context, u *unstructured.Unstructured)
 	if err != nil {
 		return nil, err
 	}
-
 	// For translation purposes, enrich Central with defaults, which are not implicitly marshalled/unmarshaled.
-	centralDefaults := platform.CentralSpec{}
-	if defaultsObj, ok := u.Object["defaults"].(map[string]interface{}); ok {
-		err = runtime.DefaultUnstructuredConverter.FromUnstructured(defaultsObj, &centralDefaults)
-		if err != nil {
-			return nil, errors.Wrap(err, "converting defaults from unstructured object")
-		}
+	if err := platform.AddUnstructuredDefaultsToCentral(&c, u); err != nil {
+		return nil, err
 	}
-	c.Defaults = centralDefaults
 
 	// At this point we don't need the Defaults in the unstructured object anymore and simply get rid of it to prevent
 	// Kube API warnings of the form:
@@ -88,7 +81,9 @@ func (t Translator) Translate(ctx context.Context, u *unstructured.Unstructured)
 // translate translates a Central CR into helm values.
 func (t Translator) translate(ctx context.Context, origCentral platform.Central) (chartutil.Values, error) {
 	modifiedCentral := origCentral.DeepCopy()
-	mergeDefaultsIntoSpec(modifiedCentral)
+	if err := platform.MergeCentralDefaultsIntoSpec(modifiedCentral); err != nil {
+		return nil, err
+	}
 	c := *modifiedCentral
 
 	v := translation.NewValuesBuilder()
@@ -133,11 +128,6 @@ func (t Translator) translate(ctx context.Context, origCentral platform.Central)
 	}
 
 	return v.Build()
-}
-
-func mergeDefaultsIntoSpec(central *platform.Central) {
-	specWithDefaults := reflectutils.DeepMergeStructs(central.Defaults, central.Spec).(platform.CentralSpec)
-	central.Spec = specWithDefaults
 }
 
 func getEnv(c platform.Central) *translation.ValuesBuilder {

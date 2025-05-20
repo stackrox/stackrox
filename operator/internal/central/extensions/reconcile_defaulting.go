@@ -49,37 +49,30 @@ func reconcileScannerV4FeatureDefaults(ctx context.Context, client ctrlClient.Cl
 	origCentral := central.DeepCopy()
 
 	// Execute defaulting flows.
-	// This updates central.Defaults and central's embedded annotations.
+	// This may update central.Defaults and central's embedded annotations.
 	for _, flow := range defaultingFlows {
 		if err := executeDefaultingFlow(logger, &central, client, flow); err != nil {
 			return err
 		}
 	}
 
-	defaultsObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&central.Defaults)
+	// We persist the annotations immediately during (first-time) execution of this extension to make sure
+	// that this information is already persisted in the Kubernetes resource before we
+	// can realistically end up in a situation where reconcilliation might need to be retried.
+	newResourceVersion, err := patchCentralAnnotations(ctx, logger, client, origCentral, central.GetAnnotations())
 	if err != nil {
-		return err
+		return errors.Wrap(err, "patching Central annotations")
 	}
+	central.SetResourceVersion(newResourceVersion)
 	updatedObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&central)
 	if err != nil {
 		return errors.Wrap(err, "converting Central to unstructured object after extension execution")
 	}
-	updatedObj["defaults"] = defaultsObj
 	u.Object = updatedObj
 
-	// We do this immediately during (first-time) execution of this extension to make sure
-	// that this information is already persisted in the Kubernetes resource before we
-	// can realistically end up in a situation where reconcilliation might need to be retried.
-
-	// MergeFromWithOptimisticLock causes the resourceVersion to be checked prior to patching.
-	patch := ctrlClient.MergeFromWithOptions(origCentral, ctrlClient.MergeFromWithOptimisticLock{})
-	if err := client.Patch(ctx, &central, patch); err != nil {
-		return err
+	if err := platform.AddCentralDefaultsToUnstructured(u, &central); err != nil {
+		return errors.Wrap(err, "enriching unstructured Central object with defaults")
 	}
-
-	logger.Info("patched Central object",
-		"oldResourceVersion", origCentral.GetResourceVersion(),
-		"newResourceVersion", central.GetResourceVersion())
 
 	return nil
 }
@@ -102,4 +95,21 @@ func executeDefaultingFlow(logger logr.Logger, central *platform.Central, client
 	central.SetAnnotations(annotations)
 
 	return nil
+}
+
+func patchCentralAnnotations(ctx context.Context, logger logr.Logger, client ctrlClient.Client, central *platform.Central, annotations map[string]string) (string, error) {
+	// MergeFromWithOptimisticLock causes the resourceVersion to be checked prior to patching.
+	patch := ctrlClient.MergeFromWithOptions(central, ctrlClient.MergeFromWithOptimisticLock{})
+	newCentral := central.DeepCopy()
+	newCentral.SetAnnotations(annotations)
+	if err := client.Patch(ctx, newCentral, patch); err != nil {
+		return "", err
+	}
+
+	newResourceVersion := newCentral.GetResourceVersion()
+	logger.Info("patched Central object",
+		"oldResourceVersion", central.GetResourceVersion(),
+		"newResourceVersion", newResourceVersion)
+
+	return newResourceVersion, nil
 }
