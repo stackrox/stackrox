@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/stackrox/rox/pkg/clientconn"
@@ -11,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/urlfmt"
 )
 
 var (
@@ -101,21 +103,40 @@ func transportMux(defaultTransport http.RoundTripper, o options) (http.RoundTrip
 		}
 	}
 
-	// This is here instead of as a global variable for testing purposes.
-	namespace := env.Namespace.Setting()
-	centralHost := fmt.Sprintf("central.%s.svc", namespace)
-	sensorHost := fmt.Sprintf("sensor.%s.svc", namespace)
+	// Set the defaults here instead of in global variables for testing purposes.
+	centralHostname, err := hostname(env.CentralEndpoint.Setting(), fmt.Sprintf("central.%s.svc", env.Namespace.Setting()))
+	if err != nil {
+		return nil, err
+	}
+	sensorHostname, err := hostname(env.SensorEndpoint.Setting(), fmt.Sprintf("sensor.%s.svc", env.Namespace.Setting()))
+	if err != nil {
+		return nil, err
+	}
 
 	return httputil.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
-		switch req.URL.Host {
-		case centralHost:
+		switch req.URL.Hostname() {
+		case centralHostname:
 			return centralTransport.RoundTrip(req)
-		case sensorHost:
+		case sensorHostname:
 			return sensorTransport.RoundTrip(req)
 		default:
 			return defaultTransport.RoundTrip(req)
 		}
 	}), nil
+}
+
+func hostname(endpoint, defaultHostname string) (string, error) {
+	if endpoint == "" {
+		return defaultHostname, nil
+	}
+	// This will prepend the https:// schema to the URL allowing us to get an accurate
+	// value for the Hostname call below.
+	endpoint = urlfmt.FormatURL(endpoint, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
+	parsedURL, err := url.Parse(endpoint)
+	if err != nil {
+		return "", fmt.Errorf("parsing URL %q: %w", endpoint, err)
+	}
+	return parsedURL.Hostname(), nil
 }
 
 func roxTransport(subject mtls.Subject) (http.RoundTripper, error) {
@@ -137,7 +158,7 @@ func roxTransport(subject mtls.Subject) (http.RoundTripper, error) {
 		// For now, disallow all HTTP/2 traffic to StackRox services.
 		ForceAttemptHTTP2: false,
 
-		// The rest are (more-or-less) copied from http.DefaultTransport as of go1.20.10.
+		// The rest are (more-or-less) copied from http.DefaultTransport as of go1.24.2.
 		DialContext:           defaultDialer.DialContext,
 		MaxIdleConns:          100,
 		IdleConnTimeout:       90 * time.Second,
