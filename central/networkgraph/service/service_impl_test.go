@@ -197,8 +197,8 @@ func (s *NetworkGraphServiceTestSuite) TestGetExternalNetworkFlows() {
 
 	mockFlowStore.EXPECT().GetMatchingFlows(gomock.Any(), gomock.Any(), gomock.Any()).Return(
 		[]*storage.NetworkFlow{
-			testutils.ExtFlow(es1aID.String(), "mydeployment", "mycluster"),
-			testutils.ExtFlow(es1bID.String(), "mydeployment", "mycluster"),
+			testutils.ExtFlowEgress(es1aID.String(), "mydeployment", "mycluster"),
+			testutils.ExtFlowEgress(es1bID.String(), "mydeployment", "mycluster"),
 		},
 		nil,
 		nil,
