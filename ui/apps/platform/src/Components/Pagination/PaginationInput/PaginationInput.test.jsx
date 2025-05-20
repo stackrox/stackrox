@@ -17,7 +17,7 @@ const MockPaginationInput = ({ defaultPage = 1 }) => {
     );
 };
 
-test('can not set page to a higher value than the total pages count', async () => {
+test('cannot set page to a higher value than the total pages count', async () => {
     render(<MockPaginationInput />);
     const input = screen.getByTestId('pagination-input');
 
@@ -26,7 +26,7 @@ test('can not set page to a higher value than the total pages count', async () =
     expect(input.value).toBe('5');
 });
 
-test('can not set page to a lower value than 1', async () => {
+test('cannot set page to a lower value than 1', async () => {
     render(<MockPaginationInput />);
     const input = screen.getByTestId('pagination-input');
 

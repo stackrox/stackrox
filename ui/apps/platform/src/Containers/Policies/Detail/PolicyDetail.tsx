@@ -230,19 +230,23 @@ function PolicyDetail({
                                               >
                                                   Export policy to JSON
                                               </DropdownItem>,
-                                              !isDefault ? (
-                                                  <DropdownItem
-                                                      key="Save as Custom Resource"
-                                                      component="button"
-                                                      onClick={() =>
-                                                          setIsSaveAsCustomResourceOpen(true)
-                                                      }
-                                                  >
-                                                      Save as Custom Resource
-                                                  </DropdownItem>
-                                              ) : (
-                                                  <React.Fragment key="Save as Custom Resource"></React.Fragment>
-                                              ),
+                                              <DropdownItem
+                                                  key="Save as Custom Resource"
+                                                  component="button"
+                                                  isDisabled={isDefault}
+                                                  description={
+                                                      isDefault
+                                                          ? 'Default policies cannot be saved as Custom Resource'
+                                                          : ''
+                                                  }
+                                                  onClick={() =>
+                                                      setIsSaveAsCustomResourceOpen(true)
+                                                  }
+                                              >
+                                                  {isDefault
+                                                      ? 'Cannot save as Custom Resource'
+                                                      : 'Save as Custom Resource'}
+                                              </DropdownItem>,
                                               <DropdownItem
                                                   key="Enable/Disable policy"
                                                   component="button"
@@ -270,19 +274,23 @@ function PolicyDetail({
                                               >
                                                   Export policy to JSON
                                               </DropdownItem>,
-                                              !isDefault ? (
-                                                  <DropdownItem
-                                                      key="Save as Custom Resource"
-                                                      component="button"
-                                                      onClick={() =>
-                                                          setIsSaveAsCustomResourceOpen(true)
-                                                      }
-                                                  >
-                                                      Save as Custom Resource
-                                                  </DropdownItem>
-                                              ) : (
-                                                  <React.Fragment key="Save as Custom Resource"></React.Fragment>
-                                              ),
+                                              <DropdownItem
+                                                  key="Save as Custom Resource"
+                                                  component="button"
+                                                  isDisabled={isDefault}
+                                                  description={
+                                                      isDefault
+                                                          ? 'Default policies cannot be saved as Custom Resource'
+                                                          : ''
+                                                  }
+                                                  onClick={() =>
+                                                      setIsSaveAsCustomResourceOpen(true)
+                                                  }
+                                              >
+                                                  {isDefault
+                                                      ? 'Cannot save as Custom Resource'
+                                                      : 'Save as Custom Resource'}
+                                              </DropdownItem>,
                                           ]
                                 }
                             />

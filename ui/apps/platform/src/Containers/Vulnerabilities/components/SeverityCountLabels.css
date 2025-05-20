@@ -1,8 +1,8 @@
 /*
   Each child label is wrapped in a Tooltip, which as of PF5 has the style `display: contents;` applied
-  in a way that can not be overridden via props. This prevents us from rendering the children with
+  in a way that cannot be overridden via props. This prevents us from rendering the children with
   any sort of layout, so we need to override the display property here.
 */
-.severity-count-labels > div {
+.severity-count-labels>div {
   display: inline !important;
 }
