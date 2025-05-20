@@ -568,6 +568,45 @@ func (suite *ManagerTestSuite) TestUpdateBaselineStatus() {
 			depPeer(2, properties(false, 8443)),
 		),
 	)
+
+	// Add an external discovered anomalous flow
+	suite.NoError(suite.m.ProcessBaselineStatusUpdate(ctxWithAccessToWrite(1),
+		modifyPeersReq(1, protoExternalPeerStatus(v1.NetworkBaselinePeerStatus_ANOMALOUS, 1, 52, true, true)),
+	))
+
+	suite.assertBaselinesAre(
+		wrapWithForbidden(
+			baselineWithPeers(1, depPeer(2, properties(true, 443)), depPeer(3, properties(true, 512))),
+			depPeer(2, properties(false, 52)),
+			// added anomalous internet flow (the external flow is anonymized to the internet)
+			internetPeer(properties(true, 52)),
+		),
+		wrapWithForbidden(baselineWithPeers(2, depPeer(1, properties(false, 443))),
+			depPeer(1, properties(true, 52)), depPeer(3, properties(true, 8443)),
+		),
+		wrapWithForbidden(baselineWithPeers(3, depPeer(1, properties(false, 512))),
+			depPeer(2, properties(false, 8443)),
+		),
+	)
+
+	// Then make it a baseline flow
+
+	suite.NoError(suite.m.ProcessBaselineStatusUpdate(ctxWithAccessToWrite(1),
+		modifyPeersReq(1, protoExternalPeerStatus(v1.NetworkBaselinePeerStatus_BASELINE, 1, 52, true, true)),
+	))
+
+	suite.assertBaselinesAre(
+		wrapWithForbidden(
+			baselineWithPeers(1, depPeer(2, properties(true, 443)), depPeer(3, properties(true, 512)), internetPeer(properties(true, 52))),
+			depPeer(2, properties(false, 52)),
+		),
+		wrapWithForbidden(baselineWithPeers(2, depPeer(1, properties(false, 443))),
+			depPeer(1, properties(true, 52)), depPeer(3, properties(true, 8443)),
+		),
+		wrapWithForbidden(baselineWithPeers(3, depPeer(1, properties(false, 512))),
+			depPeer(2, properties(false, 8443)),
+		),
+	)
 }
 
 func (suite *ManagerTestSuite) TestDeploymentDelete() {
@@ -1066,6 +1105,23 @@ func protoPeerStatus(status v1.NetworkBaselinePeerStatus_Status, peerID int, por
 	}
 }
 
+func protoExternalPeerStatus(status v1.NetworkBaselinePeerStatus_Status, peerID int, port uint32, ingress, discovered bool) *v1.NetworkBaselinePeerStatus {
+	return &v1.NetworkBaselinePeerStatus{
+		Peer: &v1.NetworkBaselineStatusPeer{
+			Entity: &v1.NetworkBaselinePeerEntity{
+				Id:         extSrcID(peerID),
+				Name:       extSrcName(peerID),
+				Type:       storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+				Discovered: discovered,
+			},
+			Port:     port,
+			Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+			Ingress:  ingress,
+		},
+		Status: status,
+	}
+}
+
 func conns(indicators ...networkgraph.NetworkConnIndicator) []networkgraph.NetworkConnIndicator {
 	return indicators
 }
@@ -1124,6 +1180,18 @@ func extSrcPeer(id int, cidr string, properties ...*storage.NetworkBaselineConne
 					},
 				},
 			}},
+		Properties: properties,
+	}
+}
+
+func internetPeer(properties ...*storage.NetworkBaselineConnectionProperties) *storage.NetworkBaselinePeer {
+	return &storage.NetworkBaselinePeer{
+		Entity: &storage.NetworkEntity{
+			Info: &storage.NetworkEntityInfo{
+				Id:   networkgraph.InternetExternalSourceID,
+				Type: storage.NetworkEntityInfo_INTERNET,
+			},
+		},
 		Properties: properties,
 	}
 }

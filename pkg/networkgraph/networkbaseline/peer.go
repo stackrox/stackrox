@@ -180,12 +180,22 @@ func ConvertPeersToProto(peerSet map[Peer]struct{}) ([]*storage.NetworkBaselineP
 
 // PeerFromV1Peer converts peer within v1 request to in-memory representation form
 func PeerFromV1Peer(v1Peer *v1.NetworkBaselineStatusPeer, peerName, cidrBlock string) Peer {
+	var entity networkgraph.Entity
+
+	if v1Peer.GetEntity().GetType() == storage.NetworkEntityInfo_EXTERNAL_SOURCE &&
+		v1Peer.GetEntity().GetDiscovered() {
+		entity = networkgraph.InternetEntity()
+	} else {
+		entity = networkgraph.Entity{
+			Type:       v1Peer.GetEntity().GetType(),
+			ID:         v1Peer.GetEntity().GetId(),
+			Discovered: v1Peer.GetEntity().GetDiscovered(),
+		}
+	}
+
 	return Peer{
 		IsIngress: v1Peer.GetIngress(),
-		Entity: networkgraph.Entity{
-			Type: v1Peer.GetEntity().GetType(),
-			ID:   v1Peer.GetEntity().GetId(),
-		},
+		Entity:    entity,
 		Name:      peerName,
 		DstPort:   v1Peer.GetPort(),
 		Protocol:  v1Peer.GetProtocol(),
