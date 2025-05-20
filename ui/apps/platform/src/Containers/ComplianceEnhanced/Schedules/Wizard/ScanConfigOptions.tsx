@@ -70,6 +70,7 @@ function ScanConfigOptions(): ReactElement {
                                         id="parameters.name"
                                         name="parameters.name"
                                         value={formik.values.parameters.name}
+                                        isDisabled={!!formik.initialValues.parameters.name}
                                         validated={
                                             formik.errors?.parameters?.name &&
                                             formik.touched?.parameters?.name
