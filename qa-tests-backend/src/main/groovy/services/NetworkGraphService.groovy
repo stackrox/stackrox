@@ -2,6 +2,7 @@ package services
 
 import com.google.protobuf.Timestamp
 import groovy.transform.CompileStatic
+import groovy.transform.NullCheck
 import groovy.util.logging.Slf4j
 
 import io.stackrox.annotations.Retry
@@ -43,17 +44,8 @@ class NetworkGraphService extends BaseService {
         }
     }
 
-    @Retry
-    static createNetworkEntity(String clusterId, String name, String cidr, Boolean isSystemGenerated) {
-        if (clusterId == null) {
-            throw new RuntimeException("Cluster ID is required to create a network entity")
-        }
-        if (name == null) {
-            throw new RuntimeException("Name is required to create a network entity")
-        }
-        if (cidr == null) {
-            throw new RuntimeException("CIDR address needs to be defined to create a network entity")
-        }
+    @NullCheck
+    static NetworkEntity createNetworkEntity(String clusterId, String name, String cidr, boolean isSystemGenerated) {
         // Create entity for request
         ExternalSource.Builder entity =
                 ExternalSource
@@ -70,7 +62,12 @@ class NetworkGraphService extends BaseService {
                         .setEntity(entity)
                         .build()
 
-        return getNetworkGraphClient().createExternalNetworkEntity(request)
+        return createNetworkEntity(request)
+    }
+
+    @Retry
+    static NetworkEntity createNetworkEntity(CreateNetworkEntityRequest request) {
+        getNetworkGraphClient().createExternalNetworkEntity(request)
     }
 
     @Retry(attempts = 24, delay = 5)
