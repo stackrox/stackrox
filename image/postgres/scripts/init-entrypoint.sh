@@ -188,7 +188,7 @@ else
                     tr -d '[:space:]')
 
         if [ "$STATUS" != "shutdown" ]; then
-            echo "Cluster was not shutdown clearly."
+            echo "Cluster was not shutdown cleanly."
             exit 1
         fi
 
