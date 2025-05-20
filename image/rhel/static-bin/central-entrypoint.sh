@@ -1,6 +1,7 @@
 #!/bin/sh
 
 set -e
+set -x
 
 # When running as the root user, chown the directories
 # and then exec as the non-root user.
