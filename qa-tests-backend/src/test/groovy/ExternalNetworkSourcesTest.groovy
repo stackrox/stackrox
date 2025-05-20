@@ -1,12 +1,12 @@
 import com.google.protobuf.Timestamp
 
-import io.stackrox.annotations.Retry
 import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.storage.NetworkFlowOuterClass.NetworkEntity
 
 import objects.Deployment
 import services.ClusterService
 import services.NetworkGraphService
+import util.Helpers
 import util.NetworkGraphUtil
 
 import spock.lang.Shared
@@ -195,10 +195,19 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
 
         and:
         "Verify no edge from deployment to supernet exists in recent network graph"
+        // We need to wait for at least (i.e., the sum of all the following):
+        // - another enrichment to happen - at least 30s.
+        // - old connection being closed by Collector - at least 5 min with the default afterglow setting.
+        // - the time-scope of the network graph - here 60s.
+        // Waiting for 6 min and 30s is a minimum here, however the edge may disappear sooner.
+        // Manually observing this test-case confirmed that there are two updates for "externalSource30ID"
+        // sent to Central, the second exactly 5min30s after the first one.
+        // We set the retries to cover 10 minutes to account for unpredictable issues.
         verifyNoEdge(
                 deploymentUid,
                 supernetID,
-                60)
+                60,
+                20)
 
         cleanup:
         deleteNetworkEntity(supernetID)
@@ -217,18 +226,20 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
                 .deleteExternalNetworkEntity(Common.ResourceByID.newBuilder().setId(entityID).build())
     }
 
-    @Retry(attempts = 4, delay = 30)
-    private static void verifyEdge(String deploymentUid, String subnetID, int sinceSeconds = 0) {
-        assert NetworkGraphUtil.checkForEdge(deploymentUid, subnetID, since(sinceSeconds), 180)
+    private static void verifyEdge(String deploymentUid, String subnetID, int sinceSeconds = 0, int retries = 4) {
+        Helpers.withRetry(retries, 30) {
+            assert NetworkGraphUtil.checkForEdge(deploymentUid, subnetID, since(sinceSeconds), 180)
+        }
     }
 
-    @Retry(attempts = 4, delay = 30)
-    private static void verifyNoEdge(String entityID1, String entityID2, int sinceSeconds = 0) {
-        assert !NetworkGraphUtil.checkForEdge(
-                entityID1,
-                entityID2,
-                since(sinceSeconds),
-                10)
+    private static void verifyNoEdge(String entityID1, String entityID2, int sinceSeconds = 0, int retries = 4) {
+        Helpers.withRetry(retries, 30) {
+            assert !NetworkGraphUtil.checkForEdge(
+                    entityID1,
+                    entityID2,
+                    since(sinceSeconds),
+                    10)
+        }
     }
 
     private static Timestamp since(int sinceSeconds) {
