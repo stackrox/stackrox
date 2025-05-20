@@ -120,7 +120,7 @@ func FetchImageSignaturesWithRetries(ctx context.Context, fetcher SignatureFetch
 	var fetchedSignatures []*storage.Signature
 	var err error
 	err = retry.WithRetry(func() error {
-		fetchedSignatures, err = fetchAndAppendSignatures(ctx, fetcher, image, fullImageName, registry)
+		fetchedSignatures, err = fetchUniqueSignatures(ctx, fetcher, image, fullImageName, registry)
 		return err
 	},
 		retry.WithContext(ctx),
@@ -133,7 +133,7 @@ func FetchImageSignaturesWithRetries(ctx context.Context, fetcher SignatureFetch
 	return fetchedSignatures, err
 }
 
-func fetchAndAppendSignatures(ctx context.Context, fetcher SignatureFetcher, image *storage.Image,
+func fetchUniqueSignatures(ctx context.Context, fetcher SignatureFetcher, image *storage.Image,
 	fullImageName string, registry registryTypes.Registry) ([]*storage.Signature, error) {
 	sigFetchCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
