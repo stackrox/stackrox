@@ -19,6 +19,7 @@ function HelpMenu(): ReactElement {
             isOpen={isHelpMenuOpen}
             onOpenChange={(isOpen) => setIsHelpMenuOpen(isOpen)}
             onOpenChangeKeys={['Escape', 'Tab']}
+            onSelect={() => setIsHelpMenuOpen(false)}
             popperProps={{ position: 'right' }}
             toggle={(toggleRef) => (
                 <MenuToggle
