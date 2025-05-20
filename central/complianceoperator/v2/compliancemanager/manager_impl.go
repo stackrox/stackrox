@@ -171,7 +171,7 @@ func (m *managerImpl) UpdateScanRequest(ctx context.Context, scanRequest *storag
 
 	// We are using scan schedule name as FK in scan results. Changing name would break relation.
 	if oldScanConfig.GetScanConfigName() != scanRequest.GetScanConfigName() {
-		return nil, errors.Errorf("Changing the scan schedule name is not allowed.")
+		return nil, errors.New("Changing the scan schedule name is not allowed.")
 	}
 
 	// TODO(ROX-22398): if we restrict cluster deletion, this is where we would do it before any updates are done.
@@ -201,11 +201,13 @@ func (m *managerImpl) removeObsoleteResultsByClusters(ctx context.Context, oldSc
 	}
 
 	removedClusterIDs := oldClusterIDs.Difference(newClusterIDs).AsSlice()
+	if len(removedClusterIDs) == 0 {
+		return
+	}
 
 	// Send delete to sensor for any clusters that were deleted
 	m.processClusterDelete(ctx, newScanConfig, removedClusterIDs)
 
-	// TODO: Testing!!!
 	err := m.resultsDS.DeleteResultsByScanConfigAndCluster(ctx, oldScanConfig.GetScanConfigName(), removedClusterIDs)
 	if err != nil {
 		log.Errorf("removing obsolete scan results for clusters %v: %v", removedClusterIDs, err)
@@ -224,12 +226,14 @@ func (m *managerImpl) removeObsoleteResultsByProfiles(ctx context.Context, oldSc
 		newProfileNames.Add(newProfile.GetProfileName())
 	}
 
-	// TODO: Testing!!!
 	removedProfileNames := oldProfileNames.Difference(newProfileNames).AsSlice()
+	if len(removedProfileNames) == 0 {
+		return
+	}
 
 	setRemovedProfileRuleNames := set.NewStringSet()
 	for _, profileName := range removedProfileNames {
-		query := search.NewQueryBuilder().AddStrings(search.ComplianceOperatorProfileName, profileName).ProtoQuery()
+		query := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorProfileName, profileName).ProtoQuery()
 		profiles, err := m.profileDS.SearchProfiles(ctx, query)
 		if err != nil {
 			log.Errorf("unable to get profile %q", profileName)
