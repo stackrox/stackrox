@@ -13,7 +13,6 @@ import (
 var (
 	// Default headers to use when printing tabular output.
 	defaultImageScanHeaders = []string{"COMPONENT", "VERSION", "CVE", "SEVERITY", "LINK", "FIXED_VERSION"}
-	defaultColumnsToMerge   = []string{"COMPONENT", "VERSION"}
 
 	imageScanHeaderToJSONPathMap = map[string]string{
 		"COMPONENT":     "result.vulnerabilities.#.componentName",
