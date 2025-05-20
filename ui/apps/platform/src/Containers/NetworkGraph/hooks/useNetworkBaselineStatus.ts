@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 
 import { TimeWindow } from 'constants/timeWindows';
 import useRestQuery from 'hooks/useRestQuery';
@@ -16,7 +16,7 @@ export function useNetworkBaselineStatus(
     status: 'ANOMALOUS' | 'BASELINE'
 ) {
     const pagination = useURLPagination(DEFAULT_NETWORK_GRAPH_PAGE_SIZE, status.toLowerCase());
-    const { page, perPage } = pagination;
+    const { page, perPage, setPage } = pagination;
 
     const fetch = useCallback((): Promise<NetworkBaselineExternalStatusResponse> => {
         const fromTimestamp = timeWindowToISO(timeWindow);
@@ -29,6 +29,10 @@ export function useNetworkBaselineStatus(
     }, [deploymentId, page, perPage, timeWindow]);
 
     const { data, isLoading, error, refetch } = useRestQuery(fetch);
+
+    useEffect(() => {
+        setPage(1);
+    }, [deploymentId, timeWindow, setPage]);
 
     const tableState = getTableUIState({
         isLoading,
