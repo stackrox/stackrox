@@ -166,7 +166,6 @@ func vulnerabilities(vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerab
 			Cve:      ccVuln.GetName(),
 			Advisory: advisory(ccVuln.GetAdvisory()),
 			Summary:  ccVuln.GetDescription(),
-			// TODO(ROX-26547)
 			// The link field will be overwritten if preferred CVSS source is available
 			Link:        link(ccVuln.GetLink()),
 			PublishedOn: ccVuln.GetIssued(),
@@ -174,6 +173,9 @@ func vulnerabilities(vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerab
 			VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
 			Severity:          normalizedSeverity(ccVuln.GetNormalizedSeverity()),
 			Epss:              epss(ccVuln.GetEpssMetrics()),
+		}
+		if len(ccVuln.CvssMetrics) > 0 {
+			vuln.Link = link(ccVuln.GetCvssMetrics()[0].Url)
 		}
 		if err := setScoresAndScoreVersions(vuln, ccVuln.GetCvssMetrics()); err != nil {
 			utils.Should(err)
