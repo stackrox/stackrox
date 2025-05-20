@@ -12,12 +12,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func nilGatherFunc(_ context.Context) iter.Seq[Finding] {
+func nilGatherFunc(context.Context, MetricLabelsExpressions) iter.Seq[Finding] {
 	return func(func(Finding) bool) {}
 }
 
-func makeTestGatherFunc(data []map[Label]string) func(_ context.Context) iter.Seq[Finding] {
-	return func(_ context.Context) iter.Seq[Finding] {
+func makeTestGatherFunc(data []map[Label]string) func(context.Context, MetricLabelsExpressions) iter.Seq[Finding] {
+	return func(context.Context, MetricLabelsExpressions) iter.Seq[Finding] {
 		return func(yield func(Finding) bool) {
 			for _, datum := range data {
 				if !yield(func(label Label) string {

@@ -100,11 +100,12 @@ func (cfg *TrackerConfig) MakeTrackFunc(
 ) func(context.Context) {
 
 	return func(ctx context.Context) {
-		result := makeAggregator(cfg.GetMetricLabelExpressions(), cfg.labelOrder)
-		for finding := range cfg.generator(ctx) {
-			result.count(finding)
+		mle := cfg.GetMetricLabelExpressions()
+		aggregator := makeAggregator(mle, cfg.labelOrder)
+		for finding := range cfg.generator(ctx, mle) {
+			aggregator.count(finding)
 		}
-		for metric, records := range result.result {
+		for metric, records := range aggregator.result {
 			for _, rec := range records {
 				trackFunc(string(metric), rec.labels, rec.total)
 			}
