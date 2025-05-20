@@ -125,7 +125,8 @@ else
 GOPATH_VOLUME_SRC := $(GOPATH_VOLUME_NAME)
 endif
 
-LOCAL_VOLUME_ARGS := -v $(CURDIR):/src:delegated -v $(GOCACHE_VOLUME_SRC):/linux-gocache:delegated -v $(GOPATH_VOLUME_SRC):/go:delegated$(if $(ADDITIONAL_LOCAL_VOLUME_ARGS), $(ADDITIONAL_LOCAL_VOLUME_ARGS))
+LOCAL_VOLUME_ARGS := -v $(CURDIR):/src:delegated -v $(GOCACHE_VOLUME_SRC):/linux-gocache:delegated -v $(GOPATH_VOLUME_SRC):/go:delegated
+LOCAL_VOLUME_ARGS += $(EXTRA_LOCAL_VOLUME_ARGS)
 GOPATH_WD_OVERRIDES := -w /src -e GOPATH=/go -e GOCACHE=/linux-gocache -e GIT_CONFIG_COUNT=1 -e GIT_CONFIG_KEY_0=safe.directory -e GIT_CONFIG_VALUE_0='/src'
 
 null :=
