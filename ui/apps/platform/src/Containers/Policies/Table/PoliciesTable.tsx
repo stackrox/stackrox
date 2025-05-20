@@ -434,7 +434,7 @@ function PoliciesTable({
                                 ? 'Cannot save as Custom Resource'
                                 : 'Save as Custom Resource',
                             description: isDefault
-                                ? 'Default policies can not be saved as Custom Resource'
+                                ? 'Default policies cannot be saved as Custom Resource'
                                 : '',
                             onClick: () => setSavingIds([id]),
                             isDisabled: isDefault,

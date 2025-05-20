@@ -236,7 +236,7 @@ function PolicyDetail({
                                                   isDisabled={isDefault}
                                                   description={
                                                       isDefault
-                                                          ? 'Default policies can not be saved as Custom Resource'
+                                                          ? 'Default policies cannot be saved as Custom Resource'
                                                           : ''
                                                   }
                                                   onClick={() =>
@@ -280,7 +280,7 @@ function PolicyDetail({
                                                   isDisabled={isDefault}
                                                   description={
                                                       isDefault
-                                                          ? 'Default policies can not be saved as Custom Resource'
+                                                          ? 'Default policies cannot be saved as Custom Resource'
                                                           : ''
                                                   }
                                                   onClick={() =>
