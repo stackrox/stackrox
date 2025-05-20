@@ -32,7 +32,7 @@ func Test_run(t *testing.T) {
 		i := false
 		runner := &aggregatorRunner{stopCh: make(chan bool, 1)}
 		runner.vulnerabilities = common.MakeTrackerConfig("test", "test",
-			map[common.Label]int{}, func(ctx context.Context) iter.Seq[common.Finding] {
+			map[common.Label]int{}, func(context.Context, common.MetricLabelsExpressions) iter.Seq[common.Finding] {
 				return func(yield func(common.Finding) bool) {
 					i = true
 					runner.Stop()
@@ -47,7 +47,7 @@ func Test_run(t *testing.T) {
 		i := 0
 		runner := &aggregatorRunner{stopCh: make(chan bool, 1)}
 		runner.vulnerabilities = common.MakeTrackerConfig("test", "test",
-			map[common.Label]int{}, func(ctx context.Context) iter.Seq[common.Finding] {
+			map[common.Label]int{}, func(context.Context, common.MetricLabelsExpressions) iter.Seq[common.Finding] {
 				return func(yield func(common.Finding) bool) {
 					i++
 					if i > 2 {
@@ -64,7 +64,7 @@ func Test_run(t *testing.T) {
 		var i atomic.Int32
 		runner := &aggregatorRunner{stopCh: make(chan bool, 1)}
 		runner.vulnerabilities = common.MakeTrackerConfig("test", "test",
-			map[common.Label]int{}, func(ctx context.Context) iter.Seq[common.Finding] {
+			map[common.Label]int{}, func(context.Context, common.MetricLabelsExpressions) iter.Seq[common.Finding] {
 				return func(yield func(common.Finding) bool) {
 					i.Add(1)
 				}
