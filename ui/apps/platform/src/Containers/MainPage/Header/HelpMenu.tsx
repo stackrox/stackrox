@@ -23,7 +23,7 @@ function HelpMenu(): ReactElement {
             popperProps={{ position: 'right' }}
             toggle={(toggleRef) => (
                 <MenuToggle
-                    aria-label="Help Menu"
+                    aria-label="Help menu"
                     ref={toggleRef}
                     variant="plain"
                     onClick={() => setIsHelpMenuOpen((wasOpen) => !wasOpen)}
