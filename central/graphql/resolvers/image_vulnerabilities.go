@@ -275,7 +275,7 @@ func (resolver *Resolver) ImageVulnerabilityCounter(ctx context.Context, args Ra
 
 	scopeQ, _ := scoped.GetQueryForAllScopes(ctx)
 	log.Infof("SHREWS -- ImageVulnerabilityCounter -- %v", args)
-	log.Infof("SHREWS -- ImageVulnerabilityCounter -- %v", scopeQ)
+	log.Infof("SHREWS -- ImageVulnerabilityCounter -- scope query -- %v", scopeQ)
 	// check permissions
 	if err := readImages(ctx); err != nil {
 		return nil, err

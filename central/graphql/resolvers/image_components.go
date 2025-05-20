@@ -157,6 +157,9 @@ func (resolver *Resolver) ImageComponents(ctx context.Context, q PaginatedQuery)
 	}
 
 	if features.FlattenCVEData.Enabled() {
+		scopeQ, _ := scoped.GetQueryForAllScopes(ctx)
+		log.Infof("SHREWS -- ImageComponents -- scope query -- %v", scopeQ)
+		log.Infof("SHREWS -- ImageComponents -- query -- %v", query)
 		// Get the flattened data
 		componentFlatData, err := resolver.ImageComponentFlatView.Get(ctx, query)
 		if err != nil {
