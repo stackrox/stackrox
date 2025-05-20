@@ -126,8 +126,12 @@ func (suite *ManagerTestSuite) mustInitManager(initialBaselines ...*storage.Netw
 		baseline.ObservationPeriodEnd = protoconv.ConvertMicroTSToProtobufTS(getNewObservationPeriodEnd())
 		suite.ds.baselines[baseline.GetDeploymentId()] = baseline
 	}
+
 	var err error
+
 	suite.networkPolicyDS.EXPECT().GetNetworkPolicies(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+	suite.treeManager.EXPECT().GetDefaultNetworkTree(gomock.Any()).Return(nil).AnyTimes()
+
 	suite.m, err = New(suite.ds, suite.networkEntities, suite.deploymentDS, suite.networkPolicyDS, suite.clusterFlows, suite.connectionManager, suite.treeManager)
 	suite.Require().NoError(err)
 }
@@ -169,7 +173,6 @@ func (suite *ManagerTestSuite) mustGetObserationPeriod(baselineID int) timestamp
 }
 
 func (suite *ManagerTestSuite) initBaselinesForDeployments(ids ...int) {
-	suite.treeManager.EXPECT().GetDefaultNetworkTree(gomock.Any()).Return(nil).AnyTimes()
 	for _, id := range ids {
 		suite.deploymentDS.EXPECT().GetDeployment(gomock.Any(), depID(id)).Return(
 			&storage.Deployment{
@@ -184,7 +187,6 @@ func (suite *ManagerTestSuite) initBaselinesForDeployments(ids ...int) {
 		suite.treeManager.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), clusterID(id)).Return(nil).AnyTimes()
 		suite.Require().NoError(suite.m.ProcessDeploymentCreate(depID(id), depName(id), clusterID(id), ns(id)))
 		suite.Require().NoError(suite.m.CreateNetworkBaseline(depID(id)))
-
 	}
 }
 
