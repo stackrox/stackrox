@@ -809,7 +809,7 @@ func (s *flowStoreImpl) pruneOrphanExternalEntities(ctx context.Context, entityI
 			return err
 		}
 
-		log.Info("Pruned %d orphaned discovered entities", totalPruned)
+		log.Infof("Pruned %d orphaned discovered entities", totalPruned)
 	}
 
 	return nil
