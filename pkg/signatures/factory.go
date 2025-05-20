@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv"
-	"github.com/stackrox/rox/pkg/protoutils"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/retry"
 )
@@ -120,7 +119,9 @@ func FetchImageSignaturesWithRetries(ctx context.Context, fetcher SignatureFetch
 	var fetchedSignatures []*storage.Signature
 	var err error
 	err = retry.WithRetry(func() error {
-		fetchedSignatures, err = fetchUniqueSignatures(ctx, fetcher, image, fullImageName, registry)
+		sigFetchCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+		defer cancel()
+		fetchedSignatures, err = fetcher.FetchSignatures(sigFetchCtx, image, fullImageName, registry)
 		return err
 	},
 		retry.WithContext(ctx),
@@ -131,16 +132,4 @@ func FetchImageSignaturesWithRetries(ctx context.Context, fetcher SignatureFetch
 		}))
 
 	return fetchedSignatures, err
-}
-
-func fetchUniqueSignatures(ctx context.Context, fetcher SignatureFetcher, image *storage.Image,
-	fullImageName string, registry registryTypes.Registry) ([]*storage.Signature, error) {
-	sigFetchCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
-	defer cancel()
-
-	sigs, err := fetcher.FetchSignatures(sigFetchCtx, image, fullImageName, registry)
-	if err != nil {
-		return nil, err
-	}
-	return protoutils.SliceUnique(sigs), nil
 }
