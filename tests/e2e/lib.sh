@@ -192,6 +192,9 @@ export_test_environment() {
     ci_export ROX_VULNERABILITY_ON_DEMAND_REPORTS "${ROX_VULNERABILITY_ON_DEMAND_REPORTS:-true}"
     ci_export ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS "${ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS:-true}"
 
+    ci_export ROX_CENTRAL_EXTRA_HELM_VALUES_FILE "${ROX_CENTRAL_EXTRA_HELM_VALUES_FILE:-}"
+    ci_export ROX_SENSOR_EXTRA_HELM_VALUES_FILE "${ROX_SENSOR_EXTRA_HELM_VALUES_FILE:-}"
+
     if is_in_PR_context && pr_has_label ci-fail-fast; then
         ci_export FAIL_FAST "true"
     fi
