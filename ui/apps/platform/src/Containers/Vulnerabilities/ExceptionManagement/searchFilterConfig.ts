@@ -9,9 +9,16 @@ const imageSearchFilterConfig: CompoundSearchFilterEntity = {
     attributes: [ImageName],
 };
 
-const imageCVESearchFilterConfig: CompoundSearchFilterEntity = {
+// After release, delete.
+const imageCVESearchFilterConfigV1: CompoundSearchFilterEntity = {
     displayName: 'CVE',
     searchCategory: 'IMAGE_VULNERABILITIES',
+    attributes: [ImageCveName],
+};
+
+const imageCVESearchFilterConfig: CompoundSearchFilterEntity = {
+    displayName: 'CVE',
+    searchCategory: 'IMAGE_VULNERABILITIES_V2',
     attributes: [ImageCveName],
 };
 
@@ -21,8 +28,26 @@ const vulnerabilityRequestSearchFilterConfig: CompoundSearchFilterEntity = {
     attributes: vulnerabilityRequestAttributes,
 };
 
-export const vulnRequestSearchFilterConfig = [
+// After release, delete.
+const vulnRequestSearchFilterConfigV1 = [
+    vulnerabilityRequestSearchFilterConfig,
+    imageCVESearchFilterConfigV1,
+    imageSearchFilterConfig,
+];
+
+const vulnRequestSearchFilterConfig = [
     vulnerabilityRequestSearchFilterConfig,
     imageCVESearchFilterConfig,
     imageSearchFilterConfig,
 ];
+
+// After release, replace temporary function
+// with export of vulnRequestSearchFilterConfig (above)
+// that has unconditional updated imageCVESearchFilterConfig.
+export function convertToFlatVulnRequestSearchFilterConfig(
+    isFlattenCveDataEnabled: boolean // ROX_FLATTEN_CVE_DATA
+): CompoundSearchFilterEntity[] {
+    return isFlattenCveDataEnabled
+        ? vulnRequestSearchFilterConfig
+        : vulnRequestSearchFilterConfigV1;
+}
