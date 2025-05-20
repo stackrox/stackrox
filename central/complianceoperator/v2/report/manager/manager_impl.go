@@ -400,7 +400,7 @@ func (m *managerImpl) handleReadyScan() {
 				concurrency.WithLock(&m.watchingScansLock, func() {
 					delete(m.watchingScans, scanWatcherResult.WatcherID)
 				})
-				if err := watcher.OnSuccessDeleteOldResults(m.automaticReportingCtx, scanWatcherResult, checkResults.Singleton()); err != nil {
+				if err := watcher.DeleteOldResults(m.automaticReportingCtx, scanWatcherResult, checkResults.Singleton()); err != nil {
 					log.Errorf("unable to delete old CheckResults: %v", err)
 				}
 				if errors.Is(scanWatcherResult.Error, watcher.ErrScanRemoved) {
@@ -519,7 +519,7 @@ func (m *managerImpl) handleReadyScanConfig() {
 				concurrency.WithLock(&m.watchingScanConfigsLock, func() {
 					delete(m.watchingScanConfigs, scanConfigWatcherResult.WatcherID)
 				})
-				if err := watcher.OnFailureDeleteOldResults(m.automaticReportingCtx, scanConfigWatcherResult, checkResults.Singleton(), m.scanDataStore, m.profileDataStore); err != nil {
+				if err := watcher.DeleteOldResultsFromMissingScans(m.automaticReportingCtx, scanConfigWatcherResult, m.profileDataStore, m.scanDataStore, checkResults.Singleton()); err != nil {
 					log.Errorf("unable to delete old CheckResults: %v", err)
 				}
 				m.generateReportsFromWatcherResults(scanConfigWatcherResult)

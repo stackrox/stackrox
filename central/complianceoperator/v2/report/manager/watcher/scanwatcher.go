@@ -61,12 +61,15 @@ type ScanWatcherResults struct {
 	Error        error
 }
 
-func OnSuccessDeleteOldResults(ctx context.Context, results *ScanWatcherResults, store resultsDS.DataStore) error {
+// DeleteOldResults associated with the Scan of the given ScanWatcherResults
+func DeleteOldResults(ctx context.Context, results *ScanWatcherResults, store resultsDS.DataStore) error {
+	includeCurrentResults := false
 	if results.Error != nil {
-		return nil
+		// If the scan failed we remove old and current results
+		includeCurrentResults = true
 	}
 	scan := results.Scan
-	return store.DeleteOldResults(ctx, scan.GetLastStartedTime(), scan.GetScanRefId(), false)
+	return store.DeleteOldResults(ctx, scan.GetLastStartedTime(), scan.GetScanRefId(), includeCurrentResults)
 }
 
 // IsComplianceOperatorHealthy indicates whether Compliance Operator is ready for automatic reporting
