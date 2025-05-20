@@ -62,7 +62,7 @@ func searchForDeployment(ctx context.Context, ns string, cli kubernetes.Interfac
 		return nil, err
 	}
 
-	return nil, errors.Errorf("deployment %s not found in any namespace", complianceoperator.Name)
+	return nil, errors.Errorf("The %q deployment was not found in any namespace.", complianceoperator.Name)
 }
 
 func getComplianceOperatorDeployment(ns string, cli kubernetes.Interface, ctx context.Context) (*appsv1.Deployment, error) {
