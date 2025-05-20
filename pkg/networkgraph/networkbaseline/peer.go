@@ -180,22 +180,9 @@ func ConvertPeersToProto(peerSet map[Peer]struct{}) ([]*storage.NetworkBaselineP
 
 // PeerFromV1Peer converts peer within v1 request to in-memory representation form
 func PeerFromV1Peer(v1Peer *v1.NetworkBaselineStatusPeer, peerName, cidrBlock string) Peer {
-	var entity networkgraph.Entity
-
-	if v1Peer.GetEntity().GetType() == storage.NetworkEntityInfo_EXTERNAL_SOURCE &&
-		v1Peer.GetEntity().GetDiscovered() {
-		entity = networkgraph.InternetEntity()
-	} else {
-		entity = networkgraph.Entity{
-			Type:       v1Peer.GetEntity().GetType(),
-			ID:         v1Peer.GetEntity().GetId(),
-			Discovered: v1Peer.GetEntity().GetDiscovered(),
-		}
-	}
-
 	return Peer{
 		IsIngress: v1Peer.GetIngress(),
-		Entity:    entity,
+		Entity:    AnonymizeExternalDiscoveredPeer(v1Peer.GetEntity()),
 		Name:      peerName,
 		DstPort:   v1Peer.GetPort(),
 		Protocol:  v1Peer.GetProtocol(),
@@ -249,4 +236,23 @@ func ReversePeerView(referenceDeploymentID, referenceDeploymentName string, p *P
 		DstPort:  p.DstPort,
 		Protocol: p.Protocol,
 	}
+}
+
+// AnonymizeExternalDiscoveredPeer anonymizes a given baseline peer to the Internet
+// if it a discovered external entity
+func AnonymizeExternalDiscoveredPeer(peer *v1.NetworkBaselinePeerEntity) networkgraph.Entity {
+	return AnonymizeExternalDiscoveredEntity(networkgraph.Entity{
+		ID:         peer.GetId(),
+		Type:       peer.GetType(),
+		Discovered: peer.GetDiscovered(),
+	})
+}
+
+// AnonymizeExternalDiscoveredEntity anonymizes a given graph entity to the Internet
+// if it a discovered external entity
+func AnonymizeExternalDiscoveredEntity(entity networkgraph.Entity) networkgraph.Entity {
+	if entity.Type == storage.NetworkEntityInfo_EXTERNAL_SOURCE && entity.Discovered {
+		return networkgraph.InternetEntity()
+	}
+	return entity
 }
