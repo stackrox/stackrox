@@ -224,7 +224,6 @@ const SystemConfigForm = ({
                             onSelect={handleTabClick}
                             aria-label="Tabs in the box light variation example"
                             role="region"
-                            className="pf-v5-u-border"
                         >
                             <Tab eventKey={0} title={<TabTitleText>Core system</TabTitleText>}>
                                 <div className="pf-v5-u-p-md">
