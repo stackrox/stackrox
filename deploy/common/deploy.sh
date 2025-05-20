@@ -55,6 +55,16 @@ echo "StackRox roxctl image set to $ROXCTL_IMAGE"
 export ROXCTL_ROX_IMAGE_FLAVOR="${ROXCTL_ROX_IMAGE_FLAVOR:-$(make --quiet --no-print-directory -C "$(git rev-parse --show-toplevel)" image-flavor)}"
 echo "Image flavor for roxctl set to $ROXCTL_ROX_IMAGE_FLAVOR"
 
+if [[ -n "$ROX_SENSOR_EXTRA_HELM_VALUES_FILE" ]]; then
+    export ROX_SENSOR_EXTRA_HELM_VALUES_FILE="${ROX_SENSOR_EXTRA_HELM_VALUES_FILE}"
+fi
+echo "ROX_SENSOR_EXTRA_HELM_VALUES_FILE set to ${ROX_SENSOR_EXTRA_HELM_VALUES_FILE:-}"
+
+if [[ -n "$ROX_CENTRAL_EXTRA_HELM_VALUES_FILE" ]]; then
+    export ROX_CENTRAL_EXTRA_HELM_VALUES_FILE="${ROX_CENTRAL_EXTRA_HELM_VALUES_FILE}"
+fi
+echo "ROX_CENTRAL_EXTRA_HELM_VALUES_FILE set to ${ROX_CENTRAL_EXTRA_HELM_VALUES_FILE:-}"
+
 popd
 
 function curl_cfg() { # Use built-in echo to not expose $2 in the process list.
