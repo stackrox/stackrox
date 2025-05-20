@@ -34,8 +34,12 @@ func AnyFlow(toID string, toType storage.NetworkEntityInfo_Type, fromID string, 
 	}
 }
 
-func ExtFlow(toID, fromID string, clusterId string) *storage.NetworkFlow {
+func ExtFlowEgress(toID, fromID string, clusterId string) *storage.NetworkFlow {
 	return AnyFlow(toID, storage.NetworkEntityInfo_EXTERNAL_SOURCE, fromID, storage.NetworkEntityInfo_DEPLOYMENT, clusterId)
+}
+
+func ExtFlowIngress(toID, fromID string, clusterId string) *storage.NetworkFlow {
+	return AnyFlow(toID, storage.NetworkEntityInfo_DEPLOYMENT, fromID, storage.NetworkEntityInfo_EXTERNAL_SOURCE, clusterId)
 }
 
 func DepFlow(toID, fromID string) *storage.NetworkFlow {
