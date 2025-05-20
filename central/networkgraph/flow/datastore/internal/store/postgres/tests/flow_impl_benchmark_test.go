@@ -79,7 +79,7 @@ func benchmarkUpsertFlows(flowStore store.FlowStore, numFlows uint32) func(*test
 		for i := uint32(0); i < numFlows; i++ {
 			id, err := testutils.ExtIdFromIPv4(fixtureconsts.Cluster1, i)
 			require.NoError(b, err)
-			flows = append(flows, testutils.ExtFlow(fixtureconsts.Deployment1, id.String(), clusterID))
+			flows = append(flows, testutils.ExtFlowIngress(fixtureconsts.Deployment1, id.String(), clusterID))
 		}
 
 		b.ResetTimer()
@@ -125,7 +125,6 @@ func BenchmarkPruneOrphanedFlowsForDeployment(b *testing.B) {
 	b.Run("1000 flows to be pruned", benchmarkPruneOrphanedFlowsForDeployment(flowStore, eStore, fixtureconsts.Deployment1, 1000))
 	b.Run("10000 flows to be pruned", benchmarkPruneOrphanedFlowsForDeployment(flowStore, eStore, fixtureconsts.Deployment1, 10000))
 	b.Run("100000 flows to be pruned", benchmarkPruneOrphanedFlowsForDeployment(flowStore, eStore, fixtureconsts.Deployment1, 100000))
-	b.Run("900000 flows to be pruned", benchmarkPruneOrphanedFlowsForDeployment(flowStore, eStore, fixtureconsts.Deployment1, 900000))
 }
 
 func BenchmarkRemoveOrphanedFlows(b *testing.B) {
@@ -139,7 +138,6 @@ func BenchmarkRemoveOrphanedFlows(b *testing.B) {
 	b.Run("1000 flows to be pruned", benchmarkRemoveOrphanedFlows(flowStore, eStore, fixtureconsts.Deployment1, 1000))
 	b.Run("10000 flows to be pruned", benchmarkRemoveOrphanedFlows(flowStore, eStore, fixtureconsts.Deployment1, 10000))
 	b.Run("100000 flows to be pruned", benchmarkRemoveOrphanedFlows(flowStore, eStore, fixtureconsts.Deployment1, 100000))
-	b.Run("900000 flows to be pruned", benchmarkRemoveOrphanedFlows(flowStore, eStore, fixtureconsts.Deployment1, 900000))
 }
 
 func BenchmarkGetFlowsForDeployment(b *testing.B) {
@@ -176,7 +174,7 @@ func setupExternalIngressFlows(b *testing.B, flowStore store.FlowStore, deployme
 	for i := uint32(0); i < numFlows; i++ {
 		id, err := testutils.ExtIdFromIPv4(fixtureconsts.Cluster1, i)
 		require.NoError(b, err)
-		flows = append(flows, testutils.ExtFlow(deploymentId, id.String(), clusterID))
+		flows = append(flows, testutils.ExtFlowIngress(deploymentId, id.String(), clusterID))
 	}
 
 	err := flowStore.UpsertFlows(ctx, flows, timestamp.Now()-1000000)
@@ -202,7 +200,7 @@ func setupExternalIngressFlowsWithEntities(b *testing.B, flowStore store.FlowSto
 		extEntity := GetClusterScopedDiscoveredEntity(cidr, clusterID)
 		id := extEntity.GetInfo().GetId()
 
-		flow := testutils.ExtFlow(id, deploymentId, clusterID)
+		flow := testutils.ExtFlowEgress(id, deploymentId, clusterID)
 		flows = append(flows, flow)
 		entities[i%batchSize] = extEntity
 	}
@@ -225,7 +223,7 @@ func setupExternalEgressFlows(b *testing.B, flowStore store.FlowStore, deploymen
 		id, err := testutils.ExtIdFromIPv4(fixtureconsts.Cluster1, i)
 		require.NoError(b, err)
 
-		flows = append(flows, testutils.ExtFlow(id.String(), deploymentId, clusterID))
+		flows = append(flows, testutils.ExtFlowEgress(id.String(), deploymentId, clusterID))
 	}
 
 	err := flowStore.UpsertFlows(ctx, flows, timestamp.Now()-1000000)
