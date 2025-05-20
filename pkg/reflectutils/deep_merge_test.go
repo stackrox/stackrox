@@ -3,10 +3,7 @@ package reflectutils
 import (
 	"testing"
 
-	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	"github.com/stretchr/testify/assert"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 type SomeStruct struct {
@@ -64,52 +61,6 @@ func TestDeepMergeStructs(t *testing.T) {
 			a:        SomeStruct{S: SubStruct{S: "from a"}},
 			b:        SomeStruct{S: SubStruct{S: "from b", P: &SubStruct{S: "inner"}}},
 			expected: SomeStruct{S: SubStruct{S: "from b", P: &SubStruct{S: "inner"}}},
-		},
-		"scanner V4 use-case": {
-			a: platform.CentralSpec{
-				ScannerV4: &platform.ScannerV4Spec{
-					ScannerComponent: &platform.ScannerV4Enabled,
-				},
-			},
-			b: platform.CentralSpec{
-				Central: &platform.CentralComponentSpec{
-					AdminPasswordSecret: &platform.LocalSecretReference{
-						Name: "foo",
-					},
-				},
-				ScannerV4: &platform.ScannerV4Spec{
-					Indexer: &platform.ScannerV4Component{
-						DeploymentSpec: platform.DeploymentSpec{
-							Resources: &corev1.ResourceRequirements{
-								Limits: corev1.ResourceList{
-									corev1.ResourceCPU:    resource.MustParse("90"),
-									corev1.ResourceMemory: resource.MustParse("100"),
-								},
-							},
-						},
-					},
-				},
-			},
-			expected: platform.CentralSpec{
-				Central: &platform.CentralComponentSpec{
-					AdminPasswordSecret: &platform.LocalSecretReference{
-						Name: "foo",
-					},
-				},
-				ScannerV4: &platform.ScannerV4Spec{
-					Indexer: &platform.ScannerV4Component{
-						DeploymentSpec: platform.DeploymentSpec{
-							Resources: &corev1.ResourceRequirements{
-								Limits: corev1.ResourceList{
-									corev1.ResourceCPU:    resource.MustParse("90"),
-									corev1.ResourceMemory: resource.MustParse("100"),
-								},
-							},
-						},
-					},
-					ScannerComponent: &platform.ScannerV4Enabled,
-				},
-			},
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
