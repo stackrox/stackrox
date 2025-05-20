@@ -1,8 +1,8 @@
 import React, { ReactElement, useState } from 'react';
-import { Link, LinkProps, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
-import { Divider, Dropdown, DropdownItem, DropdownList, MenuToggle } from '@patternfly/react-core';
 import {
+    ApplicationLauncher,
     ApplicationLauncherGroup,
     ApplicationLauncherItem,
     ApplicationLauncherSeparator,
@@ -19,55 +19,67 @@ function HelpMenu(): ReactElement {
     const [isHelpMenuOpen, setIsHelpMenuOpen] = useState(false);
     const dispatch = useDispatch();
 
-    return (
-        <Dropdown
-            isOpen={isHelpMenuOpen}
-            onOpenChange={(isOpen) => setIsHelpMenuOpen(isOpen)}
-            onOpenChangeKeys={['Escape', 'Tab']}
-            popperProps={{ position: 'right' }}
-            toggle={(toggleRef) => (
-                <MenuToggle
-                    aria-label="Help Menu"
-                    ref={toggleRef}
-                    variant="plain"
-                    onClick={() => setIsHelpMenuOpen((wasOpen) => !wasOpen)}
-                    isExpanded={isHelpMenuOpen}
-                >
-                    <QuestionCircleIcon />
-                </MenuToggle>
+    function onToggleHelpMenu() {
+        setIsHelpMenuOpen(!isHelpMenuOpen);
+    }
+
+    // React requires key to render an item in an array of elements.
+    const appLauncherItems = [
+        <ApplicationLauncherGroup key="">
+            <ApplicationLauncherItem
+                component={
+                    <Link className="pf-v5-c-app-launcher__menu-item" to={apidocsPath}>
+                        API Reference (v1)
+                    </Link>
+                }
+            />
+            <ApplicationLauncherItem
+                component={
+                    <Link className="pf-v5-c-app-launcher__menu-item" to={apidocsPathV2}>
+                        API Reference (v2)
+                    </Link>
+                }
+            />
+            <ApplicationLauncherItem
+                component="button"
+                onClick={() => {
+                    dispatch(actions.setFeedbackModalVisibility(true));
+                }}
+            >
+                Share feedback
+            </ApplicationLauncherItem>
+            {version && (
+                <>
+                    <ApplicationLauncherItem
+                        href={getVersionedDocs(version)}
+                        isExternal
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        Help Center
+                    </ApplicationLauncherItem>
+                    <ApplicationLauncherSeparator />
+                    <ApplicationLauncherItem isDisabled>
+                        {`v${version}${releaseBuild ? '' : ' [DEV BUILD]'}`}
+                    </ApplicationLauncherItem>
+                </>
             )}
-        >
-            <DropdownList>
-                <DropdownItem>
-                    <Link to={apidocsPath}>API Reference (v1)</Link>
-                </DropdownItem>
-                <DropdownItem>
-                    <Link to={apidocsPathV2}>API Reference (v2)</Link>
-                </DropdownItem>
-                <DropdownItem
-                    component="button"
-                    onClick={() => dispatch(actions.setFeedbackModalVisibility(true))}
-                >
-                    Share feedback
-                </DropdownItem>
-                {version && (
-                    <>
-                        <DropdownItem
-                            to={getVersionedDocs(version)}
-                            isExternalLink
-                            target="_blank"
-                            rel="noopener noreferrer"
-                        >
-                            Help Center
-                        </DropdownItem>
-                        <Divider component="li" />
-                        <DropdownItem isDisabled>
-                            {`v${version}${releaseBuild ? '' : ' [DEV BUILD]'}`}
-                        </DropdownItem>
-                    </>
-                )}
-            </DropdownList>
-        </Dropdown>
+        </ApplicationLauncherGroup>,
+    ];
+
+    return (
+        <ApplicationLauncher
+            aria-label="Help menu"
+            isGrouped
+            isOpen={isHelpMenuOpen}
+            items={appLauncherItems}
+            onToggle={onToggleHelpMenu}
+            onSelect={onToggleHelpMenu}
+            position="right"
+            toggleIcon={<QuestionCircleIcon alt="" />}
+            className="co-app-launcher"
+            data-quickstart-id="qs-masthead-utilitymenu"
+        />
     );
 }
 
