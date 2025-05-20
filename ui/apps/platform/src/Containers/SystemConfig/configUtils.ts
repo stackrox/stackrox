@@ -15,7 +15,7 @@ const defaultSystemRule = {
 };
 
 // This rule should theoretically always be set. This is to safeguard against any issues with the API
-const defaultRedHayLayeredProductsRule = {
+const defaultRedHatLayeredProductsRule = {
     name: 'red hat layered products',
     namespaceRule: {
         regex: '',
@@ -33,7 +33,7 @@ export function getPlatformComponentsConfigRules(
 ): PlatformComponentsConfigRules {
     const platformComponentsConfigRules: PlatformComponentsConfigRules = {
         coreSystemRule: defaultSystemRule,
-        redHatLayeredProductsRule: defaultRedHayLayeredProductsRule,
+        redHatLayeredProductsRule: defaultRedHatLayeredProductsRule,
         customRules: [],
     };
 
