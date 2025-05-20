@@ -435,6 +435,7 @@ func (s *flowStoreImpl) readIdsFromRows(rows pgx.Rows) ([]*srcDstEntityIds, erro
 	}
 
 	log.Debugf("Read returned %d src and dst ID pairs", len(entityIds))
+	log.Infof("Read returned %d src and dst ID pairs", len(entityIds))
 	return entityIds, rows.Err()
 }
 
@@ -809,7 +810,7 @@ func (s *flowStoreImpl) pruneOrphanExternalEntities(ctx context.Context, entityI
 			return err
 		}
 
-		log.Info("Pruned %d orphaned discovered entities", totalPruned)
+		log.Infof("Pruned %d orphaned discovered entities", totalPruned)
 	}
 
 	return nil
@@ -825,9 +826,13 @@ func (s *flowStoreImpl) pruneFlows(ctx context.Context, deleteStmt string, orpha
 	ctx, cancel := context.WithTimeout(ctx, deleteTimeout)
 	defer cancel()
 
-	if _, err := conn.Exec(ctx, deleteStmt, s.clusterID, orphanWindow); err != nil {
+	//if ct, err := conn.Exec(ctx, deleteStmt, s.clusterID, orphanWindow); err != nil {
+	ct, err := conn.Exec(ctx, deleteStmt, s.clusterID, orphanWindow)
+	if err != nil {
 		return err
 	}
+
+	log.Infof("Flows pruned %d", ct.RowsAffected())
 
 	return nil
 }
