@@ -75,7 +75,7 @@ func (s *serviceImplTestSuite) TestTLSChallenge() {
 	s.Require().NoError(err)
 
 	// Verify that additional CAs were received
-	s.Require().Len(trustInfo.GetAdditionalCas(), 2)
+	s.Require().Len(trustInfo.GetAdditionalCas(), 3)
 	additionalCACert, err := x509.ParseCertificate(trustInfo.GetAdditionalCas()[0])
 	s.Require().NoError(err)
 	s.Equal("nginx LoadBalancer", additionalCACert.Subject.CommonName)

@@ -66,6 +66,15 @@ func (m *TrustInfo) CloneVT() *TrustInfo {
 		}
 		r.AdditionalCas = tmpContainer
 	}
+	if rhs := m.SecondaryCertChain; rhs != nil {
+		tmpContainer := make([][]byte, len(rhs))
+		for k, v := range rhs {
+			tmpBytes := make([]byte, len(v))
+			copy(tmpBytes, v)
+			tmpContainer[k] = tmpBytes
+		}
+		r.SecondaryCertChain = tmpContainer
+	}
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -91,6 +100,11 @@ func (m *TLSChallengeResponse) CloneVT() *TLSChallengeResponse {
 		tmpBytes := make([]byte, len(rhs))
 		copy(tmpBytes, rhs)
 		r.Signature = tmpBytes
+	}
+	if rhs := m.SignatureSecondaryCa; rhs != nil {
+		tmpBytes := make([]byte, len(rhs))
+		copy(tmpBytes, rhs)
+		r.SignatureSecondaryCa = tmpBytes
 	}
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
@@ -241,6 +255,15 @@ func (this *TrustInfo) EqualVT(that *TrustInfo) bool {
 			return false
 		}
 	}
+	if len(this.SecondaryCertChain) != len(that.SecondaryCertChain) {
+		return false
+	}
+	for i, vx := range this.SecondaryCertChain {
+		vy := that.SecondaryCertChain[i]
+		if string(vx) != string(vy) {
+			return false
+		}
+	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
@@ -261,6 +284,9 @@ func (this *TLSChallengeResponse) EqualVT(that *TLSChallengeResponse) bool {
 		return false
 	}
 	if string(this.Signature) != string(that.Signature) {
+		return false
+	}
+	if string(this.SignatureSecondaryCa) != string(that.SignatureSecondaryCa) {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -465,6 +491,15 @@ func (m *TrustInfo) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if len(m.SecondaryCertChain) > 0 {
+		for iNdEx := len(m.SecondaryCertChain) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.SecondaryCertChain[iNdEx])
+			copy(dAtA[i:], m.SecondaryCertChain[iNdEx])
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.SecondaryCertChain[iNdEx])))
+			i--
+			dAtA[i] = 0x2a
+		}
+	}
 	if len(m.AdditionalCas) > 0 {
 		for iNdEx := len(m.AdditionalCas) - 1; iNdEx >= 0; iNdEx-- {
 			i -= len(m.AdditionalCas[iNdEx])
@@ -529,6 +564,13 @@ func (m *TLSChallengeResponse) MarshalToSizedBufferVT(dAtA []byte) (int, error) 
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if len(m.SignatureSecondaryCa) > 0 {
+		i -= len(m.SignatureSecondaryCa)
+		copy(dAtA[i:], m.SignatureSecondaryCa)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.SignatureSecondaryCa)))
+		i--
+		dAtA[i] = 0x1a
 	}
 	if len(m.Signature) > 0 {
 		i -= len(m.Signature)
@@ -805,6 +847,12 @@ func (m *TrustInfo) SizeVT() (n int) {
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
+	if len(m.SecondaryCertChain) > 0 {
+		for _, b := range m.SecondaryCertChain {
+			l = len(b)
+			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+		}
+	}
 	n += len(m.unknownFields)
 	return n
 }
@@ -820,6 +868,10 @@ func (m *TLSChallengeResponse) SizeVT() (n int) {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	l = len(m.Signature)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	l = len(m.SignatureSecondaryCa)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
@@ -1217,6 +1269,38 @@ func (m *TrustInfo) UnmarshalVT(dAtA []byte) error {
 			m.AdditionalCas = append(m.AdditionalCas, make([]byte, postIndex-iNdEx))
 			copy(m.AdditionalCas[len(m.AdditionalCas)-1], dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SecondaryCertChain", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.SecondaryCertChain = append(m.SecondaryCertChain, make([]byte, postIndex-iNdEx))
+			copy(m.SecondaryCertChain[len(m.SecondaryCertChain)-1], dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -1334,6 +1418,40 @@ func (m *TLSChallengeResponse) UnmarshalVT(dAtA []byte) error {
 			m.Signature = append(m.Signature[:0], dAtA[iNdEx:postIndex]...)
 			if m.Signature == nil {
 				m.Signature = []byte{}
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SignatureSecondaryCa", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.SignatureSecondaryCa = append(m.SignatureSecondaryCa[:0], dAtA[iNdEx:postIndex]...)
+			if m.SignatureSecondaryCa == nil {
+				m.SignatureSecondaryCa = []byte{}
 			}
 			iNdEx = postIndex
 		default:
@@ -2129,6 +2247,37 @@ func (m *TrustInfo) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 			m.AdditionalCas = append(m.AdditionalCas, dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SecondaryCertChain", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.SecondaryCertChain = append(m.SecondaryCertChain, dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -2241,6 +2390,37 @@ func (m *TLSChallengeResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Signature = dAtA[iNdEx:postIndex]
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SignatureSecondaryCa", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.SignatureSecondaryCa = dAtA[iNdEx:postIndex]
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
