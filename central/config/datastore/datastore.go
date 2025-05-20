@@ -292,6 +292,13 @@ func (d *datastoreImpl) UpsertPlatformComponentConfigRules(ctx context.Context, 
 		}
 		parsedRules = append(parsedRules, rule)
 	}
+	// Add back in default rules they weren't passed in by the user
+	if !systemRuleExists {
+		parsedRules = append(parsedRules, defaultPlatformConfigSystemRule)
+	}
+	if !layeredProductsRuleExists {
+		parsedRules = append(parsedRules, defaultPlatformConfigLayeredProductsRule)
+	}
 	slices.SortFunc(config.GetPlatformComponentConfig().GetRules(), ruleNameSortFunc)
 	slices.SortFunc(parsedRules, ruleNameSortFunc)
 	if config.GetPlatformComponentConfig() == nil {
