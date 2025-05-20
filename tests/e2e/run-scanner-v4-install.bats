@@ -614,7 +614,7 @@ EOT
     fi
 
     # shellcheck disable=SC2030,SC2031
-    export ROX_SCANNER_V4="" # Relying on new defaulting for Scanner V4 installation.
+    export ROX_SCANNER_V4="" # Scanner V4 enabled by default.
     # shellcheck disable=SC2030,SC2031
     export DEPLOY_STACKROX_VIA_OPERATOR="true"
     # shellcheck disable=SC2030,SC2031
@@ -646,7 +646,7 @@ EOT
     fi
 
     # shellcheck disable=SC2030,SC2031
-    export ROX_SCANNER_V4="" # Relying on new defaulting for Scanner V4 installation.
+    export ROX_SCANNER_V4="" # Scanner V4 enabled by default.
     # shellcheck disable=SC2030,SC2031
     export DEPLOY_STACKROX_VIA_OPERATOR="true"
     # shellcheck disable=SC2030,SC2031
