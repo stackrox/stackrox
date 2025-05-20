@@ -25,6 +25,7 @@ kubectl create -f external-destination-source.yml
 # Create a deployment that reaches out to 8.8.8.8
 ./create-deployment-with-ext-ip.sh 8.8.8.8 53 1
 
+# Remove comments before merging
 # Create a CIDR block that matches the above deployment
 #./create-cidr-block.sh 8.8.8.0/24 testCIDR
 
@@ -39,3 +40,8 @@ kubectl create -f net-pol.yml
 
 # Create a deployment that reaches out to 2.2.2.2
 ./create-deployment-with-ext-ip.sh 2.2.2.2 53 3
+
+# Remove comments before merging
+# Try with different ports
+# Mark as anom
+# Alert on violations
