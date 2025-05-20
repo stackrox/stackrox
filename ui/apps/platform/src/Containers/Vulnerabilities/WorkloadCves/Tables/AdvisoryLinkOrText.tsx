@@ -18,7 +18,7 @@ export type AdvisoryLinkOrTextProps = {
 
 function AdvisoryLinkOrText({ advisory }: AdvisoryLinkOrTextProps): ReactNode {
     if (advisory) {
-        const { advisoryId, advisoryLink } = advisory;
+        const { name: advisoryId, link: advisoryLink } = advisory;
         return (
             <ExternalLink>
                 <a href={advisoryLink} target="_blank" rel="noopener noreferrer">
