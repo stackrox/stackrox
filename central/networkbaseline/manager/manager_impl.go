@@ -476,11 +476,14 @@ func (m *manager) ProcessBaselineStatusUpdate(ctx context.Context, modifyRequest
 	modifiedDeploymentIDs := set.NewStringSet()
 	for _, peerAndStatus := range modifyRequest.GetPeers() {
 		v1Peer := peerAndStatus.GetPeer()
-		info := m.lookUpPeerInfo(
-			networkgraph.Entity{
-				Type: v1Peer.GetEntity().GetType(),
-				ID:   v1Peer.GetEntity().GetId(),
-			})
+
+		entity := anonymizeDiscoveredExternal(networkgraph.Entity{
+			ID:         v1Peer.GetEntity().GetId(),
+			Type:       v1Peer.GetEntity().GetType(),
+			Discovered: v1Peer.GetEntity().GetDiscovered(),
+		})
+
+		info := m.lookUpPeerInfo(entity)
 		peer := networkbaseline.PeerFromV1Peer(v1Peer, info.name, info.cidrBlock)
 		_, inBaseline := baseline.BaselinePeers[peer]
 		_, inForbidden := baseline.ForbiddenPeers[peer]
