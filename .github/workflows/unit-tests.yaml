@@ -25,7 +25,8 @@ jobs:
       fail-fast: false
       matrix:
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
-    runs-on: ubuntu-latest
+        arch: [amd64, arm64]
+    runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-24.04-arm') || 'ubuntu-24.04' }}
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
@@ -47,7 +48,8 @@ jobs:
       uses: ./.github/actions/cache-go-dependencies
 
     - name: Go Unit Tests
-      run: ${{ matrix.gotags }} make go-unit-tests
+      run: |
+        ${{ matrix.gotags }} make go-unit-tests
 
     - uses: codecov/codecov-action@v3
       with:
@@ -81,7 +83,7 @@ jobs:
         paths: 'junit-reports/report.xml'
 
     - name: Report test failures to Jira
-      if: (!cancelled())
+      if: (!cancelled()) && matrix.arch != 'arm64' # junit2jira needs arm release
       id: junit2jira
       uses: ./.github/actions/junit2jira
       with:
