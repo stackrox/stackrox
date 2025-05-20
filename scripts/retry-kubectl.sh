@@ -14,6 +14,7 @@ error_regex=$(tr '\n' '|' <<EOT | sed -e 's/|$//;'
 net/http: request canceled \(Client\.Timeout exceeded while awaiting headers\)$
 : the server is currently unable to handle the request
 : TLS handshake timeout
+failed to download openapi: Get "[^"]*": EOF
 EOT
 )
 

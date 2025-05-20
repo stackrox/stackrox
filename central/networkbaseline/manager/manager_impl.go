@@ -73,13 +73,6 @@ func getNewObservationPeriodEnd() timestamp.MicroTS {
 	return timestamp.Now().Add(observationDuration)
 }
 
-func anonymizeDiscoveredExternal(entity networkgraph.Entity) networkgraph.Entity {
-	if entity.Type == storage.NetworkEntityInfo_EXTERNAL_SOURCE && entity.Discovered {
-		return networkgraph.InternetEntity()
-	}
-	return entity
-}
-
 // shouldUpdate -- looks at the baselines and flows to determine if the flow should be added to the baseline.
 func (m *manager) shouldUpdate(conn *networkgraph.NetworkConnIndicator, updateTS timestamp.MicroTS, initialLoad bool) bool {
 	var atLeastOneBaselineInObservationPeriod bool
@@ -263,7 +256,7 @@ func (m *manager) processFlowUpdate(flows map[networkgraph.NetworkConnIndicator]
 			continue
 		}
 		if conn.SrcEntity.Type == storage.NetworkEntityInfo_DEPLOYMENT {
-			anonymizedDst := anonymizeDiscoveredExternal(conn.DstEntity)
+			anonymizedDst := networkbaseline.AnonymizeExternalDiscoveredEntity(conn.DstEntity)
 			peer := m.lookUpPeerInfo(anonymizedDst)
 			if peer.name != "" {
 				m.maybeAddPeer(conn.SrcEntity.ID, &networkbaseline.Peer{
@@ -277,7 +270,7 @@ func (m *manager) processFlowUpdate(flows map[networkgraph.NetworkConnIndicator]
 			}
 		}
 		if conn.DstEntity.Type == storage.NetworkEntityInfo_DEPLOYMENT {
-			anonymizedSrc := anonymizeDiscoveredExternal(conn.SrcEntity)
+			anonymizedSrc := networkbaseline.AnonymizeExternalDiscoveredEntity(conn.SrcEntity)
 			peer := m.lookUpPeerInfo(anonymizedSrc)
 			if peer.name != "" {
 				m.maybeAddPeer(conn.DstEntity.ID, &networkbaseline.Peer{
@@ -476,12 +469,11 @@ func (m *manager) ProcessBaselineStatusUpdate(ctx context.Context, modifyRequest
 	modifiedDeploymentIDs := set.NewStringSet()
 	for _, peerAndStatus := range modifyRequest.GetPeers() {
 		v1Peer := peerAndStatus.GetPeer()
-		info := m.lookUpPeerInfo(
-			networkgraph.Entity{
-				Type: v1Peer.GetEntity().GetType(),
-				ID:   v1Peer.GetEntity().GetId(),
-			})
+
+		entity := networkbaseline.AnonymizeExternalDiscoveredPeer(v1Peer.GetEntity())
+		info := m.lookUpPeerInfo(entity)
 		peer := networkbaseline.PeerFromV1Peer(v1Peer, info.name, info.cidrBlock)
+
 		_, inBaseline := baseline.BaselinePeers[peer]
 		_, inForbidden := baseline.ForbiddenPeers[peer]
 		switch peerAndStatus.GetStatus() {
