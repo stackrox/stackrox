@@ -12,15 +12,15 @@ import spock.lang.Unroll
 class AutocompleteTest extends BaseSpecification {
     private static final String GROUP_AUTOCOMPLETE = "GROUP"
 
-    def getVulnSearchCategore() {
-        if (Env.ROX_FLATTEN_CVE_DATA == "true") {
+    SearchCategory getVulnSearchCategory() {
+        if (Env.get("ROX_FLATTEN_CVE_DATA") == "true") {
             return SearchCategory.IMAGE_VULNERABILITIES_V2
         }
         return SearchCategory.IMAGE_VULNERABILITIES
     }
 
-    def getComponentSearchCategory() {
-        if (Env.ROX_FLATTEN_CVE_DATA == "true") {
+    SearchCategory getComponentSearchCategory() {
+        if (Env.get("ROX_FLATTEN_CVE_DATA") == "true") {
             return SearchCategory.IMAGE_COMPONENTS_V2
         }
         return SearchCategory.IMAGE_COMPONENTS
@@ -70,7 +70,7 @@ class AutocompleteTest extends BaseSpecification {
                                                 "Image Tag", "Dockerfile Instruction Keyword", "CVE", "Component"]
         SearchCategory.IMAGES                | ["Cluster", "Deployment",
                                                 "Image Tag", "Dockerfile Instruction Keyword", "CVE", "Component"]
-        getVulnSearchCategore()              | ["Cluster", "Deployment",
+        getVulnSearchCategory()              | ["Cluster", "Deployment",
                                                 "Image Tag", "Dockerfile Instruction Keyword", "CVE", "Component"]
         getComponentSearchCategory()         | ["Cluster", "Deployment",
                                                 "Image Tag", "Dockerfile Instruction Keyword", "CVE", "Component"]
