@@ -48,8 +48,13 @@ var getters = map[common.Label]func(alert *storage.ListAlert) string{
 }
 
 func MakeTrackerConfig(gauge func(string, prometheus.Labels, int)) *common.TrackerConfig[*storage.ListAlert] {
-	return common.MakeTrackerConfig("alerts", "aggregated policy violation alerts",
-		labelOrder, getters, common.Bind3rd(trackAlertsMetrics, alertDS.Singleton()), gauge)
+	return common.MakeTrackerConfig(
+		"alerts",
+		"aggregated policy violation alerts",
+		labelOrder,
+		getters,
+		common.Bind3rd(trackAlertsMetrics, alertDS.Singleton()),
+		gauge)
 }
 
 func trackAlertsMetrics(ctx context.Context, _ common.MetricLabelsExpressions, ds alertDS.DataStore) iter.Seq[*storage.ListAlert] {
