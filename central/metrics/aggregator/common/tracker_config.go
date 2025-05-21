@@ -13,11 +13,13 @@ import (
 
 // TrackerConfig wraps various pieces of configuration required for tracking
 // various metrics.
-type TrackerConfig struct {
+type TrackerConfig[Finding any] struct {
 	category    string
 	description string
 	labelOrder  map[Label]int
-	generator   FindingGenerator
+	getters     map[Label]func(Finding) string
+	generator   FindingGenerator[Finding]
+	gauge       func(string, prometheus.Labels, int)
 
 	// metricsConfig can be changed with an API call.
 	metricsConfig    MetricLabelsExpressions
@@ -28,24 +30,36 @@ type TrackerConfig struct {
 	sync.Once
 }
 
+type Tracker interface {
+	Do(func())
+	GetPeriodCh() chan time.Duration
+	Track(context.Context)
+	Reconfigure(*prometheus.Registry, map[string]*storage.PrometheusMetricsConfig_LabelExpressions, time.Duration) error
+}
+
 // MakeTrackerConfig initializes a tracker configuration without any period or metric expressions.
 // Call Reconfigure to configure the period and the expressions.
-func MakeTrackerConfig(category, description string, labelOrder map[Label]int, generator FindingGenerator) *TrackerConfig {
-	return &TrackerConfig{
+func MakeTrackerConfig[Finding any](category, description string,
+	labelOrder map[Label]int, getters map[Label]func(Finding) string, generator FindingGenerator[Finding],
+	gauge func(string, prometheus.Labels, int),
+) *TrackerConfig[Finding] {
+	return &TrackerConfig[Finding]{
 		category:    category,
 		description: description,
 		labelOrder:  labelOrder,
+		getters:     getters,
 		generator:   generator,
+		gauge:       gauge,
 
 		periodCh: make(chan time.Duration, 1),
 	}
 }
 
-func (tc *TrackerConfig) GetPeriodCh() chan time.Duration {
+func (tc *TrackerConfig[Finding]) GetPeriodCh() chan time.Duration {
 	return tc.periodCh
 }
 
-func (tc *TrackerConfig) Reconfigure(registry *prometheus.Registry, cfg map[string]*storage.PrometheusMetricsConfig_LabelExpressions, period time.Duration) error {
+func (tc *TrackerConfig[Finding]) Reconfigure(registry *prometheus.Registry, cfg map[string]*storage.PrometheusMetricsConfig_LabelExpressions, period time.Duration) error {
 	mle, err := parseMetricLabels(cfg, tc.labelOrder)
 	if err != nil {
 		return err
@@ -68,19 +82,19 @@ func (tc *TrackerConfig) Reconfigure(registry *prometheus.Registry, cfg map[stri
 	return tc.registerMetrics(registry, period)
 }
 
-func (tc *TrackerConfig) GetMetricLabelExpressions() MetricLabelsExpressions {
+func (tc *TrackerConfig[Finding]) GetMetricLabelExpressions() MetricLabelsExpressions {
 	tc.metricsConfigMux.RLock()
 	defer tc.metricsConfigMux.RUnlock()
 	return tc.metricsConfig
 }
 
-func (tc *TrackerConfig) SetMetricLabelExpressions(mle MetricLabelsExpressions) {
+func (tc *TrackerConfig[Finding]) SetMetricLabelExpressions(mle MetricLabelsExpressions) {
 	tc.metricsConfigMux.Lock()
 	defer tc.metricsConfigMux.Unlock()
 	tc.metricsConfig = mle
 }
 
-func (tc *TrackerConfig) registerMetrics(registry *prometheus.Registry, period time.Duration) error {
+func (tc *TrackerConfig[Finding]) registerMetrics(registry *prometheus.Registry, period time.Duration) error {
 	for metric, labelExpressions := range tc.metricsConfig {
 		if err := metrics.RegisterCustomAggregatedMetric(string(metric), tc.description, period,
 			getMetricLabels(labelExpressions, tc.labelOrder), registry); err != nil {
@@ -95,20 +109,17 @@ func (tc *TrackerConfig) registerMetrics(registry *prometheus.Registry, period t
 // MakeTrackFunc returns a function that calls trackFunc on every metric
 // returned by gatherFunc. cfgGetter returns the current configuration, which
 // may dynamically change.
-func (cfg *TrackerConfig) MakeTrackFunc(
-	trackFunc func(metricName string, labels prometheus.Labels, total int),
-) func(context.Context) {
-
-	return func(ctx context.Context) {
-		mle := cfg.GetMetricLabelExpressions()
-		aggregator := makeAggregator(mle, cfg.labelOrder)
-		for finding := range cfg.generator(ctx, mle) {
-			aggregator.count(finding)
-		}
-		for metric, records := range aggregator.result {
-			for _, rec := range records {
-				trackFunc(string(metric), rec.labels, rec.total)
-			}
+func (cfg *TrackerConfig[Finding]) Track(ctx context.Context) {
+	mle := cfg.GetMetricLabelExpressions()
+	aggregator := makeAggregator(mle, cfg.labelOrder)
+	for finding := range cfg.generator(ctx, mle) {
+		aggregator.count(func(label Label) string {
+			return cfg.getters[label](finding)
+		})
+	}
+	for metric, records := range aggregator.result {
+		for _, rec := range records {
+			cfg.gauge(string(metric), rec.labels, rec.total)
 		}
 	}
 }

@@ -25,9 +25,9 @@ func makeAggregator(mle MetricLabelsExpressions, labelOrder map[Label]int) *aggr
 	return &aggregator{aggregated, mle, labelOrder}
 }
 
-func (r *aggregator) count(finding Finding) {
+func (r *aggregator) count(getter func(Label) string) {
 	for metric, expressions := range r.mle {
-		if key, labels := makeAggregationKey(expressions, finding, r.labelOrder); key != "" {
+		if key, labels := makeAggregationKey(expressions, getter, r.labelOrder); key != "" {
 			if rec, ok := r.result[metric][key]; ok {
 				rec.total++
 			} else {
