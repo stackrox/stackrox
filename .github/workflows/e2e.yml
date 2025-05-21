@@ -11,6 +11,9 @@ on:
     - reopened
     - synchronize
 
+env:
+  KUBECONFIG: "./kubeconfig"
+
 jobs:
   e2e:
     runs-on: ubuntu-latest
@@ -21,6 +24,8 @@ jobs:
         ref: ${{ github.event.pull_request.head.sha }}
     - name: Create k8s Kind Cluster
       uses: helm/kind-action@v1
+      with:
+        kubeconfig: "${{ env.KUBECONFIG }}"
     - name: Install
       env:
         MAIN_IMAGE_TAG: "4.7.0"
