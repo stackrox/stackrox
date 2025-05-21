@@ -202,7 +202,7 @@ func (d *datastoreImpl) UpsertConfig(ctx context.Context, config *storage.Config
 			clusterRetentionConf.LastUpdated = protocompat.TimestampNow()
 		}
 	}
-	if platformComponentConfig := config.GetPlatformComponentConfig(); platformComponentConfig != nil {
+	if config.GetPlatformComponentConfig() != nil {
 		existingPlatformConf, _, _ := d.GetPlatformComponentConfig(ctx)
 		platformConfig, err := validateAndUpdatePlatformComponentConfig(existingPlatformConf, config.GetPlatformComponentConfig().GetRules())
 		if err != nil {
@@ -265,7 +265,7 @@ func (d *datastoreImpl) UpsertPlatformComponentConfigRules(ctx context.Context, 
 
 	config, found, err := d.store.Get(ctx)
 	if !found {
-		return nil, errox.NotFound
+		return nil, errors.Wrap(errox.NotFound, "System configuration not found")
 	} else if err != nil {
 		return nil, err
 	}
