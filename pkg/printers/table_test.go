@@ -53,11 +53,6 @@ func TestTablePrinter_PrintWithMockData(t *testing.T) {
 				{
 					Name:    "Test1",
 					ZIP:     "63438",
-					Country: "Fictional4",
-				},
-				{
-					Name:    "Test1",
-					ZIP:     "63438",
 					Country: "Fictional5",
 				},
 			},
@@ -82,8 +77,6 @@ func TestTablePrinter_PrintWithMockData(t *testing.T) {
 | Test1 | 3456  | Fictional2 |
 |       +-------+------------+
 |       | 63438 | Fictional4 |
-|       |       |            |
-|       |       |            |
 |       |       +------------+
 |       |       | Fictional5 |
 +-------+-------+------------+
@@ -100,8 +93,6 @@ func TestTablePrinter_PrintWithMockData(t *testing.T) {
 | Test  | 3456  | Fictional1 |
 +-------+-------+------------+
 | Test1 | 3456  | Fictional2 |
-+-------+-------+------------+
-| Test1 | 63438 | Fictional4 |
 +-------+-------+------------+
 | Test1 | 63438 | Fictional4 |
 +-------+-------+------------+
