@@ -58,14 +58,15 @@ func (c *codec) marshalVT(m vtprotoMessage) (mem.BufferSlice, error) {
 func (c *codec) Unmarshal(data mem.BufferSlice, v any) error {
 	m, ok := v.(vtprotoMessage)
 	if !ok {
-		return errors.Wrapf(c.CodecV2.Unmarshal(data, v),
-			"type %T does not support VT; fallback failed", v)
+		fallbackErr := c.CodecV2.Unmarshal(data, v)
+		return errors.Wrapf(fallbackErr, "type %T does not support VT; fallback failed", v)
 	}
 	buf := data.MaterializeToBuffer(defaultBufferPool)
 	defer buf.Free()
 	err := m.UnmarshalVT(buf.ReadOnlyData())
 	if err != nil {
-		return errors.Wrapf(c.CodecV2.Unmarshal(data, v), "codec failed: %s; fallback failed", err)
+		fallbackErr := c.CodecV2.Unmarshal(data, v)
+		return errors.Wrapf(fallbackErr, "codec failed: %s; fallback failed", err)
 	}
 	return nil
 }
