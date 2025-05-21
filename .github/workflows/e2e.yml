@@ -34,6 +34,9 @@ jobs:
     - name: Install roxctl
       uses: stackrox/roxctl-installer-action@v1
     - name: Test
+      env:
+        QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+        QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
       run: ./tests/e2e/sensor.sh
 
 
