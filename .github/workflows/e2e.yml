@@ -12,7 +12,7 @@ on:
     - synchronize
 
 env:
-  KUBECONFIG: "./kubeconfig"
+  KUBECONFIG: "/tmp/kubeconfig"
 
 jobs:
   e2e:
