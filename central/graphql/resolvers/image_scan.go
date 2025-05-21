@@ -36,7 +36,6 @@ func init() {
 }
 
 func (resolver *imageScanResolver) ImageComponents(_ context.Context, args PaginatedQuery) ([]ImageComponentResolver, error) {
-	log.Infof("SHREWS -- in imageScan-ImageComponents")
 	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
@@ -48,7 +47,6 @@ func (resolver *imageScanResolver) ImageComponents(_ context.Context, args Pagin
 }
 
 func (resolver *imageScanResolver) ImageComponentCount(_ context.Context, args RawQuery) (int32, error) {
-	log.Infof("SHREWS -- in imageScan-ImageComponentCount")
 	return resolver.root.ImageComponentCount(resolver.ctx, args)
 }
 
@@ -80,7 +78,6 @@ func getImageComponentResolvers(ctx context.Context, root *Resolver, imageScan *
 	}
 
 	// For now, sort by IDs.
-	log.Infof("SHREWS -- in imageScan-ImageComponents -- oh we are sorting in Go")
 	resolvers := make([]*imageComponentResolver, 0, len(idToComponent))
 	for _, component := range idToComponent {
 		resolvers = append(resolvers, component)

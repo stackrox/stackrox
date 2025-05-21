@@ -157,9 +157,6 @@ func (resolver *Resolver) ImageComponents(ctx context.Context, q PaginatedQuery)
 	}
 
 	if features.FlattenCVEData.Enabled() {
-		scopeQ, _ := scoped.GetQueryForAllScopes(ctx)
-		log.Infof("SHREWS -- ImageComponents -- scope query -- %v", scopeQ)
-		log.Infof("SHREWS -- ImageComponents -- query -- %v", query)
 		// Get the flattened data
 		componentFlatData, err := resolver.ImageComponentFlatView.Get(ctx, query)
 		if err != nil {
@@ -243,7 +240,6 @@ func (resolver *Resolver) ImageComponents(ctx context.Context, q PaginatedQuery)
 // ImageComponentCount returns count of image components that match the input query
 func (resolver *Resolver) ImageComponentCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageComponentCount")
-	log.Infof("SHREWS -- ImageComponentCount -- %v", args)
 	// check permissions
 	if err := readImages(ctx); err != nil {
 		return 0, err
@@ -257,7 +253,6 @@ func (resolver *Resolver) ImageComponentCount(ctx context.Context, args RawQuery
 
 	if features.FlattenCVEData.Enabled() {
 		componentCount, err := resolver.ImageComponentFlatView.Count(ctx, query)
-		log.Infof("SHREWS -- ImageComponentCount -- %d", componentCount)
 		return int32(componentCount), err
 	}
 	// get loader
@@ -699,13 +694,11 @@ func (resolver *imageComponentV2Resolver) Images(ctx context.Context, args Pagin
 
 func (resolver *imageComponentV2Resolver) ImageVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "ImageVulnerabilityCount")
-	log.Infof("SHREWS -- ImageVulnerabilityCount -- %v -- %v+", args, ctx)
 	return resolver.root.ImageVulnerabilityCount(resolver.imageComponentScopeContext(ctx), args)
 }
 
 func (resolver *imageComponentV2Resolver) ImageVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "ImageVulnerabilityCounter")
-	log.Infof("SHREWS -- ImageVulnerabilityCounter -- %v -- %v+", args, ctx)
 	return resolver.root.ImageVulnerabilityCounter(resolver.imageComponentScopeContext(ctx), args)
 }
 
@@ -841,13 +834,11 @@ func (resolver *imageComponentV2Resolver) imageComponentScopeContext(ctx context
 		resolver.ctx = ctx
 	}
 	if features.FlattenCVEData.Enabled() && resolver.flatData != nil && len(resolver.flatData.GetComponentIDs()) > 0 {
-		log.Infof("SHREWS -- context with IDs -- %v", resolver.flatData.GetComponentIDs())
 		return scoped.Context(resolver.ctx, scoped.Scope{
 			Level: v1.SearchCategory_IMAGE_COMPONENTS_V2,
 			IDs:   resolver.flatData.GetComponentIDs(),
 		})
 	}
-	log.Infof("SHREWS -- context with IDs -- %v", resolver.data.GetId())
 	return scoped.Context(resolver.ctx, scoped.Scope{
 		Level: v1.SearchCategory_IMAGE_COMPONENTS_V2,
 		IDs:   []string{resolver.data.GetId()},
