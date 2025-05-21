@@ -22,6 +22,8 @@ func ComponentIDV2(component *storage.EmbeddedImageScanComponent, imageID string
 	// a oneof we cannot simply flag it as ignore in the proto, sadly.
 	clonedComponent := component.CloneVT()
 	clonedComponent.SetTopCvss = nil
+	clonedComponent.Vulns = nil
+	clonedComponent.HasLayerIndex = nil
 
 	hash, err := hashstructure.Hash(clonedComponent, hashstructure.FormatV2, &hashstructure.HashOptions{ZeroNil: true})
 	if err != nil {
