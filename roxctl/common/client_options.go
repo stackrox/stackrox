@@ -20,7 +20,6 @@ type HttpClientConfig struct {
 	RetryExponentialBackoff bool
 	RetryCount              int
 	RetryDelay              time.Duration
-	ReturnRespBodyOnError   bool
 	Timeout                 time.Duration
 	UseInsecure             bool
 }
@@ -81,15 +80,6 @@ func WithRetryCount(retryCount int) HttpClientOption {
 func WithRetryDelay(d time.Duration) HttpClientOption {
 	return func(hco *HttpClientConfig) {
 		hco.RetryDelay = d
-	}
-}
-
-// WithReturnErrorResponseBody when true indicates that on error the response body
-// should be returned. By default the response body is empty with no messaging
-// to indicate what the error is or why it occurred.
-func WithReturnErrorResponseBody(returnErrRespBody bool) HttpClientOption {
-	return func(hco *HttpClientConfig) {
-		hco.ReturnRespBodyOnError = returnErrRespBody
 	}
 }
 

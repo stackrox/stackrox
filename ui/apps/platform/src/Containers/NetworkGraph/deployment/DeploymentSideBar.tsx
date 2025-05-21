@@ -15,6 +15,7 @@ import {
     Title,
 } from '@patternfly/react-core';
 
+import { TimeWindow } from 'constants/timeWindows';
 import useTabs from 'hooks/patternfly/useTabs';
 import useFetchDeployment from 'hooks/useFetchDeployment';
 import usePermissions from 'hooks/usePermissions';
@@ -37,7 +38,6 @@ import useSimulation from '../hooks/useSimulation';
 import { EdgeState } from '../components/EdgeStateSelect';
 import { deploymentTabs } from '../utils/deploymentUtils';
 import useFetchNetworkFlows from '../api/useFetchNetworkFlows';
-import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
 
 const sidebarHeadingStyleConstant = {
     '--pf-v5-u-max-width--MaxWidth': '26ch',
@@ -50,11 +50,10 @@ type DeploymentSideBarProps = {
     edges: CustomEdgeModel[];
     edgeState: EdgeState;
     onNodeSelect: (id: string) => void;
-    onExternalIPSelect: (externalIP: string) => void;
     defaultDeploymentTab: string;
-    scopeHierarchy: NetworkScopeHierarchy;
     urlPagination: UseURLPaginationResult;
     urlSearchFiltering: UseUrlSearchReturn;
+    timeWindow: TimeWindow;
 };
 
 function DeploymentSideBar({
@@ -64,11 +63,10 @@ function DeploymentSideBar({
     edges,
     edgeState,
     onNodeSelect,
-    onExternalIPSelect,
     defaultDeploymentTab,
-    scopeHierarchy,
     urlPagination,
     urlSearchFiltering,
+    timeWindow,
 }: DeploymentSideBarProps) {
     // component state
     const { hasReadAccess } = usePermissions();
@@ -233,17 +231,15 @@ function DeploymentSideBar({
                                 <DeploymentFlows
                                     nodes={nodes}
                                     deploymentId={deploymentId}
-                                    deploymentName={deployment.name}
                                     edgeState={edgeState}
                                     onNodeSelect={onNodeSelect}
-                                    onExternalIPSelect={onExternalIPSelect}
                                     isLoadingNetworkFlows={isLoadingNetworkFlows}
                                     networkFlowsError={networkFlowsError}
                                     networkFlows={networkFlows}
                                     refetchFlows={refetchFlows}
-                                    scopeHierarchy={scopeHierarchy}
                                     urlPagination={urlPagination}
                                     urlSearchFiltering={urlSearchFiltering}
+                                    timeWindow={timeWindow}
                                 />
                             )}
                         </TabContent>

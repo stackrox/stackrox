@@ -4,7 +4,12 @@ import sortBy from 'lodash/sortBy';
 import uniq from 'lodash/uniq';
 import pluralize from 'pluralize';
 
-import { CveBaseInfo, VulnerabilitySeverity, isVulnerabilitySeverity } from 'types/cve.proto';
+import {
+    Advisory,
+    CveBaseInfo,
+    VulnerabilitySeverity,
+    isVulnerabilitySeverity,
+} from 'types/cve.proto';
 import { SourceType } from 'types/image.proto';
 import { ApiSortOptionSingle } from 'types/search';
 
@@ -60,6 +65,7 @@ export type ComponentVulnerabilityBase = {
     imageVulnerabilities: {
         severity: string;
         fixedByVersion: string;
+        advisory?: Advisory | null;
         pendingExceptionCount: number;
     }[];
 };
@@ -75,6 +81,7 @@ export type DeploymentComponentVulnerability = Omit<
         cvss: number;
         scoreVersion: string;
         fixedByVersion: string;
+        advisory?: Advisory | null;
         discoveredAtImage: string | null;
         publishedOn: string | null;
         pendingExceptionCount: number;
@@ -92,6 +99,7 @@ export type TableDataRow = {
     };
     name: string;
     fixedByVersion: string;
+    advisory?: Advisory | null;
     severity: VulnerabilitySeverity;
     version: string;
     location: string;
@@ -176,6 +184,7 @@ function extractCommonComponentFields(
             ? vulnerability.severity
             : 'UNKNOWN_VULNERABILITY_SEVERITY';
     const fixedByVersion = vulnerability?.fixedByVersion ?? 'N/A';
+    const advisory = vulnerability?.advisory;
     const pendingExceptionCount = vulnerability?.pendingExceptionCount ?? 0;
 
     return {
@@ -187,6 +196,7 @@ function extractCommonComponentFields(
         layer,
         severity,
         fixedByVersion,
+        advisory,
         pendingExceptionCount,
     };
 }
