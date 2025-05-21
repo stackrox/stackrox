@@ -51,7 +51,8 @@ type DeploymentSideBarProps = {
     edgeState: EdgeState;
     onNodeSelect: (id: string) => void;
     defaultDeploymentTab: string;
-    urlPagination: UseURLPaginationResult;
+    anomalousUrlPagination: UseURLPaginationResult;
+    baselineUrlPagination: UseURLPaginationResult;
     urlSearchFiltering: UseUrlSearchReturn;
     timeWindow: TimeWindow;
 };
@@ -64,7 +65,8 @@ function DeploymentSideBar({
     edgeState,
     onNodeSelect,
     defaultDeploymentTab,
-    urlPagination,
+    anomalousUrlPagination,
+    baselineUrlPagination,
     urlSearchFiltering,
     timeWindow,
 }: DeploymentSideBarProps) {
@@ -237,7 +239,8 @@ function DeploymentSideBar({
                                     networkFlowsError={networkFlowsError}
                                     networkFlows={networkFlows}
                                     refetchFlows={refetchFlows}
-                                    urlPagination={urlPagination}
+                                    anomalousUrlPagination={anomalousUrlPagination}
+                                    baselineUrlPagination={baselineUrlPagination}
                                     urlSearchFiltering={urlSearchFiltering}
                                     timeWindow={timeWindow}
                                 />

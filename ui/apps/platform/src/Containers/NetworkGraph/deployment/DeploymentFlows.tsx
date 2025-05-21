@@ -23,7 +23,8 @@ type DeploymentFlowsProps = {
     networkFlowsError: string;
     networkFlows: Flow[];
     refetchFlows: () => void;
-    urlPagination: UseURLPaginationResult;
+    anomalousUrlPagination: UseURLPaginationResult;
+    baselineUrlPagination: UseURLPaginationResult;
     urlSearchFiltering: UseUrlSearchReturn;
     timeWindow: TimeWindow;
 };
@@ -37,7 +38,8 @@ function DeploymentFlows({
     networkFlowsError,
     networkFlows,
     refetchFlows,
-    urlPagination,
+    anomalousUrlPagination,
+    baselineUrlPagination,
     urlSearchFiltering,
     timeWindow,
 }: DeploymentFlowsProps) {
@@ -45,13 +47,15 @@ function DeploymentFlows({
     const isNetworkGraphExternalIpsEnabled = isFeatureFlagEnabled('ROX_NETWORK_GRAPH_EXTERNAL_IPS');
     const [selectedView, setSelectedView] = useState<DeploymentFlowsView>('internal-flows');
 
-    const { setPage } = urlPagination;
+    const { setPage: anomalousSetPage } = anomalousUrlPagination;
+    const { setPage: baselineSetPage } = baselineUrlPagination;
     const { setSearchFilter } = urlSearchFiltering;
 
     useEffect(() => {
-        setPage(1);
+        anomalousSetPage(1);
+        baselineSetPage(1);
         setSearchFilter({});
-    }, [selectedView, setPage, setSearchFilter]);
+    }, [selectedView, anomalousSetPage, baselineSetPage, setSearchFilter]);
 
     if (!isNetworkGraphExternalIpsEnabled) {
         return (
@@ -104,7 +108,12 @@ function DeploymentFlows({
                                 refetchFlows={refetchFlows}
                             />
                         ) : (
-                            <ExternalFlows deploymentId={deploymentId} timeWindow={timeWindow} />
+                            <ExternalFlows
+                                deploymentId={deploymentId}
+                                timeWindow={timeWindow}
+                                anomalousUrlPagination={anomalousUrlPagination}
+                                baselineUrlPagination={baselineUrlPagination}
+                            />
                         )}
                     </Stack>
                 </StackItem>
