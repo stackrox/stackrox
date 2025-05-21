@@ -89,7 +89,7 @@ func (pr *platformReprocessorImpl) RunReprocessor() {
 		if err != nil {
 			log.Errorf("Error getting platform component config config: %v", err)
 		}
-		flag = config.NeedsReevaluation
+		flag = config.GetNeedsReevaluation()
 	}
 	if flag {
 		err := pr.reprocessAlerts()
