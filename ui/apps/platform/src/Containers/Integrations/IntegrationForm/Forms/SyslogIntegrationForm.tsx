@@ -58,8 +58,8 @@ export const validationSchema = yup.object().shape({
             .required('Message size is required')
             .test(
                 'message-size-test',
-                'Message size must be between 1 and 1048576',
-                (value = 0) => value >= 1 && value <= 1048576
+                'Message size must be between 0 and 1048576',
+                (value = 0) => value >= 0 && value <= 1048576
             ),
     }),
     uiEndpoint: yup.string(),
@@ -73,7 +73,7 @@ export const defaultValues: SyslogIntegration = {
         messageFormat: 'CEF',
         localFacility: undefined,
         extraFields: [],
-        maxMessageSize: 32768,
+        maxMessageSize: 0,
         tcpConfig: {
             hostname: '',
             port: 514,
@@ -212,7 +212,7 @@ function SyslogIntegrationForm({
                             fieldId="syslog.maxMessageSize"
                             touched={touched}
                             errors={errors}
-                            helperText="A number of bytes between 0 and 1048576"
+                            helperText="A number of bytes between 0 and 1048576 to chunk messages in. 0 means messages will not be chunked."
                         >
                             <TextInput
                                 isRequired
