@@ -36,7 +36,7 @@ func TestScore(t *testing.T) {
 		},
 	}
 
-	actualRisk := scorer.Score(ctx, scancomponent.NewFromImageComponent(imageComponent), "")
+	actualRisk := scorer.Score(ctx, scancomponent.NewFromImageComponent(imageComponent), "", imageComponent, pkgScorer.GetMockImage().GetId())
 	protoassert.SlicesEqual(t, expectedRiskResults, actualRisk.GetResults())
 	assert.InDelta(t, expectedRiskScore, actualRisk.GetScore(), 0.0001)
 
