@@ -55,7 +55,6 @@ import (
 	complianceReportManager "github.com/stackrox/rox/central/complianceoperator/v2/report/manager"
 	v2ComplianceRules "github.com/stackrox/rox/central/complianceoperator/v2/rules/service"
 	complianceScanSettings "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/service"
-	configDS "github.com/stackrox/rox/central/config/datastore"
 	configService "github.com/stackrox/rox/central/config/service"
 	credentialExpiryService "github.com/stackrox/rox/central/credentialexpiry/service"
 	clusterCveCsv "github.com/stackrox/rox/central/cve/cluster/csv"
@@ -379,6 +378,9 @@ func startServices() {
 		platformReprocessor.Singleton().Start()
 	}
 
+	centralclient.Enable()
+	centralclient.StartPeriodicReload(1 * time.Hour)
+
 	go registerDelayedIntegrations(iiStore.DelayedIntegrations)
 }
 
@@ -616,30 +618,24 @@ func startGRPCServer() {
 		centralSAC.GetEnricher().GetPreAuthContextEnricher(authzTraceSink),
 	)
 
-	if cds, err := configDS.Singleton().GetPublicConfig(); err == nil || cds == nil {
-		if t := cds.GetTelemetry(); t == nil || t.GetEnabled() {
-			if cfg := centralclient.Enable(); cfg.Enabled() {
-				centralclient.RegisterCentralClient(&config, basicAuthProvider.ID())
-				centralclient.StartPeriodicReload(1 * time.Hour)
-				gs := cfg.Gatherer()
-				gs.AddGatherer(administrationEventDS.Gather(administrationEventDS.Singleton()))
-				gs.AddGatherer(apitokenDS.Gather(apitokenDS.Singleton()))
-				gs.AddGatherer(authDS.Gather)
-				gs.AddGatherer(authProviderTelemetry.Gather)
-				gs.AddGatherer(cloudSourcesDS.Gather(cloudSourcesDS.Singleton()))
-				gs.AddGatherer(clusterDataStore.Gather)
-				gs.AddGatherer(declarativeconfig.ManagerSingleton().Gather())
-				gs.AddGatherer(delegatedRegistryConfigDS.Gather(delegatedRegistryConfigDS.Singleton()))
-				gs.AddGatherer(externalbackupsDS.Gather)
-				gs.AddGatherer(featuresTelemetry.Gather)
-				gs.AddGatherer(globaldb.Gather)
-				gs.AddGatherer(imageintegrationsDS.Gather)
-				gs.AddGatherer(notifierDS.Gather)
-				gs.AddGatherer(roleDataStore.Gather)
-				gs.AddGatherer(signatureIntegrationDS.Gather)
-			}
-		}
+	if gs := centralclient.InstanceConfig().Gatherer(); gs != nil {
+		gs.AddGatherer(administrationEventDS.Gather(administrationEventDS.Singleton()))
+		gs.AddGatherer(apitokenDS.Gather(apitokenDS.Singleton()))
+		gs.AddGatherer(authDS.Gather)
+		gs.AddGatherer(authProviderTelemetry.Gather)
+		gs.AddGatherer(cloudSourcesDS.Gather(cloudSourcesDS.Singleton()))
+		gs.AddGatherer(clusterDataStore.Gather)
+		gs.AddGatherer(declarativeconfig.ManagerSingleton().Gather())
+		gs.AddGatherer(delegatedRegistryConfigDS.Gather(delegatedRegistryConfigDS.Singleton()))
+		gs.AddGatherer(externalbackupsDS.Gather)
+		gs.AddGatherer(featuresTelemetry.Gather)
+		gs.AddGatherer(globaldb.Gather)
+		gs.AddGatherer(imageintegrationsDS.Gather)
+		gs.AddGatherer(notifierDS.Gather)
+		gs.AddGatherer(roleDataStore.Gather)
+		gs.AddGatherer(signatureIntegrationDS.Gather)
 	}
+	centralclient.RegisterCentralClient(&config, basicAuthProvider.ID())
 
 	server := pkgGRPC.NewAPI(config)
 	server.Register(servicesToRegister()...)
