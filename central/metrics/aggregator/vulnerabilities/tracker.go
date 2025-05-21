@@ -5,6 +5,7 @@ import (
 	"iter"
 	"strconv"
 
+	"github.com/prometheus/client_golang/prometheus"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/metrics/aggregator/common"
 	"github.com/stackrox/rox/generated/storage"
@@ -30,13 +31,51 @@ var labelOrder = common.MakeLabelOrderMap([]common.Label{
 	"IsFixable",
 })
 
-func MakeTrackerConfig() *common.TrackerConfig {
-	tc := common.MakeTrackerConfig("vulnerabilities", "aggregated CVEs",
-		labelOrder, common.Bind3rd(trackVulnerabilityMetrics, deploymentDS.Singleton()))
+var getters = map[common.Label]func(*finding) string{
+	"Cluster":          func(f *finding) string { return f.deployment.GetClusterName() },
+	"Namespace":        func(f *finding) string { return f.deployment.GetNamespace() },
+	"Deployment":       func(f *finding) string { return f.deployment.GetName() },
+	"ImageID":          func(f *finding) string { return f.image.GetId() },
+	"ImageRegistry":    func(f *finding) string { return f.name.GetRegistry() },
+	"ImageRemote":      func(f *finding) string { return f.name.GetRemote() },
+	"ImageTag":         func(f *finding) string { return f.name.GetTag() },
+	"Component":        func(f *finding) string { return f.component.GetName() },
+	"ComponentVersion": func(f *finding) string { return f.component.GetVersion() },
+	"CVE":              func(f *finding) string { return f.vuln.GetCve() },
+	"CVSS":             func(f *finding) string { return strconv.FormatFloat(float64(f.vuln.GetCvss()), 'f', 1, 32) },
+	"OperatingSystem":  func(f *finding) string { return f.image.GetScan().GetOperatingSystem() },
+	"Severity":         func(f *finding) string { return f.vuln.GetSeverity().String() },
+	"SeverityV2":       func(f *finding) string { return f.vuln.GetCvssV2().GetSeverity().String() },
+	"SeverityV3":       func(f *finding) string { return f.vuln.GetCvssV3().GetSeverity().String() },
+	"IsFixable": func(f *finding) string {
+		if f.vuln.GetFixedBy() == "" {
+			return "false"
+		}
+		return "true"
+	},
+}
+
+type finding struct {
+	deployment *storage.Deployment
+	image      *storage.Image
+	name       *storage.ImageName
+	component  *storage.EmbeddedImageScanComponent
+	vuln       *storage.EmbeddedVulnerability
+}
+
+func MakeTrackerConfig(gauge func(string, prometheus.Labels, int)) *common.TrackerConfig[*finding] {
+	tc := common.MakeTrackerConfig(
+		"vulnerabilities",
+		"aggregated CVEs",
+		labelOrder,
+		getters,
+		common.Bind3rd(trackVulnerabilityMetrics, deploymentDS.Singleton()),
+		gauge)
 	return tc
 }
 
-func trackVulnerabilityMetrics(ctx context.Context, mle common.MetricLabelsExpressions, ds deploymentDS.DataStore) iter.Seq[common.Finding] {
+func trackVulnerabilityMetrics(ctx context.Context, mle common.MetricLabelsExpressions, ds deploymentDS.DataStore) iter.Seq[*finding] {
+	// Check if image data is needed:
 	trackImageData := false
 mleLoop:
 	for _, expr := range mle {
@@ -47,22 +86,23 @@ mleLoop:
 			}
 		}
 	}
-	return func(yield func(common.Finding) bool) {
+	return func(yield func(*finding) bool) {
+		finding := &finding{}
 		// Optimization opportunity:
-		// The resource filter is known at this point, so a more precise query could be constructed here.
+		// The resource filter (mle) is known at this point, so a more precise
+		// query could be constructed here.
 		_ = ds.WalkByQuery(ctx, search.EmptyQuery(), func(deployment *storage.Deployment) error {
+			finding.deployment = deployment
 			if trackImageData {
 				images, err := ds.GetImagesForDeployment(ctx, deployment)
 				if err != nil {
-					return nil
+					return nil // Nothing can be done with this error here.
 				}
-				for finding := range vulnerabitilies(images, deployment) {
-					if !yield(finding) {
-						return common.ErrStopIterator
-					}
+				if !forEachFinding(yield, finding, images) {
+					return common.ErrStopIterator
 				}
 			} else {
-				if !yield(func(label common.Label) string { return getResourceLabel(label, deployment) }) {
+				if !yield(finding) {
 					return common.ErrStopIterator
 				}
 			}
@@ -71,92 +111,17 @@ mleLoop:
 	}
 }
 
-func vulnerabitilies(images []*storage.Image, deployment *storage.Deployment) iter.Seq[common.Finding] {
-	return func(yield func(common.Finding) bool) {
-		for _, image := range images {
-			for _, component := range image.GetScan().GetComponents() {
-				for _, vuln := range component.GetVulns() {
-					for _, name := range image.GetNames() {
-						finding := makeFinding(
-							deployment,
-							image,
-							name,
-							component,
-							vuln,
-						)
-						if !yield(finding) {
-							return
-						}
+func forEachFinding(yield func(*finding) bool, f *finding, images []*storage.Image) bool {
+	for _, f.image = range images {
+		for _, f.component = range f.image.GetScan().GetComponents() {
+			for _, f.vuln = range f.component.GetVulns() {
+				for _, f.name = range f.image.GetNames() {
+					if !yield(f) {
+						return false
 					}
 				}
 			}
 		}
 	}
-}
-
-func makeFinding(
-	deployment *storage.Deployment,
-	image *storage.Image,
-	name *storage.ImageName,
-	component *storage.EmbeddedImageScanComponent,
-	vuln *storage.EmbeddedVulnerability,
-) common.Finding {
-
-	return func(label common.Label) string {
-		switch label {
-		case "Cluster":
-			return deployment.GetClusterName()
-		case "Namespace":
-			return deployment.GetNamespace()
-		case "Deployment":
-			return deployment.GetName()
-
-		case "ImageID":
-			return image.GetId()
-		case "ImageRegistry":
-			return name.GetRegistry()
-		case "ImageRemote":
-			return name.GetRemote()
-		case "ImageTag":
-			return name.GetTag()
-		case "Component":
-			return component.GetName()
-		case "ComponentVersion":
-			return component.GetVersion()
-
-		case "CVE":
-			return vuln.GetCve()
-		case "CVSS":
-			return strconv.FormatFloat(float64(vuln.GetCvss()), 'f', 1, 32)
-		case "OperatingSystem":
-			return image.GetScan().GetOperatingSystem()
-		case "Severity":
-			return vuln.GetSeverity().String()
-		case "SeverityV2":
-			return vuln.GetCvssV2().GetSeverity().String()
-		case "SeverityV3":
-			return vuln.GetCvssV3().GetSeverity().String()
-		case "IsFixable":
-			if vuln.GetFixedBy() == "" {
-				return "false"
-			}
-			return "true"
-
-		default:
-			return ""
-		}
-	}
-}
-
-func getResourceLabel(label common.Label, deployment *storage.Deployment) string {
-	switch label {
-	case "Cluster":
-		return deployment.GetClusterName()
-	case "Namespace":
-		return deployment.GetNamespace()
-	case "Deployment":
-		return deployment.GetName()
-	default:
-		return ""
-	}
+	return true
 }

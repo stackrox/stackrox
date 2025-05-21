@@ -28,7 +28,7 @@ type aggregatorRunner struct {
 	stopCh   chan bool
 	stopOnce sync.Once
 
-	vulnerabilities *common.TrackerConfig
+	vulnerabilities common.Tracker
 }
 
 func Singleton() interface {
@@ -39,7 +39,7 @@ func Singleton() interface {
 	once.Do(func() {
 		runner = &aggregatorRunner{
 			stopCh:          make(chan bool),
-			vulnerabilities: vulnerabilities.MakeTrackerConfig(),
+			vulnerabilities: vulnerabilities.MakeTrackerConfig(metrics.SetCustomAggregatedCount),
 		}
 		systemPrivateConfig, err := configDS.Singleton().GetPrivateConfig(
 			sac.WithAllAccess(context.Background()))
@@ -72,7 +72,7 @@ func (ar *aggregatorRunner) Reconfigure(cfg *storage.PrometheusMetricsConfig) er
 
 func (ar *aggregatorRunner) Start() {
 	ar.vulnerabilities.Do(func() {
-		go ar.run(ar.vulnerabilities, metrics.SetCustomAggregatedCount)
+		go ar.run(ar.vulnerabilities)
 	})
 }
 
@@ -82,10 +82,8 @@ func (ar *aggregatorRunner) Stop() {
 	})
 }
 
-func (ar *aggregatorRunner) run(tracker *common.TrackerConfig, gauge func(metricName string, labels prometheus.Labels, total int)) {
+func (ar *aggregatorRunner) run(tracker common.Tracker) {
 	periodCh := tracker.GetPeriodCh()
-	track := tracker.MakeTrackFunc(gauge)
-
 	// The ticker will be reset immediately when reading from the periodCh.
 	ticker := time.NewTicker(1000 * time.Hour)
 	defer ticker.Stop()
@@ -97,12 +95,12 @@ func (ar *aggregatorRunner) run(tracker *common.TrackerConfig, gauge func(metric
 	for {
 		select {
 		case <-ticker.C:
-			track(ctx)
+			tracker.Track(ctx)
 		case <-ar.stopCh:
 			return
 		case period := <-periodCh:
 			if period > 0 {
-				track(ctx)
+				tracker.Track(ctx)
 				ticker.Reset(period)
 			} else {
 				ticker.Stop()
