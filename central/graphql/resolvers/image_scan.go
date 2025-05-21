@@ -129,6 +129,10 @@ func getImageComponentV2Resolvers(ctx context.Context, root *Resolver, imageScan
 		}
 		if _, exists := idToComponent[id]; !exists {
 			component, err := common.GenerateImageComponentV2(os, image, embeddedComponent)
+			if err != nil {
+				return nil, err
+			}
+
 			resolver, err := root.wrapImageComponentV2(component, true, nil)
 			if err != nil {
 				return nil, err
