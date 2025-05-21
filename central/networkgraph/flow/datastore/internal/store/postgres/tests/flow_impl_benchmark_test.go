@@ -144,6 +144,13 @@ func BenchmarkRemoveOrphanedFlows(b *testing.B) {
 	b.Run("10000 flows and 100 entities to be pruned", benchmarkRemoveOrphanedFlows(flowStore, eStore, fixtureconsts.Deployment1, 100, 100))
 	// 100 deployments and 1000 entities
 	b.Run("100000 flows and 1000 entities to be pruned", benchmarkRemoveOrphanedFlows(flowStore, eStore, fixtureconsts.Deployment1, 100, 1000))
+
+	// 1 deployments and 1000 entities
+	b.Run("1000 flows and 1000 entities to be pruned", benchmarkRemoveOrphanedFlows(flowStore, eStore, fixtureconsts.Deployment1, 1, 1000))
+	// 1 deployments and 10000 entities
+	b.Run("10000 flows and 10000 entities to be pruned", benchmarkRemoveOrphanedFlows(flowStore, eStore, fixtureconsts.Deployment1, 1, 10000))
+	// 1 deployments and 100000 entities
+	b.Run("100000 flows and 100000 entities to be pruned", benchmarkRemoveOrphanedFlows(flowStore, eStore, fixtureconsts.Deployment1, 1, 100000))
 }
 
 func BenchmarkGetFlowsForDeployment(b *testing.B) {
@@ -201,7 +208,7 @@ func addToUUID(u string, addition int64) string {
 }
 
 func upsertTooMany(b *testing.B, eStore entityStore.EntityDataStore, entities []*storage.NetworkEntity) {
-        batchSize := 30000
+        batchSize := 3000
 	numEntities := len(entities)
 
 	for offset := 0; offset < numEntities; offset += batchSize {
@@ -287,6 +294,10 @@ func benchmarkGetFlowsForDeployment(flowStore store.FlowStore, deploymentId stri
 
 func benchmarkPruneOrphanedFlowsForDeployment(flowStore store.FlowStore, eStore entityStore.EntityDataStore, deploymentId string, numEntities uint32) func(*testing.B) {
 	return func(b *testing.B) {
+		// Prune all flows and entities from previous tests
+		orphanWindow := time.Now().UTC().Add(20000000 * time.Second)
+		err := flowStore.RemoveOrphanedFlows(allAccessCtx, &orphanWindow)
+
 		ts := timestamp.Now()+1000000
 		// Add flows and entities that will be pruned
 		startingIPIndex := uint32(0)
@@ -300,7 +311,7 @@ func benchmarkPruneOrphanedFlowsForDeployment(flowStore store.FlowStore, eStore 
 		b.ResetTimer()
 
 		b.Setenv(features.ExternalIPs.EnvVar(), "true")
-		err := flowStore.RemoveFlowsForDeployment(allAccessCtx, deploymentId)
+		err = flowStore.RemoveFlowsForDeployment(allAccessCtx, deploymentId)
 		require.NoError(b, err)
 		duration := time.Since(start)
 
@@ -311,14 +322,18 @@ func benchmarkPruneOrphanedFlowsForDeployment(flowStore store.FlowStore, eStore 
 func benchmarkRemoveOrphanedFlows(flowStore store.FlowStore, eStore entityStore.EntityDataStore, deploymentId string, numDeployments int, numEntities uint32) func(*testing.B) {
 	totalFlows := uint32(numDeployments) * numEntities
 	return func(b *testing.B) {
+		// Prune all flows and entities from previous tests
+		orphanWindow := time.Now().UTC().Add(20000000 * time.Second)
+		err := flowStore.RemoveOrphanedFlows(allAccessCtx, &orphanWindow)
+
 		// Add flows and entities that will be pruned
-		ts := timestamp.Now()-1000000
+		ts := timestamp.Now()-10000000
 		startingIPIndex := uint32(0)
 		setupExternalFlowsWithEntities(b, flowStore, eStore, deploymentId, numDeployments, numEntities, ts, startingIPIndex)
 
 		// Add flows and entities that will not be pruned
 		deploymentId = addToUUID(deploymentId, int64(numDeployments))
-		ts = timestamp.Now()+1000000
+		ts = timestamp.Now()+10000000
 		startingIPIndex = uint32(numEntities)
 		setupExternalFlowsWithEntities(b, flowStore, eStore, deploymentId, numDeployments, numEntities, ts, startingIPIndex)
 
@@ -326,8 +341,8 @@ func benchmarkRemoveOrphanedFlows(flowStore store.FlowStore, eStore entityStore.
 		b.ResetTimer()
 
 		b.Setenv(features.ExternalIPs.EnvVar(), "true")
-		orphanWindow := time.Now().UTC()
-		err := flowStore.RemoveOrphanedFlows(allAccessCtx, &orphanWindow)
+		orphanWindow = time.Now().UTC()
+		err = flowStore.RemoveOrphanedFlows(allAccessCtx, &orphanWindow)
 		require.NoError(b, err)
 		duration := time.Since(start)
 		log.Infof("Pruning %d flows and %d entities took %s", totalFlows, numEntities, duration)
