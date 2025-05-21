@@ -62,7 +62,7 @@ function assert_stderr_contains() {
     check_gha_suppressed
 }
 
-@test "Konflux: should tell Both when a different tag pushed" {
+@test "Konflux: should tell Both when non-release tag pushed" {
     export SOURCE_BRANCH=refs/tags/4.10.56-nightly.20250515
     export TARGET_BRANCH=refs/tags/4.10.56-nightly.20250515
     check_both_go
@@ -105,7 +105,7 @@ function assert_stderr_contains() {
     check_gha_suppressed
 }
 
-@test "GHA: should tell Both when different tag pushed" {
+@test "GHA: should tell Both when non-release tag pushed" {
     export GITHUB_REF=refs/tags/0.0.0-author-testing
     check_both_go
 }
