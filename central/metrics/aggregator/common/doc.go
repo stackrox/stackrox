@@ -5,8 +5,7 @@
 // # Finding Aggregation
 //
 // Finding aggregation is the process of grouping findings based on specific label
-// expressions and generating metrics that summarize the findings. A `Finding` is
-// a lazy map that provides label values for a given label key. The aggregation
+// expressions and generating metrics that summarize the findings. The aggregation
 // process involves the following steps:
 //
 //  1. **Matching Labels**: The `collectMatchingLabels` function iterates over the label
