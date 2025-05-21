@@ -49,12 +49,20 @@ function assert_stderr_contains() {
     assert grep -F "$1" <<< "${stderr_lines[@]}"
 }
 
+# Error cases
+
 @test "should fail when required values are not set" {
     run_cmd
     assert_failure 2
 }
 
-# When executing in Konflux
+@test "GHA: should fail when PR but variables are not set" {
+    export GITHUB_REF=refs/pull/1005006/merge
+    run_cmd
+    assert_failure 3
+}
+
+# Release (or RC) tag push
 
 @test "Konflux: should tell only Konflux when rc tag pushed" {
     export SOURCE_BRANCH=refs/tags/4.10.56-rc.172
@@ -62,47 +70,17 @@ function assert_stderr_contains() {
     check_gha_suppressed
 }
 
+@test "GHA: should tell only Konflux when release tag pushed" {
+    export GITHUB_REF=refs/tags/24.58.60
+    check_gha_suppressed
+}
+
+# Non-release tag push
+
 @test "Konflux: should tell Both when non-release tag pushed" {
     export SOURCE_BRANCH=refs/tags/4.10.56-nightly.20250515
     export TARGET_BRANCH=refs/tags/4.10.56-nightly.20250515
     check_both_go
-}
-
-@test "Konflux: should tell only Konflux when release-like branch pushed" {
-    export SOURCE_BRANCH=release-4.8
-    export TARGET_BRANCH=release-4.8
-    check_gha_suppressed
-}
-
-@test "Konflux: should tell Both when non-release branch pushed" {
-    export SOURCE_BRANCH=author/ROX-27716-useful-feature
-    export TARGET_BRANCH=author/ROX-27716-useful-feature
-    check_both_go
-}
-
-@test "Konflux: should tell only Konflux when PR branch name includes magic" {
-    export SOURCE_BRANCH=author/konflux-release-like
-    export TARGET_BRANCH=master
-    check_gha_suppressed_for_pr
-}
-
-@test "Konflux: should tell Both when PR branch name is not magic" {
-    export SOURCE_BRANCH=author/my-useful-feature
-    export TARGET_BRANCH=master
-    check_both_go
-}
-
-@test "Konflux: should tell only Konflux when PR targets release branch" {
-    export SOURCE_BRANCH=author/my-useful-feature
-    export TARGET_BRANCH=release-4.8
-    check_gha_suppressed
-}
-
-# When executing in GHA
-
-@test "GHA: should tell only Konflux when release tag pushed" {
-    export GITHUB_REF=refs/tags/24.58.60
-    check_gha_suppressed
 }
 
 @test "GHA: should tell Both when non-release tag pushed" {
@@ -110,9 +88,25 @@ function assert_stderr_contains() {
     check_both_go
 }
 
+# Release (or release-like) branch push
+
+@test "Konflux: should tell only Konflux when release-like branch pushed" {
+    export SOURCE_BRANCH=release-4.8
+    export TARGET_BRANCH=release-4.8
+    check_gha_suppressed
+}
+
 @test "GHA: should tell only Konflux when release-like branch pushed" {
     export GITHUB_REF=refs/heads/release-x.y
     check_gha_suppressed
+}
+
+# Non-release branch push
+
+@test "Konflux: should tell Both when non-release branch pushed" {
+    export SOURCE_BRANCH=author/ROX-27716-useful-feature
+    export TARGET_BRANCH=author/ROX-27716-useful-feature
+    check_both_go
 }
 
 @test "GHA: should tell Both when non-release branch pushed" {
@@ -120,10 +114,12 @@ function assert_stderr_contains() {
     check_both_go
 }
 
-@test "GHA: should fail when PR but variables are not set" {
-    export GITHUB_REF=refs/pull/1005006/merge
-    run_cmd
-    assert_failure 3
+# PR towards a release (or release-like) branch
+
+@test "Konflux: should tell only Konflux when PR targets release branch" {
+    export SOURCE_BRANCH=author/my-useful-feature
+    export TARGET_BRANCH=release-4.8
+    check_gha_suppressed
 }
 
 @test "GHA: should tell only Konflux when PR targets release-like branch" {
@@ -133,11 +129,27 @@ function assert_stderr_contains() {
     check_gha_suppressed
 }
 
+# PR towards a non-release branch
+
+@test "Konflux: should tell Both when PR branch name is not magic" {
+    export SOURCE_BRANCH=author/my-useful-feature
+    export TARGET_BRANCH=master
+    check_both_go
+}
+
 @test "GHA: should tell Both when PR targets non-release branch" {
     export GITHUB_REF=refs/pull/15309/merge
     export GITHUB_BASE_REF=master
     export GITHUB_HEAD_REF=author/my-useful-feature
     check_both_go
+}
+
+# PR with a source branch containing magic string
+
+@test "Konflux: should tell only Konflux when PR branch name includes magic" {
+    export SOURCE_BRANCH=author/konflux-release-like
+    export TARGET_BRANCH=master
+    check_gha_suppressed_for_pr
 }
 
 @test "GHA: should tell only Konflux when PR branch name includes magic" {
