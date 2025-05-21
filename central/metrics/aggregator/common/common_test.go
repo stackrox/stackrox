@@ -35,12 +35,6 @@ var testData = []map[Label]string{
 	},
 }
 
-var testGetters = map[Label]func(testDataIndex) string{
-	"Severity":  func(i testDataIndex) string { return testData[i]["Severity"] },
-	"Cluster":   func(i testDataIndex) string { return testData[i]["Cluster"] },
-	"Namespace": func(i testDataIndex) string { return testData[i]["Namespace"] },
-}
-
 func makeTestMetricLabels(t *testing.T) map[string]*storage.PrometheusMetricsConfig_LabelExpressions {
 	pfx := strings.ReplaceAll(t.Name(), "/", "_")
 	return map[string]*storage.PrometheusMetricsConfig_LabelExpressions{
