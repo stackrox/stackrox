@@ -6,9 +6,12 @@ import (
 	"context"
 	"encoding/binary"
 	"fmt"
+	"math/big"
 	"net/netip"
 	"testing"
 	"time"
+
+	"github.com/google/uuid"
 
 	entityStore "github.com/stackrox/rox/central/networkgraph/entity/datastore"
 	"github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store"
@@ -135,9 +138,12 @@ func BenchmarkRemoveOrphanedFlows(b *testing.B) {
 	require.NoError(b, err)
 	eStore := entityStore.GetTestPostgresDataStore(b, psql)
 
-	b.Run("1000 flows to be pruned", benchmarkRemoveOrphanedFlows(flowStore, eStore, fixtureconsts.Deployment1, 1000))
-	b.Run("10000 flows to be pruned", benchmarkRemoveOrphanedFlows(flowStore, eStore, fixtureconsts.Deployment1, 10000))
-	b.Run("100000 flows to be pruned", benchmarkRemoveOrphanedFlows(flowStore, eStore, fixtureconsts.Deployment1, 100000))
+	// 100 deployments and 10 entities
+	b.Run("1000 flows and 10 entities to be pruned", benchmarkRemoveOrphanedFlows(flowStore, eStore, fixtureconsts.Deployment1, 100, 10))
+	// 100 deployments and 100 entities
+	b.Run("10000 flows and 100 entities to be pruned", benchmarkRemoveOrphanedFlows(flowStore, eStore, fixtureconsts.Deployment1, 100, 100))
+	// 100 deployments and 1000 entities
+	b.Run("100000 flows and 1000 entities to be pruned", benchmarkRemoveOrphanedFlows(flowStore, eStore, fixtureconsts.Deployment1, 100, 1000))
 }
 
 func BenchmarkGetFlowsForDeployment(b *testing.B) {
@@ -181,40 +187,69 @@ func setupExternalIngressFlows(b *testing.B, flowStore store.FlowStore, deployme
 	require.NoError(b, err)
 }
 
-func setupExternalIngressFlowsWithEntities(b *testing.B, flowStore store.FlowStore, eStore entityStore.EntityDataStore, deploymentId string, numFlows uint32) {
-	batchSize := uint32(30000)
-	flows := make([]*storage.NetworkFlow, 0, numFlows)
-	entities := make([]*storage.NetworkEntity, batchSize)
+func incrementUUID(u string) string {
+	uBytes, _ := uuid.Parse(u)
 
-	for i := uint32(0); i < numFlows; i++ {
-		if i%batchSize == 0 && i != 0 {
-			_, err := eStore.CreateExtNetworkEntitiesForCluster(allAccessCtx, fixtureconsts.Cluster1, entities...)
-			require.NoError(b, err)
+	bi := new(big.Int)
+	bi.SetBytes(uBytes[:])
+
+	bi.Add(bi, big.NewInt(1))
+
+	newBytes := bi.Bytes()
+
+	newUUID, _ := uuid.FromBytes(newBytes)
+
+	return newUUID.String()
+}
+
+func upsertTooMany(b *testing.B, eStore entityStore.EntityDataStore, entities []*storage.NetworkEntity) {
+        batchSize := 30000
+	numEntities := len(entities)
+
+	for offset := 0; offset < numEntities; offset += batchSize {
+		end := offset + batchSize
+		if end > numEntities {
+			end = numEntities
 		}
+		_, err := eStore.CreateExtNetworkEntitiesForCluster(allAccessCtx, fixtureconsts.Cluster1, entities[offset:end]...)
+		require.NoError(b, err)
+	}
+}
+
+func setupExternalFlowsWithEntities(b *testing.B, flowStore store.FlowStore, eStore entityStore.EntityDataStore, startingDeploymentId string, numDeployments int, numEntities uint32) {
+	totalFlows := numEntities * uint32(numDeployments)
+	flows := make([]*storage.NetworkFlow, 0, totalFlows)
+	entities := make([]*storage.NetworkEntity, numEntities)
+
+	for i := uint32(0); i < numEntities; i++ {
 		bs := [4]byte{}
 		// Must have + 1 because the 0.0.0.0 IP address is not allowed
 		binary.BigEndian.PutUint32(bs[:], i+1)
 		ip := netip.AddrFrom4(bs)
 		cidr := fmt.Sprintf("%s/32", ip.String())
 
-		extEntity := GetClusterScopedDiscoveredEntity(cidr, clusterID)
-		id := extEntity.GetInfo().GetId()
+		entities[i] = GetClusterScopedDiscoveredEntity(cidr, clusterID)
+	}
 
-		flow := testutils.ExtFlowEgress(id, deploymentId, clusterID)
-		flows = append(flows, flow)
-		entities[i%batchSize] = extEntity
+	upsertTooMany(b, eStore, entities)
+
+	deploymentId := startingDeploymentId
+	var flow *storage.NetworkFlow
+	for i := 0; i < numDeployments; i++ {
+		for j := uint32(0); j < numEntities; j++ {
+			id := entities[j].GetInfo().GetId()
+			if j%2 == 0 {
+				flow = testutils.ExtFlowEgress(id, deploymentId, clusterID)
+			} else {
+				flow = testutils.ExtFlowIngress(deploymentId, id, clusterID)
+			}
+			flows = append(flows, flow)
+		}
+		deploymentId = incrementUUID(deploymentId)
 	}
 
 	err := flowStore.UpsertFlows(ctx, flows, timestamp.Now()-1000000)
 	require.NoError(b, err)
-
-	remainder := numFlows % batchSize
-
-	if remainder > 0 {
-		entities = entities[:remainder]
-		_, err = eStore.CreateExtNetworkEntitiesForCluster(allAccessCtx, fixtureconsts.Cluster1, entities...)
-		require.NoError(b, err)
-	}
 }
 
 func setupExternalEgressFlows(b *testing.B, flowStore store.FlowStore, deploymentId string, numFlows uint32) {
@@ -252,9 +287,9 @@ func benchmarkGetFlowsForDeployment(flowStore store.FlowStore, deploymentId stri
 	}
 }
 
-func benchmarkPruneOrphanedFlowsForDeployment(flowStore store.FlowStore, eStore entityStore.EntityDataStore, deploymentId string, numFlows uint32) func(*testing.B) {
+func benchmarkPruneOrphanedFlowsForDeployment(flowStore store.FlowStore, eStore entityStore.EntityDataStore, deploymentId string, numEntities uint32) func(*testing.B) {
 	return func(b *testing.B) {
-		setupExternalIngressFlowsWithEntities(b, flowStore, eStore, fixtureconsts.Deployment1, numFlows)
+		setupExternalFlowsWithEntities(b, flowStore, eStore, deploymentId, 1, numEntities)
 		start := time.Now()
 		b.ResetTimer()
 
@@ -262,13 +297,15 @@ func benchmarkPruneOrphanedFlowsForDeployment(flowStore store.FlowStore, eStore 
 		err := flowStore.RemoveFlowsForDeployment(allAccessCtx, deploymentId)
 		require.NoError(b, err)
 		duration := time.Since(start)
-		log.Infof("Pruning %d flows took %s", numFlows, duration)
+
+		log.Infof("Pruning %d flows and entities took %s", numEntities, duration)
 	}
 }
 
-func benchmarkRemoveOrphanedFlows(flowStore store.FlowStore, eStore entityStore.EntityDataStore, deploymentId string, numFlows uint32) func(*testing.B) {
+func benchmarkRemoveOrphanedFlows(flowStore store.FlowStore, eStore entityStore.EntityDataStore, deploymentId string, numDeployments int, numEntities uint32) func(*testing.B) {
+	totalFlows := uint32(numDeployments) * numEntities
 	return func(b *testing.B) {
-		setupExternalIngressFlowsWithEntities(b, flowStore, eStore, fixtureconsts.Deployment1, numFlows)
+		setupExternalFlowsWithEntities(b, flowStore, eStore, deploymentId, numDeployments, numEntities)
 		start := time.Now()
 		b.ResetTimer()
 
@@ -277,7 +314,7 @@ func benchmarkRemoveOrphanedFlows(flowStore store.FlowStore, eStore entityStore.
 		err := flowStore.RemoveOrphanedFlows(allAccessCtx, &orphanWindow)
 		require.NoError(b, err)
 		duration := time.Since(start)
-		log.Infof("Pruning %d flows took %s", numFlows, duration)
+		log.Infof("Pruning %d flows and %d entities took %s", totalFlows, numEntities, duration)
 	}
 }
 
