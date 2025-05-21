@@ -12,7 +12,6 @@ import (
 
 	"github.com/google/go-containerregistry/pkg/name"
 	gcrv1 "github.com/google/go-containerregistry/pkg/v1"
-	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/sigstore/cosign/v2/cmd/cosign/cli/fulcio"
 	"github.com/sigstore/cosign/v2/pkg/cosign"
@@ -25,6 +24,7 @@ import (
 	"github.com/sigstore/sigstore/pkg/signature/payload"
 	"github.com/sigstore/sigstore/pkg/tuf"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	imgUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/protoutils"
@@ -178,15 +178,18 @@ func (c *cosignSignatureVerifier) VerifySignature(ctx context.Context,
 		return getVerificationResultStatusFromErr(err), nil, err
 	}
 
-	var allVerifyErrs error
+	// The error list is propagated to the image UI page.
+	allVerifyErrs := errorhelpers.NewErrorList("verifying signatures")
 	if err := c.createVerifierOpts(ctx); err != nil {
 		// Fail open here instead of closed. During the creation of verifier opts for certificates, if one is given,
 		// verification of the subject & identity will be done. Thus, it could always fail if things aren't signed
 		// appropriately. In case we have a signature integration with a mix of keys & certificates to verify against,
 		// let's first try to go through any options that might have been successfully created (i.e. the key ones)
 		// and attempt to verify the signature.
-		allVerifyErrs = multierror.Append(allVerifyErrs, err)
+		allVerifyErrs.AddError(err)
 	}
+
+	log.Infof("allVerifyErrs before = %+v", allVerifyErrs)
 
 	// Find the union of all image references from verified signatures. The resulting status
 	// is verified if at least one verification was successful.
@@ -197,10 +200,12 @@ func (c *cosignSignatureVerifier) VerifySignature(ctx context.Context,
 	// OR
 	// verifier_N(sig_1) OR ... OR verifier_N(sig_N)
 	verifiedImageReferences := set.NewStringSet()
+	verifyErrs := make([]*errorhelpers.ErrorList, len(sigs))
 	var mutex sync.Mutex
 	var wg sync.WaitGroup
-	for _, opts := range c.verifierOpts {
-		for cnt, sig := range sigs {
+	for cnt, sig := range sigs {
+		verifyErrs[cnt] = errorhelpers.NewErrorList(fmt.Sprintf("signature %d", cnt+1))
+		for _, opts := range c.verifierOpts {
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
@@ -208,10 +213,7 @@ func (c *cosignSignatureVerifier) VerifySignature(ctx context.Context,
 				mutex.Lock()
 				defer mutex.Unlock()
 				if err != nil {
-					allVerifyErrs = multierror.Append(
-						allVerifyErrs,
-						errors.Wrapf(err, "verifying signature %d", cnt),
-					)
+					verifyErrs[cnt].AddError(err)
 					return
 				}
 				// Successful verification. Keep the image references.
@@ -220,6 +222,7 @@ func (c *cosignSignatureVerifier) VerifySignature(ctx context.Context,
 		}
 	}
 	wg.Wait()
+	log.Infof("verifyErrs = %+v", verifyErrs)
 
 	if len(verifiedImageReferences) > 0 {
 		verifiedRefSlice := verifiedImageReferences.AsSortedSlice(
@@ -227,7 +230,13 @@ func (c *cosignSignatureVerifier) VerifySignature(ctx context.Context,
 		)
 		return storage.ImageSignatureVerificationResult_VERIFIED, verifiedRefSlice, nil
 	}
-	return storage.ImageSignatureVerificationResult_FAILED_VERIFICATION, nil, allVerifyErrs
+	for cnt, err := range verifyErrs {
+		log.Infof("%d err in verify = %+v", cnt, err)
+		allVerifyErrs.AddError(err.ToError())
+		log.Infof("allVerifyErrs (%d) = %+v", cnt, allVerifyErrs)
+	}
+	log.Infof("allVerifyErrs = %+v", allVerifyErrs)
+	return storage.ImageSignatureVerificationResult_FAILED_VERIFICATION, nil, allVerifyErrs.ToError()
 }
 
 func (c *cosignSignatureVerifier) createVerifierOpts(ctx context.Context) error {
@@ -236,13 +245,13 @@ func (c *cosignSignatureVerifier) createVerifierOpts(ctx context.Context) error 
 		return errors.Wrap(err, "creating default cosign check opts")
 	}
 
-	var verifierErrs error
+	verifierErrs := errorhelpers.NewErrorList("")
 	// Public key verifiers.
 	for _, key := range c.parsedPublicKeys {
 		// For now, only supporting SHA256 as algorithm.
 		v, err := signature.LoadVerifier(key, crypto.SHA256)
 		if err != nil {
-			verifierErrs = multierror.Append(verifierErrs, errors.Wrap(err, "creating verifier"))
+			verifierErrs.AddError(errors.Wrap(err, "creating verifier"))
 			continue
 		}
 		opts := defaultOpts
@@ -254,7 +263,7 @@ func (c *cosignSignatureVerifier) createVerifierOpts(ctx context.Context) error 
 	for _, cert := range c.certs {
 		opts, err := cosignCheckOptsFromCert(ctx, cert, defaultOpts)
 		if err != nil {
-			verifierErrs = multierror.Append(verifierErrs, errors.Wrap(err, "creating cosign check opts from cert"))
+			verifierErrs.AddError(errors.Wrap(err, "creating cosign check opts from cert"))
 			continue
 		}
 		c.verifierOpts = append(c.verifierOpts, opts)

@@ -5,7 +5,10 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/logging"
 )
+
+var log = logging.LoggerForModule()
 
 // ErrorList is a wrapper around many errors
 type ErrorList struct {
@@ -103,7 +106,12 @@ func (e *ErrorList) String() string {
 func (e *ErrorList) ErrorStrings() []string {
 	errors := make([]string, 0, len(e.errors))
 	for _, err := range e.errors {
-		errors = append(errors, err.Error())
+		if err.Error() != "" {
+			errors = append(errors, err.Error())
+		}
+	}
+	if len(e.errors) > 2 {
+		log.Infof("len(e.errors)=%d, len(errors)=%d, errors=%+v", len(e.errors), len(errors), errors)
 	}
 	return errors
 }
