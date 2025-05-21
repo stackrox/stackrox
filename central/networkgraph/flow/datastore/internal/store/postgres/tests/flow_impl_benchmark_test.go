@@ -187,16 +187,14 @@ func setupExternalIngressFlows(b *testing.B, flowStore store.FlowStore, deployme
 	require.NoError(b, err)
 }
 
-func incrementUUID(u string) string {
+func addToUUID(u string, addition int64) string {
 	uBytes, _ := uuid.Parse(u)
 
 	bi := new(big.Int)
 	bi.SetBytes(uBytes[:])
-
-	bi.Add(bi, big.NewInt(1))
+	bi.Add(bi, big.NewInt(addition))
 
 	newBytes := bi.Bytes()
-
 	newUUID, _ := uuid.FromBytes(newBytes)
 
 	return newUUID.String()
@@ -216,7 +214,7 @@ func upsertTooMany(b *testing.B, eStore entityStore.EntityDataStore, entities []
 	}
 }
 
-func setupExternalFlowsWithEntities(b *testing.B, flowStore store.FlowStore, eStore entityStore.EntityDataStore, startingDeploymentId string, numDeployments int, numEntities uint32) {
+func setupExternalFlowsWithEntities(b *testing.B, flowStore store.FlowStore, eStore entityStore.EntityDataStore, startingDeploymentId string, numDeployments int, numEntities uint32, ts timestamp.MicroTS, startingIPIndex uint32) {
 	totalFlows := numEntities * uint32(numDeployments)
 	flows := make([]*storage.NetworkFlow, 0, totalFlows)
 	entities := make([]*storage.NetworkEntity, numEntities)
@@ -224,7 +222,7 @@ func setupExternalFlowsWithEntities(b *testing.B, flowStore store.FlowStore, eSt
 	for i := uint32(0); i < numEntities; i++ {
 		bs := [4]byte{}
 		// Must have + 1 because the 0.0.0.0 IP address is not allowed
-		binary.BigEndian.PutUint32(bs[:], i+1)
+		binary.BigEndian.PutUint32(bs[:], startingIPIndex+i+1)
 		ip := netip.AddrFrom4(bs)
 		cidr := fmt.Sprintf("%s/32", ip.String())
 
@@ -245,10 +243,10 @@ func setupExternalFlowsWithEntities(b *testing.B, flowStore store.FlowStore, eSt
 			}
 			flows = append(flows, flow)
 		}
-		deploymentId = incrementUUID(deploymentId)
+		deploymentId = addToUUID(deploymentId, 1)
 	}
 
-	err := flowStore.UpsertFlows(ctx, flows, timestamp.Now()-1000000)
+	err := flowStore.UpsertFlows(ctx, flows, ts)
 	require.NoError(b, err)
 }
 
@@ -289,7 +287,15 @@ func benchmarkGetFlowsForDeployment(flowStore store.FlowStore, deploymentId stri
 
 func benchmarkPruneOrphanedFlowsForDeployment(flowStore store.FlowStore, eStore entityStore.EntityDataStore, deploymentId string, numEntities uint32) func(*testing.B) {
 	return func(b *testing.B) {
-		setupExternalFlowsWithEntities(b, flowStore, eStore, deploymentId, 1, numEntities)
+		ts := timestamp.Now()+1000000
+		// Add flows and entities that will be pruned
+		startingIPIndex := uint32(0)
+		setupExternalFlowsWithEntities(b, flowStore, eStore, deploymentId, 1, numEntities, ts, startingIPIndex)
+
+		// Add flows and entities that will not be pruned
+		startingIPIndex = uint32(numEntities)
+		deploymentId = addToUUID(deploymentId, 1)
+		setupExternalFlowsWithEntities(b, flowStore, eStore, deploymentId, 1, numEntities, ts, startingIPIndex)
 		start := time.Now()
 		b.ResetTimer()
 
@@ -305,7 +311,17 @@ func benchmarkPruneOrphanedFlowsForDeployment(flowStore store.FlowStore, eStore 
 func benchmarkRemoveOrphanedFlows(flowStore store.FlowStore, eStore entityStore.EntityDataStore, deploymentId string, numDeployments int, numEntities uint32) func(*testing.B) {
 	totalFlows := uint32(numDeployments) * numEntities
 	return func(b *testing.B) {
-		setupExternalFlowsWithEntities(b, flowStore, eStore, deploymentId, numDeployments, numEntities)
+		// Add flows and entities that will be pruned
+		ts := timestamp.Now()-1000000
+		startingIPIndex := uint32(0)
+		setupExternalFlowsWithEntities(b, flowStore, eStore, deploymentId, numDeployments, numEntities, ts, startingIPIndex)
+
+		// Add flows and entities that will not be pruned
+		deploymentId = addToUUID(deploymentId, int64(numDeployments))
+		ts = timestamp.Now()+1000000
+		startingIPIndex = uint32(numEntities)
+		setupExternalFlowsWithEntities(b, flowStore, eStore, deploymentId, numDeployments, numEntities, ts, startingIPIndex)
+
 		start := time.Now()
 		b.ResetTimer()
 
