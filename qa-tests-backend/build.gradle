@@ -23,7 +23,7 @@ def grpcVersion = '1.69.0'
 // If the proto versions are changed, be sure it is also changed in make/protogen.mk.
 def protobufVersion = '4.31.0'
 def nettyTcNativeVersion = '2.0.61.Final'
-def fabric8Version = '7.3.0'
+def fabric8Version = '7.3.1'
 def jacksonVersion = '2.14.2'
 
 protobuf {
