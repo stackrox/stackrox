@@ -38,7 +38,7 @@ test('can press the next button when on the first page', async () => {
     expect(button).toBeEnabled();
 });
 
-test('can not press the next button when on the last page', async () => {
+test('cannot press the next button when on the last page', async () => {
     render(<MockPagination defaultPage={5} />);
     const button = screen.getByRole('button', options);
 

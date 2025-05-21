@@ -11,7 +11,7 @@ import (
 
 // rhelCPE represents the expected pattern to identify a CPE which indicates a RHEL major version.
 // The purpose of this is to identify the major version represented by this CPE.
-var rhelCPE = regexp.MustCompile(`cpe:2\.3:o:redhat:enterprise_linux:(\d+):\*:\*:\*:\*:\*:\*:\*`)
+var rhelCPE = regexp.MustCompile(`^cpe:2\.3:o:redhat:enterprise_linux:(\d+)(?:\.\d+)*:\*:\*:\*:\*:\*:\*:\*$`)
 
 // Distributions retrieves the currently known distributions from the database.
 //
@@ -30,7 +30,7 @@ func (m *matcherStore) Distributions(ctx context.Context) ([]claircore.Distribut
 	}
 	defer rows.Close()
 
-	var dists []claircore.Distribution
+	uniqueDists := make(map[claircore.Distribution]struct{})
 	for rows.Next() {
 		var (
 			dID       string
@@ -41,24 +41,29 @@ func (m *matcherStore) Distributions(ctx context.Context) ([]claircore.Distribut
 		if err := rows.Scan(&dID, &versionID, &version, &repoName); err != nil {
 			return nil, err
 		}
+
+		dist := claircore.Distribution{
+			DID:       dID,
+			VersionID: versionID,
+			Version:   version,
+		}
 		if repoName != "" {
-			dist, err := rhelDist(repoName)
+			dist, err = rhelDist(repoName)
 			if err != nil {
 				zlog.Warn(ctx).Err(err).Msg("failed to parse repo_name; skipping...")
 				continue
 			}
-			dists = append(dists, dist)
-			continue
 		}
 
-		dists = append(dists, claircore.Distribution{
-			DID:       dID,
-			VersionID: versionID,
-			Version:   version,
-		})
+		uniqueDists[dist] = struct{}{}
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
+	}
+
+	dists := make([]claircore.Distribution, 0, len(uniqueDists))
+	for dist := range uniqueDists {
+		dists = append(dists, dist)
 	}
 
 	return dists, nil
