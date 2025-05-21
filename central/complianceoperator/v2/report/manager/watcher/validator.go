@@ -16,13 +16,11 @@ import (
 func ValidateScanConfigResults(ctx context.Context, results *ScanConfigWatcherResults, integrationDataStore complianceIntegrationDS.DataStore) (map[string]*storage.ComplianceOperatorReportSnapshotV2_FailedCluster, error) {
 	failedClusters := make(map[string]*storage.ComplianceOperatorReportSnapshotV2_FailedCluster)
 	errList := errorhelpers.NewErrorList("failed clusters")
-	failedClusterSet := set.NewStringSet()
-	successfulClusterSet := set.NewStringSet()
+	clustersWithResults := set.NewStringSet()
 	for _, scanResult := range results.ScanResults {
-		failedClusterSet.Add(scanResult.Scan.GetClusterId())
+		clustersWithResults.Add(scanResult.Scan.GetClusterId())
 		failedClusterInfo, isInstallationError := ValidateScanResults(ctx, scanResult, integrationDataStore)
 		if failedClusterInfo == nil {
-			successfulClusterSet.Add(scanResult.Scan.GetClusterId())
 			continue
 		}
 		errList.AddError(errors.New(fmt.Sprintf("scan %s failed in cluster %s", scanResult.Scan.GetScanName(), failedClusterInfo.GetClusterId())))
@@ -35,15 +33,12 @@ func ValidateScanConfigResults(ctx context.Context, results *ScanConfigWatcherRe
 	}
 	// If we have less results than the number of clusters*profiles in the scan configuration,
 	// we need to add those missing clusters as failed clusters. *len(results.ScanConfig.GetProfiles())
-	if len(results.ScanConfig.GetClusters()) > len(failedClusters)+len(successfulClusterSet) {
+	if len(results.ScanConfig.GetClusters()) > len(clustersWithResults) {
 		for _, cluster := range results.ScanConfig.GetClusters() {
-			if failedClusterSet.Contains(cluster.GetClusterId()) || successfulClusterSet.Contains(cluster.GetClusterId()) {
+			if clustersWithResults.Contains(cluster.GetClusterId()) {
 				continue
 			}
 			clusterInfo := ValidateClusterHealth(ctx, cluster.GetClusterId(), integrationDataStore)
-			if clusterInfo == nil {
-				continue
-			}
 			errList.AddError(errors.New(fmt.Sprintf("cluster %s failed", clusterInfo.GetClusterId())))
 			if len(clusterInfo.Reasons) == 0 {
 				clusterInfo.Reasons = []string{report.INTERNAL_ERROR}
@@ -72,17 +67,19 @@ func ValidateScanResults(ctx context.Context, results *ScanWatcherResults, integ
 	if len(ret.Reasons) > 0 {
 		return ret, true
 	}
-	ret.Reasons = []string{report.INTERNAL_ERROR}
 	if errors.Is(results.Error, ErrScanRemoved) {
 		ret.Reasons = []string{fmt.Sprintf(report.SCAN_REMOVED_FMT, results.Scan.GetScanName())}
 		return ret, false
 	}
-	if errors.Is(results.Error, ErrScanTimeout) {
-		ret.Reasons = []string{fmt.Sprintf(report.SCAN_TIMEOUT_FMT, results.Scan.GetScanName())}
-	}
 	if checkContextIsDone(results.SensorCtx) {
 		ret.Reasons = []string{fmt.Sprintf(report.SCAN_TIMEOUT_SENSOR_DISCONNECTED_FMT, results.Scan.GetScanName())}
+		return ret, false
 	}
+	if errors.Is(results.Error, ErrScanTimeout) {
+		ret.Reasons = []string{fmt.Sprintf(report.SCAN_TIMEOUT_FMT, results.Scan.GetScanName())}
+		return ret, false
+	}
+	ret.Reasons = []string{report.INTERNAL_ERROR}
 	return ret, false
 }
 
