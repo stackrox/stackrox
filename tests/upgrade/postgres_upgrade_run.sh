@@ -135,6 +135,9 @@ test_upgrade_path() {
 
     touch "${UPGRADE_PROGRESS_POSTGRES_EARLIER_CENTRAL}"
 
+    # Extend the MUTEX timeout for this case as a restart of the db will cause locks to be held longer as it should
+    kubectl -n stackrox set env deploy/central MUTEX_WATCHDOG_TIMEOUT_SECS=600
+
     # Upgrade the image to PG15
     info "Upgrade ${EARLIER_TAG} => ${CURRENT_TAG}"
     kubectl -n stackrox set image deploy/central "*=${REGISTRY}/main:${CURRENT_TAG}"
@@ -163,8 +166,6 @@ test_upgrade_path() {
     # Bounce central-db to ensure central recovers from the database outage.               #
     ########################################################################################
     info "Bouncing central-db"
-    # Extend the MUTEX timeout just for this case as a restart of the db will cause locks to be held longer as it should
-    kubectl -n stackrox set env deploy/central MUTEX_WATCHDOG_TIMEOUT_SECS=600
     wait_for_api
     kubectl -n stackrox delete po "$(kubectl -n stackrox get po -l app=central-db -o=jsonpath='{.items[0].metadata.name}')" --grace-period=0
     wait_for_api
@@ -254,6 +255,9 @@ test_not_enough_disk_space() {
     checkForPostgresAccessScopes
 
     touch "${UPGRADE_PROGRESS_POSTGRES_EARLIER_CENTRAL}"
+
+    # Extend the MUTEX timeout for this case as a restart of the db will cause locks to be held longer as it should
+    kubectl -n stackrox set env deploy/central MUTEX_WATCHDOG_TIMEOUT_SECS=600
 
     # Upgrade the image to PG15
     info "Upgrade ${EARLIER_TAG} => ${CURRENT_TAG}"
