@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -274,7 +275,7 @@ var (
 
 	// Those are dynamically defined metrics, configured by users via the system
 	// private configuration.
-	customAggregatedMetrics = make(map[string]*prometheus.GaugeVec)
+	customAggregatedMetrics sync.Map
 )
 
 func startTimeToMS(t time.Time) float64 {
@@ -488,17 +489,10 @@ func RegisterCustomAggregatedMetric(name string, description string, period time
 		Help: "The total number of " + description + " aggregated by " + strings.Join(labels, ",") +
 			" and gathered every " + period.String(),
 	}, labels)
-	customAggregatedMetrics[name] = metric
+	customAggregatedMetrics.Store(name, metric)
 
-	// Register the metric on the default Prometheus endpoint.
-	if err := prometheus.Register(metric); err != nil {
+	if err := userRegistry.Register(metric); err != nil {
 		return err
-	}
-
-	if userRegistry != nil {
-		if err := userRegistry.Register(metric); err != nil {
-			return err
-		}
 	}
 	return nil
 }
@@ -506,5 +500,7 @@ func RegisterCustomAggregatedMetric(name string, description string, period time
 // SetCustomAggregatedCount registers the metric vector with the values,
 // according to the system private configuration.
 func SetCustomAggregatedCount(metricName string, labels prometheus.Labels, total int) {
-	customAggregatedMetrics[metricName].With(labels).Set(float64(total))
+	if metric, ok := customAggregatedMetrics.Load(metricName); ok {
+		metric.(*prometheus.GaugeVec).With(labels).Set(float64(total))
+	}
 }
