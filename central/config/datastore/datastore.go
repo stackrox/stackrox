@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/central/config/store"
 	pgStore "github.com/stackrox/rox/central/config/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoutils"
@@ -202,7 +203,8 @@ func (d *datastoreImpl) UpsertConfig(ctx context.Context, config *storage.Config
 		}
 	}
 	if platformComponentConfig := config.GetPlatformComponentConfig(); platformComponentConfig != nil {
-		platformConfig, err := d.UpsertPlatformComponentConfigRules(ctx, config.GetPlatformComponentConfig().GetRules())
+		existingPlatformConf, _, _ := d.GetPlatformComponentConfig(ctx)
+		platformConfig, err := validateAndUpdatePlatformComponentConfig(existingPlatformConf, config.GetPlatformComponentConfig().GetRules())
 		if err != nil {
 			return err
 		}
@@ -263,12 +265,23 @@ func (d *datastoreImpl) UpsertPlatformComponentConfigRules(ctx context.Context, 
 
 	config, found, err := d.store.Get(ctx)
 	if !found {
-		config = &storage.Config{}
-	}
-	if err != nil {
+		return nil, errox.NotFound
+	} else if err != nil {
 		return nil, err
 	}
 
+	config.PlatformComponentConfig, err = validateAndUpdatePlatformComponentConfig(config.PlatformComponentConfig, rules)
+	if err != nil {
+		return nil, err
+	}
+	err = d.store.Upsert(ctx, config)
+	if err != nil {
+		return nil, err
+	}
+	return config.GetPlatformComponentConfig(), nil
+}
+
+func validateAndUpdatePlatformComponentConfig(config *storage.PlatformComponentConfig, rules []*storage.PlatformComponentConfig_Rule) (*storage.PlatformComponentConfig, error) {
 	systemRuleExists := false
 	layeredProductsRuleExists := false
 	parsedRules := make([]*storage.PlatformComponentConfig_Rule, 0)
@@ -299,22 +312,20 @@ func (d *datastoreImpl) UpsertPlatformComponentConfigRules(ctx context.Context, 
 	if !layeredProductsRuleExists {
 		parsedRules = append(parsedRules, defaultPlatformConfigLayeredProductsRule)
 	}
-	slices.SortFunc(config.GetPlatformComponentConfig().GetRules(), ruleNameSortFunc)
-	slices.SortFunc(parsedRules, ruleNameSortFunc)
-	if config.GetPlatformComponentConfig() == nil {
-		config.PlatformComponentConfig = &storage.PlatformComponentConfig{
+	if config == nil {
+		config = &storage.PlatformComponentConfig{
 			Rules:             parsedRules,
 			NeedsReevaluation: true,
 		}
-	} else if !protoutils.SlicesEqual(config.GetPlatformComponentConfig().GetRules(), parsedRules) {
-		config.PlatformComponentConfig.NeedsReevaluation = true
+	} else {
+		slices.SortFunc(config.GetRules(), ruleNameSortFunc)
+		slices.SortFunc(parsedRules, ruleNameSortFunc)
+		if !protoutils.SlicesEqual(config.GetRules(), parsedRules) {
+			config.NeedsReevaluation = true
+		}
+		config.Rules = parsedRules
 	}
-	config.GetPlatformComponentConfig().Rules = parsedRules
-	err = d.store.Upsert(ctx, config)
-	if err != nil {
-		return nil, err
-	}
-	return config.GetPlatformComponentConfig(), nil
+	return config, nil
 }
 
 func ruleNameSortFunc(a *storage.PlatformComponentConfig_Rule, b *storage.PlatformComponentConfig_Rule) int {
