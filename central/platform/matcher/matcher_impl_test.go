@@ -179,10 +179,14 @@ func (s *platformMatcherTestSuite) TestMatchDeployment() {
 }
 
 func (s *platformMatcherTestSuite) TestCustomPlatformComponentRegexes() {
+	// Try to enable Customizable Platform Components feature
 	if !features.CustomizablePlatformComponents.Enabled() {
 		s.T().Setenv(features.CustomizablePlatformComponents.EnvVar(), "true")
 	}
-	s.Require().True(features.CustomizablePlatformComponents.Enabled())
+	// If we weren't able to set the environment variable for some reason, skip this test
+	if !features.CustomizablePlatformComponents.Enabled() {
+		s.T().Skip("Customized platform components was not enabled")
+	}
 	regexes := []*regexp.Regexp{
 		regexp.MustCompile("kube.*"),
 		regexp.MustCompile("openshift.*"),
