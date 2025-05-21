@@ -47,15 +47,15 @@ function DeploymentFlows({
     const isNetworkGraphExternalIpsEnabled = isFeatureFlagEnabled('ROX_NETWORK_GRAPH_EXTERNAL_IPS');
     const [selectedView, setSelectedView] = useState<DeploymentFlowsView>('internal-flows');
 
-    const { setPage: anomalousSetPage } = anomalousUrlPagination;
-    const { setPage: baselineSetPage } = baselineUrlPagination;
+    const { setPage: setPageAnomalous } = anomalousUrlPagination;
+    const { setPage: setPageBaseline } = baselineUrlPagination;
     const { setSearchFilter } = urlSearchFiltering;
 
     useEffect(() => {
-        anomalousSetPage(1);
-        baselineSetPage(1);
+        setPageAnomalous(1);
+        setPageBaseline(1);
         setSearchFilter({});
-    }, [selectedView, anomalousSetPage, baselineSetPage, setSearchFilter]);
+    }, [selectedView, setPageAnomalous, setPageBaseline, setSearchFilter]);
 
     if (!isNetworkGraphExternalIpsEnabled) {
         return (

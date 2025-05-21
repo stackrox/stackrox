@@ -104,9 +104,9 @@ const TopologyComponent = ({
     const urlPagination = useURLPagination(DEFAULT_NETWORK_GRAPH_PAGE_SIZE);
     const { setPage, setPerPage } = urlPagination;
     const anomalousUrlPagination = useURLPagination(DEFAULT_NETWORK_GRAPH_PAGE_SIZE, 'anomalous');
-    const { setPage: anomalousSetPage, setPerPage: anomalousSetPerPage } = anomalousUrlPagination;
+    const { setPage: setPageAnomalous, setPerPage: setPerPageAnomalous } = anomalousUrlPagination;
     const baselineUrlPagination = useURLPagination(DEFAULT_NETWORK_GRAPH_PAGE_SIZE, 'baseline');
-    const { setPage: baselineSetPage, setPerPage: baselineSetPerPage } = baselineUrlPagination;
+    const { setPage: setPageBaseline, setPerPage: setPerPageBaseline } = baselineUrlPagination;
 
     const urlSearchFiltering = useURLSearch('sidePanel');
     const { setSearchFilter } = urlSearchFiltering;
@@ -204,19 +204,19 @@ const TopologyComponent = ({
     useEffect(() => {
         setPerPage(DEFAULT_NETWORK_GRAPH_PAGE_SIZE);
         setPage(1);
-        anomalousSetPerPage(DEFAULT_NETWORK_GRAPH_PAGE_SIZE);
-        anomalousSetPage(1);
-        baselineSetPerPage(DEFAULT_NETWORK_GRAPH_PAGE_SIZE);
-        baselineSetPage(1);
+        setPerPageAnomalous(DEFAULT_NETWORK_GRAPH_PAGE_SIZE);
+        setPageAnomalous(1);
+        setPerPageBaseline(DEFAULT_NETWORK_GRAPH_PAGE_SIZE);
+        setPageBaseline(1);
         setSearchFilter({});
     }, [
         setPage,
         setPerPage,
         setSearchFilter,
-        anomalousSetPage,
-        anomalousSetPerPage,
-        baselineSetPage,
-        baselineSetPerPage,
+        setPageAnomalous,
+        setPerPageAnomalous,
+        setPageBaseline,
+        setPerPageBaseline,
         selectedNode,
     ]);
 
