@@ -175,7 +175,7 @@ class CSVTest extends BaseSpecification {
         assert ret.value.result.vulnerabilities.toList().size() > 0
 
         def graphQLCVEs = ret.value.result.vulnerabilities.collect { def vuln ->
-            new CVE(vuln.id, vuln.cvss, vuln.deployments, vuln.imageCount, vuln.componentCount)
+            new CVE(vuln.id, vuln.cvss, vuln.deploymentCount, vuln.imageCount, vuln.componentCount)
         }
 
         and:
