@@ -200,7 +200,7 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
         // - old connection being closed by Collector - at least 5 min with the default afterglow setting.
         // - the time-scope of the network graph - here 60s.
         // Waiting for 6 min and 30s is a minimum here, however the edge may disappear sooner.
-        // Manually observing this test-case confirmed that there are two updates for "externalSource30ID"
+        // Manually observing this test-case confirmed that there are two updates for "supernetID"
         // sent to Central, the second exactly 5min30s after the first one.
         // We set the retries to cover 10 minutes to account for unpredictable issues.
         verifyNoEdge(
