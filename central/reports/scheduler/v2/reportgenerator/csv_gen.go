@@ -93,8 +93,8 @@ func addOptionalColumnstoHeader(optionalColumns *storage.VulnerabilityReportFilt
 		csvHeaderClone = append(csvHeaderClone, "EPSS Probability Percentage")
 	}
 	if optionalColumns.GetIncludeAdvisory() {
-		csvHeaderClone = append(csvHeaderClone, "Advisory")
-		csvHeaderClone = append(csvHeaderClone, "Advisory Reference")
+		csvHeaderClone = append(csvHeaderClone, "Advisory Name")
+		csvHeaderClone = append(csvHeaderClone, "Advisory Link")
 	}
 	return csvHeaderClone
 }
@@ -112,8 +112,8 @@ func addOptionalColumnstoRow(optionalColumns *storage.VulnerabilityReportFilters
 		}
 	}
 	if optionalColumns.GetIncludeAdvisory() {
-		advisory := resp.GetAdvisory()
-		csvWriter.AppendToValue(row, advisory.GetName())
-		csvWriter.AppendToValue(row, advisory.GetLink())
+		csvWriter.AppendToValue(row, resp.GetAdvisoryName())
+		csvWriter.AppendToValue(row, resp.GetAdvisoryLink())
+
 	}
 }

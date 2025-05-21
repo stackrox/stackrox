@@ -455,7 +455,8 @@ func getSelectsWatchedImages() []*v1.QuerySelect {
 		search.NewQuerySelect(search.EPSSProbablity).Proto(),
 	}
 	if features.FlattenCVEData.Enabled() {
-		ret = append(ret, search.NewQuerySelect(search.Advisory).Proto())
+		ret = append(ret, search.NewQuerySelect(search.AdvisoryName).Proto())
+		ret = append(ret, search.NewQuerySelect(search.AdvisoryLink).Proto())
 	}
 	return ret
 }
@@ -478,7 +479,8 @@ func getSelectsDeployedImages() []*v1.QuerySelect {
 		search.NewQuerySelect(search.EPSSProbablity).Proto(),
 	}
 	if features.FlattenCVEData.Enabled() {
-		ret = append(ret, search.NewQuerySelect(search.Advisory).Proto())
+		ret = append(ret, search.NewQuerySelect(search.AdvisoryName).Proto())
+		ret = append(ret, search.NewQuerySelect(search.AdvisoryLink).Proto())
 	}
 	return ret
 }
