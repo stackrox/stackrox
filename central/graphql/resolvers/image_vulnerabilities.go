@@ -273,9 +273,6 @@ func (resolver *Resolver) ImageVulnerabilityCount(ctx context.Context, args RawQ
 func (resolver *Resolver) ImageVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageVulnerabilityCounter")
 
-	scopeQ, _ := scoped.GetQueryForAllScopes(ctx)
-	log.Infof("SHREWS -- ImageVulnerabilityCounter -- %v", args)
-	log.Infof("SHREWS -- ImageVulnerabilityCounter -- scope query -- %v", scopeQ)
 	// check permissions
 	if err := readImages(ctx); err != nil {
 		return nil, err
@@ -283,7 +280,6 @@ func (resolver *Resolver) ImageVulnerabilityCounter(ctx context.Context, args Ra
 
 	// cast query
 	query, err := args.AsV1QueryOrEmpty()
-	log.Infof("SHREWS -- ImageVulnerabilityCounter -- %v", query)
 	if err != nil {
 		return nil, err
 	}
@@ -291,7 +287,6 @@ func (resolver *Resolver) ImageVulnerabilityCounter(ctx context.Context, args Ra
 	logErrorOnQueryContainingField(query, search.Fixable, "ImageVulnerabilityCounter")
 
 	if features.FlattenCVEData.Enabled() {
-		log.Info("SHREWS -- ImageVulnerabilityCounter -- getting count stuff")
 		loader, err := loaders.GetImageCVEV2Loader(ctx)
 		if err != nil {
 			return nil, err
@@ -299,24 +294,19 @@ func (resolver *Resolver) ImageVulnerabilityCounter(ctx context.Context, args Ra
 
 		// get fixable vulns
 		fixableQuery := search.ConjunctionQuery(query, search.NewQueryBuilder().AddBools(search.Fixable, true).ProtoQuery())
-		log.Infof("SHREWS -- ImageVulnerabilityCounter -- %v", query)
 		fixableVulns, err := loader.FromQuery(ctx, fixableQuery)
-		log.Infof("SHREWS -- ImageVulnerabilityCounter -- fixable -- %v", fixableVulns)
 		if err != nil {
 			return nil, err
 		}
 		fixable := imageCveV2ToVulnerabilityWithSeverity(fixableVulns)
-		log.Infof("SHREWS -- ImageVulnerabilityCounter -- fixable -- %v", fixable)
 
 		// get unfixable vulns
 		unFixableVulnsQuery := search.ConjunctionQuery(query, search.NewQueryBuilder().AddBools(search.Fixable, false).ProtoQuery())
 		unFixableVulns, err := loader.FromQuery(ctx, unFixableVulnsQuery)
-		log.Infof("SHREWS -- ImageVulnerabilityCounter -- unfixable -- %v", unFixableVulns)
 		if err != nil {
 			return nil, err
 		}
 		unfixable := imageCveV2ToVulnerabilityWithSeverity(unFixableVulns)
-		log.Infof("SHREWS -- ImageVulnerabilityCounter -- unfixable -- %v", unfixable)
 
 		return mapCVEsToVulnerabilityCounter(fixable, unfixable), nil
 	}

@@ -359,10 +359,6 @@ func (q *query) AsSQL() string {
 	queryString := replaceVars(querySB.String())
 	if env.PostgresQueryLogger.BooleanSetting() {
 		log.Info(queryString)
-		if strings.Contains(queryString, "from image_components") {
-			log.Info("SHREWS STACK")
-			debug.Stack()
-		}
 	}
 	return queryString
 }
