@@ -4,17 +4,20 @@ import { Table, Thead, Tbody, Tr, Th, Td, ActionsColumn, IAction } from '@patter
 
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import { UseURLPaginationResult } from 'hooks/useURLPagination';
+import { UseUrlSearchReturn } from 'hooks/useURLSearch';
 import { NetworkBaselinePeerStatus } from 'types/networkBaseline.proto';
 import { TableUIState } from 'utils/getTableUIState';
 
+import { BaselineStatusType } from '../types/flow.type';
 import { getFlowKey } from '../utils/flowUtils';
 
 type FlowTableProps = {
     pagination: UseURLPaginationResult;
     flowCount: number;
-    emptyStateMessage: string;
+    statusType: BaselineStatusType;
     tableState: TableUIState<NetworkBaselinePeerStatus>;
-    selectedPageAll: boolean;
+    areAllRowsSelected: boolean;
+    urlSearchFiltering: UseUrlSearchReturn;
     onSelectAll: (sel: boolean) => void;
     rowActions: (flow: NetworkBaselinePeerStatus) => IAction[];
     isFlowSelected: (flow: NetworkBaselinePeerStatus) => boolean;
@@ -24,15 +27,17 @@ type FlowTableProps = {
 export function FlowTable({
     pagination,
     flowCount,
-    emptyStateMessage,
+    statusType,
     tableState,
-    selectedPageAll,
+    areAllRowsSelected,
+    urlSearchFiltering,
     onSelectAll,
     rowActions,
     isFlowSelected,
     onRowSelect,
 }: FlowTableProps) {
     const { page, perPage, setPage, setPerPage } = pagination;
+    const { setSearchFilter } = urlSearchFiltering;
     return (
         <>
             <ToolbarContent>
@@ -52,7 +57,7 @@ export function FlowTable({
                     <Tr>
                         <Th
                             select={{
-                                isSelected: selectedPageAll,
+                                isSelected: areAllRowsSelected,
                                 onSelect: (_e, s) => onSelectAll(s),
                             }}
                         />
@@ -68,7 +73,13 @@ export function FlowTable({
                 <TbodyUnified
                     tableState={tableState}
                     colSpan={5}
-                    emptyProps={{ message: emptyStateMessage }}
+                    emptyProps={{ title: `No ${statusType.toLowerCase()} flows`, message: '' }}
+                    filteredEmptyProps={{
+                        title: `No ${statusType.toLowerCase()} flows found`,
+                        onClearFilters: () => {
+                            setSearchFilter({});
+                        },
+                    }}
                     renderer={({ data }) => (
                         <Tbody>
                             {data.map((flow, idx) => (
