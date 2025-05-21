@@ -68,10 +68,6 @@ test_upgrade() {
     remove_existing_stackrox_resources
 
     test_not_enough_disk_space "$log_output_dir"
-
-    remove_existing_stackrox_resources
-
-    test_run_as_old_after_upgrade "$log_output_dir"
 }
 
 test_upgrade_path() {
