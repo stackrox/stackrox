@@ -37,17 +37,33 @@ type Tracker interface {
 	Reconfigure(*prometheus.Registry, map[string]*storage.PrometheusMetricsConfig_LabelExpressions, time.Duration) error
 }
 
+func makeLabelOrderMap[Finding any](getters []LabelGetter[Finding]) map[Label]int {
+	result := make(map[Label]int, len(getters))
+	for i, getter := range getters {
+		result[getter.Label] = i + 1
+	}
+	return result
+}
+
+func makeGettersMap[Finding any](getters []LabelGetter[Finding]) map[Label]func(Finding) string {
+	result := make(map[Label]func(Finding) string, len(getters))
+	for _, getter := range getters {
+		result[getter.Label] = getter.Getter
+	}
+	return result
+}
+
 // MakeTrackerConfig initializes a tracker configuration without any period or metric expressions.
 // Call Reconfigure to configure the period and the expressions.
 func MakeTrackerConfig[Finding any](category, description string,
-	labelOrder map[Label]int, getters map[Label]func(Finding) string, generator FindingGenerator[Finding],
+	getters []LabelGetter[Finding], generator FindingGenerator[Finding],
 	gauge func(string, prometheus.Labels, int),
 ) *TrackerConfig[Finding] {
 	return &TrackerConfig[Finding]{
 		category:    category,
 		description: description,
-		labelOrder:  labelOrder,
-		getters:     getters,
+		labelOrder:  makeLabelOrderMap(getters),
+		getters:     makeGettersMap(getters),
 		generator:   generator,
 		gauge:       gauge,
 

@@ -7,15 +7,17 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var testLabelOrder = map[Label]int{
-	"test":      1,
-	"Cluster":   2,
-	"Namespace": 3,
-	"CVE":       4,
-	"Severity":  5,
-	"CVSS":      6,
-	"IsFixable": 7,
+var testLabelGetters = []LabelGetter[testDataIndex]{
+	{"test", nil},
+	{"Cluster", nil},
+	{"Namespace", nil},
+	{"CVE", nil},
+	{"Severity", nil},
+	{"CVSS", nil},
+	{"IsFixable", nil},
 }
+
+var testLabelOrder = makeLabelOrderMap(testLabelGetters)
 
 func TestMakeAggregationKeyInstance(t *testing.T) {
 	testMetric := map[Label]string{
@@ -24,7 +26,7 @@ func TestMakeAggregationKeyInstance(t *testing.T) {
 		"IsFixable": "false",
 		"Namespace": "value",
 	}
-	finding := func(label Label) string {
+	getter := func(label Label) string {
 		return testMetric[label]
 	}
 	t.Run("matching", func(t *testing.T) {
@@ -34,7 +36,8 @@ func TestMakeAggregationKeyInstance(t *testing.T) {
 				"CVSS":      {{">", "5"}},
 				"IsFixable": {{"", ""}},
 			},
-			finding, testLabelOrder)
+			getter,
+			testLabelOrder)
 		assert.Equal(t, aggregationKey("value|7.4|false"), key)
 		assert.Equal(t, prometheus.Labels{
 			"Cluster":   "value",
@@ -49,7 +52,7 @@ func TestMakeAggregationKeyInstance(t *testing.T) {
 				"CVSS":      {{">", "5"}},
 				"IsFixable": {{"", ""}},
 			},
-			finding, testLabelOrder)
+			getter, testLabelOrder)
 		assert.Equal(t, aggregationKey(""), key)
 		assert.Nil(t, labels)
 	})
@@ -67,7 +70,7 @@ func TestMakeAggregationKeyInstance(t *testing.T) {
 				"CVSS":      {{">", "5"}},
 				"IsFixable": {{"", ""}},
 			},
-			finding, testLabelOrder)
+			getter, testLabelOrder)
 		assert.Equal(t, aggregationKey("value|7.4|false"), key)
 		assert.Equal(t, prometheus.Labels{
 			"Cluster":   "value",
@@ -89,7 +92,7 @@ func TestMakeAggregationKeyInstance(t *testing.T) {
 				"CVSS":      {{">", "5"}},
 				"IsFixable": nil,
 			},
-			finding, testLabelOrder)
+			getter, testLabelOrder)
 		assert.Equal(t, aggregationKey(""), key)
 		assert.Equal(t, prometheus.Labels(nil), labels)
 	})
