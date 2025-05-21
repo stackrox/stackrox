@@ -174,10 +174,6 @@ func vulnerabilities(vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerab
 			Severity:          normalizedSeverity(ccVuln.GetNormalizedSeverity()),
 			Epss:              epss(ccVuln.GetEpssMetrics()),
 		}
-		cvssMetrics := ccVuln.GetCvssMetrics()
-		if len(cvssMetrics) > 0 {
-			vuln.Link = link(cvssMetrics[0].Url)
-		}
 		if err := setScoresAndScoreVersions(vuln, ccVuln.GetCvssMetrics()); err != nil {
 			utils.Should(err)
 		}
@@ -269,7 +265,7 @@ func setScoresAndScoreVersions(vuln *storage.EmbeddedVulnerability, CVSSMetrics 
 			return nil
 		}
 	}
-
+	vuln.Link = link(CVSSMetrics[0].Url)
 	return errList.ToError()
 }
 
