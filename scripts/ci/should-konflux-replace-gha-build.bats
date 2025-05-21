@@ -13,7 +13,7 @@ function setup() {
 
 function run_cmd() {
     # We copy the script to a temporary directory and run it from there so that it does not find
-    # should-konflux-replace-gha-build.hold file if that's present in the repo.
+    # should-konflux-replace-gha-build.hold file if that's still present in the repo.
 
     cp -a "${BATS_TEST_DIRNAME}/should-konflux-replace-gha-build.sh" "${BATS_TEST_TMPDIR}/our-script.sh"
     run --separate-stderr "${BATS_TEST_TMPDIR}/our-script.sh"
@@ -90,7 +90,7 @@ function assert_stderr_contains() {
 
 # Release (or release-like) branch push
 
-@test "Konflux: should tell only Konflux when release-like branch pushed" {
+@test "Konflux: should tell only Konflux when release branch pushed" {
     export SOURCE_BRANCH=release-4.8
     export TARGET_BRANCH=release-4.8
     check_gha_suppressed
@@ -131,7 +131,7 @@ function assert_stderr_contains() {
 
 # PR towards a non-release branch
 
-@test "Konflux: should tell Both when PR branch name is not magic" {
+@test "Konflux: should tell Both when PR targets non-release branch" {
     export SOURCE_BRANCH=author/my-useful-feature
     export TARGET_BRANCH=master
     check_both_go
