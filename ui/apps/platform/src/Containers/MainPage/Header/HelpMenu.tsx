@@ -57,7 +57,7 @@ function HelpMenu(): ReactElement {
                             Help Center
                         </DropdownItem>
                         <Divider component="li" />
-                        <DropdownItem isDisabled>
+                        <DropdownItem isDisabled isAriaDisabled>
                             {`v${version}${releaseBuild ? '' : ' [DEV BUILD]'}`}
                         </DropdownItem>
                     </>
