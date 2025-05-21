@@ -42,7 +42,7 @@ func (v *imageComponentFlatViewImpl) Count(ctx context.Context, q *v1.Query) (in
 	defer cancel()
 
 	var results []*imageComponentFlatCount
-	results, err = pgSearch.RunSelectRequestForSchema[imageComponentFlatCount](queryCtx, v.db, v.schema, common.WithCountQuery(q, search.CVE))
+	results, err = pgSearch.RunSelectRequestForSchema[imageComponentFlatCount](queryCtx, v.db, v.schema, withComponentCountQuery(q, search.Component))
 	if err != nil {
 		return 0, err
 	}
@@ -118,5 +118,13 @@ func withSelectComponentCoreResponseQuery(q *v1.Query) *v1.Query {
 		}
 	}
 
+	return cloned
+}
+
+func withComponentCountQuery(q *v1.Query, field search.FieldLabel) *v1.Query {
+	cloned := q.CloneVT()
+	cloned.Selects = []*v1.QuerySelect{
+		search.NewQuerySelect(field).AggrFunc(aggregatefunc.Count).Distinct().Proto(),
+	}
 	return cloned
 }
