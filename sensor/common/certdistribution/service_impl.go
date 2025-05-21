@@ -65,7 +65,6 @@ func (s *service) RegisterServiceHandler(_ context.Context, _ *runtime.ServeMux,
 }
 
 func (s *service) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	// Wrap authorization errors with context
 	return ctx, errors.Wrapf(
 		authorizer.Authorized(ctx, fullMethodName),
 		"authorization failed for %s", fullMethodName,
@@ -107,11 +106,7 @@ func (s *service) verifyToken(ctx context.Context, token string, expectedSubject
 		return errors.Errorf("failed to review authentication token: %s", reviewStatus.Error)
 	}
 	if !reviewStatus.Authenticated {
-		// Wrap unauthenticated token error with context
-		return errors.Wrap(
-			status.Error(codes.Unauthenticated, "token not authenticated"),
-			"service account token not authenticated",
-		)
+		status.Error(codes.Unauthenticated, "token not authenticated")
 	}
 	if reviewStatus.User.Username != expectedSubject {
 		return errors.Errorf("authorized unexpected user %q", reviewStatus.User.Username)
@@ -163,10 +158,7 @@ func (s *service) verifyRequestViaServiceAccountToken(ctx context.Context, servi
 	// This API is rate limit such that an untrusted user cannot get us to DDoS the Kubernetes API server.
 	if err := s.rateLimiter.Wait(ctx); err != nil {
 		// Wrap rate limit exceeded error with context
-		return errors.Wrap(
-			status.Error(codes.PermissionDenied, "rate limit exceeded for this API"),
-			"service account token rate limit exceeded",
-		)
+		return status.Error(codes.PermissionDenied, "rate limit exceeded for this API")
 	}
 
 	expectedSubject := fmt.Sprintf("system:serviceaccount:%s:%s", s.namespace, serviceName)

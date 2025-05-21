@@ -84,14 +84,13 @@ func (s *managementService) sendCurrentSettings(stream sensor.AdmissionControlMa
 	if settings == nil {
 		return nil
 	}
-	// Wrap errors when sending settings push
 	return errors.Wrap(
 		stream.Send(&sensor.MsgToAdmissionControl{
 			Msg: &sensor.MsgToAdmissionControl_SettingsPush{
 				SettingsPush: settings,
 			},
 		}),
-		"sending settings push failed",
+		"sending settings failed",
 	)
 }
 
@@ -141,7 +140,6 @@ func (s *managementService) Communicate(stream sensor.AdmissionControlManagement
 			}
 
 		case <-stream.Context().Done():
-			// Wrap context cancellation in communication loop
 			return errors.Wrap(stream.Context().Err(), "communication canceled")
 		}
 	}
@@ -181,7 +179,6 @@ func (s *managementService) sync(stream sensor.AdmissionControlManagementService
 		}
 	}
 
-	// Wrap errors when sending final synced signal
 	return errors.Wrap(
 		stream.Send(&sensor.MsgToAdmissionControl{
 			Msg: &sensor.MsgToAdmissionControl_UpdateResourceRequest{

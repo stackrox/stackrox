@@ -26,6 +26,5 @@ func PersistCertificates(certBundle map[string]string) error {
 		}
 	}
 
-	// Wrap any errors from persisting certificates
 	return errors.Wrap(errs, "persisting certificates failed")
 }
