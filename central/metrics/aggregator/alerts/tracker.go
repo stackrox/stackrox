@@ -1,4 +1,4 @@
-package policy_violations
+package alerts
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/prometheus/client_golang/prometheus"
 	alertDS "github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/central/metrics/aggregator/common"
 	"github.com/stackrox/rox/generated/storage"
@@ -25,24 +26,6 @@ var labelOrder = common.MakeLabelOrderMap([]common.Label{
 	"EnforcementCount",
 	"State",
 })
-
-func MakeTrackerConfig() *common.TrackerConfig {
-	return common.MakeTrackerConfig("violations", "aggregated policy violations",
-		labelOrder, common.Bind3rd(trackViolationsMetrics, alertDS.Singleton()))
-}
-
-func trackViolationsMetrics(ctx context.Context, _ common.MetricLabelsExpressions, ds alertDS.DataStore) iter.Seq[common.Finding] {
-	return func(yield func(common.Finding) bool) {
-		// Optimization opportunity:
-		// The resource filter is known at this point, so a more precise query could be constructed here.
-		_ = ds.WalkAll(ctx, func(alert *storage.ListAlert) error {
-			if !yield(makeFinding(alert)) {
-				return common.ErrStopIterator
-			}
-			return nil
-		})
-	}
-}
 
 var getters = map[common.Label]func(alert *storage.ListAlert) string{
 	"Cluster":    func(alert *storage.ListAlert) string { return alert.GetCommonEntityInfo().GetClusterName() },
@@ -64,8 +47,20 @@ var getters = map[common.Label]func(alert *storage.ListAlert) string{
 	"State":            func(alert *storage.ListAlert) string { return alert.GetState().String() },
 }
 
-func makeFinding(alert *storage.ListAlert) common.Finding {
-	return func(label common.Label) string {
-		return getters[label](alert)
+func MakeTrackerConfig(gauge func(string, prometheus.Labels, int)) *common.TrackerConfig[*storage.ListAlert] {
+	return common.MakeTrackerConfig("alerts", "aggregated policy violation alerts",
+		labelOrder, getters, common.Bind3rd(trackAlertsMetrics, alertDS.Singleton()), gauge)
+}
+
+func trackAlertsMetrics(ctx context.Context, _ common.MetricLabelsExpressions, ds alertDS.DataStore) iter.Seq[*storage.ListAlert] {
+	return func(yield func(*storage.ListAlert) bool) {
+		// Optimization opportunity:
+		// The resource filter is known at this point, so a more precise query could be constructed here.
+		_ = ds.WalkAll(ctx, func(alert *storage.ListAlert) error {
+			if !yield(alert) {
+				return common.ErrStopIterator
+			}
+			return nil
+		})
 	}
 }

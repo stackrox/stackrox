@@ -7,8 +7,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	configDS "github.com/stackrox/rox/central/config/datastore"
 	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/metrics/aggregator/alerts"
 	"github.com/stackrox/rox/central/metrics/aggregator/common"
-	"github.com/stackrox/rox/central/metrics/aggregator/policy_violations"
 	"github.com/stackrox/rox/central/metrics/aggregator/vulnerabilities"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
@@ -30,7 +30,7 @@ type aggregatorRunner struct {
 	stopOnce sync.Once
 
 	vulnerabilities common.Tracker
-	violations      common.Tracker
+	alerts          common.Tracker
 }
 
 func Singleton() interface {
@@ -42,7 +42,7 @@ func Singleton() interface {
 		runner = &aggregatorRunner{
 			stopCh:          make(chan bool),
 			vulnerabilities: vulnerabilities.MakeTrackerConfig(metrics.SetCustomAggregatedCount),
-			violations:      policy_violations.MakeTrackerConfig(),
+			alerts:          alerts.MakeTrackerConfig(metrics.SetCustomAggregatedCount),
 		}
 		systemPrivateConfig, err := configDS.Singleton().GetPrivateConfig(
 			sac.WithAllAccess(context.Background()))
@@ -63,10 +63,10 @@ func vulnerabilitiesConfig(cfg *storage.PrometheusMetricsConfig) (map[string]*st
 	return vc.GetMetricLabels(), period
 }
 
-func violationsConfig(cfg *storage.PrometheusMetricsConfig) (map[string]*storage.PrometheusMetricsConfig_LabelExpressions, time.Duration) {
-	pv := cfg.GetPolicyViolations()
-	period := time.Hour * time.Duration(pv.GetGatheringPeriodHours())
-	return pv.GetMetricLabels(), period
+func alertsConfig(cfg *storage.PrometheusMetricsConfig) (map[string]*storage.PrometheusMetricsConfig_LabelExpressions, time.Duration) {
+	alerts := cfg.GetAlerts()
+	period := time.Hour * time.Duration(alerts.GetGatheringPeriodHours())
+	return alerts.GetMetricLabels(), period
 }
 
 func (ar *aggregatorRunner) Reconfigure(cfg *storage.PrometheusMetricsConfig) error {
@@ -77,8 +77,8 @@ func (ar *aggregatorRunner) Reconfigure(cfg *storage.PrometheusMetricsConfig) er
 		}
 	}
 	{
-		mle, period := violationsConfig(cfg)
-		if err := ar.violations.Reconfigure(Registry, mle, period); err != nil {
+		mle, period := alertsConfig(cfg)
+		if err := ar.alerts.Reconfigure(Registry, mle, period); err != nil {
 			return err
 		}
 	}
@@ -89,8 +89,8 @@ func (ar *aggregatorRunner) Start() {
 	ar.vulnerabilities.Do(func() {
 		go ar.run(ar.vulnerabilities)
 	})
-	ar.violations.Do(func() {
-		go ar.run(ar.violations)
+	ar.alerts.Do(func() {
+		go ar.run(ar.alerts)
 	})
 }
 

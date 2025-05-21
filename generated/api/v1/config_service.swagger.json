@@ -210,18 +210,7 @@
         }
       }
     },
-    "PrometheusMetricsConfigLabelExpressions": {
-      "type": "object",
-      "properties": {
-        "labelExpressions": {
-          "type": "object",
-          "additionalProperties": {
-            "$ref": "#/definitions/LabelExpressionsExpressions"
-          }
-        }
-      }
-    },
-    "PrometheusMetricsConfigPolicyViolations": {
+    "PrometheusMetricsConfigAlerts": {
       "type": "object",
       "properties": {
         "gatheringPeriodHours": {
@@ -232,6 +221,17 @@
           "type": "object",
           "additionalProperties": {
             "$ref": "#/definitions/PrometheusMetricsConfigLabelExpressions"
+          }
+        }
+      }
+    },
+    "PrometheusMetricsConfigLabelExpressions": {
+      "type": "object",
+      "properties": {
+        "labelExpressions": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/LabelExpressionsExpressions"
           }
         }
       }
@@ -465,8 +465,8 @@
         "vulnerabilities": {
           "$ref": "#/definitions/PrometheusMetricsConfigVulnerabilities"
         },
-        "policyViolations": {
-          "$ref": "#/definitions/PrometheusMetricsConfigPolicyViolations"
+        "alerts": {
+          "$ref": "#/definitions/PrometheusMetricsConfigAlerts"
         }
       }
     },
