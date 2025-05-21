@@ -7,6 +7,7 @@ import spock.lang.IgnoreIf
 import spock.lang.Shared
 import spock.lang.Tag
 import spock.lang.Stepwise
+import spock.lang.Unroll
 
 import services.ProcessesListeningOnPortsService
 
@@ -267,7 +268,6 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         given:
 
         String collectorUid = orchestrator.getDaemonSetId(new DaemonSet(name: "collector", namespace: "stackrox"))
-        log.info "collectorUid= ${collectorUid}"
 
         def processesListeningOnPorts = ProcessesListeningOnPortsService
                                                 .getProcessesListeningOnPortsResponse(collectorUid)
@@ -306,30 +306,30 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
                 signal.name == "collector"
                 signal.execFilePath == "/usr/local/bin/collector"
         }
+    }
 
-        def pagination = new Pagination(1, 0)
+    @Unroll
+    def "Verify listening endpoints for collector are reported with pagination: #limit - #offset"() {
+        given:
+
+        String collectorUid = orchestrator.getDaemonSetId(new DaemonSet(name: "collector", namespace: "stackrox"))
+
+        def pagination = new Pagination(limit, offset)
         def processesListeningOnPortsPaginated = ProcessesListeningOnPortsService
                                                          .getProcessesListeningOnPortsResponse(collectorUid, pagination)
 
         def listPaginated = processesListeningOnPortsPaginated.listeningEndpointsList
-        assert listPaginated.size() == 1
+        assert listPaginated.size() == limit
         assert processesListeningOnPortsPaginated.totalListeningEndpoints >= 2
 
-        pagination = new Pagination(1, 1)
-        processesListeningOnPortsPaginated = ProcessesListeningOnPortsService
-                                                     .getProcessesListeningOnPortsResponse(collectorUid, pagination)
+        where:
+        "Data inputs are:"
 
-        listPaginated = processesListeningOnPortsPaginated.listeningEndpointsList
-        assert listPaginated.size() == 1
-        assert processesListeningOnPortsPaginated.totalListeningEndpoints >= 2
+        limit | offset
 
-        pagination = new Pagination(2, 0)
-        processesListeningOnPortsPaginated = ProcessesListeningOnPortsService
-                                                     .getProcessesListeningOnPortsResponse(collectorUid, pagination)
-
-        listPaginated = processesListeningOnPortsPaginated.listeningEndpointsList
-        assert listPaginated.size() == 2
-        assert processesListeningOnPortsPaginated.totalListeningEndpoints >= 2
+        1     | 0
+        1     | 1
+        2     | 0
     }
 
     private waitForResponseToHaveNumElements(int numElements,
