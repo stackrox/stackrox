@@ -10,11 +10,11 @@ import (
 
 // collectMatchingLabels returns an iterator over the labels and the values that
 // match the expressions.
-func collectMatchingLabels(expressions map[Label][]*Expression, finding Finding) iter.Seq2[Label, string] {
+func collectMatchingLabels(expressions map[Label][]*Expression, getter func(Label) string) iter.Seq2[Label, string] {
 	return func(yield func(Label, string) bool) {
 		for label, expressions := range expressions {
 			if len(expressions) == 0 {
-				if !yield(label, finding(label)) {
+				if !yield(label, getter(label)) {
 					return
 				}
 				continue
@@ -25,7 +25,7 @@ func collectMatchingLabels(expressions map[Label][]*Expression, finding Finding)
 					skip = expr.op != opOR
 					continue
 				}
-				if value := finding(label); expr.match(value) {
+				if value := getter(label); expr.match(value) {
 					if !yield(label, value) {
 						return
 					}
@@ -73,10 +73,10 @@ func (ov orderedValues) join(sep rune) string {
 // Example:
 //
 //	"Cluster=*prod,Deployment" => "pre-prod|backend", {"Cluster": "pre-prod", "Deployment": "backend")}
-func makeAggregationKey(expressions map[Label][]*Expression, finding Finding, labelOrder map[Label]int) (aggregationKey, prometheus.Labels) {
+func makeAggregationKey(expressions map[Label][]*Expression, getter func(Label) string, labelOrder map[Label]int) (aggregationKey, prometheus.Labels) {
 	labels := make(prometheus.Labels)
 	values := make(orderedValues, len(expressions))
-	for label, value := range collectMatchingLabels(expressions, finding) {
+	for label, value := range collectMatchingLabels(expressions, getter) {
 		labels[string(label)] = value
 		values = append(values, valueOrder{labelOrder[label], value})
 	}

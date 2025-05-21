@@ -15,10 +15,9 @@ var (
 	metricNamePattern = regexp.MustCompile("^[a-zA-Z0-9_]+$")
 )
 
-type Label string               // Prometheus label.
-type MetricName string          // Prometheus metric name.
-type Finding func(Label) string // Lazy map.
-type FindingGenerator func(context.Context, MetricLabelsExpressions) iter.Seq[Finding]
+type Label string      // Prometheus label.
+type MetricName string // Prometheus metric name.
+type FindingGenerator[Finding any] func(context.Context, MetricLabelsExpressions) iter.Seq[Finding]
 
 // MetricLabelsExpressions is the parsed aggregation configuration.
 type MetricLabelsExpressions map[MetricName]map[Label][]*Expression

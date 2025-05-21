@@ -12,17 +12,17 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func nilGatherFunc(context.Context, MetricLabelsExpressions) iter.Seq[Finding] {
-	return func(func(Finding) bool) {}
+type testDataIndex = int
+
+func nilGatherFunc(context.Context, MetricLabelsExpressions) iter.Seq[testDataIndex] {
+	return func(yield func(testDataIndex) bool) {}
 }
 
-func makeTestGatherFunc(data []map[Label]string) func(context.Context, MetricLabelsExpressions) iter.Seq[Finding] {
-	return func(context.Context, MetricLabelsExpressions) iter.Seq[Finding] {
-		return func(yield func(Finding) bool) {
-			for _, datum := range data {
-				if !yield(func(label Label) string {
-					return datum[label]
-				}) {
+func makeTestGatherFunc(data []map[Label]string) func(context.Context, MetricLabelsExpressions) iter.Seq[testDataIndex] {
+	return func(ctx context.Context, mle MetricLabelsExpressions) iter.Seq[testDataIndex] {
+		return func(yield func(testDataIndex) bool) {
+			for i := range data {
+				if !yield(i) {
 					return
 				}
 			}
@@ -31,7 +31,7 @@ func makeTestGatherFunc(data []map[Label]string) func(context.Context, MetricLab
 }
 
 func TestMakeTrackerConfig(t *testing.T) {
-	tracker := MakeTrackerConfig("test", "test", testLabelOrder, nilGatherFunc)
+	tracker := MakeTrackerConfig("test", "test", testLabelOrder, nil, nilGatherFunc, nil)
 	assert.NotNil(t, tracker)
 	assert.NotNil(t, tracker.periodCh)
 
@@ -42,14 +42,14 @@ func TestMakeTrackerConfig(t *testing.T) {
 func TestTrackerConfig_Reconfigure(t *testing.T) {
 
 	t.Run("test 0 period", func(t *testing.T) {
-		tracker := MakeTrackerConfig("test", "test", testLabelOrder, nilGatherFunc)
+		tracker := MakeTrackerConfig("test", "test", testLabelOrder, nil, nilGatherFunc, nil)
 
 		assert.NoError(t, tracker.Reconfigure(nil, nil, 0))
 		assert.Nil(t, tracker.GetMetricLabelExpressions())
 	})
 
 	t.Run("test with good test configuration", func(t *testing.T) {
-		tracker := MakeTrackerConfig("test", "test", testLabelOrder, nilGatherFunc)
+		tracker := MakeTrackerConfig("test", "test", testLabelOrder, nil, nilGatherFunc, nil)
 		assert.NoError(t, tracker.Reconfigure(nil, makeTestMetricLabels(t), 42*time.Hour))
 		mle := tracker.GetMetricLabelExpressions()
 		assert.NotNil(t, mle)
@@ -63,7 +63,7 @@ func TestTrackerConfig_Reconfigure(t *testing.T) {
 	})
 
 	t.Run("test with initial bad configuration", func(t *testing.T) {
-		tracker := MakeTrackerConfig("test", "test", testLabelOrder, nilGatherFunc)
+		tracker := MakeTrackerConfig("test", "test", testLabelOrder, nil, nilGatherFunc, nil)
 		err := tracker.Reconfigure(nil, map[string]*storage.PrometheusMetricsConfig_LabelExpressions{
 			" ": nil,
 		}, 11*time.Hour)
@@ -80,7 +80,7 @@ func TestTrackerConfig_Reconfigure(t *testing.T) {
 	})
 
 	t.Run("test with bad reconfiguration", func(t *testing.T) {
-		tracker := MakeTrackerConfig("test", "test", testLabelOrder, nilGatherFunc)
+		tracker := MakeTrackerConfig("test", "test", testLabelOrder, nil, nilGatherFunc, nil)
 		assert.NoError(t, tracker.Reconfigure(nil, makeTestMetricLabels(t), 42*time.Hour))
 
 		err := tracker.Reconfigure(nil, map[string]*storage.PrometheusMetricsConfig_LabelExpressions{
@@ -105,26 +105,24 @@ func TestTrackerConfig_Reconfigure(t *testing.T) {
 	})
 }
 
-func TestMakeTrackFunc(t *testing.T) {
+func TestTrack(t *testing.T) {
 	result := make(map[string][]*aggregatedRecord)
 	cfg := MakeTrackerConfig("test", "test",
 		testLabelOrder,
+		testGetters,
 		makeTestGatherFunc(testData),
-	)
-	cfg.metricsConfig = makeTestMetricLabelExpressions(t)
-	track := cfg.MakeTrackFunc(
 		func(metricName string, labels prometheus.Labels, total int) {
 			result[metricName] = append(result[metricName], &aggregatedRecord{labels, total})
 		},
 	)
-
-	track(context.Background())
+	cfg.metricsConfig = makeTestMetricLabelExpressions(t)
+	cfg.Track(context.Background())
 
 	if assert.Len(t, result, 2) &&
-		assert.Contains(t, result, "TestMakeTrackFunc_metric1") &&
-		assert.Contains(t, result, "TestMakeTrackFunc_metric2") {
+		assert.Contains(t, result, "TestTrack_metric1") &&
+		assert.Contains(t, result, "TestTrack_metric2") {
 
-		assert.ElementsMatch(t, result["TestMakeTrackFunc_metric1"],
+		assert.ElementsMatch(t, result["TestTrack_metric1"],
 			[]*aggregatedRecord{
 				{prometheus.Labels{
 					"Severity": "CRITICAL",
@@ -136,7 +134,7 @@ func TestMakeTrackFunc(t *testing.T) {
 				}, 1},
 			})
 
-		assert.ElementsMatch(t, result["TestMakeTrackFunc_metric2"],
+		assert.ElementsMatch(t, result["TestTrack_metric2"],
 			[]*aggregatedRecord{
 				{prometheus.Labels{
 					"Namespace": "ns 1",
@@ -152,8 +150,8 @@ func TestMakeTrackFunc(t *testing.T) {
 }
 
 func TestTrackerConfig_registerMetrics(t *testing.T) {
-	tc := MakeTrackerConfig("test", "test",
-		testLabelOrder, nil)
+	tc := MakeTrackerConfig[any]("test", "test",
+		testLabelOrder, nil, nil, nil)
 	testRegistry := prometheus.NewRegistry()
 	tc.metricsConfig = makeTestMetricLabelExpressions(t)
 	assert.NoError(t, tc.registerMetrics(testRegistry, time.Hour))
