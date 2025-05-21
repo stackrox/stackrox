@@ -24,6 +24,7 @@ jobs:
     - name: Install
       env:
         MAIN_IMAGE_TAG: "4.7.0"
+        SENSOR_HELM_DEPLOY: "true"
       run: ./deploy/k8s/deploy-local.sh
 
 
