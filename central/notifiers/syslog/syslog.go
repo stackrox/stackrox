@@ -314,7 +314,8 @@ func (s *syslog) sendSyslog(severity int, timestamp time.Time, messageID, unstru
 	syslog := []byte(s.wrapSyslogUnstructuredData(severity, timestamp, messageID, unstructuredData))
 	maxSize := s.maxMessageSize
 	if maxSize == 0 {
-		maxSize = 32768
+		// If maxSize was 0 because user did not configure max size, do not chunk
+		maxSize = 1<<31 - 1
 	}
 	for len(syslog) != 0 {
 		if err := s.sender.SendSyslog(syslog[0:int(math.Min(float64(maxSize), float64(len(syslog))))]); err != nil {
