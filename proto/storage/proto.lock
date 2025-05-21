@@ -5336,6 +5336,11 @@
                 "id": 1,
                 "name": "vulnerabilities",
                 "type": "Vulnerabilities"
+              },
+              {
+                "id": 2,
+                "name": "alerts",
+                "type": "Alerts"
               }
             ],
             "messages": [
@@ -5384,6 +5389,26 @@
               },
               {
                 "name": "Vulnerabilities",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "gathering_period_hours",
+                    "type": "uint32"
+                  }
+                ],
+                "maps": [
+                  {
+                    "key_type": "string",
+                    "field": {
+                      "id": 2,
+                      "name": "metric_labels",
+                      "type": "LabelExpressions"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "Alerts",
                 "fields": [
                   {
                     "id": 1,
