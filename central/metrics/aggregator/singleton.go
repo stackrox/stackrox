@@ -7,6 +7,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	configDS "github.com/stackrox/rox/central/config/datastore"
 	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/metrics/aggregator/alerts"
 	"github.com/stackrox/rox/central/metrics/aggregator/common"
 	"github.com/stackrox/rox/central/metrics/aggregator/vulnerabilities"
 	"github.com/stackrox/rox/generated/storage"
@@ -29,6 +30,7 @@ type aggregatorRunner struct {
 	stopOnce sync.Once
 
 	vulnerabilities common.Tracker
+	alerts          common.Tracker
 }
 
 func Singleton() interface {
@@ -40,6 +42,7 @@ func Singleton() interface {
 		runner = &aggregatorRunner{
 			stopCh:          make(chan bool),
 			vulnerabilities: vulnerabilities.MakeTrackerConfig(metrics.SetCustomAggregatedCount),
+			alerts:          alerts.MakeTrackerConfig(metrics.SetCustomAggregatedCount),
 		}
 		systemPrivateConfig, err := configDS.Singleton().GetPrivateConfig(
 			sac.WithAllAccess(context.Background()))
@@ -60,10 +63,22 @@ func vulnerabilitiesConfig(cfg *storage.PrometheusMetricsConfig) (map[string]*st
 	return vc.GetMetricLabels(), period
 }
 
+func alertsConfig(cfg *storage.PrometheusMetricsConfig) (map[string]*storage.PrometheusMetricsConfig_LabelExpressions, time.Duration) {
+	alerts := cfg.GetAlerts()
+	period := time.Hour * time.Duration(alerts.GetGatheringPeriodHours())
+	return alerts.GetMetricLabels(), period
+}
+
 func (ar *aggregatorRunner) Reconfigure(cfg *storage.PrometheusMetricsConfig) error {
 	{
 		mle, period := vulnerabilitiesConfig(cfg)
 		if err := ar.vulnerabilities.Reconfigure(Registry, mle, period); err != nil {
+			return err
+		}
+	}
+	{
+		mle, period := alertsConfig(cfg)
+		if err := ar.alerts.Reconfigure(Registry, mle, period); err != nil {
 			return err
 		}
 	}
@@ -73,6 +88,9 @@ func (ar *aggregatorRunner) Reconfigure(cfg *storage.PrometheusMetricsConfig) er
 func (ar *aggregatorRunner) Start() {
 	ar.vulnerabilities.Do(func() {
 		go ar.run(ar.vulnerabilities)
+	})
+	ar.alerts.Do(func() {
+		go ar.run(ar.alerts)
 	})
 }
 

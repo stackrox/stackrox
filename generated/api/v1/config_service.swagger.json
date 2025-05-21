@@ -210,6 +210,21 @@
         }
       }
     },
+    "PrometheusMetricsConfigAlerts": {
+      "type": "object",
+      "properties": {
+        "gatheringPeriodHours": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "metricLabels": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/PrometheusMetricsConfigLabelExpressions"
+          }
+        }
+      }
+    },
     "PrometheusMetricsConfigLabelExpressions": {
       "type": "object",
       "properties": {
@@ -449,6 +464,9 @@
       "properties": {
         "vulnerabilities": {
           "$ref": "#/definitions/PrometheusMetricsConfigVulnerabilities"
+        },
+        "alerts": {
+          "$ref": "#/definitions/PrometheusMetricsConfigAlerts"
         }
       }
     },

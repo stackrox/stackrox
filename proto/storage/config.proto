@@ -141,5 +141,11 @@ message PrometheusMetricsConfig {
     map<string, LabelExpressions> metric_labels = 2;
   }
 
+  message Alerts {
+    uint32 gathering_period_hours = 1;
+    map<string, LabelExpressions> metric_labels = 2;
+  }
+
   Vulnerabilities vulnerabilities = 1;
+  Alerts alerts = 2;
 }
