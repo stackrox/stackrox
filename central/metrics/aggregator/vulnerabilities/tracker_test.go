@@ -123,7 +123,8 @@ func TestTrack(t *testing.T) {
 	}
 
 	cfg := common.MakeTrackerConfig("vuln", "test",
-		labelOrder, getters, common.Bind3rd(trackVulnerabilityMetrics, deploymentDS.DataStore(ds)),
+		getters,
+		common.Bind3rd(trackVulnerabilityMetrics, deploymentDS.DataStore(ds)),
 		func(metric string, labels prometheus.Labels, total int) {
 			actual[metric] = append(actual[metric], &labelsTotal{labels, total})
 		},
@@ -154,11 +155,5 @@ func TestTrack(t *testing.T) {
 	}
 	for metric, records := range actual {
 		assert.ElementsMatch(t, expected[metric], records)
-	}
-}
-
-func Test_labels(t *testing.T) {
-	for label := range getters {
-		assert.NotZero(t, labelOrder[label])
 	}
 }
