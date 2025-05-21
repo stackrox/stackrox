@@ -14,6 +14,8 @@ import (
 
 type testDataIndex = int
 
+var testRegistry = prometheus.NewRegistry()
+
 func nilGatherFunc(context.Context, MetricLabelsExpressions) iter.Seq[testDataIndex] {
 	return func(yield func(testDataIndex) bool) {}
 }
@@ -44,13 +46,13 @@ func TestTrackerConfig_Reconfigure(t *testing.T) {
 	t.Run("test 0 period", func(t *testing.T) {
 		tracker := MakeTrackerConfig("test", "test", testLabelGetters, nilGatherFunc, nil)
 
-		assert.NoError(t, tracker.Reconfigure(nil, nil, 0))
+		assert.NoError(t, tracker.Reconfigure(testRegistry, nil, 0))
 		assert.Nil(t, tracker.GetMetricLabelExpressions())
 	})
 
 	t.Run("test with good test configuration", func(t *testing.T) {
 		tracker := MakeTrackerConfig("test", "test", testLabelGetters, nilGatherFunc, nil)
-		assert.NoError(t, tracker.Reconfigure(nil, makeTestMetricLabels(t), 42*time.Hour))
+		assert.NoError(t, tracker.Reconfigure(testRegistry, makeTestMetricLabels(t), 42*time.Hour))
 		mle := tracker.GetMetricLabelExpressions()
 		assert.NotNil(t, mle)
 		select {
@@ -64,7 +66,7 @@ func TestTrackerConfig_Reconfigure(t *testing.T) {
 
 	t.Run("test with initial bad configuration", func(t *testing.T) {
 		tracker := MakeTrackerConfig("test", "test", testLabelGetters, nilGatherFunc, nil)
-		err := tracker.Reconfigure(nil, map[string]*storage.PrometheusMetricsConfig_LabelExpressions{
+		err := tracker.Reconfigure(testRegistry, map[string]*storage.PrometheusMetricsConfig_LabelExpressions{
 			" ": nil,
 		}, 11*time.Hour)
 
@@ -81,9 +83,9 @@ func TestTrackerConfig_Reconfigure(t *testing.T) {
 
 	t.Run("test with bad reconfiguration", func(t *testing.T) {
 		tracker := MakeTrackerConfig("test", "test", testLabelGetters, nilGatherFunc, nil)
-		assert.NoError(t, tracker.Reconfigure(nil, makeTestMetricLabels(t), 42*time.Hour))
+		assert.NoError(t, tracker.Reconfigure(testRegistry, makeTestMetricLabels(t), 42*time.Hour))
 
-		err := tracker.Reconfigure(nil, map[string]*storage.PrometheusMetricsConfig_LabelExpressions{
+		err := tracker.Reconfigure(testRegistry, map[string]*storage.PrometheusMetricsConfig_LabelExpressions{
 			"m1": {
 				LabelExpressions: map[string]*storage.PrometheusMetricsConfig_LabelExpressions_Expressions{
 					"label1": nil,

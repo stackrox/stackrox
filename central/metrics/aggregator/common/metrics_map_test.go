@@ -8,13 +8,19 @@ import (
 )
 
 var testLabelGetters = []LabelGetter[testDataIndex]{
-	{"test", nil},
-	{"Cluster", nil},
-	{"Namespace", nil},
-	{"CVE", nil},
-	{"Severity", nil},
-	{"CVSS", nil},
-	{"IsFixable", nil},
+	testDataGetter("test"),
+	testDataGetter("Cluster"),
+	testDataGetter("Namespace"),
+	testDataGetter("CVE"),
+	testDataGetter("Severity"),
+	testDataGetter("CVSS"),
+	testDataGetter("IsFixable"),
+}
+
+func testDataGetter(label Label) LabelGetter[testDataIndex] {
+	return LabelGetter[testDataIndex]{
+		label,
+		func(i testDataIndex) string { return testData[i][label] }}
 }
 
 var testLabelOrder = makeLabelOrderMap(testLabelGetters)
