@@ -223,7 +223,7 @@ test_not_enough_disk_space() {
 
     # Do not apply scaled workload to control disk space, do fallocate instead
     kubectl -n stackrox exec -it deploy/central-db -- \
-        fallocate -l 800mb "/var/lib/postgresql/data/pgdata/fake_data"
+        fallocate -l 700mb "/var/lib/postgresql/data/pgdata/fake_data"
     kubectl -n stackrox exec -it deploy/central-db -- \
         bash -c 'df "${PGDATA}" -H'
     kubectl -n stackrox exec -it deploy/central-db -- \
