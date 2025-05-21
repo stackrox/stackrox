@@ -101,6 +101,7 @@ func (s *managerTestSuite) testConnectionWithManager(mgr *managerImpl, acceptedS
 	for _, serverName := range acceptedServerNames {
 		clientTLSConf, err := clientconn.TLSConfig(mtls.CentralSubject, clientconn.TLSConfigOptions{
 			ServerName: serverName,
+			RootCAs:    getCertPool(mgr.internalTrustRoots),
 		})
 		if !s.NoError(err) {
 			continue
@@ -117,6 +118,7 @@ func (s *managerTestSuite) testConnectionWithManager(mgr *managerImpl, acceptedS
 	for _, serverName := range rejectedServerNames {
 		clientTLSConf, err := clientconn.TLSConfig(mtls.CentralSubject, clientconn.TLSConfigOptions{
 			ServerName: serverName,
+			RootCAs:    getCertPool(mgr.internalTrustRoots),
 		})
 		if !s.NoError(err) {
 			continue
@@ -133,4 +135,12 @@ func (s *managerTestSuite) testConnectionWithManager(mgr *managerImpl, acceptedS
 	s.Require().NoError(server.Close())
 	err = <-serverErrC
 	s.ErrorIs(err, net.ErrClosed)
+}
+
+func getCertPool(certs []*x509.Certificate) *x509.CertPool {
+	pool := x509.NewCertPool()
+	for _, cert := range certs {
+		pool.AddCert(cert)
+	}
+	return pool
 }

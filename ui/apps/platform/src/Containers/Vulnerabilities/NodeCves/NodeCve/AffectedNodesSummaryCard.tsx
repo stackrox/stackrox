@@ -13,7 +13,7 @@ function AffectedNodesSummaryCard({
     operatingSystemCount,
 }: AffectedNodesSummaryCardProps) {
     return (
-        <Card isCompact isFlat>
+        <Card isCompact isFlat isFullHeight>
             <CardTitle>Affected nodes</CardTitle>
             <CardBody>
                 <Grid>

@@ -3837,6 +3837,10 @@
               {
                 "name": "FAILURE",
                 "integer": 4
+              },
+              {
+                "name": "PARTIAL_ERROR",
+                "integer": 5
               }
             ]
           },
@@ -4799,6 +4803,12 @@
                 "id": 8,
                 "name": "report_data",
                 "type": "ComplianceOperatorReportData"
+              },
+              {
+                "id": 9,
+                "name": "failed_clusters",
+                "type": "FailedCluster",
+                "is_repeated": true
               }
             ],
             "messages": [
@@ -4814,6 +4824,32 @@
                     "id": 2,
                     "name": "last_started_time",
                     "type": "google.protobuf.Timestamp"
+                  }
+                ]
+              },
+              {
+                "name": "FailedCluster",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "cluster_id",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "cluster_name",
+                    "type": "string"
+                  },
+                  {
+                    "id": 3,
+                    "name": "reasons",
+                    "type": "string",
+                    "is_repeated": true
+                  },
+                  {
+                    "id": 4,
+                    "name": "operator_version",
+                    "type": "string"
                   }
                 ]
               }
@@ -5182,6 +5218,51 @@
             ]
           },
           {
+            "name": "PlatformComponentConfig",
+            "fields": [
+              {
+                "id": 1,
+                "name": "rules",
+                "type": "Rule",
+                "is_repeated": true
+              },
+              {
+                "id": 2,
+                "name": "needs_reevaluation",
+                "type": "bool"
+              }
+            ],
+            "messages": [
+              {
+                "name": "Rule",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "name",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "namespace_rule",
+                    "type": "NamespaceRule"
+                  }
+                ],
+                "messages": [
+                  {
+                    "name": "NamespaceRule",
+                    "fields": [
+                      {
+                        "id": 1,
+                        "name": "regex",
+                        "type": "string"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
             "name": "Config",
             "fields": [
               {
@@ -5193,6 +5274,11 @@
                 "id": 2,
                 "name": "private_config",
                 "type": "PrivateConfig"
+              },
+              {
+                "id": 3,
+                "name": "platform_component_config",
+                "type": "PlatformComponentConfig"
               }
             ]
           },
@@ -5953,6 +6039,21 @@
             ]
           },
           {
+            "name": "Advisory",
+            "fields": [
+              {
+                "id": 1,
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "link",
+                "type": "string"
+              }
+            ]
+          },
+          {
             "name": "ImageCVE",
             "fields": [
               {
@@ -6114,12 +6215,7 @@
               {
                 "id": 14,
                 "name": "advisory",
-                "type": "string"
-              },
-              {
-                "id": 15,
-                "name": "advisory_link",
-                "type": "string"
+                "type": "storage.Advisory"
               }
             ]
           },
@@ -18226,7 +18322,7 @@
               {
                 "id": 24,
                 "name": "advisory",
-                "type": "Advisory"
+                "type": "storage.Advisory"
               },
               {
                 "id": 2,
@@ -18379,21 +18475,6 @@
                 "id": 7,
                 "name": "snooze_expiry",
                 "type": "google.protobuf.Timestamp"
-              }
-            ]
-          },
-          {
-            "name": "Advisory",
-            "fields": [
-              {
-                "id": 1,
-                "name": "name",
-                "type": "string"
-              },
-              {
-                "id": 2,
-                "name": "link",
-                "type": "string"
               }
             ]
           }

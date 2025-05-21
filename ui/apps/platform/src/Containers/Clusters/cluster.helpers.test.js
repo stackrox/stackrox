@@ -133,7 +133,7 @@ describe('cluster helpers', () => {
 
             const displayValue = formatBuildDate(orchestratorMetadata);
 
-            expect(displayValue).toEqual('10/26/2022');
+            expect(displayValue).toEqual('Oct 26, 2022');
         });
 
         it('should return appropriate message if orchestrator metadata response not available', () => {

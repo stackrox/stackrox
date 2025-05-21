@@ -20,6 +20,10 @@
                         "total": 0,
                         "__typename": "ResourceCountByFixability"
                     },
+                    "unknown": {
+                        "total": 0,
+                        "__typename": "ResourceCountByFixability"
+                    },
                     "__typename": "ResourceCountByCVESeverity"
                 },
                 "topCVSS": 9.800000190734863,
@@ -60,6 +64,10 @@
                         "__typename": "ResourceCountByFixability"
                     },
                     "low": {
+                        "total": 0,
+                        "__typename": "ResourceCountByFixability"
+                    },
+                    "unknown": {
                         "total": 0,
                         "__typename": "ResourceCountByFixability"
                     },

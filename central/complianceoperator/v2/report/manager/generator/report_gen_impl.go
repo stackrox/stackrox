@@ -82,7 +82,7 @@ func (rg *complianceReportGeneratorImpl) ProcessReportRequest(req *report.Reques
 
 	reportData := rg.resultsAggregator.GetReportData(req)
 
-	zipData, err := rg.formatter.FormatCSVReport(reportData.ResultCSVs)
+	zipData, err := rg.formatter.FormatCSVReport(reportData.ResultCSVs, nil)
 	if err != nil {
 		if dbErr := reportUtils.UpdateSnapshotOnError(req.Ctx, snapshot, report.ErrReportGeneration, rg.snapshotDS); dbErr != nil {
 			return errors.Wrap(dbErr, "unable to update the snapshot on report generation failure")
