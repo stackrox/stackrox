@@ -243,6 +243,7 @@ func (resolver *Resolver) ImageComponents(ctx context.Context, q PaginatedQuery)
 // ImageComponentCount returns count of image components that match the input query
 func (resolver *Resolver) ImageComponentCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageComponentCount")
+	log.Infof("SHREWS -- ImageComponentCount -- %v", args)
 	// check permissions
 	if err := readImages(ctx); err != nil {
 		return 0, err
@@ -256,6 +257,7 @@ func (resolver *Resolver) ImageComponentCount(ctx context.Context, args RawQuery
 
 	if features.FlattenCVEData.Enabled() {
 		componentCount, err := resolver.ImageComponentFlatView.Count(ctx, query)
+		log.Infof("SHREWS -- ImageComponentCount -- %d", componentCount)
 		return int32(componentCount), err
 	}
 	// get loader
