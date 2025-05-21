@@ -31,7 +31,7 @@ func makeTestGatherFunc(data []map[Label]string) func(context.Context, MetricLab
 }
 
 func TestMakeTrackerConfig(t *testing.T) {
-	tracker := MakeTrackerConfig("test", "test", testLabelOrder, nil, nilGatherFunc, nil)
+	tracker := MakeTrackerConfig("test", "test", testLabelGetters, nilGatherFunc, nil)
 	assert.NotNil(t, tracker)
 	assert.NotNil(t, tracker.periodCh)
 
@@ -42,14 +42,14 @@ func TestMakeTrackerConfig(t *testing.T) {
 func TestTrackerConfig_Reconfigure(t *testing.T) {
 
 	t.Run("test 0 period", func(t *testing.T) {
-		tracker := MakeTrackerConfig("test", "test", testLabelOrder, nil, nilGatherFunc, nil)
+		tracker := MakeTrackerConfig("test", "test", testLabelGetters, nilGatherFunc, nil)
 
 		assert.NoError(t, tracker.Reconfigure(nil, nil, 0))
 		assert.Nil(t, tracker.GetMetricLabelExpressions())
 	})
 
 	t.Run("test with good test configuration", func(t *testing.T) {
-		tracker := MakeTrackerConfig("test", "test", testLabelOrder, nil, nilGatherFunc, nil)
+		tracker := MakeTrackerConfig("test", "test", testLabelGetters, nilGatherFunc, nil)
 		assert.NoError(t, tracker.Reconfigure(nil, makeTestMetricLabels(t), 42*time.Hour))
 		mle := tracker.GetMetricLabelExpressions()
 		assert.NotNil(t, mle)
@@ -63,7 +63,7 @@ func TestTrackerConfig_Reconfigure(t *testing.T) {
 	})
 
 	t.Run("test with initial bad configuration", func(t *testing.T) {
-		tracker := MakeTrackerConfig("test", "test", testLabelOrder, nil, nilGatherFunc, nil)
+		tracker := MakeTrackerConfig("test", "test", testLabelGetters, nilGatherFunc, nil)
 		err := tracker.Reconfigure(nil, map[string]*storage.PrometheusMetricsConfig_LabelExpressions{
 			" ": nil,
 		}, 11*time.Hour)
@@ -80,7 +80,7 @@ func TestTrackerConfig_Reconfigure(t *testing.T) {
 	})
 
 	t.Run("test with bad reconfiguration", func(t *testing.T) {
-		tracker := MakeTrackerConfig("test", "test", testLabelOrder, nil, nilGatherFunc, nil)
+		tracker := MakeTrackerConfig("test", "test", testLabelGetters, nilGatherFunc, nil)
 		assert.NoError(t, tracker.Reconfigure(nil, makeTestMetricLabels(t), 42*time.Hour))
 
 		err := tracker.Reconfigure(nil, map[string]*storage.PrometheusMetricsConfig_LabelExpressions{
@@ -108,8 +108,7 @@ func TestTrackerConfig_Reconfigure(t *testing.T) {
 func TestTrack(t *testing.T) {
 	result := make(map[string][]*aggregatedRecord)
 	cfg := MakeTrackerConfig("test", "test",
-		testLabelOrder,
-		testGetters,
+		testLabelGetters,
 		makeTestGatherFunc(testData),
 		func(metricName string, labels prometheus.Labels, total int) {
 			result[metricName] = append(result[metricName], &aggregatedRecord{labels, total})
@@ -150,8 +149,8 @@ func TestTrack(t *testing.T) {
 }
 
 func TestTrackerConfig_registerMetrics(t *testing.T) {
-	tc := MakeTrackerConfig[any]("test", "test",
-		testLabelOrder, nil, nil, nil)
+	tc := MakeTrackerConfig[testDataIndex]("test", "test",
+		testLabelGetters, nil, nil)
 	testRegistry := prometheus.NewRegistry()
 	tc.metricsConfig = makeTestMetricLabelExpressions(t)
 	assert.NoError(t, tc.registerMetrics(testRegistry, time.Hour))

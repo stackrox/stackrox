@@ -12,47 +12,28 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 )
 
-var labelOrder = common.MakeLabelOrderMap([]common.Label{
-	"Cluster",
-	"Namespace",
-	"Deployment",
-	"ImageID",
-	"ImageRegistry",
-	"ImageRemote",
-	"ImageTag",
-	"Component",
-	"ComponentVersion",
-	"CVE",
-	"CVSS",
-	"OperatingSystem",
-	"Severity",
-	"SeverityV2",
-	"SeverityV3",
-	"IsFixable",
-})
-
-var getters = map[common.Label]func(*finding) string{
-	"Cluster":          func(f *finding) string { return f.deployment.GetClusterName() },
-	"Namespace":        func(f *finding) string { return f.deployment.GetNamespace() },
-	"Deployment":       func(f *finding) string { return f.deployment.GetName() },
-	"ImageID":          func(f *finding) string { return f.image.GetId() },
-	"ImageRegistry":    func(f *finding) string { return f.name.GetRegistry() },
-	"ImageRemote":      func(f *finding) string { return f.name.GetRemote() },
-	"ImageTag":         func(f *finding) string { return f.name.GetTag() },
-	"Component":        func(f *finding) string { return f.component.GetName() },
-	"ComponentVersion": func(f *finding) string { return f.component.GetVersion() },
-	"CVE":              func(f *finding) string { return f.vuln.GetCve() },
-	"CVSS":             func(f *finding) string { return strconv.FormatFloat(float64(f.vuln.GetCvss()), 'f', 1, 32) },
-	"OperatingSystem":  func(f *finding) string { return f.image.GetScan().GetOperatingSystem() },
-	"Severity":         func(f *finding) string { return f.vuln.GetSeverity().String() },
-	"SeverityV2":       func(f *finding) string { return f.vuln.GetCvssV2().GetSeverity().String() },
-	"SeverityV3":       func(f *finding) string { return f.vuln.GetCvssV3().GetSeverity().String() },
-	"IsFixable": func(f *finding) string {
+var getters = []common.LabelGetter[*finding]{
+	{Label: "Cluster", Getter: func(f *finding) string { return f.deployment.GetClusterName() }},
+	{Label: "Namespace", Getter: func(f *finding) string { return f.deployment.GetNamespace() }},
+	{Label: "Deployment", Getter: func(f *finding) string { return f.deployment.GetName() }},
+	{Label: "ImageID", Getter: func(f *finding) string { return f.image.GetId() }},
+	{Label: "ImageRegistry", Getter: func(f *finding) string { return f.name.GetRegistry() }},
+	{Label: "ImageRemote", Getter: func(f *finding) string { return f.name.GetRemote() }},
+	{Label: "ImageTag", Getter: func(f *finding) string { return f.name.GetTag() }},
+	{Label: "Component", Getter: func(f *finding) string { return f.component.GetName() }},
+	{Label: "ComponentVersion", Getter: func(f *finding) string { return f.component.GetVersion() }},
+	{Label: "CVE", Getter: func(f *finding) string { return f.vuln.GetCve() }},
+	{Label: "CVSS", Getter: func(f *finding) string { return strconv.FormatFloat(float64(f.vuln.GetCvss()), 'f', 1, 32) }},
+	{Label: "OperatingSystem", Getter: func(f *finding) string { return f.image.GetScan().GetOperatingSystem() }},
+	{Label: "Severity", Getter: func(f *finding) string { return f.vuln.GetSeverity().String() }},
+	{Label: "SeverityV2", Getter: func(f *finding) string { return f.vuln.GetCvssV2().GetSeverity().String() }},
+	{Label: "SeverityV3", Getter: func(f *finding) string { return f.vuln.GetCvssV3().GetSeverity().String() }},
+	{Label: "IsFixable", Getter: func(f *finding) string {
 		if f.vuln.GetFixedBy() == "" {
 			return "false"
 		}
 		return "true"
-	},
+	}},
 }
 
 type finding struct {
@@ -67,7 +48,6 @@ func MakeTrackerConfig(gauge func(string, prometheus.Labels, int)) *common.Track
 	tc := common.MakeTrackerConfig(
 		"vulnerabilities",
 		"aggregated CVEs",
-		labelOrder,
 		getters,
 		common.Bind3rd(trackVulnerabilityMetrics, deploymentDS.Singleton()),
 		gauge)

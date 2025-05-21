@@ -17,7 +17,7 @@ func Test_run(t *testing.T) {
 		i := false
 		runner := &aggregatorRunner{stopCh: make(chan bool, 1)}
 		tracker := common.MakeTrackerConfig("test", "test",
-			map[common.Label]int{}, nil,
+			nil,
 			func(context.Context, common.MetricLabelsExpressions) iter.Seq[any] {
 				return func(yield func(any) bool) {
 					i = true
@@ -34,7 +34,7 @@ func Test_run(t *testing.T) {
 		i := false
 		runner := &aggregatorRunner{stopCh: make(chan bool, 1)}
 		tracker := common.MakeTrackerConfig("test", "test",
-			map[common.Label]int{}, nil,
+			nil,
 			func(context.Context, common.MetricLabelsExpressions) iter.Seq[any] {
 				return func(yield func(any) bool) {
 					i = true
@@ -52,7 +52,7 @@ func Test_run(t *testing.T) {
 		i := 0
 		runner := &aggregatorRunner{stopCh: make(chan bool, 1)}
 		tracker := common.MakeTrackerConfig("test", "test",
-			map[common.Label]int{}, nil,
+			nil,
 			func(context.Context, common.MetricLabelsExpressions) iter.Seq[any] {
 				return func(yield func(any) bool) {
 					i++
@@ -72,7 +72,7 @@ func Test_run(t *testing.T) {
 		var i atomic.Int32
 		runner := &aggregatorRunner{stopCh: make(chan bool, 1)}
 		tracker := common.MakeTrackerConfig("test", "test",
-			map[common.Label]int{}, nil,
+			nil,
 			func(context.Context, common.MetricLabelsExpressions) iter.Seq[any] {
 				return func(yield func(any) bool) {
 					i.Add(1)
