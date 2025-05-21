@@ -208,7 +208,7 @@ func addToUUID(u string, addition int64) string {
 }
 
 func upsertTooMany(b *testing.B, eStore entityStore.EntityDataStore, entities []*storage.NetworkEntity) {
-        batchSize := 3000
+	batchSize := 3000
 	numEntities := len(entities)
 
 	for offset := 0; offset < numEntities; offset += batchSize {
@@ -298,7 +298,7 @@ func benchmarkPruneOrphanedFlowsForDeployment(flowStore store.FlowStore, eStore 
 		orphanWindow := time.Now().UTC().Add(20000000 * time.Second)
 		err := flowStore.RemoveOrphanedFlows(allAccessCtx, &orphanWindow)
 
-		ts := timestamp.Now()+1000000
+		ts := timestamp.Now() + 1000000
 		// Add flows and entities that will be pruned
 		startingIPIndex := uint32(0)
 		setupExternalFlowsWithEntities(b, flowStore, eStore, deploymentId, 1, numEntities, ts, startingIPIndex)
@@ -327,13 +327,13 @@ func benchmarkRemoveOrphanedFlows(flowStore store.FlowStore, eStore entityStore.
 		err := flowStore.RemoveOrphanedFlows(allAccessCtx, &orphanWindow)
 
 		// Add flows and entities that will be pruned
-		ts := timestamp.Now()-10000000
+		ts := timestamp.Now() - 10000000
 		startingIPIndex := uint32(0)
 		setupExternalFlowsWithEntities(b, flowStore, eStore, deploymentId, numDeployments, numEntities, ts, startingIPIndex)
 
 		// Add flows and entities that will not be pruned
 		deploymentId = addToUUID(deploymentId, int64(numDeployments))
-		ts = timestamp.Now()+10000000
+		ts = timestamp.Now() + 10000000
 		startingIPIndex = uint32(numEntities)
 		setupExternalFlowsWithEntities(b, flowStore, eStore, deploymentId, numDeployments, numEntities, ts, startingIPIndex)
 
