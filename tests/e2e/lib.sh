@@ -682,6 +682,17 @@ patch_resources_for_test() {
     wait_for_api "$central_namespace"
 }
 
+delete_secured_cluster() {
+    local cluster_id="$1"
+    roxcurl "/v1/clusers/${cluster_id}" -XDELETE
+}
+
+delete_all_secured_clusters() {
+    roxcurl /v1/clusters | jq -r '.clusters[].id' | while read -r cluster_id; do
+        delete_secured_cluster "$cluster_id"
+    done
+}
+
 check_endpoint_availability() {
     local target_port="$1"
     # shellcheck disable=SC2034
