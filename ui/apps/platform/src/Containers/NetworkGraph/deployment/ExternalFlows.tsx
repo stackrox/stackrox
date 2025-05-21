@@ -13,6 +13,7 @@ import pluralize from 'pluralize';
 
 import { TimeWindow } from 'constants/timeWindows';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
+import { UseURLPaginationResult } from 'hooks/useURLPagination';
 
 import FlowsTableHeaderText from '../common/FlowsTableHeaderText';
 import { FlowTable } from '../components/FlowTable';
@@ -21,11 +22,28 @@ import { useNetworkBaselineStatus } from '../hooks/useNetworkBaselineStatus';
 type ExternalFlowsProps = {
     deploymentId: string;
     timeWindow: TimeWindow;
+    anomalousUrlPagination: UseURLPaginationResult;
+    baselineUrlPagination: UseURLPaginationResult;
 };
 
-function ExternalFlows({ deploymentId, timeWindow }: ExternalFlowsProps) {
-    const anomalous = useNetworkBaselineStatus(deploymentId, timeWindow, 'ANOMALOUS');
-    const baseline = useNetworkBaselineStatus(deploymentId, timeWindow, 'BASELINE');
+function ExternalFlows({
+    deploymentId,
+    timeWindow,
+    anomalousUrlPagination,
+    baselineUrlPagination,
+}: ExternalFlowsProps) {
+    const anomalous = useNetworkBaselineStatus(
+        deploymentId,
+        timeWindow,
+        anomalousUrlPagination,
+        'ANOMALOUS'
+    );
+    const baseline = useNetworkBaselineStatus(
+        deploymentId,
+        timeWindow,
+        baselineUrlPagination,
+        'BASELINE'
+    );
 
     const { isOpen: isAnomalousFlowsExpanded, onToggle: toggleAnomalousFlowsExpandable } =
         useSelectToggle(true);
@@ -67,6 +85,8 @@ function ExternalFlows({ deploymentId, timeWindow }: ExternalFlowsProps) {
                             contentId={'anomalous-expandable-content'}
                         >
                             <FlowTable
+                                pagination={anomalous.urlPagination}
+                                flowCount={totalAnomalous}
                                 emptyStateMessage="No anomalous flows."
                                 tableState={anomalous.tableState}
                             />
@@ -88,6 +108,8 @@ function ExternalFlows({ deploymentId, timeWindow }: ExternalFlowsProps) {
                             isExpanded={isBaselineFlowsExpanded}
                         >
                             <FlowTable
+                                pagination={baseline.urlPagination}
+                                flowCount={totalBaseline}
                                 emptyStateMessage="No baseline flows."
                                 tableState={baseline.tableState}
                             />
