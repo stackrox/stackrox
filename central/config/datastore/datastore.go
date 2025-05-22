@@ -283,7 +283,7 @@ func (d *datastoreImpl) UpsertPlatformComponentConfigRules(ctx context.Context, 
 	return config.GetPlatformComponentConfig(), nil
 }
 
-func (_ *datastoreImpl) GetDefaultRedHatLayeredProductsRegex() string {
+func (d *datastoreImpl) GetDefaultRedHatLayeredProductsRegex() string {
 	return defaultPlatformConfigLayeredProductsRule.NamespaceRule.Regex
 }
 
