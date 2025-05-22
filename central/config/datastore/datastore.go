@@ -33,7 +33,6 @@ type DataStore interface {
 	UpsertConfig(ctx context.Context, config *storage.Config) error
 
 	GetPlatformComponentConfig(ctx context.Context) (*storage.PlatformComponentConfig, bool, error)
-	GetDefaultRedHatLayeredProductsRegex() string
 	UpsertPlatformComponentConfigRules(ctx context.Context, rules []*storage.PlatformComponentConfig_Rule) (*storage.PlatformComponentConfig, error)
 	MarkPCCReevaluated(context.Context) error
 }
@@ -281,10 +280,6 @@ func (d *datastoreImpl) UpsertPlatformComponentConfigRules(ctx context.Context, 
 		return nil, err
 	}
 	return config.GetPlatformComponentConfig(), nil
-}
-
-func (d *datastoreImpl) GetDefaultRedHatLayeredProductsRegex() string {
-	return defaultPlatformConfigLayeredProductsRule.NamespaceRule.Regex
 }
 
 func validateAndUpdatePlatformComponentConfig(config *storage.PlatformComponentConfig, rules []*storage.PlatformComponentConfig_Rule) (*storage.PlatformComponentConfig, error) {

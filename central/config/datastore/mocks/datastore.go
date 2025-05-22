@@ -56,20 +56,6 @@ func (mr *MockDataStoreMockRecorder) GetConfig(ctx any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetConfig", reflect.TypeOf((*MockDataStore)(nil).GetConfig), ctx)
 }
 
-// GetDefaultRedHatLayeredProductsRegex mocks base method.
-func (m *MockDataStore) GetDefaultRedHatLayeredProductsRegex() string {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetDefaultRedHatLayeredProductsRegex")
-	ret0, _ := ret[0].(string)
-	return ret0
-}
-
-// GetDefaultRedHatLayeredProductsRegex indicates an expected call of GetDefaultRedHatLayeredProductsRegex.
-func (mr *MockDataStoreMockRecorder) GetDefaultRedHatLayeredProductsRegex() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDefaultRedHatLayeredProductsRegex", reflect.TypeOf((*MockDataStore)(nil).GetDefaultRedHatLayeredProductsRegex))
-}
-
 // GetPlatformComponentConfig mocks base method.
 func (m *MockDataStore) GetPlatformComponentConfig(ctx context.Context) (*storage.PlatformComponentConfig, bool, error) {
 	m.ctrl.T.Helper()

@@ -104,6 +104,7 @@ service ConfigService {
     };
   }
 
+  // GetDefaultRedHatLayeredProductsRegex returns a static string containing the default Red Hat Layered Products regex that is used for platform component identification.
   rpc GetDefaultRedHatLayeredProductsRegex(Empty) returns (GetDefaultRedHatLayeredProductsRegexResponse) {
     option (google.api.http) = {get: "/v1/config/platformcomponent/rhlp/default"};
   }

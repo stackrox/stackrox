@@ -252,7 +252,7 @@ func (s *serviceImpl) UpdatePlatformComponentConfig(ctx context.Context, req *v1
 
 func (s *serviceImpl) GetDefaultRedHatLayeredProductsRegex(_ context.Context, _ *v1.Empty) (*v1.GetDefaultRedHatLayeredProductsRegexResponse, error) {
 	return &v1.GetDefaultRedHatLayeredProductsRegexResponse{
-		Regex: s.datastore.GetDefaultRedHatLayeredProductsRegex(),
+		Regex: datastore.PlatformComponentLayeredProductsDefaultRegex,
 	}, nil
 }
 
