@@ -432,9 +432,10 @@ type DatabaseStatus struct {
 	// type of database serving central
 	DatabaseType DatabaseStatus_DatabaseType `protobuf:"varint,2,opt,name=database_type,json=databaseType,proto3,enum=v1.DatabaseStatus_DatabaseType" json:"database_type,omitempty"`
 	// version of the database
-	DatabaseVersion string `protobuf:"bytes,3,opt,name=database_version,json=databaseVersion,proto3" json:"database_version,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	DatabaseVersion    string `protobuf:"bytes,3,opt,name=database_version,json=databaseVersion,proto3" json:"database_version,omitempty"`
+	DatabaseIsExternal bool   `protobuf:"varint,4,opt,name=database_is_external,json=databaseIsExternal,proto3" json:"database_is_external,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *DatabaseStatus) Reset() {
@@ -486,6 +487,13 @@ func (x *DatabaseStatus) GetDatabaseVersion() string {
 		return x.DatabaseVersion
 	}
 	return ""
+}
+
+func (x *DatabaseStatus) GetDatabaseIsExternal() bool {
+	if x != nil {
+		return x.DatabaseIsExternal
+	}
+	return false
 }
 
 type DatabaseBackupStatus struct {
@@ -648,11 +656,12 @@ const file_api_v1_metadata_service_proto_rawDesc = "" +
 	"\x15trust_info_serialized\x18\x01 \x01(\fR\x13trustInfoSerialized\x12\x1c\n" +
 	"\tsignature\x18\x02 \x01(\fR\tsignature\">\n" +
 	"\x13TLSChallengeRequest\x12'\n" +
-	"\x0fchallenge_token\x18\x01 \x01(\tR\x0echallengeToken\"\xe9\x01\n" +
+	"\x0fchallenge_token\x18\x01 \x01(\tR\x0echallengeToken\"\x9b\x02\n" +
 	"\x0eDatabaseStatus\x12-\n" +
 	"\x12database_available\x18\x01 \x01(\bR\x11databaseAvailable\x12D\n" +
 	"\rdatabase_type\x18\x02 \x01(\x0e2\x1f.v1.DatabaseStatus.DatabaseTypeR\fdatabaseType\x12)\n" +
-	"\x10database_version\x18\x03 \x01(\tR\x0fdatabaseVersion\"7\n" +
+	"\x10database_version\x18\x03 \x01(\tR\x0fdatabaseVersion\x120\n" +
+	"\x14database_is_external\x18\x04 \x01(\bR\x12databaseIsExternal\"7\n" +
 	"\fDatabaseType\x12\n" +
 	"\n" +
 	"\x06Hidden\x10\x00\x12\v\n" +
