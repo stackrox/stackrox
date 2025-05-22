@@ -10,8 +10,8 @@ runs:
     - name: Recover docker image cache space
       run: |
         df --si /
-        printf 'Docker prune: '
-        docker system prune --force --all
+        docker system prune --force --all 2>&1 \
+          | sed -e 's/^/Docker prune: /'
         df --si /
       shell: bash
 
@@ -22,10 +22,15 @@ runs:
         set -x
         cleanup=(
           /usr/share/dotnet
+          /mnt/usr/share/swift
+          /mnt/usr/share/miniconda
           /usr/local/lib/android
           /opt/ghc
           /opt/hostedtoolcache/CodeQL
           /opt/hostedtoolcache/Ruby
+          # /mnt prefix entries for container jobs that use no hostedtools
+          /mnt/usr/local/lib/node_modules
+          /mnt/opt/hostedtoolcache/*
         )
         for d in "${cleanup[@]}"; do
           if [[ -d "/mnt${d}" ]]; then
@@ -62,4 +67,4 @@ runs:
           source scripts/ci/lib.sh;
           update_job_record outcome "${{ job.status }}" stopped_at "CURRENT_TIMESTAMP()";
           df --si /;
-          du -k -d1 "/" || true;
+          du -k -d1 "/mnt/" || true;
