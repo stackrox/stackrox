@@ -228,6 +228,20 @@ image-db: $(image-db-init-t)
         $(DB_DOCKERBUILD_ARGS) \
         -f image/db/Dockerfile image/db
 
+image/scannerctl/bin/scannerctl: bin/scannerctl
+	@echo "+ $@"
+	mkdir -p $(@D)
+	cp $< $@
+
+.PHONY: image-scannerctl
+image-scannerctl: image/scannerctl/bin/scannerctl
+	@echo "+ $@"
+	$(DOCKERBUILD) \
+	    -t stackrox/$(image-prefix)-scannerctl:$(TAG) \
+	    $(DOCKERBUILD_ARGS) \
+            -f image/scannerctl/Dockerfile image/scannerctl
+
+
 ###########
 ## Tools ##
 ###########
