@@ -202,6 +202,25 @@ func local_request_ConfigService_PutConfig_0(ctx context.Context, marshaler runt
 	return msg, metadata, err
 }
 
+func request_ConfigService_GetDefaultRedHatLayeredProductsRegex_0(ctx context.Context, marshaler runtime.Marshaler, client ConfigServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq Empty
+		metadata runtime.ServerMetadata
+	)
+	io.Copy(io.Discard, req.Body)
+	msg, err := client.GetDefaultRedHatLayeredProductsRegex(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+}
+
+func local_request_ConfigService_GetDefaultRedHatLayeredProductsRegex_0(ctx context.Context, marshaler runtime.Marshaler, server ConfigServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq Empty
+		metadata runtime.ServerMetadata
+	)
+	msg, err := server.GetDefaultRedHatLayeredProductsRegex(ctx, &protoReq)
+	return msg, metadata, err
+}
+
 // RegisterConfigServiceHandlerServer registers the http handlers for service ConfigService to "mux".
 // UnaryRPC     :call ConfigServiceServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
@@ -367,6 +386,26 @@ func RegisterConfigServiceHandlerServer(ctx context.Context, mux *runtime.ServeM
 			return
 		}
 		forward_ConfigService_PutConfig_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
+	mux.Handle(http.MethodGet, pattern_ConfigService_GetDefaultRedHatLayeredProductsRegex_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.ConfigService/GetDefaultRedHatLayeredProductsRegex", runtime.WithHTTPPathPattern("/v1/config/platformcomponent/rhlp/default"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_ConfigService_GetDefaultRedHatLayeredProductsRegex_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_ConfigService_GetDefaultRedHatLayeredProductsRegex_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
 
 	return nil
@@ -544,27 +583,46 @@ func RegisterConfigServiceHandlerClient(ctx context.Context, mux *runtime.ServeM
 		}
 		forward_ConfigService_PutConfig_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
+	mux.Handle(http.MethodGet, pattern_ConfigService_GetDefaultRedHatLayeredProductsRegex_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v1.ConfigService/GetDefaultRedHatLayeredProductsRegex", runtime.WithHTTPPathPattern("/v1/config/platformcomponent/rhlp/default"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_ConfigService_GetDefaultRedHatLayeredProductsRegex_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_ConfigService_GetDefaultRedHatLayeredProductsRegex_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
 	return nil
 }
 
 var (
-	pattern_ConfigService_GetPublicConfig_0                    = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "config", "public"}, ""))
-	pattern_ConfigService_GetPrivateConfig_0                   = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "config", "private"}, ""))
-	pattern_ConfigService_GetVulnerabilityExceptionConfig_0    = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4}, []string{"v1", "config", "private", "exception", "vulnerabilities"}, ""))
-	pattern_ConfigService_UpdateVulnerabilityExceptionConfig_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4}, []string{"v1", "config", "private", "exception", "vulnerabilities"}, ""))
-	pattern_ConfigService_GetPlatformComponentConfig_0         = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "config", "platformcomponent"}, ""))
-	pattern_ConfigService_UpdatePlatformComponentConfig_0      = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "config", "platformcomponent"}, ""))
-	pattern_ConfigService_GetConfig_0                          = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "config"}, ""))
-	pattern_ConfigService_PutConfig_0                          = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "config"}, ""))
+	pattern_ConfigService_GetPublicConfig_0                      = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "config", "public"}, ""))
+	pattern_ConfigService_GetPrivateConfig_0                     = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "config", "private"}, ""))
+	pattern_ConfigService_GetVulnerabilityExceptionConfig_0      = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4}, []string{"v1", "config", "private", "exception", "vulnerabilities"}, ""))
+	pattern_ConfigService_UpdateVulnerabilityExceptionConfig_0   = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4}, []string{"v1", "config", "private", "exception", "vulnerabilities"}, ""))
+	pattern_ConfigService_GetPlatformComponentConfig_0           = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "config", "platformcomponent"}, ""))
+	pattern_ConfigService_UpdatePlatformComponentConfig_0        = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "config", "platformcomponent"}, ""))
+	pattern_ConfigService_GetConfig_0                            = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "config"}, ""))
+	pattern_ConfigService_PutConfig_0                            = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "config"}, ""))
+	pattern_ConfigService_GetDefaultRedHatLayeredProductsRegex_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4}, []string{"v1", "config", "platformcomponent", "rhlp", "default"}, ""))
 )
 
 var (
-	forward_ConfigService_GetPublicConfig_0                    = runtime.ForwardResponseMessage
-	forward_ConfigService_GetPrivateConfig_0                   = runtime.ForwardResponseMessage
-	forward_ConfigService_GetVulnerabilityExceptionConfig_0    = runtime.ForwardResponseMessage
-	forward_ConfigService_UpdateVulnerabilityExceptionConfig_0 = runtime.ForwardResponseMessage
-	forward_ConfigService_GetPlatformComponentConfig_0         = runtime.ForwardResponseMessage
-	forward_ConfigService_UpdatePlatformComponentConfig_0      = runtime.ForwardResponseMessage
-	forward_ConfigService_GetConfig_0                          = runtime.ForwardResponseMessage
-	forward_ConfigService_PutConfig_0                          = runtime.ForwardResponseMessage
+	forward_ConfigService_GetPublicConfig_0                      = runtime.ForwardResponseMessage
+	forward_ConfigService_GetPrivateConfig_0                     = runtime.ForwardResponseMessage
+	forward_ConfigService_GetVulnerabilityExceptionConfig_0      = runtime.ForwardResponseMessage
+	forward_ConfigService_UpdateVulnerabilityExceptionConfig_0   = runtime.ForwardResponseMessage
+	forward_ConfigService_GetPlatformComponentConfig_0           = runtime.ForwardResponseMessage
+	forward_ConfigService_UpdatePlatformComponentConfig_0        = runtime.ForwardResponseMessage
+	forward_ConfigService_GetConfig_0                            = runtime.ForwardResponseMessage
+	forward_ConfigService_PutConfig_0                            = runtime.ForwardResponseMessage
+	forward_ConfigService_GetDefaultRedHatLayeredProductsRegex_0 = runtime.ForwardResponseMessage
 )

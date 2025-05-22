@@ -46,6 +46,7 @@ var (
 			v1.ConfigService_GetConfig_FullMethodName,
 			v1.ConfigService_GetPrivateConfig_FullMethodName,
 			v1.ConfigService_GetPlatformComponentConfig_FullMethodName,
+			v1.ConfigService_GetDefaultRedHatLayeredProductsRegex_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.Administration)): {
 			v1.ConfigService_PutConfig_FullMethodName,
@@ -247,6 +248,10 @@ func (s *serviceImpl) UpdatePlatformComponentConfig(ctx context.Context, req *v1
 	matcher.Singleton().SetRegexes(regexes)
 	go reprocessor.Singleton().RunReprocessor()
 	return config, nil
+}
+
+func (s *serviceImpl) GetDefaultRedHatLayeredProductsRegex() *v1.GetDefaultRedHatLayeredProductsRegexResponse {
+	return s.datastore.GetDefaultRedHatLayeredProductsRegex()
 }
 
 func validateExceptionConfigReq(config *storage.VulnerabilityExceptionConfig) error {

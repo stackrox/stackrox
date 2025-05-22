@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/config/store"
 	pgStore "github.com/stackrox/rox/central/config/store/postgres"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -33,6 +34,7 @@ type DataStore interface {
 	UpsertConfig(ctx context.Context, config *storage.Config) error
 
 	GetPlatformComponentConfig(ctx context.Context) (*storage.PlatformComponentConfig, bool, error)
+	GetDefaultRedHatLayeredProductsRegex() *v1.GetDefaultRedHatLayeredProductsRegexResponse
 	UpsertPlatformComponentConfigRules(ctx context.Context, rules []*storage.PlatformComponentConfig_Rule) (*storage.PlatformComponentConfig, error)
 	MarkPCCReevaluated(context.Context) error
 }
@@ -280,6 +282,12 @@ func (d *datastoreImpl) UpsertPlatformComponentConfigRules(ctx context.Context, 
 		return nil, err
 	}
 	return config.GetPlatformComponentConfig(), nil
+}
+
+func (_ *datastoreImpl) GetDefaultRedHatLayeredProductsRegex() *v1.GetDefaultRedHatLayeredProductsRegexResponse {
+	return &v1.GetDefaultRedHatLayeredProductsRegexResponse{
+		Regex: defaultPlatformConfigLayeredProductsRule.NamespaceRule.Regex,
+	}
 }
 
 func validateAndUpdatePlatformComponentConfig(config *storage.PlatformComponentConfig, rules []*storage.PlatformComponentConfig_Rule) (*storage.PlatformComponentConfig, error) {

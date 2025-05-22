@@ -13,6 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -54,6 +55,20 @@ func (m *MockDataStore) GetConfig(ctx context.Context) (*storage.Config, error) 
 func (mr *MockDataStoreMockRecorder) GetConfig(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetConfig", reflect.TypeOf((*MockDataStore)(nil).GetConfig), ctx)
+}
+
+// GetDefaultRedHatLayeredProductsRegex mocks base method.
+func (m *MockDataStore) GetDefaultRedHatLayeredProductsRegex() *v1.GetDefaultRedHatLayeredProductsRegexResponse {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetDefaultRedHatLayeredProductsRegex")
+	ret0, _ := ret[0].(*v1.GetDefaultRedHatLayeredProductsRegexResponse)
+	return ret0
+}
+
+// GetDefaultRedHatLayeredProductsRegex indicates an expected call of GetDefaultRedHatLayeredProductsRegex.
+func (mr *MockDataStoreMockRecorder) GetDefaultRedHatLayeredProductsRegex() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDefaultRedHatLayeredProductsRegex", reflect.TypeOf((*MockDataStore)(nil).GetDefaultRedHatLayeredProductsRegex))
 }
 
 // GetPlatformComponentConfig mocks base method.
