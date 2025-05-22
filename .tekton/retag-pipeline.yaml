@@ -35,7 +35,7 @@ spec:
         - name: name
           value: post-bigquery-metrics
         - name: bundle
-          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:d3d0eb9f66831725a7c524faa76a675df1eaf82b361c8dff30e41a2ed17156c7
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:60aa53405b42d2771a3370d2ca609f6ef6c7d2441c5151cc376cb9a555e22de5
         - name: kind
           value: task
       resolver: bundles
@@ -138,8 +138,7 @@ spec:
       - name: name
         value: determine-image-tag
       - name: bundle
-        # TODO(ROX-27716): switch to latest
-        value: quay.io/rhacs-eng/konflux-tasks:pr-55@sha256:ee6fa6df247a9a991c732c69af9eb8feba1b2d490a3fab8357692b818406377d
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:60aa53405b42d2771a3370d2ca609f6ef6c7d2441c5151cc376cb9a555e22de5
       - name: kind
         value: task
       resolver: bundles
@@ -157,7 +156,7 @@ spec:
         - name: name
           value: determine-dependency-image-tag
         - name: bundle
-          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:d3d0eb9f66831725a7c524faa76a675df1eaf82b361c8dff30e41a2ed17156c7
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:60aa53405b42d2771a3370d2ca609f6ef6c7d2441c5151cc376cb9a555e22de5
         - name: kind
           value: task
       resolver: bundles
@@ -177,7 +176,7 @@ spec:
       - name: name
         value: retag-image
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:d3d0eb9f66831725a7c524faa76a675df1eaf82b361c8dff30e41a2ed17156c7
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:60aa53405b42d2771a3370d2ca609f6ef6c7d2441c5151cc376cb9a555e22de5
       - name: kind
         value: task
       resolver: bundles
