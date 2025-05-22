@@ -218,9 +218,6 @@
           "additionalProperties": {
             "$ref": "#/definitions/MetricLabelsExpressions"
           }
-        },
-        "role": {
-          "type": "string"
         }
       }
     },
