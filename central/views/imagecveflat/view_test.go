@@ -651,6 +651,26 @@ func (s *ImageCVEFlatViewTestSuite) paginationTestCases() []testCase {
 				}
 			},
 		},
+		{
+			desc: "w/ epss probability sort",
+			q: search.NewQueryBuilder().WithPagination(
+				search.NewPagination().AddSortOption(
+					search.NewSortOption(search.EPSSProbablity),
+				).AddSortOption(search.NewSortOption(search.CVE)),
+			).ProtoQuery(),
+			less: func(records []*imageCVEFlatResponse) func(i, j int) bool {
+				return func(i, j int) bool {
+					recordI, recordJ := records[i], records[j]
+					if recordJ == nil {
+						recordJ = &imageCVEFlatResponse{}
+					}
+					if recordI.GetEPSSProbability() == recordJ.GetEPSSProbability() {
+						return records[i].CVE < records[j].CVE
+					}
+					return recordI.GetEPSSProbability() > recordJ.GetEPSSProbability()
+				}
+			},
+		},
 	}
 }
 
