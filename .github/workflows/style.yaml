@@ -18,7 +18,7 @@ jobs:
   check-generated-files:
     env:
       ARTIFACT_DIR: junit-reports/
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-20.04
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
     steps:
