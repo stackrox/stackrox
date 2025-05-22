@@ -251,7 +251,9 @@ func (s *serviceImpl) UpdatePlatformComponentConfig(ctx context.Context, req *v1
 }
 
 func (s *serviceImpl) GetDefaultRedHatLayeredProductsRegex(_ context.Context, _ *v1.Empty) (*v1.GetDefaultRedHatLayeredProductsRegexResponse, error) {
-	return s.datastore.GetDefaultRedHatLayeredProductsRegex(), nil
+	return &v1.GetDefaultRedHatLayeredProductsRegexResponse{
+		Regex: s.datastore.GetDefaultRedHatLayeredProductsRegex(),
+	}, nil
 }
 
 func validateExceptionConfigReq(config *storage.VulnerabilityExceptionConfig) error {
