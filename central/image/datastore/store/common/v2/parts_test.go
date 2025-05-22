@@ -20,14 +20,61 @@ var (
 		{
 			Name:    "comp1",
 			Version: "ver1",
+			HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{
+				LayerIndex: 1,
+			},
 		},
 		{
 			Name:    "comp1",
 			Version: "ver2",
+			HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{
+				LayerIndex: 3,
+			},
+			Vulns: []*storage.EmbeddedVulnerability{
+				{
+					Cve:                   "cve1",
+					VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+					VulnerabilityTypes:    []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
+					FirstImageOccurrence:  ts,
+					FirstSystemOccurrence: ts,
+				},
+				{
+					Cve:                "cve2",
+					VulnerabilityType:  storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+					VulnerabilityTypes: []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
+					SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
+						FixedBy: "ver3",
+					},
+					FirstImageOccurrence:  ts,
+					FirstSystemOccurrence: ts,
+				},
+			},
 		},
 		{
 			Name:    "comp2",
 			Version: "ver1",
+			HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{
+				LayerIndex: 2,
+			},
+			Vulns: []*storage.EmbeddedVulnerability{
+				{
+					Cve:                "cve1",
+					VulnerabilityType:  storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+					VulnerabilityTypes: []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
+					SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
+						FixedBy: "ver2",
+					},
+					FirstImageOccurrence:  ts,
+					FirstSystemOccurrence: ts,
+				},
+				{
+					Cve:                   "cve2",
+					VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+					VulnerabilityTypes:    []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
+					FirstImageOccurrence:  ts,
+					FirstSystemOccurrence: ts,
+				},
+			},
 		},
 	}
 
