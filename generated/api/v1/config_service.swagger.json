@@ -68,6 +68,58 @@
         ]
       }
     },
+    "/v1/config/platformcomponent": {
+      "get": {
+        "operationId": "ConfigService_GetPlatformComponentConfig",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/storagePlatformComponentConfig"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "ConfigService"
+        ]
+      },
+      "put": {
+        "operationId": "ConfigService_UpdatePlatformComponentConfig",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/storagePlatformComponentConfig"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1PutPlatformComponentConfigRequest"
+            }
+          }
+        ],
+        "tags": [
+          "ConfigService"
+        ]
+      }
+    },
     "/v1/config/private": {
       "get": {
         "operationId": "ConfigService_GetPrivateConfig",
@@ -504,6 +556,18 @@
       "properties": {
         "config": {
           "$ref": "#/definitions/storageConfig"
+        }
+      }
+    },
+    "v1PutPlatformComponentConfigRequest": {
+      "type": "object",
+      "properties": {
+        "rules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/PlatformComponentConfigRule"
+          }
         }
       }
     },
