@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
@@ -41,10 +40,6 @@ const (
 	noAccessCtx                 = "noAccessCtx"
 
 	maxPaginationLimit = 1000
-)
-
-var (
-	log = logging.LoggerForModule()
 )
 
 func TestComplianceScanConfigDataStore(t *testing.T) {
