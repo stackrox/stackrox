@@ -415,9 +415,6 @@ jobs:
       with:
         kubeconfig: "${{ env.KUBECONFIG }}"
 
-    - name: Install roxctl
-      uses: stackrox/roxctl-installer-action@v1
-
     - name: Run sensor integration tests
       run: make sensor-integration-test
 
