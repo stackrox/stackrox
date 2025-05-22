@@ -1,6 +1,8 @@
 package metrics
 
 import (
+	"strings"
+	"sync"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -270,6 +272,10 @@ var (
 		Name:      "signature_verification_reprocessor_duration_seconds",
 		Help:      "Duration of the signature verification reprocessor loop in seconds",
 	})
+
+	// Those are dynamically defined metrics, configured by users via the system
+	// private configuration.
+	customAggregatedMetrics sync.Map
 )
 
 func startTimeToMS(t time.Time) float64 {
@@ -471,4 +477,30 @@ func SetReprocessorDuration(start time.Time) {
 // SetSignatureVerificationReprocessorDuration registers how long a signature verification reprocessing step took.
 func SetSignatureVerificationReprocessorDuration(start time.Time) {
 	signatureVerificationReprocessorDurationGauge.Set(time.Since(start).Seconds())
+}
+
+// RegisterCustomAggregatedMetric registers user-defined aggregated metrics
+// according to the system private configuration.
+func RegisterCustomAggregatedMetric(name string, description string, period time.Duration, labels []string, userRegistry *prometheus.Registry) error {
+	metric := prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      name,
+		Help: "The total number of " + description + " aggregated by " + strings.Join(labels, ",") +
+			" and gathered every " + period.String(),
+	}, labels)
+	customAggregatedMetrics.Store(name, metric)
+
+	if err := userRegistry.Register(metric); err != nil {
+		return err
+	}
+	return nil
+}
+
+// SetCustomAggregatedCount registers the metric vector with the values,
+// according to the system private configuration.
+func SetCustomAggregatedCount(metricName string, labels prometheus.Labels, total int) {
+	if metric, ok := customAggregatedMetrics.Load(metricName); ok {
+		metric.(*prometheus.GaugeVec).With(labels).Set(float64(total))
+	}
 }

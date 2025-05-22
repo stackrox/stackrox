@@ -228,6 +228,29 @@
       ],
       "default": "UNSET"
     },
+    "ExpressionsExpression": {
+      "type": "object",
+      "properties": {
+        "operator": {
+          "type": "string"
+        },
+        "argument": {
+          "type": "string"
+        }
+      }
+    },
+    "LabelExpressionsExpressions": {
+      "type": "object",
+      "properties": {
+        "expression": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/ExpressionsExpression"
+          }
+        }
+      }
+    },
     "PlatformComponentConfigRule": {
       "type": "object",
       "properties": {
@@ -236,6 +259,32 @@
         },
         "namespaceRule": {
           "$ref": "#/definitions/RuleNamespaceRule"
+        }
+      }
+    },
+    "PrometheusMetricsConfigLabelExpressions": {
+      "type": "object",
+      "properties": {
+        "labelExpressions": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/LabelExpressionsExpressions"
+          }
+        }
+      }
+    },
+    "PrometheusMetricsConfigVulnerabilities": {
+      "type": "object",
+      "properties": {
+        "gatheringPeriodHours": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "metricLabels": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/PrometheusMetricsConfigLabelExpressions"
+          }
         }
       }
     },
@@ -440,9 +489,20 @@
         },
         "administrationEventsConfig": {
           "$ref": "#/definitions/storageAdministrationEventsConfig"
+        },
+        "prometheusMetricsConfig": {
+          "$ref": "#/definitions/storagePrometheusMetricsConfig"
         }
       },
-      "title": "next available tag:9"
+      "title": "next available tag:10"
+    },
+    "storagePrometheusMetricsConfig": {
+      "type": "object",
+      "properties": {
+        "vulnerabilities": {
+          "$ref": "#/definitions/PrometheusMetricsConfigVulnerabilities"
+        }
+      }
     },
     "storagePublicConfig": {
       "type": "object",
