@@ -50,7 +50,7 @@ function PlatformComponentsConfigForm({
                 <Tabs
                     activeKey={activeTabKey}
                     onSelect={handleTabClick}
-                    aria-label="Tabs in the box light variation example"
+                    aria-label="Platform components configuration tabs"
                     role="region"
                 >
                     <Tab eventKey={0} title={<TabTitleText>Core system</TabTitleText>}>
@@ -98,7 +98,7 @@ function PlatformComponentsConfigForm({
                                 variant="info"
                                 component="p"
                                 isInline
-                                title=" Any customization will be preserved after a RHACS upgrade."
+                                title="Any customization will be preserved after a RHACS upgrade."
                                 className="pf-v5-u-mt-md"
                             >
                                 For guidance on adding new component namespaces introduced with the
