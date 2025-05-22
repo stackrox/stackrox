@@ -30,6 +30,7 @@ type resetNotifiable struct {
 }
 
 func (r *resetNotifiable) Notify(e common.SensorComponentEvent) {
+	log.Info(common.LogSensorComponentEvent(e))
 	switch e {
 	case common.SensorComponentEventCentralReachable:
 		resetGRPCClient()
