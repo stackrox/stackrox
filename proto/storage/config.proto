@@ -125,7 +125,7 @@ message DayOption {
 }
 
 message PrometheusMetricsConfig {
-  message LabelExpressions {
+  message MetricLabels {
     message Expressions {
       message Expression {
         string operator = 1;
@@ -138,7 +138,7 @@ message PrometheusMetricsConfig {
 
   message Vulnerabilities {
     uint32 gathering_period_hours = 1;
-    map<string, LabelExpressions> metric_labels = 2;
+    map<string, MetricLabels> metric_labels = 2;
   }
 
   Vulnerabilities vulnerabilities = 1;
