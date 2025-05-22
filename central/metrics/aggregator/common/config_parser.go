@@ -11,7 +11,7 @@ func isKnownLabel(label string, labelOrder map[Label]int) bool {
 }
 
 // parseMetricLabels converts the storage object to the usable map, validating the values.
-func parseMetricLabels(config map[string]*storage.PrometheusMetricsConfig_LabelExpressions, labelOrder map[Label]int) (MetricLabelsExpressions, error) {
+func parseMetricLabels(config map[string]*storage.PrometheusMetricsConfig_MetricLabels, labelOrder map[Label]int) (MetricLabelsExpressions, error) {
 
 	result := make(MetricLabelsExpressions)
 	for metric, labels := range config {

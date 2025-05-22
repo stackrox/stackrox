@@ -54,7 +54,7 @@ func Singleton() interface {
 	return runner
 }
 
-func vulnerabilitiesConfig(cfg *storage.PrometheusMetricsConfig) (map[string]*storage.PrometheusMetricsConfig_LabelExpressions, time.Duration) {
+func vulnerabilitiesConfig(cfg *storage.PrometheusMetricsConfig) (map[string]*storage.PrometheusMetricsConfig_MetricLabels, time.Duration) {
 	vc := cfg.GetVulnerabilities()
 	period := time.Hour * time.Duration(vc.GetGatheringPeriodHours())
 	return vc.GetMetricLabels(), period

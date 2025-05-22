@@ -35,13 +35,13 @@ var testData = []map[Label]string{
 	},
 }
 
-func makeTestMetricLabels(t *testing.T) map[string]*storage.PrometheusMetricsConfig_LabelExpressions {
+func makeTestMetricLabels(t *testing.T) map[string]*storage.PrometheusMetricsConfig_MetricLabels {
 	pfx := strings.ReplaceAll(t.Name(), "/", "_")
-	return map[string]*storage.PrometheusMetricsConfig_LabelExpressions{
+	return map[string]*storage.PrometheusMetricsConfig_MetricLabels{
 		pfx + "_metric1": {
-			LabelExpressions: map[string]*storage.PrometheusMetricsConfig_LabelExpressions_Expressions{
+			LabelExpressions: map[string]*storage.PrometheusMetricsConfig_MetricLabels_Expressions{
 				"Severity": {
-					Expression: []*storage.PrometheusMetricsConfig_LabelExpressions_Expressions_Expression{
+					Expression: []*storage.PrometheusMetricsConfig_MetricLabels_Expressions_Expression{
 						{
 							Operator: "=",
 							Argument: "CRITICAL*",
@@ -57,7 +57,7 @@ func makeTestMetricLabels(t *testing.T) map[string]*storage.PrometheusMetricsCon
 			},
 		},
 		pfx + "_metric2": {
-			LabelExpressions: map[string]*storage.PrometheusMetricsConfig_LabelExpressions_Expressions{
+			LabelExpressions: map[string]*storage.PrometheusMetricsConfig_MetricLabels_Expressions{
 				"Namespace": {},
 			},
 		},
