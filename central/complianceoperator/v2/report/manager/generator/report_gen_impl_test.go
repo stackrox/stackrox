@@ -96,6 +96,9 @@ func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
 				},
 			},
 		},
+		ClusterData: map[string]*report.ClusterData{
+			"cluster-1": {},
+		},
 	}
 
 	s.Run("GetSnapshots data store error", func() {
@@ -156,7 +159,6 @@ func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
 	})
 
 	s.Run("Fail to upsert Snapshot (partial error)", func() {
-		request.FailedClusters = make(map[string]*storage.ComplianceOperatorReportSnapshotV2_FailedCluster)
 		s.snapshotDS.EXPECT().GetSnapshot(gomock.Any(), gomock.Any()).Times(1).
 			Return(&storage.ComplianceOperatorReportSnapshotV2{
 				ReportStatus: &storage.ComplianceOperatorReportStatus{},
@@ -172,7 +174,6 @@ func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
 	})
 
 	s.Run("Fail to upsert Snapshot (all clusters failed)", func() {
-		request.FailedClusters = make(map[string]*storage.ComplianceOperatorReportSnapshotV2_FailedCluster)
 		s.snapshotDS.EXPECT().GetSnapshot(gomock.Any(), gomock.Any()).Times(1).
 			Return(&storage.ComplianceOperatorReportSnapshotV2{
 				ReportStatus: &storage.ComplianceOperatorReportStatus{},
@@ -185,12 +186,14 @@ func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
 				return errors.New("some error")
 			})
 		req := newFakeRequestWithFailedCluster()
-		req.FailedClusters["cluster-1"] = &storage.ComplianceOperatorReportSnapshotV2_FailedCluster{}
+		req.ClusterData["cluster-1"] = &report.ClusterData{
+			FailedInfo: &report.FailedCluster{},
+		}
+		req.FailedClusters = 2
 		s.Require().Error(s.reportGen.ProcessReportRequest(req))
 	})
 
 	s.Run("Fail saving report data (nil data)", func() {
-		request.FailedClusters = make(map[string]*storage.ComplianceOperatorReportSnapshotV2_FailedCluster)
 		s.snapshotDS.EXPECT().GetSnapshot(gomock.Any(), gomock.Any()).Times(1).
 			Return(&storage.ComplianceOperatorReportSnapshotV2{
 				ReportStatus: &storage.ComplianceOperatorReportStatus{},
@@ -213,7 +216,6 @@ func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
 	})
 
 	s.Run("Fail saving report data (blob upsert error)", func() {
-		request.FailedClusters = make(map[string]*storage.ComplianceOperatorReportSnapshotV2_FailedCluster)
 		s.snapshotDS.EXPECT().GetSnapshot(gomock.Any(), gomock.Any()).Times(1).
 			Return(&storage.ComplianceOperatorReportSnapshotV2{
 				ReportStatus: &storage.ComplianceOperatorReportStatus{},
@@ -237,7 +239,6 @@ func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
 	})
 
 	s.Run("Fail saving report data (blob and snapshot upsert error)", func() {
-		request.FailedClusters = make(map[string]*storage.ComplianceOperatorReportSnapshotV2_FailedCluster)
 		s.snapshotDS.EXPECT().GetSnapshot(gomock.Any(), gomock.Any()).Times(1).
 			Return(&storage.ComplianceOperatorReportSnapshotV2{
 				ReportStatus: &storage.ComplianceOperatorReportStatus{},
@@ -261,7 +262,6 @@ func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
 	})
 
 	s.Run("Saving report data success (snapshot upsert error)", func() {
-		request.FailedClusters = make(map[string]*storage.ComplianceOperatorReportSnapshotV2_FailedCluster)
 		s.snapshotDS.EXPECT().GetSnapshot(gomock.Any(), gomock.Any()).Times(1).
 			Return(&storage.ComplianceOperatorReportSnapshotV2{
 				ReportStatus: &storage.ComplianceOperatorReportStatus{},
@@ -286,7 +286,6 @@ func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
 	})
 
 	s.Run("Saving report data success", func() {
-		request.FailedClusters = make(map[string]*storage.ComplianceOperatorReportSnapshotV2_FailedCluster)
 		s.snapshotDS.EXPECT().GetSnapshot(gomock.Any(), gomock.Any()).Times(1).
 			Return(&storage.ComplianceOperatorReportSnapshotV2{
 				ReportStatus: &storage.ComplianceOperatorReportStatus{},
@@ -421,9 +420,13 @@ func newFakeRequestWithFailedCluster() *report.Request {
 				},
 			},
 		},
-		FailedClusters: map[string]*storage.ComplianceOperatorReportSnapshotV2_FailedCluster{
-			"cluster-2": {},
+		ClusterData: map[string]*report.ClusterData{
+			"cluster-1": {},
+			"cluster-2": {
+				FailedInfo: &report.FailedCluster{},
+			},
 		},
+		FailedClusters: 1,
 	}
 }
 

@@ -45,7 +45,8 @@ type reportRequest struct {
 	ctx                context.Context
 	snapshotID         string
 	notificationMethod storage.ComplianceOperatorReportStatus_NotificationMethod
-	failedClusters     map[string]*storage.ComplianceOperatorReportSnapshotV2_FailedCluster
+	clusterData        map[string]*report.ClusterData
+	failedClusters     int
 }
 
 type managerImpl struct {
@@ -208,6 +209,7 @@ func (m *managerImpl) generateReportNoLock(req *reportRequest) {
 		Ctx:                req.ctx,
 		SnapshotID:         req.snapshotID,
 		NotificationMethod: req.notificationMethod,
+		ClusterData:        req.clusterData,
 		FailedClusters:     req.failedClusters,
 	}
 	log.Infof("Executing report request for scan config %q", req.scanConfig.GetId())
@@ -545,15 +547,27 @@ func (m *managerImpl) generateSingleReportFromWatcherResults(result *watcher.Sca
 	// Update ReportData
 	snapshot.ReportData = m.getReportData(result.ScanConfig)
 	// Add failed clusters to the report
-	if len(failedClusters) > 0 {
-		for _, cluster := range snapshot.ReportData.GetClusterStatus() {
-			if failedCluster, ok := failedClusters[cluster.GetClusterId()]; ok {
-				failedCluster.ClusterName = cluster.GetClusterName()
-			}
+	clusterData := make(map[string]*report.ClusterData)
+	for _, cluster := range snapshot.ReportData.GetClusterStatus() {
+		data := &report.ClusterData{
+			ClusterId:   cluster.GetClusterId(),
+			ClusterName: cluster.GetClusterName(),
 		}
+		if failedCluster, ok := failedClusters[cluster.GetClusterId()]; ok {
+			failedCluster.ClusterName = cluster.GetClusterName()
+			data.FailedInfo = failedCluster
+		}
+		clusterData[cluster.GetClusterId()] = data
+	}
+	if len(failedClusters) > 0 {
 		failedClustersSlice := make([]*storage.ComplianceOperatorReportSnapshotV2_FailedCluster, 0, len(failedClusters))
 		for _, failedCluster := range failedClusters {
-			failedClustersSlice = append(failedClustersSlice, failedCluster)
+			failedClustersSlice = append(failedClustersSlice, &storage.ComplianceOperatorReportSnapshotV2_FailedCluster{
+				ClusterId:       failedCluster.GetClusterId(),
+				ClusterName:     failedCluster.GetClusterName(),
+				OperatorVersion: failedCluster.GetOperatorVersion(),
+				Reasons:         failedCluster.GetReasons(),
+			})
 		}
 		snapshot.FailedClusters = failedClustersSlice
 	}
@@ -565,7 +579,8 @@ func (m *managerImpl) generateSingleReportFromWatcherResults(result *watcher.Sca
 		scanConfig:         result.ScanConfig,
 		snapshotID:         snapshot.GetReportId(),
 		notificationMethod: snapshot.GetReportStatus().GetReportNotificationMethod(),
-		failedClusters:     failedClusters,
+		failedClusters:     len(failedClusters),
+		clusterData:        clusterData,
 	}
 	isOnDemand := snapshot.GetReportStatus().GetReportRequestType() == storage.ComplianceOperatorReportStatus_ON_DEMAND
 	if err := m.handleReportScheduled(generateReportReq, isOnDemand); err != nil {

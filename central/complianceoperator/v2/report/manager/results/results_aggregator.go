@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/pkg/errors"
 	benchmarksDS "github.com/stackrox/rox/central/complianceoperator/v2/benchmarks/datastore"
 	checkResults "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	"github.com/stackrox/rox/central/complianceoperator/v2/checkresults/utils"
@@ -16,6 +17,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 const (
@@ -65,16 +67,24 @@ type aggregateResultsFn func(context.Context, string, *[]*report.ResultRow, *che
 func (g *Aggregator) GetReportData(req *report.Request) *report.Results {
 	resultsCSV := make(map[string][]*report.ResultRow)
 	reportResults := &report.Results{}
+	reportResults.ClustersData = make(map[string]*report.ClusterData)
 	for _, clusterID := range req.ClusterIDs {
-		clusterResults, clusterStatus, err := g.getReportDataForCluster(req.Ctx, req.ScanConfigID, clusterID, req.FailedClusters)
+		clusterData, err := g.getClusterData(req.Ctx, req.ScanConfigID, clusterID, req.ClusterData[clusterID])
+		if err != nil {
+			log.Errorf("Data unable to enhance cluster data for cluster %q: %v", clusterID, err)
+			continue
+		}
+		clusterResults, clusterStatus, err := g.getReportDataForCluster(req.Ctx, req.ScanConfigID, clusterID, clusterData)
 		if err != nil {
 			log.Errorf("Data not found for cluster %s", clusterID)
 			continue
 		}
+
 		resultsCSV[clusterID] = clusterResults
 		reportResults.TotalPass += clusterStatus.totalPass
 		reportResults.TotalFail += clusterStatus.totalFail
 		reportResults.TotalMixed += clusterStatus.totalMixed
+		reportResults.ClustersData[clusterID] = clusterData
 	}
 	reportResults.Clusters = len(req.ClusterIDs)
 	reportResults.Profiles = req.Profiles
@@ -82,19 +92,71 @@ func (g *Aggregator) GetReportData(req *report.Request) *report.Results {
 	return reportResults
 }
 
-func (g *Aggregator) getReportDataForCluster(ctx context.Context, scanConfigID, clusterID string, failedClusters map[string]*storage.ComplianceOperatorReportSnapshotV2_FailedCluster) ([]*report.ResultRow, *checkStatus, error) {
+func (g *Aggregator) getClusterData(ctx context.Context, scanConfigID, clusterID string, clusterData *report.ClusterData) (*report.ClusterData, error) {
+	if clusterData == nil {
+		return nil, errors.Errorf("cluster data for cluster %q is nil", clusterID)
+	}
+
+	scanNamesToProfileNames, err := g.scanDS.GetProfilesScanNamesByScanConfigAndCluster(ctx, scanConfigID, clusterID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "unable to retrieve profiles associated with the ScanConfiguration %q in the cluster %q", scanConfigID, clusterID)
+	}
+	var profileNames []string
+	var scanNames []string
+	for scanName, profileName := range scanNamesToProfileNames {
+		profileNames = append(profileNames, profileName)
+		scanNames = append(scanNames, scanName)
+	}
+	clusterData.Profiles = profileNames
+	clusterData.Scans = scanNames
+	if clusterData.FailedInfo != nil {
+		clusterData.FailedInfo, err = g.getFailedClusterData(ctx, clusterData.FailedInfo, scanConfigID, clusterID)
+		if err != nil {
+			return nil, errors.Wrapf(err, "unable to retrieve profiles associated the cluster %q", clusterData.ClusterId)
+		}
+	}
+	return clusterData, nil
+}
+
+func (g *Aggregator) getFailedClusterData(ctx context.Context, failedCluster *report.FailedCluster, scanConfigID, clusterID string) (*report.FailedCluster, error) {
+	var profileRefIDs []string
+	for _, scan := range failedCluster.Scans {
+		profileRefIDs = append(profileRefIDs, scan.GetProfile().GetProfileRefId())
+	}
+	scanNameToProfileName, err := g.scanDS.GetProfileScanNamesByScanConfigClusterAndProfileRef(ctx, scanConfigID, clusterID, profileRefIDs)
+	if err != nil {
+		return nil, err
+	}
+	var profileNames []string
+	for _, scan := range failedCluster.Scans {
+		if profileName, ok := scanNameToProfileName[scan.GetScanName()]; ok {
+			profileNames = append(profileNames, profileName)
+		}
+	}
+	failedCluster.Profiles = profileNames
+	return failedCluster, nil
+}
+
+func (g *Aggregator) getReportDataForCluster(ctx context.Context, scanConfigID, clusterID string, clusterData *report.ClusterData) ([]*report.ResultRow, *checkStatus, error) {
 	var ret []*report.ResultRow
 	statuses := &checkStatus{
 		totalPass:  0,
 		totalFail:  0,
 		totalMixed: 0,
 	}
-	// If the cluster is in the failedClusters map, we do not retrieve the data
-	if _, ok := failedClusters[clusterID]; ok {
-		return ret, statuses, nil
+	scans := clusterData.Scans
+	if clusterData.FailedInfo != nil {
+		allScansSet := set.NewStringSet(scans...)
+		failedScansSet := set.NewStringSet()
+		for _, scan := range clusterData.FailedInfo.Scans {
+			failedScansSet.Add(scan.GetScanName())
+		}
+		scans = allScansSet.Difference(failedScansSet).AsSlice()
 	}
-	scanConfigQuery := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanConfig, scanConfigID).
+	scanConfigQuery := search.NewQueryBuilder().
+		AddExactMatches(search.ComplianceOperatorScanConfig, scanConfigID).
 		AddExactMatches(search.ClusterID, clusterID).
+		AddExactMatches(search.ComplianceOperatorScanName, scans...).
 		ProtoQuery()
 	err := g.checkResultsDS.WalkByQuery(ctx, scanConfigQuery, g.aggreateResults(ctx, clusterID, &ret, statuses))
 	return ret, statuses, err
