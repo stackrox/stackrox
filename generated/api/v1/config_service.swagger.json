@@ -187,7 +187,7 @@
         }
       }
     },
-    "LabelExpressionsExpressions": {
+    "MetricLabelsExpressions": {
       "type": "object",
       "properties": {
         "expression": {
@@ -210,13 +210,13 @@
         }
       }
     },
-    "PrometheusMetricsConfigLabelExpressions": {
+    "PrometheusMetricsConfigMetricLabels": {
       "type": "object",
       "properties": {
         "labelExpressions": {
           "type": "object",
           "additionalProperties": {
-            "$ref": "#/definitions/LabelExpressionsExpressions"
+            "$ref": "#/definitions/MetricLabelsExpressions"
           }
         }
       }
@@ -231,7 +231,7 @@
         "metricLabels": {
           "type": "object",
           "additionalProperties": {
-            "$ref": "#/definitions/PrometheusMetricsConfigLabelExpressions"
+            "$ref": "#/definitions/PrometheusMetricsConfigMetricLabels"
           }
         }
       }
