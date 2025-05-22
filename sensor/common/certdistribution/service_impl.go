@@ -106,7 +106,7 @@ func (s *service) verifyToken(ctx context.Context, token string, expectedSubject
 		return errors.Errorf("failed to review authentication token: %s", reviewStatus.Error)
 	}
 	if !reviewStatus.Authenticated {
-		status.Error(codes.Unauthenticated, "token not authenticated")
+		return status.Error(codes.Unauthenticated, "token not authenticated")
 	}
 	if reviewStatus.User.Username != expectedSubject {
 		return errors.Errorf("authorized unexpected user %q", reviewStatus.User.Username)

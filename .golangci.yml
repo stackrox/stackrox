@@ -162,6 +162,7 @@ linters:
         - policy\.NewErr.*
         - retry\.MakeRetryable
         - retry\.WithRetry
+        - status\.Error
         - utils\.Should
   exclusions:
     generated: lax
