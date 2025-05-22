@@ -464,6 +464,11 @@ func Test_secretDispatcher_processDockerConfigEvent(t *testing.T) {
 			action:        central.ResourceAction_CREATE_RESOURCE,
 			wantNumEvents: 0,
 		},
+		"secret containing one correct and one broken auth entry": {
+			secretData:    `{"bad.example.com":{"auth":"nullOp7pZQ=="}, "good.example.com":{"auth":"dXNlcjE6cXdmcGI="}}`,
+			action:        central.ResourceAction_CREATE_RESOURCE,
+			wantNumEvents: 2, // 1 secret + 1 image integration
+		},
 		"bad secret with non-utf in auth (user\\xc5name)": {
 			secretData:    `{"example.com":{"auth":"dXNlcspuYW1lOnBhc3N3b3Jk"}}`,
 			action:        central.ResourceAction_CREATE_RESOURCE,
@@ -472,7 +477,12 @@ func Test_secretDispatcher_processDockerConfigEvent(t *testing.T) {
 		"good secret": {
 			secretData:    `{"auths":{"example.com":{"auth":"dXNlcjE6cXdmcGI="}}}`,
 			action:        central.ResourceAction_CREATE_RESOURCE,
-			wantNumEvents: 2, // secret + image integration
+			wantNumEvents: 2, // 1 secret + 1 image integration
+		},
+		"secret containing two good registries": {
+			secretData:    `{"1.example.com":{"auth":"dXNlcjE6cXdmcGI="}, "2.example.com":{"auth":"dXNlcjE6cXdmcGI="}}`,
+			action:        central.ResourceAction_CREATE_RESOURCE,
+			wantNumEvents: 3, // 1 secret + 2 image integrations
 		},
 	}
 	for name, tt := range tests {

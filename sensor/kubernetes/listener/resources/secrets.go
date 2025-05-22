@@ -261,18 +261,15 @@ func shouldCreateSourcedIntegration(secret *v1.Secret) bool {
 		(env.AutogenerateGlobalPullSecRegistries.BooleanSetting() && openshift.GlobalPullSecret(secret.GetNamespace(), secret.GetName()))
 }
 
-func validateSecret(registryAddr string, dce config.DockerConfigEntry, namespace, secretName string) error {
+func validateSecret(registryAddr string, dce config.DockerConfigEntry) error {
 	if !utf8.ValidString(registryAddr) {
-		return fmt.Errorf("registry address %q contains invalid UTF-8 characters. "+
-			"Correct the contents of secret %s/%s", registryAddr, namespace, secretName)
+		return fmt.Errorf("registry address %q contains invalid UTF-8 characters", registryAddr)
 	}
 	if !utf8.ValidString(dce.Username) {
-		return fmt.Errorf("registry username %q contains invalid UTF-8 characters. "+
-			"Correct the contents of secret %s/%s", registryAddr, namespace, secretName)
+		return fmt.Errorf("registry username %q contains invalid UTF-8 characters", registryAddr)
 	}
 	if !utf8.ValidString(dce.Password) {
-		return fmt.Errorf("registry password located in secret %s/%s contains invalid UTF-8 characters",
-			namespace, secretName)
+		return errors.New("registry password contains invalid UTF-8 characters")
 	}
 	return nil
 }
@@ -307,11 +304,13 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 				registryAddress, secret.GetNamespace(), secret.GetName())
 		}
 
-		if err := validateSecret(registryAddr, dce, secret.GetNamespace(), secret.GetName()); err != nil {
-			log.Warnf("Not adding registry %s from dockerConfig secret: %v", registryAddr, err)
+		if err := validateSecret(registryAddr, dce); err != nil {
+			log.Warnf("Not processing the registry with address %q found in secret %q from namespace %q: %v. ",
+				secret.GetName(), secret.GetNamespace(), registryAddr, err)
 			continue
 		}
-
+		// Only add to registries if the secret data contain credentials with valid UTF-8 characters.
+		// Processing auth data containing non-UTF-8 may lead to GRPC connection crashes during (un)marshaling.
 		registries = append(registries, &storage.ImagePullSecret_Registry{
 			Name:     registryAddr,
 			Username: dce.Username,
