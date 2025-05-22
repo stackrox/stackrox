@@ -248,7 +248,7 @@ func (ts *TLSChallengeSuite) createProxyDeployment(name string, nginxLabels map[
 			},
 		},
 	}
-	if os.Getenv("REMOTE_CLUSTER_ARCH") == "arm64" {
+	if os.Getenv("ARM64_NODESELECTORS") == "true" {
 		if d.Spec.Template.Spec.NodeSelector == nil {
 			d.Spec.Template.Spec.NodeSelector = make(map[string]string)
 		}
