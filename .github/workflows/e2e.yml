@@ -36,14 +36,9 @@ jobs:
       run: ./deploy/k8s/deploy-local.sh
     - name: Install roxctl
       uses: stackrox/roxctl-installer-action@v1
-    - name: Test
+    - name: QA Tests Backend
       env:
         QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
-      run: ./tests/e2e/run.sh
-    - name: Publish Test Report
-      uses: test-summary/action@v2
-      if: always()
-      with:
-        paths: 'junit-reports/report.xml'
+      run: make all -C
 
