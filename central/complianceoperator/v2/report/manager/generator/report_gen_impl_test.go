@@ -101,6 +101,9 @@ func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
 				},
 			},
 		},
+		ClusterData: map[string]*report.ClusterData{
+			"cluster-1": {},
+		},
 	}
 
 	s.Run("GetSnapshots data store error", func() {
@@ -215,13 +218,16 @@ func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
 				return storage.ComplianceOperatorReportStatus_FAILURE == target.GetReportStatus().GetRunState()
 			})).Times(1).Return(errors.New("some error"))
 		req := newFakeRequestWithFailedCluster()
-		req.FailedClusters["cluster-1"] = &storage.ComplianceOperatorReportSnapshotV2_FailedCluster{}
+		req.ClusterData["cluster-1"] = &report.ClusterData{
+			FailedInfo: &report.FailedCluster{},
+		}
+		req.FailedClusters = 2
 		err := s.reportGen.ProcessReportRequest(req)
 		s.Require().Error(err)
 		s.Assert().Contains(err.Error(), errUnableToUpdateSnapshotOnGenerationSuccessStr)
 	})
 
-	s.Run("Fail saving report data (FormatCSVReport returns nil data)", func() {
+	s.Run("Fail saving report data (nil data)", func() {
 		s.snapshotDS.EXPECT().GetSnapshot(gomock.Any(), gomock.Any()).Times(1).
 			Return(&storage.ComplianceOperatorReportSnapshotV2{
 				ReportStatus: &storage.ComplianceOperatorReportStatus{},
@@ -463,9 +469,13 @@ func newFakeRequestWithFailedCluster() *report.Request {
 				},
 			},
 		},
-		FailedClusters: map[string]*storage.ComplianceOperatorReportSnapshotV2_FailedCluster{
-			"cluster-2": {},
+		ClusterData: map[string]*report.ClusterData{
+			"cluster-1": {},
+			"cluster-2": {
+				FailedInfo: &report.FailedCluster{},
+			},
 		},
+		FailedClusters: 1,
 	}
 }
 
