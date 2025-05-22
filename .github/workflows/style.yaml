@@ -44,7 +44,7 @@ jobs:
   misc-checks:
     env:
       ARTIFACT_DIR: junit-reports/
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
     steps:
@@ -82,7 +82,7 @@ jobs:
       run: scripts/ci/jobs/check-image-version.sh
 
   style-check:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
       volumes:
