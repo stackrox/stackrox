@@ -5,15 +5,18 @@ import useRestQuery from 'hooks/useRestQuery';
 import { UseURLPaginationResult } from 'hooks/useURLPagination';
 import { getNetworkBaselineExternalStatus } from 'services/NetworkService';
 import { NetworkBaselineExternalStatusResponse } from 'types/networkBaseline.proto';
+import { SearchFilter } from 'types/search';
 import { getTableUIState } from 'utils/getTableUIState';
 
+import { BaselineStatusType } from '../types/flow.type';
 import { timeWindowToISO } from '../utils/timeWindow';
 
 export function useNetworkBaselineStatus(
     deploymentId: string,
     timeWindow: TimeWindow,
     urlPagination: UseURLPaginationResult,
-    status: 'ANOMALOUS' | 'BASELINE'
+    searchFilter: SearchFilter,
+    status: BaselineStatusType
 ) {
     const { page, perPage } = urlPagination;
 
@@ -23,9 +26,9 @@ export function useNetworkBaselineStatus(
             page,
             perPage,
             sortOption: {},
-            searchFilter: {},
+            searchFilter,
         });
-    }, [deploymentId, page, perPage, timeWindow]);
+    }, [deploymentId, page, perPage, searchFilter, timeWindow]);
 
     const { data, isLoading, error, refetch } = useRestQuery(fetch);
 
@@ -33,7 +36,7 @@ export function useNetworkBaselineStatus(
         isLoading,
         data: status === 'ANOMALOUS' ? data?.anomalous : data?.baseline,
         error,
-        searchFilter: {},
+        searchFilter,
     });
 
     const flows = status === 'ANOMALOUS' ? (data?.anomalous ?? []) : (data?.baseline ?? []);

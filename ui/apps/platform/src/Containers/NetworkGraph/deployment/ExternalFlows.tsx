@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     Alert,
+    Divider,
     DropdownItem,
     ExpandableSection,
     ExpandableSectionToggle,
@@ -13,17 +14,21 @@ import {
 } from '@patternfly/react-core';
 import pluralize from 'pluralize';
 
+import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import { TimeWindow } from 'constants/timeWindows';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import { UseURLPaginationResult } from 'hooks/useURLPagination';
+import { UseUrlSearchReturn } from 'hooks/useURLSearch';
 import { markNetworkBaselineStatuses } from 'services/NetworkService';
 import { NetworkBaselinePeerStatus, PeerStatus } from 'types/networkBaseline.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import FlowsTableHeaderText from '../common/FlowsTableHeaderText';
+import IPMatchFilter from '../common/IPMatchFilter';
 import { FlowBulkDropdown } from '../components/FlowBulkDropdown';
 import { FlowTable } from '../components/FlowTable';
 import { useNetworkBaselineStatus } from '../hooks/useNetworkBaselineStatus';
+import { EXTERNAL_SOURCE_ADDRESS_QUERY } from '../NetworkGraph.constants';
 import { getFlowKey } from '../utils/flowUtils';
 
 type ExternalFlowsProps = {
@@ -31,6 +36,7 @@ type ExternalFlowsProps = {
     timeWindow: TimeWindow;
     anomalousUrlPagination: UseURLPaginationResult;
     baselineUrlPagination: UseURLPaginationResult;
+    urlSearchFiltering: UseUrlSearchReturn;
 };
 
 function ExternalFlows({
@@ -38,17 +44,22 @@ function ExternalFlows({
     timeWindow,
     anomalousUrlPagination,
     baselineUrlPagination,
+    urlSearchFiltering,
 }: ExternalFlowsProps) {
+    const { searchFilter, setSearchFilter } = urlSearchFiltering;
+
     const anomalous = useNetworkBaselineStatus(
         deploymentId,
         timeWindow,
         anomalousUrlPagination,
+        searchFilter,
         'ANOMALOUS'
     );
     const baseline = useNetworkBaselineStatus(
         deploymentId,
         timeWindow,
         baselineUrlPagination,
+        searchFilter,
         'BASELINE'
     );
 
@@ -59,6 +70,14 @@ function ExternalFlows({
     const [isBaselineBulkActionOpen, setIsBaselineBulkActionOpen] = useState(false);
 
     const [networkFlowError, setNetworkFlowError] = useState('');
+
+    const { setPage: setPageAnomalous } = anomalousUrlPagination;
+    const { setPage: setPageBaseline } = baselineUrlPagination;
+
+    useEffect(() => {
+        setPageAnomalous(1);
+        setPageBaseline(1);
+    }, [setPageAnomalous, setPageBaseline, searchFilter]);
 
     const { isOpen: isAnomalousFlowsExpanded, onToggle: toggleAnomalousFlowsExpandable } =
         useSelectToggle(true);
@@ -167,7 +186,32 @@ function ExternalFlows({
                 </StackItem>
             )}
             <StackItem>
-                <Toolbar className="pf-v5-u-p-0">
+                <Toolbar className="pf-v5-u-pb-md pf-v5-u-pt-0">
+                    <ToolbarContent className="pf-v5-u-px-0">
+                        <ToolbarItem className="pf-v5-u-w-100 pf-v5-u-mr-0">
+                            <IPMatchFilter
+                                searchFilter={searchFilter}
+                                setSearchFilter={setSearchFilter}
+                            />
+                        </ToolbarItem>
+                        <ToolbarItem className="pf-v5-u-w-100">
+                            <SearchFilterChips
+                                searchFilter={searchFilter}
+                                onFilterChange={setSearchFilter}
+                                filterChipGroupDescriptors={[
+                                    {
+                                        displayName: 'CIDR',
+                                        searchFilterName: EXTERNAL_SOURCE_ADDRESS_QUERY,
+                                    },
+                                ]}
+                            />
+                        </ToolbarItem>
+                    </ToolbarContent>
+                </Toolbar>
+            </StackItem>
+            <Divider />
+            <StackItem>
+                <Toolbar className="pf-v5-u-pt-md">
                     <ToolbarContent className="pf-v5-u-px-0">
                         <ToolbarItem>
                             <FlowsTableHeaderText
@@ -212,9 +256,10 @@ function ExternalFlows({
                             <FlowTable
                                 pagination={anomalous.urlPagination}
                                 flowCount={totalAnomalous}
-                                emptyStateMessage="No anomalous flows."
+                                statusType="ANOMALOUS"
                                 tableState={anomalous.tableState}
-                                selectedPageAll={areAllPageAnomalousSelected}
+                                areAllRowsSelected={areAllPageAnomalousSelected}
+                                urlSearchFiltering={urlSearchFiltering}
                                 onSelectAll={selectAllAnomalousFlows}
                                 isFlowSelected={isFlowSelected}
                                 onRowSelect={onSelectFlow}
@@ -260,9 +305,10 @@ function ExternalFlows({
                             <FlowTable
                                 pagination={baseline.urlPagination}
                                 flowCount={totalBaseline}
-                                emptyStateMessage="No baseline flows."
+                                statusType="BASELINE"
                                 tableState={baseline.tableState}
-                                selectedPageAll={areAllPageBaselineSelected}
+                                areAllRowsSelected={areAllPageBaselineSelected}
+                                urlSearchFiltering={urlSearchFiltering}
                                 onSelectAll={selectAllBaselineFlows}
                                 isFlowSelected={isFlowSelected}
                                 onRowSelect={onSelectFlow}

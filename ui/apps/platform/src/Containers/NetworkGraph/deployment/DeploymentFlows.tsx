@@ -113,6 +113,7 @@ function DeploymentFlows({
                                 timeWindow={timeWindow}
                                 anomalousUrlPagination={anomalousUrlPagination}
                                 baselineUrlPagination={baselineUrlPagination}
+                                urlSearchFiltering={urlSearchFiltering}
                             />
                         )}
                     </Stack>
