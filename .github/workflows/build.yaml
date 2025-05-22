@@ -772,7 +772,7 @@ jobs:
       #     category: ${{ matrix.image }}
       #     sarif_file: results.sarif
 
-  e2e-sensor:
+  sensor-integration-tests:
     env:
       KUBECONFIG: "/tmp/kubeconfig"
     runs-on: ubuntu-latest
@@ -794,13 +794,9 @@ jobs:
       uses: helm/kind-action@v1
       with:
         kubeconfig: "${{ env.KUBECONFIG }}"
-    - name: Install
-      env:
-        SENSOR_HELM_DEPLOY: "true"
-      run: ./deploy/k8s/deploy-local.sh
     - name: Install roxctl
       uses: stackrox/roxctl-installer-action@v1
-    - name: Test
+    - name: Run sensor integration tests
       env:
         QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
@@ -832,7 +828,7 @@ jobs:
       - build-and-push-operator
       - scan-images-with-roxctl
       - scan-go-binaries
-      - e2e-sensor
+      - sensor-integration-tests
     permissions:
       actions: read
     steps:
