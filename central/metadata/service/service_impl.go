@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/base64"
 
 	cTLS "github.com/google/certificate-transparency-go/tls"
@@ -24,6 +25,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/version"
 	"google.golang.org/grpc"
 )
@@ -45,6 +47,10 @@ var (
 			v1.MetadataService_TLSChallenge_FullMethodName,
 		},
 	})
+
+	secondaryCALeafCertOnce sync.Once
+	secondaryCALeafCert     tls.Certificate
+	secondaryCALeafCertErr  error
 )
 
 // Service is the struct that manages the Metadata API
@@ -125,7 +131,9 @@ func (s *serviceImpl) TLSChallenge(_ context.Context, req *v1.TLSChallengeReques
 		return nil, errors.Errorf("reading additional CAs: %s", err)
 	}
 
-	// Add secondary CA cert to additional CAs, if it exists.
+	// CA rotation: we don't know which CA Sensor currently trusts, let's add both the primary and (optionally)
+	// secondary CA to the additional CAs, to make sure that Sensor trusts Central
+	additionalCAs = append(additionalCAs, caCertDERBytes)
 	_, secondaryCACertDERBytes, err := mtls.SecondaryCACert()
 	if err == nil {
 		additionalCAs = append(additionalCAs, secondaryCACertDERBytes)
@@ -150,6 +158,16 @@ func (s *serviceImpl) TLSChallenge(_ context.Context, req *v1.TLSChallengeReques
 		},
 		AdditionalCas: additionalCAs,
 	}
+
+	// if a secondary CA exists, add its chain to TrustInfor
+	secondaryLeafCert, secondaryLeafCertErr := GetLeafCertFromSecondaryCA()
+	if secondaryLeafCertErr == nil {
+		trustInfo.SecondaryCertChain = [][]byte{
+			secondaryLeafCert.Certificate[0],
+			secondaryCACertDERBytes,
+		}
+	}
+
 	trustInfoBytes, err := trustInfo.MarshalVT()
 	if err != nil {
 		return nil, errors.Errorf("Could not marshal trust info: %s", err)
@@ -166,7 +184,47 @@ func (s *serviceImpl) TLSChallenge(_ context.Context, req *v1.TLSChallengeReques
 		TrustInfoSerialized: trustInfoBytes,
 	}
 
+	// Optionally also sign with the secondary CA
+	if secondaryLeafCertErr == nil {
+		secondarySign, err := cTLS.CreateSignature(cryptoutils.DerefPrivateKey(secondaryLeafCert.PrivateKey), cTLS.SHA256, trustInfoBytes)
+		if err != nil {
+			log.Warnf("Failed to create secondary signature (primary signature will still be used): %v", err)
+		} else {
+			resp.SignatureSecondaryCa = secondarySign.Signature
+		}
+	}
+
 	return resp, nil
+}
+
+// GetLeafCertFromSecondaryCA returns a temporary leaf certificate issued by the secondary CA. It's generated once and cached.
+func GetLeafCertFromSecondaryCA() (leafKeyPair tls.Certificate, err error) {
+	secondaryCALeafCertOnce.Do(func() {
+		secondaryCA, err := mtls.SecondaryCAForSigning()
+		if err != nil {
+			secondaryCALeafCertErr = errors.Wrap(err, "failed to load secondary CA for signing")
+			return
+		}
+
+		issuedCert, issueErr := secondaryCA.IssueCertForSubject(mtls.CentralSubject)
+		if issueErr != nil {
+			secondaryCALeafCertErr = errors.Wrap(issueErr, "failed to issue leaf certificate from secondary CA")
+			return
+		}
+
+		leafCert, err := tls.X509KeyPair(issuedCert.CertPEM, issuedCert.KeyPEM)
+		if err != nil {
+			secondaryCALeafCertErr = errors.Wrap(err, "failed to load X509 key pair for temporary leaf cert from secondary CA")
+			return
+		}
+		secondaryCALeafCert = leafCert
+	})
+
+	if secondaryCALeafCertErr != nil {
+		return tls.Certificate{}, secondaryCALeafCertErr
+	}
+
+	return secondaryCALeafCert, nil
 }
 
 // GetDatabaseStatus returns the database status for Rox.
