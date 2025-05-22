@@ -2,8 +2,13 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
+	"io"
 	"log"
+	"net/http"
+	"os"
+	"strconv"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -11,16 +16,58 @@ import (
 	pkgauthn "github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/scannerv4/client"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/scanner/cmd/scannerctl/authn"
 	"github.com/stackrox/rox/scanner/cmd/scannerctl/fixtures"
 	"github.com/stackrox/rox/scanner/indexer"
 )
 
-var scanTimeout = env.ScanTimeout.DurationSetting()
+var (
+	scanTimeout = env.ScanTimeout.DurationSetting()
+
+	TestTimeMillis = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Name:    "scannerctl_scale_test_time_millis",
+		Help:    "Time to execute one test case",
+		Buckets: prometheus.ExponentialBuckets(1000, 1.6, 13),
+	}, []string{"worker_id", "total_workers", "total_images", "error"})
+
+	IndexDurationMillis = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Name:    "scannerctl_scale_index_duration_millis",
+		Help:    "Time to perform indexing per image",
+		Buckets: prometheus.ExponentialBuckets(1000, 1.6, 13),
+	}, []string{"worker_id", "total_workers", "total_images", "error"})
+
+	MatchDurationMillis = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Name:    "scannerctl_scale_match_duration_millis",
+		Help:    "Time to perform matching per image",
+		Buckets: prometheus.ExponentialBuckets(1000, 1.6, 13),
+	}, []string{"worker_id", "total_workers", "total_images", "error"})
+
+	RegistryLatencyMillis = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Name:    "scannerctl_scale_registry_duration_millis",
+		Help:    "Time to contacting registries",
+		Buckets: prometheus.ExponentialBuckets(1000, 1.6, 13),
+	}, []string{"worker_id", "total_workers", "total_images", "error"})
+
+	ImageSizeHistogram = prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name:    "scannerctl_scale_image_size_bytes",
+			Help:    "Histogram of registry image sizes in bytes",
+			Buckets: prometheus.ExponentialBuckets(10*1024*1024, 2, 10), // 10MB to ~5GB
+		},
+		[]string{"repository"},
+	)
+)
 
 // scaleStats specifies the stats we want to track when performing scale tests.
 type scaleStats struct {
@@ -51,6 +98,7 @@ func scaleCmd(ctx context.Context) *cobra.Command {
 		Use:   "scale [OPTIONS]",
 		Short: "Perform scale tests via querying for the first N images in the given repository.",
 	}
+
 	flags := cmd.PersistentFlags()
 	basicAuth := flags.String(
 		"auth",
@@ -73,7 +121,20 @@ func scaleCmd(ctx context.Context) *cobra.Command {
 		"index-only",
 		false,
 		"Only index the specified image")
+	pprofDir := flags.String(
+		"pprof-dir",
+		"pprof",
+		"Directory to save pprof data captured from the indexer and matcher")
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
+		flags.VisitAll(func(f *pflag.Flag) {
+			log.Printf("%s=%s", f.Name, f.Value.String())
+		})
+
+		go func() {
+			http.Handle("/metrics", promhttp.Handler())
+			log.Fatal(http.ListenAndServe(":9090", nil))
+		}()
+
 		// Extract basic auth username and password.
 		auth, err := authn.ParseBasic(*basicAuth)
 		if err != nil {
@@ -106,6 +167,32 @@ func scaleCmd(ctx context.Context) *cobra.Command {
 			close(refsC)
 		}()
 
+		indexerAddr, err := cmd.Flags().GetString("indexer-address")
+		if err != nil {
+			log.Fatalf("getting indexer-address: %v", err)
+		}
+
+		matcherAddr, err := cmd.Flags().GetString("matcher-address")
+		if err != nil {
+			log.Fatalf("getting matcher-address: %v", err)
+		}
+
+		stopC := make(chan struct{}, 1)
+
+		httpClient := &http.Client{
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+			},
+		}
+
+		log.Printf("pprof dir: %s", *pprofDir)
+
+		go profileForever("indexer", strings.Replace(indexerAddr, ":8443", ":9443", 1),
+			httpClient, *pprofDir, stopC)
+
+		go profileForever("matcher", strings.Replace(matcherAddr, ":8443", ":9443", 1),
+			httpClient, *pprofDir, stopC)
+
 		var stats scaleStats
 		var wg sync.WaitGroup
 		for i := 0; i < *workers; i++ {
@@ -113,17 +200,36 @@ func scaleCmd(ctx context.Context) *cobra.Command {
 			go func() {
 				defer wg.Done()
 				for ref := range refsC {
+					start := time.Now()
 					d, err := indexer.GetDigestFromReference(ref, auth)
+
+					RegistryLatencyMillis.
+						WithLabelValues(
+							fmt.Sprintf("%.0f", i),
+							fmt.Sprintf("%d", *workers),
+							fmt.Sprintf("%d", *images),
+							strconv.FormatBool(err != nil)).
+						Observe(float64(time.Since(start).Milliseconds()))
+
 					if err != nil {
 						stats.preFailure.Add(1)
 						log.Printf("could not get digest for image %v: %v", ref, err)
 						continue
 					}
+
+					start = time.Now()
 					err = doWithTimeout(ctx, scanTimeout, func(ctx context.Context) error {
 						log.Printf("indexing image %v", ref)
 						// TODO(ROX-23898): add flag for skipping TLS verification.
 						opt := client.ImageRegistryOpt{InsecureSkipTLSVerify: false}
+						indexStart := time.Now()
 						_, err := scanner.GetOrCreateImageIndex(ctx, d, auth, opt)
+						IndexDurationMillis.WithLabelValues(
+							fmt.Sprintf("%d", i),
+							fmt.Sprintf("%d", *workers),
+							fmt.Sprintf("%d", *images),
+							strconv.FormatBool(err != nil),
+						).Observe(float64(time.Since(indexStart).Milliseconds()))
 						if err != nil {
 							stats.indexFailure.Add(1)
 							return fmt.Errorf("indexing: %w", err)
@@ -139,7 +245,14 @@ func scaleCmd(ctx context.Context) *cobra.Command {
 						// and this method will just verify the index still exists. We don't account for
 						// this verification's potential failures at this time.
 						// TODO(ROX-23898): add flag for skipping TLS verification.
+						matchStart := time.Now()
 						_, err = scanner.IndexAndScanImage(ctx, d, auth, opt)
+						MatchDurationMillis.WithLabelValues(
+							fmt.Sprintf("%d", i),
+							fmt.Sprintf("%d", *workers),
+							fmt.Sprintf("%d", *images),
+							strconv.FormatBool(err != nil),
+						).Observe(float64(time.Since(matchStart).Milliseconds()))
 						if err != nil {
 							stats.matchFailure.Add(1)
 							return fmt.Errorf("matching: %w", err)
@@ -148,6 +261,15 @@ func scaleCmd(ctx context.Context) *cobra.Command {
 
 						return nil
 					})
+
+					TestTimeMillis.
+						// "worker_id", "total_workers", "total_images", "error"
+						WithLabelValues(fmt.Sprintf("%d", i),
+							fmt.Sprintf("%d", *workers),
+							fmt.Sprintf("%d", len(refs)),
+							strconv.FormatBool(err != nil)).
+						Observe(float64(time.Since(start).Milliseconds()))
+
 					if err != nil {
 						log.Printf("error scanning image %v: %v", ref, err)
 					}
@@ -156,6 +278,9 @@ func scaleCmd(ctx context.Context) *cobra.Command {
 		}
 
 		wg.Wait()
+
+		// Signal the profiler to terminate.
+		stopC <- struct{}{}
 
 		log.Printf("scale tests complete: %v", &stats)
 
@@ -192,6 +317,15 @@ ListTags:
 				return nil, err
 			}
 
+			desc, err := remote.Head(ref, remote.WithAuth(auth))
+			if err != nil {
+				return nil, fmt.Errorf("getting descriptor: %w", err)
+			}
+			log.Printf("tag: %s, size: %f bytes\n", ref.Identifier(), desc.Size)
+			ImageSizeHistogram.
+				WithLabelValues(repository).
+				Observe(float64(desc.Size))
+
 			refs = append(refs, ref)
 
 			if len(refs) == cap(refs) {
@@ -207,4 +341,55 @@ func doWithTimeout(ctx context.Context, timeout time.Duration, f func(context.Co
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 	return f(ctx)
+}
+
+// profileForever queries the scanner at the given endpoint with the given client
+// and saves the contents in the given directory.
+// The stopC channel signals the profiler should terminate gracefully.
+//
+// This function writes to the stopC channel to indicate when it has terminated gracefully.
+func profileForever(service, endpoint string, cli *http.Client, dir string, stopC chan struct{}) {
+	heapReq, heapErr := http.NewRequest(http.MethodGet, fmt.Sprintf("https://%s/debug/heap", endpoint), nil)
+	cpuReq, cpuErr := http.NewRequest(http.MethodGet, fmt.Sprintf("https://%s/debug/pprof/profile", endpoint), nil)
+	goroutineReq, goroutineErr := http.NewRequest(http.MethodGet, fmt.Sprintf("https://%s/debug/goroutine", endpoint), nil)
+	utils.CrashOnError(heapErr, cpuErr, goroutineErr)
+
+	// Representation of: Mon Jan 2 15:04:05 -0700 MST 2006
+	layout := "2006-01-02-15-04-05"
+	for {
+		select {
+		case <-stopC:
+			stopC <- struct{}{}
+			return
+		default:
+		}
+
+		heapResp, heapErr := cli.Do(heapReq)
+		cpuResp, cpuErr := cli.Do(cpuReq)
+		goroutineResp, goroutineErr := cli.Do(goroutineReq)
+		if heapErr != nil || cpuErr != nil || goroutineErr != nil {
+			errors := errorhelpers.NewErrorListWithErrors(
+				fmt.Sprintf("retrieving %s profiles", service),
+				[]error{heapErr, cpuErr, goroutineErr})
+			logrus.Fatalf("unable to get profile(s) from %s: %v",
+				service, errors.ToError())
+		}
+
+		now := time.Now()
+		heapF, heapErr := os.Create(fmt.Sprintf("%s/%s.heap_%s.tar.gz", dir, service, now.Format(layout)))
+		cpuF, cpuErr := os.Create(fmt.Sprintf("%s/%s.cpu_%s.tar.gz", dir, service, now.Format(layout)))
+		goroutineF, goroutineErr := os.Create(fmt.Sprintf("%s/%s.goroutine_%s.tar.gz", dir, service, now.Format(layout)))
+		utils.CrashOnError(heapErr, cpuErr, goroutineErr)
+
+		_, heapErr = io.Copy(heapF, heapResp.Body)
+		_, cpuErr = io.Copy(cpuF, cpuResp.Body)
+		_, goroutineErr = io.Copy(goroutineF, goroutineResp.Body)
+		utils.CrashOnError(heapErr, cpuErr, goroutineErr)
+
+		utils.IgnoreError(heapF.Close)
+		utils.IgnoreError(cpuF.Close)
+		utils.IgnoreError(goroutineF.Close)
+
+		time.Sleep(30 * time.Second)
+	}
 }
