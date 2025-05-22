@@ -22,7 +22,7 @@ on:
 jobs:
   parse-versions:
     if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-vulns')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     outputs:
       versions: ${{ steps.set-versions.outputs.versions }}
     steps:
@@ -41,7 +41,7 @@ jobs:
 
   prepare-environment:
     if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-vulns')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     outputs:
       manual_url: ${{ steps.set-manual-url.outputs.manual_url }}
     steps:
@@ -106,7 +106,7 @@ jobs:
     needs:
     - parse-versions
     - prepare-environment
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     container:
       image: quay.io/stackrox-io/apollo-ci:scanner-test-0.4.8
       volumes:
@@ -181,7 +181,7 @@ jobs:
     if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-vulns')
     needs:
     - prepare-environment
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     container:
       image: quay.io/stackrox-io/apollo-ci:scanner-test-0.4.8
       volumes:
@@ -261,7 +261,7 @@ jobs:
     needs:
     - build-and-run
     if: ${{ (failure() || success()) && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
     # Checkout to run ./.github/actions/download-artifact-with-retry
     - uses: actions/checkout@v4
@@ -337,7 +337,7 @@ jobs:
     needs:
     - build-and-run
     - upload-definitions
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     if: ${{ failure() && github.ref_name == 'master' }}
     steps:
     - name: Send Slack notification on workflow failure

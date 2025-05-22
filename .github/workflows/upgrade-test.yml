@@ -40,7 +40,7 @@ concurrency: Release automation ${{ inputs.milestone }}
 jobs:
   properties:
     name: Read repository properties
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     outputs:
       slack-channel: ${{ fromJSON(format('["{0}","{1}"]', steps.properties.outputs.dry-slack-channel, steps.properties.outputs.slack-channel))[inputs.dry-run != 'true'] }}
     steps:
@@ -52,7 +52,7 @@ jobs:
 
   run-parameters:
     name: Run parameters
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - run: |
           [ "$DRY_RUN" = "true" ] && echo "::warning::This is a dry run"
@@ -66,7 +66,7 @@ jobs:
   create-clusters:
     needs: [properties]
     if: github.event.inputs.dry-run != 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
         name: [test1, test2]
@@ -83,7 +83,7 @@ jobs:
 
   prepare-clusters:
     needs: [properties, create-clusters]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Check out code
         uses: actions/checkout@v4
@@ -136,7 +136,7 @@ jobs:
     name: Notify about failed cluster creation
     needs: [properties, prepare-clusters]
     if: always() && needs.prepare-clusters.result == 'failure'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Post to Slack
         uses: slackapi/slack-github-action@v2.1.0

@@ -23,7 +23,7 @@ jobs:
   define-scanner-job-matrix:
     outputs:
       matrix: ${{ steps.define-scanner-job-matrix.outputs.matrix }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -72,7 +72,7 @@ jobs:
 
   pre-build-scanner-go-binary:
     needs: define-scanner-job-matrix
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     strategy:
       # Supports three go binary builds:
       # default              - built with environment defaults (see handle-tagged-build & env.mk)
@@ -135,7 +135,7 @@ jobs:
 
   scan-scanner-go-binary:
     needs: pre-build-scanner-go-binary
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     container:
       image: quay.io/stackrox-io/apollo-ci:scanner-test-0.4.8
     if: contains(github.event.pull_request.labels.*.name, 'scan-go-binaries')
@@ -182,7 +182,7 @@ jobs:
     needs:
     - define-scanner-job-matrix
     - pre-build-scanner-go-binary
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       # Supports three go binary and image builds:
@@ -254,7 +254,7 @@ jobs:
     needs:
     - define-scanner-job-matrix
     - build-and-push-scanner
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       # Supports three image builds:
@@ -317,7 +317,7 @@ jobs:
     - build-and-push-scanner
     - push-scanner-manifests
     name: Check images for vulnerabilities
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     permissions:
       # Needed for stackrox/central-login to create the JWT token.
       id-token: write

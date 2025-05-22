@@ -12,7 +12,7 @@ on:
 
 jobs:
   fetch-nvd-feeds:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     if: >
       github.event_name == 'schedule' ||
       github.event_name == 'workflow_dispatch' ||
@@ -53,7 +53,7 @@ jobs:
         if-no-files-found: error
 
   fetch-nvd-api:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     if: >
       github.event_name == 'schedule' ||
       github.event_name == 'workflow_dispatch' ||
@@ -96,7 +96,7 @@ jobs:
   upload-nvd-feeds:
     needs:
     - fetch-nvd-feeds
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     if: github.event_name != 'pull_request'
     steps:
     - name: Checkout repository
@@ -125,7 +125,7 @@ jobs:
   upload-nvd-api:
     needs:
     - fetch-nvd-api
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     if: github.event_name != 'pull_request'
     steps:
     - name: Checkout repository
@@ -155,7 +155,7 @@ jobs:
     needs:
       - upload-nvd-feeds
       - upload-nvd-api
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     if: failure()
     steps:
     - name: Send Slack notification on workflow failure

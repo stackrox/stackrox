@@ -32,7 +32,7 @@ concurrency: Release automation ${{ inputs.version }}
 jobs:
   run-parameters:
     name: Run parameters
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - run: |
           {
@@ -52,7 +52,7 @@ jobs:
 
   properties:
     name: Read repository properties
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     outputs:
       jira-project: ${{ steps.properties.outputs.jira-project }}
     steps:
@@ -64,7 +64,7 @@ jobs:
 
   verify-release:
     name: Verify all artifacts for release ${{ needs.variables.outputs.named-release-patch }} are published
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: [variables, properties]
     env:
       JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}

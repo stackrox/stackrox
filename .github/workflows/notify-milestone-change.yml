@@ -11,7 +11,7 @@ env:
 jobs:
   properties:
     name: Read repository properties
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     outputs:
       docs-repository: ${{ steps.properties.outputs.docs-repository }}
       slack-channel: ${{ fromJSON(format('["{0}","{1}"]', steps.properties.outputs.dry-slack-channel, steps.properties.outputs.slack-channel))[github.repository == 'stackrox/stackrox'] }}
@@ -24,7 +24,7 @@ jobs:
         run: gh api -H "$ACCEPT_RAW" "$PROPERTIES_URL" >> "$GITHUB_OUTPUT"
 
   notify:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: [properties]
     steps:
       - name: Determine Jira context for PR

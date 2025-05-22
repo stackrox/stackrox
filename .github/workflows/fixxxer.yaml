@@ -12,7 +12,7 @@ jobs:
     name: Run PR Fixxxer
     # TODO: support leading and trailing whitespace too
     if: ${{ github.event.issue.pull_request && github.event.comment.body == '/fixxx' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
     steps:

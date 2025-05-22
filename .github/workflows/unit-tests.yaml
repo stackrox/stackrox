@@ -17,7 +17,7 @@ jobs:
       fail-fast: false
       matrix:
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
@@ -88,7 +88,7 @@ jobs:
       matrix:
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
         pg: [ '13', '15' ]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
@@ -150,7 +150,7 @@ jobs:
         directory: 'junit-reports'
 
   go-bench:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
       volumes:  # job-preamble deletes unused host runner files under /mnt
@@ -198,7 +198,7 @@ jobs:
     # https://github.com/jstemmer/go-junit-report/issues/174
 
   ui:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
@@ -237,7 +237,7 @@ jobs:
         directory: 'ui/apps/platform/test-results/reports'
 
   ui-component:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
@@ -283,7 +283,7 @@ jobs:
         directory: 'ui/apps/platform/cypress/test-results/reports'
 
   local-roxctl-tests:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
@@ -327,7 +327,7 @@ jobs:
         directory: 'roxctl-test-output'
 
   shell-unit-tests:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
@@ -366,7 +366,7 @@ jobs:
         directory: 'shell-test-output'
 
   openshift-ci-unit-tests:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
       volumes:  # job-preamble deletes unused host runner files under /mnt
@@ -397,7 +397,7 @@ jobs:
           contains(github.event.pull_request.labels.*.name, 'ci-test-github-action-slack-messages')
       )
     name: Post failure message to Slack
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs:
       - go
       - go-bench

@@ -13,7 +13,7 @@ run-name: ${{ format('Check image vulnerabilities for {0}', inputs.version) }}
 jobs:
   run-parameters:
     name: Run parameters
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - run: |
           {
@@ -27,7 +27,7 @@ jobs:
 
   check-image-vulnerabilities:
     name: Check ${{ matrix.image }}:${{ inputs.version }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     permissions:
       # Needed for stackrox/central-login to create the JWT token.
       id-token: write
