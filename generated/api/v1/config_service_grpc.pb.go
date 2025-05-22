@@ -45,6 +45,7 @@ type ConfigServiceClient interface {
 	UpdatePlatformComponentConfig(ctx context.Context, in *PutPlatformComponentConfigRequest, opts ...grpc.CallOption) (*storage.PlatformComponentConfig, error)
 	GetConfig(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*storage.Config, error)
 	PutConfig(ctx context.Context, in *PutConfigRequest, opts ...grpc.CallOption) (*storage.Config, error)
+	// GetDefaultRedHatLayeredProductsRegex returns a static string containing the default Red Hat Layered Products regex.
 	GetDefaultRedHatLayeredProductsRegex(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetDefaultRedHatLayeredProductsRegexResponse, error)
 }
 
@@ -160,6 +161,7 @@ type ConfigServiceServer interface {
 	UpdatePlatformComponentConfig(context.Context, *PutPlatformComponentConfigRequest) (*storage.PlatformComponentConfig, error)
 	GetConfig(context.Context, *Empty) (*storage.Config, error)
 	PutConfig(context.Context, *PutConfigRequest) (*storage.Config, error)
+	// GetDefaultRedHatLayeredProductsRegex returns a static string containing the default Red Hat Layered Products regex.
 	GetDefaultRedHatLayeredProductsRegex(context.Context, *Empty) (*GetDefaultRedHatLayeredProductsRegexResponse, error)
 }
 

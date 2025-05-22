@@ -122,6 +122,7 @@
     },
     "/v1/config/platformcomponent/rhlp/default": {
       "get": {
+        "summary": "GetDefaultRedHatLayeredProductsRegex returns a static string containing the default Red Hat Layered Products regex.",
         "operationId": "ConfigService_GetDefaultRedHatLayeredProductsRegex",
         "responses": {
           "200": {
