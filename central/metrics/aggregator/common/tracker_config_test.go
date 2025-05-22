@@ -66,7 +66,7 @@ func TestTrackerConfig_Reconfigure(t *testing.T) {
 
 	t.Run("test with initial bad configuration", func(t *testing.T) {
 		tracker := MakeTrackerConfig("test", "test", testLabelGetters, nilGatherFunc, nil)
-		err := tracker.Reconfigure(testRegistry, map[string]*storage.PrometheusMetricsConfig_LabelExpressions{
+		err := tracker.Reconfigure(testRegistry, map[string]*storage.PrometheusMetricsConfig_MetricLabels{
 			" ": nil,
 		}, 11*time.Hour)
 
@@ -85,9 +85,9 @@ func TestTrackerConfig_Reconfigure(t *testing.T) {
 		tracker := MakeTrackerConfig("test", "test", testLabelGetters, nilGatherFunc, nil)
 		assert.NoError(t, tracker.Reconfigure(testRegistry, makeTestMetricLabels(t), 42*time.Hour))
 
-		err := tracker.Reconfigure(testRegistry, map[string]*storage.PrometheusMetricsConfig_LabelExpressions{
+		err := tracker.Reconfigure(testRegistry, map[string]*storage.PrometheusMetricsConfig_MetricLabels{
 			"m1": {
-				LabelExpressions: map[string]*storage.PrometheusMetricsConfig_LabelExpressions_Expressions{
+				LabelExpressions: map[string]*storage.PrometheusMetricsConfig_MetricLabels_Expressions{
 					"label1": nil,
 				},
 			},

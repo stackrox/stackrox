@@ -34,7 +34,7 @@ type Tracker interface {
 	Do(func())
 	GetPeriodCh() chan time.Duration
 	Track(context.Context)
-	Reconfigure(*prometheus.Registry, map[string]*storage.PrometheusMetricsConfig_LabelExpressions, time.Duration) error
+	Reconfigure(*prometheus.Registry, map[string]*storage.PrometheusMetricsConfig_MetricLabels, time.Duration) error
 }
 
 func makeLabelOrderMap[Finding any](getters []LabelGetter[Finding]) map[Label]int {
@@ -75,7 +75,7 @@ func (tc *TrackerConfig[Finding]) GetPeriodCh() chan time.Duration {
 	return tc.periodCh
 }
 
-func (tc *TrackerConfig[Finding]) Reconfigure(registry *prometheus.Registry, cfg map[string]*storage.PrometheusMetricsConfig_LabelExpressions, period time.Duration) error {
+func (tc *TrackerConfig[Finding]) Reconfigure(registry *prometheus.Registry, cfg map[string]*storage.PrometheusMetricsConfig_MetricLabels, period time.Duration) error {
 	mle, err := parseMetricLabels(cfg, tc.labelOrder)
 	if err != nil {
 		return err
