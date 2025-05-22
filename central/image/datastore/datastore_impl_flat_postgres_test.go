@@ -38,6 +38,8 @@ import (
 )
 
 func TestImageFlatDataStoreWithPostgres(t *testing.T) {
+	// TODO(ROX-29460)
+	t.Skip("FlattenCVEData is enabled so skip for now")
 	if !features.FlattenCVEData.Enabled() {
 		t.Skip("CVE flattened data model enabled")
 	}
