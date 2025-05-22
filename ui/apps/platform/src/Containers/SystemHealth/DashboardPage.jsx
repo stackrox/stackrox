@@ -16,6 +16,7 @@ import ImageIntegrationHealthWidget from './Components/ImageIntegrationHealthWid
 import NotifierIntegrationHealthWidget from './Components/NotifierIntegrationHealthWidget';
 import BackupIntegrationHealthWidget from './Components/BackupIntegrationHealthWidget';
 import ShowAdministrationUsage from './UsageStatistics/ShowAdministrationUsage';
+import CentralDatabaseHealthCard from './CentralDatabaseHealth/CentralDatabaseHealthCard';
 
 const SystemHealthDashboardPage = () => {
     const { isCentralCapabilityAvailable } = useCentralCapabilities();
@@ -67,6 +68,9 @@ const SystemHealthDashboardPage = () => {
                     {hasReadAccessForCluster && (
                         <ClustersHealthCards pollingCount={pollingCountFaster} />
                     )}
+                    <GridItem span={12}>
+                        <CentralDatabaseHealthCard />
+                    </GridItem>
                     {hasReadAccessForAdministration && (
                         <GridItem span={12}>
                             <VulnerabilityDefinitionsHealthCard
