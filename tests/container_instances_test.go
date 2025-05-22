@@ -4,6 +4,7 @@ package tests
 
 import (
 	"fmt"
+	"os"
 	"testing"
 	"time"
 
@@ -24,6 +25,13 @@ func TestContainerInstances(testT *testing.T) {
 	// https://stack-rox.atlassian.net/browse/ROX-6493
 	// - the process events expected in this test are not reliably detected.
 	kPod := getPodFromFile(testT, "yamls/multi-container-pod.yaml")
+	if os.Getenv("REMOTE_CLUSTER_ARCH") == "arm64" {
+		if kPod.Spec.NodeSelector == nil {
+			kPod.Spec.NodeSelector = make(map[string]string)
+		}
+		kPod.Spec.NodeSelector["kubernetes.io/arch"] = "arm64"
+	}
+
 	client := createK8sClient(testT)
 	testutils.Retry(testT, 3, 5*time.Second, func(retryT testutils.T) {
 		// Set up testing environment
