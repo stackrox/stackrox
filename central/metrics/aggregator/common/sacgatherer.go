@@ -7,6 +7,7 @@ import (
 	dto "github.com/prometheus/client_model/go"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	"github.com/stackrox/rox/pkg/sac/resources"
 )
 
@@ -57,6 +58,7 @@ func (g *SacGatherer) Check(m *dto.Metric) bool {
 				}
 			}
 			if !clusterAllowed {
+				log.Info("SAC check failed for cluster ", label.GetValue())
 				return false
 			}
 		case "Namespace":
@@ -65,19 +67,32 @@ func (g *SacGatherer) Check(m *dto.Metric) bool {
 			if err != nil {
 				return false
 			}
-			nsAllowed := false
+			nsAllowed := true
+		clusters:
 			for _, cluster := range eas.Clusters {
-				for ns := range cluster.Namespaces {
-					if ns == label.GetValue() {
-						nsAllowed = true
-						break
+				switch cluster.State {
+				case effectiveaccessscope.Included:
+					nsAllowed = true
+					continue
+				case effectiveaccessscope.Excluded:
+					nsAllowed = false
+					break clusters
+				case effectiveaccessscope.Partial:
+					nsAllowed = false
+					for nsName := range cluster.Namespaces {
+						if nsName == label.GetValue() {
+							nsAllowed = true
+							break clusters
+						}
 					}
 				}
 			}
 			if !nsAllowed {
+				log.Info("SAC check failed for namespace ", label.GetValue())
 				return false
 			}
 		}
+		log.Info("SAC check passed for ", label.GetName())
 	}
 	return true
 }
