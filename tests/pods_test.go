@@ -40,7 +40,7 @@ func TestPod(testT *testing.T) {
 	// - the process events expected in this test are not reliably detected.
 
 	kPod := getPodFromFile(testT, "yamls/multi-container-pod.yaml")
-	if os.Getenv("REMOTE_CLUSTER_ARCH") == "arm64" {
+	if os.Getenv("ARM64_NODESELECTORS") == "true" {
 		if kPod.Spec.NodeSelector == nil {
 			kPod.Spec.NodeSelector = make(map[string]string)
 		}
