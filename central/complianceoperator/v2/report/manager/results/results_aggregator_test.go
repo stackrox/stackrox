@@ -15,7 +15,9 @@ import (
 	"github.com/stackrox/rox/central/complianceoperator/v2/rules/datastore"
 	ruleMocks "github.com/stackrox/rox/central/complianceoperator/v2/rules/datastore/mocks"
 	scanMocks "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore/mocks"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -50,10 +52,10 @@ type getReportDataTestCase struct {
 	numFailedChecksPerCluster int
 	numMixedChecksPerCluster  int
 	numFailedClusters         int
-	expectedErr               error
+	expectedWalkByErr         error
 }
 
-func (s *ComplianceResultsAggregatorSuite) Test_GetReportData() {
+func (s *ComplianceResultsAggregatorSuite) Test_GetReportDataResultsGeneration() {
 	cases := map[string]getReportDataTestCase{
 		"generate report data no error": {
 			numClusters:               2,
@@ -71,42 +73,277 @@ func (s *ComplianceResultsAggregatorSuite) Test_GetReportData() {
 			numFailedClusters:         1,
 		},
 		"generate report walk by error": {
-			numClusters: 3,
-			numProfiles: 4,
-			expectedErr: errors.New("error"),
+			numClusters:       3,
+			numProfiles:       4,
+			expectedWalkByErr: errors.New("error"),
 		},
 	}
 	for tname, tcase := range cases {
 		s.Run(tname, func() {
 			ctx := context.Background()
 			req := getRequest(ctx, tcase.numClusters, tcase.numProfiles, tcase.numFailedClusters)
+			s.scanDS.EXPECT().GetProfilesScanNamesByScanConfigAndCluster(gomock.Eq(ctx), scanConfigID, gomock.Cond[string](func(target string) bool {
+				for _, cluster := range req.ClusterData {
+					if target == cluster.ClusterId {
+						return true
+					}
+				}
+				return false
+			})).Times(tcase.numClusters + tcase.numFailedClusters)
+			s.scanDS.EXPECT().GetProfileScanNamesByScanConfigClusterAndProfileRef(gomock.Eq(ctx), scanConfigID, gomock.Cond[string](func(target string) bool {
+				for _, cluster := range req.ClusterData {
+					if cluster.FailedInfo != nil {
+						if target == cluster.ClusterId {
+							return true
+						}
+					}
+				}
+				return false
+			}), gomock.Any()).Times(tcase.numFailedClusters)
 			s.checkResultsDS.EXPECT().WalkByQuery(gomock.Eq(ctx), gomock.Any(), gomock.Any()).
-				Times(tcase.numClusters).
-				DoAndReturn(func(_, _ any, fn checkResultWalkByQuery) error {
-					for i := 0; i < tcase.numPassedChecksPerCluster; i++ {
-						_ = fn(&storage.ComplianceOperatorCheckResultV2{
-							CheckName: fmt.Sprintf("pass-check-%d", i),
-							Status:    storage.ComplianceOperatorCheckResultV2_PASS,
-						})
-					}
-					for i := 0; i < tcase.numFailedChecksPerCluster; i++ {
-						_ = fn(&storage.ComplianceOperatorCheckResultV2{
-							CheckName: fmt.Sprintf("fail-check-%d", i),
-							Status:    storage.ComplianceOperatorCheckResultV2_FAIL,
-						})
-					}
-					for i := 0; i < tcase.numMixedChecksPerCluster; i++ {
-						_ = fn(&storage.ComplianceOperatorCheckResultV2{
-							CheckName: fmt.Sprintf("mixed-check-%d", i),
-							Status:    storage.ComplianceOperatorCheckResultV2_INCONSISTENT,
-						})
-					}
-					return tcase.expectedErr
-				})
+				Times(tcase.numClusters + tcase.numFailedClusters).
+				DoAndReturn(fakeWalkByResponse(
+					req.ClusterData,
+					tcase.expectedWalkByErr,
+					tcase.numPassedChecksPerCluster,
+					tcase.numFailedChecksPerCluster,
+					tcase.numMixedChecksPerCluster))
 			s.aggregator.aggreateResults = mockWalkByQueryWrapper
 			res := s.aggregator.GetReportData(req)
 			assertResults(s.T(), tcase, res)
 		})
+	}
+}
+
+func (s *ComplianceResultsAggregatorSuite) Test_GetReportDataGetClusterDataErrors() {
+	cases := map[string]struct {
+		expectedGetScanToProfileErr     []error
+		expectedGetScanToProfileWithRef []error
+		emptyClusterData                bool
+		numClusters                     int
+		numProfiles                     int
+		numFailedClusters               int
+		numPassedChecksPerCluster       int
+		numFailedChecksPerCluster       int
+		numMixedChecksPerCluster        int
+		expectClusters                  []string
+		expectFailedClusters            map[string]struct{}
+	}{
+		"empty cluster data should generate to empty results": {
+			emptyClusterData:  true,
+			numClusters:       2,
+			numProfiles:       2,
+			numFailedClusters: 1,
+		},
+		"get scan to profile data fails in the first cluster": {
+			expectedGetScanToProfileErr: []error{errors.New("some error"), nil},
+			numClusters:                 2,
+			numProfiles:                 2,
+			numPassedChecksPerCluster:   2,
+			numFailedChecksPerCluster:   2,
+			numMixedChecksPerCluster:    2,
+			expectClusters:              []string{"cluster-1"},
+		},
+		"get scan to profile data fails always": {
+			expectedGetScanToProfileErr: []error{errors.New("some error"), errors.New("some error")},
+			numClusters:                 2,
+			numProfiles:                 2,
+		},
+		"get scan to profile data fails always after the first call": {
+			expectedGetScanToProfileErr: []error{nil, errors.New("some error"), errors.New("some error")},
+			numClusters:                 3,
+			numProfiles:                 2,
+			numPassedChecksPerCluster:   2,
+			numFailedChecksPerCluster:   2,
+			numMixedChecksPerCluster:    2,
+			expectClusters:              []string{"cluster-0"},
+		},
+		"get scan to profile data fails on the failed cluster": {
+			expectedGetScanToProfileErr: []error{nil, nil, errors.New("some error")},
+			numClusters:                 2,
+			numFailedClusters:           1,
+			numProfiles:                 2,
+			numPassedChecksPerCluster:   2,
+			numFailedChecksPerCluster:   2,
+			numMixedChecksPerCluster:    2,
+			expectClusters:              []string{"cluster-0", "cluster-1"},
+		},
+		"get scan to profile data with scan ref fails on the first failed cluster": {
+			expectedGetScanToProfileErr:     []error{nil, nil, nil, nil},
+			expectedGetScanToProfileWithRef: []error{errors.New("some error"), nil},
+			numClusters:                     2,
+			numFailedClusters:               2,
+			numProfiles:                     2,
+			numPassedChecksPerCluster:       2,
+			numFailedChecksPerCluster:       2,
+			numMixedChecksPerCluster:        2,
+			expectClusters:                  []string{"cluster-0", "cluster-1", "cluster-3"},
+			expectFailedClusters: map[string]struct{}{
+				"cluster-3": {},
+			},
+		},
+		"get scan to profile data with scan ref fails always": {
+			expectedGetScanToProfileErr:     []error{nil, nil, nil, nil},
+			expectedGetScanToProfileWithRef: []error{errors.New("some error"), errors.New("some error")},
+			numClusters:                     2,
+			numFailedClusters:               2,
+			numProfiles:                     2,
+			numPassedChecksPerCluster:       2,
+			numFailedChecksPerCluster:       2,
+			numMixedChecksPerCluster:        2,
+			expectClusters:                  []string{"cluster-0", "cluster-1"},
+		},
+		"get scan to profile data with scan ref fails after the first call": {
+			expectedGetScanToProfileErr:     []error{nil, nil, nil, nil, nil},
+			expectedGetScanToProfileWithRef: []error{nil, errors.New("some error"), errors.New("some error")},
+			numClusters:                     2,
+			numFailedClusters:               3,
+			numProfiles:                     2,
+			numPassedChecksPerCluster:       2,
+			numFailedChecksPerCluster:       2,
+			numMixedChecksPerCluster:        2,
+			expectClusters:                  []string{"cluster-0", "cluster-1", "cluster-2"},
+			expectFailedClusters: map[string]struct{}{
+				"cluster-2": {},
+			},
+		},
+	}
+	ctx := context.Background()
+	for tName, tCase := range cases {
+		s.Run(tName, func() {
+			expectWalkByQueryCallsWithFailedCluster := len(tCase.expectFailedClusters)
+			expectClustersWithResults := len(tCase.expectClusters) - expectWalkByQueryCallsWithFailedCluster
+			req := getRequest(ctx, tCase.numClusters, tCase.numProfiles, tCase.numFailedClusters)
+			if tCase.emptyClusterData {
+				req.ClusterData = make(map[string]*report.ClusterData)
+			}
+			scanToProfilesMap := getScanToProfileMap(tCase.numProfiles)
+			var getScanToProfileCalls []any
+			for _, err := range tCase.expectedGetScanToProfileErr {
+				call := s.scanDS.EXPECT().GetProfilesScanNamesByScanConfigAndCluster(gomock.Eq(ctx), scanConfigID, gomock.Cond[string](func(target string) bool {
+					for _, cluster := range req.ClusterData {
+						if target == cluster.ClusterId {
+							return true
+						}
+					}
+					return false
+				})).Times(1).
+					Return(scanToProfilesMap, err)
+
+				getScanToProfileCalls = append(getScanToProfileCalls, call)
+			}
+			if len(getScanToProfileCalls) > 0 {
+				gomock.InOrder(getScanToProfileCalls...)
+			}
+			var getScanToProfileWithRefCalls []any
+			for _, err := range tCase.expectedGetScanToProfileWithRef {
+				call := s.scanDS.EXPECT().GetProfileScanNamesByScanConfigClusterAndProfileRef(gomock.Eq(ctx), scanConfigID, gomock.Cond[string](func(target string) bool {
+					for _, cluster := range req.ClusterData {
+						if target == cluster.ClusterId {
+							return true
+						}
+					}
+					return false
+				}), gomock.Any()).Times(1).
+					Return(scanToProfilesMap, err)
+				getScanToProfileWithRefCalls = append(getScanToProfileWithRefCalls, call)
+			}
+			if len(getScanToProfileWithRefCalls) > 0 {
+				gomock.InOrder(getScanToProfileWithRefCalls...)
+			}
+
+			s.checkResultsDS.EXPECT().WalkByQuery(gomock.Any(), gomock.Any(), gomock.Any()).
+				Times(expectClustersWithResults + expectWalkByQueryCallsWithFailedCluster).
+				DoAndReturn(fakeWalkByResponse(
+					req.ClusterData,
+					nil,
+					tCase.numPassedChecksPerCluster,
+					tCase.numFailedChecksPerCluster,
+					tCase.numMixedChecksPerCluster))
+
+			s.aggregator.aggreateResults = mockWalkByQueryWrapper
+			res := s.aggregator.GetReportData(req)
+			s.Require().NotNil(res)
+			s.Assert().Equal(tCase.numClusters+tCase.numFailedClusters, res.Clusters)
+			s.Assert().Equal(req.Profiles, res.Profiles)
+			s.Assert().Equal(expectClustersWithResults*tCase.numPassedChecksPerCluster, res.TotalPass)
+			s.Assert().Equal(expectClustersWithResults*tCase.numFailedChecksPerCluster, res.TotalFail)
+			s.Assert().Equal(expectClustersWithResults*tCase.numMixedChecksPerCluster, res.TotalMixed)
+			if tCase.emptyClusterData {
+				s.Assert().Len(res.ClustersData, 0)
+				s.Assert().Len(res.ResultCSVs, 0)
+				return
+			}
+			s.Assert().Len(res.ClustersData, expectClustersWithResults+expectWalkByQueryCallsWithFailedCluster)
+			s.Assert().Len(res.ResultCSVs, expectClustersWithResults+expectWalkByQueryCallsWithFailedCluster)
+			for _, clusterID := range tCase.expectClusters {
+				data := res.ClustersData[clusterID]
+				s.Require().NotNil(data)
+				for scan, profile := range scanToProfilesMap {
+					s.Assert().Contains(data.Profiles, profile)
+					s.Assert().Contains(data.Scans, scan)
+				}
+				s.Assert().Equal(clusterID, data.ClusterId)
+				s.Assert().Equal(clusterID, data.ClusterName)
+				if _, ok := tCase.expectFailedClusters[clusterID]; ok {
+					s.Require().NotNil(data.FailedInfo)
+					s.Assert().Equal(clusterID, data.FailedInfo.GetClusterId())
+					s.Assert().Equal(clusterID, data.FailedInfo.GetClusterName())
+					s.Assert().Equal([]string{"timeout"}, data.FailedInfo.GetReasons())
+					s.Assert().Equal("v1.6.0", data.FailedInfo.GetOperatorVersion())
+					for scan, profile := range scanToProfilesMap {
+						s.Assert().Contains(data.FailedInfo.Profiles, profile)
+						scanFound := false
+						for _, storageScan := range data.FailedInfo.Scans {
+							if storageScan.GetScanName() == scan {
+								scanFound = true
+							}
+						}
+						s.Assert().Truef(scanFound, "expected scan %q not found", scan)
+					}
+				}
+			}
+		})
+	}
+}
+
+func fakeWalkByResponse(
+	clusterData map[string]*report.ClusterData,
+	expectedErr error,
+	numPassedChecksPerCluster int,
+	numFailedChecksPerCluster int,
+	numMixedChecksPerCluster int,
+) func(context.Context, *v1.Query, checkResultWalkByQuery) error {
+	return func(_ context.Context, query *v1.Query, fn checkResultWalkByQuery) error {
+		for _, q := range query.GetConjunction().GetQueries() {
+			if q.GetBaseQuery().GetMatchFieldQuery().GetField() == search.ClusterID.String() {
+				val := strings.Trim(q.GetBaseQuery().GetMatchFieldQuery().GetValue(), "\"")
+				if cluster, ok := clusterData[val]; ok {
+					if cluster.FailedInfo != nil {
+						return expectedErr
+					}
+				}
+			}
+		}
+		for i := 0; i < numPassedChecksPerCluster; i++ {
+			_ = fn(&storage.ComplianceOperatorCheckResultV2{
+				CheckName: fmt.Sprintf("pass-check-%d", i),
+				Status:    storage.ComplianceOperatorCheckResultV2_PASS,
+			})
+		}
+		for i := 0; i < numFailedChecksPerCluster; i++ {
+			_ = fn(&storage.ComplianceOperatorCheckResultV2{
+				CheckName: fmt.Sprintf("fail-check-%d", i),
+				Status:    storage.ComplianceOperatorCheckResultV2_FAIL,
+			})
+		}
+		for i := 0; i < numMixedChecksPerCluster; i++ {
+			_ = fn(&storage.ComplianceOperatorCheckResultV2{
+				CheckName: fmt.Sprintf("mixed-check-%d", i),
+				Status:    storage.ComplianceOperatorCheckResultV2_INCONSISTENT,
+			})
+		}
+		return expectedErr
 	}
 }
 
@@ -405,15 +642,44 @@ func getRequest(ctx context.Context, numClusters, numProfiles, numFailedClusters
 		ClusterIDs:   getNames("cluster", numClusters),
 		Profiles:     getNames("profile", numProfiles),
 	}
+	clusterData := make(map[string]*report.ClusterData)
+	for i := 0; i < numClusters+numFailedClusters; i++ {
+		id := fmt.Sprintf("cluster-%d", i)
+		var profileNames []string
+		for j := 0; j < numProfiles; j++ {
+			profileNames = append(profileNames, fmt.Sprintf("profile-%d", j))
+		}
+		clusterData[id] = &report.ClusterData{
+			ClusterId:   id,
+			ClusterName: id,
+			Profiles:    profileNames,
+			Scans:       profileNames,
+		}
+	}
 	if numFailedClusters > 0 {
-		failedClusters := make(map[string]*storage.ComplianceOperatorReportSnapshotV2_FailedCluster)
 		for i := numClusters; i < numFailedClusters+numClusters; i++ {
 			id := fmt.Sprintf("cluster-%d", i)
 			ret.ClusterIDs = append(ret.ClusterIDs, id)
-			failedClusters[id] = &storage.ComplianceOperatorReportSnapshotV2_FailedCluster{}
+			failedInfo := &report.FailedCluster{}
+			failedInfo.ClusterId = id
+			failedInfo.ClusterName = id
+			failedInfo.Profiles = clusterData[id].Profiles
+			failedInfo.Scans = func() []*storage.ComplianceOperatorScanV2 {
+				var scans []*storage.ComplianceOperatorScanV2
+				for _, scanName := range clusterData[id].Scans {
+					scans = append(scans, &storage.ComplianceOperatorScanV2{
+						ScanName: scanName,
+					})
+				}
+				return scans
+			}()
+			failedInfo.Reasons = []string{"timeout"}
+			failedInfo.OperatorVersion = "v1.6.0"
+			clusterData[id].FailedInfo = failedInfo
 		}
-		ret.FailedClusters = failedClusters
+		ret.FailedClusters = numFailedClusters
 	}
+	ret.ClusterData = clusterData
 	return ret
 }
 
@@ -450,7 +716,7 @@ func getRowFromCluster(check, clusterID string) *report.ResultRow {
 func assertResults(t *testing.T, tcase getReportDataTestCase, res *report.Results) {
 	assert.Equal(t, tcase.numClusters+tcase.numFailedClusters, res.Clusters)
 	assert.Equal(t, tcase.numProfiles, len(res.Profiles))
-	if tcase.expectedErr != nil {
+	if tcase.expectedWalkByErr != nil {
 		assert.Equal(t, 0, res.TotalPass)
 		assert.Equal(t, 0, res.TotalFail)
 		assert.Equal(t, 0, res.TotalMixed)
@@ -565,4 +831,13 @@ func assertResult(t *testing.T, tcase walkByQueryTestCase, row *report.ResultRow
 		expControlInfos = append(expControlInfos, fmt.Sprintf("%s %s", c.Standard, c.Control))
 	}
 	assert.Equal(t, strings.Join(expControlInfos, ","), row.ControlRef)
+}
+
+func getScanToProfileMap(numProfiles int) map[string]string {
+	ret := make(map[string]string)
+	for i := 0; i < numProfiles; i++ {
+		name := fmt.Sprintf("profile-%d", i)
+		ret[name] = name
+	}
+	return ret
 }
