@@ -70,6 +70,36 @@ func (mr *MockDataStoreMockRecorder) DeleteScanByCluster(ctx, clusterID any) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteScanByCluster", reflect.TypeOf((*MockDataStore)(nil).DeleteScanByCluster), ctx, clusterID)
 }
 
+// GetProfileScanNamesByScanConfigClusterAndProfileRef mocks base method.
+func (m *MockDataStore) GetProfileScanNamesByScanConfigClusterAndProfileRef(ctx context.Context, scanConfig, clusterID string, profileRefs []string) (map[string]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetProfileScanNamesByScanConfigClusterAndProfileRef", ctx, scanConfig, clusterID, profileRefs)
+	ret0, _ := ret[0].(map[string]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetProfileScanNamesByScanConfigClusterAndProfileRef indicates an expected call of GetProfileScanNamesByScanConfigClusterAndProfileRef.
+func (mr *MockDataStoreMockRecorder) GetProfileScanNamesByScanConfigClusterAndProfileRef(ctx, scanConfig, clusterID, profileRefs any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProfileScanNamesByScanConfigClusterAndProfileRef", reflect.TypeOf((*MockDataStore)(nil).GetProfileScanNamesByScanConfigClusterAndProfileRef), ctx, scanConfig, clusterID, profileRefs)
+}
+
+// GetProfilesScanNamesByScanConfigAndCluster mocks base method.
+func (m *MockDataStore) GetProfilesScanNamesByScanConfigAndCluster(ctx context.Context, scanConfigID, clusterID string) (map[string]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetProfilesScanNamesByScanConfigAndCluster", ctx, scanConfigID, clusterID)
+	ret0, _ := ret[0].(map[string]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetProfilesScanNamesByScanConfigAndCluster indicates an expected call of GetProfilesScanNamesByScanConfigAndCluster.
+func (mr *MockDataStoreMockRecorder) GetProfilesScanNamesByScanConfigAndCluster(ctx, scanConfigID, clusterID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProfilesScanNamesByScanConfigAndCluster", reflect.TypeOf((*MockDataStore)(nil).GetProfilesScanNamesByScanConfigAndCluster), ctx, scanConfigID, clusterID)
+}
+
 // GetScan mocks base method.
 func (m *MockDataStore) GetScan(ctx context.Context, id string) (*storage.ComplianceOperatorScanV2, bool, error) {
 	m.ctrl.T.Helper()

@@ -90,7 +90,7 @@ func (rg *complianceReportGeneratorImpl) ProcessReportRequest(req *report.Reques
 
 	reportData := rg.resultsAggregator.GetReportData(req)
 
-	zipData, err := rg.formatter.FormatCSVReport(reportData.ResultCSVs, req.FailedClusters)
+	zipData, err := rg.formatter.FormatCSVReport(reportData.ResultCSVs, reportData.ClustersData)
 	if err != nil {
 		if dbErr := reportUtils.UpdateSnapshotOnError(req.Ctx, snapshot, report.ErrReportGeneration, rg.snapshotDS); dbErr != nil {
 			return errors.Wrap(dbErr, errUnableToUpdateSnapshotOnGenerationFailureStr)
@@ -100,9 +100,9 @@ func (rg *complianceReportGeneratorImpl) ProcessReportRequest(req *report.Reques
 
 	if snapshot != nil {
 		snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_GENERATED
-		if len(req.FailedClusters) > 0 {
+		if req.FailedClusters > 0 {
 			snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_PARTIAL_ERROR
-			if len(req.FailedClusters) == len(req.ClusterIDs) {
+			if req.FailedClusters == len(req.ClusterIDs) {
 				snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_FAILURE
 			}
 		}
