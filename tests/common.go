@@ -248,7 +248,7 @@ func setupDeploymentNoWait(t *testing.T, image, deploymentName string, replicas 
 	cmd := exec.Command(`kubectl`, `create`, `deployment`, deploymentName, fmt.Sprintf("--image=%s", image), fmt.Sprintf("--replicas=%d", replicas))
 	output, err := cmd.CombinedOutput()
 	require.NoError(t, err, string(output))
-	if os.Getenv("REMOTE_CLUSTER_ARCH") == "arm64" {
+	if os.Getenv("ARM64_NODESELECTORS") == "true" {
 		cmd = exec.Command(`kubectl`, `patch`, `deployment`, deploymentName, `-p`, `{"spec":{"template":{"spec":{"nodeSelector":{"kubernetes.io/arch":"arm64"}}}}}`)
 		output, err = cmd.CombinedOutput()
 		require.NoError(t, err, string(output))

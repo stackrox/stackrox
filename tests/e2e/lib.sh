@@ -194,6 +194,7 @@ export_test_environment() {
 
     ci_export ROX_CENTRAL_EXTRA_HELM_VALUES_FILE "${ROX_CENTRAL_EXTRA_HELM_VALUES_FILE:-}"
     ci_export ROX_SENSOR_EXTRA_HELM_VALUES_FILE "${ROX_SENSOR_EXTRA_HELM_VALUES_FILE:-}"
+    ci_export ARM64_NODESELECTORS "${ARM64_NODESELECTORS:-}"
 
     if is_in_PR_context && pr_has_label ci-fail-fast; then
         ci_export FAIL_FAST "true"
