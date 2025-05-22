@@ -28,10 +28,11 @@ runs:
           /opt/hostedtoolcache/Ruby
         )
         for d in "${cleanup[@]}"; do
-          du -k -d1 "${d%/*}/" | sort -V | tail
           if [[ -d "/mnt${d}" ]]; then
+            du -k -d1 "/mnt${d%/*}/" | sort -V | tail
             rm -rf "/mnt${d}"
           elif [[ -d "$d" ]]; then
+            du -k -d1 "${d%/*}/" | sort -V | tail
             rm -rf "$d" \
               || sudo rm -rf "$d"
           fi
