@@ -1135,6 +1135,7 @@ func (x *VulnerabilityExceptionConfig_ExpiryOptions) GetIndefinite() bool {
 type PrometheusMetricsConfig_MetricLabels struct {
 	state            protoimpl.MessageState                                       `protogen:"open.v1"`
 	LabelExpressions map[string]*PrometheusMetricsConfig_MetricLabels_Expressions `protobuf:"bytes,1,rep,name=label_expressions,json=labelExpressions,proto3" json:"label_expressions,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Role             string                                                       `protobuf:"bytes,2,opt,name=role,proto3" json:"role,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -1174,6 +1175,13 @@ func (x *PrometheusMetricsConfig_MetricLabels) GetLabelExpressions() map[string]
 		return x.LabelExpressions
 	}
 	return nil
+}
+
+func (x *PrometheusMetricsConfig_MetricLabels) GetRole() string {
+	if x != nil {
+		return x.Role
+	}
+	return ""
 }
 
 type PrometheusMetricsConfig_Vulnerabilities struct {
@@ -1411,11 +1419,12 @@ const file_storage_config_proto_rawDesc = "" +
 	"\x17retention_duration_days\x18\x01 \x01(\rR\x15retentionDurationDays\"@\n" +
 	"\tDayOption\x12\x19\n" +
 	"\bnum_days\x18\x01 \x01(\rR\anumDays\x12\x18\n" +
-	"\aenabled\x18\x02 \x01(\bR\aenabled\"\xd7\x06\n" +
+	"\aenabled\x18\x02 \x01(\bR\aenabled\"\xeb\x06\n" +
 	"\x17PrometheusMetricsConfig\x12Z\n" +
-	"\x0fvulnerabilities\x18\x01 \x01(\v20.storage.PrometheusMetricsConfig.VulnerabilitiesR\x0fvulnerabilities\x1a\xbc\x03\n" +
+	"\x0fvulnerabilities\x18\x01 \x01(\v20.storage.PrometheusMetricsConfig.VulnerabilitiesR\x0fvulnerabilities\x1a\xd0\x03\n" +
 	"\fMetricLabels\x12p\n" +
-	"\x11label_expressions\x18\x01 \x03(\v2C.storage.PrometheusMetricsConfig.MetricLabels.LabelExpressionsEntryR\x10labelExpressions\x1a\xb9\x01\n" +
+	"\x11label_expressions\x18\x01 \x03(\v2C.storage.PrometheusMetricsConfig.MetricLabels.LabelExpressionsEntryR\x10labelExpressions\x12\x12\n" +
+	"\x04role\x18\x02 \x01(\tR\x04role\x1a\xb9\x01\n" +
 	"\vExpressions\x12d\n" +
 	"\n" +
 	"expression\x18\x01 \x03(\v2D.storage.PrometheusMetricsConfig.MetricLabels.Expressions.ExpressionR\n" +

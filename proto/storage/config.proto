@@ -134,6 +134,7 @@ message PrometheusMetricsConfig {
       repeated Expression expression = 1;
     }
     map<string, Expressions> label_expressions = 1;
+    string role = 2;
   }
 
   message Vulnerabilities {

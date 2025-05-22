@@ -2,9 +2,11 @@ package aggregator
 
 import (
 	"context"
+	"net/http"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	configDS "github.com/stackrox/rox/central/config/datastore"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/metrics/aggregator/common"
@@ -35,6 +37,7 @@ func Singleton() interface {
 	Start()
 	Stop()
 	Reconfigure(*storage.PrometheusMetricsConfig) error
+	http.Handler
 } {
 	once.Do(func() {
 		runner = &aggregatorRunner{
@@ -107,4 +110,13 @@ func (ar *aggregatorRunner) run(tracker common.Tracker) {
 			}
 		}
 	}
+}
+
+func (ar *aggregatorRunner) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	gatherer, err := common.MakeSacGatherer(r.Context(), Registry)
+	if err != nil {
+		http.Error(w, "Failed to create metrics gatherer: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	promhttp.HandlerFor(gatherer, promhttp.HandlerOpts{}).ServeHTTP(w, r)
 }
