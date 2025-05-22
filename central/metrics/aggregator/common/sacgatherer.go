@@ -55,7 +55,9 @@ func getClusterNamespace(m *dto.Metric) (clusterName string, namespaceName strin
 // Check the metrics labels with SAC.
 func (g *SacGatherer) Check(m *dto.Metric) bool {
 	labelClusterName, labelNamespaceName := getClusterNamespace(m)
+	log.Info("checking ", labelClusterName, "/", labelNamespaceName)
 	if labelClusterName == "" {
+		log.Info("empty cluster name")
 		// Do not allow namespace without cluster.
 		return labelNamespaceName == ""
 	}
@@ -64,40 +66,37 @@ func (g *SacGatherer) Check(m *dto.Metric) bool {
 	if err != nil {
 		return false
 	}
-	switch eas.State {
-	case effectiveaccessscope.Included:
-		return true
-	case effectiveaccessscope.Excluded:
+	log.Info("eas state", eas.State)
+	if eas.State != effectiveaccessscope.Partial {
+		return eas.State == effectiveaccessscope.Included
+	}
+	if len(eas.Clusters) == 0 {
+		log.Info("no clusters in parital eas")
 		return false
-	case effectiveaccessscope.Partial:
-		for clusterName, cluster := range eas.Clusters {
-			if clusterName != labelClusterName {
+	}
+	for clusterName, cluster := range eas.Clusters {
+		log.Info("checking for cluster ", clusterName)
+		if clusterName != labelClusterName {
+			continue
+		}
+		log.Info("cluster ease state", eas.State)
+		if cluster.State != effectiveaccessscope.Partial {
+			return cluster.State == effectiveaccessscope.Included
+		}
+		if labelNamespaceName == "" || len(cluster.Namespaces) == 0 {
+			log.Info("empty namespace or no cluster namespaces in partial eas")
+			return false // false if no namespace? Should be true of no other labels.
+		}
+		for namespaceName, namespace := range cluster.Namespaces {
+			log.Info("checking for namespace ", namespaceName)
+			if namespaceName != labelNamespaceName {
 				continue
 			}
-			switch cluster.State {
-			case effectiveaccessscope.Included:
-				return true
-			case effectiveaccessscope.Excluded:
-				return false
-			case effectiveaccessscope.Partial:
-				if labelNamespaceName == "" {
-					return false
-				}
-				for namespaceName, namespace := range cluster.Namespaces {
-					if namespaceName != labelNamespaceName {
-						continue
-					}
-					switch namespace.State {
-					case effectiveaccessscope.Included:
-						return true
-					case effectiveaccessscope.Excluded:
-						return false
-					case effectiveaccessscope.Partial:
-						return true // true for partial?
-					}
-				}
-			}
+			log.Info("namespace eas", namespace.State)
+			return namespace.State != effectiveaccessscope.Excluded // true for partial?
 		}
+		return false // the namespace is not in the cluster namespaces.
 	}
-	return true
+	log.Info("cluster not in the clusters")
+	return false
 }
