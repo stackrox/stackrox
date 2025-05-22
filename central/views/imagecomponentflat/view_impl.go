@@ -4,7 +4,6 @@ import (
 	"context"
 	"sort"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/views/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/contextutil"
@@ -15,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
-	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -41,20 +39,16 @@ func (v *imageComponentFlatViewImpl) Count(ctx context.Context, q *v1.Query) (in
 	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
 	defer cancel()
 
-	var results []*imageComponentFlatCount
-	results, err = pgSearch.RunSelectRequestForSchema[imageComponentFlatCount](queryCtx, v.db, v.schema, withComponentCountQuery(q, search.Component))
+	clonedQ := q.CloneVT()
+	clonedQ.Pagination = nil
+
+	// TODO(ROX-29454) figure out how to get query like `select count(distinct (name, version, operatingsystem)) from image_component_v2;`
+	results, err := v.Get(queryCtx, clonedQ)
 	if err != nil {
 		return 0, err
 	}
-	if len(results) == 0 {
-		return 0, nil
-	}
-	if len(results) > 1 {
-		err = errors.Errorf("Retrieved multiple rows when only one row is expected for count query %q", q.String())
-		utils.Should(err)
-		return 0, err
-	}
-	return results[0].ComponentCount, nil
+
+	return len(results), nil
 }
 
 func (v *imageComponentFlatViewImpl) Get(ctx context.Context, q *v1.Query) ([]ComponentFlat, error) {
