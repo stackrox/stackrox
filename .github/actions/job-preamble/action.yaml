@@ -34,10 +34,8 @@ runs:
         )
         for d in "${cleanup[@]}"; do
           if [[ -d "/mnt${d}" ]]; then
-            du -k -d1 "/mnt${d%/*}/" | sort -V | tail
             rm -rf "/mnt${d}"
           elif [[ -d "$d" ]]; then
-            du -k -d1 "${d%/*}/" | sort -V | tail
             rm -rf "$d" \
               || sudo rm -rf "$d"
           fi
@@ -67,4 +65,3 @@ runs:
           source scripts/ci/lib.sh;
           update_job_record outcome "${{ job.status }}" stopped_at "CURRENT_TIMESTAMP()";
           df --si /;
-          du -k -d1 "/mnt/" || true;
