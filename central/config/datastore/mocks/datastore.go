@@ -72,22 +72,6 @@ func (mr *MockDataStoreMockRecorder) GetPlatformComponentConfig(ctx any) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPlatformComponentConfig", reflect.TypeOf((*MockDataStore)(nil).GetPlatformComponentConfig), ctx)
 }
 
-// GetPlatformComponentConfig mocks base method.
-func (m *MockDataStore) GetPlatformComponentConfig(arg0 context.Context) (*storage.PlatformComponentConfig, bool, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPlatformComponentConfig", arg0)
-	ret0, _ := ret[0].(*storage.PlatformComponentConfig)
-	ret1, _ := ret[1].(bool)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
-}
-
-// GetPlatformComponentConfig indicates an expected call of GetPlatformComponentConfig.
-func (mr *MockDataStoreMockRecorder) GetPlatformComponentConfig(arg0 any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPlatformComponentConfig", reflect.TypeOf((*MockDataStore)(nil).GetPlatformComponentConfig), arg0)
-}
-
 // GetPrivateConfig mocks base method.
 func (m *MockDataStore) GetPrivateConfig(ctx context.Context) (*storage.PrivateConfig, error) {
 	m.ctrl.T.Helper()
@@ -174,19 +158,4 @@ func (m *MockDataStore) UpsertPlatformComponentConfigRules(ctx context.Context, 
 func (mr *MockDataStoreMockRecorder) UpsertPlatformComponentConfigRules(ctx, rules any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertPlatformComponentConfigRules", reflect.TypeOf((*MockDataStore)(nil).UpsertPlatformComponentConfigRules), ctx, rules)
-}
-
-// UpsertPlatformComponentConfigRules mocks base method.
-func (m *MockDataStore) UpsertPlatformComponentConfigRules(arg0 context.Context, arg1 []*storage.PlatformComponentConfig_Rule) (*storage.PlatformComponentConfig, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpsertPlatformComponentConfigRules", arg0, arg1)
-	ret0, _ := ret[0].(*storage.PlatformComponentConfig)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// UpsertPlatformComponentConfigRules indicates an expected call of UpsertPlatformComponentConfigRules.
-func (mr *MockDataStoreMockRecorder) UpsertPlatformComponentConfigRules(arg0, arg1 any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertPlatformComponentConfigRules", reflect.TypeOf((*MockDataStore)(nil).UpsertPlatformComponentConfigRules), arg0, arg1)
 }
