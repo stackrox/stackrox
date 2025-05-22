@@ -141,6 +141,53 @@ function yes_no_prompt() {
   return 2
 }
 
+apply_patch_to_resources() {
+	local resource_type=$1
+	local ns=$2
+	local patch_file=$3
+	local resource_type_plural=""
+
+	if [ -z "${resource_type}" ] || [ -z "${ns}" ] || [ -z "${patch_file}" ]; then
+		echo "Error: Missing one or more required arguments. '${resource_type}' '${ns}' '${patch_file}'"
+		return 1
+	fi
+
+	if [ ! -f "${patch_file}" ]; then
+		echo "Error: Patch file '${patch_file}' not found."
+		return 1
+	fi
+
+	local patch_content
+	patch_content=$(cat "${patch_file}")
+
+	resource_type_plural="${resource_type}s"
+
+	echo "Applying patch from '${patch_file}' to all ${resource_type_plural} in namespace '${ns}'..."
+
+	local resource_names
+	resource_names=$(${ORCH_CMD} -n "${ns}" get "${resource_type_plural}" -o jsonpath='{.items[*].metadata.name}' 2>/dev/null)
+	get_cmd_status=$?
+	if [ "${get_cmd_status}" -ne 0 ] || [ -z "${resource_names}" ]; then
+		echo "Failed fetching ${resource_type} in namespace '${ns}'"
+		return 1
+	fi
+
+	echo "${resource_names}" | tr -s '[:space:]' '\n' | while read -r resource_name; do
+		if [ -n "$resource_name" ]; then
+			echo "Patching ${resource_type}/${resource_name}..."
+			if ${ORCH_CMD} -n "${ns}" patch "${resource_type}" "${resource_name}" --patch "${patch_content}"; then
+				echo "Successfully patched ${resource_type}/${resource_name}."
+			else
+				echo "Error patching ${resource_type}/${resource_name}."
+				return 1
+			fi
+		fi
+	done
+
+	echo "Patching process for ${resource_type_plural} completed."
+	return 0
+}
+
 function launch_central {
     local k8s_dir="$1"
     local central_namespace=${CENTRAL_NAMESPACE:-stackrox}
@@ -547,6 +594,11 @@ function launch_central {
     if [[ "${is_local_dev}" == "true" && "${ROX_HOTRELOAD}" == "true" ]]; then
       hotload_binary central central central "${central_namespace}"
     fi
+
+    if [[ "${ARM64_NODESELECTORS}" == "true" ]]; then
+        apply_patch_to_resources "deployment" "${central_namespace}" "${COMMON_DIR}/arm64-nodeselector-patch.yaml"
+    fi
+
 
     # Wait for any pending changes to Central deployment to get reconciled before trying to connect it.
     # On some systems there's a race condition when port-forward connects to central but its pod then gets deleted due
@@ -973,6 +1025,11 @@ function launch_sensor {
 
     if [[ "$MONITORING_SUPPORT" == "true" || ( "$(local_dev)" != "true" && -z "$MONITORING_SUPPORT" ) ]]; then
       "${COMMON_DIR}/monitoring.sh"
+    fi
+
+    if [[ "${ARM64_NODESELECTORS}" == "true" ]]; then
+		apply_patch_to_resources "deployment" "${sensor_namespace}" "${COMMON_DIR}/arm64-nodeselector-patch.yaml"
+		apply_patch_to_resources "daemonset" "${sensor_namespace}" "${COMMON_DIR}/arm64-nodeselector-patch.yaml"
     fi
 
     # If deploying with chaos proxy enabled, patch sensor to add toxiproxy proxy deployment
