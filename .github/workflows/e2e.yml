@@ -25,9 +25,6 @@ jobs:
     - uses: ./.github/actions/job-preamble
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-    - name: Cache Go dependencies
-      uses: ./.github/actions/cache-go-dependencies
-    - uses: ./.github/actions/handle-tagged-build
     - name: Create k8s Kind Cluster
       uses: helm/kind-action@v1
       with:
