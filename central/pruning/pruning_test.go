@@ -251,7 +251,7 @@ func (s *PruningTestSuite) generateImageDataStructures(ctx context.Context) (ale
 	var images imageDatastore.DataStore
 	if features.FlattenCVEData.Enabled() {
 		images = imageDatastore.NewWithPostgres(
-			imagePostgresV2.New(s.pool, false, concurrency.NewKeyFence()),
+			imagePostgresV2.New(s.pool, true, concurrency.NewKeyFence()),
 			mockRiskDatastore,
 			ranking.ImageRanker(),
 			ranking.ComponentRanker(),
