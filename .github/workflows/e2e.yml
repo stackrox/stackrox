@@ -17,11 +17,6 @@ env:
 jobs:
   e2e:
     runs-on: ubuntu-latest
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
-      volumes: # job-preamble deletes unused host runner files under /mnt
-      - /usr:/mnt/usr
-      - /opt:/mnt/opt
     steps:
     - name: Checkout
       uses: actions/checkout@v4
