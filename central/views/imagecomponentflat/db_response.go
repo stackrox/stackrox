@@ -38,7 +38,3 @@ func (c *imageComponentFlatResponse) GetPriority() int64 {
 func (c *imageComponentFlatResponse) GetOperatingSystem() string {
 	return c.OperatingSystem
 }
-
-type imageComponentFlatCount struct {
-	ComponentCount int `db:"component_count"`
-}
