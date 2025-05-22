@@ -7,6 +7,7 @@ import (
 	statusStore "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/scanconfigstatus/store/postgres"
 	pgStore "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/store/postgres"
 	"github.com/stackrox/rox/central/globaldb"
+	"github.com/stackrox/rox/central/telemetry/hunter"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -65,6 +66,7 @@ func New(scanConfigStore pgStore.Store, scanConfigStatusStore statusStore.Store,
 		keyedMutex:    concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
 		db:            pool,
 	}
+	hunter.NewStarted().AddGather("compliance-operator-profiles-db", ds.GatherProfiles)
 	return ds
 }
 

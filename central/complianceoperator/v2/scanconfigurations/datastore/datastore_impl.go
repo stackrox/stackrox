@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/logging"
 	pgPkg "github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -26,6 +27,7 @@ import (
 
 var (
 	complianceSAC = sac.ForResource(resources.Compliance)
+	log           = logging.LoggerForModule()
 )
 
 type datastoreImpl struct {
@@ -375,4 +377,20 @@ func withSACFilter(ctx context.Context, targetResource permissions.ResourceMetad
 		return nil, err
 	}
 	return search.FilterQueryByQuery(query, sacQueryFilter), nil
+}
+
+func (ds *datastoreImpl) GatherProfiles(ctx context.Context) (map[string]any, error) {
+	telemetryCtx := sac.WithAllAccess(ctx)
+	profiles := make(map[string]any)
+	err := ds.storage.Walk(telemetryCtx, func(obj *storage.ComplianceOperatorScanConfigurationV2) error {
+		for _, profile := range obj.GetProfiles() {
+			profiles["Compliance Operator Profile "+profile.GetProfileName()] = 1
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed gathering profiles for telemetry")
+	}
+	log.Infof("Sending telemetry for compliance operator profiles (DB): %v", profiles)
+	return profiles, nil
 }
