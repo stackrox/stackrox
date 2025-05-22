@@ -28,6 +28,7 @@ runs:
           /opt/hostedtoolcache/Ruby
         )
         for d in "${cleanup[@]}"; do
+          du -k -d1 "${d%/*}/" | sort -V | tail
           if [[ -d "/mnt${d}" ]]; then
             rm -rf "/mnt${d}"
           elif [[ -d "$d" ]]; then
@@ -60,3 +61,4 @@ runs:
           source scripts/ci/lib.sh;
           update_job_record outcome "${{ job.status }}" stopped_at "CURRENT_TIMESTAMP()";
           df --si /;
+          du -k -d1 "/" || true;
