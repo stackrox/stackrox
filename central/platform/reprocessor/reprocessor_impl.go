@@ -87,7 +87,7 @@ func (pr *platformReprocessorImpl) RunReprocessor() {
 	if pr.customized {
 		config, _, err := pr.configDatastore.GetPlatformComponentConfig(reprocessorCtx)
 		if err != nil {
-			log.Errorf("Error getting platform component config config: %v", err)
+			log.Errorf("Error getting platform component config: %v", err)
 		}
 		flag = config.GetNeedsReevaluation()
 	}
