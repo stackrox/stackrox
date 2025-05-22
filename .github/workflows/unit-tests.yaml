@@ -386,6 +386,66 @@ jobs:
       - name: OpenShift CI Wrapper Unit Tests
         run: make -C .openshift-ci test
 
+  sensor-integration-tests:
+    env:
+      KUBECONFIG: "/tmp/kubeconfig"
+    runs-on: ubuntu-latest
+    outputs:
+      new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
+      volumes: # job-preamble deletes unused host runner files under /mnt
+      - /usr:/mnt/usr
+      - /opt:/mnt/opt
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - uses: ./.github/actions/job-preamble
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+    - name: Cache Go dependencies
+      uses: ./.github/actions/cache-go-dependencies
+
+    - name: Create k8s Kind Cluster
+      uses: helm/kind-action@v1
+      with:
+        kubeconfig: "${{ env.KUBECONFIG }}"
+
+    - name: Install roxctl
+      uses: stackrox/roxctl-installer-action@v1
+
+    - name: Run sensor integration tests
+      run: make sensor-integration-test
+
+    - uses: codecov/codecov-action@v3
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        flags: go-unit-tests
+
+    - name: Generate junit report
+      if: always()
+      run: make generate-junit-reports
+
+    - name: Publish Test Report
+      uses: test-summary/action@v2
+      if: always()
+      with:
+        paths: 'junit-reports/report.xml'
+
+    - name: Report junit failures in jira
+      if: (!cancelled())
+      id: junit2jira
+      uses: ./.github/actions/junit2jira
+      with:
+        create-jiras: ${{ github.event_name == 'push' }}
+        jira-token: ${{ secrets.JIRA_TOKEN }}
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+        directory: 'junit-reports'
+
   slack-on-unit-tests-failure:
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -404,6 +464,7 @@ jobs:
       - go-postgres
       - local-roxctl-tests
       - openshift-ci-unit-tests
+      - sensor-integration-tests
       - shell-unit-tests
       - ui
       - ui-component
@@ -416,7 +477,7 @@ jobs:
     - name: Slack message
       env:
         GITHUB_CONTEXT: ${{ toJSON(github) }}
-        mention_author: ${{ needs.go.outputs.new-jiras || needs.go-postgres.outputs.new-jiras || needs.local-roxctl-tests.outputs.new-jiras || needs.ui.outputs.new-jiras || needs.go.outputs.new-jiras || needs.shell-unit-tests.outputs.new-jiras }}
+        mention_author: ${{ needs.go.outputs.new-jiras || needs.go-postgres.outputs.new-jiras || needs.local-roxctl-tests.outputs.new-jiras || needs.ui.outputs.new-jiras || needs.go.outputs.new-jiras || needs.shell-unit-tests.outputs.new-jiras || needs.sensor-integration-tests.outputs.new-jiras }}
       run: |
         source scripts/ci/lib.sh
         slack_workflow_failure
