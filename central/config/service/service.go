@@ -2,12 +2,15 @@ package service
 
 import (
 	"context"
+	"regexp"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/config/datastore"
 	"github.com/stackrox/rox/central/convert/storagetov1"
 	"github.com/stackrox/rox/central/convert/v1tostorage"
+	"github.com/stackrox/rox/central/platform/matcher"
+	"github.com/stackrox/rox/central/platform/reprocessor"
 	"github.com/stackrox/rox/central/telemetry/centralclient"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -151,6 +154,18 @@ func (s *serviceImpl) PutConfig(ctx context.Context, req *v1.PutConfigRequest) (
 	} else {
 		centralclient.Disable()
 	}
+	if platformConfig := req.GetConfig().GetPlatformComponentConfig(); platformConfig != nil {
+		regexes := make([]*regexp.Regexp, 0)
+		for _, rule := range platformConfig.GetRules() {
+			regex, compileErr := regexp.Compile(rule.GetNamespaceRule().Regex)
+			if compileErr != nil {
+				return nil, compileErr
+			}
+			regexes = append(regexes, regex)
+		}
+		matcher.Singleton().SetRegexes(regexes)
+		go reprocessor.Singleton().RunReprocessor()
+	}
 	return req.GetConfig(), nil
 }
 
@@ -221,6 +236,16 @@ func (s *serviceImpl) UpdatePlatformComponentConfig(ctx context.Context, req *v1
 	if err != nil {
 		return nil, err
 	}
+	regexes := make([]*regexp.Regexp, 0)
+	for _, rule := range config.GetRules() {
+		regex, compileErr := regexp.Compile(rule.GetNamespaceRule().Regex)
+		if compileErr != nil {
+			return nil, compileErr
+		}
+		regexes = append(regexes, regex)
+	}
+	matcher.Singleton().SetRegexes(regexes)
+	go reprocessor.Singleton().RunReprocessor()
 	return config, nil
 }
 
