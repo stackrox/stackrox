@@ -13,7 +13,6 @@ import (
 	context "context"
 	reflect "reflect"
 
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -58,10 +57,10 @@ func (mr *MockDataStoreMockRecorder) GetConfig(ctx any) *gomock.Call {
 }
 
 // GetDefaultRedHatLayeredProductsRegex mocks base method.
-func (m *MockDataStore) GetDefaultRedHatLayeredProductsRegex() *v1.GetDefaultRedHatLayeredProductsRegexResponse {
+func (m *MockDataStore) GetDefaultRedHatLayeredProductsRegex() string {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetDefaultRedHatLayeredProductsRegex")
-	ret0, _ := ret[0].(*v1.GetDefaultRedHatLayeredProductsRegexResponse)
+	ret0, _ := ret[0].(string)
 	return ret0
 }
 
