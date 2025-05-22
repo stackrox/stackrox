@@ -413,11 +413,6 @@ jobs:
     - name: Run sensor integration tests
       run: make sensor-integration-test
 
-    - uses: codecov/codecov-action@v3
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        flags: go-unit-tests
-
     - name: Generate junit report
       if: always()
       run: make generate-junit-reports

@@ -543,7 +543,6 @@ sensor-integration-test: build-prep test-prep
 	set -eo pipefail ; \
 	rm -rf  $(GO_TEST_OUTPUT_PATH); \
 	for package in $(shell git ls-files ./sensor/tests | grep '_test.go' | xargs -n 1 dirname | uniq | sort | sed -e 's/sensor\/tests\///'); do \
-		mkdir -p test-output/$$package && \
 		CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 LOGLEVEL=debug GOTAGS=$(GOTAGS),test scripts/go-test.sh -p 4 -race -cover -coverprofile test-output/coverage.out -v ./sensor/tests/$$package \
 		| tee -a $(GO_TEST_OUTPUT_PATH); \
 	done \
