@@ -40,59 +40,64 @@ func (g *SacGatherer) Gather() ([]*dto.MetricFamily, error) {
 
 var _ prometheus.Gatherer = (*SacGatherer)(nil)
 
-// Check the metrics labels with SAC.
-func (g *SacGatherer) Check(m *dto.Metric) bool {
+func getClusterNamespace(m *dto.Metric) (clusterName string, namespaceName string) {
 	for _, label := range m.GetLabel() {
 		switch label.GetName() {
 		case "Cluster":
-			eas, err := g.EffectiveAccessScope(
-				permissions.View(resources.Cluster))
-			if err != nil {
-				return false
-			}
-			clusterAllowed := false
-			for clusterName := range eas.Clusters {
-				if clusterName == label.GetValue() {
-					clusterAllowed = true
-					break
-				}
-			}
-			if !clusterAllowed {
-				log.Info("SAC check failed for cluster ", label.GetValue())
-				return false
-			}
+			clusterName = label.GetValue()
 		case "Namespace":
-			eas, err := g.EffectiveAccessScope(
-				permissions.View(resources.Namespace))
-			if err != nil {
-				return false
+			namespaceName = label.GetValue()
+		}
+	}
+	return
+}
+
+// Check the metrics labels with SAC.
+func (g *SacGatherer) Check(m *dto.Metric) bool {
+	labelClusterName, labelNamespaceName := getClusterNamespace(m)
+	if labelClusterName == "" {
+		// Do not allow namespace without cluster.
+		return labelNamespaceName == ""
+	}
+	eas, err := g.EffectiveAccessScope(
+		permissions.View(resources.Cluster))
+	if err != nil {
+		return false
+	}
+	switch eas.State {
+	case effectiveaccessscope.Included:
+		return true
+	case effectiveaccessscope.Excluded:
+		return false
+	case effectiveaccessscope.Partial:
+		for clusterName, cluster := range eas.Clusters {
+			if clusterName != labelClusterName {
+				continue
 			}
-			nsAllowed := true
-		clusters:
-			for _, cluster := range eas.Clusters {
-				switch cluster.State {
-				case effectiveaccessscope.Included:
-					nsAllowed = true
-					continue
-				case effectiveaccessscope.Excluded:
-					nsAllowed = false
-					break clusters
-				case effectiveaccessscope.Partial:
-					nsAllowed = false
-					for nsName := range cluster.Namespaces {
-						if nsName == label.GetValue() {
-							nsAllowed = true
-							break clusters
-						}
+			switch cluster.State {
+			case effectiveaccessscope.Included:
+				return true
+			case effectiveaccessscope.Excluded:
+				return false
+			case effectiveaccessscope.Partial:
+				if labelNamespaceName == "" {
+					return false
+				}
+				for namespaceName, namespace := range cluster.Namespaces {
+					if namespaceName != labelNamespaceName {
+						continue
+					}
+					switch namespace.State {
+					case effectiveaccessscope.Included:
+						return true
+					case effectiveaccessscope.Excluded:
+						return false
+					case effectiveaccessscope.Partial:
+						return true // true for partial?
 					}
 				}
 			}
-			if !nsAllowed {
-				log.Info("SAC check failed for namespace ", label.GetValue())
-				return false
-			}
 		}
-		log.Info("SAC check passed for ", label.GetName())
 	}
 	return true
 }
