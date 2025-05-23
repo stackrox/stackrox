@@ -16,12 +16,10 @@ import {
 import useDeepCompareEffect from 'use-deep-compare-effect';
 
 import { nonGlobalResourceNamesForNetworkGraph } from 'routePaths';
-import { timeWindows, TimeWindow } from 'constants/timeWindows';
 import useFetchClustersForPermissions from 'hooks/useFetchClustersForPermissions';
 import useFetchDeploymentCount from 'hooks/useFetchDeploymentCount';
 import usePermissions from 'hooks/usePermissions';
 import useAnalytics, { CIDR_BLOCK_FORM_OPENED } from 'hooks/useAnalytics';
-import useURLSearch from 'hooks/useURLSearch';
 import { fetchNetworkFlowGraph, fetchNodeUpdates } from 'services/NetworkService';
 import queryService from 'utils/queryService';
 import { isCompleteSearchFilter } from 'utils/searchUtils';
@@ -52,6 +50,7 @@ import getSimulation from './utils/getSimulation';
 import { getSearchFilterFromScopeHierarchy } from './utils/simulatorUtils';
 import { timeWindowToISO } from './utils/timeWindow';
 import CIDRFormModal from './components/CIDRFormModal';
+import { URLStateProvider, useSearchFilter, useTimeWindowParameter } from './URLStateContext';
 
 import './NetworkGraphPage.css';
 
@@ -75,7 +74,7 @@ const ALWAYS_SHOW_ORCHESTRATOR_COMPONENTS = true;
 // This is a query param used to add policy data in the response for the network graph data
 const INCLUDE_POLICIES = true;
 
-function NetworkGraphPage() {
+function NetworkGraphPageContent() {
     const { hasReadAccess, hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForBlocks =
         hasReadAccess('Administration') && hasReadWriteAccess('NetworkGraph');
@@ -95,13 +94,13 @@ function NetworkGraphPage() {
     );
 
     const [isLoading, setIsLoading] = useState(false);
-    const [timeWindow, setTimeWindow] = useState<TimeWindow>(timeWindows[0]);
     const [lastUpdatedTime, setLastUpdatedTime] = useState<string>('');
     const [isCIDRBlockFormOpen, setIsCIDRBlockFormOpen] = useState(false);
     const [isBannerDismissed, setIsBannerDismissed] = useState(false);
 
     const { analyticsTrack } = useAnalytics();
-    const { searchFilter, setSearchFilter } = useURLSearch();
+    const { searchFilter, setSearchFilter } = useSearchFilter();
+    const { timeWindow, setTimeWindow } = useTimeWindowParameter();
     const [simulationQueryValue] = useURLParameter('simulation', undefined);
     const simulation = getSimulation(simulationQueryValue);
 
@@ -438,7 +437,6 @@ function NetworkGraphPage() {
                         simulation={simulation}
                         clusterDeploymentCount={deploymentCount || 0}
                         scopeHierarchy={scopeHierarchy}
-                        timeWindow={timeWindow}
                     />
                 )}
                 <CIDRFormModal
@@ -451,4 +449,10 @@ function NetworkGraphPage() {
     );
 }
 
-export default NetworkGraphPage;
+export default function NetworkGraphPage() {
+    return (
+        <URLStateProvider>
+            <NetworkGraphPageContent />
+        </URLStateProvider>
+    );
+}
