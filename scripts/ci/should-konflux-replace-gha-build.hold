@@ -1,0 +1,6 @@
+The existence of this file is a disabling feature flag that prevents Konflux replacing GHA for building and pushing
+release images.
+It is recognized by should-konflux-replace-gha-build.sh
+
+We should remove this file (should-konflux-replace-gha-build.hold) once we're ready to be releasing with Konflux.
+See https://issues.redhat.com/browse/ROX-29357
