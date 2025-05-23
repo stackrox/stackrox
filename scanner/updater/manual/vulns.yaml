@@ -3,6 +3,27 @@
 # Use this data with caution and prioritize official updates when they become available.
 
 vulnerabilities:
+# Vuln: CVE-2020-10683/GHSA-hwj3-m3p6-hj38
+# Reason: The vuln table has an entry for GHSA-hwj3-m3p6-hj38, but osv.dev
+# seems to attribute it to dom4j:dom4j for versions [0, 1.6.1].
+# Later versions seem to be attributed to org.dom4j:dom4j, which is what
+# Scanner V4 finds.
+# Source: https://osv-vulnerabilities.storage.googleapis.com/Maven/GHSA-hwj3-m3p6-hj38.json
+- Name: CVE-2020-10683
+  Description: dom4j allows External Entities by default which might enable XXE attacks
+  Issued: '2020-06-05T16:13:36Z'
+  Links: https://nvd.nist.gov/vuln/detail/CVE-2020-10683
+  Severity: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+  NormalizedSeverity: Critical
+  Package:
+    Name: 'org.dom4j:dom4j'
+    Kind: Binary
+    RepositoryHint: Maven
+  FixedInVersion: introduced=0&lastAffected=1.6.1
+  Repo:
+    Name: maven
+    URI: https://repo1.maven.apache.org/maven2
+
 # Vuln: CVE-2022-22963/GHSA-6v73-fgf6-w5j7
 # Reason: The vuln table has an entry for GHSA-6v73-fgf6-w5j7, but Scanner V4
 # may have trouble determining the groupID when pom.properties is missing.
