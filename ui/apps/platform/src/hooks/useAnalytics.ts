@@ -419,7 +419,8 @@ export type AnalyticsEvent =
                   | 'DOWNLOAD_GENERATED'
                   | 'EMAIL_DELIVERED'
                   | 'ERROR'
-                  | 'PARTIAL_ERROR'
+                  | 'PARTIAL_SCAN_ERROR_DOWNLOAD'
+                  | 'PARTIAL_SCAN_ERROR_EMAIL'
               )[];
           };
       }

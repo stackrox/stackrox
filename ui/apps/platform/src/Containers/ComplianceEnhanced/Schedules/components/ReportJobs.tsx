@@ -55,7 +55,14 @@ function createQueryFromReportJobStatusFilters(jobStatusFilters: string[]) {
         PREPARING: { category: 'Compliance Report State', value: 'PREPARING' },
         WAITING: { category: 'Compliance Report State', value: 'WAITING' },
         ERROR: { category: 'Compliance Report State', value: 'FAILURE' },
-        PARTIAL_ERROR: { category: 'Compliance Report State', value: 'PARTIAL_ERROR' },
+        PARTIAL_SCAN_ERROR_DOWNLOAD: {
+            category: 'Compliance Report State',
+            value: 'PARTIAL_SCAN_ERROR_DOWNLOAD',
+        },
+        PARTIAL_SCAN_ERROR_EMAIL: {
+            category: 'Compliance Report State',
+            value: 'PARTIAL_SCAN_ERROR_EMAIL',
+        },
         DOWNLOAD_GENERATED: {
             category: 'Compliance Report Notification Method',
             value: 'DOWNLOAD',
@@ -185,7 +192,9 @@ function ReportJobs({ scanConfigId }: ReportJobsProps) {
                                 'WAITING',
                                 'PREPARING',
                                 'DOWNLOAD_GENERATED',
+                                'PARTIAL_SCAN_ERROR_DOWNLOAD',
                                 'EMAIL_DELIVERED',
+                                'PARTIAL_SCAN_ERROR_EMAIL',
                                 'ERROR',
                             ]}
                             selectedStatuses={ensureReportJobStatuses(reportJobStatusFilters)}

@@ -24,25 +24,31 @@ function JobStatusPopoverContent() {
             </FlexItem>
             <FlexItem>
                 <p>
-                    <strong>Ready for download:</strong>
+                    <strong>Report ready for download:</strong>
                 </p>
                 <p>The report is ready and available for download.</p>
             </FlexItem>
             <FlexItem>
                 <p>
-                    <strong>Partial report:</strong>
+                    <strong>Partial report ready for download:</strong>
                 </p>
                 <p>The report is partially complete and ready for download.</p>
             </FlexItem>
             <FlexItem>
                 <p>
-                    <strong>Successfully sent:</strong>
+                    <strong>Report successfully sent:</strong>
                 </p>
                 <p>The report has been successfully emailed.</p>
             </FlexItem>
             <FlexItem>
                 <p>
-                    <strong>Error:</strong>
+                    <strong>Partial report successfully sent:</strong>
+                </p>
+                <p>The report is partially complete and has been successfully emailed.</p>
+            </FlexItem>
+            <FlexItem>
+                <p>
+                    <strong>Report failed to generate:</strong>
                 </p>
                 <p>There was an issue with the report job. Hover to view the error message.</p>
             </FlexItem>
