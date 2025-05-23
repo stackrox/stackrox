@@ -54,6 +54,16 @@ func (t Translator) Translate(ctx context.Context, u *unstructured.Unstructured)
 	if err != nil {
 		return nil, err
 	}
+	// For translation purposes, enrich Central with defaults, which are not implicitly marshalled/unmarshaled.
+	if err := platform.AddUnstructuredDefaultsToCentral(&c, u); err != nil {
+		return nil, err
+	}
+
+	// At this point we don't need the Defaults in the unstructured object anymore and simply get rid of it to prevent
+	// Kube API warnings of the form:
+	//
+	//   KubeAPIWarningLogger    unknown field "defaults"
+	delete(u.Object, "defaults")
 
 	valsFromCR, err := t.translate(ctx, c)
 	if err != nil {
@@ -69,7 +79,13 @@ func (t Translator) Translate(ctx context.Context, u *unstructured.Unstructured)
 }
 
 // translate translates a Central CR into helm values.
-func (t Translator) translate(ctx context.Context, c platform.Central) (chartutil.Values, error) {
+func (t Translator) translate(ctx context.Context, origCentral platform.Central) (chartutil.Values, error) {
+	modifiedCentral := origCentral.DeepCopy()
+	if err := platform.MergeCentralDefaultsIntoSpec(modifiedCentral); err != nil {
+		return nil, err
+	}
+	c := *modifiedCentral
+
 	v := translation.NewValuesBuilder()
 
 	v.AddAllFrom(translation.GetImagePullSecrets(c.Spec.ImagePullSecrets))
