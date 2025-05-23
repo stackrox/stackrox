@@ -61,6 +61,7 @@ message DatabaseStatus {
   DatabaseType database_type = 2;
   // version of the database
   string database_version = 3;
+  bool database_is_external = 4;
 }
 
 message DatabaseBackupStatus {

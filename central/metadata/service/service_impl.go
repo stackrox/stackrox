@@ -24,6 +24,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/version"
 	"google.golang.org/grpc"
 )
@@ -184,6 +185,7 @@ func (s *serviceImpl) GetDatabaseStatus(ctx context.Context, _ *v1.Empty) (*v1.D
 		dbStatus.DatabaseType = dbType
 	}
 
+	dbStatus.DatabaseIsExternal = pgconfig.IsExternalDatabase()
 	return dbStatus, nil
 }
 
