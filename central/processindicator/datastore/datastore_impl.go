@@ -195,6 +195,17 @@ func (ds *datastoreImpl) RemoveProcessIndicatorsByPod(ctx context.Context, id st
 	return storeErr
 }
 
+func (ds *datastoreImpl) RemoveProcessIndicatorsByPods(ctx context.Context, ids []string) error {
+	if ok, err := deploymentExtensionSAC.WriteAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
+	}
+	q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.PodUID, ids...).ProtoQuery()
+	_, storeErr := ds.storage.DeleteByQuery(ctx, q)
+	return storeErr
+}
+
 func (ds *datastoreImpl) prunePeriodically(ctx context.Context) {
 	defer ds.stopper.Flow().ReportStopped()
 
