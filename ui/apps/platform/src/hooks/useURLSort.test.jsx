@@ -1,24 +1,14 @@
 import React from 'react';
-import { renderHook, act } from '@testing-library/react';
+import { renderHook } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import cloneDeep from 'lodash/cloneDeep';
 
+import actAndFlushTaskQueue from 'test-utils/flushTaskQueue';
 import useURLSort from './useURLSort';
 
 const wrapper = ({ children }) => {
     return <MemoryRouter>{children}</MemoryRouter>;
 };
-
-beforeAll(() => {
-    jest.useFakeTimers();
-});
-
-function actAndRunTicks(callback) {
-    return act(() => {
-        callback();
-        jest.runAllTicks();
-    });
-}
 
 describe('useURLSort', () => {
     describe('when using URL sort with single sort options', () => {
@@ -37,20 +27,20 @@ describe('useURLSort', () => {
             expect(result.current.sortOption.reversed).toEqual(true);
         });
 
-        it('should change sorting directions on a single field', () => {
+        it('should change sorting directions on a single field', async () => {
             const { result } = renderHook(() => useURLSort(params), { wrapper });
 
             expect(result.current.sortOption.field).toEqual('Name');
             expect(result.current.sortOption.reversed).toEqual(true);
 
-            actAndRunTicks(() => {
+            await actAndFlushTaskQueue(() => {
                 result.current.getSortParams('Name').onSort(null, null, 'asc');
             });
 
             expect(result.current.sortOption.field).toEqual('Name');
             expect(result.current.sortOption.reversed).toEqual(false);
 
-            actAndRunTicks(() => {
+            await actAndFlushTaskQueue(() => {
                 result.current.getSortParams('Name').onSort(null, null, 'desc');
             });
 
@@ -58,27 +48,27 @@ describe('useURLSort', () => {
             expect(result.current.sortOption.reversed).toEqual(true);
         });
 
-        it('should change sorting fields and directions', () => {
+        it('should change sorting fields and directions', async () => {
             const { result } = renderHook(() => useURLSort(params), { wrapper });
 
             expect(result.current.sortOption.field).toEqual('Name');
             expect(result.current.sortOption.reversed).toEqual(true);
 
-            actAndRunTicks(() => {
+            await actAndFlushTaskQueue(() => {
                 result.current.getSortParams('Status').onSort(null, null, 'desc');
             });
 
             expect(result.current.sortOption.field).toEqual('Status');
             expect(result.current.sortOption.reversed).toEqual(true);
 
-            actAndRunTicks(() => {
+            await actAndFlushTaskQueue(() => {
                 result.current.getSortParams('Status').onSort(null, null, 'asc');
             });
 
             expect(result.current.sortOption.field).toEqual('Status');
             expect(result.current.sortOption.reversed).toEqual(false);
 
-            actAndRunTicks(() => {
+            await actAndFlushTaskQueue(() => {
                 result.current.getSortParams('Name').onSort(null, null, 'asc');
             });
 
@@ -86,15 +76,15 @@ describe('useURLSort', () => {
             expect(result.current.sortOption.reversed).toEqual(false);
         });
 
-        it('should trigger the `onSort` callback when the sort option changes', () => {
-            const onSort = jest.fn();
+        it('should trigger the `onSort` callback when the sort option changes', async () => {
+            const onSort = vi.fn();
 
             const { result } = renderHook(() => useURLSort({ ...params, onSort }), { wrapper });
 
             expect(result.current.sortOption.field).toEqual('Name');
             expect(result.current.sortOption.reversed).toEqual(true);
 
-            actAndRunTicks(() => {
+            await actAndFlushTaskQueue(() => {
                 result.current.getSortParams('Status').onSort(null, null, 'desc');
             });
 
@@ -104,7 +94,7 @@ describe('useURLSort', () => {
             expect(result.current.sortOption.reversed).toEqual(true);
         });
 
-        it('should retain the passed `aggregateBy` value when sorting', () => {
+        it('should retain the passed `aggregateBy` value when sorting', async () => {
             const sortParams = cloneDeep(params);
             const aggregateBy = { distinct: 'true', aggregateFunc: 'count' };
             sortParams.defaultSortOption.aggregateBy = aggregateBy;
@@ -115,7 +105,7 @@ describe('useURLSort', () => {
             expect(result.current.sortOption.aggregateBy.distinct).toEqual(true);
             expect(result.current.sortOption.aggregateBy.aggregateFunc).toEqual('count');
 
-            actAndRunTicks(() => {
+            await actAndFlushTaskQueue(() => {
                 result.current.getSortParams('Name', aggregateBy).onSort(null, null, 'asc');
             });
 
@@ -124,7 +114,7 @@ describe('useURLSort', () => {
             expect(result.current.sortOption.aggregateBy.distinct).toEqual(true);
             expect(result.current.sortOption.aggregateBy.aggregateFunc).toEqual('count');
 
-            actAndRunTicks(() => {
+            await actAndFlushTaskQueue(() => {
                 result.current
                     .getSortParams('Name', { distinct: 'false', aggregateFunc: 'count' })
                     .onSort(null, null, 'asc');
@@ -134,7 +124,7 @@ describe('useURLSort', () => {
             expect(result.current.sortOption.aggregateBy.distinct).toEqual(false);
             expect(result.current.sortOption.aggregateBy.aggregateFunc).toEqual('count');
 
-            actAndRunTicks(() => {
+            await actAndFlushTaskQueue(() => {
                 result.current.getSortParams('Status').onSort(null, null, 'desc');
             });
 
@@ -143,7 +133,7 @@ describe('useURLSort', () => {
             expect(result.current.sortOption.aggregateBy).toEqual(undefined);
         });
 
-        it('should return the correct PatternFly sort parameters via the `getSortParams` function', () => {
+        it('should return the correct PatternFly sort parameters via the `getSortParams` function', async () => {
             const { result } = renderHook(() => useURLSort(params), { wrapper });
 
             // Test handling of both provided fields, and a bogus field that doesn't exist in the sortFields array
@@ -160,7 +150,7 @@ describe('useURLSort', () => {
             expect(result.current.getSortParams('Bogus').sortBy.index).toEqual(0);
             expect(result.current.getSortParams('Bogus').sortBy.direction).toEqual('desc');
 
-            actAndRunTicks(() => {
+            await actAndFlushTaskQueue(() => {
                 result.current.getSortParams('Status').onSort(null, null, 'desc');
             });
 
@@ -176,7 +166,7 @@ describe('useURLSort', () => {
             expect(result.current.getSortParams('Bogus').sortBy.index).toEqual(1);
             expect(result.current.getSortParams('Bogus').sortBy.direction).toEqual('desc');
 
-            actAndRunTicks(() => {
+            await actAndFlushTaskQueue(() => {
                 result.current.getSortParams('Bogus').onSort(null, null, 'asc');
             });
 
@@ -215,13 +205,13 @@ describe('useURLSort', () => {
             expect(result.current.sortOption.reversed).toEqual(true);
         });
 
-        it('should return the default sort option when an empty multi field sort option is provided', () => {
+        it('should return the default sort option when an empty multi field sort option is provided', async () => {
             const { result } = renderHook(() => useURLSort(params), { wrapper });
 
             expect(result.current.sortOption.field).toEqual('Name');
             expect(result.current.sortOption.reversed).toEqual(true);
 
-            actAndRunTicks(() => {
+            await actAndFlushTaskQueue(() => {
                 result.current.getSortParams('Severity', []).onSort(null, null, 'asc');
             });
 
@@ -229,14 +219,14 @@ describe('useURLSort', () => {
             expect(result.current.sortOption.reversed).toEqual(true);
         });
 
-        it('should change sorting fields and directions', () => {
+        it('should change sorting fields and directions', async () => {
             const { result } = renderHook(() => useURLSort(params), { wrapper });
 
             expect(result.current.sortOption.field).toEqual('Name');
             expect(result.current.sortOption.reversed).toEqual(true);
 
             // Change to single field sort
-            actAndRunTicks(() => {
+            await actAndFlushTaskQueue(() => {
                 result.current.getSortParams('Status').onSort(null, null, 'desc');
             });
 
@@ -244,7 +234,7 @@ describe('useURLSort', () => {
             expect(result.current.sortOption.reversed).toEqual(true);
 
             // Change to subset of multi field sort
-            actAndRunTicks(() => {
+            await actAndFlushTaskQueue(() => {
                 result.current
                     .getSortParams('Severity', [{ field: 'Critical severity count' }])
                     .onSort(null, null, 'asc');
@@ -256,7 +246,7 @@ describe('useURLSort', () => {
 
             // A multi field sort option that matches a single field sort field will match
             // and return the sort option in array form
-            actAndRunTicks(() => {
+            await actAndFlushTaskQueue(() => {
                 result.current.getSortParams('Name', [{ field: 'Name' }]).onSort(null, null, 'asc');
             });
 
@@ -265,7 +255,7 @@ describe('useURLSort', () => {
             expect(result.current.sortOption[0].reversed).toEqual(false);
 
             // Change to multi field sort with aggregateBy using multi sort function parameters
-            actAndRunTicks(() => {
+            await actAndFlushTaskQueue(() => {
                 result.current
                     .getSortParams('Severity', [
                         {
@@ -291,7 +281,7 @@ describe('useURLSort', () => {
             expect(result.current.sortOption[1].aggregateBy.aggregateFunc).toEqual('max');
         });
 
-        it('should return the correct PatternFly sort parameters via the `getSortParams` function', () => {
+        it('should return the correct PatternFly sort parameters via the `getSortParams` function', async () => {
             const { result } = renderHook(() => useURLSort(params), { wrapper });
 
             // Test handling of both provided fields, and a bogus fields that do not exist in the sortFields array
@@ -320,7 +310,7 @@ describe('useURLSort', () => {
             expect(bogusSeveritySortParams.sortBy.index).toEqual(0);
             expect(bogusSeveritySortParams.sortBy.direction).toEqual('desc');
 
-            actAndRunTicks(() => {
+            await actAndFlushTaskQueue(() => {
                 result.current
                     .getSortParams('Severity', [{ field: 'Critical severity count' }])
                     .onSort(null, null, 'asc');
@@ -351,7 +341,7 @@ describe('useURLSort', () => {
                     .sortBy.direction
             ).toEqual('asc');
 
-            actAndRunTicks(() => {
+            await actAndFlushTaskQueue(() => {
                 result.current
                     .getSortParams('Bogus', [{ field: 'Bogus severity count' }])
                     .onSort(null, null, 'asc');
