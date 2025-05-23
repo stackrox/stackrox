@@ -56,7 +56,7 @@ type managerImpl struct {
 	deploymentScorer     deploymentScorer.Scorer
 	nodeScorer           nodeScorer.Scorer
 	imageScorer          imageScorer.Scorer
-	imageComponentScorer componentScorer.Scorer
+	imageComponentScorer componentScorer.ImageScorer
 	nodeComponentScorer  componentScorer.Scorer
 
 	clusterRanker        *ranking.Ranker
@@ -78,7 +78,7 @@ func New(nodeStorage nodeDS.DataStore,
 	nodeComponentScorer componentScorer.Scorer,
 	deploymentScorer deploymentScorer.Scorer,
 	imageScorer imageScorer.Scorer,
-	imageComponentScorer componentScorer.Scorer,
+	imageComponentScorer componentScorer.ImageScorer,
 	clusterRanker *ranking.Ranker,
 	nsRanker *ranking.Ranker,
 	componentRanker *ranking.Ranker,
@@ -212,7 +212,7 @@ func (e *managerImpl) calculateAndUpsertImageRisk(image *storage.Image) error {
 
 	// We want to compute and store risk for image components when image risk is reprocessed.
 	for _, component := range image.GetScan().GetComponents() {
-		e.reprocessImageComponentRisk(component, image.GetScan().GetOperatingSystem())
+		e.reprocessImageComponentRisk(component, image.GetScan().GetOperatingSystem(), image.GetId())
 	}
 
 	image.RiskScore = risk.Score
@@ -284,10 +284,10 @@ func scannedByScannerV4(img *storage.Image) bool {
 
 // reprocessImageComponentRisk will reprocess risk of image components and save the results.
 // Image Component ID is generated as <component_name>:<component_version>
-func (e *managerImpl) reprocessImageComponentRisk(imageComponent *storage.EmbeddedImageScanComponent, os string) {
+func (e *managerImpl) reprocessImageComponentRisk(imageComponent *storage.EmbeddedImageScanComponent, os string, imageID string) {
 	defer metrics.ObserveRiskProcessingDuration(time.Now(), "ImageComponent")
 
-	risk := e.imageComponentScorer.Score(allAccessCtx, scancomponent.NewFromImageComponent(imageComponent), os)
+	risk := e.imageComponentScorer.Score(allAccessCtx, scancomponent.NewFromImageComponent(imageComponent), os, imageComponent, imageID)
 	if risk == nil {
 		return
 	}
