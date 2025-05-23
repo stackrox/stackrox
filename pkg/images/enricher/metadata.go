@@ -1,7 +1,7 @@
 package enricher
 
 import (
-	hashstructure "github.com/mitchellh/hashstructure/v2"
+	"github.com/gohugoio/hashstructure"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -35,7 +35,7 @@ func init() {
 		},
 	}
 	var err error
-	metadataHash, err = hashstructure.Hash(metadata, hashstructure.FormatV2, &hashstructure.HashOptions{ZeroNil: true})
+	metadataHash, err = hashstructure.Hash(metadata, &hashstructure.HashOptions{ZeroNil: true})
 	utils.Must(err)
 
 	if val, ok := metadataHashToVersion[metadataHash]; !ok || val != metadataVersion {
