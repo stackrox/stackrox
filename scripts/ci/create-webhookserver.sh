@@ -25,7 +25,16 @@ install_webhook_server() {
     pushd "${gitroot}/webhookserver"
     mkdir -p chart/certs
     cp "${certs_tmp_dir}/tls.crt" "${certs_tmp_dir}/tls.key" chart/certs
-    helm -n stackrox upgrade --install webhookserver chart/
+
+    local helm_args=()
+
+    # Auto-detect if cluster has ARM64 nodes
+    if kubectl get nodes -o=jsonpath='{.items[*].status.nodeInfo.architecture}' | grep -q 'arm64'; then
+        echo "INFO: ARM64 nodes detected in cluster, applying arm64 node selector for webhookserver"
+        helm_args+=(--set 'nodeSelector.kubernetes\.io/arch=arm64')
+    fi
+
+    helm -n stackrox upgrade --install webhookserver chart/ "${helm_args[@]}"
     popd
 }
 
