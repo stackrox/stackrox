@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/cve/converter/utils"
 	graphDBTestUtils "github.com/stackrox/rox/central/graphdb/testutils"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
@@ -27,6 +28,10 @@ var (
 )
 
 func TestImageComponentCVEEdgeDatastoreSAC(t *testing.T) {
+	// TODO(ROX-28123): Remove deprecated datastore and tests
+	if features.FlattenCVEData.Enabled() {
+		t.Skip("This test is deprecated per ROX-25570.")
+	}
 	suite.Run(t, new(imageComponentCVEEdgeDatastoreSACTestSuite))
 }
 

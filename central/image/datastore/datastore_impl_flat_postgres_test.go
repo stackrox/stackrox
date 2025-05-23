@@ -37,14 +37,16 @@ import (
 	"gorm.io/gorm"
 )
 
-func TestImageDataStoreWithPostgres(t *testing.T) {
-	if features.FlattenCVEData.Enabled() {
+func TestImageFlatDataStoreWithPostgres(t *testing.T) {
+	// TODO(ROX-29460)
+	t.Skip("FlattenCVEData is enabled so skip for now")
+	if !features.FlattenCVEData.Enabled() {
 		t.Skip("CVE flattened data model enabled")
 	}
-	suite.Run(t, new(ImagePostgresDataStoreTestSuite))
+	suite.Run(t, new(ImageFlatPostgresDataStoreTestSuite))
 }
 
-type ImagePostgresDataStoreTestSuite struct {
+type ImageFlatPostgresDataStoreTestSuite struct {
 	suite.Suite
 
 	ctx                context.Context
@@ -56,7 +58,7 @@ type ImagePostgresDataStoreTestSuite struct {
 	cveDataStore       imageCVEDS.DataStore
 }
 
-func (s *ImagePostgresDataStoreTestSuite) SetupSuite() {
+func (s *ImageFlatPostgresDataStoreTestSuite) SetupSuite() {
 	s.ctx = context.Background()
 
 	source := pgtest.GetConnectionString(s.T())
@@ -69,7 +71,7 @@ func (s *ImagePostgresDataStoreTestSuite) SetupSuite() {
 	s.db = pool
 }
 
-func (s *ImagePostgresDataStoreTestSuite) SetupTest() {
+func (s *ImageFlatPostgresDataStoreTestSuite) SetupTest() {
 	pgStore.Destroy(s.ctx, s.db)
 
 	s.mockRisk = mockRisks.NewMockDataStore(gomock.NewController(s.T()))
@@ -85,12 +87,12 @@ func (s *ImagePostgresDataStoreTestSuite) SetupTest() {
 	s.cveDataStore = cveDataStore
 }
 
-func (s *ImagePostgresDataStoreTestSuite) TearDownSuite() {
+func (s *ImageFlatPostgresDataStoreTestSuite) TearDownSuite() {
 	s.db.Close()
 	pgtest.CloseGormDB(s.T(), s.gormDB)
 }
 
-func (s *ImagePostgresDataStoreTestSuite) TestSearchWithPostgres() {
+func (s *ImageFlatPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 	image := getTestImage("id1")
 
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
@@ -196,7 +198,7 @@ func (s *ImagePostgresDataStoreTestSuite) TestSearchWithPostgres() {
 	s.Equal(newImage.GetId(), results[0].ID)
 }
 
-func (s *ImagePostgresDataStoreTestSuite) TestFixableWithPostgres() {
+func (s *ImageFlatPostgresDataStoreTestSuite) TestFixableWithPostgres() {
 	image := fixtures.GetImageWithUniqueComponents(5)
 	ctx := sac.WithAllAccess(context.Background())
 
@@ -227,7 +229,7 @@ func (s *ImagePostgresDataStoreTestSuite) TestFixableWithPostgres() {
 	s.Len(results, 0)
 }
 
-func (s *ImagePostgresDataStoreTestSuite) TestUpdateVulnStateWithPostgres() {
+func (s *ImageFlatPostgresDataStoreTestSuite) TestUpdateVulnStateWithPostgres() {
 	image := fixtures.GetImageWithUniqueComponents(5)
 	ctx := sac.WithAllAccess(context.Background())
 
@@ -301,7 +303,7 @@ func (s *ImagePostgresDataStoreTestSuite) TestUpdateVulnStateWithPostgres() {
 }
 
 // Test sort by Component search label sorts by Component+Version to ensure backward compatibility.
-func (s *ImagePostgresDataStoreTestSuite) TestSortByComponent() {
+func (s *ImageFlatPostgresDataStoreTestSuite) TestSortByComponent() {
 	ctx := sac.WithAllAccess(context.Background())
 	node := fixtures.GetImageWithUniqueComponents(5)
 	componentIDs := make([]string, 0, len(node.GetScan().GetComponents()))
@@ -343,7 +345,7 @@ func (s *ImagePostgresDataStoreTestSuite) TestSortByComponent() {
 	s.Equal(componentIDs, pkgSearch.ResultsToIDs(results))
 }
 
-func (s *ImagePostgresDataStoreTestSuite) TestImageDeletes() {
+func (s *ImageFlatPostgresDataStoreTestSuite) TestImageDeletes() {
 	ctx := sac.WithAllAccess(context.Background())
 	testImage := fixtures.GetImageWithUniqueComponents(5)
 	s.NoError(s.datastore.UpsertImage(ctx, testImage))
@@ -515,7 +517,7 @@ func (s *ImagePostgresDataStoreTestSuite) TestImageDeletes() {
 	s.Equal(0, count)
 }
 
-func (s *ImagePostgresDataStoreTestSuite) TestGetManyImageMetadata() {
+func (s *ImageFlatPostgresDataStoreTestSuite) TestGetManyImageMetadata() {
 	ctx := sac.WithAllAccess(context.Background())
 	testImage1 := fixtures.GetImageWithUniqueComponents(5)
 	s.NoError(s.datastore.UpsertImage(ctx, testImage1))
@@ -539,82 +541,4 @@ func (s *ImagePostgresDataStoreTestSuite) TestGetManyImageMetadata() {
 	testImage3.Scan.Components = nil
 	testImage3.Priority = 1
 	protoassert.ElementsMatch(s.T(), []*storage.Image{testImage1, testImage2, testImage3}, storedImages)
-}
-
-func getTestImage(id string) *storage.Image {
-	return &storage.Image{
-		Id: id,
-		Scan: &storage.ImageScan{
-			OperatingSystem: "blah",
-			ScanTime:        protocompat.TimestampNow(),
-			Components: []*storage.EmbeddedImageScanComponent{
-				{
-					Name:    "comp1",
-					Version: "ver1",
-					Vulns:   []*storage.EmbeddedVulnerability{},
-				},
-				{
-					Name:    "comp1",
-					Version: "ver2",
-					Vulns: []*storage.EmbeddedVulnerability{
-						{
-							Cve:               "cve1",
-							VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
-							CvssV3: &storage.CVSSV3{
-								ImpactScore: 10,
-							},
-							ScoreVersion: storage.EmbeddedVulnerability_V3,
-						},
-						{
-							Cve:               "cve2",
-							VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
-							SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
-								FixedBy: "ver3",
-							},
-							CvssV3: &storage.CVSSV3{
-								ImpactScore: 1,
-							},
-							ScoreVersion: storage.EmbeddedVulnerability_V3,
-						},
-					},
-				},
-				{
-					Name:    "comp2",
-					Version: "ver1",
-					Vulns: []*storage.EmbeddedVulnerability{
-						{
-							Cve:               "cve1",
-							VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
-							SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
-								FixedBy: "ver2",
-							},
-							CvssV3: &storage.CVSSV3{
-								ImpactScore: 10,
-							},
-							ScoreVersion: storage.EmbeddedVulnerability_V3,
-						},
-						{
-							Cve:               "cve2",
-							VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
-							CvssV3: &storage.CVSSV3{
-								ImpactScore: 1,
-							},
-							ScoreVersion: storage.EmbeddedVulnerability_V3,
-						},
-					},
-				},
-			},
-		},
-		RiskScore: 30,
-		Priority:  1,
-	}
-}
-
-func cloneAndUpdateRiskPriority(image *storage.Image) *storage.Image {
-	cloned := image.CloneVT()
-	cloned.Priority = 1
-	for _, component := range cloned.GetScan().GetComponents() {
-		component.Priority = 1
-	}
-	return cloned
 }

@@ -61,7 +61,6 @@ func (s *NewDataModelEnhancedReportingTestSuite) TearDownTest() {
 }
 
 func (s *NewDataModelEnhancedReportingTestSuite) SetupSuite() {
-	// TODO ROX-28898:enable feature flag by default to run the unit tests
 	if !features.FlattenCVEData.Enabled() {
 		s.T().Skip()
 	}

@@ -20,14 +20,61 @@ var (
 		{
 			Name:    "comp1",
 			Version: "ver1",
+			HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{
+				LayerIndex: 1,
+			},
 		},
 		{
 			Name:    "comp1",
 			Version: "ver2",
+			HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{
+				LayerIndex: 3,
+			},
+			Vulns: []*storage.EmbeddedVulnerability{
+				{
+					Cve:                   "cve1",
+					VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+					VulnerabilityTypes:    []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
+					FirstImageOccurrence:  ts,
+					FirstSystemOccurrence: ts,
+				},
+				{
+					Cve:                "cve2",
+					VulnerabilityType:  storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+					VulnerabilityTypes: []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
+					SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
+						FixedBy: "ver3",
+					},
+					FirstImageOccurrence:  ts,
+					FirstSystemOccurrence: ts,
+				},
+			},
 		},
 		{
 			Name:    "comp2",
 			Version: "ver1",
+			HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{
+				LayerIndex: 2,
+			},
+			Vulns: []*storage.EmbeddedVulnerability{
+				{
+					Cve:                "cve1",
+					VulnerabilityType:  storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+					VulnerabilityTypes: []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
+					SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
+						FixedBy: "ver2",
+					},
+					FirstImageOccurrence:  ts,
+					FirstSystemOccurrence: ts,
+				},
+				{
+					Cve:                   "cve2",
+					VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+					VulnerabilityTypes:    []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
+					FirstImageOccurrence:  ts,
+					FirstSystemOccurrence: ts,
+				},
+			},
 		},
 	}
 
@@ -347,7 +394,7 @@ func TestSplitAndMergeImage(t *testing.T) {
 							IsFixable: true,
 						},
 						CVEV2: &storage.ImageCVEV2{
-							Id:      getTestCVEID(testCVEs["cve1comp2"], getTestComponentID(testComponents[1], "sha")),
+							Id:      getTestCVEID(testCVEs["cve1comp2"], getTestComponentID(testComponents[2], "sha")),
 							ImageId: "sha",
 							CveBaseInfo: &storage.CVEInfo{
 								Cve:       "cve1",
@@ -377,7 +424,7 @@ func TestSplitAndMergeImage(t *testing.T) {
 							ImageCveId:       cve.ID("cve2", ""),
 						},
 						CVEV2: &storage.ImageCVEV2{
-							Id:      getTestCVEID(testCVEs["cve2comp2"], getTestComponentID(testComponents[1], "sha")),
+							Id:      getTestCVEID(testCVEs["cve2comp2"], getTestComponentID(testComponents[2], "sha")),
 							ImageId: "sha",
 							CveBaseInfo: &storage.CVEInfo{
 								Cve:       "cve2",
