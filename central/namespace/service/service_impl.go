@@ -56,7 +56,7 @@ func (s *serviceImpl) GetNamespaces(ctx context.Context, req *v1.GetNamespaceReq
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 	// Fill in pagination. MaxInt32 preserves previous functionality
-	paginated.FillPagination(parsedQuery, rawQuery.GetPagination(), math.MaxInt32)
+	paginated.FillPagination(parsedQuery, rawQuery.GetPagination(), paginated.Unlimited)
 
 	namespaces, err := namespace.ResolveAll(ctx, s.datastore, s.deployments, s.secrets, s.networkPolicies, parsedQuery)
 	if err != nil {
