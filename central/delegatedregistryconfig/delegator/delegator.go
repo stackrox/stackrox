@@ -87,6 +87,10 @@ func (d *delegatorImpl) DelegateScanImage(ctx context.Context, imgName *storage.
 
 	namespace := d.inferNamespace(ctx, imgName, clusterID)
 
+	if namespace == "" {
+		namespace = "keyless"
+	}
+
 	w, err := d.scanWaiterManager.NewWaiter()
 	if err != nil {
 		return nil, err
