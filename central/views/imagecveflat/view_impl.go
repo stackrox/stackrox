@@ -199,6 +199,24 @@ func withSelectCVEFlatResponseQuery(q *v1.Query, cveIDsToFilter []string, option
 		if sortOption.Field == search.CVECreatedTime.String() {
 			sortOption.Field = search.CVECreatedTimeMin.String()
 		}
+		if sortOption.Field == search.EPSSProbablity.String() {
+			sortOption.Field = search.EPSSProbablityMax.String()
+		}
+		if sortOption.Field == search.ImpactScore.String() {
+			sortOption.Field = search.ImpactScoreMax.String()
+		}
+		if sortOption.Field == search.FirstImageOccurrenceTimestamp.String() {
+			sortOption.Field = search.FirstImageOccurrenceTimestampMin.String()
+		}
+		if sortOption.Field == search.CVEPublishedOn.String() {
+			sortOption.Field = search.CVEPublishedOnMin.String()
+		}
+		if sortOption.Field == search.VulnerabilityState.String() {
+			sortOption.Field = search.VulnerabilityStateMax.String()
+		}
+		if sortOption.Field == search.NVDCVSS.String() {
+			sortOption.Field = search.NVDCVSSMax.String()
+		}
 	}
 
 	return cloned
