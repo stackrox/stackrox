@@ -7,8 +7,10 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/deployment/datastore"
+	deploymentsView "github.com/stackrox/rox/central/views/deployments"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -17,15 +19,16 @@ var deploymentLoaderType = reflect.TypeOf(storage.Deployment{})
 
 func init() {
 	RegisterTypeFactory(reflect.TypeOf(storage.Deployment{}), func() interface{} {
-		return NewDeploymentLoader(datastore.Singleton())
+		return NewDeploymentLoader(datastore.Singleton(), deploymentsView.Singleton())
 	})
 }
 
 // NewDeploymentLoader creates a new loader for deployment data.
-func NewDeploymentLoader(ds datastore.DataStore) DeploymentLoader {
+func NewDeploymentLoader(ds datastore.DataStore, deploymentView deploymentsView.DeploymentView) DeploymentLoader {
 	return &deploymentLoaderImpl{
-		loaded: make(map[string]*storage.Deployment),
-		ds:     ds,
+		loaded:         make(map[string]*storage.Deployment),
+		ds:             ds,
+		deploymentView: deploymentView,
 	}
 }
 
@@ -53,7 +56,8 @@ type deploymentLoaderImpl struct {
 	lock   sync.RWMutex
 	loaded map[string]*storage.Deployment
 
-	ds datastore.DataStore
+	ds             datastore.DataStore
+	deploymentView deploymentsView.DeploymentView
 }
 
 // FromIDs loads a set of deployments from a set of ids.
@@ -76,11 +80,19 @@ func (idl *deploymentLoaderImpl) FromID(ctx context.Context, id string) (*storag
 
 // FromQuery loads a set of deployments that match a query.
 func (idl *deploymentLoaderImpl) FromQuery(ctx context.Context, query *v1.Query) ([]*storage.Deployment, error) {
-	results, err := idl.ds.Search(ctx, query)
+	if !features.FlattenCVEData.Enabled() {
+		results, err := idl.ds.Search(ctx, query)
+		if err != nil {
+			return nil, err
+		}
+		return idl.FromIDs(ctx, search.ResultsToIDs(results))
+	}
+
+	responses, err := idl.deploymentView.Get(ctx, query)
 	if err != nil {
 		return nil, err
 	}
-	return idl.FromIDs(ctx, search.ResultsToIDs(results))
+	return idl.FromIDs(ctx, responsesToDeploymentIDs(responses))
 }
 
 // CountFromQuery returns the number of deployments that match a given query.
@@ -141,4 +153,12 @@ func (idl *deploymentLoaderImpl) readAll(ids []string) (deployments []*storage.D
 		}
 	}
 	return
+}
+
+func responsesToDeploymentIDs(responses []deploymentsView.DeploymentCore) []string {
+	ids := make([]string, 0, len(responses))
+	for _, r := range responses {
+		ids = append(ids, r.GetDeploymentID())
+	}
+	return ids
 }
