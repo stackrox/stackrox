@@ -16,5 +16,22 @@ type Request struct {
 	Ctx                context.Context
 	SnapshotID         string
 	NotificationMethod storage.ComplianceOperatorReportStatus_NotificationMethod
-	FailedClusters     map[string]*storage.ComplianceOperatorReportSnapshotV2_FailedCluster
+	ClusterData        map[string]*ClusterData
+	FailedClusters     int
+}
+
+// ClusterData holds the metadata for the clusters
+type ClusterData struct {
+	ClusterId   string
+	ClusterName string
+	Profiles    []string
+	Scans       []string
+	FailedInfo  *FailedCluster
+}
+
+// FailedCluster holds the information of a failed cluster
+type FailedCluster struct {
+	storage.ComplianceOperatorReportSnapshotV2_FailedCluster
+	Scans    []*storage.ComplianceOperatorScanV2
+	Profiles []string
 }
