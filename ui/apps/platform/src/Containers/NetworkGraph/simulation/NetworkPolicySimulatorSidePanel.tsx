@@ -27,7 +27,6 @@ import PopoverBodyContent from 'Components/PopoverBodyContent';
 import usePermissions from 'hooks/usePermissions';
 import useRestQuery from 'hooks/useRestQuery';
 import useAnalytics, { GENERATE_NETWORK_POLICIES } from 'hooks/useAnalytics';
-import useURLSearch from 'hooks/useURLSearch';
 import useTabs from 'hooks/patternfly/useTabs';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import { getQueryObject, getQueryString } from 'utils/queryStringUtils';
@@ -51,6 +50,8 @@ import CompareYAMLModal from './CompareYAMLModal';
 import CodeCompareIcon from './CodeCompareIcon';
 import NetworkPoliciesGenerationScope from './NetworkPoliciesGenerationScope';
 import { getPropertiesForAnalytics } from '../utils/networkGraphURLUtils';
+
+import { useSearchFilter } from '../NetworkGraphURLStateContext';
 
 // @TODO: Consider a better approach to managing the side panel related state (simulation + URL path for entities)
 export function clearSimulationQuery(search: string): string {
@@ -82,7 +83,7 @@ function NetworkPolicySimulatorSidePanel({
     scopeDeploymentCount,
 }: NetworkPolicySimulatorSidePanelProps) {
     const { analyticsTrack } = useAnalytics();
-    const { searchFilter } = useURLSearch();
+    const { searchFilter } = useSearchFilter();
 
     const { hasReadAccess } = usePermissions();
     const hasReadAccessForNotifiers = hasReadAccess('Integration');
