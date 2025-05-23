@@ -63,6 +63,7 @@ func (u *updaterImpl) Stop(_ error) {
 }
 
 func (u *updaterImpl) Notify(e common.SensorComponentEvent) {
+	log.Info(common.LogSensorComponentEvent(e))
 	switch e {
 	case common.SensorComponentEventCentralReachable:
 		if u.offlineMode.CompareAndSwap(true, false) {
