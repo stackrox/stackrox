@@ -14,8 +14,6 @@ import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import useMetadata from 'hooks/useMetadata';
-import { UseURLPaginationResult } from 'hooks/useURLPagination';
-import { UseUrlSearchReturn } from 'hooks/useURLSearch';
 import { TableUIState } from 'utils/getTableUIState';
 import { getVersionedDocs } from 'utils/versioning';
 import { ExternalNetworkFlowsMetadata } from 'types/networkFlow.proto';
@@ -23,24 +21,22 @@ import { ExternalNetworkFlowsMetadata } from 'types/networkFlow.proto';
 import IPMatchFilter from '../common/IPMatchFilter';
 import { EXTERNAL_SOURCE_ADDRESS_QUERY } from '../NetworkGraph.constants';
 
+import { usePagination, useSearchFilterSidePanel } from '../NetworkGraphURLStateContext';
+
 export type ExternalIpsTableProps = {
     onExternalIPSelect: (externalIP: string) => void;
     tableState: TableUIState<ExternalNetworkFlowsMetadata>;
     totalEntities: number;
-    urlSearchFiltering: UseUrlSearchReturn;
-    urlPagination: UseURLPaginationResult;
 };
 
 function ExternalIpsTable({
     onExternalIPSelect,
     tableState,
     totalEntities,
-    urlSearchFiltering,
-    urlPagination,
 }: ExternalIpsTableProps) {
     const { version } = useMetadata();
-    const { page, perPage, setPage, setPerPage } = urlPagination;
-    const { searchFilter, setSearchFilter } = urlSearchFiltering;
+    const { page, perPage, setPage, setPerPage } = usePagination();
+    const { searchFilter, setSearchFilter } = useSearchFilterSidePanel();
 
     useEffect(() => {
         setPage(1);

@@ -33,7 +33,8 @@ import { ReactComponent as BothPolicyRules } from 'images/network-graph/both-pol
 import { ReactComponent as EgressOnly } from 'images/network-graph/egress-only.svg';
 import { ReactComponent as IngressOnly } from 'images/network-graph/ingress-only.svg';
 import { ReactComponent as NoPolicyRules } from 'images/network-graph/no-policy-rules.svg';
-import { deploymentTabs } from '../utils/deploymentUtils';
+
+import { useSidePanelTab } from '../NetworkGraphURLStateContext';
 
 import './DeploymentDetails.css';
 
@@ -43,7 +44,6 @@ type DeploymentDetailsProps = {
     numAnomalousInternalFlows: number;
     listenPorts: ListenPort[];
     networkPolicyState: NetworkPolicyState;
-    onDeploymentTabsSelect: (tab: string) => void;
 };
 
 function DetailSection({ title, children }) {
@@ -75,17 +75,18 @@ function DeploymentDetails({
     numAnomalousInternalFlows,
     listenPorts,
     networkPolicyState,
-    onDeploymentTabsSelect,
 }: DeploymentDetailsProps) {
     const labelKeys = Object.keys(deployment.labels);
     const annotationKeys = Object.keys(deployment.annotations);
 
+    const { setSelectedTabSidePanel } = useSidePanelTab();
+
     const onNetworkFlowsTabSelect = () => {
-        onDeploymentTabsSelect(deploymentTabs.FLOWS);
+        setSelectedTabSidePanel('FLOWS');
     };
 
     const onNetworkPoliciesTabSelect = () => {
-        onDeploymentTabsSelect(deploymentTabs.NETWORK_POLICIES);
+        setSelectedTabSidePanel('NETWORK_POLICIES');
     };
 
     return (
