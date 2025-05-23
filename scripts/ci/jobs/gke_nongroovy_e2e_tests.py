@@ -22,8 +22,13 @@ os.environ["SENSOR_SCANNER_SUPPORT"] = "true"
 os.environ["ROX_DEPLOY_SENSOR_WITH_CRS"] = "true"
 os.environ["SENSOR_HELM_MANAGED"] = "true"
 
+# tbd: restore this file and create gke_nongroovy_e2e_arm64_tests.py with below config
+os.environ["REMOTE_CLUSTER_ARCH"] = "arm64"
+os.environ["ARM64_NODESELECTORS"] = "true"
+os.environ["IMAGE_PREFETCH_DISABLED"] = "true"
+
 ClusterTestRunner(
-    cluster=GKECluster("nongroovy-test"),
+    cluster=GKECluster("nongroovy-test", machine_type="t2a-standard-8"),
     pre_test=PreSystemTests(),
     test=NonGroovyE2e(),
     post_test=PostClusterTest(
