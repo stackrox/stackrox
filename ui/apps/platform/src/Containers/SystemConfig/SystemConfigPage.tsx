@@ -86,6 +86,7 @@ const SystemConfigPage = (): ReactElement => {
                     systemConfig={systemConfig}
                     setSystemConfig={setSystemConfig}
                     setIsNotEditing={setIsNotEditing}
+                    isCustomizingPlatformComponentsEnabled={isCustomizingPlatformComponentsEnabled}
                 />
             </PageSection>
         ) : (

@@ -33,13 +33,15 @@ import ColorPicker from 'Components/ColorPicker';
 import ClusterLabelsTable from 'Containers/Clusters/ClusterLabelsTable';
 import { PublicConfigAction } from 'reducers/publicConfig';
 import { saveSystemConfig } from 'services/SystemConfigService';
-import { PrivateConfig, PublicConfig, SystemConfig } from 'types/config.proto';
+import { PublicConfig, SystemConfig } from 'types/config.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { selectors } from 'reducers';
 import { initializeAnalytics } from 'global/initializeAnalytics';
-
 import FormSelect from './FormSelect';
 import { convertBetweenBytesAndMB } from '../SystemConfig.utils';
+import { getPlatformComponentsConfigRules } from '../configUtils';
+import { Values } from './formTypes';
+import PlatformComponentsConfigForm from './PlatformComponentsConfigForm';
 
 function getCompletePublicConfig(systemConfig: SystemConfig): PublicConfig {
     return {
@@ -67,15 +69,11 @@ function getCompletePublicConfig(systemConfig: SystemConfig): PublicConfig {
     };
 }
 
-type Values = {
-    privateConfig: PrivateConfig;
-    publicConfig: PublicConfig;
-};
-
 export type SystemConfigFormProps = {
     systemConfig: SystemConfig;
     setSystemConfig: (systemConfig: SystemConfig) => void;
     setIsNotEditing: () => void;
+    isCustomizingPlatformComponentsEnabled: boolean;
 };
 
 const validationSchema = yup.object().shape({
@@ -93,6 +91,7 @@ const SystemConfigForm = ({
     systemConfig,
     setSystemConfig,
     setIsNotEditing,
+    isCustomizingPlatformComponentsEnabled,
 }: SystemConfigFormProps): ReactElement => {
     const dispatch = useDispatch();
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -101,8 +100,9 @@ const SystemConfigForm = ({
 
     const { privateConfig } = systemConfig;
     const publicConfig = getCompletePublicConfig(systemConfig);
-    // @TODO: Use "getPlatformComponentsConfigRules" to convert the config into a structure compatible with Formik
-    const { platformComponentsConfig } = systemConfig;
+    const platformComponentsConfigRules = getPlatformComponentsConfigRules(
+        systemConfig.platformComponentsConfig
+    );
     const {
         dirty,
         errors,
@@ -113,15 +113,24 @@ const SystemConfigForm = ({
         submitForm,
         values,
     } = useFormik<Values>({
-        initialValues: { privateConfig, publicConfig },
+        initialValues: { privateConfig, publicConfig, platformComponentsConfigRules },
         validationSchema,
         onSubmit: () => {
+            const { coreSystemRule, redHatLayeredProductsRule, customRules } =
+                values.platformComponentsConfigRules;
+            const platformComponentsConfigRules = [
+                ...(coreSystemRule ? [coreSystemRule] : []),
+                ...(redHatLayeredProductsRule ? [redHatLayeredProductsRule] : []),
+                ...customRules,
+            ];
             // Payload for privateConfig allows strings as number values.
             saveSystemConfig({
                 privateConfig: values.privateConfig,
                 publicConfig: values.publicConfig,
-                // @TODO: Pass the form values instead
-                platformComponentsConfig,
+                platformComponentsConfig: {
+                    needsReevaluation: true,
+                    rules: platformComponentsConfigRules,
+                },
             })
                 .then((data) => {
                     // Simulate fetchPublicConfig response to update Redux state.
@@ -187,6 +196,13 @@ const SystemConfigForm = ({
 
     return (
         <Form>
+            {isCustomizingPlatformComponentsEnabled && (
+                <PlatformComponentsConfigForm
+                    values={values}
+                    onChange={onChange}
+                    onCustomChange={onCustomChange}
+                />
+            )}
             <Title headingLevel="h2">Private data retention configuration</Title>
             <Grid hasGutter md={6}>
                 <GridItem>
