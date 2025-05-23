@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "1"
+  generation: 1
+  labels:
+    app: external-destination-source-${NAME}
+    name: external-destination-source-${NAME}
+  name: external-destination-source-${NAME}
+  namespace: qa
+spec:
+  minReadySeconds: 15
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: external-destination-source-${NAME}
+      name: external-destination-source-${NAME}
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: external-destination-source-${NAME}
+        deployment: external-destination-source-${NAME}
+        name: external-destination-source-${NAME}
+      name: external-destination-source-${NAME}
+      namespace: qa
+    spec:
+      imagePullSecrets:
+        - name: qa
+      containers:
+      - args:
+          - |
+            /scripts/prepare-tap.sh -a "${TARGET_IP}/32" -o
+            nc -lk "${TARGET_IP}" "${PORT}" &
+            sleep 2
+            while sleep 30; do nc -zv "${TARGET_IP}" "${PORT}"; done
+        command:
+        - /bin/bash
+        - -c
+        image: quay.io/${REPOSITORY}/external-connection:${TAG}
+        imagePullPolicy: IfNotPresent
+        name: external-destination-source
+        resources: {}
+        securityContext:
+          capabilities: {}
+          privileged: true
+          readOnlyRootFilesystem: false
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
