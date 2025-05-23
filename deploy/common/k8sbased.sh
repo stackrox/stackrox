@@ -583,12 +583,6 @@ function launch_central {
       "${COMMON_DIR}/monitoring.sh"
     fi
 
-    if [[ -n "$CI" ]]; then
-        # Needed for GKE and OpenShift clusters
-        echo "Sleep for 2 minutes to allow for stabilization"
-        sleep 120
-    fi
-
     wait_for_central "${API_ENDPOINT}" "${central_namespace}"
     echo "Successfully deployed Central!"
 
