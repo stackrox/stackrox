@@ -711,8 +711,8 @@ webhookserver-image: webhookserver-build
 	cp bin/linux_$(GOARCH)/webhookserver webhookserver/bin/webhookserver
 	chmod +w webhookserver/bin/webhookserver
 	docker build \
-		-t stackrox/webhookserver:1.3 \
-		-t quay.io/rhacs-eng/webhookserver:1.3 \
+		-t stackrox/webhookserver:1.2 \
+		-t quay.io/rhacs-eng/webhookserver:1.2 \
 		-f webhookserver/Dockerfile webhookserver
 
 syslog-image: syslog-build

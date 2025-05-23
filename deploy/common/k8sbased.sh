@@ -502,16 +502,9 @@ function launch_central {
 
       # Add a custom values file to Helm
       if [[ -n "$ROX_CENTRAL_EXTRA_HELM_VALUES_FILE" ]]; then
-        # Only prepend COMMON_DIR if the path is relative
-        if [[ "${ROX_CENTRAL_EXTRA_HELM_VALUES_FILE}" == /* ]]; then
-          helm_args+=(
-            -f "${ROX_CENTRAL_EXTRA_HELM_VALUES_FILE}"
-          )
-        else
-          helm_args+=(
-            -f "${COMMON_DIR}/${ROX_CENTRAL_EXTRA_HELM_VALUES_FILE}"
-          )
-        fi
+        helm_args+=(
+          -f "$ROX_CENTRAL_EXTRA_HELM_VALUES_FILE"
+        )
       fi
 
       helm upgrade --install -n "${central_namespace}" stackrox-central-services "${helm_chart}" \
@@ -912,16 +905,9 @@ function launch_sensor {
 
       # Add a custom values file to Helm
       if [[ -n "$ROX_SENSOR_EXTRA_HELM_VALUES_FILE" ]]; then
-        # Only prepend COMMON_DIR if the path is relative
-        if [[ "${ROX_SENSOR_EXTRA_HELM_VALUES_FILE}" == /* ]]; then
-          helm_args+=(
-            -f "${ROX_SENSOR_EXTRA_HELM_VALUES_FILE}"
-          )
-        else
-          helm_args+=(
-            -f "${COMMON_DIR}/${ROX_SENSOR_EXTRA_HELM_VALUES_FILE}"
-          )
-        fi
+        helm_args+=(
+          -f "$ROX_SENSOR_EXTRA_HELM_VALUES_FILE"
+        )
       fi
 
       if [[ "${FORCE_COLLECTION_METHOD:-false}" == "true" ]]; then
