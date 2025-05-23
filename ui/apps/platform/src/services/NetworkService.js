@@ -481,7 +481,7 @@ export function getExternalNetworkFlows(
     const params = getListQueryParams({ searchFilter, sortOption, page, perPage });
     return axios
         .get(
-            `${networkFlowBaseUrl}/cluster/${clusterId}/externalentities/${entityId}/flows?${params}`
+            `${networkFlowBaseUrl}/cluster/${clusterId}/externalentities/${entityId}/flows?${params}&since=2025-05-22T00:50:14.408Z`
         )
         .then((response) => response.data);
 }
