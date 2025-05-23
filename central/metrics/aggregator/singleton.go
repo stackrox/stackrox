@@ -2,9 +2,12 @@ package aggregator
 
 import (
 	"context"
+	"net/http"
+	"sync/atomic"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	configDS "github.com/stackrox/rox/central/config/datastore"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/metrics/aggregator/common"
@@ -27,6 +30,7 @@ var (
 type aggregatorRunner struct {
 	stopCh   chan bool
 	stopOnce sync.Once
+	needSac  atomic.Bool
 
 	vulnerabilities common.Tracker
 }
@@ -35,6 +39,7 @@ func Singleton() interface {
 	Start()
 	Stop()
 	Reconfigure(*storage.PrometheusMetricsConfig) error
+	http.Handler
 } {
 	once.Do(func() {
 		runner = &aggregatorRunner{
@@ -60,9 +65,21 @@ func vulnerabilitiesConfig(cfg *storage.PrometheusMetricsConfig) (map[string]*st
 	return vc.GetMetricLabels(), period
 }
 
+func isSacNeeded(mle map[string]*storage.PrometheusMetricsConfig_MetricLabels) bool {
+	for _, le := range mle {
+		for label := range le.LabelExpressions {
+			if label == "Cluster" || label == "Namespace" {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func (ar *aggregatorRunner) Reconfigure(cfg *storage.PrometheusMetricsConfig) error {
 	{
 		mle, period := vulnerabilitiesConfig(cfg)
+		ar.needSac.CompareAndSwap(false, isSacNeeded(mle))
 		if err := ar.vulnerabilities.Reconfigure(Registry, mle, period); err != nil {
 			return err
 		}
@@ -107,4 +124,18 @@ func (ar *aggregatorRunner) run(tracker common.Tracker) {
 			}
 		}
 	}
+}
+
+func (ar *aggregatorRunner) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	var gatherer prometheus.Gatherer = Registry
+	if ar.needSac.Load() {
+		var err error
+		log.Info("Serving metrics with SAC gatherer")
+		gatherer, err = common.MakeSacGatherer(r.Context(), Registry)
+		if err != nil {
+			http.Error(w, "Failed to create metrics gatherer: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+	promhttp.HandlerFor(gatherer, promhttp.HandlerOpts{}).ServeHTTP(w, r)
 }
