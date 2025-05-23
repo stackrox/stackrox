@@ -12,12 +12,18 @@ import (
 )
 
 type SacGatherer struct {
-	sac.ScopeChecker
+	*effectiveaccessscope.ScopeTree
 	prometheus.Gatherer
 }
 
 func MakeSacGatherer(ctx context.Context, source prometheus.Gatherer) (prometheus.Gatherer, error) {
-	return &SacGatherer{sac.GlobalAccessScopeChecker(ctx), source}, nil
+	eas, err := sac.GlobalAccessScopeChecker(ctx).
+		EffectiveAccessScope(permissions.View(resources.CVE))
+	if err != nil {
+		return nil, err
+	}
+
+	return &SacGatherer{eas, source}, nil
 }
 
 func (g *SacGatherer) Gather() ([]*dto.MetricFamily, error) {
@@ -61,25 +67,20 @@ func (g *SacGatherer) Check(m *dto.Metric) bool {
 		// Do not allow namespace without cluster.
 		return labelNamespaceName == ""
 	}
-	eas, err := g.EffectiveAccessScope(
-		permissions.View(resources.Cluster))
-	if err != nil {
-		return false
+	log.Info("eas state", g.State)
+	if g.State != effectiveaccessscope.Partial {
+		return g.State == effectiveaccessscope.Included
 	}
-	log.Info("eas state", eas.State)
-	if eas.State != effectiveaccessscope.Partial {
-		return eas.State == effectiveaccessscope.Included
-	}
-	if len(eas.Clusters) == 0 {
+	if len(g.Clusters) == 0 {
 		log.Info("no clusters in parital eas")
 		return false
 	}
-	for clusterName, cluster := range eas.Clusters {
+	for clusterName, cluster := range g.Clusters {
 		log.Info("checking for cluster ", clusterName)
 		if clusterName != labelClusterName {
 			continue
 		}
-		log.Info("cluster ease state", eas.State)
+		log.Info("cluster eas state", cluster.State)
 		if cluster.State != effectiveaccessscope.Partial {
 			return cluster.State == effectiveaccessscope.Included
 		}
