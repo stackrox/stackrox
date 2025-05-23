@@ -1,6 +1,7 @@
 package clusterentities
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -10,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/sensor/kubernetes/heritage"
 	"golang.org/x/exp/maps"
 )
 
@@ -101,6 +103,9 @@ type Store struct {
 	// callbackChannel is a channel to send container metadata upon resolution
 	callbackChannel chan<- ContainerMetadata
 
+	// pastSensors provides data about past Sensor IPs and container IDs
+	pastSensors HeritageData
+
 	// memorySize defines how many ticks old endpoint data should be remembered after removal request
 	// Set to 0 to disable memory
 	memorySize uint16
@@ -111,18 +116,25 @@ type Store struct {
 	trace      map[string]string
 }
 
+type HeritageData interface {
+	GetData(ctx context.Context) []heritage.PastSensor
+	HasCurrentSensorData() bool
+	SetCurrentSensorData(currentIP, currentContainerID string)
+}
+
 // NewStore creates and returns a new store instance.
-func NewStore() *Store {
-	return NewStoreWithMemory(0, false)
+func NewStore(hm HeritageData) *Store {
+	return NewStoreWithMemory(0, hm, false)
 }
 
 // NewStoreWithMemory returns store that remembers past IPs of an endpoint for a given number of ticks
-func NewStoreWithMemory(numTicks uint16, debugMode bool) *Store {
+func NewStoreWithMemory(numTicks uint16, hm HeritageData, debugMode bool) *Store {
 	store := &Store{
 		endpointsStore:    newEndpointsStoreWithMemory(numTicks),
 		podIPsStore:       newPodIPsStoreWithMemory(numTicks),
 		containerIDsStore: newContainerIDsStoreWithMemory(numTicks),
 		memorySize:        numTicks,
+		pastSensors:       hm,
 		debugMode:         debugMode,
 	}
 	store.initMaps()
@@ -162,6 +174,29 @@ func (e *Store) Apply(updates map[string]*EntityData, incremental bool, auxInfo 
 	if e.debugMode {
 		for id, data := range updates {
 			e.track("add-deployment (%s) overwrite=%t ID=%s, data=%v", auxInfo, !incremental, id, data.String())
+		}
+	}
+
+	// We want to catch the data about the Sensor itself and store it.
+	// This block is executed only few times per Sensor restart (as long as the update contains data about sensor).
+	if !e.pastSensors.HasCurrentSensorData() {
+		// TODO: Implement better way of discovering these data.
+		sensorPodIP := ""
+		sensorContainerID := ""
+		for _, deployment := range updates {
+			for _, meta := range deployment.containerIDs {
+				if meta.ContainerName == "sensor" {
+					sensorContainerID = meta.ContainerID
+					allPodIPs := maps.Keys(deployment.ips)
+					if len(allPodIPs) > 0 {
+						sensorPodIP = allPodIPs[0].String()
+					}
+				}
+			}
+		}
+		if sensorPodIP != "" && sensorContainerID != "" {
+			e.pastSensors.SetCurrentSensorData(sensorPodIP, sensorContainerID)
+			log.Infof("Adding podIP=%q and containerID=%q to Sensor heritage", sensorPodIP, sensorContainerID)
 		}
 	}
 
