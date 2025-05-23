@@ -193,9 +193,8 @@ function ImagePageVulnerabilities({
     });
 
     const isNvdCvssColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
-    // Omit for 4.7 release until CVE/advisory separation is available in 4.8 release.
-    // const isEpssProbabilityColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
-    const isEpssProbabilityColumnEnabled = false;
+    const isEpssProbabilityColumnEnabled =
+        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_FLATTEN_CVE_DATA');
     // totalAdvisories out of scope for MVP
     /*
     const isAdvisoryColumnEnabled =
@@ -227,7 +226,8 @@ function ImagePageVulnerabilities({
         {
             ...imageCVESearchFilterConfig,
             attributes: imageCVESearchFilterConfig.attributes.filter(
-                ({ searchTerm }) => searchTerm !== 'EPSS Probability'
+                ({ searchTerm }) =>
+                    searchTerm !== 'EPSS Probability' || isEpssProbabilityColumnEnabled
             ),
         },
         convertToFlatImageComponentSearchFilterConfig(isFlattenCveDataEnabled),

@@ -117,7 +117,7 @@ func (s *SearchOperationsTestSuite) TestAutocomplete() {
 	// Since we are using the datastore and not the store we need to create a ranker and use it to populate the
 	// risk score so the results are ordered correctly.
 	deploymentRanker := ranking.NewRanker()
-	deploymentDS, err = deploymentDatastore.New(s.pool, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), deploymentRanker, platformmatcher.Singleton())
+	deploymentDS, err = deploymentDatastore.New(s.pool, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), deploymentRanker, platformmatcher.GetTestPlatformMatcherWithDefaultPlatformComponentConfig(s.mockCtrl))
 	s.Require().NoError(err)
 
 	timeNow := time.Now()
@@ -300,7 +300,7 @@ func (s *SearchOperationsTestSuite) TestAutocompleteAuthz() {
 	)
 
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(s.mockCtrl)
-	deploymentDS, err = deploymentDatastore.New(s.pool, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker(), platformmatcher.Singleton())
+	deploymentDS, err = deploymentDatastore.New(s.pool, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker(), platformmatcher.GetTestPlatformMatcherWithDefaultPlatformComponentConfig(s.mockCtrl))
 	s.Require().NoError(err)
 
 	alertsDS = alertDatastore.GetTestPostgresDataStore(s.T(), s.pool)
@@ -371,7 +371,7 @@ func (s *SearchOperationsTestSuite) TestSearchAuthz() {
 	)
 
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(s.mockCtrl)
-	deploymentDS, err = deploymentDatastore.New(s.pool, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker(), platformmatcher.Singleton())
+	deploymentDS, err = deploymentDatastore.New(s.pool, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker(), platformmatcher.GetTestPlatformMatcherWithDefaultPlatformComponentConfig(s.mockCtrl))
 	s.Require().NoError(err)
 
 	alertsDS = alertDatastore.GetTestPostgresDataStore(s.T(), s.pool)

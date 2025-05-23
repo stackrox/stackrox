@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/postgres"
 	searchPkg "github.com/stackrox/rox/pkg/search"
+	"go.uber.org/mock/gomock"
 )
 
 var (
@@ -56,9 +57,10 @@ func New(alertStore store.Store, searcher search.Searcher, platformMatcher platf
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) DataStore {
+func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) DataStore {
 	alertStore := pgStore.New(pool)
 	searcher := search.New(alertStore)
+	mockCtrl := gomock.NewController(t)
 
-	return New(alertStore, searcher, platformmatcher.Singleton())
+	return New(alertStore, searcher, platformmatcher.GetTestPlatformMatcherWithDefaultPlatformComponentConfig(mockCtrl))
 }

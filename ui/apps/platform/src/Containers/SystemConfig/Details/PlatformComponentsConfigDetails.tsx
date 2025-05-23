@@ -11,57 +11,22 @@ import {
     Text,
 } from '@patternfly/react-core';
 
-import { PlatformComponentRule, PlatformComponentsConfig } from 'types/config.proto';
+import { PlatformComponentsConfig } from 'types/config.proto';
 
 import './PlatformComponentsConfigDetails.css';
 import RedHatLayeredProductsCard from './components/RedHatLayeredProductsCard';
 import CustomPlatformComponentsCard from './components/CustomPlatformComponentsCard';
+import { getPlatformComponentsConfigRules } from '../configUtils';
 
-// @TODO: Remove hardcoded value and add platformComponentsConfig as a prop
-const platformComponentsConfig: PlatformComponentsConfig = {
-    needsReevaluation: false,
-    rules: [
-        {
-            name: 'system rule',
-            namespaceRule: {
-                regex: '^kube-.*|^openshift-.*',
-            },
-        },
-        {
-            name: 'red hat layered products',
-            namespaceRule: {
-                regex: '^stackrox$|^rhacs-operator$|^open-cluster-management$|^multicluster-engine$|^aap$|^hive$`',
-            },
-        },
-        {
-            name: 'custom platform component 1',
-            namespaceRule: {
-                regex: '^my-application$|^custom-test$|^something-else$',
-            },
-        },
-        {
-            name: 'custom platform component 2',
-            namespaceRule: {
-                regex: '^nvidia$',
-            },
-        },
-    ],
+export type PlatformComponentsConfigDetailsProps = {
+    platformComponentsConfig: PlatformComponentsConfig;
 };
 
-const PlatformComponentsConfigDetails = (): ReactElement => {
-    let coreSystemRule: PlatformComponentRule | undefined;
-    let redHatLayeredProductsRule: PlatformComponentRule | undefined;
-    const customRules: PlatformComponentRule[] = [];
-
-    platformComponentsConfig.rules.forEach((rule) => {
-        if (rule.name === 'system rule') {
-            coreSystemRule = rule;
-        } else if (rule.name === 'red hat layered products') {
-            redHatLayeredProductsRule = rule;
-        } else {
-            customRules.push(rule);
-        }
-    });
+const PlatformComponentsConfigDetails = ({
+    platformComponentsConfig,
+}: PlatformComponentsConfigDetailsProps): ReactElement => {
+    const { coreSystemRule, redHatLayeredProductsRule, customRules } =
+        getPlatformComponentsConfigRules(platformComponentsConfig);
 
     return (
         <Grid hasGutter>
@@ -78,7 +43,7 @@ const PlatformComponentsConfigDetails = (): ReactElement => {
                             <Text component="small" className="pf-v5-u-color-200">
                                 Namespaces match (Regex)
                             </Text>
-                            <CodeBlock>{coreSystemRule?.namespaceRule.regex}</CodeBlock>
+                            <CodeBlock>{coreSystemRule?.namespaceRule?.regex || 'None'}</CodeBlock>
                         </Stack>
                     </CardBody>
                 </Card>

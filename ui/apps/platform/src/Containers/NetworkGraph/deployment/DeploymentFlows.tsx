@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Divider, Stack, StackItem, ToggleGroup, ToggleGroupItem } from '@patternfly/react-core';
+
+import { TimeWindow } from 'constants/timeWindows';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import { UseURLPaginationResult } from 'hooks/useURLPagination';
 import { UseUrlSearchReturn } from 'hooks/useURLSearch';
@@ -9,52 +11,51 @@ import { EdgeState } from '../components/EdgeStateSelect';
 import { Flow } from '../types/flow.type';
 import InternalFlows from './InternalFlows';
 import ExternalFlows from './ExternalFlows';
-import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
 
 export type DeploymentFlowsView = 'external-flows' | 'internal-flows';
 
 type DeploymentFlowsProps = {
     deploymentId: string;
-    deploymentName: string;
     nodes: CustomNodeModel[];
     edgeState: EdgeState;
     onNodeSelect: (id: string) => void;
-    onExternalIPSelect: (externalIP: string) => void;
     isLoadingNetworkFlows: boolean;
     networkFlowsError: string;
     networkFlows: Flow[];
     refetchFlows: () => void;
-    scopeHierarchy: NetworkScopeHierarchy;
-    urlPagination: UseURLPaginationResult;
+    anomalousUrlPagination: UseURLPaginationResult;
+    baselineUrlPagination: UseURLPaginationResult;
     urlSearchFiltering: UseUrlSearchReturn;
+    timeWindow: TimeWindow;
 };
 
 function DeploymentFlows({
     deploymentId,
-    deploymentName,
     nodes,
     edgeState,
     onNodeSelect,
-    onExternalIPSelect,
     isLoadingNetworkFlows,
     networkFlowsError,
     networkFlows,
     refetchFlows,
-    scopeHierarchy,
-    urlPagination,
+    anomalousUrlPagination,
+    baselineUrlPagination,
     urlSearchFiltering,
+    timeWindow,
 }: DeploymentFlowsProps) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isNetworkGraphExternalIpsEnabled = isFeatureFlagEnabled('ROX_NETWORK_GRAPH_EXTERNAL_IPS');
     const [selectedView, setSelectedView] = useState<DeploymentFlowsView>('internal-flows');
 
-    const { setPage } = urlPagination;
+    const { setPage: setPageAnomalous } = anomalousUrlPagination;
+    const { setPage: setPageBaseline } = baselineUrlPagination;
     const { setSearchFilter } = urlSearchFiltering;
 
     useEffect(() => {
-        setPage(1);
+        setPageAnomalous(1);
+        setPageBaseline(1);
         setSearchFilter({});
-    }, [selectedView, setPage, setSearchFilter]);
+    }, [selectedView, setPageAnomalous, setPageBaseline, setSearchFilter]);
 
     if (!isNetworkGraphExternalIpsEnabled) {
         return (
@@ -108,10 +109,10 @@ function DeploymentFlows({
                             />
                         ) : (
                             <ExternalFlows
-                                deploymentName={deploymentName}
-                                scopeHierarchy={scopeHierarchy}
-                                onExternalIPSelect={onExternalIPSelect}
-                                urlPagination={urlPagination}
+                                deploymentId={deploymentId}
+                                timeWindow={timeWindow}
+                                anomalousUrlPagination={anomalousUrlPagination}
+                                baselineUrlPagination={baselineUrlPagination}
                                 urlSearchFiltering={urlSearchFiltering}
                             />
                         )}
