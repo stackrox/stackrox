@@ -15,4 +15,9 @@ os.environ["ROX_ACTIVE_VULN_MGMT"] = "true"
 os.environ["ROX_RISK_REPROCESSING_INTERVAL"] = "15s"
 os.environ["ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL"] = "30s"
 
-make_qa_e2e_test_runner(cluster=GKECluster("qa-e2e-test")).run()
+# tbd: restore this file and create gke_qa_e2e_arm64_tests.py with below config
+os.environ["REMOTE_CLUSTER_ARCH"] = "arm64"
+os.environ["ARM64_NODESELECTORS"] = "true"
+os.environ["IMAGE_PREFETCH_DISABLED"] = "true"
+
+make_qa_e2e_test_runner(cluster=GKECluster("qa-e2e-test", machine_type="t2a-standard-8")).run()

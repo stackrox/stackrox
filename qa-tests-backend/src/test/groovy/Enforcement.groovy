@@ -14,6 +14,7 @@ import services.AlertService
 import services.ClusterService
 import services.PolicyService
 import services.ProcessBaselineService
+import util.Env
 import util.Timer
 
 import spock.lang.Shared
@@ -514,7 +515,9 @@ class Enforcement extends BaseSpecification {
         log.info "Enforcement took ${(System.currentTimeMillis() - startTime) / 1000}s"
         assert alert.enforcement.action == EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT
         //Node Constraint should have been ignored
-        assert !orchestrator.getDeploymentNodeSelectors(d)
+        def deploymentNodeSelectors = orchestrator.getDeploymentNodeSelectors(d)
+        assert deploymentNodeSelectors.isEmpty() ||
+                (Env.REMOTE_CLUSTER_ARCH == "arm64" && deploymentNodeSelectors == ['kubernetes.io/arch': 'arm64'])
         assert orchestrator.getDeploymentUnavailableReplicaCount(d) !=
                 orchestrator.getDeploymentReplicaCount(d)
         assert Services.getAlertEnforcementCount(

@@ -181,8 +181,8 @@ class IntegrationsTest extends BaseSpecification {
 
     @Unroll
     @Tag("Integration")
-    // splunk is not supported on P/Z
-    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
+    // splunk is only supported on x86_64
+    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH != "x86_64" })
     def "Verify Splunk Integration"() {
         given:
         "the integration is tested"
@@ -826,10 +826,10 @@ class IntegrationsTest extends BaseSpecification {
 
     @Tag("Integration")
     @Tag("BAT")
-    // syslog test image is not multi-arch, docker files have x86 only dependencies
+    // syslog test image is not multi-arch, docker files have x86_64 only dependencies
     // https://hub.docker.com/r/rsyslog/syslog_appliance_alpine
     // https://github.com/rsyslog/rsyslog-docker/tree/master/appliance/alpine
-    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
+    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH != "x86_64" })
     def "Verify syslog notifier"() {
         given:
         "syslog server is created"

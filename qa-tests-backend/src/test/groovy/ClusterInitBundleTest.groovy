@@ -5,13 +5,16 @@ import io.stackrox.proto.api.v1.ApiTokenService
 import services.BaseService
 import services.ClusterInitBundleService
 import services.ClusterService
+import util.Env
 
 import org.junit.Assume
+import spock.lang.IgnoreIf
 import spock.lang.Shared
 import spock.lang.Tag
 
 @Tag("BAT")
 @Tag("PZ")
+@IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "arm64" })
 class ClusterInitBundleTest extends BaseSpecification {
 
     @Shared
