@@ -41,24 +41,24 @@ tests:
       tolerations:
       - key: "node-role.kubernetes.io/infra"
         operator: "Exists"
-      - key: "node-role.kubernetes.io/master"
+      - key: "node-role.kubernetes.io/control-plane"
         operator: "Exists"
     configController:
       tolerations:
       - key: "node-role.kubernetes.io/infra"
         operator: "Exists"
-      - key: "node-role.kubernetes.io/master"
+      - key: "node-role.kubernetes.io/control-plane"
         operator: "Exists"
     scanner:
       tolerations:
       - key: "node-role.kubernetes.io/infra"
         operator: "Exists"
-      - key: "node-role.kubernetes.io/master"
+      - key: "node-role.kubernetes.io/control-plane"
         operator: "Exists"
       dbTolerations:
       - key: "node-role.kubernetes.io/infra"
         operator: "Exists"
-      - key: "node-role.kubernetes.io/master"
+      - key: "node-role.kubernetes.io/control-plane"
         operator: "Exists"
   expect: |
     .deployments.central.spec.template.spec.tolerations | assertThat(length == 2)
