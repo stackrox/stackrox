@@ -37,7 +37,7 @@ const SystemConfigPage = (): ReactElement => {
     const isClustersRoutePathRendered = true; // TODO replace with the preceding after #2105 has been merged
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isCustomizingPlatformComponentsEnabled = isFeatureFlagEnabled(
+    const isCustomizingPlatformComponentsEnabled = !isFeatureFlagEnabled(
         'ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS'
     );
 

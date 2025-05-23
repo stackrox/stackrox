@@ -57,17 +57,16 @@ function PlatformComponentsConfigForm({
                         <div className="pf-v5-u-p-md">
                             <Title headingLevel="h3">Core system components</Title>
                             <Text>
-                                Components found in core Openshift and Kubernetes namespaces are
-                                included in the platform definition by default
+                                Core system components are not customizable and are set by the
+                                system. These definitions may change over time as the system is
+                                upgraded.
                             </Text>
                             <Divider component="div" className="pf-v5-u-py-md" />
                             <FormGroup
-                                isRequired
                                 label="Namespace rules (Regex)"
                                 fieldId="platformComponentsConfigRules.coreSystemRule.namespaceRule.regex"
                             >
                                 <TextArea
-                                    isRequired
                                     isDisabled
                                     type="text"
                                     id="platformComponentsConfigRules.coreSystemRule.namespaceRule.regex"
@@ -89,7 +88,14 @@ function PlatformComponentsConfigForm({
                                 are included in the platform definition by default. Enter one or
                                 more namespaces using regex, separated by | (pipe symbol). For more
                                 information on the syntax structure, see{' '}
-                                <Button variant="link" isInline>
+                                <Button
+                                    variant="link"
+                                    component="a"
+                                    href="https://github.com/google/re2/wiki/syntax"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    isInline
+                                >
                                     RE2 syntax reference
                                 </Button>
                                 .
@@ -150,7 +156,14 @@ function PlatformComponentsConfigForm({
                                 applications and products. Enter one or more namespaces using regex,
                                 separated by | (pipe symbol). For more information on the syntax
                                 structure, see{' '}
-                                <Button variant="link" isInline>
+                                <Button
+                                    variant="link"
+                                    component="a"
+                                    href="https://github.com/google/re2/wiki/syntax"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    isInline
+                                >
                                     RE2 syntax reference
                                 </Button>
                                 .
