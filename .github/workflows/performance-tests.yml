@@ -10,7 +10,7 @@ concurrency: performance-tests-${{ github.ref }}
 jobs:
   wait-for-images:
     name: Wait for images
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     if: ${{ contains(github.event.pull_request.labels.*.name, 'ci-performance-tests') }}
     strategy:
       matrix:
@@ -34,7 +34,7 @@ jobs:
   run-k6-performance-tests:
     needs: [wait-for-images]
     name: Run k6 performance tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     if: ${{ contains(github.event.pull_request.labels.*.name, 'ci-performance-tests') }}
     env:
       USE_GKE_GCLOUD_AUTH_PLUGIN: "True"

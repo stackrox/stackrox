@@ -15,7 +15,7 @@ on:
 
 jobs:
   db-integration-tests:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     container:
       image: quay.io/stackrox-io/apollo-ci:scanner-test-0.4.8
     steps:

@@ -9,7 +9,7 @@ concurrency: Batch load test metrics
 
 jobs:
   batch-load-test-metrics:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
     steps:

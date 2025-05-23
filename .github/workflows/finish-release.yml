@@ -34,7 +34,7 @@ concurrency: Release automation ${{ inputs.version }}
 
 jobs:
   properties:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     outputs:
       slack-channel: ${{ fromJSON(format('["{0}","{1}"]', steps.fetch.outputs.dry-slack-channel, steps.fetch.outputs.slack-channel))[github.event.inputs.dry-run != 'true'] }}
     steps:
@@ -47,7 +47,7 @@ jobs:
   run-parameters:
     if: github.event_name == 'workflow_dispatch'
     name: Run parameters
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - run: |
           [ "$DRY_RUN" = "true" ] && echo "::warning::This is a dry run"
@@ -70,7 +70,7 @@ jobs:
 
   publish-release:
     name: Tag Release ${{ needs.variables.outputs.named-release-patch }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: [variables, properties]
     steps:
       - name: Check out code
@@ -166,7 +166,7 @@ jobs:
 
   update-infra-demo-version:
     name: Update infra demo default versions
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: [publish-release]
     env:
       BRANCH: "bump-demo-versions-${{ inputs.version }}"

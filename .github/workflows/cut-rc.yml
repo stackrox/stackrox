@@ -60,7 +60,7 @@ concurrency: Release automation ${{ inputs.version }}
 
 jobs:
   properties:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     outputs:
       slack-channel: ${{ fromJSON(format('["{0}","{1}"]', steps.fetch.outputs.dry-slack-channel, steps.fetch.outputs.slack-channel))[github.event.inputs.dry-run != 'true'] }}
       jira-projects: ${{ steps.fetch.outputs.jira-projects }}
@@ -73,7 +73,7 @@ jobs:
 
   run-parameters:
     name: Run parameters
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - run: |
           [ "$DRY_RUN" = "true" ] && echo "::warning::This is a dry run"
@@ -96,7 +96,7 @@ jobs:
   check-jira:
     name: Check Jira tickets for release
     needs: [variables, properties]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Query JIRA
         # Checking unequal with "false" because closed milestones have unset input values.
@@ -115,7 +115,7 @@ jobs:
   postpone-prs:
     name: Postpone open PRs
     needs: variables
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Check open PRs
         id: check
@@ -171,7 +171,7 @@ jobs:
 
   cut-rc:
     name: Tag RC for milestone ${{needs.variables.outputs.milestone}}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: [variables, properties, postpone-prs, check-jira]
     steps:
       - name: Check out code
@@ -300,7 +300,7 @@ jobs:
                     :arrow_right: Once all checks pass and you're ready for release, run the <${{ github.server_url }}/${{ github.repository }}/actions/workflows/finish-release.yml|Finish Release> workflow and delete the `${{ needs.variables.outputs.next-milestone }}` milestone to avoid confusion.
 
   trim-cluster-names:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     outputs:
       cluster-with-fake-load-name-cleaned: ${{ steps.cluster-names.outputs.cluster-with-fake-load-name-cleaned }}
       cluster-with-real-load-name-cleaned: ${{ steps.cluster-names.outputs.cluster-with-real-load-name-cleaned }}
