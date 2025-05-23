@@ -17,8 +17,6 @@ import pluralize from 'pluralize';
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import { TimeWindow } from 'constants/timeWindows';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
-import { UseURLPaginationResult } from 'hooks/useURLPagination';
-import { UseUrlSearchReturn } from 'hooks/useURLSearch';
 import { markNetworkBaselineStatuses } from 'services/NetworkService';
 import { NetworkBaselinePeerStatus, PeerStatus } from 'types/networkBaseline.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
@@ -31,34 +29,37 @@ import { useNetworkBaselineStatus } from '../hooks/useNetworkBaselineStatus';
 import { EXTERNAL_SOURCE_ADDRESS_QUERY } from '../NetworkGraph.constants';
 import { getFlowKey } from '../utils/flowUtils';
 
+import {
+    usePaginationAnomalous,
+    usePaginationBaseline,
+    useSearchFilterSidePanel,
+} from '../URLStateContext';
+
 type ExternalFlowsProps = {
     deploymentId: string;
     timeWindow: TimeWindow;
-    anomalousUrlPagination: UseURLPaginationResult;
-    baselineUrlPagination: UseURLPaginationResult;
-    urlSearchFiltering: UseUrlSearchReturn;
 };
 
-function ExternalFlows({
-    deploymentId,
-    timeWindow,
-    anomalousUrlPagination,
-    baselineUrlPagination,
-    urlSearchFiltering,
-}: ExternalFlowsProps) {
-    const { searchFilter, setSearchFilter } = urlSearchFiltering;
+function ExternalFlows({ deploymentId, timeWindow }: ExternalFlowsProps) {
+    const { searchFilter, setSearchFilter } = useSearchFilterSidePanel();
+
+    const anomalousPagination = usePaginationAnomalous();
+    const baselinePagination = usePaginationBaseline();
+
+    const { setPage: setPageAnomalous } = anomalousPagination;
+    const { setPage: setPageBaseline } = baselinePagination;
 
     const anomalous = useNetworkBaselineStatus(
         deploymentId,
         timeWindow,
-        anomalousUrlPagination,
+        anomalousPagination,
         searchFilter,
         'ANOMALOUS'
     );
     const baseline = useNetworkBaselineStatus(
         deploymentId,
         timeWindow,
-        baselineUrlPagination,
+        baselinePagination,
         searchFilter,
         'BASELINE'
     );
@@ -70,9 +71,6 @@ function ExternalFlows({
     const [isBaselineBulkActionOpen, setIsBaselineBulkActionOpen] = useState(false);
 
     const [networkFlowError, setNetworkFlowError] = useState('');
-
-    const { setPage: setPageAnomalous } = anomalousUrlPagination;
-    const { setPage: setPageBaseline } = baselineUrlPagination;
 
     useEffect(() => {
         setPageAnomalous(1);
@@ -259,7 +257,6 @@ function ExternalFlows({
                                 statusType="ANOMALOUS"
                                 tableState={anomalous.tableState}
                                 areAllRowsSelected={areAllPageAnomalousSelected}
-                                urlSearchFiltering={urlSearchFiltering}
                                 onSelectAll={selectAllAnomalousFlows}
                                 isFlowSelected={isFlowSelected}
                                 onRowSelect={onSelectFlow}
@@ -308,7 +305,6 @@ function ExternalFlows({
                                 statusType="BASELINE"
                                 tableState={baseline.tableState}
                                 areAllRowsSelected={areAllPageBaselineSelected}
-                                urlSearchFiltering={urlSearchFiltering}
                                 onSelectAll={selectAllBaselineFlows}
                                 isFlowSelected={isFlowSelected}
                                 onRowSelect={onSelectFlow}

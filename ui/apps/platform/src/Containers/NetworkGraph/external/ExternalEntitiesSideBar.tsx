@@ -12,8 +12,6 @@ import {
 } from '@patternfly/react-core';
 
 import { TimeWindow } from 'constants/timeWindows';
-import { UseURLPaginationResult } from 'hooks/useURLPagination';
-import { UseUrlSearchReturn } from 'hooks/useURLSearch';
 
 import { ExternalEntitiesIcon } from '../common/NetworkGraphIcons';
 import ExternalFlowsTable from './ExternalFlowsTable';
@@ -22,6 +20,8 @@ import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
 import { CustomEdgeModel, CustomNodeModel } from '../types/topology.type';
 import { getNodeById } from '../utils/networkGraphUtils';
 import EntityDetails from './EntityDetails';
+
+import { usePagination, useSearchFilterSidePanel } from '../URLStateContext';
 
 export type ExternalEntitiesView = 'external-ips' | 'workloads-with-external-flows';
 
@@ -35,8 +35,6 @@ export type ExternalEntitiesSideBarProps = {
     onNodeSelect: (id: string) => void;
     onExternalIPSelect: (externalIP: string | undefined) => void;
     timeWindow: TimeWindow;
-    urlPagination: UseURLPaginationResult;
-    urlSearchFiltering: UseUrlSearchReturn;
 };
 
 function EntityTitleText({ text, id }: { text: string | undefined; id: string }) {
@@ -57,14 +55,12 @@ function ExternalEntitiesSideBar({
     onNodeSelect,
     onExternalIPSelect,
     timeWindow,
-    urlPagination,
-    urlSearchFiltering,
 }: ExternalEntitiesSideBarProps): ReactElement {
     const [selectedView, setSelectedView] = useState<ExternalEntitiesView>('external-ips');
 
     const entityNode = getNodeById(nodes, id);
-    const { setPage } = urlPagination;
-    const { setSearchFilter } = urlSearchFiltering;
+    const { setPage } = usePagination();
+    const { setSearchFilter } = useSearchFilterSidePanel();
 
     useEffect(() => {
         setPage(1);
@@ -80,8 +76,6 @@ function ExternalEntitiesSideBar({
                 scopeHierarchy={scopeHierarchy}
                 onNodeSelect={onNodeSelect}
                 onExternalIPSelect={onExternalIPSelect}
-                urlPagination={urlPagination}
-                urlSearchFiltering={urlSearchFiltering}
             />
         );
     }
@@ -126,8 +120,6 @@ function ExternalEntitiesSideBar({
                             scopeHierarchy={scopeHierarchy}
                             onExternalIPSelect={onExternalIPSelect}
                             timeWindow={timeWindow}
-                            urlPagination={urlPagination}
-                            urlSearchFiltering={urlSearchFiltering}
                         />
                     ) : (
                         <ExternalFlowsTable

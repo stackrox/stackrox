@@ -1,10 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Divider, Stack, StackItem, ToggleGroup, ToggleGroupItem } from '@patternfly/react-core';
 
 import { TimeWindow } from 'constants/timeWindows';
 import useFeatureFlags from 'hooks/useFeatureFlags';
-import { UseURLPaginationResult } from 'hooks/useURLPagination';
-import { UseUrlSearchReturn } from 'hooks/useURLSearch';
 
 import { CustomNodeModel } from '../types/topology.type';
 import { EdgeState } from '../components/EdgeStateSelect';
@@ -12,7 +10,14 @@ import { Flow } from '../types/flow.type';
 import InternalFlows from './InternalFlows';
 import ExternalFlows from './ExternalFlows';
 
-export type DeploymentFlowsView = 'external-flows' | 'internal-flows';
+import {
+    usePaginationAnomalous,
+    usePaginationBaseline,
+    useSearchFilterSidePanel,
+    useParameterSidePanelToggle,
+} from '../URLStateContext';
+
+export type DeploymentFlowsView = 'EXTERNAL_FLOWS' | 'INTERNAL_FLOWS';
 
 type DeploymentFlowsProps = {
     deploymentId: string;
@@ -23,9 +28,6 @@ type DeploymentFlowsProps = {
     networkFlowsError: string;
     networkFlows: Flow[];
     refetchFlows: () => void;
-    anomalousUrlPagination: UseURLPaginationResult;
-    baselineUrlPagination: UseURLPaginationResult;
-    urlSearchFiltering: UseUrlSearchReturn;
     timeWindow: TimeWindow;
 };
 
@@ -38,24 +40,22 @@ function DeploymentFlows({
     networkFlowsError,
     networkFlows,
     refetchFlows,
-    anomalousUrlPagination,
-    baselineUrlPagination,
-    urlSearchFiltering,
     timeWindow,
 }: DeploymentFlowsProps) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isNetworkGraphExternalIpsEnabled = isFeatureFlagEnabled('ROX_NETWORK_GRAPH_EXTERNAL_IPS');
-    const [selectedView, setSelectedView] = useState<DeploymentFlowsView>('internal-flows');
 
-    const { setPage: setPageAnomalous } = anomalousUrlPagination;
-    const { setPage: setPageBaseline } = baselineUrlPagination;
-    const { setSearchFilter } = urlSearchFiltering;
+    const { setPage: setPageAnomalous } = usePaginationAnomalous();
+    const { setPage: setPageBaseline } = usePaginationBaseline();
+    const { setSearchFilter } = useSearchFilterSidePanel();
+    const { selectedToggleSidePanel, setSelectedToggleSidePanel } = useParameterSidePanelToggle();
 
-    useEffect(() => {
+    function changeView(view: DeploymentFlowsView) {
+        setSelectedToggleSidePanel(view);
         setPageAnomalous(1);
         setPageBaseline(1);
         setSearchFilter({});
-    }, [selectedView, setPageAnomalous, setPageBaseline, setSearchFilter]);
+    }
 
     if (!isNetworkGraphExternalIpsEnabled) {
         return (
@@ -74,6 +74,8 @@ function DeploymentFlows({
         );
     }
 
+    const selectedView = selectedToggleSidePanel ?? 'INTERNAL_FLOWS';
+
     return (
         <div className="pf-v5-u-h-100">
             <Stack>
@@ -81,22 +83,22 @@ function DeploymentFlows({
                     <ToggleGroup aria-label="Toggle between internal flows and external flows views">
                         <ToggleGroupItem
                             text="Internal flows"
-                            buttonId="internal-flows"
-                            isSelected={selectedView === 'internal-flows'}
-                            onChange={() => setSelectedView('internal-flows')}
+                            buttonId="INTERNAL_FLOWS"
+                            isSelected={selectedView === 'INTERNAL_FLOWS'}
+                            onChange={() => changeView('INTERNAL_FLOWS')}
                         />
                         <ToggleGroupItem
                             text="External flows"
-                            buttonId="external-flows"
-                            isSelected={selectedView === 'external-flows'}
-                            onChange={() => setSelectedView('external-flows')}
+                            buttonId="EXTERNAL_FLOWS"
+                            isSelected={selectedView === 'EXTERNAL_FLOWS'}
+                            onChange={() => changeView('EXTERNAL_FLOWS')}
                         />
                     </ToggleGroup>
                 </StackItem>
                 <Divider component="hr" />
                 <StackItem isFilled style={{ overflow: 'auto' }}>
                     <Stack className="pf-v5-u-p-md">
-                        {selectedView === 'internal-flows' ? (
+                        {selectedView === 'INTERNAL_FLOWS' ? (
                             <InternalFlows
                                 nodes={nodes}
                                 deploymentId={deploymentId}
@@ -108,13 +110,7 @@ function DeploymentFlows({
                                 refetchFlows={refetchFlows}
                             />
                         ) : (
-                            <ExternalFlows
-                                deploymentId={deploymentId}
-                                timeWindow={timeWindow}
-                                anomalousUrlPagination={anomalousUrlPagination}
-                                baselineUrlPagination={baselineUrlPagination}
-                                urlSearchFiltering={urlSearchFiltering}
-                            />
+                            <ExternalFlows deploymentId={deploymentId} timeWindow={timeWindow} />
                         )}
                     </Stack>
                 </StackItem>
