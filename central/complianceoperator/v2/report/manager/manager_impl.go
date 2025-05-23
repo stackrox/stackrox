@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	checkResults "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	complianceIntegrationDS "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore"
 	profileDatastore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
 	"github.com/stackrox/rox/central/complianceoperator/v2/report"
@@ -316,11 +317,11 @@ func (m *managerImpl) HandleScan(sensorCtx context.Context, scan *storage.Compli
 	if err != nil {
 		if errors.Is(err, watcher.ErrComplianceOperatorScanMissingLastStartedFiled) {
 			log.Debugf("The scan is missing the LastStartedField: %v", err)
-			return nil
+			return err
 		}
 		if errors.Is(err, watcher.ErrScanAlreadyHandled) {
 			log.Debugf("Scan %s was already handled", scan.GetScanName())
-			return nil
+			return err
 		}
 		return err
 	}
@@ -368,15 +369,15 @@ func (m *managerImpl) HandleResult(sensorCtx context.Context, result *storage.Co
 	if err != nil {
 		if errors.Is(err, watcher.ErrComplianceOperatorReceivedOldCheckResult) {
 			log.Debugf("The CheckResult is older than the current scan in the store")
-			return nil
+			return err
 		}
 		if errors.Is(err, watcher.ErrComplianceOperatorScanMissingLastStartedFiled) {
 			log.Debugf("The scan is missing the LastStartedField: %v", err)
-			return nil
+			return err
 		}
 		if errors.Is(err, watcher.ErrScanAlreadyHandled) {
 			log.Debugf("The scan linked to the check result %s is already handled", result.GetCheckName())
-			return nil
+			return err
 		}
 		return err
 	}
@@ -397,6 +398,9 @@ func (m *managerImpl) handleReadyScan() {
 				concurrency.WithLock(&m.watchingScansLock, func() {
 					delete(m.watchingScans, scanWatcherResult.WatcherID)
 				})
+				if err := watcher.DeleteOldResults(m.automaticReportingCtx, scanWatcherResult, checkResults.Singleton()); err != nil {
+					log.Errorf("unable to delete old CheckResults: %v", err)
+				}
 				if errors.Is(scanWatcherResult.Error, watcher.ErrScanRemoved) {
 					log.Debugf("Scan %s was removed", scanWatcherResult.Scan.GetScanName())
 					continue
@@ -513,6 +517,9 @@ func (m *managerImpl) handleReadyScanConfig() {
 				concurrency.WithLock(&m.watchingScanConfigsLock, func() {
 					delete(m.watchingScanConfigs, scanConfigWatcherResult.WatcherID)
 				})
+				if err := watcher.DeleteOldResultsFromMissingScans(m.automaticReportingCtx, scanConfigWatcherResult, m.profileDataStore, m.scanDataStore, checkResults.Singleton()); err != nil {
+					log.Errorf("unable to delete old CheckResults: %v", err)
+				}
 				m.generateReportsFromWatcherResults(scanConfigWatcherResult)
 			}
 		}

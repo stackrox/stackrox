@@ -3,8 +3,10 @@ package watcher
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/pkg/errors"
+	resultsDS "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	profileDatastore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
 	snapshotDS "github.com/stackrox/rox/central/complianceoperator/v2/report/datastore"
 	scanConfigurationDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
@@ -27,6 +29,37 @@ var (
 // GetScanConfigFromScan returns the ScanConfiguration associated with the given scan
 func GetScanConfigFromScan(ctx context.Context, scan *storage.ComplianceOperatorScanV2, scanConfigDS scanConfigurationDS.DataStore) (*storage.ComplianceOperatorScanConfigurationV2, error) {
 	return scanConfigDS.GetScanConfigurationByName(ctx, scan.GetScanConfigName())
+}
+
+func DeleteOldResultsFromMissingScans(ctx context.Context, results *ScanConfigWatcherResults, profileDataStore profileDatastore.DataStore, scanDataStore scan.DataStore, resultsDataStore resultsDS.DataStore) error {
+	scans, err := GetScansFromScanConfiguration(ctx, results.ScanConfig, profileDataStore, scanDataStore)
+	if err != nil {
+		return err
+	}
+	for _, scanResults := range results.ScanResults {
+		scans.Remove(fmt.Sprintf("%s:%s", scanResults.Scan.GetClusterId(), scanResults.Scan.GetId()))
+	}
+	errList := errorhelpers.NewErrorList("delete old CheckResults from missing scans")
+	for scanWatcherID, _ := range scans {
+		parts := strings.Split(scanWatcherID, ":")
+		if len(parts) != 2 {
+			errList.AddError(errors.Errorf("unable to parse ScanID from %q", scanWatcherID))
+			continue
+		}
+		scan, found, err := scanDataStore.GetScan(ctx, parts[1])
+		if err != nil {
+			errList.AddError(err)
+			continue
+		}
+		if !found {
+			errList.AddError(errors.Errorf("unable to find Scan with ID %q", parts[1]))
+			continue
+		}
+		if err := resultsDataStore.DeleteOldResults(ctx, scan.GetLastStartedTime(), scan.GetScanRefId(), true); err != nil {
+			errList.AddError(err)
+		}
+	}
+	return errList.ToError()
 }
 
 // ScanConfigWatcher determines if a ScanConfiguration has running scans or has completed
@@ -273,6 +306,7 @@ func GetScansFromScanConfiguration(ctx context.Context, scanConfig *storage.Comp
 			return nil, errors.Wrap(err, "unable to search the scans")
 		}
 		for _, s := range scans {
+			s.GetScanRefId()
 			log.Debugf("Adding scan to wait %s", s.GetScanName())
 			ret.Add(fmt.Sprintf("%s:%s", s.GetClusterId(), s.GetId()))
 		}
