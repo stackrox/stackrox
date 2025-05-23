@@ -1,6 +1,7 @@
 #!/bin/sh
 
 set -e
+set -x
 
 # When running as the root user, chown the directories
 # and then exec as the non-root user.
@@ -21,6 +22,8 @@ if [ "$(id -u)" == 0 ]; then
      exec su-exec 4000:4000 "$0" "$@"
 fi
 
+ls -laR /.init-dirs/ || true
+ls -laR /etc/pki/ca-trust/ || true
 restore-all-dir-contents
 import-additional-cas
 
