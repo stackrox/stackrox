@@ -65,7 +65,10 @@ func (s *service) RegisterServiceHandler(_ context.Context, _ *runtime.ServeMux,
 }
 
 func (s *service) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, authorizer.Authorized(ctx, fullMethodName)
+	return ctx, errors.Wrapf(
+		authorizer.Authorized(ctx, fullMethodName),
+		"authorization failed for %s", fullMethodName,
+	)
 }
 
 func (s *service) verifyToken(ctx context.Context, token string, expectedSubject string) error {
@@ -154,6 +157,7 @@ func (s *service) verifyRequestViaServiceAccountToken(ctx context.Context, servi
 
 	// This API is rate limit such that an untrusted user cannot get us to DDoS the Kubernetes API server.
 	if err := s.rateLimiter.Wait(ctx); err != nil {
+		// Wrap rate limit exceeded error with context
 		return status.Error(codes.PermissionDenied, "rate limit exceeded for this API")
 	}
 

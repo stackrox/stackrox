@@ -323,7 +323,10 @@ func (d *detectorImpl) processNetworkBaselineSync(sync *central.NetworkBaselineS
 			errs.AddError(err)
 		}
 	}
-	return errs.ToError()
+	if err := errs.ToError(); err != nil {
+		return errors.Wrap(err, "failed to process network baseline sync")
+	}
+	return nil
 }
 
 // ProcessUpdatedImage updates the imageCache with a new value

@@ -12,6 +12,8 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/utils"
+
+	pkgerrors "github.com/pkg/errors"
 )
 
 // lazyTLSCheckRegistry is a wrapper around a registry that performs
@@ -91,11 +93,15 @@ func (l *lazyTLSCheckRegistry) Metadata(image *storage.Image) (*storage.ImageMet
 		return l.initError
 	})
 	if err != nil {
-		return nil, err
+		return nil, pkgerrors.Wrap(err, "lazy TLS registry initialization failed")
 	}
 
 	// At this point lazy init has successfully completed.
-	return l.registry.Metadata(image)
+	meta, err := l.registry.Metadata(image)
+	if err != nil {
+		return nil, pkgerrors.Wrapf(err, "failed to fetch metadata for image %s", image.GetName())
+	}
+	return meta, nil
 }
 
 func (l *lazyTLSCheckRegistry) Name() string {

@@ -37,7 +37,7 @@ func load(data []byte) (*central.HelmManagedConfigInit, error) {
 func getEffectiveClusterName() (string, error) {
 	name, err := os.ReadFile(HelmClusterNameFile.Setting())
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "reading effective cluster name from file")
 	}
 	return strings.TrimSpace(string(name)), nil
 }
