@@ -26,9 +26,9 @@ os.environ["SENSOR_HELM_MANAGED"] = "true"
 # deploy via helm to set node selectors for running on GKE arm64 nodes
 os.environ["REMOTE_CLUSTER_ARCH"] = "arm64"
 os.environ["ARM64_NODESELECTORS"] = "true"
-#os.environ["OUTPUT_FORMAT"] = "helm"
-#os.environ["ROX_CENTRAL_EXTRA_HELM_VALUES_FILE"] = "central-arm64-values.yaml"
-#os.environ["ROX_SENSOR_EXTRA_HELM_VALUES_FILE"] = "sensor-arm64-values.yaml"
+# os.environ["OUTPUT_FORMAT"] = "helm"
+# os.environ["ROX_CENTRAL_EXTRA_HELM_VALUES_FILE"] = "central-arm64-values.yaml"
+# os.environ["ROX_SENSOR_EXTRA_HELM_VALUES_FILE"] = "sensor-arm64-values.yaml"
 
 os.environ["IMAGE_PREFETCH_DISABLED"] = "true"
 
