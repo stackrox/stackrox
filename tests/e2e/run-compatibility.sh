@@ -85,6 +85,10 @@ _run_compatibility_tests() {
     cd "$ROOT"
 
     collect_and_check_stackrox_logs "/tmp/compatibility-test-logs" "${compatibility_dir}/initial_tests"
+
+    # This cleanup is necessary when executing compat tests with CRS enabled, because it is forbidden to do a CRS-handshake with central
+    # for a cluster name which is already in use.
+    delete_all_secured_clusters
 }
 
 # Duplicate function with run.sh
