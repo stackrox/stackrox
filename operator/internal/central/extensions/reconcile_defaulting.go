@@ -26,7 +26,7 @@ var defaultingFlows = []defaulting.CentralDefaultingFlow{
 
 func ReconcilerExtensionFeatureDefaulting(client ctrlClient.Client) extensions.ReconcileExtension {
 	return func(ctx context.Context, u *unstructured.Unstructured, _ func(extensions.UpdateStatusFunc), l logr.Logger) error {
-		return reconcileScannerV4FeatureDefaults(ctx, client, u, l)
+		return reconcileFeatureDefaults(ctx, client, u, l)
 	}
 }
 
