@@ -31,7 +31,7 @@ var defaultingFlows = []defaulting.CentralDefaultingFlow{
 // A defaulting flow shall
 //   - derive default values based on 'status', 'annotations' and 'spec' and store them in 'defaults'.
 //   - add a new annotation in order to persist current defaulting choices.
-func ReconcilerExtensionFeatureDefaulting(client ctrlClient.Client) extensions.ReconcileExtension {
+func FeatureDefaultingExtension(client ctrlClient.Client) extensions.ReconcileExtension {
 	return func(ctx context.Context, u *unstructured.Unstructured, _ func(extensions.UpdateStatusFunc), l logr.Logger) error {
 		return reconcileFeatureDefaults(ctx, client, u, l)
 	}

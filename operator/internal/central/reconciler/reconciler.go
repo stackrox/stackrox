@@ -49,7 +49,7 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 
 	opts := make([]pkgReconciler.Option, 0, len(otherPreExtensions)+6)
 	opts = append(opts, extraEventWatcher)
-	opts = append(opts, pkgReconciler.WithPreExtension(extensions.ReconcilerExtensionFeatureDefaulting(mgr.GetClient())))
+	opts = append(opts, pkgReconciler.WithPreExtension(extensions.FeatureDefaultingExtension(mgr.GetClient())))
 	opts = append(opts, otherPreExtensions...)
 	opts = append(opts, pkgReconciler.WithReconcilePeriod(extensions.InitBundleReconcilePeriod))
 	opts = append(opts, pkgReconciler.WithPauseReconcileAnnotation(commonExtensions.PauseReconcileAnnotation))
