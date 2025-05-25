@@ -166,7 +166,7 @@ func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
 				Build()
 			unstructuredCentral := centralToUnstructured(t, central)
 
-			err := reconcileScannerV4FeatureDefaults(ctx, client, unstructuredCentral, logr.Discard())
+			err := reconcileFeatureDefaults(ctx, client, unstructuredCentral, logr.Discard())
 			assert.Nil(t, err, "reconcileScannerV4StatusDefaults returned error")
 
 			centralFetched := platform.Central{}
