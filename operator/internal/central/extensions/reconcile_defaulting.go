@@ -18,12 +18,19 @@ var defaultingFlows = []defaulting.CentralDefaultingFlow{
 	defaulting.CentralScannerV4DefaultingFlow,
 }
 
-// This extension's purpose is to
+// This extension executes "defaulting flows". A Central defaulting flow is of type
+// defaulting.CentralDefaultingFlow, which is essentially a function of type
 //
-//   1. apply defaults by mutating the Central object as a prerequisite for the value translator
-//   2. persist any implicit Scanner V4 Enabled|Disabled setting in the Central annotations for later usage during upgrade-reconcilliations.
+//	func(
+//	  logger logr.Logger,
+//	  status *platform.CentralStatus,
+//	  annotations map[string]string,
+//	  spec *platform.CentralSpec,
+//	  defaults *platform.CentralSpec) error
 //
-
+// A defaulting flow shall
+//   - derive default values based on 'status', 'annotations' and 'spec' and store them in 'defaults'.
+//   - add a new annotation in order to persist current defaulting choices.
 func ReconcilerExtensionFeatureDefaulting(client ctrlClient.Client) extensions.ReconcileExtension {
 	return func(ctx context.Context, u *unstructured.Unstructured, _ func(extensions.UpdateStatusFunc), l logr.Logger) error {
 		return reconcileFeatureDefaults(ctx, client, u, l)
