@@ -81,7 +81,7 @@ func centralScannerV4Defaulting(logger logr.Logger, status *platform.CentralStat
 	scannerV4Spec := initializedDeepCopy(spec.ScannerV4)
 	componentPolicy, usedDefaulting := CentralScannerV4ComponentPolicy(logger, status, annotations, scannerV4Spec)
 	if !usedDefaulting {
-		// User provided an explicit choice, nothing to do in this extension.
+		// User provided an explicit choice, nothing to do in this flow.
 		return nil
 	}
 
