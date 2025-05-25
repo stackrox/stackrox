@@ -30,7 +30,7 @@ func ReconcilerExtensionFeatureDefaulting(client ctrlClient.Client) extensions.R
 	}
 }
 
-func reconcileScannerV4FeatureDefaults(ctx context.Context, client ctrlClient.Client, u *unstructured.Unstructured, logger logr.Logger) error {
+func reconcileFeatureDefaults(ctx context.Context, client ctrlClient.Client, u *unstructured.Unstructured, logger logr.Logger) error {
 	logger = logger.WithName("extension-feature-defaults")
 	if u.GroupVersionKind() != platform.CentralGVK {
 		logger.Error(errUnexpectedGVK, "unable to reconcile central", "expectedGVK", platform.CentralGVK, "actualGVK", u.GroupVersionKind())
