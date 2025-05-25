@@ -53,24 +53,12 @@ func reconcileFeatureDefaults(ctx context.Context, client ctrlClient.Client, u *
 	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &central); err != nil {
 		return errors.Wrap(err, "converting unstructured object to Central")
 	}
-	origCentral := central.DeepCopy()
 
-	// Execute defaulting flows.
-	// This may update central.Defaults and central's embedded annotations.
-	for _, flow := range defaultingFlows {
-		if err := executeDefaultingFlow(logger, &central, client, flow); err != nil {
-			return err
-		}
-	}
-
-	// We persist the annotations immediately during (first-time) execution of this extension to make sure
-	// that this information is already persisted in the Kubernetes resource before we
-	// can realistically end up in a situation where reconcilliation might need to be retried.
-	newResourceVersion, err := patchCentralAnnotations(ctx, logger, client, origCentral, central.GetAnnotations())
+	err := executeDefaultingFlows(ctx, logger, &central, client)
 	if err != nil {
-		return errors.Wrap(err, "patching Central annotations")
+		return err
 	}
-	central.SetResourceVersion(newResourceVersion)
+
 	updatedObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&central)
 	if err != nil {
 		return errors.Wrap(err, "converting Central to unstructured object after extension execution")
@@ -84,7 +72,28 @@ func reconcileFeatureDefaults(ctx context.Context, client ctrlClient.Client, u *
 	return nil
 }
 
-func executeDefaultingFlow(logger logr.Logger, central *platform.Central, client ctrlClient.Client, flow defaulting.CentralDefaultingFlow) error {
+func executeDefaultingFlows(ctx context.Context, logger logr.Logger, central *platform.Central, client ctrlClient.Client) error {
+	origCentral := central.DeepCopy()
+
+	// This may update central.Defaults and central's embedded annotations.
+	for _, flow := range defaultingFlows {
+		if err := executeSingleDefaultingFlow(logger, central, client, flow); err != nil {
+			return err
+		}
+	}
+
+	// We persist the annotations immediately during (first-time) execution of this extension to make sure
+	// that this information is already persisted in the Kubernetes resource before we
+	// can realistically end up in a situation where reconcilliation might need to be retried.
+	newResourceVersion, err := patchCentralAnnotations(ctx, logger, client, origCentral, central.GetAnnotations())
+	if err != nil {
+		return errors.Wrap(err, "patching Central annotations")
+	}
+	central.SetResourceVersion(newResourceVersion)
+	return nil
+}
+
+func executeSingleDefaultingFlow(logger logr.Logger, central *platform.Central, client ctrlClient.Client, flow defaulting.CentralDefaultingFlow) error {
 	logger = logger.WithName(fmt.Sprintf("defaulting-flow-%s", flow.Name))
 	annotations := central.GetAnnotations()
 	if annotations == nil {
