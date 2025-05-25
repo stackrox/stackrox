@@ -43,19 +43,19 @@ func AddCentralDefaultsToUnstructured(u *unstructured.Unstructured, central *Cen
 
 // AddUnstructuredDefaultsToCentral adds the defaults from the unstructured object to Central.
 func AddUnstructuredDefaultsToCentral(central *Central, u *unstructured.Unstructured) error {
-	centralDefaults := CentralSpec{}
 	defaultsInterface, found := u.Object["defaults"]
 	if !found {
 		return nil
 	}
-	defaults, ok := defaultsInterface.(map[string]interface{})
+	unstructuredDefaults, ok := defaultsInterface.(map[string]interface{})
 	if !ok {
 		return errors.New("unstructured Central defaults of unexpected type")
 	}
-	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(defaults, &centralDefaults); err != nil {
+	typedDefaults := CentralSpec{}
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructuredDefaults, &typedDefaults); err != nil {
 		return errors.Wrap(err, "converting defaults from unstructured object into CentralSpec")
 	}
-	central.Defaults = centralDefaults
+	central.Defaults = typedDefaults
 
 	return nil
 }
