@@ -65,7 +65,8 @@ func (t Translator) Translate(ctx context.Context, u *unstructured.Unstructured)
 	//   KubeAPIWarningLogger    unknown field "defaults"
 	delete(u.Object, "defaults")
 
-	valsFromCR, err := t.translate(ctx, c)
+	centralCopy := c.DeepCopy()
+	valsFromCR, err := t.translate(ctx, *centralCopy)
 	if err != nil {
 		return nil, err
 	}
@@ -79,12 +80,11 @@ func (t Translator) Translate(ctx context.Context, u *unstructured.Unstructured)
 }
 
 // translate translates a Central CR into helm values.
-func (t Translator) translate(ctx context.Context, origCentral platform.Central) (chartutil.Values, error) {
-	modifiedCentral := origCentral.DeepCopy()
-	if err := platform.MergeCentralDefaultsIntoSpec(modifiedCentral); err != nil {
+// This function potentially modifies the provided Central.
+func (t Translator) translate(ctx context.Context, c platform.Central) (chartutil.Values, error) {
+	if err := platform.MergeCentralDefaultsIntoSpec(&c); err != nil {
 		return nil, err
 	}
-	c := *modifiedCentral
 
 	v := translation.NewValuesBuilder()
 
