@@ -2,5 +2,16 @@
   "base": {
     "name": "ROX-20689-Use-authz-pattern-ping-svc",
     "hash": "fdd4da87b2c60c2d95a392248edff9ad2abd5fa1"
+  },
+  "upstream": {
+    "branch": "ROX-20689-Document-why-ping-endpoint-public"
+  },
+  "change": {
+    "github": {
+      "pr": {
+        "number": 15431,
+        "gqlID": "PR_kwDOGd6UEM6Xpr6a"
+      }
+    }
   }
 }
