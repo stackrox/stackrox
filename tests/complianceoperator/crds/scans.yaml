@@ -87,7 +87,7 @@ spec:
                     additionalProperties:
                       type: string
                     default:
-                      node-role.kubernetes.io/master: ""
+                      node-role.kubernetes.io/control-plane: ""
                     description: By setting this, it's possible to configure where
                       the result server instances are run. These instances will mount
                       a Persistent Volume to store the raw results, so special care
@@ -127,12 +127,12 @@ spec:
                   tolerations:
                     default:
                     - effect: NoSchedule
-                      key: node-role.kubernetes.io/master
+                      key: node-role.kubernetes.io/control-plane
                       operator: Exists
                     description: Specifies tolerations needed for the result server
                       to run on the nodes. This is useful in case the target set of
                       nodes have custom taints that don't allow certain workloads
-                      to run. Defaults to allowing scheduling on master nodes.
+                      to run. Defaults to allowing scheduling on control-plane nodes.
                     items:
                       description: The pod this Toleration is attached to tolerates
                         any taint that matches the triple <key,value,effect> using

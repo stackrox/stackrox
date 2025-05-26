@@ -120,6 +120,29 @@
         ]
       }
     },
+    "/v1/config/platformcomponent/rhlp/default": {
+      "get": {
+        "summary": "GetDefaultRedHatLayeredProductsRegex returns a static string containing the default Red Hat Layered Products regex.",
+        "operationId": "ConfigService_GetDefaultRedHatLayeredProductsRegex",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetDefaultRedHatLayeredProductsRegexResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "ConfigService"
+        ]
+      }
+    },
     "/v1/config/private": {
       "get": {
         "operationId": "ConfigService_GetPrivateConfig",
@@ -540,6 +563,14 @@
         },
         "enabled": {
           "type": "boolean"
+        }
+      }
+    },
+    "v1GetDefaultRedHatLayeredProductsRegexResponse": {
+      "type": "object",
+      "properties": {
+        "regex": {
+          "type": "string"
         }
       }
     },
