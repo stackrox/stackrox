@@ -31,12 +31,13 @@ func wrapExtension(runFn func(ctx context.Context, central *platform.Central, cl
 		if err != nil {
 			return errors.Wrap(err, "converting object to Central")
 		}
-
 		// For translation purposes, enrich Central with defaults, which are not implicitly marshalled/unmarshaled.
 		// and merge into spec to make them visible to the extensions (e.g. for creating scanner-v4-db-password).
 		if err := platform.AddUnstructuredDefaultsToCentral(&c, u); err != nil {
 			return err
 		}
+
+		// Merge the defaults into spec for convenience of extensions (e.g. for creating scanner-v4-db-password).
 		if err := platform.MergeCentralDefaultsIntoSpec(&c); err != nil {
 			return err
 		}
