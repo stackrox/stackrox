@@ -580,10 +580,10 @@ func (m *managerImpl) generateSingleReportFromWatcherResults(result *watcher.Sca
 		failedClustersSlice := make([]*storage.ComplianceOperatorReportSnapshotV2_FailedCluster, 0, len(failedClusters))
 		for _, failedCluster := range failedClusters {
 			failedClustersSlice = append(failedClustersSlice, &storage.ComplianceOperatorReportSnapshotV2_FailedCluster{
-				ClusterId:       failedCluster.GetClusterId(),
-				ClusterName:     failedCluster.GetClusterName(),
-				OperatorVersion: failedCluster.GetOperatorVersion(),
-				Reasons:         failedCluster.GetReasons(),
+				ClusterId:       failedCluster.ClusterId,
+				ClusterName:     failedCluster.ClusterName,
+				OperatorVersion: failedCluster.OperatorVersion,
+				Reasons:         failedCluster.Reasons,
 			})
 		}
 		snapshot.FailedClusters = failedClustersSlice
