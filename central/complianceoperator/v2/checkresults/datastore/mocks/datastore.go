@@ -18,6 +18,7 @@ import (
 	storage "github.com/stackrox/rox/generated/storage"
 	search "github.com/stackrox/rox/pkg/search"
 	gomock "go.uber.org/mock/gomock"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // MockDataStore is a mock of DataStore interface.
@@ -132,6 +133,20 @@ func (m *MockDataStore) CountCheckResults(ctx context.Context, q *v1.Query) (int
 func (mr *MockDataStoreMockRecorder) CountCheckResults(ctx, q any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountCheckResults", reflect.TypeOf((*MockDataStore)(nil).CountCheckResults), ctx, q)
+}
+
+// DeleteOldResults mocks base method.
+func (m *MockDataStore) DeleteOldResults(ctx context.Context, lastStartedTimestamp *timestamppb.Timestamp, scanRefIDs string, includeCurrent bool) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteOldResults", ctx, lastStartedTimestamp, scanRefIDs, includeCurrent)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteOldResults indicates an expected call of DeleteOldResults.
+func (mr *MockDataStoreMockRecorder) DeleteOldResults(ctx, lastStartedTimestamp, scanRefIDs, includeCurrent any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteOldResults", reflect.TypeOf((*MockDataStore)(nil).DeleteOldResults), ctx, lastStartedTimestamp, scanRefIDs, includeCurrent)
 }
 
 // DeleteResult mocks base method.

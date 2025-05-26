@@ -5,6 +5,7 @@ package datastore
 import (
 	"context"
 	"testing"
+	"time"
 
 	checkresultsSearch "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/search"
 	checkResultsStorage "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/store/postgres"
@@ -1151,6 +1152,53 @@ func (s *complianceCheckResultDataStoreTestSuite) TestComplianceProfileResults()
 		s.Require().NoError(err)
 		s.Require().Equal(tc.expectedResults, results)
 	}
+}
+
+func (s *complianceCheckResultDataStoreTestSuite) TestComplianceDeleteOldResults() {
+	s.setupTestData()
+	timeNow := time.Now()
+	oldTime := timeNow.Add(-time.Hour)
+	timestampNow, err := protocompat.ConvertTimeToTimestampOrError(timeNow)
+	s.Require().NoError(err)
+	oldTimestamp, err := protocompat.ConvertTimeToTimestampOrError(oldTime)
+	s.Require().NoError(err)
+	scanName := "scan-name"
+	scanRef := internaltov2storage.BuildNameRefID(testconsts.Cluster2, scanName)
+	// Upsert CheckResults
+	rec1 := getTestRec(testconsts.Cluster2)
+	rec1.CheckName = "test-check-1"
+	rec1.LastStartedTime = timestampNow
+	rec1.ScanName = scanName
+	rec1.ScanRefId = scanRef
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, rec1))
+	rec2 := getTestRec(testconsts.Cluster2)
+	rec2.CheckName = "test-check-2"
+	rec2.LastStartedTime = timestampNow
+	rec2.ScanName = scanName
+	rec2.ScanRefId = scanRef
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, rec2))
+	rec3 := getTestRec(testconsts.Cluster2)
+	rec3.CheckName = "test-check-3"
+	rec3.LastStartedTime = oldTimestamp
+	rec3.ScanName = scanName
+	rec3.ScanRefId = scanRef
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, rec3))
+
+	s.Require().NoError(s.dataStore.DeleteOldResults(s.hasWriteCtx, timestampNow, scanRef, false))
+
+	query := search.NewQueryBuilder().
+		AddExactMatches(search.ComplianceOperatorScanRef, scanRef).ProtoQuery()
+	results, err := s.dataStore.SearchComplianceCheckResults(s.hasReadCtx, query)
+	s.Require().NoError(err)
+	s.Assert().Len(results, 2)
+	s.Assert().Equal("test-check-1", results[0].GetCheckName())
+	s.Assert().Equal("test-check-2", results[1].GetCheckName())
+
+	s.Require().NoError(s.dataStore.DeleteOldResults(s.hasWriteCtx, timestampNow, scanRef, true))
+
+	results, err = s.dataStore.SearchComplianceCheckResults(s.hasReadCtx, query)
+	s.Require().NoError(err)
+	s.Assert().Len(results, 0)
 }
 
 func (s *complianceCheckResultDataStoreTestSuite) setupTestData() {
