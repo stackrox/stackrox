@@ -17,8 +17,8 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"dario.cat/mergo"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/reflectutils"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
@@ -61,11 +61,10 @@ func AddUnstructuredDefaultsToCentral(central *Central, u *unstructured.Unstruct
 }
 
 // MergeCentralDefaultsIntoSpec merges the defaults from Central.Defaults into Central.Spec.
+// Modifies content of central.
 func MergeCentralDefaultsIntoSpec(central *Central) error {
-	specWithDefaults, ok := reflectutils.DeepMergeStructs(central.Defaults, central.Spec).(CentralSpec)
-	if !ok {
-		return errors.New("CentralSpec with merged-in defaults if of unexpected type")
+	if err := mergo.Merge(&central.Spec, central.Defaults); err != nil {
+		return errors.Wrap(err, "merging Central Defaults into Spec")
 	}
-	central.Spec = specWithDefaults
 	return nil
 }
