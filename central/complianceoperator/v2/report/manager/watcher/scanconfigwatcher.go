@@ -6,11 +6,11 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	resultsDS "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
+	resultsDataStore "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	profileDatastore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
-	snapshotDS "github.com/stackrox/rox/central/complianceoperator/v2/report/datastore"
+	snapshotDataStore "github.com/stackrox/rox/central/complianceoperator/v2/report/datastore"
 	scanConfigurationDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
-	scan "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore"
+	scanDataStore "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
@@ -31,7 +31,7 @@ func GetScanConfigFromScan(ctx context.Context, scan *storage.ComplianceOperator
 	return scanConfigDS.GetScanConfigurationByName(ctx, scan.GetScanConfigName())
 }
 
-func DeleteOldResultsFromMissingScans(ctx context.Context, results *ScanConfigWatcherResults, profileDataStore profileDatastore.DataStore, scanDataStore scan.DataStore, resultsDataStore resultsDS.DataStore) error {
+func DeleteOldResultsFromMissingScans(ctx context.Context, results *ScanConfigWatcherResults, profileDataStore profileDatastore.DataStore, scanDataStore scanDataStore.DataStore, resultsDataStore resultsDataStore.DataStore) error {
 	scans, err := GetScansFromScanConfiguration(ctx, results.ScanConfig, profileDataStore, scanDataStore)
 	if err != nil {
 		return err
@@ -40,7 +40,7 @@ func DeleteOldResultsFromMissingScans(ctx context.Context, results *ScanConfigWa
 		scans.Remove(fmt.Sprintf("%s:%s", scanResults.Scan.GetClusterId(), scanResults.Scan.GetId()))
 	}
 	errList := errorhelpers.NewErrorList("delete old CheckResults from missing scans")
-	for scanWatcherID, _ := range scans {
+	for scanWatcherID := range scans {
 		parts := strings.Split(scanWatcherID, ":")
 		if len(parts) != 2 {
 			errList.AddError(errors.Errorf("unable to parse ScanID from %q", scanWatcherID))
@@ -88,9 +88,9 @@ type scanConfigWatcherImpl struct {
 	scanWatcherResoutsC chan *ScanWatcherResults
 	stopped             *concurrency.Signal
 
-	scanDS     scan.DataStore
+	scanDS     scanDataStore.DataStore
 	profileDS  profileDatastore.DataStore
-	snapshotDS snapshotDS.DataStore
+	snapshotDS snapshotDataStore.DataStore
 
 	resultsLock       sync.Mutex
 	readyQueue        readyQueue[*ScanConfigWatcherResults]
@@ -100,7 +100,7 @@ type scanConfigWatcherImpl struct {
 }
 
 // NewScanConfigWatcher creates a new ScanConfigWatcher
-func NewScanConfigWatcher(ctx, sensorCtx context.Context, watcherID string, sc *storage.ComplianceOperatorScanConfigurationV2, scanDS scan.DataStore, profileDS profileDatastore.DataStore, snapshotDS snapshotDS.DataStore, queue readyQueue[*ScanConfigWatcherResults]) *scanConfigWatcherImpl {
+func NewScanConfigWatcher(ctx, sensorCtx context.Context, watcherID string, sc *storage.ComplianceOperatorScanConfigurationV2, scanDS scanDataStore.DataStore, profileDS profileDatastore.DataStore, snapshotDS snapshotDataStore.DataStore, queue readyQueue[*ScanConfigWatcherResults]) *scanConfigWatcherImpl {
 	watcherCtx, cancel := context.WithCancel(ctx)
 	finishedSignal := concurrency.NewSignal()
 	timeout := NewTimer(env.ComplianceScanScheduleWatcherTimeout.DurationSetting())
@@ -273,7 +273,7 @@ func (w *scanConfigWatcherImpl) appendScanToSnapshots(ctx context.Context, scan 
 }
 
 // GetScansFromScanConfiguration returns the scans associated with a given ScanConfiguration
-func GetScansFromScanConfiguration(ctx context.Context, scanConfig *storage.ComplianceOperatorScanConfigurationV2, profileDataStore profileDatastore.DataStore, scanDataStore scan.DataStore) (set.StringSet, error) {
+func GetScansFromScanConfiguration(ctx context.Context, scanConfig *storage.ComplianceOperatorScanConfigurationV2, profileDataStore profileDatastore.DataStore, scanDataStore scanDataStore.DataStore) (set.StringSet, error) {
 	ret := set.NewStringSet()
 	var profileNames []string
 	for _, p := range scanConfig.GetProfiles() {
