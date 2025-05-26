@@ -18,14 +18,18 @@ import DayPickerDropdown from 'Components/PatternFly/DayPickerDropdown';
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
 import RepeatScheduleDropdown from 'Components/PatternFly/RepeatScheduleDropdown';
 
-import { ScanConfigFormValues } from '../compliance.scanConfigs.utils';
+import usePageAction from 'hooks/usePageAction';
+import { PageActions, ScanConfigFormValues } from '../compliance.scanConfigs.utils';
 
-import { helperTextForName, helperTextForTime } from './useFormikScanConfig';
+import { helperTextForName, helperTextForNameEdit, helperTextForTime } from './useFormikScanConfig';
 
 import './ScanConfigOptions.css';
 
 function ScanConfigOptions(): ReactElement {
     const formik: FormikContextType<ScanConfigFormValues> = useFormikContext();
+    const { pageAction } = usePageAction<PageActions>();
+    const isEditAction = pageAction === 'edit';
+
     function handleSelectChange(id: string, value: string): void {
         formik.setFieldValue('parameters.daysOfWeek', []);
         formik.setFieldValue('parameters.daysOfMonth', []);
@@ -62,7 +66,9 @@ function ScanConfigOptions(): ReactElement {
                                     fieldId="parameters.name"
                                     errors={formik.errors}
                                     touched={formik.touched}
-                                    helperText={helperTextForName}
+                                    helperText={
+                                        isEditAction ? helperTextForNameEdit : helperTextForName
+                                    }
                                 >
                                     <TextInput
                                         isRequired
@@ -70,7 +76,7 @@ function ScanConfigOptions(): ReactElement {
                                         id="parameters.name"
                                         name="parameters.name"
                                         value={formik.values.parameters.name}
-                                        isDisabled={!!formik.initialValues.parameters.name}
+                                        isDisabled={isEditAction}
                                         validated={
                                             formik.errors?.parameters?.name &&
                                             formik.touched?.parameters?.name
