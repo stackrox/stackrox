@@ -4,8 +4,8 @@ values:
 tests:
 - name: "with default settings"
   expect: |
-    .deployments["central"].spec.template.spec.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 5)
-    .deployments["config-controller"].spec.template.spec.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 5)
+    .deployments["central"].spec.template.spec.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 4)
+    .deployments["config-controller"].spec.template.spec.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 4)
 - name: "override affinity"
   values:
     central:
@@ -15,7 +15,7 @@ tests:
           - weight: 50
             preference:
               matchExpressions:
-              - key: node-role.kubernetes.io/master
+              - key: node-role.kubernetes.io/control-plane
                 operator: Exists
     configController:
       affinity:
@@ -24,7 +24,7 @@ tests:
           - weight: 50
             preference:
               matchExpressions:
-              - key: node-role.kubernetes.io/master
+              - key: node-role.kubernetes.io/control-plane
                 operator: Exists
   expect: |
     .deployments["central"].spec.template.spec.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 1)

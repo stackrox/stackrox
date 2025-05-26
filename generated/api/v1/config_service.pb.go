@@ -339,6 +339,50 @@ func (x *PutPlatformComponentConfigRequest) GetRules() []*storage.PlatformCompon
 	return nil
 }
 
+type GetDefaultRedHatLayeredProductsRegexResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Regex         string                 `protobuf:"bytes,1,opt,name=regex,proto3" json:"regex,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetDefaultRedHatLayeredProductsRegexResponse) Reset() {
+	*x = GetDefaultRedHatLayeredProductsRegexResponse{}
+	mi := &file_api_v1_config_service_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetDefaultRedHatLayeredProductsRegexResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetDefaultRedHatLayeredProductsRegexResponse) ProtoMessage() {}
+
+func (x *GetDefaultRedHatLayeredProductsRegexResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_api_v1_config_service_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetDefaultRedHatLayeredProductsRegexResponse.ProtoReflect.Descriptor instead.
+func (*GetDefaultRedHatLayeredProductsRegexResponse) Descriptor() ([]byte, []int) {
+	return file_api_v1_config_service_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *GetDefaultRedHatLayeredProductsRegexResponse) GetRegex() string {
+	if x != nil {
+		return x.Regex
+	}
+	return ""
+}
+
 type VulnerabilityExceptionConfig_FixableCVEOptions struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// This options allows users to expire the vulnerability deferral request if and only if **all** vulnerabilities
@@ -353,7 +397,7 @@ type VulnerabilityExceptionConfig_FixableCVEOptions struct {
 
 func (x *VulnerabilityExceptionConfig_FixableCVEOptions) Reset() {
 	*x = VulnerabilityExceptionConfig_FixableCVEOptions{}
-	mi := &file_api_v1_config_service_proto_msgTypes[7]
+	mi := &file_api_v1_config_service_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -365,7 +409,7 @@ func (x *VulnerabilityExceptionConfig_FixableCVEOptions) String() string {
 func (*VulnerabilityExceptionConfig_FixableCVEOptions) ProtoMessage() {}
 
 func (x *VulnerabilityExceptionConfig_FixableCVEOptions) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_config_service_proto_msgTypes[7]
+	mi := &file_api_v1_config_service_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -410,7 +454,7 @@ type VulnerabilityExceptionConfig_ExpiryOptions struct {
 
 func (x *VulnerabilityExceptionConfig_ExpiryOptions) Reset() {
 	*x = VulnerabilityExceptionConfig_ExpiryOptions{}
-	mi := &file_api_v1_config_service_proto_msgTypes[8]
+	mi := &file_api_v1_config_service_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -422,7 +466,7 @@ func (x *VulnerabilityExceptionConfig_ExpiryOptions) String() string {
 func (*VulnerabilityExceptionConfig_ExpiryOptions) ProtoMessage() {}
 
 func (x *VulnerabilityExceptionConfig_ExpiryOptions) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_config_service_proto_msgTypes[8]
+	mi := &file_api_v1_config_service_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -499,7 +543,9 @@ const file_api_v1_config_service_proto_rawDesc = "" +
 	"*UpdateVulnerabilityExceptionConfigResponse\x128\n" +
 	"\x06config\x18\x01 \x01(\v2 .v1.VulnerabilityExceptionConfigR\x06config\"`\n" +
 	"!PutPlatformComponentConfigRequest\x12;\n" +
-	"\x05rules\x18\x01 \x03(\v2%.storage.PlatformComponentConfig.RuleR\x05rules2\x90\a\n" +
+	"\x05rules\x18\x01 \x03(\v2%.storage.PlatformComponentConfig.RuleR\x05rules\"D\n" +
+	",GetDefaultRedHatLayeredProductsRegexResponse\x12\x14\n" +
+	"\x05regex\x18\x01 \x01(\tR\x05regex2\xa9\b\n" +
 	"\rConfigService\x12N\n" +
 	"\x0fGetPublicConfig\x12\t.v1.Empty\x1a\x15.storage.PublicConfig\"\x19\x82\xd3\xe4\x93\x02\x13\x12\x11/v1/config/public\x12Q\n" +
 	"\x10GetPrivateConfig\x12\t.v1.Empty\x1a\x16.storage.PrivateConfig\"\x1a\x82\xd3\xe4\x93\x02\x14\x12\x12/v1/config/private\x12\x8f\x01\n" +
@@ -510,7 +556,8 @@ const file_api_v1_config_service_proto_rawDesc = "" +
 	"\tGetConfig\x12\t.v1.Empty\x1a\x0f.storage.Config\"\x12\x82\xd3\xe4\x93\x02\f\x12\n" +
 	"/v1/config\x12I\n" +
 	"\tPutConfig\x12\x14.v1.PutConfigRequest\x1a\x0f.storage.Config\"\x15\x82\xd3\xe4\x93\x02\x0f:\x01*\x1a\n" +
-	"/v1/configB'\n" +
+	"/v1/config\x12\x96\x01\n" +
+	"$GetDefaultRedHatLayeredProductsRegex\x12\t.v1.Empty\x1a0.v1.GetDefaultRedHatLayeredProductsRegexResponse\"1\x82\xd3\xe4\x93\x02+\x12)/v1/config/platformcomponent/rhlp/defaultB'\n" +
 	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1X\x01b\x06proto3"
 
 var (
@@ -525,7 +572,7 @@ func file_api_v1_config_service_proto_rawDescGZIP() []byte {
 	return file_api_v1_config_service_proto_rawDescData
 }
 
-var file_api_v1_config_service_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_api_v1_config_service_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_api_v1_config_service_proto_goTypes = []any{
 	(*PutConfigRequest)(nil),                               // 0: v1.PutConfigRequest
 	(*DayOption)(nil),                                      // 1: v1.DayOption
@@ -534,42 +581,45 @@ var file_api_v1_config_service_proto_goTypes = []any{
 	(*UpdateVulnerabilityExceptionConfigRequest)(nil),      // 4: v1.UpdateVulnerabilityExceptionConfigRequest
 	(*UpdateVulnerabilityExceptionConfigResponse)(nil),     // 5: v1.UpdateVulnerabilityExceptionConfigResponse
 	(*PutPlatformComponentConfigRequest)(nil),              // 6: v1.PutPlatformComponentConfigRequest
-	(*VulnerabilityExceptionConfig_FixableCVEOptions)(nil), // 7: v1.VulnerabilityExceptionConfig.FixableCVEOptions
-	(*VulnerabilityExceptionConfig_ExpiryOptions)(nil),     // 8: v1.VulnerabilityExceptionConfig.ExpiryOptions
-	(*storage.Config)(nil),                                 // 9: storage.Config
-	(*storage.PlatformComponentConfig_Rule)(nil),           // 10: storage.PlatformComponentConfig.Rule
-	(*Empty)(nil),                           // 11: v1.Empty
-	(*storage.PublicConfig)(nil),            // 12: storage.PublicConfig
-	(*storage.PrivateConfig)(nil),           // 13: storage.PrivateConfig
-	(*storage.PlatformComponentConfig)(nil), // 14: storage.PlatformComponentConfig
+	(*GetDefaultRedHatLayeredProductsRegexResponse)(nil),   // 7: v1.GetDefaultRedHatLayeredProductsRegexResponse
+	(*VulnerabilityExceptionConfig_FixableCVEOptions)(nil), // 8: v1.VulnerabilityExceptionConfig.FixableCVEOptions
+	(*VulnerabilityExceptionConfig_ExpiryOptions)(nil),     // 9: v1.VulnerabilityExceptionConfig.ExpiryOptions
+	(*storage.Config)(nil),                                 // 10: storage.Config
+	(*storage.PlatformComponentConfig_Rule)(nil),           // 11: storage.PlatformComponentConfig.Rule
+	(*Empty)(nil),                           // 12: v1.Empty
+	(*storage.PublicConfig)(nil),            // 13: storage.PublicConfig
+	(*storage.PrivateConfig)(nil),           // 14: storage.PrivateConfig
+	(*storage.PlatformComponentConfig)(nil), // 15: storage.PlatformComponentConfig
 }
 var file_api_v1_config_service_proto_depIdxs = []int32{
-	9,  // 0: v1.PutConfigRequest.config:type_name -> storage.Config
-	8,  // 1: v1.VulnerabilityExceptionConfig.expiry_options:type_name -> v1.VulnerabilityExceptionConfig.ExpiryOptions
+	10, // 0: v1.PutConfigRequest.config:type_name -> storage.Config
+	9,  // 1: v1.VulnerabilityExceptionConfig.expiry_options:type_name -> v1.VulnerabilityExceptionConfig.ExpiryOptions
 	2,  // 2: v1.GetVulnerabilityExceptionConfigResponse.config:type_name -> v1.VulnerabilityExceptionConfig
 	2,  // 3: v1.UpdateVulnerabilityExceptionConfigRequest.config:type_name -> v1.VulnerabilityExceptionConfig
 	2,  // 4: v1.UpdateVulnerabilityExceptionConfigResponse.config:type_name -> v1.VulnerabilityExceptionConfig
-	10, // 5: v1.PutPlatformComponentConfigRequest.rules:type_name -> storage.PlatformComponentConfig.Rule
+	11, // 5: v1.PutPlatformComponentConfigRequest.rules:type_name -> storage.PlatformComponentConfig.Rule
 	1,  // 6: v1.VulnerabilityExceptionConfig.ExpiryOptions.day_options:type_name -> v1.DayOption
-	7,  // 7: v1.VulnerabilityExceptionConfig.ExpiryOptions.fixable_cve_options:type_name -> v1.VulnerabilityExceptionConfig.FixableCVEOptions
-	11, // 8: v1.ConfigService.GetPublicConfig:input_type -> v1.Empty
-	11, // 9: v1.ConfigService.GetPrivateConfig:input_type -> v1.Empty
-	11, // 10: v1.ConfigService.GetVulnerabilityExceptionConfig:input_type -> v1.Empty
+	8,  // 7: v1.VulnerabilityExceptionConfig.ExpiryOptions.fixable_cve_options:type_name -> v1.VulnerabilityExceptionConfig.FixableCVEOptions
+	12, // 8: v1.ConfigService.GetPublicConfig:input_type -> v1.Empty
+	12, // 9: v1.ConfigService.GetPrivateConfig:input_type -> v1.Empty
+	12, // 10: v1.ConfigService.GetVulnerabilityExceptionConfig:input_type -> v1.Empty
 	4,  // 11: v1.ConfigService.UpdateVulnerabilityExceptionConfig:input_type -> v1.UpdateVulnerabilityExceptionConfigRequest
-	11, // 12: v1.ConfigService.GetPlatformComponentConfig:input_type -> v1.Empty
+	12, // 12: v1.ConfigService.GetPlatformComponentConfig:input_type -> v1.Empty
 	6,  // 13: v1.ConfigService.UpdatePlatformComponentConfig:input_type -> v1.PutPlatformComponentConfigRequest
-	11, // 14: v1.ConfigService.GetConfig:input_type -> v1.Empty
+	12, // 14: v1.ConfigService.GetConfig:input_type -> v1.Empty
 	0,  // 15: v1.ConfigService.PutConfig:input_type -> v1.PutConfigRequest
-	12, // 16: v1.ConfigService.GetPublicConfig:output_type -> storage.PublicConfig
-	13, // 17: v1.ConfigService.GetPrivateConfig:output_type -> storage.PrivateConfig
-	3,  // 18: v1.ConfigService.GetVulnerabilityExceptionConfig:output_type -> v1.GetVulnerabilityExceptionConfigResponse
-	5,  // 19: v1.ConfigService.UpdateVulnerabilityExceptionConfig:output_type -> v1.UpdateVulnerabilityExceptionConfigResponse
-	14, // 20: v1.ConfigService.GetPlatformComponentConfig:output_type -> storage.PlatformComponentConfig
-	14, // 21: v1.ConfigService.UpdatePlatformComponentConfig:output_type -> storage.PlatformComponentConfig
-	9,  // 22: v1.ConfigService.GetConfig:output_type -> storage.Config
-	9,  // 23: v1.ConfigService.PutConfig:output_type -> storage.Config
-	16, // [16:24] is the sub-list for method output_type
-	8,  // [8:16] is the sub-list for method input_type
+	12, // 16: v1.ConfigService.GetDefaultRedHatLayeredProductsRegex:input_type -> v1.Empty
+	13, // 17: v1.ConfigService.GetPublicConfig:output_type -> storage.PublicConfig
+	14, // 18: v1.ConfigService.GetPrivateConfig:output_type -> storage.PrivateConfig
+	3,  // 19: v1.ConfigService.GetVulnerabilityExceptionConfig:output_type -> v1.GetVulnerabilityExceptionConfigResponse
+	5,  // 20: v1.ConfigService.UpdateVulnerabilityExceptionConfig:output_type -> v1.UpdateVulnerabilityExceptionConfigResponse
+	15, // 21: v1.ConfigService.GetPlatformComponentConfig:output_type -> storage.PlatformComponentConfig
+	15, // 22: v1.ConfigService.UpdatePlatformComponentConfig:output_type -> storage.PlatformComponentConfig
+	10, // 23: v1.ConfigService.GetConfig:output_type -> storage.Config
+	10, // 24: v1.ConfigService.PutConfig:output_type -> storage.Config
+	7,  // 25: v1.ConfigService.GetDefaultRedHatLayeredProductsRegex:output_type -> v1.GetDefaultRedHatLayeredProductsRegexResponse
+	17, // [17:26] is the sub-list for method output_type
+	8,  // [8:17] is the sub-list for method input_type
 	8,  // [8:8] is the sub-list for extension type_name
 	8,  // [8:8] is the sub-list for extension extendee
 	0,  // [0:8] is the sub-list for field type_name
@@ -587,7 +637,7 @@ func file_api_v1_config_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_v1_config_service_proto_rawDesc), len(file_api_v1_config_service_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   9,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
