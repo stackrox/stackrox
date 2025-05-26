@@ -3,7 +3,7 @@
 
 This file helps upstream users learn about what is new in a release.
 
-Put an entry in this file if your change is user-visible and you consider it _particularly note-worthy_. Especially:
+Put an entry in this file if your change is user-visible and you consider it _particularly noteworthy_. Especially:
 - Any changes that introduce a deprecation in functionality, OR
 - Obscure side-effects that are not obviously apparent based on the JIRA associated with the changes.
 
