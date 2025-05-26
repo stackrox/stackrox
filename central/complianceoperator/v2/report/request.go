@@ -31,7 +31,10 @@ type ClusterData struct {
 
 // FailedCluster holds the information of a failed cluster
 type FailedCluster struct {
-	storage.ComplianceOperatorReportSnapshotV2_FailedCluster
-	Scans    []*storage.ComplianceOperatorScanV2
-	Profiles []string
+	ClusterId       string
+	ClusterName     string
+	Reasons         []string
+	OperatorVersion string
+	Scans           []*storage.ComplianceOperatorScanV2
+	Profiles        []string
 }

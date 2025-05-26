@@ -76,7 +76,7 @@ func (s *ComplianceReportingFormatterSuite) Test_FormatCSVReportWithFailedCluste
 	})).Times(2).Return(nil, nil)
 	s.csvWriter.EXPECT().AddValue(gomock.Cond[csv.Value](func(target csv.Value) bool {
 		failedInfo := clusterData[clusterID2].FailedInfo
-		return compareStringSlice(s.T(), target, generateFailRecord(failedInfo.GetClusterId(), failedInfo.GetClusterName(), failedInfo.GetReasons()[0], failedInfo.GetOperatorVersion())) ||
+		return compareStringSlice(s.T(), target, generateFailRecord(failedInfo.ClusterId, failedInfo.ClusterName, failedInfo.Reasons[0], failedInfo.OperatorVersion)) ||
 			compareStringSlice(s.T(), target, generateRecord(results[clusterID1][0])) ||
 			compareStringSlice(s.T(), target, generateRecord(results[clusterID1][1]))
 	})).Times(3)
@@ -102,7 +102,7 @@ func (s *ComplianceReportingFormatterSuite) Test_FormatCSVReportWithFailedCluste
 	})).Times(2).Return(nil, nil)
 	s.csvWriter.EXPECT().AddValue(gomock.Cond[csv.Value](func(target csv.Value) bool {
 		failedInfo := clusterData[clusterID2].FailedInfo
-		return compareStringSlice(s.T(), target, generateFailRecord(failedInfo.GetClusterId(), failedInfo.GetClusterName(), failedInfo.GetReasons()[0], failedInfo.GetOperatorVersion())) ||
+		return compareStringSlice(s.T(), target, generateFailRecord(failedInfo.ClusterId, failedInfo.ClusterName, failedInfo.Reasons[0], failedInfo.OperatorVersion)) ||
 			compareStringSlice(s.T(), target, generateRecord(results[clusterID1][0])) ||
 			compareStringSlice(s.T(), target, generateRecord(results[clusterID1][1]))
 	})).Times(3)
@@ -141,7 +141,7 @@ func (s *ComplianceReportingFormatterSuite) Test_FormatCSVReportWithPartialFaile
 	})).Times(3).Return(nil, nil)
 	s.csvWriter.EXPECT().AddValue(gomock.Cond[csv.Value](func(target csv.Value) bool {
 		failedInfo := clusterData[clusterID2].FailedInfo
-		return compareStringSlice(s.T(), target, generateFailRecord(failedInfo.GetClusterId(), failedInfo.GetClusterName(), failedInfo.GetReasons()[0], failedInfo.GetOperatorVersion())) ||
+		return compareStringSlice(s.T(), target, generateFailRecord(failedInfo.ClusterId, failedInfo.ClusterName, failedInfo.Reasons[0], failedInfo.OperatorVersion)) ||
 			compareStringSlice(s.T(), target, generateRecord(results[clusterID1][0])) ||
 			compareStringSlice(s.T(), target, generateRecord(results[clusterID1][1])) ||
 			compareStringSlice(s.T(), target, generateRecord(results[clusterID2][0]))
@@ -202,7 +202,7 @@ func (s *ComplianceReportingFormatterSuite) Test_FormatCSVReportWriteError() {
 		s.zipWriter.EXPECT().Create(failedFileName).Times(1).Return(nil, nil)
 		s.csvWriter.EXPECT().AddValue(gomock.Cond[csv.Value](func(target csv.Value) bool {
 			failedInfo := clusterData[clusterID2].FailedInfo
-			return compareStringSlice(s.T(), target, generateFailRecord(failedInfo.GetClusterId(), failedInfo.GetClusterName(), failedInfo.GetReasons()[0], failedInfo.GetOperatorVersion()))
+			return compareStringSlice(s.T(), target, generateFailRecord(failedInfo.ClusterId, failedInfo.ClusterName, failedInfo.Reasons[0], failedInfo.OperatorVersion))
 		})).Times(1)
 		s.csvWriter.EXPECT().WriteCSV(gomock.Any()).Times(1).Return(errors.New("error"))
 		s.zipWriter.EXPECT().Close().Times(1).Return(nil)
@@ -306,27 +306,13 @@ func getFakeReportDataWithFailedCluster() (map[string][]*report.ResultRow, map[s
 		ClusterId:   "test_cluster-2-id",
 		Profiles:    []string{"test_profile-1", "test_profile-2"},
 	}
-	clusterData[clusterID2].FailedInfo = &report.FailedCluster{}
-	clusterData[clusterID2].FailedInfo.Reasons = []string{"timeout"}
-	clusterData[clusterID2].FailedInfo.Profiles = []string{"test_profile-1", "test_profile-2"}
-	clusterData[clusterID2].FailedInfo.OperatorVersion = "v1.6.0"
+	clusterData[clusterID2].FailedInfo = &report.FailedCluster{
+		Reasons:         []string{"timeout"},
+		OperatorVersion: "v1.6.0",
+		Profiles:        []string{"test_profile-1", "test_profile-2"},
+	}
 	results := getFakeReportData()
 	return results, clusterData
-}
-
-func getFakeReportDataOnlyFailedCluster() (map[string][]*report.ResultRow, map[string]*report.ClusterData) {
-	failedClusters := make(map[string]*report.ClusterData)
-	failedClusters[clusterID2] = &report.ClusterData{
-		ClusterName: "test_cluster-2",
-		ClusterId:   "test_cluster-2-id",
-		Profiles:    []string{"test_profile-1", "test_profile-2"},
-	}
-	failedClusters[clusterID2].FailedInfo = &report.FailedCluster{}
-	failedClusters[clusterID2].FailedInfo.Reasons = []string{"timeout"}
-	failedClusters[clusterID2].FailedInfo.Profiles = []string{"test_profile-1", "test_profile-2"}
-	failedClusters[clusterID2].FailedInfo.OperatorVersion = "v1.6.0"
-	results := make(map[string][]*report.ResultRow)
-	return results, failedClusters
 }
 
 func getFakeClusterData() map[string]*report.ClusterData {

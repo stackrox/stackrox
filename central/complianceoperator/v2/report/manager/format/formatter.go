@@ -136,8 +136,8 @@ func (f *FormatterImpl) createFailedClusterFileInZip(zipWriter ZipWriter, filena
 		return err
 	}
 	csvWriter := f.newCSVWriter(failedClusterCSVHeader, true)
-	for _, reason := range failedCluster.GetReasons() {
-		csvWriter.AddValue(generateFailRecord(failedCluster.GetClusterId(), failedCluster.GetClusterName(), reason, failedCluster.GetOperatorVersion()))
+	for _, reason := range failedCluster.Reasons {
+		csvWriter.AddValue(generateFailRecord(failedCluster.ClusterId, failedCluster.ClusterName, reason, failedCluster.OperatorVersion))
 	}
 	return csvWriter.WriteCSV(w)
 }
