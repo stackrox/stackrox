@@ -287,10 +287,10 @@ func (s *ComplianceResultsAggregatorSuite) Test_GetReportDataGetClusterDataError
 				s.Assert().Equal(clusterID, data.ClusterName)
 				if _, ok := tCase.expectFailedClusters[clusterID]; ok {
 					s.Require().NotNil(data.FailedInfo)
-					s.Assert().Equal(clusterID, data.FailedInfo.GetClusterId())
-					s.Assert().Equal(clusterID, data.FailedInfo.GetClusterName())
-					s.Assert().Equal([]string{"timeout"}, data.FailedInfo.GetReasons())
-					s.Assert().Equal("v1.6.0", data.FailedInfo.GetOperatorVersion())
+					s.Assert().Equal(clusterID, data.FailedInfo.ClusterId)
+					s.Assert().Equal(clusterID, data.FailedInfo.ClusterName)
+					s.Assert().Equal([]string{"timeout"}, data.FailedInfo.Reasons)
+					s.Assert().Equal("v1.6.0", data.FailedInfo.OperatorVersion)
 					for scan, profile := range scanToProfilesMap {
 						s.Assert().Contains(data.FailedInfo.Profiles, profile)
 						scanFound := false
@@ -660,21 +660,22 @@ func getRequest(ctx context.Context, numClusters, numProfiles, numFailedClusters
 		for i := numClusters; i < numFailedClusters+numClusters; i++ {
 			id := fmt.Sprintf("cluster-%d", i)
 			ret.ClusterIDs = append(ret.ClusterIDs, id)
-			failedInfo := &report.FailedCluster{}
-			failedInfo.ClusterId = id
-			failedInfo.ClusterName = id
-			failedInfo.Profiles = clusterData[id].Profiles
-			failedInfo.Scans = func() []*storage.ComplianceOperatorScanV2 {
-				var scans []*storage.ComplianceOperatorScanV2
-				for _, scanName := range clusterData[id].Scans {
-					scans = append(scans, &storage.ComplianceOperatorScanV2{
-						ScanName: scanName,
-					})
-				}
-				return scans
-			}()
-			failedInfo.Reasons = []string{"timeout"}
-			failedInfo.OperatorVersion = "v1.6.0"
+			failedInfo := &report.FailedCluster{
+				ClusterId:       id,
+				ClusterName:     id,
+				Reasons:         []string{"timeout"},
+				OperatorVersion: "v1.6.0",
+				Profiles:        clusterData[id].Profiles,
+				Scans: func() []*storage.ComplianceOperatorScanV2 {
+					var scans []*storage.ComplianceOperatorScanV2
+					for _, scanName := range clusterData[id].Scans {
+						scans = append(scans, &storage.ComplianceOperatorScanV2{
+							ScanName: scanName,
+						})
+					}
+					return scans
+				}(),
+			}
 			clusterData[id].FailedInfo = failedInfo
 		}
 		ret.FailedClusters = numFailedClusters

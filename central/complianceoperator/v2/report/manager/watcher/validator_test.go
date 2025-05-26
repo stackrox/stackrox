@@ -380,10 +380,10 @@ func TestValidateClusterHealth(t *testing.T) {
 				Return(tCase.operatorStatus, tCase.expectDSError)
 			res := ValidateClusterHealth(ctx, clusterID, coIntegrationDS)
 			require.NotNil(tt, res)
-			assert.Equal(tt, clusterID, res.GetClusterId())
-			assert.Equal(tt, tCase.expectedReason, res.GetReasons())
+			assert.Equal(tt, clusterID, res.ClusterId)
+			assert.Equal(tt, tCase.expectedReason, res.Reasons)
 			if len(tCase.operatorStatus) > 0 {
-				assert.Equal(tt, tCase.operatorStatus[0].GetVersion(), res.GetOperatorVersion())
+				assert.Equal(tt, tCase.operatorStatus[0].GetVersion(), res.OperatorVersion)
 			}
 		})
 	}
@@ -449,10 +449,11 @@ func getFailedClusters(idx, numFailedClusters, numMissingClusters, numScans int)
 	ret := make(map[string]*report.FailedCluster)
 	for i := idx; i < idx+numFailedClusters; i++ {
 		id := fmt.Sprintf("cluster-%d", i)
-		failedCluster := &report.FailedCluster{}
-		failedCluster.ClusterId = id
-		failedCluster.OperatorVersion = minimumComplianceOperatorVersion
-		failedCluster.Reasons = []string{report.INTERNAL_ERROR}
+		failedCluster := &report.FailedCluster{
+			ClusterId:       id,
+			OperatorVersion: minimumComplianceOperatorVersion,
+			Reasons:         []string{report.INTERNAL_ERROR},
+		}
 		ret[id] = failedCluster
 		var reasons []string
 		for j := 0; j < numScans; j++ {
@@ -465,20 +466,22 @@ func getFailedClusters(idx, numFailedClusters, numMissingClusters, numScans int)
 	}
 	for i := idx + numFailedClusters; i < idx+numFailedClusters+numMissingClusters; i++ {
 		id := fmt.Sprintf("cluster-%d", i)
-		failedCluster := &report.FailedCluster{}
-		failedCluster.ClusterId = id
-		failedCluster.OperatorVersion = minimumComplianceOperatorVersion
-		failedCluster.Reasons = []string{report.INTERNAL_ERROR}
+		failedCluster := &report.FailedCluster{
+			ClusterId:       id,
+			OperatorVersion: minimumComplianceOperatorVersion,
+			Reasons:         []string{report.INTERNAL_ERROR},
+		}
 		ret[id] = failedCluster
 	}
 	return ret
 }
 
 func newFailedCluster(clusterID, coVersion string, reasons []string, expectScan bool) *report.FailedCluster {
-	ret := &report.FailedCluster{}
-	ret.ClusterId = clusterID
-	ret.OperatorVersion = coVersion
-	ret.Reasons = reasons
+	ret := &report.FailedCluster{
+		ClusterId:       clusterID,
+		OperatorVersion: coVersion,
+		Reasons:         reasons,
+	}
 	if expectScan {
 		ret.Scans = []*storage.ComplianceOperatorScanV2{
 			{
@@ -494,10 +497,10 @@ func assertFailedCluster(t *testing.T, expected, actual *report.FailedCluster) {
 	if expected == nil && actual == nil {
 		return
 	}
-	assert.Equal(t, expected.GetClusterId(), actual.GetClusterId())
-	assert.Equal(t, expected.GetClusterName(), actual.GetClusterName())
-	assert.Equal(t, expected.GetOperatorVersion(), actual.GetOperatorVersion())
-	assert.Equal(t, expected.GetReasons(), actual.GetReasons())
+	assert.Equal(t, expected.ClusterId, actual.ClusterId)
+	assert.Equal(t, expected.ClusterName, actual.ClusterName)
+	assert.Equal(t, expected.OperatorVersion, actual.OperatorVersion)
+	assert.Equal(t, expected.Reasons, actual.Reasons)
 	assert.Equal(t, len(expected.Scans), len(actual.Scans))
 	for _, expectedScan := range expected.Scans {
 		found := false
