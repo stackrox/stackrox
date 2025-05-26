@@ -89,7 +89,7 @@ dependencies {
     implementation "io.fabric8:kubernetes-client:${fabric8Version}"
     implementation "io.fabric8:openshift-client:${fabric8Version}"
 
-    implementation 'io.kubernetes:client-java:23.0.0-legacy'
+    implementation 'io.kubernetes:client-java:24.0.0-legacy'
 
     implementation group: 'commons-httpclient', name: 'commons-httpclient', version: '3.1'
     implementation group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.14'
