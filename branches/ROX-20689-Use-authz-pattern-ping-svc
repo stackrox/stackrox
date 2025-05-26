@@ -2,5 +2,16 @@
   "base": {
     "name": "master",
     "hash": "ae49054a089f0d914c3493fb9368c4facaee7118"
+  },
+  "upstream": {
+    "branch": "ROX-20689-Use-authz-pattern-ping-svc"
+  },
+  "change": {
+    "github": {
+      "pr": {
+        "number": 15430,
+        "gqlID": "PR_kwDOGd6UEM6Xpntn"
+      }
+    }
   }
 }
