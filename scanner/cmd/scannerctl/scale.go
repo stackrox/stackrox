@@ -35,6 +35,16 @@ import (
 var (
 	scanTimeout = env.ScanTimeout.DurationSetting()
 
+	TestRunStart = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "scannerctl_scale_test_run_start",
+		Help: "Marks the start of a test run",
+	}, []string{"total_workers", "total_images", "indexer_state"})
+
+	TestRunEnd = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "scannerctl_scale_test_run_end",
+		Help: "Marks the end of a test run",
+	}, []string{"total_workers", "total_images", "indexer_state"})
+
 	TestTimeMillis = promauto.NewHistogramVec(prometheus.HistogramOpts{
 		Name:    "scannerctl_scale_test_time_millis",
 		Help:    "Time to execute one test case",
@@ -121,6 +131,9 @@ func scaleCmd(ctx context.Context) *cobra.Command {
 		"index-only",
 		false,
 		"Only index the specified image")
+
+	indexerCacheState := flags.String("indexer-state", "cold", "Was the index caching warm or cold.")
+
 	pprofDir := flags.String(
 		"pprof-dir",
 		"pprof",
@@ -141,6 +154,13 @@ func scaleCmd(ctx context.Context) *cobra.Command {
 			return err
 		}
 
+		TestRunStart.
+			WithLabelValues(
+				fmt.Sprintf("%d", *workers),
+				fmt.Sprintf("%d", *images),
+				*indexerCacheState).
+			SetToCurrentTime()
+
 		// Create scanner client.
 		scanner, err := factory.Create(ctx)
 		if err != nil {
@@ -152,6 +172,7 @@ func scaleCmd(ctx context.Context) *cobra.Command {
 			refs, err = references(ctx, auth, *repository, *images)
 		} else {
 			refs, err = fixtures.References()
+			refs = refs[:*images]
 		}
 		if err != nil {
 			return fmt.Errorf("fetching image references: %w", err)
@@ -278,11 +299,18 @@ func scaleCmd(ctx context.Context) *cobra.Command {
 		}
 
 		wg.Wait()
+		TestRunEnd.
+			WithLabelValues(
+				fmt.Sprintf("%d", *workers),
+				fmt.Sprintf("%d", *images),
+				*indexerCacheState).
+			SetToCurrentTime()
 
 		// Signal the profiler to terminate.
 		stopC <- struct{}{}
 
 		log.Printf("scale tests complete: %v", &stats)
+		time.Sleep(5 * time.Minute)
 
 		return nil
 	}
