@@ -38,7 +38,9 @@ func parseMetricLabels(config map[string]*storage.PrometheusMetricsConfig_Metric
 			}
 			metricLabels[Label(label)] = exprs
 		}
-		result[MetricName(metric)] = metricLabels
+		if len(metricLabels) > 0 {
+			result[MetricName(metric)] = metricLabels
+		}
 	}
 	if len(result) == 0 {
 		return nil, nil
