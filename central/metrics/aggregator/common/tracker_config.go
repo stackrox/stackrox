@@ -127,6 +127,9 @@ func (tc *TrackerConfig[Finding]) registerMetrics(registry *prometheus.Registry,
 // may dynamically change.
 func (cfg *TrackerConfig[Finding]) Track(ctx context.Context) {
 	mle := cfg.GetMetricLabelExpressions()
+	if len(mle) == 0 {
+		return
+	}
 	aggregator := makeAggregator(mle, cfg.labelOrder)
 	for finding := range cfg.generator(ctx, mle) {
 		aggregator.count(func(label Label) string {
