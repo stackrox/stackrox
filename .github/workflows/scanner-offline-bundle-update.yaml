@@ -11,7 +11,7 @@ on:
 
 jobs:
   offline-bundle-matrix:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     if: >
       github.event_name == 'schedule' ||
       (github.event_name == 'pull_request' &&
@@ -35,7 +35,7 @@ jobs:
 
   offline-bundle-generate:
     needs: offline-bundle-matrix
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
@@ -68,7 +68,7 @@ jobs:
         if-no-files-found: error
 
   offline-bundle-upload:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs:
     - offline-bundle-generate
     steps:
@@ -124,7 +124,7 @@ jobs:
     - offline-bundle-matrix
     - offline-bundle-generate
     - offline-bundle-upload
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     if: github.event_name == 'schedule' && failure()
     steps:
     - name: Send Slack notification on workflow failure

@@ -56,7 +56,7 @@ on:
 jobs:
   parse:
     name: Parse ${{inputs.version}}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     outputs:
       release: ${{steps.parse.outputs.release}}
       major: ${{steps.parse.outputs.major}}

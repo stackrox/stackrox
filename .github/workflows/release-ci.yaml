@@ -9,7 +9,7 @@ on:
 jobs:
   run-parameters:
     name: Run parameters
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - run: |
           echo "Event: ${{ github.event_name }}" >> "$GITHUB_STEP_SUMMARY"
@@ -26,7 +26,7 @@ jobs:
     secrets: inherit
 
   check-is-release:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     outputs:
       is_release: ${{ steps.is_release_check.outputs.is_release }}
     steps:
@@ -45,7 +45,7 @@ jobs:
           fi
 
   check-scanner-version:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -58,7 +58,7 @@ jobs:
             check_scanner_version
 
   check-collector-version:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -73,7 +73,7 @@ jobs:
   update-collector-released-versions:
     needs: [check-scanner-version, check-collector-version, check-is-release]
     if: needs.check-is-release.outputs.is_release == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -93,7 +93,7 @@ jobs:
   publish-helm-charts:
     needs: [build, check-scanner-version, check-collector-version, check-is-release]
     if: needs.check-is-release.outputs.is_release == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -121,7 +121,7 @@ jobs:
   publish-roxctl:
     needs: [build, check-scanner-version, check-collector-version, check-is-release]
     if: needs.check-is-release.outputs.is_release == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -147,7 +147,7 @@ jobs:
   publish-openapispec:
     needs: [build, check-scanner-version, check-collector-version, check-is-release]
     if: needs.check-is-release.outputs.is_release == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4

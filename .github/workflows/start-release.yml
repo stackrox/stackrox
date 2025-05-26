@@ -42,7 +42,7 @@ concurrency: Release automation ${{ inputs.version }}
 jobs:
   start-sha:
     name: Find commit for release branch
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     outputs:
       start-sha: ${{ fromJSON(format('["{0}","{1}"]', env.USER_REF, steps.find.outputs.merge_base))[env.USER_REF == ''] }}
     steps:
@@ -67,7 +67,7 @@ jobs:
 
   properties:
     name: Read repository properties
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     outputs:
       docs-repository: ${{ steps.properties.outputs.docs-repository }}
       slack-channel: ${{ fromJSON(format('["{0}","{1}"]', steps.properties.outputs.dry-slack-channel, steps.properties.outputs.slack-channel))[github.event.inputs.dry-run != 'true'] }}
@@ -81,7 +81,7 @@ jobs:
 
   run-parameters:
     name: Run parameters
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - run: |
           [ "$DRY_RUN" = "true" ] && echo "::warning::This is a dry run"
@@ -102,7 +102,7 @@ jobs:
   check-jira:
     name: Check Jira release
     needs: [variables, properties]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     outputs:
       release-date: ${{steps.check-jira-release.outputs.date}}
     steps:
@@ -120,7 +120,7 @@ jobs:
   branch:
     name: Prepare release branch
     needs: [variables, start-sha]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Check out code (normal release)
         if: needs.variables.outputs.patch == 0
@@ -192,7 +192,7 @@ jobs:
     name: Configure OpenShift CI jobs
     needs: [variables, branch]
     if: needs.variables.outputs.patch == 0
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     env:
       RELEASE: "${{needs.variables.outputs.release}}"
       BRANCH: "stackrox-release-${{needs.variables.outputs.release}}"
@@ -261,7 +261,7 @@ jobs:
     name: Patch CHANGELOG.md
     needs: [variables, branch, start-sha]
     if: needs.variables.outputs.patch == 0
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Check out code
         uses: actions/checkout@v4
@@ -287,7 +287,7 @@ jobs:
   patch-scanner-versions:
     name: Patch Scanner updater configuration
     needs: [variables, branch]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Check out code
         uses: actions/checkout@v4
@@ -309,7 +309,7 @@ jobs:
   milestone:
     name: Create milestone
     needs: [variables]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Create ${{needs.variables.outputs.next-milestone}} milestone
         if: env.DRY_RUN == 'false'
@@ -335,7 +335,7 @@ jobs:
   notify:
     name: Notify everybody
     needs: [variables, properties, branch, milestone]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Post to Slack (normal release)
         if: needs.variables.outputs.patch == 0
