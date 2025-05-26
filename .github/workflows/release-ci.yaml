@@ -70,26 +70,6 @@ jobs:
           scripts/ci/lib.sh \
             check_collector_version
 
-  update-collector-released-versions:
-    needs: [check-scanner-version, check-collector-version, check-is-release]
-    if: needs.check-is-release.outputs.is_release == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: ${{ github.ref_name }}
-      - name: Patch RELEASED_VERSIONS
-        env:
-          STACKROX_TAG: ${{ github.ref_name }}
-          GITHUB_USERNAME: ${{ secrets.RHACS_BOT_GITHUB_USERNAME }}
-          GITHUB_EMAIL: ${{ secrets.RHACS_BOT_GITHUB_EMAIL }}
-          GITHUB_TOKEN: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
-        run: |
-          scripts/ci/lib.sh \
-            mark_collector_release "${STACKROX_TAG}"
-
   publish-helm-charts:
     needs: [build, check-scanner-version, check-collector-version, check-is-release]
     if: needs.check-is-release.outputs.is_release == 'true'
