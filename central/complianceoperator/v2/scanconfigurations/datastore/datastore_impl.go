@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/logging"
 	pgPkg "github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -21,11 +22,13 @@ import (
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sliceutils"
+	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
 var (
 	complianceSAC = sac.ForResource(resources.Compliance)
+	log           = logging.LoggerForModule()
 )
 
 type datastoreImpl struct {
@@ -34,6 +37,8 @@ type datastoreImpl struct {
 	statusStorage statusStore.Store
 	keyedMutex    *concurrency.KeyedMutex
 }
+
+var _ DataStore = (*datastoreImpl)(nil)
 
 // GetScanConfiguration retrieves the scan configuration specified by id
 func (ds *datastoreImpl) GetScanConfiguration(ctx context.Context, id string) (*storage.ComplianceOperatorScanConfigurationV2, bool, error) {
@@ -338,11 +343,11 @@ type distinctProfileCount struct {
 }
 
 // CountDistinctProfiles returns count of distinct profiles matching query
-func (ds *datastoreImpl) CountDistinctProfiles(ctx context.Context, q *v1.Query) (int, error) {
+func (ds *datastoreImpl) CountDistinctProfiles(ctx context.Context, q *v1.Query) (map[string]int, error) {
 	var err error
 	q, err = withSACFilter(ctx, resources.Compliance, q)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
 	query := q.CloneVT()
@@ -353,12 +358,15 @@ func (ds *datastoreImpl) CountDistinctProfiles(ctx context.Context, q *v1.Query)
 		},
 	}
 
-	var results []*distinctProfileCount
-	results, err = pgSearch.RunSelectRequestForSchema[distinctProfileCount](ctx, ds.db, schema.ComplianceOperatorScanConfigurationV2Schema, withCountQuery(query, search.ComplianceOperatorConfigProfileName))
+	result, err := pgSearch.RunSelectRequestForSchema[distinctProfileCount](ctx, ds.db, schema.ComplianceOperatorScanConfigurationV2Schema, withCountQuery(query, search.ComplianceOperatorConfigProfileName))
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
-	return len(results), nil
+	countMap := make(map[string]int, len(result))
+	for _, dp := range result {
+		countMap[dp.Name] = dp.TotalCount
+	}
+	return countMap, nil
 }
 
 func withCountQuery(query *v1.Query, field search.FieldLabel) *v1.Query {
@@ -375,4 +383,19 @@ func withSACFilter(ctx context.Context, targetResource permissions.ResourceMetad
 		return nil, err
 	}
 	return search.FilterQueryByQuery(query, sacQueryFilter), nil
+}
+
+func GatherProfiles(ds DataStore) phonehome.GatherFunc {
+	return func(ctx context.Context) (map[string]any, error) {
+		telemetryCtx := sac.WithAllAccess(ctx)
+		counts, err := ds.CountDistinctProfiles(telemetryCtx, search.EmptyQuery())
+		if err != nil {
+			return nil, errors.Wrap(err, "failed gathering profiles for telemetry")
+		}
+		profiles := make(map[string]any, len(counts))
+		for profile, count := range counts {
+			profiles["Compliance Operator Profile "+profile] = count
+		}
+		return profiles, nil
+	}
 }

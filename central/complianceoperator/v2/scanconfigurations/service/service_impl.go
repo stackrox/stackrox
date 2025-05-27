@@ -573,5 +573,5 @@ func (s *serviceImpl) getProfiles(ctx context.Context, query *v1.Query, countQue
 		return nil, 0, errors.Wrap(errox.NotFound, err.Error())
 	}
 
-	return storagetov2.ComplianceProfileSummary(profiles, benchmarkMap), profileCount, nil
+	return storagetov2.ComplianceProfileSummary(profiles, benchmarkMap), len(profileCount), nil
 }

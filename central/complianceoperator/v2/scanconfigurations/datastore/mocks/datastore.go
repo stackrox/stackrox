@@ -43,10 +43,10 @@ func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 }
 
 // CountDistinctProfiles mocks base method.
-func (m *MockDataStore) CountDistinctProfiles(ctx context.Context, q *v1.Query) (int, error) {
+func (m *MockDataStore) CountDistinctProfiles(ctx context.Context, q *v1.Query) (map[string]int, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CountDistinctProfiles", ctx, q)
-	ret0, _ := ret[0].(int)
+	ret0, _ := ret[0].(map[string]int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

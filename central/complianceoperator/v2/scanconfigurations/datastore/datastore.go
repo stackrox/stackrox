@@ -54,7 +54,7 @@ type DataStore interface {
 	GetProfilesNames(ctx context.Context, q *v1.Query) ([]string, error)
 
 	// CountDistinctProfiles returns count of distinct profiles matching query
-	CountDistinctProfiles(ctx context.Context, q *v1.Query) (int, error)
+	CountDistinctProfiles(ctx context.Context, q *v1.Query) (map[string]int, error)
 }
 
 // New returns an instance of DataStore.
