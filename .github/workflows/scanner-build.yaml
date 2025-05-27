@@ -37,10 +37,10 @@ jobs:
 
         # If goarch is updated, be sure to update architectures in "push-scanner-manifests" below.
         matrix='{
-          "pre_build_scanner_go_binary": { "name":["default"], "goos":["linux"], "goarch":["amd64", "arm64"], "exclude":[] },
+          "pre_build_scanner_go_binary": { "name":["default"], "goos":["linux"], "goarch":["amd64", "arm64"] },
           "build_and_push_scanner": { },
-          "push_scanner_manifests": { "name":["default"], "registry":["quay.io/stackrox-io", "quay.io/rhacs-eng"], "exclude":[] },
-          "scan_images_with_roxctl": { "image":["scanner-v4", "scanner-v4-db"], "registry":["quay.io/stackrox-io", "quay.io/rhacs-eng"], "exclude":[] }
+          "push_scanner_manifests": { "name":["default"], "registry":["quay.io/stackrox-io", "quay.io/rhacs-eng"] },
+          "scan_images_with_roxctl": { "image":["scanner-v4", "scanner-v4-db"], "registry":["quay.io/stackrox-io", "quay.io/rhacs-eng"] }
         }'
 
         if ! is_in_PR_context || pr_has_label ci-build-all-arch; then
@@ -63,12 +63,6 @@ jobs:
 
         matrix="$(jq '.build_and_push_scanner = .pre_build_scanner_go_binary' <<< "$matrix")"
         matrix="$(jq '.build_and_push_scanner.registry = .push_scanner_manifests.registry' <<< "$matrix")"
-
-        if [[ "$( scripts/ci/should-konflux-replace-gha-build.sh )" == "BUILD_AND_PUSH_ONLY_KONFLUX" ]]; then
-          matrix="$(jq '.build_and_push_scanner.exclude += [{ "registry": "quay.io/rhacs-eng" }]' <<< "$matrix")"
-          matrix="$(jq '.push_scanner_manifests.exclude += [{ "registry": "quay.io/rhacs-eng" }]' <<< "$matrix")"
-          matrix="$(jq '.scan_images_with_roxctl.exclude += [{ "registry": "quay.io/rhacs-eng" }]' <<< "$matrix")"
-        fi
 
         echo "Job matrix after conditionals:"
         jq <<< "$matrix"
