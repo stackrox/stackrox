@@ -1156,6 +1156,14 @@ func (s *complianceCheckResultDataStoreTestSuite) TestComplianceProfileResults()
 
 func (s *complianceCheckResultDataStoreTestSuite) TestComplianceDeleteOldResults() {
 	s.setupTestData()
+	// Remove any previous checks
+	_, err := s.db.DB.Exec(context.Background(), "TRUNCATE compliance_operator_check_result_v2")
+	s.Require().NoError(err)
+	// make sure we have nothing
+	checkResultIDs, err := s.storage.GetIDs(s.hasReadCtx)
+	s.Require().NoError(err)
+	s.Require().Empty(checkResultIDs)
+
 	timeNow := time.Now()
 	oldTime := timeNow.Add(-time.Hour)
 	timestampNow, err := protocompat.ConvertTimeToTimestampOrError(timeNow)
@@ -1163,21 +1171,21 @@ func (s *complianceCheckResultDataStoreTestSuite) TestComplianceDeleteOldResults
 	oldTimestamp, err := protocompat.ConvertTimeToTimestampOrError(oldTime)
 	s.Require().NoError(err)
 	scanName := "scan-name"
-	scanRef := internaltov2storage.BuildNameRefID(testconsts.Cluster2, scanName)
+	scanRef := internaltov2storage.BuildNameRefID(testconsts.Cluster1, scanName)
 	// Upsert CheckResults
-	rec1 := getTestRec(testconsts.Cluster2)
+	rec1 := getTestRec(testconsts.Cluster1)
 	rec1.CheckName = "test-check-1"
 	rec1.LastStartedTime = timestampNow
 	rec1.ScanName = scanName
 	rec1.ScanRefId = scanRef
 	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, rec1))
-	rec2 := getTestRec(testconsts.Cluster2)
+	rec2 := getTestRec(testconsts.Cluster1)
 	rec2.CheckName = "test-check-2"
 	rec2.LastStartedTime = timestampNow
 	rec2.ScanName = scanName
 	rec2.ScanRefId = scanRef
 	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, rec2))
-	rec3 := getTestRec(testconsts.Cluster2)
+	rec3 := getTestRec(testconsts.Cluster1)
 	rec3.CheckName = "test-check-3"
 	rec3.LastStartedTime = oldTimestamp
 	rec3.ScanName = scanName

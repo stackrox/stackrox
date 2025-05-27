@@ -58,6 +58,7 @@ type managerImpl struct {
 	integrationDataStore complianceIntegrationDS.DataStore
 	suiteDataStore       suiteDS.DataStore
 	bindingsDataStore    bindingsDS.DataStore
+	checkResultDataStore checkResults.DataStore
 
 	runningReportConfigs map[string]*reportRequest
 	// channel for report job requests
@@ -88,7 +89,15 @@ type managerImpl struct {
 	scanConfigReadyQueue *queue.Queue[*watcher.ScanConfigWatcherResults]
 }
 
-func New(scanConfigDS scanConfigurationDS.DataStore, scanDataStore scanDS.DataStore, profileDataStore profileDatastore.DataStore, snapshotDatastore snapshotDS.DataStore, complianceIntegration complianceIntegrationDS.DataStore, suiteDataStore suiteDS.DataStore, bindingsDataStore bindingsDS.DataStore, reportGen reportGen.ComplianceReportGenerator) Manager {
+func New(scanConfigDS scanConfigurationDS.DataStore,
+	scanDataStore scanDS.DataStore,
+	profileDataStore profileDatastore.DataStore,
+	snapshotDatastore snapshotDS.DataStore,
+	complianceIntegration complianceIntegrationDS.DataStore,
+	suiteDataStore suiteDS.DataStore,
+	bindingsDataStore bindingsDS.DataStore,
+	checkResultDataStore checkResults.DataStore,
+	reportGen reportGen.ComplianceReportGenerator) Manager {
 	return &managerImpl{
 		scanConfigDataStore:   scanConfigDS,
 		scanDataStore:         scanDataStore,
@@ -97,6 +106,7 @@ func New(scanConfigDS scanConfigurationDS.DataStore, scanDataStore scanDS.DataSt
 		integrationDataStore:  complianceIntegration,
 		suiteDataStore:        suiteDataStore,
 		bindingsDataStore:     bindingsDataStore,
+		checkResultDataStore:  checkResultDataStore,
 		stopper:               concurrency.NewStopper(),
 		runningReportConfigs:  make(map[string]*reportRequest, maxRequests),
 		reportRequests:        make(chan *reportRequest, maxRequests),
@@ -400,7 +410,7 @@ func (m *managerImpl) handleReadyScan() {
 				concurrency.WithLock(&m.watchingScansLock, func() {
 					delete(m.watchingScans, scanWatcherResult.WatcherID)
 				})
-				if err := watcher.DeleteOldResults(m.automaticReportingCtx, scanWatcherResult, checkResults.Singleton()); err != nil {
+				if err := watcher.DeleteOldResults(m.automaticReportingCtx, scanWatcherResult, m.checkResultDataStore); err != nil {
 					log.Errorf("unable to delete old CheckResults: %v", err)
 				}
 				if errors.Is(scanWatcherResult.Error, watcher.ErrScanRemoved) {
@@ -519,7 +529,7 @@ func (m *managerImpl) handleReadyScanConfig() {
 				concurrency.WithLock(&m.watchingScanConfigsLock, func() {
 					delete(m.watchingScanConfigs, scanConfigWatcherResult.WatcherID)
 				})
-				if err := watcher.DeleteOldResultsFromMissingScans(m.automaticReportingCtx, scanConfigWatcherResult, m.profileDataStore, m.scanDataStore, checkResults.Singleton()); err != nil {
+				if err := watcher.DeleteOldResultsFromMissingScans(m.automaticReportingCtx, scanConfigWatcherResult, m.profileDataStore, m.scanDataStore, m.checkResultDataStore); err != nil {
 					log.Errorf("unable to delete old CheckResults: %v", err)
 				}
 				m.generateReportsFromWatcherResults(scanConfigWatcherResult)
