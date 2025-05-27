@@ -214,7 +214,6 @@ func setScoresAndScoreVersions(vuln *storage.EmbeddedVulnerability, CVSSMetrics 
 		return nil
 	}
 	vuln.Link = link(CVSSMetrics[0].Url)
-	
 	errList := errorhelpers.NewErrorList("failed to get CVSS Metrics")
 	var scores []*storage.CVSSScore
 	for _, cvss := range CVSSMetrics {
