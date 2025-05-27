@@ -49,7 +49,7 @@ func reconcileFeatureDefaults(ctx context.Context, client ctrlClient.Client, u *
 		return errors.Wrap(err, "converting unstructured object to Central")
 	}
 
-	err := executeDefaultingFlows(ctx, logger, &central, client)
+	err := setDefaultsAndPersist(ctx, logger, &central, client)
 	if err != nil {
 		return err
 	}
@@ -67,7 +67,7 @@ func reconcileFeatureDefaults(ctx context.Context, client ctrlClient.Client, u *
 	return nil
 }
 
-func executeDefaultingFlows(ctx context.Context, logger logr.Logger, central *platform.Central, client ctrlClient.Client) error {
+func setDefaultsAndPersist(ctx context.Context, logger logr.Logger, central *platform.Central, client ctrlClient.Client) error {
 	origCentral := central.DeepCopy()
 
 	// This may update central.Defaults and central's embedded annotations.
