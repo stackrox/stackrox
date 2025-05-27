@@ -3,11 +3,10 @@ package image_vulnerabilities
 import (
 	"context"
 	"iter"
-	"slices"
 	"strconv"
 
 	"github.com/prometheus/client_golang/prometheus"
-	imageCVEDS "github.com/stackrox/rox/central/cve/image/datastore"
+	imageCVEDS "github.com/stackrox/rox/central/cve/image/v2/datastore"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/metrics/aggregator/common"
@@ -79,24 +78,23 @@ func MakeTrackerConfig(gauge func(string, prometheus.Labels, int)) *common.Track
 }
 
 func trackVulnerabilityMetrics(ctx context.Context, query *v1.Query, mle common.MetricLabelsExpressions, ds datastores) iter.Seq[*finding] {
-	// Optimization opportunity:
-	// The resource filter (mle) is known at this point, so a more precise
-	// query could be constructed here.
-	queryDeploymentData := queryDeploymentData(mle)
-	queryImageData := !queryDeploymentData && queryImageData(mle)
+	queryDeploymentData := mle.HasAnyLabelOf(deploymentLabels)
+	queryImageData := !queryDeploymentData && mle.HasAnyLabelOf(imageLabels)
 
 	return func(yield func(*finding) bool) {
-		finding := &finding{}
 		switch {
 		case queryDeploymentData:
-			_ = queryDeployments(ctx, ds.deployments, query, finding, yield)
+			_ = queryDeployments(ctx, ds.deployments, query, yield)
 		case queryImageData:
-			_ = queryImages(ctx, ds.images, query, finding, yield)
+			_ = queryImages(ctx, ds.images, query, yield)
+		default:
+			_ = queryCVEs(ctx, ds.cves, query, yield)
 		}
 	}
 }
 
-func queryDeployments(ctx context.Context, ds deploymentDS.DataStore, query *v1.Query, finding *finding, yield func(*finding) bool) error {
+func queryDeployments(ctx context.Context, ds deploymentDS.DataStore, query *v1.Query, yield func(*finding) bool) error {
+	finding := &finding{}
 	return ds.WalkByQuery(ctx, query, func(deployment *storage.Deployment) error {
 		finding.deployment = deployment
 		images, err := ds.GetImagesForDeployment(ctx, deployment)
@@ -104,7 +102,7 @@ func queryDeployments(ctx context.Context, ds deploymentDS.DataStore, query *v1.
 			return nil // Nothing can be done with this error here.
 		}
 		for _, finding.image = range images {
-			if !forEachFinding(yield, finding) {
+			if !forEachImageVuln(yield, finding) {
 				return common.ErrStopIterator
 			}
 		}
@@ -112,39 +110,42 @@ func queryDeployments(ctx context.Context, ds deploymentDS.DataStore, query *v1.
 	})
 }
 
-func queryImages(ctx context.Context, ds imageDS.DataStore, query *v1.Query, finding *finding, yield func(*finding) bool) error {
+func queryImages(ctx context.Context, ds imageDS.DataStore, query *v1.Query, yield func(*finding) bool) error {
+	finding := &finding{}
 	return ds.WalkByQuery(ctx, query, func(image *storage.Image) error {
 		finding.image = image
-		if !forEachFinding(yield, finding) {
+		if !forEachImageVuln(yield, finding) {
 			return common.ErrStopIterator
 		}
 		return nil
 	})
 }
 
-func queryDeploymentData(mle common.MetricLabelsExpressions) bool {
-	for _, expr := range mle {
-		for label := range expr {
-			if slices.Contains(deploymentLabels, label) {
-				return true
-			}
-		}
+func convertCVE(ic *storage.ImageCVEV2) *storage.EmbeddedVulnerability {
+	return &storage.EmbeddedVulnerability{
+		Cve:      ic.GetCveBaseInfo().GetCve(),
+		Severity: ic.GetSeverity(),
+		Cvss:     ic.GetCvss(),
+		CvssV2:   ic.GetCveBaseInfo().GetCvssV2(),
+		CvssV3:   ic.GetCveBaseInfo().GetCvssV3(),
+		SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
+			FixedBy: ic.GetFixedBy(),
+		},
 	}
-	return false
 }
 
-func queryImageData(mle common.MetricLabelsExpressions) bool {
-	for _, expr := range mle {
-		for label := range expr {
-			if slices.Contains(imageLabels, label) {
-				return true
-			}
+func queryCVEs(ctx context.Context, ds imageCVEDS.DataStore, query *v1.Query, yield func(*finding) bool) error {
+	finding := &finding{}
+	return ds.WalkByQuery(ctx, query, func(ic *storage.ImageCVEV2) error {
+		finding.vuln = convertCVE(ic)
+		if !yield(finding) {
+			return common.ErrStopIterator
 		}
-	}
-	return false
+		return nil
+	})
 }
 
-func forEachFinding(yield func(*finding) bool, f *finding) bool {
+func forEachImageVuln(yield func(*finding) bool, f *finding) bool {
 	for _, f.component = range f.image.GetScan().GetComponents() {
 		for _, f.vuln = range f.component.GetVulns() {
 			for _, f.name = range f.image.GetNames() {

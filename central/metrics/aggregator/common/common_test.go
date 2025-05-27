@@ -99,3 +99,22 @@ func Test_validateMetricName(t *testing.T) {
 		})
 	}
 }
+
+func TestHasAnyLabelOf(t *testing.T) {
+	mle := MetricLabelsExpressions{
+		"metric1": map[Label][]*Expression{
+			"label1": nil,
+			"label2": nil,
+		},
+		"metric2": map[Label][]*Expression{
+			"label3": nil,
+			"label4": nil,
+		},
+	}
+	assert.False(t, mle.HasAnyLabelOf([]Label{}))
+	assert.True(t, mle.HasAnyLabelOf([]Label{"label1"}))
+	assert.True(t, mle.HasAnyLabelOf([]Label{"label3"}))
+	assert.True(t, mle.HasAnyLabelOf([]Label{"label0", "label1"}))
+	assert.True(t, mle.HasAnyLabelOf([]Label{"label0", "label4"}))
+	assert.False(t, mle.HasAnyLabelOf([]Label{"label0", "label5"}))
+}

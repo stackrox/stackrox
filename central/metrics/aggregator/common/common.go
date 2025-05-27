@@ -4,6 +4,7 @@ import (
 	"context"
 	"iter"
 	"regexp"
+	"slices"
 
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -26,6 +27,17 @@ type LabelGetter[Finding Count] struct {
 
 // MetricLabelsExpressions is the parsed aggregation configuration.
 type MetricLabelsExpressions map[MetricName]map[Label][]*Expression
+
+func (mle MetricLabelsExpressions) HasAnyLabelOf(labels []Label) bool {
+	for _, expr := range mle {
+		for label := range expr {
+			if slices.Contains(labels, label) {
+				return true
+			}
+		}
+	}
+	return false
+}
 
 type aggregationKey string // e.g. IMPORTANT_VULNERABILITY_SEVERITY|true
 
