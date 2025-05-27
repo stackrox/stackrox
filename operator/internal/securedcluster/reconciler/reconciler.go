@@ -28,7 +28,7 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 			// Only appearance and disappearance of a Central resource can influence whether
 			// a local scanner should be deployed by the SecuredCluster controller.
 			utils.CreateAndDeleteOnlyPredicate[*platform.Central]{}))
-	// IMPORTANT: The ReconcilerExtensionFeatureDefaulting preExtensions implements feature-defaulting logic
+	// IMPORTANT: The FeatureDefaultingExtension preExtensions implements feature-defaulting logic
 	// and therefore must be executed and registered first.
 	// New extensions shall be added to otherPreExtensions to guarantee this ordering.
 	otherPreExtensions := []pkgReconciler.Option{
