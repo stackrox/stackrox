@@ -90,7 +90,7 @@ Regarding defaulting, note that there exist different kinds of defaults:
 * Translation logic-level defaults: The translation logic will recognize an absent (`nil`) value, decide on its meaning, and will set a corresponding
   value in the Helm values (see [example](https://github.com/stackrox/rox/blob/84d841c870f59d2c423f78eb7ecd44a196f8a659/operator/pkg/central/values/translation/translation.go#L120)).
 
-  A variant of this are defaults set by a special `DefaultingExtension`. TODO(ROX-29199): document how to use this.
+  Alternatively, defaults can be set by a special `DefaultingExtension`. TODO(ROX-29199): document how to use this.
 
 * Propagating chart-level defaults: The translation logic will set the corresponding Helm values field only for explicitly set values; for absent
   values, it will do nothing, thus deferring to the chart's defaulting logic (see [example](https://github.com/stackrox/rox/blob/84d841c870f59d2c423f78eb7ecd44a196f8a659/operator/pkg/central/values/translation/translation.go#L86)).
