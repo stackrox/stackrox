@@ -1,4 +1,4 @@
-package vulnerabilities
+package image_vulnerabilities
 
 import (
 	"context"
@@ -29,7 +29,7 @@ var getters = []common.LabelGetter[*finding]{
 	{Label: "Severity", Getter: func(f *finding) string { return f.vuln.GetSeverity().String() }},
 	{Label: "SeverityV2", Getter: func(f *finding) string { return f.vuln.GetCvssV2().GetSeverity().String() }},
 	{Label: "SeverityV3", Getter: func(f *finding) string { return f.vuln.GetCvssV3().GetSeverity().String() }},
-	{Label: "IsFixable", Getter: isFixable},
+	{Label: "IsFixable", Getter: func(f *finding) string { return strconv.FormatBool(f.vuln.GetFixedBy() != "") }},
 }
 
 type finding struct {
@@ -53,13 +53,6 @@ func MakeTrackerConfig(gauge func(string, prometheus.Labels, int)) *common.Track
 		common.Bind3rd(trackVulnerabilityMetrics, datastores{deploymentDS.Singleton(), imageDS.Singleton()}),
 		gauge)
 	return tc
-}
-
-func isFixable(f *finding) string {
-	if f.vuln.GetFixedBy() == "" {
-		return "false"
-	}
-	return "true"
 }
 
 func trackVulnerabilityMetrics(ctx context.Context, mle common.MetricLabelsExpressions, ds datastores) iter.Seq[*finding] {

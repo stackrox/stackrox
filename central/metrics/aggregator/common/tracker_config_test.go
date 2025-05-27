@@ -151,7 +151,7 @@ func TestTrack(t *testing.T) {
 }
 
 func TestTrackerConfig_registerMetrics(t *testing.T) {
-	tc := MakeTrackerConfig[testDataIndex]("test", "test",
+	tc := MakeTrackerConfig("test", "test",
 		testLabelGetters, nil, nil)
 	testRegistry := prometheus.NewRegistry()
 	tc.metricsConfig = makeTestMetricLabelExpressions(t)

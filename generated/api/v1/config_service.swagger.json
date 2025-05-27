@@ -522,7 +522,7 @@
     "storagePrometheusMetricsConfig": {
       "type": "object",
       "properties": {
-        "vulnerabilities": {
+        "imageVulnerabilities": {
           "$ref": "#/definitions/PrometheusMetricsConfigVulnerabilities"
         }
       }
