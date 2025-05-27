@@ -467,6 +467,7 @@ export function getExternalNetworkFlows(
     entityId,
     namespaces,
     deployments,
+    sinceTimestamp,
     { sortOption, page, perPage, advancedFilters }
 ) {
     const searchFilter = {
@@ -481,7 +482,7 @@ export function getExternalNetworkFlows(
     const params = getListQueryParams({ searchFilter, sortOption, page, perPage });
     return axios
         .get(
-            `${networkFlowBaseUrl}/cluster/${clusterId}/externalentities/${entityId}/flows?${params}`
+            `${networkFlowBaseUrl}/cluster/${clusterId}/externalentities/${entityId}/flows?since=${sinceTimestamp}&${params}`
         )
         .then((response) => response.data);
 }
