@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/central/metrics/aggregator/common"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -30,14 +32,14 @@ func Test_run(t *testing.T) {
 		runner := &aggregatorRunner{stopCh: make(chan bool, 1)}
 		tracker := common.MakeTrackerConfig("test", "test",
 			nil,
-			func(context.Context, common.MetricLabelsExpressions) iter.Seq[something] {
+			func(context.Context, *v1.Query, common.MetricLabelsExpressions) iter.Seq[something] {
 				return func(yield func(something) bool) {
 					i = true
 				}
 			},
 			nil,
 		)
-		tracker.SetMetricLabelExpressions(getNonEmptyMLE())
+		tracker.SetMetricLabelExpressions(search.EmptyQuery(), getNonEmptyMLE())
 		runner.Stop()
 		runner.run(tracker)
 		assert.False(t, i)
@@ -48,7 +50,7 @@ func Test_run(t *testing.T) {
 		runner := &aggregatorRunner{stopCh: make(chan bool, 1)}
 		tracker := common.MakeTrackerConfig("test", "test",
 			nil,
-			func(context.Context, common.MetricLabelsExpressions) iter.Seq[something] {
+			func(context.Context, *v1.Query, common.MetricLabelsExpressions) iter.Seq[something] {
 				return func(yield func(something) bool) {
 					i = true
 					runner.Stop()
@@ -56,7 +58,7 @@ func Test_run(t *testing.T) {
 			},
 			nil,
 		)
-		tracker.SetMetricLabelExpressions(getNonEmptyMLE())
+		tracker.SetMetricLabelExpressions(search.EmptyQuery(), getNonEmptyMLE())
 		tracker.GetPeriodCh() <- time.Minute
 		runner.run(tracker)
 		assert.True(t, i)
@@ -67,7 +69,7 @@ func Test_run(t *testing.T) {
 		runner := &aggregatorRunner{stopCh: make(chan bool, 1)}
 		tracker := common.MakeTrackerConfig("test", "test",
 			nil,
-			func(context.Context, common.MetricLabelsExpressions) iter.Seq[something] {
+			func(context.Context, *v1.Query, common.MetricLabelsExpressions) iter.Seq[something] {
 				return func(yield func(something) bool) {
 					i++
 					if i > 2 {
@@ -77,7 +79,7 @@ func Test_run(t *testing.T) {
 			},
 			nil,
 		)
-		tracker.SetMetricLabelExpressions(getNonEmptyMLE())
+		tracker.SetMetricLabelExpressions(search.EmptyQuery(), getNonEmptyMLE())
 		tracker.GetPeriodCh() <- 100 * time.Microsecond
 		runner.run(tracker)
 		assert.Greater(t, i, 2)
@@ -88,14 +90,14 @@ func Test_run(t *testing.T) {
 		runner := &aggregatorRunner{stopCh: make(chan bool, 1)}
 		tracker := common.MakeTrackerConfig("test", "test",
 			nil,
-			func(context.Context, common.MetricLabelsExpressions) iter.Seq[something] {
+			func(context.Context, *v1.Query, common.MetricLabelsExpressions) iter.Seq[something] {
 				return func(yield func(something) bool) {
 					i.Add(1)
 				}
 			},
 			nil,
 		)
-		tracker.SetMetricLabelExpressions(getNonEmptyMLE())
+		tracker.SetMetricLabelExpressions(search.EmptyQuery(), getNonEmptyMLE())
 		const period = 50 * time.Millisecond
 		tracker.GetPeriodCh() <- period
 		start := time.Now()

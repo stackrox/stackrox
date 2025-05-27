@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/central/metrics/aggregator/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/search"
 )
 
 var (
@@ -70,7 +69,7 @@ func MakeTrackerConfig(gauge func(string, prometheus.Labels, int)) *common.Track
 		"vulnerabilities",
 		"aggregated CVEs",
 		getters,
-		common.Bind3rd(trackVulnerabilityMetrics, datastores{
+		common.Bind4th(trackVulnerabilityMetrics, datastores{
 			deploymentDS.Singleton(),
 			imageDS.Singleton(),
 			imageCVEDS.Singleton(),
@@ -79,11 +78,10 @@ func MakeTrackerConfig(gauge func(string, prometheus.Labels, int)) *common.Track
 	return tc
 }
 
-func trackVulnerabilityMetrics(ctx context.Context, mle common.MetricLabelsExpressions, ds datastores) iter.Seq[*finding] {
+func trackVulnerabilityMetrics(ctx context.Context, query *v1.Query, mle common.MetricLabelsExpressions, ds datastores) iter.Seq[*finding] {
 	// Optimization opportunity:
 	// The resource filter (mle) is known at this point, so a more precise
 	// query could be constructed here.
-	query := search.EmptyQuery()
 	queryDeploymentData := queryDeploymentData(mle)
 	queryImageData := !queryDeploymentData && queryImageData(mle)
 

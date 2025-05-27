@@ -7,8 +7,10 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/central/metrics"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 type Count interface{ Count() int }
@@ -26,6 +28,7 @@ type TrackerConfig[Finding Count] struct {
 	// metricsConfig can be changed with an API call.
 	metricsConfig    MetricLabelsExpressions
 	metricsConfigMux sync.RWMutex
+	query            *v1.Query
 
 	// periodCh allows for changing the period in runtime.
 	periodCh chan time.Duration
@@ -36,7 +39,7 @@ type Tracker interface {
 	Do(func())
 	GetPeriodCh() chan time.Duration
 	Track(context.Context)
-	Reconfigure(*prometheus.Registry, map[string]*storage.PrometheusMetricsConfig_MetricLabels, time.Duration) error
+	Reconfigure(*prometheus.Registry, string, map[string]*storage.PrometheusMetricsConfig_MetricLabels, time.Duration) error
 }
 
 func makeLabelOrderMap[Finding Count](getters []LabelGetter[Finding]) map[Label]int {
@@ -77,12 +80,16 @@ func (tc *TrackerConfig[Finding]) GetPeriodCh() chan time.Duration {
 	return tc.periodCh
 }
 
-func (tc *TrackerConfig[Finding]) Reconfigure(registry *prometheus.Registry, cfg map[string]*storage.PrometheusMetricsConfig_MetricLabels, period time.Duration) error {
+func (tc *TrackerConfig[Finding]) Reconfigure(registry *prometheus.Registry, query string, cfg map[string]*storage.PrometheusMetricsConfig_MetricLabels, period time.Duration) error {
 	mle, err := parseMetricLabels(cfg, tc.labelOrder)
 	if err != nil {
 		return err
 	}
-	tc.SetMetricLabelExpressions(mle)
+	q, err := search.ParseQuery(query, search.MatchAllIfEmpty())
+	if err != nil {
+		return err
+	}
+	tc.SetMetricLabelExpressions(q, mle)
 	select {
 	case tc.periodCh <- period:
 		break
@@ -100,15 +107,16 @@ func (tc *TrackerConfig[Finding]) Reconfigure(registry *prometheus.Registry, cfg
 	return tc.registerMetrics(registry, period)
 }
 
-func (tc *TrackerConfig[Finding]) GetMetricLabelExpressions() MetricLabelsExpressions {
+func (tc *TrackerConfig[Finding]) GetMetricLabelExpressions() (*v1.Query, MetricLabelsExpressions) {
 	tc.metricsConfigMux.RLock()
 	defer tc.metricsConfigMux.RUnlock()
-	return tc.metricsConfig
+	return tc.query, tc.metricsConfig
 }
 
-func (tc *TrackerConfig[Finding]) SetMetricLabelExpressions(mle MetricLabelsExpressions) {
+func (tc *TrackerConfig[Finding]) SetMetricLabelExpressions(query *v1.Query, mle MetricLabelsExpressions) {
 	tc.metricsConfigMux.Lock()
 	defer tc.metricsConfigMux.Unlock()
+	tc.query = query
 	tc.metricsConfig = mle
 }
 
@@ -128,12 +136,12 @@ func (tc *TrackerConfig[Finding]) registerMetrics(registry *prometheus.Registry,
 // returned by gatherFunc. cfgGetter returns the current configuration, which
 // may dynamically change.
 func (cfg *TrackerConfig[Finding]) Track(ctx context.Context) {
-	mle := cfg.GetMetricLabelExpressions()
+	query, mle := cfg.GetMetricLabelExpressions()
 	if len(mle) == 0 {
 		return
 	}
 	aggregator := makeAggregator(mle, cfg.labelOrder)
-	for finding := range cfg.generator(ctx, mle) {
+	for finding := range cfg.generator(ctx, query, mle) {
 		aggregator.count(func(label Label) string {
 			return cfg.getters[label](finding)
 		}, finding.Count())

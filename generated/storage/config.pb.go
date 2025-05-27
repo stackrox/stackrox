@@ -1180,6 +1180,7 @@ type PrometheusMetricsConfig_Vulnerabilities struct {
 	state                protoimpl.MessageState                           `protogen:"open.v1"`
 	GatheringPeriodHours uint32                                           `protobuf:"varint,1,opt,name=gathering_period_hours,json=gatheringPeriodHours,proto3" json:"gathering_period_hours,omitempty"`
 	MetricLabels         map[string]*PrometheusMetricsConfig_MetricLabels `protobuf:"bytes,2,rep,name=metric_labels,json=metricLabels,proto3" json:"metric_labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Query                string                                           `protobuf:"bytes,3,opt,name=query,proto3" json:"query,omitempty"`
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
 }
@@ -1226,6 +1227,13 @@ func (x *PrometheusMetricsConfig_Vulnerabilities) GetMetricLabels() map[string]*
 		return x.MetricLabels
 	}
 	return nil
+}
+
+func (x *PrometheusMetricsConfig_Vulnerabilities) GetQuery() string {
+	if x != nil {
+		return x.Query
+	}
+	return ""
 }
 
 type PrometheusMetricsConfig_MetricLabels_Expressions struct {
@@ -1411,7 +1419,7 @@ const file_storage_config_proto_rawDesc = "" +
 	"\x17retention_duration_days\x18\x01 \x01(\rR\x15retentionDurationDays\"@\n" +
 	"\tDayOption\x12\x19\n" +
 	"\bnum_days\x18\x01 \x01(\rR\anumDays\x12\x18\n" +
-	"\aenabled\x18\x02 \x01(\bR\aenabled\"\xe2\x06\n" +
+	"\aenabled\x18\x02 \x01(\bR\aenabled\"\xf8\x06\n" +
 	"\x17PrometheusMetricsConfig\x12e\n" +
 	"\x15image_vulnerabilities\x18\x01 \x01(\v20.storage.PrometheusMetricsConfig.VulnerabilitiesR\x14imageVulnerabilities\x1a\xbc\x03\n" +
 	"\fMetricLabels\x12p\n" +
@@ -1426,10 +1434,11 @@ const file_storage_config_proto_rawDesc = "" +
 	"\bargument\x18\x02 \x01(\tR\bargument\x1a~\n" +
 	"\x15LabelExpressionsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12O\n" +
-	"\x05value\x18\x02 \x01(\v29.storage.PrometheusMetricsConfig.MetricLabels.ExpressionsR\x05value:\x028\x01\x1a\xa0\x02\n" +
+	"\x05value\x18\x02 \x01(\v29.storage.PrometheusMetricsConfig.MetricLabels.ExpressionsR\x05value:\x028\x01\x1a\xb6\x02\n" +
 	"\x0fVulnerabilities\x124\n" +
 	"\x16gathering_period_hours\x18\x01 \x01(\rR\x14gatheringPeriodHours\x12g\n" +
-	"\rmetric_labels\x18\x02 \x03(\v2B.storage.PrometheusMetricsConfig.Vulnerabilities.MetricLabelsEntryR\fmetricLabels\x1an\n" +
+	"\rmetric_labels\x18\x02 \x03(\v2B.storage.PrometheusMetricsConfig.Vulnerabilities.MetricLabelsEntryR\fmetricLabels\x12\x14\n" +
+	"\x05query\x18\x03 \x01(\tR\x05query\x1an\n" +
 	"\x11MetricLabelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12C\n" +
 	"\x05value\x18\x02 \x01(\v2-.storage.PrometheusMetricsConfig.MetricLabelsR\x05value:\x028\x01B.\n" +
