@@ -4,7 +4,7 @@ go 1.23.0
 
 toolchain go1.23.6
 
-require github.com/kudobuilder/kuttl v0.22.0
+require github.com/kudobuilder/kuttl v0.22.1-0.20250227123224-48064d8de757
 
 require (
 	al.essio.dev/pkg/shellescape v1.5.1 // indirect
@@ -15,7 +15,7 @@ require (
 	github.com/antlr4-go/antlr/v4 v4.13.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/distribution/reference v0.6.0 // indirect
-	github.com/docker/docker v27.5.1+incompatible // indirect
+	github.com/docker/docker v28.0.0+incompatible // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.4.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
