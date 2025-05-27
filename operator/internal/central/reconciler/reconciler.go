@@ -30,7 +30,7 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 			// Only appearance and disappearance of a SecuredCluster resource can influence whether
 			// an init bundle should be created by the Central controller.
 			utils.CreateAndDeleteOnlyPredicate[*platform.SecuredCluster]{}))
-	// IMPORTANT: The ReconcilerExtensionFeatureDefaulting preExtensions implements feature-defaulting logic
+	// IMPORTANT: The FeatureDefaultingExtension preExtension implements feature-defaulting logic
 	// and therefore must be executed and registered first.
 	// New extensions shall be added to otherPreExtensions to guarantee this ordering.
 	otherPreExtensions := []pkgReconciler.Option{
