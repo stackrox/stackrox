@@ -340,7 +340,7 @@ type distinctProfileCount struct {
 	Name       string `db:"compliance_config_profile_name"`
 }
 
-// DistinctProfiles returns a map with names of distinct profiles matching query
+// DistinctProfiles returns a map where the keys are profile names and the values are their counts, for profiles matching the query.
 func (ds *datastoreImpl) DistinctProfiles(ctx context.Context, q *v1.Query) (map[string]int, error) {
 	var err error
 	q, err = withSACFilter(ctx, resources.Compliance, q)
