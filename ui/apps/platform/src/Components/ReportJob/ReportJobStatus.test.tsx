@@ -9,9 +9,11 @@ import ReportJobStatus from './ReportJobStatus';
     * 'Waiting': The system is idle, waiting for necessary input or resources to proceed.
     * 'Failure': An error occurred, causing the run to fail. Check for issues and try again.
     * 'Download - Not actionable / No permissions': The download is available but cannot be accessed or manipulated due to insufficient permissions.
-    * 'Download - Actionable': The download is available and can be accessed or manipulated by the user.
+    * 'Download - Actionable': The full report download is available and can be accessed or manipulated by the user.
+    * 'Download - Partial report actionable': A partial report download is available and can be accessed or manipulated by the user.
     * 'Download - Deleted': The download was previously available but has since been removed or is no longer accessible.
-    * 'Email - Delivered': The email has been successfully sent and delivered to the recipient.
+    * 'Email - Delivered': The full report has been successfully sent and delivered to the recipient.
+    * 'Email - Partial report delivered': A partial report has been successfully sent and delivered to the recipient.
     * 'Unknown': The current state cannot be determined or does not match any of the predefined states listed above. Typescript should safegaurd against this. This is mostly in case the API returns a different value
 */
 describe('ReportJobStatus', () => {
@@ -158,6 +160,31 @@ describe('ReportJobStatus', () => {
         expect(statusIconElement).toBeInTheDocument();
     });
 
+    test('should display the status text and icon when a partial report download is available and accessible', () => {
+        render(
+            <ReportJobStatus
+                reportStatus={{
+                    runState: 'PARTIAL_SCAN_ERROR_DOWNLOAD',
+                    reportRequestType: 'ON_DEMAND',
+                    reportNotificationMethod: 'DOWNLOAD',
+                    completedAt: '',
+                    errorMsg: '',
+                }}
+                isDownloadAvailable
+                areDownloadActionsDisabled={false}
+                onDownload={() => {}}
+            />
+        );
+
+        const statusTextElement = screen.getByText('Partial report ready for download');
+        const statusIconElement = screen.getByTitle(
+            'Partial report download was successfully prepared'
+        );
+
+        expect(statusTextElement).toBeInTheDocument();
+        expect(statusIconElement).toBeInTheDocument();
+    });
+
     test('should display the status text and icon when download is deleted', async () => {
         render(
             <ReportJobStatus
@@ -217,6 +244,29 @@ describe('ReportJobStatus', () => {
 
         const statusTextElement = screen.getByText('Successfully sent');
         const statusIconElement = screen.getByTitle('Report was successfully sent');
+
+        expect(statusTextElement).toBeInTheDocument();
+        expect(statusIconElement).toBeInTheDocument();
+    });
+
+    test('should display the status text and icon when a partial report is sent via email', () => {
+        render(
+            <ReportJobStatus
+                reportStatus={{
+                    runState: 'PARTIAL_SCAN_ERROR_EMAIL',
+                    reportRequestType: 'ON_DEMAND',
+                    reportNotificationMethod: 'EMAIL',
+                    completedAt: '',
+                    errorMsg: '',
+                }}
+                isDownloadAvailable={false}
+                areDownloadActionsDisabled={false}
+                onDownload={() => {}}
+            />
+        );
+
+        const statusTextElement = screen.getByText('Partial report successfully sent');
+        const statusIconElement = screen.getByTitle('Partial report was successfully sent');
 
         expect(statusTextElement).toBeInTheDocument();
         expect(statusIconElement).toBeInTheDocument();

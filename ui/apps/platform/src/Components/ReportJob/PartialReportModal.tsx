@@ -7,10 +7,10 @@ import { FailedCluster } from 'types/reportJob';
 
 export type PartialReportModalProps = {
     failedClusters?: FailedCluster[];
-    onConfirm: () => void;
+    onDownload?: () => void;
 };
 
-function PartialReportModal({ failedClusters = [], onConfirm }: PartialReportModalProps) {
+function PartialReportModal({ failedClusters = [], onDownload }: PartialReportModalProps) {
     const [isModalOpen, setIsModalOpen] = React.useState(false);
 
     const handleModalToggle = () => {
@@ -18,6 +18,27 @@ function PartialReportModal({ failedClusters = [], onConfirm }: PartialReportMod
     };
 
     const sortedFailedClusters = sortBy(failedClusters, 'clusterName');
+
+    const buttonText = onDownload
+        ? 'Partial report ready for download'
+        : 'Partial report successfully sent';
+    const actions = onDownload
+        ? [
+              <Button
+                  key="confirm"
+                  variant="primary"
+                  onClick={() => {
+                      handleModalToggle();
+                      onDownload();
+                  }}
+              >
+                  Download partial report
+              </Button>,
+              <Button key="cancel" variant="link" onClick={handleModalToggle}>
+                  Cancel
+              </Button>,
+          ]
+        : [];
 
     return (
         <React.Fragment>
@@ -27,33 +48,20 @@ function PartialReportModal({ failedClusters = [], onConfirm }: PartialReportMod
                 className="pf-v5-u-primary-color-100"
                 onClick={handleModalToggle}
             >
-                Partial report
+                {buttonText}
             </Button>
             <Modal
                 variant="medium"
                 title="Partial report generated"
                 isOpen={isModalOpen}
                 onClose={handleModalToggle}
-                actions={[
-                    <Button
-                        key="confirm"
-                        variant="primary"
-                        onClick={() => {
-                            handleModalToggle();
-                            onConfirm();
-                        }}
-                    >
-                        Download partial report
-                    </Button>,
-                    <Button key="cancel" variant="link" onClick={handleModalToggle}>
-                        Cancel
-                    </Button>,
-                ]}
+                actions={actions}
             >
                 <Flex>
                     <FlexItem>
-                        The scan on the listed clusters could not be scheduled, and the report could
-                        not be generated. Please check the cluster logs to diagnose the issue.
+                        An error occurred while generating reports for the selected clusters. Review
+                        cluster logs to diagnose the issue. The following clusters are not included
+                        in this report
                     </FlexItem>
                     <Table aria-label="Failed clusters table" variant="compact">
                         <Thead>
