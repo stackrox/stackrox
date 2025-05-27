@@ -134,7 +134,7 @@ func TestQueryDeploymentsAndImages(t *testing.T) {
 
 	cfg := common.MakeTrackerConfig("vuln", "test",
 		getters,
-		common.Bind3rd(trackVulnerabilityMetrics, datastores{deploymentDS.DataStore(ds), nil}),
+		common.Bind3rd(trackVulnerabilityMetrics, datastores{deploymentDS.DataStore(ds), nil, nil}),
 		func(metric string, labels prometheus.Labels, total int) {
 			actual[metric] = append(actual[metric], &labelsTotal{labels, total})
 		},
@@ -195,7 +195,7 @@ func TestQueryImages(t *testing.T) {
 
 	cfg := common.MakeTrackerConfig("vuln", "test",
 		getters,
-		common.Bind3rd(trackVulnerabilityMetrics, datastores{nil, imageDS.DataStore(ds)}),
+		common.Bind3rd(trackVulnerabilityMetrics, datastores{nil, imageDS.DataStore(ds), nil}),
 		func(metric string, labels prometheus.Labels, total int) {
 			actual[metric] = append(actual[metric], &labelsTotal{labels, total})
 		},

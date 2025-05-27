@@ -12,7 +12,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type testDataIndex = int
+type testDataIndex int
+
+func (t testDataIndex) Count() int {
+	return 1
+}
 
 var testRegistry = prometheus.NewRegistry()
 
@@ -24,7 +28,7 @@ func makeTestGatherFunc(data []map[Label]string) func(context.Context, MetricLab
 	return func(ctx context.Context, mle MetricLabelsExpressions) iter.Seq[testDataIndex] {
 		return func(yield func(testDataIndex) bool) {
 			for i := range data {
-				if !yield(i) {
+				if !yield(testDataIndex(i)) {
 					return
 				}
 			}
