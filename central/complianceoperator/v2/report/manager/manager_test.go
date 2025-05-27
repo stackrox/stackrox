@@ -236,7 +236,7 @@ func (m *ManagerTestSuite) TestFailedReportWithWatcherRunningAndNoNotifiers() {
 		m.snapshotDataStore.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).
 			Times(1).
 			DoAndReturn(func(_ any, snapshot *storage.ComplianceOperatorReportSnapshotV2) error {
-				assert.Equal(m.T(), storage.ComplianceOperatorReportStatus_PREPARING, snapshot.GetReportStatus().GetRunState())
+				m.Assert().Equal(storage.ComplianceOperatorReportStatus_PREPARING, snapshot.GetReportStatus().GetRunState())
 				wg.Add(-1)
 				return nil
 			}),

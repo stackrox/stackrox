@@ -148,10 +148,13 @@ func (rg *complianceReportGeneratorImpl) Stop() {
 
 func (rg *complianceReportGeneratorImpl) getOnAsyncSenderSuccess(ctx context.Context, snapshot *storage.ComplianceOperatorReportSnapshotV2) func(error) error {
 	return func(err error) error {
-		concurrency.WithLock(&rg.handlersMutex, func() {
+		defer concurrency.WithLock(&rg.handlersMutex, func() {
 			delete(rg.senderResponseHandlers, snapshot.GetReportId())
 		})
 		if err != nil {
+			return err
+		}
+		if snapshot == nil {
 			return err
 		}
 		if snapshot.GetReportStatus().GetRunState() == storage.ComplianceOperatorReportStatus_GENERATED {
@@ -167,7 +170,7 @@ func (rg *complianceReportGeneratorImpl) getOnAsyncSenderSuccess(ctx context.Con
 
 func (rg *complianceReportGeneratorImpl) getOnAsyncSenderError(ctx context.Context, snapshot *storage.ComplianceOperatorReportSnapshotV2) func() {
 	return func() {
-		concurrency.WithLock(&rg.handlersMutex, func() {
+		defer concurrency.WithLock(&rg.handlersMutex, func() {
 			delete(rg.senderResponseHandlers, snapshot.GetReportId())
 		})
 		if dbErr := reportUtils.UpdateSnapshotOnError(ctx, snapshot, report.ErrSendingEmail, rg.snapshotDS); dbErr != nil {

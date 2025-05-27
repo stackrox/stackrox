@@ -32,6 +32,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/pkg/uuid"
+	"golang.org/x/exp/maps"
 	"golang.org/x/sync/semaphore"
 )
 
@@ -551,11 +552,7 @@ func (m *managerImpl) generateSingleReportFromWatcherResults(result *watcher.Sca
 				failedCluster.ClusterName = cluster.GetClusterName()
 			}
 		}
-		failedClustersSlice := make([]*storage.ComplianceOperatorReportSnapshotV2_FailedCluster, 0, len(failedClusters))
-		for _, failedCluster := range failedClusters {
-			failedClustersSlice = append(failedClustersSlice, failedCluster)
-		}
-		snapshot.FailedClusters = failedClustersSlice
+		snapshot.FailedClusters = maps.Values(failedClusters)
 	}
 	if err := m.snapshotDataStore.UpsertSnapshot(m.automaticReportingCtx, snapshot); err != nil {
 		return errors.Wrapf(err, "unable to upsert the snapshot %s", snapshot.GetReportId())
