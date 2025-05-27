@@ -79,6 +79,7 @@ _EOH_
 }
 
 handle_tag_requirements() {
+    set -x
     get_initial_options "$@"
 
     tag="$(make tag)"
@@ -105,6 +106,8 @@ _EOMISSING_
         docker cp "$id:/roxctl" "$ROXCTL_FOR_TEST"
         docker rm "$id"
     fi
+
+    set +x
 }
 
 get_initial_options() {
