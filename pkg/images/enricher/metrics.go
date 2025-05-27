@@ -12,6 +12,10 @@ import (
 type metrics interface {
 	IncrementMetadataCacheHit()
 	IncrementMetadataCacheMiss()
+	IncrementEnricherSemaphoreQueueSize()
+	DecrementEnricherSemaphoreQueueSize()
+	IncrementEnricherSemaphoreHoldingSize()
+	DecrementEnricherSemaphoreHoldingSize()
 	SetScanDurationTime(start time.Time, scanner string, err error)
 	SetImageVulnerabilityRetrievalTime(start time.Time, scanner string, err error)
 }
