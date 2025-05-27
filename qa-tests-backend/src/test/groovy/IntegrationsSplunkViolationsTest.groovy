@@ -28,8 +28,8 @@ import spock.lang.Ignore
 import spock.lang.Tag
 
 @Ignore("ROX-26297: Tests started failing regularly recently and need further investigation")
-// ROX-14228 skipping tests for 1st release on power & z
-@IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
+// ROX-14228 skipping tests for non-x86_64 architectures
+@IgnoreIf({ Env.REMOTE_CLUSTER_ARCH != "x86_64" })
 class IntegrationsSplunkViolationsTest extends BaseSpecification {
     private static final String ASSETS_DIR = Paths.get(
             System.getProperty("user.dir"), "artifacts", "splunk-violations-test")

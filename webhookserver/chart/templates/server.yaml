@@ -20,7 +20,7 @@ spec:
       - name: stackrox
       - name: stackrox-dockerhub
       containers:
-      - image: quay.io/rhacs-eng/qa-multi-arch:webhookserver-1.2
+      - image: quay.io/rhacs-eng/qa-multi-arch:webhookserver-1.3
         name: webhookserver
         command: ["/webhookserver"]
         imagePullPolicy: IfNotPresent
@@ -43,6 +43,10 @@ spec:
       - name: certs
         secret:
           secretName: webhook-server-certs
+{{- if .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.nodeSelector | indent 8 }}
+{{- end }}
 ---
 apiVersion: v1
 kind: Service
