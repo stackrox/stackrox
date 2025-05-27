@@ -276,78 +276,7 @@ export function fetchComplianceReportHistory({
             `/v2/compliance/scan/configurations/${id}/reports/${showMyHistory ? 'my-history' : 'history'}?${params}`
         )
         .then((response) => {
-            const data: ComplianceReportSnapshot[] = [
-                {
-                    reportJobId: '0b288fb3-2d90-4e7d-a931-de20b5439a9c',
-                    scanConfigId: '4848404f-0470-4c16-b6d8-412cf5ae0a5b',
-                    name: 'sc-test',
-                    description: '',
-                    reportStatus: {
-                        runState: 'PARTIAL_SCAN_ERROR_DOWNLOAD',
-                        completedAt: '2025-05-20T18:29:37.590721119Z',
-                        errorMsg: '',
-                        reportRequestType: 'ON_DEMAND',
-                        reportNotificationMethod: 'DOWNLOAD',
-                        failedClusters: [
-                            {
-                                clusterId: '1',
-                                clusterName: 'cluster-1',
-                                reason: 'Operator version is not correct',
-                                operatorVersion: 'v1.5.0',
-                            },
-                            {
-                                clusterId: '2',
-                                clusterName: 'cluster-2',
-                                reason: 'Operator version is not correct',
-                                operatorVersion: 'v1.5.0',
-                            },
-                        ],
-                    },
-                    reportData: {
-                        id: '4848404f-0470-4c16-b6d8-412cf5ae0a5b',
-                        scanName: 'sc-test',
-                        scanConfig: {
-                            oneTimeScan: false,
-                            profiles: ['rhcos4-e8'],
-                            scanSchedule: {
-                                intervalType: 'WEEKLY',
-                                hour: 0,
-                                minute: 0,
-                                daysOfWeek: {
-                                    days: [1],
-                                },
-                            },
-                            description: '',
-                            notifiers: [
-                                {
-                                    emailConfig: {
-                                        notifierId: '8469310b-55f2-4715-b98b-1301fefa4dae',
-                                        mailingLists: ['schaudhr@redhat.com'],
-                                        customSubject: '',
-                                        customBody: '',
-                                    },
-                                    notifierName: 'vantestemailserver',
-                                },
-                            ],
-                        },
-                        clusterStatus: [],
-                        createdTime: '2024-12-18T18:53:26.132099174Z',
-                        lastUpdatedTime: '2025-05-13T21:03:20.636903794Z',
-                        modifiedBy: {
-                            id: 'sso:4df1b98c-24ed-4073-a9ad-356aec6bb62d:admin',
-                            name: 'admin',
-                        },
-                        lastExecutedTime: null,
-                    },
-                    user: {
-                        id: 'sso:4df1b98c-24ed-4073-a9ad-356aec6bb62d:admin',
-                        name: 'admin',
-                    },
-                    isDownloadAvailable: true,
-                },
-            ];
-            return data;
-            // return response.data.complianceReportSnapshots;
+            return response.data.complianceReportSnapshots;
         })
         .catch((error) => {
             Raven.captureException(error);
