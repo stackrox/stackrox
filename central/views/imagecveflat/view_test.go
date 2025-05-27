@@ -1,5 +1,3 @@
-//go:build sql_integration
-
 package imagecveflat
 
 import (
@@ -24,7 +22,6 @@ import (
 	imageSamples "github.com/stackrox/rox/pkg/fixtures/image"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
-	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -963,7 +960,7 @@ func assertResponsesAreEqual(t *testing.T, expected []CveFlat, actual []CveFlat,
 	for i, flatCVE := range actual {
 		// TODO(ROX-29462) : Compare CVE IDs of expected and actual responses
 		assert.Equal(t, expected[i].GetCVE(), flatCVE.GetCVE())
-		protoassert.Equal(t, expected[i].GetSeverity(), flatCVE.GetSeverity())
+		assert.Equal(t, expected[i].GetSeverity().String(), flatCVE.GetSeverity().String())
 		assert.Equal(t, expected[i].GetTopCVSS(), flatCVE.GetTopCVSS())
 		assert.Equal(t, expected[i].GetTopNVDCVSS(), flatCVE.GetTopNVDCVSS())
 		assert.Equal(t, expected[i].GetEPSSProbability(), flatCVE.GetEPSSProbability())
@@ -971,6 +968,6 @@ func assertResponsesAreEqual(t *testing.T, expected []CveFlat, actual []CveFlat,
 		assert.Equal(t, expected[i].GetFirstDiscoveredInSystem(), flatCVE.GetFirstDiscoveredInSystem())
 		assert.Equal(t, expected[i].GetPublishDate(), flatCVE.GetPublishDate())
 		assert.Equal(t, expected[i].GetFirstImageOccurrence(), flatCVE.GetFirstImageOccurrence())
-		protoassert.Equal(t, expected[i].GetState(), flatCVE.GetState())
+		assert.Equal(t, expected[i].GetState().String(), flatCVE.GetState().String())
 	}
 }
