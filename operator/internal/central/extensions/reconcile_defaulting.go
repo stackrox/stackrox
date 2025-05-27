@@ -19,14 +19,9 @@ var defaultingFlows = []defaulting.CentralDefaultingFlow{
 }
 
 // This extension executes "defaulting flows". A Central defaulting flow is of type
-// defaulting.CentralDefaultingFlow, which is essentially a function of type
-//
-//	func(
-//	  logger logr.Logger,
-//	  status *platform.CentralStatus,
-//	  annotations map[string]string,
-//	  spec *platform.CentralSpec,
-//	  defaults *platform.CentralSpec) error
+// defaulting.CentralDefaultingFlow, which is essentially a function that acts on
+// `status`, `metadata.annotations` as well as `spec` and `defaults` (both of type `CentralSpec`)
+// of a Central CR.
 //
 // A defaulting flow shall
 //   - derive default values based on 'status', 'annotations' and 'spec' and store them in 'defaults'.
