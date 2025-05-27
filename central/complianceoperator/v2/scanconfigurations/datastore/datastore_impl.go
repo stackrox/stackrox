@@ -340,8 +340,8 @@ type distinctProfileCount struct {
 	Name       string `db:"compliance_config_profile_name"`
 }
 
-// CountDistinctProfiles returns count of distinct profiles matching query
-func (ds *datastoreImpl) CountDistinctProfiles(ctx context.Context, q *v1.Query) (map[string]int, error) {
+// DistinctProfiles returns a map with names of distinct profiles matching query
+func (ds *datastoreImpl) DistinctProfiles(ctx context.Context, q *v1.Query) (map[string]int, error) {
 	var err error
 	q, err = withSACFilter(ctx, resources.Compliance, q)
 	if err != nil {
@@ -386,7 +386,7 @@ func withSACFilter(ctx context.Context, targetResource permissions.ResourceMetad
 func GatherProfiles(ds DataStore) phonehome.GatherFunc {
 	return func(ctx context.Context) (map[string]any, error) {
 		telemetryCtx := sac.WithAllAccess(ctx)
-		counts, err := ds.CountDistinctProfiles(telemetryCtx, search.EmptyQuery())
+		counts, err := ds.DistinctProfiles(telemetryCtx, search.EmptyQuery())
 		if err != nil {
 			return nil, errors.Wrap(err, "gathering compliance operator profiles for telemetry")
 		}

@@ -568,7 +568,7 @@ func (s *serviceImpl) getProfiles(ctx context.Context, query *v1.Query, countQue
 		return nil, 0, err
 	}
 
-	profileCount, err := s.scanConfigDS.CountDistinctProfiles(ctx, countQuery)
+	profileCount, err := s.scanConfigDS.DistinctProfiles(ctx, countQuery)
 	if err != nil {
 		return nil, 0, errors.Wrap(errox.NotFound, err.Error())
 	}
