@@ -120,29 +120,10 @@ func (rg *complianceReportGeneratorImpl) ProcessReportRequest(req *report.Reques
 
 	log.Infof("Sending email for scan config %s", reportName)
 	errC := rg.reportSender.SendEmail(reportGenCtx, reportName, zipData, reportData, req.Notifiers)
-	handler, err := rg.newHandlerFn(func(err error) error {
-		concurrency.WithLock(&rg.handlersMutex, func() {
-			delete(rg.senderResponseHandlers, snapshot.GetReportId())
-		})
-		if err != nil {
-			return err
-		}
-		if snapshot.GetReportStatus().GetRunState() == storage.ComplianceOperatorReportStatus_GENERATED {
-			snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_DELIVERED
-		}
-		snapshot.GetReportStatus().CompletedAt = protocompat.TimestampNow()
-		if dbErr := rg.snapshotDS.UpsertSnapshot(req.Ctx, snapshot); dbErr != nil {
-			log.Errorf("Unable to update snapshot on send email success: %v", dbErr)
-		}
-		return err
-	}, func() {
-		if dbErr := reportUtils.UpdateSnapshotOnError(req.Ctx, snapshot, report.ErrSendingEmail, rg.snapshotDS); dbErr != nil {
-			log.Errorf("Unable to update snapshot on send email failure: %v", dbErr)
-		}
-		concurrency.WithLock(&rg.handlersMutex, func() {
-			delete(rg.senderResponseHandlers, snapshot.GetReportId())
-		})
-	}, errC)
+	handler, err := rg.newHandlerFn(
+		rg.getOnAsyncSenderSuccess(req.Ctx, snapshot),
+		rg.getOnAsyncSenderError(req.Ctx, snapshot),
+		errC)
 	if err != nil {
 		// we should never get here as NewAsyncResponseHandler will only return an error if we pass nil callbacks
 		log.Errorf("unable to create the async response handler for %s", snapshot.GetReportId())
@@ -163,6 +144,36 @@ func (rg *complianceReportGeneratorImpl) Stop() {
 			stopper.Stop()
 		}
 	})
+}
+
+func (rg *complianceReportGeneratorImpl) getOnAsyncSenderSuccess(ctx context.Context, snapshot *storage.ComplianceOperatorReportSnapshotV2) func(error) error {
+	return func(err error) error {
+		concurrency.WithLock(&rg.handlersMutex, func() {
+			delete(rg.senderResponseHandlers, snapshot.GetReportId())
+		})
+		if err != nil {
+			return err
+		}
+		if snapshot.GetReportStatus().GetRunState() == storage.ComplianceOperatorReportStatus_GENERATED {
+			snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_DELIVERED
+		}
+		snapshot.GetReportStatus().CompletedAt = protocompat.TimestampNow()
+		if dbErr := rg.snapshotDS.UpsertSnapshot(ctx, snapshot); dbErr != nil {
+			log.Errorf("Unable to update snapshot on send email success: %v", dbErr)
+		}
+		return err
+	}
+}
+
+func (rg *complianceReportGeneratorImpl) getOnAsyncSenderError(ctx context.Context, snapshot *storage.ComplianceOperatorReportSnapshotV2) func() {
+	return func() {
+		concurrency.WithLock(&rg.handlersMutex, func() {
+			delete(rg.senderResponseHandlers, snapshot.GetReportId())
+		})
+		if dbErr := reportUtils.UpdateSnapshotOnError(ctx, snapshot, report.ErrSendingEmail, rg.snapshotDS); dbErr != nil {
+			log.Errorf("Unable to update snapshot on send email failure: %v", dbErr)
+		}
+	}
 }
 
 func (rg *complianceReportGeneratorImpl) saveReportData(ctx context.Context, configID, snapshotID string, data *bytes.Buffer) error {
