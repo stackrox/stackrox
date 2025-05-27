@@ -25,13 +25,13 @@ func makeAggregator(mle MetricLabelsExpressions, labelOrder map[Label]int) *aggr
 	return &aggregator{aggregated, mle, labelOrder}
 }
 
-func (r *aggregator) count(getter func(Label) string) {
+func (r *aggregator) count(getter func(Label) string, count int) {
 	for metric, expressions := range r.mle {
 		if key, labels := makeAggregationKey(expressions, getter, r.labelOrder); key != "" {
 			if rec, ok := r.result[metric][key]; ok {
-				rec.total++
+				rec.total += count
 			} else {
-				r.result[metric][key] = &aggregatedRecord{labels, 1}
+				r.result[metric][key] = &aggregatedRecord{labels, count}
 			}
 		}
 	}

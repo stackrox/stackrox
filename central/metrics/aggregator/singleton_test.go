@@ -19,6 +19,10 @@ func getNonEmptyMLE() common.MetricLabelsExpressions {
 	}
 }
 
+type something int
+
+func (something) Count() int { return 1 }
+
 func Test_run(t *testing.T) {
 
 	t.Run("stop on start", func(t *testing.T) {
@@ -26,8 +30,8 @@ func Test_run(t *testing.T) {
 		runner := &aggregatorRunner{stopCh: make(chan bool, 1)}
 		tracker := common.MakeTrackerConfig("test", "test",
 			nil,
-			func(context.Context, common.MetricLabelsExpressions) iter.Seq[any] {
-				return func(yield func(any) bool) {
+			func(context.Context, common.MetricLabelsExpressions) iter.Seq[something] {
+				return func(yield func(something) bool) {
 					i = true
 				}
 			},
@@ -44,8 +48,8 @@ func Test_run(t *testing.T) {
 		runner := &aggregatorRunner{stopCh: make(chan bool, 1)}
 		tracker := common.MakeTrackerConfig("test", "test",
 			nil,
-			func(context.Context, common.MetricLabelsExpressions) iter.Seq[any] {
-				return func(yield func(any) bool) {
+			func(context.Context, common.MetricLabelsExpressions) iter.Seq[something] {
+				return func(yield func(something) bool) {
 					i = true
 					runner.Stop()
 				}
@@ -63,8 +67,8 @@ func Test_run(t *testing.T) {
 		runner := &aggregatorRunner{stopCh: make(chan bool, 1)}
 		tracker := common.MakeTrackerConfig("test", "test",
 			nil,
-			func(context.Context, common.MetricLabelsExpressions) iter.Seq[any] {
-				return func(yield func(any) bool) {
+			func(context.Context, common.MetricLabelsExpressions) iter.Seq[something] {
+				return func(yield func(something) bool) {
 					i++
 					if i > 2 {
 						runner.Stop()
@@ -84,8 +88,8 @@ func Test_run(t *testing.T) {
 		runner := &aggregatorRunner{stopCh: make(chan bool, 1)}
 		tracker := common.MakeTrackerConfig("test", "test",
 			nil,
-			func(context.Context, common.MetricLabelsExpressions) iter.Seq[any] {
-				return func(yield func(any) bool) {
+			func(context.Context, common.MetricLabelsExpressions) iter.Seq[something] {
+				return func(yield func(something) bool) {
 					i.Add(1)
 				}
 			},

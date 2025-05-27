@@ -11,9 +11,11 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 )
 
+type Count interface{ Count() int }
+
 // TrackerConfig wraps various pieces of configuration required for tracking
 // various metrics.
-type TrackerConfig[Finding any] struct {
+type TrackerConfig[Finding Count] struct {
 	category    string
 	description string
 	labelOrder  map[Label]int
@@ -37,7 +39,7 @@ type Tracker interface {
 	Reconfigure(*prometheus.Registry, map[string]*storage.PrometheusMetricsConfig_MetricLabels, time.Duration) error
 }
 
-func makeLabelOrderMap[Finding any](getters []LabelGetter[Finding]) map[Label]int {
+func makeLabelOrderMap[Finding Count](getters []LabelGetter[Finding]) map[Label]int {
 	result := make(map[Label]int, len(getters))
 	for i, getter := range getters {
 		result[getter.Label] = i + 1
@@ -45,7 +47,7 @@ func makeLabelOrderMap[Finding any](getters []LabelGetter[Finding]) map[Label]in
 	return result
 }
 
-func makeGettersMap[Finding any](getters []LabelGetter[Finding]) map[Label]func(Finding) string {
+func makeGettersMap[Finding Count](getters []LabelGetter[Finding]) map[Label]func(Finding) string {
 	result := make(map[Label]func(Finding) string, len(getters))
 	for _, getter := range getters {
 		result[getter.Label] = getter.Getter
@@ -55,7 +57,7 @@ func makeGettersMap[Finding any](getters []LabelGetter[Finding]) map[Label]func(
 
 // MakeTrackerConfig initializes a tracker configuration without any period or metric expressions.
 // Call Reconfigure to configure the period and the expressions.
-func MakeTrackerConfig[Finding any](category, description string,
+func MakeTrackerConfig[Finding Count](category, description string,
 	getters []LabelGetter[Finding], generator FindingGenerator[Finding],
 	gauge func(string, prometheus.Labels, int),
 ) *TrackerConfig[Finding] {
@@ -134,7 +136,7 @@ func (cfg *TrackerConfig[Finding]) Track(ctx context.Context) {
 	for finding := range cfg.generator(ctx, mle) {
 		aggregator.count(func(label Label) string {
 			return cfg.getters[label](finding)
-		})
+		}, finding.Count())
 	}
 	for metric, records := range aggregator.result {
 		for _, rec := range records {
