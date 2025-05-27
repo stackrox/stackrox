@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	"github.com/prometheus/client_golang/prometheus"
+	imageCVEDS "github.com/stackrox/rox/central/cve/image/v2/datastore"
+	imageCVEMockDS "github.com/stackrox/rox/central/cve/image/v2/datastore/mocks"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	deploymentMockDS "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
@@ -221,5 +223,85 @@ func TestQueryImages(t *testing.T) {
 	}
 	for metric, records := range actual {
 		assert.ElementsMatch(t, expected[metric], records)
+	}
+}
+
+func TestQueryCVEs(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	ds := imageCVEMockDS.NewMockDataStore(ctrl)
+
+	cves := []*storage.ImageCVEV2{
+		{
+			CveBaseInfo: &storage.CVEInfo{
+				Cve:    "cve-0",
+				CvssV3: &storage.CVSSV3{Severity: storage.CVSSV3_CRITICAL},
+			},
+			Cvss:     7.5,
+			Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
+		},
+		{
+			CveBaseInfo: &storage.CVEInfo{
+				Cve:    "cve-1",
+				CvssV3: &storage.CVSSV3{Severity: storage.CVSSV3_MEDIUM},
+			},
+			Cvss:     5.0,
+			Severity: storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
+		},
+		{
+			CveBaseInfo: &storage.CVEInfo{
+				Cve:    "cve-2",
+				CvssV3: &storage.CVSSV3{Severity: storage.CVSSV3_LOW},
+			},
+			Cvss:     3.0,
+			Severity: storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
+		},
+	}
+	ds.EXPECT().WalkByQuery(gomock.Any(), gomock.Any(), gomock.Any()).
+		Do(func(_ context.Context, _ *v1api.Query, f func(*storage.ImageCVEV2) error) {
+			for _, cve := range cves {
+				_ = f(cve)
+			}
+		}).
+		Return(nil)
+
+	var actual = make(map[string][]*labelsTotal)
+	metricExpressions := common.MetricLabelsExpressions{
+		"Severity_count": {
+			"Severity": nil,
+			"CVE":      nil,
+		},
+		"CVSS_count": {
+			"CVSS":     {common.MustMakeExpression(">", "3")},
+			"Severity": nil,
+		},
+	}
+
+	cfg := common.MakeTrackerConfig("vuln", "test",
+		getters,
+		common.Bind4th(trackVulnerabilityMetrics, datastores{nil, nil, imageCVEDS.DataStore(ds)}),
+		func(metric string, labels prometheus.Labels, total int) {
+			actual[metric] = append(actual[metric], &labelsTotal{labels, total})
+		},
+	)
+	cfg.SetMetricLabelExpressions(search.EmptyQuery(), metricExpressions)
+	cfg.Track(context.Background())
+
+	expected := map[string][]*labelsTotal{
+		"Severity_count": {
+			{prometheus.Labels{"CVE": "cve-0", "Severity": "CRITICAL_VULNERABILITY_SEVERITY"}, 1},
+			{prometheus.Labels{"CVE": "cve-1", "Severity": "MODERATE_VULNERABILITY_SEVERITY"}, 1},
+			{prometheus.Labels{"CVE": "cve-2", "Severity": "LOW_VULNERABILITY_SEVERITY"}, 1},
+		},
+		"CVSS_count": {
+			{prometheus.Labels{"CVSS": "7.5", "Severity": "CRITICAL_VULNERABILITY_SEVERITY"}, 1},
+			{prometheus.Labels{"CVSS": "5.0", "Severity": "MODERATE_VULNERABILITY_SEVERITY"}, 1},
+		},
+	}
+
+	for metric := range expected {
+		assert.Contains(t, actual, metric, metric)
+	}
+	for metric, records := range actual {
+		assert.ElementsMatch(t, expected[metric], records, metric)
 	}
 }
