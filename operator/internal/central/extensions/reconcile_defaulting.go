@@ -54,11 +54,10 @@ func reconcileFeatureDefaults(ctx context.Context, client ctrlClient.Client, u *
 		return err
 	}
 
-	updatedObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&central)
+	u.Object, err = runtime.DefaultUnstructuredConverter.ToUnstructured(&central)
 	if err != nil {
 		return errors.Wrap(err, "converting Central to unstructured object after extension execution")
 	}
-	u.Object = updatedObj
 
 	if err := platform.AddCentralDefaultsToUnstructured(u, &central); err != nil {
 		return errors.Wrap(err, "enriching unstructured Central object with defaults")
