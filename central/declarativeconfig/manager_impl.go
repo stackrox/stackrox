@@ -9,8 +9,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/gohugoio/hashstructure"
 	"github.com/hashicorp/go-multierror"
-	"github.com/mitchellh/hashstructure/v2"
 	"github.com/pkg/errors"
 	declarativeConfigHealth "github.com/stackrox/rox/central/declarativeconfig/health/datastore"
 	"github.com/stackrox/rox/central/declarativeconfig/types"
@@ -404,8 +404,7 @@ func (m *managerImpl) calculateHashAndIndicateChanges(transformedMessagesByHandl
 	// Create a hash from the transformed messages by handler map.
 	// Setting the option ZeroNil will ensure empty byte arrays will be treated as a zero value instead of using
 	// the pointer's value.
-	hash, err := hashstructure.Hash(transformedMessagesByHandler, hashstructure.FormatV2,
-		&hashstructure.HashOptions{ZeroNil: true})
+	hash, err := hashstructure.Hash(transformedMessagesByHandler, &hashstructure.HashOptions{ZeroNil: true})
 
 	// If we received an error for hash generation, log it and _always_ run the deletion. This way we ensure
 	// we don't mistakenly skip reconciliation runs where we shouldn't (e.g. consecutive errors).
