@@ -14,11 +14,12 @@ func _() {
 	_ = x[DELETE-3]
 	_ = x[SELECT-4]
 	_ = x[DELETERETURNINGIDS-5]
+	_ = x[COUNTBY-6]
 }
 
-const _QueryType_name = "SEARCHGETCOUNTDELETESELECTDELETERETURNINGIDS"
+const _QueryType_name = "SEARCHGETCOUNTDELETESELECTDELETERETURNINGIDSCOUNTBY"
 
-var _QueryType_index = [...]uint8{0, 6, 9, 14, 20, 26, 44}
+var _QueryType_index = [...]uint8{0, 6, 9, 14, 20, 26, 44, 51}
 
 func (i QueryType) String() string {
 	if i < 0 || i >= QueryType(len(_QueryType_index)-1) {
