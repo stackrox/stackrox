@@ -32,7 +32,7 @@ spec:
   - name: revision
     value: '{{revision}}'
   - name: input-image-repo
-    value: quay.io/rhacs-eng/collector
+    value: quay.io/rhacs-eng/release-collector
   - name: input-image-tag-makefile-target
     value: collector-tag
   - name: output-image-repo

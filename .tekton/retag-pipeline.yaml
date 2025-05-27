@@ -170,7 +170,7 @@ spec:
     - name: OUTPUT_IMAGE_REPO
       value: $(params.output-image-repo)
     - name: OUTPUT_IMAGE_TAG
-      value: $(tasks.determine-input-image-tag.results.IMAGE_TAG)
+      value: $(tasks.determine-output-image-tag.results.IMAGE_TAG)
     taskRef:
       params:
       - name: name
