@@ -51,7 +51,7 @@ function ReportJobStatus({
                 <ExclamationCircleIcon title="Report run was unsuccessful" />
             </Tooltip>
         );
-        statusText = <p>Error</p>;
+        statusText = <p>Report failed to generate</p>;
     } else if (isDownload && !isDownloadAvailable) {
         statusColorClass = 'pf-v5-u-disabled-color-100';
         statusIcon = <DownloadIcon title="Report download was deleted" />;
@@ -62,7 +62,7 @@ function ReportJobStatus({
                 alignItems={{ default: 'alignItemsCenter' }}
             >
                 <FlexItem>
-                    <p>Download deleted</p>
+                    <p>Report download deleted</p>
                 </FlexItem>
                 <FlexItem>
                     <Tooltip
@@ -87,7 +87,7 @@ function ReportJobStatus({
                 alignItems={{ default: 'alignItemsCenter' }}
             >
                 <FlexItem>
-                    <p>Ready for download</p>
+                    <p>Report ready for download</p>
                 </FlexItem>
                 <FlexItem>
                     <Tooltip
@@ -122,13 +122,13 @@ function ReportJobStatus({
         statusIcon = <DownloadIcon title="Report download was successfully prepared" />;
         statusText = (
             <Button variant="link" isInline className={statusColorClass} onClick={onDownload}>
-                Ready for download
+                Report ready for download
             </Button>
         );
     } else if (reportStatus.runState === 'DELIVERED') {
         statusColorClass = 'pf-v5-u-success-color-100';
         statusIcon = <CheckCircleIcon title="Report was successfully sent" />;
-        statusText = <p className="pf-v5-u-success-color-100">Successfully sent</p>;
+        statusText = <p className="pf-v5-u-success-color-100">Report successfully sent</p>;
     } else if (reportStatus.runState === 'PARTIAL_SCAN_ERROR_EMAIL') {
         statusColorClass = 'pf-v5-u-success-color-100';
         statusIcon = <CheckCircleIcon title="Partial report was successfully sent" />;

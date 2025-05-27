@@ -20,11 +20,11 @@ export type ReportJobStatus = ValueOf<typeof reportJobStatuses>;
 export const reportJobStatusLabels: Record<ReportJobStatus, string> = {
     WAITING: 'Waiting',
     PREPARING: 'Preparing',
-    DOWNLOAD_GENERATED: 'Download generated',
+    DOWNLOAD_GENERATED: 'Report ready for download',
     PARTIAL_SCAN_ERROR_DOWNLOAD: 'Partial report ready for download',
-    EMAIL_DELIVERED: 'Email delivered',
+    EMAIL_DELIVERED: 'Report successfully sent',
     PARTIAL_SCAN_ERROR_EMAIL: 'Partial report successfully sent',
-    ERROR: 'Error',
+    ERROR: 'Report failed to generate',
 };
 
 function isReportJobStatus(value: string): value is ReportJobStatus {
