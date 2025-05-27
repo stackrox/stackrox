@@ -1,4 +1,4 @@
-package vulnerabilities
+package image_vulnerabilities
 
 import (
 	"context"

@@ -11,6 +11,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func getNonEmptyMLE() common.MetricLabelsExpressions {
+	return common.MetricLabelsExpressions{
+		"metric1": map[common.Label][]*common.Expression{
+			"label1": nil,
+		},
+	}
+}
+
 func Test_run(t *testing.T) {
 
 	t.Run("stop on start", func(t *testing.T) {
@@ -25,6 +33,7 @@ func Test_run(t *testing.T) {
 			},
 			nil,
 		)
+		tracker.SetMetricLabelExpressions(getNonEmptyMLE())
 		runner.Stop()
 		runner.run(tracker)
 		assert.False(t, i)
@@ -43,6 +52,7 @@ func Test_run(t *testing.T) {
 			},
 			nil,
 		)
+		tracker.SetMetricLabelExpressions(getNonEmptyMLE())
 		tracker.GetPeriodCh() <- time.Minute
 		runner.run(tracker)
 		assert.True(t, i)
@@ -63,6 +73,7 @@ func Test_run(t *testing.T) {
 			},
 			nil,
 		)
+		tracker.SetMetricLabelExpressions(getNonEmptyMLE())
 		tracker.GetPeriodCh() <- 100 * time.Microsecond
 		runner.run(tracker)
 		assert.Greater(t, i, 2)
@@ -80,6 +91,7 @@ func Test_run(t *testing.T) {
 			},
 			nil,
 		)
+		tracker.SetMetricLabelExpressions(getNonEmptyMLE())
 		const period = 50 * time.Millisecond
 		tracker.GetPeriodCh() <- period
 		start := time.Now()

@@ -8,7 +8,7 @@ import (
 	configDS "github.com/stackrox/rox/central/config/datastore"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/metrics/aggregator/common"
-	"github.com/stackrox/rox/central/metrics/aggregator/vulnerabilities"
+	"github.com/stackrox/rox/central/metrics/aggregator/image_vulnerabilities"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
@@ -28,7 +28,7 @@ type aggregatorRunner struct {
 	stopCh   chan bool
 	stopOnce sync.Once
 
-	vulnerabilities common.Tracker
+	image_vulnerabilities common.Tracker
 }
 
 func Singleton() interface {
@@ -38,8 +38,8 @@ func Singleton() interface {
 } {
 	once.Do(func() {
 		runner = &aggregatorRunner{
-			stopCh:          make(chan bool),
-			vulnerabilities: vulnerabilities.MakeTrackerConfig(metrics.SetCustomAggregatedCount),
+			stopCh:                make(chan bool),
+			image_vulnerabilities: image_vulnerabilities.MakeTrackerConfig(metrics.SetCustomAggregatedCount),
 		}
 		systemPrivateConfig, err := configDS.Singleton().GetPrivateConfig(
 			sac.WithAllAccess(context.Background()))
@@ -54,16 +54,12 @@ func Singleton() interface {
 	return runner
 }
 
-func vulnerabilitiesConfig(cfg *storage.PrometheusMetricsConfig) (map[string]*storage.PrometheusMetricsConfig_MetricLabels, time.Duration) {
-	vc := cfg.GetVulnerabilities()
-	period := time.Hour * time.Duration(vc.GetGatheringPeriodHours())
-	return vc.GetMetricLabels(), period
-}
-
 func (ar *aggregatorRunner) Reconfigure(cfg *storage.PrometheusMetricsConfig) error {
 	{
-		mle, period := vulnerabilitiesConfig(cfg)
-		if err := ar.vulnerabilities.Reconfigure(Registry, mle, period); err != nil {
+		iv := cfg.GetImageVulnerabilities()
+		if err := ar.image_vulnerabilities.Reconfigure(Registry,
+			iv.GetMetricLabels(),
+			time.Hour*time.Duration(iv.GetGatheringPeriodHours())); err != nil {
 			return err
 		}
 	}
@@ -71,8 +67,8 @@ func (ar *aggregatorRunner) Reconfigure(cfg *storage.PrometheusMetricsConfig) er
 }
 
 func (ar *aggregatorRunner) Start() {
-	ar.vulnerabilities.Do(func() {
-		go ar.run(ar.vulnerabilities)
+	ar.image_vulnerabilities.Do(func() {
+		go ar.run(ar.image_vulnerabilities)
 	})
 }
 

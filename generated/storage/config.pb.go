@@ -873,10 +873,10 @@ func (x *DayOption) GetEnabled() bool {
 }
 
 type PrometheusMetricsConfig struct {
-	state           protoimpl.MessageState                   `protogen:"open.v1"`
-	Vulnerabilities *PrometheusMetricsConfig_Vulnerabilities `protobuf:"bytes,1,opt,name=vulnerabilities,proto3" json:"vulnerabilities,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state                protoimpl.MessageState                   `protogen:"open.v1"`
+	ImageVulnerabilities *PrometheusMetricsConfig_Vulnerabilities `protobuf:"bytes,1,opt,name=image_vulnerabilities,json=imageVulnerabilities,proto3" json:"image_vulnerabilities,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *PrometheusMetricsConfig) Reset() {
@@ -909,9 +909,9 @@ func (*PrometheusMetricsConfig) Descriptor() ([]byte, []int) {
 	return file_storage_config_proto_rawDescGZIP(), []int{12}
 }
 
-func (x *PrometheusMetricsConfig) GetVulnerabilities() *PrometheusMetricsConfig_Vulnerabilities {
+func (x *PrometheusMetricsConfig) GetImageVulnerabilities() *PrometheusMetricsConfig_Vulnerabilities {
 	if x != nil {
-		return x.Vulnerabilities
+		return x.ImageVulnerabilities
 	}
 	return nil
 }
@@ -1411,9 +1411,9 @@ const file_storage_config_proto_rawDesc = "" +
 	"\x17retention_duration_days\x18\x01 \x01(\rR\x15retentionDurationDays\"@\n" +
 	"\tDayOption\x12\x19\n" +
 	"\bnum_days\x18\x01 \x01(\rR\anumDays\x12\x18\n" +
-	"\aenabled\x18\x02 \x01(\bR\aenabled\"\xd7\x06\n" +
-	"\x17PrometheusMetricsConfig\x12Z\n" +
-	"\x0fvulnerabilities\x18\x01 \x01(\v20.storage.PrometheusMetricsConfig.VulnerabilitiesR\x0fvulnerabilities\x1a\xbc\x03\n" +
+	"\aenabled\x18\x02 \x01(\bR\aenabled\"\xe2\x06\n" +
+	"\x17PrometheusMetricsConfig\x12e\n" +
+	"\x15image_vulnerabilities\x18\x01 \x01(\v20.storage.PrometheusMetricsConfig.VulnerabilitiesR\x14imageVulnerabilities\x1a\xbc\x03\n" +
 	"\fMetricLabels\x12p\n" +
 	"\x11label_expressions\x18\x01 \x03(\v2C.storage.PrometheusMetricsConfig.MetricLabels.LabelExpressionsEntryR\x10labelExpressions\x1a\xb9\x01\n" +
 	"\vExpressions\x12d\n" +
@@ -1498,7 +1498,7 @@ var file_storage_config_proto_depIdxs = []int32{
 	7,  // 16: storage.Config.private_config:type_name -> storage.PrivateConfig
 	8,  // 17: storage.Config.platform_component_config:type_name -> storage.PlatformComponentConfig
 	18, // 18: storage.VulnerabilityExceptionConfig.expiry_options:type_name -> storage.VulnerabilityExceptionConfig.ExpiryOptions
-	20, // 19: storage.PrometheusMetricsConfig.vulnerabilities:type_name -> storage.PrometheusMetricsConfig.Vulnerabilities
+	20, // 19: storage.PrometheusMetricsConfig.image_vulnerabilities:type_name -> storage.PrometheusMetricsConfig.Vulnerabilities
 	16, // 20: storage.PlatformComponentConfig.Rule.namespace_rule:type_name -> storage.PlatformComponentConfig.Rule.NamespaceRule
 	12, // 21: storage.VulnerabilityExceptionConfig.ExpiryOptions.day_options:type_name -> storage.DayOption
 	17, // 22: storage.VulnerabilityExceptionConfig.ExpiryOptions.fixable_cve_options:type_name -> storage.VulnerabilityExceptionConfig.FixableCVEOptions

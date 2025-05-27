@@ -460,7 +460,7 @@ func (m *PrometheusMetricsConfig) CloneVT() *PrometheusMetricsConfig {
 		return (*PrometheusMetricsConfig)(nil)
 	}
 	r := new(PrometheusMetricsConfig)
-	r.Vulnerabilities = m.Vulnerabilities.CloneVT()
+	r.ImageVulnerabilities = m.ImageVulnerabilities.CloneVT()
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -1099,7 +1099,7 @@ func (this *PrometheusMetricsConfig) EqualVT(that *PrometheusMetricsConfig) bool
 	} else if this == nil || that == nil {
 		return false
 	}
-	if !this.Vulnerabilities.EqualVT(that.Vulnerabilities) {
+	if !this.ImageVulnerabilities.EqualVT(that.ImageVulnerabilities) {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -2326,8 +2326,8 @@ func (m *PrometheusMetricsConfig) MarshalToSizedBufferVT(dAtA []byte) (int, erro
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if m.Vulnerabilities != nil {
-		size, err := m.Vulnerabilities.MarshalToSizedBufferVT(dAtA[:i])
+	if m.ImageVulnerabilities != nil {
+		size, err := m.ImageVulnerabilities.MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -2792,8 +2792,8 @@ func (m *PrometheusMetricsConfig) SizeVT() (n int) {
 	}
 	var l int
 	_ = l
-	if m.Vulnerabilities != nil {
-		l = m.Vulnerabilities.SizeVT()
+	if m.ImageVulnerabilities != nil {
+		l = m.ImageVulnerabilities.SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -5712,7 +5712,7 @@ func (m *PrometheusMetricsConfig) UnmarshalVT(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Vulnerabilities", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ImageVulnerabilities", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -5739,10 +5739,10 @@ func (m *PrometheusMetricsConfig) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.Vulnerabilities == nil {
-				m.Vulnerabilities = &PrometheusMetricsConfig_Vulnerabilities{}
+			if m.ImageVulnerabilities == nil {
+				m.ImageVulnerabilities = &PrometheusMetricsConfig_Vulnerabilities{}
 			}
-			if err := m.Vulnerabilities.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ImageVulnerabilities.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -8728,7 +8728,7 @@ func (m *PrometheusMetricsConfig) UnmarshalVTUnsafe(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Vulnerabilities", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ImageVulnerabilities", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -8755,10 +8755,10 @@ func (m *PrometheusMetricsConfig) UnmarshalVTUnsafe(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.Vulnerabilities == nil {
-				m.Vulnerabilities = &PrometheusMetricsConfig_Vulnerabilities{}
+			if m.ImageVulnerabilities == nil {
+				m.ImageVulnerabilities = &PrometheusMetricsConfig_Vulnerabilities{}
 			}
-			if err := m.Vulnerabilities.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ImageVulnerabilities.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

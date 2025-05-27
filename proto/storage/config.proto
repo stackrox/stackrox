@@ -141,5 +141,5 @@ message PrometheusMetricsConfig {
     map<string, MetricLabels> metric_labels = 2;
   }
 
-  Vulnerabilities vulnerabilities = 1;
+  Vulnerabilities image_vulnerabilities = 1;
 }
