@@ -31,12 +31,12 @@ spec:
     value: '{{source_url}}'
   - name: revision
     value: '{{revision}}'
-  - name: output-image-repo
-    value: quay.io/rhacs-eng/scanner
   - name: input-image-repo
-    value: quay.io/rhacs-eng/scanner
+    value: quay.io/rhacs-eng/release-scanner
   - name: input-image-tag-makefile-target
     value: scanner-tag
+  - name: output-image-repo
+    value: quay.io/rhacs-eng/release-scanner
 
   pipelineRef:
     name: retag-pipeline

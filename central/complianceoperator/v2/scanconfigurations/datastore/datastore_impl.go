@@ -295,7 +295,7 @@ type distinctProfileName struct {
 }
 
 // GetProfilesNames gets the list of distinct profile names for the query
-func (d *datastoreImpl) GetProfilesNames(ctx context.Context, q *v1.Query) ([]string, error) {
+func (ds *datastoreImpl) GetProfilesNames(ctx context.Context, q *v1.Query) ([]string, error) {
 	var err error
 	q, err = withSACFilter(ctx, resources.Compliance, q)
 	if err != nil {
@@ -317,7 +317,7 @@ func (d *datastoreImpl) GetProfilesNames(ctx context.Context, q *v1.Query) ([]st
 	clonedQuery.Pagination = q.GetPagination()
 
 	var results []*distinctProfileName
-	results, err = pgSearch.RunSelectRequestForSchema[distinctProfileName](ctx, d.db, schema.ComplianceOperatorScanConfigurationV2Schema, clonedQuery)
+	results, err = pgSearch.RunSelectRequestForSchema[distinctProfileName](ctx, ds.db, schema.ComplianceOperatorScanConfigurationV2Schema, clonedQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -338,7 +338,7 @@ type distinctProfileCount struct {
 }
 
 // CountDistinctProfiles returns count of distinct profiles matching query
-func (d *datastoreImpl) CountDistinctProfiles(ctx context.Context, q *v1.Query) (int, error) {
+func (ds *datastoreImpl) CountDistinctProfiles(ctx context.Context, q *v1.Query) (int, error) {
 	var err error
 	q, err = withSACFilter(ctx, resources.Compliance, q)
 	if err != nil {
@@ -354,7 +354,7 @@ func (d *datastoreImpl) CountDistinctProfiles(ctx context.Context, q *v1.Query) 
 	}
 
 	var results []*distinctProfileCount
-	results, err = pgSearch.RunSelectRequestForSchema[distinctProfileCount](ctx, d.db, schema.ComplianceOperatorScanConfigurationV2Schema, withCountQuery(query, search.ComplianceOperatorConfigProfileName))
+	results, err = pgSearch.RunSelectRequestForSchema[distinctProfileCount](ctx, ds.db, schema.ComplianceOperatorScanConfigurationV2Schema, withCountQuery(query, search.ComplianceOperatorConfigProfileName))
 	if err != nil {
 		return 0, err
 	}

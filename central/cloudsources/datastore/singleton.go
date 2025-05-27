@@ -13,7 +13,7 @@ var (
 	once sync.Once
 )
 
-// Singleton returns the singleton providing access to the external backups store.
+// Singleton returns the singleton providing access to the cloud sources store.
 func Singleton() DataStore {
 	once.Do(func() {
 		store := pgStore.New(globaldb.GetPostgres())
