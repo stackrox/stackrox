@@ -93,6 +93,12 @@ func TestImageCVEVFlatiew(t *testing.T) {
 	if !features.FlattenCVEData.Enabled() {
 		t.Skip("FlattenCVEData is disabled")
 	}
+
+	// TODO(ROX-29183): make building the comparison results faster.
+	if features.FlattenCVEData.Enabled() {
+		t.Skip("Skip until ROX-29183 is resolved.")
+	}
+
 	suite.Run(t, new(ImageCVEFlatViewTestSuite))
 }
 

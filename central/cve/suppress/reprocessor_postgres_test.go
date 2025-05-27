@@ -17,6 +17,7 @@ import (
 	mockRisks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -29,6 +30,9 @@ import (
 )
 
 func TestReprocessorWithPostgres(t *testing.T) {
+	if features.FlattenCVEData.Enabled() {
+		t.Skip("FlattenCVEData is enabled and this flow is replaced with VM 2.0")
+	}
 	suite.Run(t, new(ReprocessorPostgresTestSuite))
 }
 

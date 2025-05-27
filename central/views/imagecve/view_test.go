@@ -98,6 +98,10 @@ func (f *filterImpl) withVulnFilter(fn func(vuln *storage.EmbeddedVulnerability)
 }
 
 func TestImageCVEView(t *testing.T) {
+	// TODO(ROX-29183): make building the comparison results faster.
+	if features.FlattenCVEData.Enabled() {
+		t.Skip("Skip until ROX-29183 is resolved.")
+	}
 	suite.Run(t, new(ImageCVEViewTestSuite))
 }
 
