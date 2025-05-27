@@ -46,6 +46,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
       kubectl label crd/securitypolicies.config.stackrox.io app.kubernetes.io/managed-by=Helm
 
   The above values will need to be updated to match your release name (i.e. "stackrox-central-services") or namespace (i.e. "stackrox") in case you had used different ones.
+- ROX-29232: When reading secrets containing DockerConfigs, Sensor will ignore registries if the registry address or
+  authorization data contains non-UTF8 characters.
 
 ## [4.7.0]
 
