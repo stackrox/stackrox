@@ -122,7 +122,9 @@ function AffectedDeploymentsTable({
     const hiddenColumnCount = getHiddenColumnCount(tableConfig);
     const expandedRowSet = useSet<string>();
 
-    const colSpan = 8 + -hiddenColumnCount;
+    const colSpan = 7 + -hiddenColumnCount;
+    const colSpanForComponentVulnerabilitiesTable = colSpan - 1; // minus ExpandRowTh
+
     return (
         <Table variant="compact">
             <Thead noWrap>
@@ -248,7 +250,7 @@ function AffectedDeploymentsTable({
                                 </Tr>
                                 <Tr isExpanded={isExpanded}>
                                     <Td />
-                                    <Td colSpan={6}>
+                                    <Td colSpan={colSpanForComponentVulnerabilitiesTable}>
                                         <ExpandableRowContent>
                                             <DeploymentComponentVulnerabilitiesTable
                                                 images={imageComponentVulns}
