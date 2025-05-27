@@ -207,8 +207,8 @@ class ImageScanningTest extends BaseSpecification {
     @Unroll
     @Tag("BAT")
     @Tag("Integration")
-    // GCR doesn't have MA images to verify the GCR-image-integrations on P/Z
-    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
+    // GCR images for these tests only work on x86_64
+    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH != "x86_64" })
     def "Verify Image Registry+Scanner Integrations: #testName"() {
         given:
         "Get deployment details used to test integration"
@@ -558,8 +558,8 @@ class ImageScanningTest extends BaseSpecification {
     @Unroll
     @Tag("BAT")
     @Tag("Integration")
-    // ACR, ECR, GCR don't have MA images to verify the the integrations on P/Z
-    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
+    // ACR, ECR, GCR images for these tests only work on x86_64
+    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH != "x86_64" })
     @IgnoreIf({ Env.getTestTarget() == "bat-test" && data.testName ==~ /^acr.*/ })
     @IgnoreIf({ Env.getTestTarget() == "bat-test" && data.testName == "quay-auto" })
     def "Image metadata from registry test - #testName"() {

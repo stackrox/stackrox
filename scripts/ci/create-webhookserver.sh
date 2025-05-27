@@ -25,7 +25,15 @@ install_webhook_server() {
     pushd "${gitroot}/webhookserver"
     mkdir -p chart/certs
     cp "${certs_tmp_dir}/tls.crt" "${certs_tmp_dir}/tls.key" chart/certs
-    helm -n stackrox upgrade --install webhookserver chart/
+
+    local helm_args=()
+
+    if [[ "${ARM64_NODESELECTORS}" == "true" ]]; then
+        echo "INFO: Applying arm64 node selector for webhookserver"
+        helm_args+=(--set 'nodeSelector.kubernetes\.io/arch=arm64')
+    fi
+
+    helm -n stackrox upgrade --install webhookserver chart/ "${helm_args[@]}"
     popd
 }
 

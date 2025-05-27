@@ -32,7 +32,7 @@ class Env {
     static final String IMAGE_PULL_POLICY_FOR_QUAY_IO = System.getenv("IMAGE_PULL_POLICY_FOR_QUAY_IO")
 
     // REMOTE_CLUSTER_ARCH specifies architecture of a remote cluster on which tests are to be executed
-    // the remote cluster arch can be ppc64le or s390x, default is x86_64
+    // the remote cluster arch can be arm64, ppc64le or s390x, default is x86_64
     static final String REMOTE_CLUSTER_ARCH = System.getenv("REMOTE_CLUSTER_ARCH") ?: "x86_64"
 
     // ONLY_SECURED_CLUSTER specifies that the remote cluster being used to execute tests

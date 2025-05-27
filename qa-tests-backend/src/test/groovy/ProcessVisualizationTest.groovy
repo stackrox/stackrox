@@ -3,12 +3,16 @@ import io.stackrox.proto.api.v1.SearchServiceOuterClass
 import objects.Deployment
 import services.DeploymentService
 import services.ProcessService
+import util.Env
 import util.Timer
 
 import org.junit.Assume
+import spock.lang.IgnoreIf
 import spock.lang.Tag
 import spock.lang.Unroll
 
+// TODO add arm64 layers to all test images
+@IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "arm64" })
 @Tag("PZ")
 class ProcessVisualizationTest extends BaseSpecification {
     // Deployment names
