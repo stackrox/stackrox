@@ -36,7 +36,7 @@ spec:
   - name: image-expires-after
     value: '13w'
   - name: output-image-repo
-    value: quay.io/rhacs-eng/stackrox-operator-bundle
+    value: quay.io/rhacs-eng/release-operator-bundle
   - name: revision
     value: '{{revision}}'
   - name: rebuild
