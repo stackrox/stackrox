@@ -450,14 +450,22 @@ func (suite *ManagerTestSuite) TestConcurrentUpdates() {
 	suite.assertBaselinesAre(emptyBaseline(1))
 	var wg sync.WaitGroup
 	const elems = 50
+
+	for i := 2; i <= elems; i++ {
+		// it is not strictly safe to mock inside separate threads.
+		// so do it on the main thread before calling the test code below.
+		// See: https://github.com/golang/mock/issues/533#issuecomment-821537840
+		suite.initBaselinesForDeployments(i)
+	}
+
 	for i := 2; i <= elems; i++ {
 		wg.Add(1)
 		go func(idx int) {
 			defer wg.Done()
-			suite.initBaselinesForDeployments(idx)
 			suite.processFlowUpdate(conns(depToDepConn(1, idx, uint32(idx+2))), conns(depToDepConn(1, idx, uint32(idx+3))))
 		}(i)
 	}
+
 	wg.Wait()
 	var expectedBaselines []*storage.NetworkBaseline
 	firstPeers := make([]*storage.NetworkBaselinePeer, 0, elems-1)
