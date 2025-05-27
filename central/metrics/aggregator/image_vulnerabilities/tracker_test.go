@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/central/metrics/aggregator/common"
 	v1api "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 )
@@ -134,12 +135,12 @@ func TestQueryDeploymentsAndImages(t *testing.T) {
 
 	cfg := common.MakeTrackerConfig("vuln", "test",
 		getters,
-		common.Bind3rd(trackVulnerabilityMetrics, datastores{deploymentDS.DataStore(ds), nil, nil}),
+		common.Bind4th(trackVulnerabilityMetrics, datastores{deploymentDS.DataStore(ds), nil, nil}),
 		func(metric string, labels prometheus.Labels, total int) {
 			actual[metric] = append(actual[metric], &labelsTotal{labels, total})
 		},
 	)
-	cfg.SetMetricLabelExpressions(metricExpressions)
+	cfg.SetMetricLabelExpressions(search.EmptyQuery(), metricExpressions)
 	cfg.Track(context.Background())
 
 	expected := map[string][]*labelsTotal{
@@ -195,12 +196,12 @@ func TestQueryImages(t *testing.T) {
 
 	cfg := common.MakeTrackerConfig("vuln", "test",
 		getters,
-		common.Bind3rd(trackVulnerabilityMetrics, datastores{nil, imageDS.DataStore(ds), nil}),
+		common.Bind4th(trackVulnerabilityMetrics, datastores{nil, imageDS.DataStore(ds), nil}),
 		func(metric string, labels prometheus.Labels, total int) {
 			actual[metric] = append(actual[metric], &labelsTotal{labels, total})
 		},
 	)
-	cfg.SetMetricLabelExpressions(metricExpressions)
+	cfg.SetMetricLabelExpressions(search.EmptyQuery(), metricExpressions)
 	cfg.Track(context.Background())
 
 	expected := map[string][]*labelsTotal{

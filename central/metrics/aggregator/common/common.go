@@ -6,6 +6,7 @@ import (
 	"regexp"
 
 	"github.com/pkg/errors"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -17,8 +18,8 @@ var (
 
 type Label string      // Prometheus label.
 type MetricName string // Prometheus metric name.
-type FindingGenerator[Finding any] func(context.Context, MetricLabelsExpressions) iter.Seq[Finding]
-type LabelGetter[Finding any] struct {
+type FindingGenerator[Finding Count] func(context.Context, *v1.Query, MetricLabelsExpressions) iter.Seq[Finding]
+type LabelGetter[Finding Count] struct {
 	Label  Label
 	Getter func(Finding) string
 }
@@ -41,11 +42,11 @@ func validateMetricName(name string) error {
 	return nil
 }
 
-// Bind3rd binds the third function argument:
+// Bind4th binds the fourth function argument:
 //
-//	f(a, b, c) == Bind3rd(f, c)(a, b)
-func Bind3rd[A any, B any, C any, RV any](f func(A, B, C) RV, c C) func(A, B) RV {
-	return func(a A, b B) RV {
-		return f(a, b, c)
+//	f(a, b, c, d) == Bind4th(f, d)(a, b, c)
+func Bind4th[A1 any, A2 any, A3 any, A4 any, RV any](f func(A1, A2, A3, A4) RV, bound A4) func(A1, A2, A3) RV {
+	return func(a1 A1, a2 A2, a3 A3) RV {
+		return f(a1, a2, a3, bound)
 	}
 }

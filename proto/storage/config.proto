@@ -139,6 +139,7 @@ message PrometheusMetricsConfig {
   message Vulnerabilities {
     uint32 gathering_period_hours = 1;
     map<string, MetricLabels> metric_labels = 2;
+    string query = 3;
   }
 
   Vulnerabilities image_vulnerabilities = 1;

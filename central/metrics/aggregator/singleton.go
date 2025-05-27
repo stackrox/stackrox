@@ -58,6 +58,7 @@ func (ar *aggregatorRunner) Reconfigure(cfg *storage.PrometheusMetricsConfig) er
 	{
 		iv := cfg.GetImageVulnerabilities()
 		if err := ar.image_vulnerabilities.Reconfigure(Registry,
+			iv.GetQuery(),
 			iv.GetMetricLabels(),
 			time.Hour*time.Duration(iv.GetGatheringPeriodHours())); err != nil {
 			return err

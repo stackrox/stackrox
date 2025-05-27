@@ -437,6 +437,7 @@ func (m *PrometheusMetricsConfig_Vulnerabilities) CloneVT() *PrometheusMetricsCo
 	}
 	r := new(PrometheusMetricsConfig_Vulnerabilities)
 	r.GatheringPeriodHours = m.GatheringPeriodHours
+	r.Query = m.Query
 	if rhs := m.MetricLabels; rhs != nil {
 		tmpContainer := make(map[string]*PrometheusMetricsConfig_MetricLabels, len(rhs))
 		for k, v := range rhs {
@@ -1082,6 +1083,9 @@ func (this *PrometheusMetricsConfig_Vulnerabilities) EqualVT(that *PrometheusMet
 				return false
 			}
 		}
+	}
+	if this.Query != that.Query {
+		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
@@ -2266,6 +2270,13 @@ func (m *PrometheusMetricsConfig_Vulnerabilities) MarshalToSizedBufferVT(dAtA []
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if len(m.Query) > 0 {
+		i -= len(m.Query)
+		copy(dAtA[i:], m.Query)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Query)))
+		i--
+		dAtA[i] = 0x1a
+	}
 	if len(m.MetricLabels) > 0 {
 		for k := range m.MetricLabels {
 			v := m.MetricLabels[k]
@@ -2781,6 +2792,10 @@ func (m *PrometheusMetricsConfig_Vulnerabilities) SizeVT() (n int) {
 			mapEntrySize := 1 + len(k) + protohelpers.SizeOfVarint(uint64(len(k))) + l
 			n += mapEntrySize + 1 + protohelpers.SizeOfVarint(uint64(mapEntrySize))
 		}
+	}
+	l = len(m.Query)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -5658,6 +5673,38 @@ func (m *PrometheusMetricsConfig_Vulnerabilities) UnmarshalVT(dAtA []byte) error
 				}
 			}
 			m.MetricLabels[mapkey] = mapvalue
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Query", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Query = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -8674,6 +8721,42 @@ func (m *PrometheusMetricsConfig_Vulnerabilities) UnmarshalVTUnsafe(dAtA []byte)
 				}
 			}
 			m.MetricLabels[mapkey] = mapvalue
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Query", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.Query = stringValue
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

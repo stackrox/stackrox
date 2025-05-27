@@ -308,6 +308,9 @@
           "additionalProperties": {
             "$ref": "#/definitions/PrometheusMetricsConfigMetricLabels"
           }
+        },
+        "query": {
+          "type": "string"
         }
       }
     },

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stretchr/testify/assert"
@@ -20,12 +21,12 @@ func (t testDataIndex) Count() int {
 
 var testRegistry = prometheus.NewRegistry()
 
-func nilGatherFunc(context.Context, MetricLabelsExpressions) iter.Seq[testDataIndex] {
+func nilGatherFunc(context.Context, *v1.Query, MetricLabelsExpressions) iter.Seq[testDataIndex] {
 	return func(yield func(testDataIndex) bool) {}
 }
 
-func makeTestGatherFunc(data []map[Label]string) func(context.Context, MetricLabelsExpressions) iter.Seq[testDataIndex] {
-	return func(ctx context.Context, mle MetricLabelsExpressions) iter.Seq[testDataIndex] {
+func makeTestGatherFunc(data []map[Label]string) FindingGenerator[testDataIndex] {
+	return func(context.Context, *v1.Query, MetricLabelsExpressions) iter.Seq[testDataIndex] {
 		return func(yield func(testDataIndex) bool) {
 			for i := range data {
 				if !yield(testDataIndex(i)) {
@@ -41,7 +42,8 @@ func TestMakeTrackerConfig(t *testing.T) {
 	assert.NotNil(t, tracker)
 	assert.NotNil(t, tracker.periodCh)
 
-	mle := tracker.GetMetricLabelExpressions()
+	query, mle := tracker.GetMetricLabelExpressions()
+	assert.Empty(t, query)
 	assert.Nil(t, mle)
 }
 
@@ -50,14 +52,31 @@ func TestTrackerConfig_Reconfigure(t *testing.T) {
 	t.Run("test 0 period", func(t *testing.T) {
 		tracker := MakeTrackerConfig("test", "test", testLabelGetters, nilGatherFunc, nil)
 
-		assert.NoError(t, tracker.Reconfigure(testRegistry, nil, 0))
-		assert.Nil(t, tracker.GetMetricLabelExpressions())
+		assert.NoError(t, tracker.Reconfigure(testRegistry, "", nil, 0))
+		query, mle := tracker.GetMetricLabelExpressions()
+		assert.Equal(t, "", query.String())
+		assert.Nil(t, mle)
+	})
+
+	t.Run("test query", func(t *testing.T) {
+		tracker := MakeTrackerConfig("test", "test", testLabelGetters, nilGatherFunc, nil)
+
+		assert.NoError(t, tracker.Reconfigure(testRegistry, `Cluster:name`, nil, 0))
+		query, mle := tracker.GetMetricLabelExpressions()
+		assert.Equal(t, "Cluster", query.GetBaseQuery().GetMatchFieldQuery().GetField())
+		assert.Nil(t, mle)
+	})
+
+	t.Run("test bad query", func(t *testing.T) {
+		tracker := MakeTrackerConfig("test", "test", testLabelGetters, nilGatherFunc, nil)
+
+		assert.NoError(t, tracker.Reconfigure(testRegistry, `bad query?`, nil, 0))
 	})
 
 	t.Run("test with good test configuration", func(t *testing.T) {
 		tracker := MakeTrackerConfig("test", "test", testLabelGetters, nilGatherFunc, nil)
-		assert.NoError(t, tracker.Reconfigure(testRegistry, makeTestMetricLabels(t), 42*time.Hour))
-		mle := tracker.GetMetricLabelExpressions()
+		assert.NoError(t, tracker.Reconfigure(testRegistry, "", makeTestMetricLabels(t), 42*time.Hour))
+		_, mle := tracker.GetMetricLabelExpressions()
 		assert.NotNil(t, mle)
 		select {
 		case period := <-tracker.GetPeriodCh():
@@ -70,14 +89,15 @@ func TestTrackerConfig_Reconfigure(t *testing.T) {
 
 	t.Run("test with initial bad configuration", func(t *testing.T) {
 		tracker := MakeTrackerConfig("test", "test", testLabelGetters, nilGatherFunc, nil)
-		err := tracker.Reconfigure(testRegistry, map[string]*storage.PrometheusMetricsConfig_MetricLabels{
+		err := tracker.Reconfigure(testRegistry, "", map[string]*storage.PrometheusMetricsConfig_MetricLabels{
 			" ": nil,
 		}, 11*time.Hour)
 
 		assert.ErrorIs(t, err, errox.InvalidArgs)
 		assert.Equal(t, `invalid arguments: invalid metric name " ": bad characters`, err.Error())
 
-		assert.Nil(t, tracker.GetMetricLabelExpressions())
+		_, mle := tracker.GetMetricLabelExpressions()
+		assert.Nil(t, mle)
 		select {
 		case period := <-tracker.GetPeriodCh():
 			assert.Fail(t, "period configured: %v", period)
@@ -87,9 +107,9 @@ func TestTrackerConfig_Reconfigure(t *testing.T) {
 
 	t.Run("test with bad reconfiguration", func(t *testing.T) {
 		tracker := MakeTrackerConfig("test", "test", testLabelGetters, nilGatherFunc, nil)
-		assert.NoError(t, tracker.Reconfigure(testRegistry, makeTestMetricLabels(t), 42*time.Hour))
+		assert.NoError(t, tracker.Reconfigure(testRegistry, "", makeTestMetricLabels(t), 42*time.Hour))
 
-		err := tracker.Reconfigure(testRegistry, map[string]*storage.PrometheusMetricsConfig_MetricLabels{
+		err := tracker.Reconfigure(testRegistry, "", map[string]*storage.PrometheusMetricsConfig_MetricLabels{
 			"m1": {
 				LabelExpressions: map[string]*storage.PrometheusMetricsConfig_MetricLabels_Expressions{
 					"label1": nil,
@@ -99,7 +119,7 @@ func TestTrackerConfig_Reconfigure(t *testing.T) {
 		assert.ErrorIs(t, err, errox.InvalidArgs)
 		assert.Equal(t, `invalid arguments: unknown label "label1" for metric "m1"`, err.Error())
 
-		mle := tracker.GetMetricLabelExpressions()
+		_, mle := tracker.GetMetricLabelExpressions()
 		assert.NotNil(t, mle)
 		select {
 		case period := <-tracker.GetPeriodCh():
