@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/logging"
 	pgPkg "github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -28,7 +27,6 @@ import (
 
 var (
 	complianceSAC = sac.ForResource(resources.Compliance)
-	log           = logging.LoggerForModule()
 )
 
 type datastoreImpl struct {
@@ -390,7 +388,7 @@ func GatherProfiles(ds DataStore) phonehome.GatherFunc {
 		telemetryCtx := sac.WithAllAccess(ctx)
 		counts, err := ds.CountDistinctProfiles(telemetryCtx, search.EmptyQuery())
 		if err != nil {
-			return nil, errors.Wrap(err, "failed gathering profiles for telemetry")
+			return nil, errors.Wrap(err, "gathering compliance operator profiles for telemetry")
 		}
 		profiles := make(map[string]any, len(counts))
 		for profile, count := range counts {
