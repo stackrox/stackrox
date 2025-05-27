@@ -122,7 +122,7 @@ which is painful both to develop and operate.
 We have a [CI check](../.github/workflows/check-crd-compatibility.yaml) based on [crd-schema-checker](https://github.com/openshift/crd-schema-checker) - a tool for finding breaking changes and violations of best practices in CRDs.
 
 `crd-schema-checker` has limitations. It cannot find all types of breaking changes and violations of best practices.
-A passing grade from crd-schma-checker does not mean that there are no breaking changes or violations of best practices.
++A passing grade from crd-schema-checker does not mean that there are no breaking changes or violations of best practices.
 However, it does find the above types of breakage.
 
 You can also run the checker manually:
