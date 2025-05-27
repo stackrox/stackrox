@@ -1107,8 +1107,6 @@ spec:
                     type: string
                 type: object
               scannerV4:
-                default:
-                  scannerComponent: Default
                 description: Settings for the Scanner V4 components, which can run
                   in addition to the previously existing Scanner components
                 properties:
