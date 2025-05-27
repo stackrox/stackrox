@@ -790,6 +790,78 @@ func (s *ComplianceScanConfigServiceTestSuite) TestGetReportHistory() {
 		}, res)
 	})
 
+	s.Run("Success with failed cluster and multiple errors", func() {
+		scanConfigID := "scan-config-1"
+		now := protocompat.TimestampNow()
+		snapshots := []*storage.ComplianceOperatorReportSnapshotV2{
+			{
+				ReportId:            "snapshot-1",
+				ScanConfigurationId: scanConfigID,
+				ReportStatus: &storage.ComplianceOperatorReportStatus{
+					ReportRequestType:        storage.ComplianceOperatorReportStatus_SCHEDULED,
+					ReportNotificationMethod: storage.ComplianceOperatorReportStatus_EMAIL,
+					StartedAt:                now,
+					CompletedAt:              now,
+				},
+				FailedClusters: []*storage.ComplianceOperatorReportSnapshotV2_FailedCluster{
+					{
+						ClusterId:       "cluster-1",
+						ClusterName:     "cluster-1",
+						OperatorVersion: "v1.6.0",
+						Reasons:         []string{report.INTERNAL_ERROR, report.COMPLIANCE_VERSION_ERROR},
+					},
+				},
+			},
+		}
+		sc := &storage.ComplianceOperatorScanConfigurationV2{
+			Id:             scanConfigID,
+			ScanConfigName: scanConfigID,
+		}
+
+		s.snapshotDS.EXPECT().SearchSnapshots(allAccessContext, gomock.Any()).Return(snapshots, nil)
+		s.scanConfigDatastore.EXPECT().GetScanConfiguration(allAccessContext, scanConfigID).Return(sc, true, nil)
+		s.scanConfigDatastore.EXPECT().GetScanConfigClusterStatus(allAccessContext, scanConfigID).Return(nil, nil)
+		s.suiteDataStore.EXPECT().GetSuites(allAccessContext, gomock.Any()).Return(nil, nil)
+
+		res, err := s.service.GetReportHistory(allAccessContext, &v2.ComplianceReportHistoryRequest{Id: scanConfigID})
+		s.Require().NoError(err)
+		protoassert.Equal(s.T(), &v2.ComplianceReportHistoryResponse{
+			ComplianceReportSnapshots: []*v2.ComplianceReportSnapshot{
+				{
+					ReportJobId:  "snapshot-1",
+					ScanConfigId: scanConfigID,
+					ReportStatus: &v2.ComplianceReportStatus{
+						ReportRequestType:        v2.ComplianceReportStatus_SCHEDULED,
+						ReportNotificationMethod: v2.NotificationMethod_EMAIL,
+						StartedAt:                now,
+						CompletedAt:              now,
+						FailedClusters: []*v2.FailedCluster{
+							{
+								ClusterId:       "cluster-1",
+								ClusterName:     "cluster-1",
+								OperatorVersion: "v1.6.0",
+								Reason:          failedClusterReasonsJoinFunc([]string{report.INTERNAL_ERROR, report.COMPLIANCE_VERSION_ERROR}),
+							},
+						},
+					},
+					ReportData: &v2.ComplianceScanConfigurationStatus{
+						Id:       scanConfigID,
+						ScanName: scanConfigID,
+						ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
+							OneTimeScan: false,
+							Profiles:    []string{},
+							Notifiers:   []*v2.NotifierConfiguration{},
+						},
+						ClusterStatus: []*v2.ClusterScanStatus{},
+						ModifiedBy:    &v2.SlimUser{},
+					},
+					User:                &v2.SlimUser{},
+					IsDownloadAvailable: false,
+				},
+			},
+		}, res)
+	})
+
 }
 
 func (s *ComplianceScanConfigServiceTestSuite) TestGetMyReportHistory() {
