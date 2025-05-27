@@ -2,6 +2,25 @@
 
 set -Eeo pipefail
 
+# Return the list of possible backup locations based on the mounted volumes.
+# The result is either two locations, if the backup volume is mounted, or only
+# one otherwise.
+get_backup_locations () {
+    # If we got a backup volume, it will be mounted alongside with the main
+    # data volume.
+    BACKUP_VOLUME_MOUNT="/var/lib/postgresql/backup"
+    DATA_VOLUME_MOUNT="/var/lib/postgresql/data/backup"
+
+    local -n locations=$1
+
+    if $(df | grep "${BACKUP_VOLUME_MOUNT}"); then
+        locations+=("${BACKUP_VOLUME_MOUNT}");
+    fi
+
+    mkdir -p "${DATA_VOLUME_MOUNT}"
+    locations+=("${DATA_VOLUME_MOUNT}");
+}
+
 # Inspect the file system mounted at the specified point, and tell if the
 # available disk space is more than the specified threshold. E.g. we have a
 # file system mounted at "/some/path" with available disk space 100GB, out of
@@ -48,6 +67,69 @@ else
 
     PG_DATA_VERSION=$(cat "${PGDATA}/PG_VERSION")
 
+    get_backup_locations backup_locations
+
+    if [[ -v FORCE_CLEANUP && "${FORCE_CLEANUP}" == "true" ]]; then
+        echo "Remove leftovers from previous upgrade."
+
+        PGDATA_NEW="${PGDATA}-new"
+        rm -rf "${PGDATA_NEW}"
+    fi
+
+    if [[ -v FORCE_NEW_BACKUP && "${FORCE_NEW_BACKUP}" == "true" ]]; then
+        echo "Remove old backup."
+
+        # Note that we use $POSTGRESQL_PREV_VERSION instead of PG_DATA_VERSION,
+        # since we could be asked to restore a backup after an upgrade.
+        # $POSTGRESQL_PREV_VERSION is an env variable set by the
+        # postgresql-container image itself.
+        for location in ${backup_locations[*]}
+        do
+            echo "Removing ${location}/$POSTGRESQL_PREV_VERSION-$PG_BINARY_VERSION/"
+            rm -rf "${location}/$POSTGRESQL_PREV_VERSION-$PG_BINARY_VERSION/"
+        done
+    fi
+
+    if [[ -v RESTORE_BACKUP && "${RESTORE_BACKUP}" == "true" ]]; then
+        echo "Restoring from a backup."
+
+        # Note that we use $POSTGRESQL_PREV_VERSION instead of PG_DATA_VERSION,
+        # since we could be asked to restore a backup after an upgrade.
+        # $POSTGRESQL_PREV_VERSION is an env variable set by the
+        # postgresql-container image itself.
+        for location in ${backup_locations[*]}
+        do
+            BACKUP_DIR="${location}/$POSTGRESQL_PREV_VERSION-$PG_BINARY_VERSION/"
+
+            # Do not care about symlinks yet
+            if [ -d "${BACKUP_DIR}" ]; then
+                echo "Found an upgrade backup directory ${BACKUP_DIR}."
+                PG_BACKUP_DIR="${BACKUP_DIR}"
+                break;
+            else
+                echo "An upgrade backup directory ${BACKUP_DIR} does not exist, skip."
+            fi
+        done
+
+        if [ -z "${PG_BACKUP_DIR}" ]; then
+            echo "Upgrade backup directory is not found, restore is cancelled."
+            exit 1
+        else
+            echo "Restoring from ${PG_BACKUP_DIR}"
+        fi
+
+        PGDATA_NEW="${PGDATA}-new"
+        mkdir -p "${PGDATA_NEW}"
+        tar -xf "${PG_BACKUP_DIR}/backup.tar" -C "${PGDATA_NEW}" --checkpoint=10000
+        rm -rf "${PGDATA}"
+        mv "${PGDATA_NEW}" "${PGDATA}"
+    fi
+
+    if [[ -v FORCE_OLD_BINARIES && "${FORCE_OLD_BINARIES}" == "true" ]]; then
+        echo "Using old binaries, no upgrade needed"
+        exit 0
+    fi
+
     if [ "$PG_DATA_VERSION" -lt "$PG_BINARY_VERSION" ]; then
         # Binaries version is newer, upgrade the data
         PGDATA_NEW="${PGDATA}-new"
@@ -63,22 +145,27 @@ else
         # could use df as well, since the data will be the only disk space
         # consumer, but in testing environment it might not be the case.
         PG_DATA_USED=$(du -s "${PGDATA}" | awk '{print $1}')
-        PG_BACKUP_VOLUME="/backups"
-        echo "Checking backup volume space..."
 
-        # The backup volume needs to accomodate two copies of data, one is the
-        # actual backup, and one is a restored copy, which will be deleted later.
-        if ! check_available_space "${PG_BACKUP_VOLUME}" $((PG_DATA_USED * 2)); then
-            echo "Not enough space. Checking data volume space..."
-            PG_BACKUP_VOLUME="${PGDATA}/../"
-
-            # If no luck, check the main data volume. It has to accomodate two
-            # extra copies of data as well, one is the backup and one is the
-            # restored copy.
-            if ! check_available_space "${PG_BACKUP_VOLUME}" $((PG_DATA_USED * 2)); then
-                echo "Not enough disk space, upgrade is cancelled"
-                exit 1
+        echo "Verifying backup locations ${backup_locations[*]}"
+        for location in ${backup_locations[*]}
+        do
+            # The backup volume needs to accomodate two copies of data, one is the
+            # actual backup, and one is a restored copy, which will be deleted later.
+            echo "${location}: Checking avaibale disk space..."
+            if check_available_space "${location}" $((PG_DATA_USED * 2)); then
+                echo "Location has enough space."
+                PG_BACKUP_VOLUME="${location}"
+                break
+            else
+                echo "Not enough space."
             fi
+        done
+
+        if [ -z "${PG_BACKUP_VOLUME}" ]; then
+            echo "Not enough disk space, upgrade is cancelled."
+            exit 1
+        else
+            echo "Backup will be stored in ${PG_BACKUP_VOLUME}"
         fi
 
         # After this point we know there is enough available disk space.
@@ -89,6 +176,7 @@ else
         # are rejected.
         chmod 0700 "${PGDATA}"
 
+        echo "Make sure PostgreSQL is shutdown clearly."
         # Try to restart cluster temporary to make sure it was shutdown properly
         "${OLD_BINARIES}/pg_ctl" start -w --timeout 86400 -o "-h 127.0.0.1"
         "${OLD_BINARIES}/pg_isready" -h 127.0.0.1
@@ -100,11 +188,11 @@ else
                     tr -d '[:space:]')
 
         if [ "$STATUS" != "shutdown" ]; then
-            echo "Cluster was not shutdown clearly"
+            echo "Cluster was not shutdown cleanly."
             exit 1
         fi
 
-        BACKUP_DIR="${PG_BACKUP_VOLUME}/backups/$PG_DATA_VERSION-$PG_BINARY_VERSION/"
+        BACKUP_DIR="${PG_BACKUP_VOLUME}/$PG_DATA_VERSION-$PG_BINARY_VERSION/"
         # Do not care about symlinks yet
         if [ -d "${BACKUP_DIR}" ]; then
           echo "An upgrade backup directory already exists, skip."
@@ -115,14 +203,14 @@ else
             # cluster.
             echo "Backup..."
             mkdir -p "${BACKUP_DIR}"
-            tar -cf "${BACKUP_DIR}/backup.tar" -C "${PGDATA}" --checkpoint=1000 .
+            tar -cf "${BACKUP_DIR}/backup.tar" -C "${PGDATA}" --checkpoint=10000 .
             sync "${BACKUP_DIR}/backup.tar"
         fi
 
         echo "Verify backup..."
         BACKUP_VERIFY_PGDATA="${BACKUP_DIR}/backup-restore-test"
         mkdir -p "${BACKUP_VERIFY_PGDATA}"
-        tar -xvf "${BACKUP_DIR}/backup.tar" -C "${BACKUP_VERIFY_PGDATA}"
+        tar -xf "${BACKUP_DIR}/backup.tar" -C "${BACKUP_VERIFY_PGDATA}" --checkpoint=10000
 
         "${OLD_BINARIES}/pg_ctl" \
             -D "${BACKUP_VERIFY_PGDATA}" \
@@ -148,7 +236,7 @@ else
 
         RESULT=$?
         if [ $RESULT -ne 0 ]; then
-            echo "Upgrade check failed"
+            echo "Upgrade check failed."
             find "${PGDATA_NEW}" -name pg_upgrade_server.log -exec cat {} \;
             exit 1
         fi
@@ -163,7 +251,7 @@ else
 
         RESULT=$?
         if [ $RESULT -ne 0 ]; then
-            echo "Upgrade failed"
+            echo "Upgrade failed."
             find "${PGDATA_NEW}" -name pg_upgrade_server.log -exec cat {} \;
             exit 1
         fi

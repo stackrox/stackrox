@@ -21,20 +21,28 @@ import AdvisoryLinkOrText from './AdvisoryLinkOrText';
 export { imageMetadataContextFragment };
 export type { ImageMetadataContext, ImageComponentVulnerability };
 
-export const imageComponentVulnerabilitiesFragment = gql`
-    fragment ImageComponentVulnerabilities on ImageComponent {
-        name
-        version
-        location
-        source
-        layerIndex
-        imageVulnerabilities(query: $query) {
-            severity
-            fixedByVersion
-            pendingExceptionCount: exceptionCount(requestStatus: $statusesForExceptionCount)
+// After release, replace temporary function
+// with imageComponentVulnerabilitiesFragment
+// that has unconditional advisory property.
+export function convertToFlatImageComponentVulnerabilitiesFragment(
+    isFlattenCveDataEnabled: boolean // ROX_FLATTEN_CVE_DATA
+) {
+    return gql`
+        fragment ImageComponentVulnerabilities on ImageComponent {
+            name
+            version
+            location
+            source
+            layerIndex
+            imageVulnerabilities(query: $query) {
+                severity
+                fixedByVersion
+                ${isFlattenCveDataEnabled ? 'advisory { name, link }' : ''}
+                pendingExceptionCount: exceptionCount(requestStatus: $statusesForExceptionCount)
+            }
         }
-    }
-`;
+    `;
+}
 
 const sortFields = ['Component'];
 const defaultSortOption = { field: 'Component', direction: 'asc' } as const;
@@ -52,6 +60,7 @@ function ImageComponentVulnerabilitiesTable({
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isAdvisoryColumnEnabled =
         isFeatureFlagEnabled('ROX_SCANNER_V4') &&
+        isFeatureFlagEnabled('ROX_FLATTEN_CVE_DATA') &&
         isFeatureFlagEnabled('ROX_CVE_ADVISORY_SEPARATION');
 
     const { sortOption, getSortParams } = useTableSort({ sortFields, defaultSortOption });
@@ -79,9 +88,8 @@ function ImageComponentVulnerabilitiesTable({
                 </Tr>
             </Thead>
             {sortedComponentVulns.map((componentVuln, index) => {
-                const { image, name, version, fixedByVersion, location, source, layer } =
+                const { image, name, version, fixedByVersion, advisory, location, source, layer } =
                     componentVuln;
-                const advisory = undefined; // placeholder until response includes property
                 // No border on the last row
                 const style =
                     index !== componentVulns.length - 1

@@ -79,6 +79,6 @@ describe('Help menu version number', () => {
             cy.get('button[aria-label="Help menu"]').click();
         }, routeMatcherMapForMetadata);
 
-        cy.get('nav[aria-label="Help menu"] a[role="menuitem"][aria-disabled="true"]');
+        cy.get('button[aria-label="Help menu"] + div *[role="menuitem"][aria-disabled="true"]');
     });
 });

@@ -9,6 +9,7 @@ import (
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	nbDS "github.com/stackrox/rox/central/networkbaseline/datastore"
 	networkEntityDS "github.com/stackrox/rox/central/networkgraph/entity/datastore"
+	networkTreeMocks "github.com/stackrox/rox/central/networkgraph/entity/networktree/mocks"
 	networkFlowDSMocks "github.com/stackrox/rox/central/networkgraph/flow/datastore/mocks"
 	npDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	connectionMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
@@ -50,6 +51,7 @@ func BenchmarkInitFromStore(b *testing.B) {
 	clusterFlows := networkFlowDSMocks.NewMockClusterDataStore(mockCtrl)
 
 	sensorCnxMgr := connectionMocks.NewMockManager(mockCtrl)
+	treeMgr := networkTreeMocks.NewMockManager(mockCtrl)
 
 	// load it up
 	require.NoError(b, nbStore.UpsertNetworkBaselines(ctx, generateBaselines(b)))
@@ -62,7 +64,7 @@ func BenchmarkInitFromStore(b *testing.B) {
 
 	b.Run("New", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			_, err := New(nbStore, networkEntityStore, deploymentDS, npStore, clusterFlows, sensorCnxMgr)
+			_, err := New(nbStore, networkEntityStore, deploymentDS, npStore, clusterFlows, sensorCnxMgr, treeMgr)
 			require.NoError(b, err)
 		}
 	})

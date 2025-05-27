@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/central/networkbaseline/manager"
 	"github.com/stackrox/rox/central/networkbaseline/testutils"
 	networkEntityDS "github.com/stackrox/rox/central/networkgraph/entity/datastore"
+	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
 	networkFlowDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	"github.com/stackrox/rox/central/sensor/service/connection"
@@ -61,6 +62,7 @@ type networkBaselineServiceSuite struct {
 	policyDataStore     networkPolicyDS.DataStore
 	baselineDataStore   networkBaselineDS.DataStore
 	connectionManager   connection.Manager
+	treeManager         networktree.Manager
 }
 
 func (s *networkBaselineServiceSuite) SetupTest() {
@@ -83,6 +85,7 @@ func (s *networkBaselineServiceSuite) SetupTest() {
 	s.NoError(err)
 
 	s.connectionManager = connection.ManagerSingleton()
+	s.treeManager = networktree.Singleton()
 
 	s.manager, err = manager.New(
 		s.baselineDataStore,
@@ -91,6 +94,7 @@ func (s *networkBaselineServiceSuite) SetupTest() {
 		s.policyDataStore,
 		s.flowDataStore,
 		s.connectionManager,
+		s.treeManager,
 	)
 	s.NoError(err)
 
