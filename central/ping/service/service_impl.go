@@ -17,7 +17,7 @@ var (
 			// The Ping endpoint is not process intensive, and does not expose
 			// any sensitive information (it only returns a hardcoded value).
 			// Changing from public to authenticated would actually make the
-			// associated process heavier. Therefore, the endpoint can remain
+			// associated process heavier. Therefore the endpoint can remain
 			// public.
 			v1.PingService_Ping_FullMethodName,
 		},
