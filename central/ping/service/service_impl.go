@@ -5,8 +5,18 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
+	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"google.golang.org/grpc"
+)
+
+var (
+	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
+		allow.Anonymous(): {
+			v1.PingService_Ping_FullMethodName,
+		},
+	})
 )
 
 type serviceImpl struct {
@@ -25,7 +35,7 @@ func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.S
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, allow.Anonymous().Authorized(ctx, fullMethodName)
+	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
 // Ping implements v1.PingServiceServer, and it always returns a v1.PongMessage object.
