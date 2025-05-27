@@ -131,10 +131,14 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                             <SelectOption value={runStates.PREPARING}>Preparing</SelectOption>
                             <SelectOption value={runStates.WAITING}>Waiting</SelectOption>
                             <SelectOption value={runStates.GENERATED}>
-                                Download generated
+                                Report download is ready
                             </SelectOption>
-                            <SelectOption value={runStates.DELIVERED}>Email delivered</SelectOption>
-                            <SelectOption value={runStates.FAILURE}>Error</SelectOption>
+                            <SelectOption value={runStates.DELIVERED}>
+                                Report successfully sent
+                            </SelectOption>
+                            <SelectOption value={runStates.FAILURE}>
+                                Report failed to generate
+                            </SelectOption>
                         </CheckboxSelect>
                     </ToolbarItem>
                     <ToolbarItem className="pf-v5-u-flex-grow-1">

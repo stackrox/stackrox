@@ -303,7 +303,17 @@ function ConfigReportsTab() {
                                             </HelpIconTh>
                                             <Th>Description</Th>
                                             <HelpIconTh
-                                                popoverContent={<JobStatusPopoverContent />}
+                                                popoverContent={
+                                                    <JobStatusPopoverContent
+                                                        statuses={[
+                                                            'WAITING',
+                                                            'PREPARING',
+                                                            'DOWNLOAD_GENERATED',
+                                                            'EMAIL_DELIVERED',
+                                                            'ERROR',
+                                                        ]}
+                                                    />
+                                                }
                                             >
                                                 My last job status
                                             </HelpIconTh>
