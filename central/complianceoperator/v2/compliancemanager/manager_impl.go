@@ -11,6 +11,7 @@ import (
 	compIntegration "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore"
 	profileDatastore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
 	compScanSetting "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
+	scansDatastore "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore"
 	"github.com/stackrox/rox/central/convert/internaltov2storage"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -45,6 +46,7 @@ type managerImpl struct {
 	scanSettingDS compScanSetting.DataStore
 	clusterDS     clusterDatastore.DataStore
 	profileDS     profileDatastore.DataStore
+	scansDS       scansDatastore.DataStore
 	resultsDS     resultsDatastore.DataStore
 
 	// Map used to correlate requests to a sensor with a response.  Each request will generate
@@ -54,7 +56,7 @@ type managerImpl struct {
 }
 
 // New returns on instance of Manager interface that provides functionality to process compliance requests and forward them to Sensor.
-func New(sensorConnMgr connection.Manager, integrationDS compIntegration.DataStore, scanSettingDS compScanSetting.DataStore, clusterDS clusterDatastore.DataStore, profileDS profileDatastore.DataStore, resultsDS resultsDatastore.DataStore) Manager {
+func New(sensorConnMgr connection.Manager, integrationDS compIntegration.DataStore, scanSettingDS compScanSetting.DataStore, clusterDS clusterDatastore.DataStore, profileDS profileDatastore.DataStore, scansDS scansDatastore.DataStore, resultsDS resultsDatastore.DataStore) Manager {
 	return &managerImpl{
 		sensorConnMgr:   sensorConnMgr,
 		integrationDS:   integrationDS,
@@ -62,6 +64,7 @@ func New(sensorConnMgr connection.Manager, integrationDS compIntegration.DataSto
 		runningRequests: make(map[string]clusterScan),
 		clusterDS:       clusterDS,
 		profileDS:       profileDS,
+		scansDS:         scansDS,
 		resultsDS:       resultsDS,
 	}
 }
@@ -231,33 +234,26 @@ func (m *managerImpl) removeObsoleteResultsByProfiles(ctx context.Context, oldSc
 		return
 	}
 
-	setRemovedProfileRuleNames := set.NewStringSet()
+	oldClusters := oldScanConfig.GetClusters()
+	scanRefIds := make([]string, 0)
 	for _, profileName := range removedProfileNames {
-		query := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorProfileName, profileName).ProtoQuery()
-		profiles, err := m.profileDS.SearchProfiles(ctx, query)
-		if err != nil {
-			log.Errorf("unable to get profile %q", profileName)
-			return
-		}
+		for _, oldCluster := range oldClusters {
+			query := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanConfigName, oldScanConfig.GetScanConfigName()).AddExactMatches(search.ClusterID, oldCluster.GetClusterId()).AddExactMatches(search.ComplianceOperatorProfileName, profileName).ProtoQuery()
+			scans, err := m.scansDS.SearchScans(ctx, query)
+			if err != nil {
+				log.Error(errors.Wrapf(err, "unable scan for cluster %q and profile %q", oldCluster.GetClusterId(), profileName))
+				return
+			}
 
-		for _, profile := range profiles {
-			for _, rule := range profile.GetRules() {
-				setRemovedProfileRuleNames.Add(rule.GetRuleName())
+			for _, scan := range scans {
+				scanRefIds = append(scanRefIds, internaltov2storage.BuildNameRefID(oldCluster.GetClusterId(), scan.GetScanName()))
 			}
 		}
 	}
 
-	oldClusters := oldScanConfig.GetClusters()
-	removedRuleRefIDs := make([]string, 0, len(oldClusters))
-	for _, oldCluster := range oldClusters {
-		for removedProfileRuleName := range setRemovedProfileRuleNames {
-			removedRuleRefIDs = append(removedRuleRefIDs, internaltov2storage.BuildNameRefID(oldCluster.GetClusterId(), removedProfileRuleName))
-		}
-	}
-
-	err := m.resultsDS.DeleteResultsByScanConfigAndRules(ctx, oldScanConfig.GetScanConfigName(), removedRuleRefIDs)
+	err := m.resultsDS.DeleteResultsByScans(ctx, scanRefIds)
 	if err != nil {
-		log.Errorf("removing obsolete scan results for profiles %v and rules %v: %v", removedProfileNames, setRemovedProfileRuleNames.AsSlice(), err)
+		log.Error(errors.Wrapf(err, "removing obsolete scan results for profiles %v", removedProfileNames))
 	}
 }
 

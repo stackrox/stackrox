@@ -176,18 +176,18 @@ func (mr *MockDataStoreMockRecorder) DeleteResultsByScanConfigAndCluster(ctx, sc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteResultsByScanConfigAndCluster", reflect.TypeOf((*MockDataStore)(nil).DeleteResultsByScanConfigAndCluster), ctx, scanConfigName, clusterIDs)
 }
 
-// DeleteResultsByScanConfigAndRules mocks base method.
-func (m *MockDataStore) DeleteResultsByScanConfigAndRules(ctx context.Context, scanConfigName string, ruleRefIds []string) error {
+// DeleteResultsByScans mocks base method.
+func (m *MockDataStore) DeleteResultsByScans(ctx context.Context, scanRefIds []string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteResultsByScanConfigAndRules", ctx, scanConfigName, ruleRefIds)
+	ret := m.ctrl.Call(m, "DeleteResultsByScans", ctx, scanRefIds)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// DeleteResultsByScanConfigAndRules indicates an expected call of DeleteResultsByScanConfigAndRules.
-func (mr *MockDataStoreMockRecorder) DeleteResultsByScanConfigAndRules(ctx, scanConfigName, ruleRefIds any) *gomock.Call {
+// DeleteResultsByScans indicates an expected call of DeleteResultsByScans.
+func (mr *MockDataStoreMockRecorder) DeleteResultsByScans(ctx, scanRefIds any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteResultsByScanConfigAndRules", reflect.TypeOf((*MockDataStore)(nil).DeleteResultsByScanConfigAndRules), ctx, scanConfigName, ruleRefIds)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteResultsByScans", reflect.TypeOf((*MockDataStore)(nil).DeleteResultsByScans), ctx, scanRefIds)
 }
 
 // GetComplianceCheckResult mocks base method.

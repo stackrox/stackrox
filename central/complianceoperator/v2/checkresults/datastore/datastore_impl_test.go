@@ -1186,49 +1186,38 @@ func (s *complianceCheckResultDataStoreTestSuite) TestDeleteResultsByScanConfigA
 	s.Equal(3, actualResultsCount, "2 records should be removed")
 }
 
-func (s *complianceCheckResultDataStoreTestSuite) TestDeleteResultsByScanConfigAndProfile() {
+func (s *complianceCheckResultDataStoreTestSuite) TestDeleteResultsByScans() {
 	scanConfigName1 := "scan-config1"
 	scanConfigName2 := "scan-config2"
 
-	ruleName1 := "rule1"
-	ruleName2 := "rule2"
-	ruleName3 := "rule3"
+	scanName1 := "scan1"
+	scanName2 := "scan2"
+	scanName3 := "scan3"
 
-	scanResults111 := getTestRecWithRule(scanConfigName1, testconsts.Cluster1, ruleName1)
-	scanResults121 := getTestRecWithRule(scanConfigName1, testconsts.Cluster2, ruleName1)
-	scanResults112 := getTestRecWithRule(scanConfigName1, testconsts.Cluster1, ruleName2)
-	scanResults122 := getTestRecWithRule(scanConfigName1, testconsts.Cluster2, ruleName2)
-	scanResults213 := getTestRecWithRule(scanConfigName2, testconsts.Cluster1, ruleName3)
-
-	// With current implementation this option is not possible because one profile cannot be used in two scan schedules.
-	scanResults212 := getTestRecWithRule(scanConfigName2, testconsts.Cluster1, ruleName2)
+	scanResults111 := getTestRecForScan(scanConfigName1, testconsts.Cluster1, scanName1)
+	scanResults121 := getTestRecForScan(scanConfigName1, testconsts.Cluster2, scanName1)
+	scanResults112 := getTestRecForScan(scanConfigName1, testconsts.Cluster1, scanName2)
+	scanResults122 := getTestRecForScan(scanConfigName1, testconsts.Cluster2, scanName2)
+	scanResults213 := getTestRecForScan(scanConfigName2, testconsts.Cluster1, scanName3)
+	scanResults223 := getTestRecForScan(scanConfigName2, testconsts.Cluster2, scanName3)
 
 	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, scanResults111))
 	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, scanResults121))
 	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, scanResults112))
 	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, scanResults122))
 	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, scanResults213))
-	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, scanResults212))
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, scanResults223))
 
-	ruleName2Cluster1RefID := internaltov2storage.BuildNameRefID(testconsts.Cluster1, ruleName2)
-	ruleName2Cluster2RefID := internaltov2storage.BuildNameRefID(testconsts.Cluster2, ruleName2)
+	scanName2Cluster1RefID := internaltov2storage.BuildNameRefID(testconsts.Cluster1, scanName2)
+	scanName2Cluster2RefID := internaltov2storage.BuildNameRefID(testconsts.Cluster2, scanName2)
 
-	s.T().Log(ruleName2Cluster1RefID)
-	s.T().Log(scanResults112.GetRuleRefId())
-
-	err := s.dataStore.DeleteResultsByScanConfigAndRules(s.hasWriteCtx, "", []string{ruleName2Cluster1RefID, ruleName2Cluster2RefID})
+	err := s.dataStore.DeleteResultsByScans(s.hasWriteCtx, []string{})
 	s.NoError(err)
 	actualResultsCount, err := s.dataStore.CountCheckResults(s.hasWriteCtx, search.EmptyQuery())
 	s.NoError(err)
-	s.Equal(6, actualResultsCount, "Empty scan schedule name does not delete any records")
-
-	err = s.dataStore.DeleteResultsByScanConfigAndRules(s.hasWriteCtx, scanConfigName1, []string{})
-	s.NoError(err)
-	actualResultsCount, err = s.dataStore.CountCheckResults(s.hasWriteCtx, search.EmptyQuery())
-	s.NoError(err)
 	s.Equal(6, actualResultsCount, "Empty scan list of clusters does not delete any records")
 
-	err = s.dataStore.DeleteResultsByScanConfigAndRules(s.hasWriteCtx, scanConfigName1, []string{ruleName2Cluster1RefID, ruleName2Cluster2RefID})
+	err = s.dataStore.DeleteResultsByScans(s.hasWriteCtx, []string{scanName2Cluster1RefID, scanName2Cluster2RefID})
 	s.NoError(err)
 	actualResultsCount, err = s.dataStore.CountCheckResults(s.hasWriteCtx, search.EmptyQuery())
 	s.NoError(err)
@@ -1336,8 +1325,7 @@ func getTestRec2(clusterID string) *storage.ComplianceOperatorCheckResultV2 {
 	}
 }
 
-func getTestRecWithRule(scanConfigName string, clusterID string, rule string) *storage.ComplianceOperatorCheckResultV2 {
-	scanName := uuid.NewV4().String()
+func getTestRecForScan(scanConfigName string, clusterID string, scanName string) *storage.ComplianceOperatorCheckResultV2 {
 	return &storage.ComplianceOperatorCheckResultV2{
 		Id:             uuid.NewV4().String(),
 		CheckId:        uuid.NewV4().String(),
@@ -1349,6 +1337,6 @@ func getTestRecWithRule(scanConfigName string, clusterID string, rule string) *s
 		ScanName:       scanName,
 		ScanConfigName: scanConfigName,
 		ScanRefId:      internaltov2storage.BuildNameRefID(clusterID, scanName),
-		RuleRefId:      internaltov2storage.BuildNameRefID(clusterID, rule),
+		RuleRefId:      internaltov2storage.BuildNameRefID(clusterID, uuid.NewV4().String()),
 	}
 }

@@ -377,12 +377,12 @@ func (d *datastoreImpl) DeleteResultsByScanConfigAndCluster(ctx context.Context,
 	return err
 }
 
-func (d *datastoreImpl) DeleteResultsByScanConfigAndRules(ctx context.Context, scanConfigName string, ruleRefIds []string) error {
-	if scanConfigName == "" || len(ruleRefIds) == 0 {
+func (d *datastoreImpl) DeleteResultsByScans(ctx context.Context, scanRefIds []string) error {
+	if len(scanRefIds) == 0 {
 		return nil
 	}
 
-	query := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanConfigName, scanConfigName).AddExactMatches(search.ComplianceOperatorRuleRef, ruleRefIds...).ProtoQuery()
+	query := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanRef, scanRefIds...).ProtoQuery()
 	_, err := d.store.DeleteByQuery(ctx, query)
 
 	return err
