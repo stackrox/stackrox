@@ -94,14 +94,14 @@ func setupBenchmarkForB(b *testing.B) networkGraphServiceBenchmarks {
 // setupTables setups up the database for a large number of deployments all
 // communicating with the same external IP - it is intended for benchmarks of the
 // GetExternalNetworkFlows API endpoint
-func (suite *networkGraphServiceBenchmarks) setupTables(b *testing.B, numFlows int) string {
+func (s *networkGraphServiceBenchmarks) setupTables(b *testing.B, numFlows int) string {
 	cidr := "192.168.0.1/32"
 	id, err := externalsrcs.NewClusterScopedID(fixtureconsts.Cluster1, cidr)
 	require.NoError(b, err)
 
 	entity := testutils.GetExtSrcNetworkEntity(id.String(), cidr, cidr, false, fixtureconsts.Cluster1, true)
 
-	err = suite.entityDataStore.CreateExternalNetworkEntity(globalWriteAccessCtx, entity, true)
+	err = s.entityDataStore.CreateExternalNetworkEntity(globalWriteAccessCtx, entity, true)
 	require.NoError(b, err)
 
 	flows := make([]*storage.NetworkFlow, 0, numFlows)
@@ -117,14 +117,14 @@ func (suite *networkGraphServiceBenchmarks) setupTables(b *testing.B, numFlows i
 		}
 
 		deploymentEnt := testutils.GetDeploymentNetworkEntity(deployment.Id, deployment.Name)
-		err := suite.deploymentsDataStore.UpsertDeployment(globalWriteAccessCtx, deployment)
+		err := s.deploymentsDataStore.UpsertDeployment(globalWriteAccessCtx, deployment)
 		require.NoError(b, err)
 
 		// The port is not important for the purposes of benchmarks, so 1234 chosen arbitrarily
 		flows = append(flows, testutils.GetNetworkFlow(deploymentEnt, entity.Info, 1234, storage.L4Protocol_L4_PROTOCOL_TCP, &ts))
 	}
 
-	flowStore, err := suite.flowDataStore.CreateFlowStore(globalWriteAccessCtx, fixtureconsts.Cluster1)
+	flowStore, err := s.flowDataStore.CreateFlowStore(globalWriteAccessCtx, fixtureconsts.Cluster1)
 	require.NoError(b, err)
 
 	err = flowStore.UpsertFlows(globalWriteAccessCtx, flows, timestamp.FromGoTime(time.Now()))

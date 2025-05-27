@@ -21,7 +21,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/logging"
@@ -535,7 +534,7 @@ func (m *managerImpl) generateReportsFromWatcherResults(result *watcher.ScanConf
 }
 
 func (m *managerImpl) generateSingleReportFromWatcherResults(result *watcher.ScanConfigWatcherResults, snapshot *storage.ComplianceOperatorReportSnapshotV2) error {
-	if err := m.validateScanConfigResults(result); err != nil {
+	if _, err := watcher.ValidateScanConfigResults(m.automaticReportingCtx, result, m.integrationDataStore); err != nil {
 		if dbErr := helpers.UpdateSnapshotOnError(m.automaticReportingCtx, snapshot, err, m.snapshotDataStore); dbErr != nil {
 			return errors.Errorf("%v; %v", err, errors.Wrapf(dbErr, "unable to upsert the snapshot %s", snapshot.GetReportId()))
 		}
@@ -575,47 +574,6 @@ func (m *managerImpl) handleReportScheduled(request *reportRequest, isOnDemand b
 		}
 	}()
 	return nil
-}
-
-func (m *managerImpl) validateScanConfigResults(result *watcher.ScanConfigWatcherResults) error {
-	if result.Error != nil {
-		if errors.Is(result.Error, watcher.ErrScanConfigTimeout) {
-			return report.ErrScanConfigWatcherTimeout
-		}
-		return report.ErrScanWatchersFailed
-	}
-
-	errList := errorhelpers.NewErrorList("Scan result errors")
-	for _, scanResult := range result.ScanResults {
-		if scanResult.Error != nil {
-			// To not overwhelm the UI we only report a max number of errors
-			if len(errList.Errors()) > env.ComplianceMaxNumberOfErrorsInReport.IntegerSetting() {
-				break
-			}
-			err := errors.Errorf("The report for the scan %s in cluster %s could not be generated.", scanResult.Scan.GetScanName(), scanResult.Scan.GetClusterId())
-			if errors.Is(scanResult.Error, watcher.ErrScanTimeout) {
-				healthErr := watcher.IsComplianceOperatorHealthy(m.automaticReportingCtx, scanResult.Scan.GetClusterId(), m.integrationDataStore)
-				if errors.Is(healthErr, watcher.ErrComplianceOperatorNotInstalled) {
-					errList.AddError(errors.Wrap(err, watcher.ErrComplianceOperatorNotInstalled.Error()))
-					continue
-				}
-				if errors.Is(healthErr, watcher.ErrComplianceOperatorVersion) {
-					errList.AddError(errors.Wrap(err, "compliance operator version is not 1.6.0 or greater"))
-					continue
-				}
-
-				err = errors.Wrap(err, "scan timeout")
-				select {
-				case <-scanResult.SensorCtx.Done():
-					err = errors.Wrap(err, "Sensor disconnected during the scan")
-				default:
-				}
-			}
-			errList.AddErrors(err)
-		}
-	}
-
-	return errList.ToError()
 }
 
 func (m *managerImpl) getReportData(scanConfig *storage.ComplianceOperatorScanConfigurationV2) *storage.ComplianceOperatorReportData {

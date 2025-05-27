@@ -20,14 +20,15 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	ConfigService_GetPublicConfig_FullMethodName                    = "/v1.ConfigService/GetPublicConfig"
-	ConfigService_GetPrivateConfig_FullMethodName                   = "/v1.ConfigService/GetPrivateConfig"
-	ConfigService_GetVulnerabilityExceptionConfig_FullMethodName    = "/v1.ConfigService/GetVulnerabilityExceptionConfig"
-	ConfigService_UpdateVulnerabilityExceptionConfig_FullMethodName = "/v1.ConfigService/UpdateVulnerabilityExceptionConfig"
-	ConfigService_GetPlatformComponentConfig_FullMethodName         = "/v1.ConfigService/GetPlatformComponentConfig"
-	ConfigService_UpdatePlatformComponentConfig_FullMethodName      = "/v1.ConfigService/UpdatePlatformComponentConfig"
-	ConfigService_GetConfig_FullMethodName                          = "/v1.ConfigService/GetConfig"
-	ConfigService_PutConfig_FullMethodName                          = "/v1.ConfigService/PutConfig"
+	ConfigService_GetPublicConfig_FullMethodName                      = "/v1.ConfigService/GetPublicConfig"
+	ConfigService_GetPrivateConfig_FullMethodName                     = "/v1.ConfigService/GetPrivateConfig"
+	ConfigService_GetVulnerabilityExceptionConfig_FullMethodName      = "/v1.ConfigService/GetVulnerabilityExceptionConfig"
+	ConfigService_UpdateVulnerabilityExceptionConfig_FullMethodName   = "/v1.ConfigService/UpdateVulnerabilityExceptionConfig"
+	ConfigService_GetPlatformComponentConfig_FullMethodName           = "/v1.ConfigService/GetPlatformComponentConfig"
+	ConfigService_UpdatePlatformComponentConfig_FullMethodName        = "/v1.ConfigService/UpdatePlatformComponentConfig"
+	ConfigService_GetConfig_FullMethodName                            = "/v1.ConfigService/GetConfig"
+	ConfigService_PutConfig_FullMethodName                            = "/v1.ConfigService/PutConfig"
+	ConfigService_GetDefaultRedHatLayeredProductsRegex_FullMethodName = "/v1.ConfigService/GetDefaultRedHatLayeredProductsRegex"
 )
 
 // ConfigServiceClient is the client API for ConfigService service.
@@ -44,6 +45,8 @@ type ConfigServiceClient interface {
 	UpdatePlatformComponentConfig(ctx context.Context, in *PutPlatformComponentConfigRequest, opts ...grpc.CallOption) (*storage.PlatformComponentConfig, error)
 	GetConfig(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*storage.Config, error)
 	PutConfig(ctx context.Context, in *PutConfigRequest, opts ...grpc.CallOption) (*storage.Config, error)
+	// GetDefaultRedHatLayeredProductsRegex returns a static string containing the default Red Hat Layered Products regex.
+	GetDefaultRedHatLayeredProductsRegex(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetDefaultRedHatLayeredProductsRegexResponse, error)
 }
 
 type configServiceClient struct {
@@ -134,6 +137,16 @@ func (c *configServiceClient) PutConfig(ctx context.Context, in *PutConfigReques
 	return out, nil
 }
 
+func (c *configServiceClient) GetDefaultRedHatLayeredProductsRegex(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetDefaultRedHatLayeredProductsRegexResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetDefaultRedHatLayeredProductsRegexResponse)
+	err := c.cc.Invoke(ctx, ConfigService_GetDefaultRedHatLayeredProductsRegex_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ConfigServiceServer is the server API for ConfigService service.
 // All implementations should embed UnimplementedConfigServiceServer
 // for forward compatibility.
@@ -148,6 +161,8 @@ type ConfigServiceServer interface {
 	UpdatePlatformComponentConfig(context.Context, *PutPlatformComponentConfigRequest) (*storage.PlatformComponentConfig, error)
 	GetConfig(context.Context, *Empty) (*storage.Config, error)
 	PutConfig(context.Context, *PutConfigRequest) (*storage.Config, error)
+	// GetDefaultRedHatLayeredProductsRegex returns a static string containing the default Red Hat Layered Products regex.
+	GetDefaultRedHatLayeredProductsRegex(context.Context, *Empty) (*GetDefaultRedHatLayeredProductsRegexResponse, error)
 }
 
 // UnimplementedConfigServiceServer should be embedded to have
@@ -180,6 +195,9 @@ func (UnimplementedConfigServiceServer) GetConfig(context.Context, *Empty) (*sto
 }
 func (UnimplementedConfigServiceServer) PutConfig(context.Context, *PutConfigRequest) (*storage.Config, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PutConfig not implemented")
+}
+func (UnimplementedConfigServiceServer) GetDefaultRedHatLayeredProductsRegex(context.Context, *Empty) (*GetDefaultRedHatLayeredProductsRegexResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetDefaultRedHatLayeredProductsRegex not implemented")
 }
 func (UnimplementedConfigServiceServer) testEmbeddedByValue() {}
 
@@ -345,6 +363,24 @@ func _ConfigService_PutConfig_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ConfigService_GetDefaultRedHatLayeredProductsRegex_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ConfigServiceServer).GetDefaultRedHatLayeredProductsRegex(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ConfigService_GetDefaultRedHatLayeredProductsRegex_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ConfigServiceServer).GetDefaultRedHatLayeredProductsRegex(ctx, req.(*Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ConfigService_ServiceDesc is the grpc.ServiceDesc for ConfigService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -383,6 +419,10 @@ var ConfigService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "PutConfig",
 			Handler:    _ConfigService_PutConfig_Handler,
+		},
+		{
+			MethodName: "GetDefaultRedHatLayeredProductsRegex",
+			Handler:    _ConfigService_GetDefaultRedHatLayeredProductsRegex_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

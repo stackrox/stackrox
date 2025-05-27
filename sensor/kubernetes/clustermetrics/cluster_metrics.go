@@ -82,6 +82,7 @@ func (cm *clusterMetricsImpl) Stop(_ error) {
 }
 
 func (cm *clusterMetricsImpl) Notify(e common.SensorComponentEvent) {
+	log.Info(common.LogSensorComponentEvent(e))
 	switch e {
 	case common.SensorComponentEventCentralReachable:
 		cm.pollTicker.Reset(cm.pollingInterval)
