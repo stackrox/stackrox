@@ -5,10 +5,6 @@ import "time"
 // These environment variables are used in the deployment file.
 // Please check the files before deleting.
 var (
-	// CentralEndpoint is used to provide Central's reachable endpoint to a sensor.
-	CentralEndpoint = RegisterSetting("ROX_CENTRAL_ENDPOINT", WithDefault("central.stackrox.svc:443"),
-		StripAnyPrefix("https://", "http://"))
-
 	// AdvertisedEndpoint is used to provide the Sensor with the endpoint it
 	// should advertise to services that need to contact it, within its own cluster.
 	AdvertisedEndpoint = RegisterSetting("ROX_ADVERTISED_ENDPOINT", WithDefault("sensor.stackrox.svc:443"),
@@ -99,7 +95,11 @@ var (
 	// will stay in Sensors memory until restart. Purger cleans all those entries based on rules.
 	// The max-age is a rule of last resort (when all other rules do not apply) and is used to protect Sensor from OOM kills.
 	// Set to zero to not purge based on max-age (other purger rules will be executed).
-	EnrichmentPurgerTickerMaxAge = registerDurationSetting("ROX_ENRICHMENT_PURGER_MAX_AGE", 4*time.Hour, WithDurationZeroAllowed())
+	// Disabled (set to 0), because removing items from the enrichment queue (hostConnections) causes
+	// unintended messages being sent to central about endpoints listening on ports being closed, whereas in fact
+	// they are not closed but only removed from the queue. To enable this, we need a refactor
+	// to decouple the enrichment queue from the mechanism that sends updates to Central.
+	EnrichmentPurgerTickerMaxAge = registerDurationSetting("ROX_ENRICHMENT_PURGER_MAX_AGE", 0, WithDurationZeroAllowed())
 	// EnrichmentPurgerTickerCycle controls how frequently purger is run to check for collector updates
 	// (network flows & container endpoints) that stuck in Sensor's memory. Set to zero to completely disable the purger.
 	EnrichmentPurgerTickerCycle = registerDurationSetting("ROX_ENRICHMENT_PURGER_UPDATE_CYCLE", 30*time.Minute, WithDurationZeroAllowed())

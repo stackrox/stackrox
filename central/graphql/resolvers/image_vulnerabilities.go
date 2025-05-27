@@ -63,7 +63,7 @@ func init() {
 		schema.AddType("ImageVulnerability",
 			append(commonVulnerabilitySubResolvers,
 				"activeState(query: String): ActiveState",
-				"advisory: String!",
+				"advisory: Advisory",
 				"deploymentCount(query: String): Int!",
 				"deployments(query: String, pagination: Pagination): [Deployment!]!",
 				"discoveredAtImage(query: String): Time",
@@ -91,7 +91,7 @@ type ImageVulnerabilityResolver interface {
 	CommonVulnerabilityResolver
 
 	ActiveState(ctx context.Context, args RawQuery) (*activeStateResolver, error)
-	Advisory(ctx context.Context) (string, error)
+	Advisory(ctx context.Context) (*advisoryResolver, error)
 	DeploymentCount(ctx context.Context, args RawQuery) (int32, error)
 	Deployments(ctx context.Context, args PaginatedQuery) ([]*deploymentResolver, error)
 	DiscoveredAtImage(ctx context.Context, args RawQuery) (*graphql.Time, error)
@@ -894,9 +894,9 @@ func (resolver *imageCVEResolver) Suppressed(_ context.Context) bool {
 	return resolver.data.GetSnoozed()
 }
 
-func (resolver *imageCVEResolver) Advisory(ctx context.Context) (string, error) {
+func (resolver *imageCVEResolver) Advisory(ctx context.Context) (*advisoryResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "Advisory")
-	return "", nil
+	return nil, nil
 }
 
 // Following are the functions that return information that is nested in the CVEInfo object
@@ -1176,7 +1176,7 @@ func (resolver *imageCVEV2Resolver) ExceptionCount(ctx context.Context, args str
 	return int32(count), nil
 }
 
-func (resolver *imageCVEV2Resolver) Advisory(ctx context.Context) (string, error) {
+func (resolver *imageCVEV2Resolver) Advisory(ctx context.Context) (*advisoryResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "Advisory")
 	if resolver.ctx == nil {
 		resolver.ctx = ctx
@@ -1184,23 +1184,23 @@ func (resolver *imageCVEV2Resolver) Advisory(ctx context.Context) (string, error
 
 	// Short path. Full image is embedded when image scan resolver is called.
 	if embeddedVuln := embeddedobjs.VulnFromContext(resolver.ctx); embeddedVuln != nil {
-		return embeddedVuln.GetAdvisory(), nil
+		return resolver.root.wrapAdvisory(embeddedVuln.GetAdvisory(), true, nil)
 	}
 
 	scope, hasScope := scoped.GetScope(resolver.ctx)
 	if !hasScope {
-		return "", nil
+		return nil, nil
 	}
 	if scope.Level != v1.SearchCategory_IMAGE_COMPONENTS_V2 {
-		return "", nil
+		return nil, nil
 	}
 
 	query := search.NewQueryBuilder().AddExactMatches(search.CVEID, resolver.flatData.GetCVEIDs()...).ProtoQuery()
 	cves, err := resolver.root.ImageCVEV2DataStore.SearchRawImageCVEs(resolver.ctx, query)
 	if err != nil || len(cves) == 0 {
-		return "", err
+		return nil, err
 	}
-	return cves[0].GetAdvisory(), nil
+	return resolver.root.wrapAdvisory(cves[0].GetAdvisory(), true, nil)
 }
 
 func (resolver *imageCVEV2Resolver) OperatingSystem(ctx context.Context) string {

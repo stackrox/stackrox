@@ -1,11 +1,13 @@
 
 # Changelog
 
-Entries in this file should be limited to:
+This file helps upstream users learn about what is new in a release.
 
+Put an entry in this file if your change is user-visible and you consider it _particularly noteworthy_. Especially:
 - Any changes that introduce a deprecation in functionality, OR
 - Obscure side-effects that are not obviously apparent based on the JIRA associated with the changes.
-Please avoid adding duplicate information across this changelog and JIRA/doc input pages.
+
+Changes should still be described appropriately in JIRA/doc input pages, for inclusion in downstream release notes.
 
 ## [NEXT RELEASE]
 
@@ -25,6 +27,17 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-28655: When managing a Central installation using the operator
   * Scanner V4 will be installed for new installations unless explicitly disabled (opt-out) and
   * Scanner V4 will remain not installed for upgrades unless explicitly enabled (opt-in).
+- ROX-29151: When managing a SecuredCluster installation using the operator
+  * Scanner V4 will be installed for new installations unless explicitly disabled (opt-out) and
+  * Scanner V4 will remain not installed for upgrades unless explicitly enabled (opt-in).
+- ROX-27443: Scanner V4 now has the ability to only show vulnerability data from Red Hat security data sources for official Red Hat container images
+  found in the [Red Hat Container Catalog](https://catalog.redhat.com/software/containers/explore) when the environment variable `ROX_SCANNER_V4_RED_HAT_LAYERS_RED_HAT_VULNS_ONLY` is set in Scanner V4 Matcher.
+  - Currently, those who use Scanner V4 will see vulnerability data from various sources for all layers in their images.
+    This may lead to confusion when users scan official Red Hat images or images based on official Red Hat images.
+Scanner V4 claims the images contain vulnerabilities which the official Red Hat CVE pages claim do not exist in the same image.
+  - This arises from non-RPM content in official Red Hat container images, such as Go binaries in OpenShift images.
+  - When the variable is set, Scanner V4 will continue to show non-RPM content in official Red Hat container images but will no longer
+    output vulnerabilities from non-Red Hat security data sources for these images.
 
 ### Removed Features
 
@@ -48,6 +61,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   The above values will need to be updated to match your release name (i.e. "stackrox-central-services") or namespace (i.e. "stackrox") in case you had used different ones.
 - ROX-29232: When reading secrets containing DockerConfigs, Sensor will ignore registries if the registry address or
   authorization data contains non-UTF8 characters.
+- ROX-22597: The S3 backup integration is migrated to the AWS go SDK v2. GCS buckets are not supported anymore by the S3 integration type, as announced in 4.5.0, users should use dedicated GCS integrations for these.
 
 ## [4.7.0]
 

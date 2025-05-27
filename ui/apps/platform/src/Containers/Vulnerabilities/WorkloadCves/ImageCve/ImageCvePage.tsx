@@ -60,7 +60,7 @@ import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 
 import AffectedImagesTable, {
     ImageForCve,
-    imagesForCveFragment,
+    convertToFlatImagesForCveFragment, // imagesForCveFragment
     tableId as affectedImagesTableId,
     defaultColumns as affectedImagesDefaultColumns,
 } from '../Tables/AffectedImagesTable';
@@ -68,7 +68,7 @@ import AdvancedFiltersToolbar from '../../components/AdvancedFiltersToolbar';
 import EntityTypeToggleGroup from '../../components/EntityTypeToggleGroup';
 import AffectedDeploymentsTable, {
     DeploymentForCve,
-    deploymentsForCveFragment,
+    convertToFlatDeploymentsForCveFragment, // deploymentsForCveFragment
     tableId as affectedDeploymentsTableId,
     defaultColumns as affectedDeploymentsDefaultColumns,
 } from '../Tables/AffectedDeploymentsTable';
@@ -119,37 +119,52 @@ export const imageCveSummaryQuery = gql`
     }
 `;
 
-export const imageCveAffectedImagesQuery = gql`
-    ${imagesForCveFragment}
-    # by default, query must include the CVE id
-    query getImagesForCVE(
-        $query: String
-        $pagination: Pagination
-        $statusesForExceptionCount: [String!]
-    ) {
-        images(query: $query, pagination: $pagination) {
-            ...ImagesForCVE
+// After release, replace temporary function
+// with imageCveAffectedImagesQuery
+// that has unconditional imagesForCveFragment.
+export function convertToFlatImageCveAffectedImagesQuery(
+    isFlattenCveDataEnabled: boolean // ROX_FLATTEN_CVE_DATA
+) {
+    return gql`
+        ${convertToFlatImagesForCveFragment(isFlattenCveDataEnabled)}
+        # by default, query must include the CVE id
+        query getImagesForCVE(
+            $query: String
+            $pagination: Pagination
+            $statusesForExceptionCount: [String!]
+        ) {
+            images(query: $query, pagination: $pagination) {
+                ...ImagesForCVE
+            }
         }
-    }
-`;
+    `;
+}
 
-export const imageCveAffectedDeploymentsQuery = gql`
-    ${deploymentsForCveFragment}
-    # by default, query must include the CVE id
-    query getDeploymentsForCVE(
-        $query: String
-        $pagination: Pagination
-        $lowImageCountQuery: String
-        $moderateImageCountQuery: String
-        $importantImageCountQuery: String
-        $criticalImageCountQuery: String
-        $statusesForExceptionCount: [String!]
-    ) {
-        deployments(query: $query, pagination: $pagination) {
-            ...DeploymentsForCVE
+// After release, replace temporary function
+// with imageCveAffectedDeploymentsQuery
+// that has unconditional deploymentsForCveFragment.
+export function convertToFlatImageCveAffectedDeploymentsQuery(
+    isFlattenCveDataEnabled: boolean // ROX_FLATTEN_CVE_DATA
+) {
+    return gql`
+        ${convertToFlatDeploymentsForCveFragment(isFlattenCveDataEnabled)}
+        # by default, query must include the CVE id
+        query getDeploymentsForCVE(
+            $query: String
+            $pagination: Pagination
+            $unknownImageCountQuery: String
+            $lowImageCountQuery: String
+            $moderateImageCountQuery: String
+            $importantImageCountQuery: String
+            $criticalImageCountQuery: String
+            $statusesForExceptionCount: [String!]
+        ) {
+            deployments(query: $query, pagination: $pagination) {
+                ...DeploymentsForCVE
+            }
         }
-    }
-`;
+    `;
+}
 
 const imageSortFields = ['Image', 'Severity', 'Operating System'];
 const imageDefaultSort = { field: 'Severity', direction: 'desc' } as const;
@@ -173,6 +188,7 @@ const defaultSeveritySummary = {
         important: { total: 0 },
         moderate: { total: 0 },
         low: { total: 0 },
+        unknown: { total: 0 },
     },
     affectedImageCount: 0,
     topCVSS: 0,
@@ -241,6 +257,9 @@ function ImageCvePage() {
         },
     });
 
+    const isFlattenCveDataEnabled = isFeatureFlagEnabled('ROX_FLATTEN_CVE_DATA');
+    const imageCveAffectedImagesQuery =
+        convertToFlatImageCveAffectedImagesQuery(isFlattenCveDataEnabled);
     const imageDataRequest = useQuery<
         { images: ImageForCve[] },
         {
@@ -265,10 +284,13 @@ function ImageCvePage() {
         return getVulnStateScopedQueryString(filters, currentVulnerabilityState);
     }
 
+    const imageCveAffectedDeploymentsQuery =
+        convertToFlatImageCveAffectedDeploymentsQuery(isFlattenCveDataEnabled);
     const deploymentDataRequest = useQuery<
         { deploymentCount: number; deployments: DeploymentForCve[] },
         {
             query: string;
+            unknownImageCountQuery: string;
             lowImageCountQuery: string;
             moderateImageCountQuery: string;
             importantImageCountQuery: string;
@@ -279,6 +301,7 @@ function ImageCvePage() {
     >(imageCveAffectedDeploymentsQuery, {
         variables: {
             query: getDeploymentSearchQuery(),
+            unknownImageCountQuery: getDeploymentSearchQuery('UNKNOWN_VULNERABILITY_SEVERITY'),
             lowImageCountQuery: getDeploymentSearchQuery('LOW_VULNERABILITY_SEVERITY'),
             moderateImageCountQuery: getDeploymentSearchQuery('MODERATE_VULNERABILITY_SEVERITY'),
             importantImageCountQuery: getDeploymentSearchQuery('IMPORTANT_VULNERABILITY_SEVERITY'),

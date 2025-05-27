@@ -3,8 +3,7 @@ import { Link } from 'react-router-dom';
 import { ExpandableRowContent, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { gql } from '@apollo/client';
 
-// Omit for 4.7 release until CVE/advisory separatipn is available in 4.8 release.
-// import useFeatureFlags from 'hooks/useFeatureFlags';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import useSet from 'hooks/useSet';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
@@ -23,7 +22,7 @@ import {
 import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
 
 import DeploymentComponentVulnerabilitiesTable, {
-    deploymentComponentVulnerabilitiesFragment,
+    convertToFlatDeploymentComponentVulnerabilitiesFragment, // deploymentComponentVulnerabilitiesFragment
 } from './DeploymentComponentVulnerabilitiesTable';
 import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
 import PartialCVEDataAlert from '../../components/PartialCVEDataAlert';
@@ -63,34 +62,41 @@ export const defaultColumns = {
     },
 } as const;
 
-export const deploymentWithVulnerabilitiesFragment = gql`
-    ${deploymentComponentVulnerabilitiesFragment}
-    fragment DeploymentWithVulnerabilities on Deployment {
-        id
-        images(query: $query) {
-            ...ImageMetadataContext
-        }
-        imageVulnerabilities(query: $query, pagination: $pagination) {
-            vulnerabilityId: id
-            cve
-            cveBaseInfo {
-                epss {
-                    epssProbability
-                }
-            }
-            operatingSystem
-            publishedOn
-            summary
-            pendingExceptionCount: exceptionCount(requestStatus: $statusesForExceptionCount)
+// After release, replace temporary function
+// with deploymentWithVulnerabilitiesFragment
+// that has unconditional deploymentComponentVulnerabilitiesFragment.
+export function convertToFlatDeploymentWithVulnerabilitiesFragment(
+    isFlattenCveDataEnabled: boolean // ROX_FLATTEN_CVE_DATA
+) {
+    return gql`
+        ${convertToFlatDeploymentComponentVulnerabilitiesFragment(isFlattenCveDataEnabled)}
+        fragment DeploymentWithVulnerabilities on Deployment {
+            id
             images(query: $query) {
-                imageId: id
-                imageComponents(query: $query) {
-                    ...DeploymentComponentVulnerabilities
+                ...ImageMetadataContext
+            }
+            imageVulnerabilities(query: $query, pagination: $pagination) {
+                vulnerabilityId: id
+                cve
+                cveBaseInfo {
+                    epss {
+                        epssProbability
+                    }
+                }
+                operatingSystem
+                publishedOn
+                summary
+                pendingExceptionCount: exceptionCount(requestStatus: $statusesForExceptionCount)
+                images(query: $query) {
+                    imageId: id
+                    imageComponents(query: $query) {
+                        ...DeploymentComponentVulnerabilities
+                    }
                 }
             }
         }
-    }
-`;
+    `;
+}
 
 export type DeploymentVulnerabilitiesTableProps = {
     tableState: TableUIState<FormattedDeploymentVulnerability>;
@@ -113,10 +119,9 @@ function DeploymentVulnerabilitiesTable({
     const getVisibilityClass = generateVisibilityForColumns(tableConfig);
     const hiddenColumnCount = getHiddenColumnCount(tableConfig);
     const expandedRowSet = useSet<string>();
-    // Omit for 4.7 release until CVE/advisory separatipn is available in 4.8 release.
-    // const { isFeatureFlagEnabled } = useFeatureFlags();
-    // const isEpssProbabilityColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
-    const isEpssProbabilityColumnEnabled = false;
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isEpssProbabilityColumnEnabled =
+        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_FLATTEN_CVE_DATA');
 
     const colSpan = 7 + (isEpssProbabilityColumnEnabled ? 1 : 0) - hiddenColumnCount;
 

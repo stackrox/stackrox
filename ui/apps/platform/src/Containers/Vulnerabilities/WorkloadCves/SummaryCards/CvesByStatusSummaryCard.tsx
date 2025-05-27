@@ -11,6 +11,7 @@ import {
 } from '@patternfly/react-core';
 import { MinusIcon, WrenchIcon } from '@patternfly/react-icons';
 import { gql } from '@apollo/client';
+import sumBy from 'lodash/sumBy';
 
 import { FixableStatus } from '../../types';
 
@@ -19,10 +20,15 @@ export type ResourceCountByCveSeverityAndStatus = {
     important: { total: number; fixable: number };
     moderate: { total: number; fixable: number };
     low: { total: number; fixable: number };
+    unknown: { total: number; fixable: number };
 };
 
 export const resourceCountByCveSeverityAndStatusFragment = gql`
     fragment ResourceCountsByCVESeverityAndStatus on ResourceCountByCVESeverity {
+        unknown {
+            total
+            fixable
+        }
         low {
             total
             fixable
@@ -42,13 +48,15 @@ export const resourceCountByCveSeverityAndStatusFragment = gql`
     }
 `;
 
+const severityKeys = ['critical', 'important', 'moderate', 'low', 'unknown'] as const;
+
 const statusDisplays = [
     {
         status: 'Fixable',
         Icon: WrenchIcon,
         text: (counts: ResourceCountByCveSeverityAndStatus) => {
-            const { critical, important, moderate, low } = counts;
-            const fixable = critical.fixable + important.fixable + moderate.fixable + low.fixable;
+            const severityCounts = severityKeys.map((key) => counts[key]);
+            const fixable = sumBy(severityCounts, 'fixable');
             return `${pluralize(fixable, 'vulnerability', 'vulnerabilities')} with available fixes`;
         },
     },
@@ -56,9 +64,9 @@ const statusDisplays = [
         status: 'Not fixable',
         Icon: MinusIcon,
         text: (counts: ResourceCountByCveSeverityAndStatus) => {
-            const { critical, important, moderate, low } = counts;
-            const total = critical.total + important.total + moderate.total + low.total;
-            const fixable = critical.fixable + important.fixable + moderate.fixable + low.fixable;
+            const severityCounts = severityKeys.map((key) => counts[key]);
+            const total = sumBy(severityCounts, 'total');
+            const fixable = sumBy(severityCounts, 'fixable');
             return `${total - fixable} vulnerabilities without fixes`;
         },
     },
@@ -81,7 +89,7 @@ function CvesByStatusSummaryCard({
     hiddenStatuses,
 }: CvesByStatusSummaryCardProps) {
     return (
-        <Card isCompact isFlat>
+        <Card isCompact isFlat isFullHeight>
             <CardTitle>CVEs by status</CardTitle>
             <CardBody>
                 <Grid className="pf-v5-u-pl-sm">

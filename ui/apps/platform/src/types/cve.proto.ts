@@ -20,6 +20,12 @@ export function isVulnerabilityState(value: unknown): value is VulnerabilityStat
     return vulnerabilityStates.some((state) => state === value);
 }
 
+// advisory property is null if not available or not applicable
+export type Advisory = {
+    name: string; // for example, RHSA-yyyy:nnnn
+    link: string; // for example, https://access.redhat.com/errata/RHSA-yyyy:nnnn
+};
+
 // epss property is null if not available
 export type EPSS = {
     epssProbability: number; // float fraction between 0 and 1 inclusive

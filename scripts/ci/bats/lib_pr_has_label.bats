@@ -4,15 +4,15 @@
 load "../../test_helpers.bats"
 
 function setup() {
+    unset GITHUB_ACTION
     export CI=true
     export OPENSHIFT_CI=true
+    export REPO_OWNER=mock
+    export REPO_NAME=mock
     source "${BATS_TEST_DIRNAME}/../lib.sh"
 }
 
 @test "a pr may have a label" {
-    if [[ -n "${GITHUB_ACTION:-}" ]]; then
-        skip "not working on GHA"
-    fi
     local pr_details=$(cat "${BATS_TEST_DIRNAME}/fixtures/a_pr.json")
     run pr_has_label "has-this-label" "$pr_details"
     assert_success
@@ -20,9 +20,6 @@ function setup() {
 }
 
 @test "a pr may not have a label" {
-    if [[ -n "${GITHUB_ACTION:-}" ]]; then
-        skip "not working on GHA"
-    fi
     local pr_details=$(cat "${BATS_TEST_DIRNAME}/fixtures/a_pr.json")
     run pr_has_label "does-not-have-this-label" "$pr_details"
     assert_failure

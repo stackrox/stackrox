@@ -21,9 +21,9 @@ repositories {
 
 def grpcVersion = '1.69.0'
 // If the proto versions are changed, be sure it is also changed in make/protogen.mk.
-def protobufVersion = '4.30.2'
+def protobufVersion = '4.31.0'
 def nettyTcNativeVersion = '2.0.61.Final'
-def fabric8Version = '7.2.0'
+def fabric8Version = '7.3.1'
 def jacksonVersion = '2.14.2'
 
 protobuf {
@@ -63,7 +63,7 @@ sourceSets.each { ss ->
 dependencies {
     // grpc and protobuf
     implementation 'com.google.code.gson:gson:2.13.1'
-    implementation "com.google.api.grpc:proto-google-common-protos:2.56.0"
+    implementation "com.google.api.grpc:proto-google-common-protos:2.57.0"
     implementation "io.grpc:grpc-alts:${grpcVersion}"
     implementation "io.grpc:grpc-netty:${grpcVersion}"
     implementation "io.grpc:grpc-protobuf:${grpcVersion}"
@@ -76,7 +76,7 @@ dependencies {
     implementation platform("org.spockframework:spock-bom:2.3-groovy-4.0")
     implementation "org.spockframework:spock-core"
     implementation "org.spockframework:spock-junit4"
-    implementation 'io.rest-assured:rest-assured:5.5.1'
+    implementation 'io.rest-assured:rest-assured:5.5.5'
     testImplementation group: 'org.yaml', name: 'snakeyaml', version: '2.4'
     implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.5.18'
     testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: jacksonVersion
@@ -89,7 +89,7 @@ dependencies {
     implementation "io.fabric8:kubernetes-client:${fabric8Version}"
     implementation "io.fabric8:openshift-client:${fabric8Version}"
 
-    implementation 'io.kubernetes:client-java:23.0.0-legacy'
+    implementation 'io.kubernetes:client-java:24.0.0-legacy'
 
     implementation group: 'commons-httpclient', name: 'commons-httpclient', version: '3.1'
     implementation group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.14'
@@ -98,7 +98,7 @@ dependencies {
 
     implementation group: 'commons-cli', name: 'commons-cli', version: '1.9.0'
 
-    implementation group: 'org.apache.commons', name: 'commons-exec', version: '1.4.0'
+    implementation group: 'org.apache.commons', name: 'commons-exec', version: '1.5.0'
 
     //JavaMail for mail verifications
     implementation group: 'com.sun.mail', name: 'javax.mail', version: '1.6.2'

@@ -201,6 +201,7 @@ export type AnalyticsEvent =
               SEVERITY_IMPORTANT: AnalyticsBoolean;
               SEVERITY_MODERATE: AnalyticsBoolean;
               SEVERITY_LOW: AnalyticsBoolean;
+              SEVERITY_UNKNOWN: AnalyticsBoolean;
               CVE_STATUS_FIXABLE: AnalyticsBoolean;
               CVE_STATUS_NOT_FIXABLE: AnalyticsBoolean;
           };

@@ -353,10 +353,16 @@ var (
 
 	// Max-based derived fields.  These fields are primarily used in pagination.  If used in a select it will correspond
 	// to the type of the reference field and simply provide the max function on that field.
-	ComplianceLastScanMax = newDerivedFieldLabel("Compliance Scan Last Executed Time Max", ComplianceOperatorScanLastExecutedTime, MaxDerivationType)
-	SeverityMax           = newDerivedFieldLabel("Severity Max", Severity, MaxDerivationType)
-	CVSSMax               = newDerivedFieldLabel("CVSS Max", CVSS, MaxDerivationType)
-	CVECreatedTimeMin     = newDerivedFieldLabel("CVE Created Time Min", CVECreatedTime, MinDerivationType)
+	ComplianceLastScanMax            = newDerivedFieldLabel("Compliance Scan Last Executed Time Max", ComplianceOperatorScanLastExecutedTime, MaxDerivationType)
+	SeverityMax                      = newDerivedFieldLabel("Severity Max", Severity, MaxDerivationType)
+	CVSSMax                          = newDerivedFieldLabel("CVSS Max", CVSS, MaxDerivationType)
+	CVECreatedTimeMin                = newDerivedFieldLabel("CVE Created Time Min", CVECreatedTime, MinDerivationType)
+	EPSSProbablityMax                = newDerivedFieldLabel("EPSS Probability Max", EPSSProbablity, MaxDerivationType)
+	ImpactScoreMax                   = newDerivedFieldLabel("Impact Score Max", ImpactScore, MaxDerivationType)
+	FirstImageOccurrenceTimestampMin = newDerivedFieldLabel("First Image Occurrence Timestamp Min", FirstImageOccurrenceTimestamp, MinDerivationType)
+	VulnerabilityStateMax            = newDerivedFieldLabel("Vulnerability State Max", VulnerabilityState, MaxDerivationType)
+	NVDCVSSMax                       = newDerivedFieldLabel("NVD CVSS Max", NVDCVSS, MaxDerivationType)
+	CVEPublishedOnMin                = newDerivedFieldLabel("CVE Published On Min", CVEPublishedOn, MinDerivationType)
 
 	// External network sources fields
 	DefaultExternalSource    = newFieldLabel("Default External Source")

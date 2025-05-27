@@ -8,8 +8,10 @@ import (
 )
 
 var (
-	defaultForUpgrades         = platform.ScannerV4Disabled
-	defaultForNewInstallations = platform.ScannerV4Enabled
+	CentralScannerV4DefaultingFlow = CentralDefaultingFlow{
+		Name:           "scanner-V4",
+		DefaultingFunc: centralScannerV4Defaulting,
+	}
 )
 
 const (
@@ -21,8 +23,9 @@ const (
 // This will be called from the preExtension to record the current setting.
 //
 // Second return value is `true`, if defaulting has been applied due to lack of explicit setting.
-func ScannerV4ComponentPolicy(logger logr.Logger, status *platform.CentralStatus, annotations map[string]string, spec *platform.ScannerV4Spec) (platform.ScannerV4ComponentPolicy, bool) {
-	logger = logger.WithName("scanner-v4-defaulting")
+func CentralScannerV4ComponentPolicy(logger logr.Logger, status *platform.CentralStatus, annotations map[string]string, spec *platform.ScannerV4Spec) (platform.ScannerV4ComponentPolicy, bool) {
+	defaultForUpgrades := platform.ScannerV4Disabled
+	defaultForNewInstallations := platform.ScannerV4Enabled
 
 	if spec != nil && spec.ScannerComponent != nil {
 		comp := *spec.ScannerComponent
@@ -72,4 +75,23 @@ func ScannerV4ComponentPolicy(logger logr.Logger, status *platform.CentralStatus
 // centralStatusUninitialized checks if the provided Central status is uninitialized.
 func centralStatusUninitialized(status *platform.CentralStatus) bool {
 	return status == nil || reflect.DeepEqual(status, &platform.CentralStatus{})
+}
+
+func centralScannerV4Defaulting(logger logr.Logger, status *platform.CentralStatus, annotations map[string]string, spec *platform.CentralSpec, defaults *platform.CentralSpec) error {
+	scannerV4Spec := initializedDeepCopy(spec.ScannerV4)
+	componentPolicy, usedDefaulting := CentralScannerV4ComponentPolicy(logger, status, annotations, scannerV4Spec)
+	if !usedDefaulting {
+		// User provided an explicit choice, nothing to do in this flow.
+		return nil
+	}
+
+	// User is relying on defaults. Set in-memory default and persist corresponding annotation.
+
+	if annotations[FeatureDefaultKeyScannerV4] != string(componentPolicy) {
+		// Update feature default setting.
+		annotations[FeatureDefaultKeyScannerV4] = string(componentPolicy)
+	}
+
+	defaults.ScannerV4 = &platform.ScannerV4Spec{ScannerComponent: &componentPolicy}
+	return nil
 }

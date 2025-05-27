@@ -1,9 +1,7 @@
 import { useState } from 'react';
 import { markNetworkBaselineStatuses } from 'services/NetworkService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import { Flow } from '../types/flow.type';
-
-type FlowStatus = 'BASELINE' | 'ANOMALOUS';
+import { BaselineStatusType, Flow } from '../types/flow.type';
 
 type Result = {
     isModifying: boolean;
@@ -13,7 +11,7 @@ type Result = {
 type ModifyBaselineStatuses = {
     modifyBaselineStatuses: (
         flows: Flow[],
-        status: FlowStatus,
+        status: BaselineStatusType,
         onSuccessCallback: () => void
     ) => void;
 } & Result;
@@ -23,7 +21,7 @@ const defaultResult = {
     error: '',
 };
 
-function transformFlowsToPeers(flows: Flow[], status: FlowStatus) {
+function transformFlowsToPeers(flows: Flow[], status: BaselineStatusType) {
     return flows.map((flow) => {
         const { entityId, type, entity, namespace, direction, port, protocol } = flow;
         let backendType: string = type;
@@ -55,7 +53,7 @@ function useModifyBaselineStatuses(deploymentId): ModifyBaselineStatuses {
 
     function modifyBaselineStatuses(
         flows: Flow[],
-        status: FlowStatus,
+        status: BaselineStatusType,
         onSuccessCallback: () => void
     ) {
         setResult({ isModifying: true, error: '' });

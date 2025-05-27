@@ -34,7 +34,7 @@ type CA interface {
 	IssueCertForSubject(subj Subject, opts ...IssueCertOption) (*IssuedCert, error)
 	// ValidateAndExtractSubject validates that the given certificate is a service certificate issued by this CA,
 	// and extracts the subject information.
-	ValidateAndExtractSubject(cert *x509.Certificate) (Subject, error)
+	ValidateAndExtractSubject(cert *x509.Certificate, opts ...VerifyCertOption) (Subject, error)
 }
 
 type ca struct {
@@ -132,8 +132,16 @@ func (c *ca) IssueCertForSubject(subj Subject, opts ...IssueCertOption) (*Issued
 	return issueNewCertFromSigner(subj, c.signer, opts)
 }
 
-func (c *ca) ValidateAndExtractSubject(cert *x509.Certificate) (Subject, error) {
-	if _, err := cert.Verify(x509.VerifyOptions{Roots: c.CertPool()}); err != nil {
+func (c *ca) ValidateAndExtractSubject(cert *x509.Certificate, opts ...VerifyCertOption) (Subject, error) {
+	vo := &verificationOptions{}
+	vo.apply(opts)
+
+	verifyOpts := x509.VerifyOptions{
+		Roots:       c.CertPool(),
+		CurrentTime: vo.currentTime,
+	}
+
+	if _, err := cert.Verify(verifyOpts); err != nil {
 		return Subject{}, err
 	}
 	return SubjectFromCommonName(cert.Subject.CommonName), nil

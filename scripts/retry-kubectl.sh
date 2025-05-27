@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Runs kubectl with supplied arguments, and retries on failures indicating network errors.
 #
 # NOTE: Reads all of stdin. If no input should be passed to kubectl, caller should redirect stdin from /dev/null!
@@ -14,6 +14,7 @@ error_regex=$(tr '\n' '|' <<EOT | sed -e 's/|$//;'
 net/http: request canceled \(Client\.Timeout exceeded while awaiting headers\)$
 : the server is currently unable to handle the request
 : TLS handshake timeout
+failed to download openapi: Get "[^"]*": EOF
 EOT
 )
 
