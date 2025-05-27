@@ -34,7 +34,7 @@ spec:
   - name: output-image-repo
     value: quay.io/rhacs-eng/scanner-db
   - name: input-image-repo
-    value: quay.io/rhacs-eng/scanner-db
+    value: quay.io/rhacs-eng/release-scanner-db
   - name: input-image-tag-makefile-target
     value: scanner-tag
 
