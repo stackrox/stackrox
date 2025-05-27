@@ -121,6 +121,108 @@ func (s *TranslationTestSuite) TestTranslate() {
 		args args
 		want chartutil.Values
 	}{
+		"defaults are being used for enabling Scanner V4": {
+			args: args{
+				client: newDefaultFakeClient(t),
+				sc: platform.SecuredCluster{
+					Spec: platform.SecuredClusterSpec{
+						ClusterName: "test-cluster",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "stackrox",
+					},
+					Defaults: platform.SecuredClusterSpec{
+						ScannerV4: &platform.LocalScannerV4ComponentSpec{
+							ScannerComponent: platform.LocalScannerV4AutoSense.Pointer(),
+						},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"clusterName":   "test-cluster",
+				"ca":            map[string]string{"cert": "ca central content"},
+				"createSecrets": false,
+				"admissionControl": map[string]interface{}{
+					"dynamic": map[string]interface{}{
+						"enforceOnCreates": true,
+						"enforceOnUpdates": true,
+					},
+					"listenOnCreates": true,
+					"listenOnUpdates": true,
+				},
+				"scanner": map[string]interface{}{
+					"disable": false,
+				},
+				"scannerV4": map[string]interface{}{
+					"disable": false,
+					"db": map[string]interface{}{
+						"persistence": map[string]interface{}{
+							"persistentVolumeClaim": map[string]interface{}{
+								"createClaim": true,
+							},
+						},
+					},
+				},
+				"sensor": map[string]interface{}{
+					"localImageScanning": map[string]string{
+						"enabled": "true",
+					},
+				},
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": true,
+					},
+				},
+			},
+		},
+
+		"defaults are being used for disabling Scanner V4": {
+			args: args{
+				client: newDefaultFakeClient(t),
+				sc: platform.SecuredCluster{
+					Spec: platform.SecuredClusterSpec{
+						ClusterName: "test-cluster",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "stackrox",
+					},
+					Defaults: platform.SecuredClusterSpec{
+						ScannerV4: &platform.LocalScannerV4ComponentSpec{
+							ScannerComponent: platform.LocalScannerV4ComponentDisabled.Pointer(),
+						},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"clusterName":   "test-cluster",
+				"ca":            map[string]string{"cert": "ca central content"},
+				"createSecrets": false,
+				"admissionControl": map[string]interface{}{
+					"dynamic": map[string]interface{}{
+						"enforceOnCreates": true,
+						"enforceOnUpdates": true,
+					},
+					"listenOnCreates": true,
+					"listenOnUpdates": true,
+				},
+				"scanner": map[string]interface{}{
+					"disable": false,
+				},
+				"scannerV4": map[string]interface{}{
+					"disable": true,
+				},
+				"sensor": map[string]interface{}{
+					"localImageScanning": map[string]string{
+						"enabled": "true",
+					},
+				},
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": true,
+					},
+				},
+			},
+		},
 		"minimal spec": {
 			args: args{
 				client: newDefaultFakeClient(t),

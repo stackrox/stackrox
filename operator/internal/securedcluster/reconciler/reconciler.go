@@ -28,7 +28,9 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 			// Only appearance and disappearance of a Central resource can influence whether
 			// a local scanner should be deployed by the SecuredCluster controller.
 			utils.CreateAndDeleteOnlyPredicate[*platform.Central]{}))
-
+	// IMPORTANT: The ReconcilerExtensionFeatureDefaulting preExtensions implements feature-defaulting logic
+	// and therefore must be executed and registered first.
+	// New extensions shall be added to otherPreExtensions to guarantee this ordering.
 	otherPreExtensions := []pkgReconciler.Option{
 		pkgReconciler.WithPreExtension(extensions.CheckClusterNameExtension()),
 		pkgReconciler.WithPreExtension(proxy.ReconcileProxySecretExtension(mgr.GetClient(), mgr.GetAPIReader(), proxyEnv)),
@@ -38,11 +40,9 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 		pkgReconciler.WithPreExtension(extensions.ReconcileLocalScannerV4DBPasswordExtension(mgr.GetClient(), mgr.GetAPIReader())),
 	}
 
-	// IMPORTANT: reconciler preExtensions that implement feature-defaulting logic (such as ReconcileScannerV4FeatureDefaultsExtension)
-	// must be executed first. Hence, they need to be first in order when registering extensions using WithPreExtension!
 	opts := make([]pkgReconciler.Option, 0, len(otherPreExtensions)+5)
 	opts = append(opts, extraEventWatcher)
-	opts = append(opts, pkgReconciler.WithPreExtension(extensions.ReconcileScannerV4FeatureDefaultsExtension(mgr.GetClient())))
+	opts = append(opts, pkgReconciler.WithPreExtension(extensions.FeatureDefaultingExtension(mgr.GetClient())))
 	opts = append(opts, otherPreExtensions...)
 	opts = append(opts, pkgReconciler.WithPauseReconcileAnnotation(commonExtensions.PauseReconcileAnnotation))
 	opts, err := commonExtensions.AddSelectorOptionIfNeeded(selector, opts)

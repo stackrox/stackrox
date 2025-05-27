@@ -460,6 +460,9 @@ type SecuredCluster struct {
 
 	Spec   SecuredClusterSpec   `json:"spec,omitempty"`
 	Status SecuredClusterStatus `json:"status,omitempty"`
+
+	// This field will never be serialized, it is used for attaching defaulting decisions to a SecuredCluster struct during reconciliation.
+	Defaults SecuredClusterSpec `json:"-"`
 }
 
 //+kubebuilder:object:root=true
