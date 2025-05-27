@@ -163,18 +163,16 @@ func vulnerabilities(vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerab
 
 		// TODO(ROX-20355): Populate last modified once the API is available.
 		vuln := &storage.EmbeddedVulnerability{
-			Cve:      ccVuln.GetName(),
-			Advisory: advisory(ccVuln.GetAdvisory()),
-			Summary:  ccVuln.GetDescription(),
-			// The link field will be overwritten if preferred CVSS source is available
-			Link:        link(ccVuln.GetLink()),
+			Cve:         ccVuln.GetName(),
+			Advisory:    advisory(ccVuln.GetAdvisory()),
+			Summary:     ccVuln.GetDescription(),
 			PublishedOn: ccVuln.GetIssued(),
 			// LastModified: ,
 			VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
 			Severity:          normalizedSeverity(ccVuln.GetNormalizedSeverity()),
 			Epss:              epss(ccVuln.GetEpssMetrics()),
 		}
-		if err := setScoresAndScoreVersions(vuln, ccVuln.GetCvssMetrics()); err != nil {
+		if err := setScoresAndScoreVersions(vuln, ccVuln.GetCvssMetrics(), ccVuln.Link); err != nil {
 			utils.Should(err)
 		}
 		maybeOverwriteSeverity(vuln)
@@ -210,11 +208,13 @@ func epss(epssDetail *v4.VulnerabilityReport_Vulnerability_EPSS) *storage.EPSS {
 	}
 }
 
-func setScoresAndScoreVersions(vuln *storage.EmbeddedVulnerability, CVSSMetrics []*v4.VulnerabilityReport_Vulnerability_CVSS) error {
+func setScoresAndScoreVersions(vuln *storage.EmbeddedVulnerability, CVSSMetrics []*v4.VulnerabilityReport_Vulnerability_CVSS, ccLink string) error {
 	if len(CVSSMetrics) == 0 {
+		vuln.Link = link(ccLink)
 		return nil
 	}
-
+	vuln.Link = link(CVSSMetrics[0].Url)
+	
 	errList := errorhelpers.NewErrorList("failed to get CVSS Metrics")
 	var scores []*storage.CVSSScore
 	for _, cvss := range CVSSMetrics {
@@ -265,7 +265,6 @@ func setScoresAndScoreVersions(vuln *storage.EmbeddedVulnerability, CVSSMetrics 
 			return nil
 		}
 	}
-	vuln.Link = link(CVSSMetrics[0].Url)
 	return errList.ToError()
 }
 
