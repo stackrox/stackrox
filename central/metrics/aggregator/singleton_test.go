@@ -234,3 +234,26 @@ func TestRunner_ServeHTTP(t *testing.T) {
 		assert.Contains(t, string(body), expectedBody("both_metric"))
 	})
 }
+
+func Test_makeProps(t *testing.T) {
+	runner := makeRunner(nil)
+	cfg, err := runner.ParseConfiguration(&storage.PrometheusMetricsConfig{
+		ImageVulnerabilities: &storage.PrometheusMetricsConfig_Metrics{
+			Metrics: map[string]*storage.PrometheusMetricsConfig_Labels{
+				"metric1": {
+					Labels: map[string]*storage.PrometheusMetricsConfig_Labels_Expression{
+						"CVE": nil,
+						"Cluster": {
+							Expression: []*storage.PrometheusMetricsConfig_Labels_Expression_Condition{
+								{
+									Operator: "=",
+									Argument: "prod",
+								}}}}}}}})
+	assert.NoError(t, err)
+
+	props := makeProps(cfg)
+	assert.Len(t, props, 3)
+	assert.ElementsMatch(t, props["Image Vulnerability metric labels"], []string{"CVE", "Cluster"})
+	assert.ElementsMatch(t, props["Image Vulnerability metric operators"], []string{"="})
+	assert.Equal(t, 1, props["Total Image Vulnerability metrics"])
+}
