@@ -12,10 +12,8 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/schema"
-	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -27,7 +25,6 @@ import (
 
 var (
 	complianceSAC = sac.ForResource(resources.Compliance)
-	log           = logging.LoggerForModule()
 )
 
 type datastoreImpl struct {
@@ -484,8 +481,6 @@ func (d *datastoreImpl) DeleteOldResults(ctx context.Context, lastStartedTimesta
 		lastStartedTimestampColumnName,
 		lastStartedTimestampColumnName,
 	)
-	log.Infof("AsTime: %v", lastStartedTimestamp.AsTime())
-	log.Infof("NilOrTime: %v", protocompat.NilOrTime(lastStartedTimestamp))
 	_, err := d.db.Exec(ctx, deleteStmt, scanRefIDs, lastStartedTimestamp.AsTime())
 	if err != nil {
 		return err

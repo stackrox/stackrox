@@ -1278,11 +1278,6 @@ func (s *complianceCheckResultDataStoreTestSuite) TestComplianceDeleteOldResults
 	results, err = s.dataStore.SearchComplianceCheckResults(s.hasReadCtx, query)
 	s.Require().NoError(err)
 	s.Assert().Len(results, 0)
-	if len(results) > 0 {
-		for _, r := range results {
-			s.T().Logf("found check result %s with timestamp %v. original timestamp %v", r.GetCheckName(), r.GetLastStartedTime(), timestampNow)
-		}
-	}
 }
 
 func (s *complianceCheckResultDataStoreTestSuite) setupTestData() {
