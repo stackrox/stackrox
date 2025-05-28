@@ -271,18 +271,20 @@ function DeploymentVulnerabilitiesTable({
                                     <Td />
                                     <Td colSpan={6}>
                                         <ExpandableRowContent>
-                                            {summary && images.length > 0 ? (
-                                                <>
+                                            <>
+                                                {summary && (
                                                     <p className="pf-v5-u-mb-md">{summary}</p>
+                                                )}
+                                                {images.length > 0 ? (
                                                     <DeploymentComponentVulnerabilitiesTable
                                                         images={images}
                                                         cve={cve}
                                                         vulnerabilityState={vulnerabilityState}
                                                     />
-                                                </>
-                                            ) : (
-                                                <PartialCVEDataAlert />
-                                            )}
+                                                ) : (
+                                                    <PartialCVEDataAlert />
+                                                )}
+                                            </>
                                         </ExpandableRowContent>
                                     </Td>
                                 </Tr>
