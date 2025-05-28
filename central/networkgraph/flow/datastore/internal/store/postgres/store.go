@@ -167,10 +167,11 @@ type FlowStore interface {
 }
 
 type flowStoreImpl struct {
-	db            postgres.DB
-	mutex         sync.Mutex
-	clusterID     uuid.UUID
-	partitionName string
+	db             postgres.DB
+	mutex          sync.Mutex
+	clusterID      uuid.UUID
+	partitionName  string
+	networktreeMgr networktree.Manager
 }
 
 type srcDstEntityIds struct {
@@ -255,7 +256,7 @@ func (s *flowStoreImpl) copyFromNetworkflow(ctx context.Context, tx *postgres.Tx
 }
 
 // New returns a new Store instance using the provided sql instance.
-func New(db postgres.DB, clusterID string) FlowStore {
+func New(db postgres.DB, clusterID string, networktreeMgr networktree.Manager) FlowStore {
 	clusterUUID, err := uuid.FromString(clusterID)
 	if err != nil {
 		log.Errorf("cluster ID is not valid.  %v", err)
@@ -277,9 +278,10 @@ func New(db postgres.DB, clusterID string) FlowStore {
 	}
 
 	return &flowStoreImpl{
-		db:            db,
-		clusterID:     clusterUUID,
-		partitionName: partitionName,
+		db:             db,
+		clusterID:      clusterUUID,
+		partitionName:  partitionName,
+		networktreeMgr: networktreeMgr,
 	}
 }
 
@@ -896,7 +898,7 @@ func (s *flowStoreImpl) pruneEntities(ctx context.Context, deleteStmt string, en
 	// so we need to propagate the removal.
 	// TODO: ROX-29450 will make this unnecessary
 	// and we can remove this logic.
-	if networktree := networktree.Singleton().GetNetworkTree(ctx, s.clusterID.String()); networktree != nil {
+	if networktree := s.networktreeMgr.GetNetworkTree(ctx, s.clusterID.String()); networktree != nil {
 		for _, id := range deletedIDs {
 			networktree.Remove(id)
 		}
@@ -941,7 +943,7 @@ func Destroy(ctx context.Context, db postgres.DB) {
 }
 
 // CreateTableAndNewStore returns a new Store instance for testing
-func CreateTableAndNewStore(ctx context.Context, db postgres.DB, gormDB *gorm.DB, clusterID string) FlowStore {
+func CreateTableAndNewStore(ctx context.Context, db postgres.DB, gormDB *gorm.DB, clusterID string, networktreeMgr networktree.Manager) FlowStore {
 	pkgSchema.ApplySchemaForTable(ctx, gormDB, networkFlowsTable)
-	return New(db, clusterID)
+	return New(db, clusterID, networktreeMgr)
 }
