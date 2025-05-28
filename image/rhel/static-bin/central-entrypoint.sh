@@ -22,9 +22,12 @@ if [ "$(id -u)" == 0 ]; then
      exec su-exec 4000:4000 "$0" "$@"
 fi
 
-ls -laR /.init-dirs/ || true
-ls -laR /etc/pki/ca-trust/ || true
+set +e
+ls -laR /.init-dirs/
+ls -laR /etc/pki/ca-trust/
 restore-all-dir-contents
 import-additional-cas
 
+sleep 60
+exit 1
 exec /stackrox/start-central.sh "$@"
