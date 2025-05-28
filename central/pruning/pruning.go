@@ -606,6 +606,10 @@ func (g *garbageCollectorImpl) removeOrphanedNetworkFlows(clusters set.FrozenStr
 func (g *garbageCollectorImpl) collectImages(config *storage.PrivateConfig) {
 	defer metrics.SetPruningDuration(time.Now(), "Images")
 	pruneImageAfterDays := config.GetImageRetentionDurationDays()
+	if pruneImageAfterDays == 0 {
+		log.Info("[Image Pruning] pruning is disabled.")
+		return
+	}
 	qb := search.NewQueryBuilder().AddDays(search.LastUpdatedTime, int64(pruneImageAfterDays)).ProtoQuery()
 	imageResults, err := g.images.Search(pruningCtx, qb)
 	if err != nil {

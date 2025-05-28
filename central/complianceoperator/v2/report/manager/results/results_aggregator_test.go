@@ -49,6 +49,7 @@ type getReportDataTestCase struct {
 	numPassedChecksPerCluster int
 	numFailedChecksPerCluster int
 	numMixedChecksPerCluster  int
+	numFailedClusters         int
 	expectedErr               error
 }
 
@@ -61,6 +62,14 @@ func (s *ComplianceResultsAggregatorSuite) Test_GetReportData() {
 			numFailedChecksPerCluster: 1,
 			numMixedChecksPerCluster:  3,
 		},
+		"generate report data with failed cluster": {
+			numClusters:               2,
+			numProfiles:               2,
+			numPassedChecksPerCluster: 2,
+			numFailedChecksPerCluster: 1,
+			numMixedChecksPerCluster:  3,
+			numFailedClusters:         1,
+		},
 		"generate report walk by error": {
 			numClusters: 3,
 			numProfiles: 4,
@@ -70,7 +79,7 @@ func (s *ComplianceResultsAggregatorSuite) Test_GetReportData() {
 	for tname, tcase := range cases {
 		s.Run(tname, func() {
 			ctx := context.Background()
-			req := getRequest(ctx, tcase.numClusters, tcase.numProfiles)
+			req := getRequest(ctx, tcase.numClusters, tcase.numProfiles, tcase.numFailedClusters)
 			s.checkResultsDS.EXPECT().WalkByQuery(gomock.Eq(ctx), gomock.Any(), gomock.Any()).
 				Times(tcase.numClusters).
 				DoAndReturn(func(_, _ any, fn checkResultWalkByQuery) error {
@@ -389,13 +398,23 @@ func (s *ComplianceResultsAggregatorSuite) SetupTest() {
 	s.aggregator = NewAggregator(s.checkResultsDS, s.scanDS, s.profileDS, s.remediationDS, s.benchmarkDS, s.ruleDS)
 }
 
-func getRequest(ctx context.Context, numClusters, numProfiles int) *report.Request {
-	return &report.Request{
+func getRequest(ctx context.Context, numClusters, numProfiles, numFailedClusters int) *report.Request {
+	ret := &report.Request{
 		Ctx:          ctx,
 		ScanConfigID: scanConfigID,
 		ClusterIDs:   getNames("cluster", numClusters),
 		Profiles:     getNames("profile", numProfiles),
 	}
+	if numFailedClusters > 0 {
+		failedClusters := make(map[string]*storage.ComplianceOperatorReportSnapshotV2_FailedCluster)
+		for i := numClusters; i < numFailedClusters+numClusters; i++ {
+			id := fmt.Sprintf("cluster-%d", i)
+			ret.ClusterIDs = append(ret.ClusterIDs, id)
+			failedClusters[id] = &storage.ComplianceOperatorReportSnapshotV2_FailedCluster{}
+		}
+		ret.FailedClusters = failedClusters
+	}
+	return ret
 }
 
 func getNames(prefix string, num int) []string {
@@ -429,7 +448,7 @@ func getRowFromCluster(check, clusterID string) *report.ResultRow {
 }
 
 func assertResults(t *testing.T, tcase getReportDataTestCase, res *report.Results) {
-	assert.Equal(t, tcase.numClusters, res.Clusters)
+	assert.Equal(t, tcase.numClusters+tcase.numFailedClusters, res.Clusters)
 	assert.Equal(t, tcase.numProfiles, len(res.Profiles))
 	if tcase.expectedErr != nil {
 		assert.Equal(t, 0, res.TotalPass)
