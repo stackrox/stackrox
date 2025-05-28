@@ -266,7 +266,7 @@ func validateSecret(registryAddr string, dce config.DockerConfigEntry) error {
 		return fmt.Errorf("registry address %q contains invalid UTF-8 characters", registryAddr)
 	}
 	if !utf8.ValidString(dce.Username) {
-		return fmt.Errorf("registry username %q contains invalid UTF-8 characters", registryAddr)
+		return fmt.Errorf("registry username %q contains invalid UTF-8 characters", dce.Username)
 	}
 	if !utf8.ValidString(dce.Password) {
 		return errors.New("registry password contains invalid UTF-8 characters")

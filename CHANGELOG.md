@@ -59,8 +59,7 @@ Scanner V4 claims the images contain vulnerabilities which the official Red Hat 
       kubectl label crd/securitypolicies.config.stackrox.io app.kubernetes.io/managed-by=Helm
 
   The above values will need to be updated to match your release name (i.e. "stackrox-central-services") or namespace (i.e. "stackrox") in case you had used different ones.
-- ROX-29232: When reading secrets containing DockerConfigs, Sensor will ignore registries if the registry address or
-  authorization data contains non-UTF8 characters.
+- ROX-29232: When reading docker config pull secrets from K8s, Sensor will ignore entries containing invalid UTF8 characters.
 - ROX-22597: The S3 backup integration is migrated to the AWS go SDK v2. GCS buckets are not supported anymore by the S3 integration type, as announced in 4.5.0, users should use dedicated GCS integrations for these.
 
 ## [4.7.0]
