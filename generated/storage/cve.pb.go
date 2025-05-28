@@ -1365,8 +1365,8 @@ func (x *CVEInfo) GetEpss() *EPSS {
 
 type Advisory struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty" search:"Advisory,store"` // @gotags: search:"Advisory,store"
-	Link          string                 `protobuf:"bytes,2,opt,name=link,proto3" json:"link,omitempty"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty" search:"Advisory Name,store"` // @gotags: search:"Advisory Name,store"
+	Link          string                 `protobuf:"bytes,2,opt,name=link,proto3" json:"link,omitempty" search:"Advisory Link,store"` // @gotags: search:"Advisory Link,store"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
