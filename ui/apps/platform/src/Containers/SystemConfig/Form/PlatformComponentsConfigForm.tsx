@@ -104,12 +104,11 @@ function PlatformComponentsConfigForm({
                                 variant="info"
                                 component="p"
                                 isInline
-                                title="Any customization will be preserved after a RHACS upgrade."
+                                title="Any customization will be preserved after a central upgrade."
                                 className="pf-v5-u-mt-md"
                             >
-                                For guidance on adding new component namespaces introduced with the
-                                RHACS upgrade, please refer to the documentation. Use the reset
-                                button to revert all changes back to the default definition.
+                                Use the reset button to revert all changes back to the default
+                                definition.
                             </Alert>
                             <Divider component="div" className="pf-v5-u-py-md" />
                             <Flex alignItems={{ default: 'alignItemsCenter' }}>
@@ -191,6 +190,7 @@ function PlatformComponentsConfigForm({
                                             </Button>
                                         );
                                         return (
+                                            // @TODO: Consider a more appropriate way to handle the keys
                                             // eslint-disable-next-line react/no-array-index-key
                                             <Card key={index}>
                                                 <CardHeader actions={{ actions: headerActions }}>
