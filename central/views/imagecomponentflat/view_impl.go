@@ -93,7 +93,7 @@ func withSelectComponentCoreResponseQuery(q *v1.Query) *v1.Query {
 		search.NewQuerySelect(search.ComponentVersion).Proto(),
 		search.NewQuerySelect(search.OperatingSystem).Proto(),
 		search.NewQuerySelect(search.ComponentTopCVSS).AggrFunc(aggregatefunc.Max).Proto(),
-		search.NewQuerySelect(search.ComponentPriority).AggrFunc(aggregatefunc.Max).Proto(),
+		//search.NewQuerySelect(search.ComponentPriority).AggrFunc(aggregatefunc.Max).Proto(),
 		search.NewQuerySelect(search.ComponentRiskScore).AggrFunc(aggregatefunc.Max).Proto(),
 	}
 
