@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
@@ -124,7 +125,8 @@ const (
 		AND
 		NOT EXISTS
 		(SELECT 1 FROM %s flow WHERE
-			flow.Props_DstEntity_Type = 4 AND flow.Props_DstEntity_Id = entity.Info_Id);`
+			flow.Props_DstEntity_Type = 4 AND flow.Props_DstEntity_Id = entity.Info_Id)
+		RETURNING entity.Info_Id;`
 )
 
 var (
@@ -165,10 +167,11 @@ type FlowStore interface {
 }
 
 type flowStoreImpl struct {
-	db            postgres.DB
-	mutex         sync.Mutex
-	clusterID     uuid.UUID
-	partitionName string
+	db             postgres.DB
+	mutex          sync.Mutex
+	clusterID      uuid.UUID
+	partitionName  string
+	networktreeMgr networktree.Manager
 }
 
 type srcDstEntityIds struct {
@@ -253,7 +256,7 @@ func (s *flowStoreImpl) copyFromNetworkflow(ctx context.Context, tx *postgres.Tx
 }
 
 // New returns a new Store instance using the provided sql instance.
-func New(db postgres.DB, clusterID string) FlowStore {
+func New(db postgres.DB, clusterID string, networktreeMgr networktree.Manager) FlowStore {
 	clusterUUID, err := uuid.FromString(clusterID)
 	if err != nil {
 		log.Errorf("cluster ID is not valid.  %v", err)
@@ -275,9 +278,10 @@ func New(db postgres.DB, clusterID string) FlowStore {
 	}
 
 	return &flowStoreImpl{
-		db:            db,
-		clusterID:     clusterUUID,
-		partitionName: partitionName,
+		db:             db,
+		clusterID:      clusterUUID,
+		partitionName:  partitionName,
+		networktreeMgr: networktreeMgr,
 	}
 }
 
@@ -415,7 +419,24 @@ func (s *flowStoreImpl) readRows(rows pgx.Rows, pred func(*storage.NetworkFlowPr
 	return flows, rows.Err()
 }
 
-func (s *flowStoreImpl) readIdsFromRows(rows pgx.Rows) ([]*srcDstEntityIds, error) {
+func (s *flowStoreImpl) readIdFromRows(rows pgx.Rows) ([]string, error) {
+	var entityIds []string
+
+	for rows.Next() {
+		var id string
+
+		if err := rows.Scan(&id); err != nil {
+			return nil, pgutils.ErrNilIfNoRows(err)
+		}
+
+		entityIds = append(entityIds, id)
+	}
+
+	log.Debugf("Read returned %d entity IDs", len(entityIds))
+	return entityIds, rows.Err()
+}
+
+func (s *flowStoreImpl) readIdPairsFromRows(rows pgx.Rows) ([]*srcDstEntityIds, error) {
 	var entityIds []*srcDstEntityIds
 
 	for rows.Next() {
@@ -545,7 +566,7 @@ func (s *flowStoreImpl) removeAndReturnDeploymentFlows(ctx context.Context, dele
 		return nil, err
 	}
 
-	entityIds, err := s.readIdsFromRows(rows)
+	entityIds, err := s.readIdPairsFromRows(rows)
 	if err != nil {
 		return nil, err
 	}
@@ -850,7 +871,7 @@ func (s *flowStoreImpl) pruneAndReturnFlows(ctx context.Context, deleteStmt stri
 		return nil, err
 	}
 
-	return s.readIdsFromRows(rows)
+	return s.readIdPairsFromRows(rows)
 }
 
 func (s *flowStoreImpl) pruneEntities(ctx context.Context, deleteStmt string, entityIds []string) (int64, error) {
@@ -863,12 +884,27 @@ func (s *flowStoreImpl) pruneEntities(ctx context.Context, deleteStmt string, en
 	ctx, cancel := context.WithTimeout(ctx, deleteTimeout)
 	defer cancel()
 
-	ct, err := conn.Exec(ctx, deleteStmt, entityIds)
+	rows, err := conn.Query(ctx, deleteStmt, entityIds)
 	if err != nil {
 		return 0, err
 	}
 
-	return ct.RowsAffected(), nil
+	deletedIDs, err := s.readIdFromRows(rows)
+	if err != nil {
+		return 0, err
+	}
+
+	// The networktree still has the pruned entities,
+	// so we need to propagate the removal.
+	// TODO: ROX-29450 will make this unnecessary
+	// and we can remove this logic.
+	if networktree := s.networktreeMgr.GetNetworkTree(ctx, s.clusterID.String()); networktree != nil {
+		for _, id := range deletedIDs {
+			networktree.Remove(id)
+		}
+	}
+
+	return int64(len(deletedIDs)), nil
 }
 
 // RemoveStaleFlows - remove stale duplicate network flows
@@ -907,7 +943,7 @@ func Destroy(ctx context.Context, db postgres.DB) {
 }
 
 // CreateTableAndNewStore returns a new Store instance for testing
-func CreateTableAndNewStore(ctx context.Context, db postgres.DB, gormDB *gorm.DB, clusterID string) FlowStore {
+func CreateTableAndNewStore(ctx context.Context, db postgres.DB, gormDB *gorm.DB, clusterID string, networktreeMgr networktree.Manager) FlowStore {
 	pkgSchema.ApplySchemaForTable(ctx, gormDB, networkFlowsTable)
-	return New(db, clusterID)
+	return New(db, clusterID, networktreeMgr)
 }
