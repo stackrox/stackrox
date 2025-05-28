@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import lowerCase from 'lodash/lowerCase';
 import startCase from 'lodash/startCase';
-import  findKey  from 'lodash/findKey';
+import findKey from 'lodash/findKey';
 
 import PageHeader from 'Components/PageHeader';
 import ExportButton from 'Components/ExportButton';
