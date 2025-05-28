@@ -423,17 +423,19 @@ function ImageVulnerabilitiesTable({
                                     <Td />
                                     <Td colSpan={colSpan}>
                                         <ExpandableRowContent>
-                                            {summary && imageMetadata ? (
-                                                <>
+                                            <>
+                                                {summary && (
                                                     <p className="pf-v5-u-mb-md">{summary}</p>
+                                                )}
+                                                {imageMetadata ? (
                                                     <ImageComponentVulnerabilitiesTable
                                                         imageMetadataContext={imageMetadata}
                                                         componentVulnerabilities={imageComponents}
                                                     />
-                                                </>
-                                            ) : (
-                                                <PartialCVEDataAlert />
-                                            )}
+                                                ) : (
+                                                    <PartialCVEDataAlert />
+                                                )}
+                                            </>
                                         </ExpandableRowContent>
                                     </Td>
                                 </Tr>

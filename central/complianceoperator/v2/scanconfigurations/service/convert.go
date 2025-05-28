@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"strings"
 
 	"github.com/pkg/errors"
 	blobDS "github.com/stackrox/rox/central/blob/datastore"
@@ -472,7 +473,26 @@ func convertStorageSnapshotsToV2Snapshots(ctx context.Context, snapshots []*stor
 func shallCheckDownload(reportStatus *storage.ComplianceOperatorReportStatus) bool {
 	runState := reportStatus.GetRunState()
 	return reportStatus.GetReportNotificationMethod() == storage.ComplianceOperatorReportStatus_DOWNLOAD &&
-		(runState == storage.ComplianceOperatorReportStatus_GENERATED || runState == storage.ComplianceOperatorReportStatus_DELIVERED)
+		(runState == storage.ComplianceOperatorReportStatus_GENERATED ||
+			runState == storage.ComplianceOperatorReportStatus_DELIVERED ||
+			runState == storage.ComplianceOperatorReportStatus_PARTIAL_ERROR)
+}
+
+func failedClusterReasonsJoinFunc(reasons []string) string {
+	return strings.Join(reasons, "; ")
+}
+
+func convertStorageFailedClustersToV2FailedClusters(failedClusters []*storage.ComplianceOperatorReportSnapshotV2_FailedCluster) []*v2.FailedCluster {
+	ret := make([]*v2.FailedCluster, 0, len(failedClusters))
+	for _, cluster := range failedClusters {
+		ret = append(ret, &v2.FailedCluster{
+			ClusterId:       cluster.GetClusterId(),
+			ClusterName:     cluster.GetClusterName(),
+			OperatorVersion: cluster.GetOperatorVersion(),
+			Reason:          failedClusterReasonsJoinFunc(cluster.GetReasons()),
+		})
+	}
+	return ret
 }
 
 func convertStorageSnapshotToV2Snapshot(ctx context.Context, snapshot *storage.ComplianceOperatorReportSnapshotV2,
@@ -520,6 +540,7 @@ func convertStorageSnapshotToV2Snapshot(ctx context.Context, snapshot *storage.C
 			ErrorMsg:                 snapshot.GetReportStatus().GetErrorMsg(),
 			ReportRequestType:        storageReportRequestTypeToV2[snapshot.GetReportStatus().GetReportRequestType()],
 			ReportNotificationMethod: storageReportNotificationMethodToV2[snapshot.GetReportStatus().GetReportNotificationMethod()],
+			FailedClusters:           convertStorageFailedClustersToV2FailedClusters(snapshot.GetFailedClusters()),
 		},
 		ReportData: configStatus,
 		User: &v2.SlimUser{
