@@ -55,9 +55,9 @@ describe('ReportJobStatusFilter', () => {
 
         const checkboxOptionForPreparing = getCheckboxOption('Preparing');
         const checkboxOptionForWaiting = getCheckboxOption('Waiting');
-        const checkboxOptionForDownloadGenerated = getCheckboxOption('Download generated');
-        const checkboxOptionFoEmailDelivered = getCheckboxOption('Email delivered');
-        const checkboxOptionForError = getCheckboxOption('Error');
+        const checkboxOptionForDownloadGenerated = getCheckboxOption('Report ready for download');
+        const checkboxOptionFoEmailDelivered = getCheckboxOption('Report successfully sent');
+        const checkboxOptionForError = getCheckboxOption('Report failed to generate');
 
         expect(checkboxOptionForPreparing).toBeChecked();
         expect(checkboxOptionForWaiting).not.toBeChecked();
@@ -79,9 +79,9 @@ describe('ReportJobStatusFilter', () => {
 
         const checkboxOptionForPreparing = getCheckboxOption('Preparing');
         const checkboxOptionForWaiting = getCheckboxOption('Waiting');
-        const checkboxOptionForDownloadGenerated = getCheckboxOption('Download generated');
-        const checkboxOptionForEmailDelivered = getCheckboxOption('Email delivered');
-        const checkboxOptionForError = getCheckboxOption('Error');
+        const checkboxOptionForDownloadGenerated = getCheckboxOption('Report ready for download');
+        const checkboxOptionForEmailDelivered = getCheckboxOption('Report successfully sent');
+        const checkboxOptionForError = getCheckboxOption('Report failed to generate');
 
         await userEvent.click(checkboxOptionForPreparing);
         await userEvent.click(checkboxOptionForError);
