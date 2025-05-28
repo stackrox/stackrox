@@ -4,5 +4,5 @@ import { PlatformComponentsConfigRules } from '../configUtils';
 export type Values = {
     privateConfig: PrivateConfig;
     publicConfig: PublicConfig;
-    platformComponentsConfigRules: PlatformComponentsConfigRules;
+    platformComponentConfigRules: PlatformComponentsConfigRules;
 };

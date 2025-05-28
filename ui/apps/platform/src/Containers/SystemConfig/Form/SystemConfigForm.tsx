@@ -100,8 +100,8 @@ const SystemConfigForm = ({
 
     const { privateConfig } = systemConfig;
     const publicConfig = getCompletePublicConfig(systemConfig);
-    const platformComponentsConfigRules = getPlatformComponentsConfigRules(
-        systemConfig.platformComponentsConfig
+    const platformComponentConfigRules = getPlatformComponentsConfigRules(
+        systemConfig.platformComponentConfig
     );
     const {
         dirty,
@@ -113,12 +113,12 @@ const SystemConfigForm = ({
         submitForm,
         values,
     } = useFormik<Values>({
-        initialValues: { privateConfig, publicConfig, platformComponentsConfigRules },
+        initialValues: { privateConfig, publicConfig, platformComponentConfigRules },
         validationSchema,
         onSubmit: () => {
             const { coreSystemRule, redHatLayeredProductsRule, customRules } =
-                values.platformComponentsConfigRules;
-            const platformComponentsConfigRules = [
+                values.platformComponentConfigRules;
+            const platformComponentConfigRules = [
                 ...(coreSystemRule ? [coreSystemRule] : []),
                 ...(redHatLayeredProductsRule ? [redHatLayeredProductsRule] : []),
                 ...customRules,
@@ -127,9 +127,9 @@ const SystemConfigForm = ({
             saveSystemConfig({
                 privateConfig: values.privateConfig,
                 publicConfig: values.publicConfig,
-                platformComponentsConfig: {
+                platformComponentConfig: {
                     needsReevaluation: true,
-                    rules: platformComponentsConfigRules,
+                    rules: platformComponentConfigRules,
                 },
             })
                 .then((data) => {
