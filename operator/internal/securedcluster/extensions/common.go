@@ -37,6 +37,11 @@ func wrapExtension(runFn func(ctx context.Context, securedCluster *platform.Secu
 			return err
 		}
 
+		// Merge the defaults into spec for convenience of extensions (e.g. for creating scanner-v4-db-password).
+		if err := platform.MergeSecuredClusterDefaultsIntoSpec(&securedCluster); err != nil {
+			return err
+		}
+
 		wrappedStatusUpdater := func(typedUpdateStatus updateStatusFunc) {
 			statusUpdater(func(uSt *unstructured.Unstructured) bool {
 				var status platform.SecuredClusterStatus
@@ -54,13 +59,6 @@ func wrapExtension(runFn func(ctx context.Context, securedCluster *platform.Secu
 			return err
 		}
 
-		// Keep potentially mutated SecuredCluster spec.
-		// The ReconcileScannerV4FeatureDefaultsExtension mutates the SecuredCluster spec.
-		obj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&securedCluster)
-		if err != nil {
-			return errors.Wrap(err, "converting SecuredCluster to unstructured object after extension execution")
-		}
-		u.Object = obj
 		return nil
 	}
 }
