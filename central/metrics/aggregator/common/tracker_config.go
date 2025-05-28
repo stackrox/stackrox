@@ -2,6 +2,7 @@ package common
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
@@ -9,7 +10,6 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -124,8 +124,7 @@ func (tc *TrackerConfig[Finding]) registerMetrics(registry *prometheus.Registry,
 	for metric, labelExpressions := range tc.metricsConfig {
 		if err := metrics.RegisterCustomAggregatedMetric(string(metric), tc.description, period,
 			getMetricLabels(labelExpressions, tc.labelOrder), registry); err != nil {
-			log.Errorw("Failed to register metrics", logging.Err(err))
-			return err
+			return fmt.Errorf("failed to register %s metric %q: %w", tc.category, metric, err)
 		}
 		log.Infof("Registered %s Prometheus metric %q", tc.category, metric)
 	}
