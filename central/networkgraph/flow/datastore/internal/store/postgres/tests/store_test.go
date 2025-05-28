@@ -60,7 +60,7 @@ func (s *NetworkflowStoreSuite) SetupSuite() {
 func (s *NetworkflowStoreSuite) SetupTest() {
 	s.pgDB = pgtest.ForT(s.T())
 
-	s.flowStore = postgresFlowStore.CreateTableAndNewStore(s.ctx, s.pgDB.DB, s.gormDB, clusterID)
+	s.flowStore = postgresFlowStore.CreateTableAndNewStore(s.ctx, s.pgDB.DB, s.gormDB, clusterID, networktree.Singleton())
 	s.entityStore = entityStore.GetTestPostgresDataStore(s.T(), s.pgDB.DB)
 	s.entityStore.RegisterCluster(s.ctx, clusterID)
 }
@@ -78,7 +78,7 @@ func (s *NetworkflowStoreSuite) TearDownSuite() {
 
 func (s *NetworkflowStoreSuite) TestStore() {
 	secondCluster := fixtureconsts.Cluster2
-	store2 := postgresFlowStore.New(s.pgDB.DB, secondCluster)
+	store2 := postgresFlowStore.New(s.pgDB.DB, secondCluster, networktree.Singleton())
 
 	networkFlow := &storage.NetworkFlow{
 		Props: &storage.NetworkFlowProperties{
