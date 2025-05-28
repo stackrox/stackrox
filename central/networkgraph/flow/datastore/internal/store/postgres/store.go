@@ -15,7 +15,6 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
-	"github.com/stackrox/rox/pkg/networkgraph/tree"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
@@ -172,7 +171,6 @@ type flowStoreImpl struct {
 	mutex         sync.Mutex
 	clusterID     uuid.UUID
 	partitionName string
-	networktree   tree.NetworkTree
 }
 
 type srcDstEntityIds struct {
@@ -278,16 +276,10 @@ func New(db postgres.DB, clusterID string) FlowStore {
 		return nil
 	}
 
-	nt := networktree.Singleton().GetNetworkTree(ctx, clusterID)
-	if nt == nil {
-		nt = networktree.Singleton().CreateNetworkTree(ctx, clusterID)
-	}
-
 	return &flowStoreImpl{
 		db:            db,
 		clusterID:     clusterUUID,
 		partitionName: partitionName,
-		networktree:   nt,
 	}
 }
 
@@ -895,17 +887,19 @@ func (s *flowStoreImpl) pruneEntities(ctx context.Context, deleteStmt string, en
 		return 0, err
 	}
 
-	// The networktree still has the pruned entities,
-	// so we need to propagate the removal.
-	// TODO: ROX-29450 will make this unnecessary
-	// and we can remove this logic.
 	deletedIDs, err := s.readIdFromRows(rows)
 	if err != nil {
 		return 0, err
 	}
 
-	for _, id := range deletedIDs {
-		s.networktree.Remove(id)
+	// The networktree still has the pruned entities,
+	// so we need to propagate the removal.
+	// TODO: ROX-29450 will make this unnecessary
+	// and we can remove this logic.
+	if networktree := networktree.Singleton().GetNetworkTree(ctx, s.clusterID.String()); networktree != nil {
+		for _, id := range deletedIDs {
+			networktree.Remove(id)
+		}
 	}
 
 	return int64(len(deletedIDs)), nil
