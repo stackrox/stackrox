@@ -39,6 +39,7 @@ func Singleton() interface {
 	Start()
 	Stop()
 	Reconfigure(*storage.PrometheusMetricsConfig) error
+	Gather(context.Context) (map[string]any, error)
 } {
 	once.Do(func() {
 		registry := prometheus.NewRegistry()
@@ -115,4 +116,37 @@ func (ar *aggregatorRunner) run(tracker common.Tracker) {
 			}
 		}
 	}
+}
+
+func (ar *aggregatorRunner) Gather(ctx context.Context) (map[string]any, error) {
+	systemPrivateConfig, err := configDS.Singleton().GetPrivateConfig(
+		sac.WithAllAccess(ctx))
+	if err != nil {
+		return nil, err
+	}
+	props := make(map[string]any)
+	cfg := systemPrivateConfig.GetPrometheusMetricsConfig()
+	{
+		vulns := cfg.GetImageVulnerabilities()
+		ml := vulns.GetMetricLabels()
+		props["Total Image Vulnerability custom metrics"] = len(ml)
+		maxLabels := 0
+		exressionsUsed := false
+		for _, metricLabels := range ml {
+			if len(metricLabels.GetLabelExpressions()) > maxLabels {
+				maxLabels = len(metricLabels.GetLabelExpressions())
+			}
+			if !exressionsUsed {
+				for _, labelExprs := range metricLabels.GetLabelExpressions() {
+					if len(labelExprs.GetExpression()) > 0 {
+						exressionsUsed = true
+						break
+					}
+				}
+			}
+		}
+		props["Max Image Vulnerability custom metrics labels"] = maxLabels
+		props["Custom Metrics Expressions used"] = exressionsUsed
+	}
+	return props, nil
 }
