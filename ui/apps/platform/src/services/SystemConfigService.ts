@@ -26,3 +26,14 @@ export function fetchPublicConfig(): Promise<{ response: PublicConfig }> {
 export function saveSystemConfig(config: SystemConfig): Promise<SystemConfig> {
     return axios.put<SystemConfig>(baseUrl, { config }).then((response) => response.data);
 }
+
+/**
+ *  Fetch the default Red Hat layered products namespace regex rule
+ */
+export function fetchDefaultRedHatLayeredProductsRule(): Promise<string> {
+    return axios
+        .get<{ regex: string }>(`${baseUrl}/platformcomponent/rhlp/default`)
+        .then((response) => {
+            return response.data.regex;
+        });
+}

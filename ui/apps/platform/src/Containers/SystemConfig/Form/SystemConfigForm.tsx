@@ -74,6 +74,7 @@ export type SystemConfigFormProps = {
     setSystemConfig: (systemConfig: SystemConfig) => void;
     setIsNotEditing: () => void;
     isCustomizingPlatformComponentsEnabled: boolean;
+    defaultRedHatLayeredProductsRule: string;
 };
 
 const validationSchema = yup.object().shape({
@@ -92,6 +93,7 @@ const SystemConfigForm = ({
     setSystemConfig,
     setIsNotEditing,
     isCustomizingPlatformComponentsEnabled,
+    defaultRedHatLayeredProductsRule,
 }: SystemConfigFormProps): ReactElement => {
     const dispatch = useDispatch();
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -201,6 +203,7 @@ const SystemConfigForm = ({
                     values={values}
                     onChange={onChange}
                     onCustomChange={onCustomChange}
+                    defaultRedHatLayeredProductsRule={defaultRedHatLayeredProductsRule}
                 />
             )}
             <Title headingLevel="h2">Private data retention configuration</Title>
