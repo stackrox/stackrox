@@ -305,9 +305,6 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"scanner": map[string]interface{}{
 					"disable": false,
 				},
-				"scannerV4": map[string]interface{}{
-					"disable": true,
-				},
 				"sensor": map[string]interface{}{
 					"localImageScanning": map[string]string{
 						"enabled": "true",
@@ -370,6 +367,11 @@ func (s *TranslationTestSuite) TestTranslate() {
 					Spec: platform.SecuredClusterSpec{
 						ClusterName: "test-cluster",
 					},
+					Defaults: platform.SecuredClusterSpec{
+						ScannerV4: &platform.LocalScannerV4ComponentSpec{
+							ScannerComponent: platform.LocalScannerV4AutoSense.Pointer(),
+						},
+					},
 				},
 			},
 			want: chartutil.Values{
@@ -387,6 +389,14 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"scanner": map[string]interface{}{
 					"disable": false,
 				},
+				"scannerV4": map[string]interface{}{
+					"disable": false,
+					"db": map[string]interface{}{
+						"persistence": map[string]interface{}{
+							"none": true,
+						},
+					},
+				},
 				"sensor": map[string]interface{}{
 					"localImageScanning": map[string]interface{}{
 						"enabled": "true",
@@ -396,9 +406,6 @@ func (s *TranslationTestSuite) TestTranslate() {
 					"openshift": map[string]interface{}{
 						"enabled": true,
 					},
-				},
-				"scannerV4": map[string]interface{}{
-					"disable": true,
 				},
 			},
 		},
@@ -426,9 +433,6 @@ func (s *TranslationTestSuite) TestTranslate() {
 				},
 				"scanner": map[string]interface{}{
 					"disable": false,
-				},
-				"scannerV4": map[string]interface{}{
-					"disable": true,
 				},
 				"sensor": map[string]interface{}{
 					"localImageScanning": map[string]string{
@@ -1023,9 +1027,6 @@ func (s *TranslationTestSuite) TestTranslate() {
 				},
 				"scanner": map[string]interface{}{
 					"disable": false,
-				},
-				"scannerV4": map[string]interface{}{
-					"disable": true,
 				},
 				"sensor": map[string]interface{}{
 					"localImageScanning": map[string]string{
