@@ -17,7 +17,7 @@ func TestAuthz(t *testing.T) {
 
 func TestPing(t *testing.T) {
 	service := &serviceImpl{}
-	response, err := service.Ping(sac.WithAllAccess(context.Background()), &v1.Empty{})
+	response, err := service.Ping(sac.WithNoAccess(context.Background()), &v1.Empty{})
 	assert.NoError(t, err)
 	protoassert.Equal(t, &v1.PongMessage{Status: "ok"}, response)
 }
