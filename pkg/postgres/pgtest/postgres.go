@@ -108,9 +108,9 @@ func ForT(t testing.TB) *TestPostgres {
 		database: database,
 	}
 
-	//t.Cleanup(func() {
-	//	testPg.teardown(t)
-	//})
+	t.Cleanup(func() {
+		testPg.teardown(t)
+	})
 
 	return testPg
 }
