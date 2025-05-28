@@ -35,3 +35,7 @@ type Configuration struct {
 	toDelete []MetricName
 	period   time.Duration
 }
+
+func (cfg *Configuration) GetMetrics() MetricsConfiguration {
+	return cfg.metrics
+}

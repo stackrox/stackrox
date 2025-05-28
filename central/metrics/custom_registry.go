@@ -88,3 +88,11 @@ func (cr *customRegistry) SetTotal(metricName string, labels prometheus.Labels, 
 		gauge.(*prometheus.GaugeVec).With(labels).Set(float64(total))
 	}
 }
+
+// GetCustomRegistriesCount returns the total number of currently known custom
+// registries.
+func GetCustomRegistriesCount() int {
+	registriedMux.Lock()
+	defer registriedMux.Unlock()
+	return len(userRegistries)
+}
