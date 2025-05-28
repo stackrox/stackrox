@@ -77,6 +77,8 @@ function DeploymentComponentVulnerabilitiesTable({
         isFeatureFlagEnabled('ROX_FLATTEN_CVE_DATA') &&
         isFeatureFlagEnabled('ROX_CVE_ADVISORY_SEPARATION');
 
+    const colSpanForDockerfileLayer = 8 + (isAdvisoryColumnEnabled ? 1 : 0);
+
     const { sortOption, getSortParams } = useTableSort({ sortFields, defaultSortOption });
     const componentVulns = images.flatMap(({ imageMetadataContext, componentVulnerabilities }) =>
         flattenDeploymentComponentVulns(imageMetadataContext, componentVulnerabilities)
@@ -164,7 +166,7 @@ function DeploymentComponentVulnerabilitiesTable({
                             </Td>
                         </Tr>
                         <Tr>
-                            <Td colSpan={8} className="pf-v5-u-pt-0">
+                            <Td colSpan={colSpanForDockerfileLayer} className="pf-v5-u-pt-0">
                                 <DockerfileLayer layer={layer} />
                             </Td>
                         </Tr>
