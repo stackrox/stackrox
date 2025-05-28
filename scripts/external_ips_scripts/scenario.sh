@@ -6,8 +6,8 @@ set -eou pipefail
 # This assumes that ACS has been deployed with ROX_EXTERNAL_IPS and ROX_NETWORK_GRAPH_EXTERNAL_IPS
 
 # Cleanup from previous runs
-kubectl delete ns qa
-kubectl -n stackrox delete configmap collector-config
+kubectl delete ns qa || true
+kubectl -n stackrox delete configmap collector-config || true
 
 kubectl create ns qa
 
