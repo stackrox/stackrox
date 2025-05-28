@@ -156,25 +156,9 @@ func (resolver *Resolver) wrapImageComponentV2sFlatWithContext(ctx context.Conte
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
-	coreMap := make(map[normalizedImageComponent]imagecomponentflat.ComponentFlat)
-	for _, res := range flatData {
-		normalized := normalizedImageComponent{
-			name:    res.GetComponent(),
-			version: res.GetVersion(),
-			os:      res.GetOperatingSystem(),
-		}
-		if _, ok := coreMap[normalized]; !ok {
-			coreMap[normalized] = res
-		}
-	}
 	output := make([]*imageComponentV2Resolver, len(values))
 	for i, v := range values {
-		normalized := normalizedImageComponent{
-			name:    v.GetName(),
-			version: v.GetVersion(),
-			os:      v.GetOperatingSystem(),
-		}
-		output[i] = &imageComponentV2Resolver{ctx: ctx, root: resolver, data: v, flatData: coreMap[normalized]}
+		output[i] = &imageComponentV2Resolver{ctx: ctx, root: resolver, data: v, flatData: flatData[i]}
 	}
 	return output, nil
 }
@@ -210,13 +194,18 @@ func (resolver *imageComponentV2Resolver) OperatingSystem(_ context.Context) str
 }
 
 func (resolver *imageComponentV2Resolver) Priority(_ context.Context) int32 {
-	value := resolver.data.GetPriority()
-	return int32(value)
+	if resolver.flatData != nil {
+		return int32(resolver.flatData.GetPriority())
+	}
+
+	return int32(resolver.data.GetPriority())
 }
 
 func (resolver *imageComponentV2Resolver) RiskScore(_ context.Context) float64 {
-	value := resolver.data.GetRiskScore()
-	return float64(value)
+	if resolver.flatData != nil {
+		return float64(resolver.flatData.GetRiskScore())
+	}
+	return float64(resolver.data.GetRiskScore())
 }
 
 func (resolver *imageComponentV2Resolver) Source(_ context.Context) string {
@@ -225,6 +214,8 @@ func (resolver *imageComponentV2Resolver) Source(_ context.Context) string {
 }
 
 func (resolver *imageComponentV2Resolver) Version(_ context.Context) string {
-	value := resolver.data.GetVersion()
-	return value
+	if resolver.flatData != nil {
+		return resolver.flatData.GetVersion()
+	}
+	return resolver.data.GetVersion()
 }

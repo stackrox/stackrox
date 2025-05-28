@@ -336,6 +336,7 @@ func (ds *datastoreImpl) updateImagePriority(images ...*storage.Image) {
 				componentID, err := scancomponent.ComponentIDV2(component, image.GetId())
 				if err != nil {
 					log.Error(err)
+					continue
 				}
 				component.Priority = ds.imageComponentRanker.GetRankForID(componentID)
 			} else {

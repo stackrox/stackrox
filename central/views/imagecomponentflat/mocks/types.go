@@ -98,6 +98,20 @@ func (mr *MockComponentFlatMockRecorder) GetPriority() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPriority", reflect.TypeOf((*MockComponentFlat)(nil).GetPriority))
 }
 
+// GetRiskScore mocks base method.
+func (m *MockComponentFlat) GetRiskScore() float32 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRiskScore")
+	ret0, _ := ret[0].(float32)
+	return ret0
+}
+
+// GetRiskScore indicates an expected call of GetRiskScore.
+func (mr *MockComponentFlatMockRecorder) GetRiskScore() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRiskScore", reflect.TypeOf((*MockComponentFlat)(nil).GetRiskScore))
+}
+
 // GetTopCVSS mocks base method.
 func (m *MockComponentFlat) GetTopCVSS() float32 {
 	m.ctrl.T.Helper()

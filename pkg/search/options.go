@@ -365,7 +365,9 @@ var (
 	NVDCVSSMax                       = newDerivedFieldLabel("NVD CVSS Max", NVDCVSS, MaxDerivationType)
 	CVEPublishedOnMin                = newDerivedFieldLabel("CVE Published On Min", CVEPublishedOn, MinDerivationType)
 	ComponentTopCVSSMax              = newDerivedFieldLabel("Component Top CVSS Max", ComponentTopCVSS, MaxDerivationType)
-	ComponentPriorityMax             = newDerivedFieldLabel("Component Risk Score Max", ComponentRiskScore, MaxReverseSortDerivationType)
+	ComponentRiskScoreMax            = newDerivedFieldLabel("Component Risk Score Max", ComponentRiskScore, MaxDerivationType)
+	// This is the priority which is essentially a reverse sort of the risk score
+	ComponentPriorityMax = newDerivedFieldLabel("Component Risk Priority Score Max", ComponentRiskScore, MaxReverseSortDerivationType)
 
 	// External network sources fields
 	DefaultExternalSource    = newFieldLabel("Default External Source")

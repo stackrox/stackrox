@@ -194,11 +194,11 @@ func (resolver *Resolver) ImageComponents(ctx context.Context, q PaginatedQuery)
 
 		// Normalize the Components based on the flat view to keep them in the correct paging and sort order
 		normalizedComponents := make([]*storage.ImageComponentV2, 0, len(componentFlatData))
-		for _, cveFlat := range componentFlatData {
+		for _, componentFlat := range componentFlatData {
 			normalized := normalizedImageComponent{
-				name:    cveFlat.GetComponent(),
-				version: cveFlat.GetVersion(),
-				os:      cveFlat.GetOperatingSystem(),
+				name:    componentFlat.GetComponent(),
+				version: componentFlat.GetVersion(),
+				os:      componentFlat.GetOperatingSystem(),
 			}
 			normalizedComponents = append(normalizedComponents, foundComponent[normalized])
 		}
