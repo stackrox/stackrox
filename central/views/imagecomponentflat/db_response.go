@@ -5,7 +5,7 @@ type imageComponentFlatResponse struct {
 	ComponentIDs    []string `db:"component_id"`
 	Version         string   `db:"component_version"`
 	TopCVSS         *float32 `db:"component_top_cvss_max"`
-	Priority        *int64   `db:"component_risk_priority_score_max"`
+	Priority        *int64   `db:"component_risk_priority_max"`
 	RiskScore       *float32 `db:"component_risk_score_max"`
 	OperatingSystem string   `db:"operating_system"`
 }
