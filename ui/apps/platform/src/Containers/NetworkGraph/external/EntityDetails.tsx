@@ -28,7 +28,12 @@ import { getDeploymentInfoForExternalEntity, protocolLabel } from '../utils/flow
 import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
 import { ExternalEntitiesIcon } from '../common/NetworkGraphIcons';
 import { EXTERNAL_SOURCE_ADDRESS_QUERY } from '../NetworkGraph.constants';
-import { usePagination, useSearchFilterSidePanel } from '../URLStateContext';
+import { timeWindowToISO } from '../utils/timeWindow';
+import {
+    usePagination,
+    useSearchFilterSidePanel,
+    useTimeWindowParameter,
+} from '../URLStateContext';
 
 export type EntityDetailsProps = {
     labelledById: string;
@@ -57,16 +62,25 @@ function EntityDetails({
 }: EntityDetailsProps) {
     const { page, perPage, setPage, setPerPage } = usePagination();
     const { buildSearchQuery, searchFilter } = useSearchFilterSidePanel();
+    const { timeWindow } = useTimeWindowParameter();
     const clusterId = scopeHierarchy.cluster.id;
     const { deployments, namespaces } = scopeHierarchy;
     const fetchExternalNetworkFlows = useCallback((): Promise<ExternalNetworkFlowsResponse> => {
-        return getExternalNetworkFlows(clusterId, entityId, namespaces, deployments, {
-            sortOption: {},
-            page,
-            perPage,
-            advancedFilters: searchFilter,
-        });
-    }, [page, perPage, clusterId, deployments, entityId, namespaces, searchFilter]);
+        const fromTimestamp = timeWindowToISO(timeWindow);
+        return getExternalNetworkFlows(
+            clusterId,
+            entityId,
+            namespaces,
+            deployments,
+            fromTimestamp,
+            {
+                sortOption: {},
+                page,
+                perPage,
+                advancedFilters: searchFilter,
+            }
+        );
+    }, [page, perPage, clusterId, deployments, entityId, namespaces, searchFilter, timeWindow]);
 
     const {
         data: externalNetworkFlows,
