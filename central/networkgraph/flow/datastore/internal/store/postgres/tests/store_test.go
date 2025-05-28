@@ -545,6 +545,12 @@ func (s *NetworkflowStoreSuite) TestRemoveDeplExternalEntitiesOrphaned() {
 	err = s.entityStore.UpdateExternalNetworkEntity(s.ctx, extEntity2, false)
 	s.Nil(err)
 
+	nt := networktree.Singleton().CreateNetworkTree(s.ctx, clusterID)
+	err = nt.Insert(extEntity1.Info)
+	s.Nil(err)
+	err = nt.Insert(extEntity2.Info)
+	s.Nil(err)
+
 	flows := []*storage.NetworkFlow{
 		{
 			Props: &storage.NetworkFlowProperties{
@@ -606,21 +612,29 @@ func (s *NetworkflowStoreSuite) TestRemoveDeplExternalEntitiesOrphaned() {
 	s.Nil(err)
 	s.Equal(2, count)
 
+	// entities initially in the networktree
+	s.NotNil(nt.Get(extEntity1.GetInfo().Id))
+	s.NotNil(nt.Get(extEntity2.GetInfo().Id))
+
 	// Delete deployment2
 	err = s.flowStore.RemoveFlowsForDeployment(s.ctx, fixtureconsts.Deployment2)
 	s.Nil(err)
 
-	// flows after pruning
+	// flows after pruning in the DB
 	row = s.pgDB.DB.QueryRow(s.ctx, flowsCountStmt)
 	err = row.Scan(&count)
 	s.Nil(err)
 	s.Equal(1, count)
 
-	// entities after pruning
+	// entities after pruning in the DB
 	row = s.pgDB.DB.QueryRow(s.ctx, entitiesCountStmt)
 	err = row.Scan(&count)
 	s.Nil(err)
 	s.Equal(1, count)
+
+	// entities after pruning in the networktree
+	s.NotNil(nt.Get(extEntity1.GetInfo().Id))
+	s.Nil(nt.Get(extEntity2.GetInfo().Id))
 }
 
 func deploymentIngressFlowsPredicate(props *storage.NetworkFlowProperties) bool {
