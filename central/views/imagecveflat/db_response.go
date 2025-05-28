@@ -47,6 +47,13 @@ func (c *imageCVEFlatResponse) GetTopNVDCVSS() float32 {
 	return *c.TopNVDCVSS
 }
 
+func (c *imageCVEFlatResponse) GetEPSSProbability() float32 {
+	if c.EpssProbability == nil {
+		return 0.0
+	}
+	return *c.EpssProbability
+}
+
 func (c *imageCVEFlatResponse) GetAffectedImageCount() int {
 	return c.AffectedImageCount
 }
