@@ -34,14 +34,14 @@ var (
 
 const (
 	defaultNumberOfTriesOnEmailSend                 = 3
-	ErrUnableToRetrieveSnapshotStr                  = "unable to retrieve the snapshot from the store"
-	ErrUnableToFindSnapshotStr                      = "unable to find snapshot in the store"
-	ErrUnableToUpdateSnapshotOnGenerationFailureStr = "unable to update the snapshot on report generation failure"
-	ErrUnableToGenerateReportFmt                    = "unable to zip the compliance reports for scan config %s"
-	ErrUnableToUpdateSnapshotOnGenerationSuccessStr = "unable to update snapshot on report generation success"
-	ErrUnableToUpdateSnapshotOnBlobFailureStr       = "unable to update snapshot on download failure upsert"
-	ErrUnableToSaveTheReportBlobStr                 = "unable to save the report download"
-	ErrUnableToUpdateSnapshotOnBlobSuccessStr       = "unable to update snapshot on report download ready"
+	errUnableToRetrieveSnapshotStr                  = "unable to retrieve the snapshot from the store"
+	errUnableToFindSnapshotStr                      = "unable to find snapshot in the store"
+	errUnableToUpdateSnapshotOnGenerationFailureStr = "unable to update the snapshot on report generation failure"
+	errUnableToGenerateReportFmt                    = "unable to zip the compliance reports for scan config %s"
+	errUnableToUpdateSnapshotOnGenerationSuccessStr = "unable to update snapshot on report generation success"
+	errUnableToUpdateSnapshotOnBlobFailureStr       = "unable to update snapshot on download failure upsert"
+	errUnableToSaveTheReportBlobStr                 = "unable to save the report download"
+	errUnableToUpdateSnapshotOnBlobSuccessStr       = "unable to update snapshot on report download ready"
 )
 
 type stoppable[T any] interface {
@@ -81,10 +81,10 @@ func (rg *complianceReportGeneratorImpl) ProcessReportRequest(req *report.Reques
 		var err error
 		snapshot, found, err = rg.snapshotDS.GetSnapshot(req.Ctx, req.SnapshotID)
 		if err != nil {
-			return errors.Wrap(err, ErrUnableToRetrieveSnapshotStr)
+			return errors.Wrap(err, errUnableToRetrieveSnapshotStr)
 		}
 		if !found {
-			return errors.New(ErrUnableToFindSnapshotStr)
+			return errors.New(errUnableToFindSnapshotStr)
 		}
 	}
 
@@ -93,9 +93,9 @@ func (rg *complianceReportGeneratorImpl) ProcessReportRequest(req *report.Reques
 	zipData, err := rg.formatter.FormatCSVReport(reportData.ResultCSVs, req.FailedClusters)
 	if err != nil {
 		if dbErr := reportUtils.UpdateSnapshotOnError(req.Ctx, snapshot, report.ErrReportGeneration, rg.snapshotDS); dbErr != nil {
-			return errors.Wrap(dbErr, ErrUnableToUpdateSnapshotOnGenerationFailureStr)
+			return errors.Wrap(dbErr, errUnableToUpdateSnapshotOnGenerationFailureStr)
 		}
-		return errors.Wrapf(err, ErrUnableToGenerateReportFmt, req.ScanConfigName)
+		return errors.Wrapf(err, errUnableToGenerateReportFmt, req.ScanConfigName)
 	}
 
 	if snapshot != nil {
@@ -107,19 +107,19 @@ func (rg *complianceReportGeneratorImpl) ProcessReportRequest(req *report.Reques
 			}
 		}
 		if err := rg.snapshotDS.UpsertSnapshot(req.Ctx, snapshot); err != nil {
-			return errors.Wrap(err, ErrUnableToUpdateSnapshotOnGenerationSuccessStr)
+			return errors.Wrap(err, errUnableToUpdateSnapshotOnGenerationSuccessStr)
 		}
 
 		if req.NotificationMethod == storage.ComplianceOperatorReportStatus_DOWNLOAD {
 			if err := rg.saveReportData(req.Ctx, snapshot.GetScanConfigurationId(), snapshot.GetReportId(), zipData); err != nil {
 				if dbErr := reportUtils.UpdateSnapshotOnError(req.Ctx, snapshot, err, rg.snapshotDS); dbErr != nil {
-					return errors.Wrap(err, ErrUnableToUpdateSnapshotOnBlobFailureStr)
+					return errors.Wrap(err, errUnableToUpdateSnapshotOnBlobFailureStr)
 				}
-				return errors.Wrap(err, ErrUnableToSaveTheReportBlobStr)
+				return errors.Wrap(err, errUnableToSaveTheReportBlobStr)
 			}
 			snapshot.GetReportStatus().CompletedAt = protocompat.TimestampNow()
 			if err := rg.snapshotDS.UpsertSnapshot(req.Ctx, snapshot); err != nil {
-				return errors.Wrap(err, ErrUnableToUpdateSnapshotOnBlobSuccessStr)
+				return errors.Wrap(err, errUnableToUpdateSnapshotOnBlobSuccessStr)
 			}
 			return nil
 		}

@@ -106,7 +106,7 @@ func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
 			Return(nil, false, errors.New("some error"))
 		err := s.reportGen.ProcessReportRequest(request)
 		s.Require().Error(err)
-		s.Assert().Contains(err.Error(), ErrUnableToRetrieveSnapshotStr)
+		s.Assert().Contains(err.Error(), errUnableToRetrieveSnapshotStr)
 	})
 
 	s.Run("Snapshot not found", func() {
@@ -114,7 +114,7 @@ func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
 			Return(nil, false, nil)
 		err := s.reportGen.ProcessReportRequest(request)
 		s.Require().Error(err)
-		s.Assert().Contains(err.Error(), ErrUnableToFindSnapshotStr)
+		s.Assert().Contains(err.Error(), errUnableToFindSnapshotStr)
 	})
 
 	s.Run("FormatCSVReport error", func() {
@@ -130,7 +130,7 @@ func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
 			})).Times(1).Return(nil)
 		err := s.reportGen.ProcessReportRequest(request)
 		s.Require().Error(err)
-		s.Assert().Contains(err.Error(), fmt.Sprintf(ErrUnableToGenerateReportFmt, scanConfigName))
+		s.Assert().Contains(err.Error(), fmt.Sprintf(errUnableToGenerateReportFmt, scanConfigName))
 	})
 
 	s.Run("FormatCSVReport error and upsert snapshot error", func() {
@@ -146,7 +146,7 @@ func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
 			})).Times(1).Return(errors.New("some error"))
 		err := s.reportGen.ProcessReportRequest(request)
 		s.Require().Error(err)
-		s.Assert().Contains(err.Error(), ErrUnableToUpdateSnapshotOnGenerationFailureStr)
+		s.Assert().Contains(err.Error(), errUnableToUpdateSnapshotOnGenerationFailureStr)
 	})
 
 	s.Run("Fail to upsert Snapshot (generated)", func() {
@@ -162,7 +162,7 @@ func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
 			})).Times(1).Return(errors.New("some error"))
 		err := s.reportGen.ProcessReportRequest(request)
 		s.Require().Error(err)
-		s.Assert().Contains(err.Error(), ErrUnableToUpdateSnapshotOnGenerationSuccessStr)
+		s.Assert().Contains(err.Error(), errUnableToUpdateSnapshotOnGenerationSuccessStr)
 	})
 
 	s.Run("Fail to upsert Snapshot (partial error)", func() {
@@ -178,7 +178,7 @@ func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
 			})).Times(1).Return(errors.New("some error"))
 		err := s.reportGen.ProcessReportRequest(newFakeRequestWithFailedCluster())
 		s.Require().Error(err)
-		s.Assert().Contains(err.Error(), ErrUnableToUpdateSnapshotOnGenerationSuccessStr)
+		s.Assert().Contains(err.Error(), errUnableToUpdateSnapshotOnGenerationSuccessStr)
 	})
 
 	s.Run("Fail to upsert Snapshot (all clusters failed)", func() {
@@ -196,7 +196,7 @@ func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
 		req.FailedClusters["cluster-1"] = &storage.ComplianceOperatorReportSnapshotV2_FailedCluster{}
 		err := s.reportGen.ProcessReportRequest(req)
 		s.Require().Error(err)
-		s.Assert().Contains(err.Error(), ErrUnableToUpdateSnapshotOnGenerationSuccessStr)
+		s.Assert().Contains(err.Error(), errUnableToUpdateSnapshotOnGenerationSuccessStr)
 	})
 
 	s.Run("Fail saving report data (FormatCSVReport returns nil data)", func() {
@@ -218,7 +218,7 @@ func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
 		)
 		err := s.reportGen.ProcessReportRequest(newFakeDownloadRequest())
 		s.Require().Error(err)
-		s.Assert().Contains(err.Error(), ErrUnableToSaveTheReportBlobStr)
+		s.Assert().Contains(err.Error(), errUnableToSaveTheReportBlobStr)
 	})
 
 	s.Run("Fail saving report data (blob upsert error)", func() {
@@ -241,7 +241,7 @@ func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
 		)
 		err := s.reportGen.ProcessReportRequest(newFakeDownloadRequest())
 		s.Require().Error(err)
-		s.Assert().Contains(err.Error(), ErrUnableToSaveTheReportBlobStr)
+		s.Assert().Contains(err.Error(), errUnableToSaveTheReportBlobStr)
 	})
 
 	s.Run("Fail saving report data (blob and snapshot upsert error)", func() {
@@ -264,7 +264,7 @@ func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
 		)
 		err := s.reportGen.ProcessReportRequest(newFakeDownloadRequest())
 		s.Require().Error(err)
-		s.Assert().Contains(err.Error(), ErrUnableToUpdateSnapshotOnBlobFailureStr)
+		s.Assert().Contains(err.Error(), errUnableToUpdateSnapshotOnBlobFailureStr)
 	})
 
 	s.Run("Saving report data success (snapshot upsert error)", func() {
@@ -288,7 +288,7 @@ func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
 		)
 		err := s.reportGen.ProcessReportRequest(newFakeDownloadRequest())
 		s.Require().Error(err)
-		s.Assert().Contains(err.Error(), ErrUnableToUpdateSnapshotOnBlobSuccessStr)
+		s.Assert().Contains(err.Error(), errUnableToUpdateSnapshotOnBlobSuccessStr)
 	})
 
 	s.Run("Saving report data success", func() {
