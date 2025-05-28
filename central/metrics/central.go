@@ -1,6 +1,8 @@
 package metrics
 
 import (
+	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -489,11 +491,24 @@ func RegisterCustomAggregatedMetric(name string, description string, period time
 		Help: "The total number of " + description + " aggregated by " + strings.Join(labels, ",") +
 			" and gathered every " + period.String(),
 	}, labels)
-	customAggregatedMetrics.Store(name, metric)
 
-	if err := userRegistry.Register(metric); err != nil {
+	// Unregister disabled metric.
+	if period == 0 {
+		if old, loaded := customAggregatedMetrics.LoadAndDelete(name); loaded {
+			userRegistry.Unregister(old.(prometheus.Collector))
+		}
+		return nil
+	}
+
+	// Register new metric, alert on a labels update attempt.
+	if actual, loaded := customAggregatedMetrics.LoadOrStore(name, metric); loaded {
+		if slices.Compare(actual.([]string), labels) != 0 {
+			return fmt.Errorf("cannot update %q metric labels", name)
+		}
+	} else if err := userRegistry.Register(metric); err != nil {
 		return err
 	}
+
 	return nil
 }
 
