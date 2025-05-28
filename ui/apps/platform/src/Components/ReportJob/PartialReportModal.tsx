@@ -90,6 +90,7 @@ function PartialReportModal({ failedClusters = [], onDownload }: PartialReportMo
                                     onSetPage={(_, newPage) => setPage(newPage)}
                                     onPerPageSelect={(_, newPerPage) => {
                                         setPerPage(newPerPage);
+                                        setPage(1);
                                     }}
                                 />
                             </ToolbarItem>
