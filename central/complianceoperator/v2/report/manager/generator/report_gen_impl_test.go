@@ -3,6 +3,7 @@ package generator
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -81,11 +82,13 @@ func TestComplianceReporting(t *testing.T) {
 }
 
 func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
+	scanConfigName := "scan-test"
 	request := &report.Request{
-		ScanConfigID: "scan-config-1",
-		SnapshotID:   "snapshot-1",
-		ClusterIDs:   []string{"cluster-1"},
-		Profiles:     []string{"profile-1"},
+		ScanConfigID:   "scan-config-1",
+		ScanConfigName: scanConfigName,
+		SnapshotID:     "snapshot-1",
+		ClusterIDs:     []string{"cluster-1"},
+		Profiles:       []string{"profile-1"},
 		Notifiers: []*storage.NotifierConfiguration{
 			{
 				NotifierConfig: &storage.NotifierConfiguration_EmailConfig{
@@ -101,13 +104,17 @@ func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
 	s.Run("GetSnapshots data store error", func() {
 		s.snapshotDS.EXPECT().GetSnapshot(gomock.Any(), gomock.Any()).Times(1).
 			Return(nil, false, errors.New("some error"))
-		s.Require().Error(s.reportGen.ProcessReportRequest(request))
+		err := s.reportGen.ProcessReportRequest(request)
+		s.Require().Error(err)
+		s.Assert().Contains(err.Error(), ErrUnableToRetrieveSnapshotStr)
 	})
 
 	s.Run("Snapshot not found", func() {
 		s.snapshotDS.EXPECT().GetSnapshot(gomock.Any(), gomock.Any()).Times(1).
 			Return(nil, false, nil)
-		s.Require().Error(s.reportGen.ProcessReportRequest(request))
+		err := s.reportGen.ProcessReportRequest(request)
+		s.Require().Error(err)
+		s.Assert().Contains(err.Error(), ErrUnableToFindSnapshotStr)
 	})
 
 	s.Run("FormatCSVReport error", func() {
@@ -121,7 +128,9 @@ func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
 			gomock.Cond[*storage.ComplianceOperatorReportSnapshotV2](func(target *storage.ComplianceOperatorReportSnapshotV2) bool {
 				return storage.ComplianceOperatorReportStatus_FAILURE == target.GetReportStatus().GetRunState()
 			})).Times(1).Return(nil)
-		s.Require().Error(s.reportGen.ProcessReportRequest(request))
+		err := s.reportGen.ProcessReportRequest(request)
+		s.Require().Error(err)
+		s.Assert().Contains(err.Error(), fmt.Sprintf(ErrUnableToGenerateReportFmt, scanConfigName))
 	})
 
 	s.Run("FormatCSVReport error and upsert snapshot error", func() {
@@ -135,7 +144,9 @@ func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
 			gomock.Cond[*storage.ComplianceOperatorReportSnapshotV2](func(target *storage.ComplianceOperatorReportSnapshotV2) bool {
 				return storage.ComplianceOperatorReportStatus_FAILURE == target.GetReportStatus().GetRunState()
 			})).Times(1).Return(errors.New("some error"))
-		s.Require().Error(s.reportGen.ProcessReportRequest(request))
+		err := s.reportGen.ProcessReportRequest(request)
+		s.Require().Error(err)
+		s.Assert().Contains(err.Error(), ErrUnableToUpdateSnapshotOnGenerationFailureStr)
 	})
 
 	s.Run("Fail to upsert Snapshot (generated)", func() {
@@ -149,7 +160,9 @@ func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
 			gomock.Cond[*storage.ComplianceOperatorReportSnapshotV2](func(target *storage.ComplianceOperatorReportSnapshotV2) bool {
 				return storage.ComplianceOperatorReportStatus_GENERATED == target.GetReportStatus().GetRunState()
 			})).Times(1).Return(errors.New("some error"))
-		s.Require().Error(s.reportGen.ProcessReportRequest(request))
+		err := s.reportGen.ProcessReportRequest(request)
+		s.Require().Error(err)
+		s.Assert().Contains(err.Error(), ErrUnableToUpdateSnapshotOnGenerationSuccessStr)
 	})
 
 	s.Run("Fail to upsert Snapshot (partial error)", func() {
@@ -163,7 +176,9 @@ func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
 			gomock.Cond[*storage.ComplianceOperatorReportSnapshotV2](func(target *storage.ComplianceOperatorReportSnapshotV2) bool {
 				return storage.ComplianceOperatorReportStatus_PARTIAL_ERROR == target.GetReportStatus().GetRunState()
 			})).Times(1).Return(errors.New("some error"))
-		s.Require().Error(s.reportGen.ProcessReportRequest(newFakeRequestWithFailedCluster()))
+		err := s.reportGen.ProcessReportRequest(newFakeRequestWithFailedCluster())
+		s.Require().Error(err)
+		s.Assert().Contains(err.Error(), ErrUnableToUpdateSnapshotOnGenerationSuccessStr)
 	})
 
 	s.Run("Fail to upsert Snapshot (all clusters failed)", func() {
@@ -179,7 +194,9 @@ func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
 			})).Times(1).Return(errors.New("some error"))
 		req := newFakeRequestWithFailedCluster()
 		req.FailedClusters["cluster-1"] = &storage.ComplianceOperatorReportSnapshotV2_FailedCluster{}
-		s.Require().Error(s.reportGen.ProcessReportRequest(req))
+		err := s.reportGen.ProcessReportRequest(req)
+		s.Require().Error(err)
+		s.Assert().Contains(err.Error(), ErrUnableToUpdateSnapshotOnGenerationSuccessStr)
 	})
 
 	s.Run("Fail saving report data (FormatCSVReport returns nil data)", func() {
@@ -199,7 +216,9 @@ func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
 					return storage.ComplianceOperatorReportStatus_FAILURE == target.GetReportStatus().GetRunState()
 				})).Times(1).Return(nil),
 		)
-		s.Require().Error(s.reportGen.ProcessReportRequest(newFakeDownloadRequest()))
+		err := s.reportGen.ProcessReportRequest(newFakeDownloadRequest())
+		s.Require().Error(err)
+		s.Assert().Contains(err.Error(), ErrUnableToSaveTheReportBlobStr)
 	})
 
 	s.Run("Fail saving report data (blob upsert error)", func() {
@@ -220,7 +239,9 @@ func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
 					return storage.ComplianceOperatorReportStatus_FAILURE == target.GetReportStatus().GetRunState()
 				})).Times(1).Return(nil),
 		)
-		s.Require().Error(s.reportGen.ProcessReportRequest(newFakeDownloadRequest()))
+		err := s.reportGen.ProcessReportRequest(newFakeDownloadRequest())
+		s.Require().Error(err)
+		s.Assert().Contains(err.Error(), ErrUnableToSaveTheReportBlobStr)
 	})
 
 	s.Run("Fail saving report data (blob and snapshot upsert error)", func() {
@@ -241,7 +262,9 @@ func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
 					return storage.ComplianceOperatorReportStatus_FAILURE == target.GetReportStatus().GetRunState()
 				})).Times(1).Return(errors.New("some error")),
 		)
-		s.Require().Error(s.reportGen.ProcessReportRequest(newFakeDownloadRequest()))
+		err := s.reportGen.ProcessReportRequest(newFakeDownloadRequest())
+		s.Require().Error(err)
+		s.Assert().Contains(err.Error(), ErrUnableToUpdateSnapshotOnBlobFailureStr)
 	})
 
 	s.Run("Saving report data success (snapshot upsert error)", func() {
@@ -263,7 +286,9 @@ func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
 						target.GetReportStatus().GetCompletedAt() != nil
 				})).Times(1).Return(errors.New("some error")),
 		)
-		s.Require().Error(s.reportGen.ProcessReportRequest(newFakeDownloadRequest()))
+		err := s.reportGen.ProcessReportRequest(newFakeDownloadRequest())
+		s.Require().Error(err)
+		s.Assert().Contains(err.Error(), ErrUnableToUpdateSnapshotOnBlobSuccessStr)
 	})
 
 	s.Run("Saving report data success", func() {

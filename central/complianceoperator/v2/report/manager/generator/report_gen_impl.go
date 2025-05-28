@@ -33,7 +33,15 @@ var (
 )
 
 const (
-	defaultNumberOfTriesOnEmailSend = 3
+	defaultNumberOfTriesOnEmailSend                 = 3
+	ErrUnableToRetrieveSnapshotStr                  = "unable to retrieve the snapshot from the store"
+	ErrUnableToFindSnapshotStr                      = "unable to find snapshot in the store"
+	ErrUnableToUpdateSnapshotOnGenerationFailureStr = "unable to update the snapshot on report generation failure"
+	ErrUnableToGenerateReportFmt                    = "unable to zip the compliance reports for scan config %s"
+	ErrUnableToUpdateSnapshotOnGenerationSuccessStr = "unable to update snapshot on report generation success"
+	ErrUnableToUpdateSnapshotOnBlobFailureStr       = "unable to update snapshot on download failure upsert"
+	ErrUnableToSaveTheReportBlobStr                 = "unable to save the report download"
+	ErrUnableToUpdateSnapshotOnBlobSuccessStr       = "unable to update snapshot on report download ready"
 )
 
 type stoppable[T any] interface {
@@ -73,10 +81,10 @@ func (rg *complianceReportGeneratorImpl) ProcessReportRequest(req *report.Reques
 		var err error
 		snapshot, found, err = rg.snapshotDS.GetSnapshot(req.Ctx, req.SnapshotID)
 		if err != nil {
-			return errors.Wrap(err, "unable to retrieve the snapshot from the store")
+			return errors.Wrap(err, ErrUnableToRetrieveSnapshotStr)
 		}
 		if !found {
-			return errors.New("unable to find snapshot in the store")
+			return errors.New(ErrUnableToFindSnapshotStr)
 		}
 	}
 
@@ -85,9 +93,9 @@ func (rg *complianceReportGeneratorImpl) ProcessReportRequest(req *report.Reques
 	zipData, err := rg.formatter.FormatCSVReport(reportData.ResultCSVs, req.FailedClusters)
 	if err != nil {
 		if dbErr := reportUtils.UpdateSnapshotOnError(req.Ctx, snapshot, report.ErrReportGeneration, rg.snapshotDS); dbErr != nil {
-			return errors.Wrap(dbErr, "unable to update the snapshot on report generation failure")
+			return errors.Wrap(dbErr, ErrUnableToUpdateSnapshotOnGenerationFailureStr)
 		}
-		return errors.Wrapf(err, "unable to zip the compliance reports for scan config %s", req.ScanConfigName)
+		return errors.Wrapf(err, ErrUnableToGenerateReportFmt, req.ScanConfigName)
 	}
 
 	if snapshot != nil {
@@ -99,19 +107,19 @@ func (rg *complianceReportGeneratorImpl) ProcessReportRequest(req *report.Reques
 			}
 		}
 		if err := rg.snapshotDS.UpsertSnapshot(req.Ctx, snapshot); err != nil {
-			return errors.Wrap(err, "unable to update snapshot on report generation success")
+			return errors.Wrap(err, ErrUnableToUpdateSnapshotOnGenerationSuccessStr)
 		}
 
 		if req.NotificationMethod == storage.ComplianceOperatorReportStatus_DOWNLOAD {
 			if err := rg.saveReportData(req.Ctx, snapshot.GetScanConfigurationId(), snapshot.GetReportId(), zipData); err != nil {
 				if dbErr := reportUtils.UpdateSnapshotOnError(req.Ctx, snapshot, err, rg.snapshotDS); dbErr != nil {
-					return errors.Wrap(err, "unable to update snapshot on download failure upsert")
+					return errors.Wrap(err, ErrUnableToUpdateSnapshotOnBlobFailureStr)
 				}
-				return errors.Wrap(err, "unable to save the report download")
+				return errors.Wrap(err, ErrUnableToSaveTheReportBlobStr)
 			}
 			snapshot.GetReportStatus().CompletedAt = protocompat.TimestampNow()
 			if err := rg.snapshotDS.UpsertSnapshot(req.Ctx, snapshot); err != nil {
-				return errors.Wrap(err, "unable to update snapshot on report download ready")
+				return errors.Wrap(err, ErrUnableToUpdateSnapshotOnBlobSuccessStr)
 			}
 			return nil
 		}
