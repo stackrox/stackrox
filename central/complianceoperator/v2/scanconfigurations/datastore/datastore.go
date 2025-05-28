@@ -53,7 +53,8 @@ type DataStore interface {
 	// GetProfilesNames gets the list of distinct profile names for the query
 	GetProfilesNames(ctx context.Context, q *v1.Query) ([]string, error)
 
-	// DistinctProfiles returns count of distinct profiles matching query
+	// DistinctProfiles returns a map where the keys are profile names and the values are their counts,
+	// for profiles matching the query.
 	DistinctProfiles(ctx context.Context, q *v1.Query) (map[string]int, error)
 }
 
