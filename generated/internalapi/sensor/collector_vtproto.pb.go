@@ -46,6 +46,7 @@ func (m *CollectorConfig_ExternalIPs) CloneVT() *CollectorConfig_ExternalIPs {
 	}
 	r := new(CollectorConfig_ExternalIPs)
 	r.Enabled = m.Enabled
+	r.Direction = m.Direction
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -172,6 +173,9 @@ func (this *CollectorConfig_ExternalIPs) EqualVT(that *CollectorConfig_ExternalI
 		return false
 	}
 	if this.Enabled != that.Enabled {
+		return false
+	}
+	if this.Direction != that.Direction {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -386,6 +390,11 @@ func (m *CollectorConfig_ExternalIPs) MarshalToSizedBufferVT(dAtA []byte) (int, 
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.Direction != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.Direction))
+		i--
+		dAtA[i] = 0x10
 	}
 	if m.Enabled != 0 {
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.Enabled))
@@ -673,6 +682,9 @@ func (m *CollectorConfig_ExternalIPs) SizeVT() (n int) {
 	if m.Enabled != 0 {
 		n += 1 + protohelpers.SizeOfVarint(uint64(m.Enabled))
 	}
+	if m.Direction != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.Direction))
+	}
 	n += len(m.unknownFields)
 	return n
 }
@@ -936,6 +948,25 @@ func (m *CollectorConfig_ExternalIPs) UnmarshalVT(dAtA []byte) error {
 				b := dAtA[iNdEx]
 				iNdEx++
 				m.Enabled |= ExternalIpsEnabled(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Direction", wireType)
+			}
+			m.Direction = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Direction |= ExternalIpsDirection(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -1782,6 +1813,25 @@ func (m *CollectorConfig_ExternalIPs) UnmarshalVTUnsafe(dAtA []byte) error {
 				b := dAtA[iNdEx]
 				iNdEx++
 				m.Enabled |= ExternalIpsEnabled(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Direction", wireType)
+			}
+			m.Direction = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Direction |= ExternalIpsDirection(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}

@@ -119,7 +119,7 @@ spec:
   - name: operator-image-build-repo
     description: Repository where the (unreleased) operator image is pushed by its build pipeline.
     type: string
-    default: "quay.io/rhacs-eng/stackrox-operator"
+    default: "quay.io/rhacs-eng/release-operator"
   - name: operator-image-catalog-repo
     description: Repository within the Red Hat Container Catalog where the operator image is pushed to during the release.
     type: string
@@ -128,7 +128,7 @@ spec:
   - name: main-image-build-repo
     description: Repository where the (unreleased) main image is pushed by its build pipeline.
     type: string
-    default: "quay.io/rhacs-eng/main"
+    default: "quay.io/rhacs-eng/release-main"
   - name: main-image-catalog-repo
     description: Repository within the Red Hat Container Catalog where the main image is pushed to during the release.
     type: string
@@ -137,7 +137,7 @@ spec:
   - name: scanner-image-build-repo
     description: Repository where the (unreleased) Scanner V2 image is pushed by its build pipeline.
     type: string
-    default: "quay.io/rhacs-eng/scanner"
+    default: "quay.io/rhacs-eng/release-scanner"
   - name: scanner-image-catalog-repo
     description: Repository within the Red Hat Container Catalog where the Scanner V2 image is pushed to during the release.
     type: string
@@ -146,7 +146,7 @@ spec:
   - name: scanner-db-image-build-repo
     description: Repository where the (unreleased) Scanner V2 DB image is pushed by its build pipeline.
     type: string
-    default: "quay.io/rhacs-eng/scanner-db"
+    default: "quay.io/rhacs-eng/release-scanner-db"
   - name: scanner-db-image-catalog-repo
     description: Repository within the Red Hat Container Catalog where the Scanner V2 DB image is pushed to during the release.
     type: string
@@ -155,7 +155,7 @@ spec:
   - name: scanner-slim-image-build-repo
     description: Repository where the (unreleased) Scanner V2 slim image is pushed by its build pipeline.
     type: string
-    default: "quay.io/rhacs-eng/scanner-slim"
+    default: "quay.io/rhacs-eng/release-scanner-slim"
   - name: scanner-slim-image-catalog-repo
     description: Repository within the Red Hat Container Catalog where the Scanner V2 slim image is pushed to during the release.
     type: string
@@ -164,7 +164,7 @@ spec:
   - name: scanner-db-slim-image-build-repo
     description: Repository where the (unreleased) Scanner V2 DB slim image is pushed by its build pipeline.
     type: string
-    default: "quay.io/rhacs-eng/scanner-db-slim"
+    default: "quay.io/rhacs-eng/release-scanner-db-slim"
   - name: scanner-db-slim-image-catalog-repo
     description: Repository within the Red Hat Container Catalog where the Scanner V2 DB slim image is pushed to during the release.
     type: string
@@ -173,7 +173,7 @@ spec:
   - name: scanner-v4-image-build-repo
     description: Repository where the (unreleased) Scanner V4 image is pushed by its build pipeline.
     type: string
-    default: "quay.io/rhacs-eng/scanner-v4"
+    default: "quay.io/rhacs-eng/release-scanner-v4"
   - name: scanner-v4-image-catalog-repo
     description: Repository within the Red Hat Container Catalog where the Scanner V4 image is pushed to during the release.
     type: string
@@ -182,7 +182,7 @@ spec:
   - name: scanner-v4-db-image-build-repo
     description: Repository where the (unreleased) Scanner V4 DB image is pushed by its build pipeline.
     type: string
-    default: "quay.io/rhacs-eng/scanner-v4-db"
+    default: "quay.io/rhacs-eng/release-scanner-v4-db"
   - name: scanner-v4-db-image-catalog-repo
     description: Repository within the Red Hat Container Catalog where the Scanner V4 DB image is pushed to during the release.
     type: string
@@ -191,7 +191,7 @@ spec:
   - name: collector-image-build-repo
     description: Repository where the (unreleased) collector full image is pushed by its build pipeline.
     type: string
-    default: "quay.io/rhacs-eng/collector"
+    default: "quay.io/rhacs-eng/release-collector"
   - name: collector-image-catalog-repo
     description: Repository within the Red Hat Container Catalog where the collector full image is pushed to during the release.
     type: string
@@ -200,7 +200,7 @@ spec:
   - name: roxctl-image-build-repo
     description: Repository where the (unreleased) roxctl image is pushed by its build pipeline.
     type: string
-    default: "quay.io/rhacs-eng/roxctl"
+    default: "quay.io/rhacs-eng/release-roxctl"
   - name: roxctl-image-catalog-repo
     description: Repository within the Red Hat Container Catalog where the roxctl image is pushed to during the release.
     type: string
@@ -209,7 +209,7 @@ spec:
   - name: central-db-image-build-repo
     description: Repository where the (unreleased) Central DB image is pushed by its build pipeline.
     type: string
-    default: "quay.io/rhacs-eng/central-db"
+    default: "quay.io/rhacs-eng/release-central-db"
   - name: central-db-image-catalog-repo
     description: Repository within the Red Hat Container Catalog where the Central DB image is pushed to during the release.
     type: string
