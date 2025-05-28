@@ -8,6 +8,7 @@ import (
 	"time"
 
 	entityStore "github.com/stackrox/rox/central/networkgraph/entity/datastore"
+	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
 	postgresFlowStore "github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/central/networkgraph/testhelper"
 	"github.com/stackrox/rox/generated/storage"
@@ -50,6 +51,10 @@ func (s *NetworkflowStoreSuite) SetupSuite() {
 
 	source := pgtest.GetConnectionString(s.T())
 	s.gormDB = pgtest.OpenGormDB(s.T(), source)
+
+	entitiesByCluster := map[string][]*storage.NetworkEntityInfo{}
+	err := networktree.Singleton().Initialize(entitiesByCluster)
+	s.NoError(err)
 }
 
 func (s *NetworkflowStoreSuite) SetupTest() {
