@@ -42,7 +42,6 @@ func TestTranslate(t *testing.T) {
 	connectivityPolicy := platform.ConnectivityOffline
 	scannerComponentPolicy := platform.ScannerComponentEnabled
 	scannerAutoScalingPolicy := platform.ScannerAutoScalingEnabled
-	scannerV4ComponentDefault := platform.ScannerV4ComponentDefault
 	scannerV4ComponentEnabled := platform.ScannerV4ComponentEnabled
 	scannerV4ComponentDisabled := platform.ScannerV4ComponentDisabled
 	monitoringExposeEndpointEnabled := platform.ExposeEndpointEnabled
@@ -421,7 +420,7 @@ func TestTranslate(t *testing.T) {
 							},
 						},
 						ScannerV4: &platform.ScannerV4Spec{
-							ScannerComponent: &scannerV4ComponentDefault,
+							ScannerComponent: &scannerV4ComponentEnabled,
 							Indexer: &platform.ScannerV4Component{
 								Scaling: &platform.ScannerComponentScaling{
 									AutoScaling: &scannerAutoScalingPolicy,
@@ -715,7 +714,7 @@ func TestTranslate(t *testing.T) {
 					"exposeMonitoring": true,
 				},
 				"scannerV4": map[string]interface{}{
-					"disable": true,
+					"disable": false,
 					"indexer": map[string]interface{}{
 						"autoscaling": map[string]interface{}{
 							"disable":     false,
