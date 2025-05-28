@@ -545,7 +545,7 @@ class ComplianceTest extends BaseSpecification {
         List<objects.Node> orchNodes = orchestrator.getNodeDetails()
         boolean hasMaster = orchNodes.any { objects.Node node ->
             Set<String> keys = node.getLabels().keySet()
-            keys.contains("node-role.kubernetes.io/master") || keys.contains("node-role.kubernetes.io/control-plane")
+            keys.contains("node-role.kubernetes.io/control-plane")
         }
 
         def overallState = controlResult.getOverallState()

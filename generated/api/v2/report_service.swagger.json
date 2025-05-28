@@ -1104,6 +1104,9 @@
         },
         "includeEpssProbability": {
           "type": "boolean"
+        },
+        "includeAdvisory": {
+          "type": "boolean"
         }
       }
     }

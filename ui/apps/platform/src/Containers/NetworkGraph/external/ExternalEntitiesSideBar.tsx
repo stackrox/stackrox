@@ -80,6 +80,7 @@ function ExternalEntitiesSideBar({
                 scopeHierarchy={scopeHierarchy}
                 onNodeSelect={onNodeSelect}
                 onExternalIPSelect={onExternalIPSelect}
+                timeWindow={timeWindow}
                 urlPagination={urlPagination}
                 urlSearchFiltering={urlSearchFiltering}
             />

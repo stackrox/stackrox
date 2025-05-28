@@ -98,6 +98,7 @@ func (h *commandHandler) Stop(err error) {
 }
 
 func (h *commandHandler) Notify(e common.SensorComponentEvent) {
+	log.Info(common.LogSensorComponentEvent(e))
 	switch e {
 	case common.SensorComponentEventCentralReachable:
 		h.centralReachable.Store(true)

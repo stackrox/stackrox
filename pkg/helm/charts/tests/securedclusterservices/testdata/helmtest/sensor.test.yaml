@@ -6,7 +6,7 @@ tests:
     tests:
       - name: "default affinity"
         expect: |
-          .deployments["sensor"].spec.template.spec.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 5)
+          .deployments["sensor"].spec.template.spec.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 4)
       - name: "override node affinity"
         values:
           sensor:
@@ -16,7 +16,7 @@ tests:
                   - weight: 50
                     preference:
                       matchExpressions:
-                        - key: node-role.kubernetes.io/master
+                        - key: node-role.kubernetes.io/control-plane
                           operator: Exists
         expect: |
           .deployments["sensor"].spec.template.spec.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 1)

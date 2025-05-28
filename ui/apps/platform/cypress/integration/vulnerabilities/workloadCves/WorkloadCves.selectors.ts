@@ -61,6 +61,7 @@ export const selectors = {
     nthTableRow: (n) =>
         `.workload-cves-table-container > table > tbody:nth-of-type(${n}) > tr:nth-of-type(1)`,
     firstTableRow: 'table tbody:nth-of-type(1) tr:nth-of-type(1)',
+    allTableRows: 'table tbody tr',
     tableRowSelectCheckbox: 'td input[type="checkbox"][aria-label^="Select row"]',
     tableRowSelectAllCheckbox: 'thead input[type="checkbox"][aria-label^="Select all rows"]',
     tableRowMenuToggle: 'td button[aria-label="Kebab toggle"]',

@@ -273,6 +273,7 @@ func (d *detectorImpl) Notify(e common.SensorComponentEvent) {
 	if !features.SensorCapturesIntermediateEvents.Enabled() {
 		return
 	}
+	log.Info(common.LogSensorComponentEvent(e))
 	switch e {
 	case common.SensorComponentEventCentralReachable:
 		d.indicatorsQueue.Resume()
