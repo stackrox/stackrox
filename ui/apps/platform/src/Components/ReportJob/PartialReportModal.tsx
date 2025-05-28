@@ -30,7 +30,10 @@ function PartialReportModal({ failedClusters = [], onDownload }: PartialReportMo
 
     const startIndex = (page - 1) * perPage;
     const endIndex = startIndex + perPage;
-    const sortedFailedClusters = sortBy(failedClusters, 'clusterName').slice(startIndex, endIndex);
+    const filteredFailedClusters = sortBy(failedClusters, 'clusterName').slice(
+        startIndex,
+        endIndex
+    );
 
     const buttonText = onDownload
         ? 'Partial report ready for download'
@@ -101,7 +104,7 @@ function PartialReportModal({ failedClusters = [], onDownload }: PartialReportMo
                             </Tr>
                         </Thead>
                         <Tbody>
-                            {sortedFailedClusters.map((cluster) => (
+                            {filteredFailedClusters.map((cluster) => (
                                 <Tr key={cluster.clusterId}>
                                     <Td dataLabel="Cluster">{cluster.clusterName}</Td>
                                     <Td dataLabel="Reason">{cluster.reason}</Td>
