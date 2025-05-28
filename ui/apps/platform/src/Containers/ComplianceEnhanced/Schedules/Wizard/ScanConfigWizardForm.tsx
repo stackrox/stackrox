@@ -166,6 +166,10 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
         return canJumpToConfigureReport() && Object.keys(formik.errors?.report || {}).length === 0;
     }
 
+    function allClustersAreUnhealthy(clusters): boolean {
+        return clusters?.every(cluster => cluster.statusErrors.length < 1);
+    }
+
     const wizardSteps: WizardStep[] = [
         {
             name: PARAMETERS,
@@ -183,6 +187,7 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
                 />
             ),
             canJumpTo: canJumpToSelectClusters(),
+            isDisabled: isCreating && allClustersAreUnhealthy(clusters),
         },
         {
             name: SELECT_PROFILES,
