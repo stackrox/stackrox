@@ -49,7 +49,7 @@ func reconcileFeatureDefaults(ctx context.Context, client ctrlClient.Client, u *
 		return errors.Wrap(err, "converting unstructured object to SecuredCluster")
 	}
 
-	err := executeDefaultingFlows(ctx, logger, &securedCluster, client)
+	err := setDefaultsAndPersist(ctx, logger, &securedCluster, client)
 	if err != nil {
 		return err
 	}
@@ -66,12 +66,12 @@ func reconcileFeatureDefaults(ctx context.Context, client ctrlClient.Client, u *
 	return nil
 }
 
-func executeDefaultingFlows(ctx context.Context, logger logr.Logger, securedCluster *platform.SecuredCluster, client ctrlClient.Client) error {
+func setDefaultsAndPersist(ctx context.Context, logger logr.Logger, securedCluster *platform.SecuredCluster, client ctrlClient.Client) error {
 	origSecuredCluster := securedCluster.DeepCopy()
 
 	// This may update securedCluster.Defaults and securedCluster's embedded annotations.
 	for _, flow := range defaultingFlows {
-		if err := setDefaultsAndPersist(logger, securedCluster, client, flow); err != nil {
+		if err := executeSingleDefaultingFlow(logger, securedCluster, flow); err != nil {
 			return err
 		}
 	}
@@ -87,7 +87,7 @@ func executeDefaultingFlows(ctx context.Context, logger logr.Logger, securedClus
 	return nil
 }
 
-func setDefaultsAndPersist(logger logr.Logger, securedCluster *platform.SecuredCluster, client ctrlClient.Client, flow defaulting.SecuredClusterDefaultingFlow) error {
+func executeSingleDefaultingFlow(logger logr.Logger, securedCluster *platform.SecuredCluster, flow defaulting.SecuredClusterDefaultingFlow) error {
 	logger = logger.WithName(fmt.Sprintf("defaulting-flow-%s", flow.Name))
 	annotations := securedCluster.GetAnnotations()
 	if annotations == nil {
