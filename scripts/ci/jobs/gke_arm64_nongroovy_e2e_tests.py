@@ -1,7 +1,7 @@
 #!/usr/bin/env -S python3 -u
 
 """
-Run tests/e2e in a GKE cluster
+Run nongroovy tests in a GKE arm64 cluster
 """
 import os
 from runners import ClusterTestRunner
@@ -22,8 +22,13 @@ os.environ["SENSOR_SCANNER_SUPPORT"] = "true"
 os.environ["ROX_DEPLOY_SENSOR_WITH_CRS"] = "true"
 os.environ["SENSOR_HELM_MANAGED"] = "true"
 
+# arm64 settings
+os.environ["REMOTE_CLUSTER_ARCH"] = "arm64"
+os.environ["ARM64_NODESELECTORS"] = "true"
+os.environ["IMAGE_PREFETCH_DISABLED"] = "true"
+
 ClusterTestRunner(
-    cluster=GKECluster("nongroovy-test"),
+    cluster=GKECluster("nongroovy-test", machine_type="t2a-standard-8"),
     pre_test=PreSystemTests(),
     test=NonGroovyE2e(),
     post_test=PostClusterTest(
