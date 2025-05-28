@@ -25,10 +25,21 @@ func wrapExtension(runFn func(ctx context.Context, central *platform.Central, cl
 			return errUnexpectedGVK
 		}
 
+		// Convert unstructured object into Central.
 		c := platform.Central{}
 		err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &c)
 		if err != nil {
 			return errors.Wrap(err, "converting object to Central")
+		}
+		// For translation purposes, enrich Central with defaults, which are not implicitly marshalled/unmarshaled.
+		// and merge into spec to make them visible to the extensions (e.g. for creating scanner-v4-db-password).
+		if err := platform.AddUnstructuredDefaultsToCentral(&c, u); err != nil {
+			return err
+		}
+
+		// Merge the defaults into spec for convenience of extensions (e.g. for creating scanner-v4-db-password).
+		if err := platform.MergeCentralDefaultsIntoSpec(&c); err != nil {
+			return err
 		}
 
 		wrappedStatusUpdater := func(typedUpdateStatus updateStatusFunc) {
@@ -48,13 +59,6 @@ func wrapExtension(runFn func(ctx context.Context, central *platform.Central, cl
 			return err
 		}
 
-		// Keep potentially mutated central spec.
-		// The ReconcileScannerV4StatusDefaultsExtension mutates the central spec to populate defaults for the translator.
-		obj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&c)
-		if err != nil {
-			return errors.Wrap(err, "converting Central to unstructured object after extension execution")
-		}
-		u.Object = obj
 		return nil
 	}
 }

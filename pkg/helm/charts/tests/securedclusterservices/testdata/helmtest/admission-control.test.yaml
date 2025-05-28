@@ -92,7 +92,7 @@ tests:
   tests:
     - name: "default affinity"
       expect: |
-        .deployments["admission-control"].spec.template.spec.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 2)
+        .deployments["admission-control"].spec.template.spec.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 1)
         .deployments["admission-control"].spec.template.spec.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 1)
     - name: "override node affinity"
       values:
@@ -103,7 +103,7 @@ tests:
                 - weight: 50
                   preference:
                     matchExpressions:
-                      - key: node-role.kubernetes.io/master
+                      - key: node-role.kubernetes.io/control-plane
                         operator: Exists
       expect: |
         .deployments["admission-control"].spec.template.spec.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 1)
@@ -129,7 +129,7 @@ tests:
                     matchLabels:
                       app: admission-control-other
       expect: |
-        .deployments["admission-control"].spec.template.spec.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 2)
+        .deployments["admission-control"].spec.template.spec.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 1)
         .deployments["admission-control"].spec.template.spec.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 2)
 
 - name: "Admission Controller namespace selector"

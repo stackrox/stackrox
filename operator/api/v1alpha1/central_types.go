@@ -717,6 +717,9 @@ type Central struct {
 
 	Spec   CentralSpec   `json:"spec,omitempty"`
 	Status CentralStatus `json:"status,omitempty"`
+
+	// This field will never be serialized, it is used for attaching defaulting decisions to a Central struct during reconciliation.
+	Defaults CentralSpec `json:"-"`
 }
 
 //+kubebuilder:object:root=true

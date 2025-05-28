@@ -44,7 +44,7 @@ export const validationSchema = yup.object().shape({
             .required('A category is required'),
         google: yup.object().shape({
             endpoint: yup.string().trim().required('An endpoint is required'),
-            project: yup.string().trim().required('A project is required'),
+            project: yup.string().trim(),
             wifEnabled: yup.boolean(),
             serviceAccount: yup
                 .string()
@@ -184,8 +184,8 @@ function ArtifactRegistryIntegrationForm({
                     </FormLabelGroup>
                     <FormLabelGroup
                         label="Project"
-                        isRequired
                         fieldId="config.google.project"
+                        helperText="Match images by the project of the registry. Leave empty to match all projects."
                         touched={touched}
                         errors={errors}
                     >

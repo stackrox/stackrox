@@ -22,18 +22,18 @@ import (
 // RegisterNewReconciler registers a new helm reconciler in the given k8s controller manager
 func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 	proxyEnv := proxy.GetProxyEnvVars() // fix at startup time
-	// IMPORTANT: reconciler preExtensions that implement feature-defaulting logic (such as ReconcileScannerV4FeatureDefaultsExtension)
-	// must be executed first. Hence, they need to be first in order when registering extensions using WithPreExtension!
-	opts := []pkgReconciler.Option{
-		pkgReconciler.WithExtraWatch(
-			source.Kind[*platform.SecuredCluster](
-				mgr.GetCache(),
-				&platform.SecuredCluster{},
-				reconciler.HandleSiblings[*platform.SecuredCluster](platform.CentralGVK, mgr),
-				// Only appearance and disappearance of a SecuredCluster resource can influence whether
-				// an init bundle should be created by the Central controller.
-				utils.CreateAndDeleteOnlyPredicate[*platform.SecuredCluster]{})),
-		pkgReconciler.WithPreExtension(extensions.ReconcileScannerV4FeatureDefaultsExtension(mgr.GetClient())),
+	extraEventWatcher := pkgReconciler.WithExtraWatch(
+		source.Kind[*platform.SecuredCluster](
+			mgr.GetCache(),
+			&platform.SecuredCluster{},
+			reconciler.HandleSiblings[*platform.SecuredCluster](platform.CentralGVK, mgr),
+			// Only appearance and disappearance of a SecuredCluster resource can influence whether
+			// an init bundle should be created by the Central controller.
+			utils.CreateAndDeleteOnlyPredicate[*platform.SecuredCluster]{}))
+	// IMPORTANT: The FeatureDefaultingExtension preExtension implements feature-defaulting logic
+	// and therefore must be executed and registered first.
+	// New extensions shall be added to otherPreExtensions to guarantee this ordering.
+	otherPreExtensions := []pkgReconciler.Option{
 		pkgReconciler.WithPreExtension(extensions.ReconcileCentralTLSExtensions(mgr.GetClient(), mgr.GetAPIReader())),
 		pkgReconciler.WithPreExtension(extensions.ReconcileCentralDBPasswordExtension(mgr.GetClient(), mgr.GetAPIReader())),
 		pkgReconciler.WithPreExtension(extensions.ReconcileScannerDBPasswordExtension(mgr.GetClient(), mgr.GetAPIReader())),
@@ -45,15 +45,18 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 		pkgReconciler.WithPreExtension(proxy.ReconcileProxySecretExtension(mgr.GetClient(), mgr.GetAPIReader(), proxyEnv)),
 		pkgReconciler.WithPreExtension(commonExtensions.CheckForbiddenNamespacesExtension(commonExtensions.IsSystemNamespace)),
 		pkgReconciler.WithPreExtension(commonExtensions.ReconcileProductVersionStatusExtension(version.GetMainVersion())),
-		pkgReconciler.WithReconcilePeriod(extensions.InitBundleReconcilePeriod),
-		pkgReconciler.WithPauseReconcileAnnotation(commonExtensions.PauseReconcileAnnotation),
 	}
 
+	opts := make([]pkgReconciler.Option, 0, len(otherPreExtensions)+6)
+	opts = append(opts, extraEventWatcher)
+	opts = append(opts, pkgReconciler.WithPreExtension(extensions.FeatureDefaultingExtension(mgr.GetClient())))
+	opts = append(opts, otherPreExtensions...)
+	opts = append(opts, pkgReconciler.WithReconcilePeriod(extensions.InitBundleReconcilePeriod))
+	opts = append(opts, pkgReconciler.WithPauseReconcileAnnotation(commonExtensions.PauseReconcileAnnotation))
 	opts, err := commonExtensions.AddSelectorOptionIfNeeded(selector, opts)
 	if err != nil {
 		return err
 	}
-
 	opts = commonExtensions.AddMapKubeAPIsExtensionIfMapFileExists(opts)
 
 	return reconciler.SetupReconcilerWithManager(

@@ -41,6 +41,7 @@ spec:
     kind: Service
     name: central
 ---
+{{- end }}
 
 {{ $reencryptConfig := ._rox.central.exposure.route.reencrypt }}
 {{- if $reencryptConfig.enabled }}
@@ -83,8 +84,6 @@ spec:
     kind: Service
     name: central
 ---
-{{- end }}
-
 {{- end }}
 
 {{- if ._rox.central.exposure.nodePort.enabled }}

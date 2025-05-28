@@ -47,17 +47,17 @@ tests:
         tolerations:
           - key: "node-role.kubernetes.io/infra"
             operator: "Exists"
-          - key: "node-role.kubernetes.io/master"
+          - key: "node-role.kubernetes.io/control-plane"
             operator: "Exists"
       admissionControl:
         tolerations:
           - key: "node-role.kubernetes.io/infra"
             operator: "Exists"
-          - key: "node-role.kubernetes.io/master"
+          - key: "node-role.kubernetes.io/control-plane"
             operator: "Exists"
       collector:
         tolerations:
           - key: "node-role.kubernetes.io/infra"
             operator: "Exists"
-          - key: "node-role.kubernetes.io/master"
+          - key: "node-role.kubernetes.io/control-plane"
             operator: "Exists"

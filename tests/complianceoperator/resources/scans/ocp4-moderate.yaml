@@ -13,14 +13,14 @@ spec:
   profile: xccdf_org.ssgproject.content_profile_moderate
   rawResultStorage:
     nodeSelector:
-      node-role.kubernetes.io/master: ""
+      node-role.kubernetes.io/control-plane: ""
     pvAccessModes:
     - ReadWriteOnce
     rotation: 3
     size: 1Gi
     tolerations:
     - effect: NoSchedule
-      key: node-role.kubernetes.io/master
+      key: node-role.kubernetes.io/control-plane
       operator: Exists
   scanTolerations:
   - operator: Exists
