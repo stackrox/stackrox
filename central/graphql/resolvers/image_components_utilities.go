@@ -194,10 +194,6 @@ func (resolver *imageComponentV2Resolver) OperatingSystem(_ context.Context) str
 }
 
 func (resolver *imageComponentV2Resolver) Priority(_ context.Context) int32 {
-	if resolver.flatData != nil {
-		return int32(resolver.flatData.GetPriority())
-	}
-
 	return int32(resolver.data.GetPriority())
 }
 

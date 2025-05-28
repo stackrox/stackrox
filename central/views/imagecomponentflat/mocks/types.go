@@ -84,20 +84,6 @@ func (mr *MockComponentFlatMockRecorder) GetOperatingSystem() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOperatingSystem", reflect.TypeOf((*MockComponentFlat)(nil).GetOperatingSystem))
 }
 
-// GetPriority mocks base method.
-func (m *MockComponentFlat) GetPriority() int64 {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPriority")
-	ret0, _ := ret[0].(int64)
-	return ret0
-}
-
-// GetPriority indicates an expected call of GetPriority.
-func (mr *MockComponentFlatMockRecorder) GetPriority() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPriority", reflect.TypeOf((*MockComponentFlat)(nil).GetPriority))
-}
-
 // GetRiskScore mocks base method.
 func (m *MockComponentFlat) GetRiskScore() float32 {
 	m.ctrl.T.Helper()

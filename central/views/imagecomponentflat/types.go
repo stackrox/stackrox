@@ -14,7 +14,6 @@ type ComponentFlat interface {
 	GetComponentIDs() []string
 	GetVersion() string
 	GetTopCVSS() float32
-	GetPriority() int64
 	GetRiskScore() float32
 	GetOperatingSystem() string
 }
