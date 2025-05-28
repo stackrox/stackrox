@@ -123,22 +123,35 @@ function ReportParametersDetails({
                             {getCVEsDiscoveredSinceText(formValues.reportParameters)}
                         </DescriptionListDescription>
                     </DescriptionListGroup>
+                    <DescriptionListGroup>
+                        <DescriptionListTerm>Non-optional columns</DescriptionListTerm>
+                        <DescriptionListDescription>Cluster</DescriptionListDescription>
+                        <DescriptionListDescription>Namespace</DescriptionListDescription>
+                        <DescriptionListDescription>Deployment</DescriptionListDescription>
+                        <DescriptionListDescription>Image</DescriptionListDescription>
+                        <DescriptionListDescription>Component</DescriptionListDescription>
+                        <DescriptionListDescription>CVE</DescriptionListDescription>
+                        <DescriptionListDescription>Fixable</DescriptionListDescription>
+                        <DescriptionListDescription>CVE Fixed In</DescriptionListDescription>
+                        <DescriptionListDescription>Severity</DescriptionListDescription>
+                        <DescriptionListDescription>CVSS</DescriptionListDescription>
+                        <DescriptionListDescription>Discovered At</DescriptionListDescription>
+                        <DescriptionListDescription>Reference</DescriptionListDescription>
+                    </DescriptionListGroup>
                     {(hasIncludeNvdCvss || hasIncludeEpssProbability || hasIncludeAdvisory) && (
                         <DescriptionListGroup>
                             <DescriptionListTerm>Optional columns</DescriptionListTerm>
                             {hasIncludeNvdCvss && (
-                                <DescriptionListDescription>
-                                    Include NVD CVSS
-                                </DescriptionListDescription>
+                                <DescriptionListDescription>NVDCVSS</DescriptionListDescription>
                             )}
                             {hasIncludeEpssProbability && (
                                 <DescriptionListDescription>
-                                    Include EPSS probability
+                                    EPSS Probability Percentage
                                 </DescriptionListDescription>
                             )}
                             {hasIncludeAdvisory && (
                                 <DescriptionListDescription>
-                                    Include advisory
+                                    Advisory Name and Advisory Link
                                 </DescriptionListDescription>
                             )}
                         </DescriptionListGroup>
