@@ -53,7 +53,7 @@ func (s *SearchComparisonTestSuite) SetupSuite() {
 
 func compareResults(t *testing.T, matches bool, predResult *search.Result, searchResults []search.Result) {
 	assert.Equal(t, matches, len(searchResults) != 0)
-	var imageKeyMap = make(map[string]string)
+	var imageKeyMap map[string]string
 	if features.FlattenCVEData.Enabled() {
 		imageKeyMap = map[string]string{"image.scan.components.vulns.cve": "imagecvev2.cve_base_info.cve", "image.scan.components.vulns.cvss": "imagecvev2.cvss"}
 	} else {

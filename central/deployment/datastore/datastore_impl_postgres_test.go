@@ -95,6 +95,7 @@ func (s *DeploymentPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 	cveID, err := cve.IDV2(
 		img1.GetScan().GetComponents()[0].GetVulns()[0],
 		componentIDImg1)
+	s.NoError(err)
 
 	for _, tc := range []struct {
 		desc         string
