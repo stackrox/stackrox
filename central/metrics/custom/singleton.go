@@ -3,17 +3,22 @@ package custom
 import (
 	"context"
 	"net/http"
+	"sync/atomic"
+	"time"
 
 	configDS "github.com/stackrox/rox/central/config/datastore"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/metrics/custom/image_vulnerabilities"
 	custom "github.com/stackrox/rox/central/metrics/custom/tracker"
+	"github.com/stackrox/rox/central/telemetry/centralclient"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter"
 )
 
 var (
@@ -21,6 +26,8 @@ var (
 	oneRunner sync.Once
 
 	log = logging.LoggerForModule()
+
+	ivLastGatherDuration atomic.Uint32
 )
 
 type aggregatorRunner struct {
@@ -87,6 +94,7 @@ func (ar *aggregatorRunner) ValidateConfiguration(cfg *storage.PrometheusMetrics
 // Reconfigure will panic on nil cfg. Don't pass nil.
 func (ar *aggregatorRunner) Reconfigure(cfg *RunnerConfiguration) {
 	ar.image_vulnerabilities.Reconfigure(cfg.image_vulnerabilities)
+	track(cfg)
 }
 
 func (ar *aggregatorRunner) ServeHTTP(w http.ResponseWriter, req *http.Request) {
@@ -96,7 +104,39 @@ func (ar *aggregatorRunner) ServeHTTP(w http.ResponseWriter, req *http.Request) 
 		userID = id.UID()
 		// The request context is cancelled when the client's connection closes.
 		ctx := authn.CopyContextIdentity(context.Background(), req.Context())
-		go ar.image_vulnerabilities.Gather(ctx)
+		go func() {
+			start := time.Now()
+			ar.image_vulnerabilities.Gather(ctx)
+			ivLastGatherDuration.Store(uint32(time.Since(start).Round(time.Second).Seconds()))
+		}()
 	}
 	metrics.GetCustomRegistry(userID).ServeHTTP(w, req)
+}
+
+func track(cfg *RunnerConfiguration) {
+	if cfg == nil {
+		return
+	}
+	centralclient.InstanceConfig().Telemeter().Track(
+		"Prometheus metrics configured", nil,
+		telemeter.WithTraits(makeProps(cfg)))
+}
+
+func makeProps(cfg *RunnerConfiguration) map[string]any {
+	props := make(map[string]any, 3)
+	{
+		metrics := cfg.image_vulnerabilities.GetMetrics()
+		props["Total Image Vulnerability metrics"] = len(metrics)
+		props["Image Vulnerability metric labels"] = getLabels(metrics).AsSlice()
+		props["Image Vulnerability gathering seconds"] = ivLastGatherDuration.Load()
+	}
+	return props
+}
+
+func getLabels(metrics custom.MetricsConfiguration) set.Set[custom.Label] {
+	labels := set.NewSet[custom.Label]()
+	for _, metricLabels := range metrics {
+		labels.AddAll(metricLabels...)
+	}
+	return labels
 }

@@ -146,3 +146,20 @@ func makeAdminContext(t *testing.T) context.Context {
 	)
 	return basic.ContextWithAdminIdentity(t, authProvider)
 }
+
+func Test_makeProps(t *testing.T) {
+	runner := makeRunner(nil, nil)
+	cfg, err := runner.ValidateConfiguration(&storage.PrometheusMetrics{
+		ImageVulnerabilities: &storage.PrometheusMetrics_MetricGroup{
+			Metrics: map[string]*storage.PrometheusMetrics_MetricGroup_Labels{
+				"metric1": {
+					Labels: []string{"CVE", "Cluster"},
+				}}}})
+	assert.NoError(t, err)
+
+	props := makeProps(cfg)
+	assert.Len(t, props, 3)
+	assert.ElementsMatch(t, props["Image Vulnerability metric labels"], []string{"CVE", "Cluster"})
+	assert.ElementsMatch(t, props["Image Vulnerability metric operators"], []string{"="})
+	assert.Equal(t, 1, props["Total Image Vulnerability metrics"])
+}
