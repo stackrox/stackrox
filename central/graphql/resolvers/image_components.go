@@ -145,6 +145,7 @@ func (resolver *Resolver) ImageComponent(ctx context.Context, args IDQuery) (Ima
 func (resolver *Resolver) ImageComponents(ctx context.Context, q PaginatedQuery) ([]ImageComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageComponents")
 
+	log.Infof("SHREWS -- In ImageComponents -- %v", q.Pagination)
 	// check permissions
 	if err := readImages(ctx); err != nil {
 		return nil, err
