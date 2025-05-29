@@ -1,3 +1,4 @@
+import { createContext } from 'react';
 /*
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
@@ -87,3 +88,7 @@ ThemeProvider.propTypes = {
 
 export { ThemeProvider, useTheme };
 */
+
+// Currently unused since we do not have an implementation for theming, but needed in order to prevent compile errors
+export const ThemeContext = createContext({});
+export {};

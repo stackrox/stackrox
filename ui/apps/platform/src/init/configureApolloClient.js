@@ -3,7 +3,7 @@ import { buildAxiosFetch } from '@lifeomic/axios-fetch';
 import merge from 'lodash/merge';
 
 import axios from 'services/instance';
-import possibleTypes from './possibleTypes.json'; // see `scripts/generate-graphql-possible-types.js` file
+import possibleTypes from '../possibleTypes.json'; // see `scripts/generate-graphql-possible-types.js` file
 
 const httpLink = new HttpLink({
     uri: '/api/graphql',

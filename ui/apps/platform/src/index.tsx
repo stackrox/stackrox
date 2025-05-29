@@ -8,6 +8,7 @@ import { createRoot } from 'react-dom/client';
 import { Provider } from 'react-redux';
 import { HistoryRouter as Router } from 'redux-first-history/rr6';
 import { AnyAction } from 'redux';
+import { ThunkAction, ThunkDispatch } from 'redux-thunk';
 import { ApolloProvider } from '@apollo/client';
 
 import 'css.imports';
@@ -16,13 +17,12 @@ import { configure as mobxConfigure } from 'mobx';
 
 import ErrorBoundary from 'Components/PatternFly/ErrorBoundary/ErrorBoundary';
 import AppPage from 'Containers/AppPage';
-import configureStore from 'store/configureStore';
-import installRaven from 'installRaven';
-import { ThunkAction, ThunkDispatch } from 'redux-thunk';
+import configureStore from 'init/configureStore';
+import installRaven from 'init/installRaven';
+import configureApollo from 'init/configureApolloClient';
 import { fetchFeatureFlagsThunk } from './reducers/featureFlags';
 import { fetchPublicConfigThunk } from './reducers/publicConfig';
 import { fetchCentralCapabilitiesThunk } from './reducers/centralCapabilities';
-import configureApollo from './configureApolloClient';
 
 // We need to call this MobX utility function, to prevent the error
 //   Uncaught Error: [MobX] There are multiple, different versions of MobX active. Make sure MobX is loaded only once or use `configure({ isolateGlobalState: true })`
