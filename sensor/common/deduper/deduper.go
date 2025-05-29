@@ -3,6 +3,8 @@ package deduper
 import (
 	"reflect"
 
+	"github.com/pkg/errors"
+
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/alert"
 	"github.com/stackrox/rox/pkg/deduperkey"
@@ -54,7 +56,10 @@ func NewDedupingMessageStream(stream messagestream.SensorMessageStream, deduperS
 func (d *deduper) Send(msg *central.MsgFromSensor) error {
 	eventMsg, ok := msg.Msg.(*central.MsgFromSensor_Event)
 	if !ok || skipDeduping(eventMsg.Event) {
-		return d.stream.Send(msg)
+		if err := d.stream.Send(msg); err != nil {
+			return errors.Wrap(err, "forwarding message without dedupe")
+		}
+		return nil
 	}
 	event := eventMsg.Event
 
@@ -83,7 +88,10 @@ func (d *deduper) Send(msg *central.MsgFromSensor) error {
 		if priorLen == len(d.lastSent) {
 			return nil
 		}
-		return d.stream.Send(msg)
+		if err := d.stream.Send(msg); err != nil {
+			return errors.Wrap(err, "failed to send remove resource message")
+		}
+		return nil
 	}
 
 	hashValue, ok := d.hasher.HashEvent(msg.GetEvent())
@@ -104,7 +112,7 @@ func (d *deduper) Send(msg *central.MsgFromSensor) error {
 	}
 
 	if err := d.stream.Send(msg); err != nil {
-		return err
+		return errors.Wrap(err, "sending deduped message")
 	}
 
 	return nil

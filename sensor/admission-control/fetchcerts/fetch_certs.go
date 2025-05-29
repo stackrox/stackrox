@@ -94,7 +94,7 @@ func fetchCertificateFromSensor(ctx context.Context, token string) (*sensor.Fetc
 				if ok && (spb.Code() == codes.Unavailable || spb.Code() == codes.DeadlineExceeded || spb.Code() == codes.NotFound) {
 					return retry.MakeRetryable(err)
 				}
-				return err
+				return errors.Wrap(err, "fetching certificate using RPC")
 			}
 			return nil
 		},
@@ -105,7 +105,7 @@ func fetchCertificateFromSensor(ctx context.Context, token string) (*sensor.Fetc
 			time.Sleep(retryDelay)
 		}))
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "fetching certificate from sensor")
 	}
 	return fetchResult, nil
 }

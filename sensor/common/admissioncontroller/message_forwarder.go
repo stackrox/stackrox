@@ -1,6 +1,7 @@
 package admissioncontroller
 
 import (
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -38,7 +39,7 @@ type admCtrlMsgForwarderImpl struct {
 func (h *admCtrlMsgForwarderImpl) Start() error {
 	for _, component := range h.components {
 		if err := component.Start(); err != nil {
-			return err
+			return errors.Wrapf(err, "starting admission controller component %T", component)
 		}
 	}
 
@@ -72,7 +73,8 @@ func (h *admCtrlMsgForwarderImpl) ProcessMessage(msg *central.MsgToSensor) error
 			errorList.AddError(err)
 		}
 	}
-	return errorList.ToError()
+	// Wrap any collected errors from forwarding messages
+	return errors.Wrap(errorList.ToError(), "processing message in admission control forwarder")
 }
 
 func (h *admCtrlMsgForwarderImpl) ResponsesC() <-chan *message.ExpiringMessage {

@@ -257,7 +257,7 @@ func (u *updaterImpl) ctx() context.Context {
 func getResourceListForComplianceGroupVersion(client kubernetes.Interface) (*metav1.APIResourceList, error) {
 	resourceList, err := client.Discovery().ServerResourcesForGroupVersion(complianceoperator.GetGroupVersion().String())
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "could not discover resources for %q", complianceoperator.GetGroupVersion().String())
 	}
 	if resourceList == nil {
 		return nil, errors.Errorf("API group-version %q not found", complianceoperator.GetGroupVersion().String())

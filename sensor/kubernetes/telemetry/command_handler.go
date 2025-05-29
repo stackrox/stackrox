@@ -174,7 +174,7 @@ func (h *commandHandler) sendResponse(ctx concurrency.ErrorWaitable, resp *centr
 	case h.responsesC <- message.New(msg):
 		return nil
 	case <-ctx.Done():
-		return ctx.Err()
+		return errors.Wrap(ctx.Err(), "context errored when sending pull telemetry data response")
 	}
 }
 
@@ -290,7 +290,8 @@ func (h *commandHandler) handleKubernetesInfoRequest(ctx context.Context,
 		cfg = fn(req, cfg)
 	}
 
-	return k8sintrospect.Collect(subCtx, cfg, restCfg, fileCb, sinceTs)
+	err = k8sintrospect.Collect(subCtx, cfg, restCfg, fileCb, sinceTs)
+	return errors.Wrap(err, "failed to collect k8s data")
 }
 
 func (h *commandHandler) handleClusterInfoRequest(ctx context.Context,
@@ -300,7 +301,7 @@ func (h *commandHandler) handleClusterInfoRequest(ctx context.Context,
 	clusterInfo := h.clusterGatherer.Gather(subCtx)
 	jsonBytes, err := json.Marshal(clusterInfo)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "could not marshal cluster info")
 	}
 	batchManager := batcher.New(len(jsonBytes), clusterInfoChunkSize)
 	for {
@@ -341,7 +342,7 @@ func (h *commandHandler) handleMetricsInfoRequest(ctx context.Context,
 	w := bytes.NewBuffer(nil)
 	err := prometheusutil.ExportText(subCtx, w)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to export prometheus as text")
 	}
 	if err := fileCb(subCtx, "metrics.prom", w.Bytes()); err != nil {
 		return err
@@ -370,7 +371,7 @@ func writeHeapProfile(ctx context.Context, w io.Writer) error {
 	if ctxErr := concurrency.DoInWaitable(ctx, func() {
 		err = pprof.WriteHeapProfile(w)
 	}); ctxErr != nil {
-		return ctxErr
+		return errors.Wrap(ctxErr, "waiting on writing heap profile")
 	}
-	return err
+	return errors.Wrap(err, "could not write heap profile")
 }

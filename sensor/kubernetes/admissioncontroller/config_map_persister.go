@@ -133,11 +133,11 @@ func settingsToConfigMap(settings *sensor.AdmissionControlSettings) (*v1.ConfigM
 
 	configBytes, err := clusterConfig.MarshalVT()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "marshaling cluster config")
 	}
 	configBytesGZ, err := gziputil.Compress(configBytes, gzip.BestCompression)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "compressing cluster config")
 	}
 
 	deployTimePoliciesBytes, err := enforcedDeployTimePolicies.MarshalVT()
