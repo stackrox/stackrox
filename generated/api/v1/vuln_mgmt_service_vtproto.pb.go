@@ -44,6 +44,7 @@ func (m *VulnMgmtExportWorkloadsResponse) CloneVT() *VulnMgmtExportWorkloadsResp
 		return (*VulnMgmtExportWorkloadsResponse)(nil)
 	}
 	r := new(VulnMgmtExportWorkloadsResponse)
+	r.LivePods = m.LivePods
 	if rhs := m.Deployment; rhs != nil {
 		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *storage.Deployment }); ok {
 			r.Deployment = vtpb.CloneVT()
@@ -131,6 +132,9 @@ func (this *VulnMgmtExportWorkloadsResponse) EqualVT(that *VulnMgmtExportWorkloa
 			}
 		}
 	}
+	if this.LivePods != that.LivePods {
+		return false
+	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
@@ -215,6 +219,11 @@ func (m *VulnMgmtExportWorkloadsResponse) MarshalToSizedBufferVT(dAtA []byte) (i
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.LivePods != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.LivePods))
+		i--
+		dAtA[i] = 0x18
 	}
 	if len(m.Images) > 0 {
 		for iNdEx := len(m.Images) - 1; iNdEx >= 0; iNdEx-- {
@@ -309,6 +318,9 @@ func (m *VulnMgmtExportWorkloadsResponse) SizeVT() (n int) {
 			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
+	}
+	if m.LivePods != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.LivePods))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -531,6 +543,25 @@ func (m *VulnMgmtExportWorkloadsResponse) UnmarshalVT(dAtA []byte) error {
 				}
 			}
 			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LivePods", wireType)
+			}
+			m.LivePods = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.LivePods |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -774,6 +805,25 @@ func (m *VulnMgmtExportWorkloadsResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			}
 			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LivePods", wireType)
+			}
+			m.LivePods = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.LivePods |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
