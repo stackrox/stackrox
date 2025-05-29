@@ -7,5 +7,4 @@ set -x
 
 [ -d /.init-dirs ] || exit 0
 
-cp -rvfP /.init-dirs/* / \
-  || { echo 'try overwrite instead of delete and write new file:'; yes | cp -rviP /.init-dirs/* /; }
+cp -rvfP /.init-dirs/* /
