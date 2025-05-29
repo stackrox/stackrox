@@ -177,6 +177,9 @@ func (resolver *Resolver) ImageComponents(ctx context.Context, q PaginatedQuery)
 		// Get the Components themselves.  This will be denormalized.  So use the IDs to get them, but use
 		// the data returned from Component Flat View to keep order and set just 1 instance of a Component
 		componentQuery := search.NewQueryBuilder().AddExactMatches(search.ComponentID, componentIDs...).ProtoQuery()
+		componentQuery.Pagination = &v1.QueryPagination{
+			SortOptions: query.GetPagination().GetSortOptions(),
+		}
 		comps, err := loader.FromQuery(ctx, componentQuery)
 
 		// Stash a single instance of a Component to aid in normalizing
