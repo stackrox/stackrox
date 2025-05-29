@@ -34,7 +34,8 @@ jobs:
         MAIN_IMAGE_TAG: "4.7.0"
         SENSOR_HELM_DEPLOY: "true"
         ROX_SCANNER_V4: "false"
-      run: ./deploy/k8s/deploy-local.sh
+        LOCAL_DEPLOYMENT: "true"
+      run: unset CI && ./deploy/k8s/deploy-local.sh
     - name: Check
       run: kubectl get pods -n stackrox
     - name: Fetch scanner
