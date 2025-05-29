@@ -71,7 +71,6 @@ type SecuredClusterSpec struct {
 	Scanner *LocalScannerComponentSpec `json:"scanner,omitempty"`
 
 	// Settings for the Scanner V4 components, which can run in addition to the previously existing Scanner components
-	//+kubebuilder:default={"scannerComponent":"Default"}
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=8,displayName="Scanner V4 Component Settings"
 	ScannerV4 *LocalScannerV4ComponentSpec `json:"scannerV4,omitempty"`
 	// Above default is necessary to make the nested default work see: https://github.com/kubernetes-sigs/controller-tools/issues/622
@@ -460,6 +459,9 @@ type SecuredCluster struct {
 
 	Spec   SecuredClusterSpec   `json:"spec,omitempty"`
 	Status SecuredClusterStatus `json:"status,omitempty"`
+
+	// This field will never be serialized, it is used for attaching defaulting decisions to a SecuredCluster struct during reconciliation.
+	Defaults SecuredClusterSpec `json:"-"`
 }
 
 //+kubebuilder:object:root=true

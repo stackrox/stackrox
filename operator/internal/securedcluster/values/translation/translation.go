@@ -66,8 +66,19 @@ func (t Translator) Translate(ctx context.Context, u *unstructured.Unstructured)
 	if err != nil {
 		return nil, err
 	}
+	// For translation purposes, enrich SecuredCluster with defaults, which are not implicitly marshalled/unmarshaled.
+	if err := platform.AddUnstructuredDefaultsToSecuredCluster(&sc, u); err != nil {
+		return nil, err
+	}
 
-	valsFromCR, err := t.translate(ctx, sc)
+	// At this point we don't need the Defaults in the unstructured object anymore and simply get rid of it to prevent
+	// Kube API warnings of the form:
+	//
+	//   KubeAPIWarningLogger    unknown field "defaults"
+	delete(u.Object, "defaults")
+
+	scCopy := sc.DeepCopy()
+	valsFromCR, err := t.translate(ctx, *scCopy)
 	if err != nil {
 		return nil, err
 	}
@@ -82,6 +93,9 @@ func (t Translator) Translate(ctx context.Context, u *unstructured.Unstructured)
 
 // translate translates a SecuredCluster CR into helm values.
 func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (chartutil.Values, error) {
+	if err := platform.MergeSecuredClusterDefaultsIntoSpec(&sc); err != nil {
+		return nil, err
+	}
 	t.setDefaults(&sc)
 
 	v := translation.NewValuesBuilder()
