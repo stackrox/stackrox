@@ -29,7 +29,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/sac/testutils"
-	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
 	"github.com/stackrox/rox/pkg/search/scoped"
@@ -189,10 +188,6 @@ func (s *ImageCVEViewTestSuite) TestGetImageCVECore() {
 			assert.Equal(t, len(expected), len(actual))
 
 			assertResponsesAreEqual(t, expected, actual, tc.testOrder)
-			//assert.ElementsMatch(t, expected, actual)
-			//if tc.testOrder {
-			//	assert.Equal(t, expected, actual)
-			//}
 
 			if tc.readOptions.SkipGetAffectedImages || tc.readOptions.SkipGetImagesBySeverity {
 				return
@@ -239,7 +234,6 @@ func (s *ImageCVEViewTestSuite) TestGetImageCVECoreSAC() {
 
 				expected := compileExpected(s.testImages, &matchFilter, tc.readOptions, tc.less)
 				assert.Equal(t, len(expected), len(actual))
-				//assert.ElementsMatch(t, expected, actual)
 				assertResponsesAreEqual(t, expected, actual, false)
 			})
 		}
@@ -354,7 +348,6 @@ func (s *ImageCVEViewTestSuite) TestGetImageCVECoreWithPagination() {
 				expected := compileExpected(s.testImages, tc.matchFilter, tc.readOptions, tc.less)
 				assert.Equal(t, len(expected), len(actual))
 				assertResponsesAreEqual(t, expected, actual, tc.testOrder)
-				//assert.EqualValues(t, expected, actual)
 
 				if tc.readOptions.SkipGetAffectedImages || tc.readOptions.SkipGetImagesBySeverity {
 					return
@@ -1388,12 +1381,6 @@ func testImages() []*storage.Image {
 			},
 		},
 	}
-}
-
-func getTestComponentID(testComponent *storage.EmbeddedImageScanComponent, imageID string) string {
-	id, _ := scancomponent.ComponentIDV2(testComponent, imageID)
-
-	return id
 }
 
 func assertResponsesAreEqual(t *testing.T, expected []CveCore, actual []CveCore, testOrder bool) {
