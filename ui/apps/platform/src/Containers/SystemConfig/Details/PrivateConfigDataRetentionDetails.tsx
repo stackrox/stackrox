@@ -248,6 +248,18 @@ const PrivateConfigDataRetentionDetails = ({
                 </Card>
             </GridItem>
             <GridItem sm={12}>
+                <Title headingLevel="h3" id="prometheus-metrics">
+                    Prometheus metrics
+                </Title>
+            </GridItem>
+            <GridItem>
+                <Card isFlat>
+                    <CardTitle>Image Vulnerabilities</CardTitle>
+                    <CardBody>
+                    </CardBody>
+                </Card>
+            </GridItem>
+            <GridItem sm={12}>
                 <Title headingLevel="h3" id="cluster-deletion">
                     Cluster deletion
                 </Title>
