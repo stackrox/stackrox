@@ -122,7 +122,7 @@ func (s *UpdaterTestSuite) TestDelayedTicker() {
 	// Compliance operator found, CRDs not found.
 	s.assertEqual(expectedInfo{
 		"v1.0.0", defaultNS, 1, 1,
-		"could not discover resources for \"compliance.openshift.io/v1alpha1\": the server could not find the requested resource, GroupVersion \"compliance.openshift.io/v1alpha1\" not found", true,
+		"discovering resources for \"compliance.openshift.io/v1alpha1\": the server could not find the requested resource, GroupVersion \"compliance.openshift.io/v1alpha1\" not found", true,
 	}, actual)
 }
 

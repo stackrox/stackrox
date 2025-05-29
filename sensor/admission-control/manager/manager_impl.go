@@ -149,11 +149,11 @@ func (m *manager) Sync(ctx context.Context) error {
 	select {
 	case m.syncC <- &syncSig:
 	case <-ctx.Done():
-		return pkgErr.Wrap(ctx.Err(), "syncing")
+		return pkgErr.Wrap(ctx.Err(), "sync")
 	case <-m.stopper.Client().Stopped().Done():
 		return pkgErr.Wrap(
 			m.stopper.Client().Stopped().ErrorWithDefault(pkgErr.New("manager was stopped")),
-			"sync canceled",
+			"sync",
 		)
 	}
 
@@ -163,7 +163,10 @@ func (m *manager) Sync(ctx context.Context) error {
 	case <-ctx.Done():
 		return pkgErr.Wrap(ctx.Err(), "syncing")
 	case <-m.stopper.Client().Stopped().Done():
-    return m.stopper.Client().Stopped().ErrorWithDefault(pkgErr.New("manager was stopped"))
+		return pkgErr.Wrap(
+			m.stopper.Client().Stopped().ErrorWithDefault(pkgErr.New("manager was stopped")),
+			"sync",
+		)
 	}
 }
 
