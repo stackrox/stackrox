@@ -183,9 +183,9 @@ func (s *serviceImpl) GetDatabaseStatus(ctx context.Context, _ *v1.Empty) (*v1.D
 	if authn.IdentityFromContextOrNil(ctx) != nil {
 		dbStatus.DatabaseVersion = dbVersion
 		dbStatus.DatabaseType = dbType
+		dbStatus.DatabaseIsExternal = pgconfig.IsExternalDatabase()
 	}
 
-	dbStatus.DatabaseIsExternal = pgconfig.IsExternalDatabase()
 	return dbStatus, nil
 }
 
