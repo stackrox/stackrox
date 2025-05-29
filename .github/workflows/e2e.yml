@@ -38,6 +38,7 @@ jobs:
       run: go get github.com/stackrox/scanner
     - name: QA Tests Backend
       env:
+        POD_SECURITY_POLICIES: "false"
         QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
       run: unset CI && make all -C qa-tests-backend
