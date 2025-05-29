@@ -12,6 +12,8 @@ import org.slf4j.LoggerFactory
 @CompileStatic
 class Env {
 
+    static boolean GHA = System.getenv('GITHUB_ACTION') != ""
+
     private static final Logger LOG = LoggerFactory.getLogger(this.getClass())
 
     private static final String PROPERTIES_FILE = "qa-test-settings.properties"
