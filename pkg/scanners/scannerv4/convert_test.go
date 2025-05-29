@@ -890,7 +890,8 @@ func TestSetScoresAndScoreVersions(t *testing.T) {
 				},
 			},
 		},
-		{name: "use back up link when metrics is missing",
+		{
+			name:        "use back up link when metrics is missing",
 			cvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{},
 			link:        "https://osv.dev/vulnerability/CVE-7654-321",
 			expected: &storage.EmbeddedVulnerability{
