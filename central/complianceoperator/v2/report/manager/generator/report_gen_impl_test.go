@@ -221,7 +221,7 @@ func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
 		req.ClusterData["cluster-1"] = &report.ClusterData{
 			FailedInfo: &report.FailedCluster{},
 		}
-		req.FailedClusters = 2
+		req.NumFailedClusters = 2
 		err := s.reportGen.ProcessReportRequest(req)
 		s.Require().Error(err)
 		s.Assert().Contains(err.Error(), errUnableToUpdateSnapshotOnGenerationSuccessStr)
@@ -475,7 +475,7 @@ func newFakeRequestWithFailedCluster() *report.Request {
 				FailedInfo: &report.FailedCluster{},
 			},
 		},
-		FailedClusters: 1,
+		NumFailedClusters: 1,
 	}
 }
 

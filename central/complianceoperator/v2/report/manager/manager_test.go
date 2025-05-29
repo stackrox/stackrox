@@ -104,6 +104,7 @@ func (m *ManagerTestSuite) TestHandleReportRequest() {
 	m.Run("Successful report, no watchers running", func() {
 		manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.checkResultDataStore, m.reportGen)
 		manager.Start()
+		scanConfig := getTestScanConfig()
 		wg := concurrency.NewWaitGroup(1)
 		m.snapshotDataStore.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).Times(1).
 			Return(nil)
@@ -112,6 +113,13 @@ func (m *ManagerTestSuite) TestHandleReportRequest() {
 				wg.Add(-1)
 				return nil
 			})
+		m.snapshotDataStore.EXPECT().
+			GetLastSnapshotFromScanConfig(gomock.Any(), gomock.Eq(scanConfig.GetId())).
+			Times(1).Return(nil, nil)
+		m.scanDataStore.EXPECT().
+			GetProfilesScanNamesByScanConfigAndCluster(gomock.Any(), gomock.Eq(scanConfig.GetId()), gomock.Cond[string](func(id string) bool {
+				return id == "cluster-1" || id == "cluster-2"
+			})).Times(len(scanConfig.GetClusters())).Return(getScanToProfileMap(len(scanConfig.GetProfiles())), nil)
 		err := manager.SubmitReportRequest(ctx, getTestScanConfig(), storage.ComplianceOperatorReportStatus_EMAIL)
 		m.Require().NoError(err)
 		handleWaitGroup(m.T(), &wg, 10*time.Millisecond, "report generation")
@@ -610,10 +618,10 @@ func (m *ManagerTestSuite) setupExpectCallsFromFinishAllScans(sc *storage.Compli
 		m.scanDataStore.EXPECT().
 			SearchScans(gomock.Any(), gomock.Any()).
 			Times(1).Return(allScans, nil),
-		// Upsert Snapshots
-		m.snapshotDataStore.EXPECT().
-			UpsertSnapshot(gomock.Any(), gomock.Any()).
-			Times(numSnapshots).Return(nil),
+		m.scanDataStore.EXPECT().
+			GetProfilesScanNamesByScanConfigAndCluster(gomock.Any(), gomock.Eq(sc.GetId()), gomock.Cond[string](func(id string) bool {
+				return id == "cluster-1" || id == "cluster-2"
+			})).Times(len(sc.GetClusters())*numSnapshots).Return(getScanToProfileMap(len(sc.GetProfiles())), nil),
 	}
 	expectedCalls = append(expectedCalls, calls...)
 	return expectedCalls
@@ -656,6 +664,15 @@ func (m *ManagerTestSuite) setupExpectCallsFromFailAllScans(sc *storage.Complian
 
 			})).
 			Times(numSnapshots).Return(nil),
+		// GetClusterData
+		m.scanDataStore.EXPECT().
+			GetProfilesScanNamesByScanConfigAndCluster(gomock.Any(), gomock.Eq(sc.GetId()), gomock.Cond[string](func(id string) bool {
+				return id == "cluster-1" || id == "cluster-2"
+			})).Times(len(sc.GetClusters())*numSnapshots).Return(getScanToProfileMap(len(sc.GetProfiles())), nil),
+		m.scanDataStore.EXPECT().
+			GetProfileScanNamesByScanConfigClusterAndProfileRef(gomock.Any(), gomock.Eq(sc.GetId()), gomock.Cond[string](func(id string) bool {
+				return id == "cluster-1" || id == "cluster-2"
+			}), gomock.Any()).Times(2).Return(getScanToProfileMap(len(sc.GetProfiles())), nil),
 	}
 	expectedCalls = append(expectedCalls, calls...)
 	return expectedCalls
@@ -746,6 +763,15 @@ func handleWaitGroup(t *testing.T, wg *concurrency.WaitGroup, timeout time.Durat
 		t.Fail()
 	case <-wg.Done():
 	}
+}
+
+func getScanToProfileMap(numProfiles int) map[string]string {
+	ret := make(map[string]string)
+	for i := 0; i < numProfiles; i++ {
+		name := fmt.Sprintf("profile-%d", i)
+		ret[name] = name
+	}
+	return ret
 }
 
 func newGetScanConfigClusterStatusMatcher(sc *storage.ComplianceOperatorScanConfigurationV2) *getScanConfigClusterStatusMatcher {

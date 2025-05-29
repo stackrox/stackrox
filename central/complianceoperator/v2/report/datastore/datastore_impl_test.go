@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	reportStorage "github.com/stackrox/rox/central/complianceoperator/v2/report/store/postgres"
@@ -13,6 +14,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -253,6 +255,34 @@ func (s *complianceReportSnapshotDataStoreSuite) TestDeleteOrphaned() {
 	for _, report := range searchResults {
 		s.Assert().True(expectedDownloadStates.Contains(report.GetReportStatus().GetRunState()))
 	}
+}
+
+func (s *complianceReportSnapshotDataStoreSuite) TestGetLastSnapshot() {
+	// make sure we have nothing
+	reportIDs, err := s.storage.GetIDs(s.hasReadCtx)
+	s.Require().NoError(err)
+	s.Require().Empty(reportIDs)
+
+	timeNow := time.Now()
+	oldTime := timeNow.Add(-time.Hour)
+	timestampNow, err := protocompat.ConvertTimeToTimestampOrError(timeNow)
+	s.Require().NoError(err)
+	oldTimestamp, err := protocompat.ConvertTimeToTimestampOrError(oldTime)
+	s.Require().NoError(err)
+
+	status1 := getStatus(storage.ComplianceOperatorReportStatus_PREPARING, oldTimestamp, timestampNow, "", storage.ComplianceOperatorReportStatus_SCHEDULED, storage.ComplianceOperatorReportStatus_EMAIL)
+	status2 := getStatus(storage.ComplianceOperatorReportStatus_PREPARING, oldTimestamp, oldTimestamp, "", storage.ComplianceOperatorReportStatus_SCHEDULED, storage.ComplianceOperatorReportStatus_EMAIL)
+	user := getUser("u-1", "user-1")
+	reports := []*storage.ComplianceOperatorReportSnapshotV2{
+		getTestReport(uuidStub1, uuidScanConfigStub1, status1, user),
+		getTestReport(uuidStub2, uuidScanConfigStub1, status2, user),
+	}
+	for _, r := range reports {
+		s.Require().NoError(s.storage.Upsert(s.hasWriteCtx, r))
+	}
+	snapshot, err := s.datastore.GetLastSnapshotFromScanConfig(s.hasReadCtx, uuidScanConfigStub1)
+	s.Assert().NoError(err)
+	s.Assert().Equal(uuidStub1, snapshot.GetReportId())
 }
 
 func getTestReport(id string, scanConfigID string, status *storage.ComplianceOperatorReportStatus, user *storage.SlimUser) *storage.ComplianceOperatorReportSnapshotV2 {

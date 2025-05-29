@@ -2619,6 +2619,8 @@ type ComplianceOperatorReportSnapshotV2_FailedCluster struct {
 	ClusterName     string                 `protobuf:"bytes,2,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"`
 	Reasons         []string               `protobuf:"bytes,3,rep,name=reasons,proto3" json:"reasons,omitempty"`
 	OperatorVersion string                 `protobuf:"bytes,4,opt,name=operator_version,json=operatorVersion,proto3" json:"operator_version,omitempty"`
+	Scans           []string               `protobuf:"bytes,5,rep,name=scans,proto3" json:"scans,omitempty"`
+	Profiles        []string               `protobuf:"bytes,6,rep,name=profiles,proto3" json:"profiles,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -2679,6 +2681,20 @@ func (x *ComplianceOperatorReportSnapshotV2_FailedCluster) GetOperatorVersion() 
 		return x.OperatorVersion
 	}
 	return ""
+}
+
+func (x *ComplianceOperatorReportSnapshotV2_FailedCluster) GetScans() []string {
+	if x != nil {
+		return x.Scans
+	}
+	return nil
+}
+
+func (x *ComplianceOperatorReportSnapshotV2_FailedCluster) GetProfiles() []string {
+	if x != nil {
+		return x.Profiles
+	}
+	return nil
 }
 
 // Next available tag: 5
@@ -3060,7 +3076,7 @@ const file_storage_compliance_operator_v2_proto_rawDesc = "" +
 	"\x0foutdated_object\x18\x06 \x01(\tR\x0eoutdatedObject\x12)\n" +
 	"\x10enforcement_type\x18\a \x01(\tR\x0fenforcementType\x12\x1d\n" +
 	"\n" +
-	"cluster_id\x18\b \x01(\tR\tclusterId\"\x9d\x06\n" +
+	"cluster_id\x18\b \x01(\tR\tclusterId\"\xcf\x06\n" +
 	"\"ComplianceOperatorReportSnapshotV2\x12\x1b\n" +
 	"\treport_id\x18\x01 \x01(\tR\breportId\x122\n" +
 	"\x15scan_configuration_id\x18\x02 \x01(\tR\x13scanConfigurationId\x12\x12\n" +
@@ -3074,13 +3090,15 @@ const file_storage_compliance_operator_v2_proto_rawDesc = "" +
 	"\x0ffailed_clusters\x18\t \x03(\v29.storage.ComplianceOperatorReportSnapshotV2.FailedClusterR\x0efailedClusters\x1an\n" +
 	"\x04Scan\x12\x1e\n" +
 	"\vscan_ref_id\x18\x01 \x01(\tR\tscanRefId\x12F\n" +
-	"\x11last_started_time\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x0flastStartedTime\x1a\x96\x01\n" +
+	"\x11last_started_time\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x0flastStartedTime\x1a\xc8\x01\n" +
 	"\rFailedCluster\x12\x1d\n" +
 	"\n" +
 	"cluster_id\x18\x01 \x01(\tR\tclusterId\x12!\n" +
 	"\fcluster_name\x18\x02 \x01(\tR\vclusterName\x12\x18\n" +
 	"\areasons\x18\x03 \x03(\tR\areasons\x12)\n" +
-	"\x10operator_version\x18\x04 \x01(\tR\x0foperatorVersion\"\x96\x05\n" +
+	"\x10operator_version\x18\x04 \x01(\tR\x0foperatorVersion\x12\x14\n" +
+	"\x05scans\x18\x05 \x03(\tR\x05scans\x12\x1a\n" +
+	"\bprofiles\x18\x06 \x03(\tR\bprofiles\"\x96\x05\n" +
 	"\x1cComplianceOperatorReportData\x12]\n" +
 	"\x12scan_configuration\x18\x01 \x01(\v2..storage.ComplianceOperatorScanConfigurationV2R\x11scanConfiguration\x12Z\n" +
 	"\x0ecluster_status\x18\x02 \x03(\v23.storage.ComplianceOperatorReportData.ClusterStatusR\rclusterStatus\x12H\n" +
