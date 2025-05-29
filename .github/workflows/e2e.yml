@@ -33,9 +33,15 @@ jobs:
       env:
         MAIN_IMAGE_TAG: "4.7.0"
         SENSOR_HELM_DEPLOY: "true"
+        ROX_SCANNER_V4: "false"
       run: ./deploy/k8s/deploy-local.sh
+    - name: Check
+      run: |
+        kub
     - name: Fetch scanner
       run: go get github.com/stackrox/scanner
+    - name: Cache QA Test dependencies
+      uses: ./.github/actions/cache-gradle-dependencies
     - name: QA Tests Backend
       env:
         POD_SECURITY_POLICIES: "false"
