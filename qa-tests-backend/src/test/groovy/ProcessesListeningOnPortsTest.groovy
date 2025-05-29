@@ -96,6 +96,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         orchestrator.waitForNamespaceDeletion(TEST_NAMESPACE)
     }
 
+    @IgnoreIf({ Env.GHA })
     def "Verify networking endpoints with processes appear in API at the deployment level"() {
         given:
         // implicitly creates the namespace as needed

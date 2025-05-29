@@ -17,6 +17,7 @@ import services.AlertService
 import services.ClusterService
 import services.PolicyService
 import services.ProcessBaselineService
+import util.Env
 
 import spock.lang.Shared
 import spock.lang.Tag
@@ -85,6 +86,7 @@ class ProcessBaselinesTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
+    @IgnoreIf({ Env.GHA })
     def "Verify processes risk indicators for the given key after lock on #deploymentName"() {
         when:
         "exec into the container and run a process and wait for lock to kick in"
@@ -424,6 +426,7 @@ class ProcessBaselinesTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
+    @IgnoreIf({ Env.GHA })
     def "Processes come in after baseline deleted by API for #deploymentName"() {
         when:
         def deployment = DEPLOYMENTS.find { it.name == deploymentName }
