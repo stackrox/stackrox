@@ -130,9 +130,9 @@ func Test_makeProps(t *testing.T) {
 			},
 		},
 	}
-	assert.Equal(t, map[string]any{
-		"Image Vulnerability metrics labels":    []string{"label1", "label2"},
-		"Image Vulnerability metrics operators": []string{"="},
-		"Total Image Vulnerability metrics":     1,
-	}, makeProps(cfg))
+	props := makeProps(cfg)
+	assert.Len(t, props, 3)
+	assert.ElementsMatch(t, props["Image Vulnerability metrics labels"], []string{"label1", "label2"})
+	assert.ElementsMatch(t, props["Image Vulnerability metrics operators"], []string{"="})
+	assert.Equal(t, 1, props["Total Image Vulnerability metrics"])
 }
