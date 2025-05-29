@@ -736,16 +736,16 @@ func (s *flowStoreImpl) RemoveOrphanedFlows(ctx context.Context, orphanWindow *t
 func getEntityIds(srcFlows []*storage.NetworkFlow, dstFlows []*storage.NetworkFlow) []string {
 	entityIdSet := set.NewStringSet()
 
-	// srcIds contains flows where src is the deployment,
+	// srcFlows contains flows where src is the deployment,
 	// so prune external flows based on the dst entity
-	for _, flow := range dstFlows {
-		entityIdSet.Add(flow.GetProps().GetSrcEntity().GetId())
-	}
-
-	// dstIds contains flows where dst is the deployment,
-	// so prune external flows based on the src entity
 	for _, flow := range srcFlows {
 		entityIdSet.Add(flow.GetProps().GetDstEntity().GetId())
+	}
+
+	// dstFlows contains flows where dst is the deployment,
+	// so prune external flows based on the src entity
+	for _, flow := range dstFlows {
+		entityIdSet.Add(flow.GetProps().GetSrcEntity().GetId())
 	}
 
 	entityIds := make([]string, 0, len(entityIdSet))
