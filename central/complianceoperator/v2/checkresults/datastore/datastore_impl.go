@@ -469,7 +469,10 @@ func (d *datastoreImpl) withCountByResultSelectQuery(q *v1.Query, countOn search
 	return cloned
 }
 
-func (d *datastoreImpl) DeleteOldResults(ctx context.Context, lastStartedTimestamp *timestamppb.Timestamp, scanRefIDs string, includeCurrent bool) error {
+func (d *datastoreImpl) DeleteOldResults(ctx context.Context, lastStartedTimestamp *timestamppb.Timestamp, scanRefID string, includeCurrent bool) error {
+	if scanRefID == "" || lastStartedTimestamp == nil {
+		return nil
+	}
 	lastStartedTimestampColumnName := "laststartedtime"
 	scanRefIDColumnName := "scanrefid"
 	deleteFmt := "DELETE FROM %s WHERE %s = $1 AND (%s < $2 OR %s IS NULL)"
@@ -482,7 +485,7 @@ func (d *datastoreImpl) DeleteOldResults(ctx context.Context, lastStartedTimesta
 		lastStartedTimestampColumnName,
 		lastStartedTimestampColumnName,
 	)
-	_, err := d.db.Exec(ctx, deleteStmt, scanRefIDs, protocompat.NilOrTime(lastStartedTimestamp))
+	_, err := d.db.Exec(ctx, deleteStmt, scanRefID, protocompat.NilOrTime(lastStartedTimestamp))
 	if err != nil {
 		return err
 	}
