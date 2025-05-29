@@ -136,17 +136,17 @@ func (mr *MockDataStoreMockRecorder) CountCheckResults(ctx, q any) *gomock.Call 
 }
 
 // DeleteOldResults mocks base method.
-func (m *MockDataStore) DeleteOldResults(ctx context.Context, lastStartedTimestamp *timestamppb.Timestamp, scanRefIDs string, includeCurrent bool) error {
+func (m *MockDataStore) DeleteOldResults(ctx context.Context, lastStartedTimestamp *timestamppb.Timestamp, scanRefID string, includeCurrent bool) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteOldResults", ctx, lastStartedTimestamp, scanRefIDs, includeCurrent)
+	ret := m.ctrl.Call(m, "DeleteOldResults", ctx, lastStartedTimestamp, scanRefID, includeCurrent)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // DeleteOldResults indicates an expected call of DeleteOldResults.
-func (mr *MockDataStoreMockRecorder) DeleteOldResults(ctx, lastStartedTimestamp, scanRefIDs, includeCurrent any) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) DeleteOldResults(ctx, lastStartedTimestamp, scanRefID, includeCurrent any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteOldResults", reflect.TypeOf((*MockDataStore)(nil).DeleteOldResults), ctx, lastStartedTimestamp, scanRefIDs, includeCurrent)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteOldResults", reflect.TypeOf((*MockDataStore)(nil).DeleteOldResults), ctx, lastStartedTimestamp, scanRefID, includeCurrent)
 }
 
 // DeleteResult mocks base method.
