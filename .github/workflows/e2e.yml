@@ -36,8 +36,7 @@ jobs:
         ROX_SCANNER_V4: "false"
       run: ./deploy/k8s/deploy-local.sh
     - name: Check
-      run: |
-        kub
+      run: kubectl get pods -n stackrox
     - name: Fetch scanner
       run: go get github.com/stackrox/scanner
     - name: Cache QA Test dependencies
