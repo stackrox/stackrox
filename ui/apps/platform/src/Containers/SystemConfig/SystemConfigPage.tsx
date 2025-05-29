@@ -15,6 +15,7 @@ import { clustersBasePath, getIsRoutePathRendered } from 'routePaths';
 */
 import usePermissions from 'hooks/usePermissions';
 import useFeatureFlags from 'hooks/useFeatureFlags';
+import useRestQuery from 'hooks/useRestQuery';
 import {
     fetchDefaultRedHatLayeredProductsRule,
     fetchSystemConfig,
@@ -22,7 +23,6 @@ import {
 import { SystemConfig } from 'types/config.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
-import useRestQuery from 'hooks/useRestQuery';
 import SystemConfigDetails from './Details/SystemConfigDetails';
 import SystemConfigForm from './Form/SystemConfigForm';
 
