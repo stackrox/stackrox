@@ -444,7 +444,21 @@ func (s *flowStoreImpl) RemoveFlowsForDeployment(ctx context.Context, id string)
 
 func (s *flowStoreImpl) retryableRemoveFlowsForDeployment(ctx context.Context, id string) error {
 	if features.ExternalIPs.Enabled() || env.ExternalIPsPruning.BooleanSetting() {
-		return s.removeFlowsAndEntitiesByDeployment(ctx, id)
+		// We are adding a return statement to retrieve the pruned flows. They are useful
+		// to limit the pruning of 'discovered' entities to only potential new orphans.
+		srcFlows, err := s.removeAndReturnDeploymentFlows(ctx, deleteSrcDeploymentStmt+pruneNetworkFlowsReturnStmt, id)
+		if err != nil {
+			return err
+		}
+
+		dstFlows, err := s.removeAndReturnDeploymentFlows(ctx, deleteDstDeploymentStmt+pruneNetworkFlowsReturnStmt, id)
+		if err != nil {
+			return err
+		}
+
+		entityIds := getEntityIds(srcFlows, dstFlows)
+
+		return s.pruneOrphanExternalEntities(ctx, entityIds)
 	}
 
 	// To avoid a full scan with an OR delete source and destination flows separately
@@ -454,35 +468,6 @@ func (s *flowStoreImpl) retryableRemoveFlowsForDeployment(ctx context.Context, i
 	}
 
 	return s.removeDeploymentFlows(ctx, deleteDstDeploymentStmt, id)
-}
-
-func (s *flowStoreImpl) removeFlowsAndEntitiesByDeployment(ctx context.Context, id string) error {
-	entityIds, err := s.removeAndReturnDeploymentSrcDstFlows(ctx, id)
-
-	if err != nil {
-		return err
-	}
-
-	return s.pruneOrphanExternalEntities(ctx, entityIds)
-}
-
-func (s *flowStoreImpl) removeAndReturnDeploymentSrcDstFlows(ctx context.Context, id string) ([]string, error) {
-
-	// We are adding a return statement to retrieve the pruned flows. They are useful
-	// to limit the pruning of 'discovered' entities to only potential new orphans.
-	srcFlows, err := s.removeAndReturnDeploymentFlows(ctx, deleteSrcDeploymentStmt+pruneNetworkFlowsReturnStmt, id)
-	if err != nil {
-		return nil, err
-	}
-
-	dstFlows, err := s.removeAndReturnDeploymentFlows(ctx, deleteDstDeploymentStmt+pruneNetworkFlowsReturnStmt, id)
-	if err != nil {
-		return nil, err
-	}
-
-	entityIds := getEntityIds(srcFlows, dstFlows)
-
-	return entityIds, nil
 }
 
 func (s *flowStoreImpl) removeDeploymentFlows(ctx context.Context, deleteStmt string, id string) error {
