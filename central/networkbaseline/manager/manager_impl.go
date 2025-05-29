@@ -980,6 +980,15 @@ func (m *manager) GetExternalNetworkPeers(ctx context.Context, deploymentID stri
 		return nil, err
 	}
 
+	networkTree := tree.NewMultiNetworkTree(
+		m.treeManager.GetReadOnlyNetworkTree(managerCtx, deployment.GetClusterId()),
+		m.treeManager.GetDefaultNetworkTree(managerCtx),
+	)
+
+	aggr, err := aggregator.NewSubnetToSupernetConnAggregator(networkTree)
+	utils.Should(err)
+
+	flows = aggr.Aggregate(flows)
 	flows = aggregator.NewDuplicateNameExtSrcConnAggregator().Aggregate(flows)
 	flows = aggregator.NewLatestTimestampAggregator().Aggregate(flows)
 
