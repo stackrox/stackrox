@@ -11,6 +11,7 @@ import { EdgeState } from '../components/EdgeStateSelect';
 import { Flow } from '../types/flow.type';
 import InternalFlows from './InternalFlows';
 import ExternalFlows from './ExternalFlows';
+import { isInternalFlow } from '../utils/networkGraphUtils';
 
 export type DeploymentFlowsView = 'external-flows' | 'internal-flows';
 
@@ -56,6 +57,8 @@ function DeploymentFlows({
         setPageBaseline(1);
         setSearchFilter({});
     }, [selectedView, setPageAnomalous, setPageBaseline, setSearchFilter]);
+
+    const internalFlowsOnly = networkFlows.filter((flow) => isInternalFlow(flow));
 
     if (!isNetworkGraphExternalIpsEnabled) {
         return (
@@ -104,7 +107,7 @@ function DeploymentFlows({
                                 onNodeSelect={onNodeSelect}
                                 isLoadingNetworkFlows={isLoadingNetworkFlows}
                                 networkFlowsError={networkFlowsError}
-                                networkFlows={networkFlows}
+                                networkFlows={internalFlowsOnly}
                                 refetchFlows={refetchFlows}
                             />
                         ) : (
