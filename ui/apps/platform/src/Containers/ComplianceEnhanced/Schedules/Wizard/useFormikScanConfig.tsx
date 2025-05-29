@@ -26,6 +26,8 @@ export const defaultScanConfigFormValues: ScanConfigFormValues = {
 
 export const helperTextForName =
     "Name can contain only lowercase alphanumeric characters, hyphen '-' or period '.', and start and end with an alphanumeric character.";
+export const helperTextForNameEdit =
+    "Scan config name cannot be changed because it's linked to existing scan results.";
 export const helperTextForTime = 'Select or enter scan time between 00:00 and 23:59 UTC';
 
 const timeRegExp = /\d\d:\d\d/;

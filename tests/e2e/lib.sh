@@ -188,7 +188,7 @@ export_test_environment() {
     ci_export ROX_CLUSTERS_PAGE_MIGRATION_UI "${ROX_CLUSTERS_PAGE_MIGRATION_UI:-false}"
     ci_export ROX_EXTERNAL_IPS "${ROX_EXTERNAL_IPS:-true}"
     ci_export ROX_NETWORK_GRAPH_EXTERNAL_IPS "${ROX_NETWORK_GRAPH_EXTERNAL_IPS:-false}"
-    ci_export ROX_FLATTEN_CVE_DATA "${ROX_FLATTEN_CVE_DATA:-false}"
+    ci_export ROX_FLATTEN_CVE_DATA "${ROX_FLATTEN_CVE_DATA:-true}"
     ci_export ROX_VULNERABILITY_ON_DEMAND_REPORTS "${ROX_VULNERABILITY_ON_DEMAND_REPORTS:-true}"
     ci_export ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS "${ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS:-true}"
 
@@ -333,7 +333,7 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n      - name: ROX_SBOM_GENERATION'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_FLATTEN_CVE_DATA'
-    customize_envVars+=$'\n        value: "false"'
+    customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_VULNERABILITY_ON_DEMAND_REPORTS'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS'
@@ -1567,6 +1567,34 @@ wait_for_object_to_appear() {
             return 1
         fi
         info "Waiting for $namespace $object to appear"
+        sleep "$waitInterval"
+    done
+
+    return 0
+}
+
+wait_for_log_line() {
+    if [[ "$#" -lt 2 ]]; then
+        die "missing args. usage: wait_for_log_line <namespace> <object> <container> <log_line> [<delay>]"
+    fi
+
+    local namespace="$1"
+    local object="$2"
+    local container="$3"
+    local log_line="$4"
+    local delay="${5:-300}"
+    local waitInterval=20
+    local tries=$(( delay / waitInterval ))
+    local count=0
+    until kubectl logs -n "$namespace" "$object" -c "${container}" | grep "${log_line}"; do
+        count=$((count + 1))
+        if [[ $count -ge "$tries" ]]; then
+            info "$namespace $object did not log ${log_line} after $count tries"
+            echo "Waiting for $object log in ns $namespace timed out." > "${QA_DEPLOY_WAIT_INFO}" || true
+            kubectl -n "$namespace" get "$object"
+            return 1
+        fi
+        info "Waiting for $namespace $object to log ${log_line}"
         sleep "$waitInterval"
     done
 

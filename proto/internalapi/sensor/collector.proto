@@ -21,6 +21,13 @@ enum ExternalIpsEnabled {
   ENABLED = 1;
 }
 
+enum ExternalIpsDirection {
+  UNSPECIFIED = 0;
+  BOTH = 1;
+  INGRESS = 2;
+  EGRESS = 3;
+}
+
 // CollectorConfig controls which type of data is reported by collector
 // and how it is processed by collector. These configurations are used
 // to fine-tune collector's performance on large scale clusters.
@@ -30,6 +37,7 @@ enum ExternalIpsEnabled {
 message CollectorConfig {
   message ExternalIPs {
     ExternalIpsEnabled enabled = 1;
+    ExternalIpsDirection direction = 2;
   }
 
   message Networking {

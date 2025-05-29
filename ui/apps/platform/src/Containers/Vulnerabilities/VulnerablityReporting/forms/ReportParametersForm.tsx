@@ -318,7 +318,7 @@ function ReportParametersForm({ title, formik }: ReportParametersFormParams): Re
                         )}
                         {isIncludeAdvisoryEnabled && (
                             <Checkbox
-                                label="Include advisory"
+                                label="Include advisory name and link"
                                 id="reportParameters.includeAdvisory"
                                 isChecked={formik.values.reportParameters.includeAdvisory}
                                 onChange={onChange}

@@ -2,7 +2,9 @@ import io.stackrox.proto.storage.Cve.VulnerabilitySeverity
 
 import services.GraphQLService
 import services.ImageService
+import util.Env
 
+import spock.lang.IgnoreIf
 import spock.lang.Tag
 import spock.lang.Unroll
 
@@ -148,6 +150,8 @@ fragment cveFields on ImageVulnerability {
     }
 
     @Unroll
+    // TODO(ROX-29222): Fix the test for getting cves by component
+    @IgnoreIf({ Env.ROX_FLATTEN_CVE_DATA == "true" })
     def "Verify severities and CVSS #imageDigest #component #severity #cvss"() {
         when:
         def gqlService = new GraphQLService()

@@ -52,6 +52,31 @@ function ReportJobStatus({
             </Tooltip>
         );
         statusText = <p>Error</p>;
+    } else if (isDownload && !isDownloadAvailable) {
+        statusColorClass = 'pf-v5-u-disabled-color-100';
+        statusIcon = <DownloadIcon title="Report download was deleted" />;
+        statusText = (
+            <Flex
+                direction={{ default: 'row' }}
+                spaceItems={{ default: 'spaceItemsSm' }}
+                alignItems={{ default: 'alignItemsCenter' }}
+            >
+                <FlexItem>
+                    <p>Download deleted</p>
+                </FlexItem>
+                <FlexItem>
+                    <Tooltip
+                        content={
+                            <div>
+                                The download was deleted. Please generate a new download if needed.
+                            </div>
+                        }
+                    >
+                        <HelpIcon title="Download deletion explanation" />
+                    </Tooltip>
+                </FlexItem>
+            </Flex>
+        );
     } else if (isDownload && isDownloadAvailable && areDownloadActionsDisabled) {
         statusColorClass = 'pf-v5-u-disabled-color-100';
         statusIcon = <DownloadIcon title="Report download was successfully prepared" />;
@@ -82,18 +107,14 @@ function ReportJobStatus({
         isDownload &&
         isDownloadAvailable &&
         !areDownloadActionsDisabled &&
-        reportStatus.runState === 'PARTIAL_ERROR'
+        reportStatus.runState === 'PARTIAL_SCAN_ERROR_DOWNLOAD'
     ) {
-        statusIcon = (
-            <ExclamationTriangleIcon
-                title="Report download prepared with partial errors"
-                className="pf-v5-u-warning-color-100"
-            />
-        );
+        statusColorClass = 'pf-v5-u-primary-color-100';
+        statusIcon = <DownloadIcon title="Partial report download was successfully prepared" />;
         statusText = (
             <PartialReportModal
                 failedClusters={reportStatus.failedClusters}
-                onConfirm={onDownload}
+                onDownload={onDownload}
             />
         );
     } else if (isDownload && isDownloadAvailable && !areDownloadActionsDisabled) {
@@ -104,35 +125,14 @@ function ReportJobStatus({
                 Ready for download
             </Button>
         );
-    } else if (isDownload && !isDownloadAvailable) {
-        statusColorClass = 'pf-v5-u-disabled-color-100';
-        statusIcon = <DownloadIcon title="Report download was deleted" />;
-        statusText = (
-            <Flex
-                direction={{ default: 'row' }}
-                spaceItems={{ default: 'spaceItemsSm' }}
-                alignItems={{ default: 'alignItemsCenter' }}
-            >
-                <FlexItem>
-                    <p>Download deleted</p>
-                </FlexItem>
-                <FlexItem>
-                    <Tooltip
-                        content={
-                            <div>
-                                The download was deleted. Please generate a new download if needed.
-                            </div>
-                        }
-                    >
-                        <HelpIcon title="Download deletion explanation" />
-                    </Tooltip>
-                </FlexItem>
-            </Flex>
-        );
     } else if (reportStatus.runState === 'DELIVERED') {
         statusColorClass = 'pf-v5-u-success-color-100';
         statusIcon = <CheckCircleIcon title="Report was successfully sent" />;
         statusText = <p className="pf-v5-u-success-color-100">Successfully sent</p>;
+    } else if (reportStatus.runState === 'PARTIAL_SCAN_ERROR_EMAIL') {
+        statusColorClass = 'pf-v5-u-success-color-100';
+        statusIcon = <CheckCircleIcon title="Partial report was successfully sent" />;
+        statusText = <PartialReportModal failedClusters={reportStatus.failedClusters} />;
     } else {
         statusColorClass = 'pf-v5-u-warning-color-100';
         statusIcon = (

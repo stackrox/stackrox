@@ -217,6 +217,7 @@ func populateDefaultSystemRulesIfMissing(config *storage.Config) bool {
 			config.GetPlatformComponentConfig().Rules,
 			defaultPlatformConfigSystemRule,
 		)
+		config.GetPlatformComponentConfig().NeedsReevaluation = true
 	}
 	if !hasLayeredProductsRule {
 		// if layered products rule is missing, initialize it
@@ -224,6 +225,7 @@ func populateDefaultSystemRulesIfMissing(config *storage.Config) bool {
 			config.GetPlatformComponentConfig().Rules,
 			defaultPlatformConfigLayeredProductsRule,
 		)
+		config.GetPlatformComponentConfig().NeedsReevaluation = true
 	}
 	return true
 }

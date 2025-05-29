@@ -1,11 +1,14 @@
 package generator
 
 import (
+	"bytes"
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
 	"github.com/pkg/errors"
+	blobMocks "github.com/stackrox/rox/central/blob/datastore/mocks"
 	checkResultsMocks "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/mocks"
 	profileMocks "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore/mocks"
 	remediationMocks "github.com/stackrox/rox/central/complianceoperator/v2/remediations/datastore/mocks"
@@ -35,6 +38,7 @@ type ComplainceReportingTestSuite struct {
 	profileDS         *profileMocks.MockDataStore
 	remediationDS     *remediationMocks.MockDataStore
 	ruleDS            *ruleMocks.MockDataStore
+	blobDS            *blobMocks.MockDatastore
 	notifierProcessor *notifierMocks.MockProcessor
 	formatter         *mocks.MockFormatter
 	resultsAggregator *mocks.MockResultsAggregator
@@ -50,6 +54,7 @@ func (s *ComplainceReportingTestSuite) SetupSuite() {
 	s.profileDS = profileMocks.NewMockDataStore(s.mockCtrl)
 	s.remediationDS = remediationMocks.NewMockDataStore(s.mockCtrl)
 	s.ruleDS = ruleMocks.NewMockDataStore(s.mockCtrl)
+	s.blobDS = blobMocks.NewMockDatastore(s.mockCtrl)
 	s.notifierProcessor = notifierMocks.NewMockProcessor(s.mockCtrl)
 	s.formatter = mocks.NewMockFormatter(s.mockCtrl)
 	s.resultsAggregator = mocks.NewMockResultsAggregator(s.mockCtrl)
@@ -62,6 +67,7 @@ func (s *ComplainceReportingTestSuite) SetupSuite() {
 		profileDS:              s.profileDS,
 		remediationDS:          s.remediationDS,
 		complianceRuleDS:       s.ruleDS,
+		blobStore:              s.blobDS,
 		notificationProcessor:  s.notifierProcessor,
 		formatter:              s.formatter,
 		resultsAggregator:      s.resultsAggregator,
@@ -76,11 +82,13 @@ func TestComplianceReporting(t *testing.T) {
 }
 
 func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
+	scanConfigName := "scan-test"
 	request := &report.Request{
-		ScanConfigID: "scan-config-1",
-		SnapshotID:   "snapshot-1",
-		ClusterIDs:   []string{"cluster-1"},
-		Profiles:     []string{"profile-1"},
+		ScanConfigID:   "scan-config-1",
+		ScanConfigName: scanConfigName,
+		SnapshotID:     "snapshot-1",
+		ClusterIDs:     []string{"cluster-1"},
+		Profiles:       []string{"profile-1"},
 		Notifiers: []*storage.NotifierConfiguration{
 			{
 				NotifierConfig: &storage.NotifierConfiguration_EmailConfig{
@@ -96,28 +104,213 @@ func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
 	s.Run("GetSnapshots data store error", func() {
 		s.snapshotDS.EXPECT().GetSnapshot(gomock.Any(), gomock.Any()).Times(1).
 			Return(nil, false, errors.New("some error"))
-		s.Require().Error(s.reportGen.ProcessReportRequest(request))
+		err := s.reportGen.ProcessReportRequest(request)
+		s.Require().Error(err)
+		s.Assert().Contains(err.Error(), errUnableToRetrieveSnapshotStr)
 	})
 
 	s.Run("Snapshot not found", func() {
 		s.snapshotDS.EXPECT().GetSnapshot(gomock.Any(), gomock.Any()).Times(1).
 			Return(nil, false, nil)
-		s.Require().Error(s.reportGen.ProcessReportRequest(request))
+		err := s.reportGen.ProcessReportRequest(request)
+		s.Require().Error(err)
+		s.Assert().Contains(err.Error(), errUnableToFindSnapshotStr)
 	})
 
-	s.Run("Fail to upsert Snapshot", func() {
+	s.Run("FormatCSVReport error", func() {
+		s.snapshotDS.EXPECT().GetSnapshot(gomock.Any(), gomock.Any()).Times(1).
+			Return(&storage.ComplianceOperatorReportSnapshotV2{
+				ReportStatus: &storage.ComplianceOperatorReportStatus{},
+			}, true, nil)
+		s.resultsAggregator.EXPECT().GetReportData(gomock.Any()).Times(1).Return(&report.Results{})
+		s.formatter.EXPECT().FormatCSVReport(gomock.Any(), gomock.Any()).Times(1).Return(nil, errors.New("some error"))
+		s.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(),
+			gomock.Cond[*storage.ComplianceOperatorReportSnapshotV2](func(target *storage.ComplianceOperatorReportSnapshotV2) bool {
+				return storage.ComplianceOperatorReportStatus_FAILURE == target.GetReportStatus().GetRunState()
+			})).Times(1).Return(nil)
+		err := s.reportGen.ProcessReportRequest(request)
+		s.Require().Error(err)
+		s.Assert().Contains(err.Error(), fmt.Sprintf(errUnableToGenerateReportFmt, scanConfigName))
+	})
+
+	s.Run("FormatCSVReport error and upsert snapshot error", func() {
+		s.snapshotDS.EXPECT().GetSnapshot(gomock.Any(), gomock.Any()).Times(1).
+			Return(&storage.ComplianceOperatorReportSnapshotV2{
+				ReportStatus: &storage.ComplianceOperatorReportStatus{},
+			}, true, nil)
+		s.resultsAggregator.EXPECT().GetReportData(gomock.Any()).Times(1).Return(&report.Results{})
+		s.formatter.EXPECT().FormatCSVReport(gomock.Any(), gomock.Any()).Times(1).Return(nil, errors.New("some error"))
+		s.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(),
+			gomock.Cond[*storage.ComplianceOperatorReportSnapshotV2](func(target *storage.ComplianceOperatorReportSnapshotV2) bool {
+				return storage.ComplianceOperatorReportStatus_FAILURE == target.GetReportStatus().GetRunState()
+			})).Times(1).Return(errors.New("some error"))
+		err := s.reportGen.ProcessReportRequest(request)
+		s.Require().Error(err)
+		s.Assert().Contains(err.Error(), errUnableToUpdateSnapshotOnGenerationFailureStr)
+	})
+
+	s.Run("Fail to upsert Snapshot (generated)", func() {
 		s.snapshotDS.EXPECT().GetSnapshot(gomock.Any(), gomock.Any()).Times(1).
 			Return(&storage.ComplianceOperatorReportSnapshotV2{
 				ReportStatus: &storage.ComplianceOperatorReportStatus{},
 			}, true, nil)
 		s.resultsAggregator.EXPECT().GetReportData(gomock.Any()).Times(1).Return(&report.Results{})
 		s.formatter.EXPECT().FormatCSVReport(gomock.Any(), gomock.Any()).Times(1)
-		s.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).Times(1).
-			DoAndReturn(func(_ any, snapshot *storage.ComplianceOperatorReportSnapshotV2) error {
-				s.Require().Equal(storage.ComplianceOperatorReportStatus_GENERATED, snapshot.GetReportStatus().GetRunState())
-				return errors.New("some error")
-			})
-		s.Require().Error(s.reportGen.ProcessReportRequest(request))
+		s.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(),
+			gomock.Cond[*storage.ComplianceOperatorReportSnapshotV2](func(target *storage.ComplianceOperatorReportSnapshotV2) bool {
+				return storage.ComplianceOperatorReportStatus_GENERATED == target.GetReportStatus().GetRunState()
+			})).Times(1).Return(errors.New("some error"))
+		err := s.reportGen.ProcessReportRequest(request)
+		s.Require().Error(err)
+		s.Assert().Contains(err.Error(), errUnableToUpdateSnapshotOnGenerationSuccessStr)
+	})
+
+	s.Run("Fail to upsert Snapshot (partial error)", func() {
+		s.snapshotDS.EXPECT().GetSnapshot(gomock.Any(), gomock.Any()).Times(1).
+			Return(&storage.ComplianceOperatorReportSnapshotV2{
+				ReportStatus: &storage.ComplianceOperatorReportStatus{},
+			}, true, nil)
+		s.resultsAggregator.EXPECT().GetReportData(gomock.Any()).Times(1).Return(&report.Results{})
+		s.formatter.EXPECT().FormatCSVReport(gomock.Any(), gomock.Any()).Times(1)
+		s.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(),
+			gomock.Cond[*storage.ComplianceOperatorReportSnapshotV2](func(target *storage.ComplianceOperatorReportSnapshotV2) bool {
+				return storage.ComplianceOperatorReportStatus_PARTIAL_ERROR == target.GetReportStatus().GetRunState()
+			})).Times(1).Return(errors.New("some error"))
+		err := s.reportGen.ProcessReportRequest(newFakeRequestWithFailedCluster())
+		s.Require().Error(err)
+		s.Assert().Contains(err.Error(), errUnableToUpdateSnapshotOnGenerationSuccessStr)
+	})
+
+	s.Run("Fail to upsert Snapshot (all clusters failed)", func() {
+		s.snapshotDS.EXPECT().GetSnapshot(gomock.Any(), gomock.Any()).Times(1).
+			Return(&storage.ComplianceOperatorReportSnapshotV2{
+				ReportStatus: &storage.ComplianceOperatorReportStatus{},
+			}, true, nil)
+		s.resultsAggregator.EXPECT().GetReportData(gomock.Any()).Times(1).Return(&report.Results{})
+		s.formatter.EXPECT().FormatCSVReport(gomock.Any(), gomock.Any()).Times(1)
+		s.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(),
+			gomock.Cond[*storage.ComplianceOperatorReportSnapshotV2](func(target *storage.ComplianceOperatorReportSnapshotV2) bool {
+				return storage.ComplianceOperatorReportStatus_FAILURE == target.GetReportStatus().GetRunState()
+			})).Times(1).Return(errors.New("some error"))
+		req := newFakeRequestWithFailedCluster()
+		req.FailedClusters["cluster-1"] = &storage.ComplianceOperatorReportSnapshotV2_FailedCluster{}
+		err := s.reportGen.ProcessReportRequest(req)
+		s.Require().Error(err)
+		s.Assert().Contains(err.Error(), errUnableToUpdateSnapshotOnGenerationSuccessStr)
+	})
+
+	s.Run("Fail saving report data (FormatCSVReport returns nil data)", func() {
+		s.snapshotDS.EXPECT().GetSnapshot(gomock.Any(), gomock.Any()).Times(1).
+			Return(&storage.ComplianceOperatorReportSnapshotV2{
+				ReportStatus: &storage.ComplianceOperatorReportStatus{},
+			}, true, nil)
+		s.resultsAggregator.EXPECT().GetReportData(gomock.Any()).Times(1).Return(&report.Results{})
+		s.formatter.EXPECT().FormatCSVReport(gomock.Any(), gomock.Any()).Times(1)
+		gomock.InOrder(
+			s.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(),
+				gomock.Cond[*storage.ComplianceOperatorReportSnapshotV2](func(target *storage.ComplianceOperatorReportSnapshotV2) bool {
+					return storage.ComplianceOperatorReportStatus_GENERATED == target.GetReportStatus().GetRunState()
+				})).Times(1).Return(nil),
+			s.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(),
+				gomock.Cond[*storage.ComplianceOperatorReportSnapshotV2](func(target *storage.ComplianceOperatorReportSnapshotV2) bool {
+					return storage.ComplianceOperatorReportStatus_FAILURE == target.GetReportStatus().GetRunState()
+				})).Times(1).Return(nil),
+		)
+		err := s.reportGen.ProcessReportRequest(newFakeDownloadRequest())
+		s.Require().Error(err)
+		s.Assert().Contains(err.Error(), errUnableToSaveTheReportBlobStr)
+	})
+
+	s.Run("Fail saving report data (blob upsert error)", func() {
+		s.snapshotDS.EXPECT().GetSnapshot(gomock.Any(), gomock.Any()).Times(1).
+			Return(&storage.ComplianceOperatorReportSnapshotV2{
+				ReportStatus: &storage.ComplianceOperatorReportStatus{},
+			}, true, nil)
+		s.resultsAggregator.EXPECT().GetReportData(gomock.Any()).Times(1).Return(&report.Results{})
+		s.formatter.EXPECT().FormatCSVReport(gomock.Any(), gomock.Any()).Times(1).Return(&bytes.Buffer{}, nil)
+		gomock.InOrder(
+			s.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(),
+				gomock.Cond[*storage.ComplianceOperatorReportSnapshotV2](func(target *storage.ComplianceOperatorReportSnapshotV2) bool {
+					return storage.ComplianceOperatorReportStatus_GENERATED == target.GetReportStatus().GetRunState()
+				})).Times(1).Return(nil),
+			s.blobDS.EXPECT().Upsert(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(errors.New("some error")),
+			s.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(),
+				gomock.Cond[*storage.ComplianceOperatorReportSnapshotV2](func(target *storage.ComplianceOperatorReportSnapshotV2) bool {
+					return storage.ComplianceOperatorReportStatus_FAILURE == target.GetReportStatus().GetRunState()
+				})).Times(1).Return(nil),
+		)
+		err := s.reportGen.ProcessReportRequest(newFakeDownloadRequest())
+		s.Require().Error(err)
+		s.Assert().Contains(err.Error(), errUnableToSaveTheReportBlobStr)
+	})
+
+	s.Run("Fail saving report data (blob and snapshot upsert error)", func() {
+		s.snapshotDS.EXPECT().GetSnapshot(gomock.Any(), gomock.Any()).Times(1).
+			Return(&storage.ComplianceOperatorReportSnapshotV2{
+				ReportStatus: &storage.ComplianceOperatorReportStatus{},
+			}, true, nil)
+		s.resultsAggregator.EXPECT().GetReportData(gomock.Any()).Times(1).Return(&report.Results{})
+		s.formatter.EXPECT().FormatCSVReport(gomock.Any(), gomock.Any()).Times(1).Return(&bytes.Buffer{}, nil)
+		gomock.InOrder(
+			s.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(),
+				gomock.Cond[*storage.ComplianceOperatorReportSnapshotV2](func(target *storage.ComplianceOperatorReportSnapshotV2) bool {
+					return storage.ComplianceOperatorReportStatus_GENERATED == target.GetReportStatus().GetRunState()
+				})).Times(1).Return(nil),
+			s.blobDS.EXPECT().Upsert(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(errors.New("some error")),
+			s.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(),
+				gomock.Cond[*storage.ComplianceOperatorReportSnapshotV2](func(target *storage.ComplianceOperatorReportSnapshotV2) bool {
+					return storage.ComplianceOperatorReportStatus_FAILURE == target.GetReportStatus().GetRunState()
+				})).Times(1).Return(errors.New("some error")),
+		)
+		err := s.reportGen.ProcessReportRequest(newFakeDownloadRequest())
+		s.Require().Error(err)
+		s.Assert().Contains(err.Error(), errUnableToUpdateSnapshotOnBlobFailureStr)
+	})
+
+	s.Run("Saving report data success (snapshot upsert error)", func() {
+		s.snapshotDS.EXPECT().GetSnapshot(gomock.Any(), gomock.Any()).Times(1).
+			Return(&storage.ComplianceOperatorReportSnapshotV2{
+				ReportStatus: &storage.ComplianceOperatorReportStatus{},
+			}, true, nil)
+		s.resultsAggregator.EXPECT().GetReportData(gomock.Any()).Times(1).Return(&report.Results{})
+		s.formatter.EXPECT().FormatCSVReport(gomock.Any(), gomock.Any()).Times(1).Return(&bytes.Buffer{}, nil)
+		gomock.InOrder(
+			s.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(),
+				gomock.Cond[*storage.ComplianceOperatorReportSnapshotV2](func(target *storage.ComplianceOperatorReportSnapshotV2) bool {
+					return storage.ComplianceOperatorReportStatus_GENERATED == target.GetReportStatus().GetRunState()
+				})).Times(1).Return(nil),
+			s.blobDS.EXPECT().Upsert(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil),
+			s.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(),
+				gomock.Cond[*storage.ComplianceOperatorReportSnapshotV2](func(target *storage.ComplianceOperatorReportSnapshotV2) bool {
+					return storage.ComplianceOperatorReportStatus_GENERATED == target.GetReportStatus().GetRunState() &&
+						target.GetReportStatus().GetCompletedAt() != nil
+				})).Times(1).Return(errors.New("some error")),
+		)
+		err := s.reportGen.ProcessReportRequest(newFakeDownloadRequest())
+		s.Require().Error(err)
+		s.Assert().Contains(err.Error(), errUnableToUpdateSnapshotOnBlobSuccessStr)
+	})
+
+	s.Run("Saving report data success", func() {
+		s.snapshotDS.EXPECT().GetSnapshot(gomock.Any(), gomock.Any()).Times(1).
+			Return(&storage.ComplianceOperatorReportSnapshotV2{
+				ReportStatus: &storage.ComplianceOperatorReportStatus{},
+			}, true, nil)
+		s.resultsAggregator.EXPECT().GetReportData(gomock.Any()).Times(1).Return(&report.Results{})
+		s.formatter.EXPECT().FormatCSVReport(gomock.Any(), gomock.Any()).Times(1).Return(&bytes.Buffer{}, nil)
+		gomock.InOrder(
+			s.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(),
+				gomock.Cond[*storage.ComplianceOperatorReportSnapshotV2](func(target *storage.ComplianceOperatorReportSnapshotV2) bool {
+					return storage.ComplianceOperatorReportStatus_GENERATED == target.GetReportStatus().GetRunState()
+				})).Times(1).Return(nil),
+			s.blobDS.EXPECT().Upsert(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil),
+			s.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(),
+				gomock.Cond[*storage.ComplianceOperatorReportSnapshotV2](func(target *storage.ComplianceOperatorReportSnapshotV2) bool {
+					return storage.ComplianceOperatorReportStatus_GENERATED == target.GetReportStatus().GetRunState() &&
+						target.GetReportStatus().GetCompletedAt() != nil
+				})).Times(1).Return(nil),
+		)
+		s.Require().NoError(s.reportGen.ProcessReportRequest(newFakeDownloadRequest()))
 	})
 
 	s.Run("Fail to notify", func() {
@@ -130,15 +323,19 @@ func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
 		s.resultsAggregator.EXPECT().GetReportData(gomock.Any()).Times(1).Return(&report.Results{})
 		s.formatter.EXPECT().FormatCSVReport(gomock.Any(), gomock.Any()).Times(1)
 		gomock.InOrder(
-			s.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).Times(1).
+			s.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(),
+				gomock.Cond[*storage.ComplianceOperatorReportSnapshotV2](func(target *storage.ComplianceOperatorReportSnapshotV2) bool {
+					return storage.ComplianceOperatorReportStatus_GENERATED == target.GetReportStatus().GetRunState()
+				})).Times(1).
 				DoAndReturn(func(_ any, snapshot *storage.ComplianceOperatorReportSnapshotV2) error {
-					s.Require().Equal(storage.ComplianceOperatorReportStatus_GENERATED, snapshot.GetReportStatus().GetRunState())
 					wg.Add(-1)
 					return nil
 				}),
-			s.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).Times(1).
+			s.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(),
+				gomock.Cond[*storage.ComplianceOperatorReportSnapshotV2](func(target *storage.ComplianceOperatorReportSnapshotV2) bool {
+					return storage.ComplianceOperatorReportStatus_FAILURE == target.GetReportStatus().GetRunState()
+				})).Times(1).
 				DoAndReturn(func(_ any, snapshot *storage.ComplianceOperatorReportSnapshotV2) error {
-					s.Require().Equal(storage.ComplianceOperatorReportStatus_FAILURE, snapshot.GetReportStatus().GetRunState())
 					wg.Add(-1)
 					return nil
 				}),
@@ -172,15 +369,19 @@ func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
 		s.resultsAggregator.EXPECT().GetReportData(gomock.Any()).Times(1).Return(&report.Results{})
 		s.formatter.EXPECT().FormatCSVReport(gomock.Any(), gomock.Any()).Times(1)
 		gomock.InOrder(
-			s.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).Times(1).
+			s.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(),
+				gomock.Cond[*storage.ComplianceOperatorReportSnapshotV2](func(target *storage.ComplianceOperatorReportSnapshotV2) bool {
+					return storage.ComplianceOperatorReportStatus_GENERATED == target.GetReportStatus().GetRunState()
+				})).Times(1).
 				DoAndReturn(func(_ any, snapshot *storage.ComplianceOperatorReportSnapshotV2) error {
-					s.Require().Equal(storage.ComplianceOperatorReportStatus_GENERATED, snapshot.GetReportStatus().GetRunState())
 					wg.Add(-1)
 					return nil
 				}),
-			s.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).Times(1).
+			s.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(),
+				gomock.Cond[*storage.ComplianceOperatorReportSnapshotV2](func(target *storage.ComplianceOperatorReportSnapshotV2) bool {
+					return storage.ComplianceOperatorReportStatus_DELIVERED == target.GetReportStatus().GetRunState()
+				})).Times(1).
 				DoAndReturn(func(_ any, snapshot *storage.ComplianceOperatorReportSnapshotV2) error {
-					s.Require().Equal(storage.ComplianceOperatorReportStatus_DELIVERED, snapshot.GetReportStatus().GetRunState())
 					wg.Add(-1)
 					return nil
 				}),
@@ -203,6 +404,38 @@ func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
 		}, 500*time.Millisecond, 10*time.Millisecond)
 		handleWaitGroup(s.T(), &wg, 5*time.Second, "send email failure")
 	})
+}
+
+func newFakeDownloadRequest() *report.Request {
+	return &report.Request{
+		ScanConfigID:       "scan-config-1",
+		SnapshotID:         "snapshot-1",
+		ClusterIDs:         []string{"cluster-1", "cluster-2"},
+		Profiles:           []string{"profile-1"},
+		NotificationMethod: storage.ComplianceOperatorReportStatus_DOWNLOAD,
+	}
+}
+
+func newFakeRequestWithFailedCluster() *report.Request {
+	return &report.Request{
+		ScanConfigID: "scan-config-1",
+		SnapshotID:   "snapshot-1",
+		ClusterIDs:   []string{"cluster-1", "cluster-2"},
+		Profiles:     []string{"profile-1"},
+		Notifiers: []*storage.NotifierConfiguration{
+			{
+				NotifierConfig: &storage.NotifierConfiguration_EmailConfig{
+					EmailConfig: &storage.EmailNotifierConfiguration{
+						NotifierId:   "notifier-1",
+						MailingLists: []string{"test@test.com"},
+					},
+				},
+			},
+		},
+		FailedClusters: map[string]*storage.ComplianceOperatorReportSnapshotV2_FailedCluster{
+			"cluster-2": {},
+		},
+	}
 }
 
 func handleWaitGroup(t *testing.T, wg *concurrency.WaitGroup, timeout time.Duration, msg string) {

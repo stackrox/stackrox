@@ -14,6 +14,7 @@ import {
 import { clustersBasePath, getIsRoutePathRendered } from 'routePaths';
 */
 import usePermissions from 'hooks/usePermissions';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import { fetchSystemConfig } from 'services/SystemConfigService';
 import { SystemConfig } from 'types/config.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
@@ -34,6 +35,11 @@ const SystemConfigPage = (): ReactElement => {
     })(clustersBasePath);
     */
     const isClustersRoutePathRendered = true; // TODO replace with the preceding after #2105 has been merged
+
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isCustomizingPlatformComponentsEnabled = isFeatureFlagEnabled(
+        'ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS'
+    );
 
     const [isEditing, setIsEditing] = useState(false);
 
@@ -84,8 +90,9 @@ const SystemConfigPage = (): ReactElement => {
             </PageSection>
         ) : (
             <SystemConfigDetails
-                isClustersRoutePathRendered={isClustersRoutePathRendered}
                 systemConfig={systemConfig}
+                isClustersRoutePathRendered={isClustersRoutePathRendered}
+                isCustomizingPlatformComponentsEnabled={isCustomizingPlatformComponentsEnabled}
             />
         );
     } else {

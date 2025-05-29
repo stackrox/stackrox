@@ -79,17 +79,19 @@ func GetRoxctlHTTPClient(config *HttpClientConfig) (RoxctlHTTPClient, error) {
 
 	retryClient := retryablehttp.NewClient()
 	retryClient.CheckRetry = func(ctx context.Context, resp *http.Response, err error) (bool, error) {
-		retry, err := retryablehttp.DefaultRetryPolicy(ctx, resp, err)
-		if !retry || err == nil || status.Code(err) == codes.PermissionDenied {
-			return false, err //nolint:wrapcheck
+		retry, err := retryablehttp.ErrorPropagatedRetryPolicy(ctx, resp, err)
+		if !retry || status.Code(err) == codes.PermissionDenied {
+			return false, nil
 		}
-		if resp != nil {
-			config.Logger.ErrfLn("%d %s: %v", resp.StatusCode, resp.Status, err)
-		} else {
-			config.Logger.ErrfLn(err.Error())
+		if err != nil {
+			config.Logger.WarnfLn(err.Error())
 		}
-		return true, err //nolint:wrapcheck
+		return true, nil
 	}
+	// Allows callers to extract the error message from response body.
+	// Without this only a generic message "request failed after X attempts"
+	// is surfaced.
+	retryClient.ErrorHandler = retryablehttp.PassthroughErrorHandler
 	retryClient.RetryMax = config.RetryCount
 	retryClient.HTTPClient.Transport = transport
 	retryClient.HTTPClient.Timeout = config.Timeout
@@ -101,13 +103,6 @@ func GetRoxctlHTTPClient(config *HttpClientConfig) (RoxctlHTTPClient, error) {
 		// Disable the exponential backoff, in some scenarios the backoff makes roxctl appear
 		// stuck (partially due to the logger being disabled).
 		retryClient.Backoff = func(min, max time.Duration, attemptNum int, resp *http.Response) time.Duration { return min }
-	}
-
-	if config.ReturnRespBodyOnError {
-		// Allows callers to extract the error message from response body.
-		// Without this only a generic message "request failed after X attempts"
-		// is surfaced.
-		retryClient.ErrorHandler = retryablehttp.PassthroughErrorHandler
 	}
 
 	client := retryClient.StandardClient()

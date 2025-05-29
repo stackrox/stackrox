@@ -21,6 +21,7 @@ import {
 import {
     ActionsColumn,
     ExpandableRowContent,
+    IAction,
     Table,
     Tbody,
     Td,
@@ -35,7 +36,6 @@ import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
 import PolicyDisabledIconText from 'Components/PatternFly/IconText/PolicyDisabledIconText';
 import PolicySeverityIconText from 'Components/PatternFly/IconText/PolicySeverityIconText';
 import SearchFilterInput from 'Components/SearchFilterInput';
-import { ActionItem } from 'Containers/Violations/ViolationsTablePanel';
 import EnableDisableNotificationModal, {
     EnableDisableType,
 } from 'Containers/Policies/Modal/EnableDisableNotificationModal';
@@ -423,20 +423,22 @@ function PoliciesTable({
                             labelAndNotifierIdsForTypes,
                             notifierIds
                         );
-                        const exportPolicyAction: ActionItem = {
+                        const exportPolicyAction: IAction = {
                             title: 'Export policy to JSON',
                             onClick: () => exportPoliciesHandler([id]),
                         };
                         // Store as an array so that we can conditionally spread into actionItems
                         // based on feature flag without having to deal with nulls
-                        const saveAsCustomResourceActionItems: ActionItem[] = !isDefault
-                            ? [
-                                  {
-                                      title: 'Save as Custom Resource',
-                                      onClick: () => setSavingIds([id]),
-                                  },
-                              ]
-                            : [];
+                        const saveAsCustomResourceActionItem: IAction = {
+                            title: isDefault
+                                ? 'Cannot save as Custom Resource'
+                                : 'Save as Custom Resource',
+                            description: isDefault
+                                ? 'Default policies cannot be saved as Custom Resource'
+                                : '',
+                            onClick: () => setSavingIds([id]),
+                            isDisabled: isDefault,
+                        };
                         const actionItems = hasWriteAccessForPolicy
                             ? [
                                   {
@@ -457,7 +459,7 @@ function PoliciesTable({
                                             onClick: () => disablePoliciesHandler([id]),
                                         },
                                   exportPolicyAction,
-                                  ...saveAsCustomResourceActionItems,
+                                  saveAsCustomResourceActionItem,
                                   {
                                       isSeparator: true,
                                   },
@@ -469,7 +471,7 @@ function PoliciesTable({
                                       isDisabled: isDefault,
                                   },
                               ]
-                            : [exportPolicyAction, ...saveAsCustomResourceActionItems];
+                            : [exportPolicyAction, saveAsCustomResourceActionItem];
                         const rowIndex = rowIdToIndex[id];
                         return (
                             <Tbody

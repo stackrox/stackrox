@@ -101,6 +101,8 @@ const SystemConfigForm = ({
 
     const { privateConfig } = systemConfig;
     const publicConfig = getCompletePublicConfig(systemConfig);
+    // @TODO: Use "getPlatformComponentsConfigRules" to convert the config into a structure compatible with Formik
+    const { platformComponentsConfig } = systemConfig;
     const {
         dirty,
         errors,
@@ -118,6 +120,8 @@ const SystemConfigForm = ({
             saveSystemConfig({
                 privateConfig: values.privateConfig,
                 publicConfig: values.publicConfig,
+                // @TODO: Pass the form values instead
+                platformComponentsConfig,
             })
                 .then((data) => {
                     // Simulate fetchPublicConfig response to update Redux state.

@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv"
-	"github.com/stackrox/rox/pkg/protoutils"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sync"
@@ -126,7 +125,9 @@ func FetchImageSignaturesWithRetries(ctx context.Context, fetcher SignatureFetch
 	var fetchedSignatures []*storage.Signature
 	var err error
 	err = retry.WithRetry(func() error {
-		fetchedSignatures, err = fetchAndAppendSignatures(ctx, fetcher, image, fullImageName, registry, fetchedSignatures)
+		sigFetchCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+		defer cancel()
+		fetchedSignatures, err = fetcher.FetchSignatures(sigFetchCtx, image, fullImageName, registry)
 		return err
 	},
 		retry.WithContext(ctx),
@@ -137,22 +138,4 @@ func FetchImageSignaturesWithRetries(ctx context.Context, fetcher SignatureFetch
 		}))
 
 	return fetchedSignatures, err
-}
-
-func fetchAndAppendSignatures(ctx context.Context, fetcher SignatureFetcher, image *storage.Image,
-	fullImageName string, registry registryTypes.Registry, fetchedSignatures []*storage.Signature) ([]*storage.Signature, error) {
-	sigFetchCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
-	defer cancel()
-
-	sigs, err := fetcher.FetchSignatures(sigFetchCtx, image, fullImageName, registry)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, sig := range sigs {
-		if !protoutils.SliceContains(sig, fetchedSignatures) {
-			fetchedSignatures = append(fetchedSignatures, sig)
-		}
-	}
-	return fetchedSignatures, nil
 }

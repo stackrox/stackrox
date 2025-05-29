@@ -47,12 +47,12 @@ index edbe57b..0e914b2 100644
 -      # tolerations:
 -      # # this toleration is to have the daemonset runnable on master nodes
 -      # # remove it if your masters can't run pods
--      # - key: node-role.kubernetes.io/master
+-      # - key: node-role.kubernetes.io/control-plane
 -      #   effect: NoSchedule
 +      tolerations:
 +      # this toleration is to have the daemonset runnable on master nodes
 +      # remove it if your masters can't run pods
-+      - key: node-role.kubernetes.io/master
++      - key: node-role.kubernetes.io/control-plane
 +        effect: NoSchedule
 EOF
 

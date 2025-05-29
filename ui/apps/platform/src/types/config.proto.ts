@@ -79,5 +79,5 @@ export type SystemConfig = {
      */
     publicConfig: PublicConfig | null;
     privateConfig: PrivateConfig;
-    // @TODO: Add platform components config here
+    platformComponentsConfig: PlatformComponentsConfig;
 };

@@ -16,5 +16,5 @@ repositories {
 }
 
 dependencies {
-    implementation 'org.apache.groovy:groovy:4.0.26'
+    implementation 'org.apache.groovy:groovy:4.0.27'
 }

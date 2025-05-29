@@ -68,6 +68,81 @@
         ]
       }
     },
+    "/v1/config/platformcomponent": {
+      "get": {
+        "operationId": "ConfigService_GetPlatformComponentConfig",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/storagePlatformComponentConfig"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "ConfigService"
+        ]
+      },
+      "put": {
+        "operationId": "ConfigService_UpdatePlatformComponentConfig",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/storagePlatformComponentConfig"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1PutPlatformComponentConfigRequest"
+            }
+          }
+        ],
+        "tags": [
+          "ConfigService"
+        ]
+      }
+    },
+    "/v1/config/platformcomponent/rhlp/default": {
+      "get": {
+        "summary": "GetDefaultRedHatLayeredProductsRegex returns a static string containing the default Red Hat Layered Products regex.",
+        "operationId": "ConfigService_GetDefaultRedHatLayeredProductsRegex",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetDefaultRedHatLayeredProductsRegexResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "ConfigService"
+        ]
+      }
+    },
     "/v1/config/private": {
       "get": {
         "operationId": "ConfigService_GetPrivateConfig",
@@ -491,6 +566,14 @@
         }
       }
     },
+    "v1GetDefaultRedHatLayeredProductsRegexResponse": {
+      "type": "object",
+      "properties": {
+        "regex": {
+          "type": "string"
+        }
+      }
+    },
     "v1GetVulnerabilityExceptionConfigResponse": {
       "type": "object",
       "properties": {
@@ -504,6 +587,18 @@
       "properties": {
         "config": {
           "$ref": "#/definitions/storageConfig"
+        }
+      }
+    },
+    "v1PutPlatformComponentConfigRequest": {
+      "type": "object",
+      "properties": {
+        "rules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/PlatformComponentConfigRule"
+          }
         }
       }
     },

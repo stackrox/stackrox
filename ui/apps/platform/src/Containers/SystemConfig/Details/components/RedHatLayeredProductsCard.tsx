@@ -40,13 +40,17 @@ function RedHatLayeredProductsCard({ rule }: RedHatLayeredProductsCardProps) {
                             Namespaces match (Regex)
                         </Text>
                         <CodeBlock>
-                            <div className="truncate-multiline">{rule?.namespaceRule.regex}</div>
+                            <div className="truncate-multiline">
+                                {rule?.namespaceRule?.regex || 'None'}
+                            </div>
                         </CodeBlock>
-                        <StackItem className="pf-v5-u-text-align-center pf-v5-u-mt-sm">
-                            <Button variant="link" isInline onClick={toggleModal}>
-                                View more
-                            </Button>
-                        </StackItem>
+                        {rule?.namespaceRule.regex !== '' && (
+                            <StackItem className="pf-v5-u-text-align-center pf-v5-u-mt-sm">
+                                <Button variant="link" isInline onClick={toggleModal}>
+                                    View more
+                                </Button>
+                            </StackItem>
+                        )}
                     </Stack>
                 </CardBody>
             </Card>

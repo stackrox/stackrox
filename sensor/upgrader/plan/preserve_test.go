@@ -177,7 +177,7 @@ func TestPreserveTolerations(t *testing.T) {
 					Tolerations: []corev1.Toleration{
 						{
 							Effect:   corev1.TaintEffectNoSchedule,
-							Key:      "node-role.kubernetes.io/master",
+							Key:      "node-role.kubernetes.io/control-plane",
 							Operator: corev1.TolerationOpExists,
 						},
 					},
@@ -230,7 +230,7 @@ func TestPreserveTolerations(t *testing.T) {
 					Tolerations: []corev1.Toleration{
 						{
 							Effect:   corev1.TaintEffectNoSchedule,
-							Key:      "node-role.kubernetes.io/master",
+							Key:      "node-role.kubernetes.io/control-plane",
 							Operator: corev1.TolerationOpExists,
 						},
 					},

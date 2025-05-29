@@ -40,10 +40,6 @@ func TestFunctionalOptions(t *testing.T) {
 	WithRetryDelay(1 * time.Second)(cfg)
 	assert.NotZero(t, cfg.RetryDelay)
 
-	assert.Zero(t, cfg.ReturnRespBodyOnError)
-	WithReturnErrorResponseBody(true)(cfg)
-	assert.NotZero(t, cfg.ReturnRespBodyOnError)
-
 	assert.Zero(t, cfg.Timeout)
 	WithTimeout(1 * time.Second)(cfg)
 	assert.NotZero(t, cfg.Timeout)

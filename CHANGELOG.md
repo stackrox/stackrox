@@ -1,11 +1,13 @@
 
 # Changelog
 
-Entries in this file should be limited to:
+This file helps upstream users learn about what is new in a release.
 
+Put an entry in this file if your change is user-visible and you consider it _particularly noteworthy_. Especially:
 - Any changes that introduce a deprecation in functionality, OR
 - Obscure side-effects that are not obviously apparent based on the JIRA associated with the changes.
-Please avoid adding duplicate information across this changelog and JIRA/doc input pages.
+
+Changes should still be described appropriately in JIRA/doc input pages, for inclusion in downstream release notes.
 
 ## [NEXT RELEASE]
 
@@ -58,6 +60,7 @@ Scanner V4 claims the images contain vulnerabilities which the official Red Hat 
 
   The above values will need to be updated to match your release name (i.e. "stackrox-central-services") or namespace (i.e. "stackrox") in case you had used different ones.
 - ROX-22597: The S3 backup integration is migrated to the AWS go SDK v2. GCS buckets are not supported anymore by the S3 integration type, as announced in 4.5.0, users should use dedicated GCS integrations for these.
+- The scoping of Google image integrations by project is now optional.
 
 ## [4.7.0]
 

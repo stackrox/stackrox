@@ -1446,6 +1446,34 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 				},
 			},
 		},
+		"when vuln with introduced&lastAffected fixedIn then return empty": {
+			ccVulnerabilities: map[string]*claircore.Vulnerability{
+				"foo": {
+					Issued:         now,
+					FixedInVersion: "introduced=9.0.13&lastAffected=9.0.62",
+				},
+			},
+			want: map[string]*v4.VulnerabilityReport_Vulnerability{
+				"foo": {
+					Issued:         protoNow,
+					FixedInVersion: "",
+				},
+			},
+		},
+		"when vuln with lastAffected fixedIn then return empty": {
+			ccVulnerabilities: map[string]*claircore.Vulnerability{
+				"foo": {
+					Issued:         now,
+					FixedInVersion: "lastAffected=9.0.62",
+				},
+			},
+			want: map[string]*v4.VulnerabilityReport_Vulnerability{
+				"foo": {
+					Issued:         protoNow,
+					FixedInVersion: "",
+				},
+			},
+		},
 		"when vuln urlencoded fixedIn then use fixed value in fixedIn": {
 			ccVulnerabilities: map[string]*claircore.Vulnerability{
 				"foo": {

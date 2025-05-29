@@ -209,6 +209,153 @@ func (s *configDataStoreTestSuite) TestAllowsUpdate() {
 	s.NotNil(updatedPublicConfig)
 }
 
+func (s *configDataStoreTestSuite) TestGetPlatformComponentConfig() {
+	s.storage.EXPECT().Get(gomock.Any()).Return(&storage.Config{
+		PublicConfig:  sampleConfig.PublicConfig,
+		PrivateConfig: sampleConfig.PrivateConfig,
+		PlatformComponentConfig: &storage.PlatformComponentConfig{
+			NeedsReevaluation: true,
+			Rules: []*storage.PlatformComponentConfig_Rule{
+				defaultPlatformConfigSystemRule,
+				defaultPlatformConfigLayeredProductsRule,
+			},
+		},
+	}, true, nil).Times(1)
+
+	platformConfig, _, err := s.dataStore.GetPlatformComponentConfig(s.hasReadCtx)
+	s.NoError(err, "expected no error trying to read with permissions")
+	s.NotNil(platformConfig)
+	s.True(platformConfig.NeedsReevaluation)
+	s.Equal(2, len(platformConfig.Rules))
+}
+
+func (s *configDataStoreTestSuite) TestUpsertPlatformComponentConfig() {
+	// Test when no update is required
+	s.storage.EXPECT().Get(gomock.Any()).Return(&storage.Config{
+		PublicConfig:  sampleConfig.PublicConfig,
+		PrivateConfig: sampleConfig.PrivateConfig,
+		PlatformComponentConfig: &storage.PlatformComponentConfig{
+			NeedsReevaluation: false,
+			Rules: []*storage.PlatformComponentConfig_Rule{
+				defaultPlatformConfigSystemRule,
+				defaultPlatformConfigLayeredProductsRule,
+			},
+		},
+	}, true, nil).Times(1)
+	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
+
+	config, err := s.dataStore.UpsertPlatformComponentConfigRules(s.hasWriteCtx, []*storage.PlatformComponentConfig_Rule{
+		defaultPlatformConfigSystemRule,
+		defaultPlatformConfigLayeredProductsRule,
+	})
+	s.NoError(err, "expected no error trying to upsert basic config")
+	s.NotNil(config)
+	s.False(config.NeedsReevaluation)
+	s.Equal(2, len(config.Rules))
+
+	// Test when a re-evaluation should be triggered
+	s.storage.EXPECT().Get(gomock.Any()).Return(&storage.Config{
+		PublicConfig:  sampleConfig.PublicConfig,
+		PrivateConfig: sampleConfig.PrivateConfig,
+		PlatformComponentConfig: &storage.PlatformComponentConfig{
+			NeedsReevaluation: false,
+			Rules: []*storage.PlatformComponentConfig_Rule{
+				defaultPlatformConfigSystemRule,
+				defaultPlatformConfigLayeredProductsRule,
+			},
+		},
+	}, true, nil).Times(1)
+	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
+	config, err = s.dataStore.UpsertPlatformComponentConfigRules(s.hasWriteCtx, []*storage.PlatformComponentConfig_Rule{
+		defaultPlatformConfigSystemRule,
+		defaultPlatformConfigLayeredProductsRule,
+		{
+			Name: "new rule",
+			NamespaceRule: &storage.PlatformComponentConfig_Rule_NamespaceRule{
+				Regex: ".*",
+			},
+		},
+	})
+	s.NoError(err, "expected no error when upserting new rule")
+	s.NotNil(config)
+	s.True(config.NeedsReevaluation)
+	s.Equal(3, len(config.Rules))
+
+	// Test updating a system rule a couple ways
+	s.storage.EXPECT().Get(gomock.Any()).Return(&storage.Config{
+		PublicConfig:  sampleConfig.PublicConfig,
+		PrivateConfig: sampleConfig.PrivateConfig,
+		PlatformComponentConfig: &storage.PlatformComponentConfig{
+			NeedsReevaluation: false,
+			Rules: []*storage.PlatformComponentConfig_Rule{
+				defaultPlatformConfigSystemRule,
+				defaultPlatformConfigLayeredProductsRule,
+			},
+		},
+	}, true, nil).Times(1)
+	config, err = s.dataStore.UpsertPlatformComponentConfigRules(s.hasWriteCtx, []*storage.PlatformComponentConfig_Rule{
+		defaultPlatformConfigSystemRule,
+		defaultPlatformConfigLayeredProductsRule,
+		{
+			Name: "system rule",
+			NamespaceRule: &storage.PlatformComponentConfig_Rule_NamespaceRule{
+				Regex: "not the system regex",
+			},
+		},
+	})
+	s.Error(err, "expected an error when trying to override the system regex")
+	s.Nil(config)
+
+	s.storage.EXPECT().Get(gomock.Any()).Return(&storage.Config{
+		PublicConfig:  sampleConfig.PublicConfig,
+		PrivateConfig: sampleConfig.PrivateConfig,
+		PlatformComponentConfig: &storage.PlatformComponentConfig{
+			NeedsReevaluation: false,
+			Rules: []*storage.PlatformComponentConfig_Rule{
+				defaultPlatformConfigSystemRule,
+				defaultPlatformConfigLayeredProductsRule,
+			},
+		},
+	}, true, nil).Times(1)
+	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
+	config, err = s.dataStore.UpsertPlatformComponentConfigRules(s.hasWriteCtx, []*storage.PlatformComponentConfig_Rule{
+		defaultPlatformConfigSystemRule,
+		defaultPlatformConfigLayeredProductsRule,
+		defaultPlatformConfigSystemRule,
+	})
+	s.NoError(err, "expected no error trying to add duplicate system rule")
+	s.NotNil(config)
+	s.False(config.NeedsReevaluation)
+	s.Equal(2, len(config.Rules))
+
+	// Test duplicating the layered products rule
+	s.storage.EXPECT().Get(gomock.Any()).Return(&storage.Config{
+		PublicConfig:  sampleConfig.PublicConfig,
+		PrivateConfig: sampleConfig.PrivateConfig,
+		PlatformComponentConfig: &storage.PlatformComponentConfig{
+			NeedsReevaluation: false,
+			Rules: []*storage.PlatformComponentConfig_Rule{
+				defaultPlatformConfigSystemRule,
+				defaultPlatformConfigLayeredProductsRule,
+			},
+		},
+	}, true, nil).Times(1)
+	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
+	config, err = s.dataStore.UpsertPlatformComponentConfigRules(s.hasWriteCtx, []*storage.PlatformComponentConfig_Rule{
+		defaultPlatformConfigSystemRule,
+		defaultPlatformConfigLayeredProductsRule,
+		{
+			Name: defaultPlatformConfigLayeredProductsRule.Name,
+			NamespaceRule: &storage.PlatformComponentConfig_Rule_NamespaceRule{
+				Regex: ".*",
+			},
+		},
+	})
+	s.NoError(err, "expected no error trying to add duplicate system rule")
+	s.NotNil(config)
+	s.Equal(2, len(config.Rules))
+}
+
 var (
 	customAlertRetention = &storage.PrivateConfig_AlertConfig{
 		AlertConfig: &storage.AlertRetentionConfig{

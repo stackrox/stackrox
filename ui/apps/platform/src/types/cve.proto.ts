@@ -22,8 +22,8 @@ export function isVulnerabilityState(value: unknown): value is VulnerabilityStat
 
 // advisory property is null if not available or not applicable
 export type Advisory = {
-    advisoryId: string; // for example, RHSA-yyyy:nnnn
-    advisoryLink: string; // for example, https://access.redhat.com/errata/RHSA-yyyy:nnnn
+    name: string; // for example, RHSA-yyyy:nnnn
+    link: string; // for example, https://access.redhat.com/errata/RHSA-yyyy:nnnn
 };
 
 // epss property is null if not available

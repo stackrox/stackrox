@@ -77,6 +77,17 @@ tests:
     .deployments["scanner-v4-matcher"] | assertThat(. == null)
     .deployments["scanner-v4-db"] | assertThat(. != null)
 
+- name: "Scanner V4 Indexer can find Sensor"
+  release:
+    namespace: "other"
+  set:
+    scannerV4.disable: false
+    imagePullSecrets.allowNone: true
+    allowNonstandardNamespace: true
+  expect: |
+    .deployments["scanner-v4-indexer"].spec.template.spec.containers[0].env[] |
+          select(.name == "ROX_SENSOR_ENDPOINT") | assertThat(.value == "sensor.other.svc:443")
+
 - name: "no matcher resources should exist"
   set:
     scannerV4.disable: false

@@ -1,5 +1,5 @@
 ARG PG_VERSION=15
-FROM quay.io/sclorg/postgresql-${PG_VERSION}-c8s:latest AS final
+FROM quay.io/sclorg/postgresql-${PG_VERSION}-c9s:latest AS final
 
 USER root
 
@@ -12,7 +12,7 @@ LABEL \
     io.k8s.display-name="central-db" \
     io.openshift.tags="rhacs,central-db,stackrox" \
     maintainer="Red Hat, Inc." \
-    name="rhacs-central-db-rhel8" \
+    name="rhacs-central-db-rhel9" \
     source-location="https://github.com/stackrox/stackrox" \
     summary="Central DB for Red Hat Advanced Cluster Security for Kubernetes" \
     # We must set version label to prevent inheriting value set in the base stage.

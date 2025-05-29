@@ -87,6 +87,20 @@ func (mr *MockCveFlatMockRecorder) GetCVEIDs() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCVEIDs", reflect.TypeOf((*MockCveFlat)(nil).GetCVEIDs))
 }
 
+// GetEPSSProbability mocks base method.
+func (m *MockCveFlat) GetEPSSProbability() float32 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetEPSSProbability")
+	ret0, _ := ret[0].(float32)
+	return ret0
+}
+
+// GetEPSSProbability indicates an expected call of GetEPSSProbability.
+func (mr *MockCveFlatMockRecorder) GetEPSSProbability() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEPSSProbability", reflect.TypeOf((*MockCveFlat)(nil).GetEPSSProbability))
+}
+
 // GetFirstDiscoveredInSystem mocks base method.
 func (m *MockCveFlat) GetFirstDiscoveredInSystem() *time.Time {
 	m.ctrl.T.Helper()

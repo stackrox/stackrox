@@ -189,7 +189,6 @@ describe('Image Integrations', () => {
 
         getHelperElementByLabel('Integration name').contains('An integration name is required');
         getHelperElementByLabel('Registry endpoint').contains('An endpoint is required');
-        getHelperElementByLabel('Project').contains('A project is required');
         getHelperElementByLabel('Service account key (JSON)').contains(
             'Valid JSON is required for service account key'
         );
@@ -244,7 +243,6 @@ describe('Image Integrations', () => {
 
         getHelperElementByLabel('Integration name').contains('An integration name is required');
         getHelperElementByLabel('Registry endpoint').contains('An endpoint is required');
-        getHelperElementByLabel('Project').contains('A project is required');
         getHelperElementByLabel('Service account key (JSON)').contains(
             'Valid JSON is required for service account key'
         );

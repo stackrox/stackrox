@@ -25,7 +25,6 @@ export type { ImageMetadataContext, ImageComponentVulnerability };
 // with imageComponentVulnerabilitiesFragment
 // that has unconditional advisory property.
 export function convertToFlatImageComponentVulnerabilitiesFragment(
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     isFlattenCveDataEnabled: boolean // ROX_FLATTEN_CVE_DATA
 ) {
     return gql`
@@ -38,6 +37,7 @@ export function convertToFlatImageComponentVulnerabilitiesFragment(
             imageVulnerabilities(query: $query) {
                 severity
                 fixedByVersion
+                ${isFlattenCveDataEnabled ? 'advisory { name, link }' : ''}
                 pendingExceptionCount: exceptionCount(requestStatus: $statusesForExceptionCount)
             }
         }
@@ -60,7 +60,10 @@ function ImageComponentVulnerabilitiesTable({
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isAdvisoryColumnEnabled =
         isFeatureFlagEnabled('ROX_SCANNER_V4') &&
+        isFeatureFlagEnabled('ROX_FLATTEN_CVE_DATA') &&
         isFeatureFlagEnabled('ROX_CVE_ADVISORY_SEPARATION');
+
+    const colSpanForDockerfileLayer = 5 + (isAdvisoryColumnEnabled ? 1 : 0);
 
     const { sortOption, getSortParams } = useTableSort({ sortFields, defaultSortOption });
     const componentVulns = flattenImageComponentVulns(
@@ -87,9 +90,8 @@ function ImageComponentVulnerabilitiesTable({
                 </Tr>
             </Thead>
             {sortedComponentVulns.map((componentVuln, index) => {
-                const { image, name, version, fixedByVersion, location, source, layer } =
+                const { image, name, version, fixedByVersion, advisory, location, source, layer } =
                     componentVuln;
-                const advisory = undefined; // placeholder until response includes property
                 // No border on the last row
                 const style =
                     index !== componentVulns.length - 1
@@ -115,7 +117,7 @@ function ImageComponentVulnerabilitiesTable({
                             </Td>
                         </Tr>
                         <Tr>
-                            <Td colSpan={5} className="pf-v5-u-pt-0">
+                            <Td colSpan={colSpanForDockerfileLayer} className="pf-v5-u-pt-0">
                                 <DockerfileLayer layer={layer} />
                             </Td>
                         </Tr>

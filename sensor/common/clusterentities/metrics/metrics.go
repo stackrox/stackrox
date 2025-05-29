@@ -1,6 +1,7 @@
 package metrics
 
 import (
+	"slices"
 	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -59,6 +60,11 @@ func UpdateNumberOfEndpoints(current, historical int) {
 
 // ObserveManyDeploymentsSharingSingleIP records a situation when one IP belongs to more than one container
 func ObserveManyDeploymentsSharingSingleIP(ip string, containers []string) {
+	// Prevent labels being doubled in form of:
+	// metric{containers=[A,B]} 20, metric{containers=[B,A]} 5
+	// instead of the expected:
+	// metric{containers=[A,B]} 25
+	slices.Sort(containers)
 	ipsHavingMultipleContainers.With(
 		prometheus.Labels{
 			"ip":         ip,

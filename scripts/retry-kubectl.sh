@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Runs kubectl with supplied arguments, and retries on failures indicating network errors.
 #
 # NOTE: Reads all of stdin. If no input should be passed to kubectl, caller should redirect stdin from /dev/null!

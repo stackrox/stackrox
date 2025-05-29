@@ -14,7 +14,6 @@ import { OutlinedQuestionCircleIcon } from '@patternfly/react-icons';
 
 import { SystemConfig } from 'types/config.proto';
 import { selectors } from 'reducers';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 
 import PopoverBodyContent from 'Components/PopoverBodyContent';
 import PrivateConfigDataRetentionDetails from './PrivateConfigDataRetentionDetails';
@@ -24,20 +23,17 @@ import PublicConfigTelemetryDetails from './PublicConfigTelemetryDetails';
 import PlatformComponentsConfigDetails from './PlatformComponentsConfigDetails';
 
 export type SystemConfigDetailsProps = {
-    isClustersRoutePathRendered: boolean;
     systemConfig: SystemConfig;
+    isClustersRoutePathRendered: boolean;
+    isCustomizingPlatformComponentsEnabled: boolean;
 };
 
 function SystemConfigDetails({
-    isClustersRoutePathRendered,
     systemConfig,
+    isClustersRoutePathRendered,
+    isCustomizingPlatformComponentsEnabled,
 }: SystemConfigDetailsProps): ReactElement {
     const isTelemetryConfigured = useSelector(selectors.getIsTelemetryConfigured);
-
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isCustomizingPlatformComponentsEnabled = isFeatureFlagEnabled(
-        'ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS'
-    );
 
     return (
         <>
@@ -71,7 +67,9 @@ function SystemConfigDetails({
                         findings from user workloads
                     </Text>
                     <div className="pf-v5-u-mt-lg">
-                        <PlatformComponentsConfigDetails />
+                        <PlatformComponentsConfigDetails
+                            platformComponentsConfig={systemConfig.platformComponentsConfig}
+                        />
                     </div>
                 </PageSection>
             )}
