@@ -17,7 +17,7 @@ type Request struct {
 	SnapshotID         string
 	NotificationMethod storage.ComplianceOperatorReportStatus_NotificationMethod
 	ClusterData        map[string]*ClusterData
-	FailedClusters     int
+	NumFailedClusters  int
 }
 
 // ClusterData holds the metadata for the clusters

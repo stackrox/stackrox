@@ -56,6 +56,21 @@ func (mr *MockDataStoreMockRecorder) DeleteSnapshot(ctx, id any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteSnapshot", reflect.TypeOf((*MockDataStore)(nil).DeleteSnapshot), ctx, id)
 }
 
+// GetLastSnapshotFromScanConfig mocks base method.
+func (m *MockDataStore) GetLastSnapshotFromScanConfig(ctx context.Context, scanConfigID string) (*storage.ComplianceOperatorReportSnapshotV2, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetLastSnapshotFromScanConfig", ctx, scanConfigID)
+	ret0, _ := ret[0].(*storage.ComplianceOperatorReportSnapshotV2)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetLastSnapshotFromScanConfig indicates an expected call of GetLastSnapshotFromScanConfig.
+func (mr *MockDataStoreMockRecorder) GetLastSnapshotFromScanConfig(ctx, scanConfigID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLastSnapshotFromScanConfig", reflect.TypeOf((*MockDataStore)(nil).GetLastSnapshotFromScanConfig), ctx, scanConfigID)
+}
+
 // GetSnapshot mocks base method.
 func (m *MockDataStore) GetSnapshot(ctx context.Context, id string) (*storage.ComplianceOperatorReportSnapshotV2, bool, error) {
 	m.ctrl.T.Helper()
