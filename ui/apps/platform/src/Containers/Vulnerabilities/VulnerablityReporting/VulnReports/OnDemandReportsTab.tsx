@@ -23,9 +23,9 @@ import { fetchOnDemandReportHistory } from 'services/ReportsService';
 import PageTitle from 'Components/PageTitle';
 import ReportJobStatusFilter, {
     ensureReportJobStatuses,
-    ReportJobStatus,
 } from 'Components/ReportJob/ReportJobStatusFilter';
 import MyJobsFilter from 'Components/ReportJob/MyJobsFilter';
+import { ReportJobStatus } from 'Components/ReportJob/types';
 import OnDemandReportsTable from './OnDemandReportsTable';
 
 const sortOptions = {

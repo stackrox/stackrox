@@ -32,9 +32,9 @@ import useDeleteDownloadModal from 'Containers/Vulnerabilities/VulnerablityRepor
 import DeleteModal from 'Components/PatternFly/DeleteModal';
 import ReportJobStatusFilter, {
     ensureReportJobStatuses,
-    ReportJobStatus,
 } from 'Components/ReportJob/ReportJobStatusFilter';
 import MyJobsFilter from 'Components/ReportJob/MyJobsFilter';
+import { ReportJobStatus } from 'Components/ReportJob/types';
 import ConfigDetails from './ConfigDetails';
 
 function getJobId(snapshot: ComplianceReportSnapshot) {
