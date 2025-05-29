@@ -58,8 +58,6 @@ function DeploymentFlows({
         setSearchFilter({});
     }, [selectedView, setPageAnomalous, setPageBaseline, setSearchFilter]);
 
-    const internalFlowsOnly = networkFlows.filter((flow) => isInternalFlow(flow));
-
     if (!isNetworkGraphExternalIpsEnabled) {
         return (
             <div className="pf-v5-u-h-100 pf-v5-u-p-md">
@@ -107,7 +105,7 @@ function DeploymentFlows({
                                 onNodeSelect={onNodeSelect}
                                 isLoadingNetworkFlows={isLoadingNetworkFlows}
                                 networkFlowsError={networkFlowsError}
-                                networkFlows={internalFlowsOnly}
+                                networkFlows={networkFlows.filter((flow) => isInternalFlow(flow))}
                                 refetchFlows={refetchFlows}
                             />
                         ) : (
