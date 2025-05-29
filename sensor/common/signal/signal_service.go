@@ -66,7 +66,7 @@ type serviceImpl struct {
 
 func authFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
 	err := idcheck.CollectorOnly().Authorized(ctx, fullMethodName)
-	return ctx, errors.Wrap(err, "collector authorization failed")
+	return ctx, errors.Wrap(err, "collector authorization")
 }
 
 func (s *serviceImpl) Start() error {

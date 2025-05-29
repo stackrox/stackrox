@@ -150,7 +150,7 @@ func (r *runner) generateRollbackPlan() error {
 
 func (r *runner) preflightChecks() error {
 	if err := preflight.PerformChecks(r.ctx, r.executionPlan); err != nil {
-		return errors.Wrap(err, "preflight checks failed")
+		return errors.Wrap(err, "preflight checks")
 	}
 	return nil
 }
