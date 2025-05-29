@@ -73,7 +73,7 @@ type complianceReportGeneratorImpl struct {
 
 func (rg *complianceReportGeneratorImpl) ProcessReportRequest(req *report.Request) error {
 
-	log.Infof("Processing report request %s", req)
+	log.Infof("Processing report request %s", req.ScanConfigID)
 
 	var snapshot *storage.ComplianceOperatorReportSnapshotV2
 	if req.SnapshotID != "" {
@@ -100,9 +100,9 @@ func (rg *complianceReportGeneratorImpl) ProcessReportRequest(req *report.Reques
 
 	if snapshot != nil {
 		snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_GENERATED
-		if req.FailedClusters > 0 {
+		if req.NumFailedClusters > 0 {
 			snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_PARTIAL_ERROR
-			if req.FailedClusters == len(req.ClusterIDs) {
+			if req.NumFailedClusters == len(req.ClusterIDs) {
 				snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_FAILURE
 			}
 		}
