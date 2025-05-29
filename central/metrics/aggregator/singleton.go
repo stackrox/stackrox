@@ -9,10 +9,13 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/metrics/aggregator/common"
 	"github.com/stackrox/rox/central/metrics/aggregator/image_vulnerabilities"
+	"github.com/stackrox/rox/central/telemetry/centralclient"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter"
 )
 
 var (
@@ -64,6 +67,7 @@ func (ar *aggregatorRunner) Reconfigure(cfg *storage.PrometheusMetricsConfig) er
 			return err
 		}
 	}
+	track(cfg)
 	return nil
 }
 
@@ -104,4 +108,34 @@ func (ar *aggregatorRunner) run(tracker common.Tracker) {
 			}
 		}
 	}
+}
+
+func track(cfg *storage.PrometheusMetricsConfig) {
+	if cfg == nil {
+		return
+	}
+	centralclient.InstanceConfig().Telemeter().Track(
+		"Prometheus metrics configured", nil,
+		telemeter.WithTraits(makeProps(cfg)))
+}
+
+func makeProps(cfg *storage.PrometheusMetricsConfig) map[string]any {
+	props := make(map[string]any, 3)
+	{
+		labels := set.NewStringSet()
+		operators := set.NewStringSet()
+		ml := cfg.GetImageVulnerabilities().GetMetricLabels()
+		for _, metricLabels := range ml {
+			for label, labelExprs := range metricLabels.GetLabelExpressions() {
+				labels.Add(label)
+				for _, expr := range labelExprs.GetExpression() {
+					operators.Add(expr.GetOperator())
+				}
+			}
+		}
+		props["Total Image Vulnerability metrics"] = len(ml)
+		props["Image Vulnerability metrics labels"] = labels.AsSlice()
+		props["Image Vulnerability metrics operators"] = operators.AsSlice()
+	}
+	return props
 }
