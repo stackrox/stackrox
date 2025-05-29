@@ -20,7 +20,7 @@ var (
 		{Label: "Cluster", Getter: func(f *finding) string { return f.deployment.GetClusterName() }},
 		{Label: "Namespace", Getter: func(f *finding) string { return f.deployment.GetNamespace() }},
 		{Label: "Deployment", Getter: func(f *finding) string { return f.deployment.GetName() }},
-		{Label: "IsPlatformWorkload", Getter: platformMatcher()},
+		{Label: "IsPlatformWorkload", Getter: isPlatformWorkload},
 
 		{Label: "ImageID", Getter: func(f *finding) string { return f.image.GetId() }},
 		{Label: "ImageRegistry", Getter: func(f *finding) string { return f.name.GetRegistry() }},
@@ -59,12 +59,9 @@ func (f *finding) Count() int {
 	return 1
 }
 
-func platformMatcher() func(*finding) string {
-	matcher := matcher.Singleton()
-	return func(f *finding) string {
-		p, _ := matcher.MatchDeployment(f.deployment)
-		return strconv.FormatBool(p)
-	}
+func isPlatformWorkload(f *finding) string {
+	p, _ := matcher.Singleton().MatchDeployment(f.deployment)
+	return strconv.FormatBool(p)
 }
 
 type datastores struct {
