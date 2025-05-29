@@ -8,17 +8,6 @@ export PATH
 # Set to empty string to echo some command lines which are hidden by default.
 SILENT ?= @
 
-ifeq ($(TAG),)
-	TAG := $(shell $(MAKE) -C ../ --quiet --no-print-directory tag)
-endif
-
-# Set expiration on Quay.io for non-release tags.
-ifeq ($(findstring x,$(TAG)),x)
-QUAY_TAG_EXPIRATION=13w
-else
-QUAY_TAG_EXPIRATION=never
-endif
-
 # CGO is disabled for Scanner V4 builds because:
 #
 # 1. Local builds aren't dockerized. And, upon packaging the locally-built scanner in a container when e.g. host
