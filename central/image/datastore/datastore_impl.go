@@ -339,6 +339,7 @@ func (ds *datastoreImpl) updateImagePriority(images ...*storage.Image) {
 					continue
 				}
 				component.Priority = ds.imageComponentRanker.GetRankForID(componentID)
+				log.Infof("SHREWS -- ImageDataStore -- priority -- %d", component.GetPriority())
 			} else {
 				component.Priority = ds.imageComponentRanker.GetRankForID(scancomponent.ComponentID(component.GetName(), component.GetVersion(), image.GetScan().GetOperatingSystem()))
 			}
@@ -352,8 +353,10 @@ func (ds *datastoreImpl) updateComponentRisk(image *storage.Image) {
 			componentID, err := scancomponent.ComponentIDV2(component, image.GetId())
 			if err != nil {
 				log.Error(err)
+				continue
 			}
 			component.RiskScore = ds.imageComponentRanker.GetScoreForID(componentID)
+			log.Infof("SHREWS -- ImageDataStore -- RiskScore -- %f", component.GetRiskScore())
 		} else {
 			component.RiskScore = ds.imageComponentRanker.GetScoreForID(scancomponent.ComponentID(component.GetName(), component.GetVersion(), image.GetScan().GetOperatingSystem()))
 		}
