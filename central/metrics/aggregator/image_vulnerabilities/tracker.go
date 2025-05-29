@@ -10,6 +10,7 @@ import (
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/metrics/aggregator/common"
+	"github.com/stackrox/rox/central/platform/matcher"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 )
@@ -19,6 +20,7 @@ var (
 		{Label: "Cluster", Getter: func(f *finding) string { return f.deployment.GetClusterName() }},
 		{Label: "Namespace", Getter: func(f *finding) string { return f.deployment.GetNamespace() }},
 		{Label: "Deployment", Getter: func(f *finding) string { return f.deployment.GetName() }},
+		{Label: "IsPlatformWorkload", Getter: platformMatcher()},
 
 		{Label: "ImageID", Getter: func(f *finding) string { return f.image.GetId() }},
 		{Label: "ImageRegistry", Getter: func(f *finding) string { return f.name.GetRegistry() }},
@@ -36,7 +38,7 @@ var (
 		{Label: "IsFixable", Getter: func(f *finding) string { return strconv.FormatBool(f.vuln.GetFixedBy() != "") }},
 	}
 
-	deploymentLabels = []common.Label{"Cluster", "Namespace", "Deployment"}
+	deploymentLabels = []common.Label{"Cluster", "Namespace", "Deployment", "IsPlatformWorkload"}
 	imageLabels      = []common.Label{"ImageID", "ImageRegistry", "ImageRemote", "ImageTag", "Component", "ComponentVersion", "OperatingSystem"}
 )
 
@@ -55,6 +57,14 @@ func (f *finding) Count() int {
 		return f.count
 	}
 	return 1
+}
+
+func platformMatcher() func(*finding) string {
+	matcher := matcher.Singleton()
+	return func(f *finding) string {
+		p, _ := matcher.MatchDeployment(f.deployment)
+		return strconv.FormatBool(p)
+	}
 }
 
 type datastores struct {
