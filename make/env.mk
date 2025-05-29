@@ -69,3 +69,19 @@ QUAY_TAG_EXPIRATION=13w
 else
 QUAY_TAG_EXPIRATION=never
 endif
+
+ROX_PRODUCT_BRANDING ?= STACKROX_BRANDING
+
+# ROX_IMAGE_FLAVOR is an ARG used in Dockerfiles that defines the default registries for main, scanner, and collector images.
+# ROX_IMAGE_FLAVOR valid values are: development_build, rhacs, opensource.
+ROX_IMAGE_FLAVOR ?= $(shell \
+	if [[ "$(ROX_PRODUCT_BRANDING)" == "STACKROX_BRANDING" ]]; then \
+	  echo "opensource"; \
+	else \
+	  echo "development_build"; \
+	fi)
+
+DEFAULT_IMAGE_REGISTRY := quay.io/stackrox-io
+ifeq ($(ROX_PRODUCT_BRANDING),RHACS_BRANDING)
+	DEFAULT_IMAGE_REGISTRY := quay.io/rhacs-eng
+endif
