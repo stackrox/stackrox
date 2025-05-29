@@ -97,10 +97,6 @@ func (s *imageDatastoreFlatSACSuite) deleteNamespace(id string) {
 	s.Require().NoError(s.namespaceDatastore.RemoveNamespace(sac.WithAllAccess(context.Background()), id))
 }
 
-func getImageCVEV2ID(cve string) string {
-	return cve + "#crime-stories"
-}
-
 func (s *imageDatastoreFlatSACSuite) verifyListImagesEqual(image1, image2 *storage.ListImage) {
 	s.Equal(image1.GetId(), image2.GetId())
 	s.Equal(image1.GetComponents(), image2.GetComponents())
