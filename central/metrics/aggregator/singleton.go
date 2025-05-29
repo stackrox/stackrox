@@ -10,10 +10,13 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/metrics/aggregator/common"
 	"github.com/stackrox/rox/central/metrics/aggregator/image_vulnerabilities"
+	"github.com/stackrox/rox/central/telemetry/centralclient"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter"
 	"github.com/travelaudience/go-promhttp"
 )
 
@@ -39,7 +42,6 @@ func Singleton() interface {
 	Start()
 	Stop()
 	Reconfigure(*storage.PrometheusMetricsConfig) error
-	Gather(context.Context) (map[string]any, error)
 } {
 	once.Do(func() {
 		registry := prometheus.NewRegistry()
@@ -74,6 +76,7 @@ func (ar *aggregatorRunner) Reconfigure(cfg *storage.PrometheusMetricsConfig) er
 			return err
 		}
 	}
+	track(cfg)
 	return nil
 }
 
@@ -118,35 +121,32 @@ func (ar *aggregatorRunner) run(tracker common.Tracker) {
 	}
 }
 
-func (ar *aggregatorRunner) Gather(ctx context.Context) (map[string]any, error) {
-	systemPrivateConfig, err := configDS.Singleton().GetPrivateConfig(
-		sac.WithAllAccess(ctx))
-	if err != nil {
-		return nil, err
+func track(cfg *storage.PrometheusMetricsConfig) {
+	if cfg == nil {
+		return
 	}
-	props := make(map[string]any)
-	cfg := systemPrivateConfig.GetPrometheusMetricsConfig()
+	centralclient.InstanceConfig().Telemeter().Track(
+		"Prometheus metrics configured", nil,
+		telemeter.WithTraits(makeProps(cfg)))
+}
+
+func makeProps(cfg *storage.PrometheusMetricsConfig) map[string]any {
+	props := make(map[string]any, 3)
 	{
-		vulns := cfg.GetImageVulnerabilities()
-		ml := vulns.GetMetricLabels()
-		props["Total Image Vulnerability custom metrics"] = len(ml)
-		maxLabels := 0
-		exressionsUsed := false
-		for _, metricLabels := range ml {
-			if len(metricLabels.GetLabelExpressions()) > maxLabels {
-				maxLabels = len(metricLabels.GetLabelExpressions())
-			}
-			if !exressionsUsed {
-				for _, labelExprs := range metricLabels.GetLabelExpressions() {
-					if len(labelExprs.GetExpression()) > 0 {
-						exressionsUsed = true
-						break
-					}
+		labels := set.NewStringSet()
+		operators := set.NewStringSet()
+		metrics := cfg.GetImageVulnerabilities().GetMetrics()
+		for _, metricLabels := range metrics {
+			for label, labelExpr := range metricLabels.GetLabels() {
+				labels.Add(label)
+				for _, condition := range labelExpr.GetExpression() {
+					operators.Add(condition.GetOperator())
 				}
 			}
 		}
-		props["Max Image Vulnerability custom metrics labels"] = maxLabels
-		props["Custom Metrics Expressions used"] = exressionsUsed
+		props["Total Image Vulnerability metrics"] = len(metrics)
+		props["Image Vulnerability metrics labels"] = labels.AsSlice()
+		props["Image Vulnerability metrics operators"] = operators.AsSlice()
 	}
-	return props, nil
+	return props
 }
