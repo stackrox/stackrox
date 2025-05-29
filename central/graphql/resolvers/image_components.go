@@ -186,7 +186,7 @@ func (resolver *Resolver) ImageComponents(ctx context.Context, q PaginatedQuery)
 		// Stash a single instance of a Component to aid in normalizing
 		foundComponent := make(map[normalizedImageComponent]*storage.ImageComponentV2)
 		for _, comp := range comps {
-			log.Infof("SHREWS -- ImageComponents -- priority -- %d", comp.GetPriority())
+			log.Infof("SHREWS -- ImageComponents -- name -- %q-%q -- priority -- %d", comp.GetName(), comp.GetVersion(), comp.GetPriority())
 			normalized := normalizedImageComponent{
 				name:    comp.GetName(),
 				version: comp.GetVersion(),
