@@ -40,7 +40,7 @@ func (r *bindingFetcher) generateManyDependentEvents(bindings []namespacedBindin
 	}
 
 	if !errList.Empty() {
-		return nil, errors.Wrap(errList.ToError(), "failed to generate dependent binding events")
+		return nil, errors.Wrap(errList.ToError(), "generating dependent binding events")
 	}
 	return result, nil
 }

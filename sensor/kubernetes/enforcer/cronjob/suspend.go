@@ -36,7 +36,7 @@ func makePatch(deploymentInfo *central.DeploymentEnforcement, apiVersion string)
 	}
 	patchBytes, err := json.Marshal(patch)
 	if err != nil {
-		return nil, metav1.PatchOptions{}, errors.Wrap(err, "failed to marshal patch for suspending cronjob")
+		return nil, metav1.PatchOptions{}, errors.Wrap(err, "marshalling patch for suspending cronjob")
 	}
 
 	options := metav1.PatchOptions{

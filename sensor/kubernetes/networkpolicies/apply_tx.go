@@ -98,7 +98,7 @@ type deletePolicy struct {
 func (a *deletePolicy) Execute(ctx context.Context, client networkingV1Client.NetworkingV1Interface) error {
 	err := client.NetworkPolicies(a.namespace).Delete(ctx, a.name, kubernetes.DeleteBackgroundOption)
 	if err != nil {
-		return errors.Wrapf(err, "failed to delete network policy %s/%s", a.namespace, a.name)
+		return errors.Wrapf(err, "deleting network policy %s/%s", a.namespace, a.name)
 	}
 	return nil
 }
@@ -118,7 +118,7 @@ type restorePolicy struct {
 func (a *restorePolicy) Execute(ctx context.Context, client networkingV1Client.NetworkingV1Interface) error {
 	_, err := client.NetworkPolicies(a.oldPolicy.Namespace).Update(ctx, a.oldPolicy, metav1.UpdateOptions{})
 	if err != nil {
-		return errors.Wrap(err, "failed to restore network policy")
+		return errors.Wrap(err, "restoring network policy")
 	}
 	return nil
 }
@@ -149,7 +149,7 @@ func (t *applyTx) Rollback(ctx context.Context) error {
 		errList.AddError(t.rollbackActions[i].Execute(ctx, t.networkingClient))
 	}
 	if err := errList.ToError(); err != nil {
-		return errors.Wrap(err, "failed to rollback network policy modifications")
+		return errors.Wrap(err, "reverting network policy modifications")
 	}
 	return nil
 }
@@ -164,7 +164,7 @@ func (t *applyTx) createNetworkPolicy(ctx context.Context, policy *networkingV1.
 
 	_, err := nsClient.Create(ctx, policy, metav1.CreateOptions{})
 	if err != nil {
-		return errors.Wrapf(err, "failed to create network policy %s/%s", policy.Namespace, policy.Name)
+		return errors.Wrapf(err, "creating network policy %s/%s", policy.Namespace, policy.Name)
 	}
 	t.rollbackActions = append(t.rollbackActions, &deletePolicy{
 		namespace: policy.Namespace,

@@ -89,7 +89,7 @@ func populateFromKubernetes(ctx context.Context, k8sClient kubernetes.Interface,
 	appNS := out.GetAppNamespace()
 	if appNS == "" {
 		if errResult != nil {
-			return errors.Wrap(errResult, "failed to look up application namespace")
+			return errors.Wrap(errResult, "checking application namespace")
 		}
 		return errors.New("application namespace not set")
 	}
@@ -102,7 +102,7 @@ func populateFromKubernetes(ctx context.Context, k8sClient kubernetes.Interface,
 	}
 
 	if errResult != nil {
-		return errors.Wrap(errResult, "failed to populate identification from Kubernetes API")
+		return errors.Wrap(errResult, "populating identification from Kubernetes API")
 	}
 	return nil
 }

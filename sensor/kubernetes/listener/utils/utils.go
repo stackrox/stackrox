@@ -15,7 +15,7 @@ var (
 func ServerResourcesForGroup(client client.Interface, group string) (*metav1.APIResourceList, error) {
 	resourceList, err := client.Kubernetes().Discovery().ServerResourcesForGroupVersion(group)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to get server resources for group %q", group)
+		return nil, errors.Wrapf(err, "getting server resources for group %q", group)
 	}
 	return resourceList, nil
 }

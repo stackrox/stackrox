@@ -78,7 +78,7 @@ func (r *ServiceCertificatesRepoSecrets) GetServiceCertificates(ctx context.Cont
 	for serviceType, secretSpec := range r.Secrets {
 		// on context cancellation abort getting other secrets.
 		if ctx.Err() != nil {
-			return nil, errors.Wrap(ctx.Err(), "failed to get service certificates due to context cancellation")
+			return nil, errors.Wrap(ctx.Err(), "getting service certificates due to context cancellation")
 		}
 
 		certificate, ca, err := r.getServiceCertificate(ctx, serviceType, secretSpec)
@@ -98,7 +98,7 @@ func (r *ServiceCertificatesRepoSecrets) GetServiceCertificates(ctx context.Cont
 	}
 
 	if getErr != nil {
-		return nil, errors.Wrap(getErr, "failed to get service certificates")
+		return nil, errors.Wrap(getErr, "getting service certificates")
 	}
 
 	return certificates, nil
@@ -109,7 +109,7 @@ func (r *ServiceCertificatesRepoSecrets) getServiceCertificate(ctx context.Conte
 
 	secret, getErr := r.SecretsClient.Get(ctx, secretSpec.SecretName, metav1.GetOptions{})
 	if getErr != nil {
-		return nil, nil, errors.Wrapf(getErr, "failed to get secret %s", secretSpec.SecretName)
+		return nil, nil, errors.Wrapf(getErr, "getting secret %q", secretSpec.SecretName)
 	}
 
 	ownerReferences := secret.GetOwnerReferences()
@@ -151,7 +151,7 @@ func (r *ServiceCertificatesRepoSecrets) EnsureServiceCertificates(ctx context.C
 	for _, cert := range certificates.GetServiceCerts() {
 		// on context cancellation abort putting other secrets.
 		if ctx.Err() != nil {
-			return persistedCertificates, errors.Wrap(ctx.Err(), "failed to ensure service certificates due to context cancellation")
+			return persistedCertificates, errors.Wrap(ctx.Err(), "ensuring service certificates")
 		}
 
 		secretSpec, ok := r.Secrets[cert.GetServiceType()]
@@ -167,7 +167,7 @@ func (r *ServiceCertificatesRepoSecrets) EnsureServiceCertificates(ctx context.C
 	}
 
 	if serviceErrors != nil {
-		return persistedCertificates, errors.Wrap(serviceErrors, "failed to ensure service certificates")
+		return persistedCertificates, errors.Wrap(serviceErrors, "ensuring service certificates")
 	}
 	return persistedCertificates, nil
 }
@@ -224,7 +224,7 @@ func (r *ServiceCertificatesRepoSecrets) createSecret(ctx context.Context, caPem
 		Data: r.secretDataForCertificate(secretSpec, caPem, certificate),
 	}, metav1.CreateOptions{})
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to create secret %s", secretSpec.SecretName)
+		return nil, errors.Wrapf(err, "creating secret %s", secretSpec.SecretName)
 	}
 	return created, nil
 }

@@ -65,12 +65,12 @@ func copyFiles(files []string, destDir string) error {
 	for _, file := range files {
 		content, err := os.ReadFile(file)
 		if err != nil {
-			return errors.Wrapf(err, "failed to read certificate file %s", file)
+			return errors.Wrapf(err, "reading certificate file %s", file)
 		}
 		destPath := path.Join(destDir, path.Base(file))
 		perm := os.FileMode(0600) // 0600 is required by Postgres (used by scanner-db)
 		if err = os.WriteFile(destPath, content, perm); err != nil {
-			return errors.Wrapf(err, "failed to write certificate file to %s", destPath)
+			return errors.Wrapf(err, "writing certificate file to %s", destPath)
 		}
 		log.Printf("Copied %q to %q", file, destPath)
 	}
@@ -149,7 +149,7 @@ func findFiles(sourceDir string) ([]string, error) {
 	})
 
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to walk directory %s", realSource)
+		return nil, errors.Wrapf(err, "walking directory %q", realSource)
 	}
 
 	minRequiredFiles := 3 // CA cert + leaf cert + private key

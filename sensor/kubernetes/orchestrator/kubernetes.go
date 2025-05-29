@@ -30,7 +30,7 @@ func New(kubernetes kubernetes.Interface) orchestrator.Orchestrator {
 func (k *kubernetesOrchestrator) GetNodeScrapeConfig(nodeName string) (*orchestrator.NodeScrapeConfig, error) {
 	node, err := k.nodeLister.Get(nodeName)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to get node %q", nodeName)
+		return nil, errors.Wrapf(err, "getting node %q", nodeName)
 	}
 
 	_, hasControlPlaneNodeLabel := node.GetLabels()["node-role.kubernetes.io/control-plane"]

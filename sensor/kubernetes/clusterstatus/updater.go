@@ -224,7 +224,7 @@ func (u *updaterImpl) getOpenshiftVersion() (string, error) {
 				if kerrors.IsTimeout(err) || kerrors.IsServerTimeout(err) || kerrors.IsTooManyRequests(err) || kerrors.IsServiceUnavailable(err) {
 					return retry.MakeRetryable(err)
 				}
-				return errors.Wrap(err, "failed to get openshift-apiserver cluster operator")
+				return errors.Wrap(err, "getting openshift-apiserver cluster operator")
 			}
 			return nil
 		},
@@ -259,7 +259,7 @@ func (u *updaterImpl) getOpenshiftVersionLegacyAPI() (string, error) {
 				if kerrors.IsTimeout(err) || kerrors.IsServerTimeout(err) || kerrors.IsTooManyRequests(err) || kerrors.IsServiceUnavailable(err) {
 					return retry.MakeRetryable(err)
 				}
-				return errors.Wrap(err, "failed to fetch openshift version via legacy API")
+				return errors.Wrap(err, "fetching openshift version via legacy API")
 			}
 			return nil
 		},
@@ -276,7 +276,7 @@ func (u *updaterImpl) getOpenshiftVersionLegacyAPI() (string, error) {
 	var ocServerInfo apimachineryversion.Info
 	err = json.Unmarshal(oVersionBody, &ocServerInfo)
 	if err != nil && len(oVersionBody) > 0 {
-		return "", errors.Wrap(err, "failed to unmarshal openshift version response")
+		return "", errors.Wrap(err, "unmarshalling openshift version response")
 	}
 	return ocServerInfo.String(), nil
 }

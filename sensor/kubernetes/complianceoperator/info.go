@@ -47,7 +47,7 @@ func searchForDeployment(ctx context.Context, ns string, cli kubernetes.Interfac
 	// List all namespaces to begin the lookup for compliance operator.
 	namespaceList, err := cli.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
 	if err != nil {
-		return nil, errors.Wrap(err, "could not list all namespaces")
+		return nil, errors.Wrap(err, "listing all namespaces")
 	}
 
 	for _, namespace := range namespaceList.Items {

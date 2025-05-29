@@ -107,7 +107,7 @@ func getObjectMetaWithRetries(
 	})
 
 	if getErr != nil {
-		return object, errors.Wrap(getErr, "failed to get object metadata with retries")
+		return object, errors.Wrap(getErr, "getting object metadata with retries")
 	}
 	return object, nil
 }

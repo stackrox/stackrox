@@ -93,13 +93,13 @@ func (l *lazyTLSCheckRegistry) Metadata(image *storage.Image) (*storage.ImageMet
 		return l.initError
 	})
 	if err != nil {
-		return nil, pkgerrors.Wrap(err, "lazy TLS registry initialization failed")
+		return nil, pkgerrors.Wrap(err, "lazy TLS registry initialization")
 	}
 
 	// At this point lazy init has successfully completed.
 	meta, err := l.registry.Metadata(image)
 	if err != nil {
-		return nil, pkgerrors.Wrapf(err, "failed to fetch metadata for image %s", image.GetName())
+		return nil, pkgerrors.Wrapf(err, "fetching metadata for image %s", image.GetName())
 	}
 	return meta, nil
 }

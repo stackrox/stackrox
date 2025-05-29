@@ -523,7 +523,7 @@ func (m *handlerImpl) reconcileCreateOrUpdateResource(
 		}
 		_, err = m.client.Resource(api.GroupVersionResource()).Namespace(namespace).Update(m.ctx(), updatedResource, v1.UpdateOptions{})
 		if err != nil {
-			return errors.Wrapf(err, "could not update namespace %q", namespace)
+			return errors.Wrapf(err, "updating namespace %q", namespace)
 		}
 	} else {
 		// The Resource is in Central but not in the cluster

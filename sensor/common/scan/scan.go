@@ -227,7 +227,7 @@ func (s *LocalScan) enrichImageForPullSource(ctx context.Context, pullSource *st
 		log.Debugf("Metadata for image %q (%v) using pull source %q (%v): %v", srcName, srcID, pullName, pullID, pullSourceImage.GetMetadata())
 		return reg, pullSourceImage, nil
 	}
-	return nil, nil, pkgErrors.Wrap(errorList.ToError(), "failed to enrich image metadata for pull source")
+	return nil, nil, pkgErrors.Wrap(errorList.ToError(), "enriching image metadata for pull source")
 }
 
 // getImageWithMetadata on success returns the registry used to pull metadata and an image with metadata populated.

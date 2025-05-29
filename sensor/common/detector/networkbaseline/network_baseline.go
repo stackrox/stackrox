@@ -50,7 +50,7 @@ func (e *networkBaselineEvaluator) AddBaseline(baseline *storage.NetworkBaseline
 
 	baselineInfo, err := networkbaseline.ConvertBaselineInfoFromProto(baseline)
 	if err != nil {
-		return errors.Wrap(err, "failed to convert baseline info from proto")
+		return errors.Wrap(err, "converting baseline info from proto")
 	}
 
 	e.baselineLock.Lock()

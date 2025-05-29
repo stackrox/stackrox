@@ -94,11 +94,11 @@ func (p *eventPipeline) Start() error {
 	// The order is important here, we need to start the components
 	// that receive messages from other components first
 	if err := p.output.Start(); err != nil {
-		return errors.Wrap(err, "failed to start output component")
+		return errors.Wrap(err, "starting output component")
 	}
 
 	if err := p.resolver.Start(); err != nil {
-		return errors.Wrap(err, "failed to start resolver component")
+		return errors.Wrap(err, "starting resolver component")
 	}
 
 	go p.forwardMessages()
@@ -173,7 +173,7 @@ func (p *eventPipeline) processPolicySync(sync *central.PolicySync) error {
 func (p *eventPipeline) processReprocessDeployments() error {
 	log.Debug("ReprocessDeployments message received from central")
 	if err := p.detector.ProcessReprocessDeployments(); err != nil {
-		return errors.Wrap(err, "failed to process reprocess deployments")
+		return errors.Wrap(err, "reprocessing deployments")
 	}
 	msg := component.NewEvent()
 	// TODO(ROX-14310): Add WithSkipResolving to the DeploymentResolution (Revert: https://github.com/stackrox/stackrox/pull/5551)
@@ -187,7 +187,7 @@ func (p *eventPipeline) processReprocessDeployments() error {
 func (p *eventPipeline) processUpdatedImage(image *storage.Image) error {
 	log.Debugf("UpdatedImage message received from central: image name: %s, number of components: %d", image.GetName().GetFullName(), image.GetComponents())
 	if err := p.detector.ProcessUpdatedImage(image); err != nil {
-		return errors.Wrap(err, "failed to process updated image")
+		return errors.Wrap(err, "updating image")
 	}
 	msg := component.NewEvent()
 	msg.AddDeploymentReference(resolver.ResolveDeploymentsByImages(image),
@@ -201,7 +201,7 @@ func (p *eventPipeline) processUpdatedImage(image *storage.Image) error {
 func (p *eventPipeline) processReprocessDeployment(req *central.ReprocessDeployment) error {
 	log.Debug("ReprocessDeployment message received from central")
 	if err := p.reprocessor.ProcessReprocessDeployments(req); err != nil {
-		return errors.Wrap(err, "failed to process reprocess deployment")
+		return errors.Wrap(err, "reprocessing deployment")
 	}
 	msg := component.NewEvent()
 	msg.AddDeploymentReference(resolver.ResolveDeploymentIds(req.GetDeploymentIds()...),
@@ -215,7 +215,7 @@ func (p *eventPipeline) processReprocessDeployment(req *central.ReprocessDeploym
 func (p *eventPipeline) processInvalidateImageCache(req *central.InvalidateImageCache) error {
 	log.Debug("InvalidateImageCache message received from central")
 	if err := p.reprocessor.ProcessInvalidateImageCache(req); err != nil {
-		return errors.Wrap(err, "failed to process invalidate image cache")
+		return errors.Wrap(err, "invalidating image cache")
 	}
 	keys := make([]*storage.Image, len(req.GetImageKeys()))
 	for i, image := range req.GetImageKeys() {

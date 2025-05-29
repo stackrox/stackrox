@@ -116,7 +116,7 @@ func scanImageLocal(ctx context.Context, svc v1.ImageServiceClient, req *scanIma
 
 	resp := &v1.ScanImageInternalResponse{Image: img}
 	if err != nil {
-		return resp, pkgErrors.Wrap(err, "failed to scan image locally")
+		return resp, pkgErrors.Wrap(err, "scanning image locally")
 	}
 	return resp, nil
 }

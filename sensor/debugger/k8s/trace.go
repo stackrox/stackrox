@@ -56,10 +56,10 @@ func (tw *TraceWriter) Write(b []byte) (int, error) {
 		}
 		m, err := tw.f.Write(delimiter)
 		if err != nil {
-			return n + m, errors.Wrap(err, "failed to write trace delimiter")
+			return n + m, errors.Wrap(err, "writing trace delimiter")
 		}
 		if err := tw.f.Sync(); err != nil {
-			return n + m, errors.Wrap(err, "failed to sync trace file")
+			return n + m, errors.Wrap(err, "syncing trace file")
 		}
 		return n + m, nil
 	})
@@ -78,14 +78,14 @@ type TraceReader struct {
 // Init initializes the reader
 func (tw *TraceReader) Init() error {
 	_, err := os.Stat(path.Dir(tw.Source))
-	return errors.Wrap(err, "failed to stat trace source directory")
+	return errors.Wrap(err, "stat trace source directory")
 }
 
 // ReadFile reads the entire file and returns a slice of objects
 func (tw *TraceReader) ReadFile() ([][]byte, error) {
 	data, err := os.ReadFile(tw.Source)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to read trace file %s", tw.Source)
+		return nil, errors.Wrapf(err, "reading trace file %s", tw.Source)
 	}
 	objs := bytes.Split(data, delimiter)
 	return objs, nil

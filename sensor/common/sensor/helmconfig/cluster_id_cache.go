@@ -15,7 +15,7 @@ const (
 // StoreCachedClusterID stores the cluster ID in the filesystem cache.
 func StoreCachedClusterID(id string) error {
 	if err := os.WriteFile(clusterIDCacheFile, []byte(id+"\n"), 0644); err != nil {
-		return errors.Wrapf(err, "failed to write cluster ID to cache file %s", clusterIDCacheFile)
+		return errors.Wrapf(err, "writing cluster ID to cache file %s", clusterIDCacheFile)
 	}
 	return nil
 }
