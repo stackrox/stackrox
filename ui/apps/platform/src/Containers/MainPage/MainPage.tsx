@@ -17,6 +17,8 @@ import PublicConfigFooter from './PublicConfig/PublicConfigFooter';
 import NavigationSidebar from './Navigation/NavigationSidebar';
 import HorizontalSubnav from './Navigation/HorizontalSubnav';
 
+import { DebugModeBanner } from '../../debugging';
+
 import Body from './Body';
 import AcsFeedbackModal from './AcsFeedbackModal';
 
@@ -92,6 +94,7 @@ function MainPage(): ReactElement {
                     Feedback
                 </Button>
                 {showFeedbackModal && <AcsFeedbackModal />}
+                <DebugModeBanner />
                 <Page
                     mainContainerId="main-page-container"
                     header={<Header />}

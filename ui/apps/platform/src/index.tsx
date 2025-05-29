@@ -13,6 +13,9 @@ import { ApolloProvider } from '@apollo/client';
 import 'css.imports';
 
 import { configure as mobxConfigure } from 'mobx';
+import * as monaco from 'monaco-editor';
+import { loader } from '@monaco-editor/react';
+import { configureMonacoYaml } from 'monaco-yaml';
 
 import ErrorBoundary from 'Components/PatternFly/ErrorBoundary/ErrorBoundary';
 import AppPage from 'Containers/AppPage';
@@ -23,6 +26,20 @@ import { fetchFeatureFlagsThunk } from './reducers/featureFlags';
 import { fetchPublicConfigThunk } from './reducers/publicConfig';
 import { fetchCentralCapabilitiesThunk } from './reducers/centralCapabilities';
 import configureApollo from './configureApolloClient';
+
+import { initializeApiDebugInterceptors } from './debugging';
+
+// This enables syntax highlighting for the patternfly code editor
+// Reference: https://github.com/patternfly/patternfly-react/tree/main/packages/react-code-editor#enable-yaml-syntax-highlighting
+configureMonacoYaml(monaco, {
+    enableSchemaRequest: true,
+    hover: true,
+    completion: true,
+    validate: true,
+    format: true,
+    schemas: [],
+});
+loader.config({ monaco });
 
 // We need to call this MobX utility function, to prevent the error
 //   Uncaught Error: [MobX] There are multiple, different versions of MobX active. Make sure MobX is loaded only once or use `configure({ isolateGlobalState: true })`
@@ -46,6 +63,8 @@ const dispatch = (action) =>
 dispatch(fetchFeatureFlagsThunk());
 dispatch(fetchPublicConfigThunk());
 dispatch(fetchCentralCapabilitiesThunk());
+
+initializeApiDebugInterceptors();
 
 root.render(
     <Provider store={store}>

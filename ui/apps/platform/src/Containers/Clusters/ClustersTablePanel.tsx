@@ -62,6 +62,7 @@ import {
     clustersClusterRegistrationSecretsPath,
 } from 'routePaths';
 
+import { useApiMock } from 'debugging';
 import ClustersTable from './ClustersTable';
 import AutoUpgradeToggle from './Components/AutoUpgradeToggle';
 import SecureClusterModal from './InitBundles/SecureClusterModal';
@@ -124,6 +125,9 @@ function ClustersTablePanel({
     const [hasFetchedClusters, setHasFetchedClusters] = useState(false);
 
     const [currentClusters, setCurrentClusters] = useState<Cluster[]>([]);
+
+    const { mockData, DebugPanelComponent } = useApiMock<{ clusters: Cluster[] }>('/v1/clusters');
+
     const [clusterIdToRetentionInfo, setClusterIdToRetentionInfo] =
         useState<ClusterIdToRetentionInfo>({});
 
@@ -223,9 +227,11 @@ function ClustersTablePanel({
 
     const restSearch = convertToRestSearch(searchFilter || {});
 
+    const clusterData = mockData?.clusters || currentClusters;
+
     const tableState = getTableUIState({
         isLoading: false,
-        data: currentClusters,
+        data: clusterData,
         error: errorMessage ? new Error(errorMessage) : undefined,
         searchFilter,
     });
@@ -526,6 +532,7 @@ function ClustersTablePanel({
                         {messages}
                     </div>
                 )}
+                <DebugPanelComponent />
                 {isClustersPageMigrationEnabled ? (
                     <ClustersTable
                         centralVersion={metadata.version}
@@ -542,7 +549,7 @@ function ClustersTablePanel({
                         ref={(table) => {
                             setTableRef(table);
                         }}
-                        rows={currentClusters}
+                        rows={clusterData}
                         columns={clusterColumns}
                         onRowClick={setSelectedClusterId}
                         toggleRow={toggleCluster}
