@@ -494,7 +494,7 @@ func (m *handlerImpl) getResourcesInCluster(api complianceoperator.APIResource) 
 	resourceInterface := m.client.Resource(api.GroupVersionResource())
 	resourcesInCluster, err := resourceInterface.List(m.ctx(), v1.ListOptions{LabelSelector: labels.SelectorFromSet(stackroxLabels).String()})
 	if err != nil {
-		return nil, errors.Wrap(err, "could not list resources in cluster")
+		return nil, errors.Wrap(err, "listing resources in cluster")
 	}
 	resourcesInClusterMap := make(map[string]unstructured.Unstructured)
 	for _, resource := range resourcesInCluster.Items {

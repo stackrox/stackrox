@@ -86,7 +86,7 @@ func (h *namespacePatchHandler) patchNamespaceLabels(ns *v1.Namespace, desiredLa
 
 	_, err := h.nsClient.Update(h.ctx, patchedNS, metav1.UpdateOptions{})
 	if err != nil {
-		return errors.Wrap(err, "failed to patch namespace labels")
+		return errors.Wrap(err, "patching namespace labels")
 	}
 	return nil
 }

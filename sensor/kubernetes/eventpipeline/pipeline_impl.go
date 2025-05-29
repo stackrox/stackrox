@@ -165,7 +165,7 @@ func (p *eventPipeline) forwardMessages() {
 func (p *eventPipeline) processPolicySync(sync *central.PolicySync) error {
 	log.Debug("PolicySync message received from central")
 	if err := p.detector.ProcessPolicySync(p.getCurrentContext(), sync); err != nil {
-		return errors.Wrap(err, "failed to process policy sync")
+		return errors.Wrap(err, "processing policy sync")
 	}
 	return nil
 }

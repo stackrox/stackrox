@@ -89,7 +89,7 @@ func (d *deduper) Send(msg *central.MsgFromSensor) error {
 			return nil
 		}
 		if err := d.stream.Send(msg); err != nil {
-			return errors.Wrap(err, "failed to send remove resource message")
+			return errors.Wrap(err, "sending remove resource message")
 		}
 		return nil
 	}

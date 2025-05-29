@@ -252,7 +252,7 @@ func (c *v4Client) GetImageAnalysis(ctx context.Context, image *storage.Image, c
 // Close closes and cleanup the client connection.
 func (c *v4Client) Close() error {
 	if err := c.client.Close(); err != nil {
-		return errors.Wrap(err, "failed to close v4 scanner client")
+		return errors.Wrap(err, "closing v4 scanner client")
 	}
 	return nil
 }

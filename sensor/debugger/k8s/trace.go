@@ -52,7 +52,7 @@ func (tw *TraceWriter) Write(b []byte) (int, error) {
 	total, err := concurrency.WithLock2(&tw.mu, func() (int, error) {
 		n, err := tw.f.Write(b)
 		if err != nil {
-			return n, errors.Wrap(err, "failed to write trace data")
+			return n, errors.Wrap(err, "writing trace data")
 		}
 		m, err := tw.f.Write(delimiter)
 		if err != nil {

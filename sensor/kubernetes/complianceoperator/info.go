@@ -67,5 +67,5 @@ func searchForDeployment(ctx context.Context, ns string, cli kubernetes.Interfac
 
 func getComplianceOperatorDeployment(ns string, cli kubernetes.Interface, ctx context.Context) (*appsv1.Deployment, error) {
 	deployment, err := cli.AppsV1().Deployments(ns).Get(ctx, complianceoperator.Name, metav1.GetOptions{})
-	return deployment, errors.Wrap(err, "could not get compliance operator deployment")
+	return deployment, errors.Wrap(err, "getting compliance operator deployment")
 }

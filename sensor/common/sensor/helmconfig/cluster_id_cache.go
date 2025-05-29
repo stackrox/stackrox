@@ -27,7 +27,7 @@ func LoadCachedClusterID() (string, error) {
 		if os.IsNotExist(err) {
 			return "", nil
 		}
-		return "", errors.Wrapf(err, "failed to read cluster ID cache file %s", clusterIDCacheFile)
+		return "", errors.Wrapf(err, "read cluster ID cache file %s", clusterIDCacheFile)
 	}
 	id := string(bytes.TrimSpace(cachedIDBytes))
 	if id == "" {

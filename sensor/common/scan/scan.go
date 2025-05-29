@@ -431,7 +431,7 @@ func scanImage(ctx context.Context, image *storage.Image,
 	// Get the image analysis from the local Scanner.
 	scanResp, err := scannerClient.GetImageAnalysis(ctx, image, registry.Config(ctx))
 	if err != nil {
-		return nil, pkgErrors.Wrap(err, "failed to get image analysis from local scanner")
+		return nil, pkgErrors.Wrap(err, "getting image analysis from local scanner")
 	}
 	// Return an error indicating a non-successful scan result.
 	if scanResp.GetStatus() != scannerV1.ScanStatus_SUCCEEDED {
@@ -469,7 +469,7 @@ func createNoAuthImageRegistry(ctx context.Context, imgName *storage.ImageName, 
 
 	registry, err := regFactory.CreateRegistry(ii)
 	if err != nil {
-		return nil, pkgErrors.Wrapf(err, "failed to create no-auth image registry for %q", imgName.GetRegistry())
+		return nil, pkgErrors.Wrapf(err, "creating no-auth image registry for %q", imgName.GetRegistry())
 	}
 	return registry, nil
 }

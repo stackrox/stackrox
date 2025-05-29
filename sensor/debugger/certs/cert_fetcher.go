@@ -164,7 +164,7 @@ func (f *CertificateFetcher) setHelmConfigEnv() error {
 	var clusterC helmConfig
 	yamlFile, err := os.ReadFile(path.Join(f.outputDir, f.helmClusterConfigOutputFileName))
 	if err != nil {
-		return errors.Wrapf(err, "failed to read helm cluster config file %s", f.helmClusterConfigOutputFileName)
+		return errors.Wrapf(err, "reading helm cluster config file %s", f.helmClusterConfigOutputFileName)
 	}
 	if err := yaml.Unmarshal(yamlFile, &clusterC); err != nil {
 		return errors.Wrap(err, "unmarshaling helm cluster config")
