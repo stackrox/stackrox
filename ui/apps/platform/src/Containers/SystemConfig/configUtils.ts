@@ -25,27 +25,27 @@ const defaultRedHatLayeredProductsRule = {
 /**
  * Transforms the platform components configuration into a structure compatible with Formik.
  *
- * @param platformComponentsConfig - This reprsents the platform components config retrieved from the API
+ * @param platformComponentConfig - This reprsents the platform components config retrieved from the API
  * @returns - A structured set of rules organized for use in Formik
  */
 export function getPlatformComponentsConfigRules(
-    platformComponentsConfig: PlatformComponentsConfig | undefined
+    platformComponentConfig: PlatformComponentsConfig | undefined
 ): PlatformComponentsConfigRules {
-    const platformComponentsConfigRules: PlatformComponentsConfigRules = {
+    const platformComponentConfigRules: PlatformComponentsConfigRules = {
         coreSystemRule: defaultSystemRule,
         redHatLayeredProductsRule: defaultRedHatLayeredProductsRule,
         customRules: [],
     };
 
-    platformComponentsConfig?.rules.forEach((rule) => {
+    platformComponentConfig?.rules.forEach((rule) => {
         if (rule.name === 'system rule') {
-            platformComponentsConfigRules.coreSystemRule = rule;
+            platformComponentConfigRules.coreSystemRule = rule;
         } else if (rule.name === 'red hat layered products') {
-            platformComponentsConfigRules.redHatLayeredProductsRule = rule;
+            platformComponentConfigRules.redHatLayeredProductsRule = rule;
         } else {
-            platformComponentsConfigRules.customRules.push(rule);
+            platformComponentConfigRules.customRules.push(rule);
         }
     });
 
-    return platformComponentsConfigRules;
+    return platformComponentConfigRules;
 }

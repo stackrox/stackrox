@@ -64,15 +64,15 @@ function PlatformComponentsConfigForm({
                             <Divider component="div" className="pf-v5-u-py-md" />
                             <FormGroup
                                 label="Namespace rules (Regex)"
-                                fieldId="platformComponentsConfigRules.coreSystemRule.namespaceRule.regex"
+                                fieldId="platformComponentConfigRules.coreSystemRule.namespaceRule.regex"
                             >
                                 <TextArea
                                     isDisabled
                                     type="text"
-                                    id="platformComponentsConfigRules.coreSystemRule.namespaceRule.regex"
-                                    name="platformComponentsConfigRules.coreSystemRule.namespaceRule.regex"
+                                    id="platformComponentConfigRules.coreSystemRule.namespaceRule.regex"
+                                    name="platformComponentConfigRules.coreSystemRule.namespaceRule.regex"
                                     value={
-                                        values?.platformComponentsConfigRules?.coreSystemRule
+                                        values?.platformComponentConfigRules?.coreSystemRule
                                             .namespaceRule.regex
                                     }
                                     onChange={(event, value) => onChange(value, event)}
@@ -116,15 +116,15 @@ function PlatformComponentsConfigForm({
                                     <FormGroup
                                         isRequired
                                         label="Namespace rules (Regex)"
-                                        fieldId="platformComponentsConfigRules.redHatLayeredProductsRule.namespaceRule.regex"
+                                        fieldId="platformComponentConfigRules.redHatLayeredProductsRule.namespaceRule.regex"
                                     >
                                         <TextArea
                                             isRequired
                                             type="text"
-                                            id="platformComponentsConfigRules.redHatLayeredProductsRule.namespaceRule.regex"
-                                            name="platformComponentsConfigRules.redHatLayeredProductsRule.namespaceRule.regex"
+                                            id="platformComponentConfigRules.redHatLayeredProductsRule.namespaceRule.regex"
+                                            name="platformComponentConfigRules.redHatLayeredProductsRule.namespaceRule.regex"
                                             value={
-                                                values?.platformComponentsConfigRules
+                                                values?.platformComponentConfigRules
                                                     ?.redHatLayeredProductsRule.namespaceRule.regex
                                             }
                                             onChange={(event, value) => onChange(value, event)}
@@ -169,7 +169,7 @@ function PlatformComponentsConfigForm({
                             </Text>
                             <Divider component="div" className="pf-v5-u-py-md" />
                             <Grid hasGutter md={6}>
-                                {values.platformComponentsConfigRules.customRules.map(
+                                {values.platformComponentConfigRules.customRules.map(
                                     (customRule, index) => {
                                         const headerActions = (
                                             <Button
@@ -177,12 +177,12 @@ function PlatformComponentsConfigForm({
                                                 aria-label="Remove custom component"
                                                 onClick={() => {
                                                     const newCustomRules =
-                                                        values.platformComponentsConfigRules.customRules.filter(
+                                                        values.platformComponentConfigRules.customRules.filter(
                                                             (_, i) => i !== index
                                                         );
                                                     return onCustomChange(
                                                         newCustomRules,
-                                                        'platformComponentsConfigRules.customRules'
+                                                        'platformComponentConfigRules.customRules'
                                                     );
                                                 }}
                                             >
@@ -203,15 +203,15 @@ function PlatformComponentsConfigForm({
                                                         <FormGroup
                                                             label="Name"
                                                             isRequired
-                                                            fieldId={`platformComponentsConfigRules.customRules[${index}].name`}
+                                                            fieldId={`platformComponentConfigRules.customRules[${index}].name`}
                                                         >
                                                             <TextInput
                                                                 isRequired
-                                                                id={`platformComponentsConfigRules.customRules[${index}].name`}
-                                                                name={`platformComponentsConfigRules.customRules[${index}].name`}
+                                                                id={`platformComponentConfigRules.customRules[${index}].name`}
+                                                                name={`platformComponentConfigRules.customRules[${index}].name`}
                                                                 value={
                                                                     values
-                                                                        ?.platformComponentsConfigRules
+                                                                        ?.platformComponentConfigRules
                                                                         ?.customRules?.[index].name
                                                                 }
                                                                 onChange={(event, value) =>
@@ -222,16 +222,16 @@ function PlatformComponentsConfigForm({
                                                         <FormGroup
                                                             label="Namespace rules (Regex)"
                                                             isRequired
-                                                            fieldId={`platformComponentsConfigRules.customRules[${index}].namespaceRule.regex`}
+                                                            fieldId={`platformComponentConfigRules.customRules[${index}].namespaceRule.regex`}
                                                         >
                                                             <TextArea
                                                                 isRequired
                                                                 type="text"
-                                                                id={`platformComponentsConfigRules.customRules[${index}].namespaceRule.regex`}
-                                                                name={`platformComponentsConfigRules.customRules[${index}].namespaceRule.regex`}
+                                                                id={`platformComponentConfigRules.customRules[${index}].namespaceRule.regex`}
+                                                                name={`platformComponentConfigRules.customRules[${index}].namespaceRule.regex`}
                                                                 value={
                                                                     values
-                                                                        ?.platformComponentsConfigRules
+                                                                        ?.platformComponentConfigRules
                                                                         ?.customRules?.[index]
                                                                         ?.namespaceRule.regex
                                                                 }
@@ -252,13 +252,13 @@ function PlatformComponentsConfigForm({
                                 icon={<PlusCircleIcon />}
                                 onClick={() => {
                                     const currentCustomRules =
-                                        values.platformComponentsConfigRules.customRules;
+                                        values.platformComponentConfigRules.customRules;
                                     return onCustomChange(
                                         [
                                             ...currentCustomRules,
                                             { name: '', namespaceRule: { regex: '' } },
                                         ],
-                                        'platformComponentsConfigRules.customRules'
+                                        'platformComponentConfigRules.customRules'
                                     );
                                 }}
                             >
