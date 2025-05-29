@@ -295,7 +295,7 @@ func (m *ManagerTestSuite) TestHandleScan() {
 
 	scan.Id = "scan-id"
 	err = manager.HandleScan(context.Background(), scan.CloneVT())
-	assert.Error(m.T(), err)
+	assert.NoError(m.T(), err)
 	concurrency.WithLock(&managerImplementation.watchingScansLock, func() {
 		assert.Len(m.T(), managerImplementation.watchingScans, 0)
 	})

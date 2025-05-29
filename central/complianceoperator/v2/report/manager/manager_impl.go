@@ -329,11 +329,11 @@ func (m *managerImpl) HandleScan(sensorCtx context.Context, scan *storage.Compli
 	if err != nil {
 		if errors.Is(err, watcher.ErrComplianceOperatorScanMissingLastStartedFiled) {
 			log.Debugf("The scan is missing the LastStartedField: %v", err)
-			return err
+			return nil
 		}
 		if errors.Is(err, watcher.ErrScanAlreadyHandled) {
 			log.Debugf("Scan %s was already handled", scan.GetScanName())
-			return err
+			return nil
 		}
 		return err
 	}

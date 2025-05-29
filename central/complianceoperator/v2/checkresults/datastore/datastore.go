@@ -55,7 +55,7 @@ type DataStore interface {
 	WalkByQuery(ctx context.Context, query *v1.Query, fn func(deployment *storage.ComplianceOperatorCheckResultV2) error) error
 
 	// DeleteOldResults scan results from a previous run
-	DeleteOldResults(ctx context.Context, lastStartedTimestamp *timestamppb.Timestamp, scanRefIDs string, includeCurrent bool) error
+	DeleteOldResults(ctx context.Context, lastStartedTimestamp *timestamppb.Timestamp, scanRefID string, includeCurrent bool) error
 }
 
 // New returns the datastore wrapper for compliance operator check results
