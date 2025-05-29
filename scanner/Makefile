@@ -179,6 +179,7 @@ image-scanner: $(if $(CI),,image/scanner/bin/scanner) \
 	@echo "+ $@"
 	$(DOCKERBUILD) \
         -t stackrox/$(image-prefix):$(TAG) \
+		-t $(DEFAULT_IMAGE_REGISTRY)/$(image-prefix):$(TAG) \
         $(DOCKERBUILD_ARGS) \
         -f image/scanner/Dockerfile image/scanner
 
@@ -212,6 +213,7 @@ endif
 image-db: $(image-db-init-t)
 	@echo "+ $@"
 	$(DOCKERBUILD) \
+		-t $(DEFAULT_IMAGE_REGISTRY)/$(image-prefix)-db:$(TAG) \
         -t stackrox/$(image-prefix)-db:$(TAG) \
         $(DOCKERBUILD_ARGS) \
         $(DB_DOCKERBUILD_ARGS) \
