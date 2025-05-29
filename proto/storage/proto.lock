@@ -5383,13 +5383,13 @@
             "fields": [
               {
                 "id": 1,
-                "name": "vulnerabilities",
+                "name": "image_vulnerabilities",
                 "type": "Vulnerabilities"
               }
             ],
             "messages": [
               {
-                "name": "LabelExpressions",
+                "name": "MetricLabels",
                 "maps": [
                   {
                     "key_type": "string",
@@ -5438,6 +5438,11 @@
                     "id": 1,
                     "name": "gathering_period_hours",
                     "type": "uint32"
+                  },
+                  {
+                    "id": 3,
+                    "name": "query",
+                    "type": "string"
                   }
                 ],
                 "maps": [
@@ -5446,7 +5451,7 @@
                     "field": {
                       "id": 2,
                       "name": "metric_labels",
-                      "type": "LabelExpressions"
+                      "type": "MetricLabels"
                     }
                   }
                 ]
