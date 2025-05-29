@@ -435,9 +435,7 @@ func (s *flowStoreImpl) retryableRemoveFlowsForDeployment(ctx context.Context, i
 			return err
 		}
 
-		entityIds := getEntityIds(srcFlows, dstFlows)
-
-		return s.pruneOrphanExternalEntities(ctx, entityIds)
+		return s.pruneOrphanExternalEntities(ctx, srcFlows, dstFlows)
 	}
 
 	// To avoid a full scan with an OR delete source and destination flows separately
@@ -694,9 +692,7 @@ func (s *flowStoreImpl) RemoveOrphanedFlows(ctx context.Context, orphanWindow *t
 			return err
 		}
 
-		entityIds := getEntityIds(srcFlows, dstFlows)
-
-		return s.pruneOrphanExternalEntities(ctx, entityIds)
+		return s.pruneOrphanExternalEntities(ctx, srcFlows, dstFlows)
 	}
 
 	s.mutex.Lock()
@@ -736,8 +732,9 @@ func getEntityIds(srcFlows []*storage.NetworkFlow, dstFlows []*storage.NetworkFl
 	return entityIds
 }
 
-func (s *flowStoreImpl) pruneOrphanExternalEntities(ctx context.Context, entityIds []string) error {
+func (s *flowStoreImpl) pruneOrphanExternalEntities(ctx context.Context, srcFlows []*storage.NetworkFlow, dstFlows []*storage.NetworkFlow) error {
 	var totalPruned int64 = 0
+	entityIds := getEntityIds(srcFlows, dstFlows)
 
 	if len(entityIds) != 0 {
 		err := utils.BatchProcess(entityIds, orphanedEntitiesPruningBatchSize, func(entityIds []string) error {
