@@ -351,8 +351,13 @@ func (s *ImageFlatPostgresDataStoreTestSuite) TestImageDeletes() {
 	s.True(found)
 	for _, component := range testImage.GetScan().GetComponents() {
 		for _, cve := range component.GetVulns() {
-			cve.FirstSystemOccurrence = storedImage.GetLastUpdated()
-			cve.FirstImageOccurrence = storedImage.GetLastUpdated()
+			log.Infof("SHREWS -- %v", cve.FirstSystemOccurrence)
+			log.Infof("SHREWS -- %v", cve.FirstImageOccurrence)
+			//cve.FirstSystemOccurrence = storedImage.GetLastUpdated()
+			//cve.FirstImageOccurrence = storedImage.GetLastUpdated()
+			log.Infof("SHREWS -- %v", cve.FirstSystemOccurrence)
+			log.Infof("SHREWS -- %v", cve.FirstImageOccurrence)
+			log.Infof("SHREWS -- %v", storedImage.GetLastUpdated())
 			cve.VulnerabilityTypes = []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY}
 		}
 	}
