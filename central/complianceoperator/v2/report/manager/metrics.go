@@ -26,8 +26,8 @@ var (
 	scansRunningInParallel = prometheus.NewHistogram(prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		// Num of scans: 0-10 with resolution of 1, 10-200 with resolution of 10.
-		Buckets: append([]float64{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, prometheus.LinearBuckets(10, 10, 19)...),
+		// Num of scans: 1-10 with resolution of 1, 10-200 with resolution of 10.
+		Buckets: append([]float64{1, 2, 3, 4, 5, 6, 7, 8, 9}, prometheus.LinearBuckets(10, 10, 12)...),
 		Name:    coPrefix + "num_scans_running_in_parallel",
 		Help:    "Number of scan watchers being in unfinished state representing scans still running",
 	})
