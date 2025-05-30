@@ -326,9 +326,8 @@ func (m *managerImpl) HandleScan(sensorCtx context.Context, scan *storage.Compli
 		}
 		return err
 	}
-	watch := m.getWatcher(sensorCtx, id)
 	defer m.updateMetrics()
-	return watch.PushScan(scan)
+	return m.getWatcher(sensorCtx, id).PushScan(scan)
 }
 
 func (m *managerImpl) updateMetrics() {
@@ -365,9 +364,9 @@ func (m *managerImpl) HandleScanRemove(scanID string) error {
 	concurrency.WithLock(&m.watchingScansLock, func() {
 		if scanWatcher, found := m.watchingScans[id]; found {
 			scanWatcher.Stop(watcher.ErrScanRemoved)
-			defer m.updateMetrics()
 		}
 	})
+	m.updateMetrics()
 	return nil
 }
 
