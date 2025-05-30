@@ -63,6 +63,14 @@ func AddUnstructuredDefaultsToSecuredCluster(securedCluster *SecuredCluster, u *
 // MergeSecuredClusterDefaultsIntoSpec merges the defaults from SecuredCluster.Defaults into SecuredCluster.Spec.
 // Modifies content of securedCluster.
 func MergeSecuredClusterDefaultsIntoSpec(securedCluster *SecuredCluster) error {
+	// Delete old "Default" values, which were previously injected into CRs via CRD defaults.
+	// Necessary for the below merging to be effectful in the situation that spec paths in the custom resource
+	// with explicit "Defaults" values are actually filled in with our computed defaults.
+	if scannerV4 := securedCluster.Spec.ScannerV4; scannerV4 != nil {
+		if scannerComponent := scannerV4.ScannerComponent; scannerComponent != nil && *scannerComponent == "Default" {
+			scannerV4.ScannerComponent = nil
+		}
+	}
 	if err := mergo.Merge(&securedCluster.Spec, securedCluster.Defaults); err != nil {
 		return errors.Wrap(err, "merging SecuredCluster Defaults into Spec")
 	}
