@@ -117,23 +117,16 @@ func (m *handlerImpl) run() {
 		select {
 		case req := <-m.request:
 			var requestProcessed bool
-			operationName := ""
+			operationName := fmt.Sprintf("%T", req.GetRequest())
 			switch r := req.GetRequest().(type) {
 			case *central.ComplianceRequest_EnableCompliance:
-				operationName = "enable compliance"
 				requestProcessed = m.enableCompliance(r.EnableCompliance)
 			case *central.ComplianceRequest_DisableCompliance:
-				operationName = "disable compliance"
 				requestProcessed = m.disableCompliance(r.DisableCompliance)
 			case *central.ComplianceRequest_ApplyScanConfig:
-				operationName = "apply scan config"
 				requestProcessed = m.processApplyScanCfgRequest(r.ApplyScanConfig)
 			case *central.ComplianceRequest_DeleteScanConfig:
-				operationName = "delete scan config"
 				requestProcessed = m.processDeleteScanCfgRequest(r.DeleteScanConfig)
-			default:
-				operationName = fmt.Sprintf("%T", req.GetRequest())
-				requestProcessed = false
 			}
 			commandsFromCentral.With(prometheus.Labels{
 				"operation": operationName,
@@ -173,9 +166,11 @@ func (m *handlerImpl) processApplyScanCfgRequest(request *central.ApplyComplianc
 		return true
 	default:
 		if request.GetScanRequest() == nil {
+			applyScanConfigCommands.WithLabelValues("nil").Inc()
 			return m.composeAndSendApplyScanConfigResponse(request.GetId(), errors.New("Compliance scan request is empty"))
 		}
 
+		applyScanConfigCommands.WithLabelValues(fmt.Sprintf("%T", request.GetScanRequest())).Inc()
 		switch r := request.GetScanRequest().(type) {
 		case *central.ApplyComplianceScanConfigRequest_ScheduledScan_:
 			return m.processScheduledScanRequest(request.GetId(), r.ScheduledScan)
