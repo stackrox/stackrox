@@ -444,7 +444,6 @@ func (t Translator) getLocalScannerV4ComponentValues(ctx context.Context, secure
 // Only defaults that result in behaviour different from the Helm chart defaults should be included here.
 func (t Translator) setDefaults(sc *platform.SecuredCluster) {
 	scanner.SetScannerDefaults(&sc.Spec)
-	scanner.SetScannerV4Defaults(&sc.Spec)
 	if sc.Spec.AdmissionControl == nil {
 		sc.Spec.AdmissionControl = &platform.AdmissionControlComponentSpec{}
 	}
