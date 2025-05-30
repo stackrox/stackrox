@@ -198,9 +198,12 @@ func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
 				return storage.ComplianceOperatorReportStatus_PARTIAL_SCAN_ERROR_DOWNLOAD == target.GetReportStatus().GetRunState()
 			})).Times(1).Return(errors.New("some error"))
 		req := newFakeDownloadRequest()
-		req.FailedClusters = map[string]*storage.ComplianceOperatorReportSnapshotV2_FailedCluster{
-			"cluster-2": {},
+		req.ClusterData = map[string]*report.ClusterData{
+			"cluster-2": {
+				FailedInfo: &report.FailedCluster{},
+			},
 		}
+		req.NumFailedClusters = 1
 		err := s.reportGen.ProcessReportRequest(req)
 		s.Require().Error(err)
 		s.Assert().Contains(err.Error(), errUnableToUpdateSnapshotOnGenerationSuccessStr)
