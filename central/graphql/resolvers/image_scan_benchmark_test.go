@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/stackrox/rox/central/views/imagecomponentflat"
 	"github.com/stackrox/rox/central/views/imagecveflat"
 	imagesView "github.com/stackrox/rox/central/views/images"
 	"github.com/stackrox/rox/pkg/features"
@@ -86,6 +87,7 @@ func BenchmarkImageResolver(b *testing.B) {
 			CreateTestImageCVEV2Datastore(b, testDB),
 			CreateTestImageV2Datastore(b, testDB, mockCtrl),
 			imagecveflat.NewCVEFlatView(testDB.DB),
+			imagecomponentflat.NewComponentFlatView(testDB.DB),
 		)
 	} else {
 		resolver, schema = SetupTestResolver(b,

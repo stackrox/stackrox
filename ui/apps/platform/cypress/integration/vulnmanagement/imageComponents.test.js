@@ -40,6 +40,7 @@ describe('Vulnerability Management Image Components', () => {
         const tdSelector = '.rt-td:nth-child(9)';
 
         // 0. Initial table state indicates that the column is sorted ascending.
+        cy.get('.rt-table').scrollTo('bottom', { duration: 5000 });
         cy.get(thSelector).should('have.class', '-sort-asc');
         cy.get(tdSelector).then((items) => {
             assertSortedItems(items, callbackForPairOfAscendingNumberValuesFromElements);
