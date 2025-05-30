@@ -34,4 +34,12 @@ var (
 	// ScannerV4ManifestDeleteDuration specifies the duration of the interval (not inclusive) in which manifests will be deleted.
 	// Default: 23 days
 	ScannerV4ManifestDeleteDuration = registerDurationSetting("ROX_SCANNER_V4_MANIFEST_DELETE_DURATION", 23*24*time.Hour)
+
+	// ScannerV4MavenSearchUrl
+	// TODO(DO NOT MERGE): Documentation
+	// TODO(DO NOT MERGE): Should the name be Url or Proxy?
+	// TODO(DO NOT MERGE): Doesn't set a default which means we'll use whatever the default is for the particular
+	//  Claircore version we have. I can see an argument for explicitly setting it here but my current preference is
+	//  not to. For the current Claircore default, see: https://pkg.go.dev/github.com/quay/claircore/java@main#DefaultSearchAPI
+	ScannerV4MavenSearchUrl = RegisterSetting("ROX_SCANNER_V4_MAVEN_SEARCH_URL")
 )

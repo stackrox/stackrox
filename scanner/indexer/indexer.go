@@ -333,7 +333,20 @@ func newLibindex(ctx context.Context, indexerCfg config.IndexerConfig, client *h
 					cfg.Name2ReposMappingFile = indexerCfg.NameToReposFile
 				}),
 				"java": castToConfig(func(cfg *java.ScannerConfig) {
-					cfg.DisableAPI = true
+					if features.ScannerV4MavenSearch.Enabled() {
+						// TODO(DO NOT MERGE): This is currently the default in
+						//  claircore, but explicitly setting it here kinda
+						//  makes sense to me, just in case.
+						cfg.DisableAPI = false
+						// TODO(DO NOT MERGE): Make consistent with whatever the
+						//  the outcome for the environment variable is (url vs proxy).
+						mavenSearchUrl := env.ScannerV4MavenSearchUrl.Setting()
+						if mavenSearchUrl != "" {
+							cfg.API = mavenSearchUrl
+						}
+					} else {
+						cfg.DisableAPI = true
+					}
 				}),
 			},
 		},
