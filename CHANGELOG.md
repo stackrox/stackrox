@@ -7,6 +7,9 @@ Entries in this file should be limited to:
 - Obscure side-effects that are not obviously apparent based on the JIRA associated with the changes.
 Please avoid adding duplicate information across this changelog and JIRA/doc input pages.
 
+## [4.6.7]
+- ROX-29530: Skips pruning inactive images when the Inactive image retention value is 0 instead of instantly deleting inactive images.
+
 ## [4.6.5]
 
 ### Technical Changes
