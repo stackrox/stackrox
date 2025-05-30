@@ -111,7 +111,6 @@ func (p *process) createDeployment(serviceAccountName string, sensorDeployment *
 							},
 						},
 					},
-					NodeSelector: sensorDeployment.Spec.Template.Spec.NodeSelector,
 					Volumes: []v1.Volume{
 						{
 							Name: "sensor-tls-volume",
@@ -222,6 +221,7 @@ func (p *process) createDeployment(serviceAccountName string, sensorDeployment *
 	// These are all nil safe because they are all non-pointers
 	if sensorDeployment != nil {
 		deployment.Spec.Template.Spec.Tolerations = sensorDeployment.Spec.Template.Spec.Tolerations
+		deployment.Spec.Template.Spec.NodeSelector = sensorDeployment.Spec.Template.Spec.NodeSelector
 	}
 
 	return deployment, nil
