@@ -664,6 +664,16 @@ func (m *ComplianceOperatorReportSnapshotV2_FailedCluster) CloneVT() *Compliance
 		copy(tmpContainer, rhs)
 		r.Reasons = tmpContainer
 	}
+	if rhs := m.Scans; rhs != nil {
+		tmpContainer := make([]string, len(rhs))
+		copy(tmpContainer, rhs)
+		r.Scans = tmpContainer
+	}
+	if rhs := m.Profiles; rhs != nil {
+		tmpContainer := make([]string, len(rhs))
+		copy(tmpContainer, rhs)
+		r.Profiles = tmpContainer
+	}
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -1859,6 +1869,24 @@ func (this *ComplianceOperatorReportSnapshotV2_FailedCluster) EqualVT(that *Comp
 	}
 	if this.OperatorVersion != that.OperatorVersion {
 		return false
+	}
+	if len(this.Scans) != len(that.Scans) {
+		return false
+	}
+	for i, vx := range this.Scans {
+		vy := that.Scans[i]
+		if vx != vy {
+			return false
+		}
+	}
+	if len(this.Profiles) != len(that.Profiles) {
+		return false
+	}
+	for i, vx := range this.Profiles {
+		vy := that.Profiles[i]
+		if vx != vy {
+			return false
+		}
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
@@ -4099,6 +4127,24 @@ func (m *ComplianceOperatorReportSnapshotV2_FailedCluster) MarshalToSizedBufferV
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if len(m.Profiles) > 0 {
+		for iNdEx := len(m.Profiles) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.Profiles[iNdEx])
+			copy(dAtA[i:], m.Profiles[iNdEx])
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Profiles[iNdEx])))
+			i--
+			dAtA[i] = 0x32
+		}
+	}
+	if len(m.Scans) > 0 {
+		for iNdEx := len(m.Scans) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.Scans[iNdEx])
+			copy(dAtA[i:], m.Scans[iNdEx])
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Scans[iNdEx])))
+			i--
+			dAtA[i] = 0x2a
+		}
+	}
 	if len(m.OperatorVersion) > 0 {
 		i -= len(m.OperatorVersion)
 		copy(dAtA[i:], m.OperatorVersion)
@@ -5399,6 +5445,18 @@ func (m *ComplianceOperatorReportSnapshotV2_FailedCluster) SizeVT() (n int) {
 	l = len(m.OperatorVersion)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if len(m.Scans) > 0 {
+		for _, s := range m.Scans {
+			l = len(s)
+			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+		}
+	}
+	if len(m.Profiles) > 0 {
+		for _, s := range m.Profiles {
+			l = len(s)
+			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+		}
 	}
 	n += len(m.unknownFields)
 	return n
@@ -12562,6 +12620,70 @@ func (m *ComplianceOperatorReportSnapshotV2_FailedCluster) UnmarshalVT(dAtA []by
 				return io.ErrUnexpectedEOF
 			}
 			m.OperatorVersion = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Scans", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Scans = append(m.Scans, string(dAtA[iNdEx:postIndex]))
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Profiles", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Profiles = append(m.Profiles, string(dAtA[iNdEx:postIndex]))
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -21178,6 +21300,78 @@ func (m *ComplianceOperatorReportSnapshotV2_FailedCluster) UnmarshalVTUnsafe(dAt
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
 			m.OperatorVersion = stringValue
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Scans", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.Scans = append(m.Scans, stringValue)
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Profiles", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.Profiles = append(m.Profiles, stringValue)
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
