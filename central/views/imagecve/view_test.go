@@ -185,8 +185,6 @@ func (s *ImageCVEViewTestSuite) TestGetImageCVECore() {
 			assert.NoError(t, err)
 
 			expected := compileExpected(s.testImages, tc.matchFilter, tc.readOptions, tc.less)
-			assert.Equal(t, len(expected), len(actual))
-
 			assertResponsesAreEqual(t, expected, actual, tc.testOrder)
 
 			if tc.readOptions.SkipGetAffectedImages || tc.readOptions.SkipGetImagesBySeverity {
@@ -233,7 +231,6 @@ func (s *ImageCVEViewTestSuite) TestGetImageCVECoreSAC() {
 				})
 
 				expected := compileExpected(s.testImages, &matchFilter, tc.readOptions, tc.less)
-				assert.Equal(t, len(expected), len(actual))
 				assertResponsesAreEqual(t, expected, actual, false)
 			})
 		}
@@ -346,7 +343,6 @@ func (s *ImageCVEViewTestSuite) TestGetImageCVECoreWithPagination() {
 				assert.NoError(t, err)
 
 				expected := compileExpected(s.testImages, tc.matchFilter, tc.readOptions, tc.less)
-				assert.Equal(t, len(expected), len(actual))
 				assertResponsesAreEqual(t, expected, actual, tc.testOrder)
 
 				if tc.readOptions.SkipGetAffectedImages || tc.readOptions.SkipGetImagesBySeverity {
@@ -1384,6 +1380,8 @@ func testImages() []*storage.Image {
 }
 
 func assertResponsesAreEqual(t *testing.T, expected []CveCore, actual []CveCore, testOrder bool) {
+	assert.Equal(t, len(expected), len(actual))
+
 	if !testOrder {
 		sort.SliceStable(expected, func(i, j int) bool {
 			return expected[i].GetCVE() < expected[j].GetCVE()
