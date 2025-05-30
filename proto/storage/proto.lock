@@ -4855,6 +4855,18 @@
                     "id": 4,
                     "name": "operator_version",
                     "type": "string"
+                  },
+                  {
+                    "id": 5,
+                    "name": "scans",
+                    "type": "string",
+                    "is_repeated": true
+                  },
+                  {
+                    "id": 6,
+                    "name": "profiles",
+                    "type": "string",
+                    "is_repeated": true
                   }
                 ]
               }
