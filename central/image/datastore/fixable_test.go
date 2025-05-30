@@ -20,9 +20,8 @@ import (
 )
 
 func TestFixableSearch(t *testing.T) {
-	// TODO(ROX-29460)
 	if features.FlattenCVEData.Enabled() {
-		t.Skip("FlattenCVEData is enabled so skip for now")
+		t.Skip("FlattenCVEData is enabled so this test is deprecated")
 	}
 	suite.Run(t, new(FixableSearchTestSuite))
 }
