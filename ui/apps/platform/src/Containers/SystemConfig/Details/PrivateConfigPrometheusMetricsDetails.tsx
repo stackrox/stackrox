@@ -1,6 +1,6 @@
 import React, { ReactElement } from 'react';
 
-import { MetricLabels, Expressions, PrivateConfig } from 'types/config.proto';
+import { MetricLabels, Expressions, PrivateConfig, ImageVulnerabilities } from 'types/config.proto';
 import {
     Card,
     CardBody,
@@ -14,10 +14,18 @@ import {
     Label,
 } from '@patternfly/react-core';
 
-function ivmetrics(privateConfig: PrivateConfig | null): ReactElement {
+function imageVulnerabilitiesMetrics(cfg: ImageVulnerabilities | undefined): ReactElement {
     let metrics: ReactElement[] = [];
-    const mle: Map<string, MetricLabels> | undefined =
-        privateConfig?.prometheusMetricsConfig?.imageVulnerabilities?.metricLabels;
+    if (cfg?.query) {
+        metrics.push(
+            <DescriptionListGroup>
+                <DescriptionListTerm>Query</DescriptionListTerm>
+                <DescriptionListDescription>{cfg.query}</DescriptionListDescription>
+            </DescriptionListGroup>
+        );
+    }
+
+    const mle: Map<string, MetricLabels> | undefined = cfg?.metricLabels;
     if (!mle) return <DescriptionListGroup></DescriptionListGroup>;
     for (const metric in mle) {
         const m: MetricLabels | undefined = mle[metric];
@@ -50,6 +58,18 @@ function ivmetrics(privateConfig: PrivateConfig | null): ReactElement {
     );
 }
 
+function imageVulnerabilitiesCard(cfg: ImageVulnerabilities | undefined) {
+    return (
+        <CardBody>
+            <p className="pf-v5-u-mb-sm">
+                The discovered image vulnerabilities as Prometheus metrics.
+            </p>
+            <p className="pf-v5-u-mb-sm">Gathered every {cfg?.gatheringPeriodHours} hour(s).</p>
+            {imageVulnerabilitiesMetrics(cfg)}
+        </CardBody>
+    );
+}
+
 export type PrivateConfigPrometheusMetricsDetailsProps = {
     privateConfig: PrivateConfig;
 };
@@ -57,8 +77,8 @@ export type PrivateConfigPrometheusMetricsDetailsProps = {
 const PrivateConfigPrometheusMetricsDetails = ({
     privateConfig,
 }: PrivateConfigPrometheusMetricsDetailsProps): ReactElement => {
-    const period =
-        privateConfig?.prometheusMetricsConfig?.imageVulnerabilities?.gatheringPeriodHours;
+    const imageVulnerabilitiesCfg = privateConfig?.prometheusMetricsConfig?.imageVulnerabilities;
+    const period = imageVulnerabilitiesCfg?.gatheringPeriodHours;
 
     return (
         <Card isFlat data-testid="metrics-config">
@@ -84,15 +104,7 @@ const PrivateConfigPrometheusMetricsDetails = ({
                 }
             </CardHeader>
             <Divider component="div" />
-            <CardBody>
-                <p className="pf-v5-u-mb-sm">
-                    The discovered image vulnerabilities as Prometheus metrics.
-                </p>
-                <p className="pf-v5-u-mb-sm">
-                    Gathered every {period} hour(s).
-                </p>
-                {ivmetrics(privateConfig)}
-            </CardBody>
+            {imageVulnerabilitiesCard(imageVulnerabilitiesCfg)}
         </Card>
     );
 };
