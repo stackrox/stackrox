@@ -716,9 +716,6 @@ func (s *flowStoreImpl) RemoveOrphanedFlows(ctx context.Context, orphanWindow *t
 		return s.pruneOrphanExternalEntities(ctx, srcFlows, dstFlows)
 	}
 
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
-
 	// To avoid a full scan with an OR delete source and destination flows separately
 	pruneStmt := fmt.Sprintf(pruneNetworkFlowsSrcStmt, s.partitionName)
 	err := s.pruneFlows(ctx, pruneStmt, orphanWindow)
@@ -759,9 +756,6 @@ func (s *flowStoreImpl) pruneOrphanExternalEntities(ctx context.Context, srcFlow
 
 	if len(entityIds) != 0 {
 		err := utils.BatchProcess(entityIds, orphanedEntitiesPruningBatchSize, func(entityIds []string) error {
-			s.mutex.Lock()
-			defer s.mutex.Unlock()
-
 			pruneStmt := fmt.Sprintf(pruneOrphanExternalNetworkEntitiesStmt, s.partitionName, s.partitionName)
 			nbPruned, err := s.pruneEntities(ctx, pruneStmt, entityIds)
 
@@ -779,6 +773,9 @@ func (s *flowStoreImpl) pruneOrphanExternalEntities(ctx context.Context, srcFlow
 }
 
 func (s *flowStoreImpl) pruneFlows(ctx context.Context, deleteStmt string, orphanWindow *time.Time) error {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
 	conn, release, err := s.acquireConn(ctx, ops.Remove, "NetworkFlow")
 	if err != nil {
 		return err
@@ -817,6 +814,9 @@ func (s *flowStoreImpl) pruneAndReturnFlows(ctx context.Context, deleteStmt stri
 }
 
 func (s *flowStoreImpl) pruneEntities(ctx context.Context, deleteStmt string, entityIds []string) (int64, error) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
 	conn, release, err := s.acquireConn(ctx, ops.RemoveMany, "DiscoveredNetworkEntity")
 	if err != nil {
 		return 0, err

@@ -80,7 +80,7 @@ func (s *NetworkflowStoreSuite) TestStore() {
 	secondCluster := fixtureconsts.Cluster2
 	store2 := postgresFlowStore.New(s.pgDB.DB, secondCluster, networktree.Singleton())
 
-	now := time.Now().UTC()
+	now := time.Now().UTC().Truncate(time.Second)
 	timeNow := timestamp.FromGoTime(now)
 
 	time1 := timeNow.Add(time.Second)
