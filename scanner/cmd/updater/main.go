@@ -16,7 +16,8 @@ import (
 const DefaultURL = "https://raw.githubusercontent.com/stackrox/stackrox/master/scanner/updater/manual/vulns.yaml"
 
 func tryExport(ctx context.Context, outputDir string, opts *updater.ExportOptions) error {
-	const timeout = 7 * time.Hour
+	// Temporarily increase update timeout for Vex update
+	const timeout = 6 * time.Hour
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 	err := updater.Export(ctx, outputDir, opts)
