@@ -21,6 +21,7 @@ import spock.lang.Unroll
 
 @Stepwise
 @Tag("PZ")
+@IgnoreIf({ Env.GHA })
 class AttemptedAlertsTest extends BaseSpecification {
     static final private String DEP_PREFIX = "attempted-alerts-dep"
     static final private String[] DEP_NAMES = getDeploymentNames()

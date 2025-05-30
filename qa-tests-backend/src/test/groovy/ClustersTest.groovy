@@ -2,13 +2,16 @@ import io.stackrox.proto.storage.ClusterOuterClass
 
 import services.ClusterService
 import util.Cert
+import util.Env
 
+import spock.lang.IgnoreIf
 import spock.lang.Stepwise
 import spock.lang.Tag
 
 @Tag("BAT")
 @Tag("PZ")
 @Stepwise
+@IgnoreIf({ Env.GHA })
 class ClustersTest extends BaseSpecification {
 
     def "Test cluster status has cert expiry"() {
