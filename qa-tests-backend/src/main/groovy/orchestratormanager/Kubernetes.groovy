@@ -2338,6 +2338,9 @@ class Kubernetes {
                 hostNetwork: deployment.hostNetwork,
                 serviceAccountName: deployment.serviceAccountName
         )
+        if (Env.ARM64_NODESELECTORS == "true") {
+            podSpec.nodeSelector = ["kubernetes.io/arch" : "arm64"]
+        }
         if (!deployment.automountServiceAccountToken) {
             podSpec.automountServiceAccountToken = deployment.automountServiceAccountToken
         }

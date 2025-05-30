@@ -251,8 +251,8 @@ class NetworkFlowTest extends BaseSpecification {
     }
 
     @Tag("NetworkFlowVisualization")
-    // TODO: additional handling may be needed for P/Z, skipping for 1st release
-    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
+    // TODO: additional handling may be needed for architectures other than x86_64
+    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH != "x86_64" })
     def "Verify one-time connections show at first and are closed after the afterglow period"() {
         given:
         "Two deployments, A and B, where B communicates to A a single time during initial deployment"
@@ -280,8 +280,8 @@ class NetworkFlowTest extends BaseSpecification {
     @Tag("BAT")
     @Tag("RUNTIME")
     @Tag("NetworkFlowVisualization")
-    // TODO: additional handling may be needed for P/Z, skipping for 1st release
-    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
+    // TODO: additional handling may be needed for architectures other than x86_64
+    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH != "x86_64" })
     def "Verify connections between StackRox Services"() {
         when:
         "Fetch uIDs for the central, sensor, and collector services, if present"
@@ -310,8 +310,8 @@ class NetworkFlowTest extends BaseSpecification {
     @Tag("BAT")
     @Tag("RUNTIME")
     @Tag("NetworkFlowVisualization")
-    // TODO: additional handling may be needed for P/Z, skipping for 1st release
-    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
+    // TODO: additional handling may be needed for architectures other than x86_64
+    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH != "x86_64" })
     @IgnoreIf({ true }) // ROX-16849 this test is flaking in many cluster flavors
     def "Verify ports are greater than 0"() {
         given:
@@ -385,8 +385,8 @@ class NetworkFlowTest extends BaseSpecification {
     }
 
     @Tag("NetworkFlowVisualization")
-    // TODO: additional handling may be needed for P/Z, skipping for 1st release
-    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
+    // TODO: additional handling may be needed for architectures other than x86_64
+    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH != "x86_64" })
     def "Verify connections with short consistent intervals between 2 deployments"() {
         given:
         "Two deployments, A and B, where B communicates to A in short consistent intervals"
@@ -472,8 +472,8 @@ class NetworkFlowTest extends BaseSpecification {
     }
 
     @Tag("NetworkFlowVisualization")
-    //ROX-21491 skipping test case for p/z
-    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
+    //ROX-21491 skipping test case for non-x86_64 architectures
+    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH != "x86_64" })
     def "Verify connections to external sources"() {
         given:
         "Deployment A, where A communicates to an external target"
@@ -725,8 +725,8 @@ class NetworkFlowTest extends BaseSpecification {
     }
 
     @Tag("NetworkFlowVisualization")
-    // TODO: additional handling may be needed for P/Z, skipping for 1st release
-    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
+    // TODO: additional handling may be needed for architectures other than x86_64
+    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH != "x86_64" })
     @Ignore("ROX-18729") // This test fails constantly
     def "Verify cluster updates can block flow connections from showing"() {
         // ROX-7153 - EKS cannot NetworkPolicy (RS-178)
@@ -792,8 +792,8 @@ class NetworkFlowTest extends BaseSpecification {
     }
 
     @Tag("BAT")
-    //ROX-21491 skipping test case for p/z
-    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
+    //ROX-21491 skipping test case for non-x86_64 architectures
+    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH != "x86_64" })
     def "Verify generated network policies"() {
         // TODO(RS-178): EKS cannot NetworkPolicy
         Assume.assumeFalse(ClusterService.isEKS())

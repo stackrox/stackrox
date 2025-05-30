@@ -1,10 +1,14 @@
 import objects.Deployment
 import services.ProcessService
+import util.Env
 import util.Timer
 
+import spock.lang.IgnoreIf
 import spock.lang.Tag
 import spock.lang.Unroll
 
+// TODO(ROX-29515) add arm64 layers to all test images
+@IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "arm64" })
 @Tag("PZ")
 class ProcessVisualizationReplicaTest extends BaseSpecification {
     static final private Integer REPLICACOUNT = 4

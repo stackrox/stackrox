@@ -8,11 +8,14 @@ import objects.SecretKeyRef
 import objects.Volume
 import services.PolicyService
 
+import spock.lang.IgnoreIf
 import spock.lang.Shared
 import spock.lang.Tag
 import spock.lang.Unroll
 import util.Env
 
+// TODO(ROX-29515) add arm64 layers to all test images
+@IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "arm64" })
 @Tag("PZ")
 class BuiltinPoliciesTest extends BaseSpecification {
     static final private String TRIGGER_MOST = "trigger-most"
