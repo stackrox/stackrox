@@ -80,12 +80,17 @@ func (d *delegatorImpl) GetDelegateClusterID(ctx context.Context, imgName *stora
 }
 
 // DelegateScanImage sends a scan request to the provided cluster.
-func (d *delegatorImpl) DelegateScanImage(ctx context.Context, imgName *storage.ImageName, clusterID string, force bool) (*storage.Image, error) {
+func (d *delegatorImpl) DelegateScanImage(ctx context.Context, imgName *storage.ImageName, clusterID string, namespace string, force bool) (*storage.Image, error) {
 	if clusterID == "" {
 		return nil, errors.New("missing cluster id")
 	}
 
-	namespace := d.inferNamespace(ctx, imgName, clusterID)
+	if namespace == "" {
+		namespace = d.inferNamespace(ctx, imgName, clusterID)
+	}
+	if !d.hasNamespaceAccess(ctx, clusterID, namespace) {
+		namespace = ""
+	}
 
 	w, err := d.scanWaiterManager.NewWaiter()
 	if err != nil {
@@ -144,6 +149,22 @@ func (d *delegatorImpl) inferNamespace(ctx context.Context, imgName *storage.Ima
 	}
 
 	return ""
+}
+
+func (d *delegatorImpl) hasNamespaceAccess(ctx context.Context, clusterID string, namespace string) bool {
+	namespaces, err := d.namespaceSACHelper.GetNamespacesForClusterAndPermissions(ctx, clusterID, inferNamespacePermissions)
+	if err != nil {
+		log.Warnf("Failed to get allowed namespaces for cluster %q due to error: %v", clusterID, err)
+		return false
+	}
+
+	for _, ns := range namespaces {
+		if ns.GetName() == namespace {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (d *delegatorImpl) shouldDelegate(imgName *storage.ImageName, config *storage.DelegatedRegistryConfig) (bool, string) {

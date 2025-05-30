@@ -20,6 +20,8 @@ message BuildDetectionRequest {
   repeated string policy_categories = 5;
   // Cluster to delegate scan to, may be the cluster's name or ID.
   string cluster = 7;
+  // Namespace to look for pull secrets.
+  string namespace = 8;
 }
 
 message BuildDetectionResponse {

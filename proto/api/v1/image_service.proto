@@ -34,6 +34,8 @@ message ScanImageRequest {
   bool include_snoozed = 3;
   // Cluster to delegate scan to, may be the cluster's name or ID.
   string cluster = 4;
+  // Namespace to look for pull secrets.
+  string namespace = 5;
 }
 
 message ScanImageInternalRequest {
