@@ -167,9 +167,11 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
     }
 
     function allClustersAreUnhealthy(clusters): boolean {
-        return clusters?.every(cluster => cluster.statusErrors.length < 1);
+        console.log('allClustersAreUnhealthy', clusters?.every(cluster => cluster.status === 'UNHEALTHY'))
+        return clusters?.every(cluster => cluster.status === 'UNHEALTHY');
     }
 
+    console.log('ScanConfigWizardForm', isCreating, clusters)
     const wizardSteps: WizardStep[] = [
         {
             name: PARAMETERS,
@@ -187,7 +189,6 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
                 />
             ),
             canJumpTo: canJumpToSelectClusters(),
-            isDisabled: isCreating && allClustersAreUnhealthy(clusters),
         },
         {
             name: SELECT_PROFILES,
@@ -233,6 +234,7 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
                             onSave={onSave}
                             isSaving={isCreating}
                             proceedToNextStepIfValid={proceedToNextStepIfValid}
+                            allClustersAreUnhealthy={allClustersAreUnhealthy(clusters) || !isCreating}
                         />
                     }
                 />
