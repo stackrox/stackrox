@@ -262,6 +262,17 @@ function AuthProviders(): ReactElement {
                                             </a>
                                         </ExternalLink>
                                     </Flex>
+                                    <Flex direction={{ default: 'column' }}>
+                                        <ExternalLink>
+                                            <a
+                                                href="https://hub.tekton.dev/tekton/task/rhacs-m2m-authenticate"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                            >
+                                                Tekton task for short-lived access
+                                            </a>
+                                        </ExternalLink>
+                                    </Flex>
                                 </ExpandableSection>
                             </Flex>
                         </Alert>
