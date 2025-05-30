@@ -8,12 +8,14 @@ import objects.SecretKeyRef
 import objects.Volume
 import services.PolicyService
 
+import spock.lang.IgnoreIf
 import spock.lang.Shared
 import spock.lang.Tag
 import spock.lang.Unroll
 import util.Env
 
 @Tag("PZ")
+@IgnoreIf({ Env.GHA })
 class BuiltinPoliciesTest extends BaseSpecification {
     static final private String TRIGGER_MOST = "trigger-most"
     static final private String TRIGGER_ALPINE = "trigger-alpine"

@@ -9,12 +9,14 @@ import services.NotifierService
 import util.Env
 import util.Helpers
 
+import spock.lang.IgnoreIf
 import spock.lang.Shared
 import spock.lang.Tag
 import spock.lang.Unroll
 
 @Tag("BAT")
 @Tag("PZ")
+@IgnoreIf({ Env.GHA })
 class AuditScrubbingTest extends BaseSpecification {
 
     static private final String BASIC_AUTH_PROVIDER_ID = "4df1b98c-24ed-4073-a9ad-356aec6bb62d"

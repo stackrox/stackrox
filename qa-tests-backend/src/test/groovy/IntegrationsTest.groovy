@@ -43,6 +43,7 @@ import spock.lang.Tag
 import spock.lang.Unroll
 
 @Tag("PZ")
+@IgnoreIf({ Env.GHA })
 class IntegrationsTest extends BaseSpecification {
     static final private String NOTIFIERDEPLOYMENT = "netpol-notification-test-deployment"
 

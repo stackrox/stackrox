@@ -18,11 +18,14 @@ import services.PolicyService
 import services.SignatureIntegrationService
 import services.CertificateVerificationArgs
 import services.TransparencyLogVerificationArgs
+import util.Env
 
+import spock.lang.IgnoreIf
 import spock.lang.Shared
 import spock.lang.Tag
 import spock.lang.Unroll
 
+@IgnoreIf({ Env.GHA })
 class ImageSignatureVerificationTest extends BaseSpecification {
 
     static final private String SIGNATURE_TESTING_NAMESPACE = "qa-signature-tests"

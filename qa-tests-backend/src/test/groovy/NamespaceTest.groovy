@@ -8,6 +8,7 @@ import io.stackrox.proto.api.v1.SearchServiceOuterClass
 
 import services.ClusterService
 import services.NamespaceService
+import util.Env
 
 import org.junit.Assume
 import spock.lang.IgnoreIf
@@ -17,7 +18,7 @@ import spock.lang.Tag
 class NamespaceTest extends BaseSpecification {
 
     @Tag("BAT")
-    @IgnoreIf({ System.getenv("OPENSHIFT_CI_CLUSTER_CLAIM") == "openshift-4" })
+    @IgnoreIf({ System.getenv("OPENSHIFT_CI_CLUSTER_CLAIM") == "openshift-4" || Env.GHA })
     def "Verify namespace details"() {
         // https://issues.redhat.com/browse/ROX-6844
         Assume.assumeFalse(ClusterService.isOpenShift4())

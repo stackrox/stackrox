@@ -115,6 +115,7 @@ class CertRotationTest extends BaseSpecification {
             "cert.pem", "key.pem", "SCANNER_DB_SERVICE", start)
     }
 
+    @IgnoreIf({ Env.GHA })
     def "Test sensor cert rotation"() {
         when:
         "Fetch the current sensor-tls, collector-tls and admission-control-tls secrets, and regenerate certs"

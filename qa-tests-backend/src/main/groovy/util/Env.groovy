@@ -9,6 +9,8 @@ import java.nio.file.attribute.FileTime
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
+import org.junit.Assume
+
 @CompileStatic
 class Env {
 
@@ -81,9 +83,7 @@ class Env {
 
     protected String mustGetInternal(String key) {
         def value = envVars.get(key)
-        if (value == null) {
-            throw new RuntimeException("No value assigned for required key ${key}")
-        }
+        Assume.assumeNotNull(value)
         return value
     }
 

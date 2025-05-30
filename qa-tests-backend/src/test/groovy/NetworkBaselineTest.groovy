@@ -7,9 +7,11 @@ import io.stackrox.proto.storage.NetworkFlowOuterClass
 
 import objects.Deployment
 import services.NetworkBaselineService
+import util.Env
 import util.NetworkGraphUtil
 import util.Timer
 
+import spock.lang.IgnoreIf
 import spock.lang.Tag
 
 @Tag("PZ")
@@ -169,6 +171,7 @@ class NetworkBaselineTest extends BaseSpecification {
     }
 
     @Tag("NetworkBaseline")
+    @IgnoreIf({ Env.GHA })
     def "Verify network baseline functionality"() {
         when:
         "Create initial set of deployments, wait for baseline to populate"

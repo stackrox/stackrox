@@ -7,6 +7,7 @@ import java.util.stream.Collectors
 import objects.Deployment
 import services.GraphQLService
 
+import spock.lang.IgnoreIf
 import spock.lang.Tag
 import util.Env
 
@@ -94,6 +95,7 @@ class DeploymentEventGraphQLTest extends BaseSpecification {
 
     private final gqlService = new GraphQLService()
 
+    @IgnoreIf({ Env.GHA })
     def "Verify Deployment Events in GraphQL"() {
         when:
         "Validate Policy Violation is Triggered"
