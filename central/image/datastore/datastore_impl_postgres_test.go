@@ -303,18 +303,18 @@ func (s *ImagePostgresDataStoreTestSuite) TestUpdateVulnStateWithPostgres() {
 // Test sort by Component search label sorts by Component+Version to ensure backward compatibility.
 func (s *ImagePostgresDataStoreTestSuite) TestSortByComponent() {
 	ctx := sac.WithAllAccess(context.Background())
-	node := fixtures.GetImageWithUniqueComponents(5)
-	componentIDs := make([]string, 0, len(node.GetScan().GetComponents()))
-	for _, component := range node.GetScan().GetComponents() {
+	image := fixtures.GetImageWithUniqueComponents(5)
+	componentIDs := make([]string, 0, len(image.GetScan().GetComponents()))
+	for _, component := range image.GetScan().GetComponents() {
 		componentIDs = append(componentIDs,
 			scancomponent.ComponentID(
 				component.GetName(),
 				component.GetVersion(),
-				node.GetScan().GetOperatingSystem(),
+				image.GetScan().GetOperatingSystem(),
 			))
 	}
 
-	s.NoError(s.datastore.UpsertImage(ctx, node))
+	s.NoError(s.datastore.UpsertImage(ctx, image))
 
 	// Verify sort by Component search label is transformed to sort by Component+Version.
 	query := pkgSearch.EmptyQuery()
