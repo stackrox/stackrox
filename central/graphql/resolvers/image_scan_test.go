@@ -9,6 +9,7 @@ import (
 	imageDSMocks "github.com/stackrox/rox/central/image/datastore/mocks"
 	imageComponentsDSMocks "github.com/stackrox/rox/central/imagecomponent/datastore/mocks"
 	imageComponentsDSV2Mocks "github.com/stackrox/rox/central/imagecomponent/v2/datastore/mocks"
+	imagesComponentViewMocks "github.com/stackrox/rox/central/views/imagecomponentflat/mocks"
 	imagesView "github.com/stackrox/rox/central/views/images"
 	imagesViewMocks "github.com/stackrox/rox/central/views/images/mocks"
 	"github.com/stackrox/rox/generated/storage"
@@ -61,6 +62,7 @@ type ImageScanResolverTestSuite struct {
 	imageComponentDataStore   *imageComponentsDSMocks.MockDataStore
 	imageComponentDataStoreV2 *imageComponentsDSV2Mocks.MockDataStore
 	imageCVEDataStore         *imageCVEsDSMocks.MockDataStore
+	imageComponentFlatView    *imagesComponentViewMocks.MockComponentFlatView
 
 	resolver *Resolver
 	schema   *graphql.Schema
@@ -72,12 +74,13 @@ func (s *ImageScanResolverTestSuite) SetupTest() {
 
 	s.imageDataStore = imageDSMocks.NewMockDataStore(s.mockCtrl)
 	s.imageView = imagesViewMocks.NewMockImageView(s.mockCtrl)
+	s.imageComponentFlatView = imagesComponentViewMocks.NewMockComponentFlatView(s.mockCtrl)
 
 	s.imageComponentDataStore = imageComponentsDSMocks.NewMockDataStore(s.mockCtrl)
 	s.imageComponentDataStoreV2 = imageComponentsDSV2Mocks.NewMockDataStore(s.mockCtrl)
 	s.imageCVEDataStore = imageCVEsDSMocks.NewMockDataStore(s.mockCtrl)
 
-	s.resolver, s.schema = SetupTestResolver(s.T(), s.imageDataStore, s.imageView, s.imageComponentDataStore, s.imageCVEDataStore, s.imageComponentDataStoreV2)
+	s.resolver, s.schema = SetupTestResolver(s.T(), s.imageDataStore, s.imageView, s.imageComponentDataStore, s.imageCVEDataStore, s.imageComponentDataStoreV2, s.imageComponentFlatView)
 }
 
 func (s *ImageScanResolverTestSuite) TearDownTest() {
@@ -117,7 +120,8 @@ func (s *ImageScanResolverTestSuite) TestGetImagesWithoutScan() {
 	s.imageDataStore.EXPECT().GetManyImageMetadata(gomock.Any(), gomock.Any()).
 		Return([]*storage.Image{cloned}, nil)
 	if features.FlattenCVEData.Enabled() {
-		s.imageComponentDataStoreV2.EXPECT().Search(gomock.Any(), gomock.Any()).
+		s.imageComponentFlatView.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, nil)
+		s.imageComponentDataStoreV2.EXPECT().SearchRawImageComponents(gomock.Any(), gomock.Any()).
 			Return(nil, nil)
 	} else {
 		s.imageComponentDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).
