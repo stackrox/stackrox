@@ -1823,6 +1823,10 @@
         "cluster": {
           "type": "string",
           "description": "Cluster to delegate scan to, may be the cluster's name or ID."
+        },
+        "namespace": {
+          "type": "string",
+          "description": "Namespace to look for pull secrets."
         }
       }
     },

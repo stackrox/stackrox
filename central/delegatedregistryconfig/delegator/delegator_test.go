@@ -264,7 +264,7 @@ func TestDelegateEnrichImage(t *testing.T) {
 
 	t.Run("empty cluster id", func(t *testing.T) {
 		setup(t)
-		image, err := d.DelegateScanImage(ctxBG, nil, "", false)
+		image, err := d.DelegateScanImage(ctxBG, nil, "", "", false)
 		assert.ErrorContains(t, err, "cluster id")
 		assert.Nil(t, image)
 	})
@@ -273,7 +273,7 @@ func TestDelegateEnrichImage(t *testing.T) {
 		setup(t)
 		waiterMgr.EXPECT().NewWaiter().Return(nil, errBroken)
 
-		image, err := d.DelegateScanImage(ctxBG, nil, fakeClusterID, false)
+		image, err := d.DelegateScanImage(ctxBG, nil, fakeClusterID, "", false)
 		assert.ErrorIs(t, err, errBroken)
 		assert.Nil(t, image)
 	})
@@ -284,7 +284,7 @@ func TestDelegateEnrichImage(t *testing.T) {
 		waiter.EXPECT().Close()
 		connMgr.EXPECT().SendMessage(fakeClusterID, gomock.Any()).Return(errBroken)
 
-		image, err := d.DelegateScanImage(ctxBG, nil, fakeClusterID, false)
+		image, err := d.DelegateScanImage(ctxBG, nil, fakeClusterID, "", false)
 		assert.ErrorIs(t, err, errBroken)
 		assert.Nil(t, image)
 	})
@@ -296,7 +296,7 @@ func TestDelegateEnrichImage(t *testing.T) {
 		waiter.EXPECT().Close()
 		connMgr.EXPECT().SendMessage(fakeClusterID, gomock.Any())
 
-		image, err := d.DelegateScanImage(ctxBG, nil, fakeClusterID, false)
+		image, err := d.DelegateScanImage(ctxBG, nil, fakeClusterID, "", false)
 		assert.ErrorIs(t, err, errBroken)
 		assert.Nil(t, image)
 	})
@@ -314,7 +314,7 @@ func TestDelegateEnrichImage(t *testing.T) {
 		waiter.EXPECT().Close()
 		connMgr.EXPECT().SendMessage(fakeClusterID, gomock.Any())
 
-		image, err := d.DelegateScanImage(ctxBG, fakeImgName, fakeClusterID, false)
+		image, err := d.DelegateScanImage(ctxBG, fakeImgName, fakeClusterID, "", false)
 		assert.NoError(t, err)
 		protoassert.Equal(t, fakeImage, image)
 	})
