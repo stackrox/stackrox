@@ -26,6 +26,7 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const (
@@ -83,13 +84,19 @@ func (s *storeImpl) insertIntoImages(
 	cveTimeMap := make(map[string]*timeFields)
 	for _, cve := range parts.cvesV2 {
 		if val, ok := cveTimeMap[cve.GetCveBaseInfo().GetCve()]; ok {
-			if val.createdAt.After(cve.GetCveBaseInfo().GetCreatedAt().AsTime()) {
+			if cve.GetCveBaseInfo().GetCreatedAt() != nil && val.createdAt.After(cve.GetCveBaseInfo().GetCreatedAt().AsTime()) {
 				val.createdAt = cve.GetCveBaseInfo().GetCreatedAt().AsTime()
 			}
-			if val.firstImageOccurrence.After(cve.GetFirstImageOccurrence().AsTime()) {
+			if cve.GetFirstImageOccurrence() != nil && val.firstImageOccurrence.After(cve.GetFirstImageOccurrence().AsTime()) {
 				val.firstImageOccurrence = cve.GetFirstImageOccurrence().AsTime()
 			}
 		} else {
+			if cve.GetFirstImageOccurrence() == nil {
+				cve.FirstImageOccurrence = timestamppb.New(iTime)
+			}
+			if cve.GetCveBaseInfo().GetCreatedAt() == nil {
+				cve.GetCveBaseInfo().CreatedAt = timestamppb.New(iTime)
+			}
 			cveTimeMap[cve.GetCveBaseInfo().GetCve()] = &timeFields{
 				createdAt:            cve.GetCveBaseInfo().GetCreatedAt().AsTime(),
 				firstImageOccurrence: cve.GetFirstImageOccurrence().AsTime(),
@@ -107,10 +114,10 @@ func (s *storeImpl) insertIntoImages(
 		// If the existing CVE is not already in the map that implies it no longer exists for this image and
 		// the CVE will be removed.
 		if val, ok := cveTimeMap[cve.GetCveBaseInfo().GetCve()]; ok {
-			if val.createdAt.After(cve.GetCveBaseInfo().GetCreatedAt().AsTime()) {
+			if cve.GetCveBaseInfo().GetCreatedAt() != nil && val.createdAt.After(cve.GetCveBaseInfo().GetCreatedAt().AsTime()) {
 				val.createdAt = cve.GetCveBaseInfo().GetCreatedAt().AsTime()
 			}
-			if val.firstImageOccurrence.After(cve.GetFirstImageOccurrence().AsTime()) {
+			if cve.GetFirstImageOccurrence() != nil && val.firstImageOccurrence.After(cve.GetFirstImageOccurrence().AsTime()) {
 				val.firstImageOccurrence = cve.GetFirstImageOccurrence().AsTime()
 			}
 		}

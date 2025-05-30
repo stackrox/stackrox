@@ -6,11 +6,11 @@ import (
 	"context"
 	"testing"
 
-	imageCVEDS "github.com/stackrox/rox/central/cve/image/datastore"
-	imageComponentDS "github.com/stackrox/rox/central/imagecomponent/datastore"
+	imageCVEDS "github.com/stackrox/rox/central/cve/image/v2/datastore"
+	imageComponentDS "github.com/stackrox/rox/central/imagecomponent/v2/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/cve"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
@@ -19,14 +19,19 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-func TestFixableSearch(t *testing.T) {
-	if features.FlattenCVEData.Enabled() {
-		t.Skip("FlattenCVEData is enabled so this test is deprecated")
-	}
-	suite.Run(t, new(FixableSearchTestSuite))
+type normalizedImageComponent struct {
+	name    string
+	version string
 }
 
-type FixableSearchTestSuite struct {
+func TestFixableFlatSearch(t *testing.T) {
+	if !features.FlattenCVEData.Enabled() {
+		t.Skip("FlattenCVEData is disabled so skip.")
+	}
+	suite.Run(t, new(FixableFlatSearchTestSuite))
+}
+
+type FixableFlatSearchTestSuite struct {
 	suite.Suite
 
 	ctx    context.Context
@@ -37,8 +42,7 @@ type FixableSearchTestSuite struct {
 	componentDataStore imageComponentDS.DataStore
 }
 
-func (s *FixableSearchTestSuite) SetupSuite() {
-	s.T().Setenv(env.ImageCVEEdgeCustomJoin.EnvVar(), "true")
+func (s *FixableFlatSearchTestSuite) SetupSuite() {
 	s.testDB = pgtest.ForT(s.T())
 
 	s.imageDataStore = GetTestPostgresDataStore(s.T(), s.testDB)
@@ -51,7 +55,7 @@ func (s *FixableSearchTestSuite) SetupSuite() {
 	}
 }
 
-func (s *FixableSearchTestSuite) TestImageSearch() {
+func (s *FixableFlatSearchTestSuite) TestImageSearch() {
 	for _, tc := range []struct {
 		desc                       string
 		q                          *v1.Query
@@ -144,12 +148,6 @@ func (s *FixableSearchTestSuite) TestImageSearch() {
 		},
 	} {
 		s.T().Run(tc.desc, func(t *testing.T) {
-			if tc.skipWhenWorkaroundDisabled {
-				if !env.ImageCVEEdgeCustomJoin.BooleanSetting() {
-					t.Skip("Skip test case when ROX_IMAGE_CVE_EDGE_CUSTOM_JOIN is disabled")
-					t.SkipNow()
-				}
-			}
 			results, err := s.imageDataStore.Search(s.ctx, tc.q)
 			s.NoError(err)
 			actual := search.ResultsToIDs(results)
@@ -158,7 +156,7 @@ func (s *FixableSearchTestSuite) TestImageSearch() {
 	}
 }
 
-func (s *FixableSearchTestSuite) TestCVESearch() {
+func (s *FixableFlatSearchTestSuite) TestCVESearch() {
 	for _, tc := range []struct {
 		desc                       string
 		q                          *v1.Query
@@ -169,7 +167,7 @@ func (s *FixableSearchTestSuite) TestCVESearch() {
 			desc: "Search all fixable CVEs",
 			q: search.NewQueryBuilder().
 				AddBools(search.Fixable, true).ProtoQuery(),
-			expected: []string{"cve-1#", "cve-2#"},
+			expected: []string{"cve-1", "cve-2"},
 		},
 		{
 			desc: "Search all CVEs in 'image-2' that are fixable",
@@ -177,7 +175,7 @@ func (s *FixableSearchTestSuite) TestCVESearch() {
 				AddBools(search.Fixable, true).
 				AddExactMatches(search.ImageSHA, "image-2").
 				ProtoQuery(),
-			expected:                   []string{"cve-2#"},
+			expected:                   []string{"cve-2"},
 			skipWhenWorkaroundDisabled: true,
 		},
 		{
@@ -194,20 +192,20 @@ func (s *FixableSearchTestSuite) TestCVESearch() {
 			q: search.NewQueryBuilder().
 				AddBools(search.Fixable, true).
 				AddExactMatches(search.ImageSHA, "image-4").ProtoQuery(),
-			expected: []string{"cve-1#", "cve-2#"},
+			expected: []string{"cve-1", "cve-2"},
 		},
 		{
 			desc: "Search all CVEs that are not fixable",
 			q: search.NewQueryBuilder().
 				AddBools(search.Fixable, false).ProtoQuery(),
-			expected: []string{"cve-1#", "cve-2#"},
+			expected: []string{"cve-1", "cve-2"},
 		},
 		{
 			desc: "Search all CVEs that are fixable and deferred",
 			q: search.NewQueryBuilder().
 				AddBools(search.Fixable, true).
 				AddExactMatches(search.VulnerabilityState, storage.VulnerabilityState_DEFERRED.String()).ProtoQuery(),
-			expected: []string{"cve-1#", "cve-2#"},
+			expected: []string{"cve-1", "cve-2"},
 		},
 		{
 			desc: "Search CVE 'cve-1' is fixable and deferred",
@@ -215,7 +213,7 @@ func (s *FixableSearchTestSuite) TestCVESearch() {
 				AddBools(search.Fixable, true).
 				AddExactMatches(search.CVE, "cve-1").
 				AddExactMatches(search.VulnerabilityState, storage.VulnerabilityState_DEFERRED.String()).ProtoQuery(),
-			expected: []string{"cve-1#"},
+			expected: []string{"cve-1"},
 		},
 		{
 			desc: "Search CVE 'cve-1' is fixable and deferred",
@@ -223,7 +221,7 @@ func (s *FixableSearchTestSuite) TestCVESearch() {
 				AddBools(search.Fixable, true).
 				AddExactMatches(search.CVE, "cve-1").
 				AddExactMatches(search.VulnerabilityState, storage.VulnerabilityState_DEFERRED.String()).ProtoQuery(),
-			expected: []string{"cve-1#"},
+			expected: []string{"cve-1"},
 		},
 		{
 			desc: "Search all CVEs that are fixable and deferred in 'image-1'",
@@ -238,7 +236,7 @@ func (s *FixableSearchTestSuite) TestCVESearch() {
 			q: search.NewQueryBuilder().
 				AddBools(search.Fixable, true).
 				AddExactMatches(search.Component, "comp-1").ProtoQuery(),
-			expected: []string{"cve-1#", "cve-2#"},
+			expected: []string{"cve-1", "cve-2"},
 		},
 		{
 			desc: "Search CVE 'cve-1' not fixable in component 'comp-2' but fixable elsewhere",
@@ -254,39 +252,33 @@ func (s *FixableSearchTestSuite) TestCVESearch() {
 				AddBools(search.Fixable, true).
 				AddExactMatches(search.ImageSHA, "image-1").
 				AddExactMatches(search.VulnerabilityState, storage.VulnerabilityState_OBSERVED.String()).ProtoQuery(),
-			expected: []string{"cve-1#", "cve-2#"},
+			expected: []string{"cve-1", "cve-2"},
 		},
 	} {
 		s.T().Run(tc.desc, func(t *testing.T) {
-			if tc.skipWhenWorkaroundDisabled {
-				if !env.ImageCVEEdgeCustomJoin.BooleanSetting() {
-					t.Skip("Skip test case when ROX_IMAGE_CVE_EDGE_CUSTOM_JOIN is disabled")
-					t.SkipNow()
-				}
-			}
 			results, err := s.cveDataStore.Search(s.ctx, tc.q)
 			s.NoError(err)
 			actual := search.ResultsToIDs(results)
-			assert.ElementsMatch(t, tc.expected, actual)
+			compareResults := splitFlattenedIDs(actual)
+			assert.ElementsMatch(t, tc.expected, compareResults)
 		})
 	}
 }
 
-func (s *FixableSearchTestSuite) TestImageComponentSearch() {
-	if !env.ImageCVEEdgeCustomJoin.BooleanSetting() {
-		s.T().Skip("Skip tests when ROX_IMAGE_CVE_EDGE_CUSTOM_JOIN is disabled")
-		s.T().SkipNow()
-	}
+func (s *FixableFlatSearchTestSuite) TestImageComponentSearch() {
 	for _, tc := range []struct {
 		desc     string
 		q        *v1.Query
-		expected []string
+		expected []normalizedImageComponent
 	}{
 		{
 			desc: "Search all components with at least some fixable vulnerabilities",
 			q: search.NewQueryBuilder().
 				AddBools(search.Fixable, true).ProtoQuery(),
-			expected: []string{"comp-1#ver-1#", "comp-1#ver-3#"},
+			expected: []normalizedImageComponent{
+				{"comp-1", "ver-1"},
+				{"comp-1", "ver-3"},
+			},
 		},
 		{
 			desc: "Search all components where 'cve-1' is fixable",
@@ -294,27 +286,37 @@ func (s *FixableSearchTestSuite) TestImageComponentSearch() {
 				AddBools(search.Fixable, true).
 				AddExactMatches(search.CVE, "cve-1").
 				ProtoQuery(),
-			expected: []string{"comp-1#ver-1#"},
+			expected: []normalizedImageComponent{
+				{"comp-1", "ver-1"},
+			},
 		},
 		{
 			desc: "Search all components with at least some non-fixable vulnerabilities",
 			q: search.NewQueryBuilder().
 				AddBools(search.Fixable, false).ProtoQuery(),
-			expected: []string{"comp-1#ver-3#", "comp-2#ver-1#"},
+			expected: []normalizedImageComponent{
+				{"comp-1", "ver-3"},
+				{"comp-2", "ver-1"},
+			},
 		},
 		{
 			desc: "Search all components where 'cve-2' is not fixable",
 			q: search.NewQueryBuilder().
 				AddBools(search.Fixable, false).
 				AddExactMatches(search.CVE, "cve-2").ProtoQuery(),
-			expected: []string{"comp-2#ver-1#"},
+			expected: []normalizedImageComponent{
+				{"comp-2", "ver-1"},
+			},
 		},
 		{
 			desc: "Search all components with at least some fixable vulnerabilities that are deferred",
 			q: search.NewQueryBuilder().
 				AddBools(search.Fixable, true).
 				AddExactMatches(search.VulnerabilityState, storage.VulnerabilityState_DEFERRED.String()).ProtoQuery(),
-			expected: []string{"comp-1#ver-1#", "comp-1#ver-3#"},
+			expected: []normalizedImageComponent{
+				{"comp-1", "ver-1"},
+				{"comp-1", "ver-3"},
+			},
 		},
 		{
 			desc: "Search all components where 'cve-1' is fixable and deferred",
@@ -322,7 +324,9 @@ func (s *FixableSearchTestSuite) TestImageComponentSearch() {
 				AddBools(search.Fixable, true).
 				AddExactMatches(search.CVE, "cve-1").
 				AddExactMatches(search.VulnerabilityState, storage.VulnerabilityState_DEFERRED.String()).ProtoQuery(),
-			expected: []string{"comp-1#ver-1#"},
+			expected: []normalizedImageComponent{
+				{"comp-1", "ver-1"},
+			},
 		},
 		{
 			desc: "Search all components where 'cve-1' is fixable in 'image-4'",
@@ -330,7 +334,9 @@ func (s *FixableSearchTestSuite) TestImageComponentSearch() {
 				AddBools(search.Fixable, true).
 				AddExactMatches(search.ImageSHA, "image-4").
 				AddExactMatches(search.CVE, "cve-1").ProtoQuery(),
-			expected: []string{"comp-1#ver-1#"},
+			expected: []normalizedImageComponent{
+				{"comp-1", "ver-1"},
+			},
 		},
 		{
 			desc: "Search all components where 'cve-1' is deferred and fixable in component 'image-4'",
@@ -339,7 +345,9 @@ func (s *FixableSearchTestSuite) TestImageComponentSearch() {
 				AddExactMatches(search.ImageSHA, "image-4").
 				AddExactMatches(search.CVE, "cve-1").
 				AddExactMatches(search.VulnerabilityState, storage.VulnerabilityState_DEFERRED.String()).ProtoQuery(),
-			expected: []string{"comp-1#ver-1#"},
+			expected: []normalizedImageComponent{
+				{"comp-1", "ver-1"},
+			},
 		},
 		{
 			desc: "Search all components where 'cve-1' is fixable and observed",
@@ -347,7 +355,9 @@ func (s *FixableSearchTestSuite) TestImageComponentSearch() {
 				AddBools(search.Fixable, true).
 				AddExactMatches(search.CVE, "cve-1").
 				AddExactMatches(search.VulnerabilityState, storage.VulnerabilityState_OBSERVED.String()).ProtoQuery(),
-			expected: []string{"comp-1#ver-1#"},
+			expected: []normalizedImageComponent{
+				{"comp-1", "ver-1"},
+			},
 		},
 		{
 			desc: "Search all components where cve-1 is fixable and deferred OR cve-2 is fixable and observed",
@@ -360,132 +370,37 @@ func (s *FixableSearchTestSuite) TestImageComponentSearch() {
 					AddExactMatches(search.CVE, "cve-2").
 					AddExactMatches(search.VulnerabilityState, storage.VulnerabilityState_OBSERVED.String()).ProtoQuery(),
 			),
-			expected: []string{"comp-1#ver-1#"},
+			expected: []normalizedImageComponent{
+				{"comp-1", "ver-1"},
+			},
 		},
 	} {
 		s.T().Run(tc.desc, func(t *testing.T) {
-			results, err := s.componentDataStore.Search(s.ctx, tc.q)
+			results, err := s.componentDataStore.SearchRawImageComponents(s.ctx, tc.q)
 			s.NoError(err)
-			actual := search.ResultsToIDs(results)
+			actual := make([]normalizedImageComponent, 0, len(results))
+			seenMap := make(map[normalizedImageComponent]bool)
+			for _, result := range results {
+				normalComponent := normalizedImageComponent{result.GetName(), result.GetVersion()}
+				if _, ok := seenMap[normalComponent]; !ok {
+					seenMap[normalComponent] = true
+					actual = append(actual, normalComponent)
+				}
+			}
 			assert.ElementsMatch(t, tc.expected, actual)
 		})
 	}
 }
 
-func fixableSearchTestImages() []*storage.Image {
-	return []*storage.Image{
-		{
-			Id: "image-1",
-			Scan: &storage.ImageScan{
-				Components: []*storage.EmbeddedImageScanComponent{
-					{
-						Name:    "comp-1",
-						Version: "ver-1",
-						Vulns: []*storage.EmbeddedVulnerability{
-							{
-								Cve: "cve-1",
-								SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
-									FixedBy: "ver-2",
-								},
-								State: storage.VulnerabilityState_OBSERVED,
-							},
-							{
-								Cve: "cve-2",
-								SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
-									FixedBy: "ver-3",
-								},
-								State: storage.VulnerabilityState_OBSERVED,
-							},
-						},
-					},
-				},
-			},
-		},
-		{
-			Id: "image-2",
-			Scan: &storage.ImageScan{
-				Components: []*storage.EmbeddedImageScanComponent{
-					{
-						Name:    "comp-1",
-						Version: "ver-3",
-						Vulns: []*storage.EmbeddedVulnerability{
-							{
-								Cve:   "cve-1",
-								State: storage.VulnerabilityState_OBSERVED,
-							},
-							{
-								Cve: "cve-2",
-								SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
-									FixedBy: "ver-3",
-								},
-								State: storage.VulnerabilityState_DEFERRED,
-							},
-						},
-					},
-				},
-			},
-		},
-		{
-			Id: "image-3",
-			Scan: &storage.ImageScan{
-				Components: []*storage.EmbeddedImageScanComponent{
-					{
-						Name:    "comp-2",
-						Version: "ver-1",
-						Vulns: []*storage.EmbeddedVulnerability{
-							{
-								Cve:   "cve-1",
-								State: storage.VulnerabilityState_OBSERVED,
-							},
-							{
-								Cve:   "cve-2",
-								State: storage.VulnerabilityState_OBSERVED,
-							},
-						},
-					},
-				},
-			},
-		},
-		{
-			Id: "image-4",
-			Scan: &storage.ImageScan{
-				Components: []*storage.EmbeddedImageScanComponent{
-					{
-						Name:    "comp-1",
-						Version: "ver-1",
-						Vulns: []*storage.EmbeddedVulnerability{
-							{
-								Cve: "cve-1",
-								SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
-									FixedBy: "ver-2",
-								},
-								State: storage.VulnerabilityState_DEFERRED,
-							},
-							{
-								Cve: "cve-2",
-								SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
-									FixedBy: "ver-3",
-								},
-								State: storage.VulnerabilityState_DEFERRED,
-							},
-						},
-					},
-					{
-						Name:    "comp-2",
-						Version: "ver-1",
-						Vulns: []*storage.EmbeddedVulnerability{
-							{
-								Cve:   "cve-1",
-								State: storage.VulnerabilityState_DEFERRED,
-							},
-							{
-								Cve:   "cve-2",
-								State: storage.VulnerabilityState_DEFERRED,
-							},
-						},
-					},
-				},
-			},
-		},
+func splitFlattenedIDs(ids []string) []string {
+	results := make([]string, 0, len(ids))
+	resultMap := make(map[string]bool)
+	for _, id := range ids {
+		cveID, _ := cve.IDToParts(id)
+		if _, ok := resultMap[cveID]; !ok {
+			resultMap[cveID] = true
+			results = append(results, cveID)
+		}
 	}
+	return results
 }

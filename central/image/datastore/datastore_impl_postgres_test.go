@@ -303,18 +303,18 @@ func (s *ImagePostgresDataStoreTestSuite) TestUpdateVulnStateWithPostgres() {
 // Test sort by Component search label sorts by Component+Version to ensure backward compatibility.
 func (s *ImagePostgresDataStoreTestSuite) TestSortByComponent() {
 	ctx := sac.WithAllAccess(context.Background())
-	node := fixtures.GetImageWithUniqueComponents(5)
-	componentIDs := make([]string, 0, len(node.GetScan().GetComponents()))
-	for _, component := range node.GetScan().GetComponents() {
+	image := fixtures.GetImageWithUniqueComponents(5)
+	componentIDs := make([]string, 0, len(image.GetScan().GetComponents()))
+	for _, component := range image.GetScan().GetComponents() {
 		componentIDs = append(componentIDs,
 			scancomponent.ComponentID(
 				component.GetName(),
 				component.GetVersion(),
-				node.GetScan().GetOperatingSystem(),
+				image.GetScan().GetOperatingSystem(),
 			))
 	}
 
-	s.NoError(s.datastore.UpsertImage(ctx, node))
+	s.NoError(s.datastore.UpsertImage(ctx, image))
 
 	// Verify sort by Component search label is transformed to sort by Component+Version.
 	query := pkgSearch.EmptyQuery()
@@ -361,7 +361,7 @@ func (s *ImagePostgresDataStoreTestSuite) TestImageDeletes() {
 	expectedImage := cloneAndUpdateRiskPriority(testImage)
 	protoassert.Equal(s.T(), expectedImage, storedImage)
 
-	// Verify that new scan with less components cleans up the old relations correctly.
+	// Verify that new scan with fewer components cleans up the old relations correctly.
 	testImage.Scan.ScanTime = protocompat.TimestampNow()
 	testImage.Scan.Components = testImage.Scan.Components[:len(testImage.Scan.Components)-1]
 	cveIDsSet := set.NewStringSet()
