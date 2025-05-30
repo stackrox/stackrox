@@ -464,6 +464,16 @@ const SystemConfigForm = ({
                     </FormGroup>
                 </GridItem>
             </Grid>
+            <Title headingLevel="h2">Prometheus metrics</Title>
+            <Grid hasGutter>
+                <GridItem sm={12} md={6}>
+                    <FormGroup
+                        label="Image Vulnerabilities"
+                        fieldId="privateConfig.prometheusMetricsConfig.imageVulnerabilities"
+                    >
+                    </FormGroup>
+                </GridItem>
+            </Grid>
             <Title headingLevel="h2">Public configuration</Title>
             <Grid hasGutter>
                 <GridItem sm={12} md={6}>

@@ -21,6 +21,7 @@ import PublicConfigBannerDetails from './PublicConfigBannerDetails';
 import PublicConfigLoginDetails from './PublicConfigLoginDetails';
 import PublicConfigTelemetryDetails from './PublicConfigTelemetryDetails';
 import PlatformComponentsConfigDetails from './PlatformComponentsConfigDetails';
+import PrivateConfigPrometheusMetricsDetails from './PrivateConfigPrometheusMetricsDetails';
 
 export type SystemConfigDetailsProps = {
     systemConfig: SystemConfig;
@@ -79,6 +80,14 @@ function SystemConfigDetails({
                 </Title>
                 <PrivateConfigDataRetentionDetails
                     isClustersRoutePathRendered={isClustersRoutePathRendered}
+                    privateConfig={systemConfig?.privateConfig}
+                />
+            </PageSection>
+            <PageSection data-testid="private-prometheus-config">
+                <Title headingLevel="h2" className="pf-v5-u-mb-md">
+                    Prometheus metrics configuration
+                </Title>
+                <PrivateConfigPrometheusMetricsDetails
                     privateConfig={systemConfig?.privateConfig}
                 />
             </PageSection>
