@@ -261,8 +261,6 @@ function AuthProviders(): ReactElement {
                                                 GitHub Action for short-lived access
                                             </a>
                                         </ExternalLink>
-                                    </Flex>
-                                    <Flex direction={{ default: 'column' }}>
                                         <ExternalLink>
                                             <a
                                                 href="https://hub.tekton.dev/tekton/task/rhacs-m2m-authenticate"
