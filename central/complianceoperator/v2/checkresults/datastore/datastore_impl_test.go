@@ -4,6 +4,7 @@ package datastore
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	checkresultsSearch "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/search"
@@ -1153,6 +1154,76 @@ func (s *complianceCheckResultDataStoreTestSuite) TestComplianceProfileResults()
 	}
 }
 
+func (s *complianceCheckResultDataStoreTestSuite) TestDeleteResultsByScanConfigAndCluster() {
+	scanResults1 := getTestRec(testconsts.Cluster1)
+	scanResults2 := getTestRec(testconsts.Cluster2)
+	scanResults3 := getTestRec(testconsts.Cluster3)
+	scanResults4 := getTestRec2(testconsts.Cluster1)
+	scanResults5 := getTestRec2(testconsts.Cluster2)
+
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, scanResults1))
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, scanResults2))
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, scanResults3))
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, scanResults4))
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, scanResults5))
+
+	err := s.dataStore.DeleteResultsByScanConfigAndCluster(s.hasWriteCtx, "", []string{scanResults2.GetClusterId()})
+	s.NoError(err)
+	actualResultsCount, err := s.dataStore.CountCheckResults(s.hasWriteCtx, search.EmptyQuery())
+	s.NoError(err)
+	s.Equal(5, actualResultsCount, "Empty scan schedule name does not delete any records")
+
+	err = s.dataStore.DeleteResultsByScanConfigAndCluster(s.hasWriteCtx, scanResults2.GetScanConfigName(), []string{})
+	s.NoError(err)
+	actualResultsCount, err = s.dataStore.CountCheckResults(s.hasWriteCtx, search.EmptyQuery())
+	s.NoError(err)
+	s.Equal(5, actualResultsCount, "Empty scan list of clusters does not delete any records")
+
+	err = s.dataStore.DeleteResultsByScanConfigAndCluster(s.hasWriteCtx, scanResults2.GetScanConfigName(), []string{scanResults2.GetClusterId(), scanResults3.GetClusterId()})
+	s.NoError(err)
+	actualResultsCount, err = s.dataStore.CountCheckResults(s.hasWriteCtx, search.EmptyQuery())
+	s.NoError(err)
+	s.Equal(3, actualResultsCount, "2 records should be removed")
+}
+
+func (s *complianceCheckResultDataStoreTestSuite) TestDeleteResultsByScans() {
+	scanConfigName1 := "scan-config1"
+	scanConfigName2 := "scan-config2"
+
+	scanName1 := "scan1"
+	scanName2 := "scan2"
+	scanName3 := "scan3"
+
+	scanResults111 := getTestRecForScan(scanConfigName1, testconsts.Cluster1, scanName1)
+	scanResults121 := getTestRecForScan(scanConfigName1, testconsts.Cluster2, scanName1)
+	scanResults112 := getTestRecForScan(scanConfigName1, testconsts.Cluster1, scanName2)
+	scanResults122 := getTestRecForScan(scanConfigName1, testconsts.Cluster2, scanName2)
+	scanResults213 := getTestRecForScan(scanConfigName2, testconsts.Cluster1, scanName3)
+	scanResults223 := getTestRecForScan(scanConfigName2, testconsts.Cluster2, scanName3)
+
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, scanResults111))
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, scanResults121))
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, scanResults112))
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, scanResults122))
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, scanResults213))
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, scanResults223))
+
+	scanName2Cluster1RefID := internaltov2storage.BuildNameRefID(testconsts.Cluster1, scanName2)
+	scanName2Cluster2RefID := internaltov2storage.BuildNameRefID(testconsts.Cluster2, scanName2)
+
+	err := s.dataStore.DeleteResultsByScans(s.hasWriteCtx, []string{})
+	s.NoError(err)
+	actualResultsCount, err := s.dataStore.CountCheckResults(s.hasWriteCtx, search.EmptyQuery())
+	s.NoError(err)
+	s.Equal(6, actualResultsCount, "Empty scan list of clusters does not delete any records")
+
+	err = s.dataStore.DeleteResultsByScans(s.hasWriteCtx, []string{scanName2Cluster1RefID, scanName2Cluster2RefID})
+	s.NoError(err)
+	actualResultsCount, err = s.dataStore.CountCheckResults(s.hasWriteCtx, search.EmptyQuery())
+	s.NoError(err)
+	s.Equal(4, actualResultsCount, "2 records should be removed")
+}
+
 func (s *complianceCheckResultDataStoreTestSuite) setupTestData() {
 	// make sure we have nothing
 	checkResultIDs, err := s.storage.GetIDs(s.hasReadCtx)
@@ -1251,5 +1322,21 @@ func getTestRec2(clusterID string) *storage.ComplianceOperatorCheckResultV2 {
 		ScanConfigName: "scanConfig2",
 		ScanRefId:      internaltov2storage.BuildNameRefID(clusterID, scanName),
 		RuleRefId:      internaltov2storage.BuildNameRefID(clusterID, "test-rule"),
+	}
+}
+
+func getTestRecForScan(scanConfigName string, clusterID string, scanName string) *storage.ComplianceOperatorCheckResultV2 {
+	return &storage.ComplianceOperatorCheckResultV2{
+		Id:             uuid.NewV4().String(),
+		CheckId:        uuid.NewV4().String(),
+		CheckName:      fmt.Sprintf("check-%s", scanConfigName),
+		ClusterId:      clusterID,
+		Status:         storage.ComplianceOperatorCheckResultV2_INFO,
+		Severity:       storage.RuleSeverity_INFO_RULE_SEVERITY,
+		CreatedTime:    protocompat.TimestampNow(),
+		ScanName:       scanName,
+		ScanConfigName: scanConfigName,
+		ScanRefId:      internaltov2storage.BuildNameRefID(clusterID, scanName),
+		RuleRefId:      internaltov2storage.BuildNameRefID(clusterID, uuid.NewV4().String()),
 	}
 }

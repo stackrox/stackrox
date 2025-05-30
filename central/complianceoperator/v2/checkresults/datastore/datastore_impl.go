@@ -366,6 +366,28 @@ func (d *datastoreImpl) DeleteResultsByCluster(ctx context.Context, clusterID st
 	return err
 }
 
+func (d *datastoreImpl) DeleteResultsByScanConfigAndCluster(ctx context.Context, scanConfigName string, clusterIDs []string) error {
+	if scanConfigName == "" || len(clusterIDs) == 0 {
+		return nil
+	}
+
+	query := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanConfigName, scanConfigName).AddExactMatches(search.ClusterID, clusterIDs...).ProtoQuery()
+	_, err := d.store.DeleteByQuery(ctx, query)
+
+	return err
+}
+
+func (d *datastoreImpl) DeleteResultsByScans(ctx context.Context, scanRefIds []string) error {
+	if len(scanRefIds) == 0 {
+		return nil
+	}
+
+	query := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanRef, scanRefIds...).ProtoQuery()
+	_, err := d.store.DeleteByQuery(ctx, query)
+
+	return err
+}
+
 func withCountQuery(q *v1.Query, field search.FieldLabel) *v1.Query {
 	cloned := q.CloneVT()
 	cloned.Selects = []*v1.QuerySelect{
