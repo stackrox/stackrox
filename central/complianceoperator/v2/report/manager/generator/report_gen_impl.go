@@ -111,7 +111,7 @@ func (rg *complianceReportGeneratorImpl) ProcessReportRequest(req *report.Reques
 		}
 
 		if req.NotificationMethod == storage.ComplianceOperatorReportStatus_DOWNLOAD {
-			if err := rg.saveReportData(req.Ctx, snapshot.GetScanConfigurationId(), snapshot.GetReportId(), zipData); err != nil {
+			if err := rg.saveReportData(reportGenCtx, snapshot.GetScanConfigurationId(), snapshot.GetReportId(), zipData); err != nil {
 				if dbErr := reportUtils.UpdateSnapshotOnError(req.Ctx, snapshot, err, rg.snapshotDS); dbErr != nil {
 					return errors.Wrap(err, errUnableToUpdateSnapshotOnBlobFailureStr)
 				}
