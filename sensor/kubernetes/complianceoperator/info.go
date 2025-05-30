@@ -47,7 +47,7 @@ func searchForDeployment(ctx context.Context, ns string, cli kubernetes.Interfac
 	// List all namespaces to begin the lookup for compliance operator.
 	namespaceList, err := cli.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "listing all namespaces")
 	}
 
 	for _, namespace := range namespaceList.Items {
@@ -66,5 +66,6 @@ func searchForDeployment(ctx context.Context, ns string, cli kubernetes.Interfac
 }
 
 func getComplianceOperatorDeployment(ns string, cli kubernetes.Interface, ctx context.Context) (*appsv1.Deployment, error) {
-	return cli.AppsV1().Deployments(ns).Get(ctx, complianceoperator.Name, metav1.GetOptions{})
+	deployment, err := cli.AppsV1().Deployments(ns).Get(ctx, complianceoperator.Name, metav1.GetOptions{})
+	return deployment, errors.Wrap(err, "getting compliance operator deployment")
 }

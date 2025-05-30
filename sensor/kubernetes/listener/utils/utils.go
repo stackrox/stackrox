@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -13,7 +14,10 @@ var (
 // ServerResourcesForGroup retrieves the APIResourceList of the given group.
 func ServerResourcesForGroup(client client.Interface, group string) (*metav1.APIResourceList, error) {
 	resourceList, err := client.Kubernetes().Discovery().ServerResourcesForGroupVersion(group)
-	return resourceList, err
+	if err != nil {
+		return nil, errors.Wrapf(err, "getting server resources for group %q", group)
+	}
+	return resourceList, nil
 }
 
 // ResourceExists returns true if resource exists in list.  Use with output from

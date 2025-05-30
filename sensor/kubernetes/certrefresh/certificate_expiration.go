@@ -48,7 +48,7 @@ func getCertificateRenewalTime(certificate *storage.TypedServiceCertificate) (ti
 	}
 	if err != nil {
 		var zeroTime time.Time
-		return zeroTime, err
+		return zeroTime, errors.Wrap(err, "computing renewal time for service certificate")
 	}
 
 	return calculateRenewalTime(cert), nil

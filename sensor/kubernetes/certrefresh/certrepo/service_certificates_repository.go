@@ -78,7 +78,7 @@ func (r *ServiceCertificatesRepoSecrets) GetServiceCertificates(ctx context.Cont
 	for serviceType, secretSpec := range r.Secrets {
 		// on context cancellation abort getting other secrets.
 		if ctx.Err() != nil {
-			return nil, ctx.Err()
+			return nil, errors.Wrap(ctx.Err(), "getting service certificates due to context cancellation")
 		}
 
 		certificate, ca, err := r.getServiceCertificate(ctx, serviceType, secretSpec)
@@ -98,7 +98,7 @@ func (r *ServiceCertificatesRepoSecrets) GetServiceCertificates(ctx context.Cont
 	}
 
 	if getErr != nil {
-		return nil, getErr
+		return nil, errors.Wrap(getErr, "getting service certificates")
 	}
 
 	return certificates, nil
@@ -109,7 +109,7 @@ func (r *ServiceCertificatesRepoSecrets) getServiceCertificate(ctx context.Conte
 
 	secret, getErr := r.SecretsClient.Get(ctx, secretSpec.SecretName, metav1.GetOptions{})
 	if getErr != nil {
-		return nil, nil, getErr
+		return nil, nil, errors.Wrapf(getErr, "getting secret %q", secretSpec.SecretName)
 	}
 
 	ownerReferences := secret.GetOwnerReferences()
@@ -151,7 +151,7 @@ func (r *ServiceCertificatesRepoSecrets) EnsureServiceCertificates(ctx context.C
 	for _, cert := range certificates.GetServiceCerts() {
 		// on context cancellation abort putting other secrets.
 		if ctx.Err() != nil {
-			return persistedCertificates, ctx.Err()
+			return persistedCertificates, errors.Wrap(ctx.Err(), "ensuring service certificates")
 		}
 
 		secretSpec, ok := r.Secrets[cert.GetServiceType()]
@@ -166,7 +166,10 @@ func (r *ServiceCertificatesRepoSecrets) EnsureServiceCertificates(ctx context.C
 		}
 	}
 
-	return persistedCertificates, serviceErrors
+	if serviceErrors != nil {
+		return persistedCertificates, errors.Wrap(serviceErrors, "ensuring service certificates")
+	}
+	return persistedCertificates, nil
 }
 
 func (r *ServiceCertificatesRepoSecrets) ensureServiceCertificate(ctx context.Context, caPem []byte,
@@ -210,7 +213,7 @@ type patchSecretDataByteMap struct {
 func (r *ServiceCertificatesRepoSecrets) createSecret(ctx context.Context, caPem []byte,
 	certificate *storage.TypedServiceCertificate, secretSpec ServiceCertSecretSpec) (*v1.Secret, error) {
 
-	return r.SecretsClient.Create(ctx, &v1.Secret{
+	created, err := r.SecretsClient.Create(ctx, &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            secretSpec.SecretName,
 			Namespace:       r.Namespace,
@@ -220,6 +223,10 @@ func (r *ServiceCertificatesRepoSecrets) createSecret(ctx context.Context, caPem
 		},
 		Data: r.secretDataForCertificate(secretSpec, caPem, certificate),
 	}, metav1.CreateOptions{})
+	if err != nil {
+		return nil, errors.Wrapf(err, "creating secret %s", secretSpec.SecretName)
+	}
+	return created, nil
 }
 
 func (r *ServiceCertificatesRepoSecrets) secretDataForCertificate(secretSpec ServiceCertSecretSpec, caPem []byte,

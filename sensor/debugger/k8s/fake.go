@@ -379,7 +379,7 @@ func (f *FakeEventsManager) forEachResource(client reflect.Value, execFunc func(
 			errorList.AddError(err)
 		}
 	}
-	return errorList.ToError()
+	return errors.Wrap(errorList.ToError(), "iterating resources")
 }
 
 // getNameFromObjectMeta returns the name of the resource
@@ -492,5 +492,5 @@ func (f *FakeEventsManager) DeleteAllResources() error {
 			errorList.AddError(err)
 		}
 	}
-	return errorList.ToError()
+	return errors.Wrap(errorList.ToError(), "deleting all resources")
 }
