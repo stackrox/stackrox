@@ -985,6 +985,15 @@ func (m *manager) GetExternalNetworkPeers(ctx context.Context, deploymentID stri
 		m.treeManager.GetDefaultNetworkTree(managerCtx),
 	)
 
+	listDeployment := &storage.ListDeployment{
+		Name:      deployment.GetName(),
+		Id:        deploymentID,
+		ClusterId: deployment.GetClusterId(),
+		Namespace: deployment.GetNamespace(),
+	}
+
+	flows = m.enrichFlows(listDeployment, flows)
+
 	aggr, err := aggregator.NewSubnetToSupernetConnAggregator(networkTree)
 	utils.Should(err)
 
