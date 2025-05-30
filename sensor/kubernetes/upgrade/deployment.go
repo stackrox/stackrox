@@ -111,6 +111,7 @@ func (p *process) createDeployment(serviceAccountName string, sensorDeployment *
 							},
 						},
 					},
+					NodeSelector: sensorDeployment.Spec.Template.Spec.NodeSelector,
 					Volumes: []v1.Volume{
 						{
 							Name: "sensor-tls-volume",
