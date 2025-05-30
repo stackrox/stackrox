@@ -361,7 +361,7 @@ func (s *ImagePostgresDataStoreTestSuite) TestImageDeletes() {
 	expectedImage := cloneAndUpdateRiskPriority(testImage)
 	protoassert.Equal(s.T(), expectedImage, storedImage)
 
-	// Verify that new scan with less components cleans up the old relations correctly.
+	// Verify that new scan with fewer components cleans up the old relations correctly.
 	testImage.Scan.ScanTime = protocompat.TimestampNow()
 	testImage.Scan.Components = testImage.Scan.Components[:len(testImage.Scan.Components)-1]
 	cveIDsSet := set.NewStringSet()
