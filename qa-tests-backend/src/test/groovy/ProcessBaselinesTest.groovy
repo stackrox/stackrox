@@ -185,6 +185,7 @@ class ProcessBaselinesTest extends BaseSpecification {
     @Unroll
     @Tag("BAT")
     @Tag("COMPATIBILITY")
+    @IgnoreIf({ Env.GHA })
     def "Verify baseline process violation after resolve baseline on #deploymentName"() {
                /*
                     a)Lock the processes in the baseline for the key

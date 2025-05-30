@@ -159,6 +159,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         assert endpoint.signal.args == "-d -d -v TCP-LISTEN:8081,fork STDOUT"
     }
 
+    @IgnoreIf({ Env.GHA })
     def "Networking endpoints are no longer in the API when deployments are deleted"() {
         given:
         String deploymentId1 = targetDeployments.find { it.name == TCPCONNECTIONTARGET1 }?.deploymentUid
