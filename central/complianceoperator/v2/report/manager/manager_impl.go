@@ -326,7 +326,30 @@ func (m *managerImpl) HandleScan(sensorCtx context.Context, scan *storage.Compli
 		}
 		return err
 	}
-	return m.getWatcher(sensorCtx, id).PushScan(scan)
+	watch := m.getWatcher(sensorCtx, id)
+	defer m.updateMetrics()
+	return watch.PushScan(scan)
+}
+
+func (m *managerImpl) updateMetrics() {
+	fin, all := m.numWatchers()
+	numWatchers.WithLabelValues("finished").Set(float64(fin))
+	numWatchers.WithLabelValues("total").Set(float64(all))
+	scansRunningInParallel.Observe(float64(fin))
+}
+
+func (m *managerImpl) numWatchers() (finished, unfinished int) {
+	numFinished := 0
+	all := 0
+	concurrency.WithLock(&m.watchingScansLock, func() {
+		all = len(m.watchingScans)
+		for _, scanWatcher := range m.watchingScans {
+			if !scanWatcher.Finished().IsDone() {
+				numFinished++
+			}
+		}
+	})
+	return numFinished, all
 }
 
 func (m *managerImpl) HandleScanRemove(scanID string) error {
@@ -344,6 +367,7 @@ func (m *managerImpl) HandleScanRemove(scanID string) error {
 	concurrency.WithLock(&m.watchingScansLock, func() {
 		if scanWatcher, found := m.watchingScans[id]; found {
 			scanWatcher.Stop(watcher.ErrScanRemoved)
+			defer m.updateMetrics()
 		}
 	})
 	return nil
