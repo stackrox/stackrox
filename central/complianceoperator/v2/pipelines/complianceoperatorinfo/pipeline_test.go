@@ -159,8 +159,9 @@ func (suite *PipelineTestSuite) TestComplianceInfoMinimalRequiredVersion() {
 			assert.NoError(tt, os.Setenv("ROX_COMPLIANCE_MINIMAL_SUPPORTED_OPERATOR_VERSION", tc.envVersion))
 
 			complianceMsg := &central.ComplianceOperatorInfo{
-				Version:   tc.operatorVersion,
-				Namespace: fixtureconsts.Namespace1,
+				Version:     tc.operatorVersion,
+				IsInstalled: true,
+				Namespace:   fixtureconsts.Namespace1,
 				TotalDesiredPodsOpt: &central.ComplianceOperatorInfo_TotalDesiredPods{
 					TotalDesiredPods: 1,
 				},
@@ -171,6 +172,7 @@ func (suite *PipelineTestSuite) TestComplianceInfoMinimalRequiredVersion() {
 
 			expectedInfo := &storage.ComplianceIntegration{
 				Version:             tc.operatorVersion,
+				OperatorInstalled:   true,
 				ClusterId:           fixtureconsts.Cluster1,
 				ComplianceNamespace: fixtureconsts.Namespace1,
 				StatusErrors:        tc.expectedErrors,
@@ -186,4 +188,36 @@ func (suite *PipelineTestSuite) TestComplianceInfoMinimalRequiredVersion() {
 			suite.NoError(err)
 		})
 	}
+}
+
+func (suite *PipelineTestSuite) TestComplianceInfoMinimalRequiredVersionNotInstalled() {
+	complianceMsg := &central.ComplianceOperatorInfo{
+		Version:     "not-valid",
+		IsInstalled: false,
+		StatusError: "not installed",
+		Namespace:   fixtureconsts.Namespace1,
+		TotalDesiredPodsOpt: &central.ComplianceOperatorInfo_TotalDesiredPods{
+			TotalDesiredPods: 1,
+		},
+		TotalReadyPodsOpt: &central.ComplianceOperatorInfo_TotalReadyPods{
+			TotalReadyPods: 1,
+		},
+	}
+
+	expectedInfo := &storage.ComplianceIntegration{
+		Version:             "not-valid",
+		OperatorInstalled:   false,
+		ClusterId:           fixtureconsts.Cluster1,
+		ComplianceNamespace: fixtureconsts.Namespace1,
+		StatusErrors:        []string{complianceMsg.GetStatusError()},
+		OperatorStatus:      storage.COStatus_UNHEALTHY,
+	}
+
+	suite.manager.EXPECT().ProcessComplianceOperatorInfo(gomock.Any(), expectedInfo).Return(nil).Times(1)
+	err := suite.pipeline.Run(context.Background(), fixtureconsts.Cluster1, &central.MsgFromSensor{
+		Msg: &central.MsgFromSensor_ComplianceOperatorInfo{
+			ComplianceOperatorInfo: complianceMsg,
+		},
+	}, nil)
+	suite.NoError(err)
 }
