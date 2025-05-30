@@ -3841,6 +3841,14 @@
               {
                 "name": "PARTIAL_ERROR",
                 "integer": 5
+              },
+              {
+                "name": "PARTIAL_SCAN_ERROR_DOWNLOAD",
+                "integer": 6
+              },
+              {
+                "name": "PARTIAL_SCAN_ERROR_EMAIL",
+                "integer": 7
               }
             ]
           },

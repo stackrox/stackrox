@@ -346,6 +346,8 @@ message ComplianceOperatorReportStatus {
     DELIVERED = 3;
     FAILURE = 4;
     PARTIAL_ERROR = 5;
+    PARTIAL_SCAN_ERROR_DOWNLOAD = 6;
+    PARTIAL_SCAN_ERROR_EMAIL = 7;
   }
   enum NotificationMethod {
     EMAIL = 0;
