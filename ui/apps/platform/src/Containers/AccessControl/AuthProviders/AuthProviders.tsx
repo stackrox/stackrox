@@ -269,7 +269,7 @@ function AuthProviders(): ReactElement {
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                             >
-                                                Tekton task for short-lived access
+                                                Tekton Task for short-lived access
                                             </a>
                                         </ExternalLink>
                                     </Flex>
