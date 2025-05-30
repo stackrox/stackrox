@@ -33,6 +33,9 @@ import (
 )
 
 func TestEnhancedReporting(t *testing.T) {
+	if features.FlattenCVEData.Enabled() {
+		t.Skip()
+	}
 	suite.Run(t, new(EnhancedReportingTestSuite))
 }
 

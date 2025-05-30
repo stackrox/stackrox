@@ -41,7 +41,6 @@ type FlatDataModelReportGeneratorBenchmarkTestSuite struct {
 }
 
 func BenchmarkFlatDataModelReportGenerator(b *testing.B) {
-	// TODO ROX-28898:enable feature flag by default to run the unit tests
 	if !features.FlattenCVEData.Enabled() {
 		b.Skip()
 	}

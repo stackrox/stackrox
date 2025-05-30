@@ -7,12 +7,14 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/stackrox/rox/central/image/datastore/keyfence"
 	pgStore "github.com/stackrox/rox/central/image/datastore/store/postgres"
+	pgStoreV2 "github.com/stackrox/rox/central/image/datastore/store/v2/postgres"
 	"github.com/stackrox/rox/central/ranking"
 	mockRisks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
-	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/require"
@@ -20,24 +22,20 @@ import (
 )
 
 func BenchmarkImageGetMany(b *testing.B) {
-
 	ctx := sac.WithAllAccess(context.Background())
 
-	source := pgtest.GetConnectionString(b)
-	config, err := postgres.ParseConfig(source)
-	require.NoError(b, err)
+	testDB := pgtest.ForT(b)
 
-	pool, err := postgres.New(ctx, config)
-	require.NoError(b, err)
-	gormDB := pgtest.OpenGormDB(b, source)
-	defer pgtest.CloseGormDB(b, gormDB)
+	gormDB := testDB.GetGormDB(b)
+	db := testDB.DB
 
-	db := pool
-	defer db.Close()
-
-	pgStore.Destroy(ctx, db)
 	mockRisk := mockRisks.NewMockDataStore(gomock.NewController(b))
-	datastore := NewWithPostgres(pgStore.CreateTableAndNewStore(ctx, db, gormDB, false), mockRisk, ranking.NewRanker(), ranking.NewRanker())
+	var datastore DataStore
+	if features.FlattenCVEData.Enabled() {
+		datastore = NewWithPostgres(pgStoreV2.New(db, false, keyfence.ImageKeyFenceSingleton()), mockRisk, ranking.NewRanker(), ranking.NewRanker())
+	} else {
+		datastore = NewWithPostgres(pgStore.CreateTableAndNewStore(ctx, db, gormDB, false), mockRisk, ranking.NewRanker(), ranking.NewRanker())
+	}
 
 	ids := make([]string, 0, 100)
 	images := make([]*storage.Image, 0, 100)
@@ -55,14 +53,14 @@ func BenchmarkImageGetMany(b *testing.B) {
 
 	b.Run("GetImagesBatch", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			_, err = datastore.GetImagesBatch(ctx, ids)
+			_, err := datastore.GetImagesBatch(ctx, ids)
 			require.NoError(b, err)
 		}
 	})
 
 	b.Run("GetManyImageMetadata", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			_, err = datastore.GetManyImageMetadata(ctx, ids)
+			_, err := datastore.GetManyImageMetadata(ctx, ids)
 			require.NoError(b, err)
 		}
 	})

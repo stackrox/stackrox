@@ -44,6 +44,10 @@ type ReportGeneratorBenchmarkTestSuite struct {
 }
 
 func BenchmarkReportGenerator(b *testing.B) {
+	if features.FlattenCVEData.Enabled() {
+		b.Skip()
+	}
+
 	bts := &ReportGeneratorBenchmarkTestSuite{b: b}
 	bts.setupTestSuite()
 

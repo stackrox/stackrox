@@ -114,7 +114,7 @@ var (
 	PlatformCVESplit = registerFeature("Splits Image CVEs into Workload CVE and Platform CVE sections in the UI", "ROX_PLATFORM_CVE_SPLIT", enabled)
 
 	// Flattens CVE Data Model for improved accuracy and performance
-	FlattenCVEData = registerFeature("Uses a flattened CVE Data Model improved accuracy and performance", "ROX_FLATTEN_CVE_DATA")
+	FlattenCVEData = registerFeature("Uses a flattened CVE Data Model improved accuracy and performance", "ROX_FLATTEN_CVE_DATA", enabled)
 
 	// Adds the ability to generate on-demand vulnerability reports based on filter views
 	VulnerabilityOnDemandReports = registerFeature("Adds the ability to generate on-demand vulnerability reports based on filter views", "ROX_VULNERABILITY_ON_DEMAND_REPORTS")

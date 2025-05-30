@@ -10,6 +10,7 @@ import (
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
@@ -52,7 +53,12 @@ func (s *SearchComparisonTestSuite) SetupSuite() {
 
 func compareResults(t *testing.T, matches bool, predResult *search.Result, searchResults []search.Result) {
 	assert.Equal(t, matches, len(searchResults) != 0)
-	imageKeyMap := map[string]string{"image.scan.components.vulns.cve": "imagecve.cve_base_info.cve", "image.scan.components.vulns.cvss": "imagecve.cvss"}
+	var imageKeyMap map[string]string
+	if features.FlattenCVEData.Enabled() {
+		imageKeyMap = map[string]string{"image.scan.components.vulns.cve": "imagecvev2.cve_base_info.cve", "image.scan.components.vulns.cvss": "imagecvev2.cvss"}
+	} else {
+		imageKeyMap = map[string]string{"image.scan.components.vulns.cve": "imagecve.cve_base_info.cve", "image.scan.components.vulns.cvss": "imagecve.cvss"}
+	}
 
 	if matches && len(searchResults) > 0 {
 		for k := range predResult.Matches {
