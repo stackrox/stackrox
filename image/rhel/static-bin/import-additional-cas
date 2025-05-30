@@ -3,6 +3,9 @@
 # Note: This is also used for Scanner.
 
 set -euo pipefail
+set -x
+set +e
+
 
 # The function copies everything that could be found under the path provided in
 # the first argument, ignoring files starting with '..' which are created by
@@ -16,9 +19,16 @@ copy_existing () {
     fi
 }
 
-copy_existing /usr/local/share/ca-certificates
+exitcode=0
+
+copy_existing /usr/local/share/ca-certificates || exitcode=1
 
 # Copy the custom trusted CA bundles injected by the Openshift Network Operator.
-copy_existing /etc/pki/injected-ca-trust
+copy_existing /etc/pki/injected-ca-trust || exitcode=1
 
-update-ca-trust extract
+id
+ls -la /etc/pki/ca-trust/
+update-ca-trust extract || exitcode=1
+ls -la /etc/pki/ca-trust/extracted/
+
+exit $exitcode
