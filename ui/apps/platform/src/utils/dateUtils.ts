@@ -1,7 +1,7 @@
 import Raven from 'raven-js';
 import { distanceInWordsStrict } from 'date-fns';
 
-const userLanguages = navigator.languages;
+const userLanguages: readonly string[] | undefined = globalThis.navigator?.languages;
 
 export type DateLike = string | number | Date;
 
