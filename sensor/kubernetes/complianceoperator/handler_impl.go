@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"strconv"
 	"sync/atomic"
 
 	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/complianceoperator"
@@ -115,16 +117,28 @@ func (m *handlerImpl) run() {
 		select {
 		case req := <-m.request:
 			var requestProcessed bool
+			operationName := ""
 			switch r := req.GetRequest().(type) {
 			case *central.ComplianceRequest_EnableCompliance:
+				operationName = "enable compliance"
 				requestProcessed = m.enableCompliance(r.EnableCompliance)
 			case *central.ComplianceRequest_DisableCompliance:
+				operationName = "disable compliance"
 				requestProcessed = m.disableCompliance(r.DisableCompliance)
 			case *central.ComplianceRequest_ApplyScanConfig:
+				operationName = "apply scan config"
 				requestProcessed = m.processApplyScanCfgRequest(r.ApplyScanConfig)
 			case *central.ComplianceRequest_DeleteScanConfig:
+				operationName = "delete scan config"
 				requestProcessed = m.processDeleteScanCfgRequest(r.DeleteScanConfig)
+			default:
+				operationName = fmt.Sprintf("%T", req.GetRequest())
+				requestProcessed = false
 			}
+			commandsFromCentral.With(prometheus.Labels{
+				"operation": operationName,
+				"processed": strconv.FormatBool(requestProcessed)},
+			).Inc()
 
 			if !requestProcessed {
 				log.Errorf("Could not send response for compliance request: %s", protoutils.NewWrapper(req))
