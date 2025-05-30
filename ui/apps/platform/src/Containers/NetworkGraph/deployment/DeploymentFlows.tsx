@@ -11,6 +11,7 @@ import { EdgeState } from '../components/EdgeStateSelect';
 import { Flow } from '../types/flow.type';
 import InternalFlows from './InternalFlows';
 import ExternalFlows from './ExternalFlows';
+import { isInternalFlow } from '../utils/networkGraphUtils';
 
 export type DeploymentFlowsView = 'external-flows' | 'internal-flows';
 
@@ -104,7 +105,7 @@ function DeploymentFlows({
                                 onNodeSelect={onNodeSelect}
                                 isLoadingNetworkFlows={isLoadingNetworkFlows}
                                 networkFlowsError={networkFlowsError}
-                                networkFlows={networkFlows}
+                                networkFlows={networkFlows.filter((flow) => isInternalFlow(flow))}
                                 refetchFlows={refetchFlows}
                             />
                         ) : (
