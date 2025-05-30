@@ -2338,8 +2338,7 @@ class Kubernetes {
                 hostNetwork: deployment.hostNetwork,
                 serviceAccountName: deployment.serviceAccountName
         )
-        // Set nodeSelector if GKE cluster on arm64
-        if (Env.REMOTE_CLUSTER_ARCH == "arm64") {
+        if (Env.ARM64_NODESELECTORS == "arm64") {
             podSpec.nodeSelector = ["kubernetes.io/arch" : "arm64"]
         }
         if (!deployment.automountServiceAccountToken) {
