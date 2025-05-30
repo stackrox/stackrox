@@ -16,7 +16,7 @@ jobs:
   check-crd-compatibility:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8-4-g08c9d78174
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8-5-gd9d9cd9280
       volumes:  # job-preamble deletes unused host runner files under /mnt
       - /usr:/mnt/usr
       - /opt:/mnt/opt
