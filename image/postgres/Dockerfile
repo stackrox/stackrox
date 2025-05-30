@@ -37,7 +37,7 @@ RUN dnf upgrade -y --nobest && \
     rm -rf /var/cache/dnf /var/cache/yum && \
     mkdir /docker-entrypoint-initdb.d
 
-COPY --chown=postgres:postgres scripts \
+COPY scripts \
     /usr/local/bin/
 
 ENV LANG="en_US.utf8"
