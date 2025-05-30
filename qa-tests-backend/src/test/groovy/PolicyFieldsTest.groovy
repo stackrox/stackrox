@@ -26,7 +26,7 @@ import spock.lang.Shared
 import spock.lang.Tag
 import spock.lang.Unroll
 
-// TODO add arm64 layers to all test images
+// TODO(ROX-29515) add arm64 layers to all test images
 @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "arm64" })
 // TODO(ROX-12814): re-enable the test on all platforms. Scanner OOMs on this test in some Openshift jobs.
 @IgnoreIf({ Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT })

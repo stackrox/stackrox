@@ -517,7 +517,7 @@ class Enforcement extends BaseSpecification {
         //Node Constraint should have been ignored
         def deploymentNodeSelectors = orchestrator.getDeploymentNodeSelectors(d)
         assert deploymentNodeSelectors.isEmpty() ||
-                (Env.REMOTE_CLUSTER_ARCH == "arm64" && deploymentNodeSelectors == ['kubernetes.io/arch': 'arm64'])
+                (Env.ARM64_NODESELECTORS == "true" && deploymentNodeSelectors == ['kubernetes.io/arch': 'arm64'])
         assert orchestrator.getDeploymentUnavailableReplicaCount(d) !=
                 orchestrator.getDeploymentReplicaCount(d)
         assert Services.getAlertEnforcementCount(

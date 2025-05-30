@@ -34,6 +34,7 @@ class Env {
     // REMOTE_CLUSTER_ARCH specifies architecture of a remote cluster on which tests are to be executed
     // the remote cluster arch can be arm64, ppc64le or s390x, default is x86_64
     static final String REMOTE_CLUSTER_ARCH = System.getenv("REMOTE_CLUSTER_ARCH") ?: "x86_64"
+    static final String ARM64_NODESELECTORS = System.getenv("ARM64_NODESELECTORS") ?: "false"
 
     // ONLY_SECURED_CLUSTER specifies that the remote cluster being used to execute tests
     // only has secured-cluster deployed and connects to a remote central

@@ -14,7 +14,7 @@ import spock.lang.Tag
 import spock.lang.Unroll
 import util.Env
 
-// TODO add arm64 layers to all test images
+// TODO(ROX-29515) add arm64 layers to all test images
 @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "arm64" })
 @Tag("PZ")
 class BuiltinPoliciesTest extends BaseSpecification {
@@ -119,7 +119,6 @@ class BuiltinPoliciesTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
-    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "arm64" })
     def "Verify policy '#policyName' is triggered"(String policyName, String deploymentName) {
         when:
         "An existing policy"
