@@ -62,12 +62,12 @@ export type Expressions = {
 };
 
 export type MetricLabels = {
-    labelExpressions: Map<string, Expressions>;
+    labelExpressions: Record<string, Expressions>;
 };
 
 export type ImageVulnerabilities = {
     gatheringPeriodHours: number; // uint32
-    metricLabels: Map<string, MetricLabels>;
+    metricLabels: Record<string, MetricLabels>;
     query: string;
 };
 

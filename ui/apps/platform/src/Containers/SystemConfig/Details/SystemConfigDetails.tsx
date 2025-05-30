@@ -3,6 +3,7 @@ import { useSelector } from 'react-redux';
 import {
     Button,
     Flex,
+    FlexItem,
     Grid,
     GridItem,
     PageSection,
@@ -10,7 +11,7 @@ import {
     Text,
     Title,
 } from '@patternfly/react-core';
-import { OutlinedQuestionCircleIcon } from '@patternfly/react-icons';
+import { HelpIcon, OutlinedQuestionCircleIcon } from '@patternfly/react-icons';
 
 import { SystemConfig } from 'types/config.proto';
 import { selectors } from 'reducers';
@@ -85,11 +86,34 @@ function SystemConfigDetails({
             </PageSection>
             <PageSection data-testid="private-prometheus-config">
                 <Title headingLevel="h2" className="pf-v5-u-mb-md">
-                    Prometheus metrics configuration
+                    <Flex alignItems={{ default: 'alignItemsCenter' }}>
+                        <FlexItem>Prometheus metrics configuration</FlexItem>
+                        <FlexItem>
+                            <Popover
+                                aria-label="Prometheus metrics configuration help text"
+                                bodyContent={
+                                    <div>
+                                        <p>
+                                            The Prometheus metrics are exposed on the API endpoint,
+                                            at the <code>/metrics</code> path.
+                                        </p>
+                                    </div>
+                                }
+                                enableFlip
+                                position="top"
+                            >
+                                <HelpIcon aria-label="Help for 'Prometheus metrics configuration' card" />
+                            </Popover>
+                        </FlexItem>
+                    </Flex>
                 </Title>
-                <PrivateConfigPrometheusMetricsDetails
-                    privateConfig={systemConfig?.privateConfig}
-                />
+                <Grid hasGutter>
+                    <GridItem sm={12} md={6} lg={6}>
+                        <PrivateConfigPrometheusMetricsDetails
+                            privateConfig={systemConfig?.privateConfig}
+                        />
+                    </GridItem>
+                </Grid>
             </PageSection>
             <PageSection data-testid="public-config">
                 <Title headingLevel="h2" className="pf-v5-u-mb-md">
