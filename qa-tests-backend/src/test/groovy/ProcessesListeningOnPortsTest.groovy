@@ -96,7 +96,6 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         orchestrator.waitForNamespaceDeletion(TEST_NAMESPACE)
     }
 
-    @IgnoreIf({ Env.GHA })
     def "Verify networking endpoints with processes appear in API at the deployment level"() {
         given:
         // implicitly creates the namespace as needed
@@ -159,7 +158,6 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         assert endpoint.signal.args == "-d -d -v TCP-LISTEN:8081,fork STDOUT"
     }
 
-    @IgnoreIf({ Env.GHA })
     def "Networking endpoints are no longer in the API when deployments are deleted"() {
         given:
         String deploymentId1 = targetDeployments.find { it.name == TCPCONNECTIONTARGET1 }?.deploymentUid
