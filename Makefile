@@ -97,9 +97,6 @@ ifeq ($(GOARCH),s390x)
 		--build-arg="RPMS_REGISTRY=quay.io" \
 		--build-arg="RPMS_BASE_IMAGE=centos/centos" \
 		--build-arg="RPMS_BASE_TAG=stream9"
-else ifeq ($(GOARCH),arm64)
-	CENTRAL_DB_DOCKER_ARGS := \
-		--build-arg="CENTOS_VERSION=c9s"
 endif
 
 # By default, assume we are going to use a bind mount volume instead of a standalone one.
