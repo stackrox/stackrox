@@ -54,6 +54,7 @@ import (
 	v2ComplianceProfiles "github.com/stackrox/rox/central/complianceoperator/v2/profiles/service"
 	complianceReportManager "github.com/stackrox/rox/central/complianceoperator/v2/report/manager"
 	v2ComplianceRules "github.com/stackrox/rox/central/complianceoperator/v2/rules/service"
+	complianceScanDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	complianceScanSettings "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/service"
 	configDS "github.com/stackrox/rox/central/config/datastore"
 	configService "github.com/stackrox/rox/central/config/service"
@@ -647,6 +648,7 @@ func startGRPCServer() {
 				gs.AddGatherer(notifierDS.Gather)
 				gs.AddGatherer(roleDataStore.Gather)
 				gs.AddGatherer(signatureIntegrationDS.Gather)
+				gs.AddGatherer(complianceScanDS.GatherProfiles(complianceScanDS.Singleton()))
 			}
 		}
 	}
