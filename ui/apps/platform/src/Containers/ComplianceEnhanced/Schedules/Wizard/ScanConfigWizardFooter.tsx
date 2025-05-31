@@ -8,6 +8,7 @@ export type ScanConfigWizardFooterProps = {
     onSave: () => void;
     isSaving: boolean;
     proceedToNextStepIfValid: (nextFunction: () => void, stepId: string) => void;
+    allClustersAreUnhealthy: boolean;
 };
 
 function ScanConfigWizardFooter({
@@ -15,18 +16,21 @@ function ScanConfigWizardFooter({
     onSave,
     isSaving,
     proceedToNextStepIfValid,
+    allClustersAreUnhealthy,
 }: ScanConfigWizardFooterProps) {
     const { isModalOpen, openModal, closeModal } = useModal();
     const firstStepId = wizardSteps[0].id;
     const lastStepId = wizardSteps[wizardSteps.length - 1].id;
 
     function renderButtons(activeStepId, onNext, onBack) {
+        console.log('ScanConfigWizardFooter', allClustersAreUnhealthy, activeStepId, wizardSteps[1].id);
         return (
             <>
                 {activeStepId !== lastStepId ? (
                     <Button
                         variant="primary"
                         type="submit"
+                        isDisabled={allClustersAreUnhealthy && activeStepId === wizardSteps[1].id}
                         onClick={() => proceedToNextStepIfValid(onNext, activeStepId)}
                     >
                         Next
