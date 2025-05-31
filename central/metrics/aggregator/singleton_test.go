@@ -13,9 +13,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func getNonEmptyMLE() common.MetricLabelsExpressions {
-	return common.MetricLabelsExpressions{
-		"metric1": map[common.Label][]*common.Expression{
+func getNonEmptymcfg() common.MetricsConfiguration {
+	return common.MetricsConfiguration{
+		"metric1": map[common.Label][]*common.Condition{
 			"label1": nil,
 		},
 	}
@@ -32,14 +32,14 @@ func Test_run(t *testing.T) {
 		runner := &aggregatorRunner{stopCh: make(chan bool, 1)}
 		tracker := common.MakeTrackerConfig("test", "test",
 			nil,
-			func(context.Context, *v1.Query, common.MetricLabelsExpressions) iter.Seq[something] {
+			func(context.Context, *v1.Query, common.MetricsConfiguration) iter.Seq[something] {
 				return func(yield func(something) bool) {
 					i = true
 				}
 			},
 			nil,
 		)
-		tracker.SetMetricLabelExpressions(search.EmptyQuery(), getNonEmptyMLE())
+		tracker.SetMetricsConfiguration(search.EmptyQuery(), getNonEmptymcfg())
 		runner.Stop()
 		runner.run(tracker)
 		assert.False(t, i)
@@ -50,7 +50,7 @@ func Test_run(t *testing.T) {
 		runner := &aggregatorRunner{stopCh: make(chan bool, 1)}
 		tracker := common.MakeTrackerConfig("test", "test",
 			nil,
-			func(context.Context, *v1.Query, common.MetricLabelsExpressions) iter.Seq[something] {
+			func(context.Context, *v1.Query, common.MetricsConfiguration) iter.Seq[something] {
 				return func(yield func(something) bool) {
 					i = true
 					runner.Stop()
@@ -58,7 +58,7 @@ func Test_run(t *testing.T) {
 			},
 			nil,
 		)
-		tracker.SetMetricLabelExpressions(search.EmptyQuery(), getNonEmptyMLE())
+		tracker.SetMetricsConfiguration(search.EmptyQuery(), getNonEmptymcfg())
 		tracker.GetPeriodCh() <- time.Minute
 		runner.run(tracker)
 		assert.True(t, i)
@@ -69,7 +69,7 @@ func Test_run(t *testing.T) {
 		runner := &aggregatorRunner{stopCh: make(chan bool, 1)}
 		tracker := common.MakeTrackerConfig("test", "test",
 			nil,
-			func(context.Context, *v1.Query, common.MetricLabelsExpressions) iter.Seq[something] {
+			func(context.Context, *v1.Query, common.MetricsConfiguration) iter.Seq[something] {
 				return func(yield func(something) bool) {
 					i++
 					if i > 2 {
@@ -79,7 +79,7 @@ func Test_run(t *testing.T) {
 			},
 			nil,
 		)
-		tracker.SetMetricLabelExpressions(search.EmptyQuery(), getNonEmptyMLE())
+		tracker.SetMetricsConfiguration(search.EmptyQuery(), getNonEmptymcfg())
 		tracker.GetPeriodCh() <- 100 * time.Microsecond
 		runner.run(tracker)
 		assert.Greater(t, i, 2)
@@ -90,14 +90,14 @@ func Test_run(t *testing.T) {
 		runner := &aggregatorRunner{stopCh: make(chan bool, 1)}
 		tracker := common.MakeTrackerConfig("test", "test",
 			nil,
-			func(context.Context, *v1.Query, common.MetricLabelsExpressions) iter.Seq[something] {
+			func(context.Context, *v1.Query, common.MetricsConfiguration) iter.Seq[something] {
 				return func(yield func(something) bool) {
 					i.Add(1)
 				}
 			},
 			nil,
 		)
-		tracker.SetMetricLabelExpressions(search.EmptyQuery(), getNonEmptyMLE())
+		tracker.SetMetricsConfiguration(search.EmptyQuery(), getNonEmptymcfg())
 		const period = 50 * time.Millisecond
 		tracker.GetPeriodCh() <- period
 		start := time.Now()

@@ -84,9 +84,9 @@ func MakeTrackerConfig(gauge func(string, prometheus.Labels, int)) *common.Track
 	return tc
 }
 
-func trackVulnerabilityMetrics(ctx context.Context, query *v1.Query, mle common.MetricLabelsExpressions, ds datastores) iter.Seq[*finding] {
-	queryDeploymentData := mle.HasAnyLabelOf(deploymentLabels)
-	queryImageData := !queryDeploymentData && mle.HasAnyLabelOf(imageLabels)
+func trackVulnerabilityMetrics(ctx context.Context, query *v1.Query, mcfg common.MetricsConfiguration, ds datastores) iter.Seq[*finding] {
+	queryDeploymentData := mcfg.HasAnyLabelOf(deploymentLabels)
+	queryImageData := !queryDeploymentData && mcfg.HasAnyLabelOf(imageLabels)
 
 	return func(yield func(*finding) bool) {
 		switch {

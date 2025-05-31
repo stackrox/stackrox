@@ -35,13 +35,13 @@ var testData = []map[Label]string{
 	},
 }
 
-func makeTestMetricLabels(t *testing.T) map[string]*storage.PrometheusMetricsConfig_MetricLabels {
+func makeTestMetricLabels(t *testing.T) map[string]*storage.PrometheusMetricsConfig_Labels {
 	pfx := strings.ReplaceAll(t.Name(), "/", "_")
-	return map[string]*storage.PrometheusMetricsConfig_MetricLabels{
+	return map[string]*storage.PrometheusMetricsConfig_Labels{
 		pfx + "_metric1": {
-			LabelExpressions: map[string]*storage.PrometheusMetricsConfig_MetricLabels_Expressions{
+			LabelExpression: map[string]*storage.PrometheusMetricsConfig_Labels_Expression{
 				"Severity": {
-					Expression: []*storage.PrometheusMetricsConfig_MetricLabels_Expressions_Expression{
+					Expression: []*storage.PrometheusMetricsConfig_Labels_Expression_Condition{
 						{
 							Operator: "=",
 							Argument: "CRITICAL*",
@@ -57,21 +57,21 @@ func makeTestMetricLabels(t *testing.T) map[string]*storage.PrometheusMetricsCon
 			},
 		},
 		pfx + "_metric2": {
-			LabelExpressions: map[string]*storage.PrometheusMetricsConfig_MetricLabels_Expressions{
+			LabelExpression: map[string]*storage.PrometheusMetricsConfig_Labels_Expression{
 				"Namespace": {},
 			},
 		},
 	}
 }
 
-func makeTestMetricLabelExpressions(t *testing.T) MetricLabelsExpressions {
+func makeTestMetricLabelExpression(t *testing.T) MetricsConfiguration {
 	pfx := MetricName(strings.ReplaceAll(t.Name(), "/", "_"))
-	return MetricLabelsExpressions{
+	return MetricsConfiguration{
 		pfx + "_metric1": {
 			"Severity": {
-				MustMakeExpression("=", "CRITICAL*"),
-				MustMakeExpression("OR", ""),
-				MustMakeExpression("=", "HIGH*"),
+				MustMakeCondition("=", "CRITICAL*"),
+				MustMakeCondition("OR", ""),
+				MustMakeCondition("=", "HIGH*"),
 			},
 			"Cluster": nil,
 		},
@@ -101,20 +101,20 @@ func Test_validateMetricName(t *testing.T) {
 }
 
 func TestHasAnyLabelOf(t *testing.T) {
-	mle := MetricLabelsExpressions{
-		"metric1": map[Label][]*Expression{
+	mcfg := MetricsConfiguration{
+		"metric1": map[Label][]*Condition{
 			"label1": nil,
 			"label2": nil,
 		},
-		"metric2": map[Label][]*Expression{
+		"metric2": map[Label][]*Condition{
 			"label3": nil,
 			"label4": nil,
 		},
 	}
-	assert.False(t, mle.HasAnyLabelOf([]Label{}))
-	assert.True(t, mle.HasAnyLabelOf([]Label{"label1"}))
-	assert.True(t, mle.HasAnyLabelOf([]Label{"label3"}))
-	assert.True(t, mle.HasAnyLabelOf([]Label{"label0", "label1"}))
-	assert.True(t, mle.HasAnyLabelOf([]Label{"label0", "label4"}))
-	assert.False(t, mle.HasAnyLabelOf([]Label{"label0", "label5"}))
+	assert.False(t, mcfg.HasAnyLabelOf([]Label{}))
+	assert.True(t, mcfg.HasAnyLabelOf([]Label{"label1"}))
+	assert.True(t, mcfg.HasAnyLabelOf([]Label{"label3"}))
+	assert.True(t, mcfg.HasAnyLabelOf([]Label{"label0", "label1"}))
+	assert.True(t, mcfg.HasAnyLabelOf([]Label{"label0", "label4"}))
+	assert.False(t, mcfg.HasAnyLabelOf([]Label{"label0", "label5"}))
 }

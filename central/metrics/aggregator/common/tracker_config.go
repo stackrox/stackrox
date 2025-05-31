@@ -26,7 +26,7 @@ type TrackerConfig[Finding Count] struct {
 	gauge       func(string, prometheus.Labels, int)
 
 	// metricsConfig can be changed with an API call.
-	metricsConfig    MetricLabelsExpressions
+	metricsConfig    MetricsConfiguration
 	metricsConfigMux sync.RWMutex
 	query            *v1.Query
 
@@ -39,7 +39,7 @@ type Tracker interface {
 	Do(func())
 	GetPeriodCh() chan time.Duration
 	Track(context.Context)
-	Reconfigure(*prometheus.Registry, string, map[string]*storage.PrometheusMetricsConfig_MetricLabels, time.Duration) error
+	Reconfigure(*prometheus.Registry, string, map[string]*storage.PrometheusMetricsConfig_Labels, time.Duration) error
 }
 
 func makeLabelOrderMap[Finding Count](getters []LabelGetter[Finding]) map[Label]int {
@@ -58,8 +58,8 @@ func makeGettersMap[Finding Count](getters []LabelGetter[Finding]) map[Label]fun
 	return result
 }
 
-// MakeTrackerConfig initializes a tracker configuration without any period or metric expressions.
-// Call Reconfigure to configure the period and the expressions.
+// MakeTrackerConfig initializes a tracker configuration without any period or metrics configuration.
+// Call Reconfigure to configure the period and the metrics.
 func MakeTrackerConfig[Finding Count](category, description string,
 	getters []LabelGetter[Finding], generator FindingGenerator[Finding],
 	gauge func(string, prometheus.Labels, int),
@@ -80,8 +80,8 @@ func (tc *TrackerConfig[Finding]) GetPeriodCh() chan time.Duration {
 	return tc.periodCh
 }
 
-func (tc *TrackerConfig[Finding]) Reconfigure(registry *prometheus.Registry, query string, cfg map[string]*storage.PrometheusMetricsConfig_MetricLabels, period time.Duration) error {
-	mle, err := parseMetricLabels(cfg, tc.labelOrder)
+func (tc *TrackerConfig[Finding]) Reconfigure(registry *prometheus.Registry, query string, cfg map[string]*storage.PrometheusMetricsConfig_Labels, period time.Duration) error {
+	mcfg, err := parseMetricLabels(cfg, tc.labelOrder)
 	if err != nil {
 		return err
 	}
@@ -89,7 +89,7 @@ func (tc *TrackerConfig[Finding]) Reconfigure(registry *prometheus.Registry, que
 	if err != nil {
 		return err
 	}
-	tc.SetMetricLabelExpressions(q, mle)
+	tc.SetMetricsConfiguration(q, mcfg)
 	select {
 	case tc.periodCh <- period:
 		break
@@ -107,23 +107,23 @@ func (tc *TrackerConfig[Finding]) Reconfigure(registry *prometheus.Registry, que
 	return tc.registerMetrics(registry, period)
 }
 
-func (tc *TrackerConfig[Finding]) GetMetricLabelExpressions() (*v1.Query, MetricLabelsExpressions) {
+func (tc *TrackerConfig[Finding]) GetMetricsConfiguration() (*v1.Query, MetricsConfiguration) {
 	tc.metricsConfigMux.RLock()
 	defer tc.metricsConfigMux.RUnlock()
 	return tc.query, tc.metricsConfig
 }
 
-func (tc *TrackerConfig[Finding]) SetMetricLabelExpressions(query *v1.Query, mle MetricLabelsExpressions) {
+func (tc *TrackerConfig[Finding]) SetMetricsConfiguration(query *v1.Query, mcfg MetricsConfiguration) {
 	tc.metricsConfigMux.Lock()
 	defer tc.metricsConfigMux.Unlock()
 	tc.query = query
-	tc.metricsConfig = mle
+	tc.metricsConfig = mcfg
 }
 
 func (tc *TrackerConfig[Finding]) registerMetrics(registry *prometheus.Registry, period time.Duration) error {
-	for metric, labelExpressions := range tc.metricsConfig {
+	for metric, labelExpression := range tc.metricsConfig {
 		if err := metrics.RegisterCustomAggregatedMetric(string(metric), tc.description, period,
-			getMetricLabels(labelExpressions, tc.labelOrder), registry); err != nil {
+			getMetricLabels(labelExpression, tc.labelOrder), registry); err != nil {
 			return fmt.Errorf("failed to register %s metric %q: %w", tc.category, metric, err)
 		}
 		log.Infof("Registered %s Prometheus metric %q", tc.category, metric)
@@ -135,12 +135,12 @@ func (tc *TrackerConfig[Finding]) registerMetrics(registry *prometheus.Registry,
 // returned by gatherFunc. cfgGetter returns the current configuration, which
 // may dynamically change.
 func (cfg *TrackerConfig[Finding]) Track(ctx context.Context) {
-	query, mle := cfg.GetMetricLabelExpressions()
-	if len(mle) == 0 {
+	query, mcfg := cfg.GetMetricsConfiguration()
+	if len(mcfg) == 0 {
 		return
 	}
-	aggregator := makeAggregator(mle, cfg.labelOrder)
-	for finding := range cfg.generator(ctx, query, mle) {
+	aggregator := makeAggregator(mcfg, cfg.labelOrder)
+	for finding := range cfg.generator(ctx, query, mcfg) {
 		aggregator.count(func(label Label) string {
 			return cfg.getters[label](finding)
 		}, finding.Count())

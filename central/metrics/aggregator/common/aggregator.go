@@ -13,21 +13,21 @@ type aggregatedRecord struct {
 // aggregator computes the aggregation result.
 type aggregator struct {
 	result     map[MetricName]map[aggregationKey]*aggregatedRecord
-	mle        MetricLabelsExpressions
+	mcfg       MetricsConfiguration
 	labelOrder map[Label]int
 }
 
-func makeAggregator(mle MetricLabelsExpressions, labelOrder map[Label]int) *aggregator {
+func makeAggregator(mcfg MetricsConfiguration, labelOrder map[Label]int) *aggregator {
 	aggregated := make(map[MetricName]map[aggregationKey]*aggregatedRecord)
-	for metric := range mle {
+	for metric := range mcfg {
 		aggregated[metric] = make(map[aggregationKey]*aggregatedRecord)
 	}
-	return &aggregator{aggregated, mle, labelOrder}
+	return &aggregator{aggregated, mcfg, labelOrder}
 }
 
 func (r *aggregator) count(getter func(Label) string, count int) {
-	for metric, expressions := range r.mle {
-		if key, labels := makeAggregationKey(expressions, getter, r.labelOrder); key != "" {
+	for metric, labels := range r.mcfg {
+		if key, labels := makeAggregationKey(labels, getter, r.labelOrder); key != "" {
 			if rec, ok := r.result[metric][key]; ok {
 				rec.total += count
 			} else {

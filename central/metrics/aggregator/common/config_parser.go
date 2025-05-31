@@ -15,16 +15,16 @@ func isKnownLabel(label string, labelOrder map[Label]int) bool {
 }
 
 // parseMetricLabels converts the storage object to the usable map, validating the values.
-func parseMetricLabels(config map[string]*storage.PrometheusMetricsConfig_MetricLabels, labelOrder map[Label]int) (MetricLabelsExpressions, error) {
+func parseMetricLabels(config map[string]*storage.PrometheusMetricsConfig_Labels, labelOrder map[Label]int) (MetricsConfiguration, error) {
 
-	result := make(MetricLabelsExpressions)
+	result := make(MetricsConfiguration)
 	for metric, labels := range config {
 		if err := validateMetricName(metric); err != nil {
 			return nil, errInvalidConfiguration.CausedByf(
 				"invalid metric name %q: %v", metric, err)
 		}
-		metricLabels := make(map[Label][]*Expression)
-		for label, expressions := range labels.GetLabelExpressions() {
+		labelExpression := make(map[Label][]*Condition)
+		for label, expression := range labels.GetLabelExpression() {
 
 			if !isKnownLabel(label, labelOrder) {
 				var knownLabels []Label
@@ -38,20 +38,20 @@ func parseMetricLabels(config map[string]*storage.PrometheusMetricsConfig_Metric
 					"label %q for metric %q is not in the list of known labels: %v", label, metric, knownLabels)
 			}
 
-			var exprs []*Expression
-			for _, expr := range expressions.GetExpression() {
-				if expr, err := MakeExpression(expr.GetOperator(), expr.GetArgument()); err != nil {
+			var expr []*Condition
+			for _, condition := range expression.GetExpression() {
+				if condition, err := MakeCondition(condition.GetOperator(), condition.GetArgument()); err != nil {
 					return nil, errInvalidConfiguration.CausedByf(
-						"failed to parse expression for metric %q with label %q: %v",
+						"failed to parse a condition for metric %q with label %q: %v",
 						metric, label, err)
 				} else {
-					exprs = append(exprs, expr)
+					expr = append(expr, condition)
 				}
 			}
-			metricLabels[Label(label)] = exprs
+			labelExpression[Label(label)] = expr
 		}
-		if len(metricLabels) > 0 {
-			result[MetricName(metric)] = metricLabels
+		if len(labelExpression) > 0 {
+			result[MetricName(metric)] = labelExpression
 		}
 	}
 	if len(result) == 0 {

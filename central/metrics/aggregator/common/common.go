@@ -19,18 +19,18 @@ var (
 
 type Label string      // Prometheus label.
 type MetricName string // Prometheus metric name.
-type FindingGenerator[Finding Count] func(context.Context, *v1.Query, MetricLabelsExpressions) iter.Seq[Finding]
+type FindingGenerator[Finding Count] func(context.Context, *v1.Query, MetricsConfiguration) iter.Seq[Finding]
 type LabelGetter[Finding Count] struct {
 	Label  Label
 	Getter func(Finding) string
 }
 
-// MetricLabelsExpressions is the parsed aggregation configuration.
-type MetricLabelsExpressions map[MetricName]map[Label][]*Expression
+// MetricsConfiguration is the parsed aggregation configuration.
+type MetricsConfiguration map[MetricName]map[Label][]*Condition
 
-func (mle MetricLabelsExpressions) HasAnyLabelOf(labels []Label) bool {
-	for _, expr := range mle {
-		for label := range expr {
+func (mcfg MetricsConfiguration) HasAnyLabelOf(labels []Label) bool {
+	for _, labelExpr := range mcfg {
+		for label := range labelExpr {
 			if slices.Contains(labels, label) {
 				return true
 			}

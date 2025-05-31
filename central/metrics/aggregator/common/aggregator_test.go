@@ -8,7 +8,7 @@ import (
 )
 
 func Test_aggregator(t *testing.T) {
-	a := makeAggregator(makeTestMetricLabelExpressions(t), testLabelOrder)
+	a := makeAggregator(makeTestMetricLabelExpression(t), testLabelOrder)
 	assert.NotNil(t, a)
 	assert.Equal(t, map[MetricName]map[aggregationKey]*aggregatedRecord{
 		"Test_aggregator_metric1": {},
