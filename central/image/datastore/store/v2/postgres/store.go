@@ -692,7 +692,7 @@ func getImageCVEs(ctx context.Context, tx *postgres.Tx, imageID string) ([]*stor
 }
 
 // The purpose of this function is to get legacy CVEs for the given imageID so that we can migrate the CVE created and
-// first image occurrence timestamps to the new CVE data model. Subsequently, we do not populate the fixedBy and vulnerability state
+// first image occurrence timestamps to the new CVE data model. So we do not populate the fixedBy and vulnerability state
 // in the returned vulns as that information is not necessary for migrating the timestamps.
 func getLegacyImageCVEs(ctx context.Context, tx *postgres.Tx, imageID string) ([]*storage.EmbeddedVulnerability, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ImageCVEs")
