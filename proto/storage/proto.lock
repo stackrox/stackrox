@@ -4446,6 +4446,11 @@
                 "id": 19,
                 "name": "rule_ref_id",
                 "type": "string"
+              },
+              {
+                "id": 20,
+                "name": "last_started_time",
+                "type": "google.protobuf.Timestamp"
               }
             ],
             "maps": [
