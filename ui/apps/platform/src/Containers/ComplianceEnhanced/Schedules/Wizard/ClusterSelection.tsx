@@ -164,13 +164,14 @@ function ClusterSelection({
             <Divider component="div" />
             <Form className="pf-v5-u-py-lg pf-v5-u-px-lg" ref={alertRef}>
                 <Alert
-                        title="At least one cluster must be in a Healthy state to proceed with the schedule.
-
-💡 Tip: The most common reason a cluster is marked Unhealthy is that the Compliance Operator is either not installed or is below version 1.6."
-                        component="p"
-                        variant="info"
-                        isInline
-                    />
+                    title="At least one cluster must be in a Healthy state to proceed with the schedule."
+                    variant="info"
+                    isInline
+                >
+                    <p>
+                        💡 Tip: The most common reason a cluster is marked Unhealthy is that the Compliance Operator is either not installed or is below version 1.6.
+                    </p>
+                </Alert>
                 {formikTouched.clusters && formikValues.clusters.length === 0 && (
                     <Alert
                         title="At least one cluster is required to proceed"
