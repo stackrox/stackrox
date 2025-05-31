@@ -9,7 +9,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -93,8 +92,8 @@ func TestTrackerConfig_Reconfigure(t *testing.T) {
 			" ": nil,
 		}, 11*time.Hour)
 
-		assert.ErrorIs(t, err, errox.InvalidArgs)
-		assert.Equal(t, `invalid arguments: invalid metric name " ": bad characters`, err.Error())
+		assert.ErrorIs(t, err, errInvalidConfiguration)
+		assert.Equal(t, `invalid configuration: invalid metric name " ": doesn't match "^[a-zA-Z0-9_]+$"`, err.Error())
 
 		_, mle := tracker.GetMetricLabelExpressions()
 		assert.Nil(t, mle)
@@ -116,8 +115,8 @@ func TestTrackerConfig_Reconfigure(t *testing.T) {
 				},
 			},
 		}, 11*time.Hour)
-		assert.ErrorIs(t, err, errox.InvalidArgs)
-		assert.Equal(t, `invalid arguments: unknown label "label1" for metric "m1"`, err.Error())
+		assert.ErrorIs(t, err, errInvalidConfiguration)
+		assert.Equal(t, `invalid configuration: label "label1" for metric "m1" is not in the list of known labels: [test Cluster Namespace CVE Severity CVSS IsFixable]`, err.Error())
 
 		_, mle := tracker.GetMetricLabelExpressions()
 		assert.NotNil(t, mle)

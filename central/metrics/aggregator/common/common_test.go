@@ -84,10 +84,10 @@ func makeTestMetricLabelExpressions(t *testing.T) MetricLabelsExpressions {
 func Test_validateMetricName(t *testing.T) {
 	tests := map[string]string{
 		"good":             "",
-		"not good":         "bad characters",
+		"not good":         `doesn't match "^[a-zA-Z0-9_]+$"`,
 		"":                 "empty",
 		"abc_defAZ0145609": "",
-		"not-good":         "bad characters",
+		"not-good":         `doesn't match "^[a-zA-Z0-9_]+$"`,
 	}
 	for name, expected := range tests {
 		t.Run(name, func(t *testing.T) {

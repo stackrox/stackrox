@@ -25,6 +25,8 @@ const (
 	opOR operator = "OR"
 )
 
+var knownOperators = []operator{opEQ, opNE, opGT, opGE, opLT, opLE, opOR}
+
 type Expression struct {
 	op  operator
 	arg string
@@ -56,8 +58,8 @@ func (e *Expression) validate() error {
 			return fmt.Errorf("missing operator in %q", e)
 		}
 		return errors.New("empty operator")
-	case !slices.Contains([]operator{opEQ, opNE, opGT, opGE, opLT, opLE, opOR}, e.op):
-		return fmt.Errorf("unknown operator in %q", e)
+	case !slices.Contains(knownOperators, e.op):
+		return fmt.Errorf("operator in %q is not one of %q", e, knownOperators)
 	// Test argument:
 	case e.op == opOR:
 		if len(e.arg) > 0 {
