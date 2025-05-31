@@ -10,31 +10,13 @@ import (
 
 // collectMatchingLabels returns an iterator over the labels and the values that
 // match the expressions.
-func collectMatchingLabels(labelExpression map[Label][]*Condition, getter func(Label) string) iter.Seq2[Label, string] {
+func collectMatchingLabels(labelExpression map[Label]Expression, getter func(Label) string) iter.Seq2[Label, string] {
 	return func(yield func(Label, string) bool) {
 		for label, expression := range labelExpression {
-			if len(expression) == 0 {
-				if !yield(label, getter(label)) {
+			if value := getter(label); expression.match(value) {
+				if !yield(label, value) {
 					return
 				}
-				continue
-			}
-			skip := false
-			for _, condition := range expression {
-				if skip {
-					skip = condition.op != opOR
-					continue
-				}
-				if value := getter(label); condition.match(value) {
-					if !yield(label, value) {
-						return
-					}
-					break
-				}
-				skip = true
-			}
-			if skip {
-				return
 			}
 		}
 	}
@@ -73,7 +55,7 @@ func (ov orderedValues) join(sep rune) string {
 // Example:
 //
 //	"Cluster=*prod,Deployment" => "pre-prod|backend", {"Cluster": "pre-prod", "Deployment": "backend")}
-func makeAggregationKey(labelExpression map[Label][]*Condition, getter func(Label) string, labelOrder map[Label]int) (aggregationKey, prometheus.Labels) {
+func makeAggregationKey(labelExpression map[Label]Expression, getter func(Label) string, labelOrder map[Label]int) (aggregationKey, prometheus.Labels) {
 	labels := make(prometheus.Labels)
 	values := make(orderedValues, len(labelExpression))
 	for label, value := range collectMatchingLabels(labelExpression, getter) {
@@ -89,7 +71,7 @@ func makeAggregationKey(labelExpression map[Label][]*Condition, getter func(Labe
 // getMetricLabels extracts the metric labels from the filter expression and
 // sort them according to the labelOrder map values.
 // This makes the labels to appear in the stable order in the Prometheus output.
-func getMetricLabels(labelExpression map[Label][]*Condition, labelOrder map[Label]int) []string {
+func getMetricLabels(labelExpression map[Label]Expression, labelOrder map[Label]int) []string {
 	var labels []string
 	for label := range labelExpression {
 		labels = append(labels, string(label))

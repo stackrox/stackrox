@@ -15,7 +15,7 @@ import (
 
 func getNonEmptymcfg() common.MetricsConfiguration {
 	return common.MetricsConfiguration{
-		"metric1": map[common.Label][]*common.Condition{
+		"metric1": map[common.Label]common.Expression{
 			"label1": nil,
 		},
 	}

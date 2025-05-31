@@ -37,7 +37,7 @@ func TestMakeAggregationKeyInstance(t *testing.T) {
 	}
 	t.Run("matching", func(t *testing.T) {
 		key, labels := makeAggregationKey(
-			map[Label][]*Condition{
+			map[Label]Expression{
 				"Cluster":   {{"=", "*al*"}},
 				"CVSS":      {{">", "5"}},
 				"IsFixable": {{"", ""}},
@@ -53,7 +53,7 @@ func TestMakeAggregationKeyInstance(t *testing.T) {
 	})
 	t.Run("not matching", func(t *testing.T) {
 		key, labels := makeAggregationKey(
-			map[Label][]*Condition{
+			map[Label]Expression{
 				"Cluster":   {{"=", "missing"}},
 				"CVSS":      {{">", "5"}},
 				"IsFixable": {{"", ""}},
@@ -64,7 +64,7 @@ func TestMakeAggregationKeyInstance(t *testing.T) {
 	})
 	t.Run("matching second", func(t *testing.T) {
 		key, labels := makeAggregationKey(
-			map[Label][]*Condition{
+			map[Label]Expression{
 				"Cluster": {
 					{"=", "nope"},
 					{"=", "nape"},
@@ -86,7 +86,7 @@ func TestMakeAggregationKeyInstance(t *testing.T) {
 	})
 	t.Run("no matching with OR", func(t *testing.T) {
 		key, labels := makeAggregationKey(
-			map[Label][]*Condition{
+			map[Label]Expression{
 				"Cluster": {
 					{"=", "nope"},
 					{"=", "nape"},
@@ -106,20 +106,20 @@ func TestMakeAggregationKeyInstance(t *testing.T) {
 
 func Test_getMetricLabels(t *testing.T) {
 	cases := []struct {
-		labelExpression map[Label][]*Condition
+		labelExpression map[Label]Expression
 		labels          []string
 	}{
 		{
-			map[Label][]*Condition{},
+			map[Label]Expression{},
 			[]string(nil),
 		},
 		{
-			map[Label][]*Condition{
+			map[Label]Expression{
 				"a": {{"=", "b"}}},
 			[]string{"a"},
 		},
 		{
-			map[Label][]*Condition{
+			map[Label]Expression{
 				"CVE":      {{"", ""}},
 				"Severity": {{"=", "x"}},
 				"Cluster":  {{">", "4"}},

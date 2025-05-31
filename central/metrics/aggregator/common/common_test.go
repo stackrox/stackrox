@@ -102,11 +102,11 @@ func Test_validateMetricName(t *testing.T) {
 
 func TestHasAnyLabelOf(t *testing.T) {
 	mcfg := MetricsConfiguration{
-		"metric1": map[Label][]*Condition{
+		"metric1": map[Label]Expression{
 			"label1": nil,
 			"label2": nil,
 		},
-		"metric2": map[Label][]*Condition{
+		"metric2": map[Label]Expression{
 			"label3": nil,
 			"label4": nil,
 		},

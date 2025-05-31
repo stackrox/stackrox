@@ -26,7 +26,7 @@ type LabelGetter[Finding Count] struct {
 }
 
 // MetricsConfiguration is the parsed aggregation configuration.
-type MetricsConfiguration map[MetricName]map[Label][]*Condition
+type MetricsConfiguration map[MetricName]map[Label]Expression
 
 func (mcfg MetricsConfiguration) HasAnyLabelOf(labels []Label) bool {
 	for _, labelExpr := range mcfg {

@@ -23,7 +23,7 @@ func parseMetricLabels(config map[string]*storage.PrometheusMetricsConfig_Labels
 			return nil, errInvalidConfiguration.CausedByf(
 				"invalid metric name %q: %v", metric, err)
 		}
-		labelExpression := make(map[Label][]*Condition)
+		labelExpression := make(map[Label]Expression)
 		for label, expression := range labels.GetLabelExpression() {
 
 			if !isKnownLabel(label, labelOrder) {
@@ -38,7 +38,7 @@ func parseMetricLabels(config map[string]*storage.PrometheusMetricsConfig_Labels
 					"label %q for metric %q is not in the list of known labels: %v", label, metric, knownLabels)
 			}
 
-			var expr []*Condition
+			var expr Expression
 			for _, condition := range expression.GetExpression() {
 				if condition, err := MakeCondition(condition.GetOperator(), condition.GetArgument()); err != nil {
 					return nil, errInvalidConfiguration.CausedByf(
