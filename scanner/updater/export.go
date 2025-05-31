@@ -27,8 +27,9 @@ import (
 )
 
 type ExportOptions struct {
-	SplitBundles  bool
-	ManualVulnURL string
+	SplitBundles       bool
+	ManualVulnURL      string
+	CacheDirectoryPath string
 }
 
 // Export is responsible for triggering the updaters to download Common Vulnerabilities and Exposures (CVEs) data.
@@ -94,11 +95,20 @@ func Export(ctx context.Context, outputDir string, opts *ExportOptions) error {
 	if opts.SplitBundles {
 		for name, o := range bundles {
 			ctx = zlog.ContextWithValues(ctx, "bundle", name)
-			w, err := zstdWriter(filepath.Join(outputDir, fmt.Sprintf("%s.json.zst", name)))
+			filename := fmt.Sprintf("%s.json.zst", name)
+			w, err := zstdWriter(filepath.Join(outputDir, filename))
 			if err != nil {
 				return err
 			}
-			err = bundle(ctx, httpClient, w, o)
+			bundleOpts := NewBundleOpts(httpClient, w, o)
+			if opts.CacheDirectoryPath != "" {
+				r, err := zstdReader(filepath.Join(outputDir, filename))
+				if err != nil {
+					return err
+				}
+				bundleOpts = bundleOpts.WithCache(r)
+			}
+			err = bundle(ctx, bundleOpts)
 			if err != nil {
 				_ = w.Close()
 				return err
@@ -110,13 +120,22 @@ func Export(ctx context.Context, outputDir string, opts *ExportOptions) error {
 			}
 		}
 	} else {
-		w, err := zstdWriter(filepath.Join(outputDir, "vulns.json.zst"))
+		filename := "vulns.json.zst"
+		w, err := zstdWriter(filepath.Join(outputDir, filename))
 		if err != nil {
 			return err
 		}
 		for name, o := range bundles {
 			ctx = zlog.ContextWithValues(ctx, "bundle", name)
-			err := bundle(ctx, httpClient, w, o)
+			bundleOpts := NewBundleOpts(httpClient, w, o)
+			if opts.CacheDirectoryPath != "" {
+				r, err := zstdReader(filepath.Join(outputDir, filename))
+				if err != nil {
+					return err
+				}
+				bundleOpts = bundleOpts.WithCache(r)
+			}
+			err = bundle(ctx, bundleOpts)
 			if err != nil {
 				_ = w.Close()
 				return err
@@ -210,11 +229,53 @@ func zstdWriter(filename string) (io.WriteCloser, error) {
 	return w, nil
 }
 
-func bundle(ctx context.Context, client *http.Client, w io.Writer, opts []updates.ManagerOption) error {
-	jsonStore, err := jsonblob.New()
+func zstdReader(filename string) (io.Reader, error) {
+	f, err := os.Create(filename)
 	if err != nil {
-		return err
+		return nil, err
 	}
+	r, err := zstd.NewReader(f)
+	return r, nil
+}
+
+// TODO(DO NOT MERGE): May have cooked a bit too much on this one. Consider
+//
+//	reverting and adding another parameter to [bundle[ instead.
+type BundleOpts struct {
+	client  *http.Client
+	w       io.Writer
+	cache   io.Reader
+	mgrOpts []updates.ManagerOption
+}
+
+func NewBundleOpts(client *http.Client, w io.Writer, mgrOpts []updates.ManagerOption) BundleOpts {
+	return BundleOpts{
+		client:  client,
+		w:       w,
+		mgrOpts: mgrOpts,
+	}
+}
+
+func (opts BundleOpts) WithCache(r io.Reader) BundleOpts {
+	opts.cache = r
+	return opts
+}
+
+func bundle(ctx context.Context, opts BundleOpts) error {
+	var jsonStore *jsonblob.Store
+	var err error
+	if opts.cache != nil {
+		jsonStore, err = jsonblob.Load(ctx, opts.cache)
+		if err != nil {
+			return fmt.Errorf("new manager: %w", err)
+		}
+	} else {
+		jsonStore, err = jsonblob.New()
+		if err != nil {
+			return fmt.Errorf("new manager: %w", err)
+		}
+	}
+
 	mgr, err := updates.NewManager(ctx, jsonStore, updates.NewLocalLockSource(), client, opts...)
 	if err != nil {
 		return fmt.Errorf("new manager: %w", err)
