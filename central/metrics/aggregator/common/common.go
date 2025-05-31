@@ -49,7 +49,7 @@ func validateMetricName(name string) error {
 		return errors.New("empty")
 	}
 	if !metricNamePattern.MatchString(name) {
-		return errors.New("bad characters")
+		return errors.New(`doesn't match "` + metricNamePattern.String() + `"`)
 	}
 	return nil
 }

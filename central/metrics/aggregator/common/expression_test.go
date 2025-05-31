@@ -118,10 +118,10 @@ func Test_validate(t *testing.T) {
 	}
 	cases := []testCase{
 		// NOK:
-		{Expression{op: "op"}, "unknown operator in \"op\""},
+		{Expression{op: "op"}, `operator in "op" is not one of ["=" "!=" ">" ">=" "<" "<=" "OR"]`},
 		{Expression{op: "OR", arg: "arg"}, "unexpected argument in \"ORarg\""},
 		{Expression{op: "="}, "missing argument in \"=\""},
-		{Expression{op: "?", arg: "arg"}, "unknown operator in \"?arg\""},
+		{Expression{op: "?", arg: "arg"}, `operator in "?arg" is not one of ["=" "!=" ">" ">=" "<" "<=" "OR"]`},
 		{Expression{op: "=", arg: "[a-"}, "cannot parse the argument in \"=[a-\""},
 		// OK:
 		{Expression{}, "empty operator"},

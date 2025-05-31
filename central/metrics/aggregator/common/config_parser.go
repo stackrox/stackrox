@@ -1,9 +1,13 @@
 package common
 
 import (
+	"slices"
+
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 )
+
+var errInvalidConfiguration = errox.InvalidArgs.New("invalid configuration")
 
 func isKnownLabel(label string, labelOrder map[Label]int) bool {
 	_, ok := labelOrder[Label(label)]
@@ -16,20 +20,28 @@ func parseMetricLabels(config map[string]*storage.PrometheusMetricsConfig_Metric
 	result := make(MetricLabelsExpressions)
 	for metric, labels := range config {
 		if err := validateMetricName(metric); err != nil {
-			return nil, errox.InvalidArgs.CausedByf(
+			return nil, errInvalidConfiguration.CausedByf(
 				"invalid metric name %q: %v", metric, err)
 		}
 		metricLabels := make(map[Label][]*Expression)
 		for label, expressions := range labels.GetLabelExpressions() {
 
 			if !isKnownLabel(label, labelOrder) {
-				return nil, errox.InvalidArgs.CausedByf("unknown label %q for metric %q", label, metric)
+				var knownLabels []Label
+				for k := range labelOrder {
+					knownLabels = append(knownLabels, k)
+				}
+				slices.SortFunc(knownLabels, func(a, b Label) int {
+					return labelOrder[a] - labelOrder[b]
+				})
+				return nil, errInvalidConfiguration.CausedByf(
+					"label %q for metric %q is not in the list of known labels: %v", label, metric, knownLabels)
 			}
 
 			var exprs []*Expression
 			for _, expr := range expressions.GetExpression() {
 				if expr, err := MakeExpression(expr.GetOperator(), expr.GetArgument()); err != nil {
-					return nil, errox.InvalidArgs.CausedByf(
+					return nil, errInvalidConfiguration.CausedByf(
 						"failed to parse expression for metric %q with label %q: %v",
 						metric, label, err)
 				} else {
