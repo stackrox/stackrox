@@ -20,12 +20,12 @@ func (t testDataIndex) Count() int {
 
 var testRegistry = prometheus.NewRegistry()
 
-func nilGatherFunc(context.Context, *v1.Query, MetricLabelsExpressions) iter.Seq[testDataIndex] {
+func nilGatherFunc(context.Context, *v1.Query, MetricsConfiguration) iter.Seq[testDataIndex] {
 	return func(yield func(testDataIndex) bool) {}
 }
 
 func makeTestGatherFunc(data []map[Label]string) FindingGenerator[testDataIndex] {
-	return func(context.Context, *v1.Query, MetricLabelsExpressions) iter.Seq[testDataIndex] {
+	return func(context.Context, *v1.Query, MetricsConfiguration) iter.Seq[testDataIndex] {
 		return func(yield func(testDataIndex) bool) {
 			for i := range data {
 				if !yield(testDataIndex(i)) {
@@ -41,9 +41,9 @@ func TestMakeTrackerConfig(t *testing.T) {
 	assert.NotNil(t, tracker)
 	assert.NotNil(t, tracker.periodCh)
 
-	query, mle := tracker.GetMetricLabelExpressions()
+	query, mcfg := tracker.GetMetricsConfiguration()
 	assert.Empty(t, query)
-	assert.Nil(t, mle)
+	assert.Nil(t, mcfg)
 }
 
 func TestTrackerConfig_Reconfigure(t *testing.T) {
@@ -52,18 +52,18 @@ func TestTrackerConfig_Reconfigure(t *testing.T) {
 		tracker := MakeTrackerConfig("test", "test", testLabelGetters, nilGatherFunc, nil)
 
 		assert.NoError(t, tracker.Reconfigure(testRegistry, "", nil, 0))
-		query, mle := tracker.GetMetricLabelExpressions()
+		query, mcfg := tracker.GetMetricsConfiguration()
 		assert.Equal(t, "", query.String())
-		assert.Nil(t, mle)
+		assert.Nil(t, mcfg)
 	})
 
 	t.Run("test query", func(t *testing.T) {
 		tracker := MakeTrackerConfig("test", "test", testLabelGetters, nilGatherFunc, nil)
 
 		assert.NoError(t, tracker.Reconfigure(testRegistry, `Cluster:name`, nil, 0))
-		query, mle := tracker.GetMetricLabelExpressions()
+		query, mcfg := tracker.GetMetricsConfiguration()
 		assert.Equal(t, "Cluster", query.GetBaseQuery().GetMatchFieldQuery().GetField())
-		assert.Nil(t, mle)
+		assert.Nil(t, mcfg)
 	})
 
 	t.Run("test bad query", func(t *testing.T) {
@@ -75,28 +75,28 @@ func TestTrackerConfig_Reconfigure(t *testing.T) {
 	t.Run("test with good test configuration", func(t *testing.T) {
 		tracker := MakeTrackerConfig("test", "test", testLabelGetters, nilGatherFunc, nil)
 		assert.NoError(t, tracker.Reconfigure(testRegistry, "", makeTestMetricLabels(t), 42*time.Hour))
-		_, mle := tracker.GetMetricLabelExpressions()
-		assert.NotNil(t, mle)
+		_, mcfg := tracker.GetMetricsConfiguration()
+		assert.NotNil(t, mcfg)
 		select {
 		case period := <-tracker.GetPeriodCh():
 			assert.Equal(t, 42*time.Hour, period)
 		default:
 			assert.Fail(t, "should have period configured")
 		}
-		assert.Equal(t, makeTestMetricLabelExpressions(t), mle)
+		assert.Equal(t, makeTestMetricLabelExpression(t), mcfg)
 	})
 
 	t.Run("test with initial bad configuration", func(t *testing.T) {
 		tracker := MakeTrackerConfig("test", "test", testLabelGetters, nilGatherFunc, nil)
-		err := tracker.Reconfigure(testRegistry, "", map[string]*storage.PrometheusMetricsConfig_MetricLabels{
+		err := tracker.Reconfigure(testRegistry, "", map[string]*storage.PrometheusMetricsConfig_Labels{
 			" ": nil,
 		}, 11*time.Hour)
 
 		assert.ErrorIs(t, err, errInvalidConfiguration)
 		assert.Equal(t, `invalid configuration: invalid metric name " ": doesn't match "^[a-zA-Z0-9_]+$"`, err.Error())
 
-		_, mle := tracker.GetMetricLabelExpressions()
-		assert.Nil(t, mle)
+		_, mcfg := tracker.GetMetricsConfiguration()
+		assert.Nil(t, mcfg)
 		select {
 		case period := <-tracker.GetPeriodCh():
 			assert.Fail(t, "period configured: %v", period)
@@ -108,9 +108,9 @@ func TestTrackerConfig_Reconfigure(t *testing.T) {
 		tracker := MakeTrackerConfig("test", "test", testLabelGetters, nilGatherFunc, nil)
 		assert.NoError(t, tracker.Reconfigure(testRegistry, "", makeTestMetricLabels(t), 42*time.Hour))
 
-		err := tracker.Reconfigure(testRegistry, "", map[string]*storage.PrometheusMetricsConfig_MetricLabels{
+		err := tracker.Reconfigure(testRegistry, "", map[string]*storage.PrometheusMetricsConfig_Labels{
 			"m1": {
-				LabelExpressions: map[string]*storage.PrometheusMetricsConfig_MetricLabels_Expressions{
+				LabelExpression: map[string]*storage.PrometheusMetricsConfig_Labels_Expression{
 					"label1": nil,
 				},
 			},
@@ -118,15 +118,15 @@ func TestTrackerConfig_Reconfigure(t *testing.T) {
 		assert.ErrorIs(t, err, errInvalidConfiguration)
 		assert.Equal(t, `invalid configuration: label "label1" for metric "m1" is not in the list of known labels: [test Cluster Namespace CVE Severity CVSS IsFixable]`, err.Error())
 
-		_, mle := tracker.GetMetricLabelExpressions()
-		assert.NotNil(t, mle)
+		_, mcfg := tracker.GetMetricsConfiguration()
+		assert.NotNil(t, mcfg)
 		select {
 		case period := <-tracker.GetPeriodCh():
 			assert.Equal(t, 42*time.Hour, period)
 		default:
 			assert.Fail(t, "no period in the channel")
 		}
-		assert.Equal(t, makeTestMetricLabelExpressions(t), mle)
+		assert.Equal(t, makeTestMetricLabelExpression(t), mcfg)
 	})
 }
 
@@ -139,7 +139,7 @@ func TestTrack(t *testing.T) {
 			result[metricName] = append(result[metricName], &aggregatedRecord{labels, total})
 		},
 	)
-	cfg.metricsConfig = makeTestMetricLabelExpressions(t)
+	cfg.metricsConfig = makeTestMetricLabelExpression(t)
 	cfg.Track(context.Background())
 
 	if assert.Len(t, result, 2) &&
@@ -177,22 +177,22 @@ func TestTrackerConfig_registerMetrics(t *testing.T) {
 	tc := MakeTrackerConfig("test", "test",
 		testLabelGetters, nil, nil)
 	testRegistry := prometheus.NewRegistry()
-	tc.metricsConfig = makeTestMetricLabelExpressions(t)
-	tc.metricsConfig["m1"] = map[Label][]*Expression{
+	tc.metricsConfig = makeTestMetricLabelExpression(t)
+	tc.metricsConfig["m1"] = map[Label][]*Condition{
 		"l1": nil,
 	}
 	assert.NoError(t, tc.registerMetrics(testRegistry, time.Hour))
 	assert.NoError(t, tc.registerMetrics(testRegistry, time.Hour))
-	tc.metricsConfig["m1"] = map[Label][]*Expression{
+	tc.metricsConfig["m1"] = map[Label][]*Condition{
 		"l1": nil,
 		"l2": nil,
 	}
 	assert.Error(t, tc.registerMetrics(testRegistry, time.Hour))
-	tc.metricsConfig["m1"] = map[Label][]*Expression{
+	tc.metricsConfig["m1"] = map[Label][]*Condition{
 		"l2": nil,
 	}
 	assert.Error(t, tc.registerMetrics(testRegistry, time.Hour))
-	tc.metricsConfig["m1"] = map[Label][]*Expression{
+	tc.metricsConfig["m1"] = map[Label][]*Condition{
 		"l1": nil,
 	}
 	assert.NoError(t, tc.registerMetrics(testRegistry, time.Hour))

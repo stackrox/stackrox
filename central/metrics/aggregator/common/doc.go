@@ -1,16 +1,16 @@
 // Package common provides utilities for aggregating findings into Prometheus metrics.
 // It includes functionality for parsing metric configurations, matching findings
-// against label expressions, and generating aggregation results.
+// against label expression, and generating aggregation results.
 //
 // # Finding Aggregation
 //
 // Finding aggregation is the process of grouping findings based on specific label
-// expressions and generating metrics that summarize the findings. The aggregation
+// expression and generating metrics that summarize the findings. The aggregation
 // process involves the following steps:
 //
 //  1. **Matching Labels**: The `collectMatchingLabels` function iterates over the label
-//     expressions and evaluates whether a finding matches the specified conditions.
-//     It yields the labels and their corresponding values that satisfy the expressions.
+//     expression and evaluates whether a finding matches the specified conditions.
+//     It yields the labels and their corresponding values that satisfy the expression.
 //
 //  2. **Generating Aggregation Keys**: The `makeAggregationKey` function
 //     computes a unique `aggregationKey` for each set of matching labels. The `aggregationKey`
@@ -31,9 +31,9 @@
 //
 // Example:
 //
-// Given the following label expressions and finding:
+// Given the following label expression and finding:
 //
-// Label Expressions:
+// Label Expression:
 //   - "Cluster": `=*prod`
 //   - "Deployment": `=*backend`
 //
@@ -50,5 +50,5 @@
 //	{"Cluster": "pre-prod", "Deployment": "backend"}
 //
 // This key is used to uniquely identify and aggregate findings that match the same
-// set of label expressions.
+// set of label expression.
 package common

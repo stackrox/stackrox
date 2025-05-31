@@ -120,7 +120,7 @@ func TestQueryDeploymentsAndImages(t *testing.T) {
 	}
 
 	var actual = make(map[string][]*labelsTotal)
-	metricExpressions := common.MetricLabelsExpressions{
+	metricExpressions := common.MetricsConfiguration{
 		"Severity_count": {
 			"Severity": nil,
 		},
@@ -130,8 +130,8 @@ func TestQueryDeploymentsAndImages(t *testing.T) {
 			"Severity":  {},
 		},
 		"Deployment_ImageTag_count": {
-			"Deployment": {common.MustMakeExpression("=", "*3")},
-			"ImageTag":   {common.MustMakeExpression("=", "latest")},
+			"Deployment": {common.MustMakeCondition("=", "*3")},
+			"ImageTag":   {common.MustMakeCondition("=", "latest")},
 		},
 	}
 
@@ -142,7 +142,7 @@ func TestQueryDeploymentsAndImages(t *testing.T) {
 			actual[metric] = append(actual[metric], &labelsTotal{labels, total})
 		},
 	)
-	cfg.SetMetricLabelExpressions(search.EmptyQuery(), metricExpressions)
+	cfg.SetMetricsConfiguration(search.EmptyQuery(), metricExpressions)
 	cfg.Track(context.Background())
 
 	expected := map[string][]*labelsTotal{
@@ -186,12 +186,12 @@ func TestQueryImages(t *testing.T) {
 		Return(nil)
 
 	var actual = make(map[string][]*labelsTotal)
-	metricExpressions := common.MetricLabelsExpressions{
+	metricExpressions := common.MetricsConfiguration{
 		"Severity_count": {
 			"Severity": nil,
 		},
 		"ImageTag_count": {
-			"ImageTag": {common.MustMakeExpression("=", "latest")},
+			"ImageTag": {common.MustMakeCondition("=", "latest")},
 			"Severity": nil,
 		},
 	}
@@ -203,7 +203,7 @@ func TestQueryImages(t *testing.T) {
 			actual[metric] = append(actual[metric], &labelsTotal{labels, total})
 		},
 	)
-	cfg.SetMetricLabelExpressions(search.EmptyQuery(), metricExpressions)
+	cfg.SetMetricsConfiguration(search.EmptyQuery(), metricExpressions)
 	cfg.Track(context.Background())
 
 	expected := map[string][]*labelsTotal{
@@ -265,13 +265,13 @@ func TestQueryCVEs(t *testing.T) {
 		Return(nil)
 
 	var actual = make(map[string][]*labelsTotal)
-	metricExpressions := common.MetricLabelsExpressions{
+	metricExpressions := common.MetricsConfiguration{
 		"Severity_count": {
 			"Severity": nil,
 			"CVE":      nil,
 		},
 		"CVSS_count": {
-			"CVSS":     {common.MustMakeExpression(">", "3")},
+			"CVSS":     {common.MustMakeCondition(">", "3")},
 			"Severity": nil,
 		},
 	}
@@ -283,7 +283,7 @@ func TestQueryCVEs(t *testing.T) {
 			actual[metric] = append(actual[metric], &labelsTotal{labels, total})
 		},
 	)
-	cfg.SetMetricLabelExpressions(search.EmptyQuery(), metricExpressions)
+	cfg.SetMetricsConfiguration(search.EmptyQuery(), metricExpressions)
 	cfg.Track(context.Background())
 
 	expected := map[string][]*labelsTotal{

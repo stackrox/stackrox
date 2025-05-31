@@ -37,7 +37,7 @@ func TestMakeAggregationKeyInstance(t *testing.T) {
 	}
 	t.Run("matching", func(t *testing.T) {
 		key, labels := makeAggregationKey(
-			map[Label][]*Expression{
+			map[Label][]*Condition{
 				"Cluster":   {{"=", "*al*"}},
 				"CVSS":      {{">", "5"}},
 				"IsFixable": {{"", ""}},
@@ -53,7 +53,7 @@ func TestMakeAggregationKeyInstance(t *testing.T) {
 	})
 	t.Run("not matching", func(t *testing.T) {
 		key, labels := makeAggregationKey(
-			map[Label][]*Expression{
+			map[Label][]*Condition{
 				"Cluster":   {{"=", "missing"}},
 				"CVSS":      {{">", "5"}},
 				"IsFixable": {{"", ""}},
@@ -64,7 +64,7 @@ func TestMakeAggregationKeyInstance(t *testing.T) {
 	})
 	t.Run("matching second", func(t *testing.T) {
 		key, labels := makeAggregationKey(
-			map[Label][]*Expression{
+			map[Label][]*Condition{
 				"Cluster": {
 					{"=", "nope"},
 					{"=", "nape"},
@@ -86,7 +86,7 @@ func TestMakeAggregationKeyInstance(t *testing.T) {
 	})
 	t.Run("no matching with OR", func(t *testing.T) {
 		key, labels := makeAggregationKey(
-			map[Label][]*Expression{
+			map[Label][]*Condition{
 				"Cluster": {
 					{"=", "nope"},
 					{"=", "nape"},
@@ -106,20 +106,20 @@ func TestMakeAggregationKeyInstance(t *testing.T) {
 
 func Test_getMetricLabels(t *testing.T) {
 	cases := []struct {
-		expressions map[Label][]*Expression
-		labels      []string
+		labelExpression map[Label][]*Condition
+		labels          []string
 	}{
 		{
-			map[Label][]*Expression{},
+			map[Label][]*Condition{},
 			[]string(nil),
 		},
 		{
-			map[Label][]*Expression{
+			map[Label][]*Condition{
 				"a": {{"=", "b"}}},
 			[]string{"a"},
 		},
 		{
-			map[Label][]*Expression{
+			map[Label][]*Condition{
 				"CVE":      {{"", ""}},
 				"Severity": {{"=", "x"}},
 				"Cluster":  {{">", "4"}},
@@ -128,6 +128,6 @@ func Test_getMetricLabels(t *testing.T) {
 		},
 	}
 	for _, c := range cases {
-		assert.Equal(t, c.labels, getMetricLabels(c.expressions, testLabelOrder), c.expressions)
+		assert.Equal(t, c.labels, getMetricLabels(c.labelExpression, testLabelOrder), c.labelExpression)
 	}
 }
