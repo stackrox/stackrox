@@ -5389,31 +5389,31 @@
             ],
             "messages": [
               {
-                "name": "MetricLabels",
+                "name": "Labels",
                 "maps": [
                   {
                     "key_type": "string",
                     "field": {
                       "id": 1,
-                      "name": "label_expressions",
-                      "type": "Expressions"
+                      "name": "label_expression",
+                      "type": "Expression"
                     }
                   }
                 ],
                 "messages": [
                   {
-                    "name": "Expressions",
+                    "name": "Expression",
                     "fields": [
                       {
                         "id": 1,
                         "name": "expression",
-                        "type": "Expression",
+                        "type": "Condition",
                         "is_repeated": true
                       }
                     ],
                     "messages": [
                       {
-                        "name": "Expression",
+                        "name": "Condition",
                         "fields": [
                           {
                             "id": 1,
@@ -5451,7 +5451,7 @@
                     "field": {
                       "id": 2,
                       "name": "metric_labels",
-                      "type": "MetricLabels"
+                      "type": "Labels"
                     }
                   }
                 ]
