@@ -178,21 +178,21 @@ func TestTrackerConfig_registerMetrics(t *testing.T) {
 		testLabelGetters, nil, nil)
 	testRegistry := prometheus.NewRegistry()
 	tc.metricsConfig = makeTestMetricLabelExpression(t)
-	tc.metricsConfig["m1"] = map[Label][]*Condition{
+	tc.metricsConfig["m1"] = map[Label]Expression{
 		"l1": nil,
 	}
 	assert.NoError(t, tc.registerMetrics(testRegistry, time.Hour))
 	assert.NoError(t, tc.registerMetrics(testRegistry, time.Hour))
-	tc.metricsConfig["m1"] = map[Label][]*Condition{
+	tc.metricsConfig["m1"] = map[Label]Expression{
 		"l1": nil,
 		"l2": nil,
 	}
 	assert.Error(t, tc.registerMetrics(testRegistry, time.Hour))
-	tc.metricsConfig["m1"] = map[Label][]*Condition{
+	tc.metricsConfig["m1"] = map[Label]Expression{
 		"l2": nil,
 	}
 	assert.Error(t, tc.registerMetrics(testRegistry, time.Hour))
-	tc.metricsConfig["m1"] = map[Label][]*Condition{
+	tc.metricsConfig["m1"] = map[Label]Expression{
 		"l1": nil,
 	}
 	assert.NoError(t, tc.registerMetrics(testRegistry, time.Hour))
