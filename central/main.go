@@ -108,6 +108,7 @@ import (
 	"github.com/stackrox/rox/central/jwt"
 	logimbueHandler "github.com/stackrox/rox/central/logimbue/handler"
 	metadataService "github.com/stackrox/rox/central/metadata/service"
+	customMetrics "github.com/stackrox/rox/central/metrics/aggregator"
 	"github.com/stackrox/rox/central/metrics/telemetry"
 	mitreService "github.com/stackrox/rox/central/mitre/service"
 	namespaceService "github.com/stackrox/rox/central/namespace/service"
@@ -224,6 +225,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	pkgVersion "github.com/stackrox/rox/pkg/version"
+	"github.com/travelaudience/go-promhttp"
 )
 
 var (
@@ -381,7 +383,7 @@ func startServices() {
 	administrationUsageInjector.Singleton().Start()
 	gcp.Singleton().Start()
 	administrationEventHandler.Singleton().Start()
-
+	customMetrics.Singleton().Start()
 	if features.PlatformComponents.Enabled() {
 		platformReprocessor.Singleton().Start()
 	}
@@ -866,6 +868,12 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			ServerHandler: certHandler.BackupCerts(listener.Singleton()),
 			Compression:   true,
 		},
+		{
+			Route:         "/metrics",
+			Authorizer:    user.With(permissions.View(resources.Administration)),
+			ServerHandler: promhttp.HandlerFor(customMetrics.Registry, promhttp.HandlerOpts{}),
+			Compression:   true,
+		},
 	}
 	scannerDefinitionsRoute := "/api/extensions/scannerdefinitions"
 	// Only grant compression to well-known content types. It should capture files
@@ -962,6 +970,7 @@ func waitForTerminationSignal() {
 		{gcp.Singleton(), "GCP cloud credentials manager"},
 		{cloudSourcesManager.Singleton(), "cloud sources manager"},
 		{administrationEventHandler.Singleton(), "administration events handler"},
+		{customMetrics.Singleton(), "CVE metric gatherer"},
 	}
 
 	stoppables = append(stoppables,

@@ -251,6 +251,29 @@
       ],
       "default": "UNSET"
     },
+    "ExpressionsExpression": {
+      "type": "object",
+      "properties": {
+        "operator": {
+          "type": "string"
+        },
+        "argument": {
+          "type": "string"
+        }
+      }
+    },
+    "MetricLabelsExpressions": {
+      "type": "object",
+      "properties": {
+        "expression": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/ExpressionsExpression"
+          }
+        }
+      }
+    },
     "PlatformComponentConfigRule": {
       "type": "object",
       "properties": {
@@ -259,6 +282,35 @@
         },
         "namespaceRule": {
           "$ref": "#/definitions/RuleNamespaceRule"
+        }
+      }
+    },
+    "PrometheusMetricsConfigMetricLabels": {
+      "type": "object",
+      "properties": {
+        "labelExpressions": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/MetricLabelsExpressions"
+          }
+        }
+      }
+    },
+    "PrometheusMetricsConfigVulnerabilities": {
+      "type": "object",
+      "properties": {
+        "gatheringPeriodHours": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "metricLabels": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/PrometheusMetricsConfigMetricLabels"
+          }
+        },
+        "query": {
+          "type": "string"
         }
       }
     },
@@ -463,9 +515,20 @@
         },
         "administrationEventsConfig": {
           "$ref": "#/definitions/storageAdministrationEventsConfig"
+        },
+        "prometheusMetricsConfig": {
+          "$ref": "#/definitions/storagePrometheusMetricsConfig"
         }
       },
-      "title": "next available tag:9"
+      "title": "next available tag:10"
+    },
+    "storagePrometheusMetricsConfig": {
+      "type": "object",
+      "properties": {
+        "imageVulnerabilities": {
+          "$ref": "#/definitions/PrometheusMetricsConfigVulnerabilities"
+        }
+      }
     },
     "storagePublicConfig": {
       "type": "object",
