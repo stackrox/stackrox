@@ -1,19 +1,30 @@
 package service
 
 import (
+	"context"
+	"errors"
 	"testing"
+	"time"
 
+	imageDSMocks "github.com/stackrox/rox/central/image/datastore/mocks"
 	iiStore "github.com/stackrox/rox/central/imageintegration/store"
+	riskManagerMocks "github.com/stackrox/rox/central/risk/manager/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
+	"github.com/stackrox/rox/pkg/images/enricher"
+	enricherMocks "github.com/stackrox/rox/pkg/images/enricher/mocks"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protoconv"
 	pkgTestUtils "github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
+	"golang.org/x/sync/semaphore"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func TestAuthz(t *testing.T) {
@@ -228,6 +239,123 @@ func TestUpdatingImageFromRequest(t *testing.T) {
 			clone := tc.existingImg.CloneVT()
 			updateImageFromRequest(clone, tc.reqImgName)
 			protoassert.Equal(t, tc.expectedName, clone.Name)
+		})
+	}
+}
+
+func TestScanExpired(t *testing.T) {
+	tcs := []struct {
+		desc    string
+		image   *storage.Image
+		expired bool
+	}{
+		{
+			"expired scan",
+			&storage.Image{
+				Scan: &storage.ImageScan{
+					ScanTime: timestamppb.New(time.Now().Add(-reprocessInterval * 2)),
+				},
+			},
+			true,
+		},
+		{
+			"not expired scan",
+			&storage.Image{
+				Scan: &storage.ImageScan{
+					ScanTime: timestamppb.New(time.Now()),
+				},
+			},
+			false,
+		},
+	}
+	for _, tc := range tcs {
+		t.Run(tc.desc, func(t *testing.T) {
+			assert.Equal(t, tc.expired, scanExpired(tc.image))
+		})
+	}
+
+}
+
+// TestResetClusterLocal ensure that ScanImageInternal resets the cluster local flag.
+func TestResetClusterLocal(t *testing.T) {
+	name, _, err := utils.GenerateImageNameFromString("reg.invalid/some/image:latest")
+	require.NoError(t, err)
+
+	names := []*storage.ImageName{name}
+	scanReq := &v1.ScanImageInternalRequest{Image: &storage.ContainerImage{Id: "id", Name: name}}
+	curScan := &storage.ImageScan{ScanTime: timestamppb.New(time.Now())}
+	expScan := &storage.ImageScan{ScanTime: timestamppb.New(time.Now().Add(-reprocessInterval * 2))}
+
+	tcs := []struct {
+		desc              string
+		existingImg       *storage.Image
+		expectedFetchOpt  enricher.FetchOption
+		enrichErr         error
+		finalClusterLocal bool
+	}{
+		{
+			"do not reset flag when scan not expired",
+			&storage.Image{IsClusterLocal: true, Name: name, Names: names, Scan: curScan},
+			enricher.UseCachesIfPossible, nil, true,
+		},
+		{
+			"reset flag when scan expired",
+			&storage.Image{IsClusterLocal: true, Name: name, Names: names, Scan: expScan},
+			enricher.IgnoreExistingImages, nil, false,
+		},
+		{
+			"do not reset flag when scan not expired and existing name not found",
+			&storage.Image{IsClusterLocal: true, Name: name, Names: nil, Scan: curScan},
+			enricher.ForceRefetchSignaturesOnly, nil, true,
+		},
+		{
+			"reset flag when scan expired and existing name not found",
+			&storage.Image{IsClusterLocal: true, Name: name, Names: nil, Scan: expScan},
+			enricher.IgnoreExistingImages, nil, false,
+		},
+		{
+			"do not reset flag when scan not expired and new scan fails",
+			&storage.Image{IsClusterLocal: true, Name: name, Names: names, Scan: curScan},
+			enricher.IgnoreExistingImages, errors.New("broken"), true,
+		},
+		{
+			"reset flag when scan expired and new scan fails",
+			&storage.Image{IsClusterLocal: true, Name: name, Names: names, Scan: expScan},
+			enricher.IgnoreExistingImages, errors.New("broken"), false,
+		},
+	}
+	for _, tc := range tcs {
+		t.Run(tc.desc, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+
+			fetchOptMatcher := gomock.Cond(func(eCtx enricher.EnrichmentContext) bool {
+				return eCtx.FetchOpt == tc.expectedFetchOpt
+			})
+			imageEnricherMock := enricherMocks.NewMockImageEnricher(ctrl)
+			imageEnricherMock.EXPECT().
+				EnrichImage(gomock.Any(), fetchOptMatcher, gomock.Any()).
+				Return(enricher.EnrichmentResult{}, tc.enrichErr).AnyTimes()
+
+			riskManagerMock := riskManagerMocks.NewMockManager(ctrl)
+			riskManagerMock.EXPECT().
+				CalculateRiskAndUpsertImage(gomock.Any()).
+				Return(nil).AnyTimes()
+
+			imageDSMock := imageDSMocks.NewMockDataStore(ctrl)
+			imageDSMock.EXPECT().
+				GetImage(gomock.Any(), gomock.Any()).
+				Return(tc.existingImg, tc.existingImg != nil, nil).AnyTimes()
+
+			s := &serviceImpl{
+				internalScanSemaphore: semaphore.NewWeighted(int64(env.MaxParallelImageScanInternal.IntegerSetting())),
+				enricher:              imageEnricherMock,
+				datastore:             imageDSMock,
+				riskManager:           riskManagerMock,
+			}
+
+			resp, err := s.ScanImageInternal(context.Background(), scanReq)
+			require.NoError(t, err)
+			assert.Equal(t, tc.finalClusterLocal, resp.GetImage().GetIsClusterLocal())
 		})
 	}
 }
