@@ -413,9 +413,23 @@ class NetworkBaselineTest extends BaseSpecification {
             }
             return baseline
         }
+
         def mustNotBeInBaseline = []
         validateBaseline(baseline, beforeDeploymentCreate, justAfterDeploymentCreate,
             [new Tuple2<String, Boolean>(Constants.INTERNET_EXTERNAL_SOURCE_ID, false)], mustNotBeInBaseline)
+
+        def externalBaseline = evaluateWithRetry(30, 4) {
+            def externalBaseline = NetworkBaselineService.getNetworkBaselineForExternalFlows(deploymentUid)
+            if (externalBaseline.totalAnomalous + externalBaseline.totalBaseline == 0) {
+                throw new RuntimeException(
+                    "No peers in baseline for deployment ${deploymentUid} yet. Baseline is ${externalBaseline}"
+                )
+            }
+            return baseline
+        }
+
+        assert externalBaseline
+
         log.info "At the bottom of the test"
     }
 }

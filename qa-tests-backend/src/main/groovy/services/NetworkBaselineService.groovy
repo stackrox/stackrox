@@ -4,6 +4,7 @@ import groovy.transform.CompileStatic
 
 import io.stackrox.proto.api.v1.Common.ResourceByID
 import io.stackrox.proto.api.v1.NetworkBaselineServiceGrpc
+import io.stackrox.proto.api.v1.NetworkBaselineServiceOuterClass.NetworkBaselineExternalStatusRequest
 
 @CompileStatic
 class NetworkBaselineService extends BaseService {
@@ -14,6 +15,12 @@ class NetworkBaselineService extends BaseService {
 
     static getNetworkBaseline(String deploymentID) {
         return getNetworkBaselineClient().getNetworkBaseline(ResourceByID.newBuilder().setId(deploymentID).build())
+    }
+
+    static getNetworkBaselineForExternalFlows(String deploymentID) {
+        NetworkBaselineExternalStatusRequest.Builder request = NetworkBaselineExternalStatusRequest.newBuilder()
+                                                                        .setDeploymentId(deploymentID)
+        return getNetworkBaselineClient().getNetworkBaselineStatusForExternalFlows(request.build())
     }
 
     static lockNetworkBaseline(String deploymentID) {
