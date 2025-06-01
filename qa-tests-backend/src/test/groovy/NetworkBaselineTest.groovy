@@ -25,6 +25,7 @@ class NetworkBaselineTest extends BaseSpecification {
     private static final String DEFERRED_BASELINED_CLIENT_DEP_NAME = "net-bl-client-deferred-baselined"
     private static final String DEFERRED_POST_LOCK_DEP_NAME = "net-bl-client-post-lock"
     static final private String EXTERNALDESTINATION = "external-destination-source"
+    static final private String MULTIPLE_EXTERNALDESTINATION = "multiple-external-destination-source"
     private static final String DATE_CMD = "date -Iseconds"
 
     private static final String NGINX_IMAGE = "quay.io/rhacs-eng/qa-multi-arch:nginx-1-19-alpine"
@@ -118,6 +119,16 @@ class NetworkBaselineTest extends BaseSpecification {
                     .setArgs(["echo -n 'Startup time: '; ${DATE_CMD};" +
                                       "while sleep ${NetworkGraphUtil.NETWORK_FLOW_UPDATE_CADENCE_IN_SECONDS}; " +
                                       "do wget -S -T 2 http://8.8.8.8:53; " +
+                                      "done" as String,])
+
+    private static final MULTIPLE_EXTERNAL_DEP = createAndRegisterDeployment()
+                    .setName(MULTIPLE_EXTERNALDESTINATION)
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1-15-4-alpine")
+                    .addLabel("app", MULTIPLE_EXTERNALDESTINATION)
+                    .setCommand(["/bin/sh", "-c",])
+                    .setArgs(["echo -n 'Startup time: '; ${DATE_CMD};" +
+                                      "while sleep ${NetworkGraphUtil.NETWORK_FLOW_UPDATE_CADENCE_IN_SECONDS}; " +
+                                      "do wget -S -T 2 http://8.8.8.8:53; wget -S -T 2 http://1.1.1.1:53;" +
                                       "done" as String,])
 
     private static createAndRegisterDeployment() {
@@ -478,6 +489,89 @@ class NetworkBaselineTest extends BaseSpecification {
         assert expectedPeer.getProtocol() == NetworkFlowOuterClass.L4Protocol.L4_PROTOCOL_TCP
 
         assert externalBaseline.getTotalBaseline() == 1
+        assert externalBaseline.getTotalAnomalous() == 0
+    }
+
+    @Tag("NetworkBaseline")
+    def "Verify network baseline functionality with multiple external entities"() {
+        given:
+        //when:
+        //"Create initial set of deployments, wait for baseline to populate"
+        CollectorUtil.enableExternalIps(orchestrator)
+        def beforeDeploymentCreate = System.currentTimeSeconds()
+        batchCreate([MULTIPLE_EXTERNAL_DEP])
+        def justAfterDeploymentCreate = System.currentTimeSeconds()
+
+        def deploymentUid = MULTIPLE_EXTERNAL_DEP.deploymentUid
+        assert deploymentUid != null
+
+        Timestamp epoch = Timestamp.newBuilder().setSeconds(0).build()
+
+        assert NetworkGraphUtil.checkForEdge(deploymentUid, Constants.INTERNET_EXTERNAL_SOURCE_ID, epoch, 180)
+        def baseline = evaluateWithRetry(30, 4) {
+            def baseline = NetworkBaselineService.getNetworkBaseline(deploymentUid)
+            if (baseline.getPeersCount() == 0) {
+                throw new RuntimeException(
+                    "No peers in baseline for deployment ${deploymentUid} yet. Baseline is ${baseline}"
+                )
+            }
+            return baseline
+        }
+
+        log.info "baseline= ${baseline}"
+        log.info ""
+        log.info ""
+        log.info ""
+        log.info ""
+
+        def mustNotBeInBaseline = []
+        validateBaseline(baseline, beforeDeploymentCreate, justAfterDeploymentCreate,
+            [new Tuple2<String, Boolean>(Constants.INTERNET_EXTERNAL_SOURCE_ID, false)], mustNotBeInBaseline)
+
+        def externalBaseline = evaluateWithRetry(30, 4) {
+            def externalBaseline = NetworkBaselineService.getNetworkBaselineForExternalFlows(deploymentUid)
+            if (externalBaseline.totalAnomalous + externalBaseline.totalBaseline == 0) {
+                throw new RuntimeException(
+                    "No peers in baseline for deployment ${deploymentUid} yet. Baseline is ${externalBaseline}"
+                )
+            }
+            return externalBaseline
+        }
+
+        assert externalBaseline
+        log.info "externalBaseline= ${externalBaseline}"
+
+        def peer1 = externalBaseline.getBaselineList().find { it.getPeer().getEntity().getName() == "8.8.8.8" }.getPeer()
+
+        log.info "expectedPeer= ${peer1}"
+
+        assert peer1
+        def expectedEntity1 = peer1.getEntity()
+        verifyAll(expectedEntity1) {
+            type == NetworkFlowOuterClass.NetworkEntityInfo.Type.EXTERNAL_SOURCE
+            name == "8.8.8.8"
+            discovered == true
+        }
+
+        assert peer1.getPort() == 53
+        assert peer1.getProtocol() == NetworkFlowOuterClass.L4Protocol.L4_PROTOCOL_TCP
+
+        def peer2 = externalBaseline.getBaselineList().find { it.getPeer().getEntity().getName() == "1.1.1.1" }.getPeer()
+
+        log.info "expectedPeer= ${peer2}"
+
+        assert peer2
+        def expectedEntity2 = peer2.getEntity()
+        verifyAll(expectedEntity2) {
+            type == NetworkFlowOuterClass.NetworkEntityInfo.Type.EXTERNAL_SOURCE
+            name == "1.1.1.1"
+            discovered == true
+        }
+
+        assert peer2.getPort() == 53
+        assert peer2.getProtocol() == NetworkFlowOuterClass.L4Protocol.L4_PROTOCOL_TCP
+
+        assert externalBaseline.getTotalBaseline() == 2
         assert externalBaseline.getTotalAnomalous() == 0
     }
 }
