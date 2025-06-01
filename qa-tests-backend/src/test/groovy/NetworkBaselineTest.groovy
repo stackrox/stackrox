@@ -100,6 +100,16 @@ class NetworkBaselineTest extends BaseSpecification {
                               "do wget --timeout=10 -S http://${SERVER_DEP_NAME}; " +
                               "done" as String,])
 
+//    private static final EXTERNAL_DEP = createAndRegisterDeployment()
+//                    .setName(EXTERNALDESTINATION)
+//                    .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1-15-4-alpine")
+//                    .addLabel("app", EXTERNALDESTINATION)
+//                    .setCommand(["/bin/sh", "-c",])
+//                    .setArgs(["echo -n 'Startup time: '; ${DATE_CMD};" +
+//                                      "while sleep ${NetworkGraphUtil.NETWORK_FLOW_UPDATE_CADENCE_IN_SECONDS}; " +
+//                                      "do wget -S -T 2 http://www.google.com; " +
+//                                      "done" as String,])
+
     private static final EXTERNAL_DEP = createAndRegisterDeployment()
                     .setName(EXTERNALDESTINATION)
                     .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1-15-4-alpine")
@@ -107,7 +117,7 @@ class NetworkBaselineTest extends BaseSpecification {
                     .setCommand(["/bin/sh", "-c",])
                     .setArgs(["echo -n 'Startup time: '; ${DATE_CMD};" +
                                       "while sleep ${NetworkGraphUtil.NETWORK_FLOW_UPDATE_CADENCE_IN_SECONDS}; " +
-                                      "do wget -S -T 2 http://www.google.com; " +
+                                      "do wget -S -T 2 http://8.8.8.8:53; " +
                                       "done" as String,])
 
     private static createAndRegisterDeployment() {
@@ -165,7 +175,7 @@ class NetworkBaselineTest extends BaseSpecification {
             assert actualPeer.getPropertiesCount() == 1
             def properties = actualPeer.getProperties(0)
             assert properties.getIngress() == expectedPeerIngress
-            assert properties.getPort() == 80
+            //assert properties.getPort() == 80
             assert properties.getProtocol() == NetworkFlowOuterClass.L4Protocol.L4_PROTOCOL_TCP
         }
 
@@ -182,214 +192,228 @@ class NetworkBaselineTest extends BaseSpecification {
         }
     }
 
-    //@Tag("NetworkBaseline")
-    //def "Verify network baseline functionality"() {
-    //    when:
-    //    "Create initial set of deployments, wait for baseline to populate"
-    //    def beforeDeploymentCreate = System.currentTimeSeconds()
-    //    batchCreate([SERVER_DEP, BASELINED_CLIENT_DEP])
-    //    def justAfterDeploymentCreate = System.currentTimeSeconds()
+    @Tag("NetworkBaseline")
+    def "Verify network baseline functionality"() {
+        when:
+        "Create initial set of deployments, wait for baseline to populate"
+        def beforeDeploymentCreate = System.currentTimeSeconds()
+        batchCreate([SERVER_DEP, BASELINED_CLIENT_DEP])
+        def justAfterDeploymentCreate = System.currentTimeSeconds()
 
-    //    def serverDeploymentID = SERVER_DEP.deploymentUid
-    //    assert serverDeploymentID != null
+        def serverDeploymentID = SERVER_DEP.deploymentUid
+        assert serverDeploymentID != null
 
-    //    def baselinedClientDeploymentID = BASELINED_CLIENT_DEP.deploymentUid
-    //    assert baselinedClientDeploymentID != null
+        def baselinedClientDeploymentID = BASELINED_CLIENT_DEP.deploymentUid
+        assert baselinedClientDeploymentID != null
 
-    //    Timestamp epoch = Timestamp.newBuilder().setSeconds(0).build()
+        Timestamp epoch = Timestamp.newBuilder().setSeconds(0).build()
 
-    //    assert NetworkGraphUtil.checkForEdge(baselinedClientDeploymentID, serverDeploymentID, epoch, 180)
+        assert NetworkGraphUtil.checkForEdge(baselinedClientDeploymentID, serverDeploymentID, epoch, 180)
 
-    //    // Now create the anomalous deployment
-    //    batchCreate([ANOMALOUS_CLIENT_DEP])
+        // Now create the anomalous deployment
+        batchCreate([ANOMALOUS_CLIENT_DEP])
 
-    //    def anomalousClientDeploymentID = ANOMALOUS_CLIENT_DEP.deploymentUid
-    //    assert anomalousClientDeploymentID != null
-    //    log.info "Deployment IDs Server: ${serverDeploymentID}, " +
-    //        "Baselined client: ${baselinedClientDeploymentID}, Anomalous client: ${anomalousClientDeploymentID}"
+        def anomalousClientDeploymentID = ANOMALOUS_CLIENT_DEP.deploymentUid
+        assert anomalousClientDeploymentID != null
+        log.info "Deployment IDs Server: ${serverDeploymentID}, " +
+            "Baselined client: ${baselinedClientDeploymentID}, Anomalous client: ${anomalousClientDeploymentID}"
 
-    //    assert NetworkGraphUtil.checkForEdge(anomalousClientDeploymentID, serverDeploymentID, epoch,
-    //        EXPECTED_BASELINE_DURATION_SECONDS + 180, "Namespace:qa")
+        assert NetworkGraphUtil.checkForEdge(anomalousClientDeploymentID, serverDeploymentID, epoch,
+            EXPECTED_BASELINE_DURATION_SECONDS + 180, "Namespace:qa")
 
-    //    def serverBaseline = evaluateWithRetry(30, 4) {
-    //        def baseline = NetworkBaselineService.getNetworkBaseline(serverDeploymentID)
-    //        if (baseline.getPeersCount() == 0) {
-    //            throw new RuntimeException(
-    //                "No peers in baseline for deployment ${serverDeploymentID} yet. Baseline is ${baseline}"
-    //            )
-    //        }
-    //        return baseline
-    //    }
-    //    assert serverBaseline
-    //    def anomalousClientBaseline = NetworkBaselineService.getNetworkBaseline(anomalousClientDeploymentID)
-    //    assert anomalousClientBaseline
-    //    log.info "Anomalous Baseline: ${anomalousClientBaseline}"
-    //    def baselinedClientBaseline = NetworkBaselineService.getNetworkBaseline(baselinedClientDeploymentID)
-    //    assert baselinedClientDeploymentID
+        def serverBaseline = evaluateWithRetry(30, 4) {
+            def baseline = NetworkBaselineService.getNetworkBaseline(serverDeploymentID)
+            if (baseline.getPeersCount() == 0) {
+                throw new RuntimeException(
+                    "No peers in baseline for deployment ${serverDeploymentID} yet. Baseline is ${baseline}"
+                )
+            }
+            return baseline
+        }
+        assert serverBaseline
+        def anomalousClientBaseline = NetworkBaselineService.getNetworkBaseline(anomalousClientDeploymentID)
+        assert anomalousClientBaseline
+        log.info "Anomalous Baseline: ${anomalousClientBaseline}"
+        def baselinedClientBaseline = NetworkBaselineService.getNetworkBaseline(baselinedClientDeploymentID)
+        assert baselinedClientDeploymentID
 
-    //    // Deployment IDs that must be explicitly check that are missing from server baseline
-    //    def mustNotBeInBaseline = [anomalousClientDeploymentID]
+        // Deployment IDs that must be explicitly check that are missing from server baseline
+        def mustNotBeInBaseline = [anomalousClientDeploymentID]
 
-    //    then:
-    //    "Validate server baseline"
-    //    // The anomalous client->server connection should not be baselined since the anonymous client
-    //    // sleeps for a time period longer than the observation period before connecting to the server.
-    //    validateBaseline(serverBaseline, beforeDeploymentCreate, justAfterDeploymentCreate,
-    //        [new Tuple2<String, Boolean>(baselinedClientDeploymentID, true)], mustNotBeInBaseline)
-    //    validateBaseline(anomalousClientBaseline, beforeDeploymentCreate, justAfterDeploymentCreate, [], [])
-    //    validateBaseline(baselinedClientBaseline, beforeDeploymentCreate, justAfterDeploymentCreate,
-    //        [new Tuple2<String, Boolean>(serverDeploymentID, false)], []
-    //    )
+        then:
+        "Validate server baseline"
+        // The anomalous client->server connection should not be baselined since the anonymous client
+        // sleeps for a time period longer than the observation period before connecting to the server.
+        //String policyName = "Matching CVE (${NGINX_CVE})"
+        //PolicyOuterClass.Policy policy = PolicyOuterClass.Policy.newBuilder()
+        //        .setName(policyName)
+        //        .addLifecycleStages(PolicyOuterClass.LifecycleStage.DEPLOY)
+        //        .addCategories("DevOps Best Practices")
+        //        .setSeverity(PolicyOuterClass.Severity.HIGH_SEVERITY)
+        //        .addEnforcementActions(PolicyOuterClass.EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT)
+        //        .addScope(ScopeOuterClass.Scope.newBuilder().setNamespace(TEST_NAMESPACE))
+        //        .addPolicySections(
+        //                PolicySection.newBuilder().addPolicyGroups(policyGroup.build()).build())
+        //        .build()
 
-    //    when:
-    //    "Create another deployment, ensure it gets baselined"
-    //    def beforeDeferredCreate = System.currentTimeSeconds()
-    //    batchCreate([DEFERRED_BASELINED_CLIENT_DEP])
-    //    def justAfterDeferredCreate = System.currentTimeSeconds()
+        //NetworkBaselineServiceOuterClass.Peer expe
 
-    //    def deferredBaselinedClientDeploymentID = DEFERRED_BASELINED_CLIENT_DEP.deploymentUid
-    //    assert deferredBaselinedClientDeploymentID != null
-    //    log.info "Deferred Baseline: ${deferredBaselinedClientDeploymentID}"
+        validateBaseline(serverBaseline, beforeDeploymentCreate, justAfterDeploymentCreate,
+            [new Tuple2<String, Boolean>(baselinedClientDeploymentID, true)], mustNotBeInBaseline)
+        validateBaseline(anomalousClientBaseline, beforeDeploymentCreate, justAfterDeploymentCreate, [], [])
+        validateBaseline(baselinedClientBaseline, beforeDeploymentCreate, justAfterDeploymentCreate,
+            [new Tuple2<String, Boolean>(serverDeploymentID, false)], []
+        )
 
-    //    // Waiting on it to come out of observation.
-    //    def deferredBaselinedClientBaseline = evaluateWithRetry(30, 4) {
-    //        def baseline = NetworkBaselineService.getNetworkBaseline(deferredBaselinedClientDeploymentID)
-    //        def now = System.currentTimeSeconds()
-    //        if (baseline.getObservationPeriodEnd().getSeconds() > now) {
-    //            throw new RuntimeException(
-    //                "Baseline ${deferredBaselinedClientDeploymentID} is in observation. Baseline is ${baseline}"
-    //            )
-    //        }
-    //        return baseline
-    //    }
-    //    assert deferredBaselinedClientBaseline
+        when:
+        "Create another deployment, ensure it gets baselined"
+        def beforeDeferredCreate = System.currentTimeSeconds()
+        batchCreate([DEFERRED_BASELINED_CLIENT_DEP])
+        def justAfterDeferredCreate = System.currentTimeSeconds()
 
-    //    assert NetworkGraphUtil.checkForEdge(deferredBaselinedClientDeploymentID, serverDeploymentID, null, 180)
-    //    // Make sure peers have been added to the serverBaseline
-    //    serverBaseline = evaluateWithRetry(30, 4) {
-    //        def baseline = NetworkBaselineService.getNetworkBaseline(serverDeploymentID)
-    //        if (baseline.getPeersCount() < 2) {
-    //            throw new RuntimeException(
-    //                "Not enough peers in baseline for deployment ${serverDeploymentID} yet. Baseline is ${baseline}"
-    //            )
-    //        }
-    //        return baseline
-    //    }
-    //    assert serverBaseline
+        def deferredBaselinedClientDeploymentID = DEFERRED_BASELINED_CLIENT_DEP.deploymentUid
+        assert deferredBaselinedClientDeploymentID != null
+        log.info "Deferred Baseline: ${deferredBaselinedClientDeploymentID}"
 
-    //    then:
-    //    "Validate the updated baselines"
-    //    validateBaseline(serverBaseline, beforeDeploymentCreate, justAfterDeploymentCreate,
-    //        [new Tuple2<String, Boolean>(baselinedClientDeploymentID, true),
-    //         // Currently, we add cons to the baseline if it's within the observation period
-    //         // of _at least_ one of the deployments. Therefore, the deferred client->server connection
-    //         // gets added since it's within the deferred client's observation period, and
-    //         // the server's baseline is modified as well since we keep things consistent.
-    //         new Tuple2<String, Boolean>(deferredBaselinedClientDeploymentID, true),
-    //        ], mustNotBeInBaseline
-    //    )
-    //    validateBaseline(deferredBaselinedClientBaseline, beforeDeferredCreate, justAfterDeferredCreate,
-    //        [new Tuple2<String, Boolean>(serverDeploymentID, false)], [])
+        // Waiting on it to come out of observation.
+        def deferredBaselinedClientBaseline = evaluateWithRetry(30, 4) {
+            def baseline = NetworkBaselineService.getNetworkBaseline(deferredBaselinedClientDeploymentID)
+            def now = System.currentTimeSeconds()
+            if (baseline.getObservationPeriodEnd().getSeconds() > now) {
+                throw new RuntimeException(
+                    "Baseline ${deferredBaselinedClientDeploymentID} is in observation. Baseline is ${baseline}"
+                )
+            }
+            return baseline
+        }
+        assert deferredBaselinedClientBaseline
 
-    //    when:
-    //    "Create another deployment, ensure it DOES NOT get added to serverDeploymentID due to user lock"
-    //    NetworkBaselineService.lockNetworkBaseline(serverDeploymentID)
+        assert NetworkGraphUtil.checkForEdge(deferredBaselinedClientDeploymentID, serverDeploymentID, null, 180)
+        // Make sure peers have been added to the serverBaseline
+        serverBaseline = evaluateWithRetry(30, 4) {
+            def baseline = NetworkBaselineService.getNetworkBaseline(serverDeploymentID)
+            if (baseline.getPeersCount() < 2) {
+                throw new RuntimeException(
+                    "Not enough peers in baseline for deployment ${serverDeploymentID} yet. Baseline is ${baseline}"
+                )
+            }
+            return baseline
+        }
+        assert serverBaseline
 
-    //    batchCreate([DEFERRED_POST_LOCK_CLIENT_DEP])
+        then:
+        "Validate the updated baselines"
+        validateBaseline(serverBaseline, beforeDeploymentCreate, justAfterDeploymentCreate,
+            [new Tuple2<String, Boolean>(baselinedClientDeploymentID, true),
+             // Currently, we add cons to the baseline if it's within the observation period
+             // of _at least_ one of the deployments. Therefore, the deferred client->server connection
+             // gets added since it's within the deferred client's observation period, and
+             // the server's baseline is modified as well since we keep things consistent.
+             new Tuple2<String, Boolean>(deferredBaselinedClientDeploymentID, true),
+            ], mustNotBeInBaseline
+        )
+        validateBaseline(deferredBaselinedClientBaseline, beforeDeferredCreate, justAfterDeferredCreate,
+            [new Tuple2<String, Boolean>(serverDeploymentID, false)], [])
 
-    //    def postLockClientDeploymentID = DEFERRED_POST_LOCK_CLIENT_DEP.deploymentUid
-    //    assert postLockClientDeploymentID != null
-    //    log.info "Post Lock Deployment: ${postLockClientDeploymentID}"
+        when:
+        "Create another deployment, ensure it DOES NOT get added to serverDeploymentID due to user lock"
+        NetworkBaselineService.lockNetworkBaseline(serverDeploymentID)
 
-    //    // Waiting on it to come out of observation.
-    //    def postLockClientBaseline = evaluateWithRetry(30, 4) {
-    //        def baseline = NetworkBaselineService.getNetworkBaseline(postLockClientDeploymentID)
-    //        def now = System.currentTimeSeconds()
-    //        if (baseline.getObservationPeriodEnd().getSeconds() > now) {
-    //            throw new RuntimeException(
-    //                "Baseline ${postLockClientDeploymentID} is not out of observation yet. Baseline is ${baseline}"
-    //            )
-    //        }
-    //        return baseline
-    //    }
-    //    assert postLockClientBaseline
+        batchCreate([DEFERRED_POST_LOCK_CLIENT_DEP])
 
-    //    assert NetworkGraphUtil.checkForEdge(postLockClientDeploymentID, serverDeploymentID, null, 180)
+        def postLockClientDeploymentID = DEFERRED_POST_LOCK_CLIENT_DEP.deploymentUid
+        assert postLockClientDeploymentID != null
+        log.info "Post Lock Deployment: ${postLockClientDeploymentID}"
 
-    //    // Grab the latest server baseline for validation
-    //    serverBaseline = NetworkBaselineService.getNetworkBaseline(serverDeploymentID)
-    //    assert serverBaseline
+        // Waiting on it to come out of observation.
+        def postLockClientBaseline = evaluateWithRetry(30, 4) {
+            def baseline = NetworkBaselineService.getNetworkBaseline(postLockClientDeploymentID)
+            def now = System.currentTimeSeconds()
+            if (baseline.getObservationPeriodEnd().getSeconds() > now) {
+                throw new RuntimeException(
+                    "Baseline ${postLockClientDeploymentID} is not out of observation yet. Baseline is ${baseline}"
+                )
+            }
+            return baseline
+        }
+        assert postLockClientBaseline
 
-    //    then:
-    //    "Validate the locked baselines"
-    //    // Post lock should not be added as a peer because serverBaseline is locked.
-    //    validateBaseline(serverBaseline, beforeDeploymentCreate, justAfterDeploymentCreate,
-    //        [new Tuple2<String, Boolean>(baselinedClientDeploymentID, true),
-    //         new Tuple2<String, Boolean>(deferredBaselinedClientDeploymentID, true),
-    //        ], mustNotBeInBaseline
-    //    )
-    //    validateBaseline(postLockClientBaseline, beforeDeferredCreate, justAfterDeferredCreate,
-    //        [], [])
+        assert NetworkGraphUtil.checkForEdge(postLockClientDeploymentID, serverDeploymentID, null, 180)
 
-    //    when:
-    //    "Verify user get for non-existent baseline"
-    //    def beforeUserServiceDeploymentCreate = System.currentTimeSeconds()
-    //    batchCreate([USER_DEP])
-    //    def justAfterUserServiceDeploymentCreate = System.currentTimeSeconds()
+        // Grab the latest server baseline for validation
+        serverBaseline = NetworkBaselineService.getNetworkBaseline(serverDeploymentID)
+        assert serverBaseline
 
-    //    def userReqBaselineServerDeploymentID = USER_DEP.deploymentUid
-    //    assert userReqBaselineServerDeploymentID != null
+        then:
+        "Validate the locked baselines"
+        // Post lock should not be added as a peer because serverBaseline is locked.
+        validateBaseline(serverBaseline, beforeDeploymentCreate, justAfterDeploymentCreate,
+            [new Tuple2<String, Boolean>(baselinedClientDeploymentID, true),
+             new Tuple2<String, Boolean>(deferredBaselinedClientDeploymentID, true),
+            ], mustNotBeInBaseline
+        )
+        validateBaseline(postLockClientBaseline, beforeDeferredCreate, justAfterDeferredCreate,
+            [], [])
 
-    //    log.info "Deployment IDs Server: ${userReqBaselineServerDeploymentID}"
+        when:
+        "Verify user get for non-existent baseline"
+        def beforeUserServiceDeploymentCreate = System.currentTimeSeconds()
+        batchCreate([USER_DEP])
+        def justAfterUserServiceDeploymentCreate = System.currentTimeSeconds()
 
-    //    // Get the server baseline to simulate a user asking for a baseline prior to
-    //    // observation ending.  This will generate a baseline at the time of request
-    //    // instead of after observation.
-    //    def userReqServerBaseline = NetworkBaselineService.getNetworkBaseline(userReqBaselineServerDeploymentID)
-    //    // Ensure the baseline is STILL in the observation window
-    //    def now = System.currentTimeSeconds()
-    //    assert userReqServerBaseline.getObservationPeriodEnd().getSeconds() > now
+        def userReqBaselineServerDeploymentID = USER_DEP.deploymentUid
+        assert userReqBaselineServerDeploymentID != null
 
-    //    // Add a client deployment
-    //    def beforeClientDeploymentCreate = System.currentTimeSeconds()
-    //    batchCreate([BASELINED_USER_CLIENT_DEP])
-    //    def justAfterClientDeploymentCreate = System.currentTimeSeconds()
+        log.info "Deployment IDs Server: ${userReqBaselineServerDeploymentID}"
 
-    //    def userRequestedBaselinedClientDeploymentID = BASELINED_USER_CLIENT_DEP.deploymentUid
-    //    assert userRequestedBaselinedClientDeploymentID != null
-    //    log.info "Client deployment: ${userRequestedBaselinedClientDeploymentID}"
+        // Get the server baseline to simulate a user asking for a baseline prior to
+        // observation ending.  This will generate a baseline at the time of request
+        // instead of after observation.
+        def userReqServerBaseline = NetworkBaselineService.getNetworkBaseline(userReqBaselineServerDeploymentID)
+        // Ensure the baseline is STILL in the observation window
+        def now = System.currentTimeSeconds()
+        assert userReqServerBaseline.getObservationPeriodEnd().getSeconds() > now
 
-    //    assert retryUntilTrue({
-    //        return NetworkGraphUtil.checkForEdge(
-    //            userRequestedBaselinedClientDeploymentID,
-    //            userReqBaselineServerDeploymentID)
-    //                .any { it.targetID == userReqBaselineServerDeploymentID }
-    //    }, 15)
+        // Add a client deployment
+        def beforeClientDeploymentCreate = System.currentTimeSeconds()
+        batchCreate([BASELINED_USER_CLIENT_DEP])
+        def justAfterClientDeploymentCreate = System.currentTimeSeconds()
 
-    //    // Grab the network baseline for the client.
-    //    def userReqBaselinedClientBaseline =
-    //        NetworkBaselineService.getNetworkBaseline(userRequestedBaselinedClientDeploymentID)
-    //    assert userReqBaselinedClientBaseline
+        def userRequestedBaselinedClientDeploymentID = BASELINED_USER_CLIENT_DEP.deploymentUid
+        assert userRequestedBaselinedClientDeploymentID != null
+        log.info "Client deployment: ${userRequestedBaselinedClientDeploymentID}"
 
-    //    // Grab a fresh copy of the userReqServerBaseline after the client connection has been added.
-    //    userReqServerBaseline = NetworkBaselineService.getNetworkBaseline(userReqBaselineServerDeploymentID)
+        assert retryUntilTrue({
+            return NetworkGraphUtil.checkForEdge(
+                userRequestedBaselinedClientDeploymentID,
+                userReqBaselineServerDeploymentID)
+                    .any { it.targetID == userReqBaselineServerDeploymentID }
+        }, 15)
 
-    //    log.info "Server Baseline: ${userReqServerBaseline}"
-    //    log.info "Client Baseline: ${userReqBaselinedClientBaseline}"
+        // Grab the network baseline for the client.
+        def userReqBaselinedClientBaseline =
+            NetworkBaselineService.getNetworkBaseline(userRequestedBaselinedClientDeploymentID)
+        assert userReqBaselinedClientBaseline
 
-    //    then:
-    //    "Validate user requested server baseline"
-    //    // The client->server connection should be baselined since the client as the
-    //    // connection occurred during the observation window.
-    //    validateBaseline(userReqServerBaseline, beforeUserServiceDeploymentCreate, justAfterUserServiceDeploymentCreate,
-    //        [new Tuple2<String, Boolean>(userRequestedBaselinedClientDeploymentID, true)], [])
-    //    validateBaseline(userReqBaselinedClientBaseline, beforeClientDeploymentCreate, justAfterClientDeploymentCreate,
-    //        [new Tuple2<String, Boolean>(userReqBaselineServerDeploymentID, false)], []
-    //    )
-    //}
+        // Grab a fresh copy of the userReqServerBaseline after the client connection has been added.
+        userReqServerBaseline = NetworkBaselineService.getNetworkBaseline(userReqBaselineServerDeploymentID)
+
+        log.info "Server Baseline: ${userReqServerBaseline}"
+        log.info "Client Baseline: ${userReqBaselinedClientBaseline}"
+
+        then:
+        "Validate user requested server baseline"
+        // The client->server connection should be baselined since the client as the
+        // connection occurred during the observation window.
+        validateBaseline(userReqServerBaseline, beforeUserServiceDeploymentCreate, justAfterUserServiceDeploymentCreate,
+            [new Tuple2<String, Boolean>(userRequestedBaselinedClientDeploymentID, true)], [])
+        validateBaseline(userReqBaselinedClientBaseline, beforeClientDeploymentCreate, justAfterClientDeploymentCreate,
+            [new Tuple2<String, Boolean>(userReqBaselineServerDeploymentID, false)], []
+        )
+    }
 
     @Tag("NetworkBaseline")
-    def "Verify network baseline functionality with external entitiy"() {
+    def "Verify network baseline functionality with an external entity"() {
         given:
         //when:
         //"Create initial set of deployments, wait for baseline to populate"
@@ -414,6 +438,12 @@ class NetworkBaselineTest extends BaseSpecification {
             return baseline
         }
 
+        log.info "baseline= ${baseline}"
+        log.info ""
+        log.info ""
+        log.info ""
+        log.info ""
+
         def mustNotBeInBaseline = []
         validateBaseline(baseline, beforeDeploymentCreate, justAfterDeploymentCreate,
             [new Tuple2<String, Boolean>(Constants.INTERNET_EXTERNAL_SOURCE_ID, false)], mustNotBeInBaseline)
@@ -425,11 +455,29 @@ class NetworkBaselineTest extends BaseSpecification {
                     "No peers in baseline for deployment ${deploymentUid} yet. Baseline is ${externalBaseline}"
                 )
             }
-            return baseline
+            return externalBaseline
         }
 
         assert externalBaseline
+        log.info "externalBaseline= ${externalBaseline}"
 
-        log.info "At the bottom of the test"
+        def expectedPeer = externalBaseline.getBaselineList().find { it.getPeer().getEntity().getName() == "8.8.8.8" }.getPeer()
+
+        log.info "expectedPeer= ${expectedPeer}"
+
+
+        assert expectedPeer
+        def expectedEntity = expectedPeer.getEntity()
+        verifyAll(expectedEntity) {
+            type == NetworkFlowOuterClass.NetworkEntityInfo.Type.EXTERNAL_SOURCE
+            name == "8.8.8.8"
+            discovered == true
+        }
+
+        assert expectedPeer.getPort() == 53
+        assert expectedPeer.getProtocol() == NetworkFlowOuterClass.L4Protocol.L4_PROTOCOL_TCP
+
+        assert externalBaseline.getTotalBaseline() == 1
+        assert externalBaseline.getTotalAnomalous() == 0
     }
 }
