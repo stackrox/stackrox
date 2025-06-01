@@ -2,6 +2,7 @@ import static util.Helpers.evaluateWithRetry
 
 import com.google.protobuf.Timestamp
 
+import io.stackrox.proto.api.v1.NetworkBaselineServiceOuterClass
 import io.stackrox.proto.storage.NetworkBaselineOuterClass
 import io.stackrox.proto.storage.NetworkFlowOuterClass
 
@@ -128,8 +129,10 @@ class NetworkBaselineTest extends BaseSpecification {
                     .setCommand(["/bin/sh", "-c",])
                     .setArgs(["echo -n 'Startup time: '; ${DATE_CMD};" +
                                       "while sleep ${NetworkGraphUtil.NETWORK_FLOW_UPDATE_CADENCE_IN_SECONDS}; " +
-                                      "do wget -S -T 2 http://8.8.8.8:53; wget -S -T 2 http://1.1.1.1:53;" +
+                                      "do nc -zv 8.8.8.8 53; nc -zv 1.1.1.1 53;" +
                                       "done" as String,])
+
+                                      //"do wget -S -T 2 http://8.8.8.8:53; wget -S -T 2 http://1.1.1.1:53;" +
 
     private static createAndRegisterDeployment() {
         Deployment deployment = new Deployment()
@@ -573,5 +576,46 @@ class NetworkBaselineTest extends BaseSpecification {
 
         assert externalBaseline.getTotalBaseline() == 2
         assert externalBaseline.getTotalAnomalous() == 0
+
+        def status = NetworkBaselineServiceOuterClass.NetworkBaselinePeerStatus.Status.ANOMALOUS
+        def modifiedPeer = modifyBaseline(peer1, status)
+        log.info "modifiedPeer= ${modifiedPeer}"
+
+        NetworkBaselineService.modifyBaselineStatusForPeers(deploymentUid, modifiedPeer)
+
+         
+        def externalBaselineAfter = evaluateWithRetry(30, 4) {
+            def externalBaselineAfter = NetworkBaselineService.getNetworkBaselineForExternalFlows(deploymentUid)
+            if (externalBaselineAfter.totalAnomalous + externalBaselineAfter.totalBaseline == 0) {
+                throw new RuntimeException(
+                    "No peers in baseline for deployment ${deploymentUid} yet. Baseline is ${externalBaselineAfter}"
+                )
+            }
+            return externalBaselineAfter
+        }
+
+        assert externalBaselineAfter.getTotalBaseline() == 0
+        assert externalBaselineAfter.getTotalAnomalous() == 2
+    }
+
+    def modifyBaseline(NetworkBaselineServiceOuterClass.NetworkBaselineStatusPeer peer, NetworkBaselineServiceOuterClass.NetworkBaselinePeerStatus.Status status) {
+
+        return NetworkBaselineServiceOuterClass.NetworkBaselinePeerStatus.newBuilder()
+			.setPeer(peer)
+                        .setStatus(status)
+			.build()
+
+
+        //PolicyOuterClass.Policy policy = PolicyOuterClass.Policy.newBuilder()
+        //        .setName(policyName)
+        //        .addLifecycleStages(PolicyOuterClass.LifecycleStage.DEPLOY)
+        //        .addCategories("DevOps Best Practices")
+        //        .setSeverity(PolicyOuterClass.Severity.HIGH_SEVERITY)
+        //        .addEnforcementActions(PolicyOuterClass.EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT)
+        //        .addScope(ScopeOuterClass.Scope.newBuilder().setNamespace(TEST_NAMESPACE))
+        //        .addPolicySections(
+        //                PolicySection.newBuilder().addPolicyGroups(policyGroup.build()).build())
+        //        .build()
+      
     }
 }

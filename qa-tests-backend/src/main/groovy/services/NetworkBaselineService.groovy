@@ -4,6 +4,7 @@ import groovy.transform.CompileStatic
 
 import io.stackrox.proto.api.v1.Common.ResourceByID
 import io.stackrox.proto.api.v1.NetworkBaselineServiceGrpc
+import io.stackrox.proto.api.v1.NetworkBaselineServiceOuterClass
 import io.stackrox.proto.api.v1.NetworkBaselineServiceOuterClass.NetworkBaselineExternalStatusRequest
 
 @CompileStatic
@@ -25,5 +26,14 @@ class NetworkBaselineService extends BaseService {
 
     static lockNetworkBaseline(String deploymentID) {
         getNetworkBaselineClient().lockNetworkBaseline(ResourceByID.newBuilder().setId(deploymentID).build())
+    }
+
+    static modifyBaselineStatusForPeers(String deploymentID, NetworkBaselineServiceOuterClass.NetworkBaselinePeerStatus peer) {
+        NetworkBaselineServiceOuterClass.ModifyBaselineStatusForPeersRequest request = NetworkBaselineServiceOuterClass.ModifyBaselineStatusForPeersRequest.newBuilder()
+                                                                        .setDeploymentId(deploymentID)
+                                                                        .addPeers(peer)
+                                                                        .build()
+
+        return getNetworkBaselineClient().modifyBaselineStatusForPeers(request)
     }
 }
