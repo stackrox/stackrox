@@ -129,10 +129,9 @@ class NetworkBaselineTest extends BaseSpecification {
                     .setCommand(["/bin/sh", "-c",])
                     .setArgs(["echo -n 'Startup time: '; ${DATE_CMD};" +
                                       "while sleep ${NetworkGraphUtil.NETWORK_FLOW_UPDATE_CADENCE_IN_SECONDS}; " +
-                                      "do nc -zv 8.8.8.8 53; nc -zv 1.1.1.1 53;" +
+                                      "do nc -zv 8.8.8.8 53; nc -zv 1.1.1.1 53; " +
+                                      "nc -zv 142.250.72.238 80;" +
                                       "done" as String,])
-
-                                      //"do wget -S -T 2 http://8.8.8.8:53; wget -S -T 2 http://1.1.1.1:53;" +
 
     private static createAndRegisterDeployment() {
         Deployment deployment = new Deployment()
@@ -574,7 +573,22 @@ class NetworkBaselineTest extends BaseSpecification {
         assert peer2.getPort() == 53
         assert peer2.getProtocol() == NetworkFlowOuterClass.L4Protocol.L4_PROTOCOL_TCP
 
-        assert externalBaseline.getTotalBaseline() == 2
+        def peer3 = externalBaseline.getBaselineList().find { it.getPeer().getEntity().getName() == "142.250.72.238" }.getPeer()
+
+        log.info "expectedPeer= ${peer3}"
+
+        assert peer3
+        def expectedEntity3 = peer3.getEntity()
+        verifyAll(expectedEntity3) {
+            type == NetworkFlowOuterClass.NetworkEntityInfo.Type.EXTERNAL_SOURCE
+            name == "142.250.72.238"
+            discovered == true
+        }
+
+        assert peer3.getPort() == 80
+        assert peer3.getProtocol() == NetworkFlowOuterClass.L4Protocol.L4_PROTOCOL_TCP
+
+        assert externalBaseline.getTotalBaseline() == 3
         assert externalBaseline.getTotalAnomalous() == 0
 
         def status = NetworkBaselineServiceOuterClass.NetworkBaselinePeerStatus.Status.ANOMALOUS
@@ -594,7 +608,7 @@ class NetworkBaselineTest extends BaseSpecification {
             return externalBaselineAfter
         }
 
-        assert externalBaselineAfter.getTotalBaseline() == 0
+        assert externalBaselineAfter.getTotalBaseline() == 1
         assert externalBaselineAfter.getTotalAnomalous() == 2
     }
 
@@ -604,18 +618,5 @@ class NetworkBaselineTest extends BaseSpecification {
 			.setPeer(peer)
                         .setStatus(status)
 			.build()
-
-
-        //PolicyOuterClass.Policy policy = PolicyOuterClass.Policy.newBuilder()
-        //        .setName(policyName)
-        //        .addLifecycleStages(PolicyOuterClass.LifecycleStage.DEPLOY)
-        //        .addCategories("DevOps Best Practices")
-        //        .setSeverity(PolicyOuterClass.Severity.HIGH_SEVERITY)
-        //        .addEnforcementActions(PolicyOuterClass.EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT)
-        //        .addScope(ScopeOuterClass.Scope.newBuilder().setNamespace(TEST_NAMESPACE))
-        //        .addPolicySections(
-        //                PolicySection.newBuilder().addPolicyGroups(policyGroup.build()).build())
-        //        .build()
-      
     }
 }
