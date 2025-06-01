@@ -26,6 +26,7 @@ message VulnMgmtExportWorkloadsRequest {
 message VulnMgmtExportWorkloadsResponse {
   storage.Deployment deployment = 1;
   repeated storage.Image images = 2;
+  int32 live_pods = 3;
 }
 
 // VulnMgmtService APIs are used to manage workload vulnerabilities.
