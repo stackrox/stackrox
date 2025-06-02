@@ -57,10 +57,9 @@ func (s *FixableFlatSearchTestSuite) SetupSuite() {
 
 func (s *FixableFlatSearchTestSuite) TestImageSearch() {
 	for _, tc := range []struct {
-		desc                       string
-		q                          *v1.Query
-		expected                   []string
-		skipWhenWorkaroundDisabled bool
+		desc     string
+		q        *v1.Query
+		expected []string
 	}{
 		{
 			desc: "Search all images with at least some fixable vulnerabilities",
@@ -74,8 +73,7 @@ func (s *FixableFlatSearchTestSuite) TestImageSearch() {
 				AddBools(search.Fixable, true).
 				AddExactMatches(search.CVE, "cve-1").
 				ProtoQuery(),
-			expected:                   []string{"image-1", "image-4"},
-			skipWhenWorkaroundDisabled: true,
+			expected: []string{"image-1", "image-4"},
 		},
 		{
 			desc: "Search all images with at least some non-fixable vulnerabilities",
@@ -88,8 +86,7 @@ func (s *FixableFlatSearchTestSuite) TestImageSearch() {
 			q: search.NewQueryBuilder().
 				AddBools(search.Fixable, false).
 				AddExactMatches(search.CVE, "cve-2").ProtoQuery(),
-			expected:                   []string{"image-3", "image-4"},
-			skipWhenWorkaroundDisabled: true,
+			expected: []string{"image-3", "image-4"},
 		},
 		{
 			desc: "Search all images with at least some fixable vulnerabilities that are deferred",
@@ -112,8 +109,7 @@ func (s *FixableFlatSearchTestSuite) TestImageSearch() {
 				AddBools(search.Fixable, true).
 				AddExactMatches(search.Component, "comp-1").
 				AddExactMatches(search.CVE, "cve-1").ProtoQuery(),
-			expected:                   []string{"image-1", "image-4"},
-			skipWhenWorkaroundDisabled: true,
+			expected: []string{"image-1", "image-4"},
 		},
 		{
 			desc: "Search all images where 'cve-1' is deferred and fixable in component 'comp-1'",
@@ -130,11 +126,10 @@ func (s *FixableFlatSearchTestSuite) TestImageSearch() {
 				AddBools(search.Fixable, true).
 				AddExactMatches(search.CVE, "cve-1").
 				AddExactMatches(search.VulnerabilityState, storage.VulnerabilityState_OBSERVED.String()).ProtoQuery(),
-			expected:                   []string{"image-1"},
-			skipWhenWorkaroundDisabled: true,
+			expected: []string{"image-1"},
 		},
 		{
-			desc: "Search all images",
+			desc: "Search for images where 'cve-1' is fixable and deferred or images where 'cve-2' is fixable and observed",
 			q: search.DisjunctionQuery(search.NewQueryBuilder().
 				AddBools(search.Fixable, true).
 				AddExactMatches(search.CVE, "cve-1").
@@ -158,10 +153,9 @@ func (s *FixableFlatSearchTestSuite) TestImageSearch() {
 
 func (s *FixableFlatSearchTestSuite) TestCVESearch() {
 	for _, tc := range []struct {
-		desc                       string
-		q                          *v1.Query
-		expected                   []string
-		skipWhenWorkaroundDisabled bool
+		desc     string
+		q        *v1.Query
+		expected []string
 	}{
 		{
 			desc: "Search all fixable CVEs",
@@ -175,8 +169,7 @@ func (s *FixableFlatSearchTestSuite) TestCVESearch() {
 				AddBools(search.Fixable, true).
 				AddExactMatches(search.ImageSHA, "image-2").
 				ProtoQuery(),
-			expected:                   []string{"cve-2"},
-			skipWhenWorkaroundDisabled: true,
+			expected: []string{"cve-2"},
 		},
 		{
 			desc: "Search CVE 'cve-1' which is not fixable in 'image-2' but fixable elsewhere",
@@ -184,8 +177,7 @@ func (s *FixableFlatSearchTestSuite) TestCVESearch() {
 				AddBools(search.Fixable, true).
 				AddExactMatches(search.CVE, "cve-1").
 				AddExactMatches(search.ImageSHA, "image-2").ProtoQuery(),
-			expected:                   []string{},
-			skipWhenWorkaroundDisabled: true,
+			expected: []string{},
 		},
 		{
 			desc: "Search all CVEs in 'image-4' that are fixable",
