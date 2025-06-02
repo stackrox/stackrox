@@ -531,6 +531,8 @@ class NetworkBaselineTest extends BaseSpecification {
         assert externalBaseline.getTotalBaseline() == 3
         assert externalBaseline.getTotalAnomalous() == 0
 
+        when:
+        "One of the flows is marked as anomalous"
         def status = NetworkBaselineServiceOuterClass.NetworkBaselinePeerStatus.Status.ANOMALOUS
         def modifiedPeer = modifyBaseline(peer1, status)
 
@@ -546,6 +548,8 @@ class NetworkBaselineTest extends BaseSpecification {
             return externalBaselineAfter
         }
 
+        then:
+        "All external flows with the same port and protocol are marked a anomalous"
         assert externalBaselineAfter.getTotalBaseline() == 1
         assert externalBaselineAfter.getTotalAnomalous() == 2
     }
