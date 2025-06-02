@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
     Alert,
     Divider,
@@ -12,8 +12,10 @@ import {
     ToolbarContent,
     ToolbarItem,
 } from '@patternfly/react-core';
+import { Table, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
 import pluralize from 'pluralize';
 
+import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import { TimeWindow } from 'constants/timeWindows';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
@@ -71,6 +73,12 @@ function ExternalFlows({
 
     const [networkFlowError, setNetworkFlowError] = useState('');
 
+    const [isConfirmingStatusChange, setIsConfirmingStatusChange] = useState(false);
+    const [pendingStatusChange, setPendingStatusChange] = useState<{
+        flows: NetworkBaselinePeerStatus[];
+        targetStatus: PeerStatus;
+    } | null>(null);
+
     const { setPage: setPageAnomalous } = anomalousUrlPagination;
     const { setPage: setPageBaseline } = baselineUrlPagination;
 
@@ -78,6 +86,35 @@ function ExternalFlows({
         setPageAnomalous(1);
         setPageBaseline(1);
     }, [setPageAnomalous, setPageBaseline, searchFilter]);
+
+    const uniquePendingFlows = useMemo(() => {
+        if (!pendingStatusChange) {
+            return [];
+        }
+
+        const pendingStatusUpdatesSet = new Set<string>();
+
+        return pendingStatusChange.flows.flatMap((flow) => {
+            const {
+                peer: { ingress, port, protocol },
+            } = flow;
+
+            const key = `${ingress}-${port}-${protocol}`;
+
+            if (pendingStatusUpdatesSet.has(key)) {
+                return [];
+            }
+
+            pendingStatusUpdatesSet.add(key);
+
+            return {
+                direction: ingress ? 'Ingress' : 'Egress',
+                port,
+                protocol: protocol === 'L4_PROTOCOL_TCP' ? 'TCP' : 'UDP',
+                key,
+            };
+        });
+    }, [pendingStatusChange]);
 
     const { isOpen: isAnomalousFlowsExpanded, onToggle: toggleAnomalousFlowsExpandable } =
         useSelectToggle(true);
@@ -164,169 +201,227 @@ function ExternalFlows({
         }
     }
 
-    async function markSelectedAsAnomalous() {
-        await updateFlowsStatus(selectedBaseline, 'ANOMALOUS');
+    function confirmStatusChange(flows: NetworkBaselinePeerStatus[], targetStatus: PeerStatus) {
+        setPendingStatusChange({ flows, targetStatus });
+        setIsConfirmingStatusChange(true);
     }
 
-    async function addSelectedToBaseline() {
-        await updateFlowsStatus(selectedAnomalous, 'BASELINE');
+    async function onConfirmStatusChange() {
+        if (pendingStatusChange) {
+            const { flows, targetStatus } = pendingStatusChange;
+            await updateFlowsStatus(flows, targetStatus);
+        }
+        setIsConfirmingStatusChange(false);
+        setPendingStatusChange(null);
+    }
+
+    function onCancelStatusChange() {
+        setIsConfirmingStatusChange(false);
+        setPendingStatusChange(null);
     }
 
     return (
-        <Stack>
-            {networkFlowError && (
-                <StackItem>
-                    <Alert
-                        isInline
-                        variant="danger"
-                        title={networkFlowError}
-                        component="p"
-                        className="pf-v5-u-mb-sm"
-                    />
-                </StackItem>
-            )}
-            <StackItem>
-                <Toolbar className="pf-v5-u-pb-md pf-v5-u-pt-0">
-                    <ToolbarContent className="pf-v5-u-px-0">
-                        <ToolbarItem className="pf-v5-u-w-100 pf-v5-u-mr-0">
-                            <IPMatchFilter
-                                searchFilter={searchFilter}
-                                setSearchFilter={setSearchFilter}
-                            />
-                        </ToolbarItem>
-                        <ToolbarItem className="pf-v5-u-w-100">
-                            <SearchFilterChips
-                                searchFilter={searchFilter}
-                                onFilterChange={setSearchFilter}
-                                filterChipGroupDescriptors={[
-                                    {
-                                        displayName: 'CIDR',
-                                        searchFilterName: EXTERNAL_SOURCE_ADDRESS_QUERY,
-                                    },
-                                ]}
-                            />
-                        </ToolbarItem>
-                    </ToolbarContent>
-                </Toolbar>
-            </StackItem>
-            <Divider />
-            <StackItem>
-                <Toolbar className="pf-v5-u-pt-md">
-                    <ToolbarContent className="pf-v5-u-px-0">
-                        <ToolbarItem>
-                            <FlowsTableHeaderText
-                                type={'total'}
-                                numFlows={anomalous.total + baseline.total}
-                            />
-                        </ToolbarItem>
-                    </ToolbarContent>
-                </Toolbar>
-            </StackItem>
-            <StackItem>
-                <Stack hasGutter>
+        <>
+            <Stack>
+                {networkFlowError && (
                     <StackItem>
-                        <Flex justifyContent={{ default: 'justifyContentSpaceBetween' }}>
-                            <ExpandableSectionToggle
+                        <Alert
+                            isInline
+                            variant="danger"
+                            title={networkFlowError}
+                            component="p"
+                            className="pf-v5-u-mb-sm"
+                        />
+                    </StackItem>
+                )}
+                <StackItem>
+                    <Toolbar className="pf-v5-u-pb-md pf-v5-u-pt-0">
+                        <ToolbarContent className="pf-v5-u-px-0">
+                            <ToolbarItem className="pf-v5-u-w-100 pf-v5-u-mr-0">
+                                <IPMatchFilter
+                                    searchFilter={searchFilter}
+                                    setSearchFilter={setSearchFilter}
+                                />
+                            </ToolbarItem>
+                            <ToolbarItem className="pf-v5-u-w-100">
+                                <SearchFilterChips
+                                    searchFilter={searchFilter}
+                                    onFilterChange={setSearchFilter}
+                                    filterChipGroupDescriptors={[
+                                        {
+                                            displayName: 'CIDR',
+                                            searchFilterName: EXTERNAL_SOURCE_ADDRESS_QUERY,
+                                        },
+                                    ]}
+                                />
+                            </ToolbarItem>
+                        </ToolbarContent>
+                    </Toolbar>
+                </StackItem>
+                <Divider />
+                <StackItem>
+                    <Toolbar className="pf-v5-u-pt-md">
+                        <ToolbarContent className="pf-v5-u-px-0">
+                            <ToolbarItem>
+                                <FlowsTableHeaderText
+                                    type={'total'}
+                                    numFlows={anomalous.total + baseline.total}
+                                />
+                            </ToolbarItem>
+                        </ToolbarContent>
+                    </Toolbar>
+                </StackItem>
+                <StackItem>
+                    <Stack hasGutter>
+                        <StackItem>
+                            <Flex justifyContent={{ default: 'justifyContentSpaceBetween' }}>
+                                <ExpandableSectionToggle
+                                    isExpanded={isAnomalousFlowsExpanded}
+                                    onToggle={(isExpanded) =>
+                                        toggleAnomalousFlowsExpandable(isExpanded)
+                                    }
+                                    toggleId={'anomalous-expandable-toggle'}
+                                    contentId={'anomalous-expandable-content'}
+                                >
+                                    {`${totalAnomalous} anomalous ${pluralize('flow', totalAnomalous)}`}
+                                </ExpandableSectionToggle>
+                                <FlowBulkDropdown
+                                    selectedCount={selectedAnomalous.length}
+                                    isOpen={isAnomalousBulkActionOpen}
+                                    setOpen={setIsAnomalousBulkActionOpen}
+                                    onClear={() => setSelectedAnomalous([])}
+                                >
+                                    <DropdownItem
+                                        onClick={() =>
+                                            confirmStatusChange(selectedAnomalous, 'BASELINE')
+                                        }
+                                    >
+                                        Add to baseline
+                                    </DropdownItem>
+                                </FlowBulkDropdown>
+                            </Flex>
+                            <ExpandableSection
                                 isExpanded={isAnomalousFlowsExpanded}
-                                onToggle={(isExpanded) =>
-                                    toggleAnomalousFlowsExpandable(isExpanded)
-                                }
+                                isDetached
                                 toggleId={'anomalous-expandable-toggle'}
                                 contentId={'anomalous-expandable-content'}
                             >
-                                {`${totalAnomalous} anomalous ${pluralize('flow', totalAnomalous)}`}
-                            </ExpandableSectionToggle>
-                            <FlowBulkDropdown
-                                selectedCount={selectedAnomalous.length}
-                                isOpen={isAnomalousBulkActionOpen}
-                                setOpen={setIsAnomalousBulkActionOpen}
-                                onClear={() => setSelectedAnomalous([])}
-                            >
-                                <DropdownItem onClick={addSelectedToBaseline}>
-                                    Add to baseline
-                                </DropdownItem>
-                            </FlowBulkDropdown>
-                        </Flex>
-                        <ExpandableSection
-                            isExpanded={isAnomalousFlowsExpanded}
-                            isDetached
-                            toggleId={'anomalous-expandable-toggle'}
-                            contentId={'anomalous-expandable-content'}
-                        >
-                            <FlowTable
-                                pagination={anomalous.urlPagination}
-                                flowCount={totalAnomalous}
-                                statusType="ANOMALOUS"
-                                tableState={anomalous.tableState}
-                                areAllRowsSelected={areAllPageAnomalousSelected}
-                                urlSearchFiltering={urlSearchFiltering}
-                                onSelectAll={selectAllAnomalousFlows}
-                                isFlowSelected={isFlowSelected}
-                                onRowSelect={onSelectFlow}
-                                rowActions={(flow) => [
-                                    {
-                                        title: <span>Add to baseline</span>,
-                                        onClick: async (e) => {
-                                            e.preventDefault();
-                                            await updateFlowsStatus(flow, 'BASELINE');
+                                <FlowTable
+                                    pagination={anomalous.urlPagination}
+                                    flowCount={totalAnomalous}
+                                    statusType="ANOMALOUS"
+                                    tableState={anomalous.tableState}
+                                    areAllRowsSelected={areAllPageAnomalousSelected}
+                                    urlSearchFiltering={urlSearchFiltering}
+                                    onSelectAll={selectAllAnomalousFlows}
+                                    isFlowSelected={isFlowSelected}
+                                    onRowSelect={onSelectFlow}
+                                    rowActions={(flow) => [
+                                        {
+                                            title: <span>Add to baseline</span>,
+                                            onClick: async (e) => {
+                                                e.preventDefault();
+                                                confirmStatusChange([flow], 'BASELINE');
+                                            },
                                         },
-                                    },
-                                ]}
-                            />
-                        </ExpandableSection>
-                    </StackItem>
-                    <StackItem>
-                        <Flex justifyContent={{ default: 'justifyContentSpaceBetween' }}>
-                            <ExpandableSectionToggle
-                                isExpanded={isBaselineFlowsExpanded}
-                                onToggle={(isExpanded) => toggleBaselineFlowsExpandable(isExpanded)}
+                                    ]}
+                                />
+                            </ExpandableSection>
+                        </StackItem>
+                        <StackItem>
+                            <Flex justifyContent={{ default: 'justifyContentSpaceBetween' }}>
+                                <ExpandableSectionToggle
+                                    isExpanded={isBaselineFlowsExpanded}
+                                    onToggle={(isExpanded) =>
+                                        toggleBaselineFlowsExpandable(isExpanded)
+                                    }
+                                    toggleId={'baseline-expandable-toggle'}
+                                    contentId={'baseline-expandable-content'}
+                                >
+                                    {`${totalBaseline} baseline ${pluralize('flow', totalBaseline)}`}
+                                </ExpandableSectionToggle>
+                                <FlowBulkDropdown
+                                    selectedCount={selectedBaseline.length}
+                                    isOpen={isBaselineBulkActionOpen}
+                                    setOpen={setIsBaselineBulkActionOpen}
+                                    onClear={() => setSelectedBaseline([])}
+                                >
+                                    <DropdownItem
+                                        onClick={() =>
+                                            confirmStatusChange(selectedBaseline, 'ANOMALOUS')
+                                        }
+                                    >
+                                        Mark as anomalous
+                                    </DropdownItem>
+                                </FlowBulkDropdown>
+                            </Flex>
+                            <ExpandableSection
+                                isDetached
                                 toggleId={'baseline-expandable-toggle'}
                                 contentId={'baseline-expandable-content'}
+                                isExpanded={isBaselineFlowsExpanded}
                             >
-                                {`${totalBaseline} baseline ${pluralize('flow', totalBaseline)}`}
-                            </ExpandableSectionToggle>
-                            <FlowBulkDropdown
-                                selectedCount={selectedBaseline.length}
-                                isOpen={isBaselineBulkActionOpen}
-                                setOpen={setIsBaselineBulkActionOpen}
-                                onClear={() => setSelectedBaseline([])}
-                            >
-                                <DropdownItem onClick={markSelectedAsAnomalous}>
-                                    Mark as anomalous
-                                </DropdownItem>
-                            </FlowBulkDropdown>
-                        </Flex>
-                        <ExpandableSection
-                            isDetached
-                            toggleId={'baseline-expandable-toggle'}
-                            contentId={'baseline-expandable-content'}
-                            isExpanded={isBaselineFlowsExpanded}
-                        >
-                            <FlowTable
-                                pagination={baseline.urlPagination}
-                                flowCount={totalBaseline}
-                                statusType="BASELINE"
-                                tableState={baseline.tableState}
-                                areAllRowsSelected={areAllPageBaselineSelected}
-                                urlSearchFiltering={urlSearchFiltering}
-                                onSelectAll={selectAllBaselineFlows}
-                                isFlowSelected={isFlowSelected}
-                                onRowSelect={onSelectFlow}
-                                rowActions={(flow) => [
-                                    {
-                                        title: <span>Mark as anomalous</span>,
-                                        onClick: async (e) => {
-                                            e.preventDefault();
-                                            await updateFlowsStatus(flow, 'ANOMALOUS');
+                                <FlowTable
+                                    pagination={baseline.urlPagination}
+                                    flowCount={totalBaseline}
+                                    statusType="BASELINE"
+                                    tableState={baseline.tableState}
+                                    areAllRowsSelected={areAllPageBaselineSelected}
+                                    urlSearchFiltering={urlSearchFiltering}
+                                    onSelectAll={selectAllBaselineFlows}
+                                    isFlowSelected={isFlowSelected}
+                                    onRowSelect={onSelectFlow}
+                                    rowActions={(flow) => [
+                                        {
+                                            title: <span>Mark as anomalous</span>,
+                                            onClick: async (e) => {
+                                                e.preventDefault();
+                                                confirmStatusChange([flow], 'ANOMALOUS');
+                                            },
                                         },
-                                    },
-                                ]}
-                            />
-                        </ExpandableSection>
-                    </StackItem>
-                </Stack>
-            </StackItem>
-        </Stack>
+                                    ]}
+                                />
+                            </ExpandableSection>
+                        </StackItem>
+                    </Stack>
+                </StackItem>
+            </Stack>
+            <ConfirmationModal
+                title="Apply status change to multiple flows?"
+                ariaLabel="Confirm status change"
+                confirmText="Yes"
+                isOpen={isConfirmingStatusChange}
+                onConfirm={onConfirmStatusChange}
+                onCancel={onCancelStatusChange}
+                isDestructive={false}
+            >
+                <p>
+                    All flows that have the same combination of direction, port, and protocol have
+                    the same status. This action will affect the status of all matching flows, even
+                    flows that you did not select.
+                </p>
+                <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                    <Table variant="compact" borders={false} isStickyHeader>
+                        <Thead>
+                            <Tr>
+                                <Th>Direction</Th>
+                                <Th>Port / protocol</Th>
+                            </Tr>
+                        </Thead>
+                        <Tbody>
+                            {uniquePendingFlows.map(({ direction, port, protocol }) => (
+                                <Tr key={`${direction}-${port}-${protocol}`}>
+                                    <Td dataLabel="Direction">{direction}</Td>
+                                    <Td dataLabel="Port / protocol">
+                                        {port} / {protocol}
+                                    </Td>
+                                </Tr>
+                            ))}
+                        </Tbody>
+                    </Table>
+                </div>
+            </ConfirmationModal>
+        </>
     );
 }
 
