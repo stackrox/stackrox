@@ -116,7 +116,7 @@ func (s *storeImpl) insertIntoImages(
 	}
 
 	if len(existingCVEs) == 0 {
-		// If we did not find any existing CVEs for the image, we likely just upgraded to the version using new CVE data model.
+		// If we did not find any existing CVEs for the image, we may have just upgraded to the version using new CVE data model.
 		// So we try to migrate the CVE created and first image occurrence timestamps from the legacy model.
 		existingCVEs, err = getLegacyImageCVEs(ctx, tx, parts.image.GetId())
 		if err != nil {
