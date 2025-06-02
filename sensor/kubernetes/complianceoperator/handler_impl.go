@@ -37,7 +37,10 @@ type handlerImpl struct {
 	stopSignal        concurrency.Signal
 	started           *atomic.Bool
 	complianceIsReady *concurrency.Signal
+	state             atomic.Value
 }
+
+var _ common.SensorComponent = (*handlerImpl)(nil)
 
 type scanScheduleConfiguration struct {
 	Suspend        *bool
@@ -65,13 +68,17 @@ func NewRequestHandler(client dynamic.Interface, complianceOperatorInfo StatusIn
 
 func (m *handlerImpl) Start() error {
 	defer m.started.Store(true)
+	m.state.Store(common.SensorComponentStateSTARTING)
+	defer m.state.Store(common.SensorComponentStateSTARTED)
 	// TODO: create default scan setting for ad-hoc scan
 	go m.run()
 	return nil
 }
 
 func (m *handlerImpl) Stop(_ error) {
+	m.state.Store(common.SensorComponentStateSTOPPING)
 	m.stopSignal.Signal()
+	m.state.Store(common.SensorComponentStateSTOPPED)
 }
 
 func (m *handlerImpl) Notify(_ common.SensorComponentEvent) {}
@@ -108,6 +115,10 @@ func (m *handlerImpl) ProcessMessage(msg *central.MsgToSensor) error {
 
 func (m *handlerImpl) ResponsesC() <-chan *message.ExpiringMessage {
 	return m.response
+}
+
+func (m *handlerImpl) State() common.SensorComponentState {
+	return m.state.Load().(common.SensorComponentState)
 }
 
 func (m *handlerImpl) run() {

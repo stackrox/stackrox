@@ -3,6 +3,7 @@ package networkpolicies
 import (
 	"context"
 	"fmt"
+	"sync/atomic"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -27,7 +28,10 @@ type commandHandler struct {
 	responsesC chan *message.ExpiringMessage
 
 	stopSig concurrency.Signal
+	state   atomic.Value
 }
+
+var _ common.SensorComponent = (*commandHandler)(nil)
 
 // NewCommandHandler creates a new network policies command handler.
 func NewCommandHandler(client kubernetes.Interface) common.SensorComponent {
@@ -44,12 +48,16 @@ func newCommandHandler(networkingV1Client networkingV1Client.NetworkingV1Interfa
 }
 
 func (h *commandHandler) Start() error {
+	h.state.Store(common.SensorComponentStateSTARTING)
 	go h.run()
+	h.state.Store(common.SensorComponentStateSTARTED)
 	return nil
 }
 
 func (h *commandHandler) Stop(_ error) {
+	h.state.Store(common.SensorComponentStateSTOPPING)
 	h.stopSig.Signal()
+	h.state.Store(common.SensorComponentStateSTOPPED)
 }
 
 func (h *commandHandler) Notify(common.SensorComponentEvent) {}
@@ -60,6 +68,10 @@ func (h *commandHandler) Capabilities() []centralsensor.SensorCapability {
 
 func (h *commandHandler) ResponsesC() <-chan *message.ExpiringMessage {
 	return h.responsesC
+}
+
+func (h *commandHandler) State() common.SensorComponentState {
+	return h.state.Load().(common.SensorComponentState)
 }
 
 func (h *commandHandler) run() {

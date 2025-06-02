@@ -3,6 +3,7 @@ package delegatedregistry
 import (
 	"context"
 	"errors"
+	"sync/atomic"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -18,6 +19,10 @@ import (
 	"github.com/stackrox/rox/sensor/common/scan"
 	"github.com/stackrox/rox/sensor/common/trace"
 	"google.golang.org/grpc"
+)
+
+const (
+	delegatedRegistryHandlerComponentName = "delegated-registry-handler"
 )
 
 var (
@@ -40,15 +45,20 @@ type delegatedRegistryImpl struct {
 	stopSig       concurrency.Signal
 	localScan     *scan.LocalScan
 	imageSvc      v1.ImageServiceClient
+	state         atomic.Value
 }
+
+var _ common.SensorComponent = (*delegatedRegistryImpl)(nil)
 
 // NewHandler returns a new instance of Handler.
 func NewHandler(registryStore *registry.Store, localScan *scan.LocalScan) Handler {
-	return &delegatedRegistryImpl{
+	handler := &delegatedRegistryImpl{
 		registryStore: registryStore,
 		stopSig:       concurrency.NewSignal(),
 		localScan:     localScan,
 	}
+	common.RegisterStateReporter(delegatedRegistryHandlerComponentName, handler.State)
+	return handler
 }
 
 func (d *delegatedRegistryImpl) Capabilities() []centralsensor.SensorCapability {
@@ -83,11 +93,18 @@ func (d *delegatedRegistryImpl) ResponsesC() <-chan *message.ExpiringMessage {
 }
 
 func (d *delegatedRegistryImpl) Start() error {
+	d.state.Store(common.SensorComponentStateSTARTED)
 	return nil
 }
 
 func (d *delegatedRegistryImpl) Stop(_ error) {
+	d.state.Store(common.SensorComponentStateSTOPPING)
 	d.stopSig.Signal()
+	d.state.Store(common.SensorComponentStateSTOPPED)
+}
+
+func (d *delegatedRegistryImpl) State() common.SensorComponentState {
+	return d.state.Load().(common.SensorComponentState)
 }
 
 func (d *delegatedRegistryImpl) processUpdatedDelegatedRegistryConfig(config *central.DelegatedRegistryConfig) error {

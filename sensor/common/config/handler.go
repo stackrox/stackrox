@@ -1,6 +1,8 @@
 package config
 
 import (
+	"sync/atomic"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -13,6 +15,10 @@ import (
 	"github.com/stackrox/rox/sensor/common/admissioncontroller"
 	"github.com/stackrox/rox/sensor/common/compliance"
 	"github.com/stackrox/rox/sensor/common/message"
+)
+
+const (
+	configHandlerComponentName = "config-handler"
 )
 
 var (
@@ -33,13 +39,15 @@ type Handler interface {
 
 // NewCommandHandler returns a new instance of a Handler.
 func NewCommandHandler(admCtrlSettingsMgr admissioncontroller.SettingsManager, deploymentIdentification *storage.SensorDeploymentIdentification, helmManagedConfig *central.HelmManagedConfigInit, auditLogCollectionManager compliance.AuditLogCollectionManager) Handler {
-	return &configHandlerImpl{
+	configHandler := &configHandlerImpl{
 		stopC:                     concurrency.NewErrorSignal(),
 		admCtrlSettingsMgr:        admCtrlSettingsMgr,
 		helmManagedConfig:         helmManagedConfig,
 		deploymentIdentification:  deploymentIdentification,
 		auditLogCollectionManager: auditLogCollectionManager,
 	}
+	common.RegisterStateReporter(configHandlerComponentName, configHandler.State)
+	return configHandler
 }
 
 type configHandlerImpl struct {
@@ -52,14 +60,20 @@ type configHandlerImpl struct {
 	admCtrlSettingsMgr        admissioncontroller.SettingsManager
 	auditLogCollectionManager compliance.AuditLogCollectionManager
 	stopC                     concurrency.ErrorSignal
+	state                     atomic.Value
 }
 
+var _ common.SensorComponent = (*configHandlerImpl)(nil)
+
 func (c *configHandlerImpl) Start() error {
+	c.state.Store(common.SensorComponentStateSTARTED)
 	return nil
 }
 
 func (c *configHandlerImpl) Stop(_ error) {
+	c.state.Store(common.SensorComponentStateSTOPPING)
 	c.stopC.Signal()
+	c.state.Store(common.SensorComponentStateSTOPPED)
 }
 
 func (c *configHandlerImpl) Notify(common.SensorComponentEvent) {}
@@ -108,6 +122,10 @@ func (c *configHandlerImpl) ProcessMessage(msg *central.MsgToSensor) error {
 	}
 
 	return nil
+}
+
+func (c *configHandlerImpl) State() common.SensorComponentState {
+	return c.state.Load().(common.SensorComponentState)
 }
 
 func (c *configHandlerImpl) parseMessage(parseFn func()) error {

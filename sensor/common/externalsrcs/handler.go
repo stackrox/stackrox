@@ -3,6 +3,7 @@ package externalsrcs
 import (
 	"bytes"
 	"sort"
+	"sync/atomic"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -39,6 +40,7 @@ type Handler interface {
 type handlerImpl struct {
 	stopSig   concurrency.Signal
 	updateSig concurrency.Signal
+	state     atomic.Value
 
 	// entities stores the IPNetwork to entity object mappings. We allow only unique CIDRs in a cluster, which could
 	// be overlapping or not.
@@ -55,13 +57,19 @@ type handlerImpl struct {
 	lock sync.Mutex
 }
 
+var _ common.SensorComponent = (*handlerImpl)(nil)
+
 func (h *handlerImpl) Start() error {
+	h.state.Store(common.SensorComponentStateSTARTING)
 	go h.run()
+	h.state.Store(common.SensorComponentStateSTARTED)
 	return nil
 }
 
 func (h *handlerImpl) Stop(_ error) {
+	h.state.Store(common.SensorComponentStateSTOPPING)
 	h.stopSig.Signal()
+	h.state.Store(common.SensorComponentStateSTOPPED)
 }
 
 func (h *handlerImpl) Notify(common.SensorComponentEvent) {}
@@ -95,6 +103,10 @@ func (h *handlerImpl) ProcessMessage(msg *central.MsgToSensor) error {
 
 func (h *handlerImpl) ResponsesC() <-chan *message.ExpiringMessage {
 	return nil
+}
+
+func (h *handlerImpl) State() common.SensorComponentState {
+	return h.state.Load().(common.SensorComponentState)
 }
 
 func (h *handlerImpl) run() {

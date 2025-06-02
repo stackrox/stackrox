@@ -1,6 +1,8 @@
 package compliance
 
 import (
+	"sync/atomic"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
@@ -11,6 +13,10 @@ import (
 	"github.com/stackrox/rox/sensor/common/message"
 )
 
+const (
+	multiplexerComponentName = "compliance-multiplexer"
+)
+
 var _ common.ComplianceComponent = (*Multiplexer)(nil)
 
 // Multiplexer is a wrapper around pkg.channelmultiplexer that turns it into a sensor component.
@@ -19,7 +25,10 @@ type Multiplexer struct {
 	mp         channelmultiplexer.ChannelMultiplexer[common.MessageToComplianceWithAddress]
 	components []common.ComplianceComponent
 	stopper    concurrency.Stopper
+	state      atomic.Value
 }
+
+var _ common.SensorComponent = (*Multiplexer)(nil)
 
 // Stopped returns a signal allowing to check whether the component has been stopped
 func (c *Multiplexer) Stopped() concurrency.ReadOnlyErrorSignal {
@@ -33,6 +42,7 @@ func NewMultiplexer() *Multiplexer {
 		components: []common.ComplianceComponent{},
 		stopper:    concurrency.NewStopper(),
 	}
+	common.RegisterStateReporter(multiplexerComponentName, multiplexer.State)
 	return &multiplexer
 }
 
@@ -43,6 +53,7 @@ func (c *Multiplexer) Notify(_ common.SensorComponentEvent) {
 
 // Start starts the Multiplexer. It is important not to call this before all addChannel calls
 func (c *Multiplexer) Start() error {
+	c.state.Store(common.SensorComponentStateSTARTING)
 	return c.run()
 }
 
@@ -52,12 +63,15 @@ func (c *Multiplexer) run() error {
 		c.addChannel(comp.ComplianceC())
 	}
 	c.mp.Run()
+	c.state.Store(common.SensorComponentStateSTARTED)
 	return nil
 }
 
 // Stop stops the component
 func (c *Multiplexer) Stop(_ error) {
+	c.state.Store(common.SensorComponentStateSTOPPING)
 	c.stopper.Client().Stop()
+	c.state.Store(common.SensorComponentStateSTOPPED)
 }
 
 // Capabilities is unimplemented, part of the component interface
@@ -73,6 +87,10 @@ func (c *Multiplexer) ProcessMessage(_ *central.MsgToSensor) error {
 // ResponsesC is unimplemented, part of the component interface
 func (c *Multiplexer) ResponsesC() <-chan *message.ExpiringMessage {
 	return nil
+}
+
+func (c *Multiplexer) State() common.SensorComponentState {
+	return c.state.Load().(common.SensorComponentState)
 }
 
 // AddComponentWithComplianceC registers components that will use the .ComplianceC() for communicating with Compliance

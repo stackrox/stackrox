@@ -42,6 +42,7 @@ import (
 	k8sadmctrl "github.com/stackrox/rox/sensor/kubernetes/admissioncontroller"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh"
 	"github.com/stackrox/rox/sensor/kubernetes/clusterhealth"
+	"github.com/stackrox/rox/sensor/kubernetes/clusterhealthpersister"
 	"github.com/stackrox/rox/sensor/kubernetes/clustermetrics"
 	"github.com/stackrox/rox/sensor/kubernetes/clusterstatus"
 	"github.com/stackrox/rox/sensor/kubernetes/complianceoperator"
@@ -169,6 +170,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	if admCtrlSettingsMgr != nil {
 		components = append(components, k8sadmctrl.NewConfigMapSettingsPersister(cfg.k8sClient.Kubernetes(), admCtrlSettingsMgr, sensorNamespace))
 	}
+	components = append(components, clusterhealthpersister.NewClusterHealthPersister(cfg.k8sClient.Kubernetes(), sensorNamespace))
 
 	if centralsensor.SecuredClusterIsNotManagedManually(helmManagedConfig) {
 		podName := os.Getenv("POD_NAME")

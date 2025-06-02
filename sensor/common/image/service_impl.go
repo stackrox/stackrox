@@ -2,6 +2,7 @@ package image
 
 import (
 	"context"
+	"sync/atomic"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
@@ -59,7 +60,10 @@ type serviceImpl struct {
 	registryStore registryStore
 	localScan     localScan
 	centralReady  concurrency.Signal
+	state         atomic.Value
 }
+
+var _ common.SensorComponent = (*serviceImpl)(nil)
 
 func (s *serviceImpl) SetClient(conn grpc.ClientConnInterface) {
 	s.centralClient = v1.NewImageServiceClient(conn)
@@ -142,16 +146,21 @@ func (s *serviceImpl) Notify(e common.SensorComponentEvent) {
 	switch e {
 	case common.SensorComponentEventCentralReachable:
 		s.centralReady.Signal()
+		s.state.Store(common.SensorComponentStateONLINE)
 	case common.SensorComponentEventOfflineMode:
 		s.centralReady.Reset()
+		s.state.Store(common.SensorComponentStateOFFLINE)
 	}
 }
 
 func (s *serviceImpl) Start() error {
+	s.state.Store(common.SensorComponentStateSTARTED)
 	return nil
 }
 
-func (s *serviceImpl) Stop(_ error) {}
+func (s *serviceImpl) Stop(_ error) {
+	s.state.Store(common.SensorComponentStateSTOPPED)
+}
 
 func (s *serviceImpl) Capabilities() []centralsensor.SensorCapability {
 	return nil
@@ -163,4 +172,8 @@ func (s *serviceImpl) ProcessMessage(_ *central.MsgToSensor) error {
 
 func (s *serviceImpl) ResponsesC() <-chan *message.ExpiringMessage {
 	return nil
+}
+
+func (s *serviceImpl) State() common.SensorComponentState {
+	return s.state.Load().(common.SensorComponentState)
 }
