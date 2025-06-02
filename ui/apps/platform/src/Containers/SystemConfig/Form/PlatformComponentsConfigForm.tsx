@@ -116,7 +116,7 @@ function PlatformComponentsConfigForm({
                                     variant="info"
                                     component="p"
                                     isInline
-                                    title="Any customization will be preserved after a central upgrade."
+                                    title="All customization will be preserved after a central upgrade."
                                     className="pf-v5-u-mt-md"
                                 >
                                     Use the reset button to revert all changes back to the default
@@ -275,6 +275,7 @@ function PlatformComponentsConfigForm({
                                             'platformComponentConfigRules.customRules'
                                         );
                                     }}
+                                    className="pf-v5-u-mt-md"
                                 >
                                     Add custom platform component
                                 </Button>
