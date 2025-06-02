@@ -3,6 +3,7 @@ import static util.Helpers.evaluateWithRetry
 import com.google.protobuf.Timestamp
 
 import io.stackrox.proto.api.v1.NetworkBaselineServiceOuterClass
+import io.stackrox.proto.api.v1.NetworkBaselineServiceOuterClass.NetworkBaselineStatusPeer
 import io.stackrox.proto.storage.NetworkBaselineOuterClass
 import io.stackrox.proto.storage.NetworkFlowOuterClass
 
@@ -190,6 +191,42 @@ class NetworkBaselineTest extends BaseSpecification {
             assert properties.getIngress() == expectedPeerIngress
             //assert properties.getPort() == 80
             assert properties.getProtocol() == NetworkFlowOuterClass.L4Protocol.L4_PROTOCOL_TCP
+        }
+
+        for (def checkMissingId : mustNotBeInBaseline) {
+            assert !baseline.getPeersList().any { it.getEntity().getInfo().getId() == checkMissingId }
+        }
+        return true
+    }
+
+    def validateBaseline2(NetworkBaselineOuterClass.NetworkBaseline baseline,
+                         long beforeCreate,
+                         long justAfterCreate,
+                         List<NetworkBaselineStatusPeer> mustBeInBaseline,
+                         List<String> mustNotBeInBaseline) {
+        assert baseline.getObservationPeriodEnd().getSeconds() > beforeCreate - CLOCK_SKEW_ALLOWANCE_SECONDS
+        assert baseline.getObservationPeriodEnd().getSeconds() <
+            justAfterCreate + EXPECTED_BASELINE_DURATION_SECONDS + CLOCK_SKEW_ALLOWANCE_SECONDS
+        assert baseline.getForbiddenPeersCount() == 0
+
+        for (def i = 0; i < mustBeInBaseline.size(); i++) {
+            def expectedPeer = mustBeInBaseline.get(i)
+            log.info "expectedPeer= ${expectedPeer}"
+            def expectedPeerID = expectedPeer.getEntity().getId()
+            log.info "expectedPeerID= ${expectedPeerID}"
+            def actualPeer = baseline.getPeersList().find { log.info "it= ${it}"; it.getEntity().getInfo().getId() == expectedPeerID }
+            assert actualPeer
+            log.info "actualPeer= ${actualPeer}"
+            def entityInfo = actualPeer.getEntity()
+            log.info "entityInfo= ${entityInfo}"
+            assert entityInfo.getInfo().getId() == expectedPeerID
+            def properties = actualPeer.getProperties()
+            log.info "properties= ${properties}"
+            def expectedIngress = expectedPeer.getIngress()
+            def expectedPort = expectedPeer.getPort()
+            def expectedProtocol = expectedPeer.getProtocol()
+            def matchingProperty = actualPeer.getPropertiesList().find { it.getIngress() == expectedIngress && it.getPort() == expectedPort && it.getProtocol() == expectedProtocol }
+            assert matchingProperty
         }
 
         for (def checkMissingId : mustNotBeInBaseline) {
@@ -527,8 +564,25 @@ class NetworkBaselineTest extends BaseSpecification {
         log.info ""
 
         def mustNotBeInBaseline = []
-        validateBaseline(baseline, beforeDeploymentCreate, justAfterDeploymentCreate,
-            [new Tuple2<String, Boolean>(Constants.INTERNET_EXTERNAL_SOURCE_ID, false)], mustNotBeInBaseline)
+        //validateBaseline(baseline, beforeDeploymentCreate, justAfterDeploymentCreate,
+        //    [new Tuple2<String, Boolean>(Constants.INTERNET_EXTERNAL_SOURCE_ID, false)], mustNotBeInBaseline)
+
+        
+        //def expectedEntity NetworkBaselineServiceOuterClass.NetworkBaselinePeerEntity.newBuilder()
+        def expectedEntity = NetworkBaselineServiceOuterClass.NetworkBaselinePeerEntity.newBuilder()
+				.setId(Constants.INTERNET_EXTERNAL_SOURCE_ID)
+                                .build()
+
+        log.info "expectedEntity= ${expectedEntity}"
+        def expectedPeer = NetworkBaselineServiceOuterClass.NetworkBaselineStatusPeer.newBuilder()
+                                                        .setEntity(expectedEntity)
+                                                        .setPort(53)
+                                                        .setProtocol(NetworkFlowOuterClass.L4Protocol.L4_PROTOCOL_TCP)
+                                                        .setIngress(false)
+                                                        .build()
+
+        validateBaseline2(baseline, beforeDeploymentCreate, justAfterDeploymentCreate,
+            [expectedPeer], mustNotBeInBaseline)
 
         def externalBaseline = evaluateWithRetry(30, 4) {
             def externalBaseline = NetworkBaselineService.getNetworkBaselineForExternalFlows(deploymentUid)
