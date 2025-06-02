@@ -114,12 +114,12 @@ func Test_run(t *testing.T) {
 func Test_makeProps(t *testing.T) {
 	cfg := &storage.PrometheusMetricsConfig{
 		ImageVulnerabilities: &storage.PrometheusMetricsConfig_Vulnerabilities{
-			MetricLabels: map[string]*storage.PrometheusMetricsConfig_MetricLabels{
+			Metrics: map[string]*storage.PrometheusMetricsConfig_Labels{
 				"metric1": {
-					LabelExpressions: map[string]*storage.PrometheusMetricsConfig_MetricLabels_Expressions{
+					Labels: map[string]*storage.PrometheusMetricsConfig_Labels_Expression{
 						"label1": nil,
 						"label2": {
-							Expression: []*storage.PrometheusMetricsConfig_MetricLabels_Expressions_Expression{
+							Expression: []*storage.PrometheusMetricsConfig_Labels_Expression_Condition{
 								{
 									Operator: "=",
 								},
