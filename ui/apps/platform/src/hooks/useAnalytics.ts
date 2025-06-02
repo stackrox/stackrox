@@ -22,7 +22,7 @@ export const CLUSTER_LEVEL_SIMULATOR_OPENED = 'Network Graph: Cluster Level Simu
 export const GENERATE_NETWORK_POLICIES = 'Network Graph: Generate Network Policies';
 export const DOWNLOAD_NETWORK_POLICIES = 'Network Graph: Download Network Policies';
 export const CIDR_BLOCK_FORM_OPENED = 'Network Graph: CIDR Block Form Opened';
-export const EXTERNAL_IPS_SIDE_PANEL = 'External IP Side Panel Opened';
+export const EXTERNAL_IPS_SIDE_PANEL = 'External IPs Side Panel Opened';
 export const DEPLOYMENT_FLOWS_TOGGLE_CLICKED = 'External Flows Toggle Clicked';
 
 // watch images
