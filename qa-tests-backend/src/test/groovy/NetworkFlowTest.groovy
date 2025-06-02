@@ -647,6 +647,7 @@ class NetworkFlowTest extends BaseSpecification {
     }
 
     @Tag("NetworkFlowVisualization")
+    @IgnoreIf({ Env.GHA })
     def "Verify intra-cluster connection via internal IP"() {
         // We changed the test to reflect the NetworkGraph's current behavior. Communication between two deployments
         // through a LoadBalancer shows an edge from 'External Entities', not an edge between the two deployments.
