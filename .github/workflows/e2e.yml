@@ -20,17 +20,12 @@ jobs:
       fail-fast: false
       matrix:
         tag:
-        - 'compatibility-test'
-        - 'deployment-check-test'
-        - 'enforcement-test'
-        - 'graphql-test'
-        - 'integration-test'
-        - 'networkpolicy-simulator-test'
-        - 'pz-test'
-        - 'runtime-test'
-        - 'sensor-bounce-test'
-        - 'smoke-test'
-        - 'upgrade-test'
+        - '-tests "A*" --tests "B*" --tests "C*" --tests "D*"'
+        - '-tests "E*" --tests "F*" --tests "G*" --tests "H*"'
+        - '-tests "I*" --tests "J*" --tests "K*" --tests "L*"'
+        - '-tests "M*" --tests "N*" --tests "O*" --tests "P*"'
+        - '-tests "R*" --tests "S*" --tests "T*" --tests "U*"'
+        - '-tests "W*" --tests "V*" --tests "X*" --tests "Y*"'
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
@@ -64,7 +59,7 @@ jobs:
         ROX_PROCESSES_LISTENING_ON_PORT: "false"
         REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
-      run: unset CI && make ${{ matrix.tag }} -C qa-tests-backend
+      run: unset CI && cd && ./gradlew test ${{ matrix.tag }}
     - name: Publish Test Report
       uses: test-summary/action@v2
       if: always()
