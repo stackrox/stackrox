@@ -1152,10 +1152,10 @@ func (x *VulnerabilityExceptionConfig_ExpiryOptions) GetIndefinite() bool {
 
 type PrometheusMetricsConfig_Labels struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Mapping from label key to its optional associated expression.
-	LabelExpression map[string]*PrometheusMetricsConfig_Labels_Expression `protobuf:"bytes,1,rep,name=label_expression,json=labelExpression,proto3" json:"label_expression,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	// Mapping from label name to its optional associated expression.
+	Labels        map[string]*PrometheusMetricsConfig_Labels_Expression `protobuf:"bytes,1,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *PrometheusMetricsConfig_Labels) Reset() {
@@ -1188,9 +1188,9 @@ func (*PrometheusMetricsConfig_Labels) Descriptor() ([]byte, []int) {
 	return file_storage_config_proto_rawDescGZIP(), []int{12, 0}
 }
 
-func (x *PrometheusMetricsConfig_Labels) GetLabelExpression() map[string]*PrometheusMetricsConfig_Labels_Expression {
+func (x *PrometheusMetricsConfig_Labels) GetLabels() map[string]*PrometheusMetricsConfig_Labels_Expression {
 	if x != nil {
-		return x.LabelExpression
+		return x.Labels
 	}
 	return nil
 }
@@ -1199,8 +1199,8 @@ type PrometheusMetricsConfig_Vulnerabilities struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The period (in hours) at which vulnerability data is gathered from the DB.
 	GatheringPeriodHours uint32 `protobuf:"varint,1,opt,name=gathering_period_hours,json=gatheringPeriodHours,proto3" json:"gathering_period_hours,omitempty"`
-	// Mapping from metric name to its associated labels and optional expression.
-	MetricLabels map[string]*PrometheusMetricsConfig_Labels `protobuf:"bytes,2,rep,name=metric_labels,json=metricLabels,proto3" json:"metric_labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// Mapping from metric name to its associated labels.
+	Metrics map[string]*PrometheusMetricsConfig_Labels `protobuf:"bytes,2,rep,name=metrics,proto3" json:"metrics,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	// Query string in the syntax of the Search filters used to limit the amount of aggregated vulnerabilities.
 	// Example: "Cluster:production"
 	Query         string `protobuf:"bytes,3,opt,name=query,proto3" json:"query,omitempty"`
@@ -1245,9 +1245,9 @@ func (x *PrometheusMetricsConfig_Vulnerabilities) GetGatheringPeriodHours() uint
 	return 0
 }
 
-func (x *PrometheusMetricsConfig_Vulnerabilities) GetMetricLabels() map[string]*PrometheusMetricsConfig_Labels {
+func (x *PrometheusMetricsConfig_Vulnerabilities) GetMetrics() map[string]*PrometheusMetricsConfig_Labels {
 	if x != nil {
-		return x.MetricLabels
+		return x.Metrics
 	}
 	return nil
 }
@@ -1259,6 +1259,8 @@ func (x *PrometheusMetricsConfig_Vulnerabilities) GetQuery() string {
 	return ""
 }
 
+// Expression is a list of conditions, joined with implicit AND and explicit
+// OR operators.
 type PrometheusMetricsConfig_Labels_Expression struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// List of conditions to be evaluated for a label.
@@ -1269,7 +1271,7 @@ type PrometheusMetricsConfig_Labels_Expression struct {
 	//	 { "operator": "OR"},
 	//	 { "operator": "=", "argument": "value2"}]
 	//
-	// Which is identical to:
+	// Which is identical to the following glob pattern condition:
 	//
 	//	[{"operator": "=", "argument": "value1|value2"}]
 	//
@@ -1325,7 +1327,7 @@ type PrometheusMetricsConfig_Labels_Expression_Condition struct {
 	// Operator is one of =, !=, >, >=, <, <=, OR.
 	Operator string `protobuf:"bytes,1,opt,name=operator,proto3" json:"operator,omitempty"`
 	// Argument value for the operator. OR doesn't require an argument.
-	// Glob pattern for strings.
+	// Use glob patterns for string conditions.
 	Argument      string `protobuf:"bytes,2,opt,name=argument,proto3" json:"argument,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1462,11 +1464,11 @@ const file_storage_config_proto_rawDesc = "" +
 	"\x17retention_duration_days\x18\x01 \x01(\rR\x15retentionDurationDays\"@\n" +
 	"\tDayOption\x12\x19\n" +
 	"\bnum_days\x18\x01 \x01(\rR\anumDays\x12\x18\n" +
-	"\aenabled\x18\x02 \x01(\bR\aenabled\"\xd1\x06\n" +
+	"\aenabled\x18\x02 \x01(\bR\aenabled\"\x97\x06\n" +
 	"\x17PrometheusMetricsConfig\x12e\n" +
-	"\x15image_vulnerabilities\x18\x01 \x01(\v20.storage.PrometheusMetricsConfig.VulnerabilitiesR\x14imageVulnerabilities\x1a\x9b\x03\n" +
-	"\x06Labels\x12g\n" +
-	"\x10label_expression\x18\x01 \x03(\v2<.storage.PrometheusMetricsConfig.Labels.LabelExpressionEntryR\x0flabelExpression\x1a\xaf\x01\n" +
+	"\x15image_vulnerabilities\x18\x01 \x01(\v20.storage.PrometheusMetricsConfig.VulnerabilitiesR\x14imageVulnerabilities\x1a\xf6\x02\n" +
+	"\x06Labels\x12K\n" +
+	"\x06labels\x18\x01 \x03(\v23.storage.PrometheusMetricsConfig.Labels.LabelsEntryR\x06labels\x1a\xaf\x01\n" +
 	"\n" +
 	"Expression\x12\\\n" +
 	"\n" +
@@ -1474,15 +1476,15 @@ const file_storage_config_proto_rawDesc = "" +
 	"expression\x1aC\n" +
 	"\tCondition\x12\x1a\n" +
 	"\boperator\x18\x01 \x01(\tR\boperator\x12\x1a\n" +
-	"\bargument\x18\x02 \x01(\tR\bargument\x1av\n" +
-	"\x14LabelExpressionEntry\x12\x10\n" +
+	"\bargument\x18\x02 \x01(\tR\bargument\x1am\n" +
+	"\vLabelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12H\n" +
-	"\x05value\x18\x02 \x01(\v22.storage.PrometheusMetricsConfig.Labels.ExpressionR\x05value:\x028\x01\x1a\xb0\x02\n" +
+	"\x05value\x18\x02 \x01(\v22.storage.PrometheusMetricsConfig.Labels.ExpressionR\x05value:\x028\x01\x1a\x9b\x02\n" +
 	"\x0fVulnerabilities\x124\n" +
-	"\x16gathering_period_hours\x18\x01 \x01(\rR\x14gatheringPeriodHours\x12g\n" +
-	"\rmetric_labels\x18\x02 \x03(\v2B.storage.PrometheusMetricsConfig.Vulnerabilities.MetricLabelsEntryR\fmetricLabels\x12\x14\n" +
-	"\x05query\x18\x03 \x01(\tR\x05query\x1ah\n" +
-	"\x11MetricLabelsEntry\x12\x10\n" +
+	"\x16gathering_period_hours\x18\x01 \x01(\rR\x14gatheringPeriodHours\x12W\n" +
+	"\ametrics\x18\x02 \x03(\v2=.storage.PrometheusMetricsConfig.Vulnerabilities.MetricsEntryR\ametrics\x12\x14\n" +
+	"\x05query\x18\x03 \x01(\tR\x05query\x1ac\n" +
+	"\fMetricsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12=\n" +
 	"\x05value\x18\x02 \x01(\v2'.storage.PrometheusMetricsConfig.LabelsR\x05value:\x028\x01B.\n" +
 	"\x19io.stackrox.proto.storageZ\x11./storage;storageb\x06proto3"
@@ -1524,9 +1526,9 @@ var file_storage_config_proto_goTypes = []any{
 	(*PrometheusMetricsConfig_Labels)(nil),                 // 19: storage.PrometheusMetricsConfig.Labels
 	(*PrometheusMetricsConfig_Vulnerabilities)(nil),        // 20: storage.PrometheusMetricsConfig.Vulnerabilities
 	(*PrometheusMetricsConfig_Labels_Expression)(nil),      // 21: storage.PrometheusMetricsConfig.Labels.Expression
-	nil, // 22: storage.PrometheusMetricsConfig.Labels.LabelExpressionEntry
+	nil, // 22: storage.PrometheusMetricsConfig.Labels.LabelsEntry
 	(*PrometheusMetricsConfig_Labels_Expression_Condition)(nil), // 23: storage.PrometheusMetricsConfig.Labels.Expression.Condition
-	nil,                            // 24: storage.PrometheusMetricsConfig.Vulnerabilities.MetricLabelsEntry
+	nil,                            // 24: storage.PrometheusMetricsConfig.Vulnerabilities.MetricsEntry
 	(*TelemetryConfiguration)(nil), // 25: storage.TelemetryConfiguration
 	(*timestamppb.Timestamp)(nil),  // 26: google.protobuf.Timestamp
 }
@@ -1554,11 +1556,11 @@ var file_storage_config_proto_depIdxs = []int32{
 	16, // 20: storage.PlatformComponentConfig.Rule.namespace_rule:type_name -> storage.PlatformComponentConfig.Rule.NamespaceRule
 	12, // 21: storage.VulnerabilityExceptionConfig.ExpiryOptions.day_options:type_name -> storage.DayOption
 	17, // 22: storage.VulnerabilityExceptionConfig.ExpiryOptions.fixable_cve_options:type_name -> storage.VulnerabilityExceptionConfig.FixableCVEOptions
-	22, // 23: storage.PrometheusMetricsConfig.Labels.label_expression:type_name -> storage.PrometheusMetricsConfig.Labels.LabelExpressionEntry
-	24, // 24: storage.PrometheusMetricsConfig.Vulnerabilities.metric_labels:type_name -> storage.PrometheusMetricsConfig.Vulnerabilities.MetricLabelsEntry
+	22, // 23: storage.PrometheusMetricsConfig.Labels.labels:type_name -> storage.PrometheusMetricsConfig.Labels.LabelsEntry
+	24, // 24: storage.PrometheusMetricsConfig.Vulnerabilities.metrics:type_name -> storage.PrometheusMetricsConfig.Vulnerabilities.MetricsEntry
 	23, // 25: storage.PrometheusMetricsConfig.Labels.Expression.expression:type_name -> storage.PrometheusMetricsConfig.Labels.Expression.Condition
-	21, // 26: storage.PrometheusMetricsConfig.Labels.LabelExpressionEntry.value:type_name -> storage.PrometheusMetricsConfig.Labels.Expression
-	19, // 27: storage.PrometheusMetricsConfig.Vulnerabilities.MetricLabelsEntry.value:type_name -> storage.PrometheusMetricsConfig.Labels
+	21, // 26: storage.PrometheusMetricsConfig.Labels.LabelsEntry.value:type_name -> storage.PrometheusMetricsConfig.Labels.Expression
+	19, // 27: storage.PrometheusMetricsConfig.Vulnerabilities.MetricsEntry.value:type_name -> storage.PrometheusMetricsConfig.Labels
 	28, // [28:28] is the sub-list for method output_type
 	28, // [28:28] is the sub-list for method input_type
 	28, // [28:28] is the sub-list for extension type_name

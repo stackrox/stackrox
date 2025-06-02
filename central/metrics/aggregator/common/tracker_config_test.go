@@ -110,7 +110,7 @@ func TestTrackerConfig_Reconfigure(t *testing.T) {
 
 		err := tracker.Reconfigure(testRegistry, "", map[string]*storage.PrometheusMetricsConfig_Labels{
 			"m1": {
-				LabelExpression: map[string]*storage.PrometheusMetricsConfig_Labels_Expression{
+				Labels: map[string]*storage.PrometheusMetricsConfig_Labels_Expression{
 					"label1": nil,
 				},
 			},

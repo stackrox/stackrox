@@ -24,7 +24,7 @@ func parseMetricLabels(config map[string]*storage.PrometheusMetricsConfig_Labels
 				"invalid metric name %q: %v", metric, err)
 		}
 		labelExpression := make(map[Label]Expression)
-		for label, expression := range labels.GetLabelExpression() {
+		for label, expression := range labels.GetLabels() {
 
 			if !isKnownLabel(label, labelOrder) {
 				var knownLabels []Label
