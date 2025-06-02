@@ -201,7 +201,11 @@ class NetworkBaselineTest extends BaseSpecification {
             def expectedIngress = expectedPeer.getIngress()
             def expectedPort = expectedPeer.getPort()
             def expectedProtocol = expectedPeer.getProtocol()
-            def matchingProperty = actualPeer.getPropertiesList().find { it.getIngress() == expectedIngress && it.getPort() == expectedPort && it.getProtocol() == expectedProtocol }
+            def matchingProperty = actualPeer.getPropertiesList().find {
+                it.getIngress() == expectedIngress &&
+                it.getPort() == expectedPort &&
+                it.getProtocol() == expectedProtocol
+            }
             assert matchingProperty
         }
 
@@ -478,7 +482,8 @@ class NetworkBaselineTest extends BaseSpecification {
 
         assert externalBaseline
 
-        def peer1 = externalBaseline.getBaselineList().find { it.getPeer().getEntity().getName() == EXTERNAL_IP1 }.getPeer()
+        def peerStatus1 = externalBaseline.getBaselineList().find { it.getPeer().getEntity().getName() == EXTERNAL_IP1 }
+        def peer1 = peerStatus1.getPeer()
 
         assert peer1
         def expectedEntity1 = peer1.getEntity()
@@ -491,7 +496,8 @@ class NetworkBaselineTest extends BaseSpecification {
         assert peer1.getPort() == 53
         assert peer1.getProtocol() == NetworkFlowOuterClass.L4Protocol.L4_PROTOCOL_TCP
 
-        def peer2 = externalBaseline.getBaselineList().find { it.getPeer().getEntity().getName() == EXTERNAL_IP2 }.getPeer()
+        def peerStatus2 = externalBaseline.getBaselineList().find { it.getPeer().getEntity().getName() == EXTERNAL_IP2 }
+        def peer2 = peerStatus2.getPeer()
 
         assert peer2
         def expectedEntity2 = peer2.getEntity()
@@ -504,7 +510,8 @@ class NetworkBaselineTest extends BaseSpecification {
         assert peer2.getPort() == 53
         assert peer2.getProtocol() == NetworkFlowOuterClass.L4Protocol.L4_PROTOCOL_TCP
 
-        def peer3 = externalBaseline.getBaselineList().find { it.getPeer().getEntity().getName() == EXTERNAL_IP3 }.getPeer()
+        def peerStatus3 = externalBaseline.getBaselineList().find { it.getPeer().getEntity().getName() == EXTERNAL_IP3 }
+        def peer3 = peerStatus3.getPeer()
 
         assert peer3
         def expectedEntity3 = peer3.getEntity()
