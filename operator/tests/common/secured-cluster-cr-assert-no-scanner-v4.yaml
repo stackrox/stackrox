@@ -1,3 +1,5 @@
+# NOTE: After 4.8 has been released, this file can be removed again and in favor for linking
+# to ../../common/secured-cluster-cr-assert.yaml.
 apiVersion: kuttl.dev/v1beta1
 kind: TestAssert
 collectors:
@@ -52,20 +54,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: scanner
-status:
-  availableReplicas: 1
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: scanner-v4-db
-status:
-  availableReplicas: 1
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: scanner-v4-indexer
 status:
   availableReplicas: 1
 ---
