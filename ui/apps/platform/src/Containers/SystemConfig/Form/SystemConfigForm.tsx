@@ -117,7 +117,7 @@ const SystemConfigForm = ({
     } = useFormik<Values>({
         initialValues: { privateConfig, publicConfig, platformComponentConfigRules },
         validationSchema,
-        onSubmit: () => {
+        onSubmit: async () => {
             const { coreSystemRule, redHatLayeredProductsRule, customRules } =
                 values.platformComponentConfigRules;
 
@@ -146,7 +146,7 @@ const SystemConfigForm = ({
             ];
 
             // Payload for privateConfig allows strings as number values.
-            saveSystemConfig({
+            await saveSystemConfig({
                 privateConfig: values.privateConfig,
                 publicConfig: values.publicConfig,
                 platformComponentConfig: {

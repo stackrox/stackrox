@@ -275,7 +275,7 @@ function PlatformComponentsConfigForm({
                                             'platformComponentConfigRules.customRules'
                                         );
                                     }}
-                                    className="pf-v5-u-mt-md"
+                                    className={`${values.platformComponentConfigRules.customRules.length !== 0 && 'pf-v5-u-mt-md'}`}
                                 >
                                     Add custom platform component
                                 </Button>
