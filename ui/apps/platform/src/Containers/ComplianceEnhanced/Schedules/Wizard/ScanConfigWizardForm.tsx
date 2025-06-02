@@ -166,7 +166,7 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
         return canJumpToConfigureReport() && Object.keys(formik.errors?.report || {}).length === 0;
     }
 
-    function allClustersAreHealthy(clusters): boolean {
+    function allClustersAreUnhealthy(clusters): boolean {
         return clusters?.every(cluster => cluster.status === 'UNHEALTHY');
     }
 
@@ -232,7 +232,7 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
                             onSave={onSave}
                             isSaving={isCreating}
                             proceedToNextStepIfValid={proceedToNextStepIfValid}
-                            allClustersAreUnhealthy={!allClustersAreHealthy(clusters) || !isCreating}
+                            disableClusterNext={allClustersAreUnhealthy(clusters) && isCreating}
                         />
                     }
                 />
