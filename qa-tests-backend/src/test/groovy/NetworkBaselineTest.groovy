@@ -103,16 +103,6 @@ class NetworkBaselineTest extends BaseSpecification {
                               "do wget --timeout=10 -S http://${SERVER_DEP_NAME}; " +
                               "done" as String,])
 
-//    private static final EXTERNAL_DEP = createAndRegisterDeployment()
-//                    .setName(EXTERNALDESTINATION)
-//                    .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1-15-4-alpine")
-//                    .addLabel("app", EXTERNALDESTINATION)
-//                    .setCommand(["/bin/sh", "-c",])
-//                    .setArgs(["echo -n 'Startup time: '; ${DATE_CMD};" +
-//                                      "while sleep ${NetworkGraphUtil.NETWORK_FLOW_UPDATE_CADENCE_IN_SECONDS}; " +
-//                                      "do wget -S -T 2 http://www.google.com; " +
-//                                      "done" as String,])
-
     private static final EXTERNAL_DEP = createAndRegisterDeployment()
                     .setName(EXTERNALDESTINATION)
                     .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1-15-4-alpine")
@@ -184,12 +174,12 @@ class NetworkBaselineTest extends BaseSpecification {
             def actualPeer = baseline.getPeersList().find { it.getEntity().getInfo().getId() == expectedPeerID }
             assert actualPeer
             def entityInfo = actualPeer.getEntity().getInfo()
-            //assert entityInfo.getType() == NetworkFlowOuterClass.NetworkEntityInfo.Type.DEPLOYMENT
+            assert entityInfo.getType() == NetworkFlowOuterClass.NetworkEntityInfo.Type.DEPLOYMENT
             assert entityInfo.getId() == expectedPeerID
             assert actualPeer.getPropertiesCount() == 1
             def properties = actualPeer.getProperties(0)
             assert properties.getIngress() == expectedPeerIngress
-            //assert properties.getPort() == 80
+            assert properties.getPort() == 80
             assert properties.getProtocol() == NetworkFlowOuterClass.L4Protocol.L4_PROTOCOL_TCP
         }
 
@@ -211,17 +201,11 @@ class NetworkBaselineTest extends BaseSpecification {
 
         for (def i = 0; i < mustBeInBaseline.size(); i++) {
             def expectedPeer = mustBeInBaseline.get(i)
-            log.info "expectedPeer= ${expectedPeer}"
             def expectedPeerID = expectedPeer.getEntity().getId()
-            log.info "expectedPeerID= ${expectedPeerID}"
-            def actualPeer = baseline.getPeersList().find { log.info "it= ${it}"; it.getEntity().getInfo().getId() == expectedPeerID }
+            def actualPeer = baseline.getPeersList().find { it.getEntity().getInfo().getId() == expectedPeerID }
             assert actualPeer
-            log.info "actualPeer= ${actualPeer}"
             def entityInfo = actualPeer.getEntity()
-            log.info "entityInfo= ${entityInfo}"
             assert entityInfo.getInfo().getId() == expectedPeerID
-            def properties = actualPeer.getProperties()
-            log.info "properties= ${properties}"
             def expectedIngress = expectedPeer.getIngress()
             def expectedPort = expectedPeer.getPort()
             def expectedProtocol = expectedPeer.getProtocol()
@@ -488,12 +472,6 @@ class NetworkBaselineTest extends BaseSpecification {
             return baseline
         }
 
-        log.info "baseline= ${baseline}"
-        log.info ""
-        log.info ""
-        log.info ""
-        log.info ""
-
         def mustNotBeInBaseline = []
         validateBaseline(baseline, beforeDeploymentCreate, justAfterDeploymentCreate,
             [new Tuple2<String, Boolean>(Constants.INTERNET_EXTERNAL_SOURCE_ID, false)], mustNotBeInBaseline)
@@ -509,12 +487,8 @@ class NetworkBaselineTest extends BaseSpecification {
         }
 
         assert externalBaseline
-        log.info "externalBaseline= ${externalBaseline}"
 
         def expectedPeer = externalBaseline.getBaselineList().find { it.getPeer().getEntity().getName() == "8.8.8.8" }.getPeer()
-
-        log.info "expectedPeer= ${expectedPeer}"
-
 
         assert expectedPeer
         def expectedEntity = expectedPeer.getEntity()
@@ -557,23 +531,12 @@ class NetworkBaselineTest extends BaseSpecification {
             return baseline
         }
 
-        log.info "baseline= ${baseline}"
-        log.info ""
-        log.info ""
-        log.info ""
-        log.info ""
-
         def mustNotBeInBaseline = []
-        //validateBaseline(baseline, beforeDeploymentCreate, justAfterDeploymentCreate,
-        //    [new Tuple2<String, Boolean>(Constants.INTERNET_EXTERNAL_SOURCE_ID, false)], mustNotBeInBaseline)
-
         
-        //def expectedEntity NetworkBaselineServiceOuterClass.NetworkBaselinePeerEntity.newBuilder()
         def expectedEntity = NetworkBaselineServiceOuterClass.NetworkBaselinePeerEntity.newBuilder()
 				.setId(Constants.INTERNET_EXTERNAL_SOURCE_ID)
                                 .build()
 
-        log.info "expectedEntity= ${expectedEntity}"
         def expectedPeer = NetworkBaselineServiceOuterClass.NetworkBaselineStatusPeer.newBuilder()
                                                         .setEntity(expectedEntity)
                                                         .setPort(53)
@@ -595,11 +558,8 @@ class NetworkBaselineTest extends BaseSpecification {
         }
 
         assert externalBaseline
-        log.info "externalBaseline= ${externalBaseline}"
 
         def peer1 = externalBaseline.getBaselineList().find { it.getPeer().getEntity().getName() == "8.8.8.8" }.getPeer()
-
-        log.info "expectedPeer= ${peer1}"
 
         assert peer1
         def expectedEntity1 = peer1.getEntity()
@@ -614,8 +574,6 @@ class NetworkBaselineTest extends BaseSpecification {
 
         def peer2 = externalBaseline.getBaselineList().find { it.getPeer().getEntity().getName() == "1.1.1.1" }.getPeer()
 
-        log.info "expectedPeer= ${peer2}"
-
         assert peer2
         def expectedEntity2 = peer2.getEntity()
         verifyAll(expectedEntity2) {
@@ -628,8 +586,6 @@ class NetworkBaselineTest extends BaseSpecification {
         assert peer2.getProtocol() == NetworkFlowOuterClass.L4Protocol.L4_PROTOCOL_TCP
 
         def peer3 = externalBaseline.getBaselineList().find { it.getPeer().getEntity().getName() == "142.250.72.238" }.getPeer()
-
-        log.info "expectedPeer= ${peer3}"
 
         assert peer3
         def expectedEntity3 = peer3.getEntity()
@@ -647,10 +603,8 @@ class NetworkBaselineTest extends BaseSpecification {
 
         def status = NetworkBaselineServiceOuterClass.NetworkBaselinePeerStatus.Status.ANOMALOUS
         def modifiedPeer = modifyBaseline(peer1, status)
-        log.info "modifiedPeer= ${modifiedPeer}"
 
         NetworkBaselineService.modifyBaselineStatusForPeers(deploymentUid, modifiedPeer)
-
          
         def externalBaselineAfter = evaluateWithRetry(30, 4) {
             def externalBaselineAfter = NetworkBaselineService.getNetworkBaselineForExternalFlows(deploymentUid)
