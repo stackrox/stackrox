@@ -8,6 +8,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
+	"github.com/stackrox/rox/central/views/imagecomponentflat"
 	"github.com/stackrox/rox/central/views/imagecveflat"
 	imagesView "github.com/stackrox/rox/central/views/images"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -86,6 +87,7 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) SetupSuite() {
 		CreateTestImageCVEV2Datastore(s.T(), s.testDB),
 		vulnReqDatastore,
 		imagecveflat.NewCVEFlatView(s.testDB.DB),
+		imagecomponentflat.NewComponentFlatView(s.testDB.DB),
 	)
 	s.resolver = resolver
 

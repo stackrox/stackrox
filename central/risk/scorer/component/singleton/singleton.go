@@ -9,14 +9,14 @@ import (
 
 var (
 	imageScorerOnce sync.Once
-	imageScorer     component.Scorer
+	imageScorer     component.ImageScorer
 
 	nodeScorerOnce sync.Once
 	nodeScorer     component.Scorer
 )
 
 // GetImageScorer returns the singleton Scorer object to use when scoring image risk.
-func GetImageScorer() component.Scorer {
+func GetImageScorer() component.ImageScorer {
 	imageScorerOnce.Do(func() {
 		imageScorer = image.NewImageComponentScorer()
 	})

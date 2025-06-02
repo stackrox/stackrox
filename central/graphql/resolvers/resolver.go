@@ -53,6 +53,7 @@ import (
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
+	"github.com/stackrox/rox/central/views/imagecomponentflat"
 	"github.com/stackrox/rox/central/views/imagecve"
 	"github.com/stackrox/rox/central/views/imagecveflat"
 	"github.com/stackrox/rox/central/views/nodecve"
@@ -64,6 +65,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	auditPkg "github.com/stackrox/rox/pkg/audit"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -125,10 +127,11 @@ type Resolver struct {
 	ImageCVEV2DataStore           imageCVEV2DataStore.DataStore
 
 	// Views
-	ImageCVEView     imagecve.CveView
-	ImageCVEFlatView imagecveflat.CveFlatView
-	PlatformCVEView  platformcve.CveView
-	NodeCVEView      nodecve.CveView
+	ImageComponentFlatView imagecomponentflat.ComponentFlatView
+	ImageCVEView           imagecve.CveView
+	ImageCVEFlatView       imagecveflat.CveFlatView
+	PlatformCVEView        platformcve.CveView
+	NodeCVEView            nodecve.CveView
 }
 
 // New returns a Resolver wired into the relevant data stores
@@ -148,9 +151,6 @@ func New() *Resolver {
 		DeploymentDataStore:           deploymentDatastore.Singleton(),
 		PodDataStore:                  podDatastore.Singleton(),
 		ImageDataStore:                imageDatastore.Singleton(),
-		ImageComponentDataStore:       imageComponentDataStore.Singleton(),
-		ImageComponentEdgeDataStore:   imageComponentEdgeDataStore.Singleton(),
-		ImageCVEEdgeDataStore:         imageCVEEdgeDataStore.Singleton(),
 		GroupDataStore:                groupDataStore.Singleton(),
 		NamespaceDataStore:            namespaceDataStore.Singleton(),
 		NetworkPoliciesStore:          npDS.Singleton(),
@@ -177,20 +177,14 @@ func New() *Resolver {
 		vulnReqStore:                  vulnReqDataStore.Singleton(),
 		AuditLogger:                   audit.New(processor.Singleton()),
 		ClusterCVEDataStore:           clusterCVEDataStore.Singleton(),
-		ImageCVEDataStore:             imageCVEDataStore.Singleton(),
 		NodeCVEDataStore:              nodeCVEDataStore.Singleton(),
 		NodeComponentCVEEdgeDataStore: nodeComponentCVEEdgeDataStore.Singleton(),
 		NodeComponentDataStore:        nodeComponentDataStore.Singleton(),
 		PolicyCategoryDataStore:       policyCategoryDatastore.Singleton(),
-		ImageComponentV2DataStore:     imageComponentV2DataStore.Singleton(),
-		ImageCVEV2DataStore:           imageCVEV2DataStore.Singleton(),
 
 		// Views
 		ImageCVEView: func() imagecve.CveView {
 			return imagecve.Singleton()
-		}(),
-		ImageCVEFlatView: func() imagecveflat.CveFlatView {
-			return imagecveflat.Singleton()
 		}(),
 		NodeCVEView: func() nodecve.CveView {
 			return nodecve.Singleton()
@@ -198,6 +192,22 @@ func New() *Resolver {
 		PlatformCVEView: func() platformcve.CveView {
 			return platformcve.Singleton()
 		}(),
+	}
+	if features.FlattenCVEData.Enabled() {
+		resolver.ImageCVEFlatView = func() imagecveflat.CveFlatView {
+			return imagecveflat.Singleton()
+		}()
+		resolver.ImageComponentFlatView = func() imagecomponentflat.ComponentFlatView {
+			return imagecomponentflat.Singleton()
+		}()
+
+		resolver.ImageComponentV2DataStore = imageComponentV2DataStore.Singleton()
+		resolver.ImageCVEV2DataStore = imageCVEV2DataStore.Singleton()
+	} else {
+		resolver.ImageComponentDataStore = imageComponentDataStore.Singleton()
+		resolver.ImageComponentEdgeDataStore = imageComponentEdgeDataStore.Singleton()
+		resolver.ImageCVEEdgeDataStore = imageCVEEdgeDataStore.Singleton()
+		resolver.ImageCVEDataStore = imageCVEDataStore.Singleton()
 	}
 
 	return resolver
