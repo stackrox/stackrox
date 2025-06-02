@@ -535,9 +535,7 @@ class NetworkBaselineTest extends BaseSpecification {
         when:
         "One of the flows is marked as anomalous"
         def status = NetworkBaselineServiceOuterClass.NetworkBaselinePeerStatus.Status.ANOMALOUS
-        def modifiedPeer = modifyBaseline(peer1, status)
-
-        NetworkBaselineService.modifyBaselineStatusForPeers(deploymentUid, modifiedPeer)
+        modifyBaseline(peer1, deploymentUid, status)
 
         def externalBaselineAfter = evaluateWithRetry(30, 4) {
             def externalBaselineAfter = NetworkBaselineService.getNetworkBaselineForExternalFlows(deploymentUid)
@@ -597,10 +595,12 @@ class NetworkBaselineTest extends BaseSpecification {
         assert anomalousPeer2.getProtocol() == NetworkFlowOuterClass.L4Protocol.L4_PROTOCOL_TCP
     }
 
-    def modifyBaseline(NetworkBaselineStatusPeer peer, NetworkBaselinePeerStatus.Status status) {
-        return NetworkBaselineServiceOuterClass.NetworkBaselinePeerStatus.newBuilder()
+    def modifyBaseline(NetworkBaselineStatusPeer peer, String deploymentUid, NetworkBaselinePeerStatus.Status status) {
+        def modifiedPeer = NetworkBaselineServiceOuterClass.NetworkBaselinePeerStatus.newBuilder()
                         .setPeer(peer)
                         .setStatus(status)
                         .build()
+
+        NetworkBaselineService.modifyBaselineStatusForPeers(deploymentUid, modifiedPeer)
     }
 }
