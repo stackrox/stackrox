@@ -117,16 +117,36 @@ const SystemConfigForm = ({
     } = useFormik<Values>({
         initialValues: { privateConfig, publicConfig, platformComponentConfigRules },
         validationSchema,
-        onSubmit: () => {
+        onSubmit: async () => {
             const { coreSystemRule, redHatLayeredProductsRule, customRules } =
                 values.platformComponentConfigRules;
+
+            // UI form checks (since we don't have form validation yet)
+            const isRedHatLayeredProductsRuleEmpty =
+                redHatLayeredProductsRule.namespaceRule.regex === '';
+            const hasEmptyCustomRule = customRules.some(
+                (rule) => rule.name === '' || rule.namespaceRule.regex === ''
+            );
+            if (isRedHatLayeredProductsRuleEmpty || hasEmptyCustomRule) {
+                setSubmitting(false);
+                if (isRedHatLayeredProductsRuleEmpty) {
+                    setErrorMessage('The Red Hat layered products rule cannot be empty.');
+                } else {
+                    setErrorMessage(
+                        'All custom platform component name and regex fields must be filled out.'
+                    );
+                }
+                return;
+            }
+
             const platformComponentConfigRules = [
                 ...(coreSystemRule ? [coreSystemRule] : []),
                 ...(redHatLayeredProductsRule ? [redHatLayeredProductsRule] : []),
                 ...customRules,
             ];
+
             // Payload for privateConfig allows strings as number values.
-            saveSystemConfig({
+            await saveSystemConfig({
                 privateConfig: values.privateConfig,
                 publicConfig: values.publicConfig,
                 platformComponentConfig: {
