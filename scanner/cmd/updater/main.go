@@ -38,7 +38,7 @@ func main() {
 	}
 
 	var exportCmd = &cobra.Command{
-		Use:   "export [--split] [--manual-url <url>] <output-dir>",
+		Use:   "export [--split] [--manual-url <url>] [--cache-directory <cache-dir>] <output-dir>",
 		Short: "Export vulnerabilities and write bundle(s) to <output-dir>.",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -51,6 +51,10 @@ func main() {
 			if err != nil {
 				return err
 			}
+			cacheDirPath, err := cmd.Flags().GetString("cache-directory")
+			if err != nil {
+				return err
+			}
 			const retries = 3
 			for attempt := 1; attempt <= retries; attempt++ {
 				zlog.Info(ctx).
@@ -58,7 +62,11 @@ func main() {
 					Str("manual vulns URL", manualURL).
 					Str("output directory", outputDir).
 					Msg("exporting vulnerabilities")
-				err := tryExport(ctx, outputDir, &updater.ExportOptions{SplitBundles: split, ManualVulnURL: manualURL})
+				err := tryExport(ctx, outputDir, &updater.ExportOptions{
+					SplitBundles:       split,
+					ManualVulnURL:      manualURL,
+					CacheDirectoryPath: cacheDirPath,
+				})
 				if err != nil {
 					if errors.Is(err, context.DeadlineExceeded) {
 						zlog.Warn(ctx).
@@ -78,6 +86,7 @@ func main() {
 	exportCmd.Flags().Bool("split", false,
 		"If true create multiple bundles per updater, rather than a single bundle.")
 	exportCmd.Flags().String("manual-url", DefaultURL, "URL to the manual vulnerability data.")
+	exportCmd.Flags().String("cache-directory", "", "Path to the cache directory.")
 
 	var importCmd = &cobra.Command{
 		Use:   "import",
