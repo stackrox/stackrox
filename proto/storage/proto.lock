@@ -5382,7 +5382,7 @@
                     "key_type": "string",
                     "field": {
                       "id": 1,
-                      "name": "label_expression",
+                      "name": "labels",
                       "type": "Expression"
                     }
                   }
@@ -5437,7 +5437,7 @@
                     "key_type": "string",
                     "field": {
                       "id": 2,
-                      "name": "metric_labels",
+                      "name": "metrics",
                       "type": "Labels"
                     }
                   }
