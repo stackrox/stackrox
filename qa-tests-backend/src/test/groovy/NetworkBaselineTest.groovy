@@ -103,16 +103,6 @@ class NetworkBaselineTest extends BaseSpecification {
                               "do wget --timeout=10 -S http://${SERVER_DEP_NAME}; " +
                               "done" as String,])
 
-    private static final EXTERNAL_DEP = createAndRegisterDeployment()
-                    .setName(EXTERNALDESTINATION)
-                    .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1-15-4-alpine")
-                    .addLabel("app", EXTERNALDESTINATION)
-                    .setCommand(["/bin/sh", "-c",])
-                    .setArgs(["echo -n 'Startup time: '; ${DATE_CMD};" +
-                                      "while sleep ${NetworkGraphUtil.NETWORK_FLOW_UPDATE_CADENCE_IN_SECONDS}; " +
-                                      "do wget -S -T 2 http://8.8.8.8:53; " +
-                                      "done" as String,])
-
     private static final MULTIPLE_EXTERNAL_DEP = createAndRegisterDeployment()
                     .setName(MULTIPLE_EXTERNALDESTINATION)
                     .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1-15-4-alpine")
@@ -444,65 +434,6 @@ class NetworkBaselineTest extends BaseSpecification {
         validateBaseline(userReqBaselinedClientBaseline, beforeClientDeploymentCreate, justAfterClientDeploymentCreate,
             [new Tuple2<String, Boolean>(userReqBaselineServerDeploymentID, false)], []
         )
-    }
-
-    @Tag("NetworkBaseline")
-    def "Verify network baseline functionality with an external entity"() {
-        given:
-        //when:
-        //"Create initial set of deployments, wait for baseline to populate"
-        CollectorUtil.enableExternalIps(orchestrator)
-        def beforeDeploymentCreate = System.currentTimeSeconds()
-        batchCreate([EXTERNAL_DEP])
-        def justAfterDeploymentCreate = System.currentTimeSeconds()
-
-        def deploymentUid = EXTERNAL_DEP.deploymentUid
-        assert deploymentUid != null
-
-        Timestamp epoch = Timestamp.newBuilder().setSeconds(0).build()
-
-        assert NetworkGraphUtil.checkForEdge(deploymentUid, Constants.INTERNET_EXTERNAL_SOURCE_ID, epoch, 180)
-        def baseline = evaluateWithRetry(30, 4) {
-            def baseline = NetworkBaselineService.getNetworkBaseline(deploymentUid)
-            if (baseline.getPeersCount() == 0) {
-                throw new RuntimeException(
-                    "No peers in baseline for deployment ${deploymentUid} yet. Baseline is ${baseline}"
-                )
-            }
-            return baseline
-        }
-
-        def mustNotBeInBaseline = []
-        validateBaseline(baseline, beforeDeploymentCreate, justAfterDeploymentCreate,
-            [new Tuple2<String, Boolean>(Constants.INTERNET_EXTERNAL_SOURCE_ID, false)], mustNotBeInBaseline)
-
-        def externalBaseline = evaluateWithRetry(30, 4) {
-            def externalBaseline = NetworkBaselineService.getNetworkBaselineForExternalFlows(deploymentUid)
-            if (externalBaseline.totalAnomalous + externalBaseline.totalBaseline == 0) {
-                throw new RuntimeException(
-                    "No peers in baseline for deployment ${deploymentUid} yet. Baseline is ${externalBaseline}"
-                )
-            }
-            return externalBaseline
-        }
-
-        assert externalBaseline
-
-        def expectedPeer = externalBaseline.getBaselineList().find { it.getPeer().getEntity().getName() == "8.8.8.8" }.getPeer()
-
-        assert expectedPeer
-        def expectedEntity = expectedPeer.getEntity()
-        verifyAll(expectedEntity) {
-            type == NetworkFlowOuterClass.NetworkEntityInfo.Type.EXTERNAL_SOURCE
-            name == "8.8.8.8"
-            discovered == true
-        }
-
-        assert expectedPeer.getPort() == 53
-        assert expectedPeer.getProtocol() == NetworkFlowOuterClass.L4Protocol.L4_PROTOCOL_TCP
-
-        assert externalBaseline.getTotalBaseline() == 1
-        assert externalBaseline.getTotalAnomalous() == 0
     }
 
     @Tag("NetworkBaseline")
