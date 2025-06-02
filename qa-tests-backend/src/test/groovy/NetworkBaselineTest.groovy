@@ -26,11 +26,13 @@ class NetworkBaselineTest extends BaseSpecification {
     private static final String ANOMALOUS_CLIENT_DEP_NAME = "net-bl-client-anomalous"
     private static final String DEFERRED_BASELINED_CLIENT_DEP_NAME = "net-bl-client-deferred-baselined"
     private static final String DEFERRED_POST_LOCK_DEP_NAME = "net-bl-client-post-lock"
-    static final private String EXTERNALDESTINATION = "external-destination-source"
     static final private String MULTIPLE_EXTERNALDESTINATION = "multiple-external-destination-source"
     private static final String DATE_CMD = "date -Iseconds"
 
     private static final String NGINX_IMAGE = "quay.io/rhacs-eng/qa-multi-arch:nginx-1-19-alpine"
+    private static final String EXTERNAL_IP1 = "8.8.8.8"
+    private static final String EXTERNAL_IP2 = "1.1.1.1"
+    private static final String EXTERNAL_IP3 = "142.250.72.238"
 
     // The baseline generation duration must be changed from the default for this test to succeed.
     private static final int EXPECTED_BASELINE_DURATION_SECONDS = 240
@@ -110,8 +112,8 @@ class NetworkBaselineTest extends BaseSpecification {
                     .setCommand(["/bin/sh", "-c",])
                     .setArgs(["echo -n 'Startup time: '; ${DATE_CMD};" +
                                       "while sleep ${NetworkGraphUtil.NETWORK_FLOW_UPDATE_CADENCE_IN_SECONDS}; " +
-                                      "do nc -zv 8.8.8.8 53; nc -zv 1.1.1.1 53; " +
-                                      "nc -zv 142.250.72.238 80;" +
+                                      "do nc -zv ${EXTERNAL_IP1} 53; nc -zv ${EXTERNAL_IP2} 53; " +
+                                      "nc -zv ${EXTERNAL_IP3} 80;" +
                                       "done" as String,])
 
     private static createAndRegisterDeployment() {
@@ -476,39 +478,39 @@ class NetworkBaselineTest extends BaseSpecification {
 
         assert externalBaseline
 
-        def peer1 = externalBaseline.getBaselineList().find { it.getPeer().getEntity().getName() == "8.8.8.8" }.getPeer()
+        def peer1 = externalBaseline.getBaselineList().find { it.getPeer().getEntity().getName() == EXTERNAL_IP1 }.getPeer()
 
         assert peer1
         def expectedEntity1 = peer1.getEntity()
         verifyAll(expectedEntity1) {
             type == NetworkFlowOuterClass.NetworkEntityInfo.Type.EXTERNAL_SOURCE
-            name == "8.8.8.8"
+            name == EXTERNAL_IP1
             discovered == true
         }
 
         assert peer1.getPort() == 53
         assert peer1.getProtocol() == NetworkFlowOuterClass.L4Protocol.L4_PROTOCOL_TCP
 
-        def peer2 = externalBaseline.getBaselineList().find { it.getPeer().getEntity().getName() == "1.1.1.1" }.getPeer()
+        def peer2 = externalBaseline.getBaselineList().find { it.getPeer().getEntity().getName() == EXTERNAL_IP2 }.getPeer()
 
         assert peer2
         def expectedEntity2 = peer2.getEntity()
         verifyAll(expectedEntity2) {
             type == NetworkFlowOuterClass.NetworkEntityInfo.Type.EXTERNAL_SOURCE
-            name == "1.1.1.1"
+            name == EXTERNAL_IP2
             discovered == true
         }
 
         assert peer2.getPort() == 53
         assert peer2.getProtocol() == NetworkFlowOuterClass.L4Protocol.L4_PROTOCOL_TCP
 
-        def peer3 = externalBaseline.getBaselineList().find { it.getPeer().getEntity().getName() == "142.250.72.238" }.getPeer()
+        def peer3 = externalBaseline.getBaselineList().find { it.getPeer().getEntity().getName() == EXTERNAL_IP3 }.getPeer()
 
         assert peer3
         def expectedEntity3 = peer3.getEntity()
         verifyAll(expectedEntity3) {
             type == NetworkFlowOuterClass.NetworkEntityInfo.Type.EXTERNAL_SOURCE
-            name == "142.250.72.238"
+            name == EXTERNAL_IP3
             discovered == true
         }
 
