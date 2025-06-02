@@ -22,10 +22,10 @@ jobs:
         tag:
         - '--tests "A*" --tests "B*" --tests "C*" --tests "D*"'
         - '--tests "E*" --tests "F*" --tests "G*" --tests "H*"'
-        - '--tests "I*" --tests "J*" --tests "K*" --tests "L*"'
-        - '--tests "M*" --tests "N*" --tests "O*" --tests "P*"'
-        - '--tests "R*" --tests "S*" --tests "T*" --tests "U*"'
-        - '--tests "W*" --tests "V*" --tests "X*" --tests "Y*"'
+        - '--tests "I*" --tests "J*" --tests "K*" --tests "L*" --tests "M*"'
+        - '--tests "N*"'
+        - '--tests "O*" --tests "P*" --tests "R*" --tests "S*" --tests "T*"'
+        - '--tests "U*" --tests "W*" --tests "V*" --tests "X*" --tests "Y*"'
     runs-on: ubuntu-latest
     steps:
     - name: Checkout

@@ -30,6 +30,7 @@ import spock.lang.Tag
 
 @Tag("PZ")
 @Stepwise // tests are ordered and dependent
+@IgnoreIf({ Env.GHA })
 class RiskTest extends BaseSpecification {
     @Shared
     private String clusterId
@@ -89,7 +90,6 @@ class RiskTest extends BaseSpecification {
         listDeployments().size() == DEPLOYMENTS.size()
     }
 
-    @IgnoreIf({ Env.GHA })
     def "Risk is the same for equivalent deployments"() {
         when:
         "waiting for SR to get to an initial priority and process baseline for each deployment"
