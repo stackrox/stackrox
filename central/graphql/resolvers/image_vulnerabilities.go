@@ -158,6 +158,7 @@ func (resolver *Resolver) ImageVulnerability(ctx context.Context, args IDQuery) 
 func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageVulnerabilities")
 
+	log.Info("SHREWS -- Image Vulnerabilities --")
 	// check permissions
 	if err := readImages(ctx); err != nil {
 		return nil, err

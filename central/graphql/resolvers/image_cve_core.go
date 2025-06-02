@@ -103,6 +103,8 @@ func (resolver *Resolver) ImageCVECount(ctx context.Context, q RawQuery) (int32,
 func (resolver *Resolver) ImageCVEs(ctx context.Context, q PaginatedQuery) ([]*imageCVECoreResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageCVEs")
 
+	log.Info("SHREWS -- Image CVEs --")
+
 	if err := readImages(ctx); err != nil {
 		return nil, err
 	}

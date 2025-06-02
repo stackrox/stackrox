@@ -39,6 +39,8 @@ func (resolver *Resolver) wrapPlottedImageVulnerabilitiesWithContext(ctx context
 
 // PlottedImageVulnerabilities - returns image vulns
 func (resolver *Resolver) PlottedImageVulnerabilities(ctx context.Context, args RawQuery) (*PlottedImageVulnerabilitiesResolver, error) {
+	log.Info("SHREWS -- Plotted Image Vulnerabilities --")
+
 	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
