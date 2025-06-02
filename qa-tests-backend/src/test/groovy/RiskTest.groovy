@@ -89,6 +89,7 @@ class RiskTest extends BaseSpecification {
         listDeployments().size() == DEPLOYMENTS.size()
     }
 
+    @IgnoreIf({ Env.GHA })
     def "Risk is the same for equivalent deployments"() {
         when:
         "waiting for SR to get to an initial priority and process baseline for each deployment"

@@ -45,6 +45,7 @@ import spock.lang.Unroll
 @Tag("PZ")
 // TODO(ROX-13738): Re-enable these tests in compatibility-test step
 @Stepwise // We need to verify all of the expected alerts are present before other tests.
+@IgnoreIf({ Env.GHA })
 class DefaultPoliciesTest extends BaseSpecification {
     // Deployment names
     static final private String NGINX_LATEST = "qadefpolnginxlatest"

@@ -5,8 +5,10 @@ import services.CloudSourcesService
 import services.DiscoveredClustersService
 import util.Env
 
+import spock.lang.IgnoreIf
 import spock.lang.Tag
 
+@IgnoreIf({ Env.GHA })
 class CloudSourcesTest extends BaseSpecification {
 
     static final private String CLOUD_SOURCE_NAME = "testing OCM"
