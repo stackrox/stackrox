@@ -86,7 +86,7 @@ func (d *delegatorImpl) DelegateScanImage(ctx context.Context, imgName *storage.
 		return nil, errors.New("missing cluster id")
 	}
 
-	// If a namespace is specified, we verify access to it and fail if no access it granted.
+	// If a namespace is specified, we verify access to it and fail if no access is granted.
 	// If no namespace is specified, we attempt to infer a namespace based on the registry to
 	// accommodate images from the OCP integrated registry.
 	if namespace != "" {
