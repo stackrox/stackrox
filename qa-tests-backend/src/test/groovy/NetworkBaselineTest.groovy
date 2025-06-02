@@ -179,7 +179,7 @@ class NetworkBaselineTest extends BaseSpecification {
         return true
     }
 
-    def validateBaseline2(NetworkBaselineOuterClass.NetworkBaseline baseline,
+    def validateBaselineFull(NetworkBaselineOuterClass.NetworkBaseline baseline,
                          long beforeCreate,
                          long justAfterCreate,
                          List<NetworkBaselineStatusPeer> mustBeInBaseline,
@@ -268,20 +268,6 @@ class NetworkBaselineTest extends BaseSpecification {
         "Validate server baseline"
         // The anomalous client->server connection should not be baselined since the anonymous client
         // sleeps for a time period longer than the observation period before connecting to the server.
-        //String policyName = "Matching CVE (${NGINX_CVE})"
-        //PolicyOuterClass.Policy policy = PolicyOuterClass.Policy.newBuilder()
-        //        .setName(policyName)
-        //        .addLifecycleStages(PolicyOuterClass.LifecycleStage.DEPLOY)
-        //        .addCategories("DevOps Best Practices")
-        //        .setSeverity(PolicyOuterClass.Severity.HIGH_SEVERITY)
-        //        .addEnforcementActions(PolicyOuterClass.EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT)
-        //        .addScope(ScopeOuterClass.Scope.newBuilder().setNamespace(TEST_NAMESPACE))
-        //        .addPolicySections(
-        //                PolicySection.newBuilder().addPolicyGroups(policyGroup.build()).build())
-        //        .build()
-
-        //NetworkBaselineServiceOuterClass.Peer expe
-
         validateBaseline(serverBaseline, beforeDeploymentCreate, justAfterDeploymentCreate,
             [new Tuple2<String, Boolean>(baselinedClientDeploymentID, true)], mustNotBeInBaseline)
         validateBaseline(anomalousClientBaseline, beforeDeploymentCreate, justAfterDeploymentCreate, [], [])
@@ -463,9 +449,9 @@ class NetworkBaselineTest extends BaseSpecification {
         }
 
         def mustNotBeInBaseline = []
-        
+
         def expectedEntity = NetworkBaselineServiceOuterClass.NetworkBaselinePeerEntity.newBuilder()
-				.setId(Constants.INTERNET_EXTERNAL_SOURCE_ID)
+                                .setId(Constants.INTERNET_EXTERNAL_SOURCE_ID)
                                 .build()
 
         def expectedPeer = NetworkBaselineServiceOuterClass.NetworkBaselineStatusPeer.newBuilder()
@@ -475,7 +461,7 @@ class NetworkBaselineTest extends BaseSpecification {
                                                         .setIngress(false)
                                                         .build()
 
-        validateBaseline2(baseline, beforeDeploymentCreate, justAfterDeploymentCreate,
+        validateBaselineFull(baseline, beforeDeploymentCreate, justAfterDeploymentCreate,
             [expectedPeer], mustNotBeInBaseline)
 
         def externalBaseline = evaluateWithRetry(30, 4) {
@@ -536,7 +522,7 @@ class NetworkBaselineTest extends BaseSpecification {
         def modifiedPeer = modifyBaseline(peer1, status)
 
         NetworkBaselineService.modifyBaselineStatusForPeers(deploymentUid, modifiedPeer)
-         
+
         def externalBaselineAfter = evaluateWithRetry(30, 4) {
             def externalBaselineAfter = NetworkBaselineService.getNetworkBaselineForExternalFlows(deploymentUid)
             if (externalBaselineAfter.totalAnomalous + externalBaselineAfter.totalBaseline == 0) {
@@ -554,8 +540,8 @@ class NetworkBaselineTest extends BaseSpecification {
     def modifyBaseline(NetworkBaselineServiceOuterClass.NetworkBaselineStatusPeer peer, NetworkBaselineServiceOuterClass.NetworkBaselinePeerStatus.Status status) {
 
         return NetworkBaselineServiceOuterClass.NetworkBaselinePeerStatus.newBuilder()
-			.setPeer(peer)
+                        .setPeer(peer)
                         .setStatus(status)
-			.build()
+                        .build()
     }
 }
