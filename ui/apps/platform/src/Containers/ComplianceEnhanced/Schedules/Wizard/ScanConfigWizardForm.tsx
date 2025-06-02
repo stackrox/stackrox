@@ -232,7 +232,7 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
                             onSave={onSave}
                             isSaving={isCreating}
                             proceedToNextStepIfValid={proceedToNextStepIfValid}
-                            disableClusterNext={allClustersAreUnhealthy(clusters) && isCreating}
+                            disableClusterNext={allClustersAreUnhealthy(clusters) && !initialFormValues}
                         />
                     }
                 />
