@@ -132,15 +132,6 @@ func (s *serviceImpl) TLSChallenge(_ context.Context, req *v1.TLSChallengeReques
 		return nil, errors.Errorf("reading additional CAs: %s", err)
 	}
 
-	_, secondaryCACertDERBytes, err := mtls.SecondaryCACert()
-	if err == nil {
-		// CA rotation: If a secondary CA exists, we don't know which CA Sensor currently trusts.
-		// Adding both CAs that Central trusts to the AdditionalCas field will allow Sensor to authenticate
-		// Central during mTLS, regardless of which CA Sensor currently trusts.
-		additionalCAs = append(additionalCAs, caCertDERBytes)
-		additionalCAs = append(additionalCAs, secondaryCACertDERBytes)
-	}
-
 	// add default leaf cert to additional CAs
 	defaultCertChain, err := tlsconfig.MaybeGetDefaultCertChain()
 	if err != nil {
@@ -164,9 +155,13 @@ func (s *serviceImpl) TLSChallenge(_ context.Context, req *v1.TLSChallengeReques
 	// if a secondary CA exists, add its chain to TrustInfo
 	secondaryLeafCert, secondaryLeafCertErr := GetLeafCertFromSecondaryCA()
 	if secondaryLeafCertErr == nil {
-		trustInfo.SecondaryCertChain = [][]byte{
-			secondaryLeafCert.Certificate[0],
-			secondaryCACertDERBytes,
+		_, secondaryCACertDERBytes, secondaryCACertErr := mtls.SecondaryCACert()
+
+		if secondaryCACertErr == nil {
+			trustInfo.SecondaryCertChain = [][]byte{
+				secondaryLeafCert.Certificate[0],
+				secondaryCACertDERBytes,
+			}
 		}
 	}
 

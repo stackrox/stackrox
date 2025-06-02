@@ -225,8 +225,9 @@ func (t *ClientTestSuite) TestGetTLSTrustedCerts_GetCertificate() {
 	certs, err := c.GetTLSTrustedCerts(context.Background())
 	t.Require().NoError(err)
 
-	t.Require().Len(certs, 1)
+	t.Require().Len(certs, 2)
 	t.Equal("Root LoadBalancer Certificate Authority", certs[0].Subject.CommonName)
+	t.Equal("StackRox Certificate Authority", certs[1].Subject.CommonName)
 }
 
 func (t *ClientTestSuite) TestGetTLSTrustedCerts_WithSignatureSignedByAnotherPrivateKey_ShouldFail() {
