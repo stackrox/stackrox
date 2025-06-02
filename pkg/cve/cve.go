@@ -37,7 +37,7 @@ func IDV2(cve *storage.EmbeddedVulnerability, componentID string) (string, error
 // IDToParts return the CVE ID parts—cve and operating system.
 func IDToParts(id string) (string, string) {
 	parts := pgSearch.IDToParts(id)
-	if len(parts) > +2 {
+	if len(parts) >= 2 {
 		return parts[0], parts[1]
 	}
 	return parts[0], ""
