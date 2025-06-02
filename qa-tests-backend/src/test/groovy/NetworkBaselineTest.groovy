@@ -221,6 +221,7 @@ class NetworkBaselineTest extends BaseSpecification {
         for (Deployment deployment : DEPLOYMENTS) {
             orchestrator.deleteDeployment(deployment)
         }
+        CollectorUtil.deleteRuntimeConfig(orchestrator)
     }
 
     @Tag("NetworkBaseline")
@@ -552,6 +553,48 @@ class NetworkBaselineTest extends BaseSpecification {
         "All external flows with the same port and protocol are marked a anomalous"
         assert externalBaselineAfter.getTotalBaseline() == 1
         assert externalBaselineAfter.getTotalAnomalous() == 2
+
+        def baselinePeerStatus = externalBaselineAfter.getBaselineList().find { it.getPeer().getEntity().getName() == EXTERNAL_IP3 }
+        def baselinePeer = baselinePeerStatus.getPeer()
+
+        assert baselinePeer
+        def baselineEntity = baselinePeer.getEntity()
+        verifyAll(baselineEntity) {
+            type == NetworkFlowOuterClass.NetworkEntityInfo.Type.EXTERNAL_SOURCE
+            name == EXTERNAL_IP3
+            discovered == true
+        }
+
+        assert baselinePeer.getPort() == 80
+        assert baselinePeer.getProtocol() == NetworkFlowOuterClass.L4Protocol.L4_PROTOCOL_TCP
+
+        def anomalousPeerStatus1 = externalBaselineAfter.getAnomalousList().find { it.getPeer().getEntity().getName() == EXTERNAL_IP1 }
+        def anomalousPeer1 = anomalousPeerStatus1.getPeer()
+
+        assert anomalousPeer1
+        def anomalousEntity1 = anomalousPeer1.getEntity()
+        verifyAll(anomalousEntity1) {
+            type == NetworkFlowOuterClass.NetworkEntityInfo.Type.EXTERNAL_SOURCE
+            name == EXTERNAL_IP1
+            discovered == true
+        }
+
+        assert anomalousPeer1.getPort() == 53
+        assert anomalousPeer1.getProtocol() == NetworkFlowOuterClass.L4Protocol.L4_PROTOCOL_TCP
+
+        def anomalousPeerStatus2 = externalBaselineAfter.getAnomalousList().find { it.getPeer().getEntity().getName() == EXTERNAL_IP2 }
+        def anomalousPeer2 = anomalousPeerStatus2.getPeer()
+
+        assert anomalousPeer2
+        def anomalousEntity2 = anomalousPeer2.getEntity()
+        verifyAll(anomalousEntity2) {
+            type == NetworkFlowOuterClass.NetworkEntityInfo.Type.EXTERNAL_SOURCE
+            name == EXTERNAL_IP2
+            discovered == true
+        }
+
+        assert anomalousPeer2.getPort() == 53
+        assert anomalousPeer2.getProtocol() == NetworkFlowOuterClass.L4Protocol.L4_PROTOCOL_TCP
     }
 
     def modifyBaseline(NetworkBaselineStatusPeer peer, NetworkBaselinePeerStatus.Status status) {
