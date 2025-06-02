@@ -4,6 +4,7 @@ import com.google.protobuf.Timestamp
 
 import io.stackrox.proto.api.v1.NetworkBaselineServiceOuterClass
 import io.stackrox.proto.api.v1.NetworkBaselineServiceOuterClass.NetworkBaselineStatusPeer
+import io.stackrox.proto.api.v1.NetworkBaselineServiceOuterClass.NetworkBaselinePeerStatus
 import io.stackrox.proto.storage.NetworkBaselineOuterClass
 import io.stackrox.proto.storage.NetworkFlowOuterClass
 
@@ -546,7 +547,7 @@ class NetworkBaselineTest extends BaseSpecification {
         assert externalBaselineAfter.getTotalAnomalous() == 2
     }
 
-    def modifyBaseline(NetworkBaselineServiceOuterClass.NetworkBaselineStatusPeer peer, NetworkBaselineServiceOuterClass.NetworkBaselinePeerStatus.Status status) {
+    def modifyBaseline(NetworkBaselineStatusPeer peer, NetworkBaselinePeerStatus.Status status) {
 
         return NetworkBaselineServiceOuterClass.NetworkBaselinePeerStatus.newBuilder()
                         .setPeer(peer)
