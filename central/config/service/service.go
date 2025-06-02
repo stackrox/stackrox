@@ -150,10 +150,10 @@ func (s *serviceImpl) PutConfig(ctx context.Context, req *v1.PutConfigRequest) (
 	regexes := make([]*regexp.Regexp, 0)
 	if platformConfig := req.GetConfig().GetPlatformComponentConfig(); platformConfig != nil {
 		for _, rule := range platformConfig.GetRules() {
-			if len(rule.GetNamespaceRule().Regex) == 0 {
+			if len(rule.GetNamespaceRule().GetRegex()) == 0 || len(rule.GetName()) == 0 {
 				return nil, errors.New("invalid regex for rule " + rule.GetName() + " in platform component config")
 			}
-			regex, compileErr := regexp.Compile(rule.GetNamespaceRule().Regex)
+			regex, compileErr := regexp.Compile(rule.GetNamespaceRule().GetRegex())
 			if compileErr != nil {
 				return nil, compileErr
 			}
@@ -238,10 +238,10 @@ func (s *serviceImpl) UpdatePlatformComponentConfig(ctx context.Context, req *v1
 	}
 	regexes := make([]*regexp.Regexp, 0)
 	for _, rule := range req.GetRules() {
-		if len(rule.GetNamespaceRule().Regex) == 0 {
+		if len(rule.GetNamespaceRule().GetRegex()) == 0 || len(rule.GetName()) == 0 {
 			return nil, errors.New("invalid regex for rule " + rule.GetName() + " in platform component config")
 		}
-		regex, compileErr := regexp.Compile(rule.GetNamespaceRule().Regex)
+		regex, compileErr := regexp.Compile(rule.GetNamespaceRule().GetRegex())
 		if compileErr != nil {
 			return nil, compileErr
 		}
