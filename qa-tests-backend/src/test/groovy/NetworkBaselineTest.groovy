@@ -552,7 +552,9 @@ class NetworkBaselineTest extends BaseSpecification {
         assert externalBaselineAfter.getTotalBaseline() == 1
         assert externalBaselineAfter.getTotalAnomalous() == 2
 
-        def baselinePeerStatus = externalBaselineAfter.getBaselineList().find { it.getPeer().getEntity().getName() == EXTERNAL_IP3 }
+        def baselinePeerStatus = externalBaselineAfter.getBaselineList().find {
+            it.getPeer().getEntity().getName() == EXTERNAL_IP3
+        }
         def baselinePeer = baselinePeerStatus.getPeer()
 
         assert baselinePeer
@@ -566,7 +568,9 @@ class NetworkBaselineTest extends BaseSpecification {
         assert baselinePeer.getPort() == 80
         assert baselinePeer.getProtocol() == NetworkFlowOuterClass.L4Protocol.L4_PROTOCOL_TCP
 
-        def anomalousPeerStatus1 = externalBaselineAfter.getAnomalousList().find { it.getPeer().getEntity().getName() == EXTERNAL_IP1 }
+        def anomalousPeerStatus1 = externalBaselineAfter.getAnomalousList().find {
+            it.getPeer().getEntity().getName() == EXTERNAL_IP1
+        }
         def anomalousPeer1 = anomalousPeerStatus1.getPeer()
 
         assert anomalousPeer1
@@ -580,7 +584,9 @@ class NetworkBaselineTest extends BaseSpecification {
         assert anomalousPeer1.getPort() == 53
         assert anomalousPeer1.getProtocol() == NetworkFlowOuterClass.L4Protocol.L4_PROTOCOL_TCP
 
-        def anomalousPeerStatus2 = externalBaselineAfter.getAnomalousList().find { it.getPeer().getEntity().getName() == EXTERNAL_IP2 }
+        def anomalousPeerStatus2 = externalBaselineAfter.getAnomalousList().find {
+            it.getPeer().getEntity().getName() == EXTERNAL_IP2
+        }
         def anomalousPeer2 = anomalousPeerStatus2.getPeer()
 
         assert anomalousPeer2
