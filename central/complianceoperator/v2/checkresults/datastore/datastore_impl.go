@@ -478,6 +478,9 @@ func (d *datastoreImpl) DeleteOldResults(ctx context.Context, lastStartedTimesta
 	if scanRefID == "" || lastStartedTimestamp == nil {
 		return nil
 	}
+	if err := lastStartedTimestamp.CheckValid(); err != nil {
+		return err
+	}
 	deleteFmt := "DELETE FROM %s WHERE %s = $1 AND (%s < $2 OR %s IS NULL)"
 	if includeCurrent {
 		deleteFmt = "DELETE FROM %s WHERE %s = $1 AND (%s <= $2 OR %s IS NULL)"

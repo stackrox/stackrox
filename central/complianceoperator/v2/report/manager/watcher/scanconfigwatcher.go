@@ -309,7 +309,6 @@ func GetScansFromScanConfiguration(ctx context.Context, scanConfig *storage.Comp
 			return nil, errors.Wrap(err, "unable to search the scans")
 		}
 		for _, s := range scans {
-			s.GetScanRefId()
 			log.Debugf("Adding scan to wait %s", s.GetScanName())
 			ret.Add(fmt.Sprintf("%s:%s", s.GetClusterId(), s.GetId()))
 		}

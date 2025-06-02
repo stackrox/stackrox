@@ -328,7 +328,7 @@ func (m *managerImpl) HandleScan(sensorCtx context.Context, scan *storage.Compli
 	id, err := watcher.GetWatcherIDFromScan(m.automaticReportingCtx, scan, m.snapshotDataStore, m.scanConfigDataStore, nil)
 	if err != nil {
 		if errors.Is(err, watcher.ErrComplianceOperatorScanMissingLastStartedFiled) {
-			log.Debug("The scan is missing the LastStartedField field")
+			log.Debug("The scan is missing the LastStartedTime field")
 			return nil
 		}
 		if errors.Is(err, watcher.ErrScanAlreadyHandled) {
@@ -384,7 +384,7 @@ func (m *managerImpl) HandleResult(sensorCtx context.Context, result *storage.Co
 			return err
 		}
 		if errors.Is(err, watcher.ErrComplianceOperatorScanMissingLastStartedFiled) {
-			log.Debugf("The scan is missing the LastStartedField: %v", err)
+			log.Debug("The scan is missing the LastStartedTime field")
 			return err
 		}
 		if errors.Is(err, watcher.ErrScanAlreadyHandled) {

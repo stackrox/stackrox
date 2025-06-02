@@ -531,4 +531,17 @@ func TestDeleteOldResults(t *testing.T) {
 			gomock.Eq(false)).Times(1).Return(errors.New("some error"))
 		assert.Error(tt, DeleteOldResults(context.Background(), results, ds))
 	})
+	t.Run("DataStore success should not return error", func(tt *testing.T) {
+		results := &ScanWatcherResults{
+			Scan: &storage.ComplianceOperatorScanV2{
+				ScanRefId:       "ref-id",
+				LastStartedTime: timeNow,
+			},
+		}
+		ds.EXPECT().DeleteOldResults(gomock.Any(),
+			gomock.Eq(results.Scan.GetLastStartedTime()),
+			gomock.Eq(results.Scan.GetScanRefId()),
+			gomock.Eq(false)).Times(1).Return(nil)
+		assert.NoError(tt, DeleteOldResults(context.Background(), results, ds))
+	})
 }

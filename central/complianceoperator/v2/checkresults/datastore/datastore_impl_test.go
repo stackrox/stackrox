@@ -1263,15 +1263,28 @@ func (s *complianceCheckResultDataStoreTestSuite) TestComplianceDeleteOldResults
 	rec3.ScanRefId = scanRef
 	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, rec3))
 
-	s.Require().NoError(s.dataStore.DeleteOldResults(s.hasWriteCtx, timestampNow, scanRef, false))
-
+	// Make sure the CheckResults are in the DB
 	query := search.NewQueryBuilder().
 		AddExactMatches(search.ComplianceOperatorScanRef, scanRef).ProtoQuery()
 	results, err := s.dataStore.SearchComplianceCheckResults(s.hasReadCtx, query)
 	s.Require().NoError(err)
+	s.Assert().Len(results, 3)
+
+	// DeleteOldResults
+	s.Require().NoError(s.dataStore.DeleteOldResults(s.hasWriteCtx, timestampNow, scanRef, false))
+
+	results, err = s.dataStore.SearchComplianceCheckResults(s.hasReadCtx, query)
+	s.Require().NoError(err)
 	s.Assert().Len(results, 2)
-	s.Assert().Equal("test-check-1", results[0].GetCheckName())
-	s.Assert().Equal("test-check-2", results[1].GetCheckName())
+	expectedNames := []string{"test-check-1", "test-check-2"}
+	s.Assert().Contains(expectedNames, results[0].GetCheckName())
+	s.Assert().Contains(expectedNames, results[1].GetCheckName())
+
+	// Upsert rec3 again to test old results are also deleted if `includeCurrent` is true
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, rec3))
+	results, err = s.dataStore.SearchComplianceCheckResults(s.hasReadCtx, query)
+	s.Require().NoError(err)
+	s.Assert().Len(results, 3)
 
 	s.Require().NoError(s.dataStore.DeleteOldResults(s.hasWriteCtx, timestampNow, scanRef, true))
 
