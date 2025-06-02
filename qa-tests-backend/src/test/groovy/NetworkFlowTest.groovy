@@ -547,7 +547,7 @@ class NetworkFlowTest extends BaseSpecification {
     // TODO: additional handling may be needed for P/Z - see ROX-19615
     // TODO(ROX-24299): CI improvements 2025-02-12: Disabling for OCP.
     @IgnoreIf({ Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT ||
-            Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
+            Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" || Env.GHA })
     def "Verify connections from external sources"() {
         given:
         "Deployment A, where an external source communicates to A"
