@@ -431,9 +431,8 @@ class NetworkBaselineTest extends BaseSpecification {
 
     @Tag("NetworkBaseline")
     def "Verify network baseline functionality with multiple external entities"() {
-        given:
-        //when:
-        //"Create initial set of deployments, wait for baseline to populate"
+        when:
+        "External IPs is enabled and there is a deployment has multiple flows with external IPs"
         CollectorUtil.enableExternalIps(orchestrator)
         def beforeDeploymentCreate = System.currentTimeSeconds()
         batchCreate([MULTIPLE_EXTERNAL_DEP])
@@ -455,6 +454,8 @@ class NetworkBaselineTest extends BaseSpecification {
             return baseline
         }
 
+        then:
+        "The flows are anonymized to INTERNET when using the getNetworkBaseline endpoint"
         def mustNotBeInBaseline = []
 
         def expectedEntity = NetworkBaselineServiceOuterClass.NetworkBaselinePeerEntity.newBuilder()
@@ -481,6 +482,8 @@ class NetworkBaselineTest extends BaseSpecification {
             return externalBaseline
         }
 
+        then:
+        "The getNetworkBaselineForExternalFlows endpoint returns all flows with external IPs"
         assert externalBaseline
 
         def peerStatus1 = externalBaseline.getBaselineList().find { it.getPeer().getEntity().getName() == EXTERNAL_IP1 }
@@ -548,7 +551,6 @@ class NetworkBaselineTest extends BaseSpecification {
     }
 
     def modifyBaseline(NetworkBaselineStatusPeer peer, NetworkBaselinePeerStatus.Status status) {
-
         return NetworkBaselineServiceOuterClass.NetworkBaselinePeerStatus.newBuilder()
                         .setPeer(peer)
                         .setStatus(status)
