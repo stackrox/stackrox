@@ -102,7 +102,7 @@ func Export(ctx context.Context, outputDir string, opts *ExportOptions) error {
 			}
 			bundleOpts := NewBundleOpts(httpClient, w, o)
 			if opts.CacheDirectoryPath != "" {
-				r, err := zstdReader(filepath.Join(outputDir, filename))
+				r, err := zstdReader(opts.CacheDirectoryPath)
 				if err != nil {
 					return err
 				}
@@ -129,7 +129,7 @@ func Export(ctx context.Context, outputDir string, opts *ExportOptions) error {
 			ctx = zlog.ContextWithValues(ctx, "bundle", name)
 			bundleOpts := NewBundleOpts(httpClient, w, o)
 			if opts.CacheDirectoryPath != "" {
-				r, err := zstdReader(filepath.Join(outputDir, filename))
+				r, err := zstdReader(opts.CacheDirectoryPath)
 				if err != nil {
 					return err
 				}
@@ -217,6 +217,7 @@ func redhatCSAFOpts() []updates.ManagerOption {
 }
 
 func zstdWriter(filename string) (io.WriteCloser, error) {
+	// TODO(DO NOT MERGE): I think we should close this.
 	f, err := os.Create(filename)
 	if err != nil {
 		return nil, err
@@ -229,18 +230,27 @@ func zstdWriter(filename string) (io.WriteCloser, error) {
 	return w, nil
 }
 
+// TODO(DO NOT MERGE): Can't return an io.ReadCloser. zstd.Decoder as a
+//  different method signature
+
 func zstdReader(filename string) (io.Reader, error) {
-	f, err := os.Create(filename)
+	// TODO(DO NOT MERGE): I think we should close this.
+	f, err := os.Open(filename)
 	if err != nil {
 		return nil, err
 	}
 	r, err := zstd.NewReader(f)
+	if err != nil {
+		_ = f.Close()
+		return nil, err
+	}
+
 	return r, nil
 }
 
 // TODO(DO NOT MERGE): May have cooked a bit too much on this one. Consider
-//
-//	reverting and adding another parameter to [bundle[ instead.
+//  reverting and adding another parameter to [bundle] instead.
+
 type BundleOpts struct {
 	client  *http.Client
 	w       io.Writer
@@ -276,7 +286,7 @@ func bundle(ctx context.Context, opts BundleOpts) error {
 		}
 	}
 
-	mgr, err := updates.NewManager(ctx, jsonStore, updates.NewLocalLockSource(), client, opts...)
+	mgr, err := updates.NewManager(ctx, jsonStore, updates.NewLocalLockSource(), opts.client, opts.mgrOpts...)
 	if err != nil {
 		return fmt.Errorf("new manager: %w", err)
 	}
@@ -284,7 +294,7 @@ func bundle(ctx context.Context, opts BundleOpts) error {
 	if err != nil {
 		return fmt.Errorf("run: %w", err)
 	}
-	err = jsonStore.Store(w)
+	err = jsonStore.Store(opts.w)
 	if err != nil {
 		return fmt.Errorf("json store: %w", err)
 	}

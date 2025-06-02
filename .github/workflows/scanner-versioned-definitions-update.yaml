@@ -161,18 +161,40 @@ jobs:
         unzip -l "$path"
         echo "STACKROX_NVD_ZIP_PATH=$path" >> "$GITHUB_ENV"
 
+    - name: Cache definitions
+      uses: actions/cache@v4
+      with:
+        path: |
+          cache
+        # Epoch time of when the cache was last purged. Change this value if
+        #  you need to purge the cache. Command: `date +%s`
+        key: 1748807763
+
     - name: Run Updater (single bundle)
       if: ${{ env.SCANNER_BUNDLE_VERSION == 'v1' }}
       run: |
         scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" "definitions/${SCANNER_BUNDLE_VERSION}"
+        # Create cache. Because the defintions are already in a single file,
+        #  there's no need to combine them like the multi bundle step does.
+        ln "definitions/${SCANNER_BUNDLE_VERSION}" cache/definitions.json.zst
 
     - name: Run updater (multi bundle)
       run: |
         scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" --split bundles
         zip definitions/${{ env.SCANNER_BUNDLE_VERSION }}/vulnerabilities.zip bundles/*.json.zst
+        # Create cache. We combine the files to make it easier on the updater
+        #  to load the data (the alternative would require a custom struct to
+        #  do the multi-file reading while closing files that are EOF).
+        zstdcat bundles/*.json.zst > cache/definitions.json.zst
 
     - name: Upload definitions artifacts
-      uses: actions/upload-artifact@v4
+      uses: ./.github/actions/upload-artifact-with-retry
+      with:
+        name: artifact_${{ env.SCANNER_BUNDLE_VERSION }}
+        path: definitions
+
+    - name: Upload definitions artifacts
+      uses: ./.github/actions/upload-artifact-with-retry
       with:
         name: artifact_${{ env.SCANNER_BUNDLE_VERSION }}
         path: definitions

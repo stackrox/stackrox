@@ -573,5 +573,5 @@ replace (
 	github.com/heroku/docker-registry-client => github.com/stackrox/docker-registry-client v0.2.0
 	github.com/mholt/archiver/v3 => github.com/anchore/archiver/v3 v3.5.2
 	// Temporarily use a claircore fork for Vex update
-	github.com/quay/claircore => github.com/BradLugo/claircore v0.0.0-20250529182654-126f688bb112
+	github.com/quay/claircore => github.com/BradLugo/claircore v0.0.0-20250601181113-b3c3d380d014
 )
