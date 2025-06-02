@@ -4,7 +4,6 @@ import groovy.transform.CompileStatic
 
 import io.stackrox.proto.api.v1.Common.ResourceByID
 import io.stackrox.proto.api.v1.NetworkBaselineServiceGrpc
-import io.stackrox.proto.api.v1.NetworkBaselineServiceOuterClass
 import io.stackrox.proto.api.v1.NetworkBaselineServiceOuterClass.NetworkBaselineExternalStatusRequest
 import io.stackrox.proto.api.v1.NetworkBaselineServiceOuterClass.NetworkBaselinePeerStatus
 import io.stackrox.proto.api.v1.NetworkBaselineServiceOuterClass.ModifyBaselineStatusForPeersRequest
