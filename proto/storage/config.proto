@@ -126,13 +126,15 @@ message DayOption {
 
 message PrometheusMetricsConfig {
   message Labels {
+    // Expression is a list of conditions, joined with implicit AND and explicit
+    // OR operators.
     message Expression {
       // Condition represents a single operator-argument pair used in label matching.
       message Condition {
         // Operator is one of =, !=, >, >=, <, <=, OR.
         string operator = 1;
         // Argument value for the operator. OR doesn't require an argument.
-        // Glob pattern for strings.
+        // Use glob patterns for string conditions.
         string argument = 2;
       }
       // List of conditions to be evaluated for a label.
@@ -143,7 +145,7 @@ message PrometheusMetricsConfig {
       //    { "operator": "OR"},
       //    { "operator": "=", "argument": "value2"}]
       //
-      // Which is identical to:
+      // Which is identical to the following glob pattern condition:
       //
       //   [{"operator": "=", "argument": "value1|value2"}]
       //
@@ -153,15 +155,15 @@ message PrometheusMetricsConfig {
       //    {"operator": "<", "argument": "7"}]
       repeated Condition expression = 1;
     }
-    // Mapping from label key to its optional associated expression.
-    map<string, Expression> label_expression = 1;
+    // Mapping from label name to its optional associated expression.
+    map<string, Expression> labels = 1;
   }
 
   message Vulnerabilities {
     // The period (in hours) at which vulnerability data is gathered from the DB.
     uint32 gathering_period_hours = 1;
-    // Mapping from metric name to its associated labels and optional expression.
-    map<string, Labels> metric_labels = 2;
+    // Mapping from metric name to its associated labels.
+    map<string, Labels> metrics = 2;
     // Query string in the syntax of the Search filters used to limit the amount of aggregated vulnerabilities.
     // Example: "Cluster:production"
     string query = 3;

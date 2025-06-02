@@ -260,7 +260,7 @@
         },
         "argument": {
           "type": "string",
-          "description": "Argument value for the operator. OR doesn't require an argument.\nGlob pattern for strings."
+          "description": "Argument value for the operator. OR doesn't require an argument.\nUse glob patterns for string conditions."
         }
       },
       "description": "Condition represents a single operator-argument pair used in label matching."
@@ -274,9 +274,10 @@
             "type": "object",
             "$ref": "#/definitions/ExpressionCondition"
           },
-          "description": "List of conditions to be evaluated for a label.\n\nExample:\n\n  [{ \"operator\": \"=\", \"argument\": \"value1\"},\n   { \"operator\": \"OR\"},\n   { \"operator\": \"=\", \"argument\": \"value2\"}]\n\nWhich is identical to:\n\n  [{\"operator\": \"=\", \"argument\": \"value1|value2\"}]\n\nMultiple conditions are combined with an implicit AND operator:\n\n  [{\"operator\": \">\", \"argument\": \"5\"},\n   {\"operator\": \"<\", \"argument\": \"7\"}]"
+          "description": "List of conditions to be evaluated for a label.\n\nExample:\n\n  [{ \"operator\": \"=\", \"argument\": \"value1\"},\n   { \"operator\": \"OR\"},\n   { \"operator\": \"=\", \"argument\": \"value2\"}]\n\nWhich is identical to the following glob pattern condition:\n\n  [{\"operator\": \"=\", \"argument\": \"value1|value2\"}]\n\nMultiple conditions are combined with an implicit AND operator:\n\n  [{\"operator\": \">\", \"argument\": \"5\"},\n   {\"operator\": \"<\", \"argument\": \"7\"}]"
         }
-      }
+      },
+      "description": "Expression is a list of conditions, joined with implicit AND and explicit\nOR operators."
     },
     "PlatformComponentConfigRule": {
       "type": "object",
@@ -292,12 +293,12 @@
     "PrometheusMetricsConfigLabels": {
       "type": "object",
       "properties": {
-        "labelExpression": {
+        "labels": {
           "type": "object",
           "additionalProperties": {
             "$ref": "#/definitions/LabelsExpression"
           },
-          "description": "Mapping from label key to its optional associated expression."
+          "description": "Mapping from label name to its optional associated expression."
         }
       }
     },
@@ -309,12 +310,12 @@
           "format": "int64",
           "description": "The period (in hours) at which vulnerability data is gathered from the DB."
         },
-        "metricLabels": {
+        "metrics": {
           "type": "object",
           "additionalProperties": {
             "$ref": "#/definitions/PrometheusMetricsConfigLabels"
           },
-          "description": "Mapping from metric name to its associated labels and optional expression."
+          "description": "Mapping from metric name to its associated labels."
         },
         "query": {
           "type": "string",

@@ -17,7 +17,7 @@ func Test_parseMetricLabels(t *testing.T) {
 func Test_noLabels(t *testing.T) {
 	config := map[string]*storage.PrometheusMetricsConfig_Labels{
 		"metric1": {
-			LabelExpression: map[string]*storage.PrometheusMetricsConfig_Labels_Expression{},
+			Labels: map[string]*storage.PrometheusMetricsConfig_Labels_Expression{},
 		},
 		"metric2": {},
 		"metric3": nil,
@@ -34,7 +34,7 @@ func Test_noLabels(t *testing.T) {
 func Test_parseErrors(t *testing.T) {
 	config := map[string]*storage.PrometheusMetricsConfig_Labels{
 		"metric1": {
-			LabelExpression: map[string]*storage.PrometheusMetricsConfig_Labels_Expression{
+			Labels: map[string]*storage.PrometheusMetricsConfig_Labels_Expression{
 				"unknown": nil,
 			},
 		},
@@ -51,7 +51,7 @@ func Test_parseErrors(t *testing.T) {
 
 	delete(config, "met rick")
 	config["metric1"] = &storage.PrometheusMetricsConfig_Labels{
-		LabelExpression: map[string]*storage.PrometheusMetricsConfig_Labels_Expression{
+		Labels: map[string]*storage.PrometheusMetricsConfig_Labels_Expression{
 			"test": {
 				Expression: []*storage.PrometheusMetricsConfig_Labels_Expression_Condition{
 					{

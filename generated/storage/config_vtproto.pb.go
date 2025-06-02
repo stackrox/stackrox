@@ -413,12 +413,12 @@ func (m *PrometheusMetricsConfig_Labels) CloneVT() *PrometheusMetricsConfig_Labe
 		return (*PrometheusMetricsConfig_Labels)(nil)
 	}
 	r := new(PrometheusMetricsConfig_Labels)
-	if rhs := m.LabelExpression; rhs != nil {
+	if rhs := m.Labels; rhs != nil {
 		tmpContainer := make(map[string]*PrometheusMetricsConfig_Labels_Expression, len(rhs))
 		for k, v := range rhs {
 			tmpContainer[k] = v.CloneVT()
 		}
-		r.LabelExpression = tmpContainer
+		r.Labels = tmpContainer
 	}
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
@@ -438,12 +438,12 @@ func (m *PrometheusMetricsConfig_Vulnerabilities) CloneVT() *PrometheusMetricsCo
 	r := new(PrometheusMetricsConfig_Vulnerabilities)
 	r.GatheringPeriodHours = m.GatheringPeriodHours
 	r.Query = m.Query
-	if rhs := m.MetricLabels; rhs != nil {
+	if rhs := m.Metrics; rhs != nil {
 		tmpContainer := make(map[string]*PrometheusMetricsConfig_Labels, len(rhs))
 		for k, v := range rhs {
 			tmpContainer[k] = v.CloneVT()
 		}
-		r.MetricLabels = tmpContainer
+		r.Metrics = tmpContainer
 	}
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
@@ -1025,11 +1025,11 @@ func (this *PrometheusMetricsConfig_Labels) EqualVT(that *PrometheusMetricsConfi
 	} else if this == nil || that == nil {
 		return false
 	}
-	if len(this.LabelExpression) != len(that.LabelExpression) {
+	if len(this.Labels) != len(that.Labels) {
 		return false
 	}
-	for i, vx := range this.LabelExpression {
-		vy, ok := that.LabelExpression[i]
+	for i, vx := range this.Labels {
+		vy, ok := that.Labels[i]
 		if !ok {
 			return false
 		}
@@ -1064,11 +1064,11 @@ func (this *PrometheusMetricsConfig_Vulnerabilities) EqualVT(that *PrometheusMet
 	if this.GatheringPeriodHours != that.GatheringPeriodHours {
 		return false
 	}
-	if len(this.MetricLabels) != len(that.MetricLabels) {
+	if len(this.Metrics) != len(that.Metrics) {
 		return false
 	}
-	for i, vx := range this.MetricLabels {
-		vy, ok := that.MetricLabels[i]
+	for i, vx := range this.Metrics {
+		vy, ok := that.Metrics[i]
 		if !ok {
 			return false
 		}
@@ -2215,9 +2215,9 @@ func (m *PrometheusMetricsConfig_Labels) MarshalToSizedBufferVT(dAtA []byte) (in
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if len(m.LabelExpression) > 0 {
-		for k := range m.LabelExpression {
-			v := m.LabelExpression[k]
+	if len(m.Labels) > 0 {
+		for k := range m.Labels {
+			v := m.Labels[k]
 			baseI := i
 			size, err := v.MarshalToSizedBufferVT(dAtA[:i])
 			if err != nil {
@@ -2277,9 +2277,9 @@ func (m *PrometheusMetricsConfig_Vulnerabilities) MarshalToSizedBufferVT(dAtA []
 		i--
 		dAtA[i] = 0x1a
 	}
-	if len(m.MetricLabels) > 0 {
-		for k := range m.MetricLabels {
-			v := m.MetricLabels[k]
+	if len(m.Metrics) > 0 {
+		for k := range m.Metrics {
+			v := m.Metrics[k]
 			baseI := i
 			size, err := v.MarshalToSizedBufferVT(dAtA[:i])
 			if err != nil {
@@ -2754,8 +2754,8 @@ func (m *PrometheusMetricsConfig_Labels) SizeVT() (n int) {
 	}
 	var l int
 	_ = l
-	if len(m.LabelExpression) > 0 {
-		for k, v := range m.LabelExpression {
+	if len(m.Labels) > 0 {
+		for k, v := range m.Labels {
 			_ = k
 			_ = v
 			l = 0
@@ -2780,8 +2780,8 @@ func (m *PrometheusMetricsConfig_Vulnerabilities) SizeVT() (n int) {
 	if m.GatheringPeriodHours != 0 {
 		n += 1 + protohelpers.SizeOfVarint(uint64(m.GatheringPeriodHours))
 	}
-	if len(m.MetricLabels) > 0 {
-		for k, v := range m.MetricLabels {
+	if len(m.Metrics) > 0 {
+		for k, v := range m.Metrics {
 			_ = k
 			_ = v
 			l = 0
@@ -5348,7 +5348,7 @@ func (m *PrometheusMetricsConfig_Labels) UnmarshalVT(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field LabelExpression", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Labels", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -5375,8 +5375,8 @@ func (m *PrometheusMetricsConfig_Labels) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.LabelExpression == nil {
-				m.LabelExpression = make(map[string]*PrometheusMetricsConfig_Labels_Expression)
+			if m.Labels == nil {
+				m.Labels = make(map[string]*PrometheusMetricsConfig_Labels_Expression)
 			}
 			var mapkey string
 			var mapvalue *PrometheusMetricsConfig_Labels_Expression
@@ -5473,7 +5473,7 @@ func (m *PrometheusMetricsConfig_Labels) UnmarshalVT(dAtA []byte) error {
 					iNdEx += skippy
 				}
 			}
-			m.LabelExpression[mapkey] = mapvalue
+			m.Labels[mapkey] = mapvalue
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -5547,7 +5547,7 @@ func (m *PrometheusMetricsConfig_Vulnerabilities) UnmarshalVT(dAtA []byte) error
 			}
 		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field MetricLabels", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Metrics", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -5574,8 +5574,8 @@ func (m *PrometheusMetricsConfig_Vulnerabilities) UnmarshalVT(dAtA []byte) error
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.MetricLabels == nil {
-				m.MetricLabels = make(map[string]*PrometheusMetricsConfig_Labels)
+			if m.Metrics == nil {
+				m.Metrics = make(map[string]*PrometheusMetricsConfig_Labels)
 			}
 			var mapkey string
 			var mapvalue *PrometheusMetricsConfig_Labels
@@ -5672,7 +5672,7 @@ func (m *PrometheusMetricsConfig_Vulnerabilities) UnmarshalVT(dAtA []byte) error
 					iNdEx += skippy
 				}
 			}
-			m.MetricLabels[mapkey] = mapvalue
+			m.Metrics[mapkey] = mapvalue
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
@@ -8388,7 +8388,7 @@ func (m *PrometheusMetricsConfig_Labels) UnmarshalVTUnsafe(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field LabelExpression", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Labels", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -8415,8 +8415,8 @@ func (m *PrometheusMetricsConfig_Labels) UnmarshalVTUnsafe(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.LabelExpression == nil {
-				m.LabelExpression = make(map[string]*PrometheusMetricsConfig_Labels_Expression)
+			if m.Labels == nil {
+				m.Labels = make(map[string]*PrometheusMetricsConfig_Labels_Expression)
 			}
 			var mapkey string
 			var mapvalue *PrometheusMetricsConfig_Labels_Expression
@@ -8517,7 +8517,7 @@ func (m *PrometheusMetricsConfig_Labels) UnmarshalVTUnsafe(dAtA []byte) error {
 					iNdEx += skippy
 				}
 			}
-			m.LabelExpression[mapkey] = mapvalue
+			m.Labels[mapkey] = mapvalue
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -8591,7 +8591,7 @@ func (m *PrometheusMetricsConfig_Vulnerabilities) UnmarshalVTUnsafe(dAtA []byte)
 			}
 		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field MetricLabels", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Metrics", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -8618,8 +8618,8 @@ func (m *PrometheusMetricsConfig_Vulnerabilities) UnmarshalVTUnsafe(dAtA []byte)
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.MetricLabels == nil {
-				m.MetricLabels = make(map[string]*PrometheusMetricsConfig_Labels)
+			if m.Metrics == nil {
+				m.Metrics = make(map[string]*PrometheusMetricsConfig_Labels)
 			}
 			var mapkey string
 			var mapvalue *PrometheusMetricsConfig_Labels
@@ -8720,7 +8720,7 @@ func (m *PrometheusMetricsConfig_Vulnerabilities) UnmarshalVTUnsafe(dAtA []byte)
 					iNdEx += skippy
 				}
 			}
-			m.MetricLabels[mapkey] = mapvalue
+			m.Metrics[mapkey] = mapvalue
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {

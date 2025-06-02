@@ -39,7 +39,7 @@ func makeTestMetricLabels(t *testing.T) map[string]*storage.PrometheusMetricsCon
 	pfx := strings.ReplaceAll(t.Name(), "/", "_")
 	return map[string]*storage.PrometheusMetricsConfig_Labels{
 		pfx + "_metric1": {
-			LabelExpression: map[string]*storage.PrometheusMetricsConfig_Labels_Expression{
+			Labels: map[string]*storage.PrometheusMetricsConfig_Labels_Expression{
 				"Severity": {
 					Expression: []*storage.PrometheusMetricsConfig_Labels_Expression_Condition{
 						{
@@ -57,7 +57,7 @@ func makeTestMetricLabels(t *testing.T) map[string]*storage.PrometheusMetricsCon
 			},
 		},
 		pfx + "_metric2": {
-			LabelExpression: map[string]*storage.PrometheusMetricsConfig_Labels_Expression{
+			Labels: map[string]*storage.PrometheusMetricsConfig_Labels_Expression{
 				"Namespace": {},
 			},
 		},
