@@ -387,6 +387,9 @@ func TestDeleteOldResultsFromMissingScans(t *testing.T) {
 	timeNow := timestamppb.Now()
 	scanID := "scan-id"
 	scanRefID := "ref-id"
+	t.Run("nil results should return an error", func(tt *testing.T) {
+		assert.Error(tt, DeleteOldResultsFromMissingScans(context.Background(), nil, profileDS, scanDS, checkDS))
+	})
 	t.Run("error retrieving profiles should return an error", func(tt *testing.T) {
 		results := &ScanConfigWatcherResults{
 			ScanConfig: &storage.ComplianceOperatorScanConfigurationV2{},

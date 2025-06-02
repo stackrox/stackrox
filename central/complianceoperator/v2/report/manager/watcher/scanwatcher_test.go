@@ -488,6 +488,9 @@ func TestDeleteOldResults(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	ds := checkResultsMocks.NewMockDataStore(ctrl)
 	timeNow := timestamppb.Now()
+	t.Run("nil results should return an error", func(tt *testing.T) {
+		assert.Error(tt, DeleteOldResults(context.Background(), nil, ds))
+	})
 	t.Run("results with error should also delete current CheckResults", func(tt *testing.T) {
 		results := &ScanWatcherResults{
 			Scan: &storage.ComplianceOperatorScanV2{

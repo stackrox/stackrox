@@ -63,11 +63,11 @@ type ScanWatcherResults struct {
 
 // DeleteOldResults associated with the Scan of the given ScanWatcherResults
 func DeleteOldResults(ctx context.Context, results *ScanWatcherResults, store resultsDS.DataStore) error {
-	includeCurrentResults := false
-	if results.Error != nil {
-		// If the scan failed we remove old and current results
-		includeCurrentResults = true
+	if results == nil {
+		return errors.New("unable to delete old CheckResults from an nil ScanWatcherResults")
 	}
+	// If the scan failed we remove old and current results
+	includeCurrentResults := results.Error != nil
 	scan := results.Scan
 	return store.DeleteOldResults(ctx, scan.GetLastStartedTime(), scan.GetScanRefId(), includeCurrentResults)
 }

@@ -32,6 +32,9 @@ func GetScanConfigFromScan(ctx context.Context, scan *storage.ComplianceOperator
 }
 
 func DeleteOldResultsFromMissingScans(ctx context.Context, results *ScanConfigWatcherResults, profileDataStore profileDatastore.DataStore, scanDataStore scanDataStore.DataStore, resultsDataStore resultsDataStore.DataStore) error {
+	if results == nil {
+		return errors.New("unable to delete old CheckResults from an nil ScanConfigWatcherResults")
+	}
 	scans, err := GetScansFromScanConfiguration(ctx, results.ScanConfig, profileDataStore, scanDataStore)
 	if err != nil {
 		return err

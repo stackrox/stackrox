@@ -28,6 +28,11 @@ var (
 	complianceSAC = sac.ForResource(resources.Compliance)
 )
 
+const (
+	lastStartedTimestampColumnName = "laststartedtime"
+	scanRefIDColumnName            = "scanrefid"
+)
+
 type datastoreImpl struct {
 	store    store.Store
 	db       postgres.DB
@@ -473,8 +478,6 @@ func (d *datastoreImpl) DeleteOldResults(ctx context.Context, lastStartedTimesta
 	if scanRefID == "" || lastStartedTimestamp == nil {
 		return nil
 	}
-	lastStartedTimestampColumnName := "laststartedtime"
-	scanRefIDColumnName := "scanrefid"
 	deleteFmt := "DELETE FROM %s WHERE %s = $1 AND (%s < $2 OR %s IS NULL)"
 	if includeCurrent {
 		deleteFmt = "DELETE FROM %s WHERE %s = $1 AND (%s <= $2 OR %s IS NULL)"
@@ -486,8 +489,5 @@ func (d *datastoreImpl) DeleteOldResults(ctx context.Context, lastStartedTimesta
 		lastStartedTimestampColumnName,
 	)
 	_, err := d.db.Exec(ctx, deleteStmt, scanRefID, protocompat.NilOrTime(lastStartedTimestamp))
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
