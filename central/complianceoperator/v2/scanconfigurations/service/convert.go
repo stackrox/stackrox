@@ -16,6 +16,8 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	types "github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoutils"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -524,7 +526,14 @@ func convertStorageSnapshotToV2Snapshot(ctx context.Context, snapshot *storage.C
 	if shallCheckDownload(snapshot.GetReportStatus()) {
 		blobName := common.GetComplianceReportBlobPath(snapshot.GetScanConfigurationId(), snapshot.GetReportId())
 		query := search.NewQueryBuilder().AddExactMatches(search.BlobName, blobName).ProtoQuery()
-		blobResults, err := blobDS.Search(ctx, query)
+		// We need to add the Administration access to read from the BlobStore
+		blobCtx := sac.WithGlobalAccessScopeChecker(ctx,
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+				sac.ResourceScopeKeys(resources.Administration),
+			),
+		)
+		blobResults, err := blobDS.Search(blobCtx, query)
 		if err != nil {
 			log.Errorf("unable to retrieve blob from the DataStore: %v", err)
 		}
