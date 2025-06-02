@@ -389,7 +389,7 @@ function ExternalFlows({
             <ConfirmationModal
                 title="Apply status change to multiple flows?"
                 ariaLabel="Confirm status change"
-                confirmText="Yes"
+                confirmText="Apply"
                 isOpen={isConfirmingStatusChange}
                 onConfirm={onConfirmStatusChange}
                 onCancel={onCancelStatusChange}
