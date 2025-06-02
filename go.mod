@@ -572,6 +572,4 @@ replace (
 	github.com/facebookincubator/nvdtools => github.com/stackrox/nvdtools v0.0.0-20231111002313-57e262e4797e
 	github.com/heroku/docker-registry-client => github.com/stackrox/docker-registry-client v0.2.0
 	github.com/mholt/archiver/v3 => github.com/anchore/archiver/v3 v3.5.2
-	// Temporarily use a claircore fork for Vex update
-	github.com/quay/claircore => github.com/daynewlee/claircore-python-osv v0.0.0-20250530225658-2d2a6e420022
 )
