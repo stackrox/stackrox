@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     Alert,
     Divider,
@@ -33,12 +33,45 @@ import { useNetworkBaselineStatus } from '../hooks/useNetworkBaselineStatus';
 import { EXTERNAL_SOURCE_ADDRESS_QUERY } from '../NetworkGraph.constants';
 import { getFlowKey } from '../utils/flowUtils';
 
+function getUniquePendingFlows(flows: NetworkBaselinePeerStatus[]) {
+    const uniquePendingFlowsSet = new Set<string>();
+
+    return flows.flatMap((flow) => {
+        const {
+            peer: { ingress, port, protocol },
+        } = flow;
+
+        const key = `${ingress}-${port}-${protocol}`;
+
+        if (uniquePendingFlowsSet.has(key)) {
+            return [];
+        }
+
+        uniquePendingFlowsSet.add(key);
+
+        return {
+            direction: ingress ? 'Ingress' : 'Egress',
+            port,
+            protocol: protocol === 'L4_PROTOCOL_TCP' ? 'TCP' : 'UDP',
+            key,
+        };
+    });
+}
+
 type ExternalFlowsProps = {
     deploymentId: string;
     timeWindow: TimeWindow;
     anomalousUrlPagination: UseURLPaginationResult;
     baselineUrlPagination: UseURLPaginationResult;
     urlSearchFiltering: UseUrlSearchReturn;
+};
+
+type PendingStatusChange = {
+    error: string | null;
+    flows: NetworkBaselinePeerStatus[];
+    isSubmitting: boolean;
+    targetStatus: PeerStatus;
+    uniqueFlows: ReturnType<typeof getUniquePendingFlows>;
 };
 
 function ExternalFlows({
@@ -71,13 +104,9 @@ function ExternalFlows({
     const [isAnomalousBulkActionOpen, setIsAnomalousBulkActionOpen] = useState(false);
     const [isBaselineBulkActionOpen, setIsBaselineBulkActionOpen] = useState(false);
 
-    const [networkFlowError, setNetworkFlowError] = useState('');
-
-    const [isConfirmingStatusChange, setIsConfirmingStatusChange] = useState(false);
-    const [pendingStatusChange, setPendingStatusChange] = useState<{
-        flows: NetworkBaselinePeerStatus[];
-        targetStatus: PeerStatus;
-    } | null>(null);
+    const [pendingStatusChange, setPendingStatusChange] = useState<PendingStatusChange | null>(
+        null
+    );
 
     const { setPage: setPageAnomalous } = anomalousUrlPagination;
     const { setPage: setPageBaseline } = baselineUrlPagination;
@@ -86,35 +115,6 @@ function ExternalFlows({
         setPageAnomalous(1);
         setPageBaseline(1);
     }, [setPageAnomalous, setPageBaseline, searchFilter]);
-
-    const uniquePendingFlows = useMemo(() => {
-        if (!pendingStatusChange) {
-            return [];
-        }
-
-        const pendingStatusUpdatesSet = new Set<string>();
-
-        return pendingStatusChange.flows.flatMap((flow) => {
-            const {
-                peer: { ingress, port, protocol },
-            } = flow;
-
-            const key = `${ingress}-${port}-${protocol}`;
-
-            if (pendingStatusUpdatesSet.has(key)) {
-                return [];
-            }
-
-            pendingStatusUpdatesSet.add(key);
-
-            return {
-                direction: ingress ? 'Ingress' : 'Egress',
-                port,
-                protocol: protocol === 'L4_PROTOCOL_TCP' ? 'TCP' : 'UDP',
-                key,
-            };
-        });
-    }, [pendingStatusChange]);
 
     const { isOpen: isAnomalousFlowsExpanded, onToggle: toggleAnomalousFlowsExpandable } =
         useSelectToggle(true);
@@ -183,57 +183,53 @@ function ExternalFlows({
         flows: NetworkBaselinePeerStatus | NetworkBaselinePeerStatus[],
         targetStatus: PeerStatus
     ) {
-        const selected = Array.isArray(flows) ? flows : [flows];
-        if (!selected.length) {
+        const selectedFlows = Array.isArray(flows) ? flows : [flows];
+        if (!selectedFlows.length) {
             return;
         }
 
-        const payload = selected.map((f) => ({ ...f, status: targetStatus }));
+        const payload = selectedFlows.map((flow) => ({ ...flow, status: targetStatus }));
 
-        try {
-            await markNetworkBaselineStatuses({ deploymentId, networkBaselines: payload });
-            await Promise.all([anomalous.refetch(), baseline.refetch()]);
-            setSelectedAnomalous([]);
-            setSelectedBaseline([]);
-            setNetworkFlowError('');
-        } catch (err) {
-            setNetworkFlowError(getAxiosErrorMessage(err));
-        }
+        await markNetworkBaselineStatuses({ deploymentId, networkBaselines: payload });
+        await Promise.all([anomalous.refetch(), baseline.refetch()]);
+        setSelectedAnomalous([]);
+        setSelectedBaseline([]);
     }
 
     function confirmStatusChange(flows: NetworkBaselinePeerStatus[], targetStatus: PeerStatus) {
-        setPendingStatusChange({ flows, targetStatus });
-        setIsConfirmingStatusChange(true);
+        setPendingStatusChange({
+            error: null,
+            flows,
+            isSubmitting: false,
+            targetStatus,
+            uniqueFlows: getUniquePendingFlows(flows),
+        });
     }
 
     async function onConfirmStatusChange() {
-        if (pendingStatusChange) {
-            const { flows, targetStatus } = pendingStatusChange;
-            await updateFlowsStatus(flows, targetStatus);
+        if (!pendingStatusChange) {
+            return;
         }
-        setIsConfirmingStatusChange(false);
-        setPendingStatusChange(null);
+
+        setPendingStatusChange((prev) => prev && { ...prev, isSubmitting: true, error: null });
+
+        try {
+            await updateFlowsStatus(pendingStatusChange.flows, pendingStatusChange.targetStatus);
+            setPendingStatusChange(null);
+        } catch (err) {
+            setPendingStatusChange(
+                (prev) => prev && { ...prev, isSubmitting: false, error: getAxiosErrorMessage(err) }
+            );
+        }
     }
 
     function onCancelStatusChange() {
-        setIsConfirmingStatusChange(false);
         setPendingStatusChange(null);
     }
 
     return (
         <>
             <Stack>
-                {networkFlowError && (
-                    <StackItem>
-                        <Alert
-                            isInline
-                            variant="danger"
-                            title={networkFlowError}
-                            component="p"
-                            className="pf-v5-u-mb-sm"
-                        />
-                    </StackItem>
-                )}
                 <StackItem>
                     <Toolbar className="pf-v5-u-pb-md pf-v5-u-pt-0">
                         <ToolbarContent className="pf-v5-u-px-0">
@@ -386,41 +382,55 @@ function ExternalFlows({
                     </Stack>
                 </StackItem>
             </Stack>
-            <ConfirmationModal
-                title="Apply status change to multiple flows?"
-                ariaLabel="Confirm status change"
-                confirmText="Apply"
-                isOpen={isConfirmingStatusChange}
-                onConfirm={onConfirmStatusChange}
-                onCancel={onCancelStatusChange}
-                isDestructive={false}
-            >
-                <p>
-                    All flows that have the same combination of direction, port, and protocol have
-                    the same status. This action will affect the status of all matching flows, even
-                    flows that you did not select.
-                </p>
-                <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                    <Table variant="compact" borders={false} isStickyHeader>
-                        <Thead>
-                            <Tr>
-                                <Th>Direction</Th>
-                                <Th>Port / protocol</Th>
-                            </Tr>
-                        </Thead>
-                        <Tbody>
-                            {uniquePendingFlows.map(({ direction, port, protocol }) => (
-                                <Tr key={`${direction}-${port}-${protocol}`}>
-                                    <Td dataLabel="Direction">{direction}</Td>
-                                    <Td dataLabel="Port / protocol">
-                                        {port} / {protocol}
-                                    </Td>
+            {pendingStatusChange && (
+                <ConfirmationModal
+                    title="Apply status change to multiple flows?"
+                    ariaLabel="apply status change"
+                    confirmText="Apply"
+                    isLoading={pendingStatusChange.isSubmitting}
+                    isOpen
+                    onConfirm={onConfirmStatusChange}
+                    onCancel={onCancelStatusChange}
+                    isDestructive={false}
+                >
+                    {pendingStatusChange.error && (
+                        <Alert
+                            className="pf-v5-u-mb-sm"
+                            component="p"
+                            isInline
+                            title={pendingStatusChange.error}
+                            variant="danger"
+                        />
+                    )}
+                    <p>
+                        All flows that have the same combination of direction, port, and protocol
+                        have the same status. This action will affect the status of all matching
+                        flows, even flows that you did not select.
+                    </p>
+                    <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                        <Table variant="compact" borders={false} isStickyHeader>
+                            <Thead>
+                                <Tr>
+                                    <Th>Direction</Th>
+                                    <Th>Port / protocol</Th>
                                 </Tr>
-                            ))}
-                        </Tbody>
-                    </Table>
-                </div>
-            </ConfirmationModal>
+                            </Thead>
+                            <Tbody>
+                                {pendingStatusChange.uniqueFlows.map(
+                                    ({ direction, key, port, protocol }) => (
+                                        <Tr key={key}>
+                                            <Td dataLabel="Direction">{direction}</Td>
+                                            <Td dataLabel="Port / protocol">
+                                                {port} / {protocol}
+                                            </Td>
+                                        </Tr>
+                                    )
+                                )}
+                            </Tbody>
+                        </Table>
+                    </div>
+                </ConfirmationModal>
+            )}
         </>
     );
 }
