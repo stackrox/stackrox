@@ -109,15 +109,15 @@ func (c *Condition) compareStrings(a, b string) bool {
 	case opNE:
 		return !glob.Pattern(b).Ptr().Match(a)
 	case opGT:
-		return strings.Compare(a, b) > 0
+		return strings.Compare(strings.ToLower(a), strings.ToLower(b)) > 0
 	case opGE:
 		return strings.EqualFold(a, b) ||
-			strings.Compare(a, b) > 0
+			strings.Compare(strings.ToLower(a), strings.ToLower(b)) > 0
 	case opLT:
-		return strings.Compare(a, b) < 0
+		return strings.Compare(strings.ToLower(a), strings.ToLower(b)) < 0
 	case opLE:
 		return strings.EqualFold(a, b) ||
-			strings.Compare(a, b) < 0
+			strings.Compare(strings.ToLower(a), strings.ToLower(b)) < 0
 	}
 	return false
 }

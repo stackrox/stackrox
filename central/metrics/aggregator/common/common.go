@@ -14,7 +14,8 @@ import (
 var (
 	log = logging.CreateLogger(logging.ModuleForName("central_metrics"), 1)
 
-	metricNamePattern = regexp.MustCompile("^[a-zA-Z0-9_]+$")
+	// Source: https://prometheus.io/docs/concepts/data_model/#metric-names-and-labels
+	metricNamePattern = regexp.MustCompile("^[a-zA-Z_:][a-zA-Z0-9_:]*$")
 )
 
 type Label string      // Prometheus label.

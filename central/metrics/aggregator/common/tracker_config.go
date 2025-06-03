@@ -90,12 +90,16 @@ func (tc *TrackerConfig[Finding]) Reconfigure(registry *prometheus.Registry, fil
 	tc.SetMetricsConfiguration(q, mcfg)
 	select {
 	case tc.periodCh <- period:
-		break
 	default:
-		// If the period has not been read, read it now:
-		<-tc.periodCh
-		tc.periodCh <- period
+		// The period should be read from the channel by the runner loop.
+		// If the channel buffer is full and so the channel is blocked for writing,
+		// purge it now and send the new value to proceed with the reconfiguration:
+		select {
+		case <-tc.periodCh:
+		default:
+		}
 	}
+	tc.periodCh <- period
 
 	if period == 0 {
 		log.Infof("Metrics collection is disabled for %s", tc.category)

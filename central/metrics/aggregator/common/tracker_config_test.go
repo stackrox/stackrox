@@ -93,7 +93,7 @@ func TestTrackerConfig_Reconfigure(t *testing.T) {
 		}, 11*time.Hour)
 
 		assert.ErrorIs(t, err, errInvalidConfiguration)
-		assert.Equal(t, `invalid configuration: invalid metric name " ": doesn't match "^[a-zA-Z0-9_]+$"`, err.Error())
+		assert.Equal(t, `invalid configuration: invalid metric name " ": doesn't match "^[a-zA-Z_:][a-zA-Z0-9_:]*$"`, err.Error())
 
 		_, mcfg := tracker.GetMetricsConfiguration()
 		assert.Nil(t, mcfg)
@@ -116,7 +116,7 @@ func TestTrackerConfig_Reconfigure(t *testing.T) {
 			},
 		}, 11*time.Hour)
 		assert.ErrorIs(t, err, errInvalidConfiguration)
-		assert.Equal(t, `invalid configuration: label "label1" for metric "m1" is not in the list of known labels: [test Cluster Namespace CVE Severity CVSS IsFixable]`, err.Error())
+		assert.Equal(t, `invalid configuration: label "label1" for metric "m1" is not in the list of known labels: [CVE CVSS Cluster IsFixable Namespace Severity test]`, err.Error())
 
 		_, mcfg := tracker.GetMetricsConfiguration()
 		assert.NotNil(t, mcfg)

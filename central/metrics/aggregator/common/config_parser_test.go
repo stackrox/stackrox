@@ -40,13 +40,13 @@ func Test_parseErrors(t *testing.T) {
 		},
 	}
 	labelExpression, err := parseMetricLabels(config, testLabelOrder)
-	assert.Equal(t, `invalid configuration: label "unknown" for metric "metric1" is not in the list of known labels: [test Cluster Namespace CVE Severity CVSS IsFixable]`, err.Error())
+	assert.Equal(t, `invalid configuration: label "unknown" for metric "metric1" is not in the list of known labels: [CVE CVSS Cluster IsFixable Namespace Severity test]`, err.Error())
 	assert.Empty(t, labelExpression)
 
 	delete(config, "metric1")
 	config["met rick"] = nil
 	labelExpression, err = parseMetricLabels(config, testLabelOrder)
-	assert.Equal(t, `invalid configuration: invalid metric name "met rick": doesn't match "^[a-zA-Z0-9_]+$"`, err.Error())
+	assert.Equal(t, `invalid configuration: invalid metric name "met rick": doesn't match "^[a-zA-Z_:][a-zA-Z0-9_:]*$"`, err.Error())
 	assert.Empty(t, labelExpression)
 
 	delete(config, "met rick")
