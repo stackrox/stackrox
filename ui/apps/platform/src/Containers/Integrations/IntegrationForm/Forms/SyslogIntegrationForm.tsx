@@ -59,7 +59,7 @@ export const validationSchema = yup.object().shape({
             .test(
                 'message-size-test',
                 'Message size must be between 0 and 1048576',
-                (value = 0) => value >= 0 && value <= 1048576
+                (value) => value >= 0 && value <= 1048576
             ),
     }),
     uiEndpoint: yup.string(),
@@ -212,7 +212,7 @@ function SyslogIntegrationForm({
                             fieldId="syslog.maxMessageSize"
                             touched={touched}
                             errors={errors}
-                            helperText="A number of bytes between 0 and 1048576 to chunk messages in. 0 means messages will not be chunked."
+                            helperText="The number of bytes between 0 and 1048576 to chunk messages in. A 0 means messages will not be chunked."
                         >
                             <TextInput
                                 isRequired
