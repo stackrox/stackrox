@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/jackc/pgx/v4"
@@ -31,22 +32,36 @@ func (m *matcherMetadataStore) GetLastVulnerabilityUpdate(ctx context.Context) (
 	return t.UTC(), nil
 }
 
-// GetLastVulnerabilityBundleUpdate implements MatcherMetadataStore.GetLastVulnerabilityBundleUpdate
-func (m *matcherMetadataStore) GetLastVulnerabilityBundleUpdate(ctx context.Context, bundle string) (time.Time, error) {
-	const selectTimestamp = `
-		SELECT update_timestamp
-		FROM last_vuln_update WHERE key = $1
-		ORDER BY update_timestamp DESC LIMIT 1;`
-	row := m.pool.QueryRow(ctx, selectTimestamp, bundle)
-	var t time.Time
-	err := row.Scan(&t)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return time.Time{}, nil
-	}
+// GetLastVulnerabilityBundlesUpdate implements MatcherMetadataStore.GetLastVulnerabilityBundlesUpdate
+func (m *matcherMetadataStore) GetLastVulnerabilityBundlesUpdate(
+	ctx context.Context,
+	bundles []string,
+) (map[string]time.Time, error) {
+	const selectLatestTimestamps = `
+		SELECT DISTINCT ON (key) key, update_timestamp
+		FROM last_vuln_update
+		WHERE key = ANY($1)
+		ORDER BY key, update_timestamp DESC;`
+
+	rows, err := m.pool.Query(ctx, selectLatestTimestamps, bundles)
 	if err != nil {
-		return time.Time{}, err
+		return nil, err
 	}
-	return t.UTC(), nil
+	defer rows.Close()
+
+	bundleUpdate := make(map[string]time.Time)
+	for rows.Next() {
+		var key string
+		var ts time.Time
+		if err := rows.Scan(&key, &ts); err != nil {
+			return nil, fmt.Errorf("scanning row: %w", err)
+		}
+		bundleUpdate[key] = ts.UTC()
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return bundleUpdate, nil
 }
 
 // SetLastVulnerabilityUpdate implements MatcherMetadataStore.SetLastVulnerabilityUpda
