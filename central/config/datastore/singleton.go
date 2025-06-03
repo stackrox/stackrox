@@ -41,11 +41,11 @@ const (
 	// PlatformComponentSystemRuleName is the name of the system defined rule for matching openshift and kube workloads
 	PlatformComponentSystemRuleName = "system rule"
 	// PlatformComponentSystemRegex is the system defined regex for matching kube and openshift workloads
-	PlatformComponentSystemRegex = `^kube-.*|^openshift-.*`
+	PlatformComponentSystemRegex = `^openshift-operators$|^kube-.*`
 	// PlatformComponentLayeredProductsRuleName is the name of the system defined rule for matching workloads created by Red hat layered products
 	PlatformComponentLayeredProductsRuleName = "red hat layered products"
 	// PlatformComponentLayeredProductsDefaultRegex is the default regex for matching workloads created by Red hat layered products
-	PlatformComponentLayeredProductsDefaultRegex = `^stackrox$|^rhacs-operator$|^open-cluster-management$|^multicluster-engine$|^aap$|^hive$`
+	PlatformComponentLayeredProductsDefaultRegex = `^aap$|^ack-system$|^aws-load-balancer-operator$|^cert-manager-operator$|^cert-utils-operator$|^costmanagement-metrics-operator$|^external-dns-operator$|^metallb-system$|^mtr$|^multicluster-engine$|^multicluster-global-hub$|^node-observability-operator$|^open-cluster-management$|^openshift-adp$|^openshift-apiserver$|^openshift-builds$|^openshift-cluster-csi-drivers$|^openshift-cluster-observability-operator$|^openshift-cnv$|^openshift-compliance$|^openshift-dbaas-operator$|^openshift-distributed-tracing$|^openshift-dpu-network-operator$|^openshift-dr-system$|^openshift-file-integrity$|^openshift-gitops-operator$|^openshift-ingress-node-firewall$|^openshift-keda$|^openshift-kmm$|^openshift-kmm-hub$|^openshift-lifecycle-agent$|^openshift-local-storage$|^openshift-logging$|^openshift-migration$|^openshift-mta$|^openshift-mtv$|^openshift-netobserv-operator$|^openshift-nfd$|^openshift-nmstate$|^openshift-opentelemetry-operator$|^openshift-operators-redhat$|^openshift-ptp$|^openshift-sandboxed-containers-operator$|^openshift-security-profiles$|^openshift-serverless$|^openshift-serverless-logic$|^openshift-sriov-network-operator$|^openshift-storage$|^openshift-tempo-operator$|^openshift-update-service$|^openshift-vertical-pod-autoscaler$|^openshift-windows-machine-config-operator$|^openshift-workload-availability$|^redhat-ods-operator$|^rhdh-operator$|^service-telemetry$|^stackrox$|^submariner-operator$`
 )
 
 var (
