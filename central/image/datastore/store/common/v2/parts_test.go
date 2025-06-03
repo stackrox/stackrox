@@ -440,7 +440,7 @@ func TestSplitAndMergeImage(t *testing.T) {
 		},
 	}
 
-	splitActual, err := Split(image, true)
+	splitActual, err := SplitV2(image, true)
 	assert.NoError(t, err)
 	if !features.FlattenCVEData.Enabled() {
 		protoassert.MapEqual(t, splitExpected.ImageCVEEdges, splitActual.ImageCVEEdges)
