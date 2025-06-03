@@ -86,6 +86,7 @@ func (p *persisterImpl) run() {
 	p.saveHealth()
 	for /*!p.stopper.IsDone()*/ {
 		time.Sleep(10 * time.Second)
+		log.Infof("Stopper state (IsDone) %t", p.stopper.IsDone())
 		p.saveHealth()
 	}
 	/*
