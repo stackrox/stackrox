@@ -447,11 +447,8 @@ class NetworkBaselineTest extends BaseSpecification {
         assert NetworkGraphUtil.checkForEdge(deploymentUid, Constants.INTERNET_EXTERNAL_SOURCE_ID, epoch, 180)
         def baseline = evaluateWithRetry(30, 4) {
             def baseline = NetworkBaselineService.getNetworkBaseline(deploymentUid)
-            if (baseline.getPeersCount() == 0) {
-                throw new RuntimeException(
+            assert baseline.getPeersCount() != 0 :
                     "No peers in baseline for deployment ${deploymentUid} yet. Baseline is ${baseline}"
-                )
-            }
             return baseline
         }
 
@@ -475,8 +472,8 @@ class NetworkBaselineTest extends BaseSpecification {
 
         def externalBaseline = evaluateWithRetry(30, 4) {
             def externalBaseline = NetworkBaselineService.getNetworkBaselineForExternalFlows(deploymentUid)
-            assert externalBaselineAfter.totalAnomalous + externalBaselineAfter.totalBaseline != 0 : 
-                    "No peers in baseline for deployment ${deploymentUid} yet. Baseline is ${externalBaselineAfter}"
+            assert externalBaseline.totalAnomalous + externalBaseline.totalBaseline != 0 :
+                    "No peers in baseline for deployment ${deploymentUid} yet. Baseline is ${externalBaseline}"
             return externalBaseline
         }
 
