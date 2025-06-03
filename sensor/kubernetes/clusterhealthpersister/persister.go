@@ -28,8 +28,8 @@ const (
 var log = logging.LoggerForModule()
 
 type persisterImpl struct {
-	ticker  *time.Ticker
-	tickerC <-chan time.Time
+	// ticker  *time.Ticker
+	// tickerC <-chan time.Time
 
 	now func() time.Time
 
@@ -42,10 +42,10 @@ type persisterImpl struct {
 var _ common.SensorComponent = (*persisterImpl)(nil)
 
 func NewClusterHealthPersister(k8sClient kubernetes.Interface, namespace string) common.SensorComponent {
-	ticker := time.NewTicker(10 * time.Second)
+	// ticker := time.NewTicker(10 * time.Second)
 	return &persisterImpl{
-		ticker:          ticker,
-		tickerC:         ticker.C,
+		// ticker:          ticker,
+		// tickerC:         ticker.C,
 		now:             time.Now,
 		configMapClient: k8sClient.CoreV1().ConfigMaps(namespace),
 	}
@@ -53,6 +53,7 @@ func NewClusterHealthPersister(k8sClient kubernetes.Interface, namespace string)
 
 func (p *persisterImpl) Start() error {
 	p.state.Store(common.SensorComponentStateSTARTED)
+	// p.ticker.Reset(10*time.Second)
 	go p.run()
 	p.state.Store(common.SensorComponentStateSTARTED)
 	return nil
@@ -60,7 +61,7 @@ func (p *persisterImpl) Start() error {
 
 func (p *persisterImpl) Stop(error) {
 	p.state.Store(common.SensorComponentStateSTOPPING)
-	p.ticker.Stop()
+	// p.ticker.Stop()
 	p.stopper.Signal()
 	p.state.Store(common.SensorComponentStateSTOPPED)
 }
@@ -83,15 +84,21 @@ func (p *persisterImpl) State() common.SensorComponentState {
 
 func (p *persisterImpl) run() {
 	p.saveHealth()
-	for {
-		select {
-		case <-p.tickerC:
-			log.Info("Tick")
-			p.saveHealth()
-		case <-p.stopper.Done():
-			return
-		}
+	for !p.stopper.IsDone() {
+		time.Sleep(10 * time.Second)
+		p.saveHealth()
 	}
+	/*
+		for {
+			select {
+			case <-p.tickerC:
+				log.Info("Tick")
+				p.saveHealth()
+			case <-p.stopper.Done():
+				return
+			}
+		}
+	*/
 }
 
 func (p *persisterImpl) saveHealth() {
