@@ -19,8 +19,8 @@ import (
 type MatcherMetadataStore interface {
 	// GetLastVulnerabilityUpdate returns a timestamp representing the last update timestamp of all vulnerability bundles.
 	GetLastVulnerabilityUpdate(ctx context.Context) (time.Time, error)
-	// GetLastVulnerabilityBundleUpdate returns a timestamp representing the last update timestamp of a given vuln bundle.
-	GetLastVulnerabilityBundleUpdate(ctx context.Context, bundle string) (time.Time, error)
+	// GetLastVulnerabilityBundlesUpdate returns a timestamp representing the last update timestamp of given vuln bundle list.
+	GetLastVulnerabilityBundlesUpdate(ctx context.Context, bundles []string) (map[string]time.Time, error)
 	// SetLastVulnerabilityUpdate sets the last update timestamp of one vulnerability bundle.
 	SetLastVulnerabilityUpdate(ctx context.Context, bundle string, lastUpdate time.Time) error
 	// GetOrSetLastVulnerabilityUpdate get the last update timestamp of one vulnerability bundle,
