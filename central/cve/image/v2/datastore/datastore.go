@@ -28,7 +28,6 @@ type DataStore interface {
 	GetBatch(ctx context.Context, id []string) ([]*storage.ImageCVEV2, error)
 
 	EnrichImageWithSuppressedCVEs(image *storage.Image)
-	WalkByQuery(ctx context.Context, q *v1.Query, fn func(*storage.ImageCVEV2) error) error
 }
 
 // New returns a new instance of a DataStore.
