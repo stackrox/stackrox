@@ -5436,12 +5436,12 @@
                 "fields": [
                   {
                     "id": 1,
-                    "name": "gathering_period_hours",
+                    "name": "gathering_period_minutes",
                     "type": "uint32"
                   },
                   {
                     "id": 3,
-                    "name": "query",
+                    "name": "filter",
                     "type": "string"
                   }
                 ],
