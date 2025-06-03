@@ -12,9 +12,11 @@ export type SignatureCountLabelProps = {
 };
 
 const noSignatureMessage = 'No signature found';
-const { shortName } = getProductBranding();
 
-function getBodyContent(version: string) {
+function BodyContent() {
+    const { shortName } = getProductBranding();
+    const { version } = useMetadata();
+
     return (
         <Flex direction={{ default: 'column' }}>
             <FlexItem>
@@ -47,8 +49,6 @@ function getBodyContent(version: string) {
 }
 
 function SignatureCountLabel({ count }: SignatureCountLabelProps) {
-    const { version } = useMetadata();
-
     if (count === 0) {
         return (
             <Popover
@@ -56,7 +56,7 @@ function SignatureCountLabel({ count }: SignatureCountLabelProps) {
                 bodyContent={
                     <PopoverBodyContent
                         headerContent={noSignatureMessage}
-                        bodyContent={getBodyContent(version)}
+                        bodyContent={<BodyContent />}
                     />
                 }
                 enableFlip
@@ -77,7 +77,7 @@ function SignatureCountLabel({ count }: SignatureCountLabelProps) {
             bodyContent={
                 <PopoverBodyContent
                     headerContent={signatureMessage}
-                    bodyContent={getBodyContent(version)}
+                    bodyContent={<BodyContent />}
                 />
             }
             enableFlip
