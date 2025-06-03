@@ -3,6 +3,8 @@ import { LabelGroup, Label } from '@patternfly/react-core';
 import { gql } from '@apollo/client';
 
 import { getDistanceStrict, getDateTime } from 'utils/dateUtils';
+import { SignatureVerificationResult } from '../../types';
+import VerifiedSignatureLabel from './VerifiedSignatureLabelLayout';
 
 export type ImageDetails = {
     deploymentCount: number;
@@ -16,6 +18,9 @@ export type ImageDetails = {
     scanTime: string | null;
     scanNotes: string[];
     notes: string[];
+    signatureVerificationData: {
+        results: SignatureVerificationResult[];
+    } | null;
 };
 
 export const imageDetailsFragment = gql`
@@ -33,6 +38,13 @@ export const imageDetailsFragment = gql`
         scanTime
         scanNotes
         notes
+        signatureVerificationData {
+            results {
+                status
+                verifiedImageReferences
+                verifierId
+            }
+        }
     }
 `;
 
@@ -41,13 +53,21 @@ export type ImageDetailBadgesProps = {
 };
 
 function ImageDetailBadges({ imageData }: ImageDetailBadgesProps) {
-    const { deploymentCount, operatingSystem, metadata, dataSource, scanTime } = imageData;
+    const {
+        deploymentCount,
+        operatingSystem,
+        metadata,
+        dataSource,
+        scanTime,
+        signatureVerificationData,
+    } = imageData;
     const created = metadata?.v1?.created;
     const isActive = deploymentCount > 0;
 
     return (
         <LabelGroup numLabels={Infinity}>
             <Label color={isActive ? 'green' : 'gold'}>{isActive ? 'Active' : 'Inactive'}</Label>
+            <VerifiedSignatureLabel results={signatureVerificationData?.results} />
             {operatingSystem && <Label>OS: {operatingSystem}</Label>}
             {created && <Label>Age: {getDistanceStrict(created, new Date())}</Label>}
             {scanTime && (
