@@ -239,6 +239,7 @@ var (
 	ComplianceOperatorCheckUID                 = newFieldLabel("Compliance Check UID")
 	ComplianceOperatorCheckName                = newFieldLabel("Compliance Check Name")
 	ComplianceOperatorCheckRationale           = newFieldLabel("Compliance Check Rationale")
+	ComplianceOperatorCheckLastStartedTime     = newFieldLabel("Compliance Check Last Started Time")
 	ComplianceOperatorScanUpdateTime           = newFieldLabel("Compliance Scan Config Last Updated Time")
 	ComplianceOperatorResultCreateTime         = newFieldLabel("Compliance Check Result Created Time")
 	ComplianceOperatorScanLastExecutedTime     = newFieldLabel("Compliance Scan Last Executed Time")

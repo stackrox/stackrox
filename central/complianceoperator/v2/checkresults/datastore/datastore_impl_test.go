@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	checkresultsSearch "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/search"
 	checkResultsStorage "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/store/postgres"
@@ -1222,6 +1223,74 @@ func (s *complianceCheckResultDataStoreTestSuite) TestDeleteResultsByScans() {
 	actualResultsCount, err = s.dataStore.CountCheckResults(s.hasWriteCtx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(4, actualResultsCount, "2 records should be removed")
+}
+
+func (s *complianceCheckResultDataStoreTestSuite) TestComplianceDeleteOldResults() {
+	s.setupTestData()
+	// Remove any previous checks
+	_, err := s.db.DB.Exec(context.Background(), "TRUNCATE compliance_operator_check_result_v2")
+	s.Require().NoError(err)
+	// make sure we have nothing
+	checkResultIDs, err := s.storage.GetIDs(s.hasReadCtx)
+	s.Require().NoError(err)
+	s.Require().Empty(checkResultIDs)
+
+	timeNow := time.Now()
+	oldTime := timeNow.Add(-time.Hour)
+	timestampNow, err := protocompat.ConvertTimeToTimestampOrError(timeNow)
+	s.Require().NoError(err)
+	oldTimestamp, err := protocompat.ConvertTimeToTimestampOrError(oldTime)
+	s.Require().NoError(err)
+	scanName := "scan-name"
+	scanRef := internaltov2storage.BuildNameRefID(testconsts.Cluster1, scanName)
+	// Upsert CheckResults
+	rec1 := getTestRec(testconsts.Cluster1)
+	rec1.CheckName = "test-check-1"
+	rec1.LastStartedTime = timestampNow
+	rec1.ScanName = scanName
+	rec1.ScanRefId = scanRef
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, rec1))
+	rec2 := getTestRec(testconsts.Cluster1)
+	rec2.CheckName = "test-check-2"
+	rec2.LastStartedTime = timestampNow
+	rec2.ScanName = scanName
+	rec2.ScanRefId = scanRef
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, rec2))
+	rec3 := getTestRec(testconsts.Cluster1)
+	rec3.CheckName = "test-check-3"
+	rec3.LastStartedTime = oldTimestamp
+	rec3.ScanName = scanName
+	rec3.ScanRefId = scanRef
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, rec3))
+
+	// Make sure the CheckResults are in the DB
+	query := search.NewQueryBuilder().
+		AddExactMatches(search.ComplianceOperatorScanRef, scanRef).ProtoQuery()
+	results, err := s.dataStore.SearchComplianceCheckResults(s.hasReadCtx, query)
+	s.Require().NoError(err)
+	s.Assert().Len(results, 3)
+
+	// DeleteOldResults
+	s.Require().NoError(s.dataStore.DeleteOldResults(s.hasWriteCtx, timestampNow, scanRef, false))
+
+	results, err = s.dataStore.SearchComplianceCheckResults(s.hasReadCtx, query)
+	s.Require().NoError(err)
+	s.Assert().Len(results, 2)
+	expectedNames := []string{"test-check-1", "test-check-2"}
+	s.Assert().Contains(expectedNames, results[0].GetCheckName())
+	s.Assert().Contains(expectedNames, results[1].GetCheckName())
+
+	// Upsert rec3 again to test old results are also deleted if `includeCurrent` is true
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, rec3))
+	results, err = s.dataStore.SearchComplianceCheckResults(s.hasReadCtx, query)
+	s.Require().NoError(err)
+	s.Assert().Len(results, 3)
+
+	s.Require().NoError(s.dataStore.DeleteOldResults(s.hasWriteCtx, timestampNow, scanRef, true))
+
+	results, err = s.dataStore.SearchComplianceCheckResults(s.hasReadCtx, query)
+	s.Require().NoError(err)
+	s.Assert().Len(results, 0)
 }
 
 func (s *complianceCheckResultDataStoreTestSuite) setupTestData() {

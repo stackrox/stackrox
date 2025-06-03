@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/pkg/errors"
+	resultsDS "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	complianceIntegrationDS "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore"
 	snapshotDS "github.com/stackrox/rox/central/complianceoperator/v2/report/datastore"
 	scanConfigDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
@@ -58,6 +59,17 @@ type ScanWatcherResults struct {
 	Scan         *storage.ComplianceOperatorScanV2
 	CheckResults set.StringSet
 	Error        error
+}
+
+// DeleteOldResults associated with the Scan of the given ScanWatcherResults
+func DeleteOldResults(ctx context.Context, results *ScanWatcherResults, store resultsDS.DataStore) error {
+	if results == nil {
+		return errors.New("unable to delete old CheckResults from an nil ScanWatcherResults")
+	}
+	// If the scan failed we remove old and current results
+	includeCurrentResults := results.Error != nil
+	scan := results.Scan
+	return store.DeleteOldResults(ctx, scan.GetLastStartedTime(), scan.GetScanRefId(), includeCurrentResults)
 }
 
 // IsComplianceOperatorHealthy indicates whether Compliance Operator is ready for automatic reporting

@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
@@ -13,16 +14,23 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
 	"github.com/stackrox/rox/pkg/utils"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 var (
 	complianceSAC = sac.ForResource(resources.Compliance)
+)
+
+const (
+	lastStartedTimestampColumnName = "laststartedtime"
+	scanRefIDColumnName            = "scanrefid"
 )
 
 type datastoreImpl struct {
@@ -464,4 +472,25 @@ func (d *datastoreImpl) withCountByResultSelectQuery(q *v1.Query, countOn search
 			).Proto(),
 	)
 	return cloned
+}
+
+func (d *datastoreImpl) DeleteOldResults(ctx context.Context, lastStartedTimestamp *timestamppb.Timestamp, scanRefID string, includeCurrent bool) error {
+	if scanRefID == "" || lastStartedTimestamp == nil {
+		return nil
+	}
+	if err := lastStartedTimestamp.CheckValid(); err != nil {
+		return err
+	}
+	deleteFmt := "DELETE FROM %s WHERE %s = $1 AND (%s < $2 OR %s IS NULL)"
+	if includeCurrent {
+		deleteFmt = "DELETE FROM %s WHERE %s = $1 AND (%s <= $2 OR %s IS NULL)"
+	}
+	deleteStmt := fmt.Sprintf(deleteFmt,
+		schema.ComplianceOperatorCheckResultV2TableName,
+		scanRefIDColumnName,
+		lastStartedTimestampColumnName,
+		lastStartedTimestampColumnName,
+	)
+	_, err := d.db.Exec(ctx, deleteStmt, scanRefID, protocompat.NilOrTime(lastStartedTimestamp))
+	return err
 }
