@@ -133,11 +133,11 @@ class CSVTest extends BaseSpecification {
     }
 
     def getComponentId() {
-        return "openssl#1.1.1d-0+deb10u7#debian:10"
+        return "openssl"
     }
 
     def getComponentQuery() {
-        return "COMPONENT ID:" + getComponentId() + "+Fixable:true"
+        return "COMPONENT:" + getComponentId() + "+Fixable:true"
     }
 
     def getCVETypeImageQuery() {
