@@ -33,10 +33,7 @@ func (m *matcherMetadataStore) GetLastVulnerabilityUpdate(ctx context.Context) (
 }
 
 // GetLastVulnerabilityBundlesUpdate implements MatcherMetadataStore.GetLastVulnerabilityBundlesUpdate
-func (m *matcherMetadataStore) GetLastVulnerabilityBundlesUpdate(
-	ctx context.Context,
-	bundles []string,
-) (map[string]time.Time, error) {
+func (m *matcherMetadataStore) GetLastVulnerabilityBundlesUpdate(ctx context.Context, bundles []string) (map[string]time.Time, error) {
 	const selectLatestTimestamps = `
 		SELECT DISTINCT ON (key) key, update_timestamp
 		FROM last_vuln_update
