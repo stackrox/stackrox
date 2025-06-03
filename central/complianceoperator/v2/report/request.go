@@ -24,8 +24,7 @@ type Request struct {
 type ClusterData struct {
 	ClusterId   string
 	ClusterName string
-	Profiles    []string
-	Scans       []string
+	ScanNames   []string
 	FailedInfo  *FailedCluster
 }
 
@@ -35,6 +34,5 @@ type FailedCluster struct {
 	ClusterName     string
 	Reasons         []string
 	OperatorVersion string
-	Scans           []*storage.ComplianceOperatorScanV2
-	Profiles        []string
+	FailedScans     []*storage.ComplianceOperatorScanV2
 }

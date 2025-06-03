@@ -31,16 +31,11 @@ type DataStore interface {
 
 	// SearchScans returns the scans for the given query
 	SearchScans(ctx context.Context, query *v1.Query) ([]*storage.ComplianceOperatorScanV2, error)
-
-	GetProfilesScanNamesByScanConfigAndCluster(ctx context.Context, scanConfigID, clusterID string) (map[string]string, error)
-
-	GetProfileScanNamesByScanConfigClusterAndProfileRef(ctx context.Context, scanConfig, clusterID string, profileRefs []string) (map[string]string, error)
 }
 
 // New returns an instance of DataStore.
-func New(complianceScanStorage pgStore.Store, db postgres.DB) DataStore {
+func New(complianceScanStorage pgStore.Store) DataStore {
 	return &datastoreImpl{
-		db:    db,
 		store: complianceScanStorage,
 	}
 }
@@ -48,5 +43,5 @@ func New(complianceScanStorage pgStore.Store, db postgres.DB) DataStore {
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
 func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) DataStore {
 	store := pgStore.New(pool)
-	return New(store, pool)
+	return New(store)
 }

@@ -5,12 +5,10 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/complianceoperator/v2/report"
 	"github.com/stackrox/rox/pkg/csv"
-	"github.com/stackrox/rox/pkg/set"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -80,18 +78,18 @@ func (f *FormatterImpl) FormatCSVReport(results map[string][]*report.ResultRow, 
 	timestamp := timestamppb.Now()
 	for clusterID, cluster := range clusters {
 		if cluster.FailedInfo != nil {
-			fileName := getFileName(failedClusterFmt, cluster.ClusterName, cluster.FailedInfo.Profiles, timestamp)
+			fileName := getFileName(failedClusterFmt, cluster.ClusterName, timestamp)
 			if err := f.createFailedClusterFileInZip(zipWriter, fileName, cluster.FailedInfo); err != nil {
 				return nil, errors.Wrap(err, "error creating failed cluster report")
 			}
-			if len(cluster.FailedInfo.Profiles) == len(cluster.Profiles) {
-				continue
-			}
 		}
-		fileName := getFileName(successfulClusterFmt, cluster.ClusterName, getProfileDiff(cluster.Profiles, cluster.FailedInfo), timestamp)
+		if len(results[clusterID]) == 0 && cluster.FailedInfo != nil {
+			continue
+		}
 		if _, ok := results[clusterID]; !ok {
 			return nil, errors.Errorf("found no results for cluster %q", clusterID)
 		}
+		fileName := getFileName(successfulClusterFmt, cluster.ClusterName, timestamp)
 		if err := f.createCSVInZip(zipWriter, fileName, results[clusterID]); err != nil {
 			return nil, errors.Wrap(err, "error creating csv report")
 		}
@@ -152,18 +150,9 @@ func generateFailRecord(clusterID, clusterName, reason, coVersion string) []stri
 	}
 }
 
-func getProfileDiff(allProfiles []string, failedCluster *report.FailedCluster) []string {
-	if failedCluster == nil {
-		return allProfiles
-	}
-	allProfilesSet := set.NewStringSet(allProfiles...)
-	failedProfilesSet := set.NewStringSet(failedCluster.Profiles...)
-	return allProfilesSet.Difference(failedProfilesSet).AsSlice()
-}
-
-func getFileName(format string, clusterName string, profiles []string, timestamp *timestamppb.Timestamp) string {
+func getFileName(format string, clusterName string, timestamp *timestamppb.Timestamp) string {
 	year, month, day := timestamp.AsTime().Date()
-	return fmt.Sprintf(format, fmt.Sprintf("%s_%s_%d-%d-%d", clusterName, strings.Join(profiles, "_"), year, month, day))
+	return fmt.Sprintf(format, fmt.Sprintf("%s_%d-%d-%d", clusterName, year, month, day))
 }
 
 func createNewZipWriter(buf *bytes.Buffer) ZipWriter {

@@ -9,7 +9,6 @@ import (
 	scanDS "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
-	"golang.org/x/exp/maps"
 )
 
 // GetFailedClusters returns the failed clusters metadata associated with a ScanConfiguration
@@ -20,7 +19,7 @@ func GetFailedClusters(ctx context.Context, scanConfigID string, snapshotStore s
 		return nil, err
 	}
 	for _, failedCluster := range prevSnapshot.GetFailedClusters() {
-		scans, err := populateFailedScans(ctx, failedCluster.GetScans(), prevSnapshot.GetScans(), scanStore)
+		scans, err := populateFailedScans(ctx, failedCluster.GetScanNames(), prevSnapshot.GetScans(), scanStore)
 		if err != nil {
 			return nil, err
 		}
@@ -29,8 +28,7 @@ func GetFailedClusters(ctx context.Context, scanConfigID string, snapshotStore s
 			ClusterName:     failedCluster.GetClusterName(),
 			Reasons:         failedCluster.GetReasons(),
 			OperatorVersion: failedCluster.GetOperatorVersion(),
-			Scans:           scans,
-			Profiles:        failedCluster.GetProfiles(),
+			FailedScans:     scans,
 		}
 	}
 	return failedClusters, nil
@@ -44,7 +42,7 @@ func GetClusterData(ctx context.Context, reportData *storage.ComplianceOperatorR
 			ClusterId:   cluster.GetClusterId(),
 			ClusterName: cluster.GetClusterName(),
 		}
-		data, err := populateScansAndProfiles(ctx, data, reportData, cluster.GetClusterId(), scanStore)
+		data, err := populateScanNames(ctx, data, reportData, cluster.GetClusterId(), scanStore)
 		if err != nil {
 			return nil, err
 		}
@@ -55,48 +53,27 @@ func GetClusterData(ctx context.Context, reportData *storage.ComplianceOperatorR
 		if failedCluster, ok := failedClusters[cluster.GetClusterId()]; ok {
 			failedCluster.ClusterName = cluster.GetClusterName()
 			data.FailedInfo = failedCluster
-			data, err = populateFailedScansAndProfiles(ctx, data, reportData, cluster.GetClusterId(), scanStore)
-			if err != nil {
-				return nil, err
-			}
 		}
 		clusterData[cluster.GetClusterId()] = data
 	}
 	return clusterData, nil
 }
 
-func populateScansAndProfiles(ctx context.Context, data *report.ClusterData, reportData *storage.ComplianceOperatorReportData, clusterID string, scanStore scanDS.DataStore) (*report.ClusterData, error) {
+func populateScanNames(ctx context.Context, data *report.ClusterData, reportData *storage.ComplianceOperatorReportData, clusterID string, scanStore scanDS.DataStore) (*report.ClusterData, error) {
 	if data == nil {
 		return nil, errors.New("cannot populate scans and profiles of a nil ClusterData")
 	}
-	scanNamesToProfileNames, err := scanStore.GetProfilesScanNamesByScanConfigAndCluster(ctx, reportData.GetScanConfiguration().GetId(), clusterID)
+	query := search.NewQueryBuilder().
+		AddExactMatches(search.ClusterID, clusterID).
+		AddExactMatches(search.ComplianceOperatorScanConfigName, reportData.GetScanConfiguration().GetScanConfigName()).
+		ProtoQuery()
+	scans, err := scanStore.SearchScans(ctx, query)
 	if err != nil {
-		return nil, errors.Wrapf(err, "unable to retrieve profiles associated with the ScanConfiguration %q in the cluster %q", reportData.GetScanConfiguration().GetId(), clusterID)
+		return nil, errors.Wrapf(err, "unable to retrieve scans associated with the ScanConfiguration %q in the cluster %q", reportData.GetScanConfiguration().GetId(), clusterID)
 	}
-	data.Profiles = maps.Values(scanNamesToProfileNames)
-	data.Scans = maps.Keys(scanNamesToProfileNames)
-	return data, nil
-}
-
-func populateFailedScansAndProfiles(ctx context.Context, data *report.ClusterData, reportData *storage.ComplianceOperatorReportData, clusterID string, scanStore scanDS.DataStore) (*report.ClusterData, error) {
-	if data.FailedInfo == nil {
-		return nil, errors.New("cannot populate scans and profiles of a nil FailedInfo")
+	for _, scan := range scans {
+		data.ScanNames = append(data.ScanNames, scan.GetScanName())
 	}
-	var profileRefIDs []string
-	for _, scan := range data.FailedInfo.Scans {
-		profileRefIDs = append(profileRefIDs, scan.GetProfile().GetProfileRefId())
-	}
-	scanNameToProfileName, err := scanStore.GetProfileScanNamesByScanConfigClusterAndProfileRef(ctx, reportData.GetScanConfiguration().GetId(), clusterID, profileRefIDs)
-	if err != nil {
-		return nil, err
-	}
-	var profileNames []string
-	for _, scan := range data.FailedInfo.Scans {
-		if profileName, ok := scanNameToProfileName[scan.GetScanName()]; ok {
-			profileNames = append(profileNames, profileName)
-		}
-	}
-	data.FailedInfo.Profiles = profileNames
 	return data, nil
 }
 
@@ -105,6 +82,11 @@ func populateFailedScans(ctx context.Context, failedScanNames []string, snapshot
 	for _, scan := range snapshotScans {
 		scanRefIDs = append(scanRefIDs, scan.GetScanRefId())
 	}
+	// We need to query by ScanName and ScanRefIDs
+	// because ScanNames are not unique cross cluster.
+	// scanRefIDs holds all the scan references (failed and successful)
+	// associated with the ScanConfiguration.
+	// failedScanNames holds the scan names of the failed scans.
 	query := search.NewQueryBuilder().
 		AddExactMatches(search.ComplianceOperatorScanName, failedScanNames...).
 		AddExactMatches(search.ComplianceOperatorScanResult, scanRefIDs...).ProtoQuery()

@@ -458,7 +458,7 @@ func getFailedClusters(idx, numFailedClusters, numMissingClusters, numScans int)
 		var reasons []string
 		for j := 0; j < numScans; j++ {
 			reasons = append(reasons, report.INTERNAL_ERROR)
-			failedCluster.Scans = append(failedCluster.Scans, &storage.ComplianceOperatorScanV2{
+			failedCluster.FailedScans = append(failedCluster.FailedScans, &storage.ComplianceOperatorScanV2{
 				ClusterId: id,
 			})
 		}
@@ -483,7 +483,7 @@ func newFailedCluster(clusterID, coVersion string, reasons []string, expectScan 
 		Reasons:         reasons,
 	}
 	if expectScan {
-		ret.Scans = []*storage.ComplianceOperatorScanV2{
+		ret.FailedScans = []*storage.ComplianceOperatorScanV2{
 			{
 				ClusterId: clusterID,
 				ScanName:  scanName,
@@ -501,10 +501,10 @@ func assertFailedCluster(t *testing.T, expected, actual *report.FailedCluster) {
 	assert.Equal(t, expected.ClusterName, actual.ClusterName)
 	assert.Equal(t, expected.OperatorVersion, actual.OperatorVersion)
 	assert.Equal(t, expected.Reasons, actual.Reasons)
-	assert.Equal(t, len(expected.Scans), len(actual.Scans))
-	for _, expectedScan := range expected.Scans {
+	assert.Equal(t, len(expected.FailedScans), len(actual.FailedScans))
+	for _, expectedScan := range expected.FailedScans {
 		found := false
-		for _, actualScan := range actual.Scans {
+		for _, actualScan := range actual.FailedScans {
 			if proto.Equal(expectedScan, actualScan) {
 				found = true
 				break

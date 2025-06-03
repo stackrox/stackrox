@@ -442,8 +442,7 @@ func getRequest(ctx context.Context, numClusters, numProfiles, numFailedClusters
 		clusterData[id] = &report.ClusterData{
 			ClusterId:   id,
 			ClusterName: id,
-			Profiles:    profileNames,
-			Scans:       profileNames,
+			ScanNames:   profileNames,
 		}
 	}
 	if numFailedClusters > 0 {
@@ -455,10 +454,9 @@ func getRequest(ctx context.Context, numClusters, numProfiles, numFailedClusters
 				ClusterName:     id,
 				Reasons:         []string{"timeout"},
 				OperatorVersion: "v1.6.0",
-				Profiles:        clusterData[id].Profiles,
-				Scans: func() []*storage.ComplianceOperatorScanV2 {
+				FailedScans: func() []*storage.ComplianceOperatorScanV2 {
 					var scans []*storage.ComplianceOperatorScanV2
-					for _, scanName := range clusterData[id].Scans {
+					for _, scanName := range clusterData[id].ScanNames {
 						scans = append(scans, &storage.ComplianceOperatorScanV2{
 							ScanName: scanName,
 						})

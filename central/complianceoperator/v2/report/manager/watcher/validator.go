@@ -26,7 +26,7 @@ func ValidateScanConfigResults(ctx context.Context, results *ScanConfigWatcherRe
 		errList.AddError(errors.New(fmt.Sprintf("scan %s failed in cluster %s", scanResult.Scan.GetScanName(), failedClusterInfo.ClusterId)))
 		if previousFailedInfo, ok := failedClusters[failedClusterInfo.ClusterId]; ok && !isInstallationError {
 			previousFailedInfo.Reasons = append(previousFailedInfo.Reasons, failedClusterInfo.Reasons...)
-			previousFailedInfo.Scans = append(previousFailedInfo.Scans, failedClusterInfo.Scans...)
+			previousFailedInfo.FailedScans = append(previousFailedInfo.FailedScans, failedClusterInfo.FailedScans...)
 			continue
 		}
 		failedClusters[failedClusterInfo.ClusterId] = failedClusterInfo
@@ -68,7 +68,7 @@ func ValidateScanResults(ctx context.Context, results *ScanWatcherResults, integ
 	if len(ret.Reasons) > 0 {
 		return ret, true
 	}
-	ret.Scans = []*storage.ComplianceOperatorScanV2{results.Scan}
+	ret.FailedScans = []*storage.ComplianceOperatorScanV2{results.Scan}
 	if errors.Is(results.Error, ErrScanRemoved) {
 		ret.Reasons = []string{fmt.Sprintf(report.SCAN_REMOVED_FMT, results.Scan.GetScanName())}
 		return ret, false

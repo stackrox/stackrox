@@ -98,19 +98,19 @@ func (g *Aggregator) getReportDataForCluster(ctx context.Context, scanConfigID, 
 		totalFail:  0,
 		totalMixed: 0,
 	}
-	scans := clusterData.Scans
+	scanNames := clusterData.ScanNames
 	if clusterData.FailedInfo != nil {
-		allScansSet := set.NewStringSet(scans...)
+		allScansSet := set.NewStringSet(scanNames...)
 		failedScansSet := set.NewStringSet()
-		for _, scan := range clusterData.FailedInfo.Scans {
+		for _, scan := range clusterData.FailedInfo.FailedScans {
 			failedScansSet.Add(scan.GetScanName())
 		}
-		scans = allScansSet.Difference(failedScansSet).AsSlice()
+		scanNames = allScansSet.Difference(failedScansSet).AsSlice()
 	}
 	scanConfigQuery := search.NewQueryBuilder().
 		AddExactMatches(search.ComplianceOperatorScanConfig, scanConfigID).
 		AddExactMatches(search.ClusterID, clusterID).
-		AddExactMatches(search.ComplianceOperatorScanName, scans...).
+		AddExactMatches(search.ComplianceOperatorScanName, scanNames...).
 		ProtoQuery()
 	err := g.checkResultsDS.WalkByQuery(ctx, scanConfigQuery, g.aggreateResults(ctx, clusterID, &ret, statuses))
 	return ret, statuses, err

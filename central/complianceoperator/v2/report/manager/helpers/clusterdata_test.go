@@ -28,8 +28,7 @@ func TestGetFailedClusters(t *testing.T) {
 				ClusterName:     "cluster-name",
 				Reasons:         []string{"some reason"},
 				OperatorVersion: "v1.6.0",
-				Scans:           []string{"scan-2"},
-				Profiles:        []string{"profile-2"},
+				ScanNames:       []string{"scan-2"},
 			},
 		},
 		Scans: []*storage.ComplianceOperatorReportSnapshotV2_Scan{
@@ -77,8 +76,7 @@ func TestGetFailedClusters(t *testing.T) {
 				ClusterName:     "cluster-name",
 				Reasons:         []string{"some reason"},
 				OperatorVersion: "v1.6.0",
-				Scans:           scans,
-				Profiles:        []string{"profile-2"},
+				FailedScans:     scans,
 			},
 		}
 		failedClusters, err := GetFailedClusters(ctx, scanConfigID, snapshotStore, scanStore)
@@ -91,11 +89,7 @@ func TestGetFailedClusters(t *testing.T) {
 			assert.Equal(tt, expectedCluster.ClusterName, actualCluster.ClusterName)
 			assert.Equal(tt, expectedCluster.Reasons, actualCluster.Reasons)
 			assert.Equal(tt, expectedCluster.OperatorVersion, actualCluster.OperatorVersion)
-			protoassert.SlicesEqual(t, expectedCluster.Scans, actualCluster.Scans)
-			assert.Len(tt, actualCluster.Profiles, len(expectedCluster.Profiles))
-			for _, profile := range expectedCluster.Profiles {
-				assert.Contains(tt, actualCluster.Profiles, profile)
-			}
+			protoassert.SlicesEqual(t, expectedCluster.FailedScans, actualCluster.FailedScans)
 		}
 	})
 }
@@ -123,7 +117,7 @@ func TestGetClusterData(t *testing.T) {
 			ClusterName:     "cluster-2",
 			Reasons:         []string{"some reason"},
 			OperatorVersion: "v1.6.0",
-			Scans: []*storage.ComplianceOperatorScanV2{
+			FailedScans: []*storage.ComplianceOperatorScanV2{
 				{
 					ScanName: "scan-2",
 					Profile: &storage.ProfileShim{
@@ -142,7 +136,7 @@ func TestGetClusterData(t *testing.T) {
 	})
 	t.Run("failure querying the scan store", func(tt *testing.T) {
 		scanStore.EXPECT().
-			GetProfilesScanNamesByScanConfigAndCluster(gomock.Any(), gomock.Eq(reportData.GetScanConfiguration().GetId()), gomock.Eq("cluster-1")).
+			SearchScans(gomock.Any(), gomock.Any()).
 			Times(1).Return(nil, errors.New("some error"))
 		clusterData, err := GetClusterData(ctx, reportData, failedClusters, scanStore)
 		assert.Error(tt, err)
@@ -151,96 +145,81 @@ func TestGetClusterData(t *testing.T) {
 	t.Run("no failed clusters", func(tt *testing.T) {
 		gomock.InOrder(
 			scanStore.EXPECT().
-				GetProfilesScanNamesByScanConfigAndCluster(gomock.Any(), gomock.Eq(reportData.GetScanConfiguration().GetId()), gomock.Eq("cluster-1")).
-				Times(1).Return(map[string]string{
-				"scan-1": "profile-1",
-				"scan-2": "profile-2",
+				SearchScans(gomock.Any(), gomock.Any()).
+				Times(1).Return([]*storage.ComplianceOperatorScanV2{
+				{
+					ScanName: "scan-1",
+				},
+				{
+					ScanName: "scan-2",
+				},
 			}, nil),
 			scanStore.EXPECT().
-				GetProfilesScanNamesByScanConfigAndCluster(gomock.Any(), gomock.Eq(reportData.GetScanConfiguration().GetId()), gomock.Eq("cluster-2")).
-				Times(1).Return(map[string]string{
-				"scan-1": "profile-1",
-				"scan-2": "profile-2",
+				SearchScans(gomock.Any(), gomock.Any()).
+				Times(1).Return([]*storage.ComplianceOperatorScanV2{
+				{
+					ScanName: "scan-1",
+				},
+				{
+					ScanName: "scan-2",
+				},
 			}, nil),
 		)
 		expectedClusterData := map[string]*report.ClusterData{
 			"cluster-1": {
 				ClusterId:   "cluster-1",
 				ClusterName: "cluster-1",
-				Scans:       []string{"scan-1", "scan-2"},
-				Profiles:    []string{"profile-1", "profile-2"},
+				ScanNames:   []string{"scan-1", "scan-2"},
 			},
 			"cluster-2": {
 				ClusterId:   "cluster-2",
 				ClusterName: "cluster-2",
-				Scans:       []string{"scan-1", "scan-2"},
-				Profiles:    []string{"profile-1", "profile-2"},
+				ScanNames:   []string{"scan-1", "scan-2"},
 			},
 		}
 		clusterData, err := GetClusterData(ctx, reportData, nil, scanStore)
 		assert.NoError(tt, err)
 		assertClusterData(tt, expectedClusterData, clusterData)
 	})
-	t.Run("failure querying for failed profiles", func(tt *testing.T) {
-		gomock.InOrder(
-			scanStore.EXPECT().
-				GetProfilesScanNamesByScanConfigAndCluster(gomock.Any(), gomock.Eq(reportData.GetScanConfiguration().GetId()), gomock.Eq("cluster-1")).
-				Times(1).Return(map[string]string{
-				"scan-1": "profile-1",
-				"scan-2": "profile-2",
-			}, nil),
-			scanStore.EXPECT().
-				GetProfilesScanNamesByScanConfigAndCluster(gomock.Any(), gomock.Eq(reportData.GetScanConfiguration().GetId()), gomock.Eq("cluster-2")).
-				Times(1).Return(map[string]string{
-				"scan-1": "profile-1",
-				"scan-2": "profile-2",
-			}, nil),
-			scanStore.EXPECT().
-				GetProfileScanNamesByScanConfigClusterAndProfileRef(gomock.Any(), gomock.Eq(reportData.GetScanConfiguration().GetId()), gomock.Eq("cluster-2"), gomock.Eq([]string{"profile-ref-id"})).
-				Times(1).Return(nil, errors.New("some error")),
-		)
-		clusterData, err := GetClusterData(ctx, reportData, failedClusters, scanStore)
-		assert.Error(tt, err)
-		assert.Nil(tt, clusterData)
-	})
 	t.Run("with failed clusters", func(tt *testing.T) {
 		gomock.InOrder(
 			scanStore.EXPECT().
-				GetProfilesScanNamesByScanConfigAndCluster(gomock.Any(), gomock.Eq(reportData.GetScanConfiguration().GetId()), gomock.Eq("cluster-1")).
-				Times(1).Return(map[string]string{
-				"scan-1": "profile-1",
-				"scan-2": "profile-2",
+				SearchScans(gomock.Any(), gomock.Any()).
+				Times(1).Return([]*storage.ComplianceOperatorScanV2{
+				{
+					ScanName: "scan-1",
+				},
+				{
+					ScanName: "scan-2",
+				},
 			}, nil),
 			scanStore.EXPECT().
-				GetProfilesScanNamesByScanConfigAndCluster(gomock.Any(), gomock.Eq(reportData.GetScanConfiguration().GetId()), gomock.Eq("cluster-2")).
-				Times(1).Return(map[string]string{
-				"scan-1": "profile-1",
-				"scan-2": "profile-2",
-			}, nil),
-			scanStore.EXPECT().
-				GetProfileScanNamesByScanConfigClusterAndProfileRef(gomock.Any(), gomock.Eq(reportData.GetScanConfiguration().GetId()), gomock.Eq("cluster-2"), gomock.Eq([]string{"profile-ref-id"})).
-				Times(1).Return(map[string]string{
-				"scan-2": "profile-2",
+				SearchScans(gomock.Any(), gomock.Any()).
+				Times(1).Return([]*storage.ComplianceOperatorScanV2{
+				{
+					ScanName: "scan-1",
+				},
+				{
+					ScanName: "scan-2",
+				},
 			}, nil),
 		)
 		expectedClusterData := map[string]*report.ClusterData{
 			"cluster-1": {
 				ClusterId:   "cluster-1",
 				ClusterName: "cluster-1",
-				Scans:       []string{"scan-1", "scan-2"},
-				Profiles:    []string{"profile-1", "profile-2"},
+				ScanNames:   []string{"scan-1", "scan-2"},
 			},
 			"cluster-2": {
 				ClusterId:   "cluster-2",
 				ClusterName: "cluster-2",
-				Scans:       []string{"scan-1", "scan-2"},
-				Profiles:    []string{"profile-1", "profile-2"},
+				ScanNames:   []string{"scan-1", "scan-2"},
 				FailedInfo: &report.FailedCluster{
 					ClusterId:       "cluster-2",
 					ClusterName:     "cluster-2",
 					OperatorVersion: "v1.6.0",
 					Reasons:         []string{"some reason"},
-					Scans: []*storage.ComplianceOperatorScanV2{
+					FailedScans: []*storage.ComplianceOperatorScanV2{
 						{
 							ScanName: "scan-2",
 							Profile: &storage.ProfileShim{
@@ -248,7 +227,6 @@ func TestGetClusterData(t *testing.T) {
 							},
 						},
 					},
-					Profiles: []string{"profile-2"},
 				},
 			},
 		}
@@ -265,13 +243,9 @@ func assertClusterData(t *testing.T, expected map[string]*report.ClusterData, ac
 		require.True(t, ok)
 		assert.Equal(t, expectedCluster.ClusterId, actualCluster.ClusterId)
 		assert.Equal(t, expectedCluster.ClusterName, actualCluster.ClusterName)
-		assert.Len(t, actualCluster.Scans, len(expectedCluster.Scans))
-		for _, scan := range expectedCluster.Scans {
-			assert.Contains(t, actualCluster.Scans, scan)
-		}
-		assert.Len(t, actualCluster.Profiles, len(expectedCluster.Profiles))
-		for _, profile := range expectedCluster.Profiles {
-			assert.Contains(t, actualCluster.Profiles, profile)
+		assert.Len(t, actualCluster.ScanNames, len(expectedCluster.ScanNames))
+		for _, scan := range expectedCluster.ScanNames {
+			assert.Contains(t, actualCluster.ScanNames, scan)
 		}
 		if expectedCluster.FailedInfo != nil {
 			require.NotNil(t, actualCluster.FailedInfo)
@@ -279,11 +253,7 @@ func assertClusterData(t *testing.T, expected map[string]*report.ClusterData, ac
 			assert.Equal(t, expectedCluster.FailedInfo.ClusterName, actualCluster.FailedInfo.ClusterName)
 			assert.Equal(t, expectedCluster.FailedInfo.Reasons, actualCluster.FailedInfo.Reasons)
 			assert.Equal(t, expectedCluster.FailedInfo.OperatorVersion, actualCluster.FailedInfo.OperatorVersion)
-			protoassert.SlicesEqual(t, expectedCluster.FailedInfo.Scans, actualCluster.FailedInfo.Scans)
-			assert.Len(t, actualCluster.FailedInfo.Profiles, len(expectedCluster.FailedInfo.Profiles))
-			for _, profile := range expectedCluster.FailedInfo.Profiles {
-				assert.Contains(t, actualCluster.FailedInfo.Profiles, profile)
-			}
+			protoassert.SlicesEqual(t, expectedCluster.FailedInfo.FailedScans, actualCluster.FailedInfo.FailedScans)
 		} else {
 			assert.Nil(t, actualCluster.FailedInfo)
 		}

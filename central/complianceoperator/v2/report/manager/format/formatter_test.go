@@ -37,7 +37,7 @@ func (s *ComplianceReportingFormatterSuite) Test_FormatCSVReportNoError() {
 	s.Run("with empty failed clusters", func() {
 		timestamp := timestamppb.Now()
 		clusterData := getFakeClusterData()
-		fileName := getFileName(successfulClusterFmt, clusterData[clusterID1].ClusterName, clusterData[clusterID1].Profiles, timestamp)
+		fileName := getFileName(successfulClusterFmt, clusterData[clusterID1].ClusterName, timestamp)
 		s.zipWriter.EXPECT().Create(fileName).Times(1).Return(nil, nil)
 		gomock.InOrder(
 			s.csvWriter.EXPECT().AddValue(gomock.Cond[csv.Value](func(target csv.Value) bool {
@@ -68,8 +68,8 @@ func (s *ComplianceReportingFormatterSuite) Test_FormatCSVReportWithFailedCluste
 	timestamp := timestamppb.Now()
 	results, clusterData := getFakeReportDataWithFailedCluster()
 
-	successfulFileName := getFileName(successfulClusterFmt, clusterData[clusterID1].ClusterName, clusterData[clusterID1].Profiles, timestamp)
-	failedFileName := getFileName(failedClusterFmt, clusterData[clusterID2].ClusterName, clusterData[clusterID2].Profiles, timestamp)
+	successfulFileName := getFileName(successfulClusterFmt, clusterData[clusterID1].ClusterName, timestamp)
+	failedFileName := getFileName(failedClusterFmt, clusterData[clusterID2].ClusterName, timestamp)
 
 	s.zipWriter.EXPECT().Create(gomock.Cond[string](func(target string) bool {
 		return target == successfulFileName || target == failedFileName
@@ -94,8 +94,8 @@ func (s *ComplianceReportingFormatterSuite) Test_FormatCSVReportWithFailedCluste
 	// Add empty results to the failed cluster
 	results[clusterID2] = []*report.ResultRow{}
 
-	successfulFileName := getFileName(successfulClusterFmt, clusterData[clusterID1].ClusterName, clusterData[clusterID1].Profiles, timestamp)
-	failedFileName := getFileName(failedClusterFmt, clusterData[clusterID2].ClusterName, clusterData[clusterID2].Profiles, timestamp)
+	successfulFileName := getFileName(successfulClusterFmt, clusterData[clusterID1].ClusterName, timestamp)
+	failedFileName := getFileName(failedClusterFmt, clusterData[clusterID2].ClusterName, timestamp)
 
 	s.zipWriter.EXPECT().Create(gomock.Cond[string](func(target string) bool {
 		return target == successfulFileName || target == failedFileName
@@ -117,8 +117,6 @@ func (s *ComplianceReportingFormatterSuite) Test_FormatCSVReportWithFailedCluste
 func (s *ComplianceReportingFormatterSuite) Test_FormatCSVReportWithPartialFailedCluster() {
 	timestamp := timestamppb.Now()
 	results, clusterData := getFakeReportDataWithFailedCluster()
-	// Remove profile
-	clusterData[clusterID2].FailedInfo.Profiles = clusterData[clusterID2].FailedInfo.Profiles[:1]
 	// Add partial results
 	results[clusterID2] = []*report.ResultRow{
 		{
@@ -132,9 +130,9 @@ func (s *ComplianceReportingFormatterSuite) Test_FormatCSVReportWithPartialFaile
 		},
 	}
 
-	partialSuccessFileName := getFileName(successfulClusterFmt, clusterData[clusterID2].ClusterName, getProfileDiff(clusterData[clusterID2].Profiles, clusterData[clusterID2].FailedInfo), timestamp)
-	successfulFileName := getFileName(successfulClusterFmt, clusterData[clusterID1].ClusterName, clusterData[clusterID1].Profiles, timestamp)
-	failedFileName := getFileName(failedClusterFmt, clusterData[clusterID2].ClusterName, clusterData[clusterID2].FailedInfo.Profiles, timestamp)
+	partialSuccessFileName := getFileName(successfulClusterFmt, clusterData[clusterID2].ClusterName, timestamp)
+	successfulFileName := getFileName(successfulClusterFmt, clusterData[clusterID1].ClusterName, timestamp)
+	failedFileName := getFileName(failedClusterFmt, clusterData[clusterID2].ClusterName, timestamp)
 
 	s.zipWriter.EXPECT().Create(gomock.Cond[string](func(target string) bool {
 		return target == successfulFileName || target == failedFileName || target == partialSuccessFileName
@@ -158,7 +156,7 @@ func (s *ComplianceReportingFormatterSuite) Test_FormatCSVReportCreateError() {
 	s.Run("zip writer failing to create a file (with no failed clusters) should yield an error", func() {
 		timestamp := timestamppb.Now()
 		clusterData := getFakeClusterData()
-		successfulFileName := getFileName(successfulClusterFmt, clusterData[clusterID1].ClusterName, clusterData[clusterID1].Profiles, timestamp)
+		successfulFileName := getFileName(successfulClusterFmt, clusterData[clusterID1].ClusterName, timestamp)
 		s.zipWriter.EXPECT().Create(successfulFileName).Times(1).Return(nil, errors.New("error"))
 		s.zipWriter.EXPECT().Close().Times(1).Return(nil)
 
@@ -170,7 +168,7 @@ func (s *ComplianceReportingFormatterSuite) Test_FormatCSVReportCreateError() {
 		timestamp := timestamppb.Now()
 		results, clusterData := getFakeReportDataWithFailedCluster()
 		delete(clusterData, clusterID1)
-		failedFileName := getFileName(failedClusterFmt, clusterData[clusterID2].ClusterName, clusterData[clusterID2].FailedInfo.Profiles, timestamp)
+		failedFileName := getFileName(failedClusterFmt, clusterData[clusterID2].ClusterName, timestamp)
 		s.zipWriter.EXPECT().Create(failedFileName).Times(1).Return(nil, errors.New("error"))
 		s.zipWriter.EXPECT().Close().Times(1).Return(nil)
 
@@ -184,7 +182,7 @@ func (s *ComplianceReportingFormatterSuite) Test_FormatCSVReportWriteError() {
 	s.Run("csv writer failing to create a file (with no failed clusters) should yield an error", func() {
 		timestamp := timestamppb.Now()
 		clusterData := getFakeClusterData()
-		successfulFileName := getFileName(successfulClusterFmt, clusterData[clusterID1].ClusterName, clusterData[clusterID1].Profiles, timestamp)
+		successfulFileName := getFileName(successfulClusterFmt, clusterData[clusterID1].ClusterName, timestamp)
 		s.zipWriter.EXPECT().Create(successfulFileName).Times(1).Return(nil, nil)
 		s.csvWriter.EXPECT().AddValue(gomock.Any()).Times(2)
 		s.csvWriter.EXPECT().WriteCSV(gomock.Any()).Times(1).Return(errors.New("error"))
@@ -198,7 +196,7 @@ func (s *ComplianceReportingFormatterSuite) Test_FormatCSVReportWriteError() {
 		timestamp := timestamppb.Now()
 		results, clusterData := getFakeReportDataWithFailedCluster()
 		delete(clusterData, clusterID1)
-		failedFileName := getFileName(failedClusterFmt, clusterData[clusterID2].ClusterName, clusterData[clusterID2].FailedInfo.Profiles, timestamp)
+		failedFileName := getFileName(failedClusterFmt, clusterData[clusterID2].ClusterName, timestamp)
 		s.zipWriter.EXPECT().Create(failedFileName).Times(1).Return(nil, nil)
 		s.csvWriter.EXPECT().AddValue(gomock.Cond[csv.Value](func(target csv.Value) bool {
 			failedInfo := clusterData[clusterID2].FailedInfo
@@ -216,7 +214,7 @@ func (s *ComplianceReportingFormatterSuite) Test_FormatCSVReportWriteError() {
 func (s *ComplianceReportingFormatterSuite) Test_FormatCSVReportCloseError() {
 	timestamp := timestamppb.Now()
 	clusterData := getFakeClusterData()
-	fileName := getFileName(successfulClusterFmt, clusterData[clusterID1].ClusterName, clusterData[clusterID1].Profiles, timestamp)
+	fileName := getFileName(successfulClusterFmt, clusterData[clusterID1].ClusterName, timestamp)
 	s.zipWriter.EXPECT().Create(fileName).Times(1).Return(nil, nil)
 	s.csvWriter.EXPECT().AddValue(gomock.Any()).Times(2)
 	s.csvWriter.EXPECT().WriteCSV(gomock.Any()).Times(1).Return(nil)
@@ -230,7 +228,7 @@ func (s *ComplianceReportingFormatterSuite) Test_FormatCSVReportCloseError() {
 func (s *ComplianceReportingFormatterSuite) Test_FormatCSVReportEmptyReportNoError() {
 	timestamp := timestamppb.Now()
 	clusterData := getFakeClusterData()
-	fileName := getFileName(successfulClusterFmt, clusterData[clusterID1].ClusterName, clusterData[clusterID1].Profiles, timestamp)
+	fileName := getFileName(successfulClusterFmt, clusterData[clusterID1].ClusterName, timestamp)
 	s.zipWriter.EXPECT().Create(fileName).Times(1).Return(nil, nil)
 	s.csvWriter.EXPECT().AddValue(&emptyValueMatcher{
 		t:     s.T(),
@@ -304,12 +302,10 @@ func getFakeReportDataWithFailedCluster() (map[string][]*report.ResultRow, map[s
 	clusterData[clusterID2] = &report.ClusterData{
 		ClusterName: "test_cluster-2",
 		ClusterId:   "test_cluster-2-id",
-		Profiles:    []string{"test_profile-1", "test_profile-2"},
 	}
 	clusterData[clusterID2].FailedInfo = &report.FailedCluster{
 		Reasons:         []string{"timeout"},
 		OperatorVersion: "v1.6.0",
-		Profiles:        []string{"test_profile-1", "test_profile-2"},
 	}
 	results := getFakeReportData()
 	return results, clusterData
@@ -320,7 +316,6 @@ func getFakeClusterData() map[string]*report.ClusterData {
 	ret[clusterID1] = &report.ClusterData{
 		ClusterId:   clusterID1,
 		ClusterName: "test_cluster-1",
-		Profiles:    []string{"test_profile-1", "test_profile-2"},
 	}
 	return ret
 }

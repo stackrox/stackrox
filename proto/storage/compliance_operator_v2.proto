@@ -310,8 +310,7 @@ message ComplianceOperatorReportSnapshotV2 {
     string cluster_name = 2;
     repeated string reasons = 3;
     string operator_version = 4;
-    repeated string scans = 5;
-    repeated string profiles = 6;
+    repeated string scanNames = 5;
   }
 
   repeated FailedCluster failed_clusters = 9;

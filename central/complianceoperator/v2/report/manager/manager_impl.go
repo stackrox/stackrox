@@ -311,6 +311,7 @@ func (m *managerImpl) handleReportRequest(request *reportRequest) (bool, error) 
 			if dbErr := helpers.UpdateSnapshotOnError(request.ctx, snapshot, report.ErrReportGeneration, m.snapshotDataStore); dbErr != nil {
 				return false, errors.Wrap(dbErr, "unable to upsert snapshot on generation failure")
 			}
+			return false, errors.Wrap(err, "unable to get clusters information")
 		}
 		// Add failed clusters to the report snapshot
 		if _, err = m.addFailedClustersToTheSnapshot(failedClusters, snapshot); err != nil {
@@ -587,6 +588,7 @@ func (m *managerImpl) generateSingleReportFromWatcherResults(result *watcher.Sca
 		if dbErr := helpers.UpdateSnapshotOnError(m.automaticReportingCtx, snapshot, report.ErrReportGeneration, m.snapshotDataStore); dbErr != nil {
 			return errors.Wrap(dbErr, "unable to update snapshot on populate cluster data error")
 		}
+		return errors.Wrap(err, "unable to populate cluster data")
 	}
 	// Add failed clusters to the report snapshot
 	snapshot, err = m.addFailedClustersToTheSnapshot(failedClusters, snapshot)
@@ -609,26 +611,26 @@ func (m *managerImpl) generateSingleReportFromWatcherResults(result *watcher.Sca
 }
 
 func (m *managerImpl) addFailedClustersToTheSnapshot(failedClusters map[string]*report.FailedCluster, snapshot *storage.ComplianceOperatorReportSnapshotV2) (*storage.ComplianceOperatorReportSnapshotV2, error) {
-	if len(failedClusters) > 0 {
-		failedClustersSlice := make([]*storage.ComplianceOperatorReportSnapshotV2_FailedCluster, 0, len(failedClusters))
-		for _, failedCluster := range failedClusters {
-			scans := make([]string, 0, len(failedCluster.Scans))
-			for _, scan := range failedCluster.Scans {
-				scans = append(scans, scan.GetScanName())
-			}
-			failedClustersSlice = append(failedClustersSlice, &storage.ComplianceOperatorReportSnapshotV2_FailedCluster{
-				ClusterId:       failedCluster.ClusterId,
-				ClusterName:     failedCluster.ClusterName,
-				OperatorVersion: failedCluster.OperatorVersion,
-				Reasons:         failedCluster.Reasons,
-				Scans:           scans,
-				Profiles:        failedCluster.Profiles,
-			})
+	if len(failedClusters) == 0 {
+		return snapshot, nil
+	}
+	failedClustersSlice := make([]*storage.ComplianceOperatorReportSnapshotV2_FailedCluster, 0, len(failedClusters))
+	for _, failedCluster := range failedClusters {
+		scans := make([]string, 0, len(failedCluster.FailedScans))
+		for _, scan := range failedCluster.FailedScans {
+			scans = append(scans, scan.GetScanName())
 		}
-		snapshot.FailedClusters = failedClustersSlice
-		if err := m.snapshotDataStore.UpsertSnapshot(m.automaticReportingCtx, snapshot); err != nil {
-			return snapshot, errors.Wrapf(err, "unable to upsert the snapshot %s", snapshot.GetReportId())
-		}
+		failedClustersSlice = append(failedClustersSlice, &storage.ComplianceOperatorReportSnapshotV2_FailedCluster{
+			ClusterId:       failedCluster.ClusterId,
+			ClusterName:     failedCluster.ClusterName,
+			OperatorVersion: failedCluster.OperatorVersion,
+			Reasons:         failedCluster.Reasons,
+			ScanNames:       scans,
+		})
+	}
+	snapshot.FailedClusters = failedClustersSlice
+	if err := m.snapshotDataStore.UpsertSnapshot(m.automaticReportingCtx, snapshot); err != nil {
+		return snapshot, errors.Wrapf(err, "unable to upsert the snapshot %s", snapshot.GetReportId())
 	}
 	return snapshot, nil
 }

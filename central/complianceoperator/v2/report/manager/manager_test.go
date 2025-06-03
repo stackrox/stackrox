@@ -117,9 +117,9 @@ func (m *ManagerTestSuite) TestHandleReportRequest() {
 			GetLastSnapshotFromScanConfig(gomock.Any(), gomock.Eq(scanConfig.GetId())).
 			Times(1).Return(nil, nil)
 		m.scanDataStore.EXPECT().
-			GetProfilesScanNamesByScanConfigAndCluster(gomock.Any(), gomock.Eq(scanConfig.GetId()), gomock.Cond[string](func(id string) bool {
-				return id == "cluster-1" || id == "cluster-2"
-			})).Times(len(scanConfig.GetClusters())).Return(getScanToProfileMap(len(scanConfig.GetProfiles())), nil)
+			SearchScans(gomock.Any(), gomock.Any()).
+			Times(len(scanConfig.GetClusters())).
+			Return(getScans(len(scanConfig.GetProfiles())), nil)
 		err := manager.SubmitReportRequest(ctx, getTestScanConfig(), storage.ComplianceOperatorReportStatus_EMAIL)
 		m.Require().NoError(err)
 		handleWaitGroup(m.T(), &wg, 10*time.Millisecond, "report generation")
@@ -619,9 +619,9 @@ func (m *ManagerTestSuite) setupExpectCallsFromFinishAllScans(sc *storage.Compli
 			SearchScans(gomock.Any(), gomock.Any()).
 			Times(1).Return(allScans, nil),
 		m.scanDataStore.EXPECT().
-			GetProfilesScanNamesByScanConfigAndCluster(gomock.Any(), gomock.Eq(sc.GetId()), gomock.Cond[string](func(id string) bool {
-				return id == "cluster-1" || id == "cluster-2"
-			})).Times(len(sc.GetClusters())*numSnapshots).Return(getScanToProfileMap(len(sc.GetProfiles())), nil),
+			SearchScans(gomock.Any(), gomock.Any()).
+			Times(len(sc.GetClusters())*numSnapshots).
+			Return(scans, nil),
 	}
 	expectedCalls = append(expectedCalls, calls...)
 	return expectedCalls
@@ -666,13 +666,9 @@ func (m *ManagerTestSuite) setupExpectCallsFromFailAllScans(sc *storage.Complian
 			Times(numSnapshots).Return(nil),
 		// GetClusterData
 		m.scanDataStore.EXPECT().
-			GetProfilesScanNamesByScanConfigAndCluster(gomock.Any(), gomock.Eq(sc.GetId()), gomock.Cond[string](func(id string) bool {
-				return id == "cluster-1" || id == "cluster-2"
-			})).Times(len(sc.GetClusters())*numSnapshots).Return(getScanToProfileMap(len(sc.GetProfiles())), nil),
-		m.scanDataStore.EXPECT().
-			GetProfileScanNamesByScanConfigClusterAndProfileRef(gomock.Any(), gomock.Eq(sc.GetId()), gomock.Cond[string](func(id string) bool {
-				return id == "cluster-1" || id == "cluster-2"
-			}), gomock.Any()).Times(2).Return(getScanToProfileMap(len(sc.GetProfiles())), nil),
+			SearchScans(gomock.Any(), gomock.Any()).
+			Times(len(sc.GetClusters())*numSnapshots).
+			Return(scans, nil),
 	}
 	expectedCalls = append(expectedCalls, calls...)
 	return expectedCalls
@@ -765,11 +761,13 @@ func handleWaitGroup(t *testing.T, wg *concurrency.WaitGroup, timeout time.Durat
 	}
 }
 
-func getScanToProfileMap(numProfiles int) map[string]string {
-	ret := make(map[string]string)
+func getScans(numProfiles int) []*storage.ComplianceOperatorScanV2 {
+	var ret []*storage.ComplianceOperatorScanV2
 	for i := 0; i < numProfiles; i++ {
 		name := fmt.Sprintf("profile-%d", i)
-		ret[name] = name
+		ret = append(ret, &storage.ComplianceOperatorScanV2{
+			ScanName: name,
+		})
 	}
 	return ret
 }

@@ -4,13 +4,8 @@ package datastore
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
-	profileStorage "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
-	profileSearch "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore/search"
-	profilePostgresStorage "github.com/stackrox/rox/central/complianceoperator/v2/profiles/store/postgres"
-	scanConfigStorage "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	scanStorage "github.com/stackrox/rox/central/complianceoperator/v2/scans/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
@@ -280,177 +275,10 @@ func (s *complianceScanDataStoreTestSuite) TestDeleteScan() {
 	protoassert.Equal(s.T(), testScan2, retrievedObject)
 }
 
-func (s *complianceScanDataStoreTestSuite) TestGetProfileScanNames() {
-	// Create Test DataStores for ScanConfigurations and Profiles
-	scanConfigDS := scanConfigStorage.GetTestPostgresDataStore(s.T(), s.db)
-	profilePostgres := profilePostgresStorage.New(s.db)
-	searcher := profileSearch.New(profilePostgres)
-	profileDS := profileStorage.GetTestPostgresDataStore(s.T(), s.db, searcher)
-
-	profileName1 := "ocp4-cis"
-	profileName2 := "ocp4-cis-node"
-
-	// Define Profiles 1 and 2 in Cluster 1
-	profile1 := getTestProfile(profileName1, fixtureconsts.ComplianceProfileID1, testconsts.Cluster1)
-	profile2 := getTestProfile(profileName2, fixtureconsts.ComplianceProfileID2, testconsts.Cluster1)
-
-	// Define Profiles 1 and 2 in Cluster 2
-	profile3 := getTestProfile(profileName1, fixtureconsts.ComplianceProfileID1, testconsts.Cluster2)
-	profile4 := getTestProfile(profileName2, fixtureconsts.ComplianceProfileID2, testconsts.Cluster2)
-
-	// Define ScanConfiguration
-	scanConfigName := "scanConfig1"
-	scanConfig := getTestScanConfig(scanConfigName,
-		fixtureconsts.ComplianceScanConfigID1,
-		[]string{testconsts.Cluster1, testconsts.Cluster2},
-		[]string{profileName1, profileName2})
-
-	s.T().Cleanup(func() {
-		_, _ = scanConfigDS.DeleteScanConfiguration(s.hasWriteCtx, fixtureconsts.ComplianceScanConfigID1)
-		_ = profileDS.DeleteProfilesByCluster(s.hasWriteCtx, fixtureconsts.Cluster1)
-		_ = profileDS.DeleteProfilesByCluster(s.hasWriteCtx, fixtureconsts.Cluster2)
-	})
-
-	// Create Profiles 1 and 2 in Cluster 1
-	s.Require().NoError(profileDS.UpsertProfile(s.hasWriteCtx, profile1))
-	s.Require().NoError(profileDS.UpsertProfile(s.hasWriteCtx, profile2))
-
-	// Create Profiles 1 and 2 in Cluster 2
-	s.Require().NoError(profileDS.UpsertProfile(s.hasWriteCtx, profile3))
-	s.Require().NoError(profileDS.UpsertProfile(s.hasWriteCtx, profile4))
-
-	// Create ScanConfiguration
-	s.Require().NoError(scanConfigDS.UpsertScanConfiguration(s.hasWriteCtx, scanConfig))
-
-	// make sure we have nothing
-	ScanIDs, err := s.storage.GetIDs(s.hasReadCtx)
-	s.Require().NoError(err)
-	s.Require().Empty(ScanIDs)
-
-	scanName1 := "ocp4-cis"
-	scanName2 := "ocp4-cis-node-worker"
-	scanName3 := "ocp4-cis-node-master"
-
-	// Define Scan 1, 2, and 3 for Cluster 1
-	testScan1 := getTestScanWithScanConfig(scanName1, scanConfigName, fixtureconsts.ComplianceProfileID1, testconsts.Cluster1)
-	testScan2 := getTestScanWithScanConfig(scanName2, scanConfigName, fixtureconsts.ComplianceProfileID2, testconsts.Cluster1)
-	testScan3 := getTestScanWithScanConfig(scanName3, scanConfigName, fixtureconsts.ComplianceProfileID2, testconsts.Cluster1)
-
-	// Define Scan 1, 2, and 3 for Cluster 2
-	testScan4 := getTestScanWithScanConfig(scanName1, scanConfigName, fixtureconsts.ComplianceProfileID1, testconsts.Cluster2)
-	testScan5 := getTestScanWithScanConfig(scanName2, scanConfigName, fixtureconsts.ComplianceProfileID2, testconsts.Cluster2)
-	testScan6 := getTestScanWithScanConfig(scanName3, scanConfigName, fixtureconsts.ComplianceProfileID2, testconsts.Cluster2)
-
-	s.T().Cleanup(func() {
-		_ = s.dataStore.DeleteScan(s.hasWriteCtx, testScan1.GetId())
-		_ = s.dataStore.DeleteScan(s.hasWriteCtx, testScan2.GetId())
-		_ = s.dataStore.DeleteScan(s.hasWriteCtx, testScan3.GetId())
-		_ = s.dataStore.DeleteScan(s.hasWriteCtx, testScan4.GetId())
-		_ = s.dataStore.DeleteScan(s.hasWriteCtx, testScan5.GetId())
-		_ = s.dataStore.DeleteScan(s.hasWriteCtx, testScan6.GetId())
-	})
-
-	// Create Scans
-	s.Require().NoError(s.dataStore.UpsertScan(s.hasWriteCtx, testScan1))
-	s.Require().NoError(s.dataStore.UpsertScan(s.hasWriteCtx, testScan2))
-	s.Require().NoError(s.dataStore.UpsertScan(s.hasWriteCtx, testScan3))
-	s.Require().NoError(s.dataStore.UpsertScan(s.hasWriteCtx, testScan4))
-	s.Require().NoError(s.dataStore.UpsertScan(s.hasWriteCtx, testScan5))
-	s.Require().NoError(s.dataStore.UpsertScan(s.hasWriteCtx, testScan6))
-
-	s.Run("get scan to profiles from cluster 1", func() {
-		scanToProfileMap, err := s.dataStore.GetProfilesScanNamesByScanConfigAndCluster(s.hasReadCtx, fixtureconsts.ComplianceScanConfigID1, testconsts.Cluster1)
-		s.Require().NoError(err)
-		s.Require().NotNil(scanToProfileMap)
-
-		s.Assert().Contains(scanToProfileMap, scanName1)
-		s.Assert().Contains(scanToProfileMap, scanName2)
-		s.Assert().Contains(scanToProfileMap, scanName3)
-
-		s.Assert().Equal(profileName1, scanToProfileMap[scanName1])
-		s.Assert().Equal(fmt.Sprintf("%s-worker", profileName2), scanToProfileMap[scanName2])
-		s.Assert().Equal(fmt.Sprintf("%s-master", profileName2), scanToProfileMap[scanName3])
-	})
-
-	s.Run("get scan to profiles from cluster 2", func() {
-		scanToProfileMap, err := s.dataStore.GetProfilesScanNamesByScanConfigAndCluster(s.hasReadCtx, fixtureconsts.ComplianceScanConfigID1, testconsts.Cluster2)
-		s.Require().NoError(err)
-		s.Require().NotNil(scanToProfileMap)
-
-		s.Assert().Contains(scanToProfileMap, scanName1)
-		s.Assert().Contains(scanToProfileMap, scanName2)
-		s.Assert().Contains(scanToProfileMap, scanName3)
-
-		s.Assert().Equal(profileName1, scanToProfileMap[scanName1])
-		s.Assert().Equal(fmt.Sprintf("%s-worker", profileName2), scanToProfileMap[scanName2])
-		s.Assert().Equal(fmt.Sprintf("%s-master", profileName2), scanToProfileMap[scanName3])
-	})
-
-	s.Run("get empty scan to profiles (wrong cluster)", func() {
-		scanToProfileMap, err := s.dataStore.GetProfilesScanNamesByScanConfigAndCluster(s.hasReadCtx, fixtureconsts.ComplianceScanConfigID1, testconsts.WrongCluster)
-		s.Require().NoError(err)
-		s.Require().NotNil(scanToProfileMap)
-		s.Assert().Len(scanToProfileMap, 0)
-	})
-
-	s.Run("get empty scan to profiles (wrong scan config)", func() {
-		scanToProfileMap, err := s.dataStore.GetProfilesScanNamesByScanConfigAndCluster(s.hasReadCtx, fixtureconsts.ComplianceScanConfigID2, testconsts.Cluster1)
-		s.Require().NoError(err)
-		s.Require().NotNil(scanToProfileMap)
-		s.Assert().Len(scanToProfileMap, 0)
-	})
-
-	s.Run("get scan to profiles with profile ref 1", func() {
-		scanToProfileMap, err := s.dataStore.GetProfileScanNamesByScanConfigClusterAndProfileRef(s.hasReadCtx, fixtureconsts.ComplianceScanConfigID1, testconsts.Cluster1, []string{fixtureconsts.ComplianceProfileID1})
-		s.Require().NoError(err)
-		s.Require().NotNil(scanToProfileMap)
-
-		s.Assert().Contains(scanToProfileMap, scanName1)
-		s.Assert().NotContains(scanToProfileMap, scanName2)
-		s.Assert().NotContains(scanToProfileMap, scanName3)
-
-		s.Assert().Equal(profileName1, scanToProfileMap[scanName1])
-		s.Assert().Len(scanToProfileMap[scanName2], 0)
-		s.Assert().Len(scanToProfileMap[scanName3], 0)
-	})
-
-	s.Run("get scan to profiles with profile ref 2", func() {
-		scanToProfileMap, err := s.dataStore.GetProfileScanNamesByScanConfigClusterAndProfileRef(s.hasReadCtx, fixtureconsts.ComplianceScanConfigID1, testconsts.Cluster1, []string{fixtureconsts.ComplianceProfileID2})
-		s.Require().NoError(err)
-		s.Require().NotNil(scanToProfileMap)
-
-		s.Assert().NotContains(scanToProfileMap, scanName1)
-		s.Assert().Contains(scanToProfileMap, scanName2)
-		s.Assert().Contains(scanToProfileMap, scanName3)
-
-		s.Assert().Len(scanToProfileMap[scanName1], 0)
-		s.Assert().Equal(fmt.Sprintf("%s-worker", profileName2), scanToProfileMap[scanName2])
-		s.Assert().Equal(fmt.Sprintf("%s-master", profileName2), scanToProfileMap[scanName3])
-	})
-
-	s.Run("get scan to profiles with profile ref 1 and 2", func() {
-		scanToProfileMap, err := s.dataStore.GetProfileScanNamesByScanConfigClusterAndProfileRef(s.hasReadCtx, fixtureconsts.ComplianceScanConfigID1, testconsts.Cluster1, []string{fixtureconsts.ComplianceProfileID1, fixtureconsts.ComplianceProfileID2})
-		s.Require().NoError(err)
-		s.Require().NotNil(scanToProfileMap)
-
-		s.Assert().Contains(scanToProfileMap, scanName1)
-		s.Assert().Contains(scanToProfileMap, scanName2)
-		s.Assert().Contains(scanToProfileMap, scanName3)
-
-		s.Assert().Equal(profileName1, scanToProfileMap[scanName1])
-		s.Assert().Equal(fmt.Sprintf("%s-worker", profileName2), scanToProfileMap[scanName2])
-		s.Assert().Equal(fmt.Sprintf("%s-master", profileName2), scanToProfileMap[scanName3])
-	})
-}
-
 func getTestScan(scanName string, profileID string, clusterID string) *storage.ComplianceOperatorScanV2 {
-	return getTestScanWithScanConfig(scanName, scanName, profileID, clusterID)
-}
-
-func getTestScanWithScanConfig(scanName string, scanConfig string, profileID string, clusterID string) *storage.ComplianceOperatorScanV2 {
 	return &storage.ComplianceOperatorScanV2{
 		Id:             uuid.NewV4().String(),
-		ScanConfigName: scanConfig,
+		ScanConfigName: scanName,
 		ScanName:       scanName,
 		ClusterId:      clusterID,
 		Errors:         "",
@@ -465,39 +293,5 @@ func getTestScanWithScanConfig(scanName string, scanConfig string, profileID str
 		Status:           nil,
 		CreatedTime:      protocompat.TimestampNow(),
 		LastExecutedTime: protocompat.TimestampNow(),
-	}
-}
-
-func getTestProfile(profileName string, profileRefID string, clusterID string) *storage.ComplianceOperatorProfileV2 {
-	return &storage.ComplianceOperatorProfileV2{
-		Id:           uuid.NewV4().String(),
-		Name:         profileName,
-		ProfileRefId: profileRefID,
-		ClusterId:    clusterID,
-	}
-}
-
-func getTestScanConfig(scanConfigName string, scanConfigID string, clusterID []string, profiles []string) *storage.ComplianceOperatorScanConfigurationV2 {
-	return &storage.ComplianceOperatorScanConfigurationV2{
-		Id:             scanConfigID,
-		ScanConfigName: scanConfigName,
-		Profiles: func() []*storage.ComplianceOperatorScanConfigurationV2_ProfileName {
-			var ret []*storage.ComplianceOperatorScanConfigurationV2_ProfileName
-			for _, profile := range profiles {
-				ret = append(ret, &storage.ComplianceOperatorScanConfigurationV2_ProfileName{
-					ProfileName: profile,
-				})
-			}
-			return ret
-		}(),
-		Clusters: func() []*storage.ComplianceOperatorScanConfigurationV2_Cluster {
-			var ret []*storage.ComplianceOperatorScanConfigurationV2_Cluster
-			for _, cluster := range clusterID {
-				ret = append(ret, &storage.ComplianceOperatorScanConfigurationV2_Cluster{
-					ClusterId: cluster,
-				})
-			}
-			return ret
-		}(),
 	}
 }
