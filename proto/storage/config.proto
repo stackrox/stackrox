@@ -160,23 +160,24 @@ message PrometheusMetricsConfig {
   }
 
   message Vulnerabilities {
-    // The period (in hours) at which vulnerability data is gathered from the DB.
-    uint32 gathering_period_hours = 1;
+    // The period (in minutes) at which vulnerability data is gathered from the DB.
+    uint32 gathering_period_minutes = 1;
     // Mapping from metric name to its associated labels.
     map<string, Labels> metrics = 2;
-    // Query string in the syntax of the Search filters used to limit the amount of aggregated vulnerabilities.
+    // Filter string in the syntax of the Search filters used to limit the amount of
+    // aggregated vulnerabilities.
     // Example: "Cluster:production"
-    string query = 3;
+    string filter = 3;
   }
 
   // Configuration for image vulnerabilities metrics.
   // Example:
   //
   //   "imageVulnerabilities": {
-  //     "gatheringPeriodHours": 1,
-  //     "metricLabels": {
+  //     "gatheringPeriodMinutes": 1,
+  //     "metrics": {
   //       "severity": { // custom metric name.
-  //         "labelExpression": {
+  //         "labels": {
   //           "Severity": {} // label name with no expression.
   //           "Namespace": {
   //             "expression": [ // label conditions list.

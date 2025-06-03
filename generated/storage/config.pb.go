@@ -878,10 +878,10 @@ type PrometheusMetricsConfig struct {
 	// Example:
 	//
 	//	"imageVulnerabilities": {
-	//	  "gatheringPeriodHours": 1,
-	//	  "metricLabels": {
+	//	  "gatheringPeriodMinutes": 1,
+	//	  "metrics": {
 	//	    "severity": { // custom metric name.
-	//	      "labelExpression": {
+	//	      "labels": {
 	//	        "Severity": {} // label name with no expression.
 	//	        "Namespace": {
 	//	          "expression": [ // label conditions list.
@@ -1197,13 +1197,14 @@ func (x *PrometheusMetricsConfig_Labels) GetLabels() map[string]*PrometheusMetri
 
 type PrometheusMetricsConfig_Vulnerabilities struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// The period (in hours) at which vulnerability data is gathered from the DB.
-	GatheringPeriodHours uint32 `protobuf:"varint,1,opt,name=gathering_period_hours,json=gatheringPeriodHours,proto3" json:"gathering_period_hours,omitempty"`
+	// The period (in minutes) at which vulnerability data is gathered from the DB.
+	GatheringPeriodMinutes uint32 `protobuf:"varint,1,opt,name=gathering_period_minutes,json=gatheringPeriodMinutes,proto3" json:"gathering_period_minutes,omitempty"`
 	// Mapping from metric name to its associated labels.
 	Metrics map[string]*PrometheusMetricsConfig_Labels `protobuf:"bytes,2,rep,name=metrics,proto3" json:"metrics,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	// Query string in the syntax of the Search filters used to limit the amount of aggregated vulnerabilities.
+	// Filter string in the syntax of the Search filters used to limit the amount of
+	// aggregated vulnerabilities.
 	// Example: "Cluster:production"
-	Query         string `protobuf:"bytes,3,opt,name=query,proto3" json:"query,omitempty"`
+	Filter        string `protobuf:"bytes,3,opt,name=filter,proto3" json:"filter,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1238,9 +1239,9 @@ func (*PrometheusMetricsConfig_Vulnerabilities) Descriptor() ([]byte, []int) {
 	return file_storage_config_proto_rawDescGZIP(), []int{12, 1}
 }
 
-func (x *PrometheusMetricsConfig_Vulnerabilities) GetGatheringPeriodHours() uint32 {
+func (x *PrometheusMetricsConfig_Vulnerabilities) GetGatheringPeriodMinutes() uint32 {
 	if x != nil {
-		return x.GatheringPeriodHours
+		return x.GatheringPeriodMinutes
 	}
 	return 0
 }
@@ -1252,9 +1253,9 @@ func (x *PrometheusMetricsConfig_Vulnerabilities) GetMetrics() map[string]*Prome
 	return nil
 }
 
-func (x *PrometheusMetricsConfig_Vulnerabilities) GetQuery() string {
+func (x *PrometheusMetricsConfig_Vulnerabilities) GetFilter() string {
 	if x != nil {
-		return x.Query
+		return x.Filter
 	}
 	return ""
 }
@@ -1464,7 +1465,7 @@ const file_storage_config_proto_rawDesc = "" +
 	"\x17retention_duration_days\x18\x01 \x01(\rR\x15retentionDurationDays\"@\n" +
 	"\tDayOption\x12\x19\n" +
 	"\bnum_days\x18\x01 \x01(\rR\anumDays\x12\x18\n" +
-	"\aenabled\x18\x02 \x01(\bR\aenabled\"\x97\x06\n" +
+	"\aenabled\x18\x02 \x01(\bR\aenabled\"\x9d\x06\n" +
 	"\x17PrometheusMetricsConfig\x12e\n" +
 	"\x15image_vulnerabilities\x18\x01 \x01(\v20.storage.PrometheusMetricsConfig.VulnerabilitiesR\x14imageVulnerabilities\x1a\xf6\x02\n" +
 	"\x06Labels\x12K\n" +
@@ -1479,11 +1480,11 @@ const file_storage_config_proto_rawDesc = "" +
 	"\bargument\x18\x02 \x01(\tR\bargument\x1am\n" +
 	"\vLabelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12H\n" +
-	"\x05value\x18\x02 \x01(\v22.storage.PrometheusMetricsConfig.Labels.ExpressionR\x05value:\x028\x01\x1a\x9b\x02\n" +
-	"\x0fVulnerabilities\x124\n" +
-	"\x16gathering_period_hours\x18\x01 \x01(\rR\x14gatheringPeriodHours\x12W\n" +
-	"\ametrics\x18\x02 \x03(\v2=.storage.PrometheusMetricsConfig.Vulnerabilities.MetricsEntryR\ametrics\x12\x14\n" +
-	"\x05query\x18\x03 \x01(\tR\x05query\x1ac\n" +
+	"\x05value\x18\x02 \x01(\v22.storage.PrometheusMetricsConfig.Labels.ExpressionR\x05value:\x028\x01\x1a\xa1\x02\n" +
+	"\x0fVulnerabilities\x128\n" +
+	"\x18gathering_period_minutes\x18\x01 \x01(\rR\x16gatheringPeriodMinutes\x12W\n" +
+	"\ametrics\x18\x02 \x03(\v2=.storage.PrometheusMetricsConfig.Vulnerabilities.MetricsEntryR\ametrics\x12\x16\n" +
+	"\x06filter\x18\x03 \x01(\tR\x06filter\x1ac\n" +
 	"\fMetricsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12=\n" +
 	"\x05value\x18\x02 \x01(\v2'.storage.PrometheusMetricsConfig.LabelsR\x05value:\x028\x01B.\n" +
