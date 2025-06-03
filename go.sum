@@ -481,8 +481,6 @@ github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSs
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc h1:U9qPSI2PIWSS1VwoXQT9A3Wy9MM3WgvqSxFWenqJduM=
 github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/daynewlee/claircore-python-osv v0.0.0-20250530225658-2d2a6e420022 h1:lhWFoIMJfAjgEeL4axgLuGwq1QBpCs1HB3MGStA7RYE=
-github.com/daynewlee/claircore-python-osv v0.0.0-20250530225658-2d2a6e420022/go.mod h1:WeCmNtrADHuScbJvM/OoIaPVeJkm2QyuIfOeJhx64O8=
 github.com/depcheck-test/depcheck-test v0.0.0-20220607135614-199033aaa936 h1:foGzavPWwtoyBvjWyKJYDYsyzy+23iBV7NKTwdk+LRY=
 github.com/depcheck-test/depcheck-test v0.0.0-20220607135614-199033aaa936/go.mod h1:ttKPnOepYt4LLzD+loXQ1rT6EmpyIYHro7TAJuIIlHo=
 github.com/dgrijalva/jwt-go/v4 v4.0.0-preview1/go.mod h1:+hnT3ywWDTAFrW5aE+u2Sa/wT555ZqwoCS+pk3p6ry4=
@@ -1306,6 +1304,8 @@ github.com/prometheus/procfs v0.15.1 h1:YagwOFzUgYfKKHX6Dr+sHT7km/hxC76UB0leargg
 github.com/prometheus/procfs v0.15.1/go.mod h1:fB45yRUv8NstnjriLhBQLuOUt+WW4BsoGhij/e3PBqk=
 github.com/protocolbuffers/txtpbfmt v0.0.0-20241112170944-20d2c9ebc01d h1:HWfigq7lB31IeJL8iy7jkUmU/PG1Sr8jVGhS749dbUA=
 github.com/protocolbuffers/txtpbfmt v0.0.0-20241112170944-20d2c9ebc01d/go.mod h1:jgxiZysxFPM+iWKwQwPR+y+Jvo54ARd4EisXxKYpB5c=
+github.com/quay/claircore v1.5.37 h1:98ncka8WqIAM04l62nwu96iFV7mf0z0BLKqNxQL3Iwo=
+github.com/quay/claircore v1.5.37/go.mod h1:3yfkeVOtu1BW54yyNrC4hWKxQQkPRbcH6AvQVInBeIU=
 github.com/quay/claircore/toolkit v1.0.0/go.mod h1:3ELtgf92x7o1JCTSKVOAqhcnCTXc4s5qiGaEDx62i20=
 github.com/quay/claircore/toolkit v1.2.5-0.20250120211107-bea8a6c197b2 h1:v4MBdtms7OhJgipiFSYNgfQ0nr7O+VPVESYwpS2Wb4M=
 github.com/quay/claircore/toolkit v1.2.5-0.20250120211107-bea8a6c197b2/go.mod h1:7CB7Q7tUGC0GwprVcq354sLRPRzmKJiLMgqJ1BzIwYc=
