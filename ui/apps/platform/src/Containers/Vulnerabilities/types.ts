@@ -54,7 +54,12 @@ export function isVulnMgmtLocalStorage(value: unknown): value is VulnMgmtLocalSt
     }
 }
 
-export const detailsTabValues = ['Vulnerabilities', 'Details', 'Resources'] as const;
+export const detailsTabValues = [
+    'Vulnerabilities',
+    'Details',
+    'Resources',
+    'Signature verification',
+] as const;
 
 export type DetailsTab = (typeof detailsTabValues)[number];
 
@@ -97,6 +102,7 @@ export type VerifiedStatus =
     | 'VERIFIED';
 
 export type SignatureVerificationResult = {
+    description: string | undefined;
     status: VerifiedStatus;
     verificationTime: string | undefined; // ISO 8601 formatted date time.
     verifiedImageReferences: string[];
