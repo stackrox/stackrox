@@ -93,7 +93,6 @@ test_upgrade_paths() {
     deploy_earlier_postgres_central
     wait_for_api
     setup_client_TLS_certs
-    export_central_cert
 
     restore_4_1_backup
     wait_for_api
