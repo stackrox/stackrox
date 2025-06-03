@@ -193,6 +193,7 @@ func populateDefaultSystemRulesIfMissing(config *storage.Config) bool {
 				defaultPlatformConfigSystemRule,
 				defaultPlatformConfigLayeredProductsRule,
 			},
+			NeedsReevaluation: true,
 		}
 		return true
 	}
