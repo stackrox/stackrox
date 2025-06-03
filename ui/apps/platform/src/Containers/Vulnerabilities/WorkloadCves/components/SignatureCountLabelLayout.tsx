@@ -13,71 +13,76 @@ export type SignatureCountLabelProps = {
 
 const noSignatureMessage = 'No signature found';
 
-function BodyContent() {
-    const { shortName } = getProductBranding();
-    const { version } = useMetadata();
+function getAriaLabel(count: number): string {
+    if (count === 0) {
+        return noSignatureMessage;
+    }
+    return 'Signature count';
+}
 
-    return (
-        <Flex direction={{ default: 'column' }}>
-            <FlexItem>
-                <Text>
-                    Image signatures increase the security and transparency of container images.
-                </Text>
-            </FlexItem>
-            <FlexItem>
-                <Text>
-                    Create at least one image signature integration to download and verify image
-                    signatures.
-                </Text>
-            </FlexItem>
-            <FlexItem>
-                <Text>
-                    For more information, see{' '}
-                    <ExternalLink>
-                        <a
-                            href={getVersionedDocs(version, 'operating/verify-image-signatures')}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                        >
-                            {shortName} documentation
-                        </a>
-                    </ExternalLink>
-                </Text>
-            </FlexItem>
-        </Flex>
-    );
+function getHeaderContent(count: number): string {
+    if (count === 0) {
+        return noSignatureMessage;
+    }
+    return `Signatures: ${count}`;
+}
+
+function getMessage(count: number): string {
+    if (count === 0) {
+        return noSignatureMessage;
+    }
+    return `Signatures: ${count}`;
+}
+
+function getColor(count: number): 'gold' | undefined {
+    if (count === 0) {
+        return 'gold';
+    }
+    return undefined;
 }
 
 function SignatureCountLabel({ count }: SignatureCountLabelProps) {
-    if (count === 0) {
-        return (
-            <Popover
-                aria-label={noSignatureMessage}
-                bodyContent={
-                    <PopoverBodyContent
-                        headerContent={noSignatureMessage}
-                        bodyContent={<BodyContent />}
-                    />
-                }
-                enableFlip
-                hasAutoWidth
-                position="top"
-            >
-                <Button variant="plain" className="pf-v5-u-p-0">
-                    <Label color="gold">{noSignatureMessage}</Label>
-                </Button>
-            </Popover>
-        );
-    }
-
-    const signatureMessage = `Signatures: ${count}`;
+    const { shortName } = getProductBranding();
+    const { version } = useMetadata();
     return (
         <Popover
-            aria-label="Signature count"
+            aria-label={getAriaLabel(count)}
             bodyContent={
                 <PopoverBodyContent
-                    headerContent={signatureMessage}
-                    bodyContent={<BodyContent />}
+                    headerContent={getHeaderContent(count)}
+                    bodyContent={
+                        <Flex direction={{ default: 'column' }}>
+                            <FlexItem>
+                                <Text>
+                                    Image signatures increase the security and transparency of
+                                    container images.
+                                </Text>
+                            </FlexItem>
+                            <FlexItem>
+                                <Text>
+                                    Create at least one image signature integration to download and
+                                    verify image signatures.
+                                </Text>
+                            </FlexItem>
+                            <FlexItem>
+                                <Text>
+                                    For more information, see{' '}
+                                    <ExternalLink>
+                                        <a
+                                            href={getVersionedDocs(
+                                                version,
+                                                'operating/verify-image-signatures'
+                                            )}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                        >
+                                            {shortName} documentation
+                                        </a>
+                                    </ExternalLink>
+                                </Text>
+                            </FlexItem>
+                        </Flex>
+                    }
                 />
             }
             enableFlip
@@ -85,7 +90,7 @@ function SignatureCountLabel({ count }: SignatureCountLabelProps) {
             position="top"
         >
             <Button variant="plain" className="pf-v5-u-p-0">
-                <Label>{signatureMessage}</Label>
+                <Label color={getColor(count)}>{getMessage(count)}</Label>
             </Button>
         </Popover>
     );
