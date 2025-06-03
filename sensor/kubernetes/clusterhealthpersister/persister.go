@@ -46,6 +46,7 @@ func NewClusterHealthPersister(k8sClient kubernetes.Interface, namespace string)
 	return &persisterImpl{
 		ticker:          ticker,
 		tickerC:         ticker.C,
+		stopper:         concurrency.NewSignal(),
 		now:             time.Now,
 		configMapClient: k8sClient.CoreV1().ConfigMaps(namespace),
 	}
@@ -83,37 +84,16 @@ func (p *persisterImpl) State() common.SensorComponentState {
 }
 
 func (p *persisterImpl) run() {
-	running := atomic.Int32{}
 	p.saveHealth()
-	for p.stopper.IsDone() {
-		time.Sleep(10 * time.Second)
-		log.Infof("Stopper state (IsDone) %t", p.stopper.IsDone())
-		log.Infof("Running waiters %d", running.Load())
-		p.saveHealth()
-		go func() {
-			running.Add(1)
-			defer running.Add(-1)
-			log.Info("waiting")
-			select {
-			case <-p.stopper.Done():
-				log.Info("Stop")
-				return
-			case <-p.tickerC:
-				log.Info("Tick")
-			}
-		}()
-	}
-	/*
-		for {
-			select {
-			case <-p.tickerC:
-				log.Info("Tick")
-				p.saveHealth()
-			case <-p.stopper.Done():
-				return
-			}
+	for {
+		select {
+		case <-p.tickerC:
+			log.Info("Tick")
+			p.saveHealth()
+		case <-p.stopper.Done():
+			return
 		}
-	*/
+	}
 }
 
 func (p *persisterImpl) saveHealth() {
