@@ -27,8 +27,8 @@ const (
 var log = logging.LoggerForModule()
 
 type persisterImpl struct {
-	ticker  time.Ticker
-	tickerC chan time.Time
+	ticker  *time.Ticker
+	tickerC <-chan time.Time
 
 	configMapClient v1client.ConfigMapInterface
 
@@ -39,7 +39,10 @@ type persisterImpl struct {
 var _ common.SensorComponent = (*persisterImpl)(nil)
 
 func NewClusterHealthPersister(k8sClient kubernetes.Interface, namespace string) common.SensorComponent {
+	ticker := time.NewTicker(10 * time.Second)
 	return &persisterImpl{
+		ticker:          ticker,
+		tickerC:         ticker.C,
 		configMapClient: k8sClient.CoreV1().ConfigMaps(namespace),
 	}
 }
