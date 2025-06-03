@@ -264,7 +264,6 @@ func TestDelegateEnrichImage(t *testing.T) {
 
 	t.Run("empty cluster id", func(t *testing.T) {
 		setup(t)
-		namespaceSACHelper.EXPECT().GetNamespacesForClusterAndPermissions(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
 		image, err := d.DelegateScanImage(ctxBG, nil, "", "", false)
 		assert.ErrorContains(t, err, "cluster id")
 		assert.Nil(t, image)
