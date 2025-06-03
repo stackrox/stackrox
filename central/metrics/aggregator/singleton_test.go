@@ -9,6 +9,7 @@ import (
 
 	"github.com/stackrox/rox/central/metrics/aggregator/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
 )
@@ -108,4 +109,30 @@ func Test_run(t *testing.T) {
 		assert.Greater(t, i.Load(), int32(0))
 		assert.LessOrEqual(t, i.Load(), int32(1+passed/period))
 	})
+}
+
+func Test_makeProps(t *testing.T) {
+	cfg := &storage.PrometheusMetricsConfig{
+		ImageVulnerabilities: &storage.PrometheusMetricsConfig_Vulnerabilities{
+			Metrics: map[string]*storage.PrometheusMetricsConfig_Labels{
+				"metric1": {
+					Labels: map[string]*storage.PrometheusMetricsConfig_Labels_Expression{
+						"label1": nil,
+						"label2": {
+							Expression: []*storage.PrometheusMetricsConfig_Labels_Expression_Condition{
+								{
+									Operator: "=",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	props := makeProps(cfg)
+	assert.Len(t, props, 3)
+	assert.ElementsMatch(t, props["Image Vulnerability metric labels"], []string{"label1", "label2"})
+	assert.ElementsMatch(t, props["Image Vulnerability metric operators"], []string{"="})
+	assert.Equal(t, 1, props["Total Image Vulnerability metrics"])
 }
