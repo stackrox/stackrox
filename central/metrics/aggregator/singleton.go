@@ -145,8 +145,8 @@ func makeProps(cfg *storage.PrometheusMetricsConfig) map[string]any {
 			}
 		}
 		props["Total Image Vulnerability metrics"] = len(metrics)
-		props["Image Vulnerability metrics labels"] = labels.AsSlice()
-		props["Image Vulnerability metrics operators"] = operators.AsSlice()
+		props["Image Vulnerability metric labels"] = labels.AsSlice()
+		props["Image Vulnerability metric operators"] = operators.AsSlice()
 	}
 	return props
 }
