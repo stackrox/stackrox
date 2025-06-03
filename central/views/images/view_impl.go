@@ -54,7 +54,7 @@ func (v *imageCoreViewImpl) Get(ctx context.Context, query *v1.Query) ([]ImageCo
 func withSelectQuery(query *v1.Query) *v1.Query {
 	cloned := query.CloneVT()
 	cloned.Selects = []*v1.QuerySelect{
-		search.NewQuerySelect(search.ImageSHA).Distinct().Proto(),
+		search.NewQuerySelect(search.ImageSHA).Proto(),
 	}
 
 	if common.IsSortBySeverityCounts(cloned) {
@@ -64,6 +64,9 @@ func withSelectQuery(query *v1.Query) *v1.Query {
 		cloned.Selects = append(cloned.Selects,
 			common.WithCountBySeverityAndFixabilityQuery(query, search.CVE).Selects...,
 		)
+	}
+	cloned.GroupBy = &v1.QueryGroupBy{
+		Fields: []string{search.ImageSHA.String()},
 	}
 
 	return cloned
