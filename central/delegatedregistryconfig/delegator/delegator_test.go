@@ -11,6 +11,7 @@ import (
 	connMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/protoassert"
 	waiterMocks "github.com/stackrox/rox/pkg/waiter/mocks"
 	"github.com/stretchr/testify/assert"
@@ -258,51 +259,63 @@ func TestDelegateEnrichImage(t *testing.T) {
 		namespaceSACHelper = sacHelperMocks.NewMockClusterNamespaceSacHelper(ctrl)
 
 		waiter.EXPECT().ID().Return(fakeWaiterID).AnyTimes()
-		namespaceSACHelper.EXPECT().GetNamespacesForClusterAndPermissions(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
 		d = New(deleClusterDS, connMgr, waiterMgr, namespaceSACHelper)
 	}
 
 	t.Run("empty cluster id", func(t *testing.T) {
 		setup(t)
-		image, err := d.DelegateScanImage(ctxBG, nil, "", false)
+		image, err := d.DelegateScanImage(ctxBG, nil, "", "", false)
 		assert.ErrorContains(t, err, "cluster id")
+		assert.Nil(t, image)
+	})
+
+	t.Run("no access to namespace", func(t *testing.T) {
+		setup(t)
+		namespaceSACHelper.EXPECT().GetNamespacesForClusterAndPermissions(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
+		image, err := d.DelegateScanImage(ctxBG, nil, fakeClusterID, "no-access-ns", false)
+		assert.ErrorIs(t, err, errox.NotAuthorized)
 		assert.Nil(t, image)
 	})
 
 	t.Run("waiter create error", func(t *testing.T) {
 		setup(t)
+		namespaceSACHelper.EXPECT().GetNamespacesForClusterAndPermissions(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
 		waiterMgr.EXPECT().NewWaiter().Return(nil, errBroken)
 
-		image, err := d.DelegateScanImage(ctxBG, nil, fakeClusterID, false)
+		image, err := d.DelegateScanImage(ctxBG, nil, fakeClusterID, "", false)
 		assert.ErrorIs(t, err, errBroken)
 		assert.Nil(t, image)
 	})
 
 	t.Run("send msg error", func(t *testing.T) {
 		setup(t)
+		namespaceSACHelper.EXPECT().GetNamespacesForClusterAndPermissions(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
 		waiterMgr.EXPECT().NewWaiter().Return(waiter, nil)
 		waiter.EXPECT().Close()
 		connMgr.EXPECT().SendMessage(fakeClusterID, gomock.Any()).Return(errBroken)
 
-		image, err := d.DelegateScanImage(ctxBG, nil, fakeClusterID, false)
+		image, err := d.DelegateScanImage(ctxBG, nil, fakeClusterID, "", false)
 		assert.ErrorIs(t, err, errBroken)
 		assert.Nil(t, image)
 	})
 
 	t.Run("wait error", func(t *testing.T) {
 		setup(t)
+		namespaceSACHelper.EXPECT().GetNamespacesForClusterAndPermissions(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
 		waiterMgr.EXPECT().NewWaiter().Return(waiter, nil)
 		waiter.EXPECT().Wait(gomock.Any()).Return(nil, errBroken)
 		waiter.EXPECT().Close()
 		connMgr.EXPECT().SendMessage(fakeClusterID, gomock.Any())
 
-		image, err := d.DelegateScanImage(ctxBG, nil, fakeClusterID, false)
+		image, err := d.DelegateScanImage(ctxBG, nil, fakeClusterID, "", false)
 		assert.ErrorIs(t, err, errBroken)
 		assert.Nil(t, image)
 	})
 
 	t.Run("success round trip", func(t *testing.T) {
 		setup(t)
+		namespaceSACHelper.EXPECT().GetNamespacesForClusterAndPermissions(ctxBG, fakeClusterID,
+			inferNamespacePermissions).Return([]*v1.ScopeObject{{Name: "repo"}}, nil)
 		fakeImage := &storage.Image{
 			Name: &storage.ImageName{
 				FullName: fakeImageFullName,
@@ -314,7 +327,7 @@ func TestDelegateEnrichImage(t *testing.T) {
 		waiter.EXPECT().Close()
 		connMgr.EXPECT().SendMessage(fakeClusterID, gomock.Any())
 
-		image, err := d.DelegateScanImage(ctxBG, fakeImgName, fakeClusterID, false)
+		image, err := d.DelegateScanImage(ctxBG, fakeImgName, fakeClusterID, "repo", false)
 		assert.NoError(t, err)
 		protoassert.Equal(t, fakeImage, image)
 	})

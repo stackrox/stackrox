@@ -521,9 +521,6 @@ class IntegrationsTest extends BaseSpecification {
         "S3 without endpoint" | Env.mustGetAWSS3BucketName() | Env.mustGetAWSS3BucketRegion() |
                 ""                                                   | Env.mustGetAWSAccessKeyID() |
                 Env.mustGetAWSSecretAccessKey()
-        "GCS"                 | Env.mustGetGCSBucketName()   | "us-east-1"                    |
-                "storage.googleapis.com"                             | Env.mustGetGCPAccessKeyID() |
-                Env.mustGetGCPAccessKey()
     }
 
     @Unroll

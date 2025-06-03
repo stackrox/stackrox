@@ -54,6 +54,7 @@ import (
 	v2ComplianceProfiles "github.com/stackrox/rox/central/complianceoperator/v2/profiles/service"
 	complianceReportManager "github.com/stackrox/rox/central/complianceoperator/v2/report/manager"
 	v2ComplianceRules "github.com/stackrox/rox/central/complianceoperator/v2/rules/service"
+	complianceScanDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	complianceScanSettings "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/service"
 	configDS "github.com/stackrox/rox/central/config/datastore"
 	configService "github.com/stackrox/rox/central/config/service"
@@ -315,11 +316,9 @@ func main() {
 	versionUtils.SetCurrentVersionPostgres(globaldb.GetPostgres())
 
 	features.LogFeatureFlags()
-	// Register telemetry prometheus metrics.
-	telemetry.Singleton().Start()
-	// Start the prometheus metrics server
-	pkgMetrics.NewServer(pkgMetrics.CentralSubsystem, pkgMetrics.NewTLSConfigurerFromEnv()).RunForever()
-	pkgMetrics.GatherThrottleMetricsForever(pkgMetrics.CentralSubsystem.String())
+
+	go startGRPCServer()
+	go startTelemetryServer()
 
 	if env.ManagedCentral.BooleanSetting() {
 		clusterInternalServer := internal.NewHTTPServer(metrics.HTTPSingleton())
@@ -327,9 +326,15 @@ func main() {
 		clusterInternalServer.RunForever()
 	}
 
-	go startGRPCServer()
-
 	waitForTerminationSignal()
+}
+
+func startTelemetryServer() {
+	// Register telemetry prometheus metrics.
+	telemetry.Singleton().Start()
+	// Start the prometheus metrics server
+	pkgMetrics.NewServer(pkgMetrics.CentralSubsystem, pkgMetrics.NewTLSConfigurerFromEnv()).RunForever()
+	pkgMetrics.GatherThrottleMetricsForever(pkgMetrics.CentralSubsystem.String())
 }
 
 // clusterInternalRoutes returns list of route-handler pairs to be served on "cluster-internal" port.
@@ -365,6 +370,8 @@ func ensureDB(ctx context.Context) {
 }
 
 func startServices() {
+	go cloudSourcesManager.Singleton().Start()
+
 	reprocessor.Singleton().Start()
 	suppress.Singleton().Start()
 	pruning.Singleton().Start()
@@ -556,8 +563,6 @@ func startGRPCServer() {
 		declarativeconfig.ManagerSingleton().ReconcileDeclarativeConfigurations()
 	}
 
-	cloudSourcesManager.Singleton().Start()
-
 	clusterInitBackend := backend.Singleton()
 	serviceMTLSExtractor, err := service.NewExtractorWithCertValidation(clusterInitBackend)
 	if err != nil {
@@ -616,6 +621,12 @@ func startGRPCServer() {
 		centralSAC.GetEnricher().GetPreAuthContextEnricher(authzTraceSink),
 	)
 
+	server := pkgGRPC.NewAPI(config)
+	server.Register(servicesToRegister()...)
+	startedSig := server.Start()
+
+	go watchdog(startedSig, grpcServerWatchdogTimeout)
+
 	if cds, err := configDS.Singleton().GetPublicConfig(); err == nil || cds == nil {
 		if t := cds.GetTelemetry(); t == nil || t.GetEnabled() {
 			if cfg := centralclient.Enable(); cfg.Enabled() {
@@ -637,17 +648,12 @@ func startGRPCServer() {
 				gs.AddGatherer(notifierDS.Gather)
 				gs.AddGatherer(roleDataStore.Gather)
 				gs.AddGatherer(signatureIntegrationDS.Gather)
+				gs.AddGatherer(complianceScanDS.GatherProfiles(complianceScanDS.Singleton()))
 			}
 		}
 	}
 
-	server := pkgGRPC.NewAPI(config)
-	server.Register(servicesToRegister()...)
-
-	startServices()
-	startedSig := server.Start()
-
-	go watchdog(startedSig, grpcServerWatchdogTimeout)
+	go startServices()
 }
 
 func registerDelayedIntegrations(integrationsInput []iiStore.DelayedIntegration) {

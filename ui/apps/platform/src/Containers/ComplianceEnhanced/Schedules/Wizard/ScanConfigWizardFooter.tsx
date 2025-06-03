@@ -8,6 +8,7 @@ export type ScanConfigWizardFooterProps = {
     onSave: () => void;
     isSaving: boolean;
     proceedToNextStepIfValid: (nextFunction: () => void, stepId: string) => void;
+    disableClusterNext: boolean;
 };
 
 function ScanConfigWizardFooter({
@@ -15,6 +16,7 @@ function ScanConfigWizardFooter({
     onSave,
     isSaving,
     proceedToNextStepIfValid,
+    disableClusterNext,
 }: ScanConfigWizardFooterProps) {
     const { isModalOpen, openModal, closeModal } = useModal();
     const firstStepId = wizardSteps[0].id;
@@ -27,6 +29,7 @@ function ScanConfigWizardFooter({
                     <Button
                         variant="primary"
                         type="submit"
+                        isDisabled={disableClusterNext && activeStepId === wizardSteps[1].id}
                         onClick={() => proceedToNextStepIfValid(onNext, activeStepId)}
                     >
                         Next

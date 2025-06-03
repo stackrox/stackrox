@@ -199,6 +199,48 @@ func TestPopulateImageMetadata(t *testing.T) {
 			},
 		},
 		{
+			name: "Image with latest tag, empty status, pullable",
+			wrap: []wrapContainer{
+				{
+					image: "stackrox.io/main:latest",
+				},
+			},
+			pods: []pod{
+				{
+					images: []string{"stackrox.io/main:latest"},
+					imageIDsInStatus: []string{
+						"",
+					},
+				},
+			},
+			expectedMetadata: []metadata{
+				{
+					expectedID: "",
+				},
+			},
+		},
+		{
+			name: "Image with ID, empty status, pullable",
+			wrap: []wrapContainer{
+				{
+					image: "stackrox.io/main@sha256:88c7e66e637f46e6bc0b95ddb1e755d616d9d76568b89af7c75c4b4aa7cfa4e3",
+				},
+			},
+			pods: []pod{
+				{
+					images: []string{"stackrox.io/main:latest"},
+					imageIDsInStatus: []string{
+						"",
+					},
+				},
+			},
+			expectedMetadata: []metadata{
+				{
+					expectedID: "sha256:88c7e66e637f46e6bc0b95ddb1e755d616d9d76568b89af7c75c4b4aa7cfa4e3",
+				},
+			},
+		},
+		{
 			name: "Explicitly pullable image with latest tag, ID in status, two pods",
 			wrap: []wrapContainer{
 				{

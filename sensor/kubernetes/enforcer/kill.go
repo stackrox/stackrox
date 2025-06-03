@@ -21,7 +21,10 @@ func (e *enforcerImpl) kill(ctx context.Context, enforcement *central.SensorEnfo
 	err := withReasonableRetry(func() error {
 		var err error
 		enforcementExecuted, err = pod.EnforceKill(ctx, e.client.Kubernetes(), containerInfo)
-		return err
+		if err != nil {
+			return errors.Wrap(err, "killing container for enforcement")
+		}
+		return nil
 	})
 	if err != nil {
 		return err

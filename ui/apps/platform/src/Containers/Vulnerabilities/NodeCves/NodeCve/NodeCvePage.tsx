@@ -64,6 +64,7 @@ const defaultNodeCveSummary = {
         important: { total: 0 },
         moderate: { total: 0 },
         low: { total: 0 },
+        unknown: { total: 0 },
     },
     distroTuples: [],
 };

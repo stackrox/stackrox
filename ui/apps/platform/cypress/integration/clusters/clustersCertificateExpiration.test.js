@@ -126,7 +126,7 @@ describe('Clusters Certificate Expiration', () => {
     });
 
     describe('Sensor is up to date with Central', () => {
-        const expectedExpiration = 'in 29 days on 09/29/2020'; // Degraded
+        const expectedExpiration = 'in 29 days on Sep 29, 2020'; // Degraded
         const fixturePath = 'clusters/certExpirationDegraded.json';
 
         it('should enable the upgrade option', () => {

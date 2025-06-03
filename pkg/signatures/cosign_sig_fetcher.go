@@ -25,6 +25,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	imgUtils "github.com/stackrox/rox/pkg/images/utils"
+	"github.com/stackrox/rox/pkg/protoutils"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/retry"
 	"golang.org/x/time/rate"
@@ -152,7 +153,7 @@ func (c *cosignSignatureFetcher) FetchSignatures(ctx context.Context, image *sto
 		return nil, nil
 	}
 
-	return cosignSignatures, nil
+	return protoutils.SliceUnique(cosignSignatures), nil
 }
 
 func certificateFromSignedPayload(sp cosign.SignedPayload) ([]byte, error) {

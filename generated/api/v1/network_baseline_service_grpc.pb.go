@@ -20,11 +20,12 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	NetworkBaselineService_GetNetworkBaselineStatusForFlows_FullMethodName = "/v1.NetworkBaselineService/GetNetworkBaselineStatusForFlows"
-	NetworkBaselineService_GetNetworkBaseline_FullMethodName               = "/v1.NetworkBaselineService/GetNetworkBaseline"
-	NetworkBaselineService_ModifyBaselineStatusForPeers_FullMethodName     = "/v1.NetworkBaselineService/ModifyBaselineStatusForPeers"
-	NetworkBaselineService_LockNetworkBaseline_FullMethodName              = "/v1.NetworkBaselineService/LockNetworkBaseline"
-	NetworkBaselineService_UnlockNetworkBaseline_FullMethodName            = "/v1.NetworkBaselineService/UnlockNetworkBaseline"
+	NetworkBaselineService_GetNetworkBaselineStatusForFlows_FullMethodName         = "/v1.NetworkBaselineService/GetNetworkBaselineStatusForFlows"
+	NetworkBaselineService_GetNetworkBaselineStatusForExternalFlows_FullMethodName = "/v1.NetworkBaselineService/GetNetworkBaselineStatusForExternalFlows"
+	NetworkBaselineService_GetNetworkBaseline_FullMethodName                       = "/v1.NetworkBaselineService/GetNetworkBaseline"
+	NetworkBaselineService_ModifyBaselineStatusForPeers_FullMethodName             = "/v1.NetworkBaselineService/ModifyBaselineStatusForPeers"
+	NetworkBaselineService_LockNetworkBaseline_FullMethodName                      = "/v1.NetworkBaselineService/LockNetworkBaseline"
+	NetworkBaselineService_UnlockNetworkBaseline_FullMethodName                    = "/v1.NetworkBaselineService/UnlockNetworkBaseline"
 )
 
 // NetworkBaselineServiceClient is the client API for NetworkBaselineService service.
@@ -32,6 +33,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type NetworkBaselineServiceClient interface {
 	GetNetworkBaselineStatusForFlows(ctx context.Context, in *NetworkBaselineStatusRequest, opts ...grpc.CallOption) (*NetworkBaselineStatusResponse, error)
+	GetNetworkBaselineStatusForExternalFlows(ctx context.Context, in *NetworkBaselineExternalStatusRequest, opts ...grpc.CallOption) (*NetworkBaselineExternalStatusResponse, error)
 	GetNetworkBaseline(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*storage.NetworkBaseline, error)
 	ModifyBaselineStatusForPeers(ctx context.Context, in *ModifyBaselineStatusForPeersRequest, opts ...grpc.CallOption) (*Empty, error)
 	LockNetworkBaseline(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Empty, error)
@@ -50,6 +52,16 @@ func (c *networkBaselineServiceClient) GetNetworkBaselineStatusForFlows(ctx cont
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(NetworkBaselineStatusResponse)
 	err := c.cc.Invoke(ctx, NetworkBaselineService_GetNetworkBaselineStatusForFlows_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *networkBaselineServiceClient) GetNetworkBaselineStatusForExternalFlows(ctx context.Context, in *NetworkBaselineExternalStatusRequest, opts ...grpc.CallOption) (*NetworkBaselineExternalStatusResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(NetworkBaselineExternalStatusResponse)
+	err := c.cc.Invoke(ctx, NetworkBaselineService_GetNetworkBaselineStatusForExternalFlows_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -101,6 +113,7 @@ func (c *networkBaselineServiceClient) UnlockNetworkBaseline(ctx context.Context
 // for forward compatibility.
 type NetworkBaselineServiceServer interface {
 	GetNetworkBaselineStatusForFlows(context.Context, *NetworkBaselineStatusRequest) (*NetworkBaselineStatusResponse, error)
+	GetNetworkBaselineStatusForExternalFlows(context.Context, *NetworkBaselineExternalStatusRequest) (*NetworkBaselineExternalStatusResponse, error)
 	GetNetworkBaseline(context.Context, *ResourceByID) (*storage.NetworkBaseline, error)
 	ModifyBaselineStatusForPeers(context.Context, *ModifyBaselineStatusForPeersRequest) (*Empty, error)
 	LockNetworkBaseline(context.Context, *ResourceByID) (*Empty, error)
@@ -116,6 +129,9 @@ type UnimplementedNetworkBaselineServiceServer struct{}
 
 func (UnimplementedNetworkBaselineServiceServer) GetNetworkBaselineStatusForFlows(context.Context, *NetworkBaselineStatusRequest) (*NetworkBaselineStatusResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetNetworkBaselineStatusForFlows not implemented")
+}
+func (UnimplementedNetworkBaselineServiceServer) GetNetworkBaselineStatusForExternalFlows(context.Context, *NetworkBaselineExternalStatusRequest) (*NetworkBaselineExternalStatusResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetNetworkBaselineStatusForExternalFlows not implemented")
 }
 func (UnimplementedNetworkBaselineServiceServer) GetNetworkBaseline(context.Context, *ResourceByID) (*storage.NetworkBaseline, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetNetworkBaseline not implemented")
@@ -163,6 +179,24 @@ func _NetworkBaselineService_GetNetworkBaselineStatusForFlows_Handler(srv interf
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(NetworkBaselineServiceServer).GetNetworkBaselineStatusForFlows(ctx, req.(*NetworkBaselineStatusRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _NetworkBaselineService_GetNetworkBaselineStatusForExternalFlows_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NetworkBaselineExternalStatusRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NetworkBaselineServiceServer).GetNetworkBaselineStatusForExternalFlows(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NetworkBaselineService_GetNetworkBaselineStatusForExternalFlows_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NetworkBaselineServiceServer).GetNetworkBaselineStatusForExternalFlows(ctx, req.(*NetworkBaselineExternalStatusRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -249,6 +283,10 @@ var NetworkBaselineService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetNetworkBaselineStatusForFlows",
 			Handler:    _NetworkBaselineService_GetNetworkBaselineStatusForFlows_Handler,
+		},
+		{
+			MethodName: "GetNetworkBaselineStatusForExternalFlows",
+			Handler:    _NetworkBaselineService_GetNetworkBaselineStatusForExternalFlows_Handler,
 		},
 		{
 			MethodName: "GetNetworkBaseline",

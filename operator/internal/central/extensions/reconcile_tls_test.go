@@ -29,10 +29,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
-func verifyCentralCert(t *testing.T, data types.SecretDataMap) {
+func verifyCentralCert(t *testing.T, data types.SecretDataMap, verificationTime *time.Time) {
 	ca, err := certgen.LoadCAFromFileMap(data)
 	require.NoError(t, err)
-	assert.NoError(t, certgen.VerifyServiceCertAndKey(data, "", ca, storage.ServiceType_CENTRAL_SERVICE))
+	err = certgen.VerifyServiceCertAndKey(data, "", ca, storage.ServiceType_CENTRAL_SERVICE, verificationTime)
+	assert.NoError(t, err, "verification of Central service certificate failed")
 
 	_, err = certgen.LoadJWTSigningKeyFromFileMap(data)
 	assert.NoError(t, err)
@@ -47,11 +48,12 @@ func verifySecuredClusterServiceCert(serviceType storage.ServiceType) secretVeri
 }
 
 func verifyServiceCert(serviceType storage.ServiceType, fileNamePrefix string) secretVerifyFunc {
-	return func(t *testing.T, data types.SecretDataMap) {
+	return func(t *testing.T, data types.SecretDataMap, atTime *time.Time) {
 		validatingCA, err := mtls.LoadCAForValidation(data["ca.pem"])
 		require.NoError(t, err)
 
-		assert.NoError(t, certgen.VerifyServiceCertAndKey(data, fileNamePrefix, validatingCA, serviceType))
+		err = certgen.VerifyServiceCertAndKey(data, fileNamePrefix, validatingCA, serviceType, atTime)
+		assert.NoError(t, err, "verification of certificate for service %v failed", serviceType)
 	}
 }
 

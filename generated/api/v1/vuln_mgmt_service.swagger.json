@@ -1567,6 +1567,10 @@
             "type": "object",
             "$ref": "#/definitions/storageImage"
           }
+        },
+        "livePods": {
+          "type": "integer",
+          "format": "int32"
         }
       },
       "description": "The workloads response contains the full image details including the\nvulnerability data."

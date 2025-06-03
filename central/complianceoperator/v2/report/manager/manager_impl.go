@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	checkResults "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	complianceIntegrationDS "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore"
 	profileDatastore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
 	"github.com/stackrox/rox/central/complianceoperator/v2/report"
@@ -21,7 +22,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/logging"
@@ -33,6 +33,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/pkg/uuid"
+	"golang.org/x/exp/maps"
 	"golang.org/x/sync/semaphore"
 )
 
@@ -46,6 +47,7 @@ type reportRequest struct {
 	ctx                context.Context
 	snapshotID         string
 	notificationMethod storage.ComplianceOperatorReportStatus_NotificationMethod
+	failedClusters     map[string]*storage.ComplianceOperatorReportSnapshotV2_FailedCluster
 }
 
 type managerImpl struct {
@@ -56,6 +58,7 @@ type managerImpl struct {
 	integrationDataStore complianceIntegrationDS.DataStore
 	suiteDataStore       suiteDS.DataStore
 	bindingsDataStore    bindingsDS.DataStore
+	checkResultDataStore checkResults.DataStore
 
 	runningReportConfigs map[string]*reportRequest
 	// channel for report job requests
@@ -86,7 +89,15 @@ type managerImpl struct {
 	scanConfigReadyQueue *queue.Queue[*watcher.ScanConfigWatcherResults]
 }
 
-func New(scanConfigDS scanConfigurationDS.DataStore, scanDataStore scanDS.DataStore, profileDataStore profileDatastore.DataStore, snapshotDatastore snapshotDS.DataStore, complianceIntegration complianceIntegrationDS.DataStore, suiteDataStore suiteDS.DataStore, bindingsDataStore bindingsDS.DataStore, reportGen reportGen.ComplianceReportGenerator) Manager {
+func New(scanConfigDS scanConfigurationDS.DataStore,
+	scanDataStore scanDS.DataStore,
+	profileDataStore profileDatastore.DataStore,
+	snapshotDatastore snapshotDS.DataStore,
+	complianceIntegration complianceIntegrationDS.DataStore,
+	suiteDataStore suiteDS.DataStore,
+	bindingsDataStore bindingsDS.DataStore,
+	checkResultDataStore checkResults.DataStore,
+	reportGen reportGen.ComplianceReportGenerator) Manager {
 	return &managerImpl{
 		scanConfigDataStore:   scanConfigDS,
 		scanDataStore:         scanDataStore,
@@ -95,6 +106,7 @@ func New(scanConfigDS scanConfigurationDS.DataStore, scanDataStore scanDS.DataSt
 		integrationDataStore:  complianceIntegration,
 		suiteDataStore:        suiteDataStore,
 		bindingsDataStore:     bindingsDataStore,
+		checkResultDataStore:  checkResultDataStore,
 		stopper:               concurrency.NewStopper(),
 		runningReportConfigs:  make(map[string]*reportRequest, maxRequests),
 		reportRequests:        make(chan *reportRequest, maxRequests),
@@ -208,6 +220,7 @@ func (m *managerImpl) generateReportNoLock(req *reportRequest) {
 		Ctx:                req.ctx,
 		SnapshotID:         req.snapshotID,
 		NotificationMethod: req.notificationMethod,
+		FailedClusters:     req.failedClusters,
 	}
 	log.Infof("Executing report request for scan config %q", req.scanConfig.GetId())
 	if err := m.reportGen.ProcessReportRequest(repRequest); err != nil {
@@ -315,7 +328,7 @@ func (m *managerImpl) HandleScan(sensorCtx context.Context, scan *storage.Compli
 	id, err := watcher.GetWatcherIDFromScan(m.automaticReportingCtx, scan, m.snapshotDataStore, m.scanConfigDataStore, nil)
 	if err != nil {
 		if errors.Is(err, watcher.ErrComplianceOperatorScanMissingLastStartedFiled) {
-			log.Debugf("The scan is missing the LastStartedField: %v", err)
+			log.Debug("The scan is missing the LastStartedTime field")
 			return nil
 		}
 		if errors.Is(err, watcher.ErrScanAlreadyHandled) {
@@ -368,15 +381,15 @@ func (m *managerImpl) HandleResult(sensorCtx context.Context, result *storage.Co
 	if err != nil {
 		if errors.Is(err, watcher.ErrComplianceOperatorReceivedOldCheckResult) {
 			log.Debugf("The CheckResult is older than the current scan in the store")
-			return nil
+			return err
 		}
 		if errors.Is(err, watcher.ErrComplianceOperatorScanMissingLastStartedFiled) {
-			log.Debugf("The scan is missing the LastStartedField: %v", err)
-			return nil
+			log.Debug("The scan is missing the LastStartedTime field")
+			return err
 		}
 		if errors.Is(err, watcher.ErrScanAlreadyHandled) {
 			log.Debugf("The scan linked to the check result %s is already handled", result.GetCheckName())
-			return nil
+			return err
 		}
 		return err
 	}
@@ -397,6 +410,9 @@ func (m *managerImpl) handleReadyScan() {
 				concurrency.WithLock(&m.watchingScansLock, func() {
 					delete(m.watchingScans, scanWatcherResult.WatcherID)
 				})
+				if err := watcher.DeleteOldResults(m.automaticReportingCtx, scanWatcherResult, m.checkResultDataStore); err != nil {
+					log.Errorf("unable to delete old CheckResults: %v", err)
+				}
 				if errors.Is(scanWatcherResult.Error, watcher.ErrScanRemoved) {
 					log.Debugf("Scan %s was removed", scanWatcherResult.Scan.GetScanName())
 					continue
@@ -513,6 +529,9 @@ func (m *managerImpl) handleReadyScanConfig() {
 				concurrency.WithLock(&m.watchingScanConfigsLock, func() {
 					delete(m.watchingScanConfigs, scanConfigWatcherResult.WatcherID)
 				})
+				if err := watcher.DeleteOldResultsFromMissingScans(m.automaticReportingCtx, scanConfigWatcherResult, m.profileDataStore, m.scanDataStore, m.checkResultDataStore); err != nil {
+					log.Errorf("unable to delete old CheckResults: %v", err)
+				}
 				m.generateReportsFromWatcherResults(scanConfigWatcherResult)
 			}
 		}
@@ -535,15 +554,23 @@ func (m *managerImpl) generateReportsFromWatcherResults(result *watcher.ScanConf
 }
 
 func (m *managerImpl) generateSingleReportFromWatcherResults(result *watcher.ScanConfigWatcherResults, snapshot *storage.ComplianceOperatorReportSnapshotV2) error {
-	if err := m.validateScanConfigResults(result); err != nil {
-		if dbErr := helpers.UpdateSnapshotOnError(m.automaticReportingCtx, snapshot, err, m.snapshotDataStore); dbErr != nil {
-			return errors.Errorf("%v; %v", err, errors.Wrapf(dbErr, "unable to upsert the snapshot %s", snapshot.GetReportId()))
-		}
-		return err
-	}
+	failedClusters, err := watcher.ValidateScanConfigResults(m.automaticReportingCtx, result, m.integrationDataStore)
 	snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_PREPARING
+	if err != nil {
+		snapshot.GetReportStatus().ErrorMsg = err.Error()
+	}
+	log.Infof("Snapshot for ScanConfig %s: %+v -- %+v", result.ScanConfig.GetScanConfigName(), snapshot.GetReportStatus(), snapshot.GetFailedClusters())
 	// Update ReportData
 	snapshot.ReportData = m.getReportData(result.ScanConfig)
+	// Add failed clusters to the report
+	if len(failedClusters) > 0 {
+		for _, cluster := range snapshot.ReportData.GetClusterStatus() {
+			if failedCluster, ok := failedClusters[cluster.GetClusterId()]; ok {
+				failedCluster.ClusterName = cluster.GetClusterName()
+			}
+		}
+		snapshot.FailedClusters = maps.Values(failedClusters)
+	}
 	if err := m.snapshotDataStore.UpsertSnapshot(m.automaticReportingCtx, snapshot); err != nil {
 		return errors.Wrapf(err, "unable to upsert the snapshot %s", snapshot.GetReportId())
 	}
@@ -552,6 +579,7 @@ func (m *managerImpl) generateSingleReportFromWatcherResults(result *watcher.Sca
 		scanConfig:         result.ScanConfig,
 		snapshotID:         snapshot.GetReportId(),
 		notificationMethod: snapshot.GetReportStatus().GetReportNotificationMethod(),
+		failedClusters:     failedClusters,
 	}
 	isOnDemand := snapshot.GetReportStatus().GetReportRequestType() == storage.ComplianceOperatorReportStatus_ON_DEMAND
 	if err := m.handleReportScheduled(generateReportReq, isOnDemand); err != nil {
@@ -575,47 +603,6 @@ func (m *managerImpl) handleReportScheduled(request *reportRequest, isOnDemand b
 		}
 	}()
 	return nil
-}
-
-func (m *managerImpl) validateScanConfigResults(result *watcher.ScanConfigWatcherResults) error {
-	if result.Error != nil {
-		if errors.Is(result.Error, watcher.ErrScanConfigTimeout) {
-			return report.ErrScanConfigWatcherTimeout
-		}
-		return report.ErrScanWatchersFailed
-	}
-
-	errList := errorhelpers.NewErrorList("Scan result errors")
-	for _, scanResult := range result.ScanResults {
-		if scanResult.Error != nil {
-			// To not overwhelm the UI we only report a max number of errors
-			if len(errList.Errors()) > env.ComplianceMaxNumberOfErrorsInReport.IntegerSetting() {
-				break
-			}
-			err := errors.Errorf("The report for the scan %s in cluster %s could not be generated.", scanResult.Scan.GetScanName(), scanResult.Scan.GetClusterId())
-			if errors.Is(scanResult.Error, watcher.ErrScanTimeout) {
-				healthErr := watcher.IsComplianceOperatorHealthy(m.automaticReportingCtx, scanResult.Scan.GetClusterId(), m.integrationDataStore)
-				if errors.Is(healthErr, watcher.ErrComplianceOperatorNotInstalled) {
-					errList.AddError(errors.Wrap(err, watcher.ErrComplianceOperatorNotInstalled.Error()))
-					continue
-				}
-				if errors.Is(healthErr, watcher.ErrComplianceOperatorVersion) {
-					errList.AddError(errors.Wrap(err, "compliance operator version is not 1.6.0 or greater"))
-					continue
-				}
-
-				err = errors.Wrap(err, "scan timeout")
-				select {
-				case <-scanResult.SensorCtx.Done():
-					err = errors.Wrap(err, "Sensor disconnected during the scan")
-				default:
-				}
-			}
-			errList.AddErrors(err)
-		}
-	}
-
-	return errList.ToError()
 }
 
 func (m *managerImpl) getReportData(scanConfig *storage.ComplianceOperatorScanConfigurationV2) *storage.ComplianceOperatorReportData {

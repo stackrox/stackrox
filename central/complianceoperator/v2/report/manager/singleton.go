@@ -1,6 +1,7 @@
 package manager
 
 import (
+	checkResults "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	complianceIntegrationDS "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore"
 	profileDatastore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
 	snapshotDataStore "github.com/stackrox/rox/central/complianceoperator/v2/report/datastore"
@@ -24,5 +25,13 @@ func Singleton() Manager {
 }
 
 func initialize() {
-	instance = New(scanConfigurationDS.Singleton(), scanDS.Singleton(), profileDatastore.Singleton(), snapshotDataStore.Singleton(), complianceIntegrationDS.Singleton(), suiteDS.Singleton(), bindingsDS.Singleton(), reportGen.Singleton())
+	instance = New(scanConfigurationDS.Singleton(),
+		scanDS.Singleton(),
+		profileDatastore.Singleton(),
+		snapshotDataStore.Singleton(),
+		complianceIntegrationDS.Singleton(),
+		suiteDS.Singleton(),
+		bindingsDS.Singleton(),
+		checkResults.Singleton(),
+		reportGen.Singleton())
 }

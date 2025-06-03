@@ -193,7 +193,7 @@ func validateApplyRerunScheduledScanRequest(req *central.ApplyComplianceScanConf
 func runtimeObjToUnstructured(obj runtime.Object) (*unstructured.Unstructured, error) {
 	unstructuredObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(obj)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "converting to unstructured object")
 	}
 
 	return &unstructured.Unstructured{

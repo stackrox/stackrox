@@ -21,6 +21,9 @@ const cvesListQuery = gql`
                 low {
                     total
                 }
+                unknown {
+                    total
+                }
             }
             topCVSS
             affectedNodeCount
@@ -42,6 +45,7 @@ export type NodeCVE = {
         important: { total: number };
         moderate: { total: number };
         low: { total: number };
+        unknown: { total: number };
     };
     topCVSS: number;
     affectedNodeCount: number;

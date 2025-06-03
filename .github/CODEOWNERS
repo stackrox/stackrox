@@ -22,20 +22,22 @@ pkg/search/**/*                     @stackrox/core-workflows
 # administration events, authN (authproviders), authZ (SAC)
 # cloud sources, declarative config, image signatures, images, netpol,
 # observability, performance testing, roxctl, sensor and telemetry.
-*/administration/**/*       @stackrox/sensor-ecosystem
-*/auth/**/*                 @stackrox/sensor-ecosystem
-*/cloudsources/**/*         @stackrox/sensor-ecosystem
-*/declarativeconfig/**/*    @stackrox/sensor-ecosystem
-*/discoveredclusters/**/    @stackrox/sensor-ecosystem
-*/signatureintegration/**/* @stackrox/sensor-ecosystem
-pkg/features/**/*           @stackrox/sensor-ecosystem
-pkg/images/defaults/**/*    @stackrox/sensor-ecosystem
-pkg/sac/**/*                @stackrox/sensor-ecosystem
-pkg/signatures/**/*         @stackrox/sensor-ecosystem
-roxctl/**/*                 @stackrox/sensor-ecosystem
-sensor/**/*                 @stackrox/sensor-ecosystem
-tests/performance/**/*      @stackrox/sensor-ecosystem
-tests/roxctl/**/*           @stackrox/sensor-ecosystem
+*/administration/**/*             @stackrox/sensor-ecosystem
+*/auth/**/*                       @stackrox/sensor-ecosystem
+*/cloudsources/**/*               @stackrox/sensor-ecosystem
+*/declarativeconfig/**/*          @stackrox/sensor-ecosystem
+*/discoveredclusters/**/          @stackrox/sensor-ecosystem
+*/signatureintegration/**/*       @stackrox/sensor-ecosystem
+pkg/features/**/*                 @stackrox/sensor-ecosystem
+pkg/images/defaults/**/*          @stackrox/sensor-ecosystem
+pkg/sac/**/*                      @stackrox/sensor-ecosystem
+pkg/signatures/**/*               @stackrox/sensor-ecosystem
+qa-tests-backend/**/*CloudSource* @stackrox/sensor-ecosystem
+qa-tests-backend/**/*Signature*   @stackrox/sensor-ecosystem
+roxctl/**/*                       @stackrox/sensor-ecosystem
+sensor/**/*                       @stackrox/sensor-ecosystem
+tests/performance/**/*            @stackrox/sensor-ecosystem
+tests/roxctl/**/*                 @stackrox/sensor-ecosystem
 
 # Listing all users as "Outside collaborators cannot be added to a team"
 bats-tests/local/roxctl-netpol-*               @zivnevo @adisos @shireenf-ibm
@@ -82,3 +84,4 @@ operator/**/* @stackrox/install
 **/konflux.*Dockerfile  @stackrox/rhtap-maintainers
 /.konflux/              @stackrox/rhtap-maintainers
 /.tekton/               @stackrox/rhtap-maintainers
+rpms.*                  @stackrox/rhtap-maintainers

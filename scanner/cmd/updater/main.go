@@ -16,7 +16,7 @@ import (
 const DefaultURL = "https://raw.githubusercontent.com/stackrox/stackrox/master/scanner/updater/manual/vulns.yaml"
 
 func tryExport(ctx context.Context, outputDir string, opts *updater.ExportOptions) error {
-	const timeout = 2 * time.Hour
+	const timeout = 3 * time.Hour
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 	err := updater.Export(ctx, outputDir, opts)

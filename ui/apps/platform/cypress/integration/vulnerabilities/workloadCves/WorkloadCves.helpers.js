@@ -10,7 +10,7 @@ import { selectors } from './WorkloadCves.selectors';
 import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
 
 export function getDateString(date) {
-    return format(date, 'MM/DD/YYYY');
+    return format(date, 'MMM DD, YYYY');
 }
 
 /**
@@ -232,7 +232,7 @@ export function selectSingleCveForException(exceptionType) {
 }
 
 /**
- * Selects the first CVE on each of two pages for the table and opens the exception modal
+ * Selects all cves on the current table page and opens the exception modal
  * @param {('DEFERRAL' | 'FALSE_POSITIVE')} exceptionType
  */
 export function selectMultipleCvesForException(exceptionType) {
@@ -242,31 +242,18 @@ export function selectMultipleCvesForException(exceptionType) {
             ? selectors.deferCveModal
             : selectors.markCveFalsePositiveModal;
 
-    const cveNames = [];
-
-    // Select the first CVE on the first page and the first CVE on the second page
-    // to test multi-deferral flows
+    // Select all visible CVEs to test multi-cve exceptions
     return cy
-        .get(selectors.nthTableRow(1))
-        .then(($row) => {
-            cveNames.push($row.find('td[data-label="CVE"]').text());
-            cy.wrap($row).then(($rowElement) => {
-                const checkbox = $rowElement.find(selectors.tableRowSelectCheckbox);
-                cy.wrap(checkbox).click();
+        .get(`${selectors.allTableRows} td[data-label="CVE"]`)
+        .then(($cells) => $cells.map((_i, cell) => cell.innerText).get())
+        .then((cveNames) => {
+            cy.get(`${selectors.allTableRows} ${selectors.tableRowSelectCheckbox}`).click({
+                multiple: true,
             });
-            return cy.get(selectors.nthTableRow(2));
-        })
-        .then(($nextRow) => {
-            cveNames.push($nextRow.find('td[data-label="CVE"]').text());
-            cy.wrap($nextRow).then(($rowElement) => {
-                const checkbox = $rowElement.find(selectors.tableRowSelectCheckbox);
-                cy.wrap(checkbox).click();
-            });
-
             cy.get(selectors.bulkActionMenuToggle).click();
             cy.get(selectors.menuOption(menuOption)).click();
             cy.get('button:contains("CVE selections")').click();
-            // TODO - Update this code when modal form is completed
+
             cveNames.forEach((name) => {
                 cy.get(`${modalSelector}:contains("${name}")`);
             });

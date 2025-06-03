@@ -100,7 +100,8 @@ function NodesTable({
                         {data.map((node) => {
                             const { id, name, nodeCVECountBySeverity, cluster, osImage, scanTime } =
                                 node;
-                            const { critical, important, moderate, low } = nodeCVECountBySeverity;
+                            const { critical, important, moderate, low, unknown } =
+                                nodeCVECountBySeverity;
                             return (
                                 <Tr key={id}>
                                     <Td dataLabel="Node" modifier="nowrap">
@@ -114,6 +115,7 @@ function NodesTable({
                                             importantCount={important.total}
                                             moderateCount={moderate.total}
                                             lowCount={low.total}
+                                            unknownCount={unknown.total}
                                             filteredSeverities={filteredSeverities}
                                             entity={'node'}
                                         />

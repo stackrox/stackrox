@@ -103,8 +103,10 @@ To install stackrox-central-services, you will need a secure password. This pass
 ```sh
 ROX_ADMIN_PASSWORD="$(openssl rand -base64 20 | tr -d '/=+')"
 ```
+From here, you can install stackrox-central-services to get Central and Scanner components deployed on your cluster.
 
-From here, you can install stackrox-central-services to get Central and Scanner components deployed on your cluster. Note that you need only one deployed instance of stackrox-central-services even if you plan to secure multiple clusters.
+> **Note:**
+> You need only one deployed instance of stackrox-central-services even if you plan to secure multiple clusters.
 
 To perform the installation, choose one of the following commands depending on your cluster size.
 
@@ -244,7 +246,8 @@ After a few minutes, all resources should be deployed.
 
 **Credentials for the 'admin' user can be found in the `./deploy/k8s/central-deploy/password` file.**
 
-**Note:** While the password file is stored in plaintext on your local filesystem, the Kubernetes Secret StackRox uses is encrypted, and you will not be able to alter the secret at runtime. If you lose the password, you will have to redeploy central.
+> **Note:**
+> The password file is stored in plaintext on your local filesystem, but the Kubernetes Secret that StackRox creates from it is encrypted. You will not be able to alter the password at runtime. If you lose the password, you will have to redeploy central.
 
 </details>
 
@@ -268,7 +271,8 @@ After a few minutes, all resources should be deployed. The process will complete
 
 **Credentials for the 'admin' user can be found in the `./deploy/openshift/central-deploy/password` file.**
 
-**Note:** While the password file is stored in plaintext on your local filesystem, the Kubernetes Secret StackRox uses is encrypted, and you will not be able to alter the secret at runtime. If you loose the password, you will have to redeploy central.
+> **Note:**
+> While the password file is stored in plaintext on your local filesystem, the Kubernetes Secret StackRox uses is encrypted, and you will not be able to alter the secret at runtime. If you loose the password, you will have to redeploy central.
 
 </details>
 
@@ -400,7 +404,9 @@ $ make image
 Now, you need to bring up a Kubernetes cluster *yourself* before proceeding.
 Development can either happen in GCP or locally with
 [Docker Desktop](https://docs.docker.com/desktop/kubernetes/), [Colima](https://github.com/abiosoft/colima#kubernetes), [minikube](https://minikube.sigs.k8s.io/docs/start/).
-Note that Docker Desktop and Colima are more suited for macOS development, because the cluster will have access to images built with `make image` locally without additional configuration. Also, Collector has better support for these than minikube where drivers may not be available.
+
+> **Note:**
+> Docker Desktop and Colima are more suited for macOS development, because the cluster will have access to images built with `make image` locally without additional configuration. Also, Collector has better support for these than minikube where drivers may not be available.
 
 ```bash
 # To keep the StackRox Central's Postgres DB state between database upgrades and restarts, set:
@@ -597,8 +603,9 @@ Now Central has been deployed. Use the UI to deploy Sensor.
 
 <details><summary>OpenShift</summary>
 
-Note: If using a host mount, you need to allow the container to access it by using
-`sudo chcon -Rt svirt_sandbox_file_t <full volume path>`
+> **Note:**
+> If using a host mount, you need to allow the container to access it by using
+> `sudo chcon -Rt svirt_sandbox_file_t <full volume path>`
 
 Take the image-setup.sh script from this repo and run it to do the pull/push to
 local OpenShift registry. This is a prerequisite for every new cluster.

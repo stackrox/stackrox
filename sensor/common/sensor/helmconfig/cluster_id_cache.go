@@ -14,7 +14,10 @@ const (
 
 // StoreCachedClusterID stores the cluster ID in the filesystem cache.
 func StoreCachedClusterID(id string) error {
-	return os.WriteFile(clusterIDCacheFile, []byte(id+"\n"), 0644)
+	if err := os.WriteFile(clusterIDCacheFile, []byte(id+"\n"), 0644); err != nil {
+		return errors.Wrapf(err, "writing cluster ID to cache file %s", clusterIDCacheFile)
+	}
+	return nil
 }
 
 // LoadCachedClusterID loads a cached cluster ID from the filesystem cache.
@@ -24,7 +27,7 @@ func LoadCachedClusterID() (string, error) {
 		if os.IsNotExist(err) {
 			return "", nil
 		}
-		return "", err
+		return "", errors.Wrapf(err, "read cluster ID cache file %s", clusterIDCacheFile)
 	}
 	id := string(bytes.TrimSpace(cachedIDBytes))
 	if id == "" {

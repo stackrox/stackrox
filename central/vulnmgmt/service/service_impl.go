@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
+	podDS "github.com/stackrox/rox/central/pod/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -41,6 +42,7 @@ type serviceImpl struct {
 	v1.UnimplementedVulnMgmtServiceServer
 
 	deployments deploymentDS.DataStore
+	pods        podDS.DataStore
 	images      imageDS.DataStore
 }
 
@@ -107,7 +109,19 @@ func (s *serviceImpl) VulnMgmtExportWorkloads(req *v1.VulnMgmtExportWorkloadsReq
 			}
 		}
 
-		if err := srv.Send(&v1.VulnMgmtExportWorkloadsResponse{Deployment: d, Images: images}); err != nil {
+		// Container Image Digest is a field in pods_live_instances table which is connected to pods table via FK.
+		// So the below query should return the number of pods that have live instances.
+		livePodsQ := search.NewQueryBuilder().
+			AddExactMatches(search.DeploymentID, d.GetId()).
+			AddRegexes(search.ContainerImageDigest, ".*").
+			ProtoQuery()
+
+		livePods, err := s.pods.Count(ctx, livePodsQ)
+		if err != nil {
+			log.Errorf("Error getting live pod count for deployment ID '%s'", d.GetId())
+		}
+
+		if err := srv.Send(&v1.VulnMgmtExportWorkloadsResponse{Deployment: d, Images: images, LivePods: int32(livePods)}); err != nil {
 			return err
 		}
 		return nil

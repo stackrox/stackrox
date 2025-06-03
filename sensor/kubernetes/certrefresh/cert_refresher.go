@@ -35,15 +35,15 @@ func refreshCertificates(ctx context.Context, certsDescription string, requestCe
 	timeToNextRefresh, err = ensureCertificatesAreFresh(ctx, certsDescription, requestCertificates, getCertsRenewalTime, repository)
 	if err != nil {
 		if errors.Is(err, certrepo.ErrUnexpectedSecretsOwner) {
-			log.Errorf("non-recoverable error refreshing %s, automatic refresh will be stopped: %s", certsDescription, err)
+			log.Errorf("non-recoverable error refreshing %s TLS certificates, automatic refresh will be stopped: %s", certsDescription, err)
 			return 0, concurrency.ErrNonRecoverable
 		}
 
-		log.Errorf("refreshing %s: %s", certsDescription, err)
+		log.Errorf("refreshing %s TLS certificates: %s", certsDescription, err)
 		return 0, err
 	}
 
-	log.Infof("%v scheduled to be refreshed in %s", certsDescription, timeToNextRefresh)
+	log.Infof("%v TLS certificates scheduled to be refreshed in %s", certsDescription, timeToNextRefresh)
 	return timeToNextRefresh, err
 }
 
@@ -73,7 +73,7 @@ func ensureCertificatesAreFresh(ctx context.Context, certsDescription string, re
 
 	persistedCertificates, putErr := repository.EnsureServiceCertificates(ctx, certificates)
 	if putErr != nil {
-		return 0, putErr
+		return 0, errors.Wrap(putErr, "saving certificates to repository")
 	}
 
 	renewalTime, err := getCertsRenewalTime(certificates)
@@ -82,7 +82,7 @@ func ensureCertificatesAreFresh(ctx context.Context, certsDescription string, re
 		return 0, err
 	}
 	serviceTypeNames := getServiceTypeNames(persistedCertificates)
-	log.Infof("successfully refreshed %v for: %v", certsDescription, strings.Join(serviceTypeNames, ", "))
+	log.Infof("successfully refreshed %v TLS certificates for: %v", certsDescription, strings.Join(serviceTypeNames, ", "))
 	return time.Until(renewalTime), nil
 }
 
@@ -99,26 +99,26 @@ func getTimeToRefreshFromRepo(ctx context.Context, certsDescription string, getC
 
 	certificates, getCertsErr := repository.GetServiceCertificates(ctx)
 	if errors.Is(getCertsErr, certrepo.ErrUnexpectedSecretsOwner) {
-		return 0, getCertsErr
+		return 0, errors.Wrapf(getCertsErr, "getting %s certificates from repository", certsDescription)
 	}
 	if errors.Is(getCertsErr, certrepo.ErrDifferentCAForDifferentServiceTypes) || errors.Is(getCertsErr, certrepo.ErrMissingSecretData) {
-		log.Errorf("%s are in an inconsistent state, "+
+		log.Errorf("%s TLS certificates are in an inconsistent state, "+
 			"will refresh certificates immediately: %s", certsDescription, getCertsErr)
 		return 0, nil
 	}
 	if k8sErrors.IsNotFound(getCertsErr) {
-		log.Warnf("%s not found (this is expected on a new deployment), "+
+		log.Warnf("%s TLS certificates not found (this is expected on a new deployment), "+
 			"will refresh certificates immediately: %s", certsDescription, getCertsErr)
 		return 0, nil
 	}
 	if getCertsErr != nil {
-		return 0, getCertsErr
+		return 0, errors.Wrapf(getCertsErr, "getting %s certificates from repository", certsDescription)
 	}
 
 	renewalTime, err := getCertsRenewalTime(certificates)
 	if err != nil {
 		// recover by refreshing the certificates immediately.
-		log.Errorf("error getting %s expiration, "+
+		log.Errorf("error getting %s TLS certificates expiration, "+
 			"will refresh certificates immediately: %s", certsDescription, err)
 		return 0, nil
 	}

@@ -23,6 +23,9 @@ const summaryDataQuery = gql`
                 low {
                     total
                 }
+                unknown {
+                    total
+                }
             }
         }
     }

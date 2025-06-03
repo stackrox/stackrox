@@ -304,7 +304,7 @@ func (s *securedClusterTLSIssuerTests) TestSecuredClusterTLSIssuerRequestCancell
 
 	certs, requestErr := f.tlsIssuer.requestCertificates(ctx)
 	assert.Nil(s.T(), certs)
-	assert.Equal(s.T(), context.Canceled, requestErr)
+	assert.ErrorIs(s.T(), requestErr, context.Canceled)
 }
 
 func (s *securedClusterTLSIssuerTests) TestSecuredClusterTLSIssuerRequestSuccess() {
@@ -343,7 +343,7 @@ func (s *securedClusterTLSIssuerTests) TestSecuredClusterTLSIssuerResponsesWithU
 
 	certs, requestErr := f.tlsIssuer.requestCertificates(ctx)
 	assert.Nil(s.T(), certs)
-	assert.Equal(s.T(), context.DeadlineExceeded, requestErr)
+	assert.ErrorIs(s.T(), requestErr, context.DeadlineExceeded)
 }
 
 func (s *securedClusterTLSIssuerTests) TestSecuredClusterCertificateRequesterNoReplyFromCentral() {
@@ -355,7 +355,7 @@ func (s *securedClusterTLSIssuerTests) TestSecuredClusterCertificateRequesterNoR
 
 	// No response was set using `f.respondRequest`, which simulates not receiving a reply from Central
 	assert.Nil(s.T(), certs)
-	assert.Equal(s.T(), context.DeadlineExceeded, requestErr)
+	assert.ErrorIs(s.T(), requestErr, context.DeadlineExceeded)
 }
 
 func TestSecuredClusterTLSIssuerIntegrationTests(t *testing.T) {

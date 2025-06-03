@@ -99,7 +99,7 @@ function ApiTokenIntegrationForm({
     if (isEditing) {
         return (
             <NotFoundMessage
-                title="This API Token can not be edited"
+                title="This API Token cannot be edited"
                 message="Create a new API Token or delete an existing one"
             />
         );

@@ -188,7 +188,7 @@ export_test_environment() {
     ci_export ROX_CLUSTERS_PAGE_MIGRATION_UI "${ROX_CLUSTERS_PAGE_MIGRATION_UI:-false}"
     ci_export ROX_EXTERNAL_IPS "${ROX_EXTERNAL_IPS:-true}"
     ci_export ROX_NETWORK_GRAPH_EXTERNAL_IPS "${ROX_NETWORK_GRAPH_EXTERNAL_IPS:-false}"
-    ci_export ROX_FLATTEN_CVE_DATA "${ROX_FLATTEN_CVE_DATA:-false}"
+    ci_export ROX_FLATTEN_CVE_DATA "${ROX_FLATTEN_CVE_DATA:-true}"
     ci_export ROX_VULNERABILITY_ON_DEMAND_REPORTS "${ROX_VULNERABILITY_ON_DEMAND_REPORTS:-true}"
     ci_export ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS "${ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS:-true}"
 
@@ -333,7 +333,7 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n      - name: ROX_SBOM_GENERATION'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_FLATTEN_CVE_DATA'
-    customize_envVars+=$'\n        value: "false"'
+    customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_VULNERABILITY_ON_DEMAND_REPORTS'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS'
@@ -527,15 +527,8 @@ export_central_cert() {
     central_cert="$(mktemp -d)/central_cert.pem"
     info "Storing central certificate in ${central_cert} for ${API_ENDPOINT}"
 
-    set -x
-    echo "API_ENDPOINT:$API_ENDPOINT"
-    echo "ROX_SERVER_NAME:$ROX_SERVER_NAME"
     roxctl -e "$API_ENDPOINT" \
-        central cert --insecure-skip-tls-verify 1>"$central_cert" \
-        || \
-    ROX_SERVER_NAME='' roxctl -e "$API_ENDPOINT" \
         central cert --insecure-skip-tls-verify 1>"$central_cert"
-    set +x
 
     ci_export ROX_CA_CERT_FILE "$central_cert"
     openssl x509 -in "${ROX_CA_CERT_FILE}" -subject -issuer -ext subjectAltName -noout
@@ -579,15 +572,8 @@ setup_client_CA_auth_provider() {
     require_environment "CLIENT_CA_PATH"
 
     export_central_cert
-    set -x
-    echo "API_ENDPOINT:$API_ENDPOINT"
-    echo "ROX_SERVER_NAME:$ROX_SERVER_NAME"
     roxctl -e "$API_ENDPOINT" \
-        central userpki create test-userpki -r Analyst -c "$CLIENT_CA_PATH" \
-        || \
-    ROX_SERVER_NAME='' roxctl -e "$API_ENDPOINT" \
         central userpki create test-userpki -r Analyst -c "$CLIENT_CA_PATH"
-    set +x
 }
 
 setup_generated_certs_for_test() {
@@ -603,15 +589,8 @@ setup_generated_certs_for_test() {
     require_environment "ROX_ADMIN_PASSWORD"
 
     export_central_cert
-    set -x
-    echo "API_ENDPOINT:$API_ENDPOINT"
-    echo "ROX_SERVER_NAME:$ROX_SERVER_NAME"
     roxctl -e "$API_ENDPOINT" \
-        sensor generate-certs remote --output-dir "$dir" \
-        || \
-    ROX_SERVER_NAME='' roxctl -e "$API_ENDPOINT" \
-        sensor generate-certs remote --output-dir "$dir" \
-    set +x
+        sensor generate-certs remote --output-dir "$dir"
     [[ -f "$dir"/cluster-remote-tls.yaml ]]
     # Use the certs in future steps that will use client auth.
     # This will ensure that the certs are valid.
@@ -1346,15 +1325,8 @@ restore_4_1_postgres_backup() {
 
     gsutil cp gs://stackrox-ci-upgrade-test-fixtures/upgrade-test-dbs/postgres_db_4_1.sql.zip .
     export_central_cert
-    set -x
-    echo "API_ENDPOINT:$API_ENDPOINT"
-    echo "ROX_SERVER_NAME:$ROX_SERVER_NAME"
     roxctl -e "$API_ENDPOINT" \
-        central db restore --timeout 5m postgres_db_4_1.sql.zip \
-        || \
-    ROX_SERVER_NAME='' roxctl -e "$API_ENDPOINT" \
         central db restore --timeout 5m postgres_db_4_1.sql.zip
-    set +x
 }
 
 update_public_config() {
@@ -1384,30 +1356,15 @@ db_backup_and_restore_test() {
 
     info "Backing up to ${output_dir}"
     mkdir -p "$output_dir"
-    set -x
-    echo "API_ENDPOINT:$API_ENDPOINT"
-    echo "ROX_SERVER_NAME:$ROX_SERVER_NAME"
-    roxctl -e "$API_ENDPOINT" \
-        central backup --output "$output_dir" \
-        || \
-    ROX_SERVER_NAME='' roxctl -e "$API_ENDPOINT" \
-        central backup --output "$output_dir" || touch DB_TEST_FAIL
-    set +x
+    # TODO(PR#15173): Temporarily reset the server name to fix CI:
+    roxctl --insecure-skip-tls-verify -s "" --ca="" -e "${API_ENDPOINT}" central backup --output "$output_dir" || touch DB_TEST_FAIL
 
     info "Updating public config"
     update_public_config
 
     if [[ ! -e DB_TEST_FAIL ]]; then
         info "Restoring from ${output_dir}/postgres_db_*"
-        set -x
-        echo "API_ENDPOINT:$API_ENDPOINT"
-        echo "ROX_SERVER_NAME:$ROX_SERVER_NAME"
-        roxctl -e "$API_ENDPOINT" \
-            central db restore "$output_dir"/postgres_db_* \
-            || \
-        ROX_SERVER_NAME='' roxctl -e "$API_ENDPOINT" \
-            central db restore "$output_dir"/postgres_db_* || touch DB_TEST_FAIL
-        set +x
+        roxctl --insecure-skip-tls-verify -s "" --ca="" -e "${API_ENDPOINT}" central db restore "$output_dir"/postgres_db_* || touch DB_TEST_FAIL
     fi
 
     wait_for_api "${central_namespace}"
@@ -1610,6 +1567,34 @@ wait_for_object_to_appear() {
             return 1
         fi
         info "Waiting for $namespace $object to appear"
+        sleep "$waitInterval"
+    done
+
+    return 0
+}
+
+wait_for_log_line() {
+    if [[ "$#" -lt 2 ]]; then
+        die "missing args. usage: wait_for_log_line <namespace> <object> <container> <log_line> [<delay>]"
+    fi
+
+    local namespace="$1"
+    local object="$2"
+    local container="$3"
+    local log_line="$4"
+    local delay="${5:-300}"
+    local waitInterval=20
+    local tries=$(( delay / waitInterval ))
+    local count=0
+    until kubectl logs -n "$namespace" "$object" -c "${container}" | grep "${log_line}"; do
+        count=$((count + 1))
+        if [[ $count -ge "$tries" ]]; then
+            info "$namespace $object did not log ${log_line} after $count tries"
+            echo "Waiting for $object log in ns $namespace timed out." > "${QA_DEPLOY_WAIT_INFO}" || true
+            kubectl -n "$namespace" get "$object"
+            return 1
+        fi
+        info "Waiting for $namespace $object to log ${log_line}"
         sleep "$waitInterval"
     done
 

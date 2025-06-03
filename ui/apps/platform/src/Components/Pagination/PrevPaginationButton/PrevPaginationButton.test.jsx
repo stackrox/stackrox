@@ -30,7 +30,7 @@ const options = {
     name: 'Go to previous page', // aria-label attribute
 };
 
-test('can not press the previous button when on the first page', async () => {
+test('cannot press the previous button when on the first page', async () => {
     render(<MockPagination defaultPage={1} />);
     const button = screen.getByRole('button', options);
 

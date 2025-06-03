@@ -22,6 +22,8 @@ export const CLUSTER_LEVEL_SIMULATOR_OPENED = 'Network Graph: Cluster Level Simu
 export const GENERATE_NETWORK_POLICIES = 'Network Graph: Generate Network Policies';
 export const DOWNLOAD_NETWORK_POLICIES = 'Network Graph: Download Network Policies';
 export const CIDR_BLOCK_FORM_OPENED = 'Network Graph: CIDR Block Form Opened';
+export const EXTERNAL_IPS_SIDE_PANEL = 'External IPs Side Panel Opened';
+export const DEPLOYMENT_FLOWS_TOGGLE_CLICKED = 'External Flows Toggle Clicked';
 
 // watch images
 export const WATCH_IMAGE_MODAL_OPENED = 'Watch Image Modal Opened';
@@ -163,6 +165,19 @@ export type AnalyticsEvent =
               deployments: number;
           };
       }
+    | {
+          event: typeof EXTERNAL_IPS_SIDE_PANEL;
+          properties: {
+              isEmptyTable: boolean;
+              isFilteredTable: boolean;
+          };
+      }
+    | {
+          event: typeof DEPLOYMENT_FLOWS_TOGGLE_CLICKED;
+          properties: {
+              view: 'External Flows' | 'Internal Flows';
+          };
+      }
     /** Tracks each time the user opens the "Watched Images" modal */
     | typeof WATCH_IMAGE_MODAL_OPENED
     /** Tracks each time the user submits a request to watch an image */
@@ -201,6 +216,7 @@ export type AnalyticsEvent =
               SEVERITY_IMPORTANT: AnalyticsBoolean;
               SEVERITY_MODERATE: AnalyticsBoolean;
               SEVERITY_LOW: AnalyticsBoolean;
+              SEVERITY_UNKNOWN: AnalyticsBoolean;
               CVE_STATUS_FIXABLE: AnalyticsBoolean;
               CVE_STATUS_NOT_FIXABLE: AnalyticsBoolean;
           };
@@ -418,7 +434,8 @@ export type AnalyticsEvent =
                   | 'DOWNLOAD_GENERATED'
                   | 'EMAIL_DELIVERED'
                   | 'ERROR'
-                  | 'PARTIAL_ERROR'
+                  | 'PARTIAL_SCAN_ERROR_DOWNLOAD'
+                  | 'PARTIAL_SCAN_ERROR_EMAIL'
               )[];
           };
       }

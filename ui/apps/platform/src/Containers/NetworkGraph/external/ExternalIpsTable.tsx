@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
     Button,
     Divider,
@@ -41,6 +41,10 @@ function ExternalIpsTable({
     const { version } = useMetadata();
     const { page, perPage, setPage, setPerPage } = urlPagination;
     const { searchFilter, setSearchFilter } = urlSearchFiltering;
+
+    useEffect(() => {
+        setPage(1);
+    }, [searchFilter, setPage]);
 
     return (
         <>

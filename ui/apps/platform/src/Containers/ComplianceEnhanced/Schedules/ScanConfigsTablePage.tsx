@@ -386,7 +386,21 @@ function ScanConfigsTablePage({
                                 <Th>Clusters</Th>
                                 <Th>Profiles</Th>
                                 {isReportJobsEnabled && (
-                                    <HelpIconTh popoverContent={<JobStatusPopoverContent />}>
+                                    <HelpIconTh
+                                        popoverContent={
+                                            <JobStatusPopoverContent
+                                                statuses={[
+                                                    'WAITING',
+                                                    'PREPARING',
+                                                    'DOWNLOAD_GENERATED',
+                                                    'PARTIAL_SCAN_ERROR_DOWNLOAD',
+                                                    'EMAIL_DELIVERED',
+                                                    'PARTIAL_SCAN_ERROR_EMAIL',
+                                                    'ERROR',
+                                                ]}
+                                            />
+                                        }
+                                    >
                                         My last job status
                                     </HelpIconTh>
                                 )}

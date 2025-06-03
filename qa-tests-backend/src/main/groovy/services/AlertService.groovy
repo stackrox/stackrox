@@ -2,6 +2,7 @@ package services
 
 import groovy.transform.CompileStatic
 
+import io.stackrox.annotations.Retry
 import io.stackrox.proto.api.v1.AlertServiceGrpc
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.GetAlertTimeseriesResponse
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.GetAlertsCountsRequest
@@ -18,28 +19,34 @@ class AlertService extends BaseService {
         return AlertServiceGrpc.newBlockingStub(getChannel())
     }
 
+    @Retry
     static List<ListAlert> getViolations(ListAlertsRequest request = ListAlertsRequest.newBuilder().build()) {
         return getAlertClient().listAlerts(request).alertsList
     }
 
+    @Retry
     static GetAlertsCountsResponse getAlertCounts(
             GetAlertsCountsRequest request = GetAlertsCountsRequest.newBuilder().build()) {
         return getAlertClient().getAlertsCounts(request)
     }
 
+    @Retry
     static GetAlertsGroupResponse getAlertGroups(ListAlertsRequest request = ListAlertsRequest.newBuilder().build()) {
         return getAlertClient().getAlertsGroup(request)
     }
 
+    @Retry
     static GetAlertTimeseriesResponse getAlertTimeseries(
             ListAlertsRequest request = ListAlertsRequest.newBuilder().build()) {
         return getAlertClient().getAlertTimeseries(request)
     }
 
+    @Retry
     static Alert getViolation(String alertId) {
         return getAlertClient().getAlert(getResourceByID(alertId))
     }
 
+    @Retry
     static resolveAlert(String alertID, boolean addToBaseline = false) {
         return getAlertClient().resolveAlert(
                 ResolveAlertRequest.newBuilder().setId(alertID).setAddToBaseline(addToBaseline).build())

@@ -2,6 +2,7 @@ package manager
 
 import (
 	"context"
+	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -48,4 +49,8 @@ type Manager interface {
 	ProcessNetworkPolicyUpdate(ctx context.Context, action central.ResourceAction, policy *storage.NetworkPolicy) error
 	// ProcessBaselineLockUpdate updates a baseline's lock status. This locks the baseline if lockBaseline is true
 	ProcessBaselineLockUpdate(ctx context.Context, deploymentID string, lockBaseline bool) error
+
+	// GetExternalNetworkPeers returns all external peers for a given deployment, filtered
+	// by the search query and timestamp.
+	GetExternalNetworkPeers(ctx context.Context, deploymentID string, query string, since *time.Time) ([]*v1.NetworkBaselineStatusPeer, error)
 }

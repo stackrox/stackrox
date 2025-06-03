@@ -6,6 +6,8 @@ import (
 	"sync"
 	"time"
 
+	pkgErrors "github.com/pkg/errors"
+
 	"github.com/cenkalti/backoff/v3"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -95,7 +97,11 @@ func scanImage(ctx context.Context, svc v1.ImageServiceClient, req *scanImageReq
 		}
 	}
 
-	return svc.ScanImageInternal(ctx, internalReq)
+	resp, err := svc.ScanImageInternal(ctx, internalReq)
+	if err != nil {
+		return nil, pkgErrors.Wrap(err, "scanning image via central service")
+	}
+	return resp, nil
 }
 
 func scanImageLocal(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest, localScan *scan.LocalScan) (*v1.ScanImageInternalResponse, error) {
@@ -108,9 +114,11 @@ func scanImageLocal(ctx context.Context, svc v1.ImageServiceClient, req *scanIma
 		Namespace:        req.namespace,
 	})
 
-	return &v1.ScanImageInternalResponse{
-		Image: img,
-	}, err
+	resp := &v1.ScanImageInternalResponse{Image: img}
+	if err != nil {
+		return resp, pkgErrors.Wrap(err, "scanning image locally")
+	}
+	return resp, nil
 }
 
 type scanFunc func(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest, localScan *scan.LocalScan) (*v1.ScanImageInternalResponse, error)
@@ -170,9 +178,9 @@ func (c *cacheValue) scanAndSet(ctx context.Context, svc v1.ImageServiceClient, 
 	scanImageFn := scanImage
 	if c.regStore.IsLocal(req.containerImage.GetName()) {
 		scanImageFn = scanImageLocal
-		log.Debugf("Sending scan to local scanner for image %q", req.containerImage.GetName().GetFullName())
+		log.Debugf("Sending scan to local scanner for image %q (ID %q)", req.containerImage.GetName().GetFullName(), req.containerImage.GetId())
 	} else {
-		log.Debugf("Sending scan to central for image %q", req.containerImage.GetName().GetFullName())
+		log.Debugf("Sending scan to central for image %q (ID %q)", req.containerImage.GetName().GetFullName(), req.containerImage.GetId())
 	}
 
 	scannedImage, err := c.scanWithRetries(ctx, svc, req, scanImageFn)
@@ -182,13 +190,13 @@ func (c *cacheValue) scanAndSet(ctx context.Context, svc v1.ImageServiceClient, 
 	if err != nil {
 		// Ignore the error and set the image to something basic,
 		// so alerting can progress.
-		log.Errorf("Scan request failed for image %q: %s", req.containerImage.GetName().GetFullName(), err)
-		c.image = types.ToImage(req.containerImage)
+		log.Errorf("Scan request failed for image %q (ID %q): %s", req.containerImage.GetName().GetFullName(), req.containerImage.GetId(), err)
+		c.updateImageNoLock(types.ToImage(req.containerImage))
 		return
 	}
 
-	log.Debugf("Successful image scan for image %s: %d components returned by scanner", req.containerImage.GetName().GetFullName(), len(scannedImage.GetImage().GetScan().GetComponents()))
-	c.image = scannedImage.GetImage()
+	log.Debugf("Successful image scan for image %q (ID %q): %d components returned by scanner", req.containerImage.GetName().GetFullName(), req.containerImage.GetId(), len(scannedImage.GetImage().GetScan().GetComponents()))
+	c.updateImageNoLock(scannedImage.GetImage())
 }
 
 func (c *cacheValue) scanAndSetWithLock(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest) {
@@ -201,7 +209,7 @@ func (c *cacheValue) scanAndSetWithLock(ctx context.Context, svc v1.ImageService
 
 	// Check to see if another routine already enriched this name, if so, short circuit.
 	if protoutils.SliceContains(req.containerImage.GetName(), c.image.GetNames()) {
-		log.Debugf("Image scan loaded from cache: %s: Components: (%d) - short circuit", req.containerImage.GetName().GetFullName(), len(c.image.GetScan().GetComponents()))
+		log.Debugf("Image scan loaded from cache %q (ID %q): Components: (%d) - short circuit", req.containerImage.GetName().GetFullName(), req.containerImage.GetId(), len(c.image.GetScan().GetComponents()))
 		return
 	}
 
@@ -209,21 +217,21 @@ func (c *cacheValue) scanAndSetWithLock(ctx context.Context, svc v1.ImageService
 	scanImageFn := scanImage
 	if c.regStore.IsLocal(req.containerImage.GetName()) {
 		scanImageFn = scanImageLocal
-		log.Debugf("Sending scan to local scanner for image %q", req.containerImage.GetName().GetFullName())
+		log.Debugf("Sending scan to local scanner for image %q (ID %q)", req.containerImage.GetName().GetFullName(), req.containerImage.GetId())
 	} else {
-		log.Debugf("Sending scan to central for image %q", req.containerImage.GetName().GetFullName())
+		log.Debugf("Sending scan to central for image %q (ID %q)", req.containerImage.GetName().GetFullName(), req.containerImage.GetId())
 	}
 
 	scannedImage, err := c.scanWithRetries(ctx, svc, req, scanImageFn)
 	if err != nil {
 		// Ignore the error and set the image to something basic,
 		// so alerting can progress.
-		log.Errorf("Scan request failed for image %q: %s", req.containerImage.GetName().GetFullName(), err)
+		log.Errorf("Scan request failed for image %q (ID %q): %s", req.containerImage.GetName().GetFullName(), req.containerImage.GetId(), err)
 		c.updateImageNoLock(types.ToImage(req.containerImage))
 		return
 	}
 
-	log.Debugf("Successful image scan for image %s: %d components returned by scanner", req.containerImage.GetName().GetFullName(), len(scannedImage.GetImage().GetScan().GetComponents()))
+	log.Debugf("Successful image scan for image %q (ID %q): %d components returned by scanner", req.containerImage.GetName().GetFullName(), req.containerImage.GetId(), len(scannedImage.GetImage().GetScan().GetComponents()))
 	c.updateImageNoLock(scannedImage.GetImage())
 }
 

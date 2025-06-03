@@ -119,6 +119,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 			"configured in each violated policy).")
 	c.Flags().StringSliceVarP(&imageCheckCmd.policyCategories, "categories", "c", nil, "Optional comma separated list of policy categories to run.  Defaults to all policy categories.")
 	c.Flags().StringVar(&imageCheckCmd.cluster, "cluster", "", "Cluster name or ID to use as context for evaluation.")
+	c.Flags().StringVar(&imageCheckCmd.namespace, "namespace", "", "Namespace on the secured cluster from which to read context information when delegating image scans, specifically pull secrets to access the image registry.")
 
 	// deprecated, old output format specific flags
 	c.Flags().BoolVar(&imageCheckCmd.printAllViolations, "print-all-violations", false, "Whether to print all violations per alert or truncate violations for readability.")
@@ -149,6 +150,7 @@ type imageCheckCommand struct {
 	printAllViolations bool
 	timeout            time.Duration
 	cluster            string
+	namespace          string
 
 	// values injected from either Construct, parent command or for abstracting external dependencies
 	env                      environment.Environment
@@ -217,7 +219,7 @@ func (i *imageCheckCommand) CheckImage() error {
 
 func (i *imageCheckCommand) checkImage() error {
 	// Get the violated policies for the input data.
-	req, err := buildRequest(i.image, i.sendNotifications, i.force, i.policyCategories, i.cluster)
+	req, err := buildRequest(i.image, i.sendNotifications, i.force, i.policyCategories, i.cluster, i.namespace)
 	if err != nil {
 		return err
 	}
@@ -332,7 +334,7 @@ func printAdditionalWarnsAndErrs(numTotalViolatedPolicies int, results []policy.
 }
 
 // Use inputs to generate an image name for request.
-func buildRequest(image string, sendNotifications, force bool, policyCategories []string, cluster string) (*v1.BuildDetectionRequest, error) {
+func buildRequest(image string, sendNotifications, force bool, policyCategories []string, cluster string, namespace string) (*v1.BuildDetectionRequest, error) {
 	img, err := utils.GenerateImageFromString(image)
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not parse image '%s'", image)
@@ -343,5 +345,6 @@ func buildRequest(image string, sendNotifications, force bool, policyCategories 
 		Force:             force,
 		PolicyCategories:  policyCategories,
 		Cluster:           cluster,
+		Namespace:         namespace,
 	}, nil
 }

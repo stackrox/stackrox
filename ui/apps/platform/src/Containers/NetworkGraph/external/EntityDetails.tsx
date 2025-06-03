@@ -18,6 +18,7 @@ import {
 import { InnerScrollContainer, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
+import { TimeWindow } from 'constants/timeWindows';
 import useRestQuery from 'hooks/useRestQuery';
 import { UseURLPaginationResult } from 'hooks/useURLPagination';
 import { UseUrlSearchReturn } from 'hooks/useURLSearch';
@@ -25,15 +26,17 @@ import { getExternalNetworkFlows } from 'services/NetworkService';
 import { getTableUIState } from 'utils/getTableUIState';
 import { ExternalNetworkFlowsResponse } from 'types/networkFlow.proto';
 
-import { getDeploymentInfoForExternalEntity, protocolLabel } from '../utils/flowUtils';
-import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
 import { ExternalEntitiesIcon } from '../common/NetworkGraphIcons';
+import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
+import { getDeploymentInfoForExternalEntity, protocolLabel } from '../utils/flowUtils';
+import { timeWindowToISO } from '../utils/timeWindow';
 
 export type EntityDetailsProps = {
     labelledById: string;
     entityName: string;
     entityId: string;
     scopeHierarchy: NetworkScopeHierarchy;
+    timeWindow: TimeWindow;
     urlPagination: UseURLPaginationResult;
     urlSearchFiltering: UseUrlSearchReturn;
     onNodeSelect: (id: string) => void;
@@ -53,6 +56,7 @@ function EntityDetails({
     entityName,
     entityId,
     scopeHierarchy,
+    timeWindow,
     urlPagination,
     urlSearchFiltering,
     onNodeSelect,
@@ -63,13 +67,21 @@ function EntityDetails({
     const clusterId = scopeHierarchy.cluster.id;
     const { deployments, namespaces } = scopeHierarchy;
     const fetchExternalNetworkFlows = useCallback((): Promise<ExternalNetworkFlowsResponse> => {
-        return getExternalNetworkFlows(clusterId, entityId, namespaces, deployments, {
-            sortOption: {},
-            page,
-            perPage,
-            advancedFilters: searchFilter,
-        });
-    }, [page, perPage, clusterId, deployments, entityId, namespaces, searchFilter]);
+        const fromTimestamp = timeWindowToISO(timeWindow);
+        return getExternalNetworkFlows(
+            clusterId,
+            entityId,
+            namespaces,
+            deployments,
+            fromTimestamp,
+            {
+                sortOption: {},
+                page,
+                perPage,
+                advancedFilters: searchFilter,
+            }
+        );
+    }, [page, perPage, clusterId, deployments, entityId, namespaces, searchFilter, timeWindow]);
 
     const {
         data: externalNetworkFlows,

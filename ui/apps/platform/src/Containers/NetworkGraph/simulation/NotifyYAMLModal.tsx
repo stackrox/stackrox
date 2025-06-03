@@ -2,11 +2,12 @@ import React from 'react';
 import { Alert, Bullseye, Button, Modal, Spinner } from '@patternfly/react-core';
 
 import { NetworkPolicyModification } from 'types/networkPolicy.proto';
-import useFetchNotifiers from 'hooks/useFetchNotifiers';
 import useTableSelection from 'hooks/useTableSelection';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { notifyNetworkPolicyModification } from 'services/NetworkService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+
+import useFetchNotifiers from './useFetchNotifiers';
 
 type NotifyYAMLModalProps = {
     isModalOpen: boolean;

@@ -21,7 +21,7 @@ import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
 import DeploymentComponentVulnerabilitiesTable, {
     DeploymentComponentVulnerability,
     ImageMetadataContext,
-    deploymentComponentVulnerabilitiesFragment,
+    convertToFlatDeploymentComponentVulnerabilitiesFragment, // deploymentComponentVulnerabilitiesFragment
     imageMetadataContextFragment,
 } from './DeploymentComponentVulnerabilitiesTable';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
@@ -58,6 +58,7 @@ export type DeploymentForCve = {
     namespace: string;
     clusterName: string;
     created: string | null;
+    unknownImageCount: number;
     lowImageCount: number;
     moderateImageCount: number;
     importantImageCount: number;
@@ -65,27 +66,35 @@ export type DeploymentForCve = {
     images: (ImageMetadataContext & { imageComponents: DeploymentComponentVulnerability[] })[];
 };
 
-export const deploymentsForCveFragment = gql`
-    ${imageMetadataContextFragment}
-    ${deploymentComponentVulnerabilitiesFragment}
-    fragment DeploymentsForCVE on Deployment {
-        id
-        name
-        namespace
-        clusterName
-        created
-        lowImageCount: imageCount(query: $lowImageCountQuery)
-        moderateImageCount: imageCount(query: $moderateImageCountQuery)
-        importantImageCount: imageCount(query: $importantImageCountQuery)
-        criticalImageCount: imageCount(query: $criticalImageCountQuery)
-        images(query: $query) {
-            ...ImageMetadataContext
-            imageComponents(query: $query) {
-                ...DeploymentComponentVulnerabilities
+// After release, replace temporary function
+// with deploymentsForCveFragment
+// that has unconditional deploymentComponentVulnerabilitiesFragment.
+export function convertToFlatDeploymentsForCveFragment(
+    isFlattenCveDataEnabled: boolean // ROX_FLATTEN_CVE_DATA
+) {
+    return gql`
+        ${imageMetadataContextFragment}
+        ${convertToFlatDeploymentComponentVulnerabilitiesFragment(isFlattenCveDataEnabled)}
+        fragment DeploymentsForCVE on Deployment {
+            id
+            name
+            namespace
+            clusterName
+            created
+            unknownImageCount: imageCount(query: $unknownImageCountQuery)
+            lowImageCount: imageCount(query: $lowImageCountQuery)
+            moderateImageCount: imageCount(query: $moderateImageCountQuery)
+            importantImageCount: imageCount(query: $importantImageCountQuery)
+            criticalImageCount: imageCount(query: $criticalImageCountQuery)
+            images(query: $query) {
+                ...ImageMetadataContext
+                imageComponents(query: $query) {
+                    ...DeploymentComponentVulnerabilities
+                }
             }
         }
-    }
-`;
+    `;
+}
 
 export type AffectedDeploymentsTableProps = {
     tableState: TableUIState<DeploymentForCve>;
@@ -113,7 +122,9 @@ function AffectedDeploymentsTable({
     const hiddenColumnCount = getHiddenColumnCount(tableConfig);
     const expandedRowSet = useSet<string>();
 
-    const colSpan = 8 + -hiddenColumnCount;
+    const colSpan = 7 + -hiddenColumnCount;
+    const colSpanForComponentVulnerabilitiesTable = colSpan - 1; // minus ExpandRowTh
+
     return (
         <Table variant="compact">
             <Thead noWrap>
@@ -152,6 +163,7 @@ function AffectedDeploymentsTable({
                             name,
                             namespace,
                             clusterName,
+                            unknownImageCount,
                             lowImageCount,
                             moderateImageCount,
                             importantImageCount,
@@ -204,6 +216,7 @@ function AffectedDeploymentsTable({
                                             importantCount={importantImageCount}
                                             moderateCount={moderateImageCount}
                                             lowCount={lowImageCount}
+                                            unknownCount={unknownImageCount}
                                             filteredSeverities={filteredSeverities}
                                         />
                                     </Td>
@@ -237,7 +250,7 @@ function AffectedDeploymentsTable({
                                 </Tr>
                                 <Tr isExpanded={isExpanded}>
                                     <Td />
-                                    <Td colSpan={6}>
+                                    <Td colSpan={colSpanForComponentVulnerabilitiesTable}>
                                         <ExpandableRowContent>
                                             <DeploymentComponentVulnerabilitiesTable
                                                 images={imageComponentVulns}

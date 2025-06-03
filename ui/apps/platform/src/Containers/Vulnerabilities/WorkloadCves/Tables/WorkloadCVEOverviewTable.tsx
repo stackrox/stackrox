@@ -93,7 +93,6 @@ export const cveListQuery = gql`
         $pagination: Pagination
         $statusesForExceptionCount: [String!]
     ) {
-        imageCVECount(query: $query)
         imageCVEs(query: $query, pagination: $pagination) {
             cve
             affectedImageCountBySeverity {
@@ -107,6 +106,9 @@ export const cveListQuery = gql`
                     total
                 }
                 low {
+                    total
+                }
+                unknown {
                     total
                 }
             }
@@ -140,7 +142,6 @@ export const unfilteredImageCountQuery = gql`
 `;
 
 export type CVEListQueryResult = {
-    imageCVECount: number;
     imageCVEs: ImageCVE[];
 };
 
@@ -151,6 +152,7 @@ export type ImageCVE = {
         important: { total: number };
         moderate: { total: number };
         low: { total: number };
+        unknown: { total: number };
     };
     topCVSS: number;
     affectedImageCount: number;
@@ -321,6 +323,7 @@ function WorkloadCVEOverviewTable({
                             const importantCount = affectedImageCountBySeverity.important.total;
                             const moderateCount = affectedImageCountBySeverity.moderate.total;
                             const lowCount = affectedImageCountBySeverity.low.total;
+                            const unknownCount = affectedImageCountBySeverity.unknown.total;
 
                             const prioritizedDistros = sortCveDistroList(distroTuples);
                             const scoreVersions = getScoreVersionsForTopCVSS(topCVSS, distroTuples);
@@ -388,6 +391,7 @@ function WorkloadCVEOverviewTable({
                                                 importantCount={importantCount}
                                                 moderateCount={moderateCount}
                                                 lowCount={lowCount}
+                                                unknownCount={unknownCount}
                                                 filteredSeverities={filteredSeverities}
                                             />
                                         </Td>

@@ -817,8 +817,12 @@ func convertMapToSlice[IN any, OUT any](convF func(*IN) *OUT, in map[string]*IN)
 func fixedInVersion(v *claircore.Vulnerability) string {
 	fixedIn := v.FixedInVersion
 	// Try to parse url encoded params; if expected values are not found leave it.
-	if q, err := url.ParseQuery(fixedIn); err == nil && q.Has("fixed") {
+	q, err := url.ParseQuery(fixedIn)
+	if err == nil && q.Has("fixed") {
 		fixedIn = q.Get("fixed")
+	} else if err == nil && q.Has("lastAffected") {
+		// lastAffected doesn't give us anything informative so return empty string
+		return ""
 	}
 	return fixedIn
 }

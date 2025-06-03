@@ -70,6 +70,10 @@ const routeMatcherMap = {
         method: 'GET',
         url: '/v1/declarative-config/health',
     },
+    'database/status': {
+        method: 'GET',
+        url: '/v1/database/status',
+    },
 };
 
 export function visitSystemHealthFromLeftNav() {

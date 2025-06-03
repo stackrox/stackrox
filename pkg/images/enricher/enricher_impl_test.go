@@ -1184,7 +1184,7 @@ func TestDelegateEnrichImage(t *testing.T) {
 		setup(t)
 		fakeImage := &storage.Image{}
 		dele.EXPECT().GetDelegateClusterID(emptyCtx, gomock.Any()).Return("cluster-id", true, nil)
-		dele.EXPECT().DelegateScanImage(emptyCtx, gomock.Any(), "cluster-id", gomock.Any()).Return(fakeImage, nil)
+		dele.EXPECT().DelegateScanImage(emptyCtx, gomock.Any(), "cluster-id", "", gomock.Any()).Return(fakeImage, nil)
 
 		should, err := e.delegateEnrichImage(emptyCtx, deleEnrichCtx, fakeImage)
 		assert.True(t, should)
@@ -1194,7 +1194,7 @@ func TestDelegateEnrichImage(t *testing.T) {
 	t.Run("delegate enrich error", func(t *testing.T) {
 		setup(t)
 		dele.EXPECT().GetDelegateClusterID(emptyCtx, gomock.Any()).Return("cluster-id", true, nil)
-		dele.EXPECT().DelegateScanImage(emptyCtx, gomock.Any(), "cluster-id", gomock.Any()).Return(nil, errBroken)
+		dele.EXPECT().DelegateScanImage(emptyCtx, gomock.Any(), "cluster-id", "", gomock.Any()).Return(nil, errBroken)
 
 		should, err := e.delegateEnrichImage(emptyCtx, deleEnrichCtx, nil)
 		assert.True(t, should)
@@ -1221,7 +1221,7 @@ func TestDelegateEnrichImage(t *testing.T) {
 		setup(t)
 		fakeImage := &storage.Image{}
 		dele.EXPECT().ValidateCluster("cluster-id").Return(nil)
-		dele.EXPECT().DelegateScanImage(emptyCtx, gomock.Any(), "cluster-id", gomock.Any()).Return(fakeImage, nil)
+		dele.EXPECT().DelegateScanImage(emptyCtx, gomock.Any(), "cluster-id", "", gomock.Any()).Return(fakeImage, nil)
 
 		deleEnrichCtx := EnrichmentContext{Delegable: true, ClusterID: "cluster-id"}
 
@@ -1271,7 +1271,7 @@ func TestEnrichImage_Delegate(t *testing.T) {
 		setup(t)
 		fakeImage := &storage.Image{}
 		dele.EXPECT().GetDelegateClusterID(emptyCtx, gomock.Any()).Return("cluster-id", true, nil)
-		dele.EXPECT().DelegateScanImage(emptyCtx, gomock.Any(), "cluster-id", gomock.Any()).Return(fakeImage, nil)
+		dele.EXPECT().DelegateScanImage(emptyCtx, gomock.Any(), "cluster-id", "", gomock.Any()).Return(fakeImage, nil)
 
 		result, err := e.EnrichImage(emptyCtx, deleEnrichCtx, fakeImage)
 		assert.Equal(t, result.ScanResult, ScanSucceeded)

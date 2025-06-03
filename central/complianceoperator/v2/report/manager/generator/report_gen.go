@@ -34,7 +34,7 @@ type ComplianceReportGenerator interface {
 //
 //go:generate mockgen-wrapper
 type Formatter interface {
-	FormatCSVReport(map[string][]*report.ResultRow) (*bytes.Buffer, error)
+	FormatCSVReport(map[string][]*report.ResultRow, map[string]*storage.ComplianceOperatorReportSnapshotV2_FailedCluster) (*bytes.Buffer, error)
 }
 
 // ResultsAggregator interface is used to generate the report data

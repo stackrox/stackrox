@@ -1,7 +1,9 @@
 package networkbaseline
 
 import (
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/networkbaseline"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -48,7 +50,7 @@ func (e *networkBaselineEvaluator) AddBaseline(baseline *storage.NetworkBaseline
 
 	baselineInfo, err := networkbaseline.ConvertBaselineInfoFromProto(baseline)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "converting baseline info from proto")
 	}
 
 	e.baselineLock.Lock()
@@ -70,7 +72,24 @@ func (e *networkBaselineEvaluator) checkPeerInBaselineForEntity(
 		// If no baseline exists then we do not mark it as anomalous
 		return true
 	}
-	peer := networkbaseline.PeerFromNetworkEntityInfo(peerEntity, peerEntityName, dstPort, protocol, isIngressToBaselineEntity)
+
+	var peer networkbaseline.Peer
+	if peerEntity.GetType() == storage.NetworkEntityInfo_EXTERNAL_SOURCE &&
+		peerEntity.GetExternalSource().GetDiscovered() {
+		// If a peer is a discovered external entity, we must anonymize it
+		// to the Internet, as the baselines do not currently store or monitor IP
+		// information.
+		peer = networkbaseline.PeerFromNetworkEntity(
+			networkgraph.InternetEntity(),
+			networkgraph.InternetExternalSourceName,
+			dstPort,
+			protocol,
+			isIngressToBaselineEntity,
+		)
+	} else {
+		peer = networkbaseline.PeerFromNetworkEntityInfo(peerEntity, peerEntityName, dstPort, protocol, isIngressToBaselineEntity)
+	}
+
 	_, peerInBaseline := baselineInfo.BaselinePeers[peer]
 	return peerInBaseline
 }

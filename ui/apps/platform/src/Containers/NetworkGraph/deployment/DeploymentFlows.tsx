@@ -1,5 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Divider, Stack, StackItem, ToggleGroup, ToggleGroupItem } from '@patternfly/react-core';
+
+import { TimeWindow } from 'constants/timeWindows';
+import useAnalytics, { DEPLOYMENT_FLOWS_TOGGLE_CLICKED } from 'hooks/useAnalytics';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import { UseURLPaginationResult } from 'hooks/useURLPagination';
 import { UseUrlSearchReturn } from 'hooks/useURLSearch';
@@ -9,52 +12,71 @@ import { EdgeState } from '../components/EdgeStateSelect';
 import { Flow } from '../types/flow.type';
 import InternalFlows from './InternalFlows';
 import ExternalFlows from './ExternalFlows';
-import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
+import { isInternalFlow } from '../utils/networkGraphUtils';
 
 export type DeploymentFlowsView = 'external-flows' | 'internal-flows';
 
 type DeploymentFlowsProps = {
     deploymentId: string;
-    deploymentName: string;
     nodes: CustomNodeModel[];
     edgeState: EdgeState;
     onNodeSelect: (id: string) => void;
-    onExternalIPSelect: (externalIP: string) => void;
     isLoadingNetworkFlows: boolean;
     networkFlowsError: string;
     networkFlows: Flow[];
     refetchFlows: () => void;
-    scopeHierarchy: NetworkScopeHierarchy;
-    urlPagination: UseURLPaginationResult;
+    anomalousUrlPagination: UseURLPaginationResult;
+    baselineUrlPagination: UseURLPaginationResult;
     urlSearchFiltering: UseUrlSearchReturn;
+    timeWindow: TimeWindow;
 };
 
 function DeploymentFlows({
     deploymentId,
-    deploymentName,
     nodes,
     edgeState,
     onNodeSelect,
-    onExternalIPSelect,
     isLoadingNetworkFlows,
     networkFlowsError,
     networkFlows,
     refetchFlows,
-    scopeHierarchy,
-    urlPagination,
+    anomalousUrlPagination,
+    baselineUrlPagination,
     urlSearchFiltering,
+    timeWindow,
 }: DeploymentFlowsProps) {
+    const { analyticsTrack } = useAnalytics();
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isNetworkGraphExternalIpsEnabled = isFeatureFlagEnabled('ROX_NETWORK_GRAPH_EXTERNAL_IPS');
     const [selectedView, setSelectedView] = useState<DeploymentFlowsView>('internal-flows');
 
-    const { setPage } = urlPagination;
+    const { setPage: setPageAnomalous } = anomalousUrlPagination;
+    const { setPage: setPageBaseline } = baselineUrlPagination;
     const { setSearchFilter } = urlSearchFiltering;
 
     useEffect(() => {
-        setPage(1);
+        setPageAnomalous(1);
+        setPageBaseline(1);
         setSearchFilter({});
-    }, [selectedView, setPage, setSearchFilter]);
+    }, [selectedView, setPageAnomalous, setPageBaseline, setSearchFilter]);
+
+    // can be removed when routing is added to network graph
+    const handleToggle = useCallback(
+        (view: DeploymentFlowsView) => {
+            if (view !== selectedView) {
+                setSelectedView(view);
+
+                const formattedView =
+                    view === 'internal-flows' ? 'Internal Flows' : 'External Flows';
+
+                analyticsTrack({
+                    event: DEPLOYMENT_FLOWS_TOGGLE_CLICKED,
+                    properties: { view: formattedView },
+                });
+            }
+        },
+        [selectedView, analyticsTrack]
+    );
 
     if (!isNetworkGraphExternalIpsEnabled) {
         return (
@@ -82,13 +104,13 @@ function DeploymentFlows({
                             text="Internal flows"
                             buttonId="internal-flows"
                             isSelected={selectedView === 'internal-flows'}
-                            onChange={() => setSelectedView('internal-flows')}
+                            onChange={() => handleToggle('internal-flows')}
                         />
                         <ToggleGroupItem
                             text="External flows"
                             buttonId="external-flows"
                             isSelected={selectedView === 'external-flows'}
-                            onChange={() => setSelectedView('external-flows')}
+                            onChange={() => handleToggle('external-flows')}
                         />
                     </ToggleGroup>
                 </StackItem>
@@ -103,15 +125,15 @@ function DeploymentFlows({
                                 onNodeSelect={onNodeSelect}
                                 isLoadingNetworkFlows={isLoadingNetworkFlows}
                                 networkFlowsError={networkFlowsError}
-                                networkFlows={networkFlows}
+                                networkFlows={networkFlows.filter((flow) => isInternalFlow(flow))}
                                 refetchFlows={refetchFlows}
                             />
                         ) : (
                             <ExternalFlows
-                                deploymentName={deploymentName}
-                                scopeHierarchy={scopeHierarchy}
-                                onExternalIPSelect={onExternalIPSelect}
-                                urlPagination={urlPagination}
+                                deploymentId={deploymentId}
+                                timeWindow={timeWindow}
+                                anomalousUrlPagination={anomalousUrlPagination}
+                                baselineUrlPagination={baselineUrlPagination}
                                 urlSearchFiltering={urlSearchFiltering}
                             />
                         )}

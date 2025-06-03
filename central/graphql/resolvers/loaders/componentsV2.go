@@ -78,11 +78,7 @@ func (idl *componentV2LoaderImpl) FromID(ctx context.Context, id string) (*stora
 
 // FromQuery loads a set of components that match a query.
 func (idl *componentV2LoaderImpl) FromQuery(ctx context.Context, query *v1.Query) ([]*storage.ImageComponentV2, error) {
-	results, err := idl.ds.Search(ctx, query)
-	if err != nil {
-		return nil, err
-	}
-	return idl.FromIDs(ctx, search.ResultsToIDs(results))
+	return idl.ds.SearchRawImageComponents(ctx, query)
 }
 
 func (idl *componentV2LoaderImpl) CountFromQuery(ctx context.Context, query *v1.Query) (int32, error) {

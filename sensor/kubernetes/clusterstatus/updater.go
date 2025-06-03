@@ -63,6 +63,7 @@ func (u *updaterImpl) Stop(_ error) {
 }
 
 func (u *updaterImpl) Notify(e common.SensorComponentEvent) {
+	log.Info(common.LogSensorComponentEvent(e))
 	switch e {
 	case common.SensorComponentEventCentralReachable:
 		if u.offlineMode.CompareAndSwap(true, false) {
@@ -223,7 +224,7 @@ func (u *updaterImpl) getOpenshiftVersion() (string, error) {
 				if kerrors.IsTimeout(err) || kerrors.IsServerTimeout(err) || kerrors.IsTooManyRequests(err) || kerrors.IsServiceUnavailable(err) {
 					return retry.MakeRetryable(err)
 				}
-				return err
+				return errors.Wrap(err, "getting openshift-apiserver cluster operator")
 			}
 			return nil
 		},
@@ -258,7 +259,7 @@ func (u *updaterImpl) getOpenshiftVersionLegacyAPI() (string, error) {
 				if kerrors.IsTimeout(err) || kerrors.IsServerTimeout(err) || kerrors.IsTooManyRequests(err) || kerrors.IsServiceUnavailable(err) {
 					return retry.MakeRetryable(err)
 				}
-				return err
+				return errors.Wrap(err, "fetching openshift version via legacy API")
 			}
 			return nil
 		},
@@ -275,7 +276,7 @@ func (u *updaterImpl) getOpenshiftVersionLegacyAPI() (string, error) {
 	var ocServerInfo apimachineryversion.Info
 	err = json.Unmarshal(oVersionBody, &ocServerInfo)
 	if err != nil && len(oVersionBody) > 0 {
-		return "", err
+		return "", errors.Wrap(err, "unmarshalling openshift version response")
 	}
 	return ocServerInfo.String(), nil
 }

@@ -26,24 +26,32 @@ import AdvisoryLinkOrText from './AdvisoryLinkOrText';
 export { imageMetadataContextFragment };
 export type { ImageMetadataContext, DeploymentComponentVulnerability };
 
-export const deploymentComponentVulnerabilitiesFragment = gql`
-    fragment DeploymentComponentVulnerabilities on ImageComponent {
-        name
-        version
-        location
-        source
-        layerIndex
-        imageVulnerabilities(query: $query) {
-            severity
-            cvss
-            scoreVersion
-            fixedByVersion
-            discoveredAtImage
-            publishedOn
-            pendingExceptionCount: exceptionCount(requestStatus: $statusesForExceptionCount)
+// After release, replace temporary function
+// with deploymentComponentVulnerabilitiesFragment
+// that has unconditional advisory property.
+export function convertToFlatDeploymentComponentVulnerabilitiesFragment(
+    isFlattenCveDataEnabled: boolean // ROX_FLATTEN_CVE_DATA
+) {
+    return gql`
+        fragment DeploymentComponentVulnerabilities on ImageComponent {
+            name
+            version
+            location
+            source
+            layerIndex
+            imageVulnerabilities(query: $query) {
+                severity
+                cvss
+                scoreVersion
+                fixedByVersion
+                ${isFlattenCveDataEnabled ? 'advisory { name, link }' : ''}
+                discoveredAtImage
+                publishedOn
+                pendingExceptionCount: exceptionCount(requestStatus: $statusesForExceptionCount)
+            }
         }
-    }
-`;
+    `;
+}
 
 const sortFields = ['Image', 'Component'];
 const defaultSortOption = { field: 'Image', direction: 'asc' } as const;
@@ -66,7 +74,10 @@ function DeploymentComponentVulnerabilitiesTable({
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isAdvisoryColumnEnabled =
         isFeatureFlagEnabled('ROX_SCANNER_V4') &&
+        isFeatureFlagEnabled('ROX_FLATTEN_CVE_DATA') &&
         isFeatureFlagEnabled('ROX_CVE_ADVISORY_SEPARATION');
+
+    const colSpanForDockerfileLayer = 8 + (isAdvisoryColumnEnabled ? 1 : 0);
 
     const { sortOption, getSortParams } = useTableSort({ sortFields, defaultSortOption });
     const componentVulns = images.flatMap(({ imageMetadataContext, componentVulnerabilities }) =>
@@ -103,11 +114,11 @@ function DeploymentComponentVulnerabilitiesTable({
                     cvss,
                     scoreVersion,
                     fixedByVersion,
+                    advisory,
                     location,
                     source,
                     layer,
                 } = componentVuln;
-                const advisory = undefined; // placeholder until response includes property
                 // No border on the last row
                 const style =
                     index !== componentVulns.length - 1
@@ -155,7 +166,7 @@ function DeploymentComponentVulnerabilitiesTable({
                             </Td>
                         </Tr>
                         <Tr>
-                            <Td colSpan={8} className="pf-v5-u-pt-0">
+                            <Td colSpan={colSpanForDockerfileLayer} className="pf-v5-u-pt-0">
                                 <DockerfileLayer layer={layer} />
                             </Td>
                         </Tr>

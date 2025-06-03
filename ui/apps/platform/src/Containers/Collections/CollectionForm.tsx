@@ -114,7 +114,7 @@ function yupLabelRuleObject({ field }: ByLabelResourceSelector) {
                         yup.object().shape({
                             value: yup
                                 .string()
-                                .required('This field can not be empty')
+                                .required('This field cannot be empty')
                                 .test(
                                     'label-value-k8s-format',
                                     'Labels must be valid k8s labels in the form: key=value',
@@ -150,7 +150,7 @@ function yupNameRuleObject({ field }: ByNameResourceSelector) {
                 .of(
                     yup.object().shape({
                         // TODO Add validation for k8s cluster, namespace, and deployment name characters
-                        value: yup.string().trim().required('This field can not be empty'),
+                        value: yup.string().trim().required('This field cannot be empty'),
                         matchType: yup
                             .string()
                             .required()

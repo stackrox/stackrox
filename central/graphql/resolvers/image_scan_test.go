@@ -8,9 +8,12 @@ import (
 	imageCVEsDSMocks "github.com/stackrox/rox/central/cve/image/datastore/mocks"
 	imageDSMocks "github.com/stackrox/rox/central/image/datastore/mocks"
 	imageComponentsDSMocks "github.com/stackrox/rox/central/imagecomponent/datastore/mocks"
+	imageComponentsDSV2Mocks "github.com/stackrox/rox/central/imagecomponent/v2/datastore/mocks"
+	imagesComponentViewMocks "github.com/stackrox/rox/central/views/imagecomponentflat/mocks"
 	imagesView "github.com/stackrox/rox/central/views/images"
 	imagesViewMocks "github.com/stackrox/rox/central/views/images/mocks"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -54,10 +57,12 @@ type ImageScanResolverTestSuite struct {
 	ctx      context.Context
 	mockCtrl *gomock.Controller
 
-	imageDataStore          *imageDSMocks.MockDataStore
-	imageView               *imagesViewMocks.MockImageView
-	imageComponentDataStore *imageComponentsDSMocks.MockDataStore
-	imageCVEDataStore       *imageCVEsDSMocks.MockDataStore
+	imageDataStore            *imageDSMocks.MockDataStore
+	imageView                 *imagesViewMocks.MockImageView
+	imageComponentDataStore   *imageComponentsDSMocks.MockDataStore
+	imageComponentDataStoreV2 *imageComponentsDSV2Mocks.MockDataStore
+	imageCVEDataStore         *imageCVEsDSMocks.MockDataStore
+	imageComponentFlatView    *imagesComponentViewMocks.MockComponentFlatView
 
 	resolver *Resolver
 	schema   *graphql.Schema
@@ -69,11 +74,13 @@ func (s *ImageScanResolverTestSuite) SetupTest() {
 
 	s.imageDataStore = imageDSMocks.NewMockDataStore(s.mockCtrl)
 	s.imageView = imagesViewMocks.NewMockImageView(s.mockCtrl)
+	s.imageComponentFlatView = imagesComponentViewMocks.NewMockComponentFlatView(s.mockCtrl)
 
 	s.imageComponentDataStore = imageComponentsDSMocks.NewMockDataStore(s.mockCtrl)
+	s.imageComponentDataStoreV2 = imageComponentsDSV2Mocks.NewMockDataStore(s.mockCtrl)
 	s.imageCVEDataStore = imageCVEsDSMocks.NewMockDataStore(s.mockCtrl)
 
-	s.resolver, s.schema = SetupTestResolver(s.T(), s.imageDataStore, s.imageView, s.imageComponentDataStore, s.imageCVEDataStore)
+	s.resolver, s.schema = SetupTestResolver(s.T(), s.imageDataStore, s.imageView, s.imageComponentDataStore, s.imageCVEDataStore, s.imageComponentDataStoreV2, s.imageComponentFlatView)
 }
 
 func (s *ImageScanResolverTestSuite) TearDownTest() {
@@ -112,8 +119,14 @@ func (s *ImageScanResolverTestSuite) TestGetImagesWithoutScan() {
 	cloned.Scan.Components = nil
 	s.imageDataStore.EXPECT().GetManyImageMetadata(gomock.Any(), gomock.Any()).
 		Return([]*storage.Image{cloned}, nil)
-	s.imageComponentDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).
-		Return(nil, nil)
+	if features.FlattenCVEData.Enabled() {
+		s.imageComponentFlatView.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, nil)
+		s.imageComponentDataStoreV2.EXPECT().SearchRawImageComponents(gomock.Any(), gomock.Any()).
+			Return(nil, nil)
+	} else {
+		s.imageComponentDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).
+			Return(nil, nil)
+	}
 	response := s.schema.Exec(s.ctx, imageWithoutScanQuery, "getImages", nil)
 	s.Len(response.Errors, 0)
 }

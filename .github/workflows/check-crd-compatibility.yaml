@@ -70,24 +70,12 @@ jobs:
         .crd-schema-checker/crd-schema-checker check-manifests $args --existing-crd-filename=$old_path/$sc_file --new-crd-filename=$new_path/$sc_file
         .crd-schema-checker/crd-schema-checker check-manifests $args --existing-crd-filename=$old_path/$central_file --new-crd-filename=$new_path/$central_file
 
-# Non-fatal for now, because there ARE breaking changes:
-# ERROR: "NoFieldRemoval": crd/securitypolicies.config.stackrox.io version/v1alpha1 field/^.spec.criteriaLocked may not be removed
-# ERROR: "NoFieldRemoval": crd/securitypolicies.config.stackrox.io version/v1alpha1 field/^.spec.isDefault may not be removed
-# ERROR: "NoFieldRemoval": crd/securitypolicies.config.stackrox.io version/v1alpha1 field/^.spec.mitreVectorsLocked may not be removed
-# ERROR: "NoFieldRemoval": crd/securitypolicies.config.stackrox.io version/v1alpha1 field/^.status.accepted may not be removed
-# ERROR: "NoFieldRemoval": crd/securitypolicies.config.stackrox.io version/v1alpha1 field/^.status.message may not be removed
-# ERROR: "NoNewRequiredFields": crd/securitypolicies.config.stackrox.io version/v1alpha1 field/^.status.conditions is new and may not be required
-# ERROR: "NoNewRequiredFields": crd/securitypolicies.config.stackrox.io version/v1alpha1 field/^.status.conditions[*].lastTransitionTime is new and may not be required
-# ERROR: "NoNewRequiredFields": crd/securitypolicies.config.stackrox.io version/v1alpha1 field/^.status.conditions[*].message is new and may not be required
-# ERROR: "NoNewRequiredFields": crd/securitypolicies.config.stackrox.io version/v1alpha1 field/^.status.conditions[*].status is new and may not be required
-# ERROR: "NoNewRequiredFields": crd/securitypolicies.config.stackrox.io version/v1alpha1 field/^.status.conditions[*].type is new and may not be required
     - name: Run crd-schema-checker for config operator
       run: |
-        set +e # see comment above
+        set -e
         old_path=.old-stackrox/config-controller/config/crd/bases
         new_path=config-controller/config/crd/bases
         policy_file=config.stackrox.io_securitypolicies.yaml
         args="--disabled-validators=ConditionsMustHaveProperSSATags,ListsMustHaveSSATags,NoBools,NoMaps"
         set -x
         .crd-schema-checker/crd-schema-checker check-manifests $args --existing-crd-filename=$old_path/$policy_file --new-crd-filename=$new_path/$policy_file
-        true # see comment above

@@ -53,16 +53,18 @@ func reconcileCentralTLS(ctx context.Context, c *platform.Central, client ctrlCl
 		centralObj:          c,
 		currentTime:         time.Now(),
 	}
+
 	return run.Execute(ctx)
 }
 
 type createCentralTLSExtensionRun struct {
 	*commonExtensions.SecretReconciliator
 
-	ca               mtls.CA // primary CA, used to issue Central-services certificates
-	caRotationAction carotation.Action
-	centralObj       *platform.Central
-	currentTime      time.Time
+	ca                    mtls.CA // primary CA, used to issue Central-services certificates
+	caRotationAction      carotation.Action
+	centralObj            *platform.Central
+	currentTime           time.Time
+	extraIssueCertOptions []mtls.IssueCertOption
 }
 
 func (r *createCentralTLSExtensionRun) Execute(ctx context.Context) error {
@@ -220,7 +222,11 @@ func (r *createCentralTLSExtensionRun) generateCentralTLSData(old types.SecretDa
 		}
 	}
 
-	if err := certgen.IssueCentralCert(newFileMap, r.ca, mtls.WithNamespace(r.centralObj.GetNamespace())); err != nil {
+	opts := append(
+		[]mtls.IssueCertOption{mtls.WithNamespace(r.centralObj.GetNamespace())},
+		r.extraIssueCertOptions...,
+	)
+	if err := certgen.IssueCentralCert(newFileMap, r.ca, opts...); err != nil {
 		return nil, errors.Wrap(err, "issuing central service certificate failed")
 	}
 
@@ -365,7 +371,7 @@ func (r *createCentralTLSExtensionRun) reconcileScannerV4DBTLSSecret(ctx context
 }
 
 func (r *createCentralTLSExtensionRun) validateServiceTLSData(serviceType storage.ServiceType, fileNamePrefix string, fileMap types.SecretDataMap) error {
-	if err := certgen.VerifyServiceCertAndKey(fileMap, fileNamePrefix, r.ca, serviceType, r.checkCertRenewal); err != nil {
+	if err := certgen.VerifyServiceCertAndKey(fileMap, fileNamePrefix, r.ca, serviceType, &r.currentTime, r.checkCertRenewal); err != nil {
 		return err
 	}
 	if err := certgen.VerifyCACertInFileMap(fileMap, r.ca); err != nil {
@@ -391,6 +397,7 @@ func (r *createCentralTLSExtensionRun) checkCertRenewal(certificate *x509.Certif
 
 func (r *createCentralTLSExtensionRun) generateServiceTLSData(subj mtls.Subject, fileNamePrefix string, fileMap types.SecretDataMap, opts ...mtls.IssueCertOption) error {
 	allOpts := append([]mtls.IssueCertOption{mtls.WithNamespace(r.centralObj.GetNamespace())}, opts...)
+	allOpts = append(allOpts, r.extraIssueCertOptions...)
 	if err := certgen.IssueServiceCert(fileMap, r.ca, subj, fileNamePrefix, allOpts...); err != nil {
 		return err
 	}

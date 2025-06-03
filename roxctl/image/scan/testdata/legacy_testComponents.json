@@ -45,7 +45,11 @@
             "summary": "This is a crit CVE 3",
             "link": "\u003csome-link-to-nvd\u003e",
             "fixedBy": "1.3",
-            "severity": "CRITICAL_VULNERABILITY_SEVERITY"
+            "severity": "CRITICAL_VULNERABILITY_SEVERITY",
+            "advisory": {
+              "name": "ADVISORY-789-CRIT",
+              "link": "\u003csome-link-to-somewhere\u003e"
+            }
           }
         ],
         "layerIndex": 0,
@@ -141,7 +145,11 @@
             "summary": "This is a crit CVE 3",
             "link": "\u003csome-link-to-nvd\u003e",
             "fixedBy": "1.3",
-            "severity": "CRITICAL_VULNERABILITY_SEVERITY"
+            "severity": "CRITICAL_VULNERABILITY_SEVERITY",
+            "advisory": {
+              "name": "ADVISORY-789-CRIT",
+              "link": "\u003csome-link-to-somewhere\u003e"
+            }
           }
         ],
         "layerIndex": 2,
@@ -189,7 +197,11 @@
             "summary": "This is a crit CVE 3",
             "link": "\u003csome-link-to-nvd\u003e",
             "fixedBy": "1.3",
-            "severity": "CRITICAL_VULNERABILITY_SEVERITY"
+            "severity": "CRITICAL_VULNERABILITY_SEVERITY",
+            "advisory": {
+              "name": "ADVISORY-789-CRIT",
+              "link": "\u003csome-link-to-somewhere\u003e"
+            }
           }
         ],
         "layerIndex": 2

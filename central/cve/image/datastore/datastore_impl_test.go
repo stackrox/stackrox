@@ -10,6 +10,7 @@ import (
 	storeMocks "github.com/stackrox/rox/central/cve/image/datastore/store/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	searchPkg "github.com/stackrox/rox/pkg/search"
@@ -25,6 +26,10 @@ var (
 )
 
 func TestImageCVEDataStore(t *testing.T) {
+	// TODO(ROX-28123): Remove deprecated datastore and tests
+	if features.FlattenCVEData.Enabled() {
+		t.Skip("This test is deprecated per ROX-25570.")
+	}
 	suite.Run(t, new(ImageCVEDataStoreSuite))
 }
 

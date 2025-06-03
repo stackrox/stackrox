@@ -280,6 +280,9 @@
         "databaseVersion": {
           "type": "string",
           "title": "version of the database"
+        },
+        "databaseIsExternal": {
+          "type": "boolean"
         }
       }
     },

@@ -1,5 +1,5 @@
 import React, { ReactElement, useState } from 'react';
-import { Select } from '@patternfly/react-core/deprecated';
+import { Select, SelectProps } from '@patternfly/react-core/deprecated';
 
 export type SelectSingleProps = {
     toggleIcon?: ReactElement;
@@ -16,6 +16,7 @@ export type SelectSingleProps = {
     onBlur?: React.FocusEventHandler<HTMLTextAreaElement>;
     menuAppendTo?: (() => HTMLElement) | 'inline' | 'parent';
     footer?: React.ReactNode;
+    maxHeight?: SelectProps['maxHeight'];
 };
 
 function SelectSingle({
@@ -33,6 +34,7 @@ function SelectSingle({
     onBlur,
     menuAppendTo,
     footer,
+    maxHeight = '300px',
 }: SelectSingleProps): ReactElement {
     const [isOpen, setIsOpen] = useState(false);
 
@@ -60,6 +62,7 @@ function SelectSingle({
             onBlur={onBlur}
             menuAppendTo={menuAppendTo}
             footer={footer}
+            maxHeight={maxHeight}
         >
             {children}
         </Select>

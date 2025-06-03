@@ -18,6 +18,7 @@ type CveFlat interface {
 	GetSeverity() *storage.VulnerabilitySeverity
 	GetTopCVSS() float32
 	GetTopNVDCVSS() float32
+	GetEPSSProbability() float32
 	GetAffectedImageCount() int
 	GetFirstDiscoveredInSystem() *time.Time
 	GetPublishDate() *time.Time

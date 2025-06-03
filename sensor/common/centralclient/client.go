@@ -288,7 +288,7 @@ func (c *Client) doHTTPRequest(ctx context.Context, method, route string, params
 func (c *Client) generateChallengeToken() (string, error) {
 	challenge, err := c.nonceGenerator.Nonce()
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "generating challenge token")
 	}
 
 	return challenge, nil

@@ -207,7 +207,7 @@ func (s *LocalScan) enrichImageForPullSource(ctx context.Context, pullSource *st
 	if err != nil {
 		log.Warnf("Error getting registries for pull source %q, skipping: %v", pullSource.GetName().GetFullName(), err)
 		errorList.AddError(err)
-		return nil, nil, errorList.ToError()
+		return nil, nil, pkgErrors.Wrap(errorList.ToError(), "getting registries for pull source")
 	}
 
 	log.Debugf("Using %d registries for enriching pull source %q", len(registries), pullSource.GetName().GetFullName())
@@ -227,7 +227,7 @@ func (s *LocalScan) enrichImageForPullSource(ctx context.Context, pullSource *st
 		log.Debugf("Metadata for image %q (%v) using pull source %q (%v): %v", srcName, srcID, pullName, pullID, pullSourceImage.GetMetadata())
 		return reg, pullSourceImage, nil
 	}
-	return nil, nil, errorList.ToError()
+	return nil, nil, pkgErrors.Wrap(errorList.ToError(), "enriching image metadata for pull source")
 }
 
 // getImageWithMetadata on success returns the registry used to pull metadata and an image with metadata populated.
@@ -431,7 +431,7 @@ func scanImage(ctx context.Context, image *storage.Image,
 	// Get the image analysis from the local Scanner.
 	scanResp, err := scannerClient.GetImageAnalysis(ctx, image, registry.Config(ctx))
 	if err != nil {
-		return nil, err
+		return nil, pkgErrors.Wrap(err, "getting image analysis from local scanner")
 	}
 	// Return an error indicating a non-successful scan result.
 	if scanResp.GetStatus() != scannerV1.ScanStatus_SUCCEEDED {
@@ -467,7 +467,11 @@ func createNoAuthImageRegistry(ctx context.Context, imgName *storage.ImageName, 
 		},
 	}
 
-	return regFactory.CreateRegistry(ii)
+	registry, err := regFactory.CreateRegistry(ii)
+	if err != nil {
+		return nil, pkgErrors.Wrapf(err, "creating no-auth image registry for %q", imgName.GetRegistry())
+	}
+	return registry, nil
 }
 
 // validateRequest will return an error if the request is invalid per local

@@ -350,8 +350,13 @@ func (w *deploymentWrap) populateImageMetadata(localImages set.StringSet, pods .
 			// If the ID already exists populate NotPullable, IsClusterLocal, and sync the registry
 			// and remote with the container runtime.
 			if image.GetId() != "" {
-				// Use the image ID from the pod's ContainerStatus.
-				image.NotPullable = !imageUtils.IsPullable(c.ImageID)
+				// If the image ID is populated then determine if the image is pullable,
+				// otherwise assume the image is pullable. An Image ID may be empty when a
+				// container is not ready yet per the container runtime.
+				if c.ImageID != "" {
+					image.NotPullable = !imageUtils.IsPullable(c.ImageID)
+				}
+
 				image.IsClusterLocal = localImages.Contains(image.GetName().GetFullName())
 				updateImageWithNewerImageName(image, runtimeImageName, true)
 				continue

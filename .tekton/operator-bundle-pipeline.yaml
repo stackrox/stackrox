@@ -49,7 +49,7 @@ spec:
         - name: name
           value: post-bigquery-metrics
         - name: bundle
-          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:3d1fbc306175dab80e346f65d871a0be7bfd1c0a2c81ac075cfe516bcdb21e82
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:a430d9d1be902a11cb55e25db21570da8922887bda1b9cb10c7d986166d57961
         - name: kind
           value: task
       resolver: bundles
@@ -119,7 +119,7 @@ spec:
   - name: operator-image-build-repo
     description: Repository where the (unreleased) operator image is pushed by its build pipeline.
     type: string
-    default: "quay.io/rhacs-eng/stackrox-operator"
+    default: "quay.io/rhacs-eng/release-operator"
   - name: operator-image-catalog-repo
     description: Repository within the Red Hat Container Catalog where the operator image is pushed to during the release.
     type: string
@@ -128,7 +128,7 @@ spec:
   - name: main-image-build-repo
     description: Repository where the (unreleased) main image is pushed by its build pipeline.
     type: string
-    default: "quay.io/rhacs-eng/main"
+    default: "quay.io/rhacs-eng/release-main"
   - name: main-image-catalog-repo
     description: Repository within the Red Hat Container Catalog where the main image is pushed to during the release.
     type: string
@@ -137,7 +137,7 @@ spec:
   - name: scanner-image-build-repo
     description: Repository where the (unreleased) Scanner V2 image is pushed by its build pipeline.
     type: string
-    default: "quay.io/rhacs-eng/scanner"
+    default: "quay.io/rhacs-eng/release-scanner"
   - name: scanner-image-catalog-repo
     description: Repository within the Red Hat Container Catalog where the Scanner V2 image is pushed to during the release.
     type: string
@@ -146,7 +146,7 @@ spec:
   - name: scanner-db-image-build-repo
     description: Repository where the (unreleased) Scanner V2 DB image is pushed by its build pipeline.
     type: string
-    default: "quay.io/rhacs-eng/scanner-db"
+    default: "quay.io/rhacs-eng/release-scanner-db"
   - name: scanner-db-image-catalog-repo
     description: Repository within the Red Hat Container Catalog where the Scanner V2 DB image is pushed to during the release.
     type: string
@@ -155,7 +155,7 @@ spec:
   - name: scanner-slim-image-build-repo
     description: Repository where the (unreleased) Scanner V2 slim image is pushed by its build pipeline.
     type: string
-    default: "quay.io/rhacs-eng/scanner-slim"
+    default: "quay.io/rhacs-eng/release-scanner-slim"
   - name: scanner-slim-image-catalog-repo
     description: Repository within the Red Hat Container Catalog where the Scanner V2 slim image is pushed to during the release.
     type: string
@@ -164,7 +164,7 @@ spec:
   - name: scanner-db-slim-image-build-repo
     description: Repository where the (unreleased) Scanner V2 DB slim image is pushed by its build pipeline.
     type: string
-    default: "quay.io/rhacs-eng/scanner-db-slim"
+    default: "quay.io/rhacs-eng/release-scanner-db-slim"
   - name: scanner-db-slim-image-catalog-repo
     description: Repository within the Red Hat Container Catalog where the Scanner V2 DB slim image is pushed to during the release.
     type: string
@@ -173,7 +173,7 @@ spec:
   - name: scanner-v4-image-build-repo
     description: Repository where the (unreleased) Scanner V4 image is pushed by its build pipeline.
     type: string
-    default: "quay.io/rhacs-eng/scanner-v4"
+    default: "quay.io/rhacs-eng/release-scanner-v4"
   - name: scanner-v4-image-catalog-repo
     description: Repository within the Red Hat Container Catalog where the Scanner V4 image is pushed to during the release.
     type: string
@@ -182,7 +182,7 @@ spec:
   - name: scanner-v4-db-image-build-repo
     description: Repository where the (unreleased) Scanner V4 DB image is pushed by its build pipeline.
     type: string
-    default: "quay.io/rhacs-eng/scanner-v4-db"
+    default: "quay.io/rhacs-eng/release-scanner-v4-db"
   - name: scanner-v4-db-image-catalog-repo
     description: Repository within the Red Hat Container Catalog where the Scanner V4 DB image is pushed to during the release.
     type: string
@@ -191,7 +191,7 @@ spec:
   - name: collector-image-build-repo
     description: Repository where the (unreleased) collector full image is pushed by its build pipeline.
     type: string
-    default: "quay.io/rhacs-eng/collector"
+    default: "quay.io/rhacs-eng/release-collector"
   - name: collector-image-catalog-repo
     description: Repository within the Red Hat Container Catalog where the collector full image is pushed to during the release.
     type: string
@@ -200,7 +200,7 @@ spec:
   - name: roxctl-image-build-repo
     description: Repository where the (unreleased) roxctl image is pushed by its build pipeline.
     type: string
-    default: "quay.io/rhacs-eng/roxctl"
+    default: "quay.io/rhacs-eng/release-roxctl"
   - name: roxctl-image-catalog-repo
     description: Repository within the Red Hat Container Catalog where the roxctl image is pushed to during the release.
     type: string
@@ -209,7 +209,7 @@ spec:
   - name: central-db-image-build-repo
     description: Repository where the (unreleased) Central DB image is pushed by its build pipeline.
     type: string
-    default: "quay.io/rhacs-eng/central-db"
+    default: "quay.io/rhacs-eng/release-central-db"
   - name: central-db-image-catalog-repo
     description: Repository within the Red Hat Container Catalog where the Central DB image is pushed to during the release.
     type: string
@@ -256,21 +256,7 @@ spec:
       - name: name
         value: init
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-init:0.2@sha256:7a24924417260b7094541caaedd2853dc8da08d4bb0968f710a400d3e8062063
-      - name: kind
-        value: task
-      resolver: bundles
-
-  - name: determine-image-expiration
-    params:
-      - name: DEFAULT_IMAGE_EXPIRES_AFTER
-        value: $(params.image-expires-after)
-    taskRef:
-      params:
-      - name: name
-        value: determine-image-expiration
-      - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:3d1fbc306175dab80e346f65d871a0be7bfd1c0a2c81ac075cfe516bcdb21e82
+        value: quay.io/konflux-ci/tekton-catalog/task-init:0.2@sha256:66e90d31e1386bf516fb548cd3e3f0082b5d0234b8b90dbf9e0d4684b70dbe1a
       - name: kind
         value: task
       resolver: bundles
@@ -306,6 +292,22 @@ spec:
     - name: basic-auth
       workspace: git-auth
 
+  - name: determine-image-expiration
+    params:
+      - name: DEFAULT_IMAGE_EXPIRES_AFTER
+        value: $(params.image-expires-after)
+      - name: SOURCE_ARTIFACT
+        value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
+    taskRef:
+      params:
+      - name: name
+        value: determine-image-expiration
+      - name: bundle
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:a430d9d1be902a11cb55e25db21570da8922887bda1b9cb10c7d986166d57961
+      - name: kind
+        value: task
+      resolver: bundles
+
   - name: determine-image-tag
     params:
     - name: TAG_SUFFIX
@@ -319,7 +321,7 @@ spec:
       - name: name
         value: determine-image-tag
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:3d1fbc306175dab80e346f65d871a0be7bfd1c0a2c81ac075cfe516bcdb21e82
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:a430d9d1be902a11cb55e25db21570da8922887bda1b9cb10c7d986166d57961
       - name: kind
         value: task
       resolver: bundles
@@ -339,7 +341,7 @@ spec:
       - name: name
         value: prefetch-dependencies-oci-ta
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-prefetch-dependencies-oci-ta:0.2@sha256:d48c621ae828a3cbca162e12ec166210d2d77a7ba23b0e5d60c4a1b94491adeb
+        value: quay.io/konflux-ci/tekton-catalog/task-prefetch-dependencies-oci-ta:0.2@sha256:1f6e2c9beba52d21c562ba1dea55f579f67e33b80099615bfd2043864896284d
       - name: kind
         value: task
       resolver: bundles
@@ -356,7 +358,7 @@ spec:
       - name: name
         value: wait-for-image
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:3d1fbc306175dab80e346f65d871a0be7bfd1c0a2c81ac075cfe516bcdb21e82
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:a430d9d1be902a11cb55e25db21570da8922887bda1b9cb10c7d986166d57961
       - name: kind
         value: task
       resolver: bundles
@@ -483,7 +485,7 @@ spec:
       - name: name
         value: buildah-oci-ta
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-buildah-oci-ta:0.4@sha256:6ac9d16f598c14a4b56e662eccda0a438e94aa8f87dd27a3ea0ff1abc6e00c66
+        value: quay.io/konflux-ci/tekton-catalog/task-buildah-oci-ta:0.4@sha256:cfd711876f21a55bb12c3c5745ecccf4429f2a33ba634f80d8c1eedce7fe2d26
       - name: kind
         value: task
       resolver: bundles
@@ -504,7 +506,7 @@ spec:
       - name: name
         value: apply-tags
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-apply-tags:0.1@sha256:3f89ba89cacf8547261b5ce064acce81bfe470c8ace127794d0e90aebc8c347d
+        value: quay.io/konflux-ci/tekton-catalog/task-apply-tags:0.1@sha256:1c6f673fe100a49f58aaef62580c8adf0c397790964f4e7bac7fcd3f4d07c92e
       - name: kind
         value: task
       resolver: bundles
@@ -522,7 +524,7 @@ spec:
       - name: name
         value: source-build-oci-ta
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-source-build-oci-ta:0.2@sha256:56fa2cbfc04bad4765b7fe1fa8022587f4042d4e8533bb5f65311d46b43226ee
+        value: quay.io/konflux-ci/tekton-catalog/task-source-build-oci-ta:0.2@sha256:c5e56643c0f5e19409e86c8fd4de4348413b6f10456aa0875498d5c63bf6ef0e
       - name: kind
         value: task
       resolver: bundles
@@ -545,7 +547,7 @@ spec:
       - name: name
         value: deprecated-image-check
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-deprecated-image-check:0.5@sha256:eb8136b543147b4a3e88ca3cc661ca6a11e303f35f0db44059f69151beea8496
+        value: quay.io/konflux-ci/tekton-catalog/task-deprecated-image-check:0.5@sha256:ecd33669676b3a193ff4c2c6223cb912cc1b0cf5cc36e080eaec7718500272cf
       - name: kind
         value: task
       resolver: bundles
@@ -565,7 +567,7 @@ spec:
       - name: name
         value: clair-scan
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-clair-scan:0.2@sha256:7c73e2beca9b8306387efeaf775831440ec799b05a5f5c008a65bb941a1e91f6
+        value: quay.io/konflux-ci/tekton-catalog/task-clair-scan:0.2@sha256:878ae247ffc58d95a9ac68e4d658ef91ef039363e03e65a386bc0ead02d9d7d8
       - name: kind
         value: task
       resolver: bundles
@@ -613,7 +615,7 @@ spec:
       - name: name
         value: sast-unicode-check-oci-ta
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-sast-unicode-check-oci-ta:0.2@sha256:df185dbe4e2852668f9c46f938dd752e90ea9c79696363378435a6499596c319
+        value: quay.io/konflux-ci/tekton-catalog/task-sast-unicode-check-oci-ta:0.2@sha256:54d50169b4860b90d38d41b00a973489b1db83612ae4aa40f1bdf0a151bff80d
       - name: kind
         value: task
       resolver: bundles
@@ -637,7 +639,7 @@ spec:
       - name: name
         value: sast-snyk-check-oci-ta
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-sast-snyk-check-oci-ta:0.4@sha256:89aead32dc21404e4e0913be9668bdd2eea795db3e4caa762fb619044e479cb8
+        value: quay.io/konflux-ci/tekton-catalog/task-sast-snyk-check-oci-ta:0.4@sha256:6078ec8ec7caacbb8203138fcaa63db24e88dbf838544340bb0752d5b69f20ae
       - name: kind
         value: task
       resolver: bundles
@@ -657,7 +659,7 @@ spec:
       - name: name
         value: clamav-scan
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-clamav-scan:0.2@sha256:59094118aa07d5b0199565c4e0b2d0f4feb9a4741877c8716877572e2c4804f9
+        value: quay.io/konflux-ci/tekton-catalog/task-clamav-scan:0.2@sha256:98d94290d6f21b6e231485326e3629bbcdec75c737b84e05ac9eac78f9a2c8b4
       - name: kind
         value: task
       resolver: bundles
@@ -677,7 +679,7 @@ spec:
       - name: name
         value: rpms-signature-scan
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-rpms-signature-scan:0.2@sha256:b32c66b96d911c657d54e0b4370fb861ce1d7e3719d98540eba65d942c0bf99e
+        value: quay.io/konflux-ci/tekton-catalog/task-rpms-signature-scan:0.2@sha256:1bac33bd516072d5f4432efafd9dc4d86cdbb8eea8112cea5662984a0ef80e27
       - name: kind
         value: task
       resolver: bundles
@@ -703,7 +705,7 @@ spec:
       - name: name
         value: push-dockerfile-oci-ta
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-push-dockerfile-oci-ta:0.1@sha256:278f84550844c1c050a65536799f4b54e7c203e0ac51393aa75379dd974c82e9
+        value: quay.io/konflux-ci/tekton-catalog/task-push-dockerfile-oci-ta:0.1@sha256:d0ee13ab3d9564f7ee806a8ceaced934db493a3a40e11ff6db3a912b8bbace95
       - name: kind
         value: task
       resolver: bundles
@@ -827,7 +829,7 @@ spec:
       - name: name
         value: create-snapshot
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:3d1fbc306175dab80e346f65d871a0be7bfd1c0a2c81ac075cfe516bcdb21e82
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:a430d9d1be902a11cb55e25db21570da8922887bda1b9cb10c7d986166d57961
       - name: kind
         value: task
       resolver: bundles

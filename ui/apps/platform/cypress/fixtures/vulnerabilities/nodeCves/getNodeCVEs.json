@@ -20,6 +20,10 @@
                         "total": 0,
                         "__typename": "ResourceCountByFixability"
                     },
+                    "unknown": {
+                        "total": 0,
+                        "__typename": "ResourceCountByFixability"
+                    },
                     "__typename": "ResourceCountByCVESeverity"
                 },
                 "topCVSS": 7.099999904632568,
@@ -55,6 +59,10 @@
                         "total": 0,
                         "__typename": "ResourceCountByFixability"
                     },
+                    "unknown": {
+                        "total": 0,
+                        "__typename": "ResourceCountByFixability"
+                    },
                     "__typename": "ResourceCountByCVESeverity"
                 },
                 "topCVSS": 8.600000381469727,
@@ -87,6 +95,10 @@
                         "__typename": "ResourceCountByFixability"
                     },
                     "low": {
+                        "total": 0,
+                        "__typename": "ResourceCountByFixability"
+                    },
+                    "unknown": {
                         "total": 0,
                         "__typename": "ResourceCountByFixability"
                     },

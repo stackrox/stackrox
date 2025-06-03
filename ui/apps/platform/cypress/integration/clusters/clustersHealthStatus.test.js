@@ -73,7 +73,7 @@ describe('Clusters Health Status', () => {
                 cloudProvider: 'GCP us-west1',
                 clusterStatus: 'Unhealthy',
                 sensorUpgrade: 'Up to date with Central',
-                credentialExpiration: 'in 29 days on 09/29/2020',
+                credentialExpiration: 'in 29 days on Sep 29, 2020',
                 clusterDeletion: 'Not applicable',
             },
             expectedInSide: {

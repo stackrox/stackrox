@@ -745,9 +745,9 @@ func (s *complianceScanConfigDataStoreTestSuite) TestGetProfilesNames() {
 		} else {
 			s.Require().ElementsMatch(tc.expectedRecord, profiles)
 		}
-		count, err := s.dataStore.CountDistinctProfiles(tc.testContext, tc.countQuery)
+		count, err := s.dataStore.DistinctProfiles(tc.testContext, tc.countQuery)
 		s.Require().NoError(err)
-		s.Require().Equal(tc.expectedCount, count)
+		s.Require().Len(count, tc.expectedCount)
 	}
 }
 

@@ -8,6 +8,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
+	"github.com/stackrox/rox/central/views/imagecomponentflat"
 	"github.com/stackrox/rox/central/views/imagecveflat"
 	imagesView "github.com/stackrox/rox/central/views/images"
 	"github.com/stackrox/rox/generated/storage"
@@ -72,6 +73,7 @@ func (s *GraphQLImageComponentV2TestSuite) SetupSuite() {
 		CreateTestImageCVEV2Datastore(s.T(), s.testDB),
 		CreateTestDeploymentDatastore(s.T(), s.testDB, mockCtrl, imageDataStore),
 		imagecveflat.NewCVEFlatView(s.testDB.DB),
+		imagecomponentflat.NewComponentFlatView(s.testDB.DB),
 	)
 	s.resolver = resolver
 

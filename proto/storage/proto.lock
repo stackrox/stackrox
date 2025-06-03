@@ -3837,6 +3837,18 @@
               {
                 "name": "FAILURE",
                 "integer": 4
+              },
+              {
+                "name": "PARTIAL_ERROR",
+                "integer": 5
+              },
+              {
+                "name": "PARTIAL_SCAN_ERROR_DOWNLOAD",
+                "integer": 6
+              },
+              {
+                "name": "PARTIAL_SCAN_ERROR_EMAIL",
+                "integer": 7
               }
             ]
           },
@@ -4434,6 +4446,11 @@
                 "id": 19,
                 "name": "rule_ref_id",
                 "type": "string"
+              },
+              {
+                "id": 20,
+                "name": "last_started_time",
+                "type": "google.protobuf.Timestamp"
               }
             ],
             "maps": [
@@ -4799,6 +4816,12 @@
                 "id": 8,
                 "name": "report_data",
                 "type": "ComplianceOperatorReportData"
+              },
+              {
+                "id": 9,
+                "name": "failed_clusters",
+                "type": "FailedCluster",
+                "is_repeated": true
               }
             ],
             "messages": [
@@ -4814,6 +4837,32 @@
                     "id": 2,
                     "name": "last_started_time",
                     "type": "google.protobuf.Timestamp"
+                  }
+                ]
+              },
+              {
+                "name": "FailedCluster",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "cluster_id",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "cluster_name",
+                    "type": "string"
+                  },
+                  {
+                    "id": 3,
+                    "name": "reasons",
+                    "type": "string",
+                    "is_repeated": true
+                  },
+                  {
+                    "id": 4,
+                    "name": "operator_version",
+                    "type": "string"
                   }
                 ]
               }
@@ -6003,6 +6052,21 @@
             ]
           },
           {
+            "name": "Advisory",
+            "fields": [
+              {
+                "id": 1,
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "link",
+                "type": "string"
+              }
+            ]
+          },
+          {
             "name": "ImageCVE",
             "fields": [
               {
@@ -6164,12 +6228,7 @@
               {
                 "id": 14,
                 "name": "advisory",
-                "type": "string"
-              },
-              {
-                "id": 15,
-                "name": "advisory_link",
-                "type": "string"
+                "type": "storage.Advisory"
               }
             ]
           },
@@ -14403,6 +14462,11 @@
                 "id": 10,
                 "name": "include_epss_probability",
                 "type": "bool"
+              },
+              {
+                "id": 11,
+                "name": "include_advisory",
+                "type": "bool"
               }
             ]
           },
@@ -18276,7 +18340,7 @@
               {
                 "id": 24,
                 "name": "advisory",
-                "type": "Advisory"
+                "type": "storage.Advisory"
               },
               {
                 "id": 2,
@@ -18429,21 +18493,6 @@
                 "id": 7,
                 "name": "snooze_expiry",
                 "type": "google.protobuf.Timestamp"
-              }
-            ]
-          },
-          {
-            "name": "Advisory",
-            "fields": [
-              {
-                "id": 1,
-                "name": "name",
-                "type": "string"
-              },
-              {
-                "id": 2,
-                "name": "link",
-                "type": "string"
               }
             ]
           }

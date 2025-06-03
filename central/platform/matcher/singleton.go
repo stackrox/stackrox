@@ -1,6 +1,9 @@
 package matcher
 
-import "github.com/stackrox/rox/pkg/sync"
+import (
+	configDS "github.com/stackrox/rox/central/config/datastore"
+	"github.com/stackrox/rox/pkg/sync"
+)
 
 var (
 	once         sync.Once
@@ -8,7 +11,7 @@ var (
 )
 
 func initialize() {
-	soleInstance = New()
+	soleInstance = New(configDS.Singleton())
 }
 
 // Singleton returns the sole instance of the PlatformMatcher.

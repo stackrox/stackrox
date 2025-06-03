@@ -2,7 +2,13 @@ import * as yup from 'yup';
 
 import { VulnerabilitySeverity } from 'types/cve.proto';
 
-export const vulnerabilitySeverityLabels = ['Critical', 'Important', 'Moderate', 'Low'] as const;
+export const vulnerabilitySeverityLabels = [
+    'Critical',
+    'Important',
+    'Moderate',
+    'Low',
+    'Unknown',
+] as const;
 export type VulnerabilitySeverityLabel = (typeof vulnerabilitySeverityLabels)[number];
 export function isVulnerabilitySeverityLabel(value: unknown): value is VulnerabilitySeverityLabel {
     return vulnerabilitySeverityLabels.some((severity) => severity === value);
@@ -81,3 +87,18 @@ export type ObservedCveMode = (typeof observedCveModeValues)[number];
 export function isObservedCveMode(value: unknown): value is ObservedCveMode {
     return observedCveModeValues.some((mode) => mode === value);
 }
+
+export type VerifiedStatus =
+    | 'CORRUPTED_SIGNATURE'
+    | 'FAILED_VERIFICATION'
+    | 'GENERIC_ERROR'
+    | 'INVALID_SIGNATURE_ALGO'
+    | 'UNSET'
+    | 'VERIFIED';
+
+export type SignatureVerificationResult = {
+    status: VerifiedStatus;
+    verificationTime: string | undefined; // ISO 8601 formatted date time.
+    verifiedImageReferences: string[];
+    verifierId: string; // Signature integration id of the form `io.stackrox.signatureintegration.<uuid>`.
+};

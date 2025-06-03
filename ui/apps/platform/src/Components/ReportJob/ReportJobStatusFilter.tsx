@@ -3,27 +3,7 @@ import { SelectList, SelectOption } from '@patternfly/react-core';
 import { FilterIcon } from '@patternfly/react-icons';
 
 import CheckboxSelect from 'Components/CheckboxSelect';
-import { ValueOf } from 'utils/type.utils';
-
-export const reportJobStatuses = {
-    WAITING: 'WAITING',
-    PREPARING: 'PREPARING',
-    DOWNLOAD_GENERATED: 'DOWNLOAD_GENERATED',
-    EMAIL_DELIVERED: 'EMAIL_DELIVERED',
-    ERROR: 'ERROR',
-    PARTIAL_ERROR: 'PARTIAL_ERROR',
-} as const;
-
-export type ReportJobStatus = ValueOf<typeof reportJobStatuses>;
-
-export const reportJobStatusLabels: Record<ReportJobStatus, string> = {
-    WAITING: 'Waiting',
-    PREPARING: 'Preparing',
-    DOWNLOAD_GENERATED: 'Download generated',
-    EMAIL_DELIVERED: 'Email delivered',
-    ERROR: 'Error',
-    PARTIAL_ERROR: 'Partial error',
-};
+import { ReportJobStatus, reportJobStatuses, reportJobStatusLabels } from './types';
 
 function isReportJobStatus(value: string): value is ReportJobStatus {
     return value in reportJobStatuses;

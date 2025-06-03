@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv"
 	pkgTestUtils "github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestAuthz(t *testing.T) {
@@ -23,20 +24,20 @@ func TestBuildNames(t *testing.T) {
 	srcImage := &storage.ImageName{FullName: "si"}
 
 	t.Run("nil metadata", func(t *testing.T) {
-		names := buildNames(srcImage, nil)
+		names := buildNames(srcImage, nil, nil)
 		assert.Len(t, names, 1)
 		assert.Equal(t, srcImage.GetFullName(), names[0].GetFullName())
 	})
 
 	t.Run("empty metadata", func(t *testing.T) {
-		names := buildNames(srcImage, &storage.ImageMetadata{})
+		names := buildNames(srcImage, nil, &storage.ImageMetadata{})
 		assert.Len(t, names, 1)
 		assert.Equal(t, srcImage.GetFullName(), names[0].GetFullName())
 	})
 
 	t.Run("metadata with empty data source", func(t *testing.T) {
 		metadata := &storage.ImageMetadata{DataSource: &storage.DataSource{}}
-		names := buildNames(srcImage, metadata)
+		names := buildNames(srcImage, nil, metadata)
 		assert.Len(t, names, 1)
 		assert.Equal(t, srcImage.GetFullName(), names[0].GetFullName())
 	})
@@ -44,7 +45,7 @@ func TestBuildNames(t *testing.T) {
 	t.Run("metadata with mirror", func(t *testing.T) {
 		mirror := "example.com/mirror/image:latest"
 		metadata := &storage.ImageMetadata{DataSource: &storage.DataSource{Mirror: mirror}}
-		names := buildNames(srcImage, metadata)
+		names := buildNames(srcImage, nil, metadata)
 		assert.Len(t, names, 2)
 		assert.Equal(t, srcImage.GetFullName(), names[0].GetFullName())
 		assert.Equal(t, mirror, names[1].GetFullName())
@@ -53,9 +54,27 @@ func TestBuildNames(t *testing.T) {
 	t.Run("metadata with invalid mirror", func(t *testing.T) {
 		mirror := "example.com/mirror/image@sha256:bad"
 		metadata := &storage.ImageMetadata{DataSource: &storage.DataSource{Mirror: mirror}}
-		names := buildNames(srcImage, metadata)
+		names := buildNames(srcImage, nil, metadata)
 		assert.Len(t, names, 1)
 		assert.Equal(t, srcImage.GetFullName(), names[0].GetFullName())
+	})
+
+	t.Run("existing names and mirror", func(t *testing.T) {
+		existingNames := []*storage.ImageName{
+			{FullName: "si"}, // Dupe should be omitted
+			{FullName: "e1"},
+			{FullName: "e2"},
+			{FullName: "si"}, // Dupe should be omitted
+		}
+		mirror := "example.com/mirror/image:latest"
+		metadata := &storage.ImageMetadata{DataSource: &storage.DataSource{Mirror: mirror}}
+
+		names := buildNames(srcImage, existingNames, metadata)
+		require.Len(t, names, 4)
+		assert.Equal(t, srcImage.GetFullName(), names[0].GetFullName())
+		assert.Equal(t, existingNames[1].GetFullName(), names[1].GetFullName())
+		assert.Equal(t, existingNames[2].GetFullName(), names[2].GetFullName())
+		assert.Equal(t, mirror, names[3].GetFullName())
 	})
 }
 

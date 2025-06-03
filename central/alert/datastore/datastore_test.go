@@ -9,7 +9,7 @@ import (
 	storeMocks "github.com/stackrox/rox/central/alert/datastore/internal/store/mocks"
 	_ "github.com/stackrox/rox/central/alert/mappings"
 	"github.com/stackrox/rox/central/alerttest"
-	platformmatcher "github.com/stackrox/rox/central/platform/matcher"
+	matcherMocks "github.com/stackrox/rox/central/platform/matcher/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
@@ -36,6 +36,7 @@ type alertDataStoreTestSuite struct {
 	hasWriteCtx context.Context
 
 	dataStore DataStore
+	matcher   *matcherMocks.MockPlatformMatcher
 	storage   *storeMocks.MockStore
 	searcher  *searchMocks.MockSearcher
 
@@ -55,8 +56,9 @@ func (s *alertDataStoreTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 	s.storage = storeMocks.NewMockStore(s.mockCtrl)
 	s.searcher = searchMocks.NewMockSearcher(s.mockCtrl)
+	s.matcher = matcherMocks.NewMockPlatformMatcher(s.mockCtrl)
 
-	s.dataStore = New(s.storage, s.searcher, platformmatcher.Singleton())
+	s.dataStore = New(s.storage, s.searcher, s.matcher)
 }
 
 func (s *alertDataStoreTestSuite) TestSearchAlerts() {
@@ -90,6 +92,7 @@ func (s *alertDataStoreTestSuite) TestSearchResolved() {
 
 	s.storage.EXPECT().GetMany(gomock.Any(), []string{alerttest.FakeAlertID}).Return([]*storage.Alert{fakeAlert}, nil, nil)
 	s.storage.EXPECT().UpsertMany(gomock.Any(), gomock.Any()).Return(nil)
+	s.matcher.EXPECT().MatchAlert(gomock.Any())
 	_, err := s.dataStore.MarkAlertsResolvedBatch(s.hasWriteCtx, alerttest.FakeAlertID)
 	s.NoError(err)
 
@@ -105,6 +108,7 @@ func (s *alertDataStoreTestSuite) TestSearchRawResolvedAlerts() {
 
 	s.storage.EXPECT().GetMany(gomock.Any(), []string{alerttest.FakeAlertID}).Return([]*storage.Alert{fakeAlert}, nil, nil)
 	s.storage.EXPECT().UpsertMany(gomock.Any(), gomock.Any()).Return(nil)
+	s.matcher.EXPECT().MatchAlert(gomock.Any())
 	_, err := s.dataStore.MarkAlertsResolvedBatch(s.hasWriteCtx, alerttest.FakeAlertID)
 	s.NoError(err)
 
@@ -121,6 +125,7 @@ func (s *alertDataStoreTestSuite) TestSearchResolvedListAlerts() {
 
 	s.storage.EXPECT().GetMany(gomock.Any(), []string{alerttest.FakeAlertID}).Return([]*storage.Alert{fakeAlert}, nil, nil)
 	s.storage.EXPECT().UpsertMany(gomock.Any(), gomock.Any()).Return(nil)
+	s.matcher.EXPECT().MatchAlert(gomock.Any())
 	_, err := s.dataStore.MarkAlertsResolvedBatch(s.hasWriteCtx, alerttest.FakeAlertID)
 	s.NoError(err)
 
@@ -155,6 +160,7 @@ func (s *alertDataStoreTestSuite) TestCountAlertsResolved_Success() {
 
 	s.storage.EXPECT().GetMany(gomock.Any(), []string{alerttest.FakeAlertID}).Return([]*storage.Alert{fakeAlert}, nil, nil)
 	s.storage.EXPECT().UpsertMany(gomock.Any(), gomock.Any()).Return(nil)
+	s.matcher.EXPECT().MatchAlert(gomock.Any())
 	_, err := s.dataStore.MarkAlertsResolvedBatch(s.hasWriteCtx, alerttest.FakeAlertID)
 	s.NoError(err)
 
@@ -177,6 +183,7 @@ func (s *alertDataStoreTestSuite) TestCountAlerts_Error() {
 func (s *alertDataStoreTestSuite) TestAddAlert() {
 	fakeAlert := alerttest.NewFakeAlert()
 	s.storage.EXPECT().UpsertMany(gomock.Any(), []*storage.Alert{fakeAlert}).Return(errFake)
+	s.matcher.EXPECT().MatchAlert(gomock.Any())
 
 	err := s.dataStore.UpsertAlert(s.hasWriteCtx, alerttest.NewFakeAlert())
 
@@ -186,6 +193,7 @@ func (s *alertDataStoreTestSuite) TestAddAlert() {
 func (s *alertDataStoreTestSuite) TestAddAlertWhenUpsertFails() {
 	fakeAlert := alerttest.NewFakeAlert()
 	s.storage.EXPECT().UpsertMany(gomock.Any(), []*storage.Alert{fakeAlert}).Return(errFake)
+	s.matcher.EXPECT().MatchAlert(gomock.Any())
 
 	err := s.dataStore.UpsertAlert(s.hasWriteCtx, alerttest.NewFakeAlert())
 
@@ -197,6 +205,7 @@ func (s *alertDataStoreTestSuite) TestMarkAlertStaleBatch() {
 
 	s.storage.EXPECT().GetMany(gomock.Any(), []string{alerttest.FakeAlertID}).Return([]*storage.Alert{fakeAlert}, nil, nil)
 	s.storage.EXPECT().UpsertMany(gomock.Any(), gomock.Any()).Return(nil)
+	s.matcher.EXPECT().MatchAlert(gomock.Any())
 	_, err := s.dataStore.MarkAlertsResolvedBatch(s.hasWriteCtx, alerttest.FakeAlertID)
 	s.NoError(err)
 
@@ -228,6 +237,7 @@ func (s *alertDataStoreTestSuite) TestKeyIndexing() {
 
 	s.storage.EXPECT().GetMany(gomock.Any(), []string{fakeAlert.GetId()}).Return([]*storage.Alert{fakeAlert}, nil, nil)
 	s.storage.EXPECT().UpsertMany(gomock.Any(), gomock.Any()).Return(nil)
+	s.matcher.EXPECT().MatchAlert(gomock.Any())
 	_, err := s.dataStore.MarkAlertsResolvedBatch(s.hasWriteCtx, fakeAlert.GetId())
 	s.NoError(err)
 }
@@ -275,6 +285,7 @@ func (s *alertDataStoreTestSuite) TestUpsert_PlatformComponentAndEntityTypeAssig
 	}
 
 	s.storage.EXPECT().UpsertMany(gomock.Any(), []*storage.Alert{expectedAlert}).Return(nil).Times(1)
+	s.matcher.EXPECT().MatchAlert(gomock.Any()).Times(1).Return(false, nil).Times(1)
 	err := s.dataStore.UpsertAlert(s.hasWriteCtx, alert)
 	s.Require().NoError(err)
 
@@ -291,6 +302,7 @@ func (s *alertDataStoreTestSuite) TestUpsert_PlatformComponentAndEntityTypeAssig
 	}
 
 	s.storage.EXPECT().UpsertMany(gomock.Any(), []*storage.Alert{expectedAlert}).Return(nil).Times(1)
+	s.matcher.EXPECT().MatchAlert(gomock.Any()).Times(1).Return(false, nil).Times(1)
 	err = s.dataStore.UpsertAlert(s.hasWriteCtx, alert)
 	s.Require().NoError(err)
 
@@ -307,6 +319,7 @@ func (s *alertDataStoreTestSuite) TestUpsert_PlatformComponentAndEntityTypeAssig
 	}
 
 	s.storage.EXPECT().UpsertMany(gomock.Any(), []*storage.Alert{expectedAlert}).Return(nil).Times(1)
+	s.matcher.EXPECT().MatchAlert(gomock.Any()).Times(1).Return(false, nil).Times(1)
 	err = s.dataStore.UpsertAlert(s.hasWriteCtx, alert)
 	s.Require().NoError(err)
 
@@ -323,6 +336,7 @@ func (s *alertDataStoreTestSuite) TestUpsert_PlatformComponentAndEntityTypeAssig
 	}
 
 	s.storage.EXPECT().UpsertMany(gomock.Any(), []*storage.Alert{expectedAlert}).Return(nil).Times(1)
+	s.matcher.EXPECT().MatchAlert(gomock.Any()).Times(1).Return(true, nil).Times(1)
 	err = s.dataStore.UpsertAlert(s.hasWriteCtx, alert)
 	s.Require().NoError(err)
 }
@@ -340,6 +354,7 @@ type alertDataStoreWithSACTestSuite struct {
 	hasWriteCtx context.Context
 
 	dataStore DataStore
+	matcher   *matcherMocks.MockPlatformMatcher
 	storage   *storeMocks.MockStore
 	searcher  *searchMocks.MockSearcher
 
@@ -360,11 +375,13 @@ func (s *alertDataStoreWithSACTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 	s.storage = storeMocks.NewMockStore(s.mockCtrl)
 	s.searcher = searchMocks.NewMockSearcher(s.mockCtrl)
-	s.dataStore = New(s.storage, s.searcher, platformmatcher.Singleton())
+	s.matcher = matcherMocks.NewMockPlatformMatcher(s.mockCtrl)
+	s.dataStore = New(s.storage, s.searcher, s.matcher)
 }
 
 func (s *alertDataStoreWithSACTestSuite) TestAddAlertEnforced() {
 	s.storage.EXPECT().Upsert(gomock.Any(), alerttest.NewFakeAlert()).Times(0)
+	s.matcher.EXPECT().MatchAlert(gomock.Any()).Times(0)
 	err := s.dataStore.UpsertAlert(s.hasReadCtx, alerttest.NewFakeAlert())
 
 	s.ErrorIs(err, sac.ErrResourceAccessDenied)
@@ -375,6 +392,7 @@ func (s *alertDataStoreWithSACTestSuite) TestMarkAlertStaleBatchEnforced() {
 
 	s.storage.EXPECT().GetMany(gomock.Any(), []string{alerttest.FakeAlertID}).Return([]*storage.Alert{fakeAlert}, nil, nil)
 	s.storage.EXPECT().UpsertMany(gomock.Any(), gomock.Any()).Times(0)
+	s.matcher.EXPECT().MatchAlert(gomock.Any()).Times(0)
 
 	_, err := s.dataStore.MarkAlertsResolvedBatch(s.hasReadCtx, alerttest.FakeAlertID)
 	s.ErrorIs(err, sac.ErrResourceAccessDenied)

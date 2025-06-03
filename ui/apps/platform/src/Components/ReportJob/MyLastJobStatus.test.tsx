@@ -117,7 +117,7 @@ describe('MyLastJobStatus', () => {
             />
         );
 
-        const statusTextElement = screen.getByText('Ready for download');
+        const statusTextElement = screen.getByText('Report ready for download');
         const statusIconElement = screen.getByTitle('Report download was successfully prepared');
 
         expect(statusTextElement).toBeInTheDocument();
@@ -147,7 +147,7 @@ describe('MyLastJobStatus', () => {
             />
         );
 
-        const statusTextElement = screen.getByText('Error');
+        const statusTextElement = screen.getByText('Report failed to generate');
         const statusIconElement = screen.getByRole('img', { name: 'Report run was unsuccessful' });
 
         expect(statusTextElement).toBeInTheDocument();

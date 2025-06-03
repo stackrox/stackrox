@@ -68,6 +68,58 @@ func (ExternalIpsEnabled) EnumDescriptor() ([]byte, []int) {
 	return file_internalapi_sensor_collector_proto_rawDescGZIP(), []int{0}
 }
 
+type ExternalIpsDirection int32
+
+const (
+	ExternalIpsDirection_UNSPECIFIED ExternalIpsDirection = 0
+	ExternalIpsDirection_BOTH        ExternalIpsDirection = 1
+	ExternalIpsDirection_INGRESS     ExternalIpsDirection = 2
+	ExternalIpsDirection_EGRESS      ExternalIpsDirection = 3
+)
+
+// Enum value maps for ExternalIpsDirection.
+var (
+	ExternalIpsDirection_name = map[int32]string{
+		0: "UNSPECIFIED",
+		1: "BOTH",
+		2: "INGRESS",
+		3: "EGRESS",
+	}
+	ExternalIpsDirection_value = map[string]int32{
+		"UNSPECIFIED": 0,
+		"BOTH":        1,
+		"INGRESS":     2,
+		"EGRESS":      3,
+	}
+)
+
+func (x ExternalIpsDirection) Enum() *ExternalIpsDirection {
+	p := new(ExternalIpsDirection)
+	*p = x
+	return p
+}
+
+func (x ExternalIpsDirection) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ExternalIpsDirection) Descriptor() protoreflect.EnumDescriptor {
+	return file_internalapi_sensor_collector_proto_enumTypes[1].Descriptor()
+}
+
+func (ExternalIpsDirection) Type() protoreflect.EnumType {
+	return &file_internalapi_sensor_collector_proto_enumTypes[1]
+}
+
+func (x ExternalIpsDirection) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use ExternalIpsDirection.Descriptor instead.
+func (ExternalIpsDirection) EnumDescriptor() ([]byte, []int) {
+	return file_internalapi_sensor_collector_proto_rawDescGZIP(), []int{1}
+}
+
 // A request message sent by collector to register with Sensor. Typically the first message in any streams.
 type CollectorRegisterRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -314,6 +366,7 @@ func (x *ProcessSignal) GetLineageInfo() []*ProcessSignal_LineageInfo {
 type CollectorConfig_ExternalIPs struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Enabled       ExternalIpsEnabled     `protobuf:"varint,1,opt,name=enabled,proto3,enum=sensor.ExternalIpsEnabled" json:"enabled,omitempty"`
+	Direction     ExternalIpsDirection   `protobuf:"varint,2,opt,name=direction,proto3,enum=sensor.ExternalIpsDirection" json:"direction,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -353,6 +406,13 @@ func (x *CollectorConfig_ExternalIPs) GetEnabled() ExternalIpsEnabled {
 		return x.Enabled
 	}
 	return ExternalIpsEnabled_DISABLED
+}
+
+func (x *CollectorConfig_ExternalIPs) GetDirection() ExternalIpsDirection {
+	if x != nil {
+		return x.Direction
+	}
+	return ExternalIpsDirection_UNSPECIFIED
 }
 
 type CollectorConfig_Networking struct {
@@ -467,13 +527,14 @@ const file_internalapi_sensor_collector_proto_rawDesc = "" +
 	"\x18CollectorRegisterRequest\x12\x1a\n" +
 	"\bhostname\x18\x01 \x01(\tR\bhostname\x12\x1f\n" +
 	"\vinstance_id\x18\x02 \x01(\tR\n" +
-	"instanceId\"\xae\x02\n" +
+	"instanceId\"\xea\x02\n" +
 	"\x0fCollectorConfig\x12B\n" +
 	"\n" +
 	"networking\x18\x01 \x01(\v2\".sensor.CollectorConfig.NetworkingR\n" +
-	"networking\x1aC\n" +
+	"networking\x1a\x7f\n" +
 	"\vExternalIPs\x124\n" +
-	"\aenabled\x18\x01 \x01(\x0e2\x1a.sensor.ExternalIpsEnabledR\aenabled\x1a\x91\x01\n" +
+	"\aenabled\x18\x01 \x01(\x0e2\x1a.sensor.ExternalIpsEnabledR\aenabled\x12:\n" +
+	"\tdirection\x18\x02 \x01(\x0e2\x1c.sensor.ExternalIpsDirectionR\tdirection\x1a\x91\x01\n" +
 	"\n" +
 	"Networking\x12F\n" +
 	"\fexternal_ips\x18\x01 \x01(\v2#.sensor.CollectorConfig.ExternalIPsR\vexternalIps\x12;\n" +
@@ -497,7 +558,13 @@ const file_internalapi_sensor_collector_proto_rawDesc = "" +
 	"\x15parent_exec_file_path\x18\x02 \x01(\tR\x12parentExecFilePath*/\n" +
 	"\x12ExternalIpsEnabled\x12\f\n" +
 	"\bDISABLED\x10\x00\x12\v\n" +
-	"\aENABLED\x10\x01B Z\x1b./internalapi/sensor;sensor\xf8\x01\x01b\x06proto3"
+	"\aENABLED\x10\x01*J\n" +
+	"\x14ExternalIpsDirection\x12\x0f\n" +
+	"\vUNSPECIFIED\x10\x00\x12\b\n" +
+	"\x04BOTH\x10\x01\x12\v\n" +
+	"\aINGRESS\x10\x02\x12\n" +
+	"\n" +
+	"\x06EGRESS\x10\x03B Z\x1b./internalapi/sensor;sensor\xf8\x01\x01b\x06proto3"
 
 var (
 	file_internalapi_sensor_collector_proto_rawDescOnce sync.Once
@@ -511,29 +578,31 @@ func file_internalapi_sensor_collector_proto_rawDescGZIP() []byte {
 	return file_internalapi_sensor_collector_proto_rawDescData
 }
 
-var file_internalapi_sensor_collector_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_internalapi_sensor_collector_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_internalapi_sensor_collector_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_internalapi_sensor_collector_proto_goTypes = []any{
 	(ExternalIpsEnabled)(0),             // 0: sensor.ExternalIpsEnabled
-	(*CollectorRegisterRequest)(nil),    // 1: sensor.CollectorRegisterRequest
-	(*CollectorConfig)(nil),             // 2: sensor.CollectorConfig
-	(*ProcessSignal)(nil),               // 3: sensor.ProcessSignal
-	(*CollectorConfig_ExternalIPs)(nil), // 4: sensor.CollectorConfig.ExternalIPs
-	(*CollectorConfig_Networking)(nil),  // 5: sensor.CollectorConfig.Networking
-	(*ProcessSignal_LineageInfo)(nil),   // 6: sensor.ProcessSignal.LineageInfo
-	(*timestamppb.Timestamp)(nil),       // 7: google.protobuf.Timestamp
+	(ExternalIpsDirection)(0),           // 1: sensor.ExternalIpsDirection
+	(*CollectorRegisterRequest)(nil),    // 2: sensor.CollectorRegisterRequest
+	(*CollectorConfig)(nil),             // 3: sensor.CollectorConfig
+	(*ProcessSignal)(nil),               // 4: sensor.ProcessSignal
+	(*CollectorConfig_ExternalIPs)(nil), // 5: sensor.CollectorConfig.ExternalIPs
+	(*CollectorConfig_Networking)(nil),  // 6: sensor.CollectorConfig.Networking
+	(*ProcessSignal_LineageInfo)(nil),   // 7: sensor.ProcessSignal.LineageInfo
+	(*timestamppb.Timestamp)(nil),       // 8: google.protobuf.Timestamp
 }
 var file_internalapi_sensor_collector_proto_depIdxs = []int32{
-	5, // 0: sensor.CollectorConfig.networking:type_name -> sensor.CollectorConfig.Networking
-	7, // 1: sensor.ProcessSignal.creation_time:type_name -> google.protobuf.Timestamp
-	6, // 2: sensor.ProcessSignal.lineage_info:type_name -> sensor.ProcessSignal.LineageInfo
+	6, // 0: sensor.CollectorConfig.networking:type_name -> sensor.CollectorConfig.Networking
+	8, // 1: sensor.ProcessSignal.creation_time:type_name -> google.protobuf.Timestamp
+	7, // 2: sensor.ProcessSignal.lineage_info:type_name -> sensor.ProcessSignal.LineageInfo
 	0, // 3: sensor.CollectorConfig.ExternalIPs.enabled:type_name -> sensor.ExternalIpsEnabled
-	4, // 4: sensor.CollectorConfig.Networking.external_ips:type_name -> sensor.CollectorConfig.ExternalIPs
-	5, // [5:5] is the sub-list for method output_type
-	5, // [5:5] is the sub-list for method input_type
-	5, // [5:5] is the sub-list for extension type_name
-	5, // [5:5] is the sub-list for extension extendee
-	0, // [0:5] is the sub-list for field type_name
+	1, // 4: sensor.CollectorConfig.ExternalIPs.direction:type_name -> sensor.ExternalIpsDirection
+	5, // 5: sensor.CollectorConfig.Networking.external_ips:type_name -> sensor.CollectorConfig.ExternalIPs
+	6, // [6:6] is the sub-list for method output_type
+	6, // [6:6] is the sub-list for method input_type
+	6, // [6:6] is the sub-list for extension type_name
+	6, // [6:6] is the sub-list for extension extendee
+	0, // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_internalapi_sensor_collector_proto_init() }
@@ -546,7 +615,7 @@ func file_internalapi_sensor_collector_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internalapi_sensor_collector_proto_rawDesc), len(file_internalapi_sensor_collector_proto_rawDesc)),
-			NumEnums:      1,
+			NumEnums:      2,
 			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   0,

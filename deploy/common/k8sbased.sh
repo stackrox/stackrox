@@ -146,7 +146,6 @@ function launch_central {
     local central_namespace=${CENTRAL_NAMESPACE:-stackrox}
     local common_dir="${k8s_dir}/../common"
 
-    echo "LOAD_BALANCER: ${LOAD_BALANCER:-}"
     verify_orch
     if [[ -z "$CI" ]]; then
         prompt_if_central_exists "${central_namespace}"
@@ -622,15 +621,8 @@ function export_central_cert {
     echo "Storing central certificate in ${central_cert}"
 
     export LOGLEVEL=debug
-    set -x
-    echo "API_ENDPOINT:${API_ENDPOINT:-}"
-    echo "ROX_SERVER_NAME:${ROX_SERVER_NAME:-}"
     roxctl -e "$API_ENDPOINT" \
-        central cert --insecure-skip-tls-verify 1>"$central_cert" \
-        || \
-        ROX_SERVER_NAME='' roxctl -e "$API_ENDPOINT" \
-            central cert --insecure-skip-tls-verify 1>"$central_cert"
-    set +x
+        central cert --insecure-skip-tls-verify 1>"$central_cert"
 
     ROX_CA_CERT_FILE="$central_cert"
     export ROX_CA_CERT_FILE

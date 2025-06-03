@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/search"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // DataStore defines the possible interactions with compliance operator check results
@@ -44,6 +45,12 @@ type DataStore interface {
 	// DeleteResultsByCluster scan results associated with cluster
 	DeleteResultsByCluster(ctx context.Context, clusterID string) error
 
+	// DeleteResultsByScanConfigAndCluster deletes scan results associated with scan config and cluster
+	DeleteResultsByScanConfigAndCluster(ctx context.Context, scanConfigName string, clusterIDs []string) error
+
+	// DeleteResultsByScans deletes scan results associated with scans
+	DeleteResultsByScans(ctx context.Context, scanRefIds []string) error
+
 	// GetComplianceCheckResult returns the instance of the result specified by ID
 	GetComplianceCheckResult(ctx context.Context, complianceResultID string) (*storage.ComplianceOperatorCheckResultV2, bool, error)
 
@@ -52,6 +59,9 @@ type DataStore interface {
 
 	// WalkByQuery gets one row at a time and applies function per row
 	WalkByQuery(ctx context.Context, query *v1.Query, fn func(deployment *storage.ComplianceOperatorCheckResultV2) error) error
+
+	// DeleteOldResults scan results from a previous run
+	DeleteOldResults(ctx context.Context, lastStartedTimestamp *timestamppb.Timestamp, scanRefID string, includeCurrent bool) error
 }
 
 // New returns the datastore wrapper for compliance operator check results

@@ -32,9 +32,9 @@ import useDeleteDownloadModal from 'Containers/Vulnerabilities/VulnerablityRepor
 import DeleteModal from 'Components/PatternFly/DeleteModal';
 import ReportJobStatusFilter, {
     ensureReportJobStatuses,
-    ReportJobStatus,
 } from 'Components/ReportJob/ReportJobStatusFilter';
 import MyJobsFilter from 'Components/ReportJob/MyJobsFilter';
+import { ReportJobStatus } from 'Components/ReportJob/types';
 import ConfigDetails from './ConfigDetails';
 
 function getJobId(snapshot: ComplianceReportSnapshot) {
@@ -55,12 +55,19 @@ function createQueryFromReportJobStatusFilters(jobStatusFilters: string[]) {
         PREPARING: { category: 'Compliance Report State', value: 'PREPARING' },
         WAITING: { category: 'Compliance Report State', value: 'WAITING' },
         ERROR: { category: 'Compliance Report State', value: 'FAILURE' },
-        PARTIAL_ERROR: { category: 'Compliance Report State', value: 'PARTIAL_ERROR' },
+        PARTIAL_SCAN_ERROR_DOWNLOAD: {
+            category: 'Compliance Report State',
+            value: 'PARTIAL_SCAN_ERROR_DOWNLOAD',
+        },
         DOWNLOAD_GENERATED: {
             category: 'Compliance Report Notification Method',
             value: 'DOWNLOAD',
         },
         EMAIL_DELIVERED: { category: 'Compliance Report Notification Method', value: 'EMAIL' },
+        PARTIAL_SCAN_ERROR_EMAIL: {
+            category: 'Compliance Report State',
+            value: 'PARTIAL_SCAN_ERROR_EMAIL',
+        },
     };
 
     const reportJobStatuses = ensureReportJobStatuses(jobStatusFilters);
@@ -185,7 +192,9 @@ function ReportJobs({ scanConfigId }: ReportJobsProps) {
                                 'WAITING',
                                 'PREPARING',
                                 'DOWNLOAD_GENERATED',
+                                'PARTIAL_SCAN_ERROR_DOWNLOAD',
                                 'EMAIL_DELIVERED',
+                                'PARTIAL_SCAN_ERROR_EMAIL',
                                 'ERROR',
                             ]}
                             selectedStatuses={ensureReportJobStatuses(reportJobStatusFilters)}

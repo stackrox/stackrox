@@ -35,6 +35,7 @@ function CVESeverityDropdown({ searchFilter, onSelect }: CVESeverityDropdownProp
             <SelectOption key="Important" value="Important" />
             <SelectOption key="Moderate" value="Moderate" />
             <SelectOption key="Low" value="Low" />
+            <SelectOption key="Unknown" value="Unknown" />
         </Select>
     );
 }

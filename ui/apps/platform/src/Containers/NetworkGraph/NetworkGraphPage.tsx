@@ -79,8 +79,7 @@ function NetworkGraphPage() {
     const { hasReadAccess, hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForBlocks =
         hasReadAccess('Administration') && hasReadWriteAccess('NetworkGraph');
-    const hasReadAccessForGenerator =
-        hasReadAccess('Integration') && hasReadAccess('NetworkPolicy');
+    const hasReadAccessForGenerator = hasReadAccess('NetworkPolicy');
 
     const [edgeState, setEdgeState] = useState<EdgeState>('active');
     const [displayOptions, setDisplayOptions] = useState<DisplayOption[]>([

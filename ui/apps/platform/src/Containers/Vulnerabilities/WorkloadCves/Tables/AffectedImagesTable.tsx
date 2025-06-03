@@ -31,7 +31,7 @@ import ImageNameLink from '../components/ImageNameLink';
 
 import ImageComponentVulnerabilitiesTable, {
     ImageComponentVulnerability,
-    imageComponentVulnerabilitiesFragment,
+    convertToFlatImageComponentVulnerabilitiesFragment, // imageComponentVulnerabilitiesFragment
     imageMetadataContextFragment,
 } from './ImageComponentVulnerabilitiesTable';
 import { WatchStatus } from '../../types';
@@ -97,26 +97,33 @@ export type ImageForCve = {
     })[];
 };
 
-export const imagesForCveFragment = gql`
-    ${imageMetadataContextFragment}
-    ${imageComponentVulnerabilitiesFragment}
-    fragment ImagesForCVE on Image {
-        ...ImageMetadataContext
+// After release, replace temporary function
+// with imagesForCveFragment
+// that has unconditional imageComponentVulnerabilitiesFragment.
+export function convertToFlatImagesForCveFragment(
+    isFlattenCveDataEnabled: boolean // ROX_FLATTEN_CVE_DATA
+) {
+    return gql`
+        ${imageMetadataContextFragment}
+        ${convertToFlatImageComponentVulnerabilitiesFragment(isFlattenCveDataEnabled)}
+        fragment ImagesForCVE on Image {
+            ...ImageMetadataContext
 
-        operatingSystem
-        watchStatus
-        imageComponents(query: $query) {
-            imageVulnerabilities(query: $query) {
-                discoveredAtImage
-                cvss
-                scoreVersion
-                nvdCvss
-                nvdScoreVersion
+            operatingSystem
+            watchStatus
+            imageComponents(query: $query) {
+                imageVulnerabilities(query: $query) {
+                    discoveredAtImage
+                    cvss
+                    scoreVersion
+                    nvdCvss
+                    nvdScoreVersion
+                }
+                ...ImageComponentVulnerabilities
             }
-            ...ImageComponentVulnerabilities
         }
-    }
-`;
+    `;
+}
 
 export type AffectedImagesTableProps = {
     tableState: TableUIState<ImageForCve>;
@@ -145,6 +152,7 @@ function AffectedImagesTable({
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isNvdCvssColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
     const colSpan = 8 + (isNvdCvssColumnEnabled ? 1 : 0) + -hiddenColumnCount;
+    const colSpanForComponentVulnerabilitiesTable = colSpan - 1; // minus ExpandRowTh
 
     return (
         <Table variant="compact">
@@ -291,7 +299,7 @@ function AffectedImagesTable({
                                 </Tr>
                                 <Tr isExpanded={isExpanded}>
                                     <Td />
-                                    <Td colSpan={7}>
+                                    <Td colSpan={colSpanForComponentVulnerabilitiesTable}>
                                         <ExpandableRowContent>
                                             <ImageComponentVulnerabilitiesTable
                                                 imageMetadataContext={image}

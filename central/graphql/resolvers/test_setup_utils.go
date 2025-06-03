@@ -58,6 +58,7 @@ import (
 	k8srolebindingStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
 	mockRisks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	connMgrMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
+	"github.com/stackrox/rox/central/views/imagecomponentflat"
 	"github.com/stackrox/rox/central/views/imagecve"
 	"github.com/stackrox/rox/central/views/imagecveflat"
 	imagesView "github.com/stackrox/rox/central/views/images"
@@ -140,6 +141,8 @@ func SetupTestResolver(t testing.TB, datastores ...interface{}) (*Resolver, *gra
 			resolver.ImageCVEView = ds
 		case imagecveflat.CveFlatView:
 			resolver.ImageCVEFlatView = ds
+		case imagecomponentflat.ComponentFlatView:
+			resolver.ImageComponentFlatView = ds
 		case platformcve.CveView:
 			resolver.PlatformCVEView = ds
 		case nodecve.CveView:

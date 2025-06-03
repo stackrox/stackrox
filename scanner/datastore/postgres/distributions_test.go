@@ -52,12 +52,13 @@ func TestDistributions(t *testing.T) {
 	const insertDists = `
 INSERT INTO vuln (hash_kind, hash, dist_id, dist_version_id, dist_version, repo_name) VALUES
     ('md5', 'fake1', '',       '',      '',              'cpe:2.3:o:redhat:enterprise_linux:9:*:*:*:*:*:*:*'),
-    ('md5', 'fake2', '',       '',      '',              'cpe:2.3:o:redhat:enterprise_linux:10:*:*:*:*:*:*:*'),
+    ('md5', 'fake2', '',       '',      '',              'cpe:2.3:o:redhat:enterprise_linux:10.0:*:*:*:*:*:*:*'),
     ('md5', 'fake3', 'ubuntu', '22.04', '22.04 (Jammy)', ''),
     ('md5', 'fake4', 'alpine', '',      '3.17',          ''),
     ('md5', 'fake5', 'alpine', '',      '3.18',          ''),
     ('md5', 'fake6', 'debian', '10',    '10 (buster)',   ''),
-    ('md5', 'fake7', '',       '',      '',              'cpe:2.3:o:redhat:enterprise_linux:%:*:*:*:*:*:*:*')`
+    ('md5', 'fake7', '',       '',      '',              'cpe:2.3:o:redhat:enterprise_linux:%:*:*:*:*:*:*:*'),
+    ('md5', 'fake8', '',       '',      '',              'cpe:2.3:o:redhat:enterprise_linux:10.1:*:*:*:*:*:*:*')`
 	_, err = pool.Exec(ctx, insertDists)
 	require.NoError(t, err)
 
@@ -82,7 +83,16 @@ func TestRHELDist(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			repoName: "cpe:2.3:o:redhat:enterprise_linux:10:*:*:*:*:*:*:*",
+			repoName: "cpe:2.3:o:redhat:enterprise_linux:10.0:*:*:*:*:*:*:*",
+			expected: claircore.Distribution{
+				DID:       "rhel",
+				VersionID: "10",
+				Version:   "10",
+			},
+			wantErr: false,
+		},
+		{
+			repoName: "cpe:2.3:o:redhat:enterprise_linux:10.1:*:*:*:*:*:*:*",
 			expected: claircore.Distribution{
 				DID:       "rhel",
 				VersionID: "10",

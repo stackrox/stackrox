@@ -48,6 +48,7 @@ export function getWorkloadCveOverviewSortFields(
                     'Important Severity Count',
                     'Moderate Severity Count',
                     'Low Severity Count',
+                    'Unknown Severity Count',
                 ],
                 'CVSS',
                 'Image Sha',
@@ -61,6 +62,7 @@ export function getWorkloadCveOverviewSortFields(
                     'Important Severity Count',
                     'Moderate Severity Count',
                     'Low Severity Count',
+                    'Unknown Severity Count',
                 ],
                 'Image OS',
                 'Image Created Time',
@@ -175,6 +177,7 @@ export const severitySortMap = {
     Important: 'Important Severity Count',
     Moderate: 'Moderate Severity Count',
     Low: 'Low Severity Count',
+    Unknown: 'Unknown Severity Count',
 } as const;
 
 /**
@@ -200,6 +203,7 @@ export function getSeveritySortOptions(
         { field: 'Important Severity Count' },
         { field: 'Moderate Severity Count' },
         { field: 'Low Severity Count' },
+        { field: 'Unknown Severity Count' },
     ];
 }
 

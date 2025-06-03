@@ -64,7 +64,8 @@ var (
 	CVEOrphaned        = newFieldLabel("CVE Orphaned")
 	CVEOrphanedTime    = newFieldLabel("CVE Orphaned Time")
 	EPSSProbablity     = newFieldLabel("EPSS Probability")
-	Advisory           = newFieldLabel("Advisory")
+	AdvisoryName       = newFieldLabel("Advisory Name")
+	AdvisoryLink       = newFieldLabel("Advisory Link")
 
 	Component                      = newFieldLabel("Component")
 	ComponentID                    = newFieldLabel("Component ID")
@@ -238,6 +239,7 @@ var (
 	ComplianceOperatorCheckUID                 = newFieldLabel("Compliance Check UID")
 	ComplianceOperatorCheckName                = newFieldLabel("Compliance Check Name")
 	ComplianceOperatorCheckRationale           = newFieldLabel("Compliance Check Rationale")
+	ComplianceOperatorCheckLastStartedTime     = newFieldLabel("Compliance Check Last Started Time")
 	ComplianceOperatorScanUpdateTime           = newFieldLabel("Compliance Scan Config Last Updated Time")
 	ComplianceOperatorResultCreateTime         = newFieldLabel("Compliance Check Result Created Time")
 	ComplianceOperatorScanLastExecutedTime     = newFieldLabel("Compliance Scan Last Executed Time")
@@ -363,6 +365,9 @@ var (
 	VulnerabilityStateMax            = newDerivedFieldLabel("Vulnerability State Max", VulnerabilityState, MaxDerivationType)
 	NVDCVSSMax                       = newDerivedFieldLabel("NVD CVSS Max", NVDCVSS, MaxDerivationType)
 	CVEPublishedOnMin                = newDerivedFieldLabel("CVE Published On Min", CVEPublishedOn, MinDerivationType)
+	ComponentTopCVSSMax              = newDerivedFieldLabel("Component Top CVSS Max", ComponentTopCVSS, MaxDerivationType)
+	// This is the priority which is essentially a reverse sort of the risk score
+	ComponentPriorityMax = newDerivedFieldLabel("Component Risk Priority Score Max", ComponentRiskScore, MaxReverseSortDerivationType)
 
 	// External network sources fields
 	DefaultExternalSource    = newFieldLabel("Default External Source")
@@ -620,4 +625,5 @@ const (
 	MaxDerivationType
 	CustomFieldType
 	MinDerivationType
+	MaxReverseSortDerivationType
 )

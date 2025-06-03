@@ -717,6 +717,9 @@ type Central struct {
 
 	Spec   CentralSpec   `json:"spec,omitempty"`
 	Status CentralStatus `json:"status,omitempty"`
+
+	// This field will never be serialized, it is used for attaching defaulting decisions to a Central struct during reconciliation.
+	Defaults CentralSpec `json:"-"`
 }
 
 //+kubebuilder:object:root=true
@@ -736,6 +739,7 @@ var (
 	// CentralGVK is the GVK for the Central type.
 	CentralGVK = GroupVersion.WithKind("Central")
 
+	ScannerV4Default  = ScannerV4ComponentDefault
 	ScannerV4Enabled  = ScannerV4ComponentEnabled
 	ScannerV4Disabled = ScannerV4ComponentDisabled
 )

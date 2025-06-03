@@ -312,7 +312,7 @@ func (a *apiImpl) listenOnLocalEndpoint(server *grpc.Server) pipeconn.DialContex
 }
 
 func (a *apiImpl) connectToLocalEndpoint(dialCtxFunc pipeconn.DialContextFunc) (*grpc.ClientConn, error) {
-	return grpc.Dial("", grpc.WithTransportCredentials(insecure.NewCredentials()),
+	return grpc.NewClient("passthrough:", grpc.WithLocalDNSResolution(), grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithContextDialer(func(ctx context.Context, endpoint string) (net.Conn, error) {
 			return dialCtxFunc(ctx)
 		}),

@@ -106,6 +106,10 @@ func testImage(prefix string) *storage.Image {
 							SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
 								FixedBy: "1.1",
 							},
+							Advisory: &storage.Advisory{
+								Name: "RHSA-2025-CVE-fixable",
+								Link: "test-rhsa-link",
+							},
 							Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
 							Link:     "link",
 						},
@@ -113,6 +117,10 @@ func testImage(prefix string) *storage.Image {
 							Cve:      fmt.Sprintf("CVE-nonFixable_low-%s_img_comp", prefix),
 							Severity: storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
 							Link:     "link",
+							Advisory: &storage.Advisory{
+								Name: "RHSA-2025-CVE-fixable",
+								Link: "test-rhsa-link",
+							},
 						},
 					},
 				},
