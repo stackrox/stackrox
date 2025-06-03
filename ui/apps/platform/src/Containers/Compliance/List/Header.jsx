@@ -2,6 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import lowerCase from 'lodash/lowerCase';
 import startCase from 'lodash/startCase';
+import findKey from 'lodash/findKey';
 
 import PageHeader from 'Components/PageHeader';
 import ExportButton from 'Components/ExportButton';
@@ -16,9 +17,7 @@ const ListHeader = ({ entityType, searchComponent, standard, isExporting, setIsE
     const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForCompliance = hasReadWriteAccess('Compliance');
 
-    // ROX-25189: Comment out, because standardLabels prevents Download Evidence as CSV for compliance operator standards.
-    // const standardId = findKey(standardLabels, (key) => key === standard);
-    const standardId = standard;
+    const standardId = findKey(standardLabels, (key) => key === standard) || standard;
 
     // ROX-25189: Add nullish coalescing to include compliance operator standard id:
     // in page header
