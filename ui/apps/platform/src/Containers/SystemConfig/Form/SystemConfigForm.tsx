@@ -33,13 +33,13 @@ import ColorPicker from 'Components/ColorPicker';
 import ClusterLabelsTable from 'Containers/Clusters/ClusterLabelsTable';
 import { PublicConfigAction } from 'reducers/publicConfig';
 import { saveSystemConfig } from 'services/SystemConfigService';
-import { PublicConfig, SystemConfig } from 'types/config.proto';
+import { PlatformComponentsConfig, PublicConfig, SystemConfig } from 'types/config.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { selectors } from 'reducers';
 import { initializeAnalytics } from 'global/initializeAnalytics';
 import FormSelect from './FormSelect';
 import { convertBetweenBytesAndMB } from '../SystemConfig.utils';
-import { getPlatformComponentsConfigRules } from '../configUtils';
+import { getPlatformComponentsConfigRules, PlatformComponentsConfigRules } from '../configUtils';
 import { Values } from './formTypes';
 import PlatformComponentsConfigForm from './PlatformComponentsConfigForm';
 
@@ -88,6 +88,22 @@ const validationSchema = yup.object().shape({
     }),
 });
 
+function convertConfigRulesToComponentConfig({
+    coreSystemRule,
+    redHatLayeredProductsRule,
+    customRules,
+}: PlatformComponentsConfigRules): PlatformComponentsConfig {
+    const flattenedRules = [
+        ...(coreSystemRule ? [coreSystemRule] : []),
+        ...(redHatLayeredProductsRule ? [redHatLayeredProductsRule] : []),
+        ...customRules,
+    ];
+    return {
+        needsReevaluation: true,
+        rules: flattenedRules,
+    };
+}
+
 const SystemConfigForm = ({
     systemConfig,
     setSystemConfig,
@@ -105,6 +121,7 @@ const SystemConfigForm = ({
     const platformComponentConfigRules = getPlatformComponentsConfigRules(
         systemConfig.platformComponentConfig
     );
+
     const {
         dirty,
         errors,
@@ -118,16 +135,19 @@ const SystemConfigForm = ({
         initialValues: { privateConfig, publicConfig, platformComponentConfigRules },
         validationSchema,
         onSubmit: async () => {
-            const { coreSystemRule, redHatLayeredProductsRule, customRules } =
-                values.platformComponentConfigRules;
+            const rules = values.platformComponentConfigRules;
 
             // UI form checks (since we don't have form validation yet)
             const isRedHatLayeredProductsRuleEmpty =
-                redHatLayeredProductsRule.namespaceRule.regex === '';
-            const hasEmptyCustomRule = customRules.some(
+                rules.redHatLayeredProductsRule.namespaceRule.regex === '';
+            const hasEmptyCustomRule = rules.customRules.some(
                 (rule) => rule.name === '' || rule.namespaceRule.regex === ''
             );
-            if (isRedHatLayeredProductsRuleEmpty || hasEmptyCustomRule) {
+
+            if (
+                isCustomizingPlatformComponentsEnabled &&
+                (isRedHatLayeredProductsRuleEmpty || hasEmptyCustomRule)
+            ) {
                 setSubmitting(false);
                 if (isRedHatLayeredProductsRuleEmpty) {
                     setErrorMessage('The Red Hat layered products rule cannot be empty.');
@@ -139,20 +159,15 @@ const SystemConfigForm = ({
                 return;
             }
 
-            const platformComponentConfigRules = [
-                ...(coreSystemRule ? [coreSystemRule] : []),
-                ...(redHatLayeredProductsRule ? [redHatLayeredProductsRule] : []),
-                ...customRules,
-            ];
+            const platformComponentConfig = isCustomizingPlatformComponentsEnabled
+                ? convertConfigRulesToComponentConfig(rules)
+                : systemConfig.platformComponentConfig;
 
             // Payload for privateConfig allows strings as number values.
             await saveSystemConfig({
                 privateConfig: values.privateConfig,
                 publicConfig: values.publicConfig,
-                platformComponentConfig: {
-                    needsReevaluation: true,
-                    rules: platformComponentConfigRules,
-                },
+                platformComponentConfig,
             })
                 .then((data) => {
                     // Simulate fetchPublicConfig response to update Redux state.
