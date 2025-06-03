@@ -127,7 +127,7 @@ const (
 		NOT EXISTS
 		(SELECT 1 FROM %s flow WHERE
 			flow.Props_DstEntity_Type = 4 AND flow.Props_DstEntity_Id = entity.Info_Id)
-			RETURNING entity.Info_Id;`
+		RETURNING entity.Info_Id;`
 )
 
 var (
