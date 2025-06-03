@@ -86,6 +86,7 @@ func (p *persisterImpl) run() {
 	for {
 		select {
 		case <-p.tickerC:
+			log.Info("Tick")
 			p.saveHealth()
 		case <-p.stopper.Done():
 			return
