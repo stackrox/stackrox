@@ -22,6 +22,8 @@ export const CLUSTER_LEVEL_SIMULATOR_OPENED = 'Network Graph: Cluster Level Simu
 export const GENERATE_NETWORK_POLICIES = 'Network Graph: Generate Network Policies';
 export const DOWNLOAD_NETWORK_POLICIES = 'Network Graph: Download Network Policies';
 export const CIDR_BLOCK_FORM_OPENED = 'Network Graph: CIDR Block Form Opened';
+export const EXTERNAL_IPS_SIDE_PANEL = 'External IPs Side Panel Opened';
+export const DEPLOYMENT_FLOWS_TOGGLE_CLICKED = 'External Flows Toggle Clicked';
 
 // watch images
 export const WATCH_IMAGE_MODAL_OPENED = 'Watch Image Modal Opened';
@@ -161,6 +163,19 @@ export type AnalyticsEvent =
               cluster: number;
               namespaces: number;
               deployments: number;
+          };
+      }
+    | {
+          event: typeof EXTERNAL_IPS_SIDE_PANEL;
+          properties: {
+              isEmptyTable: boolean;
+              isFilteredTable: boolean;
+          };
+      }
+    | {
+          event: typeof DEPLOYMENT_FLOWS_TOGGLE_CLICKED;
+          properties: {
+              view: 'External Flows' | 'Internal Flows';
           };
       }
     /** Tracks each time the user opens the "Watched Images" modal */
