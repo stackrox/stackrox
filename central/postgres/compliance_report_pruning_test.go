@@ -40,6 +40,12 @@ var (
 	report10 = uuid.NewV4().String()
 	report11 = uuid.NewV4().String()
 	report12 = uuid.NewV4().String()
+	report13 = uuid.NewV4().String()
+	report14 = uuid.NewV4().String()
+	report15 = uuid.NewV4().String()
+	report16 = uuid.NewV4().String()
+	report17 = uuid.NewV4().String()
+	report18 = uuid.NewV4().String()
 
 	idToHumanReadable = map[string]string{
 		report1:  "report-1",
@@ -54,6 +60,12 @@ var (
 		report10: "report-10",
 		report11: "report-11",
 		report12: "report-12",
+		report13: "report-13",
+		report14: "report-14",
+		report15: "report-15",
+		report16: "report-16",
+		report17: "report-17",
+		report18: "report-18",
 	}
 
 	blobData = []byte("some-test-date")
@@ -312,6 +324,41 @@ func (s *ComplianceReportPruningSuite) Test_MustNotDeleteJobsInTheRetentionWindo
 		newComplianceReportSnapshot(report12, config4, 3*day, storage.ComplianceOperatorReportStatus_EMAIL, storage.ComplianceOperatorReportStatus_FAILURE, true),
 	}
 	expectedDeletions := set.NewStringSet()
+	for _, snapshot := range snapshots {
+		s.Require().NoError(s.snapshotDS.UpsertSnapshot(s.ctx, snapshot))
+	}
+	s.PruneAndAssert(snapshots, expectedDeletions)
+}
+
+func (s *ComplianceReportPruningSuite) Test_MustDeleteJobsIfOutsideOfTheRetentionWindow() {
+	// Mixed jobs; all outside the retention window
+	snapshots := []*storage.ComplianceOperatorReportSnapshotV2{
+		newComplianceReportSnapshot(report1, config1, 100*day, storage.ComplianceOperatorReportStatus_EMAIL, storage.ComplianceOperatorReportStatus_GENERATED, false),
+		newComplianceReportSnapshot(report2, config1, 100*day, storage.ComplianceOperatorReportStatus_EMAIL, storage.ComplianceOperatorReportStatus_PARTIAL_ERROR, false),
+		newComplianceReportSnapshot(report3, config1, 100*day, storage.ComplianceOperatorReportStatus_EMAIL, storage.ComplianceOperatorReportStatus_PARTIAL_SCAN_ERROR_EMAIL, false),
+
+		newComplianceReportSnapshot(report4, config1, 100*day, storage.ComplianceOperatorReportStatus_EMAIL, storage.ComplianceOperatorReportStatus_GENERATED, true),
+		newComplianceReportSnapshot(report5, config1, 100*day, storage.ComplianceOperatorReportStatus_EMAIL, storage.ComplianceOperatorReportStatus_PARTIAL_ERROR, true),
+		newComplianceReportSnapshot(report6, config1, 100*day, storage.ComplianceOperatorReportStatus_EMAIL, storage.ComplianceOperatorReportStatus_PARTIAL_SCAN_ERROR_EMAIL, true),
+
+		newComplianceReportSnapshot(report7, config1, 100*day, storage.ComplianceOperatorReportStatus_DOWNLOAD, storage.ComplianceOperatorReportStatus_GENERATED, true),
+		newComplianceReportSnapshot(report8, config1, 100*day, storage.ComplianceOperatorReportStatus_DOWNLOAD, storage.ComplianceOperatorReportStatus_PARTIAL_ERROR, true),
+		newComplianceReportSnapshot(report9, config1, 100*day, storage.ComplianceOperatorReportStatus_DOWNLOAD, storage.ComplianceOperatorReportStatus_PARTIAL_SCAN_ERROR_DOWNLOAD, true),
+
+		newComplianceReportSnapshot(report10, config1, 100*day, storage.ComplianceOperatorReportStatus_EMAIL, storage.ComplianceOperatorReportStatus_FAILURE, false),
+		newComplianceReportSnapshot(report11, config1, 100*day, storage.ComplianceOperatorReportStatus_EMAIL, storage.ComplianceOperatorReportStatus_DELIVERED, false),
+		newComplianceReportSnapshot(report12, config1, 100*day, storage.ComplianceOperatorReportStatus_EMAIL, storage.ComplianceOperatorReportStatus_FAILURE, true),
+		newComplianceReportSnapshot(report13, config1, 100*day, storage.ComplianceOperatorReportStatus_EMAIL, storage.ComplianceOperatorReportStatus_DELIVERED, true),
+
+		newComplianceReportSnapshot(report14, config1, 100*day, storage.ComplianceOperatorReportStatus_DOWNLOAD, storage.ComplianceOperatorReportStatus_FAILURE, true),
+		newComplianceReportSnapshot(report15, config1, 100*day, storage.ComplianceOperatorReportStatus_DOWNLOAD, storage.ComplianceOperatorReportStatus_DELIVERED, true),
+
+		// These three are the last reports in a final state and show not be deleted
+		newComplianceReportSnapshot(report16, config1, 50*day, storage.ComplianceOperatorReportStatus_EMAIL, storage.ComplianceOperatorReportStatus_DELIVERED, true),
+		newComplianceReportSnapshot(report17, config1, 50*day, storage.ComplianceOperatorReportStatus_EMAIL, storage.ComplianceOperatorReportStatus_DELIVERED, false),
+		newComplianceReportSnapshot(report18, config1, 50*day, storage.ComplianceOperatorReportStatus_DOWNLOAD, storage.ComplianceOperatorReportStatus_DELIVERED, true),
+	}
+	expectedDeletions := set.NewStringSet(report1, report2, report3, report4, report5, report6, report7, report8, report9, report10, report11, report12, report13, report14, report15)
 	for _, snapshot := range snapshots {
 		s.Require().NoError(s.snapshotDS.UpsertSnapshot(s.ctx, snapshot))
 	}
