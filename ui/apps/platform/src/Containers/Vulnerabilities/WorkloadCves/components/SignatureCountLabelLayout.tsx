@@ -2,6 +2,7 @@ import React from 'react';
 import { Button, Flex, FlexItem, Label, Popover, Text } from '@patternfly/react-core';
 
 import useMetadata from 'hooks/useMetadata';
+import { getProductBranding } from 'constants/productBranding';
 import { getVersionedDocs } from 'utils/versioning';
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import PopoverBodyContent from 'Components/PopoverBodyContent';
@@ -11,6 +12,7 @@ export type SignatureCountLabelProps = {
 };
 
 const noSignatureMessage = 'No signature found';
+const { shortName } = getProductBranding();
 
 function getBodyContent(version: string) {
     return (
@@ -35,7 +37,7 @@ function getBodyContent(version: string) {
                             target="_blank"
                             rel="noopener noreferrer"
                         >
-                            RHACS documentation
+                            {shortName} documentation
                         </a>
                     </ExternalLink>
                 </Text>
