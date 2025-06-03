@@ -1,5 +1,6 @@
 #!/usr/bin/env bats
 
+
 # Runs Scanner V4 installation tests using the Bats testing framework.
 #
 # NOTE: For debugging purposes you can run this test suite locally against a remote cluster. For example:
