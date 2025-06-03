@@ -243,10 +243,7 @@ func assertClusterData(t *testing.T, expected map[string]*report.ClusterData, ac
 		require.True(t, ok)
 		assert.Equal(t, expectedCluster.ClusterId, actualCluster.ClusterId)
 		assert.Equal(t, expectedCluster.ClusterName, actualCluster.ClusterName)
-		assert.Len(t, actualCluster.ScanNames, len(expectedCluster.ScanNames))
-		for _, scan := range expectedCluster.ScanNames {
-			assert.Contains(t, actualCluster.ScanNames, scan)
-		}
+		assert.ElementsMatch(t, expectedCluster.ScanNames, actualCluster.ScanNames)
 		if expectedCluster.FailedInfo != nil {
 			require.NotNil(t, actualCluster.FailedInfo)
 			assert.Equal(t, expectedCluster.FailedInfo.ClusterId, actualCluster.FailedInfo.ClusterId)

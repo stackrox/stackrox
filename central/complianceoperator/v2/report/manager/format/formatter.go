@@ -135,19 +135,10 @@ func (f *FormatterImpl) createFailedClusterFileInZip(zipWriter ZipWriter, filena
 	}
 	csvWriter := f.newCSVWriter(failedClusterCSVHeader, true)
 	for _, reason := range failedCluster.Reasons {
-		csvWriter.AddValue(generateFailRecord(failedCluster.ClusterId, failedCluster.ClusterName, reason, failedCluster.OperatorVersion))
+		// The order in the slice needs to match the order defined in `failedClusterCSVHeader`
+		csvWriter.AddValue([]string{failedCluster.ClusterId, failedCluster.ClusterName, reason, failedCluster.OperatorVersion})
 	}
 	return csvWriter.WriteCSV(w)
-}
-
-func generateFailRecord(clusterID, clusterName, reason, coVersion string) []string {
-	// The order in the slice needs to match the order defined in `failedClusterCSVHeader`
-	return []string{
-		clusterID,
-		clusterName,
-		reason,
-		coVersion,
-	}
 }
 
 func getFileName(format string, clusterName string, timestamp *timestamppb.Timestamp) string {

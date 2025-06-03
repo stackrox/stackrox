@@ -71,17 +71,27 @@ func (s *ComplianceReportingFormatterSuite) Test_FormatCSVReportWithFailedCluste
 	successfulFileName := getFileName(successfulClusterFmt, clusterData[clusterID1].ClusterName, timestamp)
 	failedFileName := getFileName(failedClusterFmt, clusterData[clusterID2].ClusterName, timestamp)
 
-	s.zipWriter.EXPECT().Create(gomock.Cond[string](func(target string) bool {
-		return target == successfulFileName || target == failedFileName
-	})).Times(2).Return(nil, nil)
-	s.csvWriter.EXPECT().AddValue(gomock.Cond[csv.Value](func(target csv.Value) bool {
-		failedInfo := clusterData[clusterID2].FailedInfo
-		return compareStringSlice(s.T(), target, generateFailRecord(failedInfo.ClusterId, failedInfo.ClusterName, failedInfo.Reasons[0], failedInfo.OperatorVersion)) ||
-			compareStringSlice(s.T(), target, generateRecord(results[clusterID1][0])) ||
-			compareStringSlice(s.T(), target, generateRecord(results[clusterID1][1]))
-	})).Times(3)
-	s.csvWriter.EXPECT().WriteCSV(gomock.Any()).Times(2).Return(nil)
-	s.zipWriter.EXPECT().Close().Times(1).Return(nil)
+	calls := []any{
+		s.zipWriter.EXPECT().Create(gomock.Cond[string](func(target string) bool {
+			return target == successfulFileName
+		})).Times(1).Return(nil, nil),
+		s.zipWriter.EXPECT().Create(gomock.Cond[string](func(target string) bool {
+			return target == failedFileName
+		})).Times(1).Return(nil, nil),
+		s.csvWriter.EXPECT().AddValue(gomock.Cond[csv.Value](func(target csv.Value) bool {
+			failedInfo := clusterData[clusterID2].FailedInfo
+			return compareStringSlice(s.T(), target, []string{failedInfo.ClusterId, failedInfo.ClusterName, failedInfo.Reasons[0], failedInfo.OperatorVersion})
+		})).Times(1),
+		s.csvWriter.EXPECT().AddValue(gomock.Cond[csv.Value](func(target csv.Value) bool {
+			return compareStringSlice(s.T(), target, generateRecord(results[clusterID1][0]))
+		})).Times(1),
+		s.csvWriter.EXPECT().AddValue(gomock.Cond[csv.Value](func(target csv.Value) bool {
+			return compareStringSlice(s.T(), target, generateRecord(results[clusterID1][1]))
+		})).Times(1),
+		s.csvWriter.EXPECT().WriteCSV(gomock.Any()).Times(2).Return(nil),
+		s.zipWriter.EXPECT().Close().Times(1).Return(nil),
+	}
+	gomock.InAnyOrder(calls)
 
 	buf, err := s.formatter.FormatCSVReport(getFakeReportDataWithFailedCluster())
 	s.Require().NoError(err)
@@ -97,17 +107,27 @@ func (s *ComplianceReportingFormatterSuite) Test_FormatCSVReportWithFailedCluste
 	successfulFileName := getFileName(successfulClusterFmt, clusterData[clusterID1].ClusterName, timestamp)
 	failedFileName := getFileName(failedClusterFmt, clusterData[clusterID2].ClusterName, timestamp)
 
-	s.zipWriter.EXPECT().Create(gomock.Cond[string](func(target string) bool {
-		return target == successfulFileName || target == failedFileName
-	})).Times(2).Return(nil, nil)
-	s.csvWriter.EXPECT().AddValue(gomock.Cond[csv.Value](func(target csv.Value) bool {
-		failedInfo := clusterData[clusterID2].FailedInfo
-		return compareStringSlice(s.T(), target, generateFailRecord(failedInfo.ClusterId, failedInfo.ClusterName, failedInfo.Reasons[0], failedInfo.OperatorVersion)) ||
-			compareStringSlice(s.T(), target, generateRecord(results[clusterID1][0])) ||
-			compareStringSlice(s.T(), target, generateRecord(results[clusterID1][1]))
-	})).Times(3)
-	s.csvWriter.EXPECT().WriteCSV(gomock.Any()).Times(2).Return(nil)
-	s.zipWriter.EXPECT().Close().Times(1).Return(nil)
+	calls := []any{
+		s.zipWriter.EXPECT().Create(gomock.Cond[string](func(target string) bool {
+			return target == successfulFileName
+		})).Times(1).Return(nil, nil),
+		s.zipWriter.EXPECT().Create(gomock.Cond[string](func(target string) bool {
+			return target == failedFileName
+		})).Times(1).Return(nil, nil),
+		s.csvWriter.EXPECT().AddValue(gomock.Cond[csv.Value](func(target csv.Value) bool {
+			failedInfo := clusterData[clusterID2].FailedInfo
+			return compareStringSlice(s.T(), target, []string{failedInfo.ClusterId, failedInfo.ClusterName, failedInfo.Reasons[0], failedInfo.OperatorVersion})
+		})).Times(1),
+		s.csvWriter.EXPECT().AddValue(gomock.Cond[csv.Value](func(target csv.Value) bool {
+			return compareStringSlice(s.T(), target, generateRecord(results[clusterID1][0]))
+		})).Times(1),
+		s.csvWriter.EXPECT().AddValue(gomock.Cond[csv.Value](func(target csv.Value) bool {
+			return compareStringSlice(s.T(), target, generateRecord(results[clusterID1][1]))
+		})).Times(1),
+		s.csvWriter.EXPECT().WriteCSV(gomock.Any()).Times(2).Return(nil),
+		s.zipWriter.EXPECT().Close().Times(1).Return(nil),
+	}
+	gomock.InAnyOrder(calls)
 
 	buf, err := s.formatter.FormatCSVReport(results, clusterData)
 	s.Require().NoError(err)
@@ -134,18 +154,33 @@ func (s *ComplianceReportingFormatterSuite) Test_FormatCSVReportWithPartialFaile
 	successfulFileName := getFileName(successfulClusterFmt, clusterData[clusterID1].ClusterName, timestamp)
 	failedFileName := getFileName(failedClusterFmt, clusterData[clusterID2].ClusterName, timestamp)
 
-	s.zipWriter.EXPECT().Create(gomock.Cond[string](func(target string) bool {
-		return target == successfulFileName || target == failedFileName || target == partialSuccessFileName
-	})).Times(3).Return(nil, nil)
-	s.csvWriter.EXPECT().AddValue(gomock.Cond[csv.Value](func(target csv.Value) bool {
-		failedInfo := clusterData[clusterID2].FailedInfo
-		return compareStringSlice(s.T(), target, generateFailRecord(failedInfo.ClusterId, failedInfo.ClusterName, failedInfo.Reasons[0], failedInfo.OperatorVersion)) ||
-			compareStringSlice(s.T(), target, generateRecord(results[clusterID1][0])) ||
-			compareStringSlice(s.T(), target, generateRecord(results[clusterID1][1])) ||
-			compareStringSlice(s.T(), target, generateRecord(results[clusterID2][0]))
-	})).Times(4)
-	s.csvWriter.EXPECT().WriteCSV(gomock.Any()).Times(3).Return(nil)
-	s.zipWriter.EXPECT().Close().Times(1).Return(nil)
+	calls := []any{
+		s.zipWriter.EXPECT().Create(gomock.Cond[string](func(target string) bool {
+			return target == successfulFileName
+		})).Times(1).Return(nil, nil),
+		s.zipWriter.EXPECT().Create(gomock.Cond[string](func(target string) bool {
+			return target == failedFileName
+		})).Times(1).Return(nil, nil),
+		s.zipWriter.EXPECT().Create(gomock.Cond[string](func(target string) bool {
+			return target == partialSuccessFileName
+		})).Times(1).Return(nil, nil),
+		s.csvWriter.EXPECT().AddValue(gomock.Cond[csv.Value](func(target csv.Value) bool {
+			failedInfo := clusterData[clusterID2].FailedInfo
+			return compareStringSlice(s.T(), target, []string{failedInfo.ClusterId, failedInfo.ClusterName, failedInfo.Reasons[0], failedInfo.OperatorVersion})
+		})).Times(1),
+		s.csvWriter.EXPECT().AddValue(gomock.Cond[csv.Value](func(target csv.Value) bool {
+			return compareStringSlice(s.T(), target, generateRecord(results[clusterID1][0]))
+		})).Times(1),
+		s.csvWriter.EXPECT().AddValue(gomock.Cond[csv.Value](func(target csv.Value) bool {
+			return compareStringSlice(s.T(), target, generateRecord(results[clusterID1][1]))
+		})).Times(1),
+		s.csvWriter.EXPECT().AddValue(gomock.Cond[csv.Value](func(target csv.Value) bool {
+			return compareStringSlice(s.T(), target, generateRecord(results[clusterID2][0]))
+		})).Times(1),
+		s.csvWriter.EXPECT().WriteCSV(gomock.Any()).Times(3).Return(nil),
+		s.zipWriter.EXPECT().Close().Times(1).Return(nil),
+	}
+	gomock.InAnyOrder(calls)
 
 	buf, err := s.formatter.FormatCSVReport(results, clusterData)
 	s.Require().NoError(err)
@@ -200,7 +235,7 @@ func (s *ComplianceReportingFormatterSuite) Test_FormatCSVReportWriteError() {
 		s.zipWriter.EXPECT().Create(failedFileName).Times(1).Return(nil, nil)
 		s.csvWriter.EXPECT().AddValue(gomock.Cond[csv.Value](func(target csv.Value) bool {
 			failedInfo := clusterData[clusterID2].FailedInfo
-			return compareStringSlice(s.T(), target, generateFailRecord(failedInfo.ClusterId, failedInfo.ClusterName, failedInfo.Reasons[0], failedInfo.OperatorVersion))
+			return compareStringSlice(s.T(), target, []string{failedInfo.ClusterId, failedInfo.ClusterName, failedInfo.Reasons[0], failedInfo.OperatorVersion})
 		})).Times(1)
 		s.csvWriter.EXPECT().WriteCSV(gomock.Any()).Times(1).Return(errors.New("error"))
 		s.zipWriter.EXPECT().Close().Times(1).Return(nil)
@@ -344,12 +379,14 @@ func (m *emptyValueMatcher) String() string {
 	return m.error
 }
 
-func compareStringSlice(_ *testing.T, actual []string, expected []string) bool {
+func compareStringSlice(t *testing.T, actual []string, expected []string) bool {
 	if len(actual) != len(expected) {
+		t.Logf("Expected slice %v but got %v", expected, actual)
 		return false
 	}
 	for i := 0; i < len(actual); i++ {
 		if strings.Compare(actual[i], expected[i]) != 0 {
+			t.Logf("Expected slice %v but got %v", expected, actual)
 			return false
 		}
 	}

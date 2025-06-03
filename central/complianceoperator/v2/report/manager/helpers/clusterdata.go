@@ -46,15 +46,16 @@ func GetClusterData(ctx context.Context, reportData *storage.ComplianceOperatorR
 		if err != nil {
 			return nil, err
 		}
-		if failedClusters == nil {
-			clusterData[cluster.GetClusterId()] = data
+		clusterData[cluster.GetClusterId()] = data
+	}
+	for failedClusterId, failedCluster := range failedClusters {
+		cluster, found := clusterData[failedClusterId]
+		if !found {
 			continue
 		}
-		if failedCluster, ok := failedClusters[cluster.GetClusterId()]; ok {
-			failedCluster.ClusterName = cluster.GetClusterName()
-			data.FailedInfo = failedCluster
-		}
-		clusterData[cluster.GetClusterId()] = data
+
+		failedCluster.ClusterName = cluster.ClusterName
+		cluster.FailedInfo = failedCluster
 	}
 	return clusterData, nil
 }
