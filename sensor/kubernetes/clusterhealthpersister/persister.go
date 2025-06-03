@@ -22,6 +22,7 @@ const (
 	configMapName      = "sensor-health"
 	annotationInfoKey  = `stackrox.io/info`
 	annotationInfoText = `ConfigMap for sensor health cluster-local persistence. Automatically generated - do not modify. Your changes will be overwritten.`
+	lastUpdatedKey     = "last-updated"
 )
 
 var log = logging.LoggerForModule()
@@ -29,6 +30,8 @@ var log = logging.LoggerForModule()
 type persisterImpl struct {
 	ticker  *time.Ticker
 	tickerC <-chan time.Time
+
+	now func() time.Time
 
 	configMapClient v1client.ConfigMapInterface
 
@@ -43,6 +46,7 @@ func NewClusterHealthPersister(k8sClient kubernetes.Interface, namespace string)
 	return &persisterImpl{
 		ticker:          ticker,
 		tickerC:         ticker.C,
+		now:             time.Now,
 		configMapClient: k8sClient.CoreV1().ConfigMaps(namespace),
 	}
 }
@@ -96,6 +100,7 @@ func (p *persisterImpl) saveHealth() {
 		componentState := reporter()
 		stateMap[component] = componentState.String()
 	}
+	stateMap[lastUpdatedKey] = p.now().UTC().Format(time.RFC3339Nano)
 	configMap := &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
