@@ -31,9 +31,9 @@ class NetworkBaselineTest extends BaseSpecification {
     private static final String DATE_CMD = "date -Iseconds"
 
     private static final String NGINX_IMAGE = "quay.io/rhacs-eng/qa-multi-arch:nginx-1-19-alpine"
-    private static final String EXTERNAL_IP1 = "8.8.8.8"
-    private static final String EXTERNAL_IP2 = "1.1.1.1"
-    private static final String EXTERNAL_IP3 = "142.250.72.238"
+    private static final String EXTERNAL_IP1 = "8.8.8.8" // Google Public DNS
+    private static final String EXTERNAL_IP2 = "1.1.1.1" // Cloudflare Public DNS
+    private static final String EXTERNAL_IP3 = "142.250.72.238" // Google CDN
 
     // The baseline generation duration must be changed from the default for this test to succeed.
     private static final int EXPECTED_BASELINE_DURATION_SECONDS = 240
