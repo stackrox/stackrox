@@ -69,5 +69,17 @@ func withSelectQuery(query *v1.Query) *v1.Query {
 		Fields: []string{search.ImageSHA.String()},
 	}
 
+	for _, sortOption := range cloned.GetPagination().GetSortOptions() {
+		if sortOption.Field == search.Severity.String() {
+			sortOption.Field = search.SeverityMax.String()
+		}
+		if sortOption.Field == search.CVSS.String() {
+			sortOption.Field = search.CVSSMax.String()
+		}
+		if sortOption.Field == search.NVDCVSS.String() {
+			sortOption.Field = search.NVDCVSSMax.String()
+		}
+	}
+
 	return cloned
 }
