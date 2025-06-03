@@ -13,11 +13,9 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-type Count interface{ Count() int }
-
 // TrackerConfig wraps various pieces of configuration required for tracking
 // various metrics.
-type TrackerConfig[Finding Count] struct {
+type TrackerConfig[Finding Countable] struct {
 	category    string
 	description string
 	labelOrder  map[Label]int
@@ -42,7 +40,7 @@ type Tracker interface {
 	Reconfigure(*prometheus.Registry, string, map[string]*storage.PrometheusMetricsConfig_Labels, time.Duration) error
 }
 
-func makeLabelOrderMap[Finding Count](getters []LabelGetter[Finding]) map[Label]int {
+func makeLabelOrderMap[Finding Countable](getters []LabelGetter[Finding]) map[Label]int {
 	result := make(map[Label]int, len(getters))
 	for i, getter := range getters {
 		result[getter.Label] = i + 1
@@ -50,7 +48,7 @@ func makeLabelOrderMap[Finding Count](getters []LabelGetter[Finding]) map[Label]
 	return result
 }
 
-func makeGettersMap[Finding Count](getters []LabelGetter[Finding]) map[Label]func(Finding) string {
+func makeGettersMap[Finding Countable](getters []LabelGetter[Finding]) map[Label]func(Finding) string {
 	result := make(map[Label]func(Finding) string, len(getters))
 	for _, getter := range getters {
 		result[getter.Label] = getter.Getter
@@ -60,7 +58,7 @@ func makeGettersMap[Finding Count](getters []LabelGetter[Finding]) map[Label]fun
 
 // MakeTrackerConfig initializes a tracker configuration without any period or metrics configuration.
 // Call Reconfigure to configure the period and the metrics.
-func MakeTrackerConfig[Finding Count](category, description string,
+func MakeTrackerConfig[Finding Countable](category, description string,
 	getters []LabelGetter[Finding], generator FindingGenerator[Finding],
 	gauge func(string, prometheus.Labels, int),
 ) *TrackerConfig[Finding] {

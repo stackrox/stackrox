@@ -118,3 +118,11 @@ func TestHasAnyLabelOf(t *testing.T) {
 	assert.True(t, mcfg.HasAnyLabelOf([]Label{"label0", "label4"}))
 	assert.False(t, mcfg.HasAnyLabelOf([]Label{"label0", "label5"}))
 }
+
+func TestOneOrMore(t *testing.T) {
+	assert.Equal(t, 1, OneOrMore(-2).Count())
+	assert.Equal(t, 1, OneOrMore(-1).Count())
+	assert.Equal(t, 1, OneOrMore(0).Count())
+	assert.Equal(t, 1, OneOrMore(1).Count())
+	assert.Equal(t, 2, OneOrMore(2).Count())
+}

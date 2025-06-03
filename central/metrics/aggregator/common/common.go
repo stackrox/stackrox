@@ -19,8 +19,9 @@ var (
 
 type Label string      // Prometheus label.
 type MetricName string // Prometheus metric name.
-type FindingGenerator[Finding Count] func(context.Context, *v1.Query, MetricsConfiguration) iter.Seq[Finding]
-type LabelGetter[Finding Count] struct {
+type Countable interface{ Count() int }
+type FindingGenerator[Finding Countable] func(context.Context, *v1.Query, MetricsConfiguration) iter.Seq[Finding]
+type LabelGetter[Finding Countable] struct {
 	Label  Label
 	Getter func(Finding) string
 }
@@ -37,6 +38,15 @@ func (mcfg MetricsConfiguration) HasAnyLabelOf(labels []Label) bool {
 		}
 	}
 	return false
+}
+
+type OneOrMore int
+
+func (o OneOrMore) Count() int {
+	if o > 0 {
+		return int(o)
+	}
+	return 1
 }
 
 type aggregationKey string // e.g. IMPORTANT_VULNERABILITY_SEVERITY|true

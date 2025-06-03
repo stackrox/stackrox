@@ -36,20 +36,12 @@ var getters = []common.LabelGetter[*finding]{
 }
 
 type finding struct {
+	common.OneOrMore
 	deployment *storage.Deployment
 	image      *storage.Image
 	name       *storage.ImageName
 	component  *storage.EmbeddedImageScanComponent
 	vuln       *storage.EmbeddedVulnerability
-
-	count int
-}
-
-func (f *finding) Count() int {
-	if f.count > 0 {
-		return f.count
-	}
-	return 1
 }
 
 func isPlatformWorkload(f *finding) string {
