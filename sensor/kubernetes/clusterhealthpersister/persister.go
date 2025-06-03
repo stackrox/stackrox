@@ -62,7 +62,7 @@ func (p *persisterImpl) Start() error {
 func (p *persisterImpl) Stop(error) {
 	p.state.Store(common.SensorComponentStateSTOPPING)
 	// p.ticker.Stop()
-	p.stopper.Signal()
+	// p.stopper.Signal()
 	p.state.Store(common.SensorComponentStateSTOPPED)
 }
 
@@ -84,7 +84,7 @@ func (p *persisterImpl) State() common.SensorComponentState {
 
 func (p *persisterImpl) run() {
 	p.saveHealth()
-	for !p.stopper.IsDone() {
+	for /*!p.stopper.IsDone()*/ {
 		time.Sleep(10 * time.Second)
 		p.saveHealth()
 	}
