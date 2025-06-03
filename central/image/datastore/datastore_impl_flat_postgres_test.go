@@ -4,26 +4,28 @@ package datastore
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"testing"
 
-	imageCVEDS "github.com/stackrox/rox/central/cve/image/datastore"
-	imageCVESearch "github.com/stackrox/rox/central/cve/image/datastore/search"
-	imageCVEPostgres "github.com/stackrox/rox/central/cve/image/datastore/store/postgres"
-	pgStore "github.com/stackrox/rox/central/image/datastore/store/postgres"
-	imageComponentDS "github.com/stackrox/rox/central/imagecomponent/datastore"
-	imageComponentPostgres "github.com/stackrox/rox/central/imagecomponent/datastore/store/postgres"
-	imageComponentSearch "github.com/stackrox/rox/central/imagecomponent/search"
+	imageCVEDS "github.com/stackrox/rox/central/cve/image/v2/datastore"
+	imageCVESearch "github.com/stackrox/rox/central/cve/image/v2/datastore/search"
+	imageCVEPostgres "github.com/stackrox/rox/central/cve/image/v2/datastore/store/postgres"
+	"github.com/stackrox/rox/central/image/datastore/keyfence"
+	pgStoreV2 "github.com/stackrox/rox/central/image/datastore/store/v2/postgres"
+	imageComponentDS "github.com/stackrox/rox/central/imagecomponent/v2/datastore"
+	imageComponentSearch "github.com/stackrox/rox/central/imagecomponent/v2/datastore/search"
+	imageComponentPostgres "github.com/stackrox/rox/central/imagecomponent/v2/datastore/store/postgres"
 	"github.com/stackrox/rox/central/ranking"
 	mockRisks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/concurrency"
 	pkgCVE "github.com/stackrox/rox/pkg/cve"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	postgresSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
@@ -34,14 +36,11 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
-	"gorm.io/gorm"
 )
 
 func TestImageFlatDataStoreWithPostgres(t *testing.T) {
-	// TODO(ROX-29460)
-	t.Skip("FlattenCVEData is enabled so skip for now")
 	if !features.FlattenCVEData.Enabled() {
-		t.Skip("CVE flattened data model enabled")
+		t.Skip("CVE flattened data model is not enabled")
 	}
 	suite.Run(t, new(ImageFlatPostgresDataStoreTestSuite))
 }
@@ -50,8 +49,8 @@ type ImageFlatPostgresDataStoreTestSuite struct {
 	suite.Suite
 
 	ctx                context.Context
+	testDB             *pgtest.TestPostgres
 	db                 postgres.DB
-	gormDB             *gorm.DB
 	datastore          DataStore
 	mockRisk           *mockRisks.MockDataStore
 	componentDataStore imageComponentDS.DataStore
@@ -60,36 +59,31 @@ type ImageFlatPostgresDataStoreTestSuite struct {
 
 func (s *ImageFlatPostgresDataStoreTestSuite) SetupSuite() {
 	s.ctx = context.Background()
-
-	source := pgtest.GetConnectionString(s.T())
-	config, err := postgres.ParseConfig(source)
-	s.Require().NoError(err)
-
-	pool, err := postgres.New(s.ctx, config)
-	s.NoError(err)
-	s.gormDB = pgtest.OpenGormDB(s.T(), source)
-	s.db = pool
+	s.testDB = pgtest.ForT(s.T())
+	s.db = s.testDB.DB
 }
 
 func (s *ImageFlatPostgresDataStoreTestSuite) SetupTest() {
-	pgStore.Destroy(s.ctx, s.db)
 
 	s.mockRisk = mockRisks.NewMockDataStore(gomock.NewController(s.T()))
-	s.datastore = NewWithPostgres(pgStore.CreateTableAndNewStore(s.ctx, s.db, s.gormDB, false), s.mockRisk, ranking.NewRanker(), ranking.NewRanker())
+	dbStore := pgStoreV2.New(s.db, false, keyfence.ImageKeyFenceSingleton())
+	s.datastore = NewWithPostgres(dbStore, s.mockRisk, ranking.ImageRanker(), ranking.ComponentRanker())
 
-	componentStorage := imageComponentPostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
+	componentStorage := imageComponentPostgres.New(s.db)
 	componentSearcher := imageComponentSearch.NewV2(componentStorage)
 	s.componentDataStore = imageComponentDS.New(componentStorage, componentSearcher, s.mockRisk, ranking.NewRanker())
 
-	cveStorage := imageCVEPostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
+	cveStorage := imageCVEPostgres.New(s.db)
 	cveSearcher := imageCVESearch.New(cveStorage)
-	cveDataStore := imageCVEDS.New(cveStorage, cveSearcher, concurrency.NewKeyFence())
+	cveDataStore := imageCVEDS.New(cveStorage, cveSearcher)
 	s.cveDataStore = cveDataStore
 }
 
-func (s *ImageFlatPostgresDataStoreTestSuite) TearDownSuite() {
-	s.db.Close()
-	pgtest.CloseGormDB(s.T(), s.gormDB)
+func (s *ImageFlatPostgresDataStoreTestSuite) TearDownTest() {
+	s.truncateTable(postgresSchema.DeploymentsTableName)
+	s.truncateTable(postgresSchema.ImagesTableName)
+	s.truncateTable(postgresSchema.ImageComponentV2TableName)
+	s.truncateTable(postgresSchema.ImageCvesV2TableName)
 }
 
 func (s *ImageFlatPostgresDataStoreTestSuite) TestSearchWithPostgres() {
@@ -124,7 +118,7 @@ func (s *ImageFlatPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 	}
 	results, err = s.cveDataStore.Search(ctx, q)
 	s.NoError(err)
-	s.Equal([]string{"cve2#blah", "cve1#blah"}, pkgSearch.ResultsToIDs(results))
+	s.Equal([]string{"cve2", "cve1"}, splitFlattenedIDs(pkgSearch.ResultsToIDs(results)))
 
 	// Sort by impact score: reversed
 	q = pkgSearch.EmptyQuery()
@@ -138,7 +132,7 @@ func (s *ImageFlatPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 	}
 	results, err = s.cveDataStore.Search(ctx, q)
 	s.NoError(err)
-	s.Equal([]string{"cve1#blah", "cve2#blah"}, pkgSearch.ResultsToIDs(results))
+	s.Equal([]string{"cve1", "cve2"}, splitFlattenedIDs(pkgSearch.ResultsToIDs(results)))
 
 	// Upsert new image.
 	newImage := getTestImage("id2")
@@ -187,10 +181,15 @@ func (s *ImageFlatPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 	s.Len(results, 1)
 	s.Equal(image.GetId(), results[0].ID)
 
+	// Need to grab a CVE for the image to scope since we can not easily build the ID any longer.
+	q = pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.CVE, "cve3").ProtoQuery()
+	results, err = s.cveDataStore.Search(ctx, q)
+	s.NoError(err)
+
 	// Scope search by vulns.
 	scopedCtx = scoped.Context(ctx, scoped.Scope{
-		IDs:   []string{"cve3#blah"},
-		Level: v1.SearchCategory_IMAGE_VULNERABILITIES,
+		IDs:   []string{results[0].ID},
+		Level: v1.SearchCategory_IMAGE_VULNERABILITIES_V2,
 	})
 	results, err = s.datastore.Search(scopedCtx, pkgSearch.EmptyQuery())
 	s.NoError(err)
@@ -305,18 +304,18 @@ func (s *ImageFlatPostgresDataStoreTestSuite) TestUpdateVulnStateWithPostgres() 
 // Test sort by Component search label sorts by Component+Version to ensure backward compatibility.
 func (s *ImageFlatPostgresDataStoreTestSuite) TestSortByComponent() {
 	ctx := sac.WithAllAccess(context.Background())
-	node := fixtures.GetImageWithUniqueComponents(5)
-	componentIDs := make([]string, 0, len(node.GetScan().GetComponents()))
-	for _, component := range node.GetScan().GetComponents() {
-		componentIDs = append(componentIDs,
-			scancomponent.ComponentID(
-				component.GetName(),
-				component.GetVersion(),
-				node.GetScan().GetOperatingSystem(),
-			))
+	image := fixtures.GetImageWithUniqueComponents(5)
+	componentIDs := make([]string, 0, len(image.GetScan().GetComponents()))
+	for _, component := range image.GetScan().GetComponents() {
+		compID, err := scancomponent.ComponentIDV2(
+			component,
+			image.GetId(),
+		)
+		s.NoError(err)
+		componentIDs = append(componentIDs, compID)
 	}
 
-	s.NoError(s.datastore.UpsertImage(ctx, node))
+	s.NoError(s.datastore.UpsertImage(ctx, image))
 
 	// Verify sort by Component search label is transformed to sort by Component+Version.
 	query := pkgSearch.EmptyQuery()
@@ -368,8 +367,12 @@ func (s *ImageFlatPostgresDataStoreTestSuite) TestImageDeletes() {
 	testImage.Scan.Components = testImage.Scan.Components[:len(testImage.Scan.Components)-1]
 	cveIDsSet := set.NewStringSet()
 	for _, component := range testImage.GetScan().GetComponents() {
+		componentID, err := scancomponent.ComponentIDV2(component, testImage.GetId())
+		s.NoError(err)
 		for _, cve := range component.GetVulns() {
-			cveIDsSet.Add(pkgCVE.ID(cve.GetCve(), testImage.GetScan().GetOperatingSystem()))
+			cveID, err := pkgCVE.IDV2(cve, componentID)
+			s.NoError(err)
+			cveIDsSet.Add(cveID)
 		}
 	}
 	s.NoError(s.datastore.UpsertImage(ctx, testImage))
@@ -393,6 +396,12 @@ func (s *ImageFlatPostgresDataStoreTestSuite) TestImageDeletes() {
 
 	testImage2 := testImage.CloneVT()
 	testImage2.Id = "2"
+	for _, component := range testImage2.GetScan().GetComponents() {
+		for _, cve := range component.GetVulns() {
+			// Clone brings over the time, need to empty that out
+			cve.FirstImageOccurrence = nil
+		}
+	}
 	s.NoError(s.datastore.UpsertImage(ctx, testImage2))
 	storedImage, found, err = s.datastore.GetImage(ctx, testImage2.GetId())
 	s.NoError(err)
@@ -406,16 +415,6 @@ func (s *ImageFlatPostgresDataStoreTestSuite) TestImageDeletes() {
 	}
 	expectedImage = cloneAndUpdateRiskPriority(testImage2)
 	protoassert.Equal(s.T(), expectedImage, storedImage)
-
-	// Verify that number of image components remains unchanged since both images have same components.
-	count, err = s.componentDataStore.Count(ctx, pkgSearch.EmptyQuery())
-	s.NoError(err)
-	s.Equal(len(testImage.Scan.Components), count)
-
-	// Verify that number of image vulnerabilities remains unchanged since both images have same vulns.
-	results, err = s.cveDataStore.Search(ctx, pkgSearch.EmptyQuery())
-	s.NoError(err)
-	s.ElementsMatch(cveIDsSet.AsSlice(), pkgSearch.ResultsToIDs(results))
 
 	s.mockRisk.EXPECT().RemoveRisk(gomock.Any(), testImage.GetId(), gomock.Any()).Return(nil)
 	s.NoError(s.datastore.DeleteImages(ctx, testImage.GetId()))
@@ -461,9 +460,10 @@ func (s *ImageFlatPostgresDataStoreTestSuite) TestImageDeletes() {
 	// Verify orphaned image vulnerabilities are removed.
 	results, err = s.cveDataStore.Search(ctx, pkgSearch.EmptyQuery())
 	s.NoError(err)
-	s.ElementsMatch([]string{pkgCVE.ID("cve", "")}, pkgSearch.ResultsToIDs(results))
+	// split the IDs to only get the CVE name and make sure they all match this specific one
+	s.ElementsMatch([]string{"cve"}, splitFlattenedIDs(pkgSearch.ResultsToIDs(results)))
 
-	// Verify that new scan with less components cleans up the old relations correctly.
+	// Verify that new scan with fewer components cleans up the old relations correctly.
 	testImage2.Scan.ScanTime = protocompat.TimestampNow()
 	testImage2.Scan.Components = testImage2.Scan.Components[:len(testImage2.Scan.Components)-1]
 	s.NoError(s.datastore.UpsertImage(ctx, testImage2))
@@ -483,7 +483,7 @@ func (s *ImageFlatPostgresDataStoreTestSuite) TestImageDeletes() {
 	// Verify no vulnerability is removed since all vulns are still connected.
 	results, err = s.cveDataStore.Search(ctx, pkgSearch.EmptyQuery())
 	s.NoError(err)
-	s.ElementsMatch([]string{pkgCVE.ID("cve", "")}, pkgSearch.ResultsToIDs(results))
+	s.ElementsMatch([]string{"cve"}, splitFlattenedIDs(pkgSearch.ResultsToIDs(results)))
 
 	// Verify that new scan with no components and vulns cleans up the old relations correctly.
 	testImage2.Scan.ScanTime = protocompat.TimestampNow()
@@ -541,4 +541,10 @@ func (s *ImageFlatPostgresDataStoreTestSuite) TestGetManyImageMetadata() {
 	testImage3.Scan.Components = nil
 	testImage3.Priority = 1
 	protoassert.ElementsMatch(s.T(), []*storage.Image{testImage1, testImage2, testImage3}, storedImages)
+}
+
+func (s *ImageFlatPostgresDataStoreTestSuite) truncateTable(name string) {
+	sql := fmt.Sprintf("TRUNCATE %s CASCADE", name)
+	_, err := s.testDB.Exec(s.ctx, sql)
+	s.NoError(err)
 }
