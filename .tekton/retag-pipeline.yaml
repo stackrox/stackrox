@@ -161,7 +161,23 @@ spec:
           value: task
       resolver: bundles
 
+  - name: wait-for-image
+    params:
+    - name: IMAGE
+      value: "$(params.input-image-repo):$(tasks.determine-input-image-tag.results.IMAGE_TAG)"
+    taskRef:
+      params:
+      - name: name
+        value: wait-for-image
+      - name: bundle
+        value: quay.io/rhacs-eng/konflux-tasks:pr-64@sha256:e43f50eba124b0eb5b15327cce550fcf44c947efe01c088a65cc3d1e1c29c333
+      - name: kind
+        value: task
+      resolver: bundles
+
   - name: retag-image
+    runAfter:
+    - wait-for-image
     params:
     - name: INPUT_IMAGE_REPO
       value: $(params.input-image-repo)
