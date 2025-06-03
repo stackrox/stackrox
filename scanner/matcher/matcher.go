@@ -74,6 +74,7 @@ func init() {
 type Matcher interface {
 	GetVulnerabilities(ctx context.Context, ir *claircore.IndexReport) (*claircore.VulnerabilityReport, error)
 	GetLastVulnerabilityUpdate(ctx context.Context) (time.Time, error)
+	GetLastVulnerabilityBundleUpdate(ctx context.Context, bundle string) (time.Time, error)
 	GetKnownDistributions(ctx context.Context) []claircore.Distribution
 	GetSBOM(ctx context.Context, ir *claircore.IndexReport, opts *sbom.Options) ([]byte, error)
 	Ready(ctx context.Context) error
@@ -235,6 +236,11 @@ func (m *matcherImpl) GetVulnerabilities(ctx context.Context, ir *claircore.Inde
 func (m *matcherImpl) GetLastVulnerabilityUpdate(ctx context.Context) (time.Time, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/matcher.GetLastVulnerabilityUpdate")
 	return m.metadataStore.GetLastVulnerabilityUpdate(ctx)
+}
+
+func (m *matcherImpl) GetLastVulnerabilityBundleUpdate(ctx context.Context, bundle string) (time.Time, error) {
+	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/matcher.GetLastVulnerabilityUpdate")
+	return m.metadataStore.GetLastVulnerabilityBundleUpdate(ctx, bundle)
 }
 
 func (m *matcherImpl) GetKnownDistributions(_ context.Context) []claircore.Distribution {
