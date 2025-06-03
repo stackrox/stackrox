@@ -34,6 +34,7 @@ func (d *datastoreImpl) DeleteSnapshot(ctx context.Context, id string) error {
 }
 
 // DeleteOrphanedReportSnapshots deletes all the snapshots that are not in a final state
+// This is only called on startup to make sure we do not have orphaned reports
 func DeleteOrphanedReportSnapshots(ctx context.Context, ds DataStore) error {
 	errList := errorhelpers.NewErrorList("delete orphaned reports")
 	searchQueryForEmails := search.NewQueryBuilder().
