@@ -164,7 +164,7 @@ const SystemConfigForm = ({
                 : systemConfig.platformComponentConfig;
 
             // Payload for privateConfig allows strings as number values.
-            await saveSystemConfig({
+            return saveSystemConfig({
                 privateConfig: values.privateConfig,
                 publicConfig: values.publicConfig,
                 platformComponentConfig,
