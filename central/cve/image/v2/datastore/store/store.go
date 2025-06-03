@@ -20,5 +20,4 @@ type Store interface {
 	GetMany(ctx context.Context, ids []string) ([]*storage.ImageCVEV2, []int, error)
 
 	UpsertMany(ctx context.Context, cves []*storage.ImageCVEV2) error
-	WalkByQuery(ctx context.Context, q *v1.Query, fn func(*storage.ImageCVEV2) error) error
 }

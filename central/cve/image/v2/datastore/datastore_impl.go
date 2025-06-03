@@ -80,6 +80,3 @@ func (ds *datastoreImpl) EnrichImageWithSuppressedCVEs(image *storage.Image) {
 		}
 	}
 }
-func (ds *datastoreImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(*storage.ImageCVEV2) error) error {
-	return ds.storage.WalkByQuery(ctx, q, fn)
-}

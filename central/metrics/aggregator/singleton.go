@@ -2,6 +2,7 @@ package aggregator
 
 import (
 	"context"
+	"net/http"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -13,11 +14,10 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/travelaudience/go-promhttp"
 )
 
 var (
-	Registry = prometheus.NewRegistry()
-
 	once   sync.Once
 	runner *aggregatorRunner
 
@@ -25,6 +25,9 @@ var (
 )
 
 type aggregatorRunner struct {
+	http.Handler
+	registry *prometheus.Registry
+
 	stopCh   chan bool
 	stopOnce sync.Once
 
@@ -32,13 +35,19 @@ type aggregatorRunner struct {
 }
 
 func Singleton() interface {
+	http.Handler
 	Start()
 	Stop()
 	Reconfigure(*storage.PrometheusMetricsConfig) error
 } {
 	once.Do(func() {
+		registry := prometheus.NewRegistry()
+
 		runner = &aggregatorRunner{
-			stopCh:                make(chan bool),
+			Handler:  promhttp.HandlerFor(registry, promhttp.HandlerOpts{}),
+			registry: registry,
+			stopCh:   make(chan bool),
+
 			image_vulnerabilities: image_vulnerabilities.MakeTrackerConfig(metrics.SetCustomAggregatedCount),
 		}
 		systemPrivateConfig, err := configDS.Singleton().GetPrivateConfig(
@@ -57,7 +66,7 @@ func Singleton() interface {
 func (ar *aggregatorRunner) Reconfigure(cfg *storage.PrometheusMetricsConfig) error {
 	{
 		iv := cfg.GetImageVulnerabilities()
-		if err := ar.image_vulnerabilities.Reconfigure(Registry,
+		if err := ar.image_vulnerabilities.Reconfigure(ar.registry,
 			iv.GetFilter(),
 			iv.GetMetrics(),
 			time.Minute*time.Duration(iv.GetGatheringPeriodMinutes())); err != nil {
@@ -68,9 +77,11 @@ func (ar *aggregatorRunner) Reconfigure(cfg *storage.PrometheusMetricsConfig) er
 }
 
 func (ar *aggregatorRunner) Start() {
-	ar.image_vulnerabilities.Do(func() {
-		go ar.run(ar.image_vulnerabilities)
-	})
+	for _, tracker := range []common.Tracker{ar.image_vulnerabilities} {
+		tracker.Do(func() {
+			go ar.run(tracker)
+		})
+	}
 }
 
 func (ar *aggregatorRunner) Stop() {
