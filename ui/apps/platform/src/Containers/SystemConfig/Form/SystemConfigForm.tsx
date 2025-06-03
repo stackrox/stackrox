@@ -843,8 +843,8 @@ const SystemConfigForm = ({
                 </Form>
             </FlexItem>
             <FlexItem
-                style={{ position: 'sticky', bottom: 0, background: 'white', zIndex: 100 }}
-                className="pf-v5-u-w-100"
+                style={{ position: 'sticky', bottom: 0, zIndex: 100 }}
+                className="pf-v5-u-w-100 pf-v5-u-background-color-100"
             >
                 <Divider component="div" />
                 <Flex
