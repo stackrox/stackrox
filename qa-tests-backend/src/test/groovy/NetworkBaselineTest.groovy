@@ -475,11 +475,8 @@ class NetworkBaselineTest extends BaseSpecification {
 
         def externalBaseline = evaluateWithRetry(30, 4) {
             def externalBaseline = NetworkBaselineService.getNetworkBaselineForExternalFlows(deploymentUid)
-            if (externalBaseline.totalAnomalous + externalBaseline.totalBaseline == 0) {
-                throw new RuntimeException(
-                    "No peers in baseline for deployment ${deploymentUid} yet. Baseline is ${externalBaseline}"
-                )
-            }
+            assert externalBaselineAfter.totalAnomalous + externalBaselineAfter.totalBaseline != 0 : 
+                    "No peers in baseline for deployment ${deploymentUid} yet. Baseline is ${externalBaselineAfter}"
             return externalBaseline
         }
 
@@ -539,11 +536,8 @@ class NetworkBaselineTest extends BaseSpecification {
 
         def externalBaselineAfter = evaluateWithRetry(30, 4) {
             def externalBaselineAfter = NetworkBaselineService.getNetworkBaselineForExternalFlows(deploymentUid)
-            if (externalBaselineAfter.totalAnomalous + externalBaselineAfter.totalBaseline == 0) {
-                throw new RuntimeException(
+            assert externalBaselineAfter.totalAnomalous + externalBaselineAfter.totalBaseline != 0 :
                     "No peers in baseline for deployment ${deploymentUid} yet. Baseline is ${externalBaselineAfter}"
-                )
-            }
             return externalBaselineAfter
         }
 
