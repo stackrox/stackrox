@@ -80,12 +80,12 @@ func (tc *TrackerConfig[Finding]) GetPeriodCh() chan time.Duration {
 	return tc.periodCh
 }
 
-func (tc *TrackerConfig[Finding]) Reconfigure(registry *prometheus.Registry, query string, cfg map[string]*storage.PrometheusMetricsConfig_Labels, period time.Duration) error {
+func (tc *TrackerConfig[Finding]) Reconfigure(registry *prometheus.Registry, filter string, cfg map[string]*storage.PrometheusMetricsConfig_Labels, period time.Duration) error {
 	mcfg, err := parseMetricLabels(cfg, tc.labelOrder)
 	if err != nil {
 		return err
 	}
-	q, err := search.ParseQuery(query, search.MatchAllIfEmpty())
+	q, err := search.ParseQuery(filter, search.MatchAllIfEmpty())
 	if err != nil {
 		return err
 	}

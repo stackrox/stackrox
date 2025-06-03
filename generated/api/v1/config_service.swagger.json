@@ -305,10 +305,10 @@
     "PrometheusMetricsConfigVulnerabilities": {
       "type": "object",
       "properties": {
-        "gatheringPeriodHours": {
+        "gatheringPeriodMinutes": {
           "type": "integer",
           "format": "int64",
-          "description": "The period (in hours) at which vulnerability data is gathered from the DB."
+          "description": "The period (in minutes) at which vulnerability data is gathered from the DB."
         },
         "metrics": {
           "type": "object",
@@ -317,9 +317,9 @@
           },
           "description": "Mapping from metric name to its associated labels."
         },
-        "query": {
+        "filter": {
           "type": "string",
-          "title": "Query string in the syntax of the Search filters used to limit the amount of aggregated vulnerabilities.\nExample: \"Cluster:production\""
+          "title": "Filter string in the syntax of the Search filters used to limit the amount of\naggregated vulnerabilities.\nExample: \"Cluster:production\""
         }
       }
     },
@@ -536,7 +536,7 @@
       "properties": {
         "imageVulnerabilities": {
           "$ref": "#/definitions/PrometheusMetricsConfigVulnerabilities",
-          "description": "\"imageVulnerabilities\": {\n    \"gatheringPeriodHours\": 1,\n    \"metricLabels\": {\n      \"severity\": { // custom metric name.\n        \"labelExpression\": {\n          \"Severity\": {} // label name with no expression.\n          \"Namespace\": {\n            \"expression\": [ // label conditions list.\n              { \"operator\": \"!=\", \"argument\": \"*test*\" }\n            ]\n          }\n        }\n      }\n    }\n  }",
+          "description": "\"imageVulnerabilities\": {\n    \"gatheringPeriodMinutes\": 1,\n    \"metrics\": {\n      \"severity\": { // custom metric name.\n        \"labels\": {\n          \"Severity\": {} // label name with no expression.\n          \"Namespace\": {\n            \"expression\": [ // label conditions list.\n              { \"operator\": \"!=\", \"argument\": \"*test*\" }\n            ]\n          }\n        }\n      }\n    }\n  }",
           "title": "Configuration for image vulnerabilities metrics.\nExample:"
         }
       }

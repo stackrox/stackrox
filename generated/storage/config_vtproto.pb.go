@@ -436,8 +436,8 @@ func (m *PrometheusMetricsConfig_Vulnerabilities) CloneVT() *PrometheusMetricsCo
 		return (*PrometheusMetricsConfig_Vulnerabilities)(nil)
 	}
 	r := new(PrometheusMetricsConfig_Vulnerabilities)
-	r.GatheringPeriodHours = m.GatheringPeriodHours
-	r.Query = m.Query
+	r.GatheringPeriodMinutes = m.GatheringPeriodMinutes
+	r.Filter = m.Filter
 	if rhs := m.Metrics; rhs != nil {
 		tmpContainer := make(map[string]*PrometheusMetricsConfig_Labels, len(rhs))
 		for k, v := range rhs {
@@ -1061,7 +1061,7 @@ func (this *PrometheusMetricsConfig_Vulnerabilities) EqualVT(that *PrometheusMet
 	} else if this == nil || that == nil {
 		return false
 	}
-	if this.GatheringPeriodHours != that.GatheringPeriodHours {
+	if this.GatheringPeriodMinutes != that.GatheringPeriodMinutes {
 		return false
 	}
 	if len(this.Metrics) != len(that.Metrics) {
@@ -1084,7 +1084,7 @@ func (this *PrometheusMetricsConfig_Vulnerabilities) EqualVT(that *PrometheusMet
 			}
 		}
 	}
-	if this.Query != that.Query {
+	if this.Filter != that.Filter {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -2270,10 +2270,10 @@ func (m *PrometheusMetricsConfig_Vulnerabilities) MarshalToSizedBufferVT(dAtA []
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if len(m.Query) > 0 {
-		i -= len(m.Query)
-		copy(dAtA[i:], m.Query)
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Query)))
+	if len(m.Filter) > 0 {
+		i -= len(m.Filter)
+		copy(dAtA[i:], m.Filter)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Filter)))
 		i--
 		dAtA[i] = 0x1a
 	}
@@ -2299,8 +2299,8 @@ func (m *PrometheusMetricsConfig_Vulnerabilities) MarshalToSizedBufferVT(dAtA []
 			dAtA[i] = 0x12
 		}
 	}
-	if m.GatheringPeriodHours != 0 {
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.GatheringPeriodHours))
+	if m.GatheringPeriodMinutes != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.GatheringPeriodMinutes))
 		i--
 		dAtA[i] = 0x8
 	}
@@ -2777,8 +2777,8 @@ func (m *PrometheusMetricsConfig_Vulnerabilities) SizeVT() (n int) {
 	}
 	var l int
 	_ = l
-	if m.GatheringPeriodHours != 0 {
-		n += 1 + protohelpers.SizeOfVarint(uint64(m.GatheringPeriodHours))
+	if m.GatheringPeriodMinutes != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.GatheringPeriodMinutes))
 	}
 	if len(m.Metrics) > 0 {
 		for k, v := range m.Metrics {
@@ -2793,7 +2793,7 @@ func (m *PrometheusMetricsConfig_Vulnerabilities) SizeVT() (n int) {
 			n += mapEntrySize + 1 + protohelpers.SizeOfVarint(uint64(mapEntrySize))
 		}
 	}
-	l = len(m.Query)
+	l = len(m.Filter)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
@@ -5528,9 +5528,9 @@ func (m *PrometheusMetricsConfig_Vulnerabilities) UnmarshalVT(dAtA []byte) error
 		switch fieldNum {
 		case 1:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field GatheringPeriodHours", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field GatheringPeriodMinutes", wireType)
 			}
-			m.GatheringPeriodHours = 0
+			m.GatheringPeriodMinutes = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -5540,7 +5540,7 @@ func (m *PrometheusMetricsConfig_Vulnerabilities) UnmarshalVT(dAtA []byte) error
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.GatheringPeriodHours |= uint32(b&0x7F) << shift
+				m.GatheringPeriodMinutes |= uint32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -5676,7 +5676,7 @@ func (m *PrometheusMetricsConfig_Vulnerabilities) UnmarshalVT(dAtA []byte) error
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Query", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Filter", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -5704,7 +5704,7 @@ func (m *PrometheusMetricsConfig_Vulnerabilities) UnmarshalVT(dAtA []byte) error
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Query = string(dAtA[iNdEx:postIndex])
+			m.Filter = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -8572,9 +8572,9 @@ func (m *PrometheusMetricsConfig_Vulnerabilities) UnmarshalVTUnsafe(dAtA []byte)
 		switch fieldNum {
 		case 1:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field GatheringPeriodHours", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field GatheringPeriodMinutes", wireType)
 			}
-			m.GatheringPeriodHours = 0
+			m.GatheringPeriodMinutes = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -8584,7 +8584,7 @@ func (m *PrometheusMetricsConfig_Vulnerabilities) UnmarshalVTUnsafe(dAtA []byte)
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.GatheringPeriodHours |= uint32(b&0x7F) << shift
+				m.GatheringPeriodMinutes |= uint32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -8724,7 +8724,7 @@ func (m *PrometheusMetricsConfig_Vulnerabilities) UnmarshalVTUnsafe(dAtA []byte)
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Query", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Filter", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -8756,7 +8756,7 @@ func (m *PrometheusMetricsConfig_Vulnerabilities) UnmarshalVTUnsafe(dAtA []byte)
 			if intStringLen > 0 {
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
-			m.Query = stringValue
+			m.Filter = stringValue
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
