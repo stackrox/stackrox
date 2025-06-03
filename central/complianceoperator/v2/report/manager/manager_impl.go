@@ -87,6 +87,11 @@ type managerImpl struct {
 	watchingScanConfigs map[string]watcher.ScanConfigWatcher
 	// scanConfigReadyQueue holds the scan configurations that are ready to be reported
 	scanConfigReadyQueue *queue.Queue[*watcher.ScanConfigWatcherResults]
+
+	metricsTicker  *time.Ticker
+	metricsTickerC <-chan time.Time
+	// maxScansInParallel stores the maximum number of scans running in parallel between the ticks of metricsTicker.
+	maxScansInParallel atomic.Int32
 }
 
 func New(scanConfigDS scanConfigurationDS.DataStore,
@@ -98,6 +103,7 @@ func New(scanConfigDS scanConfigurationDS.DataStore,
 	bindingsDataStore bindingsDS.DataStore,
 	checkResultDataStore checkResults.DataStore,
 	reportGen reportGen.ComplianceReportGenerator) Manager {
+	gmt := time.NewTicker(env.ComplianceScansRunningInParallelMetricObservationPeriod.DurationSetting())
 	return &managerImpl{
 		scanConfigDataStore:   scanConfigDS,
 		scanDataStore:         scanDataStore,
@@ -117,6 +123,8 @@ func New(scanConfigDS scanConfigurationDS.DataStore,
 		readyQueue:            queue.NewQueue[*watcher.ScanWatcherResults](),
 		watchingScanConfigs:   make(map[string]watcher.ScanConfigWatcher),
 		scanConfigReadyQueue:  queue.NewQueue[*watcher.ScanConfigWatcherResults](),
+		metricsTicker:         gmt,
+		metricsTickerC:        gmt.C,
 	}
 }
 
@@ -163,9 +171,11 @@ func (m *managerImpl) Start() {
 	go m.runReports()
 	go m.handleReadyScan()
 	go m.handleReadyScanConfig()
+	go m.updateMetrics()
 }
 
 func (m *managerImpl) Stop() {
+	m.metricsTicker.Stop()
 	if m.isStarted.Load() {
 		log.Error("Compliance report manager not started")
 		return
@@ -325,6 +335,9 @@ func (m *managerImpl) HandleScan(sensorCtx context.Context, scan *storage.Compli
 	if !features.ComplianceReporting.Enabled() || !features.ScanScheduleReportJobs.Enabled() {
 		return nil
 	}
+	defer concurrency.WithLock(&m.watchingScansLock, func() {
+		m.updateMaxNumScansRunningInParallelNoLock()
+	})
 	id, err := watcher.GetWatcherIDFromScan(m.automaticReportingCtx, scan, m.snapshotDataStore, m.scanConfigDataStore, nil)
 	if err != nil {
 		if errors.Is(err, watcher.ErrComplianceOperatorScanMissingLastStartedFiled) {
@@ -338,6 +351,32 @@ func (m *managerImpl) HandleScan(sensorCtx context.Context, scan *storage.Compli
 		return err
 	}
 	return m.getWatcher(sensorCtx, id).PushScan(scan)
+}
+
+func (m *managerImpl) updateMetrics() {
+	for {
+		select {
+		case <-m.stopper.Flow().StopRequested():
+			return
+		case <-m.metricsTickerC:
+			nRunning := concurrency.WithLock1(&m.watchingScansLock, func() int {
+				return len(m.watchingScans)
+			})
+			numWatchers.Set(float64(nRunning))
+			// Reset the maximum value on tick and set to the current number
+			prevVal := m.maxScansInParallel.Swap(int32(nRunning))
+			log.Debugf("Updating maxScansInParallel from %d to %d (tick)", prevVal, nRunning)
+			if prevVal > 0 {
+				scansRunningInParallel.Observe(float64(prevVal))
+			}
+		}
+	}
+}
+
+func (m *managerImpl) updateMaxNumScansRunningInParallelNoLock() {
+	newVal := max(m.maxScansInParallel.Load(), int32(len(m.watchingScans)))
+	prevVal := m.maxScansInParallel.Swap(newVal)
+	log.Debugf("Updating maxScansInParallel from %d to %d", prevVal, newVal)
 }
 
 func (m *managerImpl) HandleScanRemove(scanID string) error {
@@ -367,6 +406,7 @@ func (m *managerImpl) getWatcher(sensorCtx context.Context, id string) watcher.S
 		if scanWatcher, found = m.watchingScans[id]; !found {
 			scanWatcher = watcher.NewScanWatcher(m.automaticReportingCtx, sensorCtx, id, m.readyQueue)
 			m.watchingScans[id] = scanWatcher
+			m.updateMaxNumScansRunningInParallelNoLock()
 		}
 	})
 	return scanWatcher
@@ -409,6 +449,7 @@ func (m *managerImpl) handleReadyScan() {
 			if scanWatcherResult := m.readyQueue.PullBlocking(m.stopper.LowLevel().GetStopRequestSignal()); scanWatcherResult != nil {
 				concurrency.WithLock(&m.watchingScansLock, func() {
 					delete(m.watchingScans, scanWatcherResult.WatcherID)
+					m.maxScansInParallel.Store(int32(len(m.watchingScans)))
 				})
 				if err := watcher.DeleteOldResults(m.automaticReportingCtx, scanWatcherResult, m.checkResultDataStore); err != nil {
 					log.Errorf("unable to delete old CheckResults: %v", err)

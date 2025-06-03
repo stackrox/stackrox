@@ -298,6 +298,8 @@ func (s *scanWatcherImpl) run() {
 		concurrency.WithLock(&s.resultsLock, func() {
 			numCheckResults = len(s.scanResults.CheckResults)
 		})
+		log.Debugf("Checking whether %s is finished. TotalChecks=%d, numCheckResults=%d",
+			s.scanResults.Scan.GetScanName(), s.totalChecks, numCheckResults)
 		if s.totalChecks != 0 && s.totalChecks == numCheckResults {
 			s.readyQueue.Push(s.scanResults)
 			return
