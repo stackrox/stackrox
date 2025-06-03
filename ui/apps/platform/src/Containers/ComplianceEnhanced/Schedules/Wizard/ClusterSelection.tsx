@@ -166,10 +166,11 @@ function ClusterSelection({
                 <Alert
                     title="At least one cluster must be in a Healthy state to proceed with the schedule."
                     variant="info"
+                    component="p"
                     isInline
                 >
                     <p>
-                        💡 Tip: The most common reason a cluster is marked Unhealthy is that the Compliance Operator is either not installed or is below version 1.6.
+                        Tip: The most common reason a cluster is marked Unhealthy is that the Compliance Operator is either not installed or is below version 1.6.
                     </p>
                 </Alert>
                 {formikTouched.clusters && formikValues.clusters.length === 0 && (

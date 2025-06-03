@@ -167,7 +167,7 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
     }
 
     function allClustersAreUnhealthy(clusters): boolean {
-        return clusters?.every(cluster => cluster.status === 'UNHEALTHY');
+        return clusters?.every((cluster) => cluster.status === 'UNHEALTHY');
     }
 
     const wizardSteps: WizardStep[] = [
@@ -232,7 +232,9 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
                             onSave={onSave}
                             isSaving={isCreating}
                             proceedToNextStepIfValid={proceedToNextStepIfValid}
-                            disableClusterNext={allClustersAreUnhealthy(clusters) && !initialFormValues}
+                            disableClusterNext={
+                                allClustersAreUnhealthy(clusters) && !initialFormValues
+                            }
                         />
                     }
                 />
