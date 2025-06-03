@@ -2,6 +2,7 @@ package resources
 
 import (
 	"context"
+	"encoding/base64"
 	"strconv"
 	"testing"
 
@@ -18,6 +19,7 @@ import (
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/yaml"
 )
 
 var (
@@ -429,4 +431,72 @@ func TestSkipIntegrationCreate(t *testing.T) {
 		assert.True(t, skipIntegrationCreate(globalPullSecretDupe))
 		assert.False(t, skipIntegrationCreate(someOtherSecret))
 	})
+}
+
+// parseSecretYAML parses YAML into a Kubernetes *v1.Secret object.
+func parseSecretYAML(t *testing.T, yamlData []byte) *v1.Secret {
+	var secret v1.Secret
+	err := yaml.Unmarshal(yamlData, &secret)
+	require.NoError(t, err)
+	return &secret
+}
+
+func buildSecretYaml(base64data string) []byte {
+	return []byte(`
+apiVersion: v1
+data:
+  .dockercfg: ` + base64data + `
+kind: Secret
+metadata:
+  name: secret1
+type: kubernetes.io/dockercfg
+`)
+}
+
+func Test_secretDispatcher_processDockerConfigEvent(t *testing.T) {
+	tests := map[string]struct {
+		secretData    string
+		action        central.ResourceAction
+		wantNumEvents int
+	}{
+		"bad secret with non-utf auth (nu\\x00Op\\x07pZQ)": {
+			secretData:    `{"example.com":{"auth":"nullOp7pZQ=="}}`,
+			action:        central.ResourceAction_CREATE_RESOURCE,
+			wantNumEvents: 0,
+		},
+		"secret containing one correct and one broken auth entry": {
+			secretData:    `{"bad.example.com":{"auth":"nullOp7pZQ=="}, "good.example.com":{"auth":"dXNlcjE6cXdmcGI="}}`,
+			action:        central.ResourceAction_CREATE_RESOURCE,
+			wantNumEvents: 2, // 1 secret + 1 image integration
+		},
+		"bad secret with non-utf in auth (user\\xc5name)": {
+			secretData:    `{"example.com":{"auth":"dXNlcspuYW1lOnBhc3N3b3Jk"}}`,
+			action:        central.ResourceAction_CREATE_RESOURCE,
+			wantNumEvents: 0,
+		},
+		"good secret": {
+			secretData:    `{"auths":{"example.com":{"auth":"dXNlcjE6cXdmcGI="}}}`,
+			action:        central.ResourceAction_CREATE_RESOURCE,
+			wantNumEvents: 2, // 1 secret + 1 image integration
+		},
+		"secret containing two good registries": {
+			secretData:    `{"1.example.com":{"auth":"dXNlcjE6cXdmcGI="}, "2.example.com":{"auth":"dXNlcjE6cXdmcGI="}}`,
+			action:        central.ResourceAction_CREATE_RESOURCE,
+			wantNumEvents: 3, // 1 secret + 2 image integrations
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			s := newSecretDispatcher(registry.NewRegistryStore(func(ctx context.Context, origAddr string) (bool, error) {
+				return true, nil
+			}))
+			secret := parseSecretYAML(t, buildSecretYaml(base64.StdEncoding.EncodeToString([]byte(tt.secretData))))
+			got := s.processDockerConfigEvent(secret, nil, tt.action)
+			if tt.wantNumEvents == 0 {
+				assert.Nil(t, got)
+			} else {
+				assert.Len(t, got.ForwardMessages, tt.wantNumEvents)
+			}
+		})
+	}
 }
