@@ -1,7 +1,8 @@
 package sensor
 
 import (
-	"github.com/pkg/errors"
+	"errors"
+
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/deduperkey"

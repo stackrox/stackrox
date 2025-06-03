@@ -305,7 +305,7 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 		}
 
 		if err := validateSecret(registryAddr, dce); err != nil {
-			log.Warnf("Not processing the registry with address %q found in secret %q from namespace %q: %v. ",
+			log.Warnf("Not processing the registry with address %q found in secret %q from namespace %q: %v.",
 				secret.GetName(), secret.GetNamespace(), registryAddr, err)
 			continue
 		}
