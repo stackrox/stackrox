@@ -93,6 +93,7 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 		scan := internaltov2storage.ComplianceOperatorScanObject(complianceScanObject, clusterID)
 		if err := s.reportMgr.HandleScan(ctx, scan); err != nil {
 			log.Errorf("unable to handle the scan in the report manager: %v", err)
+			return err
 		}
 		return s.v2Datastore.UpsertScan(ctx, scan)
 	}

@@ -1,3 +1,5 @@
+//go:build sql_integration
+
 package imagecveflat
 
 import (
@@ -93,6 +95,7 @@ func TestImageCVEVFlatiew(t *testing.T) {
 	if !features.FlattenCVEData.Enabled() {
 		t.Skip("FlattenCVEData is disabled")
 	}
+
 	suite.Run(t, new(ImageCVEFlatViewTestSuite))
 }
 

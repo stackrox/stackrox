@@ -494,7 +494,7 @@ func (m *handlerImpl) getResourcesInCluster(api complianceoperator.APIResource) 
 	resourceInterface := m.client.Resource(api.GroupVersionResource())
 	resourcesInCluster, err := resourceInterface.List(m.ctx(), v1.ListOptions{LabelSelector: labels.SelectorFromSet(stackroxLabels).String()})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "listing resources in cluster")
 	}
 	resourcesInClusterMap := make(map[string]unstructured.Unstructured)
 	for _, resource := range resourcesInCluster.Items {
@@ -523,7 +523,7 @@ func (m *handlerImpl) reconcileCreateOrUpdateResource(
 		}
 		_, err = m.client.Resource(api.GroupVersionResource()).Namespace(namespace).Update(m.ctx(), updatedResource, v1.UpdateOptions{})
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "updating namespace %q", namespace)
 		}
 	} else {
 		// The Resource is in Central but not in the cluster

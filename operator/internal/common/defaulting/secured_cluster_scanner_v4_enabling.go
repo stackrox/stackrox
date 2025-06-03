@@ -7,6 +7,13 @@ import (
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 )
 
+var (
+	SecuredClusterScannerV4DefaultingFlow = SecuredClusterDefaultingFlow{
+		Name:           "scanner-V4",
+		DefaultingFunc: securedClusterScannerV4Defaulting,
+	}
+)
+
 // Only returns AutoSense or Disabled.
 // Derive component policy based on status Defaults and spec.
 // This will be called from the preExtension to record the current setting.
@@ -15,7 +22,6 @@ import (
 func SecuredClusterScannerV4ComponentPolicy(logger logr.Logger, status *platform.SecuredClusterStatus, annotations map[string]string, spec *platform.LocalScannerV4ComponentSpec) (platform.LocalScannerV4ComponentPolicy, bool) {
 	defaultForUpgrades := platform.LocalScannerV4Disabled
 	defaultForNewInstallations := platform.LocalScannerV4AutoSense
-	logger = logger.WithName("scanner-v4-defaulting")
 
 	if spec != nil && spec.ScannerComponent != nil {
 		comp := *spec.ScannerComponent
@@ -65,4 +71,30 @@ func SecuredClusterScannerV4ComponentPolicy(logger logr.Logger, status *platform
 // securedClusterStatusUninitialized checks if the provided Securedcluster status is uninitialized.
 func securedClusterStatusUninitialized(status *platform.SecuredClusterStatus) bool {
 	return status == nil || reflect.DeepEqual(status, &platform.SecuredClusterStatus{})
+}
+
+func securedClusterScannerV4Defaulting(logger logr.Logger, status *platform.SecuredClusterStatus, annotations map[string]string, spec *platform.SecuredClusterSpec, defaults *platform.SecuredClusterSpec) error {
+	scannerV4Spec := copyLocalScannerV4ComponentSpec(spec.ScannerV4)
+	componentPolicy, usedDefaulting := SecuredClusterScannerV4ComponentPolicy(logger, status, annotations, scannerV4Spec)
+	if !usedDefaulting {
+		// User provided an explicit choice, nothing to do in this flow.
+		return nil
+	}
+
+	// User is relying on defaults. Set in-memory default and persist corresponding annotation.
+
+	if annotations[FeatureDefaultKeyScannerV4] != string(componentPolicy) {
+		// Update feature default setting.
+		annotations[FeatureDefaultKeyScannerV4] = string(componentPolicy)
+	}
+
+	defaults.ScannerV4 = &platform.LocalScannerV4ComponentSpec{ScannerComponent: &componentPolicy}
+	return nil
+}
+
+func copyLocalScannerV4ComponentSpec(spec *platform.LocalScannerV4ComponentSpec) *platform.LocalScannerV4ComponentSpec {
+	if spec == nil {
+		return &platform.LocalScannerV4ComponentSpec{}
+	}
+	return spec.DeepCopy()
 }

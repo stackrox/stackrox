@@ -387,6 +387,7 @@ func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageReques
 	enrichmentCtx := enricher.EnrichmentContext{
 		FetchOpt:  enricher.UseCachesIfPossible,
 		Delegable: true,
+		Namespace: request.GetNamespace(),
 	}
 	if request.GetForce() {
 		enrichmentCtx.FetchOpt = enricher.UseImageNamesRefetchCachedValues

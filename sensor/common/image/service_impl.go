@@ -133,7 +133,8 @@ func (s *serviceImpl) RegisterServiceHandler(context.Context, *runtime.ServeMux,
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, idcheck.AdmissionControlOnly().Authorized(ctx, fullMethodName)
+	err := idcheck.AdmissionControlOnly().Authorized(ctx, fullMethodName)
+	return ctx, errors.Wrapf(err, "image authorization for %q", fullMethodName)
 }
 
 func (s *serviceImpl) Notify(e common.SensorComponentEvent) {

@@ -568,10 +568,10 @@ func (s *serviceImpl) getProfiles(ctx context.Context, query *v1.Query, countQue
 		return nil, 0, err
 	}
 
-	profileCount, err := s.scanConfigDS.CountDistinctProfiles(ctx, countQuery)
+	profileCounts, err := s.scanConfigDS.DistinctProfiles(ctx, countQuery)
 	if err != nil {
 		return nil, 0, errors.Wrap(errox.NotFound, err.Error())
 	}
 
-	return storagetov2.ComplianceProfileSummary(profiles, benchmarkMap), profileCount, nil
+	return storagetov2.ComplianceProfileSummary(profiles, benchmarkMap), len(profileCounts), nil
 }

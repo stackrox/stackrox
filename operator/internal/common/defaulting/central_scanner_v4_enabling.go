@@ -78,7 +78,7 @@ func centralStatusUninitialized(status *platform.CentralStatus) bool {
 }
 
 func centralScannerV4Defaulting(logger logr.Logger, status *platform.CentralStatus, annotations map[string]string, spec *platform.CentralSpec, defaults *platform.CentralSpec) error {
-	scannerV4Spec := initializedDeepCopy(spec.ScannerV4)
+	scannerV4Spec := copyScannerV4Spec(spec.ScannerV4)
 	componentPolicy, usedDefaulting := CentralScannerV4ComponentPolicy(logger, status, annotations, scannerV4Spec)
 	if !usedDefaulting {
 		// User provided an explicit choice, nothing to do in this flow.
@@ -94,4 +94,11 @@ func centralScannerV4Defaulting(logger logr.Logger, status *platform.CentralStat
 
 	defaults.ScannerV4 = &platform.ScannerV4Spec{ScannerComponent: &componentPolicy}
 	return nil
+}
+
+func copyScannerV4Spec(spec *platform.ScannerV4Spec) *platform.ScannerV4Spec {
+	if spec == nil {
+		return &platform.ScannerV4Spec{}
+	}
+	return spec.DeepCopy()
 }

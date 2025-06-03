@@ -9,7 +9,9 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/zlog"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/scannerv4/enricher/csaf"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -144,7 +146,8 @@ func (eg enrichmentGetter) GetEnrichment(ctx context.Context, tags []string) ([]
 }
 
 func TestEnrich(t *testing.T) {
-	t.Parallel()
+	testutils.MustUpdateFeature(t, features.ScannerV4RedHatCVEs, false)
+
 	ctx := zlog.Test(context.Background(), t)
 
 	g := enrichmentGetter(func(ctx context.Context, tags []string) ([]driver.EnrichmentRecord, error) {

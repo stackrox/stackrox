@@ -114,7 +114,7 @@ var (
 	PlatformCVESplit = registerFeature("Splits Image CVEs into Workload CVE and Platform CVE sections in the UI", "ROX_PLATFORM_CVE_SPLIT", enabled)
 
 	// Flattens CVE Data Model for improved accuracy and performance
-	FlattenCVEData = registerFeature("Uses a flattened CVE Data Model improved accuracy and performance", "ROX_FLATTEN_CVE_DATA")
+	FlattenCVEData = registerFeature("Uses a flattened CVE Data Model improved accuracy and performance", "ROX_FLATTEN_CVE_DATA", enabled)
 
 	// Adds the ability to generate on-demand vulnerability reports based on filter views
 	VulnerabilityOnDemandReports = registerFeature("Adds the ability to generate on-demand vulnerability reports based on filter views", "ROX_VULNERABILITY_ON_DEMAND_REPORTS")
@@ -149,13 +149,13 @@ var (
 	// TODO(ROX-26672): Remove this once we can show both CVEs and RHSAs in the UI + reports.
 	//
 	// This must be set in Scanner V4 Matcher to have any effect.
-	ScannerV4RedHatCVEs = registerFeature("Scanner V4 will output CVEs instead of RHSAs/RHBAs/RHEAs for fixed Red Hat vulnerabilities", "ROX_SCANNER_V4_RED_HAT_CVES")
+	ScannerV4RedHatCVEs = registerFeature("Scanner V4 will output CVEs instead of RHSAs/RHBAs/RHEAs for fixed Red Hat vulnerabilities", "ROX_SCANNER_V4_RED_HAT_CVES", enabled)
 
 	// ScannerV4RedHatCSAF enables CSAF enrichment for Red Hat advisories.
 	// TODO(ROX-26672): Remove this once we can show both CVEs and RHSAs in the UI + reports.
 	//
 	// This must be set in Scanner V4 Matcher to have any effect.
-	ScannerV4RedHatCSAF = registerFeature("Scanner V4 will enrich its results with Red Hat CSAF data", "ROX_SCANNER_V4_RED_HAT_CSAF", enabled)
+	ScannerV4RedHatCSAF = registerFeature("Scanner V4 will enrich its results with Red Hat CSAF data", "ROX_SCANNER_V4_RED_HAT_CSAF")
 
 	// ScannerV4RedHatLayers enables displaying vulnerabilities from Red Hat sources, only, for packages found in official Red Hat image layers.
 	ScannerV4RedHatLayers = registerFeature("Scanner V4 will output vulnerabilities from Red Hat sources, only, for packages found in official Red Hat image layers", "ROX_SCANNER_V4_RED_HAT_LAYERS_RED_HAT_VULNS_ONLY")

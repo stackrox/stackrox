@@ -46,6 +46,7 @@ import {
     namespaceSearchFilterConfig,
 } from 'Containers/Vulnerabilities/searchFilterConfig';
 import { filterManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
+import { HistoryAction } from 'hooks/useURLParameter';
 import ColumnManagementButton from 'Components/ColumnManagementButton';
 import { WorkloadEntityTab, VulnerabilitySeverityLabel } from '../../types';
 import {
@@ -338,10 +339,10 @@ function ImageCvePage() {
         tableRowCount = deploymentCount;
     }
 
-    function onEntityTypeChange(entityTab: WorkloadEntityTab) {
-        setPage(1);
+    function onEntityTypeChange(entityTab: WorkloadEntityTab, historyAction?: HistoryAction) {
+        setPage(1, historyAction);
         if (entityTab !== 'CVE') {
-            setSortOption(getDefaultSortOption(entityTab));
+            setSortOption(getDefaultSortOption(entityTab), historyAction);
         }
         analyticsTrack({
             event: WORKLOAD_CVE_ENTITY_CONTEXT_VIEWED,
@@ -359,7 +360,7 @@ function ImageCvePage() {
 
     // Track the initial entity tab view
     useEffect(() => {
-        onEntityTypeChange(entityTab);
+        onEntityTypeChange(entityTab, 'replace');
     }, []);
 
     // If the `imageCVE` field is null, then the CVE ID passed via URL does not exist

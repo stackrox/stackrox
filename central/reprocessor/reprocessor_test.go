@@ -10,10 +10,12 @@ import (
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	imagePG "github.com/stackrox/rox/central/image/datastore/store/postgres"
+	imagePostgresV2 "github.com/stackrox/rox/central/image/datastore/store/v2/postgres"
 	platformmatcher "github.com/stackrox/rox/central/platform/matcher"
 	"github.com/stackrox/rox/central/ranking"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -41,8 +43,12 @@ func TestGetActiveImageIDs(t *testing.T) {
 	pool = testingDB.DB
 	defer pool.Close()
 
-	imageDS = imageDatastore.NewWithPostgres(imagePG.New(pool, false, concurrency.NewKeyFence()), nil, ranking.ImageRanker(), ranking.ComponentRanker())
 	mockCtrl := gomock.NewController(t)
+	if features.FlattenCVEData.Enabled() {
+		imageDS = imageDatastore.NewWithPostgres(imagePostgresV2.New(pool, false, concurrency.NewKeyFence()), nil, ranking.ImageRanker(), ranking.ComponentRanker())
+	} else {
+		imageDS = imageDatastore.NewWithPostgres(imagePG.New(pool, false, concurrency.NewKeyFence()), nil, ranking.ImageRanker(), ranking.ComponentRanker())
+	}
 	deploymentsDS, err = deploymentDatastore.New(pool, nil, nil, nil, nil, nil, filter.NewFilter(5, 5, []int{5}), ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker(), platformmatcher.GetTestPlatformMatcherWithDefaultPlatformComponentConfig(mockCtrl))
 	require.NoError(t, err)
 
@@ -76,8 +82,12 @@ func TestImagesWithSignaturesQuery(t *testing.T) {
 	pool := testingDB.DB
 	defer pool.Close()
 
-	imageDS := imageDatastore.NewWithPostgres(imagePG.New(pool, false,
-		concurrency.NewKeyFence()), nil, ranking.ImageRanker(), ranking.ComponentRanker())
+	var imageDS imageDatastore.DataStore
+	if features.FlattenCVEData.Enabled() {
+		imageDS = imageDatastore.NewWithPostgres(imagePostgresV2.New(pool, false, concurrency.NewKeyFence()), nil, ranking.ImageRanker(), ranking.ComponentRanker())
+	} else {
+		imageDS = imageDatastore.NewWithPostgres(imagePG.New(pool, false, concurrency.NewKeyFence()), nil, ranking.ImageRanker(), ranking.ComponentRanker())
+	}
 
 	imgWithSignature := fixtures.GetImage()
 	imgWithoutSignature := fixtures.GetImageWithUniqueComponents(10)

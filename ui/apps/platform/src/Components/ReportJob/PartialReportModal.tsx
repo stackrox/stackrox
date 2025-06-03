@@ -1,5 +1,14 @@
-import React from 'react';
-import { Button, Flex, FlexItem, Modal } from '@patternfly/react-core';
+import React, { useState } from 'react';
+import {
+    Button,
+    Flex,
+    FlexItem,
+    Modal,
+    Pagination,
+    Toolbar,
+    ToolbarContent,
+    ToolbarItem,
+} from '@patternfly/react-core';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import sortBy from 'lodash/sortBy';
 
@@ -12,12 +21,19 @@ export type PartialReportModalProps = {
 
 function PartialReportModal({ failedClusters = [], onDownload }: PartialReportModalProps) {
     const [isModalOpen, setIsModalOpen] = React.useState(false);
+    const [page, setPage] = useState(1);
+    const [perPage, setPerPage] = useState(20);
 
     const handleModalToggle = () => {
         setIsModalOpen(!isModalOpen);
     };
 
-    const sortedFailedClusters = sortBy(failedClusters, 'clusterName');
+    const startIndex = (page - 1) * perPage;
+    const endIndex = startIndex + perPage;
+    const filteredFailedClusters = sortBy(failedClusters, 'clusterName').slice(
+        startIndex,
+        endIndex
+    );
 
     const buttonText = onDownload
         ? 'Partial report ready for download'
@@ -63,6 +79,23 @@ function PartialReportModal({ failedClusters = [], onDownload }: PartialReportMo
                         cluster logs to diagnose the issue. The following clusters are not included
                         in this report
                     </FlexItem>
+                    <Toolbar className="pf-v5-u-w-100">
+                        <ToolbarContent>
+                            <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
+                                <Pagination
+                                    isCompact
+                                    itemCount={failedClusters.length}
+                                    page={page}
+                                    perPage={perPage}
+                                    onSetPage={(_, newPage) => setPage(newPage)}
+                                    onPerPageSelect={(_, newPerPage) => {
+                                        setPerPage(newPerPage);
+                                        setPage(1);
+                                    }}
+                                />
+                            </ToolbarItem>
+                        </ToolbarContent>
+                    </Toolbar>
                     <Table aria-label="Failed clusters table" variant="compact">
                         <Thead>
                             <Tr>
@@ -72,7 +105,7 @@ function PartialReportModal({ failedClusters = [], onDownload }: PartialReportMo
                             </Tr>
                         </Thead>
                         <Tbody>
-                            {sortedFailedClusters.map((cluster) => (
+                            {filteredFailedClusters.map((cluster) => (
                                 <Tr key={cluster.clusterId}>
                                     <Td dataLabel="Cluster">{cluster.clusterName}</Td>
                                     <Td dataLabel="Reason">{cluster.reason}</Td>

@@ -3,6 +3,7 @@ package metrics
 import (
 	"math"
 
+	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/reflectutils"
@@ -41,7 +42,10 @@ func (s *sizingEventStream) metricKey(typ, eventType string) string {
 
 func (s *sizingEventStream) Send(msg *central.MsgFromSensor) error {
 	s.incrementMetric(msg)
-	return s.stream.Send(msg)
+	if err := s.stream.Send(msg); err != nil {
+		return errors.Wrap(err, "sending sensor message in sizingEventStream")
+	}
+	return nil
 }
 
 // NewSizingEventStream returns a new SensorMessageStream that automatically updates max message size sent metric.

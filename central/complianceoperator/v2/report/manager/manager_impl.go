@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	checkResults "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	complianceIntegrationDS "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore"
 	profileDatastore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
 	"github.com/stackrox/rox/central/complianceoperator/v2/report"
@@ -57,6 +58,7 @@ type managerImpl struct {
 	integrationDataStore complianceIntegrationDS.DataStore
 	suiteDataStore       suiteDS.DataStore
 	bindingsDataStore    bindingsDS.DataStore
+	checkResultDataStore checkResults.DataStore
 
 	runningReportConfigs map[string]*reportRequest
 	// channel for report job requests
@@ -87,7 +89,15 @@ type managerImpl struct {
 	scanConfigReadyQueue *queue.Queue[*watcher.ScanConfigWatcherResults]
 }
 
-func New(scanConfigDS scanConfigurationDS.DataStore, scanDataStore scanDS.DataStore, profileDataStore profileDatastore.DataStore, snapshotDatastore snapshotDS.DataStore, complianceIntegration complianceIntegrationDS.DataStore, suiteDataStore suiteDS.DataStore, bindingsDataStore bindingsDS.DataStore, reportGen reportGen.ComplianceReportGenerator) Manager {
+func New(scanConfigDS scanConfigurationDS.DataStore,
+	scanDataStore scanDS.DataStore,
+	profileDataStore profileDatastore.DataStore,
+	snapshotDatastore snapshotDS.DataStore,
+	complianceIntegration complianceIntegrationDS.DataStore,
+	suiteDataStore suiteDS.DataStore,
+	bindingsDataStore bindingsDS.DataStore,
+	checkResultDataStore checkResults.DataStore,
+	reportGen reportGen.ComplianceReportGenerator) Manager {
 	return &managerImpl{
 		scanConfigDataStore:   scanConfigDS,
 		scanDataStore:         scanDataStore,
@@ -96,6 +106,7 @@ func New(scanConfigDS scanConfigurationDS.DataStore, scanDataStore scanDS.DataSt
 		integrationDataStore:  complianceIntegration,
 		suiteDataStore:        suiteDataStore,
 		bindingsDataStore:     bindingsDataStore,
+		checkResultDataStore:  checkResultDataStore,
 		stopper:               concurrency.NewStopper(),
 		runningReportConfigs:  make(map[string]*reportRequest, maxRequests),
 		reportRequests:        make(chan *reportRequest, maxRequests),
@@ -317,7 +328,7 @@ func (m *managerImpl) HandleScan(sensorCtx context.Context, scan *storage.Compli
 	id, err := watcher.GetWatcherIDFromScan(m.automaticReportingCtx, scan, m.snapshotDataStore, m.scanConfigDataStore, nil)
 	if err != nil {
 		if errors.Is(err, watcher.ErrComplianceOperatorScanMissingLastStartedFiled) {
-			log.Debugf("The scan is missing the LastStartedField: %v", err)
+			log.Debug("The scan is missing the LastStartedTime field")
 			return nil
 		}
 		if errors.Is(err, watcher.ErrScanAlreadyHandled) {
@@ -370,15 +381,15 @@ func (m *managerImpl) HandleResult(sensorCtx context.Context, result *storage.Co
 	if err != nil {
 		if errors.Is(err, watcher.ErrComplianceOperatorReceivedOldCheckResult) {
 			log.Debugf("The CheckResult is older than the current scan in the store")
-			return nil
+			return err
 		}
 		if errors.Is(err, watcher.ErrComplianceOperatorScanMissingLastStartedFiled) {
-			log.Debugf("The scan is missing the LastStartedField: %v", err)
-			return nil
+			log.Debug("The scan is missing the LastStartedTime field")
+			return err
 		}
 		if errors.Is(err, watcher.ErrScanAlreadyHandled) {
 			log.Debugf("The scan linked to the check result %s is already handled", result.GetCheckName())
-			return nil
+			return err
 		}
 		return err
 	}
@@ -399,6 +410,9 @@ func (m *managerImpl) handleReadyScan() {
 				concurrency.WithLock(&m.watchingScansLock, func() {
 					delete(m.watchingScans, scanWatcherResult.WatcherID)
 				})
+				if err := watcher.DeleteOldResults(m.automaticReportingCtx, scanWatcherResult, m.checkResultDataStore); err != nil {
+					log.Errorf("unable to delete old CheckResults: %v", err)
+				}
 				if errors.Is(scanWatcherResult.Error, watcher.ErrScanRemoved) {
 					log.Debugf("Scan %s was removed", scanWatcherResult.Scan.GetScanName())
 					continue
@@ -515,6 +529,9 @@ func (m *managerImpl) handleReadyScanConfig() {
 				concurrency.WithLock(&m.watchingScanConfigsLock, func() {
 					delete(m.watchingScanConfigs, scanConfigWatcherResult.WatcherID)
 				})
+				if err := watcher.DeleteOldResultsFromMissingScans(m.automaticReportingCtx, scanConfigWatcherResult, m.profileDataStore, m.scanDataStore, m.checkResultDataStore); err != nil {
+					log.Errorf("unable to delete old CheckResults: %v", err)
+				}
 				m.generateReportsFromWatcherResults(scanConfigWatcherResult)
 			}
 		}

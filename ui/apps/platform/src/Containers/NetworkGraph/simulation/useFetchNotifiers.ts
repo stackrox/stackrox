@@ -12,7 +12,7 @@ const defaultResultState = { notifiers: [], error: null, isLoading: true };
 /*
  * This hook does an API call to the notifiers API to get the list of notifiers
  */
-function useFetchScopes(): Result {
+function useFetchNotifiers(): Result {
     const [result, setResult] = useState<Result>(defaultResultState);
 
     useEffect(() => {
@@ -30,4 +30,4 @@ function useFetchScopes(): Result {
     return result;
 }
 
-export default useFetchScopes;
+export default useFetchNotifiers;

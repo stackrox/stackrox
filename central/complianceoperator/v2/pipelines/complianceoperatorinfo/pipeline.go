@@ -80,13 +80,15 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 		operatorErrors = append(operatorErrors, fmt.Sprintf("Compliance operator is not ready. Only %d pods out of desired %d are ready.", readyPods, desiredPods))
 	}
 
-	// we support only newer versions of compliance operator
-	complianceOperatorVersion, err := semver.NewVersion(operatorInfo.GetVersion())
-	if complianceOperatorVersion == nil || err != nil {
-		log.Error(errors.Wrapf(err, "parsing compliance operator version: %q", operatorInfo.GetVersion()))
-		operatorErrors = append(operatorErrors, fmt.Sprintf("The installed compliance operator version %q is invalid.", operatorInfo.GetVersion()))
-	} else if complianceOperatorVersion.LessThan(env.ComplianceMinimalSupportedVersion.VersionSetting()) {
-		operatorErrors = append(operatorErrors, fmt.Sprintf("The installed compliance operator version %q is unsupported. The minimum required version is %q.", complianceOperatorVersion.String(), env.ComplianceMinimalSupportedVersion.VersionSetting().String()))
+	if msg.GetComplianceOperatorInfo().GetIsInstalled() {
+		// we support only newer versions of compliance operator
+		complianceOperatorVersion, err := semver.NewVersion(operatorInfo.GetVersion())
+		if complianceOperatorVersion == nil || err != nil {
+			log.Error(errors.Wrapf(err, "parsing compliance operator version: %q", operatorInfo.GetVersion()))
+			operatorErrors = append(operatorErrors, fmt.Sprintf("The installed compliance operator version %q is invalid.", operatorInfo.GetVersion()))
+		} else if complianceOperatorVersion.LessThan(env.ComplianceMinimalSupportedVersion.VersionSetting()) {
+			operatorErrors = append(operatorErrors, fmt.Sprintf("The installed compliance operator version %q is unsupported. The minimum required version is %q.", complianceOperatorVersion.String(), env.ComplianceMinimalSupportedVersion.VersionSetting().String()))
+		}
 	}
 
 	operatorInfo.StatusErrors = operatorErrors

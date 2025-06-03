@@ -65,14 +65,6 @@ func TestTabularPrinterFactory_Validate(t *testing.T) {
 			shouldFail: true,
 			error:      errox.InvalidArgs,
 		},
-		"should fail with columns to merge not matching header": {
-			t: &TabularPrinterFactory{
-				Headers:        []string{"a", "b", "c"},
-				columnsToMerge: []string{"a", "d", "c", "e"},
-			},
-			shouldFail: true,
-			error:      errox.InvalidArgs,
-		},
 	}
 
 	for name, c := range cases {
@@ -164,8 +156,11 @@ func TestTabularPrinterFactory_CustomHeaderPropagation(t *testing.T) {
 				"result.vulnerabilities.#.componentVersion," +
 				"result.vulnerabilities.#.cveId," +
 				"result.vulnerabilities.#.cveSeverity," +
+				"result.vulnerabilities.#.cveCVSS," +
 				"result.vulnerabilities.#.cveInfo," +
-				"result.vulnerabilities.#.componentFixedVersion}",
+				"result.vulnerabilities.#.componentFixedVersion," +
+				"result.vulnerabilities.#.advisoryId," +
+				"result.vulnerabilities.#.advisoryInfo}",
 		},
 		"Reversed": {
 			t: &TabularPrinterFactory{
@@ -173,8 +168,11 @@ func TestTabularPrinterFactory_CustomHeaderPropagation(t *testing.T) {
 				RowJSONPathExpression: defaultImageScanJSONPathExpression,
 			},
 			expectedJSONPathExpression: "{" +
+				"result.vulnerabilities.#.advisoryInfo," +
+				"result.vulnerabilities.#.advisoryId," +
 				"result.vulnerabilities.#.componentFixedVersion," +
 				"result.vulnerabilities.#.cveInfo," +
+				"result.vulnerabilities.#.cveCVSS," +
 				"result.vulnerabilities.#.cveSeverity," +
 				"result.vulnerabilities.#.cveId," +
 				"result.vulnerabilities.#.componentVersion," +

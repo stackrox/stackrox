@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/delegatedregistry"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
@@ -80,12 +81,23 @@ func (d *delegatorImpl) GetDelegateClusterID(ctx context.Context, imgName *stora
 }
 
 // DelegateScanImage sends a scan request to the provided cluster.
-func (d *delegatorImpl) DelegateScanImage(ctx context.Context, imgName *storage.ImageName, clusterID string, force bool) (*storage.Image, error) {
+func (d *delegatorImpl) DelegateScanImage(ctx context.Context, imgName *storage.ImageName, clusterID string, namespace string, force bool) (*storage.Image, error) {
 	if clusterID == "" {
 		return nil, errors.New("missing cluster id")
 	}
 
-	namespace := d.inferNamespace(ctx, imgName, clusterID)
+	// If a namespace is specified, we verify access to it and fail if no access is granted.
+	// If no namespace is specified, we attempt to infer a namespace based on the registry to
+	// accommodate images from the OCP integrated registry.
+	if namespace != "" {
+		if ok, err := d.hasNamespaceAccess(ctx, clusterID, namespace); err != nil {
+			return nil, errors.Wrapf(err, "verifying access to namespace %q on cluster %q", namespace, clusterID)
+		} else if !ok {
+			return nil, errox.NotAuthorized.CausedByf("no access to namespace %q on cluster %q", namespace, clusterID)
+		}
+	} else {
+		namespace = d.inferNamespace(ctx, imgName, clusterID)
+	}
 
 	w, err := d.scanWaiterManager.NewWaiter()
 	if err != nil {
@@ -131,19 +143,31 @@ func (d *delegatorImpl) inferNamespace(ctx context.Context, imgName *storage.Ima
 
 	defer centralMetrics.SetFunctionSegmentDuration(time.Now(), "ScanDelegatorInferNamespace")
 
-	namespaces, err := d.namespaceSACHelper.GetNamespacesForClusterAndPermissions(ctx, clusterID, inferNamespacePermissions)
-	if err != nil {
+	if ok, err := d.hasNamespaceAccess(ctx, clusterID, namespace); err != nil {
 		log.Warnf("Skipping namespace inference for %q (%s) and cluster %q due to error: %v", imgName.GetFullName(), namespace, clusterID, err)
 		return ""
+	} else if !ok {
+		return ""
+	}
+
+	return namespace
+}
+
+func (d *delegatorImpl) hasNamespaceAccess(ctx context.Context, clusterID string, namespace string) (bool, error) {
+	defer centralMetrics.SetFunctionSegmentDuration(time.Now(), "ScanDelegatorCheckNamespaceAccess")
+
+	namespaces, err := d.namespaceSACHelper.GetNamespacesForClusterAndPermissions(ctx, clusterID, inferNamespacePermissions)
+	if err != nil {
+		return false, errors.Wrapf(err, "getting allowed namespaces for cluster %q", clusterID)
 	}
 
 	for _, ns := range namespaces {
 		if ns.GetName() == namespace {
-			return namespace
+			return true, nil
 		}
 	}
 
-	return ""
+	return false, nil
 }
 
 func (d *delegatorImpl) shouldDelegate(imgName *storage.ImageName, config *storage.DelegatedRegistryConfig) (bool, string) {

@@ -3841,6 +3841,14 @@
               {
                 "name": "PARTIAL_ERROR",
                 "integer": 5
+              },
+              {
+                "name": "PARTIAL_SCAN_ERROR_DOWNLOAD",
+                "integer": 6
+              },
+              {
+                "name": "PARTIAL_SCAN_ERROR_EMAIL",
+                "integer": 7
               }
             ]
           },
@@ -4438,6 +4446,11 @@
                 "id": 19,
                 "name": "rule_ref_id",
                 "type": "string"
+              },
+              {
+                "id": 20,
+                "name": "last_started_time",
+                "type": "google.protobuf.Timestamp"
               }
             ],
             "maps": [

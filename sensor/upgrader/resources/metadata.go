@@ -3,6 +3,8 @@ package resources
 import (
 	"strings"
 
+	"github.com/pkg/errors"
+
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/utils"
@@ -145,5 +147,8 @@ func GetAvailableResources(client discovery.ServerResourcesInterface, expectedGV
 		populateFromResourceList(resourceListForGroupVersion, expectedGVKs, &result)
 	}
 
-	return result, errorList.ToError()
+	if err := errorList.ToError(); err != nil {
+		return result, errors.Wrap(err, "getting available resources")
+	}
+	return result, nil
 }

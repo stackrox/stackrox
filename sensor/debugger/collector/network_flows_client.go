@@ -118,13 +118,13 @@ func (m *fakeNetworkFlowManager) start(address string) error {
 	}
 	conn, err := clientconn.GRPCConnection(ctx, mtls.SensorSubject, address, opts)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "creating gRPC connection to %s", address)
 	}
 	m.conn = conn
 	cli := sensor.NewNetworkConnectionInfoServiceClient(conn)
 	client, err := cli.PushNetworkConnectionInfo(ctx)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "opening network connection info stream")
 	}
 	go m.runRecv(client, m.receivedMessageC, m.receivedErrC)
 	go m.runSend(client, m.messageToSendC, m.sendErrC)

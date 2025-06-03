@@ -54,7 +54,7 @@ func (w *crdWatcher) startHandler() error {
 	handler := newCRDHandler(w.stopSig, w.resourceC)
 	informer := w.sif.ForResource(v1.SchemeGroupVersion.WithResource(customResourceDefinitionsName)).Informer()
 	if _, err := informer.AddEventHandler(handler); err != nil {
-		return err
+		return errors.Wrap(err, "adding CRD event handler")
 	}
 	wg := concurrency.WaitGroup{}
 	wg.Add(1)

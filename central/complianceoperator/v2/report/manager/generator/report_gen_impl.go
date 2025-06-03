@@ -101,7 +101,12 @@ func (rg *complianceReportGeneratorImpl) ProcessReportRequest(req *report.Reques
 	if snapshot != nil {
 		snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_GENERATED
 		if len(req.FailedClusters) > 0 {
-			snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_PARTIAL_ERROR
+			switch req.NotificationMethod {
+			case storage.ComplianceOperatorReportStatus_EMAIL:
+				snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_PARTIAL_SCAN_ERROR_EMAIL
+			case storage.ComplianceOperatorReportStatus_DOWNLOAD:
+				snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_PARTIAL_SCAN_ERROR_DOWNLOAD
+			}
 			if len(req.FailedClusters) == len(req.ClusterIDs) {
 				snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_FAILURE
 			}
@@ -111,7 +116,7 @@ func (rg *complianceReportGeneratorImpl) ProcessReportRequest(req *report.Reques
 		}
 
 		if req.NotificationMethod == storage.ComplianceOperatorReportStatus_DOWNLOAD {
-			if err := rg.saveReportData(req.Ctx, snapshot.GetScanConfigurationId(), snapshot.GetReportId(), zipData); err != nil {
+			if err := rg.saveReportData(reportGenCtx, snapshot.GetScanConfigurationId(), snapshot.GetReportId(), zipData); err != nil {
 				if dbErr := reportUtils.UpdateSnapshotOnError(req.Ctx, snapshot, err, rg.snapshotDS); dbErr != nil {
 					return errors.Wrap(err, errUnableToUpdateSnapshotOnBlobFailureStr)
 				}

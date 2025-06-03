@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff/v3"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
@@ -108,13 +109,13 @@ func (s *alertSenderImpl) sendAlertsToSensor(ctx context.Context) error {
 	case <-s.stopC.Done():
 		return nil
 	case <-ctx.Done():
-		return ctx.Err()
+		return errors.Wrap(ctx.Err(), "sending alerts to sensor")
 	default:
 		log.Debugf("Sending %d alert results to Sensor", len(s.stagedAlerts))
 
 		if _, err := s.client.PolicyAlerts(ctx, msg); err != nil {
 			s.stopC.Signal()
-			return err
+			return errors.Wrap(err, "sending policy alerts to sensor")
 		}
 		s.pruneStagedAlerts(keysToPrune...)
 		s.eb.Reset()

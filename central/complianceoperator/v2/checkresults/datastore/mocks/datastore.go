@@ -18,6 +18,7 @@ import (
 	storage "github.com/stackrox/rox/generated/storage"
 	search "github.com/stackrox/rox/pkg/search"
 	gomock "go.uber.org/mock/gomock"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // MockDataStore is a mock of DataStore interface.
@@ -134,6 +135,20 @@ func (mr *MockDataStoreMockRecorder) CountCheckResults(ctx, q any) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountCheckResults", reflect.TypeOf((*MockDataStore)(nil).CountCheckResults), ctx, q)
 }
 
+// DeleteOldResults mocks base method.
+func (m *MockDataStore) DeleteOldResults(ctx context.Context, lastStartedTimestamp *timestamppb.Timestamp, scanRefID string, includeCurrent bool) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteOldResults", ctx, lastStartedTimestamp, scanRefID, includeCurrent)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteOldResults indicates an expected call of DeleteOldResults.
+func (mr *MockDataStoreMockRecorder) DeleteOldResults(ctx, lastStartedTimestamp, scanRefID, includeCurrent any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteOldResults", reflect.TypeOf((*MockDataStore)(nil).DeleteOldResults), ctx, lastStartedTimestamp, scanRefID, includeCurrent)
+}
+
 // DeleteResult mocks base method.
 func (m *MockDataStore) DeleteResult(ctx context.Context, id string) error {
 	m.ctrl.T.Helper()
@@ -160,6 +175,34 @@ func (m *MockDataStore) DeleteResultsByCluster(ctx context.Context, clusterID st
 func (mr *MockDataStoreMockRecorder) DeleteResultsByCluster(ctx, clusterID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteResultsByCluster", reflect.TypeOf((*MockDataStore)(nil).DeleteResultsByCluster), ctx, clusterID)
+}
+
+// DeleteResultsByScanConfigAndCluster mocks base method.
+func (m *MockDataStore) DeleteResultsByScanConfigAndCluster(ctx context.Context, scanConfigName string, clusterIDs []string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteResultsByScanConfigAndCluster", ctx, scanConfigName, clusterIDs)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteResultsByScanConfigAndCluster indicates an expected call of DeleteResultsByScanConfigAndCluster.
+func (mr *MockDataStoreMockRecorder) DeleteResultsByScanConfigAndCluster(ctx, scanConfigName, clusterIDs any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteResultsByScanConfigAndCluster", reflect.TypeOf((*MockDataStore)(nil).DeleteResultsByScanConfigAndCluster), ctx, scanConfigName, clusterIDs)
+}
+
+// DeleteResultsByScans mocks base method.
+func (m *MockDataStore) DeleteResultsByScans(ctx context.Context, scanRefIds []string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteResultsByScans", ctx, scanRefIds)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteResultsByScans indicates an expected call of DeleteResultsByScans.
+func (mr *MockDataStoreMockRecorder) DeleteResultsByScans(ctx, scanRefIds any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteResultsByScans", reflect.TypeOf((*MockDataStore)(nil).DeleteResultsByScans), ctx, scanRefIds)
 }
 
 // GetComplianceCheckResult mocks base method.

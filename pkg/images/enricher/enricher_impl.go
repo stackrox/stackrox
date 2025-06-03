@@ -174,7 +174,7 @@ func (e *enricherImpl) delegateEnrichImage(ctx context.Context, enrichCtx Enrich
 
 	// Send image to secured cluster for enrichment.
 	force := enrichCtx.FetchOpt.forceRefetchCachedValues() || enrichCtx.FetchOpt == UseImageNamesRefetchCachedValues
-	scannedImage, err := e.scanDelegator.DelegateScanImage(ctx, image.GetName(), clusterID, force)
+	scannedImage, err := e.scanDelegator.DelegateScanImage(ctx, image.GetName(), clusterID, enrichCtx.Namespace, force)
 	if err != nil {
 		return true, err
 	}
@@ -829,7 +829,7 @@ func (e *enricherImpl) enrichWithSignature(ctx context.Context, enrichmentContex
 			if !errors.Is(err, errox.NotAuthorized) {
 				log.Errorf("Error fetching image signatures for image %q: %v", imgName, err)
 			} else {
-				// Log errox.NotAuthorized erros only in debug mode, since we expect them to occur often.
+				// Log errox.NotAuthorized errors only in debug mode, since we expect them to occur often.
 				log.Debugf("Unauthorized error fetching image signatures for image %q: %v",
 					imgName, err)
 			}
