@@ -31,8 +31,25 @@ func (m *matcherMetadataStore) GetLastVulnerabilityUpdate(ctx context.Context) (
 	return t.UTC(), nil
 }
 
-// SetLastVulnerabilityUpdate implements MatcherMetadataStore.SetLastVulnerabilityUpdate.
-//
+// GetLastVulnerabilityBundleUpdate implements MatcherMetadataStore.GetLastVulnerabilityBundleUpdate
+func (m *matcherMetadataStore) GetLastVulnerabilityBundleUpdate(ctx context.Context, bundle string) (time.Time, error) {
+	const selectTimestamp = `
+		SELECT update_timestamp
+		FROM last_vuln_update WHERE key = $1
+		ORDER BY update_timestamp DESC LIMIT 1;`
+	row := m.pool.QueryRow(ctx, selectTimestamp, bundle)
+	var t time.Time
+	err := row.Scan(&t)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return time.Time{}, nil
+	}
+	if err != nil {
+		return time.Time{}, err
+	}
+	return t.UTC(), nil
+}
+
+// SetLastVulnerabilityUpdate implements MatcherMetadataStore.SetLastVulnerabilityUpda
 // We use one row for each vulnerability bundle, keyed by their name.
 func (m *matcherMetadataStore) SetLastVulnerabilityUpdate(ctx context.Context, bundle string, lastUpdate time.Time) error {
 	const insertTimestamp = `
