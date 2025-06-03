@@ -62,7 +62,7 @@ function ImagePageSignatureVerification({ results }: ImagePageSignatureVerificat
                             <Tr>
                                 <Th>Integration</Th>
                                 <Th>Status</Th>
-                                <Th>Verificaton time</Th>
+                                <Th>Verification time</Th>
                             </Tr>
                         </Thead>
 
@@ -77,7 +77,7 @@ function ImagePageSignatureVerification({ results }: ImagePageSignatureVerificat
                                     <Tr>
                                         <Td dataLabel="Integration">{result.verifierId}</Td>
                                         <Td dataLabel="Status">{getStatusMessage(result)}</Td>
-                                        <Td dataLabel="Verificaton time">
+                                        <Td dataLabel="Verification time">
                                             <DateDistance date={result.verificationTime} />
                                         </Td>
                                     </Tr>
