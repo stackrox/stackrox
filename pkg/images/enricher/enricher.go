@@ -72,7 +72,9 @@ type EnrichmentContext struct {
 	// Used to override the delegated registry configuration.
 	ClusterID string
 
-	// Namespace contains the name of the namespace used to filter NetworkPolicies for Deployments.
+	// Namespace is used for context information in the enrichment. It may be specified to:
+	// - Filter NetworkPolicies for Deployments.
+	// - Read pull secrets from a namespace in the delegated cluster to access the image registry.
 	Namespace string
 
 	Source *RequestSource
