@@ -360,9 +360,9 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityImages() {
 
 	images, err := vuln.Images(ctx, PaginatedQuery{})
 	s.NoError(err)
-	s.Equal(1, len(images))
+	s.Equal(2, len(images))
 	idList := getIDList(ctx, images)
-	s.ElementsMatch([]string{"sha1"}, idList)
+	s.ElementsMatch([]string{"sha1", "sha2"}, idList)
 
 	count, err := vuln.ImageCount(ctx, RawQuery{})
 	s.NoError(err)
@@ -388,9 +388,9 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityImageCompon
 
 	comps, err := vuln.ImageComponents(ctx, PaginatedQuery{})
 	s.NoError(err)
-	s.Equal(1, len(comps))
+	s.Equal(2, len(comps))
 	idList := getIDList(ctx, comps)
-	s.ElementsMatch([]string{s.componentIDMap[comp11]}, idList)
+	s.ElementsMatch([]string{s.componentIDMap[comp11], s.componentIDMap[comp21]}, idList)
 
 	count, err := vuln.ImageComponentCount(ctx, RawQuery{})
 	s.NoError(err)
