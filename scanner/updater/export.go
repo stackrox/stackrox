@@ -111,6 +111,9 @@ func Export(ctx context.Context, outputDir string, opts *ExportOptions) error {
 				return err
 			}
 			err = bundle(ctx, httpClient, w, o)
+			if name == "nvd" {
+				err = fmt.Errorf("test failure injected for updater %q", name)
+			}
 			if err != nil {
 				_ = w.Close()
 				status.FailedUpdaters = append(status.FailedUpdaters, name)
