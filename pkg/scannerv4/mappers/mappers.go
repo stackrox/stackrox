@@ -818,14 +818,13 @@ func fixedInVersion(v *claircore.Vulnerability) string {
 	fixedIn := v.FixedInVersion
 	// Try to parse url encoded params; if expected values are not found leave it.
 	q, err := url.ParseQuery(fixedIn)
-	if err != nil {
-		// v.FixedInVersion is not url encoded, so just return it as-is.
-		return fixedIn
+	if err == nil && q.Has("fixed") {
+		fixedIn = q.Get("fixed")
+	} else if err == nil && (q.Has("introduced") || q.Has("lastAffected")) {
+		// either introduced or lastAffected gives us nothing informative so return empty string
+		return ""
 	}
-	if q.Has("fixed") {
-		return q.Get("fixed")
-	}
-	return ""
+	return fixedIn
 }
 
 // nvdVulnerabilities look for NVD CVSS in the vulnerability report enrichments and
