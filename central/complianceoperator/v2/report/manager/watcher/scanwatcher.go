@@ -312,7 +312,7 @@ func (s *scanWatcherImpl) run() {
 
 func GetExpectedNumChecks(scan *storage.ComplianceOperatorScanV2) (int, error) {
 	annotationsMap := scan.GetAnnotations()
-	if annotationsMap == nil || len(annotationsMap) == 0 {
+	if len(annotationsMap) == 0 {
 		return 0, nil // It can happen that the annotation is not available and this is okay.
 	}
 	checkCountAnnotation, found := annotationsMap[CheckCountAnnotationKey]
