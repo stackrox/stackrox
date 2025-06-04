@@ -30,4 +30,18 @@ var (
 	// This value can be customized via the ROX_COMPLIANCE_MINIMAL_SUPPORTED_OPERATOR_VERSION environment variable.
 	// If the environment variable is unset, contains an invalid version, or is lower than the default value, the default value "v1.6.0" will be used.
 	ComplianceMinimalSupportedVersion = RegisterVersionSetting("ROX_COMPLIANCE_MINIMAL_SUPPORTED_OPERATOR_VERSION", "v1.6.0", "v1.6.0")
+	// ComplianceScansRunningInParallelMetricObservationPeriod defines an observation window for the compliance operator metrics in Central.
+	// For example, a metric output like this:
+	// rox_central_complianceoperator_num_scans_running_in_parallel_bucket{le="0"} 0
+	// rox_central_complianceoperator_num_scans_running_in_parallel_bucket{le="1"} 6
+	// rox_central_complianceoperator_num_scans_running_in_parallel_bucket{le="2"} 16
+	// rox_central_complianceoperator_num_scans_running_in_parallel_bucket{le="3"} 20
+	// rox_central_complianceoperator_num_scans_running_in_parallel_bucket{le="4"} 36
+	// with setting of 1 hour, should be interpreted as follows:
+	// - The line with `le="0"` should be always empty, as we never have a negative number of scans running
+	// - There were six 1-hour-long time-windows with not a single scan was running
+	// - There were ten (16-6) 1-hour-long time-windows with a single scan was running
+	// - There were four (20-16) 1-hour-long time-windows with two scans were running in parallel
+	// - There were fourteen (34-20) 1-hour-long time-windows with three scans were running in parallel
+	ComplianceScansRunningInParallelMetricObservationPeriod = registerDurationSetting("ROX_COMPLIANCE_METRIC_OBSERVATION_PERIOD", 15*time.Minute)
 )

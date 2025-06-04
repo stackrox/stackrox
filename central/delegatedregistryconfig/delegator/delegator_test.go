@@ -273,7 +273,7 @@ func TestDelegateEnrichImage(t *testing.T) {
 		setup(t)
 		namespaceSACHelper.EXPECT().GetNamespacesForClusterAndPermissions(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
 		image, err := d.DelegateScanImage(ctxBG, nil, fakeClusterID, "no-access-ns", false)
-		assert.ErrorIs(t, err, errox.NotAuthorized)
+		assert.ErrorIs(t, err, errox.NotFound)
 		assert.Nil(t, image)
 	})
 

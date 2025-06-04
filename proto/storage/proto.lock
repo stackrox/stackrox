@@ -4863,6 +4863,12 @@
                     "id": 4,
                     "name": "operator_version",
                     "type": "string"
+                  },
+                  {
+                    "id": 5,
+                    "name": "scanNames",
+                    "type": "string",
+                    "is_repeated": true
                   }
                 ]
               }
@@ -12355,6 +12361,11 @@
                 "id": 4,
                 "name": "message_format",
                 "type": "MessageFormat"
+              },
+              {
+                "id": 5,
+                "name": "max_message_size",
+                "type": "int32"
               }
             ],
             "messages": [

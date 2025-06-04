@@ -15,7 +15,9 @@ import (
 	"github.com/stackrox/rox/central/complianceoperator/v2/rules/datastore"
 	ruleMocks "github.com/stackrox/rox/central/complianceoperator/v2/rules/datastore/mocks"
 	scanMocks "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore/mocks"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -50,10 +52,10 @@ type getReportDataTestCase struct {
 	numFailedChecksPerCluster int
 	numMixedChecksPerCluster  int
 	numFailedClusters         int
-	expectedErr               error
+	expectedWalkByErr         error
 }
 
-func (s *ComplianceResultsAggregatorSuite) Test_GetReportData() {
+func (s *ComplianceResultsAggregatorSuite) Test_GetReportDataResultsGeneration() {
 	cases := map[string]getReportDataTestCase{
 		"generate report data no error": {
 			numClusters:               2,
@@ -71,9 +73,9 @@ func (s *ComplianceResultsAggregatorSuite) Test_GetReportData() {
 			numFailedClusters:         1,
 		},
 		"generate report walk by error": {
-			numClusters: 3,
-			numProfiles: 4,
-			expectedErr: errors.New("error"),
+			numClusters:       3,
+			numProfiles:       4,
+			expectedWalkByErr: errors.New("error"),
 		},
 	}
 	for tname, tcase := range cases {
@@ -81,32 +83,57 @@ func (s *ComplianceResultsAggregatorSuite) Test_GetReportData() {
 			ctx := context.Background()
 			req := getRequest(ctx, tcase.numClusters, tcase.numProfiles, tcase.numFailedClusters)
 			s.checkResultsDS.EXPECT().WalkByQuery(gomock.Eq(ctx), gomock.Any(), gomock.Any()).
-				Times(tcase.numClusters).
-				DoAndReturn(func(_, _ any, fn checkResultWalkByQuery) error {
-					for i := 0; i < tcase.numPassedChecksPerCluster; i++ {
-						_ = fn(&storage.ComplianceOperatorCheckResultV2{
-							CheckName: fmt.Sprintf("pass-check-%d", i),
-							Status:    storage.ComplianceOperatorCheckResultV2_PASS,
-						})
-					}
-					for i := 0; i < tcase.numFailedChecksPerCluster; i++ {
-						_ = fn(&storage.ComplianceOperatorCheckResultV2{
-							CheckName: fmt.Sprintf("fail-check-%d", i),
-							Status:    storage.ComplianceOperatorCheckResultV2_FAIL,
-						})
-					}
-					for i := 0; i < tcase.numMixedChecksPerCluster; i++ {
-						_ = fn(&storage.ComplianceOperatorCheckResultV2{
-							CheckName: fmt.Sprintf("mixed-check-%d", i),
-							Status:    storage.ComplianceOperatorCheckResultV2_INCONSISTENT,
-						})
-					}
-					return tcase.expectedErr
-				})
+				Times(tcase.numClusters + tcase.numFailedClusters).
+				DoAndReturn(fakeWalkByResponse(
+					req.ClusterData,
+					tcase.expectedWalkByErr,
+					tcase.numPassedChecksPerCluster,
+					tcase.numFailedChecksPerCluster,
+					tcase.numMixedChecksPerCluster))
 			s.aggregator.aggreateResults = mockWalkByQueryWrapper
 			res := s.aggregator.GetReportData(req)
 			assertResults(s.T(), tcase, res)
 		})
+	}
+}
+
+func fakeWalkByResponse(
+	clusterData map[string]*report.ClusterData,
+	expectedErr error,
+	numPassedChecksPerCluster int,
+	numFailedChecksPerCluster int,
+	numMixedChecksPerCluster int,
+) func(context.Context, *v1.Query, checkResultWalkByQuery) error {
+	return func(_ context.Context, query *v1.Query, fn checkResultWalkByQuery) error {
+		for _, q := range query.GetConjunction().GetQueries() {
+			if q.GetBaseQuery().GetMatchFieldQuery().GetField() == search.ClusterID.String() {
+				val := strings.Trim(q.GetBaseQuery().GetMatchFieldQuery().GetValue(), "\"")
+				if cluster, ok := clusterData[val]; ok {
+					if cluster.FailedInfo != nil {
+						return expectedErr
+					}
+				}
+			}
+		}
+		for i := 0; i < numPassedChecksPerCluster; i++ {
+			_ = fn(&storage.ComplianceOperatorCheckResultV2{
+				CheckName: fmt.Sprintf("pass-check-%d", i),
+				Status:    storage.ComplianceOperatorCheckResultV2_PASS,
+			})
+		}
+		for i := 0; i < numFailedChecksPerCluster; i++ {
+			_ = fn(&storage.ComplianceOperatorCheckResultV2{
+				CheckName: fmt.Sprintf("fail-check-%d", i),
+				Status:    storage.ComplianceOperatorCheckResultV2_FAIL,
+			})
+		}
+		for i := 0; i < numMixedChecksPerCluster; i++ {
+			_ = fn(&storage.ComplianceOperatorCheckResultV2{
+				CheckName: fmt.Sprintf("mixed-check-%d", i),
+				Status:    storage.ComplianceOperatorCheckResultV2_INCONSISTENT,
+			})
+		}
+		return expectedErr
 	}
 }
 
@@ -405,15 +432,43 @@ func getRequest(ctx context.Context, numClusters, numProfiles, numFailedClusters
 		ClusterIDs:   getNames("cluster", numClusters),
 		Profiles:     getNames("profile", numProfiles),
 	}
+	clusterData := make(map[string]*report.ClusterData)
+	for i := 0; i < numClusters+numFailedClusters; i++ {
+		id := fmt.Sprintf("cluster-%d", i)
+		var profileNames []string
+		for j := 0; j < numProfiles; j++ {
+			profileNames = append(profileNames, fmt.Sprintf("profile-%d", j))
+		}
+		clusterData[id] = &report.ClusterData{
+			ClusterId:   id,
+			ClusterName: id,
+			ScanNames:   profileNames,
+		}
+	}
 	if numFailedClusters > 0 {
-		failedClusters := make(map[string]*storage.ComplianceOperatorReportSnapshotV2_FailedCluster)
 		for i := numClusters; i < numFailedClusters+numClusters; i++ {
 			id := fmt.Sprintf("cluster-%d", i)
 			ret.ClusterIDs = append(ret.ClusterIDs, id)
-			failedClusters[id] = &storage.ComplianceOperatorReportSnapshotV2_FailedCluster{}
+			failedInfo := &report.FailedCluster{
+				ClusterId:       id,
+				ClusterName:     id,
+				Reasons:         []string{"timeout"},
+				OperatorVersion: "v1.6.0",
+				FailedScans: func() []*storage.ComplianceOperatorScanV2 {
+					var scans []*storage.ComplianceOperatorScanV2
+					for _, scanName := range clusterData[id].ScanNames {
+						scans = append(scans, &storage.ComplianceOperatorScanV2{
+							ScanName: scanName,
+						})
+					}
+					return scans
+				}(),
+			}
+			clusterData[id].FailedInfo = failedInfo
 		}
-		ret.FailedClusters = failedClusters
+		ret.NumFailedClusters = numFailedClusters
 	}
+	ret.ClusterData = clusterData
 	return ret
 }
 
@@ -450,7 +505,7 @@ func getRowFromCluster(check, clusterID string) *report.ResultRow {
 func assertResults(t *testing.T, tcase getReportDataTestCase, res *report.Results) {
 	assert.Equal(t, tcase.numClusters+tcase.numFailedClusters, res.Clusters)
 	assert.Equal(t, tcase.numProfiles, len(res.Profiles))
-	if tcase.expectedErr != nil {
+	if tcase.expectedWalkByErr != nil {
 		assert.Equal(t, 0, res.TotalPass)
 		assert.Equal(t, 0, res.TotalFail)
 		assert.Equal(t, 0, res.TotalMixed)

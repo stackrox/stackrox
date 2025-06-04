@@ -38,6 +38,9 @@ Scanner V4 claims the images contain vulnerabilities which the official Red Hat 
   - This arises from non-RPM content in official Red Hat container images, such as Go binaries in OpenShift images.
   - When the variable is set, Scanner V4 will continue to show non-RPM content in official Red Hat container images but will no longer
     output vulnerabilities from non-Red Hat security data sources for these images.
+- ROX-25570: The data model for image based CVEs has been denormalized
+  - This will result in far more consistent results as 1 image scan will no longer overwrite CVE data of a previous image scan.
+  - `ROX_FLATTEN_CVE_DATA` can be set to false to use the old normalized data model
 
 ### Removed Features
 

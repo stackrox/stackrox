@@ -129,7 +129,32 @@ func (resolver *Resolver) ImageComponent(ctx context.Context, args IDQuery) (Ima
 		}
 
 		ret, err := loader.FromID(ctx, string(*args.ID))
-		return resolver.wrapImageComponentV2WithContext(ctx, ret, true, err)
+		if err != nil {
+			return nil, err
+		}
+
+		// With flattened model, there can be multiple component IDs for a given component name, version and OS.
+		// But the component list page on VM 1.0 groups results by name, version and OS. So on component single page,
+		// we should also show component details (like top CVSS, priority etc) and
+		// related entities (like images, CVEs and deployments) grouped by component name + version + OS.
+		query := search.NewQueryBuilder().
+			AddExactMatches(search.Component, ret.GetName()).
+			AddExactMatches(search.ComponentVersion, ret.GetVersion()).
+			AddExactMatches(search.OperatingSystem, ret.GetOperatingSystem()).
+			ProtoQuery()
+		componentFlatData, err := resolver.ImageComponentFlatView.Get(ctx, query)
+		if err != nil {
+			return nil, err
+		}
+
+		// TODO(ROX-28808): The ticket referenced is the reason we can get here.  FromID will find
+		// a component ID excluded by context but the FlatView will not. We should honor the context. This
+		// will be cleaned up with 28808.
+		if len(componentFlatData) != 1 {
+			return nil, errors.New("unable to find component")
+		}
+
+		return resolver.wrapImageComponentV2FlatWithContext(ctx, ret, componentFlatData[0], true, err)
 	}
 	// get loader
 	loader, err := loaders.GetComponentLoader(ctx)

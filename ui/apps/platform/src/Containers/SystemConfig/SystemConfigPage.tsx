@@ -90,7 +90,7 @@ const SystemConfigPage = (): ReactElement => {
         );
     } else if (systemConfig) {
         content = isEditing ? (
-            <PageSection variant="light">
+            <PageSection variant="light" padding={{ default: 'noPadding' }}>
                 <SystemConfigForm
                     systemConfig={systemConfig}
                     setSystemConfig={setSystemConfig}
