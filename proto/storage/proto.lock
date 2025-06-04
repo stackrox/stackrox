@@ -12361,6 +12361,11 @@
                 "id": 4,
                 "name": "message_format",
                 "type": "MessageFormat"
+              },
+              {
+                "id": 5,
+                "name": "max_message_size",
+                "type": "int32"
               }
             ],
             "messages": [

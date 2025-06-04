@@ -53,6 +53,14 @@ export const validationSchema = yup.object().shape({
             useTls: yup.bool(),
             skipTlsVerify: yup.bool(),
         }),
+        maxMessageSize: yup
+            .number()
+            .required('Message size is required')
+            .test(
+                'message-size-test',
+                'Message size must be between 0 and 1048576',
+                (value) => value >= 0 && value <= 1048576
+            ),
     }),
     uiEndpoint: yup.string(),
     type: yup.string().matches(/syslog/),
@@ -65,6 +73,7 @@ export const defaultValues: SyslogIntegration = {
         messageFormat: 'CEF',
         localFacility: undefined,
         extraFields: [],
+        maxMessageSize: 0,
         tcpConfig: {
             hostname: '',
             port: 514,
@@ -192,6 +201,24 @@ function SyslogIntegrationForm({
                                 type="number"
                                 id="syslog.tcpConfig.port"
                                 value={values.syslog.tcpConfig.port}
+                                onChange={(event, value) => onChange(value, event)}
+                                onBlur={handleBlur}
+                                isDisabled={!isEditable}
+                            />
+                        </FormLabelGroup>
+                        <FormLabelGroup
+                            isRequired
+                            label="Maximum message size"
+                            fieldId="syslog.maxMessageSize"
+                            touched={touched}
+                            errors={errors}
+                            helperText="The number of bytes between 0 and 1048576 to chunk messages in. A 0 means messages will not be chunked."
+                        >
+                            <TextInput
+                                isRequired
+                                type="number"
+                                id="syslog.maxMessageSize"
+                                value={values.syslog.maxMessageSize}
                                 onChange={(event, value) => onChange(value, event)}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
