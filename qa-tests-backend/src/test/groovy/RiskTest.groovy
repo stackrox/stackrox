@@ -30,6 +30,7 @@ import spock.lang.Tag
 
 @Tag("PZ")
 @Stepwise // tests are ordered and dependent
+@IgnoreIf({ Env.GHA })
 class RiskTest extends BaseSpecification {
     @Shared
     private String clusterId

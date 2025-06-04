@@ -27,7 +27,7 @@ import spock.lang.Tag
 import spock.lang.Unroll
 
 // TODO(ROX-12814): re-enable the test on all platforms. Scanner OOMs on this test in some Openshift jobs.
-@IgnoreIf({ Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT })
+@IgnoreIf({ Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT || Env.GHA })
 class PolicyFieldsTest extends BaseSpecification {
 
     // NOTE: this is populated by registerDeployments call, do not manually

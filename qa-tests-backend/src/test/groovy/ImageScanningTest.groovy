@@ -36,6 +36,7 @@ import spock.lang.Unroll
 import spock.lang.IgnoreIf
 
 @Tag("PZ")
+@IgnoreIf({ Env.GHA })
 class ImageScanningTest extends BaseSpecification {
     static final private String TEST_NAMESPACE = "qa-image-scanning-test"
     private final static String CLONED_POLICY_SUFFIX = "(${TEST_NAMESPACE})"

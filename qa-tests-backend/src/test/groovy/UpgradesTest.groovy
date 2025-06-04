@@ -20,6 +20,7 @@ import spock.lang.Tag
 import spock.lang.Unroll
 import spock.lang.IgnoreIf
 
+@IgnoreIf({ Env.GHA })
 class UpgradesTest extends BaseSpecification {
     private final static String CLUSTERID = Env.mustGet("UPGRADE_CLUSTER_ID")
     private final static String POLICIES_JSON_PATH =

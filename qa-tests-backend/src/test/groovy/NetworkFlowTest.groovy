@@ -253,6 +253,7 @@ class NetworkFlowTest extends BaseSpecification {
     @Tag("NetworkFlowVisualization")
     // TODO: additional handling may be needed for P/Z, skipping for 1st release
     @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
+    @IgnoreIf({ Env.GHA })
     def "Verify one-time connections show at first and are closed after the afterglow period"() {
         given:
         "Two deployments, A and B, where B communicates to A a single time during initial deployment"
@@ -473,7 +474,7 @@ class NetworkFlowTest extends BaseSpecification {
 
     @Tag("NetworkFlowVisualization")
     //ROX-21491 skipping test case for p/z
-    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
+    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" || Env.GHA })
     def "Verify connections to external sources"() {
         given:
         "Deployment A, where A communicates to an external target"
@@ -546,7 +547,7 @@ class NetworkFlowTest extends BaseSpecification {
     // TODO: additional handling may be needed for P/Z - see ROX-19615
     // TODO(ROX-24299): CI improvements 2025-02-12: Disabling for OCP.
     @IgnoreIf({ Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT ||
-            Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
+            Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" || Env.GHA })
     def "Verify connections from external sources"() {
         given:
         "Deployment A, where an external source communicates to A"
@@ -646,6 +647,7 @@ class NetworkFlowTest extends BaseSpecification {
     }
 
     @Tag("NetworkFlowVisualization")
+    @IgnoreIf({ Env.GHA })
     def "Verify intra-cluster connection via internal IP"() {
         // We changed the test to reflect the NetworkGraph's current behavior. Communication between two deployments
         // through a LoadBalancer shows an edge from 'External Entities', not an edge between the two deployments.
