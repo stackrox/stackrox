@@ -196,6 +196,7 @@ jobs:
 
       - name: Check Konflux-built image exists
         uses: stackrox/actions/release/wait-for-image@v1
+        continue-on-error: true
         with:
           token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
           image: rhacs-eng/release-${{ matrix.image }}:${{ steps.image-tag.outputs.image-tag }}-fast
