@@ -354,6 +354,7 @@ func (m *managerImpl) HandleScan(sensorCtx context.Context, scan *storage.Compli
 		}
 		return err
 	}
+	log.Debugf("Searching for ScanWatcher %s to PushScan", id)
 	return m.getWatcher(sensorCtx, id).PushScan(scan)
 }
 
@@ -412,6 +413,9 @@ func (m *managerImpl) getWatcher(sensorCtx context.Context, id string) watcher.S
 			m.watchingScans[id] = scanWatcher
 			m.watchingScansStartTime[id] = time.Now()
 			m.updateMaxNumScansRunningInParallelNoLock()
+			log.Debugf("ScanWatcher with %s NOT found", id)
+		} else {
+			log.Debugf("ScanWatcher with %s found", id)
 		}
 	})
 	return scanWatcher
@@ -438,6 +442,7 @@ func (m *managerImpl) HandleResult(sensorCtx context.Context, result *storage.Co
 		}
 		return err
 	}
+	log.Debugf("Searching for ScanWatcher %s to PushCheckResult", id)
 	return m.getWatcher(sensorCtx, id).PushCheckResult(result)
 }
 
