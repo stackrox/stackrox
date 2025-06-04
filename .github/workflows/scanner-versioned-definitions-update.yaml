@@ -170,12 +170,22 @@ jobs:
       run: |
         scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" --split bundles
         zip definitions/${{ env.SCANNER_BUNDLE_VERSION }}/vulnerabilities.zip bundles/*.json.zst
+        
 
     - name: Upload definitions artifacts
       uses: actions/upload-artifact@v4
       with:
         name: artifact_${{ env.SCANNER_BUNDLE_VERSION }}
         path: definitions
+
+    - name: Check failed updaters and notify Slack
+      run: |
+        if [ -s bundles/status.json ] && [ "$(jq '.failed_updaters | length' bundles/status.json)" -gt 0 ]; then
+          curl -X POST -H 'Content-type: application/json' \
+            --data "{\"text\":\"<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|Workflow ${{ github.workflow }}> failed in repository ${{ github.repository }}: One or more Scanner updaters failed\"}" \
+            ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
+          exit 1
+        fi
 
   build-upload-pr-vulnerabilities:
     if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-vulns')
