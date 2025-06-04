@@ -55,6 +55,21 @@ func (mr *MockMatcherMetadataStoreMockRecorder) GCVulnerabilityUpdates(ctx, acti
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GCVulnerabilityUpdates", reflect.TypeOf((*MockMatcherMetadataStore)(nil).GCVulnerabilityUpdates), ctx, activeUpdaters, lastUpdate)
 }
 
+// GetLastVulnerabilityBundlesUpdate mocks base method.
+func (m *MockMatcherMetadataStore) GetLastVulnerabilityBundlesUpdate(ctx context.Context, bundles []string) (map[string]time.Time, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetLastVulnerabilityBundlesUpdate", ctx, bundles)
+	ret0, _ := ret[0].(map[string]time.Time)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetLastVulnerabilityBundlesUpdate indicates an expected call of GetLastVulnerabilityBundlesUpdate.
+func (mr *MockMatcherMetadataStoreMockRecorder) GetLastVulnerabilityBundlesUpdate(ctx, bundles any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLastVulnerabilityBundlesUpdate", reflect.TypeOf((*MockMatcherMetadataStore)(nil).GetLastVulnerabilityBundlesUpdate), ctx, bundles)
+}
+
 // GetLastVulnerabilityUpdate mocks base method.
 func (m *MockMatcherMetadataStore) GetLastVulnerabilityUpdate(ctx context.Context) (time.Time, error) {
 	m.ctrl.T.Helper()

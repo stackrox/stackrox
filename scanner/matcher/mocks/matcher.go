@@ -71,6 +71,21 @@ func (mr *MockMatcherMockRecorder) GetKnownDistributions(ctx any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetKnownDistributions", reflect.TypeOf((*MockMatcher)(nil).GetKnownDistributions), ctx)
 }
 
+// GetLastVulnerabilityBundlesUpdate mocks base method.
+func (m *MockMatcher) GetLastVulnerabilityBundlesUpdate(ctx context.Context, bundles []string) (map[string]time.Time, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetLastVulnerabilityBundlesUpdate", ctx, bundles)
+	ret0, _ := ret[0].(map[string]time.Time)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetLastVulnerabilityBundlesUpdate indicates an expected call of GetLastVulnerabilityBundlesUpdate.
+func (mr *MockMatcherMockRecorder) GetLastVulnerabilityBundlesUpdate(ctx, bundles any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLastVulnerabilityBundlesUpdate", reflect.TypeOf((*MockMatcher)(nil).GetLastVulnerabilityBundlesUpdate), ctx, bundles)
+}
+
 // GetLastVulnerabilityUpdate mocks base method.
 func (m *MockMatcher) GetLastVulnerabilityUpdate(ctx context.Context) (time.Time, error) {
 	m.ctrl.T.Helper()
