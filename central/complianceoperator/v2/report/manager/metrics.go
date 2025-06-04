@@ -8,7 +8,7 @@ import (
 func init() {
 	prometheus.MustRegister(
 		scansRunningInParallel,
-		scanWatcherActiveTime,
+		scanWatcherActiveTimeMinutes,
 		numWatchers,
 	)
 }
@@ -37,16 +37,11 @@ var (
 			"If the metrics are updated every hour, then the value means how many time-blocks of 1 hour had the given " +
 			"(or less) number of scans running in parallel.",
 	})
-	scanWatcherActiveTime = prometheus.NewHistogram(prometheus.HistogramOpts{
+	scanWatcherActiveTimeMinutes = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
-		Buckets: append(
-			// First 2 minutes every 10s
-			prometheus.LinearBuckets(1, 10, 12),
-			// Rest every minute until the 40m timeout is covered
-			prometheus.LinearBuckets(120, 60, 45)...,
-		),
-		Name: coPrefix + "scan_watchers_active_time_seconds",
-		Help: "How long a scan watcher was active",
-	})
+		Buckets:   []float64{0.5, 1, 1.5, 2, 3, 4, 5, 10, 20, 30, 40, 45},
+		Name:      coPrefix + "scan_watchers_active_time_minutes",
+		Help:      "How long (in minutes) a scan watcher was active. Value of 40m is the default timeout.",
+	}, []string{"name"})
 )

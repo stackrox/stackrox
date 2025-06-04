@@ -454,8 +454,11 @@ func (m *managerImpl) handleReadyScan() {
 			if scanWatcherResult := m.readyQueue.PullBlocking(m.stopper.LowLevel().GetStopRequestSignal()); scanWatcherResult != nil {
 				concurrency.WithLock(&m.watchingScansLock, func() {
 					delete(m.watchingScans, scanWatcherResult.WatcherID)
+
 					m.maxScansInParallel.Store(int32(len(m.watchingScans)))
-					scanWatcherActiveTime.Observe(time.Since(m.watchingScansStartTime[scanWatcherResult.WatcherID]).Seconds())
+					timeActive := time.Since(m.watchingScansStartTime[scanWatcherResult.WatcherID])
+					scanWatcherActiveTimeMinutes.WithLabelValues(scanWatcherResult.Scan.GetScanName()).
+						Observe(timeActive.Minutes())
 					delete(m.watchingScansStartTime, scanWatcherResult.WatcherID)
 				})
 				if err := watcher.DeleteOldResults(m.automaticReportingCtx, scanWatcherResult, m.checkResultDataStore); err != nil {
