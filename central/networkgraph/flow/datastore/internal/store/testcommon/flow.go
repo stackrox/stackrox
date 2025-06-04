@@ -6,6 +6,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
 	"github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store"
 	"github.com/stackrox/rox/central/networkgraph/testhelper"
 	"github.com/stackrox/rox/generated/storage"
@@ -37,6 +38,11 @@ type FlowStoreTestSuite struct {
 // SetupSuite runs before any tests
 func (suite *FlowStoreTestSuite) SetupSuite() {
 	var err error
+
+	entitiesByCluster := map[string][]*storage.NetworkEntityInfo{}
+	err = networktree.Singleton().Initialize(entitiesByCluster)
+	suite.Require().NoError(err)
+
 	suite.tested, err = suite.store.CreateFlowStore(context.Background(), fixtureconsts.Cluster1)
 	suite.Require().NoError(err)
 }
