@@ -258,32 +258,45 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 			return nil, err
 		}
 
-		// If the image exists and the image name from the request matches at least one stored image name(/reference),
-		// then we returned the stored image.
-		// Otherwise, we run the enrichment pipeline using the existing image with the requests image being added to it.
 		if exists {
-			if protoutils.SliceContains(request.GetImage().GetName(), existingImg.GetNames()) {
+			// If the image is flagged as cluster local and scan has expired, clear the flag and attempt a scan.
+			// This is necessary to resume reprocessing for images after delegated scanning has been toggled on then off.
+			var clusterLocalScanExpired bool
+			if existingImg.GetIsClusterLocal() && scanExpired(existingImg) {
+				clusterLocalScanExpired = true
+				existingImg.IsClusterLocal = false
+			}
+
+			// If the image exists and the image name from the request matches at least one stored image name(/reference),
+			// then we return the stored image if it was not modified above.
+			// Otherwise, we run the enrichment pipeline using the existing image with the requests image being added to it.
+			nameFound := protoutils.SliceContains(request.GetImage().GetName(), existingImg.GetNames())
+			if nameFound && !clusterLocalScanExpired {
 				return internalScanRespFromImage(existingImg), nil
 			}
-			existingImg.Names = append(existingImg.Names, request.GetImage().GetName())
-			img = existingImg
 
 			log.Debugw("Scan cache ignored enriching image",
 				logging.FromContext(ctx),
 				logging.ImageName(existingImg.GetName().GetFullName()),
 				logging.ImageID(imgID),
 				logging.String("request_image", request.GetImage().GetName().GetFullName()),
+				logging.Bool("name_found", nameFound),
+				logging.Bool("cluster_local_scan_expired", clusterLocalScanExpired),
 			)
 
-			// We only want to force re-fetching of signatures and verification data, the additional image name has no
-			// impact on image scan data.
-			fetchOpt = enricher.ForceRefetchSignaturesOnly
-			imgExists = true
+			if !nameFound {
+				existingImg.Names = append(existingImg.Names, request.GetImage().GetName())
+				// We only want to force re-fetching of signatures and verification data, the additional image name has no
+				// impact on image scan data.
+				fetchOpt = enricher.ForceRefetchSignaturesOnly
+			}
 
-			if updateImageFromRequest(img, request.GetImage().GetName()) {
-				// Ensure that the change to Names is not overwritten by the enricher.
+			if updateImageFromRequest(existingImg, request.GetImage().GetName()) || clusterLocalScanExpired {
 				fetchOpt = enricher.IgnoreExistingImages
 			}
+
+			img = existingImg
+			imgExists = true
 		}
 	}
 
@@ -309,6 +322,13 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 	}
 
 	return internalScanRespFromImage(img), nil
+}
+
+// scanExpired returns true when the scan associated with the image
+// is considered expired.
+func scanExpired(img *storage.Image) bool {
+	scanTime := timestamp.FromProtobuf(img.GetScan().GetScanTime())
+	return !scanTime.Add(reprocessInterval).After(timestamp.Now())
 }
 
 // updateImageFromRequest will update the name of existing image with the one from the request
@@ -446,11 +466,10 @@ func (s *serviceImpl) GetImageVulnerabilitiesInternal(ctx context.Context, reque
 		if err != nil {
 			return nil, err
 		}
-		// This is safe even if img is nil.
-		scanTime := existingImg.GetScan().GetScanTime()
+
 		// If the scan exists, and reprocessing has not run since, return the scan.
 		// Otherwise, run the enrichment pipeline to ensure we do not return stale data.
-		if exists && timestamp.FromProtobuf(scanTime).Add(reprocessInterval).After(timestamp.Now()) {
+		if exists && !scanExpired(existingImg) {
 			return internalScanRespFromImage(existingImg), nil
 		}
 	}
@@ -660,11 +679,8 @@ func shouldUpdateExistingScan(imgExists bool, existingImg *storage.Image, reques
 		return true
 	}
 
-	scanTime := existingImg.GetScan().GetScanTime()
-	scanExpired := !timestamp.FromProtobuf(scanTime).Add(reprocessInterval).After(timestamp.Now())
-
 	if !features.ScannerV4.Enabled() {
-		return scanExpired
+		return scanExpired(existingImg)
 	}
 
 	v4MatchRequest := scannerTypes.ScannerV4IndexerVersion(request.GetIndexerVersion())
@@ -682,7 +698,7 @@ func shouldUpdateExistingScan(imgExists bool, existingImg *storage.Image, reques
 		return true
 	}
 
-	return scanExpired
+	return scanExpired(existingImg)
 }
 
 // buildNames returns a slice containing the known image names from the various parameters.
