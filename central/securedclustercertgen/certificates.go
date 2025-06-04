@@ -26,13 +26,34 @@ var allSupportedServiceTypes = securedClusterServiceTypes.Union(localScannerServ
 
 type certIssuerImpl struct {
 	serviceTypes set.FrozenSet[storage.ServiceType]
+	signingCA    mtls.CA
 }
 
 // IssueSecuredClusterCerts issues certificates for all the services of a secured cluster (including local scanner).
-func IssueSecuredClusterCerts(namespace string, clusterID string) (*storage.TypedServiceCertificateSet, error) {
+func IssueSecuredClusterCerts(namespace string, clusterID string, sensorSupportsCARotation bool) (*storage.TypedServiceCertificateSet, error) {
+	primaryCA, err := mtls.CAForSigning()
+	if err != nil {
+		return nil, errors.Wrap(err, "could not load CA for signing")
+	}
+	signingCA := primaryCA
+
+	if sensorSupportsCARotation {
+		secondaryCA, err := mtls.SecondaryCAForSigning()
+		if err == nil {
+			primaryCACert := primaryCA.Certificate()
+			secondaryCACert := secondaryCA.Certificate()
+
+			if secondaryCACert.NotAfter.After(primaryCACert.NotAfter) {
+				signingCA = secondaryCA
+			}
+		}
+	}
+
 	certIssuer := certIssuerImpl{
 		serviceTypes: allSupportedServiceTypes,
+		signingCA:    signingCA,
 	}
+
 	return certIssuer.issueCertificates(namespace, clusterID)
 }
 
@@ -45,8 +66,14 @@ func IssueLocalScannerCerts(namespace string, clusterID string) (*storage.TypedS
 		serviceTypes = localScannerServiceTypes
 	}
 
+	ca, err := mtls.CAForSigning()
+	if err != nil {
+		return nil, errors.Wrap(err, "could not load CA for signing")
+	}
+
 	certIssuer := certIssuerImpl{
 		serviceTypes: serviceTypes,
+		signingCA:    ca,
 	}
 
 	return certIssuer.issueCertificates(namespace, clusterID)
@@ -106,21 +133,16 @@ func (c *certIssuerImpl) generateServiceCertMap(serviceType storage.ServiceType,
 			serviceType)
 	}
 
-	ca, err := mtls.CAForSigning()
-	if err != nil {
-		return nil, errors.Wrap(err, "could not load CA for signing")
-	}
-
 	numServiceCertDataEntries := 3 // cert pem + key pem + ca pem
 	fileMap := make(secretDataMap, numServiceCertDataEntries)
 	subject := mtls.NewSubject(clusterID, serviceType)
 	issueOpts := []mtls.IssueCertOption{
 		mtls.WithNamespace(namespace),
 	}
-	if err := certgen.IssueServiceCert(fileMap, ca, subject, "", issueOpts...); err != nil {
+	if err := certgen.IssueServiceCert(fileMap, c.signingCA, subject, "", issueOpts...); err != nil {
 		return nil, errors.Wrap(err, "error generating service certificate")
 	}
-	certgen.AddCACertToFileMap(fileMap, ca)
+	certgen.AddCACertToFileMap(fileMap, c.signingCA)
 
 	return fileMap, nil
 }
