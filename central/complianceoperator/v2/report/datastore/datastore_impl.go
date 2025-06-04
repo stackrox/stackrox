@@ -8,6 +8,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	types "github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -74,4 +75,20 @@ func deleteOrphanedSnapshots(ctx context.Context, ds DataStore, query *v1.Query)
 		}
 	}
 	return errList.ToError()
+}
+
+func (d *datastoreImpl) GetLastSnapshotFromScanConfig(ctx context.Context, scanConfigID string) (*storage.ComplianceOperatorReportSnapshotV2, error) {
+	query := search.NewQueryBuilder().
+		AddExactMatches(search.ComplianceOperatorScanConfig, scanConfigID).ProtoQuery()
+	snapshots, err := d.SearchSnapshots(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	var lastSnapshot *storage.ComplianceOperatorReportSnapshotV2
+	for _, snapshot := range snapshots {
+		if types.CompareTimestamps(snapshot.GetReportStatus().GetCompletedAt(), lastSnapshot.GetReportStatus().GetCompletedAt()) > 0 {
+			lastSnapshot = snapshot
+		}
+	}
+	return lastSnapshot, nil
 }

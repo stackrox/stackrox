@@ -33,7 +33,6 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/pkg/uuid"
-	"golang.org/x/exp/maps"
 	"golang.org/x/sync/semaphore"
 )
 
@@ -47,7 +46,8 @@ type reportRequest struct {
 	ctx                context.Context
 	snapshotID         string
 	notificationMethod storage.ComplianceOperatorReportStatus_NotificationMethod
-	failedClusters     map[string]*storage.ComplianceOperatorReportSnapshotV2_FailedCluster
+	clusterData        map[string]*report.ClusterData
+	numFailedClusters  int
 }
 
 type managerImpl struct {
@@ -220,7 +220,8 @@ func (m *managerImpl) generateReportNoLock(req *reportRequest) {
 		Ctx:                req.ctx,
 		SnapshotID:         req.snapshotID,
 		NotificationMethod: req.notificationMethod,
-		FailedClusters:     req.failedClusters,
+		ClusterData:        req.clusterData,
+		NumFailedClusters:  req.numFailedClusters,
 	}
 	log.Infof("Executing report request for scan config %q", req.scanConfig.GetId())
 	if err := m.reportGen.ProcessReportRequest(repRequest); err != nil {
@@ -299,6 +300,24 @@ func (m *managerImpl) handleReportRequest(request *reportRequest) (bool, error) 
 			return false, errors.Wrap(err, "unable to upsert snapshot on report preparation")
 		}
 		request.snapshotID = snapshot.GetReportId()
+		failedClusters, err := helpers.GetFailedClusters(m.automaticReportingCtx, request.scanConfig.GetId(), m.snapshotDataStore, m.scanDataStore)
+		if err != nil {
+			log.Warnf("unable to retrieve failed clusters: %v", err)
+		}
+		request.numFailedClusters = len(failedClusters)
+		request.clusterData, err = helpers.GetClusterData(m.automaticReportingCtx, snapshot.GetReportData(), failedClusters, m.scanDataStore)
+		if err != nil {
+			log.Errorf("unable to get clusters information: %v", err)
+			if dbErr := helpers.UpdateSnapshotOnError(request.ctx, snapshot, report.ErrReportGeneration, m.snapshotDataStore); dbErr != nil {
+				return false, errors.Wrap(dbErr, "unable to upsert snapshot on generation failure")
+			}
+			return false, errors.Wrap(err, "unable to get clusters information")
+		}
+		// Add failed clusters to the report snapshot
+		if _, err = m.addFailedClustersToTheSnapshot(failedClusters, snapshot); err != nil {
+			log.Errorf("unable to updata snapshot with failed clusters: %v", err)
+			return false, err
+		}
 		m.generateReportNoLock(request)
 		return true, nil
 	}
@@ -562,30 +581,58 @@ func (m *managerImpl) generateSingleReportFromWatcherResults(result *watcher.Sca
 	log.Infof("Snapshot for ScanConfig %s: %+v -- %+v", result.ScanConfig.GetScanConfigName(), snapshot.GetReportStatus(), snapshot.GetFailedClusters())
 	// Update ReportData
 	snapshot.ReportData = m.getReportData(result.ScanConfig)
-	// Add failed clusters to the report
-	if len(failedClusters) > 0 {
-		for _, cluster := range snapshot.ReportData.GetClusterStatus() {
-			if failedCluster, ok := failedClusters[cluster.GetClusterId()]; ok {
-				failedCluster.ClusterName = cluster.GetClusterName()
-			}
+	// Populate ClusterData
+	clusterData, err := helpers.GetClusterData(m.automaticReportingCtx, snapshot.ReportData, failedClusters, m.scanDataStore)
+	if err != nil {
+		log.Errorf("unable to populate cluster data: %v", err)
+		if dbErr := helpers.UpdateSnapshotOnError(m.automaticReportingCtx, snapshot, report.ErrReportGeneration, m.snapshotDataStore); dbErr != nil {
+			return errors.Wrap(dbErr, "unable to update snapshot on populate cluster data error")
 		}
-		snapshot.FailedClusters = maps.Values(failedClusters)
+		return errors.Wrap(err, "unable to populate cluster data")
 	}
-	if err := m.snapshotDataStore.UpsertSnapshot(m.automaticReportingCtx, snapshot); err != nil {
-		return errors.Wrapf(err, "unable to upsert the snapshot %s", snapshot.GetReportId())
+	// Add failed clusters to the report snapshot
+	snapshot, err = m.addFailedClustersToTheSnapshot(failedClusters, snapshot)
+	if err != nil {
+		return err
 	}
 	generateReportReq := &reportRequest{
 		ctx:                m.automaticReportingCtx,
 		scanConfig:         result.ScanConfig,
 		snapshotID:         snapshot.GetReportId(),
 		notificationMethod: snapshot.GetReportStatus().GetReportNotificationMethod(),
-		failedClusters:     failedClusters,
+		numFailedClusters:  len(failedClusters),
+		clusterData:        clusterData,
 	}
 	isOnDemand := snapshot.GetReportStatus().GetReportRequestType() == storage.ComplianceOperatorReportStatus_ON_DEMAND
 	if err := m.handleReportScheduled(generateReportReq, isOnDemand); err != nil {
 		return errors.Wrap(err, "unable to handle the report")
 	}
 	return nil
+}
+
+func (m *managerImpl) addFailedClustersToTheSnapshot(failedClusters map[string]*report.FailedCluster, snapshot *storage.ComplianceOperatorReportSnapshotV2) (*storage.ComplianceOperatorReportSnapshotV2, error) {
+	if len(failedClusters) == 0 {
+		return snapshot, nil
+	}
+	failedClustersSlice := make([]*storage.ComplianceOperatorReportSnapshotV2_FailedCluster, 0, len(failedClusters))
+	for _, failedCluster := range failedClusters {
+		scans := make([]string, 0, len(failedCluster.FailedScans))
+		for _, scan := range failedCluster.FailedScans {
+			scans = append(scans, scan.GetScanName())
+		}
+		failedClustersSlice = append(failedClustersSlice, &storage.ComplianceOperatorReportSnapshotV2_FailedCluster{
+			ClusterId:       failedCluster.ClusterId,
+			ClusterName:     failedCluster.ClusterName,
+			OperatorVersion: failedCluster.OperatorVersion,
+			Reasons:         failedCluster.Reasons,
+			ScanNames:       scans,
+		})
+	}
+	snapshot.FailedClusters = failedClustersSlice
+	if err := m.snapshotDataStore.UpsertSnapshot(m.automaticReportingCtx, snapshot); err != nil {
+		return snapshot, errors.Wrapf(err, "unable to upsert the snapshot %s", snapshot.GetReportId())
+	}
+	return snapshot, nil
 }
 
 func (m *managerImpl) handleReportScheduled(request *reportRequest, isOnDemand bool) error {

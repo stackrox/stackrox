@@ -24,6 +24,9 @@ type DataStore interface {
 
 	// DeleteSnapshot removes a report snapshot object from the database
 	DeleteSnapshot(ctx context.Context, id string) error
+
+	// GetLastSnapshotFromScanConfig returns the last snapshot associated with a ScanConfiguration
+	GetLastSnapshotFromScanConfig(ctx context.Context, scanConfigID string) (*storage.ComplianceOperatorReportSnapshotV2, error)
 }
 
 // New returns an instance of DataStore.

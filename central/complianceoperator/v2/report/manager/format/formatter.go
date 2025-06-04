@@ -5,12 +5,11 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/complianceoperator/v2/report"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/csv"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const (
@@ -67,7 +66,7 @@ func NewFormatter() *FormatterImpl {
 // If a cluster fails, the generated CSV file will contain the reason for the reason but (no check results).
 // If a cluster success, the generated CSV file will contain all the check results with enhanced information (e.g. remediation, associated profile, etc)
 // The results parameter is expected to contain the clusters that succeed (no failed clusters should be passed in results).
-func (f *FormatterImpl) FormatCSVReport(results map[string][]*report.ResultRow, failedClusters map[string]*storage.ComplianceOperatorReportSnapshotV2_FailedCluster) (buffRet *bytes.Buffer, errRet error) {
+func (f *FormatterImpl) FormatCSVReport(results map[string][]*report.ResultRow, clusters map[string]*report.ClusterData) (buffRet *bytes.Buffer, errRet error) {
 	var buf bytes.Buffer
 	zipWriter := f.newZipWriter(&buf)
 	defer func() {
@@ -76,20 +75,22 @@ func (f *FormatterImpl) FormatCSVReport(results map[string][]*report.ResultRow, 
 			errRet = errors.Wrap(err, "unable to create a zip file of the compliance report")
 		}
 	}()
-	for clusterID, failedCluster := range failedClusters {
-		fileName := fmt.Sprintf(failedClusterFmt, clusterID)
-		if err := f.createFailedClusterFileInZip(zipWriter, fileName, failedCluster); err != nil {
-			return nil, errors.Wrap(err, "error creating failed cluster report")
+	timestamp := timestamppb.Now()
+	for clusterID, cluster := range clusters {
+		if cluster.FailedInfo != nil {
+			fileName := getFileName(failedClusterFmt, cluster.ClusterName, timestamp)
+			if err := f.createFailedClusterFileInZip(zipWriter, fileName, cluster.FailedInfo); err != nil {
+				return nil, errors.Wrap(err, "error creating failed cluster report")
+			}
 		}
-	}
-	for clusterID, res := range results {
-		// We should not receive results from a failed cluster
-		if _, ok := failedClusters[clusterID]; ok {
+		if len(results[clusterID]) == 0 && cluster.FailedInfo != nil {
 			continue
 		}
-		fileName := fmt.Sprintf(successfulClusterFmt, clusterID)
-		err := f.createCSVInZip(zipWriter, fileName, res)
-		if err != nil {
+		if _, ok := results[clusterID]; !ok {
+			return nil, errors.Errorf("found no results for cluster %q", clusterID)
+		}
+		fileName := getFileName(successfulClusterFmt, cluster.ClusterName, timestamp)
+		if err := f.createCSVInZip(zipWriter, fileName, results[clusterID]); err != nil {
 			return nil, errors.Wrap(err, "error creating csv report")
 		}
 	}
@@ -127,24 +128,22 @@ func generateRecord(row *report.ResultRow) []string {
 	}
 }
 
-func (f *FormatterImpl) createFailedClusterFileInZip(zipWriter ZipWriter, filename string, failedCluster *storage.ComplianceOperatorReportSnapshotV2_FailedCluster) error {
+func (f *FormatterImpl) createFailedClusterFileInZip(zipWriter ZipWriter, filename string, failedCluster *report.FailedCluster) error {
 	w, err := zipWriter.Create(filename)
 	if err != nil {
 		return err
 	}
 	csvWriter := f.newCSVWriter(failedClusterCSVHeader, true)
-	csvWriter.AddValue(generateFailRecord(failedCluster))
+	for _, reason := range failedCluster.Reasons {
+		// The order in the slice needs to match the order defined in `failedClusterCSVHeader`
+		csvWriter.AddValue([]string{failedCluster.ClusterId, failedCluster.ClusterName, reason, failedCluster.OperatorVersion})
+	}
 	return csvWriter.WriteCSV(w)
 }
 
-func generateFailRecord(failedCluster *storage.ComplianceOperatorReportSnapshotV2_FailedCluster) []string {
-	// The order in the slice needs to match the order defined in `failedClusterCSVHeader`
-	return []string{
-		failedCluster.GetClusterId(),
-		failedCluster.GetClusterName(),
-		strings.Join(failedCluster.GetReasons(), ", "),
-		failedCluster.GetOperatorVersion(),
-	}
+func getFileName(format string, clusterName string, timestamp *timestamppb.Timestamp) string {
+	year, month, day := timestamp.AsTime().Date()
+	return fmt.Sprintf(format, fmt.Sprintf("%s_%d-%d-%d", clusterName, year, month, day))
 }
 
 func createNewZipWriter(buf *bytes.Buffer) ZipWriter {
