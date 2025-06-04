@@ -97,9 +97,9 @@ func (tc *TrackerConfig[Finding]) Reconfigure(registry *prometheus.Registry, fil
 		select {
 		case <-tc.periodCh:
 		default:
+			tc.periodCh <- period
 		}
 	}
-	tc.periodCh <- period
 
 	if period == 0 {
 		log.Infof("Metrics collection is disabled for %s", tc.category)
