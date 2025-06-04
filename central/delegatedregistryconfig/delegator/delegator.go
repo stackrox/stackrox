@@ -93,7 +93,7 @@ func (d *delegatorImpl) DelegateScanImage(ctx context.Context, imgName *storage.
 		if ok, err := d.hasNamespaceAccess(ctx, clusterID, namespace); err != nil {
 			return nil, errors.Wrapf(err, "verifying access to namespace %q on cluster %q", namespace, clusterID)
 		} else if !ok {
-			// Return 404 rather than 401 in order to not leak the existence of namespaces.
+			// Return 404 rather than 403 in order to not leak the existence of namespaces.
 			return nil, errox.NotFound.CausedByf("namespace %q on cluster %q", namespace, clusterID)
 		}
 	} else {
