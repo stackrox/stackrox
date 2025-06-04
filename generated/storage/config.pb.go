@@ -893,6 +893,7 @@ type PrometheusMetricsConfig struct {
 	//	  }
 	//	}
 	ImageVulnerabilities *PrometheusMetricsConfig_Vulnerabilities `protobuf:"bytes,1,opt,name=image_vulnerabilities,json=imageVulnerabilities,proto3" json:"image_vulnerabilities,omitempty"`
+	NodeVulnerabilities  *PrometheusMetricsConfig_Vulnerabilities `protobuf:"bytes,2,opt,name=node_vulnerabilities,json=nodeVulnerabilities,proto3" json:"node_vulnerabilities,omitempty"`
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
 }
@@ -930,6 +931,13 @@ func (*PrometheusMetricsConfig) Descriptor() ([]byte, []int) {
 func (x *PrometheusMetricsConfig) GetImageVulnerabilities() *PrometheusMetricsConfig_Vulnerabilities {
 	if x != nil {
 		return x.ImageVulnerabilities
+	}
+	return nil
+}
+
+func (x *PrometheusMetricsConfig) GetNodeVulnerabilities() *PrometheusMetricsConfig_Vulnerabilities {
+	if x != nil {
+		return x.NodeVulnerabilities
 	}
 	return nil
 }
@@ -1465,9 +1473,10 @@ const file_storage_config_proto_rawDesc = "" +
 	"\x17retention_duration_days\x18\x01 \x01(\rR\x15retentionDurationDays\"@\n" +
 	"\tDayOption\x12\x19\n" +
 	"\bnum_days\x18\x01 \x01(\rR\anumDays\x12\x18\n" +
-	"\aenabled\x18\x02 \x01(\bR\aenabled\"\x9d\x06\n" +
+	"\aenabled\x18\x02 \x01(\bR\aenabled\"\x82\a\n" +
 	"\x17PrometheusMetricsConfig\x12e\n" +
-	"\x15image_vulnerabilities\x18\x01 \x01(\v20.storage.PrometheusMetricsConfig.VulnerabilitiesR\x14imageVulnerabilities\x1a\xf6\x02\n" +
+	"\x15image_vulnerabilities\x18\x01 \x01(\v20.storage.PrometheusMetricsConfig.VulnerabilitiesR\x14imageVulnerabilities\x12c\n" +
+	"\x14node_vulnerabilities\x18\x02 \x01(\v20.storage.PrometheusMetricsConfig.VulnerabilitiesR\x13nodeVulnerabilities\x1a\xf6\x02\n" +
 	"\x06Labels\x12K\n" +
 	"\x06labels\x18\x01 \x03(\v23.storage.PrometheusMetricsConfig.Labels.LabelsEntryR\x06labels\x1a\xaf\x01\n" +
 	"\n" +
@@ -1554,19 +1563,20 @@ var file_storage_config_proto_depIdxs = []int32{
 	8,  // 17: storage.Config.platform_component_config:type_name -> storage.PlatformComponentConfig
 	18, // 18: storage.VulnerabilityExceptionConfig.expiry_options:type_name -> storage.VulnerabilityExceptionConfig.ExpiryOptions
 	20, // 19: storage.PrometheusMetricsConfig.image_vulnerabilities:type_name -> storage.PrometheusMetricsConfig.Vulnerabilities
-	16, // 20: storage.PlatformComponentConfig.Rule.namespace_rule:type_name -> storage.PlatformComponentConfig.Rule.NamespaceRule
-	12, // 21: storage.VulnerabilityExceptionConfig.ExpiryOptions.day_options:type_name -> storage.DayOption
-	17, // 22: storage.VulnerabilityExceptionConfig.ExpiryOptions.fixable_cve_options:type_name -> storage.VulnerabilityExceptionConfig.FixableCVEOptions
-	22, // 23: storage.PrometheusMetricsConfig.Labels.labels:type_name -> storage.PrometheusMetricsConfig.Labels.LabelsEntry
-	24, // 24: storage.PrometheusMetricsConfig.Vulnerabilities.metrics:type_name -> storage.PrometheusMetricsConfig.Vulnerabilities.MetricsEntry
-	23, // 25: storage.PrometheusMetricsConfig.Labels.Expression.expression:type_name -> storage.PrometheusMetricsConfig.Labels.Expression.Condition
-	21, // 26: storage.PrometheusMetricsConfig.Labels.LabelsEntry.value:type_name -> storage.PrometheusMetricsConfig.Labels.Expression
-	19, // 27: storage.PrometheusMetricsConfig.Vulnerabilities.MetricsEntry.value:type_name -> storage.PrometheusMetricsConfig.Labels
-	28, // [28:28] is the sub-list for method output_type
-	28, // [28:28] is the sub-list for method input_type
-	28, // [28:28] is the sub-list for extension type_name
-	28, // [28:28] is the sub-list for extension extendee
-	0,  // [0:28] is the sub-list for field type_name
+	20, // 20: storage.PrometheusMetricsConfig.node_vulnerabilities:type_name -> storage.PrometheusMetricsConfig.Vulnerabilities
+	16, // 21: storage.PlatformComponentConfig.Rule.namespace_rule:type_name -> storage.PlatformComponentConfig.Rule.NamespaceRule
+	12, // 22: storage.VulnerabilityExceptionConfig.ExpiryOptions.day_options:type_name -> storage.DayOption
+	17, // 23: storage.VulnerabilityExceptionConfig.ExpiryOptions.fixable_cve_options:type_name -> storage.VulnerabilityExceptionConfig.FixableCVEOptions
+	22, // 24: storage.PrometheusMetricsConfig.Labels.labels:type_name -> storage.PrometheusMetricsConfig.Labels.LabelsEntry
+	24, // 25: storage.PrometheusMetricsConfig.Vulnerabilities.metrics:type_name -> storage.PrometheusMetricsConfig.Vulnerabilities.MetricsEntry
+	23, // 26: storage.PrometheusMetricsConfig.Labels.Expression.expression:type_name -> storage.PrometheusMetricsConfig.Labels.Expression.Condition
+	21, // 27: storage.PrometheusMetricsConfig.Labels.LabelsEntry.value:type_name -> storage.PrometheusMetricsConfig.Labels.Expression
+	19, // 28: storage.PrometheusMetricsConfig.Vulnerabilities.MetricsEntry.value:type_name -> storage.PrometheusMetricsConfig.Labels
+	29, // [29:29] is the sub-list for method output_type
+	29, // [29:29] is the sub-list for method input_type
+	29, // [29:29] is the sub-list for extension type_name
+	29, // [29:29] is the sub-list for extension extendee
+	0,  // [0:29] is the sub-list for field type_name
 }
 
 func init() { file_storage_config_proto_init() }

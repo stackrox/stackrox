@@ -538,6 +538,9 @@
           "$ref": "#/definitions/PrometheusMetricsConfigVulnerabilities",
           "description": "\"imageVulnerabilities\": {\n    \"gatheringPeriodMinutes\": 1,\n    \"metrics\": {\n      \"severity\": { // custom metric name.\n        \"labels\": {\n          \"Severity\": {} // label name with no expression.\n          \"Namespace\": {\n            \"expression\": [ // label conditions list.\n              { \"operator\": \"!=\", \"argument\": \"*test*\" }\n            ]\n          }\n        }\n      }\n    }\n  }",
           "title": "Configuration for image vulnerabilities metrics.\nExample:"
+        },
+        "nodeVulnerabilities": {
+          "$ref": "#/definitions/PrometheusMetricsConfigVulnerabilities"
         }
       }
     },

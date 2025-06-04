@@ -189,4 +189,5 @@ message PrometheusMetricsConfig {
   //     }
   //   }
   Vulnerabilities image_vulnerabilities = 1;
+  Vulnerabilities node_vulnerabilities = 2;
 }
