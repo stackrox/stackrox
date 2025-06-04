@@ -1,17 +1,23 @@
 package clientconn
 
 import (
+	"context"
+	"crypto/tls"
 	"crypto/x509"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"os"
 	"path"
+	"strings"
 	"testing"
 
+	v1API "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -137,4 +143,121 @@ func (t *ClientTestSuite) TestAuthenticatedHTTPTransport_WebSocket() {
 			t.Equal(http.StatusOK, resp.StatusCode)
 		})
 	}
+}
+
+func (t *ClientTestSuite) TestGRPCConnection() {
+	for name, tc := range map[string]struct {
+		nextProtos        []string
+		skipWhenEnv       map[string]string
+		requiredEnv       map[string]string
+		expectsError      bool
+		expectedErrorText string
+	}{
+		"h2 as next proto allows GRPCConnection to connect": {
+			nextProtos:   []string{"h2"},
+			expectsError: false,
+		},
+		"no (ALPN) next proto and no GRPC env var set (behaviour: enforce prevents connection)": {
+			nextProtos: []string{},
+			skipWhenEnv: map[string]string{
+				"GRPC_ENFORCE_ALPN_ENABLED": "false",
+			},
+			expectsError:      true,
+			expectedErrorText: "missing selected ALPN property",
+		},
+		"no (ALPN) next proto and GRPC env set to enforce prevents connection": {
+			nextProtos: []string{},
+			requiredEnv: map[string]string{
+				"GRPC_ENFORCE_ALPN_ENABLED": "true",
+			},
+			expectsError:      true,
+			expectedErrorText: "missing selected ALPN property",
+		},
+		"no (ALPN) next proto and GRPC env set to not enforce allows connection": {
+			nextProtos: []string{},
+			requiredEnv: map[string]string{
+				"GRPC_ENFORCE_ALPN_ENABLED": "false",
+			},
+		},
+	} {
+		t.Run(name, func() {
+			envAllows, skipReason := checkEnvSkipConditions(t.T(), name, tc.skipWhenEnv, tc.requiredEnv)
+			if !envAllows {
+				t.T().Skip(skipReason)
+			}
+			cert := testutils.IssueSelfSignedCert(t.T(), "localhost", "localhost")
+			handler := &dummyHandler{}
+			tlsSvr := httptest.NewUnstartedServer(http.HandlerFunc(handler.ServeHTTP))
+			tlsSvr.TLS = &tls.Config{
+				Certificates: []tls.Certificate{cert},
+				NextProtos:   tc.nextProtos,
+			}
+			tlsSvr.EnableHTTP2 = true
+			tlsSvr.StartTLS()
+			defer closeTLSServer(tlsSvr)
+			endpoint := tlsSvr.URL
+			dialCtx := context.Background()
+			server := mtls.CentralSubject
+			connectOptions := Options{TLS: TLSConfigOptions{
+				InsecureSkipVerify: true,
+				GRPCOnly:           true,
+			}}
+			endpoint = strings.TrimPrefix(endpoint, "https://")
+			cnx, err := GRPCConnection(dialCtx, server, endpoint, connectOptions)
+			t.NoError(err)
+
+			client := v1API.NewPingServiceClient(cnx)
+			rsp, err := client.Ping(context.Background(), &v1API.Empty{})
+			if tc.expectsError {
+				t.ErrorContains(err, tc.expectedErrorText)
+			} else {
+				log.Info(err)
+				log.Info(rsp)
+			}
+		})
+	}
+}
+
+func checkEnvSkipConditions(
+	_ *testing.T,
+	caseName string,
+	rejectingEnv map[string]string,
+	requiredEnv map[string]string,
+) (bool, string) {
+	envAllows := true
+	var skipReason strings.Builder
+	skipReason.WriteString("Test \"TestGRPCConnection/")
+	skipReason.WriteString(caseName)
+	skipReason.WriteString("\" skipped because of env values")
+	for varName, value := range requiredEnv {
+		actualValue := os.Getenv(varName)
+		if actualValue != value {
+			skipReason.WriteString(fmt.Sprintf(" %q ", varName))
+			skipReason.WriteString(fmt.Sprintf("(got %q but expected %q)", actualValue, value))
+			envAllows = false
+		}
+	}
+	for varName, value := range rejectingEnv {
+		actualValue := os.Getenv(varName)
+		if actualValue == value {
+			skipReason.WriteString(fmt.Sprintf(" %q ", varName))
+			skipReason.WriteString(fmt.Sprintf("(got value %q requiring skip)", actualValue))
+			envAllows = false
+		}
+	}
+	return envAllows, skipReason.String()
+}
+
+type dummyHandler struct {
+	called bool
+}
+
+func (h *dummyHandler) ServeHTTP(w http.ResponseWriter, _ *http.Request) {
+	h.called = true
+	w.WriteHeader(http.StatusOK)
+}
+
+func closeTLSServer(server *httptest.Server) {
+	server.CloseClientConnections()
+	server.Close()
 }
