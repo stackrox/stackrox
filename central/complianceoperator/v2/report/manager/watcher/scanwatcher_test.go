@@ -167,6 +167,7 @@ func TestScanWatcher(t *testing.T) {
 				}
 				assert.Truef(t, found, "Expected to find %s", checkID)
 			}
+			t.Logf("lvm ----> %t", scanWatcher.Finished().IsDone())
 		})
 	}
 }

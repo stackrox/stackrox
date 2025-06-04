@@ -263,9 +263,11 @@ func (s *scanWatcherImpl) Stop(err error) {
 
 func (s *scanWatcherImpl) run() {
 	defer func() {
+		log.Info("lvm -> defer in watcher run called")
 		s.stopped.Signal()
 		<-s.stopped.Done()
 		s.timeout.Stop()
+		log.Info("lvm -> defer in watcher run done")
 	}()
 	for {
 		select {
@@ -298,8 +300,10 @@ func (s *scanWatcherImpl) run() {
 		concurrency.WithLock(&s.resultsLock, func() {
 			numCheckResults = len(s.scanResults.CheckResults)
 		})
+		log.Infof("lvm -> scan %s current results %d expected %d", s.scanResults.Scan.GetScanName(), numCheckResults, s.totalChecks)
 		if s.totalChecks != 0 && s.totalChecks == numCheckResults {
 			s.readyQueue.Push(s.scanResults)
+			log.Infof("lvm -> results pushed to the queue")
 			return
 		}
 	}
