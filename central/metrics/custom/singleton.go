@@ -5,8 +5,10 @@ import (
 
 	alertDS "github.com/stackrox/rox/central/alert/datastore"
 	configDS "github.com/stackrox/rox/central/config/datastore"
+	cveDS "github.com/stackrox/rox/central/cve/node/datastore"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/metrics"
+	nodeDS "github.com/stackrox/rox/central/node/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
@@ -29,7 +31,12 @@ type Runner interface {
 // initialization. nil runner is safe, but no-op.
 func Singleton() Runner {
 	onceRunner.Do(func() {
-		runner = makeRunner(metrics.GetCustomRegistry, deploymentDS.Singleton(), alertDS.Singleton())
+		runner = makeRunner(metrics.GetCustomRegistry,
+			deploymentDS.Singleton(),
+			alertDS.Singleton(),
+			nodeDS.Singleton(),
+			cveDS.Singleton(),
+		)
 		go runner.initialize(configDS.Singleton())
 	})
 	return runner

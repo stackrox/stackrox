@@ -6,11 +6,14 @@ import (
 
 	alertDS "github.com/stackrox/rox/central/alert/datastore"
 	configDS "github.com/stackrox/rox/central/config/datastore"
+	cveDS "github.com/stackrox/rox/central/cve/node/datastore"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/metrics/custom/image_vulnerabilities"
+	"github.com/stackrox/rox/central/metrics/custom/node_vulnerabilities"
 	"github.com/stackrox/rox/central/metrics/custom/policy_violations"
 	custom "github.com/stackrox/rox/central/metrics/custom/tracker"
+	nodeDS "github.com/stackrox/rox/central/node/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/logging"
@@ -20,6 +23,7 @@ import (
 type aggregatorRunner struct {
 	image_vulnerabilities custom.Tracker
 	policy_violations     custom.Tracker
+	node_vulnerabilities  custom.Tracker
 }
 
 // RunnerConfiguration is a composition of tracker configurations.
@@ -29,12 +33,19 @@ type aggregatorRunner struct {
 type RunnerConfiguration struct {
 	image_vulnerabilities *custom.Configuration
 	policy_violations     *custom.Configuration
+	node_vulnerabilities  *custom.Configuration
 }
 
-func makeRunner(registryFactory func(string) metrics.CustomRegistry, dds deploymentDS.DataStore, ads alertDS.DataStore) *aggregatorRunner {
+func makeRunner(registryFactory func(string) metrics.CustomRegistry,
+	dds deploymentDS.DataStore,
+	ads alertDS.DataStore,
+	nds nodeDS.DataStore,
+	cveds cveDS.DataStore,
+) *aggregatorRunner {
 	return &aggregatorRunner{
 		image_vulnerabilities: image_vulnerabilities.New(registryFactory, dds),
 		policy_violations:     policy_violations.New(registryFactory, ads),
+		node_vulnerabilities:  node_vulnerabilities.New(registryFactory, nds, cveds),
 	}
 }
 
@@ -68,6 +79,10 @@ func (ar *aggregatorRunner) ValidateConfiguration(cfg *storage.PrometheusMetrics
 	if err != nil {
 		return nil, err
 	}
+	runnerConfig.node_vulnerabilities, err = ar.node_vulnerabilities.NewConfiguration(cfg.GetNodeVulnerabilities())
+	if err != nil {
+		return nil, err
+	}
 	return runnerConfig, nil
 }
 
@@ -82,6 +97,7 @@ func (ar *aggregatorRunner) Reconfigure(cfg *RunnerConfiguration) {
 	} else {
 		ar.image_vulnerabilities.Reconfigure(cfg.image_vulnerabilities)
 		ar.policy_violations.Reconfigure(cfg.policy_violations)
+		ar.node_vulnerabilities.Reconfigure(cfg.node_vulnerabilities)
 	}
 }
 
@@ -96,6 +112,7 @@ func (ar *aggregatorRunner) ServeHTTP(w http.ResponseWriter, req *http.Request) 
 		ctx := authn.CopyContextIdentity(context.Background(), req.Context())
 		go ar.image_vulnerabilities.Gather(ctx)
 		go ar.policy_violations.Gather(ctx)
+		go ar.node_vulnerabilities.Gather(ctx)
 	}
 	registry := metrics.GetCustomRegistry(userID)
 	registry.Lock()
