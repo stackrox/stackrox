@@ -5236,6 +5236,11 @@
                 "id": 2,
                 "name": "policy_violations",
                 "type": "Group"
+              },
+              {
+                "id": 3,
+                "name": "node_vulnerabilities",
+                "type": "Group"
               }
             ],
             "messages": [
