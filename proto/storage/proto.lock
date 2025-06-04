@@ -5385,6 +5385,11 @@
                 "id": 1,
                 "name": "image_vulnerabilities",
                 "type": "Vulnerabilities"
+              },
+              {
+                "id": 2,
+                "name": "node_vulnerabilities",
+                "type": "Vulnerabilities"
               }
             ],
             "messages": [
