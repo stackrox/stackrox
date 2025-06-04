@@ -151,7 +151,9 @@ func Export(ctx context.Context, outputDir string, opts *ExportOptions) error {
 	if err != nil {
 		return fmt.Errorf("failed to create status file: %w", err)
 	}
-	defer sf.Close()
+	defer func() {
+		_ = sf.Close()
+	}()
 
 	encoder := json.NewEncoder(sf)
 	if err := encoder.Encode(status); err != nil {
