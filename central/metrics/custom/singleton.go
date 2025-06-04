@@ -6,6 +6,7 @@ import (
 	alertDS "github.com/stackrox/rox/central/alert/datastore"
 	configDS "github.com/stackrox/rox/central/config/datastore"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
+	nodeDS "github.com/stackrox/rox/central/node/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
@@ -31,6 +32,7 @@ func Singleton() Runner {
 		runner = makeRunner(&runnerDatastores{
 			deploymentDS.Singleton(),
 			alertDS.Singleton(),
+			nodeDS.Singleton(),
 		})
 		go runner.initialize(configDS.Singleton())
 	})
