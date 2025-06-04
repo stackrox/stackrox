@@ -2,6 +2,7 @@ package updater
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -29,6 +30,12 @@ import (
 type ExportOptions struct {
 	SplitBundles  bool
 	ManualVulnURL string
+}
+
+type Status struct {
+	SuccessfulUpdaters []string `json:"successful_updaters"`
+	FailedUpdaters     []string `json:"failed_updaters"`
+	Errors             []string `json:"errors,omitempty"`
 }
 
 // Export is responsible for triggering the updaters to download Common Vulnerabilities and Exposures (CVEs) data.
@@ -89,6 +96,11 @@ func Export(ctx context.Context, outputDir string, opts *ExportOptions) error {
 			transport: http.DefaultTransport,
 		},
 	}
+	status := Status{
+		SuccessfulUpdaters: []string{},
+		FailedUpdaters:     []string{},
+		Errors:             []string{},
+	}
 
 	// Export to bundle(s).
 	if opts.SplitBundles {
@@ -101,13 +113,16 @@ func Export(ctx context.Context, outputDir string, opts *ExportOptions) error {
 			err = bundle(ctx, httpClient, w, o)
 			if err != nil {
 				_ = w.Close()
-				return err
+				status.FailedUpdaters = append(status.FailedUpdaters, name)
+				status.Errors = append(status.Errors, err.Error())
+				continue
 			}
 			if err := w.Close(); err != nil {
 				// Fail to close here means the data might not have been written fully, so we
 				// fail.
 				return fmt.Errorf("failed to close bundle output file: %w", err)
 			}
+			status.SuccessfulUpdaters = append(status.SuccessfulUpdaters, name)
 		}
 	} else {
 		w, err := zstdWriter(filepath.Join(outputDir, "vulns.json.zst"))
@@ -119,8 +134,11 @@ func Export(ctx context.Context, outputDir string, opts *ExportOptions) error {
 			err := bundle(ctx, httpClient, w, o)
 			if err != nil {
 				_ = w.Close()
-				return err
+				status.FailedUpdaters = append(status.FailedUpdaters, name)
+				status.Errors = append(status.Errors, err.Error())
+				continue
 			}
+			status.SuccessfulUpdaters = append(status.SuccessfulUpdaters, name)
 		}
 		// Fail to close here means the data might not have been written fully, so we
 		// fail.
@@ -129,6 +147,16 @@ func Export(ctx context.Context, outputDir string, opts *ExportOptions) error {
 		}
 	}
 
+	sf, err := os.Create(filepath.Join(outputDir, "status.json"))
+	if err != nil {
+		return fmt.Errorf("failed to create status file: %w", err)
+	}
+	defer sf.Close()
+
+	encoder := json.NewEncoder(sf)
+	if err := encoder.Encode(status); err != nil {
+		return fmt.Errorf("failed to write data: %w", err)
+	}
 	return nil
 }
 
