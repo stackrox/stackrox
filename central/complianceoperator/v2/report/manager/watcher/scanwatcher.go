@@ -310,15 +310,29 @@ func (s *scanWatcherImpl) run() {
 	}
 }
 
-func (s *scanWatcherImpl) handleScan(scan *storage.ComplianceOperatorScanV2) error {
-	if checkCountAnnotation, found := scan.GetAnnotations()[CheckCountAnnotationKey]; found {
-		var numChecks int
-		var err error
-		if numChecks, err = strconv.Atoi(checkCountAnnotation); err != nil {
-			return errors.Wrap(err, "unable to convert the check count annotation to int")
-		}
-		s.totalChecks = numChecks
+func GetExpectedNumChecks(scan *storage.ComplianceOperatorScanV2) (int, error) {
+	annotationsMap := scan.GetAnnotations()
+	if annotationsMap == nil || len(annotationsMap) == 0 {
+		return 0, nil // It can happen that the annotation is not available and this is okay.
 	}
+	checkCountAnnotation, found := annotationsMap[CheckCountAnnotationKey]
+	if !found {
+		return 0, nil // It can happen that the annotation is not available and this is okay.
+	}
+	var numChecks int
+	var err error
+	if numChecks, err = strconv.Atoi(checkCountAnnotation); err != nil {
+		return 0, errors.Wrap(err, "unable to convert the check count annotation to int")
+	}
+	return numChecks, nil
+}
+
+func (s *scanWatcherImpl) handleScan(scan *storage.ComplianceOperatorScanV2) error {
+	numChecks, err := GetExpectedNumChecks(scan)
+	if err != nil {
+		return err
+	}
+	s.totalChecks = numChecks
 
 	s.resultsLock.Lock()
 	defer s.resultsLock.Unlock()

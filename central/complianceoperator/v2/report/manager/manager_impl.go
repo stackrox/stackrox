@@ -355,7 +355,11 @@ func (m *managerImpl) HandleScan(sensorCtx context.Context, scan *storage.Compli
 		return err
 	}
 	log.Debugf("Searching for ScanWatcher %s to PushScan", id)
-	return m.getWatcher(sensorCtx, id).PushScan(scan)
+	numChecks, err := watcher.GetExpectedNumChecks(scan)
+	if err != nil {
+		log.Warnf("Failed to get expected number of checks from annotations for %s: %v", scan.GetScanName(), err)
+	}
+	return m.getWatcher(sensorCtx, id, numChecks).PushScan(scan)
 }
 
 func (m *managerImpl) updateMetrics() {
@@ -404,11 +408,17 @@ func (m *managerImpl) HandleScanRemove(scanID string) error {
 	return nil
 }
 
-func (m *managerImpl) getWatcher(sensorCtx context.Context, id string) watcher.ScanWatcher {
+func (m *managerImpl) getWatcher(sensorCtx context.Context, id string, numChecks int) watcher.ScanWatcher {
 	var scanWatcher watcher.ScanWatcher
 	concurrency.WithLock(&m.watchingScansLock, func() {
 		var found bool
-		if scanWatcher, found = m.watchingScans[id]; !found {
+		// The check for `numChecks == 0` is here to prevent starting a watcher twice per scan.
+		// It may happen that additional status updates (e.g., state) from CO arrive
+		// after the watcher is removed from the watchingScans (i.e., we have all the checks).
+		// Not checking that would cause a new watcher to be created here and in some circumstances
+		// (when no e-mail is provided for notification), the watcher would time-out and delete the data from DB.
+		if scanWatcher, found = m.watchingScans[id]; !found && numChecks == 0 {
+			// check the scan annotation and do not create watcher if totalChecks is >0 and numCheckResults is 0
 			scanWatcher = watcher.NewScanWatcher(m.automaticReportingCtx, sensorCtx, id, m.readyQueue)
 			m.watchingScans[id] = scanWatcher
 			m.watchingScansStartTime[id] = time.Now()
@@ -443,7 +453,7 @@ func (m *managerImpl) HandleResult(sensorCtx context.Context, result *storage.Co
 		return err
 	}
 	log.Debugf("Searching for ScanWatcher %s to PushCheckResult", id)
-	return m.getWatcher(sensorCtx, id).PushCheckResult(result)
+	return m.getWatcher(sensorCtx, id, 0).PushCheckResult(result)
 }
 
 // handleReadyScan pulls scans that are ready to be reported
