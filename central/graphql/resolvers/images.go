@@ -57,6 +57,9 @@ func init() {
 			"operatingSystem: String!",
 			"scanTime: Time",
 			"scannerVersion: String!",
+
+			// Image signature-related fields.
+			"signatureCount: Int!",
 		}),
 		schema.AddQuery("image(id: ID!): Image"),
 		schema.AddQuery("fullImage(id: ID!): Image"),
@@ -313,4 +316,19 @@ func (resolver *imageResolver) ScanTime(_ context.Context) (*graphql.Time, error
 func (resolver *imageResolver) ScannerVersion(_ context.Context) string {
 	value := resolver.data.GetScan().GetScannerVersion()
 	return value
+}
+
+func (resolver *imageResolver) SignatureCount(ctx context.Context) (int32, error) {
+	resolver.ensureData(ctx)
+
+	imageLoader, err := loaders.GetImageLoader(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	image, err := imageLoader.FullImageWithID(ctx, resolver.data.GetId())
+	if err != nil {
+		return 0, err
+	}
+	return int32(len(image.GetSignature().GetSignatures())), nil
 }
