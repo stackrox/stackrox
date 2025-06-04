@@ -120,7 +120,7 @@ var (
 	VulnerabilityOnDemandReports = registerFeature("Adds the ability to generate on-demand vulnerability reports based on filter views", "ROX_VULNERABILITY_ON_DEMAND_REPORTS")
 
 	// Adds the ability to customize the regex rules for identifying platform components
-	CustomizablePlatformComponents = registerFeature("Adds the ability to customize the regex rules for identifying platform components", "ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS")
+	CustomizablePlatformComponents = registerFeature("Adds the ability to customize the regex rules for identifying platform components", "ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS", enabled)
 )
 
 // The following feature flags are related to Scanner V4.
