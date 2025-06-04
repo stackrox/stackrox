@@ -277,12 +277,14 @@ func (s *scanWatcherImpl) run() {
 				}
 			})
 			s.readyQueue.Push(s.scanResults)
+			watcherFinishType.WithLabelValues(s.scanResults.Scan.GetScanName(), "stop requested").Inc()
 			return
 		case <-s.timeout.C():
 			concurrency.WithLock(&s.resultsLock, func() {
 				log.Warnf("Timeout waiting for the scan %s to finish", s.scanResults.Scan.GetScanName())
 				s.scanResults.Error = ErrScanTimeout
 			})
+			watcherFinishType.WithLabelValues(s.scanResults.Scan.GetScanName(), "timeout").Inc()
 			s.readyQueue.Push(s.scanResults)
 			return
 		case scan := <-s.scanC:
@@ -298,10 +300,11 @@ func (s *scanWatcherImpl) run() {
 		concurrency.WithLock(&s.resultsLock, func() {
 			numCheckResults = len(s.scanResults.CheckResults)
 		})
-		log.Debugf("Checking whether %s is finished. TotalChecks=%d, numCheckResults=%d",
-			s.scanResults.Scan.GetScanName(), s.totalChecks, numCheckResults)
+		log.Debugf("Checking whether %s is finished. TotalChecks=%d, numCheckResults=%d (watcher id: %s)",
+			s.scanResults.Scan.GetScanName(), s.totalChecks, numCheckResults, s.scanResults.WatcherID)
 		if s.totalChecks != 0 && s.totalChecks == numCheckResults {
 			s.readyQueue.Push(s.scanResults)
+			watcherFinishType.WithLabelValues(s.scanResults.Scan.GetScanName(), "done").Inc()
 			return
 		}
 	}
