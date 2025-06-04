@@ -78,6 +78,8 @@ type managerImpl struct {
 	watchingScansLock sync.Mutex
 	// watchingScans a map holding the ScanWatchers
 	watchingScans map[string]watcher.ScanWatcher
+	// watchingScansStartTime records when a given watcher was started (for the metrics)
+	watchingScansStartTime map[string]time.Time
 	// readyQueue holds the scan that are ready to be reported
 	readyQueue *queue.Queue[*watcher.ScanWatcherResults]
 
@@ -87,6 +89,11 @@ type managerImpl struct {
 	watchingScanConfigs map[string]watcher.ScanConfigWatcher
 	// scanConfigReadyQueue holds the scan configurations that are ready to be reported
 	scanConfigReadyQueue *queue.Queue[*watcher.ScanConfigWatcherResults]
+
+	metricsTicker  *time.Ticker
+	metricsTickerC <-chan time.Time
+	// maxScansInParallel stores the maximum number of scans running in parallel between the ticks of metricsTicker.
+	maxScansInParallel atomic.Int32
 }
 
 func New(scanConfigDS scanConfigurationDS.DataStore,
@@ -98,25 +105,29 @@ func New(scanConfigDS scanConfigurationDS.DataStore,
 	bindingsDataStore bindingsDS.DataStore,
 	checkResultDataStore checkResults.DataStore,
 	reportGen reportGen.ComplianceReportGenerator) Manager {
+	gmt := time.NewTicker(env.ComplianceScansRunningInParallelMetricObservationPeriod.DurationSetting())
 	return &managerImpl{
-		scanConfigDataStore:   scanConfigDS,
-		scanDataStore:         scanDataStore,
-		profileDataStore:      profileDataStore,
-		snapshotDataStore:     snapshotDatastore,
-		integrationDataStore:  complianceIntegration,
-		suiteDataStore:        suiteDataStore,
-		bindingsDataStore:     bindingsDataStore,
-		checkResultDataStore:  checkResultDataStore,
-		stopper:               concurrency.NewStopper(),
-		runningReportConfigs:  make(map[string]*reportRequest, maxRequests),
-		reportRequests:        make(chan *reportRequest, maxRequests),
-		concurrencySem:        semaphore.NewWeighted(int64(env.ReportExecutionMaxConcurrency.IntegerSetting())),
-		reportGen:             reportGen,
-		automaticReportingCtx: sac.WithAllAccess(context.Background()),
-		watchingScans:         make(map[string]watcher.ScanWatcher),
-		readyQueue:            queue.NewQueue[*watcher.ScanWatcherResults](),
-		watchingScanConfigs:   make(map[string]watcher.ScanConfigWatcher),
-		scanConfigReadyQueue:  queue.NewQueue[*watcher.ScanConfigWatcherResults](),
+		scanConfigDataStore:    scanConfigDS,
+		scanDataStore:          scanDataStore,
+		profileDataStore:       profileDataStore,
+		snapshotDataStore:      snapshotDatastore,
+		integrationDataStore:   complianceIntegration,
+		suiteDataStore:         suiteDataStore,
+		bindingsDataStore:      bindingsDataStore,
+		checkResultDataStore:   checkResultDataStore,
+		stopper:                concurrency.NewStopper(),
+		runningReportConfigs:   make(map[string]*reportRequest, maxRequests),
+		reportRequests:         make(chan *reportRequest, maxRequests),
+		concurrencySem:         semaphore.NewWeighted(int64(env.ReportExecutionMaxConcurrency.IntegerSetting())),
+		reportGen:              reportGen,
+		automaticReportingCtx:  sac.WithAllAccess(context.Background()),
+		watchingScans:          make(map[string]watcher.ScanWatcher),
+		watchingScansStartTime: make(map[string]time.Time),
+		readyQueue:             queue.NewQueue[*watcher.ScanWatcherResults](),
+		watchingScanConfigs:    make(map[string]watcher.ScanConfigWatcher),
+		scanConfigReadyQueue:   queue.NewQueue[*watcher.ScanConfigWatcherResults](),
+		metricsTicker:          gmt,
+		metricsTickerC:         gmt.C,
 	}
 }
 
@@ -163,9 +174,11 @@ func (m *managerImpl) Start() {
 	go m.runReports()
 	go m.handleReadyScan()
 	go m.handleReadyScanConfig()
+	go m.updateMetrics()
 }
 
 func (m *managerImpl) Stop() {
+	m.metricsTicker.Stop()
 	if m.isStarted.Load() {
 		log.Error("Compliance report manager not started")
 		return
@@ -182,6 +195,7 @@ func (m *managerImpl) Stop() {
 			<-scanWatcher.Finished().Done()
 		}
 		m.watchingScans = make(map[string]watcher.ScanWatcher)
+		m.watchingScansStartTime = make(map[string]time.Time)
 	})
 	concurrency.WithLock(&m.watchingScanConfigsLock, func() {
 		for _, scanConfigWatcher := range m.watchingScanConfigs {
@@ -356,7 +370,42 @@ func (m *managerImpl) HandleScan(sensorCtx context.Context, scan *storage.Compli
 		}
 		return err
 	}
-	return m.getWatcher(sensorCtx, id).PushScan(scan)
+	numChecks, err := watcher.GetExpectedNumChecks(scan)
+	if err != nil {
+		log.Warnf("Failed to get expected number of checks from annotations for %s: %v", scan.GetScanName(), err)
+	}
+	w := m.getWatcher(sensorCtx, id, numChecks)
+	if w != nil {
+		return w.PushScan(scan)
+	}
+	log.Debugf("Received scan update after removing the watcher %+v", scan)
+	return nil
+}
+
+func (m *managerImpl) updateMetrics() {
+	for {
+		select {
+		case <-m.stopper.Flow().StopRequested():
+			return
+		case <-m.metricsTickerC:
+			nRunning := concurrency.WithLock1(&m.watchingScansLock, func() int {
+				return len(m.watchingScans)
+			})
+			numWatchers.Set(float64(nRunning))
+			// Reset the maximum value on tick and set to the current number
+			prevVal := m.maxScansInParallel.Swap(int32(nRunning))
+			log.Debugf("Updating maxScansInParallel from %d to %d (tick)", prevVal, nRunning)
+			if prevVal > 0 {
+				scansRunningInParallel.Observe(float64(prevVal))
+			}
+		}
+	}
+}
+
+func (m *managerImpl) updateMaxNumScansRunningInParallelNoLock() {
+	newVal := max(m.maxScansInParallel.Load(), int32(len(m.watchingScans)))
+	prevVal := m.maxScansInParallel.Swap(newVal)
+	log.Debugf("Updating maxScansInParallel from %d to %d", prevVal, newVal)
 }
 
 func (m *managerImpl) HandleScanRemove(scanID string) error {
@@ -379,13 +428,20 @@ func (m *managerImpl) HandleScanRemove(scanID string) error {
 	return nil
 }
 
-func (m *managerImpl) getWatcher(sensorCtx context.Context, id string) watcher.ScanWatcher {
+func (m *managerImpl) getWatcher(sensorCtx context.Context, id string, numChecks int) watcher.ScanWatcher {
 	var scanWatcher watcher.ScanWatcher
 	concurrency.WithLock(&m.watchingScansLock, func() {
 		var found bool
-		if scanWatcher, found = m.watchingScans[id]; !found {
+		// The check for `numChecks == 0` is here to prevent starting a watcher twice per scan.
+		// It may happen that additional status updates (e.g., state) from CO arrive
+		// after the watcher is removed from the watchingScans (i.e., we have all the checks).
+		// Not checking that would cause a new watcher to be created here and in some circumstances
+		// (when no e-mail is provided for notification), the watcher would time-out and delete the data from DB.
+		if scanWatcher, found = m.watchingScans[id]; !found && numChecks == 0 {
 			scanWatcher = watcher.NewScanWatcher(m.automaticReportingCtx, sensorCtx, id, m.readyQueue)
 			m.watchingScans[id] = scanWatcher
+			m.watchingScansStartTime[id] = time.Now()
+			m.updateMaxNumScansRunningInParallelNoLock()
 		}
 	})
 	return scanWatcher
@@ -412,7 +468,12 @@ func (m *managerImpl) HandleResult(sensorCtx context.Context, result *storage.Co
 		}
 		return err
 	}
-	return m.getWatcher(sensorCtx, id).PushCheckResult(result)
+	w := m.getWatcher(sensorCtx, id, 0)
+	if w != nil {
+		return w.PushCheckResult(result)
+	}
+	log.Debugf("Received check result update after removing the watcher %+v", result)
+	return nil
 }
 
 // handleReadyScan pulls scans that are ready to be reported
@@ -428,6 +489,12 @@ func (m *managerImpl) handleReadyScan() {
 			if scanWatcherResult := m.readyQueue.PullBlocking(m.stopper.LowLevel().GetStopRequestSignal()); scanWatcherResult != nil {
 				concurrency.WithLock(&m.watchingScansLock, func() {
 					delete(m.watchingScans, scanWatcherResult.WatcherID)
+
+					m.maxScansInParallel.Store(int32(len(m.watchingScans)))
+					timeActive := time.Since(m.watchingScansStartTime[scanWatcherResult.WatcherID])
+					scanWatcherActiveTimeMinutes.WithLabelValues(scanWatcherResult.Scan.GetScanName()).
+						Observe(timeActive.Minutes())
+					delete(m.watchingScansStartTime, scanWatcherResult.WatcherID)
 				})
 				if err := watcher.DeleteOldResults(m.automaticReportingCtx, scanWatcherResult, m.checkResultDataStore); err != nil {
 					log.Errorf("unable to delete old CheckResults: %v", err)
