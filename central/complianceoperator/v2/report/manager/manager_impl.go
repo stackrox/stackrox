@@ -351,7 +351,6 @@ func (m *managerImpl) HandleScan(sensorCtx context.Context, scan *storage.Compli
 		}
 		return err
 	}
-	log.Debugf("Searching for ScanWatcher %s to PushScan", id)
 	numChecks, err := watcher.GetExpectedNumChecks(scan)
 	if err != nil {
 		log.Warnf("Failed to get expected number of checks from annotations for %s: %v", scan.GetScanName(), err)
@@ -360,6 +359,7 @@ func (m *managerImpl) HandleScan(sensorCtx context.Context, scan *storage.Compli
 	if w != nil {
 		return w.PushScan(scan)
 	}
+	log.Debugf("Received scan update after removing the watcher %+v", scan)
 	return nil
 }
 
@@ -453,6 +453,7 @@ func (m *managerImpl) HandleResult(sensorCtx context.Context, result *storage.Co
 	if w != nil {
 		return w.PushCheckResult(result)
 	}
+	log.Debugf("Received check result update after removing the watcher %+v", result)
 	return nil
 }
 
