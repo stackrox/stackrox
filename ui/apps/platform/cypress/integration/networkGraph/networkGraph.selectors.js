@@ -13,8 +13,11 @@ export const networkGraphSelectors = {
     drawerTabs: '.pf-v5-c-drawer__panel .pf-v5-c-tabs__list',
     deploymentNode: (deploymentName) =>
         `${networkGraphSelectors.nodes} [data-type="node"] .pf-topology__node__label:contains("${deploymentName}")`,
+    // filteredNamespaceGroupNode
+    // react-topology@5.2.1: in so-called nodes (default) and has the filtered-namespace class
+    // react-topology@5.4.1: moved from so-called nodes to groups and is grand-niece instead of grand-daughter.
     filteredNamespaceGroupNode: (namespace) =>
-        `${networkGraphSelectors.nodes} [data-type="group"] .filtered-namespace text:contains("${namespace}")`,
+        `${networkGraphSelectors.groups} g[data-type="group"][data-id="${namespace}"] text:contains("${namespace}")`,
     relatedNamespaceGroupNode: (namespace) =>
         `${networkGraphSelectors.nodes} [data-type="group"] .related-namespace text:contains("${namespace}")`,
     manageCidrBlocksButton: 'button:contains("Manage CIDR blocks")',
