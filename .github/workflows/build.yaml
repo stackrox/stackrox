@@ -109,7 +109,7 @@ jobs:
       UI_PKG_INSTALL_EXTRA_ARGS: --ignore-scripts
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8-3-g679cfb72eb
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -141,7 +141,7 @@ jobs:
   pre-build-cli:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8-3-g679cfb72eb
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
@@ -182,7 +182,7 @@ jobs:
     needs: define-job-matrix
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8-3-g679cfb72eb
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -247,7 +247,7 @@ jobs:
   pre-build-docs:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8-3-g679cfb72eb
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -304,7 +304,7 @@ jobs:
       GO_BINARIES_BUILD_ARTIFACT: ""
       ROX_PRODUCT_BRANDING: ""
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8-3-g679cfb72eb
       env:
         QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
@@ -485,7 +485,7 @@ jobs:
     env:
       ROX_PRODUCT_BRANDING: ""
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8-3-g679cfb72eb
       env:
         QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
@@ -577,7 +577,7 @@ jobs:
     needs:
       - define-job-matrix
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8-3-g679cfb72eb
       env:
         QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
         QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
@@ -662,7 +662,7 @@ jobs:
       ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8-3-g679cfb72eb
     needs:
     - pre-build-cli
     - pre-build-go-binaries
