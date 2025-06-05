@@ -231,6 +231,22 @@ func (resolver *Resolver) ImageComponents(ctx context.Context, q PaginatedQuery)
 			normalizedComponents = append(normalizedComponents, foundComponent[normalized])
 		}
 
+		for _, sortOption := range query.GetPagination().GetSortOptions() {
+			if sortOption.Field == search.ComponentPriority.String() {
+				for idx, component := range normalizedComponents {
+					if idx > 0 {
+						if normalizedComponents[idx-1].Priority > component.Priority {
+							log.Infof("SHREWS -- Priority out of order")
+							log.Infof("SHREWS -- %d -- %d", normalizedComponents[idx-1].Priority, component.Priority)
+							log.Infof("SHREWS -- %f -- %f", normalizedComponents[idx-1].RiskScore, component.RiskScore)
+							log.Infof("SHREWS -- %q -- %q", normalizedComponents[idx-1].Id, component.Id)
+						}
+					}
+				}
+				break
+			}
+		}
+
 		componentResolvers, err := resolver.wrapImageComponentV2sFlatWithContext(ctx, normalizedComponents, componentFlatData, err)
 		if err != nil {
 			return nil, err
