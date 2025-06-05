@@ -8,6 +8,7 @@ package sensor
 
 import (
 	context "context"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -19,7 +20,9 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	CollectorService_Communicate_FullMethodName = "/sensor.CollectorService/Communicate"
+	CollectorService_Communicate_FullMethodName               = "/sensor.CollectorService/Communicate"
+	CollectorService_PushProcesses_FullMethodName             = "/sensor.CollectorService/PushProcesses"
+	CollectorService_PushNetworkConnectionInfo_FullMethodName = "/sensor.CollectorService/PushNetworkConnectionInfo"
 )
 
 // CollectorServiceClient is the client API for CollectorService service.
@@ -27,6 +30,8 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type CollectorServiceClient interface {
 	Communicate(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[MsgFromCollector, MsgToCollector], error)
+	PushProcesses(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[ProcessSignal, v1.Empty], error)
+	PushNetworkConnectionInfo(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[NetworkConnectionInfo, NetworkFlowsControlMessage], error)
 }
 
 type collectorServiceClient struct {
@@ -50,11 +55,39 @@ func (c *collectorServiceClient) Communicate(ctx context.Context, opts ...grpc.C
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type CollectorService_CommunicateClient = grpc.BidiStreamingClient[MsgFromCollector, MsgToCollector]
 
+func (c *collectorServiceClient) PushProcesses(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[ProcessSignal, v1.Empty], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &CollectorService_ServiceDesc.Streams[1], CollectorService_PushProcesses_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[ProcessSignal, v1.Empty]{ClientStream: stream}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type CollectorService_PushProcessesClient = grpc.BidiStreamingClient[ProcessSignal, v1.Empty]
+
+func (c *collectorServiceClient) PushNetworkConnectionInfo(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[NetworkConnectionInfo, NetworkFlowsControlMessage], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &CollectorService_ServiceDesc.Streams[2], CollectorService_PushNetworkConnectionInfo_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[NetworkConnectionInfo, NetworkFlowsControlMessage]{ClientStream: stream}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type CollectorService_PushNetworkConnectionInfoClient = grpc.BidiStreamingClient[NetworkConnectionInfo, NetworkFlowsControlMessage]
+
 // CollectorServiceServer is the server API for CollectorService service.
 // All implementations should embed UnimplementedCollectorServiceServer
 // for forward compatibility.
 type CollectorServiceServer interface {
 	Communicate(grpc.BidiStreamingServer[MsgFromCollector, MsgToCollector]) error
+	PushProcesses(grpc.BidiStreamingServer[ProcessSignal, v1.Empty]) error
+	PushNetworkConnectionInfo(grpc.BidiStreamingServer[NetworkConnectionInfo, NetworkFlowsControlMessage]) error
 }
 
 // UnimplementedCollectorServiceServer should be embedded to have
@@ -66,6 +99,12 @@ type UnimplementedCollectorServiceServer struct{}
 
 func (UnimplementedCollectorServiceServer) Communicate(grpc.BidiStreamingServer[MsgFromCollector, MsgToCollector]) error {
 	return status.Errorf(codes.Unimplemented, "method Communicate not implemented")
+}
+func (UnimplementedCollectorServiceServer) PushProcesses(grpc.BidiStreamingServer[ProcessSignal, v1.Empty]) error {
+	return status.Errorf(codes.Unimplemented, "method PushProcesses not implemented")
+}
+func (UnimplementedCollectorServiceServer) PushNetworkConnectionInfo(grpc.BidiStreamingServer[NetworkConnectionInfo, NetworkFlowsControlMessage]) error {
+	return status.Errorf(codes.Unimplemented, "method PushNetworkConnectionInfo not implemented")
 }
 func (UnimplementedCollectorServiceServer) testEmbeddedByValue() {}
 
@@ -94,6 +133,20 @@ func _CollectorService_Communicate_Handler(srv interface{}, stream grpc.ServerSt
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type CollectorService_CommunicateServer = grpc.BidiStreamingServer[MsgFromCollector, MsgToCollector]
 
+func _CollectorService_PushProcesses_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(CollectorServiceServer).PushProcesses(&grpc.GenericServerStream[ProcessSignal, v1.Empty]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type CollectorService_PushProcessesServer = grpc.BidiStreamingServer[ProcessSignal, v1.Empty]
+
+func _CollectorService_PushNetworkConnectionInfo_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(CollectorServiceServer).PushNetworkConnectionInfo(&grpc.GenericServerStream[NetworkConnectionInfo, NetworkFlowsControlMessage]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type CollectorService_PushNetworkConnectionInfoServer = grpc.BidiStreamingServer[NetworkConnectionInfo, NetworkFlowsControlMessage]
+
 // CollectorService_ServiceDesc is the grpc.ServiceDesc for CollectorService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -105,6 +158,18 @@ var CollectorService_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "Communicate",
 			Handler:       _CollectorService_Communicate_Handler,
+			ServerStreams: true,
+			ClientStreams: true,
+		},
+		{
+			StreamName:    "PushProcesses",
+			Handler:       _CollectorService_PushProcesses_Handler,
+			ServerStreams: true,
+			ClientStreams: true,
+		},
+		{
+			StreamName:    "PushNetworkConnectionInfo",
+			Handler:       _CollectorService_PushNetworkConnectionInfo_Handler,
 			ServerStreams: true,
 			ClientStreams: true,
 		},

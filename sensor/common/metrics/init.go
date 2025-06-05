@@ -44,6 +44,6 @@ func init() {
 		telemetrySecuredVCPU,
 		deploymentEnhancementQueueSize,
 		responsesChannelOperationCount,
-		collectorChannelMessagesCount,
+		collectorProcessChannelMessagesCount,
 	)
 }

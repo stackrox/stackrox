@@ -105,13 +105,9 @@ func SendSignalMessage(fakeCollector *collector.FakeCollector, containerID strin
 
 // SendProcessMessage uses FakeCollector to send a fake MsgFromCollector.
 func SendProcessMessage(fakeCollector *collector.FakeCollector, containerID string, signalName string) {
-	fakeCollector.SendFakeProcess(&sensor.MsgFromCollector{
-		Msg: &sensor.MsgFromCollector_ProcessSignal{
-			ProcessSignal: &sensor.ProcessSignal{
-				ContainerId: containerID,
-				Name:        signalName,
-			},
-		},
+	fakeCollector.SendFakeProcess(&sensor.ProcessSignal{
+		ContainerId: containerID,
+		Name:        signalName,
 	})
 }
 

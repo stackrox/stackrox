@@ -2,6 +2,7 @@ package collector
 
 import (
 	"context"
+	"errors"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
@@ -28,14 +29,14 @@ func WithAuthFuncOverride(overrideFn func(context.Context, string) (context.Cont
 type serviceImpl struct {
 	sensor.UnimplementedCollectorServiceServer
 
-	queue chan *sensor.ProcessSignal
+	processQueue chan *sensor.ProcessSignal
 
 	authFuncOverride func(context.Context, string) (context.Context, error)
 }
 
 func newService(opts ...Option) Service {
 	s := &serviceImpl{
-		queue:            make(chan *sensor.ProcessSignal, env.CollectorIServiceChannelBufferSize.IntegerSetting()),
+		processQueue:     make(chan *sensor.ProcessSignal, env.CollectorIServiceChannelBufferSize.IntegerSetting()),
 		authFuncOverride: authFuncOverride,
 	}
 
@@ -53,13 +54,13 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 	return s.authFuncOverride(ctx, fullMethodName)
 }
 
-func (s *serviceImpl) Communicate(server sensor.CollectorService_CommunicateServer) error {
+func (s *serviceImpl) PushProcesses(server sensor.CollectorService_PushProcessesServer) error {
 	for {
 		select {
 		case <-server.Context().Done():
 			return nil
 		default:
-			if err := s.communicate(server); err != nil {
+			if err := s.pushProcesses(server); err != nil {
 				log.Error("error dequeueing collector message, event: ", err)
 				return err
 			}
@@ -67,29 +68,32 @@ func (s *serviceImpl) Communicate(server sensor.CollectorService_CommunicateServ
 	}
 }
 
-func (s *serviceImpl) communicate(server sensor.CollectorService_CommunicateServer) error {
+func (s *serviceImpl) pushProcesses(server sensor.CollectorService_PushProcessesServer) error {
 	msg, err := server.Recv()
 	if err != nil {
 		return err
 	}
 
-	metrics.CollectorChannelInc(msg)
-	switch msg.GetMsg().(type) {
-	case *sensor.MsgFromCollector_ProcessSignal:
-		select {
-		case s.queue <- msg.GetProcessSignal():
-			metrics.IncrementTotalProcessesAddedCounter()
-		case <-server.Context().Done():
-			return nil
-		default:
-			metrics.IncrementTotalProcessesDroppedCounter()
-		}
-	case *sensor.MsgFromCollector_Register:
-	case *sensor.MsgFromCollector_Info:
+	metrics.CollectorChannelInc()
+	select {
+	case s.processQueue <- msg:
+		metrics.IncrementTotalProcessesAddedCounter()
+	case <-server.Context().Done():
+		return nil
 	default:
-		log.Errorf("got unknown message from Collector: %T", msg.GetMsg())
+		metrics.IncrementTotalProcessesDroppedCounter()
 	}
 	return nil
+}
+
+func (s *serviceImpl) Communicate(server sensor.CollectorService_CommunicateServer) error {
+	// This method is not implemented on the collector side yet.
+	return errors.New("Unimplemented Communicate method")
+}
+
+func (s *serviceImpl) PushNetworkConnectionInfo(server sensor.CollectorService_PushNetworkConnectionInfoServer) error {
+	// This method is not implemented on the collector side yet.
+	return errors.New("Unimplemented PushNetworkConnectionInfo method")
 }
 
 func (s *serviceImpl) RegisterServiceServer(server *grpc.Server) {
@@ -101,5 +105,5 @@ func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.S
 }
 
 func (s *serviceImpl) GetMessagesC() <-chan *sensor.ProcessSignal {
-	return s.queue
+	return s.processQueue
 }

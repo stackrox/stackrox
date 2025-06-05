@@ -95,6 +95,6 @@ func (c *FakeCollector) SendFakeSignal(msg *sensor.SignalStreamMessage) {
 	c.signalManager.send(msg)
 }
 
-func (c *FakeCollector) SendFakeProcess(msg *sensor.MsgFromCollector) {
-	c.collectorManager.send(msg)
+func (c *FakeCollector) SendFakeProcess(msg *sensor.ProcessSignal) {
+	c.collectorManager.sendProcess(msg)
 }

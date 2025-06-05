@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -15,8 +16,8 @@ import (
 type fakeCollectorManager struct {
 	stopper          concurrency.Stopper
 	ctxCancel        context.CancelFunc
-	receivedMessageC chan *sensor.MsgToCollector
-	messageToSendC   chan *sensor.MsgFromCollector
+	receivedProcessC chan *v1.Empty
+	processToSendC   chan *sensor.ProcessSignal
 	receivedErrC     chan error
 	sendErrC         chan error
 	conn             *grpc.ClientConn
@@ -25,14 +26,14 @@ type fakeCollectorManager struct {
 func newCollectorManager(stopper concurrency.Stopper) *fakeCollectorManager {
 	return &fakeCollectorManager{
 		stopper:          stopper,
-		receivedMessageC: make(chan *sensor.MsgToCollector),
+		receivedProcessC: make(chan *v1.Empty),
 		receivedErrC:     make(chan error),
 		sendErrC:         make(chan error),
-		messageToSendC:   make(chan *sensor.MsgFromCollector),
+		processToSendC:   make(chan *sensor.ProcessSignal),
 	}
 }
 
-func (m *fakeCollectorManager) runRecv(stream sensor.CollectorService_CommunicateClient, msgC chan<- *sensor.MsgToCollector, errC chan<- error) {
+func (m *fakeCollectorManager) runProcessRecv(stream sensor.CollectorService_PushProcessesClient, msgC chan<- *v1.Empty, errC chan<- error) {
 	defer close(errC)
 	defer close(msgC)
 	for {
@@ -50,15 +51,15 @@ func (m *fakeCollectorManager) runRecv(stream sensor.CollectorService_Communicat
 	}
 }
 
-func (m *fakeCollectorManager) send(msg *sensor.MsgFromCollector) {
+func (m *fakeCollectorManager) sendProcess(msg *sensor.ProcessSignal) {
 	select {
 	case <-m.stopper.Flow().StopRequested():
 		return
-	case m.messageToSendC <- msg:
+	case m.processToSendC <- msg:
 	}
 }
 
-func (m *fakeCollectorManager) runSend(stream sensor.CollectorService_CommunicateClient, msgC <-chan *sensor.MsgFromCollector, errC chan<- error) {
+func (m *fakeCollectorManager) runSend(stream sensor.CollectorService_PushProcessesClient, msgC <-chan *sensor.ProcessSignal, errC chan<- error) {
 	defer close(errC)
 	for {
 		select {
@@ -81,7 +82,7 @@ func (m *fakeCollectorManager) run() {
 	defer func() {
 		m.ctxCancel()
 		m.stopper.Client().Stop()
-		close(m.messageToSendC)
+		close(m.processToSendC)
 		if err := m.conn.Close(); err != nil {
 			log.Errorf("Error closing the grpc connection %v", err)
 		}
@@ -96,8 +97,8 @@ func (m *fakeCollectorManager) run() {
 		case err := <-m.receivedErrC:
 			log.Errorf("Error receiving %v", err)
 			return
-		case msg := <-m.receivedMessageC:
-			log.Infof("Received message from sensor: %v", msg)
+		case msg := <-m.receivedProcessC:
+			log.Infof("Received process message from sensor: %v", msg)
 		}
 	}
 }
@@ -122,12 +123,12 @@ func (m *fakeCollectorManager) start(address string) error {
 	}
 	m.conn = conn
 	cli := sensor.NewCollectorServiceClient(conn)
-	client, err := cli.Communicate(ctx)
+	client, err := cli.PushProcesses(ctx)
 	if err != nil {
 		return err
 	}
-	go m.runRecv(client, m.receivedMessageC, m.receivedErrC)
-	go m.runSend(client, m.messageToSendC, m.sendErrC)
+	go m.runProcessRecv(client, m.receivedProcessC, m.receivedErrC)
+	go m.runSend(client, m.processToSendC, m.sendErrC)
 	go m.run()
 	return nil
 }

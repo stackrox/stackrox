@@ -7,6 +7,7 @@
 package sensor
 
 import (
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -205,7 +206,7 @@ var File_internalapi_sensor_collector_iservice_proto protoreflect.FileDescriptor
 
 const file_internalapi_sensor_collector_iservice_proto_rawDesc = "" +
 	"\n" +
-	"+internalapi/sensor/collector_iservice.proto\x12\x06sensor\x1a\"internalapi/sensor/collector.proto\x1a0internalapi/sensor/network_connection_info.proto\x1a4internalapi/sensor/network_connection_iservice.proto\"\xce\x01\n" +
+	"+internalapi/sensor/collector_iservice.proto\x12\x06sensor\x1a\x12api/v1/empty.proto\x1a\"internalapi/sensor/collector.proto\x1a0internalapi/sensor/network_connection_info.proto\x1a4internalapi/sensor/network_connection_iservice.proto\"\xce\x01\n" +
 	"\x10MsgFromCollector\x12>\n" +
 	"\bregister\x18\x01 \x01(\v2 .sensor.CollectorRegisterRequestH\x00R\bregister\x123\n" +
 	"\x04info\x18\x02 \x01(\v2\x1d.sensor.NetworkConnectionInfoH\x00R\x04info\x12>\n" +
@@ -215,9 +216,11 @@ const file_internalapi_sensor_collector_iservice_proto_rawDesc = "" +
 	"\x13public_ip_addresses\x18\x01 \x01(\v2\x15.sensor.IPAddressListH\x00R\x11publicIpAddresses\x128\n" +
 	"\vip_networks\x18\x02 \x01(\v2\x15.sensor.IPNetworkListH\x00R\n" +
 	"ipNetworksB\x05\n" +
-	"\x03msg2W\n" +
+	"\x03msg2\xf2\x01\n" +
 	"\x10CollectorService\x12C\n" +
-	"\vCommunicate\x12\x18.sensor.MsgFromCollector\x1a\x16.sensor.MsgToCollector(\x010\x01B Z\x1b./internalapi/sensor;sensor\xf8\x01\x01b\x06proto3"
+	"\vCommunicate\x12\x18.sensor.MsgFromCollector\x1a\x16.sensor.MsgToCollector(\x010\x01\x125\n" +
+	"\rPushProcesses\x12\x15.sensor.ProcessSignal\x1a\t.v1.Empty(\x010\x01\x12b\n" +
+	"\x19PushNetworkConnectionInfo\x12\x1d.sensor.NetworkConnectionInfo\x1a\".sensor.NetworkFlowsControlMessage(\x010\x01B Z\x1b./internalapi/sensor;sensor\xf8\x01\x01b\x06proto3"
 
 var (
 	file_internalapi_sensor_collector_iservice_proto_rawDescOnce sync.Once
@@ -233,13 +236,15 @@ func file_internalapi_sensor_collector_iservice_proto_rawDescGZIP() []byte {
 
 var file_internalapi_sensor_collector_iservice_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_internalapi_sensor_collector_iservice_proto_goTypes = []any{
-	(*MsgFromCollector)(nil),         // 0: sensor.MsgFromCollector
-	(*MsgToCollector)(nil),           // 1: sensor.MsgToCollector
-	(*CollectorRegisterRequest)(nil), // 2: sensor.CollectorRegisterRequest
-	(*NetworkConnectionInfo)(nil),    // 3: sensor.NetworkConnectionInfo
-	(*ProcessSignal)(nil),            // 4: sensor.ProcessSignal
-	(*IPAddressList)(nil),            // 5: sensor.IPAddressList
-	(*IPNetworkList)(nil),            // 6: sensor.IPNetworkList
+	(*MsgFromCollector)(nil),           // 0: sensor.MsgFromCollector
+	(*MsgToCollector)(nil),             // 1: sensor.MsgToCollector
+	(*CollectorRegisterRequest)(nil),   // 2: sensor.CollectorRegisterRequest
+	(*NetworkConnectionInfo)(nil),      // 3: sensor.NetworkConnectionInfo
+	(*ProcessSignal)(nil),              // 4: sensor.ProcessSignal
+	(*IPAddressList)(nil),              // 5: sensor.IPAddressList
+	(*IPNetworkList)(nil),              // 6: sensor.IPNetworkList
+	(*v1.Empty)(nil),                   // 7: v1.Empty
+	(*NetworkFlowsControlMessage)(nil), // 8: sensor.NetworkFlowsControlMessage
 }
 var file_internalapi_sensor_collector_iservice_proto_depIdxs = []int32{
 	2, // 0: sensor.MsgFromCollector.register:type_name -> sensor.CollectorRegisterRequest
@@ -248,9 +253,13 @@ var file_internalapi_sensor_collector_iservice_proto_depIdxs = []int32{
 	5, // 3: sensor.MsgToCollector.public_ip_addresses:type_name -> sensor.IPAddressList
 	6, // 4: sensor.MsgToCollector.ip_networks:type_name -> sensor.IPNetworkList
 	0, // 5: sensor.CollectorService.Communicate:input_type -> sensor.MsgFromCollector
-	1, // 6: sensor.CollectorService.Communicate:output_type -> sensor.MsgToCollector
-	6, // [6:7] is the sub-list for method output_type
-	5, // [5:6] is the sub-list for method input_type
+	4, // 6: sensor.CollectorService.PushProcesses:input_type -> sensor.ProcessSignal
+	3, // 7: sensor.CollectorService.PushNetworkConnectionInfo:input_type -> sensor.NetworkConnectionInfo
+	1, // 8: sensor.CollectorService.Communicate:output_type -> sensor.MsgToCollector
+	7, // 9: sensor.CollectorService.PushProcesses:output_type -> v1.Empty
+	8, // 10: sensor.CollectorService.PushNetworkConnectionInfo:output_type -> sensor.NetworkFlowsControlMessage
+	8, // [8:11] is the sub-list for method output_type
+	5, // [5:8] is the sub-list for method input_type
 	5, // [5:5] is the sub-list for extension type_name
 	5, // [5:5] is the sub-list for extension extendee
 	0, // [0:5] is the sub-list for field type_name
