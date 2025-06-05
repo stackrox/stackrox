@@ -170,6 +170,17 @@ message PrometheusMetricsConfig {
     string filter = 3;
   }
 
+  message Alerts {
+    // The period (in minutes) at which alerts data is gathered from the DB.
+    uint32 gathering_period_minutes = 1;
+    // Mapping from metric name to its associated labels.
+    map<string, Labels> metrics = 2;
+    // Filter string in the syntax of the Search filters used to limit the amount of
+    // aggregated alerts.
+    // Example: "Cluster:production"
+    string filter = 3;
+  }
+
   // Configuration for image vulnerabilities metrics.
   // Example:
   //
@@ -190,4 +201,5 @@ message PrometheusMetricsConfig {
   //   }
   Vulnerabilities image_vulnerabilities = 1;
   Vulnerabilities node_vulnerabilities = 2;
+  Alerts alerts = 3;
 }

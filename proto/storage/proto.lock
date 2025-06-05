@@ -5390,6 +5390,11 @@
                 "id": 2,
                 "name": "node_vulnerabilities",
                 "type": "Vulnerabilities"
+              },
+              {
+                "id": 3,
+                "name": "alerts",
+                "type": "Alerts"
               }
             ],
             "messages": [
@@ -5438,6 +5443,31 @@
               },
               {
                 "name": "Vulnerabilities",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "gathering_period_minutes",
+                    "type": "uint32"
+                  },
+                  {
+                    "id": 3,
+                    "name": "filter",
+                    "type": "string"
+                  }
+                ],
+                "maps": [
+                  {
+                    "key_type": "string",
+                    "field": {
+                      "id": 2,
+                      "name": "metrics",
+                      "type": "Labels"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "Alerts",
                 "fields": [
                   {
                     "id": 1,
