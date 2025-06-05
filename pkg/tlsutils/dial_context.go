@@ -37,12 +37,7 @@ func DialContextWithRetries(ctx context.Context, network, addr string, tlsConfig
 		log.Warnf("tls dial failed: %v, retrying after %s", err, d.Round(time.Second))
 	})
 	if err != nil {
-		var multiErr *multierror.Error
-		if dialErr != nil {
-			multiErr = multierror.Append(multiErr, dialErr)
-		}
-		multiErr = multierror.Append(multiErr, err)
-		return nil, multiErr
+		return nil, multierror.Append(err, dialErr)
 	}
 
 	return dialConn.(*tls.Conn), nil
