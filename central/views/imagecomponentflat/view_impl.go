@@ -2,7 +2,6 @@ package imagecomponentflat
 
 import (
 	"context"
-	"sort"
 
 	"github.com/stackrox/rox/central/views/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -76,9 +75,9 @@ func (v *imageComponentFlatViewImpl) Get(ctx context.Context, q *v1.Query) ([]Co
 	ret := make([]ComponentFlat, 0, len(results))
 	for _, r := range results {
 		// For each record, sort the IDs so that result looks consistent.
-		sort.SliceStable(r.ComponentIDs, func(i, j int) bool {
-			return r.ComponentIDs[i] < r.ComponentIDs[j]
-		})
+		//sort.SliceStable(r.ComponentIDs, func(i, j int) bool {
+		//	return r.ComponentIDs[i] < r.ComponentIDs[j]
+		//})
 		ret = append(ret, r)
 	}
 	return ret, nil
