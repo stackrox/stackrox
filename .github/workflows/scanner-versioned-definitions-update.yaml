@@ -181,12 +181,11 @@ jobs:
       run: |
         if [ -s bundles/status.json ] && [ "$(jq '.failed_updaters | length' bundles/status.json)" -gt 0 ]; then
           failed_updaters=$(jq -r '.failed_updaters | join(",")' bundles/status.json)
-          
           message=$(jq -n \
             --arg url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" --arg workflow "${{ github.workflow }}" \
             --arg repo "${{ github.repository }}" --arg updaters "$failed_updaters" \
             '{text: ("<\($url)|Workflow \($workflow)> failed in repository \($repo): One or more Scanner updaters failed. Failed updaters: \($updaters)") }')
-          
+
           curl -X POST -H 'Content-type: application/json' --data "$message" ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
           exit 1
         fi
