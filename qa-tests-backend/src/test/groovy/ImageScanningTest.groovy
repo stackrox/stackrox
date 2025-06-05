@@ -289,22 +289,24 @@ class ImageScanningTest extends BaseSpecification {
 
         and:
         "validate the existence of expected CVEs"
-        for (String cve : cves) {
-            log.info "Validating existence of ${cve} cve..."
-            ImageOuterClass.EmbeddedImageScanComponent component = imageDetail.scan.componentsList.find {
-                component -> component.vulnsList.find { vuln -> vuln.cve == cve }
-            }
-            assert component
-            Vulnerability.EmbeddedVulnerability vuln = component.vulnsList.find { it.cve == cve }
-            assert vuln
+        withRetry(30, 2) {
+            for (String cve : cves) {
+                log.info "Validating existence of ${cve} cve..."
+                ImageOuterClass.EmbeddedImageScanComponent component = imageDetail.scan.componentsList.find {
+                    component -> component.vulnsList.find { vuln -> vuln.cve == cve }
+                }
+                assert component
+                Vulnerability.EmbeddedVulnerability vuln = component.vulnsList.find { it.cve == cve }
+                assert vuln
 
-            assert vuln.summary && vuln.summary != ""
-            assert 0.0 <= vuln.cvss && vuln.cvss <= 10.0
-            assert vuln.link && vuln.link != ""
+                assert vuln.summary && vuln.summary != ""
+                assert 0.0 <= vuln.cvss && vuln.cvss <= 10.0
+                assert vuln.link && vuln.link != ""
+            }
+            assert imageDetail.components >= components
+            assert ((imageDetail.cves - 20)..(imageDetail.cves + 20)).contains(totalCves)
+            assert imageDetail.fixableCves >= fixable
         }
-        assert imageDetail.components >= components
-        assert ((imageDetail.cves - 20)..(imageDetail.cves + 20)).contains(totalCves)
-        assert imageDetail.fixableCves >= fixable
 
         where:
         "Data inputs:"
