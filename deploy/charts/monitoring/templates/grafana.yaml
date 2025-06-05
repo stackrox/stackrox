@@ -84,4 +84,4 @@ data:
   node-inventory.json: |-
 {{ .Files.Get "dashboards/node-inventory.json" | indent 4 }}
   compliance-operator.json: |-
-{{ .Files.Get "dashboards/compliance-operator.json" | indent 4}}
+{{ .Files.Get "dashboards/compliance-operator.json" | indent 4 }}
