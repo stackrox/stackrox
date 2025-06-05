@@ -30,27 +30,33 @@ import {
 import pluralize from 'pluralize';
 import { FormikErrors, FormikValues } from 'formik';
 
-const predefinedMetrics: Record<Category, Record<string, Record<string, Expression>>> = {
+const predefinedMetrics: Record<Category, Record<string, Labels>> = {
     imageVulnerabilities: {
-        def_namespace_severity: {
-            Cluster: {},
-            Namespace: {},
-            Severity: {},
-        },
-        def_deployment_severity: {
-            Cluster: {},
-            Namespace: {},
-            Deployment: {},
-            Severity: {},
-        },
-        def_user_workload_severity: {
-            Cluster: {},
-            Namespace: {},
-            Deployment: {},
-            IsPlatformWorkload: {
-                expression: [{ operator: '=', argument: 'false' }],
+        image_vuln_namespace_severity: {
+            labels: {
+                Cluster: { expression: [] },
+                Namespace: { expression: [] },
+                Severity: { expression: [] },
             },
-            Severity: {},
+        },
+        image_vuln_deployment_severity: {
+            labels: {
+                Cluster: { expression: [] },
+                Namespace: { expression: [] },
+                Deployment: { expression: [] },
+                Severity: { expression: [] },
+            },
+        },
+        image_vuln_user_workload_severity: {
+            labels: {
+                Cluster: { expression: [] },
+                Namespace: { expression: [] },
+                Deployment: { expression: [] },
+                IsPlatformWorkload: {
+                    expression: [{ operator: '=', argument: 'false' }],
+                },
+                Severity: { expression: [] },
+            },
         },
     },
 };
@@ -100,15 +106,10 @@ function predefinedMetricListItem(
                                 name={`${category}-${metric}`}
                                 isChecked={mcfg && metric in mcfg}
                                 onChange={(_, checked) =>
-                                    checked
-                                        ? onCustomChange(
-                                              predefinedMetrics[category][metric],
-                                              `privateConfig.prometheusMetricsConfig.${category}.metrics.${metric}.labels`
-                                          )
-                                        : onCustomChange(
-                                              null,
-                                              `privateConfig.prometheusMetricsConfig.${category}.metrics.${metric}`
-                                          )
+                                    onCustomChange(
+                                        checked ? predefinedMetrics[category][metric] : null,
+                                        `privateConfig.prometheusMetricsConfig.${category}.metrics.${metric}`
+                                    )
                                 }
                             />
                         ) : (
@@ -117,13 +118,48 @@ function predefinedMetricListItem(
                         <DataListCell>{metric}</DataListCell>,
                         <DataListCell>Predefined</DataListCell>,
                         <DataListCell>
-                            {labelGroup(predefinedMetrics[category][metric])}
+                            {labelGroup(predefinedMetrics[category][metric].labels)}
                         </DataListCell>,
                     ]}
                 />
             </DataListItemRow>
         </DataListItem>
     );
+}
+
+// isPredefined checks if the metric is one of the predefined ones by looking at
+// the metric name, labels (ignoring the order) and expressions (ordered).
+// NB: Returns false if the metric is not found in the actual configuration.
+function isPredefined(
+    category: Category,
+    metric: string,
+    mcfg: Record<string, Labels> | undefined
+): boolean {
+    if (!mcfg || !(metric in mcfg)) {
+        return false;
+    }
+    const { labels } = mcfg[metric];
+    if (!labels || !(metric in predefinedMetrics[category])) {
+        return false;
+    }
+    const predefinedLabels = predefinedMetrics[category][metric].labels;
+    return Object.entries(labels).every(([label, expr]) => {
+        if (!(label in predefinedLabels)) {
+            return false;
+        }
+        const predefinedExpr = predefinedLabels[label].expression || [];
+        if (expr.expression?.length !== predefinedExpr.length) {
+            return false;
+        }
+        return (
+            predefinedExpr.length === 0 ||
+            expr.expression.every(
+                (condition, i) =>
+                    condition.operator === predefinedExpr[i].operator &&
+                    condition.argument === predefinedExpr[i].argument
+            )
+        );
+    });
 }
 
 function prometheusMetricsDataList(
@@ -138,14 +174,14 @@ function prometheusMetricsDataList(
             {Object.keys(predefinedMetrics[category]).map((metric) => {
                 // In view mode show only enabled predefined metrics.
                 // In edit mode show all predefined metrics.
-                if (onCustomChange || (mcfg && metric in mcfg)) {
+                if (onCustomChange || isPredefined(category, metric, mcfg)) {
                     return predefinedMetricListItem(mcfg, category, metric, onCustomChange);
                 }
                 return <></>;
             })}
             {Object.entries(mcfg || {}).map(([metric, labels]) => {
                 // Predefined are rendered above.
-                if (metric in predefinedMetrics[category]) {
+                if (isPredefined(category, metric, mcfg)) {
                     return <></>;
                 }
                 return (
