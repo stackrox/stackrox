@@ -138,7 +138,8 @@ EOT
     info "Using MAIN_IMAGE_TAG=$MAIN_IMAGE_TAG"
 
     export CURRENT_MAIN_IMAGE_TAG=${CURRENT_MAIN_IMAGE_TAG:-} # Setting a tag can be useful for local testing.
-    export EARLIER_CHART_VERSION="4.6.0"
+    export EARLIER_CHART_VERSION=$(resolve_previous_x_y_0_version "$MAIN_IMAGE_TAG")
+    info "Using EARLIER_CHART_VERSION=${EARLIER_CHART_VERSION}"
     export EARLIER_MAIN_IMAGE_TAG=$EARLIER_CHART_VERSION
     export USE_LOCAL_ROXCTL="${USE_LOCAL_ROXCTL:-true}"
     export ROX_PRODUCT_BRANDING=RHACS_BRANDING
@@ -1575,4 +1576,59 @@ create_sensor_pull_secrets() {
     echo "{ \"apiVersion\": \"v1\", \"kind\": \"Namespace\", \"metadata\": { \"name\": \"$namespace\" } }" | "${ORCH_CMD}" apply -f -
     "${ROOT}/deploy/common/pull-secret.sh" stackrox "$DEFAULT_IMAGE_REGISTRY_HOST" | "${ORCH_CMD}" -n "$namespace" apply -f -
     "${ROOT}/deploy/common/pull-secret.sh" collector-stackrox "$DEFAULT_IMAGE_REGISTRY_HOST" | "${ORCH_CMD}" -n "$namespace" apply -f -
+}
+
+resolve_previous_x_y_0_version() {
+    local version_tag="$1"
+    local x_y_version
+    x_y_version=$(extract_x_y_part "$version_tag")
+    # Gets all tags from git. Make sure that we also have a x.y.z tag
+    # corresponding for the provided one. It might not be released yet.
+    local tags
+    tags=$(git tag; echo "${x_y_version}.0")
+    local previous_x_y_0_version
+    previous_x_y_0_version=$(
+        # Begin with all sort of tags.
+        echo "$tags" |
+        # Only keep tags of the form x.y.z.
+        grep -E '^[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]$' |
+        # Delete the z component.
+        extract_x_y_part |
+        # Sort stripped x.y version tags.
+        sort -V |
+        # Filter out duplicates.
+        uniq |
+        # Locate the current version among the tags, output also the previous tag.
+        grep -Fx "$x_y_version" -B 1 |
+        # Check if we have exactly two lines, abort pipe otherwise.
+        assert_num_lines 2 |
+        # Extract the previous tag.
+        head -1 |
+        # Add a z=0 suffix.
+        sed -e 's/^\(.*\)$/\1.0/'
+    )
+    if [[ -z "$previous_x_y_0_version" ]]; then
+        fail "Could not resolve previous version for version tag \"${version_tag}\""
+    fi
+    echo "$previous_x_y_0_version"
+}
+
+extract_x_y_part() {
+    local version_tag="${1:-}"
+    regex='s/^\([[:digit:]]\+\.[[:digit:]]\+\)\..*$/\1/'
+    if [[ -z "$version_tag" ]]; then
+        sed -e "$regex"
+    else
+        sed -e "$regex" <<<"$version_tag"
+    fi
+}
+
+assert_num_lines() {
+    local num="$1"
+    local input
+    input=$(cat)
+    if [[ "$(wc -l <<<"$input")" != "$num" ]]; then
+        exit 1
+    fi
+    cat <<<"$input"
 }
