@@ -487,14 +487,14 @@ main-build-dockerized: build-volumes
 .PHONY: main-build-nodeps
 main-build-nodeps:
 	$(GOBUILD) \
- 		central \
- 		compliance/cmd/compliance \
- 		config-controller \
- 		migrator \
- 		sensor/admission-control \
- 		sensor/init-tls-certs \
- 		sensor/kubernetes \
- 		sensor/upgrader
+		central \
+		compliance/cmd/compliance \
+		config-controller \
+		migrator \
+		sensor/admission-control \
+		sensor/init-tls-certs \
+		sensor/kubernetes \
+		sensor/upgrader
 ifndef CI
 	CGO_ENABLED=0 $(GOBUILD) roxctl
 endif
