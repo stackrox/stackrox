@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/postgres/pgadmin"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
+	"gopkg.in/yaml.v3"
 )
 
 var (
@@ -65,6 +66,31 @@ func checkPostgresSize(_ common.RestoreFileContext, fileReader io.Reader, size i
 	hasSpace := float64(availableBytes) > float64(requiredBytes)
 	if !hasSpace {
 		return errors.Errorf("restoring backup requires %d bytes of free disk space, but Postgres only has %d bytes available", requiredBytes, availableBytes)
+	}
+
+	return nil
+}
+
+func checkMigrationVersion(_ common.RestoreFileContext, fileReader io.Reader, size int64) error {
+	bytes := make([]byte, size)
+
+	bytesRead, err := fileReader.Read(bytes)
+	if int64(bytesRead) < size || (err != nil && err != io.EOF) {
+		log.Errorf("Could not determine RHACS version for Postgres: %v. Assuming invalid version.", err)
+		return err
+	}
+
+	var version migrations.MigrationVersion
+	err = yaml.Unmarshal(bytes, &version)
+	if err != nil {
+		log.Errorf("Could not parse RHACS version: %v. Assuming invalid version.", err)
+		return err
+	}
+
+	if version.SeqNum < migrations.MinimumSupportedDBVersionSeqNum() {
+		dbSupportErr := errors.Errorf("Restoring from this version %q is no longer supported, sequence number %d", version.MainVersion, version.SeqNum)
+		log.Error(dbSupportErr)
+		return dbSupportErr
 	}
 
 	return nil
