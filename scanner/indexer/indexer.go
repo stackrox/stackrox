@@ -334,6 +334,10 @@ func newLibindex(ctx context.Context, indexerCfg config.IndexerConfig, client *h
 				}),
 				"java": castToConfig(func(cfg *java.ScannerConfig) {
 					cfg.DisableAPI = true
+					if features.ScannerV4MavenSearch.Enabled() {
+						cfg.DisableAPI = false
+						cfg.API = env.ScannerV4MavenSearchURL.Setting()
+					}
 				}),
 			},
 		},

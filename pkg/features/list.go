@@ -159,4 +159,10 @@ var (
 
 	// ScannerV4RedHatLayers enables displaying vulnerabilities from Red Hat sources, only, for packages found in official Red Hat image layers.
 	ScannerV4RedHatLayers = registerFeature("Scanner V4 will output vulnerabilities from Red Hat sources, only, for packages found in official Red Hat image layers", "ROX_SCANNER_V4_RED_HAT_LAYERS_RED_HAT_VULNS_ONLY")
+
+	// ScannerV4MavenSearch enables reaching out to a Maven Search-compatible URL for improved indexing of JARs. The
+	// URL can be adjusted via the ROX_SCANNER_V4_MAVEN_SEARCH_URL environment variable.
+	//
+	// This must be set in Scanner V4 Indexer to have any effect.
+	ScannerV4MavenSearch = registerFeature("Enables Scanner V4 to reach out to ROX_SCANNER_V4_MAVEN_SEARCH_URL for additional information about Java packages", "ROX_SCANNER_V4_MAVEN_SEARCH")
 )
