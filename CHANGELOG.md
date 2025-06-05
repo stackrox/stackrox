@@ -9,7 +9,7 @@ Put an entry in this file if your change is user-visible and you consider it _pa
 
 Changes should still be described appropriately in JIRA/doc input pages, for inclusion in downstream release notes.
 
-## [NEXT RELEASE]
+## [4.8.0]
 
 **HELM USERS**: Please see ROX-27622 under "technical changes" to avoid upgrade failures!
 
