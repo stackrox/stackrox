@@ -96,7 +96,6 @@ test_upgrade_path() {
     deploy_earlier_postgres_central
     wait_for_api
     setup_client_TLS_certs
-    export_central_cert
 
     # It's damn fiddly, restore is needed because later test will search for a
     # default secured cluster, created by it :(
@@ -211,7 +210,6 @@ test_not_enough_disk_space() {
     unset PVC_SIZE
     wait_for_api
     setup_client_TLS_certs
-    export_central_cert
 
     # It's damn fiddly, restore is needed because later test will search for a
     # default secured cluster, created by it :(
