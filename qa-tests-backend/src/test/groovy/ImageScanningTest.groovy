@@ -267,29 +267,27 @@ class ImageScanningTest extends BaseSpecification {
 
         then:
         "validate scan results for the image"
-        Timer t = new Timer(20, 3)
-        while (imageDetail?.scan?.componentsCount == 0 && t.IsValid()) {
-            log.info "waiting on scan details..."
-            sleep 3000
-            ImageService.scanImage(deployment.image)
-            imageDetail = ImageService.getImage(ImageService.getImages().find { it.name == deployment.image }?.id)
-        }
-        assert imageDetail.metadata.dataSource.id != ""
-        assert imageDetail.metadata.dataSource.name != ""
-        assert imageDetail.scan.dataSource.id != ""
-        assert imageDetail.scan.dataSource.name != ""
-        try {
-            assert imageDetail.scan.componentsCount > 0
-        } catch (Exception e) {
-            if (strictIntegrationTesting) {
-                throw (e)
-            }
-            throw new AssumptionViolatedException("Failed to scan the image using ${integration}. Skipping test!", e)
-        }
-
-        and:
-        "validate the existence of expected CVEs"
         withRetry(30, 2) {
+            Timer t = new Timer(20, 3)
+            while (imageDetail?.scan?.componentsCount == 0 && t.IsValid()) {
+                log.info "waiting on scan details..."
+                sleep 3000
+                ImageService.scanImage(deployment.image)
+                imageDetail = ImageService.getImage(ImageService.getImages().find { it.name == deployment.image }?.id)
+            }
+            assert imageDetail.metadata.dataSource.id != ""
+            assert imageDetail.metadata.dataSource.name != ""
+            assert imageDetail.scan.dataSource.id != ""
+            assert imageDetail.scan.dataSource.name != ""
+            try {
+                assert imageDetail.scan.componentsCount > 0
+            } catch (Exception e) {
+                if (strictIntegrationTesting) {
+                    throw (e)
+                }
+                throw new AssumptionViolatedException("Failed to scan the image using ${integration}. Skipping test!", e)
+            }
+
             for (String cve : cves) {
                 log.info "Validating existence of ${cve} cve..."
                 ImageOuterClass.EmbeddedImageScanComponent component = imageDetail.scan.componentsList.find {
