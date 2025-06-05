@@ -15,6 +15,7 @@ runs:
         gcloud version && which gcloud
         bq version && which bq
         docker buildx version && which docker
+        true
 
     - name: Recover docker image cache space
       run: |
