@@ -576,6 +576,28 @@ spec:
       operator: in
       values: [ "false" ]
 
+  - name: fips-operator-bundle-check-oci-ta
+    params:
+    - name: image-digest
+      value: $(tasks.build-image-index.results.IMAGE_DIGEST)
+    - name: image-url
+      value: $(tasks.build-image-index.results.IMAGE_URL)
+    - name: SOURCE_ARTIFACT
+      value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
+    taskRef:
+      params:
+      - name: name
+        value: fips-operator-bundle-check-oci-ta
+      - name: bundle
+        value: quay.io/konflux-ci/tekton-catalog/task-fips-operator-bundle-check-oci-ta:0.1@sha256:eab60375b2461f8834bc1cfcab3444121c99838a99876134edd3af0d66bf87ad
+      - name: kind
+        value: task
+      resolver: bundles
+    when:
+    - input: $(params.skip-checks)
+      operator: in
+      values: [ "false" ]
+
   - name: sast-shell-check
     params:
     - name: image-digest
