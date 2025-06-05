@@ -4,9 +4,8 @@ import (
 	"context"
 	"errors"
 
-	"github.com/pkg/errors"
-
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	pkgErrors "github.com/pkg/errors"
 	sensorAPI "github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
@@ -48,7 +47,7 @@ type serviceImpl struct {
 
 func authFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
 	err := idcheck.CollectorOnly().Authorized(ctx, fullMethodName)
-	return ctx, errors.Wrap(err, "collector authorization")
+	return ctx, pkgErrors.Wrap(err, "collector authorization")
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -81,7 +80,7 @@ func (s *serviceImpl) receiveMessages(stream sensorAPI.SignalService_PushSignals
 		signalStreamMsg, err := stream.Recv()
 		if err != nil {
 			log.Error("error dequeueing signalStreamMsg event: ", err)
-			return errors.Wrap(err, "receiving signal stream message")
+			return pkgErrors.Wrap(err, "receiving signal stream message")
 		}
 
 		signal, err := unwrapSignal(signalStreamMsg)

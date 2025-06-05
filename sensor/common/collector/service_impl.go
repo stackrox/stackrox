@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
@@ -46,7 +47,7 @@ func newService(opts ...Option) Service {
 }
 
 func authFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, idcheck.CollectorOnly().Authorized(ctx, fullMethodName)
+	return ctx, errors.Wrap(idcheck.CollectorOnly().Authorized(ctx, fullMethodName), "Unauthorized access")
 }
 
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
@@ -70,7 +71,7 @@ func (s *serviceImpl) Communicate(server sensor.CollectorService_CommunicateServ
 func (s *serviceImpl) communicate(server sensor.CollectorService_CommunicateServer) error {
 	msg, err := server.Recv()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "Failed to receive message from collector")
 	}
 
 	metrics.CollectorChannelInc(msg)

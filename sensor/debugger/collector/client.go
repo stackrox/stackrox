@@ -118,13 +118,13 @@ func (m *fakeCollectorManager) start(address string) error {
 	}
 	conn, err := clientconn.GRPCConnection(ctx, mtls.SensorSubject, address, opts)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "Failed to stablish gRPC connection to sensor")
 	}
 	m.conn = conn
 	cli := sensor.NewCollectorServiceClient(conn)
 	client, err := cli.Communicate(ctx)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "Failed to start collector client")
 	}
 	go m.runRecv(client, m.receivedMessageC, m.receivedErrC)
 	go m.runSend(client, m.messageToSendC, m.sendErrC)
