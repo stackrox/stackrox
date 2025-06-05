@@ -485,10 +485,16 @@ main-build-dockerized: build-volumes
 	docker run $(DOCKER_OPTS) -i -e RACE -e CI -e BUILD_TAG -e SHORTCOMMIT -e GOTAGS -e DEBUG_BUILD -e CGO_ENABLED --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make main-build-nodeps
 
 .PHONY: main-build-nodeps
-main-build-nodeps: central-build-nodeps migrator-build-nodeps config-controller-build-nodeps
-	$(GOBUILD) sensor/kubernetes sensor/admission-control compliance/cmd/compliance
-	$(GOBUILD) sensor/upgrader
-	$(GOBUILD) sensor/init-tls-certs
+main-build-nodeps:
+	$(GOBUILD) \
+ 		central \
+ 		compliance/cmd/compliance \
+ 		config-controller \
+ 		migrator \
+ 		sensor/admission-control \
+ 		sensor/init-tls-certs \
+ 		sensor/kubernetes \
+ 		sensor/upgrader
 ifndef CI
 	CGO_ENABLED=0 $(GOBUILD) roxctl
 endif
