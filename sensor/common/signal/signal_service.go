@@ -2,7 +2,6 @@ package signal
 
 import (
 	"context"
-	"errors"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	pkgErrors "github.com/pkg/errors"

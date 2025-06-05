@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package sensor;
 
+import "api/v1/empty.proto";
 import "internalapi/sensor/collector.proto";
 import "internalapi/sensor/network_connection_info.proto";
 import "internalapi/sensor/network_connection_iservice.proto";
@@ -26,4 +27,6 @@ message MsgToCollector {
 
 service CollectorService {
   rpc Communicate(stream MsgFromCollector) returns (stream MsgToCollector);
+  rpc PushProcesses(stream ProcessSignal) returns (stream v1.Empty);
+  rpc PushNetworkConnectionInfo(stream NetworkConnectionInfo) returns (stream NetworkFlowsControlMessage);
 }
