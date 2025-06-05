@@ -7,7 +7,6 @@ import (
 	"time"
 
 	pkgErrors "github.com/pkg/errors"
-
 	"github.com/cenkalti/backoff/v3"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
