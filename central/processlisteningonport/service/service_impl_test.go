@@ -124,9 +124,9 @@ var (
 
 func (suite *PLOPServiceTestSuite) TestPLOPCases() {
 	cases := map[string]struct {
-		plopsInDB         []*storage.ProcessListeningOnPortStorage
-		processIndicators []*storage.ProcessIndicator
-		deployments       []*storage.Deployment
+		plopsInDB                       []*storage.ProcessListeningOnPortStorage
+		processIndicators               []*storage.ProcessIndicator
+		deployments                     []*storage.Deployment
 		expectedPlops                   []*storage.ProcessListeningOnPort
 		expectedTotalListeningEndpoints int32
 		request                         *v1.GetProcessesListeningOnPortsRequest
