@@ -52,6 +52,13 @@ runs:
         git config --global --add safe.directory "$(pwd)"
       shell: bash
 
+    - id: 'auth'
+      uses: 'google-github-actions/auth@v2'
+      with:
+        credentials_json: '${{ inputs.gcp-account }}'
+        export_environment_variables: true
+        create_credentials_file: true
+
     - name: Set up gcloud CLI
       uses: 'google-github-actions/setup-gcloud@v2'
       with:

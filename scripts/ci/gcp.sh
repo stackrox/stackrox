@@ -20,6 +20,12 @@ setup_gcp() {
     if [[ "$(gcloud config get-value core/project 2>/dev/null)" == "acs-san-stackroxci" ]]; then
         echo "Current project is already set to acs-san-stackroxci. Assuming configuration already applied."
 
+        ls -la $HOME/.config/gcloud/application_default_credentials.json || true
+        if [[ -z "$GOOGLE_APPLICATION_CREDENTIALS" ]]; then
+            echo "GOOGLE_APPLICATION_CREDENTIALS:$GOOGLE_APPLICATION_CREDENTIALS}"
+            return
+        fi
+
         # In some cases we have "setup_gcp()" already finished, but exported environment variable is lost.
         # Here we want to ensure that after running "setup_gcp()" environment is properly set.
         ci_export GOOGLE_APPLICATION_CREDENTIALS "$gcp_credentials_file"
