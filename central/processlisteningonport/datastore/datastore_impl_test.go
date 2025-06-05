@@ -1827,9 +1827,7 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePlopsByPod() {
 	protoassert.Equal(suite.T(), expectedPlopStorage1, newPlopsFromDB2[0])
 
 }
-<<<<<<< HEAD
 
-<<<<<<< HEAD
 // TestPLOPUpdatePodUidFromBlank Add a PLOP without a PodUid and then
 // the same PLOP is added with a PodUid
 func (suite *PLOPDataStoreTestSuite) TestPLOPUpdatePodUidFromBlank() {
