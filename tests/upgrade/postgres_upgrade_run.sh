@@ -99,7 +99,7 @@ test_upgrade_path() {
 
     # It's damn fiddly, restore is needed because later test will search for a
     # default secured cluster, created by it :(
-    restore_4_1_backup
+    restore_4_6_backup
     wait_for_api
 
     # Run with some scale to have data populated to migrate
@@ -213,7 +213,7 @@ test_not_enough_disk_space() {
 
     # It's damn fiddly, restore is needed because later test will search for a
     # default secured cluster, created by it :(
-    restore_4_1_backup
+    restore_4_6_backup
     wait_for_api
 
     # Do not apply scaled workload to control disk space, do fallocate instead
