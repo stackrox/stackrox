@@ -87,8 +87,8 @@ function go_build() (
   output="bin/${GOOS}_${GOARCH}"
   mkdir -p "$output"
 
-  echo >&2 "Compiling Go source in ${dirs[@]} to ${output}"
-  invoke_go_build -o "$output" ${dirs[@]}
+  echo >&2 "Compiling Go source in ${dirs[*]} to ${output}"
+  invoke_go_build -o "$output" "${dirs[@]}"
 )
 
 function go_build_file() {
