@@ -80,7 +80,7 @@ describe('Policies table', () => {
         const tdSelector = 'td[data-label="Severity"]';
 
         // 0. Initial table state is sorted by the Policy column.
-        cy.get(thSelector).should('have.attr', 'aria-sort', 'none');
+        cy.get(thSelector).should('not.have.attr', 'aria-sort');
 
         // 1. Sort descending by the Severity column.
         cy.get(thSelector).click();
