@@ -76,7 +76,7 @@ test_upgrade_paths() {
     local log_output_dir="$1"
 
     # To test we remain backwards compatible rollback to 4.6.x
-    FORCE_ROLLBACK_VERSION="EARLIER_TAG"
+    FORCE_ROLLBACK_VERSION="${EARLIER_TAG}"
 
     cd "$REPO_FOR_TIME_TRAVEL"
     git checkout "$EARLIER_SHA"
