@@ -8,6 +8,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	configDS "github.com/stackrox/rox/central/config/datastore"
 	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/metrics/aggregator/alerts"
 	"github.com/stackrox/rox/central/metrics/aggregator/common"
 	"github.com/stackrox/rox/central/metrics/aggregator/image_vulnerabilities"
 	"github.com/stackrox/rox/central/metrics/aggregator/node_vulnerabilities"
@@ -34,6 +35,7 @@ type aggregatorRunner struct {
 
 	image_vulnerabilities common.Tracker
 	node_vulnerabilities  common.Tracker
+	alerts                common.Tracker
 }
 
 func Singleton() interface {
@@ -52,6 +54,7 @@ func Singleton() interface {
 
 			image_vulnerabilities: image_vulnerabilities.MakeTrackerConfig(metrics.SetCustomAggregatedCount),
 			node_vulnerabilities:  node_vulnerabilities.MakeTrackerConfig(metrics.SetCustomAggregatedCount),
+			alerts:                alerts.MakeTrackerConfig(metrics.SetCustomAggregatedCount),
 		}
 		systemPrivateConfig, err := configDS.Singleton().GetPrivateConfig(
 			sac.WithAllAccess(context.Background()))
@@ -85,11 +88,20 @@ func (ar *aggregatorRunner) Reconfigure(cfg *storage.PrometheusMetricsConfig) er
 			return err
 		}
 	}
+	{
+		a := cfg.GetAlerts()
+		if err := ar.alerts.Reconfigure(ar.registry,
+			a.GetFilter(),
+			a.GetMetrics(),
+			time.Minute*time.Duration(a.GetGatheringPeriodMinutes())); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
 func (ar *aggregatorRunner) Start() {
-	for _, tracker := range []common.Tracker{ar.image_vulnerabilities, ar.node_vulnerabilities} {
+	for _, tracker := range []common.Tracker{ar.image_vulnerabilities, ar.node_vulnerabilities, ar.alerts} {
 		tracker.Do(func() {
 			go ar.run(tracker)
 		})

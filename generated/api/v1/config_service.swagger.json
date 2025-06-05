@@ -290,6 +290,27 @@
         }
       }
     },
+    "PrometheusMetricsConfigAlerts": {
+      "type": "object",
+      "properties": {
+        "gatheringPeriodMinutes": {
+          "type": "integer",
+          "format": "int64",
+          "description": "The period (in minutes) at which alerts data is gathered from the DB."
+        },
+        "metrics": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/PrometheusMetricsConfigLabels"
+          },
+          "description": "Mapping from metric name to its associated labels."
+        },
+        "filter": {
+          "type": "string",
+          "title": "Filter string in the syntax of the Search filters used to limit the amount of\naggregated alerts.\nExample: \"Cluster:production\""
+        }
+      }
+    },
     "PrometheusMetricsConfigLabels": {
       "type": "object",
       "properties": {
@@ -541,6 +562,9 @@
         },
         "nodeVulnerabilities": {
           "$ref": "#/definitions/PrometheusMetricsConfigVulnerabilities"
+        },
+        "alerts": {
+          "$ref": "#/definitions/PrometheusMetricsConfigAlerts"
         }
       }
     },
