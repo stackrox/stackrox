@@ -86,11 +86,6 @@ func (s *serviceImpl) pushProcesses(server sensor.CollectorService_PushProcesses
 	return nil
 }
 
-func (s *serviceImpl) Communicate(server sensor.CollectorService_CommunicateServer) error {
-	// This method is not implemented on the collector side yet.
-	return errors.New("Unimplemented Communicate method")
-}
-
 func (s *serviceImpl) PushNetworkConnectionInfo(server sensor.CollectorService_PushNetworkConnectionInfoServer) error {
 	// This method is not implemented on the collector side yet.
 	return errors.New("Unimplemented PushNetworkConnectionInfo method")
