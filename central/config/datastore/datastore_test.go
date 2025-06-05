@@ -94,6 +94,14 @@ var (
 			VulnerabilityExceptionConfig:        &storage.VulnerabilityExceptionConfig{},
 		},
 	}
+
+	samplePlatformConfig = &storage.PlatformComponentConfig{
+		NeedsReevaluation: true,
+		Rules: []*storage.PlatformComponentConfig_Rule{
+			defaultPlatformConfigSystemRule,
+			defaultPlatformConfigLayeredProductsRule,
+		},
+	}
 )
 
 func (s *configDataStoreTestSuite) TestAllowsGetPublic() {
@@ -430,8 +438,9 @@ func TestValidateConfigAndPopulateMissingDefaults(t *testing.T) {
 	}{
 		"No Update for fully set config": {
 			initialConfig: &storage.Config{
-				PublicConfig:  samplePublicConfig,
-				PrivateConfig: customPrivateConfig,
+				PublicConfig:            samplePublicConfig,
+				PrivateConfig:           customPrivateConfig,
+				PlatformComponentConfig: samplePlatformConfig,
 			},
 			upsertedConfig: nil,
 		},
@@ -452,6 +461,7 @@ func TestValidateConfigAndPopulateMissingDefaults(t *testing.T) {
 					VulnerabilityExceptionConfig:        defaultVulnerabilityDeferralConfig,
 					AdministrationEventsConfig:          defaultAdministrationEventsConfig,
 				},
+				PlatformComponentConfig: samplePlatformConfig,
 			},
 		},
 		"Missing private config gets partially configured when Features deactivated": {
@@ -471,6 +481,7 @@ func TestValidateConfigAndPopulateMissingDefaults(t *testing.T) {
 					VulnerabilityExceptionConfig:        nil,
 					AdministrationEventsConfig:          defaultAdministrationEventsConfig,
 				},
+				PlatformComponentConfig: samplePlatformConfig,
 			},
 		},
 		"Configure decommissioned cluster retention when missing": {
@@ -497,6 +508,7 @@ func TestValidateConfigAndPopulateMissingDefaults(t *testing.T) {
 					VulnerabilityExceptionConfig:        customVulnerabilityDeferralConfig,
 					AdministrationEventsConfig:          customAdministrationEventsConfig,
 				},
+				PlatformComponentConfig: samplePlatformConfig,
 			},
 		},
 		"Configure report retention when missing": {
@@ -523,6 +535,7 @@ func TestValidateConfigAndPopulateMissingDefaults(t *testing.T) {
 					VulnerabilityExceptionConfig:        customVulnerabilityDeferralConfig,
 					AdministrationEventsConfig:          customAdministrationEventsConfig,
 				},
+				PlatformComponentConfig: samplePlatformConfig,
 			},
 		},
 		"Configure vulnerability exception management when missing and Feature activated": {
@@ -550,6 +563,7 @@ func TestValidateConfigAndPopulateMissingDefaults(t *testing.T) {
 					VulnerabilityExceptionConfig:        defaultVulnerabilityDeferralConfig,
 					AdministrationEventsConfig:          customAdministrationEventsConfig,
 				},
+				PlatformComponentConfig: samplePlatformConfig,
 			},
 		},
 		"No update when vulnerability exception management is missing and Feature deactivated": {
@@ -565,6 +579,7 @@ func TestValidateConfigAndPopulateMissingDefaults(t *testing.T) {
 					VulnerabilityExceptionConfig:        nil,
 					AdministrationEventsConfig:          customAdministrationEventsConfig,
 				},
+				PlatformComponentConfig: samplePlatformConfig,
 			},
 			upsertedConfig: nil,
 		},
@@ -593,6 +608,7 @@ func TestValidateConfigAndPopulateMissingDefaults(t *testing.T) {
 					VulnerabilityExceptionConfig:        customVulnerabilityDeferralConfig,
 					AdministrationEventsConfig:          defaultAdministrationEventsConfig,
 				},
+				PlatformComponentConfig: samplePlatformConfig,
 			},
 		},
 	}

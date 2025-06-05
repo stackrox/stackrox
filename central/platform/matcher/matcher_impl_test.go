@@ -17,15 +17,17 @@ func TestPlatformMatcher(t *testing.T) {
 type platformMatcherTestSuite struct {
 	suite.Suite
 
-	matcher PlatformMatcher
+	mockCtrl *gomock.Controller
+	matcher  PlatformMatcher
 }
 
 func (s *platformMatcherTestSuite) SetupSuite() {
-	mockCtrl := gomock.NewController(s.T())
-	s.matcher = GetTestPlatformMatcherWithDefaultPlatformComponentConfig(mockCtrl)
+	s.mockCtrl = gomock.NewController(s.T())
+	s.matcher = GetTestPlatformMatcherWithDefaultPlatformComponentConfig(s.mockCtrl)
 }
 
 func (s *platformMatcherTestSuite) TestMatchAlert() {
+	s.matcher = GetTestPlatformMatcherWithDefaultPlatformComponentConfig(s.mockCtrl)
 	// case: nil alert
 	match, err := s.matcher.MatchAlert(nil)
 	s.Require().Error(err)
@@ -175,7 +177,7 @@ func (s *platformMatcherTestSuite) TestMatchDeployment() {
 	dep.Namespace = "nvidia-gpu-operator"
 	match, err = s.matcher.MatchDeployment(dep)
 	s.Require().NoError(err)
-	s.Require().True(match)
+	s.Require().False(match)
 }
 
 func (s *platformMatcherTestSuite) TestCustomPlatformComponentRegexes() {
