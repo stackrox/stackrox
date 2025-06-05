@@ -52,7 +52,7 @@ runs:
         git config --global --add safe.directory "$(pwd)"
       shell: bash
 
-    - id: 'auth'
+    - name: Auth gcloud
       uses: 'google-github-actions/auth@v2'
       with:
         credentials_json: '${{ inputs.gcp-account }}'
