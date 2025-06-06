@@ -108,7 +108,9 @@ runs:
         version=$(gcloud info --format="value(basic.version)")
         echo "version=${version}" >> "$GITHUB_OUTPUT"
         target_gcloud_version="${{ inputs.gcloud-version }}"
-        if ! sort -bcV <<< "${target_gcloud_version}"$'\n'"${version}"; then
+        if sort -bcV <<< "${target_gcloud_version}"$'\n'"${version}"; then
+          echo "Installed gcloud/google-sdk version is ${version} which is newer than the expected version ${target_gcloud_version}."
+        else
           echo "Installed gcloud/google-sdk version is ${version} which is older than the expected version ${target_gcloud_version}."
           exit 1
         fi
