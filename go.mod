@@ -1,6 +1,6 @@
 module github.com/stackrox/rox
 
-go 1.23.4
+go 1.23.5
 
 toolchain go1.23.6
 
@@ -412,6 +412,7 @@ require (
 	github.com/opentracing/opentracing-go v1.2.0 // indirect
 	github.com/operator-framework/operator-lib v0.17.0 // indirect
 	github.com/package-url/packageurl-go v0.1.3 // indirect
+	github.com/parametalol/curry v0.0.1
 	github.com/pelletier/go-toml v1.9.5 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.3 // indirect
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
