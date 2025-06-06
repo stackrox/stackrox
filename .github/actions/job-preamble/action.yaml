@@ -62,8 +62,6 @@ runs:
       continue-on-error: true
       shell: bash
       run: |
-        set +e
-        set -x
         {
           source scripts/ci/lib.sh
           create_job_record "${{ github.job }}" "gha" >/tmp/record-job.log 2>&1;
