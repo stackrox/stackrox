@@ -13,6 +13,10 @@ on:
     - reopened
     - synchronize
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 defaults:
   run:
     # This enables `-o pipefail` for all jobs as compared to when shell isn't set.
