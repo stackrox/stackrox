@@ -22,19 +22,12 @@ runs:
         docker buildx version && which docker
         true
 
-    - name: Recover docker image cache space
-      run: |
-        df --si /
-        printf 'Docker prune: '
-        docker system prune --force --all
-        df --si /
-      shell: bash
-
     - name: Remove unused gha runner tools if found
       shell: bash
       run: |
         set +e
         set -x
+        df --si /
         cleanup=(
           /usr/share/dotnet
           /usr/share/miniconda
@@ -67,6 +60,18 @@ runs:
           fi
         done
         df --si /
+
+    - name: Recover docker image cache space
+      run: |
+        free=$(df -BG --output=avail / | tail -1)
+        if [[ ${free%G} -gt "${{ inputs.free-disk-space }}" ]]; then
+          echo "Skipping docker prune. Already reached required free disk space [${{ inputs.free-disk-space }}]"
+          exit
+        fi
+        printf 'Docker prune: '
+        docker system prune --force --all
+        df --si /
+      shell: bash
 
     - name: Ignore dubious repository ownership
       run: |
