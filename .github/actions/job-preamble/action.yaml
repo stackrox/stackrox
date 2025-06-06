@@ -35,7 +35,8 @@ runs:
         fi
         gcloud info
         gcloud config list
-        { date; for I in {1..60}; do date | tee /tmp/bgcounter; sleep 1; done; echo "finished" | tee /tmp/bgcounter; } &
+        nohup bash -c '{ date; for I in {1..120}; do date | tee -a /tmp/bgcounter; sleep 1; done; echo "finished" | tee -a /tmp/bgcounter; }' </dev/null >/dev/null 2>&1 &
+        { date; for I in {1..120}; do date | tee -a /tmp/bg2counter; sleep 1; done; echo "finished2" | tee -a /tmp/bg2counter; } </dev/null >/dev/null 2>&1 &
         echo $!
 
     - name: Check gcloud CLI version
@@ -65,8 +66,10 @@ runs:
       shell: bash
       run: |
         source scripts/ci/lib.sh;
-        create_job_record "${{ github.job }}" "gha" &
+        export -f create_job_record
+        nohup bash -c 'create_job_record "${{ github.job }}" "gha"' </dev/null >/dev/null 2>&1 &
         wc -l /tmp/bgcounter || true
+        wc -l /tmp/bg2counter || true
         echo "GOOGLE_APPLICATION_CREDENTIALS:${GOOGLE_APPLICATION_CREDENTIALS}"
 
     # bugfeature: run-and-post-run waits for each line to complete as a single command
@@ -83,7 +86,9 @@ runs:
           update_job_record outcome "${{ job.status }}" stopped_at "CURRENT_TIMESTAMP()";
           df --si /;
           wc -l /tmp/bgcounter || true;
+          wc -l /tmp/bg2counter || true
           cat /tmp/bgcounter || true;
+          cat /tmp/bg2counter || true;
 
     - name: Free disk space, delete unused tools
       id: delete-unused-tools
