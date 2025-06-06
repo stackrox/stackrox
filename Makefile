@@ -485,10 +485,16 @@ main-build-dockerized: build-volumes
 	docker run $(DOCKER_OPTS) -i -e RACE -e CI -e BUILD_TAG -e SHORTCOMMIT -e GOTAGS -e DEBUG_BUILD -e CGO_ENABLED --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make main-build-nodeps
 
 .PHONY: main-build-nodeps
-main-build-nodeps: central-build-nodeps migrator-build-nodeps config-controller-build-nodeps
-	$(GOBUILD) sensor/kubernetes sensor/admission-control compliance/cmd/compliance
-	$(GOBUILD) sensor/upgrader
-	$(GOBUILD) sensor/init-tls-certs
+main-build-nodeps:
+	$(GOBUILD) \
+		central \
+		compliance/cmd/compliance \
+		config-controller \
+		migrator \
+		sensor/admission-control \
+		sensor/init-tls-certs \
+		sensor/kubernetes \
+		sensor/upgrader
 ifndef CI
 	CGO_ENABLED=0 $(GOBUILD) roxctl
 endif
@@ -553,17 +559,20 @@ sensor-pipeline-benchmark: build-prep test-prep
 
 .PHONY: go-postgres-unit-tests
 go-postgres-unit-tests: build-prep test-prep
+	set -o pipefail ; \
+	CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -timeout 15m  -race -cover -coverprofile test-output/coverage.out -v \
+		$(shell git grep -rl "//go:build sql_integration" central pkg tools | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list -tags sql_integration | grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
+		| tee $(GO_TEST_OUTPUT_PATH)
 	@# The -p 1 passed to go test is required to ensure that tests of different packages are not run in parallel, so as to avoid conflicts when interacting with the DB.
 	set -o pipefail ; \
-	CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -p 1 -race -cover -coverprofile test-output/coverage.out -v \
-		$(shell git grep -rl "//go:build sql_integration" central pkg migrator tools | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list -tags sql_integration | grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
-		| tee $(GO_TEST_OUTPUT_PATH)
+	CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -p 1 -race -cover -coverprofile test-output/migrator-coverage.out -v \
+		$(shell git grep -rl "//go:build sql_integration" migrator | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list -tags sql_integration | grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
+		| tee -a $(GO_TEST_OUTPUT_PATH)
 
 .PHONY: go-postgres-bench-tests
 go-postgres-bench-tests: build-prep test-prep
-	@# The -p 1 passed to go test is required to ensure that tests of different packages are not run in parallel, so as to avoid conflicts when interacting with the DB.
 	set -o pipefail ; \
-	CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -p 1 -run=nonthing -bench=. -benchtime=$(BENCHTIME) -benchmem -timeout $(BENCHTIMEOUT) -count $(BENCHCOUNT) -v \
+	CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -run=nonthing -bench=. -benchtime=$(BENCHTIME) -benchmem -timeout $(BENCHTIMEOUT) -count $(BENCHCOUNT) -v \
   $(shell git grep -rl "testing.B" central pkg migrator tools | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list -tags sql_integration | grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
 		| tee $(GO_TEST_OUTPUT_PATH)
 
