@@ -172,8 +172,8 @@ func (cfg *centralConfig) RegisterCentralClient(gc *grpc.Config, basicAuthProvid
 	cfg.Telemeter().Group(nil, telemeter.WithUserID(adminHash), telemeter.WithGroups(cfg.GroupType, cfg.GroupID))
 }
 
-// Disable stops and disables the telemetry collection.
-func (cfg *centralConfig) Disable() {
+// OptOut stops and disables the telemetry collection.
+func (cfg *centralConfig) OptOut() {
 	if !cfg.IsEnabled() {
 		return
 	}
@@ -182,8 +182,8 @@ func (cfg *centralConfig) Disable() {
 	cfg.Disable()
 }
 
-// Enable enables and starts the telemetry collection.
-func (cfg *centralConfig) Enable() {
+// OptIn enables and starts the telemetry collection.
+func (cfg *centralConfig) OptIn() {
 	if !cfg.IsValid() || cfg.IsEnabled() {
 		return
 	}
