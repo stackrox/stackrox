@@ -35,12 +35,14 @@ runs:
         fi
         gcloud info
         gcloud config list
+        { date; for I in {1..30}; do date; sleep 1; done; echo "finished"; } &
 
     - name: Check gcloud CLI version
       id: gcloud-version-check
       continue-on-error: true
       shell: bash
       run: |
+        ps -ef
         version=$(gcloud info --format="value(basic.version)")
         target_gcloud_version="${{ inputs.gcloud-version }}"
         if sort -bcV <<< "${target_gcloud_version}"$'\n'"${version}"; then
@@ -85,7 +87,6 @@ runs:
       run: |
         set +e
         set -x
-        ps -ef
         df --si /
         # preinstalled tools not used. ordered by size asc
         cleanup=(
