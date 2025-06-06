@@ -75,10 +75,10 @@ spec:
   # IMPORTANT: when changing timeouts here, read and follow timeout instructions in operator-bundle-build.yaml.
   timeouts:
     # The tasks regularly takes 1h to finish.
-    tasks: 1h
+    tasks: 5m
     # Reserve time for final tasks to run.
     finally: 10m
-    pipeline: 1h10m
+    pipeline: 15m
 
   workspaces:
   - name: git-auth
