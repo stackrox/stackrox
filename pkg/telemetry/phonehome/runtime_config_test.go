@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_toDownload(t *testing.T) {
@@ -90,7 +91,7 @@ func Test_download(t *testing.T) {
 	assert.Equal(t, remoteKey, cfg.Key)
 }
 
-func Test_GetKey(t *testing.T) {
+func Test_getRuntimeConfig(t *testing.T) {
 	const devVersion = "4.4.1-dev"
 	const remoteKey = "remotekey"
 
@@ -112,7 +113,9 @@ func Test_GetKey(t *testing.T) {
 	}{
 		"a": {defaultKey: "", cfgURL: ""},
 		"b": {defaultKey: "", cfgURL: env.TelemetrySelfManagedURL},
-		"c": {defaultKey: DisabledKey, cfgURL: ""},
+		"c": {defaultKey: DisabledKey, cfgURL: "",
+			expectedKey: DisabledKey,
+		},
 		"d": {defaultKey: "abc", cfgURL: env.TelemetrySelfManagedURL,
 			expectedKey: "abc",
 		},
@@ -134,17 +137,42 @@ func Test_GetKey(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			got, err := GetRuntimeConfig(tt.cfgURL, tt.defaultKey)
+			got, err := getRuntimeConfig(tt.cfgURL, tt.defaultKey)
 			if tt.expectedErr != nil {
 				assert.ErrorContains(t, err, tt.expectedErr.Error())
 			} else {
 				assert.NoError(t, err)
 			}
-			if tt.expectedKey == "" {
-				assert.Nil(t, got, name)
-			} else {
+			if err == nil && assert.NotNil(t, got) {
 				assert.Equal(t, tt.expectedKey, got.Key, name)
 			}
 		})
 	}
+}
+
+func Test_getRuntimeConfig_Campaign(t *testing.T) {
+	const devVersion = "4.4.1-dev"
+	const remoteKey = "remotekey"
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{
+			"storage_key_v1": "` + remoteKey + `",
+			"api_call_campaign": [
+				{"method": "{put,delete}"},
+				{"headers": {"Accept-Encoding": "*json*"}}
+			]
+		}`))
+	}))
+	defer server.Close()
+
+	cfg, err := getRuntimeConfig(server.URL, remoteKey)
+	require.NoError(t, err)
+	assert.Equal(t, &RuntimeConfig{
+		Key: "remotekey",
+		APICallCampaign: APICallCampaign{
+			MethodPattern("{put,delete}"),
+			HeaderPattern("Accept-Encoding", "*json*"),
+		},
+	}, cfg)
 }
