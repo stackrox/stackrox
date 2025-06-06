@@ -1,6 +1,7 @@
 name: Job Preamble
 description: Common steps for most jobs
 inputs:
+  disk-space: 20000
   gcp-account:
     description: 'Account to be used to upload tests data'
     required: true
@@ -14,6 +15,7 @@ runs:
         set -x
         gcloud version && which gcloud
         bq version && which bq
+        docker plugin ls
         docker buildx version && which docker
         true
 
@@ -38,6 +40,12 @@ runs:
           /opt/hostedtoolcache/Ruby
         )
         for d in "${cleanup[@]}"; do
+          du -ks ${d}]../*
+          free=$(df -BG --output=avail /)
+          if [[ $free -gt "${{ inputs.disk_space }}" ]]; then
+            echo "Reached required free disk space [${{ inputs.disk_space }}]"
+            break
+          fi
           if [[ -d "/mnt${d}" ]]; then
             rm -rf "/mnt${d}"
           elif [[ -d "$d" ]]; then
@@ -59,11 +67,19 @@ runs:
         credentials_json: '${{ inputs.gcp-account }}'
         export_environment_variables: true
         create_credentials_file: true
+        cleanup_credentials: false
 
     - name: Set up gcloud CLI
       uses: 'google-github-actions/setup-gcloud@v2'
       with:
         version: '>= 363.0.0'
+
+    - name: Check gcloud CLI after install
+      shell: bash
+      run: |
+        gcloud version
+        which gcloud
+        /usr/bin/gcloud version
 
     - name: Record job info
       uses: gacts/run-and-post-run@d803f6920adc9a47eeac4cb6c93dbc2e2890c684 # v1.4.0
