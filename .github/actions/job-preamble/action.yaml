@@ -23,6 +23,19 @@ runs:
         create_credentials_file: true
         cleanup_credentials: false
 
+    - name: Test gcp auth
+      continue-on-error: true
+      shell: bash
+      run: |
+        set +e
+        set -x
+        echo "GOOGLE_APPLICATION_CREDENTIALS:${GOOGLE_APPLICATION_CREDENTIALS}"
+        if [[ "$(gcloud config get-value core/project 2>/dev/null)" == "acs-san-stackroxci" ]]; then
+          echo "Current project is already set to acs-san-stackroxci. Assuming configuration already applied."
+        fi
+        gcloud info
+        gcloud config list
+
     - name: Check gcloud CLI version
       id: gcloud-version-check
       continue-on-error: true
