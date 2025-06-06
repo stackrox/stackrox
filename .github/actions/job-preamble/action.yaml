@@ -35,7 +35,7 @@ runs:
         fi
         gcloud info
         gcloud config list
-        { date; for I in {1..30}; do date; sleep 1; done; echo "finished"; } &
+        { date; for I in {1..60}; do date | tee /tmp/bgcounter; sleep 1; done; echo "finished" | tee /tmp/bgcounter; } &
         echo $!
 
     - name: Check gcloud CLI version
@@ -66,6 +66,7 @@ runs:
       run: |
         source scripts/ci/lib.sh;
         create_job_record "${{ github.job }}" "gha" &
+        wc -l /tmp/bgcounter || true
         echo "GOOGLE_APPLICATION_CREDENTIALS:${GOOGLE_APPLICATION_CREDENTIALS}"
 
     # bugfeature: run-and-post-run waits for each line to complete as a single command
@@ -81,6 +82,8 @@ runs:
           source scripts/ci/lib.sh;
           update_job_record outcome "${{ job.status }}" stopped_at "CURRENT_TIMESTAMP()";
           df --si /;
+          wc -l /tmp/bgcounter || true;
+          cat /tmp/bgcounter || true;
 
     - name: Free disk space, delete unused tools
       id: delete-unused-tools
