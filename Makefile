@@ -34,7 +34,7 @@ SILENT ?= @
 # the pattern is passed to: grep -Ev
 #  usage: "path/to/ignored|another/path"
 # TODO: [ROX-19070] Update postgres store test generation to work for foreign keys
-UNIT_TEST_IGNORE := "stackrox/rox/sensor/tests|stackrox/rox/operator/tests|stackrox/rox/central/reports/config/store/postgres|stackrox/rox/central/complianceoperator/v2/scanconfigurations/store/postgres|stackrox/rox/central/auth/store/postgres|stackrox/rox/scanner/e2etests"
+UNIT_TEST_IGNORE := "stackrox/rox/tests|stackrox/rox/migrator/|stackrox/rox/sensor/tests|stackrox/rox/operator/tests|stackrox/rox/central/reports/config/store/postgres|stackrox/rox/central/complianceoperator/v2/scanconfigurations/store/postgres|stackrox/rox/central/auth/store/postgres|stackrox/rox/scanner/e2etests"
 
 ifeq ($(TAG),)
 TAG=$(shell git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*')
@@ -560,12 +560,11 @@ sensor-pipeline-benchmark: build-prep test-prep
 go-postgres-unit-tests: build-prep test-prep
 	set -o pipefail ; \
 	CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -timeout 15m  -race -cover -coverprofile test-output/coverage.out -v \
-		$(shell git grep -rl "//go:build sql_integration" central pkg tools | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list -tags sql_integration | grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
+		$(shell go list -tags sql_integration ./... | grep -Ev $(UNIT_TEST_IGNORE)) \
 		| tee $(GO_TEST_OUTPUT_PATH)
 	@# The -p 1 passed to go test is required to ensure that tests of different packages are not run in parallel, so as to avoid conflicts when interacting with the DB.
 	set -o pipefail ; \
-	CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -p 1 -race -cover -coverprofile test-output/migrator-coverage.out -v \
-		$(shell git grep -rl "//go:build sql_integration" migrator | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list -tags sql_integration | grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
+	CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -p 1 -race -cover -coverprofile test-output/migrator-coverage.out -v ./migrator/... \
 		| tee -a $(GO_TEST_OUTPUT_PATH)
 
 .PHONY: go-postgres-bench-tests
