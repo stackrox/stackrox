@@ -86,6 +86,7 @@ bq_create_job_record() {
 
     bq query \
         --use_legacy_sql=false \
+        --batch \
         --synchronous_mode=false \
         --parameter="id::$1" \
         --parameter="name::$2" \
