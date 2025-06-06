@@ -1,6 +1,7 @@
 #!/bin/sh
 
 set -e
+set -x
 
 # When running as the root user, chown the directories
 # and then exec as the non-root user.
@@ -21,7 +22,12 @@ if [ "$(id -u)" == 0 ]; then
      exec su-exec 4000:4000 "$0" "$@"
 fi
 
+set +e
+ls -laR /.init-dirs/
+ls -laR /etc/pki/ca-trust/
 restore-all-dir-contents
 import-additional-cas
 
+sleep 60
+exit 1
 exec /stackrox/start-central.sh "$@"

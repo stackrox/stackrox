@@ -3,7 +3,9 @@
 # Note: This is also used for Scanner.
 
 set -euo pipefail
+set -x
 
 [ -d /.init-dirs ] || exit 0
 
-cp -rfP /.init-dirs/* /
+cp -rvfP /.init-dirs/* / \
+  || { echo 'try overwrite instead of delete and write new file:'; yes | cp -rviP /.init-dirs/* /; }
