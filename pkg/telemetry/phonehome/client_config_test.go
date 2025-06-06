@@ -53,18 +53,54 @@ func TestConfig_IsEnabled(t *testing.T) {
 
 func TestConfig_Reconfigure(t *testing.T) {
 	cfg := &Config{
-		StorageKey: DisabledKey,
-		telemeter:  &nilTelemeter{},
+		telemeter: &nilTelemeter{},
 	}
 
-	rc, err := cfg.Reconfigure("", "")
-	assert.Nil(t, rc)
-	assert.Nil(t, err)
-	assert.False(t, cfg.IsValid())
+	t.Run("reconfigure DisabledKey with empty key", func(t *testing.T) {
+		cfg.StorageKey = DisabledKey
+		rc, err := cfg.Reconfigure("", "")
+		assert.Nil(t, rc)
+		assert.Nil(t, err)
+		assert.False(t, cfg.IsValid())
+		assert.False(t, cfg.IsEnabled())
+	})
 
-	cfg.StorageKey = ""
-	rc, err = cfg.Reconfigure("", "test-key")
-	assert.Equal(t, &RuntimeConfig{Key: "test-key", APICallCampaign: nil}, rc)
-	assert.Nil(t, err)
-	assert.True(t, cfg.IsValid())
+	t.Run("reconfigure DisabledKey with test key", func(t *testing.T) {
+		cfg.StorageKey = DisabledKey
+		rc, err := cfg.Reconfigure("", "test key")
+		assert.Nil(t, rc)
+		assert.Nil(t, err)
+		assert.False(t, cfg.IsValid())
+		assert.False(t, cfg.IsEnabled())
+	})
+
+	t.Run("reconfigure empty disabled config with a test key", func(t *testing.T) {
+		cfg.StorageKey = ""
+		rc, err := cfg.Reconfigure("", "test-key")
+		assert.Equal(t, &RuntimeConfig{Key: "test-key", APICallCampaign: nil}, rc)
+		assert.Nil(t, err)
+		assert.True(t, cfg.IsValid())
+		assert.False(t, cfg.IsEnabled())
+	})
+
+	t.Run("reconfigure empty enabled config with a test key", func(t *testing.T) {
+		cfg.StorageKey = ""
+		cfg.enabled = true
+		rc, err := cfg.Reconfigure("", "test-key")
+		assert.Equal(t, &RuntimeConfig{Key: "test-key", APICallCampaign: nil}, rc)
+		assert.Nil(t, err)
+		assert.True(t, cfg.IsValid())
+		assert.True(t, cfg.IsEnabled())
+	})
+
+	t.Run("reconfigure enabled config with empty key", func(t *testing.T) {
+		cfg.StorageKey = "test-key"
+		cfg.enabled = true
+		rc, err := cfg.Reconfigure("", "")
+		assert.NotNil(t, rc)
+		assert.Nil(t, err)
+		assert.True(t, cfg.IsValid())
+		assert.False(t, cfg.IsEnabled())
+	})
+
 }

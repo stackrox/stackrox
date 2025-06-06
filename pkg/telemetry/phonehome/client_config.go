@@ -59,6 +59,8 @@ type Config struct {
 	interceptors     map[string][]Interceptor
 	interceptorsLock sync.RWMutex
 
+	// enabled is an additional switch to enable or disable a well configured
+	// client.
 	enabled  bool
 	stateMux sync.RWMutex
 }
@@ -72,12 +74,13 @@ func (cfg *Config) Reconfigure(cfgURL, defaultKey string) (*RuntimeConfig, error
 		return nil, err
 	}
 	cfg.stateMux.Lock()
+	previouslyMissingKey := cfg.StorageKey == "" && cfg.enabled
 	cfg.StorageKey = rc.Key
 	cfg.stateMux.Unlock()
 
 	if rc.Key == "" || rc.Key == DisabledKey {
 		cfg.Disable()
-	} else {
+	} else if previouslyMissingKey {
 		cfg.Enable()
 	}
 	return rc, nil
