@@ -16,7 +16,7 @@ import (
 const securedClusterClient = "Secured Cluster"
 
 func trackClusterRegistered(cluster *storage.Cluster) {
-	if cfg := centralclient.InstanceConfig(); cfg.Enabled() {
+	if cfg := centralclient.Singleton(); cfg.IsActive() {
 		props := map[string]any{
 			"Cluster Type": cluster.GetType().String(),
 			"Cluster ID":   cluster.GetId(),
@@ -49,7 +49,7 @@ func makeClusterProperties(cluster *storage.Cluster) map[string]any {
 }
 
 func trackClusterInitialized(cluster *storage.Cluster) {
-	if cfg := centralclient.InstanceConfig(); cfg.Enabled() {
+	if cfg := centralclient.Singleton(); cfg.IsActive() {
 		// Issue an event that makes the secured cluster identity effective:
 		cfg.Telemeter().
 			Track("Secured Cluster Initialized", map[string]any{
@@ -77,8 +77,8 @@ var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, err
 // UpdateSecuredClusterIdentity is called by the clustermetrics pipeline on
 // the reception of the cluster metrics from a sensor.
 func UpdateSecuredClusterIdentity(ctx context.Context, clusterID string, metrics *central.ClusterMetrics) {
-	cfg := centralclient.InstanceConfig()
-	if !cfg.Enabled() {
+	cfg := centralclient.Singleton()
+	if !cfg.IsActive() {
 		return
 	}
 

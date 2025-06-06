@@ -138,9 +138,9 @@ func Test_apiCall(t *testing.T) {
 	}
 	require.NoError(t, permanentTelemetryCampaign.Compile())
 	anyTestEndpoint := phonehome.PathPattern("*test*")
-	appendRuntimeCampaign(&phonehome.RuntimeConfig{
-		APICallCampaign: phonehome.APICallCampaign{anyTestEndpoint},
-	})
+	cfg := makeCentralConfig("test-id")
+	cfg.appendRuntimeCampaign(phonehome.APICallCampaign{anyTestEndpoint})
+	apiCall := cfg.apiCall()
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
 			props := make(map[string]any)

@@ -15,17 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func Test_getKey_release(t *testing.T) {
-	testutils.SetMainVersion(t, "4.5.0")
-	// Self-managed key has to be set to bypass the test build check.
-	t.Setenv(env.TelemetryStorageKey.EnvVar(), "eDd6QP8uWm0jCkAowEvijOPgeqtlulwR")
-	cfg, err := getRuntimeConfig()
-	// Telemetry should be enabled in release environment.
-	assert.NotNil(t, cfg)
-	assert.NoError(t, err)
-}
-
-func Test_reloadConfig_release(t *testing.T) {
+func Test_centralConfig_Reload_release(t *testing.T) {
 	const releaseVersion = "4.4.1"
 	const remoteKey = "remotekey"
 
@@ -43,19 +33,16 @@ func Test_reloadConfig_release(t *testing.T) {
 	}))
 	defer server.Close()
 
-	instanceId = "test-id"
 	testutils.SetMainVersion(t, releaseVersion)
 	t.Setenv(defaults.ImageFlavorEnvName, "opensource")
 	t.Setenv(env.TelemetryConfigURL.EnvVar(), server.URL)
 	t.Setenv(env.TelemetryStorageKey.EnvVar(), phonehome.DisabledKey)
 
+	cfg := makeCentralConfig("test-id")
+
 	t.Run("ignore remote if local DISABLED", func(t *testing.T) {
-		rc, err := getRuntimeConfig()
-		require.NoError(t, err)
-		require.Nil(t, rc)
-		enable, err := applyConfig()
-		require.NoError(t, err)
-		assert.False(t, enable)
-		assert.False(t, config.Enabled())
+		require.NoError(t, cfg.Reload())
+		assert.False(t, cfg.IsEnabled())
+		assert.False(t, cfg.IsValid())
 	})
 }
