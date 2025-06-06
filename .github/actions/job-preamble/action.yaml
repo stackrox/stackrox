@@ -36,6 +36,7 @@ runs:
         gcloud info
         gcloud config list
         { date; for I in {1..30}; do date; sleep 1; done; echo "finished"; } &
+        echo $!
 
     - name: Check gcloud CLI version
       id: gcloud-version-check
@@ -65,6 +66,7 @@ runs:
       run: |
         source scripts/ci/lib.sh;
         create_job_record "${{ github.job }}" "gha" &
+        echo "GOOGLE_APPLICATION_CREDENTIALS:${GOOGLE_APPLICATION_CREDENTIALS}"
 
     # bugfeature: run-and-post-run waits for each line to complete as a single command
     - name: Record job post
