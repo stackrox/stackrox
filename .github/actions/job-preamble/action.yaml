@@ -35,6 +35,10 @@ runs:
       run: |
         set +e
         set -x
+        du -ks /mnt/usr/share/*
+        du -ks /mnt/usr/local/lib/*
+        du -ks /mnt/opt/*
+        du -ks /mnt/opt/hostedtoolcache/*
         cleanup=(
           /usr/share/dotnet
           /usr/local/lib/android
@@ -43,7 +47,6 @@ runs:
           /opt/hostedtoolcache/Ruby
         )
         for d in "${cleanup[@]}"; do
-          du -ks ${d}/../*
           free=$(df -BG --output=avail /)
           if [[ ${free%G} -gt "${{ inputs.free-disk-space }}" ]]; then
             echo "Reached required free disk space [${{ inputs.free-disk-space }}]"
