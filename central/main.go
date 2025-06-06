@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/NYTimes/gziphandler"
+	"github.com/parametalol/curry"
 	administrationEventDS "github.com/stackrox/rox/central/administration/events/datastore"
 	administrationEventHandler "github.com/stackrox/rox/central/administration/events/handler"
 	administrationEventService "github.com/stackrox/rox/central/administration/events/service"
@@ -56,6 +57,7 @@ import (
 	v2ComplianceRules "github.com/stackrox/rox/central/complianceoperator/v2/rules/service"
 	complianceScanDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	complianceScanSettings "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/service"
+	configDS "github.com/stackrox/rox/central/config/datastore"
 	configService "github.com/stackrox/rox/central/config/service"
 	credentialExpiryService "github.com/stackrox/rox/central/credentialexpiry/service"
 	clusterCveCsv "github.com/stackrox/rox/central/cve/cluster/csv"
@@ -383,6 +385,11 @@ func startServices() {
 
 	if features.PlatformComponents.Enabled() {
 		platformReprocessor.Singleton().Start()
+	}
+
+	if telemetryCfg := curry.DropLastOfTwo(configDS.Singleton().GetPublicConfig()).
+		GetTelemetry(); telemetryCfg == nil || telemetryCfg.GetEnabled() {
+		phonehome.Singleton().OptIn()
 	}
 
 	go registerDelayedIntegrations(iiStore.DelayedIntegrations)
