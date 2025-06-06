@@ -18,8 +18,6 @@ runs:
         set -x
         gcloud version && which gcloud
         bq version && which bq
-        docker plugin ls
-        docker buildx version && which docker
         true
 
     - name: Remove unused gha runner tools if found
@@ -87,17 +85,22 @@ runs:
         create_credentials_file: true
         cleanup_credentials: false
 
-    - name: Set up gcloud CLI
-      uses: 'google-github-actions/setup-gcloud@v2'
-      with:
-        version: '>= 363.0.0'
-
-    - name: Check gcloud CLI after install
+    - name: Check gcloud CLI version
+      id: gcloud-version-check
+      continue-on-error: true
       shell: bash
       run: |
-        gcloud version
-        which gcloud
-        /usr/bin/gcloud version
+        set -x
+        gcloud info
+        version=$(gcloud info --format="value(basic.version)")
+        echo "version=${version}" >> "$GITHUB_OUTPUT"
+        [[ ${version%%.*} -ge 363 ]]
+
+    - name: Install gcloud CLI
+      if: steps.gcloud-version-check.outcome == 'failure'
+      uses: 'google-github-actions/setup-gcloud@v2'
+      with:
+        version: '>= 363.0.0'  # does not check installed gcloud version. checks toolcache for previously installed and cached
 
     - name: Record job info
       uses: gacts/run-and-post-run@d803f6920adc9a47eeac4cb6c93dbc2e2890c684 # v1.4.0
