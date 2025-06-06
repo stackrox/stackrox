@@ -14,8 +14,9 @@ setup_gcp() {
         echo "Current project is already set to acs-san-stackroxci. Assuming configuration already applied."
 
         echo "GOOGLE_APPLICATION_CREDENTIALS:${GOOGLE_APPLICATION_CREDENTIALS}"
-        if [[ -z "$GOOGLE_APPLICATION_CREDENTIALS" ]]; then
+        if [[ -n "$GOOGLE_APPLICATION_CREDENTIALS" ]]; then
             echo "GOOGLE_APPLICATION_CREDENTIALS:${GOOGLE_APPLICATION_CREDENTIALS}"
+            ci_export GOOGLE_APPLICATION_CREDENTIALS "${GOOGLE_APPLICATION_CREDENTIALS}"
             return
         fi
 
