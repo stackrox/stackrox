@@ -58,51 +58,134 @@ type Config struct {
 	// the event.
 	interceptors     map[string][]Interceptor
 	interceptorsLock sync.RWMutex
+
+	// enabled is an additional switch to enable or disable a well configured
+	// client.
+	enabled  bool
+	stateMux sync.RWMutex
 }
 
-// Enabled tells whether telemetry configuration allows for data collection.
-func (cfg *Config) Enabled() bool {
-	return cfg != nil && cfg.StorageKey != ""
+// Reconfigure updates the configuration, potentially from the provided remote
+// URL. defaultKey is returned within the RuntimeConfig if no better value is
+// found. It will not update an inactive config.
+func (cfg *Config) Reconfigure(cfgURL, defaultKey string) (*RuntimeConfig, error) {
+	if !cfg.IsActive() {
+		return nil, nil
+	}
+	rc, err := getRuntimeConfig(cfgURL, defaultKey)
+	if err != nil {
+		return nil, err
+	}
+	cfg.stateMux.Lock()
+	// This condition allows for the controlled start in main: the configuration
+	// is not enabled on the instantiation, so only an explicit call to
+	// cfg.Enable() will enable tracking and start gatherers.
+	previouslyMissingKey := cfg.StorageKey == "" && cfg.enabled
+	cfg.StorageKey = rc.Key
+	cfg.stateMux.Unlock()
+
+	if rc.Key == "" || rc.Key == DisabledKey {
+		cfg.Disable()
+	} else if previouslyMissingKey {
+		cfg.Enable()
+	}
+	return rc, nil
+}
+
+// IsActive tells whether telemetry configuration allows for data collection
+// now or later. An inactive configuration cannot be reconfigured.
+func (cfg *Config) IsActive() bool {
+	if cfg == nil {
+		return false
+	}
+	cfg.stateMux.RLock()
+	defer cfg.stateMux.RUnlock()
+	return cfg.StorageKey != DisabledKey
+}
+
+// IsEnabled tells whether the configuration allows for data collection now.
+func (cfg *Config) IsEnabled() bool {
+	if cfg == nil {
+		return false
+	}
+	cfg.stateMux.RLock()
+	defer cfg.stateMux.RUnlock()
+	return cfg.StorageKey != "" && cfg.StorageKey != DisabledKey && cfg.enabled
+}
+
+// Enable data reporting if the client is configured.
+func (cfg *Config) Enable() {
+	if !cfg.IsActive() || cfg.IsEnabled() {
+		return
+	}
+	cfg.stateMux.Lock()
+	cfg.enabled = true
+	cfg.stateMux.Unlock()
+	cfg.Gatherer().Start(
+		telemeter.WithGroups(cfg.GroupType, cfg.GroupID),
+		// Don't capture the time, but call WithNoDuplicates on every gathering
+		// iteration, so that the time is updated.
+		func(co *telemeter.CallOptions) {
+			// Issue a possible duplicate only once a day as a heartbeat.
+			telemeter.WithNoDuplicates(time.Now().Format(time.DateOnly))(co)
+		},
+	)
+}
+
+// Disable data reporting of the configured client.
+func (cfg *Config) Disable() {
+	if !cfg.IsEnabled() {
+		return
+	}
+	cfg.stateMux.Lock()
+	cfg.enabled = false
+	cfg.stateMux.Unlock()
+	cfg.Gatherer().Stop()
 }
 
 // Gatherer returns the telemetry gatherer instance.
 func (cfg *Config) Gatherer() Gatherer {
-	if cfg == nil {
+	if !cfg.IsActive() {
 		return &nilGatherer{}
 	}
 	cfg.onceGatherer.Do(func() {
-		if cfg.Enabled() {
-			period := cfg.GatherPeriod
-			if cfg.GatherPeriod.Nanoseconds() == 0 {
-				period = 1 * time.Hour
-			}
-			cfg.gatherer = newGatherer(cfg.ClientName, cfg.Telemeter(), period)
-		} else {
-			cfg.gatherer = &nilGatherer{}
+		period := cfg.GatherPeriod
+		if cfg.GatherPeriod.Nanoseconds() == 0 {
+			period = 1 * time.Hour
 		}
+		if cfg.gatherer != nil {
+			// cfg.gatherer could be set to a mock for testing purposes.
+			return
+		}
+		// If configuration is disabled, cfg.Telemeter() returns nilTelemeter.
+		_ = cfg.Telemeter()
+		cfg.gatherer = newGatherer(cfg.ClientName, cfg.telemeter, period)
 	})
 	return cfg.gatherer
 }
 
 // Telemeter returns the instance of the telemeter.
 func (cfg *Config) Telemeter() telemeter.Telemeter {
-	if cfg == nil {
+	if !cfg.IsActive() {
 		return &nilTelemeter{}
 	}
 	cfg.onceTelemeter.Do(func() {
-		if cfg.Enabled() {
-			cfg.telemeter = segment.NewTelemeter(
-				cfg.StorageKey,
-				cfg.Endpoint,
-				cfg.ClientID,
-				cfg.ClientName,
-				cfg.ClientVersion,
-				cfg.PushInterval,
-				cfg.BatchSize)
-		} else {
-			cfg.telemeter = &nilTelemeter{}
+		if cfg.telemeter != nil {
+			// cfg.telemeter could be set to a mock for testing purposes.
+			return
 		}
+		cfg.telemeter = segment.NewTelemeter(
+			cfg.StorageKey,
+			cfg.Endpoint,
+			cfg.ClientID,
+			cfg.ClientName,
+			cfg.ClientVersion,
+			cfg.PushInterval,
+			cfg.BatchSize)
 	})
+	if !cfg.IsEnabled() {
+		return &nilTelemeter{}
+	}
 	return cfg.telemeter
 }
 
@@ -115,13 +198,6 @@ func (cfg *Config) AddInterceptorFunc(event string, f Interceptor) {
 		cfg.interceptors = make(map[string][]Interceptor, 1)
 	}
 	cfg.interceptors[event] = append(cfg.interceptors[event], f)
-}
-
-// RemoveInterceptors cleans up the list of telemetry interceptors.
-func (cfg *Config) RemoveInterceptors() {
-	cfg.interceptorsLock.Lock()
-	defer cfg.interceptorsLock.Unlock()
-	cfg.interceptors = nil
 }
 
 // GetGRPCInterceptor returns an API interceptor function for GRPC requests.
