@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stretchr/testify/suite"
@@ -271,7 +272,7 @@ func (suite *PLOPServiceTestSuite) TestPLOPCases() {
 
 			suite.Equal(c.expectedTotalListeningEndpoints, response.TotalListeningEndpoints)
 
-			suite.Equal(c.expectedPlops, actualPlops)
+			protoassert.SlicesEqual(suite.T(), c.expectedPlops, actualPlops)
 		})
 	}
 
