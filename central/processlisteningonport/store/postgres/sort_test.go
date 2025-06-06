@@ -82,16 +82,36 @@ func (suite *SortSuite) TestSortVarious() {
 		DeploymentId: fixtureconsts.Deployment1,
 		PodId:        fixtureconsts.PodName2,
 		PodUid:       fixtureconsts.PodUID2,
+	}
+
+	plop6 := storage.ProcessListeningOnPort{
+		DeploymentId: fixtureconsts.Deployment1,
+		PodId:        fixtureconsts.PodName2,
+		PodUid:       fixtureconsts.PodUID2,
 		Signal: &storage.ProcessSignal{
 			ExecFilePath: execFilePath1,
 		},
 	}
 
-	plops := []*storage.ProcessListeningOnPort{&plop3, &plop5, &plop1, &plop2, &plop4}
+	plop7 := storage.ProcessListeningOnPort{
+		Endpoint: &storage.ProcessListeningOnPort_Endpoint{
+			Port:     1234,
+			Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+		},
+		DeploymentId: fixtureconsts.Deployment1,
+		PodId:        fixtureconsts.PodName2,
+		PodUid:       fixtureconsts.PodUID2,
+		Signal: &storage.ProcessSignal{
+			ExecFilePath: execFilePath1,
+		},
+	}
+
+
+	plops := []*storage.ProcessListeningOnPort{&plop3, &plop7, &plop5, &plop1, &plop6, &plop2, &plop4}
 
 	sortPlops(plops)
 
-	expectedSortedPlops := []*storage.ProcessListeningOnPort{&plop1, &plop2, &plop3, &plop4, &plop5}
+	expectedSortedPlops := []*storage.ProcessListeningOnPort{&plop1, &plop2, &plop3, &plop4, &plop5, &plop6, &plop7}
 
 	protoassert.SlicesEqual(suite.T(), expectedSortedPlops, plops)
 }
