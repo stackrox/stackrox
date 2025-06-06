@@ -2,6 +2,7 @@ package phonehome
 
 import (
 	"context"
+	"maps"
 	"time"
 
 	"github.com/pkg/errors"
@@ -28,7 +29,7 @@ func (*nilGatherer) AddGatherer(GatherFunc)    {}
 
 type gatherer struct {
 	clientType  string
-	telemeter   telemeter.Telemeter
+	telemeter   func() telemeter.Telemeter
 	period      time.Duration
 	stopSig     concurrency.Signal
 	ctx         context.Context
@@ -40,7 +41,7 @@ type gatherer struct {
 	tickerFactory func(time.Duration) *time.Ticker
 }
 
-func newGatherer(clientType string, t telemeter.Telemeter, p time.Duration) *gatherer {
+func newGatherer(clientType string, t func() telemeter.Telemeter, p time.Duration) *gatherer {
 	return &gatherer{
 		clientType: clientType,
 		telemeter:  t,
@@ -60,9 +61,7 @@ func (g *gatherer) gather() map[string]any {
 		if props != nil && result == nil {
 			result = make(map[string]any, len(props))
 		}
-		for k, v := range props {
-			result[k] = v
-		}
+		maps.Copy(result, props)
 	}
 	return result
 }
@@ -72,16 +71,14 @@ func (g *gatherer) identify() {
 	g.gathering.Lock()
 	defer g.gathering.Unlock()
 	data := g.gather()
+	g.telemeter().Identify(append(g.opts, telemeter.WithTraits(data))...)
+
 	// Track event makes the properties effective for the user on analytics.
-	// Duplicates are dropped during a day. The daily potential duplicate event
-	// serves as a heartbeat.
-	g.telemeter.Track("Updated "+g.clientType+" Identity", nil, append(g.opts,
-		telemeter.WithTraits(data))...)
+	// This call may wait until the client has fully send its initial identity.
+	go g.telemeter().Track("Updated "+g.clientType+" Identity", nil, g.opts...)
 }
 
 func (g *gatherer) loop() {
-	// Send initial data on start:
-	g.identify()
 	ticker := g.tickerFactory(g.period)
 	defer ticker.Stop()
 	for !g.stopSig.IsDone() {
@@ -105,6 +102,9 @@ func (g *gatherer) Start(opts ...telemeter.Option) {
 		g.ctx, _ = concurrency.DependentContext(context.Background(), &g.stopSig)
 		g.opts = opts
 	})
+	// Enqueue initial data on start, synchronously.
+	g.identify()
+
 	go g.loop()
 }
 

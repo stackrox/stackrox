@@ -10,9 +10,9 @@ func Test_With(t *testing.T) {
 	opts := ApplyOptions([]Option{
 		WithUserID("userID"),
 		WithClient("clientID", "clientType", "clientVersion"),
-		WithGroups("groupA", "groupA_id1"),
-		WithGroups("groupA", "groupA_id2"),
-		WithGroups("groupB", "groupB_id"),
+		WithGroup("groupA", "groupA_id1"),
+		WithGroup("groupA", "groupA_id2"),
+		WithGroup("groupB", "groupB_id"),
 		WithNoDuplicates("test"),
 	},
 	)
