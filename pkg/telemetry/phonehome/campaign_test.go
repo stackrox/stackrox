@@ -258,4 +258,9 @@ func TestCompile(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("nil campaign", func(t *testing.T) {
+		var campaign APICallCampaign
+		assert.NoError(t, campaign.Compile())
+	})
 }
