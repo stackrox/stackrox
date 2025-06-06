@@ -229,6 +229,66 @@ func GetPlopStorage9() *storage.ProcessListeningOnPortStorage {
 	}
 }
 
+func GetPlop7() *storage.ProcessListeningOnPort {
+	return &storage.ProcessListeningOnPort{
+		ContainerName: "test_container1",
+		PodId:         fixtureconsts.PodName1,
+		PodUid:        fixtureconsts.PodUID1,
+		DeploymentId:  fixtureconsts.Deployment1,
+		ClusterId:     fixtureconsts.Cluster1,
+		Namespace:     fixtureconsts.Namespace1,
+		Endpoint: &storage.ProcessListeningOnPort_Endpoint{
+			Port:     1234,
+			Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+		},
+		Signal: &storage.ProcessSignal{
+			Name:         "test_process1",
+			Args:         "test_arguments1",
+			ExecFilePath: "test_path1",
+		},
+	}
+}
+
+func GetPlop8() *storage.ProcessListeningOnPort {
+	return &storage.ProcessListeningOnPort{
+		ContainerName: "test_container2",
+		PodId:         fixtureconsts.PodName3,
+		PodUid:        fixtureconsts.PodUID3,
+		DeploymentId:  fixtureconsts.Deployment1,
+		ClusterId:     fixtureconsts.Cluster1,
+		Namespace:     fixtureconsts.Namespace1,
+		Endpoint: &storage.ProcessListeningOnPort_Endpoint{
+			Port:     4321,
+			Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+		},
+		Signal: &storage.ProcessSignal{
+			Name:         "test_process2",
+			Args:         "test_arguments2",
+			ExecFilePath: "test_path2",
+		},
+	}
+}
+
+func GetPlop9() *storage.ProcessListeningOnPort {
+	return &storage.ProcessListeningOnPort{
+		ContainerName: "test_container2",
+		PodId:         fixtureconsts.PodName3,
+		PodUid:        fixtureconsts.PodUID3,
+		DeploymentId:  fixtureconsts.Deployment1,
+		ClusterId:     fixtureconsts.Cluster1,
+		Namespace:     fixtureconsts.Namespace1,
+		Endpoint: &storage.ProcessListeningOnPort_Endpoint{
+			Port:     80,
+			Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+		},
+		Signal: &storage.ProcessSignal{
+			Name:         "test_process3",
+			Args:         "test_arguments3",
+			ExecFilePath: "test_path3",
+		},
+	}
+}
+
 // GetPlopStorageExpired1 Return an expired plop for the database
 func GetPlopStorageExpired1() *storage.ProcessListeningOnPortStorage {
 	return &storage.ProcessListeningOnPortStorage{

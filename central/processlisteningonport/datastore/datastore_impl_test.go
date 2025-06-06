@@ -2870,3 +2870,20 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePLOPsWithoutPodUIDScaleRaceCondit
 	suite.GreaterOrEqual(int(plopsWithoutPodUids), totalPrunedCount/2)
 	suite.LessOrEqual(int(plopsWithoutPodUids), totalPrunedCount)
 }
+
+func (suite *PLOPDataStoreTestSuite) TestSort1000000() {
+	nport := 100
+	nprocess := 100
+	npod := 100
+
+	suite.makeRandomPlops(nport, nprocess, npod, fixtureconsts.Deployment1)
+
+	startTime := time.Now()
+	newPlops, err := suite.datastore.GetProcessListeningOnPort(
+		suite.hasWriteCtx, fixtureconsts.Deployment1)
+	suite.NoError(err)
+	duration := time.Since(startTime)
+
+	fmt.Printf("Fetching %d plops %s took\n", len(newPlops), duration)
+
+}
