@@ -35,19 +35,26 @@ runs:
       run: |
         set +e
         set -x
-        du -ks /mnt/usr/share/*
-        du -ks /mnt/usr/local/lib/*
-        du -ks /mnt/opt/*
-        du -ks /mnt/opt/hostedtoolcache/*
         cleanup=(
           /usr/share/dotnet
-          /usr/local/lib/android
+          /usr/share/miniconda
+          /usr/share/swift
+          /usr/share/kotlinc
           /opt/ghc
           /opt/hostedtoolcache/CodeQL
           /opt/hostedtoolcache/Ruby
+          /opt/az
+          /opt/hostedtoolcache/CodeQL
+          /usr/local/lib/android
+
+          /mnt/usr/local/lib/node_modules
+          /mnt/opt/hostedtoolcache/node
+          /mnt/opt/pipx
+          /mnt/opt/hostedtoolcache/Python
+          /mnt/opt/hostedtoolcache/go
         )
         for d in "${cleanup[@]}"; do
-          free=$(df -BG --output=avail /)
+          free=$(df -BG --output=avail / | tail -1)
           if [[ ${free%G} -gt "${{ inputs.free-disk-space }}" ]]; then
             echo "Reached required free disk space [${{ inputs.free-disk-space }}]"
             break
