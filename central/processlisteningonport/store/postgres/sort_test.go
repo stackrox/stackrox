@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -92,5 +93,5 @@ func (suite *SortSuite) TestSortVarious() {
 
 	expectedSortedPlops := []*storage.ProcessListeningOnPort{&plop1, &plop2, &plop3, &plop4, &plop5}
 
-	suite.Equal(expectedSortedPlops, plops)
+	protoassert.SlicesEqual(suite.T(), expectedSortedPlops, plops)
 }
