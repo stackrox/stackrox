@@ -30,8 +30,6 @@ var (
 	config *centralConfig
 	once   sync.Once
 	log    = logging.LoggerForModule()
-
-	startMux sync.RWMutex
 )
 
 type centralConfig struct {
