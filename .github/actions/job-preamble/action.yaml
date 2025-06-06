@@ -15,14 +15,48 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Check installed tools
+    - name: Auth gcloud
+      uses: 'google-github-actions/auth@v2'
+      with:
+        credentials_json: '${{ inputs.gcp-account }}'
+        export_environment_variables: true
+        create_credentials_file: true
+        cleanup_credentials: false
+
+    - name: Check gcloud CLI version
+      id: gcloud-version-check
+      continue-on-error: true
       shell: bash
       run: |
-        set +e
-        set -x
-        gcloud version && which gcloud
-        bq version && which bq
-        true
+        version=$(gcloud info --format="value(basic.version)")
+        target_gcloud_version="${{ inputs.gcloud-version }}"
+        if sort -bcV <<< "${target_gcloud_version}"$'\n'"${version}"; then
+          echo "Installed gcloud/google-sdk version is ${version} which is newer than the expected version ${target_gcloud_version}."
+        else
+          echo "Installed gcloud/google-sdk version is ${version} which is older than the expected version ${target_gcloud_version}."
+          exit 1
+        fi
+
+    - name: Install gcloud CLI
+      if: steps.gcloud-version-check.outcome == 'failure'
+      uses: 'google-github-actions/setup-gcloud@v2'
+      with:
+        version: '>= ${{ inputs.gcloud-version }}'  # does not check installed gcloud version. checks toolcache for previously installed and cached
+
+    - name: Record job info
+      uses: gacts/run-and-post-run@d803f6920adc9a47eeac4cb6c93dbc2e2890c684 # v1.4.0
+      env:
+        GCP_SERVICE_ACCOUNT_STACKROX_CI: ${{ inputs.gcp-account }}
+      if: "${{ env.GCP_SERVICE_ACCOUNT_STACKROX_CI != '' }}"
+      with:
+        shell: bash
+        run: >
+          source scripts/ci/lib.sh;
+          create_job_record "${{ github.job }}" "gha" &
+        post: >
+          source scripts/ci/lib.sh;
+          update_job_record outcome "${{ job.status }}" stopped_at "CURRENT_TIMESTAMP()";
+          df --si /;
 
     - name: Free disk space, delete unused tools
       id: delete-unused-tools
@@ -89,49 +123,3 @@ runs:
         # Prevent fatal error "detected dubious ownership in repository" from recent git.
         git config --global --add safe.directory "$(pwd)"
       shell: bash
-
-    - name: Auth gcloud
-      uses: 'google-github-actions/auth@v2'
-      with:
-        credentials_json: '${{ inputs.gcp-account }}'
-        export_environment_variables: true
-        create_credentials_file: true
-        cleanup_credentials: false
-
-    - name: Check gcloud CLI version
-      id: gcloud-version-check
-      continue-on-error: true
-      shell: bash
-      run: |
-        set -x
-        gcloud info
-        version=$(gcloud info --format="value(basic.version)")
-        echo "version=${version}" >> "$GITHUB_OUTPUT"
-        target_gcloud_version="${{ inputs.gcloud-version }}"
-        if sort -bcV <<< "${target_gcloud_version}"$'\n'"${version}"; then
-          echo "Installed gcloud/google-sdk version is ${version} which is newer than the expected version ${target_gcloud_version}."
-        else
-          echo "Installed gcloud/google-sdk version is ${version} which is older than the expected version ${target_gcloud_version}."
-          exit 1
-        fi
-
-    - name: Install gcloud CLI
-      if: steps.gcloud-version-check.outcome == 'failure'
-      uses: 'google-github-actions/setup-gcloud@v2'
-      with:
-        version: '>= ${{ inputs.gcloud-version }}'  # does not check installed gcloud version. checks toolcache for previously installed and cached
-
-    - name: Record job info
-      uses: gacts/run-and-post-run@d803f6920adc9a47eeac4cb6c93dbc2e2890c684 # v1.4.0
-      env:
-        GCP_SERVICE_ACCOUNT_STACKROX_CI: ${{ inputs.gcp-account }}
-      if: "${{ env.GCP_SERVICE_ACCOUNT_STACKROX_CI != '' }}"
-      with:
-        shell: bash
-        run: >
-          source scripts/ci/lib.sh;
-          create_job_record "${{ github.job }}" "gha";
-        post: >
-          source scripts/ci/lib.sh;
-          update_job_record outcome "${{ job.status }}" stopped_at "CURRENT_TIMESTAMP()";
-          df --si /;
