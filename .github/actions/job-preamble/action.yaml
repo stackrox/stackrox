@@ -27,8 +27,6 @@ runs:
       continue-on-error: true
       shell: bash
       run: |
-        set +e
-        set -x
         echo "GOOGLE_APPLICATION_CREDENTIALS:${GOOGLE_APPLICATION_CREDENTIALS}"
         if [[ "$(gcloud config get-value core/project 2>/dev/null)" == "acs-san-stackroxci" ]]; then
           echo "Current project is already set to acs-san-stackroxci. Assuming configuration already applied."
@@ -41,13 +39,12 @@ runs:
       continue-on-error: true
       shell: bash
       run: |
-        ps -ef
         version=$(gcloud info --format="value(basic.version)")
         target_gcloud_version="${{ inputs.gcloud-version }}"
         if sort -bcV <<< "${target_gcloud_version}"$'\n'"${version}"; then
-          echo "Installed gcloud/google-sdk version is ${version} which is newer than the expected version ${target_gcloud_version}."
+          echo "gcloud/google-sdk version ${version} is newer than the expected version ${target_gcloud_version}."
         else
-          echo "Installed gcloud/google-sdk version is ${version} which is older than the expected version ${target_gcloud_version}."
+          echo "gcloud/google-sdk version ${version} is older than the expected version ${target_gcloud_version}."
           exit 1
         fi
 
@@ -64,9 +61,8 @@ runs:
       run: |
         {
           source scripts/ci/lib.sh
-          create_job_record "${{ github.job }}" "gha" >/tmp/record-job.log 2>&1;
+          create_job_record "${{ github.job }}" "gha" >/tmp/record-job-pre.log 2>&1;
         } </dev/null >/dev/null 2>&1 &
-        echo "GOOGLE_APPLICATION_CREDENTIALS:${GOOGLE_APPLICATION_CREDENTIALS}"
 
     # bugfeature: run-and-post-run waits for each line to complete as a single command
     - name: Record job post
@@ -81,8 +77,7 @@ runs:
           source scripts/ci/lib.sh;
           update_job_record outcome "${{ job.status }}" stopped_at "CURRENT_TIMESTAMP()";
           df --si /;
-          set -x;
-          cat /tmp/record-job.log || true;
+          cat /tmp/record-job-pre.log || true;
 
     - name: Free disk space, delete unused tools
       id: delete-unused-tools
