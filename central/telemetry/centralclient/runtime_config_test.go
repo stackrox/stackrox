@@ -52,7 +52,6 @@ func Test_centralConfig_Reload(t *testing.T) {
 	t.Run("reload config with no changes", func(t *testing.T) {
 		require.NoError(t, cfg.Reload())
 		require.True(t, cfg.IsValid())
-		assert.True(t, cfg.IsEnabled())
 		assert.Equal(t, remoteKey, cfg.StorageKey)
 		assert.Equal(t, append(permanentTelemetryCampaign,
 			phonehome.MethodPattern("{put,delete}"),
@@ -71,7 +70,6 @@ func Test_centralConfig_Reload(t *testing.T) {
 		err := cfg.Reload()
 		require.NoError(t, err)
 		assert.True(t, cfg.IsValid())
-		assert.True(t, cfg.IsEnabled())
 		assert.Equal(t, "anotherKey", cfg.StorageKey)
 		assert.Equal(t, append(permanentTelemetryCampaign,
 			phonehome.MethodPattern("GET"),
@@ -86,7 +84,6 @@ func Test_centralConfig_Reload(t *testing.T) {
 			err.Error())
 		// The good config should be preserved.
 		assert.True(t, cfg.IsValid())
-		assert.True(t, cfg.IsEnabled())
 		assert.Equal(t, "anotherKey", cfg.StorageKey)
 		assert.Equal(t, append(permanentTelemetryCampaign,
 			phonehome.MethodPattern("GET"),
@@ -131,7 +128,6 @@ func Test_centralConfig_Reload(t *testing.T) {
 			"api_call_campaign": [{"method": "Test"}]}`)
 		tickChan <- time.Now()
 		assert.EventuallyWithT(t, func(collect *assert.CollectT) {
-			assert.True(collect, cfg.IsEnabled())
 			assert.Equal(collect, remoteKey, cfg.Config.StorageKey)
 		}, 1*time.Second, 10*time.Millisecond)
 
@@ -140,7 +136,6 @@ func Test_centralConfig_Reload(t *testing.T) {
 		tickChan <- time.Now()
 		assert.EventuallyWithT(t, func(collect *assert.CollectT) {
 			assert.False(collect, cfg.IsValid())
-			assert.False(collect, cfg.IsEnabled())
 			assert.Equal(collect, phonehome.DisabledKey, cfg.Config.StorageKey)
 		}, 1*time.Second, 10*time.Millisecond)
 	})
