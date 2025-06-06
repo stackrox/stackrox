@@ -7,13 +7,6 @@ set -euo pipefail
 setup_gcp() {
     info "Setting up GCP auth and config"
 
-    local service_account
-    if [[ -n "${GCP_SERVICE_ACCOUNT_STACKROX_CI:-}" ]]; then
-        service_account="${GCP_SERVICE_ACCOUNT_STACKROX_CI}"
-    else
-        die "Support is missing for this environment"
-    fi
-
     require_executable "gcloud"
     local gcp_credentials_file="/tmp/gcp.json"
 
@@ -32,6 +25,13 @@ setup_gcp() {
 
         echo "GOOGLE_APPLICATION_CREDENTIALS:${GOOGLE_APPLICATION_CREDENTIALS}"
         return
+    fi
+
+    local service_account
+    if [[ -n "${GCP_SERVICE_ACCOUNT_STACKROX_CI:-}" ]]; then
+        service_account="${GCP_SERVICE_ACCOUNT_STACKROX_CI}"
+    else
+        die "Support is missing for this environment"
     fi
 
     gcloud auth activate-service-account --key-file <(echo "$service_account")
