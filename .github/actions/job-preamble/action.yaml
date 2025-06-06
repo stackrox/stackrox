@@ -1,12 +1,54 @@
 name: Job Preamble
 description: Common steps for most jobs
 inputs:
+  gcloud-version:
+    description: 'expected gcloud/sdk version'
+    required: false
+    default: 363.0.0
   gcp-account:
     description: 'Account to be used to upload tests data'
     required: true
 runs:
   using: composite
   steps:
+    - name: Auth gcloud
+      uses: 'google-github-actions/auth@v2'
+      with:
+        credentials_json: '${{ inputs.gcp-account }}'
+        export_environment_variables: true
+        create_credentials_file: true
+        cleanup_credentials: true
+
+    - name: Test gcp auth
+      continue-on-error: true
+      shell: bash
+      run: |
+        echo "GOOGLE_APPLICATION_CREDENTIALS:${GOOGLE_APPLICATION_CREDENTIALS}"
+        if [[ "$(gcloud config get-value core/project 2>/dev/null)" == "acs-san-stackroxci" ]]; then
+          echo "Current project is already set to acs-san-stackroxci. Assuming configuration already applied."
+        fi
+
+    - name: Check gcloud CLI version
+      id: gcloud-version-check
+      continue-on-error: true
+      shell: bash
+      run: |
+        version=$(gcloud info --format="value(basic.version)")
+        target_gcloud_version="${{ inputs.gcloud-version }}"
+        if sort -bcV <<< "${target_gcloud_version}"$'\n'"${version}"; then
+          echo "gcloud/google-sdk version ${version} is newer than the expected version ${target_gcloud_version}."
+        else
+          echo -e "> [!WARNING]\n> gcloud/google-sdk version ${version} is older than the expected version ${target_gcloud_version}." \
+            >> $GITHUB_STEP_SUMMARY
+          exit 1
+        fi
+
+    - name: Install gcloud CLI
+      if: steps.gcloud-version-check.outcome == 'failure'
+      uses: 'google-github-actions/setup-gcloud@v2'
+      with:
+        version: '>= ${{ inputs.gcloud-version }}'  # does not check installed gcloud version. checks toolcache for previously installed and cached
+
     - name: Recover docker image cache space
       run: |
         df --si /
@@ -42,9 +84,6 @@ runs:
         # Prevent fatal error "detected dubious ownership in repository" from recent git.
         git config --global --add safe.directory "$(pwd)"
       shell: bash
-
-    - name: Set up gcloud CLI
-      uses: 'google-github-actions/setup-gcloud@v2'
 
     - name: Record job info
       uses: gacts/run-and-post-run@d803f6920adc9a47eeac4cb6c93dbc2e2890c684 # v1.4.0
