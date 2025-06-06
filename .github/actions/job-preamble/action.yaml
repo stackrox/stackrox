@@ -43,7 +43,16 @@ runs:
       with:
         version: '>= ${{ inputs.gcloud-version }}'  # does not check installed gcloud version. checks toolcache for previously installed and cached
 
-    - name: Record job info
+    - name: Record job pre
+      id: record-job-info
+      continue-on-error: true
+      shell: bash
+      run: |
+        source scripts/ci/lib.sh;
+        create_job_record "${{ github.job }}" "gha" &
+
+    # bugfeature: run-and-post-run waits for each line to complete as a single command
+    - name: Record job post
       id: record-job-info
       uses: gacts/run-and-post-run@d803f6920adc9a47eeac4cb6c93dbc2e2890c684 # v1.4.0
       env:
@@ -51,11 +60,6 @@ runs:
       if: "${{ env.GCP_SERVICE_ACCOUNT_STACKROX_CI != '' }}"
       with:
         shell: bash
-        run: >
-          source scripts/ci/lib.sh;
-          create_job_record "${{ github.job }}" "gha" &
-          pid=$!
-          echo "bgpid=${pid}" >> GITHUB_OUTPUT
         post: >
           source scripts/ci/lib.sh;
           update_job_record outcome "${{ job.status }}" stopped_at "CURRENT_TIMESTAMP()";
@@ -69,7 +73,6 @@ runs:
         set +e
         set -x
         ps -ef
-        ps -ef | grep "${{ steps.record-job-info.outputs.bgpid }}"
         df --si /
         # preinstalled tools not used. ordered by size asc
         cleanup=(
