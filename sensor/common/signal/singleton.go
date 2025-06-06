@@ -1,19 +1,16 @@
 package signal
 
 import (
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 )
 
-// New creates a new signal service
-func New(pipeline Pipeline, indicators chan *message.ExpiringMessage, opts ...Option) Service {
+func NewService(opts ...Option) Service {
 	srv := &serviceImpl{
-		queue:            make(chan *v1.Signal, maxBufferSize),
-		indicators:       indicators,
-		processPipeline:  pipeline,
+		queue:            make(chan *storage.ProcessSignal, env.ProcessSignalChannelBufferSize.IntegerSetting()),
 		authFuncOverride: authFuncOverride,
-		writer:           nil,
 	}
+
 	for _, o := range opts {
 		o(srv)
 	}
