@@ -3,6 +3,7 @@ description: Cache Go Dependencies
 runs:
   using: composite
   steps:
+    - uses: chetan/git-restore-mtime-action@v2
     - name: Determine Go cache paths
       id: cache-paths
       run: |
