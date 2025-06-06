@@ -11,6 +11,18 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 ## [NEXT RELEASE]
 
+### Added Features
+
+### Removed Features
+
+### Deprecated Features
+
+### Technical Changes
+
+## [4.8.0]
+
+
+
 **HELM USERS**: Please see ROX-27622 under "technical changes" to avoid upgrade failures!
 
 ### Added Features
