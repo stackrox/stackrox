@@ -154,6 +154,8 @@ bq_update_job_record() {
 
     bq query \
         --use_legacy_sql=false \
+        --batch \
+        --synchronous_mode=false \
         "${sql_params[@]}" \
         "UPDATE ${_JOBS_TABLE_NAME}
         SET $update_set
