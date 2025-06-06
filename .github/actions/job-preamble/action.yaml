@@ -67,7 +67,7 @@ runs:
       run: |
         source scripts/ci/lib.sh;
         export -f create_job_record
-        nohup bash -c 'create_job_record "${{ github.job }}" "gha"' </dev/null >/dev/null 2>&1 &
+        create_job_record "${{ github.job }}" "gha" </dev/null >/dev/null 2>&1 &
         wc -l /tmp/bgcounter || true
         wc -l /tmp/bg2counter || true
         echo "GOOGLE_APPLICATION_CREDENTIALS:${GOOGLE_APPLICATION_CREDENTIALS}"
@@ -85,8 +85,9 @@ runs:
           source scripts/ci/lib.sh;
           update_job_record outcome "${{ job.status }}" stopped_at "CURRENT_TIMESTAMP()";
           df --si /;
+          set -x;
           wc -l /tmp/bgcounter || true;
-          wc -l /tmp/bg2counter || true
+          wc -l /tmp/bg2counter || true;
           cat /tmp/bgcounter || true;
           cat /tmp/bg2counter || true;
 
