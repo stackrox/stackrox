@@ -43,7 +43,7 @@ runs:
           /opt/hostedtoolcache/Ruby
         )
         for d in "${cleanup[@]}"; do
-          du -ks ${d}]../*
+          du -ks ${d}/../*
           free=$(df -BG --output=avail /)
           if [[ $free -gt "${{ inputs.free-disk-space }}" ]]; then
             echo "Reached required free disk space [${{ inputs.free-disk-space }}]"
