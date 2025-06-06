@@ -53,7 +53,7 @@ runs:
 
     # bugfeature: run-and-post-run waits for each line to complete as a single command
     - name: Record job post
-      id: record-job-info
+      id: record-job-info-post
       uses: gacts/run-and-post-run@d803f6920adc9a47eeac4cb6c93dbc2e2890c684 # v1.4.0
       env:
         GCP_SERVICE_ACCOUNT_STACKROX_CI: ${{ inputs.gcp-account }}
