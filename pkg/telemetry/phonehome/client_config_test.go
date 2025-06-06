@@ -6,15 +6,101 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestConfig_Enabled(t *testing.T) {
+func TestConfig_IsValid(t *testing.T) {
 	var cfg *Config
-	assert.False(t, cfg.Enabled())
+	assert.False(t, cfg.IsValid())
+	assert.False(t, cfg.IsEnabled())
 
 	cfg = &Config{}
-	assert.False(t, cfg.Enabled())
+	assert.True(t, cfg.IsValid())
+	assert.False(t, cfg.IsEnabled())
 
 	cfg = &Config{
 		StorageKey: "test-key",
 	}
-	assert.True(t, cfg.Enabled())
+	assert.True(t, cfg.IsValid())
+	assert.False(t, cfg.IsEnabled())
+
+	cfg = &Config{
+		StorageKey: DisabledKey,
+	}
+	assert.False(t, cfg.IsValid())
+	assert.False(t, cfg.IsEnabled())
+}
+
+func TestConfig_IsEnabled(t *testing.T) {
+	cfg := &Config{
+		StorageKey: "test-key",
+		telemeter:  &nilTelemeter{},
+		gatherer:   &nilGatherer{},
+	}
+	assert.True(t, cfg.IsValid())
+
+	assert.False(t, cfg.IsEnabled())
+	cfg.Disable()
+	assert.False(t, cfg.IsEnabled())
+
+	cfg.Enable()
+	assert.True(t, cfg.IsEnabled())
+	cfg.Enable()
+	assert.True(t, cfg.IsEnabled())
+
+	cfg.Disable()
+	assert.False(t, cfg.IsEnabled())
+
+	assert.True(t, cfg.IsValid())
+}
+
+func TestConfig_Reconfigure(t *testing.T) {
+	cfg := &Config{
+		telemeter: &nilTelemeter{},
+	}
+
+	t.Run("reconfigure DisabledKey with empty key", func(t *testing.T) {
+		cfg.StorageKey = DisabledKey
+		rc, err := cfg.Reconfigure("", "")
+		assert.Nil(t, rc)
+		assert.Nil(t, err)
+		assert.False(t, cfg.IsValid())
+		assert.False(t, cfg.IsEnabled())
+	})
+
+	t.Run("reconfigure DisabledKey with test key", func(t *testing.T) {
+		cfg.StorageKey = DisabledKey
+		rc, err := cfg.Reconfigure("", "test key")
+		assert.Nil(t, rc)
+		assert.Nil(t, err)
+		assert.False(t, cfg.IsValid())
+		assert.False(t, cfg.IsEnabled())
+	})
+
+	t.Run("reconfigure empty disabled config with a test key", func(t *testing.T) {
+		cfg.StorageKey = ""
+		rc, err := cfg.Reconfigure("", "test-key")
+		assert.Equal(t, &RuntimeConfig{Key: "test-key", APICallCampaign: nil}, rc)
+		assert.Nil(t, err)
+		assert.True(t, cfg.IsValid())
+		assert.False(t, cfg.IsEnabled())
+	})
+
+	t.Run("reconfigure empty enabled config with a test key", func(t *testing.T) {
+		cfg.StorageKey = ""
+		cfg.enabled = true
+		rc, err := cfg.Reconfigure("", "test-key")
+		assert.Equal(t, &RuntimeConfig{Key: "test-key", APICallCampaign: nil}, rc)
+		assert.Nil(t, err)
+		assert.True(t, cfg.IsValid())
+		assert.True(t, cfg.IsEnabled())
+	})
+
+	t.Run("reconfigure enabled config with empty key", func(t *testing.T) {
+		cfg.StorageKey = "test-key"
+		cfg.enabled = true
+		rc, err := cfg.Reconfigure("", "")
+		assert.NotNil(t, rc)
+		assert.Nil(t, err)
+		assert.True(t, cfg.IsValid())
+		assert.False(t, cfg.IsEnabled())
+	})
+
 }
