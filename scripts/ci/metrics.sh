@@ -84,8 +84,9 @@ _get_metrics_job_id() {
 bq_create_job_record() {
     setup_gcp
 
-    bq --nosync query \
+    bq query \
         --use_legacy_sql=false \
+        --synchronous_mode=false \
         --parameter="id::$1" \
         --parameter="name::$2" \
         --parameter="repo::$3" \
