@@ -111,7 +111,7 @@ require (
 	github.com/prometheus/client_golang v1.22.0
 	github.com/prometheus/client_model v0.6.2
 	github.com/prometheus/common v0.64.0
-	github.com/quay/claircore v1.5.37
+	github.com/quay/claircore v1.5.38
 	github.com/quay/claircore/toolkit v1.2.5-0.20250120211107-bea8a6c197b2
 	github.com/quay/zlog v1.1.8
 	github.com/remind101/migrate v0.0.0-20170729031349-52c1edff7319
@@ -142,7 +142,7 @@ require (
 	go.uber.org/mock v0.5.2
 	go.uber.org/zap v1.27.0
 	golang.org/x/crypto v0.39.0
-	golang.org/x/exp v0.0.0-20250305212735-054e65f0b394
+	golang.org/x/exp v0.0.0-20250408133849-7e4ce0ab07d0
 	golang.org/x/mod v0.25.0
 	golang.org/x/net v0.41.0
 	golang.org/x/oauth2 v0.30.0
@@ -500,10 +500,10 @@ require (
 	k8s.io/component-base v0.32.5 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20241105132330-32ad38e42d3f // indirect
-	modernc.org/libc v1.62.1 // indirect
+	modernc.org/libc v1.65.7 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
-	modernc.org/memory v1.9.1 // indirect
-	modernc.org/sqlite v1.37.0 // indirect
+	modernc.org/memory v1.11.0 // indirect
+	modernc.org/sqlite v1.37.1 // indirect
 	oras.land/oras-go v1.2.5 // indirect
 	sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.31.0 // indirect
 	sigs.k8s.io/json v0.0.0-20241010143419-9aa6b5e7a4b3 // indirect
