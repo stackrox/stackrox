@@ -1,18 +1,8 @@
 import withAuth from '../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../helpers/features';
 import { selectFilteredWorkflowView, visitViolations } from './Violations.helpers';
 
 describe('Violations - Filtered Workflow Views', () => {
     withAuth();
-
-    before(function () {
-        if (
-            !hasFeatureFlag('ROX_PLATFORM_COMPONENTS') ||
-            !hasFeatureFlag('ROX_PLATFORM_CVE_SPLIT')
-        ) {
-            this.skip();
-        }
-    });
 
     it('should filter the violations table when the "Applications view" is selected', () => {
         visitViolations();
