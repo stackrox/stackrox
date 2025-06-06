@@ -1,7 +1,7 @@
 name: Job Preamble
 description: Common steps for most jobs
 inputs:
-  disk-space: 20000
+  free-disk-space: 20
   gcp-account:
     description: 'Account to be used to upload tests data'
     required: true
@@ -42,8 +42,8 @@ runs:
         for d in "${cleanup[@]}"; do
           du -ks ${d}]../*
           free=$(df -BG --output=avail /)
-          if [[ $free -gt "${{ inputs.disk_space }}" ]]; then
-            echo "Reached required free disk space [${{ inputs.disk_space }}]"
+          if [[ $free -gt "${{ inputs.free-disk-space }}" ]]; then
+            echo "Reached required free disk space [${{ inputs.free-disk-space }}]"
             break
           fi
           if [[ -d "/mnt${d}" ]]; then
