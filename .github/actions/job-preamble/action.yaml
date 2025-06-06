@@ -5,6 +5,10 @@ inputs:
     description: 'Free disk space desired in GB'
     required: false
     default: 20
+  gcloud-version:
+    description: 'expected gcloud/sdk version'
+    required: false
+    default: 363.0.0
   gcp-account:
     description: 'Account to be used to upload tests data'
     required: true
@@ -20,13 +24,17 @@ runs:
         bq version && which bq
         true
 
-    - name: Remove unused gha runner tools if found
+    - name: Free disk space, delete unused tools
+      id: delete-unused-tools
+      continue-on-error: true
       shell: bash
       run: |
         set +e
         set -x
         df --si /
+        # preinstalled tools not used. ordered by size asc
         cleanup=(
+          # always remove (on runner or container job):
           /usr/share/dotnet
           /usr/share/miniconda
           /usr/share/swift
@@ -38,6 +46,7 @@ runs:
           /opt/hostedtoolcache/CodeQL
           /usr/local/lib/android
 
+          # remove if container job:
           /mnt/usr/local/lib/node_modules
           /mnt/opt/hostedtoolcache/node
           /mnt/opt/pipx
@@ -47,7 +56,7 @@ runs:
         for d in "${cleanup[@]}"; do
           free=$(df -BG --output=avail / | tail -1)
           if [[ ${free%G} -gt "${{ inputs.free-disk-space }}" ]]; then
-            echo "Reached required free disk space [${{ inputs.free-disk-space }}]"
+            echo "Reached required free disk space ${{ inputs.free-disk-space }} [${free} free]."
             break
           fi
           if [[ -d "/mnt${d}" ]]; then
@@ -58,12 +67,16 @@ runs:
           fi
         done
         df --si /
+        free=$(df -BG --output=avail / | tail -1)
+        [[ ${free%G} -gt "${{ inputs.free-disk-space }}" ]]
 
-    - name: Recover docker image cache space
+    - name: Free more disk space, docker system prune
+      if: steps.delete-unused-tools.outcome == 'failure'
+      continue-on-error: true
       run: |
         free=$(df -BG --output=avail / | tail -1)
         if [[ ${free%G} -gt "${{ inputs.free-disk-space }}" ]]; then
-          echo "Skipping docker prune. Already reached required free disk space [${{ inputs.free-disk-space }}]"
+          echo "Skipping docker prune. Already reached required free disk space ${{ inputs.free-disk-space }} [${free} free]."
           exit
         fi
         printf 'Docker prune: '
@@ -94,13 +107,17 @@ runs:
         gcloud info
         version=$(gcloud info --format="value(basic.version)")
         echo "version=${version}" >> "$GITHUB_OUTPUT"
-        [[ ${version%%.*} -ge 363 ]]
+        target_gcloud_version="${{ inputs.gcloud-version }}"
+        if ! sort -bcV <<< "${target_gcloud_version}"$'\n'"${version}"; then
+          echo "Installed gcloud/google-sdk version is ${version} which is older than the expected version ${target_gcloud_version}."
+          exit 1
+        fi
 
     - name: Install gcloud CLI
       if: steps.gcloud-version-check.outcome == 'failure'
       uses: 'google-github-actions/setup-gcloud@v2'
       with:
-        version: '>= 363.0.0'  # does not check installed gcloud version. checks toolcache for previously installed and cached
+        version: '>= ${{ inputs.gcloud-version }}'  # does not check installed gcloud version. checks toolcache for previously installed and cached
 
     - name: Record job info
       uses: gacts/run-and-post-run@d803f6920adc9a47eeac4cb6c93dbc2e2890c684 # v1.4.0
