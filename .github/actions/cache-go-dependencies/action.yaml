@@ -3,6 +3,7 @@ description: Cache Go Dependencies
 runs:
   using: composite
   steps:
+    - uses: chetan/git-restore-mtime-action@v2
     - name: Determine Go cache paths
       id: cache-paths
       run: |
@@ -23,7 +24,7 @@ runs:
       with:
         path: |
           ${{ steps.cache-paths.outputs.GOCACHE }}
-        key: go-build-v1-${{ github.job }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ hashFiles('**/go.sum') }}
+        key: go-build-v2-${{ github.job }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ hashFiles('**/go.sum') }}
 
     - name: Download Go modules
       run: make deps --always-make
