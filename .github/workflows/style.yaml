@@ -14,6 +14,10 @@ on:
 env:
   ROX_PRODUCT_BRANDING: RHACS_BRANDING
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   check-generated-files:
     env:

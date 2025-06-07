@@ -1,33 +1,119 @@
 name: Job Preamble
 description: Common steps for most jobs
 inputs:
+  free-disk-space:
+    description: 'Free disk space desired in GB'
+    required: false
+    default: 20
+  gcloud-version:
+    description: 'expected gcloud/sdk version'
+    required: false
+    default: 363.0.0
   gcp-account:
     description: 'Account to be used to upload tests data'
     required: true
 runs:
   using: composite
   steps:
-    - name: Recover docker image cache space
-      run: |
-        df --si /
-        printf 'Docker prune: '
-        docker system prune --force --all
-        df --si /
-      shell: bash
+    - name: Auth gcloud
+      uses: 'google-github-actions/auth@v2'
+      with:
+        credentials_json: '${{ inputs.gcp-account }}'
+        export_environment_variables: true
+        create_credentials_file: true
+        cleanup_credentials: false
 
-    - name: Remove unused gha runner tools if found
+    - name: Test gcp auth
+      continue-on-error: true
+      shell: bash
+      run: |
+        echo "GOOGLE_APPLICATION_CREDENTIALS:${GOOGLE_APPLICATION_CREDENTIALS}"
+        if [[ "$(gcloud config get-value core/project 2>/dev/null)" == "acs-san-stackroxci" ]]; then
+          echo "Current project is already set to acs-san-stackroxci. Assuming configuration already applied."
+        fi
+        gcloud info
+        gcloud config list
+
+    - name: Check gcloud CLI version
+      id: gcloud-version-check
+      continue-on-error: true
+      shell: bash
+      run: |
+        version=$(gcloud info --format="value(basic.version)")
+        target_gcloud_version="${{ inputs.gcloud-version }}"
+        if sort -bcV <<< "${target_gcloud_version}"$'\n'"${version}"; then
+          echo "gcloud/google-sdk version ${version} is newer than the expected version ${target_gcloud_version}."
+        else
+          echo "gcloud/google-sdk version ${version} is older than the expected version ${target_gcloud_version}."
+          exit 1
+        fi
+
+    - name: Install gcloud CLI
+      if: steps.gcloud-version-check.outcome == 'failure'
+      uses: 'google-github-actions/setup-gcloud@v2'
+      with:
+        version: '>= ${{ inputs.gcloud-version }}'  # does not check installed gcloud version. checks toolcache for previously installed and cached
+
+    - name: Record job pre
+      id: record-job-info
+      continue-on-error: true
+      shell: bash
+      run: |
+        {
+          source scripts/ci/lib.sh
+          create_job_record "${{ github.job }}" "gha" >/tmp/record-job-pre.log 2>&1;
+        } </dev/null >/dev/null 2>&1 &
+
+    # bugfeature: run-and-post-run waits for each line to complete as a single command
+    - name: Record job post
+      id: record-job-info-post
+      uses: gacts/run-and-post-run@d803f6920adc9a47eeac4cb6c93dbc2e2890c684 # v1.4.0
+      env:
+        GCP_SERVICE_ACCOUNT_STACKROX_CI: ${{ inputs.gcp-account }}
+      if: "${{ env.GCP_SERVICE_ACCOUNT_STACKROX_CI != '' }}"
+      with:
+        shell: bash
+        post: >
+          source scripts/ci/lib.sh;
+          update_job_record outcome "${{ job.status }}" stopped_at "CURRENT_TIMESTAMP()";
+          df --si /;
+          cat /tmp/record-job-pre.log || true;
+
+    - name: Free disk space, delete unused tools
+      id: delete-unused-tools
+      continue-on-error: true
       shell: bash
       run: |
         set +e
         set -x
+        df --si /
+        # preinstalled tools not used. ordered by size asc
         cleanup=(
+          # always remove (on runner or container job):
           /usr/share/dotnet
-          /usr/local/lib/android
+          /usr/share/miniconda
+          /usr/share/swift
+          /usr/share/kotlinc
           /opt/ghc
           /opt/hostedtoolcache/CodeQL
           /opt/hostedtoolcache/Ruby
+          /opt/az
+          /opt/hostedtoolcache/CodeQL
+          /usr/local/lib/android
+
+          # remove if container job:
+          /mnt/usr/local/lib/node_modules
+          /mnt/opt/hostedtoolcache/node
+          /mnt/opt/pipx
+          /mnt/opt/hostedtoolcache/Python
+          /mnt/opt/hostedtoolcache/go
         )
         for d in "${cleanup[@]}"; do
+          free=$(df -BG --output=avail / | tail -1)
+          if [[ ${free%G} -gt "${{ inputs.free-disk-space }}" ]]; then
+            echo "Reached required free disk space ${{ inputs.free-disk-space }} [${free} free]."
+            break
+          fi
           if [[ -d "/mnt${d}" ]]; then
             rm -rf "/mnt${d}"
           elif [[ -d "$d" ]]; then
@@ -36,27 +122,25 @@ runs:
           fi
         done
         df --si /
+        free=$(df -BG --output=avail / | tail -1)
+        [[ ${free%G} -gt "${{ inputs.free-disk-space }}" ]]
+
+    - name: Free more disk space, docker system prune
+      if: steps.delete-unused-tools.outcome == 'failure'
+      continue-on-error: true
+      run: |
+        free=$(df -BG --output=avail / | tail -1)
+        if [[ ${free%G} -gt "${{ inputs.free-disk-space }}" ]]; then
+          echo "Skipping docker prune. Already reached required free disk space ${{ inputs.free-disk-space }} [${free} free]."
+          exit
+        fi
+        printf 'Docker prune: '
+        docker system prune --force --all
+        df --si /
+      shell: bash
 
     - name: Ignore dubious repository ownership
       run: |
         # Prevent fatal error "detected dubious ownership in repository" from recent git.
         git config --global --add safe.directory "$(pwd)"
       shell: bash
-
-    - name: Set up gcloud CLI
-      uses: 'google-github-actions/setup-gcloud@v2'
-
-    - name: Record job info
-      uses: gacts/run-and-post-run@d803f6920adc9a47eeac4cb6c93dbc2e2890c684 # v1.4.0
-      env:
-        GCP_SERVICE_ACCOUNT_STACKROX_CI: ${{ inputs.gcp-account }}
-      if: "${{ env.GCP_SERVICE_ACCOUNT_STACKROX_CI != '' }}"
-      with:
-        shell: bash
-        run: >
-          source scripts/ci/lib.sh;
-          create_job_record "${{ github.job }}" "gha";
-        post: >
-          source scripts/ci/lib.sh;
-          update_job_record outcome "${{ job.status }}" stopped_at "CURRENT_TIMESTAMP()";
-          df --si /;
