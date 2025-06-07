@@ -142,7 +142,7 @@ class ClusterTestSetsRunner:
         print(marker)
 
 
-# pylint: disable=too-many-arguments
+# pylint: disable=too-many-positional-arguments,too-many-arguments
 class ClusterTestRunner(ClusterTestSetsRunner):
     """A simple cluster test runner that:
     . provisions a cluster
