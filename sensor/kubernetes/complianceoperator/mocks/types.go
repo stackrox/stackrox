@@ -163,6 +163,20 @@ func (mr *MockInfoUpdaterMockRecorder) Start() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Start", reflect.TypeOf((*MockInfoUpdater)(nil).Start))
 }
 
+// State mocks base method.
+func (m *MockInfoUpdater) State() common.SensorComponentState {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "State")
+	ret0, _ := ret[0].(common.SensorComponentState)
+	return ret0
+}
+
+// State indicates an expected call of State.
+func (mr *MockInfoUpdaterMockRecorder) State() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "State", reflect.TypeOf((*MockInfoUpdater)(nil).State))
+}
+
 // Stop mocks base method.
 func (m *MockInfoUpdater) Stop(err error) {
 	m.ctrl.T.Helper()

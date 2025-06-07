@@ -3,6 +3,7 @@ package detector
 import (
 	"context"
 	"sort"
+	"sync/atomic"
 	"time"
 
 	"github.com/pkg/errors"
@@ -169,6 +170,7 @@ type detectorImpl struct {
 	auditStopper      concurrency.Stopper
 	serializerStopper concurrency.Stopper
 	alertStopSig      concurrency.Signal
+	state             atomic.Value
 
 	admissionCacheNeedsFlush bool
 
@@ -179,7 +181,10 @@ type detectorImpl struct {
 	deploymentsQueue  queue.SimpleQueue[*queue.DeploymentQueueItem]
 }
 
+var _ common.SensorComponent = (*detectorImpl)(nil)
+
 func (d *detectorImpl) Start() error {
+	d.state.Store(common.SensorComponentStateSTARTING)
 	go d.runDetector()
 	go d.runAuditLogEventDetector()
 	go d.serializeDeployTimeOutput()
@@ -188,6 +193,7 @@ func (d *detectorImpl) Start() error {
 	go d.processDeployment()
 	d.networkFlowsQueue.Start()
 	d.indicatorsQueue.Start()
+	d.state.Store(common.SensorComponentStateSTARTED)
 	return nil
 }
 
@@ -255,6 +261,7 @@ func (d *detectorImpl) serializeDeployTimeOutput() {
 }
 
 func (d *detectorImpl) Stop(_ error) {
+	d.state.Store(common.SensorComponentStateSTOPPING)
 	d.detectorStopper.Client().Stop()
 	d.auditStopper.Client().Stop()
 	d.serializerStopper.Client().Stop()
@@ -267,6 +274,7 @@ func (d *detectorImpl) Stop(_ error) {
 	_ = d.detectorStopper.Client().Stopped().Wait()
 	_ = d.auditStopper.Client().Stopped().Wait()
 	_ = d.serializerStopper.Client().Stopped().Wait()
+	d.state.Store(common.SensorComponentStateSTOPPED)
 }
 
 func (d *detectorImpl) Notify(e common.SensorComponentEvent) {
@@ -278,14 +286,20 @@ func (d *detectorImpl) Notify(e common.SensorComponentEvent) {
 	case common.SensorComponentEventCentralReachable:
 		d.indicatorsQueue.Resume()
 		d.networkFlowsQueue.Resume()
+		d.state.Store(common.SensorComponentStateONLINE)
 	case common.SensorComponentEventOfflineMode:
 		d.indicatorsQueue.Pause()
 		d.networkFlowsQueue.Pause()
+		d.state.Store(common.SensorComponentStateOFFLINE)
 	}
 }
 
 func (d *detectorImpl) Capabilities() []centralsensor.SensorCapability {
 	return []centralsensor.SensorCapability{centralsensor.SensorDetectionCap}
+}
+
+func (d *detectorImpl) State() common.SensorComponentState {
+	return d.state.Load().(common.SensorComponentState)
 }
 
 // ProcessPolicySync reconciles policies and flush all deployments through the detector
