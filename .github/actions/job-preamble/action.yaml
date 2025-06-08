@@ -96,7 +96,7 @@ runs:
         shell: bash
         post: >
           df --si /;
-          set +e
+          set +e;
           set -x;
           echo "GOOGLE_APPLICATION_CREDENTIALS:${GOOGLE_APPLICATION_CREDENTIALS}";
           df --si /;
