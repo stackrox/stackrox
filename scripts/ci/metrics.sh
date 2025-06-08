@@ -221,7 +221,6 @@ write_job_metrics() {
         --use_legacy_sql=false \
         --batch \
         --synchronous_mode=false \
-        --parameter="id::${id}" \
         --parameter="repo::${repo}" \
         --parameter="branch::${branch}" \
         --parameter="pr_number:INTEGER:${pr_number}" \
