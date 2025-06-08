@@ -1,0 +1,256 @@
+{{- include "srox.init" . -}}
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: admission-control
+  namespace: {{ ._rox._namespace }}
+  labels:
+    {{- include "srox.labels" (list . "deployment" "admission-control") | nindent 4 }}
+    app: admission-control
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    {{- include "srox.annotations" (list . "deployment" "admission-control") | nindent 4 }}
+spec:
+  replicas: {{ ._rox.admissionControl.replicas }}
+  minReadySeconds: 0
+  selector:
+    matchLabels:
+      app: admission-control
+  template:
+    metadata:
+      namespace: {{ ._rox._namespace }}
+      labels:
+        app: admission-control
+        {{- include "srox.podLabels" (list . "deployment" "admission-control") | nindent 8 }}
+      annotations:
+        {{- $annotations := dict "traffic.sidecar.istio.io/excludeInboundPorts" "8443" -}}
+        {{- if eq ._rox.env.openshift 4 }}
+          {{- $_ := set $annotations "openshift.io/required-scc" "restricted-v2" -}}
+        {{- end }}
+        {{- include "srox.podAnnotations" (list . "deployment" "admission-control" $annotations) | nindent 8 }}
+    spec:
+      # Attempt to schedule these on master nodes
+      {{- if ._rox.admissionControl.tolerations }}
+      tolerations:
+        {{- toYaml ._rox.admissionControl.tolerations | nindent 8 }}
+      {{- end }}
+      affinity:
+        {{- toYaml ._rox.admissionControl.affinity | nindent 8 }}
+      {{- if ._rox.admissionControl._nodeSelector }}
+      nodeSelector:
+        {{- ._rox.admissionControl._nodeSelector | nindent 8 }}
+      {{- end}}
+      {{- if ._rox.admissionControl.priorityClassName }}
+      priorityClassName: {{ ._rox.admissionControl.priorityClassName }}
+      {{- end }}
+      {{- if ._rox.admissionControl.hostAliases }}
+      hostAliases: {{ toYaml ._rox.admissionControl.hostAliases | nindent 8 }}
+      {{- end }}
+      {{- if not ._rox.env.openshift }}
+      securityContext:
+        runAsUser: 4000
+        fsGroup: 4000
+      {{- end }}
+      serviceAccountName: admission-control
+      containers:
+        - image: {{ quote ._rox.image.main.fullRef }}
+          imagePullPolicy: {{ ._rox.admissionControl.imagePullPolicy }}
+          name: admission-control
+          readinessProbe:
+            httpGet:
+              scheme: HTTPS
+              path: /ready
+              port: 8443
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 1
+          ports:
+            - containerPort: 8443
+              name: webhook
+          command:
+            - admission-control
+          resources:
+            {{- ._rox.admissionControl._resources | nindent 12 }}
+          securityContext:
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+          env:
+          - name: ROX_MEMLIMIT
+            valueFrom:
+              resourceFieldRef:
+                resource: limits.memory
+          - name: GOMAXPROCS
+            valueFrom:
+              resourceFieldRef:
+                resource: limits.cpu
+          - name: ROX_SENSOR_ENDPOINT
+            value: {{ ._rox.sensor.endpoint }}
+          {{- include "srox.envVars" (list . "deployment" "admission-controller" "admission-controller") | nindent 10 }}
+          volumeMounts:
+            - name: config
+              mountPath: /run/config/stackrox.io/admission-control/config/
+              readOnly: true
+            - name: config-store
+              mountPath: /var/lib/stackrox/admission-control/
+            - name: ca
+              mountPath: /run/secrets/stackrox.io/ca/
+              readOnly: true
+            - name: certs
+              mountPath: /run/secrets/stackrox.io/certs/
+              readOnly: true
+            - name: ssl
+              mountPath: /etc/ssl
+            - name: pki
+              mountPath: /etc/pki/ca-trust/
+            - name: additional-cas
+              mountPath: /usr/local/share/ca-certificates/
+              readOnly: true
+            {{- include "srox.injectedCABundleVolumeMount" . | nindent 12 }}
+      volumes:
+        - name: certs
+          secret:
+            secretName: admission-control-tls
+            optional: true
+            items:
+              - key: admission-control-cert.pem
+                path: cert.pem
+              - key: admission-control-key.pem
+                path: key.pem
+              - key: ca.pem
+                path: ca.pem
+        - name: ca
+          secret:
+            secretName: service-ca
+            optional: true
+        - name: config
+          configMap:
+            name: admission-control
+            optional: true
+        - name: config-store
+          emptyDir: {}
+        - name: ssl
+          emptyDir: {}
+        - name: pki
+          emptyDir: {}
+        - name: additional-cas
+          secret:
+            secretName: additional-ca-sensor
+            optional: true
+        {{- include "srox.injectedCABundleVolume" . | nindent 8 }}
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: admission-control
+  namespace: {{ ._rox._namespace }}
+  labels:
+    {{- include "srox.labels" (list . "service" "admission-control") | nindent 4 }}
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    {{- include "srox.annotations" (list . "service" "admission-control") | nindent 4 }}
+spec:
+  ports:
+    - name: https
+      port: 443
+      targetPort: webhook
+      protocol: TCP
+  selector:
+    app: admission-control
+  type: ClusterIP
+  sessionAffinity: None
+---
+{{- if ne ._rox.env.openshift 3 }}
+apiVersion: admissionregistration.k8s.io/v1
+{{- else }}
+apiVersion: admissionregistration.k8s.io/v1beta1
+{{- end }}
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: stackrox
+  labels:
+    {{- include "srox.labels" (list . "validatingwebhookconfiguration" "stackrox") | nindent 4 }}
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    {{- include "srox.annotations" (list . "validatingwebhookconfiguration" "stackrox") | nindent 4 }}
+{{- if not (or ._rox.admissionControl.listenOnEvents ._rox.admissionControl.listenOnCreates ._rox.admissionControl.listenOnUpdates) }}
+webhooks: []
+{{- else }}
+webhooks:
+  {{- if or ._rox.admissionControl.listenOnCreates ._rox.admissionControl.listenOnUpdates }}
+  - name: policyeval.stackrox.io
+    {{- if ne ._rox.env.openshift 3 }}
+    sideEffects: NoneOnDryRun
+    admissionReviewVersions: [ "v1", "v1beta1" ]
+    timeoutSeconds: {{ add 2 ._rox.admissionControl.dynamic.timeout }}
+    {{- end }}
+    rules:
+      - apiGroups:
+        - '*'
+        apiVersions:
+        - '*'
+        operations:
+        {{- if ._rox.admissionControl.listenOnCreates }}
+        - CREATE
+        {{- end }}
+        {{- if ._rox.admissionControl.listenOnUpdates }}
+        - UPDATE
+        {{- end }}
+        resources:
+          - pods
+          - deployments
+          - deployments/scale
+          - replicasets
+          - replicationcontrollers
+          - statefulsets
+          - daemonsets
+          - cronjobs
+          - jobs
+          {{- if ._rox.env.openshift }}
+          - deploymentconfigs
+          {{- end }}
+    namespaceSelector:
+      matchExpressions:
+      - key: namespace.metadata.stackrox.io/name
+        operator: NotIn
+        values:
+          - {{ ._rox._namespace }}
+          - kube-system
+          - kube-public
+          - istio-system
+    failurePolicy: Ignore
+    clientConfig:
+      caBundle: {{ required "The 'ca.cert' config option MUST be set to StackRox's Service CA certificate in order for the admission controller to be usable" ._rox.ca._cert | b64enc }}
+      service:
+        namespace: {{ ._rox._namespace }}
+        name: admission-control
+        path: /validate
+  {{- end}}
+  {{- if ._rox.admissionControl.listenOnEvents }}
+  - name: k8sevents.stackrox.io
+    {{- if ne ._rox.env.openshift 3 }}
+    sideEffects: NoneOnDryRun
+    admissionReviewVersions: [ "v1", "v1beta1" ]
+    timeoutSeconds: {{ add 2 ._rox.admissionControl.dynamic.timeout }}
+    {{- end }}
+    rules:
+      - apiGroups:
+        - '*'
+        apiVersions:
+        - '*'
+        operations:
+        - CONNECT
+        resources:
+          - pods
+          - pods/exec
+          - pods/portforward
+    failurePolicy: Ignore
+    clientConfig:
+      caBundle: {{ required "The 'ca.cert' config option MUST be set to StackRox's Service CA certificate in order for the admission controller to be usable" ._rox.ca._cert | b64enc }}
+      service:
+        namespace: {{ ._rox._namespace }}
+        name: admission-control
+        path: /events
+  {{- end }}
+{{- end }}

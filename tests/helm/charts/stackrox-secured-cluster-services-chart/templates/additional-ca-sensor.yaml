@@ -1,0 +1,19 @@
+{{- include "srox.init" . -}}
+
+{{- if ._rox._additionalCAs }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: additional-ca-sensor
+  namespace: {{ ._rox._namespace }}
+  labels:
+    {{- include "srox.labels" (list . "secret" "additional-ca-sensor") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "secret" "additional-ca-sensor") | nindent 4 }}
+type: Opaque
+stringData:
+  {{- range $name, $cert := ._rox._additionalCAs }}
+  {{ $name | quote }}: |
+    {{- $cert | nindent 4 }}
+  {{- end }}
+{{- end }}

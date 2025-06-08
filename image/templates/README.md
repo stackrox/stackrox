@@ -68,6 +68,12 @@ This example shows how to work with the `stackrox central services` chart.
 # Go to rox root
 $ cdrox
 
+# Build roxctl
+make cli
+
+# If a dry run is appropriate, there's a dev tool for that:
+./dev-tools/debug-helm-chart.sh upgrade --install --dry-run stackrox-central-services ./stackrox-central-services-chart -n stackrox --set imagePullSecrets.allowNone=true
+
 # Receive the rendered helm chart from roxctl
 # To use a custom template path use the `--debug-path=</path/to/templates>` argument.
 $ ./bin/darwin_amd64/roxctl helm output central-services --image-defaults=development_build --debug
