@@ -101,10 +101,10 @@ runs:
           df --si /;
           source scripts/ci/lib.sh;
           write_job_metrics \
-            name '${{ github.job }}' \
+            name "${{ github.job }}" \
             started_at "${{ github.event.workflow_run.started_at }}" \
             stopped_at "$(date +%s)" \
-            outcome '${{ job.status }}';
+            outcome "${{ job.status }}";
 
           ls -la /tmp/job*.log;
           for fn in /tmp/job*.log; do echo "$fn"; cat "$fn"; echo; done;
