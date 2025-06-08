@@ -118,7 +118,6 @@ runs:
           df --si /;
           source scripts/ci/lib.sh;
           write_job_metrics \
-            env_var "GOOGLE_APPLICATION_CREDENTIALS=${GOOGLE_APPLICATION_CREDENTIALS}" \
             name '${{ github.job }}' \
             started_at "${{ github.event.workflow_run.started_at }}" \
             stopped_at "$(date +%s)" \

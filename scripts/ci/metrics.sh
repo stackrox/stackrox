@@ -205,7 +205,7 @@ write_job_metrics() {
     local addl_sql_params="--parameter=id::$id"
     local addl_fields=''
     local addl_values=''
-    while [[ "$#" -gt 1 ]]; do
+    while [[ "$#" -gt 0 ]]; do
         local field="$1"; shift
         local value="$2"; shift
         if [[ "$value" == 'CURRENT_TIMESTAMP()' ]]; then
