@@ -7,6 +7,33 @@ inputs:
 runs:
   using: composite
   steps:
+    # https://cloud.google.com/bigquery/docs/write-api-streaming#node.js
+    # - name: bigquery from nodejs
+    #   uses: node
+    #   post: metrics.post.js
+
+    - name: Record job info
+      shell: bash
+      run: |
+        set -x
+        df --si /
+        source scripts/ci/lib.sh
+        trap_write_metrics \
+          name '${{ github.job }}' \
+          started_at "$(date +%s)" \
+          stopped_at 'CURRENT_TIMESTAMP()' \
+          outcome '${{ job.status }}' \
+          SIGINT
+
+    - name: Post-job check info
+      uses: gacts/run-and-post-run@d803f6920adc9a47eeac4cb6c93dbc2e2890c684 # v1.4.0
+      with:
+        shell: bash
+        post: >
+          ls -la /tmp/job*.log;
+          for fn in /tmp/job*.log; do echo "$fn"; cat "$fn"; echo; done;
+          df --si /;
+
     - name: Recover docker image cache space
       run: |
         df --si /
@@ -45,18 +72,3 @@ runs:
 
     - name: Set up gcloud CLI
       uses: 'google-github-actions/setup-gcloud@v2'
-
-    - name: Record job info
-      uses: gacts/run-and-post-run@d803f6920adc9a47eeac4cb6c93dbc2e2890c684 # v1.4.0
-      env:
-        GCP_SERVICE_ACCOUNT_STACKROX_CI: ${{ inputs.gcp-account }}
-      if: "${{ env.GCP_SERVICE_ACCOUNT_STACKROX_CI != '' }}"
-      with:
-        shell: bash
-        run: >
-          source scripts/ci/lib.sh;
-          create_job_record "${{ github.job }}" "gha";
-        post: >
-          source scripts/ci/lib.sh;
-          update_job_record outcome "${{ job.status }}" stopped_at "CURRENT_TIMESTAMP()";
-          df --si /;
