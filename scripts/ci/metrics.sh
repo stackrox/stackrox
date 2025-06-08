@@ -207,7 +207,7 @@ write_job_metrics() {
     local addl_values=''
     while [[ "$#" -gt 0 ]]; do
         local field="$1"; shift
-        local value="$2"; shift
+        local value="${2:-unknown}"; shift
         if [[ "$value" == 'CURRENT_TIMESTAMP()' ]]; then
             addl_values+=", ${value}"
         else
