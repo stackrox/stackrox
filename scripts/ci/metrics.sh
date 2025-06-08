@@ -207,11 +207,11 @@ trap_write_metrics() {
     local addl_values=''
     while [[ "$#" -gt 1 ]]; do
         local field="$1"; shift
+        local value="$2"; shift
         if [[ "$field" == 'env_var' ]]; then
             prefix+="${value}"
             continue
         fi
-        local value="$2"; shift
         if [[ "$field" != 'stopped_at' ]]; then
             addl_sql_params+=" --parameter=${field}::${value}"
         fi
