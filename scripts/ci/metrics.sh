@@ -184,6 +184,57 @@ bq_job_write() {
         (@id, @name, @repo, @branch, @pr_number, @commit_sha, PARSE_TIMESTAMP('%s', @started_at), PARSE_TIMESTAMP('%s', @stopped_at), @outcome, @ci_system)"
 }
 
+write_job_metrics() {
+    local prefix=''
+    local id="$(_get_metrics_job_id)"
+    local repo="$(get_repo_full_name)"
+    local branch="$(get_branch_name)"
+    local pr_number=''
+    if is_in_PR_context; then
+        pr_number="$(get_PR_number)"
+    fi
+    local commit_sha="$(get_commit_sha)"
+    if is_OPENSHIFT_CI; then
+      ci_system='osci'
+    elif is_GITHUB_ACTIONS; then
+      ci_system='gha'
+    else
+      ci_system='unknown'
+    fi
+
+    local addl_sql_params="--parameter=id::$id"
+    local addl_fields=''
+    local addl_values=''
+    while [[ "$#" -gt 1 ]]; do
+        local field="$1"; shift
+        local value="$2"; shift
+        if [[ "$value" == 'CURRENT_TIMESTAMP()' ]]; then
+            addl_values+=", ${value}"
+        else
+            addl_sql_params+=" --parameter=${field}::${value}"
+            addl_values+=", @${field}"
+        fi
+        addl_fields+=", ${field}"
+    done
+
+    bq query \
+        --use_legacy_sql=false \
+        --batch \
+        --synchronous_mode=false \
+        --parameter="id::${id}" \
+        --parameter="repo::${repo}" \
+        --parameter="branch::${branch}" \
+        --parameter="pr_number:INTEGER:${pr_number}" \
+        --parameter="commit_sha::${commit_sha}" \
+        --parameter="ci_system::${ci_system}" \
+        "${addl_sql_params}" \
+        "INSERT INTO ${_JOBS_TABLE_NAME}
+            (id, repo, branch, pr_number, commit_sha, ci_system${addl_fields})
+        VALUES
+            (@id, @repo, @branch, @pr_number, @commit_sha, @ci_system${addl_values})" \
+        | tee -a /tmp/job.metrics.log
+}
+
 trap_write_metrics() {
     local prefix=''
     local id="$(_get_metrics_job_id)"

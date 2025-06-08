@@ -90,26 +90,43 @@ runs:
         git config --global --add safe.directory "$(pwd)"
       shell: bash
 
-    - name: Record job info
-      shell: bash
-      run: |
-        set -x
-        echo "GOOGLE_APPLICATION_CREDENTIALS:${GOOGLE_APPLICATION_CREDENTIALS}"
-        df --si /
-        source scripts/ci/lib.sh
-        trap_write_metrics \
-          env_var "GOOGLE_APPLICATION_CREDENTIALS=${GOOGLE_APPLICATION_CREDENTIALS}" \
-          name '${{ github.job }}' \
-          started_at "$(date +%s)" \
-          stopped_at 'CURRENT_TIMESTAMP()' \
-          outcome '${{ job.status }}' \
-          SIGINT
+    - name: Dump GitHub context
+      env:
+        GITHUB_CONTEXT: ${{ toJson(github) }}
+      run: echo "$GITHUB_CONTEXT"
+    - name: Dump job context
+      env:
+        JOB_CONTEXT: ${{ toJson(job) }}
+      run: echo "$JOB_CONTEXT"
+    - name: Dump steps context
+      env:
+        STEPS_CONTEXT: ${{ toJson(steps) }}
+      run: echo "$STEPS_CONTEXT"
+    - name: Dump runner context
+      env:
+        RUNNER_CONTEXT: ${{ toJson(runner) }}
+      run: echo "$RUNNER_CONTEXT"
 
     - name: Post-job check info
       uses: gacts/run-and-post-run@d803f6920adc9a47eeac4cb6c93dbc2e2890c684 # v1.4.0
       with:
         shell: bash
         post: >
+          df --si /;
+          set -x;
+          echo "GOOGLE_APPLICATION_CREDENTIALS:${GOOGLE_APPLICATION_CREDENTIALS}";
+          df --si /;
+          source scripts/ci/lib.sh;
+          write_job_metrics \
+            env_var "GOOGLE_APPLICATION_CREDENTIALS=${GOOGLE_APPLICATION_CREDENTIALS}" \
+            name '${{ github.job }}' \
+            started_at "${{ github.event.workflow_run.started_at }}" \
+            stopped_at "$(date +%s)" \
+            outcome '${{ job.status }}';
+
           ls -la /tmp/job*.log;
           for fn in /tmp/job*.log; do echo "$fn"; cat "$fn"; echo; done;
-          df --si /;
+          echo "GITHUB_CONTEXT: ${{ toJson(github) }}"
+          echo "JOB_CONTEXT: ${{ toJson(job) }}"
+          echo "STEPS_CONTEXT: ${{ toJson(steps) }}"
+          echo "RUNNER_CONTEXT: ${{ toJson(runner) }}"
