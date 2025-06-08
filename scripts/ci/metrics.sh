@@ -185,6 +185,7 @@ bq_job_write() {
 }
 
 trap_write_metrics() {
+    local prefix=''
     local id="$(_get_metrics_job_id)"
     local repo="$(get_repo_full_name)"
     local branch="$(get_branch_name)"
@@ -204,11 +205,13 @@ trap_write_metrics() {
     local addl_sql_params="--parameter=id::$id"
     local addl_fields=''
     local addl_values=''
-
     while [[ "$#" -gt 1 ]]; do
-        local field="$1"
-        local value="$2"
-        shift; shift
+        local field="$1"; shift
+        if [[ "$field" == 'env_var' ]]; then
+            prefix+="${value}"
+            continue
+        fi
+        local value="$2"; shift
         if [[ "$field" != 'stopped_at' ]]; then
             addl_sql_params+=" --parameter=${field}::${value}"
         fi
@@ -220,7 +223,7 @@ trap_write_metrics() {
         addl_fields+=", ${field}"
     done
 
-    trap_str="trap: bq query \
+    trap_str="trap: \"${prefix}; bq query \
             --use_legacy_sql=false \
             --batch \
             --synchronous_mode=false \
@@ -237,7 +240,7 @@ trap_write_metrics() {
                 (@id, @repo, @branch, @pr_number, @commit_sha, @ci_system${addl_values})\""
     echo -e ${trap_str}
     trap \
-        "bq query \
+        "${prefix}; bq query \
             --use_legacy_sql=false \
             --batch \
             --synchronous_mode=false \
