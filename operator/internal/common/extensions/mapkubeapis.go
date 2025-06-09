@@ -62,7 +62,7 @@ type MapKubeAPIsExtensionConfig struct {
 func MapKubeAPIsExtension(config MapKubeAPIsExtensionConfig) extensions.ReconcileExtension {
 	for _, api := range config.DubiousAPIs {
 		if api.Group == "" || api.Version == "" || api.Kind == "" {
-			log.Fatalf("dubious api %s group/version/kind is missing", api)
+			log.Fatalf("MapKubeAPIsExtensionConfig dubious api %s group/version/kind is missing", api)
 		}
 	}
 	return func(ctx context.Context, obj *unstructured.Unstructured, statusUpdater func(statusFunc extensions.UpdateStatusFunc), log logr.Logger) error {
@@ -86,6 +86,7 @@ type mapKubeAPIsExtensionRun struct {
 }
 
 func (r *mapKubeAPIsExtensionRun) Execute() error {
+	const allK8sVersions = "v0.0.0"
 	mapOptions := mapkubeapisCommon.MapOptions{
 		ReleaseName:      r.obj.GetName(),
 		ReleaseNamespace: r.obj.GetNamespace(),
@@ -99,7 +100,7 @@ func (r *mapKubeAPIsExtensionRun) Execute() error {
 			r.log.Info("API not present, marking for removal from release.", "GVK", dubiousGVK, "error", err)
 			extra = append(extra, &mapping.Mapping{
 				DeprecatedAPI:    fmt.Sprintf("apiVersion: %s/%s\nkind: %s\n", dubiousGVK.Group, dubiousGVK.Version, dubiousGVK.Kind),
-				RemovedInVersion: "v0.0.0",
+				RemovedInVersion: allK8sVersions,
 			})
 		}
 	}
