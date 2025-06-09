@@ -4,7 +4,7 @@ inputs:
   free-disk-space:
     description: 'Free disk space desired in GB'
     required: false
-    default: 30
+    default: 10
   gcp-account:
     description: 'Account to be used to upload tests data'
     required: true
@@ -83,6 +83,7 @@ runs:
         [[ ${free%G} -gt "${{ inputs.free-disk-space }}" ]]
 
     - name: Free more disk space, docker system prune
+      id: delete-docker-cache
       if: steps.delete-unused-tools.outcome == 'failure'
       continue-on-error: true
       shell: bash
@@ -95,3 +96,15 @@ runs:
         printf 'Docker prune: '
         docker system prune --force --all
         df --si /
+        free=$(df -BG --output=avail / | tail -1)
+        [[ ${free%G} -gt "${{ inputs.free-disk-space }}" ]]
+
+    - name: Free more disk space, docker system prune
+      if: steps.delete-docker-cache.outcome == 'failure'
+      shell: bash
+      run: |
+        free=$(df -BG --output=avail / | tail -1)
+        echo "Failed to free requested disk space, ${{ inputs.free-disk-space }} [${free} free]." \
+          | tee -a $GITHUB_SUMMARY
+        df --si /
+        [[ ${free%G} -gt "${{ inputs.free-disk-space }}" ]]
