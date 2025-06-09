@@ -15,7 +15,7 @@ runs:
       id: start
       shell: bash
       run: |
-        echo "timestamp=${EPOCHSECONDS}" | tee -a "$GITHUB_OUTPUT"
+        echo "timestamp=${EPOCHSECONDS:-$(date -u +%s)}" | tee -a "$GITHUB_OUTPUT"
         # job start time is not available in the context
 
     - name: Auth gcloud
@@ -98,7 +98,7 @@ runs:
         shell: bash
         post: >
           df --si /;
-          echo "Elapsed time: $(( EPOCHSECONDS - ${{ steps.start.outputs.timestamp }} ))s";
+          echo "Elapsed time: $(( ${EPOCHSECONDS:-$(date -u +%s)} - ${{ steps.start.outputs.timestamp }} ))s";
           echo "GOOGLE_APPLICATION_CREDENTIALS:${GOOGLE_APPLICATION_CREDENTIALS}";
           outcome="${{ job.status }}";
           started_at="${started_at:-${{ steps.start.outputs.timestamp }}}"
