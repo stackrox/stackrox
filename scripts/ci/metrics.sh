@@ -202,16 +202,16 @@ write_job_metrics() {
       ci_system='unknown'
     fi
 
-    local addl_sql_params=''
+    local -a addl_sql_params
     local addl_fields=''
     local addl_values=''
     while [[ "$#" -gt 0 ]]; do
         local field="$1"; shift
-        local value="${2:-unknown}"; shift
-        if [[ "$value" == 'CURRENT_TIMESTAMP()' ]]; then
+        local value="${1:-unknown}"; shift
+        if [[ "$value" == 'TIMESTAMP('* ]]; then
             addl_values+=", ${value}"
         else
-            addl_sql_params+=" --parameter=${field}::${value}"
+            addl_sql_params+=("--parameter=${field}::$value")
             addl_values+=", @${field}"
         fi
         addl_fields+=", ${field}"
@@ -219,15 +219,15 @@ write_job_metrics() {
 
     bq query \
         --use_legacy_sql=false \
-        --batch \
         --synchronous_mode=false \
-        --parameter="id::${id}" \
-        --parameter="repo::${repo}" \
-        --parameter="branch::${branch}" \
-        --parameter="pr_number:INTEGER:${pr_number}" \
-        --parameter="commit_sha::${commit_sha}" \
-        --parameter="ci_system::${ci_system}" \
-        "${addl_sql_params}" \
+        --batch \
+        --parameter="id::${id:-15519565654.1.misc-checks.30702}" \
+        --parameter="repo::${repo:-stackrox/stackrox}" \
+        --parameter="branch::${branch:-bq-write-once-post-job}" \
+        --parameter="pr_number:INTEGER:${pr_number:-15624}" \
+        --parameter="commit_sha::${commit_sha:-6914877a52e4b2e7ea3ec3869a49f8c2679579c0}" \
+        --parameter="ci_system::${ci_system:-gha}" \
+        "${addl_sql_params[@]}" \
         "INSERT INTO ${_JOBS_TABLE_NAME}
             (id, repo, branch, pr_number, commit_sha, ci_system${addl_fields})
         VALUES

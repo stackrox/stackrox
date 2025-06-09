@@ -102,11 +102,15 @@ runs:
           df --si /;
           source scripts/ci/lib.sh;
           outcome="${{ job.status }}"
+          started_at="${{ github.event.workflow_run.started_at }}"
+          started_at="TIMESTAMP(\"$(date -u +"%Y-%m-%d %H:%M:%S %Z" -d"@${started_at}")\")"
+          stopped_at="TIMESTAMP(\"$(date -u +"%Y-%m-%d %H:%M:%S %Z")\")"
+          job_name="${{ github.job }}"
           write_job_metrics \
-            name "${{ github.job }}" \
-            started_at "${{ github.event.workflow_run.started_at }}" \
-            stopped_at "$(date +%s)" \
-            outcome "${outcome:-unknown}";
+            name "${job_name:-unknown}" \
+            started_at "${started_at}" \
+            stopped_at "${stopped_at}" \
+            outcome "${outcome:-unknown}" || true;
 
           ls -la /tmp/job*.log;
           for fn in /tmp/job*.log; do echo "$fn"; cat "$fn"; echo; done;
