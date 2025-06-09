@@ -538,7 +538,10 @@ _image_prefetcher_prebuilt_start() {
         # prefect list stays up to date with additions.
         ci_export "IMAGE_PULL_POLICY_FOR_QUAY_IO" "Never"
         ;;
-    # TODO(ROX-20508): for operaror-e2e jobs, pre-fetch images of the release from which operator upgrade test starts.
+    *-operator-e2e-tests)
+        image_prefetcher_start_set operator-e2e
+        # TODO(ROX-20508): pre-fetch images of the release from which operator upgrade test starts as well.
+        ;;
     *)
         info "No pre-built image prefetching is currently performed for: ${CI_JOB_NAME}."
         ;;
@@ -788,6 +791,10 @@ populate_prefetcher_image_list() {
         # convert format from "basename tag" to "quay.io/.../basename:tag" expected by pre-fetcher
         awk '{print "quay.io/rhacs-eng/" $1 ":" $2}' "$image_tag_list" > "$image_list"
         rm -f "$image_tag_list"
+        ;;
+    operator-e2e)
+        # shellcheck disable=SC2046
+        grep PREFETCH-THIS-IMAGE -h -A 1 $(find operator/tests/ -type f) | awk '$1 == "image:" {print $2}' | sort -u > "$image_list"
         ;;
     qa-e2e)
         cp "$SCRIPTS_ROOT/qa-tests-backend/scripts/images-to-prefetch.txt" "$image_list"

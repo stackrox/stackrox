@@ -279,6 +279,22 @@ updates:
       prefix: chore
 
   - package-ecosystem: 'docker'
+    directory: 'operator/tests/controller/metrics'
+    schedule:
+      interval: 'monthly'
+    open-pull-requests-limit: 3
+    labels:
+    - "dependencies"
+    - "area/operator"
+    - "auto-merge"
+    - "auto-retest"
+    reviewers:
+    - "stackrox/backend-dep-updaters"
+    commit-message:
+      include: scope
+      prefix: chore
+
+  - package-ecosystem: 'docker'
     directory: 'image/rhel'
     schedule:
       interval: 'weekly'
