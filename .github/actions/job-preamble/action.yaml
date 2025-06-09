@@ -4,7 +4,7 @@ inputs:
   free-disk-space:
     description: 'Free disk space desired in GB (2025-06 ubuntu-24.04 runner starts with 20GB free and we can delete and reach 40GB)'
     required: false
-    default: 15
+    default: 20
   gcp-account:
     description: 'Account to be used to upload tests data'
     required: true
@@ -105,6 +105,6 @@ runs:
       run: |
         free=$(df -BG --output=avail / | tail -1)
         echo "Failed to free requested disk space, ${{ inputs.free-disk-space }} [${free} free]." \
-          | tee -a $GITHUB_SUMMARY
+          | tee -a $GITHUB_STEP_SUMMARY
         df --si /
         [[ ${free%G} -gt "${{ inputs.free-disk-space }}" ]]
