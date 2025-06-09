@@ -111,6 +111,7 @@ function go_run() (
 
 function go_test() (
   unset GOOS
+  export GODEBUG=gocachetest=1
   invoke_go test "$@"
 )
 
