@@ -11,6 +11,11 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: Start
+      id: start
+      run: |
+        echo "timestamp=$EPOCHSECONDS" >> "$GITHUB_OUTPUT"
+
     # https://cloud.google.com/bigquery/docs/write-api-streaming#node.js
     # - name: bigquery from nodejs
     #   uses: node
@@ -98,14 +103,15 @@ runs:
           df --si /;
           set +e;
           set -x;
+          echo $(( EPOCHSECONDS - ${{ steps.start.outputs.timestamp }} ));
           echo "GOOGLE_APPLICATION_CREDENTIALS:${GOOGLE_APPLICATION_CREDENTIALS}";
           df --si /;
           source scripts/ci/lib.sh;
-          outcome="${{ job.status }}"
-          started_at="${{ github.event.workflow_run.started_at }}"
-          started_at="TIMESTAMP(\"$(date -u +"%Y-%m-%d %H:%M:%S %Z" -d"@${started_at}")\")"
-          stopped_at="TIMESTAMP(\"$(date -u +"%Y-%m-%d %H:%M:%S %Z")\")"
-          job_name="${{ github.job }}"
+          outcome="${{ job.status }}";
+          started_at="${{ github.event.workflow_run.started_at }}";
+          started_at="TIMESTAMP(\"$(date -u +"%Y-%m-%d %H:%M:%S %Z" -d"@${started_at}")\")";
+          stopped_at="TIMESTAMP(\"$(date -u +"%Y-%m-%d %H:%M:%S %Z")\")";
+          job_name="${{ github.job }}";
           write_job_metrics \
             name "${job_name:-unknown}" \
             started_at "${started_at}" \
