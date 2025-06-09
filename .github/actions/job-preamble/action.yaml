@@ -11,20 +11,11 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Start
+    - name: Start timer
       id: start
-      shell: bash
       run: |
-        echo "timestamp=$EPOCHSECONDS" >> "$GITHUB_OUTPUT"
-        echo 'GITHUB_CONTEXT: ${{ toJson(github) }}';
-        echo "JOB_CONTEXT: ${{ toJson(job) }}";
-        echo "STEPS_CONTEXT: ${{ toJson(steps) }}";
-        echo "RUNNER_CONTEXT: ${{ toJson(runner) }}";
-
-    # https://cloud.google.com/bigquery/docs/write-api-streaming#node.js
-    # - name: bigquery from nodejs
-    #   uses: node
-    #   post: metrics.post.js
+        echo "timestamp=${EPOCHSECONDS}" | tee -a "$GITHUB_OUTPUT"
+        # job start time is not available in the context
 
     - name: Auth gcloud
       uses: 'google-github-actions/auth@v2'
@@ -106,24 +97,16 @@ runs:
         shell: bash
         post: >
           df --si /;
-          set +e;
-          set -x;
-          echo $(( EPOCHSECONDS - ${{ steps.start.outputs.timestamp }} ));
-
+          echo "Elapsed time: $(( EPOCHSECONDS - ${{ steps.start.outputs.timestamp }} ))s";
           echo "GOOGLE_APPLICATION_CREDENTIALS:${GOOGLE_APPLICATION_CREDENTIALS}";
-          df --si /;
-          source scripts/ci/lib.sh;
           outcome="${{ job.status }}";
-          started_at="${{ github.event.workflow_run.started_at }}";
           started_at="${started_at:-${{ steps.start.outputs.timestamp }}}"
           started_at="TIMESTAMP(\"$(date -u +"%Y-%m-%d %H:%M:%S %Z" -d"@${started_at}")\")";
           stopped_at="TIMESTAMP(\"$(date -u +"%Y-%m-%d %H:%M:%S %Z")\")";
           job_name="${{ github.job }}";
+          source scripts/ci/lib.sh;
           write_job_metrics \
             name "${job_name:-unknown}" \
             started_at "${started_at}" \
             stopped_at "${stopped_at}" \
             outcome "${outcome:-unknown}" || true;
-
-          ls -la /tmp/job*.log;
-          for fn in /tmp/job*.log; do echo "$fn"; cat "$fn"; echo; done;
