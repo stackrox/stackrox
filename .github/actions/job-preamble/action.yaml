@@ -11,6 +11,15 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: Use disk space
+      continue-on-error: true
+      shell: bash
+      run: |
+        set -x
+        df --si
+        fill_to=$(( 20 - ${{ inputs.free-disk-space }} ))
+        fallocate -v -l ${fill_to}GB faketempfile
+
     - name: List filesystems
       id: disk-check
       shell: bash
