@@ -18,6 +18,10 @@ on:
     - reopened
     - synchronize
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'release-') && !startsWith(github.ref, 'master/') }}
+
 defaults:
   run:
     # This enables `-o pipefail` for all jobs as compared to when shell isn't set.

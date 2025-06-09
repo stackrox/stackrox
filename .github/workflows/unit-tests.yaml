@@ -11,6 +11,9 @@ on:
     - opened
     - reopened
     - synchronize
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'release-') && !startsWith(github.ref, 'master/') }}
 jobs:
   go:
     strategy:
