@@ -43,10 +43,12 @@ runs:
           exit 1
         fi
 
+    # auth prepares the auth environment
+    # setup-gcloud authenticates gcloud
     - name: Install gcloud CLI
-      if: steps.gcloud-version-check.outcome == 'failure'
       uses: 'google-github-actions/setup-gcloud@v2'
       with:
+        skip_install: steps.gcloud-version-check.outcome != 'failure'
         version: '>= ${{ inputs.gcloud-version }}'  # does not check installed gcloud version. checks toolcache for previously installed and cached
 
     - name: Shim gsutil as gcloud storage
