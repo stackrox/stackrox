@@ -11,6 +11,7 @@ import (
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
@@ -21,9 +22,11 @@ import (
 	"github.com/stackrox/rox/scanner/matcher"
 	"github.com/stackrox/rox/scanner/sbom"
 	"github.com/stackrox/rox/scanner/services/validators"
+	"github.com/stackrox/rox/scanner/utils"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 var matcherAuth = perrpc.FromMap(map[authz.Authorizer][]string{
@@ -120,10 +123,32 @@ func (s *matcherService) GetMetadata(ctx context.Context, _ *protocompat.Empty) 
 	if err != nil {
 		return nil, fmt.Errorf("internal error: %w", err)
 	}
-	return &v4.Metadata{
+	metadata := &v4.Metadata{
 		// TODO(ROX-21362): Set scanner version.
 		LastVulnerabilityUpdate: timestamp,
-	}, nil
+	}
+	if features.ScannerV4.Enabled() {
+		lastVulnBundlesUpdate, err := s.matcher.GetLastVulnerabilityBundlesUpdate(ctx, utils.GetCcUpdaters())
+		if err != nil {
+			return nil, fmt.Errorf("internal error: %w", err)
+		}
+		metadata.LastVulnerabilityBundlesUpdate = make(map[string]*timestamppb.Timestamp)
+		for _, b := range utils.GetCcUpdaters() {
+			if ts, ok := lastVulnBundlesUpdate[b]; ok {
+				pts, err := protocompat.ConvertTimeToTimestampOrError(ts)
+				if err != nil {
+					zlog.Error(ctx).Err(err).Msg("internal error: converting to timestamppb.Timestamp")
+					metadata.LastVulnerabilityBundlesUpdate[b] = nil
+					continue
+				}
+				metadata.LastVulnerabilityBundlesUpdate[b] = pts
+			} else {
+				// Explicitly record missing timestamp as nil
+				metadata.LastVulnerabilityBundlesUpdate[b] = nil
+			}
+		}
+	}
+	return metadata, nil
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.

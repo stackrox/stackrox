@@ -195,10 +195,11 @@ func (x *GetSBOMResponse) GetSbom() []byte {
 }
 
 type Metadata struct {
-	state                   protoimpl.MessageState `protogen:"open.v1"`
-	LastVulnerabilityUpdate *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=LastVulnerabilityUpdate,proto3" json:"LastVulnerabilityUpdate,omitempty"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	state                          protoimpl.MessageState            `protogen:"open.v1"`
+	LastVulnerabilityUpdate        *timestamppb.Timestamp            `protobuf:"bytes,1,opt,name=LastVulnerabilityUpdate,proto3" json:"LastVulnerabilityUpdate,omitempty"`
+	LastVulnerabilityBundlesUpdate map[string]*timestamppb.Timestamp `protobuf:"bytes,2,rep,name=LastVulnerabilityBundlesUpdate,proto3" json:"LastVulnerabilityBundlesUpdate,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	unknownFields                  protoimpl.UnknownFields
+	sizeCache                      protoimpl.SizeCache
 }
 
 func (x *Metadata) Reset() {
@@ -238,6 +239,13 @@ func (x *Metadata) GetLastVulnerabilityUpdate() *timestamppb.Timestamp {
 	return nil
 }
 
+func (x *Metadata) GetLastVulnerabilityBundlesUpdate() map[string]*timestamppb.Timestamp {
+	if x != nil {
+		return x.LastVulnerabilityBundlesUpdate
+	}
+	return nil
+}
+
 var File_internalapi_scanner_v4_matcher_service_proto protoreflect.FileDescriptor
 
 const file_internalapi_scanner_v4_matcher_service_proto_rawDesc = "" +
@@ -253,9 +261,13 @@ const file_internalapi_scanner_v4_matcher_service_proto_rawDesc = "" +
 	"\x03uri\x18\x03 \x01(\tR\x03uri\x120\n" +
 	"\bcontents\x18\x04 \x01(\v2\x14.scanner.v4.ContentsR\bcontents\"%\n" +
 	"\x0fGetSBOMResponse\x12\x12\n" +
-	"\x04sbom\x18\x01 \x01(\fR\x04sbom\"`\n" +
+	"\x04sbom\x18\x01 \x01(\fR\x04sbom\"\xd2\x02\n" +
 	"\bMetadata\x12T\n" +
-	"\x17LastVulnerabilityUpdate\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\x17LastVulnerabilityUpdate2\xe8\x01\n" +
+	"\x17LastVulnerabilityUpdate\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\x17LastVulnerabilityUpdate\x12\x80\x01\n" +
+	"\x1eLastVulnerabilityBundlesUpdate\x18\x02 \x03(\v28.scanner.v4.Metadata.LastVulnerabilityBundlesUpdateEntryR\x1eLastVulnerabilityBundlesUpdate\x1am\n" +
+	"#LastVulnerabilityBundlesUpdateEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x120\n" +
+	"\x05value\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x05value:\x028\x012\xe8\x01\n" +
 	"\aMatcher\x12\\\n" +
 	"\x12GetVulnerabilities\x12%.scanner.v4.GetVulnerabilitiesRequest\x1a\x1f.scanner.v4.VulnerabilityReport\x12;\n" +
 	"\vGetMetadata\x12\x16.google.protobuf.Empty\x1a\x14.scanner.v4.Metadata\x12B\n" +
@@ -273,32 +285,35 @@ func file_internalapi_scanner_v4_matcher_service_proto_rawDescGZIP() []byte {
 	return file_internalapi_scanner_v4_matcher_service_proto_rawDescData
 }
 
-var file_internalapi_scanner_v4_matcher_service_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_internalapi_scanner_v4_matcher_service_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_internalapi_scanner_v4_matcher_service_proto_goTypes = []any{
 	(*GetVulnerabilitiesRequest)(nil), // 0: scanner.v4.GetVulnerabilitiesRequest
 	(*GetSBOMRequest)(nil),            // 1: scanner.v4.GetSBOMRequest
 	(*GetSBOMResponse)(nil),           // 2: scanner.v4.GetSBOMResponse
 	(*Metadata)(nil),                  // 3: scanner.v4.Metadata
-	(*Contents)(nil),                  // 4: scanner.v4.Contents
-	(*timestamppb.Timestamp)(nil),     // 5: google.protobuf.Timestamp
-	(*emptypb.Empty)(nil),             // 6: google.protobuf.Empty
-	(*VulnerabilityReport)(nil),       // 7: scanner.v4.VulnerabilityReport
+	nil,                               // 4: scanner.v4.Metadata.LastVulnerabilityBundlesUpdateEntry
+	(*Contents)(nil),                  // 5: scanner.v4.Contents
+	(*timestamppb.Timestamp)(nil),     // 6: google.protobuf.Timestamp
+	(*emptypb.Empty)(nil),             // 7: google.protobuf.Empty
+	(*VulnerabilityReport)(nil),       // 8: scanner.v4.VulnerabilityReport
 }
 var file_internalapi_scanner_v4_matcher_service_proto_depIdxs = []int32{
-	4, // 0: scanner.v4.GetVulnerabilitiesRequest.contents:type_name -> scanner.v4.Contents
-	4, // 1: scanner.v4.GetSBOMRequest.contents:type_name -> scanner.v4.Contents
-	5, // 2: scanner.v4.Metadata.LastVulnerabilityUpdate:type_name -> google.protobuf.Timestamp
-	0, // 3: scanner.v4.Matcher.GetVulnerabilities:input_type -> scanner.v4.GetVulnerabilitiesRequest
-	6, // 4: scanner.v4.Matcher.GetMetadata:input_type -> google.protobuf.Empty
-	1, // 5: scanner.v4.Matcher.GetSBOM:input_type -> scanner.v4.GetSBOMRequest
-	7, // 6: scanner.v4.Matcher.GetVulnerabilities:output_type -> scanner.v4.VulnerabilityReport
-	3, // 7: scanner.v4.Matcher.GetMetadata:output_type -> scanner.v4.Metadata
-	2, // 8: scanner.v4.Matcher.GetSBOM:output_type -> scanner.v4.GetSBOMResponse
-	6, // [6:9] is the sub-list for method output_type
-	3, // [3:6] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	5, // 0: scanner.v4.GetVulnerabilitiesRequest.contents:type_name -> scanner.v4.Contents
+	5, // 1: scanner.v4.GetSBOMRequest.contents:type_name -> scanner.v4.Contents
+	6, // 2: scanner.v4.Metadata.LastVulnerabilityUpdate:type_name -> google.protobuf.Timestamp
+	4, // 3: scanner.v4.Metadata.LastVulnerabilityBundlesUpdate:type_name -> scanner.v4.Metadata.LastVulnerabilityBundlesUpdateEntry
+	6, // 4: scanner.v4.Metadata.LastVulnerabilityBundlesUpdateEntry.value:type_name -> google.protobuf.Timestamp
+	0, // 5: scanner.v4.Matcher.GetVulnerabilities:input_type -> scanner.v4.GetVulnerabilitiesRequest
+	7, // 6: scanner.v4.Matcher.GetMetadata:input_type -> google.protobuf.Empty
+	1, // 7: scanner.v4.Matcher.GetSBOM:input_type -> scanner.v4.GetSBOMRequest
+	8, // 8: scanner.v4.Matcher.GetVulnerabilities:output_type -> scanner.v4.VulnerabilityReport
+	3, // 9: scanner.v4.Matcher.GetMetadata:output_type -> scanner.v4.Metadata
+	2, // 10: scanner.v4.Matcher.GetSBOM:output_type -> scanner.v4.GetSBOMResponse
+	8, // [8:11] is the sub-list for method output_type
+	5, // [5:8] is the sub-list for method input_type
+	5, // [5:5] is the sub-list for extension type_name
+	5, // [5:5] is the sub-list for extension extendee
+	0, // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_internalapi_scanner_v4_matcher_service_proto_init() }
@@ -314,7 +329,7 @@ func file_internalapi_scanner_v4_matcher_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internalapi_scanner_v4_matcher_service_proto_rawDesc), len(file_internalapi_scanner_v4_matcher_service_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
