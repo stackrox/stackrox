@@ -4,7 +4,7 @@ inputs:
   free-disk-space:
     description: 'Free disk space desired in GB'
     required: false
-    default: 10
+    default: 20
   gcp-account:
     description: 'Account to be used to upload tests data'
     required: true
