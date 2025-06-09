@@ -49,7 +49,7 @@ runs:
       uses: 'google-github-actions/setup-gcloud@v2'
       with:
         skip_install: ${{ steps.gcloud-version-check.outcome != 'failure' }}
-        version: ${{ steps.gcloud-version-check.outcome != 'failure' && "latest" || ">= ${{ inputs.gcloud-version }}" }}
+        version: ${{ steps.gcloud-version-check.outcome != 'failure' && 'latest' || '>= ${{ inputs.gcloud-version }}' }}
         # does not check installed gcloud version. checks toolcache for previously installed and cached
 
     - name: Shim gsutil as gcloud storage
