@@ -49,6 +49,16 @@ runs:
       with:
         version: '>= ${{ inputs.gcloud-version }}'  # does not check installed gcloud version. checks toolcache for previously installed and cached
 
+    - name: Shim gsutil as gcloud storage
+      shell: bash
+      continue-on-error: true
+      run: |
+        tee -a ~/.boto <<EOF
+        [GSUtil]
+        use_gcloud_storage=True
+        EOF
+        gsutil version -l
+
     - name: Recover docker image cache space
       run: |
         df --si /
