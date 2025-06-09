@@ -2,7 +2,7 @@ name: Job Preamble
 description: Common steps for most jobs
 inputs:
   free-disk-space:
-    description: 'Free disk space desired in GB'
+    description: 'Free disk space desired in GB (2025-06 ubuntu-24.04 runner starts with 20GB free and we can delete and reach 40GB)'
     required: false
     default: 15
   gcp-account:
