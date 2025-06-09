@@ -85,7 +85,7 @@ UNAME_S := $(shell uname -s)
 UNAME_M := $(shell uname -m)
 
 BUILD_IMAGE := quay.io/stackrox-io/apollo-ci:$(shell sed 's/\s*\#.*//' BUILD_IMAGE_VERSION)
-ifneq ($(filter $(UNAME_M),x86_64 aarch64),)
+ifeq ($(filter $(UNAME_M),x86_64 arm64 aarch64),)
 	GO_VERSION := $(shell sed -n 's/^go \([0-9]*\.[0-9]*\)\..*/\1/p' go.mod)
 	BUILD_IMAGE = docker.io/library/golang:$(GO_VERSION)
 endif
