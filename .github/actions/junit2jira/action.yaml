@@ -28,6 +28,16 @@ outputs:
 runs:
   using: "composite"
   steps:
+  - name: Shim gsutil as gcloud storage
+    shell: bash
+    continue-on-error: true
+    run: |
+      tee -a ~/.boto <<EOF
+      [GSUtil]
+      use_gcloud_storage=True
+      EOF
+      gsutil version -l
+
   - name: Download junit2jira
     shell: bash
     env:
@@ -40,6 +50,7 @@ runs:
         curl --retry 5 --retry-connrefused --silent --show-error --fail --location --output junit2jira "$LOCATION"
         chmod +x junit2jira
       fi
+
   - name: Check files
     id: run
     shell: bash
