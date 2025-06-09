@@ -15,7 +15,7 @@ runs:
       id: disk-check
       shell: bash
       run: |
-        df --si /
+        df --si
         free=$(df -BGB --output=avail / | tail -1)
         echo "free=${free}" | tee -a "$GITHUB_OUTPUT"
 
@@ -61,8 +61,8 @@ runs:
         done
         df --si /
         free=$(df -BGB --output=avail / | tail -1)
-        if [[ ${free%GB} -ge "${{ inputs.free-disk-space }}" ]]; then
-          printf "For container workflows, please mount the host /usr and /opt to allow deleting unused tools:\n.volumes:\n\t- /usr:/mnt/usr\n\t- /opt:/mnt/opt"
+        if [[ ${free%GB} -lt "${{ inputs.free-disk-space }}" ]]; then
+          printf "For container workflows, please mount the host /usr and /opt to allow deleting unused tools:\nvolumes:\n\t- /usr:/mnt/usr\n\t- /opt:/mnt/opt"
           exit 1
         fi
 
