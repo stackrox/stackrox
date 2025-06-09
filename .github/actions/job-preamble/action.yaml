@@ -13,6 +13,7 @@ runs:
   steps:
     - name: Start timer
       id: start
+      shell: bash
       run: |
         echo "timestamp=${EPOCHSECONDS}" | tee -a "$GITHUB_OUTPUT"
         # job start time is not available in the context
