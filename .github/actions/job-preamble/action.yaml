@@ -16,6 +16,10 @@ runs:
       shell: bash
       run: |
         echo "timestamp=$EPOCHSECONDS" >> "$GITHUB_OUTPUT"
+        echo 'GITHUB_CONTEXT: ${{ toJson(github) }}';
+        echo "JOB_CONTEXT: ${{ toJson(job) }}";
+        echo "STEPS_CONTEXT: ${{ toJson(steps) }}";
+        echo "RUNNER_CONTEXT: ${{ toJson(runner) }}";
 
     # https://cloud.google.com/bigquery/docs/write-api-streaming#node.js
     # - name: bigquery from nodejs
@@ -105,10 +109,6 @@ runs:
           set +e;
           set -x;
           echo $(( EPOCHSECONDS - ${{ steps.start.outputs.timestamp }} ));
-          echo 'GITHUB_CONTEXT: ${{ toJson(github) }}';
-          echo "JOB_CONTEXT: ${{ toJson(job) }}";
-          echo "STEPS_CONTEXT: ${{ toJson(steps) }}";
-          echo "RUNNER_CONTEXT: ${{ toJson(runner) }}";
 
           echo "GOOGLE_APPLICATION_CREDENTIALS:${GOOGLE_APPLICATION_CREDENTIALS}";
           df --si /;
