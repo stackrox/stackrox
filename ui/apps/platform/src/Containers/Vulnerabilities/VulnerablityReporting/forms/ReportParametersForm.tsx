@@ -42,9 +42,7 @@ export type ReportParametersFormParams = {
 
 function ReportParametersForm({ title, formik }: ReportParametersFormParams): ReactElement {
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isIncludeAdvisoryEnabled =
-        isFeatureFlagEnabled('ROX_SCANNER_V4') &&
-        isFeatureFlagEnabled('ROX_CVE_ADVISORY_SEPARATION');
+    const isIncludeAdvisoryEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
     const isIncludeEpssProbabilityEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
     const isIncludeNvdCvssEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
 
