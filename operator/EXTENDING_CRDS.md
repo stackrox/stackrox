@@ -7,7 +7,7 @@ Let us assume that there is a new (fictitious) feature "Low Energy Consumption M
 
 ## Add new Setting
 
-Add a new setting for the feature to the appropriate structs within `operator/apis/platform/<VERSION>/securedcluster_types.go` and/or `operator/apis/platform/<VERSION>/central_types.go`.
+Add a new setting for the feature to the appropriate structs within `operator/api/<VERSION>/securedcluster_types.go` and/or `operator/api/<VERSION>/central_types.go`.
 Note the [style recommendations](#style-recommendations) below.
 
 For example:
@@ -28,7 +28,7 @@ type CentralSpec struct {
 	...
 	// Central energy consumption mode. Default is High.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=42
-	EnergyConsumption *EnergyConsumptionMode `json:"energyConsumption,omitempty"`
+	EnergyConsumptionMode *EnergyConsumptionMode `json:"energyConsumptionMode,omitempty"`
 }
 ```
 
@@ -48,6 +48,7 @@ default values, as in e.g.
 
 You might still see examples of these in legacy code. They are being removed as part of ROX-22588.
 Instead, we use runtime defaulting in the operator code. The field description should explain how the default is set.
+Note that it is possible to use different defaults for upgrade vs. new installation scenarios.
 
 ## Update generated Files
 
@@ -87,7 +88,7 @@ Regarding defaulting, note that there exist different kinds of defaults:
 
   As mentioned above, as of May 2025 we stopped adding such static defaults. 
 
-* Translation logic-level defaults: The translation logic will recognize an absent (`nil`) value, decide on its meaning, and will set a corresponding
+* Defaults on the level of translation logic: The translation logic will recognize an absent (`nil`) value, decide on its meaning, and will set a corresponding
   value in the Helm values (see [example](https://github.com/stackrox/rox/blob/84d841c870f59d2c423f78eb7ecd44a196f8a659/operator/pkg/central/values/translation/translation.go#L120)).
 
   Alternatively, defaults can be set by a special `DefaultingExtension`. TODO(ROX-29199): document how to use this.
@@ -122,7 +123,7 @@ which is painful both to develop and operate.
 We have a [CI check](../.github/workflows/check-crd-compatibility.yaml) based on [crd-schema-checker](https://github.com/openshift/crd-schema-checker) - a tool for finding breaking changes and violations of best practices in CRDs.
 
 `crd-schema-checker` has limitations. It cannot find all types of breaking changes and violations of best practices.
-+A passing grade from crd-schema-checker does not mean that there are no breaking changes or violations of best practices.
++A passing grade from crd-schema-checker does not guarantee that there are no breaking changes or violations of best practices.
 However, it does find the above types of breakage.
 
 You can also run the checker manually:
