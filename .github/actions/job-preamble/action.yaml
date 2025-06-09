@@ -105,11 +105,17 @@ runs:
           set +e;
           set -x;
           echo $(( EPOCHSECONDS - ${{ steps.start.outputs.timestamp }} ));
+          echo "GITHUB_CONTEXT: ${{ toJson(github) }}"
+          echo "JOB_CONTEXT: ${{ toJson(job) }}"
+          echo "STEPS_CONTEXT: ${{ toJson(steps) }}"
+          echo "RUNNER_CONTEXT: ${{ toJson(runner) }}"
+
           echo "GOOGLE_APPLICATION_CREDENTIALS:${GOOGLE_APPLICATION_CREDENTIALS}";
           df --si /;
           source scripts/ci/lib.sh;
           outcome="${{ job.status }}";
           started_at="${{ github.event.workflow_run.started_at }}";
+          started_at="${started_at:-${{ steps.start.outputs.timestamp }}}"
           started_at="TIMESTAMP(\"$(date -u +"%Y-%m-%d %H:%M:%S %Z" -d"@${started_at}")\")";
           stopped_at="TIMESTAMP(\"$(date -u +"%Y-%m-%d %H:%M:%S %Z")\")";
           job_name="${{ github.job }}";
@@ -121,7 +127,3 @@ runs:
 
           ls -la /tmp/job*.log;
           for fn in /tmp/job*.log; do echo "$fn"; cat "$fn"; echo; done;
-          echo "GITHUB_CONTEXT: ${{ toJson(github) }}"
-          echo "JOB_CONTEXT: ${{ toJson(job) }}"
-          echo "STEPS_CONTEXT: ${{ toJson(steps) }}"
-          echo "RUNNER_CONTEXT: ${{ toJson(runner) }}"
