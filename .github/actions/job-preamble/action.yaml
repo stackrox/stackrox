@@ -42,7 +42,6 @@ runs:
       shell: bash
       run: |
         set +e
-        set -x
         df --si /
         # preinstalled tools not used. ordered by size asc
         cleanup=(
@@ -66,8 +65,8 @@ runs:
           /mnt/opt/hostedtoolcache/go
         )
         for d in "${cleanup[@]}"; do
-          free=$(df -BG --output=avail / | tail -1)
-          if [[ ${free%G} -gt "${{ inputs.free-disk-space }}" ]]; then
+          free=$(df -BGB --output=avail / | tail -1)
+          if [[ ${free%GB} -ge "${{ inputs.free-disk-space }}" ]]; then
             echo "Reached required free disk space ${{ inputs.free-disk-space }} [${free} free]."
             break
           fi
@@ -79,8 +78,11 @@ runs:
           fi
         done
         df --si /
-        free=$(df -BG --output=avail / | tail -1)
-        [[ ${free%G} -gt "${{ inputs.free-disk-space }}" ]]
+        free=$(df -BGB --output=avail / | tail -1)
+        if [[ ${free%GB} -ge "${{ inputs.free-disk-space }}" ]]; then
+          printf "For container workflows, please mount the host /usr and /opt to allow deleting unused tools:\n.volumes:\n\t- /usr:/mnt/usr\n\t- /opt:/mnt/opt"
+          exit 1
+        fi
 
     - name: Free more disk space, docker system prune
       id: delete-docker-cache
@@ -88,23 +90,23 @@ runs:
       continue-on-error: true
       shell: bash
       run: |
-        free=$(df -BG --output=avail / | tail -1)
-        if [[ ${free%G} -gt "${{ inputs.free-disk-space }}" ]]; then
+        free=$(df -BGB --output=avail / | tail -1)
+        if [[ ${free%GB} -ge "${{ inputs.free-disk-space }}" ]]; then
           echo "Skipping docker prune. Already reached required free disk space ${{ inputs.free-disk-space }} [${free} free]."
           exit
         fi
         printf 'Docker prune: '
         docker system prune --force --all
         df --si /
-        free=$(df -BG --output=avail / | tail -1)
-        [[ ${free%G} -gt "${{ inputs.free-disk-space }}" ]]
+        free=$(df -BGB --output=avail / | tail -1)
+        [[ ${free%GB} -ge "${{ inputs.free-disk-space }}" ]]
 
     - name: Free more disk space, docker system prune
       if: steps.delete-docker-cache.outcome == 'failure'
       shell: bash
       run: |
-        free=$(df -BG --output=avail / | tail -1)
+        free=$(df -BGB --output=avail / | tail -1)
         echo "Failed to free requested disk space, ${{ inputs.free-disk-space }} [${free} free]." \
           | tee -a $GITHUB_STEP_SUMMARY
-        df --si /
-        [[ ${free%G} -gt "${{ inputs.free-disk-space }}" ]]
+        df -BGB /
+        [[ ${free%GB} -ge "${{ inputs.free-disk-space }}" ]]
