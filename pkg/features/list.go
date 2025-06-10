@@ -134,6 +134,11 @@ var (
 
 	// Adds built-in policy to ensure that Red Hat images are signed by Red Hat Release Key
 	RedHatImagesSignedPolicy = registerFeature("Adds built-in policy to ensure that Red Hat images are signed by the Red Hat release key", "ROX_RED_HAT_IMAGES_SIGNED_POLICY", unchangeableInProd)
+
+	// KEVExploit enables the display of CISA KEV Exploit (KEV) data.
+	//
+	// This must be enabled in Central and Scanner V4 Matcher to have any effect.
+	KEVExploit = registerFeature("Display CISA KEV Exploit (KEV) data", "ROX_KEV_EXPLOIT", enabled)
 )
 
 // The following feature flags are related to Scanner V4.
