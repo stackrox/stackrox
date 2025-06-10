@@ -40,7 +40,6 @@ runs:
         curl --retry 5 --retry-connrefused --silent --show-error --fail --location --output junit2jira "$LOCATION"
         chmod +x junit2jira
       fi
-
   - name: Check files
     id: run
     shell: bash
