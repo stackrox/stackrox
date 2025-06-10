@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	configDS "github.com/stackrox/rox/central/config/datastore"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/metrics/aggregator/common"
@@ -66,17 +67,20 @@ func Singleton() interface {
 }
 
 func (ar *aggregatorRunner) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	ar.handlersMux.Lock()
-	defer ar.handlersMux.Unlock()
-
 	registryName, _ := strings.CutPrefix(req.URL.Path, "/metrics/")
 	registry := metrics.GetExternalRegistry(registryName)
+	ar.getHandler(registryName, registry).ServeHTTP(w, req)
+}
+
+func (ar *aggregatorRunner) getHandler(registryName string, registry *prometheus.Registry) http.Handler {
+	ar.handlersMux.Lock()
+	defer ar.handlersMux.Unlock()
 	h, ok := ar.handlers[registryName]
 	if !ok {
 		h = promhttp.HandlerFor(registry, promhttp.HandlerOpts{})
 		ar.handlers[registryName] = h
 	}
-	h.ServeHTTP(w, req)
+	return h
 }
 
 func (ar *aggregatorRunner) Reconfigure(cfg *storage.PrometheusMetricsConfig) error {
