@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 ARG PG_VERSION=13
 FROM registry.redhat.io/rhel8/postgresql-${PG_VERSION}:latest@sha256:05ebb5e22be17bd434277c4ea35031a4f7c07f7422a07ee15286407f25b072a0 AS final
+=======
+ARG PG_VERSION=15
+FROM registry.redhat.io/rhel8/postgresql-${PG_VERSION}:latest@sha256:80bd68410954cf504c020f0e285898172c2dfeeae228cc88f236d8a359389115 AS final
+>>>>>>> 9e7e1d1d9d (chore(deps): update all dependencies (#15617))
 
 USER root
 
