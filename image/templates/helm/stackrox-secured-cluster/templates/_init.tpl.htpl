@@ -61,7 +61,6 @@
 {{ $_ = set $state "referencedImages" dict }}
 {{ $_ = set $state "referencedStorageClasses" list }}
 {{ $_ = set $._rox "_state" $state }}
-{{ $_ = set $._rox "_enforceALPNenableGRPC" "false"}}
 
 {{- include "srox.checkVersionRequirements" $ -}}
 
