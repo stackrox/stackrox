@@ -28,7 +28,8 @@ type aggregatorRunner struct {
 	http.Handler
 	registry *prometheus.Registry
 
-	stopCh   chan bool
+	ctx      context.Context
+	cancel   context.CancelFunc
 	stopOnce sync.Once
 
 	image_vulnerabilities common.Tracker
@@ -46,10 +47,12 @@ func Singleton() interface {
 		runner = &aggregatorRunner{
 			Handler:  promhttp.HandlerFor(registry, promhttp.HandlerOpts{}),
 			registry: registry,
-			stopCh:   make(chan bool),
 
 			image_vulnerabilities: image_vulnerabilities.MakeTrackerConfig(metrics.SetCustomAggregatedCount),
 		}
+
+		runner.ctx, runner.cancel = context.WithCancel(sac.WithAllAccess(context.Background()))
+
 		systemPrivateConfig, err := configDS.Singleton().GetPrivateConfig(
 			sac.WithAllAccess(context.Background()))
 		if err != nil {
@@ -66,7 +69,8 @@ func Singleton() interface {
 func (ar *aggregatorRunner) Reconfigure(cfg *storage.PrometheusMetricsConfig) error {
 	{
 		iv := cfg.GetImageVulnerabilities()
-		if err := ar.image_vulnerabilities.Reconfigure(ar.registry,
+		if err := ar.image_vulnerabilities.Reconfigure(ar.ctx,
+			ar.registry,
 			iv.GetFilter(),
 			iv.GetMetrics(),
 			time.Minute*time.Duration(iv.GetGatheringPeriodMinutes())); err != nil {
@@ -78,41 +82,10 @@ func (ar *aggregatorRunner) Reconfigure(cfg *storage.PrometheusMetricsConfig) er
 
 func (ar *aggregatorRunner) Start() {
 	for _, tracker := range []common.Tracker{ar.image_vulnerabilities} {
-		tracker.Do(func() {
-			go ar.run(tracker)
-		})
+		go tracker.Run(ar.ctx)
 	}
 }
 
 func (ar *aggregatorRunner) Stop() {
-	ar.stopOnce.Do(func() {
-		close(ar.stopCh)
-	})
-}
-
-func (ar *aggregatorRunner) run(tracker common.Tracker) {
-	periodCh := tracker.GetPeriodCh()
-	// The ticker will be reset immediately when reading from the periodCh.
-	ticker := time.NewTicker(1000 * time.Hour)
-	defer ticker.Stop()
-
-	ctx, cancel := context.WithCancel(
-		sac.WithAllAccess(context.Background()))
-	defer cancel()
-
-	for {
-		select {
-		case <-ticker.C:
-			tracker.Track(ctx)
-		case <-ar.stopCh:
-			return
-		case period := <-periodCh:
-			if period > 0 {
-				tracker.Track(ctx)
-				ticker.Reset(period)
-			} else {
-				ticker.Stop()
-			}
-		}
-	}
+	ar.cancel()
 }

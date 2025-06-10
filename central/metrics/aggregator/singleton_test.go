@@ -3,20 +3,22 @@ package aggregator
 import (
 	"context"
 	"iter"
-	"sync/atomic"
 	"testing"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/central/metrics/aggregator/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
 )
 
-func getNonEmptymcfg() common.MetricsConfiguration {
-	return common.MetricsConfiguration{
-		"metric1": map[common.Label]common.Expression{
-			"label1": nil,
+func getNonEmptyStorageCfg() map[string]*storage.PrometheusMetricsConfig_Labels {
+	return map[string]*storage.PrometheusMetricsConfig_Labels{
+		"metric1": {
+			Labels: map[string]*storage.PrometheusMetricsConfig_Labels_Expression{
+				"label1": {},
+			},
 		},
 	}
 }
@@ -25,31 +27,41 @@ type something int
 
 func (something) Count() int { return 1 }
 
+var testGetters = []common.LabelGetter[something]{
+	{Label: "label1", Getter: func(f something) string { return "value1" }},
+}
+
 func Test_run(t *testing.T) {
 
+	testRegistry := prometheus.NewRegistry()
+
 	t.Run("stop on start", func(t *testing.T) {
-		i := false
-		runner := &aggregatorRunner{stopCh: make(chan bool, 1)}
+		i := 0
+		runner := &aggregatorRunner{}
+		runner.ctx, runner.cancel = context.WithCancel(context.Background())
+
 		tracker := common.MakeTrackerConfig("test", "test",
-			nil,
+			testGetters,
 			func(context.Context, *v1.Query, common.MetricsConfiguration) iter.Seq[something] {
 				return func(yield func(something) bool) {
-					i = true
+					i++
 				}
 			},
 			nil,
 		)
-		tracker.SetMetricsConfiguration(search.EmptyQuery(), getNonEmptymcfg())
+		assert.NoError(t, tracker.Reconfigure(runner.ctx, testRegistry, "", getNonEmptyStorageCfg(), 10*time.Minute))
 		runner.Stop()
-		runner.run(tracker)
-		assert.False(t, i)
+		tracker.Run(runner.ctx)
+		assert.Equal(t, 2, i)
 	})
 
 	t.Run("stop after new period", func(t *testing.T) {
 		i := false
-		runner := &aggregatorRunner{stopCh: make(chan bool, 1)}
+		runner := &aggregatorRunner{}
+		runner.ctx, runner.cancel = context.WithCancel(context.Background())
+
 		tracker := common.MakeTrackerConfig("test", "test",
-			nil,
+			testGetters,
 			func(context.Context, *v1.Query, common.MetricsConfiguration) iter.Seq[something] {
 				return func(yield func(something) bool) {
 					i = true
@@ -58,17 +70,19 @@ func Test_run(t *testing.T) {
 			},
 			nil,
 		)
-		tracker.SetMetricsConfiguration(search.EmptyQuery(), getNonEmptymcfg())
-		tracker.GetPeriodCh() <- time.Minute
-		runner.run(tracker)
+		assert.NoError(t, tracker.Reconfigure(runner.ctx, testRegistry, "", getNonEmptyStorageCfg(), time.Minute))
+		assert.NoError(t, tracker.Reconfigure(runner.ctx, testRegistry, "", getNonEmptyStorageCfg(), time.Minute))
+		tracker.Run(runner.ctx)
 		assert.True(t, i)
 	})
 
 	t.Run("run a few ticks", func(t *testing.T) {
 		i := 0
-		runner := &aggregatorRunner{stopCh: make(chan bool, 1)}
+		runner := &aggregatorRunner{}
+		runner.ctx, runner.cancel = context.WithCancel(context.Background())
+
 		tracker := common.MakeTrackerConfig("test", "test",
-			nil,
+			testGetters,
 			func(context.Context, *v1.Query, common.MetricsConfiguration) iter.Seq[something] {
 				return func(yield func(something) bool) {
 					i++
@@ -79,33 +93,9 @@ func Test_run(t *testing.T) {
 			},
 			nil,
 		)
-		tracker.SetMetricsConfiguration(search.EmptyQuery(), getNonEmptymcfg())
-		tracker.GetPeriodCh() <- 100 * time.Microsecond
-		runner.run(tracker)
-		assert.Greater(t, i, 2)
-	})
 
-	t.Run("stop in runtime", func(t *testing.T) {
-		var i atomic.Int32
-		runner := &aggregatorRunner{stopCh: make(chan bool, 1)}
-		tracker := common.MakeTrackerConfig("test", "test",
-			nil,
-			func(context.Context, *v1.Query, common.MetricsConfiguration) iter.Seq[something] {
-				return func(yield func(something) bool) {
-					i.Add(1)
-				}
-			},
-			nil,
-		)
-		tracker.SetMetricsConfiguration(search.EmptyQuery(), getNonEmptymcfg())
-		const period = 50 * time.Millisecond
-		tracker.GetPeriodCh() <- period
-		start := time.Now()
-		go runner.run(tracker)
-		tracker.GetPeriodCh() <- 0
-		passed := time.Since(start).Round(time.Millisecond)
-		time.Sleep(3 * period) // there should be no ticks during the sleep.
-		assert.Greater(t, i.Load(), int32(0))
-		assert.LessOrEqual(t, i.Load(), int32(1+passed/period))
+		assert.NoError(t, tracker.Reconfigure(runner.ctx, testRegistry, "", getNonEmptyStorageCfg(), 100*time.Microsecond))
+		tracker.Run(runner.ctx)
+		assert.Greater(t, i, 2)
 	})
 }

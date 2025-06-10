@@ -28,16 +28,12 @@ type TrackerConfig[Finding Countable] struct {
 	metricsConfigMux sync.RWMutex
 	query            *v1.Query
 
-	// periodCh allows for changing the period in runtime.
-	periodCh chan time.Duration
-	sync.Once
+	ticker *time.Ticker
 }
 
 type Tracker interface {
-	Do(func())
-	GetPeriodCh() chan time.Duration
-	Track(context.Context)
-	Reconfigure(*prometheus.Registry, string, map[string]*storage.PrometheusMetricsConfig_Labels, time.Duration) error
+	Run(context.Context)
+	Reconfigure(context.Context, *prometheus.Registry, string, map[string]*storage.PrometheusMetricsConfig_Labels, time.Duration) error
 }
 
 func makeLabelOrderMap[Finding Countable](getters []LabelGetter[Finding]) map[Label]int {
@@ -69,16 +65,10 @@ func MakeTrackerConfig[Finding Countable](category, description string,
 		getters:     makeGettersMap(getters),
 		generator:   generator,
 		gauge:       gauge,
-
-		periodCh: make(chan time.Duration, 1),
 	}
 }
 
-func (tc *TrackerConfig[Finding]) GetPeriodCh() chan time.Duration {
-	return tc.periodCh
-}
-
-func (tc *TrackerConfig[Finding]) Reconfigure(registry *prometheus.Registry, filter string, cfg map[string]*storage.PrometheusMetricsConfig_Labels, period time.Duration) error {
+func (tc *TrackerConfig[Finding]) Reconfigure(ctx context.Context, registry *prometheus.Registry, filter string, cfg map[string]*storage.PrometheusMetricsConfig_Labels, period time.Duration) error {
 	mcfg, err := parseMetricLabels(cfg, tc.labelOrder)
 	if err != nil {
 		return err
@@ -88,25 +78,29 @@ func (tc *TrackerConfig[Finding]) Reconfigure(registry *prometheus.Registry, fil
 		return err
 	}
 	tc.SetMetricsConfiguration(q, mcfg)
-	select {
-	case tc.periodCh <- period:
-	default:
-		// The period should be read from the channel by the runner loop.
-		// If the channel buffer is full and so the channel is blocked for writing,
-		// purge it now and send the new value to proceed with the reconfiguration:
-		select {
-		case <-tc.periodCh:
-		default:
-			tc.periodCh <- period
-		}
+	// Force track only on reconfiguration, not on the initial tracker creation.
+	if tc.setPeriod(period) {
+		tc.track(ctx)
 	}
-
-	if period == 0 {
-		log.Infof("Metrics collection is disabled for %s", tc.category)
-		return nil
-	}
-
 	return tc.registerMetrics(registry, period)
+}
+
+// setPeriod returns true if tracker period has been reconfigured.
+func (tc *TrackerConfig[Finding]) setPeriod(period time.Duration) bool {
+	tc.metricsConfigMux.Lock()
+	defer tc.metricsConfigMux.Unlock()
+	if period > 0 {
+		if tc.ticker == nil {
+			tc.ticker = time.NewTicker(period)
+			return false
+		}
+		tc.ticker.Reset(period)
+		return true
+	}
+	if tc.ticker != nil {
+		tc.ticker.Stop()
+	}
+	return false
 }
 
 func (tc *TrackerConfig[Finding]) GetMetricsConfiguration() (*v1.Query, MetricsConfiguration) {
@@ -128,28 +122,44 @@ func (tc *TrackerConfig[Finding]) registerMetrics(registry *prometheus.Registry,
 			getMetricLabels(labelExpression, tc.labelOrder), registry); err != nil {
 			return fmt.Errorf("failed to register %s metric %q: %w", tc.category, metric, err)
 		}
-		log.Infof("Registered %s Prometheus metric %q", tc.category, metric)
+		if period > 0 {
+			log.Infof("Registered %s Prometheus metric %q", tc.category, metric)
+		}
+	}
+	if period == 0 {
+		log.Infof("Metrics collection is disabled for %s", tc.category)
 	}
 	return nil
 }
 
-// MakeTrackFunc returns a function that calls trackFunc on every metric
-// returned by gatherFunc. cfgGetter returns the current configuration, which
-// may dynamically change.
-func (cfg *TrackerConfig[Finding]) Track(ctx context.Context) {
-	query, mcfg := cfg.GetMetricsConfiguration()
+func (tc *TrackerConfig[Finding]) track(ctx context.Context) {
+	query, mcfg := tc.GetMetricsConfiguration()
 	if len(mcfg) == 0 {
 		return
 	}
-	aggregator := makeAggregator(mcfg, cfg.labelOrder)
-	for finding := range cfg.generator(ctx, query, mcfg) {
+	aggregator := makeAggregator(mcfg, tc.labelOrder)
+	for finding := range tc.generator(ctx, query, mcfg) {
 		aggregator.count(func(label Label) string {
-			return cfg.getters[label](finding)
+			return tc.getters[label](finding)
 		}, finding.Count())
 	}
 	for metric, records := range aggregator.result {
 		for _, rec := range records {
-			cfg.gauge(string(metric), rec.labels, rec.total)
+			tc.gauge(string(metric), rec.labels, rec.total)
+		}
+	}
+}
+
+func (tc *TrackerConfig[Finding]) Run(ctx context.Context) {
+	defer tc.ticker.Stop()
+	tc.track(ctx)
+
+	for {
+		select {
+		case <-tc.ticker.C:
+			tc.track(ctx)
+		case <-ctx.Done():
+			return
 		}
 	}
 }

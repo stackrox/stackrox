@@ -3,6 +3,7 @@ package image_vulnerabilities
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
@@ -138,8 +139,11 @@ func TestQueryDeploymentsAndImages(t *testing.T) {
 			actual[metric] = append(actual[metric], &labelsTotal{labels, total})
 		},
 	)
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	assert.NoError(t, cfg.Reconfigure(ctx, nil, "", nil, time.Hour))
 	cfg.SetMetricsConfiguration(search.EmptyQuery(), metricExpressions)
-	cfg.Track(context.Background())
+	cfg.Run(ctx)
 
 	expected := map[string][]*labelsTotal{
 		"Severity_count": {
