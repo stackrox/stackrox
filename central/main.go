@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/NYTimes/gziphandler"
-	"github.com/parametalol/curry"
 	administrationEventDS "github.com/stackrox/rox/central/administration/events/datastore"
 	administrationEventHandler "github.com/stackrox/rox/central/administration/events/handler"
 	administrationEventService "github.com/stackrox/rox/central/administration/events/service"
@@ -387,9 +386,12 @@ func startServices() {
 		platformReprocessor.Singleton().Start()
 	}
 
-	if telemetryCfg := curry.DropLastOfTwo(configDS.Singleton().GetPublicConfig()).
-		GetTelemetry(); telemetryCfg == nil || telemetryCfg.GetEnabled() {
-		phonehome.Singleton().OptIn()
+	{
+		pubcfg, _ := configDS.Singleton().GetPublicConfig()
+		telemetryCfg := pubcfg.GetTelemetry()
+		if telemetryCfg == nil || telemetryCfg.GetEnabled() {
+			phonehome.Singleton().OptIn()
+		}
 	}
 
 	go registerDelayedIntegrations(iiStore.DelayedIntegrations)
