@@ -1,3 +1,6 @@
+env:
+  gRPCEnforceALPN: false
+---
 # This file applies default environment configuration, based on available API server resources.
 {{- if kindIs "invalid" ._rox.env.istio }}
 env:
