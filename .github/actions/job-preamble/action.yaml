@@ -36,7 +36,6 @@ runs:
           /opt/hostedtoolcache/CodeQL
           /opt/hostedtoolcache/Ruby
           /opt/az
-          /opt/hostedtoolcache/CodeQL
           /usr/local/lib/android
 
           # remove if container job:
