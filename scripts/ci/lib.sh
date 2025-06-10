@@ -530,6 +530,9 @@ image_prefetcher_system_start() {
 }
 
 _image_prefetcher_prebuilt_start() {
+    # NOTE: when changing this function, make corresponding changes to
+    # _image_prefetcher_prebuilt_await
+
     case "$CI_JOB_NAME" in
     *qa-e2e-tests)
         image_prefetcher_start_set qa-e2e
@@ -549,6 +552,9 @@ _image_prefetcher_prebuilt_start() {
 }
 
 _image_prefetcher_system_start() {
+    # NOTE: when changing this function, make corresponding changes to
+    # _image_prefetcher_system_await
+
     case "$CI_JOB_NAME" in
     # ROX-24818: GKE is excluded from system image prefetch as it causes
     # flakes in test.
@@ -649,7 +655,10 @@ _image_prefetcher_prebuilt_await() {
     *qa-e2e-tests)
         image_prefetcher_await_set qa-e2e
         ;;
-    # TODO(ROX-20508): for operaror-e2e jobs, pre-fetch images of the release from which operator upgrade test starts.
+    *-operator-e2e-tests)
+        image_prefetcher_start_set operator-e2e
+        # TODO(ROX-20508): pre-fetch images of the release from which operator upgrade test starts as well.
+        ;;
     *)
         info "No pre-built image prefetching is currently performed for: ${CI_JOB_NAME}. Nothing to wait for."
         ;;
