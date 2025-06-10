@@ -134,7 +134,7 @@ func Singleton() *centralConfig {
 
 		cfg := makeCentralConfig(iid)
 
-		if !cfg.IsValid() || cfg.Reload() != nil {
+		if !cfg.IsActive() || cfg.Reload() != nil {
 			return
 		}
 
@@ -154,7 +154,7 @@ func Singleton() *centralConfig {
 // RegisterCentralClient adds call interceptors, adds central and admin user
 // to the tenant group.
 func (cfg *centralConfig) RegisterCentralClient(gc *grpc.Config, basicAuthProviderID string) {
-	if !cfg.IsValid() {
+	if !cfg.IsActive() {
 		return
 	}
 	gc.HTTPInterceptors = append(gc.HTTPInterceptors, cfg.GetHTTPInterceptor())
@@ -182,7 +182,7 @@ func (cfg *centralConfig) OptOut() {
 
 // OptIn enables and starts the telemetry collection.
 func (cfg *centralConfig) OptIn() {
-	if !cfg.IsValid() || cfg.IsEnabled() {
+	if !cfg.IsActive() || cfg.IsEnabled() {
 		return
 	}
 	cfg.Enable()

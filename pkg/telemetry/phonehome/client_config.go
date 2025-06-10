@@ -67,9 +67,9 @@ type Config struct {
 
 // Reconfigure updates the configuration, potentially from the provided remote
 // URL. defaultKey is returned within the RuntimeConfig if no better value is
-// found. It will not update a non-valid config.
+// found. It will not update an inactive config.
 func (cfg *Config) Reconfigure(cfgURL, defaultKey string) (*RuntimeConfig, error) {
-	if !cfg.IsValid() {
+	if !cfg.IsActive() {
 		return nil, nil
 	}
 	rc, err := getRuntimeConfig(cfgURL, defaultKey)
@@ -77,6 +77,9 @@ func (cfg *Config) Reconfigure(cfgURL, defaultKey string) (*RuntimeConfig, error
 		return nil, err
 	}
 	cfg.stateMux.Lock()
+	// This condition allows for the controlled start in main: the configuration
+	// is not enabled on the instantiation, so only an explicit call to
+	// cfg.Enable() will enable tracking and start gatherers.
 	previouslyMissingKey := cfg.StorageKey == "" && cfg.enabled
 	cfg.StorageKey = rc.Key
 	cfg.stateMux.Unlock()
@@ -89,9 +92,9 @@ func (cfg *Config) Reconfigure(cfgURL, defaultKey string) (*RuntimeConfig, error
 	return rc, nil
 }
 
-// IsValid tells whether telemetry configuration allows for data collection
-// now or later.
-func (cfg *Config) IsValid() bool {
+// IsActive tells whether telemetry configuration allows for data collection
+// now or later. An inactive configuration cannot be reconfigured.
+func (cfg *Config) IsActive() bool {
 	if cfg == nil {
 		return false
 	}
@@ -112,7 +115,7 @@ func (cfg *Config) IsEnabled() bool {
 
 // Enable data reporting if the client is configured.
 func (cfg *Config) Enable() {
-	if !cfg.IsValid() || cfg.IsEnabled() {
+	if !cfg.IsActive() || cfg.IsEnabled() {
 		return
 	}
 	cfg.stateMux.Lock()
@@ -142,7 +145,7 @@ func (cfg *Config) Disable() {
 
 // Gatherer returns the telemetry gatherer instance.
 func (cfg *Config) Gatherer() Gatherer {
-	if !cfg.IsValid() {
+	if !cfg.IsActive() {
 		return &nilGatherer{}
 	}
 	cfg.onceGatherer.Do(func() {
@@ -163,7 +166,7 @@ func (cfg *Config) Gatherer() Gatherer {
 
 // Telemeter returns the instance of the telemeter.
 func (cfg *Config) Telemeter() telemeter.Telemeter {
-	if !cfg.IsValid() {
+	if !cfg.IsActive() {
 		return &nilTelemeter{}
 	}
 	cfg.onceTelemeter.Do(func() {

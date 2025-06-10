@@ -19,7 +19,7 @@ func (cfg *centralConfig) appendRuntimeCampaign(campaign phonehome.APICallCampai
 // Reload fetches and applies the remote configuration. It will not enable an
 // explicitely disabled configuraiton.
 func (cfg *centralConfig) Reload() error {
-	if !cfg.IsValid() {
+	if !cfg.IsActive() {
 		return nil
 	}
 	runtimeCfg, err := cfg.Reconfigure(

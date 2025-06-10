@@ -10,23 +10,23 @@ import (
 
 func TestConfig_IsValid(t *testing.T) {
 	var cfg *Config
-	assert.False(t, cfg.IsValid())
+	assert.False(t, cfg.IsActive())
 	assert.False(t, cfg.IsEnabled())
 
 	cfg = &Config{}
-	assert.True(t, cfg.IsValid())
+	assert.True(t, cfg.IsActive())
 	assert.False(t, cfg.IsEnabled())
 
 	cfg = &Config{
 		StorageKey: "test-key",
 	}
-	assert.True(t, cfg.IsValid())
+	assert.True(t, cfg.IsActive())
 	assert.False(t, cfg.IsEnabled())
 
 	cfg = &Config{
 		StorageKey: DisabledKey,
 	}
-	assert.False(t, cfg.IsValid())
+	assert.False(t, cfg.IsActive())
 	assert.False(t, cfg.IsEnabled())
 }
 
@@ -36,7 +36,7 @@ func TestConfig_IsEnabled(t *testing.T) {
 		telemeter:  &nilTelemeter{},
 		gatherer:   &nilGatherer{},
 	}
-	assert.True(t, cfg.IsValid())
+	assert.True(t, cfg.IsActive())
 
 	assert.False(t, cfg.IsEnabled())
 	cfg.Disable()
@@ -50,7 +50,7 @@ func TestConfig_IsEnabled(t *testing.T) {
 	cfg.Disable()
 	assert.False(t, cfg.IsEnabled())
 
-	assert.True(t, cfg.IsValid())
+	assert.True(t, cfg.IsActive())
 }
 
 func TestConfig_Reconfigure(t *testing.T) {
@@ -63,7 +63,7 @@ func TestConfig_Reconfigure(t *testing.T) {
 		rc, err := cfg.Reconfigure("", "")
 		assert.Nil(t, rc)
 		assert.Nil(t, err)
-		assert.False(t, cfg.IsValid())
+		assert.False(t, cfg.IsActive())
 		assert.False(t, cfg.IsEnabled())
 	})
 
@@ -72,7 +72,7 @@ func TestConfig_Reconfigure(t *testing.T) {
 		rc, err := cfg.Reconfigure("", "test key")
 		assert.Nil(t, rc)
 		assert.Nil(t, err)
-		assert.False(t, cfg.IsValid())
+		assert.False(t, cfg.IsActive())
 		assert.False(t, cfg.IsEnabled())
 	})
 
@@ -81,7 +81,7 @@ func TestConfig_Reconfigure(t *testing.T) {
 		rc, err := cfg.Reconfigure("", "test-key")
 		assert.Equal(t, &RuntimeConfig{Key: "test-key", APICallCampaign: nil}, rc)
 		assert.Nil(t, err)
-		assert.True(t, cfg.IsValid())
+		assert.True(t, cfg.IsActive())
 		assert.False(t, cfg.IsEnabled())
 	})
 
@@ -91,7 +91,7 @@ func TestConfig_Reconfigure(t *testing.T) {
 		rc, err := cfg.Reconfigure("", "test-key")
 		assert.Equal(t, &RuntimeConfig{Key: "test-key", APICallCampaign: nil}, rc)
 		assert.Nil(t, err)
-		assert.True(t, cfg.IsValid())
+		assert.True(t, cfg.IsActive())
 		assert.True(t, cfg.IsEnabled())
 	})
 
@@ -101,7 +101,7 @@ func TestConfig_Reconfigure(t *testing.T) {
 		rc, err := cfg.Reconfigure("", "")
 		assert.NotNil(t, rc)
 		assert.Nil(t, err)
-		assert.True(t, cfg.IsValid())
+		assert.True(t, cfg.IsActive())
 		assert.False(t, cfg.IsEnabled())
 	})
 
@@ -109,7 +109,7 @@ func TestConfig_Reconfigure(t *testing.T) {
 		cfg.StorageKey = DisabledKey
 		cfg.enabled = false
 
-		assert.False(t, cfg.IsValid())
+		assert.False(t, cfg.IsActive())
 		assert.False(t, cfg.IsEnabled())
 
 		const remoteKey = "remote-key"
@@ -123,7 +123,7 @@ func TestConfig_Reconfigure(t *testing.T) {
 		rc, err := cfg.Reconfigure(server.URL, "test-key")
 		assert.Nil(t, rc)
 		assert.Nil(t, err)
-		assert.False(t, cfg.IsValid())
+		assert.False(t, cfg.IsActive())
 		assert.False(t, cfg.IsEnabled())
 	})
 }
