@@ -137,6 +137,7 @@ jobs:
 
     - name: Run Tests
       run: >
+        make build-prep test-prep &&
         go test -tags test,sql_integration ./${{ matrix.pkg }}/...
         -race -cover -coverprofile test-output/coverage.out -v
         | tee -a junit-reports/report.xml
