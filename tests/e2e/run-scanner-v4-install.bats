@@ -229,6 +229,7 @@ EOT
     # Without a timeout it might happen that the pod running the tests is simply killed and we won't
     # have any logs for investigation the situation.
     export BATS_TEST_TIMEOUT=1800 # Seconds
+    export COLLECT_ANALYSIS_MAX_DURATION=5s
 
    if [[ -z "${HEAD_HELM_CHART_CENTRAL_SERVICES_DIR:-}" ]]; then
         HEAD_HELM_CHART_CENTRAL_SERVICES_DIR=$(mktemp -d)
@@ -397,14 +398,34 @@ teardown() {
         sensor_namespace="${CUSTOM_SENSOR_NAMESPACE}"
     fi
 
-    echo "Using central namespace: ${central_namespace}"
-    echo "Using sensor namespace: ${sensor_namespace}"
+    # Execute this on a best-effort basis, as it sometimes encounters long delays for whatever reason.
+    timeout "$COLLECT_ANALYSIS_MAX_DURATION" bash -c "collect_analysis_data '$central_namespace' '$sensor_namespace'" || {
+        echo "ERROR: Collecting analysis data during teardown did not finish in time."
+        echo "NOTE: This failure will be ignored to not cause a test failure."
+        true # Explicit.
+    }
+
+    run remove_existing_stackrox_resources "${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}" "stackrox"
+    echo "Post-test teardown complete."
+
+    _end
+}
+
+collect_analysis_data() {
+    local central_namespace="$1"
+    local sensor_namespace="$2"
+
+    echo "Attempting to collect analysis data..."
 
     if [[ -n "${SCANNER_V4_LOG_DIR:-}" ]]; then
-        "$ROOT/scripts/ci/collect-service-logs.sh" "${central_namespace}" \
-            "${SCANNER_V4_LOG_DIR}/${BATS_TEST_NUMBER}-${BATS_TEST_NAME}"
+        if [[ -n "$central_namespace" ]]; then
+            echo "Using central namespace: ${central_namespace}"
+            "$ROOT/scripts/ci/collect-service-logs.sh" "${central_namespace}" \
+                "${SCANNER_V4_LOG_DIR}/${BATS_TEST_NUMBER}-${BATS_TEST_NAME}"
+        fi
 
         if [[ "${central_namespace}" != "${sensor_namespace}" && -n "${sensor_namespace}" ]]; then
+            echo "Using sensor namespace: ${sensor_namespace}"
             "$ROOT/scripts/ci/collect-service-logs.sh" "${sensor_namespace}" \
                 "${SCANNER_V4_LOG_DIR}/${BATS_TEST_NUMBER}-${BATS_TEST_NAME}"
         fi
@@ -420,12 +441,8 @@ teardown() {
             describe_deployments_in_namespace "${sensor_namespace}"
         fi
     fi
-
-    run remove_existing_stackrox_resources "${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}" "stackrox"
-    echo "Post-test teardown complete."
-
-    _end
 }
+export -f collect_analysis_data
 
 @test "Upgrade from old Helm chart to HEAD Helm chart with Scanner v4 enabled" {
     init
