@@ -17,7 +17,7 @@ var (
 	customAggregatedMetrics sync.Map // [string]metricRecord
 
 	customRegistries = map[string]*prometheus.Registry{"": prometheus.NewRegistry()}
-	regMux           sync.Mutex
+	regMux           sync.RWMutex
 )
 
 type Exposure uint8
@@ -43,6 +43,13 @@ func GetExternalRegistry(name string) *prometheus.Registry {
 		customRegistries[name] = r
 	}
 	return r
+}
+
+func IsKnownRegistry(name string) bool {
+	regMux.RLock()
+	defer regMux.RUnlock()
+	_, ok := customRegistries[name]
+	return ok
 }
 
 // RegisterCustomAggregatedMetric registers user-defined aggregated metrics

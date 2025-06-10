@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
 	configDS "github.com/stackrox/rox/central/config/datastore"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/metrics/aggregator/common"
@@ -67,12 +66,20 @@ func Singleton() interface {
 }
 
 func (ar *aggregatorRunner) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	registryName, _ := strings.CutPrefix(req.URL.Path, "/metrics/")
-	registry := metrics.GetExternalRegistry(registryName)
-	ar.getHandler(registryName, registry).ServeHTTP(w, req)
+	if h := ar.getHandler(req); h != nil {
+		h.ServeHTTP(w, req)
+	} else {
+		// Serve empty OK for unknown registry names.
+		w.WriteHeader(http.StatusOK)
+	}
 }
 
-func (ar *aggregatorRunner) getHandler(registryName string, registry *prometheus.Registry) http.Handler {
+func (ar *aggregatorRunner) getHandler(req *http.Request) http.Handler {
+	registryName, ok := ar.getRegistryName(req)
+	if !ok {
+		return nil
+	}
+	registry := metrics.GetExternalRegistry(registryName)
 	ar.handlersMux.Lock()
 	defer ar.handlersMux.Unlock()
 	h, ok := ar.handlers[registryName]
@@ -81,6 +88,17 @@ func (ar *aggregatorRunner) getHandler(registryName string, registry *prometheus
 		ar.handlers[registryName] = h
 	}
 	return h
+}
+
+func (*aggregatorRunner) getRegistryName(req *http.Request) (string, bool) {
+	registryName, ok := strings.CutPrefix(req.URL.Path, "/metrics")
+	if ok && (registryName == "" || strings.HasPrefix(registryName, "/")) {
+		registryName = strings.TrimPrefix(registryName, "/")
+		if metrics.IsKnownRegistry(registryName) {
+			return registryName, true
+		}
+	}
+	return "", false
 }
 
 func (ar *aggregatorRunner) Reconfigure(cfg *storage.PrometheusMetricsConfig) error {
