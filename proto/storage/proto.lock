@@ -5834,6 +5834,36 @@
             ]
           },
           {
+            "name": "Exploit",
+            "fields": [
+              {
+                "id": 1,
+                "name": "date_added",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "short_description",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "required_action",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "due_date",
+                "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "known_ransomware_campaign_use",
+                "type": "string"
+              }
+            ]
+          },
+          {
             "name": "CVE",
             "fields": [
               {
@@ -6056,6 +6086,11 @@
                 "id": 12,
                 "name": "epss",
                 "type": "EPSS"
+              },
+              {
+                "id": 13,
+                "name": "exploit",
+                "type": "Exploit"
               }
             ],
             "messages": [
@@ -18937,6 +18972,11 @@
                 "id": 23,
                 "name": "epss",
                 "type": "EPSS"
+              },
+              {
+                "id": 25,
+                "name": "exploit",
+                "type": "Exploit"
               }
             ],
             "reserved_ids": [
