@@ -826,7 +826,7 @@ func (s *flowStoreImpl) pruneEntities(ctx context.Context, deleteStmt string, en
 	ctx, cancel := context.WithTimeout(ctx, deleteTimeout)
 	defer cancel()
 
-	ct, err := conn.Exec(ctx, deleteStmt, entityIds)
+	rows, err := conn.Query(ctx, deleteStmt, entityIds)
 	if err != nil {
 		return 0, err
 	}
@@ -846,7 +846,7 @@ func (s *flowStoreImpl) pruneEntities(ctx context.Context, deleteStmt string, en
 		}
 	}
 
-	return ct.RowsAffected(), nil
+	return int64(len(deletedIDs)), nil
 }
 
 // RemoveStaleFlows - remove stale duplicate network flows

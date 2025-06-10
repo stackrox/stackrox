@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stretchr/testify/assert"
@@ -304,6 +305,22 @@ func getNFlows(flows []flowsWithTimestamp) int {
 	return count
 }
 
+func (s *NetworkflowStoreSuite) compareEntities(actualEntityIDs []string, expectedEntityIDs set.StringSet) bool {
+
+	if len(actualEntityIDs) != len(expectedEntityIDs) {
+		return false
+	}
+
+	for _, actualEntityID := range actualEntityIDs {
+		_, exists := expectedEntityIDs[actualEntityID]
+		if !exists {
+			return false
+		}
+	}
+
+	return true
+}
+
 // Two flows using two distinct external-entities. Both are pruned
 // and we expect that all entities are pruned as well.
 func (s *NetworkflowStoreSuite) TestPruneExternalEntitiesAllOrphaned() {
@@ -364,7 +381,7 @@ func (s *NetworkflowStoreSuite) TestPruneExternalEntitiesAllOrphaned() {
 		flows            []flowsWithTimestamp
 		entities         []*storage.NetworkEntity
 		expectedFlows    int
-		expectedEntities int
+		expectedEntities set.StringSet
 		window           time.Time
 	}{
 		{
@@ -383,7 +400,7 @@ func (s *NetworkflowStoreSuite) TestPruneExternalEntitiesAllOrphaned() {
 				extEntity2,
 			},
 			expectedFlows:    0,
-			expectedEntities: 0,
+			expectedEntities: set.NewStringSet(),
 			window:           now.UTC().Add(-10 * time.Second),
 		},
 		{
@@ -408,7 +425,59 @@ func (s *NetworkflowStoreSuite) TestPruneExternalEntitiesAllOrphaned() {
 				extEntity1,
 			},
 			expectedFlows:    1,
-			expectedEntities: 1,
+			expectedEntities: set.NewStringSet(extEntity1.GetInfo().Id),
+			window:           now.UTC().Add(-200 * time.Second),
+		},
+		{
+			// One entity used by two flows. One flow pruned only.
+			// We expect that the entity remains.
+			name: "Do not prune entity due to egress flow still using it",
+			flows: []flowsWithTimestamp{
+				{
+					flows: []*storage.NetworkFlow{
+						egressFlow,
+					},
+					updatedAt: timestamp.FromGoTime(now.Add(-100 * time.Second)),
+				},
+				{
+					flows: []*storage.NetworkFlow{
+						ingressFlow1,
+					},
+					updatedAt: timestamp.FromGoTime(now.Add(-300 * time.Second)),
+				},
+			},
+			entities: []*storage.NetworkEntity{
+				extEntity1,
+			},
+			expectedFlows:    1,
+			expectedEntities: set.NewStringSet(extEntity1.GetInfo().Id),
+			window:           now.UTC().Add(-200 * time.Second),
+		},
+		{
+			// One entity used by two flows. One flow pruned only.
+			// We expect that the entity remains.
+			name: "One entity pruned another kept",
+			flows: []flowsWithTimestamp{
+				{
+					flows: []*storage.NetworkFlow{
+						egressFlow,
+					},
+					updatedAt: timestamp.FromGoTime(now.Add(-100 * time.Second)),
+				},
+				{
+					flows: []*storage.NetworkFlow{
+						ingressFlow1,
+						ingressFlow2,
+					},
+					updatedAt: timestamp.FromGoTime(now.Add(-300 * time.Second)),
+				},
+			},
+			entities: []*storage.NetworkEntity{
+				extEntity1,
+				extEntity2,
+			},
+			expectedFlows:    1,
+			expectedEntities: set.NewStringSet(extEntity1.GetInfo().Id),
 			window:           now.UTC().Add(-200 * time.Second),
 		},
 		{
@@ -429,7 +498,7 @@ func (s *NetworkflowStoreSuite) TestPruneExternalEntitiesAllOrphaned() {
 				extEntity2,
 			},
 			expectedFlows:    2,
-			expectedEntities: 2,
+			expectedEntities: set.NewStringSet(extEntity1.GetInfo().Id, extEntity2.GetInfo().Id),
 			window:           now.UTC().Add(-100 * time.Second),
 		},
 	}
@@ -474,11 +543,16 @@ func (s *NetworkflowStoreSuite) TestPruneExternalEntitiesAllOrphaned() {
 			s.Nil(err)
 			s.Equal(c.expectedFlows, count)
 
-			// entities after pruning
-			row = s.pgDB.DB.QueryRow(s.ctx, entitiesCountStmt)
-			err = row.Scan(&count)
+			//// entities after pruning
+			//row = s.pgDB.DB.QueryRow(s.ctx, entitiesCountStmt)
+			//err = row.Scan(&count)
+			//s.Nil(err)
+			//s.Equal(c.expectedEntities, count)
+			actualEntityIDs, err := s.entityStore.GetIDs(s.ctx)
 			s.Nil(err)
-			s.Equal(c.expectedEntities, count)
+
+			equal := s.compareEntities(actualEntityIDs, c.expectedEntities)
+			s.True(equal)
 		})
 	}
 }
