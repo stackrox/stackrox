@@ -656,7 +656,7 @@ _image_prefetcher_prebuilt_await() {
         image_prefetcher_await_set qa-e2e
         ;;
     *-operator-e2e-tests)
-        image_prefetcher_start_set operator-e2e
+        image_prefetcher_await_set operator-e2e
         # TODO(ROX-20508): pre-fetch images of the release from which operator upgrade test starts as well.
         ;;
     *)
