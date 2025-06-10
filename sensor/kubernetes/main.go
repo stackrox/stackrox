@@ -33,11 +33,6 @@ func init() {
 
 func main() {
 	premain.StartMain()
-	alpnErr := os.Setenv("GRPC_ENFORCE_ALPN_ENABLED", "false")
-	if alpnErr != nil {
-		log.Warn("Failed to disable ALPN enforcement through the gRPC library." +
-			" Connection to central may fail due to ALPN being enforced.")
-	}
 
 	devmode.StartOnDevBuilds("bin/kubernetes-sensor")
 
