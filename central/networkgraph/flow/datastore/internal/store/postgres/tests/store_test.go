@@ -404,6 +404,29 @@ func (s *NetworkflowStoreSuite) TestPruneExternalEntitiesAllOrphaned() {
 			window:           now.UTC().Add(-10 * time.Second),
 		},
 		{
+			name: "Same flow appears twice",
+			flows: []flowsWithTimestamp{
+				{
+					flows: []*storage.NetworkFlow{
+						egressFlow,
+					},
+					updatedAt: timestamp.FromGoTime(now.Add(-100 * time.Second)),
+				},
+				{
+					flows: []*storage.NetworkFlow{
+						egressFlow,
+					},
+					updatedAt: timestamp.FromGoTime(now.Add(-200 * time.Second)),
+				},
+			},
+			entities: []*storage.NetworkEntity{
+				extEntity1,
+			},
+			expectedFlows:    0,
+			expectedEntities: set.NewStringSet(),
+			window:           now.UTC().Add(-10 * time.Second),
+		},
+		{
 			// One entity used by two flows. One flow pruned only.
 			// We expect that the entity remains.
 			name: "Do not prune entity due to one flow still using it",
@@ -532,8 +555,6 @@ func (s *NetworkflowStoreSuite) TestPruneExternalEntitiesAllOrphaned() {
 			s.Nil(err)
 			s.Equal(len(c.entities), count)
 
-			// pruning (anything older than 10s).
-			// Flows should get pruned because Deployment1 is not in the DB.
 			err = s.flowStore.RemoveOrphanedFlows(s.ctx, &c.window)
 			s.Nil(err)
 
@@ -543,11 +564,6 @@ func (s *NetworkflowStoreSuite) TestPruneExternalEntitiesAllOrphaned() {
 			s.Nil(err)
 			s.Equal(c.expectedFlows, count)
 
-			//// entities after pruning
-			//row = s.pgDB.DB.QueryRow(s.ctx, entitiesCountStmt)
-			//err = row.Scan(&count)
-			//s.Nil(err)
-			//s.Equal(c.expectedEntities, count)
 			actualEntityIDs, err := s.entityStore.GetIDs(s.ctx)
 			s.Nil(err)
 
