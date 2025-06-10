@@ -208,6 +208,8 @@ spec:
         - name: ROX_OPENSHIFT_API
           value: "true"
         {{- end }}
+        - name: GRPC_ENFORCE_ALPN_ENABLED
+          value: {{ quote ._rox.env.gRPCEnforceALPN }}
         [<- if (not .KubectlOutput) >]
         {{- if ._rox.sensor.localImageScanning.enabled }}
         - name: ROX_SCANNER_GRPC_ENDPOINT
@@ -217,8 +219,6 @@ spec:
         {{- end }}
         - name: ROX_HELM_CLUSTER_CONFIG_FP
           value: {{ quote ._rox._configFP }}
-        - name: GRPC_ENFORCE_ALPN_ENABLED
-          value: {{ quote ._rox.env.gRPCEnforceALPN }}
         {{- if ._rox._scannerV4Enabled }}
         - name: ROX_SCANNER_V4_INDEXER_ENDPOINT
           value: {{ printf "scanner-v4-indexer.%s.svc:8443" .Release.Namespace }}
