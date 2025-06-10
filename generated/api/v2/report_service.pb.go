@@ -636,6 +636,7 @@ type VulnerabilityReportFilters struct {
 	CvesSince              isVulnerabilityReportFilters_CvesSince `protobuf_oneof:"cves_since"`
 	IncludeNvdCvss         bool                                   `protobuf:"varint,7,opt,name=include_nvd_cvss,json=includeNvdCvss,proto3" json:"include_nvd_cvss,omitempty"`
 	IncludeEpssProbability bool                                   `protobuf:"varint,8,opt,name=include_epss_probability,json=includeEpssProbability,proto3" json:"include_epss_probability,omitempty"`
+	IncludeExploitable     bool                                   `protobuf:"varint,10,opt,name=include_exploitable,json=includeExploitable,proto3" json:"include_exploitable,omitempty"`
 	IncludeAdvisory        bool                                   `protobuf:"varint,9,opt,name=include_advisory,json=includeAdvisory,proto3" json:"include_advisory,omitempty"`
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
@@ -740,6 +741,13 @@ func (x *VulnerabilityReportFilters) GetIncludeEpssProbability() bool {
 	return false
 }
 
+func (x *VulnerabilityReportFilters) GetIncludeExploitable() bool {
+	if x != nil {
+		return x.IncludeExploitable
+	}
+	return false
+}
+
 func (x *VulnerabilityReportFilters) GetIncludeAdvisory() bool {
 	if x != nil {
 		return x.IncludeAdvisory
@@ -776,6 +784,7 @@ type ViewBasedVulnerabilityReportFilters struct {
 	ImageTypes             []ViewBasedVulnerabilityReportFilters_ImageType `protobuf:"varint,2,rep,packed,name=image_types,json=imageTypes,proto3,enum=v2.ViewBasedVulnerabilityReportFilters_ImageType" json:"image_types,omitempty"`
 	IncludeNvdCvss         bool                                            `protobuf:"varint,3,opt,name=include_nvd_cvss,json=includeNvdCvss,proto3" json:"include_nvd_cvss,omitempty"`
 	IncludeEpssProbability bool                                            `protobuf:"varint,4,opt,name=include_epss_probability,json=includeEpssProbability,proto3" json:"include_epss_probability,omitempty"`
+	IncludeExploitable     bool                                            `protobuf:"varint,6,opt,name=include_exploitable,json=includeExploitable,proto3" json:"include_exploitable,omitempty"`
 	Query                  string                                          `protobuf:"bytes,5,opt,name=query,proto3" json:"query,omitempty"`
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
@@ -828,6 +837,13 @@ func (x *ViewBasedVulnerabilityReportFilters) GetIncludeNvdCvss() bool {
 func (x *ViewBasedVulnerabilityReportFilters) GetIncludeEpssProbability() bool {
 	if x != nil {
 		return x.IncludeEpssProbability
+	}
+	return false
+}
+
+func (x *ViewBasedVulnerabilityReportFilters) GetIncludeExploitable() bool {
+	if x != nil {
+		return x.IncludeExploitable
 	}
 	return false
 }
@@ -2112,7 +2128,7 @@ const file_api_v2_report_service_proto_rawDesc = "" +
 	"\n" +
 	"ReportType\x12\x11\n" +
 	"\rVULNERABILITY\x10\x00B\b\n" +
-	"\x06filter\"\x80\a\n" +
+	"\x06filter\"\xb1\a\n" +
 	"\x1aVulnerabilityReportFilters\x12I\n" +
 	"\n" +
 	"fixability\x18\x01 \x01(\x0e2).v2.VulnerabilityReportFilters.FixabilityR\n" +
@@ -2126,7 +2142,9 @@ const file_api_v2_report_service_proto_rawDesc = "" +
 	" since_last_sent_scheduled_report\x18\x05 \x01(\bH\x00R\x1csinceLastSentScheduledReport\x12F\n" +
 	"\x10since_start_date\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampH\x00R\x0esinceStartDate\x12(\n" +
 	"\x10include_nvd_cvss\x18\a \x01(\bR\x0eincludeNvdCvss\x128\n" +
-	"\x18include_epss_probability\x18\b \x01(\bR\x16includeEpssProbability\x12)\n" +
+	"\x18include_epss_probability\x18\b \x01(\bR\x16includeEpssProbability\x12/\n" +
+	"\x13include_exploitable\x18\n" +
+	" \x01(\bR\x12includeExploitable\x12)\n" +
 	"\x10include_advisory\x18\t \x01(\bR\x0fincludeAdvisory\"4\n" +
 	"\n" +
 	"Fixability\x12\b\n" +
@@ -2143,12 +2161,13 @@ const file_api_v2_report_service_proto_rawDesc = "" +
 	"\bDEPLOYED\x10\x00\x12\v\n" +
 	"\aWATCHED\x10\x01B\f\n" +
 	"\n" +
-	"cves_since\"\x9b\x02\n" +
+	"cves_since\"\xcc\x02\n" +
 	"#ViewBasedVulnerabilityReportFilters\x12R\n" +
 	"\vimage_types\x18\x02 \x03(\x0e21.v2.ViewBasedVulnerabilityReportFilters.ImageTypeR\n" +
 	"imageTypes\x12(\n" +
 	"\x10include_nvd_cvss\x18\x03 \x01(\bR\x0eincludeNvdCvss\x128\n" +
-	"\x18include_epss_probability\x18\x04 \x01(\bR\x16includeEpssProbability\x12\x14\n" +
+	"\x18include_epss_probability\x18\x04 \x01(\bR\x16includeEpssProbability\x12/\n" +
+	"\x13include_exploitable\x18\x06 \x01(\bR\x12includeExploitable\x12\x14\n" +
 	"\x05query\x18\x05 \x01(\tR\x05query\"&\n" +
 	"\tImageType\x12\f\n" +
 	"\bDEPLOYED\x10\x00\x12\v\n" +

@@ -1284,6 +1284,9 @@
         "includeEpssProbability": {
           "type": "boolean"
         },
+        "includeExploitable": {
+          "type": "boolean"
+        },
         "query": {
           "type": "string"
         }
@@ -1330,6 +1333,9 @@
           "type": "boolean"
         },
         "includeEpssProbability": {
+          "type": "boolean"
+        },
+        "includeExploitable": {
           "type": "boolean"
         },
         "includeAdvisory": {
