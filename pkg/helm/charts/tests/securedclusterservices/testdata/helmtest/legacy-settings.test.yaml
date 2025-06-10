@@ -26,34 +26,38 @@ tests:
     envVars:
       - name: "CUSTOM_ENV_VAR"
         value: "custom-value"
-  expect: |
-    # Config translation
-    .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | [
-        (.clusterName | assertThat(. == "legacy-cluster")),
-        (.clusterConfig | [
-          (.staticConfig | [
-            (.type | assertThat(. == "KUBERNETES_CLUSTER")),
-            (.mainImage | assertThat(. == "legacy-main.example.com/legacy-main")),
-            (.collectorImage | assertThat(. == "legacy-collector.example.com/legacy-collector")),
-            (.centralApiEndpoint | assertThat(. == "legacy-central.example.com:8443")),
-            (.collectionMethod | assertThat(. == "CORE_BPF"))
+  tests:
+  - name: Config translation
+    expect: |
+      .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | [
+          (.clusterName | assertThat(. == "legacy-cluster")),
+          (.clusterConfig | [
+            (.staticConfig | [
+              (.type | assertThat(. == "KUBERNETES_CLUSTER")),
+              (.mainImage | assertThat(. == "legacy-main.example.com/legacy-main")),
+              (.collectorImage | assertThat(. == "legacy-collector.example.com/legacy-collector")),
+              (.centralApiEndpoint | assertThat(. == "legacy-central.example.com:8443")),
+              (.collectionMethod | assertThat(. == "CORE_BPF"))
+            ][])
           ][])
-        ][])
-      ][]
+        ][]
 
-    # Image settings
-    container(.deployments.sensor; "sensor") | .image | assertThat(startswith("legacy-main.example.com/legacy-main:"))
-    container(.daemonsets.collector; "collector") | .image
-      | assertThat(startswith("legacy-collector.example.com/legacy-collector:"))
+  - name: Image settings
+    expect: |
+      container(.deployments.sensor; "sensor") | .image | assertThat(startswith("legacy-main.example.com/legacy-main:"))
+      container(.daemonsets.collector; "collector") | .image
+        | assertThat(startswith("legacy-collector.example.com/legacy-collector:"))
 
-    # Custom environment variables
-    envVars(.deployments.sensor; "sensor")["CUSTOM_ENV_VAR"] | assertThat(. == "custom-value")
+  - name: Custom environment variables
+    expect: |
+      envVars(.deployments.sensor; "sensor")["CUSTOM_ENV_VAR"] | assertThat(. == "custom-value")
 
-    # Endpoint settings
-    envVars(.daemonsets.collector; "compliance")["ROX_ADVERTISED_ENDPOINT"]
-      | assertThat(. == "legacy-sensor.example.com:8443")
-    envVars(.deployments["admission-control"]; "admission-control")["ROX_SENSOR_ENDPOINT"]
-      | assertThat(. == "legacy-sensor.example.com:8443")
+  - name: Endpoint settings
+    expect: |
+      envVars(.daemonsets.collector; "compliance")["ROX_ADVERTISED_ENDPOINT"]
+        | assertThat(. == "legacy-sensor.example.com:8443")
+      envVars(.deployments["admission-control"]; "admission-control")["ROX_SENSOR_ENDPOINT"]
+        | assertThat(. == "legacy-sensor.example.com:8443")
 
 - name: OpenShift in Legacy mode detects OpenShift 3
   values:

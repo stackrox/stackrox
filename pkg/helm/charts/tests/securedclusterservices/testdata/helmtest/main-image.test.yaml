@@ -9,12 +9,12 @@ values:
   imagePullSecrets:
     allowNone: true
 
+# 1. The image in the config should at least be a prefix (sans tag) of the sensor image.
+# 2. Whenever the image in the config contains a tag, there should be a warning informing the user
+#    about the upgrade impact.
 expect: |
-  # The image in the config should at least be a prefix (sans tag) of the sensor image
   mainImageFromConfig as $imgFromConfig
     | mainImageContainers | .image | assertThat(startswith($imgFromConfig))
-  # Whenever the image in the config contains a tag, there should be a warning informing the user about the upgrade
-  # impact.
   .notes as $notes
     | mainImageFromConfig | assumeThat(contains(":"))
       | $notes | assertThat(contains("WARNING: You have specified an explicit main image"))
