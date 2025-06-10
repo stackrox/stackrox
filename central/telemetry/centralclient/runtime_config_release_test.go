@@ -43,5 +43,6 @@ func Test_centralConfig_Reload_release(t *testing.T) {
 	t.Run("ignore remote if local DISABLED", func(t *testing.T) {
 		require.NoError(t, cfg.Reload())
 		assert.False(t, cfg.IsEnabled())
+		assert.False(t, cfg.IsValid())
 	})
 }

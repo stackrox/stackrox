@@ -65,6 +65,9 @@ type Config struct {
 	stateMux sync.RWMutex
 }
 
+// Reconfigure updates the configuration, potentially from the provided remote
+// URL. defaultKey is returned within the RuntimeConfig if no better value is
+// found. It will not update a non-valid config.
 func (cfg *Config) Reconfigure(cfgURL, defaultKey string) (*RuntimeConfig, error) {
 	if !cfg.IsValid() {
 		return nil, nil
@@ -97,7 +100,7 @@ func (cfg *Config) IsValid() bool {
 	return cfg.StorageKey != DisabledKey
 }
 
-// IsConfigured tells whether telemetry configuration allows for data collection.
+// IsEnabled tells whether the configuration allows for data collection now.
 func (cfg *Config) IsEnabled() bool {
 	if cfg == nil {
 		return false

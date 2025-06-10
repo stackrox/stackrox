@@ -1,6 +1,8 @@
 package phonehome
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -103,4 +105,25 @@ func TestConfig_Reconfigure(t *testing.T) {
 		assert.False(t, cfg.IsEnabled())
 	})
 
+	t.Run("reconfigure DisabledKey with downloaded test key", func(t *testing.T) {
+		cfg.StorageKey = DisabledKey
+		cfg.enabled = false
+
+		assert.False(t, cfg.IsValid())
+		assert.False(t, cfg.IsEnabled())
+
+		const remoteKey = "remote-key"
+
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(`{"storage_key_v1": "` + remoteKey + `" }`))
+		}))
+		defer server.Close()
+
+		rc, err := cfg.Reconfigure(server.URL, "test-key")
+		assert.Nil(t, rc)
+		assert.Nil(t, err)
+		assert.False(t, cfg.IsValid())
+		assert.False(t, cfg.IsEnabled())
+	})
 }
