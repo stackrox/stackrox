@@ -141,7 +141,7 @@ func TestQueryDeploymentsAndImages(t *testing.T) {
 	)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	assert.NoError(t, cfg.Reconfigure(ctx, nil, "", nil, time.Hour))
+	assert.NoError(t, cfg.Reconfigure(ctx, "", nil, time.Hour))
 	cfg.SetMetricsConfiguration(search.EmptyQuery(), metricExpressions)
 	cfg.Run(ctx)
 

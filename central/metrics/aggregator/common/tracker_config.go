@@ -33,7 +33,7 @@ type TrackerConfig[Finding Countable] struct {
 
 type Tracker interface {
 	Run(context.Context)
-	Reconfigure(context.Context, *prometheus.Registry, string, map[string]*storage.PrometheusMetricsConfig_Labels, time.Duration) error
+	Reconfigure(context.Context, string, map[string]*storage.PrometheusMetricsConfig_Labels, time.Duration) error
 }
 
 func makeLabelOrderMap[Finding Countable](getters []LabelGetter[Finding]) map[Label]int {
@@ -68,7 +68,7 @@ func MakeTrackerConfig[Finding Countable](category, description string,
 	}
 }
 
-func (tc *TrackerConfig[Finding]) Reconfigure(ctx context.Context, registry *prometheus.Registry, filter string, cfg map[string]*storage.PrometheusMetricsConfig_Labels, period time.Duration) error {
+func (tc *TrackerConfig[Finding]) Reconfigure(ctx context.Context, filter string, cfg map[string]*storage.PrometheusMetricsConfig_Labels, period time.Duration) error {
 	mcfg, err := parseMetricLabels(cfg, tc.labelOrder)
 	if err != nil {
 		return err
@@ -82,7 +82,23 @@ func (tc *TrackerConfig[Finding]) Reconfigure(ctx context.Context, registry *pro
 	if tc.setPeriod(period) {
 		tc.track(ctx)
 	}
-	return tc.registerMetrics(registry, period)
+
+	if period == 0 {
+		log.Infof("Metrics collection is disabled for %s", tc.category)
+	}
+
+	for metric, labelExpression := range tc.metricsConfig {
+		regCfg := cfg[string(metric)]
+		if err := metrics.RegisterCustomAggregatedMetric(string(metric), tc.description, period,
+			getMetricLabels(labelExpression, tc.labelOrder),
+			regCfg.GetRegistryName(), metrics.Exposure(regCfg.GetExposure().Number())); err != nil {
+			return fmt.Errorf("failed to register %s metric %q: %w", tc.category, metric, err)
+		}
+		if period > 0 {
+			log.Infof("Registered %s Prometheus metric %q", tc.category, metric)
+		}
+	}
+	return nil
 }
 
 // setPeriod returns true if tracker period has been reconfigured.
@@ -114,22 +130,6 @@ func (tc *TrackerConfig[Finding]) SetMetricsConfiguration(query *v1.Query, mcfg 
 	defer tc.metricsConfigMux.Unlock()
 	tc.query = query
 	tc.metricsConfig = mcfg
-}
-
-func (tc *TrackerConfig[Finding]) registerMetrics(registry *prometheus.Registry, period time.Duration) error {
-	for metric, labelExpression := range tc.metricsConfig {
-		if err := metrics.RegisterCustomAggregatedMetric(string(metric), tc.description, period,
-			getMetricLabels(labelExpression, tc.labelOrder), registry); err != nil {
-			return fmt.Errorf("failed to register %s metric %q: %w", tc.category, metric, err)
-		}
-		if period > 0 {
-			log.Infof("Registered %s Prometheus metric %q", tc.category, metric)
-		}
-	}
-	if period == 0 {
-		log.Infof("Metrics collection is disabled for %s", tc.category)
-	}
-	return nil
 }
 
 func (tc *TrackerConfig[Finding]) track(ctx context.Context) {

@@ -2,13 +2,18 @@ package common
 
 import (
 	"maps"
+	"regexp"
 	"slices"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 )
 
-var errInvalidConfiguration = errox.InvalidArgs.New("invalid configuration")
+var (
+	errInvalidConfiguration = errox.InvalidArgs.New("invalid configuration")
+
+	registryNamePattern = regexp.MustCompile("^[a-zA-Z0-9-_]*$")
+)
 
 func isKnownLabel(label string, labelOrder map[Label]int) bool {
 	_, ok := labelOrder[Label(label)]
@@ -19,6 +24,12 @@ func isKnownLabel(label string, labelOrder map[Label]int) bool {
 func parseMetricLabels(config map[string]*storage.PrometheusMetricsConfig_Labels, labelOrder map[Label]int) (MetricsConfiguration, error) {
 	result := make(MetricsConfiguration, len(config))
 	for metric, labels := range config {
+
+		if !registryNamePattern.MatchString(labels.GetRegistryName()) {
+			return nil, errInvalidConfiguration.CausedByf(
+				`registry name for metric %s doesn't match "`+registryNamePattern.String()+`"`, metric)
+		}
+
 		if err := validateMetricName(metric); err != nil {
 			return nil, errInvalidConfiguration.CausedByf(
 				"invalid metric name %q: %v", metric, err)

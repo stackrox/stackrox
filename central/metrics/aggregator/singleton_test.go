@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/central/metrics/aggregator/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -33,8 +32,6 @@ var testGetters = []common.LabelGetter[something]{
 
 func Test_run(t *testing.T) {
 
-	testRegistry := prometheus.NewRegistry()
-
 	t.Run("stop on start", func(t *testing.T) {
 		i := 0
 		runner := &aggregatorRunner{}
@@ -49,7 +46,7 @@ func Test_run(t *testing.T) {
 			},
 			nil,
 		)
-		assert.NoError(t, tracker.Reconfigure(runner.ctx, testRegistry, "", getNonEmptyStorageCfg(), 10*time.Minute))
+		assert.NoError(t, tracker.Reconfigure(runner.ctx, "", getNonEmptyStorageCfg(), 10*time.Minute))
 		runner.Stop()
 		tracker.Run(runner.ctx)
 		assert.Equal(t, 2, i)
@@ -70,8 +67,8 @@ func Test_run(t *testing.T) {
 			},
 			nil,
 		)
-		assert.NoError(t, tracker.Reconfigure(runner.ctx, testRegistry, "", getNonEmptyStorageCfg(), time.Minute))
-		assert.NoError(t, tracker.Reconfigure(runner.ctx, testRegistry, "", getNonEmptyStorageCfg(), time.Minute))
+		assert.NoError(t, tracker.Reconfigure(runner.ctx, "", getNonEmptyStorageCfg(), time.Minute))
+		assert.NoError(t, tracker.Reconfigure(runner.ctx, "", getNonEmptyStorageCfg(), time.Minute))
 		tracker.Run(runner.ctx)
 		assert.True(t, i)
 	})
@@ -94,7 +91,7 @@ func Test_run(t *testing.T) {
 			nil,
 		)
 
-		assert.NoError(t, tracker.Reconfigure(runner.ctx, testRegistry, "", getNonEmptyStorageCfg(), 100*time.Microsecond))
+		assert.NoError(t, tracker.Reconfigure(runner.ctx, "", getNonEmptyStorageCfg(), 100*time.Microsecond))
 		tracker.Run(runner.ctx)
 		assert.Greater(t, i, 2)
 	})

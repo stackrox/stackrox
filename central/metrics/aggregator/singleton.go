@@ -3,9 +3,9 @@ package aggregator
 import (
 	"context"
 	"net/http"
+	"strings"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
 	configDS "github.com/stackrox/rox/central/config/datastore"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/metrics/aggregator/common"
@@ -26,7 +26,9 @@ var (
 
 type aggregatorRunner struct {
 	http.Handler
-	registry *prometheus.Registry
+
+	handlers    map[string]http.Handler
+	handlersMux sync.Mutex
 
 	ctx      context.Context
 	cancel   context.CancelFunc
@@ -42,12 +44,9 @@ func Singleton() interface {
 	Reconfigure(*storage.PrometheusMetricsConfig) error
 } {
 	once.Do(func() {
-		registry := prometheus.NewRegistry()
 
 		runner = &aggregatorRunner{
-			Handler:  promhttp.HandlerFor(registry, promhttp.HandlerOpts{}),
-			registry: registry,
-
+			handlers:              map[string]http.Handler{},
 			image_vulnerabilities: image_vulnerabilities.MakeTrackerConfig(metrics.SetCustomAggregatedCount),
 		}
 
@@ -66,11 +65,24 @@ func Singleton() interface {
 	return runner
 }
 
+func (ar *aggregatorRunner) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	ar.handlersMux.Lock()
+	defer ar.handlersMux.Unlock()
+
+	registryName, _ := strings.CutPrefix(req.URL.Path, "/metrics/")
+	registry := metrics.GetExternalRegistry(registryName)
+	h, ok := ar.handlers[registryName]
+	if !ok {
+		h = promhttp.HandlerFor(registry, promhttp.HandlerOpts{})
+		ar.handlers[registryName] = h
+	}
+	h.ServeHTTP(w, req)
+}
+
 func (ar *aggregatorRunner) Reconfigure(cfg *storage.PrometheusMetricsConfig) error {
 	{
 		iv := cfg.GetImageVulnerabilities()
 		if err := ar.image_vulnerabilities.Reconfigure(ar.ctx,
-			ar.registry,
 			iv.GetFilter(),
 			iv.GetMetrics(),
 			time.Minute*time.Duration(iv.GetGatheringPeriodMinutes())); err != nil {

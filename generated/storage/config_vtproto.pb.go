@@ -413,6 +413,8 @@ func (m *PrometheusMetricsConfig_Labels) CloneVT() *PrometheusMetricsConfig_Labe
 		return (*PrometheusMetricsConfig_Labels)(nil)
 	}
 	r := new(PrometheusMetricsConfig_Labels)
+	r.Exposure = m.Exposure
+	r.RegistryName = m.RegistryName
 	if rhs := m.Labels; rhs != nil {
 		tmpContainer := make(map[string]*PrometheusMetricsConfig_Labels_Expression, len(rhs))
 		for k, v := range rhs {
@@ -1023,6 +1025,12 @@ func (this *PrometheusMetricsConfig_Labels) EqualVT(that *PrometheusMetricsConfi
 	if this == that {
 		return true
 	} else if this == nil || that == nil {
+		return false
+	}
+	if this.Exposure != that.Exposure {
+		return false
+	}
+	if this.RegistryName != that.RegistryName {
 		return false
 	}
 	if len(this.Labels) != len(that.Labels) {
@@ -2234,8 +2242,20 @@ func (m *PrometheusMetricsConfig_Labels) MarshalToSizedBufferVT(dAtA []byte) (in
 			dAtA[i] = 0xa
 			i = protohelpers.EncodeVarint(dAtA, i, uint64(baseI-i))
 			i--
-			dAtA[i] = 0xa
+			dAtA[i] = 0x1a
 		}
+	}
+	if len(m.RegistryName) > 0 {
+		i -= len(m.RegistryName)
+		copy(dAtA[i:], m.RegistryName)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.RegistryName)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.Exposure != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.Exposure))
+		i--
+		dAtA[i] = 0x8
 	}
 	return len(dAtA) - i, nil
 }
@@ -2754,6 +2774,13 @@ func (m *PrometheusMetricsConfig_Labels) SizeVT() (n int) {
 	}
 	var l int
 	_ = l
+	if m.Exposure != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.Exposure))
+	}
+	l = len(m.RegistryName)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
 	if len(m.Labels) > 0 {
 		for k, v := range m.Labels {
 			_ = k
@@ -5347,6 +5374,57 @@ func (m *PrometheusMetricsConfig_Labels) UnmarshalVT(dAtA []byte) error {
 		}
 		switch fieldNum {
 		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Exposure", wireType)
+			}
+			m.Exposure = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Exposure |= PrometheusMetricsConfig_Labels_Exposure(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RegistryName", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.RegistryName = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Labels", wireType)
 			}
@@ -8387,6 +8465,61 @@ func (m *PrometheusMetricsConfig_Labels) UnmarshalVTUnsafe(dAtA []byte) error {
 		}
 		switch fieldNum {
 		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Exposure", wireType)
+			}
+			m.Exposure = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Exposure |= PrometheusMetricsConfig_Labels_Exposure(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RegistryName", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.RegistryName = stringValue
+			iNdEx = postIndex
+		case 3:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Labels", wireType)
 			}

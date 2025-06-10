@@ -1,9 +1,6 @@
 package metrics
 
 import (
-	"fmt"
-	"slices"
-	"strings"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -12,7 +9,6 @@ import (
 	"github.com/stackrox/rox/pkg/reflectutils"
 	"github.com/stackrox/rox/pkg/sensor/event"
 	"github.com/stackrox/rox/pkg/stringutils"
-	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (
@@ -274,10 +270,6 @@ var (
 		Name:      "signature_verification_reprocessor_duration_seconds",
 		Help:      "Duration of the signature verification reprocessor loop in seconds",
 	})
-
-	// Those are dynamically defined metrics, configured by users via the system
-	// private configuration.
-	customAggregatedMetrics sync.Map
 )
 
 func startTimeToMS(t time.Time) float64 {
@@ -479,48 +471,4 @@ func SetReprocessorDuration(start time.Time) {
 // SetSignatureVerificationReprocessorDuration registers how long a signature verification reprocessing step took.
 func SetSignatureVerificationReprocessorDuration(start time.Time) {
 	signatureVerificationReprocessorDurationGauge.Set(time.Since(start).Seconds())
-}
-
-type metricRecord struct {
-	gauge  *prometheus.GaugeVec
-	labels []string
-}
-
-// RegisterCustomAggregatedMetric registers user-defined aggregated metrics
-// according to the system private configuration.
-func RegisterCustomAggregatedMetric(name string, description string, period time.Duration, labels []string, userRegistry *prometheus.Registry) error {
-	metric := prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.CentralSubsystem.String(),
-		Name:      name,
-		Help: "The total number of " + description + " aggregated by " + strings.Join(labels, ",") +
-			" and gathered every " + period.String(),
-	}, labels)
-
-	// Unregister disabled metric.
-	if period == 0 {
-		if old, loaded := customAggregatedMetrics.LoadAndDelete(name); loaded {
-			userRegistry.Unregister(old.(metricRecord).gauge)
-		}
-		return nil
-	}
-
-	// Register new metric, alert on a labels update attempt.
-	if actual, loaded := customAggregatedMetrics.LoadOrStore(name, metricRecord{metric, labels}); loaded {
-		if slices.Compare(actual.(metricRecord).labels, labels) != 0 {
-			return fmt.Errorf("cannot update %q metric labels", name)
-		}
-	} else if err := userRegistry.Register(metric); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// SetCustomAggregatedCount registers the metric vector with the values,
-// according to the system private configuration.
-func SetCustomAggregatedCount(metricName string, labels prometheus.Labels, total int) {
-	if metric, ok := customAggregatedMetrics.Load(metricName); ok {
-		metric.(metricRecord).gauge.With(labels).Set(float64(total))
-	}
 }

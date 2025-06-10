@@ -265,6 +265,16 @@
       },
       "description": "Condition represents a single operator-argument pair used in label matching."
     },
+    "LabelsExposure": {
+      "type": "string",
+      "enum": [
+        "NONE",
+        "INTERNAL",
+        "EXTERNAL",
+        "BOTH"
+      ],
+      "default": "NONE"
+    },
     "LabelsExpression": {
       "type": "object",
       "properties": {
@@ -293,6 +303,14 @@
     "PrometheusMetricsConfigLabels": {
       "type": "object",
       "properties": {
+        "exposure": {
+          "$ref": "#/definitions/LabelsExposure",
+          "description": "On which endpoint(s) this metric is exposed."
+        },
+        "registryName": {
+          "type": "string",
+          "description": "The /metrics path suffix, that allows for protecting one metrics consumer\ndata from another."
+        },
         "labels": {
           "type": "object",
           "additionalProperties": {
