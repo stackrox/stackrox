@@ -42,6 +42,15 @@ message EPSS {
   float epss_percentile = 2;
 }
 
+// Exploit stores information about a known exploit.
+message Exploit {
+  string date_added = 1;
+  string short_description = 2;
+  string required_action = 3;
+  string due_date = 4;
+  string known_ransomware_campaign_use = 5;
+}
+
 // ******************************
 // This proto is deprecated.
 // ******************************
@@ -140,6 +149,7 @@ message CVEInfo {
   // cvss_metrics stores list of cvss scores from different sources like nvd, Redhat etc
   repeated CVSSScore cvss_metrics = 11;
   EPSS epss = 12;
+  Exploit exploit = 13;
 }
 
 message Advisory {

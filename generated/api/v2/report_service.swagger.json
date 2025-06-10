@@ -1320,6 +1320,9 @@
         "includeEpssProbability": {
           "type": "boolean"
         },
+        "includeExploitable": {
+          "type": "boolean"
+        },
         "includeAdvisory": {
           "type": "boolean"
         }
