@@ -9,6 +9,7 @@ defaults:
     registry: [< required "" .MainRegistry >]
 
   env:
+    gRPCEnforceALPN: false
     offlineMode: false
 
   central:
