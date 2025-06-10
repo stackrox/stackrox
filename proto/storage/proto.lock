@@ -5030,6 +5030,26 @@
                 "integer": 3
               }
             ]
+          },
+          {
+            "name": "Labels.Exposure",
+            "enum_fields": [
+              {
+                "name": "NONE"
+              },
+              {
+                "name": "INTERNAL",
+                "integer": 1
+              },
+              {
+                "name": "EXTERNAL",
+                "integer": 2
+              },
+              {
+                "name": "BOTH",
+                "integer": 3
+              }
+            ]
           }
         ],
         "messages": [
@@ -5390,11 +5410,23 @@
             "messages": [
               {
                 "name": "Labels",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "exposure",
+                    "type": "Exposure"
+                  },
+                  {
+                    "id": 2,
+                    "name": "registry_name",
+                    "type": "string"
+                  }
+                ],
                 "maps": [
                   {
                     "key_type": "string",
                     "field": {
-                      "id": 1,
+                      "id": 3,
                       "name": "labels",
                       "type": "Expression"
                     }
