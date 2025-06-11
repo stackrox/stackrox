@@ -13,10 +13,6 @@ on:
     - reopened
     - synchronize
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ !startsWith(github.ref, 'release-') && !startsWith(github.ref, 'master/') }}
-
 jobs:
   db-integration-tests:
     runs-on: ubuntu-latest
