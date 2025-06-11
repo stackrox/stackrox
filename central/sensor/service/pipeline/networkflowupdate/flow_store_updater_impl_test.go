@@ -260,7 +260,7 @@ func (suite *FlowStoreUpdaterTestSuite) TestUpdateNoExternalIPs() {
 			}
 		}
 		return len(used) == len(expectedUpdateProps)
-	}), gomock.Any()).Return(nil)
+	}), gomock.Any()).Return(newFlows, nil)
 
 	suite.mockEntities.EXPECT().UpdateExternalNetworkEntity(suite.hasWriteCtx, gomock.Any(), true).Times(0)
 
@@ -394,7 +394,7 @@ func (suite *FlowStoreUpdaterTestSuite) TestUpdateWithExternalIPs() {
 			}
 		}
 		return len(used) == len(expectedUpdateProps)
-	}), gomock.Any()).Return(nil)
+	}), gomock.Any()).Return(newFlows, nil)
 
 	suite.mockEntities.EXPECT().UpdateExternalNetworkEntity(suite.hasWriteCtx, testutils.PredMatcher("matches an external entity", func(updatedEntity *storage.NetworkEntity) bool {
 		expectedEntities := []*storage.NetworkEntityInfo{
