@@ -3,10 +3,12 @@ package aggregator
 import (
 	"context"
 	"iter"
+	"net/http"
+	"net/url"
 	"testing"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/metrics/aggregator/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -33,8 +35,6 @@ var testGetters = []common.LabelGetter[something]{
 
 func Test_run(t *testing.T) {
 
-	testRegistry := prometheus.NewRegistry()
-
 	t.Run("stop on start", func(t *testing.T) {
 		i := 0
 		runner := &aggregatorRunner{}
@@ -49,10 +49,10 @@ func Test_run(t *testing.T) {
 			},
 			nil,
 		)
-		assert.NoError(t, tracker.Reconfigure(runner.ctx, testRegistry, "", getNonEmptyStorageCfg(), 10*time.Minute))
+		assert.NoError(t, tracker.Reconfigure(runner.ctx, "", getNonEmptyStorageCfg(), 10*time.Minute))
 		runner.Stop()
 		tracker.Run(runner.ctx)
-		assert.Equal(t, 2, i)
+		assert.Equal(t, 1, i)
 	})
 
 	t.Run("stop after new period", func(t *testing.T) {
@@ -70,8 +70,8 @@ func Test_run(t *testing.T) {
 			},
 			nil,
 		)
-		assert.NoError(t, tracker.Reconfigure(runner.ctx, testRegistry, "", getNonEmptyStorageCfg(), time.Minute))
-		assert.NoError(t, tracker.Reconfigure(runner.ctx, testRegistry, "", getNonEmptyStorageCfg(), time.Minute))
+		assert.NoError(t, tracker.Reconfigure(runner.ctx, "", getNonEmptyStorageCfg(), time.Minute))
+		assert.NoError(t, tracker.Reconfigure(runner.ctx, "", getNonEmptyStorageCfg(), time.Minute))
 		tracker.Run(runner.ctx)
 		assert.True(t, i)
 	})
@@ -94,8 +94,45 @@ func Test_run(t *testing.T) {
 			nil,
 		)
 
-		assert.NoError(t, tracker.Reconfigure(runner.ctx, testRegistry, "", getNonEmptyStorageCfg(), 100*time.Microsecond))
+		assert.NoError(t, tracker.Reconfigure(runner.ctx, "", getNonEmptyStorageCfg(), 100*time.Microsecond))
 		tracker.Run(runner.ctx)
 		assert.Greater(t, i, 2)
 	})
+}
+
+func Test_getRegistryName(t *testing.T) {
+	metrics.GetExternalRegistry("r1")
+	metrics.GetExternalRegistry("r2")
+
+	runner := &aggregatorRunner{}
+
+	for path, expected := range map[string]string{
+		"/metrics/r1":     "r1",
+		"/metrics/r2":     "r2",
+		"/metrics/r1?a=b": "r1",
+		"/metrics/r2?a=b": "r2",
+		"/metrics":        "",
+	} {
+		u, _ := url.Parse("https://central" + path)
+		name, ok := runner.getRegistryName(&http.Request{URL: u})
+		assert.True(t, ok)
+		assert.Equal(t, expected, name)
+	}
+
+	for _, path := range []string{
+		"",
+		"/r1",
+		"/r1/",
+		"/metrics/r1/",
+		"/metricsr1",
+		"/metricsr1/",
+		"/metricsr1/r1",
+		"/metrics/bad",
+		"/kilometrics/r1",
+	} {
+		u, _ := url.Parse("https://central" + path)
+		name, ok := runner.getRegistryName(&http.Request{URL: u})
+		assert.False(t, ok)
+		assert.Empty(t, name)
+	}
 }

@@ -3,9 +3,9 @@ package aggregator
 import (
 	"context"
 	"net/http"
+	"strings"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
 	configDS "github.com/stackrox/rox/central/config/datastore"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/metrics/aggregator/common"
@@ -26,11 +26,12 @@ var (
 
 type aggregatorRunner struct {
 	http.Handler
-	registry *prometheus.Registry
 
-	ctx      context.Context
-	cancel   context.CancelFunc
-	stopOnce sync.Once
+	handlers    map[string]http.Handler
+	handlersMux sync.Mutex
+
+	ctx    context.Context
+	cancel context.CancelFunc
 
 	image_vulnerabilities common.Tracker
 }
@@ -42,12 +43,9 @@ func Singleton() interface {
 	Reconfigure(*storage.PrometheusMetricsConfig) error
 } {
 	once.Do(func() {
-		registry := prometheus.NewRegistry()
 
 		runner = &aggregatorRunner{
-			Handler:  promhttp.HandlerFor(registry, promhttp.HandlerOpts{}),
-			registry: registry,
-
+			handlers:              map[string]http.Handler{},
 			image_vulnerabilities: image_vulnerabilities.MakeTrackerConfig(metrics.SetCustomAggregatedCount),
 		}
 
@@ -66,11 +64,46 @@ func Singleton() interface {
 	return runner
 }
 
+func (ar *aggregatorRunner) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	if h := ar.getHandler(req); h != nil {
+		h.ServeHTTP(w, req)
+	} else {
+		// Serve empty OK for unknown registry names.
+		w.WriteHeader(http.StatusOK)
+	}
+}
+
+func (ar *aggregatorRunner) getHandler(req *http.Request) http.Handler {
+	registryName, ok := ar.getRegistryName(req)
+	if !ok {
+		return nil
+	}
+	registry := metrics.GetExternalRegistry(registryName)
+	ar.handlersMux.Lock()
+	defer ar.handlersMux.Unlock()
+	h, ok := ar.handlers[registryName]
+	if !ok {
+		h = promhttp.HandlerFor(registry, promhttp.HandlerOpts{})
+		ar.handlers[registryName] = h
+	}
+	return h
+}
+
+func (*aggregatorRunner) getRegistryName(req *http.Request) (string, bool) {
+	registryName, ok := strings.CutPrefix(req.URL.Path, "/metrics")
+	if ok && (registryName == "" || strings.HasPrefix(registryName, "/")) {
+		registryName = strings.TrimPrefix(registryName, "/")
+		if metrics.IsKnownRegistry(registryName) {
+			return registryName, true
+		}
+	}
+	return "", false
+}
+
 func (ar *aggregatorRunner) Reconfigure(cfg *storage.PrometheusMetricsConfig) error {
 	{
 		iv := cfg.GetImageVulnerabilities()
 		if err := ar.image_vulnerabilities.Reconfigure(ar.ctx,
-			ar.registry,
 			iv.GetFilter(),
 			iv.GetMetrics(),
 			time.Minute*time.Duration(iv.GetGatheringPeriodMinutes())); err != nil {
