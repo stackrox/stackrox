@@ -495,7 +495,7 @@ func (l *loopImpl) reprocessWatchedImage(name string) bool {
 
 	img, err := imageEnricher.EnrichImageByName(ctx, l.imageEnricher, enrichmentCtx, name)
 	if err != nil {
-		log.Errorw("Error enriching watched image", logging.ImageName(name), logging.ImageID(img.GetId()), logging.Err(err))
+		log.Errorw("Error enriching watched image", logging.ImageName(name), logging.Err(err))
 		return false
 	}
 	// Save the image
