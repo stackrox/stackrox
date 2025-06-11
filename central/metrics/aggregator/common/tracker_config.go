@@ -70,13 +70,28 @@ func MakeTrackerConfig[Finding Countable](category, description string,
 }
 
 func (tc *TrackerConfig[Finding]) Reconfigure(ctx context.Context, filter string, cfg map[string]*storage.PrometheusMetricsConfig_Labels, period time.Duration) error {
+	for metric, labels := range cfg {
+		if err := metrics.CheckExposureChange(metric, labels.GetRegistryName(), metrics.Exposure(labels.GetExposure())); err != nil {
+			return errInvalidConfiguration.CausedBy(err)
+		}
+	}
+
 	mcfg, err := parseMetricLabels(cfg, tc.labelOrder)
 	if err != nil {
 		return err
 	}
+
+	toAdd, toDelete, changed := tc.metricsConfig.DiffLabels(mcfg)
+	if len(changed) != 0 {
+		return errInvalidConfiguration.CausedByf("cannot alter metrics %v", changed)
+	}
+	if len(toAdd) == 0 && len(toDelete) == 0 {
+		return nil
+	}
+
 	q, err := search.ParseQuery(filter, search.MatchAllIfEmpty())
 	if err != nil {
-		return err
+		return errInvalidConfiguration.CausedBy(err)
 	}
 	tc.SetMetricsConfiguration(q, mcfg)
 	// Force track only on reconfiguration, not on the initial tracker creation.
@@ -88,11 +103,22 @@ func (tc *TrackerConfig[Finding]) Reconfigure(ctx context.Context, filter string
 		log.Infof("Metrics collection is disabled for %s", tc.category)
 	}
 
-	for metric, labelExpression := range tc.metricsConfig {
+	for _, metric := range toDelete {
+		if metrics.UnregisterCustomAggregatedMetric(string(metric)) {
+			regCfg := cfg[string(metric)]
+			log.Infof("Unregistered %s Prometheus metric %q from path %s", tc.category, metric,
+				strings.Join([]string{"/metrics", regCfg.GetRegistryName()}, "/"))
+		}
+	}
+	for _, metric := range toAdd {
 		regCfg := cfg[string(metric)]
-		if err := metrics.RegisterCustomAggregatedMetric(string(metric), tc.description, period,
-			getMetricLabels(labelExpression, tc.labelOrder),
-			regCfg.GetRegistryName(), metrics.Exposure(regCfg.GetExposure().Number())); err != nil {
+		if err := metrics.RegisterCustomAggregatedMetric(
+			string(metric),
+			tc.description,
+			period,
+			getMetricLabels(mcfg[metric], tc.labelOrder),
+			regCfg.GetRegistryName(),
+			metrics.Exposure(regCfg.GetExposure().Number())); err != nil {
 			return fmt.Errorf("failed to register %s metric %q: %w", tc.category, metric, err)
 		}
 		if period > 0 {

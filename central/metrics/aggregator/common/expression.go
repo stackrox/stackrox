@@ -1,6 +1,12 @@
 package common
 
+import "slices"
+
 type Expression []*Condition
+
+func (expr Expression) Equals(another Expression) bool {
+	return slices.EqualFunc(expr, another, (*Condition).Equals)
+}
 
 func (expr Expression) match(value string) bool {
 	if len(expr) == 0 {

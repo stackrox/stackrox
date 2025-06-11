@@ -73,6 +73,10 @@ func (c *Condition) validate() error {
 	return nil
 }
 
+func (c *Condition) Equals(b *Condition) bool {
+	return c == b || c != nil && b != nil && c.op == b.op && c.arg == b.arg
+}
+
 func (c *Condition) String() string {
 	return string(c.op) + c.arg
 }

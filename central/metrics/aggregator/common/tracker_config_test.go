@@ -3,6 +3,7 @@ package common
 import (
 	"context"
 	"iter"
+	"strings"
 	"testing"
 	"time"
 
@@ -53,17 +54,16 @@ func TestTrackerConfig_Reconfigure(t *testing.T) {
 
 		assert.NoError(t, tracker.Reconfigure(ctx, "", nil, 0))
 		query, mcfg := tracker.GetMetricsConfiguration()
-		assert.Equal(t, "", query.String())
+		assert.Nil(t, query)
 		assert.Nil(t, mcfg)
 	})
 
 	t.Run("test query", func(t *testing.T) {
 		tracker := MakeTrackerConfig("test", "test", testLabelGetters, nilGatherFunc, nil)
-
-		assert.NoError(t, tracker.Reconfigure(ctx, `Cluster:name`, nil, 0))
+		assert.NoError(t, tracker.Reconfigure(ctx, `Cluster:name`, makeTestMetricLabels(t), 0))
 		query, mcfg := tracker.GetMetricsConfiguration()
 		assert.Equal(t, "Cluster", query.GetBaseQuery().GetMatchFieldQuery().GetField())
-		assert.Nil(t, mcfg)
+		assert.NotNil(t, mcfg)
 	})
 
 	t.Run("test bad query", func(t *testing.T) {
@@ -110,6 +110,32 @@ func TestTrackerConfig_Reconfigure(t *testing.T) {
 		_, mcfg := tracker.GetMetricsConfiguration()
 		assert.NotNil(t, mcfg)
 		assert.Equal(t, makeTestMetricLabelExpression(t), mcfg)
+	})
+
+	t.Run("change exposure", func(t *testing.T) {
+		tracker := MakeTrackerConfig("test", "test", testLabelGetters, nilGatherFunc, nil)
+		assert.NoError(t, tracker.Reconfigure(ctx, "", makeTestMetricLabels(t), 42*time.Hour))
+		cfg := makeTestMetricLabels(t)
+		for _, config := range cfg {
+			if config.Exposure == storage.PrometheusMetricsConfig_Labels_BOTH {
+				config.Exposure = storage.PrometheusMetricsConfig_Labels_INTERNAL
+			}
+		}
+		assert.ErrorIs(t, tracker.Reconfigure(ctx, "", cfg, 42*time.Hour), errInvalidConfiguration)
+	})
+
+	t.Run("change labels", func(t *testing.T) {
+		tracker := MakeTrackerConfig("test", "test", testLabelGetters, nilGatherFunc, nil)
+		assert.NoError(t, tracker.Reconfigure(ctx, "", makeTestMetricLabels(t), 42*time.Hour))
+		cfg := makeTestMetricLabels(t)
+		for _, config := range cfg {
+			if config.Exposure == storage.PrometheusMetricsConfig_Labels_BOTH {
+				config.Labels["CVE"] = &storage.PrometheusMetricsConfig_Labels_Expression{}
+			}
+		}
+		err := tracker.Reconfigure(ctx, "", cfg, 42*time.Hour)
+		assert.ErrorIs(t, err, errInvalidConfiguration)
+		assert.True(t, strings.Contains(err.Error(), "cannot alter metrics"))
 	})
 }
 

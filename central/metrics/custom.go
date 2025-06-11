@@ -1,12 +1,12 @@
 package metrics
 
 import (
-	"fmt"
 	"slices"
 	"strings"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -34,6 +34,7 @@ var (
 	// Those are dynamically defined metrics, configured by users via the system
 	// private configuration.
 	customAggregatedMetrics sync.Map // [string]*metricRecord
+	ErrChangedExposure      = errox.InvalidArgs.New("changed exposure")
 
 	customRegistries = map[string]*prometheus.Registry{"": prometheus.NewRegistry()}
 	regMux           sync.RWMutex
@@ -63,6 +64,16 @@ func (mr *metricRecord) Equals(rec *metricRecord) bool {
 			slices.Compare(mr.labels, rec.labels) == 0
 }
 
+func CheckExposureChange(name string, registry string, exposure Exposure) error {
+	if v, ok := customAggregatedMetrics.Load(name); ok {
+		mr := v.(*metricRecord)
+		if mr.exposure != exposure || mr.registry != registry {
+			return ErrChangedExposure
+		}
+	}
+	return nil
+}
+
 func GetExternalRegistry(name string) *prometheus.Registry {
 	regMux.Lock()
 	defer regMux.Unlock()
@@ -81,48 +92,48 @@ func IsKnownRegistry(name string) bool {
 	return ok
 }
 
+func UnregisterCustomAggregatedMetric(name string) bool {
+	v, ok := customAggregatedMetrics.LoadAndDelete(name)
+	if !ok {
+		return false
+	}
+	mr := v.(*metricRecord)
+	e := mr.exposure
+	if e == INTERNAL || e == BOTH {
+		prometheus.DefaultRegisterer.Unregister(mr.gauge)
+	}
+	if e == EXTERNAL || e == BOTH {
+		GetExternalRegistry(mr.registry).Unregister(mr.gauge)
+	}
+	return true
+}
+
 // RegisterCustomAggregatedMetric registers user-defined aggregated metrics
 // according to the system private configuration.
 func RegisterCustomAggregatedMetric(name string, description string, period time.Duration, labels []string, registryName string, exposure Exposure) error {
-	// Unregister changed or disabled metric.
-	if old, loaded := customAggregatedMetrics.LoadAndDelete(name); loaded && (period == 0 || exposure == NONE) {
-		oldRecord := old.(*metricRecord)
-		oldExposure := oldRecord.exposure
-		if oldExposure == INTERNAL || oldExposure == BOTH {
-			prometheus.DefaultRegisterer.Unregister(oldRecord.gauge)
-		}
-		if oldExposure == EXTERNAL || oldExposure == BOTH {
-			GetExternalRegistry(registryName).Unregister(oldRecord.gauge)
-		}
+	newRecord := &metricRecord{nil, labels, registryName, exposure}
+
+	if _, loaded := customAggregatedMetrics.LoadOrStore(name, newRecord); loaded {
 		return nil
 	}
 
-	newRecord := &metricRecord{nil, labels, registryName, exposure}
+	// TODO: ensure safe concurrent access:
+	newRecord.gauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      name,
+		Help: "The total number of " + description + " aggregated by " + strings.Join(labels, ",") +
+			" and gathered every " + period.String(),
+	}, labels)
 
-	// Register new metric, fail on an update attempt.
-	if old, loaded := customAggregatedMetrics.LoadOrStore(name, newRecord); loaded {
-		if !old.(*metricRecord).Equals(newRecord) {
-			return fmt.Errorf("cannot update %q metric", name)
+	if exposure == INTERNAL || exposure == BOTH {
+		if err := prometheus.DefaultRegisterer.Register(newRecord.gauge); err != nil {
+			return err
 		}
-	} else {
-		// TODO: ensure safe concurrent access:
-		newRecord.gauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: metrics.PrometheusNamespace,
-			Subsystem: metrics.CentralSubsystem.String(),
-			Name:      name,
-			Help: "The total number of " + description + " aggregated by " + strings.Join(labels, ",") +
-				" and gathered every " + period.String(),
-		}, labels)
-
-		if exposure == INTERNAL || exposure == BOTH {
-			if err := prometheus.DefaultRegisterer.Register(newRecord.gauge); err != nil {
-				return err
-			}
-		}
-		if exposure == EXTERNAL || exposure == BOTH {
-			if err := GetExternalRegistry(registryName).Register(newRecord.gauge); err != nil {
-				return err
-			}
+	}
+	if exposure == EXTERNAL || exposure == BOTH {
+		if err := GetExternalRegistry(registryName).Register(newRecord.gauge); err != nil {
+			return err
 		}
 	}
 

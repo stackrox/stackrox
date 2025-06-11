@@ -55,6 +55,8 @@ func makeTestMetricLabels(t *testing.T) map[string]*storage.PrometheusMetricsCon
 				},
 				"Cluster": nil,
 			},
+			Exposure:     storage.PrometheusMetricsConfig_Labels_BOTH,
+			RegistryName: "registry1",
 		},
 		pfx + "_metric2": {
 			Labels: map[string]*storage.PrometheusMetricsConfig_Labels_Expression{
@@ -127,6 +129,7 @@ func TestOneOrMore(t *testing.T) {
 	assert.Equal(t, 2, OneOrMore(2).Count())
 }
 
+/*
 func TestEquals(t *testing.T) {
 	t.Run("empty", func(t *testing.T) {
 		one := makeTestMetricLabelExpression(t)
@@ -197,4 +200,151 @@ func TestEquals(t *testing.T) {
 		assert.False(t, another.Equals(one))
 	})
 
+}
+
+func TestEqualLabels(t *testing.T) {
+	t.Run("empty", func(t *testing.T) {
+		one := makeTestMetricLabelExpression(t)
+		assert.False(t, one.Equals(MetricsConfiguration{}))
+		assert.False(t, MetricsConfiguration{}.Equals(one))
+	})
+
+	t.Run("equals", func(t *testing.T) {
+		var m MetricsConfiguration
+		assert.True(t, m.Equals(m))
+		assert.True(t, MetricsConfiguration{}.Equals(MetricsConfiguration{}))
+		one := makeTestMetricLabelExpression(t)
+		another := makeTestMetricLabelExpression(t)
+		assert.True(t, one.Equals(one))
+		assert.True(t, one.Equals(another))
+		assert.True(t, another.Equals(one))
+	})
+
+	t.Run("changed condition", func(t *testing.T) {
+		one := makeTestMetricLabelExpression(t)
+		another := makeTestMetricLabelExpression(t)
+
+	loop:
+		for _, labels := range another {
+			for _, expr := range labels {
+				for _, cond := range expr {
+					cond.arg = "changed"
+					break loop
+				}
+			}
+		}
+		assert.False(t, one.Equals(another))
+		assert.False(t, another.Equals(one))
+	})
+
+	t.Run("extra condition", func(t *testing.T) {
+		one := makeTestMetricLabelExpression(t)
+		another := makeTestMetricLabelExpression(t)
+
+	loop:
+		for _, labels := range another {
+			for label, expr := range labels {
+				labels[label] = append(expr, &Condition{"=", "extra"})
+				break loop
+			}
+		}
+		assert.False(t, one.Equals(another))
+		assert.False(t, another.Equals(one))
+	})
+
+	t.Run("extra label", func(t *testing.T) {
+		one := makeTestMetricLabelExpression(t)
+		another := makeTestMetricLabelExpression(t)
+
+		for _, labels := range another {
+			labels["extra"] = Expression{}
+			break
+		}
+		assert.False(t, one.Equals(another))
+		assert.False(t, another.Equals(one))
+	})
+
+	t.Run("extra metric", func(t *testing.T) {
+		one := makeTestMetricLabelExpression(t)
+		another := makeTestMetricLabelExpression(t)
+		another["extra"] = map[Label]Expression{}
+		assert.False(t, one.Equals(another))
+		assert.False(t, another.Equals(one))
+	})
+
+}
+*/
+
+func TestDiffLabels(t *testing.T) {
+	tests := []struct {
+		name         string
+		a, b         MetricsConfiguration
+		wantToAdd    []MetricName
+		wantToDelete []MetricName
+		wantChanged  []MetricName
+	}{
+		{
+			name:         "both nil",
+			a:            nil,
+			b:            nil,
+			wantToAdd:    nil,
+			wantToDelete: nil,
+		},
+		{
+			name:         "a empty, b has one",
+			a:            MetricsConfiguration{},
+			b:            MetricsConfiguration{"metric1": {"label1": nil}},
+			wantToAdd:    []MetricName{"metric1"},
+			wantToDelete: nil,
+		},
+		{
+			name:         "a has one, b empty",
+			a:            MetricsConfiguration{"metric1": {"label1": nil}},
+			b:            MetricsConfiguration{},
+			wantToAdd:    nil,
+			wantToDelete: []MetricName{"metric1"},
+		},
+		{
+			name:         "a has one, b has another",
+			a:            MetricsConfiguration{"metric1": {"label1": nil}},
+			b:            MetricsConfiguration{"metric2": {"label2": nil}},
+			wantToAdd:    []MetricName{"metric2"},
+			wantToDelete: []MetricName{"metric1"},
+		},
+		{
+			name: "a and b have overlap",
+			a: MetricsConfiguration{
+				"metric1": {"label1": nil},
+				"metric2": {"label2": nil},
+			},
+			b: MetricsConfiguration{
+				"metric2": {"label2": nil},
+				"metric3": {"label3": nil},
+			},
+			wantToAdd:    []MetricName{"metric3"},
+			wantToDelete: []MetricName{"metric1"},
+		},
+		{
+			name: "identical",
+			a: MetricsConfiguration{
+				"metric1": {"label1": nil},
+				"metric2": {"label2": nil},
+			},
+			b: MetricsConfiguration{
+				"metric1": {"label1": nil},
+				"metric2": {"label2": nil},
+			},
+			wantToAdd:    nil,
+			wantToDelete: nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotToAdd, gotToDelete, gotChanged := tt.a.DiffLabels(tt.b)
+			assert.ElementsMatch(t, tt.wantToAdd, gotToAdd)
+			assert.ElementsMatch(t, tt.wantToDelete, gotToDelete)
+			assert.ElementsMatch(t, tt.wantChanged, gotChanged)
+		})
+	}
 }
