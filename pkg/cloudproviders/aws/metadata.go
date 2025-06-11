@@ -30,14 +30,10 @@ const (
 	instanceTagsPath    = "/tags/instance"
 )
 
-var (
-	log = logging.LoggerForModule()
-
-	httpClient = &http.Client{
-		Timeout:   timeout,
-		Transport: proxy.Without(),
-	}
-)
+var httpClient = &http.Client{
+	Timeout:   timeout,
+	Transport: proxy.Without(),
+}
 
 // GetMetadata tries to obtain the AWS instance metadata.
 // If not on AWS, returns nil, nil.
@@ -52,7 +48,6 @@ func GetMetadata(ctx context.Context) (*storage.ProviderMetadata, error) {
 	verified := true
 	doc, err := signedIdentityDoc(ctx, mdClient)
 	if err != nil {
-		log.Warnf("Could not verify AWS public certificate: %v", err)
 		errs.AddError(err)
 		verified = false
 

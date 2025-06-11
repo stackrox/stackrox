@@ -33,7 +33,8 @@ describe('Vulnerability Management Image Components', () => {
         ]);
     });
 
-    it('should sort the Risk Priority column', () => {
+    // TODO - re-enable this test once the 4.8 release has been cut https://issues.redhat.com/browse/ROX-29614
+    it.skip('should sort the Risk Priority column', () => {
         visitVulnerabilityManagementEntities(entitiesKey);
 
         const thSelector = '.rt-th:contains("Risk Priority")';

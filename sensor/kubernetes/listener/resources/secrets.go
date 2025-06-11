@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/cloudflare/cfssl/certinfo"
 	"github.com/pkg/errors"
@@ -260,6 +261,19 @@ func shouldCreateSourcedIntegration(secret *v1.Secret) bool {
 		(env.AutogenerateGlobalPullSecRegistries.BooleanSetting() && openshift.GlobalPullSecret(secret.GetNamespace(), secret.GetName()))
 }
 
+func validateSecret(registryAddr string, dce config.DockerConfigEntry) error {
+	if !utf8.ValidString(registryAddr) {
+		return fmt.Errorf("registry address %q contains invalid UTF-8 characters", registryAddr)
+	}
+	if !utf8.ValidString(dce.Username) {
+		return fmt.Errorf("registry username %q contains invalid UTF-8 characters", dce.Username)
+	}
+	if !utf8.ValidString(dce.Password) {
+		return errors.New("registry password contains invalid UTF-8 characters")
+	}
+	return nil
+}
+
 func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret, action central.ResourceAction) *component.ResourceEvent {
 	dockerConfig := getDockerConfigFromSecret(secret)
 	if len(dockerConfig) == 0 {
@@ -290,6 +304,13 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 				registryAddress, secret.GetNamespace(), secret.GetName())
 		}
 
+		if err := validateSecret(registryAddr, dce); err != nil {
+			log.Warnf("Not processing the registry with address %q found in secret %q from namespace %q: %v.",
+				secret.GetName(), secret.GetNamespace(), registryAddr, err)
+			continue
+		}
+		// Only add to registries if the secret data contain credentials with valid UTF-8 characters.
+		// Processing auth data containing non-UTF-8 may lead to GRPC connection crashes during (un)marshaling.
 		registries = append(registries, &storage.ImagePullSecret_Registry{
 			Name:     registryAddr,
 			Username: dce.Username,
@@ -362,6 +383,11 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 			}
 		}
 	}
+	// No need to send event if there are 0 valid registries
+	if len(registries) == 0 {
+		return nil
+	}
+
 	sort.SliceStable(registries, func(i, j int) bool {
 		if registries[i].Name != registries[j].Name {
 			return registries[i].GetName() < registries[j].GetName()

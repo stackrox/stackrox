@@ -1,4 +1,3 @@
-import { hasFeatureFlag } from '../../../helpers/features';
 import withAuth from '../../../helpers/basicAuth';
 
 import {
@@ -24,10 +23,7 @@ describe('Workload CVE Namespace View', () => {
 
             cy.wrap($row.find('td[data-label="Deployments"] a')).click();
 
-            const pageTitle = hasFeatureFlag('ROX_PLATFORM_CVE_SPLIT')
-                ? 'Platform vulnerabilities'
-                : 'Workload CVEs';
-            cy.get(`h1:contains("${pageTitle}")`);
+            cy.get(`h1:contains("Platform vulnerabilities")`);
 
             cy.get(selectors.filterChipGroupItem('Namespace', `^${namespace}$`));
             cy.get(selectors.filterChipGroupItem('Cluster', `^${cluster}$`));

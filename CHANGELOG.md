@@ -11,6 +11,18 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 ## [NEXT RELEASE]
 
+### Added Features
+
+### Removed Features
+
+### Deprecated Features
+
+### Technical Changes
+
+## [4.8.0]
+
+
+
 **HELM USERS**: Please see ROX-27622 under "technical changes" to avoid upgrade failures!
 
 ### Added Features
@@ -38,6 +50,10 @@ Scanner V4 claims the images contain vulnerabilities which the official Red Hat 
   - This arises from non-RPM content in official Red Hat container images, such as Go binaries in OpenShift images.
   - When the variable is set, Scanner V4 will continue to show non-RPM content in official Red Hat container images but will no longer
     output vulnerabilities from non-Red Hat security data sources for these images.
+- ROX-25570: The data model for image based CVEs has been denormalized
+  - This will result in far more consistent results as 1 image scan will no longer overwrite CVE data of a previous image scan.
+  - `ROX_FLATTEN_CVE_DATA` can be set to false to use the old normalized data model
+- ROX-27696: ROX_EXTERNAL_IPS feature flag enabled by default. Note: Collector will still need to be configured for external IPs for this to have an effect.
 
 ### Removed Features
 
@@ -59,6 +75,7 @@ Scanner V4 claims the images contain vulnerabilities which the official Red Hat 
       kubectl label crd/securitypolicies.config.stackrox.io app.kubernetes.io/managed-by=Helm
 
   The above values will need to be updated to match your release name (i.e. "stackrox-central-services") or namespace (i.e. "stackrox") in case you had used different ones.
+- ROX-29232: When reading docker config pull secrets from K8s, Sensor will ignore entries containing invalid UTF8 characters.
 - ROX-22597: The S3 backup integration is migrated to the AWS go SDK v2. GCS buckets are not supported anymore by the S3 integration type, as announced in 4.5.0, users should use dedicated GCS integrations for these.
 - The scoping of Google image integrations by project is now optional.
 - ROX-29074: The default output of `roxctl image scan` when using the `--output` flag will now include three new fields, by default: CVSS, Advisory, and Advisory Link (the exact names depend on the specific output format).

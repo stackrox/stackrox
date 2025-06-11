@@ -80,7 +80,6 @@ export function initializeAnalytics(writeKey, proxyApiEndpoint, userId) {
             }
 
             analytics.load(writeKey, analyticsLoadConfig);
-            analytics.page();
             analytics.identify(userId);
         }
     }

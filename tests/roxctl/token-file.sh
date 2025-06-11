@@ -39,7 +39,7 @@ test_roxctl_cmd() {
   local ROX_API_TOKEN=""
 
   # Verify that specifying a token file works.
-  if OUTPUT=$(roxctl --insecure-skip-tls-verify --insecure -e "$API_ENDPOINT" \
+  if OUTPUT=$(roxctl --ca "" --insecure-skip-tls-verify --insecure -e "$API_ENDPOINT" \
     --token-file "$TOKEN_FILE" \
     "$@" \
     2>&1); then
@@ -52,7 +52,7 @@ test_roxctl_cmd() {
   fi
 
   # Verify that specifying a token file and password at the same time fails.
-  if OUTPUT=$(roxctl --insecure-skip-tls-verify --insecure -e "$API_ENDPOINT" \
+  if OUTPUT=$(roxctl --ca "" --insecure-skip-tls-verify --insecure -e "$API_ENDPOINT" \
     --token-file "$TOKEN_FILE" \
     --password "secret" \
     "$@" \
@@ -73,7 +73,7 @@ test_roxctl_cmd() {
   # Verify that specifying a token file and password at the same time fails.
   # shellcheck disable=SC2030
   if OUTPUT=$(export ROX_API_TOKEN_FILE="$TOKEN_FILE" ROX_ADMIN_PASSWORD="$password"; \
-    roxctl --insecure-skip-tls-verify --insecure -e "$API_ENDPOINT" \
+    roxctl --ca "" --insecure-skip-tls-verify --insecure -e "$API_ENDPOINT" \
     "$@" \
     2>&1); then
       eecho "[FAIL] Specifying ROX_API_TOKEN_FILE and ROX_ADMIN_PASSWORD did not produce error"
@@ -92,7 +92,7 @@ test_roxctl_cmd() {
   # Verify that token on the command line has precedence over token in the environment
   # shellcheck disable=SC2030
   if OUTPUT=$(export ROX_API_TOKEN="invalid-token"; \
-    roxctl --insecure-skip-tls-verify --insecure -e "$API_ENDPOINT" \
+    roxctl --ca "" --insecure-skip-tls-verify --insecure -e "$API_ENDPOINT" \
     --token-file "$TOKEN_FILE" \
     "$@" \
     2>&1); then
@@ -107,7 +107,7 @@ test_roxctl_cmd() {
   # Verify that a password on the command line has precedence over token in the environment
   # shellcheck disable=SC2031
   if OUTPUT=$(export ROX_API_TOKEN="invalid-token"; \
-    roxctl --insecure-skip-tls-verify --insecure -e "$API_ENDPOINT" \
+    roxctl --ca "" --insecure-skip-tls-verify --insecure -e "$API_ENDPOINT" \
     --password "$password" \
     "$@" \
     2>&1); then
@@ -122,7 +122,7 @@ test_roxctl_cmd() {
   # Verify that a password on the command line has precedence over password in the environment.
   # shellcheck disable=SC2030,SC2031
   if OUTPUT=$(export ROX_ADMIN_PASSWORD="bad-password"; \
-    roxctl --insecure-skip-tls-verify --insecure -e "$API_ENDPOINT" \
+    roxctl --ca "" --insecure-skip-tls-verify --insecure -e "$API_ENDPOINT" \
     --password "$password" \
     "$@" \
     2>&1); then
@@ -141,7 +141,7 @@ test_roxctl_cmd() {
     exit 1
   fi
 
-  if OUTPUT=$(roxctl --insecure-skip-tls-verify --insecure -e "$API_ENDPOINT" \
+  if OUTPUT=$(roxctl --ca "" --insecure-skip-tls-verify --insecure -e "$API_ENDPOINT" \
     --token-file "$NON_EXISTING" \
     "$@" \
     2>&1); then
@@ -159,7 +159,7 @@ test_roxctl_cmd() {
   # Verify that a password on the command line has precedence over token file in the environment.
   # shellcheck disable=SC2031
   if OUTPUT=$(export ROX_API_TOKEN_FILE="$TOKEN_FILE"; \
-    roxctl --insecure-skip-tls-verify --insecure -e "$API_ENDPOINT" \
+    roxctl --ca "" --insecure-skip-tls-verify --insecure -e "$API_ENDPOINT" \
     --password "$password" \
     "$@" \
     2>&1); then
@@ -174,7 +174,7 @@ test_roxctl_cmd() {
   # Verify that the token file on the command line has precedence over password in the environment.
   # shellcheck disable=SC2031
   if OUTPUT=$(export ROX_ADMIN_PASSWORD="bad-password"; \
-    roxctl --insecure-skip-tls-verify --insecure -e "$API_ENDPOINT" \
+    roxctl --ca "" --insecure-skip-tls-verify --insecure -e "$API_ENDPOINT" \
     --token-file "$TOKEN_FILE" \
     "$@" \
     2>&1); then
