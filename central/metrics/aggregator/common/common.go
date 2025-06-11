@@ -3,6 +3,7 @@ package common
 import (
 	"context"
 	"iter"
+	"maps"
 	"regexp"
 	"slices"
 
@@ -39,6 +40,17 @@ func (mcfg MetricsConfiguration) HasAnyLabelOf(labels []Label) bool {
 		}
 	}
 	return false
+}
+
+func (mcfg MetricsConfiguration) Equals(another MetricsConfiguration) bool {
+	return (mcfg == nil && another == nil) ||
+		maps.EqualFunc(mcfg, another, func(a, b map[Label]Expression) bool {
+			return maps.EqualFunc(a, b, func(a, b Expression) bool {
+				return slices.EqualFunc(a, b, func(a, b *Condition) bool {
+					return a == b || a != nil && b != nil && a.op == b.op && a.arg == b.arg
+				})
+			})
+		})
 }
 
 type OneOrMore int

@@ -126,3 +126,75 @@ func TestOneOrMore(t *testing.T) {
 	assert.Equal(t, 1, OneOrMore(1).Count())
 	assert.Equal(t, 2, OneOrMore(2).Count())
 }
+
+func TestEquals(t *testing.T) {
+	t.Run("empty", func(t *testing.T) {
+		one := makeTestMetricLabelExpression(t)
+		assert.False(t, one.Equals(MetricsConfiguration{}))
+		assert.False(t, MetricsConfiguration{}.Equals(one))
+	})
+
+	t.Run("equals", func(t *testing.T) {
+		var m MetricsConfiguration
+		assert.True(t, m.Equals(m))
+		assert.True(t, MetricsConfiguration{}.Equals(MetricsConfiguration{}))
+		one := makeTestMetricLabelExpression(t)
+		another := makeTestMetricLabelExpression(t)
+		assert.True(t, one.Equals(one))
+		assert.True(t, one.Equals(another))
+		assert.True(t, another.Equals(one))
+	})
+
+	t.Run("changed condition", func(t *testing.T) {
+		one := makeTestMetricLabelExpression(t)
+		another := makeTestMetricLabelExpression(t)
+
+	loop:
+		for _, labels := range another {
+			for _, expr := range labels {
+				for _, cond := range expr {
+					cond.arg = "changed"
+					break loop
+				}
+			}
+		}
+		assert.False(t, one.Equals(another))
+		assert.False(t, another.Equals(one))
+	})
+
+	t.Run("extra condition", func(t *testing.T) {
+		one := makeTestMetricLabelExpression(t)
+		another := makeTestMetricLabelExpression(t)
+
+	loop:
+		for _, labels := range another {
+			for label, expr := range labels {
+				labels[label] = append(expr, &Condition{"=", "extra"})
+				break loop
+			}
+		}
+		assert.False(t, one.Equals(another))
+		assert.False(t, another.Equals(one))
+	})
+
+	t.Run("extra label", func(t *testing.T) {
+		one := makeTestMetricLabelExpression(t)
+		another := makeTestMetricLabelExpression(t)
+
+		for _, labels := range another {
+			labels["extra"] = Expression{}
+			break
+		}
+		assert.False(t, one.Equals(another))
+		assert.False(t, another.Equals(one))
+	})
+
+	t.Run("extra metric", func(t *testing.T) {
+		one := makeTestMetricLabelExpression(t)
+		another := makeTestMetricLabelExpression(t)
+		another["extra"] = map[Label]Expression{}
+		assert.False(t, one.Equals(another))
+		assert.False(t, another.Equals(one))
+	})
+
+}
