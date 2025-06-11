@@ -11,10 +11,29 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
+/*
+Custom Prometheus metrics are user facing metrics, served on the API endpoint
+or/and on the internal central metrics endpoint. The metrics are configured via
+the private section of the 'config' API.
+
+A metric is configured with a list of labels and the registry name, which is
+appended to the endpoint's /metrics path to support tenant isolation by URL. For
+example: /metrics/cluster1 to show only metrics with labels filtered for
+cluster1. The label expressions are fully under user control.
+
+When a user updates the configuration for a custom Prometheus metric (such as
+changing its labels, exposure, or registry name), the system must ensure that
+the metric is correctly registered or unregistered from the appropriate
+Prometheus registries.
+
+Metrics are immutable. To change anything for a metric: registry, exposure,
+or labels, the metric has to be deleted and recreated with separate requests.
+*/
+
 var (
 	// Those are dynamically defined metrics, configured by users via the system
 	// private configuration.
-	customAggregatedMetrics sync.Map // [string]metricRecord
+	customAggregatedMetrics sync.Map // [string]*metricRecord
 
 	customRegistries = map[string]*prometheus.Registry{"": prometheus.NewRegistry()}
 	regMux           sync.RWMutex
@@ -30,8 +49,18 @@ const (
 )
 
 type metricRecord struct {
-	gauge  *prometheus.GaugeVec
-	labels []string
+	gauge    *prometheus.GaugeVec
+	labels   []string
+	registry string
+	exposure Exposure
+}
+
+func (mr *metricRecord) Equals(rec *metricRecord) bool {
+	return mr == nil && rec == nil ||
+		mr != nil && rec != nil &&
+			mr.registry == rec.registry &&
+			mr.exposure == rec.exposure &&
+			slices.Compare(mr.labels, rec.labels) == 0
 }
 
 func GetExternalRegistry(name string) *prometheus.Registry {
@@ -55,40 +84,43 @@ func IsKnownRegistry(name string) bool {
 // RegisterCustomAggregatedMetric registers user-defined aggregated metrics
 // according to the system private configuration.
 func RegisterCustomAggregatedMetric(name string, description string, period time.Duration, labels []string, registryName string, exposure Exposure) error {
-	metric := prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.CentralSubsystem.String(),
-		Name:      name,
-		Help: "The total number of " + description + " aggregated by " + strings.Join(labels, ",") +
-			" and gathered every " + period.String(),
-	}, labels)
-
-	// Unregister disabled metric.
-	if period == 0 {
-		if old, loaded := customAggregatedMetrics.LoadAndDelete(name); loaded {
-			if exposure == INTERNAL || exposure == BOTH {
-				prometheus.DefaultRegisterer.Unregister(old.(metricRecord).gauge)
-			}
-			if exposure == EXTERNAL || exposure == BOTH {
-				GetExternalRegistry(registryName).Unregister(old.(metricRecord).gauge)
-			}
+	// Unregister changed or disabled metric.
+	if old, loaded := customAggregatedMetrics.LoadAndDelete(name); loaded && (period == 0 || exposure == NONE) {
+		oldRecord := old.(*metricRecord)
+		oldExposure := oldRecord.exposure
+		if oldExposure == INTERNAL || oldExposure == BOTH {
+			prometheus.DefaultRegisterer.Unregister(oldRecord.gauge)
+		}
+		if oldExposure == EXTERNAL || oldExposure == BOTH {
+			GetExternalRegistry(registryName).Unregister(oldRecord.gauge)
 		}
 		return nil
 	}
 
-	// Register new metric, alert on a labels update attempt.
-	if actual, loaded := customAggregatedMetrics.LoadOrStore(name, metricRecord{metric, labels}); loaded {
-		if slices.Compare(actual.(metricRecord).labels, labels) != 0 {
-			return fmt.Errorf("cannot update %q metric labels", name)
+	newRecord := &metricRecord{nil, labels, registryName, exposure}
+
+	// Register new metric, fail on an update attempt.
+	if old, loaded := customAggregatedMetrics.LoadOrStore(name, newRecord); loaded {
+		if !old.(*metricRecord).Equals(newRecord) {
+			return fmt.Errorf("cannot update %q metric", name)
 		}
 	} else {
+		// TODO: ensure safe concurrent access:
+		newRecord.gauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: metrics.PrometheusNamespace,
+			Subsystem: metrics.CentralSubsystem.String(),
+			Name:      name,
+			Help: "The total number of " + description + " aggregated by " + strings.Join(labels, ",") +
+				" and gathered every " + period.String(),
+		}, labels)
+
 		if exposure == INTERNAL || exposure == BOTH {
-			if err := prometheus.DefaultRegisterer.Register(metric); err != nil {
+			if err := prometheus.DefaultRegisterer.Register(newRecord.gauge); err != nil {
 				return err
 			}
 		}
 		if exposure == EXTERNAL || exposure == BOTH {
-			if err := GetExternalRegistry(registryName).Register(metric); err != nil {
+			if err := GetExternalRegistry(registryName).Register(newRecord.gauge); err != nil {
 				return err
 			}
 		}

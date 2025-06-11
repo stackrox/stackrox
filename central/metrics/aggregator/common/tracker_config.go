@@ -3,6 +3,7 @@ package common
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -95,7 +96,8 @@ func (tc *TrackerConfig[Finding]) Reconfigure(ctx context.Context, filter string
 			return fmt.Errorf("failed to register %s metric %q: %w", tc.category, metric, err)
 		}
 		if period > 0 {
-			log.Infof("Registered %s Prometheus metric %q", tc.category, metric)
+			log.Infof("Registered %s Prometheus metric %q on path %s", tc.category, metric,
+				strings.Join([]string{"/metrics", regCfg.GetRegistryName()}, "/"))
 		}
 	}
 	return nil
