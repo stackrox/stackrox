@@ -128,7 +128,7 @@ require (
 	github.com/spf13/pflag v1.0.6
 	github.com/spf13/viper v1.20.1
 	github.com/stackrox/external-network-pusher v0.0.0-20231115153210-b82d72f500a2
-	github.com/stackrox/helmtest v0.0.5
+	github.com/stackrox/helmtest v0.0.6-0.20250611055103-88ee93cb6703
 	github.com/stackrox/k8s-overlay-patch v0.0.0-20250224110925-13b5b47fd812
 	github.com/stackrox/pkcs7 v0.0.0-20240314170115-841ca6b5f88d
 	github.com/stackrox/scanner v0.0.0-20240830165150-d133ba942d59
@@ -347,7 +347,7 @@ require (
 	github.com/in-toto/attestation v1.1.1 // indirect
 	github.com/in-toto/in-toto-golang v0.9.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/itchyny/gojq v0.12.15 // indirect
+	github.com/itchyny/gojq v0.12.17 // indirect
 	github.com/itchyny/timefmt-go v0.1.6 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
 	github.com/jackc/pgconn v1.14.3 // indirect
