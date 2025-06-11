@@ -75,7 +75,7 @@ For example, assuming that the corresponding Helm chart setting is a boolean nam
 
 ```go
 if c.Spec.EnergyConsumption != nil {
-    v.SetBoolValue("lowEnergyConsumption", *c.Spec.EnergyConsumption == EnergyConsumptionModeLow)
+    v.SetBoolValue("lowEnergyConsumption", *c.Spec.EnergyConsumptionMode == EnergyConsumptionModeLow)
 }
 ```
 
@@ -98,7 +98,7 @@ Regarding defaulting, note that there exist different kinds of defaults:
 
 ## Breaking changes
 
-The CR of an operator is the public API of the ACS configuration.
+The CR of the ACS operator is the public API of the ACS configuration.
 Additionally, we need to keep in mind that CRs are often managed in CI/CD pipelines which would
 break existing automations.
 
