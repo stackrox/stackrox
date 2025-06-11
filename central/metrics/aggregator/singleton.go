@@ -30,9 +30,8 @@ type aggregatorRunner struct {
 	handlers    map[string]http.Handler
 	handlersMux sync.Mutex
 
-	ctx      context.Context
-	cancel   context.CancelFunc
-	stopOnce sync.Once
+	ctx    context.Context
+	cancel context.CancelFunc
 
 	image_vulnerabilities common.Tracker
 }
