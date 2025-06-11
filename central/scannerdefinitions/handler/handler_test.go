@@ -569,6 +569,14 @@ func (s *handlerTestSuite) TestServeHTTP_Online_Get_V4() {
 // In online mode if is an error pulling from definitions.stackrox.io
 // the offline file should be used if available.
 func (s *handlerTestSuite) TestServeHTTP_Online_Get_Offline() {
+	// Skip this test on release builds to avoid having to update
+	// it whenever a new bundle version is created (ie: v3, v4, etc).
+	// The logic under test is NOT version specific and therefore
+	// testing only on non-release builds should be sufficient.
+	if buildinfo.ReleaseBuild {
+		s.T().Skipf("Skipping this test for release build")
+	}
+
 	s.T().Setenv(env.OfflineModeEnv.EnvVar(), "false")
 	s.T().Setenv(features.ScannerV4.EnvVar(), "true")
 
