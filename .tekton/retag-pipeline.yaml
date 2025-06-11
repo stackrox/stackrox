@@ -176,6 +176,7 @@ spec:
       resolver: bundles
 
   - name: retag-image
+    # runAfter needs to be specified, because there is no implicit dependency on its results, but we still need it to run before.
     runAfter:
     - wait-for-image
     params:

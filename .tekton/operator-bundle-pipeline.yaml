@@ -358,7 +358,7 @@ spec:
       - name: name
         value: wait-for-image
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:pr-64@sha256:03d982450c4a34f2bfc3e149096253fb9289f071f314f46695ea0b063e721f4f
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:a430d9d1be902a11cb55e25db21570da8922887bda1b9cb10c7d986166d57961
       - name: kind
         value: task
       resolver: bundles
@@ -435,7 +435,7 @@ spec:
       value: "$(params.roxctl-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
     taskRef: *wait-for-image-ref
     # This timeout must be the same as the pipeline timeout in `roxctl-build.yaml`.
-    timeout: 20m
+    timeout: 1h10m
 
   - name: wait-for-central-db-image
     params:
