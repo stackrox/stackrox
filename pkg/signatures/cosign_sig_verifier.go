@@ -33,6 +33,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/utils"
+	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -535,8 +536,9 @@ func getVerifiedImageReference(signature oci.Signature, image *storage.Image) ([
 	// 	"optional": null
 	// }
 	if strings.Contains(signatureImageReference, "@") {
-		imgUtils.NormalizeImageFullName(image.Name, image.Id)
-		if signatureImageReference == image.Name.FullName {
+		nameCopy := proto.Clone(image.GetName()).(*storage.ImageName)
+		normalizedName := imgUtils.NormalizeImageFullName(nameCopy, image.Id)
+		if signatureImageReference == normalizedName.FullName {
 			verifiedImageReferences = append(verifiedImageReferences, signatureImageReference)
 		}
 	}
