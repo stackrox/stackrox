@@ -229,7 +229,7 @@ EOT
     # Without a timeout it might happen that the pod running the tests is simply killed and we won't
     # have any logs for investigation the situation.
     export BATS_TEST_TIMEOUT=1800 # Seconds
-    export COLLECT_ANALYSIS_MAX_DURATION=5s
+    export COLLECT_ANALYSIS_MAX_DURATION=15s
 
    if [[ -z "${HEAD_HELM_CHART_CENTRAL_SERVICES_DIR:-}" ]]; then
         HEAD_HELM_CHART_CENTRAL_SERVICES_DIR=$(mktemp -d)
