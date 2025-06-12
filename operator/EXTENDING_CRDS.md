@@ -91,10 +91,50 @@ Regarding defaulting, note that there exist different kinds of defaults:
 * Defaults on the level of translation logic: The translation logic will recognize an absent (`nil`) value, decide on its meaning, and will set a corresponding
   value in the Helm values (see [example](https://github.com/stackrox/rox/blob/84d841c870f59d2c423f78eb7ecd44a196f8a659/operator/pkg/central/values/translation/translation.go#L120)).
 
-  Alternatively, defaults can be set by a special `DefaultingExtension`. TODO(ROX-29199): document how to use this.
-
 * Propagating chart-level defaults: The translation logic will set the corresponding Helm values field only for explicitly set values; for absent
   values, it will do nothing, thus deferring to the chart's defaulting logic (see [example](https://github.com/stackrox/rox/blob/84d841c870f59d2c423f78eb7ecd44a196f8a659/operator/pkg/central/values/translation/translation.go#L86)).
+
+* For more complex use cases, defaults can be set using a special `DefaultingExtension` (see below).
+
+## Defaulting Extension Mechanism
+
+The DefaultingExtension runs early in the reconcilliation process and executes "defaulting flows" in sequence.
+Each defaulting flow has the ability to populate `Central.Defaults` (of type `CentralSpec`) resp. `SecuredCluster.Defaults` (of type `SecuredClusterSpec`)
+using the custom resource's spec, status and metadata annotations (see below). More precisely, a defaulting flow can
+  - Implement complex defaulting logic (beyond what static CRD defaulting supports).
+  - Persist defaulting decisions in the custom resource's metadata as feature-specific annotation.
+  - Differentiate between green-field (fresh installation) and brown-field (upgrade) scenarios when making defaulting decision.
+  - Ensure that subsequent reconciler extensions work with a custom resource spec that already includes all relevant defaulting decisions.
+
+### Annotation Format
+
+Every defaulting decision that is persisted as an annotation should follow this naming convention:
+```
+metadata:
+  annotations:
+    "feature-defaults.platform.stackrox.io/<FEATURE_IDENTIFIER>": "<VALUE>"
+```
+
+Example:
+```
+metadata:
+  annotations:
+    "feature-defaults.platform.stackrox.io/scannerV4": "Enabled"
+```
+This annotation is added by the defaulting flow responsible for determining whether Scanner V4 should be enabled.
+If the defaulting logic decides that Scanner V4 should be enabled by default, it adds this annotation to the custom resource.
+This preserves the decision across reconciliation cycles and ensures consistent behavior during future upgrades.
+
+### Reference Implementation
+
+The two defaulting flows
+
+* [`operator/internal/common/defaulting/central_scanner_v4_enabling.go`](https://github.com/stackrox/stackrox/blob/3864927b0825ebb95a1377daf8fb6afb0da8cfa7/operator/internal/common/defaulting/central_scanner_v4_enabling.go)
+* [`operator/internal/common/defaulting/secured_cluster_scanner_v4_enabling.go`](https://github.com/stackrox/stackrox/blob/3864927b0825ebb95a1377daf8fb6afb0da8cfa7/operator/internal/common/defaulting/secured_cluster_scanner_v4_enabling.go)
+
+can be used as blueprints when implementing new defaulting flows. New defaulting flows need to be added to
+`operator/internal/central/extensions/reconcile_defaulting.go:defaultingFlows` resp.
+`operator/internal/securedcluster/extensions/reconcile_defaulting.go:defaultingFlows`.
 
 ## Breaking changes
 
