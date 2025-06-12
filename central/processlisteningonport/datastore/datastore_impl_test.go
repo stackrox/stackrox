@@ -2316,6 +2316,7 @@ func (suite *PLOPDataStoreTestSuite) makeRandomPlops(nport int, nprocess int, np
 					DeploymentId: deployment,
 					ClusterId:    fixtureconsts.Cluster1,
 					PodUid:       podUid,
+					Namespace:    fixtureconsts.Namespace1,
 				}
 				plopUDP := &storage.ProcessListeningOnPortFromSensor{
 					Port:           uint32(port),
@@ -2331,6 +2332,7 @@ func (suite *PLOPDataStoreTestSuite) makeRandomPlops(nport int, nprocess int, np
 					DeploymentId: deployment,
 					ClusterId:    fixtureconsts.Cluster1,
 					PodUid:       podUid,
+					Namespace:    fixtureconsts.Namespace1,
 				}
 				plops[count] = plopTCP
 				count++
@@ -2876,7 +2878,10 @@ func (suite *PLOPDataStoreTestSuite) TestSort1000000() {
 	nprocess := 100
 	npod := 100
 
-	suite.makeRandomPlops(nport, nprocess, npod, fixtureconsts.Deployment1)
+	plops := suite.makeRandomPlops(nport, nprocess, npod, fixtureconsts.Deployment1)
+	suite.addTooMany(plops)
+
+	suite.addDeployments()
 
 	startTime := time.Now()
 	newPlops, err := suite.datastore.GetProcessListeningOnPort(
