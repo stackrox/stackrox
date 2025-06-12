@@ -386,10 +386,10 @@ class ImageScanningTest extends BaseSpecification {
         //              ) },]                                                                                          |
         //         41  | 170 | 28
 
-        "gcr-and-other"                 | "gcr"  |
-                [{ GCRImageIntegration.createDefaultIntegration() },
-                 { QuayImageIntegration.createDefaultIntegration() },]                                    |
-                41  | 170 | 28
+        // "gcr-and-other"                 | "gcr"  |
+        //         [{ GCRImageIntegration.createDefaultIntegration() },
+        //          { QuayImageIntegration.createDefaultIntegration() },]                                    |
+        //         41  | 170 | 28
 
         cves = ["CVE-2016-2781", "CVE-2017-9614"]
     }
@@ -648,7 +648,8 @@ class ImageScanningTest extends BaseSpecification {
         "acr-config-only"     | "acr"       | true               | /^acr$/                    |
                 { -> AzureRegistryIntegration.createDefaultIntegration() }
         "quay-auto"           | "quay"      | false              | source(".*.quay.io")       | null
-        "gcr-auto"            | "gcr"       | false              | source(".*.gcr.io")        | null
+        // ROX-29668 - disable gcr.io until tests are fixed for metadata failures after migration to artifacts registry
+        //"gcr-auto"            | "gcr"       | false              | source(".*.gcr.io")        | null
     }
 
     private static String source(String server) {
