@@ -27,8 +27,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	imgUtils "github.com/stackrox/rox/pkg/images/utils"
-
-	// "github.com/stackrox/rox/pkg/protoutils"
+	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/urlfmt"
@@ -507,25 +506,20 @@ func getVerifiedImageReference(signature oci.Signature, image *storage.Image) ([
 	log.Debugf("Retrieving verified image references from the image names [%v] and image reference within the "+
 		"signature %q", image.GetNames(), signatureImageReference)
 	var verifiedImageReferences []string
-	// imageNames := protoutils.SliceUnique(append(image.GetNames(), image.GetName()))
-	// for _, name := range imageNames {
-	// 	reference, err := dockerReferenceFromImageName(name)
-	// 	fmt.Printf("image reference for image %s is %s\n", name.GetFullName(), reference)
-	// 	if err != nil {
-	// 		// Theoretically, all references should be parsable.
-	// 		// In case we somehow get an invalid entry, we will log the occurrence and skip this entry.
-	// 		log.Errorf("Failed to retrieve the reference for image name %s: %v", name.GetFullName(), err)
-	// 		continue
-	// 	}
-	// 	if signatureImageReference == reference {
-	// 		verifiedImageReferences = append(verifiedImageReferences, name.GetFullName())
-	// 	}
-	// }
-	if simpleContainer.Critical.Image.DockerManifestDigest == image.Id {
-		verifiedImageReferences = append(verifiedImageReferences, signatureImageReference)
-		return verifiedImageReferences, nil
+	imageNames := protoutils.SliceUnique(append(image.GetNames(), image.GetName()))
+	for _, name := range imageNames {
+		reference, err := dockerReferenceFromImageName(name)
+		if err != nil {
+			// Theoretically, all references should be parsable.
+			// In case we somehow get an invalid entry, we will log the occurrence and skip this entry.
+			log.Errorf("Failed to retrieve the reference for image name %s: %v", name.GetFullName(), err)
+			continue
+		}
+		if signatureImageReference == reference {
+			verifiedImageReferences = append(verifiedImageReferences, name.GetFullName())
+		}
 	}
-	return verifiedImageReferences, errNoVerificationData
+	return verifiedImageReferences, nil
 }
 
 func dockerReferenceFromImageName(imageName *storage.ImageName) (string, error) {
