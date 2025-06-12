@@ -1,6 +1,7 @@
 package common
 
 import (
+	"maps"
 	"slices"
 )
 
@@ -24,6 +25,26 @@ func (mcfg MetricsConfiguration) HasAnyLabelOf(labels []Label) bool {
 		}
 	}
 	return false
+}
+
+func (mcfg MetricsConfiguration) DiffLabels(another MetricsConfiguration) ([]MetricName, []MetricName, []MetricName) {
+	if mcfg == nil && another == nil {
+		return nil, nil, nil
+	}
+	var toAdd, toDelete, changed []MetricName
+	for metric, labels := range mcfg {
+		if anotherLabels, ok := another[metric]; !ok {
+			toDelete = append(toDelete, metric)
+		} else if !maps.EqualFunc(labels, anotherLabels, Expression.Equals) {
+			changed = append(changed, metric)
+		}
+	}
+	for metric := range another {
+		if _, ok := mcfg[metric]; !ok {
+			toAdd = append(toAdd, metric)
+		}
+	}
+	return toAdd, toDelete, changed
 }
 
 // MakeLabelOrderMap maps labels to their order according to the order of

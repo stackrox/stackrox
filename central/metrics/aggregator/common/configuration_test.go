@@ -68,6 +68,8 @@ func makeTestMetricLabels(t *testing.T) map[string]*storage.PrometheusMetricsCon
 				},
 				"Cluster": nil,
 			},
+			Exposure:     storage.PrometheusMetricsConfig_Labels_BOTH,
+			RegistryName: "registry1",
 		},
 		pfx + "_metric2": {
 			Labels: map[string]*storage.PrometheusMetricsConfig_Labels_Expression{
@@ -109,4 +111,78 @@ func TestHasAnyLabelOf(t *testing.T) {
 	assert.True(t, mcfg.HasAnyLabelOf([]Label{"label0", "label1"}))
 	assert.True(t, mcfg.HasAnyLabelOf([]Label{"label0", "label4"}))
 	assert.False(t, mcfg.HasAnyLabelOf([]Label{"label0", "label5"}))
+}
+
+func TestMetricsConfiguration_DiffLabels(t *testing.T) {
+	tests := []struct {
+		name         string
+		a, b         MetricsConfiguration
+		wantToAdd    []MetricName
+		wantToDelete []MetricName
+		wantChanged  []MetricName
+	}{
+		{
+			name:         "both nil",
+			a:            nil,
+			b:            nil,
+			wantToAdd:    nil,
+			wantToDelete: nil,
+		},
+		{
+			name:         "a empty, b has one",
+			a:            MetricsConfiguration{},
+			b:            MetricsConfiguration{"metric1": {"label1": nil}},
+			wantToAdd:    []MetricName{"metric1"},
+			wantToDelete: nil,
+		},
+		{
+			name:         "a has one, b empty",
+			a:            MetricsConfiguration{"metric1": {"label1": nil}},
+			b:            MetricsConfiguration{},
+			wantToAdd:    nil,
+			wantToDelete: []MetricName{"metric1"},
+		},
+		{
+			name:         "a has one, b has another",
+			a:            MetricsConfiguration{"metric1": {"label1": nil}},
+			b:            MetricsConfiguration{"metric2": {"label2": nil}},
+			wantToAdd:    []MetricName{"metric2"},
+			wantToDelete: []MetricName{"metric1"},
+		},
+		{
+			name: "a and b have overlap",
+			a: MetricsConfiguration{
+				"metric1": {"label1": nil},
+				"metric2": {"label2": nil},
+			},
+			b: MetricsConfiguration{
+				"metric2": {"label2": nil},
+				"metric3": {"label3": nil},
+			},
+			wantToAdd:    []MetricName{"metric3"},
+			wantToDelete: []MetricName{"metric1"},
+		},
+		{
+			name: "identical",
+			a: MetricsConfiguration{
+				"metric1": {"label1": nil},
+				"metric2": {"label2": nil},
+			},
+			b: MetricsConfiguration{
+				"metric1": {"label1": nil},
+				"metric2": {"label2": nil},
+			},
+			wantToAdd:    nil,
+			wantToDelete: nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotToAdd, gotToDelete, gotChanged := tt.a.DiffLabels(tt.b)
+			assert.ElementsMatch(t, tt.wantToAdd, gotToAdd)
+			assert.ElementsMatch(t, tt.wantToDelete, gotToDelete)
+			assert.ElementsMatch(t, tt.wantChanged, gotChanged)
+		})
+	}
 }

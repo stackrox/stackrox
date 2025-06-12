@@ -24,6 +24,10 @@ type Condition struct {
 	arg string
 }
 
+func (c *Condition) Equals(b *Condition) bool {
+	return c == b || c != nil && b != nil && c.op == b.op && c.arg == b.arg
+}
+
 // MakeCondition constructs an condition.
 func MakeCondition(op, arg string) (*Condition, error) {
 	cond := &Condition{operator(op), arg}
