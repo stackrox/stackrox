@@ -11,27 +11,32 @@ type aggregatedRecord struct {
 }
 
 // aggregator computes the aggregation result.
-type aggregator struct {
+type aggregator[Finding Countable] struct {
 	result     map[MetricName]map[aggregationKey]*aggregatedRecord
 	mcfg       MetricsConfiguration
 	labelOrder map[Label]int
+	getters    map[Label]func(Finding) string
 }
 
-func makeAggregator(mcfg MetricsConfiguration, labelOrder map[Label]int) *aggregator {
+func makeAggregator[Finding Countable](mcfg MetricsConfiguration, labelOrder map[Label]int, getters map[Label]func(Finding) string) *aggregator[Finding] {
 	aggregated := make(map[MetricName]map[aggregationKey]*aggregatedRecord)
 	for metric := range mcfg {
 		aggregated[metric] = make(map[aggregationKey]*aggregatedRecord)
 	}
-	return &aggregator{aggregated, mcfg, labelOrder}
+	return &aggregator[Finding]{aggregated, mcfg, labelOrder, getters}
 }
 
-func (r *aggregator) count(getter func(Label) string, count int) {
+// count the finding in the aggregation result.
+func (r *aggregator[Finding]) count(finding Finding) {
+	labelValue := func(label Label) string {
+		return r.getters[label](finding)
+	}
 	for metric, labels := range r.mcfg {
-		if key, labels := makeAggregationKey(labels, getter, r.labelOrder); key != "" {
+		if key, labels := makeAggregationKey(labels, labelValue, r.labelOrder); key != "" {
 			if rec, ok := r.result[metric][key]; ok {
-				rec.total += count
+				rec.total += finding.Count()
 			} else {
-				r.result[metric][key] = &aggregatedRecord{labels, count}
+				r.result[metric][key] = &aggregatedRecord{labels, finding.Count()}
 			}
 		}
 	}

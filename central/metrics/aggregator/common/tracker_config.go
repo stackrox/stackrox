@@ -137,11 +137,9 @@ func (tc *TrackerConfig[Finding]) track(ctx context.Context) {
 	if len(mcfg) == 0 {
 		return
 	}
-	aggregator := makeAggregator(mcfg, tc.labelOrder)
+	aggregator := makeAggregator(mcfg, tc.labelOrder, tc.getters)
 	for finding := range tc.generator(ctx, query, mcfg) {
-		aggregator.count(func(label Label) string {
-			return tc.getters[label](finding)
-		}, finding.Count())
+		aggregator.count(finding)
 	}
 	for metric, records := range aggregator.result {
 		for _, rec := range records {

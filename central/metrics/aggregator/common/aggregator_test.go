@@ -7,15 +7,25 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+type testFinding struct {
+	OneOrMore
+	index int
+}
+
 func Test_aggregator(t *testing.T) {
-	a := makeAggregator(makeTestMetricLabelExpression(t), testLabelOrder)
+	getters := map[Label]func(testFinding) string{
+		"Severity":  func(tf testFinding) string { return testData[tf.index]["Severity"] },
+		"Cluster":   func(tf testFinding) string { return testData[tf.index]["Cluster"] },
+		"Namespace": func(tf testFinding) string { return testData[tf.index]["Namespace"] },
+	}
+	a := makeAggregator(makeTestMetricLabelExpression(t), testLabelOrder, getters)
 	assert.NotNil(t, a)
 	assert.Equal(t, map[MetricName]map[aggregationKey]*aggregatedRecord{
 		"Test_aggregator_metric1": {},
 		"Test_aggregator_metric2": {},
 	}, a.result)
 
-	a.count(func(label Label) string { return testData[0][label] }, 1)
+	a.count(testFinding{index: 0})
 
 	assert.Equal(t, map[MetricName]map[aggregationKey]*aggregatedRecord{
 		"Test_aggregator_metric1": {
@@ -30,7 +40,7 @@ func Test_aggregator(t *testing.T) {
 			}},
 	}, a.result)
 
-	a.count(func(label Label) string { return testData[0][label] }, 1)
+	a.count(testFinding{index: 0})
 
 	assert.Equal(t, map[MetricName]map[aggregationKey]*aggregatedRecord{
 		"Test_aggregator_metric1": {
@@ -45,7 +55,7 @@ func Test_aggregator(t *testing.T) {
 			}},
 	}, a.result)
 
-	a.count(func(label Label) string { return testData[1][label] }, 1)
+	a.count(testFinding{index: 1})
 
 	assert.Equal(t, map[MetricName]map[aggregationKey]*aggregatedRecord{
 		"Test_aggregator_metric1": {
@@ -70,7 +80,7 @@ func Test_aggregator(t *testing.T) {
 		},
 	}, a.result)
 
-	a.count(func(label Label) string { return testData[1][label] }, 5)
+	a.count(testFinding{OneOrMore: 5, index: 1})
 
 	assert.Equal(t, map[MetricName]map[aggregationKey]*aggregatedRecord{
 		"Test_aggregator_metric1": {
