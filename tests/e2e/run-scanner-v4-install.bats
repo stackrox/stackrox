@@ -1598,11 +1598,10 @@ resolve_previous_x_y_0_version() {
     if [[ -z "$helm_chart_versions" ]]; then
         die "No helm chart versions were found in \"${helm_charts_repo}\"."
     fi
-    local marker_version="${x_y_version}.0"
     local previous_x_y_0_version
     previous_x_y_0_version=$(
         # Begin with all sort of tags.
-        { echo "$helm_chart_versions"; echo "$marker_version"; } |
+        { echo "$helm_chart_versions"; echo "$x_y_version"; } |
         # Delete the z component.
         extract_x_y_part |
         # Sort stripped x.y version tags.
