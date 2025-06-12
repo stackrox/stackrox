@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/sensor/common/heritage"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -195,7 +196,7 @@ func TestConvertWithRegistryOverride(t *testing.T) {
 		},
 	}
 
-	storeProvider := InitializeStore()
+	storeProvider := InitializeStore(&heritage.MockData{})
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			testutils.MustUpdateFeature(t, features.UnqualifiedSearchRegistries, c.enableUnqualifiedFeature)

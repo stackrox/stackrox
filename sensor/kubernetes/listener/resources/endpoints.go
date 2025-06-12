@@ -240,10 +240,29 @@ func (m *endpointManagerImpl) OnDeploymentCreateOrUpdateByID(id string) {
 }
 
 func (m *endpointManagerImpl) onDeploymentCreateOrUpdate(deployment *deploymentWrap) {
+	data := m.endpointDataForDeployment(deployment)
 	updates := map[string]*clusterentities.EntityData{
-		deployment.GetId(): m.endpointDataForDeployment(deployment),
+		deployment.GetId(): data,
+	}
+	if deployment.GetName() == "sensor" {
+		m.updateHeritageData(data, true)
 	}
 	m.entityStore.Apply(updates, false, "OnDeploymentCreateOrUpdateByID")
+}
+
+func (m *endpointManagerImpl) updateHeritageData(data *clusterentities.EntityData, force bool) {
+	hm := m.entityStore.GetHeritageData()
+	if hm == nil {
+		return
+	}
+	if hm.HasCurrentSensorData() && !force {
+		return
+	}
+	sensorContainerID, sensorPodIP := data.GetDetails()
+	log.Infof("Discovered podIP=%q and containerID=%q for Sensor heritage", sensorPodIP, sensorContainerID)
+	if sensorPodIP != "" && sensorContainerID != "" {
+		hm.SetCurrentSensorData(sensorPodIP, sensorContainerID)
+	}
 }
 
 func (m *endpointManagerImpl) OnDeploymentRemove(deployment *deploymentWrap) {

@@ -3,6 +3,7 @@ package clusterentities
 import (
 	"testing"
 
+	"github.com/stackrox/rox/sensor/common/heritage"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -71,7 +72,7 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryWhenGoingOffline() {
 	}
 	for name, tc := range cases {
 		s.Run(name, func() {
-			entityStore := NewStoreWithMemory(tc.numTicksToRemember, true)
+			entityStore := NewStoreWithMemory(tc.numTicksToRemember, &heritage.MockData{}, true)
 			entityStore.Apply(tc.initialState, true)
 			// We start online
 			s.Len(entityStore.podIPsStore.ipMap, tc.wantMapSizeOnline)

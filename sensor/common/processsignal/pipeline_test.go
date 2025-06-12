@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/detector/mocks"
+	"github.com/stackrox/rox/sensor/common/heritage"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -95,7 +96,7 @@ func TestProcessPipelineOfflineV3(t *testing.T) {
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			sensorEvents := make(chan *message.ExpiringMessage, outputChannelSize)
-			mockStore := clusterentities.NewStore()
+			mockStore := clusterentities.NewStoreWithMemory(0, &heritage.MockData{}, false)
 			mockDetector := mocks.NewMockDetector(mockCtrl)
 			pipeline := NewProcessPipeline(sensorEvents, mockStore,
 				filter.NewFilter(5, 5, []int{3, 3, 3}),
@@ -302,7 +303,7 @@ func TestProcessPipelineOfflineV1(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			caseCtx, cancel := context.WithCancel(context.Background())
 			defer cancel()
-			mockStore := clusterentities.NewStore()
+			mockStore := clusterentities.NewStoreWithMemory(0, &heritage.MockData{}, false)
 			mockDetector := mocks.NewMockDetector(mockCtrl)
 			defer deleteStore(containerMetadata1.DeploymentID, mockStore)
 			defer deleteStore(containerMetadata2.DeploymentID, mockStore)
@@ -416,7 +417,7 @@ func TestProcessPipelineOnline(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
-	mockStore := clusterentities.NewStore()
+	mockStore := clusterentities.NewStoreWithMemory(0, &heritage.MockData{}, false)
 	mockDetector := mocks.NewMockDetector(mockCtrl)
 
 	p := NewProcessPipeline(sensorEvents, mockStore, filter.NewFilter(5, 5, []int{10, 10, 10}),
