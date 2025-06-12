@@ -5384,7 +5384,7 @@
               {
                 "id": 1,
                 "name": "image_vulnerabilities",
-                "type": "Vulnerabilities"
+                "type": "Metrics"
               }
             ],
             "messages": [
@@ -5432,7 +5432,7 @@
                 ]
               },
               {
-                "name": "Vulnerabilities",
+                "name": "Metrics",
                 "fields": [
                   {
                     "id": 1,

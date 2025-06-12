@@ -431,11 +431,11 @@ func (m *PrometheusMetricsConfig_Labels) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
-func (m *PrometheusMetricsConfig_Vulnerabilities) CloneVT() *PrometheusMetricsConfig_Vulnerabilities {
+func (m *PrometheusMetricsConfig_Metrics) CloneVT() *PrometheusMetricsConfig_Metrics {
 	if m == nil {
-		return (*PrometheusMetricsConfig_Vulnerabilities)(nil)
+		return (*PrometheusMetricsConfig_Metrics)(nil)
 	}
-	r := new(PrometheusMetricsConfig_Vulnerabilities)
+	r := new(PrometheusMetricsConfig_Metrics)
 	r.GatheringPeriodMinutes = m.GatheringPeriodMinutes
 	r.Filter = m.Filter
 	if rhs := m.Metrics; rhs != nil {
@@ -452,7 +452,7 @@ func (m *PrometheusMetricsConfig_Vulnerabilities) CloneVT() *PrometheusMetricsCo
 	return r
 }
 
-func (m *PrometheusMetricsConfig_Vulnerabilities) CloneMessageVT() proto.Message {
+func (m *PrometheusMetricsConfig_Metrics) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
@@ -1055,7 +1055,7 @@ func (this *PrometheusMetricsConfig_Labels) EqualMessageVT(thatMsg proto.Message
 	}
 	return this.EqualVT(that)
 }
-func (this *PrometheusMetricsConfig_Vulnerabilities) EqualVT(that *PrometheusMetricsConfig_Vulnerabilities) bool {
+func (this *PrometheusMetricsConfig_Metrics) EqualVT(that *PrometheusMetricsConfig_Metrics) bool {
 	if this == that {
 		return true
 	} else if this == nil || that == nil {
@@ -1090,8 +1090,8 @@ func (this *PrometheusMetricsConfig_Vulnerabilities) EqualVT(that *PrometheusMet
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
-func (this *PrometheusMetricsConfig_Vulnerabilities) EqualMessageVT(thatMsg proto.Message) bool {
-	that, ok := thatMsg.(*PrometheusMetricsConfig_Vulnerabilities)
+func (this *PrometheusMetricsConfig_Metrics) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*PrometheusMetricsConfig_Metrics)
 	if !ok {
 		return false
 	}
@@ -2240,7 +2240,7 @@ func (m *PrometheusMetricsConfig_Labels) MarshalToSizedBufferVT(dAtA []byte) (in
 	return len(dAtA) - i, nil
 }
 
-func (m *PrometheusMetricsConfig_Vulnerabilities) MarshalVT() (dAtA []byte, err error) {
+func (m *PrometheusMetricsConfig_Metrics) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -2253,12 +2253,12 @@ func (m *PrometheusMetricsConfig_Vulnerabilities) MarshalVT() (dAtA []byte, err 
 	return dAtA[:n], nil
 }
 
-func (m *PrometheusMetricsConfig_Vulnerabilities) MarshalToVT(dAtA []byte) (int, error) {
+func (m *PrometheusMetricsConfig_Metrics) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *PrometheusMetricsConfig_Vulnerabilities) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *PrometheusMetricsConfig_Metrics) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m == nil {
 		return 0, nil
 	}
@@ -2771,7 +2771,7 @@ func (m *PrometheusMetricsConfig_Labels) SizeVT() (n int) {
 	return n
 }
 
-func (m *PrometheusMetricsConfig_Vulnerabilities) SizeVT() (n int) {
+func (m *PrometheusMetricsConfig_Metrics) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -5497,7 +5497,7 @@ func (m *PrometheusMetricsConfig_Labels) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *PrometheusMetricsConfig_Vulnerabilities) UnmarshalVT(dAtA []byte) error {
+func (m *PrometheusMetricsConfig_Metrics) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5520,10 +5520,10 @@ func (m *PrometheusMetricsConfig_Vulnerabilities) UnmarshalVT(dAtA []byte) error
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: PrometheusMetricsConfig_Vulnerabilities: wiretype end group for non-group")
+			return fmt.Errorf("proto: PrometheusMetricsConfig_Metrics: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: PrometheusMetricsConfig_Vulnerabilities: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: PrometheusMetricsConfig_Metrics: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -5787,7 +5787,7 @@ func (m *PrometheusMetricsConfig) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.ImageVulnerabilities == nil {
-				m.ImageVulnerabilities = &PrometheusMetricsConfig_Vulnerabilities{}
+				m.ImageVulnerabilities = &PrometheusMetricsConfig_Metrics{}
 			}
 			if err := m.ImageVulnerabilities.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -8541,7 +8541,7 @@ func (m *PrometheusMetricsConfig_Labels) UnmarshalVTUnsafe(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *PrometheusMetricsConfig_Vulnerabilities) UnmarshalVTUnsafe(dAtA []byte) error {
+func (m *PrometheusMetricsConfig_Metrics) UnmarshalVTUnsafe(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -8564,10 +8564,10 @@ func (m *PrometheusMetricsConfig_Vulnerabilities) UnmarshalVTUnsafe(dAtA []byte)
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: PrometheusMetricsConfig_Vulnerabilities: wiretype end group for non-group")
+			return fmt.Errorf("proto: PrometheusMetricsConfig_Metrics: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: PrometheusMetricsConfig_Vulnerabilities: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: PrometheusMetricsConfig_Metrics: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -8839,7 +8839,7 @@ func (m *PrometheusMetricsConfig) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.ImageVulnerabilities == nil {
-				m.ImageVulnerabilities = &PrometheusMetricsConfig_Vulnerabilities{}
+				m.ImageVulnerabilities = &PrometheusMetricsConfig_Metrics{}
 			}
 			if err := m.ImageVulnerabilities.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 				return err

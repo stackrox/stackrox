@@ -302,7 +302,7 @@
         }
       }
     },
-    "PrometheusMetricsConfigVulnerabilities": {
+    "PrometheusMetricsConfigMetrics": {
       "type": "object",
       "properties": {
         "gatheringPeriodMinutes": {
@@ -535,7 +535,7 @@
       "type": "object",
       "properties": {
         "imageVulnerabilities": {
-          "$ref": "#/definitions/PrometheusMetricsConfigVulnerabilities",
+          "$ref": "#/definitions/PrometheusMetricsConfigMetrics",
           "description": "\"imageVulnerabilities\": {\n    \"gatheringPeriodMinutes\": 1,\n    \"metrics\": {\n      \"severity\": { // custom metric name.\n        \"labels\": {\n          \"Severity\": {} // label name with no expression.\n          \"Namespace\": {\n            \"expression\": [ // label conditions list.\n              { \"operator\": \"!=\", \"argument\": \"*test*\" }\n            ]\n          }\n        }\n      }\n    }\n  }",
           "title": "Configuration for image vulnerabilities metrics.\nExample:"
         }

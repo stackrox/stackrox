@@ -892,7 +892,7 @@ type PrometheusMetricsConfig struct {
 	//	    }
 	//	  }
 	//	}
-	ImageVulnerabilities *PrometheusMetricsConfig_Vulnerabilities `protobuf:"bytes,1,opt,name=image_vulnerabilities,json=imageVulnerabilities,proto3" json:"image_vulnerabilities,omitempty"`
+	ImageVulnerabilities *PrometheusMetricsConfig_Metrics `protobuf:"bytes,1,opt,name=image_vulnerabilities,json=imageVulnerabilities,proto3" json:"image_vulnerabilities,omitempty"`
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
 }
@@ -927,7 +927,7 @@ func (*PrometheusMetricsConfig) Descriptor() ([]byte, []int) {
 	return file_storage_config_proto_rawDescGZIP(), []int{12}
 }
 
-func (x *PrometheusMetricsConfig) GetImageVulnerabilities() *PrometheusMetricsConfig_Vulnerabilities {
+func (x *PrometheusMetricsConfig) GetImageVulnerabilities() *PrometheusMetricsConfig_Metrics {
 	if x != nil {
 		return x.ImageVulnerabilities
 	}
@@ -1195,7 +1195,7 @@ func (x *PrometheusMetricsConfig_Labels) GetLabels() map[string]*PrometheusMetri
 	return nil
 }
 
-type PrometheusMetricsConfig_Vulnerabilities struct {
+type PrometheusMetricsConfig_Metrics struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The period (in minutes) at which vulnerability data is gathered from the DB.
 	GatheringPeriodMinutes uint32 `protobuf:"varint,1,opt,name=gathering_period_minutes,json=gatheringPeriodMinutes,proto3" json:"gathering_period_minutes,omitempty"`
@@ -1209,20 +1209,20 @@ type PrometheusMetricsConfig_Vulnerabilities struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *PrometheusMetricsConfig_Vulnerabilities) Reset() {
-	*x = PrometheusMetricsConfig_Vulnerabilities{}
+func (x *PrometheusMetricsConfig_Metrics) Reset() {
+	*x = PrometheusMetricsConfig_Metrics{}
 	mi := &file_storage_config_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *PrometheusMetricsConfig_Vulnerabilities) String() string {
+func (x *PrometheusMetricsConfig_Metrics) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*PrometheusMetricsConfig_Vulnerabilities) ProtoMessage() {}
+func (*PrometheusMetricsConfig_Metrics) ProtoMessage() {}
 
-func (x *PrometheusMetricsConfig_Vulnerabilities) ProtoReflect() protoreflect.Message {
+func (x *PrometheusMetricsConfig_Metrics) ProtoReflect() protoreflect.Message {
 	mi := &file_storage_config_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1234,26 +1234,26 @@ func (x *PrometheusMetricsConfig_Vulnerabilities) ProtoReflect() protoreflect.Me
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PrometheusMetricsConfig_Vulnerabilities.ProtoReflect.Descriptor instead.
-func (*PrometheusMetricsConfig_Vulnerabilities) Descriptor() ([]byte, []int) {
+// Deprecated: Use PrometheusMetricsConfig_Metrics.ProtoReflect.Descriptor instead.
+func (*PrometheusMetricsConfig_Metrics) Descriptor() ([]byte, []int) {
 	return file_storage_config_proto_rawDescGZIP(), []int{12, 1}
 }
 
-func (x *PrometheusMetricsConfig_Vulnerabilities) GetGatheringPeriodMinutes() uint32 {
+func (x *PrometheusMetricsConfig_Metrics) GetGatheringPeriodMinutes() uint32 {
 	if x != nil {
 		return x.GatheringPeriodMinutes
 	}
 	return 0
 }
 
-func (x *PrometheusMetricsConfig_Vulnerabilities) GetMetrics() map[string]*PrometheusMetricsConfig_Labels {
+func (x *PrometheusMetricsConfig_Metrics) GetMetrics() map[string]*PrometheusMetricsConfig_Labels {
 	if x != nil {
 		return x.Metrics
 	}
 	return nil
 }
 
-func (x *PrometheusMetricsConfig_Vulnerabilities) GetFilter() string {
+func (x *PrometheusMetricsConfig_Metrics) GetFilter() string {
 	if x != nil {
 		return x.Filter
 	}
@@ -1465,9 +1465,9 @@ const file_storage_config_proto_rawDesc = "" +
 	"\x17retention_duration_days\x18\x01 \x01(\rR\x15retentionDurationDays\"@\n" +
 	"\tDayOption\x12\x19\n" +
 	"\bnum_days\x18\x01 \x01(\rR\anumDays\x12\x18\n" +
-	"\aenabled\x18\x02 \x01(\bR\aenabled\"\x9d\x06\n" +
-	"\x17PrometheusMetricsConfig\x12e\n" +
-	"\x15image_vulnerabilities\x18\x01 \x01(\v20.storage.PrometheusMetricsConfig.VulnerabilitiesR\x14imageVulnerabilities\x1a\xf6\x02\n" +
+	"\aenabled\x18\x02 \x01(\bR\aenabled\"\x85\x06\n" +
+	"\x17PrometheusMetricsConfig\x12]\n" +
+	"\x15image_vulnerabilities\x18\x01 \x01(\v2(.storage.PrometheusMetricsConfig.MetricsR\x14imageVulnerabilities\x1a\xf6\x02\n" +
 	"\x06Labels\x12K\n" +
 	"\x06labels\x18\x01 \x03(\v23.storage.PrometheusMetricsConfig.Labels.LabelsEntryR\x06labels\x1a\xaf\x01\n" +
 	"\n" +
@@ -1480,10 +1480,10 @@ const file_storage_config_proto_rawDesc = "" +
 	"\bargument\x18\x02 \x01(\tR\bargument\x1am\n" +
 	"\vLabelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12H\n" +
-	"\x05value\x18\x02 \x01(\v22.storage.PrometheusMetricsConfig.Labels.ExpressionR\x05value:\x028\x01\x1a\xa1\x02\n" +
-	"\x0fVulnerabilities\x128\n" +
-	"\x18gathering_period_minutes\x18\x01 \x01(\rR\x16gatheringPeriodMinutes\x12W\n" +
-	"\ametrics\x18\x02 \x03(\v2=.storage.PrometheusMetricsConfig.Vulnerabilities.MetricsEntryR\ametrics\x12\x16\n" +
+	"\x05value\x18\x02 \x01(\v22.storage.PrometheusMetricsConfig.Labels.ExpressionR\x05value:\x028\x01\x1a\x91\x02\n" +
+	"\aMetrics\x128\n" +
+	"\x18gathering_period_minutes\x18\x01 \x01(\rR\x16gatheringPeriodMinutes\x12O\n" +
+	"\ametrics\x18\x02 \x03(\v25.storage.PrometheusMetricsConfig.Metrics.MetricsEntryR\ametrics\x12\x16\n" +
 	"\x06filter\x18\x03 \x01(\tR\x06filter\x1ac\n" +
 	"\fMetricsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12=\n" +
@@ -1525,11 +1525,11 @@ var file_storage_config_proto_goTypes = []any{
 	(*VulnerabilityExceptionConfig_FixableCVEOptions)(nil), // 17: storage.VulnerabilityExceptionConfig.FixableCVEOptions
 	(*VulnerabilityExceptionConfig_ExpiryOptions)(nil),     // 18: storage.VulnerabilityExceptionConfig.ExpiryOptions
 	(*PrometheusMetricsConfig_Labels)(nil),                 // 19: storage.PrometheusMetricsConfig.Labels
-	(*PrometheusMetricsConfig_Vulnerabilities)(nil),        // 20: storage.PrometheusMetricsConfig.Vulnerabilities
+	(*PrometheusMetricsConfig_Metrics)(nil),                // 20: storage.PrometheusMetricsConfig.Metrics
 	(*PrometheusMetricsConfig_Labels_Expression)(nil),      // 21: storage.PrometheusMetricsConfig.Labels.Expression
 	nil, // 22: storage.PrometheusMetricsConfig.Labels.LabelsEntry
 	(*PrometheusMetricsConfig_Labels_Expression_Condition)(nil), // 23: storage.PrometheusMetricsConfig.Labels.Expression.Condition
-	nil,                            // 24: storage.PrometheusMetricsConfig.Vulnerabilities.MetricsEntry
+	nil,                            // 24: storage.PrometheusMetricsConfig.Metrics.MetricsEntry
 	(*TelemetryConfiguration)(nil), // 25: storage.TelemetryConfiguration
 	(*timestamppb.Timestamp)(nil),  // 26: google.protobuf.Timestamp
 }
@@ -1553,15 +1553,15 @@ var file_storage_config_proto_depIdxs = []int32{
 	7,  // 16: storage.Config.private_config:type_name -> storage.PrivateConfig
 	8,  // 17: storage.Config.platform_component_config:type_name -> storage.PlatformComponentConfig
 	18, // 18: storage.VulnerabilityExceptionConfig.expiry_options:type_name -> storage.VulnerabilityExceptionConfig.ExpiryOptions
-	20, // 19: storage.PrometheusMetricsConfig.image_vulnerabilities:type_name -> storage.PrometheusMetricsConfig.Vulnerabilities
+	20, // 19: storage.PrometheusMetricsConfig.image_vulnerabilities:type_name -> storage.PrometheusMetricsConfig.Metrics
 	16, // 20: storage.PlatformComponentConfig.Rule.namespace_rule:type_name -> storage.PlatformComponentConfig.Rule.NamespaceRule
 	12, // 21: storage.VulnerabilityExceptionConfig.ExpiryOptions.day_options:type_name -> storage.DayOption
 	17, // 22: storage.VulnerabilityExceptionConfig.ExpiryOptions.fixable_cve_options:type_name -> storage.VulnerabilityExceptionConfig.FixableCVEOptions
 	22, // 23: storage.PrometheusMetricsConfig.Labels.labels:type_name -> storage.PrometheusMetricsConfig.Labels.LabelsEntry
-	24, // 24: storage.PrometheusMetricsConfig.Vulnerabilities.metrics:type_name -> storage.PrometheusMetricsConfig.Vulnerabilities.MetricsEntry
+	24, // 24: storage.PrometheusMetricsConfig.Metrics.metrics:type_name -> storage.PrometheusMetricsConfig.Metrics.MetricsEntry
 	23, // 25: storage.PrometheusMetricsConfig.Labels.Expression.expression:type_name -> storage.PrometheusMetricsConfig.Labels.Expression.Condition
 	21, // 26: storage.PrometheusMetricsConfig.Labels.LabelsEntry.value:type_name -> storage.PrometheusMetricsConfig.Labels.Expression
-	19, // 27: storage.PrometheusMetricsConfig.Vulnerabilities.MetricsEntry.value:type_name -> storage.PrometheusMetricsConfig.Labels
+	19, // 27: storage.PrometheusMetricsConfig.Metrics.MetricsEntry.value:type_name -> storage.PrometheusMetricsConfig.Labels
 	28, // [28:28] is the sub-list for method output_type
 	28, // [28:28] is the sub-list for method input_type
 	28, // [28:28] is the sub-list for extension type_name

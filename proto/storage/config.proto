@@ -159,7 +159,7 @@ message PrometheusMetricsConfig {
     map<string, Expression> labels = 1;
   }
 
-  message Vulnerabilities {
+  message Metrics {
     // The period (in minutes) at which vulnerability data is gathered from the DB.
     uint32 gathering_period_minutes = 1;
     // Mapping from metric name to its associated labels.
@@ -188,5 +188,5 @@ message PrometheusMetricsConfig {
   //       }
   //     }
   //   }
-  Vulnerabilities image_vulnerabilities = 1;
+  Metrics image_vulnerabilities = 1;
 }

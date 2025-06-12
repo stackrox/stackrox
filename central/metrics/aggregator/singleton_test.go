@@ -50,7 +50,7 @@ func Test_makeRunner(t *testing.T) {
 	t.Run("valid config", func(t *testing.T) {
 		privateConfig := &storage.PrivateConfig{
 			PrometheusMetricsConfig: &storage.PrometheusMetricsConfig{
-				ImageVulnerabilities: &storage.PrometheusMetricsConfig_Vulnerabilities{
+				ImageVulnerabilities: &storage.PrometheusMetricsConfig_Metrics{
 					Filter:                 "",
 					Metrics:                getNonEmptyStorageCfg(),
 					GatheringPeriodMinutes: 1,
