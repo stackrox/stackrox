@@ -286,7 +286,7 @@ updates:
     labels:
     - "dependencies"
     - "area/operator"
-    - "auto-merge"
+    - "auto-merge-any" # these images do not follow semver
     - "auto-retest"
     reviewers:
     - "stackrox/backend-dep-updaters"
