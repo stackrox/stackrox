@@ -90,7 +90,7 @@ func Test_parseErrors(t *testing.T) {
 
 func TestParseConfiguration(t *testing.T) {
 	t.Run("bad metric name", func(t *testing.T) {
-		cfg, err := ParseConfiguration(&storage.PrometheusMetricsConfig_Metrics{
+		cfg, err := parseConfiguration(&storage.PrometheusMetricsConfig_Metrics{
 			GatheringPeriodMinutes: 121,
 			Metrics: map[string]*storage.PrometheusMetricsConfig_Labels{
 				" ": nil,
@@ -103,7 +103,7 @@ func TestParseConfiguration(t *testing.T) {
 	})
 
 	t.Run("bad registry name", func(t *testing.T) {
-		cfg, err := ParseConfiguration(&storage.PrometheusMetricsConfig_Metrics{
+		cfg, err := parseConfiguration(&storage.PrometheusMetricsConfig_Metrics{
 			GatheringPeriodMinutes: 121,
 			Metrics: map[string]*storage.PrometheusMetricsConfig_Labels{
 				"m1": {
@@ -119,7 +119,7 @@ func TestParseConfiguration(t *testing.T) {
 
 	t.Run("test parse sequence", func(t *testing.T) {
 		// Good:
-		cfg0, err := ParseConfiguration(&storage.PrometheusMetricsConfig_Metrics{
+		cfg0, err := parseConfiguration(&storage.PrometheusMetricsConfig_Metrics{
 			GatheringPeriodMinutes: 121,
 			Metrics:                makeTestMetricLabels(t),
 			Filter:                 "Cluster:name",
@@ -132,7 +132,7 @@ func TestParseConfiguration(t *testing.T) {
 		}
 
 		// Bad:
-		cfg1, err := ParseConfiguration(&storage.PrometheusMetricsConfig_Metrics{
+		cfg1, err := parseConfiguration(&storage.PrometheusMetricsConfig_Metrics{
 			GatheringPeriodMinutes: 121,
 			Metrics: map[string]*storage.PrometheusMetricsConfig_Labels{
 				"m1": {
@@ -147,7 +147,7 @@ func TestParseConfiguration(t *testing.T) {
 		assert.Nil(t, cfg1)
 
 		// Another good:
-		cfg2, err := ParseConfiguration(&storage.PrometheusMetricsConfig_Metrics{
+		cfg2, err := parseConfiguration(&storage.PrometheusMetricsConfig_Metrics{
 			GatheringPeriodMinutes: 121,
 			Metrics: map[string]*storage.PrometheusMetricsConfig_Labels{
 				"m2": {
@@ -168,7 +168,7 @@ func TestParseConfiguration(t *testing.T) {
 	})
 
 	t.Run("test bad query", func(t *testing.T) {
-		cfg, err := ParseConfiguration(&storage.PrometheusMetricsConfig_Metrics{
+		cfg, err := parseConfiguration(&storage.PrometheusMetricsConfig_Metrics{
 			GatheringPeriodMinutes: 121,
 			Metrics:                makeTestMetricLabels(t),
 			Filter:                 "bad query?",
@@ -185,7 +185,7 @@ func TestParseConfiguration(t *testing.T) {
 			GatheringPeriodMinutes: 121,
 			Metrics:                makeTestMetricLabels(t),
 		}
-		cfg0, err := ParseConfiguration(storageConfig, nil, testLabelOrder)
+		cfg0, err := parseConfiguration(storageConfig, nil, testLabelOrder)
 		assert.NoError(t, err)
 
 		for _, labels := range storageConfig.Metrics {
@@ -207,7 +207,7 @@ func TestParseConfiguration(t *testing.T) {
 			}
 		}
 
-		cfg1, err := ParseConfiguration(storageConfig, cfg0.metrics, testLabelOrder)
+		cfg1, err := parseConfiguration(storageConfig, cfg0.metrics, testLabelOrder)
 
 		assert.ErrorIs(t, err, errInvalidConfiguration, err)
 		assert.Nil(t, cfg1)
@@ -218,14 +218,14 @@ func TestParseConfiguration(t *testing.T) {
 			GatheringPeriodMinutes: 121,
 			Metrics:                makeTestMetricLabels(t),
 		}
-		cfg0, err := ParseConfiguration(storageConfig, nil, testLabelOrder)
+		cfg0, err := parseConfiguration(storageConfig, nil, testLabelOrder)
 		assert.NoError(t, err)
 		for _, config := range storageConfig.Metrics {
 			if config.Exposure == storage.PrometheusMetricsConfig_Labels_BOTH {
 				config.Labels["CVE"] = &storage.PrometheusMetricsConfig_Labels_Expression{}
 			}
 		}
-		cfg1, err := ParseConfiguration(storageConfig, cfg0.metrics, testLabelOrder)
+		cfg1, err := parseConfiguration(storageConfig, cfg0.metrics, testLabelOrder)
 
 		assert.ErrorIs(t, err, errInvalidConfiguration, err)
 		assert.True(t, strings.Contains(err.Error(), "cannot alter metrics"))

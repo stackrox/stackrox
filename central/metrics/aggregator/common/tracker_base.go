@@ -6,17 +6,23 @@ import (
 	"slices"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-var log = logging.CreateLogger(logging.ModuleForName("central_metrics"), 1)
+var (
+	log             = logging.CreateLogger(logging.ModuleForName("central_metrics"), 1)
+	ErrStopIterator = errors.New("stopped")
+)
 
 type Tracker interface {
 	Run(context.Context)
+	ParseConfiguration(*storage.PrometheusMetricsConfig_Metrics) (*Configuration, error)
 	Reconfigure(context.Context, *Configuration)
 }
 
@@ -84,6 +90,11 @@ func MakeTrackerBase[Finding Countable](category, description string,
 	tracker.registerMetricFunc = tracker.registerMetric
 	tracker.unregisterMetricFunc = tracker.unregisterMetric
 	return tracker
+}
+
+func (tracker *TrackerBase[Finding]) ParseConfiguration(cfg *storage.PrometheusMetricsConfig_Metrics) (*Configuration, error) {
+	current := tracker.GetConfiguration()
+	return parseConfiguration(cfg, current.metrics, tracker.labelOrder)
 }
 
 // Reconfigure assumes the configuration has been validated, so doesn't return

@@ -108,6 +108,7 @@ import (
 	"github.com/stackrox/rox/central/jwt"
 	logimbueHandler "github.com/stackrox/rox/central/logimbue/handler"
 	metadataService "github.com/stackrox/rox/central/metadata/service"
+	customMetrics "github.com/stackrox/rox/central/metrics/aggregator"
 	"github.com/stackrox/rox/central/metrics/telemetry"
 	mitreService "github.com/stackrox/rox/central/mitre/service"
 	namespaceService "github.com/stackrox/rox/central/namespace/service"
@@ -381,7 +382,7 @@ func startServices() {
 	administrationUsageInjector.Singleton().Start()
 	gcp.Singleton().Start()
 	administrationEventHandler.Singleton().Start()
-
+	customMetrics.Singleton().Start()
 	if features.PlatformComponents.Enabled() {
 		platformReprocessor.Singleton().Start()
 	}
@@ -866,6 +867,16 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			ServerHandler: certHandler.BackupCerts(listener.Singleton()),
 			Compression:   true,
 		},
+		{
+			// User configured Prometheus metrics will be exposed on this path.
+			// The access is behind authorization because the metric label
+			// values may include sensitive data, such as deployment names and
+			// CVEs.
+			Route:         "/metrics",
+			Authorizer:    user.With(permissions.View(resources.Administration)),
+			ServerHandler: customMetrics.Singleton(),
+			Compression:   true,
+		},
 	}
 	scannerDefinitionsRoute := "/api/extensions/scannerdefinitions"
 	// Only grant compression to well-known content types. It should capture files
@@ -962,6 +973,7 @@ func waitForTerminationSignal() {
 		{gcp.Singleton(), "GCP cloud credentials manager"},
 		{cloudSourcesManager.Singleton(), "cloud sources manager"},
 		{administrationEventHandler.Singleton(), "administration events handler"},
+		{customMetrics.Singleton(), "custom Prometheus metrics gatherer"},
 	}
 
 	stoppables = append(stoppables,
