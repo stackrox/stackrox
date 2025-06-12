@@ -95,7 +95,7 @@ func parseMetricLabels(config map[string]*storage.PrometheusMetricsConfig_Labels
 	return result, nil
 }
 
-func ParseConfiguration(cfg *storage.PrometheusMetricsConfig_Metrics, currentMetrics MetricsConfiguration, labelOrder map[Label]int) (*Configuration, error) {
+func parseConfiguration(cfg *storage.PrometheusMetricsConfig_Metrics, currentMetrics MetricsConfiguration, labelOrder map[Label]int) (*Configuration, error) {
 	metricRegistry := make(map[MetricName]metricExposure, len(cfg.GetMetrics()))
 
 	for metric, labels := range cfg.GetMetrics() {
