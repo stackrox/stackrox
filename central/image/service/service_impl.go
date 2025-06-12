@@ -224,7 +224,7 @@ func internalScanRespFromImage(img *storage.Image) *v1.ScanImageInternalResponse
 
 func (s *serviceImpl) saveImage(img *storage.Image) error {
 	if err := s.riskManager.CalculateRiskAndUpsertImage(img); err != nil {
-		log.Errorw("Error upserting image", logging.ImageName(img.GetName().GetFullName()), logging.Err(err))
+		log.Errorw("Error upserting image", logging.ImageName(img.GetName().GetFullName()), logging.ImageID(img.GetId()), logging.Err(err))
 		return err
 	}
 	return nil
