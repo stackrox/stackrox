@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/operator/internal/utils"
 	"github.com/stackrox/rox/operator/internal/values/translation"
 	"github.com/stackrox/rox/pkg/version"
+	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
@@ -43,9 +44,21 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 	opts := make([]pkgReconciler.Option, 0, len(otherPreExtensions)+6)
 	opts = append(opts, extraEventWatcher)
 	opts = append(opts, pkgReconciler.WithPreExtension(extensions.VerifyCollisionFreeSecuredCluster(mgr.GetClient())))
+	// watch for the CABundle ConfigMap that Sensor creates
+	opts = append(opts, pkgReconciler.WithExtraWatch(
+		source.Kind(
+			mgr.GetCache(),
+			&corev1.ConfigMap{},
+			reconciler.HandleSiblings[*corev1.ConfigMap](platform.SecuredClusterGVK, mgr),
+			&utils.CreateOrUpdateWithNamePredicate[*corev1.ConfigMap]{
+				Name: extensions.CABundleConfigMapName,
+			},
+		),
+	))
 	opts = append(opts, pkgReconciler.WithPreExtension(extensions.FeatureDefaultingExtension(mgr.GetClient())))
 	opts = append(opts, otherPreExtensions...)
 	opts = append(opts, pkgReconciler.WithPauseReconcileAnnotation(commonExtensions.PauseReconcileAnnotation))
+	opts = append(opts, pkgReconciler.WithPostExtension(extensions.ReconcileAdmissionControlCABundleExtension(mgr.GetClient(), mgr.GetAPIReader())))
 	opts, err := commonExtensions.AddSelectorOptionIfNeeded(selector, opts)
 	if err != nil {
 		return err
