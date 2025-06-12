@@ -55,7 +55,7 @@ import {
 } from '../Tables/table.utils';
 import DeploymentVulnerabilitiesTable, {
     defaultColumns,
-    convertToFlatDeploymentWithVulnerabilitiesFragment, // deploymentWithVulnerabilitiesFragment
+    deploymentWithVulnerabilitiesFragment,
     tableId,
 } from '../Tables/DeploymentVulnerabilitiesTable';
 import VulnerabilityStateTabs, {
@@ -76,28 +76,21 @@ const summaryQuery = gql`
     }
 `;
 
-// After release, replace temporary function
-// with deploymentVulnerabilitiesQuery
-// that has unconditional deploymentWithVulnerabilitiesFragment.
-export function convertToFlatDeploymentVulnerabilitiesQuery(
-    isFlattenCveDataEnabled: boolean // ROX_FLATTEN_CVE_DATA
-) {
-    return gql`
-        ${imageMetadataContextFragment}
-        ${convertToFlatDeploymentWithVulnerabilitiesFragment(isFlattenCveDataEnabled)}
-        query getCvesForDeployment(
-            $id: ID!
-            $query: String!
-            $pagination: Pagination!
-            $statusesForExceptionCount: [String!]
-        ) {
-            deployment(id: $id) {
-                imageVulnerabilityCount(query: $query)
-                ...DeploymentWithVulnerabilities
-            }
+export const deploymentVulnerabilitiesQuery = gql`
+    ${imageMetadataContextFragment}
+    ${deploymentWithVulnerabilitiesFragment}
+    query getCvesForDeployment(
+        $id: ID!
+        $query: String!
+        $pagination: Pagination!
+        $statusesForExceptionCount: [String!]
+    ) {
+        deployment(id: $id) {
+            imageVulnerabilityCount(query: $query)
+            ...DeploymentWithVulnerabilities
         }
-    `;
-}
+    }
+`;
 
 const defaultSortFields = ['CVE', 'Severity'];
 
@@ -162,8 +155,6 @@ function DeploymentPageVulnerabilities({
     const summaryData = summaryRequest.data ?? summaryRequest.previousData;
 
     const isFlattenCveDataEnabled = isFeatureFlagEnabled('ROX_FLATTEN_CVE_DATA');
-    const deploymentVulnerabilitiesQuery =
-        convertToFlatDeploymentVulnerabilitiesQuery(isFlattenCveDataEnabled);
     const vulnerabilityRequest = useQuery<
         {
             deployment:
