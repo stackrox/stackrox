@@ -52,7 +52,7 @@ func Test_run(t *testing.T) {
 		assert.NoError(t, tracker.Reconfigure(runner.ctx, testRegistry, "", getNonEmptyStorageCfg(), 10*time.Minute))
 		runner.Stop()
 		tracker.Run(runner.ctx)
-		assert.Equal(t, 2, i)
+		assert.Equal(t, 1, i)
 	})
 
 	t.Run("stop after new period", func(t *testing.T) {

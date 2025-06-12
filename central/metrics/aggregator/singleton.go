@@ -28,9 +28,8 @@ type aggregatorRunner struct {
 	http.Handler
 	registry *prometheus.Registry
 
-	ctx      context.Context
-	cancel   context.CancelFunc
-	stopOnce sync.Once
+	ctx    context.Context
+	cancel context.CancelFunc
 
 	image_vulnerabilities common.Tracker
 }
