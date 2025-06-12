@@ -56,7 +56,7 @@ func TestTrackerConfig_Reconfigure(t *testing.T) {
 		assert.NoError(t, tracker.Reconfigure(ctx, testRegistry, "", nil, 0))
 		query, mcfg := tracker.GetMetricsConfiguration()
 		assert.Equal(t, "", query.String())
-		assert.Nil(t, mcfg)
+		assert.Empty(t, mcfg)
 	})
 
 	t.Run("test query", func(t *testing.T) {
@@ -65,7 +65,7 @@ func TestTrackerConfig_Reconfigure(t *testing.T) {
 		assert.NoError(t, tracker.Reconfigure(ctx, testRegistry, `Cluster:name`, nil, 0))
 		query, mcfg := tracker.GetMetricsConfiguration()
 		assert.Equal(t, "Cluster", query.GetBaseQuery().GetMatchFieldQuery().GetField())
-		assert.Nil(t, mcfg)
+		assert.Empty(t, mcfg)
 	})
 
 	t.Run("test bad query", func(t *testing.T) {
