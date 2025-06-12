@@ -130,7 +130,7 @@ This preserves the decision across reconciliation cycles and ensures consistent 
 The two defaulting flows
 * `operator/internal/common/defaulting/central_scanner_v4_enabling.go`
 * `operator/internal/common/defaulting/secured_cluster_scanner_v4_enabling.go`
-can be used as blueprints when implementing new defaulting flows. New defaulting flows need to
+can be used as blueprints when implementing new defaulting flows. New defaulting flows need to be added to
 `operator/internal/central/extensions/reconcile_defaulting.go:defaultingFlows` resp.
 `operator/internal/securedcluster/extensions/reconcile_defaulting.go:defaultingFlows`.
 
