@@ -128,8 +128,10 @@ This preserves the decision across reconciliation cycles and ensures consistent 
 ### Reference Implementation
 
 The two defaulting flows
-* `operator/internal/common/defaulting/central_scanner_v4_enabling.go`
-* `operator/internal/common/defaulting/secured_cluster_scanner_v4_enabling.go`
+
+* [`operator/internal/common/defaulting/central_scanner_v4_enabling.go`](https://github.com/stackrox/stackrox/blob/3864927b0825ebb95a1377daf8fb6afb0da8cfa7/operator/internal/common/defaulting/central_scanner_v4_enabling.go)
+* [`operator/internal/common/defaulting/secured_cluster_scanner_v4_enabling.go`](https://github.com/stackrox/stackrox/blob/3864927b0825ebb95a1377daf8fb6afb0da8cfa7/operator/internal/common/defaulting/secured_cluster_scanner_v4_enabling.go)
+
 can be used as blueprints when implementing new defaulting flows. New defaulting flows need to be added to
 `operator/internal/central/extensions/reconcile_defaulting.go:defaultingFlows` resp.
 `operator/internal/securedcluster/extensions/reconcile_defaulting.go:defaultingFlows`.
