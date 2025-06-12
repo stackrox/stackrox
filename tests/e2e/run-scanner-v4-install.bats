@@ -137,8 +137,25 @@ EOT
     export MAIN_IMAGE_TAG="${MAIN_IMAGE_TAG:-$(make --quiet --no-print-directory -C "${ROOT}" tag)}"
     info "Using MAIN_IMAGE_TAG=$MAIN_IMAGE_TAG"
 
+    # Prepare earlier Helm chart version.
+    if [[ -z "${CHART_REPOSITORY:-}" ]]; then
+        CHART_REPOSITORY=$(mktemp -d "helm-charts.XXXXXX" -p /tmp)
+    fi
+    if [[ ! -e "${CHART_REPOSITORY}/.git" ]]; then
+        echo "Cloning released Helm charts into ${CHART_REPOSITORY}..."
+        git clone --quiet --depth 1 -b main https://github.com/stackrox/helm-charts "${CHART_REPOSITORY}"
+    fi
+    export CHART_REPOSITORY
+
     export CURRENT_MAIN_IMAGE_TAG=${CURRENT_MAIN_IMAGE_TAG:-} # Setting a tag can be useful for local testing.
-    export EARLIER_CHART_VERSION="4.6.0"
+
+    EARLIER_CHART_VERSION=$(resolve_previous_x_y_0_version "$CHART_REPOSITORY" "$MAIN_IMAGE_TAG")
+    if [[ -z "$EARLIER_CHART_VERSION" ]]; then
+        die "Could not resolve previous version for version tag \"${MAIN_IMAGE_TAG}\""
+    fi
+    export EARLIER_CHART_VERSION
+    info "Using EARLIER_CHART_VERSION=${EARLIER_CHART_VERSION}"
+
     export EARLIER_MAIN_IMAGE_TAG=$EARLIER_CHART_VERSION
     export USE_LOCAL_ROXCTL="${USE_LOCAL_ROXCTL:-true}"
     export ROX_PRODUCT_BRANDING=RHACS_BRANDING
@@ -163,16 +180,6 @@ EOT
 
     local roxctl_version
     roxctl_version="$(roxctl version)"
-
-    # Prepare earlier Helm chart version.
-    if [[ -z "${CHART_REPOSITORY:-}" ]]; then
-        CHART_REPOSITORY=$(mktemp -d "helm-charts.XXXXXX" -p /tmp)
-    fi
-    if [[ ! -e "${CHART_REPOSITORY}/.git" ]]; then
-        echo "Cloning released Helm charts into ${CHART_REPOSITORY}..."
-        git clone --quiet --depth 1 -b main https://github.com/stackrox/helm-charts "${CHART_REPOSITORY}"
-    fi
-    export CHART_REPOSITORY
 
     if [[ -n "$MAIN_IMAGE_TAG" ]] && [[ "$roxctl_version" != "$MAIN_IMAGE_TAG" ]]; then
         info "MAIN_IMAGE_TAG ($MAIN_IMAGE_TAG) does not match roxctl version ($roxctl_version)."
@@ -1575,4 +1582,78 @@ create_sensor_pull_secrets() {
     echo "{ \"apiVersion\": \"v1\", \"kind\": \"Namespace\", \"metadata\": { \"name\": \"$namespace\" } }" | "${ORCH_CMD}" apply -f -
     "${ROOT}/deploy/common/pull-secret.sh" stackrox "$DEFAULT_IMAGE_REGISTRY_HOST" | "${ORCH_CMD}" -n "$namespace" apply -f -
     "${ROOT}/deploy/common/pull-secret.sh" collector-stackrox "$DEFAULT_IMAGE_REGISTRY_HOST" | "${ORCH_CMD}" -n "$namespace" apply -f -
+}
+
+resolve_previous_x_y_0_version() {
+    local helm_charts_repo="$1"
+    local version_tag="$2"
+    local x_y_version
+    x_y_version=$(extract_x_y_part "$version_tag")
+    # Gets all Helm chart versions. Make sure that we also have a x.y.z tag
+    # corresponding to the provided one -- it might not be released yet, but that is fine,
+    # we only need it for identifying the *previous* version.
+    local regex_x_y_z="^[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+$"
+    local helm_chart_versions
+    helm_chart_versions=$(list_sub_directories "${helm_charts_repo}" | grep -E "$regex_x_y_z")
+    if [[ -z "$helm_chart_versions" ]]; then
+        die "No helm chart versions were found in \"${helm_charts_repo}\"."
+    fi
+    local previous_x_y_0_version
+    previous_x_y_0_version=$(
+        # Begin with all sort of tags.
+        { echo "$helm_chart_versions"; echo "$x_y_version"; } |
+        # Delete the z component.
+        extract_x_y_part |
+        # Sort stripped x.y version tags.
+        sort -V |
+        # Filter out duplicates.
+        uniq |
+        # Locate the current version among the tags, output also the previous tag.
+        grep -Fx "$x_y_version" -B 1 |
+        # Check if we have exactly two lines, abort pipe otherwise.
+        assert_num_lines 2 |
+        # Extract the previous tag.
+        head -1 |
+        # Add a z=0 suffix.
+        sed -e 's/^\(.*\)$/\1.0/'
+    )
+    echo -n "$previous_x_y_0_version"
+}
+
+list_sub_directories() {
+    local path="$1"
+    (
+        cd "$path"
+        for d in */; do echo "$d"; done | tr -d '/'
+    )
+}
+
+extract_x_y_part() {
+    local version_tag="${1:-}"
+    regex='s/^\([[:digit:]]\+\.[[:digit:]]\+\)\..*$/\1/'
+    if [[ -z "$version_tag" ]]; then
+        sed -e "$regex"
+    else
+        sed -e "$regex" <<<"$version_tag"
+    fi
+}
+
+assert_num_lines() {
+    local num="$1"
+    local input
+    input=$(cat)
+    input_lines="$(echo -n "$input" | safe_count_lines)"
+    if [[ "$input_lines" != "$num" ]]; then
+        echo >&2 "Assertion failed: Expected exactly $num lines, but got $input_lines lines:"
+        echo >&2 "---"
+        [[ -n "$input" ]] && echo >&2 "$input"
+        echo >&2 "---"
+        exit 1
+    fi
+    echo "$input"
+}
+
+# Also works in case the last line is missing a newline.
+safe_count_lines() {
+    awk 'BEGIN { c = 0 } { c++ } END { print c }'
 }
