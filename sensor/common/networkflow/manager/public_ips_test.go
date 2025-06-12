@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
+	"github.com/stackrox/rox/sensor/common/heritage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -43,7 +44,7 @@ func TestPublicIPsManager(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	go mgr.Run(ctx, clusterentities.NewStore())
+	go mgr.Run(ctx, clusterentities.NewStoreWithMemory(0, &heritage.MockData{}, false))
 
 	vs := mgr.PublicIPsProtoStream().Iterator(true)
 

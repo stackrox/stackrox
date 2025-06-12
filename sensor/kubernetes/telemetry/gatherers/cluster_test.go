@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stackrox/rox/sensor/common/heritage"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 	"github.com/stretchr/testify/suite"
 	v1 "k8s.io/api/core/v1"
@@ -32,7 +33,9 @@ func (s *ClusterGathererTestSuite) TestGatherCluster() {
 			Name: "NamespaceName",
 		},
 	}
-	gatherer := NewClusterGatherer(fake.NewSimpleClientset(node, namespace), resources.InitializeStore().Deployments())
+	gatherer := NewClusterGatherer(
+		fake.NewSimpleClientset(node, namespace),
+		resources.InitializeStore(&heritage.MockData{}).Deployments())
 	cluster := gatherer.Gather(context.Background())
 	s.NotNil(cluster)
 	s.Len(cluster.Nodes, 1)
