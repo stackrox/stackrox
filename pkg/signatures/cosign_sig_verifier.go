@@ -46,6 +46,7 @@ var (
 	errNoImageSHA         = errors.New("no image SHA found")
 	errNoVerificationData = errors.New("verification data not found")
 	errUnverifiedBundle   = errors.New("unverified transparency log bundle")
+	errDigestMismatch     = errors.New("image digest does not match signature")
 )
 
 var once sync.Once
@@ -502,28 +503,39 @@ func getVerifiedImageReference(signature oci.Signature, image *storage.Image) ([
 	// - and has the same digest
 	// This way we also cover the case where we e.g. reference an image with digest format (<registry>/<repository>@<digest>)
 	// as well as images using floating tags (<registry>/<repository>:<tag>).
-	signatureImageReference := simpleContainer.Critical.Identity.DockerReference
+	if simpleContainer.Critical.Image.DockerManifestDigest != image.GetId() {
+		return nil, errDigestMismatch
+	}
+
+	dockerReference := simpleContainer.Critical.Identity.DockerReference
+	repoReference, err := getRepositoryReferenceFromImageName(dockerReference)
+	if err != nil {
+		return nil, errors.Wrapf(err, "parsing signature docker reference %q", dockerReference)
+	}
 	log.Debugf("Retrieving verified image references from the image names [%v] and image reference within the "+
-		"signature %q", image.GetNames(), signatureImageReference)
+		"signature %q", image.GetNames(), dockerReference)
 	var verifiedImageReferences []string
 	imageNames := protoutils.SliceUnique(append(image.GetNames(), image.GetName()))
 	for _, name := range imageNames {
-		reference, err := dockerReferenceFromImageName(name)
+		reference, err := getRepositoryReferenceFromImageName(name.FullName)
 		if err != nil {
 			// Theoretically, all references should be parsable.
 			// In case we somehow get an invalid entry, we will log the occurrence and skip this entry.
 			log.Errorf("Failed to retrieve the reference for image name %s: %v", name.GetFullName(), err)
 			continue
 		}
-		if signatureImageReference == reference {
+		if repoReference == reference {
 			verifiedImageReferences = append(verifiedImageReferences, name.GetFullName())
 		}
+	}
+	if len(verifiedImageReferences) == 0 {
+		return nil, errors.Errorf("no verified references for %q", dockerReference)
 	}
 	return verifiedImageReferences, nil
 }
 
-func dockerReferenceFromImageName(imageName *storage.ImageName) (string, error) {
-	ref, err := name.ParseReference(imageName.GetFullName())
+func getRepositoryReferenceFromImageName(imageName string) (string, error) {
+	ref, err := name.ParseReference(imageName)
 	if err != nil {
 		return "", err
 	}
