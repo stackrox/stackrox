@@ -148,6 +148,12 @@ func (s *serviceImpl) PutConfig(ctx context.Context, req *v1.PutConfigRequest) (
 		}
 	}
 
+	// Input validation only.
+	if err := imageVulnsTracker.ParseConfiguration(
+		req.GetConfig().GetPrivateConfig().GetPrometheusMetricsConfig().GetImageVulnerabilities().GetMetrics()); err != nil {
+		return nil, err
+	}
+
 	regexes := make([]*regexp.Regexp, 0)
 	if platformConfig := req.GetConfig().GetPlatformComponentConfig(); platformConfig != nil {
 		for _, rule := range platformConfig.GetRules() {
@@ -172,11 +178,6 @@ func (s *serviceImpl) PutConfig(ctx context.Context, req *v1.PutConfigRequest) (
 	matcher.Singleton().SetRegexes(regexes)
 	go reprocessor.Singleton().RunReprocessor()
 
-	// Input validation only.
-	if err := imageVulnsTracker.ParseConfiguration(
-		req.GetConfig().GetPrivateConfig().GetPrometheusMetricsConfig().GetImageVulnerabilities().GetMetrics()); err != nil {
-		return nil, err
-	}
 	return req.GetConfig(), nil
 }
 
