@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/config/datastore"
 	"github.com/stackrox/rox/central/convert/storagetov1"
 	"github.com/stackrox/rox/central/convert/v1tostorage"
+	imageVulnsTracker "github.com/stackrox/rox/central/metrics/aggregator/image_vulnerabilities"
 	"github.com/stackrox/rox/central/platform/matcher"
 	"github.com/stackrox/rox/central/platform/reprocessor"
 	"github.com/stackrox/rox/central/telemetry/centralclient"
@@ -170,6 +171,12 @@ func (s *serviceImpl) PutConfig(ctx context.Context, req *v1.PutConfigRequest) (
 	}
 	matcher.Singleton().SetRegexes(regexes)
 	go reprocessor.Singleton().RunReprocessor()
+
+	// Input validation only.
+	if err := imageVulnsTracker.ParseConfiguration(
+		req.GetConfig().GetPrivateConfig().GetPrometheusMetricsConfig().GetImageVulnerabilities().GetMetrics()); err != nil {
+		return nil, err
+	}
 	return req.GetConfig(), nil
 }
 
