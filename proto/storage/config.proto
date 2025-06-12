@@ -62,7 +62,7 @@ message ReportRetentionConfig {
   uint32 downloadable_report_global_retention_bytes = 3;
 }
 
-// next available tag:9
+// next available tag:10
 message PrivateConfig {
   oneof alert_retention {
     // will be deprecated after migration is ready
@@ -77,6 +77,8 @@ message PrivateConfig {
   VulnerabilityExceptionConfig vulnerability_exception_config = 7;
 
   AdministrationEventsConfig administration_events_config = 8;
+
+  PrometheusMetricsConfig prometheus_metrics_config = 9;
 }
 
 message PlatformComponentConfig {
@@ -120,4 +122,71 @@ message AdministrationEventsConfig {
 message DayOption {
   uint32 num_days = 1;
   bool enabled = 2;
+}
+
+message PrometheusMetricsConfig {
+  message Labels {
+    // Expression is a list of conditions, joined with implicit AND and explicit
+    // OR operators.
+    message Expression {
+      // Condition represents a single operator-argument pair used in label matching.
+      message Condition {
+        // Operator is one of =, !=, >, >=, <, <=, OR.
+        string operator = 1;
+        // Argument value for the operator. OR doesn't require an argument.
+        // Use glob patterns for string conditions.
+        string argument = 2;
+      }
+      // List of conditions to be evaluated for a label.
+      //
+      // Example:
+      //
+      //   [{ "operator": "=", "argument": "value1"},
+      //    { "operator": "OR"},
+      //    { "operator": "=", "argument": "value2"}]
+      //
+      // Which is identical to the following glob pattern condition:
+      //
+      //   [{"operator": "=", "argument": "value1|value2"}]
+      //
+      // Multiple conditions are combined with an implicit AND operator:
+      //
+      //   [{"operator": ">", "argument": "5"},
+      //    {"operator": "<", "argument": "7"}]
+      repeated Condition expression = 1;
+    }
+    // Mapping from label name to its optional associated expression.
+    map<string, Expression> labels = 1;
+  }
+
+  message Metrics {
+    // The period (in minutes) at which vulnerability data is gathered from the DB.
+    uint32 gathering_period_minutes = 1;
+    // Mapping from metric name to its associated labels.
+    map<string, Labels> metrics = 2;
+    // Filter string in the syntax of the Search filters used to limit the amount of
+    // aggregated vulnerabilities.
+    // Example: "Cluster:production"
+    string filter = 3;
+  }
+
+  // Configuration for image vulnerabilities metrics.
+  // Example:
+  //
+  //   "imageVulnerabilities": {
+  //     "gatheringPeriodMinutes": 1,
+  //     "metrics": {
+  //       "severity": { // custom metric name.
+  //         "labels": {
+  //           "Severity": {} // label name with no expression.
+  //           "Namespace": {
+  //             "expression": [ // label conditions list.
+  //               { "operator": "!=", "argument": "*test*" }
+  //             ]
+  //           }
+  //         }
+  //       }
+  //     }
+  //   }
+  Metrics image_vulnerabilities = 1;
 }

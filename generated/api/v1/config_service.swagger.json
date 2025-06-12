@@ -251,6 +251,34 @@
       ],
       "default": "UNSET"
     },
+    "ExpressionCondition": {
+      "type": "object",
+      "properties": {
+        "operator": {
+          "type": "string",
+          "description": "Operator is one of =, !=, >, >=, <, <=, OR."
+        },
+        "argument": {
+          "type": "string",
+          "description": "Argument value for the operator. OR doesn't require an argument.\nUse glob patterns for string conditions."
+        }
+      },
+      "description": "Condition represents a single operator-argument pair used in label matching."
+    },
+    "LabelsExpression": {
+      "type": "object",
+      "properties": {
+        "expression": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/ExpressionCondition"
+          },
+          "description": "List of conditions to be evaluated for a label.\n\nExample:\n\n  [{ \"operator\": \"=\", \"argument\": \"value1\"},\n   { \"operator\": \"OR\"},\n   { \"operator\": \"=\", \"argument\": \"value2\"}]\n\nWhich is identical to the following glob pattern condition:\n\n  [{\"operator\": \"=\", \"argument\": \"value1|value2\"}]\n\nMultiple conditions are combined with an implicit AND operator:\n\n  [{\"operator\": \">\", \"argument\": \"5\"},\n   {\"operator\": \"<\", \"argument\": \"7\"}]"
+        }
+      },
+      "description": "Expression is a list of conditions, joined with implicit AND and explicit\nOR operators."
+    },
     "PlatformComponentConfigRule": {
       "type": "object",
       "properties": {
@@ -259,6 +287,39 @@
         },
         "namespaceRule": {
           "$ref": "#/definitions/RuleNamespaceRule"
+        }
+      }
+    },
+    "PrometheusMetricsConfigLabels": {
+      "type": "object",
+      "properties": {
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/LabelsExpression"
+          },
+          "description": "Mapping from label name to its optional associated expression."
+        }
+      }
+    },
+    "PrometheusMetricsConfigMetrics": {
+      "type": "object",
+      "properties": {
+        "gatheringPeriodMinutes": {
+          "type": "integer",
+          "format": "int64",
+          "description": "The period (in minutes) at which vulnerability data is gathered from the DB."
+        },
+        "metrics": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/PrometheusMetricsConfigLabels"
+          },
+          "description": "Mapping from metric name to its associated labels."
+        },
+        "filter": {
+          "type": "string",
+          "title": "Filter string in the syntax of the Search filters used to limit the amount of\naggregated vulnerabilities.\nExample: \"Cluster:production\""
         }
       }
     },
@@ -463,9 +524,22 @@
         },
         "administrationEventsConfig": {
           "$ref": "#/definitions/storageAdministrationEventsConfig"
+        },
+        "prometheusMetricsConfig": {
+          "$ref": "#/definitions/storagePrometheusMetricsConfig"
         }
       },
-      "title": "next available tag:9"
+      "title": "next available tag:10"
+    },
+    "storagePrometheusMetricsConfig": {
+      "type": "object",
+      "properties": {
+        "imageVulnerabilities": {
+          "$ref": "#/definitions/PrometheusMetricsConfigMetrics",
+          "description": "\"imageVulnerabilities\": {\n    \"gatheringPeriodMinutes\": 1,\n    \"metrics\": {\n      \"severity\": { // custom metric name.\n        \"labels\": {\n          \"Severity\": {} // label name with no expression.\n          \"Namespace\": {\n            \"expression\": [ // label conditions list.\n              { \"operator\": \"!=\", \"argument\": \"*test*\" }\n            ]\n          }\n        }\n      }\n    }\n  }",
+          "title": "Configuration for image vulnerabilities metrics.\nExample:"
+        }
+      }
     },
     "storagePublicConfig": {
       "type": "object",
