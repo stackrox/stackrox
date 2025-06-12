@@ -112,7 +112,7 @@ Every defaulting decision that is persisted as an annotation should follow this 
 ```
 metadata:
   annotations:
-    "feature-defaults.platform.stackrox.io/<FEATURE IDENTIFIER>": "<VALUE>"
+    "feature-defaults.platform.stackrox.io/<FEATURE_IDENTIFIER>": "<VALUE>"
 ```
 
 Example:
