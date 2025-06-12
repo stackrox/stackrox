@@ -159,6 +159,8 @@ spec:
           value: task
       resolver: bundles
 
+    # We wait for the original image to fail the retag pipeline early and with a meaningful error.
+    # This confirms that the image is present and that it has successfully passed its build pipeline.
   - name: wait-for-image
     params:
     - name: IMAGE
@@ -172,9 +174,11 @@ spec:
       - name: kind
         value: task
       resolver: bundles
+    timeout: 5m
 
   - name: retag-image
-    # runAfter needs to be specified, because there is no implicit dependency on its results, but we still need it to run before.
+    # runAfter needs to be specified, because there is no implicit dependency on wait-for-image's
+    # results, but we still need it to run before.
     runAfter:
     - wait-for-image
     params:
