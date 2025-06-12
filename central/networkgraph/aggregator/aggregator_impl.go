@@ -182,17 +182,17 @@ func (a *aggregateExternalConnByNameImpl) Aggregate(flows []*storage.NetworkFlow
 
 		srcEntity, dstEntity = flowProps.SrcEntity, flowProps.DstEntity
 
-		// If both endpoints are not known external sources, skip processing.
-		if !networkgraph.IsKnownExternalSrc(srcEntity) && !networkgraph.IsKnownExternalSrc(dstEntity) {
-			ret = append(ret, flow)
-			continue
-		}
-
 		// If the entity is discovered, anonymize it to avoid overloading
 		// the graph with many nodes (external IP details are still accessible
 		// via other APIs)
 		flowProps.SrcEntity = anonymizeDiscoveredEntity(flowProps.SrcEntity)
 		flowProps.DstEntity = anonymizeDiscoveredEntity(flowProps.DstEntity)
+
+		// If both endpoints are not known external sources, skip processing.
+		if !networkgraph.IsKnownExternalSrc(srcEntity) && !networkgraph.IsKnownExternalSrc(dstEntity) {
+			ret = append(ret, flow)
+			continue
+		}
 
 		updateDupNameExtSrcTracker(srcEntity, dupNameExtSrcTracker)
 		updateDupNameExtSrcTracker(dstEntity, dupNameExtSrcTracker)
