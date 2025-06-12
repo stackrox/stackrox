@@ -30,8 +30,8 @@ import AdvancedFiltersToolbar from 'Containers/Vulnerabilities/components/Advanc
 import { createFilterTracker } from 'utils/analyticsEventTracking';
 import useAnalytics, { WORKLOAD_CVE_FILTER_APPLIED } from 'hooks/useAnalytics';
 import {
-    convertToFlatImageComponentSearchFilterConfig, // imageComponentSearchFilterConfig
-    convertToFlatImageCveSearchFilterConfig, // imageCVESearchFilterConfig
+    imageComponentSearchFilterConfig,
+    imageCVESearchFilterConfig,
     imageSearchFilterConfig,
 } from 'Containers/Vulnerabilities/searchFilterConfig';
 import { filterManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
@@ -154,7 +154,6 @@ function DeploymentPageVulnerabilities({
 
     const summaryData = summaryRequest.data ?? summaryRequest.previousData;
 
-    const isFlattenCveDataEnabled = isFeatureFlagEnabled('ROX_FLATTEN_CVE_DATA');
     const vulnerabilityRequest = useQuery<
         {
             deployment:
@@ -180,18 +179,14 @@ function DeploymentPageVulnerabilities({
         },
     });
 
-    const isEpssProbabilityColumnEnabled =
-        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_FLATTEN_CVE_DATA');
+    const isEpssProbabilityColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
     const filteredColumns = filterManagedColumns(
         defaultColumns,
         (key) => key !== 'epssProbability' || isEpssProbabilityColumnEnabled
     );
     const managedColumnState = useManagedColumns(tableId, filteredColumns);
 
-    // Although we will delete conditional code for EPSS and flatten after release,
-    // keep searchFilterConfigWithFeatureFlagDependency for Advisory in the future.
-    const imageCVESearchFilterConfig =
-        convertToFlatImageCveSearchFilterConfig(isFlattenCveDataEnabled);
+    // Keep searchFilterConfigWithFeatureFlagDependency for ROX_SCANNER_V4 also Advisory.
     const searchFilterConfigWithFeatureFlagDependency = [
         imageSearchFilterConfig,
         // Omit EPSSProbability for 4.7 release until CVE/advisory separation is available in 4.8 release.
@@ -203,7 +198,7 @@ function DeploymentPageVulnerabilities({
                     searchTerm !== 'EPSS Probability' || isEpssProbabilityColumnEnabled
             ),
         },
-        convertToFlatImageComponentSearchFilterConfig(isFlattenCveDataEnabled),
+        imageComponentSearchFilterConfig,
     ];
 
     const searchFilterConfig = getSearchFilterConfigWithFeatureFlagDependency(

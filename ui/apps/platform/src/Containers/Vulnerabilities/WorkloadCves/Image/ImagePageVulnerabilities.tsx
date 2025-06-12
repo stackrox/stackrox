@@ -33,8 +33,8 @@ import { createFilterTracker } from 'utils/analyticsEventTracking';
 import useAnalytics, { WORKLOAD_CVE_FILTER_APPLIED } from 'hooks/useAnalytics';
 import useHasRequestExceptionsAbility from 'Containers/Vulnerabilities/hooks/useHasRequestExceptionsAbility';
 import {
-    convertToFlatImageComponentSearchFilterConfig, // imageComponentSearchFilterConfig
-    convertToFlatImageCveSearchFilterConfig, // imageCVESearchFilterConfig
+    imageComponentSearchFilterConfig,
+    imageCVESearchFilterConfig,
 } from 'Containers/Vulnerabilities/searchFilterConfig';
 import { filterManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
 import ColumnManagementButton from 'Components/ColumnManagementButton';
@@ -133,7 +133,6 @@ function ImagePageVulnerabilities({
     });
 
     // TODO Split metadata, counts, and vulnerabilities into separate queries
-    const isFlattenCveDataEnabled = isFeatureFlagEnabled('ROX_FLATTEN_CVE_DATA');
     const { data, loading, error } = useQuery<
         {
             image: ImageMetadataContext & {
@@ -184,8 +183,7 @@ function ImagePageVulnerabilities({
     });
 
     const isNvdCvssColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
-    const isEpssProbabilityColumnEnabled =
-        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_FLATTEN_CVE_DATA');
+    const isEpssProbabilityColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
     // totalAdvisories out of scope for MVP
     /*
     const isAdvisoryColumnEnabled =
@@ -207,10 +205,7 @@ function ImagePageVulnerabilities({
     );
     const managedColumnState = useManagedColumns(tableId, filteredColumns);
 
-    // Although we will delete conditional code for EPSS and flatten after release,
-    // keep searchFilterConfigWithFeatureFlagDependency for Advisory in the future.
-    const imageCVESearchFilterConfig =
-        convertToFlatImageCveSearchFilterConfig(isFlattenCveDataEnabled);
+    // Keep searchFilterConfigWithFeatureFlagDependency for ROX_SCANNER_V4 also Advisory.
     const searchFilterConfigWithFeatureFlagDependency = [
         // Omit EPSSProbability for 4.7 release until CVE/advisory separation is available in 4.8 release.
         // imageCVESearchFilterConfig,
@@ -221,7 +216,7 @@ function ImagePageVulnerabilities({
                     searchTerm !== 'EPSS Probability' || isEpssProbabilityColumnEnabled
             ),
         },
-        convertToFlatImageComponentSearchFilterConfig(isFlattenCveDataEnabled),
+        imageComponentSearchFilterConfig,
     ];
 
     const searchFilterConfig = getSearchFilterConfigWithFeatureFlagDependency(

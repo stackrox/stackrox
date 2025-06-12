@@ -171,8 +171,7 @@ function ImageVulnerabilitiesTable({
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isNvdCvssColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
-    const isEpssProbabilityColumnEnabled =
-        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_FLATTEN_CVE_DATA');
+    const isEpssProbabilityColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
     // totalAdvisories out of scope for MVP
     /*
     const isAdvisoryColumnEnabled =

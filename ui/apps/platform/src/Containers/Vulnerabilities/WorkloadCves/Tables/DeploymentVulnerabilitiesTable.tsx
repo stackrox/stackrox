@@ -113,8 +113,7 @@ function DeploymentVulnerabilitiesTable({
     const hiddenColumnCount = getHiddenColumnCount(tableConfig);
     const expandedRowSet = useSet<string>();
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isEpssProbabilityColumnEnabled =
-        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_FLATTEN_CVE_DATA');
+    const isEpssProbabilityColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
 
     const colSpan = 7 + (isEpssProbabilityColumnEnabled ? 1 : 0) - hiddenColumnCount;
 
