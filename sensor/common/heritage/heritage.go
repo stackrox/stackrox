@@ -70,6 +70,7 @@ type Manager struct {
 	// Cache the data for the current instance of Sensor
 	currentIP               string
 	currentContainerID      string
+	sensorStart             time.Time
 	lastUpdateOfCurrentData time.Time
 
 	// Cache the data from the ConfigMap about the past instances of Sensor
@@ -78,12 +79,13 @@ type Manager struct {
 	cache            []*PastSensor
 }
 
-func NewHeritageManager(ns string, client k8sClient) *Manager {
+func NewHeritageManager(ns string, client k8sClient, start time.Time) *Manager {
 	return &Manager{
 		cacheIsPopulated: atomic.Bool{},
 		k8sClient:        client,
 		cache:            []*PastSensor{},
 		namespace:        ns,
+		sensorStart:      start,
 	}
 }
 
@@ -165,7 +167,7 @@ func (h *Manager) UpsertConfigMap(ctx context.Context, now time.Time) error {
 		h.cache = append(h.cache, &PastSensor{
 			ContainerID:  h.currentContainerID,
 			PodIP:        h.currentIP,
-			SensorStart:  now,
+			SensorStart:  h.sensorStart,
 			LatestUpdate: now,
 		})
 	}
