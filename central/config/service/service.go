@@ -67,16 +67,18 @@ type Service interface {
 }
 
 // New returns a new Service instance using the given DataStore.
-func New(datastore datastore.DataStore) Service {
+func New(datastore datastore.DataStore, ar aggregator.Runner) Service {
 	return &serviceImpl{
-		datastore: datastore,
+		datastore:  datastore,
+		aggregator: ar,
 	}
 }
 
 type serviceImpl struct {
 	v1.UnimplementedConfigServiceServer
 
-	datastore datastore.DataStore
+	datastore  datastore.DataStore
+	aggregator aggregator.Runner
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -172,7 +174,7 @@ func (s *serviceImpl) PutConfig(ctx context.Context, req *v1.PutConfigRequest) (
 	matcher.Singleton().SetRegexes(regexes)
 	go reprocessor.Singleton().RunReprocessor()
 
-	if err := aggregator.Singleton().Reconfigure(req.GetConfig().GetPrivateConfig().GetPrometheusMetricsConfig()); err != nil {
+	if err := s.aggregator.Reconfigure(req.GetConfig().GetPrivateConfig().GetPrometheusMetricsConfig()); err != nil {
 		return nil, err
 	}
 	return req.GetConfig(), nil

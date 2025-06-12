@@ -973,7 +973,7 @@ func waitForTerminationSignal() {
 		{gcp.Singleton(), "GCP cloud credentials manager"},
 		{cloudSourcesManager.Singleton(), "cloud sources manager"},
 		{administrationEventHandler.Singleton(), "administration events handler"},
-		{customMetrics.Singleton(), "CVE metric gatherer"},
+		{customMetrics.Singleton(), "custom Prometheus metrics gatherer"},
 	}
 
 	stoppables = append(stoppables,

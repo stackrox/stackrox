@@ -49,12 +49,12 @@ func isPlatformWorkload(f *finding) string {
 	return strconv.FormatBool(p)
 }
 
-func MakeTrackerConfig(gauge func(string, prometheus.Labels, int)) *common.TrackerConfig[*finding] {
+func MakeTrackerConfig(gauge func(string, prometheus.Labels, int), ds deploymentDS.DataStore) *common.TrackerConfig[*finding] {
 	tc := common.MakeTrackerConfig(
 		"vulnerabilities",
 		"aggregated CVEs",
 		getters,
-		common.Bind4th(trackVulnerabilityMetrics, deploymentDS.Singleton()),
+		common.Bind4th(trackVulnerabilityMetrics, ds),
 		gauge)
 	return tc
 }

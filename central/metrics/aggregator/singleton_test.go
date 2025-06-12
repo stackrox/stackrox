@@ -2,15 +2,19 @@ package aggregator
 
 import (
 	"context"
+	"errors"
 	"iter"
 	"testing"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	mockConfigDS "github.com/stackrox/rox/central/config/datastore/mocks"
+	mockDeploymentDS "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	"github.com/stackrox/rox/central/metrics/aggregator/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
 )
 
 func getNonEmptyStorageCfg() map[string]*storage.PrometheusMetricsConfig_Labels {
@@ -29,6 +33,39 @@ func (something) Count() int { return 1 }
 
 var testGetters = []common.LabelGetter[something]{
 	{Label: "label1", Getter: func(f something) string { return "value1" }},
+}
+
+func Test_makeRunner(t *testing.T) {
+	ctrl := gomock.NewController(t)
+
+	t.Run("config DS error", func(t *testing.T) {
+		cds := mockConfigDS.NewMockDataStore(ctrl)
+		cds.EXPECT().GetPrivateConfig(gomock.Any()).Times(1).Return(nil, errors.New("DB error"))
+		dds := mockDeploymentDS.NewMockDataStore(ctrl)
+		r := makeRunner(cds, dds)
+		assert.NotNil(t, r)
+		assert.Nil(t, r.image_vulnerabilities)
+	})
+
+	t.Run("valid config", func(t *testing.T) {
+		privateConfig := &storage.PrivateConfig{
+			PrometheusMetricsConfig: &storage.PrometheusMetricsConfig{
+				ImageVulnerabilities: &storage.PrometheusMetricsConfig_Vulnerabilities{
+					Filter:                 "",
+					Metrics:                getNonEmptyStorageCfg(),
+					GatheringPeriodMinutes: 1,
+				},
+			},
+		}
+		cds := mockConfigDS.NewMockDataStore(ctrl)
+		cds.EXPECT().GetPrivateConfig(gomock.Any()).Times(1).Return(privateConfig, nil)
+		dds := mockDeploymentDS.NewMockDataStore(ctrl)
+
+		r := makeRunner(cds, dds)
+		assert.NotNil(t, r, "Expected makeRunner to return a runner")
+		assert.NotNil(t, r.registry)
+		assert.NotNil(t, r.image_vulnerabilities)
+	})
 }
 
 func Test_run(t *testing.T) {
