@@ -5,6 +5,7 @@ import (
 	"math"
 	"slices"
 	"strconv"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/glob"
@@ -15,9 +16,16 @@ type operator string
 const (
 	opZ  operator = ""
 	opEQ operator = "="
+	opNE operator = "!="
+	opGT operator = ">"
+	opGE operator = ">="
+	opLT operator = "<"
+	opLE operator = "<="
+
+	opOR operator = "OR"
 )
 
-var knownOperators = []operator{opEQ}
+var knownOperators = []operator{opEQ, opNE, opGT, opGE, opLT, opLE, opOR}
 
 type Condition struct {
 	op  operator
@@ -53,6 +61,10 @@ func (c *Condition) validate() error {
 	case !slices.Contains(knownOperators, c.op):
 		return fmt.Errorf("operator in %q is not one of %q", c, knownOperators)
 	// Test argument:
+	case c.op == opOR:
+		if len(c.arg) > 0 {
+			return fmt.Errorf("unexpected argument in %q", c)
+		}
 	case len(c.arg) == 0:
 		return fmt.Errorf("missing argument in %q", c)
 	case !c.isFloatArg() && !c.isGlobArg():
@@ -94,6 +106,18 @@ func (c *Condition) compareStrings(a, b string) bool {
 		return a != "" && b == ""
 	case opEQ:
 		return glob.Pattern(b).Ptr().Match(a)
+	case opNE:
+		return !glob.Pattern(b).Ptr().Match(a)
+	case opGT:
+		return strings.Compare(strings.ToLower(a), strings.ToLower(b)) > 0
+	case opGE:
+		return strings.EqualFold(a, b) ||
+			strings.Compare(strings.ToLower(a), strings.ToLower(b)) > 0
+	case opLT:
+		return strings.Compare(strings.ToLower(a), strings.ToLower(b)) < 0
+	case opLE:
+		return strings.EqualFold(a, b) ||
+			strings.Compare(strings.ToLower(a), strings.ToLower(b)) < 0
 	}
 	return false
 }
@@ -103,6 +127,16 @@ func (c *Condition) compareFloats(a, b float64) bool {
 	switch c.op {
 	case opEQ:
 		return math.Abs(a-b) <= epsilon
+	case opNE:
+		return math.Abs(a-b) > epsilon
+	case opGT:
+		return a > b
+	case opGE:
+		return a >= b
+	case opLT:
+		return a < b
+	case opLE:
+		return a <= b
 	}
 	return false
 }
