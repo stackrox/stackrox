@@ -170,3 +170,36 @@ func TestQueryDeploymentsAndImages(t *testing.T) {
 		assert.ElementsMatch(t, expected[metric], records)
 	}
 }
+
+func Test_forEachImageVuln(t *testing.T) {
+	i := 0
+	interrupt := func(*finding) bool { i++; return false }
+	pass := func(*finding) bool { i++; return true }
+
+	t.Run("no panic on empty finding", func(t *testing.T) {
+		i = 0
+		assert.True(t, forEachImageVuln(interrupt, &finding{}))
+		assert.Zero(t, i)
+		assert.True(t, forEachImageVuln(pass, &finding{}))
+		assert.Zero(t, i)
+	})
+
+	t.Run("interruption on false", func(t *testing.T) {
+		i = 0
+
+		image := makeTestImage("test")
+		image.withTags("test")
+		cves := getTestCVEs()
+		image.withCVE(cves...)
+
+		assert.True(t, forEachImageVuln(pass, &finding{
+			image: (*storage.Image)(image),
+		}))
+		assert.Equal(t, len(cves), i)
+
+		assert.False(t, forEachImageVuln(interrupt, &finding{
+			image: (*storage.Image)(image),
+		}))
+		assert.Equal(t, len(cves)+1, i)
+	})
+}

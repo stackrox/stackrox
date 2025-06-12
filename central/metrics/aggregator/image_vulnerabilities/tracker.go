@@ -78,6 +78,8 @@ func trackVulnerabilityMetrics(ctx context.Context, query *v1.Query, mcfg common
 	}
 }
 
+// forEachImageVuln yields a finding for every vulnerability associated with
+// each image name.
 func forEachImageVuln(yield func(*finding) bool, f *finding) bool {
 	for _, f.component = range f.image.GetScan().GetComponents() {
 		for _, f.vuln = range f.component.GetVulns() {
