@@ -159,7 +159,7 @@ spec:
           value: task
       resolver: bundles
 
-    # We wait for the original image to fail the retag pipeline early and with a meaningful error.
+    # We only check the input image is ready and otherwise fail the retag pipeline early and with a meaningful error.
     # This confirms that the image is present and that it has successfully passed its build pipeline.
   - name: wait-for-image
     params:
