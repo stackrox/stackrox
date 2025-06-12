@@ -683,7 +683,6 @@ func (e *enricherImpl) enrichWithSignatureVerificationData(ctx context.Context, 
 	if enrichmentContext.FetchOpt == NoExternalMetadata {
 		return false, nil
 	}
-	log.Debugf("gualvare go enrichWithSignatureVerificationData, image %s", img.Name)
 
 	imgName := img.GetName().GetFullName()
 
