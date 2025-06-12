@@ -431,7 +431,7 @@ collect_analysis_data() {
         fi
     fi
 
-    if [[ -z "${BATS_TEST_COMPLETED:-}" && -z "${BATS_TEST_SKIPPED}" && -n "${central_namespace}" ]]; then
+    if [[ -z "${BATS_TEST_COMPLETED:-}" && -z "${BATS_TEST_SKIPPED:-}" && -n "${central_namespace}" ]]; then
         # Test did not "complete" and was not skipped. Collect some analysis data.
         describe_pods_in_namespace "${central_namespace}"
         describe_deployments_in_namespace "${central_namespace}"
