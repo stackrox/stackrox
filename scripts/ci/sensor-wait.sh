@@ -2,7 +2,7 @@
 set -eu
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
-export ORCH_CMD=${ORCH_CMD:-"${ROOT}/scripts/retry-kubectl.sh"}
+ORCH_CMD=${ORCH_CMD:-"${ROOT}/scripts/retry-kubectl.sh"}
 
 # Wait for sensor to be up
 #
