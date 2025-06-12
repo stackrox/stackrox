@@ -81,6 +81,9 @@ jobs:
     - name: Check build & test image versions
       run: scripts/ci/jobs/check-image-version.sh
 
+    - name: Check dependabot knows about pinned prefetched images
+      run: scripts/ci/jobs/check-dependabot-pinned-image.sh
+
   style-check:
     runs-on: ubuntu-latest
     container:
