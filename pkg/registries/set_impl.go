@@ -47,6 +47,16 @@ func (e *setImpl) getSortedRegistriesNoLock() []types.ImageRegistry {
 	return integrations
 }
 
+func (e *setImpl) Get(id string) types.ImageRegistry {
+	if id == "" {
+		return nil
+	}
+
+	e.lock.RLock()
+	defer e.lock.RUnlock()
+	return e.integrations[id]
+}
+
 // GetAll returns the set of integrations that are active.
 func (e *setImpl) GetAll() []types.ImageRegistry {
 	e.lock.RLock()
