@@ -91,8 +91,9 @@ func MakeTrackerBase[Finding Countable](category, description string,
 // an error.
 func (tracker *TrackerBase[Finding]) Reconfigure(ctx context.Context, cfg *Configuration) {
 	previous := tracker.SetConfiguration(cfg)
+	tracker.updateTicker()
 	// Force track only on reconfiguration, not on the initial tracker creation.
-	if previous.period != cfg.period && tracker.updateTicker() {
+	if previous.period != cfg.period && cfg.period != 0 {
 		tracker.track(ctx)
 	}
 	if cfg.period == 0 {
@@ -132,22 +133,21 @@ func (tracker *TrackerBase[Finding]) registerMetric(cfg *Configuration, metric M
 	}
 }
 
-// updateTicker returns true if ticker period has been reconfigured.
-func (tracker *TrackerBase[Finding]) updateTicker() bool {
+// updateTicker initializes, stops or resets the ticker.
+func (tracker *TrackerBase[Finding]) updateTicker() {
 	tracker.metricsConfigMux.Lock()
 	defer tracker.metricsConfigMux.Unlock()
 	if tracker.config.period > 0 {
 		if tracker.ticker == nil {
 			tracker.ticker = time.NewTicker(tracker.config.period)
-			return false
+		} else {
+			tracker.ticker.Reset(tracker.config.period)
 		}
-		tracker.ticker.Reset(tracker.config.period)
-		return true
+		return
 	}
 	if tracker.ticker != nil {
 		tracker.ticker.Stop()
 	}
-	return false
 }
 
 func (tracker *TrackerBase[Finding]) GetConfiguration() *Configuration {
@@ -164,6 +164,7 @@ func (tracker *TrackerBase[Finding]) SetConfiguration(config *Configuration) *Co
 	return previous
 }
 
+// track aggregates the fetched findings and updates the gauges.
 func (tracker *TrackerBase[Finding]) track(ctx context.Context) {
 	cfg := tracker.GetConfiguration()
 	if len(cfg.metrics) == 0 {

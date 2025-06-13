@@ -97,10 +97,11 @@ func TestTrackerBase_Reconfigure(t *testing.T) {
 		assert.NotNil(t, tracker.ticker)
 		assert.ElementsMatch(t, cfg0.toAdd, registered)
 		assert.Empty(t, unregistered)
-		// Run is not called, so no result:
-		assert.Empty(t, result)
+		// track() is called, so there is result from all metrics:
+		assert.ElementsMatch(t, slices.Collect(maps.Keys(result)), metricNames)
 
 		// Delete one random metric and update ticker:
+		result = make(map[MetricName][]*aggregatedRecord)
 		registered = []MetricName{}
 		unregistered = []MetricName{}
 		delete(mcfg, metricNames[0])
