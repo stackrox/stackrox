@@ -34,8 +34,6 @@ const (
 	ifModifiedSinceHeader = `If-Modified-Since`
 	lastModifiedHeader    = `Last-Modified`
 
-	updateName = `scanner-v4-updater`
-
 	updateFilePattern = `updates-*.json.zst`
 
 	defaultUpdateInterval  = 5 * time.Minute
