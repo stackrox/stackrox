@@ -410,6 +410,20 @@ func (t *nRadixTree) findCIDRNoLock(ipNet *net.IPNet) (*nRadixNode, error) {
 	return ret, nil
 }
 
+func removeRecursively(node *nRadixNode) {
+	// Do not remove the root.
+	if node.parent == nil {
+		return
+	}
+
+	parent := node.parent
+
+	if node.left == nil && node.right == nil && node.value == nil {
+		node = nil
+        	removeRecursively(parent)
+	}
+}
+
 func (t *nRadixTree) Remove(key string) {
 	t.lock.Lock()
 	defer t.lock.Unlock()
@@ -426,8 +440,11 @@ func (t *nRadixTree) Remove(key string) {
 	}
 
 	node.value = nil
+	parent := node.parent
 	if node.left == nil && node.right == nil {
 		node = nil
+        	removeRecursively(parent)
 	}
+
 	delete(t.valueNodes, key)
 }
