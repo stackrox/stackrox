@@ -1,5 +1,6 @@
-FROM quay.io/klape/stackrox-base:latest-arm
+FROM quay.io/klape/devcontainer:latest-arm64
 
+RUN dnf install -y postgresql elfutils-libelf libbpf nodejs npm
 COPY image/rhel/static-bin/* /usr/bin
 RUN mkdir -p /stackrox/static-data && save-dir-contents /etc/pki/ca-trust /etc/ssl
 
@@ -20,3 +21,6 @@ COPY ./ui /ui
 RUN mkdir -p /ui/openapi; rm -rf /ui/build
 COPY ./image/rhel/docs/api/v1/openapi.json /ui/openapi/v1.json
 COPY ./image/rhel/docs/api/v2/openapi.json /ui/openapi/v2.json
+
+ENV GOROOT=/go GOPATH=/root/go
+RUN mkdir /root/src && git -C /root/src clone https://github.com/stackrox/stackrox.git && git -C /root/src/stackrox checkout vmvm
