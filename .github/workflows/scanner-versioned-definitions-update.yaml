@@ -161,6 +161,11 @@ jobs:
         unzip -l "$path"
         echo "STACKROX_NVD_ZIP_PATH=$path" >> "$GITHUB_ENV"
 
+    - name: Run Updater (single bundle)
+      if: ${{ env.SCANNER_BUNDLE_VERSION == 'v1' }}
+      run: |
+        scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" "definitions/${SCANNER_BUNDLE_VERSION}"
+
     - name: Run updater (multi bundle)
       run: |
         scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" --split bundles
@@ -297,6 +302,36 @@ jobs:
         done
         echo "Copy upstream dev (dev) to downstream dev (1.0.0)"
         gsutil cp -r gs://definitions.stackrox.io/v4/vulnerability-bundles/dev/* gs://definitions.stackrox.io/v4/vulnerability-bundles/1.0.0/
+
+    - name: Copy v1 to pre-versioned bundles
+      run: |
+        # Only execute if v1 files were created by the build job.
+        if ! [ -d "definitions_files/v1" ]; then
+           echo "error: no definition files for v1 were created: skipping..."
+           exit 0
+        fi
+        # Using v1 bundle for released versions listed in RELEASE_VERSION.
+        single=gs://definitions.stackrox.io/v4/vulnerability-bundles/v1/vulns.json.zst
+        multi=gs://definitions.stackrox.io/v4/vulnerability-bundles/v1/vulnerabilities.zip
+        # Parse all supported pre-4.6 releases and copy the versioned bundle v1 to ensure
+        # these releases get updates.
+        grep -E "^4\.(4|5)\.[0-9]+$" scanner/updater/version/RELEASE_VERSION | while read -r release; do
+          case "$release" in
+          4.4.*)
+            gsutil cp "$single" "gs://definitions.stackrox.io/v4/vulnerability-bundles/$release/"
+            ;;
+          4.5.*)
+            gsutil cp "$single" "gs://definitions.stackrox.io/v4/vulnerability-bundles/$release/"
+            gsutil cp "$multi" "gs://definitions.stackrox.io/v4/vulnerability-bundles/$release/"
+            ;;
+          *)
+            echo "Should not happen!"
+            echo "Error: unexpected release version: $release"
+            echo "Ignoring..."
+            ;;
+          esac
+          echo "Copied v1 into $release"
+        done
 
   send-notification:
     needs:

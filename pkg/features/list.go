@@ -133,11 +133,6 @@ var (
 	// This must be set in Scanner V4 Indexer to have any effect.
 	ScannerV4ReIndex = registerFeature("Scanner V4 will re-index and delete unused manifests", "ROX_SCANNER_V4_REINDEX", enabled)
 
-	// ScannerV4MultiBundle enables Scanner V4 to consume vulnerabilities using multi-bundle archives.
-	//
-	// This must be set in Scanner V4 Matcher to have any effect.
-	ScannerV4MultiBundle = registerFeature("Enables Scanner V4 to consume vulnerabilities using multi-bundle archives", "ROX_SCANNER_V4_MULTI_BUNDLE", enabled)
-
 	// ScannerV4PartialNodeJSSupport specifies if Scanner v4 should support partial indexing/vuln matching Node.js (npm) packages.
 	// Partial support is equivalent to StackRox Scanner (Scanner v2) support: only return packages which are affected
 	// by at least one vulnerability.
