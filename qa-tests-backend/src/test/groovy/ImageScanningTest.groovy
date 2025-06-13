@@ -206,7 +206,7 @@ class ImageScanningTest extends BaseSpecification {
     }
 
     @Unroll
-    @Ignore("ROX-29720 - disable gcr.io until tests are fixed for metadata failures after migration to artifacts registry")
+    @Ignore("ROX-29720 - disable gcr.io until tests are fixed for failures after migration to artifacts registry")
     @Tag("BAT")
     @Tag("Integration")
     // GCR doesn't have MA images to verify the GCR-image-integrations on P/Z
