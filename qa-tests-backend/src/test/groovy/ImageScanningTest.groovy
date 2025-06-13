@@ -34,6 +34,7 @@ import spock.lang.Shared
 import spock.lang.Tag
 import spock.lang.Unroll
 import spock.lang.IgnoreIf
+import spock.lang.Ignore
 
 @Tag("PZ")
 class ImageScanningTest extends BaseSpecification {
@@ -205,6 +206,7 @@ class ImageScanningTest extends BaseSpecification {
     }
 
     @Unroll
+    @Ignore("ROX-29720 - disable gcr.io until tests are fixed for metadata failures after migration to artifacts registry")
     @Tag("BAT")
     @Tag("Integration")
     // GCR doesn't have MA images to verify the GCR-image-integrations on P/Z
