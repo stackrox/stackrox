@@ -9,7 +9,7 @@ type NodeUpdateSectionProps = {
     updateNetworkNodes: () => void;
 };
 
-const NodesUpdateSection = ({
+const NodeUpdateSection = ({
     isLoading,
     lastUpdatedTime,
     nodeUpdatesCount,
@@ -30,4 +30,4 @@ const NodesUpdateSection = ({
     return <em>Last updated {lastUpdatedTime ? `at ${lastUpdatedTime}` : 'never'}</em>;
 };
 
-export default NodesUpdateSection;
+export default NodeUpdateSection;
