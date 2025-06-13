@@ -9,6 +9,7 @@ import (
 	"encoding/pem"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/google/go-containerregistry/pkg/name"
 	gcrv1 "github.com/google/go-containerregistry/pkg/v1"
@@ -32,6 +33,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/utils"
+	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -517,6 +519,27 @@ func getVerifiedImageReference(signature oci.Signature, image *storage.Image) ([
 		}
 		if signatureImageReference == reference {
 			verifiedImageReferences = append(verifiedImageReferences, name.GetFullName())
+		}
+	}
+
+	// Special case where the "docker-reference" signature field contains the full image name, i.e. including digest, e.g.
+	// {
+	// 	"critical": {
+	// 		"identity": {
+	// 		"docker-reference": "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:c896b5d4b05343dfe94c0f75c9232a2a68044d0fa7a21b5f51ed796d23f1fcc5"
+	// 		},
+	// 		"image": {
+	// 		"docker-manifest-digest": "sha256:c896b5d4b05343dfe94c0f75c9232a2a68044d0fa7a21b5f51ed796d23f1fcc5"
+	// 		},
+	// 		"type": "cosign container image signature"
+	// 	},
+	// 	"optional": null
+	// }
+	if strings.Contains(signatureImageReference, "@") {
+		nameCopy := proto.Clone(image.GetName()).(*storage.ImageName)
+		normalizedName := imgUtils.NormalizeImageFullName(nameCopy, image.Id)
+		if signatureImageReference == normalizedName.FullName {
+			verifiedImageReferences = append(verifiedImageReferences, signatureImageReference)
 		}
 	}
 	return verifiedImageReferences, nil

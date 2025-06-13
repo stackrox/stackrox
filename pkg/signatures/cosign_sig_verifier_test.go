@@ -60,6 +60,24 @@ const (
 		"TljNWItNDA0MC05ZGJlLTQ0NDgzNjE3MGJlYSJ9LCJpbWFnZSI6eyJkb2NrZXItbWFuaWZlc3QtZGlnZXN0Ijoic2hhMjU2OjI5OGQxZWVk" +
 		"Mjg5M2Y2MWVkMjU0YzY4YWZmMjQxN2RlYWYzNDI2MzJhYjI2ZGJiZGIzOTkxNzE0ZTUwMWUxYzkifSwidHlwZSI6ImNvc2lnbiBjb250YWl" +
 		"uZXIgaW1hZ2Ugc2lnbmF0dXJlIn0sIm9wdGlvbmFsIjpudWxsfQ=="
+
+	pemPublicKey_4 = "-----BEGIN PUBLIC KEY-----\n" +
+		"MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEA0ASyuH2TLWvBUqPHZ4Ip\n" +
+		"75g7EncBkgQHdJnjzxAW5KQTMh/siBoB/BoSrtiPMwnChbTCnQOIQeZuDiFnhuJ7\n" +
+		"M/D3b7JoX0m123NcCSn67mAdjBa6Bg6kukZgCP4ZUZeESajWX/EjylFcRFOXW57p\n" +
+		"RDCEN42J/jYlVqt+g9+Grker8Sz86H3l0tbqOdjbz/VxHYhwF0ctUMHsyVRDq2QP\n" +
+		"tqzNXlmlMhS/PoFr6R4u/7HCn/K+LegcO2fAFOb40KvKSKKVD6lewUZErhop1CgJ\n" +
+		"XjDtGmmO9dGMF71mf6HEfaKSdy+EE6iSF2A2Vv9QhBawMiq2kOzEiLg4nAdJT8wg\n" +
+		"ZrMAmPCqGIsXNGZ4/Q+YTwwlce3glqb5L9tfNozEdSR9N85DESfQLQEdY3CalwKM\n" +
+		"BT1OEhEX1wHRCU4drMOej6BNW0VtscGtHmCrs74jPezhwNT8ypkyS+T0zT4Tsy6f\n" +
+		"VXkJ8YSHyenSzMB2Op2bvsE3grY+s74WhG9UIA6DBxcTie15NSzKwfzaoNWODcLF\n" +
+		"p7BY8aaHE2MqFxYFX+IbjpkQRfaeQQsouDFdCkXEFVfPpbD2dk6FleaMTPuyxtIT\n" +
+		"gjVEtGQK2qGCFGiQHFd4hfV+eCA63Jro1z0zoBM5BbIIQ3+eVFwt3AlZp5UVwr6d\n" +
+		"secqki/yrmv3Y0dqZ9VOn3UCAwEAAQ==\n" +
+		"-----END PUBLIC KEY-----"
+	imgName_4             = "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:c896b5d4b05343dfe94c0f75c9232a2a68044d0fa7a21b5f51ed796d23f1fcc5"
+	b64Signature_4        = "tkgrrtlysbiLo+chF2+EmcPXyGNfhVZIptlgyPK6b0Ptu8FGpk1AdhBckiKExLbx3QwkJci8lvPXWhFEXtGQc1lnw1knKvCenHArW5MbGYaBbZ5v1o2+mF4XIgAePi3PT3KoViCcemg8M3MQUxV8u4RnpMLdMu7PtQvYwOmafw9ja7RYUMoR4FfVn6EWLZUWQ5qtuU7hcR7eaCPKP7tIuedI2Ks+MTlT61NZTG16cmDw8TgkGdheR6xuA8Nw2PgMl3Ij6YGLRJBY/QIm3HSyTjr7QC1+S4Va0rln/4ywFyJuHtSLy/AlirpoqMwNiPM2Rdqd7JJ6MI4wTpIv55DUgQLKkwmZiVgWkklPrME7PIRUcKIICouALwJIZhchDtScl05ntJF0TXW4PK/qzEWs12O0GDYQVdGTGxYQR0Y1EXPK3Rwtq3dFF+pmvnFMY0j6jp092QPJIkQe8bf26drPitPpiVSdBn8fRKQu4TAlwTUmElg5n60kN8JznHxqO81MppNyw8PYfmK0s05b9X21yxkxy0/1g4h9kSlAgVdq6+vjs/QGaNl1n/bsF2krXw9/C8shVLBHsLDnQX7zpXxubVvSkXAfllg6tS17WJfB7ga5605TlPaMHrvyJO13jQbSDFMzaixtxaO85KjVdUOHE1e4SvFcQZzxzv2DdOiGhnE="
+	b64SignaturePayload_4 = "eyJjcml0aWNhbCI6eyJpZGVudGl0eSI6eyJkb2NrZXItcmVmZXJlbmNlIjoicXVheS5pby9vcGVuc2hpZnQtcmVsZWFzZS1kZXYvb2NwLXY0LjAtYXJ0LWRldkBzaGEyNTY6Yzg5NmI1ZDRiMDUzNDNkZmU5NGMwZjc1YzkyMzJhMmE2ODA0NGQwZmE3YTIxYjVmNTFlZDc5NmQyM2YxZmNjNSJ9LCJpbWFnZSI6eyJkb2NrZXItbWFuaWZlc3QtZGlnZXN0Ijoic2hhMjU2OmM4OTZiNWQ0YjA1MzQzZGZlOTRjMGY3NWM5MjMyYTJhNjgwNDRkMGZhN2EyMWI1ZjUxZWQ3OTZkMjNmMWZjYzUifSwidHlwZSI6ImNvc2lnbiBjb250YWluZXIgaW1hZ2Ugc2lnbmF0dXJlIn0sIm9wdGlvbmFsIjpudWxsfQ=="
 )
 
 func TestUnmarshalRekorBundle(t *testing.T) {
@@ -152,6 +170,31 @@ func TestCosignSignatureVerifier_VerifySignature_Success(t *testing.T) {
 	require.NoError(t, err, "creating public key verifier")
 
 	img, err := generateImageWithCosignSignature(imgName_1a, b64Signature_1a, b64SignaturePayload_1a, nil, nil, nil)
+	require.NoError(t, err, "creating image with signature")
+
+	status, verifiedImageReferences, err := pubKeyVerifier.VerifySignature(context.Background(), img)
+	assert.NoError(t, err, "verification should be successful")
+	assert.Equal(t, storage.ImageSignatureVerificationResult_VERIFIED, status, "status should be VERIFIED")
+	require.Len(t, verifiedImageReferences, 1)
+	assert.Equal(t, img.GetName().GetFullName(), verifiedImageReferences[0],
+		"image full name should match verified image reference")
+}
+
+func TestCosignSignatureVerifier_VerifySignature_Digest_In_Docker_Reference(t *testing.T) {
+	pubKeyVerifier, err := newCosignSignatureVerifier(&storage.SignatureIntegration{
+		Cosign: &storage.CosignPublicKeyVerification{
+			PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
+				{
+					Name:            "cosignSignatureVerifier",
+					PublicKeyPemEnc: pemPublicKey_4,
+				},
+			},
+		},
+	})
+
+	require.NoError(t, err, "creating public key verifier")
+
+	img, err := generateImageWithCosignSignature(imgName_4, b64Signature_4, b64SignaturePayload_4, nil, nil, nil)
 	require.NoError(t, err, "creating image with signature")
 
 	status, verifiedImageReferences, err := pubKeyVerifier.VerifySignature(context.Background(), img)
