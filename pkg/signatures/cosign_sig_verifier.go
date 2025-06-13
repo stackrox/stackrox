@@ -46,7 +46,6 @@ var (
 	errNoImageSHA         = errors.New("no image SHA found")
 	errNoVerificationData = errors.New("verification data not found")
 	errUnverifiedBundle   = errors.New("unverified transparency log bundle")
-	errDigestMismatch     = errors.New("image digest does not match signature")
 )
 
 var once sync.Once
@@ -503,10 +502,6 @@ func getVerifiedImageReference(signature oci.Signature, image *storage.Image) ([
 	// - and has the same digest
 	// This way we also cover the case where we e.g. reference an image with digest format (<registry>/<repository>@<digest>)
 	// as well as images using floating tags (<registry>/<repository>:<tag>).
-	if simpleContainer.Critical.Image.DockerManifestDigest != image.GetId() {
-		return nil, errDigestMismatch
-	}
-
 	dockerReference := simpleContainer.Critical.Identity.DockerReference
 	repoReference, err := getRepositoryReferenceFromImageName(dockerReference)
 	if err != nil {
