@@ -3,7 +3,7 @@ import { combineReducers } from 'redux';
 import { createFetchingActionTypes } from 'utils/fetchingReduxRoutines';
 import { fetchTelemetryConfig } from 'services/TelemetryConfigService';
 
-import { initializeAnalytics } from 'global/initializeAnalytics';
+import { initializeAnalytics } from 'init/initializeAnalytics';
 
 // Types
 

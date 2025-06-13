@@ -18,7 +18,7 @@ const createStateSelectors = (authProviders = [], authStatus = AUTH_STATUS.LOADI
 
 describe('Auth Sagas', () => {
     it('should not do a service call to get auth providers when location changes to violations, policies, etc.', () => {
-        const fetchMock = jest.fn().mockReturnValue({ response: [] });
+        const fetchMock = vi.fn().mockReturnValue({ response: [] });
         return expectSaga(saga)
             .provide([
                 ...createStateSelectors(),
@@ -80,7 +80,7 @@ describe('Auth Sagas', () => {
             .silentRun());
 
     it('should clear the token when user logs out', () => {
-        const logout = jest.fn();
+        const logout = vi.fn();
         return expectSaga(saga)
             .provide([
                 ...createStateSelectors([{ name: 'ap1' }], AUTH_STATUS.LOGGED_IN),
@@ -99,7 +99,7 @@ describe('Auth Sagas', () => {
     });
 
     it('should store the previous location after being redirected to login page', () => {
-        const storeLocationMock = jest.fn();
+        const storeLocationMock = vi.fn();
         const from = '/from';
         return expectSaga(saga)
             .provide([
@@ -119,7 +119,7 @@ describe('Auth Sagas', () => {
     });
 
     it('should handle OIDC redirect and restore previous location', () => {
-        const storeAccessTokenMock = jest.fn();
+        const storeAccessTokenMock = vi.fn();
         const token = 'my-token';
         const serverState = 'provider-prefix:client-state';
         const exchangedToken = 'my-rox-token';
@@ -154,10 +154,10 @@ describe('Auth Sagas', () => {
 
     it('should handle OIDC response with authorize roxctl mode', () => {
         delete window.location;
-        window.location = { assign: jest.fn() };
+        window.location = { assign: vi.fn() };
         const token = 'my-token';
         const requestedLocation = '/my-location';
-        const storeAccessTokenMock = jest.fn();
+        const storeAccessTokenMock = vi.fn();
         const callbackURL = 'http://localhost:8080/';
         const serverState = `provider-id:2ed17ca6-4b3c-4279-8317-f26f8ba01c52#${callbackURL}`;
 
@@ -192,12 +192,12 @@ describe('Auth Sagas', () => {
     });
 
     it('should handle SAML response with test mode', () => {
-        const storeLocationMock = jest.fn();
+        const storeLocationMock = vi.fn();
         const user =
             'eyJ1c2VySWQiOiJ0ZXN0QHN0YWNrcm94LmNvbSIsImV4cGlyZXMiOiIwMDAxLTAxLTAxVDAwOjAwOjAwWiIsImF1dGhQcm92aWRlciI6eyJpZCI6ImRlZjQzMDdjLTczMmEtNDUzZS05NzAyLTE2ZDU3NjA5MGE1NCIsIm5hbWUiOiJWYW5TYW1sT2t0YTEiLCJ0eXBlIjoic2FtbCIsInVpRW5kcG9pbnQiOiJsb2NhbGhvc3Q6ODAwMCIsImVuYWJsZWQiOnRydWUsImxvZ2luVXJsIjoiL3Nzby9sb2dpbi9kZWY0MzA3Yy03MzJhLTQ1M2UtOTcwMi0xNmQ1NzYwOTBhNTQifSwidXNlckluZm8iOnsidXNlcm5hbWUiOiJ0ZXN0QHN0YWNrcm94LmNvbSIsInBlcm1pc3Npb25zIjp7Im5hbWUiOiJBZG1pbiIsImdsb2JhbEFjY2VzcyI6IlJFQURfV1JJVEVfQUNDRVNTIn0sInJvbGVzIjpbeyJuYW1lIjoiQWRtaW4iLCJnbG9iYWxBY2Nlc3MiOiJSRUFEX1dSSVRFX0FDQ0VTUyJ9XX0sInVzZXJBdHRyaWJ1dGVzIjpbeyJrZXkiOiJlbWFpbCIsInZhbHVlcyI6WyJqd0BzdGFja3JveC5jb20iXX0seyJrZXkiOiJ1c2VyaWQiLCJ2YWx1ZXMiOlsidGVzdEBzdGFja3JveC5jb20iXX1dfQ';
         const requestedLocation = '/test-login-results';
         // TODO: mock auth action call, too
-        // const setAuthProviderTestResultsMock = jest.fn();
+        // const setAuthProviderTestResultsMock = vi.fn();
 
         return expectSaga(saga)
             .provide([

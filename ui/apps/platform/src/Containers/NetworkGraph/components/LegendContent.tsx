@@ -9,13 +9,13 @@ import {
 import DescriptionListItem from 'Components/DescriptionListItem';
 import DescriptionListCompact from 'Components/DescriptionListCompact';
 
-import { ReactComponent as BothPolicyRules } from 'images/network-graph/both-policy-rules.svg';
-import { ReactComponent as EgressOnly } from 'images/network-graph/egress-only.svg';
-import { ReactComponent as IngressOnly } from 'images/network-graph/ingress-only.svg';
-import { ReactComponent as NoPolicyRules } from 'images/network-graph/no-policy-rules.svg';
-import { ReactComponent as RelatedNSBorder } from 'images/network-graph/related-ns-border.svg';
-import { ReactComponent as RelatedEntity } from 'images/network-graph/related-entity.svg';
-import { ReactComponent as FilteredEntity } from 'images/network-graph/filtered-entity.svg';
+import BothPolicyRules from 'images/network-graph/both-policy-rules.svg?react';
+import EgressOnly from 'images/network-graph/egress-only.svg?react';
+import IngressOnly from 'images/network-graph/ingress-only.svg?react';
+import NoPolicyRules from 'images/network-graph/no-policy-rules.svg?react';
+import RelatedNSBorder from 'images/network-graph/related-ns-border.svg?react';
+import RelatedEntity from 'images/network-graph/related-entity.svg?react';
+import FilteredEntity from 'images/network-graph/filtered-entity.svg?react';
 
 function LegendContent() {
     return (

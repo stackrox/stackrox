@@ -77,9 +77,10 @@ COPY ./docs/api/v2/swagger.json /stackrox/static-data/docs/api/v2/swagger.json
 COPY THIRD_PARTY_NOTICES /THIRD_PARTY_NOTICES/
 
 COPY ui /ui
+RUN mkdir -p ui/openapi
+COPY ./docs/api/v1/openapi.json /ui/openapi/v1.json
+COPY ./docs/api/v2/openapi.json /ui/openapi/v2.json
 
-COPY bin/central            /stackrox/central
-COPY bin/migrator           /stackrox/bin/migrator
 COPY bin/compliance         /stackrox/bin/compliance
 COPY bin/kubernetes-sensor  /stackrox/bin/kubernetes-sensor
 COPY bin/sensor-upgrader    /stackrox/bin/sensor-upgrader
@@ -87,6 +88,8 @@ COPY bin/admission-control  /stackrox/bin/admission-control
 COPY bin/config-controller  /stackrox/bin/config-controller
 COPY bin/init-tls-certs     /stackrox/bin/init-tls-certs
 COPY bin/roxctl*            /assets/downloads/cli/
+COPY bin/migrator           /stackrox/bin/migrator
+COPY bin/central            /stackrox/central
 
 RUN ln -s /assets/downloads/cli/roxctl-linux-${TARGET_ARCH} /stackrox/roxctl && \
     ln -s /assets/downloads/cli/roxctl-linux-amd64 /assets/downloads/cli/roxctl-linux

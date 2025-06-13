@@ -43,7 +43,10 @@ message DeleteVirtualMachinesResponse {
 
 service VirtualMachineService {
   rpc CreateVirtualMachine(CreateVirtualMachineRequest) returns (storage.VirtualMachine) {
-    option (google.api.http) = {post: "/v1/virtualmachines"};
+    option (google.api.http) = {
+      post: "/v1/virtualmachines"
+      body: "*"
+    };
   }
 
   rpc GetVirtualMachine(GetVirtualMachineRequest) returns (storage.VirtualMachine) {

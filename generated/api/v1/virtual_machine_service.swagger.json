@@ -187,101 +187,12 @@
         },
         "parameters": [
           {
-            "name": "virtualMachine.id",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "virtualMachine.namespace",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "virtualMachine.name",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "virtualMachine.scan.scannerVersion",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "virtualMachine.scan.scanTime",
-            "in": "query",
-            "required": false,
-            "type": "string",
-            "format": "date-time"
-          },
-          {
-            "name": "virtualMachine.scan.operatingSystem",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "virtualMachine.scan.dataSource.id",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "virtualMachine.scan.dataSource.name",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "virtualMachine.scan.dataSource.mirror",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "virtualMachine.scan.notes",
-            "in": "query",
-            "required": false,
-            "type": "array",
-            "items": {
-              "type": "string",
-              "enum": [
-                "UNSET",
-                "OS_UNAVAILABLE",
-                "PARTIAL_SCAN_DATA",
-                "OS_CVES_UNAVAILABLE",
-                "OS_CVES_STALE",
-                "LANGUAGE_CVES_UNAVAILABLE",
-                "CERTIFIED_RHEL_SCAN_UNAVAILABLE"
-              ]
-            },
-            "collectionFormat": "multi"
-          },
-          {
-            "name": "virtualMachine.lastUpdated",
-            "in": "query",
-            "required": false,
-            "type": "string",
-            "format": "date-time"
-          },
-          {
-            "name": "virtualMachine.notes",
-            "in": "query",
-            "required": false,
-            "type": "array",
-            "items": {
-              "type": "string",
-              "enum": [
-                "MISSING_METADATA",
-                "MISSING_SCAN_DATA",
-                "MISSING_SIGNATURE",
-                "MISSING_SIGNATURE_VERIFICATION_DATA"
-              ]
-            },
-            "collectionFormat": "multi"
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1CreateVirtualMachineRequest"
+            }
           }
         ],
         "tags": [
