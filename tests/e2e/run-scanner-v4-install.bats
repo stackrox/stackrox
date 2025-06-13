@@ -161,6 +161,19 @@ EOT
         die "roxctl not found, please make sure it can be resolved via PATH."
     fi
 
+    ROXCTL_BUILT_IN_RELEASE_MODE="false"
+    if roxctl_built_in_release_mode; then
+        ROXCTL_BUILT_IN_RELEASE_MODE="true"
+    fi
+
+    if [[ "$ROXCTL_BUILT_IN_RELEASE_MODE" == "true" ]]; then
+        info "roxctl is built in release mode."
+        info "Local modification of the Helm charts will not be taken into account for Helm chart tests."
+    else
+        info "roxctl is built in non-release mode."
+        info "Local modification of the Helm charts will be taken into account for Helm chart tests."
+    fi
+
     local roxctl_version
     roxctl_version="$(roxctl version)"
 
@@ -213,18 +226,28 @@ EOT
    if [[ -z "${HEAD_HELM_CHART_CENTRAL_SERVICES_DIR:-}" ]]; then
         HEAD_HELM_CHART_CENTRAL_SERVICES_DIR=$(mktemp -d)
         echo "Rendering fresh central-services Helm chart and writing to ${HEAD_HELM_CHART_CENTRAL_SERVICES_DIR}..."
-        roxctl helm output central-services \
-            --debug --debug-path="${ROOT}/image" \
-            --output-dir="${HEAD_HELM_CHART_CENTRAL_SERVICES_DIR}" --remove
+        if [[ "$ROXCTL_BUILT_IN_RELEASE_MODE" == "true" ]]; then
+            roxctl helm output central-services \
+                --output-dir="${HEAD_HELM_CHART_CENTRAL_SERVICES_DIR}" --remove
+        else
+            roxctl helm output central-services \
+                --debug --debug-path="${ROOT}/image" \
+                --output-dir="${HEAD_HELM_CHART_CENTRAL_SERVICES_DIR}" --remove
+        fi
         export HEAD_HELM_CHART_CENTRAL_SERVICES_DIR
     fi
 
    if [[ -z "${HEAD_HELM_CHART_SECURED_CLUSTER_SERVICES_DIR:-}" ]]; then
         HEAD_HELM_CHART_SECURED_CLUSTER_SERVICES_DIR=$(mktemp -d)
         echo "Rendering fresh secured-cluster-services Helm chart and writing to ${HEAD_HELM_CHART_SECURED_CLUSTER_SERVICES_DIR}..."
-        roxctl helm output secured-cluster-services \
-            --debug --debug-path="${ROOT}/image" \
-            --output-dir="${HEAD_HELM_CHART_SECURED_CLUSTER_SERVICES_DIR}" --remove
+        if [[ "$ROXCTL_BUILT_IN_RELEASE_MODE" == "true" ]]; then
+            roxctl helm output secured-cluster-services \
+                --output-dir="${HEAD_HELM_CHART_SECURED_CLUSTER_SERVICES_DIR}" --remove
+        else
+            roxctl helm output secured-cluster-services \
+                --debug --debug-path="${ROOT}/image" \
+                --output-dir="${HEAD_HELM_CHART_SECURED_CLUSTER_SERVICES_DIR}" --remove
+        fi
         export HEAD_HELM_CHART_SECURED_CLUSTER_SERVICES_DIR
     fi
 
@@ -1576,4 +1599,8 @@ create_sensor_pull_secrets() {
     echo "{ \"apiVersion\": \"v1\", \"kind\": \"Namespace\", \"metadata\": { \"name\": \"$namespace\" } }" | "${ORCH_CMD}" apply -f -
     "${ROOT}/deploy/common/pull-secret.sh" stackrox "$DEFAULT_IMAGE_REGISTRY_HOST" | "${ORCH_CMD}" -n "$namespace" apply -f -
     "${ROOT}/deploy/common/pull-secret.sh" collector-stackrox "$DEFAULT_IMAGE_REGISTRY_HOST" | "${ORCH_CMD}" -n "$namespace" apply -f -
+}
+
+roxctl_built_in_release_mode() {
+    ! roxctl helm output central-services --help 2>&1 | grep -- --debug= >/dev/null
 }
