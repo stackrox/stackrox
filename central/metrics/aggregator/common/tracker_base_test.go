@@ -60,14 +60,14 @@ func TestTrackerBase_Reconfigure(t *testing.T) {
 
 		tracker.Reconfigure(ctx, cfg0)
 		config := tracker.GetConfiguration()
-		assert.Equal(t, cfg0, config)
+		assert.Same(t, cfg0, config)
 		assert.Nil(t, tracker.ticker)
 
 		cfg1 := &Configuration{
 			filter: &v1.Query{},
 		}
 		tracker.Reconfigure(ctx, cfg1)
-		assert.Equal(t, cfg1, tracker.GetConfiguration())
+		assert.Same(t, cfg1, tracker.GetConfiguration())
 		assert.False(t, calledRegistry)
 	})
 
@@ -93,7 +93,7 @@ func TestTrackerBase_Reconfigure(t *testing.T) {
 		}
 		tracker.Reconfigure(ctx, cfg0)
 		config := tracker.GetConfiguration()
-		assert.Equal(t, cfg0, config)
+		assert.Same(t, cfg0, config)
 		assert.NotNil(t, tracker.ticker)
 		assert.ElementsMatch(t, cfg0.toAdd, registered)
 		assert.Empty(t, unregistered)
@@ -111,7 +111,7 @@ func TestTrackerBase_Reconfigure(t *testing.T) {
 			period:   2 * time.Hour,
 		}
 		tracker.Reconfigure(ctx, cfg1)
-		assert.Equal(t, cfg1, tracker.GetConfiguration())
+		assert.Same(t, cfg1, tracker.GetConfiguration())
 		assert.Empty(t, registered)
 		assert.ElementsMatch(t, cfg1.toDelete, unregistered)
 		// track() is called, so some result should be gathered from the
@@ -127,7 +127,7 @@ func TestTrackerBase_Reconfigure(t *testing.T) {
 			period:  0,
 		}
 		tracker.Reconfigure(ctx, cfg2)
-		assert.Equal(t, cfg2, tracker.GetConfiguration())
+		assert.Same(t, cfg2, tracker.GetConfiguration())
 		assert.Empty(t, registered)
 		assert.ElementsMatch(t, metricNames[1:], unregistered)
 		assert.Empty(t, result)
