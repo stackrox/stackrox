@@ -1058,7 +1058,8 @@ class PolicyFieldsTest extends BaseSpecification {
         "Required Label"                  | REQUIRED_LABEL_KEY_ONLY               | WITH_KEY_ONLY_LABEL                    | "key only"
         "Required Label"                  | REQUIRED_LABEL_KEY_ONLY               | WITH_KEY_AND_VALUE_LABEL               | "key only matches key and value"
         "Required Label"                  | REQUIRED_LABEL_KEY_AND_VALUE          | WITH_KEY_AND_VALUE_LABEL               | "key and value"
-        "Unscanned Image"                 | IMAGES_ARE_UNSCANNED                  | IS_SCANNED                             | "no match"
+        // ROX-29668 - disable gcr.io until tests are fixed for metadata failures after migration to artifacts registry
+        //"Unscanned Image"                 | IMAGES_ARE_UNSCANNED                  | IS_SCANNED                             | "no match"
         "Volume Destination"              | NO_FOO_VOLUME_DESTINATIONS            | WITH_A_RO_HOST_BAR_VOLUME              | "no match"
         "Volume Destination"              | NO_FOO_VOLUME_DESTINATIONS            | WITHOUT_FOO_OR_BAR_VOLUMES             | "no match II"
         "Volume Name"                     | NO_FOO_VOLUME_NAME                    | WITH_A_RO_HOST_BAR_VOLUME              | "no match"
