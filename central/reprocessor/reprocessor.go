@@ -330,13 +330,13 @@ func (l *loopImpl) reprocessImage(id string, fetchOpt imageEnricher.FetchOption,
 	}, image)
 
 	if err != nil {
-		log.Errorw("Error enriching image", logging.ImageName(image.GetName().GetFullName()), logging.Err(err))
+		log.Errorw("Error enriching image", logging.ImageName(image.GetName().GetFullName()), logging.ImageID(image.GetId()), logging.Err(err))
 		return nil, false
 	}
 	if result.ImageUpdated {
 		if err := l.risk.CalculateRiskAndUpsertImage(image); err != nil {
 			log.Errorw("Error upserting image into datastore",
-				logging.ImageName(image.GetName().GetFullName()), logging.Err(err))
+				logging.ImageName(image.GetName().GetFullName()), logging.ImageID(image.GetId()), logging.Err(err))
 			return nil, false
 		}
 		// We need to fetch the image again to make sure all fields are populated.
@@ -344,11 +344,11 @@ func (l *loopImpl) reprocessImage(id string, fetchOpt imageEnricher.FetchOption,
 		// FirstImageOccurrence and FirstSystemOccurrence.
 		newImage, exists, err := l.images.GetImage(allAccessCtx, id)
 		if err != nil {
-			log.Errorw("Error fetching image from database", logging.ImageName(image.GetName().GetFullName()), logging.Err(err))
+			log.Errorw("Error fetching image from database", logging.ImageName(image.GetName().GetFullName()), logging.ImageID(image.GetId()), logging.Err(err))
 			return nil, false
 		}
 		if !exists {
-			log.Errorw("The image was not found after enrichement", logging.ImageName(image.GetName().GetFullName()))
+			log.Errorw("The image was not found after enrichement", logging.ImageName(image.GetName().GetFullName()), logging.ImageID(image.GetId()))
 			return nil, false
 		}
 		return newImage, true
@@ -418,7 +418,7 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 				})
 				if err != nil {
 					log.Errorw("Error sending updated image to sensor "+clusterID,
-						logging.ImageName(image.GetName().GetFullName()), logging.Err(err))
+						logging.ImageName(image.GetName().GetFullName()), logging.ImageID(image.GetId()), logging.Err(err))
 				}
 			}
 		}(result.ID, clusterIDSet)
@@ -504,7 +504,7 @@ func (l *loopImpl) reprocessWatchedImage(name string) bool {
 		return false
 	}
 	if err := l.risk.CalculateRiskAndUpsertImage(img); err != nil {
-		log.Errorw("Error upserting watched image after enriching", logging.ImageName(name), logging.Err(err))
+		log.Errorw("Error upserting watched image after enriching", logging.ImageName(name), logging.ImageID(img.GetId()), logging.Err(err))
 		return false
 	}
 	return true

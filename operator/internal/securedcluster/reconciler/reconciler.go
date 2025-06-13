@@ -49,7 +49,8 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 	if err != nil {
 		return err
 	}
-	opts = commonExtensions.AddMapKubeAPIsExtensionIfMapFileExists(opts)
+
+	opts = commonExtensions.AddMapKubeAPIsExtensionIfMapFileExists(opts, mgr.GetRESTMapper())
 
 	// Using uncached UncachedClient since this is reading secrets not
 	// owned by the operator so we can't guarantee labels for cache

@@ -128,7 +128,7 @@ require (
 	github.com/spf13/pflag v1.0.6
 	github.com/spf13/viper v1.20.1
 	github.com/stackrox/external-network-pusher v0.0.0-20231115153210-b82d72f500a2
-	github.com/stackrox/helmtest v0.0.5
+	github.com/stackrox/helmtest v0.0.6
 	github.com/stackrox/k8s-overlay-patch v0.0.0-20250224110925-13b5b47fd812
 	github.com/stackrox/pkcs7 v0.0.0-20240314170115-841ca6b5f88d
 	github.com/stackrox/scanner v0.0.0-20240830165150-d133ba942d59
@@ -347,7 +347,7 @@ require (
 	github.com/in-toto/attestation v1.1.1 // indirect
 	github.com/in-toto/in-toto-golang v0.9.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/itchyny/gojq v0.12.15 // indirect
+	github.com/itchyny/gojq v0.12.17 // indirect
 	github.com/itchyny/timefmt-go v0.1.6 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
 	github.com/jackc/pgconn v1.14.3 // indirect
@@ -534,11 +534,18 @@ require (
 replace github.com/nxadm/tail => github.com/stackrox/tail v1.4.9-0.20240806130957-77cf33bea65f
 
 // @stackrox/install
-// github.com/stackrox/helm-operator is a modified fork of github.com/operator-framework/helm-operator-plugins that
-// we currently depend on.
-// It includes a number of features and bug fixes which we faced in StackRox. We use this fork
-// primarily to iterate faster. See https://issues.redhat.com/browse/ROX-7911
-replace github.com/operator-framework/helm-operator-plugins => github.com/stackrox/helm-operator v0.0.12-0.20250211113659-1b2840226a8b
+replace (
+	// Enhanced to support removal of arbitrary resources.
+	// This change is already merged upstream and released in https://github.com/helm/helm-mapkubeapis/releases/tag/v0.6.1
+	// but this version requires go 1.24.
+	// TODO(ROX-29652): Bump the dependency above to v0.6.1 or later and remove this "replace" once we're on Go 1.24 or later.
+	github.com/helm/helm-mapkubeapis => github.com/porridge/helm-mapkubeapis v0.0.0-20250220113302-2f740596cb45
+	// github.com/stackrox/helm-operator is a modified fork of github.com/operator-framework/helm-operator-plugins that
+	// we currently depend on.
+	// It includes a number of features and bug fixes which we faced in StackRox. We use this fork
+	// primarily to iterate faster. See https://issues.redhat.com/browse/ROX-7911
+	github.com/operator-framework/helm-operator-plugins => github.com/stackrox/helm-operator v0.0.12-0.20250211113659-1b2840226a8b
+)
 
 // @stackrox/sensor-ecosystem
 replace (
