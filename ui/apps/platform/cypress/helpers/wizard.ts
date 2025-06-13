@@ -1,9 +1,9 @@
 export function getWizardNavStep(step: number | string) {
     if (typeof step === 'number') {
-        return cy.get('nav[data-ouia-component-type="PF5/WizardNav"] ol li').eq(step - 1);
+        return cy.get('*[data-ouia-component-type="PF5/WizardNavItem"]').eq(step - 1);
     }
 
-    return cy.get('nav[data-ouia-component-type="PF5/WizardNav"] ol li').contains(step);
+    return cy.get('*[data-ouia-component-type="PF5/WizardNavItem"]').contains(step);
 }
 
 export function goToWizardStep(step: number | string) {
