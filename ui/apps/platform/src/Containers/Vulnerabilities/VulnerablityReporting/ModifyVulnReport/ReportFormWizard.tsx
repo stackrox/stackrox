@@ -1,15 +1,21 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Wizard, WizardStep } from '@patternfly/react-core/deprecated';
+import { Button, Modal } from '@patternfly/react-core';
+import {
+    Wizard,
+    WizardContextConsumer,
+    WizardFooter,
+    WizardStep,
+} from '@patternfly/react-core/deprecated';
 import { FormikProps } from 'formik';
 import isEmpty from 'lodash/isEmpty';
 
+import useModal from 'hooks/useModal';
 import { vulnerabilityConfigurationReportsPath } from 'routePaths';
 
 import DeliveryDestinationsForm from '../forms/DeliveryDestinationsForm';
 import ReportParametersForm from '../forms/ReportParametersForm';
 import ReportReviewForm from '../forms/ReportReviewForm';
-import ReportFormWizardFooter from './ReportFormWizardFooter';
 import { ReportFormValues } from '../forms/useReportFormValues';
 
 export type ReportFormWizardProps = {
@@ -32,6 +38,9 @@ function ReportFormWizard({
     isSaving,
 }: ReportFormWizardProps) {
     const navigate = useNavigate();
+
+    const { isModalOpen, openModal, closeModal } = useModal();
+
     function onClose() {
         navigate(vulnerabilityConfigurationReportsPath);
     }
@@ -80,13 +89,84 @@ function ReportFormWizard({
             onSave={onSave}
             onClose={onClose}
             footer={
-                <ReportFormWizardFooter
-                    wizardSteps={wizardSteps}
-                    saveText={finalStepNextButtonText}
-                    onSave={onSave}
-                    isSaving={isSaving}
-                    isStepDisabled={isStepDisabled}
-                />
+                <WizardFooter>
+                    <WizardContextConsumer>
+                        {({ activeStep, onNext, onBack, onClose }) => {
+                            const firstStepName = wizardSteps[0].name;
+                            const lastStepName = wizardSteps[wizardSteps.length - 1].name;
+                            const activeStepIndex = wizardSteps.findIndex(
+                                (wizardStep) => wizardStep.name === activeStep.name
+                            );
+                            const nextStepName =
+                                activeStepIndex === wizardSteps.length - 1
+                                    ? undefined
+                                    : wizardSteps[activeStepIndex + 1].name;
+                            const isNextDisabled = isStepDisabled(nextStepName as string);
+
+                            return (
+                                <>
+                                    {activeStep.name !== lastStepName ? (
+                                        <Button
+                                            variant="primary"
+                                            type="submit"
+                                            onClick={onNext}
+                                            isDisabled={isNextDisabled}
+                                        >
+                                            Next
+                                        </Button>
+                                    ) : (
+                                        <Button
+                                            variant="primary"
+                                            type="submit"
+                                            onClick={onSave}
+                                            isLoading={isSaving}
+                                        >
+                                            {finalStepNextButtonText}
+                                        </Button>
+                                    )}
+                                    <Button
+                                        variant="secondary"
+                                        onClick={onBack}
+                                        isDisabled={activeStep.name === firstStepName}
+                                    >
+                                        Back
+                                    </Button>
+                                    <Button variant="link" onClick={openModal}>
+                                        Cancel
+                                    </Button>
+                                    <Modal
+                                        variant="small"
+                                        title="Confirm cancel"
+                                        isOpen={isModalOpen}
+                                        onClose={closeModal}
+                                        actions={[
+                                            <Button
+                                                key="confirm"
+                                                variant="primary"
+                                                onClick={onClose}
+                                            >
+                                                Confirm
+                                            </Button>,
+                                            <Button
+                                                key="cancel"
+                                                variant="secondary"
+                                                onClick={closeModal}
+                                            >
+                                                Cancel
+                                            </Button>,
+                                        ]}
+                                    >
+                                        <p>
+                                            Are you sure you want to cancel? Any unsaved changes
+                                            will be lost. You will be taken back to the list of
+                                            reports.
+                                        </p>
+                                    </Modal>
+                                </>
+                            );
+                        }}
+                    </WizardContextConsumer>
+                </WizardFooter>
             }
         />
     );
