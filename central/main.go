@@ -172,6 +172,7 @@ import (
 	"github.com/stackrox/rox/central/version"
 	vStore "github.com/stackrox/rox/central/version/store"
 	versionUtils "github.com/stackrox/rox/central/version/utils"
+	virtualmachineService "github.com/stackrox/rox/central/virtualmachine/service"
 	vulnMgmtService "github.com/stackrox/rox/central/vulnmgmt/service"
 	vulnRequestManager "github.com/stackrox/rox/central/vulnmgmt/vulnerabilityrequest/manager/requestmgr"
 	vulnRequestService "github.com/stackrox/rox/central/vulnmgmt/vulnerabilityrequest/service"
@@ -453,6 +454,7 @@ func servicesToRegister() []pkgGRPC.APIService {
 		signatureIntegrationService.Singleton(),
 		telemetryService.Singleton(),
 		userService.Singleton(),
+		virtualmachineService.Singleton(),
 		vulnMgmtService.Singleton(),
 		// TODO: [ROX-20245] Make the "/v1/cve/requests" APIs unavailable.
 		// This cannot be now because the frontend is not ready with the feature flag checks.
