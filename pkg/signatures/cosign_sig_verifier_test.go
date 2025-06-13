@@ -206,6 +206,31 @@ func TestCosignSignatureVerifier_VerifySignature_OCP_Image(t *testing.T) {
 		"image full name should match verified image reference")
 }
 
+func TestCosignSignatureVerifier_VerifySignature_NoVerifiedImageReferences(t *testing.T) {
+	pubKeyVerifier, err := newCosignSignatureVerifier(&storage.SignatureIntegration{
+		Cosign: &storage.CosignPublicKeyVerification{
+			PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
+				{
+					Name:            "cosignSignatureVerifier",
+					PublicKeyPemEnc: pemPublicKey_OCP,
+				},
+			},
+		},
+	})
+
+	require.NoError(t, err, "creating public key verifier")
+
+	// The actual signature has been created for quay.io.
+	fakeName := "docker.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:c896b5d4b05343dfe94c0f75c9232a2a68044d0fa7a21b5f51ed796d23f1fcc5"
+	img, err := generateImageWithCosignSignature(fakeName, b64Signature_OCP, b64Payload_OCP, nil, nil, nil)
+	require.NoError(t, err, "creating image with signature")
+
+	status, verifiedImageReferences, err := pubKeyVerifier.VerifySignature(context.Background(), img)
+	assert.ErrorIs(t, err, errNoVerifiedReferences)
+	assert.Equal(t, storage.ImageSignatureVerificationResult_FAILED_VERIFICATION, status, "status should be FAILED_VERIFICATION")
+	require.Empty(t, verifiedImageReferences)
+}
+
 func TestCosignSignatureVerifier_VerifySignature_Multiple_Names_One_Sig(t *testing.T) {
 	pubKeyVerifier, err := newCosignSignatureVerifier(&storage.SignatureIntegration{
 		Cosign: &storage.CosignPublicKeyVerification{

@@ -39,12 +39,13 @@ const (
 )
 
 var (
-	errCorruptedSignature = errox.InvariantViolation.New("corrupted signature")
-	errHashCreation       = errox.InvariantViolation.New("creating hash")
-	errInvalidHashAlgo    = errox.InvalidArgs.New("invalid hash algorithm used")
-	errNoImageSHA         = errors.New("no image SHA found")
-	errNoVerificationData = errors.New("verification data not found")
-	errUnverifiedBundle   = errors.New("unverified transparency log bundle")
+	errCorruptedSignature   = errox.InvariantViolation.New("corrupted signature")
+	errHashCreation         = errox.InvariantViolation.New("creating hash")
+	errInvalidHashAlgo      = errox.InvalidArgs.New("invalid hash algorithm used")
+	errNoImageSHA           = errors.New("no image SHA found")
+	errNoVerificationData   = errors.New("verification data not found")
+	errNoVerifiedReferences = errors.New("no verified references")
+	errUnverifiedBundle     = errors.New("unverified transparency log bundle")
 )
 
 var once sync.Once
@@ -397,7 +398,7 @@ func verifyImageSignature(ctx context.Context, signature oci.Signature,
 	}
 	refs, err := getVerifiedImageReference(signature, image)
 	if len(refs) == 0 && err == nil {
-		return nil, errors.New("no verified references")
+		return nil, errNoVerifiedReferences
 	}
 	return refs, err
 }
