@@ -37,13 +37,13 @@ import useModifyBaselineStatuses from '../api/useModifyBaselineStatuses';
 import useToggleAlertingOnBaselineViolation from '../api/useToggleAlertingOnBaselineViolation';
 import useFetchBaselineNetworkPolicy from '../api/useFetchBaselineNetworkPolicy';
 
-type DeploymentBaselinesProps = {
+type DeploymentBaselineProps = {
     deployment: Deployment;
     deploymentId: string;
     onNodeSelect: (id: string) => void;
 };
 
-function DeploymentBaselines({ deployment, deploymentId, onNodeSelect }: DeploymentBaselinesProps) {
+function DeploymentBaseline({ deployment, deploymentId, onNodeSelect }: DeploymentBaselineProps) {
     // component state
     const [isExcludingPortsAndProtocols, setIsExcludingPortsAndProtocols] =
         React.useState<boolean>(false);
@@ -267,4 +267,4 @@ function DeploymentBaselines({ deployment, deploymentId, onNodeSelect }: Deploym
     );
 }
 
-export default DeploymentBaselines;
+export default DeploymentBaseline;
