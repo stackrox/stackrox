@@ -7,7 +7,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"encoding/pem"
-	"fmt"
 	"os"
 
 	"github.com/google/go-containerregistry/pkg/name"
@@ -506,34 +505,35 @@ func getVerifiedImageReference(signature oci.Signature, image *storage.Image) ([
 	// - and has the same digest
 	// This way we also cover the case where we e.g. reference an image with digest format (<registry>/<repository>@<digest>)
 	// as well as images using floating tags (<registry>/<repository>:<tag>).
-	dockerReference := simpleContainer.Critical.Identity.DockerReference
-	repoReference, err := getRepositoryReferenceFromImageName(dockerReference)
-	if err != nil {
-		return nil, errors.Wrapf(err, "parsing signature docker reference %q", dockerReference)
-	}
-	log.Debugf("Retrieving verified image references from the image names [%v] and image reference within the "+
-		"signature %q", image.GetNames(), dockerReference)
+	signatureIdentity := simpleContainer.Critical.Identity.DockerReference
+	log.Debugf("Retrieving verified image references from the image names [%v] and signature identity %q",
+		image.GetNames(), signatureIdentity)
 	var verifiedImageReferences []string
 	imageNames := protoutils.SliceUnique(append(image.GetNames(), image.GetName()))
 	for _, name := range imageNames {
-		reference, err := getRepositoryReferenceFromImageName(name.GetFullName())
+		ok, err := equalRegistryRepository(signatureIdentity, name.GetFullName())
 		if err != nil {
 			// Theoretically, all references should be parsable.
 			// In case we somehow get an invalid entry, we will log the occurrence and skip this entry.
-			log.Errorf("Failed to retrieve the reference for image name %s: %v", name.GetFullName(), err)
+			log.Errorf("Failed to compare image name %q and signature identity %q: %v", name.GetFullName(), signatureIdentity, err)
 			continue
 		}
-		if repoReference == reference {
+		if ok {
 			verifiedImageReferences = append(verifiedImageReferences, name.GetFullName())
 		}
 	}
 	return verifiedImageReferences, nil
 }
 
-func getRepositoryReferenceFromImageName(imageName string) (string, error) {
-	ref, err := name.ParseReference(imageName)
+func equalRegistryRepository(signatureIdentity, imageName string) (bool, error) {
+	sigRef, err := name.ParseReference(signatureIdentity)
 	if err != nil {
-		return "", err
+		return false, errors.Wrapf(err, "parsing reference for %q", signatureIdentity)
 	}
-	return fmt.Sprintf("%s/%s", ref.Context().Registry.RegistryStr(), ref.Context().RepositoryStr()), nil
+	imgRef, err := name.ParseReference(imageName)
+	if err != nil {
+		return false, errors.Wrapf(err, "parsing reference for %q", imageName)
+	}
+	return sigRef.Context().RegistryStr() == imgRef.Context().RegistryStr() &&
+		sigRef.Context().RepositoryStr() == imgRef.Context().RepositoryStr(), nil
 }

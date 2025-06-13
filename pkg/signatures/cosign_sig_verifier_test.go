@@ -701,26 +701,54 @@ func TestRetrieveVerificationDataFromImage_Failure(t *testing.T) {
 	}
 }
 
-func TestDockerReferenceFromImageName(t *testing.T) {
+func TestEqualRegistryRepository(t *testing.T) {
 	cases := map[string]struct {
-		name *storage.ImageName
-		res  string
+		signatureIdentity string
+		imageName         string
+		expected          bool
 	}{
-		"shouldn't rewrite registry name for quay.io": {
-			name: &storage.ImageName{FullName: "quay.io/some-repo/image:latest"},
-			res:  "quay.io/some-repo/image",
+		"match for quay.io with image tag": {
+			signatureIdentity: "quay.io/some-repo/image",
+			imageName:         "quay.io/some-repo/image:latest",
+			expected:          true,
 		},
-		"should rewrite registry name for docker.io": {
-			name: &storage.ImageName{FullName: "docker.io/some-repo/image:latest"},
-			res:  "index.docker.io/some-repo/image",
+		"match for quay.io with image digest": {
+			signatureIdentity: "quay.io/some-repo/image",
+			imageName:         "quay.io/some-repo/image@sha256:a97a153152fcd6410bdf4fb64f5622ecf97a753f07dcc89dab14509d059736cf",
+			expected:          true,
+		},
+		"match for quay.io with signature digest and image digest": {
+			signatureIdentity: "quay.io/some-repo/image@sha256:a97a153152fcd6410bdf4fb64f5622ecf97a753f07dcc89dab14509d059736cf",
+			imageName:         "quay.io/some-repo/image@sha256:a97a153152fcd6410bdf4fb64f5622ecf97a753f07dcc89dab14509d059736cf",
+			expected:          true,
+		},
+		"match for docker.io with image tag": {
+			signatureIdentity: "docker.io/some-repo/image",
+			imageName:         "docker.io/some-repo/image:latest",
+			expected:          true,
+		},
+		"match for docker.io with image digest": {
+			signatureIdentity: "docker.io/some-repo/image",
+			imageName:         "docker.io/some-repo/image@sha256:a97a153152fcd6410bdf4fb64f5622ecf97a753f07dcc89dab14509d059736cf",
+			expected:          true,
+		},
+		"match for docker.io with signature digest and image digest": {
+			signatureIdentity: "docker.io/some-repo/image@sha256:a97a153152fcd6410bdf4fb64f5622ecf97a753f07dcc89dab14509d059736cf",
+			imageName:         "docker.io/some-repo/image@sha256:a97a153152fcd6410bdf4fb64f5622ecf97a753f07dcc89dab14509d059736cf",
+			expected:          true,
+		},
+		"no match": {
+			signatureIdentity: "docker.io/some-repo",
+			imageName:         "quay.io/some-repo/image:latest",
+			expected:          false,
 		},
 	}
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			res, err := getRepositoryReferenceFromImageName(c.name.GetFullName())
+			ok, err := equalRegistryRepository(c.signatureIdentity, c.imageName)
 			assert.NoError(t, err)
-			assert.Equal(t, c.res, res)
+			assert.Equal(t, c.expected, ok)
 		})
 	}
 }
