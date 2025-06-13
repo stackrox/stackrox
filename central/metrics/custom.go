@@ -144,6 +144,6 @@ func RegisterCustomAggregatedMetric(name string, category string, period time.Du
 // according to the system private configuration.
 func SetCustomAggregatedCount(metricName string, labels prometheus.Labels, total int) {
 	if metric, ok := customAggregatedMetrics.Load(metricName); ok {
-		metric.(metricRecord).gauge.With(labels).Set(float64(total))
+		metric.(*metricRecord).gauge.With(labels).Set(float64(total))
 	}
 }
