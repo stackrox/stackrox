@@ -405,7 +405,7 @@ ruleset {
     // UnusedMethodParameter
     UnusedObject 
     // ROX-29720 - disable gcr.io until tests are fixed for metadata failures after migration to artifacts registry
-    //UnusedPrivateField 
+    //UnusedPrivateField
     UnusedPrivateMethod 
     UnusedPrivateMethodParameter 
     UnusedVariable 
