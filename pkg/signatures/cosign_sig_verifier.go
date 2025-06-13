@@ -397,10 +397,13 @@ func verifyImageSignature(ctx context.Context, signature oci.Signature,
 		return nil, errUnverifiedBundle
 	}
 	refs, err := getVerifiedImageReference(signature, image)
-	if len(refs) == 0 && err == nil {
+	if err != nil {
+		return nil, errors.Wrap(err, "getting verified image references")
+	}
+	if len(refs) == 0 {
 		return nil, errNoVerifiedReferences
 	}
-	return refs, err
+	return refs, nil
 }
 
 // getVerificationResultStatusFromErr will map an error to a specific storage.ImageSignatureVerificationResult_Status.
