@@ -130,9 +130,9 @@ class BuiltinPoliciesTest extends BaseSpecification {
 
         policyName                                                   | deploymentName
         // "30-Day Scan Age" <- Not covered
-        //TODO(ROX-29668) gcr.io sunset, tests need migrated to Artifacts Registry results.
+        //TODO(ROX-29720) gcr.io sunset, tests need migrated to Artifacts Registry results.
         //"ADD Command used instead of COPY"                           | TRIGGER_MOST
-        //TODO(ROX-29668) gcr.io sunset, tests need migrated to Artifacts Registry results.
+        //TODO(ROX-29720) gcr.io sunset, tests need migrated to Artifacts Registry results.
         //"Alpine Linux Package Manager (apk) in Image"                | TRIGGER_ALPINE
         "Alpine Linux Package Manager Execution"                     | TRIGGER_ALPINE
         // "CAP_SYS_ADMIN capability added" <- Not covered
@@ -144,11 +144,11 @@ class BuiltinPoliciesTest extends BaseSpecification {
         //TODO(ROX-26897)Fix regex for Curl in Image policy. Until then this test is disabled
         //"Curl in Image"                                              | TRIGGER_MOST
         "Emergency Deployment Annotation"                            | TRIGGER_MOST
-        //TODO(ROX-29668) gcr.io sunset, tests need migrated to Artifacts Registry results.
+        //TODO(ROX-29720) gcr.io sunset, tests need migrated to Artifacts Registry results.
         //"Fixable CVSS >= 6 and Privileged"                           | TRIGGER_MOST
         "Images with no scans"                                       | TRIGGER_UNSCANNED
         // "Improper Usage of Orchestrator Secrets Volume"          | TRIGGER_MOST  // ROX-5098 does not trigger
-        //TODO(ROX-29668) gcr.io sunset, tests need migrated to Artifacts Registry results.
+        //TODO(ROX-29720) gcr.io sunset, tests need migrated to Artifacts Registry results.
         //"Insecure specified in CMD"                                  | TRIGGER_MOST
         "iptables Execution"                                         | TRIGGER_MOST
         "Iptables or nftables Executed in Privileged Container"      | TRIGGER_MOST
@@ -171,7 +171,7 @@ class BuiltinPoliciesTest extends BaseSpecification {
         "Remote File Copy Binary Execution"                          | TRIGGER_MOST
         "Required Annotation: Email"                                 | TRIGGER_MOST
         "Required Annotation: Owner/Team"                            | TRIGGER_MOST
-        //TODO(ROX-29668) gcr.io sunset, tests need migrated to Artifacts Registry results.
+        //TODO(ROX-29720) gcr.io sunset, tests need migrated to Artifacts Registry results.
         //"Required Image Label"                                       | TRIGGER_MOST
         "Required Label: Owner/Team"                                 | TRIGGER_MOST
         "Secret Mounted as Environment Variable"                     | TRIGGER_MOST
@@ -183,7 +183,7 @@ class BuiltinPoliciesTest extends BaseSpecification {
         "systemctl Execution"                                        | TRIGGER_MOST
         "systemd Execution"                                          | TRIGGER_MOST
         "Ubuntu Package Manager Execution"                           | TRIGGER_MOST
-        //TODO(ROX-29668) gcr.io sunset, tests need migrated to Artifacts Registry results.
+        //TODO(ROX-29720) gcr.io sunset, tests need migrated to Artifacts Registry results.
         //"Wget in Image"                                              | TRIGGER_MOST
     }
 }

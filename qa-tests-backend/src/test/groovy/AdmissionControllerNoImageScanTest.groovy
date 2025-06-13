@@ -14,7 +14,7 @@ import spock.lang.Ignore
 import spock.lang.Shared
 import spock.lang.Tag
 
-@Ignore("ROX-29668 - gcr.io sunset, tests need migrated to Artifacts Registry results.")
+@Ignore("ROX-29720 - gcr.io sunset, tests need migrated to Artifacts Registry results.")
 @Tag("PZ")
 class AdmissionControllerNoImageScanTest extends BaseSpecification {
     @Shared
