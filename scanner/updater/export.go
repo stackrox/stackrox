@@ -27,7 +27,6 @@ import (
 )
 
 type ExportOptions struct {
-	SplitBundles  bool
 	ManualVulnURL string
 }
 
@@ -91,40 +90,20 @@ func Export(ctx context.Context, outputDir string, opts *ExportOptions) error {
 	}
 
 	// Export to bundle(s).
-	if opts.SplitBundles {
-		for name, o := range bundles {
-			ctx = zlog.ContextWithValues(ctx, "bundle", name)
-			w, err := zstdWriter(filepath.Join(outputDir, fmt.Sprintf("%s.json.zst", name)))
-			if err != nil {
-				return err
-			}
-			err = bundle(ctx, httpClient, w, o)
-			if err != nil {
-				_ = w.Close()
-				return err
-			}
-			if err := w.Close(); err != nil {
-				// Fail to close here means the data might not have been written fully, so we
-				// fail.
-				return fmt.Errorf("failed to close bundle output file: %w", err)
-			}
-		}
-	} else {
-		w, err := zstdWriter(filepath.Join(outputDir, "vulns.json.zst"))
+	for name, o := range bundles {
+		ctx = zlog.ContextWithValues(ctx, "bundle", name)
+		w, err := zstdWriter(filepath.Join(outputDir, fmt.Sprintf("%s.json.zst", name)))
 		if err != nil {
 			return err
 		}
-		for name, o := range bundles {
-			ctx = zlog.ContextWithValues(ctx, "bundle", name)
-			err := bundle(ctx, httpClient, w, o)
-			if err != nil {
-				_ = w.Close()
-				return err
-			}
+		err = bundle(ctx, httpClient, w, o)
+		if err != nil {
+			_ = w.Close()
+			return err
 		}
-		// Fail to close here means the data might not have been written fully, so we
-		// fail.
 		if err := w.Close(); err != nil {
+			// Fail to close here means the data might not have been written fully, so we
+			// fail.
 			return fmt.Errorf("failed to close bundle output file: %w", err)
 		}
 	}
