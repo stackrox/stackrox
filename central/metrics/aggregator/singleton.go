@@ -43,6 +43,8 @@ type Runner interface {
 	Reconfigure(*RunnerConfiguration)
 }
 
+// Singleton returns a runner, or nil if there were errors durig initialization.
+// nil runner is safe, but no-op.
 func Singleton() Runner {
 	oneRunner.Do(func() {
 		runner = makeRunner(configDS.Singleton(), deploymentDS.Singleton())
@@ -50,12 +52,12 @@ func Singleton() Runner {
 	return runner
 }
 
-func makeRunner(ds configDS.DataStore, dds deploymentDS.DataStore) *aggregatorRunner {
+func makeRunner(cds configDS.DataStore, dds deploymentDS.DataStore) *aggregatorRunner {
 	ar := &aggregatorRunner{
 		handlers: map[string]http.Handler{},
 	}
 
-	systemPrivateConfig, err := ds.GetPrivateConfig(
+	systemPrivateConfig, err := cds.GetPrivateConfig(
 		sac.WithAllAccess(context.Background()))
 	if err != nil {
 		log.Errorw("Failed to read Prometheus metrics configuration from the DB", logging.Err(err))
@@ -81,7 +83,7 @@ type RunnerConfiguration struct {
 
 func (ar *aggregatorRunner) ParseConfiguration(cfg *storage.PrometheusMetricsConfig) (*RunnerConfiguration, error) {
 	if ar == nil {
-		return nil, nil
+		return &RunnerConfiguration{}, nil
 	}
 	var err error
 	runnerConfig := &RunnerConfiguration{}
@@ -92,6 +94,7 @@ func (ar *aggregatorRunner) ParseConfiguration(cfg *storage.PrometheusMetricsCon
 	return runnerConfig, nil
 }
 
+// Reconfigure will panic on nil cfg. Don't pass nil.
 func (ar *aggregatorRunner) Reconfigure(cfg *RunnerConfiguration) {
 	if ar == nil {
 		return
@@ -114,9 +117,11 @@ func (ar *aggregatorRunner) Stop() {
 	}
 	ar.cancel()
 }
+
 func (ar *aggregatorRunner) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if ar == nil {
 		w.WriteHeader(http.StatusOK)
+		return
 	}
 
 	if h := ar.getHandler(req); h != nil {
