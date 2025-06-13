@@ -13,8 +13,8 @@ on:
     - synchronize
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ !startsWith(github.ref, 'release-') && !startsWith(github.ref, 'master/') }}
+  group: ${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
 
 jobs:
   check-crd-compatibility:
