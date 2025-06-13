@@ -29,10 +29,10 @@ import { NetworkPolicyState } from 'Containers/NetworkGraph/types/topology.type'
 import DeploymentPortConfig from 'Components/DeploymentPortConfig';
 import DeploymentContainerConfig from 'Components/DeploymentContainerConfig';
 
-import { ReactComponent as BothPolicyRules } from 'images/network-graph/both-policy-rules.svg';
-import { ReactComponent as EgressOnly } from 'images/network-graph/egress-only.svg';
-import { ReactComponent as IngressOnly } from 'images/network-graph/ingress-only.svg';
-import { ReactComponent as NoPolicyRules } from 'images/network-graph/no-policy-rules.svg';
+import BothPolicyRules from 'images/network-graph/both-policy-rules.svg?react';
+import EgressOnly from 'images/network-graph/egress-only.svg?react';
+import IngressOnly from 'images/network-graph/ingress-only.svg?react';
+import NoPolicyRules from 'images/network-graph/no-policy-rules.svg?react';
 import { deploymentTabs } from '../utils/deploymentUtils';
 
 import './DeploymentDetails.css';
