@@ -33,16 +33,7 @@ func TestMakeTrackerBase(t *testing.T) {
 	tracker := MakeTrackerBase("test", "test", testLabelGetters, nilGatherFunc, nil)
 	assert.NotNil(t, tracker)
 	assert.Nil(t, tracker.ticker)
-
-	cfg := tracker.GetConfiguration()
-	if assert.NotNil(t, cfg) {
-		assert.Empty(t, cfg.filter)
-		assert.Nil(t, cfg.metrics)
-		assert.Nil(t, cfg.metricRegistry)
-		assert.Empty(t, cfg.toAdd)
-		assert.Empty(t, cfg.toDelete)
-		assert.Zero(t, cfg.period)
-	}
+	assert.Nil(t, tracker.GetConfiguration())
 }
 
 func TestTrackerBase_Reconfigure(t *testing.T) {
@@ -106,14 +97,14 @@ func TestTrackerBase_Reconfigure(t *testing.T) {
 			toAdd:   metricNames,
 			period:  time.Hour,
 		}
+		// Initial configuration, track won't be called.
 		tracker.Reconfigure(ctx, cfg0)
 		config := tracker.GetConfiguration()
 		assert.Same(t, cfg0, config)
 		assert.NotNil(t, tracker.ticker)
 		assert.ElementsMatch(t, cfg0.toAdd, registered)
 		assert.Empty(t, unregistered)
-		// track() is called, so there is result from all metrics:
-		assert.ElementsMatch(t, slices.Collect(maps.Keys(result)), metricNames)
+		assert.Empty(t, result)
 
 		// Delete one random metric and update ticker:
 		result = make(map[MetricName][]*aggregatedRecord)
@@ -154,7 +145,9 @@ func TestTrackerBase_Track(t *testing.T) {
 			result[metricName] = append(result[metricName], &aggregatedRecord{labels, total})
 		},
 	)
-	tracker.config.metrics = makeTestMetricLabelExpression(t)
+	tracker.config = &Configuration{
+		metrics: makeTestMetricLabelExpression(t),
+	}
 	tracker.track(context.Background())
 
 	if assert.Len(t, result, 2) &&

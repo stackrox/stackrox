@@ -80,7 +80,6 @@ func MakeTrackerBase[Finding Countable](category, description string,
 		getters:     makeGettersMap(getters),
 		generator:   generator,
 		gauge:       gauge,
-		config:      &Configuration{},
 	}
 	tracker.registerMetricFunc = tracker.registerMetric
 	tracker.unregisterMetricFunc = tracker.unregisterMetric
@@ -95,19 +94,21 @@ func (tracker *TrackerBase[Finding]) Reconfigure(ctx context.Context, cfg *Confi
 	}
 	previous := tracker.SetConfiguration(cfg)
 	tracker.updateTicker()
-	// Force track only on reconfiguration, not on the initial tracker creation.
-	if previous.period != cfg.period && cfg.period != 0 {
-		tracker.track(ctx)
-	}
-	if cfg.period == 0 {
-		log.Debugf("Metrics collection has been disabled for %s", tracker.category)
-		for metric := range previous.metrics {
+	if previous != nil {
+		if cfg.period != 0 {
+			// Force track only on reconfiguration, not on the initial tracker
+			// creation.
+			tracker.track(ctx)
+		} else {
+			log.Debugf("Metrics collection has been disabled for %s", tracker.category)
+			for metric := range previous.metrics {
+				tracker.unregisterMetricFunc(metric)
+			}
+			return
+		}
+		for _, metric := range cfg.toDelete {
 			tracker.unregisterMetricFunc(metric)
 		}
-		return
-	}
-	for _, metric := range cfg.toDelete {
-		tracker.unregisterMetricFunc(metric)
 	}
 	for _, metric := range cfg.toAdd {
 		tracker.registerMetricFunc(cfg, metric)
@@ -140,11 +141,12 @@ func (tracker *TrackerBase[Finding]) registerMetric(cfg *Configuration, metric M
 func (tracker *TrackerBase[Finding]) updateTicker() {
 	tracker.metricsConfigMux.Lock()
 	defer tracker.metricsConfigMux.Unlock()
-	if tracker.config.period > 0 {
+	period := tracker.config.period
+	if period > 0 {
 		if tracker.ticker == nil {
-			tracker.ticker = time.NewTicker(tracker.config.period)
+			tracker.ticker = time.NewTicker(period)
 		} else {
-			tracker.ticker.Reset(tracker.config.period)
+			tracker.ticker.Reset(period)
 		}
 		return
 	}
