@@ -79,11 +79,12 @@ func (s *flowPersisterImpl) update(ctx context.Context, newFlows []*storage.Netw
 
 	if features.ExternalIPs.Enabled() {
 		for _, newFlow := range upsertedFlows {
-			err := s.updateExternalNetworkEntityIfDiscovered(ctx, newFlow.GetProps().DstEntity)
+            props := newFlow.GetProps()
+			err := s.updateExternalNetworkEntityIfDiscovered(ctx, props.DstEntity)
 			if err != nil {
 				return err
 			}
-			err = s.updateExternalNetworkEntityIfDiscovered(ctx, newFlow.GetProps().SrcEntity)
+			err = s.updateExternalNetworkEntityIfDiscovered(ctx, props.SrcEntity)
 			if err != nil {
 				return err
 			}
