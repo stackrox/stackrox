@@ -18,7 +18,7 @@
   {{- if $.Release.IsInstall -}}
     {{- $_ := set $scannerV4 "disable" false -}}
   {{- end -}}
-  
+
   {{/* If this is an upgrade and Scanner V4 Indexer is installed, it should stay installed. */}}
   {{- if $scannerV4.disable -}}
     {{ $indexerDeployment := dict }}
