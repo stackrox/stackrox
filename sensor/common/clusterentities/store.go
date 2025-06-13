@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"maps"
+	"slices"
 	"strings"
 	"time"
 
@@ -62,7 +63,13 @@ func (ed *EntityData) GetDetails() (containerID, podIP string) {
 		containerID = s
 		break
 	}
-	for ip := range ed.ips {
+	// Sort the IPs to deterministically return the first IP if more than one are stored.
+	// The slice should contain single element in most of the cases.
+	sortedIPs := slices.SortedFunc(maps.Keys(ed.ips), func(a, b net.IPAddress) int {
+		return strings.Compare(a.String(), b.String())
+	})
+
+	for _, ip := range sortedIPs {
 		if ip.IsValid() {
 			podIP = ip.String()
 			return

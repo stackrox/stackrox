@@ -116,7 +116,7 @@ func TestEntityData_GetDetails(t *testing.T) {
 			wantContainerID: "abc",
 			wantPodIP:       "10.0.0.1",
 		},
-		"Multiple values": {
+		"Multiple sorted values": {
 			edFun: func() *EntityData {
 				ed := &EntityData{}
 				ed.AddIP(net.ParseIP("10.0.0.1"))
@@ -127,6 +127,18 @@ func TestEntityData_GetDetails(t *testing.T) {
 			},
 			wantContainerID: "abc",
 			wantPodIP:       "10.0.0.1",
+		},
+		"Multiple unsorted values": {
+			edFun: func() *EntityData {
+				ed := &EntityData{}
+				ed.AddIP(net.ParseIP("10.0.0.9"))
+				ed.AddIP(net.ParseIP("10.0.0.2"))
+				ed.AddContainerID("abc", ContainerMetadata{})
+				ed.AddContainerID("def", ContainerMetadata{})
+				return ed
+			},
+			wantContainerID: "abc",
+			wantPodIP:       "10.0.0.2",
 		},
 		"Invalid IP": {
 			edFun: func() *EntityData {
