@@ -396,7 +396,11 @@ func verifyImageSignature(ctx context.Context, signature oci.Signature,
 	if !bundleVerified && !cosignOpts.IgnoreTlog {
 		return nil, errUnverifiedBundle
 	}
-	return getVerifiedImageReference(signature, image)
+	refs, err := getVerifiedImageReference(signature, image)
+	if len(refs) == 0 && err == nil {
+		return nil, errors.New("no verified references")
+	}
+	return refs, err
 }
 
 // getVerificationResultStatusFromErr will map an error to a specific storage.ImageSignatureVerificationResult_Status.
@@ -522,9 +526,6 @@ func getVerifiedImageReference(signature oci.Signature, image *storage.Image) ([
 		if repoReference == reference {
 			verifiedImageReferences = append(verifiedImageReferences, name.GetFullName())
 		}
-	}
-	if len(verifiedImageReferences) == 0 {
-		return nil, errors.Errorf("no verified references for %q", dockerReference)
 	}
 	return verifiedImageReferences, nil
 }
