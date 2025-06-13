@@ -904,8 +904,6 @@ github.com/hashicorp/vault/api v1.16.0 h1:nbEYGJiAPGzT9U4oWgaaB0g+Rj8E59QuHKyA5L
 github.com/hashicorp/vault/api v1.16.0/go.mod h1:KhuUhzOD8lDSk29AtzNjgAu2kxRA9jL9NAbkFlqvkBA=
 github.com/heimdalr/dag v1.5.0 h1:hqVtijvY776P5OKP3QbdVBRt3Xxq6BYopz3XgklsGvo=
 github.com/heimdalr/dag v1.5.0/go.mod h1:lthekrHl01dddmzqyBQ1YZbi7XcVGGzjFo0jIky5knc=
-github.com/helm/helm-mapkubeapis v0.5.2 h1:pxiy9J5CtIAH2KCBaJEvgHxeoPhgTwzF2AXa92hPUzs=
-github.com/helm/helm-mapkubeapis v0.5.2/go.mod h1:6bgWDRUOAiVk0zw8s5IqM6TIDN2knjxvYImdfqdGwLE=
 github.com/howeyc/gopass v0.0.0-20210920133722-c8aef6fb66ef h1:A9HsByNhogrvm9cWb28sjiS3i7tcKCkflWFEkHfuAgM=
 github.com/howeyc/gopass v0.0.0-20210920133722-c8aef6fb66ef/go.mod h1:lADxMC39cJJqL93Duh1xhAs4I2Zs8mKS89XWXFGp9cs=
 github.com/hpcloud/tail v1.0.0/go.mod h1:ab1qPbhIpdTxEkNHXyeSf5vhxWSCs/tWer42PpOxQnU=
@@ -921,8 +919,8 @@ github.com/in-toto/in-toto-golang v0.9.0/go.mod h1:xsBVrVsHNsB61++S6Dy2vWosKhuA3
 github.com/inconshreveable/mousetrap v1.0.0/go.mod h1:PxqpIevigyE2G7u3NXJIT2ANytuPF1OarO4DADm73n8=
 github.com/inconshreveable/mousetrap v1.1.0 h1:wN+x4NVGpMsO7ErUn/mUI3vEoE6Jt13X2s0bqwp9tc8=
 github.com/inconshreveable/mousetrap v1.1.0/go.mod h1:vpF70FUmC8bwa3OWnCshd2FqLfsEA9PFc4w1p2J65bw=
-github.com/itchyny/gojq v0.12.15 h1:WC1Nxbx4Ifw5U2oQWACYz32JK8G9qxNtHzrvW4KEcqI=
-github.com/itchyny/gojq v0.12.15/go.mod h1:uWAHCbCIla1jiNxmeT5/B5mOjSdfkCq6p8vxWg+BM10=
+github.com/itchyny/gojq v0.12.17 h1:8av8eGduDb5+rvEdaOO+zQUjA04MS0m3Ps8HiD+fceg=
+github.com/itchyny/gojq v0.12.17/go.mod h1:WBrEMkgAfAGO1LUcGOckBl5O726KPp+OlkKug0I/FEY=
 github.com/itchyny/timefmt-go v0.1.6 h1:ia3s54iciXDdzWzwaVKXZPbiXzxxnv1SPGFfM/myJ5Q=
 github.com/itchyny/timefmt-go v0.1.6/go.mod h1:RRDZYC5s9ErkjQvTvvU7keJjxUYzIISJGxm9/mAERQg=
 github.com/jackc/chunkreader v1.0.0/go.mod h1:RT6O25fNZIuasFJRyZ4R/Y2BbhasbmZXF9QQ7T3kePo=
@@ -1270,6 +1268,8 @@ github.com/planetscale/vtprotobuf v0.6.1-0.20240409071808-615f978279ca/go.mod h1
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 h1:Jamvg5psRIccs7FGNTlIRMkT8wgtp5eCXdBlqhYGL6U=
 github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
+github.com/porridge/helm-mapkubeapis v0.0.0-20250220113302-2f740596cb45 h1:NBxeCQB+gxRMShJjjlTZ4iTN25ZGom3ganG/VceDbg8=
+github.com/porridge/helm-mapkubeapis v0.0.0-20250220113302-2f740596cb45/go.mod h1:6bgWDRUOAiVk0zw8s5IqM6TIDN2knjxvYImdfqdGwLE=
 github.com/posener/complete v1.1.1/go.mod h1:em0nMJCgc9GFtwrmVmEMR/ZL6WyhyjMBndrE9hABlRI=
 github.com/posener/complete v1.2.3/go.mod h1:WZIdtGGp+qx0sLrYKtIRAruyNpv6hFCicSgv7Sy7s/s=
 github.com/poy/onpar v1.1.2 h1:QaNrNiZx0+Nar5dLgTVp5mXkyoVFIbepjyEoGSnhbAY=
@@ -1444,8 +1444,8 @@ github.com/stackrox/external-network-pusher v0.0.0-20231115153210-b82d72f500a2 h
 github.com/stackrox/external-network-pusher v0.0.0-20231115153210-b82d72f500a2/go.mod h1:M22zIb5zuZCYbYwcn9iOWswNBrxE+YPkAHU5Bkg5XE4=
 github.com/stackrox/helm-operator v0.0.12-0.20250211113659-1b2840226a8b h1:l8jO0gzzbgvrPB7ojbTJP8P7516JL3fjh4BJn2/SqZM=
 github.com/stackrox/helm-operator v0.0.12-0.20250211113659-1b2840226a8b/go.mod h1:Sc+8bE38xTCgCChBUvtq/PxatEg9fAypr7S5iAw8nlA=
-github.com/stackrox/helmtest v0.0.5 h1:EDaCkqH//81qVZseJJSkcUoTaz4xwfrSTWyYsFF0UGA=
-github.com/stackrox/helmtest v0.0.5/go.mod h1:DoML7dGT73/Ybuk71zoQBjgC4UMHUyodwy6Njn8yQM8=
+github.com/stackrox/helmtest v0.0.6 h1:2/GagEr1ZktQ2NGdB+IAH6gXbZN8Y05/YgYSSvy9Kvc=
+github.com/stackrox/helmtest v0.0.6/go.mod h1:ylRwuZH6U9E4GSrcuFFKgo0ArVwKMwxocYnXJI+VnXU=
 github.com/stackrox/istio-cves v0.0.0-20221007013142-0bde9b541ec8 h1:rUIvoAHokPcd92aJT2gJwVeyE8tMuaqS5l5s3cEgXFY=
 github.com/stackrox/istio-cves v0.0.0-20221007013142-0bde9b541ec8/go.mod h1:ZF7mH4kH1G+82HxR3uFDHvyLG8eCOdrh1RDyQcTGkBA=
 github.com/stackrox/k8s-cves v0.0.0-20220818200547-7d0d1420c58d h1:88Iui7fSMKgXvpyfBlbP3qosrqyv3qMgOJ6JJ4V4tFQ=
