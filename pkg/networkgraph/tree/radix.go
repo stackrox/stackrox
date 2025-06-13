@@ -420,7 +420,7 @@ func removeRecursively(node *nRadixNode) {
 
 	if node.left == nil && node.right == nil && node.value == nil {
 		node = nil
-        	removeRecursively(parent)
+		removeRecursively(parent)
 	}
 }
 
@@ -443,7 +443,7 @@ func (t *nRadixTree) Remove(key string) {
 	parent := node.parent
 	if node.left == nil && node.right == nil {
 		node = nil
-        	removeRecursively(parent)
+		removeRecursively(parent)
 	}
 
 	delete(t.valueNodes, key)
