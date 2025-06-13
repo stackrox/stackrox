@@ -11,6 +11,7 @@
 #     https://github.com/bats-core/bats-core
 #     https://github.com/bats-core/bats-assert)
 #
+# .
 
 set -euo pipefail
 
