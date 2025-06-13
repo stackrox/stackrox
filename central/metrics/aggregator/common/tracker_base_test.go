@@ -49,6 +49,21 @@ func TestTrackerBase_Reconfigure(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	t.Run("nil configuration", func(t *testing.T) {
+		tracker := MakeTrackerBase("test", "test", testLabelGetters, nilGatherFunc, nil)
+		calledRegistry := false
+		tracker.registerMetricFunc = func(*Configuration, MetricName) { calledRegistry = true }
+		tracker.unregisterMetricFunc = func(MetricName) { calledRegistry = true }
+
+		tracker.Reconfigure(ctx, nil)
+		config := tracker.GetConfiguration()
+		if assert.NotNil(t, config) {
+			assert.Nil(t, config.metrics)
+			assert.Zero(t, config.period)
+		}
+		assert.False(t, calledRegistry)
+	})
+
 	t.Run("test 0 period", func(t *testing.T) {
 		tracker := MakeTrackerBase("test", "test", testLabelGetters, nilGatherFunc, nil)
 		cfg0 := &Configuration{
@@ -122,12 +137,7 @@ func TestTrackerBase_Reconfigure(t *testing.T) {
 		result = make(map[MetricName][]*aggregatedRecord)
 		registered = []MetricName{}
 		unregistered = []MetricName{}
-		cfg2 := &Configuration{
-			metrics: mcfg,
-			period:  0,
-		}
-		tracker.Reconfigure(ctx, cfg2)
-		assert.Same(t, cfg2, tracker.GetConfiguration())
+		tracker.Reconfigure(ctx, nil)
 		assert.Empty(t, registered)
 		assert.ElementsMatch(t, metricNames[1:], unregistered)
 		assert.Empty(t, result)

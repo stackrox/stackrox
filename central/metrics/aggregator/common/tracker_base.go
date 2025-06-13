@@ -90,6 +90,9 @@ func MakeTrackerBase[Finding Countable](category, description string,
 // Reconfigure assumes the configuration has been validated, so doesn't return
 // an error.
 func (tracker *TrackerBase[Finding]) Reconfigure(ctx context.Context, cfg *Configuration) {
+	if cfg == nil {
+		cfg = &Configuration{}
+	}
 	previous := tracker.SetConfiguration(cfg)
 	tracker.updateTicker()
 	// Force track only on reconfiguration, not on the initial tracker creation.
