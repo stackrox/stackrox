@@ -1,0 +1,55 @@
+package heritage
+
+import (
+	"encoding/json"
+
+	"github.com/pkg/errors"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+func pastSensorDataToConfigMap(data ...*PastSensor) (*v1.ConfigMap, error) {
+	if data == nil {
+		return nil, nil
+	}
+	dataMap := make(map[string]string, len(data))
+	byteEntry, err := json.Marshal(data)
+	if err != nil {
+		return nil, errors.Wrapf(err, "marshalling data for %v", data)
+	}
+	dataMap[configMapKey] = string(byteEntry)
+
+	return &v1.ConfigMap{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "ConfigMap",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: cmName,
+			Annotations: map[string]string{
+				annotationInfoKey: annotationInfoText,
+			},
+		},
+		Data: dataMap,
+	}, nil
+}
+
+func configMapToPastSensorData(cm *v1.ConfigMap) ([]*PastSensor, error) {
+	if cm == nil {
+		return nil, nil
+	}
+	data := make([]*PastSensor, 0, len(cm.Data))
+	for key, jsonStr := range cm.Data {
+		if key != configMapKey {
+			continue
+		}
+		var entries []PastSensor
+		if err := json.Unmarshal([]byte(jsonStr), &entries); err != nil {
+			return nil, errors.Wrapf(err, "unmarshalling data %v", jsonStr)
+		}
+		for _, entry := range entries {
+			data = append(data, &entry)
+		}
+	}
+	return data, nil
+}
