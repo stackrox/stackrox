@@ -16,7 +16,7 @@ message GetVirtualMachineRequest {
 }
 
 message ListVirtualMachinesResponse {
-  repeated storage.VirtualMachine virtualmachines = 1;
+  repeated storage.VirtualMachine virtual_machines = 1;
 }
 
 message DeleteVirtualMachinesRequest {

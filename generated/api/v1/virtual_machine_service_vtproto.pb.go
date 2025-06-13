@@ -45,7 +45,7 @@ func (m *ListVirtualMachinesResponse) CloneVT() *ListVirtualMachinesResponse {
 		return (*ListVirtualMachinesResponse)(nil)
 	}
 	r := new(ListVirtualMachinesResponse)
-	if rhs := m.Virtualmachines; rhs != nil {
+	if rhs := m.VirtualMachines; rhs != nil {
 		tmpContainer := make([]*storage.VirtualMachine, len(rhs))
 		for k, v := range rhs {
 			if vtpb, ok := interface{}(v).(interface {
@@ -56,7 +56,7 @@ func (m *ListVirtualMachinesResponse) CloneVT() *ListVirtualMachinesResponse {
 				tmpContainer[k] = proto.Clone(v).(*storage.VirtualMachine)
 			}
 		}
-		r.Virtualmachines = tmpContainer
+		r.VirtualMachines = tmpContainer
 	}
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
@@ -136,11 +136,11 @@ func (this *ListVirtualMachinesResponse) EqualVT(that *ListVirtualMachinesRespon
 	} else if this == nil || that == nil {
 		return false
 	}
-	if len(this.Virtualmachines) != len(that.Virtualmachines) {
+	if len(this.VirtualMachines) != len(that.VirtualMachines) {
 		return false
 	}
-	for i, vx := range this.Virtualmachines {
-		vy := that.Virtualmachines[i]
+	for i, vx := range this.VirtualMachines {
+		vy := that.VirtualMachines[i]
 		if p, q := vx, vy; p != q {
 			if p == nil {
 				p = &storage.VirtualMachine{}
@@ -303,9 +303,9 @@ func (m *ListVirtualMachinesResponse) MarshalToSizedBufferVT(dAtA []byte) (int, 
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if len(m.Virtualmachines) > 0 {
-		for iNdEx := len(m.Virtualmachines) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := interface{}(m.Virtualmachines[iNdEx]).(interface {
+	if len(m.VirtualMachines) > 0 {
+		for iNdEx := len(m.VirtualMachines) - 1; iNdEx >= 0; iNdEx-- {
+			if vtmsg, ok := interface{}(m.VirtualMachines[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -315,7 +315,7 @@ func (m *ListVirtualMachinesResponse) MarshalToSizedBufferVT(dAtA []byte) (int, 
 				i -= size
 				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 			} else {
-				encoded, err := proto.Marshal(m.Virtualmachines[iNdEx])
+				encoded, err := proto.Marshal(m.VirtualMachines[iNdEx])
 				if err != nil {
 					return 0, err
 				}
@@ -457,8 +457,8 @@ func (m *ListVirtualMachinesResponse) SizeVT() (n int) {
 	}
 	var l int
 	_ = l
-	if len(m.Virtualmachines) > 0 {
-		for _, e := range m.Virtualmachines {
+	if len(m.VirtualMachines) > 0 {
+		for _, e := range m.VirtualMachines {
 			if size, ok := interface{}(e).(interface {
 				SizeVT() int
 			}); ok {
@@ -660,7 +660,7 @@ func (m *ListVirtualMachinesResponse) UnmarshalVT(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Virtualmachines", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field VirtualMachines", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -687,15 +687,15 @@ func (m *ListVirtualMachinesResponse) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Virtualmachines = append(m.Virtualmachines, &storage.VirtualMachine{})
-			if unmarshal, ok := interface{}(m.Virtualmachines[len(m.Virtualmachines)-1]).(interface {
+			m.VirtualMachines = append(m.VirtualMachines, &storage.VirtualMachine{})
+			if unmarshal, ok := interface{}(m.VirtualMachines[len(m.VirtualMachines)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
 			} else {
-				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Virtualmachines[len(m.Virtualmachines)-1]); err != nil {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.VirtualMachines[len(m.VirtualMachines)-1]); err != nil {
 					return err
 				}
 			}
@@ -1077,7 +1077,7 @@ func (m *ListVirtualMachinesResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Virtualmachines", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field VirtualMachines", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -1104,15 +1104,15 @@ func (m *ListVirtualMachinesResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Virtualmachines = append(m.Virtualmachines, &storage.VirtualMachine{})
-			if unmarshal, ok := interface{}(m.Virtualmachines[len(m.Virtualmachines)-1]).(interface {
+			m.VirtualMachines = append(m.VirtualMachines, &storage.VirtualMachine{})
+			if unmarshal, ok := interface{}(m.VirtualMachines[len(m.VirtualMachines)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
 			} else {
-				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Virtualmachines[len(m.Virtualmachines)-1]); err != nil {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.VirtualMachines[len(m.VirtualMachines)-1]); err != nil {
 					return err
 				}
 			}

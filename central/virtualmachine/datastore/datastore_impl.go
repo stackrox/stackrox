@@ -54,7 +54,7 @@ func (ds *datastoreImpl) SearchVirtualMachines(ctx context.Context, q *v1.Query)
 // SearchRawVirtualMachines delegates to the underlying searcher.
 func (ds *datastoreImpl) SearchRawVirtualMachines(ctx context.Context, q *v1.Query) ([]*storage.VirtualMachine, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "VirtualMachine", "SearchRawVirtualMachines")
-	return []*storage.VirtualMachine{}, nil
+	return ds.virtualMachines, nil
 }
 
 // CountVirtualMachines delegates to the underlying store.

@@ -865,7 +865,7 @@
     "v1ListVirtualMachinesResponse": {
       "type": "object",
       "properties": {
-        "virtualmachines": {
+        "virtualMachines": {
           "type": "array",
           "items": {
             "type": "object",

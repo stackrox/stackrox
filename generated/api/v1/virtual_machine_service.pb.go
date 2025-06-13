@@ -85,7 +85,7 @@ func (x *GetVirtualMachineRequest) GetStripDescription() bool {
 
 type ListVirtualMachinesResponse struct {
 	state           protoimpl.MessageState    `protogen:"open.v1"`
-	Virtualmachines []*storage.VirtualMachine `protobuf:"bytes,1,rep,name=virtualmachines,proto3" json:"virtualmachines,omitempty"`
+	VirtualMachines []*storage.VirtualMachine `protobuf:"bytes,1,rep,name=virtual_machines,json=virtualMachines,proto3" json:"virtual_machines,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -120,9 +120,9 @@ func (*ListVirtualMachinesResponse) Descriptor() ([]byte, []int) {
 	return file_api_v1_virtual_machine_service_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *ListVirtualMachinesResponse) GetVirtualmachines() []*storage.VirtualMachine {
+func (x *ListVirtualMachinesResponse) GetVirtualMachines() []*storage.VirtualMachine {
 	if x != nil {
-		return x.Virtualmachines
+		return x.VirtualMachines
 	}
 	return nil
 }
@@ -239,9 +239,9 @@ const file_api_v1_virtual_machine_service_proto_rawDesc = "" +
 	"\x18GetVirtualMachineRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12'\n" +
 	"\x0finclude_snoozed\x18\x02 \x01(\bR\x0eincludeSnoozed\x12+\n" +
-	"\x11strip_description\x18\x03 \x01(\bR\x10stripDescription\"`\n" +
-	"\x1bListVirtualMachinesResponse\x12A\n" +
-	"\x0fvirtualmachines\x18\x01 \x03(\v2\x17.storage.VirtualMachineR\x0fvirtualmachines\"\\\n" +
+	"\x11strip_description\x18\x03 \x01(\bR\x10stripDescription\"a\n" +
+	"\x1bListVirtualMachinesResponse\x12B\n" +
+	"\x10virtual_machines\x18\x01 \x03(\v2\x17.storage.VirtualMachineR\x0fvirtualMachines\"\\\n" +
 	"\x1cDeleteVirtualMachinesRequest\x12\"\n" +
 	"\x05query\x18\x01 \x01(\v2\f.v1.RawQueryR\x05query\x12\x18\n" +
 	"\aconfirm\x18\x02 \x01(\bR\aconfirm\"Y\n" +
@@ -277,7 +277,7 @@ var file_api_v1_virtual_machine_service_proto_goTypes = []any{
 	(*RawQuery)(nil),                      // 5: v1.RawQuery
 }
 var file_api_v1_virtual_machine_service_proto_depIdxs = []int32{
-	4, // 0: v1.ListVirtualMachinesResponse.virtualmachines:type_name -> storage.VirtualMachine
+	4, // 0: v1.ListVirtualMachinesResponse.virtual_machines:type_name -> storage.VirtualMachine
 	5, // 1: v1.DeleteVirtualMachinesRequest.query:type_name -> v1.RawQuery
 	0, // 2: v1.VirtualMachineService.GetVirtualMachine:input_type -> v1.GetVirtualMachineRequest
 	5, // 3: v1.VirtualMachineService.ListVirtualMachines:input_type -> v1.RawQuery
