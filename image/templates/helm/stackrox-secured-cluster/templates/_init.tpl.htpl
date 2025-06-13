@@ -348,7 +348,6 @@ The following block checks for the validity of the provided init bundle. (`helm 
   {{ if $centralDeployment.result }}
     {{ include "srox.note" (list $ "Detected central running in the same namespace. Not deploying scanner from this chart and configuring sensor to use existing scanner instance, if any.") }}
     {{ $_ := set $._rox.scanner "disable" true }}
-    {{ $_ := set $._rox.scannerV4 "disable" true }}
   {{ end }}
 
   {{ $_ := set $._rox.sensor.localImageScanning "enabled" "true" }}
