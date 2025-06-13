@@ -2,13 +2,12 @@ syntax = "proto3";
 
 package v1;
 
-import "api/v1/empty.proto";
 import "api/v1/search_service.proto";
 import weak "google/api/annotations.proto";
-import "internalapi/scanner/v4/common.proto";
-import "scanner/api/v1/component.proto";
-import "scanner/api/v1/note.proto";
 import "storage/virtual_machine.proto";
+
+option go_package = "./api/v1;v1";
+option java_package = "io.stackrox.proto.api.v1";
 
 message GetVirtualMachineRequest {
   string id = 1;
@@ -18,68 +17,6 @@ message GetVirtualMachineRequest {
 
 message ListVirtualMachinesResponse {
   repeated storage.VirtualMachine virtualmachines = 1;
-}
-
-message CountVirtualMachinesResponse {
-  int32 count = 1;
-}
-
-message ScanVirtualMachineRequest {
-  string virtualmachine_name = 1;
-  bool force = 2;
-  bool include_snoozed = 3;
-  // Cluster to delegate scan to, may be the cluster's name or ID.
-  string cluster = 4;
-  // Namespace on the secured cluster from which to read context information
-  // when delegating virtualmachine scans, specifically pull secrets to access the virtualmachine
-  // registry.
-  string namespace = 5;
-}
-
-message ScanVirtualMachineInternalRequest {
-  message Source {
-    string cluster_id = 1;
-    string namespace = 2;
-    repeated string virtualmachine_pull_secrets = 3;
-  }
-
-  storage.ContainerVirtualMachine virtualmachine = 1;
-  reserved 2;
-  bool cached_only = 3;
-  Source source = 4;
-}
-
-message ScanVirtualMachineInternalResponse {
-  storage.VirtualMachine virtualmachine = 1;
-}
-
-message GetVirtualMachineVulnerabilitiesInternalRequest {
-  string virtualmachine_id = 1;
-  storage.VirtualMachineName virtualmachine_name = 2;
-  storage.VirtualMachineMetadata metadata = 3;
-  bool is_cluster_local = 6;
-  scannerV1.Components components = 4;
-  repeated scannerV1.Note notes = 5;
-}
-
-message EnrichLocalVirtualMachineInternalRequest {
-  string indexer_version = 12;
-  string virtualmachine_id = 1;
-  storage.VirtualMachineName virtualmachine_name = 2;
-  storage.VirtualMachineMetadata metadata = 3;
-  storage.VirtualMachineSignature virtualmachine_signature = 4;
-  scannerV1.Components components = 5;
-  repeated scannerV1.Note notes = 6;
-  repeated storage.VirtualMachine.Note virtualmachine_notes = 7;
-  string error = 8;
-  string request_id = 9;
-  bool force = 10;
-  scanner.v4.Contents v4_contents = 11;
-}
-
-message UpdateLocalScanStatusInternalRequest {
-  string request_id = 1;
-  string error = 2;
 }
 
 message DeleteVirtualMachinesRequest {
@@ -92,59 +29,6 @@ message DeleteVirtualMachinesResponse {
   bool dry_run = 2;
 }
 
-message WatchVirtualMachineRequest {
-  // The name of the virtualmachine.
-  // This must be fully qualified, including a tag,
-  // but must NOT include a SHA.
-  string name = 1;
-}
-
-message WatchVirtualMachineResponse {
-  // If the virtualmachine was scanned successfully, this returns the normalized name of the virtualmachine.
-  // This depends on what we get from the registry.
-  // For example, "docker.io/wordpress:latest" -> "docker.io/library/wordpress:latest"
-  string normalized_name = 1;
-
-  enum ErrorType {
-    NO_ERROR = 0;
-    INVALID_virtualmachine_NAME = 1;
-    NO_VALID_INTEGRATION = 2;
-    SCAN_FAILED = 3;
-  }
-
-  ErrorType error_type = 2;
-
-  // Only set if error_type is NOT equal to "NO_ERROR".
-  string error_message = 3;
-}
-
-message UnwatchVirtualMachineRequest {
-  // The name of the virtualmachine to unwatch.
-  // Should match the name of a previously watched virtualmachine.
-  string name = 1;
-}
-
-message GetWatchedVirtualMachinesResponse {
-  repeated storage.WatchedVirtualMachine watched_virtualmachines = 1;
-}
-
-// ScanVirtualMachineInternalResponseDetails contains proto messages that are added to details
-// when returning errors from the ScanVirtualMachineInternal endpoint.
-message ScanVirtualMachineInternalResponseDetails {
-  // TooManyParallelScans tells sensor that there are too many parallel scans, and that it will need to
-  // retry later.
-  message TooManyParallelScans {}
-}
-
-message ExportVirtualMachineRequest {
-  int32 timeout = 1;
-  string query = 2;
-}
-
-message ExportVirtualMachineResponse {
-  storage.VirtualMachine virtualmachine = 1;
-}
-
 service VirtualMachineService {
   rpc GetVirtualMachine(GetVirtualMachineRequest) returns (storage.VirtualMachine) {
     option (google.api.http) = {get: "/v1/virtualmachine/{id}"};
@@ -154,15 +38,7 @@ service VirtualMachineService {
     option (google.api.http) = {get: "/v1/virtualmachines"};
   }
 
-  rpc EnrichLocalVirtualMachineInternal(EnrichLocalVirtualMachineInternalRequest) returns (ScanVirtualMachineInternalResponse);
-
-  rpc UpdateLocalScanStatusInternal(UpdateLocalScanStatusInternalRequest) returns (Empty);
-
   rpc DeleteVirtualMachines(DeleteVirtualMachinesRequest) returns (DeleteVirtualMachinesResponse) {
     option (google.api.http) = {delete: "/v1/virtualmachines"};
-  }
-
-  rpc ExportVirtualMachines(ExportVirtualMachineRequest) returns (stream ExportVirtualMachineResponse) {
-    option (google.api.http) = {get: "/v1/export/virtualmachines"};
   }
 }

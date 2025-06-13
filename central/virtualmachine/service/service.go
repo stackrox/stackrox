@@ -30,7 +30,7 @@ type Service interface {
 
 	AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error)
 
-	v1.ImageServiceServer
+	v1.VirtualMachineServiceServer
 }
 
 // New returns a new Service instance using the given DataStore.
