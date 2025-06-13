@@ -3,7 +3,6 @@ package heritage
 import (
 	"cmp"
 	"context"
-	"encoding/json"
 	"fmt"
 	"slices"
 	"sync/atomic"
@@ -43,6 +42,15 @@ func (a *PastSensor) ReverseCompare(b *PastSensor) int {
 		return n
 	}
 	return 0
+}
+
+func pastSensorDataString(data []*PastSensor) string {
+	str := ""
+	for i, entry := range data {
+		str = fmt.Sprintf("%s[%d]: (%s, %s) start=%s, lastUpdate=%s; ",
+			str, i, entry.ContainerID, entry.PodIP, entry.SensorStart, entry.LatestUpdate)
+	}
+	return str
 }
 
 const (
@@ -194,15 +202,6 @@ func (h *Manager) UpsertConfigMap(ctx context.Context, now time.Time) error {
 	return h.write(ctx, h.cache...)
 }
 
-func pastSensorDataString(data []*PastSensor) string {
-	str := ""
-	for i, entry := range data {
-		str = fmt.Sprintf("%s[%d]: (%s, %s) start=%s, lastUpdate=%s; ",
-			str, i, entry.ContainerID, entry.PodIP, entry.SensorStart, entry.LatestUpdate)
-	}
-	return str
-}
-
 func (h *Manager) write(ctx context.Context, data ...*PastSensor) error {
 	cm, err := pastSensorDataToConfigMap(data...)
 	if err != nil {
@@ -241,52 +240,6 @@ func (h *Manager) readConfigMap(ctx context.Context) ([]*PastSensor, error) {
 	return data, nil
 }
 
-func pastSensorDataToConfigMap(data ...*PastSensor) (*v1.ConfigMap, error) {
-	if data == nil {
-		return nil, nil
-	}
-	dataMap := make(map[string]string, len(data))
-	byteEntry, err := json.Marshal(data)
-	if err != nil {
-		return nil, errors.Wrapf(err, "marshalling data for %v", data)
-	}
-	dataMap[configMapKey] = string(byteEntry)
-
-	return &v1.ConfigMap{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "v1",
-			Kind:       "ConfigMap",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: cmName,
-			Annotations: map[string]string{
-				annotationInfoKey: annotationInfoText,
-			},
-		},
-		Data: dataMap,
-	}, nil
-}
-
-func configMapToPastSensorData(cm *v1.ConfigMap) ([]*PastSensor, error) {
-	if cm == nil {
-		return nil, nil
-	}
-	data := make([]*PastSensor, 0, len(cm.Data))
-	for key, jsonStr := range cm.Data {
-		if key != configMapKey {
-			continue
-		}
-		var entries []PastSensor
-		if err := json.Unmarshal([]byte(jsonStr), &entries); err != nil {
-			return nil, errors.Wrapf(err, "unmarshalling data %v", jsonStr)
-		}
-		for _, entry := range entries {
-			data = append(data, &entry)
-		}
-	}
-	return data, nil
-}
-
 // cleanupHeritageData reduces the number of elements in the []*PastSensor slice by removing
 // the oldest entries if there are more than `maxSize` and removing entries older than the `maxAge`.
 // It does not remove anything until the `minSize` elements are stored.
@@ -295,7 +248,7 @@ func cleanupHeritageData(in []*PastSensor, now time.Time, maxAge time.Duration, 
 		return in
 	}
 	if maxSize > 0 && minSize > 0 && maxSize < minSize {
-		log.Warnf("Heritage cleanup misconfigured: maxSize < minSize")
+		log.Warnf("Heritage cleanup misconfigured: maxSize(%d) < minSize(%d)", maxSize, minSize)
 		return in
 	}
 	if maxSize == 0 && maxAge == 0 {
