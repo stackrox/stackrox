@@ -51,7 +51,7 @@ const (
 	annotationInfoText = `This data is for sensor to recognize its past pod instances.`
 
 	// TODO: parametrize with env vars?
-	heritageMaxSize = 50
+	heritageMaxSize = 20
 	heritageMinSize = 2
 	heritageMaxAge  = time.Hour
 )
