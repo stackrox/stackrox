@@ -10,6 +10,7 @@ import services.PolicyService
 import services.SignatureIntegrationService
 import util.Timer
 
+import spock.lang.Ignore
 import spock.lang.Shared
 import spock.lang.Tag
 
