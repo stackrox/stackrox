@@ -96,6 +96,9 @@ func MakeTrackerBase[Finding Countable](category, description string,
 
 func (tracker *TrackerBase[Finding]) ParseConfiguration(cfg *storage.PrometheusMetricsConfig_Metrics) (*Configuration, error) {
 	current := tracker.GetConfiguration()
+	if current == nil {
+		current = &Configuration{}
+	}
 	return parseConfiguration(cfg, current.metrics, tracker.labelOrder)
 }
 

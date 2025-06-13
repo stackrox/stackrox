@@ -133,6 +133,8 @@ func TestRunner_ServeHTTP(t *testing.T) {
 	}, nil)
 
 	runner := makeRunner(cds, dds)
+	runner.Stop()
+	runner.image_vulnerabilities.Run(runner.ctx)
 	rec := httptest.NewRecorder()
 	runner.ServeHTTP(rec, httptest.NewRequest("GET", "/metrics/custom", nil))
 
@@ -141,5 +143,9 @@ func TestRunner_ServeHTTP(t *testing.T) {
 	body, err := io.ReadAll(result.Body)
 	_ = result.Body.Close()
 	assert.NoError(t, err)
-	assert.Equal(t, "--", string(body))
+	assert.Equal(t,
+		`# HELP rox_central_metric1 The total number of aggregated CVEs aggregated by Cluster,Severity and gathered every 10m0s`+"\n"+
+			`# TYPE rox_central_metric1 gauge`+"\n"+
+			`rox_central_metric1{Cluster="cluster1",Severity="IMPORTANT_VULNERABILITY_SEVERITY"} 1`+"\n",
+		string(body))
 }
