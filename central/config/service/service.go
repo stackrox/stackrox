@@ -9,7 +9,7 @@ import (
 	"github.com/stackrox/rox/central/config/datastore"
 	"github.com/stackrox/rox/central/convert/storagetov1"
 	"github.com/stackrox/rox/central/convert/v1tostorage"
-	imageVulnsTracker "github.com/stackrox/rox/central/metrics/aggregator/image_vulnerabilities"
+	customMetrics "github.com/stackrox/rox/central/metrics/aggregator"
 	"github.com/stackrox/rox/central/platform/matcher"
 	"github.com/stackrox/rox/central/platform/reprocessor"
 	"github.com/stackrox/rox/central/telemetry/centralclient"
@@ -132,6 +132,9 @@ func (s *serviceImpl) GetConfig(ctx context.Context, _ *v1.Empty) (*storage.Conf
 
 // PutConfig updates Central's config
 func (s *serviceImpl) PutConfig(ctx context.Context, req *v1.PutConfigRequest) (*storage.Config, error) {
+
+	// Validation:
+
 	if req.GetConfig() == nil {
 		return nil, errors.Wrap(errox.InvalidArgs, "config must be specified")
 	}
@@ -148,12 +151,6 @@ func (s *serviceImpl) PutConfig(ctx context.Context, req *v1.PutConfigRequest) (
 		}
 	}
 
-	// Input validation only.
-	if err := imageVulnsTracker.ParseConfiguration(
-		req.GetConfig().GetPrivateConfig().GetPrometheusMetricsConfig().GetImageVulnerabilities().GetMetrics()); err != nil {
-		return nil, err
-	}
-
 	regexes := make([]*regexp.Regexp, 0)
 	if platformConfig := req.GetConfig().GetPlatformComponentConfig(); platformConfig != nil {
 		for _, rule := range platformConfig.GetRules() {
@@ -167,9 +164,20 @@ func (s *serviceImpl) PutConfig(ctx context.Context, req *v1.PutConfigRequest) (
 			regexes = append(regexes, regex)
 		}
 	}
+
+	if err := customMetrics.ParseConfiguration(
+		req.GetConfig().GetPrivateConfig().GetPrometheusMetricsConfig()); err != nil {
+		return nil, err
+	}
+
+	// Store:
+
 	if err := s.datastore.UpsertConfig(ctx, req.GetConfig()); err != nil {
 		return nil, err
 	}
+
+	// Application:
+
 	if req.GetConfig().GetPublicConfig().GetTelemetry().GetEnabled() {
 		centralclient.Enable()
 	} else {

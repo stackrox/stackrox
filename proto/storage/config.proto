@@ -155,8 +155,23 @@ message PrometheusMetricsConfig {
       //    {"operator": "<", "argument": "7"}]
       repeated Condition expression = 1;
     }
+
+    enum Exposure {
+      NONE = 0;
+      INTERNAL = 1;
+      EXTERNAL = 2;
+      BOTH = 3;
+    }
+
     // Mapping from label name to its optional associated expression.
     map<string, Expression> labels = 1;
+
+    // On which endpoint(s) this metric is exposed.
+    Exposure exposure = 2;
+
+    // The /metrics path suffix, that allows for protecting one metrics consumer
+    // data from another.
+    string registry_name = 3;
   }
 
   message Metrics {

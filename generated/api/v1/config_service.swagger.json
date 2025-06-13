@@ -265,6 +265,16 @@
       },
       "description": "Condition represents a single operator-argument pair used in label matching."
     },
+    "LabelsExposure": {
+      "type": "string",
+      "enum": [
+        "NONE",
+        "INTERNAL",
+        "EXTERNAL",
+        "BOTH"
+      ],
+      "default": "NONE"
+    },
     "LabelsExpression": {
       "type": "object",
       "properties": {
@@ -299,6 +309,14 @@
             "$ref": "#/definitions/LabelsExpression"
           },
           "description": "Mapping from label name to its optional associated expression."
+        },
+        "exposure": {
+          "$ref": "#/definitions/LabelsExposure",
+          "description": "On which endpoint(s) this metric is exposed."
+        },
+        "registryName": {
+          "type": "string",
+          "description": "The /metrics path suffix, that allows for protecting one metrics consumer\ndata from another."
         }
       }
     },
