@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/version"
 	v1 "k8s.io/api/core/v1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -19,10 +20,11 @@ import (
 )
 
 type PastSensor struct {
-	ContainerID  string    `json:"containerID"`
-	PodIP        string    `json:"podIP"`
-	SensorStart  time.Time `json:"sensorStart"`
-	LatestUpdate time.Time `json:"latestUpdate"`
+	ContainerID   string    `json:"containerID"`
+	PodIP         string    `json:"podIP"`
+	SensorStart   time.Time `json:"sensorStart"`
+	LatestUpdate  time.Time `json:"latestUpdate"`
+	SensorVersion string    `json:"sensorVersion"`
 }
 
 // ReverseCompare sorts so that younger entries are at the beginning of the slice
@@ -71,6 +73,7 @@ type Manager struct {
 	currentIP               string
 	currentContainerID      string
 	sensorStart             time.Time
+	sensorVersion           string
 	lastUpdateOfCurrentData time.Time
 
 	// Cache the data from the ConfigMap about the past instances of Sensor
@@ -86,6 +89,7 @@ func NewHeritageManager(ns string, client k8sClient, start time.Time) *Manager {
 		cache:            []*PastSensor{},
 		namespace:        ns,
 		sensorStart:      start,
+		sensorVersion:    version.GetMainVersion(),
 	}
 }
 
@@ -165,10 +169,11 @@ func (h *Manager) UpsertConfigMap(ctx context.Context, now time.Time) error {
 
 	if found := h.updateCachedTimestampNoLock(now); !found {
 		h.cache = append(h.cache, &PastSensor{
-			ContainerID:  h.currentContainerID,
-			PodIP:        h.currentIP,
-			SensorStart:  h.sensorStart,
-			LatestUpdate: now,
+			ContainerID:   h.currentContainerID,
+			PodIP:         h.currentIP,
+			SensorStart:   h.sensorStart,
+			SensorVersion: h.sensorVersion,
+			LatestUpdate:  now,
 		})
 	}
 	h.cache = cleanupHeritageData(h.cache, now, heritageMaxAge, heritageMinSize, heritageMaxSize)
