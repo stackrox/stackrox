@@ -512,7 +512,7 @@ func getVerifiedImageReference(signature oci.Signature, image *storage.Image) ([
 	var verifiedImageReferences []string
 	imageNames := protoutils.SliceUnique(append(image.GetNames(), image.GetName()))
 	for _, name := range imageNames {
-		reference, err := getRepositoryReferenceFromImageName(name.FullName)
+		reference, err := getRepositoryReferenceFromImageName(name.GetFullName())
 		if err != nil {
 			// Theoretically, all references should be parsable.
 			// In case we somehow get an invalid entry, we will log the occurrence and skip this entry.

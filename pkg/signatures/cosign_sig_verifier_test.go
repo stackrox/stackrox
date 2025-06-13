@@ -718,7 +718,7 @@ func TestDockerReferenceFromImageName(t *testing.T) {
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			res, err := getRepositoryReferenceFromImageName(c.name.FullName)
+			res, err := getRepositoryReferenceFromImageName(c.name.GetFullName())
 			assert.NoError(t, err)
 			assert.Equal(t, c.res, res)
 		})
