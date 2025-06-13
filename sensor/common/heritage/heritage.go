@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/version"
@@ -50,8 +51,6 @@ const (
 	annotationInfoKey  = `stackrox.io/past-sensors-info`
 	annotationInfoText = `This data is for sensor to recognize its past pod instances.`
 
-	// TODO: parametrize with env vars?
-	heritageMaxSize = 20
 	heritageMinSize = 2
 	heritageMaxAge  = time.Hour
 )
@@ -76,6 +75,10 @@ type Manager struct {
 	sensorVersion           string
 	lastUpdateOfCurrentData time.Time
 
+	maxSize int
+	minSize int
+	maxAge  time.Duration
+
 	// Cache the data from the ConfigMap about the past instances of Sensor
 	cacheIsPopulated atomic.Bool
 	cacheMutex       sync.Mutex
@@ -90,6 +93,9 @@ func NewHeritageManager(ns string, client k8sClient, start time.Time) *Manager {
 		namespace:        ns,
 		sensorStart:      start,
 		sensorVersion:    version.GetMainVersion(),
+		maxSize:          env.PastSensorsMaxEntries.IntegerSetting(),
+		minSize:          heritageMinSize,
+		maxAge:           heritageMaxAge,
 	}
 }
 
@@ -176,7 +182,7 @@ func (h *Manager) UpsertConfigMap(ctx context.Context, now time.Time) error {
 			LatestUpdate:  now,
 		})
 	}
-	h.cache = cleanupHeritageData(h.cache, now, heritageMaxAge, heritageMinSize, heritageMaxSize)
+	h.cache = cleanupHeritageData(h.cache, now, h.maxAge, h.minSize, h.maxSize)
 
 	h.lastUpdateOfCurrentData = now
 	log.Debugf("Writing Heritage data %s to ConfigMap %s/%s", pastSensorDataString(h.cache), h.namespace, cmName)
