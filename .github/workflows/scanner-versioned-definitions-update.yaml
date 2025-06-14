@@ -177,6 +177,19 @@ jobs:
         name: artifact_${{ env.SCANNER_BUNDLE_VERSION }}
         path: definitions
 
+    - name: Check failed updaters and notify Slack
+      run: |
+        if [ -s bundles/status.json ] && [ "$(jq '.failed_updaters | length' bundles/status.json)" -gt 0 ]; then
+          failed_updaters=$(jq -r '.failed_updaters | join(",")' bundles/status.json)
+          message=$(jq -n \
+            --arg url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" --arg workflow "${{ github.workflow }}" \
+            --arg repo "${{ github.repository }}" --arg updaters "$failed_updaters" \
+            '{text: ("<\($url)|Workflow \($workflow)> failed in repository \($repo): One or more Scanner updaters failed. Failed updaters: \($updaters)") }')
+
+          curl -X POST -H 'Content-type: application/json' --data "$message" ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
+          exit 1
+        fi
+
   build-upload-pr-vulnerabilities:
     if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-vulns')
     needs:
@@ -256,6 +269,22 @@ jobs:
         mkdir -p "$dir"
         cp -r "definitions/${{ github.event.pull_request.number }}/." "$dir/"
         gsutil -m cp -r "$dir" "gs://scanner-v4-test/vulnerability-bundles/"
+
+    # Testing only
+    - name: Check failed updaters and notify Slack
+      run: |
+        if [ -s bundles/status.json ] && [ "$(jq '.failed_updaters | length' bundles/status.json)" -gt 0 ]; then
+          failed_updaters=$(jq -r '.failed_updaters | join(",")' bundles/status.json)
+          echo "Failed updaters: $failed_updaters"
+
+          message=$(jq -n \
+            --arg url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" --arg workflow "${{ github.workflow }}" \
+            --arg repo "${{ github.repository }}" --arg updaters "$failed_updaters" \
+            '{text: ("<\($url)|Workflow \($workflow)> failed in repository \($repo): One or more Scanner updaters failed. Failed updaters: \($updaters)") }')
+
+          curl -X POST -H 'Content-type: application/json' --data "$message" ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
+          exit 1
+        fi
 
   upload-definitions:
     needs:
