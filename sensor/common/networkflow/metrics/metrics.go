@@ -1,8 +1,6 @@
 package metrics
 
 import (
-	"strconv"
-
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/pkg/metrics"
 )
@@ -16,7 +14,6 @@ func init() {
 		IncomingConnectionsEndpoints,
 
 		// Network Flows Manager
-		FlowEnrichments,
 		FlowEnrichmentEventsEndpoint,
 		FlowEnrichmentEventsConnection,
 		ExternalFlowCounter,
@@ -25,7 +22,7 @@ func init() {
 		activeEndpointsCurrent,
 		PurgerEvents,
 		ActiveEndpointsPurgerDuration,
-		NumUpdatedConnectionsEndpoints,
+		NumUpdatesSentToCentral,
 
 		// Other
 		NetworkEntityFlowCounter, // flow directions and graph entities
@@ -74,29 +71,20 @@ var (
 	}, []string{"object", "closedTS"})
 	// End of processing of the networkConnectionInfo message
 
-	// FlowEnrichments - 4. All connections and endpoints kept in memory are enriched
-	FlowEnrichments = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      netFlowManagerPrefix + "enrichments_total",
-		Help: "Total number of enrichments started for a given object " +
-			"(allows to calculate the percentage of events being enriched for " +
-			"network_flow_manager_enrichment_endpoint_events_total and network_flow_manager_enrichment_connection_events_total)",
-	}, []string{"object"})
 	// FlowEnrichmentEventsEndpoint - 4a. Enrichment can have various outcomes. This metric stores the details about the outcomes for endpoints.
 	FlowEnrichmentEventsEndpoint = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      netFlowManagerPrefix + "enrichment_endpoint_events_total",
 		Help:      "Total number of events occurred to endpoints during the enrichment of network flows passed from collector",
-	}, []string{"containerIDfound", "action", "isHistorical", "reason", "lastSeenSet", "rotten", "mature", "fresh"})
+	}, []string{"containerIDfound", "result", "action", "isHistorical", "reason", "lastSeenSet", "rotten", "mature", "fresh"})
 	// FlowEnrichmentEventsConnection - 4b. Enrichment can have various outcomes. This metric stores the details about the outcomes for connections.
 	FlowEnrichmentEventsConnection = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      netFlowManagerPrefix + "enrichment_connection_events_total",
 		Help:      "Total number of events occurred to connections during the enrichment of network flows passed from collector",
-	}, []string{"containerIDfound", "action", "isHistorical", "reason", "lastSeenSet", "rotten", "mature", "fresh", "isExternal"})
+	}, []string{"containerIDfound", "result", "action", "isHistorical", "reason", "lastSeenSet", "rotten", "mature", "fresh", "isExternal"})
 	// ExternalFlowCounter - 4c. Counts the number of flows treated as external in the enrichment (will show edge to External Entities on the Network Graph).
 	ExternalFlowCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
@@ -112,9 +100,9 @@ var (
 		Help:      "Total number of internal flows observed by Sensor enrichment",
 	}, []string{"direction", "namespace"})
 
-	// NumUpdatedConnectionsEndpoints - 5. An update is calculated between the states in consecutive enrichment ticks and the
+	// NumUpdatesSentToCentral - 5. An update is calculated between the states in consecutive enrichment ticks and the
 	// difference is treated as new updates. That updates are sent to central.
-	NumUpdatedConnectionsEndpoints = prometheus.NewCounterVec(prometheus.CounterOpts{
+	NumUpdatesSentToCentral = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      netFlowManagerPrefix + "num_sent_to_central_total",
@@ -164,45 +152,8 @@ var (
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      netFlowManagerPrefix + "processes_listening_on_port_enrichment_events_total",
 		Help:      "Total number of enrichment outcomes for the plop",
-	}, []string{"containerIDfound", "action", "isHistorical", "reason", "lastSeenSet", "rotten", "mature", "fresh"})
+	}, []string{"containerIDfound", "result", "action", "isHistorical", "reason", "lastSeenSet", "rotten", "mature", "fresh"})
 )
-
-func IncHostProcessesEnrichmentEvents(condIDfound, action, isHistorical string, reason string, lastSeenSet, rotten, mature, fresh bool) {
-	HostProcessesEnrichmentEvents.With(prometheus.Labels{
-		"containerIDfound": condIDfound,
-		"action":           action,
-		"isHistorical":     isHistorical,
-		"reason":           reason,
-		"lastSeenSet":      strconv.FormatBool(lastSeenSet),
-		"rotten":           strconv.FormatBool(rotten),
-		"mature":           strconv.FormatBool(mature),
-		"fresh":            strconv.FormatBool(fresh)}).Inc()
-}
-
-func IncFlowEnrichmentEndpoint(condIDfound bool, action, isHistorical string, reason string, lastSeenSet, rotten, mature, fresh bool) {
-	FlowEnrichmentEventsEndpoint.With(prometheus.Labels{
-		"containerIDfound": strconv.FormatBool(condIDfound),
-		"action":           action,
-		"isHistorical":     isHistorical,
-		"reason":           reason,
-		"lastSeenSet":      strconv.FormatBool(lastSeenSet),
-		"rotten":           strconv.FormatBool(rotten),
-		"mature":           strconv.FormatBool(mature),
-		"fresh":            strconv.FormatBool(fresh)}).Inc()
-}
-
-func IncFlowEnrichmentConnection(condIDfound bool, action, isHistorical string, reason string, lastSeenSet, rotten, mature, fresh bool, isExternal string) {
-	FlowEnrichmentEventsConnection.With(prometheus.Labels{
-		"containerIDfound": strconv.FormatBool(condIDfound),
-		"action":           action,
-		"isHistorical":     isHistorical,
-		"reason":           reason,
-		"lastSeenSet":      strconv.FormatBool(lastSeenSet),
-		"rotten":           strconv.FormatBool(rotten),
-		"mature":           strconv.FormatBool(mature),
-		"fresh":            strconv.FormatBool(fresh),
-		"isExternal":       isExternal}).Inc()
-}
 
 // SetActiveFlowsTotalGauge set the active network flows total gauge.
 func SetActiveFlowsTotalGauge(number int) {
