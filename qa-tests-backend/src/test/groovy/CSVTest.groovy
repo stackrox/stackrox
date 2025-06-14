@@ -13,7 +13,6 @@ import services.GraphQLService
 import services.ImageService
 import util.Env
 
-import spock.lang.IgnoreIf
 import spock.lang.Tag
 import spock.lang.Unroll
 
@@ -133,11 +132,11 @@ class CSVTest extends BaseSpecification {
     }
 
     def getComponentId() {
-        return "openssl#1.1.1d-0+deb10u7#debian:10"
+        return "openssl"
     }
 
     def getComponentQuery() {
-        return "COMPONENT ID:" + getComponentId() + "+Fixable:true"
+        return "COMPONENT:" + getComponentId() + "+Fixable:true"
     }
 
     def getCVETypeImageQuery() {
@@ -156,8 +155,6 @@ class CSVTest extends BaseSpecification {
     }
 
     @Tag("BAT")
-    // TODO(ROX-29220): Fix the test for fixable cves in component query
-    @IgnoreIf({ Env.ROX_FLATTEN_CVE_DATA == "true" })
     def "Verify CVE CSV data scoped by entity is correct #description"() {
         given:
         def graphQLPayload = payload(id)
