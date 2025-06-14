@@ -9,6 +9,7 @@ import (
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/deployment/queue"
 	"github.com/stackrox/rox/central/networkbaseline/datastore"
+	"github.com/stackrox/rox/central/networkgraph/aggregator"
 	networkEntityDS "github.com/stackrox/rox/central/networkgraph/entity/datastore"
 	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
 	networkFlowDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
@@ -978,6 +979,27 @@ func (m *manager) GetExternalNetworkPeers(ctx context.Context, deploymentID stri
 	if err != nil {
 		return nil, err
 	}
+
+	networkTree := tree.NewMultiNetworkTree(
+		m.treeManager.GetReadOnlyNetworkTree(managerCtx, deployment.GetClusterId()),
+		m.treeManager.GetDefaultNetworkTree(managerCtx),
+	)
+
+	listDeployment := &storage.ListDeployment{
+		Name:      deployment.GetName(),
+		Id:        deploymentID,
+		ClusterId: deployment.GetClusterId(),
+		Namespace: deployment.GetNamespace(),
+	}
+
+	flows = m.enrichFlows(listDeployment, flows)
+
+	aggr, err := aggregator.NewSubnetToSupernetConnAggregator(networkTree)
+	utils.Should(err)
+
+	flows = aggr.Aggregate(flows)
+	flows = aggregator.NewDuplicateNameExtSrcConnAggregator().Aggregate(flows)
+	flows = aggregator.NewLatestTimestampAggregator().Aggregate(flows)
 
 	peers := make([]*v1.NetworkBaselineStatusPeer, 0, len(flows))
 
