@@ -110,7 +110,10 @@ type tlsIssuerImpl struct {
 	online                       atomic.Bool
 	cancelRefresher              context.CancelFunc
 	activateLock                 sync.Mutex
+	state                        atomic.Value
 }
+
+var _ common.SensorComponent = (*tlsIssuerImpl)(nil)
 
 // Start starts the Sensor component and launches a certificate refresher that:
 // * checks the state of the certificates whenever Sensor connects to Central, and several months before they expire
@@ -118,6 +121,8 @@ type tlsIssuerImpl struct {
 // When Sensor is offline this component is not active.
 func (i *tlsIssuerImpl) Start() error {
 	log.Debugf("Starting %s TLS issuer.", i.componentName)
+	i.state.Store(common.SensorComponentStateSTARTING)
+	defer i.state.Store(common.SensorComponentStateSTARTED)
 	i.started.Store(true)
 	return i.activate()
 }
@@ -166,8 +171,10 @@ func (i *tlsIssuerImpl) activate() error {
 }
 
 func (i *tlsIssuerImpl) Stop(_ error) {
+	i.state.Store(common.SensorComponentStateSTOPPING)
 	i.started.Store(false)
 	i.deactivate()
+	i.state.Store(common.SensorComponentStateSTOPPED)
 }
 
 func (i *tlsIssuerImpl) deactivate() {
@@ -197,9 +204,11 @@ func (i *tlsIssuerImpl) Notify(e common.SensorComponentEvent) {
 		if err := i.activate(); err != nil {
 			log.Warnf("Failed to activate %s TLS issuer: %v", i.componentName, err)
 		}
+		i.state.Store(common.SensorComponentStateONLINE)
 	case common.SensorComponentEventOfflineMode:
 		i.online.Store(false)
 		i.deactivate()
+		i.state.Store(common.SensorComponentStateOFFLINE)
 	}
 }
 
@@ -230,6 +239,10 @@ func (i *tlsIssuerImpl) ProcessMessage(msg *central.MsgToSensor) error {
 	i.responseQueue.Push(response)
 
 	return nil
+}
+
+func (i *tlsIssuerImpl) State() common.SensorComponentState {
+	return i.state.Load().(common.SensorComponentState)
 }
 
 // requestCertificates makes a new request for a new set of secured cluster certificates from Central.

@@ -47,10 +47,13 @@ type commandHandler struct {
 
 	stopSig          concurrency.ErrorSignal
 	centralReachable atomic.Bool
+	state            atomic.Value
 
 	pendingContextCancels      map[string]context.CancelFunc
 	pendingContextCancelsMutex sync.Mutex
 }
+
+var _ common.SensorComponent = (*commandHandler)(nil)
 
 // DiagnosticConfigurationFunc is a function that modifies the diagnostic configuration.
 type DiagnosticConfigurationFunc func(request *central.PullTelemetryDataRequest, config k8sintrospect.Config) k8sintrospect.Config
@@ -87,14 +90,17 @@ func makeChunk(chunk []byte) *central.TelemetryResponsePayload {
 }
 
 func (h *commandHandler) Start() error {
+	h.state.Store(common.SensorComponentStateSTARTED)
 	return nil
 }
 
 func (h *commandHandler) Stop(err error) {
+	h.state.Store(common.SensorComponentStateSTOPPING)
 	if err == nil {
 		err = errors.New("telemetry command handler was stopped")
 	}
 	h.stopSig.SignalWithError(err)
+	h.state.Store(common.SensorComponentStateSTOPPED)
 }
 
 func (h *commandHandler) Notify(e common.SensorComponentEvent) {
@@ -102,9 +108,11 @@ func (h *commandHandler) Notify(e common.SensorComponentEvent) {
 	switch e {
 	case common.SensorComponentEventCentralReachable:
 		h.centralReachable.Store(true)
+		h.state.Store(common.SensorComponentStateONLINE)
 	case common.SensorComponentEventOfflineMode:
 		h.centralReachable.Store(false)
 		h.cancelPendingRequests()
+		h.state.Store(common.SensorComponentStateOFFLINE)
 	}
 }
 
@@ -117,6 +125,10 @@ func (h *commandHandler) ProcessMessage(msg *central.MsgToSensor) error {
 	default:
 		return nil
 	}
+}
+
+func (h *commandHandler) State() common.SensorComponentState {
+	return h.state.Load().(common.SensorComponentState)
 }
 
 func (h *commandHandler) processCancelRequest(req *central.CancelPullTelemetryDataRequest) error {

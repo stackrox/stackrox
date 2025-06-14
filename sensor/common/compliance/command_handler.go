@@ -19,7 +19,7 @@ type CommandHandler interface {
 
 // NewCommandHandler returns a new instance of a CommandHandler using the input image and Orchestrator.
 func NewCommandHandler(complianceService Service) CommandHandler {
-	return &commandHandlerImpl{
+	commandHandler := &commandHandlerImpl{
 		service: complianceService,
 
 		commands: make(chan *central.ScrapeCommand),
@@ -30,4 +30,6 @@ func NewCommandHandler(complianceService Service) CommandHandler {
 		stopper:          concurrency.NewStopper(),
 		centralReachable: atomic.Bool{},
 	}
+	common.RegisterStateReporter(commandHandlerComponentName, commandHandler.State)
+	return commandHandler
 }

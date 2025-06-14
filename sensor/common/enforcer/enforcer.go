@@ -2,6 +2,7 @@ package enforcer
 
 import (
 	"context"
+	"sync/atomic"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -41,7 +42,10 @@ type enforcer struct {
 	enforcementMap map[storage.EnforcementAction]EnforceFunc
 	actionsC       chan *central.SensorEnforcement
 	stopper        concurrency.Stopper
+	state          atomic.Value
 }
+
+var _ common.SensorComponent = (*enforcer)(nil)
 
 func (e *enforcer) Capabilities() []centralsensor.SensorCapability {
 	return nil
@@ -143,13 +147,21 @@ func (e *enforcer) start() {
 }
 
 func (e *enforcer) Start() error {
+	e.state.Store(common.SensorComponentStateSTARTING)
 	go e.start()
+	e.state.Store(common.SensorComponentStateSTARTED)
 	return nil
 }
 
 func (e *enforcer) Stop(_ error) {
+	e.state.Store(common.SensorComponentStateSTOPPING)
 	e.stopper.Client().Stop()
 	_ = e.stopper.Client().Stopped().Wait()
+	e.state.Store(common.SensorComponentStateSTOPPED)
 }
 
 func (e *enforcer) Notify(common.SensorComponentEvent) {}
+
+func (e *enforcer) State() common.SensorComponentState {
+	return e.state.Load().(common.SensorComponentState)
+}
