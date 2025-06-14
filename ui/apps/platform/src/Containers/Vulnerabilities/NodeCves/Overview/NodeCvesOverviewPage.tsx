@@ -37,7 +37,7 @@ import {
     nodeSearchFilterConfig,
 } from 'Containers/Vulnerabilities/searchFilterConfig';
 import AdvancedFiltersToolbar from '../../components/AdvancedFiltersToolbar';
-import SnoozeCveToggleButton from '../../components/SnoozedCveToggleButton';
+import SnoozedCveToggleButton from '../../components/SnoozedCveToggleButton';
 import SnoozeCvesModal from '../../components/SnoozeCvesModal/SnoozeCvesModal';
 import useSnoozeCveModal from '../../components/SnoozeCvesModal/useSnoozeCveModal';
 import useHasLegacySnoozeAbility from '../../hooks/useHasLegacySnoozeAbility';
@@ -178,7 +178,7 @@ function NodeCvesOverviewPage() {
                         <FlexItem>Prioritize and manage scanned CVEs across nodes</FlexItem>
                     </Flex>
                     <FlexItem>
-                        <SnoozeCveToggleButton
+                        <SnoozedCveToggleButton
                             searchFilter={searchFilter}
                             setSearchFilter={setSearchFilter}
                             snoozedCveCount={snoozedCveCount}
