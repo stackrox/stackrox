@@ -1,7 +1,10 @@
 package clusterentities
 
 import (
+	"context"
 	"fmt"
+	"maps"
+	"slices"
 	"strings"
 	"time"
 
@@ -10,7 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
-	"golang.org/x/exp/maps"
+	"github.com/stackrox/rox/sensor/common/heritage"
 )
 
 // ContainerMetadata is the container metadata that is stored per instance
@@ -52,6 +55,27 @@ func (ed *EntityData) String() string {
 	}
 	return fmt.Sprintf("ips: %v, endpoints: %v, containerIDs: %v",
 		maps.Keys(ed.ips), maps.Keys(ed.endpoints), maps.Keys(ed.containerIDs))
+}
+
+// GetDetails returns the internal data about the entity
+func (ed *EntityData) GetDetails() (containerID, podIP string) {
+	for s := range ed.containerIDs {
+		containerID = s
+		break
+	}
+	// Sort the IPs to deterministically return the first IP if more than one are stored.
+	// The slice should contain single element in most of the cases.
+	sortedIPs := slices.SortedFunc(maps.Keys(ed.ips), func(a, b net.IPAddress) int {
+		return strings.Compare(a.String(), b.String())
+	})
+
+	for _, ip := range sortedIPs {
+		if ip.IsValid() {
+			podIP = ip.String()
+			return
+		}
+	}
+	return
 }
 
 // isDeleteOnly prevents from treating a request as ADD with empty values, as such requests should be treated as DELETE
@@ -101,6 +125,9 @@ type Store struct {
 	// callbackChannel is a channel to send container metadata upon resolution
 	callbackChannel chan<- ContainerMetadata
 
+	// pastSensors provides data about past Sensor IPs and container IDs
+	pastSensors HeritageData
+
 	// memorySize defines how many ticks old endpoint data should be remembered after removal request
 	// Set to 0 to disable memory
 	memorySize uint16
@@ -111,18 +138,20 @@ type Store struct {
 	trace      map[string]string
 }
 
-// NewStore creates and returns a new store instance.
-func NewStore() *Store {
-	return NewStoreWithMemory(0, false)
+type HeritageData interface {
+	GetData(ctx context.Context) []*heritage.PastSensor
+	HasCurrentSensorData() bool
+	SetCurrentSensorData(currentIP, currentContainerID string)
 }
 
 // NewStoreWithMemory returns store that remembers past IPs of an endpoint for a given number of ticks
-func NewStoreWithMemory(numTicks uint16, debugMode bool) *Store {
+func NewStoreWithMemory(numTicks uint16, hm HeritageData, debugMode bool) *Store {
 	store := &Store{
 		endpointsStore:    newEndpointsStoreWithMemory(numTicks),
 		podIPsStore:       newPodIPsStoreWithMemory(numTicks),
 		containerIDsStore: newContainerIDsStoreWithMemory(numTicks),
 		memorySize:        numTicks,
+		pastSensors:       hm,
 		debugMode:         debugMode,
 	}
 	store.initMaps()
@@ -154,6 +183,10 @@ func (e *Store) resetMaps() {
 // Cleanup deletes all entries from store
 func (e *Store) Cleanup() {
 	e.resetMaps()
+}
+
+func (e *Store) GetHeritageData() HeritageData {
+	return e.pastSensors
 }
 
 // Apply applies an update to the store. If incremental is true, data will be added; otherwise, data for each deployment

@@ -3,6 +3,8 @@ package clusterentities
 import (
 	"testing"
 
+	"github.com/stackrox/rox/pkg/net"
+	"github.com/stackrox/rox/sensor/common/heritage"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -71,7 +73,7 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryWhenGoingOffline() {
 	}
 	for name, tc := range cases {
 		s.Run(name, func() {
-			entityStore := NewStoreWithMemory(tc.numTicksToRemember, true)
+			entityStore := NewStoreWithMemory(tc.numTicksToRemember, &heritage.MockData{}, true)
 			entityStore.Apply(tc.initialState, true)
 			// We start online
 			s.Len(entityStore.podIPsStore.ipMap, tc.wantMapSizeOnline)
@@ -94,6 +96,81 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryWhenGoingOffline() {
 			s.Len(entityStore.podIPsStore.historicalIPs, tc.wantHistorySizeOffline, "error in historical IPs after cleanup")
 			s.Len(entityStore.endpointsStore.historicalEndpoints, tc.wantHistorySizeOffline, "error in historical endpoints after cleanup")
 			s.Len(entityStore.containerIDsStore.historicalContainerIDs, tc.wantHistorySizeOffline, "error in historical container IDs after cleanup")
+		})
+	}
+}
+
+func TestEntityData_GetDetails(t *testing.T) {
+	tests := map[string]struct {
+		edFun           func() *EntityData
+		wantContainerID string
+		wantPodIP       string
+	}{
+		"Single values": {
+			edFun: func() *EntityData {
+				ed := &EntityData{}
+				ed.AddIP(net.ParseIP("10.0.0.1"))
+				ed.AddContainerID("abc", ContainerMetadata{})
+				return ed
+			},
+			wantContainerID: "abc",
+			wantPodIP:       "10.0.0.1",
+		},
+		"Multiple sorted values": {
+			edFun: func() *EntityData {
+				ed := &EntityData{}
+				ed.AddIP(net.ParseIP("10.0.0.1"))
+				ed.AddIP(net.ParseIP("10.0.0.2"))
+				ed.AddContainerID("abc", ContainerMetadata{})
+				ed.AddContainerID("def", ContainerMetadata{})
+				return ed
+			},
+			wantContainerID: "abc",
+			wantPodIP:       "10.0.0.1",
+		},
+		"Multiple unsorted values": {
+			edFun: func() *EntityData {
+				ed := &EntityData{}
+				ed.AddIP(net.ParseIP("10.0.0.9"))
+				ed.AddIP(net.ParseIP("10.0.0.2"))
+				ed.AddContainerID("abc", ContainerMetadata{})
+				ed.AddContainerID("def", ContainerMetadata{})
+				return ed
+			},
+			wantContainerID: "abc",
+			wantPodIP:       "10.0.0.2",
+		},
+		"Invalid IP": {
+			edFun: func() *EntityData {
+				ed := &EntityData{}
+				ed.AddIP(net.ParseIP("foo.bar.baz.boom"))
+				ed.AddIP(net.ParseIP("10.0.0.2"))
+				ed.AddContainerID("abc", ContainerMetadata{})
+				return ed
+			},
+			wantContainerID: "abc",
+			wantPodIP:       "10.0.0.2",
+		},
+		"No Container ID": {
+			edFun: func() *EntityData {
+				ed := &EntityData{}
+				ed.AddIP(net.ParseIP("10.0.0.1"))
+				return ed
+			},
+			wantContainerID: "",
+			wantPodIP:       "10.0.0.1",
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			ed := tt.edFun()
+			gotContainerID, gotPodIP := ed.GetDetails()
+			if gotContainerID != tt.wantContainerID {
+				t.Errorf("GetDetails() gotContainerID = %v, want %v", gotContainerID, tt.wantContainerID)
+			}
+			if gotPodIP != tt.wantPodIP {
+				t.Errorf("GetDetails() gotPodIP = %v, want %v", gotPodIP, tt.wantPodIP)
+			}
 		})
 	}
 }
