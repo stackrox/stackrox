@@ -14,7 +14,7 @@ import { Table, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
 import { gql, useQuery } from '@apollo/client';
 
 import EmptyStateTemplate from 'Components/EmptyStateTemplate';
-import useTableSort from 'hooks/patternfly/useTableSort';
+import useTableSort from 'hooks/useTableSort';
 import { SearchFilter } from 'types/search';
 import { getPaginationParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 
