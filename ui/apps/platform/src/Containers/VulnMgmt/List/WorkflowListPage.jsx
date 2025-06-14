@@ -12,7 +12,7 @@ import Loader from 'Components/Loader';
 import workflowStateContext from 'Containers/workflowStateContext';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import { SEARCH_OPTIONS_QUERY } from 'queries/search';
-import { convertToFlatImageSearchCategory, searchCategories } from 'constants/entityTypes';
+import { searchCategories } from 'constants/entityTypes';
 
 import EntityList from './EntityList';
 
@@ -48,13 +48,9 @@ const WorkflowListPage = ({
     const [sortFields, setSortFields] = useState({});
     const { isFeatureFlagEnabled } = useFeatureFlags();
 
-    const searchCategory = convertToFlatImageSearchCategory(
-        searchCategories[entityListType],
-        isFeatureFlagEnabled('ROX_FLATTEN_CVE_DATA')
-    );
     const searchQueryOptions = {
         variables: {
-            categories: [searchCategory],
+            categories: [searchCategories[entityListType]],
         },
     };
     const { data: searchData } = useQuery(SEARCH_OPTIONS_QUERY, searchQueryOptions);
