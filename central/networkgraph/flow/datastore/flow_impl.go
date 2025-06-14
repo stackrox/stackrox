@@ -91,11 +91,11 @@ func (fds *flowDataStoreImpl) isDeletedDeployment(id string) bool {
 	return fds.deletedDeploymentsCache.Contains(id)
 }
 
-func (fds *flowDataStoreImpl) UpsertFlows(ctx context.Context, flows []*storage.NetworkFlow, lastUpdateTS timestamp.MicroTS) error {
+func (fds *flowDataStoreImpl) UpsertFlows(ctx context.Context, flows []*storage.NetworkFlow, lastUpdateTS timestamp.MicroTS) ([]*storage.NetworkFlow, error) {
 	if ok, err := networkGraphSAC.WriteAllowed(ctx); err != nil {
-		return err
+		return nil, err
 	} else if !ok {
-		return sac.ErrResourceAccessDenied
+		return nil, sac.ErrResourceAccessDenied
 	}
 
 	filtered := flows[:0]
@@ -109,7 +109,11 @@ func (fds *flowDataStoreImpl) UpsertFlows(ctx context.Context, flows []*storage.
 		filtered = append(filtered, flow)
 	}
 
-	return fds.storage.UpsertFlows(ctx, filtered, lastUpdateTS)
+	if err := fds.storage.UpsertFlows(ctx, filtered, lastUpdateTS); err != nil {
+		return nil, err
+	}
+
+	return filtered, nil
 }
 
 func (fds *flowDataStoreImpl) RemoveFlowsForDeployment(ctx context.Context, id string) error {
