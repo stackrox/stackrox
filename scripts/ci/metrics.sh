@@ -158,6 +158,54 @@ bq_update_job_record() {
         WHERE id=@id"
 }
 
+write_job_metrics() {
+    local id="$(_get_metrics_job_id)"
+    local repo="$(get_repo_full_name)"
+    local branch="$(get_branch_name)"
+    local pr_number=''
+    if is_in_PR_context; then
+        pr_number="$(get_PR_number)"
+    fi
+    local commit_sha="$(get_commit_sha)"
+    local ci_system='unknown'
+    if is_OPENSHIFT_CI; then
+      ci_system='osci'
+    elif is_GITHUB_ACTIONS; then
+      ci_system='gha'
+    fi
+
+    local -a addl_sql_params
+    local addl_fields=''
+    local addl_values=''
+    while [[ "$#" -gt 0 ]]; do
+        local field="$1"; shift
+        local value="${1:-unknown}"; shift
+        if [[ "$value" == 'TIMESTAMP('* ]]; then
+            addl_values+=", ${value}"
+        else
+            addl_sql_params+=("--parameter=${field}::$value")
+            addl_values+=", @${field}"
+        fi
+        addl_fields+=", ${field}"
+    done
+
+    bq query \
+        --use_legacy_sql=false \
+        --synchronous_mode=false \
+        --batch \
+        --parameter="id::${id}" \
+        --parameter="repo::${repo}" \
+        --parameter="branch::${branch}" \
+        --parameter="pr_number:INTEGER:${pr_number}" \
+        --parameter="commit_sha::${commit_sha}" \
+        --parameter="ci_system::${ci_system}" \
+        "${addl_sql_params[@]}" \
+        "INSERT INTO ${_JOBS_TABLE_NAME}
+            (id, repo, branch, pr_number, commit_sha, ci_system${addl_fields})
+        VALUES
+            (@id, @repo, @branch, @pr_number, @commit_sha, @ci_system${addl_values})"
+}
+
 slack_top_n_failures() {
     local n="${1:-10}"
     local job_name_match="${2:-qa}"
