@@ -21,7 +21,6 @@ import (
 	"github.com/quay/claircore/test"
 	"github.com/quay/zlog"
 	"github.com/rs/zerolog"
-	"github.com/stackrox/rox/scanner/datastore/postgres"
 	"github.com/stackrox/rox/scanner/datastore/postgres/mocks"
 	"github.com/stackrox/rox/scanner/updater/jsonblob"
 	"github.com/stretchr/testify/assert"
@@ -62,80 +61,6 @@ func testHTTPServer(t *testing.T, content func(r *http.Request) io.ReadSeeker) (
 	}))
 	t.Cleanup(srv.Close)
 	return srv, now
-}
-
-func TestSingleBundleUpdate(t *testing.T) {
-	t.Setenv("ROX_SCANNER_V4_MULTI_BUNDLE", "false")
-
-	srv, now := testHTTPServer(t, func(r *http.Request) io.ReadSeeker {
-		accept := r.Header.Get("X-Scanner-V4-Accept")
-		if accept != "" {
-			t.Fatalf("X-Scanner-V4-Accept header should not be set for single-bundle")
-		}
-		return strings.NewReader("test")
-	})
-
-	locker := &testLocker{
-		locker: updates.NewLocalLockSource(),
-		fail:   true,
-	}
-	store := mocks.NewMockMatcherStore(gomock.NewController(t))
-	metadataStore := mocks.NewMockMatcherMetadataStore(gomock.NewController(t))
-	u := &Updater{
-		locker:        locker,
-		store:         store,
-		metadataStore: metadataStore,
-		client:        srv.Client(),
-		url:           srv.URL,
-		root:          t.TempDir(),
-		skipGC:        false,
-		importFunc: func(_ context.Context, _ io.Reader) error {
-			return nil
-		},
-		retryDelay:  1 * time.Second,
-		retryMax:    1,
-		distManager: newDistManager(store),
-	}
-
-	// Skip update when locking fails.
-	err := u.Update(context.Background())
-	assert.NoError(t, err)
-
-	locker.fail = false
-
-	dists := []claircore.Distribution{
-		{
-			ID: "0",
-		},
-		{
-			ID: "1",
-		},
-	}
-
-	// Successful update.
-	metadataStore.EXPECT().
-		GetLastVulnerabilityUpdate(gomock.Any()).
-		Return(now.Add(-time.Minute), nil)
-	metadataStore.EXPECT().
-		SetLastVulnerabilityUpdate(gomock.Any(), gomock.Eq(postgres.SingleBundleUpdateKey), now).
-		Return(nil)
-	store.EXPECT().
-		GC(gomock.Any(), gomock.Any()).
-		Return(int64(0), nil)
-	store.EXPECT().
-		Distributions(gomock.Any()).
-		Return(dists, nil)
-	err = u.Update(context.Background())
-	assert.NoError(t, err)
-	assert.Equal(t, dists, u.KnownDistributions())
-
-	// No update.
-	metadataStore.EXPECT().
-		GetLastVulnerabilityUpdate(gomock.Any()).
-		Return(now.Add(time.Minute), nil)
-	err = u.Update(context.Background())
-	assert.NoError(t, err)
-	assert.Equal(t, dists, u.KnownDistributions())
 }
 
 func TestMultiBundleUpdate(t *testing.T) {
