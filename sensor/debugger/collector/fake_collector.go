@@ -28,6 +28,7 @@ func NewFakeCollector(cfg *FakeCollectorConfig) *FakeCollector {
 		stopper:            stopper,
 		networkFlowManager: newFakeNetworkFlowManager(stopper),
 		signalManager:      newSignalManager(stopper),
+		collectorManager:   newCollectorManager(stopper),
 	}
 }
 
@@ -57,6 +58,7 @@ type FakeCollector struct {
 	stopper            concurrency.Stopper
 	networkFlowManager *fakeNetworkFlowManager
 	signalManager      *fakeSignalManager
+	collectorManager   *fakeCollectorManager
 }
 
 // Start FakeCollector.
@@ -70,6 +72,9 @@ func (c *FakeCollector) Start() error {
 		return err
 	}
 	if err := c.signalManager.start(c.config.sensorAddress); err != nil {
+		return err
+	}
+	if err := c.collectorManager.start(c.config.sensorAddress); err != nil {
 		return err
 	}
 	return nil
@@ -88,5 +93,8 @@ func (c *FakeCollector) SendFakeNetworkFlow(msg *sensor.NetworkConnectionInfoMes
 // SendFakeSignal sends a SignalStreamMessage to sensor.
 func (c *FakeCollector) SendFakeSignal(msg *sensor.SignalStreamMessage) {
 	c.signalManager.send(msg)
+}
 
+func (c *FakeCollector) SendFakeProcess(msg *sensor.MsgFromCollector) {
+	c.collectorManager.send(msg)
 }

@@ -1,4 +1,4 @@
-package processsignal
+package processindicator
 
 import (
 	"context"
