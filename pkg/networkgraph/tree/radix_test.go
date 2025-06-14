@@ -67,6 +67,17 @@ func TestNRadixTreeIPv4(t *testing.T) {
 	protoassert.ElementsMatch(t, []*storage.NetworkEntityInfo{e2, e5, e7}, tree.GetSubnetsForCIDR("0.0.0.0/0"))
 }
 
+func TestNRadixTreeIPv4Remove(t *testing.T) {
+	e1 := testutils.GetExtSrcNetworkEntityInfo("1", "1", "35.187.144.0/32", false, true)
+	e2 := testutils.GetExtSrcNetworkEntityInfo("2", "2", "35.187.144.4/32", false, true)
+
+	tree, err := NewNRadixTree(pkgNet.IPv4, []*storage.NetworkEntityInfo{e1, e2})
+	assert.NoError(t, err)
+	assert.NotNil(t, tree)
+
+	assert.True(t, tree.ValidateNetworkTree())
+}
+
 func TestNRadixTreeIPv6(t *testing.T) {
 	e1 := testutils.GetExtSrcNetworkEntityInfo("1", "1", "2001:db8:3333:4444:5555:6666:7777:8888/63", true, false)
 	e2 := testutils.GetExtSrcNetworkEntityInfo("2", "2", "2001:db8:3333:4444:5555:6666:7777:8888/64", false, false)
