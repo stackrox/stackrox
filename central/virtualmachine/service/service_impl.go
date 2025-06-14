@@ -59,6 +59,18 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
+func (s *serviceImpl) CreateVirtualMachine(ctx context.Context, request *v1.CreateVirtualMachineRequest) (*storage.VirtualMachine, error) {
+	if request == nil || request.VirtualMachine.GetId() == "" {
+		return nil, errors.Wrap(errox.InvalidArgs, "id must be specified")
+	}
+
+	if err := s.datastore.UpsertVirtualMachine(ctx, request.VirtualMachine); err != nil {
+		return nil, err
+	}
+
+	return request.VirtualMachine, nil
+}
+
 func (s *serviceImpl) GetVirtualMachine(ctx context.Context, request *v1.GetVirtualMachineRequest) (*storage.VirtualMachine, error) {
 	if request.GetId() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "id must be specified")
