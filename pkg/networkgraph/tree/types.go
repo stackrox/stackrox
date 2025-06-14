@@ -10,6 +10,7 @@ type NetworkTree interface {
 
 	Insert(entity *storage.NetworkEntityInfo) error
 	Remove(key string)
+	ValidateNetworkTree() bool
 }
 
 // ReadOnlyNetworkTree provides functionality to read network entities from a network tree.
@@ -28,6 +29,7 @@ type ReadOnlyNetworkTree interface {
 	GetSubnets(key string) []*storage.NetworkEntityInfo
 	// Returns the largest networks smaller than, and fully contained by the queried network.
 	GetSubnetsForCIDR(cidr string) []*storage.NetworkEntityInfo
+	// Checks if the network tree is valid
 	Get(key string) *storage.NetworkEntityInfo
 	Exists(key string) bool
 }
