@@ -69,7 +69,6 @@ function CreateVulnReportPage() {
                 <ReportFormWizard
                     formik={formik}
                     navAriaLabel="Report creation steps"
-                    mainAriaLabel="Report creation content"
                     wizardStepNames={wizardStepNames}
                     onSave={onCreate}
                     finalStepNextButtonText={'Create'}

@@ -110,7 +110,6 @@ function CloneVulnReportPage() {
                 <ReportFormWizard
                     formik={formik}
                     navAriaLabel="Report clone steps"
-                    mainAriaLabel="Report clone content"
                     wizardStepNames={wizardStepNames}
                     finalStepNextButtonText={'Create'}
                     onSave={onCreate}

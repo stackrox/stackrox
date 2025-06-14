@@ -103,7 +103,6 @@ function EditVulnReportPage() {
                 <ReportFormWizard
                     formik={formik}
                     navAriaLabel="Report edit steps"
-                    mainAriaLabel="Report edit content"
                     wizardStepNames={wizardStepNames}
                     onSave={onSave}
                     finalStepNextButtonText={'Save'}

@@ -1,12 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button, Modal } from '@patternfly/react-core';
-import {
-    Wizard,
-    WizardContextConsumer,
-    WizardFooter,
-    WizardStep,
-} from '@patternfly/react-core/deprecated';
+import { Button, Modal, Wizard, WizardStep } from '@patternfly/react-core';
 import { FormikProps } from 'formik';
 import isEmpty from 'lodash/isEmpty';
 
@@ -21,7 +15,6 @@ import { ReportFormValues } from '../forms/useReportFormValues';
 export type ReportFormWizardProps = {
     formik: FormikProps<ReportFormValues>;
     navAriaLabel: string;
-    mainAriaLabel: string;
     wizardStepNames: string[];
     finalStepNextButtonText: string;
     onSave: () => void;
@@ -31,7 +24,6 @@ export type ReportFormWizardProps = {
 function ReportFormWizard({
     formik,
     navAriaLabel,
-    mainAriaLabel,
     wizardStepNames,
     finalStepNextButtonText,
     onSave,
@@ -44,24 +36,6 @@ function ReportFormWizard({
     function onClose() {
         navigate(vulnerabilityConfigurationReportsPath);
     }
-
-    const wizardSteps: WizardStep[] = [
-        {
-            name: wizardStepNames[0],
-            component: <ReportParametersForm title={wizardStepNames[0]} formik={formik} />,
-        },
-        {
-            name: wizardStepNames[1],
-            component: <DeliveryDestinationsForm title={wizardStepNames[1]} formik={formik} />,
-            isDisabled: isStepDisabled(wizardStepNames[1]),
-        },
-        {
-            name: wizardStepNames[2],
-            component: <ReportReviewForm title={wizardStepNames[2]} formValues={formik.values} />,
-            nextButtonText: finalStepNextButtonText,
-            isDisabled: isStepDisabled(wizardStepNames[2]),
-        },
-    ];
 
     function isStepDisabled(stepName: string | undefined): boolean {
         if (stepName === wizardStepNames[0]) {
@@ -81,94 +55,68 @@ function ReportFormWizard({
     }
 
     return (
-        <Wizard
-            navAriaLabel={navAriaLabel}
-            mainAriaLabel={mainAriaLabel}
-            hasNoBodyPadding
-            steps={wizardSteps}
-            onSave={onSave}
-            onClose={onClose}
-            footer={
-                <WizardFooter>
-                    <WizardContextConsumer>
-                        {({ activeStep, onNext, onBack, onClose }) => {
-                            const firstStepName = wizardSteps[0].name;
-                            const lastStepName = wizardSteps[wizardSteps.length - 1].name;
-                            const activeStepIndex = wizardSteps.findIndex(
-                                (wizardStep) => wizardStep.name === activeStep.name
-                            );
-                            const nextStepName =
-                                activeStepIndex === wizardSteps.length - 1
-                                    ? undefined
-                                    : wizardSteps[activeStepIndex + 1].name;
-                            const isNextDisabled = isStepDisabled(nextStepName as string);
-
-                            return (
-                                <>
-                                    {activeStep.name !== lastStepName ? (
-                                        <Button
-                                            variant="primary"
-                                            type="submit"
-                                            onClick={onNext}
-                                            isDisabled={isNextDisabled}
-                                        >
-                                            Next
-                                        </Button>
-                                    ) : (
-                                        <Button
-                                            variant="primary"
-                                            type="submit"
-                                            onClick={onSave}
-                                            isLoading={isSaving}
-                                        >
-                                            {finalStepNextButtonText}
-                                        </Button>
-                                    )}
-                                    <Button
-                                        variant="secondary"
-                                        onClick={onBack}
-                                        isDisabled={activeStep.name === firstStepName}
-                                    >
-                                        Back
-                                    </Button>
-                                    <Button variant="link" onClick={openModal}>
-                                        Cancel
-                                    </Button>
-                                    <Modal
-                                        variant="small"
-                                        title="Confirm cancel"
-                                        isOpen={isModalOpen}
-                                        onClose={closeModal}
-                                        actions={[
-                                            <Button
-                                                key="confirm"
-                                                variant="primary"
-                                                onClick={onClose}
-                                            >
-                                                Confirm
-                                            </Button>,
-                                            <Button
-                                                key="cancel"
-                                                variant="secondary"
-                                                onClick={closeModal}
-                                            >
-                                                Cancel
-                                            </Button>,
-                                        ]}
-                                    >
-                                        <p>
-                                            Are you sure you want to cancel? Any unsaved changes
-                                            will be lost. You will be taken back to the list of
-                                            reports.
-                                        </p>
-                                    </Modal>
-                                </>
-                            );
-                        }}
-                    </WizardContextConsumer>
-                </WizardFooter>
-            }
-        />
+        <>
+            <Wizard navAriaLabel={navAriaLabel} onSave={onSave}>
+                <WizardStep
+                    name={wizardStepNames[0]}
+                    id={wizardStepNames[0]}
+                    key={wizardStepNames[0]}
+                    body={{ hasNoPadding: true }}
+                    footer={{
+                        isNextDisabled: isStepDisabled(wizardStepNames[1]),
+                        onClose: openModal,
+                    }}
+                >
+                    <ReportParametersForm title={wizardStepNames[0]} formik={formik} />
+                </WizardStep>
+                <WizardStep
+                    name={wizardStepNames[1]}
+                    id={wizardStepNames[1]}
+                    key={wizardStepNames[1]}
+                    body={{ hasNoPadding: true }}
+                    isDisabled={isStepDisabled(wizardStepNames[1])}
+                    footer={{
+                        isNextDisabled: isStepDisabled(wizardStepNames[2]),
+                        onClose: openModal,
+                    }}
+                >
+                    <DeliveryDestinationsForm title={wizardStepNames[1]} formik={formik} />
+                </WizardStep>
+                <WizardStep
+                    name={wizardStepNames[2]}
+                    id={wizardStepNames[2]}
+                    key={wizardStepNames[2]}
+                    body={{ hasNoPadding: true }}
+                    isDisabled={isStepDisabled(wizardStepNames[2])}
+                    footer={{
+                        nextButtonProps: { isLoading: isSaving },
+                        nextButtonText: finalStepNextButtonText,
+                        onClose: openModal,
+                    }}
+                >
+                    <ReportReviewForm title={wizardStepNames[2]} formValues={formik.values} />
+                </WizardStep>
+            </Wizard>
+            <Modal
+                variant="small"
+                title="Confirm cancel"
+                isOpen={isModalOpen}
+                onClose={closeModal}
+                actions={[
+                    <Button key="confirm" variant="primary" onClick={onClose}>
+                        Confirm
+                    </Button>,
+                    <Button key="cancel" variant="secondary" onClick={closeModal}>
+                        Cancel
+                    </Button>,
+                ]}
+            >
+                <p>
+                    Are you sure you want to cancel? Any unsaved changes will be lost. You will be
+                    taken back to the list of reports.
+                </p>
+            </Modal>
+        </>
     );
 }
 
