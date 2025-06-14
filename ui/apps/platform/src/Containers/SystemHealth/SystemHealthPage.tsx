@@ -18,7 +18,7 @@ import BackupIntegrationHealthWidget from './Components/BackupIntegrationHealthW
 import ShowAdministrationUsage from './UsageStatistics/ShowAdministrationUsage';
 import CentralDatabaseHealthCard from './CentralDatabaseHealth/CentralDatabaseHealthCard';
 
-const SystemHealthDashboardPage = () => {
+function SystemHealthPage() {
     const { isCentralCapabilityAvailable } = useCentralCapabilities();
     const isDeclarativeConfigHealthAvailable = isCentralCapabilityAvailable(
         'centralCanDisplayDeclarativeConfigHealth'
@@ -128,6 +128,6 @@ const SystemHealthDashboardPage = () => {
             </PageSection>
         </>
     );
-};
+}
 
-export default SystemHealthDashboardPage;
+export default SystemHealthPage;

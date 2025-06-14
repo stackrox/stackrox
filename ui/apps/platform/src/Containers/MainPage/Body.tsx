@@ -216,7 +216,7 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
         path: searchPath,
     },
     'system-health': {
-        component: asyncComponent(() => import('Containers/SystemHealth/DashboardPage')),
+        component: asyncComponent(() => import('Containers/SystemHealth/SystemHealthPage')),
         path: systemHealthPath,
     },
     systemconfig: {
