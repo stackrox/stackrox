@@ -135,16 +135,16 @@
     {{- end -}}
   {{ end }}
 
-{{- if eq $.Chart.Name "stackrox-secured-cluster-services" -}}
-  {{/* Special handling for the secured-cluster-services chart in case it gets deployed
-       to the same namespace as central-services. */}}
-  {{ $centralDeployment := dict }}
-  {{ include "srox.safeLookup" (list $ $centralDeployment "apps/v1" "Deployment" $.Release.Namespace "central") }}
-  {{ if $centralDeployment.result }}
-    {{ include "srox.note" (list $ "Detected central running in the same namespace. Not deploying scanner-v4-indexer from this chart and configuring sensor to use existing scanner-v4-indexer instance, if any.") }}
-    {{ $_ := set $components "indexer" false }}
-  {{ end }}
-{{- end }}
+  {{- if eq $.Chart.Name "stackrox-secured-cluster-services" -}}
+    {{/* Special handling for the secured-cluster-services chart in case it gets deployed
+        to the same namespace as central-services. */}}
+    {{ $centralDeployment := dict }}
+    {{ include "srox.safeLookup" (list $ $centralDeployment "apps/v1" "Deployment" $.Release.Namespace "central") }}
+    {{ if $centralDeployment.result }}
+      {{ include "srox.note" (list $ "Detected central running in the same namespace. Not deploying scanner-v4-indexer from this chart and configuring sensor to use existing scanner-v4-indexer instance, if any.") }}
+      {{ $_ := set $components "indexer" false }}
+    {{ end }}
+  {{- end }}
 
 {{- end -}} {{/* if not $scannerV4Cfg.disable */}}
 
