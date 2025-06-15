@@ -11,6 +11,7 @@ var (
 )
 
 func initialize() {
+	ad = newDatastoreImpl()
 }
 
 // Singleton provides the interface for non-service external interaction.

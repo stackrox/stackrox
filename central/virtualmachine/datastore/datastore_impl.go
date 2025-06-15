@@ -30,7 +30,8 @@ type datastoreImpl struct {
 
 func newDatastoreImpl() DataStore {
 	ds := &datastoreImpl{
-		keyedMutex: concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
+		keyedMutex:      concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
+		virtualMachines: []*storage.VirtualMachine{},
 	}
 	return ds
 }
