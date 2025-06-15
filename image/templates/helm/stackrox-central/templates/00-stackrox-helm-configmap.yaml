@@ -9,6 +9,6 @@ metadata:
   annotations:
     {{- $annotations := dict "helm.sh/hook" "pre-install" -}}
     {{- include "srox.annotations" (list . "configmap" "stackrox-helm" $annotations) | nindent 4 }}
-    "helm.sh/hook": "pre-install,pre-upgrade"
 data:
-  installVersion: {{ .Chart.appVersion | quote }}
+  installAppVersion: {{ .Chart.AppVersion | quote }}
+  installXYVersion: {{ .Chart.AppVersion | regexFind "^\\d+\\.\\d+" | quote }}
