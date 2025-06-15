@@ -6,4 +6,4 @@ set -euo pipefail
 
 [ -d /.init-dirs ] || exit 0
 
-cp -rfP /.init-dirs/* /
+cp --recursive --no-dereference /.init-dirs/* /
