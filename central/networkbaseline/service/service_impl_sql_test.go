@@ -136,7 +136,7 @@ func (s *networkBaselineServiceSuite) setupTablesExternalFlowsWithDefaultEntity(
 	fs, err := s.flowDataStore.GetFlowStore(allAllowedCtx, fixtureconsts.Cluster1)
 	s.NoError(err)
 
-	err = fs.UpsertFlows(allAllowedCtx, []*storage.NetworkFlow{flow}, timestamp.FromGoTime(ts))
+	_, err = fs.UpsertFlows(allAllowedCtx, []*storage.NetworkFlow{flow}, timestamp.FromGoTime(ts))
 	s.NoError(err)
 }
 
@@ -200,7 +200,7 @@ func (s *networkBaselineServiceSuite) setupTablesExternalFlows() {
 	fs, err := s.flowDataStore.GetFlowStore(allAllowedCtx, fixtureconsts.Cluster1)
 	s.NoError(err)
 
-	err = fs.UpsertFlows(allAllowedCtx, flows, timestamp.FromGoTime(ts))
+	_, err = fs.UpsertFlows(allAllowedCtx, flows, timestamp.FromGoTime(ts))
 	s.NoError(err)
 }
 
