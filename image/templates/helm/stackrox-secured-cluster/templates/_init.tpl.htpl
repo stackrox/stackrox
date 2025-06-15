@@ -140,7 +140,7 @@
 
 [<- if not .KubectlOutput >]
 {{ $_ := include "srox.scannerV4Defaulting" (list $ .Release $._rox.scannerV4 $.stackroxHelm) }}
-{{ include "srox.scannerDefaulting" (list .Release $._rox.scanner) }}
+{{ include "srox.scannerDefaulting" (list . .Release $._rox.scanner $.stackroxHelm) }}
 {{ if ne $._rox.scanner.mode "slim" }}
   {{ include "srox.fail" (print "Only scanner slim mode is allowed in Secured Cluster. To solve this, set to slim mode: scanner.mode=slim.") }}
 {{ end }}
