@@ -75,6 +75,27 @@ func TestNRadixTreeIPv4Remove(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, tree)
 
+	tree.Remove(e2.GetId())
+
+	assert.Nil(t, tree.Get(e2.GetId()))
+	assert.NotNil(t, tree.Get(e1.GetId()))
+
+	assert.True(t, tree.ValidateNetworkTree())
+}
+
+func TestNRadixTreeIPv4Remove2(t *testing.T) {
+	e1 := testutils.GetExtSrcNetworkEntityInfo("1", "1", "35.187.144.0/32", false, true)
+	e2 := testutils.GetExtSrcNetworkEntityInfo("2", "2", "17.187.144.4/32", false, true)
+
+	tree, err := NewNRadixTree(pkgNet.IPv4, []*storage.NetworkEntityInfo{e1, e2})
+	assert.NoError(t, err)
+	assert.NotNil(t, tree)
+
+	tree.Remove(e2.GetId())
+
+	assert.Nil(t, tree.Get(e2.GetId()))
+	assert.NotNil(t, tree.Get(e1.GetId()))
+
 	assert.True(t, tree.ValidateNetworkTree())
 }
 
