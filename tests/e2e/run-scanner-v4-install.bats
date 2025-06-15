@@ -472,16 +472,22 @@ EOT
         "$EARLIER_MAIN_IMAGE_TAG" "$old_sensor_chart" \
         "$secured_cluster_name" "$ROX_ADMIN_PASSWORD" "$central_endpoint"
 
+    _step "verify-scanner-V2-not-deployed"
+    verify_no_scannerV2_deployed "$CUSTOM_SENSOR_NAMESPACE"
+
     _step "verify-scanner-V4-not-deployed"
     verify_no_scannerV4_deployed "$CUSTOM_SENSOR_NAMESPACE"
 
     _step "upgrade-to-HEAD-sensor"
     deploy_sensor_with_helm "$CUSTOM_CENTRAL_NAMESPACE" "$CUSTOM_SENSOR_NAMESPACE" "" "" "" "" ""
 
-    _step "verify-scanner-not-deployed"
+    _step "verify-scanner-V2-not-deployed"
+    verify_no_scannerV2_deployed "$CUSTOM_SENSOR_NAMESPACE"
+
+    _step "verify-scanner-V4-not-deployed"
     verify_no_scannerV4_deployed "$CUSTOM_SENSOR_NAMESPACE"
 
-    _begin "enable-scanner-V4-in-secured-cluster"
+    _begin "enable-scanners-in-secured-cluster"
     # Without creating the scanner-db-password secret manually Scanner V2 doesn't come up.
     # Let's just reuse an existing password for this for simplicity.
     "$ORCH_CMD" </dev/null -n "$CUSTOM_SENSOR_NAMESPACE" create secret generic scanner-db-password \
@@ -490,6 +496,9 @@ EOT
     deploy_sensor_with_helm "$CUSTOM_CENTRAL_NAMESPACE" "$CUSTOM_SENSOR_NAMESPACE" "" "" "" "" "" \
         --set scannerV4.disable=false \
         --set scanner.disable=false
+
+    _step "verify-scanner-V2-deployed"
+    verify_scannerV2_deployed "$CUSTOM_SENSOR_NAMESPACE"
 
     _step "verify-scanner-V4-deployed"
     verify_scannerV4_indexer_deployed "$CUSTOM_SENSOR_NAMESPACE"
