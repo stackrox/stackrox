@@ -16,10 +16,10 @@
   {{- $_ := set $scannerV4 "disable" false -}}
   {{/* Currently there is one exception: when upgrading from a pre-4.8 version, which did not
        install Scanner V4 by default. */}}
-  {{- $installVersionUnknown := kind "invalid" $stackroxHelm.installVersion -}}
-  {{- $upgradingFromPre4_8 := or $installVersionUnknown (semverCompare "< 4.8" $stackroxHelm.installVersion) -}}
+  {{- $installVersionUnknown := kindIs "invalid" $stackroxHelm.installXYVersion -}}
+  {{- $upgradingFromPre4_8 := or $installVersionUnknown (semverCompare "< 4.8" $stackroxHelm.installXYVersion) -}}
   {{- if and $helmRelease.IsUpgrade $upgradingFromPre4_8 -}}
-    {{- include "srox.note" (list $ (printf "Scanner V4 disabled due to upgrade from version %s" $stackroxHelm.installVersion)) -}}
+    {{- include "srox.note" (list $ (printf "Scanner V4 disabled due to upgrade from version %s.x" $stackroxHelm.installXYVersion)) -}}
     {{- $_ := set $scannerV4 "disable" true -}}
   {{- end -}}
 {{- end -}}
