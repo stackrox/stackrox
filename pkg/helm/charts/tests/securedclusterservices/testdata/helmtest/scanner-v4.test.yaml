@@ -221,6 +221,20 @@ tests:
         .serviceaccounts["scanner-v4"] | saOnlyRefersTo([
           "secured-cluster-services-main", "stackrox", "stackrox-scanner-v4", "existing-secret1", "existing-secret2"])
 
+- name: "Scanner V4 is enabled for Sensor in same-namespace setting"
+  set:
+    imagePullSecrets.allowNone: true
+  server:
+    objects:
+    - apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: central
+        namespace: stackrox
+  expect: |
+    envVars(.deployments.sensor; "sensor")["ROX_SCANNER_V4"] | assertThat(. == "true")
+    envVars(.deployments.sensor; "sensor")["ROX_SCANNER_V4_INDEXER_ENDPOINT"] | assertThat(. != "")
+
 - name: "local scanning is"
   set:
     imagePullSecrets.allowNone: true
