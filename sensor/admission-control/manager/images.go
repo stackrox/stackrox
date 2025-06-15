@@ -66,7 +66,7 @@ func (m *manager) getImageFromSensorOrCentral(ctx context.Context, s *state, img
 	// currently connected to sensor.
 	// Note: Sensor is required to scan images in the local registry.
 	if !m.sensorConnStatus.Get() && s.centralConn != nil && s.centralConn.GetState() != connectivity.Shutdown {
-		// Central route
+		log.Debugf("Central route: CachedOnly: %b", !s.GetClusterConfig().GetAdmissionControllerConfig().GetScanInline())
 		resp, err := v1.NewImageServiceClient(s.centralConn).ScanImageInternal(ctx, &v1.ScanImageInternalRequest{
 			Image:      img,
 			CachedOnly: !s.GetClusterConfig().GetAdmissionControllerConfig().GetScanInline(),
@@ -77,7 +77,7 @@ func (m *manager) getImageFromSensorOrCentral(ctx context.Context, s *state, img
 		return resp.GetImage(), nil
 	}
 
-	// Sensor route
+	log.Debugf("Sensor route: ScanInline: %b", s.GetClusterConfig().GetAdmissionControllerConfig().GetScanInline())
 	resp, err := m.client.GetImage(ctx, &sensor.GetImageRequest{
 		Image:      img,
 		ScanInline: s.GetClusterConfig().GetAdmissionControllerConfig().GetScanInline(),
@@ -92,8 +92,10 @@ func (m *manager) getImageFromSensorOrCentral(ctx context.Context, s *state, img
 func (m *manager) fetchImage(ctx context.Context, s *state, resultChan chan<- fetchImageResult, pendingCount *int32, idx int, image *storage.ContainerImage, deployment *storage.Deployment) {
 	defer func() {
 		if atomic.AddInt32(pendingCount, -1) == 0 {
+			log.Debug("PendingCount is 0, closing the image channel")
 			close(resultChan)
 		}
+		log.Debugf("PendingCount is %d", pendingCount)
 	}()
 
 	scannedImg, err := m.getImageFromSensorOrCentral(ctx, s, image, deployment)
@@ -106,6 +108,8 @@ func (m *manager) fetchImage(ctx context.Context, s *state, resultChan chan<- fe
 		return
 	}
 
+	log.Debugf("Image %d %s scanned", idx, image.GetName().GetFullName())
+
 	m.cacheImage(scannedImg)
 	// resultChan is exactly sized so this will be nonblocking
 	resultChan <- fetchImageResult{
@@ -115,6 +119,7 @@ func (m *manager) fetchImage(ctx context.Context, s *state, resultChan chan<- fe
 }
 
 func (m *manager) getAvailableImagesAndKickOffScans(ctx context.Context, s *state, deployment *storage.Deployment) ([]*storage.Image, <-chan fetchImageResult) {
+	log.Debugf("Getting images for deployment %s, %d", deployment.GetName(), len(deployment.GetContainers()))
 	images := make([]*storage.Image, len(deployment.GetContainers()))
 	imgChan := make(chan fetchImageResult, len(deployment.GetContainers()))
 
@@ -127,11 +132,13 @@ func (m *manager) getAvailableImagesAndKickOffScans(ctx context.Context, s *stat
 		if image.GetId() != "" || scanInline {
 			cachedImage := m.getCachedImage(image)
 			if cachedImage != nil {
+				log.Debugf("The image for %s is cached", container.GetName())
 				images[idx] = cachedImage
 			}
 			// The cached image might be insufficient if it doesn't have a scan and we want to do inline scans.
 			if ctx != nil && (cachedImage == nil || (scanInline && cachedImage.GetScan() == nil)) {
 				atomic.AddInt32(&pendingCount, 1)
+				log.Debugf("The image for %s requires a fetch, %d pending", container.GetName(), pendingCount)
 				go m.fetchImage(ctx, s, imgChan, &pendingCount, idx, image, deployment)
 			}
 		}
@@ -141,6 +148,7 @@ func (m *manager) getAvailableImagesAndKickOffScans(ctx context.Context, s *stat
 	}
 
 	if atomic.AddInt32(&pendingCount, -1) == 0 {
+		log.Debug("PendingCount is 0, closing the image channel")
 		close(imgChan)
 	}
 	return images, imgChan
@@ -151,6 +159,7 @@ func (m *manager) getAvailableImagesAndKickOffScans(ctx context.Context, s *stat
 // returned.
 func hasModifiedImages(s *state, deployment *storage.Deployment, req *admission.AdmissionRequest) bool {
 	if req.OldObject.Raw == nil {
+		log.Debug("true")
 		return true
 	}
 
@@ -174,6 +183,7 @@ func hasModifiedImages(s *state, deployment *storage.Deployment, req *admission.
 		return true
 	}
 	if oldDeployment == nil {
+		log.Debug("true")
 		return true
 	}
 
@@ -184,10 +194,12 @@ func hasModifiedImages(s *state, deployment *storage.Deployment, req *admission.
 
 	for _, container := range deployment.GetContainers() {
 		if !oldImages.Contains(container.GetImage().GetName().GetFullName()) {
+			log.Debugf("true: %s", container.GetImage().GetName().GetFullName())
 			return true
 		}
 	}
 
+	log.Debug("false")
 	return false
 }
 
@@ -202,6 +214,7 @@ func (m *manager) kickOffImgScansAndDetect(
 	}
 	images, resultChan := m.getAvailableImagesAndKickOffScans(fetchImgCtx, s, deployment)
 	alerts, err := getAlertsFunc(deployment, images)
+	log.Debugf("%d alerts, err %v", len(alerts), err)
 
 	if fetchImgCtx != nil {
 		// Wait for image scan results to come back, running detection after every update to give a verdict ASAP.
@@ -210,21 +223,32 @@ func (m *manager) kickOffImgScansAndDetect(
 			select {
 			case nextRes, ok := <-resultChan:
 				if !ok {
+					log.Debug("not ok")
 					break resultsLoop
 				}
 				if nextRes.err != nil {
+					log.Debugf("%d alerts, err %v", len(alerts), nextRes.err)
 					continue
 				}
+				img := nextRes.img
+				scan := img.GetScan()
+				log.Debugf("Got image %s, %v", img.GetName().GetFullName(), img.GetNotes())
+				log.Debugf("Scan: %s, %d, %v, %v", scan.GetScanTime(), len(scan.GetComponents()),
+					scan.GetDataSource(), scan.GetNotes())
 				images[nextRes.idx] = nextRes.img
 
 			case <-fetchImgCtx.Done():
+				log.Debug("done")
 				break resultsLoop
 			}
 
 			alerts, err = getAlertsFunc(deployment, images)
+			log.Debugf("%d alerts, err %v", len(alerts), err)
 		}
 	} else {
 		alerts = filterOutNoScanAlerts(alerts) // no point in alerting on no scans if we're not even trying
+		log.Debugf("%d alerts", len(alerts))
 	}
+	log.Debugf("%d alerts, err %v", len(alerts), err)
 	return alerts, err
 }
