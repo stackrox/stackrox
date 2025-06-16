@@ -119,7 +119,7 @@ func TestNRadixTreeIPv4Remove(t *testing.T) {
 
 			remainingIds := externalEntityIds.Difference(deletedIds)
 
-			for id, _ := range remainingIds {
+			for id := range remainingIds {
 				assert.NotNil(t, tree.Get(id))
 			}
 
