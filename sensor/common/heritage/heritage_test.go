@@ -278,7 +278,7 @@ func Test_cleanupHeritageData(t *testing.T) {
 			for i, entry := range tt.args.in {
 				input[i] = &entry
 			}
-			got := cleanupHeritageData(input, tt.args.now, tt.args.maxAge, tt.args.minSize, tt.args.maxSize)
+			got := pruneOldHeritageData(input, tt.args.now, tt.args.maxAge, tt.args.minSize, tt.args.maxSize)
 			gotValues := make([]PastSensor, len(got))
 			// Copy to convert []*PastSensor into []PastSensor, for DeepEqual assertion
 			for i, entry := range got {

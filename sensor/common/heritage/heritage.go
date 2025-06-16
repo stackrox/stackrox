@@ -195,7 +195,7 @@ func (h *Manager) UpsertConfigMap(ctx context.Context, now time.Time) error {
 			LatestUpdate:  now,
 		})
 	}
-	h.cache = cleanupHeritageData(h.cache, now, h.maxAge, h.minSize, h.maxSize)
+	h.cache = pruneOldHeritageData(h.cache, now, h.maxAge, h.minSize, h.maxSize)
 
 	h.lastUpdateOfCurrentData = now
 	log.Debugf("Writing Heritage data %s to ConfigMap %s/%s", pastSensorDataString(h.cache), h.namespace, cmName)
@@ -240,10 +240,10 @@ func (h *Manager) readConfigMap(ctx context.Context) ([]*PastSensor, error) {
 	return data, nil
 }
 
-// cleanupHeritageData reduces the number of elements in the []*PastSensor slice by removing
+// pruneOldHeritageData reduces the number of elements in the []*PastSensor slice by removing
 // the oldest entries if there are more than `maxSize` and removing entries older than the `maxAge`.
 // It does not remove anything until the `minSize` elements are stored.
-func cleanupHeritageData(in []*PastSensor, now time.Time, maxAge time.Duration, minSize, maxSize int) []*PastSensor {
+func pruneOldHeritageData(in []*PastSensor, now time.Time, maxAge time.Duration, minSize, maxSize int) []*PastSensor {
 	if len(in) <= minSize {
 		return in
 	}
