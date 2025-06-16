@@ -9,7 +9,7 @@ set -euo pipefail
 # TODO(DO NOT MERGE): Franky, I don't love the idea of `--no-clobber`. It's
 #  going to hide problems where the directories are misconfigured. The
 #  reason it's here right now, however, is because sensor calls this script
-#  twice and some of the files don't have the write bit set (so force
+#  twice and some of the files don't have the write permission bit set (so force
 #  `--force` won't work either, which was something I had to previously
 #  work through anyway since we had that flag before this PR). That being said,
 #  `--no-clobber` makes this operation idempotent assuming the directories were
