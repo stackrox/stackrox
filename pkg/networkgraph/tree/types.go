@@ -10,6 +10,9 @@ type NetworkTree interface {
 
 	Insert(entity *storage.NetworkEntityInfo) error
 	Remove(key string)
+	// Checks that there are no leafs without values and that the number of values
+	// is equal to the cardinality. If there are multiple trees, the checks are done
+	// for each tree.
 	ValidateNetworkTree() bool
 }
 
@@ -29,7 +32,6 @@ type ReadOnlyNetworkTree interface {
 	GetSubnets(key string) []*storage.NetworkEntityInfo
 	// Returns the largest networks smaller than, and fully contained by the queried network.
 	GetSubnetsForCIDR(cidr string) []*storage.NetworkEntityInfo
-	// Checks if the network tree is valid
 	Get(key string) *storage.NetworkEntityInfo
 	Exists(key string) bool
 }
