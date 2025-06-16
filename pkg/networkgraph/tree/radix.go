@@ -435,8 +435,7 @@ func getCardinalityByValues(node *nRadixNode) int {
 		return 0
 	}
 
-	var cardinality int
-	cardinality = 0
+	cardinality := 0
 
 	if node.value != nil {
 		cardinality = 1
@@ -454,9 +453,7 @@ func getCardinalityByValues(node *nRadixNode) int {
 }
 
 func (t *nRadixTree) validateCardinality() bool {
-	cardinalityByValues := getCardinalityByValues(t.root)
-
-	return cardinalityByValues == t.Cardinality()
+	return getCardinalityByValues(t.root) == t.Cardinality()
 }
 
 func (t *nRadixTree) ValidateNetworkTree() bool {
@@ -467,14 +464,12 @@ func (t *nRadixTree) ValidateNetworkTree() bool {
 		return false
 	}
 
-	valid := validateLeavesHaveValues(t.root)
-	if !valid {
+	if !validateLeavesHaveValues(t.root) {
 		log.Errorf("Found a leaf without a value")
 		return false
 	}
 
-	valid = t.validateCardinality()
-	if !valid {
+	if !t.validateCardinality() {
 		log.Errorf("Found a leaf without a value")
 		return false
 	}
