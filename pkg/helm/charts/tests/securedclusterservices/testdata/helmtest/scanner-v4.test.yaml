@@ -72,18 +72,30 @@ tests:
   release: { "isInstall": false, "isUpgrade": true}
   set:
     imagePullSecrets.allowNone: true
-  server:
-    objects:
-    - apiVersion: v1
-      kind: ConfigMap
-      metadata:
-        name: stackrox-secured-cluster-helm
-        namespace: stackrox
-      data:
-        installXYVersion: "4.8"
   expect: |
     .deployments["scanner"] | assertThat(. != null)
     .deployments["scanner-db"] | assertThat(. != null)
+  tests:
+  - name: "from 4.8"
+    server:
+      objects:
+      - apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          name: stackrox-secured-cluster-helm
+          namespace: stackrox
+        data:
+          installXYVersion: "4.8"
+  - name: "from 4.9"
+    server:
+      objects:
+      - apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          name: stackrox-secured-cluster-helm
+          namespace: stackrox
+        data:
+          installXYVersion: "4.9"
 
 - name: "scanner V4 enabled should only deploy indexer and db"
   set:
