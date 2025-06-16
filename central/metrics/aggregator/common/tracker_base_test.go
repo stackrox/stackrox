@@ -37,10 +37,10 @@ func TestMakeTrackerBase(t *testing.T) {
 }
 
 func TestTrackerBase_Reconfigure(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
 	t.Run("nil configuration", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
 		tracker := MakeTrackerBase("test", "test", testLabelGetters, nilGatherFunc, nil)
 		calledRegistry := false
 		tracker.registerMetricFunc = func(*Configuration, MetricName) { calledRegistry = true }
@@ -56,6 +56,9 @@ func TestTrackerBase_Reconfigure(t *testing.T) {
 	})
 
 	t.Run("test 0 period", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
 		tracker := MakeTrackerBase("test", "test", testLabelGetters, nilGatherFunc, nil)
 		cfg0 := &Configuration{
 			filter: &v1.Query{},
@@ -78,6 +81,8 @@ func TestTrackerBase_Reconfigure(t *testing.T) {
 	})
 
 	t.Run("test add -> delete -> stop", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+
 		result := make(map[MetricName][]*aggregatedRecord)
 		tracker := MakeTrackerBase("test", "test", testLabelGetters,
 			makeTestGatherFunc(testData),
@@ -98,6 +103,7 @@ func TestTrackerBase_Reconfigure(t *testing.T) {
 			period:  time.Hour,
 		}
 		// Initial configuration, track won't be called.
+		// The Run() loop won't be started.
 		tracker.Reconfigure(ctx, cfg0)
 		config := tracker.GetConfiguration()
 		assert.Same(t, cfg0, config)
@@ -116,21 +122,38 @@ func TestTrackerBase_Reconfigure(t *testing.T) {
 			toDelete: metricNames[:1],
 			period:   2 * time.Hour,
 		}
+		// The Run() loop will be started, and track is called from there async.
 		tracker.Reconfigure(ctx, cfg1)
 		assert.Same(t, cfg1, tracker.GetConfiguration())
 		assert.Empty(t, registered)
 		assert.ElementsMatch(t, cfg1.toDelete, unregistered)
-		// track() is called, so some result should be gathered from the
+		// track() is called async, so some result should be gathered from the
 		// persisted metric:
-		assert.ElementsMatch(t, slices.Collect(maps.Keys(result)), metricNames[1:])
+		assert.EventuallyWithT(t, func(c *assert.CollectT) {
+			assert.ElementsMatch(c, slices.Collect(maps.Keys(result)), metricNames[1:])
+		},
+			3*time.Second, 10*time.Millisecond)
+		assert.True(t, tracker.running.Load())
 
 		// Stop and unregister everything:
 		result = make(map[MetricName][]*aggregatedRecord)
 		registered = []MetricName{}
 		unregistered = []MetricName{}
+		// The Run() loop won't be terminated, but the ticker will be stopped.
 		tracker.Reconfigure(ctx, nil)
+		assert.True(t, tracker.running.Load())
+
 		assert.Empty(t, registered)
 		assert.ElementsMatch(t, metricNames[1:], unregistered)
+		assert.Empty(t, result)
+
+		// The Run() loop will be terminated.
+		cancel()
+
+		assert.EventuallyWithT(t, func(c *assert.CollectT) {
+			assert.False(c, tracker.running.Load())
+		},
+			3*time.Second, 10*time.Millisecond)
 		assert.Empty(t, result)
 	})
 

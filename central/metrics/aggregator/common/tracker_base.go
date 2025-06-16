@@ -4,6 +4,7 @@ import (
 	"context"
 	"iter"
 	"slices"
+	"sync/atomic"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -37,7 +38,8 @@ type TrackerBase[Finding Countable] struct {
 	config           *Configuration
 	metricsConfigMux sync.RWMutex
 
-	ticker *time.Ticker
+	ticker  *time.Ticker
+	running atomic.Bool
 
 	// Mockable for testing purposes:
 	registerMetricFunc   func(*Configuration, MetricName)
@@ -98,7 +100,11 @@ func (tracker *TrackerBase[Finding]) Reconfigure(ctx context.Context, cfg *Confi
 		if cfg.period != 0 {
 			// Force track only on reconfiguration, not on the initial tracker
 			// creation.
-			tracker.track(ctx)
+			if tracker.running.Load() {
+				tracker.track(ctx)
+			} else {
+				go tracker.Run(ctx)
+			}
 		} else {
 			log.Debugf("Metrics collection has been disabled for %s", tracker.category)
 			for metric := range previous.metrics {
@@ -186,13 +192,25 @@ func (tracker *TrackerBase[Finding]) track(ctx context.Context) {
 	}
 }
 
+// Run starts the gathering loop. It can be called explicitly, or via
+// non-initial reconfiguration from zero period to non-zero period.
 func (tracker *TrackerBase[Finding]) Run(ctx context.Context) {
-	defer tracker.ticker.Stop()
+	tracker.metricsConfigMux.RLock()
+	ticker := tracker.ticker
+	tracker.metricsConfigMux.RUnlock()
+
+	// Return if no ticker or is already running.
+	if ticker == nil || !tracker.running.CompareAndSwap(false, true) {
+		return
+	}
+	defer tracker.running.Store(false)
+	defer ticker.Stop()
+
 	tracker.track(ctx)
 
 	for {
 		select {
-		case <-tracker.ticker.C:
+		case <-ticker.C:
 			tracker.track(ctx)
 		case <-ctx.Done():
 			return
