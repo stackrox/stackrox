@@ -1,10 +1,12 @@
 package clusterentities
 
 import (
+	"slices"
 	"testing"
 
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/sensor/common/heritage"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -102,9 +104,9 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryWhenGoingOffline() {
 
 func TestEntityData_GetDetails(t *testing.T) {
 	tests := map[string]struct {
-		edFun           func() *EntityData
-		wantContainerID string
-		wantPodIP       string
+		edFun            func() *EntityData
+		wantContainerIDs []string
+		wantPodIPs       []net.IPAddress
 	}{
 		"Single values": {
 			edFun: func() *EntityData {
@@ -113,8 +115,8 @@ func TestEntityData_GetDetails(t *testing.T) {
 				ed.AddContainerID("abc", ContainerMetadata{})
 				return ed
 			},
-			wantContainerID: "abc",
-			wantPodIP:       "10.0.0.1",
+			wantContainerIDs: []string{"abc"},
+			wantPodIPs:       []net.IPAddress{net.ParseIP("10.0.0.1")},
 		},
 		"Multiple sorted values": {
 			edFun: func() *EntityData {
@@ -125,8 +127,8 @@ func TestEntityData_GetDetails(t *testing.T) {
 				ed.AddContainerID("def", ContainerMetadata{})
 				return ed
 			},
-			wantContainerID: "abc",
-			wantPodIP:       "10.0.0.1",
+			wantContainerIDs: []string{"abc", "def"},
+			wantPodIPs:       []net.IPAddress{net.ParseIP("10.0.0.1"), net.ParseIP("10.0.0.2")},
 		},
 		"Multiple unsorted values": {
 			edFun: func() *EntityData {
@@ -148,8 +150,8 @@ func TestEntityData_GetDetails(t *testing.T) {
 				ed.AddContainerID("abc", ContainerMetadata{})
 				return ed
 			},
-			wantContainerID: "abc",
-			wantPodIP:       "10.0.0.2",
+			wantContainerIDs: []string{"abc"},
+			wantPodIPs:       []net.IPAddress{net.ParseIP("10.0.0.2")},
 		},
 		"No Container ID": {
 			edFun: func() *EntityData {
@@ -157,20 +159,17 @@ func TestEntityData_GetDetails(t *testing.T) {
 				ed.AddIP(net.ParseIP("10.0.0.1"))
 				return ed
 			},
-			wantContainerID: "",
-			wantPodIP:       "10.0.0.1",
+			wantContainerIDs: []string{},
+			wantPodIPs:       []net.IPAddress{net.ParseIP("10.0.0.1")},
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			ed := tt.edFun()
-			gotContainerID, gotPodIP := ed.GetDetails()
-			if gotContainerID != tt.wantContainerID {
-				t.Errorf("GetDetails() gotContainerID = %v, want %v", gotContainerID, tt.wantContainerID)
-			}
-			if gotPodIP != tt.wantPodIP {
-				t.Errorf("GetDetails() gotPodIP = %v, want %v", gotPodIP, tt.wantPodIP)
-			}
+			gotContainerIDs, gotPodIPs := ed.GetDetails()
+			assert.True(t, slices.Equal(gotContainerIDs, tt.wantContainerIDs))
+			assert.True(t, slices.Equal(gotPodIPs, tt.wantPodIPs))
+
 		})
 	}
 }
