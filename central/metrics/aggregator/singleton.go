@@ -113,8 +113,10 @@ func (ar *aggregatorRunner) Stop() {
 
 func (ar *aggregatorRunner) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if h := ar.getHandler(req); h != nil {
+		log.Debug("Serving metrics", req.URL.Path)
 		h.ServeHTTP(w, req)
 	} else {
+		log.Debug("Unknown registry name", req.URL.Path)
 		// Serve empty OK for unknown registry names.
 		w.WriteHeader(http.StatusOK)
 	}
