@@ -192,12 +192,16 @@ func (tracker *TrackerBase[Finding]) track(ctx context.Context) {
 	}
 }
 
+func (tracker *TrackerBase[Finding]) getTicker() *time.Ticker {
+	tracker.metricsConfigMux.RLock()
+	defer tracker.metricsConfigMux.RUnlock()
+	return tracker.ticker
+}
+
 // Run starts the gathering loop. It can be called explicitly, or via
 // non-initial reconfiguration from zero period to non-zero period.
 func (tracker *TrackerBase[Finding]) Run(ctx context.Context) {
-	tracker.metricsConfigMux.RLock()
-	ticker := tracker.ticker
-	tracker.metricsConfigMux.RUnlock()
+	ticker := tracker.getTicker()
 
 	// Return if no ticker or is already running.
 	if ticker == nil || !tracker.running.CompareAndSwap(false, true) {
