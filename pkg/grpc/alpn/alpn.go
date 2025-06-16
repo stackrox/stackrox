@@ -2,7 +2,10 @@ package alpn
 
 import (
 	"crypto/tls"
+	"slices"
+	"strings"
 
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sliceutils"
 )
 
@@ -15,9 +18,10 @@ const (
 // ApplyPureGRPCALPNConfig takes the given TLS config and returns a TLS config with support for the pure gRPC ALPN.
 // The original config is not modified.
 func ApplyPureGRPCALPNConfig(tlsConf *tls.Config) *tls.Config {
+	customProtosSlice := strings.Split(env.CustomALPNProtocols.Setting(), ",")
 	confForGRPC := tlsConf.Clone()
 	confForGRPC.NextProtos = sliceutils.Unique(
-		append([]string{PureGRPCALPNString, "h2"}, confForGRPC.NextProtos...))
+		slices.Concat(customProtosSlice, []string{"h2"}, confForGRPC.NextProtos))
 
 	getConfForClient := confForGRPC.GetConfigForClient
 	if getConfForClient != nil {
