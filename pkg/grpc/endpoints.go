@@ -145,6 +145,7 @@ func (c *EndpointConfig) instantiate(httpHandler http.Handler, grpcSrv *grpc.Ser
 	}
 
 	var httpLis, grpcLis net.Listener
+	var useGrpcOverHttp1 bool
 
 	var result []serverAndListener
 
@@ -199,6 +200,7 @@ func (c *EndpointConfig) instantiate(httpHandler http.Handler, grpcSrv *grpc.Ser
 		actualHTTPHandler := httpHandler
 		if c.ServeGRPC {
 			actualHTTPHandler = downgradingServer.CreateDowngradingHandler(grpcSrv, actualHTTPHandler, downgradingServer.PreferGRPCWeb(true))
+			useGrpcOverHttp1 = true
 		}
 
 		httpSrv := &http.Server{
@@ -243,6 +245,10 @@ func (c *EndpointConfig) instantiate(httpHandler http.Handler, grpcSrv *grpc.Ser
 			endpoint: c,
 		})
 	}
+
+	log.Infof("Instantiating endpoint at %s with options:"+
+		"NoHTTP2=%t, ServeGRPC=%t, ServeHTTP=%t, useGrpcOverHttp1=%t",
+		asEndpoint(c.ListenEndpoint), c.NoHTTP2, c.ServeGRPC, c.ServeHTTP, useGrpcOverHttp1)
 
 	return lis.Addr(), result, nil
 }
