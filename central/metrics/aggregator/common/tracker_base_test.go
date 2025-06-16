@@ -10,6 +10,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -83,12 +84,20 @@ func TestTrackerBase_Reconfigure(t *testing.T) {
 	t.Run("test add -> delete -> stop", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 
-		result := make(map[MetricName][]*aggregatedRecord)
+		result := make([]MetricName, 0)
+		resultMux := sync.Mutex{}
+		isEmptyResult := func() bool {
+			resultMux.Lock()
+			defer resultMux.Unlock()
+			return len(result) == 0
+		}
+
 		tracker := MakeTrackerBase("test", "test", testLabelGetters,
 			makeTestGatherFunc(testData),
 			func(metricName string, labels prometheus.Labels, total int) {
-				result[MetricName(metricName)] = append(result[MetricName(metricName)],
-					&aggregatedRecord{labels, total})
+				resultMux.Lock()
+				defer resultMux.Unlock()
+				result = append(result, MetricName(metricName))
 			})
 		var registered, unregistered []MetricName
 		tracker.registerMetricFunc = func(_ *Configuration, metric MetricName) { registered = append(registered, metric) }
@@ -110,10 +119,10 @@ func TestTrackerBase_Reconfigure(t *testing.T) {
 		assert.NotNil(t, tracker.ticker)
 		assert.ElementsMatch(t, cfg0.toAdd, registered)
 		assert.Empty(t, unregistered)
-		assert.Empty(t, result)
+		assert.True(t, isEmptyResult())
 
 		// Delete one random metric and update ticker:
-		result = make(map[MetricName][]*aggregatedRecord)
+		result = make([]MetricName, 0)
 		registered = []MetricName{}
 		unregistered = []MetricName{}
 		delete(mcfg, metricNames[0])
@@ -130,13 +139,15 @@ func TestTrackerBase_Reconfigure(t *testing.T) {
 		// track() is called async, so some result should be gathered from the
 		// persisted metric:
 		assert.EventuallyWithT(t, func(c *assert.CollectT) {
-			assert.ElementsMatch(c, slices.Collect(maps.Keys(result)), metricNames[1:])
+			resultMux.Lock()
+			defer resultMux.Unlock()
+			assert.ElementsMatch(c, slices.Compact(result), metricNames[1:])
 		},
 			3*time.Second, 10*time.Millisecond)
 		assert.True(t, tracker.running.Load())
 
 		// Stop and unregister everything:
-		result = make(map[MetricName][]*aggregatedRecord)
+		result = make([]MetricName, 0)
 		registered = []MetricName{}
 		unregistered = []MetricName{}
 		// The Run() loop won't be terminated, but the ticker will be stopped.
@@ -145,8 +156,7 @@ func TestTrackerBase_Reconfigure(t *testing.T) {
 
 		assert.Empty(t, registered)
 		assert.ElementsMatch(t, metricNames[1:], unregistered)
-		assert.Empty(t, result)
-
+		assert.True(t, isEmptyResult())
 		// The Run() loop will be terminated.
 		cancel()
 
@@ -154,7 +164,7 @@ func TestTrackerBase_Reconfigure(t *testing.T) {
 			assert.False(c, tracker.running.Load())
 		},
 			3*time.Second, 10*time.Millisecond)
-		assert.Empty(t, result)
+		assert.True(t, isEmptyResult())
 	})
 
 }
