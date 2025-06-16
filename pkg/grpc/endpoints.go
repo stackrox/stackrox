@@ -163,8 +163,16 @@ func (c *EndpointConfig) instantiate(httpHandler http.Handler, grpcSrv *grpc.Ser
 
 	if tlsConf != nil {
 		if c.ServeGRPC && !c.NoHTTP2 {
+			log.Info("Enabling ALPN support for pure-grpc in the server")
 			tlsConf = alpn.ApplyPureGRPCALPNConfig(tlsConf)
 		}
+		overwriteALPN := strings.Split(env.ForceServerALPNProtocols.Setting(), ",")
+		if len(overwriteALPN) > 0 {
+			log.Warnf("Overwriting ALPN protocols from %s. Current protocols: %s",
+				env.ForceServerALPNProtocols.EnvVar(), overwriteALPN)
+			tlsConf.NextProtos = sliceutils.Unique(overwriteALPN)
+		}
+
 		lis = tls.NewListener(lis, tlsConf)
 
 		if c.ServeGRPC && c.ServeHTTP {
