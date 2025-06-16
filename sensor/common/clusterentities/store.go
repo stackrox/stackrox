@@ -114,7 +114,7 @@ type Store struct {
 	callbackChannel chan<- ContainerMetadata
 
 	// pastSensors provides data about past Sensor IPs and container IDs
-	pastSensors HeritageData
+	pastSensors HeritageManager
 
 	// memorySize defines how many ticks old endpoint data should be remembered after removal request
 	// Set to 0 to disable memory
@@ -126,14 +126,14 @@ type Store struct {
 	trace      map[string]string
 }
 
-type HeritageData interface {
+type HeritageManager interface {
 	GetData(ctx context.Context) []*heritage.PastSensor
 	HasCurrentSensorData() bool
 	SetCurrentSensorData(currentIP, currentContainerID string)
 }
 
 // NewStoreWithMemory returns store that remembers past IPs of an endpoint for a given number of ticks
-func NewStoreWithMemory(numTicks uint16, hm HeritageData, debugMode bool) *Store {
+func NewStoreWithMemory(numTicks uint16, hm HeritageManager, debugMode bool) *Store {
 	store := &Store{
 		endpointsStore:    newEndpointsStoreWithMemory(numTicks),
 		podIPsStore:       newPodIPsStoreWithMemory(numTicks),
@@ -173,7 +173,7 @@ func (e *Store) Cleanup() {
 	e.resetMaps()
 }
 
-func (e *Store) GetHeritageData() HeritageData {
+func (e *Store) GetHeritageData() HeritageManager {
 	return e.pastSensors
 }
 
