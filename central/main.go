@@ -872,7 +872,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			// The access is behind authorization because the metric label
 			// values may include sensitive data, such as deployment names and
 			// CVEs.
-			Route:         "/metrics",
+			Route:         "/metrics/{custom}",
 			Authorizer:    user.With(permissions.View(resources.Administration)),
 			ServerHandler: customMetrics.Singleton(),
 			Compression:   true,
