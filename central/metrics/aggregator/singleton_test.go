@@ -9,12 +9,14 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 	configDS "github.com/stackrox/rox/central/config/datastore/mocks"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
+	"github.com/travelaudience/go-promhttp"
 	"go.uber.org/mock/gomock"
 )
 
@@ -106,20 +108,44 @@ func TestRunner_ServeHTTP(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	cds := configDS.NewMockDataStore(ctrl)
+
+	testLabelsConfig := map[string]*storage.PrometheusMetricsConfig_Labels_Expression{
+		"Cluster":  nil,
+		"Severity": nil,
+	}
+
 	cds.EXPECT().GetPrivateConfig(gomock.Any()).Times(1).Return(
 		&storage.PrivateConfig{
 			PrometheusMetricsConfig: &storage.PrometheusMetricsConfig{
 				ImageVulnerabilities: &storage.PrometheusMetricsConfig_Metrics{
 					GatheringPeriodMinutes: 10,
 					Metrics: map[string]*storage.PrometheusMetricsConfig_Labels{
-						"metric1": {
-							Labels: map[string]*storage.PrometheusMetricsConfig_Labels_Expression{
-								"Cluster":  nil,
-								"Severity": nil,
-							},
+						"ext_metric": {
+							Labels:       testLabelsConfig,
 							Exposure:     storage.PrometheusMetricsConfig_Labels_EXTERNAL,
 							RegistryName: "custom",
-						}}}}},
+						},
+						"int_metric": {
+							Labels:       testLabelsConfig,
+							Exposure:     storage.PrometheusMetricsConfig_Labels_INTERNAL,
+							RegistryName: "ignored",
+						},
+						"both_metric": {
+							Labels:       testLabelsConfig,
+							Exposure:     storage.PrometheusMetricsConfig_Labels_BOTH,
+							RegistryName: "custom2",
+						},
+						"none_metric": {
+							Labels:       testLabelsConfig,
+							Exposure:     storage.PrometheusMetricsConfig_Labels_NONE,
+							RegistryName: "ignored2",
+						},
+						"ext_pub_metric": {
+							Labels:       testLabelsConfig,
+							Exposure:     storage.PrometheusMetricsConfig_Labels_EXTERNAL,
+							RegistryName: "",
+						},
+					}}}},
 		nil)
 
 	dds := deploymentDS.NewMockDataStore(ctrl)
@@ -150,17 +176,61 @@ func TestRunner_ServeHTTP(t *testing.T) {
 	runner.initialize(cds)
 	runner.Stop()
 	runner.image_vulnerabilities.Run(runner.ctx)
-	rec := httptest.NewRecorder()
-	runner.ServeHTTP(rec, httptest.NewRequest("GET", "/metrics/custom", nil))
 
-	result := rec.Result()
-	assert.Equal(t, 200, result.StatusCode)
-	body, err := io.ReadAll(result.Body)
-	_ = result.Body.Close()
-	assert.NoError(t, err)
-	assert.Equal(t,
-		`# HELP rox_central_metric1 The total number of aggregated CVEs aggregated by Cluster,Severity and gathered every 10m0s`+"\n"+
-			`# TYPE rox_central_metric1 gauge`+"\n"+
-			`rox_central_metric1{Cluster="cluster1",Severity="IMPORTANT_VULNERABILITY_SEVERITY"} 1`+"\n",
-		string(body))
+	expectedBody := func(metricName string) string {
+		return `# HELP rox_central_` + metricName + ` The total number of aggregated CVEs aggregated by Cluster,Severity and gathered every 10m0s` + "\n" +
+			`# TYPE rox_central_` + metricName + ` gauge` + "\n" +
+			`rox_central_` + metricName + `{Cluster="cluster1",Severity="IMPORTANT_VULNERABILITY_SEVERITY"} 1` + "\n"
+	}
+
+	t.Run("external", func(t *testing.T) {
+		rec := httptest.NewRecorder()
+		runner.ServeHTTP(rec, httptest.NewRequest("GET", "/metrics/custom", nil))
+
+		result := rec.Result()
+		assert.Equal(t, 200, result.StatusCode)
+		body, err := io.ReadAll(result.Body)
+		_ = result.Body.Close()
+		assert.NoError(t, err)
+		assert.Equal(t, expectedBody("ext_metric"), string(body))
+	})
+
+	t.Run("both external", func(t *testing.T) {
+		rec := httptest.NewRecorder()
+		runner.ServeHTTP(rec, httptest.NewRequest("GET", "/metrics/custom2", nil))
+
+		result := rec.Result()
+		assert.Equal(t, 200, result.StatusCode)
+		body, err := io.ReadAll(result.Body)
+		_ = result.Body.Close()
+		assert.NoError(t, err)
+		assert.Equal(t, expectedBody("both_metric"), string(body))
+	})
+
+	t.Run("external default", func(t *testing.T) {
+		rec := httptest.NewRecorder()
+		runner.ServeHTTP(rec, httptest.NewRequest("GET", "/metrics", nil))
+
+		result := rec.Result()
+		assert.Equal(t, 200, result.StatusCode)
+		body, err := io.ReadAll(result.Body)
+		_ = result.Body.Close()
+		assert.NoError(t, err)
+		assert.Equal(t, expectedBody("ext_pub_metric"), string(body))
+	})
+
+	t.Run("internal", func(t *testing.T) {
+		rec := httptest.NewRecorder()
+		promhttp.HandlerFor(prometheus.DefaultGatherer, promhttp.HandlerOpts{}).
+			ServeHTTP(rec, httptest.NewRequest("GET", "/metrics", nil))
+
+		result := rec.Result()
+		assert.Equal(t, 200, result.StatusCode)
+		body, err := io.ReadAll(result.Body)
+		_ = result.Body.Close()
+		assert.NoError(t, err)
+
+		assert.Contains(t, string(body), expectedBody("int_metric"))
+		assert.Contains(t, string(body), expectedBody("both_metric"))
+	})
 }
