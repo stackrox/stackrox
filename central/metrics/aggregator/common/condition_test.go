@@ -19,6 +19,11 @@ func Test_condition_match(t *testing.T) {
 		ok := (&Condition{"=", "value"}).match(value)
 		assert.True(t, ok)
 		assert.Equal(t, "value", value)
+
+		value = labels["number"]
+		ok = (&Condition{">=", "1.0"}).match(value)
+		assert.True(t, ok)
+		assert.Equal(t, "3.4", value)
 	})
 
 	t.Run("test missing label", func(t *testing.T) {
@@ -62,6 +67,43 @@ func Test_condition_match(t *testing.T) {
 		{"string", Condition{"=", "*2"}, false},
 		{"number", Condition{"=", "3.40.1"}, false},
 		{"bool", Condition{"=", "true"}, false},
+
+		{"string", Condition{"!=", "value1"}, true},
+		{"string", Condition{"!=", "*2"}, true},
+		{"number", Condition{"!=", "3.5"}, true},
+		{"bool", Condition{"!=", "true"}, true},
+
+		{"string", Condition{"!=", "value"}, false},
+		{"string", Condition{"!=", "*alu?"}, false},
+		{"number", Condition{"!=", "3.4"}, false},
+		{"bool", Condition{"!=", "false"}, false},
+
+		{"number", Condition{">", "3.0"}, true},
+		{"number", Condition{">", "0"}, true},
+		{"number", Condition{">", "-1"}, true},
+		{"number", Condition{">=", "3.4"}, true},
+
+		{"number", Condition{">", "3.4"}, false},
+		{"number", Condition{">", "34"}, false},
+		{"number", Condition{">", "+4334"}, false},
+		{"number", Condition{">=", "3.41"}, false},
+
+		{"number", Condition{"<", "3.41"}, true},
+		{"number", Condition{"<", "34"}, true},
+		{"number", Condition{"<", "+4334"}, true},
+		{"number", Condition{"<=", "3.4"}, true},
+
+		{"number", Condition{"<", "3.4"}, false},
+		{"number", Condition{"<", "0"}, false},
+		{"number", Condition{"<", "-1"}, false},
+		{"number", Condition{"<=", "3.3"}, false},
+
+		// string comparison:
+		{"number", Condition{"<", "3.a"}, true},
+		{"number", Condition{"!=", "3,4"}, true},
+		{"string", Condition{">", "val"}, true},
+		{"string", Condition{"<=", "value1"}, true},
+		{"number", Condition{"<", ">3.4"}, true},
 	} {
 		value := labels[c.label]
 		actual := c.cond.match(value)
@@ -80,14 +122,17 @@ func Test_validate(t *testing.T) {
 	}
 	cases := []testCase{
 		// NOK:
-		{Condition{op: "op"}, `operator in "op" is not one of ["="]`},
+		{Condition{op: "op"}, `operator in "op" is not one of ["=" "!=" ">" ">=" "<" "<=" "OR"]`},
 		{Condition{op: "="}, "missing argument in \"=\""},
-		{Condition{op: "?", arg: "arg"}, `operator in "?arg" is not one of ["="]`},
+		{Condition{op: "?", arg: "arg"}, `operator in "?arg" is not one of ["=" "!=" ">" ">=" "<" "<=" "OR"]`},
 		{Condition{op: "=", arg: "[a-"}, "cannot parse the argument in \"=[a-\""},
 		{Condition{arg: "arg"}, "missing operator in \"arg\""},
+		{Condition{op: "OR", arg: "arg"}, "unexpected argument in \"ORarg\""},
 		// OK:
 		{Condition{}, "empty operator"},
+		{Condition{op: "OR"}, ""},
 		{Condition{op: "=", arg: "arg"}, ""},
+		{Condition{op: ">=", arg: "4.5"}, ""},
 		{Condition{op: "=", arg: "def"}, ""},
 	}
 	for _, c := range cases {

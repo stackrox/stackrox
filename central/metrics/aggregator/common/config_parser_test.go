@@ -82,6 +82,6 @@ func Test_parseErrors(t *testing.T) {
 		},
 	}
 	labelExpression, err = ParseMetricLabels(config, testLabelOrder)
-	assert.Equal(t, `invalid configuration: failed to parse a condition for metric "metric1" with label "test": operator in "smoothy" is not one of ["="]`, err.Error())
+	assert.Equal(t, `invalid configuration: failed to parse a condition for metric "metric1" with label "test": operator in "smoothy" is not one of ["=" "!=" ">" ">=" "<" "<=" "OR"]`, err.Error())
 	assert.Empty(t, labelExpression)
 }
