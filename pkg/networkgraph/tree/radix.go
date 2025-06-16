@@ -482,15 +482,6 @@ func (t *nRadixTree) ValidateNetworkTree() bool {
 	return true
 }
 
-//func getBinariesFromTree(node *nRadixNode) [][]byte {
-//	result = 	
-//	if node.left 	
-//}
-//
-//func (t *nRadixTree) GetIPNets() []*net.IPNet {
-//	binary := getBinariesFromTree(t.root)
-//}
-
 func removeRecursively(node *nRadixNode) {
 	// Do not remove the root.
 	if node.parent == nil {
