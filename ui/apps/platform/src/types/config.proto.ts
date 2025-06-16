@@ -61,11 +61,21 @@ export type Expression = {
     expression?: Condition[];
 };
 
+export enum Exposure {
+          NONE = 0;
+      INTERNAL = 1;
+      EXTERNAL = 2;
+      BOTH = 3;
+
+}
+
 export type Labels = {
     labels: Record<string, Expression>;
+    exposure: Exposure;
+    registryName: string;
 };
 
-export type ImageVulnerabilities = {
+export type Metrics = {
     gatheringPeriodMinutes?: number; // uint32
     metrics?: Record<string, Labels>;
     filter?: string;
@@ -75,7 +85,7 @@ export type ImageVulnerabilities = {
 export type Category = 'imageVulnerabilities';
 
 export type PrometheusMetricsConfig = {
-    imageVulnerabilities?: ImageVulnerabilities;
+    imageVulnerabilities?: Metrics;
 };
 
 export type PrivateConfig = {
