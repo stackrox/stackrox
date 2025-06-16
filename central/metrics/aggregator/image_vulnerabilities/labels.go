@@ -18,7 +18,7 @@ type finding struct {
 	deployment *storage.Deployment
 }
 
-func ParseConfiguration(config map[string]*storage.PrometheusMetricsConfig_Labels) error {
-	_, err := common.ParseMetricLabels(config, labels)
+func ParseConfiguration(config *storage.PrometheusMetricsConfig_Metrics) error {
+	_, err := common.ParseConfiguration(config, nil, labels)
 	return err
 }

@@ -7,5 +7,5 @@ import (
 
 func ParseConfiguration(config *storage.PrometheusMetricsConfig) error {
 	return image_vulnerabilities.ParseConfiguration(
-		config.GetImageVulnerabilities().GetMetrics())
+		config.GetImageVulnerabilities())
 }
