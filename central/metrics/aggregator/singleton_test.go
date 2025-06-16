@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"testing"
 
+	"github.com/pkg/errors"
 	configDS "github.com/stackrox/rox/central/config/datastore/mocks"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	"github.com/stackrox/rox/central/metrics"
@@ -54,7 +55,7 @@ func Test_getRegistryName(t *testing.T) {
 	}
 }
 
-func TestRunner_ParseConfiguration(t *testing.T) {
+func TestRunner_makeRunner(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	t.Run("nil configuration", func(t *testing.T) {
 		cds := configDS.NewMockDataStore(ctrl)
@@ -63,28 +64,41 @@ func TestRunner_ParseConfiguration(t *testing.T) {
 				PrometheusMetricsConfig: nil,
 			},
 			nil)
-		runner := makeRunner(cds, nil)
+		runner := makeRunner(nil)
+		runner.initialize(cds)
+		assert.NotNil(t, runner)
+
+		// The synchronous loop should exit on nil ticker.
+		runner.image_vulnerabilities.Run(runner.ctx)
+
 		cfg, err := runner.ParseConfiguration(nil)
 		assert.NoError(t, err)
 		assert.NotNil(t, cfg)
 		runner.Reconfigure(&RunnerConfiguration{})
+
+		// The synchronous loop should exit on nil ticker.
+		runner.image_vulnerabilities.Run(runner.ctx)
 	})
-}
 
-func TestRunner(t *testing.T) {
-	t.Run("nil runner", func(t *testing.T) {
-		var runner *aggregatorRunner
-		assert.NotPanics(t, func() {
-			runner.Start()
-			runner.Stop()
-		})
+	t.Run("err configuration", func(t *testing.T) {
+		cds := configDS.NewMockDataStore(ctrl)
+		cds.EXPECT().GetPrivateConfig(gomock.Any()).Times(1).Return(
+			nil,
+			errors.New("DB error"))
+		runner := makeRunner(nil)
+		assert.NotNil(t, runner)
+		runner.initialize(cds)
+
+		// The synchronous loop should exit on nil ticker.
+		runner.image_vulnerabilities.Run(runner.ctx)
+
 		cfg, err := runner.ParseConfiguration(nil)
-		assert.NotNil(t, cfg)
 		assert.NoError(t, err)
+		assert.NotNil(t, cfg)
+		runner.Reconfigure(&RunnerConfiguration{})
 
-		rec := httptest.NewRecorder()
-		runner.ServeHTTP(rec, nil)
-		assert.Equal(t, 200, rec.Result().StatusCode)
+		// The synchronous loop should exit on nil ticker.
+		runner.image_vulnerabilities.Run(runner.ctx)
 	})
 }
 
@@ -132,7 +146,8 @@ func TestRunner_ServeHTTP(t *testing.T) {
 		}},
 	}, nil)
 
-	runner := makeRunner(cds, dds)
+	runner := makeRunner(dds)
+	runner.initialize(cds)
 	runner.Stop()
 	runner.image_vulnerabilities.Run(runner.ctx)
 	rec := httptest.NewRecorder()
