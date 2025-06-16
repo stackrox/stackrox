@@ -59,8 +59,13 @@ const (
 	annotationInfoKey  = `stackrox.io/past-sensors-info`
 	annotationInfoText = `This data is for sensor to recognize its past pod instances.`
 
+	// heritageMinSize is set to 2 as the smallest reasonable minimum covering 1 entry about the past and 1 about the
+	// current sensor. Setting this to 1 would disable the historical data and make the heritage feature useless.
 	heritageMinSize = 2
-	heritageMaxAge  = time.Hour
+
+	// heritageMaxAge is set to 1 hour to cover for most of the cases when sensor is restarting.
+	// Crash-loops with duration of over 1 hour are enough justification for losses of details on the network graph.
+	heritageMaxAge = time.Hour
 )
 
 var (
