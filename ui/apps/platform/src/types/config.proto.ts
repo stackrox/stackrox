@@ -61,18 +61,12 @@ export type Expression = {
     expression?: Condition[];
 };
 
-export enum Exposure {
-          NONE = 0;
-      INTERNAL = 1;
-      EXTERNAL = 2;
-      BOTH = 3;
-
-}
+export type Exposure = 'NONE' | 'INTERNAL' | 'EXTERNAL' | 'BOTH';
 
 export type Labels = {
     labels: Record<string, Expression>;
-    exposure: Exposure;
-    registryName: string;
+    exposure?: Exposure;
+    registryName?: string;
 };
 
 export type Metrics = {

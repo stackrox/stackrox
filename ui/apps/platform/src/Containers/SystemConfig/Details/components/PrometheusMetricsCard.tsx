@@ -33,6 +33,7 @@ import { FormikErrors, FormikValues } from 'formik';
 const predefinedMetrics: Record<Category, Record<string, Labels>> = {
     imageVulnerabilities: {
         image_vuln_namespace_severity: {
+            exposure: 'EXTERNAL',
             labels: {
                 Cluster: { expression: [] },
                 Namespace: { expression: [] },
@@ -40,6 +41,7 @@ const predefinedMetrics: Record<Category, Record<string, Labels>> = {
             },
         },
         image_vuln_deployment_severity: {
+            exposure: 'EXTERNAL',
             labels: {
                 Cluster: { expression: [] },
                 Namespace: { expression: [] },
@@ -48,6 +50,7 @@ const predefinedMetrics: Record<Category, Record<string, Labels>> = {
             },
         },
         image_vuln_user_workload_severity: {
+            exposure: 'EXTERNAL',
             labels: {
                 Cluster: { expression: [] },
                 Namespace: { expression: [] },
@@ -116,7 +119,8 @@ function predefinedMetricListItem(
                             <></>
                         ),
                         <DataListCell>{metric}</DataListCell>,
-                        <DataListCell>Predefined</DataListCell>,
+                        <DataListCell>Predefined (EXTERNAL)</DataListCell>,
+                        <DataListCell></DataListCell>, // empty registryName.
                         <DataListCell>
                             {labelGroup(predefinedMetrics[category][metric].labels)}
                         </DataListCell>,
@@ -201,7 +205,10 @@ function prometheusMetricsDataList(
                                         <></>
                                     ),
                                     <DataListCell>{metric}</DataListCell>,
-                                    <DataListCell>Custom</DataListCell>,
+                                    <DataListCell>
+                                        Custom ({labels.exposure || 'unexposed'}){' '}
+                                    </DataListCell>,
+                                    <DataListCell>{labels.registryName || ''}</DataListCell>,
                                     <DataListCell>{labelGroup(labels?.labels)}</DataListCell>,
                                 ]}
                             />
