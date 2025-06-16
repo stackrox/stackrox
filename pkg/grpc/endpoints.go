@@ -168,8 +168,8 @@ func (c *EndpointConfig) instantiate(httpHandler http.Handler, grpcSrv *grpc.Ser
 		}
 		overwriteALPN := strings.Split(env.ForceServerALPNProtocols.Setting(), ",")
 		if len(overwriteALPN) > 0 {
-			log.Warnf("Overwriting ALPN protocols from %s. Current protocols: %s",
-				env.ForceServerALPNProtocols.EnvVar(), overwriteALPN)
+			log.Warnf("Overwriting Server ALPN protocols from %s. Previous/Current protocols: %q/%q",
+				env.ForceServerALPNProtocols.EnvVar(), tlsConf.NextProtos, overwriteALPN)
 			tlsConf.NextProtos = sliceutils.Unique(overwriteALPN)
 		}
 
