@@ -173,20 +173,30 @@ func (a *aggregateExternalConnByNameImpl) Aggregate(flows []*storage.NetworkFlow
 			continue
 		}
 
-		flow = flow.CloneVT()
-
-		flowProps := flow.GetProps()
-		if flowProps == nil {
+		// If both endpoints are not known external sources, skip processing.
+		if !networkgraph.IsKnownExternalSrc(srcEntity) && !networkgraph.IsKnownExternalSrc(dstEntity) {
+			ret = append(ret, flow)
 			continue
 		}
 
-		srcEntity, dstEntity = flowProps.SrcEntity, flowProps.DstEntity
+		if networkgraph.IsExternalDiscovered(srcEntity) || networkgraph.IsExternalDiscovered(dstEntity) {
+			log.Info("external flow ", srcEntity, " ", dstEntity)
+			flow = flow.CloneVT()
 
-		// If the entity is discovered, anonymize it to avoid overloading
-		// the graph with many nodes (external IP details are still accessible
-		// via other APIs)
-		flowProps.SrcEntity = anonymizeDiscoveredEntity(flowProps.SrcEntity)
-		flowProps.DstEntity = anonymizeDiscoveredEntity(flowProps.DstEntity)
+			flowProps := flow.GetProps()
+			if flowProps == nil {
+				continue
+			}
+
+			// If the entity is discovered, anonymize it to avoid overloading
+			// the graph with many nodes (external IP details are still accessible
+			// via other APIs)
+			flowProps.SrcEntity = anonymizeDiscoveredEntity(flowProps.GetSrcEntity())
+			flowProps.DstEntity = anonymizeDiscoveredEntity(flowProps.GetDstEntity())
+
+			ret = append(ret, flow)
+			continue
+		}
 
 		// If both endpoints are not known external sources, skip processing.
 		if !networkgraph.IsKnownExternalSrc(srcEntity) && !networkgraph.IsKnownExternalSrc(dstEntity) {
