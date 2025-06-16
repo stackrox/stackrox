@@ -1,0 +1,14 @@
+{{- include "srox.init" . -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: stackrox-central-helm
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "configmap" "stackrox-central-helm") | nindent 4 }}
+  annotations:
+    {{- $annotations := dict "helm.sh/hook" "pre-install" -}}
+    {{- include "srox.annotations" (list . "configmap" "stackrox-central-helm" $annotations) | nindent 4 }}
+data:
+  installAppVersion: {{ .Chart.AppVersion | quote }}
+  installXYVersion: {{ .Chart.AppVersion | regexFind "^\\d+\\.\\d+" | quote }}
