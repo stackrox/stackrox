@@ -22,7 +22,7 @@
   {{- $installVersionUnknown := kindIs "invalid" $stackroxHelm.installXYVersion -}}
   {{- $upgradingFromPre4_8 := or $installVersionUnknown (semverCompare "< 4.8" $stackroxHelm.installXYVersion) -}}
   {{- if and $helmRelease.IsUpgrade $upgradingFromPre4_8 -}}
-    {{- include "srox.note" (list $ (printf "StackRox Scanner not installed due to upgrade from version %s.x" $stackroxHelm.installXYVersion)) -}}
+    {{- include "srox.note" (list $ "StackRox Scanner disabled by default: this deployment was initially installed before version 4.8.") -}}
     {{- $_ := set $scanner "disable" true -}}
   {{- end -}}
 {{- end -}}
