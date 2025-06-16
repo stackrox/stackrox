@@ -34,7 +34,7 @@ type CleanableStore interface {
 }
 
 // InitializeStore creates the store instances
-func InitializeStore(hm clusterentities.HeritageData) *StoreProvider {
+func InitializeStore(hm clusterentities.HeritageManager) *StoreProvider {
 	memSizeSetting := pastClusterEntitiesMemorySize.IntegerSetting()
 	if memSizeSetting < 0 {
 		memSizeSetting = pastClusterEntitiesMemorySize.DefaultValue()

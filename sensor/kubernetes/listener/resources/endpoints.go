@@ -258,7 +258,15 @@ func (m *endpointManagerImpl) updateHeritageData(data *clusterentities.EntityDat
 	if hm.HasCurrentSensorData() && !force {
 		return
 	}
-	sensorContainerID, sensorPodIP := data.GetDetails()
+	var sensorContainerID, sensorPodIP string
+	sensorContainerIDs, sensorPodIPs := data.GetDetails()
+	if len(sensorContainerIDs) > 0 {
+		sensorContainerID = sensorContainerIDs[0]
+	}
+	if len(sensorPodIPs) > 0 {
+		// Deliberately choosing only the first IP from potentially many
+		sensorPodIP = sensorPodIPs[0].String()
+	}
 	log.Infof("Discovered podIP=%q and containerID=%q for Sensor heritage", sensorPodIP, sensorContainerID)
 	if sensorPodIP != "" && sensorContainerID != "" {
 		hm.SetCurrentSensorData(sensorPodIP, sensorContainerID)

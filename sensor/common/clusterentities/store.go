@@ -58,23 +58,11 @@ func (ed *EntityData) String() string {
 }
 
 // GetDetails returns the internal data about the entity
-func (ed *EntityData) GetDetails() (containerID, podIP string) {
-	for s := range ed.containerIDs {
-		containerID = s
-		break
-	}
-	// Sort the IPs to deterministically return the first IP if more than one are stored.
-	// The slice should contain single element in most of the cases.
-	sortedIPs := slices.SortedFunc(maps.Keys(ed.ips), func(a, b net.IPAddress) int {
-		return strings.Compare(a.String(), b.String())
+func (ed *EntityData) GetDetails() (containerIDs []string, podIPs []net.IPAddress) {
+	containerIDs = slices.Sorted(maps.Keys(ed.containerIDs))
+	podIPs = slices.DeleteFunc(slices.Collect(maps.Keys(ed.ips)), func(e net.IPAddress) bool {
+		return !e.IsValid()
 	})
-
-	for _, ip := range sortedIPs {
-		if ip.IsValid() {
-			podIP = ip.String()
-			return
-		}
-	}
 	return
 }
 
