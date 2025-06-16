@@ -26,7 +26,7 @@ import GenerateSbomModal, {
 import ImageNameLink from '../components/ImageNameLink';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
 import { SignatureVerificationResult, VulnerabilitySeverityLabel, WatchStatus } from '../../types';
-import ImageScanningIncompleteLabel from '../components/ImageScanningIncompleteLabelLayout';
+import ImageScanningIncompleteLabel from '../components/ImageScanningIncompleteLabel';
 import VerifiedSignatureLabel from '../components/VerifiedSignatureLabelLayout';
 import getImageScanMessage from '../utils/getImageScanMessage';
 import { getSeveritySortOptions } from '../../utils/sortUtils';
