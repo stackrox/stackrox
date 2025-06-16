@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/testutils"
 	"github.com/stackrox/rox/pkg/protoassert"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -67,36 +68,64 @@ func TestNRadixTreeIPv4(t *testing.T) {
 	protoassert.ElementsMatch(t, []*storage.NetworkEntityInfo{e2, e5, e7}, tree.GetSubnetsForCIDR("0.0.0.0/0"))
 }
 
+func getIds(entityInfos []*storage.NetworkEntityInfo) set.StringSet {
+	ids := set.NewStringSet()
+
+	for _, entityInfo := range entityInfos {
+		ids.Add(entityInfo.GetId())
+	}
+
+	return ids
+}
+
 func TestNRadixTreeIPv4Remove(t *testing.T) {
 	e1 := testutils.GetExtSrcNetworkEntityInfo("1", "1", "35.187.144.0/32", false, true)
 	e2 := testutils.GetExtSrcNetworkEntityInfo("2", "2", "35.187.144.4/32", false, true)
+	e3 := testutils.GetExtSrcNetworkEntityInfo("3", "3", "17.187.144.4/32", false, true)
 
-	tree, err := NewNRadixTree(pkgNet.IPv4, []*storage.NetworkEntityInfo{e1, e2})
-	assert.NoError(t, err)
-	assert.NotNil(t, tree)
+	cases := map[string]struct {
+		externalEntityInfos []*storage.NetworkEntityInfo
+		toBeDeleted         []*storage.NetworkEntityInfo
+	}{
+		"Similar IPs": {
+			externalEntityInfos: []*storage.NetworkEntityInfo{e1, e2},
+			toBeDeleted:         []*storage.NetworkEntityInfo{e2},
+		},
+		"Disimilar IPs": {
+			externalEntityInfos: []*storage.NetworkEntityInfo{e1, e3},
+			toBeDeleted:         []*storage.NetworkEntityInfo{e3},
+		},
+		"Delete multiple": {
+			externalEntityInfos: []*storage.NetworkEntityInfo{e1, e2, e3},
+			toBeDeleted:         []*storage.NetworkEntityInfo{e2, e3},
+		},
+	}
 
-	tree.Remove(e2.GetId())
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			tree, err := NewNRadixTree(pkgNet.IPv4, c.externalEntityInfos)
+			assert.NoError(t, err)
+			assert.NotNil(t, tree)
 
-	assert.Nil(t, tree.Get(e2.GetId()))
-	assert.NotNil(t, tree.Get(e1.GetId()))
+			for _, entityInfo := range c.toBeDeleted {
+				log.Infof("Deleting %+v", entityInfo)
+				assert.NotNil(t, tree.Get(entityInfo.GetId()))
+				tree.Remove(entityInfo.GetId())
+				assert.Nil(t, tree.Get(entityInfo.GetId()))
+			}
 
-	assert.True(t, tree.ValidateNetworkTree())
-}
+			externalEntityIds := getIds(c.externalEntityInfos)
+			deletedIds := getIds(c.toBeDeleted)
 
-func TestNRadixTreeIPv4Remove2(t *testing.T) {
-	e1 := testutils.GetExtSrcNetworkEntityInfo("1", "1", "35.187.144.0/32", false, true)
-	e2 := testutils.GetExtSrcNetworkEntityInfo("2", "2", "17.187.144.4/32", false, true)
+			remainingIds := externalEntityIds.Difference(deletedIds)
 
-	tree, err := NewNRadixTree(pkgNet.IPv4, []*storage.NetworkEntityInfo{e1, e2})
-	assert.NoError(t, err)
-	assert.NotNil(t, tree)
+			for id, _ := range remainingIds {
+				assert.NotNil(t, tree.Get(id))
+			}
 
-	tree.Remove(e2.GetId())
-
-	assert.Nil(t, tree.Get(e2.GetId()))
-	assert.NotNil(t, tree.Get(e1.GetId()))
-
-	assert.True(t, tree.ValidateNetworkTree())
+			assert.True(t, tree.ValidateNetworkTree())
+		})
+	}
 }
 
 func TestNRadixTreeIPv6(t *testing.T) {
