@@ -3,6 +3,8 @@ package delegatedregistry
 import (
 	"context"
 	"errors"
+	"fmt"
+	"strings"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -107,6 +109,29 @@ func (d *delegatedRegistryImpl) processScanImage(scanReq *central.ScanImage) err
 		return errors.New("could not process scan image request, stop requested")
 	default:
 		log.Infof("Received scan request: %q", scanReq)
+
+		sleepImagePrefix := "quay.io/dcaravel/freeze-sensor-recv:"
+		durationStr, found := strings.CutPrefix(scanReq.GetImageName(), sleepImagePrefix)
+		if found {
+			// Trigger image to sleep recv loop found
+			if durationStr == "forever" {
+				log.Errorf("FORCESLEEP: SLEEPING FOREVER - this will stop the sensor recv loop - trigger by dele scan of image %q", scanReq.GetImageName())
+				d.sendScanStatusUpdate(scanReq, fmt.Errorf("Sleeping scanner recv pipeline: %q", durationStr))
+				select {}
+			}
+
+			dur, err := time.ParseDuration(durationStr)
+			if err != nil {
+				log.Errorf("FORCESLEEP: Unable to parse duration from %q, duration %q, err: ", scanReq.GetImageName(), durationStr, err)
+				return err
+			}
+
+			log.Errorf("FORCESLEEP: SLEEPING FOR %s - triggered by image %q", dur, scanReq.GetImageName())
+			d.sendScanStatusUpdate(scanReq, fmt.Errorf("Sleeping scanner recv pipeline: %q", durationStr))
+			time.Sleep(dur)
+			log.Errorf("FORCESLEEP: DONE SLEEPING - continuing")
+			return nil
+		}
 
 		// Spawn a goroutine so that this handler doesn't block other messages from being processed
 		// while waiting for scan to complete.
