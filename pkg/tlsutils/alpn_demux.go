@@ -165,7 +165,7 @@ func (l *alpnDemuxListener) doDispatch(conn net.Conn) error {
 	}
 
 	negProto := tlsConn.ConnectionState().NegotiatedProtocol
-	log.Debugf("dispaching ALPN demux listener with protocol %q", negProto)
+	log.Debugf("dispatching ALPN demux listener with protocol %q", negProto)
 	ch := l.chanMap[negProto]
 	if ch == nil {
 		ch = l.chanMap[""]
