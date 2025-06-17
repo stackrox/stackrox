@@ -227,7 +227,9 @@ EOT
         HEAD_HELM_CHART_CENTRAL_SERVICES_DIR=$(mktemp -d)
         echo "Rendering fresh central-services Helm chart and writing to ${HEAD_HELM_CHART_CENTRAL_SERVICES_DIR}..."
         if [[ "$ROXCTL_BUILT_IN_RELEASE_MODE" == "true" ]]; then
-            roxctl helm output central-services \
+            # development-build image defaults are not available in the release mode, so we set opensource
+            # (which which uses the same image names) and override the registry/org elsewhere.
+            roxctl helm output central-services --image_defaults=opensource \
                 --output-dir="${HEAD_HELM_CHART_CENTRAL_SERVICES_DIR}" --remove
         else
             roxctl helm output central-services \
@@ -241,7 +243,9 @@ EOT
         HEAD_HELM_CHART_SECURED_CLUSTER_SERVICES_DIR=$(mktemp -d)
         echo "Rendering fresh secured-cluster-services Helm chart and writing to ${HEAD_HELM_CHART_SECURED_CLUSTER_SERVICES_DIR}..."
         if [[ "$ROXCTL_BUILT_IN_RELEASE_MODE" == "true" ]]; then
-            roxctl helm output secured-cluster-services \
+            # development-build image defaults are not available in the release mode, so we set opensource
+            # (which which uses the same image names) and override the registry/org elsewhere.
+            roxctl helm output secured-cluster-services --image_defaults=opensource \
                 --output-dir="${HEAD_HELM_CHART_SECURED_CLUSTER_SERVICES_DIR}" --remove
         else
             roxctl helm output secured-cluster-services \
