@@ -1,0 +1,84 @@
+{
+  "id": "c6fd7cb3-de34-4918-be4c-370006330357",
+  "name": "Red Hat Images must be signed by the Red Hat Release Key",
+  "description": "Alert when Red Hat images are not digitally signed by Red Hat",
+  "rationale": "Red Hat Images should be signed using Red Hat's Product Signing Keys (https://access.redhat.com/security/team/key)",
+  "categories": [
+    "Supply Chain Security"
+  ],
+  "lifecycleStages": [
+    "DEPLOY"
+  ],
+  "severity": "HIGH_SEVERITY",
+  "lastUpdated": "2025-06-12T11:36:56.396127178Z",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "sectionName": "All images in certain Red Hat registries must be signed by Red Hat",
+      "policyGroups": [
+        {
+          "fieldName": "Image Registry",
+          "values": [
+            {
+              "value": "registry.access.redhat.com"
+            },
+            {
+              "value": "registry.redhat.io"
+            }
+          ]
+        },
+        {
+          "fieldName": "Image Signature Verified By",
+          "values": [
+            {
+              "value": "io.stackrox.signatureintegration.12a37a37-760e-4388-9e79-d62726c075b2"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sectionName": "All images in certain quay.io remotes must be signed by Red Hat",
+      "policyGroups": [
+        {
+          "fieldName": "Image Registry",
+          "values": [
+            {
+              "value": "quay.io"
+            }
+          ]
+        },
+        {
+          "fieldName": "Image Remote",
+          "values": [
+            {
+              "value": "openshift-release-dev/ocp-release"
+            },
+            {
+              "value": "openshift-release-dev/ocp-v4.0-art-dev"
+            }
+          ]
+        },
+        {
+          "fieldName": "Image Signature Verified By",
+          "values": [
+            {
+              "value": "io.stackrox.signatureintegration.12a37a37-760e-4388-9e79-d62726c075b2"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "mitreAttackVectors": [
+    {
+      "tactic": "TA0001",
+      "techniques": [
+        "T1195.002"
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}
