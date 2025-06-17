@@ -78,7 +78,7 @@ func ALPNDemux(tlsListener net.Listener, listenersByProto map[string]*net.Listen
 		chanMap: chanByProtoMap,
 		cfg:     config,
 	}
-	go l.run()
+	go l.run() // writes connection to `ch`
 
 	for key, ch := range chanByKeyMap {
 		*key = &fromChanListener{
@@ -164,7 +164,9 @@ func (l *alpnDemuxListener) doDispatch(conn net.Conn) error {
 		return err
 	}
 
-	ch := l.chanMap[tlsConn.ConnectionState().NegotiatedProtocol]
+	negProto := tlsConn.ConnectionState().NegotiatedProtocol
+	log.Debugf("dispaching ALPN demux listener with protocol %s", negProto)
+	ch := l.chanMap[negProto]
 	if ch == nil {
 		ch = l.chanMap[""]
 	}

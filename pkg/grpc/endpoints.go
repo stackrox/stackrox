@@ -160,23 +160,25 @@ func (c *EndpointConfig) instantiate(httpHandler http.Handler, grpcSrv *grpc.Ser
 	if c.NoHTTP2 && tlsConf != nil {
 		tlsConf = tlsConf.Clone()
 		tlsConf.NextProtos = sliceutils.Without(tlsConf.NextProtos, []string{"h2", alpn.PureGRPCALPNString})
+		// http1.1
 	}
 
 	if tlsConf != nil {
-		if c.ServeGRPC && !c.NoHTTP2 {
-			log.Info("Enabling ALPN support for pure-grpc in the server")
+		if c.ServeGRPC && !c.NoHTTP2 { // http2
+			log.Info("Enabling ALPN support for pure-grpc in the server for %q", c.ListenEndpoint)
 			tlsConf = alpn.ApplyPureGRPCALPNConfig(tlsConf)
 		}
 		overwriteALPN := strings.Split(env.ForceServerALPNProtocols.Setting(), ",")
 		if len(overwriteALPN) > 0 && len(overwriteALPN[0]) > 0 {
-			log.Warnf("Overwriting Server ALPN protocols from %s. Previous/Current protocols: %q/%q",
-				env.ForceServerALPNProtocols.EnvVar(), tlsConf.NextProtos, overwriteALPN)
+			log.Warnf("Overwriting Server ALPN protocols on %q from %s. Previous/Current protocols: %q/%q",
+				c.ListenEndpoint, env.ForceServerALPNProtocols.EnvVar(), tlsConf.NextProtos, overwriteALPN)
 			for i, s := range overwriteALPN {
 				overwriteALPN[i] = strings.TrimSpace(s)
 			}
 			tlsConf.NextProtos = sliceutils.Unique(overwriteALPN)
 		}
 
+		log.Infof("New listener on %q with NextProtos: %q", c.ListenEndpoint, tlsConf.NextProtos)
 		lis = tls.NewListener(lis, tlsConf)
 
 		if c.ServeGRPC && c.ServeHTTP {
@@ -211,7 +213,7 @@ func (c *EndpointConfig) instantiate(httpHandler http.Handler, grpcSrv *grpc.Ser
 			TLSConfig: tlsConf,
 			ErrorLog:  golog.New(httpErrorLogger{}, "", golog.LstdFlags),
 		}
-		if !c.NoHTTP2 {
+		if !c.NoHTTP2 { // http2
 			h2Srv := http2.Server{
 				MaxConcurrentStreams: maxHTTP2ConcurrentStreams(),
 			}
@@ -219,6 +221,7 @@ func (c *EndpointConfig) instantiate(httpHandler http.Handler, grpcSrv *grpc.Ser
 				log.Warnf("Failed to instantiate endpoint listening at %q for HTTP/2", c.ListenEndpoint)
 			} else {
 				httpSrv.Handler = h2c.NewHandler(actualHTTPHandler, &h2Srv)
+				log.Infof("Instantiated endpoint with h2c handler at %q", c.ListenEndpoint)
 			}
 			if c.DenyMisdirectedRequests && tlsConf != nil {
 				// When using HTTP/2 over TLS, connection coalescing in conjunction with wildcard or multi-SAN
