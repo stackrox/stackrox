@@ -130,7 +130,7 @@ type IPAddress struct {
 	data ipAddrData
 }
 
-// IPAddressLess checks if the IP address a is less than the IP address b according to some defined ordering.
+// IPAddressLess checks if the IP address `a` is less than the IP address `b` according to some defined ordering.
 func IPAddressLess(a, b IPAddress) bool {
 	aBytes, bBytes := a.data.bytes(), b.data.bytes()
 
