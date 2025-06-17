@@ -28,7 +28,7 @@ type Runner interface {
 // nil runner is safe, but no-op.
 func Singleton() Runner {
 	onceRunner.Do(func() {
-		runner = makeRunner(metrics.MakeCustomRegistry(), deploymentDS.Singleton())
+		runner = makeRunner(metrics.GetCustomRegistry, deploymentDS.Singleton())
 		go runner.initialize(configDS.Singleton())
 	})
 	return runner
