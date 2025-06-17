@@ -120,7 +120,7 @@ func TestQueryDeploymentsAndImages(t *testing.T) {
 	var actual = make(map[string][]*labelsTotal)
 
 	mr := mocks.NewMockCustomRegistry(ctrl)
-	tracker := New(func() metrics.CustomRegistry { return mr }, ds)
+	tracker := New(func(string) metrics.CustomRegistry { return mr }, ds)
 	mr.EXPECT().RegisterMetric(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 		Times(3)
 	mr.EXPECT().SetTotal(gomock.Any(), gomock.Any(), gomock.Any()).

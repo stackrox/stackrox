@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/travelaudience/go-promhttp"
 )
 
 var (
@@ -39,22 +38,14 @@ type Runner interface {
 // nil runner is safe, but no-op.
 func Singleton() Runner {
 	oneRunner.Do(func() {
-		runner = makeRunner(singleRegistryFactory(), deploymentDS.Singleton())
+		runner = makeRunner(metrics.GetCustomRegistry, deploymentDS.Singleton())
 		go runner.initialize(configDS.Singleton())
 	})
 	return runner
 }
 
-func singleRegistryFactory() func() metrics.CustomRegistry {
-	registry := metrics.MakeCustomRegistry()
-	return func() metrics.CustomRegistry {
-		return registry
-	}
-}
-
-func makeRunner(registryFactory func() metrics.CustomRegistry, dds deploymentDS.DataStore) *aggregatorRunner {
+func makeRunner(registryFactory func(string) metrics.CustomRegistry, dds deploymentDS.DataStore) *aggregatorRunner {
 	return &aggregatorRunner{
-		Handler:               promhttp.HandlerFor(singleRegistryFactory()(), promhttp.HandlerOpts{}),
 		image_vulnerabilities: image_vulnerabilities.New(registryFactory, dds),
 	}
 }
@@ -100,10 +91,12 @@ func (ar *aggregatorRunner) Reconfigure(cfg *RunnerConfiguration) {
 
 func (ar *aggregatorRunner) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	id := authn.IdentityFromContextOrNil(req.Context())
+	var userID string
 	if id != nil {
+		userID = id.UID()
 		// The request context is cancelled when the client's connection closes.
 		ctx := authn.CopyContextIdentity(context.Background(), req.Context())
 		go ar.image_vulnerabilities.Gather(ctx)
 	}
-	ar.Handler.ServeHTTP(w, req)
+	metrics.GetCustomRegistry(userID).ServeHTTP(w, req)
 }

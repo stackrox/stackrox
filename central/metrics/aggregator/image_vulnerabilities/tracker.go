@@ -11,7 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 )
 
-func New(registryFactory func() metrics.CustomRegistry, ds deploymentDS.DataStore) *common.TrackerBase[finding] {
+func New(registryFactory func(string) metrics.CustomRegistry, ds deploymentDS.DataStore) *common.TrackerBase[finding] {
 	return common.MakeTrackerBase(
 		"vulnerabilities",
 		"aggregated CVEs",

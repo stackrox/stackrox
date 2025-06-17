@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	configDS "github.com/stackrox/rox/central/config/datastore/mocks"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore/mocks"
+	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
@@ -27,7 +28,7 @@ func TestRunner_makeRunner(t *testing.T) {
 				Metrics: nil,
 			},
 			nil)
-		runner := makeRunner(singleRegistryFactory(), nil)
+		runner := makeRunner(metrics.GetCustomRegistry, nil)
 		runner.initialize(cds)
 		assert.NotNil(t, runner)
 
@@ -51,7 +52,7 @@ func TestRunner_makeRunner(t *testing.T) {
 		cds.EXPECT().GetPrivateConfig(gomock.Any()).Times(1).Return(
 			nil,
 			errors.New("DB error"))
-		runner := makeRunner(singleRegistryFactory(), nil)
+		runner := makeRunner(metrics.GetCustomRegistry, nil)
 		assert.NotNil(t, runner)
 		runner.initialize(cds)
 
@@ -112,7 +113,7 @@ func TestRunner_ServeHTTP(t *testing.T) {
 		}},
 	}, nil)
 
-	runner := makeRunner(singleRegistryFactory(), dds)
+	runner := makeRunner(metrics.GetCustomRegistry, dds)
 	runner.initialize(cds)
 	runner.image_vulnerabilities.Gather(makeAdminContext(t))
 
