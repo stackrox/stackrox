@@ -9,7 +9,6 @@
             "profileVersion": "2022",
             "standards": []
         },
-       
         {
             "name": "CYPRESS-ocp4-bsi-node",
             "productType": "Node",
