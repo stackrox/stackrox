@@ -6,19 +6,18 @@ import (
 )
 
 var (
-	getters = []common.LabelGetter[*finding]{
+	lazyLabels = []common.LazyLabel[finding]{
 		{Label: "Cluster", Getter: func(f *finding) string { return f.deployment.GetClusterName() }},
 	}
 
-	labels = common.MakeLabelOrderMap(getters)
+	labels = common.MakeLabelOrderMap(lazyLabels)
 )
 
 type finding struct {
-	common.OneOrMore
 	deployment *storage.Deployment
 }
 
-func ParseConfiguration(config map[string]*storage.PrometheusMetrics_MetricGroup_Labels) error {
+func ValidateConfiguration(config map[string]*storage.PrometheusMetrics_MetricGroup_Labels) error {
 	_, err := common.TranslateMetricLabels(config, labels)
 	return err
 }

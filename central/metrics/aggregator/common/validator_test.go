@@ -34,16 +34,16 @@ func Test_validateMetricName(t *testing.T) {
 }
 
 func Test_noLabels(t *testing.T) {
-	config := map[string]*storage.PrometheusMetrics_MetricGroup_Labels{
-		"metric1": &storage.PrometheusMetrics_MetricGroup_Labels{Labels: []string{}},
-		"metric2": {},
-		"metric3": nil,
+	for _, labels := range []*storage.PrometheusMetrics_MetricGroup_Labels{{Labels: []string{}}, {}, nil} {
+		config := map[string]*storage.PrometheusMetrics_MetricGroup_Labels{
+			"metric": labels,
+		}
+		mcfg, err := TranslateMetricLabels(config, testLabelOrder)
+		assert.Equal(t, `invalid configuration: no labels specified for metric "metric"`, err.Error())
+		assert.Empty(t, mcfg)
 	}
-	mcfg, err := TranslateMetricLabels(config, testLabelOrder)
-	assert.NoError(t, err)
-	assert.Empty(t, mcfg)
 
-	mcfg, err = TranslateMetricLabels(nil, testLabelOrder)
+	mcfg, err := TranslateMetricLabels(nil, testLabelOrder)
 	assert.NoError(t, err)
 	assert.Empty(t, mcfg)
 }
@@ -55,7 +55,7 @@ func Test_parseErrors(t *testing.T) {
 		},
 	}
 	mcfg, err := TranslateMetricLabels(config, testLabelOrder)
-	assert.Equal(t, `invalid configuration: label "unknown" for metric "metric1" is not in the list of known labels: [CVE CVSS Cluster IsFixable Namespace Severity test]`, err.Error())
+	assert.Equal(t, `invalid configuration: label "unknown" for metric "metric1" is not in the list of known labels [CVE CVSS Cluster IsFixable Namespace Severity test]`, err.Error())
 	assert.Empty(t, mcfg)
 
 	delete(config, "metric1")

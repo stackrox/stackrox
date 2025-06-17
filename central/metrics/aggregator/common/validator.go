@@ -33,27 +33,35 @@ func validateMetricName(name string) error {
 	return nil
 }
 
+func validateLabels(labels []string, labelOrder map[Label]int, metricName string) ([]Label, error) {
+	if len(labels) == 0 {
+		return nil, errInvalidConfiguration.CausedByf("no labels specified for metric %q", metricName)
+	}
+	metricLabels := make([]Label, 0, len(labels))
+	for _, label := range labels {
+		if !isKnownLabel(label, labelOrder) {
+			return nil, errInvalidConfiguration.CausedByf("label %q for metric %q is not in the list of known labels %v", label,
+				metricName, slices.Sorted(maps.Keys(labelOrder)))
+		}
+		metricLabels = append(metricLabels, Label(label))
+	}
+	return metricLabels, nil
+}
+
 // TranslateMetricLabels converts the storage object to the usable map,
 // validating the values.
 func TranslateMetricLabels(config map[string]*storage.PrometheusMetrics_MetricGroup_Labels, labelOrder map[Label]int) (MetricsConfiguration, error) {
 	result := make(MetricsConfiguration, len(config))
-	for metric, labels := range config {
-		if err := validateMetricName(metric); err != nil {
+	for metricName, labels := range config {
+		if err := validateMetricName(metricName); err != nil {
 			return nil, errInvalidConfiguration.CausedByf(
-				"invalid metric name %q: %v", metric, err)
+				"invalid metric name %q: %v", metricName, err)
 		}
-		metricLabels := make([]Label, 0, len(labels.GetLabels()))
-		for _, label := range labels.GetLabels() {
-			if !isKnownLabel(label, labelOrder) {
-				return nil, errInvalidConfiguration.CausedByf(
-					"label %q for metric %q is not in the list of known labels: %v",
-					label, metric, slices.Sorted(maps.Keys(labelOrder)))
-			}
-			metricLabels = append(metricLabels, Label(label))
+		metricLabels, err := validateLabels(labels.GetLabels(), labelOrder, metricName)
+		if err != nil {
+			return nil, err
 		}
-		if len(metricLabels) > 0 {
-			result[MetricName(metric)] = metricLabels
-		}
+		result[MetricName(metricName)] = metricLabels
 	}
 	return result, nil
 }
