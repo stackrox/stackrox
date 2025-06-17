@@ -139,8 +139,8 @@ func TestEntityData_GetDetails(t *testing.T) {
 				ed.AddContainerID("def", ContainerMetadata{})
 				return ed
 			},
-			wantContainerID: "abc",
-			wantPodIP:       "10.0.0.2",
+			wantContainerIDs: []string{"abc", "def"},
+			wantPodIPs:       []net.IPAddress{net.ParseIP("10.0.0.9"), net.ParseIP("10.0.0.2")},
 		},
 		"Invalid IP": {
 			edFun: func() *EntityData {
