@@ -109,6 +109,7 @@ import (
 	"github.com/stackrox/rox/central/jwt"
 	logimbueHandler "github.com/stackrox/rox/central/logimbue/handler"
 	metadataService "github.com/stackrox/rox/central/metadata/service"
+	customMetrics "github.com/stackrox/rox/central/metrics/custom"
 	"github.com/stackrox/rox/central/metrics/telemetry"
 	mitreService "github.com/stackrox/rox/central/mitre/service"
 	namespaceService "github.com/stackrox/rox/central/namespace/service"
@@ -873,6 +874,16 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			Route:         "/api/extensions/certs/backup",
 			Authorizer:    user.With(permissions.View(resources.Administration)),
 			ServerHandler: certHandler.BackupCerts(listener.Singleton()),
+			Compression:   true,
+		},
+		{
+			// User configured Prometheus metrics will be exposed on this path.
+			// The access is behind authorization because the metric label
+			// values may include sensitive data, such as deployment names and
+			// CVEs.
+			Route:         "GET /metrics",
+			Authorizer:    user.With(permissions.View(resources.Administration)),
+			ServerHandler: customMetrics.Singleton(),
 			Compression:   true,
 		},
 	}
