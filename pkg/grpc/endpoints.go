@@ -186,14 +186,16 @@ func (c *EndpointConfig) instantiate(httpHandler http.Handler, grpcSrv *grpc.Ser
 			for i, s := range overwriteALPNCli {
 				overwriteALPNCli[i] = strings.TrimSpace(s)
 			}
-			// Overwrite config for client as well
-			tlsConf.GetConfigForClient = func(hello *tls.ClientHelloInfo) (*tls.Config, error) {
-				clientConf, err := getConfForClientOrigFn(hello)
-				if err != nil {
-					return nil, err
+			if getConfForClientOrigFn != nil {
+				// Overwrite config for client as well
+				tlsConf.GetConfigForClient = func(hello *tls.ClientHelloInfo) (*tls.Config, error) {
+					clientConf, err := getConfForClientOrigFn(hello)
+					if err != nil {
+						return nil, err
+					}
+					clientConf.NextProtos = sliceutils.Unique(overwriteALPNCli)
+					return clientConf, nil
 				}
-				clientConf.NextProtos = sliceutils.Unique(overwriteALPNCli)
-				return clientConf, nil
 			}
 		}
 
