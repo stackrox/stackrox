@@ -2,5 +2,16 @@
   "base": {
     "name": "master",
     "hash": "861d95cf46b0bae2769d300acb5885a1bd876b63"
+  },
+  "upstream": {
+    "branch": "ROX-29160-Add-default-signature-integration-rh-rk3"
+  },
+  "change": {
+    "github": {
+      "pr": {
+        "number": 15761,
+        "gqlID": "PR_kwDOGd6UEM6a5TUv"
+      }
+    }
   }
 }
