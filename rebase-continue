@@ -1,3 +1,11 @@
 {
-  "continuations": null
+  "continuations": [
+    {
+      "command": [
+        "stack",
+        "restack"
+      ],
+      "branch": "ROX-29160-Add-default-policy-red-hat-images-signed"
+    }
+  ]
 }
