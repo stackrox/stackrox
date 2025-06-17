@@ -306,6 +306,51 @@ const rules = {
             };
         },
     },
+    /*
+    // Add require to globals comment, and then paste following it:
+    // const path = require('node:path');
+    'export-default-react': {
+        // Prevent mistaken assumptions about results from Find in Files.
+        meta: {
+            type: 'problem',
+            docs: {
+                description:
+                    'Require that file name be consistent with export default of React component name',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                ExportDefaultDeclaration(node) {
+                    if (typeof node.declaration?.name === 'string') {
+                        const { name } = node.declaration;
+                        const { filename } = context;
+                        const basenameWithoutExtension = path.basename(
+                            filename,
+                            path.extname(filename)
+                        );
+                        if (basenameWithoutExtension !== name) {
+                            const ancestors = context.sourceCode.getAncestors(node);
+                            const hasReactImportDeclaration = ancestors[0]?.body?.some(
+                                (child) =>
+                                    child.type === 'ImportDeclaration' &&
+                                    child.source?.value === 'react'
+                            );
+                            // Omit from previous condition, because hooks do not import React.
+                            // child.specifiers?.[0]?.local?.name === 'React'
+                            if (hasReactImportDeclaration) {
+                                context.report({
+                                    node,
+                                    message: `Require that file name be consistent with export default of React component name: ${name}`,
+                                });
+                            }
+                        }
+                    }
+                },
+            };
+        },
+    },
+    */
     'getVersionedDocs-subPath': {
         meta: {
             type: 'problem',
