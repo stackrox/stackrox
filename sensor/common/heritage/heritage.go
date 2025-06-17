@@ -27,7 +27,9 @@ type PastSensor struct {
 	SensorVersion string    `json:"sensorVersion"`
 }
 
-// ReverseCompare sorts so that younger entries are at the beginning of the slice
+// ReverseCompare compares two PastSensors to use in sorting.
+// The resulting order makes more recently updated entries are at the beginning of the slice.
+// If there are two entries with the same `LatestUpdate` (can occur only in tests), then other fields define the order.
 func (a *PastSensor) ReverseCompare(b *PastSensor) int {
 	if n := a.LatestUpdate.Compare(b.LatestUpdate); n != 0 {
 		return n * -1
