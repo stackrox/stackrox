@@ -274,7 +274,7 @@ func removeOlderThan(in []*PastSensor, now time.Time, minSize int, maxAge time.D
 	if !slices.IsSortedFunc(in, func(a *PastSensor, b *PastSensor) int {
 		return a.ReverseCompare(b)
 	}) {
-		log.Errorf("Programmer error: cannot cleanup heritage data for unsorted slice")
+		log.Errorf("Programmer error: cannot remove old heritage data for unsorted slice")
 		return in
 	}
 	// The slice is sorted by LastestUpdate

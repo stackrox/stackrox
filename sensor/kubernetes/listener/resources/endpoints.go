@@ -1,6 +1,9 @@
 package resources
 
 import (
+	"slices"
+	"sort"
+
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/containerid"
 	"github.com/stackrox/rox/pkg/net"
@@ -261,9 +264,17 @@ func (m *endpointManagerImpl) updateHeritageData(data *clusterentities.EntityDat
 	var sensorContainerID, sensorPodIP string
 	sensorContainerIDs, sensorPodIPs := data.GetDetails()
 	if len(sensorContainerIDs) > 0 {
+		// Sort (if needed) as GetDetails is not guaranteed to return sorted data.
+		if !slices.IsSorted(sensorContainerIDs) {
+			slices.Sort(sensorContainerIDs)
+		}
 		sensorContainerID = sensorContainerIDs[0]
 	}
 	if len(sensorPodIPs) > 0 {
+		// Sort as GetDetails is not guaranteed to return sorted data.
+		sort.Slice(sensorPodIPs, func(i, j int) bool {
+			return net.IPAddressLess(sensorPodIPs[i], sensorPodIPs[j])
+		})
 		// Deliberately choosing only the first IP from potentially many
 		sensorPodIP = sensorPodIPs[0].String()
 	}
