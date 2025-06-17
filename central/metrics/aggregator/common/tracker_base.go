@@ -149,11 +149,15 @@ func (tracker *TrackerBase[Finding]) registerMetric(cfg *Configuration, metric M
 		cfg.period,
 		getMetricLabels(cfg.metrics[metric], tracker.labelOrder),
 		regCfg.registry,
-		metrics.Exposure(regCfg.exposure)); err != nil {
-		log.Errorf("Failed to register %s metric %q: %v", tracker.category, metric, err)
+		regCfg.exposure); err != nil {
+		log.Errorf("Failed to register %s metric %q (%s): %v",
+			tracker.category, metric, &regCfg, err)
+	} else if regCfg.exposure >= metrics.INTERNAL && regCfg.exposure <= metrics.BOTH {
+		log.Debugf("Registered %s Prometheus metric %q (%s)",
+			tracker.category, metric, &regCfg)
 	} else {
-		log.Debugf("Registered %s Prometheus metric %q on path /metrics/%s", tracker.category, metric,
-			regCfg.registry)
+		log.Debugf("Ignored %s Prometheus metric %q (%s)",
+			tracker.category, metric, &regCfg)
 	}
 }
 
@@ -195,11 +199,13 @@ func (tracker *TrackerBase[Finding]) track(ctx context.Context) {
 	if len(cfg.metrics) == 0 {
 		return
 	}
+	log.Debugf("starting %s metrics gathering...", tracker.category)
 	aggregator := makeAggregator(cfg.metrics, tracker.labelOrder, tracker.getters)
 	for finding := range tracker.generator(ctx, cfg.filter, cfg.metrics) {
 		aggregator.count(finding)
 	}
 	for metric, records := range aggregator.result {
+		log.Debugf("updating %s metric %s", tracker.category, metric)
 		for _, rec := range records {
 			tracker.gauge(string(metric), rec.labels, rec.total)
 		}

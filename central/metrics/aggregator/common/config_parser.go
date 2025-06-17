@@ -28,6 +28,25 @@ type metricExposure struct {
 	exposure metrics.Exposure
 }
 
+func (me *metricExposure) String() string {
+	switch me.exposure {
+	case metrics.INTERNAL:
+		return "internal path /metrics"
+	case metrics.EXTERNAL:
+		if me.registry == "" {
+			return "external path /metrics"
+		}
+		return "external path /metrics/" + me.registry
+	case metrics.BOTH:
+		if me.registry == "" {
+			return "internal and external path /metrics"
+		}
+		return "internal path /metrics and external path /metrics/" + me.registry
+	default:
+		return "not exposed"
+	}
+}
+
 type Configuration struct {
 	metrics        MetricsConfiguration
 	metricRegistry map[MetricName]metricExposure
