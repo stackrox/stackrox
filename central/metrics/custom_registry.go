@@ -40,13 +40,25 @@ type customRegistry struct {
 	gauges sync.Map // map[metricName string]*prometheus.GaugeVec
 }
 
-// MakeCustomRegistry is a CustomRegistry factory.
-func MakeCustomRegistry() CustomRegistry {
-	registry := prometheus.NewRegistry()
-	return &customRegistry{
-		Registry: registry,
-		Handler:  promhttp.HandlerFor(registry, promhttp.HandlerOpts{}),
+var (
+	userRegistries map[string]*customRegistry = make(map[string]*customRegistry)
+	registriesMux  sync.Mutex
+)
+
+// GetCustomRegistry is a CustomRegistry factory that returns the existing or
+// a new registry for the user.
+func GetCustomRegistry(userID string) CustomRegistry {
+	registriesMux.Lock()
+	defer registriesMux.Unlock()
+	registry, ok := userRegistries[userID]
+	if !ok {
+		registry = &customRegistry{
+			Registry: prometheus.NewRegistry(),
+		}
+		registry.Handler = promhttp.HandlerFor(registry, promhttp.HandlerOpts{})
+		userRegistries[userID] = registry
 	}
+	return registry
 }
 
 var _ CustomRegistry = (*customRegistry)(nil)
