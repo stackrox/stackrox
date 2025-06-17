@@ -20,7 +20,9 @@ func Test_DefaultPolicies_FilterByFeatureFlag(t *testing.T) {
 
 	// This is required here to be able to check if the policy is present in the final list of default policies
 	// since the feature flag filtering is done by filename other than policy name.
-	fileToPolicyName := map[string]string{}
+	fileToPolicyName := map[string]string{
+		"red_hat_images_signed.json": "Red Hat Images must be signed by the Red Hat Release Key",
+	}
 
 	for filename, ff := range featureFlagFileGuard {
 		t.Setenv(ff.EnvVar(), "false")
