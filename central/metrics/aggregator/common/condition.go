@@ -24,6 +24,10 @@ type Condition struct {
 	arg string
 }
 
+func (c *Condition) GetOperator() string {
+	return string(c.op)
+}
+
 func (c *Condition) Equals(b *Condition) bool {
 	return c == b || c != nil && b != nil && c.op == b.op && c.arg == b.arg
 }

@@ -10,10 +10,13 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/metrics/aggregator/common"
 	"github.com/stackrox/rox/central/metrics/aggregator/image_vulnerabilities"
+	"github.com/stackrox/rox/central/telemetry/centralclient"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter"
 	"github.com/travelaudience/go-promhttp"
 )
 
@@ -99,6 +102,7 @@ func (ar *aggregatorRunner) ParseConfiguration(cfg *storage.PrometheusMetricsCon
 // Reconfigure will panic on nil cfg. Don't pass nil.
 func (ar *aggregatorRunner) Reconfigure(cfg *RunnerConfiguration) {
 	ar.image_vulnerabilities.Reconfigure(ar.ctx, cfg.image_vulnerabilities)
+	track(cfg)
 }
 
 func (ar *aggregatorRunner) Start() {
@@ -147,4 +151,39 @@ func (*aggregatorRunner) getRegistryName(req *http.Request) (string, bool) {
 		}
 	}
 	return "", false
+}
+
+func track(cfg *RunnerConfiguration) {
+	if cfg == nil {
+		return
+	}
+	centralclient.InstanceConfig().Telemeter().Track(
+		"Prometheus metrics configured", nil,
+		telemeter.WithTraits(makeProps(cfg)))
+}
+
+func makeProps(cfg *RunnerConfiguration) map[string]any {
+	props := make(map[string]any, 3)
+	{
+		metrics := cfg.image_vulnerabilities.GetMetrics()
+		labels, operators := getLabelsAndOps(metrics)
+		props["Total Image Vulnerability metrics"] = len(metrics)
+		props["Image Vulnerability metric labels"] = labels.AsSlice()
+		props["Image Vulnerability metric operators"] = operators.AsSlice()
+	}
+	return props
+}
+
+func getLabelsAndOps(metrics common.MetricsConfiguration) (set.Set[string], set.Set[string]) {
+	labels := set.NewStringSet()
+	operators := set.NewStringSet()
+	for _, metricLabels := range metrics {
+		for label, labelExpr := range metricLabels {
+			labels.Add(string(label))
+			for _, condition := range labelExpr {
+				operators.Add(condition.GetOperator())
+			}
+		}
+	}
+	return labels, operators
 }

@@ -56,6 +56,10 @@ type Configuration struct {
 	period         time.Duration
 }
 
+func (cfg *Configuration) GetMetrics() MetricsConfiguration {
+	return cfg.metrics
+}
+
 func isKnownLabel(label string, labelOrder map[Label]int) bool {
 	_, ok := labelOrder[Label(label)]
 	return ok
