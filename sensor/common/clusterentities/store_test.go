@@ -2,6 +2,7 @@ package clusterentities
 
 import (
 	"slices"
+	"sort"
 	"testing"
 
 	"github.com/stackrox/rox/pkg/net"
@@ -106,7 +107,7 @@ func TestEntityData_GetDetails(t *testing.T) {
 	tests := map[string]struct {
 		edFun            func() *EntityData
 		wantContainerIDs []string
-		wantPodIPs       []net.IPAddress
+		wantPodIPsSorted []net.IPAddress
 	}{
 		"Single values": {
 			edFun: func() *EntityData {
@@ -116,7 +117,7 @@ func TestEntityData_GetDetails(t *testing.T) {
 				return ed
 			},
 			wantContainerIDs: []string{"abc"},
-			wantPodIPs:       []net.IPAddress{net.ParseIP("10.0.0.1")},
+			wantPodIPsSorted: []net.IPAddress{net.ParseIP("10.0.0.1")},
 		},
 		"Multiple sorted values": {
 			edFun: func() *EntityData {
@@ -128,7 +129,7 @@ func TestEntityData_GetDetails(t *testing.T) {
 				return ed
 			},
 			wantContainerIDs: []string{"abc", "def"},
-			wantPodIPs:       []net.IPAddress{net.ParseIP("10.0.0.1"), net.ParseIP("10.0.0.2")},
+			wantPodIPsSorted: []net.IPAddress{net.ParseIP("10.0.0.1"), net.ParseIP("10.0.0.2")},
 		},
 		"Multiple unsorted values": {
 			edFun: func() *EntityData {
@@ -140,7 +141,7 @@ func TestEntityData_GetDetails(t *testing.T) {
 				return ed
 			},
 			wantContainerIDs: []string{"abc", "def"},
-			wantPodIPs:       []net.IPAddress{net.ParseIP("10.0.0.9"), net.ParseIP("10.0.0.2")},
+			wantPodIPsSorted: []net.IPAddress{net.ParseIP("10.0.0.2"), net.ParseIP("10.0.0.9")},
 		},
 		"Invalid IP": {
 			edFun: func() *EntityData {
@@ -151,7 +152,7 @@ func TestEntityData_GetDetails(t *testing.T) {
 				return ed
 			},
 			wantContainerIDs: []string{"abc"},
-			wantPodIPs:       []net.IPAddress{net.ParseIP("10.0.0.2")},
+			wantPodIPsSorted: []net.IPAddress{net.ParseIP("10.0.0.2")},
 		},
 		"No Container ID": {
 			edFun: func() *EntityData {
@@ -160,15 +161,20 @@ func TestEntityData_GetDetails(t *testing.T) {
 				return ed
 			},
 			wantContainerIDs: []string{},
-			wantPodIPs:       []net.IPAddress{net.ParseIP("10.0.0.1")},
+			wantPodIPsSorted: []net.IPAddress{net.ParseIP("10.0.0.1")},
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			ed := tt.edFun()
 			gotContainerIDs, gotPodIPs := ed.GetDetails()
+			// Sort as GetDetails is not guaranteed to return sorted data.
+			sort.Slice(gotPodIPs, func(i, j int) bool {
+				return net.IPAddressLess(gotPodIPs[i], gotPodIPs[j])
+			})
+
 			assert.True(t, slices.Equal(gotContainerIDs, tt.wantContainerIDs))
-			assert.True(t, slices.Equal(gotPodIPs, tt.wantPodIPs))
+			assert.True(t, slices.Equal(gotPodIPs, tt.wantPodIPsSorted))
 
 		})
 	}
