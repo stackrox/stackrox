@@ -13,3 +13,11 @@ export function goToWizardStep(step: number | string) {
 export function getWizardStepTitle(title: string) {
     return cy.get('.pf-v5-c-wizard [data-ouia-component-type="PF5/Title"]').contains(title);
 }
+
+export function navigateWizardForward() {
+    cy.get('footer button:contains("Next")').click();
+}
+
+export function navigateWizardBackward() {
+    cy.get('footer button:contains("Back")').click();
+}

@@ -1,0 +1,31 @@
+{
+    "integrations": [
+        {
+            "id": "d393b466-1c73-432e-ada5-865a73f8bbc1",
+            "version": "",
+            "clusterId": "e491900d-b0bc-4c20-910d-f090f22effab",
+            "clusterName": "CYPRESS_test_external_ips",
+            "namespace": "",
+            "statusErrors": [
+                "The \"compliance-operator\" deployment was not found in any namespace."
+            ],
+            "operatorInstalled": false,
+            "status": "UNHEALTHY",
+            "clusterPlatformType": "KUBERNETES_CLUSTER",
+            "clusterProviderType": "GKE"
+        },
+        {
+            "id": "2d4dcce0-e814-4ad4-a74d-04af63d17aa1",
+            "version": "v1.7.0",
+            "clusterId": "f781e077-fb39-4529-a19d-7a3403e181b2",
+            "clusterName": "CYPRESS_staging-secured-cluster",
+            "namespace": "openshift-compliance",
+            "statusErrors": [],
+            "operatorInstalled": true,
+            "status": "HEALTHY",
+            "clusterPlatformType": "OPENSHIFT4_CLUSTER",
+            "clusterProviderType": "OCP"
+        }
+    ],
+    "totalCount": 2
+}
