@@ -95,11 +95,7 @@ describe('Workload CVE overview page tests', () => {
         });
     });
 
-    it('should apply the correct baseline filters when switching between built in views using the user-workload based template', function () {
-        if (!hasFeatureFlag('ROX_PLATFORM_CVE_SPLIT')) {
-            this.skip();
-        }
-
+    it('should apply the correct baseline filters when switching between built in views using the user-workload based template', () => {
         interceptAndWatchRequests(
             getRouteMatcherMapForGraphQL(['getImageCVEList', 'getImageList'])
         ).then(({ waitForRequests, waitAndYieldRequestBodyVariables }) => {
@@ -228,11 +224,7 @@ describe('Workload CVE overview page tests', () => {
     });
 
     describe('Images without CVEs view tests', () => {
-        it('should remove cve-related UI elements when viewing the "without cves" view', function () {
-            if (!hasFeatureFlag('ROX_PLATFORM_CVE_SPLIT')) {
-                this.skip();
-            }
-
+        it('should remove cve-related UI elements when viewing the "without cves" view', () => {
             visitWorkloadCveOverview();
 
             const cvesBySeverityHeader = 'th:contains("CVEs by severity")';

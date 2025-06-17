@@ -11,6 +11,18 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 ## [NEXT RELEASE]
 
+### Added Features
+
+### Removed Features
+
+### Deprecated Features
+
+### Technical Changes
+
+## [4.8.0]
+
+
+
 **HELM USERS**: Please see ROX-27622 under "technical changes" to avoid upgrade failures!
 
 ### Added Features
@@ -41,6 +53,7 @@ Scanner V4 claims the images contain vulnerabilities which the official Red Hat 
 - ROX-25570: The data model for image based CVEs has been denormalized
   - This will result in far more consistent results as 1 image scan will no longer overwrite CVE data of a previous image scan.
   - `ROX_FLATTEN_CVE_DATA` can be set to false to use the old normalized data model
+- ROX-27696: ROX_EXTERNAL_IPS feature flag enabled by default. Note: Collector will still need to be configured for external IPs for this to have an effect.
 
 ### Removed Features
 

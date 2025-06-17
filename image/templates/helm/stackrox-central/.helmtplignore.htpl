@@ -34,4 +34,7 @@ templates/*
 !templates/01-central-*-db-tls-secret.yaml
 templates/*
 [< end >]
+[< if .KubectlOutput >]
+templates/00-stackrox-helm-configmap.yaml
+[< end >]
 templates/keep.yaml

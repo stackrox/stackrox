@@ -23,7 +23,7 @@ import QuayIntegrationForm from './Forms/QuayIntegrationForm';
 import RhelIntegrationForm from './Forms/RhelIntegrationForm';
 import ScannerV4IntegrationForm from './Forms/ScannerV4IntegrationForm';
 // notifiers
-import ACSCSEmailIntegrationForm from './Forms/AcscsEmailIntegrationForm';
+import AcscsEmailIntegrationForm from './Forms/AcscsEmailIntegrationForm';
 import AwsSecurityHubIntegrationForm from './Forms/AwsSecurityHubIntegrationForm';
 import EmailIntegrationForm from './Forms/EmailIntegrationForm';
 import GenericWebhookIntegrationForm from './Forms/GenericWebhookIntegrationForm';
@@ -96,7 +96,7 @@ const ComponentFormMap = {
         scannerv4: ScannerV4IntegrationForm,
     },
     notifiers: {
-        acscsEmail: ACSCSEmailIntegrationForm,
+        acscsEmail: AcscsEmailIntegrationForm,
         awsSecurityHub: AwsSecurityHubIntegrationForm,
         cscc: GoogleCloudSccIntegrationForm,
         email: EmailIntegrationForm,

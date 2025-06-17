@@ -32,7 +32,7 @@ import { CustomEdgeModel, CustomNodeModel } from '../types/topology.type';
 import { DeploymentIcon } from '../common/NetworkGraphIcons';
 import DeploymentDetails from './DeploymentDetails';
 import DeploymentFlows from './DeploymentFlows';
-import DeploymentBaselines from './DeploymentBaseline';
+import DeploymentBaseline from './DeploymentBaseline';
 import NetworkPolicies from '../common/NetworkPolicies';
 import useSimulation from '../hooks/useSimulation';
 import { EdgeState } from '../components/EdgeStateSelect';
@@ -253,7 +253,7 @@ function DeploymentSideBar({
                             className="pf-v5-u-h-100"
                         >
                             {activeKeyTab === deploymentTabs.BASELINE && (
-                                <DeploymentBaselines
+                                <DeploymentBaseline
                                     deployment={deployment}
                                     deploymentId={deploymentId}
                                     onNodeSelect={onNodeSelect}

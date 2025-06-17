@@ -96,10 +96,10 @@ var (
 	SensorPullSecretsByName = registerFeature("Sensor will capture pull secrets by name and registry host instead of just registry host", "ROX_SENSOR_PULL_SECRETS_BY_NAME", enabled)
 
 	// ExternalIPs enables storing detailed discovered external IPs
-	ExternalIPs = registerFeature("Central will work with discovered external IPs", "ROX_EXTERNAL_IPS")
+	ExternalIPs = registerFeature("Central will work with discovered external IPs", "ROX_EXTERNAL_IPS", enabled)
 
 	// NetworkGraphExternalIPs enables displaying external IPs in the network graph
-	NetworkGraphExternalIPs = registerFeature("Display external ips in the UI", "ROX_NETWORK_GRAPH_EXTERNAL_IPS")
+	NetworkGraphExternalIPs = registerFeature("Display external ips in the UI", "ROX_NETWORK_GRAPH_EXTERNAL_IPS", enabled)
 
 	// Display RHSA/RHBA/RHEA advisory separately from associated CVE.
 	CVEAdvisorySeparation = registerFeature("Display RHSA/RHBA/RHEA advisory separately from associated CVE", "ROX_CVE_ADVISORY_SEPARATION", enabled)
