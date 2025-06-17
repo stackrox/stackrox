@@ -80,6 +80,7 @@ runs:
 
     - name: Verify free disk space
       if: steps.delete-docker-cache.outcome == 'failure'
+      continue-on-error: true
       shell: bash
       run: |
         free=$(df -BGB --output=avail / | tail -1)
