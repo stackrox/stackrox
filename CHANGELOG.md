@@ -25,6 +25,8 @@ options to "roxctl sensor generate".
   - `--admission-controller-fail-on-error` defaults to false, which means admission controller webhook will fail open.
   If set to true, the admission controller webhook will fail closed i.e. the review request will be blocked in case of timeouts or errors.
 - ROX-24956: Fix default timeout value for the --admission-controller-timeout flag to 0 (note: this flag has been marked for deprecation)
+- ROX-28326: Custom Prometheus metrics exposed on the `/metrics` path of the central API endpoint. Configured via the `/v1/config` service.
+  Disabled by default.
 
 ### Removed Features
 
