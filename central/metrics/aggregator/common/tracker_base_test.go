@@ -1,5 +1,18 @@
 package common
 
+import (
+	"context"
+	"iter"
+	"maps"
+	"slices"
+	"testing"
+	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stretchr/testify/assert"
+)
+
 type testFinding int
 
 var testLabelGetters = []LazyLabel[testFinding]{
@@ -18,4 +31,232 @@ func testLabel(label Label) LazyLabel[testFinding] {
 	return LazyLabel[testFinding]{
 		label,
 		func(i *testFinding) string { return testData[*i][label] }}
+}
+
+func nilGatherFunc(context.Context, MetricsConfiguration) iter.Seq[*testFinding] {
+	return func(yield func(*testFinding) bool) {}
+}
+
+func makeTestGatherFunc(data []map[Label]string) FindingGenerator[testFinding] {
+	return func(context.Context, MetricsConfiguration) iter.Seq[*testFinding] {
+		var finding testFinding
+		return func(yield func(*testFinding) bool) {
+			for range data {
+				if !yield(&finding) {
+					return
+				}
+				finding++
+			}
+		}
+	}
+}
+
+func TestMakeTrackerBase(t *testing.T) {
+	tracker := MakeTrackerBase("test", "test", testLabelGetters, nilGatherFunc, nil)
+	assert.NotNil(t, tracker)
+	assert.Nil(t, tracker.ticker)
+	assert.Nil(t, tracker.GetConfiguration())
+}
+
+func TestTrackerBase_Reconfigure(t *testing.T) {
+	t.Run("nil configuration", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		tracker := MakeTrackerBase("test", "test", testLabelGetters, nilGatherFunc, nil)
+		calledRegistry := false
+		tracker.registerMetricFunc = func(*Configuration, MetricName) { calledRegistry = true }
+		tracker.unregisterMetricFunc = func(MetricName) { calledRegistry = true }
+
+		tracker.Reconfigure(ctx, nil)
+		config := tracker.GetConfiguration()
+		if assert.NotNil(t, config) {
+			assert.Nil(t, config.metrics)
+			assert.Zero(t, config.period)
+		}
+		assert.False(t, calledRegistry)
+	})
+
+	t.Run("test 0 period", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		tracker := MakeTrackerBase("test", "test", testLabelGetters, nilGatherFunc, nil)
+		cfg0 := &Configuration{}
+		calledRegistry := false
+		tracker.registerMetricFunc = func(*Configuration, MetricName) { calledRegistry = true }
+		tracker.unregisterMetricFunc = func(MetricName) { calledRegistry = true }
+
+		tracker.Reconfigure(ctx, cfg0)
+		config := tracker.GetConfiguration()
+		assert.Same(t, cfg0, config)
+		assert.Nil(t, tracker.ticker)
+
+		cfg1 := &Configuration{}
+		tracker.Reconfigure(ctx, cfg1)
+		assert.Same(t, cfg1, tracker.GetConfiguration())
+		assert.False(t, calledRegistry)
+	})
+
+	t.Run("test add -> delete -> stop", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+
+		result := make([]MetricName, 0)
+		resultMux := sync.Mutex{}
+		isEmptyResult := func() bool {
+			resultMux.Lock()
+			defer resultMux.Unlock()
+			return len(result) == 0
+		}
+
+		tracker := MakeTrackerBase("test", "test", testLabelGetters,
+			makeTestGatherFunc(testData),
+			func(metricName string, labels prometheus.Labels, total int) {
+				resultMux.Lock()
+				defer resultMux.Unlock()
+				result = append(result, MetricName(metricName))
+			})
+		var registered, unregistered []MetricName
+		tracker.registerMetricFunc = func(_ *Configuration, metric MetricName) { registered = append(registered, metric) }
+		tracker.unregisterMetricFunc = func(metric MetricName) { unregistered = append(unregistered, metric) }
+
+		mcfg := makeTestMetricLabelExpression(t)
+		metricNames := slices.Collect(maps.Keys(mcfg))
+		// Add test metrics:
+		cfg0 := &Configuration{
+			metrics: mcfg,
+			toAdd:   metricNames,
+			period:  time.Hour,
+		}
+		// Initial configuration, track won't be called.
+		// The Run() loop won't be started.
+		tracker.Reconfigure(ctx, cfg0)
+		config := tracker.GetConfiguration()
+		assert.Same(t, cfg0, config)
+		assert.NotNil(t, tracker.ticker)
+		assert.ElementsMatch(t, cfg0.toAdd, registered)
+		assert.Empty(t, unregistered)
+		assert.True(t, isEmptyResult())
+
+		// Delete one random metric and update ticker:
+		result = make([]MetricName, 0)
+		registered = []MetricName{}
+		unregistered = []MetricName{}
+		delete(mcfg, metricNames[0])
+		cfg1 := &Configuration{
+			metrics:  mcfg,
+			toDelete: metricNames[:1],
+			period:   2 * time.Hour,
+		}
+		// The Run() loop will be started, and track is called from there async.
+		tracker.Reconfigure(ctx, cfg1)
+		assert.Same(t, cfg1, tracker.GetConfiguration())
+		assert.Empty(t, registered)
+		assert.ElementsMatch(t, cfg1.toDelete, unregistered)
+		// track() is called async, so some result should be gathered from the
+		// persisted metric:
+		assert.EventuallyWithT(t, func(c *assert.CollectT) {
+			resultMux.Lock()
+			defer resultMux.Unlock()
+			assert.ElementsMatch(c, slices.Compact(result), metricNames[1:])
+		},
+			3*time.Second, 10*time.Millisecond)
+		assert.True(t, tracker.running.Load())
+
+		// Stop and unregister everything:
+		result = make([]MetricName, 0)
+		registered = []MetricName{}
+		unregistered = []MetricName{}
+		// The Run() loop won't be terminated, but the ticker will be stopped.
+		tracker.Reconfigure(ctx, nil)
+		assert.True(t, tracker.running.Load())
+
+		assert.Empty(t, registered)
+		assert.ElementsMatch(t, metricNames[1:], unregistered)
+		assert.True(t, isEmptyResult())
+		// The Run() loop will be terminated.
+		cancel()
+
+		assert.EventuallyWithT(t, func(c *assert.CollectT) {
+			assert.False(c, tracker.running.Load())
+		},
+			3*time.Second, 10*time.Millisecond)
+		assert.True(t, isEmptyResult())
+	})
+
+}
+
+func TestTrackerBase_Track(t *testing.T) {
+	result := make(map[string][]*aggregatedRecord)
+	tracker := MakeTrackerBase("test", "test",
+		testLabelGetters,
+		makeTestGatherFunc(testData),
+		func(metricName string, labels prometheus.Labels, total int) {
+			result[metricName] = append(result[metricName], &aggregatedRecord{labels, total})
+		},
+	)
+	tracker.config = &Configuration{
+		metrics: makeTestMetricLabelExpression(t),
+	}
+	tracker.track(context.Background())
+
+	if assert.Len(t, result, 2) &&
+		assert.Contains(t, result, "TestTrackerBase_Track_metric1") &&
+		assert.Contains(t, result, "TestTrackerBase_Track_metric2") {
+
+		assert.ElementsMatch(t, result["TestTrackerBase_Track_metric1"],
+			[]*aggregatedRecord{
+				{prometheus.Labels{
+					"Severity": "CRITICAL",
+					"Cluster":  "cluster 1",
+				}, 2},
+				{prometheus.Labels{
+					"Severity": "LOW",
+					"Cluster":  "cluster 5",
+				}, 1},
+				{prometheus.Labels{
+					"Severity": "LOW",
+					"Cluster":  "cluster 3",
+				}, 1},
+				{prometheus.Labels{
+					"Severity": "HIGH",
+					"Cluster":  "cluster 2",
+				}, 1},
+			})
+
+		assert.ElementsMatch(t, result["TestTrackerBase_Track_metric2"],
+			[]*aggregatedRecord{
+				{prometheus.Labels{
+					"Namespace": "ns 1",
+				}, 1},
+				{prometheus.Labels{
+					"Namespace": "ns 2",
+				}, 1},
+				{prometheus.Labels{
+					"Namespace": "ns 3",
+				}, 3},
+			})
+	}
+}
+
+func TestTrackerBase_Run(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	result := make(map[string][]*aggregatedRecord)
+	tracker := MakeTrackerBase("test", "test",
+		testLabelGetters,
+		makeTestGatherFunc(testData),
+		func(metricName string, labels prometheus.Labels, total int) {
+			result[metricName] = append(result[metricName], &aggregatedRecord{labels, total})
+			cancel()
+		},
+	)
+	mcfg := makeTestMetricLabelExpression(t)
+	tracker.Reconfigure(ctx, &Configuration{
+		metrics: mcfg,
+		toAdd:   slices.Collect(maps.Keys(mcfg)),
+		period:  time.Hour,
+	})
+	// The gauge function cancels the context, so Run should not hang.
+	tracker.Run(ctx)
+	assert.NotEmpty(t, result)
 }
