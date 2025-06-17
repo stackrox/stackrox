@@ -502,8 +502,8 @@ module.exports = [
         languageOptions: {
             ...parserAndOptions,
             globals: {
-                // https://github.com/cypress-io/eslint-plugin-cypress/blob/master/index.js
-                ...pluginCypress.environments.globals.globals,
+                // https://github.com/cypress-io/eslint-plugin-cypress/blob/master/lib/flat.js#L32-L43
+                ...pluginCypress.configs.globals.languageOptions.globals,
                 ...nodeGlobals, // mocha.config.js
             },
         },
@@ -517,8 +517,8 @@ module.exports = [
         languageOptions: {
             ...parserAndOptions,
             globals: {
-                // https://github.com/cypress-io/eslint-plugin-cypress/blob/master/index.js
-                ...pluginCypress.environments.globals.globals,
+                // https://github.com/cypress-io/eslint-plugin-cypress/blob/master/lib/flat.js#L32-L43
+                ...pluginCypress.configs.globals.languageOptions.globals,
             },
         },
 
@@ -533,7 +533,7 @@ module.exports = [
             // Allow chai-style expect(x).to.be.true chain.
             'no-unused-expressions': 'off',
 
-            // https://github.com/cypress-io/eslint-plugin-cypress/blob/master/lib/config/recommended.js
+            // https://github.com/cypress-io/eslint-plugin-cypress/blob/master/lib/flat.js#L45-L62
             ...pluginCypress.configs.recommended.rules,
 
             // Turn off new rules until after we fix errors in follow-up contributions.
