@@ -30,7 +30,7 @@ func TestRunner_makeRunner(t *testing.T) {
 				Metrics: nil,
 			},
 			nil)
-		runner := makeRunner(metrics.MakeCustomRegistry(), nil, nil)
+		runner := makeRunner(metrics.GetCustomRegistry, nil, nil)
 		runner.initialize(cds)
 		assert.NotNil(t, runner)
 
@@ -54,7 +54,7 @@ func TestRunner_makeRunner(t *testing.T) {
 		cds.EXPECT().GetPrivateConfig(gomock.Any()).Times(1).Return(
 			nil,
 			errors.New("DB error"))
-		runner := makeRunner(metrics.MakeCustomRegistry(), nil, nil)
+		runner := makeRunner(metrics.GetCustomRegistry, nil, nil)
 		assert.NotNil(t, runner)
 		runner.initialize(cds)
 
@@ -142,7 +142,7 @@ func TestRunner_ServeHTTP(t *testing.T) {
 		}).
 		Return(nil)
 
-	runner := makeRunner(metrics.MakeCustomRegistry(), dds, ads)
+	runner := makeRunner(metrics.GetCustomRegistry, dds, ads)
 	runner.initialize(cds)
 	runner.image_vulnerabilities.Gather(makeAdminContext(t))
 	runner.policy_violations.Gather(makeAdminContext(t))

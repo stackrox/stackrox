@@ -13,7 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 )
 
-func New(registry metrics.CustomRegistry, ds deploymentDS.DataStore) *tracker.TrackerBase[*finding] {
+func New(registryFactory func(string) metrics.CustomRegistry, ds deploymentDS.DataStore) *tracker.TrackerBase[*finding] {
 	return tracker.MakeTrackerBase(
 		"vulnerabilities",
 		"CVEs",
@@ -21,7 +21,7 @@ func New(registry metrics.CustomRegistry, ds deploymentDS.DataStore) *tracker.Tr
 		func(ctx context.Context, md tracker.MetricDescriptors) iter.Seq[*finding] {
 			return trackVulnerabilityMetrics(ctx, md, ds)
 		},
-		registry)
+		registryFactory)
 }
 
 func trackVulnerabilityMetrics(ctx context.Context, _ tracker.MetricDescriptors, ds deploymentDS.DataStore) iter.Seq[*finding] {

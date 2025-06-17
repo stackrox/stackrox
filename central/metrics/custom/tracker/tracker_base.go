@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -80,7 +81,9 @@ type TrackerBase[Finding WithError] struct {
 	config           *Configuration
 	metricsConfigMux sync.RWMutex
 
-	gatherer *gatherer
+	gatherers sync.Map // map[user ID]tokenGatherer
+
+	registryFactory func(userID string) metrics.CustomRegistry // for mocking in tests.
 }
 
 // makeGettersMap transforms a list of label names with their getters to a map.
@@ -96,15 +99,15 @@ func makeGettersMap[Finding WithError](getters []LazyLabel[Finding]) map[Label]f
 // configuration. Call Reconfigure to configure the period and the metrics.
 func MakeTrackerBase[Finding WithError](category, description string,
 	getters []LazyLabel[Finding], generator FindingGenerator[Finding],
-	registry metrics.CustomRegistry,
+	registryFactory func(string) metrics.CustomRegistry,
 ) *TrackerBase[Finding] {
 	return &TrackerBase[Finding]{
-		category:    category,
-		description: description,
-		labelOrder:  MakeLabelOrderMap(getters),
-		getters:     makeGettersMap(getters),
-		generator:   generator,
-		gatherer:    &gatherer{registry: registry},
+		category:        category,
+		description:     description,
+		labelOrder:      MakeLabelOrderMap(getters),
+		getters:         makeGettersMap(getters),
+		generator:       generator,
+		registryFactory: registryFactory,
 	}
 }
 
@@ -159,17 +162,21 @@ func labelsAsStrings(labels []Label) []string {
 }
 
 func (tracker *TrackerBase[Finding]) unregisterMetrics(metrics []MetricName) {
-	for _, metric := range metrics {
-		if tracker.gatherer.registry.UnregisterMetric(string(metric)) {
-			log.Debugf("Unregistered %s Prometheus metric %q", tracker.category, metric)
+	tracker.gatherers.Range(func(userID, g any) bool {
+		for _, metric := range metrics {
+			g.(*gatherer).registry.UnregisterMetric(string(metric))
 		}
-	}
+		return true
+	})
 }
 
 func (tracker *TrackerBase[Finding]) registerMetrics(cfg *Configuration, metrics []MetricName) {
-	for _, metric := range metrics {
-		tracker.registerMetric(tracker.gatherer, cfg, metric)
-	}
+	tracker.gatherers.Range(func(userID, g any) bool {
+		for _, metric := range metrics {
+			tracker.registerMetric(g.(*gatherer), cfg, metric)
+		}
+		return true
+	})
 }
 
 func (tracker *TrackerBase[Finding]) registerMetric(gatherer *gatherer, cfg *Configuration, metric MetricName) {
@@ -224,8 +231,15 @@ func (tracker *TrackerBase[Finding]) track(ctx context.Context, registry metrics
 
 // Gather the data not more often then maxAge.
 func (tracker *TrackerBase[Finding]) Gather(ctx context.Context) {
+	id, err := authn.IdentityFromContext(ctx)
+	if err != nil {
+		return
+	}
 	cfg := tracker.GetConfiguration()
-	gatherer := tracker.gatherer
+	if cfg == nil {
+		return
+	}
+	gatherer := tracker.getGatherer(id.UID(), cfg)
 
 	// Return if is still running.
 	if !gatherer.running.CompareAndSwap(false, true) {
@@ -233,11 +247,31 @@ func (tracker *TrackerBase[Finding]) Gather(ctx context.Context) {
 	}
 	defer gatherer.running.Store(false)
 
-	if cfg == nil || cfg.period == 0 || time.Since(gatherer.lastGather) < cfg.period {
+	if cfg.period == 0 || time.Since(gatherer.lastGather) < cfg.period {
 		return
 	}
 	if err := tracker.track(ctx, gatherer.registry, cfg.metrics); err != nil {
 		log.Errorf("Failed to gather %s metrics: %v", tracker.category, err)
 	}
 	gatherer.lastGather = time.Now()
+}
+
+// getGatherer returns the existing or a new gatherer for the given userID.
+// When creating a new gatherer, it also registers all known metrics on the
+// gatherer registry.
+func (tracker *TrackerBase[Finding]) getGatherer(userID string, cfg *Configuration) *gatherer {
+	// TODO(PR #16176): limit the number of different tokens accessing the metrics?
+	var gr *gatherer
+	if g, ok := tracker.gatherers.Load(userID); !ok {
+		gr = &gatherer{
+			registry: tracker.registryFactory(userID),
+		}
+		tracker.gatherers.Store(userID, gr)
+		for metricName := range cfg.metrics {
+			tracker.registerMetric(gr, cfg, metricName)
+		}
+	} else {
+		gr = g.(*gatherer)
+	}
+	return gr
 }

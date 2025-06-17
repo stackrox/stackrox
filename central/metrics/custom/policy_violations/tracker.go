@@ -11,7 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 )
 
-func New(registry metrics.CustomRegistry, ds alertDS.DataStore) *tracker.TrackerBase[*finding] {
+func New(registryFactory func(string) metrics.CustomRegistry, ds alertDS.DataStore) *tracker.TrackerBase[*finding] {
 	return tracker.MakeTrackerBase(
 		"alerts",
 		"policy violations",
@@ -19,7 +19,7 @@ func New(registry metrics.CustomRegistry, ds alertDS.DataStore) *tracker.Tracker
 		func(ctx context.Context, _ tracker.MetricDescriptors) iter.Seq[*finding] {
 			return trackViolations(ctx, ds)
 		},
-		registry)
+		registryFactory)
 }
 
 func trackViolations(ctx context.Context, ds alertDS.DataStore) iter.Seq[*finding] {
