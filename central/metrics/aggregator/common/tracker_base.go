@@ -7,17 +7,23 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-var log = logging.CreateLogger(logging.ModuleForName("central_metrics"), 1)
+var (
+	log             = logging.CreateLogger(logging.ModuleForName("central_metrics"), 1)
+	ErrStopIterator = errors.New("stopped")
+)
 
 type Tracker interface {
 	Run(context.Context)
+	ParseConfiguration(*storage.PrometheusMetricsConfig_Metrics) (*Configuration, error)
 	Reconfigure(context.Context, *Configuration)
 }
 
@@ -88,6 +94,14 @@ func MakeTrackerBase[Finding Countable](category, description string,
 	return tracker
 }
 
+func (tracker *TrackerBase[Finding]) ParseConfiguration(cfg *storage.PrometheusMetricsConfig_Metrics) (*Configuration, error) {
+	current := tracker.GetConfiguration()
+	if current == nil {
+		current = &Configuration{}
+	}
+	return parseConfiguration(cfg, current.metrics, tracker.labelOrder)
+}
+
 // Reconfigure assumes the configuration has been validated, so doesn't return
 // an error.
 func (tracker *TrackerBase[Finding]) Reconfigure(ctx context.Context, cfg *Configuration) {
@@ -135,11 +149,15 @@ func (tracker *TrackerBase[Finding]) registerMetric(cfg *Configuration, metric M
 		cfg.period,
 		getMetricLabels(cfg.metrics[metric], tracker.labelOrder),
 		regCfg.registry,
-		metrics.Exposure(regCfg.exposure)); err != nil {
-		log.Errorf("Failed to register %s metric %q: %v", tracker.category, metric, err)
+		regCfg.exposure); err != nil {
+		log.Errorf("Failed to register %s metric %q (%s): %v",
+			tracker.category, metric, &regCfg, err)
+	} else if regCfg.exposure >= metrics.INTERNAL && regCfg.exposure <= metrics.BOTH {
+		log.Debugf("Registered %s Prometheus metric %q (%s)",
+			tracker.category, metric, &regCfg)
 	} else {
-		log.Debugf("Registered %s Prometheus metric %q on path /metrics/%s", tracker.category, metric,
-			regCfg.registry)
+		log.Debugf("Ignored %s Prometheus metric %q (%s)",
+			tracker.category, metric, &regCfg)
 	}
 }
 
@@ -181,11 +199,13 @@ func (tracker *TrackerBase[Finding]) track(ctx context.Context) {
 	if len(cfg.metrics) == 0 {
 		return
 	}
+	log.Debugf("starting %s metrics gathering...", tracker.category)
 	aggregator := makeAggregator(cfg.metrics, tracker.labelOrder, tracker.getters)
 	for finding := range tracker.generator(ctx, cfg.filter, cfg.metrics) {
 		aggregator.count(finding)
 	}
 	for metric, records := range aggregator.result {
+		log.Debugf("updating %s metric %s", tracker.category, metric)
 		for _, rec := range records {
 			tracker.gauge(string(metric), rec.labels, rec.total)
 		}
