@@ -179,31 +179,6 @@ func (a *aggregateExternalConnByNameImpl) Aggregate(flows []*storage.NetworkFlow
 			continue
 		}
 
-		if networkgraph.IsExternalDiscovered(srcEntity) || networkgraph.IsExternalDiscovered(dstEntity) {
-			log.Info("external flow ", srcEntity, " ", dstEntity)
-			flow = flow.CloneVT()
-
-			flowProps := flow.GetProps()
-			if flowProps == nil {
-				continue
-			}
-
-			// If the entity is discovered, anonymize it to avoid overloading
-			// the graph with many nodes (external IP details are still accessible
-			// via other APIs)
-			flowProps.SrcEntity = anonymizeDiscoveredEntity(flowProps.GetSrcEntity())
-			flowProps.DstEntity = anonymizeDiscoveredEntity(flowProps.GetDstEntity())
-
-			ret = append(ret, flow)
-			continue
-		}
-
-		// If both endpoints are not known external sources, skip processing.
-		if !networkgraph.IsKnownExternalSrc(srcEntity) && !networkgraph.IsKnownExternalSrc(dstEntity) {
-			ret = append(ret, flow)
-			continue
-		}
-
 		updateDupNameExtSrcTracker(srcEntity, dupNameExtSrcTracker)
 		updateDupNameExtSrcTracker(dstEntity, dupNameExtSrcTracker)
 
@@ -374,13 +349,4 @@ func normalizeDupNameExtSrcs(entity *storage.NetworkEntityInfo) {
 			},
 		},
 	}
-}
-
-// Return NetworkEntityInfo_INTERNET if entity is a 'discovered' external entity
-// Otherwise, return entity.
-func anonymizeDiscoveredEntity(entity *storage.NetworkEntityInfo) *storage.NetworkEntityInfo {
-	if networkgraph.IsExternalDiscovered(entity) {
-		return networkgraph.InternetEntity().ToProto()
-	}
-	return entity
 }
