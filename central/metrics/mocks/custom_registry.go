@@ -10,10 +10,12 @@
 package mocks
 
 import (
+	http "net/http"
 	reflect "reflect"
 	time "time"
 
 	prometheus "github.com/prometheus/client_golang/prometheus"
+	io_prometheus_client "github.com/prometheus/client_model/go"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -41,6 +43,21 @@ func (m *MockCustomRegistry) EXPECT() *MockCustomRegistryMockRecorder {
 	return m.recorder
 }
 
+// Gather mocks base method.
+func (m *MockCustomRegistry) Gather() ([]*io_prometheus_client.MetricFamily, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Gather")
+	ret0, _ := ret[0].([]*io_prometheus_client.MetricFamily)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Gather indicates an expected call of Gather.
+func (mr *MockCustomRegistryMockRecorder) Gather() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Gather", reflect.TypeOf((*MockCustomRegistry)(nil).Gather))
+}
+
 // RegisterMetric mocks base method.
 func (m *MockCustomRegistry) RegisterMetric(metricName, category string, period time.Duration, labels []string) error {
 	m.ctrl.T.Helper()
@@ -53,6 +70,18 @@ func (m *MockCustomRegistry) RegisterMetric(metricName, category string, period 
 func (mr *MockCustomRegistryMockRecorder) RegisterMetric(metricName, category, period, labels any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterMetric", reflect.TypeOf((*MockCustomRegistry)(nil).RegisterMetric), metricName, category, period, labels)
+}
+
+// ServeHTTP mocks base method.
+func (m *MockCustomRegistry) ServeHTTP(arg0 http.ResponseWriter, arg1 *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "ServeHTTP", arg0, arg1)
+}
+
+// ServeHTTP indicates an expected call of ServeHTTP.
+func (mr *MockCustomRegistryMockRecorder) ServeHTTP(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ServeHTTP", reflect.TypeOf((*MockCustomRegistry)(nil).ServeHTTP), arg0, arg1)
 }
 
 // SetTotal mocks base method.

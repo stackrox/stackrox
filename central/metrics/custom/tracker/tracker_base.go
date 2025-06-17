@@ -4,16 +4,22 @@ import (
 	"context"
 	"iter"
 	"maps"
+	"net/http"
 	"slices"
 	"sync/atomic"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-var log = logging.CreateLogger(logging.ModuleForName("central_metrics"), 1)
+var (
+	log             = logging.CreateLogger(logging.ModuleForName("central_metrics"), 1)
+	ErrStopIterator = errors.New("stopped")
+)
 
 type WithError interface {
 	GetError() error
@@ -42,6 +48,7 @@ func MakeLabelOrderMap[Finding WithError](getters []LazyLabel[Finding]) map[Labe
 
 type Tracker interface {
 	Gather(context.Context)
+	ValidateConfiguration(*storage.PrometheusMetrics_Group) (*Configuration, error)
 	Reconfigure(*Configuration)
 }
 
@@ -49,6 +56,7 @@ type Tracker interface {
 type FindingGenerator[Finding WithError] func(context.Context, MetricsConfiguration) iter.Seq[Finding]
 
 type gatherer struct {
+	http.Handler
 	lastGather time.Time
 	running    atomic.Bool
 	registry   metrics.CustomRegistry
@@ -94,6 +102,14 @@ func MakeTrackerBase[Finding WithError](category, description string,
 		generator:   generator,
 		gatherer:    &gatherer{registry: registry},
 	}
+}
+
+func (tracker *TrackerBase[Finding]) ValidateConfiguration(cfg *storage.PrometheusMetrics_Group) (*Configuration, error) {
+	current := tracker.GetConfiguration()
+	if current == nil {
+		current = &Configuration{}
+	}
+	return ValidateConfiguration(cfg, current.metrics, tracker.labelOrder)
 }
 
 // Reconfigure assumes the configuration has been validated, so doesn't return
@@ -194,7 +210,7 @@ func (tracker *TrackerBase[Finding]) Gather(ctx context.Context) {
 	}
 	defer gatherer.running.Store(false)
 
-	if cfg.period == 0 || time.Since(gatherer.lastGather) < cfg.period {
+	if cfg == nil || cfg.period == 0 || time.Since(gatherer.lastGather) < cfg.period {
 		return
 	}
 	if err := tracker.track(ctx, gatherer.registry, cfg.metrics); err != nil {

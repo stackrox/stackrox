@@ -1,6 +1,7 @@
 package metrics
 
 import (
+	"net/http"
 	"strings"
 	"time"
 
@@ -21,20 +22,23 @@ recreated with separate requests.
 
 //go:generate mockgen-wrapper
 type CustomRegistry interface {
+	prometheus.Gatherer
+	http.Handler
 	RegisterMetric(metricName string, category string, period time.Duration, labels []string) error
 	UnregisterMetric(metricName string) bool
 	SetTotal(metricName string, labels prometheus.Labels, total int)
 }
 
 type customRegistry struct {
-	prometheus.Registerer
+	*prometheus.Registry
+	http.Handler
 	gauges sync.Map // map[metricName string]*prometheus.GaugeVec
 }
 
 // MakeCustomRegistry is a CustomRegistry factory.
 func MakeCustomRegistry() CustomRegistry {
 	return &customRegistry{
-		Registerer: prometheus.NewRegistry(),
+		Registry: prometheus.NewRegistry(),
 	}
 }
 
