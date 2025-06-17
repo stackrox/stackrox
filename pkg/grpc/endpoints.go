@@ -165,17 +165,26 @@ func (c *EndpointConfig) instantiate(httpHandler http.Handler, grpcSrv *grpc.Ser
 
 	if tlsConf != nil {
 		if c.ServeGRPC && !c.NoHTTP2 { // http2
-			log.Info("Enabling ALPN support for pure-grpc in the server for %q", c.ListenEndpoint)
+			log.Infof("Enabling ALPN support for pure-grpc in the server for %q", c.ListenEndpoint)
 			tlsConf = alpn.ApplyPureGRPCALPNConfig(tlsConf)
 		}
 		overwriteALPN := strings.Split(env.ForceServerALPNProtocols.Setting(), ",")
 		if len(overwriteALPN) > 0 && len(overwriteALPN[0]) > 0 {
-			log.Warnf("Overwriting Server ALPN protocols on %q from %s. Previous/Current protocols: %q/%q",
+			log.Warnf("Overwriting Server ALPN protocols for endpoint %q (from %s). Previous/Current protocols: %q/%q",
 				c.ListenEndpoint, env.ForceServerALPNProtocols.EnvVar(), tlsConf.NextProtos, overwriteALPN)
 			for i, s := range overwriteALPN {
 				overwriteALPN[i] = strings.TrimSpace(s)
 			}
 			tlsConf.NextProtos = sliceutils.Unique(overwriteALPN)
+			// Overwrite config for client as well
+			tlsConf.GetConfigForClient = func(hello *tls.ClientHelloInfo) (*tls.Config, error) {
+				clientConf, err := tlsConf.GetConfigForClient(hello)
+				if err != nil {
+					return nil, err
+				}
+				clientConf.NextProtos = sliceutils.Unique(overwriteALPN)
+				return clientConf, nil
+			}
 		}
 
 		log.Infof("New listener on %q with NextProtos: %q", c.ListenEndpoint, tlsConf.NextProtos)

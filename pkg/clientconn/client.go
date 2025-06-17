@@ -115,8 +115,8 @@ func TLSConfig(server mtls.Subject, opts TLSConfigOptions) (*tls.Config, error) 
 	}
 	overwriteALPN := strings.Split(env.ForceClientALPNProtocols.Setting(), ",")
 	if len(overwriteALPN) > 0 && len(overwriteALPN[0]) > 0 {
-		log.Warnf("Overwriting Client ALPN protocols from %s. Previous/Current protocols: %q/%q",
-			env.ForceServerALPNProtocols.EnvVar(), nextProtos, overwriteALPN)
+		log.Warnf("Overwriting Client ALPN protocols for conn to server %q (from %s). Previous/Current protocols: %q/%q",
+			serverName, env.ForceServerALPNProtocols.EnvVar(), nextProtos, overwriteALPN)
 		for i, s := range overwriteALPN {
 			overwriteALPN[i] = strings.TrimSpace(s)
 		}
