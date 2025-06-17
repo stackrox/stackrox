@@ -291,6 +291,12 @@ func (h *httpHandler) openDefinitions(ctx context.Context, t updaterType, opts o
 
 	online, err := h.openOnlineDefinitions(ctx, t, opts)
 	if err != nil {
+		// If we were able to successfully pull offline bundle, use that.
+		if offline != nil {
+			log.Warnf("Using offline definitions due to error opening online definitions: %v", err)
+			return offline, nil
+		}
+
 		return nil, err
 	}
 
