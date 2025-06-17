@@ -7,15 +7,22 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
 )
+
+const whenUnlimited = 1000
 
 type searcherImpl struct {
 	storage store.Store
 }
 
-// SearchRawServiceAccounts returns the search results from indexed service accounts for the query.
+// SearchRawServiceAccounts returns the service accounts matching the query.
 func (ds *searcherImpl) SearchRawServiceAccounts(ctx context.Context, q *v1.Query) ([]*storage.ServiceAccount, error) {
-	serviceAccounts, _, err := ds.searchServiceAccounts(ctx, q)
+	serviceAccounts := make([]*storage.ServiceAccount, 0, paginated.GetLimit(q.GetPagination().GetLimit(), whenUnlimited))
+	err := ds.storage.GetByQueryFn(ctx, q, func(serviceAccount *storage.ServiceAccount) error {
+		serviceAccounts = append(serviceAccounts, serviceAccount)
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
