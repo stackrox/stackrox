@@ -6,6 +6,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	deploymentMockDS "github.com/stackrox/rox/central/deployment/datastore/mocks"
+	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/metrics/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -119,7 +120,7 @@ func TestQueryDeploymentsAndImages(t *testing.T) {
 	var actual = make(map[string][]*labelsTotal)
 
 	mr := mocks.NewMockCustomRegistry(ctrl)
-	tracker := New(mr, ds)
+	tracker := New(func(string) metrics.CustomRegistry { return mr }, ds)
 	mr.EXPECT().RegisterMetric(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 		Times(3)
 	mr.EXPECT().SetTotal(gomock.Any(), gomock.Any(), gomock.Any()).

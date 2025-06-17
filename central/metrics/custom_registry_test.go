@@ -11,8 +11,8 @@ import (
 )
 
 func TestMakeCustomRegistry(t *testing.T) {
-	cr1 := MakeCustomRegistry()
-	cr2 := MakeCustomRegistry()
+	cr1 := GetCustomRegistry("user1")
+	cr2 := GetCustomRegistry("user2")
 	assert.NotSame(t, cr1, cr2)
 
 	assert.NoError(t, cr1.RegisterMetric("test", "test", 10*time.Minute, []string{"Test1", "Test2"}))
