@@ -4,6 +4,7 @@ import (
 	"maps"
 	"regexp"
 	"slices"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
@@ -16,6 +17,13 @@ var (
 	// Source: https://prometheus.io/docs/concepts/data_model/#metric-names-and-labels
 	metricNamePattern = regexp.MustCompile("^[a-zA-Z_:][a-zA-Z0-9_:]*$")
 )
+
+type Configuration struct {
+	metrics  MetricsConfiguration
+	toAdd    []MetricName
+	toDelete []MetricName
+	period   time.Duration
+}
 
 func isKnownLabel(label string, labelOrder map[Label]int) bool {
 	_, ok := labelOrder[Label(label)]
@@ -33,6 +41,8 @@ func validateMetricName(name string) error {
 	return nil
 }
 
+// validateLabels checks if the labels exist in the labelOrder map and returns
+// sorted label list.
 func validateLabels(labels []string, labelOrder map[Label]int, metricName string) ([]Label, error) {
 	if len(labels) == 0 {
 		return nil, errInvalidConfiguration.CausedByf("no labels specified for metric %q", metricName)
@@ -45,6 +55,9 @@ func validateLabels(labels []string, labelOrder map[Label]int, metricName string
 		}
 		metricLabels = append(metricLabels, Label(label))
 	}
+	slices.SortFunc(metricLabels, func(a, b Label) int {
+		return labelOrder[Label(a)] - labelOrder[Label(b)]
+	})
 	return metricLabels, nil
 }
 
@@ -64,4 +77,23 @@ func TranslateMetricLabels(config map[string]*storage.PrometheusMetrics_MetricGr
 		result[MetricName(metricName)] = metricLabels
 	}
 	return result, nil
+}
+
+func ValidateConfiguration(metricsGroup *storage.PrometheusMetrics_MetricGroup, currentMetrics MetricsConfiguration, labelOrder map[Label]int) (*Configuration, error) {
+
+	mcfg, err := TranslateMetricLabels(metricsGroup.GetMetrics(), labelOrder)
+	if err != nil {
+		return nil, err
+	}
+	toAdd, toDelete, changed := currentMetrics.diffLabels(mcfg)
+	if len(changed) != 0 {
+		return nil, errInvalidConfiguration.CausedByf("cannot alter metrics %v", changed)
+	}
+
+	return &Configuration{
+		metrics:  mcfg,
+		toAdd:    toAdd,
+		toDelete: toDelete,
+		period:   time.Minute * time.Duration(metricsGroup.GetGatheringPeriodMinutes()),
+	}, nil
 }
