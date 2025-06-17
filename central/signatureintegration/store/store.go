@@ -17,6 +17,7 @@ type SignatureIntegrationStore interface {
 	Exists(ctx context.Context, id string) (bool, error)
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 	Upsert(ctx context.Context, obj *storage.SignatureIntegration) error
+	UpsertMany(ctx context.Context, objs []*storage.SignatureIntegration) error
 	Delete(ctx context.Context, id string) error
 	Walk(ctx context.Context, fn func(obj *storage.SignatureIntegration) error) error
 }
