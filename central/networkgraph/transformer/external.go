@@ -13,6 +13,11 @@ func (t *transformExternalDiscoveredImpl) Transform(flows []*storage.NetworkFlow
 	ret := make([]*storage.NetworkFlow, 0, len(flows))
 
 	for _, flow := range flows {
+		if !networkgraph.IsExternalDiscovered(flow.GetProps().GetSrcEntity()) &&
+			!networkgraph.IsExternalDiscovered(flow.GetProps().GetDstEntity()) {
+			ret = append(ret, flow)
+		}
+
 		ret = append(ret, anonymizeDiscoveredFlow(flow))
 	}
 
@@ -38,6 +43,7 @@ func anonymizeDiscoveredFlow(flow *storage.NetworkFlow) *storage.NetworkFlow {
 		return flow
 	}
 
+	flow = flow.CloneVT()
 	props = flow.GetProps()
 
 	props.SrcEntity = anonymizeDiscoveredEntity(props.SrcEntity)
