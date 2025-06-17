@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/distribution/reference"
@@ -21,6 +22,20 @@ var (
 	// Please see https://github.com/opencontainers/image-spec/blob/main/descriptor.md#registered-algorithms
 	// for more information.
 	digestPrefixes = []string{"sha256:", "sha512:"}
+
+	// redHatRegistries contains registries where all images are built by Red Hat.
+	// See https://github.com/stackrox/stackrox/pull/15761 for details.
+	redHatRegistries = set.NewFrozenStringSet(
+		"registry.access.redhat.com",
+		"registry.redhat.io",
+	)
+
+	// quayIoRedHatRemotes contains quay.io remotes where all images are built by Red Hat.
+	// See https://github.com/stackrox/stackrox/pull/15761 for details.
+	quayIoRedHatRemotes = set.NewFrozenStringSet(
+		"openshift-release-dev/ocp-release",
+		"openshift-release-dev/ocp-v4.0-art-dev",
+	)
 )
 
 // GenerateImageFromStringWithDefaultTag generates an image type from a common string format and returns an error if
@@ -263,4 +278,36 @@ func FilterSuppressedCVEsNoClone(img *storage.Image) {
 			Cves: int32(len(cveSet)),
 		}
 	}
+}
+
+// IsRedHatImage takes in an image and returns whether it's a Red Hat image.
+//
+// This function is used to determine whether an image is supposed to have been built and signed by Red Hat, for supply
+// chain provenance
+func IsRedHatImage(img *storage.Image) bool {
+	return slices.ContainsFunc(img.GetNames(), isRedHatImageName)
+}
+
+// isRedHatImageName takes in an image name and returns whether it corresponds to a Red Hat image
+//
+// This is determined via heuristics, by looking at these images, which are assumed to be "official Red Hat images",
+// and checking where they are hosted:
+//
+//   - All images running in a default openshift cluster
+//   - All images that are referred by PackageManifests in the "redhat-operators" OLM catalog
+//
+// See the description of https://github.com/stackrox/stackrox/pull/15761 for details
+func isRedHatImageName(imgName *storage.ImageName) bool {
+	// First consider registries where all images are built by Red Hat
+	imageRegistry := imgName.GetRegistry()
+	if redHatRegistries.Contains(imageRegistry) {
+		return true
+	}
+
+	// The only remaining possibility is quay.io, where certain remotes are all Red Hat
+	if imageRegistry != "quay.io" {
+		return false
+	}
+
+	return quayIoRedHatRemotes.Contains(imgName.GetRemote())
 }
