@@ -1,0 +1,10 @@
+apiVersion: config.openshift.io/v1
+kind: ImageDigestMirrorSet
+metadata:
+  name: wmco-idms
+spec:
+  imageDigestMirrors:
+    - source: registry.redhat.io/advanced-cluster-security/rhacs-operator-bundle
+      mirrors:
+        - quay.io/rhacs-eng/release-operator-bundle
+        - quay.io/rhacs-eng/stackrox-operator-bundle
