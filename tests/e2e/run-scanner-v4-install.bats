@@ -499,7 +499,7 @@ EOT
     _end
 }
 
-@test "Fresh installation of HEAD Helm charts and toggling Scanner V4" {
+@test "Fresh installation of HEAD Helm charts in different namespaces and toggling Scanner V4" {
     local password_setting=$(cat <<EOT
 central:
   adminPassword:
@@ -585,6 +585,95 @@ EOT
     info "Verifying Scanner V4 is getting removed for secured-cluster-services"
     verify_deployment_deletion_with_timeout 4m "$CUSTOM_SENSOR_NAMESPACE" scanner-v4-indexer scanner-v4-db
     run ! verify_deployment_scannerV4_env_var_set "$CUSTOM_SENSOR_NAMESPACE" "sensor"
+
+    _end
+}
+
+@test "Fresh installation of HEAD Helm charts in the same namespace and toggling Scanner V4" {
+    local password_setting=$(cat <<EOT
+central:
+  adminPassword:
+    value: "$ROX_ADMIN_PASSWORD"
+EOT
+    )
+    local secured_cluster_name="$(get_cluster_name)"
+    namespace="stackrox"
+
+    ######################
+    _begin "deploying-head-central"
+    info "Deploying central-services using HEAD chart"
+    deploy_central_with_helm "$namespace" "$MAIN_IMAGE_TAG" "" \
+        -f <(echo "$password_setting")
+    local central_endpoint="$(get_central_endpoint "$namespace")"
+
+    ######################
+    _begin "deploying-head-sensor"
+    info "Deploying secured-cluster-services using HEAD chart"
+    deploy_sensor_with_helm "$namespace" "$namespace" \
+        "$MAIN_IMAGE_TAG" "" \
+        "$secured_cluster_name" "$ROX_ADMIN_PASSWORD" "$central_endpoint"
+
+    ######################
+    _step "verifying-central-scanners-deployed"
+    info "Verifying that scanners are deployed"
+    verify_scannerV2_deployed "$namespace"
+    verify_scannerV4_deployed "$namespace"
+    info "Verifying that scanner V4 is enabled for sensor"
+    verify_deployment_scannerV4_env_var_set "$namespace" "central"
+
+    ######################
+    _step "verifying-sensor-scanners-enabled"
+    info "Verifying that scanner V4 is enabled for sensor"
+    run verify_deployment_scannerV4_env_var_set "$namespace" "sensor"
+
+    ######################
+    _begin "upgrading-head-central"
+    info "Upgrade central-services using same chart version"
+    deploy_central_with_helm "$namespace" "$MAIN_IMAGE_TAG" "" \
+        -f <(echo "$password_setting")
+    local central_endpoint="$(get_central_endpoint "$namespace")"
+
+    ######################
+    _begin "uprading-head-sensor"
+    info "Upgrading secured-cluster-services using same chart version"
+    deploy_sensor_with_helm "$namespace" "$namespace" \
+        "$MAIN_IMAGE_TAG" "" \
+        "$secured_cluster_name" "$ROX_ADMIN_PASSWORD" "$central_endpoint"
+
+    ######################
+    _step "verifying-central-scanners-deployed"
+    info "Verifying that scanners are still installed"
+    verify_scannerV2_deployed "$namespace"
+    verify_scannerV4_deployed "$namespace"
+    verify_deployment_scannerV4_env_var_set "$namespace" "central"
+
+    ######################
+    _step "verifying-sensor-scanners-deployed"
+    info "Verifying that scanner V4 is still enabled for sensor"
+    run verify_deployment_scannerV4_env_var_set "$namespace" "sensor"
+
+    ######################
+    _begin "disabling-central-scanner-v4"
+    info "Disabling Scanner V4 for central-services"
+    deploy_central_with_helm "$namespace" "$MAIN_IMAGE_TAG" "" \
+        --reuse-values --set scannerV4.disable=true
+
+    ######################
+    _step "disabling-sensor-scanners"
+    info "Disabling Scanner V4 for secured-cluster-services"
+    deploy_sensor_with_helm "$namespace" "$namespace" "" "" "" "" "" \
+        --set scannerV4.disable=true --set scanner.disable=true
+
+    ######################
+    _step "verifying-central-scanner-v4-not-deployed"
+    info "Verifying Scanner V4 is getting removed for central-services"
+    verify_deployment_deletion_with_timeout 4m "$namespace" scanner-v4-indexer scanner-v4-matcher scanner-v4-db
+    run ! verify_deployment_scannerV4_env_var_set "$namespace" "central"
+
+    ######################
+    _step "verifying-sensor-scanner-v4-not-deployed"
+    info "Verifying Scanner V4 is not enables for sensor"
+    run ! verify_deployment_scannerV4_env_var_set "$namespace" "sensor"
 
     _end
 }
@@ -962,7 +1051,7 @@ EOT
 
 get_central_endpoint() {
     local namespace="$1"
-    local central_ip="$("${ORCH_CMD}" -n "$CUSTOM_CENTRAL_NAMESPACE" </dev/null get service central-loadbalancer \
+    local central_ip="$("${ORCH_CMD}" -n "$namespace" </dev/null get service central-loadbalancer \
         -o json | service_get_endpoint)"
     echo "${central_ip}:443"
 }
