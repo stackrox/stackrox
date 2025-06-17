@@ -164,25 +164,35 @@ func (c *EndpointConfig) instantiate(httpHandler http.Handler, grpcSrv *grpc.Ser
 	}
 
 	if tlsConf != nil {
+		getConfForClientOrigFn := tlsConf.GetConfigForClient
 		if c.ServeGRPC && !c.NoHTTP2 { // http2
 			log.Infof("Enabling ALPN support for pure-grpc in the server for %q", c.ListenEndpoint)
 			tlsConf = alpn.ApplyPureGRPCALPNConfig(tlsConf)
 		}
-		overwriteALPN := strings.Split(env.ForceServerALPNProtocols.Setting(), ",")
-		if len(overwriteALPN) > 0 && len(overwriteALPN[0]) > 0 {
+		overwriteALPNSrv := strings.Split(env.ForceServerALPNProtocols.Setting(), ",")
+		if len(overwriteALPNSrv) > 0 && len(overwriteALPNSrv[0]) > 0 {
 			log.Warnf("Overwriting Server ALPN protocols for endpoint %q (from %s). Previous/Current protocols: %q/%q",
-				c.ListenEndpoint, env.ForceServerALPNProtocols.EnvVar(), tlsConf.NextProtos, overwriteALPN)
-			for i, s := range overwriteALPN {
-				overwriteALPN[i] = strings.TrimSpace(s)
+				c.ListenEndpoint, env.ForceServerALPNProtocols.EnvVar(), tlsConf.NextProtos, overwriteALPNSrv)
+			for i, s := range overwriteALPNSrv {
+				overwriteALPNSrv[i] = strings.TrimSpace(s)
 			}
-			tlsConf.NextProtos = sliceutils.Unique(overwriteALPN)
+			tlsConf.NextProtos = sliceutils.Unique(overwriteALPNSrv)
+		}
+
+		overwriteALPNCli := strings.Split(env.ForceClientALPNProtocols.Setting(), ",")
+		if len(overwriteALPNCli) > 0 && len(overwriteALPNCli[0]) > 0 {
+			log.Warnf("Overwriting GetConfigForClient ALPN protocols for endpoint %q (from %s). Previous/Current protocols: %q/%q",
+				c.ListenEndpoint, env.ForceServerALPNProtocols.EnvVar(), tlsConf.NextProtos, overwriteALPNCli)
+			for i, s := range overwriteALPNCli {
+				overwriteALPNCli[i] = strings.TrimSpace(s)
+			}
 			// Overwrite config for client as well
 			tlsConf.GetConfigForClient = func(hello *tls.ClientHelloInfo) (*tls.Config, error) {
-				clientConf, err := tlsConf.GetConfigForClient(hello)
+				clientConf, err := getConfForClientOrigFn(hello)
 				if err != nil {
 					return nil, err
 				}
-				clientConf.NextProtos = sliceutils.Unique(overwriteALPN)
+				clientConf.NextProtos = sliceutils.Unique(overwriteALPNCli)
 				return clientConf, nil
 			}
 		}
