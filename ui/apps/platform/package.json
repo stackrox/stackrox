@@ -88,7 +88,7 @@
         "store": "^2.0.12",
         "styled-components": "^5.3.1",
         "use-deep-compare-effect": "^1.8.1",
-        "yup": "^1.4.0"
+        "yup": "^1.6.1"
     },
     "scripts": {
         "clean": "rm -rf ./test-results ./cypress/test-results",
