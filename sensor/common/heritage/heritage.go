@@ -50,19 +50,12 @@ type PastSensor struct {
 // The resulting order makes more recently updated entries are at the beginning of the slice.
 // If there are two entries with the same `LatestUpdate` (can occur only in tests), then other fields define the order.
 func (a *PastSensor) ReverseCompare(b *PastSensor) int {
-	if n := a.LatestUpdate.Compare(b.LatestUpdate); n != 0 {
-		return n * -1
-	}
-	if n := a.SensorStart.Compare(b.SensorStart); n != 0 {
-		return n * -1
-	}
-	if n := cmp.Compare(a.PodIP, b.PodIP); n != 0 {
-		return n
-	}
-	if n := cmp.Compare(a.ContainerID, b.ContainerID); n != 0 {
-		return n
-	}
-	return 0
+	return cmp.Or(
+		-a.LatestUpdate.Compare(b.LatestUpdate), // more recent update is smaller
+		-a.SensorStart.Compare(b.SensorStart),   // more recent start is smaller
+		cmp.Compare(a.PodIP, b.PodIP),
+		cmp.Compare(a.ContainerID, b.ContainerID),
+	)
 }
 
 func pastSensorDataString(data []*PastSensor) string {
