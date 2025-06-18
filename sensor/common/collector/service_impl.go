@@ -77,9 +77,9 @@ func (s *serviceImpl) communicate(server sensor.CollectorService_CommunicateServ
 	metrics.CollectorChannelInc(msg)
 	switch msg.GetMsg().(type) {
 	case *sensor.MsgFromCollector_ProcessSignal:
+		metrics.IncrementTotalProcessesAddedCounter()
 		select {
 		case s.queue <- msg.GetProcessSignal():
-			metrics.IncrementTotalProcessesAddedCounter()
 		case <-server.Context().Done():
 			return nil
 		default:

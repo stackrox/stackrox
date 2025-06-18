@@ -92,9 +92,9 @@ func (s *serviceImpl) receiveMessages(stream sensorAPI.SignalService_PushSignals
 		case <-stream.Context().Done():
 			return nil
 		default:
+			metrics.IncrementTotalProcessesSignalAddedCounter()
 			select {
 			case s.queue <- signal:
-				metrics.IncrementTotalProcessesSignalAddedCounter()
 			case <-stream.Context().Done():
 				return nil
 			default:

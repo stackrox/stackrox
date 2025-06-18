@@ -86,7 +86,7 @@ func (c *componentImpl) run() {
 	for {
 		select {
 		case msg := <-c.processMessages:
-			metrics.IncrementTotalProcessesSignalRemovedCounter()
+			metrics.IncrementTotalProcessesRemovedCounter()
 			c.processMsg(sensorIntoStorageSignal(msg))
 		case msg := <-c.signalMessages:
 			metrics.IncrementTotalProcessesSignalRemovedCounter()
