@@ -270,6 +270,66 @@ func Test_cleanupHeritageData(t *testing.T) {
 				},
 			},
 		},
+		"Sorting order should be by the most recently updated, then by most recently start timestamp": {
+			args: args{
+				in: []PastSensor{
+					{
+						ContainerID:  "a",
+						PodIP:        "1.1.1.1",
+						SensorStart:  time.Unix(0, 0),
+						LatestUpdate: time.Unix(10, 0),
+					},
+					{
+						ContainerID:  "b",
+						PodIP:        "1.1.1.2",
+						SensorStart:  time.Unix(100, 0),
+						LatestUpdate: time.Unix(5, 0),
+					},
+					{
+						ContainerID:  "c",
+						PodIP:        "1.1.1.2",
+						SensorStart:  time.Unix(100, 0),
+						LatestUpdate: time.Unix(7, 0),
+					},
+					{
+						ContainerID:  "d",
+						PodIP:        "1.1.1.2",
+						SensorStart:  time.Unix(200, 0),
+						LatestUpdate: time.Unix(10, 0),
+					},
+				},
+				now:     time.Unix(200, 0),
+				maxAge:  9999 * time.Second, // we don't want to purge anything in this test case
+				minSize: 0,
+				maxSize: 5,
+			},
+			want: []PastSensor{
+				{
+					ContainerID:  "d",
+					PodIP:        "1.1.1.2",
+					SensorStart:  time.Unix(200, 0), // start of `d` is closer to 200 than start of `a`
+					LatestUpdate: time.Unix(10, 0),  // tie between `d` and `a`
+				},
+				{
+					ContainerID:  "a",
+					PodIP:        "1.1.1.1",
+					SensorStart:  time.Unix(0, 0),
+					LatestUpdate: time.Unix(10, 0),
+				},
+				{
+					ContainerID:  "c",
+					PodIP:        "1.1.1.2",
+					SensorStart:  time.Unix(100, 0),
+					LatestUpdate: time.Unix(7, 0),
+				},
+				{
+					ContainerID:  "b",
+					PodIP:        "1.1.1.2",
+					SensorStart:  time.Unix(100, 0),
+					LatestUpdate: time.Unix(5, 0),
+				},
+			},
+		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
@@ -285,7 +345,7 @@ func Test_cleanupHeritageData(t *testing.T) {
 				gotValues[i] = *entry
 			}
 			if !reflect.DeepEqual(gotValues, tt.want) {
-				t.Errorf("\ngot  = %v\nwant = %v", got, tt.want)
+				t.Errorf("\ngot  = %v\nwant = %v", pastSensorDataString(got), tt.want)
 			}
 		})
 	}
