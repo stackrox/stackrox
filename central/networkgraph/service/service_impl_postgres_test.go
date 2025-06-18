@@ -366,6 +366,21 @@ func (s *networkGraphServiceSuite) TestGetNetworkGraphNormalizedAndUnformalized(
 								Protocol:            storage.L4Protocol_L4_PROTOCOL_TCP,
 								LastActiveTimestamp: lastSeenTimestamp4,
 							},
+							{
+								Port:                1234,
+								Protocol:            storage.L4Protocol_L4_PROTOCOL_TCP,
+								LastActiveTimestamp: lastSeenTimestamp2,
+							},
+							{
+								Port:                1234,
+								Protocol:            storage.L4Protocol_L4_PROTOCOL_TCP,
+								LastActiveTimestamp: lastSeenTimestamp3,
+							},
+							{
+								Port:                1234,
+								Protocol:            storage.L4Protocol_L4_PROTOCOL_TCP,
+								LastActiveTimestamp: lastSeenTimestamp4,
+							},
 						},
 					},
 				},
