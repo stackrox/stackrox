@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/deployment/datastore/internal/store/types"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
@@ -22,6 +23,8 @@ var (
 		Field:    search.DeploymentPriority.String(),
 		Reversed: false,
 	}
+
+	log = logging.LoggerForModule()
 )
 
 // NewV2 returns a new instance of Searcher for the given storage.
@@ -46,20 +49,25 @@ type searcherImplV2 struct {
 
 // SearchRawDeployments retrieves deployments from the storage
 func (ds *searcherImplV2) SearchRawDeployments(ctx context.Context, q *v1.Query) ([]*storage.Deployment, error) {
+	log.Info("SHREWS -- SearchRawDeployments")
 	deployments := make([]*storage.Deployment, 0, paginated.GetLimit(q.GetPagination().GetLimit(), whenUnlimited))
 	err := ds.storage.GetByQueryFn(ctx, q, func(deployment *storage.Deployment) error {
+		log.Infof("SHREWS -- SearchRawDeployments -- %v", deployment)
 		deployments = append(deployments, deployment)
 		return nil
 	})
 
 	if err != nil {
+		log.Infof("SHREWS -- %v", err)
 		return nil, err
 	}
+	log.Infof("SHREWS -- %v", deployments)
 	return deployments, err
 }
 
 // SearchListDeployments retrieves deployments from the storage
 func (ds *searcherImplV2) SearchListDeployments(ctx context.Context, q *v1.Query) ([]*storage.ListDeployment, error) {
+	log.Info("SHREWS -- SearchRawDeployments")
 	deployments := make([]*storage.ListDeployment, 0, paginated.GetLimit(q.GetPagination().GetLimit(), whenUnlimited))
 	err := ds.storage.GetByQueryFn(ctx, q, func(deployment *storage.Deployment) error {
 		deployments = append(deployments, types.ConvertDeploymentToDeploymentList(deployment))
