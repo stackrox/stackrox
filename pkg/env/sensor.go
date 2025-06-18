@@ -103,6 +103,6 @@ var (
 	// EnrichmentPurgerTickerCycle controls how frequently purger is run to check for collector updates
 	// (network flows & container endpoints) that stuck in Sensor's memory. Set to zero to completely disable the purger.
 	EnrichmentPurgerTickerCycle = registerDurationSetting("ROX_ENRICHMENT_PURGER_UPDATE_CYCLE", 30*time.Minute, WithDurationZeroAllowed())
-	// PastSensorsMaxEntries sets the limit of entries that Sensor stores about its past instances in the `sensor-past-instances` configmap
+	// PastSensorsMaxEntries sets the limit of entries that Sensor stores about its past instances in the `sensor-past-instances` configmap.
 	PastSensorsMaxEntries = RegisterIntegerSetting("ROX_PAST_SENSORS_MAX_ENTRIES", 20)
 )
