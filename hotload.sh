@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -eo pipefail
+set -xeo pipefail
 
 component="$1"
 namespace="$2"
