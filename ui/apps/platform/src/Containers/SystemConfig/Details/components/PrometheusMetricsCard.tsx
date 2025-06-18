@@ -57,7 +57,7 @@ function labelGroup(labels: Labels): ReactElement {
 }
 
 function predefinedMetricListItem(
-    mcfg: Record<string, Labels> | undefined,
+    enabled: boolean,
     category: Category,
     metric: string,
     onCustomChange:
@@ -74,7 +74,7 @@ function predefinedMetricListItem(
                                 id={`${category}-${metric}-checkbox`}
                                 aria-labelledby={`${category}-${metric}`}
                                 name={`${category}-${metric}`}
-                                isChecked={mcfg && metric in mcfg}
+                                isChecked={enabled}
                                 onChange={(_, checked) =>
                                     onCustomChange(
                                         checked ? predefinedMetrics[category][metric] : null,
@@ -97,23 +97,16 @@ function predefinedMetricListItem(
     );
 }
 
-// isPredefined checks if the metric is one of the predefined ones by looking at
+// isIn checks if the metric is one of the predefined ones by looking at
 // the metric name, labels (ignoring the order).
 // NB: Returns false if the metric is not found in the actual configuration.
-function isPredefined(
-    category: Category,
+function hasMetric(
+    cfg: Record<string, Labels> | undefined,
     metric: string,
-    mcfg: Record<string, Labels> | undefined
+    labels: string[]
 ): boolean {
-    if (!mcfg || !(metric in mcfg)) {
-        return false;
-    }
-    const metricLabels = mcfg[metric].labels;
-    const predefined = predefinedMetrics[category][metric].labels;
-    if (metricLabels.length !== predefined.length) {
-        return false;
-    }
-    return predefined.every((label) => metricLabels.includes(label));
+    const cfgLabels = cfg?.[metric]?.labels || [];
+    return cfgLabels.length === labels.length && cfgLabels.every((label) => labels.includes(label));
 }
 
 function prometheusMetricsDataList(
@@ -125,17 +118,32 @@ function prometheusMetricsDataList(
 ): ReactElement {
     return (
         <DataList aria-label={`${category}-metrics-configuration`} isCompact>
-            {Object.keys(predefinedMetrics[category]).map((metric) => {
-                // In view mode show only enabled predefined metrics.
-                // In edit mode show all predefined metrics.
-                if (onCustomChange || isPredefined(category, metric, mcfg)) {
-                    return predefinedMetricListItem(mcfg, category, metric, onCustomChange);
+            {Object.entries(predefinedMetrics[category]).map(
+                ([predefinedMetric, originalLabels]) => {
+                    // In view mode show only enabled predefined metrics.
+                    // In edit mode show all predefined metrics unless they're
+                    // overridden.
+
+                    const isEnabledOriginal = hasMetric(
+                        mcfg,
+                        predefinedMetric,
+                        originalLabels.labels
+                    );
+                    const enabled = mcfg !== undefined && predefinedMetric in mcfg;
+                    if (isEnabledOriginal || (onCustomChange && !enabled)) {
+                        return predefinedMetricListItem(
+                            isEnabledOriginal,
+                            category,
+                            predefinedMetric,
+                            onCustomChange
+                        );
+                    }
+                    return <></>;
                 }
-                return <></>;
-            })}
+            )}
             {Object.entries(mcfg || {}).map(([metric, labels]) => {
                 // Predefined are rendered above.
-                if (isPredefined(category, metric, mcfg)) {
+                if (hasMetric(predefinedMetrics[category], metric, labels.labels)) {
                     return <></>;
                 }
                 return (
