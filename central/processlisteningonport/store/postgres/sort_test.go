@@ -106,7 +106,6 @@ func (suite *SortSuite) TestSortVarious() {
 		},
 	}
 
-
 	plops := []*storage.ProcessListeningOnPort{&plop3, &plop7, &plop5, &plop1, &plop6, &plop2, &plop4}
 
 	sortPlops(plops)
