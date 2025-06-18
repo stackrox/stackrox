@@ -1,12 +1,14 @@
 import React, { ReactElement, useCallback, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button, Modal } from '@patternfly/react-core';
 import {
+    Button,
+    Modal,
     Wizard,
-    WizardContextConsumer,
-    WizardFooter,
     WizardStep,
-} from '@patternfly/react-core/deprecated';
+    WizardFooter,
+    useWizardContext,
+} from '@patternfly/react-core';
+import type { WizardStepType } from '@patternfly/react-core';
 import { FormikProvider } from 'formik';
 import { complianceEnhancedSchedulesPath } from 'routePaths';
 import isEqual from 'lodash/isEqual';
@@ -44,6 +46,79 @@ const REVIEW_CONFIG_ID = 'review';
 type ScanConfigWizardFormProps = {
     initialFormValues?: ScanConfigFormValues;
 };
+
+type CustomFooterProps = {
+    stepId: string;
+    formik: ReturnType<typeof useFormikScanConfig>;
+    alertRef: React.RefObject<HTMLDivElement>;
+    openModal: () => void;
+    validate?: () => boolean;
+};
+
+function CustomWizardFooter({
+    stepId,
+    formik,
+    alertRef,
+    openModal,
+    validate = () => true,
+}: CustomFooterProps) {
+    const { activeStep, goToNextStep, goToPrevStep } = useWizardContext();
+
+    function scrollToAlert() {
+        if (alertRef.current) {
+            alertRef.current.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start',
+            });
+        }
+    }
+
+    function setAllFieldsTouched(formikGroupKey: string): void {
+        const groupHasNestedFields =
+            typeof formik.values[formikGroupKey] === 'object' &&
+            !Array.isArray(formik.values[formikGroupKey]);
+        let touchedState;
+
+        if (groupHasNestedFields) {
+            touchedState = Object.keys(formik.values[formikGroupKey]).reduce((acc, field) => {
+                acc[field] = true;
+                return acc;
+            }, {});
+            formik.setTouched({ ...formik.touched, [formikGroupKey]: touchedState });
+        } else {
+            formik.setTouched({ ...formik.touched, [formikGroupKey]: true });
+        }
+    }
+
+    function handleNext() {
+        const hasNoErrors = Object.keys(formik.errors?.[stepId] || {}).length === 0;
+
+        if (!hasNoErrors) {
+            setAllFieldsTouched(stepId);
+            scrollToAlert();
+            return; // Don't navigate if validation fails
+        }
+
+        // Additional validation check if provided
+        if (!validate()) {
+            return;
+        }
+
+        // If validation passes, navigate to next step
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises
+        goToNextStep();
+    }
+
+    return (
+        <WizardFooter
+            activeStep={activeStep}
+            isBackDisabled={activeStep.name === PARAMETERS}
+            onNext={handleNext}
+            onBack={goToPrevStep}
+            onClose={openModal}
+        />
+    );
+}
 
 function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps): ReactElement {
     const { analyticsTrack } = useAnalytics();
@@ -102,60 +177,22 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
         }
     }
 
-    function wizardStepChanged(step: WizardStep) {
-        if (typeof step.id === 'string') {
+    function wizardStepChanged(_event: unknown, currentStep: WizardStepType): void {
+        if (currentStep?.id) {
             analyticsTrack({
                 event: COMPLIANCE_SCHEDULES_WIZARD_STEP_CHANGED,
                 properties: {
-                    step: step.id,
+                    step: String(currentStep.id),
                 },
             });
         }
+
         handleProfilesUpdate();
         setCreateScanConfigError('');
     }
 
-    function scrollToAlert() {
-        if (alertRef.current) {
-            alertRef.current.scrollIntoView({
-                behavior: 'smooth',
-                block: 'start',
-            });
-        }
-    }
-
     function onClose(): void {
         navigate(complianceEnhancedSchedulesPath);
-    }
-
-    function setAllFieldsTouched(formikGroupKey: string): void {
-        const groupHasNestedFields =
-            typeof formik.values[formikGroupKey] === 'object' &&
-            !Array.isArray(formik.values[formikGroupKey]);
-        let touchedState;
-
-        if (groupHasNestedFields) {
-            touchedState = Object.keys(formik.values[formikGroupKey]).reduce((acc, field) => {
-                acc[field] = true;
-                return acc;
-            }, {});
-            formik.setTouched({ ...formik.touched, [formikGroupKey]: touchedState });
-        } else {
-            formik.setTouched({ ...formik.touched, [formikGroupKey]: true });
-        }
-    }
-
-    function proceedToNextStepIfValid(
-        navigateToNextStep: () => void,
-        formikGroupKey: string
-    ): void {
-        const hasNoErrors = Object.keys(formik.errors?.[formikGroupKey] || {}).length === 0;
-        if (hasNoErrors) {
-            navigateToNextStep();
-        } else {
-            setAllFieldsTouched(formikGroupKey);
-            scrollToAlert();
-        }
     }
 
     function canJumpToSelectClusters() {
@@ -174,148 +211,135 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
         return canJumpToConfigureReport() && Object.keys(formik.errors?.report || {}).length === 0;
     }
 
-    function allClustersAreUnhealthy(clusters): boolean {
-        return clusters?.every((cluster) => cluster.status === 'UNHEALTHY') as boolean;
+    function allClustersAreUnhealthy(): boolean {
+        return (
+            clusters?.every((cluster) => 'status' in cluster && cluster.status === 'UNHEALTHY') ||
+            false
+        );
     }
-
-    const wizardSteps: WizardStep[] = [
-        {
-            name: PARAMETERS,
-            id: PARAMETERS_ID,
-            component: <ScanConfigOptions />,
-        },
-        {
-            name: SELECT_CLUSTERS,
-            id: SELECT_CLUSTERS_ID,
-            component: (
-                <ClusterSelection
-                    alertRef={alertRef}
-                    clusters={clusters || []}
-                    isFetchingClusters={isFetchingClusters}
-                />
-            ),
-            canJumpTo: canJumpToSelectClusters(),
-        },
-        {
-            name: SELECT_PROFILES,
-            id: SELECT_PROFILES_ID,
-            component: (
-                <ProfileSelection
-                    alertRef={alertRef}
-                    profiles={profiles || []}
-                    isFetchingProfiles={isFetchingProfiles}
-                />
-            ),
-            canJumpTo: canJumpToSelectProfiles(),
-        },
-        {
-            name: CONFIGURE_REPORT,
-            id: CONFIGURE_REPORT_ID,
-            component: <ReportConfiguration />,
-            canJumpTo: canJumpToConfigureReport(),
-        },
-        {
-            name: REVIEW_CONFIG,
-            id: REVIEW_CONFIG_ID,
-            component: (
-                <ReviewConfig clusters={clusters || []} errorMessage={createScanConfigError} />
-            ),
-            canJumpTo: canJumpToReviewConfig(),
-        },
-    ];
-
-    const firstStepId = wizardSteps[0].id;
-    const lastStepId = wizardSteps[wizardSteps.length - 1].id;
 
     return (
         <>
             <FormikProvider value={formik}>
                 <Wizard
                     navAriaLabel="Scan configuration creation steps"
-                    mainAriaLabel="Scan configuration creation content"
-                    hasNoBodyPadding
-                    steps={wizardSteps}
-                    onClose={onClose}
-                    onCurrentStepChanged={wizardStepChanged}
-                    footer={
-                        <WizardFooter>
-                            <WizardContextConsumer>
-                                {({ activeStep, onNext, onBack, onClose }) => (
-                                    <>
-                                        {activeStep.id !== lastStepId ? (
-                                            <Button
-                                                variant="primary"
-                                                type="submit"
-                                                isDisabled={
-                                                    allClustersAreUnhealthy(clusters) &&
-                                                    !initialFormValues &&
-                                                    activeStep.id === wizardSteps[1].id
-                                                }
-                                                onClick={() =>
-                                                    proceedToNextStepIfValid(
-                                                        onNext,
-                                                        String(activeStep.id)
-                                                    )
-                                                }
-                                            >
-                                                Next
-                                            </Button>
-                                        ) : (
-                                            <Button
-                                                variant="primary"
-                                                type="submit"
-                                                isDisabled={isCreating}
-                                                onClick={onSave}
-                                                isLoading={isCreating}
-                                            >
-                                                Save
-                                            </Button>
-                                        )}
-                                        <Button
-                                            variant="secondary"
-                                            onClick={onBack}
-                                            isDisabled={activeStep.id === firstStepId}
-                                        >
-                                            Back
-                                        </Button>
-                                        <Button variant="link" onClick={openModal}>
-                                            Cancel
-                                        </Button>
-                                        <Modal
-                                            variant="small"
-                                            title="Confirm cancel"
-                                            isOpen={isModalOpen}
-                                            onClose={closeModal}
-                                            actions={[
-                                                <Button
-                                                    key="confirm"
-                                                    variant="primary"
-                                                    onClick={onClose}
-                                                >
-                                                    Confirm
-                                                </Button>,
-                                                <Button
-                                                    key="cancel"
-                                                    variant="secondary"
-                                                    onClick={closeModal}
-                                                >
-                                                    Cancel
-                                                </Button>,
-                                            ]}
-                                        >
-                                            <p>
-                                                Are you sure you want to cancel? Any unsaved changes
-                                                will be lost. You will be taken back to the list of
-                                                scan configurations.
-                                            </p>
-                                        </Modal>
-                                    </>
-                                )}
-                            </WizardContextConsumer>
-                        </WizardFooter>
-                    }
-                />
+                    onSave={onSave}
+                    onStepChange={wizardStepChanged}
+                >
+                    <WizardStep
+                        name={PARAMETERS}
+                        id={PARAMETERS_ID}
+                        key={PARAMETERS_ID}
+                        body={{ hasNoPadding: true }}
+                        footer={
+                            <CustomWizardFooter
+                                stepId={PARAMETERS_ID}
+                                formik={formik}
+                                alertRef={alertRef}
+                                openModal={openModal}
+                            />
+                        }
+                    >
+                        <ScanConfigOptions />
+                    </WizardStep>
+                    <WizardStep
+                        name={SELECT_CLUSTERS}
+                        id={SELECT_CLUSTERS_ID}
+                        key={SELECT_CLUSTERS_ID}
+                        body={{ hasNoPadding: true }}
+                        isDisabled={!canJumpToSelectClusters()}
+                        footer={
+                            <CustomWizardFooter
+                                stepId={SELECT_CLUSTERS_ID}
+                                formik={formik}
+                                alertRef={alertRef}
+                                openModal={openModal}
+                                validate={() => !(allClustersAreUnhealthy() && !initialFormValues)}
+                            />
+                        }
+                    >
+                        <ClusterSelection
+                            alertRef={alertRef}
+                            clusters={clusters || []}
+                            isFetchingClusters={isFetchingClusters}
+                        />
+                    </WizardStep>
+                    <WizardStep
+                        name={SELECT_PROFILES}
+                        id={SELECT_PROFILES_ID}
+                        key={SELECT_PROFILES_ID}
+                        body={{ hasNoPadding: true }}
+                        isDisabled={!canJumpToSelectProfiles()}
+                        footer={
+                            <CustomWizardFooter
+                                stepId={SELECT_PROFILES_ID}
+                                formik={formik}
+                                alertRef={alertRef}
+                                openModal={openModal}
+                            />
+                        }
+                    >
+                        <ProfileSelection
+                            alertRef={alertRef}
+                            profiles={profiles || []}
+                            isFetchingProfiles={isFetchingProfiles}
+                        />
+                    </WizardStep>
+                    <WizardStep
+                        name={CONFIGURE_REPORT}
+                        id={CONFIGURE_REPORT_ID}
+                        key={CONFIGURE_REPORT_ID}
+                        body={{ hasNoPadding: true }}
+                        isDisabled={!canJumpToConfigureReport()}
+                        footer={
+                            <CustomWizardFooter
+                                stepId={CONFIGURE_REPORT_ID}
+                                formik={formik}
+                                alertRef={alertRef}
+                                openModal={openModal}
+                            />
+                        }
+                    >
+                        <ReportConfiguration />
+                    </WizardStep>
+                    <WizardStep
+                        name={REVIEW_CONFIG}
+                        id={REVIEW_CONFIG_ID}
+                        key={REVIEW_CONFIG_ID}
+                        body={{ hasNoPadding: true }}
+                        isDisabled={!canJumpToReviewConfig()}
+                        footer={{
+                            nextButtonProps: { isLoading: isCreating },
+                            nextButtonText: 'Save',
+                            onClose: openModal,
+                        }}
+                    >
+                        <ReviewConfig
+                            clusters={clusters || []}
+                            errorMessage={createScanConfigError}
+                        />
+                    </WizardStep>
+                </Wizard>
             </FormikProvider>
+            <Modal
+                variant="small"
+                title="Confirm cancel"
+                isOpen={isModalOpen}
+                onClose={closeModal}
+                actions={[
+                    <Button key="confirm" variant="primary" onClick={onClose}>
+                        Confirm
+                    </Button>,
+                    <Button key="cancel" variant="secondary" onClick={closeModal}>
+                        Cancel
+                    </Button>,
+                ]}
+            >
+                <p>
+                    Are you sure you want to cancel? Any unsaved changes will be lost. You will be
+                    taken back to the list of scan configurations.
+                </p>
+            </Modal>
         </>
     );
 }
