@@ -3,6 +3,7 @@ package manifest
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	"github.com/stackrox/rox/pkg/certgen"
 	"github.com/stackrox/rox/pkg/mtls"
@@ -191,7 +192,7 @@ func (g *CentralGenerator) createCentralDeployment(m *manifestGenerator) Resourc
 						Name:            "central",
 						Image:           m.Config.Images.Central,
 						ImagePullPolicy: v1.PullAlways,
-						Command:         []string{"sh", "-c", "while true; do /stackrox/central; done"},
+						Command:         []string{"/stackrox/central"},
 						Ports: []v1.ContainerPort{{
 							Name:          "api",
 							ContainerPort: 8443,
@@ -199,6 +200,9 @@ func (g *CentralGenerator) createCentralDeployment(m *manifestGenerator) Resourc
 						}},
 						Env: []v1.EnvVar{
 							{
+								Name:  "ROX_DEVELOPMENT_BUILD",
+								Value: strconv.FormatBool(m.Config.DevMode),
+							}, {
 								Name: "POD_NAMESPACE",
 								ValueFrom: &v1.EnvVarSource{
 									FieldRef: &v1.ObjectFieldSelector{

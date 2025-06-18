@@ -3,6 +3,7 @@ package manifest
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	apps "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -79,6 +80,9 @@ clusterConfig:
 func (g SensorGenerator) applySensorDeployment(m *manifestGenerator) Resource {
 	trueVar := true
 	envVars := []v1.EnvVar{{
+		Name:  "ROX_DEVELOPMENT_BUILD",
+		Value: strconv.FormatBool(m.Config.DevMode),
+	}, {
 		Name:  "ROX_CENTRAL_ENDPOINT",
 		Value: fmt.Sprintf("central.%s.svc:443", m.Config.Namespace),
 	}, {
@@ -150,7 +154,7 @@ func (g SensorGenerator) applySensorDeployment(m *manifestGenerator) Resource {
 						Name:            "sensor",
 						Image:           m.Config.Images.Sensor,
 						ImagePullPolicy: v1.PullAlways,
-						Command:         []string{"sh", "-c", "while true; do /stackrox/kubernetes; done"},
+						Command:         []string{"/stackrox/kubernetes"},
 						Ports: []v1.ContainerPort{{
 							Name:          "api",
 							ContainerPort: 8443,

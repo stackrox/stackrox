@@ -8,6 +8,7 @@ package sensor
 
 import (
 	storage "github.com/stackrox/rox/generated/storage"
+	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -130,16 +131,17 @@ var File_internalapi_sensor_image_iservice_proto protoreflect.FileDescriptor
 
 const file_internalapi_sensor_image_iservice_proto_rawDesc = "" +
 	"\n" +
-	"'internalapi/sensor/image_iservice.proto\x12\x06sensor\x1a\x18storage/deployment.proto\x1a\x13storage/image.proto\"\x7f\n" +
+	"'internalapi/sensor/image_iservice.proto\x12\x06sensor\x1a\x18storage/deployment.proto\x1a\x13storage/image.proto\x1a\x1cgoogle/api/annotations.proto\"\x7f\n" +
 	"\x0fGetImageRequest\x12-\n" +
 	"\x05image\x18\x01 \x01(\v2\x17.storage.ContainerImageR\x05image\x12\x1c\n" +
 	"\tnamespace\x18\x03 \x01(\tR\tnamespace\x12\x1f\n" +
 	"\vscan_inline\x18\x02 \x01(\bR\n" +
 	"scanInline\"8\n" +
 	"\x10GetImageResponse\x12$\n" +
-	"\x05image\x18\x01 \x01(\v2\x0e.storage.ImageR\x05image2M\n" +
-	"\fImageService\x12=\n" +
-	"\bGetImage\x12\x17.sensor.GetImageRequest\x1a\x18.sensor.GetImageResponseB\x1dZ\x1b./internalapi/sensor;sensorb\x06proto3"
+	"\x05image\x18\x01 \x01(\v2\x0e.storage.ImageR\x05image2a\n" +
+	"\fImageService\x12Q\n" +
+	"\bGetImage\x12\x17.sensor.GetImageRequest\x1a\x18.sensor.GetImageResponse\"\x12\x82\xd3\xe4\x93\x02\f\x12\n" +
+	"/v1/imagesB\x1dZ\x1b./internalapi/sensor;sensorX\x02b\x06proto3"
 
 var (
 	file_internalapi_sensor_image_iservice_proto_rawDescOnce sync.Once

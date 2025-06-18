@@ -18,6 +18,7 @@ type Config struct {
 	Action    string `yaml:"action"`
 	Namespace string `yaml:"namespace"`
 	ScannerV4 bool   `yaml:"scannerV4"`
+	DevMode   bool   `yaml:"devMode"`
 	Images    Images `yaml:"images"`
 }
 
@@ -36,6 +37,7 @@ type Images struct {
 var DefaultConfig Config = Config{
 	Namespace: "stackrox",
 	ScannerV4: false,
+	DevMode:   false,
 	Images: Images{
 		Sensor:           localStackroxImage,
 		ConfigController: localStackroxImage,
