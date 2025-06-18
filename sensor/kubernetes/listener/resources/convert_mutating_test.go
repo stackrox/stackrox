@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
-	"github.com/stackrox/rox/sensor/common/heritage"
 	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
 	v1 "k8s.io/api/core/v1"
@@ -21,7 +20,7 @@ import (
 func TestConvertDifferentContainerNumbers(t *testing.T) {
 	t.Parallel()
 
-	storeProvider := InitializeStore(&heritage.MockData{})
+	storeProvider := InitializeStore(nil)
 	cases := []struct {
 		name               string
 		inputObj           interface{}
