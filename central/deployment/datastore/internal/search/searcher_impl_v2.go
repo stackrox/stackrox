@@ -100,20 +100,6 @@ func (ds *searcherImplV2) SearchDeployments(ctx context.Context, q *v1.Query) ([
 	return protoResults, nil
 }
 
-func (ds *searcherImplV2) searchDeployments(ctx context.Context, q *v1.Query) ([]*storage.Deployment, error) {
-	results, err := ds.Search(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-
-	ids := search.ResultsToIDs(results)
-	deployments, _, err := ds.storage.GetMany(ctx, ids)
-	if err != nil {
-		return nil, err
-	}
-	return deployments, nil
-}
-
 func (ds *searcherImplV2) Search(ctx context.Context, q *v1.Query) (res []search.Result, err error) {
 	return ds.searcher.Search(ctx, q)
 }
