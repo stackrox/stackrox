@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { Category, PrivateConfig } from 'types/config.proto';
+import { Category, PrivateConfig, Labels } from 'types/config.proto';
 import {
     Card,
     CardBody,
@@ -30,24 +30,22 @@ import {
 import pluralize from 'pluralize';
 import { FormikErrors, FormikValues } from 'formik';
 
-const predefinedMetrics: Record<Category, Record<string, string[]>> = {
+const predefinedMetrics: Record<Category, Record<string, Labels>> = {
     imageVulnerabilities: {
-        image_vuln_namespace_severity: ['Cluster', 'Namespace', 'Severity'],
-        image_vuln_deployment_severity: ['Cluster', 'Namespace', 'Deployment', 'Severity'],
-        image_vuln_user_workload_severity: [
-            'Cluster',
-            'Namespace',
-            'Deployment',
-            'IsPlatformWorkload',
-            'Severity',
-        ],
+        image_vuln_namespace_severity: { labels: ['Cluster', 'Namespace', 'Severity'] },
+        image_vuln_deployment_severity: {
+            labels: ['Cluster', 'Namespace', 'Deployment', 'Severity'],
+        },
+        image_vuln_user_workload_severity: {
+            labels: ['Cluster', 'Namespace', 'Deployment', 'IsPlatformWorkload', 'Severity'],
+        },
     },
 };
 
-function labelGroup(labels: string[]): ReactElement {
+function labelGroup(labels: Labels): ReactElement {
     return (
         <LabelGroup isCompact numLabels={Infinity}>
-            {Object.values(labels).map((label) => {
+            {Object.values(labels.labels).map((label) => {
                 return (
                     <Label isCompact key={label}>
                         {label}
@@ -59,7 +57,7 @@ function labelGroup(labels: string[]): ReactElement {
 }
 
 function predefinedMetricListItem(
-    mcfg: Record<string, string[]> | undefined,
+    mcfg: Record<string, Labels> | undefined,
     category: Category,
     metric: string,
     onCustomChange:
@@ -80,7 +78,7 @@ function predefinedMetricListItem(
                                 onChange={(_, checked) =>
                                     onCustomChange(
                                         checked ? predefinedMetrics[category][metric] : null,
-                                        `privateConfig.prometheusMetrics.${category}.metrics.${metric}`
+                                        `privateConfig.metrics.${category}.metrics.${metric}`
                                     )
                                 }
                             />
@@ -105,13 +103,13 @@ function predefinedMetricListItem(
 function isPredefined(
     category: Category,
     metric: string,
-    mcfg: Record<string, string[]> | undefined
+    mcfg: Record<string, Labels> | undefined
 ): boolean {
     if (!mcfg || !(metric in mcfg)) {
         return false;
     }
-    const metricLabels = mcfg[metric];
-    const predefined = predefinedMetrics[category][metric];
+    const metricLabels = mcfg[metric].labels;
+    const predefined = predefinedMetrics[category][metric].labels;
     if (metricLabels.length !== predefined.length) {
         return false;
     }
@@ -119,7 +117,7 @@ function isPredefined(
 }
 
 function prometheusMetricsDataList(
-    mcfg: Record<string, string[]> | undefined,
+    mcfg: Record<string, Labels> | undefined,
     category: Category,
     onCustomChange:
         | ((value: unknown, id: string) => Promise<void> | Promise<FormikErrors<FormikValues>>)
@@ -172,7 +170,7 @@ function prometheusMetricsDataList(
 export function PrometheusMetricsCard(
     category: Category,
     period: number,
-    mcfg: Record<string, string[]> | undefined,
+    mcfg: Record<string, Labels> | undefined,
     title: string
 ) {
     const hasMetrics = mcfg && Object.keys(mcfg).length > 0;
@@ -248,14 +246,14 @@ function prometheusMetricsPeriodForm(
         <FormGroup
             label="Gathering period in minutes (set to 0 to disable)"
             isRequired
-            fieldId={`privateConfig.prometheusMetrics.${category}.gatheringPeriodMinutes`}
+            fieldId={`privateConfig.metrics.${category}.gatheringPeriodMinutes`}
         >
             <TextInput
                 isRequired
                 type="number"
-                id={`privateConfig.prometheusMetrics.${category}.gatheringPeriodMinutes`}
-                name={`privateConfig.prometheusMetrics.${category}.gatheringPeriodMinutes`}
-                value={pcfg?.prometheusMetrics?.[category]?.gatheringPeriodMinutes || 0}
+                id={`privateConfig.metrics.${category}.gatheringPeriodMinutes`}
+                name={`privateConfig.metrics.${category}.gatheringPeriodMinutes`}
+                value={pcfg?.metrics?.[category]?.gatheringPeriodMinutes || 0}
                 onChange={(event, value) => onChange(value, event)}
                 min={0}
             />
@@ -288,10 +286,10 @@ export function PrometheusMetricsForm(
                             <GridItem md={12}>
                                 <FormGroup
                                     label="Metrics configuration"
-                                    fieldId={`privateConfig.prometheusMetrics.${category}.metrics`}
+                                    fieldId={`privateConfig.metrics.${category}.metrics`}
                                 >
                                     {prometheusMetricsDataList(
-                                        pcfg?.prometheusMetrics?.[category]?.metrics,
+                                        pcfg?.metrics?.[category]?.metrics,
                                         category,
                                         onCustomChange
                                     )}
