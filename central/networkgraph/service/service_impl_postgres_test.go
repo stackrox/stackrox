@@ -287,6 +287,7 @@ func (s *networkGraphServiceSuite) TestGetNetworkGraphNormalizedAndUnformalized(
 
 	entityFlows := []*storage.NetworkFlow{
 		externalFlow(deployment, entities[0], false, lastSeenTimestamp1),
+		externalFlow(deployment, entities[0], false, lastSeenTimestamp2),
 		externalFlow(deployment, entities[1], false, lastSeenTimestamp2),
 		externalFlow(deployment, entities[2], false, lastSeenTimestamp3),
 		externalFlow(deployment, internetEntity, false, lastSeenTimestamp4),
@@ -321,6 +322,21 @@ func (s *networkGraphServiceSuite) TestGetNetworkGraphNormalizedAndUnformalized(
 								Port:                1234,
 								Protocol:            storage.L4Protocol_L4_PROTOCOL_TCP,
 								LastActiveTimestamp: lastSeenTimestamp1,
+							},
+							{
+								Port:                1234,
+								Protocol:            storage.L4Protocol_L4_PROTOCOL_TCP,
+								LastActiveTimestamp: lastSeenTimestamp2,
+							},
+							{
+								Port:                1234,
+								Protocol:            storage.L4Protocol_L4_PROTOCOL_TCP,
+								LastActiveTimestamp: lastSeenTimestamp3,
+							},
+							{
+								Port:                1234,
+								Protocol:            storage.L4Protocol_L4_PROTOCOL_TCP,
+								LastActiveTimestamp: lastSeenTimestamp4,
 							},
 						},
 					},
