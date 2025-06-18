@@ -248,17 +248,14 @@ func (m *endpointManagerImpl) onDeploymentCreateOrUpdate(deployment *deploymentW
 		deployment.GetId(): data,
 	}
 	if deployment.GetName() == "sensor" {
-		m.updateHeritageData(data, true)
+		m.updateHeritageData(data)
 	}
 	m.entityStore.Apply(updates, false, "OnDeploymentCreateOrUpdateByID")
 }
 
-func (m *endpointManagerImpl) updateHeritageData(data *clusterentities.EntityData, force bool) {
+func (m *endpointManagerImpl) updateHeritageData(data *clusterentities.EntityData) {
 	hm := m.entityStore.GetHeritageData()
 	if hm == nil {
-		return
-	}
-	if hm.HasCurrentSensorData() && !force {
 		return
 	}
 	var sensorContainerID, sensorPodIP string
