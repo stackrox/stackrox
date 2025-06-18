@@ -272,7 +272,7 @@ func (m *endpointManagerImpl) updateHeritageData(data *clusterentities.EntityDat
 		sort.Slice(sensorPodIPs, func(i, j int) bool {
 			return net.IPAddressLess(sensorPodIPs[i], sensorPodIPs[j])
 		})
-		// Deliberately choosing only the first IP from potentially many
+		// Deliberately choosing only the first IP from potentially many.
 		sensorPodIP = sensorPodIPs[0].String()
 	}
 	log.Infof("Discovered podIP=%q and containerID=%q for Sensor heritage", sensorPodIP, sensorContainerID)
