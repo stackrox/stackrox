@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/k8srbac"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"google.golang.org/grpc"
@@ -31,6 +32,8 @@ var (
 			v1.ServiceAccountService_ListServiceAccounts_FullMethodName,
 		},
 	})
+
+	log = logging.LoggerForModule()
 )
 
 // serviceImpl provides APIs for alerts.
@@ -87,6 +90,7 @@ func (s *serviceImpl) GetServiceAccount(ctx context.Context, request *v1.Resourc
 
 // ListServiceAccounts returns all service accounts that match the query.
 func (s *serviceImpl) ListServiceAccounts(ctx context.Context, rawQuery *v1.RawQuery) (*v1.ListServiceAccountResponse, error) {
+	log.Info("SHREWS -- List SAs")
 	q, err := search.ParseQuery(rawQuery.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
@@ -113,6 +117,7 @@ func (s *serviceImpl) ListServiceAccounts(ctx context.Context, rawQuery *v1.RawQ
 		})
 
 	}
+	log.Info("SHREWS -- List SAs -- END")
 	return &v1.ListServiceAccountResponse{
 		SaAndRoles: saAndRoles,
 	}, nil

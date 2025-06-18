@@ -50,6 +50,7 @@ func (resolver *Resolver) ServiceAccount(ctx context.Context, args struct{ graph
 // ServiceAccounts gets service accounts based on a query
 func (resolver *Resolver) ServiceAccounts(ctx context.Context, args PaginatedQuery) ([]*serviceAccountResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ServiceAccounts")
+	log.Info("SHREWS -- graphql SAs")
 	if err := readServiceAccounts(ctx); err != nil {
 		return nil, err
 	}
@@ -59,7 +60,9 @@ func (resolver *Resolver) ServiceAccounts(ctx context.Context, args PaginatedQue
 		return nil, err
 	}
 
-	return resolver.wrapServiceAccounts(resolver.ServiceAccountsDataStore.SearchRawServiceAccounts(ctx, query))
+	sas, err := resolver.ServiceAccountsDataStore.SearchRawServiceAccounts(ctx, query)
+	log.Info("SHREWS -- graphql SAs -- END")
+	return resolver.wrapServiceAccounts(sas, err)
 }
 
 // ServiceAccountCount returns count of all service accounts across infrastructure
