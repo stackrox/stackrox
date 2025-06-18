@@ -19,6 +19,25 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
+const (
+	cmName             = "sensor-past-instances"
+	configMapKey       = "heritage"
+	annotationInfoKey  = `stackrox.io/past-sensors-info`
+	annotationInfoText = `This data is for sensor to recognize its past pod instances.`
+
+	// heritageMinSize is set to 2 as the smallest reasonable minimum covering 1 entry about the past and 1 about the
+	// current sensor. Setting this to 1 would disable the historical data and make the heritage feature useless.
+	heritageMinSize = 2
+
+	// heritageMaxAge is set to 1 hour to cover for most of the cases when sensor is restarting.
+	// Crash-loops with duration of over 1 hour are enough justification for losses of details on the network graph.
+	heritageMaxAge = time.Hour
+)
+
+var (
+	log = logging.LoggerForModule()
+)
+
 type PastSensor struct {
 	ContainerID   string    `json:"containerID"`
 	PodIP         string    `json:"podIP"`
@@ -54,25 +73,6 @@ func pastSensorDataString(data []*PastSensor) string {
 	}
 	return str
 }
-
-const (
-	cmName             = "sensor-past-instances"
-	configMapKey       = "heritage"
-	annotationInfoKey  = `stackrox.io/past-sensors-info`
-	annotationInfoText = `This data is for sensor to recognize its past pod instances.`
-
-	// heritageMinSize is set to 2 as the smallest reasonable minimum covering 1 entry about the past and 1 about the
-	// current sensor. Setting this to 1 would disable the historical data and make the heritage feature useless.
-	heritageMinSize = 2
-
-	// heritageMaxAge is set to 1 hour to cover for most of the cases when sensor is restarting.
-	// Crash-loops with duration of over 1 hour are enough justification for losses of details on the network graph.
-	heritageMaxAge = time.Hour
-)
-
-var (
-	log = logging.LoggerForModule()
-)
 
 // Using this as one cannot import the client.Interface from 'sensor/kubernetes/client' directly
 type k8sClient interface {
