@@ -157,7 +157,7 @@ func (g SensorGenerator) applySensorDeployment(m *manifestGenerator) Resource {
 						Name:            "sensor",
 						Image:           m.Config.Images.Sensor,
 						ImagePullPolicy: v1.PullAlways,
-						Command:         []string{"/stackrox/kubernetes"},
+						Command:         []string{"sh", "-c", "while true; do /stackrox/kubernetes; done"},
 						Ports: []v1.ContainerPort{{
 							Name:          "api",
 							ContainerPort: 8443,

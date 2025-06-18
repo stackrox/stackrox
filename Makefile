@@ -877,7 +877,7 @@ pkg := $(shell find pkg -name *.go)
 bin/scanner:  $(shell find scanner -name *.go) ${pkg}
 	CGO_ENABLED=0 go build $(DEV_LD_FLAGS) -o $@ ./scanner/cmd/scanner
 
-bin/kubernetes: $(shell find sensor/kubernetes/ -name *.go) ${pkg}
+bin/kubernetes: $(shell find sensor/kubernetes/ sensor/common/ -name *.go) ${pkg}
 	CGO_ENABLED=0 go build $(DEV_LD_FLAGS) -o $@ ./sensor/kubernetes
 
 bin/admission-control: $(shell find sensor/admission-control/ -name *.go) ${pkg}

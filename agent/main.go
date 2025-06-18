@@ -61,7 +61,7 @@ func main() {
 	})
 
 	if err != nil {
-		log.Errorf("Failed to get image: %w", err)
+		log.Errorf("Failed to get image: %v", err)
 		return
 	}
 
@@ -70,6 +70,20 @@ func main() {
 	if resp.Image.Scan != nil {
 		log.Infof("Component count: %d", len(resp.Image.Scan.Components))
 	}
+
+	vmClient := sensor.NewVirtualMachineServiceClient(sensorConn)
+	vmResp, err := vmClient.UpsertVirtualMachine(ctx, &sensor.UpsertVirtualMachineRequest{
+		VirtualMachine: &storage.VirtualMachine{
+			Id: "haha",
+		},
+	})
+
+	if err != nil {
+		log.Errorf("Failed to upsert VM: %v", err)
+		return
+	}
+
+	log.Infof("VM upsert success: %v", vmResp.Success)
 }
 
 func configureCA() error {
