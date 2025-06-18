@@ -10,7 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/search/paginated"
 )
 
-const whenUnlimited = 1000
+const whenUnlimited = 100
 
 type searcherImpl struct {
 	storage store.Store
