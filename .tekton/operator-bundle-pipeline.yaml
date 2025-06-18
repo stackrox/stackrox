@@ -577,9 +577,9 @@ spec:
   - name: fips-operator-bundle-check-oci-ta
     params:
     - name: image-digest
-      value: $(tasks.build-image-index.results.IMAGE_DIGEST)
+      value: $(tasks.build-container.results.IMAGE_DIGEST)
     - name: image-url
-      value: $(tasks.build-image-index.results.IMAGE_URL)
+      value: $(tasks.build-container.results.IMAGE_URL)
     - name: SOURCE_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     taskRef:
