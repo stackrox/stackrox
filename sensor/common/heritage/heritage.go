@@ -180,11 +180,6 @@ func (h *Manager) updateCachedTimestampNoLock(now time.Time) bool {
 }
 
 func (h *Manager) UpsertConfigMap(ctx context.Context, now time.Time) error {
-	if ctx == nil {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(context.Background(), 2*time.Second)
-		defer cancel()
-	}
 	h.cacheMutex.Lock()
 	defer h.cacheMutex.Unlock()
 	if !h.cacheIsPopulated.Load() {
