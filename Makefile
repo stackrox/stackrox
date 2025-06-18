@@ -920,6 +920,9 @@ bin/local-nodescanner-v2: $(shell find scannerv2/ -name *.go)
 bin/installer: $(shell find installer/ -name *.go)
 	CGO_ENABLED=0 go build $(DEV_LD_FLAGS) -o $@ ./installer
 
+bin/agent: $(shell find agent/ -name *.go) ${pkg}
+	CGO_ENABLED=0 go build $(DEV_LD_FLAGS) -o $@ ./agent
+
 bin/updater: $(shell find scannerv2/ -name *.go)
 	go build -C ./scannerv2 $(DEV_LD_FLAGS) -o ../$@ ./cmd/updater
 
