@@ -80,6 +80,9 @@ clusterConfig:
 func (g SensorGenerator) applySensorDeployment(m *manifestGenerator) Resource {
 	trueVar := true
 	envVars := []v1.EnvVar{{
+		Name:  "ROX_HOTRELOAD",
+		Value: strconv.FormatBool(m.Config.DevMode),
+	}, {
 		Name:  "ROX_DEVELOPMENT_BUILD",
 		Value: strconv.FormatBool(m.Config.DevMode),
 	}, {

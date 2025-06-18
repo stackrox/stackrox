@@ -200,6 +200,9 @@ func (g *CentralGenerator) createCentralDeployment(m *manifestGenerator) Resourc
 						}},
 						Env: []v1.EnvVar{
 							{
+								Name:  "ROX_HOTRELOAD",
+								Value: strconv.FormatBool(m.Config.DevMode),
+							}, {
 								Name:  "ROX_DEVELOPMENT_BUILD",
 								Value: strconv.FormatBool(m.Config.DevMode),
 							}, {
