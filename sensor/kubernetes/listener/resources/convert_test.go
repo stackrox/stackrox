@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/sensor/common/heritage"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/references"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -88,7 +87,7 @@ func TestPopulateNonStaticFieldWithPod(t *testing.T) {
 			expectedAction: central.ResourceAction_REMOVE_RESOURCE,
 		},
 	}
-	storeProvider := InitializeStore(&heritage.MockData{})
+	storeProvider := InitializeStore(nil)
 	for _, c := range cases {
 		ph := references.NewParentHierarchy()
 		newDeploymentEventFromResource(c.inputObj, &c.action, "Pod", testClusterID, nil,
@@ -1333,7 +1332,7 @@ func TestConvert(t *testing.T) {
 		},
 	}
 
-	storeProvider := InitializeStore(&heritage.MockData{})
+	storeProvider := InitializeStore(nil)
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			actual := newDeploymentEventFromResource(c.inputObj, &c.action, c.deploymentType, testClusterID,

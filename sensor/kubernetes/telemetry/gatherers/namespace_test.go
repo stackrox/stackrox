@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/pkg/telemetry/data"
-	"github.com/stackrox/rox/sensor/common/heritage"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 	"github.com/stretchr/testify/suite"
 	v1 "k8s.io/api/core/v1"
@@ -38,7 +37,7 @@ func (s *NamespaceGathererTestSuite) TestGatherNamespaces() {
 	}
 	gatherer := newNamespaceGatherer(
 		fake.NewSimpleClientset(knownNamespace, unknownNamespace),
-		resources.InitializeStore(&heritage.MockData{}).Deployments())
+		resources.InitializeStore(nil).Deployments())
 	namespaces, err := gatherer.Gather(context.Background())
 	s.Empty(err)
 	s.Len(namespaces, 2)

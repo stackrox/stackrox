@@ -3,7 +3,6 @@ package clusterentities
 import (
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/networkgraph"
-	"github.com/stackrox/rox/sensor/common/heritage"
 	"golang.org/x/exp/maps"
 )
 
@@ -343,7 +342,7 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPastIPs() {
 	}
 	for name, tCase := range cases {
 		s.Run(name, func() {
-			store := NewStoreWithMemory(tCase.numTicksToRemember, &heritage.MockData{}, true)
+			store := NewStoreWithMemory(tCase.numTicksToRemember, nil, true)
 			ipListener := newTestPublicIPsListener(s.T())
 			store.RegisterPublicIPsListener(ipListener)
 			// Set up the cleanup-assertions
@@ -422,7 +421,7 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPastIPs() {
 }
 
 func (s *ClusterEntitiesStoreTestSuite) TestChangingIPsAndExternalEntities() {
-	entityStore := NewStoreWithMemory(0, &heritage.MockData{}, false)
+	entityStore := NewStoreWithMemory(0, nil, false)
 	type expectation struct {
 		ip           string
 		port         uint16

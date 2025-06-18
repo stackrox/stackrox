@@ -1,9 +1,5 @@
 package clusterentities
 
-import (
-	"github.com/stackrox/rox/sensor/common/heritage"
-)
-
 func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPastContainerIDs() {
 	cases := map[string]struct {
 		numTicksToRemember uint16
@@ -255,7 +251,7 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPastContainerIDs() {
 	}
 	for name, tCase := range cases {
 		s.Run(name, func() {
-			store := NewStoreWithMemory(tCase.numTicksToRemember, &heritage.MockData{}, true)
+			store := NewStoreWithMemory(tCase.numTicksToRemember, nil, true)
 			ipListener := newTestPublicIPsListener(s.T())
 			store.RegisterPublicIPsListener(ipListener)
 			// Set up the cleanup-assertions

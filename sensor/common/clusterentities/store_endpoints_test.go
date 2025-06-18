@@ -5,7 +5,6 @@ import (
 
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/networkgraph"
-	"github.com/stackrox/rox/sensor/common/heritage"
 	"golang.org/x/exp/maps"
 )
 
@@ -252,7 +251,7 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPastEndpoints() {
 	}
 	for name, tCase := range cases {
 		s.Run(name, func() {
-			store := NewStoreWithMemory(tCase.numTicksToRemember, &heritage.MockData{}, true)
+			store := NewStoreWithMemory(tCase.numTicksToRemember, nil, true)
 			ipListener := newTestPublicIPsListener(s.T())
 			store.RegisterPublicIPsListener(ipListener)
 			defer func() {
