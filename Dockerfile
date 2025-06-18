@@ -1,6 +1,6 @@
 FROM quay.io/fedora/fedora:43
 
-RUN dnf install -y postgresql elfutils-libelf libbpf nodejs npm
+RUN dnf install -y postgresql elfutils-libelf libbpf nodejs npm procps-ng
 COPY image/rhel/static-bin/* /usr/bin
 RUN mkdir -p /stackrox/static-data && save-dir-contents /etc/pki/ca-trust /etc/ssl
 
