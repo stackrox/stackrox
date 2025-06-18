@@ -52,9 +52,13 @@ export type AdministrationEventsConfig = {
     retentionDurationDays: number; // uint32
 };
 
+export type Labels = {
+    labels: string[];
+};
+
 export type Metrics = {
     gatheringPeriodMinutes?: number; // uint32
-    metrics?: Record<string, string[]>;
+    metrics?: Record<string, Labels>;
 };
 
 // The type list of known metrics categories.
@@ -71,7 +75,7 @@ export type PrivateConfig = {
     decommissionedClusterRetention: DecommissionedClusterRetentionConfig;
     reportRetentionConfig: ReportRetentionConfig;
     administrationEventsConfig: AdministrationEventsConfig;
-    prometheusMetrics: PrometheusMetrics;
+    metrics: PrometheusMetrics;
 };
 
 export type PlatformComponentRule = {

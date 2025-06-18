@@ -10,7 +10,7 @@ export type PrivateConfigPrometheusMetricsDetailsProps = {
 const PrivateConfigPrometheusMetricsDetails = ({
     privateConfig,
 }: PrivateConfigPrometheusMetricsDetailsProps): ReactElement[] => {
-    const imageVulnerabilitiesCfg = privateConfig?.prometheusMetrics?.imageVulnerabilities;
+    const imageVulnerabilitiesCfg = privateConfig?.metrics?.imageVulnerabilities;
 
     return [
         PrometheusMetricsCard(
