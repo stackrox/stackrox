@@ -24,7 +24,7 @@ var (
 	// private configuration.
 	customAggregatedMetrics sync.Map // [string]*metricRecord
 
-	registry = prometheus.NewRegistry()
+	CustomRegistry = prometheus.NewRegistry()
 )
 
 type metricRecord struct {
@@ -37,7 +37,7 @@ func UnregisterCustomAggregatedMetric(name string) bool {
 	if !ok {
 		return false
 	}
-	return registry.Unregister(v.(*metricRecord).GaugeVec)
+	return CustomRegistry.Unregister(v.(*metricRecord).GaugeVec)
 }
 
 // RegisterCustomAggregatedMetric registers user-defined aggregated metrics
@@ -54,7 +54,7 @@ func RegisterCustomAggregatedMetric(name string, category string, period time.Du
 	if _, loaded := customAggregatedMetrics.LoadOrStore(name, &metricRecord{gauge}); loaded {
 		return nil
 	}
-	return registry.Register(gauge)
+	return CustomRegistry.Register(gauge)
 }
 
 // SetCustomAggregatedCount registers the metric vector with the values,

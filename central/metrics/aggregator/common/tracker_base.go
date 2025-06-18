@@ -6,13 +6,18 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-var log = logging.CreateLogger(logging.ModuleForName("central_metrics"), 1)
+var (
+	log             = logging.CreateLogger(logging.ModuleForName("central_metrics"), 1)
+	ErrStopIterator = errors.New("stopped")
+)
 
 type LazyLabel[Finding any] struct {
 	Label
@@ -31,6 +36,7 @@ func MakeLabelOrderMap[Finding any](getters []LazyLabel[Finding]) map[Label]int 
 
 type Tracker interface {
 	Run(context.Context)
+	ValidateConfiguration(*storage.PrometheusMetrics_MetricGroup) (*Configuration, error)
 	Reconfigure(context.Context, *Configuration)
 }
 
@@ -85,6 +91,14 @@ func MakeTrackerBase[Finding any](category, description string,
 	tracker.registerMetricFunc = tracker.registerMetric
 	tracker.unregisterMetricFunc = tracker.unregisterMetric
 	return tracker
+}
+
+func (tracker *TrackerBase[Finding]) ValidateConfiguration(cfg *storage.PrometheusMetrics_MetricGroup) (*Configuration, error) {
+	current := tracker.GetConfiguration()
+	if current == nil {
+		current = &Configuration{}
+	}
+	return ValidateConfiguration(cfg, current.metrics, tracker.labelOrder)
 }
 
 // Reconfigure assumes the configuration has been validated, so doesn't return
