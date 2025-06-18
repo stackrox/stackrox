@@ -15,7 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/search/sortfields"
 )
 
-const whenUnlimited = 1000
+const whenUnlimited = 100
 
 var (
 	defaultSortOption = &v1.QuerySortOption{
@@ -46,10 +46,7 @@ type searcherImplV2 struct {
 
 // SearchRawDeployments retrieves deployments from the storage
 func (ds *searcherImplV2) SearchRawDeployments(ctx context.Context, q *v1.Query) ([]*storage.Deployment, error) {
-	// Not pre-allocating based on paging as this function can be called without paging and we should not
-	// pre-allocate unlimited storage.  If we decide we need pre-allocating then maybe we should do a count
-	// first if and only if memory profiles show that to be necessary.
-	var deployments []*storage.Deployment
+	deployments := make([]*storage.Deployment, 0, paginated.GetLimit(q.GetPagination().GetLimit(), whenUnlimited))
 	err := ds.storage.GetByQueryFn(ctx, q, func(deployment *storage.Deployment) error {
 		deployments = append(deployments, deployment)
 		return nil
@@ -63,10 +60,7 @@ func (ds *searcherImplV2) SearchRawDeployments(ctx context.Context, q *v1.Query)
 
 // SearchListDeployments retrieves deployments from the storage
 func (ds *searcherImplV2) SearchListDeployments(ctx context.Context, q *v1.Query) ([]*storage.ListDeployment, error) {
-	// Not pre-allocating based on paging as this function can be called without paging and we should not
-	// pre-allocate unlimited storage.  If we decide we need pre-allocating then maybe we should do a count
-	// first if and only if memory profiles show that to be necessary.
-	var deployments []*storage.ListDeployment
+	deployments := make([]*storage.ListDeployment, 0, paginated.GetLimit(q.GetPagination().GetLimit(), whenUnlimited))
 	err := ds.storage.GetByQueryFn(ctx, q, func(deployment *storage.Deployment) error {
 		deployments = append(deployments, types.ConvertDeploymentToDeploymentList(deployment))
 		return nil
