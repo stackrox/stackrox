@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/stackrox/rox/central/deployment/datastore/internal/store"
+	"github.com/stackrox/rox/central/deployment/datastore/internal/store/types"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/schema"
@@ -13,6 +14,8 @@ import (
 	"github.com/stackrox/rox/pkg/search/scoped/postgres"
 	"github.com/stackrox/rox/pkg/search/sortfields"
 )
+
+const whenUnlimited = 1000
 
 var (
 	defaultSortOption = &v1.QuerySortOption{
@@ -43,7 +46,15 @@ type searcherImplV2 struct {
 
 // SearchRawDeployments retrieves deployments from the storage
 func (ds *searcherImplV2) SearchRawDeployments(ctx context.Context, q *v1.Query) ([]*storage.Deployment, error) {
-	deployments, err := ds.searchDeployments(ctx, q)
+	// Not pre-allocating based on paging as this function can be called without paging and we should not
+	// pre-allocate unlimited storage.  If we decide we need pre-allocating then maybe we should do a count
+	// first if and only if memory profiles show that to be necessary.
+	var deployments []*storage.Deployment
+	err := ds.storage.GetByQueryFn(ctx, q, func(deployment *storage.Deployment) error {
+		deployments = append(deployments, deployment)
+		return nil
+	})
+
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +63,15 @@ func (ds *searcherImplV2) SearchRawDeployments(ctx context.Context, q *v1.Query)
 
 // SearchListDeployments retrieves deployments from the storage
 func (ds *searcherImplV2) SearchListDeployments(ctx context.Context, q *v1.Query) ([]*storage.ListDeployment, error) {
-	deployments, _, err := ds.searchListDeployments(ctx, q)
+	// Not pre-allocating based on paging as this function can be called without paging and we should not
+	// pre-allocate unlimited storage.  If we decide we need pre-allocating then maybe we should do a count
+	// first if and only if memory profiles show that to be necessary.
+	var deployments []*storage.ListDeployment
+	err := ds.storage.GetByQueryFn(ctx, q, func(deployment *storage.Deployment) error {
+		deployments = append(deployments, types.ConvertDeploymentToDeploymentList(deployment))
+		return nil
+	})
+
 	if err != nil {
 		return nil, err
 	}
