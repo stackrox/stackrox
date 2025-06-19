@@ -2,5 +2,16 @@
   "base": {
     "name": "master",
     "hash": "a89ce379a43e49b3a0c2ba686549f13967851e5a"
+  },
+  "upstream": {
+    "branch": "ROX-29160-Add-feature-flag-for-built-in-policy"
+  },
+  "change": {
+    "github": {
+      "pr": {
+        "number": 15794,
+        "gqlID": "PR_kwDOGd6UEM6bPth_"
+      }
+    }
   }
 }
