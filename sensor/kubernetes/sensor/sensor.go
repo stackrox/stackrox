@@ -126,6 +126,8 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	networkFlowManager :=
 		manager.NewManager(storeProvider.Entities(), externalsrcs.StoreInstance(), policyDetector, pubSub)
 	enhancer := deploymentenhancer.CreateEnhancer(storeProvider)
+
+	vmService := virtualmachine.NewService()
 	components := []common.SensorComponent{
 		admCtrlMsgForwarder,
 		enforcer,
@@ -145,6 +147,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		imageService,
 		enhancer,
 		complianceService,
+		vmService,
 	}
 	matcher := compliance.NewNodeIDMatcher(storeProvider.Nodes())
 	nodeInventoryHandler := compliance.NewNodeInventoryHandler(complianceService.NodeInventories(), complianceService.IndexReportWraps(), matcher, matcher)
@@ -204,8 +207,8 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		processSignals,
 		complianceService,
 		imageService,
-		virtualmachine.NewService(),
 		deployment.NewService(storeProvider.Deployments(), storeProvider.Pods()),
+		vmService,
 	}
 
 	if admCtrlSettingsMgr != nil {
