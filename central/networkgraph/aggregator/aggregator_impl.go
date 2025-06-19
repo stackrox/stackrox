@@ -173,6 +173,8 @@ func (a *aggregateExternalConnByNameImpl) Aggregate(flows []*storage.NetworkFlow
 			continue
 		}
 
+		flow = flow.CloneVT()
+
 		// If both endpoints are not known external sources, skip processing.
 		if !networkgraph.IsKnownExternalSrc(srcEntity) && !networkgraph.IsKnownExternalSrc(dstEntity) {
 			ret = append(ret, flow)
