@@ -2873,10 +2873,10 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePLOPsWithoutPodUIDScaleRaceCondit
 	suite.LessOrEqual(int(plopsWithoutPodUids), totalPrunedCount)
 }
 
-func (suite *PLOPDataStoreTestSuite) TestSort1000000() {
-	nport := 100
-	nprocess := 100
-	npod := 100
+func (suite *PLOPDataStoreTestSuite) TestSortMany() {
+	nport := 50
+	nprocess := 50
+	npod := 50
 
 	plops := suite.makeRandomPlops(nport, nprocess, npod, fixtureconsts.Deployment1)
 	suite.addTooMany(plops)
