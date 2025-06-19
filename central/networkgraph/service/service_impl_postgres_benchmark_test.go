@@ -301,3 +301,81 @@ func BenchmarkGetExternalNetworkFlows(b *testing.B) {
 		},
 	}))
 }
+
+func BenchmarkNetworkGraphExternalFlows(b *testing.B) {
+	suite := setupBenchmarkForB(b)
+
+	entities := make([]*storage.NetworkEntity, 0, 255*255*2)
+
+	for x := 1; x < 2; x++ {
+		for y := 1; y < 255; y++ {
+			for z := 1; z < 255; z++ {
+				cidr := fmt.Sprintf("1.%d.%d.%d/32", x, y, z)
+				id, err := externalsrcs.NewClusterScopedID(fixtureconsts.Cluster1, cidr)
+				require.NoError(b, err)
+
+				entity := testutils.GetExtSrcNetworkEntity(id.String(), cidr, cidr, false, fixtureconsts.Cluster1, true)
+				entities = append(entities, entity)
+			}
+		}
+	}
+
+	_, err := suite.entityDataStore.CreateExtNetworkEntitiesForCluster(globalWriteAccessCtx, fixtureconsts.Cluster1, entities...)
+	require.NoError(b, err)
+
+	// entity 0 communicates with 2000 deployments (1.1.1.1)
+	// deployment-0 communicates with first 1000 entities
+	// deployment-1 communicates with all entities
+
+	flows := make([]*storage.NetworkFlow, 0, len(entities)+2000+1000)
+
+	for i := 0; i < 2000; i++ {
+		name := fmt.Sprintf("deployment-%d", i)
+		deployment := &storage.Deployment{
+			Name:      name,
+			Id:        uuid.NewV5FromNonUUIDs(fixtureconsts.Namespace1, name).String(),
+			ClusterId: fixtureconsts.Cluster1,
+			Namespace: fixtureconsts.Namespace1,
+		}
+
+		deploymentEnt := testutils.GetDeploymentNetworkEntity(deployment.Id, deployment.Name)
+		err := suite.deploymentsDataStore.UpsertDeployment(globalWriteAccessCtx, deployment)
+		require.NoError(b, err)
+
+		if i == 0 {
+			// deployment-0 talks to the first 1000 entities
+			ts := time.Now()
+			for _, entity := range entities[:1000] {
+				flow := testutils.GetNetworkFlow(deploymentEnt, entity.Info, 1337, storage.L4Protocol_L4_PROTOCOL_TCP, &ts)
+				flows = append(flows, flow)
+			}
+		} else if i == 1 {
+			// deployment-1 talks to all the entities
+			ts := time.Now()
+			for _, entity := range entities {
+				flow := testutils.GetNetworkFlow(deploymentEnt, entity.Info, 1337, storage.L4Protocol_L4_PROTOCOL_TCP, &ts)
+				flows = append(flows, flow)
+			}
+		} else {
+			// all deployments talk to entity0
+			ts := time.Now()
+			flow := testutils.GetNetworkFlow(deploymentEnt, entities[0].Info, 1337, storage.L4Protocol_L4_PROTOCOL_TCP, &ts)
+			flows = append(flows, flow)
+		}
+	}
+
+	flowStore, err := suite.flowDataStore.CreateFlowStore(globalWriteAccessCtx, fixtureconsts.Cluster1)
+	require.NoError(b, err)
+
+	_, err = flowStore.UpsertFlows(globalWriteAccessCtx, flows, timestamp.FromGoTime(time.Now()))
+	require.NoError(b, err)
+
+	b.Run("all graph", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_, err := suite.service.GetNetworkGraph(globalWriteAccessCtx, &v1.NetworkGraphRequest{
+				ClusterId: fixtureconsts.Cluster1,
+			})
+			require.NoError(b, err)
+		}
+	})
+}
