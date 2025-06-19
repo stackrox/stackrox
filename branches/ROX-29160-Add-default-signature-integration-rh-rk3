@@ -1,7 +1,7 @@
 {
   "base": {
     "name": "ROX-29160-Add-feature-flag-for-built-in-policy",
-    "hash": "2a3f10b62c8ec65deada9e49ccee834c50da06fb"
+    "hash": "adab0fb06e4365f368ab7b0137df5f46a66c5b03"
   },
   "upstream": {
     "branch": "ROX-29160-Add-default-signature-integration-rh-rk3"
