@@ -1,7 +1,7 @@
 {
   "base": {
-    "name": "ROX-29160-Add-default-signature-integration-rh-rk3",
-    "hash": "b077dd9a47773c1c0cfe87323ec07ffed5698094"
+    "name": "ROX-17872-Remove-remaining-reference-to-feature-flag",
+    "hash": "8808f333e2d6c2651f4137c5bebce446e7508673"
   },
   "upstream": {
     "branch": "ROX-29160-Add-default-policy-red-hat-images-signed"
