@@ -11,6 +11,10 @@
       "pr": {
         "number": 15794,
         "gqlID": "PR_kwDOGd6UEM6bPth_"
+      },
+      "comment": {
+        "gqlID": "IC_kwDOGd6UEM6yFs5K",
+        "url": "https://github.com/stackrox/stackrox/pull/15794#issuecomment-2987839050"
       }
     }
   }
