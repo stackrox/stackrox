@@ -11,7 +11,7 @@ func Test_parseMetricLabels(t *testing.T) {
 	config := makeTestMetricLabels(t)
 	labelExpression, err := TranslateMetricLabels(config, testLabelOrder)
 	assert.NoError(t, err)
-	assert.Equal(t, makeTestMetricLabelExpression(t), labelExpression)
+	assert.Equal(t, makeTestMetricConfiguration(t), labelExpression)
 }
 
 func Test_validateMetricName(t *testing.T) {

@@ -43,7 +43,7 @@ func makeTestMetricLabels(t *testing.T) map[string]*storage.PrometheusMetrics_Me
 	}
 }
 
-func makeTestMetricLabelExpression(t *testing.T) MetricsConfiguration {
+func makeTestMetricConfiguration(t *testing.T) MetricsConfiguration {
 	pfx := MetricName(strings.ReplaceAll(t.Name(), "/", "_"))
 	return MetricsConfiguration{
 		pfx + "_metric1": {"Severity", "Cluster"},
