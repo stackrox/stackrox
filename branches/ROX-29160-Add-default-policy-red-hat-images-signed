@@ -1,7 +1,7 @@
 {
   "base": {
     "name": "ROX-17872-Remove-remaining-reference-to-feature-flag",
-    "hash": "ff81cda542d497807cd4f3a2642c7a58887f0fd2"
+    "hash": "d6276b078cdaf0d471a17a9349f8728823decd13"
   },
   "upstream": {
     "branch": "ROX-29160-Add-default-policy-red-hat-images-signed"
