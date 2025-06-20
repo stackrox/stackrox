@@ -1,3 +1,11 @@
 {
-  "continuations": null
+  "continuations": [
+    {
+      "command": [
+        "upstack",
+        "restack"
+      ],
+      "branch": "ROX-29160-Add-default-signature-integration-rh-rk3"
+    }
+  ]
 }
