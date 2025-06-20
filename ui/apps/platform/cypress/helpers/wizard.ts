@@ -14,10 +14,10 @@ export function getWizardStepTitle(title: string) {
     return cy.get('.pf-v5-c-wizard [data-ouia-component-type="PF5/Title"]').contains(title);
 }
 
-export function navigateWizardForward() {
+export function navigateWizardNext() {
     cy.get('footer button:contains("Next")').click();
 }
 
-export function navigateWizardBackward() {
+export function navigateWizardBack() {
     cy.get('footer button:contains("Back")').click();
 }

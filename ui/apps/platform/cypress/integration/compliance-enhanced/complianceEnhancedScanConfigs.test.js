@@ -2,7 +2,7 @@ import withAuth from '../../helpers/basicAuth';
 import { interactAndWaitForResponses } from '../../helpers/request';
 import { getRegExpForTitleWithBranding } from '../../helpers/title';
 import { getHelperElementByLabel, getInputByLabel } from '../../helpers/formHelpers';
-import { navigateWizardForward } from '../../helpers/wizard';
+import { navigateWizardNext } from '../../helpers/wizard';
 
 import {
     visitComplianceEnhancedSchedulesFromLeftNav,
@@ -11,32 +11,32 @@ import {
 } from './ComplianceEnhanced.helpers';
 
 function interceptAndMockComplianceIntegrations(callback) {
-    const alias = 'complianceIntegrations';
+    const alias = 'compliance/integrations';
     return interactAndWaitForResponses(
         callback,
         {
             [alias]: { method: 'GET', url: '/v2/compliance/integrations' },
         },
         {
-            [alias]: { fixture: 'compliance-enhanced/integrations' },
+            [alias]: { fixture: 'compliance/integrations' },
         }
     );
 }
 
 function interceptAndMockComplianceProfiles(callback) {
-    const alias = 'complianceProfiles';
+    const alias = 'compliance/profiles/summary';
     return interactAndWaitForResponses(
         callback,
         {
             [alias]: { method: 'GET', url: '/v2/compliance/profiles/summary?*' },
         },
         {
-            [alias]: { fixture: 'compliance-enhanced/profiles' },
+            [alias]: { fixture: 'compliance/profiles' },
         }
     );
 }
 
-function interceptAndAssertAfterInteraction(interactionCallback, requestAssertion) {
+function interceptAndWaitForCreateScanSchedule(interactionCallback) {
     cy.intercept('POST', '/v2/compliance/scan/configurations', (req) => {
         req.reply({});
     }).as('createScanSchedule');
@@ -44,9 +44,7 @@ function interceptAndAssertAfterInteraction(interactionCallback, requestAssertio
     interactionCallback();
 
     // should filter using the correct values for the "Platform view"
-    return cy.wait('@createScanSchedule').then((interception) => {
-        requestAssertion(interception.request);
-    });
+    return cy.wait('@createScanSchedule');
 }
 
 describe('Compliance Schedules', () => {
@@ -116,42 +114,39 @@ describe('Compliance Schedules', () => {
         cy.get('input[aria-label="Time picker"]').click(); // PF Datepicker doesn't follow pattern used by helper function
         cy.get('ul[role="menu"] button:contains("00:30")').click();
 
-        navigateWizardForward();
+        navigateWizardNext();
 
         cy.get('tr:has(td:contains("Healthy")) td input[type="checkbox"]').click();
 
-        interceptAndMockComplianceProfiles(navigateWizardForward);
+        interceptAndMockComplianceProfiles(navigateWizardNext);
 
         // Select the first profile
         cy.get('td input[type="checkbox"]').eq(0).click();
 
         // TODO Skip adding a delivery destination for now
-        navigateWizardForward();
+        navigateWizardNext();
 
-        navigateWizardForward();
+        navigateWizardNext();
 
-        interceptAndAssertAfterInteraction(
-            () => {
-                cy.get('button:contains("Save")').click();
-            },
-            (request) => {
-                expect(request.body).to.deep.equal({
-                    scanName: scheduleName,
-                    scanConfig: {
-                        description: scheduleDescription,
-                        oneTimeScan: false,
-                        profiles: ['CYPRESS-ocp4-bsi'],
-                        scanSchedule: {
-                            daysOfWeek: { days: [2] },
-                            hour: 0,
-                            minute: 30,
-                            intervalType: 'WEEKLY',
-                        },
-                        notifiers: [],
+        interceptAndWaitForCreateScanSchedule(() => {
+            cy.get('button:contains("Save")').click();
+        }).should(({ request }) => {
+            expect(request.body).to.deep.equal({
+                scanName: scheduleName,
+                scanConfig: {
+                    description: scheduleDescription,
+                    oneTimeScan: false,
+                    profiles: ['CYPRESS-ocp4-bsi'],
+                    scanSchedule: {
+                        daysOfWeek: { days: [2] },
+                        hour: 0,
+                        minute: 30,
+                        intervalType: 'WEEKLY',
                     },
-                    clusters: ['f781e077-fb39-4529-a19d-7a3403e181b2'],
-                });
-            }
-        );
+                    notifiers: [],
+                },
+                clusters: ['f781e077-fb39-4529-a19d-7a3403e181b2'],
+            });
+        });
     });
 });
