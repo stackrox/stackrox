@@ -30,10 +30,6 @@ func newALPMetricForSub(sub string) *prometheus.CounterVec {
 
 func ObserveALPN(sub, endpointAddr, remoteAddr, alp string) {
 	if metric, found := alpnEndpointMetrics[sub]; found {
-		metric.With(map[string]string{
-			"endpoint":   endpointAddr,
-			"remoteAddr": remoteAddr,
-			"alp":        alp,
-		}).Inc()
+		metric.WithLabelValues(endpointAddr, remoteAddr, alp).Inc()
 	}
 }
