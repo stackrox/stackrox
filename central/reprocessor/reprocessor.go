@@ -24,6 +24,7 @@ import (
 	imageEnricher "github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/maputil"
 	nodeEnricher "github.com/stackrox/rox/pkg/nodes/enricher"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -385,6 +386,7 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 	sema := semaphore.NewWeighted(5)
 	wg := concurrency.NewWaitGroup(0)
 	nReprocessed := atomic.NewInt32(0)
+	skipClusterIDs := maputil.NewSyncMap[string, struct{}]()
 	for _, result := range results {
 		wg.Add(1)
 		if err := sema.Acquire(concurrency.AsContext(&l.stopSig), 1); err != nil {
@@ -406,19 +408,34 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 			utils.FilterSuppressedCVEsNoClone(image)
 			utils.StripCVEDescriptionsNoClone(image)
 
+			// Send the updated image to relevant clusters.
 			for clusterID := range clusterIDs {
+				if skipClusterIDs.Contains(clusterID) {
+					log.Debugw("Not sending updated image to cluster due to prior errors",
+						logging.ImageID(image.GetId()),
+						logging.ImageName(image.GetName().GetFullName()),
+						logging.ClusterID(clusterID),
+					)
+					continue
+				}
+
 				conn := l.connManager.GetConnection(clusterID)
 				if conn == nil {
 					continue
 				}
-				err := conn.InjectMessage(concurrency.AsContext(&l.stopSig), &central.MsgToSensor{
+
+				err := l.injectMessage(concurrency.AsContext(&l.stopSig), conn, &central.MsgToSensor{
 					Msg: &central.MsgToSensor_UpdatedImage{
 						UpdatedImage: image,
 					},
 				})
 				if err != nil {
-					log.Errorw("Error sending updated image to sensor "+clusterID,
-						logging.ImageName(image.GetName().GetFullName()), logging.ImageID(image.GetId()), logging.Err(err))
+					skipClusterIDs.Store(clusterID, struct{}{})
+					log.Errorw("Error sending updated image to cluster, skipping cluster until next reprocessing cycle",
+						logging.ImageName(image.GetName().GetFullName()),
+						logging.ImageID(image.GetId()), logging.Err(err),
+						logging.ClusterID(clusterID),
+					)
 				}
 			}
 		}(result.ID, clusterIDSet)
@@ -434,12 +451,44 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 	// Once the images have been rescanned, then reprocess the deployments.
 	// This should not take a particularly long period of time.
 	if !l.stopSig.IsDone() {
-		l.connManager.BroadcastMessage(&central.MsgToSensor{
+		msg := &central.MsgToSensor{
 			Msg: &central.MsgToSensor_ReprocessDeployments{
 				ReprocessDeployments: &central.ReprocessDeployments{},
 			},
-		})
+		}
+		ctx := concurrency.AsContext(&l.stopSig)
+		for _, conn := range l.connManager.GetActiveConnections() {
+			clusterID := conn.ClusterID()
+			if skipClusterIDs.Contains(clusterID) {
+				log.Debugw("Not sending reprocess deployments to cluster due to prior errors",
+					logging.ClusterID(clusterID),
+				)
+				continue
+			}
+
+			err := l.injectMessage(ctx, conn, msg)
+			if err != nil {
+				log.Errorw("Error sending reprocess deployments message to cluster",
+					logging.ClusterID(clusterID),
+					logging.Err(err),
+				)
+			}
+		}
 	}
+}
+
+// injectMessage will inject a message onto connection, an error will be returned if the
+// injection fails for any reason, including timeout.
+func (l *loopImpl) injectMessage(ctx context.Context, conn connection.SensorConnection, msg *central.MsgToSensor) error {
+	ctx, cancel := context.WithTimeout(ctx, env.ReprocessInjectMessageTimeout.DurationSetting())
+	defer cancel()
+
+	err := conn.InjectMessage(ctx, msg)
+	if err != nil {
+		return errors.Wrap(err, "error injecting message to sensor")
+	}
+
+	return nil
 }
 
 func (l *loopImpl) reprocessNode(id string) bool {
