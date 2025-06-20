@@ -5,8 +5,10 @@ import (
 	"fmt"
 
 	"github.com/stackrox/rox/central/deployment/datastore/internal/store"
+	"github.com/stackrox/rox/central/deployment/datastore/internal/store/types"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
@@ -14,11 +16,15 @@ import (
 	"github.com/stackrox/rox/pkg/search/sortfields"
 )
 
+const whenUnlimited = 100
+
 var (
 	defaultSortOption = &v1.QuerySortOption{
 		Field:    search.DeploymentPriority.String(),
 		Reversed: false,
 	}
+
+	log = logging.LoggerForModule()
 )
 
 // NewV2 returns a new instance of Searcher for the given storage.
@@ -43,16 +49,31 @@ type searcherImplV2 struct {
 
 // SearchRawDeployments retrieves deployments from the storage
 func (ds *searcherImplV2) SearchRawDeployments(ctx context.Context, q *v1.Query) ([]*storage.Deployment, error) {
-	deployments, err := ds.searchDeployments(ctx, q)
+	log.Info("SHREWS -- SearchRawDeployments")
+	deployments := make([]*storage.Deployment, 0, paginated.GetLimit(q.GetPagination().GetLimit(), whenUnlimited))
+	err := ds.storage.GetByQueryFn(ctx, q, func(deployment *storage.Deployment) error {
+		log.Infof("SHREWS -- SearchRawDeployments -- %v", deployment)
+		deployments = append(deployments, deployment)
+		return nil
+	})
+
 	if err != nil {
+		log.Infof("SHREWS -- %v", err)
 		return nil, err
 	}
+	log.Infof("SHREWS -- %v", deployments)
 	return deployments, err
 }
 
 // SearchListDeployments retrieves deployments from the storage
 func (ds *searcherImplV2) SearchListDeployments(ctx context.Context, q *v1.Query) ([]*storage.ListDeployment, error) {
-	deployments, _, err := ds.searchListDeployments(ctx, q)
+	log.Info("SHREWS -- SearchRawDeployments")
+	deployments := make([]*storage.ListDeployment, 0, paginated.GetLimit(q.GetPagination().GetLimit(), whenUnlimited))
+	err := ds.storage.GetByQueryFn(ctx, q, func(deployment *storage.Deployment) error {
+		deployments = append(deployments, types.ConvertDeploymentToDeploymentList(deployment))
+		return nil
+	})
+
 	if err != nil {
 		return nil, err
 	}
@@ -85,20 +106,6 @@ func (ds *searcherImplV2) SearchDeployments(ctx context.Context, q *v1.Query) ([
 		protoResults = append(protoResults, convertDeployment(deployment, results[i]))
 	}
 	return protoResults, nil
-}
-
-func (ds *searcherImplV2) searchDeployments(ctx context.Context, q *v1.Query) ([]*storage.Deployment, error) {
-	results, err := ds.Search(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-
-	ids := search.ResultsToIDs(results)
-	deployments, _, err := ds.storage.GetMany(ctx, ids)
-	if err != nil {
-		return nil, err
-	}
-	return deployments, nil
 }
 
 func (ds *searcherImplV2) Search(ctx context.Context, q *v1.Query) (res []search.Result, err error) {
