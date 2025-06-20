@@ -161,30 +161,24 @@ func plopComparison(plop1 *storage.ProcessListeningOnPort, plop2 *storage.Proces
 		return plop1.PodId < plop2.PodId
 	}
 
-	if plop1.Signal == nil {
-		return true
+	filePath1 := plop1.GetSignal().GetExecFilePath()
+	filePath2 := plop2.GetSignal().GetExecFilePath()
+
+	if filePath1 != filePath2 {
+		return filePath1 < filePath2
 	}
 
-	if plop2.Signal == nil {
-		return false
+	port1 := plop1.GetEndpoint().GetPort()
+	port2 := plop2.GetEndpoint().GetPort()
+
+	if port1 != port2 {
+		return port1 < port2
 	}
 
-	if plop1.Signal.ExecFilePath != plop2.Signal.ExecFilePath {
-		return plop1.Signal.ExecFilePath < plop2.Signal.ExecFilePath
-	}
+	protocol1 := plop1.GetEndpoint().GetProtocol()
+	protocol2 := plop2.GetEndpoint().GetProtocol()
 
-	if plop1.Endpoint == nil {
-		return true
-	}
-
-	if plop2.Endpoint == nil {
-		return false
-	}
-
-	if plop1.Endpoint.Port != plop2.Endpoint.Port {
-		return plop1.Endpoint.Port < plop2.Endpoint.Port
-	}
-	return plop1.Endpoint.Protocol < plop2.Endpoint.Protocol
+	return protocol1 < protocol2
 }
 
 func sortPlops(plops []*storage.ProcessListeningOnPort) {
