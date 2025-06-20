@@ -7,6 +7,14 @@
         "ROX-29160-Add-feature-flag-for-built-in-policy"
       ],
       "branch": "ROX-29160-Add-default-policy-red-hat-images-signed"
+    },
+    {
+      "command": [
+        "branch",
+        "onto",
+        "ROX-29160-Add-feature-flag-for-built-in-policy"
+      ],
+      "branch": "ROX-17872-Remove-remaining-reference-to-feature-flag"
     }
   ]
 }
