@@ -1,21 +1,19 @@
 package main
 
 import (
+	"bufio"
+	"bytes"
 	"context"
-	"os"
+	"encoding/json"
+	"fmt"
+	"os/exec"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clientconn"
-	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/safe"
-	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/pkg/x509utils"
-	"github.com/stackrox/rox/sensor/admission-control/fetchcerts"
-	// "google.golang.org/grpc/connectivity"
 )
 
 var (
@@ -71,12 +69,16 @@ func main() {
 		log.Infof("Component count: %d", len(resp.Image.Scan.Components))
 	}
 
+	vm := &storage.VirtualMachine{
+		Id: "haha",
+	}
+
+	if err := populateComponentList(vm); err != nil {
+		log.Errorf("Failed to populate component list: %v", err)
+	}
+
 	vmClient := sensor.NewVirtualMachineServiceClient(sensorConn)
-	vmResp, err := vmClient.UpsertVirtualMachine(ctx, &sensor.UpsertVirtualMachineRequest{
-		VirtualMachine: &storage.VirtualMachine{
-			Id: "haha",
-		},
-	})
+	vmResp, err := vmClient.UpsertVirtualMachine(ctx, &sensor.UpsertVirtualMachineRequest{VirtualMachine: vm})
 
 	if err != nil {
 		log.Errorf("Failed to upsert VM: %v", err)
@@ -86,56 +88,44 @@ func main() {
 	log.Infof("VM upsert success: %v", vmResp.Success)
 }
 
-func configureCA() error {
-	// Check for existence of CA cert in default location
-	if exists, err := fileutils.Exists(mtls.CAFilePath()); err != nil {
-		log.Errorf("Failed to stat CA certificate in default location: %v. Assuming it doesn't exist...", err)
-	} else if exists {
-		return nil // CA cert found in default location
-	}
-
-	// Check for existence of CA cert in fallback location
-	if exists, err := fileutils.Exists(alternativeCAPath); err != nil {
-		return errors.Wrap(err, "failed to check for existence of alternate CA certificate")
-	} else if !exists {
-		return errors.New("did not find CA certificate in primary nor alternate location")
-	}
-
-	// Found fallback CA
-	log.Info("Switching to fallback CA file location")
-	if err := utils.ShouldErr(os.Setenv(mtls.CAFileEnvName, alternativeCAPath)); err != nil {
-		return errors.Wrap(err, "failed to update environment for alternative CA location")
-	}
-	log.Info("Successfully configured CA to be read from fallback location")
-	return nil
-}
-
-func isUsableServiceCert(certFilePath, namespace string) bool {
-	certFromFile, err := x509utils.LoadCertificatePEMFile(certFilePath)
+func populateComponentList(vm *storage.VirtualMachine) error {
+	// Run RPM command to fetch list of installed RPMs in JSON format
+	cmd := exec.Command("rpm", "-qa", "--qf", `{"name":"%{NAME}","version":"%{VERSION}","release":"%{RELEASE}","arch":"%{ARCH}"\}\n`)
+	output, err := cmd.Output()
 	if err != nil {
-		log.Errorf("Failed to load service certificate: %v", err)
-		return false
-	}
-	desiredDNS := mtls.AdmissionControlSubject.HostnameForNamespace(namespace) + ".svc"
-	if err := certFromFile.VerifyHostname(desiredDNS); err != nil {
-		log.Infof("mTLS certificate with common name %q is not valid for DNS name %s: %v", certFromFile.Subject.CommonName, desiredDNS, err)
-		return false
-	}
-	return true
-}
-
-func configureCerts(namespace string) error {
-	if allExist, err := fileutils.AllExist(mtls.CertFilePath(), mtls.KeyFilePath()); err != nil {
-		log.Infof("Could not stat certificate and key in default location: %v. Assuming they don't exist...", err)
-	} else if allExist && isUsableServiceCert(mtls.CertFilePath(), namespace) {
-		// Found usable cert in default location
-		return nil
+		return fmt.Errorf("failed to execute rpm command: %v", err)
 	}
 
-	log.Info("No usable certificates found. This is expected in some configurations. Attempting to fetch certificates from sensor ...")
-	if err := fetchcerts.FetchAndSetupCertificates(context.Background()); err != nil {
-		return errors.Wrap(err, "failed to fetch certificates from sensor")
+	// Parse the JSON output and populate components
+	components := []*storage.EmbeddedImageScanComponent{}
+	bufferScanner := bufio.NewScanner(bytes.NewReader(output))
+	for bufferScanner.Scan() {
+		var rpmInfo struct {
+			Name    string `json:"name"`
+			Version string `json:"version"`
+			Release string `json:"release"`
+			Arch    string `json:"arch"`
+		}
+		if err := json.Unmarshal(bufferScanner.Bytes(), &rpmInfo); err != nil {
+			return fmt.Errorf("failed to parse rpm output: %v", err)
+		}
+
+		component := &storage.EmbeddedImageScanComponent{
+			Name:         rpmInfo.Name,
+			Version:      fmt.Sprintf("%s-%s", rpmInfo.Version, rpmInfo.Release),
+			Source:       storage.SourceType_OS,
+			Architecture: rpmInfo.Arch,
+		}
+		components = append(components, component)
 	}
-	log.Info("Obtained certificates from sensor. We're good to go.")
+
+	if err := bufferScanner.Err(); err != nil {
+		return fmt.Errorf("error reading rpm output: %v", err)
+	}
+
+	log.Infof("Found %d components", len(components))
+	vm.Scan = &storage.VirtualMachineScan{
+		Components: components,
+	}
 	return nil
 }

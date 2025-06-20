@@ -26,5 +26,17 @@ fi
 
 make bin/$binary_name
 pod_name=$(kubectl -n "$namespace" get pod -l app=$component -oname)
-hotload_cmd="cat - > /tmp/$binary_name && chmod +x /tmp/$binary_name && mv /tmp/$binary_name /stackrox && pkill $binary_name" 
+
+hotload_cmd=$(cat << EOF
+set -eo pipefail
+cat - > /tmp/$binary_name &&
+chmod +x /tmp/$binary_name &&
+mv /tmp/$binary_name /stackrox
+pid=\$(pgrep $binary_name)
+kill \$pid
+sleep 5
+[[ -d "/proc/\$pid" ]] && kill -9 \$pid
+EOF
+)
+
 kubectl exec -n "$namespace" -i $pod_name -- sh -c "$hotload_cmd" < bin/$binary_name
