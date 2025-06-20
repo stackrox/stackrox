@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"slices"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -59,12 +60,12 @@ func (a *PastSensor) ReverseCompare(b *PastSensor) int {
 }
 
 func pastSensorDataString(data []*PastSensor) string {
-	str := ""
+	var str strings.Builder
 	for i, entry := range data {
-		str = fmt.Sprintf("%s[%d]: (%s, %s) start=%s, lastUpdate=%s; ",
-			str, i, entry.ContainerID, entry.PodIP, entry.SensorStart, entry.LatestUpdate)
+		str.WriteString(fmt.Sprintf("[%d]: (%s, %s) start=%s, lastUpdate=%s; ",
+			i, entry.ContainerID, entry.PodIP, entry.SensorStart, entry.LatestUpdate))
 	}
-	return str
+	return str.String()
 }
 
 // Using this as one cannot import the client.Interface from 'sensor/kubernetes/client' directly
