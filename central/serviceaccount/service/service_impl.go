@@ -19,7 +19,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/k8srbac"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
@@ -37,8 +36,6 @@ var (
 			v1.ServiceAccountService_ListServiceAccounts_FullMethodName,
 		},
 	})
-
-	log = logging.LoggerForModule()
 )
 
 // serviceImpl provides APIs for alerts.
