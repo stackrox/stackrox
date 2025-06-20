@@ -127,7 +127,7 @@ type Store struct {
 }
 
 type HeritageManager interface {
-	GetData(ctx context.Context) []*heritage.PastSensor
+	GetData(ctx context.Context) []*heritage.SensorMetadata
 	HasCurrentSensorData() bool
 	SetCurrentSensorData(currentIP, currentContainerID string)
 }
