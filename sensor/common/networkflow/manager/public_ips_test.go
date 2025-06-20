@@ -43,7 +43,7 @@ func TestPublicIPsManager(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	go mgr.Run(ctx, clusterentities.NewStore())
+	go mgr.Run(ctx, clusterentities.NewStoreWithMemory(0, nil, false))
 
 	vs := mgr.PublicIPsProtoStream().Iterator(true)
 
