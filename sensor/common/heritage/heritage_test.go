@@ -8,7 +8,7 @@ import (
 
 func Test_cleanupHeritageData(t *testing.T) {
 	type args struct {
-		in      []PastSensor
+		in      []SensorMetadata
 		now     time.Time
 		maxAge  time.Duration
 		minSize int
@@ -16,11 +16,11 @@ func Test_cleanupHeritageData(t *testing.T) {
 	}
 	tests := map[string]struct {
 		args args
-		want []PastSensor
+		want []SensorMetadata
 	}{
 		"Cleanup disabled should not remove anything": {
 			args: args{
-				in: []PastSensor{
+				in: []SensorMetadata{
 					{
 						ContainerID:  "a",
 						PodIP:        "1.1.1.1",
@@ -39,7 +39,7 @@ func Test_cleanupHeritageData(t *testing.T) {
 				minSize: 1,
 				maxSize: 0,
 			},
-			want: []PastSensor{
+			want: []SensorMetadata{
 				{
 					ContainerID:  "a",
 					PodIP:        "1.1.1.1",
@@ -56,7 +56,7 @@ func Test_cleanupHeritageData(t *testing.T) {
 		},
 		"Cleanup should not remove anything if less entries than minSize": {
 			args: args{
-				in: []PastSensor{
+				in: []SensorMetadata{
 					{
 						ContainerID:  "a",
 						PodIP:        "1.1.1.1",
@@ -75,7 +75,7 @@ func Test_cleanupHeritageData(t *testing.T) {
 				minSize: 5,
 				maxSize: 0,
 			},
-			want: []PastSensor{
+			want: []SensorMetadata{
 				{
 					ContainerID:  "a",
 					PodIP:        "1.1.1.1",
@@ -93,7 +93,7 @@ func Test_cleanupHeritageData(t *testing.T) {
 		"Max-Size should remove the oldest entry on reverse-sorted slice": {
 			args: args{
 				// in is reverse-sorted by last-update
-				in: []PastSensor{
+				in: []SensorMetadata{
 					{
 						ContainerID:  "b",
 						PodIP:        "1.1.1.2",
@@ -112,7 +112,7 @@ func Test_cleanupHeritageData(t *testing.T) {
 				minSize: 0,
 				maxSize: 1,
 			},
-			want: []PastSensor{
+			want: []SensorMetadata{
 				{
 					ContainerID:  "b",
 					PodIP:        "1.1.1.2",
@@ -123,7 +123,7 @@ func Test_cleanupHeritageData(t *testing.T) {
 		},
 		"Max-Size should remove the oldest entry on sorted slice": {
 			args: args{
-				in: []PastSensor{
+				in: []SensorMetadata{
 					{
 						ContainerID:  "a",
 						PodIP:        "1.1.1.1",
@@ -142,7 +142,7 @@ func Test_cleanupHeritageData(t *testing.T) {
 				minSize: 0,
 				maxSize: 1,
 			},
-			want: []PastSensor{
+			want: []SensorMetadata{
 				{
 					ContainerID:  "b",
 					PodIP:        "1.1.1.2",
@@ -153,7 +153,7 @@ func Test_cleanupHeritageData(t *testing.T) {
 		},
 		"Max-Age should remove the oldest entries on sorted slice": {
 			args: args{
-				in: []PastSensor{
+				in: []SensorMetadata{
 					{
 						ContainerID:  "a",
 						PodIP:        "1.1.1.1",
@@ -172,7 +172,7 @@ func Test_cleanupHeritageData(t *testing.T) {
 				minSize: 0,
 				maxSize: 0,
 			},
-			want: []PastSensor{
+			want: []SensorMetadata{
 				{
 					ContainerID:  "b",
 					PodIP:        "1.1.1.2",
@@ -183,7 +183,7 @@ func Test_cleanupHeritageData(t *testing.T) {
 		},
 		"Max-Age should remove all entries if they are older than max age": {
 			args: args{
-				in: []PastSensor{
+				in: []SensorMetadata{
 					{
 						ContainerID:  "a",
 						PodIP:        "1.1.1.1",
@@ -202,11 +202,11 @@ func Test_cleanupHeritageData(t *testing.T) {
 				minSize: 0,
 				maxSize: 0,
 			},
-			want: []PastSensor{},
+			want: []SensorMetadata{},
 		},
 		"Max-Age should remove all entries, but  minSize of latest entries should be kept": {
 			args: args{
-				in: []PastSensor{
+				in: []SensorMetadata{
 					{
 						ContainerID:  "a",
 						PodIP:        "1.1.1.1",
@@ -225,7 +225,7 @@ func Test_cleanupHeritageData(t *testing.T) {
 				minSize: 1,
 				maxSize: 0,
 			},
-			want: []PastSensor{
+			want: []SensorMetadata{
 				{
 					ContainerID:  "b",
 					PodIP:        "1.1.1.2",
@@ -236,7 +236,7 @@ func Test_cleanupHeritageData(t *testing.T) {
 		},
 		"Max-Age should sort but remove nothing if all entries are younger than max age": {
 			args: args{
-				in: []PastSensor{
+				in: []SensorMetadata{
 					{
 						ContainerID:  "a",
 						PodIP:        "1.1.1.1",
@@ -255,7 +255,7 @@ func Test_cleanupHeritageData(t *testing.T) {
 				minSize: 0,
 				maxSize: 0,
 			},
-			want: []PastSensor{
+			want: []SensorMetadata{
 				{
 					ContainerID:  "b",
 					PodIP:        "1.1.1.2",
@@ -272,7 +272,7 @@ func Test_cleanupHeritageData(t *testing.T) {
 		},
 		"Sorting order should be by the most recently updated, then by most recently start timestamp": {
 			args: args{
-				in: []PastSensor{
+				in: []SensorMetadata{
 					{
 						ContainerID:  "a",
 						PodIP:        "1.1.1.1",
@@ -303,7 +303,7 @@ func Test_cleanupHeritageData(t *testing.T) {
 				minSize: 0,
 				maxSize: 5,
 			},
-			want: []PastSensor{
+			want: []SensorMetadata{
 				{
 					ContainerID:  "d",
 					PodIP:        "1.1.1.2",
@@ -333,14 +333,14 @@ func Test_cleanupHeritageData(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			input := make([]*PastSensor, len(tt.args.in))
-			// copy to convert []PastSensor into []*PastSensor
+			input := make([]*SensorMetadata, len(tt.args.in))
+			// copy to convert []SensorMetadata into []*SensorMetadata
 			for i, entry := range tt.args.in {
 				input[i] = &entry
 			}
 			got := pruneOldHeritageData(input, tt.args.now, tt.args.maxAge, tt.args.minSize, tt.args.maxSize)
-			gotValues := make([]PastSensor, len(got))
-			// Copy to convert []*PastSensor into []PastSensor, for DeepEqual assertion
+			gotValues := make([]SensorMetadata, len(got))
+			// Copy to convert []*SensorMetadata into []SensorMetadata, for DeepEqual assertion
 			for i, entry := range got {
 				gotValues[i] = *entry
 			}

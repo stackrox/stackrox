@@ -8,7 +8,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func pastSensorDataToConfigMap(data ...*PastSensor) (*v1.ConfigMap, error) {
+func pastSensorDataToConfigMap(data ...*SensorMetadata) (*v1.ConfigMap, error) {
 	if data == nil {
 		return nil, nil
 	}
@@ -34,16 +34,16 @@ func pastSensorDataToConfigMap(data ...*PastSensor) (*v1.ConfigMap, error) {
 	}, nil
 }
 
-func configMapToPastSensorData(cm *v1.ConfigMap) ([]*PastSensor, error) {
+func configMapToPastSensorData(cm *v1.ConfigMap) ([]*SensorMetadata, error) {
 	if cm == nil {
 		return nil, nil
 	}
-	data := make([]*PastSensor, 0, len(cm.Data))
+	data := make([]*SensorMetadata, 0, len(cm.Data))
 	for key, jsonStr := range cm.Data {
 		if key != configMapKey {
 			continue
 		}
-		var entries []PastSensor
+		var entries []SensorMetadata
 		if err := json.Unmarshal([]byte(jsonStr), &entries); err != nil {
 			return nil, errors.Wrapf(err, "unmarshalling data %v", jsonStr)
 		}
