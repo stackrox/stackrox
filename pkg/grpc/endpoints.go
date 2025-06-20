@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/alpn"
+	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/sliceutils"
@@ -138,7 +139,7 @@ func denyMisdirectedRequest(next http.Handler) http.Handler {
 	})
 }
 
-func (c *EndpointConfig) instantiate(httpHandler http.Handler, grpcSrv *grpc.Server) (net.Addr, []serverAndListener, error) {
+func (c *EndpointConfig) instantiate(httpHandler http.Handler, grpcSrv *grpc.Server, sub pkgMetrics.Subsystem) (net.Addr, []serverAndListener, error) {
 	lis, err := net.Listen("tcp", asEndpoint(c.ListenEndpoint))
 	if err != nil {
 		return nil, nil, err
@@ -174,6 +175,8 @@ func (c *EndpointConfig) instantiate(httpHandler http.Handler, grpcSrv *grpc.Ser
 			}
 
 			tlsutils.ALPNDemux(lis, protoMap, tlsutils.ALPNDemuxConfig{
+				MetricSubsystem:     sub.String(),
+				EndpointAddress:     c.ListenEndpoint,
 				OnHandshakeError:    tlsHandshakeErrorHandler,
 				TLSHandshakeTimeout: env.TLSHandshakeTimeout.DurationSetting(),
 			})
