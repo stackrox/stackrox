@@ -1,7 +1,7 @@
 {
   "base": {
     "name": "ROX-29160-Add-feature-flag-for-built-in-policy",
-    "hash": "adab0fb06e4365f368ab7b0137df5f46a66c5b03"
+    "hash": "04ae82b39d76bc6ae4c6ace462ac7ccb5bcba7c1"
   },
   "upstream": {
     "branch": "ROX-17872-Remove-remaining-reference-to-feature-flag"
