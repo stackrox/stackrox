@@ -15,6 +15,7 @@ import (
 	networkEntityDS "github.com/stackrox/rox/central/networkgraph/entity/datastore"
 	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
 	networkFlowDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
+	"github.com/stackrox/rox/central/networkgraph/transformer"
 	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	deploymentMatcher "github.com/stackrox/rox/central/networkpolicies/deployment"
 	"github.com/stackrox/rox/central/role/sachelper"
@@ -543,6 +544,8 @@ func (s *serviceImpl) addDeploymentFlowsToGraph(
 
 	flows = aggregator.NewLatestTimestampAggregator().Aggregate(flows)
 	missingInfoFlows = aggregator.NewLatestTimestampAggregator().Aggregate(missingInfoFlows)
+
+	flows = transformer.NewExternalDiscoveredTransformer().Transform(flows)
 
 	graphBuilder.AddFlows(flows)
 
