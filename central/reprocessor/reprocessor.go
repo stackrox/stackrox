@@ -357,16 +357,6 @@ func (l *loopImpl) reprocessImage(id string, fetchOpt imageEnricher.FetchOption,
 	return image, true
 }
 
-func (l *loopImpl) getActiveImageIDs() ([]string, error) {
-	query := search.NewQueryBuilder().AddStringsHighlighted(search.DeploymentID, search.WildcardString).ProtoQuery()
-	results, err := l.images.Search(allAccessCtx, query)
-	if err != nil {
-		return nil, errors.Wrap(err, "error searching for active image IDs")
-	}
-
-	return search.ResultsToIDs(results), nil
-}
-
 func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.FetchOption,
 	imgReprocessingFunc imageReprocessingFunc, imageQuery *v1.Query) {
 	if l.stopSig.IsDone() {
