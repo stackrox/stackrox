@@ -58,8 +58,6 @@ type TrackerBase[Finding any] struct {
 	metricsConfigMux sync.RWMutex
 
 	gatherer *gatherer
-
-	registryFactory func() metrics.CustomRegistry // for mocking in tests.
 }
 
 // makeGettersMap transforms a list of label names with their getters to a map.
@@ -75,16 +73,15 @@ func makeGettersMap[Finding any](getters []LazyLabel[Finding]) map[Label]func(*F
 // configuration. Call Reconfigure to configure the period and the metrics.
 func MakeTrackerBase[Finding any](category, description string,
 	getters []LazyLabel[Finding], generator FindingGenerator[Finding],
-	registryFactory func() metrics.CustomRegistry,
+	registry metrics.CustomRegistry,
 ) *TrackerBase[Finding] {
 	return &TrackerBase[Finding]{
-		category:        category,
-		description:     description,
-		labelOrder:      MakeLabelOrderMap(getters),
-		getters:         makeGettersMap(getters),
-		generator:       generator,
-		gatherer:        &gatherer{registry: registryFactory()},
-		registryFactory: metrics.MakeCustomRegistry,
+		category:    category,
+		description: description,
+		labelOrder:  MakeLabelOrderMap(getters),
+		getters:     makeGettersMap(getters),
+		generator:   generator,
+		gatherer:    &gatherer{registry: registry},
 	}
 }
 
@@ -116,7 +113,9 @@ func labelsAsStrings(labels []Label) []string {
 
 func (tracker *TrackerBase[Finding]) unregisterMetrics(metrics []MetricName) {
 	for _, metric := range metrics {
-		tracker.gatherer.registry.UnregisterMetric(string(metric))
+		if tracker.gatherer.registry.UnregisterMetric(string(metric)) {
+			log.Debugf("Unregistered %s Prometheus metric %q", tracker.category, metric)
+		}
 	}
 }
 
