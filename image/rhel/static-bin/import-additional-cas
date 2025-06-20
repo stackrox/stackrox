@@ -10,7 +10,9 @@ set -euo pipefail
 copy_existing () {
     src=$1
     if [ -d "$src" ] && [ "$(ls -A -I "..*" "$src")" ]; then
-        cp -v -L "$src"/* /etc/pki/ca-trust/source/anchors
+        # TODO(DO NOT MERGE): Is `--update` the correct operation here?
+        cp --verbose --dereference --update \
+            "$src"/* /etc/pki/ca-trust/source/anchors
     else
         echo "No certificates found in $src"
     fi
@@ -21,4 +23,23 @@ copy_existing /usr/local/share/ca-certificates
 # Copy the custom trusted CA bundles injected by the Openshift Network Operator.
 copy_existing /etc/pki/injected-ca-trust
 
-update-ca-trust extract
+
+# TODO(DO NOT MERGE): We can't override `/etc/pki/ca-trust/extracted` because
+#  some of the files don't have the write permission bit set.
+# TODO(DO NOT MERGE): If we don't care about the warning, this can be
+#  [ ! -e "/etc/pki/ca-trust/extracted" ] || \
+#      update-ca-trust extract --output /etc/pki/ca-trust/extracted
+if [ -e "/etc/pki/ca-trust/extracted" ]; then
+    # TODO(DO NOT MERGE): The sensor deployment calls this script twice (once
+    #  during an init container and another when the main container strats),
+    #  which means this warning will always be logged in the current sensor
+    #  deployments.
+    echo >&2 "Warning: CA trust list already configured. Can't overwrite."
+else
+    # TODO(DO NOT MERGE): For some reason, without the `--output` flag,
+    #  `update-ca-trust` expects `/etc/pki/ca-trust/extracted` to have all the
+    #  necessary directories created. However, if run with the `--output` flag,
+    #  it'll create the directories :shrug:. Figure out why.
+    #  Possible thread to pull on: https://bugzilla.redhat.com/show_bug.cgi?id=2241240
+    update-ca-trust extract --output /etc/pki/ca-trust/extracted
+fi
