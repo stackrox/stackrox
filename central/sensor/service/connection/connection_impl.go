@@ -275,6 +275,9 @@ func (c *sensorConnection) InjectMessage(ctx concurrency.Waitable, msg *central.
 	case c.sendC <- msg:
 		return nil
 	case <-ctx.Done():
+		if errCtx, ok := ctx.(concurrency.ErrorWaitable); ok {
+			return fmt.Errorf("context aborted: %v", errCtx.Err())
+		}
 		return errors.New("context aborted")
 	case <-c.stopSig.Done():
 		return errors.Wrap(c.stopSig.Err(), "could not send message as sensor connection was stopped")
