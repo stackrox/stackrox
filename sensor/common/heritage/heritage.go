@@ -146,10 +146,6 @@ func (h *Manager) GetData(ctx context.Context) []*SensorMetadata {
 	return h.cache
 }
 
-func (h *Manager) HasCurrentSensorData() bool {
-	return h.currentSensor.ContainerID != "" && h.currentSensor.PodIP != ""
-}
-
 func (h *Manager) SetCurrentSensorData(currentIP, currentContainerID string) {
 	h.currentSensor.PodIP = currentIP
 	h.currentSensor.ContainerID = currentContainerID
