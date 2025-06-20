@@ -39,7 +39,7 @@ var (
 	log = logging.LoggerForModule()
 )
 
-type PastSensor struct {
+type SensorMetadata struct {
 	ContainerID   string    `json:"containerID"`
 	PodIP         string    `json:"podIP"`
 	SensorStart   time.Time `json:"sensorStart"`
@@ -47,10 +47,10 @@ type PastSensor struct {
 	SensorVersion string    `json:"sensorVersion"`
 }
 
-// ReverseCompare compares two PastSensors to use in sorting.
+// ReverseCompare compares two `SensorMetadata` to use in sorting.
 // The resulting order makes more recently updated entries are at the beginning of the slice.
 // If there are two entries with the same `LatestUpdate` (can occur only in tests), then other fields define the order.
-func (a *PastSensor) ReverseCompare(b *PastSensor) int {
+func (a *SensorMetadata) ReverseCompare(b *SensorMetadata) int {
 	return cmp.Or(
 		-a.LatestUpdate.Compare(b.LatestUpdate), // more recent update is smaller
 		-a.SensorStart.Compare(b.SensorStart),   // more recent start is smaller
@@ -59,7 +59,7 @@ func (a *PastSensor) ReverseCompare(b *PastSensor) int {
 	)
 }
 
-func pastSensorDataString(data []*PastSensor) string {
+func sensorMetadataString(data []*SensorMetadata) string {
 	var str strings.Builder
 	for i, entry := range data {
 		str.WriteString(fmt.Sprintf("[%d]: (%s, %s) start=%s, lastUpdate=%s; ",
@@ -88,10 +88,10 @@ type Manager struct {
 	minSize int
 	maxAge  time.Duration
 
-	// Cache the data from the ConfigMap about the past instances of Sensor
+	// Cache the data from the ConfigMap containing all SensorMetadata
 	cacheIsPopulated atomic.Bool
 	cacheMutex       sync.Mutex
-	cache            []*PastSensor
+	cache            []*SensorMetadata
 }
 
 func NewHeritageManager(ns string, client k8sClient, start time.Time) *Manager {
@@ -103,7 +103,7 @@ func NewHeritageManager(ns string, client k8sClient, start time.Time) *Manager {
 	return &Manager{
 		cacheIsPopulated: atomic.Bool{},
 		k8sClient:        client,
-		cache:            []*PastSensor{},
+		cache:            []*SensorMetadata{},
 		namespace:        ns,
 		sensorStart:      start,
 		sensorVersion:    version.GetMainVersion(),
@@ -125,13 +125,13 @@ func (h *Manager) populateCacheFromConfigMap(ctx context.Context) error {
 		h.cacheIsPopulated.Store(false)
 		return err
 	}
-	log.Infof("Sensor heritage data with %d entries loaded to memory: %s", len(data), pastSensorDataString(data))
+	log.Infof("Sensor heritage data with %d entries loaded to memory: %s", len(data), sensorMetadataString(data))
 	h.cache = append(h.cache, data...)
 	h.cacheIsPopulated.Store(true)
 	return nil
 }
 
-func (h *Manager) GetData(ctx context.Context) []*PastSensor {
+func (h *Manager) GetData(ctx context.Context) []*SensorMetadata {
 	h.cacheMutex.Lock()
 	defer h.cacheMutex.Unlock()
 	if h.cacheIsPopulated.Load() {
@@ -183,7 +183,7 @@ func (h *Manager) UpsertConfigMap(ctx context.Context, now time.Time) error {
 	}
 
 	if found := h.updateCachedTimestampNoLock(now); !found {
-		h.cache = append(h.cache, &PastSensor{
+		h.cache = append(h.cache, &SensorMetadata{
 			ContainerID:   h.currentContainerID,
 			PodIP:         h.currentIP,
 			SensorStart:   h.sensorStart,
@@ -194,11 +194,11 @@ func (h *Manager) UpsertConfigMap(ctx context.Context, now time.Time) error {
 	h.cache = pruneOldHeritageData(h.cache, now, h.maxAge, h.minSize, h.maxSize)
 
 	h.lastUpdateOfCurrentData = now
-	log.Debugf("Writing Heritage data %s to ConfigMap %s/%s", pastSensorDataString(h.cache), h.namespace, cmName)
+	log.Debugf("Writing Heritage data %s to ConfigMap %s/%s", sensorMetadataString(h.cache), h.namespace, cmName)
 	return h.write(ctx, h.cache...)
 }
 
-func (h *Manager) write(ctx context.Context, data ...*PastSensor) error {
+func (h *Manager) write(ctx context.Context, data ...*SensorMetadata) error {
 	cm, err := pastSensorDataToConfigMap(data...)
 	if err != nil {
 		return errors.Wrap(err, "converting past sensor data to config map")
@@ -224,14 +224,14 @@ func (h *Manager) ensureConfigMapExists(ctx context.Context, cm *v1.ConfigMap) e
 	return nil
 }
 
-func (h *Manager) readConfigMap(ctx context.Context) ([]*PastSensor, error) {
+func (h *Manager) readConfigMap(ctx context.Context) ([]*SensorMetadata, error) {
 	cm, err := h.k8sClient.Kubernetes().CoreV1().ConfigMaps(h.namespace).Get(ctx, cmName, metav1.GetOptions{})
 	if err != nil {
-		return []*PastSensor{}, errors.Wrapf(err, "retrieving config map %s/%s", h.namespace, cmName)
+		return []*SensorMetadata{}, errors.Wrapf(err, "retrieving config map %s/%s", h.namespace, cmName)
 	}
 	data, err := configMapToPastSensorData(cm)
 	if err != nil {
-		return []*PastSensor{}, errors.Wrap(err, "converting config map to past sensor data")
+		return []*SensorMetadata{}, errors.Wrap(err, "converting config map to past sensor data")
 	}
 	return data, nil
 }
@@ -239,7 +239,7 @@ func (h *Manager) readConfigMap(ctx context.Context) ([]*PastSensor, error) {
 // pruneOldHeritageData reduces the number of elements in the []*PastSensor slice by removing
 // the oldest entries if there are more than `maxSize` and removing entries older than the `maxAge`.
 // It does not remove anything until the `minSize` elements are stored.
-func pruneOldHeritageData(in []*PastSensor, now time.Time, maxAge time.Duration, minSize, maxSize int) []*PastSensor {
+func pruneOldHeritageData(in []*SensorMetadata, now time.Time, maxAge time.Duration, minSize, maxSize int) []*SensorMetadata {
 	if len(in) <= minSize {
 		return in
 	}
@@ -250,7 +250,7 @@ func pruneOldHeritageData(in []*PastSensor, now time.Time, maxAge time.Duration,
 	if maxSize == 0 && maxAge == 0 {
 		return in
 	}
-	in = slices.SortedFunc[*PastSensor](slices.Values(in), func(a *PastSensor, b *PastSensor) int {
+	in = slices.SortedFunc[*SensorMetadata](slices.Values(in), func(a *SensorMetadata, b *SensorMetadata) int {
 		return a.ReverseCompare(b)
 	})
 	if maxSize > 0 && len(in) > maxSize {
@@ -261,8 +261,8 @@ func pruneOldHeritageData(in []*PastSensor, now time.Time, maxAge time.Duration,
 	}
 	return removeOlderThan(in, now, minSize, maxAge)
 }
-func removeOlderThan(in []*PastSensor, now time.Time, minSize int, maxAge time.Duration) []*PastSensor {
-	if !slices.IsSortedFunc(in, func(a *PastSensor, b *PastSensor) int {
+func removeOlderThan(in []*SensorMetadata, now time.Time, minSize int, maxAge time.Duration) []*SensorMetadata {
+	if !slices.IsSortedFunc(in, func(a *SensorMetadata, b *SensorMetadata) int {
 		return a.ReverseCompare(b)
 	}) {
 		log.Errorf("Programmer error: cannot remove old heritage data for unsorted slice")

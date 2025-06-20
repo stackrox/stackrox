@@ -345,7 +345,7 @@ func Test_cleanupHeritageData(t *testing.T) {
 				gotValues[i] = *entry
 			}
 			if !reflect.DeepEqual(gotValues, tt.want) {
-				t.Errorf("\ngot  = %v\nwant = %v", pastSensorDataString(got), tt.want)
+				t.Errorf("\ngot  = %v\nwant = %v", sensorMetadataString(got), tt.want)
 			}
 		})
 	}
