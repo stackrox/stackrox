@@ -50,7 +50,7 @@ func (p *pipelineImpl) Reconcile(_ context.Context, _ string, _ *reconciliation.
 }
 
 func (p *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
-	return msg.GetEvent().GetIndexReport() != nil
+	return msg.GetEvent().GetVirtualMachine() != nil
 }
 
 func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSensor, injector common.MessageInjector) error {
