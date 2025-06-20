@@ -59,11 +59,15 @@ func (a *SensorMetadata) ReverseCompare(b *SensorMetadata) int {
 	)
 }
 
+func (a *SensorMetadata) String() string {
+	return fmt.Sprintf("(%s, %s) start=%s, lastUpdate=%s",
+		a.ContainerID, a.PodIP, a.SensorStart, a.LatestUpdate)
+}
+
 func sensorMetadataString(data []*SensorMetadata) string {
 	var str strings.Builder
 	for i, entry := range data {
-		str.WriteString(fmt.Sprintf("[%d]: (%s, %s) start=%s, lastUpdate=%s; ",
-			i, entry.ContainerID, entry.PodIP, entry.SensorStart, entry.LatestUpdate))
+		str.WriteString(fmt.Sprintf("[%d]: %s; ", i, entry.String()))
 	}
 	return str.String()
 }
