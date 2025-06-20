@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/alpn"
+	"github.com/stackrox/rox/pkg/grpc/metrics"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/netutil"
@@ -175,9 +176,14 @@ func (c *EndpointConfig) instantiate(httpHandler http.Handler, grpcSrv *grpc.Ser
 			}
 
 			tlsutils.ALPNDemux(lis, protoMap, tlsutils.ALPNDemuxConfig{
-				MetricSubsystem:     sub.String(),
-				EndpointAddress:     c.ListenEndpoint,
-				OnHandshakeError:    tlsHandshakeErrorHandler,
+				OnHandshakeError: tlsHandshakeErrorHandler,
+				OnHandshakeComplete: func(conn net.Conn, proto string) {
+					remoteIP := "unknown"
+					if host, _, err := net.SplitHostPort(conn.RemoteAddr().String()); err == nil {
+						remoteIP = host
+					}
+					metrics.ObserveALPN(sub.String(), c.ListenEndpoint, remoteIP, proto)
+				},
 				TLSHandshakeTimeout: env.TLSHandshakeTimeout.DurationSetting(),
 			})
 		}

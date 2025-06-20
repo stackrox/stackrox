@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/grpc/metrics"
 )
 
 var (
@@ -31,9 +30,6 @@ type ListenerControl interface {
 
 // ALPNDemuxConfig allows fine-grained control over the behavior of a ALPN-demultiplexing listener.
 type ALPNDemuxConfig struct {
-	MetricSubsystem string
-	// EndpointAddress is optional information collected for metrics only.
-	EndpointAddress string
 	// MaxCloseWait is the maximum time to wait for a Close to succeed before no longer accepting
 	// connections on sub-listeners.
 	MaxCloseWait time.Duration
@@ -41,6 +37,8 @@ type ALPNDemuxConfig struct {
 	OnHandshakeError func(net.Conn, error)
 	// TLSHandshakeTimeout is the maximum time allowed for the TLS handshake to finish.
 	TLSHandshakeTimeout time.Duration
+	// OnHandshakeComplete is called when TLS handshake is done
+	OnHandshakeComplete func(conn net.Conn, proto string)
 }
 
 // ALPNDemux takes in a single listener, and demultiplexes it onto an arbitrary number of listeners based on the
@@ -172,15 +170,9 @@ func (l *alpnDemuxListener) doDispatch(conn net.Conn) error {
 	}
 
 	alp := tlsConn.ConnectionState().NegotiatedProtocol
-	remoteIP := ""
-	if host, _, err := net.SplitHostPort(tlsConn.RemoteAddr().String()); err == nil {
-		remoteIP = host
+	if callback := l.cfg.OnHandshakeComplete; callback != nil {
+		go callback(tlsConn, alp)
 	}
-	metrics.ObserveALPN(
-		l.cfg.MetricSubsystem,
-		l.cfg.EndpointAddress,
-		remoteIP,
-		alp)
 	ch := l.chanMap[alp]
 	if ch == nil {
 		ch = l.chanMap[""]
