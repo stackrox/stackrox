@@ -105,7 +105,7 @@ function CustomWizardFooter({
         }
 
         // If validation passes, navigate to next step
-        // eslint-disable-next-line @typescript-eslint/no-floating-promises
+
         goToNextStep();
     }
 
@@ -212,10 +212,7 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
     }
 
     function allClustersAreUnhealthy(): boolean {
-        return (
-            clusters?.every((cluster) => 'status' in cluster && cluster.status === 'UNHEALTHY') ||
-            false
-        );
+        return clusters?.every((cluster) => cluster.status === 'UNHEALTHY') || false;
     }
 
     return (
