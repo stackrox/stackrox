@@ -132,6 +132,20 @@ func (mr *MockSignatureIntegrationStoreMockRecorder) Upsert(ctx, obj any) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockSignatureIntegrationStore)(nil).Upsert), ctx, obj)
 }
 
+// UpsertMany mocks base method.
+func (m *MockSignatureIntegrationStore) UpsertMany(ctx context.Context, objs []*storage.SignatureIntegration) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpsertMany", ctx, objs)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpsertMany indicates an expected call of UpsertMany.
+func (mr *MockSignatureIntegrationStoreMockRecorder) UpsertMany(ctx, objs any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertMany", reflect.TypeOf((*MockSignatureIntegrationStore)(nil).UpsertMany), ctx, objs)
+}
+
 // Walk mocks base method.
 func (m *MockSignatureIntegrationStore) Walk(ctx context.Context, fn func(*storage.SignatureIntegration) error) error {
 	m.ctrl.T.Helper()
