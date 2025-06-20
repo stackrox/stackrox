@@ -82,11 +82,7 @@ type Manager struct {
 	namespace string
 
 	// Cache the data for the current instance of Sensor
-	currentIP               string
-	currentContainerID      string
-	sensorStart             time.Time
-	sensorVersion           string
-	lastUpdateOfCurrentData time.Time
+	currentSensor SensorMetadata
 
 	maxSize int
 	minSize int
@@ -109,11 +105,13 @@ func NewHeritageManager(ns string, client k8sClient, start time.Time) *Manager {
 		k8sClient:        client,
 		cache:            []*SensorMetadata{},
 		namespace:        ns,
-		sensorStart:      start,
-		sensorVersion:    version.GetMainVersion(),
-		maxSize:          env.PastSensorsMaxEntries.IntegerSetting(),
-		minSize:          heritageMinSize,
-		maxAge:           heritageMaxAge,
+		currentSensor: SensorMetadata{
+			SensorVersion: version.GetMainVersion(),
+			SensorStart:   start,
+		},
+		maxSize: env.PastSensorsMaxEntries.IntegerSetting(),
+		minSize: heritageMinSize,
+		maxAge:  heritageMaxAge,
 	}
 }
 
@@ -148,12 +146,12 @@ func (h *Manager) GetData(ctx context.Context) []*SensorMetadata {
 }
 
 func (h *Manager) HasCurrentSensorData() bool {
-	return h.currentIP != "" && h.currentContainerID != ""
+	return h.currentSensor.ContainerID != "" && h.currentSensor.PodIP != ""
 }
 
 func (h *Manager) SetCurrentSensorData(currentIP, currentContainerID string) {
-	h.currentIP = currentIP
-	h.currentContainerID = currentContainerID
+	h.currentSensor.PodIP = currentIP
+	h.currentSensor.ContainerID = currentContainerID
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
@@ -166,7 +164,7 @@ func (h *Manager) SetCurrentSensorData(currentIP, currentContainerID string) {
 // The size of h.cache is expected to be <10 in most of the cases.
 func (h *Manager) updateCachedTimestampNoLock(now time.Time) bool {
 	for _, entry := range h.cache {
-		if entry.ContainerID == h.currentContainerID && entry.PodIP == h.currentIP {
+		if entry.ContainerID == h.currentSensor.ContainerID && entry.PodIP == h.currentSensor.PodIP {
 			if entry.SensorStart.IsZero() {
 				entry.SensorStart = now
 			}
@@ -187,17 +185,11 @@ func (h *Manager) UpsertConfigMap(ctx context.Context, now time.Time) error {
 	}
 
 	if found := h.updateCachedTimestampNoLock(now); !found {
-		h.cache = append(h.cache, &SensorMetadata{
-			ContainerID:   h.currentContainerID,
-			PodIP:         h.currentIP,
-			SensorStart:   h.sensorStart,
-			SensorVersion: h.sensorVersion,
-			LatestUpdate:  now,
-		})
+		h.currentSensor.LatestUpdate = now
+		h.cache = append(h.cache, &h.currentSensor)
 	}
 	h.cache = pruneOldHeritageData(h.cache, now, h.maxAge, h.minSize, h.maxSize)
 
-	h.lastUpdateOfCurrentData = now
 	log.Debugf("Writing Heritage data %s to ConfigMap %s/%s", sensorMetadataString(h.cache), h.namespace, cmName)
 	return h.write(ctx, h.cache...)
 }
