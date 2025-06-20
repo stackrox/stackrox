@@ -21,7 +21,6 @@ import (
 )
 
 const (
-	cmName             = "sensor-past-instances"
 	configMapKey       = "heritage"
 	annotationInfoKey  = `stackrox.io/past-sensors-info`
 	annotationInfoText = `This data is for sensor to recognize its past pod instances.`
@@ -36,7 +35,8 @@ const (
 )
 
 var (
-	log = logging.LoggerForModule()
+	log    = logging.LoggerForModule()
+	cmName = env.PastSensorsConfigmapName.Setting()
 )
 
 type SensorMetadata struct {
