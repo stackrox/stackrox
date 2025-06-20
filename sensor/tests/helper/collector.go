@@ -18,14 +18,14 @@ const (
 )
 
 // ExpectedSignalMessageFn signature for a function to match SignalStreamMessage.
-type ExpectedSignalMessageFn func(*sensor.SignalStreamMessage) bool
+type ExpectedSignalMessageFn func(*storage.ProcessSignal) bool
 
 // ExpectedNetworkConnectionMessageFn signature for a function to match NetworkConnectionInfoMessage.
 type ExpectedNetworkConnectionMessageFn func(*sensor.NetworkConnectionInfoMessage) bool
 
 // WaitToReceiveMessagesFromCollector waits until sensor receives the expected messages from collector with a default timeout.
 func WaitToReceiveMessagesFromCollector(ctx context.Context, signal *concurrency.ErrorSignal,
-	signalC <-chan *sensor.SignalStreamMessage,
+	signalC <-chan *storage.ProcessSignal,
 	flowC <-chan *sensor.NetworkConnectionInfoMessage,
 	expectedSignalMessages []ExpectedSignalMessageFn,
 	expectedNetworkMessages []ExpectedNetworkConnectionMessageFn) {
@@ -34,7 +34,7 @@ func WaitToReceiveMessagesFromCollector(ctx context.Context, signal *concurrency
 
 // WaitToReceiveMessagesFromCollectorWithTimeout waits for given time until sensor receives the expected messages from collector.
 func WaitToReceiveMessagesFromCollectorWithTimeout(ctx context.Context, signal *concurrency.ErrorSignal,
-	signalC <-chan *sensor.SignalStreamMessage,
+	signalC <-chan *storage.ProcessSignal,
 	flowC <-chan *sensor.NetworkConnectionInfoMessage,
 	expectedSignalMessages []ExpectedSignalMessageFn,
 	expectedNetworkMessages []ExpectedNetworkConnectionMessageFn,
@@ -98,6 +98,18 @@ func SendSignalMessage(fakeCollector *collector.FakeCollector, containerID strin
 						Name:        signalName,
 					},
 				},
+			},
+		},
+	})
+}
+
+// SendProcessMessage uses FakeCollector to send a fake MsgFromCollector.
+func SendProcessMessage(fakeCollector *collector.FakeCollector, containerID string, signalName string) {
+	fakeCollector.SendFakeProcess(&sensor.MsgFromCollector{
+		Msg: &sensor.MsgFromCollector_ProcessSignal{
+			ProcessSignal: &sensor.ProcessSignal{
+				ContainerId: containerID,
+				Name:        signalName,
 			},
 		},
 	})

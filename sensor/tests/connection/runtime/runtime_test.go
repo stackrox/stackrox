@@ -46,7 +46,7 @@ func Test_SensorIntermediateRuntimeEvents(t *testing.T) {
 
 	flowC := make(chan *sensor.NetworkConnectionInfoMessage, 1000)
 	config.NetworkFlowTraceWriter = helper.NewNetworkFlowTraceWriter(ctx, flowC)
-	signalC := make(chan *sensor.SignalStreamMessage, 1000)
+	signalC := make(chan *storage.ProcessSignal, 1000)
 	config.ProcessIndicatorTraceWriter = helper.NewProcessIndicatorTraceWriter(ctx, signalC)
 
 	if config.RealCerts {
@@ -101,6 +101,7 @@ func Test_SensorIntermediateRuntimeEvents(t *testing.T) {
 			require.NotEqual(t, "", nginxIP)
 
 			helper.SendSignalMessage(fakeCollector, talkContainerIds[0], "curl")
+			helper.SendProcessMessage(fakeCollector, talkContainerIds[0], "curl")
 			helper.SendFlowMessage(fakeCollector,
 				sensor.SocketFamily_SOCKET_FAMILY_UNKNOWN,
 				storage.L4Protocol_L4_PROTOCOL_TCP,
@@ -123,9 +124,15 @@ func Test_SensorIntermediateRuntimeEvents(t *testing.T) {
 			},
 		}
 		expectedSignals := []helper.ExpectedSignalMessageFn{
-			func(msg *sensor.SignalStreamMessage) bool {
-				return msg.GetSignal().GetProcessSignal().GetName() == "curl" && msg.GetSignal().GetProcessSignal().GetContainerId() == talkContainerIds[0]
+			func(msg *storage.ProcessSignal) bool {
+				return msg.GetName() == "curl" && msg.GetContainerId() == talkContainerIds[0]
 			},
+		}
+		if !helper.UseRealCollector.BooleanSetting() {
+			// Fake collector tests both services for processes with the same process.
+			expectedSignals = append(expectedSignals, func(msg *storage.ProcessSignal) bool {
+				return msg.GetName() == "curl" && msg.GetContainerId() == talkContainerIds[0]
+			})
 		}
 		go helper.WaitToReceiveMessagesFromCollector(ctx, &messagesReceivedSignal,
 			signalC,
