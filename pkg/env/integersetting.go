@@ -10,6 +10,7 @@ import (
 type IntegerSetting struct {
 	envVar       string
 	defaultValue int
+	intSettingOptions
 }
 
 // EnvVar returns the string name of the environment variable
@@ -37,16 +38,72 @@ func (s *IntegerSetting) IntegerSetting() int {
 	if err != nil {
 		return s.defaultValue
 	}
+	if v < s.minimumValue && s.minSet {
+		return s.defaultValue
+	}
+	if v > s.maximumValue && s.maxSet {
+		return s.defaultValue
+	}
 	return v
 }
 
 // RegisterIntegerSetting globally registers and returns a new integer setting.
-func RegisterIntegerSetting(envVar string, defaultValue int) *IntegerSetting {
+func RegisterIntegerSetting(envVar string, defaultValue int, opts ...IntegerSettingOption) *IntegerSetting {
 	s := &IntegerSetting{
 		envVar:       envVar,
 		defaultValue: defaultValue,
 	}
+	for _, opt := range opts {
+		opt.apply(&s.intSettingOptions)
+	}
+	if s.defaultValue < s.minimumValue && s.minSet {
+		panic(fmt.Errorf("programmer error: default value for %s must be at least %d",
+			s.EnvVar(), s.minimumValue))
+	}
+	if s.defaultValue > s.maximumValue && s.maxSet {
+		panic(fmt.Errorf("programmer error: default value for %s must be maximally %d",
+			s.EnvVar(), s.maximumValue))
+	}
+	if s.minSet && s.maxSet && s.minimumValue > s.maximumValue {
+		panic(fmt.Errorf("programmer error: incorrect validation config for %s: "+
+			"minimum value %d must be smaller or equal to maximum value %d",
+			s.EnvVar(), s.minimumValue, s.maximumValue))
+	}
 
 	Settings[s.EnvVar()] = s
 	return s
+}
+
+type intSettingOptions struct {
+	minimumValue int
+	minSet       bool
+	maximumValue int
+	maxSet       bool
+}
+
+type intSettingOptionFn func(*intSettingOptions)
+
+func (f intSettingOptionFn) apply(so *intSettingOptions) {
+	f(so)
+}
+
+// IntegerSettingOption is an interface that abstracts additional options for a setting (e.g., a default value).
+type IntegerSettingOption interface {
+	apply(*intSettingOptions)
+}
+
+// WithMinimum specifies the minimum allowed value that passes the validation.
+func WithMinimum(val int) IntegerSettingOption {
+	return intSettingOptionFn(func(so *intSettingOptions) {
+		so.minimumValue = val
+		so.minSet = true
+	})
+}
+
+// WithMaximum specifies the minimum allowed value that passes the validation.
+func WithMaximum(val int) IntegerSettingOption {
+	return intSettingOptionFn(func(so *intSettingOptions) {
+		so.maximumValue = val
+		so.maxSet = true
+	})
 }
