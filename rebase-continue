@@ -1,3 +1,12 @@
 {
-  "continuations": null
+  "continuations": [
+    {
+      "command": [
+        "upstack",
+        "onto",
+        "ROX-29160-Add-default-signature-integration-rh-rk3"
+      ],
+      "branch": "ROX-29160-Add-default-policy-red-hat-images-signed"
+    }
+  ]
 }
