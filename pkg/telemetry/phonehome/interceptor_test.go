@@ -70,9 +70,12 @@ func (s *interceptorTestSuite) TestAddGrpcInterceptor() {
 		},
 	}
 	cfg := &Config{
-		ClientID:  "test",
-		GroupType: "TEST",
+		ClientID:   "test",
+		GroupType:  "TEST",
+		StorageKey: "test-key",
+
 		telemeter: s.mockTelemeter,
+		gatherer:  &nilGatherer{},
 	}
 
 	cfg.AddInterceptorFunc("TestEvent", func(rp *RequestParams, props map[string]any) bool {
@@ -88,6 +91,8 @@ func (s *interceptorTestSuite) TestAddGrpcInterceptor() {
 		"Property": "test value",
 	}, matchOptions(telemeter.WithUserID(cfg.HashUserAuthID(nil)), telemeter.WithGroups("TEST", ""))).Times(1)
 
+	cfg.Enable()
+	defer cfg.Disable()
 	cfg.track(testRP)
 }
 
@@ -102,9 +107,12 @@ func (s *interceptorTestSuite) TestAddHttpInterceptor() {
 	s.NoError(err)
 	testRP.HTTPReq = req
 	cfg := &Config{
-		ClientID:  "test",
-		GroupType: "TEST",
+		ClientID:   "test",
+		GroupType:  "TEST",
+		StorageKey: "test-key",
+
 		telemeter: s.mockTelemeter,
+		gatherer:  &nilGatherer{},
 	}
 
 	cfg.AddInterceptorFunc("TestEvent", func(rp *RequestParams, props map[string]any) bool {
@@ -120,6 +128,8 @@ func (s *interceptorTestSuite) TestAddHttpInterceptor() {
 		"Property": "test_value",
 	}, matchOptions(telemeter.WithUserID(cfg.HashUserAuthID(mockID)), telemeter.WithGroups("TEST", ""))).Times(1)
 
+	cfg.Enable()
+	defer cfg.Disable()
 	cfg.track(testRP)
 }
 
