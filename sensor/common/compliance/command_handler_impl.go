@@ -15,6 +15,10 @@ import (
 	"github.com/stackrox/rox/sensor/common/message"
 )
 
+const (
+	commandHandlerComponentName = "compliance-command-handler"
+)
+
 var (
 	log = logging.LoggerForModule()
 )
@@ -29,7 +33,10 @@ type commandHandlerImpl struct {
 
 	stopper          concurrency.Stopper
 	centralReachable atomic.Bool
+	state            atomic.Value
 }
+
+var _ common.SensorComponent = (*commandHandlerImpl)(nil)
 
 func (c *commandHandlerImpl) Capabilities() []centralsensor.SensorCapability {
 	return []centralsensor.SensorCapability{centralsensor.ComplianceInNodesCap}
@@ -40,12 +47,16 @@ func (c *commandHandlerImpl) ResponsesC() <-chan *message.ExpiringMessage {
 }
 
 func (c *commandHandlerImpl) Start() error {
+	c.state.Store(common.SensorComponentStateSTARTING)
 	go c.run()
+	c.state.Store(common.SensorComponentStateSTARTED)
 	return nil
 }
 
 func (c *commandHandlerImpl) Stop(_ error) {
+	c.state.Store(common.SensorComponentStateSTOPPING)
 	c.stopper.Client().Stop()
+	c.state.Store(common.SensorComponentStateSTOPPED)
 }
 
 func (c *commandHandlerImpl) Notify(e common.SensorComponentEvent) {
@@ -53,8 +64,10 @@ func (c *commandHandlerImpl) Notify(e common.SensorComponentEvent) {
 	switch e {
 	case common.SensorComponentEventCentralReachable:
 		c.centralReachable.Store(true)
+		c.state.Store(common.SensorComponentStateONLINE)
 	case common.SensorComponentEventOfflineMode:
 		c.centralReachable.Store(false)
+		c.state.Store(common.SensorComponentStateOFFLINE)
 	}
 }
 
@@ -73,6 +86,10 @@ func (c *commandHandlerImpl) ProcessMessage(msg *central.MsgToSensor) error {
 	case <-c.stopper.Flow().StopRequested():
 		return errors.Errorf("component is shutting down, unable to send command: %s", protocompat.MarshalTextString(command))
 	}
+}
+
+func (c *commandHandlerImpl) State() common.SensorComponentState {
+	return c.state.Load().(common.SensorComponentState)
 }
 
 func (c *commandHandlerImpl) run() {

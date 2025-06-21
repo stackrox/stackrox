@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 	"strings"
+	"sync/atomic"
 
 	"github.com/pkg/errors"
 
@@ -62,7 +63,11 @@ type serviceImpl struct {
 	processPipeline  Pipeline
 	writer           io.Writer
 	authFuncOverride func(context.Context, string) (context.Context, error)
+
+	state atomic.Value
 }
+
+var _ common.SensorComponent = (*serviceImpl)(nil)
 
 func authFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
 	err := idcheck.CollectorOnly().Authorized(ctx, fullMethodName)
@@ -70,11 +75,14 @@ func authFuncOverride(ctx context.Context, fullMethodName string) (context.Conte
 }
 
 func (s *serviceImpl) Start() error {
+	s.state.Store(common.SensorComponentStateSTARTED)
 	return nil
 }
 
 func (s *serviceImpl) Stop(_ error) {
+	s.state.Store(common.SensorComponentStateSTOPPING)
 	s.processPipeline.Shutdown()
+	s.state.Store(common.SensorComponentStateSTOPPED)
 }
 
 func (s *serviceImpl) Notify(e common.SensorComponentEvent) {
@@ -92,6 +100,10 @@ func (s *serviceImpl) ProcessMessage(_ *central.MsgToSensor) error {
 
 func (s *serviceImpl) ResponsesC() <-chan *message.ExpiringMessage {
 	return s.indicators
+}
+
+func (s *serviceImpl) State() common.SensorComponentState {
+	return s.state.Load().(common.SensorComponentState)
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.

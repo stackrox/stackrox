@@ -40,7 +40,10 @@ type eventPipeline struct {
 	contextMtx    sync.Mutex
 	context       context.Context
 	cancelContext context.CancelFunc
+	state         atomic.Value
 }
+
+var _ common.SensorComponent = (*eventPipeline)(nil)
 
 // Capabilities implements common.SensorComponent
 func (*eventPipeline) Capabilities() []centralsensor.SensorCapability {
@@ -91,6 +94,7 @@ func (p *eventPipeline) createNewContext() {
 
 // Start implements common.SensorComponent
 func (p *eventPipeline) Start() error {
+	p.state.Store(common.SensorComponentStateSTARTING)
 	// The order is important here, we need to start the components
 	// that receive messages from other components first
 	if err := p.output.Start(); err != nil {
@@ -102,11 +106,13 @@ func (p *eventPipeline) Start() error {
 	}
 
 	go p.forwardMessages()
+	p.state.Store(common.SensorComponentStateSTARTED)
 	return nil
 }
 
 // Stop implements common.SensorComponent
 func (p *eventPipeline) Stop(_ error) {
+	p.state.Store(common.SensorComponentStateSTOPPING)
 	if !p.stopper.Client().Stopped().IsDone() {
 		defer func() {
 			_ = p.stopper.Client().Stopped().Wait()
@@ -118,6 +124,7 @@ func (p *eventPipeline) Stop(_ error) {
 	p.resolver.Stop(nil)
 	p.output.Stop(nil)
 	p.stopper.Client().Stop()
+	p.state.Store(common.SensorComponentStateSTOPPED)
 }
 
 func (p *eventPipeline) Notify(e common.SensorComponentEvent) {
@@ -135,13 +142,19 @@ func (p *eventPipeline) Notify(e common.SensorComponentEvent) {
 			if err := p.listener.StartWithContext(p.context); err != nil {
 				log.Fatalf("Failed to start listener component. Sensor cannot run without listening to Kubernetes events: %s", err)
 			}
+			p.state.Store(common.SensorComponentStateONLINE)
 		}
 	case common.SensorComponentEventOfflineMode:
 		// Cancel the current context of the listeners.
 		if p.offlineMode.CompareAndSwap(false, true) {
 			p.stopCurrentContext()
+			p.state.Store(common.SensorComponentStateOFFLINE)
 		}
 	}
+}
+
+func (p *eventPipeline) State() common.SensorComponentState {
+	return p.state.Load().(common.SensorComponentState)
 }
 
 // forwardMessages from listener component to responses channel

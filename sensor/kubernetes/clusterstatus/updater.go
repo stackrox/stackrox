@@ -48,18 +48,24 @@ type updaterImpl struct {
 	context       context.Context
 	contextMtx    sync.Mutex
 	cancelContext context.CancelFunc
+	state         atomic.Value
 	// This function is needed to be able to mock in test
 	getProviders                     func(context.Context) *storage.ProviderMetadata
 	getProviderMetadataFromOpenShift providerMetadataFromOpenShift
 }
 
+var _ common.SensorComponent = (*updaterImpl)(nil)
+
 func (u *updaterImpl) Start() error {
 	// We don't do anything on Start, run will be called when Central is reachable.
+	u.state.Store(common.SensorComponentStateSTARTED)
 	return nil
 }
 
 func (u *updaterImpl) Stop(_ error) {
+	u.state.Store(common.SensorComponentStateSTOPPING)
 	u.stopSig.Signal()
+	u.state.Store(common.SensorComponentStateSTOPPED)
 }
 
 func (u *updaterImpl) Notify(e common.SensorComponentEvent) {
@@ -70,10 +76,12 @@ func (u *updaterImpl) Notify(e common.SensorComponentEvent) {
 			u.createContext()
 			go u.run()
 		}
+		u.state.Store(common.SensorComponentStateONLINE)
 	case common.SensorComponentEventOfflineMode:
 		if u.offlineMode.CompareAndSwap(false, true) {
 			u.cancelCurrentContext()
 		}
+		u.state.Store(common.SensorComponentStateOFFLINE)
 	}
 }
 
@@ -107,6 +115,10 @@ func (u *updaterImpl) ProcessMessage(_ *central.MsgToSensor) error {
 
 func (u *updaterImpl) ResponsesC() <-chan *message.ExpiringMessage {
 	return u.updates
+}
+
+func (u *updaterImpl) State() common.SensorComponentState {
+	return u.state.Load().(common.SensorComponentState)
 }
 
 func (u *updaterImpl) sendMessage(msg *central.ClusterStatusUpdate) bool {
