@@ -305,7 +305,7 @@ func benchmarkPruneOrphanedFlowsForDeployment(flowStore store.FlowStore, eStore 
 
 		// Prune all flows and entities from previous tests
 		orphanWindow := time.Now().UTC().Add(20000000 * time.Second)
-		err := flowStore.RemoveOrphanedFlows(allAccessCtx, &orphanWindow)
+		err = flowStore.RemoveOrphanedFlows(allAccessCtx, &orphanWindow)
 		require.NoError(b, err)
 
 		ts := timestamp.Now() + 1000000
@@ -339,7 +339,7 @@ func benchmarkRemoveOrphanedFlows(flowStore store.FlowStore, eStore entityStore.
 
 		// Prune all flows and entities from previous tests
 		orphanWindow := time.Now().UTC().Add(20000000 * time.Second)
-		err := flowStore.RemoveOrphanedFlows(allAccessCtx, &orphanWindow)
+		err = flowStore.RemoveOrphanedFlows(allAccessCtx, &orphanWindow)
 		require.NoError(b, err)
 
 		// Add flows and entities that will be pruned
