@@ -2889,6 +2889,6 @@ func (suite *PLOPDataStoreTestSuite) TestSortMany() {
 	suite.NoError(err)
 	duration := time.Since(startTime)
 
-	fmt.Printf("Fetching %d plops %s took\n", len(newPlops), duration)
+	fmt.Printf("Fetching %d plops took %s\n", len(newPlops), duration)
 
 }
