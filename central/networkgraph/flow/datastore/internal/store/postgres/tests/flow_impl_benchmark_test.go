@@ -13,6 +13,7 @@ import (
 
 	"github.com/google/uuid"
 	entityStore "github.com/stackrox/rox/central/networkgraph/entity/datastore"
+	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
 	"github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store"
 	postgresFlowStore "github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
@@ -77,6 +78,10 @@ func BenchmarkUpsertFlows(b *testing.B) {
 
 func benchmarkUpsertFlows(flowStore store.FlowStore, numFlows uint32) func(*testing.B) {
 	return func(b *testing.B) {
+		entitiesByCluster := map[string][]*storage.NetworkEntityInfo{}
+		err := networktree.Singleton().Initialize(entitiesByCluster)
+		require.NoError(b, err)
+
 		flows := make([]*storage.NetworkFlow, 0, numFlows)
 		for i := uint32(0); i < numFlows; i++ {
 			id, err := testutils.ExtIdFromIPv4(fixtureconsts.Cluster1, i)
@@ -293,6 +298,11 @@ func benchmarkGetFlowsForDeployment(flowStore store.FlowStore, deploymentId stri
 
 func benchmarkPruneOrphanedFlowsForDeployment(flowStore store.FlowStore, eStore entityStore.EntityDataStore, deploymentId string, numEntities uint32) func(*testing.B) {
 	return func(b *testing.B) {
+		// Initialize networktree
+		entitiesByCluster := map[string][]*storage.NetworkEntityInfo{}
+		err := networktree.Singleton().Initialize(entitiesByCluster)
+		require.NoError(b, err)
+
 		// Prune all flows and entities from previous tests
 		orphanWindow := time.Now().UTC().Add(20000000 * time.Second)
 		err := flowStore.RemoveOrphanedFlows(allAccessCtx, &orphanWindow)
@@ -322,6 +332,11 @@ func benchmarkPruneOrphanedFlowsForDeployment(flowStore store.FlowStore, eStore 
 func benchmarkRemoveOrphanedFlows(flowStore store.FlowStore, eStore entityStore.EntityDataStore, deploymentId string, numDeployments int, numEntities uint32) func(*testing.B) {
 	totalFlows := uint32(numDeployments) * numEntities
 	return func(b *testing.B) {
+		// Initialize networktree
+		entitiesByCluster := map[string][]*storage.NetworkEntityInfo{}
+		err := networktree.Singleton().Initialize(entitiesByCluster)
+		require.NoError(b, err)
+
 		// Prune all flows and entities from previous tests
 		orphanWindow := time.Now().UTC().Add(20000000 * time.Second)
 		err := flowStore.RemoveOrphanedFlows(allAccessCtx, &orphanWindow)
