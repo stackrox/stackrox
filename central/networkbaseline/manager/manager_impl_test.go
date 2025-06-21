@@ -923,6 +923,8 @@ func (suite *ManagerTestSuite) TestGetExternalNetworkPeers() {
 		testutils.ExtFlow("entity1", fixtureconsts.Deployment1),
 		testutils.ExtFlow("entity2", fixtureconsts.Deployment1),
 		testutils.ExtFlow("entity3", fixtureconsts.Deployment1),
+		// duplicate flow to test name aggregation
+		testutils.ExtFlow("entity3", fixtureconsts.Deployment1),
 	}
 
 	suite.networkEntities.EXPECT().GetEntityByQuery(gomock.Any(), gomock.Any()).Return(entities, nil)
