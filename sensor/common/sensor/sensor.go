@@ -24,6 +24,7 @@ import (
 	grpcUtil "github.com/stackrox/rox/pkg/grpc/util"
 	"github.com/stackrox/rox/pkg/kocache"
 	"github.com/stackrox/rox/pkg/logging"
+	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/probeupload"
 	"github.com/stackrox/rox/pkg/sync"
@@ -248,6 +249,7 @@ func (s *Sensor) Start() {
 				ServeHTTP:      true,
 			},
 		},
+		Subsystem: pkgMetrics.SensorSubsystem,
 	}
 	s.server = pkgGRPC.NewAPI(conf)
 
@@ -265,6 +267,7 @@ func (s *Sensor) Start() {
 				ServeHTTP:      true,
 			},
 		},
+		Subsystem: pkgMetrics.SensorSubsystem,
 	}
 
 	s.webhookServer = pkgGRPC.NewAPI(webhookConfig)

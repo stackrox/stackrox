@@ -86,7 +86,7 @@ func (s *misdirectedRequestSuite) testWithEndpoint(name string, baseCfg Endpoint
 	cfg := baseCfg
 	cfg.ListenEndpoint = "127.0.0.1:0"
 
-	addr, servers, err := cfg.instantiate(s.httpHandler, s.grpcSrv)
+	addr, servers, err := cfg.instantiate(s.httpHandler, s.grpcSrv, "test")
 	s.Require().NoError(err, "instantiating server for endpoint config")
 
 	serverErrs := make(chan error, len(servers))
