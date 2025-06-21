@@ -2,6 +2,7 @@ package alpn
 
 import (
 	"crypto/tls"
+	"slices"
 
 	"github.com/stackrox/rox/pkg/sliceutils"
 )
@@ -17,7 +18,7 @@ const (
 func ApplyPureGRPCALPNConfig(tlsConf *tls.Config) *tls.Config {
 	confForGRPC := tlsConf.Clone()
 	confForGRPC.NextProtos = sliceutils.Unique(
-		append([]string{PureGRPCALPNString, "h2"}, confForGRPC.NextProtos...))
+		slices.Concat([]string{PureGRPCALPNString, "h2"}, confForGRPC.NextProtos))
 
 	getConfForClient := confForGRPC.GetConfigForClient
 	if getConfForClient != nil {

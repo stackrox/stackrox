@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/netutil"
+	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/tlscheck"
 	"golang.org/x/net/http2"
@@ -110,6 +111,16 @@ func TLSConfig(server mtls.Subject, opts TLSConfigOptions) (*tls.Config, error) 
 	nextProtos := NextProtos
 	if !opts.GRPCOnly {
 		nextProtos = NextProtosNoPureGRPC // no pure gRPC
+		log.Info("Disabling ALPN support for pure-grpc in the client")
+	}
+	overwriteALPN := strings.Split(env.ForceClientALPNProtocols.Setting(), ",")
+	if len(overwriteALPN) > 0 && len(overwriteALPN[0]) > 0 {
+		log.Warnf("Overwriting Client ALPN protocols for conn to server %q (from %s). Previous/Current protocols: %q/%q",
+			serverName, env.ForceServerALPNProtocols.EnvVar(), nextProtos, overwriteALPN)
+		for i, s := range overwriteALPN {
+			overwriteALPN[i] = strings.TrimSpace(s)
+		}
+		nextProtos = sliceutils.Unique(overwriteALPN)
 	}
 
 	conf := &tls.Config{
