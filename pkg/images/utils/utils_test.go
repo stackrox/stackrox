@@ -283,3 +283,64 @@ func TestNormalizeImageFullName(t *testing.T) {
 		})
 	}
 }
+
+func TestIsRedHatImage(t *testing.T) {
+	tcs := []struct {
+		name      string
+		imagesStr []string
+		want      bool
+	}{
+		{
+			"images in registries assumed to contain all-redhat images are classified as Red Hat images",
+			[]string{
+				"registry.redhat.io/openshift4/ose-csi-external-provisioner@sha256:395a5a4aa4cfe3a0093d2225ce2e67acdcec0fd894e4b61e30a750f22931448d",
+				"registry.access.redhat.com/ubi8/openjdk-21@sha256:441897a1f691c7d4b3a67bb3e0fea83e18352214264cb383fd057bbbd5ed863c",
+			},
+			true,
+		},
+		{
+			"images in Red Hat registries that contain third party images are not classified as Red Hat images",
+			[]string{
+				"registry.connect.redhat.com/nvidia-network-operator/nvidia-network-operator@sha256:2418015d00846dd0d7a8aca11927f1e89b4d8d525e6ae936360e3e3b3bd9e22f",
+				"registry.marketplace.redhat.com/rhm/seldonio/alibi-detect-server@sha256:4b0edf72477f54bdcb850457582f12bcb1338ca64dc94ebca056897402708306",
+			},
+			false,
+		},
+		{
+			"images in quay.io remotes assumed to contain all-redhat images are classified as Red Hat images",
+			[]string{
+				"quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:c896b5d4b05343dfe94c0f75c9232a2a68044d0fa7a21b5f51ed796d23f1fcc5",
+				"quay.io/openshift-release-dev/ocp-release@sha256:3482dbdce3a6fb2239684d217bba6fc87453eff3bdb72f5237be4beb22a2160b",
+			},
+			true,
+		},
+		{
+			"images in quay.io remotes that contain third-party images are not classified as Red Hat images",
+			[]string{
+				"quay.io/kuadrant/kuadrant-operator:v0.3.1",
+				"quay.io/netscaler/netscaler-observability-exporter@sha256:626e3a954c67bbb910477352dc740aaab21ff1c1cfb03354becf50beab17d4a4",
+			},
+			false,
+		},
+		{
+			"images outside quay.io with quay-io Red Hat-specific remotes are not classified as Red Hat images",
+			[]string{
+				"not-quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:c896b5d4b05343dfe94c0f75c9232a2a68044d0fa7a21b5f51ed796d23f1fcc5",
+				"not-quay.io/openshift-release-dev/ocp-release@sha256:3482dbdce3a6fb2239684d217bba6fc87453eff3bdb72f5237be4beb22a2160b",
+			},
+			false,
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			for _, imageStr := range tc.imagesStr {
+				imgName, _, err := GenerateImageNameFromString(imageStr)
+				assert.NoError(t, err)
+				img := &storage.Image{Name: imgName}
+				got := IsRedHatImage(img)
+				assert.Equal(t, tc.want, got)
+			}
+		})
+	}
+}
