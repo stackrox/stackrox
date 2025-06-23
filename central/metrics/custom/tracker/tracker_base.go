@@ -1,5 +1,11 @@
 package tracker
 
+// LazyLabel allows for lazy label value evaluation.
+// A metric labels is usually a subset of all available labels for this metric
+// category. That would be inefficient to compute and store in memory values of
+// all labels per finding.
+// The Getter function, provided with a finding, returns the value only for the
+// wrapped label.
 type LazyLabel[Finding any] struct {
 	Label
 	Getter func(*Finding) string
