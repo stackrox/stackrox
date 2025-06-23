@@ -4,8 +4,8 @@ import { gql } from '@apollo/client';
 
 import { getDistanceStrict, getDateTime } from 'utils/dateUtils';
 import { SignatureVerificationResult } from '../../types';
-import SignatureCountLabel from './SignatureCountLabelLayout';
-import VerifiedSignatureLabel from './VerifiedSignatureLabelLayout';
+import SignatureCountLabel from './SignatureCountLabel';
+import VerifiedSignatureLabel from './VerifiedSignatureLabel';
 
 export type ImageDetails = {
     deploymentCount: number;

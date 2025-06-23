@@ -56,17 +56,9 @@ func (w *crdWatcher) startHandler() error {
 	if _, err := informer.AddEventHandler(handler); err != nil {
 		return errors.Wrap(err, "adding CRD event handler")
 	}
-	wg := concurrency.WaitGroup{}
-	wg.Add(1)
-	go func() {
-		defer wg.Add(-1)
-		if !cache.WaitForCacheSync(w.stopSig.Done(), informer.HasSynced) {
-			return
-		}
-	}()
 	w.sif.Start(w.stopSig.Done())
-	if !concurrency.WaitInContext(&wg, w.stopSig) {
-		return errors.New("Unable to start the CRD Handler")
+	if !cache.WaitForCacheSync(w.stopSig.Done(), informer.HasSynced) {
+		log.Warn("Failed to wait for informer cache sync")
 	}
 	return nil
 }
