@@ -23,6 +23,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -538,6 +539,13 @@ func (s *serviceImpl) addDeploymentFlowsToGraph(
 		},
 	)
 
+	// If aggressive aggregation is enabled, first transform all external discovered
+	// entities into Internet entities. Subsequent aggregation will combine these
+	// based on name and timestamp.
+	if features.NetworkGraphAggregateExternalIPs.Enabled() {
+		flows = transformer.NewExternalDiscoveredTransformer().Transform(flows)
+	}
+
 	// Aggregate all external flows by node names to control the number of external nodes.
 	flows = aggregator.NewDuplicateNameExtSrcConnAggregator().Aggregate(flows)
 	missingInfoFlows = aggregator.NewDuplicateNameExtSrcConnAggregator().Aggregate(missingInfoFlows)
@@ -545,7 +553,11 @@ func (s *serviceImpl) addDeploymentFlowsToGraph(
 	flows = aggregator.NewLatestTimestampAggregator().Aggregate(flows)
 	missingInfoFlows = aggregator.NewLatestTimestampAggregator().Aggregate(missingInfoFlows)
 
-	flows = transformer.NewExternalDiscoveredTransformer().Transform(flows)
+	// If aggressive aggregation is disabled, transform the external discovered flows
+	// at the end, so previous aggregation steps do not combine them into a single edge.
+	if !features.NetworkGraphAggregateExternalIPs.Enabled() {
+		flows = transformer.NewExternalDiscoveredTransformer().Transform(flows)
+	}
 
 	graphBuilder.AddFlows(flows)
 
