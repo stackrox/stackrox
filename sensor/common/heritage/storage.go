@@ -8,7 +8,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func pastSensorDataToConfigMap(data ...*SensorMetadata) (*v1.ConfigMap, error) {
+func pastSensorDataToConfigMap(labels map[string]string, data ...*SensorMetadata) (*v1.ConfigMap, error) {
 	if data == nil {
 		return nil, nil
 	}
@@ -29,6 +29,7 @@ func pastSensorDataToConfigMap(data ...*SensorMetadata) (*v1.ConfigMap, error) {
 			Annotations: map[string]string{
 				annotationInfoKey: annotationInfoText,
 			},
+			Labels: labels,
 		},
 		Data: dataMap,
 	}, nil

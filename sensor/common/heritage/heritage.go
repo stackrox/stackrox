@@ -4,6 +4,7 @@ import (
 	"cmp"
 	"context"
 	"fmt"
+	"maps"
 	"slices"
 	"strings"
 	"sync/atomic"
@@ -14,6 +15,8 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/version"
+	"github.com/stackrox/rox/sensor/upgrader/common"
+	"github.com/stackrox/rox/sensor/utils"
 	v1 "k8s.io/api/core/v1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -84,6 +87,9 @@ type Manager struct {
 	// Cache the data for the current instance of Sensor
 	currentSensor SensorMetadata
 
+	// Set of orchestrator labels that should be set when creating the configMap
+	cmLabels map[string]string
+
 	maxSize int
 	minSize int
 	maxAge  time.Duration
@@ -101,11 +107,19 @@ func NewHeritageManager(ns string, client k8sClient, start time.Time) *Manager {
 		log.Warnf("Value of %s is lower than minimum=%d. Applying %d",
 			env.PastSensorsMaxEntries.EnvVar(), heritageMinSize, heritageMinSize)
 	}
+
+	cmLabels := utils.GetSensorKubernetesLabels()
+	maps.Insert(cmLabels, maps.All(map[string]string{
+		common.UpgradeResourceLabelKey: common.UpgradeResourceLabelValue, // delete-sensor script relies on this label.
+		"app.kubernetes.io/component":  common.UpgradeResourceLabelValue,
+	}))
+
 	return &Manager{
 		cacheIsPopulated: atomic.Bool{},
 		k8sClient:        client,
 		cache:            []*SensorMetadata{},
 		namespace:        ns,
+		cmLabels:         cmLabels,
 		currentSensor: SensorMetadata{
 			SensorVersion: version.GetMainVersion(),
 			SensorStart:   start,
@@ -194,7 +208,7 @@ func (h *Manager) UpsertConfigMap(ctx context.Context, now time.Time) error {
 }
 
 func (h *Manager) write(ctx context.Context, data ...*SensorMetadata) error {
-	cm, err := pastSensorDataToConfigMap(data...)
+	cm, err := pastSensorDataToConfigMap(h.cmLabels, data...)
 	if err != nil {
 		return errors.Wrap(err, "converting past sensor data to config map")
 	}
