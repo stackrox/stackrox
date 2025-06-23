@@ -264,3 +264,26 @@ func FilterSuppressedCVEsNoClone(img *storage.Image) {
 		}
 	}
 }
+
+func IsRedHatImage(img *storage.Image) bool {
+	// First consider registries where all images are built by Red Hat
+	imageRegistry := img.GetName().GetRegistry()
+	redHatRegistries := set.NewStringSet(
+		"registry.access.redhat.com",
+		"registry.redhat.io",
+	)
+	if redHatRegistries.Contains(imageRegistry) {
+		return true
+	}
+
+	// The only remaining possibility is quay.io, where certain remotes are all Red Hat
+	if imageRegistry != "quay.io" {
+		return false
+	}
+
+	quayIoRedHatRemotes := set.NewStringSet(
+		"openshift-release-dev/ocp-release",
+		"openshift-release-dev/ocp-v4.0-art-dev",
+	)
+	return quayIoRedHatRemotes.Contains(img.GetName().GetRemote())
+}
