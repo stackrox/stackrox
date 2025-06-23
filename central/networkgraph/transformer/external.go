@@ -38,7 +38,6 @@ func anonymizeDiscoveredFlow(flow *storage.NetworkFlow) *storage.NetworkFlow {
 		return flow
 	}
 
-	flow = flow.CloneVT()
 	props = flow.GetProps()
 
 	props.SrcEntity = anonymizeDiscoveredEntity(props.SrcEntity)
