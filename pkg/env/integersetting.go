@@ -2,6 +2,7 @@ package env
 
 import (
 	"fmt"
+	"math"
 	"os"
 	"strconv"
 )
@@ -13,9 +14,7 @@ type IntegerSetting struct {
 
 	// Optional validation of the value
 	minimumValue int
-	minSet       bool
 	maximumValue int
-	maxSet       bool
 }
 
 // EnvVar returns the string name of the environment variable
@@ -40,7 +39,7 @@ func (s *IntegerSetting) IntegerSetting() int {
 		return s.defaultValue
 	}
 	v, err := strconv.Atoi(val)
-	if err != nil || (s.minSet && v < s.minimumValue) || (s.maxSet && v > s.maximumValue) {
+	if err != nil || (v < s.minimumValue) || (v > s.maximumValue) {
 		return s.defaultValue
 	}
 	return v
@@ -51,6 +50,8 @@ func RegisterIntegerSetting(envVar string, defaultValue int) *IntegerSetting {
 	s := &IntegerSetting{
 		envVar:       envVar,
 		defaultValue: defaultValue,
+		minimumValue: math.MinInt,
+		maximumValue: math.MaxInt,
 	}
 
 	Settings[s.EnvVar()] = s
@@ -65,9 +66,8 @@ func (s *IntegerSetting) WithMinimum(min int) *IntegerSetting {
 			s.defaultValue, min, s.envVar,
 		))
 	}
-	s.minSet = true
 	s.minimumValue = min
-	if s.maxSet && s.minimumValue > s.maximumValue {
+	if s.minimumValue > s.maximumValue {
 		panic(fmt.Errorf("programmer error: incorrect validation config for %s: "+
 			"minimum value %d must be smaller or equal to maximum value %d",
 			s.EnvVar(), s.minimumValue, s.maximumValue))
@@ -83,9 +83,8 @@ func (s *IntegerSetting) WithMaximum(max int) *IntegerSetting {
 			s.defaultValue, max, s.envVar,
 		))
 	}
-	s.maxSet = true
 	s.maximumValue = max
-	if s.minSet && s.minimumValue > s.maximumValue {
+	if s.minimumValue > s.maximumValue {
 		panic(fmt.Errorf("programmer error: incorrect validation config for %s: "+
 			"minimum value %d must be smaller or equal to maximum value %d",
 			s.EnvVar(), s.minimumValue, s.maximumValue))

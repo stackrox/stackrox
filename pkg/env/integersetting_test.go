@@ -83,6 +83,19 @@ func TestIntegerSetting(t *testing.T) {
 			wantPanic:    true,
 			wantValue:    1,
 		},
+		"crossing the max/min value of int should return default value": {
+			value:        "9223372036854775808", // = MaxInt64 + 1
+			defaultValue: 5,
+			wantPanic:    false,
+			wantValue:    5,
+		},
+		// This testcase may fail if the system running this test uses int32 as the type for int
+		"using border value for int64 should not yield default value": {
+			value:        "9223372036854775807", // = MaxInt64
+			defaultValue: 5,
+			wantPanic:    false,
+			wantValue:    9223372036854775807,
+		},
 	}
 
 	for tname, tt := range cases {
