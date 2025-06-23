@@ -104,3 +104,9 @@ func encodeDockerConfigFieldAuth(username, password string) string {
 
 	return base64.StdEncoding.EncodeToString([]byte(fieldValue))
 }
+
+// CreateFromAuthString decodes the given docker auth string into a DockerConfigEntry.
+func CreateFromAuthString(auth string) (d DockerConfigEntry, err error) {
+	d.Username, d.Password, err = decodeDockerConfigFieldAuth(auth)
+	return
+}
