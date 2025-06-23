@@ -305,18 +305,16 @@ func BenchmarkGetExternalNetworkFlows(b *testing.B) {
 func BenchmarkNetworkGraphExternalFlows(b *testing.B) {
 	suite := setupBenchmarkForB(b)
 
-	entities := make([]*storage.NetworkEntity, 0, 255*255*2)
+	entities := make([]*storage.NetworkEntity, 0, 10000)
 
-	for x := 1; x < 2; x++ {
-		for y := 1; y < 255; y++ {
-			for z := 1; z < 255; z++ {
-				cidr := fmt.Sprintf("1.%d.%d.%d/32", x, y, z)
-				id, err := externalsrcs.NewClusterScopedID(fixtureconsts.Cluster1, cidr)
-				require.NoError(b, err)
+	for x := 1; x <= 100; x++ {
+		for y := 1; y <= 100; y++ {
+			cidr := fmt.Sprintf("1.2.%d.%d/32", x, y)
+			id, err := externalsrcs.NewClusterScopedID(fixtureconsts.Cluster1, cidr)
+			require.NoError(b, err)
 
-				entity := testutils.GetExtSrcNetworkEntity(id.String(), cidr, cidr, false, fixtureconsts.Cluster1, true)
-				entities = append(entities, entity)
-			}
+			entity := testutils.GetExtSrcNetworkEntity(id.String(), cidr, cidr, false, fixtureconsts.Cluster1, true)
+			entities = append(entities, entity)
 		}
 	}
 
