@@ -1,4 +1,4 @@
-package common
+package tracker
 
 type LazyLabel[Finding any] struct {
 	Label

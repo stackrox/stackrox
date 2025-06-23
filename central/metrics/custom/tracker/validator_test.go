@@ -1,4 +1,4 @@
-package common
+package tracker
 
 import (
 	"testing"
@@ -7,11 +7,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_parseMetricLabels(t *testing.T) {
+func TestTranslateConfiguration(t *testing.T) {
 	config := makeTestMetricLabels(t)
-	labelExpression, err := TranslateMetricLabels(config, testLabelOrder)
+	mcfg, err := TranslateConfiguration(config, testLabelOrder)
 	assert.NoError(t, err)
-	assert.Equal(t, makeTestMetricConfiguration(t), labelExpression)
+	assert.Equal(t, makeTestMetricConfiguration(t), mcfg)
 }
 
 func Test_validateMetricName(t *testing.T) {
@@ -38,12 +38,12 @@ func Test_noLabels(t *testing.T) {
 		config := map[string]*storage.PrometheusMetrics_MetricGroup_Labels{
 			"metric": labels,
 		}
-		mcfg, err := TranslateMetricLabels(config, testLabelOrder)
+		mcfg, err := TranslateConfiguration(config, testLabelOrder)
 		assert.Equal(t, `invalid configuration: no labels specified for metric "metric"`, err.Error())
 		assert.Empty(t, mcfg)
 	}
 
-	mcfg, err := TranslateMetricLabels(nil, testLabelOrder)
+	mcfg, err := TranslateConfiguration(nil, testLabelOrder)
 	assert.NoError(t, err)
 	assert.Empty(t, mcfg)
 }
@@ -54,13 +54,13 @@ func Test_parseErrors(t *testing.T) {
 			Labels: []string{"unknown"},
 		},
 	}
-	mcfg, err := TranslateMetricLabels(config, testLabelOrder)
+	mcfg, err := TranslateConfiguration(config, testLabelOrder)
 	assert.Equal(t, `invalid configuration: label "unknown" for metric "metric1" is not in the list of known labels [CVE CVSS Cluster IsFixable Namespace Severity test]`, err.Error())
 	assert.Empty(t, mcfg)
 
 	delete(config, "metric1")
 	config["met rick"] = nil
-	mcfg, err = TranslateMetricLabels(config, testLabelOrder)
+	mcfg, err = TranslateConfiguration(config, testLabelOrder)
 	assert.Equal(t, `invalid configuration: invalid metric name "met rick": doesn't match "^[a-zA-Z_:][a-zA-Z0-9_:]*$"`, err.Error())
 	assert.Empty(t, mcfg)
 }

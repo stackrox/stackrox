@@ -1,16 +1,16 @@
 package image_vulnerabilities
 
 import (
-	"github.com/stackrox/rox/central/metrics/aggregator/common"
+	"github.com/stackrox/rox/central/metrics/custom/tracker"
 	"github.com/stackrox/rox/generated/storage"
 )
 
 var (
-	lazyLabels = []common.LazyLabel[finding]{
+	lazyLabels = []tracker.LazyLabel[finding]{
 		{Label: "Cluster", Getter: func(f *finding) string { return f.deployment.GetClusterName() }},
 	}
 
-	labels = common.MakeLabelOrderMap(lazyLabels)
+	labels = tracker.MakeLabelOrderMap(lazyLabels)
 )
 
 type finding struct {
@@ -18,6 +18,6 @@ type finding struct {
 }
 
 func ValidateConfiguration(config map[string]*storage.PrometheusMetrics_MetricGroup_Labels) error {
-	_, err := common.TranslateMetricLabels(config, labels)
+	_, err := tracker.TranslateConfiguration(config, labels)
 	return err
 }

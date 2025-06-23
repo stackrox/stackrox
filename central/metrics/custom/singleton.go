@@ -1,7 +1,7 @@
 package aggregator
 
 import (
-	"github.com/stackrox/rox/central/metrics/aggregator/image_vulnerabilities"
+	"github.com/stackrox/rox/central/metrics/custom/image_vulnerabilities"
 	"github.com/stackrox/rox/generated/storage"
 )
 

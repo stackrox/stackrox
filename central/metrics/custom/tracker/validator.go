@@ -1,4 +1,4 @@
-package common
+package tracker
 
 import (
 	"maps"
@@ -48,9 +48,9 @@ func validateLabels(labels []string, labelOrder map[Label]int, metricName string
 	return metricLabels, nil
 }
 
-// TranslateMetricLabels converts the storage object to the usable map,
+// TranslateConfiguration converts the storage object to the usable map,
 // validating the values.
-func TranslateMetricLabels(config map[string]*storage.PrometheusMetrics_MetricGroup_Labels, labelOrder map[Label]int) (MetricsConfiguration, error) {
+func TranslateConfiguration(config map[string]*storage.PrometheusMetrics_MetricGroup_Labels, labelOrder map[Label]int) (MetricsConfiguration, error) {
 	result := make(MetricsConfiguration, len(config))
 	for metricName, labels := range config {
 		if err := validateMetricName(metricName); err != nil {
