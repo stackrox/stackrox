@@ -553,7 +553,11 @@ func (s *serviceImpl) addDeploymentFlowsToGraph(
 	flows = aggregator.NewLatestTimestampAggregator().Aggregate(flows)
 	missingInfoFlows = aggregator.NewLatestTimestampAggregator().Aggregate(missingInfoFlows)
 
-	flows = transformer.NewExternalDiscoveredTransformer().Transform(flows)
+	// If aggressive aggregation is disabled, transform the external discovered flows
+	// at the end, so previous aggregation steps do not combine them into a single edge.
+	if !features.NetworkGraphAggregateExternalIPs.Enabled() {
+		flows = transformer.NewExternalDiscoveredTransformer().Transform(flows)
+	}
 
 	// If aggressive aggregation is disabled, transform the external discovered flows
 	// at the end, so previous aggregation steps do not combine them into a single edge.
