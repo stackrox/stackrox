@@ -707,8 +707,13 @@ func (e *enricherImpl) enrichWithSignatureVerificationData(ctx context.Context, 
 		return false, errors.Wrap(err, "fetching signature integrations")
 	}
 
-	// Short-circuit if no integrations are available.
-	if len(sigIntegrations) == 0 {
+	onlyRedHatSigIntegrationPresent := len(sigIntegrations) == 1 &&
+		sigIntegrations[0] == signatures.DefaultRedHatSignatureIntegration
+
+	// Short-circuit if
+	//	- no integrations are available, or
+	//	- only the default Red Hat sig integration exists, and this is not a Red Hat image
+	if len(sigIntegrations) == 0 || (onlyRedHatSigIntegrationPresent && !utils.IsRedHatImage(img)) {
 		// If no signature integrations are available, we need to delete any existing verification results from the
 		// image and signal an update to the verification data.
 		if len(img.GetSignatureVerificationData().GetResults()) != 0 {

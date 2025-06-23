@@ -50,6 +50,10 @@ func emptySignatureIntegrationGetter(_ context.Context) ([]*storage.SignatureInt
 	return nil, nil
 }
 
+func defaultRedHatSignatureIntegrationGetter(_ context.Context) ([]*storage.SignatureIntegration, error) {
+	return []*storage.SignatureIntegration{signatures.DefaultRedHatSignatureIntegration}, nil
+}
+
 func imageGetterFromImage(image *storage.Image) ImageGetter {
 	return func(ctx context.Context, id string) (*storage.Image, bool, error) {
 		return image, true, nil
@@ -1035,6 +1039,45 @@ func TestEnrichWithSignatureVerificationData_Success(t *testing.T) {
 			ctx:                  EnrichmentContext{FetchOpt: UseCachesIfPossible},
 			updated:              true,
 		},
+		"non-Red Hat image should not be enriched if only default Red Hat integration present": {
+			img: &storage.Image{Id: "id", Name: &storage.ImageName{FullName: "test:1.0"},
+				Signature: &storage.ImageSignature{Signatures: []*storage.Signature{createSignature("sig1", "payload1")}}},
+			sigIntegrationGetter: defaultRedHatSignatureIntegrationGetter,
+			ctx:                  EnrichmentContext{FetchOpt: ForceRefetch},
+		},
+		"Red Hat image should be enriched even if only Red Hat integration present": {
+			// All images from registry.redhat.io are considered Red Hat images.
+			img: &storage.Image{Id: "id", Name: &storage.ImageName{FullName: "registry.redhat.io/test:1.0", Registry: "registry.redhat.io"},
+				Signature: &storage.ImageSignature{Signatures: []*storage.Signature{createSignature("sig1", "payload1")}}},
+			sigIntegrationGetter: defaultRedHatSignatureIntegrationGetter,
+			sigVerifier: func(ctx context.Context, integrations []*storage.SignatureIntegration, image *storage.Image) []*storage.ImageSignatureVerificationResult {
+				return []*storage.ImageSignatureVerificationResult{
+					createSignatureVerificationResult("verifier1", storage.ImageSignatureVerificationResult_VERIFIED, "registry.redhat.io/test:1.0"),
+				}
+			},
+			expectedVerificationResults: []*storage.ImageSignatureVerificationResult{
+				createSignatureVerificationResult("verifier1",
+					storage.ImageSignatureVerificationResult_VERIFIED, "registry.redhat.io/test:1.0"),
+			},
+			updated: true,
+			ctx:     EnrichmentContext{FetchOpt: ForceRefetch},
+		},
+		"any image should be enriched if several integrations present": {
+			img: &storage.Image{Id: "id", Name: &storage.ImageName{FullName: "test:1.0"},
+				Signature: &storage.ImageSignature{Signatures: []*storage.Signature{createSignature("sig1", "payload1")}}},
+			sigIntegrationGetter: fakeTwoSignatureIntegrationsGetter(),
+			sigVerifier: func(ctx context.Context, integrations []*storage.SignatureIntegration, image *storage.Image) []*storage.ImageSignatureVerificationResult {
+				return []*storage.ImageSignatureVerificationResult{
+					createSignatureVerificationResult("verifier1", storage.ImageSignatureVerificationResult_VERIFIED, "test:1.0"),
+				}
+			},
+			expectedVerificationResults: []*storage.ImageSignatureVerificationResult{
+				createSignatureVerificationResult("verifier1",
+					storage.ImageSignatureVerificationResult_VERIFIED, "test:1.0"),
+			},
+			updated: true,
+			ctx:     EnrichmentContext{FetchOpt: ForceRefetch},
+		},
 		"cached values should be respected": {
 			img: &storage.Image{Id: "id", Name: &storage.ImageName{FullName: "test:1.0"},
 				Signature: &storage.ImageSignature{Signatures: []*storage.Signature{createSignature("sig1", "payload1")}},
@@ -1097,6 +1140,7 @@ func TestEnrichWithSignatureVerificationData_Failure(t *testing.T) {
 	require.Error(t, err)
 	assert.False(t, updated)
 }
+
 func createSignature(sig, payload string) *storage.Signature {
 	return &storage.Signature{Signature: &storage.Signature_Cosign{
 		Cosign: &storage.CosignSignature{
@@ -1124,6 +1168,21 @@ func fakeSignatureIntegrationGetter(id string, fail bool) SignatureIntegrationGe
 			{
 				Id:   id,
 				Name: id,
+			},
+		}, nil
+	}
+}
+
+func fakeTwoSignatureIntegrationsGetter() SignatureIntegrationGetter {
+	return func(ctx context.Context) ([]*storage.SignatureIntegration, error) {
+		return []*storage.SignatureIntegration{
+			{
+				Id:   "id-1",
+				Name: "name-1",
+			},
+			{
+				Id:   "id-2",
+				Name: "name-2",
 			},
 		}, nil
 	}
