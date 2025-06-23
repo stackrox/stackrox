@@ -8,11 +8,13 @@ import (
 	"time"
 
 	pkgErrors "github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/images"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
@@ -47,6 +49,11 @@ var (
 	ErrEnrichNotStarted = errors.New("enrich was not started")
 
 	log = logging.LoggerForModule()
+
+	sensorScanMetricsLabel = prometheus.Labels{
+		"subsystem": "sensor",
+		"entity":    "sensor-local-image-scan",
+	}
 )
 
 // LocalScan wraps the functions required for enriching local images. This allows us to inject different values for testing purposes.
@@ -146,10 +153,16 @@ func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClie
 
 	semaphoreCtx, cancel := context.WithTimeout(ctx, s.maxSemaphoreWaitTime)
 	defer cancel()
+	images.ScanSemaphoreQueueSize.With(sensorScanMetricsLabel).Inc()
 	if err := scanLimitSemaphore.Acquire(semaphoreCtx, 1); err != nil {
 		return nil, errors.Join(err, ErrTooManyParallelScans, ErrEnrichNotStarted)
 	}
-	defer scanLimitSemaphore.Release(1)
+	images.ScanSemaphoreQueueSize.With(sensorScanMetricsLabel).Dec()
+	images.ScanSemaphoreHoldingSize.With(sensorScanMetricsLabel).Inc()
+	defer func() {
+		scanLimitSemaphore.Release(1)
+		images.ScanSemaphoreHoldingSize.With(sensorScanMetricsLabel).Dec()
+	}()
 
 	srcImage := req.Image
 	log.Debugf("Enriching image locally %q, namespace %q, requestID %q, force %v", srcImage.GetName().GetFullName(), req.Namespace, req.ID, req.Force)

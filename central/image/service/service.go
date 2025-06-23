@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc"
+	"github.com/stackrox/rox/pkg/images"
 	"github.com/stackrox/rox/pkg/images/cache"
 	"github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/logging"
@@ -44,6 +45,7 @@ func New(
 	scanWaiterManager waiter.Manager[*storage.Image],
 	clusterSACHelper sachelper.ClusterSacHelper,
 ) Service {
+	images.ScanSemaphoreLimit.With(imageScanMetricsLabel).Set(float64(env.MaxParallelImageScanInternal.IntegerSetting()))
 	return &serviceImpl{
 		datastore:             datastore,
 		watchedImages:         watchedImages,

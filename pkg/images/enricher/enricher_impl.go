@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/cvss"
@@ -16,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/images"
 	"github.com/stackrox/rox/pkg/images/cache"
 	"github.com/stackrox/rox/pkg/images/integration"
 	"github.com/stackrox/rox/pkg/images/utils"
@@ -40,7 +42,11 @@ const (
 )
 
 var (
-	_ ImageEnricher = (*enricherImpl)(nil)
+	_                        ImageEnricher = (*enricherImpl)(nil)
+	enricherScanMetricsLabel               = prometheus.Labels{
+		"subsystem": "central",
+		"entity":    "central-image-enricher",
+	}
 )
 
 type enricherImpl struct {
@@ -965,11 +971,18 @@ func (e *enricherImpl) enrichImageWithScanner(ctx context.Context, image *storag
 	}
 
 	sema := scanner.MaxConcurrentScanSemaphore()
+	images.ScanSemaphoreQueueSize.With(enricherScanMetricsLabel).Inc()
 	err := sema.Acquire(ctx, 1)
 	if err != nil {
 		return ScanNotDone, errors.Wrapf(err, "acquiring max concurrent scan semaphore with scanner %q", scanner.Name())
 	}
-	defer sema.Release(1)
+	images.ScanSemaphoreQueueSize.With(enricherScanMetricsLabel).Dec()
+	images.ScanSemaphoreHoldingSize.With(enricherScanMetricsLabel).Inc()
+
+	defer func() {
+		sema.Release(1)
+		images.ScanSemaphoreHoldingSize.With(enricherScanMetricsLabel).Dec()
+	}()
 
 	scanStartTime := time.Now()
 	scan, err := scanner.GetScan(image)
