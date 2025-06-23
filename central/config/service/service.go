@@ -9,7 +9,7 @@ import (
 	"github.com/stackrox/rox/central/config/datastore"
 	"github.com/stackrox/rox/central/convert/storagetov1"
 	"github.com/stackrox/rox/central/convert/v1tostorage"
-	customMetrics "github.com/stackrox/rox/central/metrics/aggregator"
+	customMetrics "github.com/stackrox/rox/central/metrics/custom"
 	"github.com/stackrox/rox/central/platform/matcher"
 	"github.com/stackrox/rox/central/platform/reprocessor"
 	"github.com/stackrox/rox/central/telemetry/centralclient"
