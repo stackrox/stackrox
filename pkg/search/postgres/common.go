@@ -280,6 +280,7 @@ func (q *query) isDistinctAppliedToSelects() bool {
 }
 
 func (q *query) AsSQL() string {
+	log.Infof("SHREWS -- %s", debug.Stack())
 	if q == nil {
 		return ""
 	}
@@ -425,12 +426,12 @@ func standardizeQueryAndPopulatePath(ctx context.Context, q *v1.Query, schema *w
 	nowForQuery := time.Now()
 
 	var err error
-	// Pulling in scoped queries here to ensure searches that take this path function same as those that
-	// just get the IDs.
-	q, err = scopeContextToQuery(ctx, q)
-	if err != nil {
-		return nil, err
-	}
+	//// Pulling in scoped queries here to ensure searches that take this path function same as those that
+	//// just get the IDs.
+	//q, err = scopeContextToQuery(ctx, q)
+	//if err != nil {
+	//	return nil, err
+	//}
 
 	q, sacErr := enrichQueryWithSACFilter(ctx, q, schema, queryType)
 	if sacErr != nil {

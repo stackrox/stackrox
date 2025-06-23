@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"runtime/debug"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	searchPkg "github.com/stackrox/rox/pkg/search"
@@ -9,6 +10,8 @@ import (
 )
 
 func scopeContextToQuery(ctx context.Context, q *v1.Query) (*v1.Query, error) {
+	log.Infof("SHREWS -- scopeContextToQuery")
+	log.Infof("%s", debug.Stack())
 	scopeQ, err := scoped.GetQueryForAllScopes(ctx)
 	if err != nil {
 		return nil, err
