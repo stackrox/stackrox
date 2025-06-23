@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-// The following types are copied from the Kubernetes codebase,
+// The following types are adopted from the Kubernetes codebase,
 // since it is not placed in any of the officially supported client
 // libraries.
 // See https://github.com/kubernetes/kubernetes/blob/v1.33.1/pkg/credentialprovider/config.go
@@ -15,8 +15,7 @@ import (
 // DockerConfigJSON represents ~/.docker/config.json file info
 // see https://github.com/docker/docker/pull/12009.
 type DockerConfigJSON struct {
-	Auths       DockerConfig      `json:"auths"`
-	HTTPHeaders map[string]string `json:"HttpHeaders,omitempty"`
+	Auths DockerConfig `json:"auths"`
 }
 
 // DockerConfig represents the config file used by the docker CLI.
