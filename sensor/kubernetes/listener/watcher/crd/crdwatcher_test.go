@@ -124,13 +124,14 @@ func (s *watcherSuite) Test_CreateDeleteCRD() {
 			s.setupDynamicClient()
 			stopSig := concurrency.NewSignal()
 			callbackC := make(chan *watcher.Status)
-			defer func() {
-				stopSig.Done()
-				close(callbackC)
-			}()
 			// Create fake CRDs before starting the watcher
 			s.createFakeCRDs(tCase.resourcesToCreateBeforeWatch...)
 			w := s.createWatcher(&stopSig)
+			defer func() {
+				stopSig.Signal()
+				close(callbackC)
+				w.sif.Shutdown()
+			}()
 			for _, rName := range tCase.resourcesToCreateBeforeWatch {
 				s.Assert().NoError(w.AddResourceToWatch(rName))
 			}
@@ -184,11 +185,12 @@ func (s *watcherSuite) Test_AddResourceAfterWatchFails() {
 	s.setupDynamicClient()
 	stopSig := concurrency.NewSignal()
 	callbackC := make(chan *watcher.Status)
-	defer func() {
-		stopSig.Done()
-		close(callbackC)
-	}()
 	w := s.createWatcher(&stopSig)
+	defer func() {
+		stopSig.Signal()
+		close(callbackC)
+		w.sif.Shutdown()
+	}()
 	s.Assert().NoError(w.Watch(callbackC))
 	s.Assert().Error(w.AddResourceToWatch(crdName))
 }

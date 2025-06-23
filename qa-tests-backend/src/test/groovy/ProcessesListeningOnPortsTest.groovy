@@ -113,7 +113,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         assert list.size() == 2
         assert processesListeningOnPorts.totalListeningEndpoints == 2
 
-        def endpoint1 = list.find { it.endpoint.port == 80 }
+        def endpoint1 = list[0]
 
         verifyAll(endpoint1) {
                 deploymentId
@@ -125,9 +125,10 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
                 signal.name == "socat"
                 signal.execFilePath == "/usr/bin/socat"
                 signal.args == "-d -d -v TCP-LISTEN:80,fork STDOUT"
+                endpoint.port == 80
         }
 
-        def endpoint2 = list.find { it.endpoint.port == 8080 }
+        def endpoint2 = list[1]
 
         verifyAll(endpoint2) {
                 deploymentId
@@ -139,6 +140,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
                 signal.name == "socat"
                 signal.execFilePath == "/usr/bin/socat"
                 signal.args == "-d -d -v TCP-LISTEN:8080,fork STDOUT"
+                endpoint.port == 8080
         }
 
         processesListeningOnPorts = waitForResponseToHaveNumElements(1, deploymentId2, 240)
@@ -281,7 +283,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         assert list.size() > 1
         assert processesListeningOnPorts.totalListeningEndpoints >= 2
 
-        def endpoint1 = list.find { it.endpoint.port == 8080 }
+        def endpoint1 = list[0]
 
         verifyAll(endpoint1) {
                 deploymentId
@@ -292,9 +294,10 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
                 containerName == "collector"
                 signal.name == "collector"
                 signal.execFilePath == "/usr/local/bin/collector"
+                endpoint.port == 8080
         }
 
-        def endpoint2 = list.find { it.endpoint.port == 9090 }
+        def endpoint2 = list[1]
 
         verifyAll(endpoint2) {
                 deploymentId
@@ -305,6 +308,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
                 containerName == "collector"
                 signal.name == "collector"
                 signal.execFilePath == "/usr/local/bin/collector"
+                endpoint.port == 9090
         }
     }
 

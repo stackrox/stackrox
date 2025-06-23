@@ -58,7 +58,7 @@ const searchFilterConfig: CompoundSearchFilterConfig = [
     },
 ];
 
-function CheckDetails() {
+function CheckDetailsPage() {
     const { scanConfigurationsQuery, selectedScanConfigName, setSelectedScanConfigName } =
         useContext(ScanConfigurationsContext);
     const { checkName, profileName } = useParams() as { checkName: string; profileName: string };
@@ -235,4 +235,4 @@ function CheckDetails() {
     );
 }
 
-export default CheckDetails;
+export default CheckDetailsPage;

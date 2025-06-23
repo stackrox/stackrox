@@ -42,10 +42,6 @@ func main() {
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			outputDir := args[0]
-			split, err := cmd.Flags().GetBool("split")
-			if err != nil {
-				return err
-			}
 			manualURL, err := cmd.Flags().GetString("manual-url")
 			if err != nil {
 				return err
@@ -57,7 +53,7 @@ func main() {
 					Str("manual vulns URL", manualURL).
 					Str("output directory", outputDir).
 					Msg("exporting vulnerabilities")
-				err := tryExport(ctx, outputDir, &updater.ExportOptions{SplitBundles: split, ManualVulnURL: manualURL})
+				err := tryExport(ctx, outputDir, &updater.ExportOptions{ManualVulnURL: manualURL})
 				if err != nil {
 					if errors.Is(err, context.DeadlineExceeded) {
 						zlog.Warn(ctx).
@@ -74,8 +70,6 @@ func main() {
 			return errors.New("data export failed: max retries exceeded")
 		},
 	}
-	exportCmd.Flags().Bool("split", false,
-		"If true create multiple bundles per updater, rather than a single bundle.")
 	exportCmd.Flags().String("manual-url", DefaultURL, "URL to the manual vulnerability data.")
 
 	var importCmd = &cobra.Command{

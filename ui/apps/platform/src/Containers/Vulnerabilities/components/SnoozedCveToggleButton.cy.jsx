@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import SnoozeCveToggleButton from './SnoozedCveToggleButton';
+import SnoozedCveToggleButton from './SnoozedCveToggleButton';
 
 function Wrapper({ startingSearchFilter = {}, snoozedCveCount }) {
     const [searchFilter, setSearchFilter] = useState(startingSearchFilter);
@@ -14,7 +14,7 @@ function Wrapper({ startingSearchFilter = {}, snoozedCveCount }) {
                     </div>
                 ))}
             </div>
-            <SnoozeCveToggleButton
+            <SnoozedCveToggleButton
                 searchFilter={searchFilter}
                 setSearchFilter={setSearchFilter}
                 snoozedCveCount={snoozedCveCount}

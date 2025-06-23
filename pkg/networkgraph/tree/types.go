@@ -10,6 +10,10 @@ type NetworkTree interface {
 
 	Insert(entity *storage.NetworkEntityInfo) error
 	Remove(key string)
+	// Checks that there are no leafs without values and that the number of values
+	// is equal to the cardinality. If there are multiple trees, the checks are done
+	// for each tree.
+	ValidateNetworkTree() bool
 }
 
 // ReadOnlyNetworkTree provides functionality to read network entities from a network tree.

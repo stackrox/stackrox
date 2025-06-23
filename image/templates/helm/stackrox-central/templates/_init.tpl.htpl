@@ -151,6 +151,9 @@
 
 {{ include "srox.setInstallMethod" (list $) }}
 
+{{/* Attempt to retrieve stackrox-central-helm ConfigMap. Must be done before the defaulting logic is applied. */}}
+{{ include "srox.retrieveStackroxCentralHelmConfigMap" (list $) }}
+
 {{/* Apply defaults */}}
 {{ $defaultsCfg := dict }}
 {{ $platformCfgFile := dict }}
@@ -162,7 +165,7 @@
 {{ $_ = set $rox "_defaults" $defaultsCfg }}
 {{ $_ = include "srox.mergeInto" (list $rox $defaultsCfg.defaults) }}
 
-{{ $_ = include "srox.scannerV4Defaulting" (list .Release $rox.scannerV4) }}
+{{ $_ = include "srox.scannerV4Defaulting" (list $ .Release $rox.scannerV4 $.stackroxHelm) }}
 
 {{/* Expand applicable config values */}}
 {{ $expandables := $.Files.Get "internal/expandables.yaml" | fromYaml }}
