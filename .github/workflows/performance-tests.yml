@@ -120,6 +120,9 @@ jobs:
           REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
         run: |
           source ./workflow/env.sh
+
+          # ROX-29641: We are facing issues with workload generation on GKE when Scanner v4 is enabled.
+          export ROX_SCANNER_V4=false
           ./scale/dev/launch_central.sh
 
           # Required for k6 tests to run.

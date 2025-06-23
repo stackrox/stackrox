@@ -127,7 +127,7 @@ func (s *networkGraphServiceBenchmarks) setupTables(b *testing.B, numFlows int) 
 	flowStore, err := s.flowDataStore.CreateFlowStore(globalWriteAccessCtx, fixtureconsts.Cluster1)
 	require.NoError(b, err)
 
-	err = flowStore.UpsertFlows(globalWriteAccessCtx, flows, timestamp.FromGoTime(time.Now()))
+	_, err = flowStore.UpsertFlows(globalWriteAccessCtx, flows, timestamp.FromGoTime(time.Now()))
 	require.NoError(b, err)
 
 	return id.String()
@@ -198,7 +198,7 @@ func (s *networkGraphServiceBenchmarks) setupTablesForMetadata(b *testing.B) {
 	flowStore, err := s.flowDataStore.CreateFlowStore(globalWriteAccessCtx, fixtureconsts.Cluster1)
 	require.NoError(b, err)
 
-	err = flowStore.UpsertFlows(globalWriteAccessCtx, flows, timestamp.FromGoTime(time.Now()))
+	_, err = flowStore.UpsertFlows(globalWriteAccessCtx, flows, timestamp.FromGoTime(time.Now()))
 	require.NoError(b, err)
 }
 

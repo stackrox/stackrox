@@ -44,7 +44,7 @@ tests:
     .deployments["scanner-v4-indexer"] | assertThat(. != null)
     .deployments["scanner-v4-db"] | assertThat(. != null)
 
-- name: "scanner V4 should not be installed by default for upgrades"
+- name: "scanner V4 should not be installed by default for upgrades from < 4.8"
   release: { "isInstall": false, "isUpgrade": true}
   set:
     imagePullSecrets.allowNone: true
@@ -60,13 +60,42 @@ tests:
     .deployments["scanner"] | assertThat(. != null)
     .deployments["scanner-db"] | assertThat(. != null)
 
-- name: "scanner V2 should be not installed by default for upgrades"
+- name: "scanner V2 should be not installed by default for upgrades from < 4.8"
   release: { "isInstall": false, "isUpgrade": true}
   set:
     imagePullSecrets.allowNone: true
   expect: |
     .deployments["scanner"] | assertThat(. == null)
     .deployments["scanner-db"] | assertThat(. == null)
+
+- name: "scanner V2 should be installed by default for upgrades from >= 4.8"
+  release: { "isInstall": false, "isUpgrade": true}
+  set:
+    imagePullSecrets.allowNone: true
+  expect: |
+    .deployments["scanner"] | assertThat(. != null)
+    .deployments["scanner-db"] | assertThat(. != null)
+  tests:
+  - name: "from 4.8"
+    server:
+      objects:
+      - apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          name: stackrox-secured-cluster-helm
+          namespace: stackrox
+        data:
+          installXYVersion: "4.8"
+  - name: "from 4.9"
+    server:
+      objects:
+      - apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          name: stackrox-secured-cluster-helm
+          namespace: stackrox
+        data:
+          installXYVersion: "4.9"
 
 - name: "scanner V4 enabled should only deploy indexer and db"
   set:
@@ -191,6 +220,20 @@ tests:
       expect: |
         .serviceaccounts["scanner-v4"] | saOnlyRefersTo([
           "secured-cluster-services-main", "stackrox", "stackrox-scanner-v4", "existing-secret1", "existing-secret2"])
+
+- name: "Scanner V4 is enabled for Sensor in same-namespace setting"
+  set:
+    imagePullSecrets.allowNone: true
+  server:
+    objects:
+    - apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: central
+        namespace: stackrox
+  expect: |
+    envVars(.deployments.sensor; "sensor")["ROX_SCANNER_V4"] | assertThat(. == "true")
+    envVars(.deployments.sensor; "sensor")["ROX_SCANNER_V4_INDEXER_ENDPOINT"] | assertThat(. != "")
 
 - name: "local scanning is"
   set:
