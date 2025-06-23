@@ -145,6 +145,7 @@ func (c *EndpointConfig) instantiate(httpHandler http.Handler, grpcSrv *grpc.Ser
 	}
 
 	var httpLis, grpcLis net.Listener
+	var useGrpcOverHttp1 bool
 
 	var result []serverAndListener
 
@@ -159,12 +160,46 @@ func (c *EndpointConfig) instantiate(httpHandler http.Handler, grpcSrv *grpc.Ser
 	if c.NoHTTP2 && tlsConf != nil {
 		tlsConf = tlsConf.Clone()
 		tlsConf.NextProtos = sliceutils.Without(tlsConf.NextProtos, []string{"h2", alpn.PureGRPCALPNString})
+		// http1.1
 	}
 
 	if tlsConf != nil {
-		if c.ServeGRPC && !c.NoHTTP2 {
+		getConfForClientOrigFn := tlsConf.GetConfigForClient
+		if c.ServeGRPC && !c.NoHTTP2 { // http2
+			log.Infof("Enabling ALPN support for pure-grpc in the server for %q", c.ListenEndpoint)
 			tlsConf = alpn.ApplyPureGRPCALPNConfig(tlsConf)
 		}
+		overwriteALPNSrv := strings.Split(env.ForceServerALPNProtocols.Setting(), ",")
+		if len(overwriteALPNSrv) > 0 && len(overwriteALPNSrv[0]) > 0 {
+			log.Warnf("Overwriting Server ALPN protocols for endpoint %q (from %s). Previous/Current protocols: %q/%q",
+				c.ListenEndpoint, env.ForceServerALPNProtocols.EnvVar(), tlsConf.NextProtos, overwriteALPNSrv)
+			for i, s := range overwriteALPNSrv {
+				overwriteALPNSrv[i] = strings.TrimSpace(s)
+			}
+			tlsConf.NextProtos = sliceutils.Unique(overwriteALPNSrv)
+		}
+
+		overwriteALPNCli := strings.Split(env.ForceClientALPNProtocols.Setting(), ",")
+		if len(overwriteALPNCli) > 0 && len(overwriteALPNCli[0]) > 0 {
+			log.Warnf("Overwriting GetConfigForClient ALPN protocols for endpoint %q (from %s). Previous/Current protocols: %q/%q",
+				c.ListenEndpoint, env.ForceServerALPNProtocols.EnvVar(), tlsConf.NextProtos, overwriteALPNCli)
+			for i, s := range overwriteALPNCli {
+				overwriteALPNCli[i] = strings.TrimSpace(s)
+			}
+			if getConfForClientOrigFn != nil {
+				// Overwrite config for client as well
+				tlsConf.GetConfigForClient = func(hello *tls.ClientHelloInfo) (*tls.Config, error) {
+					clientConf, err := getConfForClientOrigFn(hello)
+					if err != nil {
+						return nil, err
+					}
+					clientConf.NextProtos = sliceutils.Unique(overwriteALPNCli)
+					return clientConf, nil
+				}
+			}
+		}
+
+		log.Infof("New listener on %q with NextProtos: %q", c.ListenEndpoint, tlsConf.NextProtos)
 		lis = tls.NewListener(lis, tlsConf)
 
 		if c.ServeGRPC && c.ServeHTTP {
@@ -191,6 +226,7 @@ func (c *EndpointConfig) instantiate(httpHandler http.Handler, grpcSrv *grpc.Ser
 		actualHTTPHandler := httpHandler
 		if c.ServeGRPC {
 			actualHTTPHandler = downgradingServer.CreateDowngradingHandler(grpcSrv, actualHTTPHandler, downgradingServer.PreferGRPCWeb(true))
+			useGrpcOverHttp1 = true
 		}
 
 		httpSrv := &http.Server{
@@ -198,7 +234,7 @@ func (c *EndpointConfig) instantiate(httpHandler http.Handler, grpcSrv *grpc.Ser
 			TLSConfig: tlsConf,
 			ErrorLog:  golog.New(httpErrorLogger{}, "", golog.LstdFlags),
 		}
-		if !c.NoHTTP2 {
+		if !c.NoHTTP2 { // http2
 			h2Srv := http2.Server{
 				MaxConcurrentStreams: maxHTTP2ConcurrentStreams(),
 			}
@@ -206,6 +242,7 @@ func (c *EndpointConfig) instantiate(httpHandler http.Handler, grpcSrv *grpc.Ser
 				log.Warnf("Failed to instantiate endpoint listening at %q for HTTP/2", c.ListenEndpoint)
 			} else {
 				httpSrv.Handler = h2c.NewHandler(actualHTTPHandler, &h2Srv)
+				log.Infof("Instantiated endpoint with h2c handler at %q", c.ListenEndpoint)
 			}
 			if c.DenyMisdirectedRequests && tlsConf != nil {
 				// When using HTTP/2 over TLS, connection coalescing in conjunction with wildcard or multi-SAN
@@ -235,6 +272,10 @@ func (c *EndpointConfig) instantiate(httpHandler http.Handler, grpcSrv *grpc.Ser
 			endpoint: c,
 		})
 	}
+
+	log.Infof("Instantiating endpoint at %s with options:"+
+		"NoHTTP2=%t, ServeGRPC=%t, ServeHTTP=%t, useGrpcOverHttp1=%t",
+		asEndpoint(c.ListenEndpoint), c.NoHTTP2, c.ServeGRPC, c.ServeHTTP, useGrpcOverHttp1)
 
 	return lis.Addr(), result, nil
 }
