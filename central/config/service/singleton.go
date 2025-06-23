@@ -2,7 +2,7 @@ package service
 
 import (
 	"github.com/stackrox/rox/central/config/datastore"
-	"github.com/stackrox/rox/central/metrics/aggregator"
+	customMetrics "github.com/stackrox/rox/central/metrics/custom"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -13,7 +13,7 @@ var (
 )
 
 func initialize() {
-	as = New(datastore.Singleton(), aggregator.Singleton())
+	as = New(datastore.Singleton(), customMetrics.Singleton())
 }
 
 // Singleton provides the instance of the Service interface to register.
