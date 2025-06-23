@@ -15,8 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/version"
-	"github.com/stackrox/rox/sensor/upgrader/common"
-	"github.com/stackrox/rox/sensor/utils"
+	"github.com/stackrox/rox/sensor/common/annotations"
 	v1 "k8s.io/api/core/v1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -108,10 +107,10 @@ func NewHeritageManager(ns string, client k8sClient, start time.Time) *Manager {
 			env.PastSensorsMaxEntries.EnvVar(), heritageMinSize, heritageMinSize)
 	}
 
-	cmLabels := utils.GetSensorKubernetesLabels()
+	cmLabels := annotations.SensorK8sLabels
 	maps.Insert(cmLabels, maps.All(map[string]string{
-		common.UpgradeResourceLabelKey: common.UpgradeResourceLabelValue, // delete-sensor script relies on this label.
-		"app.kubernetes.io/component":  common.UpgradeResourceLabelValue,
+		annotations.UpgradeResourceLabelSensorKey: annotations.UpgradeResourceLabelSensorValue,
+		"app.kubernetes.io/component":             annotations.UpgradeResourceLabelSensorValue,
 	}))
 
 	return &Manager{

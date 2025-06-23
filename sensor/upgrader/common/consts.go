@@ -1,5 +1,7 @@
 package common
 
+import "github.com/stackrox/rox/sensor/common/annotations"
+
 const (
 	// UpgradeProcessIDLabelKey is the key of a label storing the ID of the current upgrade process. This is used to
 	// ensure state does not get mixed up even if an upgrader process is terminated abruptly, e.g., by deleting the
@@ -7,9 +9,9 @@ const (
 	UpgradeProcessIDLabelKey = `sensor-upgrader.stackrox.io/process-id`
 
 	// UpgradeResourceLabelKey is a label key attached to all auto-upgradeable resources.
-	UpgradeResourceLabelKey = `auto-upgrade.stackrox.io/component`
+	UpgradeResourceLabelKey = annotations.UpgradeResourceLabelSensorKey
 	// UpgradeResourceLabelValue is the label value for the above key that identifies resources from the sensor bundle.
-	UpgradeResourceLabelValue = `sensor`
+	UpgradeResourceLabelValue = annotations.UpgradeResourceLabelSensorValue
 
 	// LastUpgradeIDAnnotationKey is an annotation key for storing the ID of the last upgrade process that has modified
 	// an object. This is used to inform the upgrader that an object no longer needs to be considered, even if it
