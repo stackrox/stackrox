@@ -1,5 +1,5 @@
 {{/*
-  srox.scannerDefaulting <Helm .Release> <Scanner configuration>
+  srox.scannerDefaulting <Helm .> <Helm .Release> <Scanner configuration> <Stackrox Helm ConfigMap content>
 
   Encapsulates the Scanner defaulting logic.
 
@@ -8,19 +8,22 @@
 
 {{- define "srox.scannerDefaulting" -}}
 
-{{- $helmRelease := index . 0 -}}
-{{- $scanner := index . 1 -}}
+{{- $ := index . 0 -}}
+{{- $helmRelease := index . 1 -}}
+{{- $scanner := index . 2 -}}
+{{- $stackroxHelm := index . 3 -}}
 
 {{- if kindIs "invalid" $scanner.disable -}}
-
-  {{/* Default to not-installed (i.e. upgrades). */}}
-  {{- $_ := set $scanner "disable" true -}}
-
-  {{/* Currently the automatic enabling of Scanner only kicks in for new installations, not for upgrades. */}}
-  {{- if $helmRelease.IsInstall -}}
-    {{- $_ := set $scanner "disable" false -}}
+  {{/* Scanner neither explicitly enabled or disabled, apply defaulting logic. */}}
+  {{/* By default Scanner will be installed. */}}
+  {{- $_ := set $scanner "disable" false -}}
+  {{/* Currently there is one exception: when upgrading from a pre-4.8 version, which did not
+       install Scanner by default. */}}
+  {{- $installVersionUnknown := kindIs "invalid" $stackroxHelm.installXYVersion -}}
+  {{- $upgradingFromPre4_8 := or $installVersionUnknown (semverCompare "< 4.8" $stackroxHelm.installXYVersion) -}}
+  {{- if and $helmRelease.IsUpgrade $upgradingFromPre4_8 -}}
+    {{- include "srox.note" (list $ "StackRox Scanner disabled by default: this deployment was initially installed before version 4.8.") -}}
+    {{- $_ := set $scanner "disable" true -}}
   {{- end -}}
-
 {{- end -}}
-
 {{- end -}}

@@ -254,7 +254,7 @@ func (e *managerImpl) skipImageUpsert(img *storage.Image) (bool, error) {
 			// Note: This image will not have `RiskScore` fields populated because
 			// risk scores are heavily tied to upserting into Central DB and
 			// this image is not being upserted.
-			log.Warnw("Cannot overwrite Scanner V4 scan already in DB with Clairify scan and cannot calculate risk scores", logging.ImageName(img.GetName().GetFullName()))
+			log.Warnw("Cannot overwrite Scanner V4 scan already in DB with Clairify scan and cannot calculate risk scores", logging.ImageName(img.GetName().GetFullName()), logging.ImageID(img.GetId()))
 			return true, nil
 		}
 	}

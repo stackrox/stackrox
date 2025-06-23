@@ -51,13 +51,10 @@ the value of `UI_START_TARGET`: `https://8.8.8.8:443`.
 
 ### Linting
 
-Unlike ESLint 8 which auto-detects eslint.config.js **flat config** file, ESLint plugin for Visual Studio code editor does not (yet).
-
 If **stackrox/ui** is your workspace root folder, you can create or edit stackrox/ui/.vscode/settings.json file to add the following properties:
 
 ```json
 {
-    "eslint.experimental.useFlatConfig": true,
     "eslint.workingDirectories": ["apps/platform"]
 }
 ```

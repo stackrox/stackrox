@@ -113,12 +113,15 @@ function NetworkPolicySimulatorSidePanel({
     const { data: currentNetworkPolicies } = useRestQuery(fetchNetworkPolicies);
 
     function handleFileInputChange(_event: DropEvent, file: File) {
-        if (file && !file.name.includes('.yaml')) {
+        const fileName = file?.name.toLowerCase();
+        const isYaml = fileName?.endsWith('.yaml') || fileName?.endsWith('.yml');
+
+        if (!isYaml) {
             setNetworkPolicyModification({
                 state: 'UPLOAD',
                 options: {
                     modification: null,
-                    error: 'File must be .yaml',
+                    error: 'File must be .yaml or .yml',
                 },
             });
         } else {

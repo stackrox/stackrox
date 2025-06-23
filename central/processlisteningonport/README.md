@@ -79,3 +79,9 @@ Internal API:
 
 * ProcessListeningOnPort -- counter, represents how many PLOP objects Sensor
   has sent to the Central.
+
+Public API:
+
+* Central holds all listening endpoints for a deployment in memory when the
+  public API is called. For example for 200,000 listening endpoints 2 Gi of
+  memory is consumed.

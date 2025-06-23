@@ -1,6 +1,12 @@
 import React, { ReactElement, useCallback, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Wizard, WizardStep } from '@patternfly/react-core/deprecated';
+import { Button, Modal } from '@patternfly/react-core';
+import {
+    Wizard,
+    WizardContextConsumer,
+    WizardFooter,
+    WizardStep,
+} from '@patternfly/react-core/deprecated';
 import { FormikProvider } from 'formik';
 import { complianceEnhancedSchedulesPath } from 'routePaths';
 import isEqual from 'lodash/isEqual';
@@ -9,6 +15,7 @@ import useAnalytics, {
     COMPLIANCE_SCHEDULES_WIZARD_SAVE_CLICKED,
     COMPLIANCE_SCHEDULES_WIZARD_STEP_CHANGED,
 } from 'hooks/useAnalytics';
+import useModal from 'hooks/useModal';
 import useRestQuery from 'hooks/useRestQuery';
 import { saveScanConfig } from 'services/ComplianceScanConfigurationService';
 import { listComplianceIntegrations } from 'services/ComplianceIntegrationService';
@@ -20,7 +27,6 @@ import ClusterSelection from './ClusterSelection';
 import ProfileSelection from './ProfileSelection';
 import ReportConfiguration from './ReportConfiguration';
 import ReviewConfig from './ReviewConfig';
-import ScanConfigWizardFooter from './ScanConfigWizardFooter';
 import useFormikScanConfig from './useFormikScanConfig';
 import { convertFormikToScanConfig, ScanConfigFormValues } from '../compliance.scanConfigs.utils';
 
@@ -58,6 +64,8 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
         return Promise.resolve([]);
     }, [clustersUsedForProfileData]);
     const { data: profiles, isLoading: isFetchingProfiles } = useRestQuery(listProfilesQuery);
+
+    const { isModalOpen, openModal, closeModal } = useModal();
 
     async function onSave() {
         setIsCreating(true);
@@ -216,6 +224,9 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
         },
     ];
 
+    const firstStepId = wizardSteps[0].id;
+    const lastStepId = wizardSteps[wizardSteps.length - 1].id;
+
     return (
         <>
             <FormikProvider value={formik}>
@@ -227,15 +238,81 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
                     onClose={onClose}
                     onCurrentStepChanged={wizardStepChanged}
                     footer={
-                        <ScanConfigWizardFooter
-                            wizardSteps={wizardSteps}
-                            onSave={onSave}
-                            isSaving={isCreating}
-                            proceedToNextStepIfValid={proceedToNextStepIfValid}
-                            disableClusterNext={
-                                allClustersAreUnhealthy(clusters) && !initialFormValues
-                            }
-                        />
+                        <WizardFooter>
+                            <WizardContextConsumer>
+                                {({ activeStep, onNext, onBack, onClose }) => (
+                                    <>
+                                        {activeStep.id !== lastStepId ? (
+                                            <Button
+                                                variant="primary"
+                                                type="submit"
+                                                isDisabled={
+                                                    allClustersAreUnhealthy(clusters) &&
+                                                    !initialFormValues &&
+                                                    activeStep.id === wizardSteps[1].id
+                                                }
+                                                onClick={() =>
+                                                    proceedToNextStepIfValid(
+                                                        onNext,
+                                                        String(activeStep.id)
+                                                    )
+                                                }
+                                            >
+                                                Next
+                                            </Button>
+                                        ) : (
+                                            <Button
+                                                variant="primary"
+                                                type="submit"
+                                                isDisabled={isCreating}
+                                                onClick={onSave}
+                                                isLoading={isCreating}
+                                            >
+                                                Save
+                                            </Button>
+                                        )}
+                                        <Button
+                                            variant="secondary"
+                                            onClick={onBack}
+                                            isDisabled={activeStep.id === firstStepId}
+                                        >
+                                            Back
+                                        </Button>
+                                        <Button variant="link" onClick={openModal}>
+                                            Cancel
+                                        </Button>
+                                        <Modal
+                                            variant="small"
+                                            title="Confirm cancel"
+                                            isOpen={isModalOpen}
+                                            onClose={closeModal}
+                                            actions={[
+                                                <Button
+                                                    key="confirm"
+                                                    variant="primary"
+                                                    onClick={onClose}
+                                                >
+                                                    Confirm
+                                                </Button>,
+                                                <Button
+                                                    key="cancel"
+                                                    variant="secondary"
+                                                    onClick={closeModal}
+                                                >
+                                                    Cancel
+                                                </Button>,
+                                            ]}
+                                        >
+                                            <p>
+                                                Are you sure you want to cancel? Any unsaved changes
+                                                will be lost. You will be taken back to the list of
+                                                scan configurations.
+                                            </p>
+                                        </Modal>
+                                    </>
+                                )}
+                            </WizardContextConsumer>
+                        </WizardFooter>
                     }
                 />
             </FormikProvider>
