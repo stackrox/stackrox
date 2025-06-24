@@ -22,6 +22,8 @@ GENERATED_BASE_PATH = $(BASE_PATH)/generated
 GENERATED_DOC_PATH = image/rhel/docs
 MERGED_API_SWAGGER_SPEC = $(GENERATED_DOC_PATH)/api/v1/swagger.json
 MERGED_API_SWAGGER_SPEC_V2 = $(GENERATED_DOC_PATH)/api/v2/swagger.json
+MERGED_API_OPENAPI_SPEC = $(GENERATED_DOC_PATH)/api/v1/openapi.json
+MERGED_API_OPENAPI_SPEC_V2 = $(GENERATED_DOC_PATH)/api/v2/openapi.json
 GENERATED_API_DOCS = $(GENERATED_DOC_PATH)/api/v1/reference
 GENERATED_PB_SRCS = $(ALL_PROTOS_REL:%.proto=$(GENERATED_BASE_PATH)/%.pb.go)
 GENERATED_VT_SRCS = $(ALL_PROTOS_REL:%.proto=$(GENERATED_BASE_PATH)/%_vtproto.pb.go)
@@ -57,7 +59,7 @@ endif
 ifeq ($(UNAME_S),Darwin)
 PROTOC_OS = osx
 endif
-PROTOC_ARCH=$(shell case $$(uname -m) in (arm64) echo aarch_64 ;; (s390x) echo s390_64 ;; (*) uname -m ;; esac)
+PROTOC_ARCH=$(shell case $$(uname -m) in (arm64) echo aarch_64 ;; (aarch64) echo aarch_64;; (s390x) echo s390_64 ;; (*) uname -m ;; esac)
 
 PROTO_PRIVATE_DIR := $(BASE_PATH)/.proto
 
@@ -300,10 +302,20 @@ $(MERGED_API_SWAGGER_SPEC_V2): $(BASE_PATH)/scripts/mergeswag.sh $(GENERATED_API
 	$(SILENT)mkdir -p "$(dir $@)"
 	$(BASE_PATH)/scripts/mergeswag.sh "2" "$(GENERATED_BASE_PATH)/api/v2" >"$@"
 
+$(MERGED_API_OPENAPI_SPEC): $(MERGED_API_SWAGGER_SPEC)
+	@echo "+ $@"
+	make -C ${BASE_PATH}/ui deps
+	npm exec -- swagger2openapi "$(BASE_PATH)/$(MERGED_API_SWAGGER_SPEC)" -o "$(BASE_PATH)/$(MERGED_API_OPENAPI_SPEC)"
+
+$(MERGED_API_OPENAPI_SPEC_V2): $(MERGED_API_SWAGGER_SPEC_V2)
+	@echo "+ $@"
+	make -C ${BASE_PATH}/ui deps
+	npm exec -- swagger2openapi "$(BASE_PATH)/$(MERGED_API_SWAGGER_SPEC_V2)" -o "$(BASE_PATH)/$(MERGED_API_OPENAPI_SPEC_V2)"
+
 # Generate the docs from the merged swagger specs.
 $(GENERATED_API_DOCS): $(MERGED_API_SWAGGER_SPEC) $(MERGED_API_SWAGGER_SPEC_V2)
 	@echo "+ $@"
-	docker run $(DOCKER_OPTS) --rm -v $(CURDIR)/$(GENERATED_DOC_PATH):/tmp/$(GENERATED_DOC_PATH) swaggerapi/swagger-codegen-cli generate -l html2 -i /tmp/$< -o /tmp/$@
+	docker run $(DOCKER_OPTS) --rm -v $(CURDIR)/$(GENERATED_DOC_PATH):/tmp/$(GENERATED_DOC_PATH) swaggerapi/swagger-codegen-cli:2.4.43 generate -l html2 -i /tmp/$< -o /tmp/$@
 
 # Nukes pretty much everything that goes into building protos.
 # You should not have to run this day-to-day, but it occasionally is useful

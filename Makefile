@@ -8,6 +8,8 @@ BENCHTIME ?= 1x
 BENCHTIMEOUT ?= 20m
 BENCHCOUNT ?= 1
 
+SHELL = /bin/bash -o pipefail
+
 podman =
 # docker --version might not contain any traces of podman in the latest
 # version, search for more output
@@ -37,7 +39,7 @@ SILENT ?= @
 UNIT_TEST_IGNORE := "stackrox/rox/sensor/tests|stackrox/rox/operator/tests|stackrox/rox/central/reports/config/store/postgres|stackrox/rox/central/complianceoperator/v2/scanconfigurations/store/postgres|stackrox/rox/central/auth/store/postgres|stackrox/rox/scanner/e2etests"
 
 ifeq ($(TAG),)
-TAG=$(shell git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*')
+TAG=$(shell git rev-parse --abbrev-ref HEAD)
 endif
 
 # Set expiration on Quay.io for non-release tags.
@@ -520,7 +522,7 @@ gendocs: $(GENERATED_API_DOCS)
 # We don't need to do anything here, because the $(MERGED_API_SWAGGER_SPEC) and $(MERGED_API_SWAGGER_SPEC_V2) targets
 # already perform validation.
 .PHONY: swagger-docs
-swagger-docs: $(MERGED_API_SWAGGER_SPEC) $(MERGED_API_SWAGGER_SPEC_V2)
+swagger-docs: $(MERGED_API_SWAGGER_SPEC) $(MERGED_API_SWAGGER_SPEC_V2) $(MERGED_API_OPENAPI_SPEC) $(MERGED_API_OPENAPI_SPEC_V2)
 	@echo "+ $@"
 
 UNIT_TEST_PACKAGES ?= ./...
@@ -630,7 +632,7 @@ junit-reports/report.xml: $(GO_TEST_OUTPUT_PATH) $(GO_JUNIT_REPORT_BIN)
 image: main-image
 
 .PHONY: all-builds
-all-builds: cli main-build clean-image $(MERGED_API_SWAGGER_SPEC) $(MERGED_API_SWAGGER_SPEC_V2) ui-build
+all-builds: cli main-build clean-image swagger-docs ui-build
 
 .PHONY: main-image
 main-image: all-builds
@@ -866,3 +868,107 @@ print-image-prefetcher-deploy-bin:
 .PHONY: prometheus-metric-parser
 prometheus-metric-parser: $(PROMETHEUS_METRIC_PARSER_BIN)
 	@echo $(PROMETHEUS_METRIC_PARSER_BIN)
+
+DEV_VERSION = 4.8.x-nightly-20250307
+DEV_LD_FLAGS = -buildvcs=false '-ldflags=-X "github.com/stackrox/rox/pkg/version/internal.MainVersion=$(DEV_VERSION)" -X "github.com/stackrox/rox/pkg/version/internal.CollectorVersion=$(DEV_VERSION)" -X "github.com/stackrox/rox/pkg/version/internal.ScannerVersion=$(DEV_VERSION)" -X "github.com/stackrox/rox/pkg/version/internal.GitShortSha=$(DEV_VERSION)"'
+
+pkg := $(shell find pkg -name *.go)
+
+bin/scanner:  $(shell find scanner -name *.go) ${pkg}
+	CGO_ENABLED=0 go build $(DEV_LD_FLAGS) -o $@ ./scanner/cmd/scanner
+
+bin/kubernetes: $(shell find sensor/kubernetes/ sensor/common/ -name *.go) ${pkg}
+	CGO_ENABLED=0 go build $(DEV_LD_FLAGS) -o $@ ./sensor/kubernetes
+
+bin/admission-control: $(shell find sensor/admission-control/ -name *.go) ${pkg}
+	CGO_ENABLED=0 go build $(DEV_LD_FLAGS) -o $@ ./sensor/admission-control
+
+bin/compliance: $(shell find compliance/ -name *.go) ${pkg}
+	CGO_ENABLED=0 go build $(DEV_LD_FLAGS) -o $@ ./compliance/cmd/compliance
+
+bin/upgrader: $(shell find sensor/upgrader/ -name *.go) ${pkg}
+	CGO_ENABLED=0 go build $(DEV_LD_FLAGS) -o $@ ./sensor/upgrader
+
+bin/init-tls-certs: $(shell find sensor/init-tls-certs/ -name *.go) ${pkg}
+	CGO_ENABLED=0 go build $(DEV_LD_FLAGS) -o $@ ./sensor/init-tls-certs
+
+bin/roxctl: $(shell find roxctl/ -name *.go) ${pkg}
+	CGO_ENABLED=0 go build $(DEV_LD_FLAGS) -o $@ ./roxctl
+
+bin/central: $(shell find central/ -name *.go) ${pkg}
+	CGO_ENABLED=0 go build $(DEV_LD_FLAGS) -o $@ ./central
+
+bin/config-controller: $(shell find config-controller/ -name *.go) ${pkg}
+	CGO_ENABLED=0 go build $(DEV_LD_FLAGS) -o $@ ./config-controller
+
+bin/migrator: $(shell find migrator/ -name *.go) ${pkg}
+	CGO_ENABLED=0 go build $(DEV_LD_FLAGS) -o $@ ./migrator
+
+central: bin/central bin/config-controller bin/migrator bin/scanner-v4
+
+secured-cluster: bin/kubernetes bin/admission-control bin/compliance bin/upgrader bin/init-tls-certs
+
+bin/scanner-v4: $(shell find scanner/ -name *.go) ${pkg}
+	CGO_ENABLED=0 go build $(DEV_LD_FLAGS) -o $@ ./scanner/cmd/scanner
+
+bin/scanner-v2: $(shell find scannerv2/ -name *.go)
+	go build -C scannerv2 $(DEV_LD_FLAGS) -o ../$@ ./cmd/clair
+
+bin/local-nodescanner-v2: $(shell find scannerv2/ -name *.go)
+	go build -C scannerv2 $(DEV_LD_FLAGS) -o ../$@ ./tools/local-nodescanner
+
+bin/installer: $(shell find installer/ -name *.go) config-controller/config/crd/bases/config.stackrox.io_securitypolicies.yaml
+	mkdir -p installer/manifest/crds/
+	cp config-controller/config/crd/bases/config.stackrox.io_securitypolicies.yaml installer/manifest/crds/
+	CGO_ENABLED=0 go build $(DEV_LD_FLAGS) -o $@ ./installer
+
+bin/updater: $(shell find scannerv2/ -name *.go)
+	go build -C ./scannerv2 $(DEV_LD_FLAGS) -o ../$@ ./cmd/updater
+
+bin/agent: $(shell find agent/ -name *.go) ${pkg}
+	CGO_ENABLED=0 go build $(DEV_LD_FLAGS) -o $@ ./agent
+
+bin/collector: $(shell find collector/ -name *.go) $(shell find collector/ -name *.cpp)
+	cmake --preset=vcpkg collector 
+	cmake --build collector/cmake-build/vcpkg -j$(nproc)
+	cp collector/cmake-build/vcpkg/collector/collector bin/collector
+	cp collector/cmake-build/vcpkg/collector/self-checks bin/self-checks
+
+bundle: scannerv2/image/scanner/dump/genesis_manifests.json
+	mkdir -p /tmp/genesis-dump
+	bin/updater generate-dump --out-file /tmp/genesis-dump/genesis-dump.zip
+	ls -lrt /tmp/genesis-dump
+	bin/updater print-stats /tmp/genesis-dump/genesis-dump.zip
+	mkdir -p bundle/
+	unzip -j /tmp/genesis-dump/genesis-dump.zip 'nvd/*.json' -d bundle/nvd_definitions
+	unzip -j /tmp/genesis-dump/genesis-dump.zip 'k8s/*.yaml' -d bundle/k8s_definitions
+	unzip -j /tmp/genesis-dump/genesis-dump.zip 'istio/*.yaml' -d bundle/istio_definitions
+	unzip -j /tmp/genesis-dump/genesis-dump.zip 'rhelv2/repository-to-cpe.json' -d bundle/repo2cpe
+	cp /tmp/genesis-dump/genesis-dump.zip bundle
+	curl -L https://security.access.redhat.com/data/metrics/container-name-repos-map.json > bundle/repo2cpe/container-name-repos-map.json
+
+ui/build: $(shell find ui -regex '.*.jsx?\|.*.tsx?\|.*.json\|.*.ico\|.*.html\|.*.css\|.*.svg' | grep -v 'build\|node_modules\|cypress')
+	make -C ui build
+
+.PHONY: scanner-v2
+scanner-v2: bin/scanner-v2 bin/local-nodescanner-v2 bundle
+
+.PHONY: all-binaries
+all-binaries: secured-cluster central bin/installer scanner-v2 bin/collector
+
+download: data
+	rm -rf data
+	mkdir data
+	image/rhel/fetch-stackrox-data.sh data
+
+.PHONY: build-combined-image
+build-combined-image:
+	podman build . | tee /tmp/stackrox-combined-image-tag
+
+.PHONY: push-combined-image-local
+push-combined-image-local: build-combined-image
+	podman tag $(shell tail -n 1 /tmp/stackrox-combined-image-tag) localhost:5001/stackrox/stackrox:latest
+	podman push --tls-verify=false localhost:5001/stackrox/stackrox:latest
+
+.PHONY: combined-image
+combined-image: $(GENERATED_API_DOCS) swagger-docs all-binaries download push-combined-image-local

@@ -99,7 +99,12 @@ function ViolationDetailsPage(): ReactElement {
                     headingLevel="h2"
                     className="pf-v5-u-mb-sm"
                 >{`in "${entityName}" ${displayedResourceType}`}</Title>
-                <LabelGroup numLabels={2} aria-label="Violation state and resolution">
+                <LabelGroup aria-label="Violation state and resolution">
+                    <Label>State: {VIOLATION_STATE_LABELS[alert.state]}</Label>
+                    <Label>Stte: {VIOLATION_STATE_LABELS[alert.state]}</Label>
+                    <Label>Sate: {VIOLATION_STATE_LABELS[alert.state]}</Label>
+                    <Label>State: {VIOLATION_STATE_LABELS[alert.state]}</Label>
+                    <Label>State: {VIOLATION_STATE_LABELS[alert.state]}</Label>
                     <Label>State: {VIOLATION_STATE_LABELS[alert.state]}</Label>
                     {alert.state === 'RESOLVED' && (
                         <Label>
