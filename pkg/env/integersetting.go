@@ -5,8 +5,6 @@ import (
 	"math"
 	"os"
 	"strconv"
-
-	"github.com/stackrox/rox/pkg/errox"
 )
 
 // IntegerSetting represents an environment variable which should be parsed into an integer
@@ -73,19 +71,20 @@ func (s *IntegerSetting) WithMaximum(max int) *IntegerSetting {
 
 func (s *IntegerSetting) mustValidate() *IntegerSetting {
 	if s.defaultValue < s.minimumValue {
-		panic(errox.InvariantViolation.Newf("programmer error: default %d < minimum %d for %s",
+		panic(fmt.Errorf("programmer error: default value %d is smaller than the minimum %d for %q",
 			s.defaultValue, s.minimumValue, s.envVar,
-		))
+		).Error())
 	}
 	if s.defaultValue > s.maximumValue {
-		panic(errox.InvariantViolation.Newf("programmer error: default %d > maximum %d for %s",
+		panic(fmt.Errorf("programmer error: default value %d is larger than the maximum %d for %q",
 			s.defaultValue, s.maximumValue, s.envVar,
-		))
+		).Error())
 	}
 	if s.minimumValue > s.maximumValue {
-		panic(errox.InvariantViolation.Newf("programmer error: incorrect integer bounds for %s: "+
+		panic(fmt.Errorf("programmer error: incorrect integer bounds for %q: "+
 			"minimum value %d must be smaller or equal to maximum value %d",
-			s.EnvVar(), s.minimumValue, s.maximumValue))
+			s.EnvVar(), s.minimumValue, s.maximumValue,
+		).Error())
 	}
 	return s
 }
