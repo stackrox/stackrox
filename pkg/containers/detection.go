@@ -4,7 +4,7 @@ import "os"
 
 // IsRunningInContainer checks whether the current process is being executed inside one of the containers we check for
 func IsRunningInContainer() bool {
-	return IsDocker() || IsPodman() || IsCryoSpark()
+	return IsDocker() || IsPodman() || IsCryoSpark() || IsKube()
 }
 
 // IsDocker returns true if we are running in a docker instance
@@ -13,6 +13,11 @@ func IsDocker() bool {
 		pathExists("/.dockerinit") ||
 		pathExists("/run/.containerenv") ||
 		pathExists("/var/run/.containerenv")
+}
+
+// IsKube returns true if we are running in a container managed by kubernetes
+func IsKube() bool {
+	return pathExists("/run/secrets/kubernetes.io/serviceaccount/namespace")
 }
 
 // IsPodman returns true if we are running in a podman instance

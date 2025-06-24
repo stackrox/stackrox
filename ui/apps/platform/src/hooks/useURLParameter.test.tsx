@@ -2,21 +2,11 @@ import React from 'react';
 import { createMemoryHistory } from 'history';
 import { MemoryRouter, useLocation, useNavigate } from 'react-router-dom';
 import { HistoryRouter as Router } from 'redux-first-history/rr6';
-import { renderHook, act } from '@testing-library/react';
+import { renderHook } from '@testing-library/react';
 
+import actAndFlushTaskQueue from 'test-utils/flushTaskQueue';
 import { URLSearchParams } from 'url';
 import useURLParameter from './useURLParameter';
-
-beforeAll(() => {
-    jest.useFakeTimers();
-});
-
-function actAndRunTicks(callback) {
-    return act(() => {
-        callback();
-        jest.runAllTicks();
-    });
-}
 
 test('should read/write scoped string value in URL parameter without changing existing URL parameters', async () => {
     let params;
@@ -42,7 +32,7 @@ test('should read/write scoped string value in URL parameter without changing ex
     expect(params.get('bogusKey')).toBeNull();
 
     // Check new and existing values when URL parameter is set
-    actAndRunTicks(() => {
+    await actAndFlushTaskQueue(() => {
         const [, setParam] = result.current;
         setParam('testValue');
     });
@@ -53,7 +43,7 @@ test('should read/write scoped string value in URL parameter without changing ex
     expect(params.get('bogusKey')).toBeNull();
 
     // Check new and existing values when URL parameter is cleared
-    actAndRunTicks(() => {
+    await actAndFlushTaskQueue(() => {
         const [, setParam] = result.current;
         setParam(undefined);
     });
@@ -84,7 +74,7 @@ test('should allow multiple sequential parameter updates without data loss', asy
     expect(params.get('key1')).toBe('oldValue1');
     expect(params.get('key2')).toBe(null);
 
-    actAndRunTicks(() => {
+    await actAndFlushTaskQueue(() => {
         const [[, setParam1], [, setParam2]] = result.current;
         setParam1('newValue1');
         setParam2('newValue2');
@@ -139,7 +129,7 @@ test('should read/write scoped complex object in URL parameter without changing 
     expect(params.get('oldKey')).toBe('test');
     expect(Array.from(params.entries())).toHaveLength(1);
 
-    actAndRunTicks(() => {
+    await actAndFlushTaskQueue(() => {
         const [, setParam] = result.current;
         setParam({
             clusters: [
@@ -171,7 +161,7 @@ test('should read/write scoped complex object in URL parameter without changing 
     expect(params.get('testKey[clusters][0][namespaces][1][name]')).toBe('payments');
 
     // Clear value and ensure URL search is removed
-    actAndRunTicks(() => {
+    await actAndFlushTaskQueue(() => {
         const [, setParam] = result.current;
         setParam(emptyState);
     });
@@ -204,26 +194,26 @@ test('should implement push and replace state for navigate', async () => {
     );
 
     // Test the the default behavior is to push URL parameter changes to the history stack
-    actAndRunTicks(() => {
+    await actAndFlushTaskQueue(() => {
         const [, setParam] = result.current;
         setParam('testValue');
     });
     expect(testLocation.pathname).toBe('/main/clusters');
     expect(testLocation.search).toBe('?oldKey=test&testKey=testValue');
-    actAndRunTicks(() => {
+    await actAndFlushTaskQueue(() => {
         testNavigate(-1);
     });
     expect(testLocation.pathname).toBe('/main/clusters');
     expect(testLocation.search).toBe('?oldKey=test');
 
     // Test that specifying a history action of 'replace' changes the history entry in-place
-    actAndRunTicks(() => {
+    await actAndFlushTaskQueue(() => {
         const [, setParam] = result.current;
         setParam('newTestValue', 'replace');
     });
     expect(testLocation.pathname).toBe('/main/clusters');
     expect(testLocation.search).toBe('?oldKey=test&testKey=newTestValue');
-    actAndRunTicks(() => {
+    await actAndFlushTaskQueue(() => {
         testNavigate(-1);
     });
     expect(testLocation.pathname).toBe('/main/dashboard');
@@ -259,7 +249,7 @@ test('should batch URL parameter updates', async () => {
     expect(result.current.hook2[0]).toBeUndefined();
 
     // Default behavior is to push URL parameter changes to the history stack
-    actAndRunTicks(() => {
+    await actAndFlushTaskQueue(() => {
         const [, setParam] = result.current.hook1;
         setParam('testValue');
     });
@@ -272,7 +262,7 @@ test('should batch URL parameter updates', async () => {
     expect(result.current.hook2[0]).toBeUndefined();
 
     // Multiple URL updates should be batched into a single history entry
-    actAndRunTicks(() => {
+    await actAndFlushTaskQueue(() => {
         const [, setParam1] = result.current.hook1;
         const [, setParam2] = result.current.hook2;
         setParam1('newValue1');
@@ -288,7 +278,7 @@ test('should batch URL parameter updates', async () => {
     expect(result.current.hook2[0]).toBe('newValue3');
 
     // A single URL update with a 'replace' action should replace the current history entry
-    actAndRunTicks(() => {
+    await actAndFlushTaskQueue(() => {
         const [, setParam] = result.current.hook1;
         setParam('newTestValue', 'replace');
     });
@@ -301,7 +291,7 @@ test('should batch URL parameter updates', async () => {
     expect(result.current.hook2[0]).toBe('newValue3');
 
     // A mix of 'push' and 'replace' actions should result in a single history entry
-    actAndRunTicks(() => {
+    await actAndFlushTaskQueue(() => {
         const [, setParam1] = result.current.hook1;
         const [, setParam2] = result.current.hook2;
         setParam1('newValue4', 'replace');
