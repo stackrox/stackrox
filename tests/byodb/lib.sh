@@ -158,16 +158,6 @@ preamble() {
 
     require_executable "$TEST_ROOT/bin/${TEST_HOST_PLATFORM}/roxctl"
 
-    info "Will clone or update a clean copy of the rox repo for test at $REPO_FOR_TIME_TRAVEL"
-    if [[ -d "$REPO_FOR_TIME_TRAVEL" ]]; then
-        if is_CI; then
-          info "Repo for time travel already exists! Will use it."
-        fi
-        (cd "$REPO_FOR_TIME_TRAVEL" && git checkout master && git reset --hard && git pull)
-    else
-        (cd "$(dirname "$REPO_FOR_TIME_TRAVEL")" && git clone https://github.com/stackrox/stackrox.git "$(basename "$REPO_FOR_TIME_TRAVEL")")
-    fi
-
     if is_CI; then
         if ! command -v yq >/dev/null 2>&1; then
             sudo wget https://github.com/mikefarah/yq/releases/download/v4.4.1/yq_linux_amd64 -O /usr/bin/yq
