@@ -50,17 +50,17 @@ var (
 
 	log = logging.LoggerForModule()
 
-	// sensorActiveScanMetricsLabel is used when collecting metrics about the semaphore for active image scans
+	// sensorCentralScanMetricsLabel is used when collecting metrics about the semaphore for image scans
 	// that are triggered by sending a request to scanner over central.
-	sensorActiveScanMetricsLabel = prometheus.Labels{
+	sensorCentralScanMetricsLabel = prometheus.Labels{
 		"subsystem": "sensor",
-		"entity":    "sensor-active-image-scan",
+		"entity":    "image-scan-over-central",
 	}
 	// sensorAdHocScanMetricsLabel is used when collecting metrics about the semaphore for delegated image scans
 	// that are triggered by sending a request to the scanner instance running in the secured cluster.
 	sensorAdHocScanMetricsLabel = prometheus.Labels{
 		"subsystem": "sensor",
-		"entity":    "sensor-delegated-image-scan",
+		"entity":    "delegated-image-scan",
 	}
 )
 
@@ -114,7 +114,7 @@ func NewLocalScan(registryStore registryStore, mirrorStore registrymirror.Store)
 		},
 	})
 	activeScanSemaLimit := max(imageScanLowerBound, env.MaxParallelImageScanInternal.IntegerSetting()-env.MaxParallelAdHocScan.IntegerSetting())
-	images.ScanSemaphoreLimit.With(sensorActiveScanMetricsLabel).Set(float64(activeScanSemaLimit))
+	images.ScanSemaphoreLimit.With(sensorCentralScanMetricsLabel).Set(float64(activeScanSemaLimit))
 	adHocSemaLimit := env.MaxParallelAdHocScan.IntegerSetting()
 	images.ScanSemaphoreLimit.With(sensorAdHocScanMetricsLabel).Set(float64(adHocSemaLimit))
 
@@ -157,7 +157,7 @@ func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClie
 		return nil, errors.Join(ErrNoLocalScanner, ErrEnrichNotStarted)
 	}
 
-	metricLabels := sensorActiveScanMetricsLabel
+	metricLabels := sensorCentralScanMetricsLabel
 	// Throttle the # of active scans.
 	scanLimitSemaphore := s.scanSemaphore
 	// Ad hoc requests have a request ID.
