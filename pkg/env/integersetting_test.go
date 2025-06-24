@@ -11,7 +11,6 @@ import (
 )
 
 func TestIntegerSetting(t *testing.T) {
-	a := assert.New(t)
 	maxInt64PlusOne := big.NewInt(math.MaxInt64)
 	maxInt64PlusOne.Add(maxInt64PlusOne, big.NewInt(1))
 
@@ -128,9 +127,9 @@ func TestIntegerSetting(t *testing.T) {
 				return
 			}
 			s = registerFunc(name, tt.defaultValue, tt.minOpt, tt.maxOpt)
-			a.NoError(os.Setenv(name, tt.value))
+			assert.NoError(t, os.Setenv(name, tt.value))
 
-			a.Equal(tt.wantValue, s.IntegerSetting())
+			assert.Equal(t, tt.wantValue, s.IntegerSetting())
 		})
 	}
 }
