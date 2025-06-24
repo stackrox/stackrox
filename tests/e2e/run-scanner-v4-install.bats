@@ -338,9 +338,9 @@ apply_crd_ownership_for_upgrade() {
 
 describe_pods_in_namespace() {
     local namespace="$1"
-    info "==============================="
-    info "Pods in namespace ${namespace}:"
-    info "==============================="
+    echo "==============================="
+    echo "Pods in namespace ${namespace}:"
+    echo "==============================="
     "${ORCH_CMD}" </dev/null -n "${namespace}" get pods || true
     echo
     "${ORCH_CMD}" </dev/null -n "${namespace}" get pods -o name | while read -r pod_name; do
@@ -352,12 +352,13 @@ describe_pods_in_namespace() {
       echo
     done
 }
+export -f describe_pods_in_namespace
 
 describe_deployments_in_namespace() {
     local namespace="$1"
-    info "====================================="
-    info "Deployments in namespace ${namespace}:"
-    info "====================================="
+    echo "====================================="
+    echo "Deployments in namespace ${namespace}:"
+    echo "====================================="
     "${ORCH_CMD}" </dev/null -n "${namespace}" get deployments || true
     echo
     "${ORCH_CMD}" </dev/null -n "${namespace}" get deployments -o name | while read -r name; do
@@ -365,6 +366,7 @@ describe_deployments_in_namespace() {
       "${ORCH_CMD}" </dev/null -n "${namespace}" describe "${name}" || true
     done
 }
+export -f describe_deployments_in_namespace
 
 teardown() {
     _begin "post-test-tear-down"
@@ -399,7 +401,7 @@ teardown() {
     fi
 
     # Execute this on a best-effort basis, as it sometimes encounters long delays for whatever reason.
-    timeout "$COLLECT_ANALYSIS_MAX_DURATION" bash -c "collect_analysis_data '$central_namespace' '$sensor_namespace'" || {
+    timeout "$COLLECT_ANALYSIS_MAX_DURATION" bash -c "set -euo pipefail; collect_analysis_data '$central_namespace' '$sensor_namespace'" || {
         echo "ERROR: Collecting analysis data during teardown did not finish in time."
         echo "NOTE: This failure will be ignored to not cause a test failure."
         true # Explicit.
