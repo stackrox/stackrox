@@ -91,7 +91,7 @@ func TestIntegerSetting(t *testing.T) {
 			wantPanic:    false,
 			wantValue:    5,
 		},
-		"using border value for int64 should not yield default value": {
+		"using border value for int should not yield default value": {
 			value:        strconv.Itoa(math.MaxInt),
 			defaultValue: 5,
 			wantPanic:    false,
