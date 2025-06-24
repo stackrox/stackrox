@@ -15,6 +15,11 @@ func TestCopyContextIdentity(t *testing.T) {
 	mid.EXPECT().UID().AnyTimes().Return("username")
 
 	original := ContextWithIdentity(context.Background(), mid, t)
+
+	type testKey string
+	original = context.WithValue(original, testKey("key"), "value")
+	original, cancelOriginal := context.WithCancel(original)
+
 	copy := CopyContextIdentity(context.Background(), original)
 
 	id, err := IdentityFromContext(copy)
@@ -22,4 +27,10 @@ func TestCopyContextIdentity(t *testing.T) {
 	if assert.NotNil(t, id) {
 		assert.Equal(t, "username", id.UID())
 	}
+
+	cancelOriginal()
+	assert.NotNil(t, original.Value(testKey("key")))
+	assert.Nil(t, copy.Value(testKey("key")))
+	assert.NotNil(t, original.Err())
+	assert.Nil(t, copy.Err())
 }
