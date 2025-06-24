@@ -12,6 +12,7 @@ package mocks
 import (
 	context "context"
 	reflect "reflect"
+	time "time"
 
 	backend "github.com/stackrox/rox/central/clusterinit/backend"
 	storage "github.com/stackrox/rox/generated/storage"
@@ -118,18 +119,18 @@ func (mr *MockBackendMockRecorder) Issue(ctx, name any) *gomock.Call {
 }
 
 // IssueCRS mocks base method.
-func (m *MockBackend) IssueCRS(ctx context.Context, name string) (*backend.CRSWithMeta, error) {
+func (m *MockBackend) IssueCRS(ctx context.Context, name string, validUntil time.Time) (*backend.CRSWithMeta, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IssueCRS", ctx, name)
+	ret := m.ctrl.Call(m, "IssueCRS", ctx, name, validUntil)
 	ret0, _ := ret[0].(*backend.CRSWithMeta)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // IssueCRS indicates an expected call of IssueCRS.
-func (mr *MockBackendMockRecorder) IssueCRS(ctx, name any) *gomock.Call {
+func (mr *MockBackendMockRecorder) IssueCRS(ctx, name, validUntil any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IssueCRS", reflect.TypeOf((*MockBackend)(nil).IssueCRS), ctx, name)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IssueCRS", reflect.TypeOf((*MockBackend)(nil).IssueCRS), ctx, name, validUntil)
 }
 
 // Revoke mocks base method.
