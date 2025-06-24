@@ -252,6 +252,8 @@ splunk:
     }
 
     def cleanup() {
+        outputAdditionalDebugInfo()
+
         orchestrator.deleteConfigMap(CONFIGMAP_NAME, DEFAULT_NAMESPACE)
 
         // Ensure we do not have stale integration health info and only the Config Map one exists.
@@ -491,9 +493,6 @@ splunk:
                         .newBuilder().build())
                 .notifiersList.find { it.getName() == VALID_NOTIFIER.getName() }
         assert notifierAfterDeletion == null
-
-        cleanup:
-        outputAdditionalDebugInfo()
     }
 
     @Tag("BAT")
@@ -570,9 +569,6 @@ splunk:
             assert configMapHealth.getErrorMessage() == ""
             assert configMapHealth.getStatus() == Status.HEALTHY
         }
-
-        cleanup:
-        outputAdditionalDebugInfo()
     }
 
     @Tag("BAT")
@@ -791,9 +787,6 @@ splunk:
             assert configMapHealth.getErrorMessage() == ""
             assert configMapHealth.getStatus() == Status.HEALTHY
         }
-
-        cleanup:
-        outputAdditionalDebugInfo()
     }
 
     // Helpers
