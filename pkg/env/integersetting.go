@@ -62,30 +62,29 @@ func RegisterIntegerSetting(envVar string, defaultValue int) *IntegerSetting {
 
 // WithMinimum specifies the minimal allowed value that passes the validation.
 func (s *IntegerSetting) WithMinimum(min int) *IntegerSetting {
-	if s.defaultValue < min {
-		panic(errox.InvariantViolation.Newf("programmer error: default %d < minimum %d for %s",
-			s.defaultValue, min, s.envVar,
-		))
-	}
 	s.minimumValue = min
-	if s.minimumValue > s.maximumValue {
-		panic(errox.InvariantViolation.Newf("programmer error: incorrect validation config for %s: "+
-			"minimum value %d must be smaller or equal to maximum value %d",
-			s.EnvVar(), s.minimumValue, s.maximumValue))
-	}
-	return s
+	return s.mustValidate()
 }
 
 // WithMaximum specifies the maximal allowed value that passes the validation.
 func (s *IntegerSetting) WithMaximum(max int) *IntegerSetting {
-	if s.defaultValue > max {
-		panic(errox.InvariantViolation.Newf("programmer error: default %d > maximum %d for %s",
-			s.defaultValue, max, s.envVar,
+	s.maximumValue = max
+	return s.mustValidate()
+}
+
+func (s *IntegerSetting) mustValidate() *IntegerSetting {
+	if s.defaultValue < s.minimumValue {
+		panic(errox.InvariantViolation.Newf("programmer error: default %d < minimum %d for %s",
+			s.defaultValue, s.minimumValue, s.envVar,
 		))
 	}
-	s.maximumValue = max
+	if s.defaultValue > s.maximumValue {
+		panic(errox.InvariantViolation.Newf("programmer error: default %d > maximum %d for %s",
+			s.defaultValue, s.maximumValue, s.envVar,
+		))
+	}
 	if s.minimumValue > s.maximumValue {
-		panic(errox.InvariantViolation.Newf("programmer error: incorrect validation config for %s: "+
+		panic(errox.InvariantViolation.Newf("programmer error: incorrect integer bounds for %s: "+
 			"minimum value %d must be smaller or equal to maximum value %d",
 			s.EnvVar(), s.minimumValue, s.maximumValue))
 	}
