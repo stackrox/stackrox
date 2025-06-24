@@ -41,12 +41,12 @@ func (r *progressWatchReader) Read(p []byte) (int, error) {
 		r.progressBar.IncrBy(len(p))
 	}
 
-	return count, err
+	return count, errors.Wrap(err, "reading data")
 }
 
 func (r *progressWatchReader) Close() error {
 	if rc, ok := r.reader.(io.ReadCloser); ok {
-		return rc.Close()
+		return errors.Wrap(rc.Close(), "closing reader")
 	}
 	r.progressBar.SetTotal(r.progressBar.Current(), true)
 	atomic.StoreInt64((*int64)(&r.lastActivity), int64(timestamp.InfiniteFuture))

@@ -9,6 +9,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/ioutils"
@@ -60,7 +61,7 @@ func (cmd *centralCertCommand) certs() error {
 	// Parse out the endpoint and server name for connecting to.
 	endpoint, serverName, err := cmd.env.ConnectNames()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "getting connection names")
 	}
 
 	// Connect to the given server. We're not expecting the endpoint be
@@ -73,7 +74,7 @@ func (cmd *centralCertCommand) certs() error {
 	defer cancel()
 	conn, err := tlsutils.DialContextWithRetries(ctx, "tcp", endpoint, &config)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "connecting to server")
 	}
 	defer utils.IgnoreError(conn.Close)
 
@@ -94,7 +95,7 @@ func (cmd *centralCertCommand) certs() error {
 		// Open the given filename.
 		handle, err = os.Create(cmd.filename)
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "creating output file %q", cmd.filename)
 		}
 	}
 
@@ -103,9 +104,9 @@ func (cmd *centralCertCommand) certs() error {
 
 	// Write out the leaf cert in PEM format.
 	if err := writeCertPEM(handle, certs[0]); err != nil {
-		return err
+		return errors.Wrap(err, "writing certificate to PEM format")
 	}
-	return handle.Close()
+	return errors.Wrap(handle.Close(), "closing certificate file")
 }
 
 func skipTLSValidation() bool {
@@ -121,7 +122,7 @@ func writeCertPEM(writer io.Writer, cert *x509.Certificate) error {
 		Bytes: cert.Raw,
 	}
 	if err := pem.Encode(writer, pemkey); err != nil {
-		return err
+		return errors.Wrap(err, "encoding certificate to PEM")
 	}
 	return nil
 }
