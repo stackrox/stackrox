@@ -388,10 +388,10 @@ func benchmarkRemoveOrphanedFlowsWhileAddingFlows(flowStore store.FlowStore, eSt
 		ts := timestamp.Now() - 10000000
 
 		var mutex sync.RWMutex
-	        var wgUpsert sync.WaitGroup
-	        wgUpsert.Add(1)
+		var wgUpsert sync.WaitGroup
+		wgUpsert.Add(1)
 
-	        running := true
+		running := true
 		go func() {
 			defer wgUpsert.Done()
 			for startingIPIndex := uint32(0); startingIPIndex < numEntities; startingIPIndex += entitiesBatchSize {
@@ -402,11 +402,11 @@ func benchmarkRemoveOrphanedFlowsWhileAddingFlows(flowStore store.FlowStore, eSt
 		// Add flows and entities that will not be pruned
 		deploymentId = addToUUID(deploymentId, int64(numDeployments))
 		tsRecent := timestamp.Now() + 10000000
-	        var wgUpsertRecent sync.WaitGroup
-	        wgUpsertRecent.Add(1)
+		var wgUpsertRecent sync.WaitGroup
+		wgUpsertRecent.Add(1)
 		go func() {
 			defer wgUpsertRecent.Done()
-			for startingIPIndex := uint32(numEntities); startingIPIndex < 2 * numEntities; startingIPIndex += entitiesBatchSize {
+			for startingIPIndex := uint32(numEntities); startingIPIndex < 2*numEntities; startingIPIndex += entitiesBatchSize {
 				setupExternalFlowsWithEntities(b, flowStore, eStore, deploymentId, numDeployments, entitiesBatchSize, tsRecent, startingIPIndex)
 			}
 		}()
