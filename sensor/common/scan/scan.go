@@ -50,9 +50,15 @@ var (
 
 	log = logging.LoggerForModule()
 
-	sensorScanMetricsLabel = prometheus.Labels{
+	// sensorActiveScanMetricsLabel is used when collecting metrics about the semaphore for active image scans
+	sensorActiveScanMetricsLabel = prometheus.Labels{
 		"subsystem": "sensor",
-		"entity":    "sensor-local-image-scan",
+		"entity":    "sensor-active-image-scan",
+	}
+	// sensorActiveScanMetricsLabel is used when collecting metrics about the semaphore for delegated image scans
+	sensorAdHocScanMetricsLabel = prometheus.Labels{
+		"subsystem": "sensor",
+		"entity":    "sensor-delegated-image-scan",
 	}
 )
 
@@ -105,12 +111,17 @@ func NewLocalScan(registryStore registryStore, mirrorStore registrymirror.Store)
 			docker.CreatorWithoutRepoList,
 		},
 	})
+	activeScanSemaLimit := max(imageScanLowerBound, env.MaxParallelImageScanInternal.IntegerSetting()-env.MaxParallelAdHocScan.IntegerSetting())
+	images.ScanSemaphoreLimit.With(sensorActiveScanMetricsLabel).Set(float64(activeScanSemaLimit))
+	adHocSemaLimit := env.MaxParallelAdHocScan.IntegerSetting()
+	images.ScanSemaphoreLimit.With(sensorAdHocScanMetricsLabel).Set(float64(adHocSemaLimit))
+
 	ls := &LocalScan{
 		scanImg:                   scanImage,
 		fetchSignaturesWithRetry:  signatures.FetchImageSignaturesWithRetries,
 		scannerClientSingleton:    scannerclient.GRPCClientSingleton,
-		scanSemaphore:             semaphore.NewWeighted(int64(max(imageScanLowerBound, env.MaxParallelImageScanInternal.IntegerSetting()-env.MaxParallelAdHocScan.IntegerSetting()))),
-		adHocScanSemaphore:        semaphore.NewWeighted(int64(env.MaxParallelAdHocScan.IntegerSetting())),
+		scanSemaphore:             semaphore.NewWeighted(int64(activeScanSemaLimit)),
+		adHocScanSemaphore:        semaphore.NewWeighted(int64(adHocSemaLimit)),
 		maxSemaphoreWaitTime:      defaultMaxSemaphoreWaitTime,
 		regFactory:                regFactory,
 		mirrorStore:               mirrorStore,
@@ -144,24 +155,26 @@ func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClie
 		return nil, errors.Join(ErrNoLocalScanner, ErrEnrichNotStarted)
 	}
 
+	metricLabels := sensorActiveScanMetricsLabel
 	// Throttle the # of active scans.
 	scanLimitSemaphore := s.scanSemaphore
 	// Ad hoc requests have a request ID.
 	if req.ID != "" {
+		metricLabels = sensorAdHocScanMetricsLabel
 		scanLimitSemaphore = s.adHocScanSemaphore
 	}
 
 	semaphoreCtx, cancel := context.WithTimeout(ctx, s.maxSemaphoreWaitTime)
 	defer cancel()
-	images.ScanSemaphoreQueueSize.With(sensorScanMetricsLabel).Inc()
+	images.ScanSemaphoreQueueSize.With(metricLabels).Inc()
 	if err := scanLimitSemaphore.Acquire(semaphoreCtx, 1); err != nil {
 		return nil, errors.Join(err, ErrTooManyParallelScans, ErrEnrichNotStarted)
 	}
-	images.ScanSemaphoreQueueSize.With(sensorScanMetricsLabel).Dec()
-	images.ScanSemaphoreHoldingSize.With(sensorScanMetricsLabel).Inc()
+	images.ScanSemaphoreQueueSize.With(metricLabels).Dec()
+	images.ScanSemaphoreHoldingSize.With(metricLabels).Inc()
 	defer func() {
 		scanLimitSemaphore.Release(1)
-		images.ScanSemaphoreHoldingSize.With(sensorScanMetricsLabel).Dec()
+		images.ScanSemaphoreHoldingSize.With(metricLabels).Dec()
 	}()
 
 	srcImage := req.Image
