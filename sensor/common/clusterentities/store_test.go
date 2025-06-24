@@ -171,14 +171,8 @@ func TestEntityData_GetDetails(t *testing.T) {
 				return net.IPAddressLess(gotPodIPs[i], gotPodIPs[j])
 			})
 
-			assert.Len(t, gotContainerIDs, len(tt.wantContainerIDs))
-			for _, id := range tt.wantContainerIDs {
-				assert.Contains(t, gotContainerIDs, id)
-			}
-			assert.Len(t, gotPodIPs, len(tt.wantPodIPs))
-			for _, ip := range tt.wantPodIPs {
-				assert.Contains(t, gotPodIPs, ip)
-			}
+			assert.ElementsMatch(t, tt.wantContainerIDs, gotContainerIDs)
+			assert.ElementsMatch(t, tt.wantPodIPs, gotPodIPs)
 		})
 	}
 }
