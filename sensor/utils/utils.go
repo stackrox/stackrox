@@ -2,13 +2,23 @@ package utils
 
 import (
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/sensor/common/annotations"
 	"k8s.io/client-go/kubernetes"
+)
+
+const (
+	KubernetesLabelManagedBy  = "app.kubernetes.io/managed-by"
+	KubernetesLabelCreatedBy  = "app.kubernetes.io/created-by"
+	KubernetesLabelName       = "app.kubernetes.io/name"
+	KubernetesOwnerAnnotation = "owner"
 )
 
 // GetSensorKubernetesLabels returns the default labels for resources created by the sensor.
 func GetSensorKubernetesLabels() map[string]string {
-	return annotations.SensorK8sLabels
+	return map[string]string{
+		KubernetesLabelManagedBy: "sensor",
+		KubernetesLabelCreatedBy: "sensor",
+		KubernetesLabelName:      "stackrox",
+	}
 }
 
 func GetTLSSecretLabels() map[string]string {
@@ -19,7 +29,9 @@ func GetTLSSecretLabels() map[string]string {
 
 // GetSensorKubernetesAnnotations returns the default annotations for resources created by the sensor.
 func GetSensorKubernetesAnnotations() map[string]string {
-	return annotations.SensorK8sAnnotations
+	return map[string]string{
+		KubernetesOwnerAnnotation: "stackrox",
+	}
 }
 
 // HasAPI checks whether the kubernetes server supports the groupVersion API for the specified kind
