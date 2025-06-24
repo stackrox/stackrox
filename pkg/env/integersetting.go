@@ -5,6 +5,8 @@ import (
 	"math"
 	"os"
 	"strconv"
+
+	"github.com/stackrox/rox/pkg/errox"
 )
 
 // IntegerSetting represents an environment variable which should be parsed into an integer
@@ -61,14 +63,13 @@ func RegisterIntegerSetting(envVar string, defaultValue int) *IntegerSetting {
 // WithMinimum specifies the minimal allowed value that passes the validation.
 func (s *IntegerSetting) WithMinimum(min int) *IntegerSetting {
 	if s.defaultValue < min {
-		panic(fmt.Errorf(
-			"programmer error: default %d < minimum %d for %s",
+		panic(errox.InvariantViolation.Newf("programmer error: default %d < minimum %d for %s",
 			s.defaultValue, min, s.envVar,
 		))
 	}
 	s.minimumValue = min
 	if s.minimumValue > s.maximumValue {
-		panic(fmt.Errorf("programmer error: incorrect validation config for %s: "+
+		panic(errox.InvariantViolation.Newf("programmer error: incorrect validation config for %s: "+
 			"minimum value %d must be smaller or equal to maximum value %d",
 			s.EnvVar(), s.minimumValue, s.maximumValue))
 	}
@@ -78,14 +79,13 @@ func (s *IntegerSetting) WithMinimum(min int) *IntegerSetting {
 // WithMaximum specifies the maximal allowed value that passes the validation.
 func (s *IntegerSetting) WithMaximum(max int) *IntegerSetting {
 	if s.defaultValue > max {
-		panic(fmt.Errorf(
-			"programmer error: default %d > maximum %d for %s",
+		panic(errox.InvariantViolation.Newf("programmer error: default %d > maximum %d for %s",
 			s.defaultValue, max, s.envVar,
 		))
 	}
 	s.maximumValue = max
 	if s.minimumValue > s.maximumValue {
-		panic(fmt.Errorf("programmer error: incorrect validation config for %s: "+
+		panic(errox.InvariantViolation.Newf("programmer error: incorrect validation config for %s: "+
 			"minimum value %d must be smaller or equal to maximum value %d",
 			s.EnvVar(), s.minimumValue, s.maximumValue))
 	}
