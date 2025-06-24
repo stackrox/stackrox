@@ -404,7 +404,7 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 					log.Debugw("Not sending updated image to cluster due to prior errors",
 						logging.ImageID(image.GetId()),
 						logging.ImageName(image.GetName().GetFullName()),
-						logging.ClusterID(clusterID),
+						logging.String("dst_cluster", clusterID),
 					)
 					continue
 				}
@@ -424,7 +424,8 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 					log.Errorw("Error sending updated image to cluster, skipping cluster until next reprocessing cycle",
 						logging.ImageName(image.GetName().GetFullName()),
 						logging.ImageID(image.GetId()), logging.Err(err),
-						logging.ClusterID(clusterID),
+						// Not using logging.ClusterID() to avoid "duplicate resource ID field found" panic
+						logging.String("dst_cluster", clusterID),
 					)
 				}
 			}
