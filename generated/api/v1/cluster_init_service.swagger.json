@@ -318,6 +318,14 @@
       "properties": {
         "name": {
           "type": "string"
+        },
+        "validUntil": {
+          "type": "string",
+          "format": "date-time",
+          "description": "'2' is reserved for 'max_registrations' (separate PR)."
+        },
+        "validFor": {
+          "type": "string"
         }
       }
     },
