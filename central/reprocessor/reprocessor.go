@@ -478,8 +478,12 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 // injectMessage will inject a message onto connection, an error will be returned if the
 // injection fails for any reason, including timeout.
 func (l *loopImpl) injectMessage(ctx context.Context, conn connection.SensorConnection, msg *central.MsgToSensor) error {
-	ctx, cancel := context.WithTimeout(ctx, env.ReprocessInjectMessageTimeout.DurationSetting())
-	defer cancel()
+	dur := env.ReprocessInjectMessageTimeout.DurationSetting()
+	if dur > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, dur)
+		defer cancel()
+	}
 
 	err := conn.InjectMessage(ctx, msg)
 	if err != nil {

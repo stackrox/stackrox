@@ -17,5 +17,6 @@ var (
 	OrchestratorVulnScanInterval = registerDurationSetting("ROX_ORCHESTRATOR_VULN_SCAN_INTERVAL", 2*time.Hour)
 	// ReprocessInjectMessageTimeout specifies the duration to wait when sending a message to sensor during reprocessing. If this duration
 	// is exceeded subsequent messages targeting this particular sensor will be skipped until the next reprocessing cycle.
-	ReprocessInjectMessageTimeout = registerDurationSetting("ROX_REPROCESSING_INJECT_MESSAGE_TIMEOUT", 1*time.Minute)
+	// Setting the duration to zero will disable the timeout.
+	ReprocessInjectMessageTimeout = registerDurationSetting("ROX_REPROCESSING_INJECT_MESSAGE_TIMEOUT", 1*time.Minute, WithDurationZeroAllowed())
 )
