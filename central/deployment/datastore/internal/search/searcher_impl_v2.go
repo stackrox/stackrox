@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/central/deployment/datastore/internal/store/types"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
@@ -23,8 +22,6 @@ var (
 		Field:    search.DeploymentPriority.String(),
 		Reversed: false,
 	}
-
-	log = logging.LoggerForModule()
 )
 
 // NewV2 returns a new instance of Searcher for the given storage.
@@ -49,30 +46,13 @@ type searcherImplV2 struct {
 
 // SearchRawDeployments retrieves deployments from the storage
 func (ds *searcherImplV2) SearchRawDeployments(ctx context.Context, q *v1.Query) ([]*storage.Deployment, error) {
-	//deployments := make([]*storage.Deployment, 0, paginated.GetLimit(q.GetPagination().GetLimit(), whenUnlimited))
-	//err := ds.storage.GetByQueryFn(ctx, q, func(deployment *storage.Deployment) error {
-	//	deployments = append(deployments, deployment)
-	//	return nil
-	//})
-	//
-	//return deployments, err
-	log.Infof("SHREWS -- SearchRawDeployments -- %v", q.String())
-	return ds.searchDeployments(ctx, q)
-}
+	deployments := make([]*storage.Deployment, 0, paginated.GetLimit(q.GetPagination().GetLimit(), whenUnlimited))
+	err := ds.storage.GetByQueryFn(ctx, q, func(deployment *storage.Deployment) error {
+		deployments = append(deployments, deployment)
+		return nil
+	})
 
-func (ds *searcherImplV2) searchDeployments(ctx context.Context, q *v1.Query) ([]*storage.Deployment, error) {
-	results, err := ds.Search(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-
-	ids := search.ResultsToIDs(results)
-	deployments, _, err := ds.storage.GetMany(ctx, ids)
-	if err != nil {
-		return nil, err
-	}
-	log.Info("SHREWS -- out searchDeployments")
-	return deployments, nil
+	return deployments, err
 }
 
 // SearchListDeployments retrieves deployments from the storage

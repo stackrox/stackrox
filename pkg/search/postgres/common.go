@@ -280,7 +280,6 @@ func (q *query) isDistinctAppliedToSelects() bool {
 }
 
 func (q *query) AsSQL() string {
-	log.Infof("SHREWS -- %s", debug.Stack())
 	if q == nil {
 		return ""
 	}
