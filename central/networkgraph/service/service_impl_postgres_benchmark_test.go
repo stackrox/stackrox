@@ -37,9 +37,6 @@ var (
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.NetworkGraph, resources.Deployment)))
-
-	// all entity IPs of the form 1.2.x.y/32
-	baseIp = "1.2"
 )
 
 type networkGraphServiceBenchmarks struct {
