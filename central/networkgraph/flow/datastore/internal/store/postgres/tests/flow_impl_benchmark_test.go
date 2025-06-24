@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"math/big"
 	"net/netip"
+	"sync"
 	"testing"
 	"time"
 
@@ -149,12 +150,15 @@ func BenchmarkRemoveOrphanedFlows(b *testing.B) {
 	// 100 deployments and 1000 entities
 	b.Run("100000 flows and 1000 entities to be pruned", benchmarkRemoveOrphanedFlows(flowStore, eStore, fixtureconsts.Deployment1, 100, 1000))
 
-	// 1 deployments and 1000 entities
+	// 1 deployment and 1000 entities
 	b.Run("1000 flows and 1000 entities to be pruned", benchmarkRemoveOrphanedFlows(flowStore, eStore, fixtureconsts.Deployment1, 1, 1000))
-	// 1 deployments and 10000 entities
+	// 1 deployment and 10000 entities
 	b.Run("10000 flows and 10000 entities to be pruned", benchmarkRemoveOrphanedFlows(flowStore, eStore, fixtureconsts.Deployment1, 1, 10000))
-	// 1 deployments and 100000 entities
+	// 1 deployment and 100000 entities
 	b.Run("100000 flows and 100000 entities to be pruned", benchmarkRemoveOrphanedFlows(flowStore, eStore, fixtureconsts.Deployment1, 1, 100000))
+
+	// 1 deployment and 100000 entities. Simultaneously pruning and adding flows and entities
+	b.Run("100000 flows and 100000 entities to be pruned and added simultaneously", benchmarkRemoveOrphanedFlowsWhileAddingFlows(flowStore, eStore, fixtureconsts.Deployment1, 1, 100000))
 }
 
 func BenchmarkGetFlowsForDeployment(b *testing.B) {
@@ -211,54 +215,72 @@ func addToUUID(u string, addition int64) string {
 	return newUUID.String()
 }
 
-func upsertTooMany(b *testing.B, eStore entityStore.EntityDataStore, entities []*storage.NetworkEntity) {
-	batchSize := 3000
-	numEntities := len(entities)
-
-	for offset := 0; offset < numEntities; offset += batchSize {
-		end := offset + batchSize
-		if end > numEntities {
-			end = numEntities
-		}
-		_, err := eStore.CreateExtNetworkEntitiesForCluster(allAccessCtx, fixtureconsts.Cluster1, entities[offset:end]...)
-		require.NoError(b, err)
-	}
-}
+//func upsertTooMany(b *testing.B, eStore entityStore.EntityDataStore, entities []*storage.NetworkEntity) {
+//	batchSize := 3000
+//	numEntities := len(entities)
+//
+//	for offset := 0; offset < numEntities; offset += batchSize {
+//		end := offset + batchSize
+//		if end >= numEntities {
+//			end = numEntities - 1
+//		}
+//		log.Info("Upserting entities")
+//		_, err := eStore.CreateExtNetworkEntitiesForCluster(allAccessCtx, fixtureconsts.Cluster1, entities[offset:end]...)
+//		require.NoError(b, err)
+//	}
+//}
 
 func setupExternalFlowsWithEntities(b *testing.B, flowStore store.FlowStore, eStore entityStore.EntityDataStore, startingDeploymentId string, numDeployments int, numEntities uint32, ts timestamp.MicroTS, startingIPIndex uint32) {
-	totalFlows := numEntities * uint32(numDeployments)
-	flows := make([]*storage.NetworkFlow, 0, totalFlows)
-	entities := make([]*storage.NetworkEntity, numEntities)
+	batchSize := uint32(3000)
+	startIndex := uint32(0)
+	endIndex := startIndex + batchSize
 
-	for i := uint32(0); i < numEntities; i++ {
-		bs := [4]byte{}
-		// Must have + 1 because the 0.0.0.0 IP address is not allowed
-		binary.BigEndian.PutUint32(bs[:], startingIPIndex+i+1)
-		ip := netip.AddrFrom4(bs)
-		cidr := fmt.Sprintf("%s/32", ip.String())
+	for startIndex < numEntities {
+		batchFlows := batchSize * uint32(numDeployments)
+		flows := make([]*storage.NetworkFlow, batchFlows)
+		entities := make([]*storage.NetworkEntity, batchSize)
 
-		entities[i] = GetClusterScopedDiscoveredEntity(cidr, clusterID)
-	}
-
-	upsertTooMany(b, eStore, entities)
-
-	deploymentId := startingDeploymentId
-	var flow *storage.NetworkFlow
-	for i := 0; i < numDeployments; i++ {
-		for j := uint32(0); j < numEntities; j++ {
-			id := entities[j].GetInfo().GetId()
-			if j%2 == 0 {
-				flow = testutils.ExtFlowEgress(id, deploymentId, clusterID)
-			} else {
-				flow = testutils.ExtFlowIngress(deploymentId, id, clusterID)
-			}
-			flows = append(flows, flow)
+		if endIndex > numEntities {
+			endIndex = numEntities
 		}
-		deploymentId = addToUUID(deploymentId, 1)
-	}
+		for i := uint32(startIndex); i < endIndex; i++ {
+			bs := [4]byte{}
+			// Must have + 1 because the 0.0.0.0 IP address is not allowed
+			binary.BigEndian.PutUint32(bs[:], startingIPIndex+i+1)
+			ip := netip.AddrFrom4(bs)
+			cidr := fmt.Sprintf("%s/32", ip.String())
 
-	err := flowStore.UpsertFlows(ctx, flows, ts)
-	require.NoError(b, err)
+			entities[i - startIndex] = GetClusterScopedDiscoveredEntity(cidr, clusterID)
+		}
+
+		//upsertTooMany(b, eStore, entities)
+		log.Info("Upserting entities")
+		_, err := eStore.CreateExtNetworkEntitiesForCluster(allAccessCtx, fixtureconsts.Cluster1, entities...)
+
+		deploymentId := startingDeploymentId
+		count := 0
+		var flow *storage.NetworkFlow
+		for i := 0; i < numDeployments; i++ {
+			for j := uint32(0); j < batchSize; j++ {
+				id := entities[j].GetInfo().GetId()
+				if j%2 == 0 {
+					flow = testutils.ExtFlowEgress(id, deploymentId, clusterID)
+				} else {
+					flow = testutils.ExtFlowIngress(deploymentId, id, clusterID)
+				}
+				//flows = append(flows, flow)
+				flows[count] = flow
+				count += 1
+			}
+			deploymentId = addToUUID(deploymentId, 1)
+		}
+
+		err = flowStore.UpsertFlows(ctx, flows, ts)
+		require.NoError(b, err)
+
+		startIndex += batchSize
+		endIndex += batchSize
+	}
 }
 
 func setupExternalEgressFlows(b *testing.B, flowStore store.FlowStore, deploymentId string, numFlows uint32) {
@@ -362,6 +384,80 @@ func benchmarkRemoveOrphanedFlows(flowStore store.FlowStore, eStore entityStore.
 		require.NoError(b, err)
 		duration := time.Since(start)
 		log.Infof("Pruning %d flows and %d entities took %s", totalFlows, numEntities, duration)
+	}
+}
+
+func benchmarkRemoveOrphanedFlowsWhileAddingFlows(flowStore store.FlowStore, eStore entityStore.EntityDataStore, deploymentId string, numDeployments int, numEntities uint32) func(*testing.B) {
+	return func(b *testing.B) {
+		// Initialize networktree
+		entitiesByCluster := map[string][]*storage.NetworkEntityInfo{}
+		err := networktree.Singleton().Initialize(entitiesByCluster)
+		require.NoError(b, err)
+
+		// Prune all flows and entities from previous tests
+		orphanWindow := time.Now().UTC().Add(20000000 * time.Second)
+		err = flowStore.RemoveOrphanedFlows(allAccessCtx, &orphanWindow)
+		require.NoError(b, err)
+
+		// Add flows and entities that will be pruned
+		ts := timestamp.Now() - 10000000
+		startingIPIndex := uint32(0)
+
+		var mutex sync.RWMutex
+	        var wgUpsert sync.WaitGroup
+	        wgUpsert.Add(1)
+
+	        running := true
+		go func() {
+			defer wgUpsert.Done()
+			log.Info("Adding orphaned flows")
+			setupExternalFlowsWithEntities(b, flowStore, eStore, deploymentId, numDeployments, numEntities, ts, startingIPIndex)
+		}()
+
+		//// Add flows and entities that will not be pruned
+		//deploymentId = addToUUID(deploymentId, int64(numDeployments))
+		//tsRecent := timestamp.Now() + 10000000
+		//startingIPIndex = uint32(numEntities)
+	        //var wgUpsertRecent sync.WaitGroup
+	        //wgUpsertRecent.Add(1)
+		//go func() {
+		//	defer wgUpsertRecent.Done()
+		//	log.Info("Adding flows")
+		//	setupExternalFlowsWithEntities(b, flowStore, eStore, deploymentId, numDeployments, numEntities, tsRecent, startingIPIndex)
+		//}()
+
+		b.ResetTimer()
+
+		b.Setenv(features.ExternalIPs.EnvVar(), "true")
+		orphanWindow = time.Now().UTC()
+		var wgPrune sync.WaitGroup
+		wgPrune.Add(1)
+
+		go func() {
+			defer wgPrune.Done()
+			for {
+				mutex.Lock()
+				stop := !running
+				mutex.Unlock()
+
+				if stop {
+					break
+				}
+
+				log.Info("Pruning orphaned flows")
+				err = flowStore.RemoveOrphanedFlows(allAccessCtx, &orphanWindow)
+				require.NoError(b, err)
+			}
+		}()
+
+		wgUpsert.Wait()
+		//wgUpsertRecent.Wait()
+
+		mutex.Lock()
+		running = false
+		mutex.Unlock()
+
+		wgPrune.Wait()
 	}
 }
 
