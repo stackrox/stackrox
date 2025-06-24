@@ -59,7 +59,7 @@ func (ed *EntityData) String() string {
 
 // GetDetails returns the internal data about the entity
 func (ed *EntityData) GetDetails() (containerIDs []string, podIPs []net.IPAddress) {
-	containerIDs = slices.Sorted(maps.Keys(ed.containerIDs))
+	containerIDs = slices.Collect(maps.Keys(ed.containerIDs))
 	podIPs = slices.DeleteFunc(slices.Collect(maps.Keys(ed.ips)), func(e net.IPAddress) bool {
 		return !e.IsValid()
 	})
