@@ -51,11 +51,13 @@ var (
 	log = logging.LoggerForModule()
 
 	// sensorActiveScanMetricsLabel is used when collecting metrics about the semaphore for active image scans
+	// that are triggered by sending a request to scanner over central.
 	sensorActiveScanMetricsLabel = prometheus.Labels{
 		"subsystem": "sensor",
 		"entity":    "sensor-active-image-scan",
 	}
-	// sensorActiveScanMetricsLabel is used when collecting metrics about the semaphore for delegated image scans
+	// sensorAdHocScanMetricsLabel is used when collecting metrics about the semaphore for delegated image scans
+	// that are triggered by sending a request to the scanner instance running in the secured cluster.
 	sensorAdHocScanMetricsLabel = prometheus.Labels{
 		"subsystem": "sensor",
 		"entity":    "sensor-delegated-image-scan",
