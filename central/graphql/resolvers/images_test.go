@@ -296,9 +296,6 @@ func (s *ImageResolversTestSuite) TestDeployments() {
 						assert.Equal(t, image.Id(testCtx), img.Id(testCtx))
 					}
 				}
-				if tc.desc == "no filter" {
-					assert.True(t, false)
-				}
 				for _, d := range expectedDeployments {
 					expectedDeploymentIDs = append(expectedDeploymentIDs, graphql.ID(d.Id))
 				}
