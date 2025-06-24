@@ -29,6 +29,12 @@ func pastSensorDataToConfigMap(data ...*SensorMetadata) (*v1.ConfigMap, error) {
 			Annotations: map[string]string{
 				annotationInfoKey: annotationInfoText,
 			},
+			Labels: map[string]string{
+				"auto-upgrade.stackrox.io/component": "sensor", // used in 'sensor/openshift/delete-sensor.sh'
+				"app.kubernetes.io/managed-by":       "sensor",
+				"app.kubernetes.io/created-by":       "sensor",
+				"app.kubernetes.io/name":             "sensor",
+			},
 		},
 		Data: dataMap,
 	}, nil
