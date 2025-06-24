@@ -120,14 +120,12 @@ func TestIntegerSetting(t *testing.T) {
 // testRegisterSetting is a helper to the function-under-test with its options.
 // It was created to avoid code repetition, as it must be called in two places depending on whether we test for panics.
 func testRegisterSetting(_ *testing.T, name string, defaultValue int, min, max func() int) *IntegerSetting {
-	if min != nil && max != nil {
-		return RegisterIntegerSetting(name, defaultValue).WithMinimum(min()).WithMaximum(max())
-	}
+	s := RegisterIntegerSetting(name, defaultValue)
 	if min != nil {
-		return RegisterIntegerSetting(name, defaultValue).WithMinimum(min())
+		s = s.WithMinimum(min())
 	}
 	if max != nil {
-		return RegisterIntegerSetting(name, defaultValue).WithMaximum(max())
+		s = s.WithMaximum(max())
 	}
-	return RegisterIntegerSetting(name, defaultValue)
+	return s
 }
