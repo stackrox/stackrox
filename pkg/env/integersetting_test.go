@@ -11,9 +11,6 @@ import (
 )
 
 func TestIntegerSetting(t *testing.T) {
-	maxInt64PlusOne := big.NewInt(math.MaxInt64)
-	maxInt64PlusOne.Add(maxInt64PlusOne, big.NewInt(1))
-
 	cases := map[string]struct {
 		value        string
 		defaultValue int
@@ -88,12 +85,12 @@ func TestIntegerSetting(t *testing.T) {
 			wantValue:    1,
 		},
 		"crossing the max/min value of int should return default value": {
-			value:        maxInt64PlusOne.Text(10),
+			// We use bigInt here to get the max value (because int may be int32 or int64) and do plus-one arithmetic.
+			value:        new(big.Int).Add(big.NewInt(math.MaxInt), big.NewInt(1)).Text(10), // math.MaxInt + 1
 			defaultValue: 5,
 			wantPanic:    false,
 			wantValue:    5,
 		},
-		// This testcase may fail if the system running this test uses int32 as the type for int
 		"using border value for int64 should not yield default value": {
 			value:        strconv.Itoa(math.MaxInt),
 			defaultValue: 5,
