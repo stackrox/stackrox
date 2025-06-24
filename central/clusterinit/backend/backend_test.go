@@ -529,5 +529,7 @@ func (s *clusterInitBackendTestSuite) TestCheckAccess() {
 }
 
 func (s *clusterInitBackendTestSuite) TearDownTest() {
-	s.db.Close()
+	if s.db != nil {
+		s.db.Close()
+	}
 }
