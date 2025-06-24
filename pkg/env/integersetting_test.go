@@ -102,31 +102,32 @@ func TestIntegerSetting(t *testing.T) {
 	for tname, tt := range cases {
 		t.Run(tname, func(t *testing.T) {
 			name := newRandomName()
-			s := &IntegerSetting{}
-
-			registerFunc := func(name string, defaultValue int, min, max func() int) *IntegerSetting {
-				if tt.minOpt != nil && tt.maxOpt != nil {
-					return RegisterIntegerSetting(name, defaultValue).WithMinimum(min()).WithMaximum(max())
-				}
-				if tt.minOpt != nil {
-					return RegisterIntegerSetting(name, defaultValue).WithMinimum(min())
-				}
-				if tt.maxOpt != nil {
-					return RegisterIntegerSetting(name, defaultValue).WithMaximum(max())
-				}
-				return RegisterIntegerSetting(name, defaultValue)
-			}
 			defer unregisterSetting(name)
 			if tt.wantPanic {
 				assert.Panics(t, func() {
-					s = registerFunc(name, tt.defaultValue, tt.minOpt, tt.maxOpt)
+					_ = testRegisterSetting(t, name, tt.defaultValue, tt.minOpt, tt.maxOpt)
 				})
 				return
 			}
-			s = registerFunc(name, tt.defaultValue, tt.minOpt, tt.maxOpt)
+			s := testRegisterSetting(t, name, tt.defaultValue, tt.minOpt, tt.maxOpt)
 			assert.NoError(t, os.Setenv(name, tt.value))
 
 			assert.Equal(t, tt.wantValue, s.IntegerSetting())
 		})
 	}
+}
+
+// testRegisterSetting is a helper to the function-under-test with its options.
+// It was created to avoid code repetition, as it must be called in two places depending on whether we test for panics.
+func testRegisterSetting(_ *testing.T, name string, defaultValue int, min, max func() int) *IntegerSetting {
+	if min != nil && max != nil {
+		return RegisterIntegerSetting(name, defaultValue).WithMinimum(min()).WithMaximum(max())
+	}
+	if min != nil {
+		return RegisterIntegerSetting(name, defaultValue).WithMinimum(min())
+	}
+	if max != nil {
+		return RegisterIntegerSetting(name, defaultValue).WithMaximum(max())
+	}
+	return RegisterIntegerSetting(name, defaultValue)
 }

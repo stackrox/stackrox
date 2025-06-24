@@ -55,7 +55,6 @@ func RegisterIntegerSetting(envVar string, defaultValue int) *IntegerSetting {
 		minimumValue: math.MinInt,
 		maximumValue: math.MaxInt,
 	}
-
 	Settings[s.EnvVar()] = s
 	return s
 }
