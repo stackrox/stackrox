@@ -270,6 +270,13 @@ var (
 		Name:      "signature_verification_reprocessor_duration_seconds",
 		Help:      "Duration of the signature verification reprocessor loop in seconds",
 	})
+
+	msgToSensorSkipCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "msg_to_sensor_skip_count",
+		Help:      "Total messages not sent to Sensor due to errors or other reasons",
+	}, []string{"ClusterID", "type"})
 )
 
 func startTimeToMS(t time.Time) float64 {
@@ -466,6 +473,13 @@ func IncSensorEventsDeduper(deduped bool, msg *central.MsgFromSensor) {
 // SetReprocessorDuration registers how long a reprocessing step took.
 func SetReprocessorDuration(start time.Time) {
 	reprocessorDurationGauge.Set(time.Since(start).Seconds())
+}
+
+// IncrementMsgToSensorSkipCounter increments the count of messages not sent to Sensor due to
+// errors or other reasons.
+func IncrementMsgToSensorSkipCounter(clusterID string, msg *central.MsgToSensor) {
+	typ := event.GetEventTypeWithoutPrefix(msg.GetMsg())
+	msgToSensorSkipCounter.With(prometheus.Labels{"ClusterID": clusterID, "type": typ}).Inc()
 }
 
 // SetSignatureVerificationReprocessorDuration registers how long a signature verification reprocessing step took.

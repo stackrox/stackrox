@@ -400,25 +400,29 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 
 			// Send the updated image to relevant clusters.
 			for clusterID := range clusterIDs {
+				conn := l.connManager.GetConnection(clusterID)
+				if conn == nil {
+					continue
+				}
+
+				msg := &central.MsgToSensor{
+					Msg: &central.MsgToSensor_UpdatedImage{
+						UpdatedImage: image,
+					},
+				}
+
+				// If were prior errors, do not attempt to send a message to this cluster.
 				if skipClusterIDs.Contains(clusterID) {
 					log.Debugw("Not sending updated image to cluster due to prior errors",
 						logging.ImageID(image.GetId()),
 						logging.ImageName(image.GetName().GetFullName()),
 						logging.String("dst_cluster", clusterID),
 					)
+					metrics.IncrementMsgToSensorSkipCounter(clusterID, msg)
 					continue
 				}
 
-				conn := l.connManager.GetConnection(clusterID)
-				if conn == nil {
-					continue
-				}
-
-				err := l.injectMessage(concurrency.AsContext(&l.stopSig), conn, &central.MsgToSensor{
-					Msg: &central.MsgToSensor_UpdatedImage{
-						UpdatedImage: image,
-					},
-				})
+				err := l.injectMessage(concurrency.AsContext(&l.stopSig), conn, msg)
 				if err != nil {
 					skipClusterIDs.Store(clusterID, struct{}{})
 					log.Errorw("Error sending updated image to cluster, skipping cluster until next reprocessing cycle",
@@ -427,6 +431,7 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 						// Not using logging.ClusterID() to avoid "duplicate resource ID field found" panic
 						logging.String("dst_cluster", clusterID),
 					)
+					metrics.IncrementMsgToSensorSkipCounter(clusterID, msg)
 				}
 			}
 		}(result.ID, clusterIDSet)
@@ -454,6 +459,7 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 				log.Debugw("Not sending reprocess deployments to cluster due to prior errors",
 					logging.ClusterID(clusterID),
 				)
+				metrics.IncrementMsgToSensorSkipCounter(clusterID, msg)
 				continue
 			}
 
@@ -463,6 +469,7 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 					logging.ClusterID(clusterID),
 					logging.Err(err),
 				)
+				metrics.IncrementMsgToSensorSkipCounter(clusterID, msg)
 			}
 		}
 	}
