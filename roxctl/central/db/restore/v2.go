@@ -200,11 +200,11 @@ func dataReadersForManifest(file *os.File, manifest *v1.DBExportManifest) ([]fun
 func assembleManifestFromZIP(file *os.File, supportedCompressionTypes map[v1.DBExportManifest_EncodingType]struct{}) (*v1.DBExportManifest, error) {
 	stat, err := file.Stat()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "getting file stats for %s", file.Name())
 	}
 	zipReader, err := zip.NewReader(file, stat.Size())
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "opening file %s as ZIP", file.Name())
 	}
 
 	mf := &v1.DBExportManifest{}
