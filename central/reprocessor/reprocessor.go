@@ -415,12 +415,12 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 
 				// If were prior errors, do not attempt to send a message to this cluster.
 				if skipClusterIDs.Contains(clusterID) {
+					metrics.IncrementMsgToSensorSkipCounter(clusterID, msg)
 					log.Debugw("Not sending updated image to cluster due to prior errors",
 						logging.ImageID(image.GetId()),
 						logging.ImageName(image.GetName().GetFullName()),
 						logging.String("dst_cluster", clusterID),
 					)
-					metrics.IncrementMsgToSensorSkipCounter(clusterID, msg)
 					continue
 				}
 
@@ -433,7 +433,6 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 						// Not using logging.ClusterID() to avoid "duplicate resource ID field found" panic
 						logging.String("dst_cluster", clusterID),
 					)
-					metrics.IncrementMsgToSensorSkipCounter(clusterID, msg)
 				}
 			}
 		}(result.ID, clusterIDSet)
@@ -458,10 +457,10 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 		for _, conn := range l.connManager.GetActiveConnections() {
 			clusterID := conn.ClusterID()
 			if skipClusterIDs.Contains(clusterID) {
+				metrics.IncrementMsgToSensorSkipCounter(clusterID, msg)
 				log.Debugw("Not sending reprocess deployments to cluster due to prior errors",
 					logging.ClusterID(clusterID),
 				)
-				metrics.IncrementMsgToSensorSkipCounter(clusterID, msg)
 				continue
 			}
 
@@ -471,7 +470,6 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 					logging.ClusterID(clusterID),
 					logging.Err(err),
 				)
-				metrics.IncrementMsgToSensorSkipCounter(clusterID, msg)
 			}
 		}
 	}

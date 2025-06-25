@@ -478,6 +478,9 @@ func SetReprocessorDuration(start time.Time) {
 // IncrementMsgToSensorSkipCounter increments the count of messages not sent to Sensor due to
 // errors or other reasons.
 func IncrementMsgToSensorSkipCounter(clusterID string, msg *central.MsgToSensor) {
+	if msg.GetMsg() == nil {
+		return
+	}
 	typ := event.GetEventTypeWithoutPrefix(msg.GetMsg())
 	msgToSensorSkipCounter.With(prometheus.Labels{"ClusterID": clusterID, "type": typ}).Inc()
 }
