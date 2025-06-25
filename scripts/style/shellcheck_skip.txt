@@ -49,7 +49,6 @@ scripts/mergeswag.sh
 scripts/offline-bundle/image-bundle/import.sh
 scripts/offline-bundle/image-collector-bundle/import.sh
 scripts/port-forward-ui.sh
-scripts/reference/build-quay-operator-bundles.sh
 scripts/sync-release-branch.sh
 tests/performance/scale/utilities/create-infra.sh
 tests/performance/scale/utilities/examples/env_3.73.x-130-g1ead7d6745.sh
