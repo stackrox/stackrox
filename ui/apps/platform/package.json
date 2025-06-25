@@ -182,12 +182,12 @@
         "@esbuild/linux-ppc64": "^0.25.5",
         "@esbuild/linux-s390x": "^0.25.5",
         "@esbuild/linux-x64": "^0.25.5",
-        "@rollup/rollup-darwin-arm64": "^4.41.1",
-        "@rollup/rollup-darwin-x64": "^4.41.1",
-        "@rollup/rollup-linux-arm64-gnu": "^4.41.1",
-        "@rollup/rollup-linux-powerpc64le-gnu": "^4.41.1",
-        "@rollup/rollup-linux-s390x-gnu": "^4.41.1",
-        "@rollup/rollup-linux-x64-gnu": "^4.41.1"
+        "@rollup/rollup-darwin-arm64": "^4.44.0",
+        "@rollup/rollup-darwin-x64": "^4.44.0",
+        "@rollup/rollup-linux-arm64-gnu": "^4.44.0",
+        "@rollup/rollup-linux-powerpc64le-gnu": "^4.44.0",
+        "@rollup/rollup-linux-s390x-gnu": "^4.44.0",
+        "@rollup/rollup-linux-x64-gnu": "^4.44.0"
     },
     "overrides": {
         "@jest/types": "^29.6.3",
