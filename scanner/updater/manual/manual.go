@@ -19,7 +19,7 @@ import (
 	"github.com/quay/zlog"
 	"github.com/stackrox/rox/pkg/scannerv4/updater/manual"
 	"github.com/stackrox/rox/pkg/utils"
-	yaml "gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v3"
 )
 
 // Vulnerability represents a manually entered vulnerability found int vulns.yaml.
