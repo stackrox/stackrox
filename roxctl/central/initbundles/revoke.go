@@ -118,7 +118,7 @@ func revokeInitBundles(cliEnvironment environment.Environment, idsOrNames []stri
 
 	conn, err := cliEnvironment.GRPCConnection(common.WithRetryTimeout(retryTimeout))
 	if err != nil {
-		return errors.Wrap(err, "establishing gRPC connection")
+		return errors.Wrap(err, "establishing gRPC connection to revoke init bundles")
 	}
 	defer utils.IgnoreError(conn.Close)
 	svc := v1.NewClusterInitServiceClient(conn)

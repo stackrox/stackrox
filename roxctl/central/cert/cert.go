@@ -61,7 +61,7 @@ func (cmd *centralCertCommand) certs() error {
 	// Parse out the endpoint and server name for connecting to.
 	endpoint, serverName, err := cmd.env.ConnectNames()
 	if err != nil {
-		return errors.Wrap(err, "getting connection names")
+		return errors.Wrap(err, "getting endpoint and server names")
 	}
 
 	// Connect to the given server. We're not expecting the endpoint be
@@ -104,7 +104,7 @@ func (cmd *centralCertCommand) certs() error {
 
 	// Write out the leaf cert in PEM format.
 	if err := writeCertPEM(handle, certs[0]); err != nil {
-		return errors.Wrap(err, "writing certificate to PEM format")
+		return errors.Wrap(err, "writing certificate")
 	}
 	return errors.Wrap(handle.Close(), "closing certificate file")
 }
@@ -122,7 +122,7 @@ func writeCertPEM(writer io.Writer, cert *x509.Certificate) error {
 		Bytes: cert.Raw,
 	}
 	if err := pem.Encode(writer, pemkey); err != nil {
-		return errors.Wrap(err, "encoding certificate to PEM")
+		return errors.Wrap(err, "encoding certificate")
 	}
 	return nil
 }

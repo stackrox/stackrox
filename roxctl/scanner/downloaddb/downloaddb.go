@@ -56,7 +56,7 @@ func (cmd *scannerDownloadDBCommand) downloadDB() error {
 	// Get the list of file names to attempt to download.
 	bundleFileNames, err := cmd.buildBundleFileNames()
 	if err != nil {
-		return pkgErrors.Wrap(err, "building bundle file names")
+		return pkgErrors.Wrap(err, "building scanner DB bundle file names")
 	}
 
 	var errs []error
@@ -141,20 +141,20 @@ func (cmd *scannerDownloadDBCommand) versionFromCentral() (string, error) {
 	client, err := cmd.env.HTTPClient(cmd.timeout)
 	if err != nil {
 		cmd.env.Logger().WarnfLn("issue building central http client: %v", err)
-		return "", pkgErrors.Wrap(err, "building HTTP client")
+		return "", pkgErrors.Wrap(err, "building HTTP client to retrieve scanner DB")
 	}
 
 	resp, err := client.DoReqAndVerifyStatusCode("v1/metadata", http.MethodGet, http.StatusOK, nil)
 	if err != nil {
 		cmd.env.Logger().WarnfLn("error contacting central: %v", err)
-		return "", pkgErrors.Wrap(err, "contacting central")
+		return "", pkgErrors.Wrap(err, "contacting central to retrieve scanner DB")
 	}
 	defer utils.IgnoreError(resp.Body.Close)
 
 	var metadata v1.Metadata
 	if err := jsonutil.JSONReaderToProto(resp.Body, &metadata); err != nil {
 		cmd.env.Logger().WarnfLn("error reading metadata from central: %v", err)
-		return "", pkgErrors.Wrap(err, "reading metadata from central")
+		return "", pkgErrors.Wrap(err, "reading scanner DB metadata from central")
 	}
 
 	return metadata.GetVersion(), nil
@@ -188,7 +188,7 @@ func (cmd *scannerDownloadDBCommand) buildAndValidateOutputFileName(bundleFileNa
 // database from.
 func (cmd *scannerDownloadDBCommand) buildDownloadURL(bundleFileName string) (string, error) {
 	downloadURL, err := url.JoinPath(env.ScannerDBDownloadBaseURL.Setting(), bundleFileName)
-	return downloadURL, pkgErrors.Wrap(err, "building download URL")
+	return downloadURL, pkgErrors.Wrap(err, "building scanner DB download URL")
 }
 
 // httpClient builds a retryable http client for non-ACS requests (such as
@@ -217,12 +217,12 @@ func (cmd *scannerDownloadDBCommand) downloadVulnDB(url string, outFileName stri
 
 	err = os.MkdirAll(filepath.Dir(outFileName), 0700)
 	if err != nil {
-		return pkgErrors.Wrap(err, "creating output directory")
+		return pkgErrors.Wrap(err, "creating scanner DB download output directory")
 	}
 
 	outFile, err := os.Create(outFileName)
 	if err != nil {
-		return pkgErrors.Wrap(err, "creating output file")
+		return pkgErrors.Wrap(err, "creating scanner DB output file")
 	}
 	defer utils.IgnoreError(outFile.Close)
 

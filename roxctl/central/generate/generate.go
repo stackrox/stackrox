@@ -46,7 +46,7 @@ func generateJWTSigningKey(fileMap map[string][]byte) error {
 func restoreJWTSigningKey(fileMap map[string][]byte, backupBundle string) error {
 	z, err := zip.NewReader(backupBundle)
 	if err != nil {
-		return errors.Wrap(err, "opening backup bundle")
+		return errors.Wrap(err, "opening JWT key backup bundle")
 	}
 	defer utils.IgnoreError(z.Close)
 
@@ -77,7 +77,7 @@ func restoreJWTSigningKey(fileMap map[string][]byte, backupBundle string) error 
 func restoreCA(backupBundle string) (mtls.CA, error) {
 	z, err := zip.NewReader(backupBundle)
 	if err != nil {
-		return nil, errors.Wrap(err, "opening backup bundle")
+		return nil, errors.Wrap(err, "opening CA backup bundle")
 	}
 	defer utils.IgnoreError(z.Close)
 
@@ -98,7 +98,7 @@ func restoreCA(backupBundle string) (mtls.CA, error) {
 func restoreCentralDBPassword(fileMap map[string][]byte, backupBundle string) error {
 	z, err := zip.NewReader(backupBundle)
 	if err != nil {
-		return errors.Wrap(err, "opening backup bundle")
+		return errors.Wrap(err, "opening central DB credential backup bundle")
 	}
 	defer utils.IgnoreError(z.Close)
 
