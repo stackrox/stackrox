@@ -13,8 +13,8 @@ import (
 	"github.com/go-git/go-git/v5"
 	"github.com/hashicorp/go-multierror"
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v3"
 	"k8s.io/client-go/tools/clientcmd"
+	yaml "sigs.k8s.io/yaml/goyaml.v3"
 )
 
 type fieldType int

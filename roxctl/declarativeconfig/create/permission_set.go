@@ -18,7 +18,7 @@ import (
 	"github.com/stackrox/rox/roxctl/declarativeconfig/k8sobject"
 	"github.com/stackrox/rox/roxctl/declarativeconfig/lint"
 	"golang.org/x/exp/maps"
-	"gopkg.in/yaml.v3"
+	yaml "sigs.k8s.io/yaml/goyaml.v3"
 )
 
 func permissionSetCommand(cliEnvironment environment.Environment) *cobra.Command {

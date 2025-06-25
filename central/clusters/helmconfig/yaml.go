@@ -13,7 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/zip"
 	"google.golang.org/grpc/codes"
-	"gopkg.in/yaml.v3"
+	yaml "sigs.k8s.io/yaml/goyaml.v3"
 )
 
 // Handler returns a handler for the helm-config method.

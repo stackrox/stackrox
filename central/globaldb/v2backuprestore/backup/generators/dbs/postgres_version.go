@@ -6,7 +6,7 @@ import (
 
 	versionUtils "github.com/stackrox/rox/central/version/utils"
 	"github.com/stackrox/rox/pkg/postgres"
-	"gopkg.in/yaml.v3"
+	yaml "sigs.k8s.io/yaml/goyaml.v3"
 )
 
 // NewPostgresVersion returns a generator for Postgres backups.
