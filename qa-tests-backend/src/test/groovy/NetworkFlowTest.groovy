@@ -511,8 +511,8 @@ class NetworkFlowTest extends BaseSpecification {
         then:
         "The edge should still be there and it should still be the only edge from A"
         assert edges
-        // Enabling external IPs should include flows for each IP
-        assert edges.size() != 0
+        // Enabling external IPs should not change the number of edges
+        assert edges.size() == 1
         assert node
         // There should only be one connection and it should be to the generic external entity.
         assert node.outEdgesMap.size() == 1
@@ -534,7 +534,7 @@ class NetworkFlowTest extends BaseSpecification {
         "The edge should still be there and it should still be the only edge from A"
         assert edges
         // Disbling external IPs should not change the number of edges
-        assert edges.size() != 0
+        assert edges.size() == 1
         assert node
         // There should only be one connection and it should be to the generic external entity.
         assert node.outEdgesMap.size() == 1
