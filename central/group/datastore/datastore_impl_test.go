@@ -7,6 +7,7 @@ import (
 	storeMocks "github.com/stackrox/rox/central/group/datastore/internal/store/mocks"
 	roleMocks "github.com/stackrox/rox/central/role/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/authproviders"
 	authProvidersMocks "github.com/stackrox/rox/pkg/auth/authproviders/mocks"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
@@ -42,10 +43,10 @@ type groupDataStoreTestSuite struct {
 	hasWriteCtx context.Context
 	dataStore   DataStore
 
-	storage           *storeMocks.MockStore
-	mockCtrl          *gomock.Controller
-	roleStore         *roleMocks.MockDataStore
-	authProviderStore *authProvidersMocks.MockStore
+	storage              *storeMocks.MockStore
+	mockCtrl             *gomock.Controller
+	roleStore            *roleMocks.MockDataStore
+	authProviderRegistry *authProvidersMocks.MockRegistry
 }
 
 func (s *groupDataStoreTestSuite) SetupTest() {
@@ -63,8 +64,8 @@ func (s *groupDataStoreTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 	s.storage = storeMocks.NewMockStore(s.mockCtrl)
 	s.roleStore = roleMocks.NewMockDataStore(s.mockCtrl)
-	s.authProviderStore = authProvidersMocks.NewMockStore(s.mockCtrl)
-	s.dataStore = New(s.storage, s.roleStore, s.authProviderStore)
+	s.authProviderRegistry = authProvidersMocks.NewMockRegistry(s.mockCtrl)
+	s.dataStore = New(s.storage, s.roleStore)
 }
 
 func (s *groupDataStoreTestSuite) TearDownTest() {
@@ -107,8 +108,10 @@ func (s *groupDataStoreTestSuite) TestGet() {
 	s.storage.EXPECT().Get(gomock.Any(), group.GetProps().GetId()).Return(group, true, nil).Times(1)
 
 	// Test that can fetch by id
-	g, err := s.dataStore.Get(s.hasReadCtx, &storage.GroupProperties{Id: group.GetProps().GetId(),
-		AuthProviderId: group.GetProps().GetAuthProviderId()})
+	g, err := s.dataStore.Get(s.hasReadCtx, &storage.GroupProperties{
+		Id:             group.GetProps().GetId(),
+		AuthProviderId: group.GetProps().GetAuthProviderId(),
+	})
 	s.NoError(err)
 	protoassert.Equal(s.T(), group, g)
 
@@ -240,7 +243,7 @@ func (s *groupDataStoreTestSuite) TestEnforcesAdd() {
 		Key:            "123",
 		Value:          "123",
 	}, RoleName: "123"}
-	err := s.dataStore.Add(s.hasNoneCtx, grp)
+	err := s.dataStore.Add(s.hasNoneCtx, grp, s.authProviderRegistry)
 	s.Error(err, "expected an error trying to write without permissions")
 
 	grp = &storage.Group{Props: &storage.GroupProperties{
@@ -248,7 +251,7 @@ func (s *groupDataStoreTestSuite) TestEnforcesAdd() {
 		Key:            "123",
 		Value:          "123",
 	}, RoleName: "123"}
-	err = s.dataStore.Add(s.hasReadCtx, grp)
+	err = s.dataStore.Add(s.hasReadCtx, grp, s.authProviderRegistry)
 	s.Error(err, "expected an error trying to write without permissions")
 }
 
@@ -261,7 +264,7 @@ func (s *groupDataStoreTestSuite) TestAllowsAdd() {
 		Key:            "123",
 		Value:          "123",
 	}, RoleName: "123"}
-	err := s.dataStore.Add(s.hasWriteCtx, grp)
+	err := s.dataStore.Add(s.hasWriteCtx, grp, s.authProviderRegistry)
 	s.NoError(err, "expected no error trying to write with permissions")
 }
 
@@ -273,7 +276,7 @@ func (s *groupDataStoreTestSuite) TestEnforcesUpdate() {
 		Key:            "123",
 		Value:          "123",
 	}, RoleName: "123"}
-	err := s.dataStore.Update(s.hasNoneCtx, grp, false)
+	err := s.dataStore.Update(s.hasNoneCtx, grp, false, s.authProviderRegistry)
 	s.Error(err, "expected an error trying to write without permissions")
 
 	grp = &storage.Group{Props: &storage.GroupProperties{
@@ -281,7 +284,7 @@ func (s *groupDataStoreTestSuite) TestEnforcesUpdate() {
 		Key:            "123",
 		Value:          "123",
 	}, RoleName: "123"}
-	err = s.dataStore.Update(s.hasReadCtx, grp, false)
+	err = s.dataStore.Update(s.hasReadCtx, grp, false, s.authProviderRegistry)
 	s.Error(err, "expected an error trying to write without permissions")
 }
 
@@ -296,7 +299,7 @@ func (s *groupDataStoreTestSuite) TestAllowsUpdate() {
 		Key:            "123",
 		Value:          "123",
 	}, RoleName: "123"}
-	err := s.dataStore.Update(s.hasWriteCtx, grp, false)
+	err := s.dataStore.Update(s.hasWriteCtx, grp, false, s.authProviderRegistry)
 	s.NoError(err, "expected no error trying to write with permissions")
 }
 
@@ -310,7 +313,7 @@ func (s *groupDataStoreTestSuite) TestEnforcesMutate() {
 		Value:          "123",
 	}, RoleName: "123"}
 	err := s.dataStore.Mutate(s.hasNoneCtx, []*storage.Group{groupWithID}, []*storage.Group{groupWithID},
-		[]*storage.Group{grp}, false)
+		[]*storage.Group{grp}, false, s.authProviderRegistry)
 	s.Error(err, "expected an error trying to write without permissions")
 
 	grp = &storage.Group{Props: &storage.GroupProperties{
@@ -319,7 +322,7 @@ func (s *groupDataStoreTestSuite) TestEnforcesMutate() {
 		Value:          "123",
 	}, RoleName: "123"}
 	err = s.dataStore.Mutate(s.hasReadCtx, []*storage.Group{groupWithID}, []*storage.Group{groupWithID},
-		[]*storage.Group{grp}, false)
+		[]*storage.Group{grp}, false, s.authProviderRegistry)
 	s.Error(err, "expected an error trying to write without permissions")
 }
 
@@ -335,7 +338,7 @@ func (s *groupDataStoreTestSuite) TestAllowsMutate() {
 		Value:          "123",
 	}, RoleName: "123"}
 	err := s.dataStore.Mutate(s.hasWriteCtx, []*storage.Group{groupWithID}, []*storage.Group{groupWithID},
-		[]*storage.Group{grp}, false)
+		[]*storage.Group{grp}, false, s.authProviderRegistry)
 	s.NoError(err, "expected no error trying to write with permissions")
 }
 
@@ -361,7 +364,7 @@ func (s *groupDataStoreTestSuite) TestMutate() {
 		s.storage.EXPECT().DeleteMany(gomock.Any(), []string{toRemove.GetProps().GetId()}),
 	)
 
-	s.NoError(s.dataStore.Mutate(s.hasWriteCtx, []*storage.Group{toRemove}, []*storage.Group{toUpdate}, toAdd, false))
+	s.NoError(s.dataStore.Mutate(s.hasWriteCtx, []*storage.Group{toRemove}, []*storage.Group{toUpdate}, toAdd, false, s.authProviderRegistry))
 }
 
 func (s *groupDataStoreTestSuite) TestCannotAddDefaultGroupIfOneAlreadyExists() {
@@ -416,7 +419,6 @@ func (s *groupDataStoreTestSuite) TestCannotAddDefaultGroupIfOneAlreadyExists() 
 
 	for _, c := range cases {
 		s.T().Run(c.name, func(t *testing.T) {
-
 			c.groupToAdd.GetProps().Id = "" // clear it out so that the data store doesn't error out
 
 			// If default group, then expect call to Walk (to find if there are other default groups)
@@ -430,24 +432,24 @@ func (s *groupDataStoreTestSuite) TestCannotAddDefaultGroupIfOneAlreadyExists() 
 			if c.shouldError {
 				// Validate Add returns an error if duplicate default group
 				s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(0)
-				err := s.dataStore.Add(s.hasWriteCtx, c.groupToAdd.CloneVT())
+				err := s.dataStore.Add(s.hasWriteCtx, c.groupToAdd.CloneVT(), s.authProviderRegistry)
 				s.Error(err)
 				s.ErrorIs(err, errox.AlreadyExists)
 
 				// Validate Mutate with additions returns an error if duplicate default group
 				s.storage.EXPECT().UpsertMany(gomock.Any(), gomock.Any()).Return(nil).Times(0)
-				err = s.dataStore.Mutate(s.hasWriteCtx, []*storage.Group{}, []*storage.Group{}, []*storage.Group{c.groupToAdd.CloneVT()}, false)
+				err = s.dataStore.Mutate(s.hasWriteCtx, []*storage.Group{}, []*storage.Group{}, []*storage.Group{c.groupToAdd.CloneVT()}, false, s.authProviderRegistry)
 				s.Error(err)
 				s.ErrorIs(err, errox.AlreadyExists)
 			} else {
 				s.validRoleAndAuthProvider(c.groupToAdd.GetRoleName(), c.groupToAdd.GetProps().GetAuthProviderId(), storage.Traits_IMPERATIVE, 2)
 				// Validate Add doesn't error if it's a new default
 				s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
-				s.NoError(s.dataStore.Add(s.hasWriteCtx, c.groupToAdd.CloneVT()))
+				s.NoError(s.dataStore.Add(s.hasWriteCtx, c.groupToAdd.CloneVT(), s.authProviderRegistry))
 
 				// Validate  Mutate with additions doesn't error if it's a new default
 				s.storage.EXPECT().UpsertMany(gomock.Any(), gomock.Any()).Return(nil).Times(1)
-				s.NoError(s.dataStore.Mutate(s.hasWriteCtx, []*storage.Group{}, []*storage.Group{}, []*storage.Group{c.groupToAdd.CloneVT()}, false))
+				s.NoError(s.dataStore.Mutate(s.hasWriteCtx, []*storage.Group{}, []*storage.Group{}, []*storage.Group{c.groupToAdd.CloneVT()}, false, s.authProviderRegistry))
 			}
 		})
 	}
@@ -481,12 +483,12 @@ func (s *groupDataStoreTestSuite) TestUpdateToDefaultGroupIfOneAlreadyExists() {
 	updatedGroup.GetProps().Value = ""
 
 	// Ensure a "AlreadyExists" error is yielded when trying to update the group.
-	err := s.dataStore.Update(s.hasWriteCtx, updatedGroup.CloneVT(), false)
+	err := s.dataStore.Update(s.hasWriteCtx, updatedGroup.CloneVT(), false, s.authProviderRegistry)
 	s.Error(err)
 	s.ErrorIs(err, errox.AlreadyExists)
 
 	// Ensure a "AlreadyExists" error is yielded when trying to update the group using Mutate.
-	err = s.dataStore.Mutate(s.hasWriteCtx, []*storage.Group{}, []*storage.Group{updatedGroup.CloneVT()}, []*storage.Group{}, false)
+	err = s.dataStore.Mutate(s.hasWriteCtx, []*storage.Group{}, []*storage.Group{updatedGroup.CloneVT()}, []*storage.Group{}, false, s.authProviderRegistry)
 	s.Error(err)
 	s.ErrorIs(err, errox.AlreadyExists)
 }
@@ -520,8 +522,8 @@ func (s *groupDataStoreTestSuite) TestCanUpdateExistingDefaultGroup() {
 	s.storage.EXPECT().UpsertMany(gomock.Any(), []*storage.Group{defaultGroup})
 
 	s.expectGet(2, fixtures.GetGroupWithMutability(storage.Traits_ALLOW_MUTATE))
-	s.NoError(s.dataStore.Update(s.hasWriteCtx, defaultGroup, false))
-	s.NoError(s.dataStore.Mutate(s.hasWriteCtx, []*storage.Group{}, []*storage.Group{defaultGroup}, []*storage.Group{}, false))
+	s.NoError(s.dataStore.Update(s.hasWriteCtx, defaultGroup, false, s.authProviderRegistry))
+	s.NoError(s.dataStore.Mutate(s.hasWriteCtx, []*storage.Group{}, []*storage.Group{defaultGroup}, []*storage.Group{}, false, s.authProviderRegistry))
 
 	// 2. Update the default group to a non-default group.
 	defaultGroup.GetProps().Key = "email" // Update the properties to make it a non-default group.
@@ -531,8 +533,8 @@ func (s *groupDataStoreTestSuite) TestCanUpdateExistingDefaultGroup() {
 	s.storage.EXPECT().UpsertMany(gomock.Any(), []*storage.Group{defaultGroup})
 
 	s.expectGet(2, fixtures.GetGroupWithMutability(storage.Traits_ALLOW_MUTATE))
-	s.NoError(s.dataStore.Update(s.hasWriteCtx, defaultGroup, false))
-	s.NoError(s.dataStore.Mutate(s.hasWriteCtx, []*storage.Group{}, []*storage.Group{defaultGroup}, []*storage.Group{}, false))
+	s.NoError(s.dataStore.Update(s.hasWriteCtx, defaultGroup, false, s.authProviderRegistry))
+	s.NoError(s.dataStore.Mutate(s.hasWriteCtx, []*storage.Group{}, []*storage.Group{defaultGroup}, []*storage.Group{}, false, s.authProviderRegistry))
 
 	// 3. Adding another default group back in should now work, as we have made the existing default group a non-default group.
 	newDefaultGroup := &storage.Group{
@@ -553,8 +555,8 @@ func (s *groupDataStoreTestSuite) TestCanUpdateExistingDefaultGroup() {
 		}
 	})
 
-	s.NoError(s.dataStore.Add(s.hasWriteCtx, newDefaultGroup.CloneVT()))
-	s.NoError(s.dataStore.Mutate(s.hasWriteCtx, []*storage.Group{}, []*storage.Group{}, []*storage.Group{newDefaultGroup}, false))
+	s.NoError(s.dataStore.Add(s.hasWriteCtx, newDefaultGroup.CloneVT(), s.authProviderRegistry))
+	s.NoError(s.dataStore.Mutate(s.hasWriteCtx, []*storage.Group{}, []*storage.Group{}, []*storage.Group{newDefaultGroup}, false, s.authProviderRegistry))
 }
 
 func (s *groupDataStoreTestSuite) TestEnforcesRemove() {
@@ -599,23 +601,23 @@ func (s *groupDataStoreTestSuite) TestValidateGroup() {
 	}
 
 	for _, g := range invalidGroups {
-		err := s.dataStore.Add(s.hasWriteCtx, g)
+		err := s.dataStore.Add(s.hasWriteCtx, g, s.authProviderRegistry)
 		s.Error(err)
 		s.ErrorIs(err, errox.InvalidArgs)
 
-		err = s.dataStore.Update(s.hasWriteCtx, g, false)
+		err = s.dataStore.Update(s.hasWriteCtx, g, false, s.authProviderRegistry)
 		s.Error(err)
 		s.ErrorIs(err, errox.InvalidArgs)
 
-		err = s.dataStore.Mutate(s.hasWriteCtx, []*storage.Group{g}, nil, nil, false)
+		err = s.dataStore.Mutate(s.hasWriteCtx, []*storage.Group{g}, nil, nil, false, nil)
 		s.Error(err)
 		s.ErrorIs(err, errox.InvalidArgs)
 
-		err = s.dataStore.Mutate(s.hasWriteCtx, nil, []*storage.Group{g}, nil, false)
+		err = s.dataStore.Mutate(s.hasWriteCtx, nil, []*storage.Group{g}, nil, false, s.authProviderRegistry)
 		s.Error(err)
 		s.ErrorIs(err, errox.InvalidArgs)
 
-		err = s.dataStore.Mutate(s.hasWriteCtx, nil, nil, []*storage.Group{g}, false)
+		err = s.dataStore.Mutate(s.hasWriteCtx, nil, nil, []*storage.Group{g}, false, s.authProviderRegistry)
 		s.Error(err)
 		s.ErrorIs(err, errox.InvalidArgs)
 	}
@@ -646,7 +648,7 @@ func (s *groupDataStoreTestSuite) TestUpdateMutableToImmutable() {
 			Value: "dfg",
 		},
 		RoleName: "Admin",
-	}, false)
+	}, false, s.authProviderRegistry)
 	s.NoError(err)
 }
 
@@ -659,7 +661,7 @@ func (s *groupDataStoreTestSuite) TestUpdateImmutableNoForce() {
 	updatedGroup.GetProps().Key = "something"
 	updatedGroup.GetProps().Value = "else"
 
-	err := s.dataStore.Update(s.hasWriteCtx, updatedGroup, false)
+	err := s.dataStore.Update(s.hasWriteCtx, updatedGroup, false, s.authProviderRegistry)
 	s.ErrorIs(err, errox.InvalidArgs)
 }
 
@@ -674,7 +676,7 @@ func (s *groupDataStoreTestSuite) TestUpdateImmutableForce() {
 	updatedGroup.GetProps().Key = "something"
 	updatedGroup.GetProps().Value = "else"
 
-	err := s.dataStore.Update(s.hasWriteCtx, updatedGroup, true)
+	err := s.dataStore.Update(s.hasWriteCtx, updatedGroup, true, s.authProviderRegistry)
 	s.NoError(err)
 }
 
@@ -707,9 +709,9 @@ func (s *groupDataStoreTestSuite) TestDefaultGroupCannotBeImmutable() {
 			},
 		},
 	}
-	err := s.dataStore.Update(s.hasWriteCtx, group, false)
+	err := s.dataStore.Update(s.hasWriteCtx, group, false, s.authProviderRegistry)
 	s.ErrorIs(err, errox.InvalidArgs)
-	err = s.dataStore.Add(s.hasWriteCtx, group)
+	err = s.dataStore.Add(s.hasWriteCtx, group, s.authProviderRegistry)
 	s.ErrorIs(err, errox.InvalidArgs)
 }
 
@@ -724,7 +726,7 @@ func (s *groupDataStoreTestSuite) TestMutateGroupNoForce() {
 		s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(immutableGroup, true, nil),
 	)
 	s.storage.EXPECT().UpsertMany(gomock.Any(), []*storage.Group{mutableGroup}).Return(nil)
-	err := s.dataStore.Mutate(s.hasWriteCtx, []*storage.Group{immutableGroup}, []*storage.Group{mutableGroup}, nil, false)
+	err := s.dataStore.Mutate(s.hasWriteCtx, []*storage.Group{immutableGroup}, []*storage.Group{mutableGroup}, nil, false, s.authProviderRegistry)
 	s.Error(err)
 	s.ErrorIs(err, errox.InvalidArgs)
 
@@ -733,7 +735,7 @@ func (s *groupDataStoreTestSuite) TestMutateGroupNoForce() {
 		s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(immutableGroup, true, nil),
 	)
 
-	err = s.dataStore.Mutate(s.hasWriteCtx, []*storage.Group{mutableGroup}, []*storage.Group{immutableGroup}, nil, false)
+	err = s.dataStore.Mutate(s.hasWriteCtx, []*storage.Group{mutableGroup}, []*storage.Group{immutableGroup}, nil, false, s.authProviderRegistry)
 	s.Error(err)
 	s.ErrorIs(err, errox.InvalidArgs)
 }
@@ -751,7 +753,7 @@ func (s *groupDataStoreTestSuite) TestMutateGroupForce() {
 	)
 	s.storage.EXPECT().UpsertMany(gomock.Any(), []*storage.Group{mutableGroup}).Return(nil).Times(1)
 	s.storage.EXPECT().DeleteMany(gomock.Any(), []string{immutableGroup.GetProps().GetId()}).Return(nil).Times(1)
-	err := s.dataStore.Mutate(s.hasWriteCtx, []*storage.Group{immutableGroup}, []*storage.Group{mutableGroup}, nil, true)
+	err := s.dataStore.Mutate(s.hasWriteCtx, []*storage.Group{immutableGroup}, []*storage.Group{mutableGroup}, nil, true, s.authProviderRegistry)
 	s.NoError(err)
 
 	// 2. Try and update an immutable group via mutate with force.
@@ -761,7 +763,7 @@ func (s *groupDataStoreTestSuite) TestMutateGroupForce() {
 	)
 	s.storage.EXPECT().UpsertMany(gomock.Any(), []*storage.Group{immutableGroup}).Return(nil).Times(1)
 	s.storage.EXPECT().DeleteMany(gomock.Any(), []string{mutableGroup.GetProps().GetId()}).Return(nil).Times(1)
-	err = s.dataStore.Mutate(s.hasWriteCtx, []*storage.Group{mutableGroup}, []*storage.Group{immutableGroup}, nil, true)
+	err = s.dataStore.Mutate(s.hasWriteCtx, []*storage.Group{mutableGroup}, []*storage.Group{immutableGroup}, nil, true, s.authProviderRegistry)
 	s.NoError(err)
 }
 
@@ -830,7 +832,7 @@ func (s *groupDataStoreTestSuite) TestUpdateDeclarativeViaAPI() {
 	updatedGroup.GetProps().Key = "something"
 	updatedGroup.GetProps().Value = "else"
 
-	err := s.dataStore.Update(s.hasWriteCtx, updatedGroup, false)
+	err := s.dataStore.Update(s.hasWriteCtx, updatedGroup, false, s.authProviderRegistry)
 	s.ErrorIs(err, errox.NotAuthorized)
 }
 
@@ -845,7 +847,7 @@ func (s *groupDataStoreTestSuite) TestUpdateDeclarativeViaConfig() {
 	updatedGroup.GetProps().Key = "something"
 	updatedGroup.GetProps().Value = "else"
 
-	err := s.dataStore.Update(s.hasWriteDeclarativeCtx, updatedGroup, true)
+	err := s.dataStore.Update(s.hasWriteDeclarativeCtx, updatedGroup, true, s.authProviderRegistry)
 	s.NoError(err)
 }
 
@@ -882,7 +884,7 @@ func (s *groupDataStoreTestSuite) TestMutateGroupViaAPI() {
 		s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(declarativeGroup, true, nil),
 	)
 	s.storage.EXPECT().UpsertMany(gomock.Any(), []*storage.Group{imperativeGroup}).Return(nil)
-	err := s.dataStore.Mutate(s.hasWriteCtx, []*storage.Group{declarativeGroup}, []*storage.Group{imperativeGroup}, nil, false)
+	err := s.dataStore.Mutate(s.hasWriteCtx, []*storage.Group{declarativeGroup}, []*storage.Group{imperativeGroup}, nil, false, s.authProviderRegistry)
 	s.Error(err)
 	s.ErrorIs(err, errox.NotAuthorized)
 
@@ -891,7 +893,7 @@ func (s *groupDataStoreTestSuite) TestMutateGroupViaAPI() {
 		s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(declarativeGroup, true, nil),
 	)
 
-	err = s.dataStore.Mutate(s.hasWriteCtx, []*storage.Group{imperativeGroup}, []*storage.Group{declarativeGroup}, nil, false)
+	err = s.dataStore.Mutate(s.hasWriteCtx, []*storage.Group{imperativeGroup}, []*storage.Group{declarativeGroup}, nil, false, s.authProviderRegistry)
 	s.Error(err)
 	s.ErrorIs(err, errox.NotAuthorized)
 }
@@ -908,7 +910,7 @@ func (s *groupDataStoreTestSuite) TestMutateGroupViaConfig() {
 	gomock.InOrder(
 		s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(imperativeGroup, true, nil),
 	)
-	err := s.dataStore.Mutate(s.hasWriteDeclarativeCtx, []*storage.Group{declarativeGroup}, []*storage.Group{imperativeGroup}, nil, true)
+	err := s.dataStore.Mutate(s.hasWriteDeclarativeCtx, []*storage.Group{declarativeGroup}, []*storage.Group{imperativeGroup}, nil, true, s.authProviderRegistry)
 	s.Error(err)
 	s.ErrorIs(err, errox.NotAuthorized)
 
@@ -918,7 +920,7 @@ func (s *groupDataStoreTestSuite) TestMutateGroupViaConfig() {
 		s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(imperativeGroup, true, nil),
 	)
 	s.storage.EXPECT().UpsertMany(gomock.Any(), []*storage.Group{declarativeGroup}).Return(nil).Times(1)
-	err = s.dataStore.Mutate(s.hasWriteDeclarativeCtx, []*storage.Group{imperativeGroup}, []*storage.Group{declarativeGroup}, nil, true)
+	err = s.dataStore.Mutate(s.hasWriteDeclarativeCtx, []*storage.Group{imperativeGroup}, []*storage.Group{declarativeGroup}, nil, true, s.authProviderRegistry)
 	s.Error(err)
 	s.ErrorIs(err, errox.NotAuthorized)
 
@@ -927,7 +929,7 @@ func (s *groupDataStoreTestSuite) TestMutateGroupViaConfig() {
 		s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(declarativeGroup, true, nil),
 	)
 	s.storage.EXPECT().UpsertMany(gomock.Any(), []*storage.Group{declarativeGroup}).Return(nil).Times(1)
-	err = s.dataStore.Mutate(s.hasWriteDeclarativeCtx, nil, []*storage.Group{declarativeGroup}, nil, true)
+	err = s.dataStore.Mutate(s.hasWriteDeclarativeCtx, nil, []*storage.Group{declarativeGroup}, nil, true, s.authProviderRegistry)
 	s.NoError(err)
 
 	// 4. Try delete declarative group via config.
@@ -935,7 +937,7 @@ func (s *groupDataStoreTestSuite) TestMutateGroupViaConfig() {
 		s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(declarativeGroup, true, nil),
 	)
 	s.storage.EXPECT().DeleteMany(gomock.Any(), []string{declarativeGroup.GetProps().GetId()}).Return(nil).Times(1)
-	err = s.dataStore.Mutate(s.hasWriteDeclarativeCtx, []*storage.Group{declarativeGroup}, nil, nil, true)
+	err = s.dataStore.Mutate(s.hasWriteDeclarativeCtx, []*storage.Group{declarativeGroup}, nil, nil, true, s.authProviderRegistry)
 	s.NoError(err)
 }
 
@@ -944,7 +946,7 @@ func (s *groupDataStoreTestSuite) TestUpsertImperativeViaConfig() {
 
 	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, false, nil).Times(1)
 
-	err := s.dataStore.Upsert(s.hasWriteDeclarativeCtx, group)
+	err := s.dataStore.Upsert(s.hasWriteDeclarativeCtx, group, s.authProviderRegistry)
 	s.ErrorIs(err, errox.NotAuthorized)
 }
 
@@ -955,7 +957,7 @@ func (s *groupDataStoreTestSuite) TestUpsertImperativeViaAPI() {
 	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 	s.validRoleAndAuthProvider(group.GetRoleName(), group.GetProps().GetAuthProviderId(), storage.Traits_IMPERATIVE, 1)
 
-	err := s.dataStore.Upsert(s.hasWriteCtx, group)
+	err := s.dataStore.Upsert(s.hasWriteCtx, group, s.authProviderRegistry)
 	s.NoError(err)
 }
 
@@ -964,7 +966,7 @@ func (s *groupDataStoreTestSuite) TestUpsertDeclarativeViaAPI() {
 
 	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, false, nil).Times(1)
 
-	err := s.dataStore.Upsert(s.hasWriteCtx, group)
+	err := s.dataStore.Upsert(s.hasWriteCtx, group, s.authProviderRegistry)
 	s.ErrorIs(err, errox.NotAuthorized)
 }
 
@@ -975,7 +977,7 @@ func (s *groupDataStoreTestSuite) TestUpsertDeclarativeViaConfig() {
 	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 	s.validRoleAndAuthProvider(group.GetRoleName(), group.GetProps().GetAuthProviderId(), storage.Traits_DECLARATIVE, 1)
 
-	err := s.dataStore.Upsert(s.hasWriteDeclarativeCtx, group)
+	err := s.dataStore.Upsert(s.hasWriteDeclarativeCtx, group, s.authProviderRegistry)
 	s.NoError(err)
 }
 
@@ -991,7 +993,7 @@ func (s *groupDataStoreTestSuite) TestUpsertChangeDeclarativeOrigin() {
 		Origin: storage.Traits_IMPERATIVE,
 	}
 
-	err := s.dataStore.Upsert(s.hasWriteDeclarativeCtx, updatedGroup)
+	err := s.dataStore.Upsert(s.hasWriteDeclarativeCtx, updatedGroup, s.authProviderRegistry)
 	s.ErrorIs(err, errox.NotAuthorized)
 }
 
@@ -1007,7 +1009,7 @@ func (s *groupDataStoreTestSuite) TestUpsertChangeImperativeOrigin() {
 		Origin: storage.Traits_DECLARATIVE,
 	}
 
-	err := s.dataStore.Upsert(s.hasWriteCtx, updatedGroup)
+	err := s.dataStore.Upsert(s.hasWriteCtx, updatedGroup, s.authProviderRegistry)
 	s.ErrorIs(err, errox.NotAuthorized)
 }
 
@@ -1015,7 +1017,7 @@ func (s *groupDataStoreTestSuite) TestAddImperativeViaConfig() {
 	group := fixtures.GetGroupWithOrigin(storage.Traits_IMPERATIVE)
 	group.Props.Id = ""
 
-	err := s.dataStore.Add(s.hasWriteDeclarativeCtx, group)
+	err := s.dataStore.Add(s.hasWriteDeclarativeCtx, group, s.authProviderRegistry)
 	s.ErrorIs(err, errox.NotAuthorized)
 }
 
@@ -1023,7 +1025,7 @@ func (s *groupDataStoreTestSuite) TestAddDeclarativeViaAPI() {
 	group := fixtures.GetGroupWithOrigin(storage.Traits_DECLARATIVE)
 	group.Props.Id = ""
 
-	err := s.dataStore.Add(s.hasWriteCtx, group)
+	err := s.dataStore.Add(s.hasWriteCtx, group, s.authProviderRegistry)
 	s.ErrorIs(err, errox.NotAuthorized)
 }
 
@@ -1035,7 +1037,7 @@ func (s *groupDataStoreTestSuite) TestAddDeclarativeViaConfig() {
 
 	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
-	err := s.dataStore.Add(s.hasWriteDeclarativeCtx, group)
+	err := s.dataStore.Add(s.hasWriteDeclarativeCtx, group, s.authProviderRegistry)
 	s.NoError(err)
 }
 
@@ -1046,12 +1048,16 @@ func (s *groupDataStoreTestSuite) validRoleAndAuthProvider(roleName, authProvide
 			Origin: origin,
 		},
 	}
-	mockedAP := &storage.AuthProvider{
-		Id: authProviderID,
-		Traits: &storage.Traits{
-			Origin: origin,
-		},
-	}
+	mockedAP, err := authproviders.NewProvider(
+		authproviders.WithStorageView(&storage.AuthProvider{
+			Id:   authProviderID,
+			Name: "auth-provider",
+			Traits: &storage.Traits{
+				Origin: origin,
+			},
+		}),
+	)
+	s.NoError(err)
 	s.roleStore.EXPECT().GetRole(gomock.Any(), roleName).Return(mockedRole, true, nil).Times(times)
-	s.authProviderStore.EXPECT().GetAuthProvider(gomock.Any(), authProviderID).Return(mockedAP, true, nil).Times(times)
+	s.authProviderRegistry.EXPECT().GetProvider(authProviderID).Return(mockedAP).Times(times)
 }

@@ -10,6 +10,7 @@ import (
 	postgresGroupStore "github.com/stackrox/rox/central/group/datastore/internal/store/postgres"
 	roleDatastoreMocks "github.com/stackrox/rox/central/role/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/authproviders"
 	authProvidersMocks "github.com/stackrox/rox/pkg/auth/authproviders/mocks"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/fixtures"
@@ -31,10 +32,10 @@ type groupsWithPostgresTestSuite struct {
 	ctx          context.Context
 	testPostgres *pgtest.TestPostgres
 
-	groupsDatastore   DataStore
-	mockCtrl          *gomock.Controller
-	roleStore         *roleDatastoreMocks.MockDataStore
-	authProviderStore *authProvidersMocks.MockStore
+	groupsDatastore      DataStore
+	mockCtrl             *gomock.Controller
+	roleStore            *roleDatastoreMocks.MockDataStore
+	authProviderRegistry *authProvidersMocks.MockRegistry
 }
 
 func (s *groupsWithPostgresTestSuite) SetupSuite() {
@@ -49,8 +50,8 @@ func (s *groupsWithPostgresTestSuite) SetupSuite() {
 
 	store := postgresGroupStore.New(s.testPostgres.DB)
 	s.roleStore = roleDatastoreMocks.NewMockDataStore(s.mockCtrl)
-	s.authProviderStore = authProvidersMocks.NewMockStore(s.mockCtrl)
-	s.groupsDatastore = New(store, s.roleStore, s.authProviderStore)
+	s.authProviderRegistry = authProvidersMocks.NewMockRegistry(s.mockCtrl)
+	s.groupsDatastore = New(store, s.roleStore)
 }
 
 func (s *groupsWithPostgresTestSuite) TearDownTest() {
@@ -67,12 +68,12 @@ func (s *groupsWithPostgresTestSuite) TestAddGroups() {
 	group.Props.Id = ""
 
 	// 1. Adding a group should work.
-	err := s.groupsDatastore.Add(s.ctx, group)
+	err := s.groupsDatastore.Add(s.ctx, group, s.authProviderRegistry)
 	s.NoError(err)
 
 	// 2. Adding the _same_ group twice should fail, since (auth provider ID, key, value, role name) should be unique
 	group.Props.Id = ""
-	err = s.groupsDatastore.Add(s.ctx, group)
+	err = s.groupsDatastore.Add(s.ctx, group, s.authProviderRegistry)
 	s.Error(err)
 	s.ErrorIs(err, errox.AlreadyExists)
 
@@ -80,7 +81,7 @@ func (s *groupsWithPostgresTestSuite) TestAddGroups() {
 	group.RoleName = "headmaster"
 	group.Props.Id = ""
 	s.validRoleAndAuthProvider(group.GetRoleName(), group.GetProps().GetAuthProviderId(), 1)
-	err = s.groupsDatastore.Add(s.ctx, group)
+	err = s.groupsDatastore.Add(s.ctx, group, s.authProviderRegistry)
 	s.NoError(err)
 }
 
@@ -90,11 +91,11 @@ func (s *groupsWithPostgresTestSuite) TestUpdateGroups() {
 	s.validRoleAndAuthProvider(group.GetRoleName(), group.GetProps().GetAuthProviderId(), 3)
 	// 0. Insert the group.
 	group.Props.Id = ""
-	err := s.groupsDatastore.Add(s.ctx, group)
+	err := s.groupsDatastore.Add(s.ctx, group, s.authProviderRegistry)
 	s.NoError(err)
 
 	// 1. Updating the group to be the same shouldn't throw an error as it's a no-op.
-	err = s.groupsDatastore.Update(s.ctx, group, false)
+	err = s.groupsDatastore.Update(s.ctx, group, false, s.authProviderRegistry)
 	s.NoError(err)
 
 	// 2. Create another group. Updating this group to be equal to the previously added one should fail.
@@ -107,7 +108,7 @@ func (s *groupsWithPostgresTestSuite) TestUpdateGroups() {
 		RoleName: "some-role",
 	}
 	s.validRoleAndAuthProvider(newGroup.GetRoleName(), newGroup.GetProps().GetAuthProviderId(), 1)
-	err = s.groupsDatastore.Add(s.ctx, newGroup)
+	err = s.groupsDatastore.Add(s.ctx, newGroup, s.authProviderRegistry)
 	s.NoError(err)
 
 	newGroup.Props.AuthProviderId = group.GetProps().GetAuthProviderId()
@@ -115,7 +116,7 @@ func (s *groupsWithPostgresTestSuite) TestUpdateGroups() {
 	newGroup.Props.Value = group.GetProps().GetValue()
 	newGroup.RoleName = group.GetRoleName()
 
-	err = s.groupsDatastore.Update(s.ctx, newGroup, false)
+	err = s.groupsDatastore.Update(s.ctx, newGroup, false, s.authProviderRegistry)
 	s.Error(err)
 	s.ErrorIs(err, errox.AlreadyExists)
 }
@@ -127,16 +128,16 @@ func (s *groupsWithPostgresTestSuite) TestUpsertGroups() {
 
 	// 0. Insert the group.
 	group.Props.Id = ""
-	err := s.groupsDatastore.Add(s.ctx, group)
+	err := s.groupsDatastore.Add(s.ctx, group, s.authProviderRegistry)
 	s.NoError(err)
 
 	// 1. Upserting the same group shouldn't throw an error as it's a no-op.
-	err = s.groupsDatastore.Upsert(s.ctx, group)
+	err = s.groupsDatastore.Upsert(s.ctx, group, s.authProviderRegistry)
 	s.NoError(err)
 
 	// 2. Upsert another group equal to the previously added one should fail.
 	group.Props.Id = ""
-	err = s.groupsDatastore.Upsert(s.ctx, group)
+	err = s.groupsDatastore.Upsert(s.ctx, group, s.authProviderRegistry)
 	s.Error(err)
 	s.ErrorIs(err, errox.AlreadyExists)
 }
@@ -148,14 +149,14 @@ func (s *groupsWithPostgresTestSuite) TestMutateGroups() {
 
 	// 1. Adding new groups to the store with mutate should work.
 	group.Props.Id = ""
-	err := s.groupsDatastore.Mutate(s.ctx, nil, nil, []*storage.Group{group}, false)
+	err := s.groupsDatastore.Mutate(s.ctx, nil, nil, []*storage.Group{group}, false, s.authProviderRegistry)
 	s.NoError(err)
 
 	existingGroupID := group.GetProps().GetId()
 
 	// 2. Adding the same group twice should not work.
 	group.Props.Id = ""
-	err = s.groupsDatastore.Mutate(s.ctx, nil, nil, []*storage.Group{group}, false)
+	err = s.groupsDatastore.Mutate(s.ctx, nil, nil, []*storage.Group{group}, false, s.authProviderRegistry)
 	s.Error(err)
 	s.ErrorIs(err, errox.AlreadyExists)
 
@@ -176,7 +177,7 @@ func (s *groupsWithPostgresTestSuite) TestMutateGroups() {
 
 	s.validRoleAndAuthProvider(group.GetRoleName(), group.GetProps().GetAuthProviderId(), 2)
 
-	err = s.groupsDatastore.Mutate(s.ctx, nil, []*storage.Group{group}, []*storage.Group{newGroup}, false)
+	err = s.groupsDatastore.Mutate(s.ctx, nil, []*storage.Group{group}, []*storage.Group{newGroup}, false, s.authProviderRegistry)
 	s.Error(err)
 	s.ErrorIs(err, errox.AlreadyExists)
 }
@@ -185,9 +186,13 @@ func (s *groupsWithPostgresTestSuite) validRoleAndAuthProvider(roleName, authPro
 	mockedRole := &storage.Role{
 		Name: roleName,
 	}
-	mockedAP := &storage.AuthProvider{
-		Id: authProviderID,
-	}
+	mockedAP, err := authproviders.NewProvider(
+		authproviders.WithStorageView(&storage.AuthProvider{
+			Id:   authProviderID,
+			Name: "auth-provider",
+		}),
+	)
+	s.NoError(err)
 	s.roleStore.EXPECT().GetRole(gomock.Any(), roleName).Return(mockedRole, true, nil).Times(times)
-	s.authProviderStore.EXPECT().GetAuthProvider(gomock.Any(), authProviderID).Return(mockedAP, true, nil).Times(times)
+	s.authProviderRegistry.EXPECT().GetProvider(authProviderID).Return(mockedAP).Times(times)
 }

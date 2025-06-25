@@ -7,6 +7,7 @@ import (
 	dsMocks "github.com/stackrox/rox/central/group/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	authProvidersMocks "github.com/stackrox/rox/pkg/auth/authproviders/mocks"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -21,15 +22,17 @@ type UserServiceTestSuite struct {
 
 	mockCtrl *gomock.Controller
 
-	groupsMock *dsMocks.MockDataStore
-	ser        Service
+	groupsMock           *dsMocks.MockDataStore
+	authProviderRegistry *authProvidersMocks.MockRegistry
+	ser                  Service
 }
 
 func (suite *UserServiceTestSuite) SetupSuite() {
 	suite.mockCtrl = gomock.NewController(suite.T())
 
 	suite.groupsMock = dsMocks.NewMockDataStore(suite.mockCtrl)
-	suite.ser = New(suite.groupsMock)
+	suite.authProviderRegistry = authProvidersMocks.NewMockRegistry(suite.mockCtrl)
+	suite.ser = New(suite.groupsMock, suite.authProviderRegistry)
 }
 
 func (suite *UserServiceTestSuite) TestBatchUpdate() {
@@ -106,7 +109,7 @@ func (suite *UserServiceTestSuite) TestBatchUpdate() {
 		Mutate(contextForMock,
 			[]*storage.Group{update.GetPreviousGroups()[0]},
 			[]*storage.Group{update.GetRequiredGroups()[1]},
-			[]*storage.Group{update.GetRequiredGroups()[2]}, false).
+			[]*storage.Group{update.GetRequiredGroups()[2]}, false, suite.authProviderRegistry).
 		Return(nil)
 
 	_, err := suite.ser.BatchUpdate(contextForMock, update)
@@ -152,7 +155,7 @@ func (suite *UserServiceTestSuite) TestBatchUpdate_Dedupe_updated_group() {
 		Mutate(contextForMock,
 			gomock.Len(0),
 			[]*storage.Group{update.GetRequiredGroups()[0]},
-			gomock.Len(0), false).
+			gomock.Len(0), false, suite.authProviderRegistry).
 		Return(nil)
 
 	_, err := suite.ser.BatchUpdate(contextForMock, update)
