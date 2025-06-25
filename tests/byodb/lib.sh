@@ -91,6 +91,7 @@ deploy_external_postgres() {
     ci_export "EXTERNAL_DB_PASSWORD" "$EXTERNAL_DB_PASSWORD"
     ci_export "EXTERNAL_DB_USER" "$EXTERNAL_DB_USER"
 
+    kubectl create namespace stackrox
     envsubst < ./tests/byodb/simple-postgres.yaml | kubectl apply -f -
 
     kubectl get pods -n stackrox
