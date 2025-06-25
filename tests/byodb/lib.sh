@@ -114,7 +114,7 @@ deploy_external_postgres_central() {
          --set central.db.password.value="${EXTERNAL_DB_PASSWORD}" \
          --set central.db.enabled=true \
          --set central.db.external=true \
-         --set central.db.source.connectionString: "host=postgres client_encoding=UTF8 user=${EXTERNAL_DB_USER} dbname=stackrox statement_timeout=1200000" \
+         --set central.db.source.connectionString="host=postgres client_encoding=UTF8 user=${EXTERNAL_DB_USER} dbname=stackrox statement_timeout=1200000" \
          --set central.persistence.none=true \
          --set central.exposure.loadBalancer.enabled=true \
          --set system.enablePodSecurityPolicies=false \
