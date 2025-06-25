@@ -49,7 +49,7 @@ func makeCentralWhoAmICommand(cliEnvironment environment.Environment, cbr *cobra
 func (cmd *centralWhoAmICommand) whoami() error {
 	conn, err := cmd.env.GRPCConnection(common.WithRetryTimeout(cmd.retryTimeout))
 	if err != nil {
-		return errors.Wrap(err, "establishing GRPC connection")
+		return errors.Wrap(err, "establishing GRPC connection to retrieve user role information")
 	}
 	defer utils.IgnoreError(conn.Close)
 

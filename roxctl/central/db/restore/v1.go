@@ -19,7 +19,7 @@ func (cmd *centralDbRestoreCommand) restoreV1(file *os.File, deadline time.Time)
 
 	client, err := cmd.env.HTTPClient(0)
 	if err != nil {
-		return errors.Wrap(err, "creating HTTP client")
+		return errors.Wrap(err, "creating HTTP client for restore")
 	}
 
 	req, err := client.NewReq(http.MethodPost, "/db/restore", file)

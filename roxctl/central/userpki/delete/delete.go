@@ -51,7 +51,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 				return errors.Wrap(err, "preparing delete provider")
 			}
 			if err := flags.CheckConfirmation(cmd, cliEnvironment.Logger(), cliEnvironment.InputOutput()); err != nil {
-				return errors.Wrap(err, "checking confirmation")
+				return errors.Wrap(err, "checking deletion confirmation")
 			}
 			return deleteProvider()
 		},
@@ -94,7 +94,7 @@ func getAuthProviderByName(ctx context.Context, svc v1.AuthProviderServiceClient
 func (cmd *centralUserPkiDeleteCommand) prepareDeleteProvider() (func() error, error) {
 	conn, err := cmd.env.GRPCConnection(common.WithRetryTimeout(cmd.retryTimeout))
 	if err != nil {
-		return nil, errors.Wrap(err, "establishing gRPC connection")
+		return nil, errors.Wrap(err, "establishing gRPC connection to delete user PKI auth provider")
 	}
 	defer utils.IgnoreError(conn.Close)
 	ctx, cancel := context.WithTimeout(pkgCommon.Context(), cmd.timeout)
@@ -112,7 +112,7 @@ func (cmd *centralUserPkiDeleteCommand) prepareDeleteProvider() (func() error, e
 	}
 
 	if err != nil {
-		return nil, errors.Wrap(err, "getting auth provider")
+		return nil, errors.Wrap(err, "getting auth provider to delete")
 	}
 	group, err := groupService.GetGroup(ctx, &storage.GroupProperties{AuthProviderId: prov.GetId()})
 

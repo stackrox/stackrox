@@ -68,7 +68,7 @@ func parseUserProvidedOutput(userProvidedOutput string) (string, error) {
 	f, err := os.Stat(userProvidedOutput)
 	if err != nil {
 		if !os.IsNotExist(err) {
-			return "", errors.Wrapf(err, "statting output path %q", userProvidedOutput)
+			return "", errors.Wrapf(err, "checking output path %q", userProvidedOutput)
 		}
 		// If they specified a directory, it must exist.
 		if strings.HasSuffix(userProvidedOutput, string(os.PathSeparator)) {
@@ -103,7 +103,7 @@ func getFilePath(respHeader http.Header, userProvidedOutput string) (string, err
 	if finalLocation == "" || strings.HasSuffix(finalLocation, string(os.PathSeparator)) {
 		parsedFileName, err := download.ParseFilenameFromHeader(respHeader)
 		if err != nil {
-			return "", errors.Wrap(err, "parsing filename from response header")
+			return "", errors.Wrap(err, "retrieving filename from response header")
 		}
 		finalLocation = filepath.Join(finalLocation, parsedFileName)
 	}

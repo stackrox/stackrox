@@ -17,7 +17,7 @@ func (cmd *centralDbRestoreCommand) restore(impl func(file *os.File, deadline ti
 
 	file, err := os.Open(cmd.file)
 	if err != nil {
-		return errors.Wrapf(err, "opening backup file %q", cmd.file)
+		return errors.Wrapf(err, "opening backup file %q to restore", cmd.file)
 	}
 	defer utils.IgnoreError(file.Close)
 
