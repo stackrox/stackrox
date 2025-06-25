@@ -45,9 +45,8 @@ ENV MAIN_TAG_SUFFIX="$VERSIONS_SUFFIX" COLLECTOR_TAG_SUFFIX="$VERSIONS_SUFFIX" S
 
 ENV GOFLAGS=""
 ENV CGO_ENABLED=1
-# TODO(ROX-24276): re-enable release builds for fast stream.
 # TODO(ROX-20240): enable non-release development builds.
-# ENV GOTAGS="release"
+ENV GOTAGS="release"
 ENV CI=1
 
 RUN # TODO(ROX-13200): make sure roxctl cli is built without running go mod tidy. \
