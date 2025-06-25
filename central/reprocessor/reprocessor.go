@@ -486,7 +486,7 @@ func (l *loopImpl) injectMessage(ctx context.Context, conn connection.SensorConn
 
 	err := conn.InjectMessage(ctx, msg)
 	if err != nil {
-		return errors.Wrap(err, "error injecting message to sensor")
+		return errors.Wrap(err, "injecting message to sensor")
 	}
 
 	return nil
