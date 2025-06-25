@@ -6,7 +6,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stackrox/rox/central/administration/events/datastore/internal/search"
 	pgStore "github.com/stackrox/rox/central/administration/events/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/central/administration/events/datastore/internal/writer"
 	"github.com/stackrox/rox/central/administration/events/testutils"
@@ -23,7 +22,7 @@ func TestGather(t *testing.T) {
 	pool := pgtest.ForT(t)
 	require.NotNil(t, pool)
 	store := pgStore.New(pool)
-	datastore := newDataStore(search.New(store), store, writer.New(store))
+	datastore := newDataStore(store, writer.New(store))
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
