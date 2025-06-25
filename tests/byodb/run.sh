@@ -78,7 +78,7 @@ run_byodb_test() {
     wait_for_api
     setup_client_TLS_certs
 
-#    restore_4_6_backup
+    restore_4_6_backup
     wait_for_api
 
     # Get the API_TOKEN for the upgrades
