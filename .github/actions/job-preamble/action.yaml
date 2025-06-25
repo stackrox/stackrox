@@ -15,8 +15,8 @@ runs:
       uses: 'google-github-actions/setup-gcloud@v2'
 
     - name: Shim gsutil as gcloud storage
-      shell: bash
       continue-on-error: true
+      shell: bash
       run: |
         tee -a ~/.boto <<EOF
         [GSUtil]
@@ -25,6 +25,7 @@ runs:
         gsutil version -l
 
     - name: Recover docker image cache space
+      shell: bash
       run: |
         df --si /
         printf 'Docker prune: '
