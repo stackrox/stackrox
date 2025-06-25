@@ -183,7 +183,7 @@ func (s *networkGraphServiceSuite) TestGetNetworkGraph() {
 	flowStore, err := s.flowDataStore.CreateFlowStore(globalWriteAccessCtx, testCluster)
 	s.NoError(err)
 
-	err = flowStore.UpsertFlows(globalWriteAccessCtx, entityFlows, timeNow)
+	_, err = flowStore.UpsertFlows(globalWriteAccessCtx, entityFlows, timeNow)
 	s.NoError(err)
 
 	request := &v1.NetworkGraphRequest{
@@ -295,7 +295,7 @@ func (s *networkGraphServiceSuite) TestGetNetworkGraphNormalizedAndUnformalized(
 	flowStore, err := s.flowDataStore.CreateFlowStore(globalWriteAccessCtx, testCluster)
 	s.NoError(err)
 
-	err = flowStore.UpsertFlows(globalWriteAccessCtx, entityFlows, timeNow)
+	_, err = flowStore.UpsertFlows(globalWriteAccessCtx, entityFlows, timeNow)
 	s.NoError(err)
 
 	request := &v1.NetworkGraphRequest{
@@ -407,7 +407,7 @@ func (s *networkGraphServiceSuite) TestGetExternalNetworkFlows() {
 	flowStore, err := s.flowDataStore.CreateFlowStore(globalWriteAccessCtx, testCluster)
 	s.NoError(err)
 
-	err = flowStore.UpsertFlows(globalWriteAccessCtx, allFlows, timestamp.FromGoTime(time.Now()))
+	_, err = flowStore.UpsertFlows(globalWriteAccessCtx, allFlows, timestamp.FromGoTime(time.Now()))
 	s.NoError(err)
 
 	for _, tc := range []struct {
@@ -565,7 +565,7 @@ func (s *networkGraphServiceSuite) TestGetExternalNetworkFlowsMetadata() {
 	flowStore, err := s.flowDataStore.CreateFlowStore(globalWriteAccessCtx, testCluster)
 	s.NoError(err)
 
-	err = flowStore.UpsertFlows(globalWriteAccessCtx, flows, timestamp.FromGoTime(time.Now()))
+	_, err = flowStore.UpsertFlows(globalWriteAccessCtx, flows, timestamp.FromGoTime(time.Now()))
 	s.NoError(err)
 
 	for _, tc := range []struct {

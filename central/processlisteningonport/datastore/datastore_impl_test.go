@@ -2316,6 +2316,7 @@ func (suite *PLOPDataStoreTestSuite) makeRandomPlops(nport int, nprocess int, np
 					DeploymentId: deployment,
 					ClusterId:    fixtureconsts.Cluster1,
 					PodUid:       podUid,
+					Namespace:    fixtureconsts.Namespace1,
 				}
 				plopUDP := &storage.ProcessListeningOnPortFromSensor{
 					Port:           uint32(port),
@@ -2331,6 +2332,7 @@ func (suite *PLOPDataStoreTestSuite) makeRandomPlops(nport int, nprocess int, np
 					DeploymentId: deployment,
 					ClusterId:    fixtureconsts.Cluster1,
 					PodUid:       podUid,
+					Namespace:    fixtureconsts.Namespace1,
 				}
 				plops[count] = plopTCP
 				count++
@@ -2869,4 +2871,24 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePLOPsWithoutPodUIDScaleRaceCondit
 	// that number.
 	suite.GreaterOrEqual(int(plopsWithoutPodUids), totalPrunedCount/2)
 	suite.LessOrEqual(int(plopsWithoutPodUids), totalPrunedCount)
+}
+
+func (suite *PLOPDataStoreTestSuite) TestSortMany() {
+	nport := 50
+	nprocess := 50
+	npod := 50
+
+	plops := suite.makeRandomPlops(nport, nprocess, npod, fixtureconsts.Deployment1)
+	suite.addTooMany(plops)
+
+	suite.addDeployments()
+
+	startTime := time.Now()
+	newPlops, err := suite.datastore.GetProcessListeningOnPort(
+		suite.hasWriteCtx, fixtureconsts.Deployment1)
+	suite.NoError(err)
+	duration := time.Since(startTime)
+
+	fmt.Printf("Fetching %d plops took %s\n", len(newPlops), duration)
+
 }

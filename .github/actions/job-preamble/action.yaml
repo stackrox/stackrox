@@ -43,8 +43,7 @@ runs:
           exit 1
         fi
 
-    # auth prepares the auth environment
-    # setup-gcloud authenticates gcloud
+    # auth prepares the environment to auth. setup-gcloud authenticates gcloud
     - name: Install gcloud CLI
       uses: 'google-github-actions/setup-gcloud@v2'
       with:

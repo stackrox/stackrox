@@ -137,8 +137,25 @@ EOT
     export MAIN_IMAGE_TAG="${MAIN_IMAGE_TAG:-$(make --quiet --no-print-directory -C "${ROOT}" tag)}"
     info "Using MAIN_IMAGE_TAG=$MAIN_IMAGE_TAG"
 
+    # Prepare earlier Helm chart version.
+    if [[ -z "${CHART_REPOSITORY:-}" ]]; then
+        CHART_REPOSITORY=$(mktemp -d "helm-charts.XXXXXX" -p /tmp)
+    fi
+    if [[ ! -e "${CHART_REPOSITORY}/.git" ]]; then
+        echo "Cloning released Helm charts into ${CHART_REPOSITORY}..."
+        git clone --quiet --depth 1 -b main https://github.com/stackrox/helm-charts "${CHART_REPOSITORY}"
+    fi
+    export CHART_REPOSITORY
+
     export CURRENT_MAIN_IMAGE_TAG=${CURRENT_MAIN_IMAGE_TAG:-} # Setting a tag can be useful for local testing.
-    export EARLIER_CHART_VERSION="4.6.0"
+
+    EARLIER_CHART_VERSION=$(resolve_previous_x_y_0_version "$CHART_REPOSITORY" "$MAIN_IMAGE_TAG")
+    if [[ -z "$EARLIER_CHART_VERSION" ]]; then
+        die "Could not resolve previous version for version tag \"${MAIN_IMAGE_TAG}\""
+    fi
+    export EARLIER_CHART_VERSION
+    info "Using EARLIER_CHART_VERSION=${EARLIER_CHART_VERSION}"
+
     export EARLIER_MAIN_IMAGE_TAG=$EARLIER_CHART_VERSION
     export USE_LOCAL_ROXCTL="${USE_LOCAL_ROXCTL:-true}"
     export ROX_PRODUCT_BRANDING=RHACS_BRANDING
@@ -161,18 +178,21 @@ EOT
         die "roxctl not found, please make sure it can be resolved via PATH."
     fi
 
+    ROXCTL_BUILT_IN_RELEASE_MODE="false"
+    if roxctl_built_in_release_mode; then
+        ROXCTL_BUILT_IN_RELEASE_MODE="true"
+    fi
+
+    if [[ "$ROXCTL_BUILT_IN_RELEASE_MODE" == "true" ]]; then
+        info "roxctl is built in release mode."
+        info "Local modification of the Helm charts will not be taken into account for Helm chart tests."
+    else
+        info "roxctl is built in non-release mode."
+        info "Local modification of the Helm charts will be taken into account for Helm chart tests."
+    fi
+
     local roxctl_version
     roxctl_version="$(roxctl version)"
-
-    # Prepare earlier Helm chart version.
-    if [[ -z "${CHART_REPOSITORY:-}" ]]; then
-        CHART_REPOSITORY=$(mktemp -d "helm-charts.XXXXXX" -p /tmp)
-    fi
-    if [[ ! -e "${CHART_REPOSITORY}/.git" ]]; then
-        echo "Cloning released Helm charts into ${CHART_REPOSITORY}..."
-        git clone --quiet --depth 1 -b main https://github.com/stackrox/helm-charts "${CHART_REPOSITORY}"
-    fi
-    export CHART_REPOSITORY
 
     if [[ -n "$MAIN_IMAGE_TAG" ]] && [[ "$roxctl_version" != "$MAIN_IMAGE_TAG" ]]; then
         info "MAIN_IMAGE_TAG ($MAIN_IMAGE_TAG) does not match roxctl version ($roxctl_version)."
@@ -209,22 +229,37 @@ EOT
     # Without a timeout it might happen that the pod running the tests is simply killed and we won't
     # have any logs for investigation the situation.
     export BATS_TEST_TIMEOUT=1800 # Seconds
+    export COLLECT_ANALYSIS_MAX_DURATION=12m
 
    if [[ -z "${HEAD_HELM_CHART_CENTRAL_SERVICES_DIR:-}" ]]; then
         HEAD_HELM_CHART_CENTRAL_SERVICES_DIR=$(mktemp -d)
         echo "Rendering fresh central-services Helm chart and writing to ${HEAD_HELM_CHART_CENTRAL_SERVICES_DIR}..."
-        roxctl helm output central-services \
-            --debug --debug-path="${ROOT}/image" \
-            --output-dir="${HEAD_HELM_CHART_CENTRAL_SERVICES_DIR}" --remove
+        if [[ "$ROXCTL_BUILT_IN_RELEASE_MODE" == "true" ]]; then
+            # development-build image defaults are not available in the release mode, so we set opensource
+            # (which which uses the same image names) and override the registry/org elsewhere.
+            roxctl helm output central-services --image-defaults=opensource \
+                --output-dir="${HEAD_HELM_CHART_CENTRAL_SERVICES_DIR}" --remove
+        else
+            roxctl helm output central-services \
+                --debug --debug-path="${ROOT}/image" \
+                --output-dir="${HEAD_HELM_CHART_CENTRAL_SERVICES_DIR}" --remove
+        fi
         export HEAD_HELM_CHART_CENTRAL_SERVICES_DIR
     fi
 
    if [[ -z "${HEAD_HELM_CHART_SECURED_CLUSTER_SERVICES_DIR:-}" ]]; then
         HEAD_HELM_CHART_SECURED_CLUSTER_SERVICES_DIR=$(mktemp -d)
         echo "Rendering fresh secured-cluster-services Helm chart and writing to ${HEAD_HELM_CHART_SECURED_CLUSTER_SERVICES_DIR}..."
-        roxctl helm output secured-cluster-services \
-            --debug --debug-path="${ROOT}/image" \
-            --output-dir="${HEAD_HELM_CHART_SECURED_CLUSTER_SERVICES_DIR}" --remove
+        if [[ "$ROXCTL_BUILT_IN_RELEASE_MODE" == "true" ]]; then
+            # development-build image defaults are not available in the release mode, so we set opensource
+            # (which which uses the same image names) and override the registry/org elsewhere.
+            roxctl helm output secured-cluster-services --image-defaults=opensource \
+                --output-dir="${HEAD_HELM_CHART_SECURED_CLUSTER_SERVICES_DIR}" --remove
+        else
+            roxctl helm output secured-cluster-services \
+                --debug --debug-path="${ROOT}/image" \
+                --output-dir="${HEAD_HELM_CHART_SECURED_CLUSTER_SERVICES_DIR}" --remove
+        fi
         export HEAD_HELM_CHART_SECURED_CLUSTER_SERVICES_DIR
     fi
 
@@ -303,9 +338,9 @@ apply_crd_ownership_for_upgrade() {
 
 describe_pods_in_namespace() {
     local namespace="$1"
-    info "==============================="
-    info "Pods in namespace ${namespace}:"
-    info "==============================="
+    echo "==============================="
+    echo "Pods in namespace ${namespace}:"
+    echo "==============================="
     "${ORCH_CMD}" </dev/null -n "${namespace}" get pods || true
     echo
     "${ORCH_CMD}" </dev/null -n "${namespace}" get pods -o name | while read -r pod_name; do
@@ -317,12 +352,13 @@ describe_pods_in_namespace() {
       echo
     done
 }
+export -f describe_pods_in_namespace
 
 describe_deployments_in_namespace() {
     local namespace="$1"
-    info "====================================="
-    info "Deployments in namespace ${namespace}:"
-    info "====================================="
+    echo "====================================="
+    echo "Deployments in namespace ${namespace}:"
+    echo "====================================="
     "${ORCH_CMD}" </dev/null -n "${namespace}" get deployments || true
     echo
     "${ORCH_CMD}" </dev/null -n "${namespace}" get deployments -o name | while read -r name; do
@@ -330,6 +366,7 @@ describe_deployments_in_namespace() {
       "${ORCH_CMD}" </dev/null -n "${namespace}" describe "${name}" || true
     done
 }
+export -f describe_deployments_in_namespace
 
 teardown() {
     _begin "post-test-tear-down"
@@ -363,20 +400,40 @@ teardown() {
         sensor_namespace="${CUSTOM_SENSOR_NAMESPACE}"
     fi
 
-    echo "Using central namespace: ${central_namespace}"
-    echo "Using sensor namespace: ${sensor_namespace}"
+    # Execute this on a best-effort basis, as it sometimes encounters long delays for whatever reason.
+    timeout "$COLLECT_ANALYSIS_MAX_DURATION" bash -c "set -euo pipefail; collect_analysis_data '$central_namespace' '$sensor_namespace'" || {
+        echo "ERROR: Collecting analysis data during teardown did not finish in time."
+        echo "NOTE: This failure will be ignored to not cause a test failure."
+        true # Explicit.
+    }
+
+    run remove_existing_stackrox_resources "${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}" "stackrox"
+    echo "Post-test teardown complete."
+
+    _end
+}
+
+collect_analysis_data() {
+    local central_namespace="$1"
+    local sensor_namespace="$2"
+
+    echo "Attempting to collect analysis data..."
 
     if [[ -n "${SCANNER_V4_LOG_DIR:-}" ]]; then
-        "$ROOT/scripts/ci/collect-service-logs.sh" "${central_namespace}" \
-            "${SCANNER_V4_LOG_DIR}/${BATS_TEST_NUMBER}-${BATS_TEST_NAME}"
+        if [[ -n "$central_namespace" ]]; then
+            echo "Using central namespace: ${central_namespace}"
+            "$ROOT/scripts/ci/collect-service-logs.sh" "${central_namespace}" \
+                "${SCANNER_V4_LOG_DIR}/${BATS_TEST_NUMBER}-${BATS_TEST_NAME}"
+        fi
 
         if [[ "${central_namespace}" != "${sensor_namespace}" && -n "${sensor_namespace}" ]]; then
+            echo "Using sensor namespace: ${sensor_namespace}"
             "$ROOT/scripts/ci/collect-service-logs.sh" "${sensor_namespace}" \
                 "${SCANNER_V4_LOG_DIR}/${BATS_TEST_NUMBER}-${BATS_TEST_NAME}"
         fi
     fi
 
-    if [[ -z "${BATS_TEST_COMPLETED:-}" && -z "${BATS_TEST_SKIPPED}" && -n "${central_namespace}" ]]; then
+    if [[ -z "${BATS_TEST_COMPLETED:-}" && -z "${BATS_TEST_SKIPPED:-}" && -n "${central_namespace}" ]]; then
         # Test did not "complete" and was not skipped. Collect some analysis data.
         describe_pods_in_namespace "${central_namespace}"
         describe_deployments_in_namespace "${central_namespace}"
@@ -386,12 +443,8 @@ teardown() {
             describe_deployments_in_namespace "${sensor_namespace}"
         fi
     fi
-
-    run remove_existing_stackrox_resources "${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}" "stackrox"
-    echo "Post-test teardown complete."
-
-    _end
 }
+export -f collect_analysis_data
 
 @test "Upgrade from old Helm chart to HEAD Helm chart with Scanner v4 enabled" {
     init
@@ -442,16 +495,22 @@ EOT
         "$EARLIER_MAIN_IMAGE_TAG" "$old_sensor_chart" \
         "$secured_cluster_name" "$ROX_ADMIN_PASSWORD" "$central_endpoint"
 
+    _step "verify-scanner-V2-not-deployed"
+    verify_no_scannerV2_deployed "$CUSTOM_SENSOR_NAMESPACE"
+
     _step "verify-scanner-V4-not-deployed"
     verify_no_scannerV4_deployed "$CUSTOM_SENSOR_NAMESPACE"
 
     _step "upgrade-to-HEAD-sensor"
     deploy_sensor_with_helm "$CUSTOM_CENTRAL_NAMESPACE" "$CUSTOM_SENSOR_NAMESPACE" "" "" "" "" ""
 
-    _step "verify-scanner-not-deployed"
+    _step "verify-scanner-V2-not-deployed"
+    verify_no_scannerV2_deployed "$CUSTOM_SENSOR_NAMESPACE"
+
+    _step "verify-scanner-V4-not-deployed"
     verify_no_scannerV4_deployed "$CUSTOM_SENSOR_NAMESPACE"
 
-    _begin "enable-scanner-V4-in-secured-cluster"
+    _begin "enable-scanners-in-secured-cluster"
     # Without creating the scanner-db-password secret manually Scanner V2 doesn't come up.
     # Let's just reuse an existing password for this for simplicity.
     "$ORCH_CMD" </dev/null -n "$CUSTOM_SENSOR_NAMESPACE" create secret generic scanner-db-password \
@@ -461,13 +520,16 @@ EOT
         --set scannerV4.disable=false \
         --set scanner.disable=false
 
+    _step "verify-scanner-V2-deployed"
+    verify_scannerV2_deployed "$CUSTOM_SENSOR_NAMESPACE"
+
     _step "verify-scanner-V4-deployed"
     verify_scannerV4_indexer_deployed "$CUSTOM_SENSOR_NAMESPACE"
 
     _end
 }
 
-@test "Fresh installation of HEAD Helm charts and toggling Scanner V4" {
+@test "Fresh installation of HEAD Helm charts in different namespaces and toggling Scanner V4" {
     local password_setting=$(cat <<EOT
 central:
   adminPassword:
@@ -503,6 +565,34 @@ EOT
     run verify_deployment_scannerV4_env_var_set "$CUSTOM_SENSOR_NAMESPACE" "sensor"
 
     ######################
+    _begin "upgrading-head-central"
+    info "Upgrade central-services using same chart version"
+    deploy_central_with_helm "$CUSTOM_CENTRAL_NAMESPACE" "$MAIN_IMAGE_TAG" "" \
+        -f <(echo "$password_setting")
+    local central_endpoint="$(get_central_endpoint "$CUSTOM_CENTRAL_NAMESPACE")"
+
+    ######################
+    _begin "uprading-head-sensor"
+    info "Upgrading secured-cluster-services using same chart version"
+    deploy_sensor_with_helm "$CUSTOM_CENTRAL_NAMESPACE" "$CUSTOM_SENSOR_NAMESPACE" \
+        "$MAIN_IMAGE_TAG" "" \
+        "$secured_cluster_name" "$ROX_ADMIN_PASSWORD" "$central_endpoint"
+
+    ######################
+    _step "verifying-central-scanners-deployed"
+    info "Verifying that scanners are still installed"
+    verify_scannerV2_deployed "$CUSTOM_CENTRAL_NAMESPACE"
+    verify_scannerV4_deployed "$CUSTOM_CENTRAL_NAMESPACE"
+    verify_deployment_scannerV4_env_var_set "$CUSTOM_CENTRAL_NAMESPACE" "central"
+
+    ######################
+    _step "verifying-sensor-scanners-deployed"
+    info "Verifying that scanners are still installed"
+    verify_scannerV2_deployed "$CUSTOM_SENSOR_NAMESPACE"
+    verify_scannerV4_indexer_deployed "$CUSTOM_SENSOR_NAMESPACE"
+    run verify_deployment_scannerV4_env_var_set "$CUSTOM_SENSOR_NAMESPACE" "sensor"
+
+    ######################
     _begin "disabling-central-scanner-v4"
     info "Disabling Scanner V4 for central-services"
     deploy_central_with_helm "$CUSTOM_CENTRAL_NAMESPACE" "$MAIN_IMAGE_TAG" "" \
@@ -525,6 +615,95 @@ EOT
     info "Verifying Scanner V4 is getting removed for secured-cluster-services"
     verify_deployment_deletion_with_timeout 4m "$CUSTOM_SENSOR_NAMESPACE" scanner-v4-indexer scanner-v4-db
     run ! verify_deployment_scannerV4_env_var_set "$CUSTOM_SENSOR_NAMESPACE" "sensor"
+
+    _end
+}
+
+@test "Fresh installation of HEAD Helm charts in the same namespace and toggling Scanner V4" {
+    local password_setting=$(cat <<EOT
+central:
+  adminPassword:
+    value: "$ROX_ADMIN_PASSWORD"
+EOT
+    )
+    local secured_cluster_name="$(get_cluster_name)"
+    namespace="stackrox"
+
+    ######################
+    _begin "deploying-head-central"
+    info "Deploying central-services using HEAD chart"
+    deploy_central_with_helm "$namespace" "$MAIN_IMAGE_TAG" "" \
+        -f <(echo "$password_setting")
+    local central_endpoint="$(get_central_endpoint "$namespace")"
+
+    ######################
+    _begin "deploying-head-sensor"
+    info "Deploying secured-cluster-services using HEAD chart"
+    deploy_sensor_with_helm "$namespace" "$namespace" \
+        "$MAIN_IMAGE_TAG" "" \
+        "$secured_cluster_name" "$ROX_ADMIN_PASSWORD" "$central_endpoint"
+
+    ######################
+    _step "verifying-central-scanners-deployed"
+    info "Verifying that scanners are deployed"
+    verify_scannerV2_deployed "$namespace"
+    verify_scannerV4_deployed "$namespace"
+    info "Verifying that scanner V4 is enabled for sensor"
+    verify_deployment_scannerV4_env_var_set "$namespace" "central"
+
+    ######################
+    _step "verifying-sensor-scanners-enabled"
+    info "Verifying that scanner V4 is enabled for sensor"
+    run verify_deployment_scannerV4_env_var_set "$namespace" "sensor"
+
+    ######################
+    _begin "upgrading-head-central"
+    info "Upgrade central-services using same chart version"
+    deploy_central_with_helm "$namespace" "$MAIN_IMAGE_TAG" "" \
+        -f <(echo "$password_setting")
+    local central_endpoint="$(get_central_endpoint "$namespace")"
+
+    ######################
+    _begin "uprading-head-sensor"
+    info "Upgrading secured-cluster-services using same chart version"
+    deploy_sensor_with_helm "$namespace" "$namespace" \
+        "$MAIN_IMAGE_TAG" "" \
+        "$secured_cluster_name" "$ROX_ADMIN_PASSWORD" "$central_endpoint"
+
+    ######################
+    _step "verifying-central-scanners-deployed"
+    info "Verifying that scanners are still installed"
+    verify_scannerV2_deployed "$namespace"
+    verify_scannerV4_deployed "$namespace"
+    verify_deployment_scannerV4_env_var_set "$namespace" "central"
+
+    ######################
+    _step "verifying-sensor-scanners-deployed"
+    info "Verifying that scanner V4 is still enabled for sensor"
+    run verify_deployment_scannerV4_env_var_set "$namespace" "sensor"
+
+    ######################
+    _begin "disabling-central-scanner-v4"
+    info "Disabling Scanner V4 for central-services"
+    deploy_central_with_helm "$namespace" "$MAIN_IMAGE_TAG" "" \
+        --reuse-values --set scannerV4.disable=true
+
+    ######################
+    _step "disabling-sensor-scanners"
+    info "Disabling Scanner V4 for secured-cluster-services"
+    deploy_sensor_with_helm "$namespace" "$namespace" "" "" "" "" "" \
+        --set scannerV4.disable=true --set scanner.disable=true
+
+    ######################
+    _step "verifying-central-scanner-v4-not-deployed"
+    info "Verifying Scanner V4 is getting removed for central-services"
+    verify_deployment_deletion_with_timeout 4m "$namespace" scanner-v4-indexer scanner-v4-matcher scanner-v4-db
+    run ! verify_deployment_scannerV4_env_var_set "$namespace" "central"
+
+    ######################
+    _step "verifying-sensor-scanner-v4-not-deployed"
+    info "Verifying Scanner V4 is not enables for sensor"
+    run ! verify_deployment_scannerV4_env_var_set "$namespace" "sensor"
 
     _end
 }
@@ -902,7 +1081,7 @@ EOT
 
 get_central_endpoint() {
     local namespace="$1"
-    local central_ip="$("${ORCH_CMD}" -n "$CUSTOM_CENTRAL_NAMESPACE" </dev/null get service central-loadbalancer \
+    local central_ip="$("${ORCH_CMD}" -n "$namespace" </dev/null get service central-loadbalancer \
         -o json | service_get_endpoint)"
     echo "${central_ip}:443"
 }
@@ -1575,4 +1754,82 @@ create_sensor_pull_secrets() {
     echo "{ \"apiVersion\": \"v1\", \"kind\": \"Namespace\", \"metadata\": { \"name\": \"$namespace\" } }" | "${ORCH_CMD}" apply -f -
     "${ROOT}/deploy/common/pull-secret.sh" stackrox "$DEFAULT_IMAGE_REGISTRY_HOST" | "${ORCH_CMD}" -n "$namespace" apply -f -
     "${ROOT}/deploy/common/pull-secret.sh" collector-stackrox "$DEFAULT_IMAGE_REGISTRY_HOST" | "${ORCH_CMD}" -n "$namespace" apply -f -
+}
+
+resolve_previous_x_y_0_version() {
+    local helm_charts_repo="$1"
+    local version_tag="$2"
+    local x_y_version
+    x_y_version=$(extract_x_y_part "$version_tag")
+    # Gets all Helm chart versions. Make sure that we also have a x.y.z tag
+    # corresponding to the provided one -- it might not be released yet, but that is fine,
+    # we only need it for identifying the *previous* version.
+    local regex_x_y_z="^[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+$"
+    local helm_chart_versions
+    helm_chart_versions=$(list_sub_directories "${helm_charts_repo}" | grep -E "$regex_x_y_z")
+    if [[ -z "$helm_chart_versions" ]]; then
+        die "No helm chart versions were found in \"${helm_charts_repo}\"."
+    fi
+    local previous_x_y_0_version
+    previous_x_y_0_version=$(
+        # Begin with all sort of tags.
+        { echo "$helm_chart_versions"; echo "$x_y_version"; } |
+        # Delete the z component.
+        extract_x_y_part |
+        # Sort stripped x.y version tags.
+        sort -V |
+        # Filter out duplicates.
+        uniq |
+        # Locate the current version among the tags, output also the previous tag.
+        grep -Fx "$x_y_version" -B 1 |
+        # Check if we have exactly two lines, abort pipe otherwise.
+        assert_num_lines 2 |
+        # Extract the previous tag.
+        head -1 |
+        # Add a z=0 suffix.
+        sed -e 's/^\(.*\)$/\1.0/'
+    )
+    echo -n "$previous_x_y_0_version"
+}
+
+list_sub_directories() {
+    local path="$1"
+    (
+        cd "$path"
+        for d in */; do echo "$d"; done | tr -d '/'
+    )
+}
+
+extract_x_y_part() {
+    local version_tag="${1:-}"
+    regex='s/^\([[:digit:]]\+\.[[:digit:]]\+\)\..*$/\1/'
+    if [[ -z "$version_tag" ]]; then
+        sed -e "$regex"
+    else
+        sed -e "$regex" <<<"$version_tag"
+    fi
+}
+
+assert_num_lines() {
+    local num="$1"
+    local input
+    input=$(cat)
+    input_lines="$(echo -n "$input" | safe_count_lines)"
+    if [[ "$input_lines" != "$num" ]]; then
+        echo >&2 "Assertion failed: Expected exactly $num lines, but got $input_lines lines:"
+        echo >&2 "---"
+        [[ -n "$input" ]] && echo >&2 "$input"
+        echo >&2 "---"
+        exit 1
+    fi
+    echo "$input"
+}
+
+# Also works in case the last line is missing a newline.
+safe_count_lines() {
+    awk 'BEGIN { c = 0 } { c++ } END { print c }'
+}
+
+roxctl_built_in_release_mode() {
+    ! roxctl helm output central-services --help 2>&1 | grep -- --debug= >/dev/null
 }

@@ -596,6 +596,7 @@ func startGRPCServer() {
 		GRPCMetrics:        metrics.GRPCSingleton(),
 		HTTPMetrics:        metrics.HTTPSingleton(),
 		Endpoints:          endpointCfgs,
+		Subsystem:          pkgMetrics.CentralSubsystem,
 	}
 
 	if devbuild.IsEnabled() {

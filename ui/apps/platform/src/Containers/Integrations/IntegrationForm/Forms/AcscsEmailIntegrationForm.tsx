@@ -41,7 +41,7 @@ export const defaultValues: ACSCSEmailIntegrationFormValues = {
     uiEndpoint: window.location.origin,
 };
 
-function EmailIntegrationForm({
+function AcscsEmailIntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<ACSCSEmailIntegration>): ReactElement {
@@ -157,4 +157,4 @@ function EmailIntegrationForm({
     );
 }
 
-export default EmailIntegrationForm;
+export default AcscsEmailIntegrationForm;
