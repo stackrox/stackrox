@@ -122,3 +122,6 @@ spec:
           memory: 3Gi
         requests:
           memory: 3Gi
+
+  taskRunTemplate:
+    serviceAccountName: build-pipeline-main
