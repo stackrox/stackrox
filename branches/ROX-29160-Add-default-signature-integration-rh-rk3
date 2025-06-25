@@ -1,7 +1,7 @@
 {
   "base": {
     "name": "ROX-17872-Remove-remaining-reference-to-feature-flag",
-    "hash": "c61921b2a661b166da374093dabfe04417870d87"
+    "hash": "d5718a821256aed70bd421518421cfc9464e3f76"
   },
   "upstream": {
     "branch": "ROX-29160-Add-default-signature-integration-rh-rk3"
