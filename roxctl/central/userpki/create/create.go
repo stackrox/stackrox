@@ -108,7 +108,7 @@ func (cmd *centralUserPkiCreateCommand) createProvider() error {
 
 	conn, err := cmd.env.GRPCConnection(common.WithRetryTimeout(cmd.retryTimeout))
 	if err != nil {
-		return errors.Wrap(err, "establishing gRPC connection")
+		return errors.Wrap(err, "establishing gRPC connection to create user PKI auth provider")
 	}
 	defer utils.IgnoreError(conn.Close)
 	ctx, cancel := context.WithTimeout(pkgCommon.Context(), cmd.timeout)

@@ -236,7 +236,7 @@ func (r *v2Restorer) Run(ctx context.Context, file *os.File) (*http.Response, er
 			})
 
 			if concurrency.WaitWithDeadline(ctx, continueTime) {
-				return nil, errors.Wrap(ctx.Err(), "waiting for retry deadline")
+				return nil, errors.Wrap(ctx.Err(), "waiting to retry restore")
 			}
 
 			nextReq, err = r.resumeAfterError(ctx)
@@ -249,7 +249,7 @@ func (r *v2Restorer) Run(ctx context.Context, file *os.File) (*http.Response, er
 		}
 	}
 
-	return nil, errors.Wrap(ctx.Err(), "context cancelled during restore")
+	return nil, errors.Wrap(ctx.Err(), "context error during restore")
 }
 
 func (r *v2Restorer) performHTTPRequest(req *http.Request) (*http.Response, error) {
@@ -257,7 +257,7 @@ func (r *v2Restorer) performHTTPRequest(req *http.Request) (*http.Response, erro
 		req.Body = r.transferProgressBar.ProxyReader(req.Body)
 	}
 	resp, err := r.httpClient.Do(req)
-	return resp, errors.Wrap(err, "executing HTTP request")
+	return resp, errors.Wrap(err, "executing restore HTTP request")
 }
 
 func (r *v2Restorer) initDataReader(file *os.File, manifest *v1.DBExportManifest) error {
@@ -273,7 +273,7 @@ func (r *v2Restorer) initDataReader(file *os.File, manifest *v1.DBExportManifest
 		readerWindowSize,
 		func() hash.Hash { return crc32.NewIEEE() },
 	)
-	return errors.Wrap(err, "creating sliding reader")
+	return errors.Wrap(err, "creating restore data reader")
 }
 
 func (r *v2Restorer) initResume(ctx context.Context, file *os.File, activeStatus *v1.DBRestoreProcessStatus) (*http.Request, error) {
@@ -408,7 +408,7 @@ func (r *v2Restorer) init(ctx context.Context, file *os.File) (*http.Request, er
 
 func (r *v2Restorer) prepareResumeRequest(resumeInfo *v1.DBRestoreProcessStatus_ResumeInfo) (*http.Request, error) {
 	if pos, err := r.dataReader.Seek(resumeInfo.GetPos(), io.SeekStart); err != nil {
-		return nil, errors.Wrap(err, "seeking to resume position")
+		return nil, errors.Wrap(err, "seeking to restore resume position")
 	} else if pos != resumeInfo.GetPos() {
 		return nil, errox.NotFound.Newf("could not seek to resume position %d in data: data ends at position %d", resumeInfo.GetPos(), pos)
 	} else if r.transferProgressBar != nil {
@@ -420,7 +420,7 @@ func (r *v2Restorer) prepareResumeRequest(resumeInfo *v1.DBRestoreProcessStatus_
 
 	req, err := r.httpClient.NewReq(http.MethodPost, "/db/v2/resumerestore", io.NopCloser(r.dataReader))
 	if err != nil {
-		return nil, errors.Wrap(err, "creating resume request")
+		return nil, errors.Wrap(err, "creating restore resume request")
 	}
 
 	queryValues := req.URL.Query()

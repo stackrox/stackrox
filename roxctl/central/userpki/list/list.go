@@ -58,7 +58,7 @@ func (cmd *centralUserPkiListCommand) construct(cbr *cobra.Command) error {
 func (cmd *centralUserPkiListCommand) listProviders() error {
 	conn, err := cmd.env.GRPCConnection(common.WithRetryTimeout(cmd.retryTimeout))
 	if err != nil {
-		return errors.Wrap(err, "establishing gRPC connection")
+		return errors.Wrap(err, "establishing gRPC connection to list user PKI auth providers")
 	}
 	defer utils.IgnoreError(conn.Close)
 
