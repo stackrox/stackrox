@@ -38,6 +38,10 @@ import (
 	"golang.org/x/sync/semaphore"
 )
 
+const (
+	imageReprocessorSemaphoreSize = int64(5)
+)
+
 var (
 	log = logging.LoggerForModule(administrationEvents.EnableAdministrationEvents())
 
@@ -73,8 +77,6 @@ var (
 			// to include those as well.
 			time.Unix(0, 0), time.Now().Add(10*time.Second)).
 		ProtoQuery()
-
-	injectMessageTimeoutDur = env.ReprocessInjectMessageTimeout.DurationSetting()
 )
 
 // Singleton returns the singleton reprocessor loop
@@ -144,6 +146,8 @@ func newLoopWithDuration(connManager connection.Manager, imageEnricher imageEnri
 		signatureVerificationSig: concurrency.NewSignal(),
 
 		connManager: connManager,
+
+		injectMessageTimeoutDur: env.ReprocessInjectMessageTimeout.DurationSetting(),
 	}
 }
 
@@ -187,6 +191,8 @@ type loopImpl struct {
 	reprocessingInProgress concurrency.Flag
 
 	connManager connection.Manager
+
+	injectMessageTimeoutDur time.Duration
 }
 
 func (l *loopImpl) ReprocessRiskForDeployments(deploymentIDs ...string) {
@@ -375,7 +381,7 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 		return
 	}
 
-	sema := semaphore.NewWeighted(5)
+	sema := semaphore.NewWeighted(imageReprocessorSemaphoreSize)
 	wg := concurrency.NewWaitGroup(0)
 	nReprocessed := atomic.NewInt32(0)
 	skipClusterIDs := maputil.NewSyncMap[string, struct{}]()
@@ -478,9 +484,9 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 // injectMessage will inject a message onto connection, an error will be returned if the
 // injection fails for any reason, including timeout.
 func (l *loopImpl) injectMessage(ctx context.Context, conn connection.SensorConnection, msg *central.MsgToSensor) error {
-	if injectMessageTimeoutDur > 0 {
+	if l.injectMessageTimeoutDur > 0 {
 		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, injectMessageTimeoutDur)
+		ctx, cancel = context.WithTimeout(ctx, l.injectMessageTimeoutDur)
 		defer cancel()
 	}
 
