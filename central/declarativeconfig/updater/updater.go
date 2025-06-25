@@ -34,7 +34,7 @@ func DefaultResourceUpdaters() map[reflect.Type]ResourceUpdater {
 	return map[reflect.Type]ResourceUpdater{
 		types.AuthProviderType: newAuthProviderUpdater(authProviderDatastore.Singleton(), authProviderRegistry.Singleton(),
 			groupDataStore.Singleton(), declarativeConfigHealth.Singleton()),
-		types.GroupType:         newGroupUpdater(groupDataStore.Singleton(), declarativeConfigHealth.Singleton()),
+		types.GroupType:         newGroupUpdater(authProviderRegistry.Singleton(), groupDataStore.Singleton(), declarativeConfigHealth.Singleton()),
 		types.RoleType:          newRoleUpdater(roleDatastore.Singleton(), declarativeConfigHealth.Singleton()),
 		types.PermissionSetType: newPermissionSetUpdater(roleDatastore.Singleton(), declarativeConfigHealth.Singleton()),
 		types.AccessScopeType:   newAccessScopeUpdater(roleDatastore.Singleton(), declarativeConfigHealth.Singleton()),

@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/central/group/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/grpc"
 )
 
@@ -17,8 +18,9 @@ type Service interface {
 }
 
 // New returns a new instance of the service. Please use the Singleton instead.
-func New(groups datastore.DataStore) Service {
+func New(groups datastore.DataStore, authProviderRegistry authproviders.Registry) Service {
 	return &serviceImpl{
-		groups: groups,
+		groups:               groups,
+		authProviderRegistry: authProviderRegistry,
 	}
 }

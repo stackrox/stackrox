@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/group/datastore/serialize"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -37,7 +38,8 @@ var (
 type serviceImpl struct {
 	v1.UnimplementedGroupServiceServer
 
-	groups datastore.DataStore
+	groups               datastore.DataStore
+	authProviderRegistry authproviders.Registry
 }
 
 func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
@@ -118,14 +120,14 @@ func (s *serviceImpl) BatchUpdate(ctx context.Context, req *v1.GroupBatchUpdateR
 	}
 
 	removed, updated, added := diffGroups(req.GetPreviousGroups(), req.GetRequiredGroups())
-	if err := s.groups.Mutate(ctx, removed, updated, added, req.GetForce()); err != nil {
+	if err := s.groups.Mutate(ctx, removed, updated, added, req.GetForce(), s.authProviderRegistry); err != nil {
 		return nil, err
 	}
 	return &v1.Empty{}, nil
 }
 
 func (s *serviceImpl) CreateGroup(ctx context.Context, group *storage.Group) (*v1.Empty, error) {
-	err := s.groups.Add(ctx, group)
+	err := s.groups.Add(ctx, group, s.authProviderRegistry)
 	if err != nil {
 		return nil, err
 	}
@@ -133,7 +135,7 @@ func (s *serviceImpl) CreateGroup(ctx context.Context, group *storage.Group) (*v
 }
 
 func (s *serviceImpl) UpdateGroup(ctx context.Context, updateReq *v1.UpdateGroupRequest) (*v1.Empty, error) {
-	err := s.groups.Update(ctx, updateReq.GetGroup(), updateReq.GetForce())
+	err := s.groups.Update(ctx, updateReq.GetGroup(), updateReq.GetForce(), s.authProviderRegistry)
 	if err != nil {
 		return nil, err
 	}
