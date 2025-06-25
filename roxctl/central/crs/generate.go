@@ -16,12 +16,15 @@ import (
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // generateCRS generates a new CRS using Central's API and writes the newly generated CRS into the
 // file specified by `outFilename` (if it is non-empty) or to stdout (if `outFilename` is empty).
 func generateCRS(cliEnvironment environment.Environment, name string,
 	outFilename string, timeout time.Duration, retryTimeout time.Duration,
+	validFor time.Duration, validUntil time.Time,
 ) error {
 	var err error
 	var outFile *os.File
@@ -52,6 +55,12 @@ func generateCRS(cliEnvironment environment.Environment, name string,
 	}
 
 	req := v1.CRSGenRequest{Name: name}
+	if validFor != 0 {
+		req.ValidFor = durationpb.New(validFor)
+	}
+	if !validUntil.IsZero() {
+		req.ValidUntil = timestamppb.New(validUntil)
+	}
 	resp, err := svc.GenerateCRS(ctx, &req)
 	if err != nil {
 		if errStatus, ok := status.FromError(err); ok && errStatus.Code() == codes.Unimplemented {
@@ -90,6 +99,8 @@ func generateCRS(cliEnvironment environment.Environment, name string,
 // generateCommand implements the command for generating new CRSs.
 func generateCommand(cliEnvironment environment.Environment) *cobra.Command {
 	var outputFile string
+	var validFor string
+	var validUntil string
 
 	c := &cobra.Command{
 		Use:   "generate <CRS name>",
@@ -104,9 +115,26 @@ func generateCommand(cliEnvironment environment.Environment) *cobra.Command {
 			if outputFile == "-" {
 				outputFile = ""
 			}
-			return generateCRS(cliEnvironment, name, outputFile, flags.Timeout(cmd), flags.RetryTimeout(cmd))
+			validForDuration := time.Duration(0)
+			validUntilTime := time.Time{}
+			var err error
+			if validFor != "" {
+				validForDuration, err = time.ParseDuration(validFor)
+				if err != nil {
+					return errors.Wrap(err, "Invalid validity duration specified using `--valid-for'")
+				}
+			}
+			if validUntil != "" {
+				validUntilTime, err = time.Parse(time.RFC3339, validUntil)
+				if err != nil {
+					return errors.Wrap(err, "Invalid validity timestamp specified using `--valid-until'")
+				}
+			}
+			return generateCRS(cliEnvironment, name, outputFile, flags.Timeout(cmd), flags.RetryTimeout(cmd), validForDuration, validUntilTime)
 		},
 	}
+	c.PersistentFlags().StringVarP(&validFor, "valid-for", "", "", "Specify validity duration for the new CRS (e.g. \"10m\", \"1d\").")
+	c.PersistentFlags().StringVarP(&validUntil, "valid-until", "", "", "Specify validity as an RFC3339 timestamp for the new CRS.")
 	c.PersistentFlags().StringVarP(&outputFile, "output", "o", "", "File to be used for storing the newly generated CRS (- for stdout).")
 
 	return c
