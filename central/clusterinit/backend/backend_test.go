@@ -238,6 +238,28 @@ func (s *clusterInitBackendTestSuite) TestCRSNameMustBeUnique() {
 	s.Require().ErrorIs(err, store.ErrInitBundleDuplicateName)
 }
 
+func (s *clusterInitBackendTestSuite) TestCRSDefaultExpiration() {
+	ctx := s.ctx
+	crsName := "crs-default-expiration"
+
+	expectedNotAfter := time.Now().Add(1 * time.Hour)
+
+	validUntil := time.Time{}.UTC()
+	crsWithMeta, err := s.backend.IssueCRS(ctx, crsName, validUntil, time.Duration(0))
+	s.Require().NoError(err)
+
+	certPEM := []byte(crsWithMeta.CRS.Cert)
+	certs, _, err := helpers.ParseOneCertificateFromPEM(certPEM)
+	utils.Must(err)
+	s.Require().Len(certs, 1)
+	cert := certs[0]
+
+	epsilon, err := time.ParseDuration("10s")
+	utils.Must(err)
+
+	s.Require().Less(cert.NotAfter.Sub(expectedNotAfter).Abs(), epsilon)
+}
+
 func (s *clusterInitBackendTestSuite) TestCRSExpirationValidUntil() {
 	ctx := s.ctx
 	crsName := "crs-expiration-valid-until"
