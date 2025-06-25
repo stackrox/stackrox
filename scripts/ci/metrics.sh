@@ -288,7 +288,7 @@ _save_metrics() {
 
     info "Saving Big Query test records from ${csv} to ${to}"
 
-    gsutil cp "${csv}" "${to}/"
+    gcloud storage cp "${csv}" "${to}/"
 }
 
 batch_load_test_metrics() {
@@ -315,7 +315,7 @@ _load_one_batch() {
     local storage_upload="${_BATCH_STORAGE_ROOT}/${subdir}/${_BATCH_STORAGE_UPLOAD_SUBDIR}"
     local storage_processing="${_BATCH_STORAGE_ROOT}/${subdir}/processing"
     local storage_done="${_BATCH_STORAGE_ROOT}/${subdir}/done"
-    for metrics_file in $(gsutil ls "${storage_upload}"); do
+    for metrics_file in $(gcloud storage ls "${storage_upload}"); do
         files+=("${metrics_file}")
         [[ "${#files[@]}" -eq "${_BATCH_SIZE}" ]] && break
     done
@@ -330,8 +330,8 @@ _load_one_batch() {
     local process_location
     process_location="${storage_processing}/$(date +%Y-%m-%d-%H-%M-%S.%N)"
     info "Moving the batch to ${process_location}"
-    gsutil -m mv "${files[@]}" "${process_location}/"
-    gsutil ls -l "${process_location}"
+    gcloud storage mv "${files[@]}" "${process_location}/"
+    gcloud storage ls -l "${process_location}"
 
     info "Loading into BQ"
     if bq load \
@@ -340,7 +340,7 @@ _load_one_batch() {
         "$table_name" "${process_location}/*"
     then
         info "Moving the processed batch to ${storage_done}"
-        gsutil -m mv "${process_location}" "${storage_done}/"
+        gcloud storage mv "${process_location}" "${storage_done}/"
     else
         info "ERROR processing the batch, leaving in ${process_location}"
         touch error
