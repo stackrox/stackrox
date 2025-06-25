@@ -28,7 +28,7 @@ func TestIncrementMsgToSensorSkipCounter(t *testing.T) {
 	t.Run("inc and extract type", func(t *testing.T) {
 		// Clear any prior values.
 		prometheus.Unregister(msgToSensorSkipCounter)
-		prometheus.Register(msgToSensorSkipCounter)
+		require.NoError(t, prometheus.Register(msgToSensorSkipCounter))
 
 		// Get references to the counters.
 		updImgCounter, err := msgToSensorSkipCounter.GetMetricWith(
