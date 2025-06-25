@@ -118,7 +118,7 @@ deploy_external_postgres_central() {
          --set central.persistence.none=true \
          --set central.exposure.loadBalancer.enabled=true \
          --set system.enablePodSecurityPolicies=false \
-         --set central.image.tag="${EARLIER_TAG}" \
+         --set central.image.tag="${CURRENT_TAG}" \
          --set scanner.image.tag="$(cat SCANNER_VERSION)" \
          --set scanner.dbImage.tag="$(cat SCANNER_VERSION)" \
          --set scanner.resources.limits.memory="6Gi"
@@ -132,10 +132,10 @@ deploy_external_postgres_central() {
     ci_export "ROX_ADMIN_PASSWORD" "$ROX_ADMIN_PASSWORD"
 }
 
-restore_4_1_backup() {
-    info "Restoring a 4.1 backup into a newer central"
+restore_4_6_backup() {
+    info "Restoring a 4.6 backup into a newer central"
 
-    restore_4_1_postgres_backup
+    restore_4_6_postgres_backup
 }
 
 preamble() {
