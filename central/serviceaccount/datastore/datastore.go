@@ -26,7 +26,7 @@ type DataStore interface {
 	RemoveServiceAccount(ctx context.Context, id string) error
 }
 
-// New returns a new instance of DataStore using the input store, and searcher.
+// New returns a new instance of DataStore using the input store.
 func New(saStore store.Store) DataStore {
 	d := &datastoreImpl{
 		storage: saStore,
