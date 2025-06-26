@@ -116,7 +116,7 @@ run_byodb_test() {
     store_qa_test_results "byodb-smoke-tests"
     [[ ! -f FAIL ]] || die "Smoke tests failed"
 
-    collect_and_check_stackrox_logs "$log_output_dir"
+    collect_and_check_stackrox_logs "$log_output_dir" "byodb_smoke"
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
