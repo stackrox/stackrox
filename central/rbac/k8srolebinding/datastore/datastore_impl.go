@@ -6,7 +6,6 @@ import (
 
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/rbac/k8srolebinding/internal/store"
-	"github.com/stackrox/rox/central/rbac/k8srolebinding/search"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
@@ -19,8 +18,7 @@ var (
 )
 
 type datastoreImpl struct {
-	storage  store.Store
-	searcher search.Searcher
+	storage store.Store
 }
 
 func (d *datastoreImpl) GetRoleBinding(ctx context.Context, id string) (*storage.K8SRoleBinding, bool, error) {
@@ -37,11 +35,19 @@ func (d *datastoreImpl) GetRoleBinding(ctx context.Context, id string) (*storage
 }
 
 func (d *datastoreImpl) SearchRoleBindings(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
-	return d.searcher.SearchRoleBindings(ctx, q)
+	bindings, results, err := d.searchRoleBindings(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+	return convertMany(bindings, results), nil
 }
 
 func (d *datastoreImpl) SearchRawRoleBindings(ctx context.Context, request *v1.Query) ([]*storage.K8SRoleBinding, error) {
-	return d.searcher.SearchRawRoleBindings(ctx, request)
+	bindings, _, err := d.searchRoleBindings(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return bindings, nil
 }
 
 func (d *datastoreImpl) UpsertRoleBinding(ctx context.Context, request *storage.K8SRoleBinding) error {
@@ -66,13 +72,44 @@ func (d *datastoreImpl) RemoveRoleBinding(ctx context.Context, id string) error 
 
 func (d *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "K8SRoleBinding", "Search")
-	return d.searcher.Search(ctx, q)
+	return d.storage.Search(ctx, q)
 }
 
 func (d *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
-	return d.searcher.Count(ctx, q)
+	return d.storage.Count(ctx, q)
 }
 
 func (d *datastoreImpl) GetManyRoleBindings(ctx context.Context, ids []string) ([]*storage.K8SRoleBinding, []int, error) {
 	return d.storage.GetMany(ctx, ids)
+}
+
+func (d *datastoreImpl) searchRoleBindings(ctx context.Context, q *v1.Query) ([]*storage.K8SRoleBinding, []searchPkg.Result, error) {
+	results, err := d.Search(ctx, q)
+	if err != nil {
+		return nil, nil, err
+	}
+	bindings, missingIndices, err := d.storage.GetMany(ctx, searchPkg.ResultsToIDs(results))
+	if err != nil {
+		return nil, nil, err
+	}
+	results = searchPkg.RemoveMissingResults(results, missingIndices)
+	return bindings, results, nil
+}
+
+func convertMany(bindings []*storage.K8SRoleBinding, results []searchPkg.Result) []*v1.SearchResult {
+	outputResults := make([]*v1.SearchResult, len(bindings))
+	for index, binding := range bindings {
+		outputResults[index] = convertOne(binding, &results[index])
+	}
+	return outputResults
+}
+
+func convertOne(binding *storage.K8SRoleBinding, result *searchPkg.Result) *v1.SearchResult {
+	return &v1.SearchResult{
+		Category:       v1.SearchCategory_ROLEBINDINGS,
+		Id:             binding.GetId(),
+		Name:           binding.GetName(),
+		FieldToMatches: searchPkg.GetProtoMatchesMap(result.Matches),
+		Score:          result.Score,
+	}
 }
