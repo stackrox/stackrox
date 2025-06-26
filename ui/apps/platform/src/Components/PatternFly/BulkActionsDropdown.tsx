@@ -1,5 +1,5 @@
 import React, { ReactElement, ReactNode, useState } from 'react';
-import { Dropdown, DropdownToggle } from '@patternfly/react-core/deprecated';
+import { Dropdown, DropdownList, MenuToggle, MenuToggleElement } from '@patternfly/react-core';
 import { CaretDownIcon } from '@patternfly/react-icons';
 
 type BulkActionsDropdownProps = {
@@ -15,39 +15,34 @@ function BulkActionsDropdown({
 }: BulkActionsDropdownProps): ReactElement {
     const [isOpen, setIsOpen] = useState(false);
 
-    function onToggle(value) {
-        setIsOpen(value);
+    function onToggleClick() {
+        setIsOpen(!isOpen);
     }
 
-    function onFocus() {
-        const element = document.getElementById('bulk-actions-dropdown');
-        element?.focus();
-    }
-
-    // @TODO: Use "event.target.id" to figure out what was clicked and then do an action
     function onSelect() {
-        setIsOpen((prevValue) => !prevValue);
-        onFocus();
+        setIsOpen(false);
     }
-
-    const dropdownItems = React.Children.toArray(children);
 
     return (
         <Dropdown
+            isOpen={isOpen}
             onSelect={onSelect}
-            toggle={
-                <DropdownToggle
+            onOpenChange={(isOpen: boolean) => setIsOpen(isOpen)}
+            toggle={(toggleRef: React.Ref<MenuToggleElement>) => (
+                <MenuToggle
                     id="bulk-actions-dropdown"
-                    onToggle={(_event, value) => onToggle(value)}
-                    toggleIndicator={CaretDownIcon}
+                    ref={toggleRef}
+                    onClick={onToggleClick}
+                    isExpanded={isOpen}
                     isDisabled={isDisabled}
                 >
                     Bulk actions
-                </DropdownToggle>
-            }
-            isOpen={isOpen}
-            dropdownItems={dropdownItems}
-        />
+                </MenuToggle>
+            )}
+            shouldFocusToggleOnSelect
+        >
+            <DropdownList>{children}</DropdownList>
+        </Dropdown>
     );
 }
 
