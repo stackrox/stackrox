@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	netPolSearcher "github.com/stackrox/rox/central/networkpolicies/datastore/internal/search"
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/store"
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/undodeploymentstore"
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/undostore"
@@ -26,8 +25,7 @@ var (
 )
 
 type datastoreImpl struct {
-	storage  store.Store
-	searcher netPolSearcher.Searcher
+	storage store.Store
 
 	undoStorageLock       sync.Mutex
 	undoStorage           undostore.UndoStore
@@ -104,7 +102,7 @@ func (ds *datastoreImpl) CountMatchingNetworkPolicies(ctx context.Context, clust
 	if stringutils.AllEmpty(clusterID, namespace) {
 		return ds.storage.Count(ctx, search.EmptyQuery())
 	}
-	return ds.searcher.Count(ctx, getQuery(clusterID, namespace))
+	return ds.storage.Count(ctx, getQuery(clusterID, namespace))
 }
 
 func (ds *datastoreImpl) UpsertNetworkPolicy(ctx context.Context, np *storage.NetworkPolicy) error {
