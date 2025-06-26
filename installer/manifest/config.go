@@ -15,14 +15,16 @@ const (
 )
 
 type Config struct {
-	Action    string `yaml:"action"`
-	Namespace string `yaml:"namespace"`
-	ScannerV4 bool   `yaml:"scannerV4"`
-	DevMode   bool   `yaml:"devMode"`
-	Images    Images `yaml:"images"`
+	Action               string `yaml:"action"`
+	Namespace            string `yaml:"namespace"`
+	ScannerV4            bool   `yaml:"scannerV4"`
+	DevMode              bool   `yaml:"devMode"`
+	ApplyNetworkPolicies bool   `yaml:"applyNetworkPolicies"`
+	Images               Images `yaml:"images"`
 }
 
 type Images struct {
+	AdmissionControl string `yaml:"admissionControl"`
 	Sensor           string `yaml:"sensor"`
 	ConfigController string `yaml:"configController"`
 	Central          string `yaml:"central"`
@@ -35,10 +37,12 @@ type Images struct {
 }
 
 var DefaultConfig Config = Config{
-	Namespace: "stackrox",
-	ScannerV4: false,
-	DevMode:   false,
+	Namespace:            "stackrox",
+	ScannerV4:            false,
+	DevMode:              false,
+	ApplyNetworkPolicies: false,
 	Images: Images{
+		AdmissionControl: localStackroxImage,
 		Sensor:           localStackroxImage,
 		ConfigController: localStackroxImage,
 		Central:          localStackroxImage,

@@ -917,7 +917,9 @@ bin/scanner-v2: $(shell find scannerv2/ -name *.go)
 bin/local-nodescanner-v2: $(shell find scannerv2/ -name *.go)
 	go build -C scannerv2 $(DEV_LD_FLAGS) -o ../$@ ./tools/local-nodescanner
 
-bin/installer: $(shell find installer/ -name *.go)
+bin/installer: $(shell find installer/ -name *.go) config-controller/config/crd/bases/config.stackrox.io_securitypolicies.yaml
+	mkdir -p installer/manifest/crds/
+	cp config-controller/config/crd/bases/config.stackrox.io_securitypolicies.yaml installer/manifest/crds/
 	CGO_ENABLED=0 go build $(DEV_LD_FLAGS) -o $@ ./installer
 
 bin/updater: $(shell find scannerv2/ -name *.go)
