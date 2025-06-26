@@ -4,12 +4,13 @@ import { Table, Thead, Tbody, Tr, Th, Td, ActionsColumn, IAction } from '@patter
 
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import { UseURLPaginationResult } from 'hooks/useURLPagination';
-import { UseUrlSearchReturn } from 'hooks/useURLSearch';
 import { NetworkBaselinePeerStatus } from 'types/networkBaseline.proto';
 import { TableUIState } from 'utils/getTableUIState';
 
 import { BaselineStatusType } from '../types/flow.type';
 import { getFlowKey } from '../utils/flowUtils';
+
+import { useSearchFilterSidePanel } from '../NetworkGraphURLStateContext';
 
 type FlowTableProps = {
     pagination: UseURLPaginationResult;
@@ -17,7 +18,6 @@ type FlowTableProps = {
     statusType: BaselineStatusType;
     tableState: TableUIState<NetworkBaselinePeerStatus>;
     areAllRowsSelected: boolean;
-    urlSearchFiltering: UseUrlSearchReturn;
     onSelectAll: (sel: boolean) => void;
     rowActions: (flow: NetworkBaselinePeerStatus) => IAction[];
     isFlowSelected: (flow: NetworkBaselinePeerStatus) => boolean;
@@ -30,14 +30,13 @@ export function FlowTable({
     statusType,
     tableState,
     areAllRowsSelected,
-    urlSearchFiltering,
     onSelectAll,
     rowActions,
     isFlowSelected,
     onRowSelect,
 }: FlowTableProps) {
     const { page, perPage, setPage, setPerPage } = pagination;
-    const { setSearchFilter } = urlSearchFiltering;
+    const { setSearchFilter } = useSearchFilterSidePanel();
     return (
         <>
             <ToolbarContent>

@@ -3,7 +3,9 @@ import { Select, SelectOption } from '@patternfly/react-core/deprecated';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 
-export type EdgeState = 'active' | 'inactive';
+export const edgeStates = ['active', 'inactive'] as const;
+
+export type EdgeState = (typeof edgeStates)[number];
 
 type EdgeStateSelectProps = {
     edgeState: EdgeState;

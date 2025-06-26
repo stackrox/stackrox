@@ -18,16 +18,20 @@ import {
 import { InnerScrollContainer, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
-import { TimeWindow } from 'constants/timeWindows';
 import useRestQuery from 'hooks/useRestQuery';
-import { UseURLPaginationResult } from 'hooks/useURLPagination';
-import { UseUrlSearchReturn } from 'hooks/useURLSearch';
+import { QueryValue } from 'hooks/useURLParameter';
 import { getExternalNetworkFlows } from 'services/NetworkService';
 import { getTableUIState } from 'utils/getTableUIState';
 import { ExternalNetworkFlowsResponse } from 'types/networkFlow.proto';
 
 import { ExternalEntitiesIcon } from '../common/NetworkGraphIcons';
+import { EXTERNAL_SOURCE_ADDRESS_QUERY } from '../NetworkGraph.constants';
 import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
+import {
+    usePagination,
+    useSearchFilterSidePanel,
+    useTimeWindow,
+} from '../NetworkGraphURLStateContext';
 import { getDeploymentInfoForExternalEntity, protocolLabel } from '../utils/flowUtils';
 import { timeWindowToISO } from '../utils/timeWindow';
 
@@ -36,10 +40,7 @@ export type EntityDetailsProps = {
     entityName: string;
     entityId: string;
     scopeHierarchy: NetworkScopeHierarchy;
-    timeWindow: TimeWindow;
-    urlPagination: UseURLPaginationResult;
-    urlSearchFiltering: UseUrlSearchReturn;
-    onNodeSelect: (id: string) => void;
+    onNodeSelect: (id: string, parametersQuery?: QueryValue, searchFilter?: qs.ParsedQs) => void;
     onExternalIPSelect: (externalIP: string | undefined) => void;
 };
 
@@ -56,16 +57,16 @@ function EntityDetails({
     entityName,
     entityId,
     scopeHierarchy,
-    timeWindow,
-    urlPagination,
-    urlSearchFiltering,
     onNodeSelect,
     onExternalIPSelect,
 }: EntityDetailsProps) {
-    const { page, perPage, setPage, setPerPage } = urlPagination;
-    const { searchFilter } = urlSearchFiltering;
+    const { page, perPage, setPage, setPerPage } = usePagination();
+    const { buildSearchQuery, searchFilter } = useSearchFilterSidePanel();
+    const { timeWindow } = useTimeWindow();
+
     const clusterId = scopeHierarchy.cluster.id;
     const { deployments, namespaces } = scopeHierarchy;
+
     const fetchExternalNetworkFlows = useCallback((): Promise<ExternalNetworkFlowsResponse> => {
         const fromTimestamp = timeWindowToISO(timeWindow);
         return getExternalNetworkFlows(
@@ -167,7 +168,18 @@ function EntityDetails({
                                             const { deployment, id } = entity;
 
                                             const onEntitySelect = () => {
-                                                onNodeSelect(id);
+                                                onNodeSelect(
+                                                    id,
+                                                    {
+                                                        sidePanelTabState: 'FLOWS',
+                                                        sidePanelToggleState: 'EXTERNAL_FLOWS',
+                                                    },
+                                                    buildSearchQuery({
+                                                        [EXTERNAL_SOURCE_ADDRESS_QUERY]: [
+                                                            `${externalIPName}/32`,
+                                                        ],
+                                                    })
+                                                );
                                             };
 
                                             return (

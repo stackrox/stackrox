@@ -5,9 +5,10 @@ import { useNavigate } from 'react-router-dom';
 import { networkBasePath } from 'routePaths';
 import useAnalytics, { CLUSTER_LEVEL_SIMULATOR_OPENED } from 'hooks/useAnalytics';
 import useURLParameter from 'hooks/useURLParameter';
-import useURLSearch from 'hooks/useURLSearch';
 import { Simulation } from '../utils/getSimulation';
 import { getPropertiesForAnalytics } from '../utils/networkGraphURLUtils';
+
+import { useSearchFilter } from '../NetworkGraphURLStateContext';
 
 type SimulateNetworkPolicyButtonProps = {
     simulation: Simulation;
@@ -17,7 +18,7 @@ type SimulateNetworkPolicyButtonProps = {
 function SimulateNetworkPolicyButton({ simulation, isDisabled }: SimulateNetworkPolicyButtonProps) {
     const { analyticsTrack } = useAnalytics();
     const navigate = useNavigate();
-    const { searchFilter } = useURLSearch();
+    const { searchFilter } = useSearchFilter();
 
     const [, setSimulationQueryValue] = useURLParameter('simulation', undefined);
 
