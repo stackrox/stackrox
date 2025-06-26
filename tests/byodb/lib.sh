@@ -95,7 +95,11 @@ deploy_external_postgres() {
     envsubst < ./tests/byodb/simple-postgres.yaml | kubectl apply -f -
 
     kubectl get pods -n stackrox
-    sleep 60
+    # Replace this with a check making sure postgres is up
+    sleep 180
+    kubectl get pods -n stackrox
+
+    restore_4_6_backup
 }
 
 deploy_external_postgres_central() {
