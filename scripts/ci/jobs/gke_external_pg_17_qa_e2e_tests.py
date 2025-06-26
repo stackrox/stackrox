@@ -26,7 +26,9 @@ ClusterTestRunner(
     cluster=GKECluster("byodb-test", machine_type="e2-standard-8"),
     pre_test=PreSystemTests(),
     test=BYODBTest(),
-    post_test=PostClusterTest(),
+    post_test=PostClusterTest(
+        collect_central_artifacts=False
+    ),
     final_post=FinalPost(
         store_qa_tests_data=True,
     ),
