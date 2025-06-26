@@ -35,10 +35,15 @@ func (d *datastoreImpl) GetRoleBinding(ctx context.Context, id string) (*storage
 }
 
 func (d *datastoreImpl) SearchRoleBindings(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
-	bindings, results, err := d.searchRoleBindings(ctx, q)
+	results, err := d.Search(ctx, q)
 	if err != nil {
 		return nil, err
 	}
+	bindings, missingIndices, err := d.storage.GetMany(ctx, searchPkg.ResultsToIDs(results))
+	if err != nil {
+		return nil, err
+	}
+	results = searchPkg.RemoveMissingResults(results, missingIndices)
 	return convertMany(bindings, results), nil
 }
 
@@ -82,19 +87,6 @@ func (d *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 
 func (d *datastoreImpl) GetManyRoleBindings(ctx context.Context, ids []string) ([]*storage.K8SRoleBinding, []int, error) {
 	return d.storage.GetMany(ctx, ids)
-}
-
-func (d *datastoreImpl) searchRoleBindings(ctx context.Context, q *v1.Query) ([]*storage.K8SRoleBinding, []searchPkg.Result, error) {
-	results, err := d.Search(ctx, q)
-	if err != nil {
-		return nil, nil, err
-	}
-	bindings, missingIndices, err := d.storage.GetMany(ctx, searchPkg.ResultsToIDs(results))
-	if err != nil {
-		return nil, nil, err
-	}
-	results = searchPkg.RemoveMissingResults(results, missingIndices)
-	return bindings, results, nil
 }
 
 func convertMany(bindings []*storage.K8SRoleBinding, results []searchPkg.Result) []*v1.SearchResult {
