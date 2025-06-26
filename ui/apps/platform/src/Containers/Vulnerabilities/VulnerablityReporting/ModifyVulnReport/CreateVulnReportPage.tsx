@@ -19,12 +19,6 @@ import useCreateReport from '../api/useCreateReport';
 import ReportFormErrorAlert from './ReportFormErrorAlert';
 import ReportFormWizard from './ReportFormWizard';
 
-const wizardStepNames = [
-    'Configure report parameters',
-    'Configure delivery destinations',
-    'Review and create',
-];
-
 function CreateVulnReportPage() {
     const navigate = useNavigate();
 
@@ -66,14 +60,7 @@ function CreateVulnReportPage() {
             </PageSection>
             <Divider component="div" />
             <PageSection padding={{ default: 'noPadding' }} isCenterAligned>
-                <ReportFormWizard
-                    formik={formik}
-                    navAriaLabel="Report creation steps"
-                    wizardStepNames={wizardStepNames}
-                    onSave={onCreate}
-                    finalStepNextButtonText={'Create'}
-                    isSaving={isLoading}
-                />
+                <ReportFormWizard formik={formik} onSave={onCreate} isSaving={isLoading} />
             </PageSection>
         </>
     );

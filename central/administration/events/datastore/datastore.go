@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stackrox/rox/central/administration/events/datastore/internal/search"
 	"github.com/stackrox/rox/central/administration/events/datastore/internal/store"
 	pgStore "github.com/stackrox/rox/central/administration/events/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/central/administration/events/datastore/internal/writer"
@@ -29,20 +28,18 @@ type DataStore interface {
 	ListEvents(ctx context.Context, query *v1.Query) ([]*storage.AdministrationEvent, error)
 }
 
-func newDataStore(searcher search.Searcher, storage store.Store, writer writer.Writer) DataStore {
+func newDataStore(storage store.Store, writer writer.Writer) DataStore {
 	return &datastoreImpl{
-		searcher: searcher,
-		store:    storage,
-		writer:   writer,
+		store:  storage,
+		writer: writer,
 	}
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
 func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) DataStore {
 	store := pgStore.New(pool)
-	searcher := search.New(store)
 	writer := writer.New(store)
-	return newDataStore(searcher, store, writer)
+	return newDataStore(store, writer)
 }
 
 // UpsertTestEvents provides a way to upsert storage.AdministrationEvents directly to the database.
