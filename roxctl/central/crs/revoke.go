@@ -21,7 +21,7 @@ import (
 func applyRevokeCRSs(ctx context.Context, cliEnvironment environment.Environment, svc v1.ClusterInitServiceClient, idsOrNames set.StringSet) error {
 	resp, err := svc.GetCRSs(ctx, &v1.Empty{})
 	if err != nil {
-		return errors.Wrap(err, "getting CRSs")
+		return errors.Wrap(err, "getting Cluster Registration Secrets")
 	}
 
 	var revokeIds []string
