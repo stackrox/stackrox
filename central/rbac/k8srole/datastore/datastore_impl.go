@@ -77,12 +77,12 @@ func (d *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 	return d.getCountResults(ctx, q)
 }
 
-func (ds *datastoreImpl) searchRoles(ctx context.Context, q *v1.Query) ([]*storage.K8SRole, []searchPkg.Result, error) {
-	results, err := ds.getSearchResults(ctx, q)
+func (d *datastoreImpl) searchRoles(ctx context.Context, q *v1.Query) ([]*storage.K8SRole, []searchPkg.Result, error) {
+	results, err := d.getSearchResults(ctx, q)
 	if err != nil {
 		return nil, nil, err
 	}
-	roles, missingIndices, err := ds.storage.GetMany(ctx, searchPkg.ResultsToIDs(results))
+	roles, missingIndices, err := d.storage.GetMany(ctx, searchPkg.ResultsToIDs(results))
 	if err != nil {
 		return nil, nil, err
 	}
@@ -90,12 +90,12 @@ func (ds *datastoreImpl) searchRoles(ctx context.Context, q *v1.Query) ([]*stora
 	return roles, results, nil
 }
 
-func (ds *datastoreImpl) getSearchResults(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error) {
-	return ds.storage.Search(ctx, q)
+func (d *datastoreImpl) getSearchResults(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error) {
+	return d.storage.Search(ctx, q)
 }
 
-func (ds *datastoreImpl) getCountResults(ctx context.Context, q *v1.Query) (int, error) {
-	return ds.storage.Count(ctx, q)
+func (d *datastoreImpl) getCountResults(ctx context.Context, q *v1.Query) (int, error) {
+	return d.storage.Count(ctx, q)
 }
 
 func convertMany(roles []*storage.K8SRole, results []searchPkg.Result) []*v1.SearchResult {
