@@ -60,6 +60,10 @@ func (ds *datastoreImpl) doForMatching(ctx context.Context, clusterID, namespace
 }
 
 func getQuery(clusterID, namespace string) *v1.Query {
+	if stringutils.AllEmpty(clusterID, namespace) {
+		return search.EmptyQuery()
+	}
+
 	query := search.NewQueryBuilder()
 	if clusterID != "" {
 		query = query.AddExactMatches(search.ClusterID, clusterID)
@@ -99,9 +103,6 @@ func (ds *datastoreImpl) GetNetworkPolicies(ctx context.Context, clusterID, name
 }
 
 func (ds *datastoreImpl) CountMatchingNetworkPolicies(ctx context.Context, clusterID, namespace string) (int, error) {
-	if stringutils.AllEmpty(clusterID, namespace) {
-		return ds.storage.Count(ctx, search.EmptyQuery())
-	}
 	return ds.storage.Count(ctx, getQuery(clusterID, namespace))
 }
 
