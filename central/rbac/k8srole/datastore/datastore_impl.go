@@ -41,11 +41,12 @@ func (d *datastoreImpl) SearchRoles(ctx context.Context, q *v1.Query) ([]*v1.Sea
 }
 
 func (d *datastoreImpl) SearchRawRoles(ctx context.Context, request *v1.Query) ([]*storage.K8SRole, error) {
-	roles, _, err := d.searchRoles(ctx, request)
-	if err != nil {
-		return nil, err
-	}
-	return roles, nil
+	roles := make([]*storage.K8SRole, 0)
+	err := d.storage.GetByQueryFn(ctx, request, func(role *storage.K8SRole) error {
+		roles = append(roles, role)
+		return nil
+	})
+	return roles, err
 }
 
 func (d *datastoreImpl) UpsertRole(ctx context.Context, request *storage.K8SRole) error {
@@ -74,7 +75,7 @@ func (d *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.Re
 
 // Count returns the number of search results from the query
 func (d *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
-	return d.getCountResults(ctx, q)
+	return d.storage.Count(ctx, q)
 }
 
 func (d *datastoreImpl) searchRoles(ctx context.Context, q *v1.Query) ([]*storage.K8SRole, []searchPkg.Result, error) {
@@ -92,10 +93,6 @@ func (d *datastoreImpl) searchRoles(ctx context.Context, q *v1.Query) ([]*storag
 
 func (d *datastoreImpl) getSearchResults(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error) {
 	return d.storage.Search(ctx, q)
-}
-
-func (d *datastoreImpl) getCountResults(ctx context.Context, q *v1.Query) (int, error) {
-	return d.storage.Count(ctx, q)
 }
 
 func convertMany(roles []*storage.K8SRole, results []searchPkg.Result) []*v1.SearchResult {
