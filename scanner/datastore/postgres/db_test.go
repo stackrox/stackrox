@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/quay/claircore/datastore/postgres"
 	"github.com/stretchr/testify/require"
 )
