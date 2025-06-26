@@ -139,9 +139,8 @@ restore_4_6_backup() {
 
     gsutil cp gs://stackrox-ci-upgrade-test-fixtures/upgrade-test-dbs/postgres_db_4_6.sql.zip .
     unzip postgres_db_4_6.sql.zip
-    ls
 
-    kubectl cp ./postgres.dump stackrox:postgres-0:/tmp
+    kubectl cp ./postgres.dump stackrox/postgres-0:/tmp
     kubectl exec -it postgres-0 -n stackrox -- pg_restore --username="${EXTERNAL_DB_USER}" -d stackrox --no-owner --clean --if-exists -Fc -vvv --single-transaction /tmp/postgres.dump
 
     cd "$TEST_ROOT"
