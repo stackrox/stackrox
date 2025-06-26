@@ -3,7 +3,6 @@ package datastore
 import (
 	"context"
 
-	profileSearch "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore/search"
 	pgStore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -22,9 +21,8 @@ var (
 )
 
 type datastoreImpl struct {
-	db       pgPkg.DB
-	store    pgStore.Store
-	searcher profileSearch.Searcher
+	db    pgPkg.DB
+	store pgStore.Store
 }
 
 // GetProfile returns the profile for the given profile ID
@@ -83,7 +81,7 @@ func (d *datastoreImpl) GetProfilesByClusters(ctx context.Context, clusterIDs []
 
 // CountProfiles returns count of profiles matching query
 func (d *datastoreImpl) CountProfiles(ctx context.Context, q *v1.Query) (int, error) {
-	return d.searcher.Count(ctx, q)
+	return d.store.Count(ctx, q)
 }
 
 type distinctProfileName struct {

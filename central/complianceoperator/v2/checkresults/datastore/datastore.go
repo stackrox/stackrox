@@ -4,8 +4,6 @@ import (
 	"context"
 	"testing"
 
-	checkResultSearch "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/search"
-	checkresultsSearch "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/search"
 	store "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -65,13 +63,12 @@ type DataStore interface {
 }
 
 // New returns the datastore wrapper for compliance operator check results
-func New(store store.Store, db postgres.DB, searcher checkResultSearch.Searcher) DataStore {
-	return &datastoreImpl{store: store, db: db, searcher: searcher}
+func New(store store.Store, db postgres.DB) DataStore {
+	return &datastoreImpl{store: store, db: db}
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
 func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) DataStore {
 	store := store.New(pool)
-	searcher := checkresultsSearch.New(store)
-	return New(store, pool, searcher)
+	return New(store, pool)
 }
