@@ -24,12 +24,6 @@ import { getReportFormValuesFromConfiguration } from '../utils';
 import ReportFormErrorAlert from './ReportFormErrorAlert';
 import ReportFormWizard from './ReportFormWizard';
 
-const wizardStepNames = [
-    'Configure report parameters',
-    'Configure delivery destinations',
-    'Review and create',
-];
-
 function CloneVulnReportPage() {
     const navigate = useNavigate();
     const { reportId } = useParams() as { reportId: string };
@@ -107,14 +101,7 @@ function CloneVulnReportPage() {
             </PageSection>
             <Divider component="div" />
             <PageSection padding={{ default: 'noPadding' }} isCenterAligned>
-                <ReportFormWizard
-                    formik={formik}
-                    navAriaLabel="Report clone steps"
-                    wizardStepNames={wizardStepNames}
-                    finalStepNextButtonText={'Create'}
-                    onSave={onCreate}
-                    isSaving={isCreating}
-                />
+                <ReportFormWizard formik={formik} onSave={onCreate} isSaving={isCreating} />
             </PageSection>
         </>
     );

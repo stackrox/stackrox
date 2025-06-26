@@ -24,12 +24,6 @@ import { getReportFormValuesFromConfiguration } from '../utils';
 import ReportFormErrorAlert from './ReportFormErrorAlert';
 import ReportFormWizard from './ReportFormWizard';
 
-const wizardStepNames = [
-    'Configure report parameters',
-    'Configure delivery destinations',
-    'Review and save', // diff
-];
-
 function EditVulnReportPage() {
     const navigate = useNavigate();
     const { reportId } = useParams() as { reportId: string };
@@ -100,14 +94,7 @@ function EditVulnReportPage() {
             </PageSection>
             <Divider component="div" />
             <PageSection padding={{ default: 'noPadding' }} isCenterAligned>
-                <ReportFormWizard
-                    formik={formik}
-                    navAriaLabel="Report edit steps"
-                    wizardStepNames={wizardStepNames}
-                    onSave={onSave}
-                    finalStepNextButtonText={'Save'}
-                    isSaving={isSaving}
-                />
+                <ReportFormWizard formik={formik} onSave={onSave} isSaving={isSaving} />
             </PageSection>
         </>
     );

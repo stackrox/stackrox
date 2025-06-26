@@ -219,7 +219,7 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
         <>
             <FormikProvider value={formik}>
                 <Wizard
-                    navAriaLabel="Scan configuration creation steps"
+                    navAriaLabel="Scan schedule configuration steps"
                     onSave={onSave}
                     onStepChange={wizardStepChanged}
                 >

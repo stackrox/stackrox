@@ -12,23 +12,19 @@ import ReportParametersForm from '../forms/ReportParametersForm';
 import ReportReviewForm from '../forms/ReportReviewForm';
 import { ReportFormValues } from '../forms/useReportFormValues';
 
+const wizardStepNames = [
+    'Configure report parameters',
+    'Configure delivery destinations',
+    'Review',
+];
+
 export type ReportFormWizardProps = {
     formik: FormikProps<ReportFormValues>;
-    navAriaLabel: string;
-    wizardStepNames: string[];
-    finalStepNextButtonText: string;
     onSave: () => void;
     isSaving: boolean;
 };
 
-function ReportFormWizard({
-    formik,
-    navAriaLabel,
-    wizardStepNames,
-    finalStepNextButtonText,
-    onSave,
-    isSaving,
-}: ReportFormWizardProps) {
+function ReportFormWizard({ formik, onSave, isSaving }: ReportFormWizardProps) {
     const navigate = useNavigate();
 
     const { isModalOpen, openModal, closeModal } = useModal();
@@ -56,7 +52,7 @@ function ReportFormWizard({
 
     return (
         <>
-            <Wizard navAriaLabel={navAriaLabel} onSave={onSave}>
+            <Wizard navAriaLabel="Vulnerability report configuration steps" onSave={onSave}>
                 <WizardStep
                     name={wizardStepNames[0]}
                     id={wizardStepNames[0]}
@@ -90,7 +86,7 @@ function ReportFormWizard({
                     isDisabled={isStepDisabled(wizardStepNames[2])}
                     footer={{
                         nextButtonProps: { isLoading: isSaving },
-                        nextButtonText: finalStepNextButtonText,
+                        nextButtonText: 'Save',
                         onClose: openModal,
                     }}
                 >

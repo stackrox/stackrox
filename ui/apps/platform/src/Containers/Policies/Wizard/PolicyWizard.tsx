@@ -159,7 +159,7 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
             >
                 <FormikProvider value={formik}>
                     <Wizard
-                        navAriaLabel={`${pageAction} policy steps`}
+                        navAriaLabel="Security policy configuration steps"
                         onClose={closeWizard}
                         onSave={submitForm}
                         isVisitRequired={!canJumpToAny}
