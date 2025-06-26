@@ -23,8 +23,8 @@ import {
     SearchInput,
     Pagination,
     EmptyStateHeader,
+    DropdownItem,
 } from '@patternfly/react-core';
-import { DropdownItem } from '@patternfly/react-core/deprecated';
 import { ActionsColumn, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { ExclamationCircleIcon, FileIcon, SearchIcon } from '@patternfly/react-icons';
 
@@ -232,7 +232,6 @@ function ConfigReportsTab() {
                                         <BulkActionsDropdown isDisabled={!hasSelections}>
                                             <DropdownItem
                                                 key="delete"
-                                                component="button"
                                                 onClick={onConfirmDeleteSelection}
                                             >
                                                 Delete ({numSelected})

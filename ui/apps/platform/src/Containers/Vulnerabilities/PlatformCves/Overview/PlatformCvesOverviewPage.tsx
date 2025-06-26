@@ -8,8 +8,8 @@ import {
     Card,
     CardBody,
     ToolbarItem,
+    DropdownItem,
 } from '@patternfly/react-core';
-import { DropdownItem } from '@patternfly/react-core/deprecated';
 import { useApolloClient } from '@apollo/client';
 
 import PageTitle from 'Components/PageTitle';
@@ -191,7 +191,6 @@ function PlatformCvesOverviewPage() {
                                     <BulkActionsDropdown isDisabled={selectedCves.size === 0}>
                                         <DropdownItem
                                             key="bulk-snooze-cve"
-                                            component="button"
                                             onClick={() =>
                                                 setSnoozeModalOptions({
                                                     action: isViewingSnoozedCves
