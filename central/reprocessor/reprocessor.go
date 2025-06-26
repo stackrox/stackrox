@@ -464,7 +464,7 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 			clusterID := conn.ClusterID()
 			if skipClusterIDs.Contains(clusterID) {
 				metrics.IncrementMsgToSensorSkipCounter(clusterID, msg)
-				log.Debugw("Not sending reprocess deployments to cluster due to prior errors",
+				log.Errorw("Not sending reprocess deployments to cluster due to prior errors",
 					logging.ClusterID(clusterID),
 				)
 				continue
