@@ -54,6 +54,8 @@ test_byodb() {
     remove_existing_stackrox_resources
 
     run_byodb_test "$log_output_dir"
+
+    cleanup_byodb_test
 }
 
 run_byodb_test() {
@@ -117,6 +119,16 @@ run_byodb_test() {
     [[ ! -f FAIL ]] || die "Smoke tests failed"
 
     collect_and_check_stackrox_logs "$log_output_dir" "byodb_smoke"
+}
+
+cleanup_byodb_test() {
+    info "Deleting sensor"
+    ./sensor-remote/delete-sensor.sh
+
+    remove_existing_stackrox_resources
+
+    kubectl delete statefulset postgres -n stackrox
+    kubectl delete pvc pgdata-postgres-0 -n stackrox
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then

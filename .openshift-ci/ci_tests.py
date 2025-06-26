@@ -332,7 +332,7 @@ class BYODBTest(BaseTest):
     TEST_OUTPUT_DIR = "/tmp/byodb-test-logs"
 
     def run(self):
-        print("Executing the Upgrade Test")
+        print("Executing the BYODB Test")
 
         def set_dirs_after_start():
             # let post test know where logs are
