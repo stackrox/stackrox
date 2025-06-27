@@ -8,11 +8,13 @@ import (
 	"time"
 
 	pkgErrors "github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/images"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
@@ -47,6 +49,19 @@ var (
 	ErrEnrichNotStarted = errors.New("enrich was not started")
 
 	log = logging.LoggerForModule()
+
+	// sensorCentralScanMetricsLabel is used when collecting metrics about the semaphore for image scans
+	// that are triggered by sending a request to scanner over central.
+	sensorCentralScanMetricsLabel = prometheus.Labels{
+		"subsystem": "sensor",
+		"entity":    "image-scan-over-central",
+	}
+	// sensorAdHocScanMetricsLabel is used when collecting metrics about the semaphore for delegated image scans
+	// that are triggered by sending a request to the scanner instance running in the secured cluster.
+	sensorAdHocScanMetricsLabel = prometheus.Labels{
+		"subsystem": "sensor",
+		"entity":    "delegated-image-scan",
+	}
 )
 
 // LocalScan wraps the functions required for enriching local images. This allows us to inject different values for testing purposes.
@@ -98,12 +113,17 @@ func NewLocalScan(registryStore registryStore, mirrorStore registrymirror.Store)
 			docker.CreatorWithoutRepoList,
 		},
 	})
+	activeScanSemaLimit := max(imageScanLowerBound, env.MaxParallelImageScanInternal.IntegerSetting()-env.MaxParallelAdHocScan.IntegerSetting())
+	images.ScanSemaphoreLimit.With(sensorCentralScanMetricsLabel).Set(float64(activeScanSemaLimit))
+	adHocSemaLimit := env.MaxParallelAdHocScan.IntegerSetting()
+	images.ScanSemaphoreLimit.With(sensorAdHocScanMetricsLabel).Set(float64(adHocSemaLimit))
+
 	ls := &LocalScan{
 		scanImg:                   scanImage,
 		fetchSignaturesWithRetry:  signatures.FetchImageSignaturesWithRetries,
 		scannerClientSingleton:    scannerclient.GRPCClientSingleton,
-		scanSemaphore:             semaphore.NewWeighted(int64(max(imageScanLowerBound, env.MaxParallelImageScanInternal.IntegerSetting()-env.MaxParallelAdHocScan.IntegerSetting()))),
-		adHocScanSemaphore:        semaphore.NewWeighted(int64(env.MaxParallelAdHocScan.IntegerSetting())),
+		scanSemaphore:             semaphore.NewWeighted(int64(activeScanSemaLimit)),
+		adHocScanSemaphore:        semaphore.NewWeighted(int64(adHocSemaLimit)),
 		maxSemaphoreWaitTime:      defaultMaxSemaphoreWaitTime,
 		regFactory:                regFactory,
 		mirrorStore:               mirrorStore,
@@ -137,19 +157,27 @@ func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClie
 		return nil, errors.Join(ErrNoLocalScanner, ErrEnrichNotStarted)
 	}
 
+	metricLabels := sensorCentralScanMetricsLabel
 	// Throttle the # of active scans.
 	scanLimitSemaphore := s.scanSemaphore
 	// Ad hoc requests have a request ID.
 	if req.ID != "" {
+		metricLabels = sensorAdHocScanMetricsLabel
 		scanLimitSemaphore = s.adHocScanSemaphore
 	}
 
 	semaphoreCtx, cancel := context.WithTimeout(ctx, s.maxSemaphoreWaitTime)
 	defer cancel()
+	images.ScanSemaphoreQueueSize.With(metricLabels).Inc()
 	if err := scanLimitSemaphore.Acquire(semaphoreCtx, 1); err != nil {
 		return nil, errors.Join(err, ErrTooManyParallelScans, ErrEnrichNotStarted)
 	}
-	defer scanLimitSemaphore.Release(1)
+	images.ScanSemaphoreQueueSize.With(metricLabels).Dec()
+	images.ScanSemaphoreHoldingSize.With(metricLabels).Inc()
+	defer func() {
+		scanLimitSemaphore.Release(1)
+		images.ScanSemaphoreHoldingSize.With(metricLabels).Dec()
+	}()
 
 	srcImage := req.Image
 	log.Debugf("Enriching image locally %q, namespace %q, requestID %q, force %v", srcImage.GetName().GetFullName(), req.Namespace, req.ID, req.Force)
