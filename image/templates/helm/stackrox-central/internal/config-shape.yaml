@@ -8,7 +8,7 @@ imagePullSecrets:
 image:
   registry: null # string
 env:
-  gRPCEnforceALPN: null # bool
+  grpcEnforceALPN: null # bool
   installMethod: null # string
   openshift: null # bool
   istio: null # bool
