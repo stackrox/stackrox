@@ -1,17 +1,20 @@
 import React, { ReactElement, ReactNode, useState } from 'react';
 import { Dropdown, DropdownList, MenuToggle, MenuToggleElement } from '@patternfly/react-core';
 
-type BulkActionsDropdownProps = {
+type MenuDropdownProps = {
     children: ReactNode;
+    toggleText: string;
+    toggleId?: string;
     isDisabled?: boolean;
 };
 
-// TODO: Connect this to the APIs
 // TODO: Reuse this for the Violations Page Bulk Actions
-function BulkActionsDropdown({
+function MenuDropdown({
     children,
+    toggleText,
+    toggleId = 'menu-dropdown',
     isDisabled = false,
-}: BulkActionsDropdownProps): ReactElement {
+}: MenuDropdownProps): ReactElement {
     const [isOpen, setIsOpen] = useState(false);
 
     function onToggleClick() {
@@ -29,13 +32,13 @@ function BulkActionsDropdown({
             onOpenChange={(isOpen: boolean) => setIsOpen(isOpen)}
             toggle={(toggleRef: React.Ref<MenuToggleElement>) => (
                 <MenuToggle
-                    id="bulk-actions-dropdown"
+                    id={toggleId}
                     ref={toggleRef}
                     onClick={onToggleClick}
                     isExpanded={isOpen}
                     isDisabled={isDisabled}
                 >
-                    Bulk actions
+                    {toggleText}
                 </MenuToggle>
             )}
             shouldFocusToggleOnSelect
@@ -45,4 +48,4 @@ function BulkActionsDropdown({
     );
 }
 
-export default BulkActionsDropdown;
+export default MenuDropdown;
