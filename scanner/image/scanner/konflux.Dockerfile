@@ -1,16 +1,4 @@
-<<<<<<< HEAD
-ARG MAPPINGS_REGISTRY=registry.access.redhat.com
-ARG MAPPINGS_BASE_IMAGE=ubi8
-ARG MAPPINGS_BASE_TAG=latest
-ARG BASE_REGISTRY=registry.access.redhat.com
-ARG BASE_IMAGE=ubi8-minimal
-ARG BASE_TAG=latest
-
-
-FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_1.22 AS builder
-=======
-FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_1.23@sha256:0a070e4a8f2698b6aba3630a49eb995ff1b0a182d0c5fa264888acf9d535f384 AS builder
->>>>>>> 2f1bc55672 (ROX-26148: Tweak Konflux setup for RPMs and renovation (#15196))
+FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_1.22@sha256:fee7f9a031bb702a88c3054f68f3e953c15b982f4132edfa621cc9adcb75b72b AS builder
 
 ARG BUILD_TAG
 RUN if [[ "$BUILD_TAG" == "" ]]; then >&2 echo "error: required BUILD_TAG arg is unset"; exit 6; fi

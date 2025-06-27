@@ -1,12 +1,7 @@
 ARG PG_VERSION=13
 
 
-<<<<<<< HEAD
-# TODO(ROX-20312): we can't pin image tag or digest because currently there's no mechanism to auto-update that.
-FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_1.22 AS go-builder
-=======
-FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_1.23@sha256:0a070e4a8f2698b6aba3630a49eb995ff1b0a182d0c5fa264888acf9d535f384 AS go-builder
->>>>>>> 2f1bc55672 (ROX-26148: Tweak Konflux setup for RPMs and renovation (#15196))
+FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_1.22@sha256:fee7f9a031bb702a88c3054f68f3e953c15b982f4132edfa621cc9adcb75b72b AS go-builder
 
 RUN dnf -y install --allowerasing jq
 
