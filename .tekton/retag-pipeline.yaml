@@ -166,11 +166,11 @@ spec:
     - name: INPUT_IMAGE_REPO
       value: $(params.input-image-repo)
     - name: INPUT_IMAGE_TAG
-      value: 3.20.7-fast
+      value: 2.35.5-fast
     - name: OUTPUT_IMAGE_REPO
       value: $(params.output-image-repo)
     - name: OUTPUT_IMAGE_TAG
-      value: 3.20.7-fast
+      value: 2.35.5-fast
     taskRef:
       params:
       - name: name
