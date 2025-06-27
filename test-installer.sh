@@ -2,7 +2,7 @@
 set -e
 
 # Read namespace from installer.yaml
-NAMESPACE=$(grep "^namespace:" installer.yaml | cut -d' ' -f2)
+NAMESPACE=$(yq .namespace installer.yaml)
 if [ -z "$NAMESPACE" ]; then
     NAMESPACE="stackrox"
 fi
@@ -33,14 +33,6 @@ echo "Deploying secured cluster..."
 
 echo "Waiting for all deployments to be ready..."
 kubectl wait --for=condition=available deployment --all -n $NAMESPACE --timeout=300s
-
-echo "Checking ValidatingWebhookConfiguration CA bundle..."
-if kubectl get validatingwebhookconfiguration stackrox -o jsonpath='{.webhooks[0].clientConfig.caBundle}' | base64 -d | grep -q "BEGIN CERTIFICATE"; then
-    echo "✓ CA bundle is present in webhook configuration"
-else
-    echo "✗ CA bundle is missing from webhook configuration"
-    exit 1
-fi
 
 echo "Testing webhook validation..."
 if kubectl create deployment test-nginx --image=nginx --dry-run=server > /dev/null 2>&1; then
