@@ -2693,6 +2693,61 @@ func Test_sortBySeverity(t *testing.T) {
 	}
 }
 
+func Test_dedupeVulns(t *testing.T) {
+	testcases := []struct {
+		name string
+		vulnIDs []string
+		vulns   map[string]*claircore.Vulnerability
+		expected []string
+	}{
+		{
+			name: "no dupes",
+			vulnIDs: []string{"0", "1", "2"},
+			vulns: map[string]*claircore.Vulnerability{
+				"0": {
+					ID: "0",
+					Name: "a",
+				},
+				"1": {
+					ID: "1",
+					Name: "b",
+				},
+				"2": {
+					ID: "2",
+					Name: "c",
+				},
+			},
+			expected: []string{"0", "1", "2"},
+		},
+		{
+			name: "dupes - FixedInVersion",
+			vulnIDs: []string{"0", "1"},
+			vulns: map[string]*claircore.Vulnerability{
+				"0": {
+					ID: "0",
+					Name: "a",
+					FixedInVersion: "fixed=2.1.8&introduced=2.0.0",
+					Updater: "osv/maven",
+				},
+				"1": {
+					ID: "1",
+					Name: "a",
+					FixedInVersion: "fixed=2.1.8&introduced=2.1.0",
+					Updater: "osv/maven",
+				},
+			},
+			expected: []string{"0"},
+		},
+	}
+
+	for _, tt := range testcases {
+		t.Run(tt.name, func(t *testing.T) {
+			got := dedupeVulns(tt.vulnIDs, tt.vulns)
+			assert.ElementsMatch(t, tt.expected, got)
+		})
+	}
+}
+
 func Test_dedupeAdvisories(t *testing.T) {
 	now := timestamppb.Now()
 
