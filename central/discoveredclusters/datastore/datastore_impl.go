@@ -5,7 +5,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/convert/typetostorage"
-	"github.com/stackrox/rox/central/discoveredclusters/datastore/internal/search"
 	"github.com/stackrox/rox/central/discoveredclusters/datastore/internal/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -16,12 +15,11 @@ import (
 var _ DataStore = (*datastoreImpl)(nil)
 
 type datastoreImpl struct {
-	searcher search.Searcher
-	store    store.Store
+	store store.Store
 }
 
 func (ds *datastoreImpl) CountDiscoveredClusters(ctx context.Context, query *v1.Query) (int, error) {
-	count, err := ds.searcher.Count(ctx, query)
+	count, err := ds.store.Count(ctx, query)
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to count discovered clusters")
 	}
