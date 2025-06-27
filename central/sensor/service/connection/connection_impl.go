@@ -243,6 +243,7 @@ func (c *sensorConnection) runSend(server central.SensorService_CommunicateServe
 			return
 		case msg := <-c.sendC:
 			if err := wrappedStream.Send(msg); err != nil {
+				metrics.IncrementMsgToSensorNotSentCounter(c.clusterID, msg, metrics.NotSentError)
 				c.stopSig.SignalWithError(errors.Wrap(err, "send error"))
 				return
 			}
@@ -275,8 +276,13 @@ func (c *sensorConnection) InjectMessage(ctx concurrency.Waitable, msg *central.
 	case c.sendC <- msg:
 		return nil
 	case <-ctx.Done():
+		metrics.IncrementMsgToSensorNotSentCounter(c.clusterID, msg, metrics.NotSentSignal)
+		if errCtx, ok := ctx.(concurrency.ErrorWaitable); ok {
+			return errors.Wrap(errCtx.Err(), "context aborted")
+		}
 		return errors.New("context aborted")
 	case <-c.stopSig.Done():
+		metrics.IncrementMsgToSensorNotSentCounter(c.clusterID, msg, metrics.NotSentSignal)
 		return errors.Wrap(c.stopSig.Err(), "could not send message as sensor connection was stopped")
 	}
 }
