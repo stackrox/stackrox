@@ -2,7 +2,7 @@ import React from 'react';
 import { useQuery } from '@apollo/client';
 import { Divider, DropdownItem, ToolbarItem } from '@patternfly/react-core';
 
-import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
+import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 import useURLSort from 'hooks/useURLSort';
 import useURLPagination from 'hooks/useURLPagination';
 import useMap from 'hooks/useMap';
@@ -140,7 +140,10 @@ function CVEsTableContainer({
                 </ToolbarItem>
                 {canSelectRows && (
                     <ToolbarItem>
-                        <BulkActionsDropdown isDisabled={selectedCves.size === 0}>
+                        <MenuDropdown
+                            toggleText="Bulk actions"
+                            isDisabled={selectedCves.size === 0}
+                        >
                             <DropdownItem
                                 key="bulk-defer-cve"
                                 onClick={() =>
@@ -163,7 +166,7 @@ function CVEsTableContainer({
                             >
                                 Mark as false positives
                             </DropdownItem>
-                        </BulkActionsDropdown>
+                        </MenuDropdown>
                     </ToolbarItem>
                 )}
             </TableEntityToolbar>

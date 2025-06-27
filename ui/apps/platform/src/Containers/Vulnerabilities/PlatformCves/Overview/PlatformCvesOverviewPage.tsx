@@ -29,7 +29,7 @@ import useURLSort from 'hooks/useURLSort';
 import { createFilterTracker } from 'utils/analyticsEventTracking';
 import useSnoozeCveModal from 'Containers/Vulnerabilities/components/SnoozeCvesModal/useSnoozeCveModal';
 import SnoozeCvesModal from 'Containers/Vulnerabilities/components/SnoozeCvesModal/SnoozeCvesModal';
-import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
+import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 
 import { parseQuerySearchFilter } from 'Containers/Vulnerabilities/utils/searchUtils';
 import AdvancedFiltersToolbar from 'Containers/Vulnerabilities/components/AdvancedFiltersToolbar';
@@ -188,7 +188,10 @@ function PlatformCvesOverviewPage() {
                         >
                             {hasLegacySnoozeAbility && (
                                 <ToolbarItem align={{ default: 'alignRight' }}>
-                                    <BulkActionsDropdown isDisabled={selectedCves.size === 0}>
+                                    <MenuDropdown
+                                        toggleText="Bulk actions"
+                                        isDisabled={selectedCves.size === 0}
+                                    >
                                         <DropdownItem
                                             key="bulk-snooze-cve"
                                             onClick={() =>
@@ -203,7 +206,7 @@ function PlatformCvesOverviewPage() {
                                         >
                                             {isViewingSnoozedCves ? 'Unsnooze CVEs' : 'Snooze CVEs'}
                                         </DropdownItem>
-                                    </BulkActionsDropdown>
+                                    </MenuDropdown>
                                 </ToolbarItem>
                             )}
                         </TableEntityToolbar>
