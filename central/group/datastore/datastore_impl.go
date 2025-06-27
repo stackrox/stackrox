@@ -29,13 +29,14 @@ var (
 )
 
 type dataStoreImpl struct {
-	storage       store.Store
-	roleDatastore datastore.DataStore
+	storage              store.Store
+	roleDatastore        datastore.DataStore
+	authProviderRegistry func() authproviders.Registry
 
 	lock sync.RWMutex
 }
 
-func (ds *dataStoreImpl) Upsert(ctx context.Context, group *storage.Group, authProviderRegistry authproviders.Registry) error {
+func (ds *dataStoreImpl) Upsert(ctx context.Context, group *storage.Group) error {
 	if err := sac.VerifyAuthzOK(accessSAC.WriteAllowed(ctx)); err != nil {
 		return err
 	}
@@ -44,7 +45,7 @@ func (ds *dataStoreImpl) Upsert(ctx context.Context, group *storage.Group, authP
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
 
-	if err := ds.validateAndPrepGroupForUpsertNoLock(ctx, group, authProviderRegistry); err != nil {
+	if err := ds.validateAndPrepGroupForUpsertNoLock(ctx, group); err != nil {
 		return err
 	}
 
@@ -120,7 +121,7 @@ func (ds *dataStoreImpl) Walk(ctx context.Context, authProviderID string, attrib
 	return groups, nil
 }
 
-func (ds *dataStoreImpl) Add(ctx context.Context, group *storage.Group, authProviderRegistry authproviders.Registry) error {
+func (ds *dataStoreImpl) Add(ctx context.Context, group *storage.Group) error {
 	if err := sac.VerifyAuthzOK(accessSAC.WriteAllowed(ctx)); err != nil {
 		return err
 	}
@@ -129,14 +130,14 @@ func (ds *dataStoreImpl) Add(ctx context.Context, group *storage.Group, authProv
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
 
-	if err := ds.validateAndPrepGroupForAddNoLock(ctx, group, authProviderRegistry); err != nil {
+	if err := ds.validateAndPrepGroupForAddNoLock(ctx, group); err != nil {
 		return err
 	}
 
 	return wrapAsConflictError(ds.storage.Upsert(ctx, group))
 }
 
-func (ds *dataStoreImpl) Update(ctx context.Context, group *storage.Group, force bool, authProviderRegistry authproviders.Registry) error {
+func (ds *dataStoreImpl) Update(ctx context.Context, group *storage.Group, force bool) error {
 	if err := sac.VerifyAuthzOK(accessSAC.WriteAllowed(ctx)); err != nil {
 		return err
 	}
@@ -145,14 +146,14 @@ func (ds *dataStoreImpl) Update(ctx context.Context, group *storage.Group, force
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
 
-	if err := ds.validateAndPrepGroupForUpdateNoLock(ctx, group, force, authProviderRegistry); err != nil {
+	if err := ds.validateAndPrepGroupForUpdateNoLock(ctx, group, force); err != nil {
 		return err
 	}
 	return wrapAsConflictError(ds.storage.Upsert(ctx, group))
 }
 
 func (ds *dataStoreImpl) Mutate(ctx context.Context, remove, update, add []*storage.Group,
-	force bool, authProviderRegistry authproviders.Registry,
+	force bool,
 ) error {
 	if err := sac.VerifyAuthzOK(accessSAC.WriteAllowed(ctx)); err != nil {
 		return err
@@ -163,7 +164,7 @@ func (ds *dataStoreImpl) Mutate(ctx context.Context, remove, update, add []*stor
 	defer ds.lock.Unlock()
 
 	for _, group := range add {
-		if err := ds.validateAndPrepGroupForAddNoLock(ctx, group, authProviderRegistry); err != nil {
+		if err := ds.validateAndPrepGroupForAddNoLock(ctx, group); err != nil {
 			return err
 		}
 	}
@@ -174,7 +175,7 @@ func (ds *dataStoreImpl) Mutate(ctx context.Context, remove, update, add []*stor
 	}
 
 	for _, group := range update {
-		if err := ds.validateAndPrepGroupForUpdateNoLock(ctx, group, force, authProviderRegistry); err != nil {
+		if err := ds.validateAndPrepGroupForUpdateNoLock(ctx, group, force); err != nil {
 			return err
 		}
 	}
@@ -228,7 +229,7 @@ func (ds *dataStoreImpl) RemoveAllWithAuthProviderID(ctx context.Context, authPr
 	if err != nil {
 		return errors.Wrap(err, "collecting associated groups")
 	}
-	return ds.Mutate(ctx, groups, nil, nil, force, nil)
+	return ds.Mutate(ctx, groups, nil, nil, force)
 }
 
 func (ds *dataStoreImpl) RemoveAllWithEmptyProperties(ctx context.Context) error {
@@ -264,7 +265,7 @@ func (ds *dataStoreImpl) RemoveAllWithEmptyProperties(ctx context.Context) error
 
 // Validate if the group is allowed to be upserted and prep the group before it is upserted in db.
 // NOTE: This function assumes that the call to this function is already behind a lock.
-func (ds *dataStoreImpl) validateAndPrepGroupForUpsertNoLock(ctx context.Context, newGroup *storage.Group, authProviderRegistry authproviders.Registry) error {
+func (ds *dataStoreImpl) validateAndPrepGroupForUpsertNoLock(ctx context.Context, newGroup *storage.Group) error {
 	if err := ValidateGroup(newGroup, false); err != nil {
 		return errox.InvalidArgs.CausedBy(err)
 	}
@@ -295,14 +296,14 @@ func (ds *dataStoreImpl) validateAndPrepGroupForUpsertNoLock(ctx context.Context
 		return errox.AlreadyExists.Newf("cannot update group to default group of auth provider %q as a default group already exists",
 			newGroup.GetProps().GetAuthProviderId())
 	}
-	if err := ds.verifyReferencedRoleAndProvider(newGroup, authProviderRegistry); err != nil {
+	if err := ds.verifyReferencedRoleAndProvider(newGroup); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (ds *dataStoreImpl) verifyReferencedRoleAndProvider(group *storage.Group, authProviderRegistry authproviders.Registry) error {
+func (ds *dataStoreImpl) verifyReferencedRoleAndProvider(group *storage.Group) error {
 	role, found, err := ds.roleDatastore.GetRole(datastoresAccessCtx, group.GetRoleName())
 	if err != nil {
 		return err
@@ -316,7 +317,7 @@ func (ds *dataStoreImpl) verifyReferencedRoleAndProvider(group *storage.Group, a
 	}
 
 	authProviderID := group.GetProps().GetAuthProviderId()
-	authProvider := authProviderRegistry.GetProvider(authProviderID)
+	authProvider := ds.authProviderRegistry().GetProvider(authProviderID)
 	if authProvider == nil {
 		return errox.InvalidArgs.Newf("group %q auth provider %q does not exist", groupID, authProviderID)
 	}
@@ -334,7 +335,7 @@ func (ds *dataStoreImpl) verifyReferencedRoleAndProvider(group *storage.Group, a
 
 // Validate if the group is allowed to be added and prep the group before it is added to the db.
 // NOTE: This function assumes that the call to this function is already behind a lock.
-func (ds *dataStoreImpl) validateAndPrepGroupForAddNoLock(ctx context.Context, group *storage.Group, authProviderRegistry authproviders.Registry) error {
+func (ds *dataStoreImpl) validateAndPrepGroupForAddNoLock(ctx context.Context, group *storage.Group) error {
 	if err := ValidateGroup(group, false); err != nil {
 		return errox.InvalidArgs.CausedBy(err)
 	}
@@ -357,7 +358,7 @@ func (ds *dataStoreImpl) validateAndPrepGroupForAddNoLock(ctx context.Context, g
 		return errox.AlreadyExists.Newf("cannot add a default group of auth provider %q as a default group already exists",
 			group.GetProps().GetAuthProviderId())
 	}
-	if err := ds.verifyReferencedRoleAndProvider(group, authProviderRegistry); err != nil {
+	if err := ds.verifyReferencedRoleAndProvider(group); err != nil {
 		return err
 	}
 
@@ -367,7 +368,7 @@ func (ds *dataStoreImpl) validateAndPrepGroupForAddNoLock(ctx context.Context, g
 // Validate if the group is allowed to be updated and prep the group before it is updated in db.
 // NOTE: This function assumes that the call to this function is already behind a lock.
 func (ds *dataStoreImpl) validateAndPrepGroupForUpdateNoLock(ctx context.Context, group *storage.Group,
-	force bool, authProviderRegistry authproviders.Registry,
+	force bool,
 ) error {
 	if err := ValidateGroup(group, true); err != nil {
 		return errox.InvalidArgs.CausedBy(err)
@@ -394,7 +395,7 @@ func (ds *dataStoreImpl) validateAndPrepGroupForUpdateNoLock(ctx context.Context
 		return errox.AlreadyExists.Newf("cannot update group to default group of auth provider %q as a default group already exists",
 			group.GetProps().GetAuthProviderId())
 	}
-	if err := ds.verifyReferencedRoleAndProvider(group, authProviderRegistry); err != nil {
+	if err := ds.verifyReferencedRoleAndProvider(group); err != nil {
 		return err
 	}
 	return nil
