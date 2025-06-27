@@ -26,7 +26,6 @@ import (
 	"github.com/stackrox/rox/pkg/protoutils"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/scanners/types"
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/signatures"
 	"github.com/stackrox/rox/pkg/sync"
@@ -638,7 +637,7 @@ func (e *enricherImpl) enrichWithScan(ctx context.Context, enrichmentContext Enr
 			}
 			errorList.AddError(err)
 
-			if features.ScannerV4.Enabled() && scanner.GetScanner().Type() == types.ScannerV4 {
+			if features.ScannerV4.Enabled() && scanner.GetScanner().Type() == scannerTypes.ScannerV4 {
 				// Do not try to scan with additional scanners if Scanner V4 enabled and fails to scan an image.
 				// This would result in Clairify scanners being skipped per sorting logic in `GetAll` of
 				// `pkg/scanners/set_impl.go`.
