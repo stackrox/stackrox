@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/externalsrcs"
@@ -94,6 +95,11 @@ func (ds *dataStoreImpl) initNetworkTrees(ctx context.Context) {
 		entitiesByCluster = make(map[string][]*storage.NetworkEntityInfo)
 		storeCtx := getStoreReadContext(ctx)
 		return ds.storage.Walk(storeCtx, func(obj *storage.NetworkEntity) error {
+			if networkgraph.IsExternalDiscovered(obj.GetInfo()) && !features.ExternalIPs.Enabled() {
+				// if external Ips are disabled, do not load discovered entities
+				// into the network tree.
+				return nil
+			}
 			entitiesByCluster[obj.GetScope().GetClusterId()] = append(entitiesByCluster[obj.GetScope().GetClusterId()], obj.GetInfo())
 			return nil
 		})
