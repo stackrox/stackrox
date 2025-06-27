@@ -1,7 +1,7 @@
 import React, { ReactElement } from 'react';
-import { DropdownItem } from '@patternfly/react-core/deprecated';
 
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
+import { DropdownItem } from '@patternfly/react-core';
 
 type FlowsBulkActionsProps = {
     type: 'baseline' | 'active' | 'extraneous';
@@ -32,19 +32,11 @@ function FlowsBulkActions({
 
     return (
         <BulkActionsDropdown isDisabled={selectedRows.length === 0}>
-            <DropdownItem
-                key="mark_as_anomalous"
-                component="button"
-                onClick={markSelectedAsAnomalousHandler}
-            >
+            <DropdownItem key="mark_as_anomalous" onClick={markSelectedAsAnomalousHandler}>
                 Mark as anomalous
             </DropdownItem>
             {type !== 'baseline' && (
-                <DropdownItem
-                    key="add_to_baseline"
-                    component="button"
-                    onClick={addSelectedToBaselineHandler}
-                >
+                <DropdownItem key="add_to_baseline" onClick={addSelectedToBaselineHandler}>
                     Add to baseline
                 </DropdownItem>
             )}

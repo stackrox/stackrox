@@ -1,7 +1,6 @@
 import React from 'react';
 import { useQuery } from '@apollo/client';
-import { Divider, ToolbarItem } from '@patternfly/react-core';
-import { DropdownItem } from '@patternfly/react-core/deprecated';
+import { Divider, DropdownItem, ToolbarItem } from '@patternfly/react-core';
 
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import useURLSort from 'hooks/useURLSort';
@@ -144,7 +143,6 @@ function CVEsTableContainer({
                         <BulkActionsDropdown isDisabled={selectedCves.size === 0}>
                             <DropdownItem
                                 key="bulk-defer-cve"
-                                component="button"
                                 onClick={() =>
                                     showModal({
                                         type: 'DEFERRAL',
@@ -156,7 +154,6 @@ function CVEsTableContainer({
                             </DropdownItem>
                             <DropdownItem
                                 key="bulk-mark-false-positive"
-                                component="button"
                                 onClick={() =>
                                     showModal({
                                         type: 'FALSE_POSITIVE',
