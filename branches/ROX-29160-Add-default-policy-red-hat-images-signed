@@ -1,7 +1,7 @@
 {
   "base": {
-    "name": "gualvare/fix-remove-duplicated-import",
-    "hash": "35cb8990467473a52056b2ddd8dc43034a35cbf9"
+    "name": "ROX-29160-Add-default-signature-integration-rh-rk3",
+    "hash": "143aebeb82ab99c86fc3d459a9a8d8b2dd639976"
   },
   "upstream": {
     "branch": "ROX-29160-Add-default-policy-red-hat-images-signed"
