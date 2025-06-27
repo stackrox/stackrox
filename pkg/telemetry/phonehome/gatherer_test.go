@@ -18,14 +18,20 @@ type gathererTestSuite struct {
 	suite.Suite
 }
 
-func TestConfig(t *testing.T) {
+func TestGatherer(t *testing.T) {
 	suite.Run(t, new(gathererTestSuite))
 }
 
 func (s *gathererTestSuite) TestNilGatherer() {
-	cfg := &Config{}
+	cfg := &Config{
+		StorageKey: DisabledKey,
+	}
 	nilgatherer := cfg.Gatherer()
+
 	s.NotNil(nilgatherer)
+	_, ok := nilgatherer.(*nilGatherer)
+	s.True(ok)
+	nilgatherer.AddGatherer(func(ctx context.Context) (map[string]any, error) { return nil, nil })
 	nilgatherer.Start() // noop
 	nilgatherer.Stop()  // noop
 }

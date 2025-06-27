@@ -14,6 +14,9 @@ import (
 const userAgentHeaderKey = "User-Agent"
 
 func (cfg *Config) track(rp *RequestParams) {
+	if !cfg.IsEnabled() {
+		return
+	}
 	cfg.interceptorsLock.RLock()
 	defer cfg.interceptorsLock.RUnlock()
 	if len(cfg.interceptors) == 0 {
