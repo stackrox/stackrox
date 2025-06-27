@@ -4,4 +4,4 @@
 # Here we exclude rpmdb files checked in this repo for testing purposes from being parsed and merged into SBOM.
 # Use scripts/ci/jobs/check-konflux-setup.sh to validate or update this exclusion list.
 exclude:
-- ./compliance/node/index/testdata/usr/share/rpm/rpmdb.sqlite
+- ./compliance/index/v4/testdata/usr/share/rpm/rpmdb.sqlite
