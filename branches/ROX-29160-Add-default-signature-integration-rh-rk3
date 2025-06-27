@@ -1,6 +1,6 @@
 {
   "base": {
-    "name": "yolo",
+    "name": "gualvare-fix-remove-duplicated-import",
     "hash": "35cb8990467473a52056b2ddd8dc43034a35cbf9"
   },
   "upstream": {
