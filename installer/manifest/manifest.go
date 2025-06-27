@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/stackrox/rox/pkg/certgen"
@@ -46,6 +47,14 @@ type Generator interface {
 	Exportable() bool
 }
 
+// OrderedGenerator allows specifying the order of generator execution.
+// Lower Priority values run first, higher Priority values run last.
+// Generators without Priority (standard Generator interface) default to Priority 0.
+type OrderedGenerator interface {
+	Generator
+	Priority() int
+}
+
 var central []Generator = []Generator{}
 var securedCluster []Generator = []Generator{}
 var crs []Generator = []Generator{}
@@ -75,8 +84,32 @@ func New(cfg *Config, clientset *kubernetes.Clientset, restConfig *restclient.Co
 	}, nil
 }
 
+// sortGeneratorsByPriority sorts generators by their priority.
+// OrderedGenerators with lower Priority values run first.
+// Standard Generators (without Priority) default to Priority 0.
+func sortGeneratorsByPriority(generators []Generator) []Generator {
+	sorted := make([]Generator, len(generators))
+	copy(sorted, generators)
+
+	sort.Slice(sorted, func(i, j int) bool {
+		iPriority := 0
+		if orderedGen, ok := sorted[i].(OrderedGenerator); ok {
+			iPriority = orderedGen.Priority()
+		}
+
+		jPriority := 0
+		if orderedGen, ok := sorted[j].(OrderedGenerator); ok {
+			jPriority = orderedGen.Priority()
+		}
+
+		return iPriority < jPriority
+	})
+
+	return sorted
+}
+
 func (m *manifestGenerator) Export(ctx context.Context, generators []Generator) error {
-	for _, generator := range generators {
+	for _, generator := range sortGeneratorsByPriority(generators) {
 		resources, err := generator.Generate(ctx, m)
 		if err != nil {
 			return errors.Wrap(err, fmt.Sprintf("Failure generating %s", generator.Name()))
@@ -123,7 +156,7 @@ func (m *manifestGenerator) Apply(ctx context.Context, generators []Generator) e
 		panic(err)
 	}
 
-	for _, generator := range generators {
+	for _, generator := range sortGeneratorsByPriority(generators) {
 		log.Info("-----")
 		log.Infof("Generating resources from %s...", generator.Name())
 		resources, err := generator.Generate(ctx, m)

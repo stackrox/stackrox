@@ -22,6 +22,12 @@ func (g AdmissionControlGenerator) Exportable() bool {
 	return true
 }
 
+// Priority returns a high priority (100) to ensure admission control is applied last
+// since it includes validating webhooks that can break subsequent resource creation.
+func (g AdmissionControlGenerator) Priority() int {
+	return 100
+}
+
 func (g AdmissionControlGenerator) Generate(ctx context.Context, m *manifestGenerator) ([]Resource, error) {
 	resources := []Resource{
 		genServiceAccount("admission-control"),
