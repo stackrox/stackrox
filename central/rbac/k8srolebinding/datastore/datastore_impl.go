@@ -49,6 +49,9 @@ func (d *datastoreImpl) SearchRoleBindings(ctx context.Context, q *v1.Query) ([]
 
 func (d *datastoreImpl) SearchRawRoleBindings(ctx context.Context, request *v1.Query) ([]*storage.K8SRoleBinding, error) {
 	bindings := make([]*storage.K8SRoleBinding, 0)
+	if request == nil {
+		request = searchPkg.EmptyQuery()
+	}
 	err := d.storage.GetByQueryFn(ctx, request, func(roleBinding *storage.K8SRoleBinding) error {
 		bindings = append(bindings, roleBinding)
 		return nil
