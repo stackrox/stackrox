@@ -12,7 +12,6 @@ import (
 
 	deploymentStore "github.com/stackrox/rox/central/deployment/datastore"
 	processIndicatorDataStore "github.com/stackrox/rox/central/processindicator/datastore"
-	processIndicatorSearch "github.com/stackrox/rox/central/processindicator/search"
 	processIndicatorStorage "github.com/stackrox/rox/central/processindicator/store/postgres"
 	plopStore "github.com/stackrox/rox/central/processlisteningonport/store"
 	postgresStore "github.com/stackrox/rox/central/processlisteningonport/store/postgres"
@@ -70,10 +69,9 @@ func (suite *PLOPDataStoreTestSuite) SetupTest() {
 	suite.store = postgresStore.NewFullStore(suite.postgres.DB)
 
 	indicatorStorage := processIndicatorStorage.New(suite.postgres.DB)
-	indicatorSearcher := processIndicatorSearch.New(indicatorStorage)
 
 	suite.indicatorDataStore = processIndicatorDataStore.New(
-		indicatorStorage, suite.store, indicatorSearcher, nil)
+		indicatorStorage, suite.store, nil)
 	suite.datastore = New(suite.store, suite.indicatorDataStore, suite.postgres)
 }
 
