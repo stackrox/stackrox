@@ -48,8 +48,46 @@ var (
 					FirstImageOccurrence:  ts,
 					FirstSystemOccurrence: ts,
 				},
+				// Exact duplicate to make sure we filter that out
+				{
+					Cve:                "cve2",
+					VulnerabilityType:  storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+					VulnerabilityTypes: []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
+					SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
+						FixedBy: "ver3",
+					},
+					FirstImageOccurrence:  ts,
+					FirstSystemOccurrence: ts,
+				},
 			},
 		},
+		{
+			Name:    "comp2",
+			Version: "ver1",
+			HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{
+				LayerIndex: 2,
+			},
+			Vulns: []*storage.EmbeddedVulnerability{
+				{
+					Cve:                "cve1",
+					VulnerabilityType:  storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+					VulnerabilityTypes: []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
+					SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
+						FixedBy: "ver2",
+					},
+					FirstImageOccurrence:  ts,
+					FirstSystemOccurrence: ts,
+				},
+				{
+					Cve:                   "cve2",
+					VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+					VulnerabilityTypes:    []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
+					FirstImageOccurrence:  ts,
+					FirstSystemOccurrence: ts,
+				},
+			},
+		},
+		// Exact duplicate to ensure it is filtered out
 		{
 			Name:    "comp2",
 			Version: "ver1",
@@ -168,6 +206,42 @@ func TestSplitAndMergeImage(t *testing.T) {
 							SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
 								FixedBy: "ver3",
 							},
+							FirstImageOccurrence:  ts,
+							FirstSystemOccurrence: ts,
+						},
+						{
+							Cve:                "cve2",
+							VulnerabilityType:  storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+							VulnerabilityTypes: []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
+							SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
+								FixedBy: "ver3",
+							},
+							FirstImageOccurrence:  ts,
+							FirstSystemOccurrence: ts,
+						},
+					},
+				},
+				{
+					Name:    "comp2",
+					Version: "ver1",
+					HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{
+						LayerIndex: 2,
+					},
+					Vulns: []*storage.EmbeddedVulnerability{
+						{
+							Cve:                "cve1",
+							VulnerabilityType:  storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+							VulnerabilityTypes: []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
+							SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
+								FixedBy: "ver2",
+							},
+							FirstImageOccurrence:  ts,
+							FirstSystemOccurrence: ts,
+						},
+						{
+							Cve:                   "cve2",
+							VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+							VulnerabilityTypes:    []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
 							FirstImageOccurrence:  ts,
 							FirstSystemOccurrence: ts,
 						},
@@ -481,7 +555,7 @@ func TestSplitAndMergeImage(t *testing.T) {
 	} else {
 		imageActual = Merge(splitActual)
 	}
-	protoassert.Equal(t, image, imageActual)
+	protoassert.Equal(t, dedupedImage(), imageActual)
 }
 
 func getTestComponentID(testComponent *storage.EmbeddedImageScanComponent, imageID string) string {
@@ -494,4 +568,92 @@ func getTestCVEID(testCVE *storage.EmbeddedVulnerability, componentID string) st
 	id, _ := cve.IDV2(testCVE, componentID)
 
 	return id
+}
+
+func dedupedImage() *storage.Image {
+	return &storage.Image{
+		Id: "sha",
+		Name: &storage.ImageName{
+			FullName: "name",
+		},
+		Metadata: &storage.ImageMetadata{
+			V1: &storage.V1Metadata{
+				Created: ts,
+			},
+		},
+		SetComponents: &storage.Image_Components{
+			Components: 3,
+		},
+		SetCves: &storage.Image_Cves{
+			Cves: 4,
+		},
+		SetFixable: &storage.Image_FixableCves{
+			FixableCves: 2,
+		},
+		Scan: &storage.ImageScan{
+			ScanTime: ts,
+			Components: []*storage.EmbeddedImageScanComponent{
+				{
+					Name:    "comp1",
+					Version: "ver1",
+					HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{
+						LayerIndex: 1,
+					},
+					Vulns: []*storage.EmbeddedVulnerability{},
+				},
+				{
+					Name:    "comp1",
+					Version: "ver2",
+					HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{
+						LayerIndex: 3,
+					},
+					Vulns: []*storage.EmbeddedVulnerability{
+						{
+							Cve:                   "cve1",
+							VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+							VulnerabilityTypes:    []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
+							FirstImageOccurrence:  ts,
+							FirstSystemOccurrence: ts,
+						},
+						{
+							Cve:                "cve2",
+							VulnerabilityType:  storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+							VulnerabilityTypes: []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
+							SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
+								FixedBy: "ver3",
+							},
+							FirstImageOccurrence:  ts,
+							FirstSystemOccurrence: ts,
+						},
+					},
+				},
+				{
+					Name:    "comp2",
+					Version: "ver1",
+					HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{
+						LayerIndex: 2,
+					},
+					Vulns: []*storage.EmbeddedVulnerability{
+						{
+							Cve:                "cve1",
+							VulnerabilityType:  storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+							VulnerabilityTypes: []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
+							SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
+								FixedBy: "ver2",
+							},
+							FirstImageOccurrence:  ts,
+							FirstSystemOccurrence: ts,
+						},
+						{
+							Cve:                   "cve2",
+							VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+							VulnerabilityTypes:    []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
+							FirstImageOccurrence:  ts,
+							FirstSystemOccurrence: ts,
+						},
+					},
+				},
+			},
+		},
+	}
 }
