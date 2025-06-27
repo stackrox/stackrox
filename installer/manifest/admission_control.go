@@ -153,11 +153,22 @@ func (g AdmissionControlGenerator) applyAdmissionControlDeployment(m *manifestGe
 				},
 				Spec: v1.PodSpec{
 					ServiceAccountName: "admission-control",
+					InitContainers: []v1.Container{{
+						Name:            "init-tls-certs",
+						Image:           m.Config.Images.Sensor,
+						ImagePullPolicy: v1.PullAlways,
+						Command:         []string{"/stackrox/init-tls-certs"},
+						Args: []string{
+							"--legacy=/run/secrets/stackrox.io/certs-legacy/",
+							"--new=/run/secrets/stackrox.io/certs-new/",
+							"--destination=/run/secrets/stackrox.io/certs/",
+						},
+					}},
 					Containers: []v1.Container{{
 						Name:            "admission-control",
 						Image:           m.Config.Images.AdmissionControl,
 						ImagePullPolicy: v1.PullAlways,
-						Command:         []string{"admission-control"},
+						Command:         []string{"/stackrox/admission-control"},
 						Ports: []v1.ContainerPort{{
 							Name:          "webhook",
 							ContainerPort: 8443,
@@ -176,7 +187,6 @@ func (g AdmissionControlGenerator) applyAdmissionControlDeployment(m *manifestGe
 							FailureThreshold:    1,
 						},
 						SecurityContext: &v1.SecurityContext{
-							RunAsNonRoot:             &trueVar,
 							ReadOnlyRootFilesystem:   &trueVar,
 							AllowPrivilegeEscalation: &falseVar,
 						},
@@ -217,8 +227,7 @@ func (g AdmissionControlGenerator) applyAdmissionControlDeployment(m *manifestGe
 			Volume: v1.Volume{
 				VolumeSource: v1.VolumeSource{
 					Secret: &v1.SecretVolumeSource{
-						SecretName: "service-ca",
-						Optional:   &trueVar,
+						SecretName: "additional-ca",
 					},
 				},
 			},
