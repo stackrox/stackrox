@@ -205,7 +205,7 @@ spec:
         - name: ROX_ADVERTISED_ENDPOINT
           value: {{ ._rox.sensor.endpoint }}
         - name: GRPC_ENFORCE_ALPN_ENABLED
-          value: {{ quote ._rox.env.gRPCEnforceALPN }}
+          value: {{ quote ._rox.env.grpcEnforceALPN }}
         {{- if ._rox.env.openshift }}
         - name: ROX_OPENSHIFT_API
           value: "true"
