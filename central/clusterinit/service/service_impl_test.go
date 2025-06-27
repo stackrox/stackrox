@@ -3,12 +3,15 @@ package service
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/pkg/errors"
 	dsMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
+	"github.com/stackrox/rox/central/clusterinit/backend"
 	"github.com/stackrox/rox/central/clusterinit/backend/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/crs"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
@@ -44,6 +47,34 @@ func TestGetInitBundlesWithClusterStoreError(t *testing.T) {
 	bundles, err := service.GetInitBundles(context.Background(), nil)
 	assert.Error(t, err)
 	assert.Empty(t, bundles.GetItems())
+}
+
+// In case the `CRSGenRequest` message does specify the `validUntil` field, the expectation is that the backend's
+// `IssueCRS` implementation receives a `validUntil` zero time.Time value.
+//
+// This test verifies this behaviour.
+func TestGenerateCRSValidUntilTimestampDefaultsToZero(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	mockStore := dsMocks.NewMockDataStore(mockCtrl)
+	mockBackend := mocks.NewMockBackend(mockCtrl)
+	service := New(mockBackend, mockStore)
+
+	mockBackend.EXPECT().IssueCRS(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).DoAndReturn(
+		func(_ context.Context, _ string, validUntil time.Time, validFor time.Duration) (*backend.CRSWithMeta, error) {
+			assert.True(t, validUntil.IsZero())
+			crsWithMeta := &backend.CRSWithMeta{
+				CRS:  &crs.CRS{},
+				Meta: &storage.InitBundleMeta{},
+			}
+			return crsWithMeta, nil
+		},
+	)
+	request := &v1.CRSGenRequest{
+		Name: "secured-cluster",
+		// Note that we are not specifying `validUntil` here.
+	}
+	_, err := service.GenerateCRS(context.Background(), request)
+	assert.NoError(t, err, "GenerateCRS failed")
 }
 
 func TestGetInitBundlesShouldReturnBundlesWithImpactedClusters(t *testing.T) {

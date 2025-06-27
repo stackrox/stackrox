@@ -11,6 +11,7 @@ import (
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	durationpb "google.golang.org/protobuf/types/known/durationpb"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
@@ -473,8 +474,11 @@ func (x *InitBundleGenRequest) GetName() string {
 }
 
 type CRSGenRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Name  string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// '2' is reserved for 'max_registrations' (separate PR).
+	ValidUntil    *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=valid_until,json=validUntil,proto3" json:"valid_until,omitempty"`
+	ValidFor      *durationpb.Duration   `protobuf:"bytes,4,opt,name=valid_for,json=validFor,proto3" json:"valid_for,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -514,6 +518,20 @@ func (x *CRSGenRequest) GetName() string {
 		return x.Name
 	}
 	return ""
+}
+
+func (x *CRSGenRequest) GetValidUntil() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ValidUntil
+	}
+	return nil
+}
+
+func (x *CRSGenRequest) GetValidFor() *durationpb.Duration {
+	if x != nil {
+		return x.ValidFor
+	}
+	return nil
 }
 
 type InitBundleRevokeRequest struct {
@@ -884,7 +902,7 @@ var File_api_v1_cluster_init_service_proto protoreflect.FileDescriptor
 
 const file_api_v1_cluster_init_service_proto_rawDesc = "" +
 	"\n" +
-	"!api/v1/cluster_init_service.proto\x12\x02v1\x1a\x12api/v1/empty.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x12storage/user.proto\"\xe0\x02\n" +
+	"!api/v1/cluster_init_service.proto\x12\x02v1\x1a\x12api/v1/empty.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1egoogle/protobuf/duration.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x12storage/user.proto\"\xe0\x02\n" +
 	"\x0eInitBundleMeta\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12O\n" +
@@ -921,9 +939,12 @@ const file_api_v1_cluster_init_service_proto_rawDesc = "" +
 	"\x10CRSMetasResponse\x12!\n" +
 	"\x05items\x18\x01 \x03(\v2\v.v1.CRSMetaR\x05items\"*\n" +
 	"\x14InitBundleGenRequest\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\"#\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\"\x98\x01\n" +
 	"\rCRSGenRequest\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\"n\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12;\n" +
+	"\vvalid_until\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"validUntil\x126\n" +
+	"\tvalid_for\x18\x04 \x01(\v2\x19.google.protobuf.DurationR\bvalidFor\"n\n" +
 	"\x17InitBundleRevokeRequest\x12\x10\n" +
 	"\x03ids\x18\x01 \x03(\tR\x03ids\x12A\n" +
 	"\x1dconfirm_impacted_clusters_ids\x18\x02 \x03(\tR\x1aconfirmImpactedClustersIds\"$\n" +
@@ -985,7 +1006,8 @@ var file_api_v1_cluster_init_service_proto_goTypes = []any{
 	(*CRSRevokeResponse_CRSRevocationError)(nil),               // 15: v1.CRSRevokeResponse.CRSRevocationError
 	(*timestamppb.Timestamp)(nil),                              // 16: google.protobuf.Timestamp
 	(*storage.User)(nil),                                       // 17: storage.User
-	(*Empty)(nil),                                              // 18: v1.Empty
+	(*durationpb.Duration)(nil),                                // 18: google.protobuf.Duration
+	(*Empty)(nil),                                              // 19: v1.Empty
 }
 var file_api_v1_cluster_init_service_proto_depIdxs = []int32{
 	13, // 0: v1.InitBundleMeta.impacted_clusters:type_name -> v1.InitBundleMeta.ImpactedCluster
@@ -999,28 +1021,30 @@ var file_api_v1_cluster_init_service_proto_depIdxs = []int32{
 	1,  // 8: v1.CRSGenResponse.meta:type_name -> v1.CRSMeta
 	0,  // 9: v1.InitBundleMetasResponse.items:type_name -> v1.InitBundleMeta
 	1,  // 10: v1.CRSMetasResponse.items:type_name -> v1.CRSMeta
-	14, // 11: v1.InitBundleRevokeResponse.init_bundle_revocation_errors:type_name -> v1.InitBundleRevokeResponse.InitBundleRevocationError
-	15, // 12: v1.CRSRevokeResponse.crs_revocation_errors:type_name -> v1.CRSRevokeResponse.CRSRevocationError
-	13, // 13: v1.InitBundleRevokeResponse.InitBundleRevocationError.impacted_clusters:type_name -> v1.InitBundleMeta.ImpactedCluster
-	9,  // 14: v1.ClusterInitService.RevokeInitBundle:input_type -> v1.InitBundleRevokeRequest
-	10, // 15: v1.ClusterInitService.RevokeCRS:input_type -> v1.CRSRevokeRequest
-	18, // 16: v1.ClusterInitService.GetCAConfig:input_type -> v1.Empty
-	18, // 17: v1.ClusterInitService.GetInitBundles:input_type -> v1.Empty
-	18, // 18: v1.ClusterInitService.GetCRSs:input_type -> v1.Empty
-	7,  // 19: v1.ClusterInitService.GenerateInitBundle:input_type -> v1.InitBundleGenRequest
-	8,  // 20: v1.ClusterInitService.GenerateCRS:input_type -> v1.CRSGenRequest
-	11, // 21: v1.ClusterInitService.RevokeInitBundle:output_type -> v1.InitBundleRevokeResponse
-	12, // 22: v1.ClusterInitService.RevokeCRS:output_type -> v1.CRSRevokeResponse
-	4,  // 23: v1.ClusterInitService.GetCAConfig:output_type -> v1.GetCAConfigResponse
-	5,  // 24: v1.ClusterInitService.GetInitBundles:output_type -> v1.InitBundleMetasResponse
-	6,  // 25: v1.ClusterInitService.GetCRSs:output_type -> v1.CRSMetasResponse
-	2,  // 26: v1.ClusterInitService.GenerateInitBundle:output_type -> v1.InitBundleGenResponse
-	3,  // 27: v1.ClusterInitService.GenerateCRS:output_type -> v1.CRSGenResponse
-	21, // [21:28] is the sub-list for method output_type
-	14, // [14:21] is the sub-list for method input_type
-	14, // [14:14] is the sub-list for extension type_name
-	14, // [14:14] is the sub-list for extension extendee
-	0,  // [0:14] is the sub-list for field type_name
+	16, // 11: v1.CRSGenRequest.valid_until:type_name -> google.protobuf.Timestamp
+	18, // 12: v1.CRSGenRequest.valid_for:type_name -> google.protobuf.Duration
+	14, // 13: v1.InitBundleRevokeResponse.init_bundle_revocation_errors:type_name -> v1.InitBundleRevokeResponse.InitBundleRevocationError
+	15, // 14: v1.CRSRevokeResponse.crs_revocation_errors:type_name -> v1.CRSRevokeResponse.CRSRevocationError
+	13, // 15: v1.InitBundleRevokeResponse.InitBundleRevocationError.impacted_clusters:type_name -> v1.InitBundleMeta.ImpactedCluster
+	9,  // 16: v1.ClusterInitService.RevokeInitBundle:input_type -> v1.InitBundleRevokeRequest
+	10, // 17: v1.ClusterInitService.RevokeCRS:input_type -> v1.CRSRevokeRequest
+	19, // 18: v1.ClusterInitService.GetCAConfig:input_type -> v1.Empty
+	19, // 19: v1.ClusterInitService.GetInitBundles:input_type -> v1.Empty
+	19, // 20: v1.ClusterInitService.GetCRSs:input_type -> v1.Empty
+	7,  // 21: v1.ClusterInitService.GenerateInitBundle:input_type -> v1.InitBundleGenRequest
+	8,  // 22: v1.ClusterInitService.GenerateCRS:input_type -> v1.CRSGenRequest
+	11, // 23: v1.ClusterInitService.RevokeInitBundle:output_type -> v1.InitBundleRevokeResponse
+	12, // 24: v1.ClusterInitService.RevokeCRS:output_type -> v1.CRSRevokeResponse
+	4,  // 25: v1.ClusterInitService.GetCAConfig:output_type -> v1.GetCAConfigResponse
+	5,  // 26: v1.ClusterInitService.GetInitBundles:output_type -> v1.InitBundleMetasResponse
+	6,  // 27: v1.ClusterInitService.GetCRSs:output_type -> v1.CRSMetasResponse
+	2,  // 28: v1.ClusterInitService.GenerateInitBundle:output_type -> v1.InitBundleGenResponse
+	3,  // 29: v1.ClusterInitService.GenerateCRS:output_type -> v1.CRSGenResponse
+	23, // [23:30] is the sub-list for method output_type
+	16, // [16:23] is the sub-list for method input_type
+	16, // [16:16] is the sub-list for extension type_name
+	16, // [16:16] is the sub-list for extension extendee
+	0,  // [0:16] is the sub-list for field type_name
 }
 
 func init() { file_api_v1_cluster_init_service_proto_init() }
