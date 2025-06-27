@@ -74,7 +74,7 @@ func (cmd *centralCertCommand) certs() error {
 	defer cancel()
 	conn, err := tlsutils.DialContextWithRetries(ctx, "tcp", endpoint, &config)
 	if err != nil {
-		return errors.Wrap(err, "connecting to server")
+		return errors.Wrap(err, "connecting to server to retrieve central certificates")
 	}
 	defer utils.IgnoreError(conn.Close)
 
@@ -95,7 +95,7 @@ func (cmd *centralCertCommand) certs() error {
 		// Open the given filename.
 		handle, err = os.Create(cmd.filename)
 		if err != nil {
-			return errors.Wrapf(err, "creating output file %q", cmd.filename)
+			return errors.Wrapf(err, "creating central certificate output file %q", cmd.filename)
 		}
 	}
 
