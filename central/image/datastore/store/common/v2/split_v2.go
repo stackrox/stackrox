@@ -34,10 +34,20 @@ func SplitV2(image *storage.Image, withComponents bool) (ImageParts, error) {
 
 func splitComponentsV2(parts ImageParts) ([]ComponentParts, error) {
 	ret := make([]ComponentParts, 0, len(parts.Image.GetScan().GetComponents()))
+	componentMap := make(map[string]*storage.EmbeddedImageScanComponent)
 	for _, component := range parts.Image.GetScan().GetComponents() {
 		generatedComponentV2, err := GenerateImageComponentV2(parts.Image.GetScan().GetOperatingSystem(), parts.Image, component)
 		if err != nil {
 			return nil, err
+		}
+
+		// dedupe components within the component
+		if val, ok := componentMap[generatedComponentV2.GetId()]; !ok {
+			componentMap[generatedComponentV2.GetId()] = component
+		} else {
+			log.Infof("SHREWS -- existing -- %v", val)
+			log.Infof("SHREWS -- new one -- %v", component)
+			continue
 		}
 
 		cves, err := splitCVEsV2(parts.Image.GetId(), generatedComponentV2.GetId(), component)
