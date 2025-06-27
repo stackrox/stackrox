@@ -16,8 +16,8 @@ import (
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/declarativeconfig/k8sobject"
 	"github.com/stackrox/rox/roxctl/declarativeconfig/lint"
+	"go.yaml.in/yaml/v3"
 	"golang.org/x/exp/maps"
-	yaml "sigs.k8s.io/yaml/goyaml.v3"
 )
 
 var (

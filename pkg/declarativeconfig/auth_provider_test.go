@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	yaml "sigs.k8s.io/yaml/goyaml.v3"
+	"go.yaml.in/yaml/v3"
 )
 
 func TestAuthProviderYAMLTransformation_OIDC(t *testing.T) {

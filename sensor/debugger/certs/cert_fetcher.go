@@ -7,8 +7,8 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
+	"go.yaml.in/yaml/v3"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	yaml "sigs.k8s.io/yaml/goyaml.v3"
 )
 
 const (

@@ -9,8 +9,8 @@ require (
 	github.com/go-git/go-git/v5 v5.13.1
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/spf13/cobra v1.7.0
+	go.yaml.in/yaml/v3 v3.0.3
 	k8s.io/client-go v0.28.2
-	sigs.k8s.io/yaml v1.4.0
 )
 
 require (
@@ -74,4 +74,5 @@ require (
 	k8s.io/utils v0.0.0-20230406110748-d93618cff8a2 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
+	sigs.k8s.io/yaml v1.4.0 // indirect
 )

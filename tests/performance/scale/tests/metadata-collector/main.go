@@ -13,8 +13,8 @@ import (
 	"github.com/go-git/go-git/v5"
 	"github.com/hashicorp/go-multierror"
 	"github.com/spf13/cobra"
+	"go.yaml.in/yaml/v3"
 	"k8s.io/client-go/tools/clientcmd"
-	yaml "sigs.k8s.io/yaml/goyaml.v3"
 )
 
 type fieldType int
@@ -279,18 +279,17 @@ func getGitRevision() (string, error) {
 }
 
 func truncateVersion(version string) string {
-    // Version should match x.y
-    re := regexp.MustCompile(`^[vV]?(\d+\.\d+)`)
+	// Version should match x.y
+	re := regexp.MustCompile(`^[vV]?(\d+\.\d+)`)
 
-    match := re.FindStringSubmatch(version)
+	match := re.FindStringSubmatch(version)
 
-    // If the version is valid return it. Otherwise return 0.0
-    if len(match) > 1 {
-        return match[1]
-    }
-    return "0.0"
+	// If the version is valid return it. Otherwise return 0.0
+	if len(match) > 1 {
+		return match[1]
+	}
+	return "0.0"
 }
-
 
 func collectClusterInformation(kubeConfigurationPath string) error {
 	config, configErr := clientcmd.BuildConfigFromFlags("", kubeConfigurationPath)
