@@ -47,6 +47,9 @@ func (d *datastoreImpl) SearchRoles(ctx context.Context, q *v1.Query) ([]*v1.Sea
 
 func (d *datastoreImpl) SearchRawRoles(ctx context.Context, request *v1.Query) ([]*storage.K8SRole, error) {
 	roles := make([]*storage.K8SRole, 0)
+	if request == nil {
+		request = searchPkg.EmptyQuery()
+	}
 	err := d.storage.GetByQueryFn(ctx, request, func(role *storage.K8SRole) error {
 		roles = append(roles, role)
 		return nil
