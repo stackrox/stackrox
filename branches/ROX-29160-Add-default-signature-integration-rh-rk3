@@ -1,7 +1,7 @@
 {
   "base": {
-    "name": "master",
-    "hash": "9712486895c62055e00697093ef74f956ca12099"
+    "name": "yolo",
+    "hash": "35cb8990467473a52056b2ddd8dc43034a35cbf9"
   },
   "upstream": {
     "branch": "ROX-29160-Add-default-signature-integration-rh-rk3"
