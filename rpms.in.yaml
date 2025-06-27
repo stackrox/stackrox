@@ -9,7 +9,7 @@ packages:
 - postgresql
 moduleEnable:
 # final stage in image/rhel/konflux.Dockerfile
-- postgresql:15
+- postgresql:13
 contentOrigin:
   repofiles: [ "rpms.rhel.repo" ]
 context:
