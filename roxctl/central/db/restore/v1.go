@@ -19,17 +19,17 @@ func (cmd *centralDbRestoreCommand) restoreV1(file *os.File, deadline time.Time)
 
 	client, err := cmd.env.HTTPClient(0)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "creating HTTP client for restore")
 	}
 
 	req, err := client.NewReq(http.MethodPost, "/db/restore", file)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "creating restore request")
 	}
 
 	resp, err := transfer.ViaHTTP(req, client, deadline, idleTimeout)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "executing restore request")
 	}
 	defer utils.IgnoreError(resp.Body.Close)
 

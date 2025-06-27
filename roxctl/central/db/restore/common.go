@@ -4,6 +4,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -16,7 +17,7 @@ func (cmd *centralDbRestoreCommand) restore(impl func(file *os.File, deadline ti
 
 	file, err := os.Open(cmd.file)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "opening backup file %q to restore", cmd.file)
 	}
 	defer utils.IgnoreError(file.Close)
 

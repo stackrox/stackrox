@@ -58,7 +58,7 @@ func writeAuthzTraces(cliEnvironment environment.Environment, timeout time.Durat
 		}
 	}
 
-	return multierror.Append(streamErr, syncErr).ErrorOrNil()
+	return errors.Wrap(multierror.Append(streamErr, syncErr).ErrorOrNil(), "writing authorization traces")
 }
 
 func streamAuthzTraces(cliEnvironment environment.Environment, timeout time.Duration, traceOutput io.Writer) error {
@@ -68,7 +68,7 @@ func streamAuthzTraces(cliEnvironment environment.Environment, timeout time.Dura
 
 	conn, err := cliEnvironment.GRPCConnection()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "establishing GRPC connection to retrieve authorization traces")
 	}
 	defer utils.IgnoreError(conn.Close)
 
@@ -76,7 +76,7 @@ func streamAuthzTraces(cliEnvironment environment.Environment, timeout time.Dura
 	client := v1.NewDebugServiceClient(conn)
 	stream, err := client.StreamAuthzTraces(ctx, &v1.Empty{})
 	if err != nil {
-		return err
+		return errors.Wrap(err, "starting authorization trace stream")
 	}
 
 	// Receive authz traces from central, convert them to JSON, and write.
@@ -93,14 +93,14 @@ func streamAuthzTraces(cliEnvironment environment.Environment, timeout time.Dura
 			if errors.Is(recvErr, io.EOF) || status.Code(recvErr) == codes.Canceled || status.Code(recvErr) == codes.DeadlineExceeded {
 				return nil
 			}
-			return recvErr
+			return errors.Wrap(recvErr, "receiving authorization trace")
 		}
 
 		if err := jsonutil.Marshal(traceOutput, trace); err != nil {
 			return errors.Wrap(err, "marshaling a trace to JSON")
 		}
 		if _, err := traceOutput.Write([]byte{'\n'}); err != nil {
-			return err
+			return errors.Wrap(err, "finalizing output")
 		}
 	}
 }
