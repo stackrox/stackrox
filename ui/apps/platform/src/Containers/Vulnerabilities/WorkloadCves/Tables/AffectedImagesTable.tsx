@@ -31,7 +31,7 @@ import ImageNameLink from '../components/ImageNameLink';
 
 import ImageComponentVulnerabilitiesTable, {
     ImageComponentVulnerability,
-    convertToFlatImageComponentVulnerabilitiesFragment, // imageComponentVulnerabilitiesFragment
+    imageComponentVulnerabilitiesFragment,
     imageMetadataContextFragment,
 } from './ImageComponentVulnerabilitiesTable';
 import { WatchStatus } from '../../types';
@@ -97,33 +97,26 @@ export type ImageForCve = {
     })[];
 };
 
-// After release, replace temporary function
-// with imagesForCveFragment
-// that has unconditional imageComponentVulnerabilitiesFragment.
-export function convertToFlatImagesForCveFragment(
-    isFlattenCveDataEnabled: boolean // ROX_FLATTEN_CVE_DATA
-) {
-    return gql`
-        ${imageMetadataContextFragment}
-        ${convertToFlatImageComponentVulnerabilitiesFragment(isFlattenCveDataEnabled)}
-        fragment ImagesForCVE on Image {
-            ...ImageMetadataContext
+export const imagesForCveFragment = gql`
+    ${imageMetadataContextFragment}
+    ${imageComponentVulnerabilitiesFragment}
+    fragment ImagesForCVE on Image {
+        ...ImageMetadataContext
 
-            operatingSystem
-            watchStatus
-            imageComponents(query: $query) {
-                imageVulnerabilities(query: $query) {
-                    discoveredAtImage
-                    cvss
-                    scoreVersion
-                    nvdCvss
-                    nvdScoreVersion
-                }
-                ...ImageComponentVulnerabilities
+        operatingSystem
+        watchStatus
+        imageComponents(query: $query) {
+            imageVulnerabilities(query: $query) {
+                discoveredAtImage
+                cvss
+                scoreVersion
+                nvdCvss
+                nvdScoreVersion
             }
+            ...ImageComponentVulnerabilities
         }
-    `;
-}
+    }
+`;
 
 export type AffectedImagesTableProps = {
     tableState: TableUIState<ImageForCve>;
