@@ -18,6 +18,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/tlsutils"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -298,7 +299,7 @@ func (c *endpointsTestCase) runHTTPTest(t *testing.T, testCtx *endpointsTestCont
 		} else {
 			transport = &http.Transport{
 				DialTLSContext: func(ctx context.Context, network, _ string) (net.Conn, error) {
-					return (&tls.Dialer{Config: tlsConfig}).DialContext(ctx, network, c.endpoint())
+					return tlsutils.DialContextWithRetries(ctx, network, c.endpoint(), tlsConfig)
 				},
 			}
 		}
