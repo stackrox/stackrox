@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/utils"
+	"go.yaml.in/yaml/v3"
 	v1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -28,7 +29,6 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/kubectl/pkg/scheme"
 	"k8s.io/utils/pointer"
-	"sigs.k8s.io/yaml"
 )
 
 const (
