@@ -32,7 +32,7 @@ spec:
   - name: revision
     value: '{{revision}}'
   - name: input-image-repo
-    value: quay.io/rhacs-eng/release-collector
+    value: quay.io/rhacs-eng/collector
   - name: input-image-tag-makefile-target
     value: collector-tag
   # Historically, slim collector is first built to quay.io/rhacs-eng/collector:<original-tag>-slim, and then it's
