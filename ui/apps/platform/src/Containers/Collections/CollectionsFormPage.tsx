@@ -9,6 +9,7 @@ import {
     Bullseye,
     Button,
     Divider,
+    DropdownItem,
     Flex,
     FlexItem,
     PageSection,
@@ -17,12 +18,6 @@ import {
     Tooltip,
     Truncate,
 } from '@patternfly/react-core';
-import {
-    Dropdown,
-    DropdownItem,
-    DropdownSeparator,
-    DropdownToggle,
-} from '@patternfly/react-core/deprecated';
 import { useMediaQuery } from 'react-responsive';
 
 import { deleteCollection } from 'services/CollectionsService';
@@ -41,6 +36,7 @@ import useCollection from './hooks/useCollection';
 import CollectionsFormModal from './CollectionsFormModal';
 import CollectionLoadError from './CollectionLoadError';
 import { useCollectionFormSubmission } from './hooks/useCollectionFormSubmission';
+import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 
 export type CollectionsFormPageProps = {
     hasWriteAccessForCollections: boolean;
@@ -243,49 +239,38 @@ function CollectionsFormPage({
                             <FlexItem align={{ default: 'alignLeft', md: 'alignRight' }}>
                                 {pageAction.type === 'view' && hasWriteAccessForCollections && (
                                     <>
-                                        <Dropdown
+                                        <MenuDropdown
+                                            toggleText="Actions"
+                                            toggleVariant="primary"
                                             onSelect={closeMenu}
-                                            toggle={
-                                                <DropdownToggle
-                                                    toggleVariant="primary"
-                                                    onToggle={(_e, v) => toggleMenu(v)}
-                                                    toggleIndicator={CaretDownIcon}
-                                                >
-                                                    Actions
-                                                </DropdownToggle>
-                                            }
-                                            isOpen={menuIsOpen}
-                                            dropdownItems={[
-                                                <DropdownItem
-                                                    key="Edit collection"
-                                                    component="button"
-                                                    onClick={() =>
-                                                        onEditCollection(pageAction.collectionId)
-                                                    }
-                                                >
-                                                    Edit collection
-                                                </DropdownItem>,
-                                                <DropdownItem
-                                                    key="Clone collection"
-                                                    component="button"
-                                                    onClick={() =>
-                                                        onCloneCollection(pageAction.collectionId)
-                                                    }
-                                                >
-                                                    Clone collection
-                                                </DropdownItem>,
-                                                <DropdownSeparator key="Separator" />,
-                                                <DropdownItem
-                                                    key="Delete collection"
-                                                    component="button"
-                                                    onClick={() =>
-                                                        setDeleteId(pageAction.collectionId)
-                                                    }
-                                                >
-                                                    Delete collection
-                                                </DropdownItem>,
-                                            ]}
-                                        />
+                                        >
+                                            <DropdownItem
+                                                key="Edit collection"
+                                                component="button"
+                                                onClick={() =>
+                                                    onEditCollection(pageAction.collectionId)
+                                                }
+                                            >
+                                                Edit collection
+                                            </DropdownItem>
+                                            <DropdownItem
+                                                key="Clone collection"
+                                                component="button"
+                                                onClick={() =>
+                                                    onCloneCollection(pageAction.collectionId)
+                                                }
+                                            >
+                                                Clone collection
+                                            </DropdownItem>
+                                            <Divider component="li" key="separator" />
+                                            <DropdownItem
+                                                key="Delete collection"
+                                                component="button"
+                                                onClick={() => setDeleteId(pageAction.collectionId)}
+                                            >
+                                                Delete collection
+                                            </DropdownItem>
+                                        </MenuDropdown>
                                         <Divider
                                             className="pf-v5-u-px-xs"
                                             orientation={{ default: 'vertical' }}
