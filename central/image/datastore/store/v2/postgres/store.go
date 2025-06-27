@@ -208,23 +208,7 @@ func (s *storeImpl) insertIntoImages(
 		return err
 	}
 
-	return copyFromImageComponentV2Cves(ctx, tx, iTime, cveTimeMap, dedupeCVEs(parts.cvesV2)...)
-}
-
-func dedupeCVEs(cves []*storage.ImageCVEV2) []*storage.ImageCVEV2 {
-	var ret []*storage.ImageCVEV2
-	cveMap := make(map[string]*storage.ImageCVEV2)
-	for _, cve := range cves {
-		if val, ok := cveMap[cve.GetId()]; !ok {
-			cveMap[cve.GetId()] = cve
-			ret = append(ret, cve)
-		} else {
-			log.Infof("SHREWS -- existing -- %v", val)
-			log.Infof("SHREWS -- new one -- %v", cve)
-		}
-	}
-
-	return ret
+	return copyFromImageComponentV2Cves(ctx, tx, iTime, cveTimeMap, parts.cvesV2...)
 }
 
 func getPartsAsSlice(parts common.ImageParts) *imagePartsAsSlice {

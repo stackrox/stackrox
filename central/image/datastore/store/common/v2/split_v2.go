@@ -58,10 +58,20 @@ func splitComponentsV2(parts ImageParts) ([]ComponentParts, error) {
 
 func splitCVEsV2(imageID string, componentID string, embedded *storage.EmbeddedImageScanComponent) ([]CVEParts, error) {
 	ret := make([]CVEParts, 0, len(embedded.GetVulns()))
+	cveMap := make(map[string]*storage.EmbeddedVulnerability)
 	for _, cve := range embedded.GetVulns() {
 		convertedCVE, err := utils.EmbeddedVulnerabilityToImageCVEV2(imageID, componentID, cve)
 		if err != nil {
 			return nil, err
+		}
+
+		// dedupe CVEs within the component
+		if val, ok := cveMap[convertedCVE.GetId()]; !ok {
+			cveMap[convertedCVE.GetId()] = cve
+		} else {
+			log.Infof("SHREWS -- existing -- %v", val)
+			log.Infof("SHREWS -- new one -- %v", cve)
+			continue
 		}
 
 		cp := CVEParts{
