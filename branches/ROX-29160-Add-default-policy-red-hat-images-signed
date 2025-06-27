@@ -1,7 +1,7 @@
 {
   "base": {
     "name": "ROX-29160-Add-default-signature-integration-rh-rk3",
-    "hash": "ec1f60162da6fac1d9cde47a35ed6b25e7d1e029"
+    "hash": "1fccf33322b8395647145ec89b49c5bd5dcf4629"
   },
   "upstream": {
     "branch": "ROX-29160-Add-default-policy-red-hat-images-signed"
