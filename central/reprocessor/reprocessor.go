@@ -421,7 +421,7 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 
 				// If were prior errors, do not attempt to send a message to this cluster.
 				if skipClusterIDs.Contains(clusterID) {
-					metrics.IncrementMsgToSensorSkipCounter(clusterID, msg)
+					metrics.IncrementMsgToSensorNotSentCounter(clusterID, msg, metrics.NotSentSkip)
 					log.Debugw("Not sending updated image to cluster due to prior errors",
 						logging.ImageID(image.GetId()),
 						logging.ImageName(image.GetName().GetFullName()),
@@ -463,7 +463,7 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 		for _, conn := range l.connManager.GetActiveConnections() {
 			clusterID := conn.ClusterID()
 			if skipClusterIDs.Contains(clusterID) {
-				metrics.IncrementMsgToSensorSkipCounter(clusterID, msg)
+				metrics.IncrementMsgToSensorNotSentCounter(clusterID, msg, metrics.NotSentSkip)
 				log.Errorw("Not sending reprocess deployments to cluster due to prior errors",
 					logging.ClusterID(clusterID),
 				)

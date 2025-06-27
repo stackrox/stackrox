@@ -10,51 +10,65 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestIncrementMsgToSensorSkipCounter(t *testing.T) {
+func TestIncrementMsgToSensorNotSentCounter(t *testing.T) {
 	t.Run("no panic on nil msg", func(t *testing.T) {
 		assert.NotPanics(t, func() {
-			IncrementMsgToSensorSkipCounter("", nil)
+			IncrementMsgToSensorNotSentCounter("", nil, "")
 		})
 	})
 
 	t.Run("no panic on nil inner msg", func(t *testing.T) {
 		assert.NotPanics(t, func() {
-			IncrementMsgToSensorSkipCounter("", &central.MsgToSensor{
+			IncrementMsgToSensorNotSentCounter("", &central.MsgToSensor{
 				Msg: nil,
-			})
+			}, "")
 		})
 	})
 
 	t.Run("inc and extract type", func(t *testing.T) {
 		// Clear any prior values.
-		prometheus.Unregister(msgToSensorSkipCounter)
-		require.NoError(t, prometheus.Register(msgToSensorSkipCounter))
+		prometheus.Unregister(msgToSensorNotSentCounter)
+		require.NoError(t, prometheus.Register(msgToSensorNotSentCounter))
 
 		// Get references to the counters.
-		updImgCounter, err := msgToSensorSkipCounter.GetMetricWith(
-			prometheus.Labels{"ClusterID": "a", "type": "UpdatedImage"},
+		updImgErrCounter, err := msgToSensorNotSentCounter.GetMetricWith(
+			prometheus.Labels{"ClusterID": "a", "type": "UpdatedImage", "reason": NotSentError},
 		)
 		require.NoError(t, err)
-		reprocessDeployCounter, err := msgToSensorSkipCounter.GetMetricWith(
-			prometheus.Labels{"ClusterID": "b", "type": "ReprocessDeployments"},
+		updImgSkipCounter, err := msgToSensorNotSentCounter.GetMetricWith(
+			prometheus.Labels{"ClusterID": "a", "type": "UpdatedImage", "reason": NotSentSkip},
+		)
+		require.NoError(t, err)
+		reprocessDeploySignalCounter, err := msgToSensorNotSentCounter.GetMetricWith(
+			prometheus.Labels{"ClusterID": "b", "type": "ReprocessDeployments", "reason": NotSentSignal},
 		)
 		require.NoError(t, err)
 
 		// Sanity check.
-		assert.Equal(t, 0.0, testutil.ToFloat64(updImgCounter))
-		assert.Equal(t, 0.0, testutil.ToFloat64(reprocessDeployCounter))
+		assert.Equal(t, 0.0, testutil.ToFloat64(updImgErrCounter))
+		assert.Equal(t, 0.0, testutil.ToFloat64(updImgSkipCounter))
+		assert.Equal(t, 0.0, testutil.ToFloat64(reprocessDeploySignalCounter))
 
-		// Verify the count is incremented and type extracted.
-		IncrementMsgToSensorSkipCounter("a", &central.MsgToSensor{
+		// Verify the count is incremented, type extracted, and reason recorded.
+		IncrementMsgToSensorNotSentCounter("a", &central.MsgToSensor{
 			Msg: &central.MsgToSensor_UpdatedImage{},
-		})
-		assert.Equal(t, 1.0, testutil.ToFloat64(updImgCounter))
-		assert.Equal(t, 0.0, testutil.ToFloat64(reprocessDeployCounter))
+		}, NotSentError)
+		assert.Equal(t, 1.0, testutil.ToFloat64(updImgErrCounter))
+		assert.Equal(t, 0.0, testutil.ToFloat64(updImgSkipCounter))
+		assert.Equal(t, 0.0, testutil.ToFloat64(reprocessDeploySignalCounter))
 
-		IncrementMsgToSensorSkipCounter("b", &central.MsgToSensor{
+		IncrementMsgToSensorNotSentCounter("a", &central.MsgToSensor{
+			Msg: &central.MsgToSensor_UpdatedImage{},
+		}, NotSentSkip)
+		assert.Equal(t, 1.0, testutil.ToFloat64(updImgErrCounter))
+		assert.Equal(t, 1.0, testutil.ToFloat64(updImgSkipCounter))
+		assert.Equal(t, 0.0, testutil.ToFloat64(reprocessDeploySignalCounter))
+
+		IncrementMsgToSensorNotSentCounter("b", &central.MsgToSensor{
 			Msg: &central.MsgToSensor_ReprocessDeployments{},
-		})
-		assert.Equal(t, 1.0, testutil.ToFloat64(updImgCounter))
-		assert.Equal(t, 1.0, testutil.ToFloat64(reprocessDeployCounter))
+		}, NotSentSignal)
+		assert.Equal(t, 1.0, testutil.ToFloat64(updImgErrCounter))
+		assert.Equal(t, 1.0, testutil.ToFloat64(updImgSkipCounter))
+		assert.Equal(t, 1.0, testutil.ToFloat64(reprocessDeploySignalCounter))
 	})
 }
