@@ -191,7 +191,7 @@ spec:
   - name: collector-slim-image-build-repo
     description: Repository where the (unreleased) collector slim image is pushed by its build pipeline.
     type: string
-    default: "quay.io/rhacs-eng/collector-slim"
+    default: "quay.io/rhacs-eng/release-collector-slim"
   - name: collector-slim-image-catalog-repo
     description: Repository within the Red Hat Container Catalog where the collector slim image is pushed to during the release.
     type: string
@@ -200,13 +200,8 @@ spec:
   - name: collector-full-image-build-repo
     description: Repository where the (unreleased) collector full image is pushed by its build pipeline.
     type: string
-<<<<<<< HEAD
-    default: "quay.io/rhacs-eng/collector"
-  - name: collector-full-image-catalog-repo
-=======
     default: "quay.io/rhacs-eng/release-collector"
-  - name: collector-image-catalog-repo
->>>>>>> d2da273327 (ROX-29479: switch to custom Konflux quay.io repositories (#15441))
+  - name: collector-full-image-catalog-repo
     description: Repository within the Red Hat Container Catalog where the collector full image is pushed to during the release.
     type: string
     default: "registry.redhat.io/advanced-cluster-security/rhacs-collector-rhel8"
