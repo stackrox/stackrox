@@ -2,7 +2,6 @@ package compliancemanager
 
 import (
 	"context"
-	"strings"
 
 	"github.com/adhocore/gronx"
 	"github.com/pkg/errors"
@@ -283,10 +282,6 @@ func (m *managerImpl) processRequestToSensor(ctx context.Context, scanRequest *s
 	if len(returnedProfiles) != len(profiles) {
 		return nil, errors.Errorf("Unable to find all profiles for scan configuration named %q.", scanRequest.GetScanConfigName())
 	}
-	err = validateProfiles(returnedProfiles)
-	if err != nil {
-		return nil, errors.Wrapf(err, "Unable to create scan configuration named %q.", scanRequest.GetScanConfigName())
-	}
 
 	err = m.scanSettingDS.UpsertScanConfiguration(ctx, scanRequest)
 	if err != nil {
@@ -367,24 +362,6 @@ func (m *managerImpl) removeSensorRequestForCluster(scanConfigID, clusterID stri
 			delete(m.runningRequests, k)
 		}
 	}
-}
-
-// validateProfiles checks if the profiles are compatible and returns an error if not.
-// Check if node profiles have more than one product
-// ex. we can not have rhcos node profile and ocp node profile in the same scan configuration
-// as this is not allowed on Compliance Operator ScanSettingBinding
-func validateProfiles(profiles []*storage.ComplianceOperatorProfileV2) error {
-	var product string
-	for _, profile := range profiles {
-		if strings.Contains(strings.ToLower(profile.GetProductType()), "node") {
-			if product == "" {
-				product = profile.GetProduct()
-			} else if product != profile.GetProduct() {
-				return errors.New("Node profiles must have the same product")
-			}
-		}
-	}
-	return nil
 }
 
 // trackSensorRequest adds sensor request to a map with cluster and scan config that was sent for correlating responses.
