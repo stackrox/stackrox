@@ -71,7 +71,7 @@ func revokeCRSs(cliEnvironment environment.Environment, idsOrNames []string,
 
 	conn, err := cliEnvironment.GRPCConnection(common.WithRetryTimeout(retryTimeout))
 	if err != nil {
-		return errors.Wrap(err, "establishing GRPC connection")
+		return errors.Wrap(err, "establishing GRPC connection to revoke Cluster Registration Secret")
 	}
 	defer utils.IgnoreError(conn.Close)
 	svc := v1.NewClusterInitServiceClient(conn)
