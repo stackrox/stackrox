@@ -3,8 +3,10 @@ import Raven from 'raven-js';
 import { imageScanMessages } from 'messages/vulnMgmt.messages';
 import getImageScanMessage from './getImageScanMessage';
 
-jest.mock('raven-js', () => ({
-    captureException: jest.fn(),
+vi.mock('raven-js', () => ({
+    default: {
+        captureException: vi.fn(),
+    },
 }));
 
 describe('getImageScanMessage', () => {
@@ -82,7 +84,7 @@ describe('getImageScanMessage', () => {
 
     it('should capture the error when an unknown state is encountered', () => {
         // Spy on Raven.captureException
-        const spy = jest.spyOn(Raven, 'captureException');
+        const spy = vi.spyOn(Raven, 'captureException');
 
         const imageNotes = [];
         const scanNotes = ['THIS_IS_NOT_OK'];

@@ -23,11 +23,7 @@ describe('Component:Select', () => {
     it('should show the placeholder as the first option', () => {
         // arrange
         render(
-            <Select
-                options={initialOptions}
-                placeholder={initialPlaceholder}
-                onChange={jest.fn()}
-            />
+            <Select options={initialOptions} placeholder={initialPlaceholder} onChange={vi.fn()} />
         );
 
         // act
@@ -41,11 +37,7 @@ describe('Component:Select', () => {
     it('should have option elements for every option object, plus the placeholder', () => {
         // arrange
         render(
-            <Select
-                options={initialOptions}
-                placeholder={initialPlaceholder}
-                onChange={jest.fn()}
-            />
+            <Select options={initialOptions} placeholder={initialPlaceholder} onChange={vi.fn()} />
         );
 
         // act
@@ -58,7 +50,7 @@ describe('Component:Select', () => {
     it('should pass the option clicked on to its provided handler', () => {
         // arrange
         const selectedOptionObject = initialOptions[1];
-        const onChangeSpy = jest.fn();
+        const onChangeSpy = vi.fn();
         render(
             <Select
                 options={initialOptions}
