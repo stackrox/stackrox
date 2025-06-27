@@ -78,7 +78,7 @@ func (d *datastoreImpl) RemoveServiceAccount(ctx context.Context, id string) err
 }
 
 func (d *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error) {
-	return d.getSearchResults(ctx, q)
+	return d.storage.Search(ctx, q)
 }
 
 // Count returns the number of search results from the query
@@ -86,12 +86,8 @@ func (d *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 	return d.storage.Count(ctx, q)
 }
 
-func (d *datastoreImpl) getSearchResults(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error) {
-	return d.storage.Search(ctx, q)
-}
-
 func (d *datastoreImpl) searchServiceAccounts(ctx context.Context, q *v1.Query) ([]*storage.ServiceAccount, []searchPkg.Result, error) {
-	results, err := d.getSearchResults(ctx, q)
+	results, err := d.Search(ctx, q)
 	if err != nil {
 		return nil, nil, err
 	}
