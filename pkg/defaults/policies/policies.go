@@ -24,7 +24,9 @@ var (
 	policiesFS embed.FS
 
 	// featureFlagFileGuard is a map indexed by file name that ignores files if the feature flag is not enabled.
-	featureFlagFileGuard = map[string]features.FeatureFlag{}
+	featureFlagFileGuard = map[string]features.FeatureFlag{
+		"red_hat_images_signed.json": features.RedHatImagesSignedPolicy,
+	}
 )
 
 // DefaultPolicies returns a slice of the default policies.
