@@ -3,6 +3,7 @@
 SHELL := /bin/bash
 
 colon := :
+comma := ,
 
 # GOPATH might actually be a colon-separated list of paths. For the purposes of this makefile,
 # work with the first element only.
@@ -40,10 +41,11 @@ endif
 TAG := # make sure tag is never injectable as an env var
 RELEASE_GOTAGS := release
 
-# Use a release go -tag when CI is targetting a tag
+# Use a release go -tag when CI is targeting a tag
 ifdef CI
 ifneq ($(BUILD_TAG),)
-GOTAGS := $(RELEASE_GOTAGS)
+# Preserve existing GOTAGS and append release tags
+GOTAGS := $(if $(GOTAGS),$(GOTAGS)$(comma))$(RELEASE_GOTAGS)
 endif
 endif
 
