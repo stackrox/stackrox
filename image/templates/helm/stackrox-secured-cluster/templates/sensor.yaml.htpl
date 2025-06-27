@@ -98,7 +98,7 @@ spec:
         - name: ROX_HELM_CLUSTER_CONFIG_FP
           value: {{ quote ._rox._configFP }}
         - name: GRPC_ENFORCE_ALPN_ENABLED
-          value: {{ quote ._rox.env.gRPCEnforceALPN }}
+          value: {{ quote ._rox.env.grpcEnforceALPN }}
         {{- if ._rox._scannerV4Enabled }}
         - name: ROX_SCANNER_V4
           value: "true"
