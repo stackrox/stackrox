@@ -235,7 +235,7 @@ func (suite *complianceManagerTestSuite) TestProcessScanRequest() {
 			isErrorTest: false,
 		},
 		{
-			desc:        "Invalid profiles in scan configuration",
+			desc:        "Successful creation of scan configuration with profiles of different products",
 			testRequest: getTestRecNoIDInvalidProfile(),
 			testContext: suite.testContexts[testutils.UnrestrictedReadWriteCtx],
 			clusters:    []string{testconsts.Cluster1},
@@ -246,9 +246,12 @@ func (suite *complianceManagerTestSuite) TestProcessScanRequest() {
 					getTestProfile("ocp4-cis-node", "1.0.0", "node", "ocp4", testconsts.Cluster1, 1),
 					getTestProfile("rhcos4-cis", "1.0.0", "node", "rhcos4", testconsts.Cluster1, 1),
 				}, nil).Times(1)
+				suite.scanConfigDS.EXPECT().UpsertScanConfiguration(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any()).Return(nil).Times(1)
+				suite.connectionMgr.EXPECT().SendMessage(testconsts.Cluster1, gomock.Any()).Return(nil).Times(1)
+				suite.clusterDatastore.EXPECT().GetClusterName(gomock.Any(), gomock.Any()).Return("test_cluster", true, nil).Times(1)
+				suite.scanConfigDS.EXPECT().UpdateClusterStatus(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any(), testconsts.Cluster1, "", "test_cluster")
 			},
-			isErrorTest: true,
-			expectedErr: fmt.Sprintf("Unable to create scan configuration named %q.", mockScanName),
+			isErrorTest: false,
 		},
 		{
 			desc:        "Scan configuration already exists",
