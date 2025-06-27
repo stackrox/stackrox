@@ -9,8 +9,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.yaml.in/yaml/v3"
 	"golang.org/x/net/http/httpproxy"
-	"sigs.k8s.io/yaml"
 )
 
 func TestProxyConfig(t *testing.T) {

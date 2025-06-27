@@ -2,8 +2,8 @@ package translation
 
 import (
 	"github.com/pkg/errors"
+	"go.yaml.in/yaml/v3"
 	"helm.sh/helm/v3/pkg/chartutil"
-	"sigs.k8s.io/yaml"
 )
 
 // ToHelmValues returns the given object (which must be a (pointer to a) map or struct)

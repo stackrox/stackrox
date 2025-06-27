@@ -18,8 +18,8 @@ import (
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/maputil"
 	"github.com/stretchr/testify/suite"
+	"go.yaml.in/yaml/v3"
 	"helm.sh/helm/v3/pkg/chartutil"
-	"sigs.k8s.io/yaml"
 )
 
 var (

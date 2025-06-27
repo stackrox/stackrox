@@ -4,11 +4,11 @@ import (
 	"bytes"
 
 	"github.com/pkg/errors"
+	"go.yaml.in/yaml/v3"
 	"helm.sh/helm/v3/pkg/kube"
 	"helm.sh/helm/v3/pkg/postrender"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/cli-runtime/pkg/resource"
-	"sigs.k8s.io/yaml"
 )
 
 var defaultLabels = map[string]string{
