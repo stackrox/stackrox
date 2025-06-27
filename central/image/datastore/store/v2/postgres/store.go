@@ -217,6 +217,7 @@ func dedupeCVEs(cves []*storage.ImageCVEV2) []*storage.ImageCVEV2 {
 	for _, cve := range cves {
 		if val, ok := cveMap[cve.GetId()]; !ok {
 			cveMap[cve.GetId()] = cve
+			ret = append(ret, cve)
 		} else {
 			log.Infof("SHREWS -- existing -- %v", val)
 			log.Infof("SHREWS -- new one -- %v", cve)
