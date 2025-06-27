@@ -85,7 +85,7 @@ func (cmd *centralDbRestoreCommand) newV2Restorer(confirm func() error, retryDea
 	dbClient := v1.NewDBServiceClient(conn)
 	httpClient, err := cmd.env.HTTPClient(0)
 	if err != nil {
-		return nil, errors.Wrap(err, "creating HTTP client")
+		return nil, errors.Wrap(err, "creating HTTP client for central database restore")
 	}
 
 	return &v2Restorer{

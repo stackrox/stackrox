@@ -125,7 +125,7 @@ func (cmd *centralBackupCommand) backup(timeout time.Duration, full bool) error 
 
 	client, err := cmd.env.HTTPClient(0)
 	if err != nil {
-		return errors.Wrap(err, "creating HTTP client")
+		return errors.Wrap(err, "creating HTTP client for backup")
 	}
 
 	req, err := client.NewReq(http.MethodGet, endpoint, nil)
