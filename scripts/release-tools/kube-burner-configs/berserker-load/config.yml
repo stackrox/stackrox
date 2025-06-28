@@ -21,9 +21,8 @@ jobs:
     preLoadPeriod: 30s
     churn: true
     churnDuration: 1000h
-    churnDelay: 10s
+    churnDelay: 10m
     churnPercent: 80
-    churnInterval: 10m
     namespaceLabels:
       security.openshift.io/scc.podSecurityLabelSync: false
       pod-security.kubernetes.io/enforce: privileged
