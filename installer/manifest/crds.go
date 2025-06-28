@@ -53,7 +53,7 @@ func (g CRDGenerator) Generate(ctx context.Context, m *manifestGenerator) ([]Res
 	return []Resource{{
 		Object:        crd,
 		Name:          crd.ObjectMeta.Name,
-		IsUpdateable:  true,
+		IsUpdateable:  false,
 		ClusterScoped: true,
 	}}, nil
 }
