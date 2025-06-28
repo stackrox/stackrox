@@ -198,8 +198,34 @@ This modern workflow provides much faster iteration cycles:
 3. Use workflow repo's `roxdebug` command for port forwarding
 4. Attach GoLand debugger to `localhost:40000`
 
+## Development Learnings
+
+### Fast REPL-Style Development Workflow
+The combination of individual binary builds + hotload script enables a very fast development cycle:
+
+**Workflow Pattern:**
+1. **Deploy once**: 
+   - `bin/installer apply central`
+   - Wait for Central to be ready
+   - `bin/installer apply crs`
+   - `bin/installer apply securedcluster`
+2. **Iterate rapidly**: Make code changes, then immediately test with `./hotload.sh sensor` or `./hotload.sh central`
+3. **Instant feedback**: Changes are live in seconds vs minutes for full Docker rebuild/redeploy
+
+**Key Benefits:**
+- **Speed**: Binary builds are much faster than Docker image builds
+- **Preservation**: Kubernetes state, configs, and data persist between code updates
+- **Granular**: Update individual components without affecting others
+- **Debug-friendly**: Easy to test incremental changes and roll back
+
+**Best Practices:**
+- Keep one terminal for code changes, another for running hotload commands
+- Use `make bin/central` or `make bin/kubernetes` for even faster targeted builds
+- Leverage devcontainer for consistent environment across team members
+
 ### Important Files
 - `BUILD_IMAGE_VERSION` - CI build image version
 - `SCANNER_VERSION` - Scanner component version
 - `COLLECTOR_VERSION` - Collector component version
 - `go.mod` - Go dependencies (requires Go 1.23.4+)
+- `installer.yaml` - Installer configuration (contains namespace setting)

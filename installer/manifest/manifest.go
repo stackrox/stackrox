@@ -77,6 +77,9 @@ func New(cfg *Config, clientset *kubernetes.Clientset, restConfig *restclient.Co
 		return nil, fmt.Errorf("Invalid namespace: %s", cfg.Namespace)
 	}
 
+	// Initialize certificate manager before any generators might need it
+	InitializeCertificateManager(cfg)
+
 	return &manifestGenerator{
 		Config:     cfg,
 		Client:     clientset,

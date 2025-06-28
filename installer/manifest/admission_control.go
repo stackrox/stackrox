@@ -240,26 +240,21 @@ func (g AdmissionControlGenerator) applyAdmissionControlDeployment(m *manifestGe
 		}, {
 			Name:      "certs",
 			MountPath: "/run/secrets/stackrox.io/certs/",
+			Volume: v1.Volume{
+				VolumeSource: v1.VolumeSource{
+					EmptyDir: &v1.EmptyDirVolumeSource{},
+				},
+			},
+		}, {
+			Name:      "certs-new",
+			MountPath: "/run/secrets/stackrox.io/certs-new/",
 			ReadOnly:  true,
 			Volume: v1.Volume{
 				VolumeSource: v1.VolumeSource{
 					Secret: &v1.SecretVolumeSource{
-						SecretName: "admission-control-tls",
-						Optional:   &trueVar,
-						Items: []v1.KeyToPath{
-							{
-								Key:  "admission-control-cert.pem",
-								Path: "cert.pem",
-							},
-							{
-								Key:  "admission-control-key.pem",
-								Path: "key.pem",
-							},
-							{
-								Key:  "ca.pem",
-								Path: "ca.pem",
-							},
-						},
+						DefaultMode: &ReadOnlyMode,
+						SecretName:  "tls-cert-admission-control",
+						Optional:    &trueVar,
 					},
 				},
 			},
@@ -296,6 +291,7 @@ func (g AdmissionControlGenerator) applyAdmissionControlDeployment(m *manifestGe
 
 	for _, v := range volumeMounts {
 		v.Apply(&deployment.Spec.Template.Spec.Containers[0], &deployment.Spec.Template.Spec)
+		v.Apply(&deployment.Spec.Template.Spec.InitContainers[0], nil)
 	}
 
 	deployment.SetGroupVersionKind(apps.SchemeGroupVersion.WithKind("Deployment"))
@@ -338,6 +334,7 @@ func (g AdmissionControlGenerator) applyValidatingWebhookConfiguration(m *manife
 						Namespace: m.Config.Namespace,
 						Path:      stringPtr("/validate"),
 					},
+					CABundle: GetCertificateManager().GetCACertificate(),
 				},
 				Rules: []admissionregistrationv1.RuleWithOperations{
 					{

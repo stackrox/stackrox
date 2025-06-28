@@ -20,6 +20,7 @@ type Config struct {
 	ScannerV4            bool   `yaml:"scannerV4"`
 	DevMode              bool   `yaml:"devMode"`
 	ApplyNetworkPolicies bool   `yaml:"applyNetworkPolicies"`
+	CertPath             string `yaml:"certPath"`
 	Images               Images `yaml:"images"`
 }
 
@@ -41,6 +42,7 @@ var DefaultConfig Config = Config{
 	ScannerV4:            false,
 	DevMode:              false,
 	ApplyNetworkPolicies: false,
+	CertPath:             "./certs",
 	Images: Images{
 		AdmissionControl: localStackroxImage,
 		Sensor:           localStackroxImage,

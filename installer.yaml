@@ -1,4 +1,4 @@
-namespace: default
+namespace: stackrox
 scannerV4: true
 devMode: true
 images:
