@@ -10,7 +10,7 @@ global:
 jobs:
   - name: berserker-load
     namespace: berserker
-    jobIterations: 5
+    jobIterations: 10
     jobPause: 1000h
     qps: 20
     burst: 20
@@ -31,22 +31,22 @@ jobs:
     objects:
 
       - objectTemplate: process-load-deployment.yml
-        replicas: 5
+        replicas: 10
         inputVars:
           podReplicas: 2
 
       - objectTemplate: endpoint-load-deployment.yml
-        replicas: 5
+        replicas: 10
         inputVars:
           podReplicas: 2
 
       - objectTemplate: connection-load-deployment.yml
-        replicas: 5
+        replicas: 10
         inputVars:
           podReplicas: 2
 
       - objectTemplate: service.yml
-        replicas: 5
+        replicas: 10
 
       - objectTemplate: secret.yml
         replicas: 10
