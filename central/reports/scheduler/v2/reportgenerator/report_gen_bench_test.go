@@ -15,6 +15,7 @@ import (
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
 	collectionSearch "github.com/stackrox/rox/central/resourcecollection/datastore/search"
 	collectionPostgres "github.com/stackrox/rox/central/resourcecollection/datastore/store/postgres"
+	deploymentsView "github.com/stackrox/rox/central/views/deployments"
 	imagesView "github.com/stackrox/rox/central/views/images"
 	watchedImageDS "github.com/stackrox/rox/central/watchedimage/datastore"
 	"github.com/stackrox/rox/generated/storage"
@@ -111,6 +112,7 @@ func (bts *ReportGeneratorBenchmarkTestSuite) setupTestSuite() {
 		resolvers.CreateTestImageComponentCVEEdgeDatastore(bts.b, bts.testDB),
 		resolvers.CreateTestImageCVEEdgeDatastore(bts.b, bts.testDB),
 		resolvers.CreateTestDeploymentDatastore(bts.b, bts.testDB, bts.mockCtrl, imageDataStore),
+		deploymentsView.NewDeploymentView(bts.testDB.DB),
 	)
 
 	var err error
