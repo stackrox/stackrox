@@ -4,24 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Development Commands
 
-### Build Commands
-- `make image` - Build the main StackRox Docker image (`stackrox/main`)
-- `make main-build-dockerized` - Compile all binaries in Docker
-- `make fast-central` - Compile and restart only Central component
-- `make fast-sensor` - Compile only Sensor component
-- `make fast-migrator` - Compile only Migrator component
-- `make proto-generated-srcs` - Generate protobuf sources
-
 ### Testing Commands
 - `make test` - Run all tests
 - `make style` - Apply and check style standards (Go and JavaScript)
 - `make golangci-lint` - Run Go linting
 - `make qa-tests-style` - Run QA test style checks
 - `make ui-lint` - Lint UI code
-
-### Development Setup
-- `make install-dev-tools` - Install development tools and linters
-- `make init-githooks` - Enable pre-commit hooks for style checks
 
 ### Individual Binary Builds
 These targets build specific components as local binaries in the `bin/` directory, useful for faster development iteration:
@@ -64,8 +52,8 @@ To run E2E API tests from `tests/` directory:
 ```bash
 # Set environment variables
 export ROX_USERNAME=admin
-export ROX_ADMIN_PASSWORD=$(cat deploy/k8s/central-deploy/password)
-export API_ENDPOINT=localhost:8000
+export ROX_ADMIN_PASSWORD=letmein
+export API_ENDPOINT=central.$(yq .namespace installer.yaml).svc:8000
 
 # Run specific test
 cd tests && go test -run <TestName>
@@ -77,9 +65,9 @@ From `ui/` directory:
 - `npm run deploy-local` - Deploy local StackRox instance for UI development
 
 ### Deployment Commands
-- `./deploy/k8s/deploy-local.sh` - Deploy locally on Kubernetes (Docker Desktop, Colima, minikube)
-- `./deploy/openshift/deploy-local.sh` - Deploy locally on OpenShift
-- `MAIN_IMAGE_TAG=<version> ./deploy/deploy.sh` - Deploy specific version
+- `bin/installer apply central` - Deploy central
+- `bin/installer apply crs` - Apply CRS. Must wait for Central to be ready because it makes a call to Central API
+- `bin/installer apply securedcluster` - Deploy Sensor, Collector, and Admission Control
 
 ## Architecture Overview
 
@@ -104,24 +92,6 @@ From `ui/` directory:
 - **Container Runtime**: Supports multiple Kubernetes distributions
 - **UI**: React-based web interface
 
-## Important Environment Variables
-
-### Build Configuration
-- `SKIP_UI_BUILD=1` - Skip UI builds to save time
-- `SKIP_CLI_BUILD=1` - Skip CLI builds to save time
-- `DEBUG_BUILD=yes` - Create debug build (also enabled for branches with `-debug` suffix)
-- `STORAGE=pvc` - Use persistent storage for Central database
-
-### Deployment Configuration
-- `ROX_HOTRELOAD=true` - Mount local binaries for faster development (Docker Desktop only)
-- `LOAD_BALANCER=route|lb` - Configure Central exposure (route for OpenShift, lb for K8s)
-- `MAIN_IMAGE_TAG=<tag>` - Specify image version to deploy
-- `MONITORING_SUPPORT=true` - Enable StackRox monitoring
-
-### Development Workflow
-- `ROX_LOCAL_SOURCE_PATH` - Path to local binaries when using hotreload
-- `SENSOR_DEV_RESOURCES=true` - Use reduced resources for development
-
 ## Code Organization
 
 ### Go Modules Structure
@@ -134,8 +104,6 @@ From `ui/` directory:
 
 ### Build System
 - Main `Makefile` with modular includes from `make/`
-- Docker-based builds using `BUILD_IMAGE` for consistency
-- Protocol buffer generation with `buf` tool
 - Multi-architecture support (AMD64, ARM64, S390X)
 
 ### Testing Structure
@@ -167,11 +135,7 @@ This modern workflow provides much faster iteration cycles:
 1. **Setup**: Work in devcontainer for consistent development environment
 2. **Initial Deploy**: Use the installer binary for deployment
    ```bash
-   make bin/installer
-   bin/installer apply central
-   # wait for Central to finish deploying
-   bin/installer apply crs
-   bin/installer apply securedcluster
+   ./test-installer.sh
    ```
 3. **Development Cycle**: Use fast binary builds + hotload for instant updates
    ```bash
@@ -191,37 +155,6 @@ This modern workflow provides much faster iteration cycles:
 - **Consistency**: Devcontainer ensures identical dev environment
 - **Efficiency**: No Docker builds or pod recreation needed
 - **Flexibility**: Update individual components independently
-
-### Debugging Setup
-1. Create debug build: `DEBUG_BUILD=yes make image`
-2. Deploy the debug image
-3. Use workflow repo's `roxdebug` command for port forwarding
-4. Attach GoLand debugger to `localhost:40000`
-
-## Development Learnings
-
-### Fast REPL-Style Development Workflow
-The combination of individual binary builds + hotload script enables a very fast development cycle:
-
-**Workflow Pattern:**
-1. **Deploy once**: 
-   - `bin/installer apply central`
-   - Wait for Central to be ready
-   - `bin/installer apply crs`
-   - `bin/installer apply securedcluster`
-2. **Iterate rapidly**: Make code changes, then immediately test with `./hotload.sh sensor` or `./hotload.sh central`
-3. **Instant feedback**: Changes are live in seconds vs minutes for full Docker rebuild/redeploy
-
-**Key Benefits:**
-- **Speed**: Binary builds are much faster than Docker image builds
-- **Preservation**: Kubernetes state, configs, and data persist between code updates
-- **Granular**: Update individual components without affecting others
-- **Debug-friendly**: Easy to test incremental changes and roll back
-
-**Best Practices:**
-- Keep one terminal for code changes, another for running hotload commands
-- Use `make bin/central` or `make bin/kubernetes` for even faster targeted builds
-- Leverage devcontainer for consistent environment across team members
 
 ### Important Files
 - `BUILD_IMAGE_VERSION` - CI build image version
