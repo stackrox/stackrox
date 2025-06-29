@@ -131,7 +131,7 @@
   "policyVersion": "1.1",
   "policySections": [
     {
-      "sectionName": "Alert on missing ingres Network Policy",
+      "sectionName": "Alert on missing ingress Network Policy",
       "policyGroups": [
         {
           "fieldName": "Has Ingress Network Policy",
