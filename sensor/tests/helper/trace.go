@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -40,7 +41,7 @@ func (tr *NetworkFlowTraceWriter) Write(data []byte) (int, error) {
 }
 
 // NewProcessIndicatorTraceWriter creates a new ProcessIndicatorTraceWriter.
-func NewProcessIndicatorTraceWriter(ctx context.Context, messageC chan *sensor.SignalStreamMessage) *ProcessIndicatorTraceWriter {
+func NewProcessIndicatorTraceWriter(ctx context.Context, messageC chan *storage.ProcessSignal) *ProcessIndicatorTraceWriter {
 	return &ProcessIndicatorTraceWriter{
 		ctx:      ctx,
 		messageC: messageC,
@@ -50,7 +51,7 @@ func NewProcessIndicatorTraceWriter(ctx context.Context, messageC chan *sensor.S
 // ProcessIndicatorTraceWriter  writes the network flows received from collector.
 type ProcessIndicatorTraceWriter struct {
 	mu       sync.Mutex
-	messageC chan *sensor.SignalStreamMessage
+	messageC chan *storage.ProcessSignal
 	ctx      context.Context
 }
 
@@ -58,7 +59,7 @@ type ProcessIndicatorTraceWriter struct {
 func (tr *ProcessIndicatorTraceWriter) Write(data []byte) (int, error) {
 	tr.mu.Lock()
 	defer tr.mu.Unlock()
-	message := &sensor.SignalStreamMessage{}
+	message := &storage.ProcessSignal{}
 	if err := message.UnmarshalVTUnsafe(data); err != nil {
 		return 0, err
 	}
