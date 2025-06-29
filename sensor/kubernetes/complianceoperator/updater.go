@@ -2,6 +2,7 @@ package complianceoperator
 
 import (
 	"context"
+	"sync/atomic"
 	"time"
 
 	"github.com/pkg/errors"
@@ -97,16 +98,23 @@ type updaterImpl struct {
 	stopSig              concurrency.Signal
 	complianceOperatorNS string
 	isReady              *concurrency.Signal
+	state                atomic.Value
 }
 
+var _ common.SensorComponent = (*updaterImpl)(nil)
+
 func (u *updaterImpl) Start() error {
+	u.state.Store(common.SensorComponentStateSTARTING)
 	go u.run(u.updateTicker.C)
+	u.state.Store(common.SensorComponentStateSTARTED)
 	return nil
 }
 
 func (u *updaterImpl) Stop(_ error) {
+	u.state.Store(common.SensorComponentStateSTOPPING)
 	u.updateTicker.Stop()
 	u.stopSig.Signal()
+	u.state.Store(common.SensorComponentStateSTOPPED)
 }
 
 func (u *updaterImpl) Notify(e common.SensorComponentEvent) {
@@ -118,8 +126,10 @@ func (u *updaterImpl) Notify(e common.SensorComponentEvent) {
 			return
 		}
 		u.updateTicker.Stop()
+		u.state.Store(common.SensorComponentStateONLINE)
 	case common.SensorComponentEventOfflineMode:
 		u.isReady.Reset()
+		u.state.Store(common.SensorComponentStateOFFLINE)
 	}
 }
 
@@ -133,6 +143,10 @@ func (u *updaterImpl) ProcessMessage(_ *central.MsgToSensor) error {
 
 func (u *updaterImpl) ResponsesC() <-chan *message.ExpiringMessage {
 	return u.response
+}
+
+func (u *updaterImpl) State() common.SensorComponentState {
+	return u.state.Load().(common.SensorComponentState)
 }
 
 func (u *updaterImpl) GetNamespace() string {

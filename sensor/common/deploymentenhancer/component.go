@@ -2,6 +2,7 @@ package deploymentenhancer
 
 import (
 	"context"
+	"sync/atomic"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -28,7 +29,10 @@ type DeploymentEnhancer struct {
 	storeProvider    store.Provider
 	ctx              context.Context
 	ctxCancel        context.CancelFunc
+	state            atomic.Value
 }
+
+var _ common.SensorComponent = (*DeploymentEnhancer)(nil)
 
 // CreateEnhancer creates a new Enhancer
 func CreateEnhancer(provider store.Provider) common.SensorComponent {
@@ -65,6 +69,7 @@ func (d *DeploymentEnhancer) ProcessMessage(msg *central.MsgToSensor) error {
 
 // Start starts the component
 func (d *DeploymentEnhancer) Start() error {
+	d.state.Store(common.SensorComponentStateSTARTING)
 	go func() {
 		for {
 			select {
@@ -88,6 +93,7 @@ func (d *DeploymentEnhancer) Start() error {
 			}
 		}
 	}()
+	d.state.Store(common.SensorComponentStateSTARTED)
 	return nil
 }
 
@@ -145,8 +151,14 @@ func (d *DeploymentEnhancer) ResponsesC() <-chan *message.ExpiringMessage {
 
 // Stop stops the component
 func (d *DeploymentEnhancer) Stop(_ error) {
+	d.state.Store(common.SensorComponentStateSTOPPING)
 	d.ctxCancel()
+	d.state.Store(common.SensorComponentStateSTOPPED)
 }
 
 // Notify is unimplemented, part of the common interface
 func (d *DeploymentEnhancer) Notify(_ common.SensorComponentEvent) {}
+
+func (d *DeploymentEnhancer) State() common.SensorComponentState {
+	return d.state.Load().(common.SensorComponentState)
+}

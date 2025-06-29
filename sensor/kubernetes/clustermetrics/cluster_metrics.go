@@ -2,6 +2,7 @@ package clustermetrics
 
 import (
 	"context"
+	"sync/atomic"
 	"time"
 
 	"github.com/pkg/errors"
@@ -68,17 +69,24 @@ type clusterMetricsImpl struct {
 	pollingTimeout  time.Duration
 	k8sClient       kubernetes.Interface
 	pollTicker      *time.Ticker
+	state           atomic.Value
 }
 
+var _ common.SensorComponent = (*clusterMetricsImpl)(nil)
+
 func (cm *clusterMetricsImpl) Start() error {
+	cm.state.Store(common.SensorComponentStateSTARTING)
 	go cm.Poll(cm.pollTicker.C)
+	cm.state.Store(common.SensorComponentStateSTARTED)
 	return nil
 }
 
 func (cm *clusterMetricsImpl) Stop(_ error) {
+	cm.state.Store(common.SensorComponentStateSTOPPING)
 	cm.pollTicker.Stop()
 	cm.stopper.Client().Stop()
 	_ = cm.stopper.Client().Stopped().Wait()
+	cm.state.Store(common.SensorComponentStateSTOPPED)
 }
 
 func (cm *clusterMetricsImpl) Notify(e common.SensorComponentEvent) {
@@ -86,8 +94,10 @@ func (cm *clusterMetricsImpl) Notify(e common.SensorComponentEvent) {
 	switch e {
 	case common.SensorComponentEventCentralReachable:
 		cm.pollTicker.Reset(cm.pollingInterval)
+		cm.state.Store(common.SensorComponentStateONLINE)
 	case common.SensorComponentEventOfflineMode:
 		cm.pollTicker.Stop()
+		cm.state.Store(common.SensorComponentStateOFFLINE)
 	}
 }
 
@@ -101,6 +111,10 @@ func (cm *clusterMetricsImpl) ProcessMessage(_ *central.MsgToSensor) error {
 
 func (cm *clusterMetricsImpl) ResponsesC() <-chan *message.ExpiringMessage {
 	return cm.output
+}
+
+func (cm *clusterMetricsImpl) State() common.SensorComponentState {
+	return cm.state.Load().(common.SensorComponentState)
 }
 
 func (cm *clusterMetricsImpl) ProcessIndicator(_ *storage.ProcessIndicator) {}

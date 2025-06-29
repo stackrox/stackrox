@@ -1,6 +1,8 @@
 package admissioncontroller
 
 import (
+	"sync/atomic"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
@@ -8,6 +10,10 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
+)
+
+const (
+	alertHandlerComponentName = "alert-handler"
 )
 
 var (
@@ -24,17 +30,24 @@ type AlertHandler interface {
 
 type alertHandlerImpl struct {
 	output       chan *message.ExpiringMessage
+	state        atomic.Value
 	stopSig      concurrency.Signal
 	centralReady concurrency.Signal
 }
 
+var _ common.SensorComponent = (*alertHandlerImpl)(nil)
+
 func (h *alertHandlerImpl) Start() error {
+	h.state.Store(common.SensorComponentStateSTARTING)
 	go h.run()
+	h.state.Store(common.SensorComponentStateSTARTED)
 	return nil
 }
 
 func (h *alertHandlerImpl) Stop(_ error) {
+	h.state.Store(common.SensorComponentStateSTOPPING)
 	h.stopSig.Signal()
+	h.state.Store(common.SensorComponentStateSTOPPED)
 }
 
 func (h *alertHandlerImpl) Notify(e common.SensorComponentEvent) {
@@ -42,8 +55,10 @@ func (h *alertHandlerImpl) Notify(e common.SensorComponentEvent) {
 	switch e {
 	case common.SensorComponentEventCentralReachable:
 		h.centralReady.Signal()
+		h.state.Store(common.SensorComponentStateONLINE)
 	case common.SensorComponentEventOfflineMode:
 		h.centralReady.Reset()
+		h.state.Store(common.SensorComponentStateOFFLINE)
 	}
 }
 
@@ -57,6 +72,10 @@ func (h *alertHandlerImpl) ProcessMessage(_ *central.MsgToSensor) error {
 
 func (h *alertHandlerImpl) ResponsesC() <-chan *message.ExpiringMessage {
 	return h.output
+}
+
+func (h *alertHandlerImpl) State() common.SensorComponentState {
+	return h.state.Load().(common.SensorComponentState)
 }
 
 func (h *alertHandlerImpl) run() {

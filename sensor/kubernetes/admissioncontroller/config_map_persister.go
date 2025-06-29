@@ -3,6 +3,7 @@ package admissioncontroller
 import (
 	"compress/gzip"
 	"context"
+	"sync/atomic"
 	"time"
 
 	"github.com/pkg/errors"
@@ -38,7 +39,11 @@ type configMapPersister struct {
 	client v1client.ConfigMapInterface
 
 	settingsStreamIt concurrency.ValueStreamIter[*sensor.AdmissionControlSettings]
+
+	state atomic.Value
 }
+
+var _ common.SensorComponent = (*configMapPersister)(nil)
 
 // NewConfigMapSettingsPersister creates a config persister object for the admission controller.
 func NewConfigMapSettingsPersister(k8sClient kubernetes.Interface, settingsMgr admissioncontroller.SettingsManager, namespace string) common.SensorComponent {
@@ -49,16 +54,20 @@ func NewConfigMapSettingsPersister(k8sClient kubernetes.Interface, settingsMgr a
 }
 
 func (p *configMapPersister) Start() error {
+	p.state.Store(common.SensorComponentStateSTARTING)
 	if !p.stopSig.Reset() {
 		return errors.New("config persister was already started")
 	}
 
 	go p.run()
+	p.state.Store(common.SensorComponentStateSTARTED)
 	return nil
 }
 
 func (p *configMapPersister) Stop(err error) {
+	p.state.Store(common.SensorComponentStateSTOPPING)
 	p.stopSig.SignalWithError(err)
+	p.state.Store(common.SensorComponentStateSTOPPED)
 }
 
 func (p *configMapPersister) Notify(common.SensorComponentEvent) {}
@@ -73,6 +82,10 @@ func (p *configMapPersister) ProcessMessage(_ *central.MsgToSensor) error {
 
 func (p *configMapPersister) ResponsesC() <-chan *message.ExpiringMessage {
 	return nil
+}
+
+func (p *configMapPersister) State() common.SensorComponentState {
+	return p.state.Load().(common.SensorComponentState)
 }
 
 func (p *configMapPersister) ctx() context.Context {

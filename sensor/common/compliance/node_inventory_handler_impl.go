@@ -2,6 +2,7 @@ package compliance
 
 import (
 	"strconv"
+	"sync/atomic"
 
 	"github.com/pkg/errors"
 	"github.com/quay/claircore/indexer/controller"
@@ -31,6 +32,8 @@ const (
 	// From ClairCore rhel-vex matcher
 	goldenName = "Red Hat Container Catalog"
 	goldenURI  = `https://catalog.redhat.com/software/containers/explore`
+
+	nodeInventoryHandlerComponentName = "compliance-node-inventory-handler"
 )
 
 type nodeInventoryHandlerImpl struct {
@@ -46,10 +49,13 @@ type nodeInventoryHandlerImpl struct {
 	// lock prevents the race condition between Start() [writer] and ResponsesC() [reader]
 	lock    *sync.Mutex
 	stopper concurrency.Stopper
+	state   atomic.Value
 	// archCache stores an architecture per node, so that it can be used in the index report for
 	// the 'rhcos' package. The arch is discovered once and then reused for subsequent scans.
 	archCache map[string]string
 }
+
+var _ common.SensorComponent = (*nodeInventoryHandlerImpl)(nil)
 
 func (c *nodeInventoryHandlerImpl) Stopped() concurrency.ReadOnlyErrorSignal {
 	return c.stopper.Client().Stopped()
@@ -75,6 +81,7 @@ func (c *nodeInventoryHandlerImpl) ComplianceC() <-chan common.MessageToComplian
 }
 
 func (c *nodeInventoryHandlerImpl) Start() error {
+	c.state.Store(common.SensorComponentStateSTARTING)
 	c.lock.Lock()
 	defer c.lock.Unlock()
 	if c.toCentral != nil || c.toCompliance != nil {
@@ -82,14 +89,17 @@ func (c *nodeInventoryHandlerImpl) Start() error {
 	}
 	c.toCompliance = make(chan common.MessageToComplianceWithAddress)
 	c.toCentral = c.run()
+	c.state.Store(common.SensorComponentStateSTARTED)
 	return nil
 }
 
 func (c *nodeInventoryHandlerImpl) Stop(_ error) {
+	c.state.Store(common.SensorComponentStateSTOPPING)
 	if !c.stopper.Client().Stopped().IsDone() {
 		defer utils.IgnoreError(c.stopper.Client().Stopped().Wait)
 	}
 	c.stopper.Client().Stop()
+	c.state.Store(common.SensorComponentStateSTOPPED)
 }
 
 func (c *nodeInventoryHandlerImpl) Notify(e common.SensorComponentEvent) {
@@ -97,10 +107,12 @@ func (c *nodeInventoryHandlerImpl) Notify(e common.SensorComponentEvent) {
 	switch e {
 	case common.SensorComponentEventCentralReachable:
 		c.centralReady.Signal()
+		c.state.Store(common.SensorComponentStateONLINE)
 	case common.SensorComponentEventOfflineMode:
 		// As Compliance enters a retry loop when it is not receiving an ACK,
 		// there is no need to do anything when entering offline mode
 		c.centralReady.Reset()
+		c.state.Store(common.SensorComponentStateOFFLINE)
 	}
 }
 
@@ -143,6 +155,10 @@ func (c *nodeInventoryHandlerImpl) ProcessMessage(msg *central.MsgToSensor) erro
 		}
 	}
 	return nil
+}
+
+func (c *nodeInventoryHandlerImpl) State() common.SensorComponentState {
+	return c.state.Load().(common.SensorComponentState)
 }
 
 // run handles the messages from Compliance and forwards them to Central

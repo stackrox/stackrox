@@ -1,6 +1,7 @@
 package compliance
 
 import (
+	"sync/atomic"
 	"time"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -15,7 +16,8 @@ import (
 )
 
 const (
-	defaultInterval = 1 * time.Minute
+	defaultInterval              = 1 * time.Minute
+	auditLogManagerComponentName = "compliance-audit-log-manager"
 )
 
 // auditLogCollectionManagerImpl manages the lifecycle of audit log collection within the cluster
@@ -31,6 +33,8 @@ type auditLogCollectionManagerImpl struct {
 	auditEventMsgs   chan *sensor.MsgFromCompliance
 	fileStateUpdates chan *message.ExpiringMessage
 
+	state atomic.Value
+
 	stopper        concurrency.Stopper
 	forceUpdateSig concurrency.Signal
 	centralReady   concurrency.Signal
@@ -39,19 +43,25 @@ type auditLogCollectionManagerImpl struct {
 	connectionLock sync.RWMutex
 }
 
+var _ common.SensorComponent = (*auditLogCollectionManagerImpl)(nil)
+
 func (a *auditLogCollectionManagerImpl) Start() error {
+	a.state.Store(common.SensorComponentStateSTARTING)
 	go a.runStateSaver()
 	go a.runUpdater(a.updaterTicker.C)
+	a.state.Store(common.SensorComponentStateSTARTED)
 	return nil
 }
 
 func (a *auditLogCollectionManagerImpl) Stop(_ error) {
+	a.state.Store(common.SensorComponentStateSTOPPING)
 	if !a.stopper.Client().Stopped().IsDone() {
 		defer func() {
 			_ = a.stopper.Client().Stopped().Wait()
 		}()
 	}
 	a.stopper.Client().Stop()
+	a.state.Store(common.SensorComponentStateSTOPPED)
 }
 
 func (a *auditLogCollectionManagerImpl) Notify(e common.SensorComponentEvent) {
@@ -59,8 +69,10 @@ func (a *auditLogCollectionManagerImpl) Notify(e common.SensorComponentEvent) {
 	switch e {
 	case common.SensorComponentEventCentralReachable:
 		a.centralReady.Signal()
+		a.state.Store(common.SensorComponentStateONLINE)
 	case common.SensorComponentEventOfflineMode:
 		a.centralReady.Reset()
+		a.state.Store(common.SensorComponentStateOFFLINE)
 	}
 }
 
@@ -78,6 +90,10 @@ func (a *auditLogCollectionManagerImpl) ProcessMessage(_ *central.MsgToSensor) e
 
 func (a *auditLogCollectionManagerImpl) ResponsesC() <-chan *message.ExpiringMessage {
 	return a.fileStateUpdates
+}
+
+func (a *auditLogCollectionManagerImpl) State() common.SensorComponentState {
+	return a.state.Load().(common.SensorComponentState)
 }
 
 // ForceUpdate immediately updates Central with the latest file state

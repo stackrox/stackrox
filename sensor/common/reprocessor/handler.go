@@ -1,6 +1,8 @@
 package reprocessor
 
 import (
+	"sync/atomic"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
@@ -41,14 +43,20 @@ type handlerImpl struct {
 	detector           detector.Detector
 	imageCache         cache.Image
 	stopSig            concurrency.ErrorSignal
+	state              atomic.Value
 }
 
+var _ common.SensorComponent = (*handlerImpl)(nil)
+
 func (h *handlerImpl) Start() error {
+	h.state.Store(common.SensorComponentStateSTARTED)
 	return nil
 }
 
 func (h *handlerImpl) Stop(err error) {
+	h.state.Store(common.SensorComponentStateSTOPPING)
 	h.stopSig.SignalWithError(err)
+	h.state.Store(common.SensorComponentStateSTOPPED)
 }
 
 func (h *handlerImpl) Notify(common.SensorComponentEvent) {}
@@ -61,6 +69,10 @@ func (h *handlerImpl) Capabilities() []centralsensor.SensorCapability {
 
 func (h *handlerImpl) ProcessMessage(_ *central.MsgToSensor) error {
 	return nil
+}
+
+func (h *handlerImpl) State() common.SensorComponentState {
+	return h.state.Load().(common.SensorComponentState)
 }
 
 func (h *handlerImpl) ProcessReprocessDeployments(req *central.ReprocessDeployment) error {

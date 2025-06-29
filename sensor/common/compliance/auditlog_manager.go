@@ -44,7 +44,7 @@ type AuditLogCollectionManager interface {
 
 // NewAuditLogCollectionManager creates a new instance of AuditLogCollectionManager, which provides an API to manage the lifecycle of audit log collection within the cluster
 func NewAuditLogCollectionManager() AuditLogCollectionManager {
-	return &auditLogCollectionManagerImpl{
+	auditLogManager := &auditLogCollectionManagerImpl{
 		// Need to use a getter instead of directly calling clusterid.Get because it may block if the communication with central is not yet finished
 		// Putting it as a getter so it can be overridden in tests
 		clusterIDGetter:         clusterid.Get,
@@ -57,4 +57,6 @@ func NewAuditLogCollectionManager() AuditLogCollectionManager {
 		centralReady:            concurrency.NewSignal(),
 		updaterTicker:           time.NewTicker(defaultInterval),
 	}
+	common.RegisterStateReporter(auditLogManagerComponentName, auditLogManager.State)
+	return auditLogManager
 }
