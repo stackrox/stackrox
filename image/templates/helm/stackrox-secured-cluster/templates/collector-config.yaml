@@ -1,7 +1,7 @@
 {{- include "srox.init" . -}}
 
 {{- $enabled := lower (default "disabled" ._rox.collector.runtimeConfig.enabled) }}
-{{- if or (eq $enabled "auto") (eq $enabled "enabled") -}}
+{{- if or (eq $enabled "enabled") (eq $enabled "true") -}}
 apiVersion: v1
 kind: ConfigMap
 metadata:

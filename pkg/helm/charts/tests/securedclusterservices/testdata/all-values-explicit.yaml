@@ -39,7 +39,7 @@ collector:
     cert: "DUMMY COLLECTOR CERT"
     key: "DUMMY COLLECTOR KEY"
   runtimeConfig:
-    enabled: "AUTO"
+    enabled: "enabled"
     networking:
       externalIps:
         enabled: "ENABLED"
