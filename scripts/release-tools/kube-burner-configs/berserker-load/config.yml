@@ -10,7 +10,7 @@ global:
 jobs:
   - name: berserker-load
     namespace: berserker
-    jobIterations: 10
+    jobIterations: 5
     jobPause: 1000h
     qps: 20
     burst: 20
