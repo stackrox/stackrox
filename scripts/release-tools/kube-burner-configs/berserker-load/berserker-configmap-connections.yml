@@ -13,10 +13,10 @@ data:
     server = true
     address = "223.42.0.1"
     target_port = 1337
-    arrival_rate = 0.1
-    departure_rate = 0.1
+    arrival_rate = 100
+    departure_rate = 100
     conns_per_addr = 2
-    nconnections = 100
+    nconnections = 10000
 
   network-client.toml: |
     restart_interval = 10
@@ -28,7 +28,7 @@ data:
     server = false
     address = "223.42.0.1"
     target_port = 1337
-    arrival_rate = 0.1
-    departure_rate = 0.1
+    arrival_rate = 100
+    departure_rate = 100
     conns_per_addr = 2
-    nconnections = 100
+    nconnections = 10000
