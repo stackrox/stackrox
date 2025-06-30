@@ -18,7 +18,6 @@ import {
     Spinner,
     Title,
 } from '@patternfly/react-core';
-import { CaretDownIcon } from '@patternfly/react-icons';
 
 import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import NotFoundMessage from 'Components/NotFoundMessage';
