@@ -88,7 +88,6 @@ function ReviewPolicyForm({
      * alignSelfStretch so columns have equal height for border.
      */
 
-    /* eslint-disable no-nested-ternary */
     return (
         <Flex
             spaceItems={{ default: 'spaceItemsNone' }}
@@ -193,7 +192,6 @@ function ReviewPolicyForm({
             )}
         </Flex>
     );
-    /* eslint-enable no-nested-ternary */
 }
 
 export default ReviewPolicyForm;

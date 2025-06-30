@@ -89,7 +89,7 @@ function NoClustersPage({ isModalOpen, setIsModalOpen }): ReactElement {
     // Because  Button is inside, it has same width at the text :(
 
     // TODO after 4.4 release add hasAdminRole to conditional rendering.
-    /* eslint-disable no-nested-ternary */
+
     return (
         <>
             <Alert
@@ -212,7 +212,6 @@ function NoClustersPage({ isModalOpen, setIsModalOpen }): ReactElement {
             </PageSection>
         </>
     );
-    /* eslint-enable no-nested-ternary */
 }
 
 export default NoClustersPage;

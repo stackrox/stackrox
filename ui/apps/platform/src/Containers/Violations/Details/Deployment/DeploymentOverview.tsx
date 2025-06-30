@@ -33,7 +33,6 @@ function DeploymentOverview({
                 desc={
                     <Link
                         to={
-                            // eslint-disable-next-line no-nested-ternary
                             !isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT')
                                 ? `${vulnerabilitiesWorkloadCvesPath}/deployments/${alertDeployment.id}`
                                 : hasPlatformWorkloadCveLink

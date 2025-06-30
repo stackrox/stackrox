@@ -1,4 +1,3 @@
-/* eslint-disable no-nested-ternary */
 import React from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 

@@ -19,7 +19,6 @@ function ContainerConfiguration({ deployment }: ContainerConfigurationProps): Re
 
     const hasPlatformWorkloadCveLink = deployment && deployment.platformComponent;
 
-    // eslint-disable-next-line no-nested-ternary
     const vulnMgmtBasePath = !isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT')
         ? vulnerabilitiesWorkloadCvesPath
         : hasPlatformWorkloadCveLink

@@ -1,4 +1,3 @@
-/* eslint-disable no-nested-ternary */
 import React, { ReactElement, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
