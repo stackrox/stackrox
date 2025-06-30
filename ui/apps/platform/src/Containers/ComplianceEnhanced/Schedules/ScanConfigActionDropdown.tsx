@@ -1,6 +1,5 @@
-import React, { ReactElement, useState } from 'react';
+import React, { ReactElement } from 'react';
 import { generatePath, useNavigate } from 'react-router-dom';
-import { CaretDownIcon } from '@patternfly/react-icons';
 
 import { ComplianceScanConfigurationStatus } from 'services/ComplianceScanConfigurationService';
 
