@@ -15,8 +15,9 @@ import (
 )
 
 var (
-	ds   DataStore
-	once sync.Once
+	ds                  DataStore
+	once                sync.Once
+	onceSetAuthProvider sync.Once
 
 	// Global variable to store the auth provider registry function
 	// This will be set by the auth provider registry package to break circular dependency
@@ -40,7 +41,9 @@ func initialize() {
 // SetAuthProviderRegistryFunc sets the function to get the auth provider registry
 // This is called by the auth provider registry package to break the circular dependency
 func SetAuthProviderRegistryFunc(fn func() authproviders.Registry) {
-	authProviderRegistryFunc = fn
+	onceSetAuthProvider.Do(func() {
+		authProviderRegistryFunc = fn
+	})
 }
 
 // Singleton returns the singleton providing access to the roles store.

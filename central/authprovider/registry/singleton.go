@@ -25,14 +25,14 @@ func initialize() {
 		ssoURLPathPrefix, tokenRedirectURLPath,
 		authProviderDS.Singleton(), jwt.IssuerFactorySingleton(),
 		mapper.FactorySingleton())
+	// Set the auth provider registry function in the group datastore to break circular dependency
+	groupDataStore.SetAuthProviderRegistryFunc(func() authproviders.Registry {
+		return registry
+	})
 }
 
 // Singleton returns the auth providers registry.
 func Singleton() authproviders.Registry {
 	once.Do(initialize)
-	// Set the auth provider registry function in the group datastore to break circular dependency
-	groupDataStore.SetAuthProviderRegistryFunc(func() authproviders.Registry {
-		return registry
-	})
 	return registry
 }
