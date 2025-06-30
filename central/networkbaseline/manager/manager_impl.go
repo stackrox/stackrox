@@ -940,14 +940,10 @@ func (m *manager) GetExternalNetworkPeers(ctx context.Context, deploymentID stri
 		return nil, errors.Wrap(err, "failed to get matching entities")
 	}
 
-	entitiesMap := make(map[string]*storage.NetworkEntityInfo)
 	entityFilter := set.NewStringSet()
 	for _, entity := range entities {
 		info := entity.GetInfo()
 		entityFilter.Add(info.GetId())
-
-		// store enriched entities data for lookup later
-		entitiesMap[info.GetId()] = info
 	}
 
 	pred := func(props *storage.NetworkFlowProperties) bool {
@@ -1004,13 +1000,13 @@ func (m *manager) GetExternalNetworkPeers(ctx context.Context, deploymentID stri
 	peers := make([]*v1.NetworkBaselineStatusPeer, 0, len(flows))
 
 	for _, flow := range flows {
-		peers = append(peers, m.mapFlowToPeer(flow, entitiesMap))
+		peers = append(peers, m.mapFlowToPeer(flow))
 	}
 
 	return peers, nil
 }
 
-func (m *manager) mapFlowToPeer(flow *storage.NetworkFlow, entitiesMap map[string]*storage.NetworkEntityInfo) *v1.NetworkBaselineStatusPeer {
+func (m *manager) mapFlowToPeer(flow *storage.NetworkFlow) *v1.NetworkBaselineStatusPeer {
 	var entity *v1.NetworkBaselinePeerEntity
 	ingress := false
 
@@ -1018,20 +1014,18 @@ func (m *manager) mapFlowToPeer(flow *storage.NetworkFlow, entitiesMap map[strin
 	src, dst := props.GetSrcEntity(), props.GetDstEntity()
 
 	if src.GetType() == storage.NetworkEntityInfo_DEPLOYMENT {
-		info := entitiesMap[dst.GetId()]
 		entity = &v1.NetworkBaselinePeerEntity{
 			Id:         dst.GetId(),
 			Type:       dst.GetType(),
-			Name:       info.GetExternalSource().GetName(),
-			Discovered: info.GetExternalSource().GetDiscovered(),
+			Name:       dst.GetExternalSource().GetName(),
+			Discovered: dst.GetExternalSource().GetDiscovered(),
 		}
 	} else {
-		info := entitiesMap[src.GetId()]
 		entity = &v1.NetworkBaselinePeerEntity{
 			Id:         src.GetId(),
 			Type:       src.GetType(),
-			Name:       info.GetExternalSource().GetName(),
-			Discovered: info.GetExternalSource().GetDiscovered(),
+			Name:       src.GetExternalSource().GetName(),
+			Discovered: src.GetExternalSource().GetDiscovered(),
 		}
 		ingress = true
 	}
