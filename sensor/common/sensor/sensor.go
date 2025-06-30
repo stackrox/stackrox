@@ -373,7 +373,6 @@ func (s *Sensor) Stop() {
 }
 
 func (s *Sensor) communicationWithCentral(centralReachable *concurrency.Flag) {
-	log.Info("sensor common sensor communicationWithCentral")
 	s.centralCommunication = NewCentralCommunication(false, false, s.components...)
 
 	syncDone := concurrency.NewSignal()
@@ -467,7 +466,6 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 			return err
 		}
 
-		log.Info("sensor common sensor communicationWithCentralWithRetries")
 		// At this point, we know that connection factory reported that connection is up.
 		// Try to create a central communication component. This component will fail (Stopped() signal) if the connection
 		// suddenly broke.

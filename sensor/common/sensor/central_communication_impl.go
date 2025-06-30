@@ -62,7 +62,6 @@ var (
 )
 
 func (s *centralCommunicationImpl) Start(client central.SensorServiceClient, centralReachable *concurrency.Flag, syncDone *concurrency.Signal, configHandler config.Handler, detector detector.Detector) {
-	log.Info("sensor common sensor centralCommunicationImpl start")
 	go s.sendEvents(client, centralReachable, syncDone, configHandler, detector, s.receiver.Stop, s.sender.Stop)
 }
 
@@ -94,7 +93,6 @@ func CommunicateWithAutoSensedEncoding(ctx context.Context, client central.Senso
 	opts := []grpc.CallOption{grpc.UseCompressor(gzip.Name)}
 
 	for {
-		log.Info("sensor common sensor CommunicateWithAutoSensedEncoding")
 		stream, err := client.Communicate(ctx, opts...)
 		if err != nil {
 			if isUnimplemented(err) && len(opts) > 0 {
@@ -139,7 +137,6 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 
 	// Start the stream client.
 	///////////////////////////
-	log.Info("sensor common centralCommunicationImpl sendEvents")
 
 	// Prepare the `SensorHello` message. This message informs Central about who is talking to it, and announces
 	// the capabilities/features supported by this sensor.
