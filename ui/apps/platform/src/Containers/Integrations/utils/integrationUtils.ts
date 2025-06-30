@@ -173,7 +173,6 @@ function getCategoriesUtils<
     ];
 
     // For robust behavior in case of unexpected response, provide ternary fallback even though categories limited to Category0 and Category1.
-
     return {
         categoriesAlternatives,
 
