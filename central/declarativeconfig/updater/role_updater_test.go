@@ -195,7 +195,7 @@ func (s *roleUpdaterTestSuite) TestDelete_Error() {
 			Value:          "",
 		},
 		RoleName: "test",
-	}, s.authProviderRegistry))
+	}))
 	s.Require().NoError(s.updater.healthDS.UpsertDeclarativeConfig(s.ctx, &storage.DeclarativeConfigHealth{
 		Id:     declarativeConfigUtils.HealthStatusIDForRole("test"),
 		Name:   "test",
