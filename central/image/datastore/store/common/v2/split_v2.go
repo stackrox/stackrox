@@ -42,13 +42,12 @@ func splitComponentsV2(parts ImageParts) ([]ComponentParts, error) {
 		}
 
 		// dedupe components within the component
-		if val, ok := componentMap[generatedComponentV2.GetId()]; !ok {
-			componentMap[generatedComponentV2.GetId()] = component
-		} else {
-			log.Infof("SHREWS -- existing -- %v", val)
-			log.Infof("SHREWS -- new one -- %v", component)
+		if _, ok := componentMap[generatedComponentV2.GetId()]; ok {
+			log.Infof("Component %s-%s has already been processed in the image. Skipping...", component.GetName(), component.GetVersion())
 			continue
 		}
+
+		componentMap[generatedComponentV2.GetId()] = component
 
 		cves, err := splitCVEsV2(parts.Image.GetId(), generatedComponentV2.GetId(), component)
 		if err != nil {
@@ -76,13 +75,12 @@ func splitCVEsV2(imageID string, componentID string, embedded *storage.EmbeddedI
 		}
 
 		// dedupe CVEs within the component
-		if val, ok := cveMap[convertedCVE.GetId()]; !ok {
-			cveMap[convertedCVE.GetId()] = cve
-		} else {
-			log.Infof("SHREWS -- existing -- %v", val)
-			log.Infof("SHREWS -- new one -- %v", cve)
+		if _, ok := cveMap[convertedCVE.GetId()]; ok {
+			log.Infof("CVE %s has already been processed in the image. Skipping...", cve.GetCve())
 			continue
 		}
+
+		cveMap[convertedCVE.GetId()] = cve
 
 		cp := CVEParts{
 			CVEV2: convertedCVE,
