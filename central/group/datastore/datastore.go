@@ -41,10 +41,10 @@ func New(storage store.Store, roleDatastore datastore.DataStore, authProviderReg
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB, roleDatastore datastore.DataStore) DataStore {
+func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB, roleDatastore datastore.DataStore, authProviderRegistry func() authproviders.Registry) DataStore {
 	return &dataStoreImpl{
 		storage:              pgStore.New(pool),
 		roleDatastore:        roleDatastore,
-		authProviderRegistry: nil,
+		authProviderRegistry: authProviderRegistry,
 	}
 }

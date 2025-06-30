@@ -57,7 +57,9 @@ func (s *roleUpdaterTestSuite) SetupTest() {
 	s.Require().NotNil(s.pgTest)
 	rds := roleDS.GetTestPostgresDataStore(s.T(), s.pgTest.DB)
 	ads := authProviderDS.GetTestPostgresDataStore(s.T(), s.pgTest.DB)
-	s.gds = groupDS.GetTestPostgresDataStore(s.T(), s.pgTest.DB, rds)
+	s.gds = groupDS.GetTestPostgresDataStore(s.T(), s.pgTest.DB, rds, func() authproviders.Registry {
+		return s.authProviderRegistry
+	})
 	tokenIssuerFactory := authTokenMocks.NewMockIssuerFactory(s.mockCtrl)
 	tokenIssuerFactory.EXPECT().CreateIssuer(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
 	uds := userDS.GetTestDataStore(s.T())
