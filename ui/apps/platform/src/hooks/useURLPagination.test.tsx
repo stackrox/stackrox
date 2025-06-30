@@ -43,7 +43,7 @@ test('should update pagination parameters in the URL', async () => {
     expect(params.get('page')).toBe('2');
     expect(params.get('perPage')).toBe(null);
 
-    // Check that updating the perPage parameter also resets the page parameter to 1
+    // Check that updating the perPage parameter also resets the page parameter
     await actAndFlushTaskQueue(() => {
         const { setPerPage } = result.current;
         setPerPage(20);
@@ -51,7 +51,7 @@ test('should update pagination parameters in the URL', async () => {
     params = new URLSearchParams(testLocation.search);
     expect(result.current.page).toBe(1);
     expect(result.current.perPage).toBe(20);
-    expect(params.get('page')).toBe('1');
+    expect(params.get('page')).toBe(null);
     expect(params.get('perPage')).toBe('20');
 });
 
@@ -98,7 +98,7 @@ test('should not add history states when setting values with a "replace" action'
     // Check the length of the history stack after updating the perPage parameter
     params = new URLSearchParams(history.location.search);
     expect(history.index).toBe(0);
-    expect(params.get('page')).toBe('1');
+    expect(params.get('page')).toBe(null);
     expect(params.get('perPage')).toBe('20');
 });
 
@@ -145,6 +145,6 @@ test('should only add a single history state when setting perPage without an act
     // Check the length of the history stack after updating the perPage parameter
     params = new URLSearchParams(history.location.search);
     expect(history.index).toBe(2);
-    expect(params.get('page')).toBe('1');
+    expect(params.get('page')).toBe(null);
     expect(params.get('perPage')).toBe('20');
 });

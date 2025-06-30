@@ -1,8 +1,9 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { Divider, Stack, StackItem, ToggleGroup, ToggleGroupItem } from '@patternfly/react-core';
 
 import useAnalytics, { DEPLOYMENT_FLOWS_TOGGLE_CLICKED } from 'hooks/useAnalytics';
 import useFeatureFlags from 'hooks/useFeatureFlags';
+import { QueryValue } from 'hooks/useURLParameter';
 
 import { CustomNodeModel } from '../types/topology.type';
 import { EdgeState } from '../components/EdgeStateSelect';
@@ -12,13 +13,22 @@ import ExternalFlows from './ExternalFlows';
 import { isInternalFlow } from '../utils/networkGraphUtils';
 
 import {
-    usePaginationAnomalous,
-    usePaginationBaseline,
+    usePagination,
+    usePaginationSecondary,
     useSearchFilterSidePanel,
     useSidePanelToggle,
 } from '../NetworkGraphURLStateContext';
 
 export type DeploymentFlowsView = 'EXTERNAL_FLOWS' | 'INTERNAL_FLOWS';
+
+const DEPLOYMENT_FLOWS_TOGGLES = ['INTERNAL_FLOWS', 'EXTERNAL_FLOWS'] as const;
+export type DeploymentFlowsToggleKey = (typeof DEPLOYMENT_FLOWS_TOGGLES)[number];
+
+export const DEFAULT_DEPLOYMENT_FLOWS_TOGGLE: DeploymentFlowsToggleKey = 'INTERNAL_FLOWS';
+
+export function isValidDeploymentFlowsToggle(value: QueryValue): value is DeploymentFlowsToggleKey {
+    return typeof value === 'string' && DEPLOYMENT_FLOWS_TOGGLES.some((state) => state === value);
+}
 
 type DeploymentFlowsProps = {
     deploymentId: string;
@@ -45,10 +55,19 @@ function DeploymentFlows({
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isNetworkGraphExternalIpsEnabled = isFeatureFlagEnabled('ROX_NETWORK_GRAPH_EXTERNAL_IPS');
 
-    const { setPage: setPageAnomalous } = usePaginationAnomalous();
-    const { setPage: setPageBaseline } = usePaginationBaseline();
+    const { setPage: setPageAnomalous } = usePagination();
+    const { setPage: setPageBaseline } = usePaginationSecondary();
     const { setSearchFilter } = useSearchFilterSidePanel();
     const { selectedToggleSidePanel, setSelectedToggleSidePanel } = useSidePanelToggle();
+
+    useEffect(() => {
+        if (
+            selectedToggleSidePanel !== undefined &&
+            !isValidDeploymentFlowsToggle(selectedToggleSidePanel)
+        ) {
+            setSelectedToggleSidePanel(DEFAULT_DEPLOYMENT_FLOWS_TOGGLE, 'replace');
+        }
+    }, [selectedToggleSidePanel, setSelectedToggleSidePanel]);
 
     const handleToggle = useCallback(
         (view: DeploymentFlowsView) => {
@@ -94,7 +113,11 @@ function DeploymentFlows({
         );
     }
 
-    const selectedView = selectedToggleSidePanel ?? 'INTERNAL_FLOWS';
+    const selectedView: DeploymentFlowsToggleKey = isValidDeploymentFlowsToggle(
+        selectedToggleSidePanel
+    )
+        ? selectedToggleSidePanel
+        : DEFAULT_DEPLOYMENT_FLOWS_TOGGLE;
 
     return (
         <div className="pf-v5-u-h-100">

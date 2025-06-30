@@ -9,10 +9,11 @@ import useURLStringUnion from 'hooks/useURLStringUnion';
 import { edgeStates, EdgeState } from './components/EdgeStateSelect';
 import { DEFAULT_NETWORK_GRAPH_PAGE_SIZE, EDGE_STATE, TIME_WINDOW } from './NetworkGraph.constants';
 
+export const SIDE_PANEL_SEARCH_PREFIX = 's2';
+
 export type NetworkGraphURLStateValue = {
     pagination: ReturnType<typeof useURLPagination>;
-    paginationAnomalous: ReturnType<typeof useURLPagination>;
-    paginationBaseline: ReturnType<typeof useURLPagination>;
+    paginationSecondary: ReturnType<typeof useURLPagination>;
 
     searchFilter: ReturnType<typeof useURLSearch>;
     searchFilterSidePanel: ReturnType<typeof useURLSearch>;
@@ -42,11 +43,10 @@ const NetworkGraphURLStateContext = createContext<NetworkGraphURLStateValue | un
 
 export function NetworkGraphURLStateProvider({ children }: { children: ReactNode }) {
     const pagination = useURLPagination(DEFAULT_NETWORK_GRAPH_PAGE_SIZE);
-    const paginationAnomalous = useURLPagination(DEFAULT_NETWORK_GRAPH_PAGE_SIZE, 'anomalous');
-    const paginationBaseline = useURLPagination(DEFAULT_NETWORK_GRAPH_PAGE_SIZE, 'baseline');
+    const paginationSecondary = useURLPagination(DEFAULT_NETWORK_GRAPH_PAGE_SIZE, 'secondary');
 
     const searchFilter = useURLSearch();
-    const searchFilterSidePanel = useURLSearch('s2');
+    const searchFilterSidePanel = useURLSearch(SIDE_PANEL_SEARCH_PREFIX);
 
     const [selectedTabSidePanel, setSelectedTabSidePanel] = useURLParameter(
         'sidePanelTabState',
@@ -64,8 +64,7 @@ export function NetworkGraphURLStateProvider({ children }: { children: ReactNode
     const value = useMemo<NetworkGraphURLStateValue>(
         () => ({
             pagination,
-            paginationAnomalous,
-            paginationBaseline,
+            paginationSecondary,
             searchFilter,
             searchFilterSidePanel,
             sidePanelTab: { selectedTabSidePanel, setSelectedTabSidePanel },
@@ -76,8 +75,7 @@ export function NetworkGraphURLStateProvider({ children }: { children: ReactNode
         [
             edgeState,
             pagination,
-            paginationAnomalous,
-            paginationBaseline,
+            paginationSecondary,
             searchFilter,
             searchFilterSidePanel,
             selectedTabSidePanel,
@@ -97,7 +95,7 @@ export function NetworkGraphURLStateProvider({ children }: { children: ReactNode
     );
 }
 
-export function useNetworkGraphURLState() {
+function useNetworkGraphURLState() {
     const context = useContext(NetworkGraphURLStateContext);
     if (!context) {
         throw new Error(
@@ -108,8 +106,7 @@ export function useNetworkGraphURLState() {
 }
 
 export const usePagination = () => useNetworkGraphURLState().pagination;
-export const usePaginationAnomalous = () => useNetworkGraphURLState().paginationAnomalous;
-export const usePaginationBaseline = () => useNetworkGraphURLState().paginationBaseline;
+export const usePaginationSecondary = () => useNetworkGraphURLState().paginationSecondary;
 export const useSearchFilter = () => useNetworkGraphURLState().searchFilter;
 export const useSearchFilterSidePanel = () => useNetworkGraphURLState().searchFilterSidePanel;
 export const useSidePanelTab = () => useNetworkGraphURLState().sidePanelTab;

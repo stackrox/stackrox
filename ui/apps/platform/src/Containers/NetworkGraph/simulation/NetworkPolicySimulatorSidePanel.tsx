@@ -22,6 +22,7 @@ import {
 } from '@patternfly/react-core';
 import { HelpIcon } from '@patternfly/react-icons';
 import sortBy from 'lodash/sortBy';
+import { ParsedQs } from 'qs';
 
 import PopoverBodyContent from 'Components/PopoverBodyContent';
 import usePermissions from 'hooks/usePermissions';
@@ -29,7 +30,7 @@ import useRestQuery from 'hooks/useRestQuery';
 import useAnalytics, { GENERATE_NETWORK_POLICIES } from 'hooks/useAnalytics';
 import useTabs from 'hooks/patternfly/useTabs';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
-import { getQueryObject, getQueryString } from 'utils/queryStringUtils';
+import { getQueryObject } from 'utils/queryStringUtils';
 import { fetchNetworkPoliciesByClusterId } from 'services/NetworkService';
 
 import ViewActiveYAMLs from './ViewActiveYAMLs';
@@ -53,12 +54,18 @@ import { getPropertiesForAnalytics } from '../utils/networkGraphURLUtils';
 
 import { useSearchFilter } from '../NetworkGraphURLStateContext';
 
-// @TODO: Consider a better approach to managing the side panel related state (simulation + URL path for entities)
-export function clearSimulationQuery(search: string): string {
+// @TODO: Consider a better approach to managing the side panel related state
+export function clearSidePanelQuery(search: string): ParsedQs {
     const modifiedSearchFilter = getQueryObject(search);
     delete modifiedSearchFilter.simulation;
-    const queryString = getQueryString(modifiedSearchFilter);
-    return queryString;
+    delete modifiedSearchFilter.sidePanelTabState;
+    delete modifiedSearchFilter.sidePanelToggleState;
+    delete modifiedSearchFilter.sidePanel;
+    delete modifiedSearchFilter.page;
+    delete modifiedSearchFilter.perPage;
+    delete modifiedSearchFilter.secondaryPage;
+    delete modifiedSearchFilter.secondaryPerPage;
+    return modifiedSearchFilter;
 }
 
 export type NetworkPolicySimulatorSidePanelProps = {

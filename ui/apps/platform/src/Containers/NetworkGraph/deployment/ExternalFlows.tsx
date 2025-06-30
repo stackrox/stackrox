@@ -29,8 +29,8 @@ import { FlowTable } from '../components/FlowTable';
 import { useNetworkBaselineStatus } from '../hooks/useNetworkBaselineStatus';
 import { EXTERNAL_SOURCE_ADDRESS_QUERY } from '../NetworkGraph.constants';
 import {
-    usePaginationAnomalous,
-    usePaginationBaseline,
+    usePagination,
+    usePaginationSecondary,
     useSearchFilterSidePanel,
     useTimeWindow,
 } from '../NetworkGraphURLStateContext';
@@ -77,8 +77,8 @@ function ExternalFlows({ deploymentId }: ExternalFlowsProps) {
     const { searchFilter, setSearchFilter } = useSearchFilterSidePanel();
     const { timeWindow } = useTimeWindow();
 
-    const anomalousPagination = usePaginationAnomalous();
-    const baselinePagination = usePaginationBaseline();
+    const anomalousPagination = usePagination();
+    const baselinePagination = usePaginationSecondary();
 
     const { setPage: setPageAnomalous } = anomalousPagination;
     const { setPage: setPageBaseline } = baselinePagination;

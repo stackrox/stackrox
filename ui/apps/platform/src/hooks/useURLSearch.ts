@@ -11,7 +11,6 @@ export type SetSearchFilter = (newFilter: SearchFilter, historyAction?: HistoryA
 export type UseUrlSearchReturn = {
     searchFilter: SearchFilter;
     setSearchFilter: SetSearchFilter;
-    buildSearchQuery: (filter: SearchFilter) => qs.ParsedQs;
 };
 
 function parseFilter(rawFilter: QueryValue): SearchFilter {
@@ -46,12 +45,7 @@ function useURLSearch(keyPrefix = 's'): UseUrlSearchReturn {
         searchFilterRef.current = sanitizedFilter;
     }
 
-    // TODO: explore alternatives. Might not be beneficial.
-    // wanting a way to make a search query when using `Navigate()` that's
-    // tightly coupled with useURLSearch/useURLParameter
-    const buildSearchQuery = (filter: SearchFilter) => ({ [keyPrefix]: filter });
-
-    return { searchFilter: searchFilterRef.current, setSearchFilter, buildSearchQuery };
+    return { searchFilter: searchFilterRef.current, setSearchFilter };
 }
 
 export default useURLSearch;

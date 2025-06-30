@@ -18,7 +18,7 @@ import { networkBasePath } from 'routePaths';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import usePermissions from 'hooks/usePermissions';
 import useFetchDeploymentCount from 'hooks/useFetchDeploymentCount';
-import { getQueryObject, getQueryString } from 'utils/queryStringUtils';
+import { getQueryString } from 'utils/queryStringUtils';
 import { QueryValue } from 'hooks/useURLParameter';
 import DeploymentSideBar from './deployment/DeploymentSideBar';
 import NamespaceSideBar from './namespace/NamespaceSideBar';
@@ -26,7 +26,7 @@ import GenericEntitiesSideBar from './genericEntities/GenericEntitiesSideBar';
 import ExternalEntitiesSideBar from './external/ExternalEntitiesSideBar';
 import ExternalGroupSideBar from './external/ExternalGroupSideBar';
 import NetworkPolicySimulatorSidePanel, {
-    clearSimulationQuery,
+    clearSidePanelQuery,
 } from './simulation/NetworkPolicySimulatorSidePanel';
 import { getExternalEntitiesNode, getNodeById } from './utils/networkGraphUtils';
 import { CustomModel, CustomNodeModel, isNodeOfType } from './types/topology.type';
@@ -50,8 +50,7 @@ import { DEFAULT_NETWORK_GRAPH_PAGE_SIZE } from './NetworkGraph.constants';
 
 import {
     usePagination,
-    usePaginationAnomalous,
-    usePaginationBaseline,
+    usePaginationSecondary,
     useSearchFilterSidePanel,
     useSidePanelTab,
     useSidePanelToggle,
@@ -103,12 +102,10 @@ const TopologyComponent = ({
 
     const { detailID: selectedExternalIP, nodeId: nodeIdParam } = useParams();
 
-    // three paginations (default + two flows tables: anomalous & baseline)
-    // deployment flows section has 2 tables instead of 1 which is why we need anomalous+baseline.
-    // set at the topology level so we can reset every table when switching nodes.
+    // two paginations (default + secondary for when 2 tables present)
+    // deployment flows section has 2 tables instead of 1 which is why we need the additional pagination.
     const { setPerPage } = usePagination();
-    const { setPerPage: setPerPageAnomalous } = usePaginationAnomalous();
-    const { setPerPage: setPerPageBaseline } = usePaginationBaseline();
+    const { setPerPage: setPerPageSecondary } = usePaginationSecondary();
 
     const { setSelectedTabSidePanel } = useSidePanelTab();
     const { setSelectedToggleSidePanel } = useSidePanelToggle();
@@ -121,7 +118,8 @@ const TopologyComponent = ({
     const controller = useVisualizationController();
 
     const closeSidebar = useCallback(() => {
-        const queryString = clearSimulationQuery(location.search);
+        const queryObject = clearSidePanelQuery(location.search);
+        const queryString = getQueryString(queryObject);
         navigate(`${networkBasePath}${queryString}`);
     }, [navigate, location.search]);
 
@@ -144,20 +142,16 @@ const TopologyComponent = ({
             return;
         }
 
-        // TODO: figure out better way to handle deleting query parameters
-        const modifiedSearchFilter = getQueryObject(location.search);
-        delete modifiedSearchFilter.simulation;
-        delete modifiedSearchFilter.sidePanelTabState;
-        delete modifiedSearchFilter.sidePanel;
+        const queryObject = clearSidePanelQuery(location.search);
         if (parametersQuery) {
-            Object.assign(modifiedSearchFilter, parametersQuery);
+            Object.assign(queryObject, parametersQuery);
         }
 
         if (searchFilter) {
-            Object.assign(modifiedSearchFilter, searchFilter);
+            Object.assign(queryObject, searchFilter);
         }
 
-        const queryString = getQueryString(modifiedSearchFilter);
+        const queryString = getQueryString(queryObject);
 
         const { data, id } = newSelectedEntity;
         const [nodeType, nodeId] = getUrlParamsForNode(data.type, id);
@@ -223,8 +217,7 @@ const TopologyComponent = ({
     useEffect(() => {
         if (!nodeIdParam) {
             setPerPage(DEFAULT_NETWORK_GRAPH_PAGE_SIZE, 'replace');
-            setPerPageAnomalous(DEFAULT_NETWORK_GRAPH_PAGE_SIZE, 'replace');
-            setPerPageBaseline(DEFAULT_NETWORK_GRAPH_PAGE_SIZE, 'replace');
+            setPerPageSecondary(DEFAULT_NETWORK_GRAPH_PAGE_SIZE, 'replace');
             setSearchFilter({}, 'replace');
             setSelectedTabSidePanel(undefined, 'replace');
             setSelectedToggleSidePanel(undefined, 'replace');
@@ -232,8 +225,7 @@ const TopologyComponent = ({
     }, [
         setPerPage,
         setSearchFilter,
-        setPerPageAnomalous,
-        setPerPageBaseline,
+        setPerPageSecondary,
         setSelectedTabSidePanel,
         setSelectedToggleSidePanel,
         nodeIdParam,

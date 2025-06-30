@@ -28,6 +28,7 @@ import { ExternalEntitiesIcon } from '../common/NetworkGraphIcons';
 import { EXTERNAL_SOURCE_ADDRESS_QUERY } from '../NetworkGraph.constants';
 import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
 import {
+    SIDE_PANEL_SEARCH_PREFIX,
     usePagination,
     useSearchFilterSidePanel,
     useTimeWindow,
@@ -61,7 +62,7 @@ function EntityDetails({
     onExternalIPSelect,
 }: EntityDetailsProps) {
     const { page, perPage, setPage, setPerPage } = usePagination();
-    const { buildSearchQuery, searchFilter } = useSearchFilterSidePanel();
+    const { searchFilter } = useSearchFilterSidePanel();
     const { timeWindow } = useTimeWindow();
 
     const clusterId = scopeHierarchy.cluster.id;
@@ -174,11 +175,13 @@ function EntityDetails({
                                                         sidePanelTabState: 'FLOWS',
                                                         sidePanelToggleState: 'EXTERNAL_FLOWS',
                                                     },
-                                                    buildSearchQuery({
-                                                        [EXTERNAL_SOURCE_ADDRESS_QUERY]: [
-                                                            `${externalIPName}/32`,
-                                                        ],
-                                                    })
+                                                    {
+                                                        [SIDE_PANEL_SEARCH_PREFIX]: {
+                                                            [EXTERNAL_SOURCE_ADDRESS_QUERY]: [
+                                                                `${externalIPName}/32`,
+                                                            ],
+                                                        },
+                                                    }
                                                 );
                                             };
 
