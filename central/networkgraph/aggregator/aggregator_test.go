@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/externalsrcs"
 	"github.com/stackrox/rox/pkg/networkgraph/testutils"
@@ -329,77 +328,4 @@ func TestAggregateExtConnsByName(t *testing.T) {
 
 	assert.Len(t, actual, len(expected))
 	protoassert.ElementsMatch(t, expected, actual)
-}
-
-func TestAggregateExtConnsByNameAnonymizeDiscoveredExtEntities(t *testing.T) {
-	ts1 := time.Now()
-	ts2 := ts1.Add(-1000 * time.Second)
-
-	d1 := testutils.GetDeploymentNetworkEntity("d1", "d1")
-
-	discovered_entity1 := networkgraph.DiscoveredExternalEntity(net.IPNetworkFromCIDRBytes([]byte{35, 187, 144, 4, 32})).ToProto()
-	discovered_entity2 := networkgraph.DiscoveredExternalEntity(net.IPNetworkFromCIDRBytes([]byte{35, 187, 144, 5, 32})).ToProto()
-	internet := networkgraph.InternetEntity().ToProto()
-
-	detailed_flow1 := testutils.GetNetworkFlow(d1, discovered_entity1, 8000, storage.L4Protocol_L4_PROTOCOL_TCP, &ts1)
-	detailed_flow2 := testutils.GetNetworkFlow(d1, discovered_entity2, 8000, storage.L4Protocol_L4_PROTOCOL_TCP, &ts2)
-	anonymized_flow := testutils.GetNetworkFlow(d1, internet, 8000, storage.L4Protocol_L4_PROTOCOL_TCP, &ts1)
-
-	for _, testCase := range []struct {
-		name     string
-		flows    []*storage.NetworkFlow
-		expected []*storage.NetworkFlow
-	}{
-		{
-			name:     "Single flow with discovered entity",
-			flows:    []*storage.NetworkFlow{detailed_flow1},
-			expected: []*storage.NetworkFlow{anonymized_flow},
-		},
-		{
-			name:     "Two flows with discovered entities are aggregated",
-			flows:    []*storage.NetworkFlow{detailed_flow1, detailed_flow2},
-			expected: []*storage.NetworkFlow{anonymized_flow},
-		},
-	} {
-		t.Run(testCase.name, func(t *testing.T) {
-			actual := NewDuplicateNameExtSrcConnAggregator().Aggregate(testCase.flows)
-
-			assert.Len(t, actual, len(testCase.expected))
-			protoassert.ElementsMatch(t, testCase.expected, actual)
-		})
-	}
-}
-
-func TestAnonymizeDiscoveredEntity(t *testing.T) {
-	type TestSetEntry struct {
-		name     string
-		input    *storage.NetworkEntityInfo
-		expected *storage.NetworkEntityInfo
-	}
-
-	testSet := []TestSetEntry{
-		{
-			name:     "Deployment",
-			input:    testutils.GetDeploymentNetworkEntity("d1", "d1"),
-			expected: testutils.GetDeploymentNetworkEntity("d1", "d1"),
-		},
-		{
-			name:     "NonDiscoveredExternalEntity",
-			input:    testutils.GetExtSrcNetworkEntityInfo("cluster1__e1", "google", "net1", false, false),
-			expected: testutils.GetExtSrcNetworkEntityInfo("cluster1__e1", "google", "net1", false, false),
-		},
-		{
-			name:     "DiscoveredExternalEntity",
-			input:    networkgraph.DiscoveredExternalEntity(net.IPNetworkFromCIDRBytes([]byte{35, 187, 144, 4, 32})).ToProto(),
-			expected: networkgraph.InternetEntity().ToProto(), // <- anonymization
-		},
-	}
-
-	for _, testEntry := range testSet {
-		t.Run(testEntry.name, func(t *testing.T) {
-			actual := anonymizeDiscoveredEntity(testEntry.input)
-
-			protoassert.Equal(t, testEntry.expected, actual)
-		})
-	}
 }

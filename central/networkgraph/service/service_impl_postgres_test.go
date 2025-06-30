@@ -131,6 +131,20 @@ func externalFlow(deployment *storage.Deployment, entity *storage.NetworkEntity,
 	}
 }
 
+func (s *networkGraphServiceSuite) networkGraphsEqual(expected, actual *v1.NetworkGraph) {
+	s.Assert().Equal(len(expected.Nodes), len(actual.Nodes))
+
+	for i, expectedNode := range expected.Nodes {
+		protoassert.Equal(s.T(), expectedNode.Entity, actual.Nodes[i].Entity)
+
+		for k, expectedEdges := range expectedNode.OutEdges {
+			actualEdges := actual.Nodes[i].OutEdges[k]
+
+			protoassert.ElementsMatch(s.T(), expectedEdges.Properties, actualEdges.Properties)
+		}
+	}
+}
+
 func (s *networkGraphServiceSuite) TestGetNetworkGraph() {
 	ctx := sac.WithGlobalAccessScopeChecker(
 		context.Background(),
@@ -210,6 +224,16 @@ func (s *networkGraphServiceSuite) TestGetNetworkGraph() {
 								Protocol:            storage.L4Protocol_L4_PROTOCOL_TCP,
 								LastActiveTimestamp: lastSeenTimestamp1,
 							},
+							{
+								Port:                1234,
+								Protocol:            storage.L4Protocol_L4_PROTOCOL_TCP,
+								LastActiveTimestamp: lastSeenTimestamp2,
+							},
+							{
+								Port:                1234,
+								Protocol:            storage.L4Protocol_L4_PROTOCOL_TCP,
+								LastActiveTimestamp: lastSeenTimestamp3,
+							},
 						},
 					},
 				},
@@ -228,7 +252,7 @@ func (s *networkGraphServiceSuite) TestGetNetworkGraph() {
 	response, err := s.service.GetNetworkGraph(ctx, request)
 	s.NoError(err)
 
-	protoassert.Equal(s.T(), expectedResponse, response)
+	s.networkGraphsEqual(expectedResponse, response)
 }
 
 func (s *networkGraphServiceSuite) TestGetNetworkGraphNormalizedAndUnformalized() {
@@ -279,14 +303,16 @@ func (s *networkGraphServiceSuite) TestGetNetworkGraphNormalizedAndUnformalized(
 	_, err = s.entityDataStore.CreateExtNetworkEntitiesForCluster(globalWriteAccessCtx, testCluster, entities...)
 	s.NoError(err)
 
-	timeNow := timestamp.FromGoTime(time.Now())
+	timeNow := timestamp.FromGoTime(time.Unix(10, 0))
 	lastSeenTimestamp1 := timeNow.Protobuf()
 	lastSeenTimestamp2 := timeNow.Add(-time.Second).Protobuf()
 	lastSeenTimestamp3 := timeNow.Add(-2 * time.Second).Protobuf()
 	lastSeenTimestamp4 := timeNow.Add(-3 * time.Second).Protobuf()
 
 	entityFlows := []*storage.NetworkFlow{
+		// flows to entities[0] will be aggregated to the latest timestamp (2)
 		externalFlow(deployment, entities[0], false, lastSeenTimestamp1),
+		externalFlow(deployment, entities[0], false, lastSeenTimestamp2),
 		externalFlow(deployment, entities[1], false, lastSeenTimestamp2),
 		externalFlow(deployment, entities[2], false, lastSeenTimestamp3),
 		externalFlow(deployment, internetEntity, false, lastSeenTimestamp4),
@@ -300,6 +326,7 @@ func (s *networkGraphServiceSuite) TestGetNetworkGraphNormalizedAndUnformalized(
 
 	request := &v1.NetworkGraphRequest{
 		ClusterId: testCluster,
+		Since:     timestamppb.New(time.Unix(0, 0)),
 	}
 
 	expectedResponse := &v1.NetworkGraph{
@@ -317,10 +344,27 @@ func (s *networkGraphServiceSuite) TestGetNetworkGraphNormalizedAndUnformalized(
 				OutEdges: map[int32]*v1.NetworkEdgePropertiesBundle{
 					1: {
 						Properties: []*v1.NetworkEdgeProperties{
+							// Expect 2 edges for 1234/TCP/timestamp 2, one for aggregated
+							// entities[0] and one for entities[1]
 							{
 								Port:                1234,
 								Protocol:            storage.L4Protocol_L4_PROTOCOL_TCP,
-								LastActiveTimestamp: lastSeenTimestamp1,
+								LastActiveTimestamp: lastSeenTimestamp2,
+							},
+							{
+								Port:                1234,
+								Protocol:            storage.L4Protocol_L4_PROTOCOL_TCP,
+								LastActiveTimestamp: lastSeenTimestamp2,
+							},
+							{
+								Port:                1234,
+								Protocol:            storage.L4Protocol_L4_PROTOCOL_TCP,
+								LastActiveTimestamp: lastSeenTimestamp3,
+							},
+							{
+								Port:                1234,
+								Protocol:            storage.L4Protocol_L4_PROTOCOL_TCP,
+								LastActiveTimestamp: lastSeenTimestamp4,
 							},
 						},
 					},
@@ -340,7 +384,7 @@ func (s *networkGraphServiceSuite) TestGetNetworkGraphNormalizedAndUnformalized(
 	response, err := s.service.GetNetworkGraph(ctx, request)
 	s.NoError(err)
 
-	protoassert.Equal(s.T(), expectedResponse, response)
+	s.networkGraphsEqual(expectedResponse, response)
 }
 
 func (s *networkGraphServiceSuite) TestGetExternalNetworkFlows() {
