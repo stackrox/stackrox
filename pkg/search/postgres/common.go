@@ -446,6 +446,7 @@ func standardizeQueryAndPopulatePath(ctx context.Context, q *v1.Query, schema *w
 	// for this category. (For example, searching secrets by "Policy:"). In this case, we return a query that matches nothing.
 	// This behaviour is helpful, for example, in Global Search, where a query that is invalid for a
 	// certain category will just return no elements of that category.
+	log.Infof("SHREWS -- standardizeQueryAndPopulatePath -- %v, %v", q.GetQuery(), queryEntry)
 	if q.GetQuery() != nil && queryEntry == nil {
 		return nil, nil
 	}
@@ -1005,14 +1006,18 @@ func RunGetManyQueryForSchema[T any, PT pgutils.Unmarshaler[T]](ctx context.Cont
 
 func prepareQuery(ctx context.Context, schema *walker.Schema, q *v1.Query) (*query, error) {
 	if q == nil {
+		log.Info("query is nil, using empty")
 		q = searchPkg.EmptyQuery()
 	}
 
 	preparedQuery, err := standardizeQueryAndPopulatePath(ctx, q, schema, GET)
 	if err != nil {
+
+		log.Infof("SHREWS -- prepareQuery -- %s", err.Error())
 		return nil, errors.Wrap(err, "error creating query")
 	}
 	if preparedQuery == nil {
+		log.Info("SHREWS -- failed to build query")
 		return nil, emptyQueryErr
 	}
 
@@ -1037,8 +1042,10 @@ func handleRowsWithCallback[T any, PT pgutils.Unmarshaler[T]](ctx context.Contex
 }
 
 func retryableGetRows(ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB) (*tracedRows, error) {
+	log.Infof("SHREWS -- get rows -- %s", q.String())
 	preparedQuery, err := prepareQuery(ctx, schema, q)
 	if err != nil {
+		log.Infof("SHREWS -- get rows -- %v", err.Error())
 		return nil, err
 	}
 
@@ -1047,6 +1054,7 @@ func retryableGetRows(ctx context.Context, schema *walker.Schema, q *v1.Query, d
 }
 
 func RunQueryForSchemaFn[T any, PT pgutils.Unmarshaler[T]](ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB, callback func(obj PT) error) error {
+	log.Infof("SHREWS -- RunQueryForSchemaFn -- %s", q.String())
 	rows, err := pgutils.Retry2(ctx, func() (*tracedRows, error) {
 		return retryableGetRows(ctx, schema, q, db)
 	})

@@ -202,6 +202,7 @@ func (s *SubjectSearcher) Count(ctx context.Context, q *v1.Query) (int, error) {
 
 // SearchSubjects implements the search interface that returns v1.SearchResult
 func (s *SubjectSearcher) SearchSubjects(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
+	log.Infof("SHREWS -- SearchSubjects %s", q.String())
 	subjectQuery, _ := search.FilterQueryWithMap(q, subjectMapping.OptionsMap)
 	pred, err := subjectFactory.GeneratePredicate(subjectQuery)
 	if err != nil {
@@ -210,6 +211,7 @@ func (s *SubjectSearcher) SearchSubjects(ctx context.Context, q *v1.Query) ([]*v
 
 	bindings, err := s.k8sRoleBindingDatastore.SearchRawRoleBindings(ctx, q)
 	if err != nil {
+		log.Errorf("SearchRawRoleBindings: %s", err.Error())
 		return nil, err
 	}
 	// Subject return only users and groups, there is a separate resolver for service accounts.
@@ -230,5 +232,6 @@ func (s *SubjectSearcher) SearchSubjects(ctx context.Context, q *v1.Query) ([]*v
 			})
 		}
 	}
+	log.Infof("SHREWS -- OUT SearchSubjects %s", q.String())
 	return searchResults, nil
 }

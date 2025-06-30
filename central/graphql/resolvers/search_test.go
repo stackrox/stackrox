@@ -479,3 +479,144 @@ func TestImageLabelAutoCompleteSearch(t *testing.T) {
 	require.NoError(t, err)
 	require.ElementsMatch(t, []string{"k1=v1", "k2=v2"}, results)
 }
+
+func TestSubjectGlobalSearch(t *testing.T) {
+
+	testDB := pgtest.ForT(t)
+	testGormDB := testDB.GetGormDB(t)
+	defer pgtest.CloseGormDB(t, testGormDB)
+
+	roleBindingDatastore := k8sRoleBindingDataStore.GetTestPostgresDataStore(t, testDB.DB)
+
+	ctx := loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
+	roleBindings := fixtures.GetMultipleK8sRoleBindings(2, 3)
+	for _, roleBinding := range roleBindings {
+		require.NoError(t, roleBindingDatastore.UpsertRoleBinding(ctx, roleBinding))
+	}
+
+	ctrl := gomock.NewController(t)
+	cluster := clusterMocks.NewMockDataStore(ctrl)
+	deployment := deploymentMocks.NewMockDataStore(ctrl)
+	namespace := namespaceMocks.NewMockDataStore(ctrl)
+	secret := secretMocks.NewMockDataStore(ctrl)
+	nps := npsMocks.NewMockDataStore(ctrl)
+	violations := alertMocks.NewMockDataStore(ctrl)
+	images := imageMocks.NewMockDataStore(ctrl)
+	policies := policyMocks.NewMockDataStore(ctrl)
+	nodes := nodeMocks.NewMockDataStore(ctrl)
+	serviceAccounts := serviceAccountMocks.NewMockDataStore(ctrl)
+	roles := k8sroleMocks.NewMockDataStore(ctrl)
+	components := imageComponentMocks.NewMockDataStore(ctrl)
+
+	resolver := &Resolver{
+		ClusterDataStore:          cluster,
+		DeploymentDataStore:       deployment,
+		PolicyDataStore:           policies,
+		NamespaceDataStore:        namespace,
+		SecretsDataStore:          secret,
+		NetworkPoliciesStore:      nps,
+		ViolationsDataStore:       violations,
+		ImageDataStore:            images,
+		ServiceAccountsDataStore:  serviceAccounts,
+		NodeDataStore:             nodes,
+		K8sRoleBindingStore:       roleBindingDatastore,
+		K8sRoleStore:              roles,
+		ImageComponentDataStore:   components,
+		PolicyCategoryDataStore:   policyCategoryMocks.NewMockDataStore(ctrl),
+		ImageCVEDataStore:         imageCVEMocks.NewMockDataStore(ctrl),
+		NodeCVEDataStore:          nodeCVEMocks.NewMockDataStore(ctrl),
+		ClusterCVEDataStore:       clusterCVEMocks.NewMockDataStore(ctrl),
+		NodeComponentDataStore:    nodeComponentMocks.NewMockDataStore(ctrl),
+		ImageComponentV2DataStore: imageComponentV2Mocks.NewMockDataStore(ctrl),
+		ImageCVEV2DataStore:       imageCVEV2Mocks.NewMockDataStore(ctrl),
+	}
+
+	//resolver, _ := SetupTestResolver(t, roleBindingDatastore, policyCategoryMocks.NewMockDataStore(ctrl),
+	//	imageCVEMocks.NewMockDataStore(ctrl),
+	//	nodeCVEMocks.NewMockDataStore(ctrl),
+	//	clusterCVEMocks.NewMockDataStore(ctrl),
+	//	nodeComponentMocks.NewMockDataStore(ctrl),
+	//	imageComponentV2Mocks.NewMockDataStore(ctrl),
+	//	imageCVEV2Mocks.NewMockDataStore(ctrl),
+	//	cluster,
+	//	deployment,
+	//	policies,
+	//	namespace,
+	//	secret,
+	//	nps,
+	//	violations,
+	//	images,
+	//	serviceAccounts,
+	//	nodes,
+	//	roles,
+	//	components)
+
+	searchCategories := resolver.getAutoCompleteSearchers()
+	searchFuncs := resolver.getSearchFuncs()
+	log.Infof("categories -- %v", searchCategories)
+	log.Infof("funcs -- %v", searchFuncs)
+	allowAllCtx := SetAuthorizerOverride(ctx, allow.Anonymous())
+
+	testCases := []struct {
+		desc     string
+		request  searchRequest
+		expected []string
+	}{
+		{
+			desc: "Subject name autocomplete",
+			request: searchRequest{
+				Query:      fmt.Sprintf("Subject:%s", roleBindings[0].Subjects[1].Name),
+				Categories: &[]string{"SUBJECTS"},
+			},
+			expected: []string{roleBindings[0].Subjects[1].Name},
+		},
+		{
+			desc: "Subject Kind autocomplete",
+			request: searchRequest{
+				Query:      "Subject Kind:",
+				Categories: &[]string{"SUBJECTS"},
+			},
+			expected: []string{"user", "group"},
+		},
+		{
+			desc: "Cluster name autocomplete",
+			request: searchRequest{
+				Query:      fmt.Sprintf("Cluster:%s", roleBindings[1].ClusterName),
+				Categories: &[]string{"SUBJECTS"},
+			},
+			expected: []string{roleBindings[1].ClusterName},
+		},
+		{
+			desc: "Cluster role autocomplete",
+			request: searchRequest{
+				Query:      "Cluster Role:tr",
+				Categories: &[]string{"SUBJECTS"},
+			},
+			expected: []string{"true"},
+		},
+		{
+			desc: "Cluster name + Subject name autocomplete",
+			request: searchRequest{
+				Query:      fmt.Sprintf("Cluster:%s+Subject:", roleBindings[0].ClusterName),
+				Categories: &[]string{"SUBJECTS"},
+			},
+			expected: []string{roleBindings[0].Subjects[1].Name, roleBindings[0].Subjects[2].Name},
+		},
+		{
+			desc: "Autocomplete on unsupported option",
+			request: searchRequest{
+				Query:      "Deployment:d1",
+				Categories: &[]string{"SUBJECTS"},
+			},
+			expected: []string{},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			_, err := resolver.GlobalSearch(allowAllCtx, tc.request)
+			require.NoError(t, err)
+			//require.ElementsMatch(t, tc.expected, results)
+		})
+	}
+}
