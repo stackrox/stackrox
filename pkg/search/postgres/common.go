@@ -1016,10 +1016,10 @@ func prepareQuery(ctx context.Context, schema *walker.Schema, q *v1.Query) (*que
 		log.Infof("SHREWS -- prepareQuery -- %s", err.Error())
 		return nil, errors.Wrap(err, "error creating query")
 	}
-	if preparedQuery == nil {
-		log.Info("SHREWS -- failed to build query")
-		return nil, emptyQueryErr
-	}
+	//if preparedQuery == nil {
+	//	log.Info("SHREWS -- failed to build query")
+	//	//return nil, emptyQueryErr
+	//}
 
 	return preparedQuery, nil
 }
@@ -1049,6 +1049,10 @@ func retryableGetRows(ctx context.Context, schema *walker.Schema, q *v1.Query, d
 		return nil, err
 	}
 
+	if preparedQuery == nil {
+		return nil, nil
+	}
+
 	queryStr := preparedQuery.AsSQL()
 	return tracedQuery(ctx, db, queryStr, preparedQuery.Data...)
 }
@@ -1062,6 +1066,9 @@ func RunQueryForSchemaFn[T any, PT pgutils.Unmarshaler[T]](ctx context.Context, 
 		return err
 	}
 
+	if rows == nil {
+		return nil
+	}
 	_, err = handleRowsWithCallback(ctx, rows, callback)
 	if err != nil {
 		return errors.Wrap(err, "processing rows")

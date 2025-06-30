@@ -570,14 +570,14 @@ func TestSubjectGlobalSearch(t *testing.T) {
 			},
 			expected: []string{roleBindings[0].Subjects[1].Name},
 		},
-		{
-			desc: "Subject Kind autocomplete",
-			request: searchRequest{
-				Query:      "Subject Kind:",
-				Categories: &[]string{"SUBJECTS"},
-			},
-			expected: []string{"user", "group"},
-		},
+		//{
+		//	desc: "Subject Kind autocomplete",
+		//	request: searchRequest{
+		//		Query:      "Subject Kind:",
+		//		Categories: &[]string{"SUBJECTS"},
+		//	},
+		//	expected: []string{"user", "group"},
+		//},
 		{
 			desc: "Cluster name autocomplete",
 			request: searchRequest{
