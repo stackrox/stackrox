@@ -1,7 +1,7 @@
 {
   "base": {
-    "name": "gualvare/fix-remove-duplicated-import",
-    "hash": "401a893b1e333cecc1828636830737b799d8c871"
+    "name": "master",
+    "hash": "93e80ee1161ffaa0f299a59da3b113d4750737fa"
   },
   "upstream": {
     "branch": "ROX-29160-Add-default-signature-integration-rh-rk3"
