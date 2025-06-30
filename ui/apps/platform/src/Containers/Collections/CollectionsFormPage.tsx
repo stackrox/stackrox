@@ -21,7 +21,7 @@ import {
 import { useMediaQuery } from 'react-responsive';
 
 import { deleteCollection } from 'services/CollectionsService';
-import { CaretDownIcon, ExclamationCircleIcon } from '@patternfly/react-icons';
+import { ExclamationCircleIcon } from '@patternfly/react-icons';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import { collectionsBasePath } from 'routePaths';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
