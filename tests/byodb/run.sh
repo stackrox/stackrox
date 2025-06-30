@@ -80,6 +80,8 @@ run_byodb_test() {
     wait_for_api
     setup_client_TLS_certs
 
+    touch "${STATE_DEPLOYED}"
+
     # Get the API_TOKEN for the upgrades
     export API_TOKEN="$(roxcurl /v1/apitokens/generate -d '{"name": "helm-upgrade-test", "role": "Admin"}' | jq -r '.token')"
 

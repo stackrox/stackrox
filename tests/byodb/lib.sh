@@ -103,7 +103,6 @@ deploy_external_postgres() {
 }
 
 deploy_external_postgres_central() {
-#    make cli
     deploy_external_postgres
 
     PATH="bin/$TEST_HOST_PLATFORM:$PATH" command -v roxctl
