@@ -161,15 +161,14 @@ jobs:
         unzip -l "$path"
         echo "STACKROX_NVD_ZIP_PATH=$path" >> "$GITHUB_ENV"
 
-    - name: Run Updater (single bundle)
-      if: ${{ env.SCANNER_BUNDLE_VERSION == 'v1' }}
-      run: |
-        scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" "definitions/${SCANNER_BUNDLE_VERSION}"
-
-    - name: Run updater (multi bundle)
+    - name: Run updater
       run: |
         scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" bundles
         zip definitions/${{ env.SCANNER_BUNDLE_VERSION }}/vulnerabilities.zip bundles/*.json.zst
+        # Continue updating unsupported releases for now.
+        if [ "$SCANNER_BUNDLE_VERSION" = "v1" ]; then
+          cp -r bundles "definitions/${SCANNER_BUNDLE_VERSION}"
+        fi
 
     - name: Upload definitions artifacts
       uses: actions/upload-artifact@v4
@@ -237,7 +236,7 @@ jobs:
     - name: Create bundle output directory
       run: mkdir -p definitions/${{ github.event.pull_request.number }}
 
-    - name: Run updater (multi bundle)
+    - name: Run updater
       run: |
         scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" bundles
         zip definitions/${{ github.event.pull_request.number }}/vulnerabilities.zip bundles/*.json.zst
