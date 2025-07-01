@@ -11,13 +11,14 @@ import (
 	"github.com/stackrox/rox/central/clusterinit/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/set"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 var (
@@ -136,14 +137,15 @@ func (s *serviceImpl) GenerateCRS(ctx context.Context, request *v1.CRSGenRequest
 		return nil, status.Error(codes.Unimplemented, "support for generating Cluster Registration Secrets (CRS) is not enabled")
 	}
 
-	validUntil := fromProtoTimestamp(request.GetValidUntil())
-	validFor := request.GetValidFor().AsDuration()
-	if !validUntil.IsZero() && validFor != 0 {
-		return nil, errox.InvalidArgument.CausedBy("cannot use validUntil and validFor at the same time")
+	reqValidUntil := request.GetValidUntil()
+	reqValidFor := request.GetValidFor()
+	if reqValidUntil != nil && reqValidFor != nil {
+		return nil, errox.InvalidArgs.CausedBy("cannot specify validUntil and validFor at the same time")
 	}
 
-	if validFor != 0 {
-		validUntil = time.Now().Add(validFor)
+	validUntil := time.Time{}
+	if reqValidUntil != nil || reqValidFor != nil {
+		validUntil = protocompat.NilOrNow(reqValidUntil).Add(reqValidFor.AsDuration())
 	}
 
 	generated, err := s.backend.IssueCRS(ctx, request.GetName(), validUntil)
@@ -164,16 +166,6 @@ func (s *serviceImpl) GenerateCRS(ctx context.Context, request *v1.CRSGenRequest
 		Crs:  bundleK8sManifest,
 		Meta: meta,
 	}, nil
-}
-
-func fromProtoTimestamp(tsProto *timestamppb.Timestamp) time.Time {
-	ts := time.Time{}
-	if tsProto != nil {
-		// Must be careful here: If a proto timestamp is nil, calling  .AsTime() on it, will produce a
-		// time.Time value containing the 1970-01-01 epoch starting point.
-		ts = tsProto.AsTime()
-	}
-	return ts
 }
 
 func (s *serviceImpl) RevokeInitBundle(ctx context.Context, request *v1.InitBundleRevokeRequest) (*v1.InitBundleRevokeResponse, error) {
