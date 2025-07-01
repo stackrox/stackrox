@@ -46,7 +46,6 @@ function AdministrationEventPage({ id }: AdministrationEventPageProps): ReactEle
 
     const h1 = event ? event.domain : 'Administration event';
 
-    /* eslint-disable no-nested-ternary */
     return (
         <>
             <PageTitle title={`Administration events - ${h1}`} />
@@ -82,7 +81,6 @@ function AdministrationEventPage({ id }: AdministrationEventPageProps): ReactEle
             </PageSection>
         </>
     );
-    /* eslint-enable no-nested-ternary */
 }
 
 export default AdministrationEventPage;

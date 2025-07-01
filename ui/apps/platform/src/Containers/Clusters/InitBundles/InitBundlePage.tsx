@@ -52,7 +52,6 @@ function InitBundlePage({ hasWriteAccessForInitBundles, id }: InitBundlePageProp
             </Button>
         ) : null;
 
-    /* eslint-disable no-nested-ternary */
     return (
         <>
             <InitBundlesHeader headerActions={headerActions} title="Cluster init bundle" />
@@ -91,7 +90,6 @@ function InitBundlePage({ hasWriteAccessForInitBundles, id }: InitBundlePageProp
             </PageSection>
         </>
     );
-    /* eslint-enable no-nested-ternary */
 }
 
 export default InitBundlePage;

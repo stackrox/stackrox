@@ -84,7 +84,6 @@ function DiscoveredClustersPage(): ReactElement {
             });
     }, [page, perPage, searchFilter, sortOption]);
 
-    /* eslint-disable no-nested-ternary */
     return (
         <>
             <PageSection component="div" variant="light">
@@ -143,7 +142,6 @@ function DiscoveredClustersPage(): ReactElement {
             </PageSection>
         </>
     );
-    /* eslint-enable no-nested-ternary */
 }
 
 export default DiscoveredClustersPage;

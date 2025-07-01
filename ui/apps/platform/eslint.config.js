@@ -426,7 +426,6 @@ module.exports = [
             'no-bitwise': 'error',
             'no-continue': 'error',
             'no-multi-assign': ['error'],
-            'no-nested-ternary': 'error',
             'no-plusplus': 'error',
             'no-restricted-syntax': [
                 'error',

@@ -64,14 +64,14 @@ export function getSensorUpgradeCounts(clusters: Cluster[]): ClusterStatusCounts
                 default: {
                     const { upgradeStatus } = cluster.status || {};
                     const upgradeState = findUpgradeState(upgradeStatus);
-                    /* eslint-disable no-nested-ternary */
+
                     const key =
                         upgradeState?.type === 'current'
                             ? 'HEALTHY'
                             : upgradeState?.type === 'failure'
                               ? 'UNHEALTHY'
                               : 'DEGRADED';
-                    /* eslint-enable no-nested-ternary */
+
                     counts[key] += 1;
                 }
             }
