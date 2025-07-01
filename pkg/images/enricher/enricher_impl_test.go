@@ -50,6 +50,23 @@ func emptySignatureIntegrationGetter(_ context.Context) ([]*storage.SignatureInt
 	return nil, nil
 }
 
+func defaultRedHatSignatureIntegrationGetter(_ context.Context) ([]*storage.SignatureIntegration, error) {
+	return []*storage.SignatureIntegration{signatures.DefaultRedHatSignatureIntegration}, nil
+}
+
+func twoSignaturesIntegrationGetter(_ context.Context) ([]*storage.SignatureIntegration, error) {
+	return []*storage.SignatureIntegration{
+		{
+			Id:   "id-1",
+			Name: "name-1",
+		},
+		{
+			Id:   "id-2",
+			Name: "name-2",
+		},
+	}, nil
+}
+
 func imageGetterFromImage(image *storage.Image) ImageGetter {
 	return func(ctx context.Context, id string) (*storage.Image, bool, error) {
 		return image, true, nil
@@ -1097,6 +1114,45 @@ func TestEnrichWithSignature_Success(t *testing.T) {
 			expectedSigs:         []*storage.Signature{createSignature("rawsignature", "rawpayload")},
 			updated:              true,
 			sigIntegrationGetter: fakeSignatureIntegrationGetter("test", false),
+		},
+		"enrichment should be skipped if no signature integrations available": {
+			ctx:                  EnrichmentContext{FetchOpt: NoExternalMetadata},
+			sigIntegrationGetter: emptySignatureIntegrationGetter,
+		},
+		"enrichment should be skipped if only default Red Hat integration available and not Red Hat image": {
+			img: &storage.Image{
+				Id:    "id",
+				Name:  &storage.ImageName{Registry: "not-redhat.io"},
+				Names: []*storage.ImageName{{Registry: "not-redhat.io"}},
+			},
+			ctx:                  EnrichmentContext{FetchOpt: NoExternalMetadata},
+			sigIntegrationGetter: defaultRedHatSignatureIntegrationGetter,
+		},
+		"enrichment should be performed if only default Red Hat integration available and Red Hat image": {
+			img: &storage.Image{
+				Id:    "id",
+				Name:  &storage.ImageName{Registry: "registry.redhat.io"},
+				Names: []*storage.ImageName{{Registry: "registry.redhat.io"}},
+			},
+			ctx: EnrichmentContext{FetchOpt: ForceRefetchSignaturesOnly},
+			sigFetcher: &fakeSigFetcher{sigs: []*storage.Signature{
+				createSignature("rawsignature", "rawpayload")}},
+			expectedSigs:         []*storage.Signature{createSignature("rawsignature", "rawpayload")},
+			updated:              true,
+			sigIntegrationGetter: defaultRedHatSignatureIntegrationGetter,
+		},
+		"enrichment should be performed for any image if several integrations available": {
+			img: &storage.Image{
+				Id:    "id",
+				Name:  &storage.ImageName{Registry: "not-redhat.io"},
+				Names: []*storage.ImageName{{Registry: "not-redhat.io"}},
+			},
+			ctx: EnrichmentContext{FetchOpt: ForceRefetchSignaturesOnly},
+			sigFetcher: &fakeSigFetcher{sigs: []*storage.Signature{
+				createSignature("rawsignature", "rawpayload")}},
+			expectedSigs:         []*storage.Signature{createSignature("rawsignature", "rawpayload")},
+			updated:              true,
+			sigIntegrationGetter: twoSignaturesIntegrationGetter,
 		},
 	}
 
