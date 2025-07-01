@@ -353,9 +353,8 @@ func IssueNewCert(subj Subject, opts ...IssueCertOption) (cert *IssuedCert, err 
 
 // IssueNewCrsCert generates a new key and certificate chain for a CRS.
 func IssueNewCrsCert(crsId uuid.UUID, validUntil time.Time) (cert *IssuedCert, err error) {
-	opts := make([]IssueCertOption, 0, 2)
-	if !validUntil.IsZero() {
-		opts = append(opts, WithValidityNotAfter(validUntil))
+	opts := []IssueCertOption{
+		WithValidityNotAfter(validUntil),
 	}
 
 	subj := NewInitSubject(centralsensor.RegisteredInitCertClusterID, storage.ServiceType_REGISTRANT_SERVICE, crsId)
