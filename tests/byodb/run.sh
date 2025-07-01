@@ -129,8 +129,9 @@ cleanup_byodb_test() {
 
     remove_existing_stackrox_resources
 
-#    kubectl delete statefulset postgres -n stackrox
-    kubectl delete pvc pgdata-postgres-0 -n stackrox
+    kubectl delete namespace database
+#    kubectl delete statefulset postgres -n database
+#    kubectl delete pvc pgdata-postgres-0 -n database
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then

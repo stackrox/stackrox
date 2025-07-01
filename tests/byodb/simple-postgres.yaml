@@ -3,7 +3,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: postgres
-  namespace: stackrox
+  namespace: database
 spec:
   serviceName: "postgres"
   replicas: 1
@@ -36,7 +36,7 @@ spec:
   volumeClaimTemplates:
   - metadata:
       name: pgdata
-      namespace: stackrox
+      namespace: database
     spec:
       accessModes: [ "ReadWriteOnce" ]
       storageClassName: "standard-rwo"

@@ -91,13 +91,13 @@ deploy_external_postgres() {
     ci_export "EXTERNAL_DB_PASSWORD" "$EXTERNAL_DB_PASSWORD"
     ci_export "EXTERNAL_DB_USER" "$EXTERNAL_DB_USER"
 
-    kubectl create namespace stackrox
+    kubectl create namespace database
     envsubst < ./tests/byodb/simple-postgres.yaml | kubectl apply -f -
 
-    kubectl get pods -n stackrox
+    kubectl get pods -n database
     # Replace this with a check making sure postgres is up
     sleep 180
-    kubectl get pods -n stackrox
+    kubectl get pods -n database
 
     restore_4_6_backup
 }
@@ -117,7 +117,7 @@ deploy_external_postgres_central() {
          --set central.db.password.value="${EXTERNAL_DB_PASSWORD}" \
          --set central.db.enabled=true \
          --set central.db.external=true \
-         --set central.db.source.connectionString="host=postgres client_encoding=UTF8 user=${EXTERNAL_DB_USER} dbname=stackrox statement_timeout=1200000" \
+         --set central.db.source.connectionString="host=postgres.database client_encoding=UTF8 user=${EXTERNAL_DB_USER} dbname=stackrox statement_timeout=1200000" \
          --set central.persistence.none=true \
          --set central.exposure.loadBalancer.enabled=true \
          --set system.enablePodSecurityPolicies=false \
@@ -144,7 +144,7 @@ restore_4_6_backup() {
     unzip postgres_db_4_6.sql.zip
 
     kubectl cp ./postgres.dump stackrox/postgres-0:/tmp
-    kubectl exec -it postgres-0 -n stackrox -- pg_restore --username="${EXTERNAL_DB_USER}" -d stackrox --no-owner --clean --if-exists -Fc -vvv --single-transaction /tmp/postgres.dump
+    kubectl exec -it postgres-0 -n database -- pg_restore --username="${EXTERNAL_DB_USER}" -d stackrox --no-owner --clean --if-exists -Fc -vvv --single-transaction /tmp/postgres.dump
 
     cd "$TEST_ROOT"
 }
