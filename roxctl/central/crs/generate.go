@@ -3,8 +3,10 @@ package crs
 import (
 	"context"
 	"os"
+	"strings"
 	"time"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -18,6 +20,10 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
+)
+
+const (
+	minimumCentralVersionWithConfigurableCrsValidity = "4.9"
 )
 
 // generateCRS generates a new CRS using Central's API and writes the newly generated CRS into the
@@ -37,7 +43,25 @@ func generateCRS(cliEnvironment environment.Environment, name string,
 		return err
 	}
 	defer utils.IgnoreError(conn.Close)
-	svc := v1.NewClusterInitServiceClient(conn)
+	metadataSvc := v1.NewMetadataServiceClient(conn)
+	clusterInitSvc := v1.NewClusterInitServiceClient(conn)
+
+	// pre-4.8 Central silently ignores validUntil/validFor settings.
+	// Let us make sure that we fail gracefully instead of silently ignoring these user settings.
+	if !validUntil.IsZero() || validFor != 0 {
+		centralVersion, err := getCentralXYVersion(ctx, metadataSvc)
+		if err != nil {
+			return errors.Wrap(err, "retrieving Central version")
+		}
+
+		versionRequirementSatisfied, err := versionLessOrEqual(minimumCentralVersionWithConfigurableCrsValidity, centralVersion)
+		if err != nil {
+			return errors.Wrap(err, "comparing Central version")
+		}
+		if !versionRequirementSatisfied {
+			return errors.Errorf("Central version %s does not support configurable validity periods for CRSs", centralVersion)
+		}
+	}
 
 	outWriter := cliEnvironment.InputOutput().Out()
 	if outFilename != "" {
@@ -61,7 +85,7 @@ func generateCRS(cliEnvironment environment.Environment, name string,
 	if !validUntil.IsZero() {
 		req.ValidUntil = timestamppb.New(validUntil)
 	}
-	resp, err := svc.GenerateCRS(ctx, &req)
+	resp, err := clusterInitSvc.GenerateCRS(ctx, &req)
 	if err != nil {
 		if errStatus, ok := status.FromError(err); ok && errStatus.Code() == codes.Unimplemented {
 			return errors.Wrap(err, "missing CRS support in Central")
@@ -139,4 +163,34 @@ func generateCommand(cliEnvironment environment.Environment) *cobra.Command {
 	c.MarkFlagsMutuallyExclusive("valid-for", "valid-until")
 
 	return c
+}
+
+func getCentralXYVersion(ctx context.Context, metadataSvc v1.MetadataServiceClient) (string, error) {
+	resp, err := metadataSvc.GetMetadata(ctx, &v1.Empty{})
+	if err != nil {
+		return "", errors.Wrap(err, "retrieving Central metadata")
+	}
+	fullVersion := resp.GetVersion()
+	xyVersion := extractXYVersion(fullVersion)
+	return xyVersion, nil
+}
+
+func extractXYVersion(version string) string {
+	parts := strings.SplitN(version, ".", 3)
+	if len(parts) < 2 {
+		return version
+	}
+	return parts[0] + "." + parts[1]
+}
+
+func versionLessOrEqual(versionA, versionB string) (bool, error) {
+	vA, err := semver.NewVersion(versionA)
+	if err != nil {
+		return false, err
+	}
+	vB, err := semver.NewVersion(versionB)
+	if err != nil {
+		return false, err
+	}
+	return vA.LessThanEqual(vB), nil
 }
