@@ -52,5 +52,17 @@
         "job": "compliance-e2e-tests",
         "logfile": "collector-previous",
         "logline": "Socket closed"
+    },
+    {
+        "comment": "Scanner V4 slow to start",
+        "job": "byodb",
+        "logfile": "scanner-v4-indexer-previous",
+        "logline": "panic: migrate: failed to connect to"
+    },
+    {
+        "comment": "Scanner V4 slow to start matcher",
+        "job": "byodb",
+        "logfile": "scanner-v4-matcher-previous",
+        "logline": "panic: migrate: failed to connect to"
     }
 ]
