@@ -1,11 +1,9 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { Divider, Stack, StackItem, ToggleGroup, ToggleGroupItem } from '@patternfly/react-core';
 
-import { TimeWindow } from 'constants/timeWindows';
 import useAnalytics, { DEPLOYMENT_FLOWS_TOGGLE_CLICKED } from 'hooks/useAnalytics';
 import useFeatureFlags from 'hooks/useFeatureFlags';
-import { UseURLPaginationResult } from 'hooks/useURLPagination';
-import { UseUrlSearchReturn } from 'hooks/useURLSearch';
+import { QueryValue } from 'hooks/useURLParameter';
 
 import { CustomNodeModel } from '../types/topology.type';
 import { EdgeState } from '../components/EdgeStateSelect';
@@ -14,7 +12,23 @@ import InternalFlows from './InternalFlows';
 import ExternalFlows from './ExternalFlows';
 import { isInternalFlow } from '../utils/networkGraphUtils';
 
-export type DeploymentFlowsView = 'external-flows' | 'internal-flows';
+import {
+    usePagination,
+    usePaginationSecondary,
+    useSearchFilterSidePanel,
+    useSidePanelToggle,
+} from '../NetworkGraphURLStateContext';
+
+export type DeploymentFlowsView = 'EXTERNAL_FLOWS' | 'INTERNAL_FLOWS';
+
+const DEPLOYMENT_FLOWS_TOGGLES = ['INTERNAL_FLOWS', 'EXTERNAL_FLOWS'] as const;
+export type DeploymentFlowsToggleKey = (typeof DEPLOYMENT_FLOWS_TOGGLES)[number];
+
+export const DEFAULT_DEPLOYMENT_FLOWS_TOGGLE: DeploymentFlowsToggleKey = 'INTERNAL_FLOWS';
+
+export function isValidDeploymentFlowsToggle(value: QueryValue): value is DeploymentFlowsToggleKey {
+    return typeof value === 'string' && DEPLOYMENT_FLOWS_TOGGLES.some((state) => state === value);
+}
 
 type DeploymentFlowsProps = {
     deploymentId: string;
@@ -25,10 +39,6 @@ type DeploymentFlowsProps = {
     networkFlowsError: string;
     networkFlows: Flow[];
     refetchFlows: () => void;
-    anomalousUrlPagination: UseURLPaginationResult;
-    baselineUrlPagination: UseURLPaginationResult;
-    urlSearchFiltering: UseUrlSearchReturn;
-    timeWindow: TimeWindow;
 };
 
 function DeploymentFlows({
@@ -40,34 +50,35 @@ function DeploymentFlows({
     networkFlowsError,
     networkFlows,
     refetchFlows,
-    anomalousUrlPagination,
-    baselineUrlPagination,
-    urlSearchFiltering,
-    timeWindow,
 }: DeploymentFlowsProps) {
     const { analyticsTrack } = useAnalytics();
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isNetworkGraphExternalIpsEnabled = isFeatureFlagEnabled('ROX_NETWORK_GRAPH_EXTERNAL_IPS');
-    const [selectedView, setSelectedView] = useState<DeploymentFlowsView>('internal-flows');
 
-    const { setPage: setPageAnomalous } = anomalousUrlPagination;
-    const { setPage: setPageBaseline } = baselineUrlPagination;
-    const { setSearchFilter } = urlSearchFiltering;
+    const { setPage: setPageAnomalous } = usePagination();
+    const { setPage: setPageBaseline } = usePaginationSecondary();
+    const { setSearchFilter } = useSearchFilterSidePanel();
+    const { selectedToggleSidePanel, setSelectedToggleSidePanel } = useSidePanelToggle();
 
     useEffect(() => {
-        setPageAnomalous(1);
-        setPageBaseline(1);
-        setSearchFilter({});
-    }, [selectedView, setPageAnomalous, setPageBaseline, setSearchFilter]);
+        if (
+            selectedToggleSidePanel !== undefined &&
+            !isValidDeploymentFlowsToggle(selectedToggleSidePanel)
+        ) {
+            setSelectedToggleSidePanel(DEFAULT_DEPLOYMENT_FLOWS_TOGGLE, 'replace');
+        }
+    }, [selectedToggleSidePanel, setSelectedToggleSidePanel]);
 
-    // can be removed when routing is added to network graph
     const handleToggle = useCallback(
         (view: DeploymentFlowsView) => {
-            if (view !== selectedView) {
-                setSelectedView(view);
+            if (view !== selectedToggleSidePanel) {
+                setSelectedToggleSidePanel(view);
+                setPageAnomalous(1);
+                setPageBaseline(1);
+                setSearchFilter({});
 
                 const formattedView =
-                    view === 'internal-flows' ? 'Internal Flows' : 'External Flows';
+                    view === 'INTERNAL_FLOWS' ? 'Internal Flows' : 'External Flows';
 
                 analyticsTrack({
                     event: DEPLOYMENT_FLOWS_TOGGLE_CLICKED,
@@ -75,7 +86,14 @@ function DeploymentFlows({
                 });
             }
         },
-        [selectedView, analyticsTrack]
+        [
+            analyticsTrack,
+            selectedToggleSidePanel,
+            setPageAnomalous,
+            setPageBaseline,
+            setSearchFilter,
+            setSelectedToggleSidePanel,
+        ]
     );
 
     if (!isNetworkGraphExternalIpsEnabled) {
@@ -95,6 +113,12 @@ function DeploymentFlows({
         );
     }
 
+    const selectedView: DeploymentFlowsToggleKey = isValidDeploymentFlowsToggle(
+        selectedToggleSidePanel
+    )
+        ? selectedToggleSidePanel
+        : DEFAULT_DEPLOYMENT_FLOWS_TOGGLE;
+
     return (
         <div className="pf-v5-u-h-100">
             <Stack>
@@ -103,21 +127,21 @@ function DeploymentFlows({
                         <ToggleGroupItem
                             text="Internal flows"
                             buttonId="internal-flows"
-                            isSelected={selectedView === 'internal-flows'}
-                            onChange={() => handleToggle('internal-flows')}
+                            isSelected={selectedView === 'INTERNAL_FLOWS'}
+                            onChange={() => handleToggle('INTERNAL_FLOWS')}
                         />
                         <ToggleGroupItem
                             text="External flows"
                             buttonId="external-flows"
-                            isSelected={selectedView === 'external-flows'}
-                            onChange={() => handleToggle('external-flows')}
+                            isSelected={selectedView === 'EXTERNAL_FLOWS'}
+                            onChange={() => handleToggle('EXTERNAL_FLOWS')}
                         />
                     </ToggleGroup>
                 </StackItem>
                 <Divider component="hr" />
                 <StackItem isFilled style={{ overflow: 'auto' }}>
                     <Stack className="pf-v5-u-p-md">
-                        {selectedView === 'internal-flows' ? (
+                        {selectedView === 'INTERNAL_FLOWS' ? (
                             <InternalFlows
                                 nodes={nodes}
                                 deploymentId={deploymentId}
@@ -129,13 +153,7 @@ function DeploymentFlows({
                                 refetchFlows={refetchFlows}
                             />
                         ) : (
-                            <ExternalFlows
-                                deploymentId={deploymentId}
-                                timeWindow={timeWindow}
-                                anomalousUrlPagination={anomalousUrlPagination}
-                                baselineUrlPagination={baselineUrlPagination}
-                                urlSearchFiltering={urlSearchFiltering}
-                            />
+                            <ExternalFlows deploymentId={deploymentId} />
                         )}
                     </Stack>
                 </StackItem>
