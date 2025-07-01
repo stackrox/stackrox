@@ -871,11 +871,12 @@ func TestFillScanStats(t *testing.T) {
 
 func TestEnrichWithSignature_Success(t *testing.T) {
 	cases := map[string]struct {
-		img          *storage.Image
-		sigFetcher   signatures.SignatureFetcher
-		expectedSigs []*storage.Signature
-		updated      bool
-		ctx          EnrichmentContext
+		img                  *storage.Image
+		sigFetcher           signatures.SignatureFetcher
+		expectedSigs         []*storage.Signature
+		updated              bool
+		ctx                  EnrichmentContext
+		sigIntegrationGetter SignatureIntegrationGetter
 	}{
 		"signatures found without pre-existing signatures": {
 			img: &storage.Image{
@@ -886,8 +887,9 @@ func TestEnrichWithSignature_Success(t *testing.T) {
 			ctx: EnrichmentContext{FetchOpt: ForceRefetchSignaturesOnly},
 			sigFetcher: &fakeSigFetcher{sigs: []*storage.Signature{
 				createSignature("rawsignature", "rawpayload")}},
-			expectedSigs: []*storage.Signature{createSignature("rawsignature", "rawpayload")},
-			updated:      true,
+			expectedSigs:         []*storage.Signature{createSignature("rawsignature", "rawpayload")},
+			updated:              true,
+			sigIntegrationGetter: fakeSignatureIntegrationGetter("test", false),
 		},
 		"no external metadata enrichment context": {
 			ctx: EnrichmentContext{FetchOpt: NoExternalMetadata},
@@ -898,7 +900,8 @@ func TestEnrichWithSignature_Success(t *testing.T) {
 				Signatures: []*storage.Signature{createSignature("rawsignature", "rawpayload")}},
 				Names: []*storage.ImageName{{Registry: "reg"}},
 			},
-			expectedSigs: []*storage.Signature{createSignature("rawsignature", "rawpayload")},
+			expectedSigs:         []*storage.Signature{createSignature("rawsignature", "rawpayload")},
+			sigIntegrationGetter: fakeSignatureIntegrationGetter("test", false),
 		},
 		"fetched signatures contains duplicate": {
 			img: &storage.Image{
@@ -909,8 +912,9 @@ func TestEnrichWithSignature_Success(t *testing.T) {
 			sigFetcher: &fakeSigFetcher{sigs: []*storage.Signature{
 				createSignature("rawsignature", "rawpayload"),
 				createSignature("rawsignature", "rawpayload")}},
-			expectedSigs: []*storage.Signature{createSignature("rawsignature", "rawpayload")},
-			updated:      true,
+			expectedSigs:         []*storage.Signature{createSignature("rawsignature", "rawpayload")},
+			updated:              true,
+			sigIntegrationGetter: fakeSignatureIntegrationGetter("test", false),
 		},
 	}
 
@@ -928,7 +932,7 @@ func TestEnrichWithSignature_Success(t *testing.T) {
 			e := enricherImpl{
 				integrations:               integrationsSetMock,
 				signatureFetcher:           c.sigFetcher,
-				signatureIntegrationGetter: fakeSignatureIntegrationGetter("test", false),
+				signatureIntegrationGetter: c.sigIntegrationGetter,
 			}
 			updated, err := e.enrichWithSignature(emptyCtx, c.ctx, c.img)
 			assert.NoError(t, err)
