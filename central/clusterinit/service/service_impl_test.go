@@ -3,15 +3,20 @@ package service
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/pkg/errors"
 	dsMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
+	"github.com/stackrox/rox/central/clusterinit/backend"
 	"github.com/stackrox/rox/central/clusterinit/backend/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/crs"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func TestGetInitBundlesWithBackendError(t *testing.T) {
@@ -44,6 +49,110 @@ func TestGetInitBundlesWithClusterStoreError(t *testing.T) {
 	bundles, err := service.GetInitBundles(context.Background(), nil)
 	assert.Error(t, err)
 	assert.Empty(t, bundles.GetItems())
+}
+
+// In case the `CRSGenRequest` message does specify the `validUntil` field, the expectation is that the backend's
+// `IssueCRS` implementation receives a `validUntil` zero time.Time value.
+//
+// This test verifies this behaviour.
+func TestGenerateCRSValidUntilTimestampDefaultsToZero(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	mockStore := dsMocks.NewMockDataStore(mockCtrl)
+	mockBackend := mocks.NewMockBackend(mockCtrl)
+	service := New(mockBackend, mockStore)
+
+	mockBackend.EXPECT().IssueCRS(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).DoAndReturn(
+		func(_ context.Context, _ string, validUntil time.Time) (*backend.CRSWithMeta, error) {
+			assert.True(t, validUntil.IsZero())
+			crsWithMeta := &backend.CRSWithMeta{
+				CRS:  &crs.CRS{},
+				Meta: &storage.InitBundleMeta{},
+			}
+			return crsWithMeta, nil
+		},
+	)
+	request := &v1.CRSGenRequest{
+		Name: "secured-cluster",
+		// Note that we are not specifying `validUntil` here.
+	}
+	_, err := service.GenerateCRS(context.Background(), request)
+	assert.NoError(t, err, "GenerateCRS failed")
+}
+
+func TestGenerateCRSWithValidUntil(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	mockStore := dsMocks.NewMockDataStore(mockCtrl)
+	mockBackend := mocks.NewMockBackend(mockCtrl)
+	service := New(mockBackend, mockStore)
+
+	reqValidUntil, err := time.Parse(time.RFC3339, "2100-01-02T13:04:05Z")
+	assert.NoError(t, err, "parsing RFC3339 timestamp failed")
+
+	mockBackend.EXPECT().IssueCRS(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).DoAndReturn(
+		func(_ context.Context, _ string, validUntil time.Time) (*backend.CRSWithMeta, error) {
+			assert.True(t, validUntil.Equal(reqValidUntil))
+			crsWithMeta := &backend.CRSWithMeta{
+				CRS:  &crs.CRS{},
+				Meta: &storage.InitBundleMeta{},
+			}
+			return crsWithMeta, nil
+		},
+	)
+	request := &v1.CRSGenRequest{
+		Name:       "secured-cluster",
+		ValidUntil: timestamppb.New(reqValidUntil),
+	}
+	_, err = service.GenerateCRS(context.Background(), request)
+	assert.NoError(t, err, "GenerateCRS failed")
+}
+
+func TestGenerateCRSWithValidFor(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	mockStore := dsMocks.NewMockDataStore(mockCtrl)
+	mockBackend := mocks.NewMockBackend(mockCtrl)
+	service := New(mockBackend, mockStore)
+
+	reqValidFor := 10 * time.Minute
+	t0 := time.Now()
+	epsilon := 10 * time.Second
+
+	mockBackend.EXPECT().IssueCRS(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).DoAndReturn(
+		func(_ context.Context, _ string, validUntil time.Time) (*backend.CRSWithMeta, error) {
+			assert.Less(t, (validUntil.Sub(t0) - reqValidFor).Abs(), epsilon, "CRS valid for longer than expected")
+			crsWithMeta := &backend.CRSWithMeta{
+				CRS:  &crs.CRS{},
+				Meta: &storage.InitBundleMeta{},
+			}
+			return crsWithMeta, nil
+		},
+	)
+	request := &v1.CRSGenRequest{
+		Name:     "secured-cluster",
+		ValidFor: durationpb.New(reqValidFor),
+	}
+	_, err := service.GenerateCRS(context.Background(), request)
+	assert.NoError(t, err, "GenerateCRS failed")
+}
+
+func TestGenerateCRSWithValidForAndValidUntil(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	mockStore := dsMocks.NewMockDataStore(mockCtrl)
+	mockBackend := mocks.NewMockBackend(mockCtrl)
+	service := New(mockBackend, mockStore)
+
+	reqValidUntil, err := time.Parse(time.RFC3339, "2100-01-02T13:04:05Z")
+	assert.NoError(t, err, "parsing RFC3339 timestamp failed")
+	reqValidFor := 10 * time.Minute
+
+	mockBackend.EXPECT().IssueCRS(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
+
+	request := &v1.CRSGenRequest{
+		Name:       "secured-cluster",
+		ValidUntil: timestamppb.New(reqValidUntil),
+		ValidFor:   durationpb.New(reqValidFor),
+	}
+	_, err = service.GenerateCRS(context.Background(), request)
+	assert.Error(t, err, "GenerateCRS succeeded, but failure expected")
 }
 
 func TestGetInitBundlesShouldReturnBundlesWithImpactedClusters(t *testing.T) {
