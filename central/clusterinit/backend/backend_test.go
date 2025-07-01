@@ -229,42 +229,23 @@ func (s *clusterInitBackendTestSuite) TestCRSNameMustBeUnique() {
 	crsName := "test1"
 
 	// Issue new CRS.
-	_, err := s.backend.IssueCRS(ctx, crsName, time.Time{}, time.Duration(0))
+	_, err := s.backend.IssueCRS(ctx, crsName, time.Time{})
 	s.Require().NoError(err)
 
 	// Attempt to issue again with same name.
-	_, err = s.backend.IssueCRS(ctx, crsName, time.Time{}, time.Duration(0))
+	_, err = s.backend.IssueCRS(ctx, crsName, time.Time{})
 	s.Require().Error(err)
 	s.Require().ErrorIs(err, store.ErrInitBundleDuplicateName)
 }
 
-func (s *clusterInitBackendTestSuite) TestCRSExpirationValidUntil() {
+func (s *clusterInitBackendTestSuite) TestCRSDefaultExpiration() {
 	ctx := s.ctx
-	crsName := "crs-expiration-valid-until"
+	crsName := "crs-default-expiration"
 
-	validUntil, err := time.Parse(time.RFC3339, "2106-01-02T15:04:05Z")
-	s.Require().NoError(err)
+	expectedNotAfter := time.Now().Add(1 * time.Hour)
 
-	crsWithMeta, err := s.backend.IssueCRS(ctx, crsName, validUntil, time.Duration(0))
-	s.Require().NoError(err)
-
-	certPEM := []byte(crsWithMeta.CRS.Cert)
-	certs, _, err := helpers.ParseOneCertificateFromPEM(certPEM)
-	utils.Must(err)
-	s.Require().Len(certs, 1)
-	cert := certs[0]
-	s.Require().Equal(validUntil, cert.NotAfter)
-}
-
-func (s *clusterInitBackendTestSuite) TestCRSExpirationValidFor() {
-	ctx := s.ctx
-	crsName := "crs-expiration-valid-until"
-
-	validFor, err := time.ParseDuration("2h15m10s")
-	s.Require().NoError(err)
-
-	expectedNotAfter := time.Now().Add(validFor)
-	crsWithMeta, err := s.backend.IssueCRS(ctx, crsName, time.Time{}, validFor)
+	validUntil := time.Time{}.UTC()
+	crsWithMeta, err := s.backend.IssueCRS(ctx, crsName, validUntil)
 	s.Require().NoError(err)
 
 	certPEM := []byte(crsWithMeta.CRS.Cert)
@@ -279,12 +260,30 @@ func (s *clusterInitBackendTestSuite) TestCRSExpirationValidFor() {
 	s.Require().Less(cert.NotAfter.Sub(expectedNotAfter).Abs(), epsilon)
 }
 
+func (s *clusterInitBackendTestSuite) TestCRSExpirationValidUntil() {
+	ctx := s.ctx
+	crsName := "crs-expiration-valid-until"
+
+	validUntil, err := time.Parse(time.RFC3339, "2106-01-02T15:04:05Z")
+	s.Require().NoError(err)
+
+	crsWithMeta, err := s.backend.IssueCRS(ctx, crsName, validUntil)
+	s.Require().NoError(err)
+
+	certPEM := []byte(crsWithMeta.CRS.Cert)
+	certs, _, err := helpers.ParseOneCertificateFromPEM(certPEM)
+	utils.Must(err)
+	s.Require().Len(certs, 1)
+	cert := certs[0]
+	s.Require().Equal(validUntil, cert.NotAfter)
+}
+
 func (s *clusterInitBackendTestSuite) TestCRSLifecycle() {
 	ctx := s.ctx
 	crsName := "test1"
 
 	// Issue new CRS.
-	crsWithMeta, err := s.backend.IssueCRS(ctx, crsName, time.Time{}, time.Duration(0))
+	crsWithMeta, err := s.backend.IssueCRS(ctx, crsName, time.Time{})
 	s.Require().NoError(err)
 	id := crsWithMeta.Meta.Id
 
