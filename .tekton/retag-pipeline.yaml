@@ -179,8 +179,6 @@ spec:
   - name: retag-image
     # runAfter needs to be specified, because there is no implicit dependency on wait-for-image's
     # results, but we still need it to run before.
-    runAfter:
-    - wait-for-image
     params:
     - name: INPUT_IMAGE_REPO
       value: $(params.input-image-repo)
