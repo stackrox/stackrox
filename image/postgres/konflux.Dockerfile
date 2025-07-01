@@ -1,9 +1,5 @@
-<<<<<<< HEAD
-FROM registry.redhat.io/rhel8/postgresql-13:latest AS final
-=======
-ARG PG_VERSION=15
-FROM registry.redhat.io/rhel8/postgresql-${PG_VERSION}:latest@sha256:0576206b44a5cb073b6364f7af104a4a17994f9bb8c7a948da9588d6b4bbf1e8 AS final
->>>>>>> 2f1bc55672 (ROX-26148: Tweak Konflux setup for RPMs and renovation (#15196))
+ARG PG_VERSION=13
+FROM registry.redhat.io/rhel8/postgresql-${PG_VERSION}:latest@sha256:05ebb5e22be17bd434277c4ea35031a4f7c07f7422a07ee15286407f25b072a0 AS final
 
 USER root
 
