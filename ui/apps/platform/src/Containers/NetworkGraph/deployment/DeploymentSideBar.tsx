@@ -18,12 +18,7 @@ import {
 import useFetchDeployment from 'hooks/useFetchDeployment';
 import usePermissions from 'hooks/usePermissions';
 import { QueryValue } from 'hooks/useURLParameter';
-import {
-    getListenPorts,
-    getNodeById,
-    getNumAnomalousExternalFlows,
-    getNumAnomalousInternalFlows,
-} from '../utils/networkGraphUtils';
+import { getListenPorts, getNodeById } from '../utils/networkGraphUtils';
 import { CustomEdgeModel, CustomNodeModel } from '../types/topology.type';
 
 import { DeploymentIcon } from '../common/NetworkGraphIcons';
@@ -33,7 +28,6 @@ import DeploymentBaseline from './DeploymentBaseline';
 import NetworkPolicies from '../common/NetworkPolicies';
 import useSimulation from '../hooks/useSimulation';
 import { EdgeState } from '../components/EdgeStateSelect';
-import useFetchNetworkFlows from '../api/useFetchNetworkFlows';
 import { DEFAULT_NETWORK_GRAPH_PAGE_SIZE } from '../NetworkGraph.constants';
 import {
     usePagination,
@@ -75,11 +69,13 @@ function DeploymentSideBar({
     // component state
     const { setPerPage: setPerPageAnomalous } = usePagination();
     const { setPerPage: setPerPageBaseline } = usePaginationSecondary();
-    const { hasReadAccess } = usePermissions();
     const { selectedTabSidePanel, setSelectedTabSidePanel } = useSidePanelTab();
     const { setSelectedToggleSidePanel } = useSidePanelToggle();
+    const { hasReadAccess } = usePermissions();
     const hasReadAccessForDeploymentExtension = hasReadAccess('DeploymentExtension');
     const hasReadAccessForNetworkPolicy = hasReadAccess('NetworkPolicy');
+    const hasReadAccessForFlows =
+        hasReadAccessForDeploymentExtension && hasReadAccessForNetworkPolicy;
     const { deployment, isLoading: isLoadingDeployment, error } = useFetchDeployment(deploymentId);
 
     const { simulation } = useSimulation();
@@ -88,13 +84,6 @@ function DeploymentSideBar({
     const activeTab: DeploymentTabKey = isValidDeploymentTab(selectedTabSidePanel)
         ? selectedTabSidePanel
         : DEFAULT_DEPLOYMENT_TAB;
-
-    const {
-        isLoading: isLoadingNetworkFlows,
-        error: networkFlowsError,
-        data: { networkFlows },
-        refetchFlows,
-    } = useFetchNetworkFlows({ nodes, edges, deploymentId, edgeState });
 
     useEffect(() => {
         if (isBaselineSimulationOn) {
@@ -110,8 +99,6 @@ function DeploymentSideBar({
 
     // derived values
     const deploymentNode = getNodeById(nodes, deploymentId);
-    const numAnomalousExternalFlows = getNumAnomalousExternalFlows(networkFlows);
-    const numAnomalousInternalFlows = getNumAnomalousInternalFlows(networkFlows);
     const listenPorts = getListenPorts(nodes, deploymentId);
     const deploymentPolicyIds =
         deploymentNode?.data.type === 'DEPLOYMENT' ? deploymentNode?.data?.policyIds : [];
@@ -196,12 +183,14 @@ function DeploymentSideBar({
                                 title={<TabTitleText>Details</TabTitleText>}
                                 disabled={isBaselineSimulationOn}
                             />
-                            <Tab
-                                eventKey={'FLOWS'}
-                                tabContentId={'FLOWS'}
-                                title={<TabTitleText>Flows</TabTitleText>}
-                                disabled={isBaselineSimulationOn}
-                            />
+                            {hasReadAccessForFlows && (
+                                <Tab
+                                    eventKey={'FLOWS'}
+                                    tabContentId={'FLOWS'}
+                                    title={<TabTitleText>Flows</TabTitleText>}
+                                    disabled={isBaselineSimulationOn}
+                                />
+                            )}
                             {hasReadAccessForDeploymentExtension && (
                                 <Tab
                                     eventKey={'BASELINE'}
@@ -228,41 +217,48 @@ function DeploymentSideBar({
                             {deployment && (
                                 <DeploymentDetails
                                     deployment={deployment}
-                                    numAnomalousExternalFlows={numAnomalousExternalFlows}
-                                    numAnomalousInternalFlows={numAnomalousInternalFlows}
-                                    listenPorts={listenPorts}
-                                    networkPolicyState={networkPolicyState}
-                                />
-                            )}
-                        </TabContent>
-                        <TabContent eventKey={'FLOWS'} id={'FLOWS'} hidden={activeTab !== 'FLOWS'}>
-                            {activeTab === 'FLOWS' && (
-                                <DeploymentFlows
-                                    nodes={nodes}
                                     deploymentId={deploymentId}
                                     edgeState={edgeState}
-                                    onNodeSelect={onNodeSelect}
-                                    isLoadingNetworkFlows={isLoadingNetworkFlows}
-                                    networkFlowsError={networkFlowsError}
-                                    networkFlows={networkFlows}
-                                    refetchFlows={refetchFlows}
+                                    edges={edges}
+                                    listenPorts={listenPorts}
+                                    networkPolicyState={networkPolicyState}
+                                    nodes={nodes}
                                 />
                             )}
                         </TabContent>
-                        <TabContent
-                            eventKey={'BASELINE'}
-                            id={'BASELINE'}
-                            hidden={activeTab !== 'BASELINE'}
-                            className="pf-v5-u-h-100"
-                        >
-                            {activeTab === 'BASELINE' && (
-                                <DeploymentBaseline
-                                    deployment={deployment}
-                                    deploymentId={deploymentId}
-                                    onNodeSelect={onNodeSelect}
-                                />
-                            )}
-                        </TabContent>
+                        {hasReadAccessForNetworkPolicy && (
+                            <TabContent
+                                eventKey={'FLOWS'}
+                                id={'FLOWS'}
+                                hidden={activeTab !== 'FLOWS'}
+                            >
+                                {activeTab === 'FLOWS' && (
+                                    <DeploymentFlows
+                                        deploymentId={deploymentId}
+                                        edgeState={edgeState}
+                                        edges={edges}
+                                        nodes={nodes}
+                                        onNodeSelect={onNodeSelect}
+                                    />
+                                )}
+                            </TabContent>
+                        )}
+                        {hasReadAccessForDeploymentExtension && (
+                            <TabContent
+                                eventKey={'BASELINE'}
+                                id={'BASELINE'}
+                                hidden={activeTab !== 'BASELINE'}
+                                className="pf-v5-u-h-100"
+                            >
+                                {activeTab === 'BASELINE' && (
+                                    <DeploymentBaseline
+                                        deployment={deployment}
+                                        deploymentId={deploymentId}
+                                        onNodeSelect={onNodeSelect}
+                                    />
+                                )}
+                            </TabContent>
+                        )}
                         {hasReadAccessForNetworkPolicy && (
                             <TabContent
                                 eventKey={'NETWORK_POLICIES'}
