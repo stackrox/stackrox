@@ -45,21 +45,28 @@ const (
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		user.With(permissions.View(resources.Compliance)): {
+		// Endpoints with cluster information.
+		user.With(permissions.View(resources.Compliance), permissions.View(resources.Cluster)): {
 			v2.ComplianceScanConfigurationService_ListComplianceScanConfigurations_FullMethodName,
 			v2.ComplianceScanConfigurationService_GetComplianceScanConfiguration_FullMethodName,
-			v2.ComplianceScanConfigurationService_ListComplianceScanConfigProfiles_FullMethodName,
 			v2.ComplianceScanConfigurationService_ListComplianceScanConfigClusterProfiles_FullMethodName,
 			v2.ComplianceScanConfigurationService_GetReportHistory_FullMethodName,
 			v2.ComplianceScanConfigurationService_GetMyReportHistory_FullMethodName,
 		},
-		user.With(permissions.Modify(resources.Compliance)): {
+		user.With(permissions.Modify(resources.Compliance), permissions.View(resources.Cluster)): {
 			v2.ComplianceScanConfigurationService_CreateComplianceScanConfiguration_FullMethodName,
+			v2.ComplianceScanConfigurationService_UpdateComplianceScanConfiguration_FullMethodName,
+		},
+
+		// Endpoints without cluster information.
+		user.With(permissions.View(resources.Compliance)): {
+			v2.ComplianceScanConfigurationService_ListComplianceScanConfigProfiles_FullMethodName,
+		},
+		user.With(permissions.Modify(resources.Compliance)): {
 			v2.ComplianceScanConfigurationService_DeleteComplianceScanConfiguration_FullMethodName,
 			v2.ComplianceScanConfigurationService_RunComplianceScanConfiguration_FullMethodName,
-			v2.ComplianceScanConfigurationService_UpdateComplianceScanConfiguration_FullMethodName,
-			v2.ComplianceScanConfigurationService_RunReport_FullMethodName,
 			v2.ComplianceScanConfigurationService_DeleteReport_FullMethodName,
+			v2.ComplianceScanConfigurationService_RunReport_FullMethodName,
 		},
 	})
 
@@ -128,7 +135,6 @@ func (s *serviceImpl) CreateComplianceScanConfiguration(ctx context.Context, req
 	}
 
 	validName := configNameRegexp.MatchString(req.GetScanName())
-
 	if !validName {
 		return nil, errors.Wrapf(errox.InvalidArgs, "Scan configuration name %q is not a valid name", req.GetScanName())
 	}
