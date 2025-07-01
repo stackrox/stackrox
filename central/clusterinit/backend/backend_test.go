@@ -31,7 +31,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/stringutils"
-	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -70,13 +69,13 @@ func (s *clusterInitBackendTestSuite) SetupTest() {
 	s.T().Setenv(mtls.CAFileEnvName, testData+"/ca-cert.pem")
 
 	caKeyFile, err := os.CreateTemp("", "test-ca-key.pem")
-	utils.Must(err)
+	s.Require().NoError(err)
 	content, err := os.ReadFile(testData + "/ca-key.pem")
-	utils.Must(err)
+	s.Require().NoError(err)
 	contentStr := string(content)
 	contentStr = strings.ReplaceAll(contentStr, "TEST PRIVATE KEY", "PRIVATE KEY")
 	err = os.WriteFile(caKeyFile.Name(), []byte(contentStr), 0600)
-	utils.Must(err)
+	s.Require().NoError(err)
 	s.T().Setenv(mtls.CAKeyFileEnvName, caKeyFile.Name())
 }
 
@@ -249,12 +248,12 @@ func (s *clusterInitBackendTestSuite) TestCRSDefaultExpiration() {
 
 	certPEM := []byte(crsWithMeta.CRS.Cert)
 	certs, _, err := helpers.ParseOneCertificateFromPEM(certPEM)
-	utils.Must(err)
+	s.Require().NoError(err)
 	s.Require().Len(certs, 1)
 	cert := certs[0]
 
 	epsilon, err := time.ParseDuration("10s")
-	utils.Must(err)
+	s.Require().NoError(err)
 
 	s.Require().Less(cert.NotAfter.Sub(expectedNotAfter).Abs(), epsilon)
 }
@@ -271,7 +270,7 @@ func (s *clusterInitBackendTestSuite) TestCRSExpirationValidUntil() {
 
 	certPEM := []byte(crsWithMeta.CRS.Cert)
 	certs, _, err := helpers.ParseOneCertificateFromPEM(certPEM)
-	utils.Must(err)
+	s.Require().NoError(err)
 	s.Require().Len(certs, 1)
 	cert := certs[0]
 	s.Require().Equal(validUntil, cert.NotAfter)
