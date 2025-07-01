@@ -254,7 +254,8 @@ func (s *clusterInitBackendTestSuite) TestCRSDefaultExpiration() {
 
 	epsilon := 30 * time.Second
 
-	s.Require().Less(cert.NotAfter.Sub(expectedNotAfter).Abs(), epsilon)
+	s.Assert().True(!expectedNotAfter.After(cert.NotAfter))
+	s.Assert().Less(cert.NotAfter.Sub(expectedNotAfter), epsilon)
 }
 
 func (s *clusterInitBackendTestSuite) TestCRSExpirationValidUntil() {
