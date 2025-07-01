@@ -9,7 +9,6 @@
 module.exports = {
     blockHosts: ['*.*'], // Browser options
     chromeWebSecurity: false, // Browser options
-    defaultBrowser: 'chrome', // Browser options
     defaultCommandTimeout: 8000, // Timeouts options
     numTestsKeptInMemory: 0, // Global options
     requestTimeout: 20000, // Timeouts options
