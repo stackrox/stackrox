@@ -32,11 +32,7 @@ RUN mkdir -p image/rhel/docs/api/v1 && \
 RUN make copy-go-binaries-to-image-dir
 
 
-<<<<<<< HEAD
-FROM registry.access.redhat.com/ubi8/nodejs-20:latest@sha256:fa392685003effa2e9836f83e912fd57df6eeab560ecd53742627c170386b563 AS ui-builder
-=======
 FROM registry.access.redhat.com/ubi9/nodejs-20:latest@sha256:a30f4d8b632eb048c294b1e1fc71c1e574e14ee89cef73101d76d561420f6504 AS ui-builder
->>>>>>> cf0e956a59 (chore(deps): update registry.access.redhat.com/ubi9/python-39:latest docker digest to 2214c67 (#15292))
 
 WORKDIR /go/src/github.com/stackrox/rox/app
 
