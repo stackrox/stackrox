@@ -48,16 +48,10 @@ ENV GOEXPERIMENT=strictfipsruntime
 ENV CI=1
 
 RUN # TODO(ROX-13200): make sure roxctl cli is built without running go mod tidy. \
-<<<<<<< HEAD
-    make main-build-nodeps cli-build && \
-    mkdir -p image/rhel/docs/api/v1 && \
-    ./scripts/mergeswag.sh generated/api/v1 1 >image/rhel/docs/api/v1/swagger.json && \
-=======
     make main-build-nodeps cli-build
 
 RUN mkdir -p image/rhel/docs/api/v1 && \
-    ./scripts/mergeswag.sh 1 generated/api/v1 central/docs/api_custom_routes >image/rhel/docs/api/v1/swagger.json && \
->>>>>>> 20cb274c25 (build: Remove rocksdb dependencies from Konflux builder stage (#14728))
+    ./scripts/mergeswag.sh generated/api/v1 1 >image/rhel/docs/api/v1/swagger.json && \
     mkdir -p image/rhel/docs/api/v2 && \
     ./scripts/mergeswag.sh generated/api/v2 2 >image/rhel/docs/api/v2/swagger.json
 
