@@ -2,9 +2,9 @@ name: Job Preamble
 description: Common steps for most jobs
 inputs:
   free-disk-space:
-    description: 'Free disk space desired in GB (2025-06 ubuntu-24.04 runner starts with 20GB free and we can delete and reach 40GB)'
+    description: 'Free disk space desired in GB (2025-06 ubuntu-24.04 runner starts with 20GB free and we can delete and reach 40GB). Set to "MAX" if the most amount of space is desired instead.'
     required: false
-    default: 22
+    default: '22'
   gcp-account:
     description: 'Account to be used to upload tests data'
     required: true
@@ -68,7 +68,8 @@ runs:
         )
         for d in "${cleanup[@]}"; do
           free=$(df -BGB --output=avail / | tail -1)
-          if [[ ${free%GB} -ge "${{ inputs.free-disk-space }}" ]]; then
+          if [[ "$(printf ${{ inputs.free-disk-space }} | tr '[:lower:]' '[:upper:]')" != "MAX" \ 
+                ${free%GB} -ge "${{ inputs.free-disk-space }}" ]]; then
             echo "Reached required free disk space ${{ inputs.free-disk-space }} [${free} free]."
             exit 0
           fi
@@ -80,11 +81,13 @@ runs:
           fi
         done
         df --si /
-        free=$(df -BGB --output=avail / | tail -1)
-        if [[ ${free%GB} -lt "${{ inputs.free-disk-space }}" ]]; then
-          printf "For container workflows, please mount the host /usr and /opt to allow deleting unused tools:\nvolumes:\n\t- /usr:/mnt/usr\n\t- /opt:/mnt/opt" \
-            | tee -a "$GITHUB_STEP_SUMMARY"
-          exit 1
+        if [[ "$(printf ${{ inputs.free-disk-space }} | tr '[:lower:]' '[:upper:]')" != "MAX" ]]; then
+          free=$(df -BGB --output=avail / | tail -1)
+          if [[ ${free%GB} -lt "${{ inputs.free-disk-space }}" ]]; then
+            printf "For container workflows, please mount the host /usr and /opt to allow deleting unused tools:\nvolumes:\n\t- /usr:/mnt/usr\n\t- /opt:/mnt/opt" \
+              | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
         fi
 
     - name: Free more disk space, docker system prune
@@ -96,19 +99,23 @@ runs:
         printf 'Docker prune: '
         docker system prune --force --all
         df --si /
-        free=$(df -BGB --output=avail / | tail -1)
-        [[ ${free%GB} -ge "${{ inputs.free-disk-space }}" ]]
+        if [[ "$(printf ${{ inputs.free-disk-space }} | tr '[:lower:]' '[:upper:]')" != "MAX" ]]; then
+          free=$(df -BGB --output=avail / | tail -1)
+          [[ ${free%GB} -ge "${{ inputs.free-disk-space }}" ]]
+        fi
 
     - name: Verify free disk space
       if: steps.delete-docker-cache.outcome == 'failure'
       continue-on-error: true
       shell: bash
       run: |
-        free=$(df -BGB --output=avail / | tail -1)
-        echo "Failed to free requested disk space, ${{ inputs.free-disk-space }} [${free} free]." \
-          | tee -a "$GITHUB_STEP_SUMMARY"
-        df -BGB /
-        [[ ${free%GB} -ge "${{ inputs.free-disk-space }}" ]]
+        if [[ "$(printf ${{ inputs.free-disk-space }} | tr '[:lower:]' '[:upper:]')" != "MAX" ]]; then
+          free=$(df -BGB --output=avail / | tail -1)
+          echo "Failed to free requested disk space, ${{ inputs.free-disk-space }} [${free} free]." \
+            | tee -a "$GITHUB_STEP_SUMMARY"
+          df -BGB /
+          [[ ${free%GB} -ge "${{ inputs.free-disk-space }}" ]]
+        fi
 
     - name: Ignore dubious repository ownership
       run: |
