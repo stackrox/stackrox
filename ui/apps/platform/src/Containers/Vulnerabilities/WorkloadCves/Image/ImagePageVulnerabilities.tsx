@@ -1,6 +1,7 @@
 import React from 'react';
 import {
     Divider,
+    DropdownItem,
     Flex,
     PageSection,
     Pagination,
@@ -10,7 +11,6 @@ import {
     Text,
     Title,
 } from '@patternfly/react-core';
-import { DropdownItem } from '@patternfly/react-core/deprecated';
 import { gql, useQuery } from '@apollo/client';
 
 import useURLSearch from 'hooks/useURLSearch';
@@ -340,7 +340,6 @@ function ImagePageVulnerabilities({
                                         <BulkActionsDropdown isDisabled={selectedCves.size === 0}>
                                             <DropdownItem
                                                 key="bulk-defer-cve"
-                                                component="button"
                                                 onClick={() =>
                                                     showModal({
                                                         type: 'DEFERRAL',
@@ -352,7 +351,6 @@ function ImagePageVulnerabilities({
                                             </DropdownItem>
                                             <DropdownItem
                                                 key="bulk-mark-false-positive"
-                                                component="button"
                                                 onClick={() =>
                                                     showModal({
                                                         type: 'FALSE_POSITIVE',
