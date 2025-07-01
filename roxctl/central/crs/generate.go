@@ -136,6 +136,7 @@ func generateCommand(cliEnvironment environment.Environment) *cobra.Command {
 	c.PersistentFlags().StringVarP(&validFor, "valid-for", "", "", "Specify validity duration for the new CRS (e.g. \"10m\", \"1d\").")
 	c.PersistentFlags().StringVarP(&validUntil, "valid-until", "", "", "Specify validity as an RFC3339 timestamp for the new CRS.")
 	c.PersistentFlags().StringVarP(&outputFile, "output", "o", "", "File to be used for storing the newly generated CRS (- for stdout).")
+	c.MarkFlagsMutuallyExclusive("valid-for", "valid-until")
 
 	return c
 }
