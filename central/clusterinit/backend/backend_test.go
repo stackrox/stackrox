@@ -44,7 +44,6 @@ const (
 )
 
 func TestClusterInitBackend(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(clusterInitBackendTestSuite))
 }
 
@@ -68,7 +67,7 @@ func (s *clusterInitBackendTestSuite) SetupTest() {
 	s.ctx = sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
 	s.certProvider = certProvider
 
-	utils.Must(os.Setenv(mtls.CAFileEnvName, testData+"/ca-cert.pem"))
+	s.T().Setenv(mtls.CAFileEnvName, testData+"/ca-cert.pem")
 
 	caKeyFile, err := os.CreateTemp("", "test-ca-key.pem")
 	utils.Must(err)
@@ -78,7 +77,7 @@ func (s *clusterInitBackendTestSuite) SetupTest() {
 	contentStr = strings.ReplaceAll(contentStr, "TEST PRIVATE KEY", "PRIVATE KEY")
 	err = os.WriteFile(caKeyFile.Name(), []byte(contentStr), 0600)
 	utils.Must(err)
-	utils.Must(os.Setenv(mtls.CAKeyFileEnvName, caKeyFile.Name()))
+	s.T().Setenv(mtls.CAKeyFileEnvName, caKeyFile.Name())
 }
 
 func (s *clusterInitBackendTestSuite) TestInitBundleLifecycle() {
