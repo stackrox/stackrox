@@ -64,5 +64,11 @@
         "job": "byodb",
         "logfile": "scanner-v4-matcher-previous",
         "logline": "panic: migrate: failed to connect to"
+    },
+    {
+        "comment": "Scanner V4 slow to start matcher",
+        "job": "byodb",
+        "logfile": "scanner-previous",
+        "logline": "panic: migrate: failed to connect to"
     }
 ]
