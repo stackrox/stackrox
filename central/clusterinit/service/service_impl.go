@@ -139,7 +139,7 @@ func (s *serviceImpl) GenerateCRS(ctx context.Context, request *v1.CRSGenRequest
 	validUntil := fromProtoTimestamp(request.GetValidUntil())
 	validFor := request.GetValidFor().AsDuration()
 	if !validUntil.IsZero() && validFor != 0 {
-		return nil, status.Error(codes.InvalidArgument, "cannot use validUntil and validFor at the same time")
+		return nil, errox.InvalidArgument.CausedBy("cannot use validUntil and validFor at the same time")
 	}
 
 	if validFor != 0 {
