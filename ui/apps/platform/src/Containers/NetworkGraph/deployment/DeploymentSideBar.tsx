@@ -16,7 +16,7 @@ import {
 } from '@patternfly/react-core';
 
 import useFetchDeployment from 'hooks/useFetchDeployment';
-import usePermissions from 'hooks/usePermissions';
+import usePermissions, { HasReadAccess } from 'hooks/usePermissions';
 import { QueryValue } from 'hooks/useURLParameter';
 import { getListenPorts, getNodeById } from '../utils/networkGraphUtils';
 import { CustomEdgeModel, CustomNodeModel } from '../types/topology.type';
@@ -45,6 +45,18 @@ type DeploymentTabKey = (typeof DEPLOYMENT_TABS)[number];
 
 const DEFAULT_DEPLOYMENT_TAB: DeploymentTabKey = 'DETAILS';
 
+function hasReadAccessForDeploymentTab(hasReadAccess: HasReadAccess, tabKey: DeploymentTabKey) {
+    switch (tabKey) {
+        case 'BASELINE':
+        case 'FLOWS':
+            return hasReadAccess('DeploymentExtension');
+        case 'NETWORK_POLICIES':
+            return hasReadAccess('NetworkPolicy');
+        default:
+            return true;
+    }
+}
+
 function isValidDeploymentTab(value: QueryValue): value is DeploymentTabKey {
     return typeof value === 'string' && DEPLOYMENT_TABS.some((tab) => tab === value);
 }
@@ -72,18 +84,16 @@ function DeploymentSideBar({
     const { selectedTabSidePanel, setSelectedTabSidePanel } = useSidePanelTab();
     const { setSelectedToggleSidePanel } = useSidePanelToggle();
     const { hasReadAccess } = usePermissions();
-    const hasReadAccessForDeploymentExtension = hasReadAccess('DeploymentExtension');
-    const hasReadAccessForNetworkPolicy = hasReadAccess('NetworkPolicy');
-    const hasReadAccessForFlows =
-        hasReadAccessForDeploymentExtension && hasReadAccessForNetworkPolicy;
     const { deployment, isLoading: isLoadingDeployment, error } = useFetchDeployment(deploymentId);
 
     const { simulation } = useSimulation();
     const isBaselineSimulationOn = simulation.isOn && simulation.type === 'baseline';
 
-    const activeTab: DeploymentTabKey = isValidDeploymentTab(selectedTabSidePanel)
-        ? selectedTabSidePanel
-        : DEFAULT_DEPLOYMENT_TAB;
+    const activeTab: DeploymentTabKey =
+        isValidDeploymentTab(selectedTabSidePanel) &&
+        hasReadAccessForDeploymentTab(hasReadAccess, selectedTabSidePanel)
+            ? selectedTabSidePanel
+            : DEFAULT_DEPLOYMENT_TAB;
 
     useEffect(() => {
         if (isBaselineSimulationOn) {
@@ -183,7 +193,7 @@ function DeploymentSideBar({
                                 title={<TabTitleText>Details</TabTitleText>}
                                 disabled={isBaselineSimulationOn}
                             />
-                            {hasReadAccessForFlows && (
+                            {hasReadAccessForDeploymentTab(hasReadAccess, 'FLOWS') && (
                                 <Tab
                                     eventKey={'FLOWS'}
                                     tabContentId={'FLOWS'}
@@ -191,14 +201,14 @@ function DeploymentSideBar({
                                     disabled={isBaselineSimulationOn}
                                 />
                             )}
-                            {hasReadAccessForDeploymentExtension && (
+                            {hasReadAccessForDeploymentTab(hasReadAccess, 'BASELINE') && (
                                 <Tab
                                     eventKey={'BASELINE'}
                                     tabContentId={'BASELINE'}
                                     title={<TabTitleText>Baseline</TabTitleText>}
                                 />
                             )}
-                            {hasReadAccessForNetworkPolicy && (
+                            {hasReadAccessForDeploymentTab(hasReadAccess, 'NETWORK_POLICIES') && (
                                 <Tab
                                     eventKey={'NETWORK_POLICIES'}
                                     tabContentId="NETWORK_POLICIES"
@@ -226,7 +236,7 @@ function DeploymentSideBar({
                                 />
                             )}
                         </TabContent>
-                        {hasReadAccessForNetworkPolicy && (
+                        {hasReadAccessForDeploymentTab(hasReadAccess, 'FLOWS') && (
                             <TabContent
                                 eventKey={'FLOWS'}
                                 id={'FLOWS'}
@@ -243,7 +253,7 @@ function DeploymentSideBar({
                                 )}
                             </TabContent>
                         )}
-                        {hasReadAccessForDeploymentExtension && (
+                        {hasReadAccessForDeploymentTab(hasReadAccess, 'BASELINE') && (
                             <TabContent
                                 eventKey={'BASELINE'}
                                 id={'BASELINE'}
@@ -259,7 +269,7 @@ function DeploymentSideBar({
                                 )}
                             </TabContent>
                         )}
-                        {hasReadAccessForNetworkPolicy && (
+                        {hasReadAccessForDeploymentTab(hasReadAccess, 'NETWORK_POLICIES') && (
                             <TabContent
                                 eventKey={'NETWORK_POLICIES'}
                                 id="NETWORK_POLICIES"
