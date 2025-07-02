@@ -8,6 +8,8 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/metrics/custom/tracker"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -23,6 +25,10 @@ func New(registry metrics.CustomRegistry, ds deploymentDS.DataStore) *tracker.Tr
 }
 
 func trackVulnerabilityMetrics(ctx context.Context, _ tracker.MetricsConfiguration, ds deploymentDS.DataStore) iter.Seq[*finding] {
+	ctx = sac.WithGlobalAccessScopeChecker(ctx, sac.AllowFixedScopes(
+		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+		sac.ResourceScopeKeys(resources.Deployment, resources.Image)))
+
 	return func(yield func(*finding) bool) {
 		finding := &finding{}
 		_ = ds.WalkByQuery(ctx, search.EmptyQuery(), func(deployment *storage.Deployment) error {
