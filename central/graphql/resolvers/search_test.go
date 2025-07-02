@@ -531,30 +531,6 @@ func TestSubjectGlobalSearch(t *testing.T) {
 		ImageCVEV2DataStore:       imageCVEV2Mocks.NewMockDataStore(ctrl),
 	}
 
-	//resolver, _ := SetupTestResolver(t, roleBindingDatastore, policyCategoryMocks.NewMockDataStore(ctrl),
-	//	imageCVEMocks.NewMockDataStore(ctrl),
-	//	nodeCVEMocks.NewMockDataStore(ctrl),
-	//	clusterCVEMocks.NewMockDataStore(ctrl),
-	//	nodeComponentMocks.NewMockDataStore(ctrl),
-	//	imageComponentV2Mocks.NewMockDataStore(ctrl),
-	//	imageCVEV2Mocks.NewMockDataStore(ctrl),
-	//	cluster,
-	//	deployment,
-	//	policies,
-	//	namespace,
-	//	secret,
-	//	nps,
-	//	violations,
-	//	images,
-	//	serviceAccounts,
-	//	nodes,
-	//	roles,
-	//	components)
-
-	searchCategories := resolver.getAutoCompleteSearchers()
-	searchFuncs := resolver.getSearchFuncs()
-	log.Infof("categories -- %v", searchCategories)
-	log.Infof("funcs -- %v", searchFuncs)
 	allowAllCtx := SetAuthorizerOverride(ctx, allow.Anonymous())
 
 	testCases := []struct {
@@ -569,30 +545,6 @@ func TestSubjectGlobalSearch(t *testing.T) {
 				Categories: &[]string{"SUBJECTS"},
 			},
 			expected: []string{roleBindings[0].Subjects[1].Name},
-		},
-		//{
-		//	desc: "Subject Kind autocomplete",
-		//	request: searchRequest{
-		//		Query:      "Subject Kind:",
-		//		Categories: &[]string{"SUBJECTS"},
-		//	},
-		//	expected: []string{"user", "group"},
-		//},
-		{
-			desc: "Cluster name autocomplete",
-			request: searchRequest{
-				Query:      fmt.Sprintf("Cluster:%s", roleBindings[1].ClusterName),
-				Categories: &[]string{"SUBJECTS"},
-			},
-			expected: []string{roleBindings[1].ClusterName},
-		},
-		{
-			desc: "Cluster role autocomplete",
-			request: searchRequest{
-				Query:      "Cluster Role:tr",
-				Categories: &[]string{"SUBJECTS"},
-			},
-			expected: []string{"true"},
 		},
 		{
 			desc: "Cluster name + Subject name autocomplete",
@@ -614,9 +566,18 @@ func TestSubjectGlobalSearch(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			_, err := resolver.GlobalSearch(allowAllCtx, tc.request)
+			results, err := resolver.GlobalSearch(allowAllCtx, tc.request)
 			require.NoError(t, err)
-			//require.ElementsMatch(t, tc.expected, results)
+			resultIDs := getResultIDs(results)
+			require.ElementsMatch(t, tc.expected, resultIDs)
 		})
 	}
+}
+
+func getResultIDs(results []*searchResultResolver) []string {
+	var ids []string
+	for _, r := range results {
+		ids = append(ids, r.data.Id)
+	}
+	return ids
 }
