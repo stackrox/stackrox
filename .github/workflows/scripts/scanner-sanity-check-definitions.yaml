@@ -3,6 +3,10 @@ name: Scanner sanity check vulnerabilities definitions
 on:
   schedule:
   - cron: "30 */4 * * *"
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - 'yli3/checkVuln'
 
 jobs:
   parse-versions:
@@ -24,7 +28,7 @@ jobs:
         ./.github/workflows/scripts/scanner-get-released-tags.sh | tee -a "$GITHUB_OUTPUT"
         echo "$EOF" >> "$GITHUB_OUTPUT"
 
-  build-and-run:
+  sanity-check:
     # if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     needs:
     - parse-versions
@@ -44,7 +48,7 @@ jobs:
     env:
       SCANNER_BUNDLE_VERSION: ${{ matrix.version }}
     steps:
-    - name: Build updater
+    - name: Check bundle
       run: |
         echo "Checking vulnerabilities for version ${{ env.SCANNER_BUNDLE_VERSION }}..."
-        curl
+        curl --head --fail --silent --show-error "https://storage.googleapis.com/definitions.stackrox.io/v4/vulnerability-bundles/${SCANNER_BUNDLE_VERSION}/vulnerabilities.zip"
