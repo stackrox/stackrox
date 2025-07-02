@@ -39,7 +39,7 @@ patterns=$(jq -c '.[]' "$DIR/restart-ok-patterns.json")
             if [[ "${logfile}" =~ ${logfile_pattern} ]]
             then
                 echo "${logfile} matches ${logfile_pattern}"
-            elif
+            else
                 echo "${logfile} does not match ${logfile_pattern}"
             fi
             if [[ "${job}" =~ ${job_pattern} ]] &&
