@@ -927,6 +927,13 @@ func (suite *ManagerTestSuite) TestGetExternalNetworkPeers() {
 		testutils.ExtFlow("entity3", fixtureconsts.Deployment1),
 	}
 
+	mockTree := tree.NewDefaultNetworkTreeWrapper()
+	for _, entity := range entities {
+		mockTree.Insert(entity.GetInfo())
+	}
+
+	suite.treeManager.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), fixtureconsts.Cluster1).Return(mockTree).AnyTimes()
+	suite.treeManager.EXPECT().GetDefaultNetworkTree(gomock.Any()).Return(nil).AnyTimes()
 	suite.networkEntities.EXPECT().GetEntityByQuery(gomock.Any(), gomock.Any()).Return(entities, nil)
 	suite.clusterFlows.EXPECT().GetFlowStore(gomock.Any(), fixtureconsts.Cluster1).Return(suite.flowStore, nil).AnyTimes()
 	suite.flowStore.EXPECT().GetMatchingFlows(gomock.Any(), gomock.Any(), gomock.Any()).Return(flows, nil, nil).AnyTimes()
