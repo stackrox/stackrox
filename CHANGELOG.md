@@ -13,6 +13,9 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 ### Added Features
 
+- ROX-28326: Custom Prometheus metrics exposed on the `/metrics` path of the central API endpoint. Configured via the `/v1/config` service.
+  Disabled by default.
+
 ### Removed Features
 
 ### Deprecated Features
@@ -20,8 +23,6 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 ### Technical Changes
 
 ## [4.8.0]
-
-
 
 **HELM USERS**: Please see ROX-27622 under "technical changes" to avoid upgrade failures!
 
