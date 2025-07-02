@@ -55,20 +55,14 @@
     },
     {
         "comment": "Scanner V4 slow to start",
-        "job": "byodb",
-        "logfile": "scanner-v4-indexer-previous",
+        "job": "gke-external-pg-*-qa-e2e-tests",
+        "logfile": "indexer-previous",
         "logline": "panic: migrate: failed to connect to"
     },
     {
         "comment": "Scanner V4 slow to start matcher",
-        "job": "byodb",
-        "logfile": "scanner-v4-matcher-previous",
-        "logline": "panic: migrate: failed to connect to"
-    },
-    {
-        "comment": "Scanner V4 slow to start matcher",
-        "job": "byodb",
-        "logfile": "scanner-previous",
+        "job": "gke-external-pg-*-qa-e2e-tests",
+        "logfile": "matcher-previous",
         "logline": "panic: migrate: failed to connect to"
     }
 ]
