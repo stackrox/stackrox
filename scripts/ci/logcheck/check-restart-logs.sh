@@ -27,6 +27,7 @@ patterns=$(jq -c '.[]' "$DIR/restart-ok-patterns.json")
     IFS='
 '
     all_ok=true
+    echo "Job: ${job}"
     for logfile in "$@"; do
         echo "Checking for a restart exception in: ${logfile}"
         this_log_is_ok=false
@@ -35,6 +36,12 @@ patterns=$(jq -c '.[]' "$DIR/restart-ok-patterns.json")
             job_pattern=$(echo "$pattern" | jq -r '.job')
             logfile_pattern=$(echo "$pattern" | jq -r '.logfile')
             logline_pattern=$(echo "$pattern" | jq -r '.logline')
+            if [[ "${logfile}" =~ ${logfile_pattern} ]]
+            then
+                echo "${logfile} matches ${logfile_pattern}"
+            elif
+                echo "${logfile} does not match ${logfile_pattern}"
+            fi
             if [[ "${job}" =~ ${job_pattern} ]] &&
                [[ "${logfile}" =~ ${logfile_pattern} ]] &&
                egrep -q "${logline_pattern}" "${logfile}"
