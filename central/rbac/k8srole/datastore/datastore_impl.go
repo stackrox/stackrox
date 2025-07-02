@@ -3,6 +3,7 @@ package datastore
 import (
 	"context"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/rbac/k8srole/internal/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -42,7 +43,7 @@ func (d *datastoreImpl) SearchRoles(ctx context.Context, q *v1.Query) ([]*v1.Sea
 	}
 	results = searchPkg.RemoveMissingResults(results, missingIndices)
 
-	return convertMany(roles, results), nil
+	return convertMany(roles, results)
 }
 
 func (d *datastoreImpl) SearchRawRoles(ctx context.Context, request *v1.Query) ([]*storage.K8SRole, error) {
@@ -83,12 +84,16 @@ func (d *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 	return d.storage.Count(ctx, q)
 }
 
-func convertMany(roles []*storage.K8SRole, results []searchPkg.Result) []*v1.SearchResult {
+func convertMany(roles []*storage.K8SRole, results []searchPkg.Result) ([]*v1.SearchResult, error) {
+	if len(roles) != len(results) {
+		return nil, errors.New("mismatch between search results and retrieved roles")
+	}
+
 	outputResults := make([]*v1.SearchResult, len(roles))
 	for index, role := range roles {
 		outputResults[index] = convertOne(role, &results[index])
 	}
-	return outputResults
+	return outputResults, nil
 }
 
 func convertOne(role *storage.K8SRole, result *searchPkg.Result) *v1.SearchResult {
