@@ -82,9 +82,6 @@ run_byodb_test() {
 
     touch "${STATE_DEPLOYED}"
 
-    # Get the API_TOKEN for the upgrades
-    export API_TOKEN="$(roxcurl /v1/apitokens/generate -d '{"name": "helm-upgrade-test", "role": "Admin"}' | jq -r '.token')"
-
     cd "$TEST_ROOT"
 
     info "Fetching a sensor bundle for cluster 'remote'"
@@ -116,9 +113,9 @@ run_byodb_test() {
     remove_qa_test_results
 
     info "Running smoke tests"
-    CLUSTER="$CLUSTER_TYPE_FOR_TEST" make -C qa-tests-backend smoke-test || touch FAIL
-    store_qa_test_results "byodb-smoke-tests"
-    [[ ! -f FAIL ]] || die "Smoke tests failed"
+    CLUSTER="$CLUSTER_TYPE_FOR_TEST" make -C qa-tests-backend test || touch FAIL
+    store_qa_test_results "byodb-tests"
+    [[ ! -f FAIL ]] || die "QA tests failed"
 
     collect_and_check_stackrox_logs "$log_output_dir" "byodb_smoke"
 }
@@ -130,8 +127,6 @@ cleanup_byodb_test() {
     remove_existing_stackrox_resources
 
     kubectl delete namespace database
-#    kubectl delete statefulset postgres -n database
-#    kubectl delete pvc pgdata-postgres-0 -n database
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then

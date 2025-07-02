@@ -27,63 +27,6 @@ wait_for_central_reconciliation() {
     [[ "$success" == 1 ]]
 }
 
-wait_for_scanner_to_be_ready() {
-    echo "Waiting for scanner to be ready"
-    start_time="$(date '+%s')"
-    while true; do
-      scanner_json="$(kubectl -n stackrox get deploy/scanner -o json)"
-      replicas="$(jq '.status.replicas' <<<"${scanner_json}")"
-      readyReplicas="$(jq '.status.readyReplicas' <<<"${scanner_json}")"
-      echo "scanner replicas: $replicas"
-      echo "scanner readyReplicas: $readyReplicas"
-      if [[  "$replicas" == "$readyReplicas" ]]; then
-        break
-      fi
-      if (( $(date '+%s') - start_time > 1200 )); then
-        kubectl -n stackrox get pod -o wide
-        kubectl -n stackrox get deploy -o wide
-        echo >&2 "Timed out after 20m"
-        exit 1
-      fi
-      sleep 5
-    done
-    echo "Scanner is ready"
-}
-
-validate_upgrade() {
-    if [[ "$#" -ne 3 ]]; then
-        die "missing args. usage: validate_upgrade <stage name> <stage description> <upgrade_cluster_id>"
-    fi
-
-    local stage_name="$1"
-    local stage_description="$2"
-    local upgrade_cluster_id="$3"
-    local policies_dir="../pkg/defaults/policies/files"
-
-    if [[ -n "${API_TOKEN:-}" ]]; then
-        info "Verifying API token generated can access the central"
-        echo "${API_TOKEN}" | "${TEST_ROOT}/bin/${TEST_HOST_PLATFORM}/roxctl" --insecure-skip-tls-verify --insecure -e "${API_ENDPOINT}" --token-file /dev/stdin central whoami > /dev/null
-    fi
-
-    rm -f FAIL
-    remove_qa_test_results
-
-    info "Validating the upgrade with upgrade tests: $stage_description"
-
-    CLUSTER="$CLUSTER_TYPE_FOR_TEST" \
-        UPGRADE_CLUSTER_ID="$upgrade_cluster_id" \
-        POLICIES_JSON_RELATIVE_PATH="$policies_dir" \
-        make -C qa-tests-backend upgrade-test || touch FAIL
-    store_qa_test_results "validate-upgrade-tests-${stage_name}"
-    [[ ! -f FAIL ]] || die "Upgrade tests failed"
-}
-
-function roxcurl() {
-  local url="$1"
-  shift
-  curl --config <(curl_cfg user "admin:${ROX_ADMIN_PASSWORD}") -k "https://${API_ENDPOINT}${url}" "$@"
-}
-
 deploy_external_postgres() {
     pwd
     EXTERNAL_DB_PASSWORD="$(tr -dc _A-Z-a-z-0-9 < /dev/urandom | head -c12 || true)"
