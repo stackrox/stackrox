@@ -8,6 +8,9 @@ import {
     Alert,
     Bullseye,
     Button,
+    Dropdown,
+    DropdownItem,
+    DropdownList,
     ExpandableSection,
     Flex,
     PageSection,
@@ -15,13 +18,6 @@ import {
     Spinner,
     Title,
 } from '@patternfly/react-core';
-import {
-    Dropdown,
-    DropdownItem,
-    DropdownPosition,
-    DropdownToggle,
-} from '@patternfly/react-core/deprecated';
-import { CaretDownIcon } from '@patternfly/react-icons';
 
 import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import NotFoundMessage from 'Components/NotFoundMessage';
@@ -46,6 +42,7 @@ import AuthProvidersList from './AuthProvidersList';
 import AccessControlBreadcrumbs from '../AccessControlBreadcrumbs';
 import AccessControlHeading from '../AccessControlHeading';
 import AccessControlHeaderActionBar from '../AccessControlHeaderActionBar';
+import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 
 const entityType = 'AUTH_PROVIDER';
 
@@ -90,7 +87,6 @@ function AuthProviders(): ReactElement {
     const { analyticsTrack } = useAnalytics();
     const { version } = useMetadata();
 
-    const [isCreateMenuOpen, setIsCreateMenuOpen] = useState(false);
     const [isInfoExpanded, setIsInfoExpanded] = useState(false);
     const {
         authProviders,
@@ -108,10 +104,6 @@ function AuthProviders(): ReactElement {
         dispatch(groupActions.fetchGroups.request());
     }, [dispatch]);
 
-    function onToggleCreateMenu(isOpen) {
-        setIsCreateMenuOpen(isOpen);
-    }
-
     function onClickInviteUsers() {
         // track request to invite
         analyticsTrack(INVITE_USERS_MODAL_OPENED);
@@ -120,8 +112,6 @@ function AuthProviders(): ReactElement {
     }
 
     function onClickCreate(event) {
-        setIsCreateMenuOpen(false);
-
         navigate(
             getEntityPath(entityType, undefined, {
                 ...queryObject,
@@ -162,7 +152,7 @@ function AuthProviders(): ReactElement {
     }
 
     const dropdownItems = availableProviderTypes.map(({ value, label }) => (
-        <DropdownItem key={value} value={value} component="button">
+        <DropdownItem key={value} value={value}>
             {label}
         </DropdownItem>
     ));
@@ -189,24 +179,17 @@ function AuthProviders(): ReactElement {
                         }
                         actionComponent={
                             hasWriteAccessForPage && (
-                                <Dropdown
-                                    className="auth-provider-dropdown pf-v5-u-ml-md"
+                                <MenuDropdown
+                                    toggleClassName="auth-provider-dropdown pf-v5-u-ml-md"
+                                    toggleText="Create auth provider"
+                                    toggleVariant="primary"
                                     onSelect={onClickCreate}
-                                    position={DropdownPosition.right}
-                                    toggle={
-                                        <DropdownToggle
-                                            onToggle={(_event, isOpen) =>
-                                                onToggleCreateMenu(isOpen)
-                                            }
-                                            toggleIndicator={CaretDownIcon}
-                                            toggleVariant="primary"
-                                        >
-                                            Create auth provider
-                                        </DropdownToggle>
-                                    }
-                                    isOpen={isCreateMenuOpen}
-                                    dropdownItems={dropdownItems}
-                                />
+                                    popperProps={{
+                                        position: 'end',
+                                    }}
+                                >
+                                    <DropdownList>{dropdownItems}</DropdownList>
+                                </MenuDropdown>
                             )
                         }
                     />
