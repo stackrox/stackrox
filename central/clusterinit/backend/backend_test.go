@@ -68,7 +68,7 @@ func (s *clusterInitBackendTestSuite) SetupTest() {
 
 	s.T().Setenv(mtls.CAFileEnvName, testData+"/ca-cert.pem")
 
-	caKeyFile, err := os.CreateTemp("", "test-ca-key.pem")
+	caKeyFile, err := os.CreateTemp(s.T().TempDir(), "test-ca-key.pem")
 	s.Require().NoError(err)
 	content, err := os.ReadFile(testData + "/ca-key.pem")
 	s.Require().NoError(err)
