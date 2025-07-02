@@ -87,12 +87,6 @@ run_byodb_test() {
 
     cd "$TEST_ROOT"
 
-    # Trying to skip some scanner v4 restarts because we don't care for this test
-    cp scripts/ci/logcheck/allowlist-patterns /tmp/allowlist-patterns
-    echo "panic: migrate: failed to connect to" >> /tmp/allowlist-patterns
-    # Using ci_export so the post tests have this as well
-    ci_export ALLOWLIST_FILE "/tmp/allowlist-patterns"
-
     info "Fetching a sensor bundle for cluster 'remote'"
     "$TEST_ROOT/bin/$TEST_HOST_PLATFORM/roxctl" version
     rm -rf sensor-remote

@@ -12,6 +12,7 @@ from post_tests import PostClusterTest, FinalPost
 
 # set test parameters
 os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
+os.environ["POSTGRES_VERSION"] = "17"
 
 os.environ["ROX_ACTIVE_VULN_MGMT"] = "true"
 os.environ["ROX_RISK_REPROCESSING_INTERVAL"] = "15s"
