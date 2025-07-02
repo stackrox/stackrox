@@ -327,6 +327,7 @@ class CustomSetTest(BaseTest):
             ["qa-tests-backend/scripts/run-custom-pz.sh"], CustomSetTest.TEST_TIMEOUT
         )
 
+
 class BYODBTest(BaseTest):
     TEST_TIMEOUT = 60 * 60 * 2
     TEST_OUTPUT_DIR = "/tmp/byodb-test-logs"
