@@ -31,7 +31,7 @@ class GKECluster:
     # create a cluster.
     PROVISION_TIMEOUT = 140 * 60
     WAIT_TIMEOUT = 20 * 60
-    TEARDOWN_TIMEOUT = 10 * 60
+    TEARDOWN_TIMEOUT = 5 * 60
     # separate script names used for testability - test_clusters.py
     PROVISION_PATH = "scripts/ci/gke.sh"
     WAIT_PATH = "scripts/ci/gke.sh"
