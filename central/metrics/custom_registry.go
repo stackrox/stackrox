@@ -8,6 +8,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/travelaudience/go-promhttp"
 )
 
 /*
@@ -35,11 +36,25 @@ type customRegistry struct {
 	gauges sync.Map // map[metricName string]*prometheus.GaugeVec
 }
 
-// MakeCustomRegistry is a CustomRegistry factory.
-func MakeCustomRegistry() CustomRegistry {
-	return &customRegistry{
-		Registry: prometheus.NewRegistry(),
+var (
+	userRegistries map[string]*customRegistry = make(map[string]*customRegistry)
+	registriedMux  sync.Mutex
+)
+
+// GetCustomRegistry is a CustomRegistry factory that returns the existing or
+// a new registry for the user.
+func GetCustomRegistry(userID string) CustomRegistry {
+	registriedMux.Lock()
+	defer registriedMux.Unlock()
+	registry, ok := userRegistries[userID]
+	if !ok {
+		registry = &customRegistry{
+			Registry: prometheus.NewRegistry(),
+		}
+		registry.Handler = promhttp.HandlerFor(registry, promhttp.HandlerOpts{})
+		userRegistries[userID] = registry
 	}
+	return registry
 }
 
 var _ CustomRegistry = (*customRegistry)(nil)
