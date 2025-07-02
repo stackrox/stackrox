@@ -1005,7 +1005,6 @@ func RunGetManyQueryForSchema[T any, PT pgutils.Unmarshaler[T]](ctx context.Cont
 
 func prepareQuery(ctx context.Context, schema *walker.Schema, q *v1.Query) (*query, error) {
 	if q == nil {
-		log.Info("query is nil, using empty")
 		q = searchPkg.EmptyQuery()
 	}
 
