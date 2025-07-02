@@ -1010,7 +1010,6 @@ func prepareQuery(ctx context.Context, schema *walker.Schema, q *v1.Query) (*que
 
 	preparedQuery, err := standardizeQueryAndPopulatePath(ctx, q, schema, GET)
 	if err != nil {
-
 		return nil, errors.Wrap(err, "error creating query")
 	}
 
