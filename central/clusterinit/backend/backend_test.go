@@ -237,13 +237,9 @@ func (s *clusterInitBackendTestSuite) TestCRSNameMustBeUnique() {
 }
 
 func (s *clusterInitBackendTestSuite) TestCRSDefaultExpiration() {
-	ctx := s.ctx
-	crsName := "crs-default-expiration"
+	expectedNotAfter := time.Now().UTC().Add(1 * time.Hour)
 
-	expectedNotAfter := time.Now().Add(1 * time.Hour)
-
-	validUntil := time.Time{}.UTC()
-	crsWithMeta, err := s.backend.IssueCRS(ctx, crsName, validUntil)
+	crsWithMeta, err := s.backend.IssueCRS(s.ctx, "crs-default-expiration", time.Time{}.UTC())
 	s.Require().NoError(err)
 
 	certPEM := []byte(crsWithMeta.CRS.Cert)
@@ -252,10 +248,8 @@ func (s *clusterInitBackendTestSuite) TestCRSDefaultExpiration() {
 	s.Require().Len(certs, 1)
 	cert := certs[0]
 
-	epsilon := 30 * time.Second
-
-	s.Assert().True(!expectedNotAfter.After(cert.NotAfter))
-	s.Assert().Less(cert.NotAfter.Sub(expectedNotAfter), epsilon)
+	epsilon := 70 * time.Second // Let's cover at least one minute of drift, because cfssl internally does rounding to minutes during cert issuing.
+	s.Assert().Less(cert.NotAfter.Sub(expectedNotAfter).Abs(), epsilon, "expected: |cert.NotAfter - expectedNotAfter| < epsilon")
 }
 
 func (s *clusterInitBackendTestSuite) TestCRSExpirationValidUntil() {
