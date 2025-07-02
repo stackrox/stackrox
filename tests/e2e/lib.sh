@@ -1422,7 +1422,7 @@ record_upgrade_test_progess() {
     record_progress_step "${UPGRADE_PROGRESS_UPGRADER}" "${UPGRADE_PROGRESS_SENSOR_BUNDLE}" \
         "postgres_sensor_run" "bin/upgrader tests"
 
-    # tests/upgrade/run.sh
+    # tests/upgrade/postgres_run.sh
     record_progress_step "${UPGRADE_PROGRESS_POSTGRES_PREP}" "${UPGRADE_PROGRESS_UPGRADER}" \
         "postgres_run" "Preparation for postgres testing"
     record_progress_step "${UPGRADE_PROGRESS_POSTGRES_EARLIER_CENTRAL}" "${UPGRADE_PROGRESS_POSTGRES_PREP}" \
