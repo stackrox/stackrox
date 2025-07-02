@@ -4,7 +4,6 @@ import {
     Dropdown,
     DropdownList,
     DropdownPopperProps,
-    DropdownToggleProps,
     MenuToggle,
     MenuToggleElement,
     MenuToggleProps,
