@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
-	"github.com/stackrox/rox/pkg/search/scoped/postgres"
 	"github.com/stackrox/rox/pkg/search/sortfields"
 )
 
@@ -28,8 +27,7 @@ func NewV2(storage store.Store) Searcher {
 }
 
 func formatSearcherV2(searcher search.Searcher) search.Searcher {
-	scopedSearcher := postgres.WithScoping(searcher)
-	transformedSortFieldSearcher := sortfields.TransformSortFields(scopedSearcher, schema.ImagesSchema.OptionsMap)
+	transformedSortFieldSearcher := sortfields.TransformSortFields(searcher, schema.ImagesSchema.OptionsMap)
 	return paginated.WithDefaultSortOption(transformedSortFieldSearcher, defaultSortOption)
 }
 
