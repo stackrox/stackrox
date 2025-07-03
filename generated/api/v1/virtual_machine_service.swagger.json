@@ -33,138 +33,6 @@
             }
           }
         },
-        "parameters": [
-          {
-            "name": "query",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "pagination.limit",
-            "in": "query",
-            "required": false,
-            "type": "integer",
-            "format": "int32"
-          },
-          {
-            "name": "pagination.offset",
-            "in": "query",
-            "required": false,
-            "type": "integer",
-            "format": "int32"
-          },
-          {
-            "name": "pagination.sortOption.field",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "pagination.sortOption.reversed",
-            "in": "query",
-            "required": false,
-            "type": "boolean"
-          },
-          {
-            "name": "pagination.sortOption.aggregateBy.aggrFunc",
-            "in": "query",
-            "required": false,
-            "type": "string",
-            "enum": [
-              "UNSET",
-              "COUNT",
-              "MIN",
-              "MAX"
-            ],
-            "default": "UNSET"
-          },
-          {
-            "name": "pagination.sortOption.aggregateBy.distinct",
-            "in": "query",
-            "required": false,
-            "type": "boolean"
-          }
-        ],
-        "tags": [
-          "VirtualMachineService"
-        ]
-      },
-      "delete": {
-        "operationId": "VirtualMachineService_DeleteVirtualMachines",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1DeleteVirtualMachinesResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "query.query",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "query.pagination.limit",
-            "in": "query",
-            "required": false,
-            "type": "integer",
-            "format": "int32"
-          },
-          {
-            "name": "query.pagination.offset",
-            "in": "query",
-            "required": false,
-            "type": "integer",
-            "format": "int32"
-          },
-          {
-            "name": "query.pagination.sortOption.field",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "query.pagination.sortOption.reversed",
-            "in": "query",
-            "required": false,
-            "type": "boolean"
-          },
-          {
-            "name": "query.pagination.sortOption.aggregateBy.aggrFunc",
-            "in": "query",
-            "required": false,
-            "type": "string",
-            "enum": [
-              "UNSET",
-              "COUNT",
-              "MIN",
-              "MAX"
-            ],
-            "default": "UNSET"
-          },
-          {
-            "name": "query.pagination.sortOption.aggregateBy.distinct",
-            "in": "query",
-            "required": false,
-            "type": "boolean"
-          },
-          {
-            "name": "confirm",
-            "in": "query",
-            "required": false,
-            "type": "boolean"
-          }
-        ],
         "tags": [
           "VirtualMachineService"
         ]
@@ -887,27 +755,6 @@
       "default": "OBSERVED",
       "description": "VulnerabilityState indicates if vulnerability is being observed or deferred(/suppressed). By default, it vulnerabilities are observed.\n\n - OBSERVED: [Default state]"
     },
-    "v1AggregateBy": {
-      "type": "object",
-      "properties": {
-        "aggrFunc": {
-          "$ref": "#/definitions/v1Aggregation"
-        },
-        "distinct": {
-          "type": "boolean"
-        }
-      }
-    },
-    "v1Aggregation": {
-      "type": "string",
-      "enum": [
-        "UNSET",
-        "COUNT",
-        "MIN",
-        "MAX"
-      ],
-      "default": "UNSET"
-    },
     "v1CreateVirtualMachineRequest": {
       "type": "object",
       "properties": {
@@ -924,18 +771,6 @@
         }
       }
     },
-    "v1DeleteVirtualMachinesResponse": {
-      "type": "object",
-      "properties": {
-        "numDeleted": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "dryRun": {
-          "type": "boolean"
-        }
-      }
-    },
     "v1ListVirtualMachinesResponse": {
       "type": "object",
       "properties": {
@@ -945,57 +780,6 @@
             "type": "object",
             "$ref": "#/definitions/storageVirtualMachine"
           }
-        }
-      }
-    },
-    "v1Pagination": {
-      "type": "object",
-      "properties": {
-        "limit": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "offset": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "sortOption": {
-          "$ref": "#/definitions/v1SortOption"
-        },
-        "sortOptions": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/v1SortOption"
-          },
-          "description": "This field is under development. It is not supported on any REST APIs."
-        }
-      }
-    },
-    "v1RawQuery": {
-      "type": "object",
-      "properties": {
-        "query": {
-          "type": "string"
-        },
-        "pagination": {
-          "$ref": "#/definitions/v1Pagination"
-        }
-      },
-      "description": "RawQuery represents the search query string.\nThe format of the query string is \"<field name>:<value,value,...>+<field name>:<value, value,...>+...\"\nFor example:\nTo search for deployments named \"central\" and \"sensor\" in the namespace \"stackrox\", the query string would be\n\"Deployment:central,sensor+Namespace:stackrox\"\nRawQuery is used in ListAPIs to search for a particular object."
-    },
-    "v1SortOption": {
-      "type": "object",
-      "properties": {
-        "field": {
-          "type": "string"
-        },
-        "reversed": {
-          "type": "boolean"
-        },
-        "aggregateBy": {
-          "$ref": "#/definitions/v1AggregateBy",
-          "description": "This field is under development. It is not supported on any REST APIs."
         }
       }
     }

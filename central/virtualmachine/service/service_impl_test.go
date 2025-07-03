@@ -10,7 +10,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
-	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -21,528 +20,361 @@ func TestAuthz(t *testing.T) {
 }
 
 func TestCreateVirtualMachine(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockDatastore := datastoreMocks.NewMockDataStore(ctrl)
-	mockSACHelper := mocks.NewMockClusterSacHelper(ctrl)
-
-	service := &serviceImpl{
-		datastore:        mockDatastore,
-		clusterSACHelper: mockSACHelper,
-	}
-
 	ctx := context.Background()
 
-	t.Run("successful creation", func(t *testing.T) {
-		vm := &storage.VirtualMachine{
-			Id:        "test-vm-id",
-			Name:      "test-vm",
-			Namespace: "test-namespace",
-		}
+	testVM := &storage.VirtualMachine{
+		Id:        "test-vm-id",
+		Name:      "test-vm",
+		Namespace: "test-namespace",
+	}
 
-		request := &v1.CreateVirtualMachineRequest{
-			VirtualMachine: vm,
-		}
-
-		mockDatastore.EXPECT().
-			UpsertVirtualMachine(ctx, vm).
-			Return(nil)
-
-		result, err := service.CreateVirtualMachine(ctx, request)
-		require.NoError(t, err)
-		assert.Equal(t, vm, result)
-	})
-
-	t.Run("nil request", func(t *testing.T) {
-		result, err := service.CreateVirtualMachine(ctx, nil)
-		assert.Nil(t, result)
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "id must be specified")
-	})
-
-	t.Run("empty ID", func(t *testing.T) {
-		request := &v1.CreateVirtualMachineRequest{
-			VirtualMachine: &storage.VirtualMachine{
-				Id: "",
+	tests := []struct {
+		name           string
+		request        *v1.CreateVirtualMachineRequest
+		setupMock      func(*datastoreMocks.MockDataStore)
+		expectedResult *storage.VirtualMachine
+		expectedError  string
+	}{
+		{
+			name: "successful creation",
+			request: &v1.CreateVirtualMachineRequest{
+				VirtualMachine: testVM,
 			},
-		}
+			setupMock: func(mockDS *datastoreMocks.MockDataStore) {
+				mockDS.EXPECT().
+					CreateVirtualMachine(ctx, testVM).
+					Return(nil)
+			},
+			expectedResult: testVM,
+			expectedError:  "",
+		},
+		{
+			name:           "nil request",
+			request:        nil,
+			setupMock:      func(mockDS *datastoreMocks.MockDataStore) {},
+			expectedResult: nil,
+			expectedError:  "id must be specified",
+		},
+		{
+			name: "empty ID",
+			request: &v1.CreateVirtualMachineRequest{
+				VirtualMachine: &storage.VirtualMachine{
+					Id: "",
+				},
+			},
+			setupMock:      func(mockDS *datastoreMocks.MockDataStore) {},
+			expectedResult: nil,
+			expectedError:  "id must be specified",
+		},
+		{
+			name: "datastore error",
+			request: &v1.CreateVirtualMachineRequest{
+				VirtualMachine: testVM,
+			},
+			setupMock: func(mockDS *datastoreMocks.MockDataStore) {
+				mockDS.EXPECT().
+					CreateVirtualMachine(ctx, testVM).
+					Return(errors.New("datastore error"))
+			},
+			expectedResult: nil,
+			expectedError:  "datastore error",
+		},
+	}
 
-		result, err := service.CreateVirtualMachine(ctx, request)
-		assert.Nil(t, result)
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "id must be specified")
-	})
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
 
-	t.Run("datastore error", func(t *testing.T) {
-		vm := &storage.VirtualMachine{
-			Id:        "test-vm-id",
-			Name:      "test-vm",
-			Namespace: "test-namespace",
-		}
+			mockDatastore := datastoreMocks.NewMockDataStore(ctrl)
+			mockSACHelper := mocks.NewMockClusterSacHelper(ctrl)
 
-		request := &v1.CreateVirtualMachineRequest{
-			VirtualMachine: vm,
-		}
+			service := &serviceImpl{
+				datastore:        mockDatastore,
+				clusterSACHelper: mockSACHelper,
+			}
 
-		expectedErr := errors.New("datastore error")
-		mockDatastore.EXPECT().
-			UpsertVirtualMachine(ctx, vm).
-			Return(expectedErr)
+			tt.setupMock(mockDatastore)
 
-		result, err := service.CreateVirtualMachine(ctx, request)
-		assert.Nil(t, result)
-		assert.Equal(t, expectedErr, err)
-	})
+			result, err := service.CreateVirtualMachine(ctx, tt.request)
+
+			if tt.expectedError != "" {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), tt.expectedError)
+				assert.Nil(t, result)
+			} else {
+				require.NoError(t, err)
+				assert.Equal(t, tt.expectedResult, result)
+			}
+		})
+	}
 }
 
 func TestGetVirtualMachine(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockDatastore := datastoreMocks.NewMockDataStore(ctrl)
-	mockSACHelper := mocks.NewMockClusterSacHelper(ctrl)
-
-	service := &serviceImpl{
-		datastore:        mockDatastore,
-		clusterSACHelper: mockSACHelper,
-	}
-
 	ctx := context.Background()
 
-	t.Run("successful get", func(t *testing.T) {
-		vmID := "test-vm-id"
-		vm := &storage.VirtualMachine{
-			Id:        vmID,
-			Name:      "test-vm",
-			Namespace: "test-namespace",
-		}
+	testVM := &storage.VirtualMachine{
+		Id:        "test-vm-id",
+		Name:      "test-vm",
+		Namespace: "test-namespace",
+	}
 
-		request := &v1.GetVirtualMachineRequest{
-			Id: vmID,
-		}
+	tests := []struct {
+		name           string
+		request        *v1.GetVirtualMachineRequest
+		setupMock      func(*datastoreMocks.MockDataStore)
+		expectedResult *storage.VirtualMachine
+		expectedError  string
+	}{
+		{
+			name: "successful get",
+			request: &v1.GetVirtualMachineRequest{
+				Id: "test-vm-id",
+			},
+			setupMock: func(mockDS *datastoreMocks.MockDataStore) {
+				mockDS.EXPECT().
+					GetVirtualMachine(ctx, "test-vm-id").
+					Return(testVM, true, nil)
+			},
+			expectedResult: testVM,
+			expectedError:  "",
+		},
+		{
+			name: "empty ID",
+			request: &v1.GetVirtualMachineRequest{
+				Id: "",
+			},
+			setupMock:      func(mockDS *datastoreMocks.MockDataStore) {},
+			expectedResult: nil,
+			expectedError:  "id must be specified",
+		},
+		{
+			name: "virtual machine not found",
+			request: &v1.GetVirtualMachineRequest{
+				Id: "non-existent-vm",
+			},
+			setupMock: func(mockDS *datastoreMocks.MockDataStore) {
+				mockDS.EXPECT().
+					GetVirtualMachine(ctx, "non-existent-vm").
+					Return(nil, false, nil)
+			},
+			expectedResult: nil,
+			expectedError:  "does not exist",
+		},
+		{
+			name: "datastore error",
+			request: &v1.GetVirtualMachineRequest{
+				Id: "test-vm-id",
+			},
+			setupMock: func(mockDS *datastoreMocks.MockDataStore) {
+				mockDS.EXPECT().
+					GetVirtualMachine(ctx, "test-vm-id").
+					Return(nil, false, errors.New("datastore error"))
+			},
+			expectedResult: nil,
+			expectedError:  "datastore error",
+		},
+	}
 
-		mockDatastore.EXPECT().
-			GetVirtualMachine(ctx, vmID).
-			Return(vm, true, nil)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
 
-		result, err := service.GetVirtualMachine(ctx, request)
-		require.NoError(t, err)
-		assert.Equal(t, vm, result)
-	})
+			mockDatastore := datastoreMocks.NewMockDataStore(ctrl)
+			mockSACHelper := mocks.NewMockClusterSacHelper(ctrl)
 
-	t.Run("empty ID", func(t *testing.T) {
-		request := &v1.GetVirtualMachineRequest{
-			Id: "",
-		}
+			service := &serviceImpl{
+				datastore:        mockDatastore,
+				clusterSACHelper: mockSACHelper,
+			}
 
-		result, err := service.GetVirtualMachine(ctx, request)
-		assert.Nil(t, result)
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "id must be specified")
-	})
+			tt.setupMock(mockDatastore)
 
-	t.Run("virtual machine not found", func(t *testing.T) {
-		vmID := "non-existent-vm"
-		request := &v1.GetVirtualMachineRequest{
-			Id: vmID,
-		}
+			result, err := service.GetVirtualMachine(ctx, tt.request)
 
-		mockDatastore.EXPECT().
-			GetVirtualMachine(ctx, vmID).
-			Return(nil, false, nil)
-
-		result, err := service.GetVirtualMachine(ctx, request)
-		assert.Nil(t, result)
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "does not exist")
-	})
-
-	t.Run("datastore error", func(t *testing.T) {
-		vmID := "test-vm-id"
-		request := &v1.GetVirtualMachineRequest{
-			Id: vmID,
-		}
-
-		expectedErr := errors.New("datastore error")
-		mockDatastore.EXPECT().
-			GetVirtualMachine(ctx, vmID).
-			Return(nil, false, expectedErr)
-
-		result, err := service.GetVirtualMachine(ctx, request)
-		assert.Nil(t, result)
-		assert.Equal(t, expectedErr, err)
-	})
+			if tt.expectedError != "" {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), tt.expectedError)
+				assert.Nil(t, result)
+			} else {
+				require.NoError(t, err)
+				assert.Equal(t, tt.expectedResult, result)
+			}
+		})
+	}
 }
 
 func TestListVirtualMachines(t *testing.T) {
 	ctx := context.Background()
 
-	t.Run("successful list", func(t *testing.T) {
-		ctrl := gomock.NewController(t)
-		defer ctrl.Finish()
+	testVMs := []*storage.VirtualMachine{
+		{
+			Id:        "vm-1",
+			Name:      "test-vm-1",
+			Namespace: "namespace-1",
+		},
+		{
+			Id:        "vm-2",
+			Name:      "test-vm-2",
+			Namespace: "namespace-2",
+		},
+	}
 
-		mockDatastore := datastoreMocks.NewMockDataStore(ctrl)
-		mockSACHelper := mocks.NewMockClusterSacHelper(ctrl)
-
-		service := &serviceImpl{
-			datastore:        mockDatastore,
-			clusterSACHelper: mockSACHelper,
-		}
-		vms := []*storage.VirtualMachine{
-			{
-				Id:        "vm-1",
-				Name:      "test-vm-1",
-				Namespace: "namespace-1",
+	tests := []struct {
+		name           string
+		request        *v1.ListVirtualMachinesRequest
+		setupMock      func(*datastoreMocks.MockDataStore)
+		expectedResult *v1.ListVirtualMachinesResponse
+		expectedError  string
+	}{
+		{
+			name:    "successful list",
+			request: &v1.ListVirtualMachinesRequest{},
+			setupMock: func(mockDS *datastoreMocks.MockDataStore) {
+				mockDS.EXPECT().
+					GetAllVirtualMachines(ctx).
+					Return(testVMs, nil)
 			},
-			{
-				Id:        "vm-2",
-				Name:      "test-vm-2",
-				Namespace: "namespace-2",
+			expectedResult: &v1.ListVirtualMachinesResponse{
+				VirtualMachines: testVMs,
 			},
-		}
+			expectedError: "",
+		},
+		{
+			name:    "empty list",
+			request: &v1.ListVirtualMachinesRequest{},
+			setupMock: func(mockDS *datastoreMocks.MockDataStore) {
+				mockDS.EXPECT().
+					GetAllVirtualMachines(ctx).
+					Return([]*storage.VirtualMachine{}, nil)
+			},
+			expectedResult: &v1.ListVirtualMachinesResponse{
+				VirtualMachines: []*storage.VirtualMachine{},
+			},
+			expectedError: "",
+		},
+		{
+			name:    "datastore error",
+			request: &v1.ListVirtualMachinesRequest{},
+			setupMock: func(mockDS *datastoreMocks.MockDataStore) {
+				mockDS.EXPECT().
+					GetAllVirtualMachines(ctx).
+					Return(nil, errors.New("datastore error"))
+			},
+			expectedResult: nil,
+			expectedError:  "datastore error",
+		},
+	}
 
-		request := &v1.RawQuery{
-			Query: "name:test",
-		}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
 
-		mockDatastore.EXPECT().
-			SearchRawVirtualMachines(ctx, gomock.Any()).
-			Return(vms, nil)
+			mockDatastore := datastoreMocks.NewMockDataStore(ctrl)
+			mockSACHelper := mocks.NewMockClusterSacHelper(ctrl)
 
-		result, err := service.ListVirtualMachines(ctx, request)
-		require.NoError(t, err)
-		assert.Equal(t, vms, result.VirtualMachines)
-	})
+			service := &serviceImpl{
+				datastore:        mockDatastore,
+				clusterSACHelper: mockSACHelper,
+			}
 
-	t.Run("empty query", func(t *testing.T) {
-		ctrl := gomock.NewController(t)
-		defer ctrl.Finish()
+			tt.setupMock(mockDatastore)
 
-		mockDatastore := datastoreMocks.NewMockDataStore(ctrl)
-		mockSACHelper := mocks.NewMockClusterSacHelper(ctrl)
+			result, err := service.ListVirtualMachines(ctx, tt.request)
 
-		service := &serviceImpl{
-			datastore:        mockDatastore,
-			clusterSACHelper: mockSACHelper,
-		}
-
-		vms := []*storage.VirtualMachine{}
-
-		request := &v1.RawQuery{
-			Query: "",
-		}
-
-		mockDatastore.EXPECT().
-			SearchRawVirtualMachines(ctx, gomock.Any()).
-			Return(vms, nil)
-
-		result, err := service.ListVirtualMachines(ctx, request)
-		require.NoError(t, err)
-		assert.Empty(t, result.VirtualMachines)
-	})
-
-	t.Run("invalid query", func(t *testing.T) {
-		ctrl := gomock.NewController(t)
-		defer ctrl.Finish()
-
-		mockDatastore := datastoreMocks.NewMockDataStore(ctrl)
-		mockSACHelper := mocks.NewMockClusterSacHelper(ctrl)
-
-		service := &serviceImpl{
-			datastore:        mockDatastore,
-			clusterSACHelper: mockSACHelper,
-		}
-
-		request := &v1.RawQuery{
-			Query: "invalid[query",
-		}
-
-		// The query parser is lenient, so this will reach the datastore
-		mockDatastore.EXPECT().
-			SearchRawVirtualMachines(ctx, gomock.Any()).
-			Return(nil, errors.New("mock datastore error"))
-
-		result, err := service.ListVirtualMachines(ctx, request)
-		assert.Nil(t, result)
-		assert.Error(t, err)
-	})
-
-	t.Run("datastore error", func(t *testing.T) {
-		ctrl := gomock.NewController(t)
-		defer ctrl.Finish()
-
-		mockDatastore := datastoreMocks.NewMockDataStore(ctrl)
-		mockSACHelper := mocks.NewMockClusterSacHelper(ctrl)
-
-		service := &serviceImpl{
-			datastore:        mockDatastore,
-			clusterSACHelper: mockSACHelper,
-		}
-
-		request := &v1.RawQuery{
-			Query: "name:test",
-		}
-
-		expectedErr := errors.New("datastore error")
-		mockDatastore.EXPECT().
-			SearchRawVirtualMachines(ctx, gomock.Any()).
-			Return(nil, expectedErr)
-
-		result, err := service.ListVirtualMachines(ctx, request)
-		assert.Nil(t, result)
-		assert.Equal(t, expectedErr, err)
-	})
+			if tt.expectedError != "" {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), tt.expectedError)
+				assert.Nil(t, result)
+			} else {
+				require.NoError(t, err)
+				assert.Equal(t, tt.expectedResult, result)
+			}
+		})
+	}
 }
 
 func TestDeleteVirtualMachine(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+	ctx := context.Background()
 
-	mockDatastore := datastoreMocks.NewMockDataStore(ctrl)
-	mockSACHelper := mocks.NewMockClusterSacHelper(ctrl)
-
-	service := &serviceImpl{
-		datastore:        mockDatastore,
-		clusterSACHelper: mockSACHelper,
+	tests := []struct {
+		name           string
+		request        *v1.DeleteVirtualMachineRequest
+		setupMock      func(*datastoreMocks.MockDataStore)
+		expectedResult *v1.DeleteVirtualMachineResponse
+		expectedError  string
+	}{
+		{
+			name: "successful deletion",
+			request: &v1.DeleteVirtualMachineRequest{
+				Id: "test-vm-id",
+			},
+			setupMock: func(mockDS *datastoreMocks.MockDataStore) {
+				mockDS.EXPECT().
+					DeleteVirtualMachines(ctx, "test-vm-id").
+					Return(nil)
+			},
+			expectedResult: &v1.DeleteVirtualMachineResponse{
+				Success: true,
+			},
+			expectedError: "",
+		},
+		{
+			name: "empty ID",
+			request: &v1.DeleteVirtualMachineRequest{
+				Id: "",
+			},
+			setupMock: func(mockDS *datastoreMocks.MockDataStore) {},
+			expectedResult: &v1.DeleteVirtualMachineResponse{
+				Success: false,
+			},
+			expectedError: "id cannot be empty",
+		},
+		{
+			name: "datastore error",
+			request: &v1.DeleteVirtualMachineRequest{
+				Id: "test-vm-id",
+			},
+			setupMock: func(mockDS *datastoreMocks.MockDataStore) {
+				mockDS.EXPECT().
+					DeleteVirtualMachines(ctx, "test-vm-id").
+					Return(errors.New("datastore error"))
+			},
+			expectedResult: &v1.DeleteVirtualMachineResponse{
+				Success: false,
+			},
+			expectedError: "datastore error",
+		},
 	}
 
-	ctx := context.Background()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
 
-	t.Run("successful deletion", func(t *testing.T) {
-		vmID := "test-vm-id"
-		request := &v1.DeleteVirtualMachineRequest{
-			Id: vmID,
-		}
+			mockDatastore := datastoreMocks.NewMockDataStore(ctrl)
+			mockSACHelper := mocks.NewMockClusterSacHelper(ctrl)
 
-		mockDatastore.EXPECT().
-			DeleteVirtualMachines(ctx, vmID).
-			Return(nil)
+			service := &serviceImpl{
+				datastore:        mockDatastore,
+				clusterSACHelper: mockSACHelper,
+			}
 
-		result, err := service.DeleteVirtualMachine(ctx, request)
-		require.NoError(t, err)
-		assert.True(t, result.Success)
-	})
+			tt.setupMock(mockDatastore)
 
-	t.Run("empty ID", func(t *testing.T) {
-		request := &v1.DeleteVirtualMachineRequest{
-			Id: "",
-		}
+			result, err := service.DeleteVirtualMachine(ctx, tt.request)
 
-		result, err := service.DeleteVirtualMachine(ctx, request)
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "id cannot be empty")
-		assert.False(t, result.Success)
-	})
-
-	t.Run("datastore error", func(t *testing.T) {
-		vmID := "test-vm-id"
-		request := &v1.DeleteVirtualMachineRequest{
-			Id: vmID,
-		}
-
-		expectedErr := errors.New("datastore error")
-		mockDatastore.EXPECT().
-			DeleteVirtualMachines(ctx, vmID).
-			Return(expectedErr)
-
-		result, err := service.DeleteVirtualMachine(ctx, request)
-		assert.Error(t, err)
-		assert.Equal(t, expectedErr, err)
-		assert.False(t, result.Success)
-	})
+			if tt.expectedError != "" {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), tt.expectedError)
+				assert.Equal(t, tt.expectedResult, result)
+			} else {
+				require.NoError(t, err)
+				assert.Equal(t, tt.expectedResult, result)
+			}
+		})
+	}
 }
 
-func TestDeleteVirtualMachines(t *testing.T) {
-	ctx := context.Background()
-
-	t.Run("successful bulk deletion", func(t *testing.T) {
-		ctrl := gomock.NewController(t)
-		defer ctrl.Finish()
-
-		mockDatastore := datastoreMocks.NewMockDataStore(ctrl)
-		mockSACHelper := mocks.NewMockClusterSacHelper(ctrl)
-
-		service := &serviceImpl{
-			datastore:        mockDatastore,
-			clusterSACHelper: mockSACHelper,
-		}
-		searchResults := []search.Result{
-			{ID: "vm-1"},
-			{ID: "vm-2"},
-		}
-
-		request := &v1.DeleteVirtualMachinesRequest{
-			Query: &v1.RawQuery{
-				Query: "cluster:test",
-			},
-			Confirm: true,
-		}
-
-		mockDatastore.EXPECT().
-			Search(ctx, gomock.Any()).
-			Return(searchResults, nil)
-
-		mockDatastore.EXPECT().
-			DeleteVirtualMachines(ctx, "vm-1", "vm-2").
-			Return(nil)
-
-		result, err := service.DeleteVirtualMachines(ctx, request)
-		require.NoError(t, err)
-		assert.Equal(t, uint32(2), result.NumDeleted)
-		assert.False(t, result.DryRun)
-	})
-
-	t.Run("dry run", func(t *testing.T) {
-		ctrl := gomock.NewController(t)
-		defer ctrl.Finish()
-
-		mockDatastore := datastoreMocks.NewMockDataStore(ctrl)
-		mockSACHelper := mocks.NewMockClusterSacHelper(ctrl)
-
-		service := &serviceImpl{
-			datastore:        mockDatastore,
-			clusterSACHelper: mockSACHelper,
-		}
-
-		searchResults := []search.Result{
-			{ID: "vm-1"},
-			{ID: "vm-2"},
-		}
-
-		request := &v1.DeleteVirtualMachinesRequest{
-			Query: &v1.RawQuery{
-				Query: "cluster:test",
-			},
-			Confirm: false,
-		}
-
-		mockDatastore.EXPECT().
-			Search(ctx, gomock.Any()).
-			Return(searchResults, nil)
-
-		// No deletion should occur in dry run
-		result, err := service.DeleteVirtualMachines(ctx, request)
-		require.NoError(t, err)
-		assert.Equal(t, uint32(2), result.NumDeleted)
-		assert.True(t, result.DryRun)
-	})
-
-	t.Run("nil query", func(t *testing.T) {
-		ctrl := gomock.NewController(t)
-		defer ctrl.Finish()
-
-		mockDatastore := datastoreMocks.NewMockDataStore(ctrl)
-		mockSACHelper := mocks.NewMockClusterSacHelper(ctrl)
-
-		service := &serviceImpl{
-			datastore:        mockDatastore,
-			clusterSACHelper: mockSACHelper,
-		}
-
-		request := &v1.DeleteVirtualMachinesRequest{
-			Query:   nil,
-			Confirm: true,
-		}
-
-		result, err := service.DeleteVirtualMachines(ctx, request)
-		assert.Nil(t, result)
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "scoping query is required")
-	})
-
-	t.Run("invalid query", func(t *testing.T) {
-		ctrl := gomock.NewController(t)
-		defer ctrl.Finish()
-
-		mockDatastore := datastoreMocks.NewMockDataStore(ctrl)
-		mockSACHelper := mocks.NewMockClusterSacHelper(ctrl)
-
-		service := &serviceImpl{
-			datastore:        mockDatastore,
-			clusterSACHelper: mockSACHelper,
-		}
-
-		request := &v1.DeleteVirtualMachinesRequest{
-			Query: &v1.RawQuery{
-				Query: "invalid[query",
-			},
-			Confirm: true,
-		}
-
-		// The query parser is lenient, so this will reach the datastore
-		mockDatastore.EXPECT().
-			Search(ctx, gomock.Any()).
-			Return(nil, errors.New("mock datastore error"))
-
-		result, err := service.DeleteVirtualMachines(ctx, request)
-		assert.Nil(t, result)
-		assert.Error(t, err)
-	})
-
-	t.Run("search error", func(t *testing.T) {
-		ctrl := gomock.NewController(t)
-		defer ctrl.Finish()
-
-		mockDatastore := datastoreMocks.NewMockDataStore(ctrl)
-		mockSACHelper := mocks.NewMockClusterSacHelper(ctrl)
-
-		service := &serviceImpl{
-			datastore:        mockDatastore,
-			clusterSACHelper: mockSACHelper,
-		}
-
-		request := &v1.DeleteVirtualMachinesRequest{
-			Query: &v1.RawQuery{
-				Query: "cluster:test",
-			},
-			Confirm: true,
-		}
-
-		expectedErr := errors.New("search error")
-		mockDatastore.EXPECT().
-			Search(ctx, gomock.Any()).
-			Return(nil, expectedErr)
-
-		result, err := service.DeleteVirtualMachines(ctx, request)
-		assert.Nil(t, result)
-		assert.Equal(t, expectedErr, err)
-	})
-
-	t.Run("deletion error", func(t *testing.T) {
-		ctrl := gomock.NewController(t)
-		defer ctrl.Finish()
-
-		mockDatastore := datastoreMocks.NewMockDataStore(ctrl)
-		mockSACHelper := mocks.NewMockClusterSacHelper(ctrl)
-
-		service := &serviceImpl{
-			datastore:        mockDatastore,
-			clusterSACHelper: mockSACHelper,
-		}
-
-		searchResults := []search.Result{
-			{ID: "vm-1"},
-		}
-
-		request := &v1.DeleteVirtualMachinesRequest{
-			Query: &v1.RawQuery{
-				Query: "cluster:test",
-			},
-			Confirm: true,
-		}
-
-		mockDatastore.EXPECT().
-			Search(ctx, gomock.Any()).
-			Return(searchResults, nil)
-
-		expectedErr := errors.New("deletion error")
-		mockDatastore.EXPECT().
-			DeleteVirtualMachines(ctx, "vm-1").
-			Return(expectedErr)
-
-		result, err := service.DeleteVirtualMachines(ctx, request)
-		assert.Nil(t, result)
-		assert.Equal(t, expectedErr, err)
-	})
-}

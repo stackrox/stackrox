@@ -171,6 +171,42 @@ func (x *ListVirtualMachinesResponse) GetVirtualMachines() []*storage.VirtualMac
 	return nil
 }
 
+type ListVirtualMachinesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListVirtualMachinesRequest) Reset() {
+	*x = ListVirtualMachinesRequest{}
+	mi := &file_api_v1_virtual_machine_service_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListVirtualMachinesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListVirtualMachinesRequest) ProtoMessage() {}
+
+func (x *ListVirtualMachinesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_v1_virtual_machine_service_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListVirtualMachinesRequest.ProtoReflect.Descriptor instead.
+func (*ListVirtualMachinesRequest) Descriptor() ([]byte, []int) {
+	return file_api_v1_virtual_machine_service_proto_rawDescGZIP(), []int{3}
+}
+
 type DeleteVirtualMachineRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -180,7 +216,7 @@ type DeleteVirtualMachineRequest struct {
 
 func (x *DeleteVirtualMachineRequest) Reset() {
 	*x = DeleteVirtualMachineRequest{}
-	mi := &file_api_v1_virtual_machine_service_proto_msgTypes[3]
+	mi := &file_api_v1_virtual_machine_service_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -192,7 +228,7 @@ func (x *DeleteVirtualMachineRequest) String() string {
 func (*DeleteVirtualMachineRequest) ProtoMessage() {}
 
 func (x *DeleteVirtualMachineRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_virtual_machine_service_proto_msgTypes[3]
+	mi := &file_api_v1_virtual_machine_service_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -205,7 +241,7 @@ func (x *DeleteVirtualMachineRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteVirtualMachineRequest.ProtoReflect.Descriptor instead.
 func (*DeleteVirtualMachineRequest) Descriptor() ([]byte, []int) {
-	return file_api_v1_virtual_machine_service_proto_rawDescGZIP(), []int{3}
+	return file_api_v1_virtual_machine_service_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *DeleteVirtualMachineRequest) GetId() string {
@@ -213,58 +249,6 @@ func (x *DeleteVirtualMachineRequest) GetId() string {
 		return x.Id
 	}
 	return ""
-}
-
-type DeleteVirtualMachinesRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Query         *RawQuery              `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
-	Confirm       bool                   `protobuf:"varint,2,opt,name=confirm,proto3" json:"confirm,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *DeleteVirtualMachinesRequest) Reset() {
-	*x = DeleteVirtualMachinesRequest{}
-	mi := &file_api_v1_virtual_machine_service_proto_msgTypes[4]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *DeleteVirtualMachinesRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*DeleteVirtualMachinesRequest) ProtoMessage() {}
-
-func (x *DeleteVirtualMachinesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_virtual_machine_service_proto_msgTypes[4]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use DeleteVirtualMachinesRequest.ProtoReflect.Descriptor instead.
-func (*DeleteVirtualMachinesRequest) Descriptor() ([]byte, []int) {
-	return file_api_v1_virtual_machine_service_proto_rawDescGZIP(), []int{4}
-}
-
-func (x *DeleteVirtualMachinesRequest) GetQuery() *RawQuery {
-	if x != nil {
-		return x.Query
-	}
-	return nil
-}
-
-func (x *DeleteVirtualMachinesRequest) GetConfirm() bool {
-	if x != nil {
-		return x.Confirm
-	}
-	return false
 }
 
 type DeleteVirtualMachineResponse struct {
@@ -311,63 +295,11 @@ func (x *DeleteVirtualMachineResponse) GetSuccess() bool {
 	return false
 }
 
-type DeleteVirtualMachinesResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	NumDeleted    uint32                 `protobuf:"varint,1,opt,name=num_deleted,json=numDeleted,proto3" json:"num_deleted,omitempty"`
-	DryRun        bool                   `protobuf:"varint,2,opt,name=dry_run,json=dryRun,proto3" json:"dry_run,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *DeleteVirtualMachinesResponse) Reset() {
-	*x = DeleteVirtualMachinesResponse{}
-	mi := &file_api_v1_virtual_machine_service_proto_msgTypes[6]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *DeleteVirtualMachinesResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*DeleteVirtualMachinesResponse) ProtoMessage() {}
-
-func (x *DeleteVirtualMachinesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_virtual_machine_service_proto_msgTypes[6]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use DeleteVirtualMachinesResponse.ProtoReflect.Descriptor instead.
-func (*DeleteVirtualMachinesResponse) Descriptor() ([]byte, []int) {
-	return file_api_v1_virtual_machine_service_proto_rawDescGZIP(), []int{6}
-}
-
-func (x *DeleteVirtualMachinesResponse) GetNumDeleted() uint32 {
-	if x != nil {
-		return x.NumDeleted
-	}
-	return 0
-}
-
-func (x *DeleteVirtualMachinesResponse) GetDryRun() bool {
-	if x != nil {
-		return x.DryRun
-	}
-	return false
-}
-
 var File_api_v1_virtual_machine_service_proto protoreflect.FileDescriptor
 
 const file_api_v1_virtual_machine_service_proto_rawDesc = "" +
 	"\n" +
-	"$api/v1/virtual_machine_service.proto\x12\x02v1\x1a\x1bapi/v1/search_service.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1dstorage/virtual_machine.proto\"\x80\x01\n" +
+	"$api/v1/virtual_machine_service.proto\x12\x02v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1dstorage/virtual_machine.proto\"\x80\x01\n" +
 	"\x18GetVirtualMachineRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12'\n" +
 	"\x0finclude_snoozed\x18\x02 \x01(\bR\x0eincludeSnoozed\x12+\n" +
@@ -375,25 +307,18 @@ const file_api_v1_virtual_machine_service_proto_rawDesc = "" +
 	"\x1bCreateVirtualMachineRequest\x12@\n" +
 	"\x0fvirtual_machine\x18\x01 \x01(\v2\x17.storage.VirtualMachineR\x0evirtualMachine\"a\n" +
 	"\x1bListVirtualMachinesResponse\x12B\n" +
-	"\x10virtual_machines\x18\x01 \x03(\v2\x17.storage.VirtualMachineR\x0fvirtualMachines\"-\n" +
+	"\x10virtual_machines\x18\x01 \x03(\v2\x17.storage.VirtualMachineR\x0fvirtualMachines\"\x1c\n" +
+	"\x1aListVirtualMachinesRequest\"-\n" +
 	"\x1bDeleteVirtualMachineRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\"\\\n" +
-	"\x1cDeleteVirtualMachinesRequest\x12\"\n" +
-	"\x05query\x18\x01 \x01(\v2\f.v1.RawQueryR\x05query\x12\x18\n" +
-	"\aconfirm\x18\x02 \x01(\bR\aconfirm\"8\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"8\n" +
 	"\x1cDeleteVirtualMachineResponse\x12\x18\n" +
-	"\asuccess\x18\x02 \x01(\bR\asuccess\"Y\n" +
-	"\x1dDeleteVirtualMachinesResponse\x12\x1f\n" +
-	"\vnum_deleted\x18\x01 \x01(\rR\n" +
-	"numDeleted\x12\x17\n" +
-	"\adry_run\x18\x02 \x01(\bR\x06dryRun2\xd2\x04\n" +
+	"\asuccess\x18\x02 \x01(\bR\asuccess2\xe9\x03\n" +
 	"\x15VirtualMachineService\x12p\n" +
 	"\x14CreateVirtualMachine\x12\x1f.v1.CreateVirtualMachineRequest\x1a\x17.storage.VirtualMachine\"\x1e\x82\xd3\xe4\x93\x02\x18:\x01*\"\x13/v1/virtualmachines\x12l\n" +
-	"\x11GetVirtualMachine\x12\x1c.v1.GetVirtualMachineRequest\x1a\x17.storage.VirtualMachine\" \x82\xd3\xe4\x93\x02\x1a\x12\x18/v1/virtualmachines/{id}\x12a\n" +
-	"\x13ListVirtualMachines\x12\f.v1.RawQuery\x1a\x1f.v1.ListVirtualMachinesResponse\"\x1b\x82\xd3\xe4\x93\x02\x15\x12\x13/v1/virtualmachines\x12{\n" +
-	"\x14DeleteVirtualMachine\x12\x1f.v1.DeleteVirtualMachineRequest\x1a .v1.DeleteVirtualMachineResponse\" \x82\xd3\xe4\x93\x02\x1a*\x18/v1/virtualmachines/{id}\x12y\n" +
-	"\x15DeleteVirtualMachines\x12 .v1.DeleteVirtualMachinesRequest\x1a!.v1.DeleteVirtualMachinesResponse\"\x1b\x82\xd3\xe4\x93\x02\x15*\x13/v1/virtualmachinesB'\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1X\x01b\x06proto3"
+	"\x11GetVirtualMachine\x12\x1c.v1.GetVirtualMachineRequest\x1a\x17.storage.VirtualMachine\" \x82\xd3\xe4\x93\x02\x1a\x12\x18/v1/virtualmachines/{id}\x12s\n" +
+	"\x13ListVirtualMachines\x12\x1e.v1.ListVirtualMachinesRequest\x1a\x1f.v1.ListVirtualMachinesResponse\"\x1b\x82\xd3\xe4\x93\x02\x15\x12\x13/v1/virtualmachines\x12{\n" +
+	"\x14DeleteVirtualMachine\x12\x1f.v1.DeleteVirtualMachineRequest\x1a .v1.DeleteVirtualMachineResponse\" \x82\xd3\xe4\x93\x02\x1a*\x18/v1/virtualmachines/{id}B'\n" +
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1X\x00b\x06proto3"
 
 var (
 	file_api_v1_virtual_machine_service_proto_rawDescOnce sync.Once
@@ -407,37 +332,32 @@ func file_api_v1_virtual_machine_service_proto_rawDescGZIP() []byte {
 	return file_api_v1_virtual_machine_service_proto_rawDescData
 }
 
-var file_api_v1_virtual_machine_service_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_api_v1_virtual_machine_service_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_api_v1_virtual_machine_service_proto_goTypes = []any{
-	(*GetVirtualMachineRequest)(nil),      // 0: v1.GetVirtualMachineRequest
-	(*CreateVirtualMachineRequest)(nil),   // 1: v1.CreateVirtualMachineRequest
-	(*ListVirtualMachinesResponse)(nil),   // 2: v1.ListVirtualMachinesResponse
-	(*DeleteVirtualMachineRequest)(nil),   // 3: v1.DeleteVirtualMachineRequest
-	(*DeleteVirtualMachinesRequest)(nil),  // 4: v1.DeleteVirtualMachinesRequest
-	(*DeleteVirtualMachineResponse)(nil),  // 5: v1.DeleteVirtualMachineResponse
-	(*DeleteVirtualMachinesResponse)(nil), // 6: v1.DeleteVirtualMachinesResponse
-	(*storage.VirtualMachine)(nil),        // 7: storage.VirtualMachine
-	(*RawQuery)(nil),                      // 8: v1.RawQuery
+	(*GetVirtualMachineRequest)(nil),     // 0: v1.GetVirtualMachineRequest
+	(*CreateVirtualMachineRequest)(nil),  // 1: v1.CreateVirtualMachineRequest
+	(*ListVirtualMachinesResponse)(nil),  // 2: v1.ListVirtualMachinesResponse
+	(*ListVirtualMachinesRequest)(nil),   // 3: v1.ListVirtualMachinesRequest
+	(*DeleteVirtualMachineRequest)(nil),  // 4: v1.DeleteVirtualMachineRequest
+	(*DeleteVirtualMachineResponse)(nil), // 5: v1.DeleteVirtualMachineResponse
+	(*storage.VirtualMachine)(nil),       // 6: storage.VirtualMachine
 }
 var file_api_v1_virtual_machine_service_proto_depIdxs = []int32{
-	7, // 0: v1.CreateVirtualMachineRequest.virtual_machine:type_name -> storage.VirtualMachine
-	7, // 1: v1.ListVirtualMachinesResponse.virtual_machines:type_name -> storage.VirtualMachine
-	8, // 2: v1.DeleteVirtualMachinesRequest.query:type_name -> v1.RawQuery
-	1, // 3: v1.VirtualMachineService.CreateVirtualMachine:input_type -> v1.CreateVirtualMachineRequest
-	0, // 4: v1.VirtualMachineService.GetVirtualMachine:input_type -> v1.GetVirtualMachineRequest
-	8, // 5: v1.VirtualMachineService.ListVirtualMachines:input_type -> v1.RawQuery
-	3, // 6: v1.VirtualMachineService.DeleteVirtualMachine:input_type -> v1.DeleteVirtualMachineRequest
-	4, // 7: v1.VirtualMachineService.DeleteVirtualMachines:input_type -> v1.DeleteVirtualMachinesRequest
-	7, // 8: v1.VirtualMachineService.CreateVirtualMachine:output_type -> storage.VirtualMachine
-	7, // 9: v1.VirtualMachineService.GetVirtualMachine:output_type -> storage.VirtualMachine
-	2, // 10: v1.VirtualMachineService.ListVirtualMachines:output_type -> v1.ListVirtualMachinesResponse
-	5, // 11: v1.VirtualMachineService.DeleteVirtualMachine:output_type -> v1.DeleteVirtualMachineResponse
-	6, // 12: v1.VirtualMachineService.DeleteVirtualMachines:output_type -> v1.DeleteVirtualMachinesResponse
-	8, // [8:13] is the sub-list for method output_type
-	3, // [3:8] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	6, // 0: v1.CreateVirtualMachineRequest.virtual_machine:type_name -> storage.VirtualMachine
+	6, // 1: v1.ListVirtualMachinesResponse.virtual_machines:type_name -> storage.VirtualMachine
+	1, // 2: v1.VirtualMachineService.CreateVirtualMachine:input_type -> v1.CreateVirtualMachineRequest
+	0, // 3: v1.VirtualMachineService.GetVirtualMachine:input_type -> v1.GetVirtualMachineRequest
+	3, // 4: v1.VirtualMachineService.ListVirtualMachines:input_type -> v1.ListVirtualMachinesRequest
+	4, // 5: v1.VirtualMachineService.DeleteVirtualMachine:input_type -> v1.DeleteVirtualMachineRequest
+	6, // 6: v1.VirtualMachineService.CreateVirtualMachine:output_type -> storage.VirtualMachine
+	6, // 7: v1.VirtualMachineService.GetVirtualMachine:output_type -> storage.VirtualMachine
+	2, // 8: v1.VirtualMachineService.ListVirtualMachines:output_type -> v1.ListVirtualMachinesResponse
+	5, // 9: v1.VirtualMachineService.DeleteVirtualMachine:output_type -> v1.DeleteVirtualMachineResponse
+	6, // [6:10] is the sub-list for method output_type
+	2, // [2:6] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_api_v1_virtual_machine_service_proto_init() }
@@ -445,14 +365,13 @@ func file_api_v1_virtual_machine_service_proto_init() {
 	if File_api_v1_virtual_machine_service_proto != nil {
 		return
 	}
-	file_api_v1_search_service_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_v1_virtual_machine_service_proto_rawDesc), len(file_api_v1_virtual_machine_service_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   7,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

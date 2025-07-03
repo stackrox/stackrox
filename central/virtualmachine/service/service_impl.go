@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"math"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
@@ -16,13 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/sac/resources"
-	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/paginated"
 	"google.golang.org/grpc"
-)
-
-const (
-	maxVirtualMachinesReturned = 1000
 )
 
 var (
@@ -32,7 +25,6 @@ var (
 			v1.VirtualMachineService_ListVirtualMachines_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.VirtualMachine)): {
-			v1.VirtualMachineService_DeleteVirtualMachines_FullMethodName,
 			v1.VirtualMachineService_DeleteVirtualMachine_FullMethodName,
 			v1.VirtualMachineService_CreateVirtualMachine_FullMethodName,
 		},
@@ -66,7 +58,8 @@ func (s *serviceImpl) CreateVirtualMachine(ctx context.Context, request *v1.Crea
 		return nil, errors.Wrap(errox.InvalidArgs, "id must be specified")
 	}
 
-	if err := s.datastore.UpsertVirtualMachine(ctx, request.VirtualMachine); err != nil {
+	// TODO: Handle specific error cases with proper error codes, e.g. duplicate ID
+	if err := s.datastore.CreateVirtualMachine(ctx, request.VirtualMachine); err != nil {
 		return nil, err
 	}
 
@@ -84,22 +77,16 @@ func (s *serviceImpl) GetVirtualMachine(ctx context.Context, request *v1.GetVirt
 		return nil, err
 	}
 	if !exists {
+		// TODO: check if this is HTTP 404
 		return nil, errors.Wrapf(errox.NotFound, "Virtual machine with id %q does not exist", request.GetId())
 	}
 
 	return vm, nil
 }
 
-func (s *serviceImpl) ListVirtualMachines(ctx context.Context, request *v1.RawQuery) (*v1.ListVirtualMachinesResponse, error) {
-	parsedQuery, err := search.ParseQuery(request.GetQuery(), search.MatchAllIfEmpty())
-	if err != nil {
-		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
-	}
-
-	// Fill in pagination.
-	paginated.FillPagination(parsedQuery, request.GetPagination(), maxVirtualMachinesReturned)
-
-	vms, err := s.datastore.SearchRawVirtualMachines(ctx, parsedQuery)
+func (s *serviceImpl) ListVirtualMachines(ctx context.Context, request *v1.ListVirtualMachinesRequest) (*v1.ListVirtualMachinesResponse, error) {
+	// For now, just return all virtual machines since we don't have search functionality
+	vms, err := s.datastore.GetAllVirtualMachines(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -121,36 +108,4 @@ func (s *serviceImpl) DeleteVirtualMachine(ctx context.Context, request *v1.Dele
 		response.Success = true
 		return &response, nil
 	}
-}
-
-func (s *serviceImpl) DeleteVirtualMachines(ctx context.Context, request *v1.DeleteVirtualMachinesRequest) (*v1.DeleteVirtualMachinesResponse, error) {
-	if request.GetQuery() == nil {
-		return nil, errors.New("a scoping query is required")
-	}
-
-	query, err := search.ParseQuery(request.GetQuery().GetQuery(), search.MatchAllIfEmpty())
-	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "error parsing query: %v", err)
-	}
-	paginated.FillPagination(query, request.GetQuery().GetPagination(), math.MaxInt32)
-
-	results, err := s.datastore.Search(ctx, query)
-	if err != nil {
-		return nil, err
-	}
-
-	response := &v1.DeleteVirtualMachinesResponse{
-		NumDeleted: uint32(len(results)),
-		DryRun:     !request.GetConfirm(),
-	}
-
-	if !request.GetConfirm() {
-		return response, nil
-	}
-
-	idSlice := search.ResultsToIDs(results)
-	if err := s.datastore.DeleteVirtualMachines(ctx, idSlice...); err != nil {
-		return nil, err
-	}
-	return response, nil
 }

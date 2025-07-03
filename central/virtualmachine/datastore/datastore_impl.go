@@ -2,18 +2,15 @@ package datastore
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
-	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
 
 var (
@@ -24,60 +21,39 @@ var (
 )
 
 type datastoreImpl struct {
-	keyedMutex      *concurrency.KeyedMutex
+	globalMutex     sync.Mutex
 	virtualMachines map[string]*storage.VirtualMachine
 }
 
 func newDatastoreImpl() DataStore {
 	ds := &datastoreImpl{
-		keyedMutex:      concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
+		globalMutex:     sync.Mutex{},
 		virtualMachines: map[string]*storage.VirtualMachine{},
 	}
 	return ds
 }
 
-func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error) {
-	defer metrics.SetDatastoreFunctionDuration(time.Now(), "VirtualMachine", "Search")
-	return []pkgSearch.Result{}, nil
-}
-
-// Count returns the number of search results from the query
-func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
-	defer metrics.SetDatastoreFunctionDuration(time.Now(), "VirtualMachine", "Count")
-	return len(ds.virtualMachines), nil
-}
-
-func (ds *datastoreImpl) SearchVirtualMachines(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
-	defer metrics.SetDatastoreFunctionDuration(time.Now(), "VirtualMachine", "SearchVirtualMachines")
-	return []*v1.SearchResult{}, nil
-}
-
-// SearchRawVirtualMachines delegates to the underlying searcher.
-func (ds *datastoreImpl) SearchRawVirtualMachines(ctx context.Context, q *v1.Query) ([]*storage.VirtualMachine, error) {
-	defer metrics.SetDatastoreFunctionDuration(time.Now(), "VirtualMachine", "SearchRawVirtualMachines")
-	values := make([]*storage.VirtualMachine, 0, len(ds.virtualMachines))
-	for _, v := range ds.virtualMachines {
-		values = append(values, v)
-	}
-	return values, nil
-}
-
 // CountVirtualMachines delegates to the underlying store.
 func (ds *datastoreImpl) CountVirtualMachines(ctx context.Context) (int, error) {
-	if _, err := virtualMachinesSAC.ReadAllowed(ctx); err != nil {
+	if ok, err := virtualMachinesSAC.ReadAllowed(ctx); err != nil {
 		return 0, err
+	} else if !ok {
+		return 0, sac.ErrResourceAccessDenied
 	}
 	return len(ds.virtualMachines), nil
 }
 
 // GetVirtualMachine delegates to the underlying store.
 func (ds *datastoreImpl) GetVirtualMachine(ctx context.Context, id string) (*storage.VirtualMachine, bool, error) {
+	if ok, err := virtualMachinesSAC.ReadAllowed(ctx); err != nil {
+		return &storage.VirtualMachine{}, false, err
+	} else if !ok {
+		return &storage.VirtualMachine{}, false, sac.ErrResourceAccessDenied
+	}
+
 	if id == "" {
 		return nil, false, errors.New("Please specify an id")
 	}
-
-	ds.keyedMutex.Lock(id)
-	defer ds.keyedMutex.Unlock(id)
 
 	vm, found := ds.virtualMachines[id]
 
@@ -89,13 +65,29 @@ func (ds *datastoreImpl) GetVirtualMachine(ctx context.Context, id string) (*sto
 	return nil, false, nil
 }
 
-// UpsertVirtualMachine dedupes the virtualMachine with the underlying storage and adds the virtualMachine to the index.
-func (ds *datastoreImpl) UpsertVirtualMachine(ctx context.Context, virtualMachine *storage.VirtualMachine) error {
-	defer metrics.SetDatastoreFunctionDuration(time.Now(), "VirtualMachine", "UpsertVirtualMachine")
-
-	if virtualMachine.GetId() == "" {
-		return errors.New("cannot upsert a virtualMachine without an id")
+// GetAllVirtualMachines delegates to the underlying store.
+func (ds *datastoreImpl) GetAllVirtualMachines(ctx context.Context) ([]*storage.VirtualMachine, error) {
+	if ok, err := virtualMachinesSAC.ReadAllowed(ctx); err != nil {
+		return []*storage.VirtualMachine{}, err
+	} else if !ok {
+		return []*storage.VirtualMachine{}, sac.ErrResourceAccessDenied
 	}
+
+	ds.globalMutex.Lock()
+	defer ds.globalMutex.Unlock()
+
+	ret := make([]*storage.VirtualMachine, 0, len(ds.virtualMachines))
+
+	for _, v := range ds.virtualMachines {
+		ret = append(ret, v.CloneVT())
+	}
+
+	return ret, nil
+}
+
+// UpsertVirtualMachine dedupes the virtualMachine with the underlying storage and adds the virtualMachine to the index.
+func (ds *datastoreImpl) CreateVirtualMachine(ctx context.Context, virtualMachine *storage.VirtualMachine) error {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "VirtualMachine", "CreateVirtualMachine")
 
 	if ok, err := virtualMachinesSAC.WriteAllowed(ctx); err != nil {
 		return err
@@ -103,8 +95,38 @@ func (ds *datastoreImpl) UpsertVirtualMachine(ctx context.Context, virtualMachin
 		return sac.ErrResourceAccessDenied
 	}
 
-	ds.keyedMutex.Lock(virtualMachine.GetId())
-	defer ds.keyedMutex.Unlock(virtualMachine.GetId())
+	if virtualMachine.GetId() == "" {
+		return errors.New("cannot create a virtualMachine without an id")
+	}
+
+	ds.globalMutex.Lock()
+	defer ds.globalMutex.Unlock()
+
+	if _, exists := ds.virtualMachines[virtualMachine.GetId()]; exists {
+		return errors.New("Already exists")
+	}
+
+	ds.virtualMachines[virtualMachine.GetId()] = virtualMachine
+
+	return nil
+}
+
+// UpsertVirtualMachine dedupes the virtualMachine with the underlying storage and adds the virtualMachine to the index.
+func (ds *datastoreImpl) UpsertVirtualMachine(ctx context.Context, virtualMachine *storage.VirtualMachine) error {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "VirtualMachine", "UpsertVirtualMachine")
+
+	if ok, err := virtualMachinesSAC.WriteAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
+	}
+
+	if virtualMachine.GetId() == "" {
+		return errors.New("cannot upsert a virtualMachine without an id")
+	}
+
+	ds.globalMutex.Lock()
+	defer ds.globalMutex.Unlock()
 
 	ds.virtualMachines[virtualMachine.GetId()] = virtualMachine
 
@@ -120,15 +142,16 @@ func (ds *datastoreImpl) DeleteVirtualMachines(ctx context.Context, ids ...strin
 		return sac.ErrResourceAccessDenied
 	}
 
+	ds.globalMutex.Lock()
+	defer ds.globalMutex.Unlock()
+
 	missingIds := make([]string, 0)
 
 	// First check which IDs exist
 	for _, id := range ids {
-		ds.keyedMutex.Lock(id)
 		if _, exists := ds.virtualMachines[id]; !exists {
 			missingIds = append(missingIds, id)
 		}
-		ds.keyedMutex.Unlock(id)
 	}
 
 	if len(missingIds) > 0 {
@@ -137,9 +160,7 @@ func (ds *datastoreImpl) DeleteVirtualMachines(ctx context.Context, ids ...strin
 
 	// Only proceed with deletion if all IDs exist
 	for _, id := range ids {
-		ds.keyedMutex.Lock(id)
 		delete(ds.virtualMachines, id)
-		ds.keyedMutex.Unlock(id)
 	}
 
 	return nil
@@ -147,6 +168,11 @@ func (ds *datastoreImpl) DeleteVirtualMachines(ctx context.Context, ids ...strin
 
 func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "VirtualMachine", "Exists")
+	if ok, err := virtualMachinesSAC.ReadAllowed(ctx); err != nil {
+		return false, err
+	} else if !ok {
+		return false, sac.ErrResourceAccessDenied
+	}
 
 	if id == "" {
 		return false, errors.New("Please specify a valid id")

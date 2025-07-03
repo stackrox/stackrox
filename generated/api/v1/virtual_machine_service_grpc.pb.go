@@ -20,11 +20,10 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	VirtualMachineService_CreateVirtualMachine_FullMethodName  = "/v1.VirtualMachineService/CreateVirtualMachine"
-	VirtualMachineService_GetVirtualMachine_FullMethodName     = "/v1.VirtualMachineService/GetVirtualMachine"
-	VirtualMachineService_ListVirtualMachines_FullMethodName   = "/v1.VirtualMachineService/ListVirtualMachines"
-	VirtualMachineService_DeleteVirtualMachine_FullMethodName  = "/v1.VirtualMachineService/DeleteVirtualMachine"
-	VirtualMachineService_DeleteVirtualMachines_FullMethodName = "/v1.VirtualMachineService/DeleteVirtualMachines"
+	VirtualMachineService_CreateVirtualMachine_FullMethodName = "/v1.VirtualMachineService/CreateVirtualMachine"
+	VirtualMachineService_GetVirtualMachine_FullMethodName    = "/v1.VirtualMachineService/GetVirtualMachine"
+	VirtualMachineService_ListVirtualMachines_FullMethodName  = "/v1.VirtualMachineService/ListVirtualMachines"
+	VirtualMachineService_DeleteVirtualMachine_FullMethodName = "/v1.VirtualMachineService/DeleteVirtualMachine"
 )
 
 // VirtualMachineServiceClient is the client API for VirtualMachineService service.
@@ -33,9 +32,8 @@ const (
 type VirtualMachineServiceClient interface {
 	CreateVirtualMachine(ctx context.Context, in *CreateVirtualMachineRequest, opts ...grpc.CallOption) (*storage.VirtualMachine, error)
 	GetVirtualMachine(ctx context.Context, in *GetVirtualMachineRequest, opts ...grpc.CallOption) (*storage.VirtualMachine, error)
-	ListVirtualMachines(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListVirtualMachinesResponse, error)
+	ListVirtualMachines(ctx context.Context, in *ListVirtualMachinesRequest, opts ...grpc.CallOption) (*ListVirtualMachinesResponse, error)
 	DeleteVirtualMachine(ctx context.Context, in *DeleteVirtualMachineRequest, opts ...grpc.CallOption) (*DeleteVirtualMachineResponse, error)
-	DeleteVirtualMachines(ctx context.Context, in *DeleteVirtualMachinesRequest, opts ...grpc.CallOption) (*DeleteVirtualMachinesResponse, error)
 }
 
 type virtualMachineServiceClient struct {
@@ -66,7 +64,7 @@ func (c *virtualMachineServiceClient) GetVirtualMachine(ctx context.Context, in 
 	return out, nil
 }
 
-func (c *virtualMachineServiceClient) ListVirtualMachines(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListVirtualMachinesResponse, error) {
+func (c *virtualMachineServiceClient) ListVirtualMachines(ctx context.Context, in *ListVirtualMachinesRequest, opts ...grpc.CallOption) (*ListVirtualMachinesResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListVirtualMachinesResponse)
 	err := c.cc.Invoke(ctx, VirtualMachineService_ListVirtualMachines_FullMethodName, in, out, cOpts...)
@@ -86,25 +84,14 @@ func (c *virtualMachineServiceClient) DeleteVirtualMachine(ctx context.Context, 
 	return out, nil
 }
 
-func (c *virtualMachineServiceClient) DeleteVirtualMachines(ctx context.Context, in *DeleteVirtualMachinesRequest, opts ...grpc.CallOption) (*DeleteVirtualMachinesResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(DeleteVirtualMachinesResponse)
-	err := c.cc.Invoke(ctx, VirtualMachineService_DeleteVirtualMachines_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // VirtualMachineServiceServer is the server API for VirtualMachineService service.
 // All implementations should embed UnimplementedVirtualMachineServiceServer
 // for forward compatibility.
 type VirtualMachineServiceServer interface {
 	CreateVirtualMachine(context.Context, *CreateVirtualMachineRequest) (*storage.VirtualMachine, error)
 	GetVirtualMachine(context.Context, *GetVirtualMachineRequest) (*storage.VirtualMachine, error)
-	ListVirtualMachines(context.Context, *RawQuery) (*ListVirtualMachinesResponse, error)
+	ListVirtualMachines(context.Context, *ListVirtualMachinesRequest) (*ListVirtualMachinesResponse, error)
 	DeleteVirtualMachine(context.Context, *DeleteVirtualMachineRequest) (*DeleteVirtualMachineResponse, error)
-	DeleteVirtualMachines(context.Context, *DeleteVirtualMachinesRequest) (*DeleteVirtualMachinesResponse, error)
 }
 
 // UnimplementedVirtualMachineServiceServer should be embedded to have
@@ -120,14 +107,11 @@ func (UnimplementedVirtualMachineServiceServer) CreateVirtualMachine(context.Con
 func (UnimplementedVirtualMachineServiceServer) GetVirtualMachine(context.Context, *GetVirtualMachineRequest) (*storage.VirtualMachine, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetVirtualMachine not implemented")
 }
-func (UnimplementedVirtualMachineServiceServer) ListVirtualMachines(context.Context, *RawQuery) (*ListVirtualMachinesResponse, error) {
+func (UnimplementedVirtualMachineServiceServer) ListVirtualMachines(context.Context, *ListVirtualMachinesRequest) (*ListVirtualMachinesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListVirtualMachines not implemented")
 }
 func (UnimplementedVirtualMachineServiceServer) DeleteVirtualMachine(context.Context, *DeleteVirtualMachineRequest) (*DeleteVirtualMachineResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteVirtualMachine not implemented")
-}
-func (UnimplementedVirtualMachineServiceServer) DeleteVirtualMachines(context.Context, *DeleteVirtualMachinesRequest) (*DeleteVirtualMachinesResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DeleteVirtualMachines not implemented")
 }
 func (UnimplementedVirtualMachineServiceServer) testEmbeddedByValue() {}
 
@@ -186,7 +170,7 @@ func _VirtualMachineService_GetVirtualMachine_Handler(srv interface{}, ctx conte
 }
 
 func _VirtualMachineService_ListVirtualMachines_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RawQuery)
+	in := new(ListVirtualMachinesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -198,7 +182,7 @@ func _VirtualMachineService_ListVirtualMachines_Handler(srv interface{}, ctx con
 		FullMethod: VirtualMachineService_ListVirtualMachines_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(VirtualMachineServiceServer).ListVirtualMachines(ctx, req.(*RawQuery))
+		return srv.(VirtualMachineServiceServer).ListVirtualMachines(ctx, req.(*ListVirtualMachinesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -217,24 +201,6 @@ func _VirtualMachineService_DeleteVirtualMachine_Handler(srv interface{}, ctx co
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(VirtualMachineServiceServer).DeleteVirtualMachine(ctx, req.(*DeleteVirtualMachineRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _VirtualMachineService_DeleteVirtualMachines_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DeleteVirtualMachinesRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(VirtualMachineServiceServer).DeleteVirtualMachines(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: VirtualMachineService_DeleteVirtualMachines_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(VirtualMachineServiceServer).DeleteVirtualMachines(ctx, req.(*DeleteVirtualMachinesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -261,10 +227,6 @@ var VirtualMachineService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteVirtualMachine",
 			Handler:    _VirtualMachineService_DeleteVirtualMachine_Handler,
-		},
-		{
-			MethodName: "DeleteVirtualMachines",
-			Handler:    _VirtualMachineService_DeleteVirtualMachines_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
