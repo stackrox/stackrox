@@ -24,14 +24,14 @@ var (
 
 	// redHatRegistries contains registries where all images are built by Red Hat.
 	// See https://github.com/stackrox/stackrox/pull/15761 for details.
-	redHatRegistries = set.NewStringSet(
+	redHatRegistries = set.NewFrozenStringSet(
 		"registry.access.redhat.com",
 		"registry.redhat.io",
 	)
 
 	// quayIoRedHatRemotes contains quay.io remotes where all images are built by Red Hat.
 	// See https://github.com/stackrox/stackrox/pull/15761 for details.
-	quayIoRedHatRemotes = set.NewStringSet(
+	quayIoRedHatRemotes = set.NewFrozenStringSet(
 		"openshift-release-dev/ocp-release",
 		"openshift-release-dev/ocp-v4.0-art-dev",
 	)
