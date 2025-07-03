@@ -30,7 +30,7 @@ func createDefaultRedHatSignatureIntegration(siStore store.SignatureIntegrationS
 		return
 	}
 
-	log.Infof("Upserting default Red Hat signature integration %q (%v)",
+	log.Infof("Upserting default Red Hat signature integration %q (%s)",
 		signatures.DefaultRedHatSignatureIntegration.GetName(),
 		signatures.DefaultRedHatSignatureIntegration.GetId())
 	err := siStore.Upsert(ctx, signatures.DefaultRedHatSignatureIntegration)
