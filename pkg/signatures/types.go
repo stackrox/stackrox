@@ -30,6 +30,7 @@ secqki/yrmv3Y0dqZ9VOn3UCAwEAAQ==
 )
 
 var DefaultRedHatSignatureIntegration = &storage.SignatureIntegration{
+	// Please don't change this ID, as it's referred to from other places. A migration may be needed if this is changed.
 	Id:   SignatureIntegrationIDPrefix + "12a37a37-760e-4388-9e79-d62726c075b2",
 	Name: "Red Hat",
 	Cosign: &storage.CosignPublicKeyVerification{
