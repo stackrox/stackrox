@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
   pull_request:
     branches:
-      - 'yli3/checkVuln'
+    - 'yli3/checkVuln'
 
 jobs:
   parse-versions:
