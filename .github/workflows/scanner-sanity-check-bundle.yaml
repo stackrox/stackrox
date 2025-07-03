@@ -50,11 +50,6 @@ jobs:
     env:
       SCANNER_BUNDLE_VERSION: ${{ matrix.version }}
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-
     - name: Check bundle
       run: |
         echo "Checking vulnerabilities for version ${{ env.SCANNER_BUNDLE_VERSION }}..."
