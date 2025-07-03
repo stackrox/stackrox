@@ -30,6 +30,26 @@ jobs:
         ./.github/workflows/scripts/scanner-get-released-tags.sh | tee -a "$GITHUB_OUTPUT"
         echo "$EOF" >> "$GITHUB_OUTPUT"
 
+  parse-older-versions:
+    runs-on: ubuntu-latest
+    outputs:
+      versions: ${{ steps.set-versions.outputs.versions }}
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Parse VULNERABILITY_BUNDLE_VERSION from RELEASE_VERSION
+      id: set-versions
+      run: |
+        set -o pipefail
+        EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+        VERSIONS=$(grep -E "^4\.(4|5)\.[0-9]+$" scanner/updater/version/RELEASE_VERSION | sed 's/.*/{"version": "&"}/' | jq -s .)
+        echo "versions<<$EOF" >> "$GITHUB_OUTPUT"
+        echo "$VERSIONS" >> "$GITHUB_OUTPUT"
+        echo "$EOF" >> "$GITHUB_OUTPUT"
+
   sanity-check:
     # if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     needs:
@@ -52,6 +72,55 @@ jobs:
     steps:
     - name: Check bundle
       run: |
-        echo "Checking vulnerabilities for version ${{ env.SCANNER_BUNDLE_VERSION }}..."
-        curl --head --fail --silent --show-error "https://storage.googleapis.com/definitions.stackrox.io/v4/vulnerability-bundles/${SCANNER_BUNDLE_VERSION}/vulnerabilities.zip"
+        NOW_EPOCH=$(date +%s)
+        LAST_MODIFIED=$(curl --head --fail --silent --show-error "https://storage.googleapis.com/definitions.stackrox.io/v4/vulnerability-bundles/${SCANNER_BUNDLE_VERSION}/vulnerabilities.zip" | grep -i '^Last-Modified:' | sed 's/Last-Modified: //I')
+        if [ "$SCANNER_BUNDLE_VERSION" = "v1" ]; then
+          curl --head --fail --silent --show-error "https://storage.googleapis.com/definitions.stackrox.io/v4/vulnerability-bundles/${SCANNER_BUNDLE_VERSION}/vulns.json.zst"
+        fi
+        LAST_MODIFIED_EPOCH=$(date -d "$LAST_MODIFIED" +%s)
+        AGE=$(( (NOW_EPOCH - LAST_MODIFIED_EPOCH) / 3600 ))
+        echo "ZIP file for version ${{ env.SCANNER_BUNDLE_VERSION }} age: ${AGE} hours"
+        if [ "$AGE" -gt 5 ]; then
+          echo "File is older than 5 hours."
+          exit 1
+        fi
 
+  check-older-versions:
+    needs:
+    - parse-older-versions
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.4.8
+      volumes:
+      # The updater makes heavy use of /tmp files.
+      - /tmp:/tmp
+      - /usr:/mnt/usr
+      - /opt:/mnt/opt
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        include: ${{ fromJson(needs.parse-older-versions.outputs.versions) }}
+    env:
+      SCANNER_RELEASE_VERSION: ${{ matrix.version }}
+    steps:
+    - name: Check bundle
+      run: |
+        echo "Checking vulnerabilities for version ${{ env.SCANNER_RELEASE_VERSION }}..."
+        curl --head --fail --silent --show-error "https://storage.googleapis.com/definitions.stackrox.io/v4/vulnerability-bundles/${SCANNER_RELEASE_VERSION}/vulns.json.zst"
+
+        if [[ "$SCANNER_RELEASE_VERSION" == 4.5.* ]]; then
+          curl --head --fail --silent --show-error "https://storage.googleapis.com/definitions.stackrox.io/v4/vulnerability-bundles/${SCANNER_RELEASE_VERSION}/vulnerabilities.zip"
+        fi
+
+
+  send-notification:
+    needs:
+    - sanity-check
+    - check-older-versions
+    runs-on: ubuntu-latest
+    if: ${{ failure() && github.ref_name == 'master' }}
+    steps:
+    - name: Send Slack notification on workflow failure
+      run: |
+        curl -X POST -H 'Content-type: application/json' --data '{"text":"<${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|Workflow ${{ github.workflow }}> failed in repository ${{ github.repository }}: Vulnerabilities may be missing or outdated"}' ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
