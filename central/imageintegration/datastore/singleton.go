@@ -138,7 +138,7 @@ func createDefaultScannerV4Integration(ctx context.Context, iiStore store.Store)
 		return
 	}
 
-	log.Infof("Upserting default Scanner V4 integration %q (%v)", store.DefaultScannerV4Integration.GetName(), store.DefaultScannerV4Integration.GetId())
+	log.Infof("Upserting default Scanner V4 integration %q (%s)", store.DefaultScannerV4Integration.GetName(), store.DefaultScannerV4Integration.GetId())
 	err := iiStore.Upsert(ctx, store.DefaultScannerV4Integration)
 	utils.Should(errors.Wrap(err, "unable to upsert default ScannerV4 integration"))
 }
