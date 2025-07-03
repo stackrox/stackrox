@@ -49,7 +49,7 @@ main() {
 
     // backup not supported for external databases
     local byodb="${BYODB_TEST:-false}"
-    if [[ "${byodb}" == "false" ]] then
+    if [ "${byodb}" == "false" ]; then
         roxctl --ca="" --insecure-skip-tls-verify -e "${api_endpoint}" central backup --output "${dest}"
     fi
 
