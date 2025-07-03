@@ -21,6 +21,20 @@ var (
 	// Please see https://github.com/opencontainers/image-spec/blob/main/descriptor.md#registered-algorithms
 	// for more information.
 	digestPrefixes = []string{"sha256:", "sha512:"}
+
+	// redHatRegistries contains registries where all images are built by Red Hat.
+	// See https://github.com/stackrox/stackrox/pull/15761 for details.
+	redHatRegistries = set.NewStringSet(
+		"registry.access.redhat.com",
+		"registry.redhat.io",
+	)
+
+	// quayIoRedHatRemotes contains quay.io remotes where all images are built by Red Hat.
+	// See https://github.com/stackrox/stackrox/pull/15761 for details.
+	quayIoRedHatRemotes = set.NewStringSet(
+		"openshift-release-dev/ocp-release",
+		"openshift-release-dev/ocp-v4.0-art-dev",
+	)
 )
 
 // GenerateImageFromStringWithDefaultTag generates an image type from a common string format and returns an error if
@@ -276,10 +290,6 @@ func FilterSuppressedCVEsNoClone(img *storage.Image) {
 func IsRedHatImage(img *storage.Image) bool {
 	// First consider registries where all images are built by Red Hat
 	imageRegistry := img.GetName().GetRegistry()
-	redHatRegistries := set.NewStringSet(
-		"registry.access.redhat.com",
-		"registry.redhat.io",
-	)
 	if redHatRegistries.Contains(imageRegistry) {
 		return true
 	}
@@ -289,9 +299,5 @@ func IsRedHatImage(img *storage.Image) bool {
 		return false
 	}
 
-	quayIoRedHatRemotes := set.NewStringSet(
-		"openshift-release-dev/ocp-release",
-		"openshift-release-dev/ocp-v4.0-art-dev",
-	)
 	return quayIoRedHatRemotes.Contains(img.GetName().GetRemote())
 }
