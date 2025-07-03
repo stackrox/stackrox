@@ -20,8 +20,8 @@ metadata:
         )
       )
   labels:
-    appstudio.openshift.io/application: acs
-    appstudio.openshift.io/component: main
+    appstudio.openshift.io/application: acs-4-7
+    appstudio.openshift.io/component: main-4-7
     pipelines.appstudio.openshift.io/type: build
   name: main-on-push
   namespace: rh-acs-tenant
@@ -117,7 +117,7 @@ spec:
           memory: 3Gi
 
   taskRunTemplate:
-    serviceAccountName: build-pipeline-main
+    serviceAccountName: build-pipeline-main-4-7
 
   # IMPORTANT: when changing timeouts here, read and follow timeout instructions in operator-bundle-build.yaml.
   timeouts:
