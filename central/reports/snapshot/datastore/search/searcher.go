@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
-	pkgPostgres "github.com/stackrox/rox/pkg/search/scoped/postgres"
 )
 
 var (
@@ -37,6 +36,5 @@ func New(storage pgStore.Store) Searcher {
 }
 
 func formatSearcher(searcher search.Searcher) search.Searcher {
-	scopedSafeSearcher := pkgPostgres.WithScoping(searcher)
-	return paginated.WithDefaultSortOption(scopedSafeSearcher, defaultSortOption)
+	return paginated.WithDefaultSortOption(searcher, defaultSortOption)
 }

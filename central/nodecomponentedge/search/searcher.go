@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/search"
-	pkgPostgres "github.com/stackrox/rox/pkg/search/scoped/postgres"
 	"github.com/stackrox/rox/pkg/search/sortfields"
 )
 
@@ -31,6 +30,5 @@ func New(storage store.Store) Searcher {
 }
 
 func formatSearcherV2(searcher search.Searcher) search.Searcher {
-	scopedSafeSearcher := pkgPostgres.WithScoping(searcher)
-	return sortfields.TransformSortFields(scopedSafeSearcher, schema.NodesSchema.OptionsMap)
+	return sortfields.TransformSortFields(searcher, schema.NodesSchema.OptionsMap)
 }
