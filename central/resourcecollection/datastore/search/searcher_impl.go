@@ -18,11 +18,6 @@ func (s *searcherImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result
 	return s.searcher.Search(ctx, q)
 }
 
-// Count returns the number of search results from the query
-func (s *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
-	return s.searcher.Count(ctx, q)
-}
-
 func (s *searcherImpl) SearchCollections(ctx context.Context, q *v1.Query) ([]*storage.ResourceCollection, error) {
 	clusters, _, err := s.searchCollections(ctx, q)
 	return clusters, err

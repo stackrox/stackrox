@@ -15,14 +15,12 @@ import (
 type Searcher interface {
 	SearchRawProcessBaselines(ctx context.Context, q *v1.Query) ([]*storage.ProcessBaseline, error)
 	Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error)
-	Count(ctx context.Context, q *v1.Query) (int, error)
 }
 
 // New returns a new instance of Searcher for the given storage.
 func New(processBaselineStore store.Store) Searcher {
 	ds := &searcherImpl{
-		storage:           processBaselineStore,
-		formattedSearcher: formatSearcher(processBaselineStore),
+		storage: processBaselineStore,
 	}
 
 	return ds

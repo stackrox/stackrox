@@ -32,7 +32,7 @@ func (ds *datastoreImpl) SearchRawEdges(ctx context.Context, q *v1.Query) ([]*st
 }
 
 func (ds *datastoreImpl) Count(ctx context.Context) (int, error) {
-	return ds.searcher.Count(ctx, searchPkg.EmptyQuery())
+	return ds.storage.Count(ctx, searchPkg.EmptyQuery())
 }
 
 func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.ImageComponentEdge, bool, error) {

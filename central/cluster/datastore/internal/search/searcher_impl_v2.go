@@ -75,11 +75,6 @@ func (s *searcherImplV2) Search(ctx context.Context, q *v1.Query) ([]search.Resu
 	return s.searcher.Search(ctx, q)
 }
 
-// Count returns the number of search results from the query
-func (s *searcherImplV2) Count(ctx context.Context, q *v1.Query) (int, error) {
-	return s.searcher.Count(ctx, q)
-}
-
 func convertCluster(cluster *storage.Cluster, result search.Result) *v1.SearchResult {
 	return &v1.SearchResult{
 		Category:       v1.SearchCategory_CLUSTERS,

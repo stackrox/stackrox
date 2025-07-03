@@ -40,11 +40,6 @@ func (s *searcherImplV2) Search(ctx context.Context, q *v1.Query) ([]search.Resu
 	return s.getSearchResults(ctx, q)
 }
 
-// Count returns the number of search results from the query
-func (s *searcherImplV2) Count(ctx context.Context, q *v1.Query) (int, error) {
-	return s.getCountResults(ctx, q)
-}
-
 func (s *searcherImplV2) SearchNodes(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
 	results, err := s.getSearchResults(ctx, q)
 	if err != nil {
@@ -73,10 +68,6 @@ func (s *searcherImplV2) searchNodes(ctx context.Context, q *v1.Query) ([]*stora
 
 func (s *searcherImplV2) getSearchResults(ctx context.Context, q *v1.Query) (res []search.Result, err error) {
 	return s.searcher.Search(ctx, q)
-}
-
-func (s *searcherImplV2) getCountResults(ctx context.Context, q *v1.Query) (count int, err error) {
-	return s.searcher.Count(ctx, q)
 }
 
 func (s *searcherImplV2) resultsToNodes(ctx context.Context, results []search.Result) ([]*storage.Node, []int, error) {
