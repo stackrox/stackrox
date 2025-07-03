@@ -120,14 +120,14 @@ func (s *serviceImpl) BatchUpdate(ctx context.Context, req *v1.GroupBatchUpdateR
 	}
 
 	removed, updated, added := diffGroups(req.GetPreviousGroups(), req.GetRequiredGroups())
-	if err := s.groups.Mutate(ctx, removed, updated, added, req.GetForce(), s.authProviderRegistry); err != nil {
+	if err := s.groups.Mutate(ctx, removed, updated, added, req.GetForce()); err != nil {
 		return nil, err
 	}
 	return &v1.Empty{}, nil
 }
 
 func (s *serviceImpl) CreateGroup(ctx context.Context, group *storage.Group) (*v1.Empty, error) {
-	err := s.groups.Add(ctx, group, s.authProviderRegistry)
+	err := s.groups.Add(ctx, group)
 	if err != nil {
 		return nil, err
 	}
@@ -135,7 +135,7 @@ func (s *serviceImpl) CreateGroup(ctx context.Context, group *storage.Group) (*v
 }
 
 func (s *serviceImpl) UpdateGroup(ctx context.Context, updateReq *v1.UpdateGroupRequest) (*v1.Empty, error) {
-	err := s.groups.Update(ctx, updateReq.GetGroup(), updateReq.GetForce(), s.authProviderRegistry)
+	err := s.groups.Update(ctx, updateReq.GetGroup(), updateReq.GetForce())
 	if err != nil {
 		return nil, err
 	}

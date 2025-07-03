@@ -43,7 +43,7 @@ func (u *groupUpdater) Upsert(ctx context.Context, m protocompat.Message) error 
 	if !ok {
 		return errox.InvariantViolation.Newf("wrong type passed to group updater: %T", group)
 	}
-	return u.groupDS.Upsert(ctx, group, u.authProviderRegistry)
+	return u.groupDS.Upsert(ctx, group)
 }
 
 func (u *groupUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip ...string) ([]string, error) {
