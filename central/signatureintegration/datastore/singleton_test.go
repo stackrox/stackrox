@@ -3,8 +3,8 @@ package datastore
 import (
 	"testing"
 
-	"github.com/stackrox/rox/central/signatureintegration/store"
 	mockSIStore "github.com/stackrox/rox/central/signatureintegration/store/mocks"
+	"github.com/stackrox/rox/pkg/signatures"
 	"go.uber.org/mock/gomock"
 )
 
@@ -12,7 +12,7 @@ func TestCreateDefaultRedHatSignatureIntegration(t *testing.T) {
 	t.Run("should not add default integration when it already exists", func(t *testing.T) {
 		s := mockSIStore.NewMockSignatureIntegrationStore(gomock.NewController(t))
 		s.EXPECT().Get(gomock.Any(), gomock.Any()).Return(
-			store.DefaultRedHatSignatureIntegration, true, nil)
+			signatures.DefaultRedHatSignatureIntegration, true, nil)
 
 		createDefaultRedHatSignatureIntegration(s)
 	})
@@ -20,7 +20,7 @@ func TestCreateDefaultRedHatSignatureIntegration(t *testing.T) {
 	t.Run("should add default integration when it doesn't exist", func(t *testing.T) {
 		s := mockSIStore.NewMockSignatureIntegrationStore(gomock.NewController(t))
 		s.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, false, nil)
-		s.EXPECT().Upsert(gomock.Any(), store.DefaultRedHatSignatureIntegration).Return(nil)
+		s.EXPECT().Upsert(gomock.Any(), signatures.DefaultRedHatSignatureIntegration).Return(nil)
 
 		createDefaultRedHatSignatureIntegration(s)
 	})
