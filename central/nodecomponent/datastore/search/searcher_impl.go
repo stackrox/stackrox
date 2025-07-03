@@ -18,11 +18,6 @@ func (s *searcherImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result
 	return s.getSearchResults(ctx, q)
 }
 
-// Count returns the number of search results from the query
-func (s *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
-	return s.getCountResults(ctx, q)
-}
-
 func (s *searcherImpl) SearchNodeComponents(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
 	results, err := s.getSearchResults(ctx, q)
 	if err != nil {
@@ -51,10 +46,6 @@ func (s *searcherImpl) searchNodeComponents(ctx context.Context, q *v1.Query) ([
 
 func (s *searcherImpl) getSearchResults(ctx context.Context, q *v1.Query) (res []search.Result, err error) {
 	return s.searcher.Search(ctx, q)
-}
-
-func (s *searcherImpl) getCountResults(ctx context.Context, q *v1.Query) (count int, err error) {
-	return s.searcher.Count(ctx, q)
 }
 
 func (s *searcherImpl) resultsToImageComponents(ctx context.Context, results []search.Result) ([]*storage.NodeComponent, []int, error) {

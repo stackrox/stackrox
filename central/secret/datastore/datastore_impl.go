@@ -82,5 +82,5 @@ func (d *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Re
 
 // Count returns the number of search results from the query
 func (d *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
-	return d.searcher.Count(ctx, q)
+	return d.storage.Count(ctx, q)
 }
