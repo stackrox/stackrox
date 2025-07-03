@@ -265,6 +265,14 @@ func FilterSuppressedCVEsNoClone(img *storage.Image) {
 	}
 }
 
+// IsRedHatImage takes in an image and returns whether it's a Red Hat image.
+// This is determined via heuristics, by looking at these images, which are assumed to be "official Red Hat images",
+// and checking where they are hosted:
+//
+//   - All images running in a default openshift cluster
+//   - All images that are referred by PackageManifests in the "redhat-operators" OLM catalog
+//
+// See the description of https://github.com/stackrox/stackrox/pull/15761 for details
 func IsRedHatImage(img *storage.Image) bool {
 	// First consider registries where all images are built by Red Hat
 	imageRegistry := img.GetName().GetRegistry()
