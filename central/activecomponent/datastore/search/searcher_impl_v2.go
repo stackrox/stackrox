@@ -38,8 +38,3 @@ func (s *searcherImplV2) SearchRawActiveComponents(ctx context.Context, q *v1.Qu
 func (s *searcherImplV2) Search(ctx context.Context, q *v1.Query) (res []search.Result, err error) {
 	return s.storage.Search(ctx, q)
 }
-
-// Count returns the number of search results from the query
-func (s *searcherImplV2) Count(ctx context.Context, q *v1.Query) (count int, err error) {
-	return s.storage.Count(ctx, q)
-}
