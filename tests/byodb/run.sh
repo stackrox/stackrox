@@ -80,6 +80,8 @@ run_byodb_test() {
     wait_for_api
     setup_client_TLS_certs
 
+    wait_for_scanner_V4
+
     touch "${STATE_DEPLOYED}"
 
     cd "$TEST_ROOT"
@@ -112,12 +114,12 @@ run_byodb_test() {
     rm -f FAIL
     remove_qa_test_results
 
-    info "Running smoke tests"
+    info "Running QA tests"
     CLUSTER="$CLUSTER_TYPE_FOR_TEST" make -C qa-tests-backend test || touch FAIL
     store_qa_test_results "byodb-tests"
     [[ ! -f FAIL ]] || die "QA tests failed"
 
-    collect_and_check_stackrox_logs "$log_output_dir" "byodb_smoke"
+    collect_and_check_stackrox_logs "$log_output_dir" "byodb_QA"
 }
 
 cleanup_byodb_test() {
