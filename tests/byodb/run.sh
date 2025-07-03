@@ -80,7 +80,7 @@ run_byodb_test() {
     wait_for_api
     setup_client_TLS_certs
 
-    wait_for_scanner_V4
+    wait_for_scanner_V4 "stackrox"
 
     touch "${STATE_DEPLOYED}"
 
