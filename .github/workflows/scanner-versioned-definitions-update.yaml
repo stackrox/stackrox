@@ -102,7 +102,7 @@ jobs:
         if-no-files-found: error
 
   build-and-run:
-    # if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     needs:
     - parse-versions
     - prepare-environment
