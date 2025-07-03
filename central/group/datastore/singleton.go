@@ -8,6 +8,7 @@ import (
 	roleDatastore "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sync"
@@ -15,18 +16,20 @@ import (
 )
 
 var (
-	ds                  DataStore
-	once                sync.Once
-	onceSetAuthProvider sync.Once
+	ds                DataStore
+	once              sync.Once
+	authProviderMutex sync.RWMutex
 
 	// Global variable to store the auth provider registry function
-	// This will be set by the auth provider registry package to break circular dependency
+	// This will be set by the auth provider registry package to break circular dependency.
 	authProviderRegistryFunc func() authproviders.Registry
 )
 
 func initialize() {
 	ds = New(pgStore.New(globaldb.GetPostgres()), roleDatastore.Singleton(), func() authproviders.Registry {
-		return authProviderRegistryFunc()
+		return concurrency.WithRLock1(&authProviderMutex, func() authproviders.Registry {
+			return authProviderRegistryFunc()
+		})
 	})
 
 	// Give datastore access to groups so that it can delete any groups with empty props on startup
@@ -41,7 +44,7 @@ func initialize() {
 // SetAuthProviderRegistryFunc sets the function to get the auth provider registry
 // This is called by the auth provider registry package to break the circular dependency
 func SetAuthProviderRegistryFunc(fn func() authproviders.Registry) {
-	onceSetAuthProvider.Do(func() {
+	concurrency.WithLock(&authProviderMutex, func() {
 		authProviderRegistryFunc = fn
 	})
 }
