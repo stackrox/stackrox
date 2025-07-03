@@ -100,11 +100,6 @@ func (s *searcherImplV2) Search(ctx context.Context, q *v1.Query) (res []search.
 	return s.searcher.Search(ctx, q)
 }
 
-// Count returns the number of search results from the query
-func (s *searcherImplV2) Count(ctx context.Context, q *v1.Query) (count int, err error) {
-	return s.searcher.Count(ctx, q)
-}
-
 // convertImage returns proto search result from a image object and the internal search result
 func convertImage(image *storage.Image, result search.Result) *v1.SearchResult {
 	return &v1.SearchResult{
