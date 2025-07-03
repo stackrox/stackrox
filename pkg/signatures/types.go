@@ -11,6 +11,7 @@ const (
 	//	"io.stackrox.signatureintegration.94ac7bfe-f9b2-402e-b4f2-bfda480e1a13".
 	SignatureIntegrationIDPrefix = "io.stackrox.signatureintegration."
 
+	// TODO Implement dynamic fetching to handle key rotations: ROX-29936
 	releaseKey3PublicKey = `-----BEGIN PUBLIC KEY-----
 MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEA0ASyuH2TLWvBUqPHZ4Ip
 75g7EncBkgQHdJnjzxAW5KQTMh/siBoB/BoSrtiPMwnChbTCnQOIQeZuDiFnhuJ7
