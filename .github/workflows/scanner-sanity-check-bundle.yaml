@@ -54,4 +54,3 @@ jobs:
       run: |
         echo "Checking vulnerabilities for version ${{ env.SCANNER_BUNDLE_VERSION }}..."
         curl --head --fail --silent --show-error "https://storage.googleapis.com/definitions.stackrox.io/v4/vulnerability-bundles/${SCANNER_BUNDLE_VERSION}/vulnerabilities.zip"
-
