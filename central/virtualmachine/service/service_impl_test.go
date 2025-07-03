@@ -4,358 +4,545 @@ import (
 	"context"
 	"errors"
 	"testing"
-	"time"
 
-	imageDSMocks "github.com/stackrox/rox/central/image/datastore/mocks"
-	iiStore "github.com/stackrox/rox/central/imageintegration/store"
-	riskManagerMocks "github.com/stackrox/rox/central/risk/manager/mocks"
+	"github.com/stackrox/rox/central/role/sachelper/mocks"
+	datastoreMocks "github.com/stackrox/rox/central/virtualmachine/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
-	"github.com/stackrox/rox/pkg/images/enricher"
-	enricherMocks "github.com/stackrox/rox/pkg/images/enricher/mocks"
-	"github.com/stackrox/rox/pkg/images/utils"
-	"github.com/stackrox/rox/pkg/protoassert"
-	"github.com/stackrox/rox/pkg/protoconv"
-	pkgTestUtils "github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
-	"golang.org/x/sync/semaphore"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func TestAuthz(t *testing.T) {
 	testutils.AssertAuthzWorks(t, &serviceImpl{})
 }
 
-func TestBuildNames(t *testing.T) {
-	srcImage := &storage.ImageName{FullName: "si"}
+func TestCreateVirtualMachine(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
 
-	t.Run("nil metadata", func(t *testing.T) {
-		names := buildNames(srcImage, nil, nil)
-		assert.Len(t, names, 1)
-		assert.Equal(t, srcImage.GetFullName(), names[0].GetFullName())
-	})
+	mockDatastore := datastoreMocks.NewMockDataStore(ctrl)
+	mockSACHelper := mocks.NewMockClusterSacHelper(ctrl)
 
-	t.Run("empty metadata", func(t *testing.T) {
-		names := buildNames(srcImage, nil, &storage.ImageMetadata{})
-		assert.Len(t, names, 1)
-		assert.Equal(t, srcImage.GetFullName(), names[0].GetFullName())
-	})
+	service := &serviceImpl{
+		datastore:        mockDatastore,
+		clusterSACHelper: mockSACHelper,
+	}
 
-	t.Run("metadata with empty data source", func(t *testing.T) {
-		metadata := &storage.ImageMetadata{DataSource: &storage.DataSource{}}
-		names := buildNames(srcImage, nil, metadata)
-		assert.Len(t, names, 1)
-		assert.Equal(t, srcImage.GetFullName(), names[0].GetFullName())
-	})
+	ctx := context.Background()
 
-	t.Run("metadata with mirror", func(t *testing.T) {
-		mirror := "example.com/mirror/image:latest"
-		metadata := &storage.ImageMetadata{DataSource: &storage.DataSource{Mirror: mirror}}
-		names := buildNames(srcImage, nil, metadata)
-		assert.Len(t, names, 2)
-		assert.Equal(t, srcImage.GetFullName(), names[0].GetFullName())
-		assert.Equal(t, mirror, names[1].GetFullName())
-	})
-
-	t.Run("metadata with invalid mirror", func(t *testing.T) {
-		mirror := "example.com/mirror/image@sha256:bad"
-		metadata := &storage.ImageMetadata{DataSource: &storage.DataSource{Mirror: mirror}}
-		names := buildNames(srcImage, nil, metadata)
-		assert.Len(t, names, 1)
-		assert.Equal(t, srcImage.GetFullName(), names[0].GetFullName())
-	})
-
-	t.Run("existing names and mirror", func(t *testing.T) {
-		existingNames := []*storage.ImageName{
-			{FullName: "si"}, // Dupe should be omitted
-			{FullName: "e1"},
-			{FullName: "e2"},
-			{FullName: "si"}, // Dupe should be omitted
+	t.Run("successful creation", func(t *testing.T) {
+		vm := &storage.VirtualMachine{
+			Id:        "test-vm-id",
+			Name:      "test-vm",
+			Namespace: "test-namespace",
 		}
-		mirror := "example.com/mirror/image:latest"
-		metadata := &storage.ImageMetadata{DataSource: &storage.DataSource{Mirror: mirror}}
 
-		names := buildNames(srcImage, existingNames, metadata)
-		require.Len(t, names, 4)
-		assert.Equal(t, srcImage.GetFullName(), names[0].GetFullName())
-		assert.Equal(t, existingNames[1].GetFullName(), names[1].GetFullName())
-		assert.Equal(t, existingNames[2].GetFullName(), names[2].GetFullName())
-		assert.Equal(t, mirror, names[3].GetFullName())
+		request := &v1.CreateVirtualMachineRequest{
+			VirtualMachine: vm,
+		}
+
+		mockDatastore.EXPECT().
+			UpsertVirtualMachine(ctx, vm).
+			Return(nil)
+
+		result, err := service.CreateVirtualMachine(ctx, request)
+		require.NoError(t, err)
+		assert.Equal(t, vm, result)
+	})
+
+	t.Run("nil request", func(t *testing.T) {
+		result, err := service.CreateVirtualMachine(ctx, nil)
+		assert.Nil(t, result)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "id must be specified")
+	})
+
+	t.Run("empty ID", func(t *testing.T) {
+		request := &v1.CreateVirtualMachineRequest{
+			VirtualMachine: &storage.VirtualMachine{
+				Id: "",
+			},
+		}
+
+		result, err := service.CreateVirtualMachine(ctx, request)
+		assert.Nil(t, result)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "id must be specified")
+	})
+
+	t.Run("datastore error", func(t *testing.T) {
+		vm := &storage.VirtualMachine{
+			Id:        "test-vm-id",
+			Name:      "test-vm",
+			Namespace: "test-namespace",
+		}
+
+		request := &v1.CreateVirtualMachineRequest{
+			VirtualMachine: vm,
+		}
+
+		expectedErr := errors.New("datastore error")
+		mockDatastore.EXPECT().
+			UpsertVirtualMachine(ctx, vm).
+			Return(expectedErr)
+
+		result, err := service.CreateVirtualMachine(ctx, request)
+		assert.Nil(t, result)
+		assert.Equal(t, expectedErr, err)
 	})
 }
 
-func TestShouldUpdateExistingScan(t *testing.T) {
-	// These variables exist for readability.
-	var noExistingImg *storage.Image
-	var emptyReq *v1.EnrichLocalImageInternalRequest
-	feature := true
-	update := true
-	imgExists := true
-	v4DataSource := &storage.DataSource{Id: iiStore.DefaultScannerV4Integration.GetId()}
-	v4MatchReq := &v1.EnrichLocalImageInternalRequest{IndexerVersion: "v4"}
-	v2MatchReq := &v1.EnrichLocalImageInternalRequest{}
-	v2ExpiredScan := &storage.Image{Scan: &storage.ImageScan{ScanTime: protoconv.NowMinus(reprocessInterval * 2)}}
-	v2CurrentScan := &storage.Image{Scan: &storage.ImageScan{ScanTime: protoconv.NowMinus(0)}}
-	v4ExpiredScan := &storage.Image{Scan: &storage.ImageScan{ScanTime: v2ExpiredScan.Scan.ScanTime, DataSource: v4DataSource}}
-	v4CurrentScan := &storage.Image{Scan: &storage.ImageScan{ScanTime: protoconv.NowMinus(0), DataSource: v4DataSource}}
+func TestGetVirtualMachine(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
 
-	testCases := []struct {
-		desc           string
-		featureEnabled bool
-		imgExists      bool
-		existingImg    *storage.Image
-		req            *v1.EnrichLocalImageInternalRequest
-		expected       bool
-	}{
-		// Scanner V4 feature disabled.
-		{
-			"update if no existing image",
-			!feature, !imgExists, noExistingImg, emptyReq, update,
-		},
-		{
-			"update if no existing scan",
-			!feature, imgExists, &storage.Image{}, emptyReq, update,
-		},
-		{
-			"update if scan expired",
-			!feature, imgExists, v2ExpiredScan, emptyReq, update,
-		},
-		{
-			"no update if scan is current",
-			!feature, imgExists, v2CurrentScan, emptyReq, !update,
-		},
-		// Scanner V4 feature enabled.
-		{
-			"update if no existing image (feature enabled)",
-			feature, !imgExists, noExistingImg, emptyReq, update,
-		},
-		{
-			"update if no existing scan (feature enabled)",
-			feature, imgExists, &storage.Image{}, emptyReq, update,
-		},
-		{
-			"update if v2 scan expired and match request for v4",
-			feature, imgExists, v2ExpiredScan, v4MatchReq, update,
-		},
-		{
-			"update if v2 scan expired and match request for v2",
-			feature, imgExists, v2ExpiredScan, v2MatchReq, update,
-		},
-		{
-			"no update if v2 scan NOT expired and match request for v2",
-			feature, imgExists, v2CurrentScan, v2MatchReq, !update,
-		},
-		{
-			"update if v4 scan expired and match request for v4",
-			feature, imgExists, v4ExpiredScan, v4MatchReq, update,
-		},
-		{
-			"no update if v4 scan NOT expired and match request for v4",
-			feature, imgExists, v4CurrentScan, v4MatchReq, !update,
-		},
-		{
-			"no update if v4 scan expired and match request for v2",
-			feature, imgExists, v4ExpiredScan, v2MatchReq, !update,
-		},
-		{
-			"update if v2 scan NOT expired and match request for v4",
-			feature, imgExists, v2CurrentScan, v4MatchReq, update,
-		},
+	mockDatastore := datastoreMocks.NewMockDataStore(ctrl)
+	mockSACHelper := mocks.NewMockClusterSacHelper(ctrl)
+
+	service := &serviceImpl{
+		datastore:        mockDatastore,
+		clusterSACHelper: mockSACHelper,
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.desc, func(t *testing.T) {
-			pkgTestUtils.MustUpdateFeature(t, features.ScannerV4, tc.featureEnabled)
+	ctx := context.Background()
 
-			actual := shouldUpdateExistingScan(tc.imgExists, tc.existingImg, tc.req)
-			assert.Equal(t, tc.expected, actual)
-		})
-	}
-
-}
-
-func TestUpdatingImageFromRequest(t *testing.T) {
-	createImgName := func(name string) *storage.ImageName {
-		imgName, _, err := utils.GenerateImageNameFromString(name)
-		if err != nil {
-			t.Fatal(err)
+	t.Run("successful get", func(t *testing.T) {
+		vmID := "test-vm-id"
+		vm := &storage.VirtualMachine{
+			Id:        vmID,
+			Name:      "test-vm",
+			Namespace: "test-namespace",
 		}
-		return imgName
-	}
 
-	imgAName := createImgName("docker.io/library/nginx:latest")
-	imgBName := createImgName("example.com/library/nginx:latest")   // diff registry
-	imgCName := createImgName("docker.io/different/nginx:latest")   // diff remote
-	imgDName := createImgName("example.com/different/nginx:latest") // diff registry and remote
+		request := &v1.GetVirtualMachineRequest{
+			Id: vmID,
+		}
 
-	imgA := &storage.Image{Name: imgAName}
-	imgAWithMeta := &storage.Image{Name: imgAName, Metadata: &storage.ImageMetadata{}}
+		mockDatastore.EXPECT().
+			GetVirtualMachine(ctx, vmID).
+			Return(vm, true, nil)
 
-	tcs := []struct {
-		name         string
-		existingImg  *storage.Image
-		reqImgName   *storage.ImageName
-		expectedName *storage.ImageName
-		feature      bool
-	}{
-		{
-			"feature disabled do not update name",
-			imgA, imgBName, imgAName, false,
-		},
-		{
-			"metadata exists do not update name",
-			imgAWithMeta, imgBName, imgAName, true,
-		},
-		{
-			"images are the same do not update name",
-			imgA, imgAName, imgAName, true,
-		},
-		{
-			"registry differs update name",
-			imgA, imgBName, imgBName, true,
-		},
-		{
-			"remote differs update name",
-			imgA, imgCName, imgCName, true,
-		},
-		{
-			"registry and remote differs update name",
-			imgA, imgDName, imgDName, true,
-		},
-		{
-			"image name nil do not update name",
-			imgA, nil, imgAName, true,
-		},
-	}
-	for _, tc := range tcs {
-		t.Run(tc.name, func(t *testing.T) {
-			pkgTestUtils.MustUpdateFeature(t, features.UnqualifiedSearchRegistries, tc.feature)
+		result, err := service.GetVirtualMachine(ctx, request)
+		require.NoError(t, err)
+		assert.Equal(t, vm, result)
+	})
 
-			clone := tc.existingImg.CloneVT()
-			updateImageFromRequest(clone, tc.reqImgName)
-			protoassert.Equal(t, tc.expectedName, clone.Name)
-		})
-	}
+	t.Run("empty ID", func(t *testing.T) {
+		request := &v1.GetVirtualMachineRequest{
+			Id: "",
+		}
+
+		result, err := service.GetVirtualMachine(ctx, request)
+		assert.Nil(t, result)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "id must be specified")
+	})
+
+	t.Run("virtual machine not found", func(t *testing.T) {
+		vmID := "non-existent-vm"
+		request := &v1.GetVirtualMachineRequest{
+			Id: vmID,
+		}
+
+		mockDatastore.EXPECT().
+			GetVirtualMachine(ctx, vmID).
+			Return(nil, false, nil)
+
+		result, err := service.GetVirtualMachine(ctx, request)
+		assert.Nil(t, result)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "does not exist")
+	})
+
+	t.Run("datastore error", func(t *testing.T) {
+		vmID := "test-vm-id"
+		request := &v1.GetVirtualMachineRequest{
+			Id: vmID,
+		}
+
+		expectedErr := errors.New("datastore error")
+		mockDatastore.EXPECT().
+			GetVirtualMachine(ctx, vmID).
+			Return(nil, false, expectedErr)
+
+		result, err := service.GetVirtualMachine(ctx, request)
+		assert.Nil(t, result)
+		assert.Equal(t, expectedErr, err)
+	})
 }
 
-func TestScanExpired(t *testing.T) {
-	tcs := []struct {
-		desc    string
-		image   *storage.Image
-		expired bool
-	}{
-		{
-			"expired scan",
-			&storage.Image{
-				Scan: &storage.ImageScan{
-					ScanTime: timestamppb.New(time.Now().Add(-reprocessInterval * 2)),
-				},
-			},
-			true,
-		},
-		{
-			"not expired scan",
-			&storage.Image{
-				Scan: &storage.ImageScan{
-					ScanTime: timestamppb.New(time.Now()),
-				},
-			},
-			false,
-		},
-	}
-	for _, tc := range tcs {
-		t.Run(tc.desc, func(t *testing.T) {
-			assert.Equal(t, tc.expired, scanExpired(tc.image))
-		})
-	}
+func TestListVirtualMachines(t *testing.T) {
+	ctx := context.Background()
 
+	t.Run("successful list", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockDatastore := datastoreMocks.NewMockDataStore(ctrl)
+		mockSACHelper := mocks.NewMockClusterSacHelper(ctrl)
+
+		service := &serviceImpl{
+			datastore:        mockDatastore,
+			clusterSACHelper: mockSACHelper,
+		}
+		vms := []*storage.VirtualMachine{
+			{
+				Id:        "vm-1",
+				Name:      "test-vm-1",
+				Namespace: "namespace-1",
+			},
+			{
+				Id:        "vm-2",
+				Name:      "test-vm-2",
+				Namespace: "namespace-2",
+			},
+		}
+
+		request := &v1.RawQuery{
+			Query: "name:test",
+		}
+
+		mockDatastore.EXPECT().
+			SearchRawVirtualMachines(ctx, gomock.Any()).
+			Return(vms, nil)
+
+		result, err := service.ListVirtualMachines(ctx, request)
+		require.NoError(t, err)
+		assert.Equal(t, vms, result.VirtualMachines)
+	})
+
+	t.Run("empty query", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockDatastore := datastoreMocks.NewMockDataStore(ctrl)
+		mockSACHelper := mocks.NewMockClusterSacHelper(ctrl)
+
+		service := &serviceImpl{
+			datastore:        mockDatastore,
+			clusterSACHelper: mockSACHelper,
+		}
+
+		vms := []*storage.VirtualMachine{}
+
+		request := &v1.RawQuery{
+			Query: "",
+		}
+
+		mockDatastore.EXPECT().
+			SearchRawVirtualMachines(ctx, gomock.Any()).
+			Return(vms, nil)
+
+		result, err := service.ListVirtualMachines(ctx, request)
+		require.NoError(t, err)
+		assert.Empty(t, result.VirtualMachines)
+	})
+
+	t.Run("invalid query", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockDatastore := datastoreMocks.NewMockDataStore(ctrl)
+		mockSACHelper := mocks.NewMockClusterSacHelper(ctrl)
+
+		service := &serviceImpl{
+			datastore:        mockDatastore,
+			clusterSACHelper: mockSACHelper,
+		}
+
+		request := &v1.RawQuery{
+			Query: "invalid[query",
+		}
+
+		// The query parser is lenient, so this will reach the datastore
+		mockDatastore.EXPECT().
+			SearchRawVirtualMachines(ctx, gomock.Any()).
+			Return(nil, errors.New("mock datastore error"))
+
+		result, err := service.ListVirtualMachines(ctx, request)
+		assert.Nil(t, result)
+		assert.Error(t, err)
+	})
+
+	t.Run("datastore error", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockDatastore := datastoreMocks.NewMockDataStore(ctrl)
+		mockSACHelper := mocks.NewMockClusterSacHelper(ctrl)
+
+		service := &serviceImpl{
+			datastore:        mockDatastore,
+			clusterSACHelper: mockSACHelper,
+		}
+
+		request := &v1.RawQuery{
+			Query: "name:test",
+		}
+
+		expectedErr := errors.New("datastore error")
+		mockDatastore.EXPECT().
+			SearchRawVirtualMachines(ctx, gomock.Any()).
+			Return(nil, expectedErr)
+
+		result, err := service.ListVirtualMachines(ctx, request)
+		assert.Nil(t, result)
+		assert.Equal(t, expectedErr, err)
+	})
 }
 
-// TestResetClusterLocal ensure that ScanImageInternal resets the cluster local flag.
-func TestResetClusterLocal(t *testing.T) {
-	name, _, err := utils.GenerateImageNameFromString("reg.invalid/some/image:latest")
-	require.NoError(t, err)
+func TestDeleteVirtualMachine(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
 
-	names := []*storage.ImageName{name}
-	scanReq := &v1.ScanImageInternalRequest{Image: &storage.ContainerImage{Id: "id", Name: name}}
-	curScan := &storage.ImageScan{ScanTime: timestamppb.New(time.Now())}
-	expScan := &storage.ImageScan{ScanTime: timestamppb.New(time.Now().Add(-reprocessInterval * 2))}
+	mockDatastore := datastoreMocks.NewMockDataStore(ctrl)
+	mockSACHelper := mocks.NewMockClusterSacHelper(ctrl)
 
-	tcs := []struct {
-		desc              string
-		existingImg       *storage.Image
-		expectedFetchOpt  enricher.FetchOption
-		enrichErr         error
-		finalClusterLocal bool
-	}{
-		{
-			"do not reset flag when scan not expired",
-			&storage.Image{IsClusterLocal: true, Name: name, Names: names, Scan: curScan},
-			enricher.UseCachesIfPossible, nil, true,
-		},
-		{
-			"reset flag when scan expired",
-			&storage.Image{IsClusterLocal: true, Name: name, Names: names, Scan: expScan},
-			enricher.IgnoreExistingImages, nil, false,
-		},
-		{
-			"do not reset flag when scan not expired and existing name not found",
-			&storage.Image{IsClusterLocal: true, Name: name, Names: nil, Scan: curScan},
-			enricher.ForceRefetchSignaturesOnly, nil, true,
-		},
-		{
-			"reset flag when scan expired and existing name not found",
-			&storage.Image{IsClusterLocal: true, Name: name, Names: nil, Scan: expScan},
-			enricher.IgnoreExistingImages, nil, false,
-		},
-		{
-			"do not reset flag when scan not expired and new scan fails",
-			&storage.Image{IsClusterLocal: true, Name: name, Names: names, Scan: curScan},
-			enricher.IgnoreExistingImages, errors.New("broken"), true,
-		},
-		{
-			"reset flag when scan expired and new scan fails",
-			&storage.Image{IsClusterLocal: true, Name: name, Names: names, Scan: expScan},
-			enricher.IgnoreExistingImages, errors.New("broken"), false,
-		},
+	service := &serviceImpl{
+		datastore:        mockDatastore,
+		clusterSACHelper: mockSACHelper,
 	}
-	for _, tc := range tcs {
-		t.Run(tc.desc, func(t *testing.T) {
-			ctrl := gomock.NewController(t)
 
-			fetchOptMatcher := gomock.Cond(func(eCtx enricher.EnrichmentContext) bool {
-				return eCtx.FetchOpt == tc.expectedFetchOpt
-			})
-			imageEnricherMock := enricherMocks.NewMockImageEnricher(ctrl)
-			imageEnricherMock.EXPECT().
-				EnrichImage(gomock.Any(), fetchOptMatcher, gomock.Any()).
-				Return(enricher.EnrichmentResult{}, tc.enrichErr).AnyTimes()
+	ctx := context.Background()
 
-			riskManagerMock := riskManagerMocks.NewMockManager(ctrl)
-			riskManagerMock.EXPECT().
-				CalculateRiskAndUpsertImage(gomock.Any()).
-				Return(nil).AnyTimes()
+	t.Run("successful deletion", func(t *testing.T) {
+		vmID := "test-vm-id"
+		request := &v1.DeleteVirtualMachineRequest{
+			Id: vmID,
+		}
 
-			imageDSMock := imageDSMocks.NewMockDataStore(ctrl)
-			imageDSMock.EXPECT().
-				GetImage(gomock.Any(), gomock.Any()).
-				Return(tc.existingImg, tc.existingImg != nil, nil).AnyTimes()
+		mockDatastore.EXPECT().
+			DeleteVirtualMachines(ctx, vmID).
+			Return(nil)
 
-			s := &serviceImpl{
-				internalScanSemaphore: semaphore.NewWeighted(int64(env.MaxParallelImageScanInternal.IntegerSetting())),
-				enricher:              imageEnricherMock,
-				datastore:             imageDSMock,
-				riskManager:           riskManagerMock,
-			}
+		result, err := service.DeleteVirtualMachine(ctx, request)
+		require.NoError(t, err)
+		assert.True(t, result.Success)
+	})
 
-			resp, err := s.ScanImageInternal(context.Background(), scanReq)
-			require.NoError(t, err)
-			assert.Equal(t, tc.finalClusterLocal, resp.GetImage().GetIsClusterLocal())
-		})
-	}
+	t.Run("empty ID", func(t *testing.T) {
+		request := &v1.DeleteVirtualMachineRequest{
+			Id: "",
+		}
+
+		result, err := service.DeleteVirtualMachine(ctx, request)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "id cannot be empty")
+		assert.False(t, result.Success)
+	})
+
+	t.Run("datastore error", func(t *testing.T) {
+		vmID := "test-vm-id"
+		request := &v1.DeleteVirtualMachineRequest{
+			Id: vmID,
+		}
+
+		expectedErr := errors.New("datastore error")
+		mockDatastore.EXPECT().
+			DeleteVirtualMachines(ctx, vmID).
+			Return(expectedErr)
+
+		result, err := service.DeleteVirtualMachine(ctx, request)
+		assert.Error(t, err)
+		assert.Equal(t, expectedErr, err)
+		assert.False(t, result.Success)
+	})
+}
+
+func TestDeleteVirtualMachines(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("successful bulk deletion", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockDatastore := datastoreMocks.NewMockDataStore(ctrl)
+		mockSACHelper := mocks.NewMockClusterSacHelper(ctrl)
+
+		service := &serviceImpl{
+			datastore:        mockDatastore,
+			clusterSACHelper: mockSACHelper,
+		}
+		searchResults := []search.Result{
+			{ID: "vm-1"},
+			{ID: "vm-2"},
+		}
+
+		request := &v1.DeleteVirtualMachinesRequest{
+			Query: &v1.RawQuery{
+				Query: "cluster:test",
+			},
+			Confirm: true,
+		}
+
+		mockDatastore.EXPECT().
+			Search(ctx, gomock.Any()).
+			Return(searchResults, nil)
+
+		mockDatastore.EXPECT().
+			DeleteVirtualMachines(ctx, "vm-1", "vm-2").
+			Return(nil)
+
+		result, err := service.DeleteVirtualMachines(ctx, request)
+		require.NoError(t, err)
+		assert.Equal(t, uint32(2), result.NumDeleted)
+		assert.False(t, result.DryRun)
+	})
+
+	t.Run("dry run", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockDatastore := datastoreMocks.NewMockDataStore(ctrl)
+		mockSACHelper := mocks.NewMockClusterSacHelper(ctrl)
+
+		service := &serviceImpl{
+			datastore:        mockDatastore,
+			clusterSACHelper: mockSACHelper,
+		}
+
+		searchResults := []search.Result{
+			{ID: "vm-1"},
+			{ID: "vm-2"},
+		}
+
+		request := &v1.DeleteVirtualMachinesRequest{
+			Query: &v1.RawQuery{
+				Query: "cluster:test",
+			},
+			Confirm: false,
+		}
+
+		mockDatastore.EXPECT().
+			Search(ctx, gomock.Any()).
+			Return(searchResults, nil)
+
+		// No deletion should occur in dry run
+		result, err := service.DeleteVirtualMachines(ctx, request)
+		require.NoError(t, err)
+		assert.Equal(t, uint32(2), result.NumDeleted)
+		assert.True(t, result.DryRun)
+	})
+
+	t.Run("nil query", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockDatastore := datastoreMocks.NewMockDataStore(ctrl)
+		mockSACHelper := mocks.NewMockClusterSacHelper(ctrl)
+
+		service := &serviceImpl{
+			datastore:        mockDatastore,
+			clusterSACHelper: mockSACHelper,
+		}
+
+		request := &v1.DeleteVirtualMachinesRequest{
+			Query:   nil,
+			Confirm: true,
+		}
+
+		result, err := service.DeleteVirtualMachines(ctx, request)
+		assert.Nil(t, result)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "scoping query is required")
+	})
+
+	t.Run("invalid query", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockDatastore := datastoreMocks.NewMockDataStore(ctrl)
+		mockSACHelper := mocks.NewMockClusterSacHelper(ctrl)
+
+		service := &serviceImpl{
+			datastore:        mockDatastore,
+			clusterSACHelper: mockSACHelper,
+		}
+
+		request := &v1.DeleteVirtualMachinesRequest{
+			Query: &v1.RawQuery{
+				Query: "invalid[query",
+			},
+			Confirm: true,
+		}
+
+		// The query parser is lenient, so this will reach the datastore
+		mockDatastore.EXPECT().
+			Search(ctx, gomock.Any()).
+			Return(nil, errors.New("mock datastore error"))
+
+		result, err := service.DeleteVirtualMachines(ctx, request)
+		assert.Nil(t, result)
+		assert.Error(t, err)
+	})
+
+	t.Run("search error", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockDatastore := datastoreMocks.NewMockDataStore(ctrl)
+		mockSACHelper := mocks.NewMockClusterSacHelper(ctrl)
+
+		service := &serviceImpl{
+			datastore:        mockDatastore,
+			clusterSACHelper: mockSACHelper,
+		}
+
+		request := &v1.DeleteVirtualMachinesRequest{
+			Query: &v1.RawQuery{
+				Query: "cluster:test",
+			},
+			Confirm: true,
+		}
+
+		expectedErr := errors.New("search error")
+		mockDatastore.EXPECT().
+			Search(ctx, gomock.Any()).
+			Return(nil, expectedErr)
+
+		result, err := service.DeleteVirtualMachines(ctx, request)
+		assert.Nil(t, result)
+		assert.Equal(t, expectedErr, err)
+	})
+
+	t.Run("deletion error", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockDatastore := datastoreMocks.NewMockDataStore(ctrl)
+		mockSACHelper := mocks.NewMockClusterSacHelper(ctrl)
+
+		service := &serviceImpl{
+			datastore:        mockDatastore,
+			clusterSACHelper: mockSACHelper,
+		}
+
+		searchResults := []search.Result{
+			{ID: "vm-1"},
+		}
+
+		request := &v1.DeleteVirtualMachinesRequest{
+			Query: &v1.RawQuery{
+				Query: "cluster:test",
+			},
+			Confirm: true,
+		}
+
+		mockDatastore.EXPECT().
+			Search(ctx, gomock.Any()).
+			Return(searchResults, nil)
+
+		expectedErr := errors.New("deletion error")
+		mockDatastore.EXPECT().
+			DeleteVirtualMachines(ctx, "vm-1").
+			Return(expectedErr)
+
+		result, err := service.DeleteVirtualMachines(ctx, request)
+		assert.Nil(t, result)
+		assert.Equal(t, expectedErr, err)
+	})
 }
