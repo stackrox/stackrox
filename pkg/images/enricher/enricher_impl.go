@@ -806,7 +806,7 @@ func (e *enricherImpl) enrichWithSignature(ctx context.Context, enrichmentContex
 				img.GetName().GetFullName())
 		}
 
-		log.Debugf(description + ", skipping signature enrichment")
+		log.Debugf("%s, skipping signature enrichment", description)
 		// Contrary to the signature verification step we will retain existing signatures.
 		return false, nil
 	}
