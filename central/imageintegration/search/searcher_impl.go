@@ -18,10 +18,6 @@ func (ds *searcherImpl) Search(ctx context.Context, q *v1.Query) ([]search.Resul
 	return ds.storage.Search(ctx, q)
 }
 
-func (ds *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
-	return ds.storage.Count(ctx, q)
-}
-
 // SearchImageIntegrations retrieves SearchResults from the store.
 func (ds *searcherImpl) SearchImageIntegrations(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
 	results, err := ds.storage.Search(ctx, q)

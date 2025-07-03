@@ -42,11 +42,6 @@ func (ds *searcherImplV2) Search(ctx context.Context, q *v1.Query) (res []search
 	return ds.searcher.Search(ctx, q)
 }
 
-// Count returns the number of search results from the query
-func (ds *searcherImplV2) Count(ctx context.Context, q *v1.Query) (count int, err error) {
-	return ds.searcher.Count(ctx, q)
-}
-
 // SearchRawEdges retrieves edges from the storage.
 func (ds *searcherImplV2) SearchRawEdges(ctx context.Context, q *v1.Query) ([]*storage.ImageComponentEdge, error) {
 	return ds.searchImageComponentEdges(ctx, q)

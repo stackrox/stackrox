@@ -26,7 +26,7 @@ type datastoreImpl struct {
 }
 
 func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
-	return ds.formattedSearcher.Count(ctx, q)
+	return ds.storage.Count(ctx, q)
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error) {
