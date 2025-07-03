@@ -8,7 +8,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
-	pkgPostgres "github.com/stackrox/rox/pkg/search/scoped/postgres"
 )
 
 // Searcher provides search functionality on existing cves.
@@ -30,6 +29,5 @@ func New(storage store.Store) Searcher {
 }
 
 func formatSearcherV2(searcher search.Searcher) search.Searcher {
-	scopedSearcher := pkgPostgres.WithScoping(searcher)
-	return edgefields.TransformFixableFields(scopedSearcher)
+	return edgefields.TransformFixableFields(searcher)
 }
