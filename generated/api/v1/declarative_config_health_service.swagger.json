@@ -107,7 +107,8 @@
         "ROLE",
         "AUTH_PROVIDER",
         "GROUP",
-        "NOTIFIER"
+        "NOTIFIER",
+        "AUTH_MACHINE_TO_MACHINE_CONFIG"
       ],
       "default": "CONFIG_MAP"
     },
