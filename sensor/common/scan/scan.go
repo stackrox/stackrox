@@ -170,6 +170,7 @@ func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClie
 	defer cancel()
 	images.ScanSemaphoreQueueSize.With(metricLabels).Inc()
 	if err := scanLimitSemaphore.Acquire(semaphoreCtx, 1); err != nil {
+		images.ScanSemaphoreQueueSize.With(metricLabels).Dec()
 		return nil, errors.Join(err, ErrTooManyParallelScans, ErrEnrichNotStarted)
 	}
 	images.ScanSemaphoreQueueSize.With(metricLabels).Dec()

@@ -974,6 +974,7 @@ func (e *enricherImpl) enrichImageWithScanner(ctx context.Context, image *storag
 	images.ScanSemaphoreQueueSize.With(enricherScanMetricsLabel).Inc()
 	err := sema.Acquire(ctx, 1)
 	if err != nil {
+		images.ScanSemaphoreQueueSize.With(enricherScanMetricsLabel).Dec()
 		return ScanNotDone, errors.Wrapf(err, "acquiring max concurrent scan semaphore with scanner %q", scanner.Name())
 	}
 	images.ScanSemaphoreQueueSize.With(enricherScanMetricsLabel).Dec()
