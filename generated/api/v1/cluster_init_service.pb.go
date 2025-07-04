@@ -109,14 +109,17 @@ func (x *InitBundleMeta) GetExpiresAt() *timestamppb.Timestamp {
 }
 
 type CRSMeta struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	CreatedBy     *storage.User          `protobuf:"bytes,4,opt,name=created_by,json=createdBy,proto3" json:"created_by,omitempty"`
-	ExpiresAt     *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"open.v1"`
+	Id                     string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name                   string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	CreatedAt              *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	CreatedBy              *storage.User          `protobuf:"bytes,4,opt,name=created_by,json=createdBy,proto3" json:"created_by,omitempty"`
+	ExpiresAt              *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
+	MaxRegistrations       uint64                 `protobuf:"varint,7,opt,name=max_registrations,json=maxRegistrations,proto3" json:"max_registrations,omitempty"`
+	RegistrationsInitiated []string               `protobuf:"bytes,8,rep,name=registrations_initiated,json=registrationsInitiated,proto3" json:"registrations_initiated,omitempty"`
+	RegistrationsCompleted []string               `protobuf:"bytes,9,rep,name=registrations_completed,json=registrationsCompleted,proto3" json:"registrations_completed,omitempty"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *CRSMeta) Reset() {
@@ -180,6 +183,27 @@ func (x *CRSMeta) GetCreatedBy() *storage.User {
 func (x *CRSMeta) GetExpiresAt() *timestamppb.Timestamp {
 	if x != nil {
 		return x.ExpiresAt
+	}
+	return nil
+}
+
+func (x *CRSMeta) GetMaxRegistrations() uint64 {
+	if x != nil {
+		return x.MaxRegistrations
+	}
+	return 0
+}
+
+func (x *CRSMeta) GetRegistrationsInitiated() []string {
+	if x != nil {
+		return x.RegistrationsInitiated
+	}
+	return nil
+}
+
+func (x *CRSMeta) GetRegistrationsCompleted() []string {
+	if x != nil {
+		return x.RegistrationsCompleted
 	}
 	return nil
 }
@@ -473,10 +497,11 @@ func (x *InitBundleGenRequest) GetName() string {
 }
 
 type CRSGenRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	Name             string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	MaxRegistrations uint64                 `protobuf:"varint,2,opt,name=max_registrations,json=maxRegistrations,proto3" json:"max_registrations,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *CRSGenRequest) Reset() {
@@ -514,6 +539,13 @@ func (x *CRSGenRequest) GetName() string {
 		return x.Name
 	}
 	return ""
+}
+
+func (x *CRSGenRequest) GetMaxRegistrations() uint64 {
+	if x != nil {
+		return x.MaxRegistrations
+	}
+	return 0
 }
 
 type InitBundleRevokeRequest struct {
@@ -897,7 +929,7 @@ const file_api_v1_cluster_init_service_proto_rawDesc = "" +
 	"expires_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\x1a5\n" +
 	"\x0fImpactedCluster\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x0e\n" +
-	"\x02id\x18\x02 \x01(\tR\x02id\"\xd1\x01\n" +
+	"\x02id\x18\x02 \x01(\tR\x02id\"\xf0\x02\n" +
 	"\aCRSMeta\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x129\n" +
@@ -906,7 +938,10 @@ const file_api_v1_cluster_init_service_proto_rawDesc = "" +
 	"\n" +
 	"created_by\x18\x04 \x01(\v2\r.storage.UserR\tcreatedBy\x129\n" +
 	"\n" +
-	"expires_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\"\x94\x01\n" +
+	"expires_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\x12+\n" +
+	"\x11max_registrations\x18\a \x01(\x04R\x10maxRegistrations\x127\n" +
+	"\x17registrations_initiated\x18\b \x03(\tR\x16registrationsInitiated\x127\n" +
+	"\x17registrations_completed\x18\t \x03(\tR\x16registrationsCompleted\"\x94\x01\n" +
 	"\x15InitBundleGenResponse\x12&\n" +
 	"\x04meta\x18\x01 \x01(\v2\x12.v1.InitBundleMetaR\x04meta\x12,\n" +
 	"\x12helm_values_bundle\x18\x02 \x01(\fR\x10helmValuesBundle\x12%\n" +
@@ -921,9 +956,10 @@ const file_api_v1_cluster_init_service_proto_rawDesc = "" +
 	"\x10CRSMetasResponse\x12!\n" +
 	"\x05items\x18\x01 \x03(\v2\v.v1.CRSMetaR\x05items\"*\n" +
 	"\x14InitBundleGenRequest\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\"#\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\"P\n" +
 	"\rCRSGenRequest\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\"n\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12+\n" +
+	"\x11max_registrations\x18\x02 \x01(\x04R\x10maxRegistrations\"n\n" +
 	"\x17InitBundleRevokeRequest\x12\x10\n" +
 	"\x03ids\x18\x01 \x03(\tR\x03ids\x12A\n" +
 	"\x1dconfirm_impacted_clusters_ids\x18\x02 \x03(\tR\x1aconfirmImpactedClustersIds\"$\n" +
