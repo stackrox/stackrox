@@ -121,6 +121,16 @@ func NewLocalScan(registryStore registryStore, mirrorStore registrymirror.Store)
 	return ls
 }
 
+func acquireSemaphoreWithMetrics(semaphore *semaphore.Weighted, ctx context.Context, labelReqOrigin string) error {
+	images.ScanSemaphoreQueueSize.WithLabelValues("sensor", "delegated-scan", labelReqOrigin).Inc()
+	defer images.ScanSemaphoreQueueSize.WithLabelValues("sensor", "delegated-scan", labelReqOrigin).Dec()
+	if err := semaphore.Acquire(ctx, 1); err != nil {
+		return errors.Join(err, ErrTooManyParallelScans, ErrEnrichNotStarted)
+	}
+	images.ScanSemaphoreHoldingSize.WithLabelValues("sensor", "delegated-scan", labelReqOrigin).Inc()
+	return nil
+}
+
 // EnrichLocalImageInNamespace will enrich an image with scan results from local scanner as well as signatures
 // from the local registry. Afterwards, missing enriched data such as signature verification results and image
 // vulnerabilities will be fetched from central, returning the fully enriched image. A request is always sent
@@ -155,13 +165,9 @@ func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClie
 	semaphoreCtx, cancel := context.WithTimeout(ctx, s.maxSemaphoreWaitTime)
 	defer cancel()
 
-	images.ScanSemaphoreQueueSize.WithLabelValues("sensor", "delegated-scan", labelRequestOrigin).Inc()
-	if err := scanLimitSemaphore.Acquire(semaphoreCtx, 1); err != nil {
-		images.ScanSemaphoreQueueSize.WithLabelValues("sensor", "delegated-scan", labelRequestOrigin).Dec()
-		return nil, errors.Join(err, ErrTooManyParallelScans, ErrEnrichNotStarted)
+	if err := acquireSemaphoreWithMetrics(scanLimitSemaphore, semaphoreCtx, labelRequestOrigin); err != nil {
+		return nil, err
 	}
-	images.ScanSemaphoreQueueSize.WithLabelValues("sensor", "delegated-scan", labelRequestOrigin).Dec()
-	images.ScanSemaphoreHoldingSize.WithLabelValues("sensor", "delegated-scan", labelRequestOrigin).Inc()
 	defer func() {
 		scanLimitSemaphore.Release(1)
 		images.ScanSemaphoreHoldingSize.WithLabelValues("sensor", "delegated-scan", labelRequestOrigin).Dec()

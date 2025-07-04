@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/cvss"
@@ -33,6 +32,7 @@ import (
 	"github.com/stackrox/rox/pkg/signatures"
 	"github.com/stackrox/rox/pkg/sync"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
+	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
 )
 
@@ -41,13 +41,7 @@ const (
 	consecutiveErrorThreshold = 3
 )
 
-var (
-	_                        ImageEnricher = (*enricherImpl)(nil)
-	enricherScanMetricsLabel               = prometheus.Labels{
-		"subsystem": "central",
-		"entity":    "central-image-enricher",
-	}
-)
+var _ ImageEnricher = (*enricherImpl)(nil)
 
 type enricherImpl struct {
 	cvesSuppressor   CVESuppressor
@@ -963,6 +957,17 @@ func normalizeVulnerabilities(scan *storage.ImageScan) {
 	}
 }
 
+func acquireSemaphoreWithMetrics(semaphore *semaphore.Weighted, ctx context.Context) error {
+	images.ScanSemaphoreQueueSize.WithLabelValues("central", "central-image-enricher", "n/a").Inc()
+	defer images.ScanSemaphoreQueueSize.WithLabelValues("central", "central-image-enricher", "n/a").Dec()
+	err := semaphore.Acquire(ctx, 1)
+	if err != nil {
+		return err
+	}
+	images.ScanSemaphoreHoldingSize.WithLabelValues("central", "central-image-enricher", "n/a").Inc()
+	return nil
+}
+
 func (e *enricherImpl) enrichImageWithScanner(ctx context.Context, image *storage.Image, imageScanner scannerTypes.ImageScannerWithDataSource) (ScanResult, error) {
 	scanner := imageScanner.GetScanner()
 
@@ -971,18 +976,13 @@ func (e *enricherImpl) enrichImageWithScanner(ctx context.Context, image *storag
 	}
 
 	sema := scanner.MaxConcurrentScanSemaphore()
-	images.ScanSemaphoreQueueSize.With(enricherScanMetricsLabel).Inc()
-	err := sema.Acquire(ctx, 1)
-	if err != nil {
-		images.ScanSemaphoreQueueSize.With(enricherScanMetricsLabel).Dec()
+	if err := acquireSemaphoreWithMetrics(sema, ctx); err != nil {
 		return ScanNotDone, errors.Wrapf(err, "acquiring max concurrent scan semaphore with scanner %q", scanner.Name())
 	}
-	images.ScanSemaphoreQueueSize.With(enricherScanMetricsLabel).Dec()
-	images.ScanSemaphoreHoldingSize.With(enricherScanMetricsLabel).Inc()
 
 	defer func() {
 		sema.Release(1)
-		images.ScanSemaphoreHoldingSize.With(enricherScanMetricsLabel).Dec()
+		images.ScanSemaphoreHoldingSize.WithLabelValues("central", "central-image-enricher", "n/a").Dec()
 	}()
 
 	scanStartTime := time.Now()
