@@ -8,7 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
-	"go.yaml.in/yaml/v3"
+	"sigs.k8s.io/yaml"
 )
 
 var (
