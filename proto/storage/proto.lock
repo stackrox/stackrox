@@ -17921,6 +17921,151 @@
       }
     },
     {
+      "protopath": "virtual_machine.proto",
+      "def": {
+        "enums": [
+          {
+            "name": "VirtualMachine.Note",
+            "enum_fields": [
+              {
+                "name": "MISSING_METADATA"
+              },
+              {
+                "name": "MISSING_SCAN_DATA",
+                "integer": 1
+              },
+              {
+                "name": "MISSING_SIGNATURE",
+                "integer": 2
+              },
+              {
+                "name": "MISSING_SIGNATURE_VERIFICATION_DATA",
+                "integer": 3
+              }
+            ]
+          },
+          {
+            "name": "VirtualMachineScan.Note",
+            "enum_fields": [
+              {
+                "name": "UNSET"
+              },
+              {
+                "name": "OS_UNAVAILABLE",
+                "integer": 1
+              },
+              {
+                "name": "PARTIAL_SCAN_DATA",
+                "integer": 2
+              },
+              {
+                "name": "OS_CVES_UNAVAILABLE",
+                "integer": 3
+              },
+              {
+                "name": "OS_CVES_STALE",
+                "integer": 4
+              },
+              {
+                "name": "LANGUAGE_CVES_UNAVAILABLE",
+                "integer": 5
+              },
+              {
+                "name": "CERTIFIED_RHEL_SCAN_UNAVAILABLE",
+                "integer": 6
+              }
+            ]
+          }
+        ],
+        "messages": [
+          {
+            "name": "VirtualMachine",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "namespace",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "scan",
+                "type": "VirtualMachineScan"
+              },
+              {
+                "id": 5,
+                "name": "last_updated",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 6,
+                "name": "notes",
+                "type": "Note",
+                "is_repeated": true
+              }
+            ]
+          },
+          {
+            "name": "VirtualMachineScan",
+            "fields": [
+              {
+                "id": 6,
+                "name": "scanner_version",
+                "type": "string"
+              },
+              {
+                "id": 1,
+                "name": "scan_time",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 2,
+                "name": "components",
+                "type": "EmbeddedImageScanComponent",
+                "is_repeated": true
+              },
+              {
+                "id": 4,
+                "name": "operating_system",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "data_source",
+                "type": "DataSource"
+              },
+              {
+                "id": 5,
+                "name": "notes",
+                "type": "Note",
+                "is_repeated": true
+              }
+            ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "google/protobuf/timestamp.proto"
+          },
+          {
+            "path": "storage/image.proto"
+          }
+        ],
+        "package": {
+          "name": "storage"
+        }
+      }
+    },
+    {
       "protopath": "vuln_requests.proto",
       "def": {
         "enums": [
