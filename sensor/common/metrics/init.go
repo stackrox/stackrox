@@ -23,7 +23,8 @@ func init() {
 		totalNetworkEndpointsSentCounter,
 		totalNetworkEndpointsReceivedCounter,
 		totalProcessesSentCounter,
-		totalProcessesReceivedCounter,
+		totalProcessesSignalCounter,
+		totalProcessesCounter,
 		processSignalBufferGauge,
 		processSignalDroppedCount,
 		sensorEvents,
@@ -43,5 +44,6 @@ func init() {
 		telemetrySecuredVCPU,
 		deploymentEnhancementQueueSize,
 		responsesChannelOperationCount,
+		collectorChannelMessagesCount,
 	)
 }

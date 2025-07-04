@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/namespaces"
 	v1 "k8s.io/api/core/v1"
