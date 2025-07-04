@@ -5233,6 +5233,11 @@
                 "id": 8,
                 "name": "administration_events_config",
                 "type": "AdministrationEventsConfig"
+              },
+              {
+                "id": 9,
+                "name": "prometheus_metrics_config",
+                "type": "PrometheusMetricsConfig"
               }
             ]
           },
@@ -5376,6 +5381,86 @@
                 "id": 2,
                 "name": "enabled",
                 "type": "bool"
+              }
+            ]
+          },
+          {
+            "name": "PrometheusMetricsConfig",
+            "fields": [
+              {
+                "id": 1,
+                "name": "image_vulnerabilities",
+                "type": "Metrics"
+              }
+            ],
+            "messages": [
+              {
+                "name": "Labels",
+                "maps": [
+                  {
+                    "key_type": "string",
+                    "field": {
+                      "id": 1,
+                      "name": "labels",
+                      "type": "Expression"
+                    }
+                  }
+                ],
+                "messages": [
+                  {
+                    "name": "Expression",
+                    "fields": [
+                      {
+                        "id": 1,
+                        "name": "expression",
+                        "type": "Condition",
+                        "is_repeated": true
+                      }
+                    ],
+                    "messages": [
+                      {
+                        "name": "Condition",
+                        "fields": [
+                          {
+                            "id": 1,
+                            "name": "operator",
+                            "type": "string"
+                          },
+                          {
+                            "id": 2,
+                            "name": "argument",
+                            "type": "string"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "Metrics",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "gathering_period_minutes",
+                    "type": "uint32"
+                  },
+                  {
+                    "id": 3,
+                    "name": "filter",
+                    "type": "string"
+                  }
+                ],
+                "maps": [
+                  {
+                    "key_type": "string",
+                    "field": {
+                      "id": 2,
+                      "name": "metrics",
+                      "type": "Labels"
+                    }
+                  }
+                ]
               }
             ]
           }
