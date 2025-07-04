@@ -230,10 +230,9 @@ func (r *createCentralTLSExtensionRun) generateCentralTLSData(old types.SecretDa
 		return nil, errors.Wrap(err, "issuing central service certificate failed")
 	}
 
+	// The JWT key is used to validate API Tokens. Recreating the key will invalidate all existing tokens.
+	// For this reason, we only generate a key if one doesn't already exist.
 	if oldJWTKey, oldJWTKeyOK := old[certgen.JWTKeyPEMFileName]; oldJWTKeyOK {
-		// The impact of replacing the JWT key is unclear.
-		// Avoid re-generating JWT key if it exists, out of an abundance of caution.
-		// Perhaps this can be changed in the future if we have a way of validating such key.
 		newFileMap[certgen.JWTKeyPEMFileName] = oldJWTKey
 	} else {
 		jwtKey, err := certgen.GenerateJWTSigningKey()
