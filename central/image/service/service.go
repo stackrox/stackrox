@@ -45,7 +45,7 @@ func New(
 	scanWaiterManager waiter.Manager[*storage.Image],
 	clusterSACHelper sachelper.ClusterSacHelper,
 ) Service {
-	images.ScanSemaphoreLimit.With(imageScanMetricsLabel).Set(float64(env.MaxParallelImageScanInternal.IntegerSetting()))
+	images.SetCentralScanSemaphoreLimit(float64(env.MaxParallelImageScanInternal.IntegerSetting()))
 	return &serviceImpl{
 		datastore:             datastore,
 		watchedImages:         watchedImages,
