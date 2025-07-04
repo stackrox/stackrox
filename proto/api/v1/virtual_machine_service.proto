@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+package v1;
+
+import weak "google/api/annotations.proto";
+import "storage/virtual_machine.proto";
+
+option go_package = "./api/v1;v1";
+option java_package = "io.stackrox.proto.api.v1";
+
+message GetVirtualMachineRequest {
+  string id = 1;
+  bool strip_description = 3;
+}
+
+message CreateVirtualMachineRequest {
+  storage.VirtualMachine virtual_machine = 1;
+}
+
+message ListVirtualMachinesResponse {
+  repeated storage.VirtualMachine virtual_machines = 1;
+}
+
+message ListVirtualMachinesRequest {}
+
+message DeleteVirtualMachineRequest {
+  string id = 1;
+}
+
+message DeleteVirtualMachineResponse {
+  bool success = 2;
+}
+
+service VirtualMachineService {
+  rpc CreateVirtualMachine(CreateVirtualMachineRequest) returns (storage.VirtualMachine) {
+    option (google.api.http) = {
+      post: "/v1/virtualmachines"
+      body: "*"
+    };
+  }
+
+  rpc GetVirtualMachine(GetVirtualMachineRequest) returns (storage.VirtualMachine) {
+    option (google.api.http) = {get: "/v1/virtualmachines/{id}"};
+  }
+
+  rpc ListVirtualMachines(ListVirtualMachinesRequest) returns (ListVirtualMachinesResponse) {
+    option (google.api.http) = {get: "/v1/virtualmachines"};
+  }
+
+  rpc DeleteVirtualMachine(DeleteVirtualMachineRequest) returns (DeleteVirtualMachineResponse) {
+    option (google.api.http) = {delete: "/v1/virtualmachines/{id}"};
+  }
+}
