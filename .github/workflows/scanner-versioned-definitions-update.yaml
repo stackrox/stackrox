@@ -176,7 +176,6 @@ jobs:
         fi
         zip definitions/"$SCANNER_BUNDLE_VERSION"/vulnerabilities.zip bundles/*.json.zst
 
-
     - name: Upload definitions artifacts
       uses: actions/upload-artifact@v4
       with:
