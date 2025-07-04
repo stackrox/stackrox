@@ -4,7 +4,7 @@ import (
 	"os"
 
 	"github.com/pkg/errors"
-	"go.yaml.in/yaml/v3"
+	"sigs.k8s.io/yaml"
 )
 
 func loadFromFile(path string) (*Config, error) {
