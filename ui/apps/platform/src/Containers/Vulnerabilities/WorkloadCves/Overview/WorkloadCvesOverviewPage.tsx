@@ -50,8 +50,8 @@ import { createFilterTracker } from 'utils/analyticsEventTracking';
 import {
     clusterSearchFilterConfig,
     deploymentSearchFilterConfig,
-    convertToFlatImageCveSearchFilterConfig, // imageCVESearchFilterConfig
-    convertToFlatImageComponentSearchFilterConfig, // imageComponentSearchFilterConfig
+    imageCVESearchFilterConfig,
+    imageComponentSearchFilterConfig,
     imageSearchFilterConfig,
     namespaceSearchFilterConfig,
 } from 'Containers/Vulnerabilities/searchFilterConfig';
@@ -353,13 +353,11 @@ function WorkloadCvesOverviewPage() {
         return apolloClient.refetchQueries({ include: [imageListQuery] });
     }
 
-    // Although we will delete conditional code for flatten after release,
-    // keep searchFilterConfigWithFeatureFlagDependency for Advisory in the future.
-    const isFlattenCveDataEnabled = isFeatureFlagEnabled('ROX_FLATTEN_CVE_DATA');
+    // Keep searchFilterConfigWithFeatureFlagDependency for ROX_SCANNER_V4.
     const searchFilterConfigWithFeatureFlagDependency = [
         imageSearchFilterConfig,
-        convertToFlatImageCveSearchFilterConfig(isFlattenCveDataEnabled),
-        convertToFlatImageComponentSearchFilterConfig(isFlattenCveDataEnabled),
+        imageCVESearchFilterConfig,
+        imageComponentSearchFilterConfig,
         deploymentSearchFilterConfig,
         namespaceSearchFilterConfig,
         clusterSearchFilterConfig,
