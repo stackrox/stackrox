@@ -18,6 +18,13 @@ var (
 )
 
 func DialContextWithRetries(ctx context.Context, network, addr string, tlsConfig *tls.Config) (*tls.Conn, error) {
+	dialer := tls.Dialer{
+		Config: tlsConfig,
+	}
+	return DialContextWithRetriesWithDialer(ctx, dialer, network, addr)
+}
+
+func DialContextWithRetriesWithDialer(ctx context.Context, dialer tls.Dialer, network, addr string) (*tls.Conn, error) {
 	expBackoff := backoff.NewExponentialBackOff(
 		backoff.WithInitialInterval(2*time.Second),
 		backoff.WithMultiplier(2),
@@ -28,7 +35,7 @@ func DialContextWithRetries(ctx context.Context, network, addr string, tlsConfig
 	var dialErr error
 
 	err := backoff.RetryNotify(func() error {
-		dialConn, dialErr = DialContext(ctx, network, addr, tlsConfig)
+		dialConn, dialErr = DialContextWithDialer(ctx, dialer, network, addr)
 		if dialErr != nil {
 			return dialErr
 		}
@@ -48,6 +55,12 @@ func DialContext(ctx context.Context, network, addr string, tlsConfig *tls.Confi
 	dialer := tls.Dialer{
 		Config: tlsConfig,
 	}
+	return DialContextWithDialer(ctx, dialer, network, addr)
+}
+
+// DialContextWithDialer attempts to establishes a TLS-enabled connection in a context-aware manner using
+// provided tls Dialer.
+func DialContextWithDialer(ctx context.Context, dialer tls.Dialer, network, addr string) (*tls.Conn, error) {
 	conn, err := dialer.DialContext(ctx, network, addr)
 	if err != nil {
 		log.Debugw("tls dial failed", logging.Err(err))
