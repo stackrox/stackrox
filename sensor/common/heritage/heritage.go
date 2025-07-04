@@ -95,12 +95,6 @@ type Manager struct {
 }
 
 func NewHeritageManager(ns string, client k8sClient, start time.Time) *Manager {
-	maxSize := env.PastSensorsMaxEntries.IntegerSetting()
-	if maxSize > 0 && maxSize < heritageMinSize {
-		maxSize = heritageMinSize
-		log.Warnf("Value of %s is lower than minimum=%d. Applying %d",
-			env.PastSensorsMaxEntries.EnvVar(), heritageMinSize, heritageMinSize)
-	}
 	return &Manager{
 		cacheIsPopulated: atomic.Bool{},
 		k8sClient:        client,
@@ -110,8 +104,8 @@ func NewHeritageManager(ns string, client k8sClient, start time.Time) *Manager {
 			SensorVersion: version.GetMainVersion(),
 			SensorStart:   start,
 		},
-		maxSize: env.PastSensorsMaxEntries.IntegerSetting(),
-		minSize: heritageMinSize,
+		maxSize: env.PastSensorsMaxEntries.IntegerSetting(), // Setting value is already validated
+		minSize: heritageMinSize,                            // Keep in sync with minimum of `env.PastSensorsMaxEntries`
 		maxAge:  heritageMaxAge,
 	}
 }
