@@ -84,5 +84,5 @@ func (cmd *centralRestoreCancelCommand) cancelActiveRestore() error {
 		Id: processStatus.GetMetadata().GetId(),
 	})
 
-	return err
+	return errors.Wrap(err, "canceling restore process")
 }

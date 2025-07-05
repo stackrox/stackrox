@@ -34,7 +34,7 @@ func readUserInput(prompt string) (string, error) {
 	reader := bufio.NewReader(os.Stdin)
 	text, err := reader.ReadString('\n')
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "reading user input")
 	}
 	return strings.TrimSpace(text), nil
 }
@@ -158,7 +158,7 @@ func getPassword(fd int) (passwd string, err error) {
 	if term.IsTerminal(fd) {
 		bytes, err := term.ReadPassword(fd)
 		if err != nil {
-			return "", err
+			return "", errors.Wrap(err, "reading password from terminal")
 		}
 		passwd = string(bytes)
 		printlnToStderr("")
@@ -166,7 +166,7 @@ func getPassword(fd int) (passwd string, err error) {
 		reader := bufio.NewReader(os.Stdin)
 		passwd, err = reader.ReadString('\n')
 		if err != nil {
-			return "", err
+			return "", errors.Wrap(err, "reading password from stdin")
 		}
 	}
 	return strings.TrimSuffix(passwd, "\n"), nil

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/cloudflare/cfssl/helpers"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -57,7 +58,7 @@ func (cmd *centralUserPkiListCommand) construct(cbr *cobra.Command) error {
 func (cmd *centralUserPkiListCommand) listProviders() error {
 	conn, err := cmd.env.GRPCConnection(common.WithRetryTimeout(cmd.retryTimeout))
 	if err != nil {
-		return err
+		return errors.Wrap(err, "establishing gRPC connection to list user PKI auth providers")
 	}
 	defer utils.IgnoreError(conn.Close)
 
@@ -68,14 +69,14 @@ func (cmd *centralUserPkiListCommand) listProviders() error {
 	groupClient := v1.NewGroupServiceClient(conn)
 	providers, err := authClient.GetAuthProviders(ctx, &v1.GetAuthProvidersRequest{Type: userpki.TypeName})
 	if err != nil {
-		return err
+		return errors.Wrap(err, "getting auth providers")
 	}
 	if cmd.json {
 		err = jsonutil.MarshalPretty(cmd.env.InputOutput().Out(), providers)
 		if err == nil {
 			cmd.env.Logger().PrintfLn("")
 		}
-		return err
+		return errors.Wrap(err, "marshalling providers to JSON")
 	}
 	if len(providers.GetAuthProviders()) == 0 {
 		cmd.env.Logger().InfofLn("No user certificate providers configured")
@@ -83,7 +84,7 @@ func (cmd *centralUserPkiListCommand) listProviders() error {
 	}
 	groups, err := groupClient.GetGroups(ctx, &v1.GetGroupsRequest{})
 	if err != nil {
-		return err
+		return errors.Wrap(err, "getting groups")
 	}
 	defaultRoles := make(map[string]string)
 	for _, g := range groups.GetGroups() {
