@@ -14,6 +14,7 @@ import (
 	reflect "reflect"
 
 	storage "github.com/stackrox/rox/generated/storage"
+	authproviders "github.com/stackrox/rox/pkg/auth/authproviders"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -42,17 +43,17 @@ func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 }
 
 // Add mocks base method.
-func (m *MockDataStore) Add(ctx context.Context, group *storage.Group) error {
+func (m *MockDataStore) Add(ctx context.Context, group *storage.Group, authProviderRegistry authproviders.Registry) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Add", ctx, group)
+	ret := m.ctrl.Call(m, "Add", ctx, group, authProviderRegistry)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Add indicates an expected call of Add.
-func (mr *MockDataStoreMockRecorder) Add(ctx, group any) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) Add(ctx, group, authProviderRegistry any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockDataStore)(nil).Add), ctx, group)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockDataStore)(nil).Add), ctx, group, authProviderRegistry)
 }
 
 // ForEach mocks base method.
@@ -100,17 +101,17 @@ func (mr *MockDataStoreMockRecorder) GetFiltered(ctx, filter any) *gomock.Call {
 }
 
 // Mutate mocks base method.
-func (m *MockDataStore) Mutate(ctx context.Context, remove, update, add []*storage.Group, force bool) error {
+func (m *MockDataStore) Mutate(ctx context.Context, remove, update, add []*storage.Group, force bool, authProviderRegistry authproviders.Registry) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Mutate", ctx, remove, update, add, force)
+	ret := m.ctrl.Call(m, "Mutate", ctx, remove, update, add, force, authProviderRegistry)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Mutate indicates an expected call of Mutate.
-func (mr *MockDataStoreMockRecorder) Mutate(ctx, remove, update, add, force any) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) Mutate(ctx, remove, update, add, force, authProviderRegistry any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Mutate", reflect.TypeOf((*MockDataStore)(nil).Mutate), ctx, remove, update, add, force)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Mutate", reflect.TypeOf((*MockDataStore)(nil).Mutate), ctx, remove, update, add, force, authProviderRegistry)
 }
 
 // Remove mocks base method.
@@ -156,31 +157,31 @@ func (mr *MockDataStoreMockRecorder) RemoveAllWithEmptyProperties(ctx any) *gomo
 }
 
 // Update mocks base method.
-func (m *MockDataStore) Update(ctx context.Context, group *storage.Group, force bool) error {
+func (m *MockDataStore) Update(ctx context.Context, group *storage.Group, force bool, authProviderRegistry authproviders.Registry) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Update", ctx, group, force)
+	ret := m.ctrl.Call(m, "Update", ctx, group, force, authProviderRegistry)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Update indicates an expected call of Update.
-func (mr *MockDataStoreMockRecorder) Update(ctx, group, force any) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) Update(ctx, group, force, authProviderRegistry any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockDataStore)(nil).Update), ctx, group, force)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockDataStore)(nil).Update), ctx, group, force, authProviderRegistry)
 }
 
 // Upsert mocks base method.
-func (m *MockDataStore) Upsert(ctx context.Context, group *storage.Group) error {
+func (m *MockDataStore) Upsert(ctx context.Context, group *storage.Group, authProviderRegistry authproviders.Registry) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Upsert", ctx, group)
+	ret := m.ctrl.Call(m, "Upsert", ctx, group, authProviderRegistry)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Upsert indicates an expected call of Upsert.
-func (mr *MockDataStoreMockRecorder) Upsert(ctx, group any) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) Upsert(ctx, group, authProviderRegistry any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockDataStore)(nil).Upsert), ctx, group)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockDataStore)(nil).Upsert), ctx, group, authProviderRegistry)
 }
 
 // Walk mocks base method.
