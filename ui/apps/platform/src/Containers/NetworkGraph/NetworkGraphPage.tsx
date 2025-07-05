@@ -20,13 +20,12 @@ import useFetchClustersForPermissions from 'hooks/useFetchClustersForPermissions
 import useFetchDeploymentCount from 'hooks/useFetchDeploymentCount';
 import usePermissions from 'hooks/usePermissions';
 import useAnalytics, { CIDR_BLOCK_FORM_OPENED } from 'hooks/useAnalytics';
-import { fetchNetworkFlowGraph, fetchNodeUpdates } from 'services/NetworkService';
+import { fetchNetworkFlowGraph } from 'services/NetworkService';
 import queryService from 'utils/queryService';
 import { isCompleteSearchFilter } from 'utils/searchUtils';
 
 import { CodeViewerThemeProvider } from 'Components/CodeViewer';
 import PageTitle from 'Components/PageTitle';
-import useInterval from 'hooks/useInterval';
 import useURLParameter from 'hooks/useURLParameter';
 import { SearchFilter } from 'types/search';
 
@@ -83,7 +82,7 @@ function NetworkGraphPageContent() {
     const { hasReadAccess, hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForBlocks =
         hasReadAccess('Administration') && hasReadWriteAccess('NetworkGraph');
-    const hasReadAccessForGenerator = hasReadAccess('NetworkPolicy');
+    const hasReadAccessForNetworkPolicy = hasReadAccess('NetworkPolicy');
 
     const { edgeState, setEdgeState } = useEdgeState();
     const [displayOptions, setDisplayOptions] = useState<DisplayOption[]>([
@@ -166,19 +165,6 @@ function NetworkGraphPageContent() {
     const [currentEpochCount, setCurrentEpochCount] = useState(0);
 
     const nodeUpdatesCount = currentEpochCount - prevEpochCount;
-
-    // We will update the poll epoch after 30 seconds to update the node count for a cluster
-    useInterval(() => {
-        if (selectedClusterId && namespacesFromUrl.length > 0) {
-            fetchNodeUpdates(selectedClusterId)
-                .then((result) => {
-                    setCurrentEpochCount(result?.response?.epoch || 0);
-                })
-                .catch(() => {
-                    // failure to update the node count is not critical
-                });
-        }
-    }, 30000);
 
     function updateNetworkNodes() {
         // check that user is finished adding a complete filter
@@ -335,7 +321,7 @@ function NetworkGraphPageContent() {
                                 onScopeChange={clearGraphOnEmptyScope}
                             />
                         </ToolbarGroup>
-                        {(hasWriteAccessForBlocks || hasReadAccessForGenerator) && (
+                        {(hasWriteAccessForBlocks || hasReadAccessForNetworkPolicy) && (
                             <ToolbarGroup
                                 variant="button-group"
                                 align={{ default: 'alignRight' }}
@@ -352,7 +338,7 @@ function NetworkGraphPageContent() {
                                         </Button>
                                     </ToolbarItem>
                                 )}
-                                {hasReadAccessForGenerator && (
+                                {hasReadAccessForNetworkPolicy && (
                                     <ToolbarItem>
                                         <SimulateNetworkPolicyButton
                                             simulation={simulation}
@@ -405,23 +391,28 @@ function NetworkGraphPageContent() {
                                         />
                                     </ToolbarItem>
                                 </ToolbarGroup>
-                                <ToolbarGroup
-                                    align={{ default: 'alignRight' }}
-                                    className="pf-v5-u-align-self-center"
-                                >
-                                    <Divider
-                                        component="div"
-                                        orientation={{ default: 'vertical' }}
-                                    />
-                                    <ToolbarItem className="pf-v5-u-color-200">
-                                        <NodeUpdateSection
-                                            isLoading={isLoading}
-                                            lastUpdatedTime={lastUpdatedTime}
-                                            nodeUpdatesCount={nodeUpdatesCount}
-                                            updateNetworkNodes={updateNetworkNodes}
+                                {hasReadAccessForNetworkPolicy && (
+                                    <ToolbarGroup
+                                        align={{ default: 'alignRight' }}
+                                        className="pf-v5-u-align-self-center"
+                                    >
+                                        <Divider
+                                            component="div"
+                                            orientation={{ default: 'vertical' }}
                                         />
-                                    </ToolbarItem>
-                                </ToolbarGroup>
+                                        <ToolbarItem className="pf-v5-u-color-200">
+                                            <NodeUpdateSection
+                                                isLoading={isLoading}
+                                                lastUpdatedTime={lastUpdatedTime}
+                                                namespacesFromUrl={namespacesFromUrl}
+                                                nodeUpdatesCount={nodeUpdatesCount}
+                                                selectedClusterId={selectedClusterId}
+                                                setCurrentEpochCount={setCurrentEpochCount}
+                                                updateNetworkNodes={updateNetworkNodes}
+                                            />
+                                        </ToolbarItem>
+                                    </ToolbarGroup>
+                                )}
                             </ToolbarContent>
                         </Toolbar>
                     </PageSection>

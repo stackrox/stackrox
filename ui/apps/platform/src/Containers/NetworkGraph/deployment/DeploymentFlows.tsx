@@ -5,12 +5,13 @@ import useAnalytics, { DEPLOYMENT_FLOWS_TOGGLE_CLICKED } from 'hooks/useAnalytic
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import { QueryValue } from 'hooks/useURLParameter';
 
-import { CustomNodeModel } from '../types/topology.type';
+import useFetchNetworkFlows from '../api/useFetchNetworkFlows';
 import { EdgeState } from '../components/EdgeStateSelect';
-import { Flow } from '../types/flow.type';
+import { CustomEdgeModel, CustomNodeModel } from '../types/topology.type';
+import { isInternalFlow } from '../utils/networkGraphUtils';
+
 import InternalFlows from './InternalFlows';
 import ExternalFlows from './ExternalFlows';
-import { isInternalFlow } from '../utils/networkGraphUtils';
 
 import {
     usePagination,
@@ -32,24 +33,18 @@ export function isValidDeploymentFlowsToggle(value: QueryValue): value is Deploy
 
 type DeploymentFlowsProps = {
     deploymentId: string;
-    nodes: CustomNodeModel[];
     edgeState: EdgeState;
+    edges: CustomEdgeModel[];
+    nodes: CustomNodeModel[];
     onNodeSelect: (id: string) => void;
-    isLoadingNetworkFlows: boolean;
-    networkFlowsError: string;
-    networkFlows: Flow[];
-    refetchFlows: () => void;
 };
 
 function DeploymentFlows({
     deploymentId,
     nodes,
     edgeState,
+    edges,
     onNodeSelect,
-    isLoadingNetworkFlows,
-    networkFlowsError,
-    networkFlows,
-    refetchFlows,
 }: DeploymentFlowsProps) {
     const { analyticsTrack } = useAnalytics();
     const { isFeatureFlagEnabled } = useFeatureFlags();
@@ -95,6 +90,13 @@ function DeploymentFlows({
             setSelectedToggleSidePanel,
         ]
     );
+
+    const {
+        isLoading: isLoadingNetworkFlows,
+        error: networkFlowsError,
+        data: { networkFlows },
+        refetchFlows,
+    } = useFetchNetworkFlows({ deploymentId, edgeState, edges, nodes });
 
     if (!isNetworkGraphExternalIpsEnabled) {
         return (
