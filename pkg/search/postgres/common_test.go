@@ -940,7 +940,8 @@ func TestDeleteQueries(t *testing.T) {
 				AddSelectFields(search.NewQuerySelect(search.DeploymentName)).
 				AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
 			expectedQuery: normalizeStatement(`delete from deployments
-				where deployments.Name = $1`),
+				inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id
+				where (deployments.Name = $1 and deployments_containers.Image_Id = $2)`),
 		},
 		{
 			desc: "base schema; delete w/ multiple scopes",
@@ -955,8 +956,9 @@ func TestDeleteQueries(t *testing.T) {
 			q: search.NewQueryBuilder().
 				AddSelectFields(search.NewQuerySelect(search.DeploymentName)).
 				AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
-			expectedQuery: normalizeStatement(`delete from deployments
-				where deployments.Name = $1`),
+			expectedQuery: normalizeStatement(`delete
+				from deployments where (deployments.Name = $1 and (deployments.NamespaceId = $2
+				and deployments.ClusterId = $3))`),
 		},
 	} {
 		t.Run(c.desc, func(t *testing.T) {
@@ -1105,8 +1107,9 @@ func TestDeleteReturningIDsQueries(t *testing.T) {
 				AddSelectFields(search.NewQuerySelect(search.DeploymentName)).
 				AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
 			expectedQuery: normalizeStatement(`delete from deployments
-				where deployments.Name = $1
-				returning deployments.Id::text as Deployment_ID`),
+				inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id
+				where (deployments.Name = $1 and deployments_containers.Image_Id = $2)
+				returning distinct(deployments.Id::text) as Deployment_ID`),
 		},
 		{
 			desc: "base schema; delete w/ multiple scopes",
@@ -1121,8 +1124,9 @@ func TestDeleteReturningIDsQueries(t *testing.T) {
 			q: search.NewQueryBuilder().
 				AddSelectFields(search.NewQuerySelect(search.DeploymentName)).
 				AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
-			expectedQuery: normalizeStatement(`delete from deployments
-				where deployments.Name = $1
+			expectedQuery: normalizeStatement(`delete
+				from deployments where (deployments.Name = $1 and (deployments.NamespaceId = $2
+				and deployments.ClusterId = $3))
 				returning deployments.Id::text as Deployment_ID`),
 		},
 	} {
