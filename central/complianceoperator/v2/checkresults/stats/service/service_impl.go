@@ -36,13 +36,18 @@ const (
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		user.With(permissions.View(resources.Compliance)): {
-			v2.ComplianceResultsStatsService_GetComplianceProfileStats_FullMethodName,
-			v2.ComplianceResultsStatsService_GetComplianceProfilesStats_FullMethodName,
+		// Endpoints with cluster information.
+		user.With(permissions.View(resources.Compliance), permissions.View(resources.Cluster)): {
 			v2.ComplianceResultsStatsService_GetComplianceProfilesClusterStats_FullMethodName,
 			v2.ComplianceResultsStatsService_GetComplianceClusterScanStats_FullMethodName,
 			v2.ComplianceResultsStatsService_GetComplianceOverallClusterStats_FullMethodName,
 			v2.ComplianceResultsStatsService_GetComplianceClusterStats_FullMethodName,
+		},
+
+		// Endpoints without cluster information.
+		user.With(permissions.View(resources.Compliance)): {
+			v2.ComplianceResultsStatsService_GetComplianceProfileStats_FullMethodName,
+			v2.ComplianceResultsStatsService_GetComplianceProfilesStats_FullMethodName,
 			v2.ComplianceResultsStatsService_GetComplianceProfileCheckStats_FullMethodName,
 		},
 	})
