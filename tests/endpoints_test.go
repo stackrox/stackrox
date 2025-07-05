@@ -191,7 +191,9 @@ func (c *endpointsTestCase) runConnectionTest(t *testing.T, testCtx *endpointsTe
 	nameErr := &x509.HostnameError{}
 	for serverName := range invalidServerNames {
 		tlsConf := testCtx.tlsConfig(c.clientCert, serverName, true)
-		conn, err := tls.DialWithDialer(&dialer, "tcp", c.endpoint(), tlsConf)
+		testDialer := dialer
+		testDialer.tlsConf = tlsConf
+		conn, err := tlsutils.DialContextWithRetriesWithDialer(testCtx, &testDialer, "tcp", c.endpoint())
 		if conn != nil {
 			_ = conn.Close()
 		}
