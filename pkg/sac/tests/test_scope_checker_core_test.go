@@ -9,29 +9,6 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-const (
-	resourceAlert        = permissions.Resource("Alert")
-	resourceCluster      = permissions.Resource("Cluster")
-	resourceConfig       = permissions.Resource("Config")
-	resourceDeployment   = permissions.Resource("Deployment")
-	resourceImage        = permissions.Resource("Image")
-	resourceInstallation = permissions.Resource("InstallationInfo")
-	resourceNetworkGraph = permissions.Resource("NetworkGraph")
-	resourceNode         = permissions.Resource("Node")
-	resourceRisk         = permissions.Resource("Risk")
-
-	clusterClusterID = "clusterID"
-	clusterCluster1  = "cluster1"
-	clusterMyCluster = "mycluster"
-
-	nsNamespace1 = "namespace1"
-	nsNamespace2 = "namespace2"
-	nsFoo        = "foo"
-	nsBar        = "bar"
-	nsBaz        = "baz"
-	nsFar        = "far"
-)
-
 type testScopeCheckerCoreTestSuite struct {
 	suite.Suite
 }
