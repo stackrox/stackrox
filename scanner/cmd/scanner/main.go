@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	golog "log"
@@ -264,7 +265,7 @@ func (b *Backends) APIServices() []grpc.APIService {
 }
 
 // HealthCheck returns true if all configured backends are healthy and ready.
-func (b *Backends) HealthCheck(ctx context.Context) bool {
+func (b *Backends) HealthCheck(ctx context.Context) error {
 	var checkList []func(context.Context) error
 	if b.Indexer != nil {
 		checkList = append(checkList, b.Indexer.Ready)
@@ -272,24 +273,24 @@ func (b *Backends) HealthCheck(ctx context.Context) bool {
 	if b.Matcher != nil {
 		checkList = append(checkList, b.Matcher.Ready)
 	}
+	var errs []error
 	for _, check := range checkList {
 		if err := check(ctx); err != nil {
 			zlog.Error(ctx).Err(err).Msg("scanner is not ready")
-			return false
+			errs = append(errs, err)
 		}
 	}
-	return true
+	return errors.Join(errs...)
 }
 
 // HealthRoutes returns HTTP routes for health checking the configured backends.
 func (b *Backends) HealthRoutes() (r []routes.CustomRoute) {
 	for n, h := range map[string]http.HandlerFunc{
 		"/health/readiness": func(w http.ResponseWriter, r *http.Request) {
-			st := http.StatusOK
-			if !b.HealthCheck(r.Context()) {
-				st = http.StatusServiceUnavailable
+			if err := b.HealthCheck(r.Context()); err != nil {
+				w.WriteHeader(http.StatusServiceUnavailable)
+				_, _ = w.Write([]byte(err.Error()))
 			}
-			w.WriteHeader(st)
 		},
 	} {
 		r = append(r, routes.CustomRoute{
