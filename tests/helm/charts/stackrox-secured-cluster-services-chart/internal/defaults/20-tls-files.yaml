@@ -1,0 +1,23 @@
+# These defaults ensure that by default, certificates and keys are loaded from the respective files in the secrets/
+# directory that they needed to be placed in for the old sensor Helm chart.
+#
+# A user can specify either references to files (with a "@" prefix - note that this requires changing the chart,
+# as Helm only allows accessing files that are part of the chart), or PEM-encoded certificates and keys directly.
+
+ca:
+  cert: "@?secrets/ca.pem"
+
+sensor:
+  serviceTLS:
+    cert: "@?secrets/sensor-cert.pem"
+    key: "@?secrets/sensor-key.pem"
+
+admissionControl:
+  serviceTLS:
+    cert: "@?secrets/admission-control-cert.pem"
+    key: "@?secrets/admission-control-key.pem"
+
+collector:
+  serviceTLS:
+    cert: "@?secrets/collector-cert.pem"
+    key: "@?secrets/collector-key.pem"
