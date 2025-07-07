@@ -19,6 +19,7 @@ import {
     Title,
 } from '@patternfly/react-core';
 
+import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import NotFoundMessage from 'Components/NotFoundMessage';
 import useAnalytics, { INVITE_USERS_MODAL_OPENED } from 'hooks/useAnalytics';
@@ -42,7 +43,6 @@ import AuthProvidersList from './AuthProvidersList';
 import AccessControlBreadcrumbs from '../AccessControlBreadcrumbs';
 import AccessControlHeading from '../AccessControlHeading';
 import AccessControlHeaderActionBar from '../AccessControlHeaderActionBar';
-import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 
 const entityType = 'AUTH_PROVIDER';
 
