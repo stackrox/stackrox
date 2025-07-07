@@ -13,6 +13,9 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 ### Added Features
 
+- ROX-27238: Central API for generating CRSs now supports custom expiration times, specified using the new fields "valid_until" or "valid_for".
+  roxctl's "central crs generate" now supports specifying custom expiration times using the new parameters "--valid-until" or "--valid-for".
+
 ### Removed Features
 
 ### Deprecated Features
@@ -20,8 +23,6 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 ### Technical Changes
 
 ## [4.8.0]
-
-
 
 **HELM USERS**: Please see ROX-27622 under "technical changes" to avoid upgrade failures!
 
