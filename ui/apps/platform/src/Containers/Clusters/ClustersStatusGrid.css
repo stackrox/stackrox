@@ -1,0 +1,11 @@
+.cluster-status-panel {
+    flex: 1 1 calc(25% - var(--pf-v5-l-flex--ColumnGap));
+  }
+  
+  @media (max-width: 1200px) {
+    .cluster-status-panel { flex: 1 1 calc(50% - var(--pf-v5-l-flex--ColumnGap)); }
+  }
+  
+  @media (max-width: 768px) {
+    .cluster-status-panel { flex: 1 1 100%; }
+  }
