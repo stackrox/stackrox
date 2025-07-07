@@ -90,9 +90,9 @@ var (
 	delegateScanPermissions = []string{"Image"}
 
 	imageScanMetricsLabel = prometheus.Labels{
-		"subsystem":      "central",
-		"entity":         "central-image-scan-service",
-		"requested-from": "n/a"}
+		"subsystem":     "central",
+		"entity":        "central-image-scan-service",
+		"requestedFrom": "n/a"}
 )
 
 // serviceImpl provides APIs for alerts.
