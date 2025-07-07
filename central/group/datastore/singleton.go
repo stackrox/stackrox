@@ -27,9 +27,7 @@ var (
 
 func initialize() {
 	ds = New(pgStore.New(globaldb.GetPostgres()), roleDatastore.Singleton(), func() authproviders.Registry {
-		return concurrency.WithRLock1(&authProviderMutex, func() authproviders.Registry {
-			return authProviderRegistryFunc()
-		})
+		return concurrency.WithRLock1(&authProviderMutex, authProviderRegistryFunc)
 	})
 
 	// Give datastore access to groups so that it can delete any groups with empty props on startup
