@@ -109,7 +109,7 @@ func (suite *UserServiceTestSuite) TestBatchUpdate() {
 		Mutate(contextForMock,
 			[]*storage.Group{update.GetPreviousGroups()[0]},
 			[]*storage.Group{update.GetRequiredGroups()[1]},
-			[]*storage.Group{update.GetRequiredGroups()[2]}, false, suite.authProviderRegistry).
+			[]*storage.Group{update.GetRequiredGroups()[2]}, false).
 		Return(nil)
 
 	_, err := suite.ser.BatchUpdate(contextForMock, update)
@@ -155,7 +155,7 @@ func (suite *UserServiceTestSuite) TestBatchUpdate_Dedupe_updated_group() {
 		Mutate(contextForMock,
 			gomock.Len(0),
 			[]*storage.Group{update.GetRequiredGroups()[0]},
-			gomock.Len(0), false, suite.authProviderRegistry).
+			gomock.Len(0), false).
 		Return(nil)
 
 	_, err := suite.ser.BatchUpdate(contextForMock, update)

@@ -22,27 +22,29 @@ type DataStore interface {
 
 	Walk(ctx context.Context, authProviderID string, attributes map[string][]string) ([]*storage.Group, error)
 
-	Add(ctx context.Context, group *storage.Group, authProviderRegistry authproviders.Registry) error
-	Update(ctx context.Context, group *storage.Group, force bool, authProviderRegistry authproviders.Registry) error
-	Upsert(ctx context.Context, group *storage.Group, authProviderRegistry authproviders.Registry) error
-	Mutate(ctx context.Context, remove, update, add []*storage.Group, force bool, authProviderRegistry authproviders.Registry) error
+	Add(ctx context.Context, group *storage.Group) error
+	Update(ctx context.Context, group *storage.Group, force bool) error
+	Upsert(ctx context.Context, group *storage.Group) error
+	Mutate(ctx context.Context, remove, update, add []*storage.Group, force bool) error
 	Remove(ctx context.Context, props *storage.GroupProperties, force bool) error
 	RemoveAllWithAuthProviderID(ctx context.Context, authProviderID string, force bool) error
 	RemoveAllWithEmptyProperties(ctx context.Context) error
 }
 
 // New returns a new DataStore instance.
-func New(storage store.Store, roleDatastore datastore.DataStore) DataStore {
+func New(storage store.Store, roleDatastore datastore.DataStore, authProviderRegistry func() authproviders.Registry) DataStore {
 	return &dataStoreImpl{
-		storage:       storage,
-		roleDatastore: roleDatastore,
+		storage:              storage,
+		roleDatastore:        roleDatastore,
+		authProviderRegistry: authProviderRegistry,
 	}
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB, roleDatastore datastore.DataStore) DataStore {
+func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB, roleDatastore datastore.DataStore, authProviderRegistry func() authproviders.Registry) DataStore {
 	return &dataStoreImpl{
-		storage:       pgStore.New(pool),
-		roleDatastore: roleDatastore,
+		storage:              pgStore.New(pool),
+		roleDatastore:        roleDatastore,
+		authProviderRegistry: authProviderRegistry,
 	}
 }
