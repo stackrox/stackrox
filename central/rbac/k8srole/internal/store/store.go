@@ -15,6 +15,7 @@ type Store interface {
 
 	Get(ctx context.Context, id string) (*storage.K8SRole, bool, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.K8SRole, []int, error)
+	GetByQueryFn(ctx context.Context, query *v1.Query, fn func(obj *storage.K8SRole) error) error
 	Walk(ctx context.Context, fn func(role *storage.K8SRole) error) error
 
 	Upsert(ctx context.Context, role *storage.K8SRole) error
