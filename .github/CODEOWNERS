@@ -85,3 +85,11 @@ operator/**/* @stackrox/install
 /.konflux/              @stackrox/rhtap-maintainers
 /.tekton/               @stackrox/rhtap-maintainers
 rpms.*                  @stackrox/rhtap-maintainers
+
+
+# Dependencies
+**/go.mod @stackrox/backend-dep-updaters
+**/go.sum @stackrox/backend-dep-updaters
+/.github/**/* @stackrox/backend-dep-updaters
+/qa-tests-backend/build.gradle @stackrox/backend-dep-updaters
+/ui/**/package*.json @stackrox/ui-dep-updaters

@@ -87,7 +87,6 @@ function CertificateCard({ component, pollingCount }: CertificateCardProps): Rea
      */
     const isFetchingInitialRequest = isFetching && pollingCount === 0;
 
-    /* eslint-disable no-nested-ternary */
     const icon = isFetchingInitialRequest
         ? SpinnerIcon
         : !expirationDate || !currentDatetime
@@ -177,7 +176,6 @@ function CertificateCard({ component, pollingCount }: CertificateCardProps): Rea
             </CardBody>
         </Card>
     );
-    /* eslint-enable no-nested-ternary */
 }
 
 export default CertificateCard;

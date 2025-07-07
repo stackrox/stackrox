@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stackrox/rox/central/discoveredclusters/datastore/internal/search"
 	"github.com/stackrox/rox/central/discoveredclusters/datastore/internal/store"
 	pgStore "github.com/stackrox/rox/central/discoveredclusters/datastore/internal/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -24,18 +23,15 @@ type DataStore interface {
 	DeleteDiscoveredClusters(ctx context.Context, query *v1.Query) ([]string, error)
 }
 
-func newDataStore(searcher search.Searcher, storage store.Store) DataStore {
+func newDataStore(storage store.Store) DataStore {
 	return &datastoreImpl{
-		searcher: searcher,
-		store:    storage,
+		store: storage,
 	}
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
 func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) DataStore {
-	store := pgStore.New(pool)
-	searcher := search.New(store)
-	return newDataStore(searcher, store)
+	return newDataStore(pgStore.New(pool))
 }
 
 // UpsertTestDiscoveredClusters provides a way to upsert storage.DiscoveredClusters directly to the database.

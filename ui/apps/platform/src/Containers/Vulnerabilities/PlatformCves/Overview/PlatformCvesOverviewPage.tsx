@@ -8,8 +8,8 @@ import {
     Card,
     CardBody,
     ToolbarItem,
+    DropdownItem,
 } from '@patternfly/react-core';
-import { DropdownItem } from '@patternfly/react-core/deprecated';
 import { useApolloClient } from '@apollo/client';
 
 import PageTitle from 'Components/PageTitle';
@@ -29,7 +29,7 @@ import useURLSort from 'hooks/useURLSort';
 import { createFilterTracker } from 'utils/analyticsEventTracking';
 import useSnoozeCveModal from 'Containers/Vulnerabilities/components/SnoozeCvesModal/useSnoozeCveModal';
 import SnoozeCvesModal from 'Containers/Vulnerabilities/components/SnoozeCvesModal/SnoozeCvesModal';
-import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
+import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 
 import { parseQuerySearchFilter } from 'Containers/Vulnerabilities/utils/searchUtils';
 import AdvancedFiltersToolbar from 'Containers/Vulnerabilities/components/AdvancedFiltersToolbar';
@@ -188,10 +188,12 @@ function PlatformCvesOverviewPage() {
                         >
                             {hasLegacySnoozeAbility && (
                                 <ToolbarItem align={{ default: 'alignRight' }}>
-                                    <BulkActionsDropdown isDisabled={selectedCves.size === 0}>
+                                    <MenuDropdown
+                                        toggleText="Bulk actions"
+                                        isDisabled={selectedCves.size === 0}
+                                    >
                                         <DropdownItem
                                             key="bulk-snooze-cve"
-                                            component="button"
                                             onClick={() =>
                                                 setSnoozeModalOptions({
                                                     action: isViewingSnoozedCves
@@ -204,7 +206,7 @@ function PlatformCvesOverviewPage() {
                                         >
                                             {isViewingSnoozedCves ? 'Unsnooze CVEs' : 'Snooze CVEs'}
                                         </DropdownItem>
-                                    </BulkActionsDropdown>
+                                    </MenuDropdown>
                                 </ToolbarItem>
                             )}
                         </TableEntityToolbar>

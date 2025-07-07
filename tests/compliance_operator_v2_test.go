@@ -467,18 +467,16 @@ func TestComplianceV2CreateGetScanConfigurations(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, len(scanConfigs.GetConfigurations()), 1)
 
-	// Create a scan configuration with invalid profiles configuration
-	// contains both rhcos4-high and ocp4-e8 profiles. This is going
-	// to fail validation, so we don't need to worry about running a larger
-	// profile (e.g., rhcos4-high), since it won't increase test times.
-	invalidProfileTestName := fmt.Sprintf("test-%s", uuid.NewV4().String())
-	invalidProfileReq := &v2.ComplianceScanConfiguration{
-		ScanName: invalidProfileTestName,
+	// Create a scan configuration with profiles with different products (rhcos, cis-node).
+	// This should be valid in version >= 4.9
+	differentProductProfileTestName := fmt.Sprintf("test-%s", uuid.NewV4().String())
+	differentProductProfileReq := &v2.ComplianceScanConfiguration{
+		ScanName: differentProductProfileTestName,
 		Id:       "",
 		Clusters: []string{clusterID},
 		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
 			OneTimeScan: false,
-			Profiles:    []string{"rhcos4-high", "ocp4-cis-node"},
+			Profiles:    []string{"rhcos4-stig", "ocp4-cis-node"},
 			Description: "test config with invalid profiles",
 			ScanSchedule: &v2.Schedule{
 				IntervalType: 1,
@@ -493,17 +491,16 @@ func TestComplianceV2CreateGetScanConfigurations(t *testing.T) {
 		},
 	}
 
-	// Verify that the invalid scan configuration was not created and the error message is correct
-	_, err = scanConfigService.CreateComplianceScanConfiguration(ctx, invalidProfileReq)
-	if err == nil {
-		t.Fatal("expected error creating scan configuration with invalid profiles")
-	}
-	assert.Contains(t, err.Error(), "profiles must have the same product")
+	res, err := scanConfigService.CreateComplianceScanConfiguration(ctx, differentProductProfileReq)
+	require.NoError(t, err)
 
 	query = &v2.RawQuery{Query: ""}
 	scanConfigs, err = scanConfigService.ListComplianceScanConfigurations(ctx, query)
 	assert.NoError(t, err)
-	assert.Equal(t, len(scanConfigs.GetConfigurations()), 1)
+	assert.Equal(t, len(scanConfigs.GetConfigurations()), 2)
+
+	_, err = scanConfigService.DeleteComplianceScanConfiguration(ctx, &v2.ResourceByID{Id: res.GetId()})
+	require.NoError(t, err)
 }
 
 func TestComplianceV2UpdateScanConfigurations(t *testing.T) {

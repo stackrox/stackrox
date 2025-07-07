@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/rbac/k8srolebinding/internal/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -44,7 +45,7 @@ func (d *datastoreImpl) SearchRoleBindings(ctx context.Context, q *v1.Query) ([]
 		return nil, err
 	}
 	results = searchPkg.RemoveMissingResults(results, missingIndices)
-	return convertMany(bindings, results), nil
+	return convertMany(bindings, results)
 }
 
 func (d *datastoreImpl) SearchRawRoleBindings(ctx context.Context, request *v1.Query) ([]*storage.K8SRoleBinding, error) {
@@ -89,12 +90,16 @@ func (d *datastoreImpl) GetManyRoleBindings(ctx context.Context, ids []string) (
 	return d.storage.GetMany(ctx, ids)
 }
 
-func convertMany(bindings []*storage.K8SRoleBinding, results []searchPkg.Result) []*v1.SearchResult {
+func convertMany(bindings []*storage.K8SRoleBinding, results []searchPkg.Result) ([]*v1.SearchResult, error) {
+	if len(bindings) != len(results) {
+		return nil, errors.New("mismatch between search results and retrieved role bindings")
+	}
+
 	outputResults := make([]*v1.SearchResult, len(bindings))
 	for index, binding := range bindings {
 		outputResults[index] = convertOne(binding, &results[index])
 	}
-	return outputResults
+	return outputResults, nil
 }
 
 func convertOne(binding *storage.K8SRoleBinding, result *searchPkg.Result) *v1.SearchResult {

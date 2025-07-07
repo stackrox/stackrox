@@ -54,13 +54,11 @@ function DeclarativeConfigurationHealthCard({
     const unhealthyItems = items.filter(({ status }) => status === 'UNHEALTHY');
     const unhealthyCount = unhealthyItems.length;
 
-    /* eslint-disable no-nested-ternary */
     const icon = isFetchingInitialRequest
         ? SpinnerIcon
         : errorMessageFetching
           ? ErrorIcon
           : healthIconMap[unhealthyCount === 0 ? 'success' : 'danger'];
-    /* eslint-enable no-nested-ternary */
 
     return (
         <Card isFullHeight isCompact>

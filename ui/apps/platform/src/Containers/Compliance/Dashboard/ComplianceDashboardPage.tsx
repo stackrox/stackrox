@@ -127,7 +127,6 @@ function ComplianceDashboardPage(): ReactElement {
         setIsManageStandardsModalOpen(false);
     }
 
-    /* eslint-disable no-nested-ternary */
     return (
         <>
             <PageHeader header="Compliance" subHeader="Dashboard">
@@ -251,7 +250,6 @@ function ComplianceDashboardPage(): ReactElement {
             ) : null}
         </>
     );
-    /* eslint-enable no-nested-ternary */
 }
 
 export default ComplianceDashboardPage;

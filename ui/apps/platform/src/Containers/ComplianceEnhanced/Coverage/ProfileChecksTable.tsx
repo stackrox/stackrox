@@ -54,7 +54,6 @@ function ProfileChecksTable({
     getSortParams,
     onClearFilters,
 }: ProfileChecksTableProps) {
-    /* eslint-disable no-nested-ternary */
     const { generatePathWithScanConfig } = useScanConfigRouter();
     const [expandedRows, setExpandedRows] = useState<number[]>([]);
     const { searchFilter } = useURLSearch();
