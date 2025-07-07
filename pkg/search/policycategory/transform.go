@@ -21,17 +21,6 @@ func TransformCategoryNameFields(searcher search.Searcher) search.Searcher {
 			local.Pagination = pagination
 			return searcher.Search(ctx, local)
 		},
-		CountFunc: func(ctx context.Context, q *v1.Query) (int, error) {
-			// Local copy to avoid changing input.
-			local := q.CloneVT()
-			pagination := local.GetPagination()
-			local.Pagination = nil
-
-			handleCategoryNameQuery(local)
-
-			local.Pagination = pagination
-			return searcher.Count(ctx, local)
-		},
 	}
 }
 
