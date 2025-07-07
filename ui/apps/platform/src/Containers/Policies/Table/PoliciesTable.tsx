@@ -238,7 +238,7 @@ function PoliciesTable({
                                         >
                                             {`Disable policies (${numEnabled})`}
                                         </DropdownItem>
-                                        <Divider component="li" key="separator" />
+                                        <Divider component="li" key="policy-management-separator" />
                                         <DropdownItem
                                             key="Enable notification"
                                             onClick={() => {
@@ -255,7 +255,7 @@ function PoliciesTable({
                                         >
                                             Disable notification
                                         </DropdownItem>
-                                        <Divider component="li" key="separator" />
+                                        <Divider component="li" key="policy-export-separator" />
                                         <DropdownItem
                                             key="Export policy"
                                             isDisabled={selectedPolicies.length === 0}
@@ -278,7 +278,7 @@ function PoliciesTable({
                                         >
                                             {`Save as Custom Resources (${numSaveable})`}
                                         </DropdownItem>
-                                        <Divider component="li" key="separator" />
+                                        <Divider component="li" key="policy-deletion-separator" />
                                         <DropdownItem
                                             key="Delete policy"
                                             isDisabled={numDeletable === 0}

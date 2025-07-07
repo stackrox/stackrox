@@ -188,7 +188,7 @@ function ViewVulnReportPage() {
                                 >
                                     Edit report
                                 </DropdownItem>
-                                <Divider component="li" key="separator" />
+                                <Divider component="li" key="edit-execution-separator" />
                                 <DropdownItem
                                     key="Send report"
                                     onClick={() => runReport(reportId, 'EMAIL')}
@@ -220,7 +220,7 @@ function ViewVulnReportPage() {
                                 >
                                     Clone report
                                 </DropdownItem>
-                                <Divider component="li" key="separator" />
+                                <Divider component="li" key="execution-danger-separator" />
                                 <DropdownItem
                                     key="Delete report"
                                     className="pf-v5-u-danger-color-100"
