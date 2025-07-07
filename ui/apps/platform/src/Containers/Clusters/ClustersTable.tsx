@@ -16,6 +16,7 @@ import { ClusterIdToRetentionInfo } from 'types/clusterService.proto';
 import { TableUIState } from 'utils/getTableUIState';
 
 import { formatCloudProvider } from './cluster.helpers';
+import ClustersStatusGrid from './ClustersStatusGrid';
 import { CertExpiryStatus, ClusterHealthStatus } from './clusterTypes';
 import ClusterDeletion from './Components/ClusterDeletion';
 import ClusterNameWithTypeIcon from './Components/ClusterNameWithTypeIcon';
@@ -200,9 +201,9 @@ function ClustersTable({
                                         <Tr isExpanded>
                                             <Td colSpan={colSpan}>
                                                 <ExpandableRowContent>
-                                                    <div className="pf-v5-u-text-align-center">
-                                                        *status details*
-                                                    </div>
+                                                    <ClustersStatusGrid
+                                                        healthStatus={clusterInfo.healthStatus}
+                                                    />
                                                 </ExpandableRowContent>
                                             </Td>
                                         </Tr>
