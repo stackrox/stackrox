@@ -30,18 +30,20 @@ func TransformFixableFields(searcher search.Searcher) search.Searcher {
 			local.Pagination = pagination
 			return searcher.Search(ctx, local)
 		},
-		CountFunc: func(ctx context.Context, q *v1.Query) (int, error) {
-			// Local copy to avoid changing input.
-			local := q.CloneVT()
-			pagination := local.GetPagination()
-			local.Pagination = nil
-
-			handleFixableQuery(local)
-
-			local.Pagination = pagination
-			return searcher.Count(ctx, local)
-		},
 	}
+}
+
+// TransformFixableFieldsQuery transform fixable search fields for cluster vulnerabilities.
+func TransformFixableFieldsQuery(q *v1.Query) *v1.Query {
+	// Local copy to avoid changing input.
+	local := q.CloneVT()
+	pagination := local.GetPagination()
+	local.Pagination = nil
+
+	handleFixableQuery(local)
+
+	local.Pagination = pagination
+	return local
 }
 
 func handleFixableQuery(q *v1.Query) {
@@ -63,34 +65,6 @@ func handleFixableQuery(q *v1.Query) {
 			matchFieldQuery.MatchFieldQuery.Field = search.ClusterCVEFixable.String()
 		}
 	})
-}
-
-// HandleCVEEdgeSearchQuery handles the query cve edge query
-func HandleCVEEdgeSearchQuery(searcher search.Searcher) search.Searcher {
-	return search.FuncSearcher{
-		SearchFunc: func(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-			// Local copy to avoid changing input.
-			local := q.CloneVT()
-			pagination := local.GetPagination()
-			local.Pagination = nil
-
-			getCVEEdgeQuery(local)
-
-			local.Pagination = pagination
-			return searcher.Search(ctx, local)
-		},
-		CountFunc: func(ctx context.Context, q *v1.Query) (int, error) {
-			// Local copy to avoid changing input.
-			local := q.CloneVT()
-			pagination := local.GetPagination()
-			local.Pagination = nil
-
-			getCVEEdgeQuery(local)
-
-			local.Pagination = pagination
-			return searcher.Count(ctx, local)
-		},
-	}
 }
 
 func getCVEEdgeQuery(q *v1.Query) {
@@ -131,35 +105,6 @@ func getCVEEdgeQuery(q *v1.Query) {
 		}
 	default:
 		log.Errorf("Unhandled query type: %T; query was %s", q, protocompat.MarshalTextString(q))
-	}
-}
-
-// HandleSnoozeSearchQuery ensures that when vulns are being searched by `Snoozed`,
-// the vulns deferred by new workflow are also included.
-func HandleSnoozeSearchQuery(searcher search.Searcher) search.Searcher {
-	return search.FuncSearcher{
-		SearchFunc: func(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-			// Local copy to avoid changing input.
-			local := q.CloneVT()
-			pagination := local.GetPagination()
-			local.Pagination = nil
-
-			local = handleSnoozedCVEQuery(ctx, local)
-
-			local.Pagination = pagination
-			return searcher.Search(ctx, local)
-		},
-		CountFunc: func(ctx context.Context, q *v1.Query) (int, error) {
-			// Local copy to avoid changing input.
-			local := q.CloneVT()
-			pagination := local.GetPagination()
-			local.Pagination = nil
-
-			local = handleSnoozedCVEQuery(ctx, local)
-
-			local.Pagination = pagination
-			return searcher.Count(ctx, local)
-		},
 	}
 }
 

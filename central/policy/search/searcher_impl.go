@@ -81,14 +81,6 @@ func (ds *searcherImpl) Search(ctx context.Context, q *v1.Query) ([]search.Resul
 	return ds.searcher.Search(ctx, q)
 }
 
-func (ds *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
-	if ok, err := policySAC.ReadAllowed(ctx); err != nil || !ok {
-		return 0, err
-	}
-
-	return ds.searcher.Count(ctx, q)
-}
-
 // convertPolicy returns proto search result from a policy object and the internal search result
 func convertPolicy(policy *storage.Policy, result search.Result) *v1.SearchResult {
 	return &v1.SearchResult{

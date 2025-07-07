@@ -14,7 +14,6 @@ import (
 //go:generate mockgen-wrapper
 type Searcher interface {
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
-	Count(ctx context.Context, q *v1.Query) (int, error)
 	SearchPolicies(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error)
 	SearchRawPolicies(ctx context.Context, q *v1.Query) ([]*storage.Policy, error)
 }

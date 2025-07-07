@@ -35,6 +35,19 @@ func TransformCategoryNameFields(searcher search.Searcher) search.Searcher {
 	}
 }
 
+// TransformCategoryNameFieldsQuery transforms category name fields for the new data layout for categories in postgres.
+func TransformCategoryNameFieldsQuery(q *v1.Query) *v1.Query {
+	// Local copy to avoid changing input.
+	local := q.CloneVT()
+	pagination := local.GetPagination()
+	local.Pagination = nil
+
+	handleCategoryNameQuery(local)
+
+	local.Pagination = pagination
+	return local
+}
+
 func handleCategoryNameQuery(q *v1.Query) {
 	if q.GetQuery() == nil {
 		return
