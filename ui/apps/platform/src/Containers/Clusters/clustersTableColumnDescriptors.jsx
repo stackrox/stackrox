@@ -12,7 +12,7 @@ import {
 import { formatCloudProvider } from './cluster.helpers';
 import ClusterDeletion from './Components/ClusterDeletion';
 import ClusterNameWithTypeIcon from './Components/ClusterNameWithTypeIcon';
-import ClusterStatus from './Components/ClusterStatus';
+import ClusterStatusLegacy from './Components/ClusterStatusLegacy';
 import CredentialExpiration from './Components/CredentialExpiration';
 import SensorUpgrade from './Components/SensorUpgrade';
 
@@ -58,7 +58,7 @@ export function getColumnsForClusters({
                 const safeHealthStatus = original.healthStatus || {
                     overallHealthStatus: 'UNINITIALIZED',
                 };
-                return <ClusterStatus healthStatus={safeHealthStatus} isList />;
+                return <ClusterStatusLegacy healthStatus={safeHealthStatus} isList />;
             },
             headerClassName: `w-1/4 ${defaultHeaderClassName}`,
             className: `w-1/4 ${wrapClassName} ${defaultColumnClassName}`,

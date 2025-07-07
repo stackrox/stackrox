@@ -3,6 +3,7 @@ import { differenceInDays, differenceInMinutes } from 'date-fns';
 import get from 'lodash/get';
 import { DownloadCloud } from 'react-feather';
 import {
+    BanIcon,
     CheckCircleIcon,
     ExclamationCircleIcon,
     ExclamationTriangleIcon,
@@ -10,6 +11,7 @@ import {
     InProgressIcon,
     MinusCircleIcon,
     ResourcesEmptyIcon,
+    UnknownIcon,
 } from '@patternfly/react-icons';
 
 import { Cluster, ClusterProviderMetadata } from 'types/cluster.proto';
@@ -109,34 +111,52 @@ const MinusCircleRotate45 = ({ className }: MinusCircleRotate45Props) => (
     <MinusCircleIcon className={`${className} transform rotate-45`} />
 );
 
-export const styleUninitialized = {
+const styleUninitializedLegacy = {
     Icon: MinusCircleRotate45,
     fgColor: '',
 };
 
-export const styleHealthy = {
+const styleUninitialized = {
+    Icon: BanIcon,
+    fgColor: '',
+};
+
+const styleHealthy = {
     Icon: CheckCircleIcon,
     fgColor: 'pf-v5-u-success-color-100',
 };
 
-export const styleDegraded = {
+const styleDegraded = {
     Icon: ExclamationTriangleIcon,
     fgColor: 'pf-v5-u-warning-color-100',
 };
 
-export const styleUnhealthy = {
+const styleUnhealthy = {
     Icon: ExclamationCircleIcon,
     fgColor: 'pf-v5-u-danger-color-100',
 };
 
+const styleUnavailable = {
+    Icon: UnknownIcon,
+    fgColor: '',
+};
+
 // Styles for ClusterStatus, SensorStatus, CollectorStatus.
 // Colors are similar to LabelChip, but fgColor is slightly lighter 700 instead of 800.
-export const healthStatusStyles = {
-    UNINITIALIZED: styleUninitialized,
+export const healthStatusStylesLegacy = {
+    UNINITIALIZED: styleUninitializedLegacy,
     UNAVAILABLE: {
         Icon: ResourcesEmptyIcon,
         fgColor: '',
     },
+    UNHEALTHY: styleUnhealthy,
+    DEGRADED: styleDegraded,
+    HEALTHY: styleHealthy,
+};
+
+export const healthStatusStyles = {
+    UNINITIALIZED: styleUninitialized,
+    UNAVAILABLE: styleUnavailable,
     UNHEALTHY: styleUnhealthy,
     DEGRADED: styleDegraded,
     HEALTHY: styleHealthy,

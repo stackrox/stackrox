@@ -1,6 +1,6 @@
 import React, { ReactElement } from 'react';
 
-import { healthStatusStyles } from '../../cluster.helpers';
+import { healthStatusStylesLegacy } from '../../cluster.helpers';
 
 const trClassName = 'align-bottom leading-normal'; // align-bottom in case heading text wraps
 const thClassName = 'font-700 pl-0 pr-1 py-0 text-left';
@@ -46,7 +46,7 @@ function AdmissionControlStatusTotals({
                                 {statusErrors.map((err) => (
                                     <li key={err}>
                                         <span
-                                            className={`${healthStatusStyles.UNHEALTHY.fgColor} break-all`}
+                                            className={`${healthStatusStylesLegacy.UNHEALTHY.fgColor} break-all`}
                                         >
                                             {err}
                                         </span>
