@@ -10,8 +10,8 @@ import (
 )
 
 type extractor struct {
-	caFP      string
-	validator authn.ValidateCertChain
+	trustedCAFingerprints map[string]bool
+	validator             authn.ValidateCertChain
 }
 
 func getExtractorError(msg string, err error) *authn.ExtractorError {
@@ -29,7 +29,7 @@ func (e extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reques
 	}
 
 	requestCA := ri.VerifiedChains[0][len(ri.VerifiedChains[0])-1]
-	if requestCA.CertFingerprint != e.caFP {
+	if !e.trustedCAFingerprints[requestCA.CertFingerprint] {
 		return nil, nil
 	}
 
@@ -51,10 +51,17 @@ func NewExtractorWithCertValidation(validator authn.ValidateCertChain) (authn.Id
 		return nil, err
 	}
 
-	caFP := cryptoutils.CertFingerprint(ca)
+	fingerprints := make(map[string]bool)
+	fingerprints[cryptoutils.CertFingerprint(ca)] = true
+
+	secondaryCA, _, err := mtls.SecondaryCACert()
+	if err == nil {
+		fingerprints[cryptoutils.CertFingerprint(secondaryCA)] = true
+	}
+
 	return extractor{
-		caFP:      caFP,
-		validator: validator,
+		trustedCAFingerprints: fingerprints,
+		validator:             validator,
 	}, nil
 }
 
