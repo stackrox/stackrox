@@ -48,7 +48,7 @@ import PageTitle from 'Components/PageTitle';
 import EmptyStateTemplate from 'Components/EmptyStateTemplate/EmptyStateTemplate';
 import CollectionsFormModal from 'Containers/Collections/CollectionsFormModal';
 import useToasts, { Toast } from 'hooks/patternfly/useToasts';
-import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
+import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 import useTableSelection from 'hooks/useTableSelection';
 import pluralize from 'pluralize';
 import HelpIconTh from 'Components/HelpIconTh';
@@ -229,14 +229,17 @@ function ConfigReportsTab() {
                                         />
                                     </ToolbarItem>
                                     <ToolbarItem>
-                                        <BulkActionsDropdown isDisabled={!hasSelections}>
+                                        <MenuDropdown
+                                            toggleText="Bulk actions"
+                                            isDisabled={!hasSelections}
+                                        >
                                             <DropdownItem
                                                 key="delete"
                                                 onClick={onConfirmDeleteSelection}
                                             >
                                                 Delete ({numSelected})
                                             </DropdownItem>
-                                        </BulkActionsDropdown>
+                                        </MenuDropdown>
                                     </ToolbarItem>
                                     <ToolbarItem
                                         variant="pagination"
