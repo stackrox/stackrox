@@ -20,8 +20,8 @@ metadata:
         )
       )
   labels:
-    appstudio.openshift.io/application: acs
-    appstudio.openshift.io/component: operator
+    appstudio.openshift.io/application: acs-4-8
+    appstudio.openshift.io/component: operator-4-8
     pipelines.appstudio.openshift.io/type: build
   name: operator-on-push
   namespace: rh-acs-tenant
@@ -70,7 +70,7 @@ spec:
           cpu: 2
 
   taskRunTemplate:
-    serviceAccountName: build-pipeline-operator
+    serviceAccountName: build-pipeline-operator-4-8
 
   # IMPORTANT: when changing timeouts here, read and follow timeout instructions in operator-bundle-build.yaml.
   timeouts:
