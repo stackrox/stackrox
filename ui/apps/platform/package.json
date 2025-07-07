@@ -163,7 +163,7 @@
         "prettier": "^3.6.2",
         "redux-immutable-state-invariant": "^2.1.0",
         "redux-saga-test-plan": "^3.7.0",
-        "tailwindcss": "^2.0.3",
+        "tailwindcss": "^2.2.19",
         "typescript": "^5.8.2",
         "vite": "^6.2.6",
         "vite-plugin-svgr": "^4.3.0",
