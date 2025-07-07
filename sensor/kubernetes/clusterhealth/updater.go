@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/pkg/errors"
@@ -53,16 +54,23 @@ type updaterImpl struct {
 	ctxMutex       sync.Mutex
 	pipelineCtx    context.Context
 	cancelCtx      context.CancelFunc
+	state          atomic.Value
 }
 
+var _ common.SensorComponent = (*updaterImpl)(nil)
+
 func (u *updaterImpl) Start() error {
+	u.state.Store(common.SensorComponentStateSTARTING)
 	go u.run(u.updateTicker.C)
+	u.state.Store(common.SensorComponentStateSTARTED)
 	return nil
 }
 
 func (u *updaterImpl) Stop(_ error) {
+	u.state.Store(common.SensorComponentStateSTOPPING)
 	u.updateTicker.Stop()
 	u.stopSig.Signal()
+	u.state.Store(common.SensorComponentStateSTOPPED)
 }
 
 func (u *updaterImpl) Notify(e common.SensorComponentEvent) {
@@ -71,8 +79,10 @@ func (u *updaterImpl) Notify(e common.SensorComponentEvent) {
 	case common.SensorComponentEventCentralReachable:
 		u.resetContext()
 		u.updateTicker.Reset(u.updateInterval)
+		u.state.Store(common.SensorComponentStateONLINE)
 	case common.SensorComponentEventOfflineMode:
 		u.updateTicker.Stop()
+		u.state.Store(common.SensorComponentStateONLINE)
 	}
 }
 
@@ -86,6 +96,10 @@ func (u *updaterImpl) ProcessMessage(_ *central.MsgToSensor) error {
 
 func (u *updaterImpl) ResponsesC() <-chan *message.ExpiringMessage {
 	return u.updates
+}
+
+func (u *updaterImpl) State() common.SensorComponentState {
+	return u.state.Load().(common.SensorComponentState)
 }
 
 func (u *updaterImpl) resetContext() {

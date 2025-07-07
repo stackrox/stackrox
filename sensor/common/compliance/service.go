@@ -39,7 +39,7 @@ type Service interface {
 func NewService(orchestrator orchestrator.Orchestrator, auditEventsInput chan *sensor.AuditEvents, auditLogCollectionManager AuditLogCollectionManager, complianceC <-chan common.MessageToComplianceWithAddress) Service {
 	offlineMode := &atomic.Bool{}
 	offlineMode.Store(true)
-	return &serviceImpl{
+	service := &serviceImpl{
 		output:                    make(chan *compliance.ComplianceReturn),
 		nodeInventories:           make(chan *storage.NodeInventory),
 		indexReportWraps:          make(chan *index.IndexReportWrap),
@@ -51,4 +51,6 @@ func NewService(orchestrator orchestrator.Orchestrator, auditEventsInput chan *s
 		offlineMode:               offlineMode,
 		stopper:                   set.NewSet[concurrency.Stopper](),
 	}
+	common.RegisterStateReporter(serviceComponentName, service.State)
+	return service
 }

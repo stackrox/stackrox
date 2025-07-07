@@ -2,6 +2,7 @@ package upgrade
 
 import (
 	"context"
+	"sync/atomic"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -31,6 +32,7 @@ var (
 
 type commandHandler struct {
 	stopSig concurrency.Signal
+	state   atomic.Value
 
 	currentProcess      *process
 	currentProcessMutex sync.Mutex
@@ -40,6 +42,8 @@ type commandHandler struct {
 
 	configHandler config.Handler
 }
+
+var _ common.SensorComponent = (*commandHandler)(nil)
 
 // NewCommandHandler returns a new upgrade command handler for Kubernetes.
 func NewCommandHandler(configHandler config.Handler) (common.SensorComponent, error) {
@@ -66,12 +70,16 @@ func (h *commandHandler) SetCentralGRPCClient(cc grpc.ClientConnInterface) {
 }
 
 func (h *commandHandler) Start() error {
+	h.state.Store(common.SensorComponentStateSTARTING)
 	h.stopSig.Reset()
+	h.state.Store(common.SensorComponentStateSTARTED)
 	return nil
 }
 
 func (h *commandHandler) Stop(_ error) {
+	h.state.Store(common.SensorComponentStateSTOPPING)
 	h.stopSig.Signal()
+	h.state.Store(common.SensorComponentStateSTOPPED)
 }
 
 func (h *commandHandler) Notify(common.SensorComponentEvent) {}
@@ -82,6 +90,10 @@ func (h *commandHandler) Capabilities() []centralsensor.SensorCapability {
 
 func (h *commandHandler) ResponsesC() <-chan *message.ExpiringMessage {
 	return nil
+}
+
+func (h *commandHandler) State() common.SensorComponentState {
+	return h.state.Load().(common.SensorComponentState)
 }
 
 func (h *commandHandler) waitForTermination(proc *process) {

@@ -25,6 +25,10 @@ import (
 	"google.golang.org/grpc"
 )
 
+const (
+	serviceComponentName = "compliance-service"
+)
+
 // ComplianceService is the struct that manages the compliance results and audit log events
 type serviceImpl struct {
 	sensor.UnimplementedComplianceServiceServer
@@ -45,29 +49,37 @@ type serviceImpl struct {
 	offlineMode *atomic.Bool
 	stopperLock sync.Mutex
 	stopper     set.Set[concurrency.Stopper]
+	state       atomic.Value
 }
+
+var _ common.SensorComponent = (*serviceImpl)(nil)
 
 func (s *serviceImpl) Notify(e common.SensorComponentEvent) {
 	log.Info(common.LogSensorComponentEvent(e))
 	switch e {
 	case common.SensorComponentEventCentralReachable:
 		s.offlineMode.Store(false)
+		s.state.Store(common.SensorComponentStateONLINE)
 	case common.SensorComponentEventOfflineMode:
 		s.offlineMode.Store(true)
+		s.state.Store(common.SensorComponentStateOFFLINE)
 	}
 }
 
 func (s *serviceImpl) Start() error {
+	s.state.Store(common.SensorComponentStateSTARTED)
 	return nil
 }
 
 func (s *serviceImpl) Stop(_ error) {
+	s.state.Store(common.SensorComponentStateSTOPPING)
 	concurrency.WithLock(&s.stopperLock, func() {
 		for _, stopper := range s.stopper.AsSlice() {
 			stopper.Client().Stop()
 			_ = stopper.Client().Stopped().Wait()
 		}
 	})
+	s.state.Store(common.SensorComponentStateSTOPPED)
 }
 
 func (s *serviceImpl) Capabilities() []centralsensor.SensorCapability {
@@ -80,6 +92,10 @@ func (s *serviceImpl) ProcessMessage(_ *central.MsgToSensor) error {
 
 func (s *serviceImpl) ResponsesC() <-chan *message.ExpiringMessage {
 	return nil
+}
+
+func (s *serviceImpl) State() common.SensorComponentState {
+	return s.state.Load().(common.SensorComponentState)
 }
 
 type connectionManager struct {

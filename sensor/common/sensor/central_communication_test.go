@@ -520,6 +520,10 @@ func (f fakeSensorComponent) Stop(error) {
 	panic("implement me")
 }
 
+func (f fakeSensorComponent) State() common.SensorComponentState {
+	return common.SensorComponentStateUNDEFINED
+}
+
 func (f fakeSensorComponent) Capabilities() []centralsensor.SensorCapability {
 	return []centralsensor.SensorCapability{}
 }

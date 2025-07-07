@@ -363,13 +363,17 @@ type networkFlowManager struct {
 	stopper concurrency.Stopper
 	purger  networkFlowComponent
 	pubSub  *internalmessage.MessageSubscriber
+	state   atomic.Value
 }
+
+var _ common.SensorComponent = (*networkFlowManager)(nil)
 
 func (m *networkFlowManager) ProcessMessage(_ *central.MsgToSensor) error {
 	return nil
 }
 
 func (m *networkFlowManager) Start() error {
+	m.state.Store(common.SensorComponentStateSTARTING)
 	go m.enrichConnections(m.enricherTickerC)
 	go m.publicIPs.Run(m.stopper.LowLevel().GetStopRequestSignal(), m.clusterEntities)
 	if m.purger != nil {
@@ -377,10 +381,12 @@ func (m *networkFlowManager) Start() error {
 			log.Warnf("Not starting network flow purger: %s", err)
 		}
 	}
+	m.state.Store(common.SensorComponentStateSTARTED)
 	return nil
 }
 
 func (m *networkFlowManager) Stop(_ error) {
+	m.state.Store(common.SensorComponentStateSTOPPING)
 	if !m.stopper.Client().Stopped().IsDone() {
 		defer func() {
 			_ = m.stopper.Client().Stopped().Wait()
@@ -390,6 +396,7 @@ func (m *networkFlowManager) Stop(_ error) {
 	if m.purger != nil {
 		m.purger.Stop(nil)
 	}
+	m.state.Store(common.SensorComponentStateSTOPPED)
 }
 
 func (m *networkFlowManager) Capabilities() []centralsensor.SensorCapability {
@@ -416,17 +423,23 @@ func (m *networkFlowManager) Notify(e common.SensorComponentEvent) {
 		m.resetLastSentState()
 		m.centralReady.Signal()
 		m.enricherTicker.Reset(enricherCycle)
+		m.state.Store(common.SensorComponentStateONLINE)
 	case common.SensorComponentEventOfflineMode:
 		if features.SensorCapturesIntermediateEvents.Enabled() {
 			return
 		}
 		m.centralReady.Reset()
 		m.enricherTicker.Stop()
+		m.state.Store(common.SensorComponentStateOFFLINE)
 	}
 }
 
 func (m *networkFlowManager) ResponsesC() <-chan *message.ExpiringMessage {
 	return m.sensorUpdates
+}
+
+func (m *networkFlowManager) State() common.SensorComponentState {
+	return m.state.Load().(common.SensorComponentState)
 }
 
 func (m *networkFlowManager) resetContext() {
