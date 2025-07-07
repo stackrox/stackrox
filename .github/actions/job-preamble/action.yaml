@@ -1,10 +1,6 @@
 name: Job Preamble
 description: Common steps for most jobs
 inputs:
-  gcloud-version:
-    description: 'expected gcloud/sdk version'
-    required: false
-    default: 363.0.0
   free-disk-space:
     description: 'Free disk space desired in GB (2025-06 ubuntu-24.04 runner starts with 20GB free and we can delete and reach 40GB)'
     required: false
@@ -15,6 +11,7 @@ inputs:
 runs:
   using: composite
   steps:
+    # auth prepares the gcp environment to authenticate.
     - name: Auth gcloud
       uses: 'google-github-actions/auth@v2'
       with:
@@ -23,29 +20,18 @@ runs:
         create_credentials_file: true
         cleanup_credentials: true
 
-    # check installed gcloud version (setup-gcloud action checks cache and not installed gcloud version)
-    - name: Check gcloud CLI version
-      id: gcloud-version-check
+    - name: Check gcloud CLI
+      id: gcloud-check
       continue-on-error: true
       shell: bash
       run: |
-        version=$(gcloud info --format="value(basic.version)")
-        target_gcloud_version="${{ inputs.gcloud-version }}"
-        if sort -bcV <<< "${target_gcloud_version}"$'\n'"${version}"; then
-          echo "gcloud/google-sdk version ${version} is newer than the expected version ${target_gcloud_version}."
-        else
-          echo -e "> [!WARNING]\n> gcloud/google-sdk version ${version} is older than the expected version ${target_gcloud_version}." \
-            >> $GITHUB_STEP_SUMMARY
-          exit 1
-        fi
+        gcloud info
 
-    # auth prepares the environment to auth. setup-gcloud authenticates gcloud
+    # setup-gcloud authenticates gcloud
     - name: Install gcloud CLI
       uses: 'google-github-actions/setup-gcloud@v2'
       with:
-        skip_install: ${{ steps.gcloud-version-check.outcome != 'failure' }}
-        version: ${{ steps.gcloud-version-check.outcome != 'failure' && 'latest' || '>= ${{ inputs.gcloud-version }}' }}
-        # does not check installed gcloud version. checks toolcache for previously installed and cached
+        skip_install: ${{ steps.gcloud-check.outcome != 'failure' }}
 
     - name: Shim gsutil as gcloud storage
       continue-on-error: true
