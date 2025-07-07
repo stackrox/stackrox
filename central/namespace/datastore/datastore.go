@@ -191,7 +191,7 @@ func (b *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]search.Resul
 
 // Count returns the number of search results from the query
 func (b *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
-	return b.formattedSearcher.Count(ctx, q)
+	return b.store.Count(ctx, q)
 }
 
 func (b *datastoreImpl) SearchResults(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {

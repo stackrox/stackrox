@@ -47,9 +47,6 @@ func Searcher(searcher search.Searcher, field search.FieldLabel, ranker Ranker) 
 			})
 			return results, nil
 		},
-		CountFunc: func(ctx context.Context, q *v1.Query) (int, error) {
-			return searcher.Count(ctx, q)
-		},
 	}
 }
 

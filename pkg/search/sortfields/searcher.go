@@ -51,8 +51,5 @@ func TransformSortFields(searcher search.Searcher, optionsMap search.OptionsMap)
 			// run the search
 			return searcher.Search(ctx, local)
 		},
-		CountFunc: func(ctx context.Context, q *v1.Query) (int, error) {
-			return searcher.Count(ctx, q)
-		},
 	}
 }

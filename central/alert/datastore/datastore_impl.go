@@ -51,8 +51,11 @@ func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query, excludeResolve
 // Count returns the number of search results from the query
 func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query, excludeResolved bool) (int, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "Count")
+	if excludeResolved {
+		q = alertutils.ApplyDefaultState(q)
+	}
 
-	return ds.searcher.Count(ctx, q, excludeResolved)
+	return ds.storage.Count(ctx, q)
 }
 
 func (ds *datastoreImpl) SearchListAlerts(ctx context.Context, q *v1.Query, excludeResolved bool) ([]*storage.ListAlert, error) {

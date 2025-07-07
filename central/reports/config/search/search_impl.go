@@ -34,10 +34,6 @@ func (s *searcherImpl) SearchReportConfigurations(ctx context.Context, query *v1
 	return s.searchReportConfigurations(ctx, query)
 }
 
-func (s *searcherImpl) Count(ctx context.Context, query *v1.Query) (int, error) {
-	return s.searcher.Count(ctx, query)
-}
-
 // Format the search functionality for default sorting.
 func formatSearcher(searcher search.Searcher) search.Searcher {
 	return paginated.WithDefaultSortOption(searcher, defaultSortOption)

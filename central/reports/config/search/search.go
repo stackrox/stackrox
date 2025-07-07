@@ -15,7 +15,6 @@ import (
 type Searcher interface {
 	Search(ctx context.Context, query *v1.Query) ([]search.Result, error)
 	SearchReportConfigurations(ctx context.Context, query *v1.Query) ([]*storage.ReportConfiguration, error)
-	Count(ctx context.Context, query *v1.Query) (int, error)
 }
 
 // New returns a new instance of Searcher for the given storage and index.

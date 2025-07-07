@@ -43,21 +43,6 @@ func (m *MockSearcher) EXPECT() *MockSearcherMockRecorder {
 	return m.recorder
 }
 
-// Count mocks base method.
-func (m *MockSearcher) Count(ctx context.Context, q *v1.Query, excludeResolved bool) (int, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Count", ctx, q, excludeResolved)
-	ret0, _ := ret[0].(int)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Count indicates an expected call of Count.
-func (mr *MockSearcherMockRecorder) Count(ctx, q, excludeResolved any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockSearcher)(nil).Count), ctx, q, excludeResolved)
-}
-
 // Search mocks base method.
 func (m *MockSearcher) Search(ctx context.Context, q *v1.Query, excludeResolved bool) ([]search.Result, error) {
 	m.ctrl.T.Helper()

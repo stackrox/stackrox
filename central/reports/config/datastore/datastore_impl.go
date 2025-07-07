@@ -29,7 +29,7 @@ func (d *dataStoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.Re
 }
 
 func (d *dataStoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
-	return d.searcher.Count(ctx, q)
+	return d.reportConfigStore.Count(ctx, q)
 }
 
 func (d *dataStoreImpl) GetReportConfigurations(ctx context.Context, query *v1.Query) ([]*storage.ReportConfiguration, error) {
