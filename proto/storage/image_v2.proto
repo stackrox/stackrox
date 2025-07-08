@@ -10,77 +10,77 @@ option java_package = "io.stackrox.proto.storage";
 
 // Next tag: 28
 message ImageV2 {
-    string id = 1; // @gotags: search:"Image ID,hidden" sql:"pk,type(uuid)"
-    string sha = 2; // @gotags: search:"Image Sha"
-    ImageName name = 3;
+  string id = 1; // @gotags: search:"Image ID,hidden" sql:"pk,type(uuid)"
+  string sha = 2; // @gotags: search:"Image Sha"
+  ImageName name = 3;
 
-    ImageMetadata metadata = 4;
-    ImageScan scan = 5; // @gotags: policy:"Image Scan"
+  ImageMetadata metadata = 4;
+  ImageScan scan = 5; // @gotags: policy:"Image Scan"
 
-    ImageSignatureVerificationData signature_verification_data = 6;
-    ImageSignature signature = 7;
+  ImageSignatureVerificationData signature_verification_data = 6;
+  ImageSignature signature = 7;
 
-    oneof set_components {
-        int32 components = 8; // @gotags: search:"Component Count,hidden"
-    }
-    oneof set_cves {
-        int32 cves = 9; // @gotags: search:"Image CVE Count"
-    }
-    oneof set_fixable_cves {
-        int32 fixable_cves = 10; // @gotags: search:"Fixable CVE Count,hidden"
-    }
+  oneof set_components {
+    int32 components = 8; // @gotags: search:"Component Count,hidden"
+  }
+  oneof set_cves {
+    int32 cves = 9; // @gotags: search:"Image CVE Count"
+  }
+  oneof set_fixable_cves {
+    int32 fixable_cves = 10; // @gotags: search:"Fixable CVE Count,hidden"
+  }
 
-    oneof set_unknown_cves {
-        int32 unknown_cves = 11; // @gotags: search:"Unknown CVE Count,hidden"
-    }
-    oneof set_fixable_unknown_cves {
-        int32 fixable_unknown_cves = 12; // @gotags: search:"Fixable Unknown CVE Count,hidden"
-    }
+  oneof set_unknown_cves {
+    int32 unknown_cves = 11; // @gotags: search:"Unknown CVE Count,hidden"
+  }
+  oneof set_fixable_unknown_cves {
+    int32 fixable_unknown_cves = 12; // @gotags: search:"Fixable Unknown CVE Count,hidden"
+  }
 
-    oneof set_critical_cves {
-        int32 critical_cves = 13; // @gotags: search:"Critical CVE Count,hidden"
-    }
-    oneof set_fixable_critical_cves {
-        int32 fixable_critical_cves = 14; // @gotags: search:"Fixable Critical CVE Count,hidden"
-    }
+  oneof set_critical_cves {
+    int32 critical_cves = 13; // @gotags: search:"Critical CVE Count,hidden"
+  }
+  oneof set_fixable_critical_cves {
+    int32 fixable_critical_cves = 14; // @gotags: search:"Fixable Critical CVE Count,hidden"
+  }
 
-    oneof set_important_cves {
-        int32 important_cves = 15; // @gotags: search:"Important CVE Count,hidden"
-    }
-    oneof set_fixable_important_cves {
-        int32 fixable_important_cves = 16; // @gotags: search:"Fixable Important CVE Count,hidden"
-    }
+  oneof set_important_cves {
+    int32 important_cves = 15; // @gotags: search:"Important CVE Count,hidden"
+  }
+  oneof set_fixable_important_cves {
+    int32 fixable_important_cves = 16; // @gotags: search:"Fixable Important CVE Count,hidden"
+  }
 
-    oneof set_moderate_cves {
-        int32 moderate_cves = 17; // @gotags: search:"Moderate CVE Count,hidden"
-    }
-    oneof set_fixable_moderate_cves {
-        int32 fixable_moderate_cves = 18; // @gotags: search:"Fixable Moderate CVE Count,hidden"
-    }
+  oneof set_moderate_cves {
+    int32 moderate_cves = 17; // @gotags: search:"Moderate CVE Count,hidden"
+  }
+  oneof set_fixable_moderate_cves {
+    int32 fixable_moderate_cves = 18; // @gotags: search:"Fixable Moderate CVE Count,hidden"
+  }
 
-    oneof set_low_cves {
-        int32 low_cves = 19; // @gotags: search:"Low CVE Count,hidden"
-    }
-    oneof set_fixable_low_cves {
-        int32 fixable_low_cves = 20; // @gotags: search:"Fixable Low CVE Count,hidden"
-    }
+  oneof set_low_cves {
+    int32 low_cves = 19; // @gotags: search:"Low CVE Count,hidden"
+  }
+  oneof set_fixable_low_cves {
+    int32 fixable_low_cves = 20; // @gotags: search:"Fixable Low CVE Count,hidden"
+  }
 
-    google.protobuf.Timestamp last_updated = 21; // @gotags: search:"Last Updated,hidden"
+  google.protobuf.Timestamp last_updated = 21; // @gotags: search:"Last Updated,hidden"
 
-    bool not_pullable = 22;
-    bool is_cluster_local = 23;
+  bool not_pullable = 22;
+  bool is_cluster_local = 23;
 
-    int64 priority = 24; // @gotags: search:"Image Risk Priority,hidden"
-    float risk_score = 25; // @gotags: search:"Image Risk Score,hidden"
-    oneof set_top_cvss {
-        float top_cvss = 26; // @gotags: search:"Image Top CVSS,store"
-    }
+  int64 priority = 24; // @gotags: search:"Image Risk Priority,hidden"
+  float risk_score = 25; // @gotags: search:"Image Risk Score,hidden"
+  oneof set_top_cvss {
+    float top_cvss = 26; // @gotags: search:"Image Top CVSS,store"
+  }
 
-    enum Note {
-        MISSING_METADATA = 0;
-        MISSING_SCAN_DATA = 1;
-        MISSING_SIGNATURE = 2;
-        MISSING_SIGNATURE_VERIFICATION_DATA = 3;
-    }
-    repeated Note notes = 27;
+  enum Note {
+    MISSING_METADATA = 0;
+    MISSING_SCAN_DATA = 1;
+    MISSING_SIGNATURE = 2;
+    MISSING_SIGNATURE_VERIFICATION_DATA = 3;
+  }
+  repeated Note notes = 27;
 }
