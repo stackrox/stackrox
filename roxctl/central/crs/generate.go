@@ -54,19 +54,24 @@ func generateCRS(cliEnvironment environment.Environment, name string,
 		}()
 	}
 
-	req := v1.CRSGenRequest{Name: name}
-	if validFor != 0 {
-		req.ValidFor = durationpb.New(validFor)
-	}
-	if !validUntil.IsZero() {
-		req.ValidUntil = timestamppb.New(validUntil)
-	}
-	resp, err := svc.GenerateCRS(ctx, &req)
-	if err != nil {
-		if errStatus, ok := status.FromError(err); ok && errStatus.Code() == codes.Unimplemented {
-			return errors.Wrap(err, "missing CRS support in Central")
+	var resp *v1.CRSGenResponse
+	if validFor != 0 || !validUntil.IsZero() {
+		resp, err = generateCrsExtended(ctx, svc, name, validFor, validUntil)
+		if err != nil {
+			if errStatus, ok := status.FromError(err); ok && errStatus.Code() == codes.Unimplemented {
+				cliEnvironment.Logger().ErrfLn("generating a CRS with custom expiration times requires a newer Central")
+				return errors.Wrap(err, "missing extended CRS support in Central")
+			}
+			return errors.Wrap(err, "generating new CRS with extended settings")
 		}
-		return errors.Wrap(err, "generating new CRS")
+	} else {
+		resp, err = svc.GenerateCRS(ctx, &v1.CRSGenRequest{Name: name})
+		if err != nil {
+			if errStatus, ok := status.FromError(err); ok && errStatus.Code() == codes.Unimplemented {
+				return errors.Wrap(err, "missing CRS support in Central")
+			}
+			return errors.Wrap(err, "generating new CRS with extended settings")
+		}
 	}
 
 	crs := resp.GetCrs()
@@ -94,6 +99,24 @@ func generateCRS(cliEnvironment environment.Environment, name string,
 	cliEnvironment.Logger().InfofLn("Then CRS needs to be stored securely, since it contains secrets.")
 	cliEnvironment.Logger().InfofLn("It is not possible to retrieve previously generated CRSs.")
 	return nil
+}
+
+func generateCrsExtended(
+	ctx context.Context,
+	svc v1.ClusterInitServiceClient,
+	name string,
+	validFor time.Duration,
+	validUntil time.Time,
+) (*v1.CRSGenResponse, error) {
+	req := v1.CRSGenRequestExtended{Name: name}
+	if validFor != 0 {
+		req.ValidFor = durationpb.New(validFor)
+	}
+	if !validUntil.IsZero() {
+		req.ValidUntil = timestamppb.New(validUntil)
+	}
+
+	return svc.GenerateCRSExtended(ctx, &req)
 }
 
 // generateCommand implements the command for generating new CRSs.
