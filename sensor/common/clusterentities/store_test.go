@@ -74,7 +74,7 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryWhenGoingOffline() {
 	}
 	for name, tc := range cases {
 		s.Run(name, func() {
-			entityStore := NewStoreWithMemory(tc.numTicksToRemember, nil, true)
+			entityStore := NewStore(tc.numTicksToRemember, nil, true)
 			entityStore.Apply(tc.initialState, true)
 			// We start online
 			s.Len(entityStore.podIPsStore.ipMap, tc.wantMapSizeOnline)

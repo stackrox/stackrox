@@ -110,7 +110,7 @@ func NewHeritageManager(ns string, client k8sClient, start time.Time) *Manager {
 	}
 }
 
-func (h *Manager) populateCacheFromConfigMap(ctx context.Context) error {
+func (h *Manager) populateCacheFromConfigMapNoLock(ctx context.Context) error {
 	data, err := h.readConfigMap(ctx)
 	if err != nil {
 		if apiErrors.IsNotFound(err) {
@@ -134,7 +134,7 @@ func (h *Manager) GetData(ctx context.Context) []*SensorMetadata {
 	if h.cacheIsPopulated.Load() {
 		return h.cache
 	}
-	if err := h.populateCacheFromConfigMap(ctx); err != nil {
+	if err := h.populateCacheFromConfigMapNoLock(ctx); err != nil {
 		log.Warnf("%v", err)
 	}
 	return h.cache
@@ -148,7 +148,7 @@ func (h *Manager) SetCurrentSensorData(currentIP, currentContainerID string) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	if err := h.UpsertConfigMap(ctx, time.Now()); err != nil {
+	if err := h.upsertConfigMap(ctx, time.Now()); err != nil {
 		log.Warnf("Failed to update heritage data in the configMap: %v", err)
 	}
 }
@@ -168,11 +168,11 @@ func (h *Manager) updateCachedTimestampNoLock(now time.Time) bool {
 	return false
 }
 
-func (h *Manager) UpsertConfigMap(ctx context.Context, now time.Time) error {
+func (h *Manager) upsertConfigMap(ctx context.Context, now time.Time) error {
 	h.cacheMutex.Lock()
 	defer h.cacheMutex.Unlock()
 	if !h.cacheIsPopulated.Load() {
-		if err := h.populateCacheFromConfigMap(ctx); err != nil {
+		if err := h.populateCacheFromConfigMapNoLock(ctx); err != nil {
 			log.Warnf("%v", err)
 		}
 	}
@@ -257,7 +257,7 @@ func removeOlderThan(in []*SensorMetadata, now time.Time, minSize int, maxAge ti
 		log.Errorf("Programmer error: cannot remove old heritage data for unsorted slice")
 		return in
 	}
-	// The slice is sorted by LastestUpdate
+	// The slice is sorted by `LatestUpdate`
 	cutOff := now.Add(-maxAge)
 	for idx, entry := range in {
 		// We assume that LatestUpdate cannot be zero, as in the worst case we'd have LatestUpdate==SensorStart

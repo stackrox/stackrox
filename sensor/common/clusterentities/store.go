@@ -131,8 +131,8 @@ type HeritageManager interface {
 	SetCurrentSensorData(currentIP, currentContainerID string)
 }
 
-// NewStoreWithMemory returns store that remembers past IPs of an endpoint for a given number of ticks
-func NewStoreWithMemory(numTicks uint16, hm HeritageManager, debugMode bool) *Store {
+// NewStore returns store that remembers past IPs of an endpoint for a given number of ticks
+func NewStore(numTicks uint16, hm HeritageManager, debugMode bool) *Store {
 	store := &Store{
 		endpointsStore:    newEndpointsStoreWithMemory(numTicks),
 		podIPsStore:       newPodIPsStoreWithMemory(numTicks),
@@ -172,7 +172,7 @@ func (e *Store) Cleanup() {
 	e.resetMaps()
 }
 
-func (e *Store) GetHeritageData() HeritageManager {
+func (e *Store) GetHeritageManager() HeritageManager {
 	return e.pastSensors
 }
 

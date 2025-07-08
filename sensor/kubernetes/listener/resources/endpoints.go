@@ -257,7 +257,7 @@ func (m *endpointManagerImpl) onDeploymentCreateOrUpdate(deployment *deploymentW
 }
 
 func (m *endpointManagerImpl) updateHeritageData(data *clusterentities.EntityData) error {
-	hm := m.entityStore.GetHeritageData()
+	hm := m.entityStore.GetHeritageManager()
 	if hm == nil {
 		// Feature may be disabled, no need to raise an error.
 		return nil

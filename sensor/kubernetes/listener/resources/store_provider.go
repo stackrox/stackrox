@@ -44,7 +44,7 @@ func InitializeStore(hm clusterentities.HeritageManager) *StoreProvider {
 	podStore := newPodStore()
 	svcStore := newServiceStore()
 	nodeStore := newNodeStore()
-	entityStore := clusterentities.NewStoreWithMemory(uint16(memSizeSetting), hm, debugClusterEntitiesStore.BooleanSetting())
+	entityStore := clusterentities.NewStore(uint16(memSizeSetting), hm, debugClusterEntitiesStore.BooleanSetting())
 	if debugClusterEntitiesStore.BooleanSetting() {
 		go entityStore.StartDebugServer()
 	}
