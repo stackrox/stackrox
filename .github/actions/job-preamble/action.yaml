@@ -9,10 +9,13 @@ inputs:
     required: true
 runs:
   using: composite
+  env:
+    default-free-disk-space: 25
   steps:
     - name: Variable setup
       shell: bash
       run: |
+        echo "inputs=${{ toJson(inputs) }}"
         echo "target_free=${{ inputs.free-disk-space || env.default-free-disk-space }}" >> $GITHUB_ENV
 
     - name: Set up gcloud CLI
