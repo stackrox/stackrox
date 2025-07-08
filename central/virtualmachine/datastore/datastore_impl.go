@@ -17,13 +17,13 @@ var (
 )
 
 type datastoreImpl struct {
-	globalMutex     sync.Mutex
+	mutex           sync.RWMutex
 	virtualMachines map[string]*storage.VirtualMachine
 }
 
 func newDatastoreImpl() DataStore {
 	ds := &datastoreImpl{
-		globalMutex:     sync.Mutex{},
+		mutex:           sync.RWMutex{},
 		virtualMachines: map[string]*storage.VirtualMachine{},
 	}
 	return ds
@@ -36,6 +36,10 @@ func (ds *datastoreImpl) CountVirtualMachines(ctx context.Context) (int, error) 
 	} else if !ok {
 		return 0, sac.ErrResourceAccessDenied
 	}
+
+	ds.mutex.RLock()
+	defer ds.mutex.RUnlock()
+
 	return len(ds.virtualMachines), nil
 }
 
@@ -50,6 +54,9 @@ func (ds *datastoreImpl) GetVirtualMachine(ctx context.Context, id string) (*sto
 	if id == "" {
 		return nil, false, errors.New("Please specify an id")
 	}
+
+	ds.mutex.RLock()
+	defer ds.mutex.RUnlock()
 
 	vm, found := ds.virtualMachines[id]
 
@@ -69,8 +76,8 @@ func (ds *datastoreImpl) GetAllVirtualMachines(ctx context.Context) ([]*storage.
 		return []*storage.VirtualMachine{}, sac.ErrResourceAccessDenied
 	}
 
-	ds.globalMutex.Lock()
-	defer ds.globalMutex.Unlock()
+	ds.mutex.RLock()
+	defer ds.mutex.RUnlock()
 
 	ret := make([]*storage.VirtualMachine, 0, len(ds.virtualMachines))
 
@@ -95,8 +102,8 @@ func (ds *datastoreImpl) CreateVirtualMachine(ctx context.Context, virtualMachin
 		return errors.New("cannot create a virtualMachine without an id")
 	}
 
-	ds.globalMutex.Lock()
-	defer ds.globalMutex.Unlock()
+	ds.mutex.Lock()
+	defer ds.mutex.Unlock()
 
 	if _, exists := ds.virtualMachines[virtualMachine.GetId()]; exists {
 		return errors.New("Already exists")
@@ -121,8 +128,8 @@ func (ds *datastoreImpl) UpsertVirtualMachine(ctx context.Context, virtualMachin
 		return errors.New("cannot upsert a virtualMachine without an id")
 	}
 
-	ds.globalMutex.Lock()
-	defer ds.globalMutex.Unlock()
+	ds.mutex.Lock()
+	defer ds.mutex.Unlock()
 
 	ds.virtualMachines[virtualMachine.GetId()] = virtualMachine
 
@@ -138,8 +145,8 @@ func (ds *datastoreImpl) DeleteVirtualMachines(ctx context.Context, ids ...strin
 		return sac.ErrResourceAccessDenied
 	}
 
-	ds.globalMutex.Lock()
-	defer ds.globalMutex.Unlock()
+	ds.mutex.Lock()
+	defer ds.mutex.Unlock()
 
 	missingIds := make([]string, 0)
 
@@ -173,6 +180,9 @@ func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
 	if id == "" {
 		return false, errors.New("Please specify a valid id")
 	}
+
+	ds.mutex.RLock()
+	defer ds.mutex.RUnlock()
 
 	_, exists := ds.virtualMachines[id]
 	return exists, nil
