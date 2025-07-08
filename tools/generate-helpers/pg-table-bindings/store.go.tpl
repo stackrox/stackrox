@@ -85,12 +85,20 @@ type Store interface {
 {{ define "defineScopeChecker" }}scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_{{ . }}_ACCESS).Resource(targetResource){{ end }}
 
 {{ define "storeCreator" -}}
-    {{- if and (.CachedStore) (not .Obj.IsDirectlyScoped) -}}
+    {{- if and (.CachedStore) (not .Obj.IsDirectlyScoped) (not .DefaultSortStore) -}}
         pgSearch.NewGloballyScopedGenericStoreWithCache
-    {{- else if and (not .CachedStore) (not .Obj.IsDirectlyScoped) -}}
+    {{- else if and (.CachedStore) (not .Obj.IsDirectlyScoped) (.DefaultSortStore) -}}
+        pgSearch.NewGloballyScopedGenericStoreWithCacheAndDefaultSort
+    {{- else if and (not .CachedStore) (not .Obj.IsDirectlyScoped) (not .DefaultSortStore) -}}
         pgSearch.NewGloballyScopedGenericStore
-    {{- else if .CachedStore -}}
+    {{- else if and (not .CachedStore) (not .Obj.IsDirectlyScoped) (.DefaultSortStore) -}}
+        pgSearch.NewGloballyScopedGenericStoreWithDefaultSort
+    {{- else if and .CachedStore (not .DefaultSortStore) -}}
         pgSearch.NewGenericStoreWithCache
+    {{- else if and .CachedStore (.DefaultSortStore) -}}
+        pgSearch.NewGenericStoreWithCacheAndDefaultSort
+    {{- else if (.DefaultSortStore) -}}
+        pgSearch.NewGenericStoreWithDefaultSort
     {{- else -}}
         pgSearch.NewGenericStore
     {{- end -}}
@@ -127,6 +135,9 @@ func New(db postgres.DB) Store {
             isUpsertAllowed,
             {{- end }}
             targetResource,
+            {{- if .DefaultSortStore }}
+            getDefaultSort({{.DefaultSort}}, {{.ReverseDefaultSort}}),
+            {{- end }}
     )
 }
 
@@ -319,6 +330,15 @@ func {{ template "copyFunctionName" $schema }}(ctx context.Context, s pgSearch.D
 {{ template "copyObject" dict "schema" .Schema }}
 {{- end }}
 {{- end }}
+
+func getDefaultSort(sortOption string, reversed bool) *v1.QuerySortOption {
+    defaultSortOption := &v1.QuerySortOption{
+    	Field:    sortOption,
+    	Reversed: reversed,
+    }
+
+    return defaultSortOption
+}
 
 // endregion Helper functions
 
