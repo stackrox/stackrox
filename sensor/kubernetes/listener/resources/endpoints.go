@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/containerid"
 	"github.com/stackrox/rox/pkg/net"
+	"github.com/stackrox/rox/pkg/pods"
 	podUtils "github.com/stackrox/rox/pkg/pods/utils"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
@@ -243,12 +244,16 @@ func (m *endpointManagerImpl) OnDeploymentCreateOrUpdateByID(id string) {
 	m.onDeploymentCreateOrUpdate(deployment)
 }
 
+func isSensor(deployment *deploymentWrap) bool {
+	return deployment.GetName() == "sensor" && deployment.GetNamespace() == pods.GetPodNamespace()
+}
+
 func (m *endpointManagerImpl) onDeploymentCreateOrUpdate(deployment *deploymentWrap) {
 	data := m.endpointDataForDeployment(deployment)
 	updates := map[string]*clusterentities.EntityData{
 		deployment.GetId(): data,
 	}
-	if deployment.GetName() == "sensor" {
+	if isSensor(deployment) {
 		if err := m.updateHeritageData(data); err != nil {
 			log.Warnf("Error updating Sensor heritage data: %v", err)
 		}
