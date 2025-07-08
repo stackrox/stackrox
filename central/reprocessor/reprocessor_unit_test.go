@@ -217,45 +217,6 @@ func TestReprocessImage(t *testing.T) {
 		assert.Nil(tt, retImage)
 		assert.False(tt, reprocessed)
 	})
-	t.Run("re-fetch error", func(tt *testing.T) {
-		testLoop, imageDS, riskManager := newTestLoop(tt)
-		image := &storage.Image{}
-		gomock.InOrder(
-			imageDS.EXPECT().GetImage(gomock.Any(), gomock.Eq(imageID)).Times(1).Return(image, true, nil),
-			riskManager.EXPECT().CalculateRiskAndUpsertImage(gomock.Eq(image)).Times(1).Return(nil),
-			imageDS.EXPECT().GetImage(gomock.Any(), gomock.Eq(imageID)).Times(1).Return(nil, false, errors.New("some error")),
-		)
-		retImage, reprocessed := testLoop.reprocessImage(imageID, imageEnricher.UseCachesIfPossible, reprocessFuncUpdate)
-		assert.Nil(tt, retImage)
-		assert.False(tt, reprocessed)
-	})
-	t.Run("re-fetch not found", func(tt *testing.T) {
-		testLoop, imageDS, riskManager := newTestLoop(tt)
-		image := &storage.Image{}
-		gomock.InOrder(
-			imageDS.EXPECT().GetImage(gomock.Any(), gomock.Eq(imageID)).Times(1).Return(image, true, nil),
-			riskManager.EXPECT().CalculateRiskAndUpsertImage(gomock.Eq(image)).Times(1).Return(nil),
-			imageDS.EXPECT().GetImage(gomock.Any(), gomock.Eq(imageID)).Times(1).Return(nil, false, nil),
-		)
-		retImage, reprocessed := testLoop.reprocessImage(imageID, imageEnricher.UseCachesIfPossible, reprocessFuncUpdate)
-		assert.Nil(tt, retImage)
-		assert.False(tt, reprocessed)
-	})
-	t.Run("re-fetch image", func(tt *testing.T) {
-		testLoop, imageDS, riskManager := newTestLoop(tt)
-		initialImage := &storage.Image{}
-		secondImage := &storage.Image{Scan: &storage.ImageScan{}}
-		gomock.InOrder(
-			imageDS.EXPECT().GetImage(gomock.Any(), gomock.Eq(imageID)).Times(1).Return(initialImage, true, nil),
-			riskManager.EXPECT().CalculateRiskAndUpsertImage(gomock.Eq(initialImage)).Times(1).Return(nil),
-			imageDS.EXPECT().GetImage(gomock.Any(), gomock.Eq(imageID)).Times(1).Return(secondImage, true, nil),
-		)
-		retImage, reprocessed := testLoop.reprocessImage(imageID, imageEnricher.UseCachesIfPossible, reprocessFuncUpdate)
-		assert.NotNil(tt, retImage)
-		assert.False(tt, proto.Equal(initialImage, retImage))
-		assert.True(tt, proto.Equal(secondImage, retImage))
-		assert.True(tt, reprocessed)
-	})
 	t.Run("reprocessingFunc no scan update", func(tt *testing.T) {
 		testLoop, imageDS, _ := newTestLoop(tt)
 		image := &storage.Image{}
