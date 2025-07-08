@@ -104,4 +104,8 @@ var (
 	PastSensorsMaxEntries = RegisterIntegerSetting("ROX_PAST_SENSORS_MAX_ENTRIES", 20).WithMinimum(2)
 	// PastSensorsConfigmapName defines the name of the configmap where Sensor's metadata about past instances are stored
 	PastSensorsConfigmapName = RegisterSetting("ROX_PAST_SENSORS_CONFIG_MAP_NAME", WithDefault("sensor-past-instances"))
+
+	// ContainerIDResolutionGracePeriod defines a time period in which it is "okay" to not find the container ID in
+	// cluster entities store in Sensor. If that
+	ContainerIDResolutionGracePeriod = registerDurationSetting("ROX_CONTAINER_ID_RESOLUTION_GRACE_PERIOD", 2*time.Minute)
 )

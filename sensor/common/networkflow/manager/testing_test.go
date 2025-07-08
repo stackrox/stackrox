@@ -69,7 +69,7 @@ func expectationsEndpointPurger(mockEntityStore *mocksManager.MockEntityStore, i
 func expectEntityLookupContainerHelper(mockEntityStore *mocksManager.MockEntityStore, times int, containerMetadata clusterentities.ContainerMetadata, found, historical bool) expectFn {
 	return func() {
 		mockEntityStore.EXPECT().LookupByContainerID(gomock.Any()).Times(times).DoAndReturn(func(_ any) (clusterentities.ContainerMetadata, bool, bool) {
-			return containerMetadata, found, false
+			return containerMetadata, found, historical
 		})
 	}
 }
@@ -156,6 +156,10 @@ type endpointPair struct {
 }
 
 func createEndpointPair(firstSeen, tsAdded timestamp.MicroTS) *endpointPair {
+	return createEndpointPairWithProcess(firstSeen, tsAdded, 0, processInfo{})
+}
+
+func createEndpointPairWithProcess(firstSeen, tsAdded, lastSeen timestamp.MicroTS, processKey processInfo) *endpointPair {
 	return &endpointPair{
 		endpoint: &containerEndpoint{
 			endpoint: net.NumericEndpoint{
@@ -166,10 +170,12 @@ func createEndpointPair(firstSeen, tsAdded timestamp.MicroTS) *endpointPair {
 				L4Proto: net.TCP,
 			},
 			containerID: "container-id",
+			processKey:  processKey,
 		},
 		status: &connStatus{
 			firstSeen: firstSeen,
 			tsAdded:   tsAdded,
+			lastSeen:  lastSeen,
 		},
 	}
 }
@@ -184,33 +190,11 @@ func (ep *endpointPair) lastSeen(lastSeen timestamp.MicroTS) *endpointPair {
 	return ep
 }
 
-type containerPair struct {
-	endpoint *containerEndpoint
-	status   *connStatus
-}
-
 func defaultProcessKey() processInfo {
 	return processInfo{
 		processName: "process-name",
 		processArgs: "process-args",
 		processExec: "process-exec",
-	}
-}
-
-func createContainerPair(firstSeen timestamp.MicroTS) *containerPair {
-	return &containerPair{
-		endpoint: &containerEndpoint{
-			endpoint: net.NumericEndpoint{
-				IPAndPort: net.NetworkPeerID{
-					Address: net.ParseIP("8.8.8.8"),
-					Port:    80,
-				},
-			},
-			processKey: defaultProcessKey(),
-		},
-		status: &connStatus{
-			firstSeen: firstSeen,
-		},
 	}
 }
 
@@ -243,23 +227,23 @@ func addHostConnection(mgr *networkFlowManager, connectionsHostPair *HostnameAnd
 	if !ok {
 		h = &hostConnections{}
 	}
-	h.mutex.Lock()
-	defer h.mutex.Unlock()
-	if connectionsHostPair.connPair != nil {
-		if h.connections == nil {
-			h.connections = make(map[connection]*connStatus)
+	concurrency.WithLock(&h.mutex, func() {
+		if connectionsHostPair.connPair != nil {
+			if h.connections == nil {
+				h.connections = make(map[connection]*connStatus)
+			}
+			conn := *connectionsHostPair.connPair.conn
+			h.connections[conn] = connectionsHostPair.connPair.status
 		}
-		conn := *connectionsHostPair.connPair.conn
-		h.connections[conn] = connectionsHostPair.connPair.status
-	}
-	if connectionsHostPair.endpointPair != nil {
-		if h.endpoints == nil {
-			h.endpoints = make(map[containerEndpoint]*connStatus)
+		if connectionsHostPair.endpointPair != nil {
+			if h.endpoints == nil {
+				h.endpoints = make(map[containerEndpoint]*connStatus)
+			}
+			ep := *connectionsHostPair.endpointPair.endpoint
+			h.endpoints[ep] = connectionsHostPair.endpointPair.status
 		}
-		ep := *connectionsHostPair.endpointPair.endpoint
-		h.endpoints[ep] = connectionsHostPair.endpointPair.status
-	}
-	mgr.connectionsByHost[connectionsHostPair.hostname] = h
+		mgr.connectionsByHost[connectionsHostPair.hostname] = h
+	})
 }
 
 type expectedEntitiesPair struct {
