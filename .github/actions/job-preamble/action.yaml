@@ -79,12 +79,11 @@ runs:
             exit 0
           fi
           if [[ -d "/mnt${d}" ]]; then
-            rm -rf "/mnt${d}"
+            rm -r --interactive=never -- "/mnt${d}"
           elif [[ -d "$d" ]]; then
-            rm -rf "$d" \
-              || sudo rm -rf "$d"
+            rm -r --interactive=never -- "$d" \
+              || sudo rm -r --interactive=never -- "$d"
           fi
-          echo "$d"
         done
         df --si /
         free=$(df -BGB --output=avail / | tail -1)
