@@ -1,6 +1,8 @@
 package tree
 
 import (
+	"net"
+
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -14,6 +16,7 @@ type NetworkTree interface {
 	// is equal to the cardinality. If there are multiple trees, the checks are done
 	// for each tree.
 	ValidateNetworkTree() bool
+	findCIDRNoLock(ipNet *net.IPNet) (*nRadixNode, error)
 }
 
 // ReadOnlyNetworkTree provides functionality to read network entities from a network tree.

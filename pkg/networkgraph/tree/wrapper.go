@@ -1,6 +1,8 @@
 package tree
 
 import (
+	"net"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	pkgNet "github.com/stackrox/rox/pkg/net"
@@ -47,6 +49,10 @@ func NewNetworkTreeWrapper(entities []*storage.NetworkEntityInfo) (NetworkTree, 
 	return &networkTreeWrapper{
 		trees: trees,
 	}, nil
+}
+
+func (t *networkTreeWrapper) findCIDRNoLock(ipNet *net.IPNet) (*nRadixNode, error) {
+	return nil, nil
 }
 
 func newDefaultNetworkTreeWrapper() *networkTreeWrapper {

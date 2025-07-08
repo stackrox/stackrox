@@ -390,6 +390,10 @@ func (t *nRadixTree) findCIDRNoLock(ipNet *net.IPNet) (*nRadixNode, error) {
 			node = node.left
 		}
 
+		if node == nil {
+			break
+		}
+
 		// All network bits are traversed. If a supernet was found along the way, `ret` holds it,
 		// else there does not exist any supernet containing the search network/address.
 		if ipNet.Mask[i]&bit == 0 {
@@ -511,15 +515,7 @@ func (t *nRadixTree) Remove(key string) {
 	}
 
 	node.value = nil
-	parent := node.parent
-	if node.left == nil && node.right == nil {
-		if parent.right == node {
-			parent.right = nil
-		} else {
-			parent.left = nil
-		}
-		removeRecursively(parent)
-	}
+	removeRecursively(node)
 
 	delete(t.valueNodes, key)
 }

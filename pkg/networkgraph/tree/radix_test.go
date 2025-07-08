@@ -1,6 +1,7 @@
 package tree
 
 import (
+	"net"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -82,6 +83,7 @@ func TestNRadixTreeIPv4Remove(t *testing.T) {
 	e1 := testutils.GetExtSrcNetworkEntityInfo("1", "1", "35.187.144.0/32", false, true)
 	e2 := testutils.GetExtSrcNetworkEntityInfo("2", "2", "35.187.144.4/32", false, true)
 	e3 := testutils.GetExtSrcNetworkEntityInfo("3", "3", "17.187.144.4/32", false, true)
+	e4 := testutils.GetExtSrcNetworkEntityInfo("4", "4", "17.187.144.0/24", false, true)
 
 	cases := map[string]struct {
 		externalEntityInfos []*storage.NetworkEntityInfo
@@ -98,6 +100,14 @@ func TestNRadixTreeIPv4Remove(t *testing.T) {
 		"Delete multiple": {
 			externalEntityInfos: []*storage.NetworkEntityInfo{e1, e2, e3},
 			toBeDeleted:         []*storage.NetworkEntityInfo{e2, e3},
+		},
+		"Delete all": {
+			externalEntityInfos: []*storage.NetworkEntityInfo{e1, e2},
+			toBeDeleted:         []*storage.NetworkEntityInfo{e1, e2},
+		},
+		"Delete supernet": {
+			externalEntityInfos: []*storage.NetworkEntityInfo{e3, e4},
+			toBeDeleted:         []*storage.NetworkEntityInfo{e4},
 		},
 	}
 
@@ -126,6 +136,25 @@ func TestNRadixTreeIPv4Remove(t *testing.T) {
 			assert.True(t, tree.ValidateNetworkTree())
 		})
 	}
+}
+
+func TestNRadixTreeFindCIDR(t *testing.T) {
+	e1 := testutils.GetExtSrcNetworkEntityInfo("1", "1", "35.187.144.0/32", false, true)
+	e2 := testutils.GetExtSrcNetworkEntityInfo("2", "2", "35.187.144.4/32", false, true)
+	e3 := testutils.GetExtSrcNetworkEntityInfo("3", "3", "17.187.144.4/32", false, true)
+	e4 := testutils.GetExtSrcNetworkEntityInfo("4", "4", "17.187.144.0/24", false, true)
+
+	internetEntity := networkgraph.InternetProtoWithDesc(pkgNet.IPv4)
+	cidr := "255.0.0.0/32"
+	_, ipNet, err := net.ParseCIDR(cidr)
+	assert.NoError(t, err)
+
+	tree, err := NewNRadixTree(pkgNet.IPv4, []*storage.NetworkEntityInfo{e1, e2, e3, e4})
+	assert.NoError(t, err)
+
+	supernet, err := tree.findCIDRNoLock(ipNet)
+	assert.NoError(t, err)
+	protoassert.Equal(t, supernet.value, internetEntity)
 }
 
 func TestNRadixTreeIPv6(t *testing.T) {
