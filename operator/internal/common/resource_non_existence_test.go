@@ -16,7 +16,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
-type testCase struct {
+type testCaseResourceNonExistence struct {
 	name                  string
 	existingObjects       []ctrlClient.Object
 	gvk                   schema.GroupVersionKind
@@ -30,8 +30,8 @@ const (
 	otherName     = "other-name"
 )
 
-var (
-	testCases = []testCase{
+func TestVerifyResourceNonExistence(t *testing.T) {
+	testCases := []testCaseResourceNonExistence{
 		{
 			name:         "central-check-plain",
 			gvk:          platform.CentralGVK,
@@ -72,9 +72,6 @@ var (
 			}},
 		},
 	}
-)
-
-func TestVerifyResourceNonExistence(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			executeTestCase(t, testCase)
@@ -82,7 +79,7 @@ func TestVerifyResourceNonExistence(t *testing.T) {
 	}
 }
 
-func executeTestCase(t *testing.T, testCase testCase) {
+func executeTestCase(t *testing.T, testCase testCaseResourceNonExistence) {
 	ctx := context.Background()
 	client := buildClientWithObjects(t, testCase.existingObjects)
 
