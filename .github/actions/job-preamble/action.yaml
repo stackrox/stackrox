@@ -79,10 +79,12 @@ runs:
             exit 0
           fi
           if [[ -d "/mnt${d}" ]]; then
-            rm -r --interactive=never -- "/mnt${d}"
+            rm -rf "/mnt${d}"
           elif [[ -d "$d" ]]; then
-            rm -r --interactive=never -- "$d" \
-              || sudo rm -r --interactive=never -- "$d"
+            rm -rf "$d" \
+              || sudo rm -rf "$d"
+          else
+            echo "$d not found"
           fi
         done
         df --si /
