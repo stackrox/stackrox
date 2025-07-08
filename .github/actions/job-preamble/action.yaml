@@ -7,10 +7,10 @@ inputs:
   gcp-account:
     description: 'Account to be used to upload tests data'
     required: true
+env:
+  default-free-disk-space: 25
 runs:
   using: composite
-  env:
-    default-free-disk-space: 25
   steps:
     - name: Variable setup
       shell: bash
