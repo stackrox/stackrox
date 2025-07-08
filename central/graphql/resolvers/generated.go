@@ -531,6 +531,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"isClusterLocal: Boolean!",
 		"name: ImageName",
 		"notPullable: Boolean!",
+		"v2Id: String!",
 	}))
 	utils.Must(builder.AddType("ContainerInstance", []string{
 		"containerIps: [String!]!",
@@ -6546,6 +6547,11 @@ func (resolver *containerImageResolver) Name(ctx context.Context) (*imageNameRes
 
 func (resolver *containerImageResolver) NotPullable(ctx context.Context) bool {
 	value := resolver.data.GetNotPullable()
+	return value
+}
+
+func (resolver *containerImageResolver) V2Id(ctx context.Context) string {
+	value := resolver.data.GetV2Id()
 	return value
 }
 
