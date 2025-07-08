@@ -253,6 +253,7 @@ func (s *VirtualMachineDataStoreTestSuite) TestExists() {
 	s.False(exists)
 }
 
+// TODO: Actually test concurrent writes
 // Test concurrent reads with writes
 func (s *VirtualMachineDataStoreTestSuite) TestConcurrentReads() {
 	// Pre-populate some VMs
