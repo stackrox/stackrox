@@ -101,7 +101,6 @@ runs:
 
     - name: Verify free disk space
       if: (steps.delete-docker-cache.outcome == 'failure') && (inputs.free-disk-space && true || false)  # Do not warn if default free space
-        
       continue-on-error: true
       shell: bash
       run: |
