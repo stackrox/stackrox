@@ -8,12 +8,12 @@ function DownloadCLIDropdown({ hasBuild }) {
     const [isCLIDownloading, setIsCLIDownloading] = React.useState(false);
 
     // TODO: Show a success and error message
-    function handleDownloadCLI(_, value) {
+    async function handleDownloadCLI(_, value) {
         setIsCLIDownloading(true);
-        downloadCLI(value).finally(() => {
-            setIsCLIDownloading(false);
-        });
+        await downloadCLI(value);
+        setIsCLIDownloading(false);
     }
+
     return (
         <MenuDropdown
             isDisabled={!hasBuild || isCLIDownloading}

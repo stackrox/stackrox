@@ -17,8 +17,8 @@ import {
     FlexItem,
     DropdownItem,
 } from '@patternfly/react-core';
-import { CaretDownIcon } from '@patternfly/react-icons';
 
+import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
 import useToasts, { Toast } from 'hooks/patternfly/useToasts';
@@ -30,7 +30,6 @@ import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import PolicyDetailContent from './PolicyDetailContent';
 import { isExternalPolicy } from '../policies.utils';
-import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 
 function formatUpdateDisabledStateAction(disabled: boolean) {
     return disabled ? 'Enable policy' : 'Disable policy';

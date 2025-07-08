@@ -4,6 +4,7 @@ import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { Divider, DropdownItem } from '@patternfly/react-core';
 
+import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 import useAnalytics, { INVITE_USERS_MODAL_OPENED } from 'hooks/useAnalytics';
 import usePermissions from 'hooks/usePermissions';
 import { selectors } from 'reducers';
@@ -11,7 +12,6 @@ import { actions as authActions } from 'reducers/auth';
 import { actions as inviteActions } from 'reducers/invite';
 import { userBasePath } from 'routePaths';
 import User from 'utils/User';
-import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 
 const userMenuStyleConstant = {
     '--pf-v5-u-min-width--MinWidth': '20ch',
@@ -46,7 +46,7 @@ function UserMenu({ logout, setInviteModalVisibility, userData }) {
     return (
         <MenuDropdown
             popperProps={{ position: 'end' }}
-            toggleText={name ? name : '--'}
+            toggleText={name || '--'}
             toggleVariant="plainText"
         >
             <DropdownItem

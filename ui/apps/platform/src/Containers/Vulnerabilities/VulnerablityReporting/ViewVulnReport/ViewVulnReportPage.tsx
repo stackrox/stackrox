@@ -38,6 +38,7 @@ import NotFoundMessage from 'Components/NotFoundMessage/NotFoundMessage';
 import usePermissions from 'hooks/usePermissions';
 import useToasts, { Toast } from 'hooks/patternfly/useToasts';
 
+import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 import ReportJobsHelpAction from 'Components/ReportJob/ReportJobsHelpAction';
 import { JobContextTab } from 'Components/ReportJob/types';
 import { ensureJobContextTab } from 'Components/ReportJob/utils';
@@ -48,7 +49,6 @@ import { defaultEmailBody, getDefaultEmailSubject } from '../forms/emailTemplate
 import ReportJobs from './ReportJobs';
 import useRunReport from '../api/useRunReport';
 import { useWatchLastSnapshotForReports } from '../api/useWatchLastSnapshotForReports';
-import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 
 export type TabTitleProps = {
     icon?: ReactElement;

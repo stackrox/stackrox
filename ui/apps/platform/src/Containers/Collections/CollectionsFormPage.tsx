@@ -28,6 +28,7 @@ import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
 import useToasts from 'hooks/patternfly/useToasts';
 import PageTitle from 'Components/PageTitle';
+import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import useAnalytics, { COLLECTION_CREATED } from 'hooks/useAnalytics';
 import { CollectionPageAction } from './collections.utils';
@@ -36,7 +37,6 @@ import useCollection from './hooks/useCollection';
 import CollectionsFormModal from './CollectionsFormModal';
 import CollectionLoadError from './CollectionLoadError';
 import { useCollectionFormSubmission } from './hooks/useCollectionFormSubmission';
-import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 
 export type CollectionsFormPageProps = {
     hasWriteAccessForCollections: boolean;
@@ -77,12 +77,6 @@ function CollectionsFormPage({
 
     const { configError, setConfigError, onSubmit } = useCollectionFormSubmission(pageAction);
     const configErrorAlertElem = useRef<HTMLDivElement | null>(null);
-
-    const {
-        isOpen: menuIsOpen,
-        toggleSelect: toggleMenu,
-        closeSelect: closeMenu,
-    } = useSelectToggle();
 
     const {
         isOpen: isDrawerOpen,
@@ -239,11 +233,7 @@ function CollectionsFormPage({
                             <FlexItem align={{ default: 'alignLeft', md: 'alignRight' }}>
                                 {pageAction.type === 'view' && hasWriteAccessForCollections && (
                                     <>
-                                        <MenuDropdown
-                                            toggleText="Actions"
-                                            toggleVariant="primary"
-                                            onSelect={closeMenu}
-                                        >
+                                        <MenuDropdown toggleText="Actions" toggleVariant="primary">
                                             <DropdownItem
                                                 key="Edit collection"
                                                 component="button"

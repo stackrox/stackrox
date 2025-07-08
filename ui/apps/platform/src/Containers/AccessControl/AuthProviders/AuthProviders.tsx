@@ -8,7 +8,6 @@ import {
     Alert,
     Bullseye,
     Button,
-    Dropdown,
     DropdownItem,
     DropdownList,
     ExpandableSection,

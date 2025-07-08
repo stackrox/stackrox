@@ -1,11 +1,11 @@
 import { ReactElement } from 'react';
+import { Divider, DropdownItem } from '@patternfly/react-core';
 import { generatePath, useNavigate } from 'react-router-dom';
 
 import { ComplianceScanConfigurationStatus } from 'services/ComplianceScanConfigurationService';
+import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 
 import { scanConfigDetailsPath } from './compliance.scanConfigs.routes';
-import MenuDropdown from 'Components/PatternFly/MenuDropdown';
-import { Divider, DropdownItem } from '@patternfly/react-core';
 
 // Component for scan config details page corresponds to ScanConfigActionsColumn for scan configs table table page.
 // One difference: omit delete on details page.
