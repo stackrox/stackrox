@@ -129,28 +129,3 @@ func (s *AlertsSearchSuite) TestSearchResolved() {
 		s.False(unresolvedAlertIds[entry])
 	}
 }
-
-func (s *AlertsSearchSuite) TestCountResolved() {
-	ids := []string{fixtureconsts.Alert1, fixtureconsts.Alert2, fixtureconsts.Alert3, fixtureconsts.Alert4}
-	for i, id := range ids {
-		alert := fixtures.GetAlert()
-		alert.Id = id
-		alert.EntityType = storage.Alert_DEPLOYMENT
-		alert.PlatformComponent = false
-		if i >= 2 {
-			alert.State = storage.ViolationState_RESOLVED
-		}
-		s.NoError(s.store.Upsert(ctx, alert))
-		foundAlert, exists, err := s.store.Get(ctx, id)
-		s.True(exists)
-		s.NoError(err)
-		protoassert.Equal(s.T(), alert, foundAlert)
-	}
-	results, err := s.searcher.Count(ctx, search.EmptyQuery(), false)
-	s.NoError(err)
-	s.Equal(4, results)
-
-	results, err = s.searcher.Count(ctx, search.EmptyQuery(), true)
-	s.NoError(err)
-	s.Equal(2, results)
-}

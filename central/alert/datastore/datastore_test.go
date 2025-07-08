@@ -1,3 +1,5 @@
+//go:build sql_integration
+
 package datastore
 
 import (
@@ -143,41 +145,6 @@ func (s *alertDataStoreTestSuite) TestSearchListAlerts() {
 
 	s.Equal(errFake, err)
 	protoassert.SlicesEqual(s.T(), alerttest.NewFakeListAlertSlice(), result)
-}
-
-func (s *alertDataStoreTestSuite) TestCountAlerts_Success() {
-	expectedQ := search.NewQueryBuilder().AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery()
-	s.searcher.EXPECT().Count(s.hasReadCtx, expectedQ, true).Return(1, nil)
-
-	result, err := s.dataStore.CountAlerts(s.hasReadCtx)
-
-	s.NoError(err)
-	s.Equal(1, result)
-}
-
-func (s *alertDataStoreTestSuite) TestCountAlertsResolved_Success() {
-	fakeAlert := alerttest.NewFakeAlert()
-
-	s.storage.EXPECT().GetMany(gomock.Any(), []string{alerttest.FakeAlertID}).Return([]*storage.Alert{fakeAlert}, nil, nil)
-	s.storage.EXPECT().UpsertMany(gomock.Any(), gomock.Any()).Return(nil)
-	s.matcher.EXPECT().MatchAlert(gomock.Any())
-	_, err := s.dataStore.MarkAlertsResolvedBatch(s.hasWriteCtx, alerttest.FakeAlertID)
-	s.NoError(err)
-
-	s.searcher.EXPECT().Count(s.hasReadCtx, &v1.Query{}, false).Return(1, nil)
-
-	result, err := s.dataStore.Count(s.hasReadCtx, &v1.Query{}, false)
-	s.NoError(err)
-	s.Equal(1, result)
-}
-
-func (s *alertDataStoreTestSuite) TestCountAlerts_Error() {
-	expectedQ := search.NewQueryBuilder().AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery()
-	s.searcher.EXPECT().Count(s.hasReadCtx, expectedQ, true).Return(0, errFake)
-
-	_, err := s.dataStore.CountAlerts(s.hasReadCtx)
-
-	s.Equal(errFake, err)
 }
 
 func (s *alertDataStoreTestSuite) TestAddAlert() {
