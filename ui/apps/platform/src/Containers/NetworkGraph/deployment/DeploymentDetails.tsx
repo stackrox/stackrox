@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-    Button,
     DescriptionList,
     DescriptionListDescription,
     DescriptionListGroup,
@@ -18,32 +17,35 @@ import {
     Title,
     EmptyStateHeader,
 } from '@patternfly/react-core';
-import { ExclamationCircleIcon, ExclamationTriangleIcon } from '@patternfly/react-icons';
-import pluralize from 'pluralize';
 
+import usePermissions from 'hooks/usePermissions';
 import { Deployment } from 'types/deployment.proto';
 import { ListenPort } from 'types/networkFlow.proto';
 import { getDateTime } from 'utils/dateUtils';
-import { NetworkPolicyState } from 'Containers/NetworkGraph/types/topology.type';
 
 import DeploymentPortConfig from 'Components/DeploymentPortConfig';
 import DeploymentContainerConfig from 'Components/DeploymentContainerConfig';
 
-import { ReactComponent as BothPolicyRules } from 'images/network-graph/both-policy-rules.svg';
-import { ReactComponent as EgressOnly } from 'images/network-graph/egress-only.svg';
-import { ReactComponent as IngressOnly } from 'images/network-graph/ingress-only.svg';
-import { ReactComponent as NoPolicyRules } from 'images/network-graph/no-policy-rules.svg';
-import { deploymentTabs } from '../utils/deploymentUtils';
+import BothPolicyRules from 'images/network-graph/both-policy-rules.svg?react';
+import EgressOnly from 'images/network-graph/egress-only.svg?react';
+import IngressOnly from 'images/network-graph/ingress-only.svg?react';
+import NoPolicyRules from 'images/network-graph/no-policy-rules.svg?react';
+
+import { EdgeState } from '../components/EdgeStateSelect';
+import { CustomEdgeModel, CustomNodeModel, NetworkPolicyState } from '../types/topology.type';
+
+import AnomalousTraffic from './AnomalousTraffic';
 
 import './DeploymentDetails.css';
 
 type DeploymentDetailsProps = {
     deployment: Deployment;
-    numAnomalousExternalFlows: number;
-    numAnomalousInternalFlows: number;
+    deploymentId: string;
+    edgeState: EdgeState;
+    edges: CustomEdgeModel[];
     listenPorts: ListenPort[];
     networkPolicyState: NetworkPolicyState;
-    onDeploymentTabsSelect: (tab: string) => void;
+    nodes: CustomNodeModel[];
 };
 
 function DetailSection({ title, children }) {
@@ -71,22 +73,18 @@ function DetailSection({ title, children }) {
 
 function DeploymentDetails({
     deployment,
-    numAnomalousExternalFlows,
-    numAnomalousInternalFlows,
+    deploymentId,
+    edgeState,
+    edges,
     listenPorts,
     networkPolicyState,
-    onDeploymentTabsSelect,
+    nodes,
 }: DeploymentDetailsProps) {
     const labelKeys = Object.keys(deployment.labels);
     const annotationKeys = Object.keys(deployment.annotations);
 
-    const onNetworkFlowsTabSelect = () => {
-        onDeploymentTabsSelect(deploymentTabs.FLOWS);
-    };
-
-    const onNetworkPoliciesTabSelect = () => {
-        onDeploymentTabsSelect(deploymentTabs.NETWORK_POLICIES);
-    };
+    const { hasReadAccess } = usePermissions();
+    const hasReadAccessForNetworkPolicy = hasReadAccess('NetworkPolicy');
 
     return (
         <div className="pf-v5-u-h-100 pf-v5-u-p-md">
@@ -94,159 +92,68 @@ function DeploymentDetails({
                 <li>
                     <DetailSection title="Network security">
                         <DescriptionList columnModifier={{ default: '1Col' }}>
-                            <DescriptionListGroup>
-                                <DescriptionListTerm>Anomalous traffic</DescriptionListTerm>
-                                <DescriptionListDescription>
-                                    <Flex
-                                        direction={{ default: 'row' }}
-                                        alignItems={{ default: 'alignItemsCenter' }}
-                                    >
-                                        {numAnomalousExternalFlows === 0 &&
-                                            numAnomalousInternalFlows === 0 &&
-                                            'None'}
-                                        {numAnomalousExternalFlows !== 0 && (
-                                            <FlexItem>
-                                                <Button
-                                                    variant="link"
-                                                    isInline
-                                                    onClick={onNetworkFlowsTabSelect}
-                                                >
-                                                    <Label
-                                                        variant="outline"
-                                                        color="red"
-                                                        icon={<ExclamationCircleIcon />}
-                                                    >
-                                                        {numAnomalousExternalFlows} external{' '}
-                                                        {pluralize(
-                                                            'flow',
-                                                            numAnomalousExternalFlows
-                                                        )}
-                                                    </Label>
-                                                </Button>
-                                            </FlexItem>
-                                        )}
-                                        {numAnomalousInternalFlows !== 0 && (
-                                            <FlexItem>
-                                                <Button
-                                                    variant="link"
-                                                    isInline
-                                                    onClick={onNetworkFlowsTabSelect}
-                                                >
-                                                    <Label
-                                                        variant="outline"
-                                                        color="gold"
-                                                        icon={<ExclamationTriangleIcon />}
-                                                    >
-                                                        {numAnomalousInternalFlows} internal{' '}
-                                                        {pluralize(
-                                                            'flow',
-                                                            numAnomalousInternalFlows
-                                                        )}
-                                                    </Label>
-                                                </Button>
-                                            </FlexItem>
-                                        )}
-                                    </Flex>
-                                </DescriptionListDescription>
-                            </DescriptionListGroup>
+                            {hasReadAccessForNetworkPolicy && (
+                                <AnomalousTraffic
+                                    deploymentId={deploymentId}
+                                    edgeState={edgeState}
+                                    edges={edges}
+                                    nodes={nodes}
+                                />
+                            )}
                             <DescriptionListGroup>
                                 <DescriptionListTerm>Network policy rules</DescriptionListTerm>
                                 <DescriptionListDescription>
                                     {networkPolicyState === 'both' && (
-                                        <Button
-                                            variant="link"
-                                            isInline
-                                            onClick={onNetworkPoliciesTabSelect}
+                                        <Label
+                                            variant="outline"
+                                            color="blue"
+                                            icon={<BothPolicyRules width="22px" height="22px" />}
                                         >
-                                            <Label
-                                                variant="outline"
-                                                color="blue"
-                                                icon={
-                                                    <BothPolicyRules width="22px" height="22px" />
-                                                }
-                                            >
-                                                1 or more policies regulating bidirectional traffic
-                                            </Label>
-                                        </Button>
+                                            1 or more policies regulating bidirectional traffic
+                                        </Label>
                                     )}
                                     {networkPolicyState === 'egress' && (
                                         <LabelGroup>
-                                            <Button
-                                                variant="link"
-                                                isInline
-                                                onClick={onNetworkPoliciesTabSelect}
+                                            <Label
+                                                variant="outline"
+                                                color="red"
+                                                icon={<NoPolicyRules width="22px" height="22px" />}
                                             >
-                                                <Label
-                                                    variant="outline"
-                                                    color="red"
-                                                    icon={
-                                                        <NoPolicyRules width="22px" height="22px" />
-                                                    }
-                                                >
-                                                    A missing policy is allowing all ingress traffic
-                                                </Label>
-                                            </Button>
-                                            <Button
-                                                variant="link"
-                                                isInline
-                                                onClick={onNetworkPoliciesTabSelect}
+                                                A missing policy is allowing all ingress traffic
+                                            </Label>
+                                            <Label
+                                                variant="outline"
+                                                color="blue"
+                                                icon={<EgressOnly width="22px" height="22px" />}
                                             >
-                                                <Label
-                                                    variant="outline"
-                                                    color="blue"
-                                                    icon={<EgressOnly width="22px" height="22px" />}
-                                                >
-                                                    1 or more policies regulating egress traffic
-                                                </Label>
-                                            </Button>
+                                                1 or more policies regulating egress traffic
+                                            </Label>
                                         </LabelGroup>
                                     )}
                                     {networkPolicyState === 'ingress' && (
                                         <LabelGroup>
-                                            <Button
-                                                variant="link"
-                                                isInline
-                                                onClick={onNetworkPoliciesTabSelect}
-                                            >
-                                                <Label
-                                                    variant="outline"
-                                                    icon={
-                                                        <NoPolicyRules width="22px" height="22px" />
-                                                    }
-                                                >
-                                                    A missing policy is allowing all egress traffic
-                                                </Label>
-                                            </Button>
-                                            <Button
-                                                variant="link"
-                                                isInline
-                                                onClick={onNetworkPoliciesTabSelect}
-                                            >
-                                                <Label
-                                                    variant="outline"
-                                                    color="blue"
-                                                    icon={
-                                                        <IngressOnly width="22px" height="22px" />
-                                                    }
-                                                >
-                                                    1 or more policies regulating ingress traffic
-                                                </Label>
-                                            </Button>
-                                        </LabelGroup>
-                                    )}
-                                    {networkPolicyState === 'none' && (
-                                        <Button
-                                            variant="link"
-                                            isInline
-                                            onClick={onNetworkPoliciesTabSelect}
-                                        >
                                             <Label
                                                 variant="outline"
                                                 icon={<NoPolicyRules width="22px" height="22px" />}
                                             >
-                                                A missing policy is allowing all network traffic
+                                                A missing policy is allowing all egress traffic
                                             </Label>
-                                        </Button>
+                                            <Label
+                                                variant="outline"
+                                                color="blue"
+                                                icon={<IngressOnly width="22px" height="22px" />}
+                                            >
+                                                1 or more policies regulating ingress traffic
+                                            </Label>
+                                        </LabelGroup>
+                                    )}
+                                    {networkPolicyState === 'none' && (
+                                        <Label
+                                            variant="outline"
+                                            icon={<NoPolicyRules width="22px" height="22px" />}
+                                        >
+                                            A missing policy is allowing all network traffic
+                                        </Label>
                                     )}
                                 </DescriptionListDescription>
                             </DescriptionListGroup>

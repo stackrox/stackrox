@@ -55,7 +55,6 @@ function ClusterRegistrationSecretPage({
             </Button>
         ) : null;
 
-    /* eslint-disable no-nested-ternary */
     return (
         <>
             <ClusterRegistrationSecretsHeader
@@ -99,7 +98,6 @@ function ClusterRegistrationSecretPage({
             </PageSection>
         </>
     );
-    /* eslint-enable no-nested-ternary */
 }
 
 export default ClusterRegistrationSecretPage;

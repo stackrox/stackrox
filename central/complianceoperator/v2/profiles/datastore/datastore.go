@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore/search"
 	pgStore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -44,16 +43,15 @@ type DataStore interface {
 }
 
 // New returns an instance of DataStore.
-func New(complianceProfileStorage pgStore.Store, pool postgres.DB, searcher search.Searcher) DataStore {
+func New(complianceProfileStorage pgStore.Store, pool postgres.DB) DataStore {
 	return &datastoreImpl{
-		store:    complianceProfileStorage,
-		db:       pool,
-		searcher: searcher,
+		store: complianceProfileStorage,
+		db:    pool,
 	}
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB, searcher search.Searcher) DataStore {
+func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) DataStore {
 	store := pgStore.New(pool)
-	return New(store, pool, searcher)
+	return New(store, pool)
 }

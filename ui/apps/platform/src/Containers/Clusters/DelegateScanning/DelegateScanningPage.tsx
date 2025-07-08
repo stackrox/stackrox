@@ -70,7 +70,6 @@ function DelegateScanningPage() {
         setIsEditing(false); // either Cancel or successful Save
     }
 
-    /* eslint-disable no-nested-ternary */
     return (
         <>
             <PageTitle title={displayedPageTitle} />
@@ -131,7 +130,6 @@ function DelegateScanningPage() {
             </PageSection>
         </>
     );
-    /* eslint-enable no-nested-ternary */
 }
 
 export default DelegateScanningPage;

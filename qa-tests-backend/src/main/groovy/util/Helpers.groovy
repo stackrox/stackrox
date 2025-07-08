@@ -194,6 +194,10 @@ class Helpers {
         return false
     }
 
+    private static final Set<String> VOLATILE_ANNOTATIONS_TO_IGNORE = [
+        "machineconfiguration.openshift.io/lastSyncedControllerConfigResourceVersion"
+    ].toSet()
+
     static void compareAnnotations(Map<String, String> orchestratorAnnotations,
                                    Map<String, String> stackroxAnnotations) {
         if (stackroxAnnotations == orchestratorAnnotations) {
@@ -211,6 +215,11 @@ class Helpers {
                 // is more complicated than we'd like to test
                 log.info "Removing long annotation value from comparison: " +
                          "key: ${name}, length: ${orchestratorTruncated[name].length()}"
+                stackroxTruncated.remove(name)
+                orchestratorTruncated.remove(name)
+            }
+
+            if (VOLATILE_ANNOTATIONS_TO_IGNORE.contains(name)) {
                 stackroxTruncated.remove(name)
                 orchestratorTruncated.remove(name)
             }

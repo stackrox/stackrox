@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	checkResultSearch "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/search"
 	store "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/store/postgres"
 	complianceUtils "github.com/stackrox/rox/central/complianceoperator/v2/utils"
 	"github.com/stackrox/rox/central/metrics"
@@ -34,9 +33,8 @@ const (
 )
 
 type datastoreImpl struct {
-	store    store.Store
-	db       postgres.DB
-	searcher checkResultSearch.Searcher
+	store store.Store
+	db    postgres.DB
 }
 
 // UpsertResult adds the result to the database  If enabling the use of this
@@ -365,7 +363,7 @@ func (d *datastoreImpl) countByConfiguration(ctx context.Context, query *v1.Quer
 }
 
 func (d *datastoreImpl) CountCheckResults(ctx context.Context, q *v1.Query) (int, error) {
-	return d.searcher.Count(ctx, q)
+	return d.store.Count(ctx, q)
 }
 
 func (d *datastoreImpl) DeleteResultsByCluster(ctx context.Context, clusterID string) error {

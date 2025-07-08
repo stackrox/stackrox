@@ -1,6 +1,6 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`entityRelationshipMap has properties and derived properties 1`] = `
+exports[`entityRelationshipMap > has properties and derived properties 1`] = `
 {
   "CLUSTER": {
     "1-children": "NAMESPACE NODE ROLE",

@@ -9,15 +9,15 @@ const pluginESLint = require('@eslint/js'); // eslint-disable-line import/no-ext
 const pluginJSON = require('@eslint/json').default;
 const pluginESLintComments = require('eslint-plugin-eslint-comments');
 const pluginImport = require('eslint-plugin-import');
-const pluginJest = require('eslint-plugin-jest');
 const pluginJestDOM = require('eslint-plugin-jest-dom');
 const pluginPrettier = require('eslint-plugin-prettier');
 const pluginReact = require('eslint-plugin-react');
 const pluginReactHooks = require('eslint-plugin-react-hooks');
 const pluginTestingLibrary = require('eslint-plugin-testing-library');
 const pluginTypeScriptESLint = require('@typescript-eslint/eslint-plugin');
+const pluginVitest = require('@vitest/eslint-plugin');
 
-const { browser: browserGlobals, jest: jestGlobals, node: nodeGlobals } = require('globals');
+const { browser: browserGlobals, node: nodeGlobals, vitest: vitestGlobals } = require('globals');
 
 const pluginAccessibility = require('./eslint-plugins/pluginAccessibility');
 const pluginGeneric = require('./eslint-plugins/pluginGeneric');
@@ -38,7 +38,6 @@ module.exports = [
         ignores: [
             'build/**',
             'coverage/**',
-            'react-app-rewired/**',
             'scripts/**',
             'src/setupProxy.js',
             'src/setupTests.js',
@@ -427,7 +426,6 @@ module.exports = [
             'no-bitwise': 'error',
             'no-continue': 'error',
             'no-multi-assign': ['error'],
-            'no-nested-ternary': 'error',
             'no-plusplus': 'error',
             'no-restricted-syntax': [
                 'error',
@@ -525,7 +523,7 @@ module.exports = [
         // Key of plugin is namespace of its rules.
         plugins: {
             cypress: pluginCypress,
-            jest: pluginJest,
+            vitest: pluginVitest,
         },
         rules: {
             // Turn off rules from ESLint recommended configuration.
@@ -542,7 +540,7 @@ module.exports = [
             'cypress/no-chained-get': 'error',
             // 'cypress/no-force': 'error', // TODO fix errors
 
-            'jest/no-focused-tests': 'error',
+            'vitest/no-focused-tests': 'error',
         },
     },
     {
@@ -733,6 +731,7 @@ module.exports = [
                         path.join(__dirname, 'eslint.config.js'),
                         path.join(__dirname, 'postcss.config.js'),
                         path.join(__dirname, 'tailwind.config.js'), // only for @tailwindcss/forms
+                        path.join(__dirname, 'vite.config.js'),
                     ],
                 },
             ],
@@ -744,16 +743,16 @@ module.exports = [
         languageOptions: {
             ...parserAndOptions,
             globals: {
-                ...jestGlobals,
+                ...vitestGlobals,
             },
         },
 
         // Key of plugin is namespace of its rules.
         plugins: {
             import: pluginImport,
-            jest: pluginJest,
             'jest-dom': pluginJestDOM,
             'testing-library': pluginTestingLibrary,
+            vitest: pluginVitest,
         },
         rules: {
             'import/no-extraneous-dependencies': [
@@ -763,9 +762,9 @@ module.exports = [
                 },
             ],
 
-            ...pluginJest.configs.recommended.rules,
+            ...pluginVitest.configs.recommended.rules,
 
-            'jest/expect-expect': [
+            'vitest/expect-expect': [
                 'error',
                 {
                     assertFunctionNames: ['expect', 'expectSaga'], // authSagas.test.js integrationSagas.test.js

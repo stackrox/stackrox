@@ -1012,9 +1012,6 @@ func prepareQuery(ctx context.Context, schema *walker.Schema, q *v1.Query) (*que
 	if err != nil {
 		return nil, errors.Wrap(err, "error creating query")
 	}
-	if preparedQuery == nil {
-		return nil, emptyQueryErr
-	}
 
 	return preparedQuery, nil
 }
@@ -1042,6 +1039,10 @@ func retryableGetRows(ctx context.Context, schema *walker.Schema, q *v1.Query, d
 		return nil, err
 	}
 
+	if preparedQuery == nil {
+		return nil, nil
+	}
+
 	queryStr := preparedQuery.AsSQL()
 	return tracedQuery(ctx, db, queryStr, preparedQuery.Data...)
 }
@@ -1054,6 +1055,9 @@ func RunQueryForSchemaFn[T any, PT pgutils.Unmarshaler[T]](ctx context.Context, 
 		return err
 	}
 
+	if rows == nil {
+		return nil
+	}
 	_, err = handleRowsWithCallback(ctx, rows, callback)
 	if err != nil {
 		return errors.Wrap(err, "processing rows")

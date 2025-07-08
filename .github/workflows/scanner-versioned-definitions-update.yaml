@@ -108,7 +108,7 @@ jobs:
     - prepare-environment
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.4.8
+      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.4.9
       volumes:
       # The updater makes heavy use of /tmp files.
       - /tmp:/tmp
@@ -131,6 +131,7 @@ jobs:
 
     - uses: ./.github/actions/job-preamble
       with:
+        free-disk-space: 50
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Checkout specific reference
@@ -168,8 +169,12 @@ jobs:
 
     - name: Run updater (multi bundle)
       run: |
-        scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" bundles
-        zip definitions/${{ env.SCANNER_BUNDLE_VERSION }}/vulnerabilities.zip bundles/*.json.zst
+        if [ "$SCANNER_BUNDLE_VERSION" = "v1" ]; then
+          scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" --split bundles
+        else
+          scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" bundles
+        fi
+        zip definitions/"$SCANNER_BUNDLE_VERSION"/vulnerabilities.zip bundles/*.json.zst
 
     - name: Upload definitions artifacts
       uses: actions/upload-artifact@v4
@@ -183,7 +188,7 @@ jobs:
     - prepare-environment
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.4.8
+      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.4.9
       volumes:
       # The updater makes heavy use of /tmp files.
       - /tmp:/tmp
@@ -198,6 +203,7 @@ jobs:
 
     - uses: ./.github/actions/job-preamble
       with:
+        free-disk-space: 50
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Checkout specific reference

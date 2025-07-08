@@ -58,13 +58,16 @@ current_label=""
 post_processor_pid=""
 
 _begin() {
+    local label="${1:-}"
+
     # In case it is convenient for a given test-case, _begin() can take care of the initialization.
     if [[ $initialized = "false" ]]; then
         init
         initialized="true"
+    elif [[ -n "$post_processor_pid" ]]; then
+        _end
     fi
 
-    local label="${1:-}"
     current_label="$label"
 
     # Save original stdout and stderr fds as 4 and 5.
@@ -102,12 +105,6 @@ emit_timing_data() {
     cat <<EOT
 TIMING_DATA: {"test": "$test", "step": "$step", "seconds_spent": $seconds_spent}
 EOT
-}
-
-# Combined _end() and _begin() for convenience.
-_step() {
-    _end
-    _begin "$1"
 }
 
 export TEST_SUITE_ABORTED="false"
@@ -229,6 +226,7 @@ EOT
     # Without a timeout it might happen that the pod running the tests is simply killed and we won't
     # have any logs for investigation the situation.
     export BATS_TEST_TIMEOUT=1800 # Seconds
+    export COLLECT_ANALYSIS_MAX_DURATION=12m
 
    if [[ -z "${HEAD_HELM_CHART_CENTRAL_SERVICES_DIR:-}" ]]; then
         HEAD_HELM_CHART_CENTRAL_SERVICES_DIR=$(mktemp -d)
@@ -303,7 +301,7 @@ setup() {
         setup_deployment_env false false
     fi
 
-    _step "pre-test-tear-down"
+    _begin "pre-test-tear-down"
 
     if [[ "${SKIP_INITIAL_TEARDOWN:-}" != "true" ]] && (( test_case_no == 0 )); then
         # executing teardown to begin test execution in a well-defined state
@@ -337,9 +335,9 @@ apply_crd_ownership_for_upgrade() {
 
 describe_pods_in_namespace() {
     local namespace="$1"
-    info "==============================="
-    info "Pods in namespace ${namespace}:"
-    info "==============================="
+    echo "==============================="
+    echo "Pods in namespace ${namespace}:"
+    echo "==============================="
     "${ORCH_CMD}" </dev/null -n "${namespace}" get pods || true
     echo
     "${ORCH_CMD}" </dev/null -n "${namespace}" get pods -o name | while read -r pod_name; do
@@ -351,12 +349,13 @@ describe_pods_in_namespace() {
       echo
     done
 }
+export -f describe_pods_in_namespace
 
 describe_deployments_in_namespace() {
     local namespace="$1"
-    info "====================================="
-    info "Deployments in namespace ${namespace}:"
-    info "====================================="
+    echo "====================================="
+    echo "Deployments in namespace ${namespace}:"
+    echo "====================================="
     "${ORCH_CMD}" </dev/null -n "${namespace}" get deployments || true
     echo
     "${ORCH_CMD}" </dev/null -n "${namespace}" get deployments -o name | while read -r name; do
@@ -364,6 +363,7 @@ describe_deployments_in_namespace() {
       "${ORCH_CMD}" </dev/null -n "${namespace}" describe "${name}" || true
     done
 }
+export -f describe_deployments_in_namespace
 
 teardown() {
     _begin "post-test-tear-down"
@@ -397,20 +397,40 @@ teardown() {
         sensor_namespace="${CUSTOM_SENSOR_NAMESPACE}"
     fi
 
-    echo "Using central namespace: ${central_namespace}"
-    echo "Using sensor namespace: ${sensor_namespace}"
+    # Execute this on a best-effort basis, as it sometimes encounters long delays for whatever reason.
+    timeout "$COLLECT_ANALYSIS_MAX_DURATION" bash -c "set -euo pipefail; collect_analysis_data '$central_namespace' '$sensor_namespace'" || {
+        echo "ERROR: Collecting analysis data during teardown did not finish in time."
+        echo "NOTE: This failure will be ignored to not cause a test failure."
+        true # Explicit.
+    }
+
+    run remove_existing_stackrox_resources "${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}" "stackrox"
+    echo "Post-test teardown complete."
+
+    _end
+}
+
+collect_analysis_data() {
+    local central_namespace="$1"
+    local sensor_namespace="$2"
+
+    echo "Attempting to collect analysis data..."
 
     if [[ -n "${SCANNER_V4_LOG_DIR:-}" ]]; then
-        "$ROOT/scripts/ci/collect-service-logs.sh" "${central_namespace}" \
-            "${SCANNER_V4_LOG_DIR}/${BATS_TEST_NUMBER}-${BATS_TEST_NAME}"
+        if [[ -n "$central_namespace" ]]; then
+            echo "Using central namespace: ${central_namespace}"
+            "$ROOT/scripts/ci/collect-service-logs.sh" "${central_namespace}" \
+                "${SCANNER_V4_LOG_DIR}/${BATS_TEST_NUMBER}-${BATS_TEST_NAME}"
+        fi
 
         if [[ "${central_namespace}" != "${sensor_namespace}" && -n "${sensor_namespace}" ]]; then
+            echo "Using sensor namespace: ${sensor_namespace}"
             "$ROOT/scripts/ci/collect-service-logs.sh" "${sensor_namespace}" \
                 "${SCANNER_V4_LOG_DIR}/${BATS_TEST_NUMBER}-${BATS_TEST_NAME}"
         fi
     fi
 
-    if [[ -z "${BATS_TEST_COMPLETED:-}" && -z "${BATS_TEST_SKIPPED}" && -n "${central_namespace}" ]]; then
+    if [[ -z "${BATS_TEST_COMPLETED:-}" && -z "${BATS_TEST_SKIPPED:-}" && -n "${central_namespace}" ]]; then
         # Test did not "complete" and was not skipped. Collect some analysis data.
         describe_pods_in_namespace "${central_namespace}"
         describe_deployments_in_namespace "${central_namespace}"
@@ -420,12 +440,8 @@ teardown() {
             describe_deployments_in_namespace "${sensor_namespace}"
         fi
     fi
-
-    run remove_existing_stackrox_resources "${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}" "stackrox"
-    echo "Post-test teardown complete."
-
-    _end
 }
+export -f collect_analysis_data
 
 @test "Upgrade from old Helm chart to HEAD Helm chart with Scanner v4 enabled" {
     init
@@ -446,7 +462,7 @@ central:
 EOT
     )
 
-    _step "verify-scanner-V4-not-deployed"
+    _begin "verify-scanner-V4-not-deployed"
     verify_scannerV2_deployed "$CUSTOM_CENTRAL_NAMESPACE"
     verify_no_scannerV4_deployed "$CUSTOM_CENTRAL_NAMESPACE"
 
@@ -454,7 +470,7 @@ EOT
     deploy_central_with_helm "$CUSTOM_CENTRAL_NAMESPACE" "$MAIN_IMAGE_TAG" "" \
         --reuse-values
 
-    _step "verify-scanner-V4-not-deployed"
+    _begin "verify-scanner-V4-not-deployed"
     verify_scannerV2_deployed "$CUSTOM_CENTRAL_NAMESPACE"
     verify_no_scannerV4_deployed "$CUSTOM_CENTRAL_NAMESPACE"
 
@@ -463,7 +479,7 @@ EOT
         --reuse-values \
         --set scannerV4.disable=false
 
-    _step "verify-scanners-deployed"
+    _begin "verify-scanners-deployed"
     verify_scannerV2_deployed "$CUSTOM_CENTRAL_NAMESPACE"
     verify_scannerV4_deployed "$CUSTOM_CENTRAL_NAMESPACE"
     verify_deployment_scannerV4_env_var_set "$CUSTOM_CENTRAL_NAMESPACE" "central"
@@ -476,19 +492,19 @@ EOT
         "$EARLIER_MAIN_IMAGE_TAG" "$old_sensor_chart" \
         "$secured_cluster_name" "$ROX_ADMIN_PASSWORD" "$central_endpoint"
 
-    _step "verify-scanner-V2-not-deployed"
+    _begin "verify-scanner-V2-not-deployed"
     verify_no_scannerV2_deployed "$CUSTOM_SENSOR_NAMESPACE"
 
-    _step "verify-scanner-V4-not-deployed"
+    _begin "verify-scanner-V4-not-deployed"
     verify_no_scannerV4_deployed "$CUSTOM_SENSOR_NAMESPACE"
 
-    _step "upgrade-to-HEAD-sensor"
+    _begin "upgrade-to-HEAD-sensor"
     deploy_sensor_with_helm "$CUSTOM_CENTRAL_NAMESPACE" "$CUSTOM_SENSOR_NAMESPACE" "" "" "" "" ""
 
-    _step "verify-scanner-V2-not-deployed"
+    _begin "verify-scanner-V2-not-deployed"
     verify_no_scannerV2_deployed "$CUSTOM_SENSOR_NAMESPACE"
 
-    _step "verify-scanner-V4-not-deployed"
+    _begin "verify-scanner-V4-not-deployed"
     verify_no_scannerV4_deployed "$CUSTOM_SENSOR_NAMESPACE"
 
     _begin "enable-scanners-in-secured-cluster"
@@ -501,10 +517,10 @@ EOT
         --set scannerV4.disable=false \
         --set scanner.disable=false
 
-    _step "verify-scanner-V2-deployed"
+    _begin "verify-scanner-V2-deployed"
     verify_scannerV2_deployed "$CUSTOM_SENSOR_NAMESPACE"
 
-    _step "verify-scanner-V4-deployed"
+    _begin "verify-scanner-V4-deployed"
     verify_scannerV4_indexer_deployed "$CUSTOM_SENSOR_NAMESPACE"
 
     _end
@@ -534,13 +550,13 @@ EOT
         "$secured_cluster_name" "$ROX_ADMIN_PASSWORD" "$central_endpoint"
 
     ######################
-    _step "verifying-central-scanners-deployed"
+    _begin "verifying-central-scanners-deployed"
     verify_scannerV2_deployed "$CUSTOM_CENTRAL_NAMESPACE"
     verify_scannerV4_deployed "$CUSTOM_CENTRAL_NAMESPACE"
     verify_deployment_scannerV4_env_var_set "$CUSTOM_CENTRAL_NAMESPACE" "central"
 
     ######################
-    _step "verifying-sensor-scanners-deployed"
+    _begin "verifying-sensor-scanners-deployed"
     verify_scannerV2_deployed "$CUSTOM_SENSOR_NAMESPACE"
     verify_scannerV4_indexer_deployed "$CUSTOM_SENSOR_NAMESPACE"
     run verify_deployment_scannerV4_env_var_set "$CUSTOM_SENSOR_NAMESPACE" "sensor"
@@ -560,14 +576,14 @@ EOT
         "$secured_cluster_name" "$ROX_ADMIN_PASSWORD" "$central_endpoint"
 
     ######################
-    _step "verifying-central-scanners-deployed"
+    _begin "verifying-central-scanners-deployed"
     info "Verifying that scanners are still installed"
     verify_scannerV2_deployed "$CUSTOM_CENTRAL_NAMESPACE"
     verify_scannerV4_deployed "$CUSTOM_CENTRAL_NAMESPACE"
     verify_deployment_scannerV4_env_var_set "$CUSTOM_CENTRAL_NAMESPACE" "central"
 
     ######################
-    _step "verifying-sensor-scanners-deployed"
+    _begin "verifying-sensor-scanners-deployed"
     info "Verifying that scanners are still installed"
     verify_scannerV2_deployed "$CUSTOM_SENSOR_NAMESPACE"
     verify_scannerV4_indexer_deployed "$CUSTOM_SENSOR_NAMESPACE"
@@ -580,19 +596,19 @@ EOT
         --reuse-values --set scannerV4.disable=true
 
     ######################
-    _step "disabling-sensor-scanners"
+    _begin "disabling-sensor-scanners"
     info "Disabling Scanner V4 for secured-cluster-services"
     deploy_sensor_with_helm "$CUSTOM_CENTRAL_NAMESPACE" "$CUSTOM_SENSOR_NAMESPACE" "" "" "" "" "" \
         --set scannerV4.disable=true --set scanner.disable=true
 
     ######################
-    _step "verifying-central-scanner-v4-not-deployed"
+    _begin "verifying-central-scanner-v4-not-deployed"
     info "Verifying Scanner V4 is getting removed for central-services"
     verify_deployment_deletion_with_timeout 4m "$CUSTOM_CENTRAL_NAMESPACE" scanner-v4-indexer scanner-v4-matcher scanner-v4-db
     run ! verify_deployment_scannerV4_env_var_set "$CUSTOM_CENTRAL_NAMESPACE" "central"
 
     ######################
-    _step "verifying-sensor-scanner-v4-not-deployed"
+    _begin "verifying-sensor-scanner-v4-not-deployed"
     info "Verifying Scanner V4 is getting removed for secured-cluster-services"
     verify_deployment_deletion_with_timeout 4m "$CUSTOM_SENSOR_NAMESPACE" scanner-v4-indexer scanner-v4-db
     run ! verify_deployment_scannerV4_env_var_set "$CUSTOM_SENSOR_NAMESPACE" "sensor"
@@ -625,7 +641,7 @@ EOT
         "$secured_cluster_name" "$ROX_ADMIN_PASSWORD" "$central_endpoint"
 
     ######################
-    _step "verifying-central-scanners-deployed"
+    _begin "verifying-central-scanners-deployed"
     info "Verifying that scanners are deployed"
     verify_scannerV2_deployed "$namespace"
     verify_scannerV4_deployed "$namespace"
@@ -633,7 +649,7 @@ EOT
     verify_deployment_scannerV4_env_var_set "$namespace" "central"
 
     ######################
-    _step "verifying-sensor-scanners-enabled"
+    _begin "verifying-sensor-scanners-enabled"
     info "Verifying that scanner V4 is enabled for sensor"
     run verify_deployment_scannerV4_env_var_set "$namespace" "sensor"
 
@@ -652,14 +668,14 @@ EOT
         "$secured_cluster_name" "$ROX_ADMIN_PASSWORD" "$central_endpoint"
 
     ######################
-    _step "verifying-central-scanners-deployed"
+    _begin "verifying-central-scanners-deployed"
     info "Verifying that scanners are still installed"
     verify_scannerV2_deployed "$namespace"
     verify_scannerV4_deployed "$namespace"
     verify_deployment_scannerV4_env_var_set "$namespace" "central"
 
     ######################
-    _step "verifying-sensor-scanners-deployed"
+    _begin "verifying-sensor-scanners-deployed"
     info "Verifying that scanner V4 is still enabled for sensor"
     run verify_deployment_scannerV4_env_var_set "$namespace" "sensor"
 
@@ -670,19 +686,19 @@ EOT
         --reuse-values --set scannerV4.disable=true
 
     ######################
-    _step "disabling-sensor-scanners"
+    _begin "disabling-sensor-scanners"
     info "Disabling Scanner V4 for secured-cluster-services"
     deploy_sensor_with_helm "$namespace" "$namespace" "" "" "" "" "" \
         --set scannerV4.disable=true --set scanner.disable=true
 
     ######################
-    _step "verifying-central-scanner-v4-not-deployed"
+    _begin "verifying-central-scanner-v4-not-deployed"
     info "Verifying Scanner V4 is getting removed for central-services"
     verify_deployment_deletion_with_timeout 4m "$namespace" scanner-v4-indexer scanner-v4-matcher scanner-v4-db
     run ! verify_deployment_scannerV4_env_var_set "$namespace" "central"
 
     ######################
-    _step "verifying-sensor-scanner-v4-not-deployed"
+    _begin "verifying-sensor-scanner-v4-not-deployed"
     info "Verifying Scanner V4 is not enables for sensor"
     run ! verify_deployment_scannerV4_env_var_set "$namespace" "sensor"
 
@@ -740,13 +756,13 @@ EOT
 
     _deploy_stackrox
 
-    _step "verify"
+    _begin "verify"
 
     verify_scannerV2_deployed
     verify_no_scannerV4_deployed
     run ! verify_deployment_scannerV4_env_var_set "stackrox" "central"
 
-    _step "deploy-scanner-v4"
+    _begin "deploy-scanner-v4"
 
     assert [ -d "${scanner_bundle}" ]
     assert [ -d "${scanner_bundle}/scanner-v4" ]
@@ -785,7 +801,7 @@ EOT
     VERSION="${OPERATOR_VERSION_TAG}" deploy_stackrox_operator
     _deploy_stackrox
 
-    _step "verify"
+    _begin "verify"
 
     verify_scannerV2_deployed "stackrox"
     verify_scannerV4_deployed "stackrox"
@@ -817,7 +833,7 @@ EOT
     VERSION="${OPERATOR_VERSION_TAG}" deploy_stackrox_operator
     _deploy_stackrox "" "${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}"
 
-    _step "verify"
+    _begin "verify"
 
     verify_scannerV2_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
     verify_scannerV4_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
@@ -851,12 +867,12 @@ EOT
     VERSION="${OPERATOR_VERSION_TAG}" make -C operator deploy-previous-via-olm
     ROX_SCANNER_V4="false" _deploy_stackrox "" "${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}"
 
-    _step "verify"
+    _begin "verify"
 
     verify_scannerV2_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
     verify_scannerV2_deployed "${CUSTOM_SENSOR_NAMESPACE}"
 
-    _step "upgrade-operator"
+    _begin "upgrade-operator"
 
     # Upgrade operator
     info "Upgrading StackRox Operator to version ${OPERATOR_VERSION_TAG}..."
@@ -869,7 +885,7 @@ EOT
     sleep 60
     "${ORCH_CMD}" </dev/null -n stackrox-operator wait --for=condition=Ready --timeout=3m pods -l app=rhacs-operator
 
-    _step "verify"
+    _begin "verify"
 
     verify_scannerV2_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
     verify_scannerV2_deployed "${CUSTOM_SENSOR_NAMESPACE}"
@@ -880,7 +896,7 @@ EOT
 
     wait_until_central_validation_webhook_is_ready "${CUSTOM_CENTRAL_NAMESPACE}"
 
-    _step "patch-central"
+    _begin "patch-central"
 
     # Enable Scanner V4 on central side.
     info "Patching Central"
@@ -926,7 +942,7 @@ EOT
     sleep 60
     "${ORCH_CMD}" </dev/null -n "${CUSTOM_CENTRAL_NAMESPACE}" wait --for=condition=Ready pods -l app=central || true
 
-    _step "patch-secured-cluster"
+    _begin "patch-secured-cluster"
 
     info "Patching SecuredCluster"
     # Enable Scanner V4 on secured-cluster side
@@ -961,7 +977,7 @@ EOT
     sleep 60
     "${ORCH_CMD}" </dev/null -n "${CUSTOM_SENSOR_NAMESPACE}" wait --for=condition=Ready pods -l app=sensor || true
 
-    _step "verify"
+    _begin "verify"
 
     verify_scannerV2_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
     verify_scannerV4_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
@@ -970,7 +986,7 @@ EOT
     verify_scannerV4_indexer_deployed "${CUSTOM_SENSOR_NAMESPACE}"
     verify_deployment_scannerV4_env_var_set "${CUSTOM_SENSOR_NAMESPACE}" "sensor"
 
-    _step "disable-scanner-v4"
+    _begin "disable-scanner-v4"
 
     # Test disabling of Scanner V4.
     info "Disabling Scanner V4 for Central"
@@ -991,7 +1007,7 @@ spec:
 EOT
     )
 
-    _step "verify"
+    _begin "verify"
 
     verify_deployment_deletion_with_timeout 4m "${CUSTOM_CENTRAL_NAMESPACE}" scanner-v4-indexer scanner-v4-matcher scanner-v4-db
     verify_deployment_deletion_with_timeout 4m "${CUSTOM_SENSOR_NAMESPACE}" scanner-v4-indexer scanner-v4-db
@@ -1016,7 +1032,7 @@ EOT
 
     _deploy_stackrox
 
-    _step "verify"
+    _begin "verify"
 
     verify_scannerV2_deployed "stackrox"
     verify_scannerV4_deployed "stackrox"
@@ -1038,19 +1054,19 @@ EOT
     info "Using roxctl executable ${EARLIER_ROXCTL_PATH}/roxctl for generating pre-Scanner V4 deployment bundles"
     PATH="${EARLIER_ROXCTL_PATH}:${PATH}" MAIN_IMAGE_TAG="${EARLIER_MAIN_IMAGE_TAG}" ROX_SCANNER_V4=false _deploy_stackrox
 
-    _step "verify"
+    _begin "verify"
 
     verify_scannerV2_deployed
     verify_no_scannerV4_deployed
     run ! verify_deployment_scannerV4_env_var_set "stackrox" "central"
     run ! verify_deployment_scannerV4_env_var_set "stackrox" "sensor"
 
-    _step "upgrade-stackrox"
+    _begin "upgrade-stackrox"
 
     info "Upgrading StackRox using HEAD deployment bundles"
     ROX_SCANNER_V4=true _deploy_stackrox
 
-    _step "verify"
+    _begin "verify"
 
     verify_scannerV2_deployed
     verify_scannerV4_deployed

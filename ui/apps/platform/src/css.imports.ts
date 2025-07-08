@@ -1,5 +1,5 @@
 import 'react-toastify/dist/ReactToastify.css';
-import 'app.tw.css'; // this file is the main Tailwind entrypoint handled by react-scripts
+import './app.tw.css'; // this file is the main Tailwind entrypoint handled by react-scripts
 import '@patternfly/react-core/dist/styles/base.css';
 import '@patternfly/react-styles/css/utilities/Accessibility/accessibility.css';
 import '@patternfly/react-styles/css/utilities/Alignment/alignment.css';

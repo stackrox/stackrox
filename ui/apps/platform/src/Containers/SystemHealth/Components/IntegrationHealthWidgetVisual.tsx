@@ -30,13 +30,13 @@ const IntegrationHealthWidgetVisual = ({
     const integrations = integrationsMerged.filter((integrationMergedItem) => {
         return integrationMergedItem.status === 'UNHEALTHY';
     });
-    /* eslint-disable no-nested-ternary */
+
     const icon = isFetchingInitialRequest
         ? SpinnerIcon
         : errorMessageFetching
           ? ErrorIcon
           : healthIconMap[integrations.length === 0 ? 'success' : 'danger'];
-    /* eslint-enable no-nested-ternary */
+
     const hasCount = !isFetchingInitialRequest && !errorMessageFetching;
 
     return (

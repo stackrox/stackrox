@@ -4,17 +4,17 @@ import {
     Card,
     CardBody,
     Divider,
+    DropdownItem,
     Flex,
     FlexItem,
     PageSection,
     Title,
     ToolbarItem,
 } from '@patternfly/react-core';
-import { DropdownItem } from '@patternfly/react-core/deprecated';
 import { useApolloClient } from '@apollo/client';
 
 import PageTitle from 'Components/PageTitle';
-import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
+import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 import useMap from 'hooks/useMap';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import useURLPagination from 'hooks/useURLPagination';
@@ -227,10 +227,12 @@ function NodeCvesOverviewPage() {
                             >
                                 {hasLegacySnoozeAbility && (
                                     <ToolbarItem align={{ default: 'alignRight' }}>
-                                        <BulkActionsDropdown isDisabled={selectedCves.size === 0}>
+                                        <MenuDropdown
+                                            toggleText="Bulk actions"
+                                            isDisabled={selectedCves.size === 0}
+                                        >
                                             <DropdownItem
                                                 key="bulk-snooze-cve"
-                                                component="button"
                                                 onClick={() =>
                                                     setSnoozeModalOptions({
                                                         action: isViewingSnoozedCves
@@ -245,7 +247,7 @@ function NodeCvesOverviewPage() {
                                                     ? 'Unsnooze CVEs'
                                                     : 'Snooze CVEs'}
                                             </DropdownItem>
-                                        </BulkActionsDropdown>
+                                        </MenuDropdown>
                                     </ToolbarItem>
                                 )}
                             </TableEntityToolbar>
