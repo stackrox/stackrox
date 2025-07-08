@@ -182,7 +182,7 @@ type ImageComponentV2 struct {
 	// was hash index, making it btree
 	//
 	// Deprecated: Marked as deprecated in storage/image_component.proto.
-	ImageId string `protobuf:"bytes,10,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty" sql:"fk(Image:id),index=btree"` // @gotags: sql:"fk(Image:id),index=btree"
+	ImageId string `protobuf:"bytes,10,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty" sql:"fk(Image:id),no-fk-constraint,index=btree"` // @gotags: sql:"fk(Image:id),no-fk-constraint,index=btree"
 	// / Layer that contains this component
 	//
 	// Types that are valid to be assigned to HasLayerIndex:
@@ -191,7 +191,7 @@ type ImageComponentV2 struct {
 	HasLayerIndex isImageComponentV2_HasLayerIndex `protobuf_oneof:"has_layer_index"`
 	Location      string                           `protobuf:"bytes,12,opt,name=location,proto3" json:"location,omitempty" search:"Component Location,store,hidden"` // @gotags: search:"Component Location,store,hidden"
 	Architecture  string                           `protobuf:"bytes,13,opt,name=architecture,proto3" json:"architecture,omitempty"`
-	ImageV2Id     string                           `protobuf:"bytes,14,opt,name=image_v2_id,json=imageV2Id,proto3" json:"image_v2_id,omitempty" sql:"fk(ImageV2:id),index=btree"` // @gotags: sql:"fk(ImageV2:id),index=btree"
+	ImageV2Id     string                           `protobuf:"bytes,14,opt,name=image_v2_id,json=imageV2Id,proto3" json:"image_v2_id,omitempty" sql:"fk(ImageV2:id),no-fk-constraint,index=btree"` // @gotags: sql:"fk(ImageV2:id),no-fk-constraint,index=btree"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

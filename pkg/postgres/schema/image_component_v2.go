@@ -31,7 +31,8 @@ var (
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ImageComponentV2)(nil)), "image_component_v2")
 		referencedSchemas := map[string]*walker.Schema{
-			"storage.Image": ImagesSchema,
+			"storage.Image":   ImagesSchema,
+			"storage.ImageV2": ImageV2Schema,
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
@@ -42,6 +43,7 @@ var (
 			v1.SearchCategory_IMAGE_VULNERABILITIES_V2,
 			v1.SearchCategory_IMAGE_COMPONENTS_V2,
 			v1.SearchCategory_IMAGES,
+			v1.SearchCategory_IMAGES_V2,
 			v1.SearchCategory_DEPLOYMENTS,
 			v1.SearchCategory_NAMESPACES,
 			v1.SearchCategory_CLUSTERS,
@@ -70,6 +72,6 @@ type ImageComponentV2 struct {
 	OperatingSystem string             `gorm:"column:operatingsystem;type:varchar"`
 	ImageID         string             `gorm:"column:imageid;type:varchar;index:imagecomponentv2_imageid,type:btree"`
 	Location        string             `gorm:"column:location;type:varchar"`
+	ImageV2ID       string             `gorm:"column:imagev2id;type:varchar;index:imagecomponentv2_imagev2id,type:btree"`
 	Serialized      []byte             `gorm:"column:serialized;type:bytea"`
-	ImagesRef       Images             `gorm:"foreignKey:imageid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }
