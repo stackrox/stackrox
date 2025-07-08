@@ -18,6 +18,8 @@ import {
 import useFetchDeployment from 'hooks/useFetchDeployment';
 import usePermissions, { HasReadAccess } from 'hooks/usePermissions';
 import { QueryValue } from 'hooks/useURLParameter';
+import { ensureExhaustive } from 'utils/type.utils';
+
 import { getListenPorts, getNodeById } from '../utils/networkGraphUtils';
 import { CustomEdgeModel, CustomNodeModel } from '../types/topology.type';
 
@@ -52,8 +54,10 @@ function hasReadAccessForDeploymentTab(hasReadAccess: HasReadAccess, tabKey: Dep
             return hasReadAccess('DeploymentExtension');
         case 'NETWORK_POLICIES':
             return hasReadAccess('NetworkPolicy');
-        default:
+        case 'DETAILS':
             return true;
+        default:
+            return ensureExhaustive(tabKey);
     }
 }
 
