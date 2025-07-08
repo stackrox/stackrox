@@ -19,4 +19,6 @@ var (
 	RoleType = reflect.TypeOf((*storage.Role)(nil))
 	// NotifierType reflects the type of storage.Notifier.
 	NotifierType = reflect.TypeOf((*storage.Notifier)(nil))
+	// AuthMachineToMachineConfigType reflects the type of storage.AuthMachineToMachineConfig.
+	AuthMachineToMachineConfigType = reflect.TypeOf((*storage.AuthMachineToMachineConfig)(nil))
 )

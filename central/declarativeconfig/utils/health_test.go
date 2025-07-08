@@ -38,6 +38,10 @@ func TestResourceTypeFromProtoMessage(t *testing.T) {
 			msg:          &storage.Notifier{},
 			resourceType: storage.DeclarativeConfigHealth_NOTIFIER,
 		},
+		{
+			msg:          &storage.AuthMachineToMachineConfig{},
+			resourceType: storage.DeclarativeConfigHealth_AUTH_MACHINE_TO_MACHINE_CONFIG,
+		},
 	}
 
 	for _, c := range cases {
