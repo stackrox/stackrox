@@ -252,6 +252,10 @@ func copyFromComplianceOperatorBenchmarkV2Profiles(ctx context.Context, s pgSear
 }
 
 func getDefaultSort(sortOption string, reversed bool) *v1.QuerySortOption {
+	if sortOption == "" {
+		return nil
+	}
+
 	defaultSortOption := &v1.QuerySortOption{
 		Field:    sortOption,
 		Reversed: reversed,

@@ -180,6 +180,10 @@ func copyFromCloudSources(ctx context.Context, s pgSearch.Deleter, tx *postgres.
 }
 
 func getDefaultSort(sortOption string, reversed bool) *v1.QuerySortOption {
+	if sortOption == "" {
+		return nil
+	}
+
 	defaultSortOption := &v1.QuerySortOption{
 		Field:    sortOption,
 		Reversed: reversed,
