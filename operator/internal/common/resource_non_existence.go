@@ -11,7 +11,7 @@ import (
 
 // Verifies that a resource identified by 'gvk', 'namespace' and 'name' does not exist already. Returns an error, if it does.
 // The error returned comes from the apimachinery API errors and (unfortunately) requires a schema.GroupResource to be constructed.
-// Hence we also need 'resource' in this function. This way we can keep it simply and require the resource name to be passed in
+// Hence we also need 'resource' in this function. This way we can keep it simple and require the resource name to be passed in
 // by the caller instead of implementing dynamic discovery.
 func VerifyResourceNonExistence(ctx context.Context, client ctrlClient.Reader, gvk schema.GroupVersionKind, resource, namespace, name string) error {
 	key := ctrlClient.ObjectKey{Namespace: namespace, Name: name}
