@@ -7,10 +7,6 @@ import (
 	"github.com/stackrox/rox/pkg/namespaces"
 )
 
-var (
-	log = logging.LoggerForModule()
-)
-
 const (
 	// The corresponding environment variable is configured to contain pod namespace by sensor YAML/helm file using
 	// the Kubernetes Downward API, see
