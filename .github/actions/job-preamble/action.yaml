@@ -9,11 +9,6 @@ inputs:
     required: true
 runs:
   using: composite
-  defaults:
-    run:
-      shell: bash
-  env:
-    default-free-disk-space: 25
   steps:
     - name: Variable setup
       run: |
@@ -24,6 +19,7 @@ runs:
 
     - name: Shim gsutil as gcloud storage
       continue-on-error: true
+      shell: bash
       run: |
         tee -a ~/.boto <<EOF
         [GSUtil]
@@ -32,6 +28,7 @@ runs:
         gsutil version -l
 
     - name: Recover docker image cache space
+      shell: bash
       run: |
         df --si /
         printf 'Docker prune: '
@@ -40,6 +37,7 @@ runs:
 
     - name: List filesystems
       id: disk-check
+      shell: bash
       run: |
         df --si
         free=$(df -BGB --output=avail / | tail -1)
@@ -48,6 +46,7 @@ runs:
     - name: Free disk space, delete unused tools
       id: delete-unused-tools
       continue-on-error: true
+      shell: bash
       run: |
         set +e
         # preinstalled tools not used. ordered by size asc
@@ -91,6 +90,7 @@ runs:
       id: delete-docker-cache
       if: steps.delete-unused-tools.outcome == 'failure'
       continue-on-error: true
+      shell: bash
       run: |
         printf 'Docker prune: '
         docker system prune --force --all
@@ -102,6 +102,7 @@ runs:
       if: (steps.delete-docker-cache.outcome == 'failure') && \
         (inputs.free-disk-space && true || false)  # Do not warn if default free space
       continue-on-error: true
+      shell: bash
       run: |
         free=$(df -BGB --output=avail / | tail -1)
         echo "Failed to free requested disk space, ${{ env.target_free }} [${free} free]." \
@@ -117,6 +118,7 @@ runs:
       run: |
         # Prevent fatal error "detected dubious ownership in repository" from recent git.
         git config --global --add safe.directory "$(pwd)"
+      shell: bash
 
     - name: Record job info
       uses: gacts/run-and-post-run@d803f6920adc9a47eeac4cb6c93dbc2e2890c684 # v1.4.0
