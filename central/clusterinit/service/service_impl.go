@@ -162,6 +162,10 @@ func (s *serviceImpl) GenerateCRSExtended(ctx context.Context, request *v1.CRSGe
 		return nil, status.Error(codes.Unimplemented, "support for generating Cluster Registration Secrets (CRS) is not enabled")
 	}
 
+	if request.GetMaxRegistrations() != 0 {
+		return nil, errox.NotImplemented.CausedBy("max-registration limits not supported")
+	}
+
 	reqValidUntil := request.GetValidUntil()
 	reqValidFor := request.GetValidFor()
 	if reqValidUntil != nil && reqValidFor != nil {
