@@ -34,6 +34,10 @@ func extractIDFromProtoMessage(message protocompat.Message) string {
 	if role, ok := message.(*storage.Role); ok {
 		return role.GetName()
 	}
+	// Special case, as the issuer of the m2m config is unique and used as ID.
+	if m2mConfig, ok := message.(*storage.AuthMachineToMachineConfig); ok {
+		return m2mConfig.GetIssuer()
+	}
 
 	messageWithID, ok := message.(interface {
 		GetId() string
@@ -53,6 +57,10 @@ func extractNameFromProtoMessage(message protocompat.Message) string {
 	if group, ok := message.(*storage.Group); ok {
 		return fmt.Sprintf("group %s:%s:%s for auth provider ID %s",
 			group.GetProps().GetKey(), group.GetProps().GetValue(), group.GetRoleName(), group.GetProps().GetAuthProviderId())
+	}
+	// Special case, as the m2m config specifies no name, and the issuer is unique it will be used as name.
+	if m2mConfig, ok := message.(*storage.AuthMachineToMachineConfig); ok {
+		return m2mConfig.GetIssuer()
 	}
 
 	messageWithName, ok := message.(interface {
