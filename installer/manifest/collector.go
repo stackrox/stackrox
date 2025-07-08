@@ -48,7 +48,7 @@ func (g CollectorGenerator) genDaemonSet(ctx context.Context, m *manifestGenerat
 						Name:            "collector",
 						Image:           m.Config.Images.Collector,
 						ImagePullPolicy: v1.PullAlways,
-						Command:         []string{"/stackrox/collector"},
+						Command:         []string{"collector"},
 						Ports: []v1.ContainerPort{{
 							Name:          "monitoring",
 							ContainerPort: 9090,

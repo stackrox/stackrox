@@ -5,3 +5,4 @@ images:
   scannerDb: "localhost:5001/stackrox/scanner-db:latest"
   scannerv4Db: "localhost:5001/stackrox/scanner-v4-db:latest"
   centralDb: "localhost:5001/stackrox/central-db:latest"
+  collector: "quay.io/stackrox-io/collector:3.22.0"
