@@ -11,9 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
-	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
@@ -61,52 +59,4 @@ func (s *ImageComponentV2StoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(foundImageComponentV2)
 
-	withNoAccessCtx := sac.WithNoAccess(ctx)
-
-	s.NoError(store.Upsert(ctx, imageComponentV2))
-	foundImageComponentV2, exists, err = store.Get(ctx, imageComponentV2.GetId())
-	s.NoError(err)
-	s.True(exists)
-	protoassert.Equal(s.T(), imageComponentV2, foundImageComponentV2)
-
-	imageComponentV2Count, err := store.Count(ctx, search.EmptyQuery())
-	s.NoError(err)
-	s.Equal(1, imageComponentV2Count)
-	imageComponentV2Count, err = store.Count(withNoAccessCtx, search.EmptyQuery())
-	s.NoError(err)
-	s.Zero(imageComponentV2Count)
-
-	imageComponentV2Exists, err := store.Exists(ctx, imageComponentV2.GetId())
-	s.NoError(err)
-	s.True(imageComponentV2Exists)
-	s.NoError(store.Upsert(ctx, imageComponentV2))
-	s.ErrorIs(store.Upsert(withNoAccessCtx, imageComponentV2), sac.ErrResourceAccessDenied)
-
-	s.NoError(store.Delete(ctx, imageComponentV2.GetId()))
-	foundImageComponentV2, exists, err = store.Get(ctx, imageComponentV2.GetId())
-	s.NoError(err)
-	s.False(exists)
-	s.Nil(foundImageComponentV2)
-	s.NoError(store.Delete(withNoAccessCtx, imageComponentV2.GetId()))
-
-	var imageComponentV2s []*storage.ImageComponentV2
-	var imageComponentV2IDs []string
-	for i := 0; i < 200; i++ {
-		imageComponentV2 := &storage.ImageComponentV2{}
-		s.NoError(testutils.FullInit(imageComponentV2, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-		imageComponentV2s = append(imageComponentV2s, imageComponentV2)
-		imageComponentV2IDs = append(imageComponentV2IDs, imageComponentV2.GetId())
-	}
-
-	s.NoError(store.UpsertMany(ctx, imageComponentV2s))
-
-	imageComponentV2Count, err = store.Count(ctx, search.EmptyQuery())
-	s.NoError(err)
-	s.Equal(200, imageComponentV2Count)
-
-	s.NoError(store.DeleteMany(ctx, imageComponentV2IDs))
-
-	imageComponentV2Count, err = store.Count(ctx, search.EmptyQuery())
-	s.NoError(err)
-	s.Equal(0, imageComponentV2Count)
 }

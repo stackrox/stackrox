@@ -525,7 +525,7 @@ func (x *Deployment) GetPlatformComponent() bool {
 	return false
 }
 
-// Next tag: 12
+// Next tag: 13
 type ContainerImage struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Deprecated: Marked as deprecated in storage/deployment.proto.
