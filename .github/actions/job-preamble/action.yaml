@@ -15,8 +15,9 @@ runs:
     - name: Variable setup
       shell: bash
       run: |
-        echo "inputs=${{ toJson(inputs) }}"
-        echo "target_free=${{ inputs.free-disk-space || env.default-free-disk-space }}" >> $GITHUB_ENV
+        target_free="${{ inputs.free-disk-space }}"
+        target_free="${target_free:-${{ env.default-free-disk-space }}}"
+        echo "target_free=${target_free}" >> $GITHUB_ENV
 
     - name: Set up gcloud CLI
       uses: 'google-github-actions/setup-gcloud@v2'
