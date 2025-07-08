@@ -20,7 +20,7 @@ metadata:
         )
       )
   labels:
-    appstudio.openshift.io/application: acs
+    appstudio.openshift.io/application: acs-4-6
   name: retag-collector-full
   namespace: rh-acs-tenant
 
@@ -42,7 +42,7 @@ spec:
     name: retag-pipeline
 
   taskRunTemplate:
-    serviceAccountName: build-pipeline-collector
+    serviceAccountName: build-pipeline-collector-4-6
 
   timeouts:
     tasks: 30m
