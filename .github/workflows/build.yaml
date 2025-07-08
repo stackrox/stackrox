@@ -119,6 +119,7 @@ jobs:
 
       - uses: ./.github/actions/job-preamble
         with:
+          free-disk-space: 30
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       - uses: ./.github/actions/cache-ui-dependencies
