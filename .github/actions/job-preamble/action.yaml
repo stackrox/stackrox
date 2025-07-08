@@ -84,10 +84,14 @@ runs:
             rm -rf "$d" \
               || sudo rm -rf "$d"
           fi
+          echo "$d"
         done
         df --si /
         free=$(df -BGB --output=avail / | tail -1)
-        [[ ${free%GB} -ge "${{ env.target_free }}" ]]
+        if [[ ${free%GB} -lt "${{ env.target_free }}" ]]; then
+          echo "Failed to free requested disk space, ${{ env.target_free }} [${free} free]."
+          exit 1
+        fi
 
     - name: Free more disk space, docker system prune
       id: delete-docker-cache
@@ -99,7 +103,10 @@ runs:
         docker system prune --force --all
         df --si /
         free=$(df -BGB --output=avail / | tail -1)
-        [[ ${free%GB} -ge "${{ env.target_free }}" ]]
+        if [[ ${free%GB} -lt "${{ env.target_free }}" ]]; then
+          echo "Failed to free requested disk space, ${{ env.target_free }} [${free} free]."
+          exit 1
+        fi
 
     - name: Verify free disk space
       if: (steps.delete-docker-cache.outcome == 'failure') && (inputs.free-disk-space && true || false)  # Do not warn if default free space
