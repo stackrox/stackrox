@@ -12,7 +12,7 @@ import (
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// Reconciler extension, which fails on initial reconcilliation, if a SecuredCluster CR with the same namespace/name exist.
+// Reconciler extension, which fails on initial reconcilliation, if a SecuredCluster CR with the same namespace/name exists.
 func VerifyCollisionFreeCentral(client ctrlClient.Client) extensions.ReconcileExtension {
 	return func(ctx context.Context, u *unstructured.Unstructured, _ func(extensions.UpdateStatusFunc), l logr.Logger) error {
 		return verifyCollisionFreeCentral(ctx, client, u, l)
