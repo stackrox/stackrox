@@ -34,11 +34,20 @@ func SplitV2(image *storage.Image, withComponents bool) (ImageParts, error) {
 
 func splitComponentsV2(parts ImageParts) ([]ComponentParts, error) {
 	ret := make([]ComponentParts, 0, len(parts.Image.GetScan().GetComponents()))
+	componentMap := make(map[string]*storage.EmbeddedImageScanComponent)
 	for _, component := range parts.Image.GetScan().GetComponents() {
 		generatedComponentV2, err := GenerateImageComponentV2(parts.Image.GetScan().GetOperatingSystem(), parts.Image, component)
 		if err != nil {
 			return nil, err
 		}
+
+		// dedupe components within the component
+		if _, ok := componentMap[generatedComponentV2.GetId()]; ok {
+			log.Infof("Component %s-%s has already been processed in the image. Skipping...", component.GetName(), component.GetVersion())
+			continue
+		}
+
+		componentMap[generatedComponentV2.GetId()] = component
 
 		cves, err := splitCVEsV2(parts.Image.GetId(), generatedComponentV2.GetId(), component)
 		if err != nil {
@@ -58,11 +67,20 @@ func splitComponentsV2(parts ImageParts) ([]ComponentParts, error) {
 
 func splitCVEsV2(imageID string, componentID string, embedded *storage.EmbeddedImageScanComponent) ([]CVEParts, error) {
 	ret := make([]CVEParts, 0, len(embedded.GetVulns()))
+	cveMap := make(map[string]*storage.EmbeddedVulnerability)
 	for _, cve := range embedded.GetVulns() {
 		convertedCVE, err := utils.EmbeddedVulnerabilityToImageCVEV2(imageID, componentID, cve)
 		if err != nil {
 			return nil, err
 		}
+
+		// dedupe CVEs within the component
+		if _, ok := cveMap[convertedCVE.GetId()]; ok {
+			log.Infof("CVE %s has already been processed in the image. Skipping...", cve.GetCve())
+			continue
+		}
+
+		cveMap[convertedCVE.GetId()] = cve
 
 		cp := CVEParts{
 			CVEV2: convertedCVE,

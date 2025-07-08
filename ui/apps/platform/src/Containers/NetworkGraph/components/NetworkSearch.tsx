@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 
 import SearchFilterInput from 'Components/SearchFilterInput';
-import useURLSearch from 'hooks/useURLSearch';
 import searchOptionsToQuery from 'services/searchOptionsToQuery';
 import { getSearchOptionsForCategory } from 'services/SearchService';
 import { orchestratorComponentsOption } from 'utils/orchestratorComponents';
+
+import { useSearchFilter } from '../NetworkGraphURLStateContext';
 
 import './NetworkSearch.css';
 
@@ -31,7 +32,7 @@ function NetworkSearch({
     isDisabled,
 }: NetworkSearchProps) {
     const [searchOptions, setSearchOptions] = useState<string[]>([]);
-    const { searchFilter, setSearchFilter } = useURLSearch();
+    const { searchFilter, setSearchFilter } = useSearchFilter();
 
     useEffect(() => {
         const { request, cancel } = getSearchOptionsForCategory(searchCategory);

@@ -35,7 +35,7 @@ spec:
         - name: name
           value: post-bigquery-metrics
         - name: bundle
-          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:8f95f656875314a5c10e5da5f9a35352c3cd59a96e9da1648199686dccde6da2
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:8ebb5d5589a23798f7c3f049d9ba42f726c5a39314f1cb10b10f9466e89d0dca
         - name: kind
           value: task
       resolver: bundles
@@ -117,7 +117,7 @@ spec:
       - name: name
         value: git-clone-oci-ta
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-git-clone-oci-ta:0.1@sha256:8ecf57d5a6697ce709bee65b62781efe79a10b0c2b95e05576442b67fbd61744
+        value: quay.io/konflux-ci/tekton-catalog/task-git-clone-oci-ta:0.1@sha256:0fea1e4bd2fdde46c5b7786629f423a51e357f681c32ceddd744a6e3d48b8327
       - name: kind
         value: task
       resolver: bundles
@@ -136,7 +136,7 @@ spec:
       - name: name
         value: determine-image-tag
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:8f95f656875314a5c10e5da5f9a35352c3cd59a96e9da1648199686dccde6da2
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:8ebb5d5589a23798f7c3f049d9ba42f726c5a39314f1cb10b10f9466e89d0dca
       - name: kind
         value: task
       resolver: bundles
@@ -154,12 +154,33 @@ spec:
         - name: name
           value: determine-dependency-image-tag
         - name: bundle
-          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:8f95f656875314a5c10e5da5f9a35352c3cd59a96e9da1648199686dccde6da2
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:8ebb5d5589a23798f7c3f049d9ba42f726c5a39314f1cb10b10f9466e89d0dca
         - name: kind
           value: task
       resolver: bundles
 
+    # We only check the input image is ready and otherwise fail the retag pipeline early and with a meaningful error.
+    # This confirms that the image is present and that it has successfully passed its build pipeline.
+  - name: wait-for-image
+    params:
+    - name: IMAGE
+      value: "$(params.input-image-repo):$(tasks.determine-input-image-tag.results.IMAGE_TAG)"
+    taskRef:
+      params:
+      - name: name
+        value: wait-for-image
+      - name: bundle
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:8ebb5d5589a23798f7c3f049d9ba42f726c5a39314f1cb10b10f9466e89d0dca
+      - name: kind
+        value: task
+      resolver: bundles
+    timeout: 5m
+
   - name: retag-image
+    # runAfter needs to be specified, because there is no implicit dependency on wait-for-image's
+    # results, but we still need it to run before.
+    runAfter:
+    - wait-for-image
     params:
     - name: INPUT_IMAGE_REPO
       value: $(params.input-image-repo)
@@ -174,7 +195,7 @@ spec:
       - name: name
         value: retag-image
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:8f95f656875314a5c10e5da5f9a35352c3cd59a96e9da1648199686dccde6da2
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:8ebb5d5589a23798f7c3f049d9ba42f726c5a39314f1cb10b10f9466e89d0dca
       - name: kind
         value: task
       resolver: bundles

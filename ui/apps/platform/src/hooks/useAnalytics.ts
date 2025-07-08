@@ -506,7 +506,7 @@ function redactParsedQs(value: RawQueryStringValue, key: string): RawQueryString
 function redactSearchParams(location: string): string {
     // Top level URL parameters that can contain user or installation-specific information. Any
     // key that should have its value redacted should be added to this list.
-    const topLevelSearchKeys = ['s', 's2', 'sidePanel'];
+    const topLevelSearchKeys = ['s', 's2'];
 
     try {
         const url = new URL(location);

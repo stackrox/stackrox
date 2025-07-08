@@ -20,7 +20,7 @@ jobs:
       ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -46,7 +46,7 @@ jobs:
       ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -81,10 +81,13 @@ jobs:
     - name: Check build & test image versions
       run: scripts/ci/jobs/check-image-version.sh
 
+    - name: Check dependabot knows about pinned prefetched images
+      run: scripts/ci/jobs/check-dependabot-pinned-image.sh
+
   style-check:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
       volumes:
       - /usr:/mnt/usr
       - /opt:/mnt/opt
@@ -97,6 +100,7 @@ jobs:
 
       - uses: ./.github/actions/job-preamble
         with:
+          free-disk-space: '30'
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       - name: Cache Go dependencies
@@ -118,7 +122,7 @@ jobs:
     timeout-minutes: 240
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
@@ -131,6 +135,7 @@ jobs:
 
     - uses: ./.github/actions/job-preamble
       with:
+        free-disk-space: '30'
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Cache Go dependencies
@@ -229,7 +234,7 @@ jobs:
   openshift-ci-lint:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
     steps:
       - name: Checkout
         uses: actions/checkout@v4

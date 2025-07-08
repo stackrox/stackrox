@@ -12,7 +12,6 @@ import (
 
 	deploymentStore "github.com/stackrox/rox/central/deployment/datastore"
 	processIndicatorDataStore "github.com/stackrox/rox/central/processindicator/datastore"
-	processIndicatorSearch "github.com/stackrox/rox/central/processindicator/search"
 	processIndicatorStorage "github.com/stackrox/rox/central/processindicator/store/postgres"
 	plopStore "github.com/stackrox/rox/central/processlisteningonport/store"
 	postgresStore "github.com/stackrox/rox/central/processlisteningonport/store/postgres"
@@ -70,10 +69,9 @@ func (suite *PLOPDataStoreTestSuite) SetupTest() {
 	suite.store = postgresStore.NewFullStore(suite.postgres.DB)
 
 	indicatorStorage := processIndicatorStorage.New(suite.postgres.DB)
-	indicatorSearcher := processIndicatorSearch.New(indicatorStorage)
 
 	suite.indicatorDataStore = processIndicatorDataStore.New(
-		indicatorStorage, suite.store, indicatorSearcher, nil)
+		indicatorStorage, suite.store, nil)
 	suite.datastore = New(suite.store, suite.indicatorDataStore, suite.postgres)
 }
 
@@ -2316,6 +2314,7 @@ func (suite *PLOPDataStoreTestSuite) makeRandomPlops(nport int, nprocess int, np
 					DeploymentId: deployment,
 					ClusterId:    fixtureconsts.Cluster1,
 					PodUid:       podUid,
+					Namespace:    fixtureconsts.Namespace1,
 				}
 				plopUDP := &storage.ProcessListeningOnPortFromSensor{
 					Port:           uint32(port),
@@ -2331,6 +2330,7 @@ func (suite *PLOPDataStoreTestSuite) makeRandomPlops(nport int, nprocess int, np
 					DeploymentId: deployment,
 					ClusterId:    fixtureconsts.Cluster1,
 					PodUid:       podUid,
+					Namespace:    fixtureconsts.Namespace1,
 				}
 				plops[count] = plopTCP
 				count++
@@ -2869,4 +2869,24 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePLOPsWithoutPodUIDScaleRaceCondit
 	// that number.
 	suite.GreaterOrEqual(int(plopsWithoutPodUids), totalPrunedCount/2)
 	suite.LessOrEqual(int(plopsWithoutPodUids), totalPrunedCount)
+}
+
+func (suite *PLOPDataStoreTestSuite) TestSortMany() {
+	nport := 50
+	nprocess := 50
+	npod := 50
+
+	plops := suite.makeRandomPlops(nport, nprocess, npod, fixtureconsts.Deployment1)
+	suite.addTooMany(plops)
+
+	suite.addDeployments()
+
+	startTime := time.Now()
+	newPlops, err := suite.datastore.GetProcessListeningOnPort(
+		suite.hasWriteCtx, fixtureconsts.Deployment1)
+	suite.NoError(err)
+	duration := time.Since(startTime)
+
+	fmt.Printf("Fetching %d plops took %s\n", len(newPlops), duration)
+
 }

@@ -266,13 +266,66 @@ tests:
       release: { "isInstall": true, "isUpgrade": false }
       set:
         scanner.disable: true
+    - name: "on upgrade from >= 4.8"
+      release: { "isInstall": false, "isUpgrade": true }
+      server:
+        objects:
+        # Dummy secrets to avoid the chart trying to generate them and fail due to missing CA key.
+        - apiVersion: v1
+          kind: Secret
+          metadata:
+            name: scanner-v4-db-tls
+            namespace: stackrox
+          stringData:
+            ca.pem: ""
+            cert.pem: ""
+            key.pem: ""
+        - apiVersion: v1
+          kind: Secret
+          metadata:
+            name: scanner-v4-matcher-tls
+            namespace: stackrox
+          stringData:
+            ca.pem: ""
+            cert.pem: ""
+            key.pem: ""
+        - apiVersion: v1
+          kind: Secret
+          metadata:
+            name: scanner-v4-indexer-tls
+            namespace: stackrox
+          stringData:
+            ca.pem: ""
+            cert.pem: ""
+            key.pem: ""
+      tests:
+      - name: "from 4.8"
+        server:
+          objects:
+          - apiVersion: v1
+            kind: ConfigMap
+            metadata:
+              name: stackrox-central-helm
+              namespace: stackrox
+            data:
+              installXYVersion: "4.8"
+      - name: "from 4.9"
+        server:
+          objects:
+          - apiVersion: v1
+            kind: ConfigMap
+            metadata:
+              name: stackrox-central-helm
+              namespace: stackrox
+            data:
+              installXYVersion: "4.9"
   - name: "not installed"
     expect: |
       .deployments["scanner-v4-indexer"] | assertThat(. == null)
       .deployments["scanner-v4-matcher"] | assertThat(. == null)
       .deployments["scanner-v4-db"] | assertThat(. == null)
     tests:
-    - name: "on upgrade"
+    - name: "on upgrade from pre-4.8"
       release: { "isInstall": false, "isUpgrade": true }
 
 - name: "Scanner V4 can be disabled without impacting Scanner V2"

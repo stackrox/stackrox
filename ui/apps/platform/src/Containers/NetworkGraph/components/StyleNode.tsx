@@ -26,10 +26,10 @@ import { PficonNetworkRangeIcon, ZoneIcon } from '@patternfly/react-icons';
 import useDetailsLevel from '@patternfly/react-topology/dist/esm/hooks/useDetailsLevel';
 import { SVGIconProps } from '@patternfly/react-icons/dist/esm/createIcon';
 
-import { ReactComponent as BothPolicyRules } from 'images/network-graph/both-policy-rules.svg';
-import { ReactComponent as EgressOnly } from 'images/network-graph/egress-only.svg';
-import { ReactComponent as IngressOnly } from 'images/network-graph/ingress-only.svg';
-import { ReactComponent as NoPolicyRules } from 'images/network-graph/no-policy-rules.svg';
+import BothPolicyRules from 'images/network-graph/both-policy-rules.svg?react';
+import EgressOnly from 'images/network-graph/egress-only.svg?react';
+import IngressOnly from 'images/network-graph/ingress-only.svg?react';
+import NoPolicyRules from 'images/network-graph/no-policy-rules.svg?react';
 import { ensureExhaustive } from 'utils/type.utils';
 import { NetworkPolicyState, DeploymentData, NodeDataType } from '../types/topology.type';
 

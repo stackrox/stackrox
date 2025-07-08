@@ -5,9 +5,10 @@ import { DownloadIcon } from '@patternfly/react-icons';
 
 import CodeViewer from 'Components/CodeViewer';
 import useAnalytics, { DOWNLOAD_NETWORK_POLICIES } from 'hooks/useAnalytics';
-import useURLSearch from 'hooks/useURLSearch';
 import download from 'utils/download';
 import { getPropertiesForAnalytics } from '../utils/networkGraphURLUtils';
+
+import { useSearchFilter } from '../NetworkGraphURLStateContext';
 
 type NetworkPoliciesYAMLProp = {
     yaml: string;
@@ -17,7 +18,7 @@ type NetworkPoliciesYAMLProp = {
 
 function NetworkPoliciesYAML({ yaml, style, additionalControls }: NetworkPoliciesYAMLProp) {
     const { analyticsTrack } = useAnalytics();
-    const { searchFilter } = useURLSearch();
+    const { searchFilter } = useSearchFilter();
 
     const downloadYAMLHandler = (fileName: string, fileContent: string) => () => {
         const properties = getPropertiesForAnalytics(searchFilter);

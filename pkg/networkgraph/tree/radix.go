@@ -410,6 +410,91 @@ func (t *nRadixTree) findCIDRNoLock(ipNet *net.IPNet) (*nRadixNode, error) {
 	return ret, nil
 }
 
+func validateLeavesHaveValues(node *nRadixNode) bool {
+	if node == nil {
+		return true
+	}
+
+	if node.left == nil && node.right == nil && node.value == nil {
+		return false
+	}
+
+	if node.left != nil && !validateLeavesHaveValues(node.left) {
+		return false
+	}
+
+	if node.right != nil && !validateLeavesHaveValues(node.right) {
+		return false
+	}
+
+	return true
+}
+
+func getCardinalityByValues(node *nRadixNode) int {
+	if node == nil {
+		return 0
+	}
+
+	cardinality := 0
+
+	if node.value != nil {
+		cardinality = 1
+	}
+
+	if node.left != nil {
+		cardinality += getCardinalityByValues(node.left)
+	}
+
+	if node.right != nil {
+		cardinality += getCardinalityByValues(node.right)
+	}
+
+	return cardinality
+}
+
+func (t *nRadixTree) validateCardinality() bool {
+	return getCardinalityByValues(t.root) == t.Cardinality()
+}
+
+func (t *nRadixTree) ValidateNetworkTree() bool {
+	t.lock.Lock()
+	defer t.lock.Unlock()
+
+	if t.root == nil {
+		return false
+	}
+
+	if !validateLeavesHaveValues(t.root) {
+		log.Errorf("Found a leaf without a value")
+		return false
+	}
+
+	if !t.validateCardinality() {
+		log.Errorf("Found a leaf without a value")
+		return false
+	}
+
+	return true
+}
+
+func removeRecursively(node *nRadixNode) {
+	// Do not remove the root.
+	if node.parent == nil {
+		return
+	}
+
+	parent := node.parent
+
+	if node.left == nil && node.right == nil && node.value == nil {
+		if parent.right == node {
+			parent.right = nil
+		} else {
+			parent.left = nil
+		}
+		removeRecursively(parent)
+	}
+}
+
 func (t *nRadixTree) Remove(key string) {
 	t.lock.Lock()
 	defer t.lock.Unlock()
@@ -426,8 +511,15 @@ func (t *nRadixTree) Remove(key string) {
 	}
 
 	node.value = nil
+	parent := node.parent
 	if node.left == nil && node.right == nil {
-		node = nil
+		if parent.right == node {
+			parent.right = nil
+		} else {
+			parent.left = nil
+		}
+		removeRecursively(parent)
 	}
+
 	delete(t.valueNodes, key)
 }

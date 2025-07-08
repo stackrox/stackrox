@@ -1,9 +1,8 @@
 import React from 'react';
 import { useQuery } from '@apollo/client';
-import { Divider, ToolbarItem } from '@patternfly/react-core';
-import { DropdownItem } from '@patternfly/react-core/deprecated';
+import { Divider, DropdownItem, ToolbarItem } from '@patternfly/react-core';
 
-import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
+import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 import useURLSort from 'hooks/useURLSort';
 import useURLPagination from 'hooks/useURLPagination';
 import useMap from 'hooks/useMap';
@@ -141,10 +140,12 @@ function CVEsTableContainer({
                 </ToolbarItem>
                 {canSelectRows && (
                     <ToolbarItem>
-                        <BulkActionsDropdown isDisabled={selectedCves.size === 0}>
+                        <MenuDropdown
+                            toggleText="Bulk actions"
+                            isDisabled={selectedCves.size === 0}
+                        >
                             <DropdownItem
                                 key="bulk-defer-cve"
-                                component="button"
                                 onClick={() =>
                                     showModal({
                                         type: 'DEFERRAL',
@@ -156,7 +157,6 @@ function CVEsTableContainer({
                             </DropdownItem>
                             <DropdownItem
                                 key="bulk-mark-false-positive"
-                                component="button"
                                 onClick={() =>
                                     showModal({
                                         type: 'FALSE_POSITIVE',
@@ -166,7 +166,7 @@ function CVEsTableContainer({
                             >
                                 Mark as false positives
                             </DropdownItem>
-                        </BulkActionsDropdown>
+                        </MenuDropdown>
                     </ToolbarItem>
                 )}
             </TableEntityToolbar>

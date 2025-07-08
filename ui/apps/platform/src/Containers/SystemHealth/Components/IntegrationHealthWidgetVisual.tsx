@@ -14,29 +14,29 @@ import IntegrationsHealth from './IntegrationsHealth';
 import { IntegrationMergedItem } from '../utils/integrations';
 import { ErrorIcon, healthIconMap, SpinnerIcon } from '../CardHeaderIcons';
 
-type IntegrationHealthWidgetProps = {
+type IntegrationHealthWidgetVisualProps = {
     integrationText: string;
     integrationsMerged: IntegrationMergedItem[];
     errorMessageFetching: string;
     isFetchingInitialRequest: boolean;
 };
 
-const IntegrationHealthWidget = ({
+const IntegrationHealthWidgetVisual = ({
     integrationText,
     integrationsMerged,
     errorMessageFetching,
     isFetchingInitialRequest,
-}: IntegrationHealthWidgetProps): ReactElement => {
+}: IntegrationHealthWidgetVisualProps): ReactElement => {
     const integrations = integrationsMerged.filter((integrationMergedItem) => {
         return integrationMergedItem.status === 'UNHEALTHY';
     });
-    /* eslint-disable no-nested-ternary */
+
     const icon = isFetchingInitialRequest
         ? SpinnerIcon
         : errorMessageFetching
           ? ErrorIcon
           : healthIconMap[integrations.length === 0 ? 'success' : 'danger'];
-    /* eslint-enable no-nested-ternary */
+
     const hasCount = !isFetchingInitialRequest && !errorMessageFetching;
 
     return (
@@ -81,4 +81,4 @@ const IntegrationHealthWidget = ({
     );
 };
 
-export default IntegrationHealthWidget;
+export default IntegrationHealthWidgetVisual;

@@ -38,7 +38,6 @@ function ScanConfigsPage() {
                 <Route
                     index
                     element={
-                        // eslint-disable-next-line no-nested-ternary
                         pageAction === 'create' && hasWriteAccessForCompliance ? (
                             <CreateScanConfigPage />
                         ) : !pageAction ? (

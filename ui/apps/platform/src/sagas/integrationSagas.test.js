@@ -30,9 +30,9 @@ describe('Integrations Sagas', () => {
     });
 
     it("shouldn't fetch image integrations / notifiers when location changes to violations, dashboard, etc.", () => {
-        const fetchImageIntegrationsMock = jest.fn();
-        const fetchNotifiersMock = jest.fn();
-        const fetchBackupsMock = jest.fn();
+        const fetchImageIntegrationsMock = vi.fn();
+        const fetchNotifiersMock = vi.fn();
+        const fetchBackupsMock = vi.fn();
         return expectSaga(saga)
             .provide([
                 [call(fetchIntegration, 'imageIntegrations'), dynamic(fetchImageIntegrationsMock)],

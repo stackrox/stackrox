@@ -79,13 +79,13 @@ function ViolationDetailsPage(): ReactElement {
 
     const { policy, enforcement } = alert;
     const title = policy.name || 'Unknown violation';
-    /* eslint-disable no-nested-ternary */
+
     const entityName = isResourceAlert(alert)
         ? alert.resource.clusterName
         : isDeploymentAlert(alert)
           ? alert.deployment.name
           : '';
-    /* eslint-enable no-nested-ternary */
+
     const resourceType = isResourceAlert(alert) ? alert.resource.resourceType : 'deployment';
 
     const displayedResourceType = startCase(resourceType.toLowerCase());

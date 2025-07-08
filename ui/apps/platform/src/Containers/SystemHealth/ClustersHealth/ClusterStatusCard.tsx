@@ -54,7 +54,6 @@ function ClusterStatusCard({
      * for table of countsOverall if not healthy: HEALTHY === 0 || UNHEALTHY !== 0 || DEGRADED !== 0
      */
 
-    /* eslint-disable no-nested-ternary */
     return (
         <Card isCompact>
             <ClustersHealthCardHeader
@@ -119,7 +118,6 @@ function ClusterStatusCard({
             ) : null}
         </Card>
     );
-    /* eslint-enable no-nested-ternary */
 }
 
 export default ClusterStatusCard;

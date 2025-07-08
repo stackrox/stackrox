@@ -89,7 +89,6 @@ function AdministrationEventsPage(): ReactElement {
             .catch(() => {});
     }, 60000); // 60 seconds corresponds to backend reprocessing events.
 
-    /* eslint-disable no-nested-ternary */
     return (
         <>
             <PageTitle title="Administration Events" />
@@ -139,7 +138,6 @@ function AdministrationEventsPage(): ReactElement {
             </PageSection>
         </>
     );
-    /* eslint-enable no-nested-ternary */
 }
 
 export default AdministrationEventsPage;

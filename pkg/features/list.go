@@ -101,6 +101,10 @@ var (
 	// NetworkGraphExternalIPs enables displaying external IPs in the network graph
 	NetworkGraphExternalIPs = registerFeature("Display external ips in the UI", "ROX_NETWORK_GRAPH_EXTERNAL_IPS", enabled)
 
+	// NetworkGraphAggregateExternalIPs enable aggressive aggregation of external flows in the network graph.
+	// Will aggregate to one edge per unique port/protocol/direction instead of one edge per unique IP/port/protocol/direction.
+	NetworkGraphAggregateExternalIPs = registerFeature("Aggregate all external IP graph edges, showing only unique port/protocol pairs", "ROX_NETWORK_GRAPH_AGGREGATE_EXT_IPS")
+
 	// Display RHSA/RHBA/RHEA advisory separately from associated CVE.
 	CVEAdvisorySeparation = registerFeature("Display RHSA/RHBA/RHEA advisory separately from associated CVE", "ROX_CVE_ADVISORY_SEPARATION", enabled)
 
@@ -116,11 +120,17 @@ var (
 	// Flattens CVE Data Model for improved accuracy and performance
 	FlattenCVEData = registerFeature("Uses a flattened CVE Data Model improved accuracy and performance", "ROX_FLATTEN_CVE_DATA", enabled)
 
+	// Flattens Image Data Model for improved accuracy and performance
+	FlattenImageData = registerFeature("Uses a flattened Image Data Model for improved accuracy and performance", "ROX_FLATTEN_IMAGE_DATA")
+
 	// Adds the ability to generate on-demand vulnerability reports based on filter views
 	VulnerabilityOnDemandReports = registerFeature("Adds the ability to generate on-demand vulnerability reports based on filter views", "ROX_VULNERABILITY_ON_DEMAND_REPORTS")
 
 	// Adds the ability to customize the regex rules for identifying platform components
 	CustomizablePlatformComponents = registerFeature("Adds the ability to customize the regex rules for identifying platform components", "ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS", enabled)
+
+	// Adds built-in policy to ensure that Red Hat images are signed by Red Hat Release Key
+	RedHatImagesSignedPolicy = registerFeature("Adds built-in policy to ensure that Red Hat images are signed by the Red Hat release key", "ROX_RED_HAT_IMAGES_SIGNED_POLICY", unchangeableInProd)
 )
 
 // The following feature flags are related to Scanner V4.
@@ -132,11 +142,6 @@ var (
 	//
 	// This must be set in Scanner V4 Indexer to have any effect.
 	ScannerV4ReIndex = registerFeature("Scanner V4 will re-index and delete unused manifests", "ROX_SCANNER_V4_REINDEX", enabled)
-
-	// ScannerV4MultiBundle enables Scanner V4 to consume vulnerabilities using multi-bundle archives.
-	//
-	// This must be set in Scanner V4 Matcher to have any effect.
-	ScannerV4MultiBundle = registerFeature("Enables Scanner V4 to consume vulnerabilities using multi-bundle archives", "ROX_SCANNER_V4_MULTI_BUNDLE", enabled)
 
 	// ScannerV4PartialNodeJSSupport specifies if Scanner v4 should support partial indexing/vuln matching Node.js (npm) packages.
 	// Partial support is equivalent to StackRox Scanner (Scanner v2) support: only return packages which are affected

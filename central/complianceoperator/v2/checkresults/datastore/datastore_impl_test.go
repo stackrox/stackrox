@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	checkresultsSearch "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/search"
 	checkResultsStorage "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/store/postgres"
 	"github.com/stackrox/rox/central/convert/internaltov2storage"
 	apiV1 "github.com/stackrox/rox/generated/api/v1"
@@ -452,7 +451,6 @@ type complianceCheckResultDataStoreTestSuite struct {
 	dataStore DataStore
 	storage   checkResultsStorage.Store
 	db        *pgtest.TestPostgres
-	searcher  checkresultsSearch.Searcher
 }
 
 func (s *complianceCheckResultDataStoreTestSuite) SetupSuite() {
@@ -481,9 +479,7 @@ func (s *complianceCheckResultDataStoreTestSuite) SetupTest() {
 	s.db = pgtest.ForT(s.T())
 
 	s.storage = checkResultsStorage.New(s.db)
-	configStorage := checkResultsStorage.New(s.db)
-	s.searcher = checkresultsSearch.New(configStorage)
-	s.dataStore = New(s.storage, s.db, s.searcher)
+	s.dataStore = New(s.storage, s.db)
 }
 
 func (s *complianceCheckResultDataStoreTestSuite) TestUpsertResult() {

@@ -22,15 +22,15 @@ import {
 } from '@patternfly/react-core';
 import { HelpIcon } from '@patternfly/react-icons';
 import sortBy from 'lodash/sortBy';
+import { ParsedQs } from 'qs';
 
 import PopoverBodyContent from 'Components/PopoverBodyContent';
 import usePermissions from 'hooks/usePermissions';
 import useRestQuery from 'hooks/useRestQuery';
 import useAnalytics, { GENERATE_NETWORK_POLICIES } from 'hooks/useAnalytics';
-import useURLSearch from 'hooks/useURLSearch';
 import useTabs from 'hooks/patternfly/useTabs';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
-import { getQueryObject, getQueryString } from 'utils/queryStringUtils';
+import { getQueryObject } from 'utils/queryStringUtils';
 import { fetchNetworkPoliciesByClusterId } from 'services/NetworkService';
 
 import ViewActiveYAMLs from './ViewActiveYAMLs';
@@ -52,12 +52,20 @@ import CodeCompareIcon from './CodeCompareIcon';
 import NetworkPoliciesGenerationScope from './NetworkPoliciesGenerationScope';
 import { getPropertiesForAnalytics } from '../utils/networkGraphURLUtils';
 
-// @TODO: Consider a better approach to managing the side panel related state (simulation + URL path for entities)
-export function clearSimulationQuery(search: string): string {
+import { useSearchFilter } from '../NetworkGraphURLStateContext';
+
+// @TODO: Consider a better approach to managing the side panel related state
+export function clearSidePanelQuery(search: string): ParsedQs {
     const modifiedSearchFilter = getQueryObject(search);
     delete modifiedSearchFilter.simulation;
-    const queryString = getQueryString(modifiedSearchFilter);
-    return queryString;
+    delete modifiedSearchFilter.sidePanelTabState;
+    delete modifiedSearchFilter.sidePanelToggleState;
+    delete modifiedSearchFilter.sidePanel;
+    delete modifiedSearchFilter.page;
+    delete modifiedSearchFilter.perPage;
+    delete modifiedSearchFilter.secondaryPage;
+    delete modifiedSearchFilter.secondaryPerPage;
+    return modifiedSearchFilter;
 }
 
 export type NetworkPolicySimulatorSidePanelProps = {
@@ -82,7 +90,7 @@ function NetworkPolicySimulatorSidePanel({
     scopeDeploymentCount,
 }: NetworkPolicySimulatorSidePanelProps) {
     const { analyticsTrack } = useAnalytics();
-    const { searchFilter } = useURLSearch();
+    const { searchFilter } = useSearchFilter();
 
     const { hasReadAccess } = usePermissions();
     const hasReadAccessForNotifiers = hasReadAccess('Integration');
@@ -113,12 +121,15 @@ function NetworkPolicySimulatorSidePanel({
     const { data: currentNetworkPolicies } = useRestQuery(fetchNetworkPolicies);
 
     function handleFileInputChange(_event: DropEvent, file: File) {
-        if (file && !file.name.includes('.yaml')) {
+        const fileName = file?.name.toLowerCase();
+        const isYaml = fileName?.endsWith('.yaml') || fileName?.endsWith('.yml');
+
+        if (!isYaml) {
             setNetworkPolicyModification({
                 state: 'UPLOAD',
                 options: {
                     modification: null,
-                    error: 'File must be .yaml',
+                    error: 'File must be .yaml or .yml',
                 },
             });
         } else {

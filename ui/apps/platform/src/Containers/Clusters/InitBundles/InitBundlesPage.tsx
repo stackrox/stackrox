@@ -49,7 +49,6 @@ function InitBundlesPage({ hasWriteAccessForInitBundles }: InitBundlesPageProps)
         }
     }
 
-    /* eslint-disable no-nested-ternary */
     return (
         <>
             <InitBundlesHeader headerActions={headerActions} title={titleInitBundles} />
@@ -85,7 +84,6 @@ function InitBundlesPage({ hasWriteAccessForInitBundles }: InitBundlesPageProps)
             </PageSection>
         </>
     );
-    /* eslint-enable no-nested-ternary */
 }
 
 export default InitBundlesPage;

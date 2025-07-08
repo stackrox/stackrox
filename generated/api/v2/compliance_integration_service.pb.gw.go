@@ -42,7 +42,9 @@ func request_ComplianceIntegrationService_ListComplianceIntegrations_0(ctx conte
 		protoReq RawQuery
 		metadata runtime.ServerMetadata
 	)
-	io.Copy(io.Discard, req.Body)
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
