@@ -1567,7 +1567,7 @@ type ImageCVEV2 struct {
 	// was hash index, making it btree
 	//
 	// Deprecated: Marked as deprecated in storage/cve.proto.
-	ImageId     string   `protobuf:"bytes,2,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty" sql:"fk(Image:id),index=btree"` // @gotags: sql:"fk(Image:id),index=btree"
+	ImageId     string   `protobuf:"bytes,2,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty" sql:"fk(Image:id),no-fk-constraint,index=btree"` // @gotags: sql:"fk(Image:id),no-fk-constraint,index=btree"
 	CveBaseInfo *CVEInfo `protobuf:"bytes,3,opt,name=cve_base_info,json=cveBaseInfo,proto3" json:"cve_base_info,omitempty"`
 	// cvss stores ACS preferred cvss score
 	Cvss        float32               `protobuf:"fixed32,4,opt,name=cvss,proto3" json:"cvss,omitempty" search:"CVSS,store"`                                           // @gotags: search:"CVSS,store"
@@ -1587,7 +1587,7 @@ type ImageCVEV2 struct {
 	HasFixedBy    isImageCVEV2_HasFixedBy `protobuf_oneof:"has_fixed_by"`
 	ComponentId   string                  `protobuf:"bytes,13,opt,name=component_id,json=componentId,proto3" json:"component_id,omitempty" sql:"fk(ImageComponentV2:id),index=btree"` // @gotags: sql:"fk(ImageComponentV2:id),index=btree"
 	Advisory      *Advisory               `protobuf:"bytes,14,opt,name=advisory,proto3" json:"advisory,omitempty"`
-	ImageV2Id     string                  `protobuf:"bytes,15,opt,name=image_v2_id,json=imageV2Id,proto3" json:"image_v2_id,omitempty" sql:"fk(ImageV2:id),index=btree"` // @gotags: sql:"fk(ImageV2:id),index=btree"
+	ImageV2Id     string                  `protobuf:"bytes,15,opt,name=image_v2_id,json=imageV2Id,proto3" json:"image_v2_id,omitempty" sql:"fk(ImageV2:id),no-fk-constraint,index=btree"` // @gotags: sql:"fk(ImageV2:id),no-fk-constraint,index=btree"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

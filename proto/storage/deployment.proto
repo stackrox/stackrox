@@ -64,7 +64,7 @@ message ContainerImage {
 
   bool is_cluster_local = 11;
 
-  string image_v2_id = 12; // @gotags: search:"Image ID,hidden" sql:"fk(ImageV2:id),index=btree"
+  string image_v2_id = 12; // @gotags: search:"Image ID,hidden" sql:"fk(ImageV2:id),no-fk-constraint,index=btree"
 }
 
 message Container {
