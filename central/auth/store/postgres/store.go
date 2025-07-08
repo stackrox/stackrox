@@ -239,6 +239,15 @@ func copyFromAuthMachineToMachineConfigsMappings(ctx context.Context, s pgSearch
 	return nil
 }
 
+func getDefaultSort(sortOption string, reversed bool) *v1.QuerySortOption {
+	defaultSortOption := &v1.QuerySortOption{
+		Field:    sortOption,
+		Reversed: reversed,
+	}
+
+	return defaultSortOption
+}
+
 // endregion Helper functions
 
 // region Used for testing

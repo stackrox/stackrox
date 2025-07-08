@@ -107,6 +107,100 @@ func NewGloballyScopedGenericStoreWithCache[T any, PT ClonedUnmarshaler[T]](
 	return store
 }
 
+// NewGenericStoreWithCacheAndDefaultSort returns new subStore implementation for given resource.
+// subStore implements subset of Store operations.
+func NewGenericStoreWithCacheAndDefaultSort[T any, PT ClonedUnmarshaler[T]](
+	db postgres.DB,
+	schema *walker.Schema,
+	pkGetter primaryKeyGetter[T, PT],
+	insertInto inserter[T, PT],
+	copyFromObj copier[T, PT],
+	setAcquireDBConnDuration durationTimeSetter,
+	setPostgresOperationDurationTime durationTimeSetter,
+	setCacheOperationDurationTime durationTimeSetter,
+	upsertAllowed upsertChecker[T, PT],
+	targetResource permissions.ResourceMetadata,
+	defaultSort *v1.QuerySortOption,
+) Store[T, PT] {
+	underlyingStore := NewGenericStoreWithDefaultSort[T, PT](
+		db,
+		schema,
+		pkGetter,
+		insertInto,
+		copyFromObj,
+		setAcquireDBConnDuration,
+		setPostgresOperationDurationTime,
+		upsertAllowed,
+		targetResource,
+		defaultSort,
+	)
+	store := &cachedStore[T, PT]{
+		schema:          schema,
+		pkGetter:        pkGetter,
+		targetResource:  targetResource,
+		cache:           make(map[string]PT),
+		underlyingStore: underlyingStore,
+
+		setCacheOperationDurationTime: setCacheOperationDurationTime,
+	}
+	// Initial population of the cache. Make sure it is in sync with the DB.
+	err := store.populateCache()
+	if err != nil {
+		// Failed to populate the cache, return the store connected to the DB
+		// in order to avoid serving data from a cache not consistent with
+		// the underlying database.
+		log.Errorf("Failed to populate store cache, using direct store access instead: %v", err)
+		return underlyingStore
+	}
+	return store
+}
+
+// NewGloballyScopedGenericStoreWithCacheAndDefaultSort returns new subStore implementation for given resource.
+// subStore implements subset of Store operations.
+func NewGloballyScopedGenericStoreWithCacheAndDefaultSort[T any, PT ClonedUnmarshaler[T]](
+	db postgres.DB,
+	schema *walker.Schema,
+	pkGetter primaryKeyGetter[T, PT],
+	insertInto inserter[T, PT],
+	copyFromObj copier[T, PT],
+	setAcquireDBConnDuration durationTimeSetter,
+	setPostgresOperationDurationTime durationTimeSetter,
+	setCacheOperationDurationTime durationTimeSetter,
+	targetResource permissions.ResourceMetadata,
+	defaultSort *v1.QuerySortOption,
+) Store[T, PT] {
+	underlyingStore := NewGloballyScopedGenericStoreWithDefaultSort[T, PT](
+		db,
+		schema,
+		pkGetter,
+		insertInto,
+		copyFromObj,
+		setAcquireDBConnDuration,
+		setPostgresOperationDurationTime,
+		targetResource,
+		defaultSort,
+	)
+	store := &cachedStore[T, PT]{
+		schema:          schema,
+		pkGetter:        pkGetter,
+		targetResource:  targetResource,
+		cache:           make(map[string]PT),
+		underlyingStore: underlyingStore,
+
+		setCacheOperationDurationTime: setCacheOperationDurationTime,
+	}
+	// Initial population of the cache. Make sure it is in sync with the DB.
+	err := store.populateCache()
+	if err != nil {
+		// Failed to populate the cache, return the store connected to the DB
+		// in order to avoid serving data from a cache not consistent with
+		// the underlying database.
+		log.Errorf("Failed to populate store cache, using direct store access instead: %v", err)
+		return underlyingStore
+	}
+	return store
+}
+
 // cachedStore implements subset of Store interface for resources with single ID.
 type cachedStore[T any, PT ClonedUnmarshaler[T]] struct {
 	schema                        *walker.Schema

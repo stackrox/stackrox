@@ -62,7 +62,7 @@ type Store interface {
 
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB) Store {
-	return pgSearch.NewGloballyScopedGenericStore[storeType, *storeType](
+	return pgSearch.NewGloballyScopedGenericStoreWithDefaultSort[storeType, *storeType](
 		db,
 		schema,
 		pkGetter,
@@ -71,6 +71,7 @@ func New(db postgres.DB) Store {
 		metricsSetAcquireDBConnDuration,
 		metricsSetPostgresOperationDurationTime,
 		targetResource,
+		getDefaultSort(search.Component.String(), false),
 	)
 }
 
@@ -192,6 +193,15 @@ func copyFromImageComponentV2(ctx context.Context, s pgSearch.Deleter, tx *postg
 	}
 
 	return nil
+}
+
+func getDefaultSort(sortOption string, reversed bool) *v1.QuerySortOption {
+	defaultSortOption := &v1.QuerySortOption{
+		Field:    sortOption,
+		Reversed: reversed,
+	}
+
+	return defaultSortOption
 }
 
 // endregion Helper functions

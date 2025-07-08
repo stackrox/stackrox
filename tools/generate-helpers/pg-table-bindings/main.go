@@ -102,6 +102,12 @@ type properties struct {
 
 	// Indicates the store should be mirrored in memory.
 	CachedStore bool
+
+	// Provides default sort option field
+	DefaultSortField string
+
+	// Informs to reverse the default sort option
+	ReverseDefaultSort bool
 }
 
 type parsedReference struct {
@@ -133,6 +139,8 @@ func main() {
 	c.Flags().BoolVar(&props.SingletonStore, "singleton", false, "indicates that we should just generate the singleton store")
 	c.Flags().StringSliceVar(&props.SearchScope, "search-scope", []string{}, "if set, the search is scoped to specified search categories. comma seperated of search categories")
 	c.Flags().BoolVar(&props.CachedStore, "cached-store", false, "if true, ensure the store is mirrored in a memory cache (can be dangerous on high cardinality stores, use with care)")
+	c.Flags().StringVar(&props.DefaultSortField, "default-sort", "", "if set, provides a default sort for search if one is not present")
+	c.Flags().BoolVar(&props.ReverseDefaultSort, "reverse-default-sort", false, "if true, reverses the default sort")
 	utils.Must(c.MarkFlagRequired("schema-directory"))
 
 	c.Flags().StringVar(&props.Cycle, "cycle", "", "indicates that there is a cyclical foreign key reference, should be the path to the embedded foreign key")
@@ -172,6 +180,8 @@ func main() {
 			}
 		}
 
+		defaultSort := props.DefaultSortField
+
 		var embeddedFK string
 		if props.Cycle != "" {
 			embeddedFK = props.Cycle
@@ -197,14 +207,17 @@ func main() {
 				storageType: props.Type,
 				schema:      schema,
 			},
-			"NoCopyFrom":     props.NoCopyFrom,
-			"Cycle":          embeddedFK != "",
-			"EmbeddedFK":     embeddedFK,
-			"References":     filteredReferences,
-			"SearchScope":    searchScope,
-			"RegisterSchema": !props.ConversionFuncs,
-			"FeatureFlag":    props.FeatureFlag,
-			"CachedStore":    props.CachedStore,
+			"NoCopyFrom":         props.NoCopyFrom,
+			"Cycle":              embeddedFK != "",
+			"EmbeddedFK":         embeddedFK,
+			"References":         filteredReferences,
+			"SearchScope":        searchScope,
+			"RegisterSchema":     !props.ConversionFuncs,
+			"FeatureFlag":        props.FeatureFlag,
+			"CachedStore":        props.CachedStore,
+			"DefaultSortStore":   defaultSort != "",
+			"DefaultSort":        defaultSort,
+			"ReverseDefaultSort": props.ReverseDefaultSort,
 		}
 
 		if err := common.RenderFile(templateMap, schemaTemplate, getSchemaFileName(props.SchemaDirectory, schema.Table)); err != nil {
@@ -212,7 +225,7 @@ func main() {
 		}
 
 		if props.ConversionFuncs {
-			if err := generateConverstionFuncs(schema, props.SchemaDirectory); err != nil {
+			if err := generateConversionFuncs(schema, props.SchemaDirectory); err != nil {
 				return err
 			}
 		}
@@ -242,7 +255,7 @@ func main() {
 	}
 }
 
-func generateConverstionFuncs(s *walker.Schema, dir string) error {
+func generateConversionFuncs(s *walker.Schema, dir string) error {
 	templateMap := map[string]interface{}{
 		"Schema": s,
 	}
