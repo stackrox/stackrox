@@ -249,6 +249,10 @@ func copyFromActiveComponentsActiveContextsSlices(ctx context.Context, s pgSearc
 }
 
 func getDefaultSort(sortOption string, reversed bool) *v1.QuerySortOption {
+	if sortOption == "" {
+		return nil
+	}
+
 	defaultSortOption := &v1.QuerySortOption{
 		Field:    sortOption,
 		Reversed: reversed,

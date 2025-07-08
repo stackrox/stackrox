@@ -221,6 +221,10 @@ func copyFromComplianceOperatorCheckResultV2(ctx context.Context, s pgSearch.Del
 }
 
 func getDefaultSort(sortOption string, reversed bool) *v1.QuerySortOption {
+	if sortOption == "" {
+		return nil
+	}
+
 	defaultSortOption := &v1.QuerySortOption{
 		Field:    sortOption,
 		Reversed: reversed,
