@@ -4,19 +4,26 @@ inputs:
   free-disk-space:
     description: 'Free disk space desired in GB (2025-06 ubuntu-24.04 runner starts with 20GB free and we can delete and reach 40GB)'
     required: false
-    default: 25
   gcp-account:
     description: 'Account to be used to upload tests data'
     required: true
 runs:
   using: composite
+  defaults:
+    run:
+      shell: bash
+  env:
+    default-free-disk-space: 25
   steps:
+    - name: Variable setup
+      run: |
+        echo "target_free=${{ inputs.free-disk-space || env.default-free-disk-space }}" >> $GITHUB_ENV
+
     - name: Set up gcloud CLI
       uses: 'google-github-actions/setup-gcloud@v2'
 
     - name: Shim gsutil as gcloud storage
       continue-on-error: true
-      shell: bash
       run: |
         tee -a ~/.boto <<EOF
         [GSUtil]
@@ -25,7 +32,6 @@ runs:
         gsutil version -l
 
     - name: Recover docker image cache space
-      shell: bash
       run: |
         df --si /
         printf 'Docker prune: '
@@ -34,7 +40,6 @@ runs:
 
     - name: List filesystems
       id: disk-check
-      shell: bash
       run: |
         df --si
         free=$(df -BGB --output=avail / | tail -1)
@@ -43,7 +48,6 @@ runs:
     - name: Free disk space, delete unused tools
       id: delete-unused-tools
       continue-on-error: true
-      shell: bash
       run: |
         set +e
         # preinstalled tools not used. ordered by size asc
@@ -68,8 +72,8 @@ runs:
         )
         for d in "${cleanup[@]}"; do
           free=$(df -BGB --output=avail / | tail -1)
-          if [[ ${free%GB} -ge "${{ inputs.free-disk-space }}" ]]; then
-            echo "Reached required free disk space ${{ inputs.free-disk-space }} [${free} free]."
+          if [[ ${free%GB} -ge "${{ env.target_free }}" ]]; then
+            echo "Reached requested free disk space ${{ env.target_free }} [${free} free]."
             exit 0
           fi
           if [[ -d "/mnt${d}" ]]; then
@@ -81,40 +85,38 @@ runs:
         done
         df --si /
         free=$(df -BGB --output=avail / | tail -1)
-        if [[ ${free%GB} -lt "${{ inputs.free-disk-space }}" ]]; then
-          printf "For container workflows, please mount the host /usr and /opt to allow deleting unused tools:\nvolumes:\n\t- /usr:/mnt/usr\n\t- /opt:/mnt/opt" \
-            | tee -a "$GITHUB_STEP_SUMMARY"
-          exit 1
-        fi
+        [[ ${free%GB} -ge "${{ env.target_free }}" ]]
 
     - name: Free more disk space, docker system prune
       id: delete-docker-cache
       if: steps.delete-unused-tools.outcome == 'failure'
       continue-on-error: true
-      shell: bash
       run: |
         printf 'Docker prune: '
         docker system prune --force --all
         df --si /
         free=$(df -BGB --output=avail / | tail -1)
-        [[ ${free%GB} -ge "${{ inputs.free-disk-space }}" ]]
+        [[ ${free%GB} -ge "${{ env.target_free }}" ]]
 
     - name: Verify free disk space
-      if: steps.delete-docker-cache.outcome == 'failure'
+      if: (steps.delete-docker-cache.outcome == 'failure') && \
+        (inputs.free-disk-space && true || false)  # Do not warn if default free space
       continue-on-error: true
-      shell: bash
       run: |
         free=$(df -BGB --output=avail / | tail -1)
-        echo "Failed to free requested disk space, ${{ inputs.free-disk-space }} [${free} free]." \
+        echo "Failed to free requested disk space, ${{ env.target_free }} [${free} free]." \
           | tee -a "$GITHUB_STEP_SUMMARY"
         df -BGB /
-        [[ ${free%GB} -ge "${{ inputs.free-disk-space }}" ]]
+        if [[ ! -d /opt/hostedtoolcache && ! -d /mnt/opt/hostedtoolcache ]]; then
+          printf "For container workflows, please mount the host /usr and /opt to allow deleting unused tools:\nvolumes:\n\t- /usr:/mnt/usr\n\t- /opt:/mnt/opt" \
+            | tee -a "$GITHUB_STEP_SUMMARY"
+        fi
+        [[ ${free%GB} -ge "${{ env.target_free }}" ]]
 
     - name: Ignore dubious repository ownership
       run: |
         # Prevent fatal error "detected dubious ownership in repository" from recent git.
         git config --global --add safe.directory "$(pwd)"
-      shell: bash
 
     - name: Record job info
       uses: gacts/run-and-post-run@d803f6920adc9a47eeac4cb6c93dbc2e2890c684 # v1.4.0
