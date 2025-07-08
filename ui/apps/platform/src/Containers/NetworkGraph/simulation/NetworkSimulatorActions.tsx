@@ -1,7 +1,8 @@
-import { DropdownItem, DropEvent, Split, SplitItem } from '@patternfly/react-core';
 import React from 'react';
-import UploadYAMLButton from './UploadYAMLButton';
+import { DropdownItem, DropEvent, Split, SplitItem } from '@patternfly/react-core';
+
 import MenuDropdown from 'Components/PatternFly/MenuDropdown';
+import UploadYAMLButton from './UploadYAMLButton';
 
 type NetworkSimulatorActionsProps = {
     generateNetworkPolicies: () => void;

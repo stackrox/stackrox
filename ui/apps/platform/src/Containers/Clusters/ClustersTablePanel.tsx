@@ -16,6 +16,7 @@ import {
     DropdownItem,
 } from '@patternfly/react-core';
 
+import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 import CheckboxTable from 'Components/CheckboxTable';
 import CloseButton from 'Components/CloseButton';
 import Dialog from 'Components/Dialog';
@@ -63,7 +64,6 @@ import SecureClusterModal from './InitBundles/SecureClusterModal';
 import { clusterTablePollingInterval, getUpgradeableClusters } from './cluster.helpers';
 import { getColumnsForClusters } from './clustersTableColumnDescriptors';
 import NoClustersPage from './NoClustersPage';
-import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 
 export type ClustersTablePanelProps = {
     selectedClusterId: string;
