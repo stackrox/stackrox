@@ -181,7 +181,7 @@ export function fetchDeploymentWithRisk(id: string): Promise<DeploymentWithRisk>
         .then((response) => response.data);
 }
 
-type DeploymentWithRisk = {
+export type DeploymentWithRisk = {
     deployment: Deployment;
     risk: Risk;
 };
