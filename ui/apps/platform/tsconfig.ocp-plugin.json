@@ -1,0 +1,18 @@
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "noEmit": false,
+        "outDir": "./dist/types",
+        "declaration": true,
+        "declarationMap": true,
+        "types": []
+    },
+    "include": [
+        "src/Containers/ConsolePlugin/**/*"
+    ],
+    "ts-node": {
+        "compilerOptions": {
+            "module": "commonjs"
+        }
+    }
+}
