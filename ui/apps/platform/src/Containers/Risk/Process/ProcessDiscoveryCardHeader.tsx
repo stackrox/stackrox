@@ -1,33 +1,57 @@
 import React from 'react';
-import PropTypes from 'prop-types';
-import * as Icon from 'react-feather';
-import { Tooltip } from '@patternfly/react-core';
-import { ExclamationCircleIcon } from '@patternfly/react-icons';
+import { Button, Tooltip } from '@patternfly/react-core';
+import {
+    AngleDownIcon,
+    AngleUpIcon,
+    ExclamationCircleIcon,
+    PlusIcon,
+} from '@patternfly/react-icons';
 
-import { addDeleteProcesses } from 'services/ProcessesService';
-import { getDeploymentAndProcessIdFromProcessGroup } from 'utils/processUtils';
+import usePermissions from 'hooks/usePermissions';
+import { addProcessesToBaseline } from 'services/ProcessBaselineService';
+import type { ProcessNameAndContainerNameGroup } from 'services/ProcessService';
+
+import { getClusterIdAndNamespaceFromProcessGroup } from './process.utils';
 
 const titleClassName =
     'border-b border-base-300 leading-normal cursor-pointer flex justify-between h-14';
 const headerClassName = 'hover:bg-primary-200 hover:border-primary-300';
 
-function DiscoveryCardHeader({ icon, deploymentId, process, processEpoch, setProcessEpoch }) {
+export type ProcessDiscoveryCardHeaderProps = {
+    isExpanded: boolean;
+    deploymentId: string;
+    process: ProcessNameAndContainerNameGroup;
+    processEpoch: number;
+    setProcessEpoch: (number) => void;
+};
+
+function ProcessDiscoveryCardHeader({
+    isExpanded,
+    deploymentId,
+    process,
+    processEpoch,
+    setProcessEpoch,
+}: ProcessDiscoveryCardHeaderProps) {
+    const { hasReadWriteAccess } = usePermissions();
+    const hasWriteAccessForDeploymentExtension = hasReadWriteAccess('DeploymentExtension');
+
     const { name, containerName, suspicious } = process;
 
     function addBaseline(evt) {
         evt.stopPropagation();
-        const { clusterId, namespace } = getDeploymentAndProcessIdFromProcessGroup(process);
+        const { clusterId, namespace } = getClusterIdAndNamespaceFromProcessGroup(process);
         const addProcessesQuery = {
             keys: [{ deploymentId, containerName, clusterId, namespace }],
             addElements: [{ processName: name }],
         };
-        addDeleteProcesses(addProcessesQuery).then(() => {
+        return addProcessesToBaseline(addProcessesQuery).then(() => {
             // This is so that the parent component knows that one of the child components
             // modified the state server side and knows to re-render. Updating the processEpoch
             // value is just a way of causing the parent to reload the data from the server
             // and rerender all of the children.
             setProcessEpoch(processEpoch + 1);
         });
+        // TODO catch finally?
     }
 
     const trimmedName = name.length > 48 ? `${name.substring(0, 48)}...` : name;
@@ -47,39 +71,24 @@ function DiscoveryCardHeader({ icon, deploymentId, process, processEpoch, setPro
                 <div className="text-sm">{`in container ${containerName} `}</div>
             </div>
             <div className="flex content-center">
-                {suspicious && (
+                {hasWriteAccessForDeploymentExtension && suspicious && (
                     <div className="border-l border-r flex items-center justify-center w-16">
-                        <Tooltip content="Add to baseline">
-                            <button
-                                type="button"
-                                onClick={addBaseline}
-                                className="border rounded p-px mr-3 ml-3 flex items-center"
+                        <Tooltip content="Add process to baseline">
+                            <Button
+                                variant="control"
                                 aria-label="Add process to baseline"
-                            >
-                                <Icon.Plus className="h-4 w-4" />
-                            </button>
+                                icon={<PlusIcon />}
+                                onClick={addBaseline}
+                            />
                         </Tooltip>
                     </div>
                 )}
                 <button type="button" className="pl-3 pr-3" aria-label="Expand or Collapse">
-                    {icon}
+                    {isExpanded ? <AngleUpIcon /> : <AngleDownIcon />}
                 </button>
             </div>
         </div>
     );
 }
 
-DiscoveryCardHeader.propTypes = {
-    icon: PropTypes.node.isRequired,
-    deploymentId: PropTypes.string.isRequired,
-    process: PropTypes.shape({
-        name: PropTypes.string.isRequired,
-        containerName: PropTypes.string.isRequired,
-        suspicious: PropTypes.bool.isRequired,
-        groups: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
-    }).isRequired,
-    processEpoch: PropTypes.number.isRequired,
-    setProcessEpoch: PropTypes.func.isRequired,
-};
-
-export default DiscoveryCardHeader;
+export default ProcessDiscoveryCardHeader;
