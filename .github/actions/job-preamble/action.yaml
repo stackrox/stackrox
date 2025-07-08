@@ -3,21 +3,19 @@ description: Common steps for most jobs
 inputs:
   free-disk-space:
     description: 'Free disk space desired in GB (2025-06 ubuntu-24.04 runner starts with 20GB free and we can delete and reach 40GB)'
-    required: false
+  default-free-disk-space:
+    description: 'default for free-disk-space'
+    default: 25
   gcp-account:
     description: 'Account to be used to upload tests data'
     required: true
-env:
-  default-free-disk-space: 25
 runs:
   using: composite
   steps:
     - name: Variable setup
       shell: bash
       run: |
-        target_free="${{ inputs.free-disk-space }}"
-        target_free="${target_free:-${{ env.default-free-disk-space }}}"
-        echo "target_free=${target_free}" >> $GITHUB_ENV
+        echo "target_free=${{ inputs.free-disk-space || inputs.default-free-disk-space }}" >> $GITHUB_ENV
 
     - name: Set up gcloud CLI
       uses: 'google-github-actions/setup-gcloud@v2'
