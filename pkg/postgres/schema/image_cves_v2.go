@@ -34,7 +34,7 @@ var (
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.Image":            ImagesSchema,
 			"storage.ImageComponentV2": ImageComponentV2Schema,
-			"storage.ImageV2":          ImageV2Schema,
+			"storage.ImageV2":          ImagesV2Schema,
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {

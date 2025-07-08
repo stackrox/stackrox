@@ -3,7 +3,6 @@
 package schema
 
 import (
-	"fmt"
 	"reflect"
 	"time"
 
@@ -37,13 +36,6 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ImageV2)(nil)), "images_v2")
-		referencedSchemas := map[string]*walker.Schema{
-			"storage.ImageV2": ImageV2Schema,
-		}
-
-		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
-			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
-		})
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_IMAGES_V2, "imagev2", (*storage.ImageV2)(nil)))
 		schema.SetSearchScope([]v1.SearchCategory{
 			v1.SearchCategory_IMAGE_VULNERABILITIES_V2,

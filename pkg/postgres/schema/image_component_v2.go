@@ -32,7 +32,7 @@ var (
 		schema = walker.Walk(reflect.TypeOf((*storage.ImageComponentV2)(nil)), "image_component_v2")
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.Image":   ImagesSchema,
-			"storage.ImageV2": ImageV2Schema,
+			"storage.ImageV2": ImagesV2Schema,
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
