@@ -6,9 +6,8 @@ import (
 	"sync"
 	"time"
 
-	pkgErrors "github.com/pkg/errors"
-
 	"github.com/cenkalti/backoff/v3"
+	pkgErrors "github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"

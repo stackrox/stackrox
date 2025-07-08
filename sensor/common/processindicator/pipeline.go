@@ -1,4 +1,4 @@
-package processsignal
+package processindicator
 
 import (
 	"context"
@@ -8,11 +8,13 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/channelmultiplexer"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/process/normalize"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/sensor/queue"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common"
@@ -47,12 +49,13 @@ type Pipeline struct {
 }
 
 // NewProcessPipeline defines how to process a ProcessIndicator
-func NewProcessPipeline(indicators chan *message.ExpiringMessage, clusterEntities *clusterentities.Store, processFilter filter.Filter, detector detector.Detector) *Pipeline {
+func NewProcessPipeline(clusterEntities *clusterentities.Store, processFilter filter.Filter, detector detector.Detector) *Pipeline {
 	log.Debug("Calling NewProcessPipeline")
 	msgCtx, cancelMsgCtx := context.WithCancelCause(trace.Background())
 	enricherCtx, cancelEnricherCtx := context.WithCancelCause(trace.Background())
 	en := newEnricher(enricherCtx, clusterEntities)
 	enrichedIndicators := make(chan *storage.ProcessIndicator)
+	indicators := make(chan *message.ExpiringMessage, queue.ScaleSizeOnNonDefault(env.ProcessIndicatorBufferSize))
 
 	cm := channelmultiplexer.NewMultiplexer[*storage.ProcessIndicator]()
 	cm.AddChannel(en.getEnrichedC())  // PIs that are enriched in the enricher
@@ -91,6 +94,7 @@ func (p *Pipeline) Shutdown() {
 	p.cancelEnricherCtx(errors.New("pipeline shutdown"))
 	defer func() {
 		close(p.enrichedIndicators)
+		defer close(p.indicators)
 		_ = p.enricher.Stopped().Wait()
 		_ = p.stopper.Client().Stopped().Wait()
 	}()
