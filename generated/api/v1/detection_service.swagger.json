@@ -735,6 +735,9 @@
         },
         "isClusterLocal": {
           "type": "boolean"
+        },
+        "imageV2Id": {
+          "type": "string"
         }
       },
       "title": "Next tag: 12"

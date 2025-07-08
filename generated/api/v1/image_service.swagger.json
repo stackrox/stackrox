@@ -999,6 +999,9 @@
         },
         "isClusterLocal": {
           "type": "boolean"
+        },
+        "imageV2Id": {
+          "type": "string"
         }
       },
       "title": "Next tag: 12"
@@ -1304,7 +1307,7 @@
           }
         }
       },
-      "title": "Next Tag: 19"
+      "title": "This proto is deprecated and replaced by ImageV2.\nNext Tag: 19"
     },
     "storageImageLayer": {
       "type": "object",
