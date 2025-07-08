@@ -4,7 +4,7 @@
 # - https://issues.redhat.com/browse/RHTAPBUGS-864 - deprecated-base-image-check behaves incorrectly.
 # - https://issues.redhat.com/browse/RHTAPBUGS-865 - openshift-golang-builder is not considered to be a valid base image.
 #
-FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_1.23@sha256:0a070e4a8f2698b6aba3630a49eb995ff1b0a182d0c5fa264888acf9d535f384 AS builder
+FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_golang_1.24_test@sha256:021ab8e6e4af3d1683b52ec985996f9421edb2111dc697b5781dee3c7595ae00 AS builder
 
 WORKDIR /go/src/github.com/stackrox/rox/app
 
