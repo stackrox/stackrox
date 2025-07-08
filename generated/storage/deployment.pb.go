@@ -533,7 +533,7 @@ type ContainerImage struct {
 	Name           *ImageName `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	NotPullable    bool       `protobuf:"varint,10,opt,name=not_pullable,json=notPullable,proto3" json:"not_pullable,omitempty"`
 	IsClusterLocal bool       `protobuf:"varint,11,opt,name=is_cluster_local,json=isClusterLocal,proto3" json:"is_cluster_local,omitempty"`
-	ImageV2Id      string     `protobuf:"bytes,12,opt,name=image_v2_id,json=imageV2Id,proto3" json:"image_v2_id,omitempty" search:"Image ID,hidden" sql:"fk(ImageV2:id),index=btree"` // @gotags: search:"Image ID,hidden" sql:"fk(ImageV2:id),index=btree"
+	V2Id           string     `protobuf:"bytes,12,opt,name=v2_id,json=v2Id,proto3" json:"v2_id,omitempty" search:"Image ID,hidden" sql:"fk(ImageV2:id),no-fk-constraint,index=btree"` // @gotags: search:"Image ID,hidden" sql:"fk(ImageV2:id),no-fk-constraint,index=btree"
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -597,9 +597,9 @@ func (x *ContainerImage) GetIsClusterLocal() bool {
 	return false
 }
 
-func (x *ContainerImage) GetImageV2Id() string {
+func (x *ContainerImage) GetV2Id() string {
 	if x != nil {
-		return x.ImageV2Id
+		return x.V2Id
 	}
 	return ""
 }
@@ -2058,14 +2058,14 @@ const file_storage_deployment_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a>\n" +
 	"\x10AnnotationsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01J\x04\b\x03\x10\x04J\x04\b\f\x10\rJ\x04\b\x1e\x10\x1f\"\xe3\x01\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01J\x04\b\x03\x10\x04J\x04\b\f\x10\rJ\x04\b\x1e\x10\x1f\"\xd8\x01\n" +
 	"\x0eContainerImage\x12\x12\n" +
 	"\x02id\x18\x04 \x01(\tB\x02\x18\x01R\x02id\x12&\n" +
 	"\x04name\x18\x01 \x01(\v2\x12.storage.ImageNameR\x04name\x12!\n" +
 	"\fnot_pullable\x18\n" +
 	" \x01(\bR\vnotPullable\x12(\n" +
-	"\x10is_cluster_local\x18\v \x01(\bR\x0eisClusterLocal\x12\x1e\n" +
-	"\vimage_v2_id\x18\f \x01(\tR\timageV2IdJ\x04\b\x02\x10\x03J\x04\b\x03\x10\x04J\x04\b\x05\x10\x06J\x04\b\x06\x10\aJ\x04\b\a\x10\bJ\x04\b\b\x10\tJ\x04\b\t\x10\n" +
+	"\x10is_cluster_local\x18\v \x01(\bR\x0eisClusterLocal\x12\x13\n" +
+	"\x05v2_id\x18\f \x01(\tR\x04v2IdJ\x04\b\x02\x10\x03J\x04\b\x03\x10\x04J\x04\b\x05\x10\x06J\x04\b\x06\x10\aJ\x04\b\a\x10\bJ\x04\b\b\x10\tJ\x04\b\t\x10\n" +
 	"\"\x97\x04\n" +
 	"\tContainer\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x120\n" +

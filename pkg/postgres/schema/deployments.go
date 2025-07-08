@@ -140,7 +140,7 @@ type DeploymentsContainers struct {
 	ImageNameRemote                       string          `gorm:"column:image_name_remote;type:varchar"`
 	ImageNameTag                          string          `gorm:"column:image_name_tag;type:varchar"`
 	ImageNameFullName                     string          `gorm:"column:image_name_fullname;type:varchar"`
-	ImageImageV2ID                        string          `gorm:"column:image_imagev2id;type:varchar;index:deploymentscontainers_image_imagev2id,type:btree"`
+	ImageV2ID                             string          `gorm:"column:image_v2id;type:varchar;index:deploymentscontainers_image_v2id,type:btree"`
 	SecurityContextPrivileged             bool            `gorm:"column:securitycontext_privileged;type:bool"`
 	SecurityContextDropCapabilities       *pq.StringArray `gorm:"column:securitycontext_dropcapabilities;type:text[]"`
 	SecurityContextAddCapabilities        *pq.StringArray `gorm:"column:securitycontext_addcapabilities;type:text[]"`
@@ -150,7 +150,6 @@ type DeploymentsContainers struct {
 	ResourcesMemoryMbRequest              float32         `gorm:"column:resources_memorymbrequest;type:numeric"`
 	ResourcesMemoryMbLimit                float32         `gorm:"column:resources_memorymblimit;type:numeric"`
 	DeploymentsRef                        Deployments     `gorm:"foreignKey:deployments_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
-	ImageV2Ref                            ImageV2         `gorm:"foreignKey:image_imagev2id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }
 
 // DeploymentsContainersEnvs holds the Gorm model for Postgres table `deployments_containers_envs`.

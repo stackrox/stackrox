@@ -120,7 +120,7 @@ func (m *ContainerImage) CloneVT() *ContainerImage {
 	r.Name = m.Name.CloneVT()
 	r.NotPullable = m.NotPullable
 	r.IsClusterLocal = m.IsClusterLocal
-	r.ImageV2Id = m.ImageV2Id
+	r.V2Id = m.V2Id
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -789,7 +789,7 @@ func (this *ContainerImage) EqualVT(that *ContainerImage) bool {
 	if this.IsClusterLocal != that.IsClusterLocal {
 		return false
 	}
-	if this.ImageV2Id != that.ImageV2Id {
+	if this.V2Id != that.V2Id {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -1904,10 +1904,10 @@ func (m *ContainerImage) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if len(m.ImageV2Id) > 0 {
-		i -= len(m.ImageV2Id)
-		copy(dAtA[i:], m.ImageV2Id)
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.ImageV2Id)))
+	if len(m.V2Id) > 0 {
+		i -= len(m.V2Id)
+		copy(dAtA[i:], m.V2Id)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.V2Id)))
 		i--
 		dAtA[i] = 0x62
 	}
@@ -3422,7 +3422,7 @@ func (m *ContainerImage) SizeVT() (n int) {
 	if m.IsClusterLocal {
 		n += 2
 	}
-	l = len(m.ImageV2Id)
+	l = len(m.V2Id)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
@@ -5291,7 +5291,7 @@ func (m *ContainerImage) UnmarshalVT(dAtA []byte) error {
 			m.IsClusterLocal = bool(v != 0)
 		case 12:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ImageV2Id", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field V2Id", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -5319,7 +5319,7 @@ func (m *ContainerImage) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.ImageV2Id = string(dAtA[iNdEx:postIndex])
+			m.V2Id = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -10282,7 +10282,7 @@ func (m *ContainerImage) UnmarshalVTUnsafe(dAtA []byte) error {
 			m.IsClusterLocal = bool(v != 0)
 		case 12:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ImageV2Id", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field V2Id", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -10314,7 +10314,7 @@ func (m *ContainerImage) UnmarshalVTUnsafe(dAtA []byte) error {
 			if intStringLen > 0 {
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
-			m.ImageV2Id = stringValue
+			m.V2Id = stringValue
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
