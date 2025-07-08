@@ -11,6 +11,7 @@ runs:
   using: composite
   steps:
     - name: Variable setup
+      shell: bash
       run: |
         echo "target_free=${{ inputs.free-disk-space || env.default-free-disk-space }}" >> $GITHUB_ENV
 
