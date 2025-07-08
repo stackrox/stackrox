@@ -860,12 +860,14 @@ EOT
     export DEPLOY_STACKROX_VIA_OPERATOR="true"
     # shellcheck disable=SC2030,SC2031
     export SENSOR_SCANNER_SUPPORT=true
+    # shellcheck disable=SC2030,SC2031
+    export ROX_SCANNER_V4="" # Scanner V4 enabled by default.
 
     _begin "deploy-stackrox"
 
     # Install old version of the operator & deploy StackRox.
     VERSION="${OPERATOR_VERSION_TAG}" make -C operator deploy-previous-via-olm
-    ROX_SCANNER_V4="false" _deploy_stackrox "" "${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}"
+    _deploy_stackrox "" "${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}"
 
     _begin "verify"
 
