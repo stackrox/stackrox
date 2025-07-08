@@ -41,7 +41,7 @@ func (r *progressWatchReader) Read(p []byte) (int, error) {
 		r.progressBar.IncrBy(len(p))
 	}
 
-	return count, errors.Wrap(err, "reading data")
+	return count, err //nolint:wrapcheck // we should not wrap EOF as it has special meaning and is not handled everywhere properly with errors.Is
 }
 
 func (r *progressWatchReader) Close() error {
