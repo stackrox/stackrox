@@ -67,10 +67,10 @@ type Store interface {
 
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB) Store {
-	// Use of pgSearch.NewGenericStoreWithCache can be dangerous with high cardinality stores,
+	// Use of pgSearch.NewGenericStoreWithCacheAndDefaultSort can be dangerous with high cardinality stores,
 	// and be the source of memory pressure. Think twice about the need for in-memory caching
 	// of the whole store.
-	return pgSearch.NewGenericStoreWithCache[storeType, *storeType](
+	return pgSearch.NewGenericStoreWithCacheAndDefaultSort[storeType, *storeType](
 		db,
 		schema,
 		pkGetter,
@@ -81,6 +81,7 @@ func New(db postgres.DB) Store {
 		metricsSetCacheOperationDurationTime,
 		isUpsertAllowed,
 		targetResource,
+		getDefaultSort(search.DeploymentPriority.String(), false),
 	)
 }
 
