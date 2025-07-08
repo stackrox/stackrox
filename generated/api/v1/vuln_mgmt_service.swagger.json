@@ -566,7 +566,7 @@
         "isClusterLocal": {
           "type": "boolean"
         },
-        "imageV2Id": {
+        "v2Id": {
           "type": "string"
         }
       },

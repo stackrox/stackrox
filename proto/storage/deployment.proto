@@ -53,7 +53,7 @@ message Deployment {
   bool platform_component = 35; // @gotags: search:"Platform Component"
 }
 
-// Next tag: 12
+// Next tag: 13
 message ContainerImage {
   // These tags maintain backwards compatibility with the previously embedded storage.Image
   // Tags after 10 may be used as needed
@@ -64,7 +64,7 @@ message ContainerImage {
 
   bool is_cluster_local = 11;
 
-  string image_v2_id = 12; // @gotags: search:"Image ID,hidden" sql:"fk(ImageV2:id),no-fk-constraint,index=btree"
+  string v2_id = 12; // @gotags: search:"Image ID,hidden" sql:"fk(ImageV2:id),no-fk-constraint,index=btree"
 }
 
 message Container {
