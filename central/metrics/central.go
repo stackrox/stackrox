@@ -263,6 +263,26 @@ var (
 		Name:      "signature_verification_reprocessor_duration_seconds",
 		Help:      "Duration of the signature verification reprocessor loop in seconds",
 	})
+
+	msgToSensorNotSentCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "msg_to_sensor_not_sent_count",
+		Help:      "Total messages not sent to Sensor due to errors or other reasons",
+	}, []string{"ClusterID", "type", "reason"})
+)
+
+// Reasons for a message not being sent.
+var (
+	// NotSentError indicates that an attempt was made to send the message
+	// but an error was encountered.
+	NotSentError = "error"
+	// NotSentSignal indicates that a signal prevented the message from being
+	// sent, such as a timeout.
+	NotSentSignal = "signal"
+	// NotSentSkip indicates that no attempt was made to send the message,
+	// perhaps due to prior errors.
+	NotSentSkip = "skip"
 )
 
 func startTimeToMS(t time.Time) float64 {
@@ -451,6 +471,16 @@ func IncSensorEventsDeduper(deduped bool, msg *central.MsgFromSensor) {
 // SetReprocessorDuration registers how long a reprocessing step took.
 func SetReprocessorDuration(start time.Time) {
 	reprocessorDurationGauge.Set(time.Since(start).Seconds())
+}
+
+// IncrementMsgToSensorNotSentCounter increments the count of messages not sent to Sensor due to
+// errors or other reasons.
+func IncrementMsgToSensorNotSentCounter(clusterID string, msg *central.MsgToSensor, reason string) {
+	if msg.GetMsg() == nil {
+		return
+	}
+	typ := event.GetEventTypeWithoutPrefix(msg.GetMsg())
+	msgToSensorNotSentCounter.With(prometheus.Labels{"ClusterID": clusterID, "type": typ, "reason": reason}).Inc()
 }
 
 // SetSignatureVerificationReprocessorDuration registers how long a signature verification reprocessing step took.
