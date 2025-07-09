@@ -460,6 +460,79 @@ func (t *nRadixTree) validateCardinality() bool {
 	return getCardinalityByValues(t.root) == t.Cardinality()
 }
 
+func cloneIPNet(ipNet *net.IPNet) *net.IPNet {
+    ip := make(net.IP, len(ipNet.IP))
+    copy(ip, ipNet.IP)
+
+    mask := make(net.IPMask, len(ipNet.Mask))
+    copy(mask, ipNet.Mask)
+
+    return &net.IPNet{
+        IP:   ip,
+        Mask: mask,
+    }
+}
+
+func compareValueIpNet(value *storage.NetworkEntityInfo, ipNet *net.IPNet) bool {
+	valueCidr := value.GetExternalSource().GetCidr()
+	ipNetCidr := ipNet.String()
+	return valueCidr == ipNetCidr
+}
+
+func validateValuesRecursive(ipNet *net.IPNet, octetIdx int, bit byte, node *nRadixNode) bool {
+	if node.value != nil {
+		if !compareValueIpNet(node.value, ipNet) {
+			return false
+		}
+	}
+
+	if octetIdx >= len(ipNet.IP) && node.value == nil {
+		return false
+	}
+
+	newBit := bit >> 1
+	newOctetIdx := octetIdx
+	if newBit == 0 {
+		newOctetIdx = octetIdx + 1
+		newBit = byte(0x80)
+	}
+
+	if node.right != nil {
+		newIpNet := cloneIPNet(ipNet)
+		newIpNet.IP[octetIdx] |= bit
+		newIpNet.Mask[octetIdx] |= bit
+		valid := validateValuesRecursive(newIpNet, newOctetIdx, newBit, node.right)
+		if !valid {
+			return false
+		}
+	}
+
+	if node.left != nil {
+		newIpNet := cloneIPNet(ipNet)
+		newIpNet.Mask[octetIdx] |= bit
+		valid := validateValuesRecursive(newIpNet, newOctetIdx, newBit, node.left)
+		if !valid {
+			return false
+		}
+	}
+
+	return true
+}
+
+func (t *nRadixTree) validateValues() bool {
+	ip := make(net.IP, 4)
+	mask := make(net.IPMask, 4)
+
+	ipNet := &net.IPNet{
+		IP:	ip,
+		Mask: mask,
+	}
+
+	octetIdx := 0
+	bit := byte(0x80)
+	return validateValuesRecursive(ipNet, octetIdx, bit, t.root)
+}
+
 func (t *nRadixTree) ValidateNetworkTree() bool {
 	t.lock.Lock()
 	defer t.lock.Unlock()
@@ -474,7 +547,12 @@ func (t *nRadixTree) ValidateNetworkTree() bool {
 	}
 
 	if !t.validateCardinality() {
-		log.Errorf("Found a leaf without a value")
+		log.Errorf("The number of values in the tree doesn't match the number of keys")
+		return false
+	}
+
+	if !t.validateValues() {
+		log.Errorf("Values do not match tree path")
 		return false
 	}
 
