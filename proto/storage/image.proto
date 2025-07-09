@@ -48,7 +48,6 @@ message Image {
     float top_cvss = 13; // @gotags: search:"Image Top CVSS,store"
   }
 
-
   enum Note {
     MISSING_METADATA = 0;
     MISSING_SCAN_DATA = 1;
