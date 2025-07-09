@@ -97,6 +97,8 @@ spec:
           value: {{ ._rox.centralEndpoint }}
         - name: ROX_HELM_CLUSTER_CONFIG_FP
           value: {{ quote ._rox._configFP }}
+        - name: GRPC_ENFORCE_ALPN_ENABLED
+          value: {{ quote ._rox.env.grpcEnforceALPN }}
         {{- if ._rox._scannerV4Enabled }}
         - name: ROX_SCANNER_V4
           value: "true"
@@ -202,6 +204,8 @@ spec:
           value: {{ ._rox.centralEndpoint }}
         - name: ROX_ADVERTISED_ENDPOINT
           value: {{ ._rox.sensor.endpoint }}
+        - name: GRPC_ENFORCE_ALPN_ENABLED
+          value: {{ quote ._rox.env.grpcEnforceALPN }}
         {{- if ._rox.env.openshift }}
         - name: ROX_OPENSHIFT_API
           value: "true"
