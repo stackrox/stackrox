@@ -76,19 +76,19 @@ function go_build() (
   [[ -n "$GOOS" ]] || die "GOOS must be set"
   [[ -n "$GOARCH" ]] || die "GOARCH must be set"
 
+  dirs=()
   for main_srcdir in "$@"; do
-    if ! [[ "${main_srcdir}" =~ ^\.?/ ]]; then
-      main_srcdir="./${main_srcdir}"
+    if ! [[ "$main_srcdir" =~ ^\.?/ ]]; then
+      main_srcdir="./$main_srcdir"
     fi
-    bin_name="$(basename "$main_srcdir")"
-    output_file="bin/${GOOS}_${GOARCH}/${bin_name}"
-    if [[ "$GOOS" == "windows" ]]; then
-      output_file="${output_file}.exe"
-    fi
-    mkdir -p "$(dirname "$output_file")"
-    echo >&2 "Compiling Go source in ${main_srcdir} to ${output_file}"
-    invoke_go_build -o "$output_file" "$main_srcdir"
+    dirs+=("$main_srcdir")
   done
+
+  output="bin/${GOOS}_${GOARCH}"
+  mkdir -p "$output"
+
+  echo >&2 "Compiling Go source in ${dirs[*]} to ${output}"
+  invoke_go_build -o "$output" "${dirs[@]}"
 )
 
 function go_build_file() {

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/quay/claircore/pkg/ctxlock"
+	"github.com/quay/claircore/pkg/ctxlock/v2"
 	"github.com/stackrox/rox/scanner/datastore/postgres"
 	"github.com/stackrox/rox/scanner/matcher/updater/vuln"
 )

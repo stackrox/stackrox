@@ -10,7 +10,8 @@ spec:
   restartPolicy: Never
   containers:
   - name: run
-    image: registry.access.redhat.com/ubi9/ubi-minimal:latest
+    # PREFETCH-THIS-IMAGE <-- a CI script looks for this marker
+    image: registry.access.redhat.com/ubi9/ubi-minimal:latest@sha256:383329bf9c4f968e87e85d30ba3a5cb988a3bbde28b8e4932dcd3a025fd9c98c
     args:
     - bash
     - "-c"

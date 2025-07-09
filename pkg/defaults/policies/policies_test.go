@@ -20,9 +20,7 @@ func Test_DefaultPolicies_FilterByFeatureFlag(t *testing.T) {
 
 	// This is required here to be able to check if the policy is present in the final list of default policies
 	// since the feature flag filtering is done by filename other than policy name.
-	fileToPolicyName := map[string]string{
-		"deployment_has_ingress_network_policy.json": "Deployments should have at least one ingress Network Policy",
-	}
+	fileToPolicyName := map[string]string{}
 
 	for filename, ff := range featureFlagFileGuard {
 		t.Setenv(ff.EnvVar(), "false")

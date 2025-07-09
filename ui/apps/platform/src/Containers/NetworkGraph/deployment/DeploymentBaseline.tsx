@@ -19,6 +19,7 @@ import {
 import { HelpIcon } from '@patternfly/react-icons';
 
 import download from 'utils/download';
+import usePermissions from 'hooks/usePermissions';
 import { Deployment } from 'types/deployment.proto';
 import { NetworkPolicyModification } from 'types/networkPolicy.proto';
 import { AdvancedFlowsFilterType } from '../common/AdvancedFlowsFilter/types';
@@ -37,13 +38,16 @@ import useModifyBaselineStatuses from '../api/useModifyBaselineStatuses';
 import useToggleAlertingOnBaselineViolation from '../api/useToggleAlertingOnBaselineViolation';
 import useFetchBaselineNetworkPolicy from '../api/useFetchBaselineNetworkPolicy';
 
-type DeploymentBaselinesProps = {
+type DeploymentBaselineProps = {
     deployment: Deployment;
     deploymentId: string;
     onNodeSelect: (id: string) => void;
 };
 
-function DeploymentBaselines({ deployment, deploymentId, onNodeSelect }: DeploymentBaselinesProps) {
+function DeploymentBaseline({ deployment, deploymentId, onNodeSelect }: DeploymentBaselineProps) {
+    const { hasReadWriteAccess } = usePermissions();
+    const hasWriteAccessForActions = hasReadWriteAccess('DeploymentExtension');
+
     // component state
     const [isExcludingPortsAndProtocols, setIsExcludingPortsAndProtocols] =
         React.useState<boolean>(false);
@@ -208,15 +212,17 @@ function DeploymentBaselines({ deployment, deploymentId, onNodeSelect }: Deploym
                             <ToolbarItem>
                                 <FlowsTableHeaderText type="baseline" numFlows={numBaselines} />
                             </ToolbarItem>
-                            <ToolbarItem align={{ default: 'alignRight' }}>
-                                <FlowsBulkActions
-                                    type="baseline"
-                                    selectedRows={selectedRows}
-                                    onClearSelectedRows={() => setSelectedRows([])}
-                                    markSelectedAsAnomalous={markSelectedAsAnomalous}
-                                    addSelectedToBaseline={addSelectedToBaseline}
-                                />
-                            </ToolbarItem>
+                            {hasWriteAccessForActions && (
+                                <ToolbarItem align={{ default: 'alignRight' }}>
+                                    <FlowsBulkActions
+                                        type="baseline"
+                                        selectedRows={selectedRows}
+                                        onClearSelectedRows={() => setSelectedRows([])}
+                                        markSelectedAsAnomalous={markSelectedAsAnomalous}
+                                        addSelectedToBaseline={addSelectedToBaseline}
+                                    />
+                                </ToolbarItem>
+                            )}
                         </ToolbarContent>
                     </Toolbar>
                 </StackItem>
@@ -231,7 +237,7 @@ function DeploymentBaselines({ deployment, deploymentId, onNodeSelect }: Deploym
                         setSelectedRows={setSelectedRows}
                         addToBaseline={addToBaseline}
                         markAsAnomalous={markAsAnomalous}
-                        isEditable
+                        isEditable={hasWriteAccessForActions}
                         onSelectFlow={onSelectFlow}
                     />
                 </StackItem>
@@ -267,4 +273,4 @@ function DeploymentBaselines({ deployment, deploymentId, onNodeSelect }: Deploym
     );
 }
 
-export default DeploymentBaselines;
+export default DeploymentBaseline;

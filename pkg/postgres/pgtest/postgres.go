@@ -16,7 +16,6 @@ import (
 	"github.com/stackrox/rox/pkg/random"
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
-	"k8s.io/utils/env"
 )
 
 const (
@@ -161,7 +160,11 @@ func (tp *TestPostgres) teardown(t testing.TB) {
 
 // GetConnectionString returns a connection string for integration testing with Postgres
 func GetConnectionString(t testing.TB) string {
-	return conn.GetConnectionStringWithDatabaseName(t, env.GetString("POSTGRES_DB", defaultDatabaseName))
+	database := CreateADatabaseForT(t)
+	t.Cleanup(func() {
+		DropDatabase(t, database)
+	})
+	return conn.GetConnectionStringWithDatabaseName(t, database)
 }
 
 // GetConnectionStringWithDatabaseName returns a connection string for integration testing with Postgres

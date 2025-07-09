@@ -17,10 +17,7 @@ import pluralize from 'pluralize';
 
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
-import { TimeWindow } from 'constants/timeWindows';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
-import { UseURLPaginationResult } from 'hooks/useURLPagination';
-import { UseUrlSearchReturn } from 'hooks/useURLSearch';
 import { markNetworkBaselineStatuses } from 'services/NetworkService';
 import { NetworkBaselinePeerStatus, PeerStatus } from 'types/networkBaseline.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
@@ -31,6 +28,12 @@ import { FlowBulkDropdown } from '../components/FlowBulkDropdown';
 import { FlowTable } from '../components/FlowTable';
 import { useNetworkBaselineStatus } from '../hooks/useNetworkBaselineStatus';
 import { EXTERNAL_SOURCE_ADDRESS_QUERY } from '../NetworkGraph.constants';
+import {
+    usePagination,
+    usePaginationSecondary,
+    useSearchFilterSidePanel,
+    useTimeWindow,
+} from '../NetworkGraphURLStateContext';
 import { getFlowKey } from '../utils/flowUtils';
 
 function getUniquePendingFlows(flows: NetworkBaselinePeerStatus[]) {
@@ -60,10 +63,6 @@ function getUniquePendingFlows(flows: NetworkBaselinePeerStatus[]) {
 
 type ExternalFlowsProps = {
     deploymentId: string;
-    timeWindow: TimeWindow;
-    anomalousUrlPagination: UseURLPaginationResult;
-    baselineUrlPagination: UseURLPaginationResult;
-    urlSearchFiltering: UseUrlSearchReturn;
 };
 
 type PendingStatusChange = {
@@ -74,26 +73,27 @@ type PendingStatusChange = {
     uniqueFlows: ReturnType<typeof getUniquePendingFlows>;
 };
 
-function ExternalFlows({
-    deploymentId,
-    timeWindow,
-    anomalousUrlPagination,
-    baselineUrlPagination,
-    urlSearchFiltering,
-}: ExternalFlowsProps) {
-    const { searchFilter, setSearchFilter } = urlSearchFiltering;
+function ExternalFlows({ deploymentId }: ExternalFlowsProps) {
+    const { searchFilter, setSearchFilter } = useSearchFilterSidePanel();
+    const { timeWindow } = useTimeWindow();
+
+    const anomalousPagination = usePagination();
+    const baselinePagination = usePaginationSecondary();
+
+    const { setPage: setPageAnomalous } = anomalousPagination;
+    const { setPage: setPageBaseline } = baselinePagination;
 
     const anomalous = useNetworkBaselineStatus(
         deploymentId,
         timeWindow,
-        anomalousUrlPagination,
+        anomalousPagination,
         searchFilter,
         'ANOMALOUS'
     );
     const baseline = useNetworkBaselineStatus(
         deploymentId,
         timeWindow,
-        baselineUrlPagination,
+        baselinePagination,
         searchFilter,
         'BASELINE'
     );
@@ -107,9 +107,6 @@ function ExternalFlows({
     const [pendingStatusChange, setPendingStatusChange] = useState<PendingStatusChange | null>(
         null
     );
-
-    const { setPage: setPageAnomalous } = anomalousUrlPagination;
-    const { setPage: setPageBaseline } = baselineUrlPagination;
 
     useEffect(() => {
         setPageAnomalous(1);
@@ -308,7 +305,6 @@ function ExternalFlows({
                                     statusType="ANOMALOUS"
                                     tableState={anomalous.tableState}
                                     areAllRowsSelected={areAllPageAnomalousSelected}
-                                    urlSearchFiltering={urlSearchFiltering}
                                     onSelectAll={selectAllAnomalousFlows}
                                     isFlowSelected={isFlowSelected}
                                     onRowSelect={onSelectFlow}
@@ -363,7 +359,6 @@ function ExternalFlows({
                                     statusType="BASELINE"
                                     tableState={baseline.tableState}
                                     areAllRowsSelected={areAllPageBaselineSelected}
-                                    urlSearchFiltering={urlSearchFiltering}
                                     onSelectAll={selectAllBaselineFlows}
                                     isFlowSelected={isFlowSelected}
                                     onRowSelect={onSelectFlow}

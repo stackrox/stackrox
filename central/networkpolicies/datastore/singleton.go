@@ -2,7 +2,6 @@ package store
 
 import (
 	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/search"
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/store/postgres"
 	undoPGStore "github.com/stackrox/rox/central/networkpolicies/datastore/internal/undodeploymentstore/postgres"
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/undostore"
@@ -18,9 +17,8 @@ var (
 func initialize() {
 	undoDeploymentStorage := undoPGStore.New(globaldb.GetPostgres())
 	networkPolicyStorage := postgres.New(globaldb.GetPostgres())
-	networkPolicySearcher := search.New(networkPolicyStorage)
 
-	as = New(networkPolicyStorage, networkPolicySearcher, undostore.Singleton(), undoDeploymentStorage)
+	as = New(networkPolicyStorage, undostore.Singleton(), undoDeploymentStorage)
 }
 
 // Singleton provides the interface for non-service external interaction.

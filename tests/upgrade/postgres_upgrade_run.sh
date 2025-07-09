@@ -96,11 +96,10 @@ test_upgrade_path() {
     deploy_earlier_postgres_central
     wait_for_api
     setup_client_TLS_certs
-    export_central_cert
 
     # It's damn fiddly, restore is needed because later test will search for a
     # default secured cluster, created by it :(
-    restore_4_1_backup
+    restore_4_6_backup
     wait_for_api
 
     # Run with some scale to have data populated to migrate
@@ -211,11 +210,10 @@ test_not_enough_disk_space() {
     unset PVC_SIZE
     wait_for_api
     setup_client_TLS_certs
-    export_central_cert
 
     # It's damn fiddly, restore is needed because later test will search for a
     # default secured cluster, created by it :(
-    restore_4_1_backup
+    restore_4_6_backup
     wait_for_api
 
     # Do not apply scaled workload to control disk space, do fallocate instead

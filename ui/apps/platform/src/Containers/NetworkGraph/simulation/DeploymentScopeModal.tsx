@@ -14,9 +14,10 @@ import { Table, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
 import { gql, useQuery } from '@apollo/client';
 
 import EmptyStateTemplate from 'Components/EmptyStateTemplate';
-import useTableSort from 'hooks/patternfly/useTableSort';
-import { SearchFilter } from 'types/search';
+import useTableSort from 'hooks/useTableSort';
 import { getPaginationParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+
+import { useSearchFilter } from '../NetworkGraphURLStateContext';
 
 const deploymentQuery = gql`
     query getDeploymentsForPolicyGeneration($query: String!, $pagination: Pagination!) {
@@ -32,14 +33,12 @@ const sortFields = ['Deployment', 'Namespace'];
 const defaultSortOption = { field: 'Deployment', direction: 'asc' } as const;
 
 export type DeploymentScopeModalProps = {
-    searchFilter: SearchFilter;
     scopeDeploymentCount: number;
     isOpen: boolean;
     onClose: () => void;
 };
 
 function DeploymentScopeModal({
-    searchFilter,
     scopeDeploymentCount,
     isOpen,
     onClose,
@@ -47,6 +46,8 @@ function DeploymentScopeModal({
     const { sortOption, getSortParams } = useTableSort({ sortFields, defaultSortOption });
     const [page, setPage] = useState(1);
     const [perPage, setPerPage] = useState(20);
+
+    const { searchFilter } = useSearchFilter();
 
     const options = {
         skip: !isOpen,

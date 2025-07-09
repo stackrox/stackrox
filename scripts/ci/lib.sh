@@ -154,10 +154,8 @@ get_central_debug_dump() {
 
     require_environment "API_ENDPOINT"
     require_environment "ROX_ADMIN_PASSWORD"
-    # TODO(PR#15173): Temporarily reset the server name to fix CI:
-    roxctl -s "" -e "${API_ENDPOINT}" \
-        central debug dump --output-dir "${output_dir}" \
-        --insecure-skip-tls-verify
+    roxctl -e "${API_ENDPOINT}" --ca "" --insecure-skip-tls-verify \
+        central debug dump --output-dir "${output_dir}"
     ls -l "${output_dir}"
 }
 
@@ -217,10 +215,8 @@ get_central_diagnostics() {
 
     require_environment "API_ENDPOINT"
     require_environment "ROX_ADMIN_PASSWORD"
-    # TODO(PR#15173): Temporarily reset the server name to fix CI:
-    roxctl -s "" -e "${API_ENDPOINT}" \
-        central debug download-diagnostics --output-dir "${output_dir}" \
-        --insecure-skip-tls-verify
+    roxctl -e "${API_ENDPOINT}" --ca "" --insecure-skip-tls-verify \
+        central debug download-diagnostics --output-dir "${output_dir}"
     ls -l "${output_dir}"
 }
 
@@ -534,6 +530,9 @@ image_prefetcher_system_start() {
 }
 
 _image_prefetcher_prebuilt_start() {
+    # NOTE: when changing this function, make corresponding changes to
+    # _image_prefetcher_prebuilt_await
+
     case "$CI_JOB_NAME" in
     *qa-e2e-tests)
         image_prefetcher_start_set qa-e2e
@@ -542,7 +541,10 @@ _image_prefetcher_prebuilt_start() {
         # prefect list stays up to date with additions.
         ci_export "IMAGE_PULL_POLICY_FOR_QUAY_IO" "Never"
         ;;
-    # TODO(ROX-20508): for operaror-e2e jobs, pre-fetch images of the release from which operator upgrade test starts.
+    *-operator-e2e-tests)
+        image_prefetcher_start_set operator-e2e
+        # TODO(ROX-20508): pre-fetch images of the release from which operator upgrade test starts as well.
+        ;;
     *)
         info "No pre-built image prefetching is currently performed for: ${CI_JOB_NAME}."
         ;;
@@ -550,6 +552,9 @@ _image_prefetcher_prebuilt_start() {
 }
 
 _image_prefetcher_system_start() {
+    # NOTE: when changing this function, make corresponding changes to
+    # _image_prefetcher_system_await
+
     case "$CI_JOB_NAME" in
     # ROX-24818: GKE is excluded from system image prefetch as it causes
     # flakes in test.
@@ -650,7 +655,10 @@ _image_prefetcher_prebuilt_await() {
     *qa-e2e-tests)
         image_prefetcher_await_set qa-e2e
         ;;
-    # TODO(ROX-20508): for operaror-e2e jobs, pre-fetch images of the release from which operator upgrade test starts.
+    *-operator-e2e-tests)
+        image_prefetcher_await_set operator-e2e
+        # TODO(ROX-20508): pre-fetch images of the release from which operator upgrade test starts as well.
+        ;;
     *)
         info "No pre-built image prefetching is currently performed for: ${CI_JOB_NAME}. Nothing to wait for."
         ;;
@@ -792,6 +800,10 @@ populate_prefetcher_image_list() {
         # convert format from "basename tag" to "quay.io/.../basename:tag" expected by pre-fetcher
         awk '{print "quay.io/rhacs-eng/" $1 ":" $2}' "$image_tag_list" > "$image_list"
         rm -f "$image_tag_list"
+        ;;
+    operator-e2e)
+        # shellcheck disable=SC2046
+        grep PREFETCH-THIS-IMAGE -h -A 1 $(find operator/tests/ -type f) | awk '$1 == "image:" {print $2}' | sort -u > "$image_list"
         ;;
     qa-e2e)
         cp "$SCRIPTS_ROOT/qa-tests-backend/scripts/images-to-prefetch.txt" "$image_list"

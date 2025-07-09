@@ -120,6 +120,28 @@ func startMockDefinitionsStackRoxIO(t *testing.T) string {
 	return srv.URL
 }
 
+// startBrokenMockDefinitionsStackRoxIO mocks definitions.stackrox.io but always
+// returns an error.
+func startBrokenMockDefinitionsStackRoxIO(t *testing.T) string {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+		}
+
+		w.WriteHeader(http.StatusNotFound)
+	}))
+
+	// Replace definitions.stackrox.io with the mock server.
+	originalURL := scannerUpdateBaseURL
+	scannerUpdateBaseURL, _ = url.Parse(srv.URL)
+	t.Cleanup(func() {
+		srv.Close()
+		// Revert URL change.
+		scannerUpdateBaseURL = originalURL
+	})
+	return srv.URL
+}
+
 // mustCreateV2Bundle creates a ZIP file mimicking a Scanner v2 diff.zip.
 // This ZIP contains at least one file called manifest.json.
 func mustCreateV2Bundle(t *testing.T) *bytes.Buffer {

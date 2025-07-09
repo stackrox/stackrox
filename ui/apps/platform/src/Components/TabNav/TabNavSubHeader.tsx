@@ -11,9 +11,7 @@ function TabNavSubHeader({ description, actions }: TabNavSubHeaderProps) {
         <PageSection variant="light" className="pf-v5-u-py-0">
             <Toolbar inset={{ default: 'insetNone' }}>
                 <ToolbarContent>
-                    <ToolbarItem alignSelf="center">
-                        <div className="pf-v5-u-font-size-sm">{description}</div>
-                    </ToolbarItem>
+                    <ToolbarItem alignSelf="center">{description}</ToolbarItem>
                     <ToolbarItem align={{ default: 'alignRight' }}>
                         <Flex>{actions}</Flex>
                     </ToolbarItem>

@@ -71,7 +71,7 @@ func (cmd *centralCertCommand) certs() error {
 	}
 	ctx, cancel := context.WithTimeout(pkgCommon.Context(), cmd.timeout)
 	defer cancel()
-	conn, err := tlsutils.DialContext(ctx, "tcp", endpoint, &config)
+	conn, err := tlsutils.DialContextWithRetries(ctx, "tcp", endpoint, &config)
 	if err != nil {
 		return err
 	}

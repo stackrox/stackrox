@@ -8,6 +8,7 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 	clusterUtil "github.com/stackrox/rox/central/cluster/util"
 	"github.com/stackrox/rox/central/image/datastore"
 	iiStore "github.com/stackrox/rox/central/imageintegration/store"
@@ -27,6 +28,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	images "github.com/stackrox/rox/pkg/images"
 	"github.com/stackrox/rox/pkg/images/cache"
 	"github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/images/types"
@@ -86,6 +88,11 @@ var (
 	reprocessInterval = env.ReprocessInterval.DurationSetting()
 
 	delegateScanPermissions = []string{"Image"}
+
+	imageScanMetricsLabel = prometheus.Labels{
+		"subsystem":     "central",
+		"entity":        "central-image-scan-service",
+		"requestedFrom": "n/a"}
 )
 
 // serviceImpl provides APIs for alerts.
@@ -224,7 +231,7 @@ func internalScanRespFromImage(img *storage.Image) *v1.ScanImageInternalResponse
 
 func (s *serviceImpl) saveImage(img *storage.Image) error {
 	if err := s.riskManager.CalculateRiskAndUpsertImage(img); err != nil {
-		log.Errorw("Error upserting image", logging.ImageName(img.GetName().GetFullName()), logging.Err(err))
+		log.Errorw("Error upserting image", logging.ImageName(img.GetName().GetFullName()), logging.ImageID(img.GetId()), logging.Err(err))
 		return err
 	}
 	return nil
@@ -242,7 +249,10 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 		)
 		return nil, err
 	}
-	defer s.internalScanSemaphore.Release(1)
+	defer func() {
+		s.internalScanSemaphore.Release(1)
+		images.ScanSemaphoreHoldingSize.With(imageScanMetricsLabel).Dec()
+	}()
 
 	var (
 		img       *storage.Image
@@ -456,7 +466,10 @@ func (s *serviceImpl) GetImageVulnerabilitiesInternal(ctx context.Context, reque
 		)
 		return nil, err
 	}
-	defer s.internalScanSemaphore.Release(1)
+	defer func() {
+		s.internalScanSemaphore.Release(1)
+		images.ScanSemaphoreHoldingSize.With(imageScanMetricsLabel).Dec()
+	}()
 
 	imgID := request.GetImageId()
 
@@ -499,6 +512,8 @@ func (s *serviceImpl) GetImageVulnerabilitiesInternal(ctx context.Context, reque
 func (s *serviceImpl) acquireScanSemaphore(ctx context.Context) error {
 	semaphoreCtx, cancel := context.WithTimeout(ctx, maxSemaphoreWaitTime)
 	defer cancel()
+	images.ScanSemaphoreQueueSize.With(imageScanMetricsLabel).Inc()
+	defer images.ScanSemaphoreQueueSize.With(imageScanMetricsLabel).Dec()
 	if err := s.internalScanSemaphore.Acquire(semaphoreCtx, 1); err != nil {
 		wrappedErr := errors.Wrap(err, "acquiring scan semaphore")
 
@@ -520,6 +535,7 @@ func (s *serviceImpl) acquireScanSemaphore(ctx context.Context) error {
 		}
 		return s.Err()
 	}
+	images.ScanSemaphoreHoldingSize.With(imageScanMetricsLabel).Inc()
 	return nil
 }
 
@@ -535,8 +551,10 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 		)
 		return nil, err
 	}
-
-	defer s.internalScanSemaphore.Release(1)
+	defer func() {
+		s.internalScanSemaphore.Release(1)
+		images.ScanSemaphoreHoldingSize.With(imageScanMetricsLabel).Dec()
+	}()
 
 	imgID := request.GetImageId()
 	var hasErrors bool

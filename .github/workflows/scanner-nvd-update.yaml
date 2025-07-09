@@ -156,7 +156,7 @@ jobs:
       - upload-nvd-feeds
       - upload-nvd-api
     runs-on: ubuntu-latest
-    if: failure()
+    if: ${{ failure() && github.ref_name == 'master' }}
     steps:
     - name: Send Slack notification on workflow failure
       run: |
