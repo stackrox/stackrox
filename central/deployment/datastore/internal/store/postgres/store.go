@@ -81,7 +81,7 @@ func New(db postgres.DB) Store {
 		metricsSetCacheOperationDurationTime,
 		isUpsertAllowed,
 		targetResource,
-		getDefaultSort(search.DeploymentPriority.String(), false),
+		pgSearch.GetDefaultSort(search.DeploymentPriority.String(), false),
 	)
 }
 
