@@ -119,7 +119,7 @@ runs:
           | tee -a "$GITHUB_STEP_SUMMARY"
         df -BGB /
         if [[ ! -d /opt/hostedtoolcache && ! -d /mnt/opt/hostedtoolcache ]]; then
-          printf "For container workflows, please mount the host /usr and /opt to allow deleting unused tools:\n```\nvolumes:\n\t- /usr:/mnt/usr\n\t- /opt:/mnt/opt\n```" \
+          printf 'For container workflows, please mount the host /usr and /opt to allow deleting unused tools:\n```\nvolumes:\n\t- /usr:/mnt/usr\n\t- /opt:/mnt/opt\n```' \
             | tee -a "$GITHUB_STEP_SUMMARY"
         fi
         [[ ${free%GB} -ge "${{ env.target_free }}" ]]
