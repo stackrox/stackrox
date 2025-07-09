@@ -62,7 +62,7 @@ type Store interface {
 
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB) Store {
-	return pgSearch.NewGloballyScopedGenericStore[storeType, *storeType](
+	return pgSearch.NewGloballyScopedGenericStoreWithDefaultSort[storeType, *storeType](
 		db,
 		schema,
 		pkGetter,
@@ -71,6 +71,7 @@ func New(db postgres.DB) Store {
 		metricsSetAcquireDBConnDuration,
 		metricsSetPostgresOperationDurationTime,
 		targetResource,
+		pgSearch.GetDefaultSort(search.Component.String(), false),
 	)
 }
 

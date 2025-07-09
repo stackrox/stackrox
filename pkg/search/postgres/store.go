@@ -91,6 +91,7 @@ type genericStore[T any, PT ClonedUnmarshaler[T]] struct {
 	setPostgresOperationDurationTime durationTimeSetter
 	upsertAllowed                    upsertChecker[T, PT]
 	targetResource                   permissions.ResourceMetadata
+	defaultSort                      *v1.QuerySortOption
 }
 
 // NewGenericStore returns new subStore implementation for given resource.
@@ -164,6 +165,81 @@ func NewGloballyScopedGenericStore[T any, PT ClonedUnmarshaler[T]](
 	}
 }
 
+// NewGenericStoreWithDefaultSort returns new subStore implementation for given resource.
+// subStore implements subset of Store operations.
+func NewGenericStoreWithDefaultSort[T any, PT ClonedUnmarshaler[T]](
+	db postgres.DB,
+	schema *walker.Schema,
+	pkGetter primaryKeyGetter[T, PT],
+	insertInto inserter[T, PT],
+	copyFromObj copier[T, PT],
+	setAcquireDBConnDuration durationTimeSetter,
+	setPostgresOperationDurationTime durationTimeSetter,
+	upsertAllowed upsertChecker[T, PT],
+	targetResource permissions.ResourceMetadata,
+	defaultSort *v1.QuerySortOption,
+) Store[T, PT] {
+	return &genericStore[T, PT]{
+		db:          db,
+		schema:      schema,
+		pkGetter:    pkGetter,
+		insertInto:  insertInto,
+		copyFromObj: copyFromObj,
+		setAcquireDBConnDuration: func() durationTimeSetter {
+			if setAcquireDBConnDuration == nil {
+				return doNothingDurationTimeSetter
+			}
+			return setAcquireDBConnDuration
+		}(),
+		setPostgresOperationDurationTime: func() durationTimeSetter {
+			if setPostgresOperationDurationTime == nil {
+				return doNothingDurationTimeSetter
+			}
+			return setPostgresOperationDurationTime
+		}(),
+		upsertAllowed:  upsertAllowed,
+		targetResource: targetResource,
+		defaultSort:    defaultSort,
+	}
+}
+
+// NewGloballyScopedGenericStoreWithDefaultSort returns new subStore implementation for given resource.
+// subStore implements subset of Store operations.
+func NewGloballyScopedGenericStoreWithDefaultSort[T any, PT ClonedUnmarshaler[T]](
+	db postgres.DB,
+	schema *walker.Schema,
+	pkGetter primaryKeyGetter[T, PT],
+	insertInto inserter[T, PT],
+	copyFromObj copier[T, PT],
+	setAcquireDBConnDuration durationTimeSetter,
+	setPostgresOperationDurationTime durationTimeSetter,
+	targetResource permissions.ResourceMetadata,
+	defaultSort *v1.QuerySortOption,
+) Store[T, PT] {
+	return &genericStore[T, PT]{
+		db:          db,
+		schema:      schema,
+		pkGetter:    pkGetter,
+		insertInto:  insertInto,
+		copyFromObj: copyFromObj,
+		setAcquireDBConnDuration: func() durationTimeSetter {
+			if setAcquireDBConnDuration == nil {
+				return doNothingDurationTimeSetter
+			}
+			return setAcquireDBConnDuration
+		}(),
+		setPostgresOperationDurationTime: func() durationTimeSetter {
+			if setPostgresOperationDurationTime == nil {
+				return doNothingDurationTimeSetter
+			}
+			return setPostgresOperationDurationTime
+		}(),
+		upsertAllowed:  globallyScopedUpsertChecker[T, PT](targetResource),
+		targetResource: targetResource,
+		defaultSort:    defaultSort,
+	}
+}
+
 // Exists tells whether the ID exists in the store.
 func (s *genericStore[T, PT]) Exists(ctx context.Context, id string) (bool, error) {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.Exists)
@@ -186,10 +262,13 @@ func (s *genericStore[T, PT]) Count(ctx context.Context, q *v1.Query) (int, erro
 func (s *genericStore[T, PT]) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.Search)
 
+	q = applyDefaultSort(q, s.defaultSort)
+
 	return RunSearchRequestForSchema(ctx, s.schema, q, s.db)
 }
 
 func (s *genericStore[T, PT]) walkByQuery(ctx context.Context, query *v1.Query, fn func(obj PT) error) error {
+	query = applyDefaultSort(query, s.defaultSort)
 	return RunCursorQueryForSchemaFn[T, PT](ctx, s.schema, query, s.db, fn)
 }
 
@@ -227,6 +306,9 @@ func (s *genericStore[T, PT]) Get(ctx context.Context, id string) (PT, bool, err
 // TODO(ROX-28999): merge with WalkByQuery if cursor is removed
 func (s *genericStore[T, PT]) GetByQueryFn(ctx context.Context, query *v1.Query, fn func(obj PT) error) error {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.GetByQuery)
+
+	query = applyDefaultSort(query, s.defaultSort)
+
 	return RunQueryForSchemaFn[T, PT](ctx, s.schema, query, s.db, fn)
 }
 
@@ -234,6 +316,8 @@ func (s *genericStore[T, PT]) GetByQueryFn(ctx context.Context, query *v1.Query,
 // Deprecated: Use GetByQueryFn instead
 func (s *genericStore[T, PT]) GetByQuery(ctx context.Context, query *v1.Query) ([]*T, error) {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.GetByQuery)
+
+	query = applyDefaultSort(query, s.defaultSort)
 
 	rows := make([]*T, 0, paginated.GetLimit(query.GetPagination().GetLimit(), batchAfter))
 	err := RunQueryForSchemaFn(ctx, s.schema, query, s.db, func(obj PT) error {
@@ -398,6 +482,19 @@ func (s *genericStore[T, PT]) UpsertMany(ctx context.Context, objs []PT) error {
 	})
 }
 
+func GetDefaultSort(sortOption string, reversed bool) *v1.QuerySortOption {
+	if sortOption == "" {
+		return nil
+	}
+
+	defaultSortOption := &v1.QuerySortOption{
+		Field:    sortOption,
+		Reversed: reversed,
+	}
+
+	return defaultSortOption
+}
+
 // region Helper functions
 
 func (s *genericStore[T, PT]) acquireConn(ctx context.Context, op ops.Op) (*postgres.Conn, error) {
@@ -510,6 +607,14 @@ func globallyScopedUpsertChecker[T any, PT ClonedUnmarshaler[T]](targetResource 
 		}
 		return nil
 	}
+}
+
+func applyDefaultSort(q *v1.Query, defaultSortOption *v1.QuerySortOption) *v1.Query {
+	if defaultSortOption == nil {
+		return q
+	}
+	// Add pagination sort order if needed.
+	return paginated.FillDefaultSortOption(q, defaultSortOption.CloneVT())
 }
 
 // endregion Helper functions
