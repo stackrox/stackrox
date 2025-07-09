@@ -88,6 +88,8 @@ central:
     generate:
       PERSISTENT_FLAGS:
         - output
+        - valid-for
+        - valid-until
       INHERITED_FLAGS:
         - ca
         - direct-grpc

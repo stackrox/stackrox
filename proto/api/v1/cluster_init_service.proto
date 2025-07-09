@@ -4,6 +4,7 @@ package v1;
 
 import "api/v1/empty.proto";
 import weak "google/api/annotations.proto";
+import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
 import "storage/user.proto";
 
@@ -61,6 +62,13 @@ message InitBundleGenRequest {
 
 message CRSGenRequest {
   string name = 1;
+}
+
+message CRSGenRequestExtended {
+  string name = 1;
+  google.protobuf.Timestamp valid_until = 2;
+  google.protobuf.Duration valid_for = 3;
+  int32 max_registrations = 4; // Support for this is to be implemented in ROX-26769.
 }
 
 message InitBundleRevokeRequest {
@@ -136,6 +144,13 @@ service ClusterInitService {
   rpc GenerateCRS(CRSGenRequest) returns (CRSGenResponse) {
     option (google.api.http) = {
       post: "/v1/cluster-init/crs"
+      body: "*"
+    };
+  }
+
+  rpc GenerateCRSExtended(CRSGenRequestExtended) returns (CRSGenResponse) {
+    option (google.api.http) = {
+      post: "/v1/cluster-init/crs-extended"
       body: "*"
     };
   }

@@ -16,6 +16,7 @@ import {
 } from '@patternfly/react-core';
 import pluralize from 'pluralize';
 
+import usePermissions from 'hooks/usePermissions';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import useModifyBaselineStatuses from '../api/useModifyBaselineStatuses';
 import { AdvancedFlowsFilterType } from '../common/AdvancedFlowsFilter/types';
@@ -61,6 +62,9 @@ function InternalFlows({
     networkFlows,
     refetchFlows,
 }: InternalFlowsProps) {
+    const { hasReadWriteAccess } = usePermissions();
+    const hasWriteAccessForActions = hasReadWriteAccess('DeploymentExtension');
+
     // component state
     const [entityNameFilter, setEntityNameFilter] = React.useState<string>('');
     const [advancedFilters, setAdvancedFilters] = React.useState<AdvancedFlowsFilterType>(
@@ -178,18 +182,20 @@ function InternalFlows({
                         <ToolbarItem>
                             <FlowsTableHeaderText type={edgeState} numFlows={totalFlows} />
                         </ToolbarItem>
-                        <ToolbarItem align={{ default: 'alignRight' }}>
-                            <FlowsBulkActions
-                                type="active"
-                                selectedRows={selectedRows}
-                                onClearSelectedRows={() => {
-                                    setSelectedAnomalousRows([]);
-                                    setSelectedBaselineRows([]);
-                                }}
-                                markSelectedAsAnomalous={markSelectedAsAnomalous}
-                                addSelectedToBaseline={addSelectedToBaseline}
-                            />
-                        </ToolbarItem>
+                        {hasWriteAccessForActions && (
+                            <ToolbarItem align={{ default: 'alignRight' }}>
+                                <FlowsBulkActions
+                                    type="active"
+                                    selectedRows={selectedRows}
+                                    onClearSelectedRows={() => {
+                                        setSelectedAnomalousRows([]);
+                                        setSelectedBaselineRows([]);
+                                    }}
+                                    markSelectedAsAnomalous={markSelectedAsAnomalous}
+                                    addSelectedToBaseline={addSelectedToBaseline}
+                                />
+                            </ToolbarItem>
+                        )}
                     </ToolbarContent>
                 </Toolbar>
             </StackItem>
@@ -217,7 +223,7 @@ function InternalFlows({
                                     markAsAnomalous={markAsAnomalous}
                                     numExtraneousEgressFlows={numExtraneousEgressFlows}
                                     numExtraneousIngressFlows={numExtraneousIngressFlows}
-                                    isEditable
+                                    isEditable={hasWriteAccessForActions}
                                     onSelectFlow={onSelectFlow}
                                 />
                             ) : (
@@ -247,7 +253,7 @@ function InternalFlows({
                                     markAsAnomalous={markAsAnomalous}
                                     numExtraneousEgressFlows={numExtraneousEgressFlows}
                                     numExtraneousIngressFlows={numExtraneousIngressFlows}
-                                    isEditable
+                                    isEditable={hasWriteAccessForActions}
                                     onSelectFlow={onSelectFlow}
                                 />
                             ) : (

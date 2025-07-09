@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/images"
 	"github.com/stackrox/rox/pkg/images/cache"
 	"github.com/stackrox/rox/pkg/images/integration"
 	"github.com/stackrox/rox/pkg/images/utils"
@@ -30,6 +31,7 @@ import (
 	"github.com/stackrox/rox/pkg/signatures"
 	"github.com/stackrox/rox/pkg/sync"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
+	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
 )
 
@@ -38,9 +40,7 @@ const (
 	consecutiveErrorThreshold = 3
 )
 
-var (
-	_ ImageEnricher = (*enricherImpl)(nil)
-)
+var _ ImageEnricher = (*enricherImpl)(nil)
 
 type enricherImpl struct {
 	cvesSuppressor   CVESuppressor
@@ -956,6 +956,17 @@ func normalizeVulnerabilities(scan *storage.ImageScan) {
 	}
 }
 
+func acquireSemaphoreWithMetrics(semaphore *semaphore.Weighted, ctx context.Context) error {
+	images.ScanSemaphoreQueueSize.WithLabelValues("central", "central-image-enricher", "n/a").Inc()
+	defer images.ScanSemaphoreQueueSize.WithLabelValues("central", "central-image-enricher", "n/a").Dec()
+	err := semaphore.Acquire(ctx, 1)
+	if err != nil {
+		return err
+	}
+	images.ScanSemaphoreHoldingSize.WithLabelValues("central", "central-image-enricher", "n/a").Inc()
+	return nil
+}
+
 func (e *enricherImpl) enrichImageWithScanner(ctx context.Context, image *storage.Image, imageScanner scannerTypes.ImageScannerWithDataSource) (ScanResult, error) {
 	scanner := imageScanner.GetScanner()
 
@@ -964,11 +975,14 @@ func (e *enricherImpl) enrichImageWithScanner(ctx context.Context, image *storag
 	}
 
 	sema := scanner.MaxConcurrentScanSemaphore()
-	err := sema.Acquire(ctx, 1)
-	if err != nil {
+	if err := acquireSemaphoreWithMetrics(sema, ctx); err != nil {
 		return ScanNotDone, errors.Wrapf(err, "acquiring max concurrent scan semaphore with scanner %q", scanner.Name())
 	}
-	defer sema.Release(1)
+
+	defer func() {
+		sema.Release(1)
+		images.ScanSemaphoreHoldingSize.WithLabelValues("central", "central-image-enricher", "n/a").Dec()
+	}()
 
 	scanStartTime := time.Now()
 	scan, err := scanner.GetScan(image)
