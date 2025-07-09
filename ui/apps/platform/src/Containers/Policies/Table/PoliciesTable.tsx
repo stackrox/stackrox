@@ -217,7 +217,7 @@ function PoliciesTable({
                                 <ToolbarItem>
                                     <MenuDropdown
                                         data-testid="policies-bulk-actions-dropdown"
-                                        toggleText="Bulk Actions"
+                                        toggleText="Bulk actions"
                                         toggleVariant="primary"
                                         isDisabled={!hasSelections}
                                         popperProps={{

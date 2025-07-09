@@ -110,12 +110,12 @@ function AuthProviders(): ReactElement {
         dispatch(inviteActions.setInviteModalVisibility(true));
     }
 
-    function onClickCreate(event) {
+    function onClickCreate(event, value) {
         navigate(
             getEntityPath(entityType, undefined, {
                 ...queryObject,
                 action: 'create',
-                type: event?.target?.value,
+                type: value,
             })
         );
     }
