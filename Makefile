@@ -901,6 +901,9 @@ bin/central: $(shell find central/ -name *.go) ${pkg}
 bin/config-controller: $(shell find config-controller/ -name *.go) ${pkg}
 	CGO_ENABLED=0 go build $(DEV_LD_FLAGS) -o $@ ./config-controller
 
+bin/operator: $(shell find operator/ -name *.go) ${pkg}
+	CGO_ENABLED=0 go build $(DEV_LD_FLAGS) -o $@ ./operator/cmd
+
 bin/migrator: $(shell find migrator/ -name *.go) ${pkg}
 	CGO_ENABLED=0 go build $(DEV_LD_FLAGS) -o $@ ./migrator
 
