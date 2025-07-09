@@ -39,7 +39,7 @@ func Test_OutputQueue_ExpiringMessages(t *testing.T) {
 	q := New(detector, 10)
 
 	assert.NoError(t, q.Start())
-	defer q.Stop(nil)
+	defer q.Stop()
 
 	expiredContext, cancel := context.WithCancel(context.Background())
 	cancel()

@@ -102,7 +102,7 @@ func (s *eventPipelineSuite) Test_OfflineModeCases() {
 	s.outputQueue.EXPECT().Start().Times(1)
 	s.resolver.EXPECT().Start().Times(1)
 	s.listener.EXPECT().StartWithContext(gomock.Any()).AnyTimes()
-	s.listener.EXPECT().Stop(gomock.Any()).AnyTimes()
+	s.listener.EXPECT().Stop().AnyTimes()
 
 	s.Require().NoError(s.pipeline.Start())
 	s.pipeline.Notify(common.SensorComponentEventCentralReachable)
@@ -136,7 +136,7 @@ func (s *eventPipelineSuite) Test_OfflineMode() {
 
 	// Expect listener to be reset (i.e. started twice and stopped once)
 	s.listener.EXPECT().StartWithContext(gomock.Any()).Times(2)
-	s.listener.EXPECT().Stop(gomock.Any()).Times(2)
+	s.listener.EXPECT().Stop().Times(2)
 
 	s.Require().NoError(s.pipeline.Start())
 	s.pipeline.Notify(common.SensorComponentEventCentralReachable)

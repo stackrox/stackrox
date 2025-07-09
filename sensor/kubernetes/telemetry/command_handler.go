@@ -90,10 +90,8 @@ func (h *commandHandler) Start() error {
 	return nil
 }
 
-func (h *commandHandler) Stop(err error) {
-	if err == nil {
-		err = errors.New("telemetry command handler was stopped")
-	}
+func (h *commandHandler) Stop() {
+	err := errors.New("telemetry command handler was stopped")
 	h.stopSig.SignalWithError(err)
 }
 
