@@ -36,18 +36,6 @@ runs:
       continue-on-error: true
       shell: bash
       run: |
-        set +e
-        if [[ -d "/__t" ]]; then
-          set -x
-          time rm -rf /__t/CodeQL /__t/Python /__t/go /__t/gcloud /__t/node
-          free=$(df -BGB --output=avail / | tail -1)
-          if [[ ${free%GB} -lt "${{ inputs.free-disk-space }}" ]]; then
-            echo "Failed to free requested disk space, ${{ inputs.free-disk-space }} [${free} free]."
-            exit 1
-          else
-            exit 0
-          fi
-        fi
         cleanup=(
           # on non-container jobs:
           /usr/share/dotnet
@@ -59,6 +47,14 @@ runs:
           /opt/hostedtoolcache/Ruby
           /opt/az
           /usr/local/lib/android
+          # container jobs
+          /__t/CodeQL
+          /__t/Python
+          /__t/go
+          /__t/gcloud
+          /__t/node
+          /__t/PyPy
+          /__t/Ruby
         )
         for d in "${cleanup[@]}"; do
           free=$(df -BGB --output=avail / | tail -1)
@@ -66,7 +62,7 @@ runs:
             echo "Reached requested free disk space ${{ inputs.free-disk-space }} [${free} free]."
             exit 0
           fi
-          if [[ -d "$d" ]]; then
+         if [[ -d "$d" ]]; then
             rm -rf -- "$d" && echo "deleted $d"
           else
             echo "$d not found"
