@@ -60,7 +60,6 @@ runs:
           /__t/CodeQL
           /__t/Python
           /__t/go
-          /__t/gcloud
           /__t/node
           /__t/PyPy
           /__t/Ruby
