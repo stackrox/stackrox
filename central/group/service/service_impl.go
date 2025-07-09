@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/central/group/datastore/serialize"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -38,8 +37,7 @@ var (
 type serviceImpl struct {
 	v1.UnimplementedGroupServiceServer
 
-	groups               datastore.DataStore
-	authProviderRegistry authproviders.Registry
+	groups datastore.DataStore
 }
 
 func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
