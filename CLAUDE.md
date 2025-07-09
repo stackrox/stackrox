@@ -5,10 +5,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Development Commands
 
 ### Testing Commands
-- `make test` - Run all tests
+* When validating changes in Go code, run `make go-unit-tests` and `make golangci-lint`.
+* Run more targeted `go test ./...` commands for much faster feedback.
+* Only run `make golangci-lint` when about to open a PR
 - `make style` - Apply and check style standards (Go and JavaScript)
-- `make golangci-lint` - Run Go linting
-- `make qa-tests-style` - Run QA test style checks
 - `make ui-lint` - Lint UI code
 
 ### Individual Binary Builds
@@ -26,18 +26,6 @@ These targets build specific components as local binaries in the `bin/` director
 - `make bin/config-controller` - Build Config Controller binary only
 - `make bin/installer` - Build Installer binary only
 - `make bin/collector` - Build Collector binary (requires cmake)
-- `make bin/agent` - Build Agent binary only
-
-### Component Groups
-- `make central` - Build all Central-related binaries (central, config-controller, migrator, scanner-v4)
-- `make secured-cluster` - Build all Sensor-related binaries (kubernetes, admission-control, compliance, upgrader, init-tls-certs)
-- `make all-binaries` - Build all binaries (secured-cluster + central + installer + scanner-v2 + collector)
-
-### Scanner v2 Development
-- `make scanner-v2` - Build Scanner v2 with all components and vulnerability bundle
-- `make bin/scanner-v2` - Build Scanner v2 binary only
-- `make bin/local-nodescanner-v2` - Build local node scanner tool
-- `make bundle` - Generate vulnerability definitions bundle
 
 ### UI Development
 - `make ui/build` - Build UI assets only
@@ -84,6 +72,7 @@ From `ui/` directory:
 - **Central ↔ Scanner**: gRPC/HTTP APIs for vulnerability data
 - **UI ↔ Central**: REST/GraphQL APIs with token auth
 - **Sensor ↔ Admission Controller**: gRPC within cluster
+- **Admission Controller ↔ Central**: gRPC within mTLS, bidirectional streaming
 
 ### Key Technologies
 - **Database**: PostgreSQL (primary datastore)
@@ -101,6 +90,7 @@ From `ui/` directory:
 - `generated/` - Auto-generated protobuf code and storage interfaces
 - `migrator/` - Database migration tools
 - `roxctl/` - CLI tool implementation
+* `proto/` - Protocol Buffer files. API is generated from these files
 
 ### Build System
 - Main `Makefile` with modular includes from `make/`
@@ -129,32 +119,6 @@ docker run --rm --env POSTGRES_USER="$USER" --env POSTGRES_HOST_AUTH_METHOD=trus
 4. Deploy: `./deploy/deploy-local.sh`
 5. Access UI: https://localhost:8000 (credentials in `deploy/k8s/central-deploy/password`)
 
-#### Fast Development Flow (Devcontainer + Binary Hotload)
-This modern workflow provides much faster iteration cycles:
-
-1. **Setup**: Work in devcontainer for consistent development environment
-2. **Initial Deploy**: Use the installer binary for deployment
-   ```bash
-   ./test-installer.sh
-   ```
-3. **Development Cycle**: Use fast binary builds + hotload for instant updates
-   ```bash
-   # Make code changes, then:
-   ./hotload.sh sensor [namespace]    # Updates Sensor with new binary
-   ./hotload.sh central [namespace]   # Updates Central with new binary
-   ```
-
-**Hotload Process**:
-- Builds the component binary locally (much faster than Docker)
-- Copies binary directly into running pod
-- Gracefully restarts the process with new code
-- Typically completes in seconds vs minutes for full redeploy
-
-**Benefits**:
-- **Speed**: Seconds instead of minutes for code changes
-- **Consistency**: Devcontainer ensures identical dev environment
-- **Efficiency**: No Docker builds or pod recreation needed
-- **Flexibility**: Update individual components independently
 
 ### Important Files
 - `BUILD_IMAGE_VERSION` - CI build image version
@@ -162,3 +126,7 @@ This modern workflow provides much faster iteration cycles:
 - `COLLECTOR_VERSION` - Collector component version
 - `go.mod` - Go dependencies (requires Go 1.23.4+)
 - `installer.yaml` - Installer configuration (contains namespace setting)
+
+## User-Specific Instructions
+
+- @~/.claude/stackrox.md
