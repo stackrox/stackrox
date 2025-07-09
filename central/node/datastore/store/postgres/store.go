@@ -23,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/set"
 	"gorm.io/gorm"
@@ -47,6 +48,10 @@ var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.NodesSchema
 	targetResource = resources.Node
+
+	defaultSortOption = &v1.QuerySortOption{
+		Field: search.LastUpdatedTime.String(),
+	}
 )
 
 type nodePartsAsSlice struct {
@@ -600,6 +605,7 @@ func (s *storeImpl) retryableCount(ctx context.Context, q *v1.Query) (int, error
 // Search returns the result matching the query.
 func (s *storeImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Search, "Node")
+	q = applyDefaultSort(q, defaultSortOption)
 
 	return pgutils.Retry2(ctx, func() ([]search.Result, error) {
 		return s.retryableSearch(ctx, q)
@@ -917,6 +923,8 @@ func (s *storeImpl) retryableGetMany(ctx context.Context, ids []string) ([]*stor
 func (s *storeImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(node *storage.Node) error) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.WalkByQuery, "Node")
 
+	q = applyDefaultSort(q, defaultSortOption)
+
 	conn, release, err := s.acquireConn(ctx, ops.WalkByQuery, "Node")
 	if err != nil {
 		return err
@@ -1038,6 +1046,14 @@ func (s *storeImpl) retryableGetManyNodeMetadata(ctx context.Context, ids []stri
 		}
 	}
 	return elems, missingIndices, nil
+}
+
+func applyDefaultSort(q *v1.Query, defaultSortOption *v1.QuerySortOption) *v1.Query {
+	if defaultSortOption == nil {
+		return q
+	}
+	// Add pagination sort order if needed.
+	return paginated.FillDefaultSortOption(q, defaultSortOption.CloneVT())
 }
 
 //// Used for testing
