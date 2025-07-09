@@ -3,6 +3,7 @@ description: Common steps for most jobs
 inputs:
   free-disk-space:
     description: 'Free disk space desired in GB (2025-06 ubuntu-24.04 runner starts with 20GB free and we can delete and reach 40GB)'
+    required: false
     default: 25
   gcp-account:
     description: 'Account to be used to upload tests data'
@@ -23,21 +24,29 @@ runs:
         EOF
         gsutil version -l
 
-    - name: List filesystems
+    - name: Check disk space
       id: disk-check
+      continue-on-error: true
       shell: bash
       run: |
         df --si
         free=$(df -BGB --output=avail / | tail -1)
         echo "free=${free}" | tee -a "$GITHUB_OUTPUT"
+        if [[ ${free%GB} -ge "${{ inputs.free-disk-space }}" ]]; then
+          echo "Reached requested free disk space ${{ inputs.free-disk-space }} [${free} free]."
+          exit 0
+        else
+          exit 1
+        fi
 
-    - name: Free disk space, delete unused tools
+    - name: Free disk space (delete unused tools)
       id: delete-unused-tools
+      if: steps.disk-check.outcome == 'failure'
       continue-on-error: true
       shell: bash
       run: |
         cleanup=(
-          # on non-container jobs:
+          # non-container jobs are first priority (every second may be a high % of the total)
           /usr/share/dotnet
           /usr/share/miniconda
           /usr/share/swift
@@ -47,7 +56,7 @@ runs:
           /opt/hostedtoolcache/Ruby
           /opt/az
           /usr/local/lib/android
-          # container jobs
+          # container jobs are lower priority: they are already slowed by container image pulls
           /__t/CodeQL
           /__t/Python
           /__t/go
@@ -57,25 +66,22 @@ runs:
           /__t/Ruby
         )
         for d in "${cleanup[@]}"; do
+         if [[ -d "$d" ]]; then
+            rm -rf -- "$d" && echo "deleted $d"
+          else
+            echo "$d not found"
+            continue
+          fi
           free=$(df -BGB --output=avail / | tail -1)
           if [[ ${free%GB} -ge "${{ inputs.free-disk-space }}" ]]; then
             echo "Reached requested free disk space ${{ inputs.free-disk-space }} [${free} free]."
             exit 0
           fi
-         if [[ -d "$d" ]]; then
-            rm -rf -- "$d" && echo "deleted $d"
-          else
-            echo "$d not found"
-          fi
         done
-        df --si /
-        free=$(df -BGB --output=avail / | tail -1)
-        if [[ ${free%GB} -lt "${{ inputs.free-disk-space  }}" ]]; then
-          echo "Failed to free requested disk space, ${{ inputs.free-disk-space }} [${free} free]."
-          exit 1
-        fi
+        echo "Failed to free requested disk space, ${{ inputs.free-disk-space }} [${free} free]."
+        exit 1
 
-    - name: Free more disk space, docker system prune
+    - name: Free more disk space (docker system prune)
       id: delete-docker-cache
       if: steps.delete-unused-tools.outcome == 'failure'
       continue-on-error: true
@@ -83,21 +89,17 @@ runs:
       run: |
         printf 'Docker prune: '
         docker system prune --force --all
-        df --si /
-        free=$(df -BGB --output=avail / | tail -1)
-        if [[ ${free%GB} -lt "${{ inputs.free-disk-space }}" ]]; then
-          echo "Failed to free requested disk space, ${{ inputs.free-disk-space }} [${free} free]."
-          exit 1
-        fi
 
     - name: Verify free disk space
-      if: steps.delete-docker-cache.outcome == 'failure'
+      id: disk-check-cleaned
       continue-on-error: true
       shell: bash
       run: |
         free=$(df -BGB --output=avail / | tail -1)
+        echo "free=${free}" | tee -a "$GITHUB_OUTPUT"
         echo "Failed to free requested disk space, ${{ inputs.free-disk-space }} [${free} free]." \
           | tee -a "$GITHUB_STEP_SUMMARY"
+        df --si /
         df -BGB /
         [[ ${free%GB} -ge "${{ inputs.free-disk-space }}" ]]
 
@@ -121,8 +123,10 @@ runs:
           source scripts/ci/lib.sh;
           update_job_record outcome "${{ job.status }}" stopped_at "CURRENT_TIMESTAMP()";
           df --si /;
+          du -ks / | sort -V;
           free=$(df -BGB --output=avail / | tail -1);
-          echo "Free disk space before: ${{ steps.disk-check.outputs.free }}, and after: ${free}.";
+          echo "Free disk space before: ${{ steps.disk-check-cleaned.outputs.free }} [${{ steps.disk-check.outputs.free }} before cleanup], and after: ${free}.";
           if [[ ${free%GB} -lt 5 ]]; then\
             printf "Low free disk space post-job: ${free}" | tee -a "$GITHUB_STEP_SUMMARY";\
+            du -k / | sort -V | tail -100; \
           fi;
