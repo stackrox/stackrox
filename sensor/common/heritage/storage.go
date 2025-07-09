@@ -30,10 +30,16 @@ func pastSensorDataToConfigMap(data ...*SensorMetadata) (*v1.ConfigMap, error) {
 				annotationInfoKey: annotationInfoText,
 			},
 			Labels: map[string]string{
-				"auto-upgrade.stackrox.io/component": "sensor", // used in 'sensor/openshift/delete-sensor.sh'
-				"app.kubernetes.io/managed-by":       "sensor",
-				"app.kubernetes.io/created-by":       "sensor",
-				"app.kubernetes.io/name":             "sensor",
+				// Tells the cluster upgrader to "own" this resource.
+				// See `UpgradeResourceLabelKey` in `sensor/upgrader/common/consts.go`.
+				// This is used in `sensor/openshift/delete-sensor.sh`.
+				"auto-upgrade.stackrox.io/component": "sensor",
+				// Tells the cluster upgrader to preserve this resource during upgrades.
+				// See: `PreserveResourcesAnnotationKey` in `sensor/upgrader/common/consts.go`.
+				"auto-upgrade.stackrox.io/preserve-resources": "true",
+				"app.kubernetes.io/managed-by":                "sensor",
+				"app.kubernetes.io/created-by":                "sensor",
+				"app.kubernetes.io/name":                      "sensor",
 			},
 		},
 		Data: dataMap,
