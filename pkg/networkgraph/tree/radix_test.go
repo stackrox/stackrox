@@ -157,6 +157,21 @@ func TestNRadixTreeFindCIDR(t *testing.T) {
 	protoassert.Equal(t, supernet.value, internetEntity)
 }
 
+func TestNRadixTreeFindCIDR_Depth31(t *testing.T) {
+	e := testutils.GetExtSrcNetworkEntityInfo("1", "1", "255.0.0.0/31", false, true)
+
+	cidr := "255.0.0.0/32"
+	_, ipNet, err := net.ParseCIDR(cidr)
+	assert.NoError(t, err)
+
+	tree, err := NewNRadixTree(pkgNet.IPv4, []*storage.NetworkEntityInfo{e})
+	assert.NoError(t, err)
+
+	supernet, err := tree.findCIDRNoLock(ipNet)
+	assert.NoError(t, err)
+	protoassert.Equal(t, supernet.value, e)
+}
+
 func TestNRadixTreeIPv6(t *testing.T) {
 	e1 := testutils.GetExtSrcNetworkEntityInfo("1", "1", "2001:db8:3333:4444:5555:6666:7777:8888/63", true, false)
 	e2 := testutils.GetExtSrcNetworkEntityInfo("2", "2", "2001:db8:3333:4444:5555:6666:7777:8888/64", false, false)
