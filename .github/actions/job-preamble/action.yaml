@@ -128,10 +128,10 @@ runs:
           source scripts/ci/lib.sh;
           retry 5 true update_job_record outcome "${{ job.status }}" stopped_at "CURRENT_TIMESTAMP()";
           df --si /;
-          du -ks / | sort -V;
+          du -ks / 2>/dev/null | sort -V;
           free=$(df -BGB --output=avail / | tail -1);
           echo "Free disk space before: ${{ steps.disk-check-cleaned.outputs.free }} [${{ steps.disk-check.outputs.free }} before cleanup], and after: ${free}.";
           if [[ ${free%GB} -lt 5 ]]; then\
             printf "Low free disk space post-job: ${free}" | tee -a "$GITHUB_STEP_SUMMARY";\
-            du -k / | sort -V | tail -100 || true; \
+            du -k / 2>/dev/null | sort -V | tail -100 || true; \
           fi;
