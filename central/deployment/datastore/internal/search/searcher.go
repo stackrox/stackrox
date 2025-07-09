@@ -17,5 +17,4 @@ type Searcher interface {
 	SearchListDeployments(ctx context.Context, q *v1.Query) ([]*storage.ListDeployment, error)
 
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
-	Count(ctx context.Context, q *v1.Query) (int, error)
 }
