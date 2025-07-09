@@ -53,11 +53,18 @@ runs:
       run: |
         set +e
         ls -la /__t/
-        du -s /* | sort -V
-        du /__w/ /__t/ /usr/ /opt/ 2>/dev/null | sort -V | tail -50
+        du -s /__t/* | sort -V
+        du /__w/ /__t/ /usr/ /opt/ 2>/dev/null | sort -V | tail -70
         # preinstalled tools not used. ordered by size asc
         cleanup=(
-          # always remove (on runner or container job):
+          # remove if container job:
+          /__t/CodeQL
+          /__t/Python
+          /__t/go
+          /__t/Ruby
+          /__w/_temp/
+
+          # on non-container jobs:
           /usr/share/dotnet
           /usr/share/miniconda
           /usr/share/swift
@@ -67,13 +74,6 @@ runs:
           /opt/hostedtoolcache/Ruby
           /opt/az
           /usr/local/lib/android
-
-          # remove if container job:
-          /mnt/usr/local/lib/node_modules
-          /mnt/opt/hostedtoolcache/node
-          /mnt/opt/pipx
-          /mnt/opt/hostedtoolcache/Python
-          /mnt/opt/hostedtoolcache/go
         )
         for d in "${cleanup[@]}"; do
           free=$(df -BGB --output=avail / | tail -1)
@@ -81,13 +81,8 @@ runs:
             echo "Reached requested free disk space ${{ env.target_free }} [${free} free]."
             exit 0
           fi
-          if [[ -d "/__t${d#/opt/hostedtoolcache}" ]]; then
-            rm -rf "/__t${d#/opt/hostedtoolcache}" && echo "deleted /__t${d#/opt/hostedtoolcache}"
-          elif [[ -d "/mnt${d}" ]]; then
-            rm -rf "/mnt${d}" && echo "deleted /mnt${d}"
-          elif [[ -d "$d" ]]; then
-            rm -rf "$d" && echo "deleted $d" \
-              || sudo rm -rf "$d"
+          if [[ -d "$d" ]]; then
+            rm -rf -- "$d" && echo "deleted $d"
           else
             echo "$d not found"
           fi
@@ -123,10 +118,6 @@ runs:
         echo "Failed to free requested disk space, ${{ env.target_free }} [${free} free]." \
           | tee -a "$GITHUB_STEP_SUMMARY"
         df -BGB /
-        if [[ ! -d /opt/hostedtoolcache && ! -d /mnt/opt/hostedtoolcache ]]; then
-          printf 'For container workflows, please mount the host /usr and /opt to allow deleting unused tools:\n```\nvolumes:\n\t- /usr:/mnt/usr\n\t- /opt:/mnt/opt\n```' \
-            | tee -a "$GITHUB_STEP_SUMMARY"
-        fi
         [[ ${free%GB} -ge "${{ env.target_free }}" ]]
 
     - name: Ignore dubious repository ownership
