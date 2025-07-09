@@ -18,6 +18,7 @@ type Store interface {
 	GetIDs(ctx context.Context) ([]string, error)
 	Get(ctx context.Context, id string) (*storage.Pod, bool, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.Pod, []int, error)
+	GetByQueryFn(ctx context.Context, query *v1.Query, fn func(obj *storage.Pod) error) error
 	Walk(ctx context.Context, fn func(obj *storage.Pod) error) error
 	WalkByQuery(ctx context.Context, q *v1.Query, fn func(pod *storage.Pod) error) error
 
