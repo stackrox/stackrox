@@ -23,6 +23,8 @@ runs:
         use_gcloud_storage=True
         EOF
         gsutil version -l
+        which gsutil
+        which gcloud
 
     - name: Check disk space
       id: disk-check
@@ -45,6 +47,7 @@ runs:
       continue-on-error: true
       shell: bash
       run: |
+        set +e
         cleanup=(
           # non-container jobs are first priority (every second may be a high % of the total)
           /usr/share/dotnet
@@ -57,6 +60,7 @@ runs:
           /opt/az
           /usr/local/lib/android
           # container jobs are lower priority: they are already slowed by container image pulls
+          /__t/gcloud
           /__t/CodeQL
           /__t/Python
           /__t/go
@@ -73,6 +77,8 @@ runs:
           fi
           free=$(df -BGB --output=avail / | tail -1)
           if [[ ${free%GB} -ge "${{ inputs.free-disk-space }}" ]]; then
+            which gcloud
+            gcloud --version
             echo "Reached requested free disk space ${{ inputs.free-disk-space }} [${free} free]."
             exit 0
           fi
