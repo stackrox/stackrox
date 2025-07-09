@@ -35,6 +35,8 @@ spec:
                 fieldRef:
                   apiVersion: v1
                   fieldPath: metadata.name
+            - name: GRPC_ENFORCE_ALPN_ENABLED
+              value: "false"
             - name: ROX_TELEMETRY_ENDPOINT
               value: https://telemetry.endpoint
             - name: ROX_TELEMETRY_STORAGE_KEY_V1
