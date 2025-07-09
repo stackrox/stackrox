@@ -52,7 +52,7 @@ runs:
       shell: bash
       run: |
         set +e
-        du /usr/ /opt/ 2>/dev/null |sort -V | tail -50
+        du /__w/ /__t/ /usr/ /opt/ 2>/dev/null |sort -V | tail -50
         # preinstalled tools not used. ordered by size asc
         cleanup=(
           # always remove (on runner or container job):
@@ -79,10 +79,12 @@ runs:
             echo "Reached requested free disk space ${{ env.target_free }} [${free} free]."
             exit 0
           fi
-          if [[ -d "/mnt${d}" ]]; then
-            rm -rf "/mnt${d}"
+          if [[ -d "/__t${d#/opt/hostedtoolcache}" ]]; then
+            rm -rf "/__t${d}" && echo "deleted /__t${d}"
+          elif [[ -d "/mnt${d}" ]]; then
+            rm -rf "/mnt${d}" && echo "deleted /mnt${d}"
           elif [[ -d "$d" ]]; then
-            rm -rf "$d" \
+            rm -rf "$d" && echo "deleted $d" \
               || sudo rm -rf "$d"
           else
             echo "$d not found"
