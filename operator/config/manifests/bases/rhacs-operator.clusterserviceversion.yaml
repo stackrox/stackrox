@@ -144,7 +144,10 @@ spec:
         path: misc.createSCCs
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
-      - displayName: Enabled
+      - displayName: OpenShift
+        path: monitoring.openshift
+      - description: Enables the integration with OpenShift platform monitoring.
+        displayName: Enabled
         path: monitoring.openshift.enabled
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
@@ -863,7 +866,10 @@ spec:
         path: misc.createSCCs
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
-      - displayName: Enabled
+      - displayName: OpenShift
+        path: monitoring.openshift
+      - description: Enables the integration with OpenShift platform monitoring.
+        displayName: Enabled
         path: monitoring.openshift.enabled
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
