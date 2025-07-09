@@ -136,7 +136,7 @@ func New(db postgres.DB) Store {
             {{- end }}
             targetResource,
             {{- if .DefaultSortStore }}
-            getDefaultSort({{.DefaultSort}}, {{.ReverseDefaultSort}}),
+            pgSearch.GetDefaultSort({{.DefaultSort}}, {{.ReverseDefaultSort}}),
             {{- end }}
     )
 }
@@ -330,19 +330,6 @@ func {{ template "copyFunctionName" $schema }}(ctx context.Context, s pgSearch.D
 {{ template "copyObject" dict "schema" .Schema }}
 {{- end }}
 {{- end }}
-
-func getDefaultSort(sortOption string, reversed bool) *v1.QuerySortOption {
-    if sortOption == "" {
-        return nil
-    }
-    
-    defaultSortOption := &v1.QuerySortOption{
-    	Field:    sortOption,
-    	Reversed: reversed,
-    }
-
-    return defaultSortOption
-}
 
 // endregion Helper functions
 

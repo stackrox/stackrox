@@ -247,19 +247,6 @@ func copyFromCollectionsEmbeddedCollections(ctx context.Context, s pgSearch.Dele
 	return nil
 }
 
-func getDefaultSort(sortOption string, reversed bool) *v1.QuerySortOption {
-	if sortOption == "" {
-		return nil
-	}
-
-	defaultSortOption := &v1.QuerySortOption{
-		Field:    sortOption,
-		Reversed: reversed,
-	}
-
-	return defaultSortOption
-}
-
 // endregion Helper functions
 
 // region Used for testing
