@@ -80,19 +80,6 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func getDefaultSort(sortOption string, reversed bool) *v1.QuerySortOption {
-	if sortOption == "" {
-		return nil
-	}
-
-	defaultSortOption := &v1.QuerySortOption{
-		Field:    sortOption,
-		Reversed: reversed,
-	}
-
-	return defaultSortOption
-}
-
 // endregion Helper functions
 
 // region Used for testing
