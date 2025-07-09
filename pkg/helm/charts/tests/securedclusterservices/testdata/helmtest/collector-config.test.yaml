@@ -1,0 +1,42 @@
+values:
+  imagePullSecrets:
+    allowNone: true
+tests:
+- name: "The collector config map should exist when it is enabled"
+  set:
+    collector:
+      runtimeConfig:
+        enabled: "ENABLED"
+  expect: |
+    .configmaps["collector-config"] | assertThat(. != null)
+- name: "The collector config map should no exist when it is disabled"
+  set:
+    collector:
+      runtimeConfig:
+        enabled: "DISABLED"
+  expect: |
+    .configmaps["collector-config"] | assertThat(. == null)
+- name: "The collector config should have the correct values for networking"
+  set:
+    collector:
+      runtimeConfig:
+        enabled: "ENABLED"
+        networking:
+          externalIps:
+            enabled: "ENABLED"
+          maxConnectionsPerMinute: 512
+  expect: |
+    .configmaps["collector-config"].data.["runtime_config.yaml"] | fromyaml | .networking.externalIps.enabled | assertThat(. == "ENABLED")
+    .configmaps["collector-config"].data.["runtime_config.yaml"] | fromyaml | .networking.maxConnectionsPerMinute | assertThat(. == 512)
+- name: "The collector config should have the correct values for networking 2"
+  set:
+    collector:
+      runtimeConfig:
+        enabled: "ENABLED"
+        networking:
+          externalIps:
+            enabled: "DISABLED"
+          maxConnectionsPerMinute: 200
+  expect: |
+    .configmaps["collector-config"].data.["runtime_config.yaml"] | fromyaml | .networking.externalIps.enabled | assertThat(. == "DISABLED")
+    .configmaps["collector-config"].data.["runtime_config.yaml"] | fromyaml | .networking.maxConnectionsPerMinute | assertThat(. == 200)
