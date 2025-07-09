@@ -79,7 +79,7 @@ runs:
             exit 0
           fi
           if [[ -d "/__t${d#/opt/hostedtoolcache}" ]]; then
-            rm -rf "/__t${d#/opt/hostedtoolcache}" && echo "deleted /__t${d}"
+            rm -rf "/__t${d#/opt/hostedtoolcache}" && echo "deleted /__t${d#/opt/hostedtoolcache}"
           elif [[ -d "/mnt${d}" ]]; then
             rm -rf "/mnt${d}" && echo "deleted /mnt${d}"
           elif [[ -d "$d" ]]; then
