@@ -103,6 +103,20 @@ func (mr *MockBackendMockRecorder) GetCAConfig(ctx any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCAConfig", reflect.TypeOf((*MockBackend)(nil).GetCAConfig), ctx)
 }
 
+// InitiateClusterRegistration mocks base method.
+func (m *MockBackend) InitiateClusterRegistration(ctx context.Context, initArtifactId, clusterName string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InitiateClusterRegistration", ctx, initArtifactId, clusterName)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// InitiateClusterRegistration indicates an expected call of InitiateClusterRegistration.
+func (mr *MockBackendMockRecorder) InitiateClusterRegistration(ctx, initArtifactId, clusterName any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitiateClusterRegistration", reflect.TypeOf((*MockBackend)(nil).InitiateClusterRegistration), ctx, initArtifactId, clusterName)
+}
+
 // Issue mocks base method.
 func (m *MockBackend) Issue(ctx context.Context, name string) (*backend.InitBundleWithMeta, error) {
 	m.ctrl.T.Helper()
@@ -119,18 +133,32 @@ func (mr *MockBackendMockRecorder) Issue(ctx, name any) *gomock.Call {
 }
 
 // IssueCRS mocks base method.
-func (m *MockBackend) IssueCRS(ctx context.Context, name string, validUntil time.Time) (*backend.CRSWithMeta, error) {
+func (m *MockBackend) IssueCRS(ctx context.Context, name string, validUntil time.Time, maxRegistrations uint64) (*backend.CRSWithMeta, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IssueCRS", ctx, name, validUntil)
+	ret := m.ctrl.Call(m, "IssueCRS", ctx, name, validUntil, maxRegistrations)
 	ret0, _ := ret[0].(*backend.CRSWithMeta)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // IssueCRS indicates an expected call of IssueCRS.
-func (mr *MockBackendMockRecorder) IssueCRS(ctx, name, validUntil any) *gomock.Call {
+func (mr *MockBackendMockRecorder) IssueCRS(ctx, name, validUntil, maxRegistrations any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IssueCRS", reflect.TypeOf((*MockBackend)(nil).IssueCRS), ctx, name, validUntil)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IssueCRS", reflect.TypeOf((*MockBackend)(nil).IssueCRS), ctx, name, validUntil, maxRegistrations)
+}
+
+// MarkClusterRegistrationComplete mocks base method.
+func (m *MockBackend) MarkClusterRegistrationComplete(ctx context.Context, initArtifactId, clusterName string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MarkClusterRegistrationComplete", ctx, initArtifactId, clusterName)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// MarkClusterRegistrationComplete indicates an expected call of MarkClusterRegistrationComplete.
+func (mr *MockBackendMockRecorder) MarkClusterRegistrationComplete(ctx, initArtifactId, clusterName any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkClusterRegistrationComplete", reflect.TypeOf((*MockBackend)(nil).MarkClusterRegistrationComplete), ctx, initArtifactId, clusterName)
 }
 
 // Revoke mocks base method.
