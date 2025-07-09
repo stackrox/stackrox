@@ -44,18 +44,28 @@ runs:
       shell: bash
       run: |
         set +e
+        du -k /__t/ | sort -V
         if [[ -d "/__t" ]]; then
           set -x
-          rm -rf /__t/*
+          # 2025-07-09 'rm -rf /__t/*' takes around 18-20 seconds and reach 30gb free. 
+          time rm -rf /__t/CodeQL /__t/Python /__t/gcloud /__t/go /__t/node
           free=$(df -BGB --output=avail / | tail -1)
           if [[ ${free%GB} -lt "${{ env.target_free }}" ]]; then
             echo "Failed to free requested disk space, ${{ env.target_free }} [${free} free]."
-            exit 1
           else
             exit 0
           fi
         fi
         cleanup=(
+          /__t/CodeQL
+          /__t/Python
+          /__t/go
+          /__t/gcloud
+          /__t/PyPy
+          /__t/node
+          /__t/Ruby
+          /__t/Java_Temurin-Hotspot_jdk
+
           # on non-container jobs:
           /usr/share/dotnet
           /usr/share/miniconda
