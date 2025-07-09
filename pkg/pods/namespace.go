@@ -7,15 +7,13 @@ import (
 	"github.com/stackrox/rox/pkg/namespaces"
 )
 
-var (
-	log = logging.LoggerForModule()
-)
-
 const (
 	// The corresponding environment variable is configured to contain pod namespace by sensor YAML/helm file using
 	// the Kubernetes Downward API, see
 	// https://github.com/kubernetes/kubernetes/blob/release-1.0/docs/user-guide/downward-api.md
 	nsEnvVar = "POD_NAMESPACE"
+	// loggingRateLimiter is key used for reducing the number of warnings in the discovery of sensor's namespace.
+	loggingRateLimiter = "sensor-pod-namespace"
 )
 
 // GetPodNamespace is a heuristic to determine in what namespace a given pod
@@ -30,7 +28,8 @@ func GetPodNamespace() string {
 
 	if sensorNamespace == "" {
 		sensorNamespace = namespaces.StackRox
-		log.Warnf("%s environment variable is unset/empty, using %q as fallback for sensor namespace",
+		logging.GetRateLimitedLogger().WarnL(loggingRateLimiter,
+			"%s environment variable is unset/empty, using %q as fallback for sensor namespace",
 			nsEnvVar, namespaces.StackRox)
 	}
 	return sensorNamespace
