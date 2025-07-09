@@ -52,9 +52,7 @@ runs:
       shell: bash
       run: |
         set +e
-        ls -la /__t/
         du -s /__t/* | sort -V
-        du /__w/ /__t/ 2>/dev/null | sort -V | tail -70
         # preinstalled tools not used. ordered by size asc
         cleanup=(
           # remove if container job:
@@ -65,7 +63,6 @@ runs:
           /__t/node
           /__t/PyPy
           /__t/Ruby
-          /__w/_temp/
 
           # on non-container jobs:
           /usr/share/dotnet
