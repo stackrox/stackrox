@@ -3,6 +3,8 @@ import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { Divider, DropdownItem } from '@patternfly/react-core';
+import initials from 'initials';
+import { useNavigate } from 'react-router-dom';
 
 import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 import useAnalytics, { INVITE_USERS_MODAL_OPENED } from 'hooks/useAnalytics';
@@ -19,6 +21,7 @@ const userMenuStyleConstant = {
 } as CSSProperties;
 
 function UserMenu({ logout, setInviteModalVisibility, userData }) {
+    const navigate = useNavigate();
     const { analyticsTrack } = useAnalytics();
     const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForInviting = hasReadWriteAccess('Access');
@@ -46,8 +49,9 @@ function UserMenu({ logout, setInviteModalVisibility, userData }) {
     return (
         <MenuDropdown
             popperProps={{ position: 'end' }}
-            toggleText={name || '--'}
+            toggleText={name ? initials(name) : '--'}
             toggleVariant="plainText"
+            ariaLabel="User menu"
         >
             <DropdownItem
                 key="user"
@@ -58,7 +62,7 @@ function UserMenu({ logout, setInviteModalVisibility, userData }) {
                 {displayName}
             </DropdownItem>
             <Divider component="li" key="separator" />
-            <DropdownItem key="profile" href={userBasePath}>
+            <DropdownItem key="profile" onClick={() => navigate(userBasePath)}>
                 My profile
             </DropdownItem>
             {hasWriteAccessForInviting && (
