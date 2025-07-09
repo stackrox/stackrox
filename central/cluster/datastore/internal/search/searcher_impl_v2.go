@@ -13,13 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/search/sorted"
 )
 
-var (
-	defaultSortOption = &v1.QuerySortOption{
-		Field:    search.Cluster.String(),
-		Reversed: false,
-	}
-)
-
 // NewV2 returns a new instance of Searcher for the given storage.
 func NewV2(storage store.Store, clusterRanker *ranking.Ranker) Searcher {
 	return &searcherImplV2{
@@ -30,8 +23,7 @@ func NewV2(storage store.Store, clusterRanker *ranking.Ranker) Searcher {
 
 func formatSearcherV2(searcher search.Searcher, clusterRanker *ranking.Ranker) search.Searcher {
 	prioritySortedSearcher := sorted.Searcher(searcher, search.ClusterPriority, clusterRanker)
-	paginatedSearcher := paginated.Paginated(prioritySortedSearcher)
-	return paginated.WithDefaultSortOption(paginatedSearcher, defaultSortOption)
+	return paginated.Paginated(prioritySortedSearcher)
 }
 
 type searcherImplV2 struct {
