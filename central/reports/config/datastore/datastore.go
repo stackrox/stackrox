@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stackrox/rox/central/reports/config/search"
 	"github.com/stackrox/rox/central/reports/config/store"
 	pgStore "github.com/stackrox/rox/central/reports/config/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -30,17 +29,15 @@ type DataStore interface {
 }
 
 // New returns a new DataStore instance.
-func New(reportConfigStore store.Store, searcher search.Searcher) DataStore {
+func New(reportConfigStore store.Store) DataStore {
 	return &dataStoreImpl{
 		reportConfigStore: reportConfigStore,
-		searcher:          searcher,
 	}
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
 func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) DataStore {
 	store := pgStore.New(pool)
-	searcher := search.New(store)
 
-	return New(store, searcher)
+	return New(store)
 }
