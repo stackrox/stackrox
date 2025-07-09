@@ -54,13 +54,16 @@ runs:
         set +e
         ls -la /__t/
         du -s /__t/* | sort -V
-        du /__w/ /__t/ /usr/ /opt/ 2>/dev/null | sort -V | tail -70
+        du /__w/ /__t/ 2>/dev/null | sort -V | tail -70
         # preinstalled tools not used. ordered by size asc
         cleanup=(
           # remove if container job:
           /__t/CodeQL
           /__t/Python
           /__t/go
+          /__t/gcloud
+          /__t/node
+          /__t/PyPy
           /__t/Ruby
           /__w/_temp/
 
