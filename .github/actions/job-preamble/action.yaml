@@ -133,5 +133,5 @@ runs:
           echo "Free disk space before: ${{ steps.disk-check-cleaned.outputs.free }} [${{ steps.disk-check.outputs.free }} before cleanup], and after: ${free}.";
           if [[ ${free%GB} -lt 5 ]]; then\
             printf "Low free disk space post-job: ${free}" | tee -a "$GITHUB_STEP_SUMMARY";\
-            du -k / | sort -V | tail -100; \
+            du -k / | sort -V | tail -100 || true; \
           fi;
