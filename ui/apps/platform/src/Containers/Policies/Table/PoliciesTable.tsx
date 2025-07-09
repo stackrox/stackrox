@@ -27,6 +27,7 @@ import {
 } from '@patternfly/react-table';
 
 import { ListPolicy } from 'types/policy.proto';
+import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
 import PolicyDisabledIconText from 'Components/PatternFly/IconText/PolicyDisabledIconText';
 import PolicySeverityIconText from 'Components/PatternFly/IconText/PolicySeverityIconText';
@@ -51,7 +52,6 @@ import {
 } from '../policies.utils';
 
 import './PoliciesTable.css';
-import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 
 function isExternalPolicySelected(policies: ListPolicy[], selectedIds: string[]): boolean {
     return policies.filter(({ id }) => selectedIds.includes(id)).some(isExternalPolicy);
