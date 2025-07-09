@@ -6,7 +6,6 @@ import (
 
 	"github.com/stackrox/rox/central/secret/internal/store"
 	pgStore "github.com/stackrox/rox/central/secret/internal/store/postgres"
-	"github.com/stackrox/rox/central/secret/search"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -30,10 +29,9 @@ type DataStore interface {
 }
 
 // New returns a new instance of DataStore using the input store, and searcher.
-func New(secretStore store.Store, searcher search.Searcher) DataStore {
+func New(secretStore store.Store) DataStore {
 	d := &datastoreImpl{
-		storage:  secretStore,
-		searcher: searcher,
+		storage: secretStore,
 	}
 	return d
 }
@@ -41,6 +39,5 @@ func New(secretStore store.Store, searcher search.Searcher) DataStore {
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
 func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) DataStore {
 	dbstore := pgStore.New(pool)
-	searcher := search.New(dbstore)
-	return New(dbstore, searcher)
+	return New(dbstore)
 }
