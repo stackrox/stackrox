@@ -63,6 +63,7 @@ image:
     tag: null # string
     fullRef: null # string
 env:
+  grpcEnforceALPN: null # bool
   openshift: null # bool | int
   istio: null # bool
   storageClasses:
