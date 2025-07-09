@@ -59,8 +59,8 @@ func TestGenerateCRS(t *testing.T) {
 	mockBackend := mocks.NewMockBackend(mockCtrl)
 	service := New(mockBackend, mockStore)
 
-	mockBackend.EXPECT().IssueCRS(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).DoAndReturn(
-		func(_ context.Context, _ string, validUntil time.Time) (*backend.CRSWithMeta, error) {
+	mockBackend.EXPECT().IssueCRS(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).DoAndReturn(
+		func(_ context.Context, _ string, validUntil time.Time, maxRegistrations uint64) (*backend.CRSWithMeta, error) {
 			assert.True(t, validUntil.IsZero())
 			crsWithMeta := &backend.CRSWithMeta{
 				CRS:  &crs.CRS{},
@@ -84,8 +84,8 @@ func TestGenerateCRSWithoutValidity(t *testing.T) {
 	mockBackend := mocks.NewMockBackend(mockCtrl)
 	service := New(mockBackend, mockStore)
 
-	mockBackend.EXPECT().IssueCRS(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).DoAndReturn(
-		func(_ context.Context, _ string, validUntil time.Time) (*backend.CRSWithMeta, error) {
+	mockBackend.EXPECT().IssueCRS(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).DoAndReturn(
+		func(_ context.Context, _ string, validUntil time.Time, maxRegistrations uint64) (*backend.CRSWithMeta, error) {
 			assert.True(t, validUntil.IsZero())
 			crsWithMeta := &backend.CRSWithMeta{
 				CRS:  &crs.CRS{},
@@ -111,10 +111,10 @@ func TestGenerateCRSWithValidUntil(t *testing.T) {
 	reqValidUntil, err := time.Parse(time.RFC3339, "2100-01-02T13:04:05Z")
 	assert.NoError(t, err, "parsing RFC3339 timestamp failed")
 
-	mockBackend.EXPECT().IssueCRS(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).DoAndReturn(
+	mockBackend.EXPECT().IssueCRS(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).DoAndReturn(
 		// Verify that the validUntil timestamp passed to the backend matches what is specified
 		// in the service request.
-		func(_ context.Context, _ string, validUntil time.Time) (*backend.CRSWithMeta, error) {
+		func(_ context.Context, _ string, validUntil time.Time, maxRegistrations uint64) (*backend.CRSWithMeta, error) {
 			assert.True(t, validUntil.Equal(reqValidUntil))
 			crsWithMeta := &backend.CRSWithMeta{
 				CRS:  &crs.CRS{},
@@ -142,8 +142,8 @@ func TestGenerateCRSWithValidFor(t *testing.T) {
 	expectedValidUntil := time.Now().Add(reqValidFor)
 	epsilon := 10 * time.Second
 
-	mockBackend.EXPECT().IssueCRS(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).DoAndReturn(
-		func(_ context.Context, _ string, validUntil time.Time) (*backend.CRSWithMeta, error) {
+	mockBackend.EXPECT().IssueCRS(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).DoAndReturn(
+		func(_ context.Context, _ string, validUntil time.Time, maxRegistrations uint64) (*backend.CRSWithMeta, error) {
 			// Verify that the validUntil passed to the backend matches now() + validFor.
 			timeDelta := validUntil.Sub(expectedValidUntil)
 			assert.Less(t, timeDelta, epsilon, "CRS valid for longer than expected")
@@ -173,7 +173,7 @@ func TestGenerateCRSWithValidForAndValidUntil(t *testing.T) {
 	assert.NoError(t, err, "parsing RFC3339 timestamp failed")
 	reqValidFor := 10 * time.Minute
 
-	mockBackend.EXPECT().IssueCRS(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
+	mockBackend.EXPECT().IssueCRS(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 
 	request := &v1.CRSGenRequestExtended{
 		Name:       "secured-cluster",
