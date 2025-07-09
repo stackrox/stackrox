@@ -461,16 +461,16 @@ func (t *nRadixTree) validateCardinality() bool {
 }
 
 func cloneIPNet(ipNet *net.IPNet) *net.IPNet {
-    ip := make(net.IP, len(ipNet.IP))
-    copy(ip, ipNet.IP)
+	ip := make(net.IP, len(ipNet.IP))
+	copy(ip, ipNet.IP)
 
-    mask := make(net.IPMask, len(ipNet.Mask))
-    copy(mask, ipNet.Mask)
+	mask := make(net.IPMask, len(ipNet.Mask))
+	copy(mask, ipNet.Mask)
 
-    return &net.IPNet{
-        IP:   ip,
-        Mask: mask,
-    }
+	return &net.IPNet{
+		IP:   ip,
+		Mask: mask,
+	}
 }
 
 func compareValueIpNet(value *storage.NetworkEntityInfo, ipNet *net.IPNet) bool {
@@ -524,7 +524,7 @@ func (t *nRadixTree) validateValues() bool {
 	mask := make(net.IPMask, 4)
 
 	ipNet := &net.IPNet{
-		IP:	ip,
+		IP:   ip,
 		Mask: mask,
 	}
 
