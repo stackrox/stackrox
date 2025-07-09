@@ -52,7 +52,6 @@ runs:
       shell: bash
       run: |
         set +e
-        du /__w/ /__t/ /usr/ /opt/ 2>/dev/null |sort -V | tail -50
         # preinstalled tools not used. ordered by size asc
         cleanup=(
           # always remove (on runner or container job):
