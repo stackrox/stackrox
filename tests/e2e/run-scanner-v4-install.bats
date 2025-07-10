@@ -462,24 +462,16 @@ central:
 EOT
     )
 
-    _begin "verify-scanner-V4-not-deployed"
+    _begin "verify-scanners-are-deployed"
     verify_scannerV2_deployed "$CUSTOM_CENTRAL_NAMESPACE"
-    verify_no_scannerV4_deployed "$CUSTOM_CENTRAL_NAMESPACE"
+    verify_scannerV4_deployed "$CUSTOM_CENTRAL_NAMESPACE"
+    verify_deployment_scannerV4_env_var_set "$CUSTOM_CENTRAL_NAMESPACE" "central"
 
     _begin "upgrade-to-HEAD-central"
     deploy_central_with_helm "$CUSTOM_CENTRAL_NAMESPACE" "$MAIN_IMAGE_TAG" "" \
         --reuse-values
 
-    _begin "verify-scanner-V4-not-deployed"
-    verify_scannerV2_deployed "$CUSTOM_CENTRAL_NAMESPACE"
-    verify_no_scannerV4_deployed "$CUSTOM_CENTRAL_NAMESPACE"
-
-    _begin "enable-scanner-V4-in-central"
-    deploy_central_with_helm "$CUSTOM_CENTRAL_NAMESPACE" "$MAIN_IMAGE_TAG" "" \
-        --reuse-values \
-        --set scannerV4.disable=false
-
-    _begin "verify-scanners-deployed"
+    _begin "verify-scanners-are-deployed"
     verify_scannerV2_deployed "$CUSTOM_CENTRAL_NAMESPACE"
     verify_scannerV4_deployed "$CUSTOM_CENTRAL_NAMESPACE"
     verify_deployment_scannerV4_env_var_set "$CUSTOM_CENTRAL_NAMESPACE" "central"
@@ -492,36 +484,18 @@ EOT
         "$EARLIER_MAIN_IMAGE_TAG" "$old_sensor_chart" \
         "$secured_cluster_name" "$ROX_ADMIN_PASSWORD" "$central_endpoint"
 
-    _begin "verify-scanner-V2-not-deployed"
-    verify_no_scannerV2_deployed "$CUSTOM_SENSOR_NAMESPACE"
-
-    _begin "verify-scanner-V4-not-deployed"
-    verify_no_scannerV4_deployed "$CUSTOM_SENSOR_NAMESPACE"
+    _begin "verify-scanners-are-deployed"
+    verify_scannerV2_deployed "$CUSTOM_SENSOR_NAMESPACE"
+    verify_scannerV4_indexer_deployed "$CUSTOM_SENSOR_NAMESPACE"
+    verify_deployment_scannerV4_env_var_set "$CUSTOM_SENSOR_NAMESPACE" "sensor"
 
     _begin "upgrade-to-HEAD-sensor"
     deploy_sensor_with_helm "$CUSTOM_CENTRAL_NAMESPACE" "$CUSTOM_SENSOR_NAMESPACE" "" "" "" "" ""
 
-    _begin "verify-scanner-V2-not-deployed"
-    verify_no_scannerV2_deployed "$CUSTOM_SENSOR_NAMESPACE"
-
-    _begin "verify-scanner-V4-not-deployed"
-    verify_no_scannerV4_deployed "$CUSTOM_SENSOR_NAMESPACE"
-
-    _begin "enable-scanners-in-secured-cluster"
-    # Without creating the scanner-db-password secret manually Scanner V2 doesn't come up.
-    # Let's just reuse an existing password for this for simplicity.
-    "$ORCH_CMD" </dev/null -n "$CUSTOM_SENSOR_NAMESPACE" create secret generic scanner-db-password \
-        --from-file=password=<(echo "$ROX_ADMIN_PASSWORD")
-
-    deploy_sensor_with_helm "$CUSTOM_CENTRAL_NAMESPACE" "$CUSTOM_SENSOR_NAMESPACE" "" "" "" "" "" \
-        --set scannerV4.disable=false \
-        --set scanner.disable=false
-
-    _begin "verify-scanner-V2-deployed"
+    _begin "verify-scanners-are-deployed"
     verify_scannerV2_deployed "$CUSTOM_SENSOR_NAMESPACE"
-
-    _begin "verify-scanner-V4-deployed"
     verify_scannerV4_indexer_deployed "$CUSTOM_SENSOR_NAMESPACE"
+    verify_deployment_scannerV4_env_var_set "$CUSTOM_SENSOR_NAMESPACE" "sensor"
 
     _end
 }
