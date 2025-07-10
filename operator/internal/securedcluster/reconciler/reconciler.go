@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/operator/internal/legacy"
 	"github.com/stackrox/rox/operator/internal/proxy"
 	"github.com/stackrox/rox/operator/internal/reconciler"
+	"github.com/stackrox/rox/operator/internal/securedcluster"
 	"github.com/stackrox/rox/operator/internal/securedcluster/extensions"
 	scTranslation "github.com/stackrox/rox/operator/internal/securedcluster/values/translation"
 	"github.com/stackrox/rox/operator/internal/utils"
@@ -51,14 +52,13 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 			&corev1.ConfigMap{},
 			reconciler.HandleSiblings[*corev1.ConfigMap](platform.SecuredClusterGVK, mgr),
 			&utils.CreateOrUpdateWithNamePredicate[*corev1.ConfigMap]{
-				Name: extensions.CABundleConfigMapName,
+				Name: securedcluster.CABundleConfigMapName,
 			},
 		),
 	))
 	opts = append(opts, pkgReconciler.WithPreExtension(extensions.FeatureDefaultingExtension(mgr.GetClient())))
 	opts = append(opts, otherPreExtensions...)
 	opts = append(opts, pkgReconciler.WithPauseReconcileAnnotation(commonExtensions.PauseReconcileAnnotation))
-	opts = append(opts, pkgReconciler.WithPostExtension(extensions.ReconcileAdmissionControlCABundleExtension(mgr.GetClient(), mgr.GetAPIReader())))
 	opts, err := commonExtensions.AddSelectorOptionIfNeeded(selector, opts)
 	if err != nil {
 		return err
