@@ -11,7 +11,6 @@ import {
     violationsBasePath,
     vulnerabilitiesAllImagesPath,
     vulnerabilitiesNodeCvesPath,
-    vulnerabilitiesWorkloadCvesPath,
 } from 'routePaths';
 import { getQueryString } from 'utils/queryStringUtils';
 import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
@@ -58,7 +57,7 @@ export type SearchResultCategoryMap = Record<SearchResultCategory, SearchResultC
 // Therefore update that property if response ever adds search categories.
 
 function getSearchResultCategoryMap(
-    isFeatureFlagEnabled: IsFeatureFlagEnabled
+    isFeatureFlagEnabled: IsFeatureFlagEnabled // eslint-disable-line @typescript-eslint/no-unused-vars
 ): SearchResultCategoryMap {
     return {
         ALERTS: {
@@ -101,7 +100,7 @@ function getSearchResultCategoryMap(
             },
             viewLinks: [
                 {
-                    basePath: `${vulnerabilitiesWorkloadCvesPath}/images/:id`,
+                    basePath: `${vulnerabilitiesAllImagesPath}/images/:id`,
                     linkText: 'Images',
                     routeKey: 'vulnerability-management',
                 },
@@ -111,11 +110,7 @@ function getSearchResultCategoryMap(
             filterOn: null,
             viewLinks: [
                 {
-                    basePath: `${
-                        isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT')
-                            ? vulnerabilitiesAllImagesPath
-                            : vulnerabilitiesWorkloadCvesPath
-                    }/namespace-view${getQueryString({
+                    basePath: `${vulnerabilitiesAllImagesPath}/namespace-view${getQueryString({
                         s: {
                             Namespace: ['^:name$'],
                             Cluster: ['^:locationTextForCategory$'],

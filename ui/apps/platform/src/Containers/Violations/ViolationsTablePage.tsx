@@ -26,7 +26,6 @@ import { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
 import { onURLSearch } from 'Components/CompoundSearchFilter/utils/utils';
 import { FilteredWorkflowView } from 'Components/FilteredWorkflowViewSelector/types';
 import { SearchFilter } from 'types/search';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import useEffectAfterFirstRender from 'hooks/useEffectAfterFirstRender';
 import useURLSort from 'hooks/useURLSort';
@@ -112,8 +111,6 @@ function getDescriptionForSelectedViolationState(
 function ViolationsTablePage(): ReactElement {
     const { analyticsTrack } = useAnalytics();
     const { searchFilter, setSearchFilter } = useURLSearch();
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isPlatformCveSplitEnabled = isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT');
 
     const [selectedViolationStateTab, setSelectedViolationStateTab] = useURLStringUnion(
         'violationState',
@@ -278,19 +275,15 @@ function ViolationsTablePage(): ReactElement {
                     spaceItems={{ default: 'spaceItemsNone' }}
                     className="pf-v5-u-flex-grow-1"
                 >
-                    <Title headingLevel="h1">
-                        {isPlatformCveSplitEnabled ? title : 'Violations'}
-                    </Title>
-                    {isPlatformCveSplitEnabled && (
-                        <Popover
-                            aria-label="More information about the current page"
-                            bodyContent={description}
-                        >
-                            <Button title="Page description" variant="plain">
-                                <OutlinedQuestionCircleIcon />
-                            </Button>
-                        </Popover>
-                    )}
+                    <Title headingLevel="h1">{title}</Title>
+                    <Popover
+                        aria-label="More information about the current page"
+                        bodyContent={description}
+                    >
+                        <Button title="Page description" variant="plain">
+                            <OutlinedQuestionCircleIcon />
+                        </Button>
+                    </Popover>
                 </Flex>
             </PageSection>
             <PageSection variant="light" className="pf-v5-u-py-0">
@@ -321,21 +314,15 @@ function ViolationsTablePage(): ReactElement {
                     />
                 </Tabs>
             </PageSection>
-            {!isPlatformCveSplitEnabled && (
-                <PageSection className="pf-v5-u-py-md" component="div" variant="light">
-                    <FilteredWorkflowViewSelector
-                        filteredWorkflowView={filteredWorkflowView}
-                        onChangeFilteredWorkflowView={onChangeFilteredWorkflowView}
-                    />
-                </PageSection>
-            )}
-            {isPlatformCveSplitEnabled && (
-                <PageSection variant="light">
-                    <Text>
-                        {getDescriptionForSelectedViolationState(selectedViolationStateTab)}
-                    </Text>
-                </PageSection>
-            )}
+            <PageSection className="pf-v5-u-py-md" component="div" variant="light">
+                <FilteredWorkflowViewSelector
+                    filteredWorkflowView={filteredWorkflowView}
+                    onChangeFilteredWorkflowView={onChangeFilteredWorkflowView}
+                />
+            </PageSection>
+            <PageSection variant="light">
+                <Text>{getDescriptionForSelectedViolationState(selectedViolationStateTab)}</Text>
+            </PageSection>
             <PageSection variant="default" id={tabContentId}>
                 {isLoadingAlerts && (
                     <Bullseye>

@@ -8,7 +8,7 @@ import {
     configManagementPath,
     urlEntityListTypes,
     violationsFullViewPath,
-    vulnerabilitiesWorkloadCvesPath,
+    vulnerabilitiesWorkloadCvesPath, // TODO vulnerabilitiesAllImagesPath?
 } from 'routePaths';
 import { resourceTypes } from 'constants/entityTypes';
 import { getDateTime } from 'utils/dateUtils';

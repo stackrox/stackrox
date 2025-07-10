@@ -4,7 +4,7 @@ import { Flex, List, ListItem, Text, Button, FlexItem, Alert } from '@patternfly
 import { MinusCircleIcon, PlusCircleIcon } from '@patternfly/react-icons';
 
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
-import { vulnerabilitiesWorkloadCvesPath } from 'routePaths';
+import { vulnerabilitiesWorkloadCvesPath } from 'routePaths'; // TODO vulnerabilitiesAllImagesPath?
 
 const vulnerabilitiesWorkloadCveSinglePath = `${vulnerabilitiesWorkloadCvesPath}/cves/:cve`;
 

@@ -3,10 +3,9 @@ import { Link } from 'react-router-dom-v5-compat';
 import lowerCase from 'lodash/lowerCase';
 import capitalize from 'lodash/capitalize';
 
-import { vulnerabilitiesPlatformPath, vulnerabilitiesWorkloadCvesPath } from 'routePaths';
+import { vulnerabilitiesAllImagesPath, vulnerabilitiesPlatformPath } from 'routePaths';
 
 import CollapsibleCard from 'Components/CollapsibleCard';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import KeyValuePairs from './KeyValuePairs';
 
 const containerConfigMap = {
@@ -114,14 +113,9 @@ const ContainerSecrets = ({ secrets }) => {
 
 const ContainerConfigurations = ({ deployment }) => {
     const title = 'Container configuration';
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const usePlatformWorkloadCvePath =
-        isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT') &&
-        deployment &&
-        deployment.platformComponent;
-    const vulnMgmtBasePath = usePlatformWorkloadCvePath
+    const vulnMgmtBasePath = deployment?.platformComponent
         ? vulnerabilitiesPlatformPath
-        : vulnerabilitiesWorkloadCvesPath;
+        : vulnerabilitiesAllImagesPath; // fall back to All if not known to be platform
 
     let containers = [];
     if (deployment.containers) {

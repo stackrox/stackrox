@@ -5,7 +5,7 @@ import isObject from 'lodash/isObject';
 import isArray from 'lodash/isArray';
 import isEmpty from 'lodash/isEmpty';
 
-import { vulnerabilitiesPlatformPath, vulnerabilitiesWorkloadCvesPath } from 'routePaths';
+import { vulnerabilitiesAllImagesPath, vulnerabilitiesPlatformPath } from 'routePaths';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 
 const isNumeric = (x) => (typeof x === 'number' || typeof x === 'string') && Number(x) >= 0;
@@ -17,7 +17,6 @@ class KeyValuePairs extends Component {
             label: PropTypes.string,
             className: PropTypes.string,
         }),
-        isFeatureFlagEnabled: PropTypes.func.isRequired,
     };
 
     static defaultProps = {
@@ -53,7 +52,7 @@ class KeyValuePairs extends Component {
 
     render() {
         const keys = this.getKeys();
-        const { data, isFeatureFlagEnabled } = this.props;
+        const { data } = this.props;
         const mapping = this.props.keyValueMap;
         return keys.map((key) => {
             if (!data[key] || !mapping[key] || (isObject(data[key]) && isEmpty(data[key]))) {
@@ -69,7 +68,6 @@ class KeyValuePairs extends Component {
             }
 
             const usePlatformWorkloadCvePath =
-                isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT') &&
                 typeof data === 'object' &&
                 'platformComponent' in data &&
                 // eslint-disable-next-line react/prop-types
@@ -77,7 +75,7 @@ class KeyValuePairs extends Component {
 
             const vulnMgmtBasePath = usePlatformWorkloadCvePath
                 ? vulnerabilitiesPlatformPath
-                : vulnerabilitiesWorkloadCvesPath;
+                : vulnerabilitiesAllImagesPath; // fall back to All if not known to be platform
 
             return (
                 <div

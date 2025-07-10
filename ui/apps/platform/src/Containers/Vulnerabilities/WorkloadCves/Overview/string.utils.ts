@@ -1,22 +1,6 @@
 import { VulnerabilityState } from 'types/cve.proto';
 import { ensureExhaustive } from 'utils/type.utils';
 
-export function getViewStateTitle(
-    vulnerabilityState: VulnerabilityState,
-    isViewingWithCves: boolean
-): string {
-    switch (vulnerabilityState) {
-        case 'OBSERVED':
-            return isViewingWithCves ? 'Image vulnerabilities' : 'Images without vulnerabilities';
-        case 'DEFERRED':
-            return 'Deferred vulnerabilities';
-        case 'FALSE_POSITIVE':
-            return 'False-positive vulnerabilities';
-        default:
-            return ensureExhaustive(vulnerabilityState);
-    }
-}
-
 export function getViewStateDescription(
     vulnerabilityState: VulnerabilityState,
     isViewingWithCves: boolean
