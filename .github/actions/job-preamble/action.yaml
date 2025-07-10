@@ -60,10 +60,10 @@ runs:
           /opt/az
           /usr/local/lib/android
           # container jobs are lower priority: they are already slowed by container image pulls
-          /__t/gcloud
           /__t/CodeQL
           /__t/Python
           /__t/go
+          /__t/gcloud
           /__t/node
           /__t/PyPy
           /__t/Ruby
