@@ -11,8 +11,27 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Set up gcloud CLI
+    # auth prepares the gcp environment to authenticate.
+    - name: Auth gcloud
+      uses: 'google-github-actions/auth@v2'
+      with:
+        credentials_json: '${{ inputs.gcp-account }}'
+        export_environment_variables: true
+        create_credentials_file: true
+        cleanup_credentials: true
+
+    - name: Check gcloud CLI
+      id: gcloud-check
+      continue-on-error: true
+      shell: bash
+      run: |
+        gcloud info
+
+    # setup-gcloud authenticates gcloud
+    - name: Install gcloud CLI
       uses: 'google-github-actions/setup-gcloud@v2'
+      with:
+        skip_install: ${{ steps.gcloud-check.outcome != 'failure' }}
 
     - name: Shim gsutil as gcloud storage
       continue-on-error: true
@@ -23,14 +42,6 @@ runs:
         use_gcloud_storage=True
         EOF
         gsutil version -l
-
-    - name: Recover docker image cache space
-      shell: bash
-      run: |
-        df --si /
-        printf 'Docker prune: '
-        docker system prune --force --all
-        df --si /
 
     - name: List filesystems
       id: disk-check
