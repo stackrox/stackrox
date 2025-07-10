@@ -21,24 +21,6 @@ var (
 	instance DataStore
 )
 
-// upsertDefaultRedHatSignatureIntegration creates the default Red Hat signature integration if it doesn't exist.
-func upsertDefaultRedHatSignatureIntegration(ctx context.Context, siStore store.SignatureIntegrationStore) error {
-	log.Info("Upserting default Red Hat signature integration")
-	err := siStore.Upsert(ctx, signatures.DefaultRedHatSignatureIntegration)
-	return err
-}
-
-// deleteDefaultRedHatSignatureIntegration removes the default Red Hat signature integration if it exists.
-func deleteDefaultRedHatSignatureIntegration(ctx context.Context, siStore store.SignatureIntegrationStore) error {
-	log.Info("Deleting default Red Hat signature integration")
-	err := siStore.Delete(ctx, signatures.DefaultRedHatSignatureIntegration.GetId())
-	if errors.Is(err, errox.NotFound) {
-		log.Debug("Default Red Hat signature integration did not exist")
-		return nil
-	}
-	return err
-}
-
 // setupDefaultRedHatSignatureIntegration ensures the presence of the default Red Hat signature integration is
 // in line with the RedHatImagesSignedPolicy feature flag.
 func setupDefaultRedHatSignatureIntegration(siStore store.SignatureIntegrationStore) {
@@ -52,11 +34,17 @@ func setupDefaultRedHatSignatureIntegration(siStore store.SignatureIntegrationSt
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
 
 	if features.RedHatImagesSignedPolicy.Enabled() {
-		err := upsertDefaultRedHatSignatureIntegration(ctx, siStore)
+		log.Debug("Upserting default Red Hat signature integration")
+		err := siStore.Upsert(ctx, signatures.DefaultRedHatSignatureIntegration)
 		utils.Should(errors.Wrap(err, "upserting default Red Hat signature integration"))
 	} else {
-		err := deleteDefaultRedHatSignatureIntegration(ctx, siStore)
-		utils.Should(errors.Wrap(err, "deleting default RedHat signature integration"))
+		log.Debug("Deleting default Red Hat signature integration")
+		err := siStore.Delete(ctx, signatures.DefaultRedHatSignatureIntegration.GetId())
+		if errors.Is(err, errox.NotFound) {
+			log.Debug("Default Red Hat signature integration did not exist")
+		} else {
+			utils.Should(errors.Wrap(err, "deleting default RedHat signature integration"))
+		}
 	}
 }
 
