@@ -1,56 +1,42 @@
 package datastore
 
 import (
-	"context"
 	"testing"
 
 	mockSIStore "github.com/stackrox/rox/central/signatureintegration/store/mocks"
+	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/signatures"
+	"github.com/stackrox/rox/pkg/testutils"
 	"go.uber.org/mock/gomock"
 )
 
-func TestCreateDefaultRedHatSignatureIntegration(t *testing.T) {
-	ctx := context.Background()
+func TestSetupDefaultRedHatSignatureIntegration(t *testing.T) {
+	t.Run("should upsert integration when RedHatImagesSignedPolicy feature is enabled", func(t *testing.T) {
+		testutils.MustUpdateFeature(t, features.RedHatImagesSignedPolicy, true)
 
-	t.Run("should not add default integration when it already exists", func(t *testing.T) {
 		s := mockSIStore.NewMockSignatureIntegrationStore(gomock.NewController(t))
-
-		s.EXPECT().Get(gomock.Any(), signatures.DefaultRedHatSignatureIntegration.GetId()).Return(
-			signatures.DefaultRedHatSignatureIntegration, true, nil)
-
-		createDefaultRedHatSignatureIntegration(ctx, s)
-	})
-
-	t.Run("should add default integration when it doesn't exist", func(t *testing.T) {
-		s := mockSIStore.NewMockSignatureIntegrationStore(gomock.NewController(t))
-
-		s.EXPECT().Get(gomock.Any(), signatures.DefaultRedHatSignatureIntegration.GetId()).Return(
-			nil, false, nil)
 		s.EXPECT().Upsert(gomock.Any(), signatures.DefaultRedHatSignatureIntegration).Return(nil)
 
-		createDefaultRedHatSignatureIntegration(ctx, s)
-	})
-}
-
-func TestRemoveDefaultRedHatSignatureIntegration(t *testing.T) {
-	ctx := context.Background()
-
-	t.Run("should not delete default integration when it doesn't exist", func(t *testing.T) {
-		s := mockSIStore.NewMockSignatureIntegrationStore(gomock.NewController(t))
-
-		s.EXPECT().Get(gomock.Any(), signatures.DefaultRedHatSignatureIntegration.GetId()).Return(
-			nil, false, nil)
-
-		removeDefaultRedHatSignatureIntegration(ctx, s)
+		setupDefaultRedHatSignatureIntegration(s)
 	})
 
-	t.Run("should delete default integration when it exists", func(t *testing.T) {
-		s := mockSIStore.NewMockSignatureIntegrationStore(gomock.NewController(t))
+	t.Run("should delete integration when RedHatImagesSignedPolicy feature is disabled", func(t *testing.T) {
+		testutils.MustUpdateFeature(t, features.RedHatImagesSignedPolicy, false)
 
-		s.EXPECT().Get(gomock.Any(), signatures.DefaultRedHatSignatureIntegration.GetId()).Return(
-			signatures.DefaultRedHatSignatureIntegration, true, nil)
+		s := mockSIStore.NewMockSignatureIntegrationStore(gomock.NewController(t))
 		s.EXPECT().Delete(gomock.Any(), signatures.DefaultRedHatSignatureIntegration.GetId()).Return(nil)
 
-		removeDefaultRedHatSignatureIntegration(ctx, s)
+		setupDefaultRedHatSignatureIntegration(s)
+	})
+
+	t.Run("should handle NotFound error gracefully when deleting", func(t *testing.T) {
+		testutils.MustUpdateFeature(t, features.RedHatImagesSignedPolicy, false)
+
+		s := mockSIStore.NewMockSignatureIntegrationStore(gomock.NewController(t))
+		notFoundErr := errox.NotFound.New("integration not found")
+		s.EXPECT().Delete(gomock.Any(), signatures.DefaultRedHatSignatureIntegration.GetId()).Return(notFoundErr)
+
+		setupDefaultRedHatSignatureIntegration(s)
 	})
 }
