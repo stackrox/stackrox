@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -47,10 +48,10 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 			centralUserPkiDeleteCommand := makeCentralUserPkiDeleteCommand(cliEnvironment, cmd, args)
 			deleteProvider, err := centralUserPkiDeleteCommand.prepareDeleteProvider()
 			if err != nil {
-				return err
+				return errors.Wrap(err, "preparing delete provider")
 			}
 			if err := flags.CheckConfirmation(cmd, cliEnvironment.Logger(), cliEnvironment.InputOutput()); err != nil {
-				return err
+				return errors.Wrap(err, "checking deletion confirmation")
 			}
 			return deleteProvider()
 		},
@@ -71,13 +72,14 @@ func makeCentralUserPkiDeleteCommand(cliEnvironment environment.Environment, cmd
 }
 
 func getAuthProviderByID(ctx context.Context, svc v1.AuthProviderServiceClient, id string) (*storage.AuthProvider, error) {
-	return svc.GetAuthProvider(ctx, &v1.GetAuthProviderRequest{Id: id})
+	prov, err := svc.GetAuthProvider(ctx, &v1.GetAuthProviderRequest{Id: id})
+	return prov, errors.Wrap(err, "getting auth provider by ID")
 }
 
 func getAuthProviderByName(ctx context.Context, svc v1.AuthProviderServiceClient, name string) (*storage.AuthProvider, error) {
 	provs, err := svc.GetAuthProviders(ctx, &v1.GetAuthProvidersRequest{Name: name, Type: userpki.TypeName})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "getting auth providers by name")
 	}
 	all := provs.GetAuthProviders()
 	if len(all) == 0 {
@@ -92,7 +94,7 @@ func getAuthProviderByName(ctx context.Context, svc v1.AuthProviderServiceClient
 func (cmd *centralUserPkiDeleteCommand) prepareDeleteProvider() (func() error, error) {
 	conn, err := cmd.env.GRPCConnection(common.WithRetryTimeout(cmd.retryTimeout))
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "establishing gRPC connection to delete user PKI auth provider")
 	}
 	defer utils.IgnoreError(conn.Close)
 	ctx, cancel := context.WithTimeout(pkgCommon.Context(), cmd.timeout)
@@ -110,7 +112,7 @@ func (cmd *centralUserPkiDeleteCommand) prepareDeleteProvider() (func() error, e
 	}
 
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "getting auth provider to delete")
 	}
 	group, err := groupService.GetGroup(ctx, &storage.GroupProperties{AuthProviderId: prov.GetId()})
 
@@ -127,12 +129,12 @@ func (cmd *centralUserPkiDeleteCommand) prepareDeleteProvider() (func() error, e
 			Id: prov.GetId(),
 		})
 		if err != nil {
-			return err
+			return errors.Wrap(err, "deleting auth provider")
 		}
 
 		groups, err := groupService.GetGroups(ctx, &v1.GetGroupsRequest{})
 		if err != nil {
-			return err
+			return errors.Wrap(err, "getting groups")
 		}
 		var relevantGroups []*storage.Group
 		for _, v := range groups.GetGroups() {
@@ -146,7 +148,7 @@ func (cmd *centralUserPkiDeleteCommand) prepareDeleteProvider() (func() error, e
 				RequiredGroups: nil,
 			})
 			if err != nil {
-				return err
+				return errors.Wrap(err, "updating groups")
 			}
 		}
 		cmd.env.Logger().PrintfLn("Successfully deleted.")
