@@ -410,9 +410,6 @@ function WorkloadCvesOverviewPage() {
                             </Button>
                         </Popover>
                     )}
-                    <FlexItem>
-                        Prioritize and manage scanned CVEs across images and deployments
-                    </FlexItem>
                 </Flex>
                 <Flex>
                     {hasWriteAccessForWatchedImage && (
