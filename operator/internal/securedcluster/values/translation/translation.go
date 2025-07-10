@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
+	"github.com/stackrox/rox/operator/internal/securedcluster"
 	"github.com/stackrox/rox/operator/internal/securedcluster/scanner"
 	"github.com/stackrox/rox/operator/internal/values/translation"
 	"github.com/stackrox/rox/pkg/crs"
@@ -187,9 +188,45 @@ func (t Translator) getTLSValues(ctx context.Context, sc platform.SecuredCluster
 		}
 		centralCA = string(ca)
 	}
+
+	// Read CA bundle from ConfigMap for ValidatingWebhookConfiguration, if available.
+	// This ConfigMap is genereated at runtime by Sensor.
+	if caBundleFromConfigMap, err := t.getCABundleFromConfigMap(ctx, sc); err == nil && caBundleFromConfigMap != "" {
+		// Use the CA bundle from ConfigMap for the ValidatingWebhookConfiguration
+		centralCA = caBundleFromConfigMap
+	}
+
 	v.SetStringMap("ca", map[string]string{"cert": centralCA})
 
 	return &v
+}
+
+// getCABundleFromConfigMap reads the CA bundle from the ConfigMap created by Sensor
+func (t Translator) getCABundleFromConfigMap(ctx context.Context, sc platform.SecuredCluster) (string, error) {
+	const (
+		caBundleKey = "ca-bundle.pem"
+	)
+
+	var configMap corev1.ConfigMap
+	key := ctrlClient.ObjectKey{
+		Namespace: sc.Namespace,
+		Name:      securedcluster.CABundleConfigMapName,
+	}
+
+	if err := t.direct.Get(ctx, key, &configMap); err != nil {
+		if k8sErrors.IsNotFound(err) {
+			return "", nil
+		}
+
+		return "", errors.Wrapf(err, "failed to get CA bundle ConfigMap %s", key)
+	}
+
+	caBundlePEM, ok := configMap.Data[caBundleKey]
+	if !ok {
+		return "", errors.Errorf("key %q not found in ConfigMap %s", caBundleKey, key)
+	}
+
+	return caBundlePEM, nil
 }
 
 func (t Translator) checkRequiredTLSSecrets(ctx context.Context, sc platform.SecuredCluster) (*crs.CRS, error) {
