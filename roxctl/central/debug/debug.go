@@ -76,7 +76,7 @@ func logLevelCommand(cliEnvironment environment.Environment) *cobra.Command {
 func (cmd *centralDebugLogLevelCommand) getLogLevel() error {
 	conn, err := cmd.env.GRPCConnection(common.WithRetryTimeout(cmd.retryTimeout))
 	if err != nil {
-		return err
+		return errors.Wrap(err, "establishing GRPC connection to retrieve log level")
 	}
 	defer func() {
 		_ = conn.Close()
@@ -117,7 +117,7 @@ func (cmd *centralDebugLogLevelCommand) printGetLogLevelResponse(r *v1.LogLevelR
 func (cmd *centralDebugLogLevelCommand) setLogLevel() error {
 	conn, err := cmd.env.GRPCConnection(common.WithRetryTimeout(cmd.retryTimeout))
 	if err != nil {
-		return err
+		return errors.Wrap(err, "establishing GRPC connection to set log level")
 	}
 	defer func() {
 		_ = conn.Close()
