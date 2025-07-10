@@ -108,8 +108,6 @@ jobs:
       # For consistency with `image/rhel/konflux.Dockerfile`, see comment there.
       UI_PKG_INSTALL_EXTRA_ARGS: --ignore-scripts
     runs-on: ubuntu-latest
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
     steps:
       - name: Checkout
         uses: actions/checkout@v4
