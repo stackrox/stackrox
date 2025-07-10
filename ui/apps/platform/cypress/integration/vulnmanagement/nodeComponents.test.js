@@ -32,7 +32,7 @@ describe('Vulnerability Management Node Components', () => {
         ]);
     });
 
-    // TODO: test perma-fails on OCP 4.19 after June 4, 2025
+    // ROX-19936: test perma-fails on OCP 4.19 after June 4, 2025
     it.skip('should sort the Risk Priority column', () => {
         visitVulnerabilityManagementEntities(entitiesKey);
 
@@ -118,12 +118,12 @@ describe('Vulnerability Management Node Components', () => {
     // Argument 3 in verify functions is index of column which has the links.
     // The one-based index includes checkbox, hidden, invisible.
 
-    // TODO: test perma-fails on OCP 4.19 after June 4, 2025
+    // ROX-19936: test perma-fails on OCP 4.19 after June 4, 2025
     it.skip('should display either links for node CVEs or text for No CVEs', () => {
         verifyConditionalCVEs(entitiesKey, 'node-cves', 4, 'vulnCounter');
     });
 
-    // TODO: test perma-fails on OCP 4.19 after June 4, 2025
+    // ROX-19936: test perma-fails on OCP 4.19 after June 4, 2025
     it.skip('should display links for nodes', () => {
         verifySecondaryEntities(entitiesKey, 'nodes', 6);
     });
