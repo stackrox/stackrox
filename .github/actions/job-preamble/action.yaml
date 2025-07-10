@@ -60,11 +60,11 @@ runs:
           /usr/local/lib/android
           # container jobs are lower priority: they are already slowed by container image pulls
           /__t/CodeQL
+          /__t/Ruby
+          /__t/PyPy
           /__t/Python
           /__t/go
           /__t/node
-          /__t/PyPy
-          /__t/Ruby
         )
         for d in "${cleanup[@]}"; do
           if [[ -d "$d" ]]; then
