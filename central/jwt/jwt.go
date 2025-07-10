@@ -1,13 +1,17 @@
 package jwt
 
 import (
+	"context"
 	"crypto/x509"
 	"encoding/pem"
 	"log"
 	"os"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/auth/m2m"
+	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/pkg/auth/tokens"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -52,6 +56,31 @@ func GetPrivateKeyBytes() ([]byte, error) {
 	return getBytesFromPem(privateKeyPathPEM)
 }
 
+type m2mValidator struct {
+	m2m.TokenExchangerSet
+	roxValidator tokens.Validator
+	issuerID     string
+}
+
+// Validate implements tokens.Validator.
+func (v *m2mValidator) Validate(ctx context.Context, token string) (*tokens.TokenInfo, error) {
+	iss, err := m2m.IssuerFromRawIDToken(token)
+	if err != nil {
+		return nil, err
+	}
+	if iss != v.issuerID {
+		exchanger, found := v.GetTokenExchanger(iss)
+		if !found {
+			return nil, errox.NoCredentials.CausedBy("no exchanger found for issuer " + iss)
+		}
+		token, err = exchanger.ExchangeToken(ctx, token)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return v.roxValidator.Validate(ctx, token)
+}
+
 func create() (tokens.IssuerFactory, tokens.Validator, error) {
 	privateKeyBytes, err := GetPrivateKeyBytes()
 	if err != nil {
@@ -63,7 +92,14 @@ func create() (tokens.IssuerFactory, tokens.Validator, error) {
 		return nil, nil, errors.Wrap(err, "parsing private key")
 	}
 
-	return tokens.CreateIssuerFactoryAndValidator(issuerID, privateKey, keyID)
+	factory, validator, err := tokens.CreateIssuerFactoryAndValidator(issuerID, privateKey, keyID)
+	if err == nil {
+		validator = &m2mValidator{
+			m2m.TokenExchangerSetSingleton(roleDataStore.Singleton(), IssuerFactorySingleton()),
+			validator,
+			issuerID}
+	}
+	return factory, validator, err
 }
 
 func initialize() {
