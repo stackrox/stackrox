@@ -1,13 +1,13 @@
-# PatternFly & Styling Standards for StackRox UI
+# PatternFly Styling Standards for StackRox UI
 
 ## PatternFly Component Usage
 
 ### Component Selection Priority
 
-1. **PatternFly components** - Use first for consistency
-2. **Custom PatternFly wrappers** - Use for common patterns
-3. **Tailwind utilities** - Use for spacing, colors, layout
-4. **Custom components** - Only when PatternFly doesn't provide functionality
+1. **PatternFly components** - Use first for consistency and accessibility
+2. **PatternFly utilities** - Use for spacing, colors, layout when components don't provide the needed styling
+3. **Custom PatternFly wrappers** - Use for common patterns not covered by base components
+4. **Custom CSS with PatternFly variables** - Only when PatternFly doesn't provide functionality
 
 ### Common PatternFly Patterns
 
@@ -15,7 +15,20 @@
 
 ```typescript
 // ✅ Good - Use PatternFly layout components
-import { Page, PageSection, Card, CardBody, CardHeader, Title } from '@patternfly/react-core';
+import {
+    Page,
+    PageSection,
+    Card,
+    CardBody,
+    CardHeader,
+    Title,
+    Gallery,
+    GalleryItem,
+    Flex,
+    FlexItem,
+    Grid,
+    GridItem
+} from '@patternfly/react-core';
 
 function AuthProviderPage() {
     return (
@@ -37,22 +50,43 @@ function AuthProviderPage() {
     );
 }
 
+// ✅ Good - Use PatternFly layout utilities
+function AuthProviderLayout({ providers }: { providers: AuthProvider[] }) {
+    return (
+        <Gallery hasGutter minWidths={{ default: '300px' }}>
+            {providers.map((provider) => (
+                <GalleryItem key={provider.id}>
+                    <AuthProviderCard provider={provider} />
+                </GalleryItem>
+            ))}
+        </Gallery>
+    );
+}
+
+// ✅ Good - Use PatternFly Flex for alignment
+function AuthProviderHeader({ provider }: { provider: AuthProvider }) {
+    return (
+        <Flex justifyContent={{ default: 'justifyContentSpaceBetween' }}>
+            <FlexItem>
+                <Title headingLevel="h3" size="md">
+                    {provider.name}
+                </Title>
+            </FlexItem>
+            <FlexItem>
+                <Label color={provider.enabled ? 'green' : 'red'}>
+                    {provider.enabled ? 'Enabled' : 'Disabled'}
+                </Label>
+            </FlexItem>
+        </Flex>
+    );
+}
+
 // ❌ Bad - Custom divs instead of PatternFly components
 function AuthProviderPage() {
     return (
         <div className="page">
             <div className="page-section">
                 <h1>Authentication Providers</h1>
-            </div>
-            <div className="page-section">
-                <div className="card">
-                    <div className="card-header">
-                        <h2>Provider List</h2>
-                    </div>
-                    <div className="card-body">
-                        <AuthProviderList />
-                    </div>
-                </div>
             </div>
         </div>
     );
@@ -71,7 +105,9 @@ import {
     FormSelectOption,
     Switch,
     ActionGroup,
-    Button
+    Button,
+    Grid,
+    GridItem
 } from '@patternfly/react-core';
 
 function AuthProviderForm({ provider, onSubmit }: AuthProviderFormProps) {
@@ -82,45 +118,53 @@ function AuthProviderForm({ provider, onSubmit }: AuthProviderFormProps) {
 
     return (
         <Form onSubmit={handleSubmit}>
-            <FormGroup
-                label="Provider Name"
-                isRequired
-                fieldId="provider-name"
-                validated={validated}
-                helperTextInvalid="Name is required"
-            >
-                <TextInput
-                    value={name}
-                    onChange={(value) => setName(value)}
-                    id="provider-name"
-                    name="provider-name"
-                    validated={validated}
-                    isRequired
-                />
-            </FormGroup>
+            <Grid hasGutter>
+                <GridItem span={6}>
+                    <FormGroup
+                        label="Provider Name"
+                        isRequired
+                        fieldId="provider-name"
+                        validated={validated}
+                        helperTextInvalid="Name is required"
+                    >
+                        <TextInput
+                            value={name}
+                            onChange={(value) => setName(value)}
+                            id="provider-name"
+                            name="provider-name"
+                            validated={validated}
+                            isRequired
+                        />
+                    </FormGroup>
+                </GridItem>
 
-            <FormGroup label="Provider Type" fieldId="provider-type">
-                <FormSelect
-                    value={type}
-                    onChange={(value) => setType(value as AuthProviderType)}
-                    id="provider-type"
-                    name="provider-type"
-                >
-                    <FormSelectOption value="oidc" label="OpenID Connect" />
-                    <FormSelectOption value="saml" label="SAML" />
-                    <FormSelectOption value="oauth" label="OAuth" />
-                </FormSelect>
-            </FormGroup>
+                <GridItem span={6}>
+                    <FormGroup label="Provider Type" fieldId="provider-type">
+                        <FormSelect
+                            value={type}
+                            onChange={(value) => setType(value as AuthProviderType)}
+                            id="provider-type"
+                            name="provider-type"
+                        >
+                            <FormSelectOption value="oidc" label="OpenID Connect" />
+                            <FormSelectOption value="saml" label="SAML" />
+                            <FormSelectOption value="oauth" label="OAuth" />
+                        </FormSelect>
+                    </FormGroup>
+                </GridItem>
 
-            <FormGroup label="Enabled" fieldId="provider-enabled">
-                <Switch
-                    id="provider-enabled"
-                    label="Enabled"
-                    labelOff="Disabled"
-                    isChecked={enabled}
-                    onChange={(checked) => setEnabled(checked)}
-                />
-            </FormGroup>
+                <GridItem span={12}>
+                    <FormGroup label="Enabled" fieldId="provider-enabled">
+                        <Switch
+                            id="provider-enabled"
+                            label="Enabled"
+                            labelOff="Disabled"
+                            isChecked={enabled}
+                            onChange={(checked) => setEnabled(checked)}
+                        />
+                    </FormGroup>
+                </GridItem>
+            </Grid>
 
             <ActionGroup>
                 <Button variant="primary" type="submit">
@@ -243,6 +287,10 @@ function SideNavigation() {
     opacity: 0.6;
 }
 
+.rox-auth-provider-card--elevated {
+    box-shadow: var(--pf-v5-global--BoxShadow--lg);
+}
+
 /* ❌ Bad - Overriding PatternFly classes */
 .pf-v5-c-card {
     background-color: #f0f0f0;
@@ -273,104 +321,131 @@ function CustomCard({ variant = 'default', isDisabled, className, ...props }: Cu
 }
 ```
 
-## Tailwind CSS Integration
+## PatternFly Layout Utilities
 
-### Tailwind Usage Guidelines
-
-- **Use for spacing** - margins, padding, gaps
-- **Use for layout** - flexbox, grid utilities
-- **Use for responsive design** - breakpoint prefixes
-- **Avoid for colors** - use PatternFly color variables instead
+### Spacing with PatternFly
 
 ```typescript
-// ✅ Good - Tailwind for layout and spacing
+// ✅ Good - Use PatternFly spacing utilities
+import { Stack, StackItem, Flex, FlexItem } from '@patternfly/react-core';
+
 function AuthProviderCard({ provider }: { provider: AuthProvider }) {
     return (
-        <Card className="mb-4">
+        <Card>
             <CardBody>
-                <div className="flex items-center justify-between mb-2">
-                    <Title headingLevel="h3" size="md">
-                        {provider.name}
-                    </Title>
-                    <Label color={provider.enabled ? 'green' : 'red'}>
-                        {provider.enabled ? 'Enabled' : 'Disabled'}
-                    </Label>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <Text component="small">Type</Text>
-                        <Text>{provider.type}</Text>
-                    </div>
-                    <div>
-                        <Text component="small">Groups</Text>
-                        <Text>{provider.groups?.length || 0} groups</Text>
-                    </div>
-                </div>
+                <Stack hasGutter>
+                    <StackItem>
+                        <Flex justifyContent={{ default: 'justifyContentSpaceBetween' }}>
+                            <FlexItem>
+                                <Title headingLevel="h3" size="md">
+                                    {provider.name}
+                                </Title>
+                            </FlexItem>
+                            <FlexItem>
+                                <Label color={provider.enabled ? 'green' : 'red'}>
+                                    {provider.enabled ? 'Enabled' : 'Disabled'}
+                                </Label>
+                            </FlexItem>
+                        </Flex>
+                    </StackItem>
+                    <StackItem>
+                        <Grid hasGutter>
+                            <GridItem span={6}>
+                                <Text component="small">Type</Text>
+                                <Text>{provider.type}</Text>
+                            </GridItem>
+                            <GridItem span={6}>
+                                <Text component="small">Groups</Text>
+                                <Text>{provider.groups?.length || 0} groups</Text>
+                            </GridItem>
+                        </Grid>
+                    </StackItem>
+                </Stack>
             </CardBody>
         </Card>
     );
 }
 
-// ❌ Bad - Tailwind for colors instead of PatternFly
+// ❌ Bad - Custom spacing instead of PatternFly utilities
 function AuthProviderCard({ provider }: { provider: AuthProvider }) {
     return (
-        <div className="bg-white border border-gray-300 rounded p-4 mb-4">
-            <div className="flex items-center justify-between mb-2">
-                <h3 className="text-lg font-semibold text-gray-900">
-                    {provider.name}
-                </h3>
-                <span className={`px-2 py-1 rounded text-sm ${
-                    provider.enabled ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                }`}>
-                    {provider.enabled ? 'Enabled' : 'Disabled'}
-                </span>
+        <div style={{ marginBottom: '16px' }}>
+            <div style={{ padding: '16px', backgroundColor: 'white', border: '1px solid #ccc' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                    <h3>{provider.name}</h3>
+                    <span>{provider.enabled ? 'Enabled' : 'Disabled'}</span>
+                </div>
             </div>
         </div>
     );
 }
 ```
 
-### Responsive Design
+### Responsive Design with PatternFly
 
 ```typescript
-// ✅ Good - Tailwind responsive utilities
+// ✅ Good - PatternFly responsive utilities
+import { Gallery, GalleryItem, Grid, GridItem } from '@patternfly/react-core';
+
 function AuthProviderGrid({ providers }: { providers: AuthProvider[] }) {
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <Gallery hasGutter minWidths={{ default: '300px', md: '400px', lg: '500px' }}>
             {providers.map((provider) => (
-                <AuthProviderCard key={provider.id} provider={provider} />
+                <GalleryItem key={provider.id}>
+                    <AuthProviderCard provider={provider} />
+                </GalleryItem>
             ))}
-        </div>
+        </Gallery>
     );
 }
 
-// ✅ Good - Responsive navigation
-function Navigation() {
+// ✅ Good - Responsive Grid
+function AuthProviderDetails({ provider }: { provider: AuthProvider }) {
+    return (
+        <Grid hasGutter>
+            <GridItem span={12} md={6} lg={4}>
+                <Text component="small">Provider Name</Text>
+                <Text>{provider.name}</Text>
+            </GridItem>
+            <GridItem span={12} md={6} lg={4}>
+                <Text component="small">Provider Type</Text>
+                <Text>{provider.type}</Text>
+            </GridItem>
+            <GridItem span={12} md={12} lg={4}>
+                <Text component="small">Status</Text>
+                <Label color={provider.enabled ? 'green' : 'red'}>
+                    {provider.enabled ? 'Enabled' : 'Disabled'}
+                </Label>
+            </GridItem>
+        </Grid>
+    );
+}
+
+// ✅ Good - Responsive navigation with PatternFly
+function ResponsiveNavigation() {
     const [isNavOpen, setIsNavOpen] = useState(false);
 
     return (
-        <div className="flex h-screen">
-            <nav className={`
-                fixed inset-y-0 left-0 z-50 w-64 transform transition-transform duration-300 ease-in-out
-                lg:translate-x-0 lg:static lg:inset-0
-                ${isNavOpen ? 'translate-x-0' : '-translate-x-full'}
-            `}>
-                <SideNavigation />
-            </nav>
-
-            <main className="flex-1 overflow-y-auto lg:ml-0">
-                <div className="lg:hidden">
-                    <Button
-                        variant="plain"
-                        onClick={() => setIsNavOpen(!isNavOpen)}
-                        className="p-2"
-                    >
-                        <BarsIcon />
-                    </Button>
-                </div>
+        <Page
+            header={
+                <PageHeader
+                    logo={<Brand src="/logo.svg" alt="StackRox" />}
+                    showNavToggle
+                    isNavOpen={isNavOpen}
+                    onNavToggle={() => setIsNavOpen(!isNavOpen)}
+                />
+            }
+            sidebar={
+                <PageSidebar
+                    nav={<SideNavigation />}
+                    isNavOpen={isNavOpen}
+                />
+            }
+        >
+            <PageSection>
                 {/* Main content */}
-            </main>
-        </div>
+            </PageSection>
+        </Page>
     );
 }
 ```
@@ -397,6 +472,17 @@ function Navigation() {
 .rox-custom-component--danger {
     background-color: var(--pf-v5-global--danger-color--100);
     color: var(--pf-v5-global--danger-color--200);
+}
+
+/* ✅ Good - Custom spacing using PatternFly variables */
+.rox-custom-spacing {
+    margin-bottom: var(--pf-v5-global--spacer--md);
+    padding: var(--pf-v5-global--spacer--sm) var(--pf-v5-global--spacer--md);
+}
+
+.rox-custom-spacing--large {
+    margin-bottom: var(--pf-v5-global--spacer--lg);
+    padding: var(--pf-v5-global--spacer--md) var(--pf-v5-global--spacer--lg);
 }
 
 /* ❌ Bad - Hardcoded values */
@@ -455,7 +541,7 @@ function AuthProviderActions({ provider, onEdit, onDelete }: AuthProviderActions
                 aria-describedby={`edit-${provider.id}-description`}
             >
                 Edit
-                <span id={`edit-${provider.id}-description`} className="sr-only">
+                <span id={`edit-${provider.id}-description`} className="pf-v5-screen-reader">
                     Edit authentication provider {provider.name}
                 </span>
             </DropdownItem>
@@ -465,7 +551,7 @@ function AuthProviderActions({ provider, onEdit, onDelete }: AuthProviderActions
                 aria-describedby={`delete-${provider.id}-description`}
             >
                 Delete
-                <span id={`delete-${provider.id}-description`} className="sr-only">
+                <span id={`delete-${provider.id}-description`} className="pf-v5-screen-reader">
                     Delete authentication provider {provider.name}
                 </span>
             </DropdownItem>
@@ -517,8 +603,8 @@ function AuthProviderList({ providers }: { providers: AuthProvider[] }) {
                     key={provider.id}
                     role="option"
                     aria-selected={index === selectedIndex}
-                    className={`provider-item ${
-                        index === selectedIndex ? 'provider-item--selected' : ''
+                    className={`rox-provider-item ${
+                        index === selectedIndex ? 'rox-provider-item--selected' : ''
                     }`}
                     onClick={() => handleSelectProvider(provider)}
                 >
@@ -586,11 +672,13 @@ function AuthProviderList() {
     }
 
     return (
-        <div>
+        <Stack hasGutter>
             {providers.map((provider) => (
-                <AuthProviderCard key={provider.id} provider={provider} />
+                <StackItem key={provider.id}>
+                    <AuthProviderCard provider={provider} />
+                </StackItem>
             ))}
-        </div>
+        </Stack>
     );
 }
 ```
@@ -691,12 +779,11 @@ function VirtualizedAuthProviderList({ items, height, itemHeight }: VirtualizedL
 
 ```typescript
 // ❌ Bad - Hardcoded colors
-<Label color="red">Error</Label>
-<div style={{ backgroundColor: '#ff0000' }}>Error message</div>
+<div style={{ backgroundColor: '#ff0000', color: '#ffffff' }}>Error message</div>
 
 // ✅ Good - PatternFly semantic colors
-<Label color="red">Error</Label>
 <Alert variant="danger" title="Error" />
+<Label color="red">Error</Label>
 ```
 
 ### 2. Spacing Inconsistencies
@@ -707,22 +794,89 @@ function VirtualizedAuthProviderList({ items, height, itemHeight }: VirtualizedL
     <div style={{ padding: '10px 12px' }}>Content</div>
 </div>
 
-// ✅ Good - Consistent spacing
-<div className="mb-4">
-    <div className="p-3">Content</div>
-</div>
+// ✅ Good - PatternFly spacing utilities
+<Stack hasGutter>
+    <StackItem>
+        <Card>
+            <CardBody>Content</CardBody>
+        </Card>
+    </StackItem>
+</Stack>
 ```
 
 ### 3. Missing Responsive Design
 
 ```typescript
 // ❌ Bad - Not responsive
-<div className="w-64">
+<div style={{ width: '256px' }}>
     <AuthProviderCard />
 </div>
 
-// ✅ Good - Responsive
-<div className="w-full sm:w-64 md:w-80 lg:w-96">
-    <AuthProviderCard />
+// ✅ Good - Responsive with PatternFly
+<Gallery hasGutter minWidths={{ default: '300px', md: '400px', lg: '500px' }}>
+    <GalleryItem>
+        <AuthProviderCard />
+    </GalleryItem>
+</Gallery>
+```
+
+### 4. Bypassing PatternFly Components
+
+```typescript
+// ❌ Bad - Custom implementation
+<div className="custom-button" onClick={handleClick}>
+    Click me
 </div>
+
+// ✅ Good - Use PatternFly components
+<Button variant="primary" onClick={handleClick}>
+    Click me
+</Button>
+```
+
+## PatternFly Utility Classes
+
+### Available Utility Classes
+
+```typescript
+// ✅ Good - Use PatternFly utility classes when needed
+<div className="pf-v5-u-mb-md pf-v5-u-p-md">
+    <Title headingLevel="h3" className="pf-v5-u-mb-sm">
+        Provider Details
+    </Title>
+    <Text className="pf-v5-u-color-400">
+        Configuration details for the authentication provider
+    </Text>
+</div>
+
+// Common utility classes:
+// Spacing: pf-v5-u-m-* (margin), pf-v5-u-p-* (padding)
+// Colors: pf-v5-u-color-*, pf-v5-u-background-color-*
+// Typography: pf-v5-u-font-size-*, pf-v5-u-font-weight-*
+// Display: pf-v5-u-display-*, pf-v5-u-flex-*, pf-v5-u-align-*
+```
+
+### When to Use Utility Classes
+
+- **Spacing adjustments** that don't warrant a custom component
+- **Quick responsive tweaks** for specific use cases
+- **Accessibility improvements** like screen reader only text
+- **Minor styling** that doesn't justify custom CSS
+
+```typescript
+// ✅ Good - Utility classes for minor adjustments
+<Card className="pf-v5-u-mb-lg">
+    <CardBody className="pf-v5-u-p-lg">
+        <Flex className="pf-v5-u-align-items-center pf-v5-u-justify-content-space-between">
+            <FlexItem>
+                <Title headingLevel="h4" className="pf-v5-u-mb-0">
+                    {provider.name}
+                </Title>
+            </FlexItem>
+            <FlexItem>
+                <Label>{provider.type}</Label>
+            </FlexItem>
+        </Flex>
+    </CardBody>
+</Card>
 ```
