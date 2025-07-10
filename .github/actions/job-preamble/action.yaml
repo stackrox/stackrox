@@ -101,14 +101,16 @@ runs:
       run: |
         free=$(df -BGB --output=avail / | tail -1)
         echo "free=${free}" | tee -a "$GITHUB_OUTPUT"
-        echo "Failed to free requested disk space, ${{ inputs.free-disk-space }} [${free} free]." \
-          | tee -a "$GITHUB_STEP_SUMMARY"
-        if [[ ! -d /opt/hostedtoolcache && ! -d /mnt/opt/hostedtoolcache && ! -d /mnt/usr/local ]]; then
-          printf 'For container workflows, you can mount the host /usr and /opt to allow deleting more unused tools:\n```\nvolumes:\n\t- /usr:/mnt/usr\n\t- /opt:/mnt/opt\n```' \
+        if [[ ${free%GB} -lt "${{ inputs.free-disk-space }}" ]]; then
+          echo "Failed to free requested disk space, ${{ inputs.free-disk-space }} [${free} free]." \
             | tee -a "$GITHUB_STEP_SUMMARY"
+          if [[ ! -d /opt/hostedtoolcache && ! -d /mnt/opt/hostedtoolcache && ! -d /mnt/usr/local ]]; then
+            printf 'For container workflows, you can mount the host /usr and /opt to allow deleting more unused tools:\n```\nvolumes:\n\t- /usr:/mnt/usr\n\t- /opt:/mnt/opt\n```' \
+              | tee -a "$GITHUB_STEP_SUMMARY"
+          fi
+          df --si /
+          exit 1
         fi
-        df --si /
-        [[ ${free%GB} -ge "${{ inputs.free-disk-space }}" ]]
 
     - name: Ignore dubious repository ownership
       run: |
