@@ -32,8 +32,7 @@ describe('Vulnerability Management Node Components', () => {
         ]);
     });
 
-    // ROX-19936: test perma-fails on OCP 4.19 after June 4, 2025
-    it.skip('should sort the Risk Priority column', () => {
+    it('should sort the Risk Priority column', () => {
         visitVulnerabilityManagementEntities(entitiesKey);
 
         const thSelector = '.rt-th:contains("Risk Priority")';
@@ -70,7 +69,7 @@ describe('Vulnerability Management Node Components', () => {
         // Do not assert because of potential timing problem: get td elements before table re-renders.
     });
 
-    // TODO: Investigate whether not yet supported or incorrect field in payload.
+    // TODO Investigate whether not yet supported or incorrect field in payload.
     it.skip('should sort the Top CVSS column', function () {
         if (hasOrchestratorFlavor('openshift')) {
             this.skip();
@@ -118,13 +117,11 @@ describe('Vulnerability Management Node Components', () => {
     // Argument 3 in verify functions is index of column which has the links.
     // The one-based index includes checkbox, hidden, invisible.
 
-    // ROX-19936: test perma-fails on OCP 4.19 after June 4, 2025
-    it.skip('should display either links for node CVEs or text for No CVEs', () => {
+    it('should display either links for node CVEs or text for No CVEs', () => {
         verifyConditionalCVEs(entitiesKey, 'node-cves', 4, 'vulnCounter');
     });
 
-    // ROX-19936: test perma-fails on OCP 4.19 after June 4, 2025
-    it.skip('should display links for nodes', () => {
+    it('should display links for nodes', () => {
         verifySecondaryEntities(entitiesKey, 'nodes', 6);
     });
 });
