@@ -14,7 +14,7 @@ import { gql, useQuery } from '@apollo/client';
 import { Link } from 'react-router-dom';
 import pluralize from 'pluralize';
 
-import { vulnerabilitiesWorkloadCvesPath } from 'routePaths';
+import { vulnerabilitiesWorkloadCvesPath } from 'routePaths'; // TODO vulnerabilitiesAllImagesPath?
 import { SetResult } from 'hooks/useSet';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';

@@ -11,7 +11,6 @@ import {
     vulnerabilitiesInactiveImagesPath,
     vulnerabilitiesPlatformPath,
     vulnerabilitiesUserWorkloadsPath,
-    vulnerabilitiesWorkloadCvesPath,
 } from 'routePaths';
 import ScannerV4IntegrationBanner from 'Components/ScannerV4IntegrationBanner';
 import useFeatureFlags, { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
@@ -35,7 +34,7 @@ export const imagesWithoutCvesViewId = 'images-without-cves';
 
 function getWorkloadCveContextFromView(
     viewId: string,
-    isFeatureFlagEnabled: IsFeatureFlagEnabled
+    isFeatureFlagEnabled: IsFeatureFlagEnabled // eslint-disable-line @typescript-eslint/no-unused-vars
 ): WorkloadCveView {
     let pageTitle: string = '';
     let pageTitleDescription: string | undefined;
@@ -46,21 +45,11 @@ function getWorkloadCveContextFromView(
 
     switch (viewId) {
         case userWorkloadViewId:
-            if (isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT')) {
-                pageTitle = 'User workload vulnerabilities';
-                pageTitleDescription =
-                    'Vulnerabilities affecting user-managed workloads and images';
-                baseSearchFilter = { 'Platform Component': ['false'] };
-                getAbsoluteUrl = (subPath: string) =>
-                    `${vulnerabilitiesUserWorkloadsPath}/${subPath}`;
-                viewContext = 'User workloads';
-            } else {
-                pageTitle = 'Workload CVEs';
-                baseSearchFilter = {};
-                getAbsoluteUrl = (subPath: string) =>
-                    `${vulnerabilitiesWorkloadCvesPath}/${subPath}`;
-                viewContext = 'Workload CVEs';
-            }
+            pageTitle = 'User workload vulnerabilities';
+            pageTitleDescription = 'Vulnerabilities affecting user-managed workloads and images';
+            baseSearchFilter = { 'Platform Component': ['false'] };
+            getAbsoluteUrl = (subPath: string) => `${vulnerabilitiesUserWorkloadsPath}/${subPath}`;
+            viewContext = 'User workloads';
             break;
         case platformViewId:
             pageTitle = 'Platform vulnerabilities';

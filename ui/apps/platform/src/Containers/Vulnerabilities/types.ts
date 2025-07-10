@@ -85,14 +85,6 @@ export type WatchStatus = 'WATCHED' | 'NOT_WATCHED' | 'UNKNOWN';
 
 export type CveExceptionRequestType = 'DEFERRAL' | 'FALSE_POSITIVE';
 
-export const observedCveModeValues = ['WITH_CVES', 'WITHOUT_CVES'] as const;
-
-export type ObservedCveMode = (typeof observedCveModeValues)[number];
-
-export function isObservedCveMode(value: unknown): value is ObservedCveMode {
-    return observedCveModeValues.some((mode) => mode === value);
-}
-
 export type VerifiedStatus =
     | 'CORRUPTED_SIGNATURE'
     | 'FAILED_VERIFICATION'

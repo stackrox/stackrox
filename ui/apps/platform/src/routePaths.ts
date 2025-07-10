@@ -6,7 +6,7 @@ import { resourceTypes, standardEntityTypes, rbacConfigTypes } from 'constants/e
 import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import { HasReadAccess } from 'hooks/usePermissions';
 import { ResourceName } from 'types/roleResources';
-import { FeatureFlagPredicate, allEnabled } from 'utils/featureFlagUtils';
+import { FeatureFlagPredicate } from 'utils/featureFlagUtils';
 
 export const mainPath = '/main';
 export const loginPath = '/login';
@@ -186,7 +186,6 @@ export type RouteKey =
     | 'vulnerabilities/inactive-images'
     | 'vulnerabilities/images-without-cves'
     | 'vulnerabilities/platform-cves'
-    | 'vulnerabilities/workload-cves'
     | 'vulnerability-management'
     ;
 
@@ -347,27 +346,19 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     'vulnerabilities/reports': {
         resourceAccessRequirements: everyResource(['WorkflowAdministration']),
     },
-    'vulnerabilities/workload-cves': {
-        resourceAccessRequirements: everyResource(['Deployment', 'Image']),
-    },
     'vulnerabilities/user-workloads': {
-        featureFlagRequirements: allEnabled(['ROX_PLATFORM_CVE_SPLIT']),
         resourceAccessRequirements: everyResource(['Deployment', 'Image']),
     },
     'vulnerabilities/platform': {
-        featureFlagRequirements: allEnabled(['ROX_PLATFORM_CVE_SPLIT']),
         resourceAccessRequirements: everyResource(['Deployment', 'Image']),
     },
     'vulnerabilities/all-images': {
-        featureFlagRequirements: allEnabled(['ROX_PLATFORM_CVE_SPLIT']),
         resourceAccessRequirements: everyResource(['Deployment', 'Image']),
     },
     'vulnerabilities/inactive-images': {
-        featureFlagRequirements: allEnabled(['ROX_PLATFORM_CVE_SPLIT']),
         resourceAccessRequirements: everyResource(['Deployment', 'Image']),
     },
     'vulnerabilities/images-without-cves': {
-        featureFlagRequirements: allEnabled(['ROX_PLATFORM_CVE_SPLIT']),
         resourceAccessRequirements: everyResource(['Deployment', 'Image']),
     },
     'vulnerability-management': {
@@ -456,7 +447,6 @@ const vulnManagementPathToLabelMap: Record<string, string> = {
 
 const vulnerabilitiesPathToLabelMap: Record<string, string> = {
     [vulnerabilitiesBasePath]: 'Vulnerabilities',
-    [vulnerabilitiesWorkloadCvesPath]: 'Workload CVEs',
     [vulnerabilitiesPlatformCvesPath]: 'Platform CVEs',
     [vulnerabilitiesNodeCvesPath]: 'Node CVEs',
     [vulnerabilityReportsPath]: 'Vulnerability Reporting',
