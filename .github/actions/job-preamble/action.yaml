@@ -131,10 +131,11 @@ runs:
           source scripts/ci/lib.sh;
           update_job_record outcome "${{ job.status }}" stopped_at "CURRENT_TIMESTAMP()";
           df --si;
-          du -ks /* 2>/dev/null | sort -V || true;
           free=$(df -BGB --output=avail / | tail -1);
           echo "Free disk space before: ${{ steps.disk-check-cleaned.outputs.free }} [${{ steps.disk-check.outputs.free }} before cleanup], and after: ${free}.";
           if [[ ${free%GB} -lt 5 ]]; then\
+            set -ex;\
+            du -ks /* 2>/dev/null | sort -V || true;
             du -k / 2>/dev/null | sort -V | tail -100 || true; \
             printf "Low free disk space post-job: ${free}" | tee -a "$GITHUB_STEP_SUMMARY";\
           fi;
