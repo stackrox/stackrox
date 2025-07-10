@@ -116,7 +116,8 @@ func generateCrsExtended(
 		req.ValidUntil = timestamppb.New(validUntil)
 	}
 
-	return svc.GenerateCRSExtended(ctx, &req)
+	crs, err := svc.GenerateCRSExtended(ctx, &req)
+	return crs, errors.Wrap(err, "generating CRS extended")
 }
 
 // generateCommand implements the command for generating new CRSs.
