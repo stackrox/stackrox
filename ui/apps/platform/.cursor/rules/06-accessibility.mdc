@@ -1,0 +1,947 @@
+# Accessibility Standards for StackRox UI
+
+## Core Accessibility Principles
+
+### WCAG 2.1 AA Compliance
+
+- **Perceivable** - Information must be presentable in ways users can perceive
+- **Operable** - Interface components must be operable by all users
+- **Understandable** - Information and UI operation must be understandable
+- **Robust** - Content must be robust enough for various assistive technologies
+
+### PatternFly Integration
+
+- **Use PatternFly components** - They include built-in accessibility features
+- **Follow PatternFly patterns** - Leverage their accessibility expertise
+- **Extend properly** - Maintain accessibility when customizing components
+
+## Semantic HTML and ARIA
+
+### Semantic HTML Structure
+
+```typescript
+// ✅ Good - Semantic HTML
+function AuthProviderPage() {
+    return (
+        <main>
+            <header>
+                <h1>Authentication Providers</h1>
+                <p>Manage your authentication providers and configurations.</p>
+            </header>
+
+            <section>
+                <h2>Provider List</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th scope="col">Name</th>
+                            <th scope="col">Type</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {providers.map((provider) => (
+                            <tr key={provider.id}>
+                                <td>{provider.name}</td>
+                                <td>{provider.type}</td>
+                                <td>{provider.enabled ? 'Enabled' : 'Disabled'}</td>
+                                <td>
+                                    <button
+                                        type="button"
+                                        onClick={() => editProvider(provider)}
+                                        aria-label={`Edit ${provider.name}`}
+                                    >
+                                        Edit
+                                    </button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </section>
+        </main>
+    );
+}
+
+// ❌ Bad - Non-semantic HTML
+function AuthProviderPage() {
+    return (
+        <div>
+            <div>
+                <div>Authentication Providers</div>
+                <div>Manage your authentication providers and configurations.</div>
+            </div>
+
+            <div>
+                <div>Provider List</div>
+                <div>
+                    <div>
+                        <div>Name</div>
+                        <div>Type</div>
+                        <div>Status</div>
+                        <div>Actions</div>
+                    </div>
+                    {providers.map((provider) => (
+                        <div key={provider.id}>
+                            <div>{provider.name}</div>
+                            <div>{provider.type}</div>
+                            <div>{provider.enabled ? 'Enabled' : 'Disabled'}</div>
+                            <div>
+                                <div onClick={() => editProvider(provider)}>Edit</div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+}
+```
+
+### ARIA Labels and Descriptions
+
+```typescript
+// ✅ Good - Proper ARIA usage
+function AuthProviderActions({ provider, onEdit, onDelete }: AuthProviderActionsProps) {
+    const [isOpen, setIsOpen] = useState(false);
+
+    return (
+        <div className="auth-provider-actions">
+            <button
+                type="button"
+                onClick={() => setIsOpen(!isOpen)}
+                aria-expanded={isOpen}
+                aria-haspopup="menu"
+                aria-label={`Actions for ${provider.name}`}
+                id={`actions-${provider.id}`}
+            >
+                <EllipsisVIcon />
+            </button>
+
+            {isOpen && (
+                <div
+                    role="menu"
+                    aria-labelledby={`actions-${provider.id}`}
+                    className="actions-menu"
+                >
+                    <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => onEdit(provider)}
+                        aria-describedby={`edit-${provider.id}-description`}
+                    >
+                        Edit
+                        <span id={`edit-${provider.id}-description`} className="sr-only">
+                            Edit authentication provider {provider.name}
+                        </span>
+                    </button>
+
+                    <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => onDelete(provider.id)}
+                        aria-describedby={`delete-${provider.id}-description`}
+                    >
+                        Delete
+                        <span id={`delete-${provider.id}-description`} className="sr-only">
+                            Delete authentication provider {provider.name}
+                        </span>
+                    </button>
+                </div>
+            )}
+        </div>
+    );
+}
+
+// ❌ Bad - Missing ARIA attributes
+function AuthProviderActions({ provider, onEdit, onDelete }) {
+    const [isOpen, setIsOpen] = useState(false);
+
+    return (
+        <div>
+            <button onClick={() => setIsOpen(!isOpen)}>
+                <EllipsisVIcon />
+            </button>
+
+            {isOpen && (
+                <div>
+                    <button onClick={() => onEdit(provider)}>Edit</button>
+                    <button onClick={() => onDelete(provider.id)}>Delete</button>
+                </div>
+            )}
+        </div>
+    );
+}
+```
+
+## Form Accessibility
+
+### Form Labels and Descriptions
+
+```typescript
+// ✅ Good - Accessible form
+function AuthProviderForm({ provider, onSubmit, onCancel }: AuthProviderFormProps) {
+    const [name, setName] = useState(provider?.name || '');
+    const [type, setType] = useState(provider?.type || 'oidc');
+    const [enabled, setEnabled] = useState(provider?.enabled || true);
+    const [errors, setErrors] = useState<Record<string, string>>({});
+
+    const nameId = `provider-name-${provider?.id || 'new'}`;
+    const typeId = `provider-type-${provider?.id || 'new'}`;
+    const enabledId = `provider-enabled-${provider?.id || 'new'}`;
+
+    return (
+        <form onSubmit={handleSubmit} noValidate>
+            <fieldset>
+                <legend>
+                    {provider ? 'Edit Authentication Provider' : 'Create Authentication Provider'}
+                </legend>
+
+                <div className="form-group">
+                    <label htmlFor={nameId} className="required">
+                        Provider Name
+                    </label>
+                    <input
+                        id={nameId}
+                        type="text"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        aria-required="true"
+                        aria-invalid={errors.name ? 'true' : 'false'}
+                        aria-describedby={errors.name ? `${nameId}-error` : `${nameId}-description`}
+                        className={errors.name ? 'error' : ''}
+                    />
+                    <div id={`${nameId}-description`} className="form-description">
+                        Enter a unique name for this authentication provider
+                    </div>
+                    {errors.name && (
+                        <div id={`${nameId}-error`} className="error-message" role="alert">
+                            {errors.name}
+                        </div>
+                    )}
+                </div>
+
+                <div className="form-group">
+                    <label htmlFor={typeId}>Provider Type</label>
+                    <select
+                        id={typeId}
+                        value={type}
+                        onChange={(e) => setType(e.target.value as AuthProviderType)}
+                        aria-describedby={`${typeId}-description`}
+                    >
+                        <option value="oidc">OpenID Connect</option>
+                        <option value="saml">SAML</option>
+                        <option value="oauth">OAuth</option>
+                    </select>
+                    <div id={`${typeId}-description`} className="form-description">
+                        Select the type of authentication provider
+                    </div>
+                </div>
+
+                <div className="form-group">
+                    <label htmlFor={enabledId}>
+                        <input
+                            id={enabledId}
+                            type="checkbox"
+                            checked={enabled}
+                            onChange={(e) => setEnabled(e.target.checked)}
+                            aria-describedby={`${enabledId}-description`}
+                        />
+                        Enable this provider
+                    </label>
+                    <div id={`${enabledId}-description`} className="form-description">
+                        When enabled, users can authenticate using this provider
+                    </div>
+                </div>
+
+                <div className="form-actions">
+                    <button type="submit" disabled={isSubmitting}>
+                        {isSubmitting ? 'Saving...' : 'Save Provider'}
+                    </button>
+                    <button type="button" onClick={onCancel}>
+                        Cancel
+                    </button>
+                </div>
+            </fieldset>
+        </form>
+    );
+}
+```
+
+### Error Handling and Validation
+
+```typescript
+// ✅ Good - Accessible error handling
+function FormField({
+    label,
+    value,
+    onChange,
+    error,
+    description,
+    required = false,
+    type = 'text',
+    ...props
+}: FormFieldProps) {
+    const id = useId();
+    const errorId = `${id}-error`;
+    const descriptionId = `${id}-description`;
+
+    return (
+        <div className="form-field">
+            <label htmlFor={id} className={required ? 'required' : ''}>
+                {label}
+                {required && <span aria-label="required">*</span>}
+            </label>
+
+            <input
+                id={id}
+                type={type}
+                value={value}
+                onChange={onChange}
+                aria-required={required}
+                aria-invalid={error ? 'true' : 'false'}
+                aria-describedby={[
+                    description ? descriptionId : null,
+                    error ? errorId : null,
+                ].filter(Boolean).join(' ')}
+                {...props}
+            />
+
+            {description && (
+                <div id={descriptionId} className="form-description">
+                    {description}
+                </div>
+            )}
+
+            {error && (
+                <div id={errorId} className="error-message" role="alert">
+                    <ExclamationTriangleIcon aria-hidden="true" />
+                    {error}
+                </div>
+            )}
+        </div>
+    );
+}
+```
+
+## Keyboard Navigation
+
+### Focus Management
+
+```typescript
+// ✅ Good - Keyboard navigation
+function AuthProviderModal({ isOpen, onClose, provider }: AuthProviderModalProps) {
+    const modalRef = useRef<HTMLDivElement>(null);
+    const firstFocusableRef = useRef<HTMLButtonElement>(null);
+    const lastFocusableRef = useRef<HTMLButtonElement>(null);
+
+    useEffect(() => {
+        if (isOpen) {
+            // Focus first element when modal opens
+            firstFocusableRef.current?.focus();
+        }
+    }, [isOpen]);
+
+    const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+        if (event.key === 'Escape') {
+            onClose();
+        }
+
+        if (event.key === 'Tab') {
+            // Trap focus within modal
+            if (event.shiftKey) {
+                // Shift+Tab - going backwards
+                if (document.activeElement === firstFocusableRef.current) {
+                    event.preventDefault();
+                    lastFocusableRef.current?.focus();
+                }
+            } else {
+                // Tab - going forwards
+                if (document.activeElement === lastFocusableRef.current) {
+                    event.preventDefault();
+                    firstFocusableRef.current?.focus();
+                }
+            }
+        }
+    };
+
+    if (!isOpen) return null;
+
+    return (
+        <div
+            className="modal-overlay"
+            onClick={onClose}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="modal-title"
+            aria-describedby="modal-description"
+        >
+            <div
+                ref={modalRef}
+                className="modal-content"
+                onClick={(e) => e.stopPropagation()}
+                onKeyDown={handleKeyDown}
+            >
+                <header>
+                    <h2 id="modal-title">
+                        {provider ? 'Edit Provider' : 'Create Provider'}
+                    </h2>
+                    <button
+                        ref={lastFocusableRef}
+                        type="button"
+                        onClick={onClose}
+                        aria-label="Close modal"
+                        className="close-button"
+                    >
+                        <TimesIcon />
+                    </button>
+                </header>
+
+                <div id="modal-description">
+                    <AuthProviderForm
+                        provider={provider}
+                        onSubmit={handleSubmit}
+                        onCancel={onClose}
+                        firstFocusableRef={firstFocusableRef}
+                    />
+                </div>
+            </div>
+        </div>
+    );
+}
+```
+
+### Custom Keyboard Interactions
+
+```typescript
+// ✅ Good - Custom keyboard interactions
+function SearchableList({ items, onSelect }: SearchableListProps) {
+    const [selectedIndex, setSelectedIndex] = useState(-1);
+    const [query, setQuery] = useState('');
+    const listRef = useRef<HTMLUListElement>(null);
+
+    const filteredItems = items.filter(item =>
+        item.name.toLowerCase().includes(query.toLowerCase())
+    );
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+        switch (event.key) {
+            case 'ArrowDown':
+                event.preventDefault();
+                setSelectedIndex(prev =>
+                    prev < filteredItems.length - 1 ? prev + 1 : 0
+                );
+                break;
+
+            case 'ArrowUp':
+                event.preventDefault();
+                setSelectedIndex(prev =>
+                    prev > 0 ? prev - 1 : filteredItems.length - 1
+                );
+                break;
+
+            case 'Enter':
+            case ' ':
+                event.preventDefault();
+                if (selectedIndex >= 0) {
+                    onSelect(filteredItems[selectedIndex]);
+                }
+                break;
+
+            case 'Escape':
+                setQuery('');
+                setSelectedIndex(-1);
+                break;
+        }
+    };
+
+    // Ensure selected item is visible
+    useEffect(() => {
+        if (selectedIndex >= 0 && listRef.current) {
+            const selectedElement = listRef.current.children[selectedIndex] as HTMLElement;
+            selectedElement?.scrollIntoView({
+                block: 'nearest',
+                behavior: 'smooth'
+            });
+        }
+    }, [selectedIndex]);
+
+    return (
+        <div className="searchable-list">
+            <label htmlFor="search-input" className="sr-only">
+                Search items
+            </label>
+            <input
+                id="search-input"
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Search..."
+                role="combobox"
+                aria-expanded="true"
+                aria-autocomplete="list"
+                aria-controls="search-results"
+                aria-describedby="search-instructions"
+            />
+
+            <div id="search-instructions" className="sr-only">
+                Use arrow keys to navigate, Enter to select, Escape to clear
+            </div>
+
+            <ul
+                ref={listRef}
+                id="search-results"
+                role="listbox"
+                aria-label="Search results"
+                className="search-results"
+            >
+                {filteredItems.map((item, index) => (
+                    <li
+                        key={item.id}
+                        role="option"
+                        aria-selected={index === selectedIndex}
+                        className={index === selectedIndex ? 'selected' : ''}
+                        onClick={() => onSelect(item)}
+                    >
+                        {item.name}
+                    </li>
+                ))}
+            </ul>
+        </div>
+    );
+}
+```
+
+## Visual Accessibility
+
+### Color and Contrast
+
+```css
+/* ✅ Good - High contrast colors */
+.auth-provider-status {
+    /* Use PatternFly semantic colors */
+    --success-color: var(--pf-v5-global--success-color--100);
+    --warning-color: var(--pf-v5-global--warning-color--100);
+    --danger-color: var(--pf-v5-global--danger-color--100);
+}
+
+.auth-provider-status--enabled {
+    color: var(--success-color);
+    background-color: var(--pf-v5-global--success-color--200);
+}
+
+.auth-provider-status--disabled {
+    color: var(--warning-color);
+    background-color: var(--pf-v5-global--warning-color--200);
+}
+
+.auth-provider-status--error {
+    color: var(--danger-color);
+    background-color: var(--pf-v5-global--danger-color--200);
+}
+
+/* ❌ Bad - Low contrast colors */
+.auth-provider-status--enabled {
+    color: #90ee90; /* Light green - poor contrast */
+    background-color: #ffffff;
+}
+
+.auth-provider-status--disabled {
+    color: #ffd700; /* Gold - poor contrast on white */
+    background-color: #ffffff;
+}
+```
+
+### Icons and Visual Indicators
+
+```typescript
+// ✅ Good - Accessible icons
+function AuthProviderStatus({ provider }: { provider: AuthProvider }) {
+    const getStatusIcon = () => {
+        if (provider.enabled) {
+            return <CheckCircleIcon aria-hidden="true" />;
+        }
+        return <ExclamationTriangleIcon aria-hidden="true" />;
+    };
+
+    const getStatusText = () => {
+        if (provider.enabled) {
+            return 'Enabled';
+        }
+        return 'Disabled';
+    };
+
+    return (
+        <div className="auth-provider-status">
+            {getStatusIcon()}
+            <span>{getStatusText()}</span>
+            <span className="sr-only">
+                Authentication provider {provider.name} is {getStatusText().toLowerCase()}
+            </span>
+        </div>
+    );
+}
+
+// ❌ Bad - Icons without text alternatives
+function AuthProviderStatus({ provider }) {
+    return (
+        <div className="auth-provider-status">
+            {provider.enabled ? (
+                <CheckCircleIcon style={{ color: 'green' }} />
+            ) : (
+                <ExclamationTriangleIcon style={{ color: 'red' }} />
+            )}
+        </div>
+    );
+}
+```
+
+### Responsive Design
+
+```typescript
+// ✅ Good - Responsive and accessible
+function AuthProviderCard({ provider }: { provider: AuthProvider }) {
+    return (
+        <div className="auth-provider-card">
+            <div className="card-header">
+                <h3>{provider.name}</h3>
+                <AuthProviderStatus provider={provider} />
+            </div>
+
+            <div className="card-body">
+                <dl className="provider-details">
+                    <dt>Type</dt>
+                    <dd>{provider.type}</dd>
+
+                    <dt>Last Updated</dt>
+                    <dd>
+                        <time dateTime={provider.lastUpdated}>
+                            {formatDate(provider.lastUpdated)}
+                        </time>
+                    </dd>
+
+                    <dt>Groups</dt>
+                    <dd>{provider.groups?.length || 0} groups</dd>
+                </dl>
+            </div>
+
+            <div className="card-actions">
+                <button
+                    type="button"
+                    onClick={() => editProvider(provider)}
+                    aria-label={`Edit ${provider.name}`}
+                >
+                    Edit
+                </button>
+                <button
+                    type="button"
+                    onClick={() => deleteProvider(provider.id)}
+                    aria-label={`Delete ${provider.name}`}
+                    className="danger"
+                >
+                    Delete
+                </button>
+            </div>
+        </div>
+    );
+}
+```
+
+## Screen Reader Support
+
+### Screen Reader Only Content
+
+```typescript
+// ✅ Good - Screen reader content
+function DataTable({ data, columns }: DataTableProps) {
+    return (
+        <div className="data-table">
+            <div className="sr-only">
+                Data table with {data.length} rows and {columns.length} columns.
+                Use arrow keys to navigate, Enter to activate buttons.
+            </div>
+
+            <table role="table" aria-label="Authentication Providers">
+                <caption className="sr-only">
+                    List of authentication providers with their status and actions
+                </caption>
+
+                <thead>
+                    <tr>
+                        {columns.map((column) => (
+                            <th key={column.key} scope="col">
+                                {column.label}
+                                {column.sortable && (
+                                    <button
+                                        type="button"
+                                        onClick={() => handleSort(column.key)}
+                                        aria-label={`Sort by ${column.label}`}
+                                        className="sort-button"
+                                    >
+                                        <SortIcon aria-hidden="true" />
+                                    </button>
+                                )}
+                            </th>
+                        ))}
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {data.map((item, index) => (
+                        <tr key={item.id}>
+                            {columns.map((column) => (
+                                <td key={column.key} data-label={column.label}>
+                                    {column.render(item)}
+                                </td>
+                            ))}
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
+    );
+}
+```
+
+### Live Regions
+
+```typescript
+// ✅ Good - Live regions for dynamic content
+function AuthProviderList() {
+    const [providers, setProviders] = useState<AuthProvider[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [statusMessage, setStatusMessage] = useState('');
+
+    const handleDelete = async (providerId: string) => {
+        try {
+            setIsLoading(true);
+            await deleteAuthProvider(providerId);
+            setProviders(prev => prev.filter(p => p.id !== providerId));
+            setStatusMessage('Authentication provider deleted successfully');
+        } catch (error) {
+            setStatusMessage('Failed to delete authentication provider');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return (
+        <div className="auth-provider-list">
+            {/* Live region for status updates */}
+            <div
+                aria-live="polite"
+                aria-atomic="true"
+                className="sr-only"
+                role="status"
+            >
+                {statusMessage}
+            </div>
+
+            {/* Live region for loading state */}
+            <div
+                aria-live="polite"
+                aria-atomic="true"
+                className="sr-only"
+                role="status"
+            >
+                {isLoading && 'Loading...'}
+            </div>
+
+            <div className="provider-grid">
+                {providers.map((provider) => (
+                    <AuthProviderCard
+                        key={provider.id}
+                        provider={provider}
+                        onDelete={handleDelete}
+                    />
+                ))}
+            </div>
+        </div>
+    );
+}
+```
+
+## Testing for Accessibility
+
+### Automated Testing
+
+```typescript
+// ✅ Good - Accessibility testing
+import { render, screen } from '@testing-library/react';
+import { axe, toHaveNoViolations } from 'jest-axe';
+import AuthProviderForm from './AuthProviderForm';
+
+expect.extend(toHaveNoViolations);
+
+describe('AuthProviderForm Accessibility', () => {
+    it('should have no accessibility violations', async () => {
+        const { container } = render(
+            <AuthProviderForm onSubmit={() => {}} onCancel={() => {}} />
+        );
+
+        const results = await axe(container);
+        expect(results).toHaveNoViolations();
+    });
+
+    it('should have proper form labels', () => {
+        render(<AuthProviderForm onSubmit={() => {}} onCancel={() => {}} />);
+
+        expect(screen.getByLabelText('Provider Name')).toBeInTheDocument();
+        expect(screen.getByLabelText('Provider Type')).toBeInTheDocument();
+        expect(screen.getByLabelText('Enable this provider')).toBeInTheDocument();
+    });
+
+    it('should have proper heading hierarchy', () => {
+        render(<AuthProviderForm onSubmit={() => {}} onCancel={() => {}} />);
+
+        const headings = screen.getAllByRole('heading');
+        expect(headings[0]).toHaveTextContent('Create Authentication Provider');
+        expect(headings[0].tagName).toBe('H2'); // Assuming it's in a section with H1
+    });
+
+    it('should have proper button labels', () => {
+        const mockProvider = { id: '1', name: 'Test Provider' };
+        render(<AuthProviderCard provider={mockProvider} onDelete={() => {}} />);
+
+        expect(screen.getByLabelText('Edit Test Provider')).toBeInTheDocument();
+        expect(screen.getByLabelText('Delete Test Provider')).toBeInTheDocument();
+    });
+
+    it('should manage focus properly', () => {
+        render(<AuthProviderForm onSubmit={() => {}} onCancel={() => {}} />);
+
+        const nameInput = screen.getByLabelText('Provider Name');
+        nameInput.focus();
+
+        expect(document.activeElement).toBe(nameInput);
+    });
+});
+```
+
+### Manual Testing Checklist
+
+```typescript
+// Manual accessibility testing checklist
+/*
+Keyboard Navigation:
+- [ ] All interactive elements are keyboard accessible
+- [ ] Tab order is logical and intuitive
+- [ ] Focus indicators are visible and clear
+- [ ] No keyboard traps exist
+- [ ] Escape key works to close modals/menus
+
+Screen Reader:
+- [ ] All content is announced properly
+- [ ] Form fields have proper labels
+- [ ] Error messages are announced
+- [ ] Status changes are announced
+- [ ] Tables have proper headers
+
+Visual:
+- [ ] Text has sufficient contrast (4.5:1 minimum)
+- [ ] Focus indicators are visible
+- [ ] Content is usable at 200% zoom
+- [ ] No information is conveyed by color alone
+- [ ] Animation can be disabled if needed
+
+Forms:
+- [ ] All form fields have labels
+- [ ] Required fields are marked
+- [ ] Error messages are clear and helpful
+- [ ] Form validation is accessible
+- [ ] Help text is properly associated
+*/
+```
+
+## Common Accessibility Patterns
+
+### Skip Links
+
+```typescript
+// ✅ Good - Skip links
+function AppLayout({ children }: { children: React.ReactNode }) {
+    return (
+        <div className="app-layout">
+            <a href="#main-content" className="skip-link">
+                Skip to main content
+            </a>
+            <a href="#navigation" className="skip-link">
+                Skip to navigation
+            </a>
+
+            <header role="banner">
+                <Navigation />
+            </header>
+
+            <nav id="navigation" role="navigation">
+                <SidebarNavigation />
+            </nav>
+
+            <main id="main-content" role="main">
+                {children}
+            </main>
+        </div>
+    );
+}
+```
+
+### Landmark Regions
+
+```typescript
+// ✅ Good - Landmark regions
+function AuthProviderPage() {
+    return (
+        <div className="auth-provider-page">
+            <header>
+                <h1>Authentication Providers</h1>
+                <p>Manage your authentication providers and configurations.</p>
+            </header>
+
+            <nav aria-label="Page actions">
+                <button type="button">Create Provider</button>
+                <button type="button">Import Settings</button>
+            </nav>
+
+            <main>
+                <section aria-labelledby="providers-heading">
+                    <h2 id="providers-heading">Current Providers</h2>
+                    <AuthProviderList />
+                </section>
+
+                <aside aria-labelledby="help-heading">
+                    <h2 id="help-heading">Help</h2>
+                    <p>Need help setting up authentication providers?</p>
+                </aside>
+            </main>
+        </div>
+    );
+}
+```
+
+## Accessibility Best Practices Summary
+
+### DO:
+
+- Use semantic HTML elements
+- Provide proper labels and descriptions
+- Ensure keyboard accessibility
+- Test with screen readers
+- Maintain proper focus management
+- Use sufficient color contrast
+- Provide text alternatives for images
+- Use ARIA attributes correctly
+- Test with automated tools
+
+### DON'T:
+
+- Rely solely on color for information
+- Use placeholder text as labels
+- Create keyboard traps
+- Use positive tabindex values
+- Override focus styles without providing alternatives
+- Use generic button/link text
+- Ignore screen reader users
+- Skip accessibility testing
+- Assume one test covers all users

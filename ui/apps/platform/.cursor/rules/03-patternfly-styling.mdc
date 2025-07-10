@@ -1,0 +1,728 @@
+# PatternFly & Styling Standards for StackRox UI
+
+## PatternFly Component Usage
+
+### Component Selection Priority
+
+1. **PatternFly components** - Use first for consistency
+2. **Custom PatternFly wrappers** - Use for common patterns
+3. **Tailwind utilities** - Use for spacing, colors, layout
+4. **Custom components** - Only when PatternFly doesn't provide functionality
+
+### Common PatternFly Patterns
+
+#### Layout Components
+
+```typescript
+// ✅ Good - Use PatternFly layout components
+import { Page, PageSection, Card, CardBody, CardHeader, Title } from '@patternfly/react-core';
+
+function AuthProviderPage() {
+    return (
+        <Page>
+            <PageSection variant="light">
+                <Title headingLevel="h1">Authentication Providers</Title>
+            </PageSection>
+            <PageSection>
+                <Card>
+                    <CardHeader>
+                        <Title headingLevel="h2">Provider List</Title>
+                    </CardHeader>
+                    <CardBody>
+                        <AuthProviderList />
+                    </CardBody>
+                </Card>
+            </PageSection>
+        </Page>
+    );
+}
+
+// ❌ Bad - Custom divs instead of PatternFly components
+function AuthProviderPage() {
+    return (
+        <div className="page">
+            <div className="page-section">
+                <h1>Authentication Providers</h1>
+            </div>
+            <div className="page-section">
+                <div className="card">
+                    <div className="card-header">
+                        <h2>Provider List</h2>
+                    </div>
+                    <div className="card-body">
+                        <AuthProviderList />
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+```
+
+#### Form Components
+
+```typescript
+// ✅ Good - PatternFly form components
+import {
+    Form,
+    FormGroup,
+    TextInput,
+    FormSelect,
+    FormSelectOption,
+    Switch,
+    ActionGroup,
+    Button
+} from '@patternfly/react-core';
+
+function AuthProviderForm({ provider, onSubmit }: AuthProviderFormProps) {
+    const [name, setName] = useState(provider?.name || '');
+    const [type, setType] = useState(provider?.type || 'oidc');
+    const [enabled, setEnabled] = useState(provider?.enabled || true);
+    const [validated, setValidated] = useState<'default' | 'error' | 'success'>('default');
+
+    return (
+        <Form onSubmit={handleSubmit}>
+            <FormGroup
+                label="Provider Name"
+                isRequired
+                fieldId="provider-name"
+                validated={validated}
+                helperTextInvalid="Name is required"
+            >
+                <TextInput
+                    value={name}
+                    onChange={(value) => setName(value)}
+                    id="provider-name"
+                    name="provider-name"
+                    validated={validated}
+                    isRequired
+                />
+            </FormGroup>
+
+            <FormGroup label="Provider Type" fieldId="provider-type">
+                <FormSelect
+                    value={type}
+                    onChange={(value) => setType(value as AuthProviderType)}
+                    id="provider-type"
+                    name="provider-type"
+                >
+                    <FormSelectOption value="oidc" label="OpenID Connect" />
+                    <FormSelectOption value="saml" label="SAML" />
+                    <FormSelectOption value="oauth" label="OAuth" />
+                </FormSelect>
+            </FormGroup>
+
+            <FormGroup label="Enabled" fieldId="provider-enabled">
+                <Switch
+                    id="provider-enabled"
+                    label="Enabled"
+                    labelOff="Disabled"
+                    isChecked={enabled}
+                    onChange={(checked) => setEnabled(checked)}
+                />
+            </FormGroup>
+
+            <ActionGroup>
+                <Button variant="primary" type="submit">
+                    Save
+                </Button>
+                <Button variant="link" onClick={onCancel}>
+                    Cancel
+                </Button>
+            </ActionGroup>
+        </Form>
+    );
+}
+```
+
+#### Table Components
+
+```typescript
+// ✅ Good - PatternFly table
+import {
+    Table,
+    Thead,
+    Tr,
+    Th,
+    Tbody,
+    Td,
+    ActionsColumn,
+    IAction
+} from '@patternfly/react-table';
+
+function AuthProviderTable({ providers, onEdit, onDelete }: AuthProviderTableProps) {
+    const actions = (provider: AuthProvider): IAction[] => [
+        {
+            title: 'Edit',
+            onClick: () => onEdit(provider)
+        },
+        {
+            title: 'Delete',
+            onClick: () => onDelete(provider.id)
+        }
+    ];
+
+    return (
+        <Table aria-label="Authentication Providers">
+            <Thead>
+                <Tr>
+                    <Th>Name</Th>
+                    <Th>Type</Th>
+                    <Th>Status</Th>
+                    <Th>Last Updated</Th>
+                    <Th screenReaderText="Actions" />
+                </Tr>
+            </Thead>
+            <Tbody>
+                {providers.map((provider) => (
+                    <Tr key={provider.id}>
+                        <Td dataLabel="Name">{provider.name}</Td>
+                        <Td dataLabel="Type">{provider.type}</Td>
+                        <Td dataLabel="Status">
+                            <Label color={provider.enabled ? 'green' : 'red'}>
+                                {provider.enabled ? 'Enabled' : 'Disabled'}
+                            </Label>
+                        </Td>
+                        <Td dataLabel="Last Updated">
+                            {formatDate(provider.lastUpdated)}
+                        </Td>
+                        <Td>
+                            <ActionsColumn items={actions(provider)} />
+                        </Td>
+                    </Tr>
+                ))}
+            </Tbody>
+        </Table>
+    );
+}
+```
+
+#### Navigation Components
+
+```typescript
+// ✅ Good - PatternFly navigation
+import { Nav, NavItem, NavList, NavGroup } from '@patternfly/react-core';
+
+function SideNavigation() {
+    return (
+        <Nav>
+            <NavList>
+                <NavGroup title="Platform Configuration">
+                    <NavItem to="/auth-providers" isActive={isAuthProvidersActive}>
+                        Authentication Providers
+                    </NavItem>
+                    <NavItem to="/access-scopes" isActive={isAccessScopesActive}>
+                        Access Scopes
+                    </NavItem>
+                    <NavItem to="/roles" isActive={isRolesActive}>
+                        Roles
+                    </NavItem>
+                </NavGroup>
+            </NavList>
+        </Nav>
+    );
+}
+```
+
+### PatternFly Customization Guidelines
+
+#### Custom CSS Classes
+
+- **Prefix custom classes** with `rox-` to avoid conflicts
+- **Use CSS variables** for theming
+- **Avoid overriding PatternFly classes** directly
+
+```css
+/* ✅ Good - Custom classes with prefix */
+.rox-auth-provider-card {
+    --pf-v5-c-card--BackgroundColor: var(--pf-v5-global--BackgroundColor--100);
+    border: 1px solid var(--pf-v5-global--BorderColor--300);
+}
+
+.rox-auth-provider-card--disabled {
+    opacity: 0.6;
+}
+
+/* ❌ Bad - Overriding PatternFly classes */
+.pf-v5-c-card {
+    background-color: #f0f0f0;
+}
+```
+
+#### Component Extension
+
+```typescript
+// ✅ Good - Extend PatternFly components
+interface CustomCardProps extends CardProps {
+    variant?: 'default' | 'compact' | 'elevated';
+    isDisabled?: boolean;
+}
+
+function CustomCard({ variant = 'default', isDisabled, className, ...props }: CustomCardProps) {
+    const customClasses = classNames(
+        'rox-custom-card',
+        {
+            'rox-custom-card--compact': variant === 'compact',
+            'rox-custom-card--elevated': variant === 'elevated',
+            'rox-custom-card--disabled': isDisabled,
+        },
+        className
+    );
+
+    return <Card className={customClasses} {...props} />;
+}
+```
+
+## Tailwind CSS Integration
+
+### Tailwind Usage Guidelines
+
+- **Use for spacing** - margins, padding, gaps
+- **Use for layout** - flexbox, grid utilities
+- **Use for responsive design** - breakpoint prefixes
+- **Avoid for colors** - use PatternFly color variables instead
+
+```typescript
+// ✅ Good - Tailwind for layout and spacing
+function AuthProviderCard({ provider }: { provider: AuthProvider }) {
+    return (
+        <Card className="mb-4">
+            <CardBody>
+                <div className="flex items-center justify-between mb-2">
+                    <Title headingLevel="h3" size="md">
+                        {provider.name}
+                    </Title>
+                    <Label color={provider.enabled ? 'green' : 'red'}>
+                        {provider.enabled ? 'Enabled' : 'Disabled'}
+                    </Label>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <Text component="small">Type</Text>
+                        <Text>{provider.type}</Text>
+                    </div>
+                    <div>
+                        <Text component="small">Groups</Text>
+                        <Text>{provider.groups?.length || 0} groups</Text>
+                    </div>
+                </div>
+            </CardBody>
+        </Card>
+    );
+}
+
+// ❌ Bad - Tailwind for colors instead of PatternFly
+function AuthProviderCard({ provider }: { provider: AuthProvider }) {
+    return (
+        <div className="bg-white border border-gray-300 rounded p-4 mb-4">
+            <div className="flex items-center justify-between mb-2">
+                <h3 className="text-lg font-semibold text-gray-900">
+                    {provider.name}
+                </h3>
+                <span className={`px-2 py-1 rounded text-sm ${
+                    provider.enabled ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                }`}>
+                    {provider.enabled ? 'Enabled' : 'Disabled'}
+                </span>
+            </div>
+        </div>
+    );
+}
+```
+
+### Responsive Design
+
+```typescript
+// ✅ Good - Tailwind responsive utilities
+function AuthProviderGrid({ providers }: { providers: AuthProvider[] }) {
+    return (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {providers.map((provider) => (
+                <AuthProviderCard key={provider.id} provider={provider} />
+            ))}
+        </div>
+    );
+}
+
+// ✅ Good - Responsive navigation
+function Navigation() {
+    const [isNavOpen, setIsNavOpen] = useState(false);
+
+    return (
+        <div className="flex h-screen">
+            <nav className={`
+                fixed inset-y-0 left-0 z-50 w-64 transform transition-transform duration-300 ease-in-out
+                lg:translate-x-0 lg:static lg:inset-0
+                ${isNavOpen ? 'translate-x-0' : '-translate-x-full'}
+            `}>
+                <SideNavigation />
+            </nav>
+
+            <main className="flex-1 overflow-y-auto lg:ml-0">
+                <div className="lg:hidden">
+                    <Button
+                        variant="plain"
+                        onClick={() => setIsNavOpen(!isNavOpen)}
+                        className="p-2"
+                    >
+                        <BarsIcon />
+                    </Button>
+                </div>
+                {/* Main content */}
+            </main>
+        </div>
+    );
+}
+```
+
+## CSS Variables and Theming
+
+### Using PatternFly CSS Variables
+
+```css
+/* ✅ Good - Use PatternFly CSS variables */
+.rox-custom-component {
+    background-color: var(--pf-v5-global--BackgroundColor--100);
+    color: var(--pf-v5-global--Color--100);
+    border: 1px solid var(--pf-v5-global--BorderColor--300);
+    padding: var(--pf-v5-global--spacer--md);
+    border-radius: var(--pf-v5-global--BorderRadius--sm);
+}
+
+.rox-custom-component--primary {
+    background-color: var(--pf-v5-global--primary-color--100);
+    color: var(--pf-v5-global--primary-color--200);
+}
+
+.rox-custom-component--danger {
+    background-color: var(--pf-v5-global--danger-color--100);
+    color: var(--pf-v5-global--danger-color--200);
+}
+
+/* ❌ Bad - Hardcoded values */
+.rox-custom-component {
+    background-color: #ffffff;
+    color: #151515;
+    border: 1px solid #d2d2d2;
+    padding: 16px;
+    border-radius: 4px;
+}
+```
+
+### Theme Support
+
+```typescript
+// ✅ Good - Theme-aware component
+function ThemedCard({ children, variant = 'default' }: ThemedCardProps) {
+    const cardClasses = classNames(
+        'rox-themed-card',
+        `rox-themed-card--${variant}`,
+        {
+            'rox-themed-card--dark': isDarkTheme,
+        }
+    );
+
+    return (
+        <Card className={cardClasses}>
+            {children}
+        </Card>
+    );
+}
+```
+
+## Accessibility Standards
+
+### ARIA Labels and Descriptions
+
+```typescript
+// ✅ Good - Proper ARIA labels
+function AuthProviderActions({ provider, onEdit, onDelete }: AuthProviderActionsProps) {
+    return (
+        <Dropdown
+            toggle={
+                <DropdownToggle
+                    aria-label={`Actions for ${provider.name}`}
+                    id={`actions-${provider.id}`}
+                >
+                    <EllipsisVIcon />
+                </DropdownToggle>
+            }
+            isPlain
+        >
+            <DropdownItem
+                key="edit"
+                onClick={() => onEdit(provider)}
+                aria-describedby={`edit-${provider.id}-description`}
+            >
+                Edit
+                <span id={`edit-${provider.id}-description`} className="sr-only">
+                    Edit authentication provider {provider.name}
+                </span>
+            </DropdownItem>
+            <DropdownItem
+                key="delete"
+                onClick={() => onDelete(provider.id)}
+                aria-describedby={`delete-${provider.id}-description`}
+            >
+                Delete
+                <span id={`delete-${provider.id}-description`} className="sr-only">
+                    Delete authentication provider {provider.name}
+                </span>
+            </DropdownItem>
+        </Dropdown>
+    );
+}
+```
+
+### Keyboard Navigation
+
+```typescript
+// ✅ Good - Keyboard accessible
+function AuthProviderList({ providers }: { providers: AuthProvider[] }) {
+    const [selectedIndex, setSelectedIndex] = useState(-1);
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+        switch (event.key) {
+            case 'ArrowDown':
+                event.preventDefault();
+                setSelectedIndex((prev) =>
+                    prev < providers.length - 1 ? prev + 1 : 0
+                );
+                break;
+            case 'ArrowUp':
+                event.preventDefault();
+                setSelectedIndex((prev) =>
+                    prev > 0 ? prev - 1 : providers.length - 1
+                );
+                break;
+            case 'Enter':
+            case ' ':
+                event.preventDefault();
+                if (selectedIndex >= 0) {
+                    handleSelectProvider(providers[selectedIndex]);
+                }
+                break;
+        }
+    };
+
+    return (
+        <div
+            role="listbox"
+            aria-label="Authentication Providers"
+            onKeyDown={handleKeyDown}
+            tabIndex={0}
+        >
+            {providers.map((provider, index) => (
+                <div
+                    key={provider.id}
+                    role="option"
+                    aria-selected={index === selectedIndex}
+                    className={`provider-item ${
+                        index === selectedIndex ? 'provider-item--selected' : ''
+                    }`}
+                    onClick={() => handleSelectProvider(provider)}
+                >
+                    {provider.name}
+                </div>
+            ))}
+        </div>
+    );
+}
+```
+
+## Loading States and Feedback
+
+### Loading Patterns
+
+```typescript
+// ✅ Good - Consistent loading states
+function AuthProviderList() {
+    const { providers, isLoading, error } = useAuthProviders();
+
+    if (error) {
+        return (
+            <EmptyState variant="large">
+                <EmptyStateIcon icon={ExclamationTriangleIcon} />
+                <Title headingLevel="h2" size="lg">
+                    Unable to load providers
+                </Title>
+                <EmptyStateBody>
+                    {error}
+                </EmptyStateBody>
+                <EmptyStateActions>
+                    <Button variant="primary" onClick={() => window.location.reload()}>
+                        Retry
+                    </Button>
+                </EmptyStateActions>
+            </EmptyState>
+        );
+    }
+
+    if (isLoading) {
+        return (
+            <Bullseye>
+                <Spinner size="xl" />
+            </Bullseye>
+        );
+    }
+
+    if (providers.length === 0) {
+        return (
+            <EmptyState variant="large">
+                <EmptyStateIcon icon={CubesIcon} />
+                <Title headingLevel="h2" size="lg">
+                    No authentication providers
+                </Title>
+                <EmptyStateBody>
+                    Create your first authentication provider to get started.
+                </EmptyStateBody>
+                <EmptyStateActions>
+                    <Button variant="primary" onClick={handleCreateProvider}>
+                        Create Provider
+                    </Button>
+                </EmptyStateActions>
+            </EmptyState>
+        );
+    }
+
+    return (
+        <div>
+            {providers.map((provider) => (
+                <AuthProviderCard key={provider.id} provider={provider} />
+            ))}
+        </div>
+    );
+}
+```
+
+### Toast Notifications
+
+```typescript
+// ✅ Good - Toast notifications
+import { useAlert } from 'hooks/useAlert';
+
+function AuthProviderForm({ provider, onSubmit }: AuthProviderFormProps) {
+    const { addAlert } = useAlert();
+
+    const handleSubmit = async (formData: AuthProvider) => {
+        try {
+            await onSubmit(formData);
+            addAlert({
+                title: 'Success',
+                variant: 'success',
+                description: `Authentication provider ${formData.name} has been saved.`,
+            });
+        } catch (error) {
+            addAlert({
+                title: 'Error',
+                variant: 'danger',
+                description: error instanceof Error ? error.message : 'Failed to save provider',
+            });
+        }
+    };
+
+    // ... rest of component
+}
+```
+
+## Performance Considerations
+
+### Component Optimization
+
+```typescript
+// ✅ Good - Optimized list rendering
+import { FixedSizeList as List } from 'react-window';
+
+interface VirtualizedListProps {
+    items: AuthProvider[];
+    height: number;
+    itemHeight: number;
+}
+
+function VirtualizedAuthProviderList({ items, height, itemHeight }: VirtualizedListProps) {
+    const ItemRenderer = ({ index, style }) => (
+        <div style={style}>
+            <AuthProviderCard provider={items[index]} />
+        </div>
+    );
+
+    return (
+        <List
+            height={height}
+            itemCount={items.length}
+            itemSize={itemHeight}
+            itemData={items}
+        >
+            {ItemRenderer}
+        </List>
+    );
+}
+```
+
+### Efficient CSS
+
+```css
+/* ✅ Good - Efficient CSS selectors */
+.rox-auth-provider-card {
+    /* Direct class selector */
+}
+
+.rox-auth-provider-card__header {
+    /* BEM methodology */
+}
+
+.rox-auth-provider-card--disabled {
+    /* Modifier class */
+}
+
+/* ❌ Bad - Inefficient selectors */
+.rox-auth-provider-card div div span {
+    /* Overly specific */
+}
+
+.rox-auth-provider-card * {
+    /* Universal selector */
+}
+```
+
+## Common Styling Pitfalls
+
+### 1. Color Inconsistencies
+
+```typescript
+// ❌ Bad - Hardcoded colors
+<Label color="red">Error</Label>
+<div style={{ backgroundColor: '#ff0000' }}>Error message</div>
+
+// ✅ Good - PatternFly semantic colors
+<Label color="red">Error</Label>
+<Alert variant="danger" title="Error" />
+```
+
+### 2. Spacing Inconsistencies
+
+```typescript
+// ❌ Bad - Inconsistent spacing
+<div style={{ marginBottom: '15px' }}>
+    <div style={{ padding: '10px 12px' }}>Content</div>
+</div>
+
+// ✅ Good - Consistent spacing
+<div className="mb-4">
+    <div className="p-3">Content</div>
+</div>
+```
+
+### 3. Missing Responsive Design
+
+```typescript
+// ❌ Bad - Not responsive
+<div className="w-64">
+    <AuthProviderCard />
+</div>
+
+// ✅ Good - Responsive
+<div className="w-full sm:w-64 md:w-80 lg:w-96">
+    <AuthProviderCard />
+</div>
+```

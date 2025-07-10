@@ -1,0 +1,961 @@
+# Testing Patterns for StackRox UI
+
+## Testing Strategy Overview
+
+### Testing Pyramid
+
+1. **Unit Tests** (Vitest + React Testing Library) - 70%
+
+    - Component behavior
+    - Custom hooks
+    - Utility functions
+    - Service layer functions
+
+2. **Integration Tests** (Vitest + React Testing Library) - 20%
+
+    - Component interactions
+    - API integration
+    - Redux integration
+
+3. **End-to-End Tests** (Cypress) - 10%
+    - User workflows
+    - Critical business flows
+    - Cross-browser testing
+
+## Unit Testing with Vitest
+
+### Component Testing Standards
+
+```typescript
+// ✅ Good - Component testing
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { vi } from 'vitest';
+import { BrowserRouter } from 'react-router-dom';
+import { Provider } from 'react-redux';
+import { configureStore } from '@reduxjs/toolkit';
+import AuthProviderForm from './AuthProviderForm';
+
+// Test utilities
+const renderWithProviders = (
+    ui: React.ReactElement,
+    {
+        preloadedState = {},
+        store = configureStore({
+            reducer: {
+                auth: authReducer,
+            },
+            preloadedState,
+        }),
+        ...renderOptions
+    } = {}
+) => {
+    function Wrapper({ children }: { children: React.ReactNode }) {
+        return (
+            <Provider store={store}>
+                <BrowserRouter>
+                    {children}
+                </BrowserRouter>
+            </Provider>
+        );
+    }
+
+    return {
+        store,
+        ...render(ui, { wrapper: Wrapper, ...renderOptions }),
+    };
+};
+
+describe('AuthProviderForm', () => {
+    const mockOnSubmit = vi.fn();
+    const mockOnCancel = vi.fn();
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('should render form fields with default values', () => {
+        renderWithProviders(
+            <AuthProviderForm onSubmit={mockOnSubmit} onCancel={mockOnCancel} />
+        );
+
+        expect(screen.getByLabelText('Provider Name')).toBeInTheDocument();
+        expect(screen.getByLabelText('Provider Type')).toBeInTheDocument();
+        expect(screen.getByLabelText('Enabled')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Cancel' })).toBeInTheDocument();
+    });
+
+    it('should populate form when editing existing provider', () => {
+        const existingProvider = {
+            id: '1',
+            name: 'Test Provider',
+            type: 'oidc' as const,
+            enabled: true,
+            config: {},
+        };
+
+        renderWithProviders(
+            <AuthProviderForm
+                provider={existingProvider}
+                onSubmit={mockOnSubmit}
+                onCancel={mockOnCancel}
+            />
+        );
+
+        expect(screen.getByDisplayValue('Test Provider')).toBeInTheDocument();
+        expect(screen.getByDisplayValue('oidc')).toBeInTheDocument();
+        expect(screen.getByLabelText('Enabled')).toBeChecked();
+    });
+
+    it('should call onSubmit with form data when submitted', async () => {
+        renderWithProviders(
+            <AuthProviderForm onSubmit={mockOnSubmit} onCancel={mockOnCancel} />
+        );
+
+        const nameInput = screen.getByLabelText('Provider Name');
+        const typeSelect = screen.getByLabelText('Provider Type');
+        const submitButton = screen.getByRole('button', { name: 'Save' });
+
+        fireEvent.change(nameInput, { target: { value: 'New Provider' } });
+        fireEvent.change(typeSelect, { target: { value: 'saml' } });
+        fireEvent.click(submitButton);
+
+        await waitFor(() => {
+            expect(mockOnSubmit).toHaveBeenCalledWith({
+                name: 'New Provider',
+                type: 'saml',
+                enabled: true,
+                config: {},
+            });
+        });
+    });
+
+    it('should display validation errors', async () => {
+        renderWithProviders(
+            <AuthProviderForm onSubmit={mockOnSubmit} onCancel={mockOnCancel} />
+        );
+
+        const submitButton = screen.getByRole('button', { name: 'Save' });
+        fireEvent.click(submitButton);
+
+        await waitFor(() => {
+            expect(screen.getByText('Name is required')).toBeInTheDocument();
+        });
+    });
+
+    it('should handle submission errors', async () => {
+        const mockError = new Error('Save failed');
+        mockOnSubmit.mockRejectedValue(mockError);
+
+        renderWithProviders(
+            <AuthProviderForm onSubmit={mockOnSubmit} onCancel={mockOnCancel} />
+        );
+
+        const nameInput = screen.getByLabelText('Provider Name');
+        const submitButton = screen.getByRole('button', { name: 'Save' });
+
+        fireEvent.change(nameInput, { target: { value: 'Test Provider' } });
+        fireEvent.click(submitButton);
+
+        await waitFor(() => {
+            expect(screen.getByText('Save failed')).toBeInTheDocument();
+        });
+    });
+
+    it('should call onCancel when cancel button is clicked', () => {
+        renderWithProviders(
+            <AuthProviderForm onSubmit={mockOnSubmit} onCancel={mockOnCancel} />
+        );
+
+        const cancelButton = screen.getByRole('button', { name: 'Cancel' });
+        fireEvent.click(cancelButton);
+
+        expect(mockOnCancel).toHaveBeenCalled();
+    });
+});
+```
+
+### Custom Hook Testing
+
+```typescript
+// ✅ Good - Hook testing
+import { renderHook, act } from '@testing-library/react';
+import { vi } from 'vitest';
+import { BrowserRouter } from 'react-router-dom';
+import useAuthProviders from './useAuthProviders';
+
+// Mock the service
+vi.mock('services/AuthService', () => ({
+    fetchAuthProviders: vi.fn(),
+    saveAuthProvider: vi.fn(),
+    deleteAuthProvider: vi.fn(),
+}));
+
+const wrapper = ({ children }: { children: React.ReactNode }) => (
+    <BrowserRouter>{children}</BrowserRouter>
+);
+
+describe('useAuthProviders', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('should fetch providers on mount', async () => {
+        const mockProviders = [
+            { id: '1', name: 'Provider 1', type: 'oidc', enabled: true },
+            { id: '2', name: 'Provider 2', type: 'saml', enabled: false },
+        ];
+
+        vi.mocked(fetchAuthProviders).mockResolvedValue(mockProviders);
+
+        const { result } = renderHook(() => useAuthProviders(), { wrapper });
+
+        expect(result.current.isLoading).toBe(true);
+        expect(result.current.providers).toEqual([]);
+        expect(result.current.error).toBe(null);
+
+        await act(async () => {
+            await new Promise(resolve => setTimeout(resolve, 0));
+        });
+
+        expect(result.current.isLoading).toBe(false);
+        expect(result.current.providers).toEqual(mockProviders);
+        expect(result.current.error).toBe(null);
+    });
+
+    it('should handle fetch errors', async () => {
+        const mockError = new Error('Fetch failed');
+        vi.mocked(fetchAuthProviders).mockRejectedValue(mockError);
+
+        const { result } = renderHook(() => useAuthProviders(), { wrapper });
+
+        await act(async () => {
+            await new Promise(resolve => setTimeout(resolve, 0));
+        });
+
+        expect(result.current.isLoading).toBe(false);
+        expect(result.current.providers).toEqual([]);
+        expect(result.current.error).toBe('Fetch failed');
+    });
+
+    it('should create new provider', async () => {
+        const initialProviders = [{ id: '1', name: 'Provider 1', type: 'oidc', enabled: true }];
+        const newProvider = { name: 'New Provider', type: 'saml', enabled: true };
+        const savedProvider = { id: '2', ...newProvider };
+
+        vi.mocked(fetchAuthProviders).mockResolvedValue(initialProviders);
+        vi.mocked(saveAuthProvider).mockResolvedValue(savedProvider);
+
+        const { result } = renderHook(() => useAuthProviders(), { wrapper });
+
+        // Wait for initial load
+        await act(async () => {
+            await new Promise(resolve => setTimeout(resolve, 0));
+        });
+
+        expect(result.current.providers).toHaveLength(1);
+
+        // Create new provider
+        await act(async () => {
+            await result.current.createProvider(newProvider);
+        });
+
+        expect(result.current.providers).toHaveLength(2);
+        expect(result.current.providers[1]).toEqual(savedProvider);
+    });
+
+    it('should refetch providers', async () => {
+        const initialProviders = [{ id: '1', name: 'Provider 1', type: 'oidc', enabled: true }];
+        const updatedProviders = [
+            { id: '1', name: 'Updated Provider', type: 'oidc', enabled: false },
+        ];
+
+        vi.mocked(fetchAuthProviders)
+            .mockResolvedValueOnce(initialProviders)
+            .mockResolvedValueOnce(updatedProviders);
+
+        const { result } = renderHook(() => useAuthProviders(), { wrapper });
+
+        // Wait for initial load
+        await act(async () => {
+            await new Promise(resolve => setTimeout(resolve, 0));
+        });
+
+        expect(result.current.providers).toEqual(initialProviders);
+
+        // Refetch
+        await act(async () => {
+            await result.current.refetch();
+        });
+
+        expect(result.current.providers).toEqual(updatedProviders);
+    });
+});
+```
+
+### Service Layer Testing
+
+```typescript
+// ✅ Good - Service testing
+import { vi, describe, it, expect, beforeEach } from 'vitest';
+import {
+    fetchAuthProviders,
+    saveAuthProvider,
+    deleteAuthProvider,
+    AuthHttpError,
+} from './AuthService';
+
+// Mock axios
+vi.mock('services/instance', () => ({
+    default: {
+        get: vi.fn(),
+        post: vi.fn(),
+        put: vi.fn(),
+        delete: vi.fn(),
+    },
+}));
+
+describe('AuthService', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    describe('fetchAuthProviders', () => {
+        it('should return providers when API call succeeds', async () => {
+            const mockResponse = {
+                data: {
+                    authProviders: [
+                        { id: '1', name: 'Provider 1', type: 'oidc', enabled: true },
+                        { id: '2', name: 'Provider 2', type: 'saml', enabled: false },
+                    ],
+                },
+            };
+
+            vi.mocked(axios.get).mockResolvedValue(mockResponse);
+
+            const result = await fetchAuthProviders();
+
+            expect(result).toEqual(mockResponse.data.authProviders);
+            expect(axios.get).toHaveBeenCalledWith('/v1/authProviders');
+        });
+
+        it('should return empty array when no providers exist', async () => {
+            const mockResponse = { data: { authProviders: null } };
+            vi.mocked(axios.get).mockResolvedValue(mockResponse);
+
+            const result = await fetchAuthProviders();
+
+            expect(result).toEqual([]);
+        });
+
+        it('should throw AuthHttpError when API call fails', async () => {
+            const mockError = {
+                response: { status: 500 },
+                message: 'Internal Server Error',
+            };
+
+            vi.mocked(axios.get).mockRejectedValue(mockError);
+
+            await expect(fetchAuthProviders()).rejects.toThrow(AuthHttpError);
+        });
+    });
+
+    describe('saveAuthProvider', () => {
+        it('should create new provider when no ID provided', async () => {
+            const newProvider = { name: 'New Provider', type: 'oidc', enabled: true };
+            const savedProvider = { id: '1', ...newProvider };
+            const mockResponse = { data: { authProvider: savedProvider } };
+
+            vi.mocked(axios.post).mockResolvedValue(mockResponse);
+
+            const result = await saveAuthProvider(newProvider);
+
+            expect(result).toEqual(savedProvider);
+            expect(axios.post).toHaveBeenCalledWith('/v1/authProviders', newProvider);
+        });
+
+        it('should update existing provider when ID provided', async () => {
+            const existingProvider = {
+                id: '1',
+                name: 'Updated Provider',
+                type: 'oidc',
+                enabled: false,
+            };
+            const mockResponse = { data: { authProvider: existingProvider } };
+
+            vi.mocked(axios.put).mockResolvedValue(mockResponse);
+
+            const result = await saveAuthProvider(existingProvider);
+
+            expect(result).toEqual(existingProvider);
+            expect(axios.put).toHaveBeenCalledWith('/v1/authProviders/1', existingProvider);
+        });
+
+        it('should throw AuthHttpError on validation error', async () => {
+            const invalidProvider = { name: '', type: 'oidc', enabled: true };
+            const mockError = {
+                response: {
+                    status: 422,
+                    data: { message: 'Validation failed' },
+                },
+            };
+
+            vi.mocked(axios.post).mockRejectedValue(mockError);
+
+            await expect(saveAuthProvider(invalidProvider)).rejects.toThrow(AuthHttpError);
+        });
+    });
+
+    describe('deleteAuthProvider', () => {
+        it('should delete provider successfully', async () => {
+            vi.mocked(axios.delete).mockResolvedValue({});
+
+            await deleteAuthProvider('1');
+
+            expect(axios.delete).toHaveBeenCalledWith('/v1/authProviders/1');
+        });
+
+        it('should throw AuthHttpError when provider not found', async () => {
+            const mockError = {
+                response: { status: 404 },
+                message: 'Not Found',
+            };
+
+            vi.mocked(axios.delete).mockRejectedValue(mockError);
+
+            await expect(deleteAuthProvider('1')).rejects.toThrow(AuthHttpError);
+        });
+    });
+});
+```
+
+### Utility Function Testing
+
+```typescript
+// ✅ Good - Utility testing
+import { describe, it, expect } from 'vitest';
+import { formatDate, validateEmail, debounce } from './utils';
+
+describe('utils', () => {
+    describe('formatDate', () => {
+        it('should format date correctly', () => {
+            const date = new Date('2023-01-01T12:00:00Z');
+            expect(formatDate(date)).toBe('Jan 1, 2023');
+        });
+
+        it('should handle invalid date', () => {
+            expect(formatDate(new Date('invalid'))).toBe('Invalid date');
+        });
+    });
+
+    describe('validateEmail', () => {
+        it('should validate correct email addresses', () => {
+            expect(validateEmail('test@example.com')).toBe(true);
+            expect(validateEmail('user.name+tag@example.com')).toBe(true);
+        });
+
+        it('should reject invalid email addresses', () => {
+            expect(validateEmail('invalid-email')).toBe(false);
+            expect(validateEmail('test@')).toBe(false);
+            expect(validateEmail('@example.com')).toBe(false);
+        });
+    });
+
+    describe('debounce', () => {
+        it('should debounce function calls', (done) => {
+            let callCount = 0;
+            const debouncedFn = debounce(() => {
+                callCount++;
+            }, 100);
+
+            debouncedFn();
+            debouncedFn();
+            debouncedFn();
+
+            expect(callCount).toBe(0);
+
+            setTimeout(() => {
+                expect(callCount).toBe(1);
+                done();
+            }, 150);
+        });
+    });
+});
+```
+
+## Integration Testing
+
+### Component Integration Tests
+
+```typescript
+// ✅ Good - Integration testing
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { vi } from 'vitest';
+import { Provider } from 'react-redux';
+import { configureStore } from '@reduxjs/toolkit';
+import AuthProviderPage from './AuthProviderPage';
+
+// Mock the service
+vi.mock('services/AuthService', () => ({
+    fetchAuthProviders: vi.fn(),
+    saveAuthProvider: vi.fn(),
+    deleteAuthProvider: vi.fn(),
+}));
+
+describe('AuthProviderPage Integration', () => {
+    const createStore = (initialState = {}) => {
+        return configureStore({
+            reducer: {
+                auth: authReducer,
+                alerts: alertsReducer,
+            },
+            preloadedState: initialState,
+        });
+    };
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('should display providers and handle CRUD operations', async () => {
+        const mockProviders = [
+            { id: '1', name: 'Provider 1', type: 'oidc', enabled: true },
+            { id: '2', name: 'Provider 2', type: 'saml', enabled: false },
+        ];
+
+        vi.mocked(fetchAuthProviders).mockResolvedValue(mockProviders);
+
+        const store = createStore();
+        render(
+            <Provider store={store}>
+                <AuthProviderPage />
+            </Provider>
+        );
+
+        // Wait for providers to load
+        await waitFor(() => {
+            expect(screen.getByText('Provider 1')).toBeInTheDocument();
+            expect(screen.getByText('Provider 2')).toBeInTheDocument();
+        });
+
+        // Test creating new provider
+        const createButton = screen.getByRole('button', { name: 'Create Provider' });
+        fireEvent.click(createButton);
+
+        expect(screen.getByText('New Authentication Provider')).toBeInTheDocument();
+
+        // Fill form and submit
+        const nameInput = screen.getByLabelText('Provider Name');
+        const typeSelect = screen.getByLabelText('Provider Type');
+        const saveButton = screen.getByRole('button', { name: 'Save' });
+
+        fireEvent.change(nameInput, { target: { value: 'New Provider' } });
+        fireEvent.change(typeSelect, { target: { value: 'oauth' } });
+
+        const newProvider = { id: '3', name: 'New Provider', type: 'oauth', enabled: true };
+        vi.mocked(saveAuthProvider).mockResolvedValue(newProvider);
+
+        fireEvent.click(saveButton);
+
+        await waitFor(() => {
+            expect(screen.getByText('New Provider')).toBeInTheDocument();
+        });
+    });
+});
+```
+
+## End-to-End Testing with Cypress
+
+### Cypress Test Structure
+
+```typescript
+// ✅ Good - Cypress test structure
+describe('Authentication Providers', () => {
+    beforeEach(() => {
+        // Setup authentication
+        cy.login('admin', 'password');
+
+        // Setup test data
+        cy.fixture('authProviders').as('authProviders');
+        cy.intercept('GET', '/v1/authProviders', { fixture: 'authProviders.json' }).as(
+            'getAuthProviders'
+        );
+        cy.intercept('POST', '/v1/authProviders', { fixture: 'newAuthProvider.json' }).as(
+            'createAuthProvider'
+        );
+        cy.intercept('PUT', '/v1/authProviders/*', { fixture: 'updatedAuthProvider.json' }).as(
+            'updateAuthProvider'
+        );
+        cy.intercept('DELETE', '/v1/authProviders/*', {}).as('deleteAuthProvider');
+    });
+
+    it('should display list of authentication providers', () => {
+        cy.visit('/admin/auth-providers');
+
+        cy.wait('@getAuthProviders');
+
+        cy.get('[data-testid="auth-provider-table"]').should('be.visible');
+        cy.get('[data-testid="auth-provider-row"]').should('have.length.greaterThan', 0);
+
+        // Check table headers
+        cy.get('th').should('contain', 'Name');
+        cy.get('th').should('contain', 'Type');
+        cy.get('th').should('contain', 'Status');
+        cy.get('th').should('contain', 'Last Updated');
+    });
+
+    it('should create new authentication provider', () => {
+        cy.visit('/admin/auth-providers');
+
+        // Click create button
+        cy.get('[data-testid="create-auth-provider-btn"]').click();
+
+        // Fill form
+        cy.get('[data-testid="provider-name-input"]').type('Test Provider');
+        cy.get('[data-testid="provider-type-select"]').select('oidc');
+        cy.get('[data-testid="provider-enabled-switch"]').check();
+
+        // Submit form
+        cy.get('[data-testid="save-provider-btn"]').click();
+
+        cy.wait('@createAuthProvider');
+
+        // Verify success message
+        cy.get('[data-testid="success-alert"]').should('contain', 'Provider created successfully');
+
+        // Verify provider appears in list
+        cy.get('[data-testid="auth-provider-table"]').should('contain', 'Test Provider');
+    });
+
+    it('should edit existing authentication provider', () => {
+        cy.visit('/admin/auth-providers');
+
+        // Click edit button on first provider
+        cy.get('[data-testid="auth-provider-row"]')
+            .first()
+            .within(() => {
+                cy.get('[data-testid="edit-provider-btn"]').click();
+            });
+
+        // Update name
+        cy.get('[data-testid="provider-name-input"]').clear().type('Updated Provider');
+
+        // Save changes
+        cy.get('[data-testid="save-provider-btn"]').click();
+
+        cy.wait('@updateAuthProvider');
+
+        // Verify success message
+        cy.get('[data-testid="success-alert"]').should('contain', 'Provider updated successfully');
+
+        // Verify updated name appears
+        cy.get('[data-testid="auth-provider-table"]').should('contain', 'Updated Provider');
+    });
+
+    it('should delete authentication provider', () => {
+        cy.visit('/admin/auth-providers');
+
+        // Click delete button on first provider
+        cy.get('[data-testid="auth-provider-row"]')
+            .first()
+            .within(() => {
+                cy.get('[data-testid="delete-provider-btn"]').click();
+            });
+
+        // Confirm deletion
+        cy.get('[data-testid="confirm-delete-btn"]').click();
+
+        cy.wait('@deleteAuthProvider');
+
+        // Verify success message
+        cy.get('[data-testid="success-alert"]').should('contain', 'Provider deleted successfully');
+    });
+
+    it('should handle validation errors', () => {
+        cy.visit('/admin/auth-providers');
+
+        // Click create button
+        cy.get('[data-testid="create-auth-provider-btn"]').click();
+
+        // Try to submit empty form
+        cy.get('[data-testid="save-provider-btn"]').click();
+
+        // Check for validation errors
+        cy.get('[data-testid="provider-name-error"]').should('contain', 'Name is required');
+        cy.get('[data-testid="provider-type-error"]').should('contain', 'Type is required');
+    });
+});
+```
+
+### Cypress Page Objects
+
+```typescript
+// ✅ Good - Page object pattern
+class AuthProviderPage {
+    visit() {
+        cy.visit('/admin/auth-providers');
+        return this;
+    }
+
+    getTable() {
+        return cy.get('[data-testid="auth-provider-table"]');
+    }
+
+    getCreateButton() {
+        return cy.get('[data-testid="create-auth-provider-btn"]');
+    }
+
+    getProviderRow(index = 0) {
+        return cy.get('[data-testid="auth-provider-row"]').eq(index);
+    }
+
+    createProvider(provider: { name: string; type: string; enabled: boolean }) {
+        this.getCreateButton().click();
+
+        cy.get('[data-testid="provider-name-input"]').type(provider.name);
+        cy.get('[data-testid="provider-type-select"]').select(provider.type);
+
+        if (provider.enabled) {
+            cy.get('[data-testid="provider-enabled-switch"]').check();
+        }
+
+        cy.get('[data-testid="save-provider-btn"]').click();
+
+        return this;
+    }
+
+    editProvider(
+        index: number,
+        updates: Partial<{ name: string; type: string; enabled: boolean }>
+    ) {
+        this.getProviderRow(index).within(() => {
+            cy.get('[data-testid="edit-provider-btn"]').click();
+        });
+
+        if (updates.name) {
+            cy.get('[data-testid="provider-name-input"]').clear().type(updates.name);
+        }
+
+        if (updates.type) {
+            cy.get('[data-testid="provider-type-select"]').select(updates.type);
+        }
+
+        if (updates.enabled !== undefined) {
+            const action = updates.enabled ? 'check' : 'uncheck';
+            cy.get('[data-testid="provider-enabled-switch"]')[action]();
+        }
+
+        cy.get('[data-testid="save-provider-btn"]').click();
+
+        return this;
+    }
+
+    deleteProvider(index: number) {
+        this.getProviderRow(index).within(() => {
+            cy.get('[data-testid="delete-provider-btn"]').click();
+        });
+
+        cy.get('[data-testid="confirm-delete-btn"]').click();
+
+        return this;
+    }
+
+    shouldShowSuccess(message: string) {
+        cy.get('[data-testid="success-alert"]').should('contain', message);
+        return this;
+    }
+
+    shouldShowError(message: string) {
+        cy.get('[data-testid="error-alert"]').should('contain', message);
+        return this;
+    }
+}
+
+// Usage in tests
+describe('Authentication Providers', () => {
+    const authProviderPage = new AuthProviderPage();
+
+    it('should create new provider', () => {
+        authProviderPage
+            .visit()
+            .createProvider({ name: 'Test Provider', type: 'oidc', enabled: true })
+            .shouldShowSuccess('Provider created successfully');
+    });
+});
+```
+
+## Testing Best Practices
+
+### Test Organization
+
+```typescript
+// ✅ Good - Test organization
+describe('AuthProviderForm', () => {
+    // Group related tests
+    describe('Rendering', () => {
+        it('should render form fields');
+        it('should render with existing provider data');
+        it('should render loading state');
+    });
+
+    describe('User Interactions', () => {
+        it('should handle form submission');
+        it('should handle form cancellation');
+        it('should validate required fields');
+    });
+
+    describe('Error Handling', () => {
+        it('should display API errors');
+        it('should display validation errors');
+        it('should recover from errors');
+    });
+});
+```
+
+### Test Data Management
+
+```typescript
+// ✅ Good - Test data factories
+const createAuthProvider = (overrides = {}) => ({
+    id: '1',
+    name: 'Test Provider',
+    type: 'oidc',
+    enabled: true,
+    config: {},
+    lastUpdated: new Date().toISOString(),
+    ...overrides,
+});
+
+const createAuthProviderList = (count = 3) => {
+    return Array.from({ length: count }, (_, index) =>
+        createAuthProvider({
+            id: `${index + 1}`,
+            name: `Provider ${index + 1}`
+        })
+    );
+};
+
+// Usage
+describe('AuthProviderList', () => {
+    it('should display multiple providers', () => {
+        const providers = createAuthProviderList(5);
+        render(<AuthProviderList providers={providers} />);
+
+        expect(screen.getAllByTestId('auth-provider-card')).toHaveLength(5);
+    });
+});
+```
+
+### Async Testing
+
+```typescript
+// ✅ Good - Async testing patterns
+describe('AuthProviderService', () => {
+    it('should handle concurrent requests', async () => {
+        const mockProviders = createAuthProviderList(3);
+        vi.mocked(fetchAuthProviders).mockResolvedValue(mockProviders);
+
+        // Make multiple concurrent requests
+        const promises = Array.from({ length: 3 }, () => fetchAuthProviders());
+        const results = await Promise.all(promises);
+
+        results.forEach((result) => {
+            expect(result).toEqual(mockProviders);
+        });
+    });
+
+    it('should handle request timeout', async () => {
+        vi.mocked(fetchAuthProviders).mockImplementation(
+            () => new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 100))
+        );
+
+        await expect(fetchAuthProviders()).rejects.toThrow('Timeout');
+    });
+});
+```
+
+## Common Testing Pitfalls
+
+### 1. Testing Implementation Details
+
+```typescript
+// ❌ Bad - Testing implementation
+it('should update state when input changes', () => {
+    const { container } = render(<AuthProviderForm />);
+    const input = container.querySelector('input[name="name"]');
+
+    fireEvent.change(input, { target: { value: 'test' } });
+
+    // Testing internal state - bad
+    expect(component.state.name).toBe('test');
+});
+
+// ✅ Good - Testing behavior
+it('should display entered value in input', () => {
+    render(<AuthProviderForm />);
+    const input = screen.getByLabelText('Provider Name');
+
+    fireEvent.change(input, { target: { value: 'test' } });
+
+    expect(input).toHaveValue('test');
+});
+```
+
+### 2. Not Cleaning Up After Tests
+
+```typescript
+// ❌ Bad - No cleanup
+describe('AuthProviderForm', () => {
+    it('should submit form', async () => {
+        const mockFn = vi.fn();
+        // ... test implementation
+        // Missing cleanup
+    });
+});
+
+// ✅ Good - Proper cleanup
+describe('AuthProviderForm', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    afterEach(() => {
+        cleanup();
+    });
+});
+```
+
+### 3. Brittle Selectors
+
+```typescript
+// ❌ Bad - Brittle selectors
+cy.get('.auth-provider-form > div:nth-child(2) > input').type('test');
+
+// ✅ Good - Stable selectors
+cy.get('[data-testid="provider-name-input"]').type('test');
+cy.get('[aria-label="Provider Name"]').type('test');
+```
+
+## Testing Checklist
+
+### Before Writing Tests
+
+- [ ] Understand the component's purpose and behavior
+- [ ] Identify critical user paths
+- [ ] Plan test data and mocks
+- [ ] Set up proper test environment
+
+### While Writing Tests
+
+- [ ] Test behavior, not implementation
+- [ ] Use descriptive test names
+- [ ] Keep tests focused and isolated
+- [ ] Use proper assertions
+- [ ] Handle async operations correctly
+
+### After Writing Tests
+
+- [ ] Run tests multiple times to ensure stability
+- [ ] Check test coverage
+- [ ] Review test maintainability
+- [ ] Ensure tests fail for the right reasons

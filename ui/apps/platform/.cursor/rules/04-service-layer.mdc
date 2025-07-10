@@ -1,0 +1,769 @@
+# Service Layer & API Integration Standards
+
+## Service Organization
+
+### Service Structure
+
+- **One service per domain** - AuthService, ClustersService, etc.
+- **Named exports** for all functions
+- **Typed responses** with proper interfaces
+- **Consistent error handling** across all services
+
+```typescript
+// ✅ Good - Service structure
+// AuthService.ts
+export interface AuthProvider {
+    id: string;
+    name: string;
+    type: AuthProviderType;
+    enabled: boolean;
+    config: AuthProviderConfig;
+}
+
+export interface AuthProviderListResponse {
+    authProviders: AuthProvider[];
+}
+
+export interface AuthProviderResponse {
+    authProvider: AuthProvider;
+}
+
+export async function fetchAuthProviders(): Promise<AuthProvider[]> {
+    try {
+        const response = await axios.get<AuthProviderListResponse>('/v1/authProviders');
+        return response.data.authProviders || [];
+    } catch (error) {
+        throw new AuthHttpError(
+            'Failed to fetch authentication providers',
+            error.response?.status || 500,
+            error
+        );
+    }
+}
+
+export async function saveAuthProvider(provider: AuthProvider): Promise<AuthProvider> {
+    try {
+        const response = provider.id
+            ? await axios.put<AuthProviderResponse>(`/v1/authProviders/${provider.id}`, provider)
+            : await axios.post<AuthProviderResponse>('/v1/authProviders', provider);
+        return response.data.authProvider;
+    } catch (error) {
+        throw new AuthHttpError(
+            `Failed to ${provider.id ? 'update' : 'create'} authentication provider`,
+            error.response?.status || 500,
+            error
+        );
+    }
+}
+
+export async function deleteAuthProvider(providerId: string): Promise<void> {
+    try {
+        await axios.delete(`/v1/authProviders/${providerId}`);
+    } catch (error) {
+        throw new AuthHttpError(
+            'Failed to delete authentication provider',
+            error.response?.status || 500,
+            error
+        );
+    }
+}
+```
+
+### Error Handling Standards
+
+#### Custom Error Classes
+
+```typescript
+// ✅ Good - Custom error classes
+export class AuthHttpError extends Error {
+    code: number;
+    cause: Error;
+
+    constructor(message: string, code: number, cause: Error) {
+        super(message);
+        this.name = 'AuthHttpError';
+        this.code = code;
+        this.cause = cause;
+    }
+
+    isAccessDenied = (): boolean => this.code === 403;
+    isInvalidAuth = (): boolean => this.code === 401;
+    isNotFound = (): boolean => this.code === 404;
+    isServerError = (): boolean => this.code >= 500;
+}
+
+export class ServiceError extends Error {
+    constructor(
+        message: string,
+        public service: string,
+        public operation: string
+    ) {
+        super(message);
+        this.name = 'ServiceError';
+    }
+}
+```
+
+#### Error Response Handling
+
+```typescript
+// ✅ Good - Consistent error handling
+import { AxiosError } from 'axios';
+
+function handleServiceError(error: AxiosError, operation: string): never {
+    if (error.response) {
+        // Server responded with error status
+        const { status, data } = error.response;
+        const message = data?.message || data?.error || 'An error occurred';
+
+        switch (status) {
+            case 401:
+                throw new AuthHttpError('Authentication required', status, error);
+            case 403:
+                throw new AuthHttpError('Access denied', status, error);
+            case 404:
+                throw new AuthHttpError('Resource not found', status, error);
+            case 422:
+                throw new AuthHttpError(`Validation failed: ${message}`, status, error);
+            default:
+                throw new AuthHttpError(message, status, error);
+        }
+    } else if (error.request) {
+        // Network error
+        throw new ServiceError(
+            'Network error - please check your connection',
+            'network',
+            operation
+        );
+    } else {
+        // Request setup error
+        throw new ServiceError(`Request failed: ${error.message}`, 'request', operation);
+    }
+}
+
+// Usage in service functions
+export async function fetchClusters(): Promise<Cluster[]> {
+    try {
+        const response = await axios.get<ClusterListResponse>('/v1/clusters');
+        return response.data.clusters || [];
+    } catch (error) {
+        handleServiceError(error as AxiosError, 'fetchClusters');
+    }
+}
+```
+
+## API Integration Patterns
+
+### Request Configuration
+
+```typescript
+// ✅ Good - Request configuration
+import { axios } from 'services/instance';
+
+// Use the configured axios instance, not the default
+export async function fetchWithTimeout<T>(
+    url: string,
+    options: {
+        timeout?: number;
+        signal?: AbortSignal;
+        params?: Record<string, any>;
+    } = {}
+): Promise<T> {
+    const { timeout = 30000, signal, params } = options;
+
+    const response = await axios.get<T>(url, {
+        timeout,
+        signal,
+        params,
+        // Headers are already configured in the axios instance
+    });
+
+    return response.data;
+}
+
+// ❌ Bad - Using default axios
+import axios from 'axios';
+
+export async function fetchData() {
+    const response = await axios.get('/v1/data', {
+        headers: {
+            Authorization: `Bearer ${getToken()}`, // Token logic duplicated
+        },
+    });
+    return response.data;
+}
+```
+
+### Request Cancellation
+
+```typescript
+// ✅ Good - Request cancellation support
+import { CancellationToken } from 'services/cancellationUtils';
+
+export async function fetchAuthProviders(
+    cancellationToken?: CancellationToken
+): Promise<AuthProvider[]> {
+    try {
+        const response = await axios.get<AuthProviderListResponse>('/v1/authProviders', {
+            signal: cancellationToken?.signal,
+        });
+        return response.data.authProviders || [];
+    } catch (error) {
+        if (cancellationToken?.signal.aborted) {
+            return []; // Return empty array for cancelled requests
+        }
+        throw handleServiceError(error as AxiosError, 'fetchAuthProviders');
+    }
+}
+
+// Usage with cancellation
+export function useAuthProviders() {
+    const [providers, setProviders] = useState<AuthProvider[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const cancellationToken = new CancellationToken();
+
+        async function loadProviders() {
+            setIsLoading(true);
+            setError(null);
+
+            try {
+                const data = await fetchAuthProviders(cancellationToken);
+                setProviders(data);
+            } catch (err) {
+                if (!cancellationToken.signal.aborted) {
+                    setError(err instanceof Error ? err.message : 'Failed to load providers');
+                }
+            } finally {
+                if (!cancellationToken.signal.aborted) {
+                    setIsLoading(false);
+                }
+            }
+        }
+
+        loadProviders();
+
+        return () => {
+            cancellationToken.cancel();
+        };
+    }, []);
+
+    return { providers, isLoading, error };
+}
+```
+
+### Response Transformation
+
+```typescript
+// ✅ Good - Response transformation
+interface ApiAuthProvider {
+    id: string;
+    name: string;
+    type: string;
+    enabled: boolean;
+    config: Record<string, any>;
+    lastUpdated: string;
+    claimMappings: Record<string, string>;
+}
+
+interface AuthProvider {
+    id: string;
+    name: string;
+    type: AuthProviderType;
+    enabled: boolean;
+    config: AuthProviderConfig;
+    lastUpdated: Date;
+    claimMappings: [string, string][];
+}
+
+function transformAuthProvider(apiProvider: ApiAuthProvider): AuthProvider {
+    return {
+        ...apiProvider,
+        type: apiProvider.type as AuthProviderType,
+        lastUpdated: new Date(apiProvider.lastUpdated),
+        claimMappings: Object.entries(apiProvider.claimMappings).sort(([a], [b]) =>
+            a.localeCompare(b)
+        ),
+        config: transformAuthProviderConfig(apiProvider.config),
+    };
+}
+
+export async function fetchAuthProviders(): Promise<AuthProvider[]> {
+    try {
+        const response = await axios.get<{ authProviders: ApiAuthProvider[] }>('/v1/authProviders');
+        return response.data.authProviders.map(transformAuthProvider);
+    } catch (error) {
+        throw handleServiceError(error as AxiosError, 'fetchAuthProviders');
+    }
+}
+```
+
+## Data Validation
+
+### Input Validation
+
+```typescript
+// ✅ Good - Input validation
+import { z } from 'zod';
+
+const AuthProviderSchema = z.object({
+    name: z.string().min(1, 'Name is required').max(100, 'Name too long'),
+    type: z.enum(['auth0', 'oidc', 'saml', 'userpki', 'iap', 'openshift']),
+    enabled: z.boolean(),
+    config: z.record(z.any()),
+});
+
+export async function saveAuthProvider(provider: Partial<AuthProvider>): Promise<AuthProvider> {
+    // Validate input
+    const validatedProvider = AuthProviderSchema.parse(provider);
+
+    try {
+        const response = provider.id
+            ? await axios.put<AuthProviderResponse>(
+                  `/v1/authProviders/${provider.id}`,
+                  validatedProvider
+              )
+            : await axios.post<AuthProviderResponse>('/v1/authProviders', validatedProvider);
+        return response.data.authProvider;
+    } catch (error) {
+        throw handleServiceError(error as AxiosError, 'saveAuthProvider');
+    }
+}
+```
+
+### Response Validation
+
+```typescript
+// ✅ Good - Response validation
+const AuthProviderListResponseSchema = z.object({
+    authProviders: z.array(AuthProviderSchema),
+});
+
+export async function fetchAuthProviders(): Promise<AuthProvider[]> {
+    try {
+        const response = await axios.get('/v1/authProviders');
+
+        // Validate response structure
+        const validatedResponse = AuthProviderListResponseSchema.parse(response.data);
+
+        return validatedResponse.authProviders.map(transformAuthProvider);
+    } catch (error) {
+        if (error instanceof z.ZodError) {
+            throw new ServiceError('Invalid response format', 'validation', 'fetchAuthProviders');
+        }
+        throw handleServiceError(error as AxiosError, 'fetchAuthProviders');
+    }
+}
+```
+
+## Custom Hooks for API Integration
+
+### Data Fetching Hooks
+
+```typescript
+// ✅ Good - Reusable data fetching hook
+export function useRestQuery<T>(
+    queryFn: () => Promise<T>,
+    dependencies: any[] = []
+): {
+    data: T | null;
+    isLoading: boolean;
+    error: string | null;
+    refetch: () => void;
+} {
+    const [data, setData] = useState<T | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const fetchData = useCallback(async () => {
+        setIsLoading(true);
+        setError(null);
+
+        try {
+            const result = await queryFn();
+            setData(result);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'An error occurred');
+        } finally {
+            setIsLoading(false);
+        }
+    }, dependencies);
+
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
+
+    return {
+        data,
+        isLoading,
+        error,
+        refetch: fetchData,
+    };
+}
+
+// Usage
+export function useAuthProviders() {
+    return useRestQuery(fetchAuthProviders, []);
+}
+
+export function useCluster(clusterId: string) {
+    return useRestQuery(() => fetchCluster(clusterId), [clusterId]);
+}
+```
+
+### Mutation Hooks
+
+```typescript
+// ✅ Good - Mutation hook
+export function useRestMutation<TData, TVariables>(
+    mutationFn: (variables: TVariables) => Promise<TData>
+): {
+    mutate: (variables: TVariables) => Promise<TData>;
+    isLoading: boolean;
+    error: string | null;
+} {
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const mutate = useCallback(
+        async (variables: TVariables): Promise<TData> => {
+            setIsLoading(true);
+            setError(null);
+
+            try {
+                const result = await mutationFn(variables);
+                return result;
+            } catch (err) {
+                const errorMessage = err instanceof Error ? err.message : 'An error occurred';
+                setError(errorMessage);
+                throw err;
+            } finally {
+                setIsLoading(false);
+            }
+        },
+        [mutationFn]
+    );
+
+    return {
+        mutate,
+        isLoading,
+        error,
+    };
+}
+
+// Usage
+export function useCreateAuthProvider() {
+    return useRestMutation(saveAuthProvider);
+}
+
+export function useDeleteAuthProvider() {
+    return useRestMutation(deleteAuthProvider);
+}
+```
+
+## Caching Strategies
+
+### Simple Memory Cache
+
+```typescript
+// ✅ Good - Simple cache implementation
+class ServiceCache {
+    private cache = new Map<string, { data: any; timestamp: number; ttl: number }>();
+
+    set<T>(key: string, data: T, ttl: number = 5 * 60 * 1000): void {
+        this.cache.set(key, {
+            data,
+            timestamp: Date.now(),
+            ttl,
+        });
+    }
+
+    get<T>(key: string): T | null {
+        const cached = this.cache.get(key);
+        if (!cached) return null;
+
+        if (Date.now() - cached.timestamp > cached.ttl) {
+            this.cache.delete(key);
+            return null;
+        }
+
+        return cached.data;
+    }
+
+    invalidate(key: string): void {
+        this.cache.delete(key);
+    }
+
+    clear(): void {
+        this.cache.clear();
+    }
+}
+
+const cache = new ServiceCache();
+
+export async function fetchAuthProviders(useCache = true): Promise<AuthProvider[]> {
+    const cacheKey = 'authProviders';
+
+    if (useCache) {
+        const cached = cache.get<AuthProvider[]>(cacheKey);
+        if (cached) return cached;
+    }
+
+    try {
+        const response = await axios.get<AuthProviderListResponse>('/v1/authProviders');
+        const providers = response.data.authProviders || [];
+
+        cache.set(cacheKey, providers, 5 * 60 * 1000); // 5 minutes
+        return providers;
+    } catch (error) {
+        throw handleServiceError(error as AxiosError, 'fetchAuthProviders');
+    }
+}
+
+// Invalidate cache when data changes
+export async function saveAuthProvider(provider: AuthProvider): Promise<AuthProvider> {
+    try {
+        const response = provider.id
+            ? await axios.put<AuthProviderResponse>(`/v1/authProviders/${provider.id}`, provider)
+            : await axios.post<AuthProviderResponse>('/v1/authProviders', provider);
+
+        // Invalidate cache
+        cache.invalidate('authProviders');
+
+        return response.data.authProvider;
+    } catch (error) {
+        throw handleServiceError(error as AxiosError, 'saveAuthProvider');
+    }
+}
+```
+
+## GraphQL Integration
+
+### Apollo Client Patterns
+
+```typescript
+// ✅ Good - GraphQL query patterns
+import { gql, useQuery, useMutation } from '@apollo/client';
+
+const GET_AUTH_PROVIDERS = gql`
+    query GetAuthProviders {
+        authProviders {
+            id
+            name
+            type
+            enabled
+            lastUpdated
+            config {
+                clientId
+                issuer
+            }
+        }
+    }
+`;
+
+const CREATE_AUTH_PROVIDER = gql`
+    mutation CreateAuthProvider($input: AuthProviderInput!) {
+        createAuthProvider(input: $input) {
+            id
+            name
+            type
+            enabled
+        }
+    }
+`;
+
+export function useAuthProviders() {
+    const { data, loading, error, refetch } = useQuery(GET_AUTH_PROVIDERS);
+
+    return {
+        providers: data?.authProviders || [],
+        isLoading: loading,
+        error: error?.message || null,
+        refetch,
+    };
+}
+
+export function useCreateAuthProvider() {
+    const [createAuthProvider, { loading, error }] = useMutation(CREATE_AUTH_PROVIDER, {
+        update(cache, { data }) {
+            const existingProviders = cache.readQuery({ query: GET_AUTH_PROVIDERS });
+            if (existingProviders) {
+                cache.writeQuery({
+                    query: GET_AUTH_PROVIDERS,
+                    data: {
+                        authProviders: [
+                            ...existingProviders.authProviders,
+                            data.createAuthProvider,
+                        ],
+                    },
+                });
+            }
+        },
+    });
+
+    return {
+        createProvider: createAuthProvider,
+        isLoading: loading,
+        error: error?.message || null,
+    };
+}
+```
+
+## Testing Service Layer
+
+### Service Function Testing
+
+```typescript
+// ✅ Good - Service testing
+import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { fetchAuthProviders, saveAuthProvider } from './AuthService';
+import { AuthHttpError } from './AuthService';
+
+// Mock axios
+vi.mock('services/instance', () => ({
+    axios: {
+        get: vi.fn(),
+        post: vi.fn(),
+        put: vi.fn(),
+        delete: vi.fn(),
+    },
+}));
+
+describe('AuthService', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    describe('fetchAuthProviders', () => {
+        it('should return auth providers on success', async () => {
+            const mockProviders = [{ id: '1', name: 'Test Provider', type: 'oidc', enabled: true }];
+
+            vi.mocked(axios.get).mockResolvedValue({
+                data: { authProviders: mockProviders },
+            });
+
+            const result = await fetchAuthProviders();
+
+            expect(result).toEqual(mockProviders);
+            expect(axios.get).toHaveBeenCalledWith('/v1/authProviders');
+        });
+
+        it('should throw AuthHttpError on API error', async () => {
+            const mockError = {
+                response: { status: 500 },
+                message: 'Server error',
+            };
+
+            vi.mocked(axios.get).mockRejectedValue(mockError);
+
+            await expect(fetchAuthProviders()).rejects.toThrow(AuthHttpError);
+        });
+    });
+
+    describe('saveAuthProvider', () => {
+        it('should create new provider when no ID provided', async () => {
+            const newProvider = { name: 'New Provider', type: 'oidc', enabled: true };
+            const savedProvider = { id: '1', ...newProvider };
+
+            vi.mocked(axios.post).mockResolvedValue({
+                data: { authProvider: savedProvider },
+            });
+
+            const result = await saveAuthProvider(newProvider);
+
+            expect(result).toEqual(savedProvider);
+            expect(axios.post).toHaveBeenCalledWith('/v1/authProviders', newProvider);
+        });
+
+        it('should update existing provider when ID provided', async () => {
+            const existingProvider = {
+                id: '1',
+                name: 'Existing Provider',
+                type: 'oidc',
+                enabled: true,
+            };
+
+            vi.mocked(axios.put).mockResolvedValue({
+                data: { authProvider: existingProvider },
+            });
+
+            const result = await saveAuthProvider(existingProvider);
+
+            expect(result).toEqual(existingProvider);
+            expect(axios.put).toHaveBeenCalledWith('/v1/authProviders/1', existingProvider);
+        });
+    });
+});
+```
+
+### Custom Hook Testing
+
+```typescript
+// ✅ Good - Hook testing
+import { renderHook, act } from '@testing-library/react';
+import { vi } from 'vitest';
+import { useAuthProviders } from './useAuthProviders';
+
+vi.mock('./AuthService', () => ({
+    fetchAuthProviders: vi.fn(),
+}));
+
+describe('useAuthProviders', () => {
+    it('should fetch providers on mount', async () => {
+        const mockProviders = [{ id: '1', name: 'Test' }];
+        vi.mocked(fetchAuthProviders).mockResolvedValue(mockProviders);
+
+        const { result } = renderHook(() => useAuthProviders());
+
+        expect(result.current.isLoading).toBe(true);
+        expect(result.current.providers).toEqual([]);
+
+        await act(async () => {
+            await new Promise((resolve) => setTimeout(resolve, 0));
+        });
+
+        expect(result.current.isLoading).toBe(false);
+        expect(result.current.providers).toEqual(mockProviders);
+        expect(result.current.error).toBe(null);
+    });
+
+    it('should handle fetch errors', async () => {
+        const mockError = new Error('Fetch failed');
+        vi.mocked(fetchAuthProviders).mockRejectedValue(mockError);
+
+        const { result } = renderHook(() => useAuthProviders());
+
+        await act(async () => {
+            await new Promise((resolve) => setTimeout(resolve, 0));
+        });
+
+        expect(result.current.isLoading).toBe(false);
+        expect(result.current.providers).toEqual([]);
+        expect(result.current.error).toBe('Fetch failed');
+    });
+});
+```
+
+## Best Practices Summary
+
+### DO:
+
+- Use typed service functions with proper interfaces
+- Implement consistent error handling across all services
+- Use custom hooks for API integration
+- Validate inputs and responses
+- Implement request cancellation for long-running operations
+- Cache responses appropriately
+- Write comprehensive tests for service layer
+
+### DON'T:
+
+- Use the default axios instance directly
+- Ignore error handling or use generic error messages
+- Duplicate API logic across components
+- Skip input validation
+- Forget to handle loading and error states
+- Cache responses indefinitely
+- Skip testing service layer functions
