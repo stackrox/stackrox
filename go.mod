@@ -6,7 +6,7 @@ require (
 	cloud.google.com/go/artifactregistry v1.17.1
 	cloud.google.com/go/compute/metadata v0.7.0
 	cloud.google.com/go/containeranalysis v0.14.1
-	cloud.google.com/go/securitycenter v1.36.2
+	cloud.google.com/go/securitycenter v1.37.0
 	cloud.google.com/go/storage v1.54.0
 	dario.cat/mergo v1.0.2
 	github.com/Azure/azure-sdk-for-go-extensions v0.1.9
@@ -142,14 +142,14 @@ require (
 	golang.org/x/mod v0.25.0
 	golang.org/x/net v0.41.0
 	golang.org/x/oauth2 v0.30.0
-	golang.org/x/sync v0.15.0
+	golang.org/x/sync v0.16.0
 	golang.org/x/sys v0.33.0
 	golang.org/x/term v0.32.0
 	golang.org/x/text v0.26.0
 	golang.org/x/time v0.12.0
 	golang.org/x/tools v0.34.0
 	golang.stackrox.io/grpc-http1 v0.4.0
-	google.golang.org/api v0.240.0
+	google.golang.org/api v0.241.0
 	google.golang.org/genproto v0.0.0-20250505200425-f936aa4a68b2
 	google.golang.org/genproto/googleapis/api v0.0.0-20250603155806-513f23925822
 	google.golang.org/grpc v1.73.0

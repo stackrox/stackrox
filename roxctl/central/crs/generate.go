@@ -34,7 +34,7 @@ func generateCRS(cliEnvironment environment.Environment, name string,
 
 	conn, err := cliEnvironment.GRPCConnection(common.WithRetryTimeout(retryTimeout))
 	if err != nil {
-		return err
+		return errors.Wrap(err, "establishing GRPC connection to generate Cluster Registration Secrets")
 	}
 	defer utils.IgnoreError(conn.Close)
 	svc := v1.NewClusterInitServiceClient(conn)
@@ -116,7 +116,8 @@ func generateCrsExtended(
 		req.ValidUntil = timestamppb.New(validUntil)
 	}
 
-	return svc.GenerateCRSExtended(ctx, &req)
+	crs, err := svc.GenerateCRSExtended(ctx, &req)
+	return crs, errors.Wrap(err, "generating CRS extended")
 }
 
 // generateCommand implements the command for generating new CRSs.

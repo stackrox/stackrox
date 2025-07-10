@@ -3,6 +3,7 @@ package generate
 import (
 	"crypto/tls"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/renderer"
 )
@@ -47,5 +48,5 @@ func validateDefaultTLSCert(certPEM, keyPEM []byte) error {
 	}
 
 	_, err := tls.X509KeyPair(certPEM, keyPEM)
-	return err
+	return errors.Wrap(err, "validating TLS certificate and key pair")
 }
