@@ -287,6 +287,7 @@ func FilterSuppressedCVEsNoClone(img *storage.Image) {
 //   - All images that are referred by PackageManifests in the "redhat-operators" OLM catalog
 //
 // See the description of https://github.com/stackrox/stackrox/pull/15761 for details
+// This function is used to determine which images should be built and signed by Red Hat, for supply chain provenance
 func IsRedHatImage(img *storage.Image) bool {
 	// First consider registries where all images are built by Red Hat
 	imageRegistry := img.GetName().GetRegistry()
