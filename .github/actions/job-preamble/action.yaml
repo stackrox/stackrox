@@ -65,6 +65,7 @@ runs:
           /__t/Python
           /__t/go
           /__t/node
+          /__t/gcloud
         )
         for d in "${cleanup[@]}"; do
           if [[ -d "$d" ]]; then
