@@ -232,8 +232,17 @@ func (q *query) getPortionBeforeFromClause() string {
 		}
 		return fmt.Sprintf("select count(%s)", countOn)
 	case GET:
-		for _, f := range q.PrimaryKeyFields {
-			log.Infof("SHREWS -- %v", f)
+		if q.DistinctAppliedOnPrimaryKeySelect() {
+			var primaryKeyPaths []string
+			// Always select the primary keys for count.
+			for _, pk := range q.Schema.PrimaryKeys() {
+				primaryKeyPaths = append(primaryKeyPaths, qualifyColumn(pk.Schema.Table, pk.ColumnName, ""))
+			}
+
+			for _, f := range q.PrimaryKeyFields {
+				log.Infof("SHREWS -- %v", f)
+			}
+			return fmt.Sprintf("select distinct(%s), %q.serialized", strings.Join(primaryKeyPaths, ", "), q.From)
 		}
 		return fmt.Sprintf("select %q.serialized", q.From)
 	case SEARCH:
