@@ -232,6 +232,9 @@ func (q *query) getPortionBeforeFromClause() string {
 		}
 		return fmt.Sprintf("select count(%s)", countOn)
 	case GET:
+		for _, f := range q.PrimaryKeyFields {
+			log.Infof("SHREWS -- %v", f)
+		}
 		return fmt.Sprintf("select %q.serialized", q.From)
 	case SEARCH:
 		var selectStrs []string
