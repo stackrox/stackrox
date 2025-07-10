@@ -321,6 +321,7 @@ class ImageManagementTest extends BaseSpecification {
 
     @Tag("BAT")
     @Tag("Integration")
+    @IgnoreIf({ Env.BYODB_TEST == "true" })
     def "Verify CI/CD Integration Endpoint with notifications"() {
         when:
         "Clone and scope the policy for test"

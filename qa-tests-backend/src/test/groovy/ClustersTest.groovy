@@ -2,12 +2,15 @@ import io.stackrox.proto.storage.ClusterOuterClass
 
 import services.ClusterService
 import util.Cert
+import util.Env
 
+import spock.lang.IgnoreIf
 import spock.lang.Stepwise
 import spock.lang.Tag
 
 @Tag("BAT")
 @Tag("PZ")
+@IgnoreIf({ Env.BYODB_TEST == "true" })
 @Stepwise
 class ClustersTest extends BaseSpecification {
 
