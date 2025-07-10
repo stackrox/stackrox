@@ -516,102 +516,301 @@ function ThemedCard({ children, variant = 'default' }: ThemedCardProps) {
 }
 ```
 
-## Accessibility Standards
+## PatternFly Accessibility Features
 
-### ARIA Labels and Descriptions
+### Built-in Accessibility
+
+PatternFly components come with accessibility features built-in. Always use these components for their accessibility benefits:
 
 ```typescript
-// ✅ Good - Proper ARIA labels
-function AuthProviderActions({ provider, onEdit, onDelete }: AuthProviderActionsProps) {
+// ✅ Good - PatternFly components with built-in accessibility
+import {
+    Table,
+    Thead,
+    Tbody,
+    Tr,
+    Th,
+    Td,
+    Button,
+    Modal,
+    Form,
+    FormGroup,
+    TextInput
+} from '@patternfly/react-core';
+
+function AccessibleTable({ data }: { data: AuthProvider[] }) {
     return (
-        <Dropdown
-            toggle={
-                <DropdownToggle
-                    aria-label={`Actions for ${provider.name}`}
-                    id={`actions-${provider.id}`}
-                >
-                    <EllipsisVIcon />
-                </DropdownToggle>
-            }
-            isPlain
+        <Table aria-label="Authentication Providers" variant="compact">
+            <Thead>
+                <Tr>
+                    <Th sort={{ sortBy: 'name', onSort: handleSort }}>
+                        Name
+                    </Th>
+                    <Th>Type</Th>
+                    <Th>Status</Th>
+                    <Th screenReaderText="Actions" />
+                </Tr>
+            </Thead>
+            <Tbody>
+                {data.map((provider) => (
+                    <Tr key={provider.id}>
+                        <Td dataLabel="Name">{provider.name}</Td>
+                        <Td dataLabel="Type">{provider.type}</Td>
+                        <Td dataLabel="Status">
+                            <Label color={provider.enabled ? 'green' : 'red'}>
+                                {provider.enabled ? 'Enabled' : 'Disabled'}
+                            </Label>
+                        </Td>
+                        <Td>
+                            <ActionsColumn
+                                items={[
+                                    { title: 'Edit', onClick: () => handleEdit(provider) },
+                                    { title: 'Delete', onClick: () => handleDelete(provider.id) }
+                                ]}
+                            />
+                        </Td>
+                    </Tr>
+                ))}
+            </Tbody>
+        </Table>
+    );
+}
+
+// ✅ Good - PatternFly Modal with accessibility
+function AuthProviderModal({ isOpen, onClose }: AuthProviderModalProps) {
+    return (
+        <Modal
+            isOpen={isOpen}
+            onClose={onClose}
+            title="Create Authentication Provider"
+            description="Configure a new authentication provider for your organization"
+            variant="medium"
+            hasNoBodyWrapper
         >
-            <DropdownItem
-                key="edit"
-                onClick={() => onEdit(provider)}
-                aria-describedby={`edit-${provider.id}-description`}
-            >
-                Edit
-                <span id={`edit-${provider.id}-description`} className="pf-v5-screen-reader">
-                    Edit authentication provider {provider.name}
-                </span>
-            </DropdownItem>
-            <DropdownItem
-                key="delete"
-                onClick={() => onDelete(provider.id)}
-                aria-describedby={`delete-${provider.id}-description`}
-            >
-                Delete
-                <span id={`delete-${provider.id}-description`} className="pf-v5-screen-reader">
-                    Delete authentication provider {provider.name}
-                </span>
-            </DropdownItem>
-        </Dropdown>
+            <Form>
+                <FormGroup label="Provider Name" isRequired fieldId="provider-name">
+                    <TextInput
+                        id="provider-name"
+                        isRequired
+                        aria-label="Provider name"
+                    />
+                </FormGroup>
+                {/* PatternFly handles focus management, keyboard navigation, and ARIA automatically */}
+            </Form>
+        </Modal>
     );
 }
 ```
 
-### Keyboard Navigation
+### PatternFly Accessibility Classes
 
 ```typescript
-// ✅ Good - Keyboard accessible
-function AuthProviderList({ providers }: { providers: AuthProvider[] }) {
-    const [selectedIndex, setSelectedIndex] = useState(-1);
+// ✅ Good - Using PatternFly screen reader classes
+function AuthProviderCard({ provider }: { provider: AuthProvider }) {
+    return (
+        <Card>
+            <CardHeader>
+                <Flex justifyContent={{ default: 'justifyContentSpaceBetween' }}>
+                    <FlexItem>
+                        <Title headingLevel="h3">{provider.name}</Title>
+                    </FlexItem>
+                    <FlexItem>
+                        <Label color={provider.enabled ? 'green' : 'red'}>
+                            {provider.enabled ? 'Enabled' : 'Disabled'}
+                        </Label>
+                        {/* Additional context for screen readers */}
+                        <span className="pf-v5-screen-reader">
+                            Authentication provider {provider.name} is {provider.enabled ? 'enabled' : 'disabled'}
+                        </span>
+                    </FlexItem>
+                </Flex>
+            </CardHeader>
+            <CardBody>
+                <Text>Type: {provider.type}</Text>
+                <Text>Last updated: {formatDate(provider.lastUpdated)}</Text>
+            </CardBody>
+        </Card>
+    );
+}
 
-    const handleKeyDown = (event: KeyboardEvent) => {
-        switch (event.key) {
-            case 'ArrowDown':
-                event.preventDefault();
-                setSelectedIndex((prev) =>
-                    prev < providers.length - 1 ? prev + 1 : 0
-                );
-                break;
-            case 'ArrowUp':
-                event.preventDefault();
-                setSelectedIndex((prev) =>
-                    prev > 0 ? prev - 1 : providers.length - 1
-                );
-                break;
-            case 'Enter':
-            case ' ':
-                event.preventDefault();
-                if (selectedIndex >= 0) {
-                    handleSelectProvider(providers[selectedIndex]);
-                }
-                break;
-        }
-    };
+// ✅ Good - PatternFly utility classes for accessibility
+function StatusIndicator({ status }: { status: string }) {
+    return (
+        <div className="pf-v5-u-display-flex pf-v5-u-align-items-center">
+            <span className="pf-v5-u-mr-sm">
+                {status === 'active' ? '✓' : '✗'}
+            </span>
+            <span>{status}</span>
+            {/* Screen reader only description */}
+            <span className="pf-v5-screen-reader">
+                Status: {status}
+            </span>
+        </div>
+    );
+}
+```
+
+### Extending PatternFly Components Accessibly
+
+```typescript
+// ✅ Good - Maintaining accessibility when extending PatternFly components
+interface AccessibleCustomCardProps extends CardProps {
+    isInteractive?: boolean;
+    onActivate?: () => void;
+    ariaLabel?: string;
+}
+
+function AccessibleCustomCard({
+    isInteractive,
+    onActivate,
+    ariaLabel,
+    children,
+    ...cardProps
+}: AccessibleCustomCardProps) {
+    if (isInteractive) {
+        return (
+            <Card
+                {...cardProps}
+                isSelectable
+                isSelected={false}
+                onSelectableInputChange={onActivate}
+                aria-label={ariaLabel}
+                tabIndex={0}
+            >
+                {children}
+            </Card>
+        );
+    }
+
+    return <Card {...cardProps}>{children}</Card>;
+}
+
+// ✅ Good - Custom component with PatternFly accessibility patterns
+function AccessibleProviderStatus({ provider }: { provider: AuthProvider }) {
+    return (
+        <Flex>
+            <FlexItem>
+                <Label
+                    color={provider.enabled ? 'green' : 'red'}
+                    icon={provider.enabled ? <CheckCircleIcon /> : <ExclamationCircleIcon />}
+                >
+                    {provider.enabled ? 'Enabled' : 'Disabled'}
+                </Label>
+            </FlexItem>
+            <FlexItem>
+                {/* PatternFly screen reader class for additional context */}
+                <span className="pf-v5-screen-reader">
+                    Provider {provider.name} is {provider.enabled ? 'enabled and accepting authentication' : 'disabled and not accepting authentication'}
+                </span>
+            </FlexItem>
+        </Flex>
+    );
+}
+```
+
+### PatternFly Form Accessibility
+
+```typescript
+// ✅ Good - PatternFly forms with built-in accessibility
+function AccessibleProviderForm({ provider, onSubmit }: AccessibleProviderFormProps) {
+    const [validated, setValidated] = useState<'default' | 'error' | 'success'>('default');
 
     return (
-        <div
-            role="listbox"
-            aria-label="Authentication Providers"
-            onKeyDown={handleKeyDown}
-            tabIndex={0}
-        >
-            {providers.map((provider, index) => (
-                <div
-                    key={provider.id}
-                    role="option"
-                    aria-selected={index === selectedIndex}
-                    className={`rox-provider-item ${
-                        index === selectedIndex ? 'rox-provider-item--selected' : ''
-                    }`}
-                    onClick={() => handleSelectProvider(provider)}
-                >
-                    {provider.name}
-                </div>
-            ))}
-        </div>
+        <Form onSubmit={handleSubmit}>
+            <FormGroup
+                label="Provider Name"
+                isRequired
+                fieldId="provider-name"
+                helperText="Enter a unique name for this authentication provider"
+                helperTextInvalid="Provider name is required and must be unique"
+                validated={validated}
+            >
+                <TextInput
+                    id="provider-name"
+                    isRequired
+                    validated={validated}
+                    aria-describedby="provider-name-helper"
+                />
+            </FormGroup>
+
+            <FormGroup
+                label="Provider Configuration"
+                fieldId="provider-config"
+                helperText="Upload or paste your provider configuration"
+            >
+                <FileUpload
+                    id="provider-config"
+                    type="text"
+                    value={config}
+                    filename={filename}
+                    onChange={handleConfigChange}
+                    onClear={handleClear}
+                    aria-describedby="provider-config-helper"
+                />
+            </FormGroup>
+
+            <ActionGroup>
+                <Button variant="primary" type="submit">
+                    Save Provider
+                </Button>
+                <Button variant="link" onClick={onCancel}>
+                    Cancel
+                </Button>
+            </ActionGroup>
+        </Form>
+    );
+}
+```
+
+### PatternFly Navigation Accessibility
+
+```typescript
+// ✅ Good - PatternFly navigation with accessibility
+function AccessibleSideNavigation() {
+    const [activeItem, setActiveItem] = useState('auth-providers');
+
+    return (
+        <Nav aria-label="Platform Configuration Navigation">
+            <NavList>
+                <NavGroup title="Authentication">
+                    <NavItem
+                        to="/auth-providers"
+                        itemId="auth-providers"
+                        isActive={activeItem === 'auth-providers'}
+                        onClick={() => setActiveItem('auth-providers')}
+                    >
+                        Authentication Providers
+                    </NavItem>
+                    <NavItem
+                        to="/access-scopes"
+                        itemId="access-scopes"
+                        isActive={activeItem === 'access-scopes'}
+                        onClick={() => setActiveItem('access-scopes')}
+                    >
+                        Access Scopes
+                    </NavItem>
+                </NavGroup>
+
+                <NavGroup title="User Management">
+                    <NavItem
+                        to="/users"
+                        itemId="users"
+                        isActive={activeItem === 'users'}
+                        onClick={() => setActiveItem('users')}
+                    >
+                        Users
+                    </NavItem>
+                    <NavItem
+                        to="/roles"
+                        itemId="roles"
+                        isActive={activeItem === 'roles'}
+                        onClick={() => setActiveItem('roles')}
+                    >
+                        Roles
+                    </NavItem>
+                </NavGroup>
+            </NavList>
+        </Nav>
     );
 }
 ```

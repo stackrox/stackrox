@@ -1,5 +1,7 @@
 # Accessibility Standards for StackRox UI
 
+> **Note:** This file contains comprehensive accessibility standards and patterns. For PatternFly-specific accessibility guidance, see `03-patternfly-styling.mdc`.
+
 ## Core Accessibility Principles
 
 ### WCAG 2.1 AA Compliance
@@ -509,6 +511,129 @@ function SearchableList({ items, onSelect }: SearchableListProps) {
                     </li>
                 ))}
             </ul>
+        </div>
+    );
+}
+```
+
+### General Keyboard Navigation Patterns
+
+```typescript
+// ✅ Good - General keyboard accessible list
+function AccessibleList({ items, onSelect }: { items: any[], onSelect: (item: any) => void }) {
+    const [selectedIndex, setSelectedIndex] = useState(-1);
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+        switch (event.key) {
+            case 'ArrowDown':
+                event.preventDefault();
+                setSelectedIndex((prev) =>
+                    prev < items.length - 1 ? prev + 1 : 0
+                );
+                break;
+            case 'ArrowUp':
+                event.preventDefault();
+                setSelectedIndex((prev) =>
+                    prev > 0 ? prev - 1 : items.length - 1
+                );
+                break;
+            case 'Enter':
+            case ' ':
+                event.preventDefault();
+                if (selectedIndex >= 0) {
+                    onSelect(items[selectedIndex]);
+                }
+                break;
+            case 'Escape':
+                setSelectedIndex(-1);
+                break;
+        }
+    };
+
+    return (
+        <div
+            role="listbox"
+            aria-label="Items list"
+            onKeyDown={handleKeyDown}
+            tabIndex={0}
+            className="accessible-list"
+        >
+            {items.map((item, index) => (
+                <div
+                    key={item.id}
+                    role="option"
+                    aria-selected={index === selectedIndex}
+                    className={`list-item ${
+                        index === selectedIndex ? 'list-item--selected' : ''
+                    }`}
+                    onClick={() => onSelect(item)}
+                >
+                    {item.name}
+                </div>
+            ))}
+        </div>
+    );
+}
+```
+
+### General ARIA Action Patterns
+
+```typescript
+// ✅ Good - General ARIA action menu pattern
+function AccessibleActionMenu({
+    target,
+    actions,
+    triggerLabel
+}: {
+    target: any,
+    actions: Array<{ title: string, onClick: () => void }>,
+    triggerLabel: string
+}) {
+    const [isOpen, setIsOpen] = useState(false);
+    const menuId = `action-menu-${target.id}`;
+
+    return (
+        <div className="action-menu">
+            <button
+                type="button"
+                onClick={() => setIsOpen(!isOpen)}
+                aria-expanded={isOpen}
+                aria-haspopup="menu"
+                aria-label={triggerLabel}
+                aria-controls={menuId}
+            >
+                <DotsVerticalIcon />
+            </button>
+
+            {isOpen && (
+                <div
+                    id={menuId}
+                    role="menu"
+                    aria-labelledby={`${menuId}-trigger`}
+                    className="action-menu__dropdown"
+                >
+                    {actions.map((action, index) => (
+                        <button
+                            key={index}
+                            type="button"
+                            role="menuitem"
+                            onClick={() => {
+                                action.onClick();
+                                setIsOpen(false);
+                            }}
+                            aria-describedby={`${menuId}-${index}-description`}
+                        >
+                            {action.title}
+                            <span
+                                id={`${menuId}-${index}-description`}
+                                className="sr-only"
+                            >
+                                {action.title} for {target.name}
+                            </span>
+                        </button>
+                    ))}
+                </div>
+            )}
         </div>
     );
 }
