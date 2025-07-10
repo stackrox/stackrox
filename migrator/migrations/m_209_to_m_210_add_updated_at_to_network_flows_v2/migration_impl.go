@@ -12,7 +12,8 @@ import (
 )
 
 var (
-	log = loghelper.LogWrapper{}
+	log       = loghelper.LogWrapper{}
+	batchSize = 100000
 )
 
 func migrate(database *types.Databases) error {
@@ -27,6 +28,10 @@ func migrate(database *types.Databases) error {
 	return nil
 }
 
+type commandResult interface {
+	RowsAffected() int64
+}
+
 func addColumnToTable(ctx context.Context, db postgres.DB, table, column string) error {
 	ctx, cancel := context.WithTimeout(ctx, types.DefaultMigrationTimeout)
 	defer cancel()
@@ -37,11 +42,15 @@ func addColumnToTable(ctx context.Context, db postgres.DB, table, column string)
 		return errors.Wrapf(err, "unable to alter table %s", table)
 	}
 
-	updateColumnStmt := fmt.Sprintf("UPDATE %s SET %s = now()::timestamp WHERE %s IS NULL;", table, column, column)
+	var result commandResult
+	for result == nil || batchSize == int(result.RowsAffected()) {
+		selectNullStmt := fmt.Sprintf("SELECT flow_id FROM %s WHERE %s IS NULL LIMIT %d", table, column, batchSize)
+		updateColumnStmt := fmt.Sprintf("UPDATE %s SET %s = now()::timestamp WHERE flow_id IN (%s);", table, column, selectNullStmt)
 
-	_, err = db.Exec(ctx, updateColumnStmt)
-	if err != nil {
-		return errors.Wrapf(err, "unable to update column %s", column)
+		result, err = db.Exec(ctx, updateColumnStmt)
+		if err != nil {
+			return errors.Wrapf(err, "unable to update column %s", column)
+		}
 	}
 
 	addIndexStmt := fmt.Sprintf("CREATE INDEX IF NOT EXISTS network_flows_updatedat_v2 ON %s USING brin (%s);", table, column)
