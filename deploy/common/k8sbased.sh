@@ -306,7 +306,6 @@ function launch_central {
         fi
     fi
 
-
     # Do not default to running monitoring locally for resource reasons, which can be overridden
     # with MONITORING_SUPPORT=true, otherwise default it to true on all other systems
     is_local_dev=$(local_dev)
@@ -417,6 +416,14 @@ function launch_central {
         helm_args+=(
           --set scannerV4.disable="${_disable}"
         )
+      fi
+
+      if [[ -n "$EXTERNAL_DB" ]]; then
+          helm_args+=(
+            --set "central.db.password.value=${EXTERNAL_DB_PASSWORD}"
+            --set "central.db.external=true"
+            --set "central.db.source.connectionString=host=${EXTERNAL_DATABASE_HOST} client_encoding=UTF8 user=${EXTERNAL_DB_USER} dbname=${EXTERNAL_DATABASE_NAME} statement_timeout=1200000"
+          )
       fi
 
       local helm_chart="$unzip_dir/chart"
