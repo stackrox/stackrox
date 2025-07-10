@@ -91,8 +91,7 @@ func (h *commandHandler) Start() error {
 }
 
 func (h *commandHandler) Stop() {
-	err := errors.New("telemetry command handler was stopped")
-	h.stopSig.SignalWithError(err)
+	h.stopSig.Signal()
 }
 
 func (h *commandHandler) Notify(e common.SensorComponentEvent) {

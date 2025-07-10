@@ -294,6 +294,7 @@ func (s *Sensor) Start() {
 			log.Warnf("Sensor connection was not yet established when internal message for connection restart was received. Skipping soft restart")
 			return
 		}
+		log.Errorf("%s: forced connection restart", message.Text)
 		s.centralCommunication.Stop()
 	})
 
