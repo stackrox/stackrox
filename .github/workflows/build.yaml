@@ -574,10 +574,9 @@ jobs:
       QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
       QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
       QUAY_RHACS_ENG_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
+      ROX_PRODUCT_BRANDING: ${{ matrix.name }}
     strategy:
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).build_and_push_operator }}
-    env:
-      ROX_PRODUCT_BRANDING: ${{ matrix.name }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
