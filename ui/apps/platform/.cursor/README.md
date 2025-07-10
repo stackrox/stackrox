@@ -364,9 +364,3 @@ Our Cursor rules complement existing ESLint configuration:
 - TypeScript configuration: `tsconfig.json`
 - Testing setup: `vitest.config.ts`
 - Cypress configuration: `cypress.config.js`
-
----
-
-**Last Updated**: November 2024
-**Team**: StackRox UI Engineering (4 developers)
-**Maintained By**: Team Lead
