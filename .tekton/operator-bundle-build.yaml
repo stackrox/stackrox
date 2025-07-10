@@ -20,8 +20,8 @@ metadata:
         )
       )
   labels:
-    appstudio.openshift.io/application: acs
-    appstudio.openshift.io/component: operator-bundle
+    appstudio.openshift.io/application: acs-4-8
+    appstudio.openshift.io/component: operator-bundle-4-8
     pipelines.appstudio.openshift.io/type: build
   name: operator-bundle-on-push
   namespace: rh-acs-tenant
@@ -59,7 +59,7 @@ spec:
     name: operator-bundle-pipeline
 
   taskRunTemplate:
-    serviceAccountName: build-pipeline-operator-bundle
+    serviceAccountName: build-pipeline-operator-bundle-4-8
 
   # When building the operator-bundle, we must resolve image digests for all other ACS product images in order to inject
   # these digests in the bundle's ClusterServiceVersion file. For this, the bundle pipeline waits for each image to be
