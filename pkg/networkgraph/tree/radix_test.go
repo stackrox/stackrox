@@ -149,7 +149,8 @@ func TestNRadixTreeFindCIDR(t *testing.T) {
 	_, ipNet, err := net.ParseCIDR(cidr)
 	assert.NoError(t, err)
 
-	tree, err := NewNRadixTree(pkgNet.IPv4, []*storage.NetworkEntityInfo{e1, e2, e3, e4})
+	tree := newDefaultNRadixTree(pkgNet.IPv4)
+	err = tree.build([]*storage.NetworkEntityInfo{e1, e2, e3, e4})
 	assert.NoError(t, err)
 
 	supernet, err := tree.findCIDRNoLock(ipNet)
@@ -164,7 +165,8 @@ func TestNRadixTreeFindCIDR_Depth31(t *testing.T) {
 	_, ipNet, err := net.ParseCIDR(cidr)
 	assert.NoError(t, err)
 
-	tree, err := NewNRadixTree(pkgNet.IPv4, []*storage.NetworkEntityInfo{e})
+	tree := newDefaultNRadixTree(pkgNet.IPv4)
+	err = tree.build([]*storage.NetworkEntityInfo{e})
 	assert.NoError(t, err)
 
 	supernet, err := tree.findCIDRNoLock(ipNet)
