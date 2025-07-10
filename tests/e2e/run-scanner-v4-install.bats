@@ -967,6 +967,7 @@ EOT
     # Install using roxctl deployment bundles
     # shellcheck disable=SC2030,SC2031
     export OUTPUT_FORMAT=""
+    export SENSOR_HELM_DEPLOY="false" # Without this subtlety this test case would silently (and wrongly) use Helm for deploying sensor...
     info "Using roxctl executable ${EARLIER_ROXCTL_PATH}/roxctl for generating pre-Scanner V4 deployment bundles"
     PATH="${EARLIER_ROXCTL_PATH}:${PATH}" MAIN_IMAGE_TAG="${EARLIER_MAIN_IMAGE_TAG}" ROX_SCANNER_V4=false _deploy_stackrox
 
