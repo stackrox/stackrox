@@ -242,6 +242,17 @@ func (q *query) getPortionBeforeFromClause() string {
 			for _, f := range q.PrimaryKeyFields {
 				log.Infof("SHREWS -- %v", f)
 			}
+			for _, f := range q.SelectedFields {
+				log.Infof("SHREWS -- SELECTED -- %v", f)
+			}
+			var selectStrs []string
+			for _, f := range q.ExtraSelectedFieldPaths() {
+				log.Infof("SHREWS -- Extra --  %v", f)
+				selectStrs = append(selectStrs, f.PathForSelectPortion())
+			}
+			if len(selectStrs) > 0 {
+				return fmt.Sprintf("select distinct(%s), %q.serialized, ", strings.Join(primaryKeyPaths, ", "), q.From) + stringutils.JoinNonEmpty(", ", selectStrs...)
+			}
 			return fmt.Sprintf("select distinct(%s), %q.serialized", strings.Join(primaryKeyPaths, ", "), q.From)
 		}
 		return fmt.Sprintf("select %q.serialized", q.From)
