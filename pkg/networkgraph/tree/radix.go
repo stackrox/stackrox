@@ -414,6 +414,8 @@ func (t *nRadixTree) findCIDRNoLock(ipNet *net.IPNet) (*nRadixNode, error) {
 	return ret, nil
 }
 
+// Checks that all leaf nodes have values. All leaves
+// should have nodes since paths represent values.
 func validateLeavesHaveValues(node *nRadixNode) bool {
 	if node == nil {
 		return true
@@ -456,6 +458,8 @@ func getCardinalityByValues(node *nRadixNode) int {
 	return cardinality
 }
 
+// Checks that the number of values in the network tree
+// matches the number of keys in valueNodes.
 func (t *nRadixTree) validateCardinality() bool {
 	return getCardinalityByValues(t.root) == t.Cardinality()
 }
@@ -473,7 +477,7 @@ func cloneIPNet(ipNet *net.IPNet) *net.IPNet {
 	}
 }
 
-func compareValueIpNet(value *storage.NetworkEntityInfo, ipNet *net.IPNet) bool {
+func equalValueIpNet(value *storage.NetworkEntityInfo, ipNet *net.IPNet) bool {
 	valueCidr := value.GetExternalSource().GetCidr()
 	ipNetCidr := ipNet.String()
 	return valueCidr == ipNetCidr
@@ -481,7 +485,7 @@ func compareValueIpNet(value *storage.NetworkEntityInfo, ipNet *net.IPNet) bool 
 
 func validateValuesRecursive(ipNet *net.IPNet, octetIdx int, bit byte, node *nRadixNode) bool {
 	if node.value != nil {
-		if !compareValueIpNet(node.value, ipNet) {
+		if !equalValueIpNet(node.value, ipNet) {
 			return false
 		}
 	}
@@ -519,6 +523,8 @@ func validateValuesRecursive(ipNet *net.IPNet, octetIdx int, bit byte, node *nRa
 	return true
 }
 
+// Checks that the values of nodes correspond to the paths taken from
+// the root to the nodes.
 func (t *nRadixTree) validateValues() bool {
 	ip := make(net.IP, 4)
 	mask := make(net.IPMask, 4)
