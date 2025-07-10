@@ -119,10 +119,6 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-      - uses: actions/setup-go@v5
-        with:
-          go-version: '1.24.4'
-
       - uses: ./.github/actions/cache-ui-dependencies
 
       - uses: ./.github/actions/handle-tagged-build
@@ -152,8 +148,6 @@ jobs:
       - uses: ./.github/actions/job-preamble
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
-      - uses: actions/setup-go@v5
 
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
@@ -190,8 +184,6 @@ jobs:
       - uses: ./.github/actions/job-preamble
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
-      - uses: actions/setup-go@v5
 
       - name: Cache Go dependencies
         env:
@@ -257,8 +249,6 @@ jobs:
       - uses: ./.github/actions/job-preamble
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
-      - uses: actions/setup-go@v5
 
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
@@ -352,8 +342,6 @@ jobs:
       - uses: ./.github/actions/job-preamble
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
-      - uses: actions/setup-go@v5
 
       - name: Login to docker.io to mitigate rate limiting on downloading images
         uses: docker/login-action@v3
