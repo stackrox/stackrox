@@ -121,6 +121,10 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.4'
+
       - uses: ./.github/actions/cache-ui-dependencies
 
       - uses: ./.github/actions/handle-tagged-build
