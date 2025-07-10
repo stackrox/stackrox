@@ -231,7 +231,9 @@ jobs:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       - name: Pylint
-        run: make -C .openshift-ci lint
+        run: |
+          pip install -r .openshift-ci/dev-requirements.txt
+          make -C .openshift-ci lint
 
   slack-on-style-failure:
     env:
