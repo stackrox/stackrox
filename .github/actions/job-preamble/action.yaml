@@ -108,7 +108,6 @@ runs:
             | tee -a "$GITHUB_STEP_SUMMARY"
         fi
         df --si /
-        df -BGB /
         [[ ${free%GB} -ge "${{ inputs.free-disk-space }}" ]]
 
     - name: Ignore dubious repository ownership
@@ -130,8 +129,8 @@ runs:
         post: >
           source scripts/ci/lib.sh;
           update_job_record outcome "${{ job.status }}" stopped_at "CURRENT_TIMESTAMP()";
-          df --si /;
-          du -ks / 2>/dev/null | sort -V || true;
+          df --si;
+          du -ks /* 2>/dev/null | sort -V || true;
           free=$(df -BGB --output=avail / | tail -1);
           echo "Free disk space before: ${{ steps.disk-check-cleaned.outputs.free }} [${{ steps.disk-check.outputs.free }} before cleanup], and after: ${free}.";
           if [[ ${free%GB} -lt 5 ]]; then\
