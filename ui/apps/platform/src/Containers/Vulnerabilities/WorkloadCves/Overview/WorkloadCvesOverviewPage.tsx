@@ -82,7 +82,6 @@ import useVulnerabilityState from '../hooks/useVulnerabilityState';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 import DefaultFilterModal from '../components/DefaultFilterModal';
 import EntityTypeToggleGroup from '../../components/EntityTypeToggleGroup';
-import { getViewStateDescription } from './string.utils';
 import CreateReportDropdown from '../components/CreateReportDropdown';
 import CreateOnDemandReportModal from '../components/CreateOnDemandReportModal';
 import { imageListQuery } from '../Tables/ImageOverviewTable';
@@ -471,12 +470,6 @@ function WorkloadCvesOverviewPage() {
                                             ? 'Vulnerability findings'
                                             : 'Workloads without detected vulnerabilities'}
                                     </Title>
-                                    <Text className="pf-v5-u-font-size-sm">
-                                        {getViewStateDescription(
-                                            currentVulnerabilityState ?? 'OBSERVED',
-                                            isViewingWithCves
-                                        )}
-                                    </Text>
                                 </FlexItem>
                                 {isViewingWithCves &&
                                     (currentVulnerabilityState === 'OBSERVED' ||
