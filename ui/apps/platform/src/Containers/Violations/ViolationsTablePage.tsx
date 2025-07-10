@@ -34,7 +34,6 @@ import useURLSearch from 'hooks/useURLSearch';
 import useURLPagination from 'hooks/useURLPagination';
 import useInterval from 'hooks/useInterval';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import FilteredWorkflowViewSelector from 'Components/FilteredWorkflowViewSelector/FilteredWorkflowViewSelector';
 import useFilteredWorkflowViewURLState from 'Components/FilteredWorkflowViewSelector/useFilteredWorkflowViewURLState';
 import ViolationsTablePanel from './ViolationsTablePanel';
 import { getViolationsTableColumnDescriptors } from './violationsTableColumnDescriptors';
@@ -159,6 +158,8 @@ function ViolationsTablePage(): ReactElement {
         onURLSearch(searchFilter, setSearchFilter, payload);
     };
 
+    // TODO FilteredWorkflowView has 15 results in 5 files
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const onChangeFilteredWorkflowView = (value) => {
         setFilteredWorkflowView(value);
         setSearchFilter({});
@@ -313,12 +314,6 @@ function ViolationsTablePage(): ReactElement {
                         title={<TabTitleText>Attempted</TabTitleText>}
                     />
                 </Tabs>
-            </PageSection>
-            <PageSection className="pf-v5-u-py-md" component="div" variant="light">
-                <FilteredWorkflowViewSelector
-                    filteredWorkflowView={filteredWorkflowView}
-                    onChangeFilteredWorkflowView={onChangeFilteredWorkflowView}
-                />
             </PageSection>
             <PageSection variant="light">
                 <Text>{getDescriptionForSelectedViolationState(selectedViolationStateTab)}</Text>
