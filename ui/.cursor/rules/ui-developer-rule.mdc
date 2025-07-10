@@ -1,0 +1,214 @@
+---
+description: StackRox UI Development Rules - React/TypeScript patterns and best practices
+globs: ['apps/platform/src/**/*.{ts,tsx,js,jsx}', 'apps/platform/cypress/**/*.{ts,js}']
+alwaysApply: true
+---
+
+# StackRox UI Development Rules
+
+## Component Structure & Patterns
+
+### React Components
+
+-   Create functional components with TypeScript
+-   Use explicit typing for props with exported interfaces/types
+-   Export component as default, types/interfaces as named exports
+-   Use `React.FC` type annotation only when necessary (children props)
+-   Structure components with props destructuring and default values
+-   Use the pattern: `const Component = ({ prop1 = defaultValue, ...restProps }: ComponentProps) => {}`
+
+### Component Organization
+
+-   Use folder structure with `index.ts` for clean imports: `export { default } from './ComponentName';`
+-   Place types in the same file as the component or in separate `.types.ts` files for complex types
+-   Use PascalCase for component names and filenames
+-   Group related components in subdirectories
+
+### Props and State
+
+-   Always define prop types with TypeScript interfaces
+-   Use destructuring with default values in function parameters
+-   Use `data-testid` attributes for testing (follow pattern: `dataTestId` prop)
+-   Spread additional props with `...restProps` or `...ariaProps` when needed
+-   Use optional chaining and nullish coalescing for safer prop access
+
+## TypeScript Patterns
+
+### Type Definitions
+
+-   Use `const` assertions for union types: `const states = { LOADING: 'LOADING' } as const;`
+-   Create type from const: `type State = (typeof states)[keyof typeof states];`
+-   Use `Record<K, V>` for object types with known keys
+-   Define return types for functions, especially service functions
+-   Use generic types for reusable patterns
+
+### Service Layer
+
+-   Export individual functions, not classes
+-   Use consistent naming: `fetchSomething`, `createSomething`, `updateSomething`, `deleteSomething`
+-   Always include explicit return types for service functions
+-   Use `axios` instance consistently for API calls
+-   Handle errors with proper typing
+-   Use `Promise<T>` return types for async functions
+-   Structure API responses with proper typing
+
+## Hooks and State Management
+
+### Custom Hooks
+
+-   Prefix with `use` and use camelCase
+-   Export hook as default, types as named exports
+-   Use Redux `useSelector` with structured selectors for performance
+-   Always type hook return values
+-   Use destructuring in hook returns for better developer experience
+
+### Redux Patterns
+
+-   Use `createStructuredSelector` for complex selectors
+-   Type selectors properly with state interface
+-   Use proper Redux TypeScript patterns for actions and reducers
+
+## Testing Patterns
+
+### Cypress Tests
+
+-   Use `describe` blocks for test organization
+-   Implement `beforeEach` for common setup
+-   Use `cy.route` for API mocking (legacy pattern in codebase)
+-   Use descriptive test names with `it('should ...')`
+-   Use `withAuth()` helper for authentication
+-   Use page object model with selectors from constants
+-   Test user interactions, not implementation details
+
+### Test Structure
+
+-   Import selectors from constants files
+-   Use `data-testid` attributes for reliable element selection
+-   Mock API responses with fixtures
+-   Use `cy.wait()` for async operations
+-   Test both success and error scenarios
+
+## Import/Export Patterns
+
+### Import Organization
+
+-   Group imports: React first, then libraries, then local imports
+-   Use absolute imports for src-level imports
+-   Use relative imports for same-directory files
+-   Sort imports alphabetically within groups
+-   Use named imports when possible, default imports for components
+
+### Export Patterns
+
+-   Use default export for main component/function
+-   Use named exports for types, utilities, and secondary exports
+-   Use barrel exports (index.ts) for clean API surfaces
+-   Export types alongside implementation when related
+
+## Error Handling & API Patterns
+
+### API Services
+
+-   Use consistent error handling patterns
+-   Return proper typing for API responses
+-   Use `queryString.stringify` for URL parameters
+-   Handle null/undefined responses with fallbacks
+-   Use generic error types for consistent error handling
+
+### Error Boundaries
+
+-   Implement error boundaries for component trees
+-   Use proper error logging and user feedback
+-   Handle async errors in services and components
+
+## Performance & Optimization
+
+### React Performance
+
+-   Use `React.memo` for expensive components
+-   Implement proper dependency arrays in useEffect
+-   Use `useCallback` and `useMemo` judiciously
+-   Avoid inline object/function creation in render
+-   Use proper key props for list items
+
+### Bundle Optimization
+
+-   Use dynamic imports for code splitting
+-   Implement lazy loading for large components
+-   Optimize images and assets
+-   Use proper tree shaking patterns
+
+## Accessibility & UX
+
+### Accessibility
+
+-   Use semantic HTML elements
+-   Implement proper ARIA attributes
+-   Ensure keyboard navigation works
+-   Use proper color contrast and visual indicators
+-   Include alt text for images and icons
+
+### User Experience
+
+-   Implement loading states with spinners/skeletons
+-   Show proper error messages to users
+-   Use consistent spacing and typography
+-   Implement proper form validation
+-   Provide clear feedback for user actions
+
+## Code Style & Quality
+
+### General Rules
+
+-   Use meaningful variable and function names
+-   Implement proper JSDoc comments for complex functions
+-   Use consistent indentation and formatting
+-   Avoid deeply nested code structures
+-   Use early returns to reduce nesting
+-   Implement proper null/undefined checks
+
+### React Specific
+
+-   Use fragments instead of unnecessary divs
+-   Implement proper cleanup in useEffect
+-   Use proper event handler naming: `handleSomething`
+-   Avoid using array indices as keys
+-   Use proper CSS class naming conventions
+
+## File Organization
+
+### Directory Structure
+
+-   Group related files in feature directories
+-   Use consistent naming patterns
+-   Keep components small and focused
+-   Separate concerns (presentation vs logic)
+-   Use proper barrel exports for clean imports
+
+### File Naming
+
+-   Use PascalCase for component files
+-   Use camelCase for utility files
+-   Use kebab-case for test files
+-   Use descriptive names that indicate purpose
+-   Group related files in subdirectories
+
+## API Integration
+
+### Service Integration
+
+-   Use consistent parameter naming
+-   Implement proper typing for API responses
+-   Handle pagination and filtering patterns
+-   Use proper error handling and retry logic
+-   Implement caching strategies where appropriate
+
+### State Management
+
+-   Use Redux for global state
+-   Use local state for component-specific data
+-   Implement proper loading and error states
+-   Use proper action naming conventions
+-   Implement proper selector patterns
+
+These rules ensure consistent, maintainable, and high-quality code that follows the established patterns in the StackRox UI codebase.

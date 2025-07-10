@@ -1,0 +1,170 @@
+---
+description: TypeScript Best Practices - Type safety and patterns for StackRox UI
+globs: ['apps/platform/src/**/*.{ts,tsx}', 'apps/platform/src/types/**/*.ts']
+alwaysApply: true
+---
+
+# TypeScript Rules
+
+## Type Definitions
+
+### Basic Types
+
+-   Use explicit return types for functions: `function fetchData(): Promise<Data[]>`
+-   Use `interface` for object shapes that might be extended
+-   Use `type` for unions, intersections, and computed types
+-   Use `const` assertions for literal types: `const states = { LOADING: 'LOADING' } as const`
+
+### Advanced Patterns
+
+-   Create types from const objects: `type State = (typeof states)[keyof typeof states]`
+-   Use `Record<K, V>` for key-value mappings: `Record<string, User>`
+-   Use `Partial<T>` for optional properties: `Partial<User>`
+-   Use `Pick<T, K>` and `Omit<T, K>` for type manipulation
+
+### Generic Types
+
+-   Use generic constraints: `<T extends BaseType>`
+-   Use generic defaults: `<T = DefaultType>`
+-   Use conditional types when needed: `T extends string ? string[] : T[]`
+
+## API & Service Types
+
+### Request/Response Types
+
+-   Define explicit types for API responses
+-   Use discriminated unions for different response states
+-   Type API parameters with proper interfaces
+-   Use `Promise<T>` for async function return types
+
+### Error Handling
+
+-   Create specific error types for different scenarios
+-   Use union types for error states: `{ success: true; data: T } | { success: false; error: string }`
+-   Type error boundaries properly
+
+### Service Patterns
+
+```typescript
+// Service function with proper typing
+export async function fetchUsers(params: FetchUsersParams): Promise<User[]> {
+    const response = await axios.get<{ users: User[] }>('/api/users', { params });
+    return response.data.users ?? [];
+}
+
+// Type the parameters
+interface FetchUsersParams {
+    page?: number;
+    limit?: number;
+    search?: string;
+}
+```
+
+## Component Types
+
+### Props Types
+
+-   Use interfaces for component props
+-   Make props readonly when possible: `readonly prop: string`
+-   Use optional properties with default values in destructuring
+-   Extend HTML attributes when needed: `interface Props extends ButtonHTMLAttributes<HTMLButtonElement>`
+
+### Event Handlers
+
+-   Type event handlers properly: `(event: React.MouseEvent<HTMLButtonElement>) => void`
+-   Use React's event types: `React.ChangeEvent`, `React.FormEvent`, etc.
+-   Type custom event handlers with proper parameters
+
+### Ref Types
+
+-   Use `React.RefObject<T>` for refs
+-   Use `React.MutableRefObject<T>` for mutable refs
+-   Type forwarded refs properly: `React.forwardRef<HTMLDivElement, Props>`
+
+## State Management Types
+
+### Redux Types
+
+-   Type action creators with proper payloads
+-   Use discriminated unions for action types
+-   Type reducers with proper state and action types
+-   Use `createStructuredSelector` with proper typing
+
+### Hook Types
+
+-   Type custom hook return values
+-   Use generic types for reusable hooks
+-   Type hook parameters with proper interfaces
+
+## Utility Types
+
+### Common Patterns
+
+```typescript
+// ID types
+type UserId = string;
+type ProductId = number;
+
+// Status types
+type Status = 'idle' | 'loading' | 'success' | 'error';
+
+// API response wrapper
+type ApiResponse<T> = {
+    data: T;
+    status: number;
+    message?: string;
+};
+
+// Form state
+type FormState<T> = {
+    values: T;
+    errors: Partial<Record<keyof T, string>>;
+    touched: Partial<Record<keyof T, boolean>>;
+};
+```
+
+### Type Guards
+
+```typescript
+// Type guard functions
+function isString(value: unknown): value is string {
+    return typeof value === 'string';
+}
+
+function isApiError(error: unknown): error is ApiError {
+    return error instanceof Error && 'status' in error;
+}
+```
+
+## Best Practices
+
+### General Rules
+
+-   Enable strict TypeScript configuration
+-   Use `unknown` instead of `any` when possible
+-   Prefer type assertions over type casting
+-   Use type guards for runtime type checking
+-   Avoid `as any` - use proper typing instead
+
+### Performance
+
+-   Use `as const` for immutable data
+-   Use type-only imports: `import type { User } from './types'`
+-   Avoid complex computed types in hot paths
+-   Use generic constraints to improve inference
+
+### Organization
+
+-   Group related types in modules
+-   Export types alongside implementations
+-   Use barrel exports for type modules
+-   Document complex types with JSDoc
+
+### Error Prevention
+
+-   Use branded types for IDs: `type UserId = string & { __brand: 'UserId' }`
+-   Use exhaustiveness checking with never types
+-   Validate external data at boundaries
+-   Use strict null checks
+
+These TypeScript rules ensure type safety and maintainability in the StackRox UI codebase.

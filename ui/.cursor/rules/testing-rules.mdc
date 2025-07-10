@@ -1,0 +1,122 @@
+---
+description: Testing Rules - Cypress and Jest patterns for StackRox UI
+globs:
+    [
+        'apps/platform/cypress/**/*.{js,ts}',
+        'apps/platform/src/**/*.test.{js,ts,tsx}',
+        'apps/platform/src/**/*.spec.{js,ts,tsx}',
+    ]
+alwaysApply: true
+---
+
+# Testing Rules
+
+## Cypress E2E Testing
+
+### Test Structure
+
+-   Use `describe` blocks for feature grouping
+-   Use `beforeEach` for common setup and data preparation
+-   Use `it('should...')` for clear test descriptions
+-   Implement `withAuth()` helper for authentication setup
+
+### Selectors & Page Objects
+
+-   Import selectors from constants files: `import { selectors } from '../constants/SomePage';`
+-   Use `data-testid` attributes for reliable element targeting
+-   Avoid CSS class selectors that might change
+-   Use semantic selectors when possible
+
+### API Mocking
+
+-   Use `cy.route()` for legacy API mocking patterns
+-   Mock API responses with fixtures from `cypress/fixtures/`
+-   Use `cy.wait('@aliasName')` for async operations
+-   Test both success and error scenarios
+
+### Best Practices
+
+-   Test user workflows, not implementation details
+-   Use `cy.get()` with proper selectors
+-   Use `cy.contains()` for text-based assertions
+-   Force clicks only when necessary: `cy.click({ force: true })`
+-   Clean up state between tests
+
+## Unit Testing (Jest/Vitest)
+
+### Component Testing
+
+-   Test component behavior, not implementation
+-   Use React Testing Library patterns
+-   Mock external dependencies
+-   Test user interactions and state changes
+
+### Hook Testing
+
+-   Use `@testing-library/react-hooks` for custom hooks
+-   Test hook return values and side effects
+-   Mock dependencies and contexts
+-   Test error conditions
+
+### Service Testing
+
+-   Mock HTTP requests with appropriate libraries
+-   Test error handling and edge cases
+-   Verify proper data transformation
+-   Test retry logic and timeout scenarios
+
+## Test Organization
+
+### File Structure
+
+-   Keep tests close to source files
+-   Use descriptive test file names
+-   Group related tests in directories
+-   Use fixtures for test data
+
+### Test Data
+
+-   Use realistic test data
+-   Create reusable fixtures
+-   Mock external services consistently
+-   Clean up test data after tests
+
+## Common Patterns
+
+### Authentication Testing
+
+```javascript
+// Use the withAuth helper
+withAuth();
+
+// Or custom auth setup
+beforeEach(() => {
+    cy.login('admin', 'password');
+});
+```
+
+### API Response Testing
+
+```javascript
+// Mock successful response
+cy.route('GET', '/api/data', 'fixture:data/success.json').as('getData');
+
+// Mock error response
+cy.route({
+    method: 'GET',
+    url: '/api/data',
+    status: 500,
+    response: { error: 'Server Error' },
+}).as('getDataError');
+```
+
+### Form Testing
+
+```javascript
+// Test form submission
+cy.get('[data-testid="form-input"]').type('test value');
+cy.get('[data-testid="submit-button"]').click();
+cy.wait('@submitForm');
+```
+
+These testing rules ensure reliable, maintainable tests that follow StackRox UI testing patterns.

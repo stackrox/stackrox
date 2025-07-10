@@ -1,0 +1,119 @@
+---
+description: Context-Specific Rules - Advanced patterns and conditional logic
+globs: ['apps/platform/src/services/**/*.ts', 'apps/platform/src/hooks/**/*.ts']
+alwaysApply: false
+---
+
+# Context-Specific Rules
+
+## Service Layer Rules (for /services/ directory)
+
+When working in the `services/` directory:
+
+### API Service Patterns
+
+-   Always export individual functions, not classes
+-   Use consistent naming: `fetch*`, `create*`, `update*`, `delete*`
+-   Include explicit return types: `Promise<T>`
+-   Handle errors consistently with try-catch blocks
+-   Use `axios` instance from `./instance` for all HTTP calls
+
+### Example Service Structure
+
+```typescript
+// services/UserService.ts
+import axios from './instance';
+import { User, CreateUserRequest } from 'types/user';
+
+export async function fetchUsers(): Promise<User[]> {
+    try {
+        const response = await axios.get<{ users: User[] }>('/api/users');
+        return response.data.users ?? [];
+    } catch (error) {
+        console.error('Failed to fetch users:', error);
+        throw error;
+    }
+}
+
+export async function createUser(userData: CreateUserRequest): Promise<User> {
+    const response = await axios.post<User>('/api/users', userData);
+    return response.data;
+}
+```
+
+## Custom Hook Rules (for /hooks/ directory)
+
+When working in the `hooks/` directory:
+
+### Hook Patterns
+
+-   Prefix all hooks with `use` (e.g., `useUserData`, `useApiCall`)
+-   Export hook as default, types as named exports
+-   Use object destructuring for return values with multiple items
+-   Include loading and error states for async operations
+-   Use `useCallback` for returned functions to prevent re-renders
+
+### Example Hook Structure
+
+```typescript
+// hooks/useUserData.ts
+import { useState, useEffect, useCallback } from 'react';
+import { fetchUsers } from 'services/UserService';
+import { User } from 'types/user';
+
+interface UseUserDataReturn {
+    users: User[];
+    isLoading: boolean;
+    error: string | null;
+    refetch: () => void;
+}
+
+const useUserData = (): UseUserDataReturn => {
+    const [users, setUsers] = useState<User[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const fetchData = useCallback(async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const data = await fetchUsers();
+            setUsers(data);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Unknown error');
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
+
+    return { users, isLoading, error, refetch: fetchData };
+};
+
+export default useUserData;
+```
+
+## File-Specific Rules
+
+### For Redux Files
+
+-   Use `createStructuredSelector` for complex selectors
+-   Type actions with discriminated unions
+-   Use proper Redux Toolkit patterns when available
+
+### For Utility Files
+
+-   Export individual functions as named exports
+-   Include JSDoc comments for complex functions
+-   Use generic types for reusable utilities
+
+### For Type Files
+
+-   Use `interface` for extensible object shapes
+-   Use `type` for unions and computed types
+-   Export types alongside related implementations
+
+These context-specific rules help maintain consistency within specific parts of the codebase.

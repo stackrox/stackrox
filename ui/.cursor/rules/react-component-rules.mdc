@@ -1,0 +1,260 @@
+---
+description: React Component Best Practices - Modern patterns and performance for StackRox UI
+globs:
+    ['apps/platform/src/Components/**/*.{tsx,jsx}', 'apps/platform/src/Containers/**/*.{tsx,jsx}']
+alwaysApply: true
+---
+
+# React Component Rules
+
+## Component Structure
+
+### Functional Components
+
+-   Use arrow functions: `const Component = () => {}`
+-   Use explicit TypeScript typing for props
+-   Destructure props with default values in parameters
+-   Use `React.memo()` for performance optimization when needed
+
+### Component Organization
+
+```typescript
+// Proper component structure
+interface ComponentProps {
+    title: string;
+    isLoading?: boolean;
+    onClick?: () => void;
+}
+
+const Component = ({
+    title,
+    isLoading = false,
+    onClick = () => {},
+    ...restProps
+}: ComponentProps) => {
+    // Component logic here
+    return <div {...restProps}>{title}</div>;
+};
+
+export default Component;
+```
+
+### Export Patterns
+
+-   Use default export for main component
+-   Use named exports for types and utilities
+-   Use barrel exports in `index.ts`: `export { default } from './Component'`
+
+## Props and State
+
+### Props Design
+
+-   Keep props interfaces simple and focused
+-   Use optional props with sensible defaults
+-   Extend HTML attributes when wrapping native elements
+-   Use `data-testid` for testing: `dataTestId?: string`
+
+### State Management
+
+-   Use `useState` for local component state
+-   Use `useReducer` for complex state logic
+-   Prefer derived state over stored state
+-   Use `useCallback` for event handlers to prevent re-renders
+
+## Event Handling
+
+### Event Handlers
+
+-   Name handlers with `handle` prefix: `handleClick`, `handleSubmit`
+-   Use proper TypeScript event types
+-   Use `useCallback` for handlers passed to children
+-   Handle async operations properly
+
+### Form Handling
+
+```typescript
+const handleSubmit = useCallback((event: React.FormEvent) => {
+    event.preventDefault();
+    // Handle form submission
+}, []);
+
+const handleInputChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    setValue(event.target.value);
+}, []);
+```
+
+## Performance Optimization
+
+### Memoization
+
+-   Use `React.memo` for expensive components
+-   Use `useMemo` for expensive calculations
+-   Use `useCallback` for stable function references
+-   Avoid inline object/array creation in renders
+
+### Rendering Patterns
+
+```typescript
+// Good: Memoized expensive calculation
+const expensiveValue = useMemo(() => {
+    return processLargeData(data);
+}, [data]);
+
+// Good: Stable event handler
+const handleClick = useCallback(() => {
+    onSelect(item.id);
+}, [onSelect, item.id]);
+
+// Avoid: Inline object creation
+// Bad: style={{ color: 'red' }}
+// Good: const styles = { color: 'red' }; style={styles}
+```
+
+## Hooks Usage
+
+### Built-in Hooks
+
+-   Use `useEffect` for side effects only
+-   Provide proper dependency arrays
+-   Clean up effects when needed
+-   Use `useLayoutEffect` for DOM measurements
+
+### Custom Hooks
+
+-   Extract reusable logic into custom hooks
+-   Use proper naming: `useUserData`, `useApiCall`
+-   Return objects for multiple values
+-   Type return values properly
+
+## Component Composition
+
+### Children Patterns
+
+-   Use `React.ReactNode` for children prop
+-   Use render props for flexible composition
+-   Use compound components for related functionality
+-   Prefer composition over inheritance
+
+### Higher-Order Components
+
+-   Use hooks instead of HOCs when possible
+-   Use proper TypeScript typing for HOCs
+-   Use `React.forwardRef` when wrapping components
+-   Handle ref forwarding properly
+
+## Error Handling
+
+### Error Boundaries
+
+-   Implement error boundaries for component trees
+-   Use proper error states in components
+-   Handle async errors in effects
+-   Provide meaningful error messages to users
+
+### Loading States
+
+```typescript
+const Component = () => {
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    if (error) {
+        return <ErrorMessage message={error} />;
+    }
+
+    if (isLoading) {
+        return <LoadingSpinner />;
+    }
+
+    return <div>Content</div>;
+};
+```
+
+## Accessibility
+
+### ARIA Attributes
+
+-   Use semantic HTML elements first
+-   Add ARIA labels for screen readers
+-   Use proper role attributes
+-   Ensure keyboard navigation works
+
+### Focus Management
+
+-   Use `useRef` for focus management
+-   Handle focus trap in modals
+-   Provide skip links for navigation
+-   Use proper tab order
+
+## Testing Support
+
+### Test-Friendly Components
+
+-   Use `data-testid` attributes
+-   Keep components pure and predictable
+-   Mock external dependencies
+-   Test user interactions, not implementation
+
+### Test Utilities
+
+```typescript
+// Component with test support
+const Button = ({ children, dataTestId = 'button', ...props }: ButtonProps) => {
+    return (
+        <button data-testid={dataTestId} {...props}>
+            {children}
+        </button>
+    );
+};
+```
+
+## Styling
+
+### CSS-in-JS / Tailwind
+
+-   Use consistent class naming
+-   Prefer utility classes over custom CSS
+-   Use CSS modules for component-specific styles
+-   Avoid inline styles except for dynamic values
+
+### Responsive Design
+
+-   Use mobile-first approach
+-   Use consistent breakpoints
+-   Test across different screen sizes
+-   Use semantic spacing units
+
+## Common Patterns
+
+### Conditional Rendering
+
+```typescript
+// Prefer logical AND for simple conditions
+{
+    isVisible && <Component />;
+}
+
+// Use ternary for if-else
+{
+    isLoading ? <Spinner /> : <Content />;
+}
+
+// Use early returns for complex conditions
+if (!data) return <EmptyState />;
+```
+
+### List Rendering
+
+```typescript
+// Always use proper keys
+{
+    items.map((item) => <Item key={item.id} data={item} />);
+}
+
+// Handle empty states
+{
+    items.length === 0 ? <EmptyState /> : items.map((item) => <Item key={item.id} data={item} />);
+}
+```
+
+These React component rules ensure maintainable, performant, and accessible components in the StackRox UI codebase.

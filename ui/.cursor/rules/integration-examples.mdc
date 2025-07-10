@@ -1,0 +1,330 @@
+---
+description: Integration Examples - How to use Cursor rules with other tools and workflows
+globs: ['**/*.{ts,tsx,js,jsx}']
+alwaysApply: false
+---
+
+# Integration Examples
+
+These examples show how to integrate Cursor rules with your existing development workflow and tools.
+
+## 🔧 ESLint Integration
+
+Your rules should complement, not conflict with, ESLint. Here's how to align them:
+
+### ESLint Rules vs Cursor Rules
+
+-   **ESLint**: Syntax, formatting, and code style enforcement
+-   **Cursor**: Architectural patterns, best practices, and code generation guidance
+
+### Example Alignment
+
+```typescript
+// ESLint enforces: no-unused-vars, prefer-const
+// Cursor guides: component structure, TypeScript patterns
+
+// Both work together for this component:
+const UserProfile = ({ userId, onUpdate }: UserProfileProps) => {
+    const [user, setUser] = useState<User | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
+
+    // ESLint: Detects unused variables
+    // Cursor: Suggests proper error handling patterns
+    const handleUpdate = useCallback(
+        async (data: UserUpdateData) => {
+            try {
+                setIsLoading(true);
+                await updateUser(userId, data);
+                onUpdate();
+            } catch (error) {
+                console.error('Failed to update user:', error);
+            } finally {
+                setIsLoading(false);
+            }
+        },
+        [userId, onUpdate]
+    );
+
+    return /* JSX */;
+};
+```
+
+## 🧪 Testing Integration
+
+### Cypress Test Generation
+
+When Cursor generates tests, it follows these patterns:
+
+```typescript
+// Cursor generates tests following testing-rules.mdc
+describe('User Profile', () => {
+    beforeEach(() => {
+        // Cursor suggests proper setup
+        cy.intercept('GET', '/api/users/*', { fixture: 'user.json' }).as('getUser');
+        cy.visit('/users/123');
+    });
+
+    it('should display user information', () => {
+        // Cursor suggests data-testid selectors
+        cy.get('[data-testid="user-name"]').should('contain', 'John Doe');
+        cy.get('[data-testid="user-email"]').should('contain', 'john@example.com');
+    });
+
+    it('should handle update success', () => {
+        // Cursor suggests proper API mocking
+        cy.intercept('PUT', '/api/users/*', { statusCode: 200 }).as('updateUser');
+
+        cy.get('[data-testid="edit-button"]').click();
+        cy.get('[data-testid="name-input"]').clear().type('Jane Doe');
+        cy.get('[data-testid="save-button"]').click();
+
+        cy.wait('@updateUser');
+        cy.get('[data-testid="success-message"]').should('be.visible');
+    });
+});
+```
+
+## 📦 Package.json Scripts
+
+Add scripts to validate rule compliance:
+
+```json
+{
+    "scripts": {
+        "lint:rules": "echo 'Checking Cursor rule compliance...'",
+        "type-check": "tsc --noEmit",
+        "test:rules": "cypress run --spec 'cypress/integration/rules/**/*'",
+        "validate:codebase": "npm run lint && npm run type-check && npm run test:rules"
+    }
+}
+```
+
+## 🔄 CI/CD Integration
+
+### GitHub Actions Example
+
+```yaml
+name: Code Quality
+on: [push, pull_request]
+
+jobs:
+    quality-check:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v3
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v3
+              with:
+                  node-version: '18'
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Check TypeScript
+              run: npm run type-check
+
+            - name: Run ESLint
+              run: npm run lint
+
+            - name: Run tests
+              run: npm run test
+
+            - name: Comment on PR
+              uses: actions/github-script@v6
+              with:
+                  script: |
+                      // Add comment about rule compliance
+                      const comment = `
+                      ## Code Quality Check ✅
+                      - TypeScript compilation: Passed
+                      - ESLint rules: Passed  
+                      - Cursor rules: Applied (check generated code patterns)
+                      `;
+                      github.rest.issues.createComment({
+                        issue_number: context.issue.number,
+                        owner: context.repo.owner,
+                        repo: context.repo.repo,
+                        body: comment
+                      });
+```
+
+## 📊 Code Review Integration
+
+### PR Template Addition
+
+Add to your `.github/pull_request_template.md`:
+
+```markdown
+## Code Quality Checklist
+
+-   [ ] Code follows TypeScript patterns from cursor rules
+-   [ ] Components use proper prop typing and destructuring
+-   [ ] Services include proper error handling
+-   [ ] Tests use data-testid selectors and proper mocking
+-   [ ] New code includes loading/error states where appropriate
+```
+
+### Review Guidelines
+
+```markdown
+## Cursor Rules Review Points
+
+### TypeScript Patterns
+
+-   ✅ Explicit return types for functions
+-   ✅ Proper interface definitions
+-   ✅ No `any` types (use `unknown` or proper typing)
+
+### React Components
+
+-   ✅ Functional components with proper props destructuring
+-   ✅ Default values in parameters, not inside component
+-   ✅ Proper event handler naming (handleXxx)
+-   ✅ data-testid attributes for testing
+
+### Services
+
+-   ✅ Individual function exports (not classes)
+-   ✅ Consistent naming (fetchXxx, createXxx, etc.)
+-   ✅ Proper error handling with try-catch
+-   ✅ Explicit Promise return types
+```
+
+## 🎯 VS Code Integration
+
+### Settings.json
+
+```json
+{
+    "typescript.preferences.useAliasesForRenames": false,
+    "typescript.preferences.includePackageJsonAutoImports": "auto",
+    "typescript.suggest.autoImports": true,
+    "editor.codeActionsOnSave": {
+        "source.fixAll.eslint": true,
+        "source.organizeImports": true
+    },
+    "files.associations": {
+        "*.mdc": "markdown"
+    }
+}
+```
+
+### Extensions Recommendations
+
+Create `.vscode/extensions.json`:
+
+```json
+{
+    "recommendations": [
+        "ms-vscode.vscode-typescript-next",
+        "esbenp.prettier-vscode",
+        "dbaeumer.vscode-eslint",
+        "bradlc.vscode-tailwindcss",
+        "ms-playwright.playwright"
+    ]
+}
+```
+
+## 🚀 Advanced Automation
+
+### Rule Compliance Checker
+
+```typescript
+// scripts/check-rule-compliance.ts
+import { glob } from 'glob';
+import { readFileSync } from 'fs';
+
+interface RuleViolation {
+    file: string;
+    line: number;
+    rule: string;
+    message: string;
+}
+
+async function checkRuleCompliance(): Promise<RuleViolation[]> {
+    const violations: RuleViolation[] = [];
+    const files = await glob('apps/platform/src/**/*.{ts,tsx}');
+
+    for (const file of files) {
+        const content = readFileSync(file, 'utf8');
+        const lines = content.split('\n');
+
+        lines.forEach((line, index) => {
+            // Check for 'any' type usage
+            if (line.includes(': any') || line.includes('as any')) {
+                violations.push({
+                    file,
+                    line: index + 1,
+                    rule: 'typescript-rules',
+                    message: 'Avoid using "any" type - use proper TypeScript types',
+                });
+            }
+
+            // Check for console.log in production code
+            if (line.includes('console.log') && !file.includes('.test.')) {
+                violations.push({
+                    file,
+                    line: index + 1,
+                    rule: 'code-quality',
+                    message: 'Remove console.log statements - use proper logging',
+                });
+            }
+        });
+    }
+
+    return violations;
+}
+
+checkRuleCompliance().then((violations) => {
+    if (violations.length > 0) {
+        console.log('🚨 Rule Violations Found:');
+        violations.forEach((v) => {
+            console.log(`${v.file}:${v.line} - ${v.message}`);
+        });
+        process.exit(1);
+    } else {
+        console.log('✅ No rule violations found!');
+    }
+});
+```
+
+## 📈 Metrics and Monitoring
+
+### Code Quality Metrics
+
+```typescript
+// scripts/measure-code-quality.ts
+import { analyzeCodebase } from './utils/codebase-analyzer';
+
+interface QualityMetrics {
+    typeScriptCoverage: number;
+    componentPatternCompliance: number;
+    testCoverage: number;
+    errorHandlingCoverage: number;
+}
+
+async function measureQuality(): Promise<QualityMetrics> {
+    const analysis = await analyzeCodebase();
+
+    return {
+        typeScriptCoverage: analysis.typedFunctions / analysis.totalFunctions,
+        componentPatternCompliance: analysis.properComponents / analysis.totalComponents,
+        testCoverage: analysis.testedComponents / analysis.totalComponents,
+        errorHandlingCoverage: analysis.errorHandledFunctions / analysis.totalAsyncFunctions,
+    };
+}
+
+// Run weekly and track trends
+measureQuality().then((metrics) => {
+    console.log('📊 Code Quality Metrics:');
+    console.log(`TypeScript Coverage: ${(metrics.typeScriptCoverage * 100).toFixed(1)}%`);
+    console.log(
+        `Component Pattern Compliance: ${(metrics.componentPatternCompliance * 100).toFixed(1)}%`
+    );
+    console.log(`Test Coverage: ${(metrics.testCoverage * 100).toFixed(1)}%`);
+    console.log(`Error Handling Coverage: ${(metrics.errorHandlingCoverage * 100).toFixed(1)}%`);
+});
+```
+
+These integration examples show how Cursor rules can be part of a comprehensive development workflow that includes linting, testing, CI/CD, and code quality monitoring.
