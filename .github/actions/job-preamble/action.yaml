@@ -11,8 +11,34 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Set up gcloud CLI
+    - name: Start timer
+      id: start
+      shell: bash
+      run: |
+        echo "timestamp=${EPOCHSECONDS:-$(date -u +%s)}" | tee -a "$GITHUB_OUTPUT"
+        # job start time is not available in the context
+
+    # auth prepares the gcp environment to authenticate.
+    - name: Auth gcloud
+      uses: 'google-github-actions/auth@v2'
+      with:
+        credentials_json: '${{ inputs.gcp-account }}'
+        export_environment_variables: true
+        create_credentials_file: true
+        cleanup_credentials: true
+
+    - name: Check gcloud CLI
+      id: gcloud-check
+      continue-on-error: true
+      shell: bash
+      run: |
+        gcloud info
+
+    # setup-gcloud authenticates gcloud
+    - name: Install gcloud CLI
       uses: 'google-github-actions/setup-gcloud@v2'
+      with:
+        skip_install: ${{ steps.gcloud-check.outcome != 'failure' }}
 
     - name: Shim gsutil as gcloud storage
       continue-on-error: true
@@ -23,14 +49,6 @@ runs:
         use_gcloud_storage=True
         EOF
         gsutil version -l
-
-    - name: Recover docker image cache space
-      shell: bash
-      run: |
-        df --si /
-        printf 'Docker prune: '
-        docker system prune --force --all
-        df --si /
 
     - name: List filesystems
       id: disk-check
@@ -123,13 +141,20 @@ runs:
       if: "${{ env.GCP_SERVICE_ACCOUNT_STACKROX_CI != '' }}"
       with:
         shell: bash
-        run: >
-          source scripts/ci/lib.sh;
-          create_job_record "${{ github.job }}" "gha";
         post: >
-          source scripts/ci/lib.sh;
-          update_job_record outcome "${{ job.status }}" stopped_at "CURRENT_TIMESTAMP()";
           df --si /;
+          echo "Elapsed time: $(( ${EPOCHSECONDS:-$(date -u +%s)} - ${{ steps.start.outputs.timestamp }} ))s";
+          outcome="${{ job.status }}";
+          started_at="${started_at:-${{ steps.start.outputs.timestamp }}}"
+          started_at="TIMESTAMP(\"$(date -u +"%Y-%m-%d %H:%M:%S %Z" -d"@${started_at}")\")";
+          stopped_at="TIMESTAMP(\"$(date -u +"%Y-%m-%d %H:%M:%S %Z")\")";
+          job_name="${{ github.job }}";
+          source scripts/ci/lib.sh;
+          write_job_metrics \
+            name "${job_name:-unknown}" \
+            started_at "${started_at}" \
+            stopped_at "${stopped_at}" \
+            outcome "${outcome:-unknown}" || true;
           free=$(df -BGB --output=avail / | tail -1);
           echo "Free disk space before: ${{ steps.disk-check.outputs.free }}, and after: ${free}.";
           if [[ ${free%GB} -lt 5 ]]; then\
