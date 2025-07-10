@@ -46,9 +46,11 @@ jobs:
         set -o pipefail
         EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
         VERSIONS=$(grep -E "^4\.(4|5)\.[0-9]+$" scanner/updater/version/RELEASE_VERSION | sed 's/.*/{"version": "&"}/' | jq -s .)
-        echo "versions<<$EOF" >> "$GITHUB_OUTPUT"
-        echo "$VERSIONS" >> "$GITHUB_OUTPUT"
-        echo "$EOF" >> "$GITHUB_OUTPUT"
+        {
+          echo "versions<<$EOF"
+          echo "$VERSIONS"
+          echo "$EOF"
+        } >> "$GITHUB_OUTPUT"
 
   sanity-check:
     # if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
