@@ -10,6 +10,7 @@ import (
 	postgresGroupStore "github.com/stackrox/rox/central/group/datastore/internal/store/postgres"
 	roleDatastoreMocks "github.com/stackrox/rox/central/role/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/authproviders"
 	authProvidersMocks "github.com/stackrox/rox/pkg/auth/authproviders/mocks"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/fixtures"
@@ -31,10 +32,10 @@ type groupsWithPostgresTestSuite struct {
 	ctx          context.Context
 	testPostgres *pgtest.TestPostgres
 
-	groupsDatastore   DataStore
-	mockCtrl          *gomock.Controller
-	roleStore         *roleDatastoreMocks.MockDataStore
-	authProviderStore *authProvidersMocks.MockStore
+	groupsDatastore      DataStore
+	mockCtrl             *gomock.Controller
+	roleStore            *roleDatastoreMocks.MockDataStore
+	authProviderRegistry *authProvidersMocks.MockRegistry
 }
 
 func (s *groupsWithPostgresTestSuite) SetupSuite() {
@@ -49,8 +50,10 @@ func (s *groupsWithPostgresTestSuite) SetupSuite() {
 
 	store := postgresGroupStore.New(s.testPostgres.DB)
 	s.roleStore = roleDatastoreMocks.NewMockDataStore(s.mockCtrl)
-	s.authProviderStore = authProvidersMocks.NewMockStore(s.mockCtrl)
-	s.groupsDatastore = New(store, s.roleStore, s.authProviderStore)
+	s.authProviderRegistry = authProvidersMocks.NewMockRegistry(s.mockCtrl)
+	s.groupsDatastore = New(store, s.roleStore, func() authproviders.Registry {
+		return s.authProviderRegistry
+	})
 }
 
 func (s *groupsWithPostgresTestSuite) TearDownTest() {
@@ -185,9 +188,13 @@ func (s *groupsWithPostgresTestSuite) validRoleAndAuthProvider(roleName, authPro
 	mockedRole := &storage.Role{
 		Name: roleName,
 	}
-	mockedAP := &storage.AuthProvider{
-		Id: authProviderID,
-	}
+	mockedAP, err := authproviders.NewProvider(
+		authproviders.WithStorageView(&storage.AuthProvider{
+			Id:   authProviderID,
+			Name: "auth-provider",
+		}),
+	)
+	s.NoError(err)
 	s.roleStore.EXPECT().GetRole(gomock.Any(), roleName).Return(mockedRole, true, nil).Times(times)
-	s.authProviderStore.EXPECT().GetAuthProvider(gomock.Any(), authProviderID).Return(mockedAP, true, nil).Times(times)
+	s.authProviderRegistry.EXPECT().GetProvider(authProviderID).Return(mockedAP).Times(times)
 }
