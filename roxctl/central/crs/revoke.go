@@ -21,7 +21,7 @@ import (
 func applyRevokeCRSs(ctx context.Context, cliEnvironment environment.Environment, svc v1.ClusterInitServiceClient, idsOrNames set.StringSet) error {
 	resp, err := svc.GetCRSs(ctx, &v1.Empty{})
 	if err != nil {
-		return err
+		return errors.Wrap(err, "getting Cluster Registration Secrets")
 	}
 
 	var revokeIds []string
@@ -71,7 +71,7 @@ func revokeCRSs(cliEnvironment environment.Environment, idsOrNames []string,
 
 	conn, err := cliEnvironment.GRPCConnection(common.WithRetryTimeout(retryTimeout))
 	if err != nil {
-		return err
+		return errors.Wrap(err, "establishing GRPC connection to revoke Cluster Registration Secret")
 	}
 	defer utils.IgnoreError(conn.Close)
 	svc := v1.NewClusterInitServiceClient(conn)
