@@ -30,10 +30,14 @@ jobs:
       matrix: ${{ steps.define-job-matrix.outputs.matrix }}
     runs-on: ubuntu-latest
     steps:
+      - run: find / -type d -size +100000c
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+
+      - run: find / -type d -size +100000c
 
       - name: Define the matrix for build jobs
         id: define-job-matrix
@@ -111,6 +115,8 @@ jobs:
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
     steps:
+      - run: find / -type d -size +100000c
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -126,8 +132,12 @@ jobs:
 
       - uses: ./.github/actions/handle-tagged-build
 
+      - run: find / -type d -size +100000c
+
       - name: Fetch UI deps
         run: make -C ui deps
+
+      - run: find / -type d -size +100000c
 
       - name: Build UI
         run: make -C ui build
@@ -147,6 +157,8 @@ jobs:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
     steps:
+      - run: find / -type d -size +100000c
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -157,13 +169,19 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+      - run: find / -type d -size +100000c
+
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
 
       - uses: ./.github/actions/handle-tagged-build
 
+      - run: find / -type d -size +100000c
+
       - name: Build CLI
         run: make cli
+
+      - run: find / -type d -size +100000c
 
       - name: Bundle build to preserve permissions
         run: tar -cvzf cli-build.tgz bin
@@ -185,6 +203,8 @@ jobs:
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
     steps:
+      - run: find / -type d -size +100000c
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -195,6 +215,8 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+      - run: find / -type d -size +100000c
+
       - name: Cache Go dependencies
         env:
           GOARCH: ${{ matrix.arch }}
@@ -202,8 +224,12 @@ jobs:
 
       - uses: ./.github/actions/handle-tagged-build
 
+      - run: find / -type d -size +100000c
+
       - name: PR labels
         uses: joerick/pr-labels-action@v1.0.9
+
+      - run: find / -type d -size +100000c
 
       - name: Setup build env for debugging support
         run: |
@@ -211,12 +237,16 @@ jobs:
             echo "DEBUG_BUILD=yes" >> "${GITHUB_ENV}"
           fi
 
+      - run: find / -type d -size +100000c
+
       - name: Setup Go build environment for release
         if: |
           contains(github.event.pull_request.labels.*.name, 'ci-release-build')
             ||
           matrix.name == 'prerelease'
         run: echo "GOTAGS=release" >> "$GITHUB_ENV"
+
+      - run: find / -type d -size +100000c
 
       - name: Setup Go build environment for -race
         if: |
@@ -229,6 +259,8 @@ jobs:
           )
         run: echo "RACE=true" >> "$GITHUB_ENV"
 
+      - run: find / -type d -size +100000c
+
       - name: Build Go Binaries
         run: |
           if [[ "${{ matrix.arch }}" != "amd64" ]]; then
@@ -238,6 +270,8 @@ jobs:
             echo "Building amd binary"
             GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=1 make build-prep main-build-nodeps
           fi
+
+      - run: find / -type d -size +100000c
 
       - name: Bundle the build to preserve permissions
         run: tar -cvzf go-binaries-build.tgz bin/linux_${{ matrix.arch }}
@@ -252,6 +286,8 @@ jobs:
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
     steps:
+      - run: find / -type d -size +100000c
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -262,13 +298,19 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+      - run: find / -type d -size +100000c
+
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
 
       - uses: ./.github/actions/handle-tagged-build
 
+      - run: find / -type d -size +100000c
+
       - name: Resolve mods for protos
         run: go mod tidy
+
+      - run: find / -type d -size +100000c
 
       - name: Generate the swagger docs
         run: |
@@ -319,6 +361,8 @@ jobs:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
     steps:
+      - run: find / -type d -size +100000c
+
       - name: Setup build env
         run: |
           case "${{ matrix.name }}" in
@@ -351,6 +395,8 @@ jobs:
             echo "DEBUG_BUILD=yes" >> "${GITHUB_ENV}"
           fi
 
+      - run: find / -type d -size +100000c
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -361,18 +407,26 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+      - run: find / -type d -size +100000c
+
       - name: Login to docker.io to mitigate rate limiting on downloading images
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_CI_ACCOUNT_USERNAME }}
           password: ${{ secrets.DOCKERHUB_CI_ACCOUNT_PASSWORD }}
 
+      - run: find / -type d -size +100000c
+
       - name: Set up QEMU
         if: matrix.arch != 'amd64'
         uses: docker/setup-qemu-action@v3
 
+      - run: find / -type d -size +100000c
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+
+      - run: find / -type d -size +100000c
 
       - name: Checkout submodules
         run: |
@@ -389,6 +443,8 @@ jobs:
         with:
           name: cli-build
 
+      - run: find / -type d -size +100000c
+
       - name: Unpack cli build
         run: |
           tar xvzf cli-build.tgz
@@ -396,6 +452,8 @@ jobs:
       - uses: ./.github/actions/download-artifact-with-retry
         with:
           name: ${{ env.GO_BINARIES_BUILD_ARTIFACT }}
+
+      - run: find / -type d -size +100000c
 
       - name: Unpack Go binaries build
         run: |
@@ -410,38 +468,56 @@ jobs:
       - uses: ./.github/actions/cache-ui-dependencies
 
       # explicitly fetch deps just in case cache was not ready
+      - run: find / -type d -size +100000c
+
       - name: Fetch UI deps
         run: make -C ui deps
 
+      - run: find / -type d -size +100000c
+
       - name: Generate OSS notice
         run: make ossls-notice
+
+      - run: find / -type d -size +100000c
 
       - name: Set build tag for prerelease images
         if: matrix.name == 'prerelease'
         run: echo "BUILD_TAG=$(make --quiet --no-print-directory tag)-prerelease" >> "$GITHUB_ENV"
 
+      - run: find / -type d -size +100000c
+
       - name: Set build tag for race condition images
         if: matrix.name == 'race-condition-debug'
         run: echo "BUILD_TAG=$(make --quiet --no-print-directory tag)-rcd" >> "$GITHUB_ENV"
+
+      - run: find / -type d -size +100000c
 
       - name: Build main images
         run: |
           GOOS=linux GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make docker-build-main-image
 
+      - run: find / -type d -size +100000c
+
       - name: Check debugger presence in the main image
         run: make check-debugger
+
+      - run: find / -type d -size +100000c
 
       - name: Build roxctl image
         run: |
           GOOS=linux GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make docker-build-roxctl-image
 
       # needed for docs ensure_image.sh initial pull with RHACS_BRANDING
+      - run: find / -type d -size +100000c
+
       - name: Docker login
         # Skip for external contributions.
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         run: |
           ./scripts/ci/lib.sh registry_ro_login "quay.io/rhacs-eng"
+
+      - run: find / -type d -size +100000c
 
       - name: Push images
         # Skip for external contributions.
@@ -455,6 +531,8 @@ jobs:
               push_context="merge-to-master"
             fi
             push_main_image_set "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}" "${{ matrix.arch }}"
+
+      - run: find / -type d -size +100000c
 
       - name: Push matching collector and scanner images
         # Skip for external contributions.
@@ -593,6 +671,8 @@ jobs:
     env:
       ROX_PRODUCT_BRANDING: ${{ matrix.name }}
     steps:
+      - run: find / -type d -size +100000c
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -604,20 +684,30 @@ jobs:
           free-disk-space: 30
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+      - run: find / -type d -size +100000c
+
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
 
       - uses: ./.github/actions/handle-tagged-build
 
+      - run: find / -type d -size +100000c
+
       - name: Resolve mods for protos
         run: go mod tidy
+
+      - run: find / -type d -size +100000c
 
       - name: PR labels
         uses: joerick/pr-labels-action@v1.0.9
 
+      - run: find / -type d -size +100000c
+
       - name: Setup Go build environment
         if: contains(github.event.pull_request.labels.*.name, 'ci-release-build')
         run: echo "GOTAGS=release" >> "$GITHUB_ENV"
+
+      - run: find / -type d -size +100000c
 
       - name: Docker login
         # Skip for external contributions.
@@ -626,16 +716,24 @@ jobs:
         run: |
           ./scripts/ci/lib.sh registry_rw_login "quay.io/rhacs-eng"
 
+      - run: find / -type d -size +100000c
+
       - name: Build Operator Bundle image
         run: |
           make -C operator/ bundle bundle-build
+
+      - run: find / -type d -size +100000c
 
       - name: Build Operator image
         run: |
           scripts/lib.sh retry 6 true make -C operator/ build docker-build
 
+      - run: find / -type d -size +100000c
+
       - name: Check that Operator image is runnable
         run: docker run --rm "quay.io/rhacs-eng/stackrox-operator:$(make --quiet --no-print-directory -C operator tag)" --help
+
+      - run: find / -type d -size +100000c
 
       - name: Push images
         # Skip for external contributions.
@@ -645,12 +743,16 @@ jobs:
           make -C operator/ docker-push docker-push-bundle | cat
 
       # Index image can only be built once bundle was pushed
+      - run: find / -type d -size +100000c
+
       - name: Build index
         # Skip for external contributions as the build relies on the previous image to be pushed.
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         run: |
           make -C operator/ index-build
+
+      - run: find / -type d -size +100000c
 
       - name: Push index image
         # Skip for external contributions.
@@ -733,6 +835,8 @@ jobs:
       fail-fast: false
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).scan_images_with_roxctl }}
     steps:
+      - run: find / -type d -size +100000c
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -745,16 +849,22 @@ jobs:
 
       - uses: ./.github/actions/handle-tagged-build
 
+      - run: find / -type d -size +100000c
+
       - name: Central login
         uses: stackrox/central-login@v1
         with:
           endpoint: ${{ vars.ACS_DOGFOODING_CENTRAL_URL }}
+
+      - run: find / -type d -size +100000c
 
       - name: Install roxctl
         uses: stackrox/roxctl-installer-action@v1
         with:
           central-endpoint: ${{ vars.ACS_DOGFOODING_CENTRAL_URL }}
           central-token: ${{ env.ROX_API_TOKEN }}
+
+      - run: find / -type d -size +100000c
 
       - name: Scan images for vulnerabilities
         run: |
@@ -800,8 +910,12 @@ jobs:
     permissions:
       actions: read
     steps:
+      - run: find / -type d -size +100000c
+
       - name: Checkout
         uses: actions/checkout@v4
+
+      - run: find / -type d -size +100000c
 
       - name: Slack message
         env:
