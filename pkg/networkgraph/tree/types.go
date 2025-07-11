@@ -10,8 +10,9 @@ type NetworkTree interface {
 
 	Insert(entity *storage.NetworkEntityInfo) error
 	Remove(key string)
-	// Checks that there are no leafs without values and that the number of values
-	// is equal to the cardinality. If there are multiple trees, the checks are done
+	// Checks that there are no leafs without values, that the number of values is equal to
+	// the cardinality, and that the values in the network tree corresponds to the paths needed
+	// to take from the root to their location. If there are multiple trees, the checks are done
 	// for each tree.
 	ValidateNetworkTree() bool
 }
