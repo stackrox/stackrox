@@ -84,7 +84,7 @@ _get_metrics_job_id() {
 bq_create_job_record() {
     setup_gcp
 
-    bq query \
+    echo bq query \
         --use_legacy_sql=false \
         --parameter="id::$1" \
         --parameter="name::$2" \
@@ -150,7 +150,7 @@ bq_update_job_record() {
         fi
     done
 
-    bq query \
+    echo bq query \
         --use_legacy_sql=false \
         "${sql_params[@]}" \
         "UPDATE ${_JOBS_TABLE_NAME}
