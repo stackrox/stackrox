@@ -6173,7 +6173,13 @@
               {
                 "id": 2,
                 "name": "image_id",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "deprecated",
+                    "value": "true"
+                  }
+                ]
               },
               {
                 "id": 3,
@@ -6235,6 +6241,11 @@
                 "id": 14,
                 "name": "advisory",
                 "type": "storage.Advisory"
+              },
+              {
+                "id": 15,
+                "name": "image_v2_id",
+                "type": "string"
               }
             ]
           },
@@ -6997,7 +7008,13 @@
               {
                 "id": 4,
                 "name": "id",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "deprecated",
+                    "value": "true"
+                  }
+                ]
               },
               {
                 "id": 1,
@@ -7013,6 +7030,11 @@
                 "id": 11,
                 "name": "is_cluster_local",
                 "type": "bool"
+              },
+              {
+                "id": 12,
+                "name": "v2_id",
+                "type": "string"
               }
             ],
             "reserved_ids": [
@@ -8414,6 +8436,12 @@
             ],
             "reserved_ids": [
               6
+            ],
+            "options": [
+              {
+                "name": "deprecated",
+                "value": "true"
+              }
             ]
           },
           {
@@ -9051,7 +9079,13 @@
               {
                 "id": 10,
                 "name": "image_id",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "deprecated",
+                    "value": "true"
+                  }
+                ]
               },
               {
                 "id": 11,
@@ -9067,6 +9101,11 @@
               {
                 "id": 13,
                 "name": "architecture",
+                "type": "string"
+              },
+              {
+                "id": 14,
+                "name": "image_v2_id",
                 "type": "string"
               }
             ]
@@ -9533,6 +9572,211 @@
         "imports": [
           {
             "path": "google/protobuf/timestamp.proto"
+          }
+        ],
+        "package": {
+          "name": "storage"
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "./storage;storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
+      }
+    },
+    {
+      "protopath": "image_v2.proto",
+      "def": {
+        "enums": [
+          {
+            "name": "ImageV2.Note",
+            "enum_fields": [
+              {
+                "name": "MISSING_METADATA"
+              },
+              {
+                "name": "MISSING_SCAN_DATA",
+                "integer": 1
+              },
+              {
+                "name": "MISSING_SIGNATURE",
+                "integer": 2
+              },
+              {
+                "name": "MISSING_SIGNATURE_VERIFICATION_DATA",
+                "integer": 3
+              }
+            ]
+          }
+        ],
+        "messages": [
+          {
+            "name": "ImageV2",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "sha",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "name",
+                "type": "ImageName"
+              },
+              {
+                "id": 4,
+                "name": "metadata",
+                "type": "ImageMetadata"
+              },
+              {
+                "id": 5,
+                "name": "scan",
+                "type": "ImageScan"
+              },
+              {
+                "id": 6,
+                "name": "signature_verification_data",
+                "type": "ImageSignatureVerificationData"
+              },
+              {
+                "id": 7,
+                "name": "signature",
+                "type": "ImageSignature"
+              },
+              {
+                "id": 8,
+                "name": "components",
+                "type": "int32",
+                "oneof_parent": "set_components"
+              },
+              {
+                "id": 9,
+                "name": "cves",
+                "type": "int32",
+                "oneof_parent": "set_cves"
+              },
+              {
+                "id": 10,
+                "name": "fixable_cves",
+                "type": "int32",
+                "oneof_parent": "set_fixable_cves"
+              },
+              {
+                "id": 11,
+                "name": "unknown_cves",
+                "type": "int32",
+                "oneof_parent": "set_unknown_cves"
+              },
+              {
+                "id": 12,
+                "name": "fixable_unknown_cves",
+                "type": "int32",
+                "oneof_parent": "set_fixable_unknown_cves"
+              },
+              {
+                "id": 13,
+                "name": "critical_cves",
+                "type": "int32",
+                "oneof_parent": "set_critical_cves"
+              },
+              {
+                "id": 14,
+                "name": "fixable_critical_cves",
+                "type": "int32",
+                "oneof_parent": "set_fixable_critical_cves"
+              },
+              {
+                "id": 15,
+                "name": "important_cves",
+                "type": "int32",
+                "oneof_parent": "set_important_cves"
+              },
+              {
+                "id": 16,
+                "name": "fixable_important_cves",
+                "type": "int32",
+                "oneof_parent": "set_fixable_important_cves"
+              },
+              {
+                "id": 17,
+                "name": "moderate_cves",
+                "type": "int32",
+                "oneof_parent": "set_moderate_cves"
+              },
+              {
+                "id": 18,
+                "name": "fixable_moderate_cves",
+                "type": "int32",
+                "oneof_parent": "set_fixable_moderate_cves"
+              },
+              {
+                "id": 19,
+                "name": "low_cves",
+                "type": "int32",
+                "oneof_parent": "set_low_cves"
+              },
+              {
+                "id": 20,
+                "name": "fixable_low_cves",
+                "type": "int32",
+                "oneof_parent": "set_fixable_low_cves"
+              },
+              {
+                "id": 21,
+                "name": "last_updated",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 22,
+                "name": "not_pullable",
+                "type": "bool"
+              },
+              {
+                "id": 23,
+                "name": "is_cluster_local",
+                "type": "bool"
+              },
+              {
+                "id": 24,
+                "name": "priority",
+                "type": "int64"
+              },
+              {
+                "id": 25,
+                "name": "risk_score",
+                "type": "float"
+              },
+              {
+                "id": 26,
+                "name": "top_cvss",
+                "type": "float",
+                "oneof_parent": "set_top_cvss"
+              },
+              {
+                "id": 27,
+                "name": "notes",
+                "type": "Note",
+                "is_repeated": true
+              }
+            ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "google/protobuf/timestamp.proto"
+          },
+          {
+            "path": "storage/image.proto"
           }
         ],
         "package": {

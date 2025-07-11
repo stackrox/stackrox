@@ -105,6 +105,17 @@ var (
 	LastUpdatedTime                = newFieldLabel("Last Updated")
 	ImageTopCVSS                   = newFieldLabel("Image Top CVSS")
 	NodeTopCVSS                    = newFieldLabel("Node Top CVSS")
+	ImageID                        = newFieldLabel("Image ID")
+	UnknownCVECount                = newFieldLabel("Unknown CVE Count")
+	FixableUnknownCVECount         = newFieldLabel("Fixable Unknown CVE Count")
+	CriticalCVECount               = newFieldLabel("Critical CVE Count")
+	FixableCriticalCVECount        = newFieldLabel("Fixable Critical CVE Count")
+	ImportantCVECount              = newFieldLabel("Important CVE Count")
+	FixableImportantCVECount       = newFieldLabel("Fixable Important CVE Count")
+	ModerateCVECount               = newFieldLabel("Moderate CVE Count")
+	FixableModerateCVECount        = newFieldLabel("Fixable Moderate CVE Count")
+	LowCVECount                    = newFieldLabel("Low CVE Count")
+	FixableLowCVECount             = newFieldLabel("Fixable Low CVE Count")
 
 	// Deployment related fields
 	AddCapabilities              = newFieldLabel("Add Capabilities")
