@@ -155,6 +155,7 @@ bq_update_job_record() {
 
     retry 7 true bq query \
         --use_legacy_sql=false \
+        --nosynchronous_mode \
         --batch \
         --headless \
         "${sql_params[@]}" \
