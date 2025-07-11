@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardBody, CardTitle } from '@patternfly/react-core';
 
-import { vulnerabilitiesWorkloadCvesPath } from 'routePaths';
+import { vulnerabilitiesWorkloadCvesPath } from 'routePaths'; // TODO vulnerabilitiesAllImagesPath?
 import { ContainerImage } from 'types/deployment.proto';
 
 type ContainerImageInfoProps = {
