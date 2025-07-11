@@ -85,7 +85,9 @@ jobs:
       run: scripts/ci/jobs/check-dependabot-pinned-image.sh
 
   style-check:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -97,10 +99,6 @@ jobs:
         with:
           free-disk-space: '30'
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.6.x'
 
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
@@ -115,9 +113,7 @@ jobs:
         run: make -C ui deps
 
       - name: make style-slim
-        run: |
-          pip install -r .openshift-ci/dev-requirements.txt
-          make style-slim
+        run: make style-slim
 
   golangci-lint:
     timeout-minutes: 240
@@ -228,7 +224,9 @@ jobs:
         run: shellcheck -P SCRIPTDIR -x ./.github/workflows/scripts/*.sh
 
   openshift-ci-lint:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -240,14 +238,8 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.6.8'
-
       - name: Pylint
-        run: |
-          pip install -r .openshift-ci/dev-requirements.txt
-          make -C .openshift-ci lint
+        run: make -C .openshift-ci lint
 
   slack-on-style-failure:
     env:

@@ -396,7 +396,16 @@ jobs:
         run: make -C ui deps
 
       - name: Generate OSS notice
-        run: make ossls-notice
+        run: |
+          set +e
+          OSSLS_VERSION=0.11.1
+          OSSLS_SHA256=f1bf3012961c1d90ba307a46263f29025028d35c209b9a65e5c7d502c470c95f
+          fetch --repo="https://github.com/stackrox/ossls" --tag="${OSSLS_VERSION}" --release-asset="ossls_linux_amd64" .
+          echo "${OSSLS_SHA256} *ossls_linux_amd64" | sha256sum -c -
+          install ossls_linux_amd64 /usr/bin/ossls \
+            || install ossls_linux_amd64 /usr/local/bin/ossls
+          which ossls
+          make ossls-notice
 
       - name: Set build tag for prerelease images
         if: matrix.name == 'prerelease'
