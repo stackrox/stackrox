@@ -566,8 +566,14 @@ jobs:
       env:
         GITHUB_TOKEN: "${{ secrets.RHACS_BOT_GITHUB_TOKEN }}"
       run: |
-        source ./scripts/ci/lib.sh
-        add_build_comment_to_pr
+        set -x
+        sha="${{ github.event.pull_request.head.sha }}"
+        tag=$(make tag)
+        gh pr comment "${{ github.event.number }}" --body - <<EOT
+        Images are ready for the commit at ${sha}.
+
+        To use with deploy scripts, first \`export MAIN_IMAGE_TAG=${tag}\`.
+        EOT
 
   build-and-push-operator:
     runs-on: ubuntu-latest
