@@ -322,11 +322,6 @@ teardown_gke_cluster() {
     require_environment "CLUSTER_NAME"
     require_executable "gcloud"
 
-    if [[ "${canceled}" == "false" ]]; then
-        # (prefix output to avoid triggering prow log focus)
-        "$SCRIPTS_ROOT/scripts/ci/cleanup-deployment.sh" 2>&1 | sed -e 's/^/out: /' || true
-    fi
-
     for i in {1..10}; do
         gcloud container clusters describe "${CLUSTER_NAME}" --format "flattened(status)"
         if [[ ! "$(gcloud container clusters describe "${CLUSTER_NAME}" --format 'get(status)')" =~ PROVISIONING|RECONCILING ]]; then
