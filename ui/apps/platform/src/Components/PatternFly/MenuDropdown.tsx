@@ -17,6 +17,7 @@ type MenuDropdownProps = {
     toggleClassName?: string;
     toggleVariant?: MenuToggleProps['variant'];
     toggleIcon?: ReactNode;
+    ariaLabel?: string;
     onSelect?: (event?: React.MouseEvent<Element, MouseEvent>, value?: string | number) => void;
     isDisabled?: boolean;
     isPlain?: boolean;
@@ -32,6 +33,7 @@ function MenuDropdown({
     toggleClassName,
     toggleVariant = 'default',
     toggleIcon,
+    ariaLabel,
     onSelect,
     isDisabled = false,
     isPlain = false,
@@ -67,6 +69,7 @@ function MenuDropdown({
                     isExpanded={isOpen}
                     isDisabled={isDisabled}
                     variant={toggleVariant}
+                    aria-label={ariaLabel}
                 >
                     {isLoading ? (
                         <Bullseye>
