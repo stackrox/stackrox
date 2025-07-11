@@ -846,6 +846,8 @@ policyutil:
 	CGO_ENABLED=0 GOOS=$(HOST_OS) $(GOBUILD) ./tools/policyutil
 	go install ./tools/policyutil
 	set | grep GO
+	ls -la "$GOPATH"/bin/
+	find / -name policyutil
 
 .PHONY: mitre
 mitre:
