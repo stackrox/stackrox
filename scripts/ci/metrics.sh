@@ -84,7 +84,7 @@ _get_metrics_job_id() {
 bq_create_job_record() {
     setup_gcp
 
-    bq query \
+    retry 7 true bq query \
         --use_legacy_sql=false \
         --nosynchronous_mode \
         --batch \
