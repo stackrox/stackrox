@@ -25,7 +25,7 @@ runs:
       continue-on-error: true
       shell: bash
       run: |
-        gcloud info
+        which gcloud
 
     # setup-gcloud authenticates gcloud
     - name: Install gcloud CLI
@@ -41,22 +41,19 @@ runs:
         [GSUtil]
         use_gcloud_storage=True
         EOF
-        gsutil version -l
-        which gsutil
-        which gcloud
 
     - name: Check disk space
       id: disk-check
       continue-on-error: true
       shell: bash
       run: |
-        df --si
         free=$(df -BGB --output=avail / | tail -1)
         echo "free=${free}" | tee -a "$GITHUB_OUTPUT"
         if [[ ${free%GB} -ge "${{ inputs.free-disk-space }}" ]]; then
           echo "Reached requested free disk space ${{ inputs.free-disk-space }} [${free} free]."
           exit 0
         else
+          df --si
           exit 1
         fi
 
@@ -66,6 +63,7 @@ runs:
       continue-on-error: true
       shell: bash
       run: |
+        # delete preinstalled unused tools
         cleanup=(
           # non-container jobs are first priority (every second may be a high % of the total)
           /usr/share/dotnet
@@ -79,11 +77,12 @@ runs:
           /usr/local/lib/android
           # container jobs are lower priority: they are already slowed by container image pulls
           /__t/CodeQL
+          /__t/Ruby
+          /__t/PyPy
           /__t/Python
           /__t/go
           /__t/node
-          /__t/PyPy
-          /__t/Ruby
+          /__t/gcloud
         )
         for d in "${cleanup[@]}"; do
           if [[ -d "$d" ]]; then
@@ -114,6 +113,7 @@ runs:
 
     - name: Verify free disk space
       id: disk-check-cleaned
+      if: steps.disk-check.outcome == 'failure'
       continue-on-error: true
       shell: bash
       run: |
@@ -149,11 +149,12 @@ runs:
         post: >
           source scripts/ci/lib.sh;
           update_job_record outcome "${{ job.status }}" stopped_at "CURRENT_TIMESTAMP()";
-          df --si;
-          du -ks /* 2>/dev/null | sort -V || true;
           free=$(df -BGB --output=avail / | tail -1);
           echo "Free disk space before: ${{ steps.disk-check-cleaned.outputs.free }} [${{ steps.disk-check.outputs.free }} before cleanup], and after: ${free}.";
           if [[ ${free%GB} -lt 5 ]]; then\
+            set -ex;\
+            df --si;\
+            du -ks /* 2>/dev/null | sort -V || true;\
             du -k / 2>/dev/null | sort -V | tail -100 || true; \
             printf "Low free disk space post-job: ${free}" | tee -a "$GITHUB_STEP_SUMMARY";\
           fi;
