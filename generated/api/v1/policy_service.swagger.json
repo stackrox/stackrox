@@ -92,7 +92,8 @@
         ]
       },
       "post": {
-        "summary": "PostPolicy creates a new policy.",
+        "summary": "PostPolicy creates a new security policy in the system.",
+        "description": "This endpoint creates a new policy with comprehensive validation. The policy will be\nvalidated before creation and can be tested using the dry-run functionality.\n\n**Key Constraints:**\n- Policy ID must be empty (will be auto-generated)\n- Policy name must be unique across all policies\n- Policy name must be 5-128 characters with no newlines or dollar signs\n- Description must not exceed 800 characters and cannot contain dollar signs\n- At least one lifecycle stage must be specified\n- At least one category must be specified\n- Severity must be set (not UNSET_SEVERITY)\n- Policy sections must contain valid criteria for the specified lifecycle stages\n- Runtime policies must contain at least one runtime criterion\n- Audit log event policies require both KubeResource and KubeAPIVerb criteria\n- Enforcement actions must be compatible with lifecycle stages\n- Notifier IDs must reference existing notifiers\n- Scope and exclusion configurations must be valid\n\n**Validation Levels:**\n- Basic validation: Always performed (field requirements, syntax, etc.)\n- Strict validation: When enableStrictValidation=true, includes additional checks:\n  - Environment variable source restrictions (ROX-5208)\n  - Dockerfile FROM line restrictions\n  - Enhanced field validation\n\n**Lifecycle Stage Requirements:**\n- BUILD: Must contain image-related criteria only\n- DEPLOY: Cannot contain runtime criteria\n- RUNTIME: Must contain at least one runtime criterion (process, network, audit, k8s events)\n\n**Event Source Rules:**\n- Runtime policies with NOT_APPLICABLE event source are invalid\n- Build/Deploy policies with non-NOT_APPLICABLE event source are invalid\n- Audit log event policies cannot have enforcement actions\n- Audit log event policies cannot use label-based scopes or exclusions\n\nReturns the created policy with generated ID, timestamps, and metadata.",
         "operationId": "PolicyService_PostPolicy",
         "responses": {
           "200": {
@@ -111,6 +112,7 @@
         "parameters": [
           {
             "name": "policy",
+            "description": "The policy configuration to create. Must include all required fields and valid criteria.\n\n**Critical Constraints:**\n- id field MUST be empty (will be auto-generated)\n- name must be unique across all policies\n- policyVersion must be \"1.1\"\n- lifecycleStages must be compatible with policySections criteria\n- enforcement actions must be compatible with lifecycle stages\n- notifier IDs must reference existing notifiers\n- scope and exclusion configurations must be valid\n\n**Policy Section Requirements:**\n- Each section must have a unique sectionName\n- Each policy group must have a valid fieldName and at least one value\n- Field names must be valid for the specified lifecycle stages\n- Values must match the expected format for each field type\n- Boolean operators must be compatible with field requirements\n- Negation must be allowed for the field type\n\n**Runtime Policy Requirements:**\n- Must contain at least one runtime criterion (process, network, audit, k8s events)\n- Runtime criteria must be in separate sections\n- Audit log policies require both KubeResource and KubeAPIVerb criteria\n\n**Enforcement Action Compatibility:**\n- FAIL_BUILD_ENFORCEMENT: BUILD lifecycle only\n- SCALE_TO_ZERO_ENFORCEMENT: DEPLOY lifecycle only\n- UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT: DEPLOY lifecycle only\n- KILL_POD_ENFORCEMENT: RUNTIME lifecycle only\n- FAIL_KUBE_REQUEST_ENFORCEMENT: RUNTIME lifecycle only\n- FAIL_DEPLOYMENT_CREATE_ENFORCEMENT: DEPLOY lifecycle only\n- FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT: DEPLOY lifecycle only",
             "in": "body",
             "required": true,
             "schema": {
@@ -119,6 +121,7 @@
           },
           {
             "name": "enableStrictValidation",
+            "description": "When true, performs additional validation checks including:\n- Environment variable source restrictions (ROX-5208)\n  - Only UNSET, RAW, UNKNOWN sources allowed for value checking\n  - SECRET_KEY, CONFIG_MAP_KEY, FIELD, RESOURCE_FIELD sources restricted\n- Dockerfile FROM line restrictions\n- Enhanced field validation and cross-field consistency checks\n- Stricter regex validation for field values\n\n**Environment Variable Restrictions (when enabled):**\n- Valid: \"UNSET=key=value\", \"RAW=key=value\", \"UNKNOWN=key=value\"\n- Valid: \"SECRET_KEY=key=\", \"CONFIG_MAP_KEY=key=\" (empty value only)\n- Invalid: \"SECRET_KEY=key=value\", \"CONFIG_MAP_KEY=key=value\" (with value)\n\nRecommended for development/testing environments. Defaults to false in production.\nWhen enabled, provides detailed error messages for validation failures.",
             "in": "query",
             "required": false,
             "type": "boolean"
@@ -452,6 +455,7 @@
         "parameters": [
           {
             "name": "id",
+            "description": "Unique identifier generated by the system. Must be empty for new policies.\nFormat: UUID v4, auto-generated during creation",
             "in": "path",
             "required": true,
             "type": "string"
@@ -650,40 +654,41 @@
       "properties": {
         "name": {
           "type": "string",
-          "description": "Name of the policy.  Must be unique."
+          "title": "Name of the policy. Must be unique across all policies.\nValidation: 5-128 characters, no newlines or dollar signs\nPattern: ^[^\\n\\r\\$]{5,128}$"
         },
         "description": {
           "type": "string",
-          "description": "Free-form text description of this policy."
+          "title": "Free-form text description of this policy.\nValidation: Max 800 characters, no dollar signs\nPattern: ^[^\\$]{0,800}$"
         },
         "rationale": {
-          "type": "string"
+          "type": "string",
+          "description": "Business justification for why this policy exists.\nUsed for compliance and audit purposes."
         },
         "remediation": {
           "type": "string",
-          "description": "Describes how to remediate a violation of this policy."
+          "description": "Describes how to remediate a violation of this policy.\nShould be actionable and specific to the policy type."
         },
         "disabled": {
           "type": "boolean",
-          "description": "Toggles whether or not this policy will be executing and actively firing alerts."
+          "title": "Toggles whether or not this policy will be executing and actively firing alerts.\nDefault: false"
         },
         "categories": {
           "type": "array",
           "items": {
             "type": "string"
           },
-          "description": "List of categories that this policy falls under.  Category names must already exist in Central."
+          "title": "List of categories that this policy falls under. Category names must already exist in Central.\nValidation: At least one category required, no duplicates"
         },
         "lifecycleStages": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/storageLifecycleStage"
           },
-          "description": "Describes which policy lifecylce stages this policy applies to.  Choices are DEPLOY, BUILD, and RUNTIME."
+          "title": "Describes which policy lifecycle stages this policy applies to. Choices are DEPLOY, BUILD, and RUNTIME.\nValidation: At least one stage required\n- BUILD: Must contain image-related criteria only\n- DEPLOY: Cannot contain runtime criteria\n- RUNTIME: Must contain at least one runtime criterion"
         },
         "eventSource": {
           "$ref": "#/definitions/storageEventSource",
-          "title": "Describes which events should trigger execution of this policy"
+          "title": "Describes which events should trigger execution of this policy\nValidation Rules:\n- Runtime policies: Cannot be NOT_APPLICABLE\n- Build/Deploy policies: Must be NOT_APPLICABLE\n- Audit log policies: No enforcement actions, no label scopes"
         },
         "exclusions": {
           "type": "array",
@@ -691,7 +696,7 @@
             "type": "object",
             "$ref": "#/definitions/storageExclusion"
           },
-          "description": "Define deployments or images that should be excluded from this policy."
+          "title": "Define deployments or images that should be excluded from this policy.\nValidation:\n- Deployment exclusions: Only valid for DEPLOY and RUNTIME lifecycles\n- Image exclusions: Only valid for BUILD lifecycle\n- Must have at least one criteria (name, scope, or image)"
         },
         "scope": {
           "type": "array",
@@ -699,29 +704,30 @@
             "type": "object",
             "$ref": "#/definitions/storageScope"
           },
-          "description": "Defines clusters, namespaces, and deployments that should be included in this policy.  No scopes defined includes everything."
+          "title": "Defines clusters, namespaces, and deployments that should be included in this policy.\nNo scopes defined includes everything.\nValidation: Must have at least one field populated (cluster, namespace, or label)"
         },
         "severity": {
           "$ref": "#/definitions/storageSeverity",
-          "description": "Defines how severe a violation from this policy is.  Possible values are UNSET_SEVERITY, LOW_SEVERITY, MEDIUM_SEVERITY, HIGH_SEVERITY, and CRITICAL_SEVERITY."
+          "description": "Defines how severe a violation from this policy is.\nValidation: Must be set (not UNSET_SEVERITY)\nPossible values are UNSET_SEVERITY, LOW_SEVERITY, MEDIUM_SEVERITY, HIGH_SEVERITY, and CRITICAL_SEVERITY."
         },
         "enforcementActions": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/storageEnforcementAction"
           },
-          "description": "FAIL_DEPLOYMENT_CREATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object creates/updates.\nFAIL_KUBE_REQUEST_ENFORCEMENT takes effect only if admission control webhook is enabled to listen on exec and port-forward events.\nFAIL_DEPLOYMENT_UPDATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object updates.\nLists the enforcement actions to take when a violation from this policy is identified.  Possible value are UNSET_ENFORCEMENT, SCALE_TO_ZERO_ENFORCEMENT, UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT, KILL_POD_ENFORCEMENT, FAIL_BUILD_ENFORCEMENT, FAIL_KUBE_REQUEST_ENFORCEMENT, FAIL_DEPLOYMENT_CREATE_ENFORCEMENT, and. FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT."
+          "title": "Lists the enforcement actions to take when a violation from this policy is identified.\nValidation: Must be compatible with lifecycle stages\n- FAIL_BUILD_ENFORCEMENT: BUILD lifecycle only\n- SCALE_TO_ZERO_ENFORCEMENT: DEPLOY lifecycle only\n- UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT: DEPLOY lifecycle only\n- KILL_POD_ENFORCEMENT: RUNTIME lifecycle only\n- FAIL_KUBE_REQUEST_ENFORCEMENT: RUNTIME lifecycle only\n- FAIL_DEPLOYMENT_CREATE_ENFORCEMENT: DEPLOY lifecycle only\n- FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT: DEPLOY lifecycle only\n- Audit log policies: No enforcement actions allowed"
         },
         "notifiers": {
           "type": "array",
           "items": {
             "type": "string"
           },
-          "description": "List of IDs of the notifiers that should be triggered when a violation from this policy is identified.  IDs should be in the form of a UUID and are found through the Central API."
+          "title": "List of IDs of the notifiers that should be triggered when a violation from this policy is identified.\nIDs should be in the form of a UUID and are found through the Central API.\nValidation: All notifier IDs must reference existing notifiers"
         },
         "lastUpdated": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "description": "Timestamp when the policy was last updated. Auto-generated during creation/update."
         },
         "SORTName": {
           "type": "string",
@@ -736,7 +742,8 @@
           "description": "For internal use only."
         },
         "policyVersion": {
-          "type": "string"
+          "type": "string",
+          "title": "Policy version. Must be \"1.1\" (current supported version).\nValidation: Only version 1.1 is supported"
         },
         "policySections": {
           "type": "array",
@@ -744,14 +751,15 @@
             "type": "object",
             "$ref": "#/definitions/storagePolicySection"
           },
-          "description": "PolicySections define the violation criteria for this policy."
+          "title": "PolicySections define the violation criteria for this policy.\nValidation Requirements:\n- Each section must have a unique sectionName\n- Each policy group must have a valid fieldName and at least one value\n- Field names must be valid for the specified lifecycle stages\n- Values must match the expected format for each field type\n- Boolean operators must be compatible with field requirements\n- Negation must be allowed for the field type\n- Runtime policies must contain at least one runtime criterion\n- Runtime criteria must be in separate sections\n- Audit log policies require both KubeResource and KubeAPIVerb criteria"
         },
         "mitreAttackVectors": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/PolicyMitreAttackVectors"
-          }
+          },
+          "description": "MITRE ATT&CK framework mappings for this policy.\nUsed for threat intelligence and compliance reporting."
         },
         "criteriaLocked": {
           "type": "boolean",
@@ -837,7 +845,8 @@
       "type": "object",
       "properties": {
         "name": {
-          "type": "string"
+          "type": "string",
+          "description": "Name of the exclusion. Used for identification and documentation."
         },
         "deployment": {
           "$ref": "#/definitions/storageExclusionDeployment"
@@ -847,7 +856,8 @@
         },
         "expiration": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "description": "Expiration timestamp for this exclusion.\nWhen expired, the exclusion is automatically removed."
         }
       }
     },
@@ -855,10 +865,12 @@
       "type": "object",
       "properties": {
         "name": {
-          "type": "string"
+          "type": "string",
+          "title": "Name of the deployment to exclude. Optional if scope is provided.\nValidation: Must be provided if scope is not specified"
         },
         "scope": {
-          "$ref": "#/definitions/storageScope"
+          "$ref": "#/definitions/storageScope",
+          "title": "Scope-based exclusion criteria. Optional if name is provided.\nValidation: Must be provided if name is not specified\n- Must have at least one field populated (cluster, namespace, or label)\n- For audit log policies: Labels are not permitted"
         }
       }
     },
@@ -866,7 +878,8 @@
       "type": "object",
       "properties": {
         "name": {
-          "type": "string"
+          "type": "string",
+          "title": "Name of the image to exclude.\nValidation: Must be non-empty"
         }
       }
     },
@@ -984,44 +997,46 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string"
+          "type": "string",
+          "title": "Unique identifier generated by the system. Must be empty for new policies.\nFormat: UUID v4, auto-generated during creation"
         },
         "name": {
           "type": "string",
-          "description": "Name of the policy.  Must be unique."
+          "title": "Name of the policy. Must be unique across all policies.\nValidation: 5-128 characters, no newlines or dollar signs\nPattern: ^[^\\n\\r\\$]{5,128}$"
         },
         "description": {
           "type": "string",
-          "description": "Free-form text description of this policy."
+          "title": "Free-form text description of this policy.\nValidation: Max 800 characters, no dollar signs\nPattern: ^[^\\$]{0,800}$"
         },
         "rationale": {
-          "type": "string"
+          "type": "string",
+          "description": "Business justification for why this policy exists.\nUsed for compliance and audit purposes."
         },
         "remediation": {
           "type": "string",
-          "description": "Describes how to remediate a violation of this policy."
+          "description": "Describes how to remediate a violation of this policy.\nShould be actionable and specific to the policy type."
         },
         "disabled": {
           "type": "boolean",
-          "description": "Toggles whether or not this policy will be executing and actively firing alerts."
+          "title": "Toggles whether or not this policy will be executing and actively firing alerts.\nDefault: false"
         },
         "categories": {
           "type": "array",
           "items": {
             "type": "string"
           },
-          "description": "List of categories that this policy falls under.  Category names must already exist in Central."
+          "title": "List of categories that this policy falls under. Category names must already exist in Central.\nValidation: At least one category required, no duplicates"
         },
         "lifecycleStages": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/storageLifecycleStage"
           },
-          "description": "Describes which policy lifecylce stages this policy applies to.  Choices are DEPLOY, BUILD, and RUNTIME."
+          "title": "Describes which policy lifecycle stages this policy applies to. Choices are DEPLOY, BUILD, and RUNTIME.\nValidation: At least one stage required\n- BUILD: Must contain image-related criteria only\n- DEPLOY: Cannot contain runtime criteria\n- RUNTIME: Must contain at least one runtime criterion"
         },
         "eventSource": {
           "$ref": "#/definitions/storageEventSource",
-          "title": "Describes which events should trigger execution of this policy"
+          "title": "Describes which events should trigger execution of this policy\nValidation Rules:\n- Runtime policies: Cannot be NOT_APPLICABLE\n- Build/Deploy policies: Must be NOT_APPLICABLE\n- Audit log policies: No enforcement actions, no label scopes"
         },
         "exclusions": {
           "type": "array",
@@ -1029,7 +1044,7 @@
             "type": "object",
             "$ref": "#/definitions/storageExclusion"
           },
-          "description": "Define deployments or images that should be excluded from this policy."
+          "title": "Define deployments or images that should be excluded from this policy.\nValidation:\n- Deployment exclusions: Only valid for DEPLOY and RUNTIME lifecycles\n- Image exclusions: Only valid for BUILD lifecycle\n- Must have at least one criteria (name, scope, or image)"
         },
         "scope": {
           "type": "array",
@@ -1037,29 +1052,30 @@
             "type": "object",
             "$ref": "#/definitions/storageScope"
           },
-          "description": "Defines clusters, namespaces, and deployments that should be included in this policy.  No scopes defined includes everything."
+          "title": "Defines clusters, namespaces, and deployments that should be included in this policy.\nNo scopes defined includes everything.\nValidation: Must have at least one field populated (cluster, namespace, or label)"
         },
         "severity": {
           "$ref": "#/definitions/storageSeverity",
-          "description": "Defines how severe a violation from this policy is.  Possible values are UNSET_SEVERITY, LOW_SEVERITY, MEDIUM_SEVERITY, HIGH_SEVERITY, and CRITICAL_SEVERITY."
+          "description": "Defines how severe a violation from this policy is.\nValidation: Must be set (not UNSET_SEVERITY)\nPossible values are UNSET_SEVERITY, LOW_SEVERITY, MEDIUM_SEVERITY, HIGH_SEVERITY, and CRITICAL_SEVERITY."
         },
         "enforcementActions": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/storageEnforcementAction"
           },
-          "description": "FAIL_DEPLOYMENT_CREATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object creates/updates.\nFAIL_KUBE_REQUEST_ENFORCEMENT takes effect only if admission control webhook is enabled to listen on exec and port-forward events.\nFAIL_DEPLOYMENT_UPDATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object updates.\nLists the enforcement actions to take when a violation from this policy is identified.  Possible value are UNSET_ENFORCEMENT, SCALE_TO_ZERO_ENFORCEMENT, UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT, KILL_POD_ENFORCEMENT, FAIL_BUILD_ENFORCEMENT, FAIL_KUBE_REQUEST_ENFORCEMENT, FAIL_DEPLOYMENT_CREATE_ENFORCEMENT, and. FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT."
+          "title": "Lists the enforcement actions to take when a violation from this policy is identified.\nValidation: Must be compatible with lifecycle stages\n- FAIL_BUILD_ENFORCEMENT: BUILD lifecycle only\n- SCALE_TO_ZERO_ENFORCEMENT: DEPLOY lifecycle only\n- UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT: DEPLOY lifecycle only\n- KILL_POD_ENFORCEMENT: RUNTIME lifecycle only\n- FAIL_KUBE_REQUEST_ENFORCEMENT: RUNTIME lifecycle only\n- FAIL_DEPLOYMENT_CREATE_ENFORCEMENT: DEPLOY lifecycle only\n- FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT: DEPLOY lifecycle only\n- Audit log policies: No enforcement actions allowed"
         },
         "notifiers": {
           "type": "array",
           "items": {
             "type": "string"
           },
-          "description": "List of IDs of the notifiers that should be triggered when a violation from this policy is identified.  IDs should be in the form of a UUID and are found through the Central API."
+          "title": "List of IDs of the notifiers that should be triggered when a violation from this policy is identified.\nIDs should be in the form of a UUID and are found through the Central API.\nValidation: All notifier IDs must reference existing notifiers"
         },
         "lastUpdated": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "description": "Timestamp when the policy was last updated. Auto-generated during creation/update."
         },
         "SORTName": {
           "type": "string",
@@ -1074,7 +1090,8 @@
           "description": "For internal use only."
         },
         "policyVersion": {
-          "type": "string"
+          "type": "string",
+          "title": "Policy version. Must be \"1.1\" (current supported version).\nValidation: Only version 1.1 is supported"
         },
         "policySections": {
           "type": "array",
@@ -1082,14 +1099,15 @@
             "type": "object",
             "$ref": "#/definitions/storagePolicySection"
           },
-          "description": "PolicySections define the violation criteria for this policy."
+          "title": "PolicySections define the violation criteria for this policy.\nValidation Requirements:\n- Each section must have a unique sectionName\n- Each policy group must have a valid fieldName and at least one value\n- Field names must be valid for the specified lifecycle stages\n- Values must match the expected format for each field type\n- Boolean operators must be compatible with field requirements\n- Negation must be allowed for the field type\n- Runtime policies must contain at least one runtime criterion\n- Runtime criteria must be in separate sections\n- Audit log policies require both KubeResource and KubeAPIVerb criteria"
         },
         "mitreAttackVectors": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/PolicyMitreAttackVectors"
-          }
+          },
+          "description": "MITRE ATT&CK framework mappings for this policy.\nUsed for threat intelligence and compliance reporting."
         },
         "criteriaLocked": {
           "type": "boolean",
@@ -1114,15 +1132,15 @@
       "properties": {
         "fieldName": {
           "type": "string",
-          "description": "Defines which field on a deployment or image this PolicyGroup evaluates.  See https://docs.openshift.com/acs/operating/manage-security-policies.html#policy-criteria_manage-security-policies for a complete list of possible values."
+          "title": "Defines which field on a deployment or image this PolicyGroup evaluates.\nSee https://docs.openshift.com/acs/operating/manage-security-policies.html#policy-criteria_manage-security-policies for a complete list of possible values.\nValidation Requirements:\n- Must be a valid field name for the specified lifecycle stages\n- Field must support the specified boolean operator\n- Field must allow negation if negate=true\n- Field must support multiple values if more than one value is provided\n- Some fields have special restrictions (e.g., ImageSignatureVerifiedBy cannot use AND operator)"
         },
         "booleanOperator": {
           "$ref": "#/definitions/storageBooleanOperator",
-          "description": "Determines if the values are combined with an OR or an AND.  Defaults to OR."
+          "title": "Determines if the values are combined with an OR or an AND. Defaults to OR.\nValidation: Must be compatible with the field type\n- Some fields only support OR (e.g., ImageSignatureVerifiedBy)\n- Some fields only support single values (operatorsForbidden=true)"
         },
         "negate": {
           "type": "boolean",
-          "description": "Determines if the evaluation of this PolicyGroup is negated.  Default to false."
+          "title": "Determines if the evaluation of this PolicyGroup is negated. Default to false.\nValidation: Must be allowed for the field type\n- Some fields cannot be negated (negationForbidden=true)"
         },
         "values": {
           "type": "array",
@@ -1130,7 +1148,7 @@
             "type": "object",
             "$ref": "#/definitions/storagePolicyValue"
           },
-          "title": "List of values for the specified field"
+          "title": "List of values for the specified field.\nValidation Requirements:\n- Must have at least one value\n- Values must match the expected regex pattern for the field type\n- Some fields only support single values\n- Values must be valid for the field's data type and constraints\n- Environment variable values have special format requirements\n- Dockerfile line values have special restrictions (e.g., no FROM with strict validation)"
         }
       }
     },
@@ -1138,7 +1156,8 @@
       "type": "object",
       "properties": {
         "sectionName": {
-          "type": "string"
+          "type": "string",
+          "description": "Name of the policy section. Must be unique within the policy.\nUsed for organizing policy criteria into logical groups."
         },
         "policyGroups": {
           "type": "array",
@@ -1146,7 +1165,7 @@
             "type": "object",
             "$ref": "#/definitions/storagePolicyGroup"
           },
-          "description": "The set of policies groups that make up this section.  Each group can be considered an individual criterion."
+          "title": "The set of policy groups that make up this section. Each group can be considered an individual criterion.\nValidation Requirements:\n- Each group must have a valid fieldName and at least one value\n- Field names must be valid for the specified lifecycle stages\n- Values must match the expected format for each field type\n- Boolean operators must be compatible with field requirements\n- Negation must be allowed for the field type\n- Runtime criteria must be in separate sections\n- Audit log policies require both KubeResource and KubeAPIVerb criteria"
         }
       }
     },
@@ -1162,7 +1181,8 @@
       "type": "object",
       "properties": {
         "value": {
-          "type": "string"
+          "type": "string",
+          "title": "The actual value for the policy criterion.\nValidation: Must match the expected format for the field type\nExamples:\n- CVE: \"CVE-2021-1234\"\n- Image Tag: \"latest\"\n- Environment Variable: \"UNSET=key=value\" or \"SECRET_KEY=key=\"\n- Dockerfile Line: \"ADD=.\" or \"RUN=apt-get update\"\n- Process Name: \"nginx\"\n- Network Flow: \"tcp:80\""
         }
       }
     },

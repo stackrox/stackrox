@@ -33,10 +33,10 @@ const (
 	PolicyService_SubmitDryRunPolicyJob_FullMethodName           = "/v1.PolicyService/SubmitDryRunPolicyJob"
 	PolicyService_QueryDryRunJobStatus_FullMethodName            = "/v1.PolicyService/QueryDryRunJobStatus"
 	PolicyService_CancelDryRunJob_FullMethodName                 = "/v1.PolicyService/CancelDryRunJob"
-	PolicyService_GetPolicyCategories_FullMethodName             = "/v1.PolicyService/GetPolicyCategories"
 	PolicyService_ExportPolicies_FullMethodName                  = "/v1.PolicyService/ExportPolicies"
 	PolicyService_PolicyFromSearch_FullMethodName                = "/v1.PolicyService/PolicyFromSearch"
 	PolicyService_ImportPolicies_FullMethodName                  = "/v1.PolicyService/ImportPolicies"
+	PolicyService_GetPolicyCategories_FullMethodName             = "/v1.PolicyService/GetPolicyCategories"
 )
 
 // PolicyServiceClient is the client API for PolicyService service.
@@ -51,7 +51,45 @@ type PolicyServiceClient interface {
 	GetPolicyMitreVectors(ctx context.Context, in *GetPolicyMitreVectorsRequest, opts ...grpc.CallOption) (*GetPolicyMitreVectorsResponse, error)
 	// ListPolicies returns the list of policies.
 	ListPolicies(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListPoliciesResponse, error)
-	// PostPolicy creates a new policy.
+	// PostPolicy creates a new security policy in the system.
+	//
+	// This endpoint creates a new policy with comprehensive validation. The policy will be
+	// validated before creation and can be tested using the dry-run functionality.
+	//
+	// **Key Constraints:**
+	// - Policy ID must be empty (will be auto-generated)
+	// - Policy name must be unique across all policies
+	// - Policy name must be 5-128 characters with no newlines or dollar signs
+	// - Description must not exceed 800 characters and cannot contain dollar signs
+	// - At least one lifecycle stage must be specified
+	// - At least one category must be specified
+	// - Severity must be set (not UNSET_SEVERITY)
+	// - Policy sections must contain valid criteria for the specified lifecycle stages
+	// - Runtime policies must contain at least one runtime criterion
+	// - Audit log event policies require both KubeResource and KubeAPIVerb criteria
+	// - Enforcement actions must be compatible with lifecycle stages
+	// - Notifier IDs must reference existing notifiers
+	// - Scope and exclusion configurations must be valid
+	//
+	// **Validation Levels:**
+	// - Basic validation: Always performed (field requirements, syntax, etc.)
+	// - Strict validation: When enableStrictValidation=true, includes additional checks:
+	//   - Environment variable source restrictions (ROX-5208)
+	//   - Dockerfile FROM line restrictions
+	//   - Enhanced field validation
+	//
+	// **Lifecycle Stage Requirements:**
+	// - BUILD: Must contain image-related criteria only
+	// - DEPLOY: Cannot contain runtime criteria
+	// - RUNTIME: Must contain at least one runtime criterion (process, network, audit, k8s events)
+	//
+	// **Event Source Rules:**
+	// - Runtime policies with NOT_APPLICABLE event source are invalid
+	// - Build/Deploy policies with non-NOT_APPLICABLE event source are invalid
+	// - Audit log event policies cannot have enforcement actions
+	// - Audit log event policies cannot use label-based scopes or exclusions
+	//
+	// Returns the created policy with generated ID, timestamps, and metadata.
 	PostPolicy(ctx context.Context, in *PostPolicyRequest, opts ...grpc.CallOption) (*storage.Policy, error)
 	// PutPolicy modifies an existing policy.
 	PutPolicy(ctx context.Context, in *storage.Policy, opts ...grpc.CallOption) (*Empty, error)
@@ -68,13 +106,13 @@ type PolicyServiceClient interface {
 	SubmitDryRunPolicyJob(ctx context.Context, in *storage.Policy, opts ...grpc.CallOption) (*JobId, error)
 	QueryDryRunJobStatus(ctx context.Context, in *JobId, opts ...grpc.CallOption) (*DryRunJobStatusResponse, error)
 	CancelDryRunJob(ctx context.Context, in *JobId, opts ...grpc.CallOption) (*Empty, error)
-	// GetPolicyCategories returns the policy categories.
-	GetPolicyCategories(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*PolicyCategoriesResponse, error)
 	// ExportPolicies takes a list of policy IDs and returns either the entire list of policies or an error message
 	ExportPolicies(ctx context.Context, in *ExportPoliciesRequest, opts ...grpc.CallOption) (*storage.ExportPoliciesResponse, error)
 	PolicyFromSearch(ctx context.Context, in *PolicyFromSearchRequest, opts ...grpc.CallOption) (*PolicyFromSearchResponse, error)
 	// ImportPolicies accepts a list of Policies and returns a list of the policies which could not be imported
 	ImportPolicies(ctx context.Context, in *ImportPoliciesRequest, opts ...grpc.CallOption) (*ImportPoliciesResponse, error)
+	// GetPolicyCategories returns the policy categories.
+	GetPolicyCategories(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*PolicyCategoriesResponse, error)
 }
 
 type policyServiceClient struct {
@@ -215,16 +253,6 @@ func (c *policyServiceClient) CancelDryRunJob(ctx context.Context, in *JobId, op
 	return out, nil
 }
 
-func (c *policyServiceClient) GetPolicyCategories(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*PolicyCategoriesResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(PolicyCategoriesResponse)
-	err := c.cc.Invoke(ctx, PolicyService_GetPolicyCategories_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *policyServiceClient) ExportPolicies(ctx context.Context, in *ExportPoliciesRequest, opts ...grpc.CallOption) (*storage.ExportPoliciesResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(storage.ExportPoliciesResponse)
@@ -255,6 +283,16 @@ func (c *policyServiceClient) ImportPolicies(ctx context.Context, in *ImportPoli
 	return out, nil
 }
 
+func (c *policyServiceClient) GetPolicyCategories(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*PolicyCategoriesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(PolicyCategoriesResponse)
+	err := c.cc.Invoke(ctx, PolicyService_GetPolicyCategories_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // PolicyServiceServer is the server API for PolicyService service.
 // All implementations should embed UnimplementedPolicyServiceServer
 // for forward compatibility.
@@ -267,7 +305,45 @@ type PolicyServiceServer interface {
 	GetPolicyMitreVectors(context.Context, *GetPolicyMitreVectorsRequest) (*GetPolicyMitreVectorsResponse, error)
 	// ListPolicies returns the list of policies.
 	ListPolicies(context.Context, *RawQuery) (*ListPoliciesResponse, error)
-	// PostPolicy creates a new policy.
+	// PostPolicy creates a new security policy in the system.
+	//
+	// This endpoint creates a new policy with comprehensive validation. The policy will be
+	// validated before creation and can be tested using the dry-run functionality.
+	//
+	// **Key Constraints:**
+	// - Policy ID must be empty (will be auto-generated)
+	// - Policy name must be unique across all policies
+	// - Policy name must be 5-128 characters with no newlines or dollar signs
+	// - Description must not exceed 800 characters and cannot contain dollar signs
+	// - At least one lifecycle stage must be specified
+	// - At least one category must be specified
+	// - Severity must be set (not UNSET_SEVERITY)
+	// - Policy sections must contain valid criteria for the specified lifecycle stages
+	// - Runtime policies must contain at least one runtime criterion
+	// - Audit log event policies require both KubeResource and KubeAPIVerb criteria
+	// - Enforcement actions must be compatible with lifecycle stages
+	// - Notifier IDs must reference existing notifiers
+	// - Scope and exclusion configurations must be valid
+	//
+	// **Validation Levels:**
+	// - Basic validation: Always performed (field requirements, syntax, etc.)
+	// - Strict validation: When enableStrictValidation=true, includes additional checks:
+	//   - Environment variable source restrictions (ROX-5208)
+	//   - Dockerfile FROM line restrictions
+	//   - Enhanced field validation
+	//
+	// **Lifecycle Stage Requirements:**
+	// - BUILD: Must contain image-related criteria only
+	// - DEPLOY: Cannot contain runtime criteria
+	// - RUNTIME: Must contain at least one runtime criterion (process, network, audit, k8s events)
+	//
+	// **Event Source Rules:**
+	// - Runtime policies with NOT_APPLICABLE event source are invalid
+	// - Build/Deploy policies with non-NOT_APPLICABLE event source are invalid
+	// - Audit log event policies cannot have enforcement actions
+	// - Audit log event policies cannot use label-based scopes or exclusions
+	//
+	// Returns the created policy with generated ID, timestamps, and metadata.
 	PostPolicy(context.Context, *PostPolicyRequest) (*storage.Policy, error)
 	// PutPolicy modifies an existing policy.
 	PutPolicy(context.Context, *storage.Policy) (*Empty, error)
@@ -284,13 +360,13 @@ type PolicyServiceServer interface {
 	SubmitDryRunPolicyJob(context.Context, *storage.Policy) (*JobId, error)
 	QueryDryRunJobStatus(context.Context, *JobId) (*DryRunJobStatusResponse, error)
 	CancelDryRunJob(context.Context, *JobId) (*Empty, error)
-	// GetPolicyCategories returns the policy categories.
-	GetPolicyCategories(context.Context, *Empty) (*PolicyCategoriesResponse, error)
 	// ExportPolicies takes a list of policy IDs and returns either the entire list of policies or an error message
 	ExportPolicies(context.Context, *ExportPoliciesRequest) (*storage.ExportPoliciesResponse, error)
 	PolicyFromSearch(context.Context, *PolicyFromSearchRequest) (*PolicyFromSearchResponse, error)
 	// ImportPolicies accepts a list of Policies and returns a list of the policies which could not be imported
 	ImportPolicies(context.Context, *ImportPoliciesRequest) (*ImportPoliciesResponse, error)
+	// GetPolicyCategories returns the policy categories.
+	GetPolicyCategories(context.Context, *Empty) (*PolicyCategoriesResponse, error)
 }
 
 // UnimplementedPolicyServiceServer should be embedded to have
@@ -339,9 +415,6 @@ func (UnimplementedPolicyServiceServer) QueryDryRunJobStatus(context.Context, *J
 func (UnimplementedPolicyServiceServer) CancelDryRunJob(context.Context, *JobId) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CancelDryRunJob not implemented")
 }
-func (UnimplementedPolicyServiceServer) GetPolicyCategories(context.Context, *Empty) (*PolicyCategoriesResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetPolicyCategories not implemented")
-}
 func (UnimplementedPolicyServiceServer) ExportPolicies(context.Context, *ExportPoliciesRequest) (*storage.ExportPoliciesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ExportPolicies not implemented")
 }
@@ -350,6 +423,9 @@ func (UnimplementedPolicyServiceServer) PolicyFromSearch(context.Context, *Polic
 }
 func (UnimplementedPolicyServiceServer) ImportPolicies(context.Context, *ImportPoliciesRequest) (*ImportPoliciesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ImportPolicies not implemented")
+}
+func (UnimplementedPolicyServiceServer) GetPolicyCategories(context.Context, *Empty) (*PolicyCategoriesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetPolicyCategories not implemented")
 }
 func (UnimplementedPolicyServiceServer) testEmbeddedByValue() {}
 
@@ -605,24 +681,6 @@ func _PolicyService_CancelDryRunJob_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
-func _PolicyService_GetPolicyCategories_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Empty)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(PolicyServiceServer).GetPolicyCategories(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: PolicyService_GetPolicyCategories_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PolicyServiceServer).GetPolicyCategories(ctx, req.(*Empty))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _PolicyService_ExportPolicies_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ExportPoliciesRequest)
 	if err := dec(in); err != nil {
@@ -673,6 +731,24 @@ func _PolicyService_ImportPolicies_Handler(srv interface{}, ctx context.Context,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(PolicyServiceServer).ImportPolicies(ctx, req.(*ImportPoliciesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PolicyService_GetPolicyCategories_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PolicyServiceServer).GetPolicyCategories(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PolicyService_GetPolicyCategories_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PolicyServiceServer).GetPolicyCategories(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -737,10 +813,6 @@ var PolicyService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _PolicyService_CancelDryRunJob_Handler,
 		},
 		{
-			MethodName: "GetPolicyCategories",
-			Handler:    _PolicyService_GetPolicyCategories_Handler,
-		},
-		{
 			MethodName: "ExportPolicies",
 			Handler:    _PolicyService_ExportPolicies_Handler,
 		},
@@ -751,6 +823,10 @@ var PolicyService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ImportPolicies",
 			Handler:    _PolicyService_ImportPolicies_Handler,
+		},
+		{
+			MethodName: "GetPolicyCategories",
+			Handler:    _PolicyService_GetPolicyCategories_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
