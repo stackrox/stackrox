@@ -847,9 +847,7 @@ policyutil:
 	go install ./tools/policyutil
 	set +e
 	set | grep GO
-	ls -la "$(GOPATH)"/bin/
 	ls -la "$(GOBIN)"/
-	find / -name policyutil
 
 .PHONY: mitre
 mitre:
