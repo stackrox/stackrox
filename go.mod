@@ -62,7 +62,7 @@ require (
 	github.com/google/go-containerregistry v0.20.6
 	github.com/google/go-github/v60 v60.0.0
 	github.com/google/uuid v1.6.0
-	github.com/googleapis/gax-go/v2 v2.14.2
+	github.com/googleapis/gax-go/v2 v2.15.0
 	github.com/gorilla/schema v1.4.1
 	github.com/grafana/pyroscope-go v1.2.2
 	github.com/graph-gophers/graphql-go v1.5.0
@@ -150,7 +150,7 @@ require (
 	golang.org/x/tools v0.34.0
 	golang.stackrox.io/grpc-http1 v0.4.0
 	google.golang.org/api v0.241.0
-	google.golang.org/genproto v0.0.0-20250505200425-f936aa4a68b2
+	google.golang.org/genproto v0.0.0-20250603155806-513f23925822
 	google.golang.org/genproto/googleapis/api v0.0.0-20250603155806-513f23925822
 	google.golang.org/grpc v1.73.0
 	google.golang.org/grpc/examples v0.0.0-20230224211313-3775f633ce20
