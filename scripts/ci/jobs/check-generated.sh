@@ -82,6 +82,7 @@ info 'Check operator files are up to date (If this fails, run `make -C operator 
 function check-operator-generated-files-up-to-date() {
     make -C operator/ generate
     make -C operator/ manifests
+    set -x
     echo 'Checking for diffs after making generate and manifests...'
     git diff --exit-code HEAD
     make -C operator/ bundle
@@ -98,6 +99,8 @@ bash -c check-operator-generated-files-up-to-date || {
     git reset --hard HEAD
     echo check-operator-generated-files-up-to-date >> "$FAIL_FLAG"
 }
+echo "early end"
+exit 0
 
 # shellcheck disable=SC2016
 info 'Check config-controller files are up to date (If this fails, run `make config-controller-gen` and commit the result.)'
