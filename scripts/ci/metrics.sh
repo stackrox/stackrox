@@ -153,7 +153,7 @@ bq_update_job_record() {
         fi
     done
 
-    retry 5 true bq query \
+    retry 7 true bq query \
         --use_legacy_sql=false \
         --batch \
         --headless \
