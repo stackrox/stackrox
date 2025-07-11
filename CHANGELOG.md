@@ -15,6 +15,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 - ROX-27238: Central API for generating CRSs now supports custom expiration times, specified using the new fields "valid_until" or "valid_for".
   roxctl's "central crs generate" now supports specifying custom expiration times using the new parameters "--valid-until" or "--valid-for".
+- ROX-30087: Implicit exchange of OIDC tokens, accessing the API, with role mapping according to a M2M configuration matching the token issuer.
 
 ### Removed Features
 
