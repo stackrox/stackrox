@@ -80,5 +80,5 @@ func (u *authMachineToMachineConfigUpdater) DeleteResources(
 			}
 		}
 	}
-	return deletionFailedIDs, deletionErr
+	return deletionFailedIDs, deletionErr.ErrorOrNil()
 }
