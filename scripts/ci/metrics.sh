@@ -86,6 +86,8 @@ bq_create_job_record() {
 
     bq query \
         --use_legacy_sql=false \
+        --batch \
+        --headless \
         --parameter="id::$1" \
         --parameter="name::$2" \
         --parameter="repo::$3" \
@@ -152,6 +154,8 @@ bq_update_job_record() {
 
     bq query \
         --use_legacy_sql=false \
+        --batch \
+        --headless \
         "${sql_params[@]}" \
         "UPDATE ${_JOBS_TABLE_NAME}
         SET $update_set
