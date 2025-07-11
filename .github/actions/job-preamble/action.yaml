@@ -25,7 +25,7 @@ runs:
       continue-on-error: true
       shell: bash
       run: |
-        gcloud info
+        which gcloud
 
     # setup-gcloud authenticates gcloud
     - name: Install gcloud CLI
