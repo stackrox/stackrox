@@ -1,4 +1,6 @@
-/* globals module */
+/* globals module require */
+
+const path = require('node:path');
 
 const rules = {
     // ESLint naming convention for positive rules:
@@ -306,9 +308,6 @@ const rules = {
             };
         },
     },
-    /*
-    // Add require to globals comment, and then paste following it:
-    // const path = require('node:path');
     'export-default-react': {
         // Prevent mistaken assumptions about results from Find in Files.
         meta: {
@@ -350,7 +349,6 @@ const rules = {
             };
         },
     },
-    */
     'getVersionedDocs-subPath': {
         meta: {
             type: 'problem',

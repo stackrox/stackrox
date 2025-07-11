@@ -1,0 +1,67 @@
+{
+  "src/Containers/Compliance/Entity/Cluster.jsx": {
+    "generic/export-default-react": {
+      "count": 1
+    }
+  },
+  "src/Containers/Compliance/Entity/Control.jsx": {
+    "generic/export-default-react": {
+      "count": 1
+    }
+  },
+  "src/Containers/Compliance/Entity/Deployment.jsx": {
+    "generic/export-default-react": {
+      "count": 1
+    }
+  },
+  "src/Containers/Compliance/Entity/Header.jsx": {
+    "generic/export-default-react": {
+      "count": 1
+    }
+  },
+  "src/Containers/Compliance/Entity/Namespace.jsx": {
+    "generic/export-default-react": {
+      "count": 1
+    }
+  },
+  "src/Containers/Compliance/Entity/Node.jsx": {
+    "generic/export-default-react": {
+      "count": 1
+    }
+  },
+  "src/Containers/Compliance/Entity/Page.jsx": {
+    "generic/export-default-react": {
+      "count": 1
+    }
+  },
+  "src/Containers/Compliance/Entity/Standard.jsx": {
+    "generic/export-default-react": {
+      "count": 1
+    }
+  },
+  "src/Containers/Compliance/List/Header.jsx": {
+    "generic/export-default-react": {
+      "count": 1
+    }
+  },
+  "src/Containers/Compliance/List/List.jsx": {
+    "generic/export-default-react": {
+      "count": 1
+    }
+  },
+  "src/Containers/Compliance/List/Page.jsx": {
+    "generic/export-default-react": {
+      "count": 1
+    }
+  },
+  "src/Containers/Compliance/List/SidePanel.jsx": {
+    "generic/export-default-react": {
+      "count": 1
+    }
+  },
+  "src/Containers/Compliance/List/Table.jsx": {
+    "generic/export-default-react": {
+      "count": 1
+    }
+  }
+}
