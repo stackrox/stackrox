@@ -9,6 +9,7 @@ import (
 
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
+	deploymentsView "github.com/stackrox/rox/central/views/deployments"
 	"github.com/stackrox/rox/central/views/imagecve"
 	"github.com/stackrox/rox/central/views/imagecveflat"
 	imagesView "github.com/stackrox/rox/central/views/images"
@@ -50,6 +51,7 @@ func (s *DeploymentResolversTestSuite) SetupSuite() {
 		imgDataStore = CreateTestImageV2Datastore(s.T(), s.testDB, mockCtrl)
 		resolver, _ = SetupTestResolver(s.T(),
 			CreateTestDeploymentDatastore(s.T(), s.testDB, mockCtrl, imgDataStore),
+			deploymentsView.NewDeploymentView(s.testDB.DB),
 			imagesView.NewImageView(s.testDB.DB),
 			imgDataStore,
 			CreateTestImageComponentV2Datastore(s.T(), s.testDB, mockCtrl),
@@ -60,6 +62,7 @@ func (s *DeploymentResolversTestSuite) SetupSuite() {
 		imgDataStore = CreateTestImageDatastore(s.T(), s.testDB, mockCtrl)
 		resolver, _ = SetupTestResolver(s.T(),
 			CreateTestDeploymentDatastore(s.T(), s.testDB, mockCtrl, imgDataStore),
+			deploymentsView.NewDeploymentView(s.testDB.DB),
 			imagesView.NewImageView(s.testDB.DB),
 			imgDataStore,
 			CreateTestImageComponentDatastore(s.T(), s.testDB, mockCtrl),
