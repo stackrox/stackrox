@@ -151,7 +151,7 @@ func (s *serviceImpl) Start() error {
 	return nil
 }
 
-func (s *serviceImpl) Stop(_ error) {}
+func (s *serviceImpl) Stop() {}
 
 func (s *serviceImpl) Capabilities() []centralsensor.SensorCapability {
 	return nil

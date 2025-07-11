@@ -173,7 +173,7 @@ func (s *securedClusterTLSIssuerTests) TestSecuredClusterTLSIssuerStartStopSucce
 			startErr := fixture.tlsIssuer.Start()
 			fixture.tlsIssuer.Notify(common.SensorComponentEventCentralReachable)
 			assert.NotNil(s.T(), fixture.tlsIssuer.certRefresher)
-			fixture.tlsIssuer.Stop(nil)
+			fixture.tlsIssuer.Stop()
 
 			assert.NoError(s.T(), startErr)
 			assert.Nil(s.T(), fixture.tlsIssuer.certRefresher)
@@ -188,13 +188,13 @@ func (s *securedClusterTLSIssuerTests) TestSecuredClusterTLSIssuerStopStartStop(
 	fixture.certRefresher.On("Stop").Once()
 
 	// calling Start / Stop out of order should be OK
-	fixture.tlsIssuer.Stop(nil)
+	fixture.tlsIssuer.Stop()
 
 	startErr := fixture.tlsIssuer.Start()
 	fixture.tlsIssuer.Notify(common.SensorComponentEventOfflineMode)
 	fixture.tlsIssuer.Notify(common.SensorComponentEventCentralReachable)
 	assert.NotNil(s.T(), fixture.tlsIssuer.certRefresher)
-	fixture.tlsIssuer.Stop(nil)
+	fixture.tlsIssuer.Stop()
 
 	assert.NoError(s.T(), startErr)
 	assert.Nil(s.T(), fixture.tlsIssuer.certRefresher)
@@ -426,7 +426,7 @@ func (s *securedClusterTLSIssuerIntegrationTests) TestSuccessfulRefresh() {
 
 			s.Require().NoError(tlsIssuer.Start())
 			tlsIssuer.Notify(common.SensorComponentEventCentralReachable)
-			defer tlsIssuer.Stop(nil)
+			defer tlsIssuer.Stop()
 			s.Require().NotNil(tlsIssuer.certRefresher)
 			s.Require().False(tlsIssuer.certRefresher.Stopped())
 
@@ -464,7 +464,7 @@ func (s *securedClusterTLSIssuerIntegrationTests) TestSensorOnlineOfflineModes()
 
 	s.Require().NoError(tlsIssuer.Start())
 	tlsIssuer.Notify(common.SensorComponentEventCentralReachable)
-	defer tlsIssuer.Stop(nil)
+	defer tlsIssuer.Stop()
 	s.Require().NotNil(tlsIssuer.certRefresher)
 	s.Require().False(tlsIssuer.certRefresher.Stopped())
 
@@ -535,7 +535,7 @@ func (s *securedClusterTLSIssuerIntegrationTests) TestUnexpectedOwnerStop() {
 
 			s.Require().NoError(tlsIssuer.Start())
 			tlsIssuer.Notify(common.SensorComponentEventCentralReachable)
-			defer tlsIssuer.Stop(nil)
+			defer tlsIssuer.Stop()
 
 			require.Eventually(s.T(), func() bool {
 				return tlsIssuer.certRefresher != nil && tlsIssuer.certRefresher.Stopped()

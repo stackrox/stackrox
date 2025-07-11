@@ -64,7 +64,7 @@ type Notifiable interface {
 type SensorComponent interface {
 	Notifiable
 	Start() error
-	Stop(err error) // TODO: get rid of err argument as it always seems to be effectively nil.
+	Stop()
 	Capabilities() []centralsensor.SensorCapability
 
 	ProcessMessage(msg *central.MsgToSensor) error

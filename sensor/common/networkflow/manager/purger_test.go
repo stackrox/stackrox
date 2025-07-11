@@ -60,7 +60,7 @@ func (s *NetworkFlowPurgerTestSuite) TestDisabledPurger() {
 	}
 	// purgingDone should not be signalled for disabled purger
 	s.Never(purger.purgingDone.IsDone, 500*time.Millisecond, 100*time.Millisecond)
-	purger.Stop(nil)
+	purger.Stop()
 }
 
 func (s *NetworkFlowPurgerTestSuite) TestPurgerWithoutManager() {
@@ -82,7 +82,7 @@ func (s *NetworkFlowPurgerTestSuite) TestPurgerWithoutManager() {
 	}
 	// purgingDone should not be signalled for unstarted purger
 	s.Never(purger.purgingDone.IsDone, 500*time.Millisecond, 100*time.Millisecond)
-	purger.Stop(nil)
+	purger.Stop()
 }
 
 func (s *NetworkFlowPurgerTestSuite) TestPurgerWithManager() {
@@ -145,7 +145,7 @@ func (s *NetworkFlowPurgerTestSuite) TestPurgerWithManager() {
 			// wait until purger is done
 			s.Require().Eventually(purger.purgingDone.IsDone, 2*time.Second, 500*time.Millisecond)
 			s.Equal(tc.expectedNumEndpoints, len(m.connectionsByHost[hostname].endpoints))
-			purger.Stop(nil)
+			purger.Stop()
 		})
 	}
 

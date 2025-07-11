@@ -254,7 +254,7 @@ func (d *detectorImpl) serializeDeployTimeOutput() {
 	}
 }
 
-func (d *detectorImpl) Stop(_ error) {
+func (d *detectorImpl) Stop() {
 	d.detectorStopper.Client().Stop()
 	d.auditStopper.Client().Stop()
 	d.serializerStopper.Client().Stop()

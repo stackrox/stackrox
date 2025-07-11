@@ -53,7 +53,6 @@ type centralCommunicationImpl struct {
 }
 
 var (
-	errForcedConnectionRestart       = errors.New("forced connection restart")
 	errCantReconcile                 = errors.New("unable to reconcile")
 	errLargePayload                  = errors.Wrap(errCantReconcile, "deduper payload too large")
 	errTimeoutWaitingForDeduperState = errors.Wrap(errCantReconcile, "timeout reached while waiting for the DeduperState")
@@ -65,14 +64,7 @@ func (s *centralCommunicationImpl) Start(client central.SensorServiceClient, cen
 	go s.sendEvents(client, centralReachable, syncDone, configHandler, detector, s.receiver.Stop, s.sender.Stop)
 }
 
-func (s *centralCommunicationImpl) Stop(err error) {
-	if err != nil {
-		if errors.Is(err, errForcedConnectionRestart) {
-			log.Infof("Connection restart requested: %v", err)
-		} else {
-			log.Errorf("Stopping connection due to error: %v", err)
-		}
-	}
+func (s *centralCommunicationImpl) Stop() {
 	s.stopper.Client().Stop()
 }
 
@@ -122,11 +114,11 @@ func (s *centralCommunicationImpl) getSensorState() central.SensorHello_SensorSt
 	return central.SensorHello_STARTUP
 }
 
-func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient, centralReachable *concurrency.Flag, syncDone *concurrency.Signal, configHandler config.Handler, detector detector.Detector, onStops ...func(error)) {
+func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient, centralReachable *concurrency.Flag, syncDone *concurrency.Signal, configHandler config.Handler, detector detector.Detector, onStops ...func()) {
 	var stream central.SensorService_CommunicateClient
 	defer func() {
 		s.stopper.Flow().ReportStopped()
-		runAll(s.stopper.Client().Stopped().Err(), onStops...)
+		runAll(onStops...)
 		s.allFinished.Wait()
 		if stream != nil {
 			if err := stream.CloseSend(); err != nil {
@@ -394,8 +386,8 @@ func (s *centralCommunicationImpl) initialPolicySync(ctx context.Context,
 	return nil
 }
 
-func runAll(err error, fs ...func(error)) {
+func runAll(fs ...func()) {
 	for _, f := range fs {
-		f(err)
+		f()
 	}
 }

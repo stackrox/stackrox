@@ -55,7 +55,7 @@ func (s *HandlerTestSuite) SetupTest() {
 }
 
 func (s *HandlerTestSuite) TearDownSuite() {
-	s.requestHandler.Stop(nil)
+	s.requestHandler.Stop()
 }
 
 func (s *HandlerTestSuite) TestProcessApplyOneTimeScanSuccess() {

@@ -72,7 +72,7 @@ func (m *handlerImpl) Start() error {
 	return nil
 }
 
-func (m *handlerImpl) Stop(_ error) {
+func (m *handlerImpl) Stop() {
 	m.stopSignal.Signal()
 }
 

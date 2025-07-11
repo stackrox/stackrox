@@ -684,7 +684,7 @@ func (s *NetworkFlowManagerTestSuite) TestManagerOfflineMode() {
 			}
 		})
 	}
-	m.Stop(nil)
+	m.Stop()
 }
 
 func (s *NetworkFlowManagerTestSuite) TestExpireMessage() {
@@ -727,7 +727,7 @@ func (s *NetworkFlowManagerTestSuite) TestExpireMessage() {
 		m.Notify(common.SensorComponentEventResourceSyncFinished)
 		s.Assert().True(msg.IsExpired(), "the message should be expired")
 	}
-	m.Stop(nil)
+	m.Stop()
 }
 
 func TestSendNetworkFlows(t *testing.T) {

@@ -57,8 +57,8 @@ func (p *configMapPersister) Start() error {
 	return nil
 }
 
-func (p *configMapPersister) Stop(err error) {
-	p.stopSig.SignalWithError(err)
+func (p *configMapPersister) Stop() {
+	p.stopSig.Signal()
 }
 
 func (p *configMapPersister) Notify(common.SensorComponentEvent) {}

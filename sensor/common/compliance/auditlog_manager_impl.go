@@ -45,7 +45,7 @@ func (a *auditLogCollectionManagerImpl) Start() error {
 	return nil
 }
 
-func (a *auditLogCollectionManagerImpl) Stop(_ error) {
+func (a *auditLogCollectionManagerImpl) Stop() {
 	if !a.stopper.Client().Stopped().IsDone() {
 		defer func() {
 			_ = a.stopper.Client().Stopped().Wait()

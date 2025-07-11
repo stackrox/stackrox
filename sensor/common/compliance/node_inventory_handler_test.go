@@ -224,7 +224,7 @@ func (s *NodeInventoryHandlerTestSuite) TestStopHandler() {
 			case inventories <- fakeNodeInventory("Node"):
 				if i == 0 {
 					s.NoError(consumer.Stopped().Wait()) // This blocks until consumer receives its 1 message
-					h.Stop(nil)
+					h.Stop()
 				}
 			}
 		}
@@ -249,7 +249,7 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerRegularRoutine() {
 	s.NoError(producer.Stopped().Wait())
 	s.NoError(consumer.Stopped().Wait())
 
-	h.Stop(nil)
+	h.Stop()
 	s.NoError(h.Stopped().Wait())
 }
 
@@ -266,8 +266,7 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerStopIgnoresError() {
 	s.NoError(producer.Stopped().Wait())
 	s.NoError(consumer.Stopped().Wait())
 
-	errTest := errors.New("example-stop-error")
-	h.Stop(errTest)
+	h.Stop()
 	// This test indicates that the handler ignores an error that's supplied to its Stop function.
 	// The handler will report either an internal error if it occurred during processing or nil otherwise.
 	s.NoError(h.Stopped().Wait())
@@ -331,7 +330,7 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerCentralACKsToCompliance() {
 			s.Equal(tc.expectedACKCount, result.ACKCount)
 			s.Equal(tc.expectedNACKCount, result.NACKCount)
 
-			handler.Stop(nil)
+			handler.Stop()
 			s.T().Logf("waiting for handler to stop")
 			s.NoError(handler.Stopped().Wait())
 		})
@@ -383,7 +382,7 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerOfflineACKNACK() {
 		s.Equal(state.expectedNACKCount, result.NACKCount)
 	}
 
-	h.Stop(nil)
+	h.Stop()
 	s.T().Logf("waiting for handler to stop")
 	s.NoError(h.Stopped().Wait())
 }
@@ -502,7 +501,7 @@ func (s *NodeInventoryHandlerTestSuite) TestMultipleStartHandler() {
 	s.NoError(producer.Stopped().Wait())
 	s.NoError(consumer.Stopped().Wait())
 
-	h.Stop(nil)
+	h.Stop()
 	s.NoError(h.Stopped().Wait())
 
 	// No second start even after a stop
@@ -521,8 +520,8 @@ func (s *NodeInventoryHandlerTestSuite) TestDoubleStopHandler() {
 	consumer := consumeAndCount(h.ResponsesC(), 10)
 	s.NoError(producer.Stopped().Wait())
 	s.NoError(consumer.Stopped().Wait())
-	h.Stop(nil)
-	h.Stop(nil)
+	h.Stop()
+	h.Stop()
 	s.NoError(h.Stopped().Wait())
 	// it should not block
 	s.NoError(h.Stopped().Wait())
@@ -575,7 +574,7 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerNilInput() {
 	s.NoError(producer.Stopped().Wait())
 	s.NoError(consumer.Stopped().Wait())
 
-	h.Stop(nil)
+	h.Stop()
 	s.NoError(h.Stopped().Wait())
 }
 
@@ -596,7 +595,7 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerNodeUnknown() {
 	s.NoError(centralConsumer.Stopped().Wait())
 	s.NoError(complianceConsumer.Stopped().Wait())
 
-	h.Stop(nil)
+	h.Stop()
 	s.NoError(h.Stopped().Wait())
 }
 
@@ -615,7 +614,7 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerCentralNotReady() {
 	s.NoError(centralConsumer.Stopped().Wait())
 	s.NoError(complianceConsumer.Stopped().Wait())
 
-	h.Stop(nil)
+	h.Stop()
 	s.T().Logf("waiting for handler to stop")
 	s.NoError(h.Stopped().Wait())
 }

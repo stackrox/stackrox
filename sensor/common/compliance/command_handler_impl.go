@@ -44,7 +44,7 @@ func (c *commandHandlerImpl) Start() error {
 	return nil
 }
 
-func (c *commandHandlerImpl) Stop(_ error) {
+func (c *commandHandlerImpl) Stop() {
 	c.stopper.Client().Stop()
 }
 

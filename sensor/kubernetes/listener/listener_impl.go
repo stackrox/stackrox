@@ -89,7 +89,7 @@ func (k *listenerImpl) Start() error {
 	return nil
 }
 
-func (k *listenerImpl) Stop(_ error) {
+func (k *listenerImpl) Stop() {
 	if k.credentialsManager != nil {
 		k.credentialsManager.Stop()
 	}

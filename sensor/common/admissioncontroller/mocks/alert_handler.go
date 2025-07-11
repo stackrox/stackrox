@@ -127,13 +127,13 @@ func (mr *MockAlertHandlerMockRecorder) Start() *gomock.Call {
 }
 
 // Stop mocks base method.
-func (m *MockAlertHandler) Stop(err error) {
+func (m *MockAlertHandler) Stop() {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Stop", err)
+	m.ctrl.Call(m, "Stop")
 }
 
 // Stop indicates an expected call of Stop.
-func (mr *MockAlertHandlerMockRecorder) Stop(err any) *gomock.Call {
+func (mr *MockAlertHandlerMockRecorder) Stop() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stop", reflect.TypeOf((*MockAlertHandler)(nil).Stop), err)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stop", reflect.TypeOf((*MockAlertHandler)(nil).Stop))
 }

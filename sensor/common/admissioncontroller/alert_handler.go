@@ -33,7 +33,7 @@ func (h *alertHandlerImpl) Start() error {
 	return nil
 }
 
-func (h *alertHandlerImpl) Stop(_ error) {
+func (h *alertHandlerImpl) Stop() {
 	h.stopSig.Signal()
 }
 

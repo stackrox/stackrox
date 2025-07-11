@@ -72,7 +72,7 @@ func BenchmarkProcessDeploymentReferences(b *testing.B) {
 				}
 				doneSignal.Wait()
 				b.StopTimer()
-				res.Stop(nil)
+				res.Stop()
 			}
 		})
 	}
@@ -93,7 +93,7 @@ func BenchmarkProcessRandomDeploymentReferences(b *testing.B) {
 				}
 				doneSignal.Wait()
 				b.StopTimer()
-				res.Stop(nil)
+				res.Stop()
 			}
 		})
 	}

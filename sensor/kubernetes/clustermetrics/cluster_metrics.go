@@ -75,7 +75,7 @@ func (cm *clusterMetricsImpl) Start() error {
 	return nil
 }
 
-func (cm *clusterMetricsImpl) Stop(_ error) {
+func (cm *clusterMetricsImpl) Stop() {
 	cm.pollTicker.Stop()
 	cm.stopper.Client().Stop()
 	_ = cm.stopper.Client().Stopped().Wait()

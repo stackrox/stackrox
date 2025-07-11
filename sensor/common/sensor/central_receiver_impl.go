@@ -15,11 +15,11 @@ type centralReceiverImpl struct {
 	finished  *sync.WaitGroup
 }
 
-func (s *centralReceiverImpl) Start(stream central.SensorService_CommunicateClient, onStops ...func(error)) {
+func (s *centralReceiverImpl) Start(stream central.SensorService_CommunicateClient, onStops ...func()) {
 	go s.receive(stream, onStops...)
 }
 
-func (s *centralReceiverImpl) Stop(_ error) {
+func (s *centralReceiverImpl) Stop() {
 	s.stopper.Client().Stop()
 }
 
@@ -28,10 +28,10 @@ func (s *centralReceiverImpl) Stopped() concurrency.ReadOnlyErrorSignal {
 }
 
 // Take in data processed by central, run post-processing, then send it to the output channel.
-func (s *centralReceiverImpl) receive(stream central.SensorService_CommunicateClient, onStops ...func(error)) {
+func (s *centralReceiverImpl) receive(stream central.SensorService_CommunicateClient, onStops ...func()) {
 	defer func() {
 		s.stopper.Flow().ReportStopped()
-		runAll(s.stopper.Client().Stopped().Err(), onStops...)
+		runAll(onStops...)
 		s.finished.Done()
 	}()
 

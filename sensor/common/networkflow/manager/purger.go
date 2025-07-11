@@ -86,7 +86,7 @@ func (p *NetworkFlowPurger) Start() error {
 	return nil
 }
 
-func (p *NetworkFlowPurger) Stop(_ error) {
+func (p *NetworkFlowPurger) Stop() {
 	p.purgerTicker.Stop()
 	if !p.stopper.Client().Stopped().IsDone() {
 		defer func() {

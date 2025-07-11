@@ -73,7 +73,7 @@ func (s *serviceImpl) Start() error {
 	return nil
 }
 
-func (s *serviceImpl) Stop(_ error) {
+func (s *serviceImpl) Stop() {
 	s.processPipeline.Shutdown()
 }
 

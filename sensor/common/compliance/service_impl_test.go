@@ -71,7 +71,7 @@ func (s *complianceServiceSuite) SetupTest() {
 }
 
 func (s *complianceServiceSuite) TearDownTest() {
-	s.srv.Stop(nil)
+	s.srv.Stop()
 	if s.stopServerFn != nil {
 		s.stopServerFn()
 	}

@@ -147,7 +147,7 @@ func (e *enforcer) Start() error {
 	return nil
 }
 
-func (e *enforcer) Stop(_ error) {
+func (e *enforcer) Stop() {
 	e.stopper.Client().Stop()
 	_ = e.stopper.Client().Stopped().Wait()
 }

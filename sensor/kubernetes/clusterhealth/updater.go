@@ -60,7 +60,7 @@ func (u *updaterImpl) Start() error {
 	return nil
 }
 
-func (u *updaterImpl) Stop(_ error) {
+func (u *updaterImpl) Stop() {
 	u.updateTicker.Stop()
 	u.stopSig.Signal()
 }
