@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/lib/pq"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest/conn"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
@@ -155,7 +156,9 @@ func (tp *TestPostgres) teardown(t testing.TB) {
 	}
 	tp.Close()
 
-	DropDatabase(t, tp.database)
+	if !env.PostgresKeepTestDB.BooleanSetting() {
+		DropDatabase(t, tp.database)
+	}
 }
 
 // GetConnectionString returns a connection string for integration testing with Postgres
