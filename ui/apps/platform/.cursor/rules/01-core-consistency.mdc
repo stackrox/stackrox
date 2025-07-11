@@ -1,0 +1,298 @@
+---
+description: Core consistency rules for StackRox UI - always applied for uniform code style
+globs: ['apps/platform/src/**/*.{js,jsx,ts,tsx}']
+alwaysApply: true
+---
+
+# Core Consistency Rules for StackRox UI
+
+## File Organization & Naming
+
+### File Extensions and Migration Strategy
+
+- **NEW files**: Always use `.tsx` for React components, `.ts` for utilities/types
+- **EXISTING files**: When making significant changes, migrate `.js` → `.ts` and `.jsx` → `.tsx`
+- **Component files**: Use PascalCase matching the component name (e.g., `AuthProvider.tsx`)
+- **Utility files**: Use camelCase describing the function (e.g., `dateUtils.ts`)
+- **Constants**: Use camelCase with descriptive names (e.g., `entityTypes.ts`)
+
+### Directory Structure Standards
+
+```
+src/
+├── Components/          # Reusable UI components
+│   ├── PatternFly/     # PatternFly wrapper components
+│   └── [ComponentName]/ # Individual component folders
+├── Containers/         # Page-level containers
+├── hooks/             # Custom React hooks
+├── services/          # API service layer
+├── types/             # TypeScript type definitions
+├── constants/         # Application constants
+└── utils/             # Utility functions
+```
+
+## Import/Export Patterns
+
+### Import Organization (enforced by ESLint)
+
+```typescript
+// 1. External libraries
+import React from 'react';
+import { Button } from '@patternfly/react-core';
+
+// 2. Internal modules (absolute imports)
+import { AuthService } from 'services/AuthService';
+import { useAuthStatus } from 'hooks/useAuthStatus';
+
+// 3. Relative imports
+import './ComponentName.css';
+```
+
+### Export Standards
+
+- **Components**: Use default exports for main component, named exports for utilities
+- **Services**: Use named exports for all functions
+- **Constants**: Use named exports with `as const` assertion
+- **Types**: Use named exports, prefer interfaces over types for objects
+
+```typescript
+// ✅ Good - Component
+export default function AuthProvider({ children }: Props) { ... }
+export { useAuthContext }; // Related utilities
+
+// ✅ Good - Service
+export function fetchAuthProviders(): Promise<AuthProvider[]> { ... }
+export function saveAuthProvider(provider: AuthProvider): Promise<void> { ... }
+
+// ✅ Good - Constants
+export const entityTypes = {
+    CLUSTER: 'CLUSTER',
+    DEPLOYMENT: 'DEPLOYMENT',
+} as const;
+```
+
+## Component Structure Standards
+
+### Functional Component Template
+
+```typescript
+import React from 'react';
+import { ComponentProps } from './types';
+
+interface Props extends ComponentProps {
+    // Component-specific props
+}
+
+function ComponentName({ prop1, prop2, ...props }: Props) {
+    // 1. Hooks (useEffect, useState, custom hooks)
+    // 2. Event handlers
+    // 3. Computed values
+    // 4. Render logic
+
+    return (
+        <div {...props}>
+            {/* JSX */}
+        </div>
+    );
+}
+
+export default ComponentName;
+```
+
+### Props Interface Standards
+
+- **Always define interfaces** for component props
+- **Use descriptive names** - avoid generic names like `Props`
+- **Document complex props** with JSDoc comments
+- **Use proper typing** - avoid `any`, prefer specific types
+
+```typescript
+// ✅ Good
+interface AuthProviderFormProps {
+    /** Authentication provider to edit, undefined for new providers */
+    provider?: AuthProvider;
+    /** Called when form is submitted successfully */
+    onSubmit: (provider: AuthProvider) => void;
+    /** Called when form is cancelled */
+    onCancel: () => void;
+    /** Whether form is in loading state */
+    isLoading?: boolean;
+}
+
+// ❌ Bad
+interface Props {
+    data: any;
+    onClick: Function;
+}
+```
+
+## Naming Conventions
+
+### Variables and Functions
+
+- **camelCase** for variables, functions, and properties
+- **Descriptive names** - avoid abbreviations
+- **Boolean variables** - use `is`, `has`, `can`, `should` prefixes
+- **Event handlers** - use `handle` prefix or `on` prefix for props
+
+```typescript
+// ✅ Good
+const isUserAuthenticated = true;
+const hasPermission = checkPermission();
+const canEditProvider = user.role === 'admin';
+
+function handleSubmit() { ... }
+function handleProviderChange(provider: AuthProvider) { ... }
+
+// ❌ Bad
+const auth = true;
+const perm = checkPermission();
+const usr = getCurrentUser();
+```
+
+### Constants
+
+- **SCREAMING_SNAKE_CASE** for true constants
+- **camelCase objects** with `as const` assertion
+- **Descriptive names** that indicate purpose
+
+```typescript
+// ✅ Good
+const MAX_RETRY_ATTEMPTS = 3;
+const API_ENDPOINTS = {
+    AUTH_PROVIDERS: '/v1/authProviders',
+    USERS: '/v1/users',
+} as const;
+
+// ❌ Bad
+const MAX = 3;
+const ENDPOINTS = { ... };
+```
+
+## Error Handling Standards
+
+### Service Layer Error Handling
+
+- **Use typed errors** - extend Error class or use error unions
+- **Consistent error responses** - use `AuthHttpError` pattern
+- **Proper error propagation** - don't swallow errors
+
+```typescript
+// ✅ Good
+export async function fetchAuthProviders(): Promise<AuthProvider[]> {
+    try {
+        const response = await axios.get('/v1/authProviders');
+        return response.data.authProviders || [];
+    } catch (error) {
+        throw new AuthHttpError('Failed to fetch auth providers', error.status, error);
+    }
+}
+
+// ❌ Bad
+export async function fetchAuthProviders() {
+    try {
+        const response = await axios.get('/v1/authProviders');
+        return response.data;
+    } catch (error) {
+        console.error(error);
+        return [];
+    }
+}
+```
+
+### Component Error Handling
+
+- **Use error boundaries** for component-level errors
+- **Handle loading states** consistently
+- **Provide user feedback** for errors
+
+```typescript
+// ✅ Good
+function AuthProviderList() {
+    const [providers, setProviders] = useState<AuthProvider[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        async function loadProviders() {
+            setIsLoading(true);
+            setError(null);
+            try {
+                const data = await fetchAuthProviders();
+                setProviders(data);
+            } catch (err) {
+                setError(err instanceof Error ? err.message : 'Failed to load providers');
+            } finally {
+                setIsLoading(false);
+            }
+        }
+        loadProviders();
+    }, []);
+
+    if (error) {
+        return <Alert variant="danger" title="Error loading providers" />;
+    }
+
+    return (
+        <div>
+            {isLoading && <Spinner />}
+            {/* render providers */}
+        </div>
+    );
+}
+```
+
+## Code Comments and Documentation
+
+### When to Comment
+
+- **Complex business logic** - explain the "why", not the "what"
+- **API integrations** - document expected responses
+- **Workarounds** - explain why they're needed
+- **Public interfaces** - use JSDoc for functions and components
+
+### Comment Style
+
+```typescript
+// ✅ Good
+/**
+ * Refreshes the authentication token and updates the stored token.
+ * This function is called automatically when a 401 response is received.
+ */
+async function refreshAccessToken(): Promise<void> {
+    // Implementation here
+}
+
+// Handle edge case where PatternFly dropdown doesn't close properly
+// after selecting an item. This is a known issue with version 5.2.1
+const handleDropdownSelect = (value: string) => {
+    setIsOpen(false); // Force close
+    onSelect(value);
+};
+
+// ❌ Bad
+// This function refreshes the token
+async function refreshAccessToken() { ... }
+
+// Set isOpen to false
+setIsOpen(false);
+```
+
+## Team Guidelines
+
+### Code Review Focus Points
+
+1. **Consistency**: Are naming conventions followed?
+2. **Types**: Are proper TypeScript types used?
+3. **Error handling**: Are errors handled appropriately?
+4. **Performance**: Are there any obvious performance issues?
+5. **Accessibility**: Are accessibility requirements met?
+
+### Before Committing Checklist
+
+- [ ] ESLint passes without warnings
+- [ ] TypeScript compilation succeeds
+- [ ] Component has proper prop types
+- [ ] Error states are handled
+- [ ] Loading states are implemented
+- [ ] Tests are updated (if applicable)
