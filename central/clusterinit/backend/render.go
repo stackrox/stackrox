@@ -10,7 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/crs"
 	"github.com/stackrox/rox/pkg/mtls"
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v3"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sJson "k8s.io/apimachinery/pkg/runtime/serializer/json"
