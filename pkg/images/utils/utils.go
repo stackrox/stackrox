@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/distribution/reference"
@@ -280,6 +281,15 @@ func FilterSuppressedCVEsNoClone(img *storage.Image) {
 }
 
 // IsRedHatImage takes in an image and returns whether it's a Red Hat image.
+//
+// This function is used to determine whether an image is supposed to have been built and signed by Red Hat, for supply
+// chain provenance
+func IsRedHatImage(img *storage.Image) bool {
+	return slices.ContainsFunc(img.GetNames(), IsRedHatImageName)
+}
+
+// IsRedHatImageName takes in an image name and returns whether it corresponds to a Red Hat image
+//
 // This is determined via heuristics, by looking at these images, which are assumed to be "official Red Hat images",
 // and checking where they are hosted:
 //
@@ -287,10 +297,9 @@ func FilterSuppressedCVEsNoClone(img *storage.Image) {
 //   - All images that are referred by PackageManifests in the "redhat-operators" OLM catalog
 //
 // See the description of https://github.com/stackrox/stackrox/pull/15761 for details
-// This function is used to determine which images should be built and signed by Red Hat, for supply chain provenance
-func IsRedHatImage(img *storage.Image) bool {
+func IsRedHatImageName(imgName *storage.ImageName) bool {
 	// First consider registries where all images are built by Red Hat
-	imageRegistry := img.GetName().GetRegistry()
+	imageRegistry := imgName.GetRegistry()
 	if redHatRegistries.Contains(imageRegistry) {
 		return true
 	}
@@ -300,5 +309,5 @@ func IsRedHatImage(img *storage.Image) bool {
 		return false
 	}
 
-	return quayIoRedHatRemotes.Contains(img.GetName().GetRemote())
+	return quayIoRedHatRemotes.Contains(imgName.GetRemote())
 }
