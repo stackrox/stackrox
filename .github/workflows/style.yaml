@@ -240,6 +240,10 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.6.8'
+
       - name: Pylint
         run: |
           pip install -r .openshift-ci/dev-requirements.txt
