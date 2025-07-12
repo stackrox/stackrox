@@ -37,7 +37,7 @@ TimelineOverview.propTypes = {
     counts: PropTypes.arrayOf(
         PropTypes.shape({
             count: PropTypes.number.isRequired,
-            text: PropTypes.string.isRequiredd,
+            text: PropTypes.string.isRequired,
         })
     ),
     onClick: PropTypes.func.isRequired,
