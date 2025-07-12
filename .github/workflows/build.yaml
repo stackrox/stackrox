@@ -38,6 +38,8 @@ jobs:
           fetch-depth: 1
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
+      - run: git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+
       - uses: ./.github/actions/job-preamble
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
