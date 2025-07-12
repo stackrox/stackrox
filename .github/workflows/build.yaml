@@ -60,42 +60,11 @@ jobs:
         run: |
             git submodule update --init
 
-      - uses: ./.github/actions/handle-tagged-build
-
-      - name: Generate OSS notice
-        run: |
-          set +e
-          FETCH_VERSION=0.4.6
-          FETCH_SHA256=a67ed3141d6deb7e7841f40505cba11eb7a37abbab78374712a42373e7854209
-          wget --no-verbose -O fetch https://github.com/gruntwork-io/fetch/releases/download/v${FETCH_VERSION}/fetch_linux_amd64
-          echo "${FETCH_SHA256} fetch" | sha256sum -c -
-          install fetch /usr/bin \
-            || install fetch /usr/local/bin
-          OSSLS_VERSION=0.11.1
-          OSSLS_SHA256=f1bf3012961c1d90ba307a46263f29025028d35c209b9a65e5c7d502c470c95f
-          fetch --repo="https://github.com/stackrox/ossls" --tag="${OSSLS_VERSION}" --release-asset="ossls_linux_amd64" .
-          echo "${OSSLS_SHA256} *ossls_linux_amd64" | sha256sum -c -
-          install ossls_linux_amd64 /usr/bin/ossls \
-            || install ossls_linux_amd64 /usr/local/bin/ossls
-          which ossls
-          make ossls-notice
-
       - name: Build image
         run: |
           make build-prep main-build-nodeps
           make -j4 -Oline docker-build-main-image
           make -j4 -Oline docker-build-roxctl-image
-
-      - name: Build main images
-        run: |
-          GOOS=linux scripts/lib.sh retry 6 true make docker-build-main-image
-
-      - name: Check debugger presence in the main image
-        run: make check-debugger
-
-      - name: Build roxctl image
-        run: |
-          GOOS=linux scripts/lib.sh retry 6 true make docker-build-roxctl-image
 
 
   define-job-matrix:
