@@ -1,0 +1,20 @@
+[
+    {
+        "type": "console.page/route",
+        "properties": {
+            "exact": true,
+            "path": "/security-TODO",
+            "component": { "$codeRef": "SecurityVulnerabilitiesPage.EntryPoint" }
+        }
+    },
+    {
+        "type": "console.navigation/href",
+        "properties": {
+            "id": "security-vulnerabilities",
+            "name": "%plugin__console-plugin-template~Plugin Security Vulnerabilities%",
+            "href": "/security-TODO",
+            "perspective": "admin",
+            "section": "home"
+        }
+    }
+]

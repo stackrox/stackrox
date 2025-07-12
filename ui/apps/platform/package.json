@@ -21,7 +21,7 @@
         "@patternfly/react-icons": "^5.2.1",
         "@patternfly/react-styles": "^5.2.1",
         "@patternfly/react-table": "^5.2.2",
-        "@patternfly/react-topology": "^5.2.1",
+        "@patternfly/react-topology": "^6.2.0",
         "@patternfly/react-user-feedback": "^5.0.0",
         "axios": "^1.10.0",
         "computed-style-to-inline-style": "^3.0.0",
@@ -54,13 +54,13 @@
         "qs": "^6.14.0",
         "raven-for-redux": "^1.3.1",
         "raven-js": "^3.27.0",
-        "react": "^18.2.0",
+        "react": "17.0.1",
         "react-collapsible": "^2.8.1",
         "react-color": "^2.19.3",
         "react-copy-to-clipboard": "^5.0.3",
         "react-dnd": "^14.0.3",
         "react-dnd-html5-backend": "^14.0.1",
-        "react-dom": "^18.2.0",
+        "react-dom": "17.0.1",
         "react-feather": "^2.0.9",
         "react-helmet": "^6.1.0",
         "react-modal": "^3.12.1",
@@ -68,7 +68,7 @@
         "react-popper": "0.9.0",
         "react-redux": "^7.2.6",
         "react-responsive": "^9.0.2",
-        "react-router-dom": "^6.28.0",
+        "react-router-dom": "^5.3.0",
         "react-router-hash-link": "^2.4.3",
         "react-select": "^2.0.0",
         "react-spinners": "^0.10.4",
@@ -79,11 +79,11 @@
         "react-truncate": "^2.4.0",
         "react-vis": "^1.12.1",
         "redoc": "^2.5.0",
-        "redux": "^4.1.2",
+        "redux": "4.0.1",
         "redux-first-history": "^5.2.0",
         "redux-form": "^8.3.10",
         "redux-saga": "^0.16.0",
-        "redux-thunk": "^2.4.1",
+        "redux-thunk": "2.4.0",
         "reselect": "^4.1.2",
         "store": "^2.0.12",
         "styled-components": "^5.3.1",
@@ -95,11 +95,13 @@
         "clean": "rm -rf ./test-results ./cypress/test-results",
         "start": "vite serve",
         "build": "tsc && NODE_OPTIONS=--max_old_space_size=4096 vite build",
+        "build:ocp-plugin": "rm -rf dist && tsc --project tsconfig.ocp-plugin.json && NODE_ENV=production npm run webpack:ocp-plugin",
         "test": "TZ=UTC vitest",
         "test-coverage": "TZ=UTC vitest run --coverage",
         "lint": "eslint --quiet .",
         "lint:fix": "eslint --fix --quiet .",
         "tsc": "tsc",
+        "tsc:ocp-plugin": "tsc --project tsconfig.ocp-plugin.json --noEmit",
         "cypress-open": "./scripts/cypress.sh open --e2e --config defaultBrowser=chrome",
         "cypress-spec": "./scripts/cypress.sh run --spec",
         "cypress-component": "CYPRESS_COMPONENT_TEST=true ./scripts/cypress-component.sh open --component",
@@ -107,7 +109,8 @@
         "test-e2e-local": "TZ=UTC ./scripts/cypress.sh run",
         "test-component": "TZ=UTC CYPRESS_COMPONENT_TEST=true ./scripts/cypress-component.sh run --reporter mocha-multi-reporters --reporter-options configFile=cypress/mocha.config.js --component",
         "generate-graphql-possible-types": "ROX_AUTH_TOKEN=$(./scripts/get-auth-token.sh) node scripts/generate-graphql-possible-types.js",
-        "postinstall": "node scripts/check-optional-dependency-versions.js"
+        "postinstall": "node scripts/check-optional-dependency-versions.js",
+        "webpack:ocp-plugin": "TS_NODE_PROJECT=tsconfig.ocp-plugin.json node -r ts-node/register ./node_modules/.bin/webpack --config webpack.ocp-plugin.config.ts"
     },
     "devDependencies": {
         "@babel/core": "^7.27.4",
@@ -121,6 +124,8 @@
         "@babel/preset-typescript": "^7.27.1",
         "@babel/runtime": "^7.27.6",
         "@eslint/json": "^0.12.0",
+        "@openshift-console/dynamic-plugin-sdk": "^4.19.0",
+        "@openshift-console/dynamic-plugin-sdk-webpack": "^4.19.0",
         "@tailwindcss/forms": "^0.2.1",
         "@testing-library/cypress": "^10.0.3",
         "@testing-library/dom": "^10.4.0",
@@ -139,8 +144,10 @@
         "@vitejs/plugin-basic-ssl": "^1.1.0",
         "@vitejs/plugin-react": "^4.4.0",
         "@vitest/coverage-v8": "^3.1.1",
-        "@vitest/eslint-plugin" : "^1.3.3",
+        "@vitest/eslint-plugin": "^1.3.3",
         "axe-core": "^4.10.3",
+        "copy-webpack-plugin": "^13.0.0",
+        "css-loader": "^7.1.2",
         "cypress": "^14.5.0",
         "cypress-axe": "^1.6.0",
         "eslint": "^9.30.0",
@@ -163,11 +170,17 @@
         "prettier": "^3.6.2",
         "redux-immutable-state-invariant": "^2.1.0",
         "redux-saga-test-plan": "^3.7.0",
+        "style-loader": "^4.0.0",
         "tailwindcss": "^2.0.3",
+        "ts-loader": "^9.5.2",
+        "ts-node": "^10.9.2",
         "typescript": "^5.8.2",
         "vite": "^6.2.6",
         "vite-plugin-svgr": "^4.3.0",
-        "vitest": "^3.0.5"
+        "vitest": "^3.0.5",
+        "webpack": "^5.99.9",
+        "webpack-cli": "^6.0.1",
+        "webpack-dev-server": "^5.2.2"
     },
     "optionalDependencies": {
         "@esbuild/darwin-arm64": "^0.25.5",
@@ -186,10 +199,24 @@
     "overrides": {
         "autoprefixer": "10.4.5",
         "nth-check": "^2.1.1",
-        "react": "^18.2.0",
-        "react-dom": "^18.2.0"
+        "react": "17.0.1",
+        "react-dom": "17.0.1",
+        "redux": "4.0.1",
+        "redux-thunk": "2.4.0"
     },
     "browserslist": [
         "Chrome >= 80"
-    ]
+    ],
+    "consolePlugin": {
+        "name": "acs-ocp-console-plugin",
+        "version": "0.0.1",
+        "displayName": "Red Hat Advanced Cluster Security for OpenShift Console Plugin",
+        "description": "ACS OCP Console Plugin",
+        "exposedModules": {
+            "SecurityVulnerabilitiesPage": "./Containers/ConsolePlugin/SecurityVulnerabilitiesPage/EntryPoint"
+        },
+        "dependencies": {
+            "@console/pluginAPI": "*"
+        }
+    }
 }

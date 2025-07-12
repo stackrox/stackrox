@@ -1,0 +1,6 @@
+import { jsx as _jsx, jsxs as _jsxs, Fragment as _Fragment } from "react/jsx-runtime";
+import { PageSection, Title } from '@patternfly/react-core';
+import { CheckCircleIcon } from '@patternfly/react-icons';
+export function EntryPoint() {
+    return (_jsxs(_Fragment, { children: [_jsx(PageSection, { children: _jsx(Title, { headingLevel: "h1", children: 'Hello, Plugin!' }) }), _jsxs(PageSection, { children: [_jsxs("p", { children: [_jsxs("span", { className: "console-plugin-template__nice", children: [_jsx(CheckCircleIcon, {}), " ", 'Success!'] }), ' ', 'Your plugin is working.'] }), _jsxs("p", { children: ['This is a custom page contributed by the console plugin template. The extension that adds the page is declared in console-extensions.json in the project root along with the corresponding nav item. Update console-extensions.json to change or add extensions. Code references in console-extensions.json must have a corresponding property', _jsx("code", { children: 'exposedModules' }), ' ', 'in package.json mapping the reference to the module.'] }), _jsxs("p", { children: ['After cloning this project, replace references to', ' ', _jsx("code", { children: 'console-template-plugin' }), ' ', 'and other plugin metadata in package.json with values for your plugin.'] })] })] }));
+}
