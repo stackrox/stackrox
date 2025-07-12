@@ -454,7 +454,6 @@ func servicesToRegister() []pkgGRPC.APIService {
 		signatureIntegrationService.Singleton(),
 		telemetryService.Singleton(),
 		userService.Singleton(),
-		virtualmachineService.Singleton(),
 		vulnMgmtService.Singleton(),
 		// TODO: [ROX-20245] Make the "/v1/cve/requests" APIs unavailable.
 		// This cannot be now because the frontend is not ready with the feature flag checks.
@@ -481,6 +480,10 @@ func servicesToRegister() []pkgGRPC.APIService {
 
 	if features.UnifiedCVEDeferral.Enabled() {
 		servicesToRegister = append(servicesToRegister, vulnRequestServiceV2.Singleton())
+	}
+
+	if features.VirtualMachines.Enabled() {
+		servicesToRegister = append(servicesToRegister, virtualmachineService.Singleton())
 	}
 
 	autoTriggerUpgrades := sensorUpgradeService.Singleton().AutoUpgradeSetting()
