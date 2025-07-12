@@ -25,9 +25,9 @@ message VirtualMachine {
 
 message VirtualMachineScan {
   string scanner_version = 6;
-  google.protobuf.Timestamp scan_time = 1; // @gotags: search:"Image Scan Time,store"
+  google.protobuf.Timestamp scan_time = 1; // @gotags: search:"Virtual Machine Scan Time,store"
   repeated EmbeddedImageScanComponent components = 2; // @gotags: sql:"-"
-  string operating_system = 4; // @gotags: search:"Image OS,store"
+  string operating_system = 4; // @gotags: search:"Virtual Machine OS,store"
   // DataSource contains information about which integration was used to scan the image
   DataSource data_source = 3;
   enum Note {

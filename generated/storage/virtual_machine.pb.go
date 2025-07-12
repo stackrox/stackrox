@@ -222,9 +222,9 @@ func (x *VirtualMachine) GetNotes() []VirtualMachine_Note {
 type VirtualMachineScan struct {
 	state           protoimpl.MessageState        `protogen:"open.v1"`
 	ScannerVersion  string                        `protobuf:"bytes,6,opt,name=scanner_version,json=scannerVersion,proto3" json:"scanner_version,omitempty"`
-	ScanTime        *timestamppb.Timestamp        `protobuf:"bytes,1,opt,name=scan_time,json=scanTime,proto3" json:"scan_time,omitempty" search:"Image Scan Time,store"`                      // @gotags: search:"Image Scan Time,store"
+	ScanTime        *timestamppb.Timestamp        `protobuf:"bytes,1,opt,name=scan_time,json=scanTime,proto3" json:"scan_time,omitempty" search:"Virtual Machine Scan Time,store"`                      // @gotags: search:"Virtual Machine Scan Time,store"
 	Components      []*EmbeddedImageScanComponent `protobuf:"bytes,2,rep,name=components,proto3" json:"components,omitempty" sql:"-"`                                  // @gotags: sql:"-"
-	OperatingSystem string                        `protobuf:"bytes,4,opt,name=operating_system,json=operatingSystem,proto3" json:"operating_system,omitempty" search:"Image OS,store"` // @gotags: search:"Image OS,store"
+	OperatingSystem string                        `protobuf:"bytes,4,opt,name=operating_system,json=operatingSystem,proto3" json:"operating_system,omitempty" search:"Virtual Machine OS,store"` // @gotags: search:"Virtual Machine OS,store"
 	// DataSource contains information about which integration was used to scan the image
 	DataSource    *DataSource               `protobuf:"bytes,3,opt,name=data_source,json=dataSource,proto3" json:"data_source,omitempty"`
 	Notes         []VirtualMachineScan_Note `protobuf:"varint,5,rep,packed,name=notes,proto3,enum=storage.VirtualMachineScan_Note" json:"notes,omitempty"`

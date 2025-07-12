@@ -27,7 +27,6 @@ func (m *GetVirtualMachineRequest) CloneVT() *GetVirtualMachineRequest {
 	}
 	r := new(GetVirtualMachineRequest)
 	r.Id = m.Id
-	r.IncludeSnoozed = m.IncludeSnoozed
 	r.StripDescription = m.StripDescription
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
@@ -151,9 +150,6 @@ func (this *GetVirtualMachineRequest) EqualVT(that *GetVirtualMachineRequest) bo
 		return false
 	}
 	if this.Id != that.Id {
-		return false
-	}
-	if this.IncludeSnoozed != that.IncludeSnoozed {
 		return false
 	}
 	if this.StripDescription != that.StripDescription {
@@ -326,16 +322,6 @@ func (m *GetVirtualMachineRequest) MarshalToSizedBufferVT(dAtA []byte) (int, err
 		}
 		i--
 		dAtA[i] = 0x18
-	}
-	if m.IncludeSnoozed {
-		i--
-		if m.IncludeSnoozed {
-			dAtA[i] = 1
-		} else {
-			dAtA[i] = 0
-		}
-		i--
-		dAtA[i] = 0x10
 	}
 	if len(m.Id) > 0 {
 		i -= len(m.Id)
@@ -585,9 +571,6 @@ func (m *GetVirtualMachineRequest) SizeVT() (n int) {
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
-	if m.IncludeSnoozed {
-		n += 2
-	}
 	if m.StripDescription {
 		n += 2
 	}
@@ -735,26 +718,6 @@ func (m *GetVirtualMachineRequest) UnmarshalVT(dAtA []byte) error {
 			}
 			m.Id = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 2:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field IncludeSnoozed", wireType)
-			}
-			var v int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				v |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			m.IncludeSnoozed = bool(v != 0)
 		case 3:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field StripDescription", wireType)
@@ -1255,26 +1218,6 @@ func (m *GetVirtualMachineRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 			m.Id = stringValue
 			iNdEx = postIndex
-		case 2:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field IncludeSnoozed", wireType)
-			}
-			var v int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				v |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			m.IncludeSnoozed = bool(v != 0)
 		case 3:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field StripDescription", wireType)

@@ -10,7 +10,6 @@ option java_package = "io.stackrox.proto.api.v1";
 
 message GetVirtualMachineRequest {
   string id = 1;
-  bool include_snoozed = 2;
   bool strip_description = 3;
 }
 

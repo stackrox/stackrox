@@ -26,7 +26,6 @@ const (
 type GetVirtualMachineRequest struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
 	Id               string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	IncludeSnoozed   bool                   `protobuf:"varint,2,opt,name=include_snoozed,json=includeSnoozed,proto3" json:"include_snoozed,omitempty"`
 	StripDescription bool                   `protobuf:"varint,3,opt,name=strip_description,json=stripDescription,proto3" json:"strip_description,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
@@ -67,13 +66,6 @@ func (x *GetVirtualMachineRequest) GetId() string {
 		return x.Id
 	}
 	return ""
-}
-
-func (x *GetVirtualMachineRequest) GetIncludeSnoozed() bool {
-	if x != nil {
-		return x.IncludeSnoozed
-	}
-	return false
 }
 
 func (x *GetVirtualMachineRequest) GetStripDescription() bool {
@@ -299,10 +291,9 @@ var File_api_v1_virtual_machine_service_proto protoreflect.FileDescriptor
 
 const file_api_v1_virtual_machine_service_proto_rawDesc = "" +
 	"\n" +
-	"$api/v1/virtual_machine_service.proto\x12\x02v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1dstorage/virtual_machine.proto\"\x80\x01\n" +
+	"$api/v1/virtual_machine_service.proto\x12\x02v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1dstorage/virtual_machine.proto\"W\n" +
 	"\x18GetVirtualMachineRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12'\n" +
-	"\x0finclude_snoozed\x18\x02 \x01(\bR\x0eincludeSnoozed\x12+\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12+\n" +
 	"\x11strip_description\x18\x03 \x01(\bR\x10stripDescription\"_\n" +
 	"\x1bCreateVirtualMachineRequest\x12@\n" +
 	"\x0fvirtual_machine\x18\x01 \x01(\v2\x17.storage.VirtualMachineR\x0evirtualMachine\"a\n" +

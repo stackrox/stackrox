@@ -93,12 +93,6 @@
             "type": "string"
           },
           {
-            "name": "includeSnoozed",
-            "in": "query",
-            "required": false,
-            "type": "boolean"
-          },
-          {
             "name": "stripDescription",
             "in": "query",
             "required": false,
