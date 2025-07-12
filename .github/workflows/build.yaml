@@ -62,6 +62,7 @@ jobs:
 
       - name: Build image
         run: |
+          set -x
           export CI=true  # or builds roxctl separately in main-build-nodeps even if built
           export SKIP_UI_BUILD=true  # or ui-build's in all-builds even if already built
           export SKIP_CLI_BUILD=true  # or cli-build's in all-builds even if already built
