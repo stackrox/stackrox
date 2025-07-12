@@ -39,29 +39,8 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-      - uses: ./.github/actions/cache-ui-dependencies
-
-      - name: Build UI
-        run: make -C ui deps build
-
       - name: Build image
         run: make image
-
-      - name: Build Go Binaries
-        run: |
-          if [[ "${{ matrix.arch }}" != "amd64" ]]; then
-            echo "Building non-amd binary"
-            GOOS=linux CGO_ENABLED=0 make build-prep main-build-nodeps
-          else
-            echo "Building amd binary"
-            GOOS=linux CGO_ENABLED=1 make build-prep main-build-nodeps
-          fi
-
-      - name: Generate the swagger docs
-        run: |
-          make swagger-docs
-          # Workaround to handle https://github.com/actions/cache/issues/753
-          rm -rf .proto
 
       - name: Login to docker.io to mitigate rate limiting on downloading images
         uses: docker/login-action@v3
