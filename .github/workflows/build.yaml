@@ -25,6 +25,68 @@ defaults:
     shell: bash
 
 jobs:
+  all-in-one:
+    runs-on: ubuntu-latest
+    env:
+      GOOS: linux
+      GOARCH: amd64
+      CGO_ENABLED: 1
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - uses: ./.github/actions/cache-ui-dependencies
+
+      - name: Cache Go dependencies
+        uses: ./.github/actions/cache-go-dependencies
+
+      - name: Login to docker.io to mitigate rate limiting on downloading images
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_CI_ACCOUNT_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_CI_ACCOUNT_PASSWORD }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Checkout submodules
+        run: |
+            git submodule update --init
+
+      - name: Build image
+        run: |
+          set -x
+          export CI=true  # or builds roxctl separately in main-build-nodeps even if built
+          export SKIP_UI_BUILD=true  # or ui-build's in all-builds even if already built
+          export SKIP_CLI_BUILD=true  # or cli-build's in all-builds even if already built
+
+          parallel=1  # sequential until verified working. TODO: test parallel=>1
+          make -j${parallel} -Oline deps  # go mod tidy all go.sum files
+            # semaphore ./deps controls if run
+            # if [[ ! -d ./deps ]]; then for d in $(find . -name go.sum | xargs dirname); do pushd $d; go mod tidy; popd; done; fi
+            # make -j${parallel} -Oline build-prep  # depends on deps and creates empty build binary output path
+              # mkdir -p bin/linux_amd64
+          make -j${parallel} -Oline cli_linux-amd64 main-build-nodeps ui-build
+            # main-build-nodeps: gobuild *. then, build roxctl if not CI
+            # ui-build: test -d ui/build || make -C ui build
+          make -j${parallel} -Oline all-builds
+          make -j${parallel} -Oline docker-build-main-image
+            # copies bin/*/ to image/rhel/bin/
+            # copies ui/build to image/rhel/ui/
+            # builds image/rhel/Dockerfile tagged image/rhel
+            # builds image/postgres/Dockerfile tagged image/postgres
+          make -j${parallel} -Oline docker-build-roxctl-image
+            # copies bin/linux_$GOARCH/roxctl to image/roxctl/roxctl-linux
+            # builds image/roxctl/Dockerfile tagged image/roxctl
+
+
   define-job-matrix:
     outputs:
       matrix: ${{ steps.define-job-matrix.outputs.matrix }}
@@ -108,8 +170,6 @@ jobs:
       # For consistency with `image/rhel/konflux.Dockerfile`, see comment there.
       UI_PKG_INSTALL_EXTRA_ARGS: --ignore-scripts
     runs-on: ubuntu-latest
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -119,10 +179,18 @@ jobs:
 
       - uses: ./.github/actions/job-preamble
         with:
-          free-disk-space: 30
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       - uses: ./.github/actions/cache-ui-dependencies
+
+      - name: Cache Vite build
+        uses: actions/cache@v4
+        with:
+          path: |
+            /github/home/ui/apps/platform/cache
+            /github/home/ui/apps/cache
+            /github/home/ui/cache
+          key: ${{ runner.os }}-build-ui-vite-${{ github.head_ref || github.ref_name }}
 
       - uses: ./.github/actions/handle-tagged-build
 
@@ -131,6 +199,16 @@ jobs:
 
       - name: Build UI
         run: make -C ui build
+
+      - name: Inspect files
+        run: |
+          set +e
+          set -x
+          ls -latr
+          ls -latr ui/
+          ls -latr ui/apps/
+          ls -latr ui/apps/platform
+          find ./ -name cache
 
       - uses: ./.github/actions/upload-artifact-with-retry
         with:
@@ -141,11 +219,6 @@ jobs:
 
   pre-build-cli:
     runs-on: ubuntu-latest
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
-      volumes:
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -182,8 +255,6 @@ jobs:
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).pre_build_go_binaries }}
     needs: define-job-matrix
     runs-on: ubuntu-latest
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -249,8 +320,6 @@ jobs:
 
   pre-build-docs:
     runs-on: ubuntu-latest
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -306,18 +375,12 @@ jobs:
     env:
       GO_BINARIES_BUILD_ARTIFACT: ""
       ROX_PRODUCT_BRANDING: ""
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
-      env:
-        QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
-        QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
-        QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
-        QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
-        QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
-        QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
-      volumes:
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
+      QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+      QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+      QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+      QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+      QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
+      QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
     steps:
       - name: Setup build env
         run: |
@@ -487,15 +550,12 @@ jobs:
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).push_main_multiarch_manifests }}
     env:
       ROX_PRODUCT_BRANDING: ""
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
-      env:
-        QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
-        QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
-        QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
-        QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
-        QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
-        QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
+      QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+      QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+      QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+      QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+      QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
+      QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
     steps:
     - name: Setup build env
       run: |
@@ -572,8 +632,14 @@ jobs:
       env:
         GITHUB_TOKEN: "${{ secrets.RHACS_BOT_GITHUB_TOKEN }}"
       run: |
-        source ./scripts/ci/lib.sh
-        add_build_comment_to_pr
+        set -x
+        sha="${{ github.event.pull_request.head.sha }}"
+        tag=$(make tag)
+        gh pr comment "${{ github.event.number }}" --body - <<EOT
+        Images are ready for the commit at ${sha}.
+
+        To use with deploy scripts, first \`export MAIN_IMAGE_TAG=${tag}\`.
+        EOT
 
   build-and-push-operator:
     runs-on: ubuntu-latest
@@ -588,10 +654,13 @@ jobs:
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
+    env:
+      QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+      QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+      QUAY_RHACS_ENG_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
+      ROX_PRODUCT_BRANDING: ${{ matrix.name }}
     strategy:
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).build_and_push_operator }}
-    env:
-      ROX_PRODUCT_BRANDING: ${{ matrix.name }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -665,8 +734,6 @@ jobs:
     env:
       ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-latest
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
     needs:
     - pre-build-cli
     - pre-build-go-binaries

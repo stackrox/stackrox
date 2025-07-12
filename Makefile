@@ -407,15 +407,13 @@ endif
 
 .PHONY: build-prep
 build-prep: deps
-	mkdir -p bin/{darwin_amd64,darwin_arm64,linux_amd64,linux_arm64,linux_ppc64le,linux_s390x,windows_amd64}
+	mkdir -p bin/linux_amd64
 
 .PHONY: cli-build
-cli-build: cli-linux cli-darwin cli-windows
+cli-build: cli-linux
 
 .PHONY: cli-install
 cli-install:
-	# Workaround a bug on MacOS
-	rm -f $(GOPATH)/bin/roxctl
 	# Copy the user's specific OS into gopath
 	mkdir -p $(GOPATH)/bin
 	cp bin/$(HOST_OS)_$(GOARCH)/roxctl $(GOPATH)/bin/roxctl
@@ -424,7 +422,7 @@ cli-install:
 .PHONY: cli
 cli: cli-build cli-install
 
-cli-linux: cli_linux-amd64 cli_linux-arm64 cli_linux-ppc64le cli_linux-s390x
+cli-linux: cli_linux-amd64
 cli-darwin: cli_darwin-amd64 cli_darwin-arm64
 cli-windows: cli_windows-amd64
 
@@ -845,6 +843,9 @@ policyutil:
 	@echo "+ $@"
 	CGO_ENABLED=0 GOOS=$(HOST_OS) $(GOBUILD) ./tools/policyutil
 	go install ./tools/policyutil
+	set +e
+	set | grep GO
+	ls -la "$(GOBIN)"/
 
 .PHONY: mitre
 mitre:
