@@ -71,7 +71,7 @@ export default defineConfig(async () => {
     return {
         cache: true,
         build: {
-            cacheDir: '/tmp/cache',
+            cacheDir: 'cache',
             assetsDir: './static',
             outDir: 'build',
             rollupOptions: {

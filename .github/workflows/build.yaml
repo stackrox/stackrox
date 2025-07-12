@@ -125,7 +125,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            /tmp/cache
+            /github/home/ui/apps/platform/cache
+            /github/home/ui/apps/cache
+            /github/home/ui/cache
           key: ${{ runner.os }}-build-ui-vite-${{ github.head_ref || github.ref_name }}
 
       - uses: ./.github/actions/handle-tagged-build
