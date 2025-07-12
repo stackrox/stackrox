@@ -40,6 +40,11 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+      - uses: ./.github/actions/cache-ui-dependencies
+
+      - name: Cache Go dependencies
+        uses: ./.github/actions/cache-go-dependencies
+
       - name: Build image
         run: GOARCH=amd64 make image
 
