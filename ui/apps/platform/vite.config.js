@@ -70,6 +70,7 @@ export default defineConfig(async () => {
     const sslOptions = getSslOptions();
     return {
         build: {
+            cacheDir: './cache',
             assetsDir: './static',
             outDir: 'build',
             rollupOptions: {
