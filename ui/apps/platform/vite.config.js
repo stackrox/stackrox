@@ -69,6 +69,7 @@ function getSrcAliases() {
 export default defineConfig(async () => {
     const sslOptions = getSslOptions();
     return {
+        cache: true,
         build: {
             cacheDir: './cache',
             assetsDir: './static',
