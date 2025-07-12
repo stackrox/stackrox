@@ -36,9 +36,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
+          fetch-tags: true
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
-
-      - run: git fetch --depth=1 origin +refs/tags/*:refs/tags/*
 
       - uses: ./.github/actions/job-preamble
         with:
