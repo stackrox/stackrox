@@ -83,8 +83,8 @@ jobs:
       - name: Build image
         run: |
           make build-prep main-build-nodeps
-          make docker-build-main-image
-          make docker-build-roxctl-image
+          make -j4 -Oline docker-build-main-image
+          make -j4 -Oline docker-build-roxctl-image
 
       - name: Build main images
         run: |
