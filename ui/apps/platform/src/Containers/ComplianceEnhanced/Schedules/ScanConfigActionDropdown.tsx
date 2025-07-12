@@ -24,7 +24,6 @@ export type ScanConfigActionDropdownProps = {
     isScanning: boolean;
     isReportStatusPending: boolean;
     scanConfigResponse: ComplianceScanConfigurationStatus;
-    isReportJobsEnabled: boolean;
 };
 
 function ScanConfigActionDropdown({
@@ -34,7 +33,6 @@ function ScanConfigActionDropdown({
     isScanning,
     isReportStatusPending,
     scanConfigResponse,
-    isReportJobsEnabled,
 }: ScanConfigActionDropdownProps): ReactElement {
     const navigate = useNavigate();
 
@@ -96,22 +94,17 @@ function ScanConfigActionDropdown({
         >
             Send report
         </DropdownItem>,
+        <DropdownItem
+            key="Generate download"
+            component="button"
+            isDisabled={isProcessing}
+            onClick={() => {
+                handleGenerateDownload(scanConfigResponse);
+            }}
+        >
+            Generate download
+        </DropdownItem>,
     ];
-
-    if (isReportJobsEnabled) {
-        dropdownItems.push(
-            <DropdownItem
-                key="Generate download"
-                component="button"
-                isDisabled={isProcessing}
-                onClick={() => {
-                    handleGenerateDownload(scanConfigResponse);
-                }}
-            >
-                Generate download
-            </DropdownItem>
-        );
-    }
 
     return (
         <Dropdown
