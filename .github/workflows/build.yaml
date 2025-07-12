@@ -44,17 +44,8 @@ jobs:
       - name: Build UI
         run: make -C ui deps build
 
-      - name: Cache Go dependencies
-        uses: ./.github/actions/cache-go-dependencies
-
-      - name: Build CLI
-        run: make cli
-
-      - name: Setup build env for debugging support
-        run: |
-          if [[ "${GITHUB_HEAD_REF:-}" =~ -debug ]]; then
-            echo "DEBUG_BUILD=yes" >> "${GITHUB_ENV}"
-          fi
+      - name: Build image
+        run: make image
 
       - name: Build Go Binaries
         run: |
@@ -65,9 +56,6 @@ jobs:
             echo "Building amd binary"
             GOOS=linux CGO_ENABLED=1 make build-prep main-build-nodeps
           fi
-
-      - name: Resolve mods for protos
-        run: go mod tidy
 
       - name: Generate the swagger docs
         run: |
