@@ -407,7 +407,7 @@ endif
 
 .PHONY: build-prep
 build-prep: deps
-	mkdir -p bin/{darwin_amd64,darwin_arm64,linux_amd64,linux_arm64,linux_ppc64le,linux_s390x,windows_amd64}
+	mkdir -p bin/linux_amd64
 
 .PHONY: cli-build
 cli-build: cli-linux cli-darwin cli-windows
