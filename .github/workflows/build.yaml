@@ -62,7 +62,7 @@ jobs:
 
       - name: Build image
         run: |
-          make -j4 -Oline image
+          make -j4 -Oline image docker-build-roxctl-image
 
 
   define-job-matrix:
