@@ -15,5 +15,4 @@ runs:
           /github/home/.npm
           /github/home/.cache/Cypress
           /usr/local/share/.cache
-          /github/home/ui/apps/platform/cache
         key: npm-v2-${{ hashFiles(inputs.lockFile) }}
