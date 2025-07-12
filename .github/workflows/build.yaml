@@ -47,12 +47,6 @@ jobs:
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
 
-      - name: Build image
-        run: |
-          make build-prep main-build-nodeps
-          make docker-build-main-image
-          make docker-build-roxctl-image
-
       - name: Login to docker.io to mitigate rate limiting on downloading images
         uses: docker/login-action@v3
         with:
@@ -85,6 +79,12 @@ jobs:
             || install ossls_linux_amd64 /usr/local/bin/ossls
           which ossls
           make ossls-notice
+
+      - name: Build image
+        run: |
+          make build-prep main-build-nodeps
+          make docker-build-main-image
+          make docker-build-roxctl-image
 
       - name: Build main images
         run: |
