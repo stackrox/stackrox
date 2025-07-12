@@ -378,12 +378,6 @@ describe('Workload CVE Image Single page', () => {
         const headerSbomModalButton = 'section:has(h1) button:contains("Generate SBOM")';
         const generateSbomButton = '[role="dialog"] button:contains("Generate SBOM")';
 
-        before(function () {
-            if (!hasFeatureFlag('ROX_SBOM_GENERATION')) {
-                this.skip();
-            }
-        });
-
         it('should hide the SBOM generation button when the user does not have write access to the Image resource', () => {
             interceptAndOverridePermissions({ Image: 'READ_ACCESS' });
 
