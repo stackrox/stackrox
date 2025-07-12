@@ -410,7 +410,7 @@ build-prep: deps
 	mkdir -p bin/linux_amd64
 
 .PHONY: cli-build
-cli-build: cli-linux cli-darwin cli-windows
+cli-build: cli-linux
 
 .PHONY: cli-install
 cli-install:
@@ -424,7 +424,7 @@ cli-install:
 .PHONY: cli
 cli: cli-build cli-install
 
-cli-linux: cli_linux-amd64 cli_linux-arm64 cli_linux-ppc64le cli_linux-s390x
+cli-linux: cli_linux-amd64
 cli-darwin: cli_darwin-amd64 cli_darwin-arm64
 cli-windows: cli_windows-amd64
 
