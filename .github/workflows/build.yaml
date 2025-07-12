@@ -462,6 +462,91 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+      - name: Login to docker.io to mitigate rate limiting on downloading images
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_CI_ACCOUNT_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_CI_ACCOUNT_PASSWORD }}
+
+      - name: Set up QEMU
+        if: matrix.arch != 'amd64'
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Checkout submodules
+        run: |
+            git submodule update --init
+
+      - uses: ./.github/actions/handle-tagged-build
+
+      - uses: ./.github/actions/download-artifact-with-retry
+        with:
+          name: ui-${{ env.ROX_PRODUCT_BRANDING }}-build
+          path: ui
+
+      - uses: ./.github/actions/download-artifact-with-retry
+        with:
+          name: cli-build
+
+      - name: Unpack cli build
+        run: |
+          tar xvzf cli-build.tgz
+
+      - uses: ./.github/actions/download-artifact-with-retry
+        with:
+          name: ${{ env.GO_BINARIES_BUILD_ARTIFACT }}
+
+      - name: Unpack Go binaries build
+        run: |
+          tar xvzf go-binaries-build.tgz
+
+      - uses: ./.github/actions/download-artifact-with-retry
+        with:
+          name: docs-build
+          path: image/rhel/docs
+
+      # needed to restore node_modules for ossls-nostice
+      - uses: ./.github/actions/cache-ui-dependencies
+
+      # explicitly fetch deps just in case cache was not ready
+      - name: Fetch UI deps
+        run: make -C ui deps
+
+      - name: Generate OSS notice
+        run: make ossls-notice
+
+      - name: Set build tag for prerelease images
+        if: matrix.name == 'prerelease'
+        run: echo "BUILD_TAG=$(make --quiet --no-print-directory tag)-prerelease" >> "$GITHUB_ENV"
+
+      - name: Set build tag for race condition images
+        if: matrix.name == 'race-condition-debug'
+        run: echo "BUILD_TAG=$(make --quiet --no-print-directory tag)-rcd" >> "$GITHUB_ENV"
+
+      - name: Build main images
+        run: |
+          GOOS=linux GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make docker-build-main-image
+
+      - name: Check debugger presence in the main image
+        run: make check-debugger
+
+      - name: Build roxctl image
+        run: |
+          GOOS=linux GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make docker-build-roxctl-image
+
+      # needed for docs ensure_image.sh initial pull with RHACS_BRANDING
+      - name: Docker login
+        # Skip for external contributions.
+        if: |
+          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+        run: |
+          ./scripts/ci/lib.sh registry_ro_login "quay.io/rhacs-eng"
+
+      - name: Push images
+        # Skip for external contributions.
+        if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         run: |
             source ./scripts/ci/lib.sh
