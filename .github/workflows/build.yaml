@@ -513,7 +513,7 @@ jobs:
           wget --no-verbose -O fetch https://github.com/gruntwork-io/fetch/releases/download/v${FETCH_VERSION}/fetch_linux_amd64
           echo "${FETCH_SHA256} fetch" | sha256sum -c -
           install fetch /usr/bin \
-            || install fetch /usr/bin
+            || install fetch /usr/local/bin
 
           OSSLS_VERSION=0.11.1
           OSSLS_SHA256=f1bf3012961c1d90ba307a46263f29025028d35c209b9a65e5c7d502c470c95f
