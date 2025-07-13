@@ -213,17 +213,17 @@ proto-style: $(BUF_BIN) deps
 .PHONY: qa-tests-style
 qa-tests-style:
 	@echo "+ $@"
-	make -C qa-tests-backend/ style
+	$(MAKE) -C qa-tests-backend/ style
 
 .PHONY: ui-lint
 ui-lint:
 	@echo "+ $@"
-	make -C ui lint
+	$(MAKE) -C ui lint
 
 .PHONY: openshift-ci-style
 openshift-ci-style:
 	@echo "+ $@"
-	make -C .openshift-ci/ style
+	$(MAKE) -C .openshift-ci/ style
 
 .PHONY: shell-style
 shell-style:
@@ -362,8 +362,8 @@ clean-proto-generated-srcs:
 
 .PHONY: config-controller-gen
 config-controller-gen:
-	make -C config-controller/ manifests
-	make -C config-controller/ generate
+	$(MAKE) -C config-controller/ manifests
+	$(MAKE) -C config-controller/ generate
 	cp config-controller/config/crd/bases/config.stackrox.io_securitypolicies.yaml image/templates/helm/stackrox-central/internal
 
 .PHONY: generated-srcs
@@ -586,18 +586,18 @@ shell-unit-tests:
 .PHONY: ui-build
 ui-build:
 ifdef SKIP_UI_BUILD
-	test -d ui/build || make -C ui build
+	test -d ui/build || $(MAKE) -C ui build
 else
-	make -C ui build
+	$(MAKE) -C ui build
 endif
 
 .PHONY: ui-test
 ui-test:
-	make -C ui test
+	$(MAKE) -C ui test
 
 .PHONY: ui-component-tests
 ui-component-tests:
-	make -C ui test-component
+	$(MAKE) -C ui test-component
 
 .PHONY: test
 test: go-unit-tests ui-test shell-unit-tests
@@ -634,7 +634,7 @@ all-builds: cli main-build clean-image $(MERGED_API_SWAGGER_SPEC) $(MERGED_API_S
 
 .PHONY: main-image
 main-image: all-builds
-	make docker-build-main-image
+	$(MAKE) docker-build-main-image
 
 .PHONY: docker-build-main-image
 docker-build-main-image: copy-binaries-to-image-dir central-db-image
