@@ -62,29 +62,38 @@ jobs:
 
       - name: Checkout submodules
         run: |
-            git submodule update --init
+          git submodule update --init
 
-      - name: Build image
+      - name: go mod tidy
         run: |
           set -x
-          echo $SECONDS
-
-          export CI=true  # or builds roxctl separately in main-build-nodeps even if built
-          export SKIP_UI_BUILD=true  # or ui-build's in all-builds even if already built
-          export SKIP_CLI_BUILD=true  # or cli-build's in all-builds even if already built
-
           parallel="${{ matrix.parallel }}"  # sequential until verified working. TODO: test parallel=>1
-
           make -j${parallel} -Oline deps  # go mod tidy all go.sum files
             # semaphore ./deps controls if run
             # if [[ ! -d ./deps ]]; then for d in $(find . -name go.sum | xargs dirname); do pushd $d; go mod tidy; popd; done; fi
             # make -j${parallel} -Oline build-prep  # depends on deps and creates empty build binary output path
               # mkdir -p bin/linux_amd64
+
+      - name: compile
+        run: |
+          export SKIP_CLI_BUILD=true  # or cli-build's in cli even if already built
+          export CI=true  # or builds roxctl separately in main-build-nodeps even if built
+          export SKIP_UI_BUILD=true  # or ui-build's in all-builds even if already built
+          set -x
+          parallel="${{ matrix.parallel }}"  # sequential until verified working. TODO: test parallel=>1
           make -j${parallel} -Oline cli-build main-build-nodeps ui-build clean-image
             # main-build-nodeps: gobuild *. then, build roxctl if not CI
             # ui-build: test -d ui/build || make -C ui build
             # clean-image: clear image context dir contents
             # TODO: add make $(MERGED_API_SWAGGER_SPEC) $(MERGED_API_SWAGGER_SPEC_V2)
+
+      - name: Generate OSS notice
+        run: make ossls-notice
+
+      - name: Build image
+        run: |
+          set -x
+          parallel="${{ matrix.parallel }}"  # sequential until verified working. TODO: test parallel=>1
           make -j${parallel} -Oline docker-build-main-image docker-build-roxctl-image
             # copies bin/*/ to image/rhel/bin/
             # copies ui/build to image/rhel/ui/
@@ -93,7 +102,6 @@ jobs:
             # docker-build-roxctl-image
               # copies bin/linux_$GOARCH/roxctl to image/roxctl/roxctl-linux
               # builds image/roxctl/Dockerfile tagged image/roxctl
-          echo $SECONDS
 
   define-job-matrix:
     outputs:
