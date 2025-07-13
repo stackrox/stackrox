@@ -658,13 +658,13 @@ function launch_sensor {
         fi
     else
         if [[ "$external_ips_enabled" == "enabled" ]]; then
-	    echo "If ROX_COLLECTOR_EXTERNAL_IPS_ENABLE is enabled ROX_COLLECTOR_RUNTIME_CONFIG must be enabled"
-	    exit 1
+            echo "If ROX_COLLECTOR_EXTERNAL_IPS_ENABLE is enabled ROX_COLLECTOR_RUNTIME_CONFIG must be enabled"
+            exit 1
         fi
 
         if [[ -n "${ROX_COLLECTOR_MAX_CONNECTIONS_PER_MINUTE:-}" ]]; then
-	    echo "If ROX_COLLECTOR_MAX_CONNECTIONS_PER_MINUTE is set ROX_COLLECTOR_RUNTIME_CONFIG must be enabled"
-	    exit 1
+            echo "If ROX_COLLECTOR_MAX_CONNECTIONS_PER_MINUTE is set ROX_COLLECTOR_RUNTIME_CONFIG must be enabled"
+            exit 1
         fi
     fi
 
