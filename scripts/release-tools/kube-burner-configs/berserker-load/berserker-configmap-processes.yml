@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{.JobName}}-berserker-process-config
+data:
+  network-server.toml: |
+    restart_interval = 10
+    
+    [workload]
+    type = "processes"
+    arrival_rate = 10.0
+    departure_rate = 200.0
+    random_process = true
