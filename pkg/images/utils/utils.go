@@ -285,10 +285,10 @@ func FilterSuppressedCVEsNoClone(img *storage.Image) {
 // This function is used to determine whether an image is supposed to have been built and signed by Red Hat, for supply
 // chain provenance
 func IsRedHatImage(img *storage.Image) bool {
-	return slices.ContainsFunc(img.GetNames(), IsRedHatImageName)
+	return slices.ContainsFunc(img.GetNames(), isRedHatImageName)
 }
 
-// IsRedHatImageName takes in an image name and returns whether it corresponds to a Red Hat image
+// isRedHatImageName takes in an image name and returns whether it corresponds to a Red Hat image
 //
 // This is determined via heuristics, by looking at these images, which are assumed to be "official Red Hat images",
 // and checking where they are hosted:
@@ -297,7 +297,7 @@ func IsRedHatImage(img *storage.Image) bool {
 //   - All images that are referred by PackageManifests in the "redhat-operators" OLM catalog
 //
 // See the description of https://github.com/stackrox/stackrox/pull/15761 for details
-func IsRedHatImageName(imgName *storage.ImageName) bool {
+func isRedHatImageName(imgName *storage.ImageName) bool {
 	// First consider registries where all images are built by Red Hat
 	imageRegistry := imgName.GetRegistry()
 	if redHatRegistries.Contains(imageRegistry) {
