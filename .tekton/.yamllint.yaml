@@ -1,0 +1,33 @@
+# Some common style settings for Konflux YAML files.
+
+# This config is for https://github.com/adrienverge/yamllint tool.
+# The main purpose is to ensure consistent indentation in each file so that when MintMaker (or its dependency) makes
+# an update to our pipelines, it does not mess up the formatting. See https://issues.redhat.com/browse/ROX-30101 for
+# context links if you need to learn more.
+
+# If you'd like to run the tool locally, you can do the following (in this directory):
+# $ docker run --rm -it -v .:/source -w /source --entrypoint=/bin/bash registry.access.redhat.com/ubi9/python-312
+# $ pip3 install yamllint
+# $ yamllint .
+
+yaml-files:
+- '*.yaml'
+- '*.yml'
+- '.yamllint'
+
+extends: default
+# See https://yamllint.readthedocs.io/en/stable/configuration.html#default-configuration
+
+rules:
+  brackets:
+    forbid: false
+    min-spaces-inside: 1
+    max-spaces-inside: 1
+    min-spaces-inside-empty: 1
+    max-spaces-inside-empty: 1
+  document-start: disable
+  indentation:
+    spaces: 2
+    indent-sequences: false
+    check-multi-line-strings: false
+  line-length: disable
