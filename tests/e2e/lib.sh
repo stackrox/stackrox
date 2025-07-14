@@ -193,6 +193,7 @@ export_test_environment() {
     ci_export ROX_VULNERABILITY_ON_DEMAND_REPORTS "${ROX_VULNERABILITY_ON_DEMAND_REPORTS:-true}"
     ci_export ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS "${ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS:-true}"
     ci_export ROX_ADMISSION_CONTROLLER_CONFIG "${ROX_ADMISSION_CONTROLLER_CONFIG:-true}"
+    ci_export ROX_RED_HAT_IMAGES_SIGNED_POLICY "${ROX_RED_HAT_IMAGES_SIGNED_POLICY:-true}"
 
     if is_in_PR_context && pr_has_label ci-fail-fast; then
         ci_export FAIL_FAST "true"
@@ -345,6 +346,8 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n      - name: ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_ADMISSION_CONTROLLER_CONFIG'
+    customize_envVars+=$'\n        value: "true"'
+    customize_envVars+=$'\n      - name: ROX_RED_HAT_IMAGES_SIGNED_POLICY'
     customize_envVars+=$'\n        value: "true"'
 
     local scannerV4ScannerComponent="Default"
