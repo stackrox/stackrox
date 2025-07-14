@@ -63,4 +63,7 @@ function ErrorBoundaryWrapper({ children }: { children: ReactNode }) {
     return <ErrorBoundary location={location.pathname}>{children}</ErrorBoundary>;
 }
 
+// Encapsulate ErrorBoundaryWrapper as implementation detail,
+// especially since ErrorBoundary appears in Find results.
+// eslint-disable-next-line limited/export-default-react
 export default ErrorBoundaryWrapper;
