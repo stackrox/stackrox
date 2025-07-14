@@ -220,7 +220,7 @@ func (i *tlsIssuerImpl) ResponsesC() <-chan *message.ExpiringMessage {
 // ProcessMessage dispatches Central's messages to Sensor received via the Central receiver.
 // This method must not block as it would prevent centralReceiverImpl from sending messages
 // to other SensorComponents.
-func (i *tlsIssuerImpl) ProcessMessage(msg *central.MsgToSensor, ctx context.Context) error {
+func (i *tlsIssuerImpl) ProcessMessage(ctx context.Context, msg *central.MsgToSensor) error {
 	if i.getResponseFn == nil {
 		return errors.New("getResponseFn is not set")
 	}

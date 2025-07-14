@@ -361,7 +361,7 @@ func (d *detectorImpl) ProcessReprocessDeployments() error {
 	return nil
 }
 
-func (d *detectorImpl) ProcessMessage(msg *central.MsgToSensor, ctx context.Context) error {
+func (d *detectorImpl) ProcessMessage(ctx context.Context, msg *central.MsgToSensor) error {
 	switch {
 	case msg.GetBaselineSync() != nil:
 		return d.processBaselineSync(msg.GetBaselineSync())

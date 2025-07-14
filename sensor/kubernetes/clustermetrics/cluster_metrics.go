@@ -100,7 +100,7 @@ func (cm *clusterMetricsImpl) Capabilities() []centralsensor.SensorCapability {
 	return []centralsensor.SensorCapability{}
 }
 
-func (cm *clusterMetricsImpl) ProcessMessage(msg *central.MsgToSensor, ctx context.Context) error {
+func (cm *clusterMetricsImpl) ProcessMessage(ctx context.Context, msg *central.MsgToSensor) error {
 	return nil
 }
 

@@ -49,7 +49,7 @@ func CreateEnhancer(provider store.Provider) common.SensorComponent {
 }
 
 // ProcessMessage takes an incoming message and queues it for enhancement
-func (d *DeploymentEnhancer) ProcessMessage(msg *central.MsgToSensor, ctx context.Context) error {
+func (d *DeploymentEnhancer) ProcessMessage(ctx context.Context, msg *central.MsgToSensor) error {
 	toEnhance := msg.GetDeploymentEnhancementRequest()
 	if toEnhance == nil {
 		return nil

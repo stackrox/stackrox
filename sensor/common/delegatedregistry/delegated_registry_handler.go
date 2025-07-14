@@ -66,7 +66,7 @@ func (d *delegatedRegistryImpl) Capabilities() []centralsensor.SensorCapability 
 
 func (d *delegatedRegistryImpl) Notify(_ common.SensorComponentEvent) {}
 
-func (d *delegatedRegistryImpl) ProcessMessage(msg *central.MsgToSensor, ctx context.Context) error {
+func (d *delegatedRegistryImpl) ProcessMessage(ctx context.Context, msg *central.MsgToSensor) error {
 	if !enabled {
 		return nil
 	}

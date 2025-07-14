@@ -111,17 +111,17 @@ func (mr *MockDetectorMockRecorder) ProcessIndicator(ctx, indicator any) *gomock
 }
 
 // ProcessMessage mocks base method.
-func (m *MockDetector) ProcessMessage(msg *central.MsgToSensor, ctx context.Context) error {
+func (m *MockDetector) ProcessMessage(ctx context.Context, msg *central.MsgToSensor) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ProcessMessage", msg, ctx)
+	ret := m.ctrl.Call(m, "ProcessMessage", ctx, msg)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // ProcessMessage indicates an expected call of ProcessMessage.
-func (mr *MockDetectorMockRecorder) ProcessMessage(msg, ctx any) *gomock.Call {
+func (mr *MockDetectorMockRecorder) ProcessMessage(ctx, msg any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessMessage", reflect.TypeOf((*MockDetector)(nil).ProcessMessage), msg, ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessMessage", reflect.TypeOf((*MockDetector)(nil).ProcessMessage), ctx, msg)
 }
 
 // ProcessNetworkFlow mocks base method.

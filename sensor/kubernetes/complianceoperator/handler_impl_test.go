@@ -411,7 +411,7 @@ func (s *HandlerTestSuite) sendMessage(times int, msg *central.MsgToSensor) *cen
 	var ret *central.ComplianceResponse
 
 	for i := 0; i < times; i++ {
-		s.NoError(s.requestHandler.ProcessMessage(msg, s.T().Context()))
+		s.NoError(s.requestHandler.ProcessMessage(s.T().Context(), msg))
 
 		select {
 		case response := <-s.requestHandler.ResponsesC():

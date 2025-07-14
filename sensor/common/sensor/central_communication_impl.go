@@ -342,7 +342,7 @@ func (s *centralCommunicationImpl) initialConfigSync(stream central.SensorServic
 		return errors.Errorf("initial message received from Sensor was not a cluster config: %T", msg.Msg)
 	}
 	// Send the initial cluster config to the config handler
-	if err := handler.ProcessMessage(msg, context.Background()); err != nil {
+	if err := handler.ProcessMessage(context.Background(), msg); err != nil {
 		return errors.Wrap(err, "processing initial cluster config")
 	}
 	return nil
@@ -368,7 +368,7 @@ func (s *centralCommunicationImpl) initialPolicySync(ctx context.Context,
 	if err != nil {
 		return errors.Wrap(err, "receiving initial baselines")
 	}
-	if err := detector.ProcessMessage(msg, ctx); err != nil {
+	if err := detector.ProcessMessage(ctx, msg); err != nil {
 		return errors.Wrap(err, "process baselines could not be successfully processed")
 	}
 
@@ -380,7 +380,7 @@ func (s *centralCommunicationImpl) initialPolicySync(ctx context.Context,
 	if msg.GetNetworkBaselineSync() == nil {
 		return errors.Errorf("expected NetworkBaseline message but received %t", msg.Msg)
 	}
-	if err := detector.ProcessMessage(msg, ctx); err != nil {
+	if err := detector.ProcessMessage(ctx, msg); err != nil {
 		return errors.Wrap(err, "network baselines could not be successfully processed")
 	}
 	return nil

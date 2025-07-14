@@ -391,13 +391,13 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerOfflineACKNACK() {
 func mockCentralReply(h *nodeInventoryHandlerImpl, ackType central.NodeInventoryACK_Action) error {
 	select {
 	case <-h.ResponsesC():
-		return h.ProcessMessage(&central.MsgToSensor{
+		return h.ProcessMessage(context.Background(), &central.MsgToSensor{
 			Msg: &central.MsgToSensor_NodeInventoryAck{NodeInventoryAck: &central.NodeInventoryACK{
 				ClusterId: "4",
 				NodeName:  "4",
 				Action:    ackType,
 			}},
-		}, context.Background())
+		})
 	case <-time.After(5 * time.Second):
 		return errors.New("ResponsesC msg didn't arrive after 5 seconds")
 	}

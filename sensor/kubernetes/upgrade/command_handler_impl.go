@@ -111,7 +111,7 @@ func (h *commandHandler) waitForTermination(proc *process) {
 	}
 }
 
-func (h *commandHandler) ProcessMessage(msg *central.MsgToSensor, ctx context.Context) error {
+func (h *commandHandler) ProcessMessage(ctx context.Context, msg *central.MsgToSensor) error {
 	trigger := msg.GetSensorUpgradeTrigger()
 	if trigger == nil {
 		return nil

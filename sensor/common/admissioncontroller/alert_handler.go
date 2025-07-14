@@ -58,7 +58,7 @@ func (h *alertHandlerImpl) Capabilities() []centralsensor.SensorCapability {
 	return nil
 }
 
-func (h *alertHandlerImpl) ProcessMessage(msg *central.MsgToSensor, ctx context.Context) error {
+func (h *alertHandlerImpl) ProcessMessage(ctx context.Context, msg *central.MsgToSensor) error {
 	return nil
 }
 

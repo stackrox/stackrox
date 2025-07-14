@@ -85,7 +85,7 @@ func (h *commandHandler) run() {
 	}
 }
 
-func (h *commandHandler) ProcessMessage(msg *central.MsgToSensor, ctx context.Context) error {
+func (h *commandHandler) ProcessMessage(ctx context.Context, msg *central.MsgToSensor) error {
 	cmd := msg.GetNetworkPoliciesCommand()
 	if cmd == nil {
 		return nil

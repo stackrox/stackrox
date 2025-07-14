@@ -66,7 +66,7 @@ func (h *handlerImpl) Capabilities() []centralsensor.SensorCapability {
 	return nil
 }
 
-func (h *handlerImpl) ProcessMessage(msg *central.MsgToSensor, ctx context.Context) error {
+func (h *handlerImpl) ProcessMessage(ctx context.Context, msg *central.MsgToSensor) error {
 	return nil
 }
 

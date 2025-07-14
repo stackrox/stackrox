@@ -52,7 +52,7 @@ func (*eventPipeline) Capabilities() []centralsensor.SensorCapability {
 }
 
 // ProcessMessage implements common.SensorComponent
-func (p *eventPipeline) ProcessMessage(msg *central.MsgToSensor, ctx context.Context) error {
+func (p *eventPipeline) ProcessMessage(ctx context.Context, msg *central.MsgToSensor) error {
 	switch {
 	case msg.GetPolicySync() != nil:
 		return p.processPolicySync(msg.GetPolicySync())

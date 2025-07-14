@@ -68,7 +68,7 @@ type SensorComponent interface {
 	Stop()
 	Capabilities() []centralsensor.SensorCapability
 
-	ProcessMessage(msg *central.MsgToSensor, ctx context.Context) error
+	ProcessMessage(ctx context.Context, msg *central.MsgToSensor) error
 	ResponsesC() <-chan *message.ExpiringMessage
 	Name() string
 }

@@ -90,7 +90,7 @@ func (s *serviceImpl) Capabilities() []centralsensor.SensorCapability {
 	return nil
 }
 
-func (s *serviceImpl) ProcessMessage(msg *central.MsgToSensor, ctx context.Context) error {
+func (s *serviceImpl) ProcessMessage(ctx context.Context, msg *central.MsgToSensor) error {
 	return nil
 }
 

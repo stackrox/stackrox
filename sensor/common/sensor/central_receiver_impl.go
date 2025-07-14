@@ -80,7 +80,7 @@ func processWithDeadline(c common.SensorComponent, deadline time.Duration, msg *
 	done := make(chan error)
 	defer close(done)
 	go func() {
-		done <- c.ProcessMessage(msg, ctx)
+		done <- c.ProcessMessage(ctx, msg)
 	}()
 
 	select {

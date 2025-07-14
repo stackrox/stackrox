@@ -99,17 +99,17 @@ func (mr *MockHandlerMockRecorder) ProcessInvalidateImageCache(arg0 any) *gomock
 }
 
 // ProcessMessage mocks base method.
-func (m *MockHandler) ProcessMessage(msg *central.MsgToSensor, ctx context.Context) error {
+func (m *MockHandler) ProcessMessage(ctx context.Context, msg *central.MsgToSensor) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ProcessMessage", msg, ctx)
+	ret := m.ctrl.Call(m, "ProcessMessage", ctx, msg)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // ProcessMessage indicates an expected call of ProcessMessage.
-func (mr *MockHandlerMockRecorder) ProcessMessage(msg, ctx any) *gomock.Call {
+func (mr *MockHandlerMockRecorder) ProcessMessage(ctx, msg any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessMessage", reflect.TypeOf((*MockHandler)(nil).ProcessMessage), msg, ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessMessage", reflect.TypeOf((*MockHandler)(nil).ProcessMessage), ctx, msg)
 }
 
 // ProcessReprocessDeployments mocks base method.

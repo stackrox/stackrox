@@ -73,10 +73,10 @@ func (h *admCtrlMsgForwarderImpl) Capabilities() []centralsensor.SensorCapabilit
 	return nil
 }
 
-func (h *admCtrlMsgForwarderImpl) ProcessMessage(msg *central.MsgToSensor, ctx context.Context) error {
+func (h *admCtrlMsgForwarderImpl) ProcessMessage(ctx context.Context, msg *central.MsgToSensor) error {
 	errorList := errorhelpers.NewErrorList("ProcessMessage in AdmCtrlMsgForwarder")
 	for _, component := range h.components {
-		if err := component.ProcessMessage(msg, ctx); err != nil {
+		if err := component.ProcessMessage(ctx, msg); err != nil {
 			errorList.AddError(err)
 		}
 	}

@@ -369,7 +369,7 @@ func (m *networkFlowManager) Name() string {
 	return fmt.Sprintf("%T", m)
 }
 
-func (m *networkFlowManager) ProcessMessage(msg *central.MsgToSensor, ctx context.Context) error {
+func (m *networkFlowManager) ProcessMessage(ctx context.Context, msg *central.MsgToSensor) error {
 	return nil
 }
 

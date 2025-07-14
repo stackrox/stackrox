@@ -73,7 +73,7 @@ func (c *Multiplexer) Capabilities() []centralsensor.SensorCapability {
 }
 
 // ProcessMessage is unimplemented, part of the component interface
-func (c *Multiplexer) ProcessMessage(msg *central.MsgToSensor, ctx context.Context) error {
+func (c *Multiplexer) ProcessMessage(ctx context.Context, msg *central.MsgToSensor) error {
 	return nil
 }
 

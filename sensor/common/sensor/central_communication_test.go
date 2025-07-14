@@ -528,7 +528,7 @@ func (f fakeSensorComponent) Capabilities() []centralsensor.SensorCapability {
 	return []centralsensor.SensorCapability{}
 }
 
-func (f fakeSensorComponent) ProcessMessage(*central.MsgToSensor, context.Context) error {
+func (f fakeSensorComponent) ProcessMessage(context.Context, *central.MsgToSensor) error {
 	return nil
 }
 
