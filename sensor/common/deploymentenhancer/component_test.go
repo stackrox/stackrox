@@ -112,10 +112,10 @@ func (s *ComponentTestSuite) TestMsgQueueOverfill() {
 		deploymentsQueue: make(chan *central.DeploymentEnhancementRequest, 1),
 		storeProvider:    s.mockStoreProvider,
 	}
-	s.NoError(de.ProcessMessage(generateMsgToSensor(), nil))
+	s.NoError(de.ProcessMessage(generateMsgToSensor(), s.T().Context()))
 
 	// As there is no reader, the second call has to error out
-	s.ErrorContains(de.ProcessMessage(generateMsgToSensor(), nil), "DeploymentEnhancer queue has reached its limit of")
+	s.ErrorContains(de.ProcessMessage(generateMsgToSensor(), s.T().Context()), "DeploymentEnhancer queue has reached its limit of")
 }
 
 func generateMsgToSensor() *central.MsgToSensor {

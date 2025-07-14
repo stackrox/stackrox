@@ -1,6 +1,7 @@
 package compliance
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strings"
@@ -396,7 +397,7 @@ func mockCentralReply(h *nodeInventoryHandlerImpl, ackType central.NodeInventory
 				NodeName:  "4",
 				Action:    ackType,
 			}},
-		}, nil)
+		}, context.Background())
 	case <-time.After(5 * time.Second):
 		return errors.New("ResponsesC msg didn't arrive after 5 seconds")
 	}

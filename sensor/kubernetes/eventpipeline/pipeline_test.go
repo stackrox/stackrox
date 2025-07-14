@@ -183,7 +183,7 @@ func (s *eventPipelineSuite) Test_ReprocessDeployments() {
 		assert.True(s.T(), resourceEvent.DeploymentReferences[0].ForceDetection)
 	})
 
-	err := s.pipeline.ProcessMessage(msgFromCentral, nil)
+	err := s.pipeline.ProcessMessage(msgFromCentral, s.T().Context())
 	s.NoError(err)
 
 	messageReceived.Wait()
@@ -204,7 +204,7 @@ func (s *eventPipelineSuite) Test_PolicySync() {
 		defer messageReceived.Done()
 	})
 
-	err := s.pipeline.ProcessMessage(msgFromCentral, nil)
+	err := s.pipeline.ProcessMessage(msgFromCentral, s.T().Context())
 	s.NoError(err)
 
 	messageReceived.Wait()
@@ -233,7 +233,7 @@ func (s *eventPipelineSuite) Test_UpdatedImage() {
 		assertResourceEvent(s.T(), resourceEvent)
 	})
 
-	err := s.pipeline.ProcessMessage(msgFromCentral, nil)
+	err := s.pipeline.ProcessMessage(msgFromCentral, s.T().Context())
 	s.NoError(err)
 
 	messageReceived.Wait()
@@ -262,7 +262,7 @@ func (s *eventPipelineSuite) Test_ReprocessDeployment() {
 		assertResourceEvent(s.T(), resourceEvent)
 	})
 
-	err := s.pipeline.ProcessMessage(msgFromCentral, nil)
+	err := s.pipeline.ProcessMessage(msgFromCentral, s.T().Context())
 	s.NoError(err)
 
 	messageReceived.Wait()
@@ -291,7 +291,7 @@ func (s *eventPipelineSuite) Test_InvalidateImageCache() {
 		assertResourceEvent(s.T(), resourceEvent)
 	})
 
-	err := s.pipeline.ProcessMessage(msgFromCentral, nil)
+	err := s.pipeline.ProcessMessage(msgFromCentral, s.T().Context())
 	s.NoError(err)
 
 	messageReceived.Wait()
