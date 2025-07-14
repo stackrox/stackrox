@@ -140,6 +140,7 @@ jobs:
     - name: Check Konflux YAML formatting
       run: |
         pip3 install yamllint
+        echo "::notice::If this step fails, expand the regions below in order to see what checks failed per each file."
         yamllint --config-file .tekton/.yamllint.yaml --format github .tekton/
 
   golangci-lint:
