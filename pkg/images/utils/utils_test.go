@@ -341,7 +341,7 @@ func TestIsRedHatImageName(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			imgName, _, err := GenerateImageNameFromString(tc.imageStr)
 			assert.NoError(t, err)
-			got := IsRedHatImageName(imgName)
+			got := isRedHatImageName(imgName)
 			assert.Equal(t, tc.want, got)
 		})
 	}
