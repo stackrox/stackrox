@@ -14,6 +14,7 @@ import (
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	podDatastore "github.com/stackrox/rox/central/pod/datastore"
+	deploymentsView "github.com/stackrox/rox/central/views/deployments"
 	imagesView "github.com/stackrox/rox/central/views/images"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/jsonutil"
@@ -37,12 +38,13 @@ var (
 // ExportServicePostgresTestHelper is a utility to help testing the
 // export APIs (takes over the data injection).
 type ExportServicePostgresTestHelper struct {
-	Ctx         context.Context
-	pool        *pgtest.TestPostgres
-	Deployments deploymentDataStore.DataStore
-	Images      imageDataStore.DataStore
-	ImageView   imagesView.ImageView
-	Pods        podDatastore.DataStore
+	Ctx            context.Context
+	pool           *pgtest.TestPostgres
+	Deployments    deploymentDataStore.DataStore
+	Images         imageDataStore.DataStore
+	ImageView      imagesView.ImageView
+	Pods           podDatastore.DataStore
+	DeploymentView deploymentsView.DeploymentView
 }
 
 // SetupTest prepares the ExportServicePostgresTestHelper struct for testing.
@@ -60,6 +62,7 @@ func (h *ExportServicePostgresTestHelper) SetupTest(tb testing.TB) error {
 		return err
 	}
 	h.Deployments = deploymentStore
+	h.DeploymentView = deploymentsView.NewDeploymentView(h.pool)
 	h.Images = imageDataStore.GetTestPostgresDataStore(tb, h.pool)
 	h.ImageView = imagesView.NewImageView(h.pool)
 	h.Pods = podDatastore.GetTestPostgresDataStore(tb, h.pool)

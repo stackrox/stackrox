@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http/httptest"
+	"reflect"
 	"regexp"
 	"strconv"
 	"testing"
@@ -21,6 +22,8 @@ import (
 	k8sroleMocks "github.com/stackrox/rox/central/rbac/k8srole/datastore/mocks"
 	k8srolebindingMocks "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore/mocks"
 	secretMocks "github.com/stackrox/rox/central/secret/datastore/mocks"
+	deploymentsViewMocks "github.com/stackrox/rox/central/views/deployments/mocks"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
@@ -42,8 +45,11 @@ var (
 )
 
 type mocks struct {
+	ctrl *gomock.Controller
+
 	cluster        *clusterMocks.MockDataStore
 	deployment     *deploymentMocks.MockDataStore
+	deploymentView *deploymentsViewMocks.MockDeploymentView
 	process        *processMocks.MockDataStore
 	k8srole        *k8sroleMocks.MockDataStore
 	k8srolebinding *k8srolebindingMocks.MockDataStore
@@ -57,6 +63,7 @@ func mockResolver(t *testing.T) mocks {
 	ctrl := gomock.NewController(t)
 	cluster := clusterMocks.NewMockDataStore(ctrl)
 	deployment := deploymentMocks.NewMockDataStore(ctrl)
+	deploymentView := deploymentsViewMocks.NewMockDeploymentView(ctrl)
 	process := processMocks.NewMockDataStore(ctrl)
 	k8srole := k8sroleMocks.NewMockDataStore(ctrl)
 	k8srolebinding := k8srolebindingMocks.NewMockDataStore(ctrl)
@@ -74,10 +81,15 @@ func mockResolver(t *testing.T) mocks {
 		SecretsDataStore:      secret,
 		NetworkPoliciesStore:  nps,
 	}
+	loaders.RegisterTypeFactory(reflect.TypeOf(storage.Deployment{}), func() interface{} {
+		return loaders.NewDeploymentLoader(deployment, deploymentView)
+	})
 
 	return mocks{
+		ctrl:           ctrl,
 		cluster:        cluster,
 		deployment:     deployment,
+		deploymentView: deploymentView,
 		resolver:       resolver,
 		process:        process,
 		k8srole:        k8srole,

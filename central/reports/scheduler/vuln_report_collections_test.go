@@ -16,6 +16,7 @@ import (
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
 	collectionSearch "github.com/stackrox/rox/central/resourcecollection/datastore/search"
 	collectionPostgres "github.com/stackrox/rox/central/resourcecollection/datastore/store/postgres"
+	deploymentsView "github.com/stackrox/rox/central/views/deployments"
 	"github.com/stackrox/rox/central/views/imagecomponentflat"
 	"github.com/stackrox/rox/central/views/imagecve"
 	"github.com/stackrox/rox/central/views/imagecveflat"
@@ -79,6 +80,7 @@ func (s *ReportingWithCollectionsTestSuite) SetupSuite() {
 			imagecve.NewCVEView(s.testDB.DB),
 			imagecveflat.NewCVEFlatView(s.testDB.DB),
 			imagecomponentflat.NewComponentFlatView(s.testDB.DB),
+			deploymentsView.NewDeploymentView(s.testDB.DB),
 		)
 	} else {
 		imgDataStore = resolvers.CreateTestImageDatastore(s.T(), s.testDB, mockCtrl)
@@ -90,6 +92,7 @@ func (s *ReportingWithCollectionsTestSuite) SetupSuite() {
 			resolvers.CreateTestImageComponentCVEEdgeDatastore(s.T(), s.testDB),
 			resolvers.CreateTestImageCVEEdgeDatastore(s.T(), s.testDB),
 			resolvers.CreateTestDeploymentDatastore(s.T(), s.testDB, mockCtrl, imgDataStore),
+			deploymentsView.NewDeploymentView(s.testDB.DB),
 		)
 	}
 
