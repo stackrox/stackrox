@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/central/cluster/datastore/internal/search"
 	clusterStore "github.com/stackrox/rox/central/cluster/store/cluster"
 	clusterHealthStore "github.com/stackrox/rox/central/cluster/store/clusterhealth"
+	clusterInitStore "github.com/stackrox/rox/central/clusterinit/store"
 	compliancePruning "github.com/stackrox/rox/central/complianceoperator/v2/pruner"
 	clusterCVEDS "github.com/stackrox/rox/central/cve/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
@@ -67,6 +68,7 @@ var (
 
 type datastoreImpl struct {
 	clusterStorage            clusterStore.Store
+	clusterInitStore          clusterInitStore.Store
 	clusterHealthStorage      clusterHealthStore.Store
 	clusterCVEDataStore       clusterCVEDS.DataStore
 	alertDataStore            alertDataStore.DataStore
@@ -881,6 +883,10 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 
 	} else if clusterName != "" {
 		// At this point, we can be sure that the cluster does not exist.
+		if err := ds.clusterInitStore.InitiateClusterRegistration(ctx, registrantID, clusterName); err != nil {
+			return nil, err
+		}
+
 		cluster = &storage.Cluster{
 			Name:               clusterName,
 			InitBundleId:       registrantID,
