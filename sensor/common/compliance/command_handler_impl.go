@@ -1,6 +1,8 @@
 package compliance
 
 import (
+	"context"
+	"fmt"
 	"sync/atomic"
 
 	"github.com/pkg/errors"
@@ -42,6 +44,10 @@ func (c *commandHandlerImpl) ResponsesC() <-chan *message.ExpiringMessage {
 func (c *commandHandlerImpl) Start() error {
 	go c.run()
 	return nil
+}
+
+func (c *commandHandlerImpl) Name() string {
+	return fmt.Sprintf("%T", c)
 }
 
 func (c *commandHandlerImpl) Stop() {

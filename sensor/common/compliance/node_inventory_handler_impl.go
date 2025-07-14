@@ -1,6 +1,8 @@
 package compliance
 
 import (
+	"context"
+	"fmt"
 	"strconv"
 
 	"github.com/pkg/errors"
@@ -49,6 +51,10 @@ type nodeInventoryHandlerImpl struct {
 	// archCache stores an architecture per node, so that it can be used in the index report for
 	// the 'rhcos' package. The arch is discovered once and then reused for subsequent scans.
 	archCache map[string]string
+}
+
+func (c *nodeInventoryHandlerImpl) Name() string {
+	return fmt.Sprintf("%T", c)
 }
 
 func (c *nodeInventoryHandlerImpl) Stopped() concurrency.ReadOnlyErrorSignal {

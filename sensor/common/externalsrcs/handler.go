@@ -2,6 +2,8 @@ package externalsrcs
 
 import (
 	"bytes"
+	"context"
+	"fmt"
 	"sort"
 
 	"github.com/pkg/errors"
@@ -62,6 +64,10 @@ func (h *handlerImpl) Start() error {
 
 func (h *handlerImpl) Stop() {
 	h.stopSig.Signal()
+}
+
+func (h *handlerImpl) Name() string {
+	return fmt.Sprintf("%T", h)
 }
 
 func (h *handlerImpl) Notify(common.SensorComponentEvent) {}
