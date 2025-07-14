@@ -8,8 +8,11 @@ import (
 	pkgErrors "github.com/pkg/errors"
 	"github.com/stackrox/rox/central/auth/m2m"
 	"github.com/stackrox/rox/central/auth/store"
+	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/errox"
 	pgPkg "github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -28,6 +31,7 @@ type datastoreImpl struct {
 	store         store.Store
 	set           m2m.TokenExchangerSet
 	issuerFetcher m2m.ServiceAccountIssuerFetcher
+	roleDataStore roleDataStore.DataStore
 
 	mutex sync.RWMutex
 }
@@ -64,6 +68,16 @@ func (d *datastoreImpl) upsertAuthM2MConfigNoLock(ctx context.Context,
 	config *storage.AuthMachineToMachineConfig) (*storage.AuthMachineToMachineConfig, error) {
 	if err := sac.VerifyAuthzOK(accessSAC.WriteAllowed(ctx)); err != nil {
 		return nil, err
+	}
+
+	if err := verifyM2MConfigOrigin(ctx, config); err != nil {
+		return nil, err
+	}
+
+	if config.GetTraits().GetOrigin() == storage.Traits_DECLARATIVE {
+		if err := d.verifyConfigRolesExist(ctx, config); err != nil {
+			return nil, err
+		}
 	}
 
 	// Get the existing stored config, if any.
@@ -108,6 +122,41 @@ func (d *datastoreImpl) upsertAuthM2MConfigNoLock(ctx context.Context,
 	}
 
 	return config, nil
+}
+
+func verifyM2MConfigOrigin(ctx context.Context, config *storage.AuthMachineToMachineConfig) error {
+	if !declarativeconfig.CanModifyResource(ctx, config) {
+		return pkgErrors.Wrapf(errox.NotAuthorized, "machine to machine auth config %q's origin is %s, cannot be modified or deleted with the current permission",
+			config.GetIssuer(), config.GetTraits().GetOrigin())
+	}
+	return nil
+}
+
+func (ds *datastoreImpl) verifyConfigRolesExist(ctx context.Context, config *storage.AuthMachineToMachineConfig) error {
+	for _, mapping := range config.GetMappings() {
+		roleName := mapping.GetRole()
+		role, found, err := ds.roleDataStore.GetRole(ctx, roleName)
+		if err != nil {
+			return pkgErrors.Wrapf(
+				err,
+				"failed to retrieve role %q referenced by auth machine to machine config for issuer %q",
+				roleName,
+				config.GetIssuer(),
+			)
+		}
+		if !found {
+			return pkgErrors.Wrapf(
+				errox.InvalidArgs,
+				"missing role %q referenced by auth machine to machine config for issuer %q",
+				roleName,
+				config.GetIssuer(),
+			)
+		}
+		if err := declarativeconfig.VerifyReferencedResourceOrigin(role, config, roleName, config.GetIssuer()); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (d *datastoreImpl) GetTokenExchanger(ctx context.Context, issuer string) (m2m.TokenExchanger, bool) {
