@@ -119,7 +119,7 @@ jobs:
       - name: make style-slim
         run: make style-slim
 
-  konflux-style-check:
+  check-konflux-style:
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
@@ -290,7 +290,7 @@ jobs:
       - check-generated-files
       - misc-checks
       - style-check
-      - konflux-style-check
+      - check-konflux-style
       - golangci-lint
       - check-collector-and-scanner-images-exist
       - github-actions-lint
