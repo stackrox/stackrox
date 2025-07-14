@@ -929,7 +929,7 @@ func (suite *ManagerTestSuite) TestGetExternalNetworkPeers() {
 
 	mockTree := tree.NewDefaultNetworkTreeWrapper()
 	for _, entity := range entities {
-		mockTree.Insert(entity.GetInfo())
+		suite.NoError(mockTree.Insert(entity.GetInfo()))
 	}
 
 	suite.treeManager.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), fixtureconsts.Cluster1).Return(mockTree).AnyTimes()
