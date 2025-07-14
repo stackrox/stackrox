@@ -3,6 +3,7 @@ package tlsutils
 import (
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"net"
 	"time"
 
@@ -24,6 +25,29 @@ func DialContextWithRetries(ctx context.Context, network, addr string, tlsConfig
 	return DialContextWithRetriesWithDialer(ctx, dialer, network, addr)
 }
 
+func isPermanentError(err error) bool {
+	permanentErrorChecks := []func(error) bool{
+		func(err error) bool {
+			return errors.As(err, &x509.CertificateInvalidError{})
+		},
+		func(err error) bool {
+			return errors.As(err, &x509.HostnameError{})
+		},
+		func(err error) bool {
+			return errors.As(err, &x509.UnknownAuthorityError{})
+		},
+		func(err error) bool {
+			return errors.As(err, &x509.SystemRootsError{})
+		},
+	}
+	for _, isPermanent := range permanentErrorChecks {
+		if isPermanent(err) {
+			return true
+		}
+	}
+	return false
+}
+
 func DialContextWithRetriesWithDialer(ctx context.Context, dialer tls.Dialer, network, addr string) (*tls.Conn, error) {
 	expBackoff := backoff.NewExponentialBackOff(
 		backoff.WithInitialInterval(2*time.Second),
@@ -37,6 +61,10 @@ func DialContextWithRetriesWithDialer(ctx context.Context, dialer tls.Dialer, ne
 	err := backoff.RetryNotify(func() error {
 		dialConn, dialErr = DialContextWithDialer(ctx, dialer, network, addr)
 		if dialErr != nil {
+			if isPermanentError(dialErr) {
+				log.Warnf("tls dial failed due to permanent error %v, not retrying", dialErr)
+				return backoff.Permanent(dialErr)
+			}
 			return dialErr
 		}
 		return nil
