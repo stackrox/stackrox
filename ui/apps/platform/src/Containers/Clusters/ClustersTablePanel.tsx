@@ -1,5 +1,5 @@
 import React, { ReactElement, useState, useReducer } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import useDeepCompareEffect from 'use-deep-compare-effect';
 import {
     Alert,
@@ -13,14 +13,10 @@ import {
     ToolbarGroup,
     ToolbarItem,
     Spinner,
-} from '@patternfly/react-core';
-import {
-    Dropdown,
     DropdownItem,
-    DropdownPosition,
-    DropdownToggle,
-} from '@patternfly/react-core/deprecated';
+} from '@patternfly/react-core';
 
+import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 import CheckboxTable from 'Components/CheckboxTable';
 import CloseButton from 'Components/CloseButton';
 import Dialog from 'Components/Dialog';
@@ -92,12 +88,7 @@ function ClustersTablePanel({
     const { currentUser } = useAuthStatus();
     const hasAdminRole = Boolean(currentUser?.userInfo?.roles.some(({ name }) => name === 'Admin')); // optional chaining just in case of the unexpected
 
-    const [isInstallMenuOpen, setIsInstallMenuOpen] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
-
-    function onToggleInstallMenu(newIsInstallMenuOpen) {
-        setIsInstallMenuOpen(newIsInstallMenuOpen);
-    }
 
     function onFocusInstallMenu() {
         const element = document.getElementById('toggle-descriptions');
@@ -107,7 +98,6 @@ function ClustersTablePanel({
     }
 
     function onSelectInstallMenuItem() {
-        setIsInstallMenuOpen(false);
         onFocusInstallMenu();
     }
 
@@ -161,49 +151,6 @@ function ClustersTablePanel({
             />
         </div>
     ));
-
-    const installMenuOptions = [
-        <DropdownItem
-            key="init-bundle"
-            onClick={() => {
-                analyticsTrack({
-                    event: SECURE_A_CLUSTER_LINK_CLICKED,
-                    properties: { source: 'Secure a Cluster Dropdown' },
-                });
-            }}
-            component={<Link to={clustersSecureClusterPath}>Init bundle installation methods</Link>}
-        />,
-        <DropdownItem
-            key="cluster-registration-secret"
-            onClick={() => {
-                analyticsTrack({
-                    event: CRS_SECURE_A_CLUSTER_LINK_CLICKED,
-                    properties: { source: 'Secure a Cluster Dropdown' },
-                });
-            }}
-            component={
-                <Link to={clustersSecureClusterCrsPath}>
-                    Cluster registration secret installation methods
-                </Link>
-            }
-        />,
-        <DropdownItem
-            key="legacy"
-            component={
-                <Link
-                    to={`${clustersBasePath}/new`}
-                    onClick={() =>
-                        analyticsTrack({
-                            event: LEGACY_SECURE_A_CLUSTER_LINK_CLICKED,
-                            properties: { source: 'Secure a Cluster Dropdown' },
-                        })
-                    }
-                >
-                    Legacy installation method
-                </Link>
-            }
-        />,
-    ];
 
     function refreshClusterList(restSearch?: RestSearchOption[]) {
         // Although return works around typescript-eslint/no-floating-promises error elsewhere,
@@ -434,23 +381,56 @@ function ClustersTablePanel({
                             )}
                             {hasWriteAccessForCluster && (
                                 <ToolbarItem>
-                                    <Dropdown
+                                    <MenuDropdown
+                                        toggleText="Secure a cluster"
                                         onSelect={onSelectInstallMenuItem}
-                                        toggle={
-                                            <DropdownToggle
-                                                id="install-toggle"
-                                                toggleVariant="secondary"
-                                                onToggle={(_event, newIsInstallMenuOpen) =>
-                                                    onToggleInstallMenu(newIsInstallMenuOpen)
-                                                }
-                                            >
-                                                Secure a cluster
-                                            </DropdownToggle>
-                                        }
-                                        position={DropdownPosition.right}
-                                        isOpen={isInstallMenuOpen}
-                                        dropdownItems={installMenuOptions}
-                                    />
+                                        popperProps={{
+                                            position: 'end',
+                                        }}
+                                    >
+                                        <DropdownItem
+                                            key="init-bundle"
+                                            onClick={() => {
+                                                analyticsTrack({
+                                                    event: SECURE_A_CLUSTER_LINK_CLICKED,
+                                                    properties: {
+                                                        source: 'Secure a Cluster Dropdown',
+                                                    },
+                                                });
+                                                navigate(clustersSecureClusterPath);
+                                            }}
+                                        >
+                                            Init bundle installation methods
+                                        </DropdownItem>
+                                        <DropdownItem
+                                            key="cluster-registration-secret"
+                                            onClick={() => {
+                                                analyticsTrack({
+                                                    event: CRS_SECURE_A_CLUSTER_LINK_CLICKED,
+                                                    properties: {
+                                                        source: 'Secure a Cluster Dropdown',
+                                                    },
+                                                });
+                                                navigate(clustersSecureClusterCrsPath);
+                                            }}
+                                        >
+                                            Cluster registration secret installation methods
+                                        </DropdownItem>
+                                        <DropdownItem
+                                            key="legacy"
+                                            onClick={() => {
+                                                analyticsTrack({
+                                                    event: LEGACY_SECURE_A_CLUSTER_LINK_CLICKED,
+                                                    properties: {
+                                                        source: 'Secure a Cluster Dropdown',
+                                                    },
+                                                });
+                                                navigate(`${clustersBasePath}/new`);
+                                            }}
+                                        >
+                                            Legacy installation method
+                                        </DropdownItem>
+                                    </MenuDropdown>
                                 </ToolbarItem>
                             )}
                         </ToolbarGroup>
