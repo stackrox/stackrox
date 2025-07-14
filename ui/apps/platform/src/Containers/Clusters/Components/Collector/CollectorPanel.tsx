@@ -8,8 +8,10 @@ import {
     ListItem,
 } from '@patternfly/react-core';
 
+import { ClusterHealthStatus } from 'types/cluster.proto';
+import { healthStatusLabels } from 'messages/common';
+
 import ClusterHealthPanel from '../ClusterHealthPanel';
-import { ClusterHealthStatus } from '../../clusterTypes';
 import CollectorStatus from './CollectorStatus';
 
 export type CollectorPanelProps = {
@@ -21,21 +23,20 @@ function CollectorPanel({ healthStatus }: CollectorPanelProps) {
 
     let statusMessage: string | null = null;
 
-    if (collectorHealthStatus === 'UNINITIALIZED') {
-        statusMessage = 'Uninitialized';
-    } else if (collectorHealthStatus === 'UNAVAILABLE') {
+    if (collectorHealthStatus === 'UNAVAILABLE') {
         statusMessage = 'Upgrade Sensor to get Collector health information';
+    } else {
+        statusMessage = healthStatusLabels[collectorHealthStatus];
     }
 
     return (
         <ClusterHealthPanel header={<CollectorStatus healthStatus={healthStatus} />}>
             <DescriptionList>
-                {statusMessage ? (
-                    <DescriptionListGroup>
-                        <DescriptionListTerm>Status</DescriptionListTerm>
-                        <DescriptionListDescription>{statusMessage}</DescriptionListDescription>
-                    </DescriptionListGroup>
-                ) : (
+                <DescriptionListGroup>
+                    <DescriptionListTerm>Status</DescriptionListTerm>
+                    <DescriptionListDescription>{statusMessage}</DescriptionListDescription>
+                </DescriptionListGroup>
+                {collectorHealthInfo && (
                     <>
                         <DescriptionListGroup>
                             <DescriptionListTerm>Pods ready</DescriptionListTerm>
@@ -61,21 +62,21 @@ function CollectorPanel({ healthStatus }: CollectorPanelProps) {
                                 {collectorHealthInfo?.version ?? 'n/a'}
                             </DescriptionListDescription>
                         </DescriptionListGroup>
-                        {collectorHealthInfo?.statusErrors &&
-                            collectorHealthInfo.statusErrors.length > 0 && (
-                                <DescriptionListGroup>
-                                    <DescriptionListTerm>Errors</DescriptionListTerm>
-                                    <DescriptionListDescription>
-                                        <List>
-                                            {collectorHealthInfo.statusErrors.map((err) => (
-                                                <ListItem key={err}>{err}</ListItem>
-                                            ))}
-                                        </List>
-                                    </DescriptionListDescription>
-                                </DescriptionListGroup>
-                            )}
                     </>
                 )}
+                {collectorHealthInfo?.statusErrors &&
+                    collectorHealthInfo.statusErrors.length > 0 && (
+                        <DescriptionListGroup>
+                            <DescriptionListTerm>Errors</DescriptionListTerm>
+                            <DescriptionListDescription>
+                                <List>
+                                    {collectorHealthInfo.statusErrors.map((err) => (
+                                        <ListItem key={err}>{err}</ListItem>
+                                    ))}
+                                </List>
+                            </DescriptionListDescription>
+                        </DescriptionListGroup>
+                    )}
             </DescriptionList>
         </ClusterHealthPanel>
     );

@@ -17,7 +17,7 @@ import { TableUIState } from 'utils/getTableUIState';
 
 import { formatCloudProvider } from './cluster.helpers';
 import ClustersStatusGrid from './ClustersStatusGrid';
-import { CertExpiryStatus, ClusterHealthStatus } from './clusterTypes';
+import { CertExpiryStatus } from './clusterTypes';
 import ClusterDeletion from './Components/ClusterDeletion';
 import ClusterNameWithTypeIcon from './Components/ClusterNameWithTypeIcon';
 import ClusterStatus from './Components/ClusterStatus';
@@ -136,11 +136,8 @@ function ClustersTable({
                                                 columnIndex: 3,
                                             }}
                                         >
-                                            {/* TODO: needs update for upgrade */}
                                             <ClusterStatus
-                                                healthStatus={
-                                                    clusterInfo?.healthStatus as ClusterHealthStatus
-                                                }
+                                                healthStatus={clusterInfo?.healthStatus}
                                             />
                                         </Td>
                                         <Td

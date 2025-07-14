@@ -1,11 +1,13 @@
 import React, { ReactElement } from 'react';
 
+import { ClusterHealthStatus } from 'types/cluster.proto';
+import { getDistanceStrict } from 'utils/dateUtils';
+
 import {
     delayedAdmissionControlStatusStyle,
     healthStatusStyles,
     isDelayedSensorHealthStatus,
 } from '../../cluster.helpers';
-import { ClusterHealthStatus } from '../../clusterTypes';
 import HealthLabelWithDelayed from '../HealthLabelWithDelayed';
 import HealthStatus from '../HealthStatus';
 import HealthStatusNotApplicable from '../HealthStatusNotApplicable';
@@ -21,6 +23,7 @@ function AdmissionControlStatus({ healthStatus }: AdmissionControlStatusProps): 
 
     const { admissionControlHealthStatus, sensorHealthStatus, lastContact } = healthStatus;
     const isDelayed = !!(lastContact && isDelayedSensorHealthStatus(sensorHealthStatus));
+    const delayedText = isDelayed ? `(${getDistanceStrict(lastContact, new Date())} ago)` : '';
     const { Icon, fgColor } = isDelayed
         ? delayedAdmissionControlStatusStyle
         : healthStatusStyles[admissionControlHealthStatus];
@@ -29,7 +32,7 @@ function AdmissionControlStatus({ healthStatus }: AdmissionControlStatusProps): 
     const healthLabelElement = (
         <HealthLabelWithDelayed
             isDelayed={isDelayed}
-            delayedText=""
+            delayedText={delayedText}
             clusterHealthItem="admissionControl"
             clusterHealthItemStatus={admissionControlHealthStatus}
             isList
