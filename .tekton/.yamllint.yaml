@@ -5,10 +5,10 @@
 # an update to our pipelines, it does not mess up the formatting. See https://issues.redhat.com/browse/ROX-30101 for
 # context links if you need to learn more.
 
-# If you'd like to run the tool locally, you can do the following (in this directory):
+# If you'd like to run the tool locally, you can do the following (in the repo root):
 # $ docker run --rm -it -v .:/source -w /source --entrypoint=/bin/bash registry.access.redhat.com/ubi9/python-312
 # $ pip3 install yamllint
-# $ yamllint .
+# $ yamllint -c .tekton/.yamllint.yaml .tekton
 
 yaml-files:
 - '*.yaml'
