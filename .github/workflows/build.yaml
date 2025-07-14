@@ -84,7 +84,7 @@ jobs:
           export SKIP_UI_BUILD=true  # or ui-build's in all-builds even if already built
           set -x
           parallel="${{ matrix.parallel }}"  # sequential until verified working. TODO: test parallel=>1
-          make -j${parallel} -Oline cli-build main-build-nodeps ui-build clean-image
+          make -j${parallel} -Oline cli-build main-build-nodeps ui-build clean-image swagger-docs
             # main-build-nodeps: gobuild *. then, build roxctl if not CI
             # ui-build: test -d ui/build || make -C ui build
             # clean-image: clear image context dir contents
