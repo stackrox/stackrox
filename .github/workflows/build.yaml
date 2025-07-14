@@ -39,8 +39,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 100
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+
+      - name: Fetch tags
+        run: git fetch --depth=100 origin +refs/tags/*:refs/tags/*
 
       - uses: ./.github/actions/job-preamble
         with:
