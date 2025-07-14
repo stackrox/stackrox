@@ -135,7 +135,7 @@ func (c *centralCommunicationSuite) Test_StopCentralCommunication() {
 	c.mockService.connected.Wait()
 
 	// Stop CentralCommunication
-	c.comm.Stop(nil)
+	c.comm.Stop()
 	select {
 	case <-ch:
 		break
@@ -516,7 +516,7 @@ func (f fakeSensorComponent) Start() error {
 	panic("implement me")
 }
 
-func (f fakeSensorComponent) Stop(error) {
+func (f fakeSensorComponent) Stop() {
 	panic("implement me")
 }
 

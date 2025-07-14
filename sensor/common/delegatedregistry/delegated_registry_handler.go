@@ -86,7 +86,7 @@ func (d *delegatedRegistryImpl) Start() error {
 	return nil
 }
 
-func (d *delegatedRegistryImpl) Stop(_ error) {
+func (d *delegatedRegistryImpl) Stop() {
 	d.stopSig.Signal()
 }
 

@@ -9,8 +9,8 @@ import (
 
 // CentralReceiver handles receiving data from central.
 type CentralReceiver interface {
-	Start(stream central.SensorService_CommunicateClient, onStops ...func(error))
-	Stop(err error)
+	Start(stream central.SensorService_CommunicateClient, onStops ...func())
+	Stop()
 	Stopped() concurrency.ReadOnlyErrorSignal
 }
 
