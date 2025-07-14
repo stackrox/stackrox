@@ -10,7 +10,8 @@ export const selectors = scopeSelectors('main', {
     list: {
         authProviders: {
             dataRows: 'tbody tr',
-            createDropdownItem: 'button:contains("Create auth provider") + ul button',
+            createDropdownItem:
+                'button:contains("Create auth provider") + div ul li button[role="menuitem"]',
             tdType: 'td[data-label="Type"]',
             tdMinimumAccessRole: 'td[data-label="Minimum access role',
             tdRules: 'td[data-label="Rules"]',
