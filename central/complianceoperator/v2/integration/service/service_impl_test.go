@@ -181,7 +181,25 @@ func (s *ComplianceIntegrationServiceTestSuite) TestListComplianceIntegrations()
 				StatusErrors:        []string{"Error 1", "Error 2", "Error 3"},
 			}, true, nil).Times(1)
 
-			s.clusterDatastore.EXPECT().GetCluster(gomock.Any(), gomock.Any()).Return(&storage.Cluster{HealthStatus: &storage.ClusterHealthStatus{SensorHealthStatus: tc.sensorHealthState.healthStatus}}, tc.sensorHealthState.found, tc.sensorHealthState.err).Times(1)
+			s.clusterDatastore.EXPECT().WalkClusters(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, fn func(c *storage.Cluster) error) error {
+				// Getting clusters from DB failed.
+				if tc.sensorHealthState.err != nil {
+					return errors.New("DB error")
+				}
+
+				storedClusters := []*storage.Cluster{
+					{Id: fixtureconsts.Cluster2, HealthStatus: &storage.ClusterHealthStatus{SensorHealthStatus: storage.ClusterHealthStatus_UNINITIALIZED}},
+					{Id: fixtureconsts.Cluster3, HealthStatus: &storage.ClusterHealthStatus{SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY}},
+				}
+				if tc.sensorHealthState.found {
+					storedClusters = append(storedClusters, &storage.Cluster{Id: fixtureconsts.Cluster1, HealthStatus: &storage.ClusterHealthStatus{SensorHealthStatus: tc.sensorHealthState.healthStatus}})
+				}
+
+				for _, cluster := range storedClusters {
+					_ = fn(cluster)
+				}
+				return nil
+			})
 
 			s.complianceIntegrationDataStore.EXPECT().GetComplianceIntegrationsView(allAccessContext, tc.expectedQ).
 				Return([]*datastore.IntegrationDetails{{

@@ -90,18 +90,24 @@ func (s *serviceImpl) ListComplianceIntegrations(ctx context.Context, req *v2.Ra
 		return nil, errors.Wrap(err, "failed to convert compliance integrations.")
 	}
 
+	clusterSensorStatuses := map[string]storage.ClusterHealthStatus_HealthStatusLabel{}
+	errFetchStatus := s.clusterDS.WalkClusters(ctx, func(cluster *storage.Cluster) error {
+		clusterSensorStatuses[cluster.GetId()] = cluster.GetHealthStatus().GetSensorHealthStatus()
+		return nil
+	})
+
 	// Enrich cluster status with sensor connection status.
 	for _, apiIntegration := range apiIntegrations {
-		cluster, found, err := s.clusterDS.GetCluster(ctx, apiIntegration.GetClusterId())
-		if err != nil {
+		if errFetchStatus != nil {
 			apiIntegration.StatusErrors = append(apiIntegration.StatusErrors, fmt.Sprintf(fmtGetClusterErr, apiIntegration.GetClusterName()))
 			continue
 		}
+		clusterSensorStatus, found := clusterSensorStatuses[apiIntegration.GetClusterId()]
 		if !found {
 			apiIntegration.StatusErrors = append(apiIntegration.StatusErrors, fmt.Sprintf(fmtGetClusterNotFound, apiIntegration.GetClusterName()))
 			continue
 		}
-		if cluster.GetHealthStatus().GetSensorHealthStatus() != storage.ClusterHealthStatus_HEALTHY {
+		if clusterSensorStatus != storage.ClusterHealthStatus_HEALTHY {
 			apiIntegration.StatusErrors = append(apiIntegration.StatusErrors, fmt.Sprintf(fmtGetClusterUnhealthy, apiIntegration.GetClusterName()))
 		}
 	}
