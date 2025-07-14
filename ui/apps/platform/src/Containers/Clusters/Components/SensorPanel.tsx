@@ -5,12 +5,13 @@ import {
     DescriptionListTerm,
     DescriptionListDescription,
 } from '@patternfly/react-core';
+import { healthStatusLabels } from 'messages/common';
 
+import { ClusterHealthStatus } from 'types/cluster.proto';
 import { getDateTime, getDistanceStrictAsPhrase } from 'utils/dateUtils';
 
 import { isDelayedSensorHealthStatus } from '../cluster.helpers';
 import ClusterHealthPanel from './ClusterHealthPanel';
-import { ClusterHealthStatus } from '../clusterTypes';
 import SensorStatus from './SensorStatus';
 
 export type SensorPanelProps = {
@@ -19,12 +20,6 @@ export type SensorPanelProps = {
 
 function SensorPanel({ healthStatus }: SensorPanelProps) {
     const { lastContact, sensorHealthStatus } = healthStatus;
-
-    let statusMessage: string | null = null;
-
-    if (sensorHealthStatus === 'UNINITIALIZED') {
-        statusMessage = 'Uninitialized';
-    }
 
     let lastContactText = 'n/a';
 
@@ -41,12 +36,13 @@ function SensorPanel({ healthStatus }: SensorPanelProps) {
     return (
         <ClusterHealthPanel header={<SensorStatus healthStatus={healthStatus} />}>
             <DescriptionList>
-                {statusMessage ? (
-                    <DescriptionListGroup>
-                        <DescriptionListTerm>Status</DescriptionListTerm>
-                        <DescriptionListDescription>{statusMessage}</DescriptionListDescription>
-                    </DescriptionListGroup>
-                ) : (
+                <DescriptionListGroup>
+                    <DescriptionListTerm>Status</DescriptionListTerm>
+                    <DescriptionListDescription>
+                        {healthStatusLabels[sensorHealthStatus]}
+                    </DescriptionListDescription>
+                </DescriptionListGroup>
+                {sensorHealthStatus !== 'UNINITIALIZED' && (
                     <DescriptionListGroup>
                         <DescriptionListTerm>Last contact</DescriptionListTerm>
                         <DescriptionListDescription>{lastContactText}</DescriptionListDescription>

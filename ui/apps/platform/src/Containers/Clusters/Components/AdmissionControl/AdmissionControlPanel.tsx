@@ -8,9 +8,11 @@ import {
     ListItem,
 } from '@patternfly/react-core';
 
+import { healthStatusLabels } from 'messages/common';
+import { ClusterHealthStatus } from 'types/cluster.proto';
+
 import AdmissionControlStatus from './AdmissionControlStatus';
 import ClusterHealthPanel from '../ClusterHealthPanel';
-import { ClusterHealthStatus } from '../../clusterTypes';
 
 export type AdmissionControlPanelProps = {
     healthStatus: ClusterHealthStatus;
@@ -21,21 +23,20 @@ function AdmissionControlPanel({ healthStatus }: AdmissionControlPanelProps) {
 
     let statusMessage: string | null = null;
 
-    if (admissionControlHealthStatus === 'UNINITIALIZED') {
-        statusMessage = 'Uninitialized';
-    } else if (admissionControlHealthStatus === 'UNAVAILABLE') {
+    if (admissionControlHealthStatus === 'UNAVAILABLE') {
         statusMessage = 'Upgrade Sensor to get Admission Control health information';
+    } else {
+        statusMessage = healthStatusLabels[admissionControlHealthStatus];
     }
 
     return (
         <ClusterHealthPanel header={<AdmissionControlStatus healthStatus={healthStatus} />}>
             <DescriptionList>
-                {statusMessage ? (
-                    <DescriptionListGroup>
-                        <DescriptionListTerm>Status</DescriptionListTerm>
-                        <DescriptionListDescription>{statusMessage}</DescriptionListDescription>
-                    </DescriptionListGroup>
-                ) : (
+                <DescriptionListGroup>
+                    <DescriptionListTerm>Status</DescriptionListTerm>
+                    <DescriptionListDescription>{statusMessage}</DescriptionListDescription>
+                </DescriptionListGroup>
+                {admissionControlHealthInfo && (
                     <>
                         <DescriptionListGroup>
                             <DescriptionListTerm>Pods ready</DescriptionListTerm>
@@ -49,23 +50,21 @@ function AdmissionControlPanel({ healthStatus }: AdmissionControlPanelProps) {
                                 {admissionControlHealthInfo?.totalDesiredPods ?? 'n/a'}
                             </DescriptionListDescription>
                         </DescriptionListGroup>
-                        {admissionControlHealthInfo?.statusErrors &&
-                            admissionControlHealthInfo.statusErrors.length > 0 && (
-                                <DescriptionListGroup>
-                                    <DescriptionListTerm>Errors</DescriptionListTerm>
-                                    <DescriptionListDescription>
-                                        <List>
-                                            {admissionControlHealthInfo.statusErrors.map(
-                                                (error) => (
-                                                    <ListItem key={error}>{error}</ListItem>
-                                                )
-                                            )}
-                                        </List>
-                                    </DescriptionListDescription>
-                                </DescriptionListGroup>
-                            )}
                     </>
                 )}
+                {admissionControlHealthInfo?.statusErrors &&
+                    admissionControlHealthInfo.statusErrors.length > 0 && (
+                        <DescriptionListGroup>
+                            <DescriptionListTerm>Errors</DescriptionListTerm>
+                            <DescriptionListDescription>
+                                <List>
+                                    {admissionControlHealthInfo.statusErrors.map((error) => (
+                                        <ListItem key={error}>{error}</ListItem>
+                                    ))}
+                                </List>
+                            </DescriptionListDescription>
+                        </DescriptionListGroup>
+                    )}
             </DescriptionList>
         </ClusterHealthPanel>
     );

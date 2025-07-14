@@ -9,9 +9,9 @@ import {
 } from '@patternfly/react-core';
 
 import { healthStatusLabels } from 'messages/common';
+import { ClusterHealthStatus } from 'types/cluster.proto';
 
 import ClusterHealthPanel from '../ClusterHealthPanel';
-import { ClusterHealthStatus } from '../../clusterTypes';
 import ScannerStatus from './ScannerStatus';
 
 export type ScannerPanelProps = {
@@ -26,32 +26,42 @@ function resolveDbHealthStatus(desiredPods?: number, readyPods?: number): string
 }
 
 function ScannerPanel({ healthStatus }: ScannerPanelProps) {
-    const { scannerHealthInfo } = healthStatus;
+    const { scannerHealthInfo, scannerHealthStatus } = healthStatus;
 
     return (
         <ClusterHealthPanel header={<ScannerStatus healthStatus={healthStatus} />}>
             <DescriptionList>
                 <DescriptionListGroup>
-                    <DescriptionListTerm>Database</DescriptionListTerm>
+                    <DescriptionListTerm>Status</DescriptionListTerm>
                     <DescriptionListDescription>
-                        {resolveDbHealthStatus(
-                            scannerHealthInfo?.totalDesiredDbPods,
-                            scannerHealthInfo?.totalReadyDbPods
-                        )}
+                        {healthStatusLabels[scannerHealthStatus]}
                     </DescriptionListDescription>
                 </DescriptionListGroup>
-                <DescriptionListGroup>
-                    <DescriptionListTerm>Pods ready</DescriptionListTerm>
-                    <DescriptionListDescription>
-                        {scannerHealthInfo?.totalReadyAnalyzerPods ?? 'n/a'}
-                    </DescriptionListDescription>
-                </DescriptionListGroup>
-                <DescriptionListGroup>
-                    <DescriptionListTerm>Pods expected</DescriptionListTerm>
-                    <DescriptionListDescription>
-                        {scannerHealthInfo?.totalDesiredAnalyzerPods ?? 'n/a'}
-                    </DescriptionListDescription>
-                </DescriptionListGroup>
+                {scannerHealthInfo && (
+                    <>
+                        <DescriptionListGroup>
+                            <DescriptionListTerm>Pods ready</DescriptionListTerm>
+                            <DescriptionListDescription>
+                                {scannerHealthInfo?.totalReadyAnalyzerPods ?? 'n/a'}
+                            </DescriptionListDescription>
+                        </DescriptionListGroup>
+                        <DescriptionListGroup>
+                            <DescriptionListTerm>Pods expected</DescriptionListTerm>
+                            <DescriptionListDescription>
+                                {scannerHealthInfo?.totalDesiredAnalyzerPods ?? 'n/a'}
+                            </DescriptionListDescription>
+                        </DescriptionListGroup>
+                        <DescriptionListGroup>
+                            <DescriptionListTerm>Database</DescriptionListTerm>
+                            <DescriptionListDescription>
+                                {resolveDbHealthStatus(
+                                    scannerHealthInfo?.totalDesiredDbPods,
+                                    scannerHealthInfo?.totalReadyDbPods
+                                )}
+                            </DescriptionListDescription>
+                        </DescriptionListGroup>
+                    </>
+                )}
                 {scannerHealthInfo?.statusErrors && scannerHealthInfo.statusErrors.length > 0 && (
                     <DescriptionListGroup>
                         <DescriptionListTerm>Errors</DescriptionListTerm>
