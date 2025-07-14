@@ -71,7 +71,7 @@ jobs:
         run: |
           set -x
           parallel="${{ matrix.parallel }}"  # sequential until verified working. TODO: test parallel=>1
-          make -j${parallel} -Oline deps  # go mod tidy all go.sum files
+          make -j${parallel} -Oline deps clean-image  # go mod tidy all go.sum files
             # semaphore ./deps controls if run
             # if [[ ! -d ./deps ]]; then for d in $(find . -name go.sum | xargs dirname); do pushd $d; go mod tidy; popd; done; fi
             # make -j${parallel} -Oline build-prep  # depends on deps and creates empty build binary output path
@@ -84,7 +84,7 @@ jobs:
           export SKIP_UI_BUILD=true  # or ui-build's in all-builds even if already built
           set -x
           parallel="${{ matrix.parallel }}"  # sequential until verified working. TODO: test parallel=>1
-          make -j${parallel} -Oline cli-build main-build-nodeps ui-build clean-image swagger-docs
+          make -j${parallel} -Oline cli-build main-build-nodeps ui-build swagger-docs
             # main-build-nodeps: gobuild *. then, build roxctl if not CI
             # ui-build: test -d ui/build || make -C ui build
             # clean-image: clear image context dir contents
