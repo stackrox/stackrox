@@ -2,6 +2,7 @@ package deploymentenhancer
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -30,6 +31,10 @@ type DeploymentEnhancer struct {
 	ctxCancel        context.CancelFunc
 }
 
+func (d *DeploymentEnhancer) Name() string {
+	return fmt.Sprintf("%T", d)
+}
+
 // CreateEnhancer creates a new Enhancer
 func CreateEnhancer(provider store.Provider) common.SensorComponent {
 	ctx, ctxCancel := context.WithCancel(context.Background())
@@ -44,7 +49,7 @@ func CreateEnhancer(provider store.Provider) common.SensorComponent {
 }
 
 // ProcessMessage takes an incoming message and queues it for enhancement
-func (d *DeploymentEnhancer) ProcessMessage(msg *central.MsgToSensor) error {
+func (d *DeploymentEnhancer) ProcessMessage(msg *central.MsgToSensor, ctx context.Context) error {
 	toEnhance := msg.GetDeploymentEnhancementRequest()
 	if toEnhance == nil {
 		return nil

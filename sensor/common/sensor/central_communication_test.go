@@ -60,8 +60,8 @@ func (c *centralCommunicationSuite) SetupTest() {
 	// Setup Mocks:
 	c.mockHandler.EXPECT().GetDeploymentIdentification().AnyTimes().Return(nil)
 	c.mockHandler.EXPECT().GetHelmManagedConfig().AnyTimes().Return(nil)
-	c.mockHandler.EXPECT().ProcessMessage(gomock.Any()).AnyTimes().Return(nil)
-	c.mockDetector.EXPECT().ProcessMessage(gomock.Any()).AnyTimes().Return(nil)
+	c.mockHandler.EXPECT().ProcessMessage(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
+	c.mockDetector.EXPECT().ProcessMessage(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
 	c.mockDetector.EXPECT().ProcessPolicySync(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
 }
 
@@ -508,6 +508,10 @@ type fakeSensorComponent struct {
 	responsesC chan *message.ExpiringMessage
 }
 
+func (f fakeSensorComponent) Name() string {
+	return fmt.Sprintf("%T", f)
+}
+
 func (f fakeSensorComponent) Notify(common.SensorComponentEvent) {
 	panic("implement me")
 }
@@ -524,7 +528,7 @@ func (f fakeSensorComponent) Capabilities() []centralsensor.SensorCapability {
 	return []centralsensor.SensorCapability{}
 }
 
-func (f fakeSensorComponent) ProcessMessage(*central.MsgToSensor) error {
+func (f fakeSensorComponent) ProcessMessage(*central.MsgToSensor, context.Context) error {
 	return nil
 }
 

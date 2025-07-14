@@ -41,6 +41,10 @@ type handlerImpl struct {
 	complianceIsReady *concurrency.Signal
 }
 
+func (m *handlerImpl) Name() string {
+	return fmt.Sprintf("%T", m)
+}
+
 type scanScheduleConfiguration struct {
 	Suspend        *bool
 	Schedule       *string
@@ -85,7 +89,7 @@ func (m *handlerImpl) Capabilities() []centralsensor.SensorCapability {
 	return nil
 }
 
-func (m *handlerImpl) ProcessMessage(msg *central.MsgToSensor) error {
+func (m *handlerImpl) ProcessMessage(msg *central.MsgToSensor, ctx context.Context) error {
 	req := msg.GetComplianceRequest()
 	if req == nil {
 		return nil

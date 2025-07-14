@@ -2,12 +2,12 @@ package signal
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"strings"
 
-	"github.com/pkg/errors"
-
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	sensorAPI "github.com/stackrox/rox/generated/internalapi/sensor"
@@ -64,6 +64,10 @@ type serviceImpl struct {
 	authFuncOverride func(context.Context, string) (context.Context, error)
 }
 
+func (s *serviceImpl) Name() string {
+	return fmt.Sprintf("%T", s)
+}
+
 func authFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
 	err := idcheck.CollectorOnly().Authorized(ctx, fullMethodName)
 	return ctx, errors.Wrap(err, "collector authorization")
@@ -86,7 +90,7 @@ func (s *serviceImpl) Capabilities() []centralsensor.SensorCapability {
 	return nil
 }
 
-func (s *serviceImpl) ProcessMessage(_ *central.MsgToSensor) error {
+func (s *serviceImpl) ProcessMessage(msg *central.MsgToSensor, ctx context.Context) error {
 	return nil
 }
 

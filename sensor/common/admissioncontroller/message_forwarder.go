@@ -1,6 +1,9 @@
 package admissioncontroller
 
 import (
+	"context"
+	"fmt"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
@@ -55,6 +58,10 @@ func (h *admCtrlMsgForwarderImpl) Stop() {
 	h.stopper.Client().Stop()
 }
 
+func (h *admCtrlMsgForwarderImpl) Name() string {
+	return fmt.Sprintf("%T", h)
+}
+
 func (h *admCtrlMsgForwarderImpl) Notify(event common.SensorComponentEvent) {
 	// Propagate event to sub-components
 	for _, c := range h.components {
@@ -66,10 +73,10 @@ func (h *admCtrlMsgForwarderImpl) Capabilities() []centralsensor.SensorCapabilit
 	return nil
 }
 
-func (h *admCtrlMsgForwarderImpl) ProcessMessage(msg *central.MsgToSensor) error {
+func (h *admCtrlMsgForwarderImpl) ProcessMessage(msg *central.MsgToSensor, ctx context.Context) error {
 	errorList := errorhelpers.NewErrorList("ProcessMessage in AdmCtrlMsgForwarder")
 	for _, component := range h.components {
-		if err := component.ProcessMessage(msg); err != nil {
+		if err := component.ProcessMessage(msg, ctx); err != nil {
 			errorList.AddError(err)
 		}
 	}

@@ -55,6 +55,10 @@ type updaterImpl struct {
 	cancelCtx      context.CancelFunc
 }
 
+func (u *updaterImpl) Name() string {
+	return fmt.Sprintf("%T", u)
+}
+
 func (u *updaterImpl) Start() error {
 	go u.run(u.updateTicker.C)
 	return nil
@@ -80,7 +84,7 @@ func (u *updaterImpl) Capabilities() []centralsensor.SensorCapability {
 	return []centralsensor.SensorCapability{centralsensor.HealthMonitoringCap}
 }
 
-func (u *updaterImpl) ProcessMessage(_ *central.MsgToSensor) error {
+func (u *updaterImpl) ProcessMessage(msg *central.MsgToSensor, ctx context.Context) error {
 	return nil
 }
 

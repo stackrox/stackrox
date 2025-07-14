@@ -1,6 +1,9 @@
 package admissioncontroller
 
 import (
+	"context"
+	"fmt"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
@@ -28,6 +31,10 @@ type alertHandlerImpl struct {
 	centralReady concurrency.Signal
 }
 
+func (h *alertHandlerImpl) Name() string {
+	return fmt.Sprintf("%T", h)
+}
+
 func (h *alertHandlerImpl) Start() error {
 	go h.run()
 	return nil
@@ -51,7 +58,7 @@ func (h *alertHandlerImpl) Capabilities() []centralsensor.SensorCapability {
 	return nil
 }
 
-func (h *alertHandlerImpl) ProcessMessage(_ *central.MsgToSensor) error {
+func (h *alertHandlerImpl) ProcessMessage(msg *central.MsgToSensor, ctx context.Context) error {
 	return nil
 }
 

@@ -47,6 +47,10 @@ type serviceImpl struct {
 	stopper     set.Set[concurrency.Stopper]
 }
 
+func (s *serviceImpl) Name() string {
+	return fmt.Sprintf("%T", s)
+}
+
 func (s *serviceImpl) Notify(e common.SensorComponentEvent) {
 	log.Info(common.LogSensorComponentEvent(e))
 	switch e {
@@ -74,7 +78,7 @@ func (s *serviceImpl) Capabilities() []centralsensor.SensorCapability {
 	return nil
 }
 
-func (s *serviceImpl) ProcessMessage(_ *central.MsgToSensor) error {
+func (s *serviceImpl) ProcessMessage(msg *central.MsgToSensor, ctx context.Context) error {
 	return nil
 }
 

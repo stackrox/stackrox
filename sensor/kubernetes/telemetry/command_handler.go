@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"runtime/pprof"
 	"sync/atomic"
@@ -50,6 +51,10 @@ type commandHandler struct {
 
 	pendingContextCancels      map[string]context.CancelFunc
 	pendingContextCancelsMutex sync.Mutex
+}
+
+func (h *commandHandler) Name() string {
+	return fmt.Sprintf("%T", h)
 }
 
 // DiagnosticConfigurationFunc is a function that modifies the diagnostic configuration.
@@ -105,7 +110,7 @@ func (h *commandHandler) Notify(e common.SensorComponentEvent) {
 	}
 }
 
-func (h *commandHandler) ProcessMessage(msg *central.MsgToSensor) error {
+func (h *commandHandler) ProcessMessage(msg *central.MsgToSensor, ctx context.Context) error {
 	switch m := msg.GetMsg().(type) {
 	case *central.MsgToSensor_TelemetryDataRequest:
 		return h.processRequest(m.TelemetryDataRequest)

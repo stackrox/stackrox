@@ -112,6 +112,10 @@ type tlsIssuerImpl struct {
 	activateLock                 sync.Mutex
 }
 
+func (i *tlsIssuerImpl) Name() string {
+	return fmt.Sprintf("%T", i)
+}
+
 // Start starts the Sensor component and launches a certificate refresher that:
 // * checks the state of the certificates whenever Sensor connects to Central, and several months before they expire
 // * updates the certificates if needed
@@ -216,7 +220,7 @@ func (i *tlsIssuerImpl) ResponsesC() <-chan *message.ExpiringMessage {
 // ProcessMessage dispatches Central's messages to Sensor received via the Central receiver.
 // This method must not block as it would prevent centralReceiverImpl from sending messages
 // to other SensorComponents.
-func (i *tlsIssuerImpl) ProcessMessage(msg *central.MsgToSensor) error {
+func (i *tlsIssuerImpl) ProcessMessage(msg *central.MsgToSensor, ctx context.Context) error {
 	if i.getResponseFn == nil {
 		return errors.New("getResponseFn is not set")
 	}

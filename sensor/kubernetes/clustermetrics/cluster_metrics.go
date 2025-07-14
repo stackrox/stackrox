@@ -2,6 +2,7 @@ package clustermetrics
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
@@ -70,6 +71,10 @@ type clusterMetricsImpl struct {
 	pollTicker      *time.Ticker
 }
 
+func (cm *clusterMetricsImpl) Name() string {
+	return fmt.Sprintf("%T", cm)
+}
+
 func (cm *clusterMetricsImpl) Start() error {
 	go cm.Poll(cm.pollTicker.C)
 	return nil
@@ -95,7 +100,7 @@ func (cm *clusterMetricsImpl) Capabilities() []centralsensor.SensorCapability {
 	return []centralsensor.SensorCapability{}
 }
 
-func (cm *clusterMetricsImpl) ProcessMessage(_ *central.MsgToSensor) error {
+func (cm *clusterMetricsImpl) ProcessMessage(msg *central.MsgToSensor, ctx context.Context) error {
 	return nil
 }
 

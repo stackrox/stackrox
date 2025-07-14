@@ -3,6 +3,7 @@ package admissioncontroller
 import (
 	"compress/gzip"
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
@@ -40,6 +41,10 @@ type configMapPersister struct {
 	settingsStreamIt concurrency.ValueStreamIter[*sensor.AdmissionControlSettings]
 }
 
+func (p *configMapPersister) Name() string {
+	return fmt.Sprintf("%T", p)
+}
+
 // NewConfigMapSettingsPersister creates a config persister object for the admission controller.
 func NewConfigMapSettingsPersister(k8sClient kubernetes.Interface, settingsMgr admissioncontroller.SettingsManager, namespace string) common.SensorComponent {
 	return &configMapPersister{
@@ -67,7 +72,7 @@ func (p *configMapPersister) Capabilities() []centralsensor.SensorCapability {
 	return nil
 }
 
-func (p *configMapPersister) ProcessMessage(_ *central.MsgToSensor) error {
+func (p *configMapPersister) ProcessMessage(msg *central.MsgToSensor, ctx context.Context) error {
 	return nil
 }
 

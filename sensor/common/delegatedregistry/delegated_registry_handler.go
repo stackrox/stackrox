@@ -3,6 +3,7 @@ package delegatedregistry
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -42,6 +43,10 @@ type delegatedRegistryImpl struct {
 	imageSvc      v1.ImageServiceClient
 }
 
+func (d *delegatedRegistryImpl) Name() string {
+	return fmt.Sprintf("%T", d)
+}
+
 // NewHandler returns a new instance of Handler.
 func NewHandler(registryStore *registry.Store, localScan *scan.LocalScan) Handler {
 	return &delegatedRegistryImpl{
@@ -61,7 +66,7 @@ func (d *delegatedRegistryImpl) Capabilities() []centralsensor.SensorCapability 
 
 func (d *delegatedRegistryImpl) Notify(_ common.SensorComponentEvent) {}
 
-func (d *delegatedRegistryImpl) ProcessMessage(msg *central.MsgToSensor) error {
+func (d *delegatedRegistryImpl) ProcessMessage(msg *central.MsgToSensor, ctx context.Context) error {
 	if !enabled {
 		return nil
 	}

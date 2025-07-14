@@ -1,6 +1,8 @@
 package compliance
 
 import (
+	"context"
+	"fmt"
 	"time"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -39,6 +41,10 @@ type auditLogCollectionManagerImpl struct {
 	connectionLock sync.RWMutex
 }
 
+func (a *auditLogCollectionManagerImpl) Name() string {
+	return fmt.Sprintf("%T", a)
+}
+
 func (a *auditLogCollectionManagerImpl) Start() error {
 	go a.runStateSaver()
 	go a.runUpdater(a.updaterTicker.C)
@@ -68,7 +74,7 @@ func (a *auditLogCollectionManagerImpl) Capabilities() []centralsensor.SensorCap
 	return []centralsensor.SensorCapability{centralsensor.AuditLogEventsCap}
 }
 
-func (a *auditLogCollectionManagerImpl) ProcessMessage(_ *central.MsgToSensor) error {
+func (a *auditLogCollectionManagerImpl) ProcessMessage(msg *central.MsgToSensor, ctx context.Context) error {
 	// This component doesn't actually process or handle any messages sent to Sensor. It uses the sensor component
 	// so that the lifecycle (start, stop) can be handled when Sensor starts up. The actual messages from central to
 	// enable/disable audit log collection is handled as part of the dynamic config in config.Handler which then calls

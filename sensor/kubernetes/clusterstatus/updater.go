@@ -3,6 +3,7 @@ package clusterstatus
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"slices"
 	"sync/atomic"
 	"time"
@@ -53,6 +54,10 @@ type updaterImpl struct {
 	getProviderMetadataFromOpenShift providerMetadataFromOpenShift
 }
 
+func (u *updaterImpl) Name() string {
+	return fmt.Sprintf("%T", u)
+}
+
 func (u *updaterImpl) Start() error {
 	// We don't do anything on Start, run will be called when Central is reachable.
 	return nil
@@ -101,7 +106,7 @@ func (u *updaterImpl) Capabilities() []centralsensor.SensorCapability {
 	return nil
 }
 
-func (u *updaterImpl) ProcessMessage(_ *central.MsgToSensor) error {
+func (u *updaterImpl) ProcessMessage(msg *central.MsgToSensor, ctx context.Context) error {
 	return nil
 }
 

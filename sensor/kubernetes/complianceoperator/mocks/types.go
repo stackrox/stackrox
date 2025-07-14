@@ -10,6 +10,7 @@
 package mocks
 
 import (
+	context "context"
 	reflect "reflect"
 
 	central "github.com/stackrox/rox/generated/internalapi/central"
@@ -109,6 +110,20 @@ func (mr *MockInfoUpdaterMockRecorder) GetNamespace() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNamespace", reflect.TypeOf((*MockInfoUpdater)(nil).GetNamespace))
 }
 
+// Name mocks base method.
+func (m *MockInfoUpdater) Name() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Name")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// Name indicates an expected call of Name.
+func (mr *MockInfoUpdaterMockRecorder) Name() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Name", reflect.TypeOf((*MockInfoUpdater)(nil).Name))
+}
+
 // Notify mocks base method.
 func (m *MockInfoUpdater) Notify(e common.SensorComponentEvent) {
 	m.ctrl.T.Helper()
@@ -122,17 +137,17 @@ func (mr *MockInfoUpdaterMockRecorder) Notify(e any) *gomock.Call {
 }
 
 // ProcessMessage mocks base method.
-func (m *MockInfoUpdater) ProcessMessage(msg *central.MsgToSensor) error {
+func (m *MockInfoUpdater) ProcessMessage(msg *central.MsgToSensor, ctx context.Context) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ProcessMessage", msg)
+	ret := m.ctrl.Call(m, "ProcessMessage", msg, ctx)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // ProcessMessage indicates an expected call of ProcessMessage.
-func (mr *MockInfoUpdaterMockRecorder) ProcessMessage(msg any) *gomock.Call {
+func (mr *MockInfoUpdaterMockRecorder) ProcessMessage(msg, ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessMessage", reflect.TypeOf((*MockInfoUpdater)(nil).ProcessMessage), msg)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessMessage", reflect.TypeOf((*MockInfoUpdater)(nil).ProcessMessage), msg, ctx)
 }
 
 // ResponsesC mocks base method.

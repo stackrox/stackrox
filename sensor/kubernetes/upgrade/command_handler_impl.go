@@ -2,6 +2,7 @@ package upgrade
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -39,6 +40,10 @@ type commandHandler struct {
 	checkInClient       central.SensorUpgradeControlServiceClient
 
 	configHandler config.Handler
+}
+
+func (h *commandHandler) Name() string {
+	return fmt.Sprintf("%T", h)
 }
 
 // NewCommandHandler returns a new upgrade command handler for Kubernetes.
@@ -106,7 +111,7 @@ func (h *commandHandler) waitForTermination(proc *process) {
 	}
 }
 
-func (h *commandHandler) ProcessMessage(msg *central.MsgToSensor) error {
+func (h *commandHandler) ProcessMessage(msg *central.MsgToSensor, ctx context.Context) error {
 	trigger := msg.GetSensorUpgradeTrigger()
 	if trigger == nil {
 		return nil

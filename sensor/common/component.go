@@ -1,6 +1,7 @@
 package common
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -67,8 +68,9 @@ type SensorComponent interface {
 	Stop()
 	Capabilities() []centralsensor.SensorCapability
 
-	ProcessMessage(msg *central.MsgToSensor) error
+	ProcessMessage(msg *central.MsgToSensor, ctx context.Context) error
 	ResponsesC() <-chan *message.ExpiringMessage
+	Name() string
 }
 
 // MessageToComplianceWithAddress adds the Hostname to sensor.MsgToCompliance so we know where to send it to.

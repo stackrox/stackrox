@@ -2,6 +2,7 @@ package image
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
@@ -59,6 +60,10 @@ type serviceImpl struct {
 	registryStore registryStore
 	localScan     localScan
 	centralReady  concurrency.Signal
+}
+
+func (s *serviceImpl) Name() string {
+	return fmt.Sprintf("%T", s)
 }
 
 func (s *serviceImpl) SetClient(conn grpc.ClientConnInterface) {
@@ -157,7 +162,7 @@ func (s *serviceImpl) Capabilities() []centralsensor.SensorCapability {
 	return nil
 }
 
-func (s *serviceImpl) ProcessMessage(_ *central.MsgToSensor) error {
+func (s *serviceImpl) ProcessMessage(msg *central.MsgToSensor, ctx context.Context) error {
 	return nil
 }
 

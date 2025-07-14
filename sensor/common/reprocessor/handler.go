@@ -1,6 +1,9 @@
 package reprocessor
 
 import (
+	"context"
+	"fmt"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
@@ -43,6 +46,10 @@ type handlerImpl struct {
 	stopSig            concurrency.ErrorSignal
 }
 
+func (h *handlerImpl) Name() string {
+	return fmt.Sprintf("%T", h)
+}
+
 func (h *handlerImpl) Start() error {
 	return nil
 }
@@ -59,7 +66,7 @@ func (h *handlerImpl) Capabilities() []centralsensor.SensorCapability {
 	return nil
 }
 
-func (h *handlerImpl) ProcessMessage(_ *central.MsgToSensor) error {
+func (h *handlerImpl) ProcessMessage(msg *central.MsgToSensor, ctx context.Context) error {
 	return nil
 }
 

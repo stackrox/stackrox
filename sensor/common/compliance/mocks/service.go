@@ -121,6 +121,20 @@ func (mr *MockServiceMockRecorder) IndexReportWraps() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IndexReportWraps", reflect.TypeOf((*MockService)(nil).IndexReportWraps))
 }
 
+// Name mocks base method.
+func (m *MockService) Name() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Name")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// Name indicates an expected call of Name.
+func (mr *MockServiceMockRecorder) Name() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Name", reflect.TypeOf((*MockService)(nil).Name))
+}
+
 // NodeInventories mocks base method.
 func (m *MockService) NodeInventories() <-chan *storage.NodeInventory {
 	m.ctrl.T.Helper()
@@ -162,17 +176,17 @@ func (mr *MockServiceMockRecorder) Output() *gomock.Call {
 }
 
 // ProcessMessage mocks base method.
-func (m *MockService) ProcessMessage(msg *central.MsgToSensor) error {
+func (m *MockService) ProcessMessage(msg *central.MsgToSensor, ctx context.Context) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ProcessMessage", msg)
+	ret := m.ctrl.Call(m, "ProcessMessage", msg, ctx)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // ProcessMessage indicates an expected call of ProcessMessage.
-func (mr *MockServiceMockRecorder) ProcessMessage(msg any) *gomock.Call {
+func (mr *MockServiceMockRecorder) ProcessMessage(msg, ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessMessage", reflect.TypeOf((*MockService)(nil).ProcessMessage), msg)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessMessage", reflect.TypeOf((*MockService)(nil).ProcessMessage), msg, ctx)
 }
 
 // RegisterServiceHandler mocks base method.

@@ -1,6 +1,9 @@
 package compliance
 
 import (
+	"context"
+	"fmt"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
@@ -19,6 +22,10 @@ type Multiplexer struct {
 	mp         channelmultiplexer.ChannelMultiplexer[common.MessageToComplianceWithAddress]
 	components []common.ComplianceComponent
 	stopper    concurrency.Stopper
+}
+
+func (c *Multiplexer) Name() string {
+	return fmt.Sprintf("%T", c)
 }
 
 // Stopped returns a signal allowing to check whether the component has been stopped
@@ -66,7 +73,7 @@ func (c *Multiplexer) Capabilities() []centralsensor.SensorCapability {
 }
 
 // ProcessMessage is unimplemented, part of the component interface
-func (c *Multiplexer) ProcessMessage(_ *central.MsgToSensor) error {
+func (c *Multiplexer) ProcessMessage(msg *central.MsgToSensor, ctx context.Context) error {
 	return nil
 }
 

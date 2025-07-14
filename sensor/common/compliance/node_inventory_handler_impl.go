@@ -104,7 +104,7 @@ func (c *nodeInventoryHandlerImpl) Notify(e common.SensorComponentEvent) {
 	}
 }
 
-func (c *nodeInventoryHandlerImpl) ProcessMessage(msg *central.MsgToSensor) error {
+func (c *nodeInventoryHandlerImpl) ProcessMessage(msg *central.MsgToSensor, ctx context.Context) error {
 	ackMsg := msg.GetNodeInventoryAck()
 	if ackMsg == nil {
 		return nil

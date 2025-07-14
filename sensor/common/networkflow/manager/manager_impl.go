@@ -365,7 +365,11 @@ type networkFlowManager struct {
 	pubSub  *internalmessage.MessageSubscriber
 }
 
-func (m *networkFlowManager) ProcessMessage(_ *central.MsgToSensor) error {
+func (m *networkFlowManager) Name() string {
+	return fmt.Sprintf("%T", m)
+}
+
+func (m *networkFlowManager) ProcessMessage(msg *central.MsgToSensor, ctx context.Context) error {
 	return nil
 }
 

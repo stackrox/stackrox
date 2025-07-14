@@ -2,10 +2,10 @@ package eventpipeline
 
 import (
 	"context"
+	"fmt"
 	"sync/atomic"
 
 	"github.com/pkg/errors"
-
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
@@ -42,13 +42,17 @@ type eventPipeline struct {
 	cancelContext context.CancelFunc
 }
 
+func (p *eventPipeline) Name() string {
+	return fmt.Sprintf("%T", p)
+}
+
 // Capabilities implements common.SensorComponent
 func (*eventPipeline) Capabilities() []centralsensor.SensorCapability {
 	return nil
 }
 
 // ProcessMessage implements common.SensorComponent
-func (p *eventPipeline) ProcessMessage(msg *central.MsgToSensor) error {
+func (p *eventPipeline) ProcessMessage(msg *central.MsgToSensor, ctx context.Context) error {
 	switch {
 	case msg.GetPolicySync() != nil:
 		return p.processPolicySync(msg.GetPolicySync())
