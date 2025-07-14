@@ -42,6 +42,20 @@ jobs:
           fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
+      - name: Checkout manually
+        run: |
+          ref=${{ github.sha || inputs.commit || github.event.pull_request.head.sha }}
+          ref_name=${{ github.ref_name }}
+          url=${{ github.repositoryUrl }}
+          set +e
+          set -x
+          fetch_depth=0
+          time git clone --verbose --depth="${fetch_depth}" --single-branch --branch "${ref}" "${url}"
+          ls -la stackrox/
+          cd stackrox
+          git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*' || true
+          make tag
+
       - uses: ./.github/actions/job-preamble
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
