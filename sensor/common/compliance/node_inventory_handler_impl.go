@@ -1,7 +1,9 @@
 package compliance
 
 import (
+	"context"
 	"strconv"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/quay/claircore/indexer/controller"
@@ -105,6 +107,20 @@ func (c *nodeInventoryHandlerImpl) Notify(e common.SensorComponentEvent) {
 }
 
 func (c *nodeInventoryHandlerImpl) ProcessMessage(msg *central.MsgToSensor) error {
+	done := make(chan error)
+	defer close(done)
+	go func() {
+		done <- c.processMessage(msg)
+	}()
+	select {
+	case err := <-done:
+		return err
+	case <-time.After(5 * time.Second):
+		return context.DeadlineExceeded
+	}
+}
+
+func (c *nodeInventoryHandlerImpl) processMessage(msg *central.MsgToSensor) error {
 	ackMsg := msg.GetNodeInventoryAck()
 	if ackMsg == nil {
 		return nil
