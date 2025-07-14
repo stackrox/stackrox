@@ -39,12 +39,12 @@ func DefaultResourceUpdaters() map[reflect.Type]ResourceUpdater {
 			groupDataStore.Singleton(),
 			declarativeConfigHealth.Singleton(),
 		),
-		types.GroupType:         newGroupUpdater(
+		types.GroupType: newGroupUpdater(
 			authProviderRegistry.Singleton(),
 			groupDataStore.Singleton(),
 			declarativeConfigHealth.Singleton(),
 		),
-		types.RoleType:          newRoleUpdater(
+		types.RoleType: newRoleUpdater(
 			roleDatastore.Singleton(),
 			declarativeConfigHealth.Singleton(),
 		),
@@ -52,7 +52,7 @@ func DefaultResourceUpdaters() map[reflect.Type]ResourceUpdater {
 			roleDatastore.Singleton(),
 			declarativeConfigHealth.Singleton(),
 		),
-		types.AccessScopeType:   newAccessScopeUpdater(
+		types.AccessScopeType: newAccessScopeUpdater(
 			roleDatastore.Singleton(),
 			declarativeConfigHealth.Singleton(),
 		),
@@ -62,6 +62,7 @@ func DefaultResourceUpdaters() map[reflect.Type]ResourceUpdater {
 			notifierProcessor.Singleton(),
 			declarativeConfigHealth.Singleton(),
 			reporter.Singleton(),
+		),
 		types.AuthMachineToMachineConfigType: newAuthM2MConfigUpdater(
 			authM2MConfigDataStore.Singleton(),
 			declarativeConfigHealth.Singleton(),
