@@ -3,9 +3,9 @@ kind: ConfigMap
 metadata:
   name: {{.JobName}}-berserker-process-config
 data:
-  network-server.toml: |
+  workload.toml: |
     restart_interval = 10
-    
+
     [workload]
     type = "processes"
     arrival_rate = 10.0
