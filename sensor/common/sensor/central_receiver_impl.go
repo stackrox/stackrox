@@ -1,13 +1,18 @@
 package sensor
 
 import (
+	"context"
 	"io"
+	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 )
+
+var ComponentProcessingDeadline = 5 * time.Second
 
 type centralReceiverImpl struct {
 	receivers []common.SensorComponent
@@ -59,10 +64,30 @@ func (s *centralReceiverImpl) receive(stream central.SensorService_CommunicateCl
 				return
 			}
 			for _, r := range s.receivers {
-				if err := r.ProcessMessage(msg); err != nil {
+				if err := processWithDeadline(r, ComponentProcessingDeadline, msg); err != nil {
 					log.Error(err)
 				}
 			}
 		}
+	}
+}
+
+func processWithDeadline(c common.SensorComponent, deadline time.Duration, msg *central.MsgToSensor) error {
+	ctx, cancel := context.WithTimeout(context.Background(), deadline)
+	defer cancel()
+
+	// Wrap ProcessMessage with a goroutine
+	done := make(chan error)
+	defer close(done)
+	go func() {
+		done <- c.ProcessMessage(msg, ctx)
+	}()
+
+	select {
+	case err := <-done:
+		return err
+	case <-ctx.Done():
+		return errors.Wrapf(ctx.Err(), "component %s took more than %s to process Central reply",
+			c.Name(), ComponentProcessingDeadline.String())
 	}
 }
