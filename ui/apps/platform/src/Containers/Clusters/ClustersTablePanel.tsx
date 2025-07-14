@@ -516,6 +516,7 @@ function ClustersTablePanel({
                         onDeleteCluster={onDeleteHandler}
                         toggleAllClusters={toggleAllClusters}
                         toggleCluster={toggleCluster}
+                        upgradeSingleCluster={upgradeSingleCluster}
                     />
                 ) : (
                     <CheckboxTable
