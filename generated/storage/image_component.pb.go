@@ -191,7 +191,7 @@ type ImageComponentV2 struct {
 	HasLayerIndex isImageComponentV2_HasLayerIndex `protobuf_oneof:"has_layer_index"`
 	Location      string                           `protobuf:"bytes,12,opt,name=location,proto3" json:"location,omitempty" search:"Component Location,store,hidden"` // @gotags: search:"Component Location,store,hidden"
 	Architecture  string                           `protobuf:"bytes,13,opt,name=architecture,proto3" json:"architecture,omitempty"`
-	ImageV2Id     string                           `protobuf:"bytes,14,opt,name=image_v2_id,json=imageV2Id,proto3" json:"image_v2_id,omitempty" sql:"fk(ImageV2:id),index=btree"` // @gotags: sql:"fk(ImageV2:id),index=btree"
+	ImageIdV2     string                           `protobuf:"bytes,14,opt,name=image_id_v2,json=imageIdV2,proto3" json:"image_id_v2,omitempty" sql:"fk(ImageV2:id),index=btree"` // @gotags: sql:"fk(ImageV2:id),index=btree"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -336,9 +336,9 @@ func (x *ImageComponentV2) GetArchitecture() string {
 	return ""
 }
 
-func (x *ImageComponentV2) GetImageV2Id() string {
+func (x *ImageComponentV2) GetImageIdV2() string {
 	if x != nil {
-		return x.ImageV2Id
+		return x.ImageIdV2
 	}
 	return ""
 }
@@ -399,7 +399,7 @@ const file_storage_image_component_proto_rawDesc = "" +
 	"layerIndex\x12\x1a\n" +
 	"\blocation\x18\f \x01(\tR\blocation\x12\"\n" +
 	"\farchitecture\x18\r \x01(\tR\farchitecture\x12\x1e\n" +
-	"\vimage_v2_id\x18\x0e \x01(\tR\timageV2IdB\x0e\n" +
+	"\vimage_id_v2\x18\x0e \x01(\tR\timageIdV2B\x0e\n" +
 	"\fset_top_cvssB\x11\n" +
 	"\x0fhas_layer_indexB.\n" +
 	"\x19io.stackrox.proto.storageZ\x11./storage;storageb\x06proto3"

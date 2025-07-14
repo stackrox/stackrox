@@ -140,7 +140,7 @@ type DeploymentsContainers struct {
 	ImageNameRemote                       string          `gorm:"column:image_name_remote;type:varchar"`
 	ImageNameTag                          string          `gorm:"column:image_name_tag;type:varchar"`
 	ImageNameFullName                     string          `gorm:"column:image_name_fullname;type:varchar"`
-	ImageV2ID                             string          `gorm:"column:image_v2id;type:varchar;index:deploymentscontainers_image_v2id,type:btree"`
+	ImageIDV2                             string          `gorm:"column:image_idv2;type:varchar;index:deploymentscontainers_image_idv2,type:btree"`
 	SecurityContextPrivileged             bool            `gorm:"column:securitycontext_privileged;type:bool"`
 	SecurityContextDropCapabilities       *pq.StringArray `gorm:"column:securitycontext_dropcapabilities;type:text[]"`
 	SecurityContextAddCapabilities        *pq.StringArray `gorm:"column:securitycontext_addcapabilities;type:text[]"`

@@ -268,7 +268,7 @@ func (m *ImageCVEV2) CloneVT() *ImageCVEV2 {
 	r.IsFixable = m.IsFixable
 	r.ComponentId = m.ComponentId
 	r.Advisory = m.Advisory.CloneVT()
-	r.ImageV2Id = m.ImageV2Id
+	r.ImageIdV2 = m.ImageIdV2
 	if m.HasFixedBy != nil {
 		r.HasFixedBy = m.HasFixedBy.(interface {
 			CloneVT() isImageCVEV2_HasFixedBy
@@ -885,7 +885,7 @@ func (this *ImageCVEV2) EqualVT(that *ImageCVEV2) bool {
 	if !this.Advisory.EqualVT(that.Advisory) {
 		return false
 	}
-	if this.ImageV2Id != that.ImageV2Id {
+	if this.ImageIdV2 != that.ImageIdV2 {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -1989,10 +1989,10 @@ func (m *ImageCVEV2) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		}
 		i -= size
 	}
-	if len(m.ImageV2Id) > 0 {
-		i -= len(m.ImageV2Id)
-		copy(dAtA[i:], m.ImageV2Id)
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.ImageV2Id)))
+	if len(m.ImageIdV2) > 0 {
+		i -= len(m.ImageIdV2)
+		copy(dAtA[i:], m.ImageIdV2)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.ImageIdV2)))
 		i--
 		dAtA[i] = 0x7a
 	}
@@ -2993,7 +2993,7 @@ func (m *ImageCVEV2) SizeVT() (n int) {
 		l = m.Advisory.SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
-	l = len(m.ImageV2Id)
+	l = len(m.ImageIdV2)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
@@ -5738,7 +5738,7 @@ func (m *ImageCVEV2) UnmarshalVT(dAtA []byte) error {
 			iNdEx = postIndex
 		case 15:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ImageV2Id", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ImageIdV2", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -5766,7 +5766,7 @@ func (m *ImageCVEV2) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.ImageV2Id = string(dAtA[iNdEx:postIndex])
+			m.ImageIdV2 = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -9692,7 +9692,7 @@ func (m *ImageCVEV2) UnmarshalVTUnsafe(dAtA []byte) error {
 			iNdEx = postIndex
 		case 15:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ImageV2Id", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ImageIdV2", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -9724,7 +9724,7 @@ func (m *ImageCVEV2) UnmarshalVTUnsafe(dAtA []byte) error {
 			if intStringLen > 0 {
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
-			m.ImageV2Id = stringValue
+			m.ImageIdV2 = stringValue
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

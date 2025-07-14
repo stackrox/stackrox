@@ -1587,7 +1587,7 @@ type ImageCVEV2 struct {
 	HasFixedBy    isImageCVEV2_HasFixedBy `protobuf_oneof:"has_fixed_by"`
 	ComponentId   string                  `protobuf:"bytes,13,opt,name=component_id,json=componentId,proto3" json:"component_id,omitempty" sql:"fk(ImageComponentV2:id),index=btree"` // @gotags: sql:"fk(ImageComponentV2:id),index=btree"
 	Advisory      *Advisory               `protobuf:"bytes,14,opt,name=advisory,proto3" json:"advisory,omitempty"`
-	ImageV2Id     string                  `protobuf:"bytes,15,opt,name=image_v2_id,json=imageV2Id,proto3" json:"image_v2_id,omitempty" sql:"fk(ImageV2:id),index=btree"` // @gotags: sql:"fk(ImageV2:id),index=btree"
+	ImageIdV2     string                  `protobuf:"bytes,15,opt,name=image_id_v2,json=imageIdV2,proto3" json:"image_id_v2,omitempty" sql:"fk(ImageV2:id),index=btree"` // @gotags: sql:"fk(ImageV2:id),index=btree"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1730,9 +1730,9 @@ func (x *ImageCVEV2) GetAdvisory() *Advisory {
 	return nil
 }
 
-func (x *ImageCVEV2) GetImageV2Id() string {
+func (x *ImageCVEV2) GetImageIdV2() string {
 	if x != nil {
-		return x.ImageV2Id
+		return x.ImageIdV2
 	}
 	return ""
 }
@@ -2637,7 +2637,7 @@ const file_storage_cve_proto_rawDesc = "" +
 	"\bfixed_by\x18\f \x01(\tH\x00R\afixedBy\x12!\n" +
 	"\fcomponent_id\x18\r \x01(\tR\vcomponentId\x12-\n" +
 	"\badvisory\x18\x0e \x01(\v2\x11.storage.AdvisoryR\badvisory\x12\x1e\n" +
-	"\vimage_v2_id\x18\x0f \x01(\tR\timageV2IdB\x0e\n" +
+	"\vimage_id_v2\x18\x0f \x01(\tR\timageIdV2B\x0e\n" +
 	"\fhas_fixed_by\"\xe4\x03\n" +
 	"\aNodeCVE\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x124\n" +

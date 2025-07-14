@@ -6244,7 +6244,7 @@
               },
               {
                 "id": 15,
-                "name": "image_v2_id",
+                "name": "image_id_v2",
                 "type": "string"
               }
             ]
@@ -7033,7 +7033,7 @@
               },
               {
                 "id": 12,
-                "name": "v2_id",
+                "name": "id_v2",
                 "type": "string"
               }
             ],
@@ -9105,7 +9105,7 @@
               },
               {
                 "id": 14,
-                "name": "image_v2_id",
+                "name": "image_id_v2",
                 "type": "string"
               }
             ]
@@ -9655,81 +9655,68 @@
               },
               {
                 "id": 8,
-                "name": "components",
-                "type": "int32",
-                "oneof_parent": "set_components"
+                "name": "component_count",
+                "type": "int32"
               },
               {
                 "id": 9,
-                "name": "cves",
-                "type": "int32",
-                "oneof_parent": "set_cves"
+                "name": "cve_count",
+                "type": "int32"
               },
               {
                 "id": 10,
-                "name": "fixable_cves",
-                "type": "int32",
-                "oneof_parent": "set_fixable_cves"
+                "name": "fixable_cve_count",
+                "type": "int32"
               },
               {
                 "id": 11,
-                "name": "unknown_cves",
-                "type": "int32",
-                "oneof_parent": "set_unknown_cves"
+                "name": "unknown_cve_count",
+                "type": "int32"
               },
               {
                 "id": 12,
-                "name": "fixable_unknown_cves",
-                "type": "int32",
-                "oneof_parent": "set_fixable_unknown_cves"
+                "name": "fixable_unknown_cve_count",
+                "type": "int32"
               },
               {
                 "id": 13,
-                "name": "critical_cves",
-                "type": "int32",
-                "oneof_parent": "set_critical_cves"
+                "name": "critical_cve_count",
+                "type": "int32"
               },
               {
                 "id": 14,
-                "name": "fixable_critical_cves",
-                "type": "int32",
-                "oneof_parent": "set_fixable_critical_cves"
+                "name": "fixable_critical_cve_count",
+                "type": "int32"
               },
               {
                 "id": 15,
-                "name": "important_cves",
-                "type": "int32",
-                "oneof_parent": "set_important_cves"
+                "name": "important_cve_count",
+                "type": "int32"
               },
               {
                 "id": 16,
-                "name": "fixable_important_cves",
-                "type": "int32",
-                "oneof_parent": "set_fixable_important_cves"
+                "name": "fixable_important_cve_count",
+                "type": "int32"
               },
               {
                 "id": 17,
-                "name": "moderate_cves",
-                "type": "int32",
-                "oneof_parent": "set_moderate_cves"
+                "name": "moderate_cve_count",
+                "type": "int32"
               },
               {
                 "id": 18,
-                "name": "fixable_moderate_cves",
-                "type": "int32",
-                "oneof_parent": "set_fixable_moderate_cves"
+                "name": "fixable_moderate_cve_count",
+                "type": "int32"
               },
               {
                 "id": 19,
-                "name": "low_cves",
-                "type": "int32",
-                "oneof_parent": "set_low_cves"
+                "name": "low_cve_count",
+                "type": "int32"
               },
               {
                 "id": 20,
-                "name": "fixable_low_cves",
-                "type": "int32",
-                "oneof_parent": "set_fixable_low_cves"
+                "name": "fixable_low_cve_count",
+                "type": "int32"
               },
               {
                 "id": 21,
@@ -9759,8 +9746,7 @@
               {
                 "id": 26,
                 "name": "top_cvss",
-                "type": "float",
-                "oneof_parent": "set_top_cvss"
+                "type": "float"
               },
               {
                 "id": 27,

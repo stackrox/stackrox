@@ -528,10 +528,10 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ContainerConfig_EnvironmentConfig_EnvVarSource(0)))
 	utils.Must(builder.AddType("ContainerImage", []string{
 		"id: ID!",
+		"idV2: String!",
 		"isClusterLocal: Boolean!",
 		"name: ImageName",
 		"notPullable: Boolean!",
-		"v2Id: String!",
 	}))
 	utils.Must(builder.AddType("ContainerInstance", []string{
 		"containerIps: [String!]!",
@@ -6535,6 +6535,11 @@ func (resolver *containerImageResolver) Id(ctx context.Context) graphql.ID {
 	return graphql.ID(value)
 }
 
+func (resolver *containerImageResolver) IdV2(ctx context.Context) string {
+	value := resolver.data.GetIdV2()
+	return value
+}
+
 func (resolver *containerImageResolver) IsClusterLocal(ctx context.Context) bool {
 	value := resolver.data.GetIsClusterLocal()
 	return value
@@ -6547,11 +6552,6 @@ func (resolver *containerImageResolver) Name(ctx context.Context) (*imageNameRes
 
 func (resolver *containerImageResolver) NotPullable(ctx context.Context) bool {
 	value := resolver.data.GetNotPullable()
-	return value
-}
-
-func (resolver *containerImageResolver) V2Id(ctx context.Context) string {
-	value := resolver.data.GetV2Id()
 	return value
 }
 

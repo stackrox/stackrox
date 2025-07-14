@@ -533,7 +533,7 @@ type ContainerImage struct {
 	Name           *ImageName `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	NotPullable    bool       `protobuf:"varint,10,opt,name=not_pullable,json=notPullable,proto3" json:"not_pullable,omitempty"`
 	IsClusterLocal bool       `protobuf:"varint,11,opt,name=is_cluster_local,json=isClusterLocal,proto3" json:"is_cluster_local,omitempty"`
-	V2Id           string     `protobuf:"bytes,12,opt,name=v2_id,json=v2Id,proto3" json:"v2_id,omitempty" search:"Image ID,hidden" sql:"fk(ImageV2:id),no-fk-constraint,index=btree"` // @gotags: search:"Image ID,hidden" sql:"fk(ImageV2:id),no-fk-constraint,index=btree"
+	IdV2           string     `protobuf:"bytes,12,opt,name=id_v2,json=idV2,proto3" json:"id_v2,omitempty" search:"Image ID,hidden" sql:"fk(ImageV2:id),no-fk-constraint,index=btree"` // @gotags: search:"Image ID,hidden" sql:"fk(ImageV2:id),no-fk-constraint,index=btree"
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -597,9 +597,9 @@ func (x *ContainerImage) GetIsClusterLocal() bool {
 	return false
 }
 
-func (x *ContainerImage) GetV2Id() string {
+func (x *ContainerImage) GetIdV2() string {
 	if x != nil {
-		return x.V2Id
+		return x.IdV2
 	}
 	return ""
 }
@@ -2065,7 +2065,7 @@ const file_storage_deployment_proto_rawDesc = "" +
 	"\fnot_pullable\x18\n" +
 	" \x01(\bR\vnotPullable\x12(\n" +
 	"\x10is_cluster_local\x18\v \x01(\bR\x0eisClusterLocal\x12\x13\n" +
-	"\x05v2_id\x18\f \x01(\tR\x04v2IdJ\x04\b\x02\x10\x03J\x04\b\x03\x10\x04J\x04\b\x05\x10\x06J\x04\b\x06\x10\aJ\x04\b\a\x10\bJ\x04\b\b\x10\tJ\x04\b\t\x10\n" +
+	"\x05id_v2\x18\f \x01(\tR\x04idV2J\x04\b\x02\x10\x03J\x04\b\x03\x10\x04J\x04\b\x05\x10\x06J\x04\b\x06\x10\aJ\x04\b\a\x10\bJ\x04\b\b\x10\tJ\x04\b\t\x10\n" +
 	"\"\x97\x04\n" +
 	"\tContainer\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x120\n" +

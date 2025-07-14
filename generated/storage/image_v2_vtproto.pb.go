@@ -36,75 +36,25 @@ func (m *ImageV2) CloneVT() *ImageV2 {
 	r.Scan = m.Scan.CloneVT()
 	r.SignatureVerificationData = m.SignatureVerificationData.CloneVT()
 	r.Signature = m.Signature.CloneVT()
+	r.ComponentCount = m.ComponentCount
+	r.CveCount = m.CveCount
+	r.FixableCveCount = m.FixableCveCount
+	r.UnknownCveCount = m.UnknownCveCount
+	r.FixableUnknownCveCount = m.FixableUnknownCveCount
+	r.CriticalCveCount = m.CriticalCveCount
+	r.FixableCriticalCveCount = m.FixableCriticalCveCount
+	r.ImportantCveCount = m.ImportantCveCount
+	r.FixableImportantCveCount = m.FixableImportantCveCount
+	r.ModerateCveCount = m.ModerateCveCount
+	r.FixableModerateCveCount = m.FixableModerateCveCount
+	r.LowCveCount = m.LowCveCount
+	r.FixableLowCveCount = m.FixableLowCveCount
 	r.LastUpdated = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.LastUpdated).CloneVT())
 	r.NotPullable = m.NotPullable
 	r.IsClusterLocal = m.IsClusterLocal
 	r.Priority = m.Priority
 	r.RiskScore = m.RiskScore
-	if m.SetComponents != nil {
-		r.SetComponents = m.SetComponents.(interface {
-			CloneVT() isImageV2_SetComponents
-		}).CloneVT()
-	}
-	if m.SetCves != nil {
-		r.SetCves = m.SetCves.(interface{ CloneVT() isImageV2_SetCves }).CloneVT()
-	}
-	if m.SetFixableCves != nil {
-		r.SetFixableCves = m.SetFixableCves.(interface {
-			CloneVT() isImageV2_SetFixableCves
-		}).CloneVT()
-	}
-	if m.SetUnknownCves != nil {
-		r.SetUnknownCves = m.SetUnknownCves.(interface {
-			CloneVT() isImageV2_SetUnknownCves
-		}).CloneVT()
-	}
-	if m.SetFixableUnknownCves != nil {
-		r.SetFixableUnknownCves = m.SetFixableUnknownCves.(interface {
-			CloneVT() isImageV2_SetFixableUnknownCves
-		}).CloneVT()
-	}
-	if m.SetCriticalCves != nil {
-		r.SetCriticalCves = m.SetCriticalCves.(interface {
-			CloneVT() isImageV2_SetCriticalCves
-		}).CloneVT()
-	}
-	if m.SetFixableCriticalCves != nil {
-		r.SetFixableCriticalCves = m.SetFixableCriticalCves.(interface {
-			CloneVT() isImageV2_SetFixableCriticalCves
-		}).CloneVT()
-	}
-	if m.SetImportantCves != nil {
-		r.SetImportantCves = m.SetImportantCves.(interface {
-			CloneVT() isImageV2_SetImportantCves
-		}).CloneVT()
-	}
-	if m.SetFixableImportantCves != nil {
-		r.SetFixableImportantCves = m.SetFixableImportantCves.(interface {
-			CloneVT() isImageV2_SetFixableImportantCves
-		}).CloneVT()
-	}
-	if m.SetModerateCves != nil {
-		r.SetModerateCves = m.SetModerateCves.(interface {
-			CloneVT() isImageV2_SetModerateCves
-		}).CloneVT()
-	}
-	if m.SetFixableModerateCves != nil {
-		r.SetFixableModerateCves = m.SetFixableModerateCves.(interface {
-			CloneVT() isImageV2_SetFixableModerateCves
-		}).CloneVT()
-	}
-	if m.SetLowCves != nil {
-		r.SetLowCves = m.SetLowCves.(interface{ CloneVT() isImageV2_SetLowCves }).CloneVT()
-	}
-	if m.SetFixableLowCves != nil {
-		r.SetFixableLowCves = m.SetFixableLowCves.(interface {
-			CloneVT() isImageV2_SetFixableLowCves
-		}).CloneVT()
-	}
-	if m.SetTopCvss != nil {
-		r.SetTopCvss = m.SetTopCvss.(interface{ CloneVT() isImageV2_SetTopCvss }).CloneVT()
-	}
+	r.TopCvss = m.TopCvss
 	if rhs := m.Notes; rhs != nil {
 		tmpContainer := make([]ImageV2_Note, len(rhs))
 		copy(tmpContainer, rhs)
@@ -121,303 +71,11 @@ func (m *ImageV2) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
-func (m *ImageV2_Components) CloneVT() isImageV2_SetComponents {
-	if m == nil {
-		return (*ImageV2_Components)(nil)
-	}
-	r := new(ImageV2_Components)
-	r.Components = m.Components
-	return r
-}
-
-func (m *ImageV2_Cves) CloneVT() isImageV2_SetCves {
-	if m == nil {
-		return (*ImageV2_Cves)(nil)
-	}
-	r := new(ImageV2_Cves)
-	r.Cves = m.Cves
-	return r
-}
-
-func (m *ImageV2_FixableCves) CloneVT() isImageV2_SetFixableCves {
-	if m == nil {
-		return (*ImageV2_FixableCves)(nil)
-	}
-	r := new(ImageV2_FixableCves)
-	r.FixableCves = m.FixableCves
-	return r
-}
-
-func (m *ImageV2_UnknownCves) CloneVT() isImageV2_SetUnknownCves {
-	if m == nil {
-		return (*ImageV2_UnknownCves)(nil)
-	}
-	r := new(ImageV2_UnknownCves)
-	r.UnknownCves = m.UnknownCves
-	return r
-}
-
-func (m *ImageV2_FixableUnknownCves) CloneVT() isImageV2_SetFixableUnknownCves {
-	if m == nil {
-		return (*ImageV2_FixableUnknownCves)(nil)
-	}
-	r := new(ImageV2_FixableUnknownCves)
-	r.FixableUnknownCves = m.FixableUnknownCves
-	return r
-}
-
-func (m *ImageV2_CriticalCves) CloneVT() isImageV2_SetCriticalCves {
-	if m == nil {
-		return (*ImageV2_CriticalCves)(nil)
-	}
-	r := new(ImageV2_CriticalCves)
-	r.CriticalCves = m.CriticalCves
-	return r
-}
-
-func (m *ImageV2_FixableCriticalCves) CloneVT() isImageV2_SetFixableCriticalCves {
-	if m == nil {
-		return (*ImageV2_FixableCriticalCves)(nil)
-	}
-	r := new(ImageV2_FixableCriticalCves)
-	r.FixableCriticalCves = m.FixableCriticalCves
-	return r
-}
-
-func (m *ImageV2_ImportantCves) CloneVT() isImageV2_SetImportantCves {
-	if m == nil {
-		return (*ImageV2_ImportantCves)(nil)
-	}
-	r := new(ImageV2_ImportantCves)
-	r.ImportantCves = m.ImportantCves
-	return r
-}
-
-func (m *ImageV2_FixableImportantCves) CloneVT() isImageV2_SetFixableImportantCves {
-	if m == nil {
-		return (*ImageV2_FixableImportantCves)(nil)
-	}
-	r := new(ImageV2_FixableImportantCves)
-	r.FixableImportantCves = m.FixableImportantCves
-	return r
-}
-
-func (m *ImageV2_ModerateCves) CloneVT() isImageV2_SetModerateCves {
-	if m == nil {
-		return (*ImageV2_ModerateCves)(nil)
-	}
-	r := new(ImageV2_ModerateCves)
-	r.ModerateCves = m.ModerateCves
-	return r
-}
-
-func (m *ImageV2_FixableModerateCves) CloneVT() isImageV2_SetFixableModerateCves {
-	if m == nil {
-		return (*ImageV2_FixableModerateCves)(nil)
-	}
-	r := new(ImageV2_FixableModerateCves)
-	r.FixableModerateCves = m.FixableModerateCves
-	return r
-}
-
-func (m *ImageV2_LowCves) CloneVT() isImageV2_SetLowCves {
-	if m == nil {
-		return (*ImageV2_LowCves)(nil)
-	}
-	r := new(ImageV2_LowCves)
-	r.LowCves = m.LowCves
-	return r
-}
-
-func (m *ImageV2_FixableLowCves) CloneVT() isImageV2_SetFixableLowCves {
-	if m == nil {
-		return (*ImageV2_FixableLowCves)(nil)
-	}
-	r := new(ImageV2_FixableLowCves)
-	r.FixableLowCves = m.FixableLowCves
-	return r
-}
-
-func (m *ImageV2_TopCvss) CloneVT() isImageV2_SetTopCvss {
-	if m == nil {
-		return (*ImageV2_TopCvss)(nil)
-	}
-	r := new(ImageV2_TopCvss)
-	r.TopCvss = m.TopCvss
-	return r
-}
-
 func (this *ImageV2) EqualVT(that *ImageV2) bool {
 	if this == that {
 		return true
 	} else if this == nil || that == nil {
 		return false
-	}
-	if this.SetComponents == nil && that.SetComponents != nil {
-		return false
-	} else if this.SetComponents != nil {
-		if that.SetComponents == nil {
-			return false
-		}
-		if !this.SetComponents.(interface {
-			EqualVT(isImageV2_SetComponents) bool
-		}).EqualVT(that.SetComponents) {
-			return false
-		}
-	}
-	if this.SetCves == nil && that.SetCves != nil {
-		return false
-	} else if this.SetCves != nil {
-		if that.SetCves == nil {
-			return false
-		}
-		if !this.SetCves.(interface{ EqualVT(isImageV2_SetCves) bool }).EqualVT(that.SetCves) {
-			return false
-		}
-	}
-	if this.SetFixableCves == nil && that.SetFixableCves != nil {
-		return false
-	} else if this.SetFixableCves != nil {
-		if that.SetFixableCves == nil {
-			return false
-		}
-		if !this.SetFixableCves.(interface {
-			EqualVT(isImageV2_SetFixableCves) bool
-		}).EqualVT(that.SetFixableCves) {
-			return false
-		}
-	}
-	if this.SetUnknownCves == nil && that.SetUnknownCves != nil {
-		return false
-	} else if this.SetUnknownCves != nil {
-		if that.SetUnknownCves == nil {
-			return false
-		}
-		if !this.SetUnknownCves.(interface {
-			EqualVT(isImageV2_SetUnknownCves) bool
-		}).EqualVT(that.SetUnknownCves) {
-			return false
-		}
-	}
-	if this.SetFixableUnknownCves == nil && that.SetFixableUnknownCves != nil {
-		return false
-	} else if this.SetFixableUnknownCves != nil {
-		if that.SetFixableUnknownCves == nil {
-			return false
-		}
-		if !this.SetFixableUnknownCves.(interface {
-			EqualVT(isImageV2_SetFixableUnknownCves) bool
-		}).EqualVT(that.SetFixableUnknownCves) {
-			return false
-		}
-	}
-	if this.SetCriticalCves == nil && that.SetCriticalCves != nil {
-		return false
-	} else if this.SetCriticalCves != nil {
-		if that.SetCriticalCves == nil {
-			return false
-		}
-		if !this.SetCriticalCves.(interface {
-			EqualVT(isImageV2_SetCriticalCves) bool
-		}).EqualVT(that.SetCriticalCves) {
-			return false
-		}
-	}
-	if this.SetFixableCriticalCves == nil && that.SetFixableCriticalCves != nil {
-		return false
-	} else if this.SetFixableCriticalCves != nil {
-		if that.SetFixableCriticalCves == nil {
-			return false
-		}
-		if !this.SetFixableCriticalCves.(interface {
-			EqualVT(isImageV2_SetFixableCriticalCves) bool
-		}).EqualVT(that.SetFixableCriticalCves) {
-			return false
-		}
-	}
-	if this.SetImportantCves == nil && that.SetImportantCves != nil {
-		return false
-	} else if this.SetImportantCves != nil {
-		if that.SetImportantCves == nil {
-			return false
-		}
-		if !this.SetImportantCves.(interface {
-			EqualVT(isImageV2_SetImportantCves) bool
-		}).EqualVT(that.SetImportantCves) {
-			return false
-		}
-	}
-	if this.SetFixableImportantCves == nil && that.SetFixableImportantCves != nil {
-		return false
-	} else if this.SetFixableImportantCves != nil {
-		if that.SetFixableImportantCves == nil {
-			return false
-		}
-		if !this.SetFixableImportantCves.(interface {
-			EqualVT(isImageV2_SetFixableImportantCves) bool
-		}).EqualVT(that.SetFixableImportantCves) {
-			return false
-		}
-	}
-	if this.SetModerateCves == nil && that.SetModerateCves != nil {
-		return false
-	} else if this.SetModerateCves != nil {
-		if that.SetModerateCves == nil {
-			return false
-		}
-		if !this.SetModerateCves.(interface {
-			EqualVT(isImageV2_SetModerateCves) bool
-		}).EqualVT(that.SetModerateCves) {
-			return false
-		}
-	}
-	if this.SetFixableModerateCves == nil && that.SetFixableModerateCves != nil {
-		return false
-	} else if this.SetFixableModerateCves != nil {
-		if that.SetFixableModerateCves == nil {
-			return false
-		}
-		if !this.SetFixableModerateCves.(interface {
-			EqualVT(isImageV2_SetFixableModerateCves) bool
-		}).EqualVT(that.SetFixableModerateCves) {
-			return false
-		}
-	}
-	if this.SetLowCves == nil && that.SetLowCves != nil {
-		return false
-	} else if this.SetLowCves != nil {
-		if that.SetLowCves == nil {
-			return false
-		}
-		if !this.SetLowCves.(interface {
-			EqualVT(isImageV2_SetLowCves) bool
-		}).EqualVT(that.SetLowCves) {
-			return false
-		}
-	}
-	if this.SetFixableLowCves == nil && that.SetFixableLowCves != nil {
-		return false
-	} else if this.SetFixableLowCves != nil {
-		if that.SetFixableLowCves == nil {
-			return false
-		}
-		if !this.SetFixableLowCves.(interface {
-			EqualVT(isImageV2_SetFixableLowCves) bool
-		}).EqualVT(that.SetFixableLowCves) {
-			return false
-		}
-	}
-	if this.SetTopCvss == nil && that.SetTopCvss != nil {
-		return false
-	} else if this.SetTopCvss != nil {
-		if that.SetTopCvss == nil {
-			return false
-		}
-		if !this.SetTopCvss.(interface {
-			EqualVT(isImageV2_SetTopCvss) bool
-		}).EqualVT(that.SetTopCvss) {
-			return false
-		}
 	}
 	if this.Id != that.Id {
 		return false
@@ -440,6 +98,45 @@ func (this *ImageV2) EqualVT(that *ImageV2) bool {
 	if !this.Signature.EqualVT(that.Signature) {
 		return false
 	}
+	if this.ComponentCount != that.ComponentCount {
+		return false
+	}
+	if this.CveCount != that.CveCount {
+		return false
+	}
+	if this.FixableCveCount != that.FixableCveCount {
+		return false
+	}
+	if this.UnknownCveCount != that.UnknownCveCount {
+		return false
+	}
+	if this.FixableUnknownCveCount != that.FixableUnknownCveCount {
+		return false
+	}
+	if this.CriticalCveCount != that.CriticalCveCount {
+		return false
+	}
+	if this.FixableCriticalCveCount != that.FixableCriticalCveCount {
+		return false
+	}
+	if this.ImportantCveCount != that.ImportantCveCount {
+		return false
+	}
+	if this.FixableImportantCveCount != that.FixableImportantCveCount {
+		return false
+	}
+	if this.ModerateCveCount != that.ModerateCveCount {
+		return false
+	}
+	if this.FixableModerateCveCount != that.FixableModerateCveCount {
+		return false
+	}
+	if this.LowCveCount != that.LowCveCount {
+		return false
+	}
+	if this.FixableLowCveCount != that.FixableLowCveCount {
+		return false
+	}
 	if !(*timestamppb1.Timestamp)(this.LastUpdated).EqualVT((*timestamppb1.Timestamp)(that.LastUpdated)) {
 		return false
 	}
@@ -453,6 +150,9 @@ func (this *ImageV2) EqualVT(that *ImageV2) bool {
 		return false
 	}
 	if this.RiskScore != that.RiskScore {
+		return false
+	}
+	if this.TopCvss != that.TopCvss {
 		return false
 	}
 	if len(this.Notes) != len(that.Notes) {
@@ -474,244 +174,6 @@ func (this *ImageV2) EqualMessageVT(thatMsg proto.Message) bool {
 	}
 	return this.EqualVT(that)
 }
-func (this *ImageV2_Components) EqualVT(thatIface isImageV2_SetComponents) bool {
-	that, ok := thatIface.(*ImageV2_Components)
-	if !ok {
-		return false
-	}
-	if this == that {
-		return true
-	}
-	if this == nil && that != nil || this != nil && that == nil {
-		return false
-	}
-	if this.Components != that.Components {
-		return false
-	}
-	return true
-}
-
-func (this *ImageV2_Cves) EqualVT(thatIface isImageV2_SetCves) bool {
-	that, ok := thatIface.(*ImageV2_Cves)
-	if !ok {
-		return false
-	}
-	if this == that {
-		return true
-	}
-	if this == nil && that != nil || this != nil && that == nil {
-		return false
-	}
-	if this.Cves != that.Cves {
-		return false
-	}
-	return true
-}
-
-func (this *ImageV2_FixableCves) EqualVT(thatIface isImageV2_SetFixableCves) bool {
-	that, ok := thatIface.(*ImageV2_FixableCves)
-	if !ok {
-		return false
-	}
-	if this == that {
-		return true
-	}
-	if this == nil && that != nil || this != nil && that == nil {
-		return false
-	}
-	if this.FixableCves != that.FixableCves {
-		return false
-	}
-	return true
-}
-
-func (this *ImageV2_UnknownCves) EqualVT(thatIface isImageV2_SetUnknownCves) bool {
-	that, ok := thatIface.(*ImageV2_UnknownCves)
-	if !ok {
-		return false
-	}
-	if this == that {
-		return true
-	}
-	if this == nil && that != nil || this != nil && that == nil {
-		return false
-	}
-	if this.UnknownCves != that.UnknownCves {
-		return false
-	}
-	return true
-}
-
-func (this *ImageV2_FixableUnknownCves) EqualVT(thatIface isImageV2_SetFixableUnknownCves) bool {
-	that, ok := thatIface.(*ImageV2_FixableUnknownCves)
-	if !ok {
-		return false
-	}
-	if this == that {
-		return true
-	}
-	if this == nil && that != nil || this != nil && that == nil {
-		return false
-	}
-	if this.FixableUnknownCves != that.FixableUnknownCves {
-		return false
-	}
-	return true
-}
-
-func (this *ImageV2_CriticalCves) EqualVT(thatIface isImageV2_SetCriticalCves) bool {
-	that, ok := thatIface.(*ImageV2_CriticalCves)
-	if !ok {
-		return false
-	}
-	if this == that {
-		return true
-	}
-	if this == nil && that != nil || this != nil && that == nil {
-		return false
-	}
-	if this.CriticalCves != that.CriticalCves {
-		return false
-	}
-	return true
-}
-
-func (this *ImageV2_FixableCriticalCves) EqualVT(thatIface isImageV2_SetFixableCriticalCves) bool {
-	that, ok := thatIface.(*ImageV2_FixableCriticalCves)
-	if !ok {
-		return false
-	}
-	if this == that {
-		return true
-	}
-	if this == nil && that != nil || this != nil && that == nil {
-		return false
-	}
-	if this.FixableCriticalCves != that.FixableCriticalCves {
-		return false
-	}
-	return true
-}
-
-func (this *ImageV2_ImportantCves) EqualVT(thatIface isImageV2_SetImportantCves) bool {
-	that, ok := thatIface.(*ImageV2_ImportantCves)
-	if !ok {
-		return false
-	}
-	if this == that {
-		return true
-	}
-	if this == nil && that != nil || this != nil && that == nil {
-		return false
-	}
-	if this.ImportantCves != that.ImportantCves {
-		return false
-	}
-	return true
-}
-
-func (this *ImageV2_FixableImportantCves) EqualVT(thatIface isImageV2_SetFixableImportantCves) bool {
-	that, ok := thatIface.(*ImageV2_FixableImportantCves)
-	if !ok {
-		return false
-	}
-	if this == that {
-		return true
-	}
-	if this == nil && that != nil || this != nil && that == nil {
-		return false
-	}
-	if this.FixableImportantCves != that.FixableImportantCves {
-		return false
-	}
-	return true
-}
-
-func (this *ImageV2_ModerateCves) EqualVT(thatIface isImageV2_SetModerateCves) bool {
-	that, ok := thatIface.(*ImageV2_ModerateCves)
-	if !ok {
-		return false
-	}
-	if this == that {
-		return true
-	}
-	if this == nil && that != nil || this != nil && that == nil {
-		return false
-	}
-	if this.ModerateCves != that.ModerateCves {
-		return false
-	}
-	return true
-}
-
-func (this *ImageV2_FixableModerateCves) EqualVT(thatIface isImageV2_SetFixableModerateCves) bool {
-	that, ok := thatIface.(*ImageV2_FixableModerateCves)
-	if !ok {
-		return false
-	}
-	if this == that {
-		return true
-	}
-	if this == nil && that != nil || this != nil && that == nil {
-		return false
-	}
-	if this.FixableModerateCves != that.FixableModerateCves {
-		return false
-	}
-	return true
-}
-
-func (this *ImageV2_LowCves) EqualVT(thatIface isImageV2_SetLowCves) bool {
-	that, ok := thatIface.(*ImageV2_LowCves)
-	if !ok {
-		return false
-	}
-	if this == that {
-		return true
-	}
-	if this == nil && that != nil || this != nil && that == nil {
-		return false
-	}
-	if this.LowCves != that.LowCves {
-		return false
-	}
-	return true
-}
-
-func (this *ImageV2_FixableLowCves) EqualVT(thatIface isImageV2_SetFixableLowCves) bool {
-	that, ok := thatIface.(*ImageV2_FixableLowCves)
-	if !ok {
-		return false
-	}
-	if this == that {
-		return true
-	}
-	if this == nil && that != nil || this != nil && that == nil {
-		return false
-	}
-	if this.FixableLowCves != that.FixableLowCves {
-		return false
-	}
-	return true
-}
-
-func (this *ImageV2_TopCvss) EqualVT(thatIface isImageV2_SetTopCvss) bool {
-	that, ok := thatIface.(*ImageV2_TopCvss)
-	if !ok {
-		return false
-	}
-	if this == that {
-		return true
-	}
-	if this == nil && that != nil || this != nil && that == nil {
-		return false
-	}
-	if this.TopCvss != that.TopCvss {
-		return false
-	}
-	return true
-}
-
 func (m *ImageV2) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
@@ -742,132 +204,6 @@ func (m *ImageV2) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if vtmsg, ok := m.SetTopCvss.(interface {
-		MarshalToSizedBufferVT([]byte) (int, error)
-	}); ok {
-		size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-	}
-	if vtmsg, ok := m.SetFixableLowCves.(interface {
-		MarshalToSizedBufferVT([]byte) (int, error)
-	}); ok {
-		size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-	}
-	if vtmsg, ok := m.SetLowCves.(interface {
-		MarshalToSizedBufferVT([]byte) (int, error)
-	}); ok {
-		size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-	}
-	if vtmsg, ok := m.SetFixableModerateCves.(interface {
-		MarshalToSizedBufferVT([]byte) (int, error)
-	}); ok {
-		size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-	}
-	if vtmsg, ok := m.SetModerateCves.(interface {
-		MarshalToSizedBufferVT([]byte) (int, error)
-	}); ok {
-		size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-	}
-	if vtmsg, ok := m.SetFixableImportantCves.(interface {
-		MarshalToSizedBufferVT([]byte) (int, error)
-	}); ok {
-		size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-	}
-	if vtmsg, ok := m.SetImportantCves.(interface {
-		MarshalToSizedBufferVT([]byte) (int, error)
-	}); ok {
-		size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-	}
-	if vtmsg, ok := m.SetFixableCriticalCves.(interface {
-		MarshalToSizedBufferVT([]byte) (int, error)
-	}); ok {
-		size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-	}
-	if vtmsg, ok := m.SetCriticalCves.(interface {
-		MarshalToSizedBufferVT([]byte) (int, error)
-	}); ok {
-		size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-	}
-	if vtmsg, ok := m.SetFixableUnknownCves.(interface {
-		MarshalToSizedBufferVT([]byte) (int, error)
-	}); ok {
-		size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-	}
-	if vtmsg, ok := m.SetUnknownCves.(interface {
-		MarshalToSizedBufferVT([]byte) (int, error)
-	}); ok {
-		size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-	}
-	if vtmsg, ok := m.SetFixableCves.(interface {
-		MarshalToSizedBufferVT([]byte) (int, error)
-	}); ok {
-		size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-	}
-	if vtmsg, ok := m.SetCves.(interface {
-		MarshalToSizedBufferVT([]byte) (int, error)
-	}); ok {
-		size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-	}
-	if vtmsg, ok := m.SetComponents.(interface {
-		MarshalToSizedBufferVT([]byte) (int, error)
-	}); ok {
-		size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-	}
 	if len(m.Notes) > 0 {
 		var pksize2 int
 		for _, num := range m.Notes {
@@ -890,6 +226,14 @@ func (m *ImageV2) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		dAtA[i] = 0x1
 		i--
 		dAtA[i] = 0xda
+	}
+	if m.TopCvss != 0 {
+		i -= 4
+		binary.LittleEndian.PutUint32(dAtA[i:], uint32(math.Float32bits(float32(m.TopCvss))))
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0xd5
 	}
 	if m.RiskScore != 0 {
 		i -= 4
@@ -941,6 +285,81 @@ func (m *ImageV2) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		dAtA[i] = 0x1
 		i--
 		dAtA[i] = 0xaa
+	}
+	if m.FixableLowCveCount != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.FixableLowCveCount))
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0xa0
+	}
+	if m.LowCveCount != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.LowCveCount))
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0x98
+	}
+	if m.FixableModerateCveCount != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.FixableModerateCveCount))
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0x90
+	}
+	if m.ModerateCveCount != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.ModerateCveCount))
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0x88
+	}
+	if m.FixableImportantCveCount != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.FixableImportantCveCount))
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0x80
+	}
+	if m.ImportantCveCount != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.ImportantCveCount))
+		i--
+		dAtA[i] = 0x78
+	}
+	if m.FixableCriticalCveCount != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.FixableCriticalCveCount))
+		i--
+		dAtA[i] = 0x70
+	}
+	if m.CriticalCveCount != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.CriticalCveCount))
+		i--
+		dAtA[i] = 0x68
+	}
+	if m.FixableUnknownCveCount != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.FixableUnknownCveCount))
+		i--
+		dAtA[i] = 0x60
+	}
+	if m.UnknownCveCount != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.UnknownCveCount))
+		i--
+		dAtA[i] = 0x58
+	}
+	if m.FixableCveCount != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.FixableCveCount))
+		i--
+		dAtA[i] = 0x50
+	}
+	if m.CveCount != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.CveCount))
+		i--
+		dAtA[i] = 0x48
+	}
+	if m.ComponentCount != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.ComponentCount))
+		i--
+		dAtA[i] = 0x40
 	}
 	if m.Signature != nil {
 		size, err := m.Signature.MarshalToSizedBufferVT(dAtA[:i])
@@ -1009,187 +428,6 @@ func (m *ImageV2) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ImageV2_Components) MarshalToVT(dAtA []byte) (int, error) {
-	size := m.SizeVT()
-	return m.MarshalToSizedBufferVT(dAtA[:size])
-}
-
-func (m *ImageV2_Components) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	i = protohelpers.EncodeVarint(dAtA, i, uint64(m.Components))
-	i--
-	dAtA[i] = 0x40
-	return len(dAtA) - i, nil
-}
-func (m *ImageV2_Cves) MarshalToVT(dAtA []byte) (int, error) {
-	size := m.SizeVT()
-	return m.MarshalToSizedBufferVT(dAtA[:size])
-}
-
-func (m *ImageV2_Cves) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	i = protohelpers.EncodeVarint(dAtA, i, uint64(m.Cves))
-	i--
-	dAtA[i] = 0x48
-	return len(dAtA) - i, nil
-}
-func (m *ImageV2_FixableCves) MarshalToVT(dAtA []byte) (int, error) {
-	size := m.SizeVT()
-	return m.MarshalToSizedBufferVT(dAtA[:size])
-}
-
-func (m *ImageV2_FixableCves) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	i = protohelpers.EncodeVarint(dAtA, i, uint64(m.FixableCves))
-	i--
-	dAtA[i] = 0x50
-	return len(dAtA) - i, nil
-}
-func (m *ImageV2_UnknownCves) MarshalToVT(dAtA []byte) (int, error) {
-	size := m.SizeVT()
-	return m.MarshalToSizedBufferVT(dAtA[:size])
-}
-
-func (m *ImageV2_UnknownCves) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	i = protohelpers.EncodeVarint(dAtA, i, uint64(m.UnknownCves))
-	i--
-	dAtA[i] = 0x58
-	return len(dAtA) - i, nil
-}
-func (m *ImageV2_FixableUnknownCves) MarshalToVT(dAtA []byte) (int, error) {
-	size := m.SizeVT()
-	return m.MarshalToSizedBufferVT(dAtA[:size])
-}
-
-func (m *ImageV2_FixableUnknownCves) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	i = protohelpers.EncodeVarint(dAtA, i, uint64(m.FixableUnknownCves))
-	i--
-	dAtA[i] = 0x60
-	return len(dAtA) - i, nil
-}
-func (m *ImageV2_CriticalCves) MarshalToVT(dAtA []byte) (int, error) {
-	size := m.SizeVT()
-	return m.MarshalToSizedBufferVT(dAtA[:size])
-}
-
-func (m *ImageV2_CriticalCves) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	i = protohelpers.EncodeVarint(dAtA, i, uint64(m.CriticalCves))
-	i--
-	dAtA[i] = 0x68
-	return len(dAtA) - i, nil
-}
-func (m *ImageV2_FixableCriticalCves) MarshalToVT(dAtA []byte) (int, error) {
-	size := m.SizeVT()
-	return m.MarshalToSizedBufferVT(dAtA[:size])
-}
-
-func (m *ImageV2_FixableCriticalCves) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	i = protohelpers.EncodeVarint(dAtA, i, uint64(m.FixableCriticalCves))
-	i--
-	dAtA[i] = 0x70
-	return len(dAtA) - i, nil
-}
-func (m *ImageV2_ImportantCves) MarshalToVT(dAtA []byte) (int, error) {
-	size := m.SizeVT()
-	return m.MarshalToSizedBufferVT(dAtA[:size])
-}
-
-func (m *ImageV2_ImportantCves) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	i = protohelpers.EncodeVarint(dAtA, i, uint64(m.ImportantCves))
-	i--
-	dAtA[i] = 0x78
-	return len(dAtA) - i, nil
-}
-func (m *ImageV2_FixableImportantCves) MarshalToVT(dAtA []byte) (int, error) {
-	size := m.SizeVT()
-	return m.MarshalToSizedBufferVT(dAtA[:size])
-}
-
-func (m *ImageV2_FixableImportantCves) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	i = protohelpers.EncodeVarint(dAtA, i, uint64(m.FixableImportantCves))
-	i--
-	dAtA[i] = 0x1
-	i--
-	dAtA[i] = 0x80
-	return len(dAtA) - i, nil
-}
-func (m *ImageV2_ModerateCves) MarshalToVT(dAtA []byte) (int, error) {
-	size := m.SizeVT()
-	return m.MarshalToSizedBufferVT(dAtA[:size])
-}
-
-func (m *ImageV2_ModerateCves) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	i = protohelpers.EncodeVarint(dAtA, i, uint64(m.ModerateCves))
-	i--
-	dAtA[i] = 0x1
-	i--
-	dAtA[i] = 0x88
-	return len(dAtA) - i, nil
-}
-func (m *ImageV2_FixableModerateCves) MarshalToVT(dAtA []byte) (int, error) {
-	size := m.SizeVT()
-	return m.MarshalToSizedBufferVT(dAtA[:size])
-}
-
-func (m *ImageV2_FixableModerateCves) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	i = protohelpers.EncodeVarint(dAtA, i, uint64(m.FixableModerateCves))
-	i--
-	dAtA[i] = 0x1
-	i--
-	dAtA[i] = 0x90
-	return len(dAtA) - i, nil
-}
-func (m *ImageV2_LowCves) MarshalToVT(dAtA []byte) (int, error) {
-	size := m.SizeVT()
-	return m.MarshalToSizedBufferVT(dAtA[:size])
-}
-
-func (m *ImageV2_LowCves) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	i = protohelpers.EncodeVarint(dAtA, i, uint64(m.LowCves))
-	i--
-	dAtA[i] = 0x1
-	i--
-	dAtA[i] = 0x98
-	return len(dAtA) - i, nil
-}
-func (m *ImageV2_FixableLowCves) MarshalToVT(dAtA []byte) (int, error) {
-	size := m.SizeVT()
-	return m.MarshalToSizedBufferVT(dAtA[:size])
-}
-
-func (m *ImageV2_FixableLowCves) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	i = protohelpers.EncodeVarint(dAtA, i, uint64(m.FixableLowCves))
-	i--
-	dAtA[i] = 0x1
-	i--
-	dAtA[i] = 0xa0
-	return len(dAtA) - i, nil
-}
-func (m *ImageV2_TopCvss) MarshalToVT(dAtA []byte) (int, error) {
-	size := m.SizeVT()
-	return m.MarshalToSizedBufferVT(dAtA[:size])
-}
-
-func (m *ImageV2_TopCvss) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	i -= 4
-	binary.LittleEndian.PutUint32(dAtA[i:], uint32(math.Float32bits(float32(m.TopCvss))))
-	i--
-	dAtA[i] = 0x1
-	i--
-	dAtA[i] = 0xd5
-	return len(dAtA) - i, nil
-}
 func (m *ImageV2) SizeVT() (n int) {
 	if m == nil {
 		return 0
@@ -1224,44 +462,44 @@ func (m *ImageV2) SizeVT() (n int) {
 		l = m.Signature.SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
-	if vtmsg, ok := m.SetComponents.(interface{ SizeVT() int }); ok {
-		n += vtmsg.SizeVT()
+	if m.ComponentCount != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.ComponentCount))
 	}
-	if vtmsg, ok := m.SetCves.(interface{ SizeVT() int }); ok {
-		n += vtmsg.SizeVT()
+	if m.CveCount != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.CveCount))
 	}
-	if vtmsg, ok := m.SetFixableCves.(interface{ SizeVT() int }); ok {
-		n += vtmsg.SizeVT()
+	if m.FixableCveCount != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.FixableCveCount))
 	}
-	if vtmsg, ok := m.SetUnknownCves.(interface{ SizeVT() int }); ok {
-		n += vtmsg.SizeVT()
+	if m.UnknownCveCount != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.UnknownCveCount))
 	}
-	if vtmsg, ok := m.SetFixableUnknownCves.(interface{ SizeVT() int }); ok {
-		n += vtmsg.SizeVT()
+	if m.FixableUnknownCveCount != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.FixableUnknownCveCount))
 	}
-	if vtmsg, ok := m.SetCriticalCves.(interface{ SizeVT() int }); ok {
-		n += vtmsg.SizeVT()
+	if m.CriticalCveCount != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.CriticalCveCount))
 	}
-	if vtmsg, ok := m.SetFixableCriticalCves.(interface{ SizeVT() int }); ok {
-		n += vtmsg.SizeVT()
+	if m.FixableCriticalCveCount != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.FixableCriticalCveCount))
 	}
-	if vtmsg, ok := m.SetImportantCves.(interface{ SizeVT() int }); ok {
-		n += vtmsg.SizeVT()
+	if m.ImportantCveCount != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.ImportantCveCount))
 	}
-	if vtmsg, ok := m.SetFixableImportantCves.(interface{ SizeVT() int }); ok {
-		n += vtmsg.SizeVT()
+	if m.FixableImportantCveCount != 0 {
+		n += 2 + protohelpers.SizeOfVarint(uint64(m.FixableImportantCveCount))
 	}
-	if vtmsg, ok := m.SetModerateCves.(interface{ SizeVT() int }); ok {
-		n += vtmsg.SizeVT()
+	if m.ModerateCveCount != 0 {
+		n += 2 + protohelpers.SizeOfVarint(uint64(m.ModerateCveCount))
 	}
-	if vtmsg, ok := m.SetFixableModerateCves.(interface{ SizeVT() int }); ok {
-		n += vtmsg.SizeVT()
+	if m.FixableModerateCveCount != 0 {
+		n += 2 + protohelpers.SizeOfVarint(uint64(m.FixableModerateCveCount))
 	}
-	if vtmsg, ok := m.SetLowCves.(interface{ SizeVT() int }); ok {
-		n += vtmsg.SizeVT()
+	if m.LowCveCount != 0 {
+		n += 2 + protohelpers.SizeOfVarint(uint64(m.LowCveCount))
 	}
-	if vtmsg, ok := m.SetFixableLowCves.(interface{ SizeVT() int }); ok {
-		n += vtmsg.SizeVT()
+	if m.FixableLowCveCount != 0 {
+		n += 2 + protohelpers.SizeOfVarint(uint64(m.FixableLowCveCount))
 	}
 	if m.LastUpdated != nil {
 		l = (*timestamppb1.Timestamp)(m.LastUpdated).SizeVT()
@@ -1279,8 +517,8 @@ func (m *ImageV2) SizeVT() (n int) {
 	if m.RiskScore != 0 {
 		n += 6
 	}
-	if vtmsg, ok := m.SetTopCvss.(interface{ SizeVT() int }); ok {
-		n += vtmsg.SizeVT()
+	if m.TopCvss != 0 {
+		n += 6
 	}
 	if len(m.Notes) > 0 {
 		l = 0
@@ -1293,132 +531,6 @@ func (m *ImageV2) SizeVT() (n int) {
 	return n
 }
 
-func (m *ImageV2_Components) SizeVT() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	n += 1 + protohelpers.SizeOfVarint(uint64(m.Components))
-	return n
-}
-func (m *ImageV2_Cves) SizeVT() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	n += 1 + protohelpers.SizeOfVarint(uint64(m.Cves))
-	return n
-}
-func (m *ImageV2_FixableCves) SizeVT() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	n += 1 + protohelpers.SizeOfVarint(uint64(m.FixableCves))
-	return n
-}
-func (m *ImageV2_UnknownCves) SizeVT() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	n += 1 + protohelpers.SizeOfVarint(uint64(m.UnknownCves))
-	return n
-}
-func (m *ImageV2_FixableUnknownCves) SizeVT() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	n += 1 + protohelpers.SizeOfVarint(uint64(m.FixableUnknownCves))
-	return n
-}
-func (m *ImageV2_CriticalCves) SizeVT() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	n += 1 + protohelpers.SizeOfVarint(uint64(m.CriticalCves))
-	return n
-}
-func (m *ImageV2_FixableCriticalCves) SizeVT() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	n += 1 + protohelpers.SizeOfVarint(uint64(m.FixableCriticalCves))
-	return n
-}
-func (m *ImageV2_ImportantCves) SizeVT() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	n += 1 + protohelpers.SizeOfVarint(uint64(m.ImportantCves))
-	return n
-}
-func (m *ImageV2_FixableImportantCves) SizeVT() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	n += 2 + protohelpers.SizeOfVarint(uint64(m.FixableImportantCves))
-	return n
-}
-func (m *ImageV2_ModerateCves) SizeVT() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	n += 2 + protohelpers.SizeOfVarint(uint64(m.ModerateCves))
-	return n
-}
-func (m *ImageV2_FixableModerateCves) SizeVT() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	n += 2 + protohelpers.SizeOfVarint(uint64(m.FixableModerateCves))
-	return n
-}
-func (m *ImageV2_LowCves) SizeVT() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	n += 2 + protohelpers.SizeOfVarint(uint64(m.LowCves))
-	return n
-}
-func (m *ImageV2_FixableLowCves) SizeVT() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	n += 2 + protohelpers.SizeOfVarint(uint64(m.FixableLowCves))
-	return n
-}
-func (m *ImageV2_TopCvss) SizeVT() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	n += 6
-	return n
-}
 func (m *ImageV2) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -1694,9 +806,9 @@ func (m *ImageV2) UnmarshalVT(dAtA []byte) error {
 			iNdEx = postIndex
 		case 8:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Components", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ComponentCount", wireType)
 			}
-			var v int32
+			m.ComponentCount = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -1706,17 +818,16 @@ func (m *ImageV2) UnmarshalVT(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				v |= int32(b&0x7F) << shift
+				m.ComponentCount |= int32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			m.SetComponents = &ImageV2_Components{Components: v}
 		case 9:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Cves", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field CveCount", wireType)
 			}
-			var v int32
+			m.CveCount = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -1726,17 +837,16 @@ func (m *ImageV2) UnmarshalVT(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				v |= int32(b&0x7F) << shift
+				m.CveCount |= int32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			m.SetCves = &ImageV2_Cves{Cves: v}
 		case 10:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field FixableCves", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field FixableCveCount", wireType)
 			}
-			var v int32
+			m.FixableCveCount = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -1746,17 +856,16 @@ func (m *ImageV2) UnmarshalVT(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				v |= int32(b&0x7F) << shift
+				m.FixableCveCount |= int32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			m.SetFixableCves = &ImageV2_FixableCves{FixableCves: v}
 		case 11:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field UnknownCves", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field UnknownCveCount", wireType)
 			}
-			var v int32
+			m.UnknownCveCount = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -1766,17 +875,16 @@ func (m *ImageV2) UnmarshalVT(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				v |= int32(b&0x7F) << shift
+				m.UnknownCveCount |= int32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			m.SetUnknownCves = &ImageV2_UnknownCves{UnknownCves: v}
 		case 12:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field FixableUnknownCves", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field FixableUnknownCveCount", wireType)
 			}
-			var v int32
+			m.FixableUnknownCveCount = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -1786,17 +894,16 @@ func (m *ImageV2) UnmarshalVT(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				v |= int32(b&0x7F) << shift
+				m.FixableUnknownCveCount |= int32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			m.SetFixableUnknownCves = &ImageV2_FixableUnknownCves{FixableUnknownCves: v}
 		case 13:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field CriticalCves", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field CriticalCveCount", wireType)
 			}
-			var v int32
+			m.CriticalCveCount = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -1806,17 +913,16 @@ func (m *ImageV2) UnmarshalVT(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				v |= int32(b&0x7F) << shift
+				m.CriticalCveCount |= int32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			m.SetCriticalCves = &ImageV2_CriticalCves{CriticalCves: v}
 		case 14:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field FixableCriticalCves", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field FixableCriticalCveCount", wireType)
 			}
-			var v int32
+			m.FixableCriticalCveCount = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -1826,17 +932,16 @@ func (m *ImageV2) UnmarshalVT(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				v |= int32(b&0x7F) << shift
+				m.FixableCriticalCveCount |= int32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			m.SetFixableCriticalCves = &ImageV2_FixableCriticalCves{FixableCriticalCves: v}
 		case 15:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ImportantCves", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ImportantCveCount", wireType)
 			}
-			var v int32
+			m.ImportantCveCount = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -1846,17 +951,16 @@ func (m *ImageV2) UnmarshalVT(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				v |= int32(b&0x7F) << shift
+				m.ImportantCveCount |= int32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			m.SetImportantCves = &ImageV2_ImportantCves{ImportantCves: v}
 		case 16:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field FixableImportantCves", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field FixableImportantCveCount", wireType)
 			}
-			var v int32
+			m.FixableImportantCveCount = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -1866,17 +970,16 @@ func (m *ImageV2) UnmarshalVT(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				v |= int32(b&0x7F) << shift
+				m.FixableImportantCveCount |= int32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			m.SetFixableImportantCves = &ImageV2_FixableImportantCves{FixableImportantCves: v}
 		case 17:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ModerateCves", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ModerateCveCount", wireType)
 			}
-			var v int32
+			m.ModerateCveCount = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -1886,17 +989,16 @@ func (m *ImageV2) UnmarshalVT(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				v |= int32(b&0x7F) << shift
+				m.ModerateCveCount |= int32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			m.SetModerateCves = &ImageV2_ModerateCves{ModerateCves: v}
 		case 18:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field FixableModerateCves", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field FixableModerateCveCount", wireType)
 			}
-			var v int32
+			m.FixableModerateCveCount = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -1906,17 +1008,16 @@ func (m *ImageV2) UnmarshalVT(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				v |= int32(b&0x7F) << shift
+				m.FixableModerateCveCount |= int32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			m.SetFixableModerateCves = &ImageV2_FixableModerateCves{FixableModerateCves: v}
 		case 19:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field LowCves", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field LowCveCount", wireType)
 			}
-			var v int32
+			m.LowCveCount = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -1926,17 +1027,16 @@ func (m *ImageV2) UnmarshalVT(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				v |= int32(b&0x7F) << shift
+				m.LowCveCount |= int32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			m.SetLowCves = &ImageV2_LowCves{LowCves: v}
 		case 20:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field FixableLowCves", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field FixableLowCveCount", wireType)
 			}
-			var v int32
+			m.FixableLowCveCount = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -1946,12 +1046,11 @@ func (m *ImageV2) UnmarshalVT(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				v |= int32(b&0x7F) << shift
+				m.FixableLowCveCount |= int32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			m.SetFixableLowCves = &ImageV2_FixableLowCves{FixableLowCves: v}
 		case 21:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field LastUpdated", wireType)
@@ -2068,7 +1167,7 @@ func (m *ImageV2) UnmarshalVT(dAtA []byte) error {
 			}
 			v = uint32(binary.LittleEndian.Uint32(dAtA[iNdEx:]))
 			iNdEx += 4
-			m.SetTopCvss = &ImageV2_TopCvss{TopCvss: float32(math.Float32frombits(v))}
+			m.TopCvss = float32(math.Float32frombits(v))
 		case 27:
 			if wireType == 0 {
 				var v ImageV2_Note
@@ -2443,9 +1542,9 @@ func (m *ImageV2) UnmarshalVTUnsafe(dAtA []byte) error {
 			iNdEx = postIndex
 		case 8:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Components", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ComponentCount", wireType)
 			}
-			var v int32
+			m.ComponentCount = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -2455,17 +1554,16 @@ func (m *ImageV2) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				v |= int32(b&0x7F) << shift
+				m.ComponentCount |= int32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			m.SetComponents = &ImageV2_Components{Components: v}
 		case 9:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Cves", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field CveCount", wireType)
 			}
-			var v int32
+			m.CveCount = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -2475,17 +1573,16 @@ func (m *ImageV2) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				v |= int32(b&0x7F) << shift
+				m.CveCount |= int32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			m.SetCves = &ImageV2_Cves{Cves: v}
 		case 10:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field FixableCves", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field FixableCveCount", wireType)
 			}
-			var v int32
+			m.FixableCveCount = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -2495,17 +1592,16 @@ func (m *ImageV2) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				v |= int32(b&0x7F) << shift
+				m.FixableCveCount |= int32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			m.SetFixableCves = &ImageV2_FixableCves{FixableCves: v}
 		case 11:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field UnknownCves", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field UnknownCveCount", wireType)
 			}
-			var v int32
+			m.UnknownCveCount = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -2515,17 +1611,16 @@ func (m *ImageV2) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				v |= int32(b&0x7F) << shift
+				m.UnknownCveCount |= int32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			m.SetUnknownCves = &ImageV2_UnknownCves{UnknownCves: v}
 		case 12:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field FixableUnknownCves", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field FixableUnknownCveCount", wireType)
 			}
-			var v int32
+			m.FixableUnknownCveCount = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -2535,17 +1630,16 @@ func (m *ImageV2) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				v |= int32(b&0x7F) << shift
+				m.FixableUnknownCveCount |= int32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			m.SetFixableUnknownCves = &ImageV2_FixableUnknownCves{FixableUnknownCves: v}
 		case 13:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field CriticalCves", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field CriticalCveCount", wireType)
 			}
-			var v int32
+			m.CriticalCveCount = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -2555,17 +1649,16 @@ func (m *ImageV2) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				v |= int32(b&0x7F) << shift
+				m.CriticalCveCount |= int32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			m.SetCriticalCves = &ImageV2_CriticalCves{CriticalCves: v}
 		case 14:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field FixableCriticalCves", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field FixableCriticalCveCount", wireType)
 			}
-			var v int32
+			m.FixableCriticalCveCount = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -2575,17 +1668,16 @@ func (m *ImageV2) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				v |= int32(b&0x7F) << shift
+				m.FixableCriticalCveCount |= int32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			m.SetFixableCriticalCves = &ImageV2_FixableCriticalCves{FixableCriticalCves: v}
 		case 15:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ImportantCves", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ImportantCveCount", wireType)
 			}
-			var v int32
+			m.ImportantCveCount = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -2595,17 +1687,16 @@ func (m *ImageV2) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				v |= int32(b&0x7F) << shift
+				m.ImportantCveCount |= int32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			m.SetImportantCves = &ImageV2_ImportantCves{ImportantCves: v}
 		case 16:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field FixableImportantCves", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field FixableImportantCveCount", wireType)
 			}
-			var v int32
+			m.FixableImportantCveCount = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -2615,17 +1706,16 @@ func (m *ImageV2) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				v |= int32(b&0x7F) << shift
+				m.FixableImportantCveCount |= int32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			m.SetFixableImportantCves = &ImageV2_FixableImportantCves{FixableImportantCves: v}
 		case 17:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ModerateCves", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ModerateCveCount", wireType)
 			}
-			var v int32
+			m.ModerateCveCount = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -2635,17 +1725,16 @@ func (m *ImageV2) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				v |= int32(b&0x7F) << shift
+				m.ModerateCveCount |= int32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			m.SetModerateCves = &ImageV2_ModerateCves{ModerateCves: v}
 		case 18:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field FixableModerateCves", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field FixableModerateCveCount", wireType)
 			}
-			var v int32
+			m.FixableModerateCveCount = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -2655,17 +1744,16 @@ func (m *ImageV2) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				v |= int32(b&0x7F) << shift
+				m.FixableModerateCveCount |= int32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			m.SetFixableModerateCves = &ImageV2_FixableModerateCves{FixableModerateCves: v}
 		case 19:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field LowCves", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field LowCveCount", wireType)
 			}
-			var v int32
+			m.LowCveCount = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -2675,17 +1763,16 @@ func (m *ImageV2) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				v |= int32(b&0x7F) << shift
+				m.LowCveCount |= int32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			m.SetLowCves = &ImageV2_LowCves{LowCves: v}
 		case 20:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field FixableLowCves", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field FixableLowCveCount", wireType)
 			}
-			var v int32
+			m.FixableLowCveCount = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -2695,12 +1782,11 @@ func (m *ImageV2) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				v |= int32(b&0x7F) << shift
+				m.FixableLowCveCount |= int32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			m.SetFixableLowCves = &ImageV2_FixableLowCves{FixableLowCves: v}
 		case 21:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field LastUpdated", wireType)
@@ -2817,7 +1903,7 @@ func (m *ImageV2) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 			v = uint32(binary.LittleEndian.Uint32(dAtA[iNdEx:]))
 			iNdEx += 4
-			m.SetTopCvss = &ImageV2_TopCvss{TopCvss: float32(math.Float32frombits(v))}
+			m.TopCvss = float32(math.Float32frombits(v))
 		case 27:
 			if wireType == 0 {
 				var v ImageV2_Note

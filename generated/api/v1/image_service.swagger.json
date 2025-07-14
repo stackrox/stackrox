@@ -1000,7 +1000,7 @@
         "isClusterLocal": {
           "type": "boolean"
         },
-        "v2Id": {
+        "idV2": {
           "type": "string"
         }
       },
