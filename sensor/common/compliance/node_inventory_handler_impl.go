@@ -85,7 +85,7 @@ func (c *nodeInventoryHandlerImpl) Start() error {
 	return nil
 }
 
-func (c *nodeInventoryHandlerImpl) Stop(_ error) {
+func (c *nodeInventoryHandlerImpl) Stop() {
 	if !c.stopper.Client().Stopped().IsDone() {
 		defer utils.IgnoreError(c.stopper.Client().Stopped().Wait)
 	}

@@ -58,7 +58,7 @@ func (u *updaterImpl) Start() error {
 	return nil
 }
 
-func (u *updaterImpl) Stop(_ error) {
+func (u *updaterImpl) Stop() {
 	u.stopSig.Signal()
 }
 

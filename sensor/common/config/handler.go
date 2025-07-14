@@ -58,7 +58,7 @@ func (c *configHandlerImpl) Start() error {
 	return nil
 }
 
-func (c *configHandlerImpl) Stop(_ error) {
+func (c *configHandlerImpl) Stop() {
 	c.stopC.Signal()
 }
 

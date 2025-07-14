@@ -303,7 +303,7 @@ func (s *AuditLogCollectionManagerTestSuite) TestStateSaverSavesFileStates() {
 	manager.enabled.Set(true) // start out enabled
 
 	s.NoError(manager.Start())
-	defer manager.Stop(nil)
+	defer manager.Stop()
 
 	// Now pass in a few messages and wait for the state to get updated asynchronously
 	expectedFileStates := make(map[string]*storage.AuditLogFileState)
@@ -339,7 +339,7 @@ func (s *AuditLogCollectionManagerTestSuite) TestStateSaverDoesNotSaveIfMsgHasNo
 	manager.enabled.Set(true) // start out enabled
 
 	s.NoError(manager.Start())
-	defer manager.Stop(nil)
+	defer manager.Stop()
 
 	// Now pass in a few messages and wait for the state to get updated asynchronously
 	startTime := time.Now()
@@ -410,7 +410,7 @@ func (s *AuditLogCollectionManagerTestSuite) TestUpdaterDoesNotSendWhenNoFileSta
 
 	err := manager.Start()
 	s.Require().NoError(err)
-	defer manager.Stop(nil)
+	defer manager.Stop()
 
 	timer := time.NewTimer(updateTimeout + (500 * time.Millisecond)) // wait an extra 1/2 second
 
@@ -432,7 +432,7 @@ func (s *AuditLogCollectionManagerTestSuite) TestUpdaterDoesNotSendIfInitStateNo
 
 	err := manager.Start()
 	s.Require().NoError(err)
-	defer manager.Stop(nil)
+	defer manager.Stop()
 
 	timer := time.NewTimer(updateTimeout + (500 * time.Millisecond)) // wait an extra 1/2 second
 
@@ -457,7 +457,7 @@ func (s *AuditLogCollectionManagerTestSuite) TestUpdaterSendsUpdateWithLatestFil
 
 	err := manager.Start()
 	s.Require().NoError(err)
-	defer manager.Stop(nil)
+	defer manager.Stop()
 
 	status := s.getUpdaterStatusMsg(manager, 10)
 	protoassert.MapEqual(s.T(), expectedStatus, status.GetNodeAuditLogFileStates())
@@ -479,7 +479,7 @@ func (s *AuditLogCollectionManagerTestSuite) TestUpdaterSendsUpdateWhenForced() 
 
 	err := manager.Start()
 	s.Require().NoError(err)
-	defer manager.Stop(nil)
+	defer manager.Stop()
 
 	manager.ForceUpdate()
 
@@ -553,5 +553,5 @@ func (s *AuditLogCollectionManagerTestSuite) TestUpdaterSkipsOnOfflineMode() {
 
 	}
 
-	manager.Stop(nil)
+	manager.Stop()
 }
