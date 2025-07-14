@@ -28,16 +28,16 @@ spec:
 
   - name: post-metric-end
     params:
-      - name: AGGREGATE_TASKS_STATUS
-        value: $(tasks.status)
+    - name: AGGREGATE_TASKS_STATUS
+      value: $(tasks.status)
     taskRef: &post-bigquery-metrics-ref
       params:
-        - name: name
-          value: post-bigquery-metrics
-        - name: bundle
-          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:8ebb5d5589a23798f7c3f049d9ba42f726c5a39314f1cb10b10f9466e89d0dca
-        - name: kind
-          value: task
+      - name: name
+        value: post-bigquery-metrics
+      - name: bundle
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:8ebb5d5589a23798f7c3f049d9ba42f726c5a39314f1cb10b10f9466e89d0dca
+      - name: kind
+        value: task
       resolver: bundles
 
   params:
@@ -151,12 +151,12 @@ spec:
       value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
     taskRef:
       params:
-        - name: name
-          value: determine-dependency-image-tag
-        - name: bundle
-          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:8ebb5d5589a23798f7c3f049d9ba42f726c5a39314f1cb10b10f9466e89d0dca
-        - name: kind
-          value: task
+      - name: name
+        value: determine-dependency-image-tag
+      - name: bundle
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:8ebb5d5589a23798f7c3f049d9ba42f726c5a39314f1cb10b10f9466e89d0dca
+      - name: kind
+        value: task
       resolver: bundles
 
     # We only check the input image is ready and otherwise fail the retag pipeline early and with a meaningful error.
