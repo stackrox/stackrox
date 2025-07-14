@@ -69,7 +69,7 @@ jobs:
           set -x
           export CI=true  # or builds roxctl separately in main-build-nodeps even if built
           parallel="${{ matrix.parallel }}"  # sequential until verified working. TODO: test parallel=>1
-          make -j${parallel} -Oline deps # go mod tidy all go.sum files
+          make -j${parallel} -Oline deps clean-image  # go mod tidy all go.sum files
             # semaphore ./deps controls if run
             # if [[ ! -d ./deps ]]; then for d in $(find . -name go.sum | xargs dirname); do pushd $d; go mod tidy; popd; done; fi
             # make -j${parallel} -Oline build-prep  # depends on deps and creates empty build binary output path
@@ -83,7 +83,7 @@ jobs:
           parallel="${{ matrix.parallel }}"  # sequential until verified working. TODO: test parallel=>1
           # cli-build  # reduced to linux amd64 for CI test-use
           # make cli_host-arch could work, but we specifically want linux-amd64 for CI test clusters
-          time make -j${parallel} -Oline cli_linux-amd64 main-build-nodeps ui-build swagger-docs clean-image
+          time make -j${parallel} -Oline cli_linux-amd64 main-build-nodeps ui-build swagger-docs
             # main-build-nodeps: gobuild *. then, build roxctl if not CI
             # ui-build: test -d ui/build || make -C ui build
             # clean-image: clear image context dir contents
