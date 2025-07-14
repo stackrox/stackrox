@@ -8,7 +8,7 @@
 # If you'd like to run the tool locally, you can do the following (in the repo root):
 # $ docker run --rm -it -v .:/source -w /source --entrypoint=/bin/bash registry.access.redhat.com/ubi9/python-312
 # $ pip3 install yamllint
-# $ yamllint -c .tekton/.yamllint.yaml .tekton
+# $ yamllint -c .konflux/.yamllint.yaml .tekton
 
 yaml-files:
 - '*.yaml'

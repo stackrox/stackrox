@@ -141,7 +141,7 @@ jobs:
       run: |
         pip3 install yamllint
         echo "::warning::If this step fails, expand the regions below in order to see what checks failed per each file."
-        yamllint --config-file .tekton/.yamllint.yaml --format github .tekton/
+        yamllint --config-file .konflux/.yamllint.yaml --format github .tekton/
 
   golangci-lint:
     timeout-minutes: 240
