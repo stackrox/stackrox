@@ -56,3 +56,6 @@ jobs:
 
       - objectTemplate: berserker-configmap-connections.yml
         replicas: 10
+
+      - objectTemplate: berserker-configmap-processes.yml
+        replicas: 10
