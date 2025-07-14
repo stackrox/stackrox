@@ -43,7 +43,7 @@ jobs:
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
       - name: Fetch tags
-        run: git fetch --depth=100 origin +refs/tags/*:refs/tags/*
+        run: git fetch --depth=10 origin +refs/tags/*:refs/tags/*
 
       - uses: ./.github/actions/job-preamble
         with:
