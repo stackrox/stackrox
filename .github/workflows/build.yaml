@@ -39,7 +39,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 5000
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
       - name: Checkout manually
@@ -50,7 +50,7 @@ jobs:
           set +e
           set -x
           #fetch_depth=1
-          time git clone --verbose --single-branch --branch "${ref}" "${url}"
+          time git clone --verbose --depth=5000 --single-branch --branch "${ref}" "${url}"
           ls -la stackrox/
           cd stackrox
           git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*' || true
