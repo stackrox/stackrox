@@ -42,7 +42,7 @@ jobs:
           fetch-depth: 5000
           fetch-tags: true
           show-progress: false
-          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+          ref: ${{ github.ref_name || inputs.commit || github.event.pull_request.head.sha }}
 
       - uses: ./.github/actions/job-preamble
         with:
