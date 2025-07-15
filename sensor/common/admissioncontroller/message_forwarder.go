@@ -1,6 +1,8 @@
 package admissioncontroller
 
 import (
+	"fmt"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
@@ -53,6 +55,10 @@ func (h *admCtrlMsgForwarderImpl) Stop() {
 	}
 
 	h.stopper.Client().Stop()
+}
+
+func (h *admCtrlMsgForwarderImpl) Name() string {
+	return fmt.Sprintf("%T", h)
 }
 
 func (h *admCtrlMsgForwarderImpl) Notify(event common.SensorComponentEvent) {

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"runtime/pprof"
 	"sync/atomic"
@@ -50,6 +51,10 @@ type commandHandler struct {
 
 	pendingContextCancels      map[string]context.CancelFunc
 	pendingContextCancelsMutex sync.Mutex
+}
+
+func (h *commandHandler) Name() string {
+	return fmt.Sprintf("%T", h)
 }
 
 // DiagnosticConfigurationFunc is a function that modifies the diagnostic configuration.

@@ -1,6 +1,8 @@
 package reprocessor
 
 import (
+	"fmt"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
@@ -41,6 +43,10 @@ type handlerImpl struct {
 	detector           detector.Detector
 	imageCache         cache.Image
 	stopSig            concurrency.ErrorSignal
+}
+
+func (h *handlerImpl) Name() string {
+	return fmt.Sprintf("%T", h)
 }
 
 func (h *handlerImpl) Start() error {

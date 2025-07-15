@@ -69,6 +69,7 @@ type SensorComponent interface {
 
 	ProcessMessage(msg *central.MsgToSensor) error
 	ResponsesC() <-chan *message.ExpiringMessage
+	Name() string
 }
 
 // MessageToComplianceWithAddress adds the Hostname to sensor.MsgToCompliance so we know where to send it to.

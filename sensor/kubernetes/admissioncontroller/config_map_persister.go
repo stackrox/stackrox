@@ -3,6 +3,7 @@ package admissioncontroller
 import (
 	"compress/gzip"
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
@@ -38,6 +39,10 @@ type configMapPersister struct {
 	client v1client.ConfigMapInterface
 
 	settingsStreamIt concurrency.ValueStreamIter[*sensor.AdmissionControlSettings]
+}
+
+func (p *configMapPersister) Name() string {
+	return fmt.Sprintf("%T", p)
 }
 
 // NewConfigMapSettingsPersister creates a config persister object for the admission controller.

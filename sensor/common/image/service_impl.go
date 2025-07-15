@@ -2,6 +2,7 @@ package image
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
@@ -59,6 +60,10 @@ type serviceImpl struct {
 	registryStore registryStore
 	localScan     localScan
 	centralReady  concurrency.Signal
+}
+
+func (s *serviceImpl) Name() string {
+	return fmt.Sprintf("%T", s)
 }
 
 func (s *serviceImpl) SetClient(conn grpc.ClientConnInterface) {

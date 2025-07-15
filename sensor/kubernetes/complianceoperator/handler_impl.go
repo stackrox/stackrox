@@ -41,6 +41,10 @@ type handlerImpl struct {
 	complianceIsReady *concurrency.Signal
 }
 
+func (m *handlerImpl) Name() string {
+	return fmt.Sprintf("%T", m)
+}
+
 type scanScheduleConfiguration struct {
 	Suspend        *bool
 	Schedule       *string

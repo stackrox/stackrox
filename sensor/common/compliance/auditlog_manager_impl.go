@@ -1,6 +1,7 @@
 package compliance
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -37,6 +38,10 @@ type auditLogCollectionManagerImpl struct {
 
 	fileStateLock  sync.RWMutex
 	connectionLock sync.RWMutex
+}
+
+func (a *auditLogCollectionManagerImpl) Name() string {
+	return fmt.Sprintf("%T", a)
 }
 
 func (a *auditLogCollectionManagerImpl) Start() error {

@@ -2,6 +2,7 @@ package complianceoperator
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
@@ -97,6 +98,10 @@ type updaterImpl struct {
 	stopSig              concurrency.Signal
 	complianceOperatorNS string
 	isReady              *concurrency.Signal
+}
+
+func (u *updaterImpl) Name() string {
+	return fmt.Sprintf("%T", u)
 }
 
 func (u *updaterImpl) Start() error {

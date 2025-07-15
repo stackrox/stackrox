@@ -508,6 +508,10 @@ type fakeSensorComponent struct {
 	responsesC chan *message.ExpiringMessage
 }
 
+func (f fakeSensorComponent) Name() string {
+	return fmt.Sprintf("%T", f)
+}
+
 func (f fakeSensorComponent) Notify(common.SensorComponentEvent) {
 	panic("implement me")
 }

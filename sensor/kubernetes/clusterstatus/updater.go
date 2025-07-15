@@ -3,6 +3,7 @@ package clusterstatus
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"slices"
 	"sync/atomic"
 	"time"
@@ -51,6 +52,10 @@ type updaterImpl struct {
 	// This function is needed to be able to mock in test
 	getProviders                     func(context.Context) *storage.ProviderMetadata
 	getProviderMetadataFromOpenShift providerMetadataFromOpenShift
+}
+
+func (u *updaterImpl) Name() string {
+	return fmt.Sprintf("%T", u)
 }
 
 func (u *updaterImpl) Start() error {

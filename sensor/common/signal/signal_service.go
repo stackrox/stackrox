@@ -2,12 +2,12 @@ package signal
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"strings"
 
-	"github.com/pkg/errors"
-
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	sensorAPI "github.com/stackrox/rox/generated/internalapi/sensor"
@@ -62,6 +62,10 @@ type serviceImpl struct {
 	processPipeline  Pipeline
 	writer           io.Writer
 	authFuncOverride func(context.Context, string) (context.Context, error)
+}
+
+func (s *serviceImpl) Name() string {
+	return fmt.Sprintf("%T", s)
 }
 
 func authFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {

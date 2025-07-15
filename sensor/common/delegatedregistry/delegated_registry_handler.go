@@ -3,6 +3,7 @@ package delegatedregistry
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -40,6 +41,10 @@ type delegatedRegistryImpl struct {
 	stopSig       concurrency.Signal
 	localScan     *scan.LocalScan
 	imageSvc      v1.ImageServiceClient
+}
+
+func (d *delegatedRegistryImpl) Name() string {
+	return fmt.Sprintf("%T", d)
 }
 
 // NewHandler returns a new instance of Handler.

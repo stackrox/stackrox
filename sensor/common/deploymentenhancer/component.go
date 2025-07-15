@@ -2,6 +2,7 @@ package deploymentenhancer
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -28,6 +29,10 @@ type DeploymentEnhancer struct {
 	storeProvider    store.Provider
 	ctx              context.Context
 	ctxCancel        context.CancelFunc
+}
+
+func (d *DeploymentEnhancer) Name() string {
+	return fmt.Sprintf("%T", d)
 }
 
 // CreateEnhancer creates a new Enhancer

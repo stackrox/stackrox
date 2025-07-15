@@ -2,6 +2,7 @@ package enforcer
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -41,6 +42,10 @@ type enforcer struct {
 	enforcementMap map[storage.EnforcementAction]EnforceFunc
 	actionsC       chan *central.SensorEnforcement
 	stopper        concurrency.Stopper
+}
+
+func (e *enforcer) Name() string {
+	return fmt.Sprintf("%T", e)
 }
 
 func (e *enforcer) Capabilities() []centralsensor.SensorCapability {

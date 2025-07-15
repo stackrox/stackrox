@@ -2,6 +2,7 @@ package clustermetrics
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
@@ -68,6 +69,10 @@ type clusterMetricsImpl struct {
 	pollingTimeout  time.Duration
 	k8sClient       kubernetes.Interface
 	pollTicker      *time.Ticker
+}
+
+func (cm *clusterMetricsImpl) Name() string {
+	return fmt.Sprintf("%T", cm)
 }
 
 func (cm *clusterMetricsImpl) Start() error {

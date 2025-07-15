@@ -1,6 +1,8 @@
 package admissioncontroller
 
 import (
+	"fmt"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
@@ -26,6 +28,10 @@ type alertHandlerImpl struct {
 	output       chan *message.ExpiringMessage
 	stopSig      concurrency.Signal
 	centralReady concurrency.Signal
+}
+
+func (h *alertHandlerImpl) Name() string {
+	return fmt.Sprintf("%T", h)
 }
 
 func (h *alertHandlerImpl) Start() error {

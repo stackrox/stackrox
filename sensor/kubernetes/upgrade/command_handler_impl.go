@@ -2,6 +2,7 @@ package upgrade
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -39,6 +40,10 @@ type commandHandler struct {
 	checkInClient       central.SensorUpgradeControlServiceClient
 
 	configHandler config.Handler
+}
+
+func (h *commandHandler) Name() string {
+	return fmt.Sprintf("%T", h)
 }
 
 // NewCommandHandler returns a new upgrade command handler for Kubernetes.

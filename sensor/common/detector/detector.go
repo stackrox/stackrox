@@ -2,6 +2,7 @@ package detector
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"time"
 
@@ -177,6 +178,10 @@ type detectorImpl struct {
 	networkFlowsQueue *queue.Queue[*queue.FlowQueueItem]
 	indicatorsQueue   *queue.Queue[*queue.IndicatorQueueItem]
 	deploymentsQueue  queue.SimpleQueue[*queue.DeploymentQueueItem]
+}
+
+func (d *detectorImpl) Name() string {
+	return fmt.Sprintf("%T", d)
 }
 
 func (d *detectorImpl) Start() error {
