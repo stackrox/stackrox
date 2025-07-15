@@ -18228,19 +18228,39 @@
               },
               {
                 "id": 4,
+                "name": "cluster_id",
+                "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "cluster_name",
+                "type": "string"
+              },
+              {
+                "id": 7,
                 "name": "scan",
                 "type": "VirtualMachineScan"
               },
               {
-                "id": 5,
+                "id": 8,
                 "name": "last_updated",
                 "type": "google.protobuf.Timestamp"
               },
               {
-                "id": 6,
+                "id": 9,
                 "name": "notes",
                 "type": "Note",
                 "is_repeated": true
+              }
+            ],
+            "maps": [
+              {
+                "key_type": "string",
+                "field": {
+                  "id": 6,
+                  "name": "facts",
+                  "type": "string"
+                }
               }
             ]
           },
@@ -18248,17 +18268,17 @@
             "name": "VirtualMachineScan",
             "fields": [
               {
-                "id": 6,
+                "id": 1,
                 "name": "scanner_version",
                 "type": "string"
               },
               {
-                "id": 1,
+                "id": 2,
                 "name": "scan_time",
                 "type": "google.protobuf.Timestamp"
               },
               {
-                "id": 2,
+                "id": 3,
                 "name": "components",
                 "type": "EmbeddedImageScanComponent",
                 "is_repeated": true
@@ -18269,12 +18289,12 @@
                 "type": "string"
               },
               {
-                "id": 3,
+                "id": 5,
                 "name": "data_source",
                 "type": "DataSource"
               },
               {
-                "id": 5,
+                "id": 6,
                 "name": "notes",
                 "type": "Note",
                 "is_repeated": true

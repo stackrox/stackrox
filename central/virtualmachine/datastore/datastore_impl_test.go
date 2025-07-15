@@ -184,6 +184,32 @@ func (s *VirtualMachineDataStoreTestSuite) TestUpsertVirtualMachine() {
 	s.Equal(sac.ErrResourceAccessDenied, err)
 }
 
+// Test DeleteVirtualMachines in one call
+func (s *VirtualMachineDataStoreTestSuite) TestDeleteVirtualMachinesOneCall() {
+	// Create test VMs
+	vm1 := s.createTestVM("test-1")
+	vm2 := s.createTestVM("test-2")
+
+	err := s.datastore.CreateVirtualMachine(s.sacCtx, vm1)
+	s.NoError(err)
+	err = s.datastore.CreateVirtualMachine(s.sacCtx, vm2)
+	s.NoError(err)
+
+	// Test successful deletion
+	err = s.datastore.DeleteVirtualMachines(s.sacCtx, "test-1", "test-2")
+	s.NoError(err)
+
+	// Verify deletion
+	_, found, err := s.datastore.GetVirtualMachine(s.sacCtx, "test-1")
+	s.NoError(err)
+	s.False(found)
+
+	// Verify deletion
+	_, found, err = s.datastore.GetVirtualMachine(s.sacCtx, "test-2")
+	s.NoError(err)
+	s.False(found)
+}
+
 // Test DeleteVirtualMachines
 func (s *VirtualMachineDataStoreTestSuite) TestDeleteVirtualMachines() {
 	// Create test VMs

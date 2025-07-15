@@ -642,17 +642,6 @@
       ],
       "default": "DEPLOYED"
     },
-    "VulnerabilityReportFiltersVulnerabilitySeverity": {
-      "type": "string",
-      "enum": [
-        "UNKNOWN_VULNERABILITY_SEVERITY",
-        "LOW_VULNERABILITY_SEVERITY",
-        "MODERATE_VULNERABILITY_SEVERITY",
-        "IMPORTANT_VULNERABILITY_SEVERITY",
-        "CRITICAL_VULNERABILITY_SEVERITY"
-      ],
-      "default": "UNKNOWN_VULNERABILITY_SEVERITY"
-    },
     "protobufAny": {
       "type": "object",
       "properties": {
@@ -1080,7 +1069,7 @@
         "severities": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/VulnerabilityReportFiltersVulnerabilitySeverity"
+            "$ref": "#/definitions/v2VulnerabilityReportFiltersVulnerabilitySeverity"
           }
         },
         "imageTypes": {
@@ -1109,6 +1098,17 @@
           "type": "boolean"
         }
       }
+    },
+    "v2VulnerabilityReportFiltersVulnerabilitySeverity": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN_VULNERABILITY_SEVERITY",
+        "LOW_VULNERABILITY_SEVERITY",
+        "MODERATE_VULNERABILITY_SEVERITY",
+        "IMPORTANT_VULNERABILITY_SEVERITY",
+        "CRITICAL_VULNERABILITY_SEVERITY"
+      ],
+      "default": "UNKNOWN_VULNERABILITY_SEVERITY"
     }
   }
 }
