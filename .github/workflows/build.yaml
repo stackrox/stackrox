@@ -39,10 +39,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 5000
-          fetch-tags: true
           show-progress: false
-          ref: ${{ github.ref_name || inputs.commit || github.event.pull_request.head.sha }}
+          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
       - uses: ./.github/actions/job-preamble
         with:
