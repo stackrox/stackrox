@@ -319,6 +319,7 @@ func main() {
 
 	go startGRPCServer()
 	go startTelemetryServer()
+	go startBackgroundProcesses()
 
 	if env.ManagedCentral.BooleanSetting() {
 		clusterInternalServer := internal.NewHTTPServer(metrics.HTTPSingleton())
@@ -558,10 +559,6 @@ func startGRPCServer() {
 	}
 
 	basicAuthProvider := userpass.RegisterAuthProviderOrPanic(authProviderRegisteringCtx, basicAuthMgr, registry)
-
-	if env.DeclarativeConfiguration.BooleanSetting() {
-		declarativeconfig.ManagerSingleton().ReconcileDeclarativeConfigurations()
-	}
 
 	clusterInitBackend := backend.Singleton()
 	serviceMTLSExtractor, err := service.NewExtractorWithCertValidation(clusterInitBackend)
@@ -933,6 +930,12 @@ func debugRoutes() []routes.CustomRoute {
 		})
 	}
 	return customRoutes
+}
+
+func startBackgroundProcesses() {
+	if env.DeclarativeConfiguration.BooleanSetting() {
+		declarativeconfig.ManagerSingleton().ReconcileDeclarativeConfigurations()
+	}
 }
 
 type stoppable interface {
