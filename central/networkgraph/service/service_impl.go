@@ -559,12 +559,6 @@ func (s *serviceImpl) addDeploymentFlowsToGraph(
 		flows = transformer.NewExternalDiscoveredTransformer().Transform(flows)
 	}
 
-	// If aggressive aggregation is disabled, transform the external discovered flows
-	// at the end, so previous aggregation steps do not combine them into a single edge.
-	if !features.NetworkGraphAggregateExternalIPs.Enabled() {
-		flows = transformer.NewExternalDiscoveredTransformer().Transform(flows)
-	}
-
 	graphBuilder.AddFlows(flows)
 
 	filteredFlows, visibleNeighbors, maskedDeployments, err := filterFlowsAndMaskScopeAlienDeployments(ctx,
