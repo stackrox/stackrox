@@ -6,12 +6,14 @@ import (
 	"encoding/pem"
 	"log"
 	"os"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/auth/m2m"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -59,6 +61,9 @@ func GetPrivateKeyBytes() ([]byte, error) {
 type m2mValidator struct {
 	m2m.TokenExchangerSet
 	roxValidator tokens.Validator
+	// A token cache per issuer with separately configured TTL.
+	exchangedTokensCache map[string]expiringcache.Cache[string, string]
+	cacheMux             sync.Mutex
 }
 
 // Validate the token: if this is not a stackrox.io token, exchange it first,
@@ -79,17 +84,53 @@ func (v *m2mValidator) Validate(ctx context.Context, token string) (*tokens.Toke
 	}
 	// Otherwise, let's exchange the token according to an M2M configuration for
 	// this issuer, if available.
-	exchanger, found := v.GetTokenExchanger(iss)
-	if !found {
-		return nil, errox.NoCredentials.CausedBy("no exchanger found for issuer " + iss)
-	}
-	// The exchanger will pass the provided token to the according
-	// coreos/go-oidc provider for verification (expiration, signature, etc.).
-	newToken, err := exchanger.ExchangeToken(ctx, token)
+	newToken, err := v.exchange(ctx, iss, token)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "failed to exchange an ID token for issuer %s", iss)
 	}
 	return v.roxValidator.Validate(ctx, newToken)
+}
+
+func (v *m2mValidator) exchange(ctx context.Context, iss string, token string) (string, error) {
+	exchanger, found := v.GetTokenExchanger(iss)
+	if !found {
+		return "", errox.NoCredentials.CausedBy("no exchanger found")
+	}
+
+	v.cacheMux.Lock()
+	defer v.cacheMux.Unlock()
+
+	cache, found := v.exchangedTokensCache[iss]
+	if !found {
+		tokenTTL, err := time.ParseDuration(exchanger.Config().GetTokenExpirationDuration())
+		if err != nil {
+			return "", errox.InvalidArgs.New("parsing token expiration duration").CausedBy(err)
+		}
+		// TTL for the cached token should be less than the token TTL so that
+		// the cache doen't return expired tokens. Let's not cache tokens with
+		// TTL less than a 1 minute margin.
+		const margin = time.Minute
+		if tokenTTL > margin {
+			cache = expiringcache.NewExpiringCache[string, string](tokenTTL - margin)
+		}
+		v.exchangedTokensCache[iss] = cache
+	}
+	if cache == nil {
+		// No cache, just exchange:
+		return exchanger.ExchangeToken(ctx, token)
+	}
+	newToken, found := cache.Get(token)
+	if !found {
+		var err error
+		// The exchanger will pass the provided token to the according
+		// coreos/go-oidc provider for verification (expiration, signature, etc.).
+		newToken, err = exchanger.ExchangeToken(ctx, token)
+		if err != nil {
+			return "", err
+		}
+		cache.Add(token, newToken)
+	}
+	return newToken, nil
 }
 
 func create() (tokens.IssuerFactory, tokens.Validator, error) {
@@ -111,7 +152,9 @@ func create() (tokens.IssuerFactory, tokens.Validator, error) {
 	// provided token is not issued by stackrox.io and requires an implicit
 	// exchange.
 	exchangerSet := m2m.TokenExchangerSetSingleton(roleDataStore.Singleton(), factory)
-	return factory, &m2mValidator{exchangerSet, validator}, err
+	return factory, &m2mValidator{exchangerSet, validator,
+		make(map[string]expiringcache.Cache[string, string]), sync.Mutex{},
+	}, err
 }
 
 func initialize() {
