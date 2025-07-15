@@ -69,12 +69,17 @@ function getSrcAliases() {
 export default defineConfig(async () => {
     const sslOptions = getSslOptions();
     return {
-        cache: true,
+        cacheDir: '/tmp/cache',
         build: {
-            cacheDir: 'cache',
+            minify: false,
             assetsDir: './static',
+            sourceMap: false,
             outDir: 'build',
             rollupOptions: {
+                logLevel: 'debug',
+                cache: true,
+                perf: true,
+                maxParallelFileOps: 3000,
                 output: {
                     // Break the following dependencies into their own chunks to limit memory usage during build and decouple large
                     // dependencies from their first entry point in our app's pages.
