@@ -518,6 +518,8 @@ jobs:
         run: make -C ui deps
 
       - name: Generate OSS notice
+        env:
+          GITHUB_OAUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           FETCH_VERSION=0.4.6
           FETCH_SHA256=a67ed3141d6deb7e7841f40505cba11eb7a37abbab78374712a42373e7854209
