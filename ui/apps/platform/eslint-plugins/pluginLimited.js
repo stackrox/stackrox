@@ -22,6 +22,8 @@ const rules = {
         create(context) {
             return {
                 ExportDefaultDeclaration(node) {
+                    const hookRegExp = /^use[A-Z]/; // Uppercase prevents false match like userWhatever
+
                     // export default Whatever
                     // export default function Whatever() {}
                     const name = node.declaration?.name ?? node.declaration?.id?.name;
@@ -33,8 +35,8 @@ const rules = {
                         // Use file name extension in case JSX Transform removes import React as cue for component.
                         const isReactComponentOrHook =
                             ['.jsx', '.tsx'].includes(extname) ||
-                            basenameWithoutExtension.startsWith('use') ||
-                            name.startsWith('use');
+                            hookRegExp.test(basenameWithoutExtension) ||
+                            hookRegExp.test(name);
                         if (isReactComponentOrHook && basenameWithoutExtension !== name) {
                             context.report({
                                 node,
