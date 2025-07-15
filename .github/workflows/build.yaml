@@ -90,6 +90,8 @@ jobs:
               # mkdir -p bin/linux_amd64
 
       - name: compile
+        env:
+          NODE_OPTIONS: "--max_old_space_size=4096"
         run: |
           export SKIP_CLI_BUILD=true  # or cli-build's in cli even if already built
           export SKIP_UI_BUILD=true  # or ui-build's in all-builds even if already built
