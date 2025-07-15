@@ -1,4 +1,4 @@
-/* globals module require */
+/* globals console module require */
 
 const path = require('node:path');
 
@@ -22,28 +22,27 @@ const rules = {
         create(context) {
             return {
                 ExportDefaultDeclaration(node) {
-                    if (typeof node.declaration?.name === 'string') {
-                        const { name } = node.declaration;
+                    // export default Whatever
+                    // export default function Whatever() {}
+                    const name = node.declaration?.name ?? node.declaration?.id?.name;
+                    if (typeof name === 'string') {
                         const { filename } = context;
-                        const basenameWithoutExtension = path.basename(
-                            filename,
-                            path.extname(filename)
-                        );
-                        if (basenameWithoutExtension !== name) {
-                            const ancestors = context.sourceCode.getAncestors(node);
-                            const hasReactImportDeclaration = ancestors[0]?.body?.some(
-                                (child) =>
-                                    child.type === 'ImportDeclaration' &&
-                                    child.source?.value === 'react'
-                            );
-                            // Omit from previous condition, because hooks do not import React.
-                            // child.specifiers?.[0]?.local?.name === 'React'
-                            if (hasReactImportDeclaration) {
-                                context.report({
-                                    node,
-                                    message: `Require that file name be consistent with export default of React component name: ${name}`,
-                                });
-                            }
+                        const extname = path.extname(filename);
+                        const basenameWithoutExtension = path.basename(filename, extname);
+
+                        // Use file name extension in case JSX Transform removes import React as cue for component.
+                        const isReactComponentOrHook =
+                            ['.jsx', '.tsx'].includes(extname) ||
+                            basenameWithoutExtension.startsWith('use') ||
+                            name.startsWith('use');
+                        if (isReactComponentOrHook) {
+                            console.log(`${name} ${basenameWithoutExtension} ${extname}`); // eslint-disable-line no-console
+                        }
+                        if (isReactComponentOrHook && basenameWithoutExtension !== name) {
+                            context.report({
+                                node,
+                                message: `Require that file name be consistent with export default of React component name: ${name}`,
+                            });
                         }
                     }
                 },
