@@ -77,7 +77,6 @@ jobs:
               # mkdir -p bin/linux_amd64
 
       - name: compile
-        env:
         run: |
           export SKIP_CLI_BUILD=true  # or cli-build's in cli even if already built
           export SKIP_UI_BUILD=true  # or ui-build's in all-builds even if already built
