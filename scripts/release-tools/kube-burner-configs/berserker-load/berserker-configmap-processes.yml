@@ -8,6 +8,6 @@ data:
 
     [workload]
     type = "processes"
-    arrival_rate = 10.0
+    arrival_rate = 100.0
     departure_rate = 200.0
     random_process = true
