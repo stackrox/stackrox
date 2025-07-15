@@ -3,7 +3,6 @@ package delegatedregistry
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -44,7 +43,7 @@ type delegatedRegistryImpl struct {
 }
 
 func (d *delegatedRegistryImpl) Name() string {
-	return fmt.Sprintf("%T", d)
+	return common.DefaultComponentName(d)
 }
 
 // NewHandler returns a new instance of Handler.

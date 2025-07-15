@@ -48,7 +48,7 @@ type serviceImpl struct {
 }
 
 func (s *serviceImpl) Name() string {
-	return fmt.Sprintf("%T", s)
+	return common.DefaultComponentName(s)
 }
 
 func (s *serviceImpl) Notify(e common.SensorComponentEvent) {

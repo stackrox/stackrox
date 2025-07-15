@@ -1,8 +1,6 @@
 package config
 
 import (
-	"fmt"
-
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -57,7 +55,7 @@ type configHandlerImpl struct {
 }
 
 func (c *configHandlerImpl) Name() string {
-	return fmt.Sprintf("%T", c)
+	return common.DefaultComponentName(c)
 }
 
 func (c *configHandlerImpl) Start() error {

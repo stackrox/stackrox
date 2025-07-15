@@ -1,8 +1,6 @@
 package reprocessor
 
 import (
-	"fmt"
-
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
@@ -46,7 +44,7 @@ type handlerImpl struct {
 }
 
 func (h *handlerImpl) Name() string {
-	return fmt.Sprintf("%T", h)
+	return common.DefaultComponentName(h)
 }
 
 func (h *handlerImpl) Start() error {

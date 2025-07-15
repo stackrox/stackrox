@@ -54,6 +54,13 @@ func LogSensorComponentEvent(e SensorComponentEvent, optComponentName ...string)
 	}
 }
 
+func DefaultComponentName[T any](instance *T) string {
+	if instance == nil {
+		instance = new(T)
+	}
+	return fmt.Sprintf("%T", *instance)
+}
+
 // Notifiable is the interface used by Sensor to notify components of state changes in Central<->Sensor connectivity.
 type Notifiable interface {
 	Notify(e SensorComponentEvent)

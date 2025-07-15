@@ -113,7 +113,7 @@ type tlsIssuerImpl struct {
 }
 
 func (i *tlsIssuerImpl) Name() string {
-	return fmt.Sprintf("%T", i)
+	return common.DefaultComponentName(i)
 }
 
 // Start starts the Sensor component and launches a certificate refresher that:

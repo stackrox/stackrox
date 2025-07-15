@@ -1,8 +1,6 @@
 package compliance
 
 import (
-	"fmt"
-
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
@@ -24,7 +22,7 @@ type Multiplexer struct {
 }
 
 func (c *Multiplexer) Name() string {
-	return fmt.Sprintf("%T", c)
+	return common.DefaultComponentName(c)
 }
 
 // Stopped returns a signal allowing to check whether the component has been stopped

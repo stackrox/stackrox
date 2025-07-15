@@ -2,7 +2,6 @@ package eventpipeline
 
 import (
 	"context"
-	"fmt"
 	"sync/atomic"
 
 	"github.com/pkg/errors"
@@ -43,7 +42,7 @@ type eventPipeline struct {
 }
 
 func (p *eventPipeline) Name() string {
-	return fmt.Sprintf("%T", p)
+	return common.DefaultComponentName(p)
 }
 
 // Capabilities implements common.SensorComponent

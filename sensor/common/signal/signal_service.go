@@ -2,7 +2,6 @@ package signal
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"strings"
 
@@ -65,7 +64,7 @@ type serviceImpl struct {
 }
 
 func (s *serviceImpl) Name() string {
-	return fmt.Sprintf("%T", s)
+	return common.DefaultComponentName(s)
 }
 
 func authFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {

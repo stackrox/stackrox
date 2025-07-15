@@ -30,7 +30,7 @@ type commandHandler struct {
 }
 
 func (h *commandHandler) Name() string {
-	return fmt.Sprintf("%T", h)
+	return common.DefaultComponentName(h)
 }
 
 // NewCommandHandler creates a new network policies command handler.

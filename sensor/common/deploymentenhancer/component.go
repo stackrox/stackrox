@@ -2,7 +2,6 @@ package deploymentenhancer
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -32,7 +31,7 @@ type DeploymentEnhancer struct {
 }
 
 func (d *DeploymentEnhancer) Name() string {
-	return fmt.Sprintf("%T", d)
+	return common.DefaultComponentName(d)
 }
 
 // CreateEnhancer creates a new Enhancer

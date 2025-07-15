@@ -2,7 +2,6 @@ package enforcer
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -45,7 +44,7 @@ type enforcer struct {
 }
 
 func (e *enforcer) Name() string {
-	return fmt.Sprintf("%T", e)
+	return common.DefaultComponentName(e)
 }
 
 func (e *enforcer) Capabilities() []centralsensor.SensorCapability {

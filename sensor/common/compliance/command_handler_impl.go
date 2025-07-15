@@ -1,7 +1,6 @@
 package compliance
 
 import (
-	"fmt"
 	"sync/atomic"
 
 	"github.com/pkg/errors"
@@ -46,7 +45,7 @@ func (c *commandHandlerImpl) Start() error {
 }
 
 func (c *commandHandlerImpl) Name() string {
-	return fmt.Sprintf("%T", c)
+	return common.DefaultComponentName(c)
 }
 
 func (c *commandHandlerImpl) Stop() {

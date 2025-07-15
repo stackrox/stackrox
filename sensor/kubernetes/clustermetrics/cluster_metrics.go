@@ -2,7 +2,6 @@ package clustermetrics
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
@@ -72,7 +71,7 @@ type clusterMetricsImpl struct {
 }
 
 func (cm *clusterMetricsImpl) Name() string {
-	return fmt.Sprintf("%T", cm)
+	return common.DefaultComponentName(cm)
 }
 
 func (cm *clusterMetricsImpl) Start() error {

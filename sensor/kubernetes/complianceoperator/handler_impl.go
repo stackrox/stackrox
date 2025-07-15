@@ -42,7 +42,7 @@ type handlerImpl struct {
 }
 
 func (m *handlerImpl) Name() string {
-	return fmt.Sprintf("%T", m)
+	return common.DefaultComponentName(m)
 }
 
 type scanScheduleConfiguration struct {

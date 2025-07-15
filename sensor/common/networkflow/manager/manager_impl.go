@@ -366,7 +366,7 @@ type networkFlowManager struct {
 }
 
 func (m *networkFlowManager) Name() string {
-	return fmt.Sprintf("%T", m)
+	return common.DefaultComponentName(m)
 }
 
 func (m *networkFlowManager) ProcessMessage(_ *central.MsgToSensor) error {

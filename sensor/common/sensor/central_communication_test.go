@@ -509,7 +509,7 @@ type fakeSensorComponent struct {
 }
 
 func (f fakeSensorComponent) Name() string {
-	return fmt.Sprintf("%T", f)
+	return "sensor.fakeSensorComponent"
 }
 
 func (f fakeSensorComponent) Notify(common.SensorComponentEvent) {

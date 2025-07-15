@@ -2,7 +2,6 @@ package upgrade
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -43,7 +42,7 @@ type commandHandler struct {
 }
 
 func (h *commandHandler) Name() string {
-	return fmt.Sprintf("%T", h)
+	return common.DefaultComponentName(h)
 }
 
 // NewCommandHandler returns a new upgrade command handler for Kubernetes.

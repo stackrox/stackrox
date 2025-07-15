@@ -2,7 +2,6 @@ package detector
 
 import (
 	"context"
-	"fmt"
 	"sort"
 	"time"
 
@@ -181,7 +180,7 @@ type detectorImpl struct {
 }
 
 func (d *detectorImpl) Name() string {
-	return fmt.Sprintf("%T", d)
+	return common.DefaultComponentName(d)
 }
 
 func (d *detectorImpl) Start() error {

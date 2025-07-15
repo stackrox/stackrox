@@ -2,7 +2,6 @@ package complianceoperator
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
@@ -101,7 +100,7 @@ type updaterImpl struct {
 }
 
 func (u *updaterImpl) Name() string {
-	return fmt.Sprintf("%T", u)
+	return common.DefaultComponentName(u)
 }
 
 func (u *updaterImpl) Start() error {

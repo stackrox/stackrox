@@ -1,8 +1,6 @@
 package admissioncontroller
 
 import (
-	"fmt"
-
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
@@ -31,7 +29,7 @@ type alertHandlerImpl struct {
 }
 
 func (h *alertHandlerImpl) Name() string {
-	return fmt.Sprintf("%T", h)
+	return common.DefaultComponentName(h)
 }
 
 func (h *alertHandlerImpl) Start() error {

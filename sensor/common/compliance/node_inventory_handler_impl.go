@@ -1,7 +1,6 @@
 package compliance
 
 import (
-	"fmt"
 	"strconv"
 
 	"github.com/pkg/errors"
@@ -53,7 +52,7 @@ type nodeInventoryHandlerImpl struct {
 }
 
 func (c *nodeInventoryHandlerImpl) Name() string {
-	return fmt.Sprintf("%T", c)
+	return common.DefaultComponentName(c)
 }
 
 func (c *nodeInventoryHandlerImpl) Stopped() concurrency.ReadOnlyErrorSignal {

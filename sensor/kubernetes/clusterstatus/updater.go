@@ -3,7 +3,6 @@ package clusterstatus
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"slices"
 	"sync/atomic"
 	"time"
@@ -55,7 +54,7 @@ type updaterImpl struct {
 }
 
 func (u *updaterImpl) Name() string {
-	return fmt.Sprintf("%T", u)
+	return common.DefaultComponentName(u)
 }
 
 func (u *updaterImpl) Start() error {

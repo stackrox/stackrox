@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"runtime/pprof"
 	"sync/atomic"
@@ -54,7 +53,7 @@ type commandHandler struct {
 }
 
 func (h *commandHandler) Name() string {
-	return fmt.Sprintf("%T", h)
+	return common.DefaultComponentName(h)
 }
 
 // DiagnosticConfigurationFunc is a function that modifies the diagnostic configuration.

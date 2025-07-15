@@ -3,7 +3,6 @@ package admissioncontroller
 import (
 	"compress/gzip"
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
@@ -42,7 +41,7 @@ type configMapPersister struct {
 }
 
 func (p *configMapPersister) Name() string {
-	return fmt.Sprintf("%T", p)
+	return common.DefaultComponentName(p)
 }
 
 // NewConfigMapSettingsPersister creates a config persister object for the admission controller.
