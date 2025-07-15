@@ -137,12 +137,15 @@ func (VirtualMachineScan_Note) EnumDescriptor() ([]byte, []int) {
 
 type VirtualMachine struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Virtual Machine ID,store,hidden" sql:"pk"`                                      // @gotags: search:"Virtual Machine ID,store,hidden" sql:"pk"
-	Namespace     string                 `protobuf:"bytes,2,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace,store"`                        // @gotags: search:"Namespace,store"
-	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty" search:"Name,store"`                                  // @gotags: search:"Name,store"
-	Scan          *VirtualMachineScan    `protobuf:"bytes,4,opt,name=scan,proto3" json:"scan,omitempty" policy:"Virtual Machine Scan"`                                  // @gotags: policy:"Virtual Machine Scan"
-	LastUpdated   *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty" search:"Last Updated,hidden"` // @gotags: search:"Last Updated,hidden"
-	Notes         []VirtualMachine_Note  `protobuf:"varint,6,rep,packed,name=notes,proto3,enum=storage.VirtualMachine_Note" json:"notes,omitempty"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Virtual Machine ID,store,hidden" sql:"pk"`                                // @gotags: search:"Virtual Machine ID,store,hidden" sql:"pk"
+	Namespace     string                 `protobuf:"bytes,2,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace,store"`                  // @gotags: search:"Namespace,store"
+	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty" search:"Name,store"`                            // @gotags: search:"Name,store"
+	ClusterId     string                 `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden,store" sql:"type(uuid)"` // @gotags: search:"Cluster ID,hidden,store"  sql:"type(uuid)"
+	ClusterName   string                 `protobuf:"bytes,5,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"`
+	Facts         map[string]string      `protobuf:"bytes,6,rep,name=facts,proto3" json:"facts,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Scan          *VirtualMachineScan    `protobuf:"bytes,7,opt,name=scan,proto3" json:"scan,omitempty" policy:"Virtual Machine Scan"`                                  // @gotags: policy:"Virtual Machine Scan"
+	LastUpdated   *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty" search:"Last Updated,hidden"` // @gotags: search:"Last Updated,hidden"
+	Notes         []VirtualMachine_Note  `protobuf:"varint,9,rep,packed,name=notes,proto3,enum=storage.VirtualMachine_Note" json:"notes,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -198,6 +201,27 @@ func (x *VirtualMachine) GetName() string {
 	return ""
 }
 
+func (x *VirtualMachine) GetClusterId() string {
+	if x != nil {
+		return x.ClusterId
+	}
+	return ""
+}
+
+func (x *VirtualMachine) GetClusterName() string {
+	if x != nil {
+		return x.ClusterName
+	}
+	return ""
+}
+
+func (x *VirtualMachine) GetFacts() map[string]string {
+	if x != nil {
+		return x.Facts
+	}
+	return nil
+}
+
 func (x *VirtualMachine) GetScan() *VirtualMachineScan {
 	if x != nil {
 		return x.Scan
@@ -221,13 +245,13 @@ func (x *VirtualMachine) GetNotes() []VirtualMachine_Note {
 
 type VirtualMachineScan struct {
 	state           protoimpl.MessageState        `protogen:"open.v1"`
-	ScannerVersion  string                        `protobuf:"bytes,6,opt,name=scanner_version,json=scannerVersion,proto3" json:"scanner_version,omitempty"`
-	ScanTime        *timestamppb.Timestamp        `protobuf:"bytes,1,opt,name=scan_time,json=scanTime,proto3" json:"scan_time,omitempty" search:"Virtual Machine Scan Time,store"`                      // @gotags: search:"Virtual Machine Scan Time,store"
-	Components      []*EmbeddedImageScanComponent `protobuf:"bytes,2,rep,name=components,proto3" json:"components,omitempty" sql:"-"`                                  // @gotags: sql:"-"
+	ScannerVersion  string                        `protobuf:"bytes,1,opt,name=scanner_version,json=scannerVersion,proto3" json:"scanner_version,omitempty"`
+	ScanTime        *timestamppb.Timestamp        `protobuf:"bytes,2,opt,name=scan_time,json=scanTime,proto3" json:"scan_time,omitempty" search:"Virtual Machine Scan Time,store"`                      // @gotags: search:"Virtual Machine Scan Time,store"
+	Components      []*EmbeddedImageScanComponent `protobuf:"bytes,3,rep,name=components,proto3" json:"components,omitempty" sql:"-"`                                  // @gotags: sql:"-"
 	OperatingSystem string                        `protobuf:"bytes,4,opt,name=operating_system,json=operatingSystem,proto3" json:"operating_system,omitempty" search:"Virtual Machine OS,store"` // @gotags: search:"Virtual Machine OS,store"
 	// DataSource contains information about which integration was used to scan the image
-	DataSource    *DataSource               `protobuf:"bytes,3,opt,name=data_source,json=dataSource,proto3" json:"data_source,omitempty"`
-	Notes         []VirtualMachineScan_Note `protobuf:"varint,5,rep,packed,name=notes,proto3,enum=storage.VirtualMachineScan_Note" json:"notes,omitempty"`
+	DataSource    *DataSource               `protobuf:"bytes,5,opt,name=data_source,json=dataSource,proto3" json:"data_source,omitempty"`
+	Notes         []VirtualMachineScan_Note `protobuf:"varint,6,rep,packed,name=notes,proto3,enum=storage.VirtualMachineScan_Note" json:"notes,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -308,29 +332,37 @@ var File_storage_virtual_machine_proto protoreflect.FileDescriptor
 
 const file_storage_virtual_machine_proto_rawDesc = "" +
 	"\n" +
-	"\x1dstorage/virtual_machine.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x13storage/image.proto\"\xeb\x02\n" +
+	"\x1dstorage/virtual_machine.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x13storage/image.proto\"\xa1\x04\n" +
 	"\x0eVirtualMachine\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1c\n" +
 	"\tnamespace\x18\x02 \x01(\tR\tnamespace\x12\x12\n" +
-	"\x04name\x18\x03 \x01(\tR\x04name\x12/\n" +
-	"\x04scan\x18\x04 \x01(\v2\x1b.storage.VirtualMachineScanR\x04scan\x12=\n" +
-	"\flast_updated\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\vlastUpdated\x122\n" +
-	"\x05notes\x18\x06 \x03(\x0e2\x1c.storage.VirtualMachine.NoteR\x05notes\"s\n" +
+	"\x04name\x18\x03 \x01(\tR\x04name\x12\x1d\n" +
+	"\n" +
+	"cluster_id\x18\x04 \x01(\tR\tclusterId\x12!\n" +
+	"\fcluster_name\x18\x05 \x01(\tR\vclusterName\x128\n" +
+	"\x05facts\x18\x06 \x03(\v2\".storage.VirtualMachine.FactsEntryR\x05facts\x12/\n" +
+	"\x04scan\x18\a \x01(\v2\x1b.storage.VirtualMachineScanR\x04scan\x12=\n" +
+	"\flast_updated\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\vlastUpdated\x122\n" +
+	"\x05notes\x18\t \x03(\x0e2\x1c.storage.VirtualMachine.NoteR\x05notes\x1a8\n" +
+	"\n" +
+	"FactsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"s\n" +
 	"\x04Note\x12\x14\n" +
 	"\x10MISSING_METADATA\x10\x00\x12\x15\n" +
 	"\x11MISSING_SCAN_DATA\x10\x01\x12\x15\n" +
 	"\x11MISSING_SIGNATURE\x10\x02\x12'\n" +
 	"#MISSING_SIGNATURE_VERIFICATION_DATA\x10\x03\"\x83\x04\n" +
 	"\x12VirtualMachineScan\x12'\n" +
-	"\x0fscanner_version\x18\x06 \x01(\tR\x0escannerVersion\x127\n" +
-	"\tscan_time\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\bscanTime\x12C\n" +
+	"\x0fscanner_version\x18\x01 \x01(\tR\x0escannerVersion\x127\n" +
+	"\tscan_time\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\bscanTime\x12C\n" +
 	"\n" +
-	"components\x18\x02 \x03(\v2#.storage.EmbeddedImageScanComponentR\n" +
+	"components\x18\x03 \x03(\v2#.storage.EmbeddedImageScanComponentR\n" +
 	"components\x12)\n" +
 	"\x10operating_system\x18\x04 \x01(\tR\x0foperatingSystem\x124\n" +
-	"\vdata_source\x18\x03 \x01(\v2\x13.storage.DataSourceR\n" +
+	"\vdata_source\x18\x05 \x01(\v2\x13.storage.DataSourceR\n" +
 	"dataSource\x126\n" +
-	"\x05notes\x18\x05 \x03(\x0e2 .storage.VirtualMachineScan.NoteR\x05notes\"\xac\x01\n" +
+	"\x05notes\x18\x06 \x03(\x0e2 .storage.VirtualMachineScan.NoteR\x05notes\"\xac\x01\n" +
 	"\x04Note\x12\t\n" +
 	"\x05UNSET\x10\x00\x12\x12\n" +
 	"\x0eOS_UNAVAILABLE\x10\x01\x12\x15\n" +
@@ -353,29 +385,31 @@ func file_storage_virtual_machine_proto_rawDescGZIP() []byte {
 }
 
 var file_storage_virtual_machine_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_storage_virtual_machine_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_storage_virtual_machine_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_storage_virtual_machine_proto_goTypes = []any{
 	(VirtualMachine_Note)(0),           // 0: storage.VirtualMachine.Note
 	(VirtualMachineScan_Note)(0),       // 1: storage.VirtualMachineScan.Note
 	(*VirtualMachine)(nil),             // 2: storage.VirtualMachine
 	(*VirtualMachineScan)(nil),         // 3: storage.VirtualMachineScan
-	(*timestamppb.Timestamp)(nil),      // 4: google.protobuf.Timestamp
-	(*EmbeddedImageScanComponent)(nil), // 5: storage.EmbeddedImageScanComponent
-	(*DataSource)(nil),                 // 6: storage.DataSource
+	nil,                                // 4: storage.VirtualMachine.FactsEntry
+	(*timestamppb.Timestamp)(nil),      // 5: google.protobuf.Timestamp
+	(*EmbeddedImageScanComponent)(nil), // 6: storage.EmbeddedImageScanComponent
+	(*DataSource)(nil),                 // 7: storage.DataSource
 }
 var file_storage_virtual_machine_proto_depIdxs = []int32{
-	3, // 0: storage.VirtualMachine.scan:type_name -> storage.VirtualMachineScan
-	4, // 1: storage.VirtualMachine.last_updated:type_name -> google.protobuf.Timestamp
-	0, // 2: storage.VirtualMachine.notes:type_name -> storage.VirtualMachine.Note
-	4, // 3: storage.VirtualMachineScan.scan_time:type_name -> google.protobuf.Timestamp
-	5, // 4: storage.VirtualMachineScan.components:type_name -> storage.EmbeddedImageScanComponent
-	6, // 5: storage.VirtualMachineScan.data_source:type_name -> storage.DataSource
-	1, // 6: storage.VirtualMachineScan.notes:type_name -> storage.VirtualMachineScan.Note
-	7, // [7:7] is the sub-list for method output_type
-	7, // [7:7] is the sub-list for method input_type
-	7, // [7:7] is the sub-list for extension type_name
-	7, // [7:7] is the sub-list for extension extendee
-	0, // [0:7] is the sub-list for field type_name
+	4, // 0: storage.VirtualMachine.facts:type_name -> storage.VirtualMachine.FactsEntry
+	3, // 1: storage.VirtualMachine.scan:type_name -> storage.VirtualMachineScan
+	5, // 2: storage.VirtualMachine.last_updated:type_name -> google.protobuf.Timestamp
+	0, // 3: storage.VirtualMachine.notes:type_name -> storage.VirtualMachine.Note
+	5, // 4: storage.VirtualMachineScan.scan_time:type_name -> google.protobuf.Timestamp
+	6, // 5: storage.VirtualMachineScan.components:type_name -> storage.EmbeddedImageScanComponent
+	7, // 6: storage.VirtualMachineScan.data_source:type_name -> storage.DataSource
+	1, // 7: storage.VirtualMachineScan.notes:type_name -> storage.VirtualMachineScan.Note
+	8, // [8:8] is the sub-list for method output_type
+	8, // [8:8] is the sub-list for method input_type
+	8, // [8:8] is the sub-list for extension type_name
+	8, // [8:8] is the sub-list for extension extendee
+	0, // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_storage_virtual_machine_proto_init() }
@@ -390,7 +424,7 @@ func file_storage_virtual_machine_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_storage_virtual_machine_proto_rawDesc), len(file_storage_virtual_machine_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   2,
+			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

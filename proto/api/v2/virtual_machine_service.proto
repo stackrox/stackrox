@@ -1,0 +1,90 @@
+syntax = "proto3";
+
+package v2;
+
+import "api/v2/scan_component.proto";
+import weak "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "./api/v2;v2";
+option java_package = "io.stackrox.proto.api.v2";
+
+message VirtualMachine {
+  string id = 1;
+  string namespace = 2;
+  string name = 3;
+  string cluster_id = 4;
+  string cluster_name = 5;
+  map<string, string> facts = 8;
+
+  VirtualMachineScan scan = 9;
+
+  google.protobuf.Timestamp last_updated = 10;
+}
+
+message VirtualMachineScan {
+  string scanner_version = 1;
+  google.protobuf.Timestamp scan_time = 2;
+  repeated ScanComponent components = 3;
+  DataSource data_source = 5;
+  enum Note {
+    UNSET = 0;
+    OS_UNAVAILABLE = 1;
+    PARTIAL_SCAN_DATA = 2;
+    OS_CVES_UNAVAILABLE = 3;
+    OS_CVES_STALE = 4;
+    LANGUAGE_CVES_UNAVAILABLE = 5;
+    CERTIFIED_RHEL_SCAN_UNAVAILABLE = 6;
+  }
+  repeated Note notes = 6;
+}
+
+message DataSource {
+  string id = 1;
+  string name = 2;
+  string mirror = 3;
+}
+
+message GetVirtualMachineRequest {
+  string id = 1;
+  bool strip_description = 2;
+}
+
+message CreateVirtualMachineRequest {
+  VirtualMachine virtual_machine = 1;
+}
+
+message ListVirtualMachinesResponse {
+  repeated VirtualMachine virtual_machines = 1;
+}
+
+message ListVirtualMachinesRequest {}
+
+message DeleteVirtualMachineRequest {
+  string id = 1;
+}
+
+message DeleteVirtualMachineResponse {
+  bool success = 2;
+}
+
+service VirtualMachineService {
+  rpc CreateVirtualMachine(CreateVirtualMachineRequest) returns (VirtualMachine) {
+    option (google.api.http) = {
+      post: "/v1/virtualmachines"
+      body: "*"
+    };
+  }
+
+  rpc GetVirtualMachine(GetVirtualMachineRequest) returns (VirtualMachine) {
+    option (google.api.http) = {get: "/v1/virtualmachines/{id}"};
+  }
+
+  rpc ListVirtualMachines(ListVirtualMachinesRequest) returns (ListVirtualMachinesResponse) {
+    option (google.api.http) = {get: "/v1/virtualmachines"};
+  }
+
+  rpc DeleteVirtualMachine(DeleteVirtualMachineRequest) returns (DeleteVirtualMachineResponse) {
+    option (google.api.http) = {delete: "/v1/virtualmachines/{id}"};
+  }
+}
