@@ -92,6 +92,8 @@ jobs:
             # TODO: add make $(MERGED_API_SWAGGER_SPEC) $(MERGED_API_SWAGGER_SPEC_V2)
 
       - name: Generate OSS notice
+        env:
+          GITHUB_OAUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -x
           FETCH_VERSION=0.4.6
