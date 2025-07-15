@@ -191,8 +191,9 @@ func (t Translator) getTLSValues(ctx context.Context, sc platform.SecuredCluster
 		centralCA = string(ca)
 	}
 
-	// Attempt to get the CA bundle from the tls-ca-bundle ConfigMap (used for CA rotation scenarios).
-	// This ConfigMap is created by Sensor at runtime and may contain multiple CAs.
+	// Attempt to get the CA bundle from the tls-ca-bundle ConfigMap, which is created by Sensor at runtime
+	// based on data received from Central, and may contain multiple CA certificates.
+	// This is needed so that the Operator can update the ValidatingWebhookConfiguration's caBundle field.
 	caBundle, err := t.getCABundleFromConfigMap(ctx, sc)
 	if err != nil {
 		t.logger.Error(err, "failed to get CA bundle from ConfigMap", "configMap", securedcluster.CABundleConfigMapName)
@@ -227,6 +228,10 @@ func (t Translator) getCABundleFromConfigMap(ctx context.Context, sc platform.Se
 	caBundlePEM, ok := configMap.Data[caBundleKey]
 	if !ok {
 		return "", errors.Errorf("key %q not found in ConfigMap %s", caBundleKey, key)
+	}
+
+	if caBundlePEM == "" {
+		return "", errors.Errorf("CA bundle is empty in ConfigMap %s", key)
 	}
 
 	return caBundlePEM, nil
