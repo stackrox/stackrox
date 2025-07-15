@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/go-logr/logr"
 	"github.com/jeremywohl/flatten"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	"github.com/stackrox/rox/operator/internal/images"
@@ -52,7 +53,7 @@ func (s *TranslationTestSuite) TestImageOverrides() {
 	s.Require().NoError(err)
 
 	fc := newDefaultFakeClient(s.T())
-	translator := Translator{client: fc, direct: fc}
+	translator := New(fc, fc, logr.Discard())
 
 	vals, err := translator.Translate(context.Background(), u)
 	s.Require().NoError(err)
@@ -94,7 +95,7 @@ func TestTranslateShouldCreateConfigFingerprint(t *testing.T) {
 	require.NoError(t, err)
 
 	fc := newDefaultFakeClient(t)
-	translator := Translator{client: fc, direct: fc}
+	translator := New(fc, fc, logr.Discard())
 	vals, err := translator.Translate(context.Background(), u)
 	require.NoError(t, err)
 
@@ -1047,7 +1048,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 			wantAsValues, err := translation.ToHelmValues(tt.want)
 			require.NoError(t, err, "error in test specification: cannot translate `want` specification to Helm values")
 
-			translator := Translator{client: tt.args.client, direct: tt.args.client}
+			translator := New(tt.args.client, tt.args.client, logr.Discard())
 			got, err := translator.translate(context.Background(), tt.args.sc)
 			require.NoError(t, err)
 
@@ -1140,7 +1141,7 @@ func TestTranslatePartialMatch(t *testing.T) {
 			require.NoError(t, err, "error in test specification: cannot translate `want` specification to Helm values")
 
 			client := newDefaultFakeClientWithCentral(t) // Provide default objects and central for detection
-			translator := New(client, client)
+			translator := New(client, client, logr.Discard())
 			got, err := translator.translate(context.Background(), tt.args.sc)
 			assert.NoError(t, err)
 

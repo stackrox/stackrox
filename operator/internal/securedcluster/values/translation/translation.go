@@ -9,6 +9,7 @@ import (
 	// Required for the usage of go:embed below.
 	_ "embed"
 
+	"github.com/go-logr/logr"
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
@@ -47,14 +48,15 @@ var (
 // New creates a translator.
 // direct should be an uncached Reader to allow directly
 // reading resources that don't match the caching configuration.
-func New(client ctrlClient.Client, direct ctrlClient.Reader) Translator {
-	return Translator{client: client, direct: direct}
+func New(client ctrlClient.Client, direct ctrlClient.Reader, logger logr.Logger) Translator {
+	return Translator{client: client, direct: direct, logger: logger.WithName("translation")}
 }
 
 // Translator translates and enriches helm values
 type Translator struct {
 	client ctrlClient.Client
 	direct ctrlClient.Reader
+	logger logr.Logger
 }
 
 // Translate translates and enriches helm values
@@ -189,11 +191,13 @@ func (t Translator) getTLSValues(ctx context.Context, sc platform.SecuredCluster
 		centralCA = string(ca)
 	}
 
-	// Read CA bundle from ConfigMap for ValidatingWebhookConfiguration, if available.
-	// This ConfigMap is genereated at runtime by Sensor.
-	if caBundleFromConfigMap, err := t.getCABundleFromConfigMap(ctx, sc); err == nil && caBundleFromConfigMap != "" {
-		// Use the CA bundle from ConfigMap for the ValidatingWebhookConfiguration
-		centralCA = caBundleFromConfigMap
+	// Attempt to get the CA bundle from the tls-ca-bundle ConfigMap (used for CA rotation scenarios).
+	// This ConfigMap is created by Sensor at runtime and may contain multiple CAs.
+	caBundle, err := t.getCABundleFromConfigMap(ctx, sc)
+	if err != nil {
+		t.logger.Error(err, "failed to get CA bundle from ConfigMap", "configMap", securedcluster.CABundleConfigMapName)
+	} else if caBundle != "" {
+		centralCA = caBundle
 	}
 
 	v.SetStringMap("ca", map[string]string{"cert": centralCA})
@@ -215,9 +219,8 @@ func (t Translator) getCABundleFromConfigMap(ctx context.Context, sc platform.Se
 
 	if err := t.direct.Get(ctx, key, &configMap); err != nil {
 		if k8sErrors.IsNotFound(err) {
-			return "", nil
+			return "", nil // ConfigMap doesn't exist yet - this is normal for fresh installs
 		}
-
 		return "", errors.Wrapf(err, "failed to get CA bundle ConfigMap %s", key)
 	}
 
