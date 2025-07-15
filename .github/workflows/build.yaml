@@ -34,12 +34,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        parallel: [ 1, 2, 3, 4 ]
+        parallel: [ 1 ]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 1
+          fetch-tags: true
           show-progress: false
           ref: ${{ inputs.commit || github.sha }}
 

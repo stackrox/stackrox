@@ -37,7 +37,7 @@ SILENT ?= @
 UNIT_TEST_IGNORE := "stackrox/rox/sensor/tests|stackrox/rox/operator/tests|stackrox/rox/central/reports/config/store/postgres|stackrox/rox/central/complianceoperator/v2/scanconfigurations/store/postgres|stackrox/rox/central/auth/store/postgres|stackrox/rox/scanner/e2etests"
 
 ifeq ($(TAG),)
-TAG=$(shell git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*')
+	TAG=$(shell git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*' || ${GITHUB_SHA:0:10})
 endif
 
 # Set expiration on Quay.io for non-release tags.
