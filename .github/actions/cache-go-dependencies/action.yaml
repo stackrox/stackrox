@@ -23,7 +23,7 @@ runs:
       with:
         path: |
           ${{ steps.cache-paths.outputs.GOCACHE }}
-        key: go-build-v1-${{ github.job }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ hashFiles('**/go.sum') }}
+        key: go-build-v1-${{ steps.cache-paths.outputs.GOARCH }}-${{ hashFiles('**/go.sum') }}
 
     - name: Download Go modules
       run: make deps --always-make
