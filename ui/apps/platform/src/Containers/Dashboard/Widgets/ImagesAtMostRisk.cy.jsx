@@ -1,6 +1,6 @@
 import React from 'react';
 
-import ComponentTestProviders from 'test-utils/ComponentProviders';
+import ComponentTestProvider from 'test-utils/ComponentTestProvider';
 import { graphqlUrl } from 'test-utils/apiEndpoints';
 import { vulnManagementImagesPath, vulnManagementPath } from 'routePaths';
 
@@ -58,9 +58,9 @@ function setup() {
     });
 
     cy.mount(
-        <ComponentTestProviders>
+        <ComponentTestProvider>
             <ImagesAtMostRisk />
-        </ComponentTestProviders>
+        </ComponentTestProvider>
     );
 }
 
