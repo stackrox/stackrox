@@ -232,30 +232,44 @@ func (q *query) getPortionBeforeFromClause() string {
 		}
 		return fmt.Sprintf("select count(%s)", countOn)
 	case GET:
-		if q.DistinctAppliedOnPrimaryKeySelect() {
-			var primaryKeyPaths []string
-			// Always select the primary keys for count.
-			for _, pk := range q.Schema.PrimaryKeys() {
-				primaryKeyPaths = append(primaryKeyPaths, qualifyColumn(pk.Schema.Table, pk.ColumnName, ""))
-			}
-
-			for _, f := range q.PrimaryKeyFields {
-				log.Infof("SHREWS -- %v", f)
-			}
-			for _, f := range q.SelectedFields {
-				log.Infof("SHREWS -- SELECTED -- %v", f)
-			}
-			var selectStrs []string
-			for _, f := range q.ExtraSelectedFieldPaths() {
-				log.Infof("SHREWS -- Extra --  %v", f)
-				selectStrs = append(selectStrs, f.PathForSelectPortion())
-			}
-			if len(selectStrs) > 0 {
-				return fmt.Sprintf("select distinct(%s), %q.serialized, ", strings.Join(primaryKeyPaths, ", "), q.From) + stringutils.JoinNonEmpty(", ", selectStrs...)
-			}
-			return fmt.Sprintf("select distinct(%s), %q.serialized", strings.Join(primaryKeyPaths, ", "), q.From)
+		// cursor suggestion
+		if len(q.Joins) > 0 {
+			// Return window function SELECT clause
+			return q.getWindowFunctionSelectClause()
 		}
-		return fmt.Sprintf("select %q.serialized", q.From)
+		//if len(q.Joins) > 0 {
+		//	// Use DISTINCT ON (id) for better performance
+		//	var primaryKeyPaths []string
+		//	for _, pk := range q.Schema.PrimaryKeys() {
+		//		primaryKeyPaths = append(primaryKeyPaths, qualifyColumn(pk.Schema.Table, pk.ColumnName, ""))
+		//	}
+		//	return fmt.Sprintf("select distinct on (%s) %q.serialized",
+		//		strings.Join(primaryKeyPaths, ", "), q.From)
+		//}
+		//if q.DistinctAppliedOnPrimaryKeySelect() {
+		//	var primaryKeyPaths []string
+		//	// Always select the primary keys for count.
+		//	for _, pk := range q.Schema.PrimaryKeys() {
+		//		primaryKeyPaths = append(primaryKeyPaths, qualifyColumn(pk.Schema.Table, pk.ColumnName, ""))
+		//	}
+		//
+		//	for _, f := range q.PrimaryKeyFields {
+		//		log.Infof("SHREWS -- %v", f)
+		//	}
+		//	for _, f := range q.SelectedFields {
+		//		log.Infof("SHREWS -- SELECTED -- %v", f)
+		//	}
+		//	var selectStrs []string
+		//	for _, f := range q.ExtraSelectedFieldPaths() {
+		//		log.Infof("SHREWS -- Extra --  %v", f)
+		//		selectStrs = append(selectStrs, f.PathForSelectPortion())
+		//	}
+		//	if len(selectStrs) > 0 {
+		//		return fmt.Sprintf("select distinct(%s), %q.serialized, ", strings.Join(primaryKeyPaths, ", "), q.From) + stringutils.JoinNonEmpty(", ", selectStrs...)
+		//	}
+		//	return fmt.Sprintf("select distinct(%s), %q.serialized", strings.Join(primaryKeyPaths, ", "), q.From)
+		//}
+		return fmt.Sprintf("select %s.serialized", q.From)
 	case SEARCH:
 		var selectStrs []string
 		// Always select the primary keys first.
@@ -306,6 +320,16 @@ func (q *query) AsSQL() string {
 	if q == nil {
 		return ""
 	}
+
+	// Claude via Cursor experiment
+	// Special handling for GET queries with joins
+	// Check if we need to wrap with window function
+	needsWindowFunction := q.QueryType == GET && len(q.Joins) > 0
+	//if q.QueryType == GET && len(q.Joins) > 0 {
+	//	queryReturn := q.buildWindowFunctionQuery()
+	//	log.Infof(queryReturn)
+	//	return queryReturn
+	//}
 
 	var querySB strings.Builder
 
@@ -373,10 +397,28 @@ func (q *query) AsSQL() string {
 		}
 		querySB.WriteString(strings.Join(returnedColumnPaths, ", "))
 	}
-	if paginationSQL := q.Pagination.AsSQL(); paginationSQL != "" {
-		querySB.WriteString(" ")
-		querySB.WriteString(paginationSQL)
+
+	// NOW: Handle window function wrapping vs normal pagination
+	if needsWindowFunction {
+		// Wrap the built query and add window function logic
+		innerQuery := querySB.String()
+		queryString := q.wrapQueryWithWindowFunction(innerQuery)
+		if env.PostgresQueryLogger.BooleanSetting() {
+			log.Info(queryString)
+		}
+		return queryString
+	} else {
+		// Normal pagination (existing logic)
+		if paginationSQL := q.Pagination.AsSQL(); paginationSQL != "" {
+			querySB.WriteString(" ")
+			querySB.WriteString(paginationSQL)
+		}
 	}
+
+	//if paginationSQL := q.Pagination.AsSQL(); paginationSQL != "" {
+	//	querySB.WriteString(" ")
+	//	querySB.WriteString(paginationSQL)
+	//}
 	// Performing this operation on full query is safe since table names and column names
 	// can only contain alphanumeric and underscore character.
 	queryString := replaceVars(querySB.String())
@@ -1269,4 +1311,189 @@ func validateDerivedFieldDataType(queryFields map[string]searchFieldMetadata) er
 		}
 	}
 	return errList.ToError()
+}
+
+// from Claude via Curosr
+// pkg/search/postgres/common.go
+func (q *query) buildWindowFunctionQuery() string {
+	var querySB strings.Builder
+
+	// Outer query selecting just serialized data
+	querySB.WriteString("select subq.serialized from (")
+
+	// Inner query with window function
+	querySB.WriteString(fmt.Sprintf("select %q.serialized", q.From))
+
+	// Add sort fields to subquery SELECT so we can reference them in outer ORDER BY
+	if len(q.Pagination.OrderBys) > 0 {
+		for _, orderBy := range q.Pagination.OrderBys {
+			querySB.WriteString(fmt.Sprintf(", %s", orderBy.Field.SelectPath))
+		}
+	}
+
+	// Add the window function
+	querySB.WriteString(fmt.Sprintf(", row_number() over (partition by %s", q.getPrimaryKeyPartitionClause()))
+
+	// Window function ORDER BY (same as user's desired ordering)
+	if len(q.Pagination.OrderBys) > 0 {
+		querySB.WriteString(" order by ")
+		orderByClauses := make([]string, 0, len(q.Pagination.OrderBys))
+		for _, entry := range q.Pagination.OrderBys {
+			orderByClauses = append(orderByClauses, fmt.Sprintf("%s %s nulls last",
+				entry.Field.SelectPath,
+				ternary(entry.Descending, "desc", "asc")))
+		}
+		querySB.WriteString(strings.Join(orderByClauses, ", "))
+	} else {
+		// Default to primary key if no user ordering
+		querySB.WriteString(fmt.Sprintf(" order by %s", q.getPrimaryKeyPartitionClause()))
+	}
+
+	querySB.WriteString(") as rn from ")
+	querySB.WriteString(q.From)
+
+	// Add JOINs
+	for _, join := range q.Joins {
+		if join.joinType == Inner {
+			querySB.WriteString(" inner join ")
+		} else {
+			querySB.WriteString(" left join ")
+		}
+		querySB.WriteString(join.rightTable)
+		querySB.WriteString(" on")
+
+		for i, columnNamePair := range join.columnNamePairs {
+			if i > 0 {
+				querySB.WriteString(" and")
+			}
+			querySB.WriteString(fmt.Sprintf(" %s.%s = %s.%s",
+				join.leftTable, columnNamePair.ColumnNameInThisSchema,
+				join.rightTable, columnNamePair.ColumnNameInOtherSchema))
+		}
+	}
+
+	// Add WHERE clause
+	if q.Where != "" {
+		querySB.WriteString(" where ")
+		querySB.WriteString(q.Where)
+	}
+
+	// Close inner query and filter to first row per partition
+	querySB.WriteString(") subq where subq.rn = 1")
+
+	// Add final ORDER BY to preserve user ordering in outer query
+	if len(q.Pagination.OrderBys) > 0 {
+		querySB.WriteString(" order by ")
+		orderByClauses := make([]string, 0, len(q.Pagination.OrderBys))
+		for _, entry := range q.Pagination.OrderBys {
+			// Reference the field from the subquery
+			fieldName := q.getFieldNameFromSelectPath(entry.Field.SelectPath)
+			orderByClauses = append(orderByClauses, fmt.Sprintf("subq.%s %s nulls last",
+				fieldName,
+				ternary(entry.Descending, "desc", "asc")))
+		}
+		querySB.WriteString(strings.Join(orderByClauses, ", "))
+	}
+
+	// Add LIMIT and OFFSET
+	if q.Pagination.Limit > 0 {
+		querySB.WriteString(fmt.Sprintf(" LIMIT %d", q.Pagination.Limit))
+	}
+	if q.Pagination.Offset > 0 {
+		querySB.WriteString(fmt.Sprintf(" OFFSET %d", q.Pagination.Offset))
+	}
+
+	return replaceVars(querySB.String())
+}
+
+// Helper method to get primary key partition clause
+func (q *query) getPrimaryKeyPartitionClause() string {
+	var primaryKeyPaths []string
+	for _, pk := range q.Schema.PrimaryKeys() {
+		primaryKeyPaths = append(primaryKeyPaths, qualifyColumn(pk.Schema.Table, pk.ColumnName, ""))
+	}
+	return strings.Join(primaryKeyPaths, ", ")
+}
+
+// Helper to extract field name from qualified path (e.g., "images.last_updated" -> "last_updated")
+func (q *query) getFieldNameFromSelectPath(selectPath string) string {
+	parts := strings.Split(selectPath, ".")
+	if len(parts) > 1 {
+		return parts[len(parts)-1]
+	}
+	return selectPath
+}
+
+// Helper function
+func ternary(condition bool, trueVal, falseVal string) string {
+	if condition {
+		return trueVal
+	}
+	return falseVal
+}
+
+// Add helper method for window function SELECT
+func (q *query) getWindowFunctionSelectClause() string {
+	var selectParts []string
+
+	// Always include serialized
+	selectParts = append(selectParts, fmt.Sprintf("%q.serialized", q.From))
+
+	// Include sort fields so we can reference them in outer ORDER BY
+	if len(q.Pagination.OrderBys) > 0 {
+		for _, orderBy := range q.Pagination.OrderBys {
+			selectParts = append(selectParts, orderBy.Field.SelectPath)
+		}
+	}
+
+	// Add window function
+	windowFunc := fmt.Sprintf("row_number() over (partition by %s", q.getPrimaryKeyPartitionClause())
+
+	if len(q.Pagination.OrderBys) > 0 {
+		windowFunc += " order by "
+		orderByClauses := make([]string, 0, len(q.Pagination.OrderBys))
+		for _, entry := range q.Pagination.OrderBys {
+			orderByClauses = append(orderByClauses, fmt.Sprintf("%s %s nulls last",
+				entry.Field.SelectPath,
+				pkgUtils.IfThenElse(entry.Descending, "desc", "asc")))
+		}
+		windowFunc += strings.Join(orderByClauses, ", ")
+	} else {
+		windowFunc += fmt.Sprintf(" order by %s", q.getPrimaryKeyPartitionClause())
+	}
+
+	windowFunc += ") as rn"
+	selectParts = append(selectParts, windowFunc)
+	return "select " + strings.Join(selectParts, ", ")
+}
+
+// Add helper method to wrap query with window function logic
+func (q *query) wrapQueryWithWindowFunction(innerQuery string) string {
+	var outerSB strings.Builder
+
+	outerSB.WriteString("select subq.serialized from (")
+	outerSB.WriteString(innerQuery)
+	outerSB.WriteString(") subq where subq.rn = 1")
+
+	// Add outer ORDER BY to preserve user ordering
+	if len(q.Pagination.OrderBys) > 0 {
+		outerSB.WriteString(" order by ")
+		orderByClauses := make([]string, 0, len(q.Pagination.OrderBys))
+		for _, entry := range q.Pagination.OrderBys {
+			fieldName := q.getFieldNameFromSelectPath(entry.Field.SelectPath)
+			orderByClauses = append(orderByClauses, fmt.Sprintf("subq.%s %s nulls last",
+				fieldName, pkgUtils.IfThenElse(entry.Descending, "desc", "asc")))
+		}
+		outerSB.WriteString(strings.Join(orderByClauses, ", "))
+	}
+
+	// Add LIMIT and OFFSET to outer query
+	if q.Pagination.Limit > 0 {
+		outerSB.WriteString(fmt.Sprintf(" LIMIT %d", q.Pagination.Limit))
+	}
+	if q.Pagination.Offset > 0 {
+		outerSB.WriteString(fmt.Sprintf(" OFFSET %d", q.Pagination.Offset))
+	}
+
+	return replaceVars(outerSB.String())
 }
