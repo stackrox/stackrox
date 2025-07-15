@@ -1,7 +1,6 @@
 import React, { ReactElement } from 'react';
 
 import { ClusterHealthStatus } from 'types/cluster.proto';
-import { getDistanceStrict } from 'utils/dateUtils';
 
 import { healthStatusStyles, isDelayedSensorHealthStatus } from '../cluster.helpers';
 
@@ -21,7 +20,6 @@ function SensorStatus({ healthStatus }: SensorStatusProps): ReactElement {
     const { sensorHealthStatus, lastContact } = healthStatus;
 
     const isDelayed = !!(lastContact && isDelayedSensorHealthStatus(sensorHealthStatus));
-    const delayedText = isDelayed ? `(${getDistanceStrict(lastContact, new Date())} ago)` : '';
     const { Icon, fgColor } = healthStatusStyles[sensorHealthStatus];
     const icon = <Icon className="inline h-4 w-4" />;
 
@@ -31,7 +29,7 @@ function SensorStatus({ healthStatus }: SensorStatusProps): ReactElement {
             isList
             clusterHealthItem="sensor"
             clusterHealthItemStatus={sensorHealthStatus}
-            delayedText={delayedText}
+            delayedText=""
         />
     );
 

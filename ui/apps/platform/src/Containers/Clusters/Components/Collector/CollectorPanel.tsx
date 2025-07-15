@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
     DescriptionList,
     DescriptionListGroup,
@@ -9,7 +9,7 @@ import {
 } from '@patternfly/react-core';
 
 import { ClusterHealthStatus } from 'types/cluster.proto';
-import { healthStatusLabels } from 'messages/common';
+import { buildStatusMessage } from '../../cluster.helpers';
 
 import ClusterHealthPanel from '../ClusterHealthPanel';
 import CollectorStatus from './CollectorStatus';
@@ -19,15 +19,13 @@ export type CollectorPanelProps = {
 };
 
 function CollectorPanel({ healthStatus }: CollectorPanelProps) {
-    const { collectorHealthInfo, collectorHealthStatus } = healthStatus;
+    const { collectorHealthInfo, collectorHealthStatus, sensorHealthStatus, lastContact } =
+        healthStatus;
 
-    let statusMessage: string | null = null;
-
-    if (collectorHealthStatus === 'UNAVAILABLE') {
-        statusMessage = 'Upgrade Sensor to get Collector health information';
-    } else {
-        statusMessage = healthStatusLabels[collectorHealthStatus];
-    }
+    const statusMessage = useMemo(
+        () => buildStatusMessage(collectorHealthStatus, lastContact, sensorHealthStatus),
+        [collectorHealthStatus, sensorHealthStatus, lastContact]
+    );
 
     return (
         <ClusterHealthPanel header={<CollectorStatus healthStatus={healthStatus} />}>
@@ -63,6 +61,14 @@ function CollectorPanel({ healthStatus }: CollectorPanelProps) {
                             </DescriptionListDescription>
                         </DescriptionListGroup>
                     </>
+                )}
+                {collectorHealthStatus === 'UNAVAILABLE' && (
+                    <DescriptionListGroup>
+                        <DescriptionListTerm>Notes</DescriptionListTerm>
+                        <DescriptionListDescription>
+                            Upgrade Sensor to get Collector health information
+                        </DescriptionListDescription>
+                    </DescriptionListGroup>
                 )}
                 {collectorHealthInfo?.statusErrors &&
                     collectorHealthInfo.statusErrors.length > 0 && (

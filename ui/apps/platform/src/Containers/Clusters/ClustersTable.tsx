@@ -86,7 +86,7 @@ function ClustersTable({
                     />
                     <Th>Cluster</Th>
                     <Th>Provider (Region)</Th>
-                    <Th>Status</Th>
+                    <Th>Cluster Status</Th>
                     <Th>Sensor upgrade status</Th>
                     <Th>Credential expiration</Th>
                     <Th>Cluster deletion</Th>
@@ -124,7 +124,7 @@ function ClustersTable({
                                         </Td>
                                         <Td dataLabel="Provider (Region)">{provider}</Td>
                                         <Td
-                                            dataLabel="Status"
+                                            dataLabel="Cluster Status"
                                             compoundExpand={{
                                                 isExpanded: isCellExpanded(
                                                     clusterId,
