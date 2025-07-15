@@ -10,7 +10,6 @@
     "DEPLOY"
   ],
   "severity": "HIGH_SEVERITY",
-  "lastUpdated": "2025-06-12T11:36:56.396127178Z",
   "policyVersion": "1.1",
   "policySections": [
     {
