@@ -39,6 +39,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          depth: 0
           show-progress: false
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
