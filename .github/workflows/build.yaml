@@ -41,7 +41,7 @@ jobs:
         with:
           fetch-depth: 0
           show-progress: false
-          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+          ref: ${{ inputs.commit || github.sha }}
 
       - uses: ./.github/actions/job-preamble
         with:
