@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
     DescriptionList,
     DescriptionListGroup,
@@ -11,6 +11,7 @@ import {
 import { healthStatusLabels } from 'messages/common';
 import { ClusterHealthStatus } from 'types/cluster.proto';
 
+import { buildStatusMessage } from 'Containers/Clusters/cluster.helpers';
 import ClusterHealthPanel from '../ClusterHealthPanel';
 import ScannerStatus from './ScannerStatus';
 
@@ -26,16 +27,20 @@ function resolveDbHealthStatus(desiredPods?: number, readyPods?: number): string
 }
 
 function ScannerPanel({ healthStatus }: ScannerPanelProps) {
-    const { scannerHealthInfo, scannerHealthStatus } = healthStatus;
+    const { scannerHealthInfo, scannerHealthStatus, sensorHealthStatus, lastContact } =
+        healthStatus;
+
+    const statusMessage = useMemo(
+        () => buildStatusMessage(scannerHealthStatus, lastContact, sensorHealthStatus),
+        [scannerHealthStatus, sensorHealthStatus, lastContact]
+    );
 
     return (
         <ClusterHealthPanel header={<ScannerStatus healthStatus={healthStatus} />}>
             <DescriptionList>
                 <DescriptionListGroup>
                     <DescriptionListTerm>Status</DescriptionListTerm>
-                    <DescriptionListDescription>
-                        {healthStatusLabels[scannerHealthStatus]}
-                    </DescriptionListDescription>
+                    <DescriptionListDescription>{statusMessage}</DescriptionListDescription>
                 </DescriptionListGroup>
                 {scannerHealthInfo && (
                     <>

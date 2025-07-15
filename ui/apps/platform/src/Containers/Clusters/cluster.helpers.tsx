@@ -14,9 +14,11 @@ import {
     UnknownIcon,
 } from '@patternfly/react-icons';
 
-import { Cluster, ClusterProviderMetadata } from 'types/cluster.proto';
-import { getDate } from 'utils/dateUtils';
+import { healthStatusLabels } from 'messages/common';
+import { Cluster, ClusterHealthStatusLabel, ClusterProviderMetadata } from 'types/cluster.proto';
+import { getDate, getDistanceStrict } from 'utils/dateUtils';
 import { getProductBranding } from 'constants/productBranding';
+
 import { CertExpiryStatus } from './clusterTypes';
 
 export const runtimeOptions = [
@@ -535,6 +537,23 @@ export function getUpgradeableClusters(clusters: Cluster[] = []): Cluster[] {
 
         return upgradeStateObject?.actionText; // if property exists, you can try or retry an upgrade
     });
+}
+
+export function buildStatusMessage(
+    healthStatus: ClusterHealthStatusLabel,
+    lastContact: string | null | undefined,
+    sensorHealthStatus: ClusterHealthStatusLabel,
+    formatDelayedText: (distance: string) => string = (distance) => `${distance} ago`
+): string {
+    let message = healthStatusLabels[healthStatus];
+
+    const isDelayed = !!(lastContact && isDelayedSensorHealthStatus(sensorHealthStatus));
+
+    if (isDelayed && lastContact) {
+        const distance = getDistanceStrict(lastContact, new Date());
+        message += ` ${formatDelayedText(distance)}`;
+    }
+    return message;
 }
 
 export default {

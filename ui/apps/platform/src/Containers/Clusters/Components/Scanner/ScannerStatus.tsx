@@ -1,7 +1,6 @@
 import React from 'react';
 
 import { ClusterHealthStatus } from 'types/cluster.proto';
-import { getDistanceStrict } from 'utils/dateUtils';
 
 import {
     delayedScannerStatusStyle,
@@ -22,7 +21,6 @@ const ScannerStatus = ({ healthStatus }: ScannerStatusProps) => {
     }
     const { scannerHealthStatus, sensorHealthStatus, lastContact } = healthStatus;
     const isDelayed = !!(lastContact && isDelayedSensorHealthStatus(sensorHealthStatus));
-    const delayedText = isDelayed ? `(${getDistanceStrict(lastContact, new Date())} ago)` : '';
     const { Icon, fgColor } = isDelayed
         ? delayedScannerStatusStyle
         : healthStatusStyles[scannerHealthStatus];
@@ -31,7 +29,7 @@ const ScannerStatus = ({ healthStatus }: ScannerStatusProps) => {
     const healthLabelElement = (
         <HealthLabelWithDelayed
             isDelayed={isDelayed}
-            delayedText={delayedText}
+            delayedText=""
             clusterHealthItem="scanner"
             clusterHealthItemStatus={scannerHealthStatus}
             isList

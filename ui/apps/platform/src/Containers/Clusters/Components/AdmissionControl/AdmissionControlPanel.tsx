@@ -8,8 +8,8 @@ import {
     ListItem,
 } from '@patternfly/react-core';
 
-import { healthStatusLabels } from 'messages/common';
 import { ClusterHealthStatus } from 'types/cluster.proto';
+import { buildStatusMessage } from 'Containers/Clusters/cluster.helpers';
 
 import AdmissionControlStatus from './AdmissionControlStatus';
 import ClusterHealthPanel from '../ClusterHealthPanel';
@@ -19,15 +19,18 @@ export type AdmissionControlPanelProps = {
 };
 
 function AdmissionControlPanel({ healthStatus }: AdmissionControlPanelProps) {
-    const { admissionControlHealthInfo, admissionControlHealthStatus } = healthStatus;
+    const {
+        admissionControlHealthInfo,
+        admissionControlHealthStatus,
+        sensorHealthStatus,
+        lastContact,
+    } = healthStatus;
 
-    let statusMessage: string | null = null;
-
-    if (admissionControlHealthStatus === 'UNAVAILABLE') {
-        statusMessage = 'Upgrade Sensor to get Admission Control health information';
-    } else {
-        statusMessage = healthStatusLabels[admissionControlHealthStatus];
-    }
+    const statusMessage = buildStatusMessage(
+        admissionControlHealthStatus,
+        lastContact,
+        sensorHealthStatus
+    );
 
     return (
         <ClusterHealthPanel header={<AdmissionControlStatus healthStatus={healthStatus} />}>
@@ -51,6 +54,14 @@ function AdmissionControlPanel({ healthStatus }: AdmissionControlPanelProps) {
                             </DescriptionListDescription>
                         </DescriptionListGroup>
                     </>
+                )}
+                {admissionControlHealthStatus === 'UNAVAILABLE' && (
+                    <DescriptionListGroup>
+                        <DescriptionListTerm>Notes</DescriptionListTerm>
+                        <DescriptionListDescription>
+                            Upgrade Sensor to get Admission Control health information
+                        </DescriptionListDescription>
+                    </DescriptionListGroup>
                 )}
                 {admissionControlHealthInfo?.statusErrors &&
                     admissionControlHealthInfo.statusErrors.length > 0 && (

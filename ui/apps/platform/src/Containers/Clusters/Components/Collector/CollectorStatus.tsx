@@ -2,7 +2,6 @@ import React, { ReactElement } from 'react';
 
 import { ClusterHealthStatus } from 'types/cluster.proto';
 
-import { getDistanceStrict } from 'utils/dateUtils';
 import {
     delayedCollectorStatusStyle,
     healthStatusStyles,
@@ -24,7 +23,6 @@ function CollectorStatus({ healthStatus }: CollectorStatusProps): ReactElement {
     const { collectorHealthStatus, sensorHealthStatus, lastContact } = healthStatus;
 
     const isDelayed = !!(lastContact && isDelayedSensorHealthStatus(sensorHealthStatus));
-    const delayedText = isDelayed ? `(${getDistanceStrict(lastContact, new Date())} ago)` : '';
     const { Icon, fgColor } = isDelayed
         ? delayedCollectorStatusStyle
         : healthStatusStyles[collectorHealthStatus];
@@ -36,7 +34,7 @@ function CollectorStatus({ healthStatus }: CollectorStatusProps): ReactElement {
             isList
             clusterHealthItem="collector"
             clusterHealthItemStatus={collectorHealthStatus}
-            delayedText={delayedText}
+            delayedText=""
         />
     );
 
