@@ -16,7 +16,7 @@ data:
     arrival_rate = 10
     departure_rate = 10
     conns_per_addr = 2
-    nconnections = 1000
+    nconnections = 4000
 
   network-client.toml: |
     restart_interval = 10
@@ -31,4 +31,4 @@ data:
     arrival_rate = 10
     departure_rate = 10
     conns_per_addr = 2
-    nconnections = 1000
+    nconnections = 4000
