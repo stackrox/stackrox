@@ -96,7 +96,7 @@
     "scripts": {
         "clean": "rm -rf ./test-results ./cypress/test-results",
         "start": "vite serve",
-        "build": "tsc && NODE_OPTIONS=${NODE_OPTIONS:---max_old_space_size=4096} vite build",
+        "build": "tsc && echo ${NODE_OPTIONS:-} && NODE_OPTIONS=${NODE_OPTIONS:---max_old_space_size=4096} vite build",
         "test": "TZ=UTC vitest",
         "test-coverage": "TZ=UTC vitest run --coverage",
         "lint": "eslint --quiet .",
