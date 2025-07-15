@@ -40,21 +40,9 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 5000
+          fetch-tags: true
+          show-progress: false
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
-
-      - name: Checkout manually
-        run: |
-          ref=${{ github.sha || inputs.commit || github.event.pull_request.head.sha }}
-          ref_name=${{ github.ref_name }}
-          url=${{ github.repositoryUrl }}
-          set +e
-          set -x
-          #fetch_depth=1
-          time git clone --verbose --depth=5000 --single-branch --branch "${ref}" "${url}"
-          ls -la stackrox/
-          cd stackrox
-          git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*' || true
-          make tag
 
       - uses: ./.github/actions/job-preamble
         with:
