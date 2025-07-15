@@ -5,9 +5,10 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/stackrox/rox/central/convert/v2tostorage"
 	"github.com/stackrox/rox/central/role/sachelper/mocks"
 	datastoreMocks "github.com/stackrox/rox/central/virtualmachine/datastore/mocks"
-	v1 "github.com/stackrox/rox/generated/api/v1"
+	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
 	"github.com/stackrox/rox/pkg/protoassert"
@@ -23,7 +24,7 @@ func TestAuthz(t *testing.T) {
 func TestCreateVirtualMachine(t *testing.T) {
 	ctx := context.Background()
 
-	testVM := &storage.VirtualMachine{
+	testVM := &v2.VirtualMachine{
 		Id:        "test-vm-id",
 		Name:      "test-vm",
 		Namespace: "test-namespace",
@@ -31,19 +32,19 @@ func TestCreateVirtualMachine(t *testing.T) {
 
 	tests := []struct {
 		name           string
-		request        *v1.CreateVirtualMachineRequest
+		request        *v2.CreateVirtualMachineRequest
 		setupMock      func(*datastoreMocks.MockDataStore)
-		expectedResult *storage.VirtualMachine
+		expectedResult *v2.VirtualMachine
 		expectedError  string
 	}{
 		{
 			name: "successful creation",
-			request: &v1.CreateVirtualMachineRequest{
+			request: &v2.CreateVirtualMachineRequest{
 				VirtualMachine: testVM,
 			},
 			setupMock: func(mockDS *datastoreMocks.MockDataStore) {
 				mockDS.EXPECT().
-					CreateVirtualMachine(ctx, testVM).
+					CreateVirtualMachine(ctx, v2tostorage.VirtualMachine(testVM)).
 					Return(nil)
 			},
 			expectedResult: testVM,
@@ -58,8 +59,8 @@ func TestCreateVirtualMachine(t *testing.T) {
 		},
 		{
 			name: "empty ID",
-			request: &v1.CreateVirtualMachineRequest{
-				VirtualMachine: &storage.VirtualMachine{
+			request: &v2.CreateVirtualMachineRequest{
+				VirtualMachine: &v2.VirtualMachine{
 					Id: "",
 				},
 			},
@@ -69,12 +70,12 @@ func TestCreateVirtualMachine(t *testing.T) {
 		},
 		{
 			name: "datastore error",
-			request: &v1.CreateVirtualMachineRequest{
+			request: &v2.CreateVirtualMachineRequest{
 				VirtualMachine: testVM,
 			},
 			setupMock: func(mockDS *datastoreMocks.MockDataStore) {
 				mockDS.EXPECT().
-					CreateVirtualMachine(ctx, testVM).
+					CreateVirtualMachine(ctx, v2tostorage.VirtualMachine(testVM)).
 					Return(errors.New("datastore error"))
 			},
 			expectedResult: nil,
@@ -114,7 +115,7 @@ func TestCreateVirtualMachine(t *testing.T) {
 func TestGetVirtualMachine(t *testing.T) {
 	ctx := context.Background()
 
-	testVM := &storage.VirtualMachine{
+	testVM := &v2.VirtualMachine{
 		Id:        "test-vm-id",
 		Name:      "test-vm",
 		Namespace: "test-namespace",
@@ -122,27 +123,27 @@ func TestGetVirtualMachine(t *testing.T) {
 
 	tests := []struct {
 		name           string
-		request        *v1.GetVirtualMachineRequest
+		request        *v2.GetVirtualMachineRequest
 		setupMock      func(*datastoreMocks.MockDataStore)
-		expectedResult *storage.VirtualMachine
+		expectedResult *v2.VirtualMachine
 		expectedError  string
 	}{
 		{
 			name: "successful get",
-			request: &v1.GetVirtualMachineRequest{
+			request: &v2.GetVirtualMachineRequest{
 				Id: "test-vm-id",
 			},
 			setupMock: func(mockDS *datastoreMocks.MockDataStore) {
 				mockDS.EXPECT().
 					GetVirtualMachine(ctx, "test-vm-id").
-					Return(testVM, true, nil)
+					Return(v2tostorage.VirtualMachine(testVM), true, nil)
 			},
 			expectedResult: testVM,
 			expectedError:  "",
 		},
 		{
 			name: "empty ID",
-			request: &v1.GetVirtualMachineRequest{
+			request: &v2.GetVirtualMachineRequest{
 				Id: "",
 			},
 			setupMock:      func(mockDS *datastoreMocks.MockDataStore) {},
@@ -151,7 +152,7 @@ func TestGetVirtualMachine(t *testing.T) {
 		},
 		{
 			name: "virtual machine not found",
-			request: &v1.GetVirtualMachineRequest{
+			request: &v2.GetVirtualMachineRequest{
 				Id: "non-existent-vm",
 			},
 			setupMock: func(mockDS *datastoreMocks.MockDataStore) {
@@ -164,7 +165,7 @@ func TestGetVirtualMachine(t *testing.T) {
 		},
 		{
 			name: "datastore error",
-			request: &v1.GetVirtualMachineRequest{
+			request: &v2.GetVirtualMachineRequest{
 				Id: "test-vm-id",
 			},
 			setupMock: func(mockDS *datastoreMocks.MockDataStore) {
@@ -209,7 +210,7 @@ func TestGetVirtualMachine(t *testing.T) {
 func TestListVirtualMachines(t *testing.T) {
 	ctx := context.Background()
 
-	testVMs := []*storage.VirtualMachine{
+	testVMs := []*v2.VirtualMachine{
 		{
 			Id:        "vm-1",
 			Name:      "test-vm-1",
@@ -222,42 +223,48 @@ func TestListVirtualMachines(t *testing.T) {
 		},
 	}
 
+	storageVMs := make([]*storage.VirtualMachine, len(testVMs))
+
+	for i, vm := range testVMs {
+		storageVMs[i] = v2tostorage.VirtualMachine(vm)
+	}
+
 	tests := []struct {
 		name           string
-		request        *v1.ListVirtualMachinesRequest
+		request        *v2.ListVirtualMachinesRequest
 		setupMock      func(*datastoreMocks.MockDataStore)
-		expectedResult *v1.ListVirtualMachinesResponse
+		expectedResult *v2.ListVirtualMachinesResponse
 		expectedError  string
 	}{
 		{
 			name:    "successful list",
-			request: &v1.ListVirtualMachinesRequest{},
+			request: &v2.ListVirtualMachinesRequest{},
 			setupMock: func(mockDS *datastoreMocks.MockDataStore) {
 				mockDS.EXPECT().
 					GetAllVirtualMachines(ctx).
-					Return(testVMs, nil)
+					Return(storageVMs, nil)
 			},
-			expectedResult: &v1.ListVirtualMachinesResponse{
+			expectedResult: &v2.ListVirtualMachinesResponse{
 				VirtualMachines: testVMs,
 			},
 			expectedError: "",
 		},
 		{
 			name:    "empty list",
-			request: &v1.ListVirtualMachinesRequest{},
+			request: &v2.ListVirtualMachinesRequest{},
 			setupMock: func(mockDS *datastoreMocks.MockDataStore) {
 				mockDS.EXPECT().
 					GetAllVirtualMachines(ctx).
 					Return([]*storage.VirtualMachine{}, nil)
 			},
-			expectedResult: &v1.ListVirtualMachinesResponse{
-				VirtualMachines: []*storage.VirtualMachine{},
+			expectedResult: &v2.ListVirtualMachinesResponse{
+				VirtualMachines: []*v2.VirtualMachine{},
 			},
 			expectedError: "",
 		},
 		{
 			name:    "datastore error",
-			request: &v1.ListVirtualMachinesRequest{},
+			request: &v2.ListVirtualMachinesRequest{},
 			setupMock: func(mockDS *datastoreMocks.MockDataStore) {
 				mockDS.EXPECT().
 					GetAllVirtualMachines(ctx).
@@ -302,14 +309,14 @@ func TestDeleteVirtualMachine(t *testing.T) {
 
 	tests := []struct {
 		name           string
-		request        *v1.DeleteVirtualMachineRequest
+		request        *v2.DeleteVirtualMachineRequest
 		setupMock      func(*datastoreMocks.MockDataStore)
-		expectedResult *v1.DeleteVirtualMachineResponse
+		expectedResult *v2.DeleteVirtualMachineResponse
 		expectedError  string
 	}{
 		{
 			name: "successful deletion",
-			request: &v1.DeleteVirtualMachineRequest{
+			request: &v2.DeleteVirtualMachineRequest{
 				Id: "test-vm-id",
 			},
 			setupMock: func(mockDS *datastoreMocks.MockDataStore) {
@@ -317,25 +324,25 @@ func TestDeleteVirtualMachine(t *testing.T) {
 					DeleteVirtualMachines(ctx, "test-vm-id").
 					Return(nil)
 			},
-			expectedResult: &v1.DeleteVirtualMachineResponse{
+			expectedResult: &v2.DeleteVirtualMachineResponse{
 				Success: true,
 			},
 			expectedError: "",
 		},
 		{
 			name: "empty ID",
-			request: &v1.DeleteVirtualMachineRequest{
+			request: &v2.DeleteVirtualMachineRequest{
 				Id: "",
 			},
 			setupMock: func(mockDS *datastoreMocks.MockDataStore) {},
-			expectedResult: &v1.DeleteVirtualMachineResponse{
+			expectedResult: &v2.DeleteVirtualMachineResponse{
 				Success: false,
 			},
 			expectedError: "id cannot be empty",
 		},
 		{
 			name: "datastore error",
-			request: &v1.DeleteVirtualMachineRequest{
+			request: &v2.DeleteVirtualMachineRequest{
 				Id: "test-vm-id",
 			},
 			setupMock: func(mockDS *datastoreMocks.MockDataStore) {
@@ -343,7 +350,7 @@ func TestDeleteVirtualMachine(t *testing.T) {
 					DeleteVirtualMachines(ctx, "test-vm-id").
 					Return(errors.New("datastore error"))
 			},
-			expectedResult: &v1.DeleteVirtualMachineResponse{
+			expectedResult: &v2.DeleteVirtualMachineResponse{
 				Success: false,
 			},
 			expectedError: "datastore error",

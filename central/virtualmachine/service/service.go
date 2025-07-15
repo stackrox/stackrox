@@ -5,7 +5,7 @@ import (
 
 	"github.com/stackrox/rox/central/role/sachelper"
 	"github.com/stackrox/rox/central/virtualmachine/datastore"
-	v1 "github.com/stackrox/rox/generated/api/v1"
+	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/pkg/grpc"
 )
 
@@ -15,7 +15,7 @@ type Service interface {
 
 	AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error)
 
-	v1.VirtualMachineServiceServer
+	v2.VirtualMachineServiceServer
 }
 
 // New returns a new Service instance using the given DataStore.

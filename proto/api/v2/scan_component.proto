@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package v2;
+
+import "api/v2/vulnerability.proto";
+
+option go_package = "./api/v2;v2";
+option java_package = "io.stackrox.proto.api.v2";
+
+message ScanComponent {
+  string name = 1;
+  string version = 2;
+  License license = 3;
+  repeated EmbeddedVulnerability vulns = 4;
+  SourceType source = 5;
+  string location = 6;
+  oneof set_top_cvss {
+    float top_cvss = 7;
+  }
+  float risk_score = 8;
+  // Component version that fixes all the fixable vulnerabilities in this component.
+  string fixed_by = 9;
+  message Executable {
+    string path = 1;
+    repeated string dependencies = 2;
+  }
+  // Values are cleared after moving to cache, remove them from the grpc return as well
+  repeated Executable executables = 10;
+  string architecture = 11;
+}
+
+enum SourceType {
+  OS = 0;
+  PYTHON = 1;
+  JAVA = 2;
+  RUBY = 3;
+  NODEJS = 4;
+  GO = 7;
+  DOTNETCORERUNTIME = 5;
+  INFRASTRUCTURE = 6;
+}
+
+message License {
+  string name = 1;
+  string type = 2;
+  string url = 3;
+}

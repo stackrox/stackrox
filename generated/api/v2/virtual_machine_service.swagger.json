@@ -1,7 +1,7 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "api/v1/virtual_machine_service.proto",
+    "title": "api/v2/virtual_machine_service.proto",
     "version": "version not set"
   },
   "tags": [
@@ -23,13 +23,13 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v1ListVirtualMachinesResponse"
+              "$ref": "#/definitions/v2ListVirtualMachinesResponse"
             }
           },
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/rpcStatus"
             }
           }
         },
@@ -43,13 +43,13 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/storageVirtualMachine"
+              "$ref": "#/definitions/v2VirtualMachine"
             }
           },
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/rpcStatus"
             }
           }
         },
@@ -59,7 +59,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/v1CreateVirtualMachineRequest"
+              "$ref": "#/definitions/v2CreateVirtualMachineRequest"
             }
           }
         ],
@@ -75,13 +75,13 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/storageVirtualMachine"
+              "$ref": "#/definitions/v2VirtualMachine"
             }
           },
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/rpcStatus"
             }
           }
         },
@@ -109,13 +109,13 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v1DeleteVirtualMachineResponse"
+              "$ref": "#/definitions/v2DeleteVirtualMachineResponse"
             }
           },
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/rpcStatus"
             }
           }
         },
@@ -177,19 +177,43 @@
       ],
       "default": "UI_NONE"
     },
-    "EmbeddedVulnerabilityVulnerabilityType": {
+    "ScanComponentExecutable": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "VirtualMachineScanNote": {
       "type": "string",
       "enum": [
-        "UNKNOWN_VULNERABILITY",
-        "IMAGE_VULNERABILITY",
-        "K8S_VULNERABILITY",
-        "ISTIO_VULNERABILITY",
-        "NODE_VULNERABILITY",
-        "OPENSHIFT_VULNERABILITY"
+        "UNSET",
+        "OS_UNAVAILABLE",
+        "PARTIAL_SCAN_DATA",
+        "OS_CVES_UNAVAILABLE",
+        "OS_CVES_STALE",
+        "LANGUAGE_CVES_UNAVAILABLE",
+        "CERTIFIED_RHEL_SCAN_UNAVAILABLE"
       ],
-      "default": "UNKNOWN_VULNERABILITY"
+      "default": "UNSET"
     },
-    "googlerpcStatus": {
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "rpcStatus": {
       "type": "object",
       "properties": {
         "code": {
@@ -208,18 +232,7 @@
         }
       }
     },
-    "protobufAny": {
-      "type": "object",
-      "properties": {
-        "@type": {
-          "type": "string",
-          "description": "A URL/resource name that uniquely identifies the type of the serialized\nprotocol buffer message. This string must contain at least\none \"/\" character. The last segment of the URL's path must represent\nthe fully qualified name of the type (as in\n`path/google.protobuf.Duration`). The name should be in a canonical form\n(e.g., leading \".\" is not accepted).\n\nIn practice, teams usually precompile into the binary all types that they\nexpect it to use in the context of Any. However, for URLs which use the\nscheme `http`, `https`, or no scheme, one can optionally set up a type\nserver that maps type URLs to message definitions as follows:\n\n* If no scheme is provided, `https` is assumed.\n* An HTTP GET on the URL must yield a [google.protobuf.Type][]\n  value in binary format, or produce an error.\n* Applications are allowed to cache lookup results based on the\n  URL, or have them precompiled into a binary to avoid any\n  lookup. Therefore, binary compatibility needs to be preserved\n  on changes to types. (Use versioned type names to manage\n  breaking changes.)\n\nNote: this functionality is not currently available in the official\nprotobuf release, and it is not used for type URLs beginning with\ntype.googleapis.com. As of May 2023, there are no widely used type server\nimplementations and no plans to implement one.\n\nSchemes other than `http`, `https` (or the empty scheme) might be\nused with implementation specific semantics."
-        }
-      },
-      "additionalProperties": {},
-      "description": "`Any` contains an arbitrary serialized protocol buffer message along with a\nURL that describes the type of the serialized message.\n\nProtobuf library provides support to pack/unpack Any values in the form\nof utility functions or additional generated methods of the Any type.\n\nExample 1: Pack and unpack a message in C++.\n\n    Foo foo = ...;\n    Any any;\n    any.PackFrom(foo);\n    ...\n    if (any.UnpackTo(&foo)) {\n      ...\n    }\n\nExample 2: Pack and unpack a message in Java.\n\n    Foo foo = ...;\n    Any any = Any.pack(foo);\n    ...\n    if (any.is(Foo.class)) {\n      foo = any.unpack(Foo.class);\n    }\n    // or ...\n    if (any.isSameTypeAs(Foo.getDefaultInstance())) {\n      foo = any.unpack(Foo.getDefaultInstance());\n    }\n\n Example 3: Pack and unpack a message in Python.\n\n    foo = Foo(...)\n    any = Any()\n    any.Pack(foo)\n    ...\n    if any.Is(Foo.DESCRIPTOR):\n      any.Unpack(foo)\n      ...\n\n Example 4: Pack and unpack a message in Go\n\n     foo := &pb.Foo{...}\n     any, err := anypb.New(foo)\n     if err != nil {\n       ...\n     }\n     ...\n     foo := &pb.Foo{}\n     if err := any.UnmarshalTo(foo); err != nil {\n       ...\n     }\n\nThe pack methods provided by protobuf library will by default use\n'type.googleapis.com/full.type.name' as the type URL and the unpack\nmethods only use the fully qualified type name after the last '/'\nin the type URL, for example \"foo.bar.com/x/y.z\" will yield type\nname \"y.z\".\n\nJSON\n====\nThe JSON representation of an `Any` value uses the regular\nrepresentation of the deserialized, embedded message, with an\nadditional field `@type` which contains the type URL. Example:\n\n    package google.profile;\n    message Person {\n      string first_name = 1;\n      string last_name = 2;\n    }\n\n    {\n      \"@type\": \"type.googleapis.com/google.profile.Person\",\n      \"firstName\": <string>,\n      \"lastName\": <string>\n    }\n\nIf the embedded message type is well-known and has a custom JSON\nrepresentation, that representation will be embedded adding a field\n`value` which holds the custom JSON in addition to the `@type`\nfield. Example (for message [google.protobuf.Duration][]):\n\n    {\n      \"@type\": \"type.googleapis.com/google.protobuf.Duration\",\n      \"value\": \"1.212s\"\n    }"
-    },
-    "storageAdvisory": {
+    "v2Advisory": {
       "type": "object",
       "properties": {
         "name": {
@@ -230,31 +243,31 @@
         }
       }
     },
-    "storageCVSSScore": {
+    "v2CVSSScore": {
       "type": "object",
       "properties": {
         "source": {
-          "$ref": "#/definitions/storageSource"
+          "$ref": "#/definitions/v2Source"
         },
         "url": {
           "type": "string"
         },
         "cvssv2": {
-          "$ref": "#/definitions/storageCVSSV2"
+          "$ref": "#/definitions/v2CVSSV2"
         },
         "cvssv3": {
-          "$ref": "#/definitions/storageCVSSV3"
+          "$ref": "#/definitions/v2CVSSV3"
         }
       }
     },
-    "storageCVSSV2": {
+    "v2CVSSV2": {
       "type": "object",
       "properties": {
         "vector": {
           "type": "string"
         },
         "attackVector": {
-          "$ref": "#/definitions/storageCVSSV2AttackVector"
+          "$ref": "#/definitions/v2CVSSV2AttackVector"
         },
         "accessComplexity": {
           "$ref": "#/definitions/CVSSV2AccessComplexity"
@@ -263,13 +276,13 @@
           "$ref": "#/definitions/CVSSV2Authentication"
         },
         "confidentiality": {
-          "$ref": "#/definitions/storageCVSSV2Impact"
+          "$ref": "#/definitions/v2CVSSV2Impact"
         },
         "integrity": {
-          "$ref": "#/definitions/storageCVSSV2Impact"
+          "$ref": "#/definitions/v2CVSSV2Impact"
         },
         "availability": {
-          "$ref": "#/definitions/storageCVSSV2Impact"
+          "$ref": "#/definitions/v2CVSSV2Impact"
         },
         "exploitabilityScore": {
           "type": "number",
@@ -284,11 +297,11 @@
           "format": "float"
         },
         "severity": {
-          "$ref": "#/definitions/storageCVSSV2Severity"
+          "$ref": "#/definitions/v2CVSSV2Severity"
         }
       }
     },
-    "storageCVSSV2AttackVector": {
+    "v2CVSSV2AttackVector": {
       "type": "string",
       "enum": [
         "ATTACK_LOCAL",
@@ -297,7 +310,7 @@
       ],
       "default": "ATTACK_LOCAL"
     },
-    "storageCVSSV2Impact": {
+    "v2CVSSV2Impact": {
       "type": "string",
       "enum": [
         "IMPACT_NONE",
@@ -306,7 +319,7 @@
       ],
       "default": "IMPACT_NONE"
     },
-    "storageCVSSV2Severity": {
+    "v2CVSSV2Severity": {
       "type": "string",
       "enum": [
         "UNKNOWN",
@@ -316,7 +329,7 @@
       ],
       "default": "UNKNOWN"
     },
-    "storageCVSSV3": {
+    "v2CVSSV3": {
       "type": "object",
       "properties": {
         "vector": {
@@ -331,7 +344,7 @@
           "format": "float"
         },
         "attackVector": {
-          "$ref": "#/definitions/storageCVSSV3AttackVector"
+          "$ref": "#/definitions/v2CVSSV3AttackVector"
         },
         "attackComplexity": {
           "$ref": "#/definitions/CVSSV3Complexity"
@@ -343,27 +356,27 @@
           "$ref": "#/definitions/CVSSV3UserInteraction"
         },
         "scope": {
-          "$ref": "#/definitions/storageCVSSV3Scope"
+          "$ref": "#/definitions/v2CVSSV3Scope"
         },
         "confidentiality": {
-          "$ref": "#/definitions/storageCVSSV3Impact"
+          "$ref": "#/definitions/v2CVSSV3Impact"
         },
         "integrity": {
-          "$ref": "#/definitions/storageCVSSV3Impact"
+          "$ref": "#/definitions/v2CVSSV3Impact"
         },
         "availability": {
-          "$ref": "#/definitions/storageCVSSV3Impact"
+          "$ref": "#/definitions/v2CVSSV3Impact"
         },
         "score": {
           "type": "number",
           "format": "float"
         },
         "severity": {
-          "$ref": "#/definitions/storageCVSSV3Severity"
+          "$ref": "#/definitions/v2CVSSV3Severity"
         }
       }
     },
-    "storageCVSSV3AttackVector": {
+    "v2CVSSV3AttackVector": {
       "type": "string",
       "enum": [
         "ATTACK_LOCAL",
@@ -373,7 +386,7 @@
       ],
       "default": "ATTACK_LOCAL"
     },
-    "storageCVSSV3Impact": {
+    "v2CVSSV3Impact": {
       "type": "string",
       "enum": [
         "IMPACT_NONE",
@@ -382,7 +395,7 @@
       ],
       "default": "IMPACT_NONE"
     },
-    "storageCVSSV3Scope": {
+    "v2CVSSV3Scope": {
       "type": "string",
       "enum": [
         "UNCHANGED",
@@ -390,7 +403,7 @@
       ],
       "default": "UNCHANGED"
     },
-    "storageCVSSV3Severity": {
+    "v2CVSSV3Severity": {
       "type": "string",
       "enum": [
         "UNKNOWN",
@@ -402,7 +415,15 @@
       ],
       "default": "UNKNOWN"
     },
-    "storageDataSource": {
+    "v2CreateVirtualMachineRequest": {
+      "type": "object",
+      "properties": {
+        "virtualMachine": {
+          "$ref": "#/definitions/v2VirtualMachine"
+        }
+      }
+    },
+    "v2DataSource": {
       "type": "object",
       "properties": {
         "id": {
@@ -416,7 +437,15 @@
         }
       }
     },
-    "storageEPSS": {
+    "v2DeleteVirtualMachineResponse": {
+      "type": "object",
+      "properties": {
+        "success": {
+          "type": "boolean"
+        }
+      }
+    },
+    "v2EPSS": {
       "type": "object",
       "properties": {
         "epssProbability": {
@@ -430,87 +459,14 @@
       },
       "title": "EPSS Score stores two epss metrics returned by scanner - epss probability and epss percentile"
     },
-    "storageEmbeddedImageScanComponent": {
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "version": {
-          "type": "string"
-        },
-        "license": {
-          "$ref": "#/definitions/storageLicense"
-        },
-        "vulns": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/storageEmbeddedVulnerability"
-          }
-        },
-        "layerIndex": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "priority": {
-          "type": "string",
-          "format": "int64"
-        },
-        "source": {
-          "$ref": "#/definitions/storageSourceType"
-        },
-        "location": {
-          "type": "string"
-        },
-        "topCvss": {
-          "type": "number",
-          "format": "float"
-        },
-        "riskScore": {
-          "type": "number",
-          "format": "float"
-        },
-        "fixedBy": {
-          "type": "string",
-          "description": "Component version that fixes all the fixable vulnerabilities in this component."
-        },
-        "executables": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/storageEmbeddedImageScanComponentExecutable"
-          },
-          "title": "Values are cleared after moving to cache, remove them from the grpc return as well"
-        },
-        "architecture": {
-          "type": "string"
-        }
-      },
-      "title": "Next Tag: 14"
-    },
-    "storageEmbeddedImageScanComponentExecutable": {
-      "type": "object",
-      "properties": {
-        "path": {
-          "type": "string"
-        },
-        "dependencies": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      }
-    },
-    "storageEmbeddedVulnerability": {
+    "v2EmbeddedVulnerability": {
       "type": "object",
       "properties": {
         "cve": {
           "type": "string"
         },
         "advisory": {
-          "$ref": "#/definitions/storageAdvisory"
+          "$ref": "#/definitions/v2Advisory"
         },
         "cvss": {
           "type": "number",
@@ -525,15 +481,8 @@
         "fixedBy": {
           "type": "string"
         },
-        "scoreVersion": {
-          "$ref": "#/definitions/storageEmbeddedVulnerabilityScoreVersion"
-        },
-        "cvssV2": {
-          "$ref": "#/definitions/storageCVSSV2",
-          "title": "CVSSV2 CVSSV3 can be deprecated ROX-26066"
-        },
         "cvssV3": {
-          "$ref": "#/definitions/storageCVSSV3"
+          "$ref": "#/definitions/v2CVSSV3"
         },
         "publishedOn": {
           "type": "string",
@@ -544,13 +493,13 @@
           "format": "date-time"
         },
         "vulnerabilityType": {
-          "$ref": "#/definitions/EmbeddedVulnerabilityVulnerabilityType",
+          "$ref": "#/definitions/v2VulnerabilityType",
           "description": "For internal purposes only."
         },
         "vulnerabilityTypes": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/EmbeddedVulnerabilityVulnerabilityType"
+            "$ref": "#/definitions/v2VulnerabilityType"
           }
         },
         "suppressed": {
@@ -575,16 +524,16 @@
           "description": "Time when the CVE was first seen in this image."
         },
         "severity": {
-          "$ref": "#/definitions/storageVulnerabilitySeverity"
+          "$ref": "#/definitions/v2VulnerabilitySeverity"
         },
         "state": {
-          "$ref": "#/definitions/storageVulnerabilityState"
+          "$ref": "#/definitions/v2VulnerabilityState"
         },
         "cvssMetrics": {
           "type": "array",
           "items": {
             "type": "object",
-            "$ref": "#/definitions/storageCVSSScore"
+            "$ref": "#/definitions/v2CVSSScore"
           },
           "title": "cvss_metrics stores list of cvss scores from different sources like nvd, Redhat etc"
         },
@@ -593,22 +542,11 @@
           "format": "float"
         },
         "epss": {
-          "$ref": "#/definitions/storageEPSS"
+          "$ref": "#/definitions/v2EPSS"
         }
-      },
-      "title": "Next Tag: 25"
+      }
     },
-    "storageEmbeddedVulnerabilityScoreVersion": {
-      "type": "string",
-      "enum": [
-        "V2",
-        "V3"
-      ],
-      "default": "V2",
-      "description": "- V2: No unset for automatic backwards compatibility",
-      "title": "ScoreVersion can be deprecated ROX-26066"
-    },
-    "storageLicense": {
+    "v2License": {
       "type": "object",
       "properties": {
         "name": {
@@ -622,7 +560,69 @@
         }
       }
     },
-    "storageSource": {
+    "v2ListVirtualMachinesResponse": {
+      "type": "object",
+      "properties": {
+        "virtualMachines": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2VirtualMachine"
+          }
+        }
+      }
+    },
+    "v2ScanComponent": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "license": {
+          "$ref": "#/definitions/v2License"
+        },
+        "vulns": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2EmbeddedVulnerability"
+          }
+        },
+        "source": {
+          "$ref": "#/definitions/v2SourceType"
+        },
+        "location": {
+          "type": "string"
+        },
+        "topCvss": {
+          "type": "number",
+          "format": "float"
+        },
+        "riskScore": {
+          "type": "number",
+          "format": "float"
+        },
+        "fixedBy": {
+          "type": "string",
+          "description": "Component version that fixes all the fixable vulnerabilities in this component."
+        },
+        "executables": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/ScanComponentExecutable"
+          },
+          "title": "Values are cleared after moving to cache, remove them from the grpc return as well"
+        },
+        "architecture": {
+          "type": "string"
+        }
+      }
+    },
+    "v2Source": {
       "type": "string",
       "enum": [
         "SOURCE_UNKNOWN",
@@ -632,7 +632,7 @@
       ],
       "default": "SOURCE_UNKNOWN"
     },
-    "storageSourceType": {
+    "v2SourceType": {
       "type": "string",
       "enum": [
         "OS",
@@ -646,7 +646,7 @@
       ],
       "default": "OS"
     },
-    "storageVirtualMachine": {
+    "v2VirtualMachine": {
       "type": "object",
       "properties": {
         "id": {
@@ -658,32 +658,28 @@
         "name": {
           "type": "string"
         },
+        "clusterId": {
+          "type": "string"
+        },
+        "clusterName": {
+          "type": "string"
+        },
+        "facts": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
         "scan": {
-          "$ref": "#/definitions/storageVirtualMachineScan"
+          "$ref": "#/definitions/v2VirtualMachineScan"
         },
         "lastUpdated": {
           "type": "string",
           "format": "date-time"
-        },
-        "notes": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/storageVirtualMachineNote"
-          }
         }
       }
     },
-    "storageVirtualMachineNote": {
-      "type": "string",
-      "enum": [
-        "MISSING_METADATA",
-        "MISSING_SCAN_DATA",
-        "MISSING_SIGNATURE",
-        "MISSING_SIGNATURE_VERIFICATION_DATA"
-      ],
-      "default": "MISSING_METADATA"
-    },
-    "storageVirtualMachineScan": {
+    "v2VirtualMachineScan": {
       "type": "object",
       "properties": {
         "scannerVersion": {
@@ -697,38 +693,21 @@
           "type": "array",
           "items": {
             "type": "object",
-            "$ref": "#/definitions/storageEmbeddedImageScanComponent"
+            "$ref": "#/definitions/v2ScanComponent"
           }
         },
-        "operatingSystem": {
-          "type": "string"
-        },
         "dataSource": {
-          "$ref": "#/definitions/storageDataSource",
-          "title": "DataSource contains information about which integration was used to scan the image"
+          "$ref": "#/definitions/v2DataSource"
         },
         "notes": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/storageVirtualMachineScanNote"
+            "$ref": "#/definitions/VirtualMachineScanNote"
           }
         }
       }
     },
-    "storageVirtualMachineScanNote": {
-      "type": "string",
-      "enum": [
-        "UNSET",
-        "OS_UNAVAILABLE",
-        "PARTIAL_SCAN_DATA",
-        "OS_CVES_UNAVAILABLE",
-        "OS_CVES_STALE",
-        "LANGUAGE_CVES_UNAVAILABLE",
-        "CERTIFIED_RHEL_SCAN_UNAVAILABLE"
-      ],
-      "default": "UNSET"
-    },
-    "storageVulnerabilitySeverity": {
+    "v2VulnerabilitySeverity": {
       "type": "string",
       "enum": [
         "UNKNOWN_VULNERABILITY_SEVERITY",
@@ -739,7 +718,7 @@
       ],
       "default": "UNKNOWN_VULNERABILITY_SEVERITY"
     },
-    "storageVulnerabilityState": {
+    "v2VulnerabilityState": {
       "type": "string",
       "enum": [
         "OBSERVED",
@@ -747,35 +726,19 @@
         "FALSE_POSITIVE"
       ],
       "default": "OBSERVED",
-      "description": "VulnerabilityState indicates if vulnerability is being observed or deferred(/suppressed). By default, it vulnerabilities are observed.\n\n - OBSERVED: [Default state]"
+      "description": "VulnerabilityState are the possible applicable to CVE. By default all vulnerabilities are in observed state.\n\n - OBSERVED: This is the default state and indicates that the CVE is not excluded from policy evaluation and risk evaluation.\n\n[Default state]\n - DEFERRED: Indicates that the vulnerability is deferred. A deferred CVE is excluded from policy evaluation and risk evaluation.\n - FALSE_POSITIVE: Indicates that the vulnerability is a false-positive. A false-positive CVE is excluded from policy evaluation and risk evaluation."
     },
-    "v1CreateVirtualMachineRequest": {
-      "type": "object",
-      "properties": {
-        "virtualMachine": {
-          "$ref": "#/definitions/storageVirtualMachine"
-        }
-      }
-    },
-    "v1DeleteVirtualMachineResponse": {
-      "type": "object",
-      "properties": {
-        "success": {
-          "type": "boolean"
-        }
-      }
-    },
-    "v1ListVirtualMachinesResponse": {
-      "type": "object",
-      "properties": {
-        "virtualMachines": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/storageVirtualMachine"
-          }
-        }
-      }
+    "v2VulnerabilityType": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN_VULNERABILITY",
+        "IMAGE_VULNERABILITY",
+        "K8S_VULNERABILITY",
+        "ISTIO_VULNERABILITY",
+        "NODE_VULNERABILITY",
+        "OPENSHIFT_VULNERABILITY"
+      ],
+      "default": "UNKNOWN_VULNERABILITY"
     }
   }
 }
