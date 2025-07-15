@@ -319,7 +319,6 @@ func main() {
 
 	go startGRPCServer()
 	go startTelemetryServer()
-	go startBackgroundProcesses()
 
 	if env.ManagedCentral.BooleanSetting() {
 		clusterInternalServer := internal.NewHTTPServer(metrics.HTTPSingleton())
@@ -388,6 +387,10 @@ func startServices() {
 	}
 
 	go registerDelayedIntegrations(iiStore.DelayedIntegrations)
+
+	if env.DeclarativeConfiguration.BooleanSetting() {
+		declarativeconfig.ManagerSingleton().ReconcileDeclarativeConfigurations()
+	}
 }
 
 func servicesToRegister() []pkgGRPC.APIService {
@@ -930,12 +933,6 @@ func debugRoutes() []routes.CustomRoute {
 		})
 	}
 	return customRoutes
-}
-
-func startBackgroundProcesses() {
-	if env.DeclarativeConfiguration.BooleanSetting() {
-		declarativeconfig.ManagerSingleton().ReconcileDeclarativeConfigurations()
-	}
 }
 
 type stoppable interface {
