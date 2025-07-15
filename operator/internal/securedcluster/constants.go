@@ -1,6 +1,6 @@
 package securedcluster
 
 const (
-	// CABundleConfigMapName is the name of the ConfigMap created by Sensor that contains the CA bundle
+	// CABundleConfigMapName is a ConfigMap that Sensor creates at runtime to store the CA certificates retrieved from Central
 	CABundleConfigMapName = "tls-ca-bundle"
 )
