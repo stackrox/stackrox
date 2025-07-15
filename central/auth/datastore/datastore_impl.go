@@ -132,10 +132,10 @@ func verifyM2MConfigOrigin(ctx context.Context, config *storage.AuthMachineToMac
 	return nil
 }
 
-func (ds *datastoreImpl) verifyConfigRolesExist(ctx context.Context, config *storage.AuthMachineToMachineConfig) error {
+func (d *datastoreImpl) verifyConfigRolesExist(ctx context.Context, config *storage.AuthMachineToMachineConfig) error {
 	for _, mapping := range config.GetMappings() {
 		roleName := mapping.GetRole()
-		role, found, err := ds.roleDataStore.GetRole(ctx, roleName)
+		role, found, err := d.roleDataStore.GetRole(ctx, roleName)
 		if err != nil {
 			return pkgErrors.Wrapf(
 				err,

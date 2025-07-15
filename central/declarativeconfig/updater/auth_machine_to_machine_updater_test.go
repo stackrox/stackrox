@@ -4,12 +4,13 @@ package updater
 
 import (
 	"context"
+	"testing"
+
 	"github.com/stackrox/rox/central/auth/m2m/mocks"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/uuid"
 	"go.uber.org/mock/gomock"
-	"testing"
 
 	m2mDataStore "github.com/stackrox/rox/central/auth/datastore"
 	m2mStore "github.com/stackrox/rox/central/auth/store"
@@ -85,20 +86,23 @@ func (s *authMachineToMachineTestSuite) TestUpsert() {
 		"valid message should be upserted": {
 			testInit: func() {
 				err := s.roleDS.AddAccessScope(s.ctx, &storage.SimpleAccessScope{
-					Id:    uuid.NewTestUUID(1).String(),
-					Name:  "Test Access Scope",
-					Rules: &storage.SimpleAccessScope_Rules{},
+					Id:     uuid.NewTestUUID(1).String(),
+					Name:   "Test Access Scope",
+					Rules:  &storage.SimpleAccessScope_Rules{},
+					Traits: &storage.Traits{Origin: storage.Traits_DECLARATIVE},
 				})
 				s.Require().NoError(err)
 				err = s.roleDS.AddPermissionSet(s.ctx, &storage.PermissionSet{
-					Id:   uuid.NewTestUUID(2).String(),
-					Name: "Test Permission Set",
+					Id:     uuid.NewTestUUID(2).String(),
+					Name:   "Test Permission Set",
+					Traits: &storage.Traits{Origin: storage.Traits_DECLARATIVE},
 				})
 				s.Require().NoError(err)
 				err = s.roleDS.AddRole(s.ctx, &storage.Role{
 					Name:            "Test Role",
 					PermissionSetId: uuid.NewTestUUID(2).String(),
 					AccessScopeId:   uuid.NewTestUUID(1).String(),
+					Traits:          &storage.Traits{Origin: storage.Traits_DECLARATIVE},
 				})
 				s.Require().NoError(err)
 			},
@@ -137,18 +141,21 @@ func (s *authMachineToMachineTestSuite) TestUpsert() {
 
 func (s *authMachineToMachineTestSuite) TestDelete_Success() {
 	s.Require().NoError(s.roleDS.AddAccessScope(s.ctx, &storage.SimpleAccessScope{
-		Id:    uuid.NewTestUUID(1).String(),
-		Name:  "Test Access Scope",
-		Rules: &storage.SimpleAccessScope_Rules{},
+		Id:     uuid.NewTestUUID(1).String(),
+		Name:   "Test Access Scope",
+		Rules:  &storage.SimpleAccessScope_Rules{},
+		Traits: &storage.Traits{Origin: storage.Traits_DECLARATIVE},
 	}))
 	s.Require().NoError(s.roleDS.AddPermissionSet(s.ctx, &storage.PermissionSet{
-		Id:   uuid.NewTestUUID(2).String(),
-		Name: "Test Permission Set",
+		Id:     uuid.NewTestUUID(2).String(),
+		Name:   "Test Permission Set",
+		Traits: &storage.Traits{Origin: storage.Traits_DECLARATIVE},
 	}))
 	s.Require().NoError(s.roleDS.AddRole(s.ctx, &storage.Role{
 		Name:            "Test Role",
 		PermissionSetId: uuid.NewTestUUID(2).String(),
 		AccessScopeId:   uuid.NewTestUUID(1).String(),
+		Traits:          &storage.Traits{Origin: storage.Traits_DECLARATIVE},
 	}))
 	m2mConfig := &storage.AuthMachineToMachineConfig{
 		Id:                      uuid.NewTestUUID(3).String(),
