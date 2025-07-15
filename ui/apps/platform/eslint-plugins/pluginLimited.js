@@ -1,4 +1,4 @@
-/* globals console module require */
+/* globals module require */
 
 const path = require('node:path');
 
@@ -35,9 +35,6 @@ const rules = {
                             ['.jsx', '.tsx'].includes(extname) ||
                             basenameWithoutExtension.startsWith('use') ||
                             name.startsWith('use');
-                        if (isReactComponentOrHook) {
-                            console.log(`${name} ${basenameWithoutExtension} ${extname}`); // eslint-disable-line no-console
-                        }
                         if (isReactComponentOrHook && basenameWithoutExtension !== name) {
                             context.report({
                                 node,
