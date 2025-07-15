@@ -14,7 +14,7 @@ import spock.lang.Tag
 
 @Tag("BAT")
 @Tag("PZ")
-@IgnoreIf({ Env.BYODB_TEST == "true" })
+@IgnoreIf({ Env.IS_BYODB })
 class ClusterInitBundleTest extends BaseSpecification {
 
     @Shared
