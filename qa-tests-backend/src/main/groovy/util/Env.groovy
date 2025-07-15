@@ -39,6 +39,9 @@ class Env {
     // only has secured-cluster deployed and connects to a remote central
     static final String ONLY_SECURED_CLUSTER = System.getenv("ONLY_SECURED_CLUSTER") ?: "false"
 
+    // IS_BYODB specifies that this is testing an external Postgres database
+    static final boolean IS_BYODB = (System.getenv("BYODB_TEST") == "true")
+
     private static final Env INSTANCE = new Env()
 
     static String get(String key, String defVal = null) {
