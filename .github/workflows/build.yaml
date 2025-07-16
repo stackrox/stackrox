@@ -46,7 +46,7 @@ jobs:
           fetch-depth: ${{ env.PR_DEPTH }}
           fetch-tags: true
           show-progress: false
-          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+          ref: ${{ github.sha || inputs.commit || github.event.pull_request.head.sha }}
 
       - name: List changes
         continue-on-error: true
@@ -58,7 +58,6 @@ jobs:
           git fetch origin ${{ github.event.pull_request.base.ref }}
 
           git diff --no-renames --name-status ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
-          git diff --no-renames --name-status ${{ github.event.pull_request.base.sha }}..${{ github.sha }}
           git diff --no-renames --name-status ${{ github.base_ref }}..${{ github.sha }}
 
           git diff-tree --name-only --diff-filter 'AM' -r \
