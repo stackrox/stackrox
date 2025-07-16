@@ -17,6 +17,8 @@ runs:
         path: |
           ${{ steps.cache-paths.outputs.GOMODCACHE }}
         key: go-mod-v1-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          go-mod-v1-
 
     - name: Cache Go Build
       uses: actions/cache@v4
@@ -24,6 +26,8 @@ runs:
         path: |
           ${{ steps.cache-paths.outputs.GOCACHE }}
         key: go-build-v1-${{ steps.cache-paths.outputs.GOARCH }}-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          go-build-v1-${{ steps.cache-paths.outputs.GOARCH }}-
 
     - name: Download Go modules
       run: make deps --always-make
