@@ -43,7 +43,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: ${{ env.PR_FETCH_DEPTH }}
+          fetch-depth: ${{ env.PR_DEPTH }}
           fetch-tags: true
           show-progress: false
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
@@ -53,16 +53,18 @@ jobs:
         run: |
           set +e
           set -x
-          git diff --no-renames --name-status ${{ github.base_ref }}..${{ github.ref_name }}
-          git fetch --depth=${PR_FETCH_DEPTH:-2000}
-          git diff --no-renames --name-status ${{ github.base_ref }}..${{ github.ref_name }}
-          echo
           git diff --no-renames --name-status ${{ github.event.pull_request.base.sha }}..${{ github.head_ref }}
           git diff --no-renames --name-status ${{ github.event.pull_request.base.sha }}..${{ github.ref_name }}
           git diff --no-renames --name-status ${{ github.event.pull_request.base.sha }}..${{ github.sha }}
           git diff --no-renames --name-status ${{ github.base_ref }}..${{ github.head_ref }}
           git diff --no-renames --name-status ${{ github.base_ref }}..${{ github.ref_name }}
           git diff --no-renames --name-status ${{ github.base_ref }}..${{ github.sha }}
+
+          git fetch origin ${{ github.event.pull_request.head.ref }} --depth $(( ${{ github.event.pull_request.commits }} + 1 ))
+          git fetch origin ${{ github.event.pull_request.base.ref }}
+
+          git diff-tree --name-only --diff-filter 'AM' -r \
+            --merge-base origin/${{ github.event.pull_request.base.ref }} ${{ github.event.pull_request.head.ref }}
 
       - uses: ./.github/actions/job-preamble
         with:
