@@ -25,11 +25,12 @@ end() {
 
     local started_at=""
     started_at=$(jq -r '.timestamp' /tmp/started.json)
-    save_job_record \
+
+    save_job_record "${JOB_NAME:-missing}" "prow" \
         outcome "${OVERALL_JOB_OUTCOME}" \
         started_at "${started_at}" \
         stopped_at "CURRENT_TIMESTAMP()" \
-        "test_target" "${test_target:-null}" \
+        test_target "${test_target:-null}" \
         cut_product_version "${cut_product_version:-null}" \
         cut_k8s_version "${cut_k8s_version:-null}" \
         cut_os_image "${cut_os_image:-null}" \
