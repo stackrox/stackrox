@@ -28,6 +28,10 @@ type alertHandlerImpl struct {
 	centralReady concurrency.Signal
 }
 
+func (h *alertHandlerImpl) Name() string {
+	return common.DefaultComponentName(h)
+}
+
 func (h *alertHandlerImpl) Start() error {
 	go h.run()
 	return nil

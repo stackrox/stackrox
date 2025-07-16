@@ -39,6 +39,10 @@ type auditLogCollectionManagerImpl struct {
 	connectionLock sync.RWMutex
 }
 
+func (a *auditLogCollectionManagerImpl) Name() string {
+	return common.DefaultComponentName(a)
+}
+
 func (a *auditLogCollectionManagerImpl) Start() error {
 	go a.runStateSaver()
 	go a.runUpdater(a.updaterTicker.C)

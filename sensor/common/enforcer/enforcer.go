@@ -43,6 +43,10 @@ type enforcer struct {
 	stopper        concurrency.Stopper
 }
 
+func (e *enforcer) Name() string {
+	return common.DefaultComponentName(e)
+}
+
 func (e *enforcer) Capabilities() []centralsensor.SensorCapability {
 	return nil
 }

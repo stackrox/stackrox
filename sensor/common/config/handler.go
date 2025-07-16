@@ -54,6 +54,10 @@ type configHandlerImpl struct {
 	stopC                     concurrency.ErrorSignal
 }
 
+func (c *configHandlerImpl) Name() string {
+	return common.DefaultComponentName(c)
+}
+
 func (c *configHandlerImpl) Start() error {
 	return nil
 }

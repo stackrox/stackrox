@@ -55,6 +55,10 @@ type updaterImpl struct {
 	cancelCtx      context.CancelFunc
 }
 
+func (u *updaterImpl) Name() string {
+	return common.DefaultComponentName(u)
+}
+
 func (u *updaterImpl) Start() error {
 	go u.run(u.updateTicker.C)
 	return nil

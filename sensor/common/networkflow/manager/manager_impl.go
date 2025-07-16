@@ -365,6 +365,10 @@ type networkFlowManager struct {
 	pubSub  *internalmessage.MessageSubscriber
 }
 
+func (m *networkFlowManager) Name() string {
+	return common.DefaultComponentName(m)
+}
+
 func (m *networkFlowManager) ProcessMessage(_ *central.MsgToSensor) error {
 	return nil
 }
