@@ -37,7 +37,6 @@ type centralConfig struct {
 
 	campaignMux       sync.RWMutex
 	telemetryCampaign phonehome.APICallCampaign
-	interceptors      map[string][]phonehome.Interceptor
 }
 
 func makeCentralConfig(instanceId string) *centralConfig {
