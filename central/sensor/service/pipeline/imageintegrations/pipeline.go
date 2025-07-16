@@ -133,8 +133,8 @@ func matchesECRAuth(new, old *storage.ImageIntegration) bool {
 // matchingFunc returns true if the new integration matches the old integration.
 type matchingFunc func(new, old *storage.ImageIntegration) bool
 
-// getMatchingImageIntegration returns the image integration that exists and should be updated
-// the second return value
+// getMatchingImageIntegration returns the existing image integration (if found) and true
+// if the new integration should be upserted, false otherwise.
 func (s *pipelineImpl) getMatchingImageIntegration(matches matchingFunc, auto *storage.ImageIntegration, existingIntegrations []*storage.ImageIntegration) (*storage.ImageIntegration, bool) {
 	for _, existing := range existingIntegrations {
 		if auto.GetName() != existing.GetName() {
