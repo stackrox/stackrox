@@ -184,10 +184,12 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 
 	if svcType == storage.ServiceType_REGISTRANT_SERVICE {
 		// Terminate connection which uses a CRS certificate at this point.
+		log.Infof("Terminating initial CRS flow from cluster %s (%s)", cluster.GetName(), cluster.GetId())
 		return nil
 	}
 
 	if cluster.GetHealthStatus().GetLastContact() == nil && cluster.GetInitBundleId() != "" {
+		log.Infof("First connection from cluster %s (%s) with proper service certificates.", cluster.GetName(), cluster.GetId())
 		// Sensor has initially connected with a real service certificate, not just with an init artifact.
 		initBundleMeta, err := s.clusterInitStore.Get(clusterDSSAC, cluster.GetInitBundleId())
 		if err != nil {
@@ -197,6 +199,7 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 		if initBundleMeta.GetVersion() == storage.InitBundleMeta_CRS {
 			// The call to MarkClusterRegistrationComplete also updates the revocation state of the CRS used for this
 			// cluster, if needed.
+			log.Infof("Marking registration of cluster %s (%s) as complete.", cluster.GetName(), cluster.GetId())
 			if err := s.clusterInitStore.MarkClusterRegistrationComplete(clusterDSSAC, cluster.GetInitBundleId(), cluster.GetId()); err != nil {
 				return errors.Wrapf(err, "updating completed-registrations counter for cluster registration secret %q", cluster.GetInitBundleId())
 			}
