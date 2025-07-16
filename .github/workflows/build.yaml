@@ -43,8 +43,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: ${{ env.PR_DEPTH }}
-          fetch-tags: true
+          fetch-depth: 1  #${{ env.PR_DEPTH }}
+          fetch-tags: false #true
           show-progress: false
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
@@ -53,36 +53,22 @@ jobs:
         run: |
           set +e
           set -x
-          # compare with merge-base
-          git diff --name-only origin/${{ github.event.pull_request.base.ref }}...${{ github.event.pull_request.head.sha }} \
-            | tee >( cat >&2 ) \
-            | grep "${CHANGE_MATCH:-.*}"
 
-          git diff --name-only ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }} \
-            | tee >( cat >&2 ) \
-            | grep "${CHANGE_MATCH:-.*}"
+          git diff --name-only ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}
 
-          git fetch origin ${{ github.event.pull_request.head.ref }} --depth $(( ${{ github.event.pull_request.commits }} + 1 ))
 
-          # compare with merge-base
-          git diff --name-only origin/${{ github.event.pull_request.base.ref }}...${{ github.event.pull_request.head.sha }} \
-            | tee >( cat >&2 ) \
-            | grep "${CHANGE_MATCH:-.*}"
+          time git fetch origin ${{ github.event.pull_request.head.ref }} --depth $(( ${{ github.event.pull_request.commits }} + 1 ))
 
-          git diff --name-only ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }} \
-            | tee >( cat >&2 ) \
-            | grep "${CHANGE_MATCH:-.*}"
+          git diff --name-only origin/${{ github.event.pull_request.base.ref }}...${{ github.event.pull_request.head.sha }}
+
+          git diff --name-only ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}
+
 
           git fetch origin ${{ github.event.pull_request.base.ref }}
 
-          # compare with merge-base
-          git diff --name-only origin/${{ github.event.pull_request.base.ref }}...${{ github.event.pull_request.head.sha }} \
-            | tee >( cat >&2 ) \
-            | grep "${CHANGE_MATCH:-.*}"
+          git diff --name-only origin/${{ github.event.pull_request.base.ref }}...${{ github.event.pull_request.head.sha }}
 
-          git diff --name-only ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }} \
-            | tee >( cat >&2 ) \
-            | grep "${CHANGE_MATCH:-.*}"
+          git diff --name-only ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}
 
       - uses: ./.github/actions/files-changed
         id: files-changed
