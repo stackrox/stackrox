@@ -1328,72 +1328,59 @@ func TestGetCABundleFromConfigMap(t *testing.T) {
 func TestTranslateWithCABundle(t *testing.T) {
 	const testNamespace = "stackrox"
 
+	createClientWithConfigMap := func(t *testing.T, hasConfigMap bool, configMapData string) ctrlClient.Client {
+		objects := append(defaultObjects, defaultStorageClasses...)
+
+		if hasConfigMap {
+			cm := &v1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      securedcluster.CABundleConfigMapName,
+					Namespace: testNamespace,
+				},
+				Data: map[string]string{
+					"ca-bundle.pem": configMapData,
+				},
+			}
+			objects = append(objects, cm)
+		}
+
+		return testutils.NewFakeClientBuilder(t, objects...).Build()
+	}
+
 	tests := []struct {
 		name            string
-		setupClient     func(t *testing.T) ctrlClient.Client
+		hasConfigMap    bool
+		configMapData   string
 		expectedCAValue string
 	}{
 		{
-			name: "no ConfigMap should use default CA from secrets",
-			setupClient: func(t *testing.T) ctrlClient.Client {
-				return newDefaultFakeClient(t)
-			},
+			name:            "no ConfigMap should use default CA from secrets",
+			hasConfigMap:    false,
+			configMapData:   "",
 			expectedCAValue: "ca central content",
 		},
 		{
-			name: "ConfigMap with CA bundle should use bundle instead of secret",
-			setupClient: func(t *testing.T) ctrlClient.Client {
-				caBundleContent := "test-data"
-
-				cm := &v1.ConfigMap{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      securedcluster.CABundleConfigMapName,
-						Namespace: testNamespace,
-					},
-					Data: map[string]string{
-						"ca-bundle.pem": caBundleContent,
-					},
-				}
-
-				objects := append(defaultObjects, defaultStorageClasses...)
-				objects = append(objects, cm)
-				return testutils.NewFakeClientBuilder(t, objects...).Build()
-			},
+			name:            "ConfigMap with CA bundle should use bundle instead of secret",
+			hasConfigMap:    true,
+			configMapData:   "test-data",
 			expectedCAValue: "test-data",
 		},
 		{
-			name: "ConfigMap with empty CA bundle should log error and use default CA from secrets",
-			setupClient: func(t *testing.T) ctrlClient.Client {
-				cm := &v1.ConfigMap{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      securedcluster.CABundleConfigMapName,
-						Namespace: testNamespace,
-					},
-					Data: map[string]string{
-						"ca-bundle.pem": "",
-					},
-				}
-
-				objects := append(defaultObjects, defaultStorageClasses...)
-				objects = append(objects, cm)
-				return testutils.NewFakeClientBuilder(t, objects...).Build()
-			},
+			name:            "ConfigMap with empty CA bundle should log error and use default CA from secrets",
+			hasConfigMap:    true,
+			configMapData:   "",
 			expectedCAValue: "ca central content",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			client := tt.setupClient(t)
+			client := createClientWithConfigMap(t, tt.hasConfigMap, tt.configMapData)
 			translator := New(client, client, logr.Discard())
 
 			sc := platform.SecuredCluster{
-				ObjectMeta: metav1.ObjectMeta{
-					Namespace: testNamespace,
-				},
-				Spec: platform.SecuredClusterSpec{
-					ClusterName: "test-cluster",
-				},
+				ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace},
+				Spec:       platform.SecuredClusterSpec{ClusterName: "test-cluster"},
 			}
 
 			result, err := translator.translate(context.Background(), sc)
