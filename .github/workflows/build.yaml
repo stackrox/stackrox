@@ -53,6 +53,10 @@ jobs:
         run: |
           set +e
           set -x
+          git diff --no-renames --name-status ${{ github.base_ref }}..${{ github.ref_name }}
+          git fetch --depth=${PR_FETCH_DEPTH:-2000}
+          git diff --no-renames --name-status ${{ github.base_ref }}..${{ github.ref_name }}
+          echo
           git diff --no-renames --name-status ${{ github.event.pull_request.base.sha }}..${{ github.head_ref }}
           git diff --no-renames --name-status ${{ github.event.pull_request.base.sha }}..${{ github.ref_name }}
           git diff --no-renames --name-status ${{ github.event.pull_request.base.sha }}..${{ github.sha }}
