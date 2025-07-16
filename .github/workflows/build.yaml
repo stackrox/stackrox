@@ -51,6 +51,7 @@ jobs:
       - name: fetch origin
         continue-on-error: true
         run: |
+          set +e
           git fetch origin ${{ github.event.pull_request.head.ref }} --depth $(( ${{ github.event.pull_request.commits }} + 1 ))
           # git fetch origin ${{ github.event.pull_request.base.ref }}
 

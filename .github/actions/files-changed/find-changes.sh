@@ -5,8 +5,6 @@ declare -A filters="$1"
 base=${2:-origin/master}
 sha=${3:-$(git rev-parse HEAD)}
 
-set +e
-
 if [[ -z "${filters[@]}" ]]; then
   echo 'No filters provided. Please re-try with filters set like "( ["ui"]="ui/**" ["gha"]=".github/**" )"'
   exit 1
