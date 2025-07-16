@@ -25,7 +25,7 @@ import (
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/openshift"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/tlscheck"
+	"github.com/stackrox/rox/pkg/tlscheckcache"
 	"github.com/stackrox/rox/pkg/urlfmt"
 )
 
@@ -56,6 +56,10 @@ func NewPipeline(integrationManager enrichment.Manager,
 		datastore:           datastore,
 		clusterDatastore:    clusterDatastore,
 		enrichAndDetectLoop: enrichAndDetectLoop,
+		tlsCheckCache: tlscheckcache.New(
+			tlscheckcache.WithMetricSubsystem(metrics.CentralSubsystem),
+			tlscheckcache.WithTTL(env.RegistryTLSCheckTTL.DurationSetting()),
+		),
 	}
 }
 
@@ -65,6 +69,7 @@ type pipelineImpl struct {
 	datastore           datastore.DataStore
 	clusterDatastore    clusterDatastore.DataStore
 	enrichAndDetectLoop reprocessor.Loop
+	tlsCheckCache       *tlscheckcache.Cache
 }
 
 func (s *pipelineImpl) Capabilities() []centralsensor.CentralCapability {
@@ -180,13 +185,17 @@ func parseEndpointForURL(endpoint string) string {
 
 // setUpIntegrationParams sets up the integration parameters based on its type
 // and returns them.
-func setUpIntegrationParams(ctx context.Context, imageIntegration *storage.ImageIntegration, includePathInDescription bool) (description string, matches matchingFunc, err error) {
+func (s *pipelineImpl) setUpIntegrationParams(ctx context.Context, imageIntegration *storage.ImageIntegration, includePathInDescription bool) (description string, matches matchingFunc, err error) {
 	switch config := imageIntegration.GetIntegrationConfig().(type) {
 	case *storage.ImageIntegration_Docker:
 		dockerCfg := config.Docker
-		validTLS, tlsErr := tlscheck.CheckTLS(ctx, dockerCfg.GetEndpoint())
-		if tlsErr != nil {
-			log.Debugf("reaching out for TLS check to %s: %v", dockerCfg.GetEndpoint(), tlsErr)
+		validTLS, skip, tlsErr := s.tlsCheckCache.CheckTLS(ctx, dockerCfg.GetEndpoint())
+		if tlsErr != nil || skip {
+			if skip {
+				log.Debugf("reaching out for TLS check to %s: tls check skipped due to previous error", dockerCfg.GetEndpoint())
+			} else {
+				log.Debugf("reaching out for TLS check to %s: %v", dockerCfg.GetEndpoint(), tlsErr)
+			}
 			// Not enough evidence that we can skip TLS, so conservatively require it.
 			dockerCfg.Insecure = false
 		} else {
@@ -309,7 +318,7 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	}
 	imageIntegration.ClusterId = clusterID
 
-	description, matches, err := setUpIntegrationParams(ctx, imageIntegration, sourcedIntegration)
+	description, matches, err := s.setUpIntegrationParams(ctx, imageIntegration, sourcedIntegration)
 	if err != nil {
 		return errors.Wrapf(err, "setting up integration params for %q", imageIntegration.GetId())
 	}

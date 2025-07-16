@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/openshift"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/tlscheckcache"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 )
@@ -218,14 +219,18 @@ func TestSetupIntegrationParamsDescription(t *testing.T) {
 		},
 	}
 
+	p := pipelineImpl{
+		tlsCheckCache: tlscheckcache.New(),
+	}
+
 	t.Run("do not include path in description", func(t *testing.T) {
-		desc, _, _ := setUpIntegrationParams(ctx, ii.CloneVT(), false)
+		desc, _, _ := p.setUpIntegrationParams(ctx, ii.CloneVT(), false)
 		assert.NotContains(t, desc, "/path")
 		assert.Equal(t, "https://registry.invalid", desc)
 	})
 
 	t.Run("include path in description", func(t *testing.T) {
-		desc, _, _ := setUpIntegrationParams(ctx, ii.CloneVT(), true)
+		desc, _, _ := p.setUpIntegrationParams(ctx, ii.CloneVT(), true)
 		assert.Equal(t, "https://registry.invalid/path/to/thing", desc)
 	})
 }
