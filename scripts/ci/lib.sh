@@ -2416,7 +2416,7 @@ _record_cluster_info() {
         cut_container_runtime_version="$containerRuntimeVersion"
     fi
 
-    update_job_record \
+    ci_export \
       cut_product_version "$cut_product_version" \
       cut_k8s_version "$cut_k8s_version" \
       cut_os_image "$cut_os_image" \
