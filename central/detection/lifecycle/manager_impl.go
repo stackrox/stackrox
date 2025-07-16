@@ -20,6 +20,8 @@ import (
 	baselineDataStore "github.com/stackrox/rox/central/processbaseline/datastore"
 	processIndicatorDatastore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/reprocessor"
+	"github.com/stackrox/rox/central/sensor/service/connection"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
@@ -81,6 +83,8 @@ type managerImpl struct {
 	removedOrDisabledPolicies set.StringSet
 
 	processAggregator aggregator.ProcessAggregator
+
+	connectionManager connection.Manager
 }
 
 func (m *managerImpl) copyAndResetIndicatorQueue() map[string]*storage.ProcessIndicator {
@@ -291,6 +295,20 @@ func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, ind
 	}
 	if !exists {
 		_, err = m.baselines.UpsertProcessBaseline(lifecycleMgrCtx, key, elements, true, true)
+		if err != nil {
+			return false, err
+		}
+
+	        err := m.connectionManager.SendMessage(baseline.GetKey().GetClusterId(), &central.MsgToSensor{
+                	Msg: &central.MsgToSensor_BaselineSync{
+                        	BaselineSync: &central.BaselineSync{
+                        	        Baselines: []*storage.ProcessBaseline{baseline},
+                        	}},
+        	})
+        	if err != nil {
+        	        log.Errorf("Error sending process baseline to cluster %q: %v", baseline.GetKey().GetClusterId(), err)
+        	}
+
 		return false, err
 	}
 

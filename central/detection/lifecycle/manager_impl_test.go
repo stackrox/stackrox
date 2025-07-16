@@ -9,6 +9,7 @@ import (
 	queueMocks "github.com/stackrox/rox/central/deployment/queue/mocks"
 	alertManagerMocks "github.com/stackrox/rox/central/detection/alertmanager/mocks"
 	processBaselineDataStoreMocks "github.com/stackrox/rox/central/processbaseline/datastore/mocks"
+	connectionMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	reprocessorMocks "github.com/stackrox/rox/central/reprocessor/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
@@ -32,6 +33,7 @@ type ManagerTestSuite struct {
 	reprocessor                *reprocessorMocks.MockLoop
 	alertManager               *alertManagerMocks.MockAlertManager
 	deploymentObservationQueue *queueMocks.MockDeploymentObservationQueue
+	connectionManager          *connectionMocks.MockManager
 	manager                    *managerImpl
 	mockCtrl                   *gomock.Controller
 }
@@ -43,12 +45,14 @@ func (suite *ManagerTestSuite) SetupTest() {
 	suite.reprocessor = reprocessorMocks.NewMockLoop(suite.mockCtrl)
 	suite.alertManager = alertManagerMocks.NewMockAlertManager(suite.mockCtrl)
 	suite.deploymentObservationQueue = queueMocks.NewMockDeploymentObservationQueue(suite.mockCtrl)
+	suite.connectionManager = connectionMocks.NewMockManager(suite.mockCtrl)
 
 	suite.manager = &managerImpl{
 		baselines:                  suite.baselines,
 		reprocessor:                suite.reprocessor,
 		alertManager:               suite.alertManager,
 		deploymentObservationQueue: suite.deploymentObservationQueue,
+		connectionManager:          suite.connectionManager,
 	}
 }
 
@@ -96,6 +100,7 @@ func (suite *ManagerTestSuite) TestBaselineNotFound() {
 	elements := fixtures.MakeBaselineItems(indicator.GetSignal().GetExecFilePath())
 	suite.baselines.EXPECT().GetProcessBaseline(gomock.Any(), key).Return(nil, false, nil)
 	suite.deploymentObservationQueue.EXPECT().InObservation(key.GetDeploymentId()).Return(false).AnyTimes()
+	suite.connectionManager.EXPECT().SendMessage(gomock.Any(), gomock.Any()).Return(nil)
 	suite.baselines.EXPECT().UpsertProcessBaseline(gomock.Any(), key, elements, true, true).Return(nil, nil)
 	_, err := suite.manager.checkAndUpdateBaseline(indicatorToBaselineKey(indicator), []*storage.ProcessIndicator{indicator})
 	suite.NoError(err)
