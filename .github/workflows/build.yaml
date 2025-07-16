@@ -130,7 +130,7 @@ jobs:
           parallel="${{ matrix.parallel }}"  # sequential until verified working. TODO: test parallel=>1
           # cli-build  # reduced to linux amd64 for CI test-use
           # make cli_host-arch could work, but we specifically want linux-amd64 for CI test clusters
-          ui_build='${{ steps.cache.outputs.cache-hit != 'true' && "ui-build" }}'
+          ui_build='${{ steps.cache.outputs.cache-hit != 'true' && 'ui-build' }}'
           time make -j${parallel} -Oline cli_linux-amd64 main-build-nodeps ${ui_build} swagger-docs
             # main-build-nodeps: gobuild *. then, build roxctl if not CI
             # ui-build: test -d ui/build || make -C ui build
