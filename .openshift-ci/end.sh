@@ -27,7 +27,7 @@ end() {
     started_at=$(jq -r '.timestamp' /tmp/started.json)
     save_job_record \
         outcome "${OVERALL_JOB_OUTCOME}" \
-        started_at "TIMESTAMP_SECONDS(${started_at})" \
+        started_at "${started_at}" \
         stopped_at "CURRENT_TIMESTAMP()" \
         "test_target" "${test_target:-null}" \
         cut_product_version "${cut_product_version:-null}" \
