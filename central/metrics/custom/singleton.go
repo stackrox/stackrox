@@ -124,7 +124,7 @@ func track(cfg *RunnerConfiguration) {
 
 func makeProps(cfg *RunnerConfiguration) map[string]any {
 	props := make(map[string]any, 3)
-	{
+	if cfg.image_vulnerabilities != nil {
 		metrics := cfg.image_vulnerabilities.GetMetrics()
 		props["Total Image Vulnerability metrics"] = len(metrics)
 		props["Image Vulnerability metric labels"] = getLabels(metrics).AsSlice()

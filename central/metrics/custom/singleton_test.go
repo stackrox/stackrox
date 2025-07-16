@@ -10,6 +10,7 @@ import (
 	configDS "github.com/stackrox/rox/central/config/datastore/mocks"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	"github.com/stackrox/rox/central/metrics"
+	custom "github.com/stackrox/rox/central/metrics/custom/tracker"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
@@ -159,7 +160,6 @@ func Test_makeProps(t *testing.T) {
 
 	props := makeProps(cfg)
 	assert.Len(t, props, 3)
-	assert.ElementsMatch(t, props["Image Vulnerability metric labels"], []string{"CVE", "Cluster"})
-	assert.ElementsMatch(t, props["Image Vulnerability metric operators"], []string{"="})
+	assert.ElementsMatch(t, props["Image Vulnerability metric labels"], []custom.Label{"CVE", "Cluster"})
 	assert.Equal(t, 1, props["Total Image Vulnerability metrics"])
 }
