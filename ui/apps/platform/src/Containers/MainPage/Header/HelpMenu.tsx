@@ -1,5 +1,5 @@
 import React, { ReactElement, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom-v5-compat';
 import { useDispatch } from 'react-redux';
 import { Divider, Dropdown, DropdownItem, DropdownList, MenuToggle } from '@patternfly/react-core';
 import { QuestionCircleIcon } from '@patternfly/react-icons';

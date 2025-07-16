@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom-v5-compat';
 
 import usePermissions from 'hooks/usePermissions';
 import useURLParameter from 'hooks/useURLParameter';

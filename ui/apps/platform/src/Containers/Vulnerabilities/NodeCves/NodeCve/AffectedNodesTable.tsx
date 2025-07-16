@@ -2,7 +2,7 @@ import React from 'react';
 import { Truncate, pluralize } from '@patternfly/react-core';
 import { ExpandableRowContent, Table, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
 import { gql } from '@apollo/client';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom-v5-compat';
 
 import { TableUIState } from 'utils/getTableUIState';
 

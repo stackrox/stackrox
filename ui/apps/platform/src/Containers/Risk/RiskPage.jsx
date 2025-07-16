@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom-v5-compat';
 import { useQuery } from '@apollo/client';
 
 import { PageBody } from 'Components/Panel';

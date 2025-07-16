@@ -1,5 +1,5 @@
 import React from 'react';
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom-v5-compat';
 
 import PoliciesPage from 'Containers/Policies/PoliciesPage';
 import PolicyCategoriesPage from 'Containers/PolicyCategories/PolicyCategoriesPage';

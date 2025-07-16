@@ -8,7 +8,7 @@ import {
     VerticalBarSeries,
 } from 'react-vis';
 import PropTypes from 'prop-types';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom-v5-compat';
 import DiscreteColorLegend from 'react-vis/dist/legends/discrete-color-legend';
 import merge from 'deepmerge';
 

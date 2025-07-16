@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom-v5-compat';
 import { Text, Bullseye, Flex, FlexItem, PageSection } from '@patternfly/react-core';
 import { CubesIcon } from '@patternfly/react-icons';
 

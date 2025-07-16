@@ -8,7 +8,7 @@ import {
     Divider,
     Flex,
 } from '@patternfly/react-core';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom-v5-compat';
 import { connect } from 'react-redux';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';

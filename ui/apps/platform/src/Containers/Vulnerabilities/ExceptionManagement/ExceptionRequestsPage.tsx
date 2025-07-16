@@ -8,7 +8,7 @@ import {
     Tabs,
     Title,
 } from '@patternfly/react-core';
-import { Route, Routes, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Route, Routes, Navigate, useLocation, useNavigate } from 'react-router-dom-v5-compat';
 
 import { exceptionManagementPath } from 'routePaths';
 

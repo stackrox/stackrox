@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import { gql } from '@apollo/client';
 import * as Icon from 'react-feather';
 import { connect } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom-v5-compat';
 
 import {
     defaultHeaderClassName,

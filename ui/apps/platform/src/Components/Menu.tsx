@@ -1,5 +1,5 @@
 import React, { useState, ReactElement } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom-v5-compat';
 import { ChevronDown, ChevronUp } from 'react-feather';
 import { Tooltip } from '@patternfly/react-core';
 
