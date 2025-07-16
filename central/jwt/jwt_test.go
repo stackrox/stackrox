@@ -103,6 +103,7 @@ func TestM2MValidator(t *testing.T) {
 			if c.setupExchangerSet != nil {
 				c.setupExchangerSet(exchangerSet)
 			}
+			exchangerSet.EXPECT().HasExchangersConfigured().Times(1).Return(true)
 
 			validator := &m2mValidator{
 				TokenExchangerSet: exchangerSet,
