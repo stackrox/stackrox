@@ -126,13 +126,13 @@ jobs:
       - name: check hashfiles
         run: |
           set +e
-          echo ui-built-${{ hashFiles('ui/build/**') }}
+          echo ui-built-${{ hashFiles('ui/**') }}
 
       - uses: actions/cache/restore@v4
         if: ${{ steps.files-changed.outputs.ui }}'
         id: restore-ui-build
         with:
-          key: ui-built-${{ steps.files-changed.outputs.ui && hashFiles('ui/build/**') }}
+          key: ui-built-${{ steps.files-changed.outputs.ui && hashFiles('ui/**') }}
           restore-keys: |
             ui-built-
           path: ui/build
@@ -154,11 +154,9 @@ jobs:
             # TODO: add make $(MERGED_API_SWAGGER_SPEC) $(MERGED_API_SWAGGER_SPEC_V2)
 
       - uses: actions/cache/save@v4
-        if: ${{ steps.files-changed.outputs.ui || steps.restore-ui-build.outputs.cache-hit != 'true' }}
+        if: ${{ steps.files-changed.outputs.ui && steps.restore-ui-build.outputs.cache-hit != 'true' }}
         with:
-          key: ui-built-${{ hashFiles('ui/build/**') }}
-          restore-keys: |
-            ui-built-
+          key: ui-built-${{ steps.restore-ui-build.outputs.cache-primary-key }}
           path: ui/build
 
       - name: Generate OSS notice
