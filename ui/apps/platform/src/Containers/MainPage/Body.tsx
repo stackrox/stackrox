@@ -1,6 +1,6 @@
 import React, { ElementType, ReactElement, useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import { Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom-v5-compat';
 import { PageSection } from '@patternfly/react-core';
 
 // Import path variables in alphabetical order to minimize merge conflicts when multiple people add routes.

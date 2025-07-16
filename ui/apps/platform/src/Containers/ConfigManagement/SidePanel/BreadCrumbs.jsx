@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import pluralize from 'pluralize';
 import upperFirst from 'lodash/upperFirst';
 import { ChevronRight } from 'react-feather';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom-v5-compat';
 
 import useEntityName from 'hooks/useEntityName';
 import useWorkflowMatch from 'hooks/useWorkflowMatch';

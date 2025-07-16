@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
 import capitalize from 'lodash/capitalize';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom-v5-compat';
 
 import URLService from 'utils/URLService';
 import entityTypes, { standardBaseTypes } from 'constants/entityTypes';

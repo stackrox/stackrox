@@ -1,5 +1,5 @@
 import React, { ReactElement, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom-v5-compat';
 import { Alert, Bullseye, Button, PageSection, Spinner } from '@patternfly/react-core';
 
 import useRestQuery from 'hooks/useRestQuery';
