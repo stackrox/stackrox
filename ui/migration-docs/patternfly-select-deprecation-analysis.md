@@ -121,7 +121,7 @@ The following Select-related components are being imported from the deprecated m
 
 ### Components (7 files)
 
--   [ ] `src/Components/PatternFly/FormMultiSelect.tsx`
+-   [x] `src/Components/PatternFly/FormMultiSelect.tsx`
 -   [ ] `src/Components/PatternFly/CheckboxSelect.tsx`
 -   [ ] `src/Components/PatternFly/RepeatScheduleDropdown.tsx`
 -   [ ] `src/Components/PatternFly/DayPickerDropdown.tsx`
