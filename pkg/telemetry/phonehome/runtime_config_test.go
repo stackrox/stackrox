@@ -151,7 +151,6 @@ func Test_getRuntimeConfig(t *testing.T) {
 }
 
 func Test_getRuntimeConfig_Campaign(t *testing.T) {
-	const devVersion = "4.4.1-dev"
 	const remoteKey = "remotekey"
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
