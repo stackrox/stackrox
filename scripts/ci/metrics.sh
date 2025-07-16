@@ -160,13 +160,18 @@ bq_save_job_record() {
         shift; shift
 
         local type=""
+        columns="$columns, $field"
 
         if [[ "$field" == "pr_number" ]]; then
             type="INTEGER"
         fi
 
-        columns="$columns, $field"
-        values="$values, @$field"
+        if [[ "$field" == "started_at" ]]; then
+            type="INTEGER"
+            values="$values, TIMESTAMP_SECONDS(@$field)"
+        else
+            values="$values, @$field"
+        fi
         sql_params+=("--parameter=${field}:$type:$value")
     done
 

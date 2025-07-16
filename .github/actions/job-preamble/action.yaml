@@ -150,7 +150,7 @@ runs:
           source scripts/ci/lib.sh;
           save_job_record \
             outcome "${{ job.status }}" \
-            started_at "TIMESTAMP_SECONDS(${{ steps.record_job_info.outputs.start_time }})";
+            started_at "${{ steps.record_job_info.outputs.start_time }}";
           free=$(df -BGB --output=avail / | tail -1);
           echo "Free disk space before: ${{ steps.disk-check-cleaned.outputs.free }} [${{ steps.disk-check.outputs.free }} before cleanup], and after: ${free}.";
           if [[ ${free%GB} -lt 5 ]]; then\
