@@ -48,24 +48,9 @@ jobs:
           show-progress: false
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
-      - name: List changes
-        id: list_changes
+      - name: fetch origin
         continue-on-error: true
-        env:
-          CHANGE_MATCH: '^/ui'
         run: |
-          set +e
-          set -x
-
-          # compare with merge-base
-          git diff --name-only origin/${{ github.event.pull_request.base.ref }}...${{ github.event.pull_request.head.sha }} \
-            | tee >( cat >&2 ) \
-            | grep "${CHANGE_MATCH:-.*}"
-
-          git diff --name-only ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }} \
-            | tee >( cat >&2 ) \
-            | grep "${CHANGE_MATCH:-.*}"
-
           git fetch origin ${{ github.event.pull_request.head.ref }} --depth $(( ${{ github.event.pull_request.commits }} + 1 ))
           # git fetch origin ${{ github.event.pull_request.base.ref }}
 
@@ -88,6 +73,11 @@ jobs:
           git diff --name-only ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }} \
             | tee >( cat >&2 ) \
             | grep "${CHANGE_MATCH:-.*}"
+
+      - uses: ./.github/actions/files-changed
+        continue-on-error: true
+        with:
+          filter: ( ['ui']='^/ui' '['docs']='^/docs' )
 
       - uses: ./.github/actions/job-preamble
         with:

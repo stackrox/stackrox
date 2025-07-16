@@ -1,0 +1,25 @@
+name: Match files changed
+description: Compare files changed with path filters. Output matches.
+outputs:
+  output_1: ${{ steps.gen_output.outputs.output_1 }}
+  output_2: ${{ steps.gen_output.outputs.output_2 }}
+  output_3: ${{ steps.gen_output.outputs.output_3 }}
+inputs:
+  filters:
+    description: 'associative array like glob matches like ( ["ui"]="ui/**" ["gha"]=".github/**" )'
+    required: true
+  base:
+    description: 'base ref to compare with'
+    required: false
+    default: ${{ github. }}
+  sha:
+    description: 'sha to compare'
+    required: false
+    default: ${{ github. }}
+runs:
+  using: composite
+  steps:
+    - name: Download Go modules
+      shell: bash
+      run: |
+        ./find-changes.sh '${{ inputs.filters }}' '${{ inputs.base }}' '${{ inputs.sha}}'
