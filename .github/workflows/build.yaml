@@ -39,14 +39,24 @@ jobs:
       - name: Count commits
         run:
           echo "PR_DEPTH=$(( ${{ github.event.pull_request.commits }} + 1 ))" >> "${GITHUB_ENV}"
+          echo "TAG_DEPTH=$(( ${{ github.event.pull_request.commits }} + 5000 ))" >> "${GITHUB_ENV}"
 
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1  #${{ env.PR_DEPTH }}
+          fetch-depth: ${{ env.PR_DEPTH }}
           fetch-tags: false #true
           show-progress: false
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: ${{ env.TAG_DEPTH }}
+          fetch-tags: true
+          show-progress: false
+          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+          path: srox
 
       - name: fetch origin
         continue-on-error: true
@@ -69,14 +79,13 @@ jobs:
           test
 
           for I in {1..6}; do
-            time git fetch --deepen=1000 --quiet
+            time git fetch --depth=1000 --quiet
             test && break
           done
 
           time git fetch --tags --quiet
           
           test
-
 
       - uses: ./.github/actions/files-changed
         id: files-changed
@@ -121,11 +130,14 @@ jobs:
         run: |
           set +e
           echo ui-built-${{ hashFiles('ui/**') }}
-          echo ui-built-${{ steps.files-changed.outputs.ui && hashFiles('ui/**') }}
-          echo ${{ steps.files-changed.outputs.ui }}
-          echo ${{ steps.files-changed.outputs.ui && 'true' }}
+          echo ui-built-${{ steps.files-changed.outputs.matches.ui && hashFiles('ui/**') }}
+          echo ${{ steps.files-changed.outputs.matches.ui }}
+          echo ${{ steps.files-changed.outputs.matches.ui && 'true' }}
           echo "${{ toJSON(steps.files-changed.outputs) }}"
-
+          set -x
+          ls -la /github/home/.npm
+          ls -la /github/home/.cache/Cypress
+          ls -la /usr/local/share/.cache
 
       - uses: actions/cache/restore@v4
         if: ${{ steps.files-changed.outputs.ui }}'
