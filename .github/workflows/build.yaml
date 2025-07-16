@@ -115,9 +115,10 @@ jobs:
               # mkdir -p bin/linux_amd64
 
       - uses: actions/cache/restore@v4
+        if: ${{ steps.files-changed.outputs.ui }}'
         id: restore-ui-build
         with:
-          key: ui-built-${{ hashFiles('ui/build/**') }}
+          key: ui-built-${{ steps.files-changed.outputs.ui && hashFiles('ui/build/**') }}
           restore-keys: |
             ui-built-
           path: ui/build
