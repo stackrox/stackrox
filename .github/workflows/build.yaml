@@ -52,6 +52,9 @@ jobs:
           git diff --no-renames --name-status ${{ github.base_ref }}..${{ github.head_ref }}
           git diff --no-renames --name-status ${{ github.base_ref }}..${{ github.ref_name }}
           git diff --no-renames --name-status ${{ github.base_ref }}..${{ github.sha }}
+          git diff --no-renames --name-status ${{ github.event.pull_request.base.sha }}..${{ github.head_ref }}
+          git diff --no-renames --name-status ${{ github.event.pull_request.base.sha }}..${{ github.ref_name }}
+          git diff --no-renames --name-status ${{ github.event.pull_request.base.sha }}..${{ github.sha }}
 
       - uses: ./.github/actions/job-preamble
         with:
