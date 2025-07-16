@@ -94,7 +94,7 @@ _save_job_record() {
     local commit_sha
     commit_sha="$(get_commit_sha)"
 
-    bq_save_job_record "$id" "$name" repo "$repo" branch "$branch" pr_number "$pr_number" commit_sha "$commit_sha" ci_system "$ci_system" "$@"
+    bq_save_job_record id "$id" name "$name" repo "$repo" branch "$branch" pr_number "$pr_number" commit_sha "$commit_sha" ci_system "$ci_system" "$@"
 }
 
 _get_metrics_job_id() {

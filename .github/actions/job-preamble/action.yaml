@@ -148,7 +148,7 @@ runs:
           echo "start_time=$(date -u +%s)" >> "$GITHUB_OUTPUT"
         post: >
           source scripts/ci/lib.sh;
-          save_job_record \
+          save_job_record "${{ github.job }}" "gha" \
             outcome "${{ job.status }}" \
             started_at "${{ steps.record_job_info.outputs.start_time }}";
           free=$(df -BGB --output=avail / | tail -1);
