@@ -316,13 +316,16 @@ refresh_gke_token() {
 
 teardown_gke_cluster() {
     local canceled="${1:-false}"
+    local byodb="${BYODB_TEST:-false}"
 
     info "Tearing down the GKE cluster: ${CLUSTER_NAME:-}, canceled: ${canceled}"
 
     require_environment "CLUSTER_NAME"
     require_executable "gcloud"
 
-    if [[ "${canceled}" == "false" ]]; then
+    if [[ "${canceled}" == "false" ]] &&
+       [[ "${byodb}" == "false" ]]
+    then
         # (prefix output to avoid triggering prow log focus)
         "$SCRIPTS_ROOT/scripts/ci/cleanup-deployment.sh" 2>&1 | sed -e 's/^/out: /' || true
     fi

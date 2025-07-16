@@ -144,7 +144,7 @@ func (d *DeploymentEnhancer) ResponsesC() <-chan *message.ExpiringMessage {
 }
 
 // Stop stops the component
-func (d *DeploymentEnhancer) Stop(_ error) {
+func (d *DeploymentEnhancer) Stop() {
 	d.ctxCancel()
 }
 

@@ -19,7 +19,7 @@ import {
     ManagedColumns,
 } from 'hooks/useManagedColumns';
 import useIsScannerV4Enabled from 'hooks/useIsScannerV4Enabled';
-import useHasGenerateSBOMAbility from '../../hooks/useHasGenerateSBOMAbility';
+import usePermissions from 'hooks/usePermissions';
 import GenerateSbomModal, {
     getSbomGenerationStatusMessage,
 } from '../../components/GenerateSbomModal';
@@ -161,11 +161,12 @@ function ImageOverviewTable({
     onClearFilters,
     columnVisibilityState,
 }: ImageOverviewTableProps) {
-    const hasGenerateSBOMAbility = useHasGenerateSBOMAbility();
+    const { hasReadWriteAccess } = usePermissions();
+    const hasWriteAccessForImage = hasReadWriteAccess('Image'); // SBOM Generation mutates image scan state.
     const isScannerV4Enabled = useIsScannerV4Enabled();
     const getVisibilityClass = generateVisibilityForColumns(columnVisibilityState);
     const hiddenColumnCount = getHiddenColumnCount(columnVisibilityState);
-    const hasActionColumn = hasWriteAccessForWatchedImage || hasGenerateSBOMAbility;
+    const hasActionColumn = hasWriteAccessForWatchedImage || hasWriteAccessForImage;
     const colSpan =
         5 + (hasActionColumn ? 1 : 0) + (showCveDetailFields ? 1 : 0) + -hiddenColumnCount;
     const [sbomTargetImage, setSbomTargetImage] = useState<string>();
@@ -262,7 +263,7 @@ function ImageOverviewTable({
                             });
                         }
 
-                        if (hasGenerateSBOMAbility) {
+                        if (hasWriteAccessForImage) {
                             const isAriaDisabled = !isScannerV4Enabled || hasScanMessage;
                             const description = getSbomGenerationStatusMessage({
                                 isScannerV4Enabled,

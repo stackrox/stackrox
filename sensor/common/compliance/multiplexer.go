@@ -56,7 +56,7 @@ func (c *Multiplexer) run() error {
 }
 
 // Stop stops the component
-func (c *Multiplexer) Stop(_ error) {
+func (c *Multiplexer) Stop() {
 	c.stopper.Client().Stop()
 }
 

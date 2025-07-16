@@ -86,7 +86,7 @@ describe('User Profile', () => {
 
             // open menu and click Invite useres menu item
             cy.get(topNavSelectors.menuButton).click();
-            cy.get('.pf-v5-c-dropdown__menu-item:contains("Invite users")').click();
+            cy.get(topNavSelectors.menuList.inviteUsersButton).click();
 
             checkInviteUsersModal();
 

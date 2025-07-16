@@ -326,3 +326,23 @@ class CustomSetTest(BaseTest):
         self.run_with_graceful_kill(
             ["qa-tests-backend/scripts/run-custom-pz.sh"], CustomSetTest.TEST_TIMEOUT
         )
+
+
+class BYODBTest(BaseTest):
+    TEST_TIMEOUT = 60 * 60 * 2
+    TEST_OUTPUT_DIR = "/tmp/byodb-test-logs"
+
+    def run(self):
+        print("Executing the BYODB Test")
+
+        def set_dirs_after_start():
+            # let post test know where logs are
+            self.test_outputs = [
+                BYODBTest.TEST_OUTPUT_DIR,
+            ]
+
+        self.run_with_graceful_kill(
+            ["tests/byodb/run.sh", BYODBTest.TEST_OUTPUT_DIR],
+            BYODBTest.TEST_TIMEOUT,
+            post_start_hook=set_dirs_after_start,
+        )

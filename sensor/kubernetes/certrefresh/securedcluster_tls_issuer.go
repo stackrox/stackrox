@@ -165,7 +165,7 @@ func (i *tlsIssuerImpl) activate() error {
 	return nil
 }
 
-func (i *tlsIssuerImpl) Stop(_ error) {
+func (i *tlsIssuerImpl) Stop() {
 	i.started.Store(false)
 	i.deactivate()
 }

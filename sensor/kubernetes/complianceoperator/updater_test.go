@@ -275,7 +275,7 @@ func (s *UpdaterTestSuite) getInfo(times int, updateInterval time.Duration) *cen
 	updater.Notify(common.SensorComponentEventSyncFinished)
 	err := updater.Start()
 	s.Require().NoError(err)
-	defer updater.Stop(nil)
+	defer updater.Stop()
 
 	var info *central.ComplianceOperatorInfo
 
