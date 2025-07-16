@@ -46,10 +46,13 @@ jobs:
           fetch-depth: ${{ env.PR_DEPTH }}
           fetch-tags: true
           show-progress: false
-          ref: ${{ github.sha || inputs.commit || github.event.pull_request.head.sha }}
+          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
       - name: List changes
+        id: list_changes
         continue-on-error: true
+        env:
+          CHANGE_MATCH: '^/ui'
         run: |
           set +e
           set -x
@@ -57,14 +60,10 @@ jobs:
           git fetch origin ${{ github.event.pull_request.head.ref }} --depth $(( ${{ github.event.pull_request.commits }} + 1 ))
           git fetch origin ${{ github.event.pull_request.base.ref }}
 
-          git diff --no-renames --name-status ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
-          git diff --no-renames --name-status ${{ github.base_ref }}..${{ github.sha }}
-
-          git diff-tree --name-only --diff-filter 'AM' -r \
-            --merge-base origin/${{ github.event.pull_request.base.ref }} ${{ github.event.pull_request.head.sha }}
-          echo '${{ github.event.pull_request.compare }}'
-          echo "${{ github.event.pull_request.commits }}"
-          echo '${{ github.event.compare }}'
+          # compare with merge-base
+          git diff --name-only origin/${{ github.event.pull_request.base.ref }}...${{ github.event.pull_request.head.sha }}
+            | tee >( cat >&2 ) \
+            | grep "${CHANGE_MATCH:-.*}"
 
       - uses: ./.github/actions/job-preamble
         with:
