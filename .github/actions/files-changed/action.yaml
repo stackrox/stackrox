@@ -7,7 +7,7 @@ inputs:
   base:
     description: 'base ref to compare with'
     required: false
-    default: ${{ github.event.pull_request.base.ref }}
+    default: origin/${{ github.event.pull_request.base.ref }}
   sha:
     description: 'sha to compare'
     required: false

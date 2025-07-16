@@ -114,6 +114,11 @@ jobs:
             # make -j${parallel} -Oline build-prep  # depends on deps and creates empty build binary output path
               # mkdir -p bin/linux_amd64
 
+      - name: check hashfiles
+        run: |
+          set +e
+          echo ui-built-${{ hashFiles('ui/build/**') }}
+
       - uses: actions/cache/restore@v4
         if: ${{ steps.files-changed.outputs.ui }}'
         id: restore-ui-build
