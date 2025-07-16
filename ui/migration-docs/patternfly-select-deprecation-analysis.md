@@ -7,7 +7,12 @@ This document lists all files in the codebase that import Select-related compone
 ## Migration Status
 
 -   **Total files found: 56**
--   **Migration status: Not started**
+-   **Files completed: 4** (includes dependent files)
+-   **Migration status: In progress (Phase 1)**
+
+## ⚠️ **Important Discovery**
+
+When migrating components, always check and fix **dependent files** that import the migrated components. These files may also be importing from the deprecated library and need to be updated simultaneously.
 
 ## Deprecated Import Components
 
@@ -29,8 +34,8 @@ The following Select-related components are being imported from the deprecated m
 ### Vulnerabilities (5 files)
 
 -   [ ] `src/Containers/Vulnerabilities/VulnerablityReporting/forms/CollectionSelection.tsx`
--   [ ] `src/Containers/Vulnerabilities/VulnerablityReporting/forms/ReportParametersForm.tsx`
--   [ ] `src/Containers/Vulnerabilities/VulnerablityReporting/ViewVulnReport/ReportJobs.tsx`
+-   [x] `src/Containers/Vulnerabilities/VulnerablityReporting/forms/ReportParametersForm.tsx` (imports fixed with CheckboxSelect)
+-   [x] `src/Containers/Vulnerabilities/VulnerablityReporting/ViewVulnReport/ReportJobs.tsx` (imports fixed with CheckboxSelect)
 -   [ ] `src/Containers/Vulnerabilities/components/CVEStatusDropdown.tsx`
 -   [ ] `src/Containers/Vulnerabilities/components/CVESeverityDropdown.tsx`
 
@@ -122,7 +127,7 @@ The following Select-related components are being imported from the deprecated m
 ### Components (7 files)
 
 -   [x] `src/Components/PatternFly/FormMultiSelect.tsx`
--   [ ] `src/Components/PatternFly/CheckboxSelect.tsx`
+-   [x] `src/Components/PatternFly/CheckboxSelect.tsx` + 2 dependent files
 -   [ ] `src/Components/PatternFly/RepeatScheduleDropdown.tsx`
 -   [ ] `src/Components/PatternFly/DayPickerDropdown.tsx`
 -   [ ] `src/Components/EmailNotifier/EmailNotifierForm.tsx`

@@ -15,7 +15,7 @@ _Start here - these are reusable components that other files likely depend on_
 **Target:** `src/Components/` directory
 
 -   [x] `src/Components/PatternFly/FormMultiSelect.tsx`
--   [ ] `src/Components/PatternFly/CheckboxSelect.tsx`
+-   [x] `src/Components/PatternFly/CheckboxSelect.tsx` + 2 dependent files
 -   [ ] `src/Components/PatternFly/RepeatScheduleDropdown.tsx`
 -   [ ] `src/Components/PatternFly/DayPickerDropdown.tsx`
 -   [ ] `src/Components/SelectSingle/SelectSingle.tsx`
@@ -117,8 +117,8 @@ _Security vulnerability management_
 -   [ ] `src/Containers/Vulnerabilities/components/CVEStatusDropdown.tsx`
 -   [ ] `src/Containers/Vulnerabilities/components/CVESeverityDropdown.tsx`
 -   [ ] `src/Containers/Vulnerabilities/VulnerablityReporting/forms/CollectionSelection.tsx`
--   [ ] `src/Containers/Vulnerabilities/VulnerablityReporting/forms/ReportParametersForm.tsx`
--   [ ] `src/Containers/Vulnerabilities/VulnerablityReporting/ViewVulnReport/ReportJobs.tsx`
+-   [x] `src/Containers/Vulnerabilities/VulnerablityReporting/forms/ReportParametersForm.tsx` (imports fixed with CheckboxSelect)
+-   [x] `src/Containers/Vulnerabilities/VulnerablityReporting/ViewVulnReport/ReportJobs.tsx` (imports fixed with CheckboxSelect)
 -   [ ] `src/Containers/Violations/ViolationsTablePanel.tsx`
 
 **Rationale:** Critical security features - handle with care and thorough testing.
@@ -175,31 +175,40 @@ _Most complex - save for last_
     import { Select, SelectOption } from '@patternfly/react-core';
     ```
 
-2. **Run build** to catch any immediate TypeScript errors
+2. **Check and fix dependencies** - Search for ALL files that import components from the phase and fix any deprecated imports
+
+    ```bash
+    # Example: Find files that use the migrated component
+    grep -r "import.*CheckboxSelect" src/
+    # Then check those files for deprecated imports and fix them
+    grep -r "from '@patternfly/react-core/deprecated'" src/path/to/dependent/files/
+    ```
+
+3. **Run build** to catch any immediate TypeScript errors
 
     ```bash
     npm run build
     ```
 
-3. **Test functionality** for that specific feature area
+4. **Test functionality** for that specific feature area
 
     - Manual testing of the UI components
     - Run relevant tests if available
     - Check for console errors
 
-4. **Update checklist** in both markdown files
+5. **Update checklist** in both markdown files
 
     - Mark completed files with `[x]`
     - Note any issues or special considerations
 
-5. **Commit changes** for that phase
+6. **Commit changes** for that phase
 
     ```bash
     git add .
     git commit -m "feat: migrate Phase X PatternFly Select components from deprecated imports"
     ```
 
-6. **Move to next phase**
+7. **Move to next phase**
 
 ---
 
@@ -226,7 +235,7 @@ _Most complex - save for last_
 -   [ ] **Phase 8**: Policies (7 files)
 -   [ ] **Phase 9**: Network Graph (9 files)
 
-**Total Progress**: 1/56 files completed (1.8%)
+**Total Progress**: 4/56 files completed (7.1%)
 
 ---
 

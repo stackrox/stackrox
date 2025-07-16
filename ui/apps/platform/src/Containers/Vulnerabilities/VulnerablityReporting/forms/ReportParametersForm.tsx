@@ -11,8 +11,8 @@ import {
     TextArea,
     TextInput,
     Title,
+    SelectOption,
 } from '@patternfly/react-core';
-import { SelectOption } from '@patternfly/react-core/deprecated';
 import { FormikProps } from 'formik';
 import { cloneDeep } from 'lodash';
 

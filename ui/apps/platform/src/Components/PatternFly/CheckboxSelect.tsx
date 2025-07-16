@@ -1,14 +1,23 @@
 import React, { ReactElement, useState } from 'react';
-import { Select, SelectOptionObject, SelectOptionProps } from '@patternfly/react-core/deprecated';
+import {
+    Select,
+    SelectList,
+    SelectOption,
+    MenuToggle,
+    MenuToggleElement,
+    Badge,
+    Flex,
+    FlexItem,
+} from '@patternfly/react-core';
 
 export type CheckboxSelectProps = {
     id?: string;
     name?: string;
     selections: string[];
     onChange: (selection: string[]) => void;
-    onBlur?: React.FocusEventHandler<HTMLTextAreaElement>;
+    onBlur?: React.FocusEventHandler<HTMLDivElement>;
     ariaLabel: string;
-    children: ReactElement<SelectOptionProps>[];
+    children: ReactElement<typeof SelectOption>[];
     placeholderText?: string;
     toggleIcon?: ReactElement;
     toggleId?: string;
@@ -17,7 +26,7 @@ export type CheckboxSelectProps = {
 
 function CheckboxSelect({
     id,
-    name,
+    name: _name, // eslint-disable-line @typescript-eslint/no-unused-vars -- Keep for backward compatibility
     selections,
     onChange,
     onBlur,
@@ -30,41 +39,58 @@ function CheckboxSelect({
 }: CheckboxSelectProps): ReactElement {
     const [isOpen, setIsOpen] = useState(false);
 
-    function onToggle(isExpanded: boolean) {
-        setIsOpen(isExpanded);
+    function onToggleClick() {
+        setIsOpen(!isOpen);
     }
 
     function onSelect(
-        event: React.MouseEvent | React.ChangeEvent,
-        selection: string | SelectOptionObject
+        event: React.MouseEvent<Element, MouseEvent> | undefined,
+        value: string | number | undefined
     ) {
-        if (typeof selection !== 'string' || !selections || !onChange) {
+        if (typeof value !== 'string' || !selections || !onChange) {
             return;
         }
-        if (selections.includes(selection)) {
-            onChange(selections.filter((item) => item !== selection));
+        if (selections.includes(value)) {
+            onChange(selections.filter((item) => item !== value));
         } else {
-            onChange([...selections, selection]);
+            onChange([...selections, value]);
         }
     }
+
+    const toggle = (toggleRef: React.Ref<MenuToggleElement>) => (
+        <MenuToggle
+            ref={toggleRef}
+            onClick={onToggleClick}
+            isExpanded={isOpen}
+            id={toggleId}
+            icon={toggleIcon}
+        >
+            <Flex
+                alignItems={{ default: 'alignItemsCenter' }}
+                spaceItems={{ default: 'spaceItemsSm' }}
+            >
+                <FlexItem>{placeholderText}</FlexItem>
+                {selections && selections.length > 0 && <Badge isRead>{selections.length}</Badge>}
+            </Flex>
+        </MenuToggle>
+    );
 
     return (
         <Select
             id={id}
-            name={name}
-            variant="checkbox"
-            toggleIcon={toggleIcon}
-            onToggle={(_event, isExpanded: boolean) => onToggle(isExpanded)}
-            onSelect={onSelect}
-            onBlur={onBlur}
-            selections={selections}
-            isOpen={isOpen}
-            placeholderText={placeholderText}
             aria-label={ariaLabel}
-            toggleId={toggleId}
-            menuAppendTo={menuAppendTo}
+            isOpen={isOpen}
+            selected={selections}
+            onSelect={onSelect}
+            onOpenChange={(nextOpen: boolean) => setIsOpen(nextOpen)}
+            toggle={toggle}
+            shouldFocusToggleOnSelect
+            onBlur={onBlur}
+            popperProps={{
+                appendTo: menuAppendTo,
+            }}
         >
-            {children}
+            <SelectList>{children}</SelectList>
         </Select>
     );
 }
