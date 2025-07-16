@@ -37,6 +37,7 @@ const (
 	warningAdmissionControllerScanInlineSet       = `The --admission-controller-scan-inline flag has been deprecated and will be removed in future versions of roxctl. It will be ignored from version 4.9 onwards.`
 	warningAdmissionControllerEnforceOnCreatesSet = `The --admission-controller-enforce-on-creates flag has been deprecated and will be removed in future versions of roxctl. It will be ignored from version 4.9 onwards.`
 	warningAdmissionControllerEnforceOnUpdatesSet = `The --admission-controller-enforce-on-updates flag has been deprecated and will be removed in future versions of roxctl. It will be ignored from version 4.9 onwards.`
+	warningAdmissionControllerTimeoutSet          = `The --admission-controller-timeout flag has been deprecated and will be removed in future versions of roxctl. It will be ignored from version 4.9 onwards.`
 
 	mainImageRepository = "main-image-repository"
 	slimCollector       = "slim-collector"
@@ -62,6 +63,21 @@ type sensorGenerateCommand struct {
 }
 
 func defaultCluster() *storage.Cluster {
+	if features.AdmissionControllerConfig.Enabled() {
+		return &storage.Cluster{
+			TolerationsConfig: &storage.TolerationsConfig{
+				Disabled: false,
+			},
+			DynamicConfig: &storage.DynamicClusterConfig{
+				AdmissionControllerConfig: &storage.AdmissionControllerConfig{
+					Enabled:          true,
+					ScanInline:       true,
+					DisableBypass:    false,
+					EnforceOnUpdates: true,
+				},
+			},
+		}
+	}
 	return &storage.Cluster{
 		TolerationsConfig: &storage.TolerationsConfig{
 			Disabled: false,
@@ -232,6 +248,9 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		c.PersistentFlags().BoolVar(&ac.EnforceOnUpdates, "admission-controller-enforce-on-updates", true, "Dynamic enable for enforcing on object updates in the admission controller.")
 		utils.Must(c.PersistentFlags().MarkDeprecated("admission-controller-enforce-on-updates", warningAdmissionControllerEnforceOnUpdatesSet))
 
+		c.PersistentFlags().Int32Var(&ac.TimeoutSeconds, "admission-controller-timeout", 3, "Timeout in seconds for the admission controller.")
+		utils.Must(c.PersistentFlags().MarkDeprecated("admission-controller-timeout", warningAdmissionControllerTimeoutSet))
+
 		// New failure mode flag available for configuring the failure mode of the validating webhook
 		c.PersistentFlags().BoolVar(&generateCmd.cluster.AdmissionControllerFailOnError, "admission-controller-fail-on-error", false, "Whether the admission controller webhook should fail the operation in case of errors or not")
 
@@ -247,10 +266,10 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		c.PersistentFlags().BoolVar(&ac.ScanInline, "admission-controller-scan-inline", false, "Get scans inline when using the admission controller.")
 		c.PersistentFlags().BoolVar(&ac.Enabled, "admission-controller-enforce-on-creates", false, "Dynamic enable for enforcing on object creates in the admission controller.")
 		c.PersistentFlags().BoolVar(&ac.EnforceOnUpdates, "admission-controller-enforce-on-updates", false, "Dynamic enable for enforcing on object updates in the admission controller.")
+		c.PersistentFlags().Int32Var(&ac.TimeoutSeconds, "admission-controller-timeout", 3, "Timeout in seconds for the admission controller.")
 	}
 
 	c.PersistentFlags().BoolVar(&ac.DisableBypass, "admission-controller-disable-bypass", false, "Disable the bypass annotations for the admission controller.")
-	c.PersistentFlags().Int32Var(&ac.TimeoutSeconds, "admission-controller-timeout", 3, "Timeout in seconds for the admission controller.")
 
 	flags.AddTimeoutWithDefault(c, 5*time.Minute)
 
