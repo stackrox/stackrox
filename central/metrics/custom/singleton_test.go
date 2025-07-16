@@ -158,8 +158,12 @@ func Test_makeProps(t *testing.T) {
 				}}}})
 	assert.NoError(t, err)
 
+	ivLastGatherDuration.Store(42)
 	props := makeProps(cfg)
-	assert.Len(t, props, 3)
+
+	assert.Len(t, props, 4)
 	assert.ElementsMatch(t, props["Image Vulnerability metric labels"], []custom.Label{"CVE", "Cluster"})
 	assert.Equal(t, 1, props["Total Image Vulnerability metrics"])
+	assert.Contains(t, props, "Total custom Prometheus registries")
+	assert.Equal(t, uint32(42), props["Image Vulnerability gathering seconds"])
 }

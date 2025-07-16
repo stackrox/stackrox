@@ -123,13 +123,14 @@ func track(cfg *RunnerConfiguration) {
 }
 
 func makeProps(cfg *RunnerConfiguration) map[string]any {
-	props := make(map[string]any, 3)
+	props := make(map[string]any, 4)
 	if cfg.image_vulnerabilities != nil {
 		metrics := cfg.image_vulnerabilities.GetMetrics()
 		props["Total Image Vulnerability metrics"] = len(metrics)
 		props["Image Vulnerability metric labels"] = getLabels(metrics).AsSlice()
 		props["Image Vulnerability gathering seconds"] = ivLastGatherDuration.Load()
 	}
+	props["Total custom Prometheus registries"] = metrics.GetCustomRegistriesCount()
 	return props
 }
 
