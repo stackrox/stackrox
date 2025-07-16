@@ -173,7 +173,7 @@ message ImageCVEV2 {
   // within the component
   string id = 1; // @gotags: search:"CVE ID,hidden" sql:"pk,id"
   // was hash index, making it btree
-  string image_id = 2; // @gotags: sql:"fk(Image:id),index=btree"
+  string image_id = 2 [deprecated = true]; // @gotags: sql:"fk(Image:id),index=btree"
   CVEInfo cve_base_info = 3;
   // cvss stores ACS preferred cvss score
   float cvss = 4; // @gotags: search:"CVSS,store"
@@ -194,6 +194,8 @@ message ImageCVEV2 {
 
   string component_id = 13; // @gotags: sql:"fk(ImageComponentV2:id),index=btree"
   storage.Advisory advisory = 14;
+
+  string image_id_v2 = 15; // @gotags: sql:"fk(ImageV2:id),index=btree"
 }
 
 message NodeCVE {
