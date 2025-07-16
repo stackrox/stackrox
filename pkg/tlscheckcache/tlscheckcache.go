@@ -2,12 +2,12 @@ package tlscheckcache
 
 import (
 	"context"
-	"sync"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/tlscheck"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -39,6 +39,47 @@ type Cache struct {
 	results expiringcache.Cache[string, *cacheEntry]
 	// ttl represents the duration before a cached entry expires.
 	ttl time.Duration
+}
+
+// New creates a cache that will hold results of recent TLS checks.
+func New(opts ...CacheOption) *Cache {
+	cache := &Cache{
+		ttl:          defaultTTL,
+		checkTLSFunc: tlscheck.CheckTLS,
+	}
+
+	for _, opt := range opts {
+		opt(cache)
+	}
+
+	cache.results = expiringcache.NewExpiringCache[string, *cacheEntry](cache.ttl)
+
+	return cache
+}
+
+// Cleanup will empty the cache.
+func (c *Cache) Cleanup() {
+	c.results.RemoveAll()
+}
+
+// CheckTLS performs a TLS check on a endpoint or returns the result from a
+// previous check. Returns true for skip if there was a previous error.
+func (c *Cache) CheckTLS(ctx context.Context, endpoint string) (secure bool, skip bool, err error) {
+	incrementTLSCheckCount(c.metricSubsystem)
+
+	// First check the cache for an entry, and, if found, perform
+	// the TLS check. This is an optimization to avoid unnecessary
+	// allocations on cache hits.
+	entry, ok := c.results.Get(endpoint)
+	if ok {
+		return entry.checkTLS(ctx, c.metricSubsystem, endpoint, c.checkTLSFunc)
+	}
+
+	// Otherwise, create a new cache entry in a semi-coordinated way,
+	// this may result in multiple cacheEntry objects being created
+	// however only one will enter the cache.
+	entry = c.results.GetOrSet(endpoint, &cacheEntry{})
+	return entry.checkTLS(ctx, c.metricSubsystem, endpoint, c.checkTLSFunc)
 }
 
 // CacheOption modifies the default values of the cache.
@@ -105,45 +146,4 @@ func (e *cacheEntry) checkTLS(ctx context.Context, metricSubsystem metrics.Subsy
 
 	// Should not be reachable.
 	return false, false, utils.ShouldErr(errors.Errorf("Unknown TLS check result: %v", e.result))
-}
-
-// New creates a cache that will hold results of recent TLS checks.
-func New(opts ...CacheOption) *Cache {
-	cache := &Cache{
-		ttl:          defaultTTL,
-		checkTLSFunc: tlscheck.CheckTLS,
-	}
-
-	for _, opt := range opts {
-		opt(cache)
-	}
-
-	cache.results = expiringcache.NewExpiringCache[string, *cacheEntry](cache.ttl)
-
-	return cache
-}
-
-// Cleanup will empty the cache.
-func (c *Cache) Cleanup() {
-	c.results.RemoveAll()
-}
-
-// CheckTLS performs a TLS check on a endpoint or returns the result from a
-// previous check. Returns true for skip if there was a previous error.
-func (c *Cache) CheckTLS(ctx context.Context, endpoint string) (secure bool, skip bool, err error) {
-	incrementTLSCheckCount(c.metricSubsystem)
-
-	// First check the cache for an entry, and, if found, perform
-	// the TLS check. This is an optimization to avoid unnecessary
-	// allocations on cache hits.
-	entry, ok := c.results.Get(endpoint)
-	if ok {
-		return entry.checkTLS(ctx, c.metricSubsystem, endpoint, c.checkTLSFunc)
-	}
-
-	// Otherwise, create a new cache entry in a semi-coordinated way,
-	// this may result in multiple cacheEntry objects being created
-	// however only one will enter the cache.
-	entry = c.results.GetOrSet(endpoint, &cacheEntry{})
-	return entry.checkTLS(ctx, c.metricSubsystem, endpoint, c.checkTLSFunc)
 }
