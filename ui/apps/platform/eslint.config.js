@@ -722,7 +722,7 @@ module.exports = [
             limited: pluginLimited,
         },
         rules: {
-            'limited/export-default-react': 'error',
+            'limited/react-export-default': 'error',
         },
     },
     {
