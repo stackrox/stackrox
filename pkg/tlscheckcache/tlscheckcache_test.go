@@ -6,14 +6,12 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus/testutil"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stretchr/testify/assert"
 )
 
 var (
 	ctx = context.Background()
-	ttl = env.RegistryTLSCheckTTL.DurationSetting()
 )
 
 func TestCheckTLS(t *testing.T) {
