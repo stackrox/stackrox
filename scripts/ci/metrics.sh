@@ -54,10 +54,11 @@ _create_job_record() {
 }
 
 save_job_record() {
-    _save_job_record "$@" || {
-        # Failure to gather metrics is not a test failure
-        info "WARNING: Job record creation failed"
-    }
+    _save_job_record "$@"
+#    || {
+#        # Failure to gather metrics is not a test failure
+#        info "WARNING: Job record creation failed"
+#    }
 }
 
 _save_job_record() {
@@ -93,7 +94,7 @@ _save_job_record() {
     local commit_sha
     commit_sha="$(get_commit_sha)"
 
-    bq_save_job_record id "$id" name "$name" repo "$repo" branch "$branch" pr_number "$pr_number" commit_sha "$commit_sha" ci_system "$ci_system" stopped_at "CURRENT_TIMESTAMP()" "$@"
+    bq_save_job_record id "$id" name "$name" repo "$repo" branch "$branch" pr_number "$pr_number" commit_sha "$commit_sha" ci_system "$ci_system" "$@"
 }
 
 _get_metrics_job_id() {
@@ -125,6 +126,7 @@ _get_metrics_job_id() {
 }
 
 bq_create_job_record() {
+    info "WARNING: Job record creation is deprecated. Use save_job_record instead"
     setup_gcp
 
     bq query \
@@ -143,14 +145,13 @@ bq_create_job_record() {
 }
 
 bq_save_job_record() {
-    info "WARNING: Job record creation is deprecated. Use save_job_record instead"
     setup_gcp
 
     local -a sql_params
     sql_params=()
 
-    local columns=""
-    local values=""
+    local columns="stopped_at"
+    local values="CURRENT_TIMESTAMP()"
 
     # Process additional field-value pairs
     while [[ "$#" -ne 0 ]]; do
@@ -162,6 +163,9 @@ bq_save_job_record() {
         values="$values, @$field"
         sql_params+=("--parameter=${field}::$value")
     done
+
+    info "${sql_params[@]}"
+    info "INSERT INTO ${_JOBS_TABLE_NAME} ($columns) VALUES ($values)"
 
     bq query \
         --use_legacy_sql=false \
