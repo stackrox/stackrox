@@ -18,4 +18,4 @@ runs:
     - name: Compare list of files changed with filters
       shell: bash
       run: |
-        ./find-changes.sh '${{ inputs.filters }}' '${{ inputs.base }}' '${{ inputs.sha}}'
+        ${{ github.action_path }}/find-changes.sh '${{ inputs.filters }}' '${{ inputs.base }}' '${{ inputs.sha}}'
