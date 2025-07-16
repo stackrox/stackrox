@@ -15,4 +15,5 @@ runs:
           /github/home/.npm
           /github/home/.cache/Cypress
           /usr/local/share/.cache
-        key: npm-v2-${{ hashFiles(inputs.lockFile) }}
+          ui/apps/platform/node_modules
+        key: npm-v3-${{ hashFiles(inputs.lockFile) }}
