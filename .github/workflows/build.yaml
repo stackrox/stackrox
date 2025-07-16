@@ -75,9 +75,10 @@ jobs:
             | grep "${CHANGE_MATCH:-.*}"
 
       - uses: ./.github/actions/files-changed
+        id: files-changed
         continue-on-error: true
         with:
-          filter: ( ['ui']='^/ui' '['docs']='^/docs' )
+          filters: ( ['ui']='ui/**' )
 
       - uses: ./.github/actions/job-preamble
         with:
@@ -112,6 +113,14 @@ jobs:
             # make -j${parallel} -Oline build-prep  # depends on deps and creates empty build binary output path
               # mkdir -p bin/linux_amd64
 
+      - uses: actions/cache/restore@v4
+        id: restore-ui-build
+        with:
+          key: ui-built-${{ hashFiles('ui/build/**') }}
+          restore-keys: |
+            ui-built-
+          path: ui/build
+
       - name: compile
         run: |
           export SKIP_CLI_BUILD=true  # or cli-build's in cli even if already built
@@ -121,11 +130,20 @@ jobs:
           parallel="${{ matrix.parallel }}"  # sequential until verified working. TODO: test parallel=>1
           # cli-build  # reduced to linux amd64 for CI test-use
           # make cli_host-arch could work, but we specifically want linux-amd64 for CI test clusters
-          time make -j${parallel} -Oline cli_linux-amd64 main-build-nodeps ui-build swagger-docs
+          ui_build='${{ steps.cache.outputs.cache-hit != 'true' && "ui-build" }}'
+          time make -j${parallel} -Oline cli_linux-amd64 main-build-nodeps ${ui_build} swagger-docs
             # main-build-nodeps: gobuild *. then, build roxctl if not CI
             # ui-build: test -d ui/build || make -C ui build
             # clean-image: clear image context dir contents
             # TODO: add make $(MERGED_API_SWAGGER_SPEC) $(MERGED_API_SWAGGER_SPEC_V2)
+
+      - uses: actions/cache/save@v4
+        if: ${{ steps.files-changed.outputs.ui || steps.restore-ui-build.outputs.cache-hit != 'true' }}
+        with:
+          key: ui-built-${{ hashFiles('ui/build/**') }}
+          restore-keys: |
+            ui-built-
+          path: ui/build
 
       - name: Generate OSS notice
         env:
