@@ -70,6 +70,7 @@ type Alerts struct {
 	ImageNameRemote          string                              `gorm:"column:image_name_remote;type:varchar"`
 	ImageNameTag             string                              `gorm:"column:image_name_tag;type:varchar"`
 	ImageNameFullName        string                              `gorm:"column:image_name_fullname;type:varchar"`
+	ImageIDV2                string                              `gorm:"column:image_idv2;type:varchar"`
 	ResourceResourceType     storage.Alert_Resource_ResourceType `gorm:"column:resource_resourcetype;type:integer"`
 	ResourceName             string                              `gorm:"column:resource_name;type:varchar"`
 	EnforcementAction        storage.EnforcementAction           `gorm:"column:enforcement_action;type:integer"`

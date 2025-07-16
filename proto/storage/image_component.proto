@@ -40,7 +40,7 @@ message ImageComponentV2 {
   string fixed_by = 8;
   string operating_system = 9; // @gotags: search:"Operating System"
   // was hash index, making it btree
-  string image_id = 10; // @gotags: sql:"fk(Image:id),index=btree"
+  string image_id = 10 [deprecated = true]; // @gotags: sql:"fk(Image:id),index=btree"
   /// Layer that contains this component
   oneof has_layer_index {
     int32 layer_index = 11;
@@ -49,4 +49,6 @@ message ImageComponentV2 {
   string location = 12; // @gotags: search:"Component Location,store,hidden"
 
   string architecture = 13;
+
+  string image_id_v2 = 14; // @gotags: sql:"fk(ImageV2:id),index=btree"
 }
