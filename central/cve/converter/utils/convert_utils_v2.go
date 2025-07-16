@@ -110,7 +110,7 @@ func EmbeddedVulnerabilityToImageCVEV2(imageID string, componentID string, from 
 	if !features.FlattenImageData.Enabled() {
 		ret.ImageId = imageID
 	} else {
-		ret.ImageV2Id = imageID
+		ret.ImageIdV2 = imageID
 	}
 
 	if from.GetFixedBy() != "" {
