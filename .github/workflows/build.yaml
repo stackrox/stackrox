@@ -56,17 +56,7 @@ jobs:
 
           git diff --name-only ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}
 
-
-          time git fetch origin ${{ github.event.pull_request.head.ref }} --depth $(( ${{ github.event.pull_request.commits }} + 1 ))
-
-          git diff --name-only origin/${{ github.event.pull_request.base.ref }}...${{ github.event.pull_request.head.sha }}
-
-          git diff --name-only ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}
-
-
-          git fetch origin ${{ github.event.pull_request.base.ref }}
-
-          git diff --name-only origin/${{ github.event.pull_request.base.ref }}...${{ github.event.pull_request.head.sha }}
+          git fetch origin ${{ github.event.pull_request.head.ref }} --depth $(( ${{ github.event.pull_request.commits }} + 1 ))
 
           git diff --name-only ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}
 
@@ -115,6 +105,9 @@ jobs:
           echo ui-built-${{ hashFiles('ui/**') }}
           echo ui-built-${{ steps.files-changed.outputs.ui && hashFiles('ui/**') }}
           echo ${{ steps.files-changed.outputs.ui }}
+          echo ${{ steps.files-changed.outputs.ui && 'true' }}
+          echo "${{ toJSON(steps.files-changed.outputs) }}"
+
 
       - uses: actions/cache/restore@v4
         if: ${{ steps.files-changed.outputs.ui }}'
