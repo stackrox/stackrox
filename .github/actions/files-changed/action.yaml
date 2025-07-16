@@ -5,9 +5,9 @@ inputs:
     description: 'associative array like glob matches like ( ["ui"]="ui/**" ["gha"]=".github/**" )'
     required: true
   base:
-    description: 'base ref to compare with'
+    description: 'base sha to compare with'
     required: false
-    default: origin/${{ github.event.pull_request.base.ref }}
+    default: ${{ github.event.pull_request.base.sha }}
   sha:
     description: 'sha to compare'
     required: false
