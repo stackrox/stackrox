@@ -1625,7 +1625,3 @@ create_sensor_pull_secrets() {
 roxctl_built_in_release_mode() {
     ! roxctl helm output central-services --help 2>&1 | grep -- --debug= >/dev/null
 }
-
-roxctl_built_in_release_mode() {
-    ! roxctl helm output central-services --help 2>&1 | grep -- --debug= >/dev/null
-}
