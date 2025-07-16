@@ -68,14 +68,15 @@ jobs:
 
           test
 
-          git fetch --tags
+          for I in {1..6}; do
+            time git fetch --deepen=1000 --quiet
+            test && break
+          done
+
+          time git fetch --tags --quiet
           
           test
 
-          for I in {1..6}; do
-            time git fetch --deepen=1000
-            test && break
-          done
 
       - uses: ./.github/actions/files-changed
         id: files-changed
