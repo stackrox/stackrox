@@ -9,7 +9,7 @@ const rules = {
     // ESLint naming convention for positive rules:
     // If your rule is enforcing the inclusion of something, use a short name without a special prefix.
 
-    'export-default-react': {
+    'react-export-default': {
         // Prevent mistaken assumptions about results from Find in Files.
         meta: {
             type: 'problem',
