@@ -54,11 +54,24 @@ jobs:
           set +e
           set -x
 
+	        git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*' \
+            || echo ${GITHUB_SHA:0:10}
+
           git diff --name-only ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}
 
           git fetch origin ${{ github.event.pull_request.head.ref }} --depth $(( ${{ github.event.pull_request.commits }} + 1 ))
 
           git diff --name-only ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}
+
+	        git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*' \
+            || echo ${GITHUB_SHA:0:10}
+
+          git fetch origin ${{ github.event.pull_request.base.ref }}
+
+          git diff --name-only ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}
+
+	        git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*' \
+            || echo ${GITHUB_SHA:0:10}
 
       - uses: ./.github/actions/files-changed
         id: files-changed
