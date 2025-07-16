@@ -159,9 +159,15 @@ bq_save_job_record() {
         local value="$2"
         shift; shift
 
+        local type=""
+
+        if [[ "$field" == "pr_number" ]]; then
+            type="INTEGER"
+        fi
+
         columns="$columns, $field"
         values="$values, @$field"
-        sql_params+=("--parameter=${field}::$value")
+        sql_params+=("--parameter=${field}:$type:$value")
     done
 
     info "${sql_params[@]}"
