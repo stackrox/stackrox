@@ -64,21 +64,25 @@ type m2mValidator struct {
 
 // Validate implements tokens.Validator.
 func (v *m2mValidator) Validate(ctx context.Context, token string) (*tokens.TokenInfo, error) {
+	if !v.HasExchangersConfigured() {
+		return v.roxValidator.Validate(ctx, token)
+	}
 	iss, err := m2m.IssuerFromRawIDToken(token)
 	if err != nil {
 		return nil, err
 	}
-	if iss != v.issuerID {
-		exchanger, found := v.GetTokenExchanger(iss)
-		if !found {
-			return nil, errox.NoCredentials.CausedBy("no exchanger found for issuer " + iss)
-		}
-		token, err = exchanger.ExchangeToken(ctx, token)
-		if err != nil {
-			return nil, err
-		}
+	if iss == v.issuerID {
+		return v.roxValidator.Validate(ctx, token)
 	}
-	return v.roxValidator.Validate(ctx, token)
+	exchanger, found := v.GetTokenExchanger(iss)
+	if !found {
+		return nil, errox.NoCredentials.CausedBy("no exchanger found for issuer " + iss)
+	}
+	newToken, err := exchanger.ExchangeToken(ctx, token)
+	if err != nil {
+		return nil, err
+	}
+	return v.roxValidator.Validate(ctx, newToken)
 }
 
 func create() (tokens.IssuerFactory, tokens.Validator, error) {
@@ -93,11 +97,13 @@ func create() (tokens.IssuerFactory, tokens.Validator, error) {
 	}
 
 	factory, validator, err := tokens.CreateIssuerFactoryAndValidator(issuerID, privateKey, keyID)
-	if err == nil {
-		validator = &m2mValidator{
-			m2m.TokenExchangerSetSingleton(roleDataStore.Singleton(), IssuerFactorySingleton()),
-			validator,
-			issuerID}
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "creating factory and validator")
+	}
+	validator = &m2mValidator{
+		m2m.TokenExchangerSetSingleton(roleDataStore.Singleton(), IssuerFactorySingleton()),
+		validator,
+		issuerID,
 	}
 	return factory, validator, err
 }
