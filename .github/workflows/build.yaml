@@ -47,7 +47,11 @@ jobs:
       - name: List changes
         continue-on-error: true
         run: |
-          git diff --no-renames --name-status ${{ github.base_ref }}..${{ github.ref }}
+          set +e
+          set -x
+          git diff --no-renames --name-status ${{ github.base_ref }}..${{ github.head_ref }}
+          git diff --no-renames --name-status ${{ github.base_ref }}..${{ github.ref_name }}
+          git diff --no-renames --name-status ${{ github.base_ref }}..${{ github.sha }}
 
       - uses: ./.github/actions/job-preamble
         with:
