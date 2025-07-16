@@ -52,6 +52,10 @@ type commandHandler struct {
 	pendingContextCancelsMutex sync.Mutex
 }
 
+func (h *commandHandler) Name() string {
+	return common.DefaultComponentName(h)
+}
+
 // DiagnosticConfigurationFunc is a function that modifies the diagnostic configuration.
 type DiagnosticConfigurationFunc func(request *central.PullTelemetryDataRequest, config k8sintrospect.Config) k8sintrospect.Config
 

@@ -99,6 +99,10 @@ type updaterImpl struct {
 	isReady              *concurrency.Signal
 }
 
+func (u *updaterImpl) Name() string {
+	return common.DefaultComponentName(u)
+}
+
 func (u *updaterImpl) Start() error {
 	go u.run(u.updateTicker.C)
 	return nil

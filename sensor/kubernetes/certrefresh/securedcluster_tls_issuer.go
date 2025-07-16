@@ -112,6 +112,10 @@ type tlsIssuerImpl struct {
 	activateLock                 sync.Mutex
 }
 
+func (i *tlsIssuerImpl) Name() string {
+	return common.DefaultComponentName(i)
+}
+
 // Start starts the Sensor component and launches a certificate refresher that:
 // * checks the state of the certificates whenever Sensor connects to Central, and several months before they expire
 // * updates the certificates if needed

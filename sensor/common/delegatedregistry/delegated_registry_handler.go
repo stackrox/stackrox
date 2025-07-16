@@ -42,6 +42,10 @@ type delegatedRegistryImpl struct {
 	imageSvc      v1.ImageServiceClient
 }
 
+func (d *delegatedRegistryImpl) Name() string {
+	return common.DefaultComponentName(d)
+}
+
 // NewHandler returns a new instance of Handler.
 func NewHandler(registryStore *registry.Store, localScan *scan.LocalScan) Handler {
 	return &delegatedRegistryImpl{

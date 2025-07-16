@@ -60,6 +60,20 @@ func (mr *MockDetectorMockRecorder) Capabilities() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Capabilities", reflect.TypeOf((*MockDetector)(nil).Capabilities))
 }
 
+// Name mocks base method.
+func (m *MockDetector) Name() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Name")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// Name indicates an expected call of Name.
+func (mr *MockDetectorMockRecorder) Name() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Name", reflect.TypeOf((*MockDetector)(nil).Name))
+}
+
 // Notify mocks base method.
 func (m *MockDetector) Notify(e common.SensorComponentEvent) {
 	m.ctrl.T.Helper()

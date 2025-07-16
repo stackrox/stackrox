@@ -43,6 +43,10 @@ type handlerImpl struct {
 	stopSig            concurrency.ErrorSignal
 }
 
+func (h *handlerImpl) Name() string {
+	return common.DefaultComponentName(h)
+}
+
 func (h *handlerImpl) Start() error {
 	return nil
 }
