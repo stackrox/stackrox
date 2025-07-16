@@ -218,7 +218,7 @@ func (t Translator) getCABundleFromConfigMap(ctx context.Context, sc platform.Se
 		Name:      securedcluster.CABundleConfigMapName,
 	}
 
-	if err := t.direct.Get(ctx, key, &configMap); err != nil {
+	if err := t.client.Get(ctx, key, &configMap); err != nil {
 		if k8sErrors.IsNotFound(err) {
 			return "", nil // ConfigMap doesn't exist yet - this is normal for fresh installs
 		}
