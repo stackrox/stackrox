@@ -44,6 +44,11 @@ jobs:
           show-progress: false
           ref: ${{ inputs.commit || github.sha }}
 
+      - name: List changes
+        continue-on-error: true
+        run: |
+          git diff --no-renames --name-status ${{ github.base_ref }}..${{ github.ref }}
+
       - uses: ./.github/actions/job-preamble
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
