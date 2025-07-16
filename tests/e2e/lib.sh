@@ -1301,7 +1301,7 @@ _record_build_info() {
         build_info="${build_info},-race"
     fi
 
-    update_job_record "build" "${build_info}"
+    ci_export "build" "${build_info}"
 }
 
 restore_4_6_postgres_backup() {

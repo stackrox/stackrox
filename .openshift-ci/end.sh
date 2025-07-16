@@ -23,7 +23,18 @@ end() {
 
     generate_cluster_junit
 
-    update_job_record outcome "${OVERALL_JOB_OUTCOME}" stopped_at "CURRENT_TIMESTAMP()"
+    local started_at=""
+    started_at=$(jq -r '.timestamp' /tmp/started.json)
+    save_job_record \
+        outcome "${OVERALL_JOB_OUTCOME}" \
+        started_at "TIMESTAMP_SECONDS(${started_at})" \
+        stopped_at "CURRENT_TIMESTAMP()" \
+        "test_target" "${test_target:-null}" \
+        cut_product_version "${cut_product_version:-null}" \
+        cut_k8s_version "${cut_k8s_version:-null}" \
+        cut_os_image "${cut_os_image:-null}" \
+        cut_kernel_version "${cut_kernel_version:-null}" \
+        cut_container_runtime_version "${cut_container_runtime_version:-null}"
 
     post_process_test_results "${END_SLACK_FAILURE_ATTACHMENTS}" "${END_JUNIT2JIRA_SUMMARY_FILE}"
 

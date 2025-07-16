@@ -143,6 +143,7 @@ bq_create_job_record() {
 }
 
 bq_save_job_record() {
+    info "WARNING: Job record creation is deprecated. Use save_job_record instead"
     setup_gcp
 
     local -a sql_params
@@ -196,6 +197,7 @@ _update_job_record() {
 }
 
 bq_update_job_record() {
+    info "WARNING: Job record update is deprecated. Use save_job_record instead"
     setup_gcp
 
     local id="$1"
