@@ -2,6 +2,7 @@ package imageintegrations
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -16,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/tlscheckcache"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 )
 
@@ -219,18 +221,14 @@ func TestSetupIntegrationParamsDescription(t *testing.T) {
 		},
 	}
 
-	p := pipelineImpl{
-		tlsCheckCache: tlscheckcache.New(),
-	}
-
 	t.Run("do not include path in description", func(t *testing.T) {
-		desc, _, _ := p.setUpIntegrationParams(ctx, ii.CloneVT(), false)
+		desc, _, _ := setUpIntegrationParams(ctx, ii.CloneVT(), false)
 		assert.NotContains(t, desc, "/path")
 		assert.Equal(t, "https://registry.invalid", desc)
 	})
 
 	t.Run("include path in description", func(t *testing.T) {
-		desc, _, _ := p.setUpIntegrationParams(ctx, ii.CloneVT(), true)
+		desc, _, _ := setUpIntegrationParams(ctx, ii.CloneVT(), true)
 		assert.Equal(t, "https://registry.invalid/path/to/thing", desc)
 	})
 }
@@ -276,5 +274,100 @@ func TestReconcileGlobalPullSecret(t *testing.T) {
 		iiDSMock.EXPECT().RemoveImageIntegration(bCtx, "global-pull-2")
 
 		assert.NoError(t, p.Reconcile(bCtx, clusterID, m))
+	})
+}
+
+func TestUpdateIntegrationInsecuredFlag(t *testing.T) {
+	ctx := context.Background()
+	endpoint := "endpoint.invalid"
+
+	tlsCheckErrFunc := func(_ context.Context, _ string) (bool, error) {
+		return false, errors.New("fake tls failure")
+	}
+
+	tlsCheckInsecureFunc := func(_ context.Context, _ string) (bool, error) {
+		return false, nil
+	}
+
+	tlsCheckSecureFunc := func(_ context.Context, _ string) (bool, error) {
+		return true, nil
+	}
+
+	createII := func(insecure bool) *storage.ImageIntegration {
+		return &storage.ImageIntegration{
+			IntegrationConfig: &storage.ImageIntegration_Docker{
+				Docker: &storage.DockerConfig{
+					Endpoint: endpoint,
+					Insecure: insecure,
+				},
+			},
+		}
+	}
+
+	t.Run("insecure is false on tls check error", func(t *testing.T) {
+		p := pipelineImpl{
+			tlsCheckCache: tlscheckcache.New(
+				tlscheckcache.WithTLSCheckFunc(tlsCheckErrFunc),
+			),
+		}
+
+		ii := createII(true)
+		require.True(t, ii.GetDocker().GetInsecure())
+
+		p.updateIntegrationInsecureFlag(ctx, ii)
+		assert.False(t, ii.GetDocker().GetInsecure())
+	})
+
+	t.Run("insecure is false on tls check skip", func(t *testing.T) {
+		cache := tlscheckcache.New(
+			tlscheckcache.WithTLSCheckFunc(tlsCheckErrFunc),
+		)
+		p := pipelineImpl{
+			tlsCheckCache: cache,
+		}
+
+		// Warm the cache with an error so next invocation will trigger a skip.
+		_, skip, err := cache.CheckTLS(ctx, endpoint)
+		require.False(t, skip)
+		require.Error(t, err)
+
+		// Confirm cache is returning skips
+		_, skip, err = cache.CheckTLS(ctx, endpoint)
+		require.True(t, skip)
+		require.NoError(t, err)
+
+		ii := createII(true)
+		require.True(t, ii.GetDocker().GetInsecure())
+
+		p.updateIntegrationInsecureFlag(ctx, ii)
+		assert.False(t, ii.GetDocker().GetInsecure())
+	})
+
+	t.Run("insecure is false on tls check secure result", func(t *testing.T) {
+		p := pipelineImpl{
+			tlsCheckCache: tlscheckcache.New(
+				tlscheckcache.WithTLSCheckFunc(tlsCheckSecureFunc),
+			),
+		}
+
+		ii := createII(true)
+		require.True(t, ii.GetDocker().GetInsecure())
+
+		p.updateIntegrationInsecureFlag(ctx, ii)
+		assert.False(t, ii.GetDocker().GetInsecure())
+	})
+
+	t.Run("insecure is true on tls check insecure result", func(t *testing.T) {
+		p := pipelineImpl{
+			tlsCheckCache: tlscheckcache.New(
+				tlscheckcache.WithTLSCheckFunc(tlsCheckInsecureFunc),
+			),
+		}
+
+		ii := createII(false)
+		require.False(t, ii.GetDocker().GetInsecure())
+
+		p.updateIntegrationInsecureFlag(ctx, ii)
+		assert.True(t, ii.GetDocker().GetInsecure())
 	})
 }
