@@ -76,13 +76,8 @@ func (cfg *Config) Reconfigure(cfgURL, defaultKey string) (*RuntimeConfig, error
 	if err != nil {
 		return nil, err
 	}
-	cfg.stateMux.Lock()
-	// This condition allows for the controlled start in main: the configuration
-	// is not enabled on the instantiation, so only an explicit call to
-	// cfg.Enable() will enable tracking and start gatherers.
-	previouslyMissingKey := cfg.StorageKey == "" && cfg.enabled
-	cfg.StorageKey = rc.Key
-	cfg.stateMux.Unlock()
+
+	previouslyMissingKey := cfg.setStorageKey(rc)
 
 	if rc.Key == "" || rc.Key == DisabledKey {
 		cfg.Disable()
@@ -90,6 +85,19 @@ func (cfg *Config) Reconfigure(cfgURL, defaultKey string) (*RuntimeConfig, error
 		cfg.Enable()
 	}
 	return rc, nil
+}
+
+// setStorageKey sets the key from the provided configuration, and returns
+// whether the configuration had been enabled with empty key before this change.
+func (cfg *Config) setStorageKey(rc *RuntimeConfig) bool {
+	cfg.stateMux.Lock()
+	defer cfg.stateMux.Unlock()
+	// This condition allows for the controlled start in main: the configuration
+	// is not enabled on the instantiation, so only an explicit call to
+	// cfg.Enable() will enable tracking and start gatherers.
+	previouslyMissingKey := cfg.StorageKey == "" && cfg.enabled
+	cfg.StorageKey = rc.Key
+	return previouslyMissingKey
 }
 
 // IsActive tells whether telemetry configuration allows for data collection
