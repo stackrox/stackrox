@@ -33,39 +33,14 @@ type ResourceUpdater interface {
 // for updates for this type.
 func DefaultResourceUpdaters() map[reflect.Type]ResourceUpdater {
 	return map[reflect.Type]ResourceUpdater{
-		types.AuthProviderType: newAuthProviderUpdater(
-			authProviderDatastore.Singleton(),
-			authProviderRegistry.Singleton(),
-			groupDataStore.Singleton(),
-			declarativeConfigHealth.Singleton(),
-		),
-		types.GroupType: newGroupUpdater(
-			authProviderRegistry.Singleton(),
-			groupDataStore.Singleton(),
-			declarativeConfigHealth.Singleton(),
-		),
-		types.RoleType: newRoleUpdater(
-			roleDatastore.Singleton(),
-			declarativeConfigHealth.Singleton(),
-		),
-		types.PermissionSetType: newPermissionSetUpdater(
-			roleDatastore.Singleton(),
-			declarativeConfigHealth.Singleton(),
-		),
-		types.AccessScopeType: newAccessScopeUpdater(
-			roleDatastore.Singleton(),
-			declarativeConfigHealth.Singleton(),
-		),
-		types.NotifierType: newNotifierUpdater(
-			notifierDataStore.Singleton(),
-			policycleaner.Singleton(),
-			notifierProcessor.Singleton(),
-			declarativeConfigHealth.Singleton(),
-			reporter.Singleton(),
-		),
-		types.AuthMachineToMachineConfigType: newAuthM2MConfigUpdater(
-			authM2MConfigDataStore.Singleton(),
-			declarativeConfigHealth.Singleton(),
-		),
+		types.AuthProviderType: newAuthProviderUpdater(authProviderDatastore.Singleton(), authProviderRegistry.Singleton(),
+			groupDataStore.Singleton(), declarativeConfigHealth.Singleton()),
+		types.GroupType:         newGroupUpdater(authProviderRegistry.Singleton(), groupDataStore.Singleton(), declarativeConfigHealth.Singleton()),
+		types.RoleType:          newRoleUpdater(roleDatastore.Singleton(), declarativeConfigHealth.Singleton()),
+		types.PermissionSetType: newPermissionSetUpdater(roleDatastore.Singleton(), declarativeConfigHealth.Singleton()),
+		types.AccessScopeType:   newAccessScopeUpdater(roleDatastore.Singleton(), declarativeConfigHealth.Singleton()),
+		types.NotifierType: newNotifierUpdater(notifierDataStore.Singleton(), policycleaner.Singleton(),
+			notifierProcessor.Singleton(), declarativeConfigHealth.Singleton(), reporter.Singleton()),
+		types.AuthMachineToMachineConfigType: newAuthM2MConfigUpdater(authM2MConfigDataStore.Singleton(), declarativeConfigHealth.Singleton()),
 	}
 }
