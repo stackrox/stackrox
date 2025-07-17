@@ -269,12 +269,12 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-      - uses: ./.github/actions/cache-ui-dependencies
-
       - uses: actions/cache@v4
         with:
           key: ui-built-${{ matrix.branding }}-${{ hashFiles('ui/**') }}  # TODO: verify the same key is used at save and not reevaluated
           path: ui/build
+
+      - uses: ./.github/actions/cache-ui-dependencies
 
       - uses: ./.github/actions/handle-tagged-build
 
