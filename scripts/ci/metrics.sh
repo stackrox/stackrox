@@ -54,11 +54,10 @@ _create_job_record() {
 }
 
 save_job_record() {
-    _save_job_record "$@"
-#    || {
-#        # Failure to gather metrics is not a test failure
-#        info "WARNING: Job record creation failed"
-#    }
+    _save_job_record "$@" || {
+        # Failure to gather metrics is not a test failure
+        info "WARNING: Job record creation failed"
+    }
 }
 
 _save_job_record() {
@@ -178,7 +177,7 @@ bq_save_job_record() {
     info "${sql_params[@]}"
     info "INSERT INTO ${_JOBS_TABLE_NAME} ($columns) VALUES ($values)"
 
-    bq query \
+    bq --nosync query --batch \
         --use_legacy_sql=false \
         "${sql_params[@]}" \
         "INSERT INTO ${_JOBS_TABLE_NAME}
