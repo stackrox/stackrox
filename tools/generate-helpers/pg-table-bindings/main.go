@@ -108,6 +108,9 @@ type properties struct {
 
 	// Informs to reverse the default sort option
 	ReverseDefaultSort bool
+
+	// Provides options map for sort option transforms
+	TransformSortOptions string
 }
 
 type parsedReference struct {
@@ -141,6 +144,7 @@ func main() {
 	c.Flags().BoolVar(&props.CachedStore, "cached-store", false, "if true, ensure the store is mirrored in a memory cache (can be dangerous on high cardinality stores, use with care)")
 	c.Flags().StringVar(&props.DefaultSortField, "default-sort", "", "if set, provides a default sort for search if one is not present")
 	c.Flags().BoolVar(&props.ReverseDefaultSort, "reverse-default-sort", false, "if true, reverses the default sort")
+	c.Flags().StringVar(&props.TransformSortOptions, "transform-sort-options", "", "if set, provides an option map for sort transforms")
 	utils.Must(c.MarkFlagRequired("schema-directory"))
 
 	c.Flags().StringVar(&props.Cycle, "cycle", "", "indicates that there is a cyclical foreign key reference, should be the path to the embedded foreign key")
@@ -207,17 +211,19 @@ func main() {
 				storageType: props.Type,
 				schema:      schema,
 			},
-			"NoCopyFrom":         props.NoCopyFrom,
-			"Cycle":              embeddedFK != "",
-			"EmbeddedFK":         embeddedFK,
-			"References":         filteredReferences,
-			"SearchScope":        searchScope,
-			"RegisterSchema":     !props.ConversionFuncs,
-			"FeatureFlag":        props.FeatureFlag,
-			"CachedStore":        props.CachedStore,
-			"DefaultSortStore":   defaultSort != "",
-			"DefaultSort":        defaultSort,
-			"ReverseDefaultSort": props.ReverseDefaultSort,
+			"NoCopyFrom":           props.NoCopyFrom,
+			"Cycle":                embeddedFK != "",
+			"EmbeddedFK":           embeddedFK,
+			"References":           filteredReferences,
+			"SearchScope":          searchScope,
+			"RegisterSchema":       !props.ConversionFuncs,
+			"FeatureFlag":          props.FeatureFlag,
+			"CachedStore":          props.CachedStore,
+			"DefaultSortStore":     defaultSort != "",
+			"DefaultSort":          defaultSort,
+			"ReverseDefaultSort":   props.ReverseDefaultSort,
+			"TransformSortOptions": props.TransformSortOptions,
+			"DefaultTransform":     props.TransformSortOptions != "",
 		}
 
 		if err := common.RenderFile(templateMap, schemaTemplate, getSchemaFileName(props.SchemaDirectory, schema.Table)); err != nil {

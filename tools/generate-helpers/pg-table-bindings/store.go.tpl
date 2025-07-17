@@ -85,20 +85,12 @@ type Store interface {
 {{ define "defineScopeChecker" }}scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_{{ . }}_ACCESS).Resource(targetResource){{ end }}
 
 {{ define "storeCreator" -}}
-    {{- if and (.CachedStore) (not .Obj.IsDirectlyScoped) (not .DefaultSortStore) -}}
+    {{- if and (.CachedStore) (not .Obj.IsDirectlyScoped) -}}
         pgSearch.NewGloballyScopedGenericStoreWithCache
-    {{- else if and (.CachedStore) (not .Obj.IsDirectlyScoped) (.DefaultSortStore) -}}
-        pgSearch.NewGloballyScopedGenericStoreWithCacheAndDefaultSort
-    {{- else if and (not .CachedStore) (not .Obj.IsDirectlyScoped) (not .DefaultSortStore) -}}
+    {{- else if and (not .CachedStore) (not .Obj.IsDirectlyScoped) -}}
         pgSearch.NewGloballyScopedGenericStore
-    {{- else if and (not .CachedStore) (not .Obj.IsDirectlyScoped) (.DefaultSortStore) -}}
-        pgSearch.NewGloballyScopedGenericStoreWithDefaultSort
-    {{- else if and .CachedStore (not .DefaultSortStore) -}}
+    {{- else if .CachedStore -}}
         pgSearch.NewGenericStoreWithCache
-    {{- else if and .CachedStore (.DefaultSortStore) -}}
-        pgSearch.NewGenericStoreWithCacheAndDefaultSort
-    {{- else if (.DefaultSortStore) -}}
-        pgSearch.NewGenericStoreWithDefaultSort
     {{- else -}}
         pgSearch.NewGenericStore
     {{- end -}}
@@ -137,6 +129,13 @@ func New(db postgres.DB) Store {
             targetResource,
             {{- if .DefaultSortStore }}
             pgSearch.GetDefaultSort({{.DefaultSort}}, {{.ReverseDefaultSort}}),
+            {{- else }}
+            nil,
+            {{- end }}
+            {{- if .DefaultTransform }}
+            {{.TransformSortOptions}},
+            {{- else }}
+            nil,
             {{- end }}
     )
 }
