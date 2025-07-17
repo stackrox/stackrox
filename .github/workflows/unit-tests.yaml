@@ -31,6 +31,8 @@ jobs:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
     steps:
+    - run: df -h
+
     - name: Checkout
       uses: actions/checkout@v4
       with:
@@ -40,8 +42,12 @@ jobs:
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+    - run: df -h
+
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
+
+    - run: df -h
 
     - name: Go Unit Tests
       run: ${{ matrix.gotags }} make go-unit-tests
@@ -51,31 +57,45 @@ jobs:
         token: ${{ secrets.CODECOV_TOKEN }}
         flags: go-unit-tests
 
+    - run: df -h
+
     - name: Generate junit report
       if: always()
       run: make generate-junit-reports
+
+    - run: df -h
 
     - name: Publish Test Report
       uses: test-summary/action@v2
       if: always()
       with:
         paths: 'junit-reports/report.xml'
+
+    - run: df -h
 
     - name: Go Integration Unit Tests
       run: ${{ matrix.gotags }} make integration-unit-tests
 
+    - run: df -h
+
     - name: Go Operator Integration Tests
       run: ${{ matrix.gotags }} make -C operator/ test-integration
+
+    - run: df -h
 
     - name: Generate junit report
       if: always()
       run: make generate-junit-reports
+
+    - run: df -h
 
     - name: Publish Test Report
       uses: test-summary/action@v2
       if: always()
       with:
         paths: 'junit-reports/report.xml'
+
+    - run: df -h
 
     - name: Report test failures to Jira
       if: (!cancelled())
@@ -102,9 +122,13 @@ jobs:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
     steps:
+    - run: df -h
+
     - name: Set Postgres version
       run: |
         echo "/usr/pgsql-${{ matrix.pg }}/bin" >> "${GITHUB_PATH}"
+
+    - run: df -h
 
     - name: Checkout
       uses: actions/checkout@v4
@@ -115,16 +139,24 @@ jobs:
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+    - run: df -h
+
     - name: Run Postgres
       run: |
         su postgres -c 'initdb -D /tmp/data'
         su postgres -c 'pg_ctl -D /tmp/data start'
 
+    - run: df -h
+
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
 
+    - run: df -h
+
     - name: Is Postgres ready
       run: pg_isready -h 127.0.0.1
+
+    - run: df -h
 
     - name: Go Unit Tests
       run: ${{ matrix.gotags }} make go-postgres-unit-tests
@@ -134,15 +166,21 @@ jobs:
         token: ${{ secrets.CODECOV_TOKEN }}
         flags: go-unit-tests
 
+    - run: df -h
+
     - name: Generate junit report
       if: always()
       run: make generate-junit-reports
+
+    - run: df -h
 
     - name: Publish Test Report
       uses: test-summary/action@v2
       if: always()
       with:
         paths: 'junit-reports/report.xml'
+
+    - run: df -h
 
     - name: Report junit failures in jira
       if: (!cancelled())
@@ -162,9 +200,13 @@ jobs:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
     steps:
+    - run: df -h
+
     - name: Set Postgres version
       run: |
         echo "/usr/pgsql-15/bin" >> "${GITHUB_PATH}"
+
+    - run: df -h
 
     - name: Checkout
       uses: actions/checkout@v4
@@ -175,23 +217,35 @@ jobs:
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+    - run: df -h
+
     - name: Run Postgres
       run: |
         su postgres -c 'initdb -D /tmp/data'
         su postgres -c 'pg_ctl -D /tmp/data start'
 
+    - run: df -h
+
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
+
+    - run: df -h
 
     - name: Is Postgres ready
       run: pg_isready -h 127.0.0.1
 
+    - run: df -h
+
     - name: Go Bench Tests
       run: make go-postgres-bench-tests
+
+    - run: df -h
 
     - name: Generate junit report
       if: always()
       run: make generate-junit-reports
+
+    - run: df -h
 
     - name: Publish Test Report
       uses: test-summary/action@v2
@@ -212,6 +266,8 @@ jobs:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
     steps:
+    - run: df -h
+
     - name: Checkout
       uses: actions/checkout@v4
 
@@ -219,17 +275,25 @@ jobs:
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+    - run: df -h
+
     - name: Cache UI dependencies
       uses: ./.github/actions/cache-ui-dependencies
 
+    - run: df -h
+
     - name: UI Unit Tests
       run: make ui-test
+
+    - run: df -h
 
     - name: Publish Test Report
       uses: test-summary/action@v2
       if: always()
       with:
         paths: 'ui/apps/platform/test-results/reports/*.xml'
+
+    - run: df -h
 
     - name: Report junit failures in jira
       if: (!cancelled())
@@ -251,6 +315,8 @@ jobs:
       - /usr:/mnt/usr
       - /opt:/mnt/opt
     steps:
+    - run: df -h
+
     - name: Checkout
       uses: actions/checkout@v4
 
@@ -258,11 +324,17 @@ jobs:
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+    - run: df -h
+
     - name: Cache UI dependencies
       uses: ./.github/actions/cache-ui-dependencies
 
+    - run: df -h
+
     - name: UI Component Tests
       run: make ui-component-tests
+
+    - run: df -h
 
     - name: Upload Cypress test result artifacts
       uses: ./.github/actions/upload-artifact-with-retry
@@ -271,11 +343,15 @@ jobs:
         name: Cypress test results
         path: ui/apps/platform/cypress/test-results/
 
+    - run: df -h
+
     - name: Publish Test Report
       uses: test-summary/action@v2
       if: always()
       with:
         paths: 'ui/apps/platform/cypress/test-results/reports/**/*.xml'
+
+    - run: df -h
 
     - name: Report junit failures in jira
       if: (!cancelled())
@@ -297,6 +373,8 @@ jobs:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
     steps:
+    - run: df -h
+
     - name: Checkout
       uses: actions/checkout@v4
       with:
@@ -307,19 +385,27 @@ jobs:
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+    - run: df -h
+
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
 
     - uses: ./.github/actions/handle-tagged-build
 
+    - run: df -h
+
     - name: Local roxctl tests
       run: ./scripts/ci/jobs/local-roxctl-tests.sh
+
+    - run: df -h
 
     - name: Publish Test Report
       uses: test-summary/action@v2
       if: always()
       with:
         paths: 'roxctl-test-output/*.xml'
+
+    - run: df -h
 
     - name: Report junit failures in jira
       if: (!cancelled())
@@ -341,6 +427,8 @@ jobs:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
     steps:
+    - run: df -h
+
     - name: Checkout
       uses: actions/checkout@v4
       with:
@@ -351,14 +439,20 @@ jobs:
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+    - run: df -h
+
     - name: Shell Unit Tests
       run: make shell-unit-tests
+
+    - run: df -h
 
     - name: Publish Test Report
       uses: test-summary/action@v2
       if: always()
       with:
         paths: 'shell-test-output/*.xml'
+
+    - run: df -h
 
     - name: Report junit failures in jira
       if: (!cancelled())
@@ -378,6 +472,8 @@ jobs:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
     steps:
+      - run: df -h
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -387,6 +483,8 @@ jobs:
       - uses: ./.github/actions/job-preamble
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - run: df -h
 
       - name: OpenShift CI Wrapper Unit Tests
         run: make -C .openshift-ci test
@@ -398,6 +496,8 @@ jobs:
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     steps:
+    - run: df -h
+
     - name: Checkout
       uses: actions/checkout@v4
       with:
@@ -407,26 +507,38 @@ jobs:
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+    - run: df -h
+
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
+
+    - run: df -h
 
     - name: Create k8s Kind Cluster
       uses: helm/kind-action@v1
       with:
         kubeconfig: "${{ env.KUBECONFIG }}"
 
+    - run: df -h
+
     - name: Run sensor integration tests
       run: make sensor-integration-test
+
+    - run: df -h
 
     - name: Generate junit report
       if: always()
       run: make generate-junit-reports
+
+    - run: df -h
 
     - name: Publish Test Report
       uses: test-summary/action@v2
       if: always()
       with:
         paths: 'junit-reports/report.xml'
+
+    - run: df -h
 
     - name: Report junit failures in jira
       if: (!cancelled())
@@ -463,8 +575,12 @@ jobs:
     permissions:
       actions: read
     steps:
+    - run: df -h
+
     - name: Checkout
       uses: actions/checkout@v4
+
+    - run: df -h
 
     - name: Slack message
       env:
