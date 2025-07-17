@@ -18,6 +18,7 @@ runs:
   using: composite
   steps:
     - name: Compare list of files changed with filters
+      id: compare
       shell: bash
       run: |
         ${{ github.action_path }}/find-changes.sh '${{ inputs.filters }}' '${{ inputs.base }}' '${{ inputs.sha}}'
