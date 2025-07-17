@@ -72,10 +72,12 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+      # TODO: review if handle-tag-build is needed or can be replaced/reduced
+
       - uses: actions/cache@v4
         id: restore-ui-build
         with:
-          key: ui-built-${{ env.ROX_PRODUCT_BRANDING }}-${{ hashFiles('ui/**') }}  # TODO: verify the same key is used at save and not reevaluated
+          key: ui-built-${{ env.ROX_PRODUCT_BRANDING }}-${{ hashFiles('ui/**') }}
           path: ui/build
 
       - uses: ./.github/actions/cache-ui-dependencies
@@ -111,6 +113,7 @@ jobs:
 
       - name: compile
         run: |
+          # TODO: modify gobuild.sh/Makefile/this to only rebuild if the files changed (from restored state), then only restore go deps if changed also?
           set -x
           export SKIP_CLI_BUILD=true  # or cli-build's in cli even if already built
           export SKIP_UI_BUILD=true  # or ui-build's in all-builds even if already built
@@ -127,6 +130,7 @@ jobs:
         env:
           GITHUB_OAUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # TODO: cache OSS notice with deps?
           set -x
           FETCH_VERSION=0.4.6
           FETCH_SHA256=a67ed3141d6deb7e7841f40505cba11eb7a37abbab78374712a42373e7854209
@@ -160,10 +164,14 @@ jobs:
               # builds image/roxctl/Dockerfile tagged image/roxctl
 
       - name: Check images
+        if: always()
         continue-on-error: true
         run: |
           set -x
           set +e
+          echo '${{ toJSON(steps.files-changed.outputs.changes) }}'
+          echo '${{ toJSON(steps.files-changed.outputs) }}'
+          echo '${{ toJSON(steps.files-changed) }}'
           docker images
           tail /tmp/git.fetching.log
           ls -la /tmp/git.fetching.log
@@ -266,7 +274,7 @@ jobs:
       - uses: actions/cache@v4
         id: restore-ui-build
         with:
-          key: ui-built-${{ matrix.branding }}-${{ hashFiles('ui/**') }}  # TODO: verify the same key is used at save and not reevaluated
+          key: ui-built-${{ matrix.branding }}-${{ hashFiles('ui/**') }}
           path: ui/build
 
       - uses: ./.github/actions/cache-ui-dependencies
