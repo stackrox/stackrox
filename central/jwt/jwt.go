@@ -25,7 +25,7 @@ var (
 const (
 	privateKeyPath    = "/run/secrets/stackrox.io/jwt/jwt-key.der"
 	privateKeyPathPEM = "/run/secrets/stackrox.io/jwt/jwt-key.pem"
-	issuerID          = "https://stackrox.io/jwt"
+	roxIssuer         = "https://stackrox.io/jwt"
 
 	keyID = "jwtk0"
 )
@@ -74,7 +74,7 @@ func (v *m2mValidator) Validate(ctx context.Context, token string) (*tokens.Toke
 		return nil, err
 	}
 	// If this is a stackrox.io token, let's just validate it.
-	if iss == issuerID {
+	if iss == roxIssuer {
 		return v.roxValidator.Validate(ctx, token)
 	}
 	// Otherwise, let's exchange the token according to an M2M configuration for
@@ -103,7 +103,7 @@ func create() (tokens.IssuerFactory, tokens.Validator, error) {
 		return nil, nil, errors.Wrap(err, "parsing private key")
 	}
 
-	factory, validator, err := tokens.CreateIssuerFactoryAndValidator(issuerID, privateKey, keyID)
+	factory, validator, err := tokens.CreateIssuerFactoryAndValidator(roxIssuer, privateKey, keyID)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "creating factory and validator")
 	}

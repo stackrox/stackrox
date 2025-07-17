@@ -46,12 +46,12 @@ func TestM2MValidator(t *testing.T) {
 		expectedErr         error
 	}{
 		"rox issuer": {
-			token: tokenWithIssuer(issuerID),
+			token: tokenWithIssuer(roxIssuer),
 			mockRoxValidator: func(ctx context.Context, token string) (*tokens.TokenInfo, error) {
-				assert.Equal(t, tokenWithIssuer(issuerID), token)
+				assert.Equal(t, tokenWithIssuer(roxIssuer), token)
 				return &tokens.TokenInfo{Token: token}, nil
 			},
-			expectedTokenToPass: tokenWithIssuer(issuerID),
+			expectedTokenToPass: tokenWithIssuer(roxIssuer),
 		},
 		"non-rox issuer with exchanger": {
 			token: tokenWithIssuer("other-issuer"),
