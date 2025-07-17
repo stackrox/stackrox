@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
 	metricsPkg "github.com/stackrox/rox/sensor/common/metrics"
+	"github.com/stackrox/rox/sensor/common/unimplemented"
 	"github.com/stackrox/rox/sensor/kubernetes/complianceoperator"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -60,6 +61,8 @@ func NewWithInterval(k8sClient kubernetes.Interface, pollInterval time.Duration)
 }
 
 type clusterMetricsImpl struct {
+	unimplemented.Receiver
+
 	lastKnownComplianceOperatorNamespace string
 
 	output          chan *message.ExpiringMessage
@@ -97,10 +100,6 @@ func (cm *clusterMetricsImpl) Notify(e common.SensorComponentEvent) {
 
 func (cm *clusterMetricsImpl) Capabilities() []centralsensor.SensorCapability {
 	return []centralsensor.SensorCapability{}
-}
-
-func (cm *clusterMetricsImpl) ProcessMessage(_ *central.MsgToSensor) error {
-	return nil
 }
 
 func (cm *clusterMetricsImpl) ResponsesC() <-chan *message.ExpiringMessage {

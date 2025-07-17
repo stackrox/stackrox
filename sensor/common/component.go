@@ -70,13 +70,24 @@ type Notifiable interface {
 // as well as sending messages back to central.
 type SensorComponent interface {
 	Notifiable
+	CentralSender
+	CentralReceiver
+	Component
+	Name() string
+}
+
+type Component interface {
 	Start() error
 	Stop()
 	Capabilities() []centralsensor.SensorCapability
+}
 
-	ProcessMessage(msg *central.MsgToSensor) error
+type CentralSender interface {
 	ResponsesC() <-chan *message.ExpiringMessage
-	Name() string
+}
+
+type CentralReceiver interface {
+	ProcessMessage(msg *central.MsgToSensor) error
 }
 
 // MessageToComplianceWithAddress adds the Hostname to sensor.MsgToCompliance so we know where to send it to.
