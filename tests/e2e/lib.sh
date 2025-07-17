@@ -1301,7 +1301,7 @@ _record_build_info() {
         build_info="${build_info},-race"
     fi
 
-    ci_export "build" "${build_info}"
+    set_ci_shared_export "build" "${build_info}"
 }
 
 restore_4_6_postgres_backup() {

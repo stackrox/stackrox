@@ -2416,12 +2416,11 @@ _record_cluster_info() {
         cut_container_runtime_version="$containerRuntimeVersion"
     fi
 
-    ci_export \
-      cut_product_version "$cut_product_version" \
-      cut_k8s_version "$cut_k8s_version" \
-      cut_os_image "$cut_os_image" \
-      cut_kernel_version "$cut_kernel_version" \
-      cut_container_runtime_version "$cut_container_runtime_version"
+    set_ci_shared_export cut_product_version "$cut_product_version"
+    set_ci_shared_export cut_k8s_version "$cut_k8s_version"
+    set_ci_shared_export cut_os_image "$cut_os_image"
+    set_ci_shared_export cut_kernel_version "$cut_kernel_version"
+    set_ci_shared_export cut_container_runtime_version "$cut_container_runtime_version"
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
