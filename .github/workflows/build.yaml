@@ -92,8 +92,10 @@ jobs:
       - name: go mod tidy
         run: |
           set -x
+          set +e
+          echo ${{ contains(steps.files-changed.outputs.matched, 'ui') }}
           export CI=true  # or builds roxctl separately in main-build-nodeps even if built
-          parallel="${{ matrix.parallel }}"  # sequential until verified working. TODO: test parallel=>1
+          parallel="${{ matrix.parallel }}"
           make -j${parallel} -Oline deps clean-image  # go mod tidy all go.sum files
             # semaphore ./deps controls if run
             # if [[ ! -d ./deps ]]; then for d in $(find . -name go.sum | xargs dirname); do pushd $d; go mod tidy; popd; done; fi
@@ -154,7 +156,7 @@ jobs:
         run: |
           set -x
           unset CI  # include only the host arch build of roxctl
-          parallel="${{ matrix.parallel }}"  # sequential until verified working. TODO: test parallel=>1
+          parallel="${{ matrix.parallel }}"
           make -j${parallel} -Oline docker-build-main-image docker-build-roxctl-image
             # copies bin/*/ to image/rhel/bin/
             # copies ui/build to image/rhel/ui/
