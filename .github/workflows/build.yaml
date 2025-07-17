@@ -44,7 +44,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: ${{ env.PR_DEPTH }}
-          fetch-tags: true
+          fetch-tags: false
           show-progress: false
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
