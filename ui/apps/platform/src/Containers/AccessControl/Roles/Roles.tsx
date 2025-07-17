@@ -38,7 +38,7 @@ import AccessControlBreadcrumbs from '../AccessControlBreadcrumbs';
 import AccessControlHeaderActionBar from '../AccessControlHeaderActionBar';
 import AccessControlHeading from '../AccessControlHeading';
 import usePermissions from '../../../hooks/usePermissions';
-import { isUserResource } from '../traits';
+import { isUserResource } from '../../traits';
 
 const entityType = 'ROLE';
 
