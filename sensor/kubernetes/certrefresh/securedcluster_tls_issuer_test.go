@@ -272,7 +272,7 @@ func (s *securedClusterTLSIssuerTests) TestSecuredClusterTLSIssuerProcessMessage
 	fixture.tlsIssuer.Notify(common.SensorComponentEventCentralReachable)
 	s.Require().NoError(fixture.tlsIssuer.Start())
 
-	assert.NoError(s.T(), fixture.tlsIssuer.ProcessMessage(msg))
+	assert.NoError(s.T(), fixture.tlsIssuer.ProcessMessage(context.TODO(), msg))
 	assert.Eventually(s.T(), func() bool {
 		response := fixture.tlsIssuer.responseQueue.Pull()
 		return response != nil
@@ -289,7 +289,7 @@ func (s *securedClusterTLSIssuerTests) TestSecuredClusterTLSIssuerProcessMessage
 	fixture.tlsIssuer.Notify(common.SensorComponentEventCentralReachable)
 	s.Require().NoError(fixture.tlsIssuer.Start())
 
-	assert.NoError(s.T(), fixture.tlsIssuer.ProcessMessage(msg))
+	assert.NoError(s.T(), fixture.tlsIssuer.ProcessMessage(context.TODO(), msg))
 	assert.Never(s.T(), func() bool {
 		response := fixture.tlsIssuer.responseQueue.Pull()
 		return response != nil
@@ -433,13 +433,13 @@ func (s *securedClusterTLSIssuerIntegrationTests) TestSuccessfulRefresh() {
 			for i := 0; i < tc.numFailedResponses; i++ {
 				request := s.waitForRequest(ctx, tlsIssuer)
 				response := getSecuredClusterIssueCertsFailureResponse(request.GetRequestId())
-				err = tlsIssuer.ProcessMessage(response)
+				err = tlsIssuer.ProcessMessage(context.TODO(), response)
 				s.Require().NoError(err)
 			}
 
 			request := s.waitForRequest(ctx, tlsIssuer)
 			response := getSecuredClusterIssueCertsSuccessResponse(request.GetRequestId(), ca.CertPEM(), secretsCerts)
-			err = tlsIssuer.ProcessMessage(response)
+			err = tlsIssuer.ProcessMessage(context.TODO(), response)
 			s.Require().NoError(err)
 
 			verifySecrets(ctx, s.T(), k8sClient, sensorNamespace, ca, secretsCerts)
@@ -470,7 +470,7 @@ func (s *securedClusterTLSIssuerIntegrationTests) TestSensorOnlineOfflineModes()
 
 	request := s.waitForRequest(ctx, tlsIssuer)
 	response := getSecuredClusterIssueCertsFailureResponse(request.GetRequestId())
-	err = tlsIssuer.ProcessMessage(response)
+	err = tlsIssuer.ProcessMessage(context.TODO(), response)
 	s.Require().NoError(err)
 
 	tlsIssuer.Notify(common.SensorComponentEventOfflineMode)
@@ -481,7 +481,7 @@ func (s *securedClusterTLSIssuerIntegrationTests) TestSensorOnlineOfflineModes()
 
 	request = s.waitForRequest(ctx, tlsIssuer)
 	response = getSecuredClusterIssueCertsSuccessResponse(request.GetRequestId(), ca.CertPEM(), secretsCerts)
-	err = tlsIssuer.ProcessMessage(response)
+	err = tlsIssuer.ProcessMessage(context.TODO(), response)
 	s.Require().NoError(err)
 
 	verifySecrets(ctx, s.T(), k8sClient, sensorNamespace, ca, secretsCerts)
@@ -497,7 +497,7 @@ func (s *securedClusterTLSIssuerIntegrationTests) TestSensorOnlineOfflineModes()
 
 	request = s.waitForRequest(ctx, tlsIssuer)
 	response = getSecuredClusterIssueCertsSuccessResponse(request.GetRequestId(), ca.CertPEM(), secretsCerts)
-	err = tlsIssuer.ProcessMessage(response)
+	err = tlsIssuer.ProcessMessage(context.TODO(), response)
 	s.Require().NoError(err)
 
 	verifySecrets(ctx, s.T(), k8sClient, sensorNamespace, ca, secretsCerts)

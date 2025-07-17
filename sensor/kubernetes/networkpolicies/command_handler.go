@@ -85,12 +85,14 @@ func (h *commandHandler) run() {
 	}
 }
 
-func (h *commandHandler) ProcessMessage(msg *central.MsgToSensor) error {
+func (h *commandHandler) ProcessMessage(ctx context.Context, msg *central.MsgToSensor) error {
 	cmd := msg.GetNetworkPoliciesCommand()
 	if cmd == nil {
 		return nil
 	}
 	select {
+	case <-ctx.Done():
+		return ctx.Err() // TODO(ROX-): pass the context together with `cmd` to `h.commandsC`
 	case h.commandsC <- cmd:
 		return nil
 	case <-h.stopSig.Done():

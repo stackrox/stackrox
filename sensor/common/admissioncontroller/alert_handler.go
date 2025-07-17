@@ -1,6 +1,8 @@
 package admissioncontroller
 
 import (
+	"context"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
@@ -55,7 +57,7 @@ func (h *alertHandlerImpl) Capabilities() []centralsensor.SensorCapability {
 	return nil
 }
 
-func (h *alertHandlerImpl) ProcessMessage(_ *central.MsgToSensor) error {
+func (h *alertHandlerImpl) ProcessMessage(_ context.Context, _ *central.MsgToSensor) error {
 	return nil
 }
 

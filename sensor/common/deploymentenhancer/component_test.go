@@ -1,6 +1,7 @@
 package deploymentenhancer
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -112,10 +113,10 @@ func (s *ComponentTestSuite) TestMsgQueueOverfill() {
 		deploymentsQueue: make(chan *central.DeploymentEnhancementRequest, 1),
 		storeProvider:    s.mockStoreProvider,
 	}
-	s.NoError(de.ProcessMessage(generateMsgToSensor()))
+	s.NoError(de.ProcessMessage(context.TODO(), generateMsgToSensor()))
 
 	// As there is no reader, the second call has to error out
-	s.ErrorContains(de.ProcessMessage(generateMsgToSensor()), "DeploymentEnhancer queue has reached its limit of")
+	s.ErrorContains(de.ProcessMessage(context.TODO(), generateMsgToSensor()), "DeploymentEnhancer queue has reached its limit of")
 }
 
 func generateMsgToSensor() *central.MsgToSensor {

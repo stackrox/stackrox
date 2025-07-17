@@ -1,6 +1,8 @@
 package compliance
 
 import (
+	"context"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
@@ -70,7 +72,7 @@ func (c *Multiplexer) Capabilities() []centralsensor.SensorCapability {
 }
 
 // ProcessMessage is unimplemented, part of the component interface
-func (c *Multiplexer) ProcessMessage(_ *central.MsgToSensor) error {
+func (c *Multiplexer) ProcessMessage(_ context.Context, _ *central.MsgToSensor) error {
 	return nil
 }
 
