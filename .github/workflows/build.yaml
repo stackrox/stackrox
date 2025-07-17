@@ -120,7 +120,7 @@ jobs:
       - uses: actions/cache/save@v4
         if: ${{ contains(steps.files-changed.outputs.matched, 'ui') && steps.restore-ui-build.outputs.cache-hit != 'true' }}
         with:
-          key: ui-built-${{ steps.restore-ui-build.outputs.cache-primary-key }}
+          key: ${{ steps.restore-ui-build.outputs.cache-primary-key }}
           path: ui/build
 
       - name: Generate OSS notice
