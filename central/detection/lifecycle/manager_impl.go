@@ -25,6 +25,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/process/filter"
@@ -316,15 +317,16 @@ func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, ind
 		return false, err
 	}
 
-	err = m.connectionManager.SendMessage(baseline.GetKey().GetClusterId(), &central.MsgToSensor{
-		Msg: &central.MsgToSensor_BaselineSync{
-			BaselineSync: &central.BaselineSync{
-				Baselines: []*storage.ProcessBaseline{baseline},
-			}},
-	})
-	if err != nil {
-		return false, err
-
+	if features.AutolockAllProcessBaselines.Enabled() {
+		err = m.connectionManager.SendMessage(baseline.GetKey().GetClusterId(), &central.MsgToSensor{
+			Msg: &central.MsgToSensor_BaselineSync{
+				BaselineSync: &central.BaselineSync{
+					Baselines: []*storage.ProcessBaseline{baseline},
+				}},
+		})
+		if err != nil {
+			return false, err
+		}
 	}
 
 	return true, err
