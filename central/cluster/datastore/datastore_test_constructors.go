@@ -25,6 +25,13 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
+)
+
+var (
+	testInstance     DataStore
+	testInstanceInit sync.Once
 )
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
@@ -73,4 +80,13 @@ func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) (DataStore, error)
 		nodeStore, podStore, secretStore, netFlowStore, netEntityStore,
 		serviceAccountStore, k8sRoleStore, k8sRoleBindingStore, sensorCnxMgr, nil,
 		clusterRanker, networkBaselineManager, compliancePruner)
+}
+
+func GetTestPostgresDataStoreSingleton(t testing.TB, pool postgres.DB) DataStore {
+	testInstanceInit.Do(func() {
+		store, err := GetTestPostgresDataStore(t, pool)
+		utils.Must(err)
+		testInstance = store
+	})
+	return testInstance
 }
