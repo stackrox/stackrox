@@ -32,6 +32,11 @@ import { filterNavDescriptions, isActiveLink, NavDescription } from './utils';
 
 import './HorizontalSubnav.css';
 
+// Check if the search string contains the pattern or the encoded version of the pattern
+function containsPatternIgnoringEncoding(search: string, pattern: string) {
+    return new RegExp(`${pattern}|${encodeURI(pattern)}`, 'i').test(search);
+}
+
 type SubnavParentKey = 'violations' | 'vulnerabilities';
 
 /*
@@ -50,8 +55,12 @@ function getSubnavDescriptionGroups(
                       path: violationsUserWorkloadsViewPath,
                       isActive: (location) => {
                           const search: string = location.search || '';
-                          const encodedValue = encodeURIComponent('Applications view');
-                          return search.includes(`filteredWorkflowView=${encodedValue}`);
+                          return (
+                              containsPatternIgnoringEncoding(
+                                  search,
+                                  'filteredWorkflowView=Applications view'
+                              ) || !search.includes('filteredWorkflowView')
+                          );
                       },
                       routeKey: 'violations',
                   },
@@ -61,8 +70,10 @@ function getSubnavDescriptionGroups(
                       path: violationsPlatformViewPath,
                       isActive: (location) => {
                           const search: string = location.search || '';
-                          const encodedValue = encodeURIComponent('Platform view');
-                          return search.includes(`filteredWorkflowView=${encodedValue}`);
+                          return containsPatternIgnoringEncoding(
+                              search,
+                              'filteredWorkflowView=Platform view'
+                          );
                       },
                       routeKey: 'violations',
                   },
@@ -72,8 +83,10 @@ function getSubnavDescriptionGroups(
                       path: violationsFullViewPath,
                       isActive: (location) => {
                           const search: string = location.search || '';
-                          const encodedValue = encodeURIComponent('Full view');
-                          return search.includes(`filteredWorkflowView=${encodedValue}`);
+                          return containsPatternIgnoringEncoding(
+                              search,
+                              'filteredWorkflowView=Full view'
+                          );
                       },
                       routeKey: 'violations',
                   },
