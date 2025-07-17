@@ -71,7 +71,7 @@ type clusterMetricsImpl struct {
 }
 
 func (cm *clusterMetricsImpl) Name() string {
-	return common.DefaultComponentName(cm)
+	return "clustermetrics.clusterMetricsImpl"
 }
 
 func (cm *clusterMetricsImpl) Start() error {

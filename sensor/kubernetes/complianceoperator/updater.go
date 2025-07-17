@@ -100,7 +100,7 @@ type updaterImpl struct {
 }
 
 func (u *updaterImpl) Name() string {
-	return common.DefaultComponentName(u)
+	return "complianceoperator.updaterImpl"
 }
 
 func (u *updaterImpl) Start() error {
