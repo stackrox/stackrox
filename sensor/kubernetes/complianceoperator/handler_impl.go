@@ -89,7 +89,7 @@ func (m *handlerImpl) Capabilities() []centralsensor.SensorCapability {
 	return nil
 }
 
-func (m *handlerImpl) ProcessMessage(msg *central.MsgToSensor) error {
+func (m *handlerImpl) ProcessMessage(ctx context.Context, msg *central.MsgToSensor) error {
 	req := msg.GetComplianceRequest()
 	if req == nil {
 		return nil
@@ -105,6 +105,8 @@ func (m *handlerImpl) ProcessMessage(msg *central.MsgToSensor) error {
 	}
 
 	select {
+	case <-ctx.Done():
+		return ctx.Err() // TODO(ROX-): Pass this context together with `req` to `m.request`
 	case m.request <- req:
 		return nil
 	case <-m.stopSignal.Done():
