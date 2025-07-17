@@ -59,11 +59,13 @@ func GetPrivateKeyBytes() ([]byte, error) {
 type m2mValidator struct {
 	m2m.TokenExchangerSet
 	roxValidator tokens.Validator
-	issuerID     string
 }
 
-// Validate implements tokens.Validator.
+// Validate the token: if this is not a stackrox.io token, exchange it first,
+// according to the M2M configuration, and then validate using roxValidator.
 func (v *m2mValidator) Validate(ctx context.Context, token string) (*tokens.TokenInfo, error) {
+	// Short-circuit here in case there are no M2M configuration available for
+	// the implicit token exchange.
 	if !v.HasExchangersConfigured() {
 		return v.roxValidator.Validate(ctx, token)
 	}
@@ -71,13 +73,18 @@ func (v *m2mValidator) Validate(ctx context.Context, token string) (*tokens.Toke
 	if err != nil {
 		return nil, err
 	}
-	if iss == v.issuerID {
+	// If this is a stackrox.io token, let's just validate it.
+	if iss == issuerID {
 		return v.roxValidator.Validate(ctx, token)
 	}
+	// Otherwise, let's exchange the token according to an M2M configuration for
+	// this issuer, if available.
 	exchanger, found := v.GetTokenExchanger(iss)
 	if !found {
 		return nil, errox.NoCredentials.CausedBy("no exchanger found for issuer " + iss)
 	}
+	// The exchanger will pass the provided token to the according
+	// coreos/go-oidc provider for verification (expiration, signature, etc.).
 	newToken, err := exchanger.ExchangeToken(ctx, token)
 	if err != nil {
 		return nil, err
@@ -100,12 +107,11 @@ func create() (tokens.IssuerFactory, tokens.Validator, error) {
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "creating factory and validator")
 	}
-	validator = &m2mValidator{
-		m2m.TokenExchangerSetSingleton(roleDataStore.Singleton(), factory),
-		validator,
-		issuerID,
-	}
-	return factory, validator, err
+	// Decorate the stackrox.io token validator with M2M validator in case the
+	// provided token is not issued by stackrox.io and requires an implicit
+	// exchange.
+	exchangerSet := m2m.TokenExchangerSetSingleton(roleDataStore.Singleton(), factory)
+	return factory, &m2mValidator{exchangerSet, validator}, err
 }
 
 func initialize() {

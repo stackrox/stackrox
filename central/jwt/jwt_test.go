@@ -14,10 +14,6 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-const (
-	testRoxIssuerID = "test-issuer"
-)
-
 var (
 	errTest = errors.New("test error")
 )
@@ -50,12 +46,12 @@ func TestM2MValidator(t *testing.T) {
 		expectedErr         error
 	}{
 		"rox issuer": {
-			token: tokenWithIssuer(testRoxIssuerID),
+			token: tokenWithIssuer(issuerID),
 			mockRoxValidator: func(ctx context.Context, token string) (*tokens.TokenInfo, error) {
-				assert.Equal(t, tokenWithIssuer(testRoxIssuerID), token)
+				assert.Equal(t, tokenWithIssuer(issuerID), token)
 				return &tokens.TokenInfo{Token: token}, nil
 			},
-			expectedTokenToPass: tokenWithIssuer(testRoxIssuerID),
+			expectedTokenToPass: tokenWithIssuer(issuerID),
 		},
 		"non-rox issuer with exchanger": {
 			token: tokenWithIssuer("other-issuer"),
@@ -108,7 +104,6 @@ func TestM2MValidator(t *testing.T) {
 			validator := &m2mValidator{
 				TokenExchangerSet: exchangerSet,
 				roxValidator:      c.mockRoxValidator,
-				issuerID:          testRoxIssuerID,
 			}
 
 			token, err := validator.Validate(ctx, c.token)
