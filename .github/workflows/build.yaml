@@ -121,7 +121,6 @@ jobs:
           git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*'
           export SKIP_CLI_BUILD=true  # or cli-build's in cli even if already built
           export SKIP_UI_BUILD=true  # or ui-build's in all-builds even if already built
-          export NODE_OPTIONS="--max_old_space_size=8192"
           parallel="${{ matrix.parallel }}"  # sequential until verified working. TODO: test parallel=>1
           # cli-build  # reduced to linux amd64 for CI test-use
           # make cli_host-arch could work, but we specifically want linux-amd64 for CI test clusters
