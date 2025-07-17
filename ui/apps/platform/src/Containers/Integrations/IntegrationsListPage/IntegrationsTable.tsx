@@ -18,7 +18,7 @@ import useFeatureFlags from 'hooks/useFeatureFlags';
 import useTableSelection from 'hooks/useTableSelection';
 import { allEnabled } from 'utils/featureFlagUtils';
 import TableCellValue from 'Components/TableCellValue/TableCellValue';
-import { isUserResource } from 'Containers/AccessControl/traits';
+import { isUserResource } from 'Containers/traits';
 import useIntegrationPermissions from '../hooks/useIntegrationPermissions';
 import usePageState from '../hooks/usePageState';
 import {

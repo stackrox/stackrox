@@ -18,7 +18,7 @@ import { ArrowRightIcon, InfoCircleIcon, PlusCircleIcon, TrashIcon } from '@patt
 import { Group } from 'services/AuthService';
 import { Role } from 'services/RolesService';
 import SelectSingle from 'Components/SelectSingle';
-import { getOriginLabel, isUserResource } from '../traits';
+import { getOriginLabel, isUserResource } from '../../traits';
 
 export type RuleGroupErrors = {
     roleName?: string;
