@@ -43,6 +43,11 @@ type centralConfig struct {
 }
 
 func makeCentralConfig(instanceId string) *centralConfig {
+	// Disable telemetry when running unit tests if no key is configured.
+	if env.TelemetryStorageKey.Setting() == "" && testing.Testing() {
+		return &centralConfig{}
+	}
+
 	tenantID := env.TenantID.Setting()
 	// Consider on-prem central a tenant of itself:
 	if tenantID == "" {
@@ -147,6 +152,7 @@ func Singleton() *centralConfig {
 		cfg := makeCentralConfig(iid)
 
 		if !cfg.IsActive() || cfg.Reload() != nil {
+			config = cfg
 			return
 		}
 

@@ -10,8 +10,8 @@ import (
 
 func Test_makeCentralConfig(t *testing.T) {
 	cfg := makeCentralConfig("test-id")
-	// Telemetry should be disabled in test environment.
-	assert.True(t, cfg.IsActive())
+	// Telemetry should be disabled in test environment with no key provided.
+	assert.False(t, cfg.IsActive())
 	assert.False(t, cfg.IsEnabled())
 }
 

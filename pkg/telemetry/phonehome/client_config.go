@@ -122,7 +122,7 @@ func (cfg *Config) withRLock(f func() bool) bool {
 // IsActive tells whether telemetry configuration allows for data collection
 // now or later. An inactive configuration cannot be reconfigured.
 func (cfg *Config) IsActive() bool {
-	return cfg.withRLock(cfg.isActiveNoLock)
+	return cfg.withRLock(func() bool { return cfg.isActiveNoLock() })
 }
 
 func (cfg *Config) isActiveNoLock() bool {
@@ -131,7 +131,7 @@ func (cfg *Config) isActiveNoLock() bool {
 
 // IsEnabled tells whether the configuration allows for data collection now.
 func (cfg *Config) IsEnabled() bool {
-	return cfg.withRLock(cfg.isEnabledNoLock)
+	return cfg.withRLock(func() bool { return cfg.isEnabledNoLock() })
 }
 
 func (cfg *Config) isEnabledNoLock() bool {
