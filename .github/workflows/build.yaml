@@ -263,7 +263,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
       - uses: ./.github/actions/job-preamble
@@ -281,6 +280,9 @@ jobs:
 
       - name: Build UI
         run: make ui-build
+          git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*' \
+            || git fetch --depth=5000 origin +refs/tags/*:refs/tags/*
+          make ui-build
 
       - uses: ./.github/actions/upload-artifact-with-retry
         with:
