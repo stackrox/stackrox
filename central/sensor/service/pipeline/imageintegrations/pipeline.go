@@ -9,6 +9,7 @@ import (
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/enrichment"
 	"github.com/stackrox/rox/central/imageintegration/datastore"
+	iitlscheckcache "github.com/stackrox/rox/central/imageintegration/tlscheckcache"
 	countMetrics "github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/central/sensor/service/common"
@@ -43,6 +44,7 @@ func GetPipeline() pipeline.Fragment {
 		datastore.Singleton(),
 		clusterDatastore.Singleton(),
 		reprocessor.Singleton(),
+		iitlscheckcache.Singleton(),
 	)
 }
 
@@ -50,16 +52,14 @@ func GetPipeline() pipeline.Fragment {
 func NewPipeline(integrationManager enrichment.Manager,
 	datastore datastore.DataStore,
 	clusterDatastore clusterDatastore.DataStore,
-	enrichAndDetectLoop reprocessor.Loop) pipeline.Fragment {
+	enrichAndDetectLoop reprocessor.Loop,
+	tlsCheckcache tlscheckcache.Cache) pipeline.Fragment {
 	return &pipelineImpl{
 		integrationManager:  integrationManager,
 		datastore:           datastore,
 		clusterDatastore:    clusterDatastore,
 		enrichAndDetectLoop: enrichAndDetectLoop,
-		tlsCheckCache: tlscheckcache.New(
-			tlscheckcache.WithMetricSubsystem(metrics.CentralSubsystem),
-			tlscheckcache.WithTTL(env.RegistryTLSCheckTTL.DurationSetting()),
-		),
+		tlsCheckCache:       tlsCheckcache,
 	}
 }
 
@@ -69,7 +69,7 @@ type pipelineImpl struct {
 	datastore           datastore.DataStore
 	clusterDatastore    clusterDatastore.DataStore
 	enrichAndDetectLoop reprocessor.Loop
-	tlsCheckCache       *tlscheckcache.Cache
+	tlsCheckCache       tlscheckcache.Cache
 }
 
 func (s *pipelineImpl) Capabilities() []centralsensor.CentralCapability {
