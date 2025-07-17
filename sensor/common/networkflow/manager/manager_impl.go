@@ -562,6 +562,16 @@ func (m *networkFlowManager) currentEnrichedConnsAndEndpoints() (
 	return enrichedConnections, enrichedEndpoints, enrichedProcesses
 }
 
+// isUpdated determines if a connection/endpoint should be sent to Central based on timestamp comparison.
+//
+// Timestamp Convention:
+// - timestamp.InfiniteFuture = connection/endpoint is OPEN (still active)
+// - Any other timestamp value = connection/endpoint is CLOSED (lastSeen/closeTime)
+//
+// This function detects updates when:
+// 1. New connection/endpoint (not seen before)
+// 2. More recent activity (newer timestamp)
+// 3. State transition from OPEN -> CLOSED (InfiniteFuture -> actual timestamp)
 func isUpdated(prevTS, currTS timestamp.MicroTS, found bool) bool {
 	// Connection has not been seen in the last tick.
 	if !found {
