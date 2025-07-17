@@ -54,6 +54,9 @@ func (c *connStatus) isClosed() bool {
 }
 
 type connStatus struct {
+	// Order of fields is optimized for memory alignment.
+	// See https://goperf.dev/01-common-patterns/fields-alignment/ for more details.
+
 	// tsAdded is a timestamp when this item was added to Sensor's memory (in connectionsByHost)
 	tsAdded timestamp.MicroTS
 	// firstSeen is a timestamp of opening a given connection/endpoint
@@ -61,16 +64,17 @@ type connStatus struct {
 	// lastSeen is a timestamp of closing a given connection/endpoint.
 	// It is set to infinity for items that are still open.
 	lastSeen timestamp.MicroTS
+
+	enrichmentResult enrichmentResult
+
+	// isExternal
+	isExternal bool
 	// rotten means that the item does not map to any known containerID and the grace-period has passed
 	rotten bool
 	// historicalContainerID means that the item maps to a containerID that has recently been deleted
 	historicalContainerID bool
 	// containerIDFound is set when the item can be mapped to a known containerID (historical or not)
 	containerIDFound bool
-	// isExternal
-	isExternal string
-
-	enrichmentResult enrichmentResult
 }
 
 func (c *connStatus) timeElapsedSinceFirstSeen(now timestamp.MicroTS) time.Duration {
@@ -81,9 +85,6 @@ func (c *connStatus) isFresh(now timestamp.MicroTS) bool {
 }
 func (c *connStatus) pastContainerResolutionDeadline(now timestamp.MicroTS) bool {
 	return c.timeElapsedSinceFirstSeen(now) > env.ContainerIDResolutionGracePeriod.DurationSetting()
-}
-func (c *connStatus) setIsExternal(isExternal bool) {
-	c.isExternal = strconv.FormatBool(isExternal)
 }
 
 func logReasonForAggregatingNetGraphFlow(conn *connection, contNs, contName, entitiesName string, port uint16) {
