@@ -2,6 +2,8 @@ package centralclient
 
 import (
 	"context"
+	"os"
+	"testing"
 
 	"github.com/pkg/errors"
 	installationDS "github.com/stackrox/rox/central/installation/store"
@@ -17,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/pkg/version"
 	k8sVersion "k8s.io/apimachinery/pkg/version"
 	"k8s.io/client-go/kubernetes"
@@ -90,8 +93,13 @@ func getCentralDeploymentProperties() map[string]any {
 		}
 	}
 
+	var imageFlavor string
+	if _, ok := os.LookupEnv(defaults.ImageFlavorEnvName); ok {
+		imageFlavor = defaults.GetImageFlavorNameFromEnv()
+	}
+
 	return map[string]any{
-		"Image Flavor":       defaults.GetImageFlavorNameFromEnv(),
+		"Image Flavor":       imageFlavor,
 		"Central version":    version.GetMainVersion(),
 		"Chart version":      version.GetChartVersion(),
 		"Orchestrator":       orchestrator,
@@ -101,6 +109,11 @@ func getCentralDeploymentProperties() map[string]any {
 }
 
 func getInstanceId() (string, error) {
+	if testing.Testing() {
+		// There might be no installation info when running unit tests without
+		// a database.
+		return uuid.Nil.String(), nil
+	}
 	ii, _, err := installationDS.Singleton().Get(
 		sac.WithGlobalAccessScopeChecker(context.Background(),
 			sac.AllowFixedScopes(
