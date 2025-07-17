@@ -14,6 +14,7 @@ import (
 	rolePostgresStore "github.com/stackrox/rox/central/role/store/role/postgres"
 	accessScopePostgresStore "github.com/stackrox/rox/central/role/store/simpleaccessscope/postgres"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -44,7 +45,9 @@ func TestAuthDatastorePostgres(t *testing.T) {
 type datastorePostgresTestSuite struct {
 	suite.Suite
 
-	ctx           context.Context
+	ctx            context.Context
+	declarativeCtx context.Context
+
 	pool          *pgtest.TestPostgres
 	authDataStore DataStore
 	roleDataStore roleDataStore.DataStore
@@ -58,6 +61,8 @@ func (s *datastorePostgresTestSuite) SetupTest() {
 			sac.ResourceScopeKeys(resources.Access),
 		),
 	)
+
+	s.declarativeCtx = declarativeconfig.WithModifyDeclarativeResource(s.ctx)
 
 	s.pool = pgtest.ForT(s.T())
 	s.Require().NotNil(s.pool)
@@ -337,5 +342,100 @@ func (s *datastorePostgresTestSuite) addRoles(roleStore rolePostgresStore.Store)
 			PermissionSetId: permSetID,
 			AccessScopeId:   accessScopeID,
 		}))
+	}
+}
+
+func (s *datastorePostgresTestSuite) addDeclarativeRoles() {
+	accessScopeID := uuid.NewTestUUID(1).String()
+	declarativeAccessScope := &storage.SimpleAccessScope{
+		Id:   accessScopeID,
+		Name: "Declarative test access scope",
+		Rules: &storage.SimpleAccessScope_Rules{
+			IncludedClusters: []string{"cluster A"},
+		},
+		Traits: &storage.Traits{Origin: storage.Traits_DECLARATIVE},
+	}
+	permissionSetID := uuid.NewTestUUID(2).String()
+	declarativePermissionSet := &storage.PermissionSet{
+		Id:   permissionSetID,
+		Name: "Declarative test permission set",
+		ResourceToAccess: map[string]storage.Access{
+			resources.Access.String(): storage.Access_READ_ACCESS,
+		},
+		Traits: &storage.Traits{Origin: storage.Traits_DECLARATIVE},
+	}
+
+	s.Require().NoError(s.roleDataStore.UpsertAccessScope(s.declarativeCtx, declarativeAccessScope))
+	s.Require().NoError(s.roleDataStore.UpsertPermissionSet(s.declarativeCtx, declarativePermissionSet))
+
+	for _, roleName := range testRoles.AsSlice() {
+		declarativeRole := &storage.Role{
+			Name:            fmt.Sprintf("declarative %s", roleName),
+			PermissionSetId: permissionSetID,
+			AccessScopeId:   accessScopeID,
+			Traits:          &storage.Traits{Origin: storage.Traits_DECLARATIVE},
+		}
+		s.Require().NoError(s.roleDataStore.UpsertRole(s.declarativeCtx, declarativeRole))
+	}
+}
+
+func (s *datastorePostgresTestSuite) TestDeclarativeUpserts() {
+	imperativeTraits := &storage.Traits{Origin: storage.Traits_IMPERATIVE}
+	declarativeTraits := &storage.Traits{Origin: storage.Traits_DECLARATIVE}
+
+	s.addDeclarativeRoles()
+
+	for name, tc := range map[string]struct {
+		targetRoleName  string
+		m2mConfigTraits *storage.Traits
+		expectedError   error
+	}{
+		// Calling upsert with a ModifyDeclarativeConfig context will:
+		// - fail for imperative input objects
+		// - fail for declarative input objects referencing imperative roles
+		// - succeed for declarative input objects referencing only declarative roles
+		"Upserting imperative m2m config referencing imperative role fails": {
+			targetRoleName:  testRole1,
+			m2mConfigTraits: imperativeTraits.CloneVT(),
+			expectedError:   errox.NotAuthorized,
+		},
+		"Upserting imperative m2m config referencing declarative role fails": {
+			targetRoleName:  fmt.Sprintf("declarative %s", testRole1),
+			m2mConfigTraits: imperativeTraits.CloneVT(),
+			expectedError:   errox.NotAuthorized,
+		},
+		"Upserting declarative m2m config referencing imperative role fails": {
+			targetRoleName:  testRole1,
+			m2mConfigTraits: declarativeTraits.CloneVT(),
+			expectedError:   errox.InvalidArgs,
+		},
+		"Upserting declarative m2m config referencing missing role fails": {
+			targetRoleName:  "missing role",
+			m2mConfigTraits: declarativeTraits.CloneVT(),
+			expectedError:   errox.InvalidArgs,
+		},
+		"Upserting declarative m2m config referencing declarative role succeeds": {
+			targetRoleName:  fmt.Sprintf("declarative %s", testRole1),
+			m2mConfigTraits: declarativeTraits.CloneVT(),
+		},
+	} {
+		s.Run(name, func() {
+			m2mConfig := &storage.AuthMachineToMachineConfig{
+				Id:                      uuid.NewV5FromNonUUIDs("auth-m2m-config", tc.targetRoleName).String(),
+				Type:                    storage.AuthMachineToMachineConfig_GENERIC,
+				TokenExpirationDuration: "20m",
+				Mappings: []*storage.AuthMachineToMachineConfig_Mapping{
+					{
+						Key:             "sub",
+						ValueExpression: "system:serviceaccount:stackrox:config-controller",
+						Role:            tc.targetRoleName,
+					},
+				},
+				Issuer: fmt.Sprintf("https://stackrox.io/%s/%d", tc.targetRoleName, tc.m2mConfigTraits.GetOrigin()),
+				Traits: tc.m2mConfigTraits.CloneVT(),
+			}
+			_, err := s.authDataStore.UpsertAuthM2MConfig(s.declarativeCtx, m2mConfig)
+			s.ErrorIs(err, tc.expectedError)
+		})
 	}
 }
