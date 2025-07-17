@@ -27,13 +27,13 @@ func Test_toDownload(t *testing.T) {
 
 		"e": {release: true, key: "", cfgURL: "", download: false},
 		"f": {release: true, key: "abc", cfgURL: "", download: false},
-		"g": {release: true, key: "", cfgURL: "url", download: true},
-		"h": {release: true, key: "abc", cfgURL: "url", download: false},
+		"g": {release: true, key: "", cfgURL: "url", download: false},   // because testing.
+		"h": {release: true, key: "abc", cfgURL: "url", download: true}, // because testing.
 
 		"j": {release: false, key: "", cfgURL: env.TelemetrySelfManagedURL, download: false},
 		"k": {release: false, key: "abc", cfgURL: env.TelemetrySelfManagedURL, download: true},
-		"l": {release: true, key: "", cfgURL: env.TelemetrySelfManagedURL, download: true},
-		"m": {release: true, key: "abc", cfgURL: env.TelemetrySelfManagedURL, download: false},
+		"l": {release: true, key: "", cfgURL: env.TelemetrySelfManagedURL, download: false},   // because testing.
+		"m": {release: true, key: "abc", cfgURL: env.TelemetrySelfManagedURL, download: true}, // because testing.
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
