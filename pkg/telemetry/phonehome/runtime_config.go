@@ -71,21 +71,21 @@ func downloadConfig(u string) (*RuntimeConfig, error) {
 	return cfg, cfg.APICallCampaign.Compile()
 }
 
-// toDownload decides if a configuration with the key need to be downloaded.
+// toDownload decides if a configuration with the key needs to be downloaded.
 // We want to prevent accidental use of the production key, but still allow
 // developers to test the functionality. So download will only happen for
-// development installations if both a key and an URL are provided. For release
-// versions the key should be empty.
-// See unit tests for the examples.
+// development installations if both the key and the URL are provided. For
+// release versions the key must be empty. See unit tests for the examples.
 func toDownload(isRelease bool, key, cfgURL string) bool {
 	if cfgURL == "" {
 		return false
 	}
-	if !isRelease {
-		// Development versions must provide a key on top of the URL.
-		return key != ""
+	if isRelease {
+		// Release versions must have an empty key to trigger downloading.
+		return key == ""
 	}
-	return key == ""
+	// Development versions must provide a key on top of the URL.
+	return key != ""
 }
 
 // useRemoteKey decides if the key from the downloaded configuration has to be
