@@ -155,7 +155,6 @@ jobs:
       - name: Build image
         run: |
           set -x
-          git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*'
           unset CI  # include only the host arch build of roxctl
           parallel="${{ matrix.parallel }}"
           make -j${parallel} -Oline docker-build-main-image docker-build-roxctl-image
