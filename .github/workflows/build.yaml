@@ -50,7 +50,7 @@ jobs:
         run: |
           set +e
           set -x
-          nohup git fetch --depth=5000 origin +refs/tags/*:refs/tags/* >>/tmp/git.fetching.log 2>&1 &
+          nohup git fetch --quiet --depth=5000 origin +refs/tags/*:refs/tags/* >>/tmp/git.fetching.log 2>&1 &
           echo $! | tee /tmp/git.fetching.pid
 
           function test() {
@@ -286,7 +286,9 @@ jobs:
         if: steps.restore-ui-build.outputs.cache-hit != 'true'
         run: |
           git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*' \
-            || git fetch --depth=5000 origin +refs/tags/*:refs/tags/*
+            || git fetch --quiet --depth=5000 origin +refs/tags/*:refs/tags/*
+          git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*' \
+            || echo 'ERROR: cannot find the last release version tag for this branch'
           make ui-build
 
       - uses: ./.github/actions/upload-artifact-with-retry
