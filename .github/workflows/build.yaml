@@ -268,15 +268,6 @@ jobs:
 
       - uses: ./.github/actions/cache-ui-dependencies
 
-      - name: Cache Vite build
-        uses: actions/cache@v4
-        with:
-          path: |
-            /github/home/ui/apps/platform/cache
-            /github/home/ui/apps/cache
-            /github/home/ui/cache
-          key: ${{ runner.os }}-build-ui-vite-${{ github.head_ref || github.ref_name }}
-
       - uses: ./.github/actions/handle-tagged-build
 
       - name: Fetch UI deps
@@ -293,7 +284,7 @@ jobs:
           ls -latr ui/
           ls -latr ui/apps/
           ls -latr ui/apps/platform
-          find ./ -name cache
+          find ./ -name "*cache"
 
       - uses: ./.github/actions/upload-artifact-with-retry
         with:
