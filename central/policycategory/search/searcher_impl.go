@@ -37,14 +37,6 @@ func (s *searcherImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result
 	return s.searcher.Search(ctx, q)
 }
 
-func (s *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
-	if ok, err := policyCategorySAC.ReadAllowed(ctx); err != nil || !ok {
-		return 0, err
-	}
-
-	return s.searcher.Count(ctx, q)
-}
-
 func (s searcherImpl) SearchRawCategories(ctx context.Context, q *v1.Query) ([]*storage.PolicyCategory, error) {
 	categories, _, err := s.searchCategories(ctx, q)
 	return categories, err
