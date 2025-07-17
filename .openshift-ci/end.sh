@@ -23,12 +23,9 @@ end() {
 
     generate_cluster_junit
 
-    local started_at=""
-    started_at=$(jq -r '.timestamp' /tmp/started.json)
-
     save_job_record "${JOB_NAME:-missing}" "prow" \
         outcome "${OVERALL_JOB_OUTCOME}" \
-        started_at "${started_at}" \
+        started_at "${started_at:-0}" \
         stopped_at "CURRENT_TIMESTAMP()" \
         test_target "${test_target:-null}" \
         cut_product_version "${cut_product_version:-null}" \

@@ -13,6 +13,8 @@ info "Start of CI handling"
 openshift_ci_mods
 openshift_ci_import_creds
 
+ci_export started_at "$(date -u +%s)"
+
 if [[ -z "${SHARED_DIR:-}" ]]; then
     echo "ERROR: There is no SHARED_DIR for step env sharing"
     exit 0 # not fatal but worth highlighting
