@@ -55,7 +55,7 @@ jobs:
           set -x
 
           function test() {
-            ret=0
+            local ret=0
             git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*'; ret=$(( ret + $? ))
             git diff --name-only ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}; ret=$(( ret + $? ))
             return $ret
