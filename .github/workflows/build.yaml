@@ -122,7 +122,7 @@ jobs:
             # ui-build condition is if ./ui/build exists (sot it is skipped if cache restored it)
 
       - uses: actions/cache/save@v4
-        if: ${{ steps.files-changed.outputs.ui && steps.restore-ui-build.outputs.cache-hit != 'true' }}
+        if: ${{ contains(steps.files-changed.outputs.matched, 'ui') && steps.restore-ui-build.outputs.cache-hit != 'true' }}
         with:
           key: ui-built-${{ steps.restore-ui-build.outputs.cache-primary-key }}
           path: ui/build
