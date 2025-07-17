@@ -39,24 +39,14 @@ jobs:
       - name: Count commits
         run:
           echo "PR_DEPTH=$(( ${{ github.event.pull_request.commits }} + 1 ))" >> "${GITHUB_ENV}"
-          echo "TAG_DEPTH=$(( ${{ github.event.pull_request.commits }} + 5000 ))" >> "${GITHUB_ENV}"
 
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: ${{ env.PR_DEPTH }}
+          fetch-depth: 1  # ${{ env.PR_DEPTH }}
           fetch-tags: false #true
           show-progress: false
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
-
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: ${{ env.TAG_DEPTH }}
-          fetch-tags: true
-          show-progress: false
-          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
-          path: srox
 
       - name: fetch origin
         continue-on-error: true
@@ -65,8 +55,10 @@ jobs:
           set -x
 
           function test() {
-            git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*'
-            git diff --name-only ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}
+            ret=0
+            git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*'; ret=$(( ret + $? ))
+            git diff --name-only ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}; ret=$(( ret + $? ))
+            return $ret
           }
           test
 
@@ -79,7 +71,7 @@ jobs:
           test
 
           for I in {1..6}; do
-            time git fetch --depth=1000 --quiet
+            time git fetch --depth=500 --quiet
             test && break
           done
 
