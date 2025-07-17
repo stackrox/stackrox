@@ -327,21 +327,6 @@ func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, ind
 
 	}
 
-	// if !exists {
-	//	//_, err = m.baselines.UpsertProcessBaseline(lifecycleMgrCtx, key, elements, true, true)
-	//	return false, err
-	//}
-
-	//	userBaseline := processbaseline.IsUserLocked(baseline)
-	//	roxBaseline := processbaseline.IsRoxLocked(baseline) && hasNonStartupProcess
-	//	if userBaseline || roxBaseline {
-	//		// We already checked if it's in the baseline and it is not, so reprocess risk to mark the results are suspicious if necessary
-	//		m.reprocessor.ReprocessRiskForDeployments(baselineKey.deploymentID)
-	//	} else {
-	//		// So we have a baseline, but not locked.  Now we need to add these elements to the unlocked baseline
-	//		_, err = m.baselines.UpdateProcessBaselineElements(lifecycleMgrCtx, key, elements, nil, true)
-	//	}
-
 	return true, err
 }
 

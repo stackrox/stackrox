@@ -99,11 +99,9 @@ func makeIndicator() (*storage.ProcessBaselineKey, *storage.ProcessIndicator) {
 func (suite *ManagerTestSuite) TestBaselineNotFound() {
 	suite.T().Setenv(env.BaselineGenerationDuration.EnvVar(), time.Millisecond.String())
 	key, indicator := makeIndicator()
-	// elements := fixtures.MakeBaselineItems(indicator.GetSignal().GetExecFilePath())
 	suite.baselines.EXPECT().GetProcessBaseline(gomock.Any(), key).Return(nil, false, nil)
 	suite.connectionManager.EXPECT().SendMessage(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 	suite.deploymentObservationQueue.EXPECT().InObservation(key.GetDeploymentId()).Return(false).AnyTimes()
-	// suite.baselines.EXPECT().UpsertProcessBaseline(gomock.Any(), key, elements, true, true).Return(nil, nil)
 	suite.baselines.EXPECT().UpdateProcessBaselineAndSetTimestamp(gomock.Any(), gomock.Any()).Return(nil)
 	_, err := suite.manager.checkAndUpdateBaseline(indicatorToBaselineKey(indicator), []*storage.ProcessIndicator{indicator})
 	suite.NoError(err)
@@ -118,7 +116,6 @@ func (suite *ManagerTestSuite) TestBaselineNotFound() {
 
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.baselines.EXPECT().GetProcessBaseline(gomock.Any(), key).Return(nil, false, nil)
-	// suite.baselines.EXPECT().UpdateProcessBaselineAndSetTimestamp(gomock.Any(), key, elements, true, true).Return(nil, expectedError)
 	suite.baselines.EXPECT().UpdateProcessBaselineAndSetTimestamp(gomock.Any(), gomock.Any()).Return(expectedError)
 	_, err = suite.manager.checkAndUpdateBaseline(indicatorToBaselineKey(indicator), []*storage.ProcessIndicator{indicator})
 	suite.Equal(expectedError, err)

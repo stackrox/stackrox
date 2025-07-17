@@ -2,7 +2,6 @@ package datastore
 
 import (
 	"context"
-	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/processbaseline/search"
@@ -12,7 +11,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	processBaselinePkg "github.com/stackrox/rox/pkg/processbaseline"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -23,8 +21,6 @@ import (
 
 var (
 	deploymentExtensionSAC = sac.ForResource(resources.DeploymentExtension)
-
-	genDuration = env.BaselineGenerationDuration.DurationSetting()
 )
 
 type datastoreImpl struct {
@@ -77,7 +73,7 @@ func (ds *datastoreImpl) addProcessBaselineUnlocked(ctx context.Context, id stri
 	baseline.Id = id
 	baseline.Created = protocompat.TimestampNow()
 	baseline.LastUpdate = baseline.GetCreated()
-	lockTime := ds.generateLockTimestamp()
+	lockTime := processBaselinePkg.GenerateLockTimestamp()
 	baseline.StackRoxLockedTimestamp = protocompat.ConvertTimeToTimestampOrNil(&lockTime)
 
 	if err := ds.storage.Upsert(ctx, baseline); err != nil {
@@ -405,22 +401,10 @@ func (ds *datastoreImpl) ClearProcessBaselines(ctx context.Context, ids []string
 		baseline.ElementGraveyard = nil
 
 		// We need to extend the stackrox lock timestamp to re-observe the processes.
-		lockTime := ds.generateLockTimestamp()
+		lockTime := processBaselinePkg.GenerateLockTimestamp()
 		lockTimestamp := protocompat.ConvertTimeToTimestampOrNil(&lockTime)
 		baseline.StackRoxLockedTimestamp = lockTimestamp
 		baseline.LastUpdate = protocompat.TimestampNow()
 	}
 	return ds.storage.UpsertMany(ctx, baselines)
-}
-
-// TODO remove before merging
-func (ds *datastoreImpl) generateLockTimestamp() time.Time {
-	lockTimestamp := time.Now().Add(genDuration)
-	_, err := protocompat.ConvertTimeToTimestampOrError(lockTimestamp)
-	// This should not occur unless genDuration is in a bad state.  If that happens just
-	// set it to one hour in the future.
-	if err != nil {
-		lockTimestamp = time.Now().Add(1 * time.Hour)
-	}
-	return lockTimestamp
 }

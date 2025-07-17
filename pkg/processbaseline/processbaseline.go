@@ -135,7 +135,7 @@ func BaselineFromKeysItemsAndExistingBaseline(baseline *storage.ProcessBaseline,
 	if lock {
 		baseline.StackRoxLockedTimestamp = timestamp
 	} else {
-		lockTime := generateLockTimestamp()
+		lockTime := GenerateLockTimestamp()
 		baseline.StackRoxLockedTimestamp = protocompat.ConvertTimeToTimestampOrNil(&lockTime)
 	}
 
@@ -146,7 +146,7 @@ func BaselineFromKeysItemsAndExistingBaseline(baseline *storage.ProcessBaseline,
 	return baseline, nil
 }
 
-func generateLockTimestamp() time.Time {
+func GenerateLockTimestamp() time.Time {
 	lockTimestamp := time.Now().Add(genDuration)
 	_, err := protocompat.ConvertTimeToTimestampOrError(lockTimestamp)
 	// This should not occur unless genDuration is in a bad state.  If that happens just
