@@ -119,6 +119,15 @@ func (cfg *Config) withRLock(f func() bool) bool {
 	return f()
 }
 
+func (cfg *Config) GetStorageKey() string {
+	var key string
+	_ = cfg.withRLock(func() bool {
+		key = cfg.StorageKey
+		return true
+	})
+	return key
+}
+
 // IsActive tells whether telemetry configuration allows for data collection
 // now or later. An inactive configuration cannot be reconfigured.
 func (cfg *Config) IsActive() bool {

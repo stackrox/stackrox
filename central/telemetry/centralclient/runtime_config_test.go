@@ -128,7 +128,7 @@ func Test_centralConfig_Reload(t *testing.T) {
 			"api_call_campaign": [{"method": "Test"}]}`)
 		tickChan <- time.Now()
 		assert.EventuallyWithT(t, func(collect *assert.CollectT) {
-			assert.Equal(collect, remoteKey, cfg.Config.StorageKey)
+			assert.Equal(collect, remoteKey, cfg.Config.GetStorageKey())
 		}, 1*time.Second, 10*time.Millisecond)
 
 		t.Setenv(env.TelemetryStorageKey.EnvVar(), "DISABLED")
@@ -136,7 +136,7 @@ func Test_centralConfig_Reload(t *testing.T) {
 		tickChan <- time.Now()
 		assert.EventuallyWithT(t, func(collect *assert.CollectT) {
 			assert.False(collect, cfg.IsActive())
-			assert.Equal(collect, phonehome.DisabledKey, cfg.Config.StorageKey)
+			assert.Equal(collect, phonehome.DisabledKey, cfg.Config.GetStorageKey())
 		}, 1*time.Second, 10*time.Millisecond)
 	})
 }
