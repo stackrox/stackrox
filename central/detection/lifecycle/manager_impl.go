@@ -302,6 +302,7 @@ func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, ind
 		if userBaseline || roxBaseline {
 			// We already checked if it's in the baseline and it is not, so reprocess risk to mark the results are suspicious if necessary
 			m.reprocessor.ReprocessRiskForDeployments(baselineKey.deploymentID)
+			return true, nil
 		}
 	}
 
@@ -322,12 +323,12 @@ func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, ind
 
 	if features.AutolockAllProcessBaselines.Enabled() {
 		msg := &central.MsgToSensor{
-				Msg: &central.MsgToSensor_BaselineSync{
-					BaselineSync: &central.BaselineSync{
-						Baselines: []*storage.ProcessBaseline{baseline},
-					},
+			Msg: &central.MsgToSensor_BaselineSync{
+				BaselineSync: &central.BaselineSync{
+					Baselines: []*storage.ProcessBaseline{baseline},
 				},
-			}
+			},
+		}
 
 		err = m.connectionManager.SendMessage(baseline.GetKey().GetClusterId(), msg)
 
