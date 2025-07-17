@@ -60,6 +60,7 @@ jobs:
             return $ret
           }
           test
+          make tag
           cat /tmp/git.fetching.log
 
       - uses: ./.github/actions/files-changed
@@ -99,11 +100,6 @@ jobs:
       - name: go mod tidy
         run: |
           set -x
-          set +e
-          git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*'
-          echo "${{ toJSON(steps.files-changed.outputs) }}"
-          echo "${{ toJSON(steps.files-changed.outputs.matches) }}"
-          echo "${{ contains(steps.files-changed.outputs.matches, 'ui') }}"
           export CI=true  # or builds roxctl separately in main-build-nodeps even if built
           parallel="${{ matrix.parallel }}"
           make -j${parallel} -Oline deps clean-image  # go mod tidy all go.sum files
@@ -112,13 +108,10 @@ jobs:
             # make -j${parallel} -Oline build-prep  # depends on deps and creates empty build binary output path
               # mkdir -p bin/linux_amd64
             # clean-image: clear image context dir contents
-          tail /tmp/git.fetching.log
 
       - name: compile
         run: |
           set -x
-          set +e
-          git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*'
           export SKIP_CLI_BUILD=true  # or cli-build's in cli even if already built
           export SKIP_UI_BUILD=true  # or ui-build's in all-builds even if already built
           parallel="${{ matrix.parallel }}"  # sequential until verified working. TODO: test parallel=>1
@@ -173,7 +166,8 @@ jobs:
           set +e
           docker images
           tail /tmp/git.fetching.log
-          ps -ef
+          ls -la /tmp/git.fetching.log
+          ps -ef | grep git
           ps -f -p$(pgrep -F /tmp/git.fetching.pid)
 
   define-job-matrix:
