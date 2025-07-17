@@ -11,8 +11,8 @@ import {
     HelperTextItem,
     TextInput,
     Tooltip,
+    SelectOption,
 } from '@patternfly/react-core';
-import { SelectOption } from '@patternfly/react-core/deprecated';
 import { ArrowRightIcon, InfoCircleIcon, PlusCircleIcon, TrashIcon } from '@patternfly/react-icons';
 
 import { Group } from 'services/AuthService';

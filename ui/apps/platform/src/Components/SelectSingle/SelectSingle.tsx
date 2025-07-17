@@ -1,5 +1,5 @@
 import React, { ReactElement, useState } from 'react';
-import { Select, SelectProps } from '@patternfly/react-core/deprecated';
+import { Select, SelectList, MenuToggle, MenuToggleElement } from '@patternfly/react-core';
 
 export type SelectSingleProps = {
     toggleIcon?: ReactElement;
@@ -13,10 +13,10 @@ export type SelectSingleProps = {
     isCreatable?: boolean;
     variant?: 'typeahead' | null;
     placeholderText?: string;
-    onBlur?: React.FocusEventHandler<HTMLTextAreaElement>;
+    onBlur?: React.FocusEventHandler<HTMLButtonElement | HTMLDivElement | HTMLTextAreaElement>;
     menuAppendTo?: (() => HTMLElement) | 'inline' | 'parent';
     footer?: React.ReactNode;
-    maxHeight?: SelectProps['maxHeight'];
+    maxHeight?: string;
 };
 
 function SelectSingle({
@@ -28,43 +28,94 @@ function SelectSingle({
     isDisabled = false,
     children,
     direction = 'down',
-    isCreatable = false,
-    variant = null,
+    isCreatable: _isCreatable = false, // eslint-disable-line @typescript-eslint/no-unused-vars
+    variant: _variant = null, // eslint-disable-line @typescript-eslint/no-unused-vars
     placeholderText = '',
     onBlur,
     menuAppendTo,
     footer,
-    maxHeight = '300px',
+    maxHeight: _maxHeight = '300px', // eslint-disable-line @typescript-eslint/no-unused-vars
 }: SelectSingleProps): ReactElement {
     const [isOpen, setIsOpen] = useState(false);
 
-    function onSelect(_event, selection) {
-        // The mouse event is not useful.
-        setIsOpen(false);
-        handleSelect(id, selection);
+    function onSelect(
+        _event: React.MouseEvent<Element, MouseEvent> | undefined,
+        selection: string | number | undefined
+    ) {
+        if (selection !== undefined) {
+            setIsOpen(false);
+            handleSelect(id, String(selection));
+        }
     }
+
+    function onToggleClick() {
+        setIsOpen(!isOpen);
+    }
+
+    function onOpenChange(nextOpen: boolean) {
+        setIsOpen(nextOpen);
+    }
+
+    // Find the display text for the selected value
+    const getSelectedDisplayText = (): string => {
+        if (!value) {
+            return placeholderText;
+        }
+
+        // Find the matching SelectOption child and extract its text content
+        const selectedOption = React.Children.toArray(children).find((child) => {
+            return (
+                React.isValidElement(child) &&
+                child.props &&
+                typeof child.props === 'object' &&
+                'value' in child.props &&
+                child.props.value === value
+            );
+        });
+
+        if (selectedOption && React.isValidElement(selectedOption) && selectedOption.props) {
+            // Return the text content of the SelectOption
+            const childProps = selectedOption.props as { children?: React.ReactNode };
+            return (typeof childProps.children === 'string' ? childProps.children : value) || value;
+        }
+
+        return value || placeholderText;
+    };
+
+    const toggle = (toggleRef: React.Ref<MenuToggleElement>) => (
+        <MenuToggle
+            ref={toggleRef}
+            onClick={onToggleClick}
+            isExpanded={isOpen}
+            isDisabled={isDisabled}
+            icon={toggleIcon}
+            aria-label={toggleAriaLabel}
+            id={id}
+            onBlur={onBlur}
+        >
+            {getSelectedDisplayText()}
+        </MenuToggle>
+    );
 
     return (
         <Select
-            variant={variant === 'typeahead' ? 'typeahead' : 'single'}
-            toggleIcon={toggleIcon}
-            toggleAriaLabel={toggleAriaLabel}
-            id={id}
-            isDisabled={isDisabled}
+            id={`${id}-select`}
             isOpen={isOpen}
+            selected={value}
             onSelect={onSelect}
-            onToggle={(_event, val) => setIsOpen(val)}
-            selections={value}
-            direction={direction}
-            isCreatable={isCreatable}
-            placeholderText={placeholderText}
-            toggleId={id}
-            onBlur={onBlur}
-            menuAppendTo={menuAppendTo}
-            footer={footer}
-            maxHeight={maxHeight}
+            onOpenChange={onOpenChange}
+            toggle={toggle}
+            isScrollable
+            shouldFocusToggleOnSelect
+            popperProps={{
+                direction: direction === 'up' ? 'up' : 'down',
+                appendTo: menuAppendTo === 'parent' ? undefined : menuAppendTo,
+            }}
         >
-            {children}
+            <SelectList>
+                {children}
+                {footer}
+            </SelectList>
         </Select>
     );
 }

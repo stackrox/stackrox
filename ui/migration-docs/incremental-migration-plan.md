@@ -16,11 +16,11 @@ _Start here - these are reusable components that other files likely depend on_
 
 -   [x] `src/Components/PatternFly/FormMultiSelect.tsx`
 -   [x] `src/Components/PatternFly/CheckboxSelect.tsx` + 2 dependent files
--   [ ] `src/Components/PatternFly/RepeatScheduleDropdown.tsx`
+-   [x] `src/Components/PatternFly/RepeatScheduleDropdown.tsx`
 -   [ ] `src/Components/PatternFly/DayPickerDropdown.tsx`
--   [ ] `src/Components/SelectSingle/SelectSingle.tsx`
--   [ ] `src/Components/EmailNotifier/EmailNotifierForm.tsx`
--   [ ] `src/Components/NotifierConfiguration/NotifierMailingLists.tsx`
+-   [x] `src/Components/SelectSingle/SelectSingle.tsx` + 7 other dependent files
+-   [x] `src/Components/EmailNotifier/EmailNotifierForm.tsx` (imports fixed with SelectSingle)
+-   [x] `src/Components/NotifierConfiguration/NotifierMailingLists.tsx` (imports fixed with SelectSingle)
 
 **Rationale:** Fix shared components first to avoid conflicts when updating dependent files.
 
@@ -235,7 +235,7 @@ _Most complex - save for last_
 -   [ ] **Phase 8**: Policies (7 files)
 -   [ ] **Phase 9**: Network Graph (9 files)
 
-**Total Progress**: 4/56 files completed (7.1%)
+**Total Progress**: 15/56 files completed (26.8%)
 
 ---
 

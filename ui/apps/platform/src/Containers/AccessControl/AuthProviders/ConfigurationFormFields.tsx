@@ -11,8 +11,8 @@ import {
     TextArea,
     TextInput,
     ValidatedOptions,
+    SelectOption,
 } from '@patternfly/react-core';
-import { SelectOption } from '@patternfly/react-core/deprecated';
 
 import { oidcCallbackModes } from 'constants/accessControl';
 import { AuthProviderConfig, AuthProviderType } from 'services/AuthService';
