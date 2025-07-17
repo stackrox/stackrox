@@ -1,10 +1,9 @@
 package tlscheckcache
 
 import (
-	"sync"
-
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/tlscheckcache"
 )
 
