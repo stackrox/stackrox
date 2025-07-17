@@ -1,8 +1,8 @@
 name: Match files changed
-description: Compare files changed with path filters. Output matches.
+description: Compare files changed with path filters. Output named matches.
 inputs:
   filters:
-    description: 'associative array like glob matches like ( ["ui"]="ui/**" ["gha"]=".github/**" )'
+    description: 'string of associative array glob matches like ( ["ui"]="ui/**" ["gha"]=".github/**" )'
     required: true
   base:
     description: 'base sha to compare with'
@@ -13,7 +13,9 @@ inputs:
     required: false
     default: ${{ github.event.pull_request.head.sha }}
 outputs:
-  matches: "${{ steps.compare.outputs }}"
+  matches:
+    description: "string of matched filter names"
+    value: ${{ steps.compare.outputs.matches }}
 runs:
   using: composite
   steps:
@@ -21,4 +23,5 @@ runs:
       id: compare
       shell: bash
       run: |
-        ${{ github.action_path }}/find-changes.sh '${{ inputs.filters }}' '${{ inputs.base }}' '${{ inputs.sha}}'
+        ${{ github.action_path }}/find-changes.sh '${{ inputs.filters }}' '${{ inputs.base }}' '${{ inputs.sha}}' \
+          | tee -a ${GITHUB_OUTPUT}

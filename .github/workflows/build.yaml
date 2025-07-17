@@ -122,17 +122,16 @@ jobs:
         run: |
           set +e
           echo ui-built-${{ hashFiles('ui/**') }}
-          echo ui-built-${{ steps.files-changed.outputs.matches.ui && hashFiles('ui/**') }}
-          echo ${{ steps.files-changed.outputs.matches.ui }}
-          echo ${{ steps.files-changed.outputs.matches.ui && 'true' }}
-          echo "${{ toJSON(steps.files-changed.outputs) }}"
+          echo ui-built-${{ contains(steps.files-changed.outputs.matches, "ui") && hashFiles('ui/**') }}
+          echo ${{ contains(steps.files-changed.outputs.matches, "ui") }}
+          echo ${{ steps.files-changed.outputs.matches && 'true' }}
+          echo "${{ toJSON(steps.files-changed) }}"
           set -x
           ls -la /github/home/.npm
           ls -la /github/home/.cache/Cypress
           ls -la /usr/local/share/.cache
 
       - uses: actions/cache/restore@v4
-        if: ${{ steps.files-changed.outputs.ui }}'
         id: restore-ui-build
         with:
           key: ui-built-${{ hashFiles('ui/**') }}
@@ -161,6 +160,7 @@ jobs:
           path: ui/build
 
       - name: Generate OSS notice
+        if: false
         env:
           GITHUB_OAUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
