@@ -23,5 +23,6 @@ runs:
       id: compare
       shell: bash
       run: |
+        set -x
         ${{ github.action_path }}/find-changes.sh '${{ inputs.filters }}' '${{ inputs.base }}' '${{ inputs.sha}}' \
           | tee -a ${GITHUB_OUTPUT}

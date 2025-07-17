@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+set -x
 declare -A filters="$1"
 base=${2:-$(git rev-parse origin/master)}
 sha=${3:-$(git rev-parse HEAD)}
