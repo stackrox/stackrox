@@ -33,7 +33,7 @@ import AccessControlHeaderActionBar from '../AccessControlHeaderActionBar';
 import AccessControlBreadcrumbs from '../AccessControlBreadcrumbs';
 import AccessControlHeading from '../AccessControlHeading';
 import usePermissions from '../../../hooks/usePermissions';
-import { isUserResource } from '../traits';
+import { isUserResource } from '../../traits';
 
 const entityType = 'PERMISSION_SET';
 

@@ -17,7 +17,7 @@ import LinkShim from 'Components/PatternFly/LinkShim';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import { Traits } from 'types/traits.proto';
 import { TraitsOriginLabel } from 'Containers/AccessControl/TraitsOriginLabel';
-import { isUserResource } from 'Containers/AccessControl/traits';
+import { isUserResource } from 'Containers/traits';
 import TechPreviewLabel from 'Components/PatternFly/TechPreviewLabel';
 import { getIntegrationLabel } from './utils/integrationsList';
 import { getEditDisabledMessage, getIsMachineAccessConfig } from './utils/integrationUtils';
