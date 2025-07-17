@@ -101,7 +101,7 @@ func create() (tokens.IssuerFactory, tokens.Validator, error) {
 		return nil, nil, errors.Wrap(err, "creating factory and validator")
 	}
 	validator = &m2mValidator{
-		m2m.TokenExchangerSetSingleton(roleDataStore.Singleton(), IssuerFactorySingleton()),
+		m2m.TokenExchangerSetSingleton(roleDataStore.Singleton(), factory),
 		validator,
 		issuerID,
 	}
