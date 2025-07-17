@@ -140,7 +140,7 @@ func (m *networkFlowManager) enrichConnection(now timestamp.MicroTS, conn *conne
 		if extSrc == nil {
 			entityType := networkgraph.InternetEntity()
 			isExternal, err := conn.IsExternal()
-			status.setIsExternal(isExternal)
+			status.isExternal = isExternal
 			if err != nil {
 				// IP is malformed or unknown - do not show on the graph and log the info
 				// TODO(ROX-22388): Change log level back to warning when potential Collector issue is fixed
@@ -317,6 +317,6 @@ func updateConnectionMetric(now timestamp.MicroTS, action PostEnrichmentAction, 
 		"rotten":           strconv.FormatBool(status.rotten),
 		"mature":           strconv.FormatBool(status.pastContainerResolutionDeadline(now)),
 		"fresh":            strconv.FormatBool(status.isFresh(now)),
-		"isExternal":       status.isExternal},
-	).Inc()
+		"isExternal":       strconv.FormatBool(status.isExternal),
+	}).Inc()
 }
