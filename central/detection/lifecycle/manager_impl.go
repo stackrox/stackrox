@@ -305,7 +305,10 @@ func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, ind
 		}
 	}
 
-	baseline, err = processBaselinePkg.BaselineFromKeysItemsAndExistingBaseline(baseline, key, elements, true, true, true)
+	auto := true
+	rox_lock := true
+	user_lock := features.AutolockAllProcessBaselines.Enabled()
+	baseline, err = processBaselinePkg.BaselineFromKeysItemsAndExistingBaseline(baseline, key, elements, auto, rox_lock, user_lock)
 
 	if err != nil {
 		return false, err
