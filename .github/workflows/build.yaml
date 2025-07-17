@@ -92,6 +92,7 @@ jobs:
         run: |
           set -x
           set +e
+          git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*'
           echo "${{ steps.files-changed.outputs }}"
           echo "${{ steps.files-changed.outputs.matched }}"
           echo "${{ contains(steps.files-changed.outputs.matched, 'ui') }}"
@@ -114,6 +115,8 @@ jobs:
       - name: compile
         run: |
           set -x
+          set +e
+          git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*'
           export SKIP_CLI_BUILD=true  # or cli-build's in cli even if already built
           export SKIP_UI_BUILD=true  # or ui-build's in all-builds even if already built
           export NODE_OPTIONS="--max_old_space_size=8192"
@@ -158,6 +161,7 @@ jobs:
       - name: Build image
         run: |
           set -x
+          git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*'
           unset CI  # include only the host arch build of roxctl
           parallel="${{ matrix.parallel }}"
           make -j${parallel} -Oline docker-build-main-image docker-build-roxctl-image
