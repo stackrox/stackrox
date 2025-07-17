@@ -69,15 +69,29 @@ type Config struct {
 // URL. defaultKey is returned within the RuntimeConfig if no better value is
 // found. It will not update an inactive config.
 func (cfg *Config) Reconfigure(cfgURL, defaultKey string) (*RuntimeConfig, error) {
-	if !cfg.IsActive() {
-		return nil, nil
-	}
-	rc, err := getRuntimeConfig(cfgURL, defaultKey)
-	if err != nil {
+	var err error
+	var rc *RuntimeConfig
+	var previouslyMissingKey bool
+
+	if !cfg.withLock(func() bool {
+		if !cfg.isActiveNoLock() {
+			return false
+		}
+		rc, err = getRuntimeConfig(cfgURL, defaultKey)
+		if err != nil {
+			return false
+		}
+
+		// This condition allows for the controlled start in main: the
+		// configuration is not enabled on the instantiation, so only an
+		// explicit call to cfg.Enable() will enable tracking and start
+		// gatherers.
+		previouslyMissingKey = cfg.StorageKey == "" && cfg.enabled
+		cfg.StorageKey = rc.Key
+		return true
+	}) {
 		return nil, err
 	}
-
-	previouslyMissingKey := cfg.setStorageKey(rc)
 
 	if rc.Key == "" || rc.Key == DisabledKey {
 		cfg.Disable()
@@ -87,48 +101,54 @@ func (cfg *Config) Reconfigure(cfgURL, defaultKey string) (*RuntimeConfig, error
 	return rc, nil
 }
 
-// setStorageKey sets the key from the provided configuration, and returns
-// whether the configuration had been enabled with empty key before this change.
-func (cfg *Config) setStorageKey(rc *RuntimeConfig) bool {
+func (cfg *Config) withLock(f func() bool) bool {
+	if cfg == nil {
+		return false
+	}
 	cfg.stateMux.Lock()
 	defer cfg.stateMux.Unlock()
-	// This condition allows for the controlled start in main: the configuration
-	// is not enabled on the instantiation, so only an explicit call to
-	// cfg.Enable() will enable tracking and start gatherers.
-	previouslyMissingKey := cfg.StorageKey == "" && cfg.enabled
-	cfg.StorageKey = rc.Key
-	return previouslyMissingKey
+	return f()
+}
+
+func (cfg *Config) withRLock(f func() bool) bool {
+	if cfg == nil {
+		return false
+	}
+	cfg.stateMux.RLock()
+	defer cfg.stateMux.RUnlock()
+	return f()
 }
 
 // IsActive tells whether telemetry configuration allows for data collection
 // now or later. An inactive configuration cannot be reconfigured.
 func (cfg *Config) IsActive() bool {
-	if cfg == nil {
-		return false
-	}
-	cfg.stateMux.RLock()
-	defer cfg.stateMux.RUnlock()
+	return cfg.withRLock(cfg.isActiveNoLock)
+}
+
+func (cfg *Config) isActiveNoLock() bool {
 	return cfg.StorageKey != DisabledKey
 }
 
 // IsEnabled tells whether the configuration allows for data collection now.
 func (cfg *Config) IsEnabled() bool {
-	if cfg == nil {
-		return false
-	}
-	cfg.stateMux.RLock()
-	defer cfg.stateMux.RUnlock()
+	return cfg.withRLock(cfg.isEnabledNoLock)
+}
+
+func (cfg *Config) isEnabledNoLock() bool {
 	return cfg.StorageKey != "" && cfg.StorageKey != DisabledKey && cfg.enabled
 }
 
 // Enable data reporting if the client is configured.
 func (cfg *Config) Enable() {
-	if !cfg.IsActive() || cfg.IsEnabled() {
+	if !cfg.withLock(func() bool {
+		if !cfg.isActiveNoLock() || cfg.isEnabledNoLock() {
+			return false
+		}
+		cfg.enabled = true
+		return true
+	}) {
 		return
 	}
-	cfg.stateMux.Lock()
-	cfg.enabled = true
-	cfg.stateMux.Unlock()
 	cfg.Gatherer().Start(
 		telemeter.WithGroups(cfg.GroupType, cfg.GroupID),
 		// Don't capture the time, but call WithNoDuplicates on every gathering
@@ -142,12 +162,15 @@ func (cfg *Config) Enable() {
 
 // Disable data reporting of the configured client.
 func (cfg *Config) Disable() {
-	if !cfg.IsEnabled() {
+	if !cfg.withLock(func() bool {
+		if !cfg.isEnabledNoLock() {
+			return false
+		}
+		cfg.enabled = false
+		return true
+	}) {
 		return
 	}
-	cfg.stateMux.Lock()
-	cfg.enabled = false
-	cfg.stateMux.Unlock()
 	cfg.Gatherer().Stop()
 }
 

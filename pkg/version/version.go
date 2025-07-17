@@ -152,6 +152,9 @@ func GetChartVersion() string {
 
 // deriveChartVersion derives a Chart Version string from the provided Main Version string.
 func deriveChartVersion(mainVersion string) (string, error) {
+	if mainVersion == "" {
+		return "", nil
+	}
 	parsedMainVersion, err := parseMainVersion(mainVersion)
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to parse main version %q", mainVersion)
