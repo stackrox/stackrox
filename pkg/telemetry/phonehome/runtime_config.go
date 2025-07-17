@@ -3,6 +3,7 @@ package phonehome
 import (
 	"encoding/json"
 	"net/http"
+	"testing"
 	"time"
 
 	"github.com/pkg/errors"
@@ -75,16 +76,18 @@ func downloadConfig(u string) (*RuntimeConfig, error) {
 // We want to prevent accidental use of the production key, but still allow
 // developers to test the functionality. So download will only happen for
 // development installations if both the key and the URL are provided. For
-// release versions the key must be empty. See unit tests for the examples.
+// release versions (but not running tests) the key must be empty.
+// See unit tests for the examples.
 func toDownload(isRelease bool, key, cfgURL string) bool {
 	if cfgURL == "" {
 		return false
 	}
-	if isRelease {
+	if isRelease && !testing.Testing() {
 		// Release versions must have an empty key to trigger downloading.
 		return key == ""
 	}
-	// Development versions must provide a key on top of the URL.
+	// Development versions or release under testing must provide a key on top
+	// of the URL.
 	return key != ""
 }
 
