@@ -279,11 +279,8 @@ jobs:
 
       - uses: ./.github/actions/handle-tagged-build
 
-      - name: Fetch UI deps
-        run: make -C ui deps
-
       - name: Build UI
-        run: make -C ui build
+        run: make ui-build
 
       - uses: ./.github/actions/upload-artifact-with-retry
         with:
