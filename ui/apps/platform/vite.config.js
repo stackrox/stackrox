@@ -69,23 +69,26 @@ function getSrcAliases() {
 export default defineConfig(async () => {
     const sslOptions = getSslOptions();
     return {
-        cacheDir: '/tmp/cache',
-        cache: true,
         build: {
-            cache: true,
-            minify: false,
             assetsDir: './static',
-            sourceMap: false,
             outDir: 'build',
-            experimental: {
-              enableNativePlugin: true,
-            },
             rollupOptions: {
-                logLevel: 'debug',
-                cache: true,
-                perf: true,
-                maxParallelFileOps: 3000,
                 output: {
+                    // Break the following dependencies into their own chunks to limit memory usage during build and decouple large
+                    // dependencies from their first entry point in our app's pages.
+                    manualChunks: {
+                        d3: ['d3'],
+                        lodash: ['lodash'],
+                        redoc: [
+                            'redoc',
+                            '@redocly/ajv',
+                            '@redocly/config',
+                            '@redocly/openapi-core',
+                        ],
+                        react: ['react', 'react-dom'],
+                        apollo: ['@apollo/client'],
+                        patternfly: ['@patternfly/react-core', '@patternfly/react-styles'],
+                    },
                 },
             },
         },
