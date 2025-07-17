@@ -133,7 +133,7 @@ func New(db postgres.DB) Store {
             nil,
             {{- end }}
             {{- if .DefaultTransform }}
-            {{.TransformSortOptions}},
+            pkgSchema.{{.TransformSortOptions}},
             {{- else }}
             nil,
             {{- end }}
