@@ -122,8 +122,6 @@ jobs:
         id: restore-ui-build
         with:
           key: ui-built-${{ hashFiles('ui/**') }}
-          restore-keys: |
-            ui-built-
           path: ui/build
 
       - name: compile
