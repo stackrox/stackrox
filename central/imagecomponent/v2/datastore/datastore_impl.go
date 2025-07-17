@@ -3,7 +3,6 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/imagecomponent/v2/datastore/search"
 	pgStore "github.com/stackrox/rox/central/imagecomponent/v2/datastore/store/postgres"
 	"github.com/stackrox/rox/central/ranking"
 	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
@@ -20,15 +19,14 @@ var (
 )
 
 type datastoreImpl struct {
-	storage  pgStore.Store
-	searcher search.Searcher
+	storage pgStore.Store
 
 	risks                riskDataStore.DataStore
 	imageComponentRanker *ranking.Ranker
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error) {
-	return ds.searcher.Search(ctx, q)
+	return ds.storage.Search(ctx, q)
 }
 
 // Count returns the number of search results from the query
@@ -37,14 +35,29 @@ func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 }
 
 func (ds *datastoreImpl) SearchImageComponents(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
-	return ds.searcher.SearchImageComponents(ctx, q)
-}
-
-func (ds *datastoreImpl) SearchRawImageComponents(ctx context.Context, q *v1.Query) ([]*storage.ImageComponentV2, error) {
-	components, err := ds.searcher.SearchRawImageComponents(ctx, q)
+	results, err := ds.Search(ctx, q)
 	if err != nil {
 		return nil, err
 	}
+
+	components, missingIndices, err := ds.storage.GetMany(ctx, pkgSearch.ResultsToIDs(results))
+	if err != nil {
+		return nil, err
+	}
+	results = pkgSearch.RemoveMissingResults(results, missingIndices)
+	return convertMany(components, results), nil
+}
+
+func (ds *datastoreImpl) SearchRawImageComponents(ctx context.Context, q *v1.Query) ([]*storage.ImageComponentV2, error) {
+	var components []*storage.ImageComponentV2
+	err := ds.storage.GetByQueryFn(ctx, q, func(component *storage.ImageComponentV2) error {
+		components = append(components, component)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
 	ds.updateImageComponentPriority(components...)
 	return components, nil
 }
@@ -103,5 +116,23 @@ func (ds *datastoreImpl) initializeRankers() {
 func (ds *datastoreImpl) updateImageComponentPriority(ics ...*storage.ImageComponentV2) {
 	for _, ic := range ics {
 		ic.Priority = ds.imageComponentRanker.GetRankForID(ic.GetId())
+	}
+}
+
+func convertMany(components []*storage.ImageComponentV2, results []pkgSearch.Result) []*v1.SearchResult {
+	outputResults := make([]*v1.SearchResult, len(components))
+	for index, sar := range components {
+		outputResults[index] = convertOne(sar, &results[index])
+	}
+	return outputResults
+}
+
+func convertOne(component *storage.ImageComponentV2, result *pkgSearch.Result) *v1.SearchResult {
+	return &v1.SearchResult{
+		Category:       v1.SearchCategory_IMAGE_COMPONENTS_V2,
+		Id:             component.GetId(),
+		Name:           component.GetName(),
+		FieldToMatches: pkgSearch.GetProtoMatchesMap(result.Matches),
+		Score:          result.Score,
 	}
 }

@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/central/cve/common"
-	searchMocks "github.com/stackrox/rox/central/cve/image/datastore/search/mocks"
 	storeMocks "github.com/stackrox/rox/central/cve/image/datastore/store/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -39,7 +38,6 @@ type ImageCVEDataStoreSuite struct {
 	mockCtrl *gomock.Controller
 
 	storage   *storeMocks.MockStore
-	searcher  *searchMocks.MockSearcher
 	datastore *datastoreImpl
 }
 
@@ -47,11 +45,8 @@ func (suite *ImageCVEDataStoreSuite) SetupSuite() {
 	suite.mockCtrl = gomock.NewController(suite.T())
 
 	suite.storage = storeMocks.NewMockStore(suite.mockCtrl)
-	suite.searcher = searchMocks.NewMockSearcher(suite.mockCtrl)
 
-	suite.searcher.EXPECT().SearchRawImageCVEs(accessAllCtx, testSuppressionQuery).Return([]*storage.ImageCVE{}, nil)
-
-	ds := New(suite.storage, suite.searcher, concurrency.NewKeyFence())
+	ds := New(suite.storage, concurrency.NewKeyFence())
 	suite.datastore = ds.(*datastoreImpl)
 }
 

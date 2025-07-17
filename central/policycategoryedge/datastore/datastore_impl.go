@@ -3,7 +3,6 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/policycategoryedge/search"
 	"github.com/stackrox/rox/central/policycategoryedge/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -18,26 +17,40 @@ var (
 )
 
 type datastoreImpl struct {
-	storage  store.Store
-	searcher search.Searcher
+	storage store.Store
 
 	mutex sync.Mutex
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error) {
-	return ds.searcher.Search(ctx, q)
+	return ds.storage.Search(ctx, q)
 }
 
 func (ds *datastoreImpl) SearchEdges(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
-	return ds.searcher.SearchEdges(ctx, q)
-}
-
-func (ds *datastoreImpl) SearchRawEdges(ctx context.Context, q *v1.Query) ([]*storage.PolicyCategoryEdge, error) {
-	imgs, err := ds.searcher.SearchRawEdges(ctx, q)
+	results, err := ds.Search(ctx, q)
 	if err != nil {
 		return nil, err
 	}
-	return imgs, nil
+
+	cves, missingIndices, err := ds.storage.GetMany(ctx, searchPkg.ResultsToIDs(results))
+	if err != nil {
+		return nil, err
+	}
+	results = searchPkg.RemoveMissingResults(results, missingIndices)
+	return convertMany(cves, results), nil
+}
+
+func (ds *datastoreImpl) SearchRawEdges(ctx context.Context, q *v1.Query) ([]*storage.PolicyCategoryEdge, error) {
+	var edges []*storage.PolicyCategoryEdge
+	err := ds.storage.GetByQueryFn(ctx, q, func(edge *storage.PolicyCategoryEdge) error {
+		edges = append(edges, edge)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return edges, nil
 }
 
 func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
@@ -128,4 +141,22 @@ func (ds *datastoreImpl) DeleteByQuery(ctx context.Context, q *v1.Query) error {
 
 	_, storeErr := ds.storage.DeleteByQuery(ctx, q)
 	return storeErr
+}
+
+func convertMany(cves []*storage.PolicyCategoryEdge, results []searchPkg.Result) []*v1.SearchResult {
+	outputResults := make([]*v1.SearchResult, len(cves))
+	for index, sar := range cves {
+		outputResults[index] = convertOne(sar, &results[index])
+	}
+	return outputResults
+}
+
+func convertOne(obj *storage.PolicyCategoryEdge, result *searchPkg.Result) *v1.SearchResult {
+	return &v1.SearchResult{
+		Category:       v1.SearchCategory_POLICY_CATEGORY_EDGE,
+		Id:             obj.GetId(),
+		Name:           obj.GetId(),
+		FieldToMatches: searchPkg.GetProtoMatchesMap(result.Matches),
+		Score:          result.Score,
+	}
 }

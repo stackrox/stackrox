@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
-	searcherMocks "github.com/stackrox/rox/central/deployment/datastore/internal/search/mocks"
 	storeMocks "github.com/stackrox/rox/central/deployment/datastore/internal/store/mocks"
 	matcherMocks "github.com/stackrox/rox/central/platform/matcher/mocks"
 	"github.com/stackrox/rox/central/ranking"
@@ -30,7 +29,6 @@ type DeploymentDataStoreTestSuite struct {
 
 	matcher   *matcherMocks.MockPlatformMatcher
 	storage   *storeMocks.MockStore
-	searcher  *searcherMocks.MockSearcher
 	riskStore *riskMocks.MockDataStore
 	filter    filter.Filter
 
@@ -45,7 +43,6 @@ func (suite *DeploymentDataStoreTestSuite) SetupTest() {
 	mockCtrl := gomock.NewController(suite.T())
 	suite.mockCtrl = mockCtrl
 	suite.storage = storeMocks.NewMockStore(mockCtrl)
-	suite.searcher = searcherMocks.NewMockSearcher(mockCtrl)
 	suite.riskStore = riskMocks.NewMockDataStore(mockCtrl)
 	suite.filter = filter.NewFilter(5, 5, []int{5, 4, 3, 2, 1})
 	suite.matcher = matcherMocks.NewMockPlatformMatcher(mockCtrl)
@@ -60,7 +57,7 @@ func (suite *DeploymentDataStoreTestSuite) TestInitializeRanker() {
 	nsRanker := ranking.NewRanker()
 	deploymentRanker := ranking.NewRanker()
 
-	ds := newDatastoreImpl(suite.storage, suite.searcher, nil, nil, nil, suite.riskStore, nil, suite.filter, clusterRanker, nsRanker, deploymentRanker, suite.matcher)
+	ds := newDatastoreImpl(suite.storage, nil, nil, nil, suite.riskStore, nil, suite.filter, clusterRanker, nsRanker, deploymentRanker, suite.matcher)
 
 	deployments := []*storage.Deployment{
 		{
