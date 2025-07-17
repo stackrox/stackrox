@@ -16,7 +16,6 @@ import (
 //go:generate mockgen-wrapper
 type Searcher interface {
 	Search(ctx context.Context, query *v1.Query) ([]search.Result, error)
-	Count(ctx context.Context, query *v1.Query) (int, error)
 	SearchEdges(context.Context, *v1.Query) ([]*v1.SearchResult, error)
 	SearchRawEdges(ctx context.Context, query *v1.Query) ([]*storage.NodeComponentCVEEdge, error)
 }

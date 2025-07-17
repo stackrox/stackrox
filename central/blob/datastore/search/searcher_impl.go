@@ -29,8 +29,3 @@ func (s *searcherImpl) SearchMetadata(ctx context.Context, q *v1.Query) ([]*stor
 func (s *searcherImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	return s.storage.Search(ctx, q)
 }
-
-// Count returns the number of search results from the query
-func (s *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
-	return s.storage.Count(ctx, q)
-}
