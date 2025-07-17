@@ -12,7 +12,5 @@ runs:
       uses: actions/cache@v4
       with:
         path: |
-          /github/home/.npm
-          /github/home/.cache/Cypress
           ui/apps/platform/node_modules
         key: npm-v3-${{ hashFiles(inputs.lockFile) }}
