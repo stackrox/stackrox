@@ -107,7 +107,7 @@ test_part_1() {
         test_target="test"
     fi
 
-    ci_export "test_target" "${test_target}"
+    set_ci_shared_export "test_target" "${test_target}"
 
     make -C qa-tests-backend "${test_target}" || touch FAIL
 
