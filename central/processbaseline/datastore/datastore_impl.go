@@ -48,7 +48,7 @@ func (ds *datastoreImpl) GetProcessBaseline(ctx context.Context, key *storage.Pr
 	if !deploymentExtensionSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).ForNamespaceScopedObject(key).IsAllowed() {
 		return nil, false, nil
 	}
-	id, err := keyToID(key)
+	id, err := processBaselinePkg.KeyToID(key)
 	if err != nil {
 		return nil, false, err
 	}
@@ -64,7 +64,7 @@ func (ds *datastoreImpl) AddProcessBaseline(ctx context.Context, baseline *stora
 		return "", sac.ErrResourceAccessDenied
 	}
 
-	id, err := keyToID(baseline.GetKey())
+	id, err := processBaselinePkg.KeyToID(baseline.GetKey())
 	if err != nil {
 		return "", err
 	}
@@ -114,7 +114,7 @@ func (ds *datastoreImpl) RemoveProcessBaseline(ctx context.Context, key *storage
 		return sac.ErrResourceAccessDenied
 	}
 
-	id, err := keyToID(key)
+	id, err := processBaselinePkg.KeyToID(key)
 	if err != nil {
 		return err
 	}
@@ -177,61 +177,15 @@ func (ds *datastoreImpl) getBaselineForUpdate(ctx context.Context, id string) (*
 	return baseline, nil
 }
 
-func makeElementMap(elementList []*storage.BaselineElement) map[string]*storage.BaselineElement {
-	elementMap := make(map[string]*storage.BaselineElement, len(elementList))
-	for _, listItem := range elementList {
-		elementMap[listItem.GetElement().GetProcessName()] = listItem
-	}
-	return elementMap
-}
-
-func makeElementList(elementMap map[string]*storage.BaselineElement) []*storage.BaselineElement {
-	elementList := make([]*storage.BaselineElement, 0, len(elementMap))
-	for _, process := range elementMap {
-		elementList = append(elementList, process)
-	}
-	return elementList
-}
-
-func (ds *datastoreImpl) updateProcessBaselineAndSetTimestamp(ctx context.Context, baseline *storage.ProcessBaseline) error {
+func (ds *datastoreImpl) UpdateProcessBaselineAndSetTimestamp(ctx context.Context, baseline *storage.ProcessBaseline) error {
 	baseline.LastUpdate = protocompat.TimestampNow()
 	return ds.storage.Upsert(ctx, baseline)
 }
 
 func (ds *datastoreImpl) updateProcessBaselineElements(ctx context.Context, baseline *storage.ProcessBaseline, addElements []*storage.BaselineItem, removeElements []*storage.BaselineItem, auto bool) (*storage.ProcessBaseline, error) {
-	baselineMap := makeElementMap(baseline.GetElements())
-	graveyardMap := makeElementMap(baseline.GetElementGraveyard())
+	baseline = processBaselinePkg.AddAndRemoveElementsFromBaseline(baseline, addElements, removeElements, auto)
 
-	for _, element := range addElements {
-		// Don't automatically add anything which has been previously removed
-		if _, ok := graveyardMap[element.GetProcessName()]; auto && ok {
-			continue
-		}
-		existing, ok := baselineMap[element.GetProcessName()]
-		if !ok || existing.Auto {
-			delete(graveyardMap, element.GetProcessName())
-			baselineMap[element.GetProcessName()] = &storage.BaselineElement{
-				Element: element,
-				Auto:    auto,
-			}
-		}
-	}
-
-	for _, removeElement := range removeElements {
-		delete(baselineMap, removeElement.GetProcessName())
-		existing, ok := graveyardMap[removeElement.GetProcessName()]
-		if !ok || existing.Auto {
-			graveyardMap[removeElement.GetProcessName()] = &storage.BaselineElement{
-				Element: removeElement,
-				Auto:    auto,
-			}
-		}
-	}
-
-	baseline.Elements = makeElementList(baselineMap)
-	baseline.ElementGraveyard = makeElementList(graveyardMap)
-
-	err := ds.updateProcessBaselineAndSetTimestamp(ctx, baseline)
+	err := ds.UpdateProcessBaselineAndSetTimestamp(ctx, baseline)
 	if err != nil {
 		return nil, err
 	}
@@ -244,7 +198,7 @@ func (ds *datastoreImpl) UpdateProcessBaselineElements(ctx context.Context, key 
 		return nil, sac.ErrResourceAccessDenied
 	}
 
-	id, err := keyToID(key)
+	id, err := processBaselinePkg.KeyToID(key)
 	if err != nil {
 		return nil, err
 	}
@@ -265,7 +219,7 @@ func (ds *datastoreImpl) UpsertProcessBaseline(ctx context.Context, key *storage
 		return nil, sac.ErrResourceAccessDenied
 	}
 
-	id, err := keyToID(key)
+	id, err := processBaselinePkg.KeyToID(key)
 	if err != nil {
 		return nil, err
 	}
@@ -312,7 +266,7 @@ func (ds *datastoreImpl) UserLockProcessBaseline(ctx context.Context, key *stora
 		return nil, sac.ErrResourceAccessDenied
 	}
 
-	id, err := keyToID(key)
+	id, err := processBaselinePkg.KeyToID(key)
 	if err != nil {
 		return nil, err
 	}
@@ -326,10 +280,10 @@ func (ds *datastoreImpl) UserLockProcessBaseline(ctx context.Context, key *stora
 
 	if locked && baseline.GetUserLockedTimestamp() == nil {
 		baseline.UserLockedTimestamp = protocompat.TimestampNow()
-		err = ds.updateProcessBaselineAndSetTimestamp(ctx, baseline)
+		err = ds.UpdateProcessBaselineAndSetTimestamp(ctx, baseline)
 	} else if !locked && baseline.GetUserLockedTimestamp() != nil {
 		baseline.UserLockedTimestamp = nil
-		err = ds.updateProcessBaselineAndSetTimestamp(ctx, baseline)
+		err = ds.UpdateProcessBaselineAndSetTimestamp(ctx, baseline)
 	}
 	if err != nil {
 		return nil, err
@@ -342,7 +296,7 @@ func (ds *datastoreImpl) CreateUnlockedProcessBaseline(ctx context.Context, key 
 		return nil, sac.ErrResourceAccessDenied
 	}
 
-	id, err := keyToID(key)
+	id, err := processBaselinePkg.KeyToID(key)
 	if err != nil {
 		return nil, err
 	}
@@ -420,7 +374,7 @@ func (ds *datastoreImpl) WalkAll(ctx context.Context, fn func(baseline *storage.
 
 func (ds *datastoreImpl) RemoveProcessBaselinesByIDs(ctx context.Context, ids []string) error {
 	for _, id := range ids {
-		key, err := IDToKey(id)
+		key, err := processBaselinePkg.IDToKey(id)
 		if err != nil {
 			return err
 		}
@@ -459,6 +413,7 @@ func (ds *datastoreImpl) ClearProcessBaselines(ctx context.Context, ids []string
 	return ds.storage.UpsertMany(ctx, baselines)
 }
 
+// TODO remove before merging
 func (ds *datastoreImpl) generateLockTimestamp() time.Time {
 	lockTimestamp := time.Now().Add(genDuration)
 	_, err := protocompat.ConvertTimeToTimestampOrError(lockTimestamp)
