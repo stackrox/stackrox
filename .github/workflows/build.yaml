@@ -49,6 +49,8 @@ jobs:
         run: |
           set +e
           set -x
+          nohup git fetch --depth=100 origin +refs/tags/*:refs/tags/* 2>&1 >>/tmp/git.fetching.log &
+          echo $!
 
           function test() {
             local ret=0
@@ -57,6 +59,7 @@ jobs:
             return $ret
           }
           test
+          cat /tmp/git.fetching.log
 
       - uses: ./.github/actions/files-changed
         id: files-changed
@@ -96,6 +99,7 @@ jobs:
             # make -j${parallel} -Oline build-prep  # depends on deps and creates empty build binary output path
               # mkdir -p bin/linux_amd64
             # clean-image: clear image context dir contents
+          cat /tmp/git.fetching.log
 
       - uses: actions/cache/restore@v4
         id: restore-ui-build
@@ -116,6 +120,7 @@ jobs:
             # main-build-nodeps: gobuild *. then, build roxctl if not CI
             # ui-build: test -d ui/build || make -C ui build
             # ui-build condition is if ./ui/build exists (sot it is skipped if cache restored it)
+          cat /tmp/git.fetching.log
 
       - uses: actions/cache/save@v4
         if: ${{ contains(steps.files-changed.outputs.matched, 'ui') && steps.restore-ui-build.outputs.cache-hit != 'true' }}
@@ -160,6 +165,8 @@ jobs:
               # copies bin/linux_$GOARCH/roxctl to image/roxctl/roxctl-linux
               # builds image/roxctl/Dockerfile tagged image/roxctl
           docker images
+          cat /tmp/git.fetching.log
+          ps -ef
 
   define-job-matrix:
     outputs:
