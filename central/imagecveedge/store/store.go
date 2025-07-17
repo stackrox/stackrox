@@ -18,4 +18,5 @@ type Store interface {
 
 	Get(ctx context.Context, id string) (*storage.ImageCVEEdge, bool, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.ImageCVEEdge, []int, error)
+	GetByQueryFn(ctx context.Context, query *v1.Query, fn func(obj *storage.ImageCVEEdge) error) error
 }

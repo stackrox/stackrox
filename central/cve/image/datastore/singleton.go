@@ -1,7 +1,6 @@
 package datastore
 
 import (
-	"github.com/stackrox/rox/central/cve/image/datastore/search"
 	pgStore "github.com/stackrox/rox/central/cve/image/datastore/store/postgres"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/image/datastore/keyfence"
@@ -17,7 +16,7 @@ var (
 func initialize() {
 	storage := pgStore.New(globaldb.GetPostgres())
 
-	ds = New(storage, search.New(storage), keyfence.ImageKeyFenceSingleton())
+	ds = New(storage, keyfence.ImageKeyFenceSingleton())
 }
 
 // Singleton returns a singleton instance of cve datastore

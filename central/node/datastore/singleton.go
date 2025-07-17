@@ -3,7 +3,6 @@ package datastore
 import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/node/datastore/keyfence"
-	"github.com/stackrox/rox/central/node/datastore/search"
 	pgStore "github.com/stackrox/rox/central/node/datastore/store/postgres"
 	"github.com/stackrox/rox/central/ranking"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
@@ -18,8 +17,7 @@ var (
 
 func initialize() {
 	storage := pgStore.New(globaldb.GetPostgres(), false, keyfence.NodeKeyFenceSingleton())
-	searcher := search.NewV2(storage)
-	ad = NewWithPostgres(storage, searcher, riskDS.Singleton(), ranking.NodeRanker(), ranking.NodeComponentRanker())
+	ad = NewWithPostgres(storage, riskDS.Singleton(), ranking.NodeRanker(), ranking.NodeComponentRanker())
 }
 
 // Singleton provides the interface for non-service external interaction.
