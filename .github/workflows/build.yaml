@@ -31,6 +31,7 @@ jobs:
       GOOS: linux
       GOARCH: amd64
       CGO_ENABLED: 0
+      ROX_PRODUCT_BRANDING: STACKROX_BRANDING
     strategy:
       fail-fast: false
       matrix:
@@ -104,11 +105,11 @@ jobs:
             # make -j${parallel} -Oline build-prep  # depends on deps and creates empty build binary output path
               # mkdir -p bin/linux_amd64
             # clean-image: clear image context dir contents
-          cat /tmp/git.fetching.log
+          tail /tmp/git.fetching.log
 
       - uses: actions/cache@v4
         with:
-          key: ui-built-${{ hashFiles('ui/**') }}
+          key: ui-built-${{ env.ROX_PRODUCT_BRANDING }}-${{ hashFiles('ui/**') }}  # TODO: verify the same key is used at save and not reevaluated
           path: ui/build
 
       - name: compile
@@ -126,7 +127,6 @@ jobs:
             # main-build-nodeps: gobuild *. then, build roxctl if not CI
             # ui-build: test -d ui/build || make -C ui build
             # ui-build condition is if ./ui/build exists (sot it is skipped if cache restored it)
-          cat /tmp/git.fetching.log
 
       - name: Generate OSS notice
         if: false
@@ -165,11 +165,15 @@ jobs:
             # docker-build-roxctl-image
               # copies bin/linux_$GOARCH/roxctl to image/roxctl/roxctl-linux
               # builds image/roxctl/Dockerfile tagged image/roxctl
-          docker images
+
+      - name: Check images
+        continue-on-error: true
+        run: |
+          set -x
           set +e
-          cat /tmp/git.fetching.log
+          docker images
+          tail /tmp/git.fetching.log
           ps -ef
-          cat /tmp/git.fetching.pid
           ps -f -p$(pgrep -F /tmp/git.fetching.pid)
 
   define-job-matrix:
