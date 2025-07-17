@@ -36,14 +36,10 @@ jobs:
       matrix:
         parallel: [ 1 ]
     steps:
-      - name: Count commits
-        run:
-          echo "PR_DEPTH=$(( ${{ github.event.pull_request.commits }} + 1 ))" >> "${GITHUB_ENV}"
-
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: ${{ env.PR_DEPTH }}
+          fetch-depth: ${{ github.event.pull_request.commits }}
           fetch-tags: false
           show-progress: false
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
