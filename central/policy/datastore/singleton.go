@@ -7,7 +7,6 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
-	"github.com/stackrox/rox/central/policy/search"
 	policyStore "github.com/stackrox/rox/central/policy/store"
 	categoriesDS "github.com/stackrox/rox/central/policycategory/datastore"
 	"github.com/stackrox/rox/generated/storage"
@@ -27,13 +26,12 @@ var (
 
 func initialize() {
 	storage := policyStore.New(globaldb.GetPostgres())
-	searcher := search.New(storage)
 
 	clusterDatastore := clusterDS.Singleton()
 	notifierDatastore := notifierDS.Singleton()
 	categoriesDatastore := categoriesDS.Singleton()
 
-	ad = New(storage, searcher, clusterDatastore, notifierDatastore, categoriesDatastore)
+	ad = New(storage, clusterDatastore, notifierDatastore, categoriesDatastore)
 	addDefaults(storage, categoriesDatastore)
 }
 
