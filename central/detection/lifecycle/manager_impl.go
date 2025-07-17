@@ -321,12 +321,16 @@ func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, ind
 	}
 
 	if features.AutolockAllProcessBaselines.Enabled() {
-		err = m.connectionManager.SendMessage(baseline.GetKey().GetClusterId(), &central.MsgToSensor{
-			Msg: &central.MsgToSensor_BaselineSync{
-				BaselineSync: &central.BaselineSync{
-					Baselines: []*storage.ProcessBaseline{baseline},
-				}},
-		})
+		msg := &central.MsgToSensor{
+				Msg: &central.MsgToSensor_BaselineSync{
+					BaselineSync: &central.BaselineSync{
+						Baselines: []*storage.ProcessBaseline{baseline},
+					},
+				},
+			}
+
+		err = m.connectionManager.SendMessage(baseline.GetKey().GetClusterId(), msg)
+
 		if err != nil {
 			return false, err
 		}
