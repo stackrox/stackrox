@@ -374,10 +374,6 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Checkout submodules
-        run: |
-            git submodule update --init
-
       - uses: ./.github/actions/handle-tagged-build
 
       - uses: ./.github/actions/download-artifact-with-retry
@@ -530,10 +526,6 @@ jobs:
     - uses: ./.github/actions/job-preamble
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
-    - name: Checkout submodules
-      run: |
-        git submodule update --init
 
     - uses: ./.github/actions/handle-tagged-build
 
