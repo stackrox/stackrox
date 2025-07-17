@@ -72,7 +72,7 @@ func New(db postgres.DB) Store {
 		metricsSetPostgresOperationDurationTime,
 		targetResource,
 		pgSearch.GetDefaultSort(search.PolicyCategoryName.String(), false),
-		schema.PolicyCategoriesSchema.OptionsMap,
+		pkgSchema.PolicyCategoriesSchema.OptionsMap,
 	)
 }
 

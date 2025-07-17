@@ -73,7 +73,7 @@ func New(db postgres.DB) Store {
 		metricsSetPostgresOperationDurationTime,
 		targetResource,
 		nil,
-		schema.ImagesSchema.OptionsMap,
+		pkgSchema.ImagesSchema.OptionsMap,
 	)
 }
 
