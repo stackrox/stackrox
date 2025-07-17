@@ -7,7 +7,7 @@ import { Role } from 'services/RolesService';
 
 import { AccessControlEntityLink, RolesLink } from '../AccessControlLinks';
 import usePermissions from '../../../hooks/usePermissions';
-import { getOriginLabel, isUserResource } from '../traits';
+import { getOriginLabel, isUserResource } from '../../traits';
 
 const entityType = 'ACCESS_SCOPE';
 
