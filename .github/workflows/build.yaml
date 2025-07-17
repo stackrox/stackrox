@@ -270,15 +270,18 @@ jobs:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       - uses: actions/cache@v4
+        id: restore-ui-build
         with:
           key: ui-built-${{ matrix.branding }}-${{ hashFiles('ui/**') }}  # TODO: verify the same key is used at save and not reevaluated
           path: ui/build
 
       - uses: ./.github/actions/cache-ui-dependencies
+        if: steps.restore-ui-build.outputs.cache-hit != 'true'
 
       - uses: ./.github/actions/handle-tagged-build
 
       - name: Build UI
+        if: steps.restore-ui-build.outputs.cache-hit != 'true'
         run: |
           git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*' \
             || git fetch --depth=5000 origin +refs/tags/*:refs/tags/*
