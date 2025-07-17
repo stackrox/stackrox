@@ -279,7 +279,7 @@ jobs:
       - uses: ./.github/actions/handle-tagged-build
 
       - name: Build UI
-        run: make ui-build
+        run: |
           git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*' \
             || git fetch --depth=5000 origin +refs/tags/*:refs/tags/*
           make ui-build
