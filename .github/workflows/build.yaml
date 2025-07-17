@@ -270,7 +270,7 @@ jobs:
 
       - uses: actions/cache@v4
         with:
-          key: ui-built-${{ hashFiles('ui/**') }}
+          key: ui-built-${{ matrix.branding }}-${{ hashFiles('ui/**') }}
           path: ui/build
 
       - uses: ./.github/actions/handle-tagged-build
