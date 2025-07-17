@@ -106,8 +106,7 @@ jobs:
             # clean-image: clear image context dir contents
           cat /tmp/git.fetching.log
 
-      - uses: actions/cache/restore@v4
-        id: restore-ui-build
+      - uses: actions/cache@v4
         with:
           key: ui-built-${{ hashFiles('ui/**') }}
           path: ui/build
@@ -128,12 +127,6 @@ jobs:
             # ui-build: test -d ui/build || make -C ui build
             # ui-build condition is if ./ui/build exists (sot it is skipped if cache restored it)
           cat /tmp/git.fetching.log
-
-      - uses: actions/cache/save@v4
-        if: ${{ contains(steps.files-changed.outputs.matches, 'ui') && steps.restore-ui-build.outputs.cache-hit != 'true' }}
-        with:
-          key: ${{ steps.restore-ui-build.outputs.cache-primary-key }}
-          path: ui/build
 
       - name: Generate OSS notice
         if: false
