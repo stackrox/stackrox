@@ -43,7 +43,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 5000  # ${{ env.PR_DEPTH }}
+          fetch-depth: ${{ env.PR_DEPTH }}
           fetch-tags: true
           show-progress: false
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
@@ -117,19 +117,6 @@ jobs:
             # make -j${parallel} -Oline build-prep  # depends on deps and creates empty build binary output path
               # mkdir -p bin/linux_amd64
             # clean-image: clear image context dir contents
-
-      - name: check hashfiles
-        run: |
-          set +e
-          echo ui-built-${{ hashFiles('ui/**') }}
-          echo ui-built-${{ contains(steps.files-changed.outputs.matches, 'ui') && hashFiles('ui/**') }}
-          echo ${{ contains(steps.files-changed.outputs.matches, 'ui') }}
-          echo ${{ steps.files-changed.outputs.matches && 'true' }}
-          echo "${{ toJSON(steps.files-changed) }}"
-          set -x
-          ls -la /github/home/.npm
-          ls -la /github/home/.cache/Cypress
-          ls -la /usr/local/share/.cache
 
       - uses: actions/cache/restore@v4
         id: restore-ui-build
