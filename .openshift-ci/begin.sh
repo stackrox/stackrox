@@ -36,5 +36,4 @@ if [[ "${JOB_NAME:-}" =~ -eks- ]]; then
     set_ci_shared_export USER_ARNS "$(aws sts get-caller-identity | jq -r '.Arn')"
 fi
 
-#TODO: Remove
-exit 0
+die "Just for testing"
