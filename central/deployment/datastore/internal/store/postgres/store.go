@@ -82,7 +82,7 @@ func New(db postgres.DB) Store {
 		isUpsertAllowed,
 		targetResource,
 		pgSearch.GetDefaultSort(search.DeploymentPriority.String(), false),
-		nil,
+		schema.DeploymentsSchema.OptionsMap,
 	)
 }
 
