@@ -92,7 +92,8 @@ func (h *commandHandler) ProcessMessage(ctx context.Context, msg *central.MsgToS
 	}
 	select {
 	case <-ctx.Done():
-		return ctx.Err() // TODO(ROX-): pass the context together with `cmd` to `h.commandsC`
+		// TODO(ROX-): pass the context together with `cmd` to `h.commandsC`
+		return errors.Wrapf(ctx.Err(), "message processing in component %s", h.Name())
 	case h.commandsC <- cmd:
 		return nil
 	case <-h.stopSig.Done():

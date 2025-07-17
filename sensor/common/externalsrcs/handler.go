@@ -82,7 +82,7 @@ func (h *handlerImpl) ProcessMessage(ctx context.Context, msg *central.MsgToSens
 	}
 	select {
 	case <-ctx.Done():
-		return ctx.Err()
+		return errors.Wrapf(ctx.Err(), "message processing in component %s", h.Name())
 	case <-h.stopSig.Done():
 		return errors.New("could not process external network entities request")
 	default:

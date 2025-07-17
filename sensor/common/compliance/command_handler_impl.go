@@ -74,7 +74,7 @@ func (c *commandHandlerImpl) ProcessMessage(ctx context.Context, msg *central.Ms
 	}
 	select {
 	case <-ctx.Done():
-		return ctx.Err()
+		return errors.Wrapf(ctx.Err(), "message processing in component %s", c.Name())
 	case c.commands <- command:
 		return nil
 	case <-c.stopper.Flow().StopRequested():
