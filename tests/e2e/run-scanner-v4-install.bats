@@ -433,6 +433,10 @@ teardown() {
     local old_central_chart="${CHART_REPOSITORY}/${EARLIER_CHART_VERSION}/central-services"
     local old_sensor_chart="${CHART_REPOSITORY}/${EARLIER_CHART_VERSION}/secured-cluster-services"
 
+    # NOTE: Expected behaviour for 4.7.x is that
+    # - scanner V4 is not deployed by default.
+    # - secured-cluster does not deploy any scanners by default.
+
     _begin "deploy-old-central"
     info "Deploying StackRox central-services using chart ${old_central_chart}"
     deploy_central_with_helm "$CUSTOM_CENTRAL_NAMESPACE" "$EARLIER_MAIN_IMAGE_TAG" "$old_central_chart" \
@@ -443,14 +447,26 @@ central:
 EOT
     )
 
-    _begin "verify-scanners-are-deployed"
+    _begin "verify-scanner-v2-deployed"
     verify_scannerV2_deployed "$CUSTOM_CENTRAL_NAMESPACE"
-    verify_scannerV4_deployed "$CUSTOM_CENTRAL_NAMESPACE"
-    verify_deployment_scannerV4_env_var_set "$CUSTOM_CENTRAL_NAMESPACE" "central"
+
+    _begin "verify-scanner-V4-not-deployed"
+    verify_no_scannerV4_deployed "$CUSTOM_CENTRAL_NAMESPACE"
+    run ! verify_deployment_scannerV4_env_var_set "$CUSTOM_CENTRAL_NAMESPACE" "central"
 
     _begin "upgrade-to-HEAD-central"
     deploy_central_with_helm "$CUSTOM_CENTRAL_NAMESPACE" "$MAIN_IMAGE_TAG" "" \
         --reuse-values
+
+    _begin "verify-scanner-V4-not-deployed"
+    verify_scannerV2_deployed "$CUSTOM_CENTRAL_NAMESPACE"
+    verify_no_scannerV4_deployed "$CUSTOM_CENTRAL_NAMESPACE"
+    run ! verify_deployment_scannerV4_env_var_set "$CUSTOM_CENTRAL_NAMESPACE" "central"
+
+    _begin "enable-scanner-V4-in-central"
+    deploy_central_with_helm "$CUSTOM_CENTRAL_NAMESPACE" "$MAIN_IMAGE_TAG" "" \
+        --reuse-values \
+        --set scannerV4.disable=false
 
     _begin "verify-scanners-are-deployed"
     verify_scannerV2_deployed "$CUSTOM_CENTRAL_NAMESPACE"
@@ -465,15 +481,30 @@ EOT
         "$EARLIER_MAIN_IMAGE_TAG" "$old_sensor_chart" \
         "$secured_cluster_name" "$ROX_ADMIN_PASSWORD" "$central_endpoint"
 
-    _begin "verify-scanners-are-deployed"
-    verify_scannerV2_deployed "$CUSTOM_SENSOR_NAMESPACE"
-    verify_scannerV4_indexer_deployed "$CUSTOM_SENSOR_NAMESPACE"
-    verify_deployment_scannerV4_env_var_set "$CUSTOM_SENSOR_NAMESPACE" "sensor"
+    _begin "verify-scanners-are-not-deployed"
+    verify_no_scannerV2_deployed "$CUSTOM_SENSOR_NAMESPACE"
+    verify_no_scannerV4_deployed "$CUSTOM_SENSOR_NAMESPACE"
+    run ! verify_deployment_scannerV4_env_var_set "$CUSTOM_SENSOR_NAMESPACE" "sensor"
 
     _begin "upgrade-to-HEAD-sensor"
     deploy_sensor_with_helm "$CUSTOM_CENTRAL_NAMESPACE" "$CUSTOM_SENSOR_NAMESPACE" "" "" "" "" ""
 
-    _begin "verify-scanners-are-deployed"
+    _begin "verify-scanners-not-deployed"
+    verify_no_scannerV2_deployed "$CUSTOM_SENSOR_NAMESPACE"
+    verify_no_scannerV4_deployed "$CUSTOM_SENSOR_NAMESPACE"
+    run ! verify_deployment_scannerV4_env_var_set "$CUSTOM_SENSOR_NAMESPACE" "sensor"
+
+    _begin "enable-scanners-in-secured-cluster"
+    # Without creating the scanner-db-password secret manually Scanner V2 doesn't come up.
+    # Let's just reuse an existing password for this for simplicity.
+    "$ORCH_CMD" </dev/null -n "$CUSTOM_SENSOR_NAMESPACE" create secret generic scanner-db-password \
+        --from-file=password=<(echo "$ROX_ADMIN_PASSWORD")
+
+    deploy_sensor_with_helm "$CUSTOM_CENTRAL_NAMESPACE" "$CUSTOM_SENSOR_NAMESPACE" "" "" "" "" "" \
+        --set scannerV4.disable=false \
+        --set scanner.disable=false
+
+   _begin "verify-scanners-are-deployed"
     verify_scannerV2_deployed "$CUSTOM_SENSOR_NAMESPACE"
     verify_scannerV4_indexer_deployed "$CUSTOM_SENSOR_NAMESPACE"
     verify_deployment_scannerV4_env_var_set "$CUSTOM_SENSOR_NAMESPACE" "sensor"
