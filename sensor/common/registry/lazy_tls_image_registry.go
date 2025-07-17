@@ -38,7 +38,7 @@ type lazyTLSCheckRegistry struct {
 	registry types.Registry
 
 	// tlsCheckCache performs and caches registry TLS checks.
-	tlsCheckCache *tlscheckcache.Cache
+	tlsCheckCache tlscheckcache.Cache
 
 	// initialized tracks whether lazy initialization has completed.
 	initialized      atomic.Uint32

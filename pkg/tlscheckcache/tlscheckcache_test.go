@@ -16,7 +16,7 @@ var (
 
 func TestCheckTLS(t *testing.T) {
 	t.Run("secure", func(t *testing.T) {
-		c := New(WithTLSCheckFunc(alwaysSecureCheckTLS))
+		c := New(WithTLSCheckFunc(alwaysSecureCheckTLS)).(*cacheImpl)
 		secure, skip, err := c.CheckTLS(ctx, "fake")
 		assert.True(t, secure)
 		assert.False(t, skip)
@@ -32,7 +32,7 @@ func TestCheckTLS(t *testing.T) {
 	})
 
 	t.Run("insecure", func(t *testing.T) {
-		c := New(WithTLSCheckFunc(alwaysInsecureCheckTLS))
+		c := New(WithTLSCheckFunc(alwaysInsecureCheckTLS)).(*cacheImpl)
 		secure, skip, err := c.CheckTLS(ctx, "fake")
 		assert.False(t, secure)
 		assert.False(t, skip)
@@ -48,7 +48,7 @@ func TestCheckTLS(t *testing.T) {
 	})
 
 	t.Run("error", func(t *testing.T) {
-		c := New(WithTLSCheckFunc(alwaysFailCheckTLS))
+		c := New(WithTLSCheckFunc(alwaysFailCheckTLS)).(*cacheImpl)
 		secure, skip, err := c.CheckTLS(ctx, "fake")
 		assert.False(t, secure)
 		assert.False(t, skip)
@@ -76,7 +76,7 @@ func TestAysncCheckTLS(t *testing.T) {
 	}
 	regs := []string{"reg1", "reg2", "reg3"}
 
-	c := New(WithTLSCheckFunc(countingCheckTLSFunc))
+	c := New(WithTLSCheckFunc(countingCheckTLSFunc)).(*cacheImpl)
 	runAsyncTLSChecks(c, regs)
 
 	assert.Len(t, callCounts, len(regs))
@@ -87,7 +87,7 @@ func TestAysncCheckTLS(t *testing.T) {
 	}
 
 	// Simulate cache expiry
-	c.results.RemoveAll()
+	c.Cleanup()
 	runAsyncTLSChecks(c, regs)
 
 	assert.Len(t, callCounts, len(regs))
@@ -98,7 +98,7 @@ func TestAysncCheckTLS(t *testing.T) {
 	}
 }
 
-func runAsyncTLSChecks(cache *Cache, regs []string) {
+func runAsyncTLSChecks(cache Cache, regs []string) {
 	var wg sync.WaitGroup
 
 	for i := 0; i < 100; i++ {

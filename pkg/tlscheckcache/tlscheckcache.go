@@ -28,7 +28,16 @@ const (
 type CheckTLSFunc func(ctx context.Context, endpoint string) (bool, error)
 
 // Cache orchestrates and holds the results of TLS checks.
-type Cache struct {
+type Cache interface {
+	// CheckTLS performs a TLS check on a endpoint or returns the result from a
+	// previous check. Returns true for skip if there was a previous error.
+	CheckTLS(ctx context.Context, endpoint string) (secure bool, skip bool, err error)
+
+	// Cleanup will empty the cache.
+	Cleanup()
+}
+
+type cacheImpl struct {
 	checkTLSFunc CheckTLSFunc
 	// metricSubsystem prometheus metrics will be labeled with this subsystem.
 	metricSubsystem metrics.Subsystem
@@ -42,8 +51,8 @@ type Cache struct {
 }
 
 // New creates a cache that will hold results of recent TLS checks.
-func New(opts ...CacheOption) *Cache {
-	cache := &Cache{
+func New(opts ...CacheOption) Cache {
+	cache := &cacheImpl{
 		ttl:          defaultTTL,
 		checkTLSFunc: tlscheck.CheckTLS,
 	}
@@ -57,14 +66,11 @@ func New(opts ...CacheOption) *Cache {
 	return cache
 }
 
-// Cleanup will empty the cache.
-func (c *Cache) Cleanup() {
+func (c *cacheImpl) Cleanup() {
 	c.results.RemoveAll()
 }
 
-// CheckTLS performs a TLS check on a endpoint or returns the result from a
-// previous check. Returns true for skip if there was a previous error.
-func (c *Cache) CheckTLS(ctx context.Context, endpoint string) (secure bool, skip bool, err error) {
+func (c *cacheImpl) CheckTLS(ctx context.Context, endpoint string) (secure bool, skip bool, err error) {
 	incrementTLSCheckCount(c.metricSubsystem)
 
 	// First check the cache for an entry, and, if found, perform
@@ -83,18 +89,18 @@ func (c *Cache) CheckTLS(ctx context.Context, endpoint string) (secure bool, ski
 }
 
 // CacheOption modifies the default values of the cache.
-type CacheOption func(*Cache)
+type CacheOption func(*cacheImpl)
 
 // WithTTL sets the duration before cached entries expire.
 func WithTTL(ttl time.Duration) CacheOption {
-	return func(c *Cache) {
+	return func(c *cacheImpl) {
 		c.ttl = ttl
 	}
 }
 
 // WithTLSCheckFunc sets function that will be used when performing TLS checks.
 func WithTLSCheckFunc(f CheckTLSFunc) CacheOption {
-	return func(c *Cache) {
+	return func(c *cacheImpl) {
 		c.checkTLSFunc = f
 	}
 }
@@ -102,7 +108,7 @@ func WithTLSCheckFunc(f CheckTLSFunc) CacheOption {
 // WithMetricSubsystem sets the subsystem label that will be applied to prometheus metrics
 // tracked by the cache.
 func WithMetricSubsystem(metricSubsystem metrics.Subsystem) CacheOption {
-	return func(c *Cache) {
+	return func(c *cacheImpl) {
 		c.metricSubsystem = metricSubsystem
 	}
 }

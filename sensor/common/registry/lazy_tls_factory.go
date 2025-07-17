@@ -23,10 +23,10 @@ var _ registries.Factory = (*lazyFactory)(nil)
 
 type lazyFactory struct {
 	creators      map[string]types.Creator
-	tlsCheckCache *tlscheckcache.Cache
+	tlsCheckCache tlscheckcache.Cache
 }
 
-func newLazyFactory(tlsCheckCache *tlscheckcache.Cache) registries.Factory {
+func newLazyFactory(tlsCheckCache tlscheckcache.Cache) registries.Factory {
 	factory := &lazyFactory{
 		creators:      make(map[string]types.Creator, len(lazyEligibleCreators)),
 		tlsCheckCache: tlsCheckCache,

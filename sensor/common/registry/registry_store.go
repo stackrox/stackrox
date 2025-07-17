@@ -77,7 +77,7 @@ type Store struct {
 	// centralRegistryIntegration holds registry integrations sync'd from Central.
 	centralRegistryIntegrations registries.Set
 
-	tlsCheckCache *tlscheckcache.Cache
+	tlsCheckCache tlscheckcache.Cache
 }
 
 // NewRegistryStore creates a new registry store.
