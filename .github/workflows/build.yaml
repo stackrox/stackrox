@@ -122,8 +122,8 @@ jobs:
         run: |
           set +e
           echo ui-built-${{ hashFiles('ui/**') }}
-          echo ui-built-${{ contains(steps.files-changed.outputs.matches, "ui") && hashFiles('ui/**') }}
-          echo ${{ contains(steps.files-changed.outputs.matches, "ui") }}
+          echo ui-built-${{ contains(steps.files-changed.outputs.matches, 'ui') && hashFiles('ui/**') }}
+          echo ${{ contains(steps.files-changed.outputs.matches, 'ui') }}
           echo ${{ steps.files-changed.outputs.matches && 'true' }}
           echo "${{ toJSON(steps.files-changed) }}"
           set -x
