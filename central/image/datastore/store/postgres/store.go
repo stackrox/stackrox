@@ -28,6 +28,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
+	"github.com/stackrox/rox/pkg/search/sortfields"
 	"github.com/stackrox/rox/pkg/set"
 	"gorm.io/gorm"
 )
@@ -796,7 +797,7 @@ func (s *storeImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 func (s *storeImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Search, "Image")
 
-	q = applyDefaultSort(q)
+	q = s.applyDefaultSort(q)
 
 	return pgutils.Retry2(ctx, func() ([]search.Result, error) {
 		return pgSearch.RunSearchRequestForSchema(ctx, schema, q, s.db)
@@ -1185,7 +1186,7 @@ func (s *storeImpl) retryableGetByIDs(ctx context.Context, ids []string) ([]*sto
 func (s *storeImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(image *storage.Image) error) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.WalkByQuery, "Image")
 
-	q = applyDefaultSort(q)
+	q = s.applyDefaultSort(q)
 
 	conn, release, err := s.acquireConn(ctx, ops.WalkByQuery, "Image")
 	if err != nil {
@@ -1423,7 +1424,9 @@ func gatherKeys(parts *imagePartsAsSlice) [][]byte {
 	return keys
 }
 
-func applyDefaultSort(q *v1.Query) *v1.Query {
+func (s *storeImpl) applyDefaultSort(q *v1.Query) *v1.Query {
+	q = sortfields.TransformSortOptions(q, pkgSchema.ImagesSchema.OptionsMap)
+
 	if defaultSortOption == nil {
 		return q
 	}
