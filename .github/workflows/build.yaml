@@ -92,8 +92,6 @@ jobs:
       - name: go mod tidy
         run: |
           set -x
-          set +e
-          echo ${{ contains(steps.files-changed.outputs.matched, 'ui') }}
           export CI=true  # or builds roxctl separately in main-build-nodeps even if built
           parallel="${{ matrix.parallel }}"
           make -j${parallel} -Oline deps clean-image  # go mod tidy all go.sum files
@@ -124,6 +122,7 @@ jobs:
             # ui-build condition is if ./ui/build exists (sot it is skipped if cache restored it)
 
       - uses: actions/cache/save@v4
+        if: ${{ contains(steps.files-changed.outputs.matched, 'ui') && steps.restore-ui-build.outputs.cache-hit != 'true' }}
         with:
           key: ui-built-${{ steps.restore-ui-build.outputs.cache-primary-key }}
           path: ui/build
