@@ -153,10 +153,11 @@ func (i *processListeningIndicator) toProto(ts timestamp.MicroTS) *storage.Proce
 	return proto
 }
 
-// connection is an instance of a connection as reported by collector
+// connection is an instance of a connection as reported by collector.
+// Fields are ordered for memory alignment optimization (as described in https://goperf.dev/01-common-patterns/fields-alignment/)
 type connection struct {
-	local       net.NetworkPeerID
 	remote      net.NumericEndpoint
+	local       net.NetworkPeerID
 	containerID string
 	incoming    bool
 }
@@ -211,10 +212,12 @@ func (p *processInfo) String() string {
 	return fmt.Sprintf("%s: %s %s", p.processExec, p.processName, p.processArgs)
 }
 
+// containerEndpoint represents a container endpoint with fields ordered for memory alignment optimization
+// (as described in https://goperf.dev/01-common-patterns/fields-alignment/)
 type containerEndpoint struct {
+	processKey  processInfo
 	endpoint    net.NumericEndpoint
 	containerID string
-	processKey  processInfo
 }
 
 func (e *containerEndpoint) String() string {
