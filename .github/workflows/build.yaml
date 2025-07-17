@@ -93,9 +93,9 @@ jobs:
           set -x
           set +e
           git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*'
-          echo "${{ steps.files-changed.outputs }}"
-          echo "${{ steps.files-changed.outputs.matched }}"
-          echo "${{ contains(steps.files-changed.outputs.matched, 'ui') }}"
+          echo "${{ toJSON(steps.files-changed.outputs) }}"
+          echo "${{ toJSON(steps.files-changed.outputs.matches) }}"
+          echo "${{ contains(steps.files-changed.outputs.matches, 'ui') }}"
           export CI=true  # or builds roxctl separately in main-build-nodeps even if built
           parallel="${{ matrix.parallel }}"
           make -j${parallel} -Oline deps clean-image  # go mod tidy all go.sum files
@@ -130,7 +130,7 @@ jobs:
           cat /tmp/git.fetching.log
 
       - uses: actions/cache/save@v4
-        if: ${{ contains(steps.files-changed.outputs.matched, 'ui') && steps.restore-ui-build.outputs.cache-hit != 'true' }}
+        if: ${{ contains(steps.files-changed.outputs.matches, 'ui') && steps.restore-ui-build.outputs.cache-hit != 'true' }}
         with:
           key: ${{ steps.restore-ui-build.outputs.cache-primary-key }}
           path: ui/build
