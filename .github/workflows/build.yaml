@@ -71,7 +71,14 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+      - uses: actions/cache@v4
+        id: restore-ui-build
+        with:
+          key: ui-built-${{ env.ROX_PRODUCT_BRANDING }}-${{ hashFiles('ui/**') }}  # TODO: verify the same key is used at save and not reevaluated
+          path: ui/build
+
       - uses: ./.github/actions/cache-ui-dependencies
+        if: steps.restore-ui-build.outputs.cache-hit != 'true'
 
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
@@ -106,11 +113,6 @@ jobs:
               # mkdir -p bin/linux_amd64
             # clean-image: clear image context dir contents
           tail /tmp/git.fetching.log
-
-      - uses: actions/cache@v4
-        with:
-          key: ui-built-${{ env.ROX_PRODUCT_BRANDING }}-${{ hashFiles('ui/**') }}  # TODO: verify the same key is used at save and not reevaluated
-          path: ui/build
 
       - name: compile
         run: |
