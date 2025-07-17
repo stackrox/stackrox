@@ -49,8 +49,8 @@ jobs:
         run: |
           set +e
           set -x
-          nohup git fetch --depth=100 origin +refs/tags/*:refs/tags/* 2>&1 >>/tmp/git.fetching.log &
-          echo $!
+          nohup git fetch --depth=5000 origin +refs/tags/*:refs/tags/* >>/tmp/git.fetching.log 2>&1 &
+          echo $! | tee /tmp/git.fetching.pid
 
           function test() {
             local ret=0
@@ -91,6 +91,10 @@ jobs:
       - name: go mod tidy
         run: |
           set -x
+          set +e
+          echo "${{ steps.files-changed.outputs }}"
+          echo "${{ steps.files-changed.outputs.matched }}"
+          echo "${{ contains(steps.files-changed.outputs.matched, 'ui') }}"
           export CI=true  # or builds roxctl separately in main-build-nodeps even if built
           parallel="${{ matrix.parallel }}"
           make -j${parallel} -Oline deps clean-image  # go mod tidy all go.sum files
@@ -165,8 +169,11 @@ jobs:
               # copies bin/linux_$GOARCH/roxctl to image/roxctl/roxctl-linux
               # builds image/roxctl/Dockerfile tagged image/roxctl
           docker images
+          set +e
           cat /tmp/git.fetching.log
           ps -ef
+          cat /tmp/git.fetching.pid
+          ps -f -p$(pgrep -F /tmp/git.fetching.pid)
 
   define-job-matrix:
     outputs:
