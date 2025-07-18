@@ -42,7 +42,7 @@ type eventPipeline struct {
 }
 
 func (p *eventPipeline) Name() string {
-	return common.DefaultComponentName(p)
+	return "eventpipeline.eventPipeline"
 }
 
 // Capabilities implements common.SensorComponent

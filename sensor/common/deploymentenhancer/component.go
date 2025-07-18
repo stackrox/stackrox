@@ -31,7 +31,7 @@ type DeploymentEnhancer struct {
 }
 
 func (d *DeploymentEnhancer) Name() string {
-	return common.DefaultComponentName(d)
+	return "deploymentenhancer.DeploymentEnhancer"
 }
 
 // CreateEnhancer creates a new Enhancer

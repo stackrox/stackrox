@@ -65,7 +65,7 @@ func (h *handlerImpl) Stop() {
 }
 
 func (h *handlerImpl) Name() string {
-	return common.DefaultComponentName(h)
+	return "externalsrcs.handlerImpl"
 }
 
 func (h *handlerImpl) Notify(common.SensorComponentEvent) {}

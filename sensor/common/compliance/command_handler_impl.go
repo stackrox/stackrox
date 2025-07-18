@@ -45,7 +45,7 @@ func (c *commandHandlerImpl) Start() error {
 }
 
 func (c *commandHandlerImpl) Name() string {
-	return common.DefaultComponentName(c)
+	return "compliance.commandHandlerImpl"
 }
 
 func (c *commandHandlerImpl) Stop() {

@@ -44,7 +44,7 @@ type enforcer struct {
 }
 
 func (e *enforcer) Name() string {
-	return common.DefaultComponentName(e)
+	return "enforcer.enforcer"
 }
 
 func (e *enforcer) Capabilities() []centralsensor.SensorCapability {
