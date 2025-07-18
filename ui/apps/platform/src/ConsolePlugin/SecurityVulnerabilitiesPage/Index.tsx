@@ -2,19 +2,23 @@ import * as React from 'react';
 import { PageSection, Title } from '@patternfly/react-core';
 import { CheckCircleIcon } from '@patternfly/react-icons';
 
-import SeverityCountLabels from 'Containers/Vulnerabilities/components/SeverityCountLabels';
+import SummaryCounts from 'Containers/Dashboard/SummaryCounts';
+import PluginProvider from '../PluginProvider';
 
 export function Index() {
     return (
-        <>
+        <PluginProvider>
             <PageSection>
                 <Title headingLevel="h1">{'Hello, Plugin!'}</Title>
-                <SeverityCountLabels
-                    criticalCount={10}
-                    importantCount={20}
-                    moderateCount={30}
-                    lowCount={40}
-                    unknownCount={50}
+                <SummaryCounts
+                    hasReadAccessForResource={{
+                        Cluster: true,
+                        Node: true,
+                        Alert: true,
+                        Deployment: true,
+                        Image: true,
+                        Secret: true,
+                    }}
                 />
             </PageSection>
             <PageSection>
@@ -25,6 +29,6 @@ export function Index() {
                     {'Your plugin is working.'}
                 </p>
             </PageSection>
-        </>
+        </PluginProvider>
     );
 }
