@@ -83,7 +83,7 @@ jobs:
       - uses: ./.github/actions/cache-ui-dependencies
         if: steps.restore-ui-build.outputs.cache-hit != 'true'
 
-      - uses: actions/cache@v4
+      - uses: actions/cache/restore@v4
         id: restore-roxctl-build
         with:
           key: roxctl-built-${{ env.ROX_PRODUCT_BRANDING }}-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('roxctl/**', 'proto/**', 'generated/**') }}
@@ -131,6 +131,12 @@ jobs:
             # main-build-nodeps: gobuild *. then, build roxctl if not CI
             # ui-build: test -d ui/build || make -C ui build
             # ui-build condition is if ./ui/build exists (sot it is skipped if cache restored it)
+
+      - uses: actions/cache/save@v4
+        if: ${{ steps.restore-roxctl-build.outputs.cache-hit != 'true' }}
+        with:
+          key: ${{ steps.restore-roxctl-build.outputs.cache-primary-key }}
+          path: bin/${{ env.GOOS }}_${{ env.GOARCH }}/roxctl
 
       - name: Generate OSS notice
         if: false
