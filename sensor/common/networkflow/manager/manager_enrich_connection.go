@@ -116,6 +116,7 @@ func (m *networkFlowManager) enrichConnection(now timestamp.MicroTS, conn *conne
 		"namespace": container.Namespace,
 	}
 
+	// Cannot find any entity when looking by endpoint and IP address.
 	if len(lookupResults) == 0 {
 		// If the address is set and is not resolvable, we want to we wait for `clusterEntityResolutionWaitPeriod` time
 		// before associating it to a known network or INTERNET.
@@ -123,13 +124,11 @@ func (m *networkFlowManager) enrichConnection(now timestamp.MicroTS, conn *conne
 			return EnrichmentResultRetryLater, EnrichmentReasonConnIPUnresolvableYet
 		}
 
-		extSrc := m.externalSrcs.LookupByNetwork(conn.remote.IPAndPort.IPNetwork)
-		if extSrc != nil {
-			// Network was resolved, so there is no need to retry that
-			isFresh = false
-		}
-
-		if isFresh { // FIXME: Refactor this condition
+		externalSource := m.externalSrcs.LookupByNetwork(conn.remote.IPAndPort.IPNetwork)
+		// If we're still within the cluster entity resolution wait period and couldn't find
+		// a matching external network source, retry later. This gives time for external
+		// network definitions to be loaded before falling back to generic entities.
+		if isFresh && externalSource == nil {
 			return EnrichmentResultRetryLater, EnrichmentReasonConnLookupByNetworkFailed
 		}
 
@@ -137,7 +136,7 @@ func (m *networkFlowManager) enrichConnection(now timestamp.MicroTS, conn *conne
 			status.enrichmentResult.consumedNetworkGraph = true
 		}()
 
-		if extSrc == nil {
+		if externalSource == nil {
 			entityType := networkgraph.InternetEntity()
 			isExternal, err := conn.IsExternal()
 			status.isExternal = isExternal
@@ -184,7 +183,7 @@ func (m *networkFlowManager) enrichConnection(now timestamp.MicroTS, conn *conne
 			}
 			lookupResults = []clusterentities.LookupResult{
 				{
-					Entity:         networkgraph.EntityFromProto(extSrc),
+					Entity:         networkgraph.EntityFromProto(externalSource),
 					ContainerPorts: []uint16{port},
 				},
 			}
