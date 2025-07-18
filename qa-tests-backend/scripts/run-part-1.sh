@@ -25,7 +25,14 @@ set -euo pipefail
 run_part_1() {
     info "Starting test (qa-tests-backend part I)"
 
-    config_part_1
+    if [[ "${REMOVE_EXISTING_STACKROX_RESOURCES:-true}" == 'false' ]]; then
+      info 'Skipping config. Tests will be performed on the existing stackrox resources.'
+      kubectl get ns || true
+      kubectl get pods -n stackrox || true
+      { kubectl get pods -A | grep stackrox; } || true
+    else
+      config_part_1
+    fi
     test_part_1
 }
 
