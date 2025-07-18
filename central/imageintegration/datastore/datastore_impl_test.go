@@ -6,8 +6,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stackrox/rox/central/imageintegration/search"
-	searchMocks "github.com/stackrox/rox/central/imageintegration/search/mocks"
 	"github.com/stackrox/rox/central/imageintegration/store"
 	postgresStore "github.com/stackrox/rox/central/imageintegration/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -39,8 +37,6 @@ type ImageIntegrationDataStoreTestSuite struct {
 	hasReadCtx  context.Context
 	hasWriteCtx context.Context
 
-	mockSearcher *searchMocks.MockSearcher
-
 	datastore DataStore
 
 	testDB *pgtest.TestPostgres
@@ -59,7 +55,6 @@ func (suite *ImageIntegrationDataStoreTestSuite) SetupTest() {
 			sac.ResourceScopeKeys(resources.Integration)))
 
 	suite.mockCtrl = gomock.NewController(suite.T())
-	suite.mockSearcher = searchMocks.NewMockSearcher(suite.mockCtrl)
 
 	suite.testDB = pgtest.ForT(suite.T())
 	suite.NotNil(suite.testDB)
@@ -67,7 +62,7 @@ func (suite *ImageIntegrationDataStoreTestSuite) SetupTest() {
 	suite.store = postgresStore.New(suite.testDB.DB)
 
 	// test formattedSearcher
-	suite.datastore = NewForTestOnly(suite.store, suite.mockSearcher)
+	suite.datastore = NewForTestOnly(suite.store)
 }
 
 func (suite *ImageIntegrationDataStoreTestSuite) TestIntegrationsPersistence() {
@@ -289,7 +284,6 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestAllowsRemove() {
 
 func (suite *ImageIntegrationDataStoreTestSuite) TestSearch() {
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
-	suite.mockSearcher.EXPECT().Search(ctx, nil).Return(nil, nil)
 	_, err := suite.datastore.Search(ctx, nil)
 	suite.NoError(err)
 }
@@ -317,7 +311,7 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestDataStoreSearch() {
 	}
 
 	// Create a new datastore since the one in suite uses mocks
-	ds := New(suite.store, search.New(suite.store))
+	ds := New(suite.store)
 
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
 	_, err := ds.AddImageIntegration(ctx, ii)
