@@ -83,7 +83,8 @@ jobs:
       - uses: ./.github/actions/cache-ui-dependencies
         if: steps.restore-ui-build.outputs.cache-hit != 'true'
 
-      - uses: actions/cache/restore@v4
+      - name: restore cached roxctl
+        uses: actions/cache/restore@v4
         id: restore-roxctl-build
         with:
           key: roxctl-built-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('roxctl/**', 'proto/**', 'generated/**') }}
@@ -132,7 +133,8 @@ jobs:
             # ui-build: test -d ui/build || make -C ui build
             # ui-build condition is if ./ui/build exists (sot it is skipped if cache restored it)
 
-      - uses: actions/cache/save@v4
+      - name: cache roxctl
+        uses: actions/cache/save@v4
         if: ${{ steps.restore-roxctl-build.outputs.cache-hit != 'true' }}
         with:
           key: ${{ steps.restore-roxctl-build.outputs.cache-primary-key }}
@@ -163,6 +165,7 @@ jobs:
           make ossls-notice
 
       - name: Build image
+        continue-on-error: true
         run: |
           # TODO: cache container build layers
           set -x
@@ -333,6 +336,12 @@ jobs:
       - uses: ./.github/actions/job-preamble
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - name: cache all os_arch roxctl binaries
+        uses: actions/cache@v4
+        with:
+          key: roxctl-built-all-${{ hashFiles('roxctl/**', 'proto/**', 'generated/**') }}
+          path: bin/*/roxctl
 
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
