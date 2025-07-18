@@ -172,6 +172,7 @@ import (
 	"github.com/stackrox/rox/central/version"
 	vStore "github.com/stackrox/rox/central/version/store"
 	versionUtils "github.com/stackrox/rox/central/version/utils"
+	virtualmachineService "github.com/stackrox/rox/central/virtualmachine/service"
 	vulnMgmtService "github.com/stackrox/rox/central/vulnmgmt/service"
 	vulnRequestManager "github.com/stackrox/rox/central/vulnmgmt/vulnerabilityrequest/manager/requestmgr"
 	vulnRequestService "github.com/stackrox/rox/central/vulnmgmt/vulnerabilityrequest/service"
@@ -479,6 +480,10 @@ func servicesToRegister() []pkgGRPC.APIService {
 
 	if features.UnifiedCVEDeferral.Enabled() {
 		servicesToRegister = append(servicesToRegister, vulnRequestServiceV2.Singleton())
+	}
+
+	if features.VirtualMachines.Enabled() {
+		servicesToRegister = append(servicesToRegister, virtualmachineService.Singleton())
 	}
 
 	autoTriggerUpgrades := sensorUpgradeService.Singleton().AutoUpgradeSetting()

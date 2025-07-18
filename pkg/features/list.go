@@ -173,4 +173,6 @@ var (
 	//
 	// This must be set in Scanner V4 Indexer to have any effect.
 	ScannerV4MavenSearch = registerFeature("Enables Scanner V4 to reach out to ROX_SCANNER_V4_MAVEN_SEARCH_URL for additional information about Java packages", "ROX_SCANNER_V4_MAVEN_SEARCH")
+
+	VirtualMachines = registerFeature("Enables endpoints to support virtual machine management", "ROX_VIRTUAL_MACHINES")
 )
