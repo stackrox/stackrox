@@ -31,11 +31,7 @@ import NavigationItem from './NavigationItem';
 import { filterNavDescriptions, isActiveLink, NavDescription } from './utils';
 
 import './HorizontalSubnav.css';
-
-// Check if the search string contains the pattern or the encoded version of the pattern
-function containsPatternIgnoringEncoding(search: string, pattern: string) {
-    return new RegExp(`${pattern}|${encodeURI(pattern)}`, 'i').test(search);
-}
+import { hasSearchKeyValue } from 'utils/searchUtils';
 
 type SubnavParentKey = 'violations' | 'vulnerabilities';
 
@@ -56,10 +52,11 @@ function getSubnavDescriptionGroups(
                       isActive: (location) => {
                           const search: string = location.search || '';
                           return (
-                              containsPatternIgnoringEncoding(
+                              hasSearchKeyValue(
                                   search,
-                                  'filteredWorkflowView=Applications view'
-                              ) || !search.includes('filteredWorkflowView')
+                                  'filteredWorkflowView',
+                                  'Applications view'
+                              ) || hasSearchKeyValue(search, 'filteredWorkflowView', null)
                           );
                       },
                       routeKey: 'violations',
@@ -70,10 +67,7 @@ function getSubnavDescriptionGroups(
                       path: violationsPlatformViewPath,
                       isActive: (location) => {
                           const search: string = location.search || '';
-                          return containsPatternIgnoringEncoding(
-                              search,
-                              'filteredWorkflowView=Platform view'
-                          );
+                          return hasSearchKeyValue(search, 'filteredWorkflowView', 'Platform view');
                       },
                       routeKey: 'violations',
                   },
@@ -83,10 +77,7 @@ function getSubnavDescriptionGroups(
                       path: violationsFullViewPath,
                       isActive: (location) => {
                           const search: string = location.search || '';
-                          return containsPatternIgnoringEncoding(
-                              search,
-                              'filteredWorkflowView=Full view'
-                          );
+                          return hasSearchKeyValue(search, 'filteredWorkflowView', 'Full view');
                       },
                       routeKey: 'violations',
                   },
