@@ -28,7 +28,7 @@ import PermissionSetsTable from './PermissionSetsTable';
 
 import './RoleForm.css';
 import usePermissions from '../../../hooks/usePermissions';
-import { TraitsOriginLabel } from '../TraitsOriginLabel';
+import { TraitsOriginLabel } from '../../TraitsOriginLabel';
 
 export type RoleFormProps = {
     isActionable: boolean;

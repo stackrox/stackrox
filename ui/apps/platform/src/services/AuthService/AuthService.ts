@@ -13,7 +13,7 @@ import addTokenRefreshInterceptors, {
 } from './addTokenRefreshInterceptors';
 import { authProviderLabels } from '../../constants/accessControl';
 import type { Traits } from '../../types/traits.proto';
-import { isUserResource } from '../../Containers/AccessControl/traits';
+import { isUserResource } from '../../Containers/traits';
 
 const authProvidersUrl = '/v1/authProviders';
 const authLoginProvidersUrl = '/v1/login/authproviders';

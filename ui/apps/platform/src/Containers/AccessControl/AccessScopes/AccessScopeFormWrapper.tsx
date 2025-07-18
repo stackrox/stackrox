@@ -23,7 +23,7 @@ import {
 } from './accessScopes.utils';
 import AccessScopeForm from './AccessScopeForm';
 import usePermissions from '../../../hooks/usePermissions';
-import { TraitsOriginLabel } from '../TraitsOriginLabel';
+import { TraitsOriginLabel } from '../../TraitsOriginLabel';
 
 export type AccessScopeFormWrapperProps = {
     isActionable: boolean;
