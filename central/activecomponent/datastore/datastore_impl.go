@@ -5,7 +5,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/activecomponent/datastore/internal/store"
-	"github.com/stackrox/rox/central/activecomponent/datastore/search"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
@@ -18,16 +17,24 @@ var (
 )
 
 type datastoreImpl struct {
-	storage  store.Store
-	searcher search.Searcher
+	storage store.Store
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, query *v1.Query) ([]pkgSearch.Result, error) {
-	return ds.searcher.Search(ctx, query)
+	return ds.storage.Search(ctx, query)
 }
 
 func (ds *datastoreImpl) SearchRawActiveComponents(ctx context.Context, query *v1.Query) ([]*storage.ActiveComponent, error) {
-	return ds.searcher.SearchRawActiveComponents(ctx, query)
+	var components []*storage.ActiveComponent
+	err := ds.storage.GetByQueryFn(ctx, query, func(component *storage.ActiveComponent) error {
+		components = append(components, component)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return components, nil
 }
 
 func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.ActiveComponent, bool, error) {
