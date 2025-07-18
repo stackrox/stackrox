@@ -55,8 +55,7 @@ _create_job_record() {
 
 save_job_record() {
     _save_job_record "$@" || {
-        # Failure to gather metrics is not a test failure
-        info "WARNING: Job record creation failed"
+        die "Job record creation failed"
     }
 }
 
