@@ -46,7 +46,7 @@ func (s *centralReceiverImpl) receive(stream central.SensorService_CommunicateCl
 		for name, ch := range componentsQueues {
 			go func() {
 				for msg := range ch {
-					log.Warnf("Dropping %s not handled by %s", msg, name)
+					log.Warnf("Dropping %T not handled by %s", msg, name)
 				}
 			}()
 		}
@@ -64,7 +64,9 @@ func (s *centralReceiverImpl) receive(stream central.SensorService_CommunicateCl
 			case ch <- msg:
 				log.Debugf("Sending msg to %s", name)
 			case <-ctx.Done():
-				log.Errorf("Failed to send msg %T to %s receiver channel", msg, name)
+				log.Info("Context done not multiplexing messages")
+				log.Warnf("Dropping %T", msg)
+				return
 			}
 		}
 	}
