@@ -346,7 +346,10 @@ func (e *enricherImpl) updateImageFromDatabase(ctx context.Context, img *storage
 func (e *enricherImpl) enrichWithMetadata(ctx context.Context, enrichmentContext EnrichmentContext, image *storage.Image) (bool, error) {
 	// Attempt to short-circuit before checking registries.
 	metadataOutOfDate := metadataIsOutOfDate(image.GetMetadata())
-	if !metadataOutOfDate {
+	// If the datasource does not exist re-pull metadata to find a valid datasource,
+	// otherwise scanning may fail.
+	dataSourceExists := e.integrations.RegistrySet().Get(image.GetMetadata().GetDataSource().GetId()) != nil
+	if !metadataOutOfDate && dataSourceExists {
 		return false, nil
 	}
 
