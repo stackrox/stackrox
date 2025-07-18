@@ -168,7 +168,7 @@ jobs:
           cache_tag_master='master'
           
           export DOCKER_BUILD_CACHE_ARGS="--cache-to type=registry,ref=${cache_registry}/${cache_image}:${cache_tag},mode=max \
-            --cache-from type=registry,ref=${cache_registry}/${cache_image}:${cache_tag} \
+            --cache-from type=registry,ref=${cache_registry}/${cache_image}:${cache_tag//\//_} \
             --cache-from type=registry,ref=${cache_registry}/${cache_image}:${cache_tag_master}"
           make -j${parallel} -Oline docker-build-main-image docker-build-roxctl-image
             # copies bin/*/ to image/rhel/bin/
