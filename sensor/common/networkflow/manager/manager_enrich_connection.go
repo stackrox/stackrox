@@ -25,7 +25,7 @@ const (
 	EnrichmentReasonConnOutsideOfGracePeriod       EnrichmentReasonConn = "outside-of-grace-period"
 	EnrichmentReasonConnIPUnresolvableYet          EnrichmentReasonConn = "ip-unresolvable-yet"
 	EnrichmentReasonConnLookupByNetworkFailed      EnrichmentReasonConn = "lookup-by-network-failed"
-	EnrichmentReasonConnParsingIPFailed            EnrichmentReasonConn = "lookup-by-network-failed"
+	EnrichmentReasonConnParsingIPFailed            EnrichmentReasonConn = "parsing-ip-failed"
 	EnrichmentReasonConnIncomingInternalConnection EnrichmentReasonConn = "incoming-internal-connection"
 )
 
