@@ -1,7 +1,6 @@
 package datastore
 
 import (
-	"github.com/stackrox/rox/central/blob/datastore/search"
 	"github.com/stackrox/rox/central/blob/datastore/store"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/pkg/sync"
@@ -17,9 +16,8 @@ var (
 func Singleton() Datastore {
 	once.Do(func() {
 		store := store.New(globaldb.GetPostgres())
-		searcher := search.New(store)
 
-		ds = NewDatastore(store, searcher)
+		ds = NewDatastore(store)
 	})
 	return ds
 }
