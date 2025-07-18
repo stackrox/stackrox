@@ -9,6 +9,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
@@ -121,12 +122,12 @@ func (h *Manager) populateCacheFromConfigMapNoLock(ctx context.Context) error {
 	if err != nil {
 		if apiErrors.IsNotFound(err) {
 			h.cacheIsPopulated.Store(true)
-			log.Debug("No heritage data found. Starting with empty cache")
+			log.Debug("No heritage data found. Starting with empty cache.")
 			return nil
 		}
 		log.Warnf("Loading data from configMap failed: %v", err)
 		h.cacheIsPopulated.Store(false)
-		return err
+		return errors.Wrap(err, "reading configmap")
 	}
 	log.Infof("Sensor heritage data with %d entries loaded to memory: %s", len(data), sensorMetadataString(data))
 	h.cache = append(h.cache, data...)
@@ -208,7 +209,7 @@ func (h *Manager) write(ctx context.Context, now time.Time) (wrote bool, err err
 		h.lastCmWrite = now
 		return true, nil
 	}
-	return false, err
+	return false, errors.Wrap(err, "writing configmap")
 }
 
 // pruneOldHeritageData reduces the number of elements in the []*PastSensor slice by removing
