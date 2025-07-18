@@ -31,12 +31,15 @@ func (s *centralReceiverImpl) Stopped() concurrency.ReadOnlyErrorSignal {
 
 // Take in data processed by central, run post-processing, then send it to the output channel.
 func (s *centralReceiverImpl) receive(stream central.SensorService_CommunicateClient, onStops ...func()) {
+	ctx, cancel := context.WithCancel(stream.Context())
+
 	componentsQueues := make(map[string]chan *central.MsgToSensor, len(s.receivers))
 	for _, r := range s.receivers {
 		componentsQueues[r.Name()] = make(chan *central.MsgToSensor, 1)
 	}
 
 	defer func() {
+		cancel()
 		s.stopper.Flow().ReportStopped()
 		runAll(onStops...)
 		s.finished.Done()
@@ -51,7 +54,7 @@ func (s *centralReceiverImpl) receive(stream central.SensorService_CommunicateCl
 		for name, ch := range componentsQueues {
 			select {
 			case ch <- msg:
-				log.Debug("Sending msg to %s", name)
+				log.Debugf("Sending msg to %s", name)
 			case <-ctx.Done():
 				log.Error("Failed to send msg %T to %s receiver channel", msg, name)
 			}
@@ -68,9 +71,9 @@ func (s *centralReceiverImpl) receive(stream central.SensorService_CommunicateCl
 			log.Info("Stop flow requested")
 			return
 
-		case <-stream.Context().Done():
+		case <-ctx.Done():
 			log.Info("Context done")
-			s.stopper.Flow().StopWithError(stream.Context().Err())
+			s.stopper.Flow().StopWithError(ctx.Err())
 			return
 
 		default:
@@ -85,7 +88,7 @@ func (s *centralReceiverImpl) receive(stream central.SensorService_CommunicateCl
 				s.stopper.Flow().StopWithError(err)
 				return
 			}
-			go sendToAll(stream.Context(), msg)
+			go sendToAll(ctx, msg)
 		}
 	}
 }
