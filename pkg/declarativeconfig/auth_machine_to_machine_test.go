@@ -54,6 +54,21 @@ issuer: https://kubernetes.default.svc
 	assert.ErrorIs(t, err, errox.InvalidArgs)
 }
 
+func TestAuthMachineToMachineConfigTypeBadYAML(t *testing.T) {
+	data := []byte(`type: [ true, false ]
+tokenExpirationDuration: 1h
+mappings:
+    - key: sub
+      value: system:serviceaccount:stackrox:config-controller
+      role: Configuration Controller
+issuer: https://kubernetes.default.svc
+`)
+	m2mConfig := &AuthMachineToMachineConfig{}
+
+	err := yaml.Unmarshal(data, m2mConfig)
+	assert.ErrorContains(t, err, "yaml: unmarshal errors:\n  line 1: cannot unmarshal !!seq into string")
+}
+
 func TestAuthMachineToMachineConfigTypeDecoding(t *testing.T) {
 	for name, tc := range map[string]struct {
 		inputNode           *yaml.Node
