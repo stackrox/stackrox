@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package storage;
+
+import "google/protobuf/timestamp.proto";
+import "storage/image.proto";
+
+message VirtualMachine {
+  string id = 1; // @gotags: search:"Virtual Machine ID,store,hidden" sql:"pk"
+  string namespace = 2; // @gotags: search:"Namespace,store"
+  string name = 3; // @gotags: search:"Name,store"
+  string cluster_id = 4; // @gotags: search:"Cluster ID,hidden,store"  sql:"type(uuid)"
+  string cluster_name = 5;
+  map<string, string> facts = 6;
+
+  VirtualMachineScan scan = 7; // @gotags: policy:"Virtual Machine Scan"
+
+  google.protobuf.Timestamp last_updated = 8; // @gotags: search:"Last Updated,hidden"
+
+  enum Note {
+    MISSING_METADATA = 0;
+    MISSING_SCAN_DATA = 1;
+    MISSING_SIGNATURE = 2;
+    MISSING_SIGNATURE_VERIFICATION_DATA = 3;
+  }
+  repeated Note notes = 9;
+}
+
+message VirtualMachineScan {
+  string scanner_version = 1;
+  google.protobuf.Timestamp scan_time = 2; // @gotags: search:"Virtual Machine Scan Time,store"
+  repeated EmbeddedImageScanComponent components = 3; // @gotags: sql:"-"
+  string operating_system = 4; // @gotags: search:"Virtual Machine OS,store"
+  // DataSource contains information about which integration was used to scan the image
+  DataSource data_source = 5;
+  enum Note {
+    UNSET = 0;
+    OS_UNAVAILABLE = 1;
+    PARTIAL_SCAN_DATA = 2;
+    OS_CVES_UNAVAILABLE = 3;
+    OS_CVES_STALE = 4;
+    LANGUAGE_CVES_UNAVAILABLE = 5;
+    CERTIFIED_RHEL_SCAN_UNAVAILABLE = 6;
+  }
+  repeated Note notes = 6;
+}
