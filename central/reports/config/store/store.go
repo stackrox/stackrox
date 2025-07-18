@@ -17,6 +17,7 @@ type Store interface {
 
 	Get(ctx context.Context, id string) (*storage.ReportConfiguration, bool, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.ReportConfiguration, []int, error)
+	GetByQueryFn(ctx context.Context, query *v1.Query, fn func(obj *storage.ReportConfiguration) error) error
 	Walk(context.Context, func(reportConfig *storage.ReportConfiguration) error) error
 
 	Upsert(ctx context.Context, reportConfig *storage.ReportConfiguration) error

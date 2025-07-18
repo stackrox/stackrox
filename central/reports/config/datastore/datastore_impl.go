@@ -4,10 +4,10 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/reports/config/search"
 	"github.com/stackrox/rox/central/reports/config/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	searchPkg "github.com/stackrox/rox/pkg/search"
@@ -16,16 +16,16 @@ import (
 
 var (
 	reportConfigSAC = sac.ForResource(resources.WorkflowAdministration)
+
+	log = logging.LoggerForModule()
 )
 
 type dataStoreImpl struct {
 	reportConfigStore store.Store
-
-	searcher search.Searcher
 }
 
 func (d *dataStoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error) {
-	return d.searcher.Search(ctx, q)
+	return d.reportConfigStore.Search(ctx, q)
 }
 
 func (d *dataStoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
@@ -36,7 +36,18 @@ func (d *dataStoreImpl) GetReportConfigurations(ctx context.Context, query *v1.Q
 	if ok, err := reportConfigSAC.ReadAllowed(ctx); !ok || err != nil {
 		return nil, err
 	}
-	return d.searcher.SearchReportConfigurations(ctx, query)
+	log.Infof("SHREWS -- %v", query.String())
+	var configs []*storage.ReportConfiguration
+	err := d.reportConfigStore.GetByQueryFn(ctx, query, func(config *storage.ReportConfiguration) error {
+		log.Infof("SHREWS -- %v", config.Id)
+		configs = append(configs, config)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return configs, nil
 }
 
 func (d *dataStoreImpl) GetReportConfiguration(ctx context.Context, id string) (*storage.ReportConfiguration, bool, error) {

@@ -49,11 +49,6 @@ func New(nsStore store.Store, deploymentDataStore deploymentDataStore.DataStore,
 
 var (
 	namespaceSAC = sac.ForResource(resources.Namespace)
-
-	defaultSortOption = &v1.QuerySortOption{
-		Field:    search.Namespace.String(),
-		Reversed: false,
-	}
 )
 
 type datastoreImpl struct {
@@ -259,6 +254,5 @@ func (b *datastoreImpl) updateNamespacePriority(nss ...*storage.NamespaceMetadat
 func formatSearcherV2(searcher search.Searcher, namespaceRanker *ranking.Ranker) search.Searcher {
 	prioritySortedSearcher := sorted.Searcher(searcher, search.NamespacePriority, namespaceRanker)
 	// This is currently required due to the priority searcher
-	paginatedSearcher := paginated.Paginated(prioritySortedSearcher)
-	return paginated.WithDefaultSortOption(paginatedSearcher, defaultSortOption)
+	return paginated.Paginated(prioritySortedSearcher)
 }

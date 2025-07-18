@@ -9,14 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/search/sortfields"
-)
-
-var (
-	defaultSortOption = &v1.QuerySortOption{
-		Field: search.LastUpdatedTime.String(),
-	}
 )
 
 // NewV2 returns a new instance of Searcher for the given the storage.
@@ -28,8 +21,7 @@ func NewV2(storage store.Store) Searcher {
 }
 
 func formatSearcherV2(searcher search.Searcher) search.Searcher {
-	transformedSortFieldSearcher := sortfields.TransformSortFields(searcher, schema.ImagesSchema.OptionsMap)
-	return paginated.WithDefaultSortOption(transformedSortFieldSearcher, defaultSortOption)
+	return sortfields.TransformSortFields(searcher, schema.ImagesSchema.OptionsMap)
 }
 
 // searcherImplV2 provides an intermediary implementation layer for image storage.
