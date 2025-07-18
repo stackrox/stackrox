@@ -31,6 +31,7 @@ import NavigationItem from './NavigationItem';
 import { filterNavDescriptions, isActiveLink, NavDescription } from './utils';
 
 import './HorizontalSubnav.css';
+import { hasSearchKeyValue } from 'utils/searchUtils';
 
 type SubnavParentKey = 'violations' | 'vulnerabilities';
 
@@ -50,8 +51,13 @@ function getSubnavDescriptionGroups(
                       path: violationsUserWorkloadsViewPath,
                       isActive: (location) => {
                           const search: string = location.search || '';
-                          const encodedValue = encodeURIComponent('Applications view');
-                          return search.includes(`filteredWorkflowView=${encodedValue}`);
+                          return (
+                              hasSearchKeyValue(
+                                  search,
+                                  'filteredWorkflowView',
+                                  'Applications view'
+                              ) || hasSearchKeyValue(search, 'filteredWorkflowView', null)
+                          );
                       },
                       routeKey: 'violations',
                   },
@@ -61,8 +67,7 @@ function getSubnavDescriptionGroups(
                       path: violationsPlatformViewPath,
                       isActive: (location) => {
                           const search: string = location.search || '';
-                          const encodedValue = encodeURIComponent('Platform view');
-                          return search.includes(`filteredWorkflowView=${encodedValue}`);
+                          return hasSearchKeyValue(search, 'filteredWorkflowView', 'Platform view');
                       },
                       routeKey: 'violations',
                   },
@@ -72,8 +77,7 @@ function getSubnavDescriptionGroups(
                       path: violationsFullViewPath,
                       isActive: (location) => {
                           const search: string = location.search || '';
-                          const encodedValue = encodeURIComponent('Full view');
-                          return search.includes(`filteredWorkflowView=${encodedValue}`);
+                          return hasSearchKeyValue(search, 'filteredWorkflowView', 'Full view');
                       },
                       routeKey: 'violations',
                   },
