@@ -29,11 +29,6 @@ apps/platform/cypress/downloads/
 .cursor/
 .cursorrules/
 
-# cursor rules
-# we want to ignore all cursor rules while we are working expermenting with them
-.cursor/
-.cursorrules/
-
 # claude code rules
 CLAUDE.md
 claude-docs/
