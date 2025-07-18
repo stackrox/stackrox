@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/tlscheckcache"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/utils"
 
@@ -37,7 +38,7 @@ type lazyTLSCheckRegistry struct {
 	registry types.Registry
 
 	// tlsCheckCache performs and caches registry TLS checks.
-	tlsCheckCache *tlsCheckCacheImpl
+	tlsCheckCache tlscheckcache.Cache
 
 	// initialized tracks whether lazy initialization has completed.
 	initialized      atomic.Uint32

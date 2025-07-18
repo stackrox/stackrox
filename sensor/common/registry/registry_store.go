@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/openshift"
 	"github.com/stackrox/rox/pkg/registries"
 	rhelFactory "github.com/stackrox/rox/pkg/registries/rhel"
@@ -21,9 +22,10 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/tlscheck"
+	"github.com/stackrox/rox/pkg/tlscheckcache"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/sensor/common/cloudproviders/gcp"
-	"github.com/stackrox/rox/sensor/common/registry/metrics"
+	registryMetrics "github.com/stackrox/rox/sensor/common/registry/metrics"
 )
 
 const defaultSA = "default"
@@ -75,21 +77,21 @@ type Store struct {
 	// centralRegistryIntegration holds registry integrations sync'd from Central.
 	centralRegistryIntegrations registries.Set
 
-	tlsCheckCache *tlsCheckCacheImpl
+	tlsCheckCache tlscheckcache.Cache
 }
-
-// CheckTLS defines a function which checks if the given address is using TLS.
-// An example implementation of this is tlscheck.CheckTLS.
-type CheckTLS func(ctx context.Context, origAddr string) (bool, error)
 
 // NewRegistryStore creates a new registry store.
 // The passed-in CheckTLS is used to check if a registry uses TLS.
 // If checkTLS is nil, tlscheck.CheckTLS is used by default.
-func NewRegistryStore(checkTLSFunc CheckTLS) *Store {
+func NewRegistryStore(checkTLSFunc tlscheckcache.CheckTLSFunc) *Store {
 	if checkTLSFunc == nil {
 		checkTLSFunc = tlscheck.CheckTLS
 	}
-	tlsCheckCache := newTLSCheckCache(checkTLSFunc)
+	tlsCheckCache := tlscheckcache.New(
+		tlscheckcache.WithMetricSubsystem(metrics.SensorSubsystem),
+		tlscheckcache.WithTLSCheckFunc(checkTLSFunc),
+		tlscheckcache.WithTTL(env.RegistryTLSCheckTTL.DurationSetting()),
+	)
 
 	defaultFactory := registries.NewFactory(registries.FactoryOptions{
 		CreatorFuncs: registries.AllCreatorFuncsWithoutRepoList,
@@ -103,12 +105,12 @@ func NewRegistryStore(checkTLSFunc CheckTLS) *Store {
 		storeByName: make(namespaceToSecretName),
 		globalRegistries: registries.NewSet(
 			factory,
-			types.WithMetricsHandler(metrics.Singleton()),
+			types.WithMetricsHandler(registryMetrics.Singleton()),
 			types.WithGCPTokenManager(gcp.Singleton()),
 		),
 		centralRegistryIntegrations: registries.NewSet(
 			defaultFactory,
-			types.WithMetricsHandler(metrics.Singleton()),
+			types.WithMetricsHandler(registryMetrics.Singleton()),
 			types.WithGCPTokenManager(gcp.Singleton()),
 		),
 		clusterLocalRegistryHosts: set.NewStringSet(),
@@ -128,7 +130,7 @@ func (rs *Store) Cleanup() {
 	rs.cleanupClusterLocalRegistryHosts()
 	rs.tlsCheckCache.Cleanup()
 
-	metrics.ResetRegistryMetrics()
+	registryMetrics.ResetRegistryMetrics()
 
 	log.Info("Registry store cleared.")
 }
@@ -222,8 +224,8 @@ func (rs *Store) upsertRegistry(namespace, registry, host string, dce config.Doc
 
 	if inserted {
 		// A new entry was inserted (not updated).
-		metrics.IncrementPullSecretEntriesCount(1)
-		metrics.IncrementPullSecretEntriesSize(ii.SizeVT())
+		registryMetrics.IncrementPullSecretEntriesCount(1)
+		registryMetrics.IncrementPullSecretEntriesSize(ii.SizeVT())
 	}
 
 	return nil
@@ -269,7 +271,7 @@ func (rs *Store) upsertGlobalRegistry(registry, host string, dce config.DockerCo
 
 	log.Debugf("Upserted global registry %q into store", registry)
 
-	metrics.SetGlobalSecretEntriesCount(rs.globalRegistries.Len())
+	registryMetrics.SetGlobalSecretEntriesCount(rs.globalRegistries.Len())
 
 	return nil
 }
@@ -350,7 +352,7 @@ func (rs *Store) addClusterLocalRegistryHost(host string) {
 	if rs.clusterLocalRegistryHosts.Add(host) {
 		log.Infof("Added cluster local registry host %q", host)
 
-		metrics.SetClusterLocalHostsCount(len(rs.clusterLocalRegistryHosts))
+		registryMetrics.SetClusterLocalHostsCount(len(rs.clusterLocalRegistryHosts))
 	}
 }
 
@@ -379,7 +381,7 @@ func (rs *Store) UpsertCentralRegistryIntegrations(iis []*storage.ImageIntegrati
 		}
 	}
 
-	metrics.SetCentralIntegrationCount(rs.centralRegistryIntegrations.Len())
+	registryMetrics.SetCentralIntegrationCount(rs.centralRegistryIntegrations.Len())
 }
 
 // DeleteCentralRegistryIntegrations deletes registry integrations from the store.
@@ -393,7 +395,7 @@ func (rs *Store) DeleteCentralRegistryIntegrations(ids []string) {
 		}
 	}
 
-	metrics.SetCentralIntegrationCount(rs.centralRegistryIntegrations.Len())
+	registryMetrics.SetCentralIntegrationCount(rs.centralRegistryIntegrations.Len())
 }
 
 // GetCentralRegistries returns registry integrations sync'd from Central that match the
@@ -538,11 +540,11 @@ func (rs *Store) upsertPullSecretByNameNoLock(namespace, secretName, registry, h
 
 	oldreg, ok := hostToRegistry[registry]
 	if !ok {
-		metrics.IncrementPullSecretEntriesCount(1)
-		metrics.IncrementPullSecretEntriesSize(reg.Source().SizeVT())
+		registryMetrics.IncrementPullSecretEntriesCount(1)
+		registryMetrics.IncrementPullSecretEntriesSize(reg.Source().SizeVT())
 	} else {
 		// Adjust the the size based on the diff between the old and the new entry.
-		metrics.IncrementPullSecretEntriesSize(reg.Source().SizeVT() - oldreg.Source().SizeVT())
+		registryMetrics.IncrementPullSecretEntriesSize(reg.Source().SizeVT() - oldreg.Source().SizeVT())
 	}
 
 	hostToRegistry[registry] = reg
@@ -577,8 +579,8 @@ func (rs *Store) DeleteSecret(namespace, secretName string) bool {
 		}
 
 		log.Debugf("Deleted secret %q from namespace %q", secretName, namespace)
-		metrics.DecrementPullSecretEntriesCount(len(hostToRegistry))
-		metrics.DecrementPullSecretEntriesSize(deletedBytes)
+		registryMetrics.DecrementPullSecretEntriesCount(len(hostToRegistry))
+		registryMetrics.DecrementPullSecretEntriesSize(deletedBytes)
 		return true
 	}
 
