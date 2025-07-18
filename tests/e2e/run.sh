@@ -138,9 +138,6 @@ run_roxctl_tests() {
     junit_wrap "roxctl-token-file" "roxctl token-file test" "" \
         "$ROOT/tests/roxctl/token-file.sh"
 
-    junit_wrap "roxctl-slim-collector" "roxctl slim-collector test" "" \
-        "$ROOT/tests/roxctl/slim-collector.sh"
-
     junit_wrap "roxctl-authz-trace" "roxctl authz-trace test" "" \
         "$ROOT/tests/roxctl/authz-trace.sh"
 

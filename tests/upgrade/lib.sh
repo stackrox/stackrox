@@ -198,7 +198,7 @@ test_upgrader() {
     rm -rf sensor-remote-new
     "$TEST_ROOT/bin/${TEST_HOST_PLATFORM}/roxctl" -e "$API_ENDPOINT" --ca "" --insecure-skip-tls-verify sensor generate k8s \
         --name remote-new \
-        --create-admission-controller
+        --admission-controller-listen-on-creates
 
     deploy_sensor_via_upgrader "for the first time, to test rollback" 3b2cbf78-d35a-4c2c-b67b-e37f805c14da
     rollback_sensor_via_upgrader 3b2cbf78-d35a-4c2c-b67b-e37f805c14da
