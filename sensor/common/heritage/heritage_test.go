@@ -387,10 +387,10 @@ func Test_writeRateLimiter(t *testing.T) {
 		cacheHit      bool
 		writeExpected bool
 	}{
-		"Write after 5s should not trigger 1s rate limit": {
+		"Write after 15s should not trigger 10s rate limit": {
 			lastWrite:     time.Unix(0, 0),
-			frequency:     time.Second,
-			now:           time.Unix(5, 0),
+			frequency:     10 * time.Second,
+			now:           time.Unix(15, 0),
 			cacheHit:      true,
 			writeExpected: true,
 		},
@@ -407,6 +407,13 @@ func Test_writeRateLimiter(t *testing.T) {
 			now:           time.Unix(5, 0),
 			cacheHit:      false,
 			writeExpected: true,
+		},
+		"Negative time difference on cache hit should not write": {
+			lastWrite:     time.Unix(10, 0),
+			frequency:     10 * time.Second,
+			now:           time.Unix(5, 0),
+			cacheHit:      true,
+			writeExpected: false,
 		},
 	}
 	for name, tt := range tests {
