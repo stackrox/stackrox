@@ -19,7 +19,6 @@ type MachineToMachineRoleMapping struct {
 
 // AuthMachineToMachineConfig represents a machine to machine auth configuration.
 type AuthMachineToMachineConfig struct {
-	ID                      string                         `yaml:"id,omitempty"`
 	Type                    AuthMachineToMachineConfigType `yaml:"type,omitempty"`
 	TokenExpirationDuration string                         `yaml:"tokenExpirationDuration,omitempty"`
 	Mappings                []MachineToMachineRoleMapping  `yaml:"mappings,omitempty"`
