@@ -452,15 +452,19 @@ func (m *managerImpl) ProcessRescanRequest(ctx context.Context, scanID string) e
 				},
 			},
 		}
+
+		newClusterStatus := ""
 		err := m.sensorConnMgr.SendMessage(c.GetClusterId(), msg)
 		if err != nil {
 			log.Errorf("Unable to rescan cluster %s due to message failure: %s", c.GetClusterId(), err)
-			// Update status in DB
-			err = m.updateClusterStatus(ctx, scanConfig.GetId(), c.GetClusterId(), err.Error())
-			if err != nil {
-				log.Error(err)
-				return errors.Errorf("Unable to save scan configuration status for scan configuration %q.", scanConfig.GetScanConfigName())
-			}
+			newClusterStatus = err.Error()
+		}
+
+		// Update status in DB
+		err = m.updateClusterStatus(ctx, scanConfig.GetId(), c.GetClusterId(), newClusterStatus)
+		if err != nil {
+			log.Error(err)
+			return errors.Errorf("Unable to save scan configuration status for scan configuration %q.", scanConfig.GetScanConfigName())
 		}
 	}
 

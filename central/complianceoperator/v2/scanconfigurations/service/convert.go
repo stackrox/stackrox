@@ -389,35 +389,7 @@ func convertStorageScanConfigToV2ScanStatus(ctx context.Context,
 	return &v2.ComplianceScanConfigurationStatus{
 		Id:       scanConfig.GetId(),
 		ScanName: scanConfig.GetScanConfigName(),
-		ClusterStatus: func() []*v2.ClusterScanStatus {
-			clusterStatuses := make([]*v2.ClusterScanStatus, 0, len(scanClusters))
-			for _, cluster := range scanClusters {
-				var errors []string
-				bindings, err := bindingsDS.GetScanSettingBindings(ctx, search.NewQueryBuilder().
-					AddExactMatches(search.ComplianceOperatorScanConfigName, scanConfig.GetScanConfigName()).
-					AddExactMatches(search.ClusterID, cluster.ClusterId).ProtoQuery())
-				if err != nil {
-					continue
-				}
-
-				// We may not have received any bindings from sensor
-				if len(bindings) != 0 {
-					bindingError := getLatestBindingError(bindings[0].Status)
-					if bindingError != "" {
-						errors = append(errors, bindingError)
-					}
-				}
-
-				errors = append(errors, cluster.GetErrors()...)
-				clusterStatuses = append(clusterStatuses, &v2.ClusterScanStatus{
-					ClusterId:   cluster.GetClusterId(),
-					ClusterName: cluster.GetClusterName(),
-					Errors:      errors,
-					SuiteStatus: clusterToSuiteMap[cluster.GetClusterId()],
-				})
-			}
-			return clusterStatuses
-		}(),
+		ClusterStatus: getClusterStatus(ctx, bindingsDS, scanConfig, clusterToSuiteMap, scanClusters),
 		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
 			OneTimeScan:  scanConfig.GetOneTimeScan(),
 			ScanSchedule: convertProtoScheduleToV2(scanConfig.GetSchedule()),
@@ -433,6 +405,36 @@ func convertStorageScanConfigToV2ScanStatus(ctx context.Context,
 		LastUpdatedTime:  scanConfig.GetLastUpdatedTime(),
 		LastExecutedTime: lastScanTime,
 	}, nil
+}
+
+func getClusterStatus(ctx context.Context, bindingsDS bindingsDS.DataStore, scanConfig *storage.ComplianceOperatorScanConfigurationV2, clusterToSuiteMap map[string]*v2.ClusterScanStatus_SuiteStatus, scanClusterStatuses []*storage.ComplianceOperatorClusterScanConfigStatus) []*v2.ClusterScanStatus {
+	clusterStatuses := make([]*v2.ClusterScanStatus, 0, len(scanClusterStatuses))
+	for _, cluster := range scanClusterStatuses {
+		var errors []string
+		bindings, err := bindingsDS.GetScanSettingBindings(ctx, search.NewQueryBuilder().
+			AddExactMatches(search.ComplianceOperatorScanConfigName, scanConfig.GetScanConfigName()).
+			AddExactMatches(search.ClusterID, cluster.ClusterId).ProtoQuery())
+		if err != nil {
+			continue
+		}
+
+		// We may not have received any bindings from sensor
+		if len(bindings) != 0 {
+			bindingError := getLatestBindingError(bindings[0].Status)
+			if bindingError != "" {
+				errors = append(errors, bindingError)
+			}
+		}
+
+		errors = append(errors, cluster.GetErrors()...)
+		clusterStatuses = append(clusterStatuses, &v2.ClusterScanStatus{
+			ClusterId:   cluster.GetClusterId(),
+			ClusterName: cluster.GetClusterName(),
+			Errors:      errors,
+			SuiteStatus: clusterToSuiteMap[cluster.GetClusterId()],
+		})
+	}
+	return clusterStatuses
 }
 
 func convertStorageScanConfigToV2ScanStatuses(ctx context.Context,
