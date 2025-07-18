@@ -10,7 +10,6 @@ import (
 	configDS "github.com/stackrox/rox/central/config/datastore/mocks"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	"github.com/stackrox/rox/central/metrics"
-	custom "github.com/stackrox/rox/central/metrics/custom/tracker"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
@@ -146,24 +145,4 @@ func makeAdminContext(t *testing.T) context.Context {
 		authproviders.WithName("Test Auth Provider"),
 	)
 	return basic.ContextWithAdminIdentity(t, authProvider)
-}
-
-func Test_makeProps(t *testing.T) {
-	runner := makeRunner(nil, nil)
-	cfg, err := runner.ValidateConfiguration(&storage.PrometheusMetrics{
-		ImageVulnerabilities: &storage.PrometheusMetrics_MetricGroup{
-			Metrics: map[string]*storage.PrometheusMetrics_MetricGroup_Labels{
-				"metric1": {
-					Labels: []string{"CVE", "Cluster"},
-				}}}})
-	assert.NoError(t, err)
-
-	ivLastGatherDuration.Store(42)
-	props := makeProps(cfg)
-
-	assert.Len(t, props, 4)
-	assert.ElementsMatch(t, props["Image Vulnerability metric labels"], []custom.Label{"CVE", "Cluster"})
-	assert.Equal(t, 1, props["Total Image Vulnerability metrics"])
-	assert.Contains(t, props, "Total custom Prometheus registries")
-	assert.Equal(t, uint32(42), props["Image Vulnerability gathering seconds"])
 }

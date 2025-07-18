@@ -3,8 +3,6 @@ package custom
 import (
 	"context"
 	"net/http"
-	"sync/atomic"
-	"time"
 
 	configDS "github.com/stackrox/rox/central/config/datastore"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
@@ -16,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter"
 )
@@ -26,8 +23,6 @@ var (
 	oneRunner sync.Once
 
 	log = logging.LoggerForModule()
-
-	ivLastGatherDuration atomic.Uint32
 )
 
 type aggregatorRunner struct {
@@ -94,7 +89,6 @@ func (ar *aggregatorRunner) ValidateConfiguration(cfg *storage.PrometheusMetrics
 // Reconfigure will panic on nil cfg. Don't pass nil.
 func (ar *aggregatorRunner) Reconfigure(cfg *RunnerConfiguration) {
 	ar.image_vulnerabilities.Reconfigure(cfg.image_vulnerabilities)
-	track(cfg)
 }
 
 func (ar *aggregatorRunner) ServeHTTP(w http.ResponseWriter, req *http.Request) {
@@ -104,40 +98,19 @@ func (ar *aggregatorRunner) ServeHTTP(w http.ResponseWriter, req *http.Request) 
 		userID = id.UID()
 		// The request context is cancelled when the client's connection closes.
 		ctx := authn.CopyContextIdentity(context.Background(), req.Context())
-		go func() {
-			start := time.Now()
-			ar.image_vulnerabilities.Gather(ctx)
-			ivLastGatherDuration.Store(uint32(time.Since(start).Round(time.Second).Seconds()))
-		}()
+		go ar.image_vulnerabilities.Gather(ctx)
 	}
 	metrics.GetCustomRegistry(userID).ServeHTTP(w, req)
+	go phonehome()
 }
 
-func track(cfg *RunnerConfiguration) {
-	if cfg == nil {
-		return
+func phonehome() {
+	props := map[string]any{
+		"Total custom Prometheus registries": metrics.GetCustomRegistriesCount(),
 	}
+
 	centralclient.InstanceConfig().Telemeter().Track(
-		"Prometheus metrics configured", nil,
-		telemeter.WithTraits(makeProps(cfg)))
-}
-
-func makeProps(cfg *RunnerConfiguration) map[string]any {
-	props := make(map[string]any, 4)
-	if cfg.image_vulnerabilities != nil {
-		metrics := cfg.image_vulnerabilities.GetMetrics()
-		props["Total Image Vulnerability metrics"] = len(metrics)
-		props["Image Vulnerability metric labels"] = getLabels(metrics).AsSlice()
-		props["Image Vulnerability gathering seconds"] = ivLastGatherDuration.Load()
-	}
-	props["Total custom Prometheus registries"] = metrics.GetCustomRegistriesCount()
-	return props
-}
-
-func getLabels(metrics custom.MetricsConfiguration) set.Set[custom.Label] {
-	labels := set.NewSet[custom.Label]()
-	for _, metricLabels := range metrics {
-		labels.AddAll(metricLabels...)
-	}
-	return labels
+		"Served custom Prometheus metrics", nil,
+		telemeter.WithTraits(props),
+		telemeter.WithNoDuplicates("prom_registries"))
 }

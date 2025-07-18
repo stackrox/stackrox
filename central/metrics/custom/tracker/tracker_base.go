@@ -11,10 +11,13 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/telemetry/centralclient"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter"
 )
 
 var (
@@ -216,8 +219,31 @@ func (tracker *TrackerBase[Finding]) Gather(ctx context.Context) {
 	if cfg.period == 0 || time.Since(gatherer.lastGather) < cfg.period {
 		return
 	}
+	begin := time.Now()
 	tracker.track(ctx, gatherer.registry, cfg.metrics)
-	gatherer.lastGather = time.Now()
+	end := time.Now()
+	gatherer.lastGather = end
+
+	centralclient.InstanceConfig().Telemeter().Track(
+		tracker.category+" metrics gathered", nil,
+		telemeter.WithTraits(tracker.makeProps(end.Sub(begin))),
+		telemeter.WithNoDuplicates(tracker.category))
+}
+
+func (tracker *TrackerBase[Finding]) makeProps(duration time.Duration) map[string]any {
+	props := make(map[string]any, 3)
+	props["Total "+tracker.category+" metrics"] = len(tracker.config.metrics)
+	props[tracker.category+" metrics labels"] = getLabels(tracker.config.metrics).AsSlice()
+	props[tracker.category+" gathering seconds"] = uint32(duration.Round(time.Second).Seconds())
+	return props
+}
+
+func getLabels(metrics MetricsConfiguration) set.Set[Label] {
+	labels := set.NewSet[Label]()
+	for _, metricLabels := range metrics {
+		labels.AddAll(metricLabels...)
+	}
+	return labels
 }
 
 // getGatherer returns the existing or a new gatherer for the given userID.
