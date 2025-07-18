@@ -41,6 +41,10 @@ type handlerImpl struct {
 	complianceIsReady *concurrency.Signal
 }
 
+func (m *handlerImpl) Name() string {
+	return "complianceoperator.handlerImpl"
+}
+
 type scanScheduleConfiguration struct {
 	Suspend        *bool
 	Schedule       *string

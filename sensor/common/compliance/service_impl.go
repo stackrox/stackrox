@@ -47,6 +47,10 @@ type serviceImpl struct {
 	stopper     set.Set[concurrency.Stopper]
 }
 
+func (s *serviceImpl) Name() string {
+	return "compliance.serviceImpl"
+}
+
 func (s *serviceImpl) Notify(e common.SensorComponentEvent) {
 	log.Info(common.LogSensorComponentEvent(e))
 	switch e {

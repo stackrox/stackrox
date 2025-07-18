@@ -55,6 +55,10 @@ func (h *admCtrlMsgForwarderImpl) Stop() {
 	h.stopper.Client().Stop()
 }
 
+func (h *admCtrlMsgForwarderImpl) Name() string {
+	return "admissioncontroller.admCtrlMsgForwarderImpl"
+}
+
 func (h *admCtrlMsgForwarderImpl) Notify(event common.SensorComponentEvent) {
 	// Propagate event to sub-components
 	for _, c := range h.components {

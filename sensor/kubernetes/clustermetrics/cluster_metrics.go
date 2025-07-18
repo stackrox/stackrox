@@ -70,6 +70,10 @@ type clusterMetricsImpl struct {
 	pollTicker      *time.Ticker
 }
 
+func (cm *clusterMetricsImpl) Name() string {
+	return "clustermetrics.clusterMetricsImpl"
+}
+
 func (cm *clusterMetricsImpl) Start() error {
 	go cm.Poll(cm.pollTicker.C)
 	return nil

@@ -51,6 +51,10 @@ type nodeInventoryHandlerImpl struct {
 	archCache map[string]string
 }
 
+func (c *nodeInventoryHandlerImpl) Name() string {
+	return "compliance.nodeInventoryHandlerImpl"
+}
+
 func (c *nodeInventoryHandlerImpl) Stopped() concurrency.ReadOnlyErrorSignal {
 	return c.stopper.Client().Stopped()
 }

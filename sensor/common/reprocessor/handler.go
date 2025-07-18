@@ -43,6 +43,10 @@ type handlerImpl struct {
 	stopSig            concurrency.ErrorSignal
 }
 
+func (h *handlerImpl) Name() string {
+	return "reprocessor.handlerImpl"
+}
+
 func (h *handlerImpl) Start() error {
 	return nil
 }

@@ -44,6 +44,10 @@ func (c *commandHandlerImpl) Start() error {
 	return nil
 }
 
+func (c *commandHandlerImpl) Name() string {
+	return "compliance.commandHandlerImpl"
+}
+
 func (c *commandHandlerImpl) Stop() {
 	c.stopper.Client().Stop()
 }

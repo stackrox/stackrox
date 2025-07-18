@@ -64,6 +64,10 @@ func (h *handlerImpl) Stop() {
 	h.stopSig.Signal()
 }
 
+func (h *handlerImpl) Name() string {
+	return "externalsrcs.handlerImpl"
+}
+
 func (h *handlerImpl) Notify(common.SensorComponentEvent) {}
 
 func (h *handlerImpl) Capabilities() []centralsensor.SensorCapability {

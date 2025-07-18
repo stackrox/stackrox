@@ -120,7 +120,8 @@
                 "AUTH_PROVIDERS",
                 "COMPLIANCE_REPORT_SNAPSHOT",
                 "IMAGE_COMPONENTS_V2",
-                "IMAGE_VULNERABILITIES_V2"
+                "IMAGE_VULNERABILITIES_V2",
+                "IMAGES_V2"
               ]
             },
             "collectionFormat": "multi"
@@ -235,7 +236,8 @@
                 "AUTH_PROVIDERS",
                 "COMPLIANCE_REPORT_SNAPSHOT",
                 "IMAGE_COMPONENTS_V2",
-                "IMAGE_VULNERABILITIES_V2"
+                "IMAGE_VULNERABILITIES_V2",
+                "IMAGES_V2"
               ]
             },
             "collectionFormat": "multi"
@@ -344,7 +346,8 @@
                 "AUTH_PROVIDERS",
                 "COMPLIANCE_REPORT_SNAPSHOT",
                 "IMAGE_COMPONENTS_V2",
-                "IMAGE_VULNERABILITIES_V2"
+                "IMAGE_VULNERABILITIES_V2",
+                "IMAGES_V2"
               ]
             },
             "collectionFormat": "multi"
@@ -496,10 +499,11 @@
         "AUTH_PROVIDERS",
         "COMPLIANCE_REPORT_SNAPSHOT",
         "IMAGE_COMPONENTS_V2",
-        "IMAGE_VULNERABILITIES_V2"
+        "IMAGE_VULNERABILITIES_V2",
+        "IMAGES_V2"
       ],
       "default": "SEARCH_UNSET",
-      "title": "Next available tag: 74"
+      "title": "Next available tag: 77"
     },
     "v1SearchOptionsResponse": {
       "type": "object",

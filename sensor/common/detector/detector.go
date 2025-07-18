@@ -179,6 +179,10 @@ type detectorImpl struct {
 	deploymentsQueue  queue.SimpleQueue[*queue.DeploymentQueueItem]
 }
 
+func (d *detectorImpl) Name() string {
+	return "detector.detectorImpl"
+}
+
 func (d *detectorImpl) Start() error {
 	go d.runDetector()
 	go d.runAuditLogEventDetector()

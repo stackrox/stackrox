@@ -21,6 +21,10 @@ type Multiplexer struct {
 	stopper    concurrency.Stopper
 }
 
+func (c *Multiplexer) Name() string {
+	return "compliance.Multiplexer"
+}
+
 // Stopped returns a signal allowing to check whether the component has been stopped
 func (c *Multiplexer) Stopped() concurrency.ReadOnlyErrorSignal {
 	return c.stopper.Client().Stopped()

@@ -53,6 +53,10 @@ type updaterImpl struct {
 	getProviderMetadataFromOpenShift providerMetadataFromOpenShift
 }
 
+func (u *updaterImpl) Name() string {
+	return "clusterstatus.updaterImpl"
+}
+
 func (u *updaterImpl) Start() error {
 	// We don't do anything on Start, run will be called when Central is reachable.
 	return nil
