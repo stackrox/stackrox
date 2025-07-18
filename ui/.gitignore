@@ -23,3 +23,13 @@ apps/platform/cypress/downloads/
 
 # misc
 .DS_Store
+
+# cursor rules
+# we want to ignore all cursor rules while we are experimenting with them
+.cursor/
+.cursorrules/
+
+# claude code rules
+# we want to ignore all claude code rules while we are experimenting with them
+CLAUDE.md
+claude-docs/
