@@ -111,7 +111,7 @@ function ScanConfigClustersTable({
                     <Tr>
                         <Th sort={getSortParams(0)}>Cluster</Th>
                         <Th sort={getSortParams(1)} width={20}>
-                            Operator status
+                            Scan schedule status
                         </Th>
                     </Tr>
                 </Thead>
