@@ -358,7 +358,7 @@ jobs:
       - uses: ./.github/actions/handle-tagged-build
 
       - name: Build CLI
-        run: \
+        run: |
           export SKIP_CLI_BUILD=true  # check for built binaries and do not rebuild
           make cli
 
