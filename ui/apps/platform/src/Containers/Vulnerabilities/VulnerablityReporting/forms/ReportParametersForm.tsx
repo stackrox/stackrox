@@ -8,11 +8,11 @@ import {
     Form,
     FormGroup,
     PageSection,
+    SelectOption,
     TextArea,
     TextInput,
     Title,
 } from '@patternfly/react-core';
-import { SelectOption } from '@patternfly/react-core/deprecated';
 import { FormikProps } from 'formik';
 import { cloneDeep } from 'lodash';
 
@@ -124,7 +124,6 @@ function ReportParametersForm({ title, formik }: ReportParametersFormParams): Re
                 >
                     <CheckboxSelect
                         toggleId="reportParameters.cveSeverities"
-                        name="reportParameters.cveSeverities"
                         ariaLabel="CVE severity checkbox select"
                         selections={formik.values.reportParameters.cveSeverities}
                         onChange={handleCheckboxSelectChange('reportParameters.cveSeverities')}
@@ -187,7 +186,6 @@ function ReportParametersForm({ title, formik }: ReportParametersFormParams): Re
                 >
                     <CheckboxSelect
                         toggleId="reportParameters.cveStatus"
-                        name="reportParameters.cveStatus"
                         ariaLabel="CVE status checkbox select"
                         selections={formik.values.reportParameters.cveStatus}
                         onChange={handleCheckboxSelectChange('reportParameters.cveStatus')}
@@ -209,7 +207,6 @@ function ReportParametersForm({ title, formik }: ReportParametersFormParams): Re
                 >
                     <CheckboxSelect
                         toggleId="reportParameters.imageType"
-                        name="reportParameters.imageType"
                         ariaLabel="Image type checkbox select"
                         selections={formik.values.reportParameters.imageType}
                         onChange={handleCheckboxSelectChange('reportParameters.imageType')}
