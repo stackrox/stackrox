@@ -74,7 +74,8 @@ jobs:
 
       # TODO: review if handle-tag-build is needed or can be replaced/reduced
 
-      - uses: actions/cache@v4
+      - name: restore cached ui
+        uses: actions/cache@v4
         id: restore-ui-build
         with:
           key: ui-built-${{ env.ROX_PRODUCT_BRANDING }}-${{ hashFiles('ui/**') }}
@@ -90,7 +91,13 @@ jobs:
           key: roxctl-built-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('roxctl/**', 'proto/**', 'generated/**') }}
           path: bin/${{ env.GOOS }}_${{ env.GOARCH }}/roxctl
 
-      - uses: ./.github/actions/cache-ui-dependencies
+      - name: restore cached main go build
+        uses: actions/cache/restore@v4
+        id: restore-central-build
+        with:
+          key: central-built-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('central/**', 'compliance/**', 'config-controller/**', 'migrator/**', 'sensor/**', 'proto/**', 'generated/**') }}
+          path: bin/${{ env.GOOS }}_${{ env.GOARCH }}/**
+
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
 
@@ -202,6 +209,7 @@ jobs:
           ls -la /tmp/git.fetching.log
           ps -ef | grep git
           ps -f -p$(pgrep -F /tmp/git.fetching.pid)
+          ls -latr bin/linux_amd64/
           true
 
   define-job-matrix:
@@ -344,6 +352,7 @@ jobs:
           path: bin/*/roxctl
 
       - name: Cache Go dependencies
+        if: ${{ steps.restore-roxctl-build.outputs.cache-hit != 'true' }}
         uses: ./.github/actions/cache-go-dependencies
 
       - uses: ./.github/actions/handle-tagged-build
