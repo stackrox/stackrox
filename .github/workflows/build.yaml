@@ -156,8 +156,8 @@ jobs:
           unset CI  # include only the host arch build of roxctl
           parallel="${{ matrix.parallel }}"
           cache_registry='ghcr.io'
-          cache_image='${{ github.repository }}'
-          cache_tag="${GITHUB_REF_NAME}-${{ env.ROX_PRODUCT_BRANDING }}-main"
+          cache_image="${GITHUB_REPOSITORY,,}"
+          cache_tag="${GITHUB_REF_NAME,,}-${ROX_PRODUCT_BRANDING,,}-main"
           cache_tag_master='master'
           
           export DOCKER_BUILD_CACHE_ARGS="--cache-to type=registry,ref=${cache_registry}/${cache_image}:${cache_tag},mode=max \
@@ -186,6 +186,7 @@ jobs:
           ls -la /tmp/git.fetching.log
           ps -ef | grep git
           ps -f -p$(pgrep -F /tmp/git.fetching.pid)
+          true
 
   define-job-matrix:
     outputs:
