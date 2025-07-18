@@ -270,6 +270,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("Cluster", []string{
 		"admissionController: Boolean!",
 		"admissionControllerEvents: Boolean!",
+		"admissionControllerFailOnError: Boolean!",
 		"admissionControllerUpdates: Boolean!",
 		"centralApiEndpoint: String!",
 		"collectionMethod: CollectionMethod!",
@@ -639,6 +640,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("Exclusion_Image", []string{
 		"name: String!",
 	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.FailurePolicy(0)))
 	utils.Must(builder.AddType("FalsePositiveRequest", []string{
 	}))
 	utils.Must(builder.AddInput("FalsePositiveVulnRequest", []string{
@@ -1360,6 +1362,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("StaticClusterConfig", []string{
 		"admissionController: Boolean!",
 		"admissionControllerEvents: Boolean!",
+		"admissionControllerFailurePolicy: FailurePolicy!",
 		"admissionControllerUpdates: Boolean!",
 		"centralApiEndpoint: String!",
 		"collectionMethod: CollectionMethod!",
@@ -4030,6 +4033,11 @@ func (resolver *clusterResolver) AdmissionController(ctx context.Context) bool {
 
 func (resolver *clusterResolver) AdmissionControllerEvents(ctx context.Context) bool {
 	value := resolver.data.GetAdmissionControllerEvents()
+	return value
+}
+
+func (resolver *clusterResolver) AdmissionControllerFailOnError(ctx context.Context) bool {
+	value := resolver.data.GetAdmissionControllerFailOnError()
 	return value
 }
 
@@ -7694,6 +7702,24 @@ func (resolver *Resolver) wrapExclusion_ImagesWithContext(ctx context.Context, v
 func (resolver *exclusion_ImageResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
 	return value
+}
+
+func toFailurePolicy(value *string) storage.FailurePolicy {
+	if value != nil {
+		return storage.FailurePolicy(storage.FailurePolicy_value[*value])
+	}
+	return storage.FailurePolicy(0)
+}
+
+func toFailurePolicies(values *[]string) []storage.FailurePolicy {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.FailurePolicy, len(*values))
+	for i, v := range *values {
+		output[i] = toFailurePolicy(&v)
+	}
+	return output
 }
 
 type falsePositiveRequestResolver struct {
@@ -14774,6 +14800,11 @@ func (resolver *staticClusterConfigResolver) AdmissionController(ctx context.Con
 func (resolver *staticClusterConfigResolver) AdmissionControllerEvents(ctx context.Context) bool {
 	value := resolver.data.GetAdmissionControllerEvents()
 	return value
+}
+
+func (resolver *staticClusterConfigResolver) AdmissionControllerFailurePolicy(ctx context.Context) string {
+	value := resolver.data.GetAdmissionControllerFailurePolicy()
+	return value.String()
 }
 
 func (resolver *staticClusterConfigResolver) AdmissionControllerUpdates(ctx context.Context) bool {

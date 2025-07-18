@@ -1983,7 +1983,6 @@ sensor:
   generate:
     PERSISTENT_FLAGS:
       - admission-controller-disable-bypass
-      - admission-controller-enabled
       - admission-controller-enforce-on-creates
       - admission-controller-enforce-on-updates
       - admission-controller-listen-on-creates
@@ -1994,7 +1993,6 @@ sensor:
       - collection-method
       - collector-image-repository
       - continue-if-exists
-      - create-admission-controller
       - create-upgrader-sa
       - disable-tolerations
       - enable-pod-security-policies
@@ -2024,7 +2022,6 @@ sensor:
         - admission-controller-listen-on-events
       INHERITED_FLAGS:
         - admission-controller-disable-bypass
-        - admission-controller-enabled
         - admission-controller-enforce-on-creates
         - admission-controller-enforce-on-updates
         - admission-controller-listen-on-creates
@@ -2036,7 +2033,6 @@ sensor:
         - collection-method
         - collector-image-repository
         - continue-if-exists
-        - create-admission-controller
         - create-upgrader-sa
         - direct-grpc
         - disable-tolerations
@@ -2066,7 +2062,6 @@ sensor:
         - openshift-version
       INHERITED_FLAGS:
         - admission-controller-disable-bypass
-        - admission-controller-enabled
         - admission-controller-enforce-on-creates
         - admission-controller-enforce-on-updates
         - admission-controller-listen-on-creates
@@ -2078,7 +2073,6 @@ sensor:
         - collection-method
         - collector-image-repository
         - continue-if-exists
-        - create-admission-controller
         - create-upgrader-sa
         - direct-grpc
         - disable-tolerations
