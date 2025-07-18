@@ -100,6 +100,8 @@ func resourceTypeFromProtoMessage(message protocompat.Message) storage.Declarati
 		return storage.DeclarativeConfigHealth_ROLE
 	case types.NotifierType:
 		return storage.DeclarativeConfigHealth_NOTIFIER
+	case types.AuthMachineToMachineConfigType:
+		return storage.DeclarativeConfigHealth_AUTH_MACHINE_TO_MACHINE_CONFIG
 	default:
 		utils.Must(errox.InvariantViolation.Newf("unsupported type given for proto message %+v, "+
 			"returning the default type", reflect.TypeOf(message)))
