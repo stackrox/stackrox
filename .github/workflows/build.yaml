@@ -104,7 +104,7 @@ jobs:
         with:
           key: built-compliance-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('compliance/**', 'proto/**', 'generated/**') }}
           path: bin/${{ env.GOOS }}_${{ env.GOARCH }}/compliance
--
+
       - name: restore cached config-controller go build
         uses: actions/cache/restore@v4
         id: restore-config-controller-build
