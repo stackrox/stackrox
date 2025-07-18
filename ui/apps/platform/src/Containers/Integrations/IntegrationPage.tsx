@@ -16,7 +16,7 @@ import PageTitle from 'Components/PageTitle';
 import LinkShim from 'Components/PatternFly/LinkShim';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import { Traits } from 'types/traits.proto';
-import { TraitsOriginLabel } from 'Containers/AccessControl/TraitsOriginLabel';
+import { TraitsOriginLabel } from 'Containers/TraitsOriginLabel';
 import { isUserResource } from 'Containers/traits';
 import TechPreviewLabel from 'Components/PatternFly/TechPreviewLabel';
 import { getIntegrationLabel } from './utils/integrationsList';
@@ -47,7 +47,9 @@ function IntegrationPage({ title, name, traits, children }: IntegrationPageProps
     const editDisabledMessage = getEditDisabledMessage(type);
 
     const hasTraitsLabel =
-        pageState !== 'CREATE' && pageState !== 'LIST' && (type === 'generic' || type === 'splunk');
+        pageState !== 'CREATE' && pageState !== 'LIST' && (
+            type === 'generic' || type === 'splunk' || type === 'machineAccess'
+        );
     const hasEditButton =
         pageState === 'VIEW_DETAILS' && permissions[source].write && isUserResource(traits);
     return (
