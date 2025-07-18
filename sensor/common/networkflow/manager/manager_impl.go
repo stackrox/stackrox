@@ -319,7 +319,7 @@ func NewManager(
 // networkFlowComponent represents a sub-component of the networkFlowManager
 type networkFlowComponent interface {
 	Start() error
-	Stop(error)
+	Stop()
 	Notify(common.SensorComponentEvent)
 }
 
@@ -365,6 +365,10 @@ type networkFlowManager struct {
 	pubSub  *internalmessage.MessageSubscriber
 }
 
+func (m *networkFlowManager) Name() string {
+	return "networkflow.manager.networkFlowManager"
+}
+
 func (m *networkFlowManager) ProcessMessage(_ *central.MsgToSensor) error {
 	return nil
 }
@@ -380,7 +384,7 @@ func (m *networkFlowManager) Start() error {
 	return nil
 }
 
-func (m *networkFlowManager) Stop(_ error) {
+func (m *networkFlowManager) Stop() {
 	if !m.stopper.Client().Stopped().IsDone() {
 		defer func() {
 			_ = m.stopper.Client().Stopped().Wait()
@@ -388,7 +392,7 @@ func (m *networkFlowManager) Stop(_ error) {
 	}
 	m.stopper.Client().Stop()
 	if m.purger != nil {
-		m.purger.Stop(nil)
+		m.purger.Stop()
 	}
 }
 

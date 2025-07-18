@@ -112,6 +112,10 @@ type tlsIssuerImpl struct {
 	activateLock                 sync.Mutex
 }
 
+func (i *tlsIssuerImpl) Name() string {
+	return "certrefresh.tlsIssuerImpl"
+}
+
 // Start starts the Sensor component and launches a certificate refresher that:
 // * checks the state of the certificates whenever Sensor connects to Central, and several months before they expire
 // * updates the certificates if needed
@@ -165,7 +169,7 @@ func (i *tlsIssuerImpl) activate() error {
 	return nil
 }
 
-func (i *tlsIssuerImpl) Stop(_ error) {
+func (i *tlsIssuerImpl) Stop() {
 	i.started.Store(false)
 	i.deactivate()
 }

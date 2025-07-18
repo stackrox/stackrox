@@ -47,6 +47,10 @@ type serviceImpl struct {
 	stopper     set.Set[concurrency.Stopper]
 }
 
+func (s *serviceImpl) Name() string {
+	return "compliance.serviceImpl"
+}
+
 func (s *serviceImpl) Notify(e common.SensorComponentEvent) {
 	log.Info(common.LogSensorComponentEvent(e))
 	switch e {
@@ -61,7 +65,7 @@ func (s *serviceImpl) Start() error {
 	return nil
 }
 
-func (s *serviceImpl) Stop(_ error) {
+func (s *serviceImpl) Stop() {
 	concurrency.WithLock(&s.stopperLock, func() {
 		for _, stopper := range s.stopper.AsSlice() {
 			stopper.Client().Stop()

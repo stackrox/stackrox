@@ -70,12 +70,16 @@ type clusterMetricsImpl struct {
 	pollTicker      *time.Ticker
 }
 
+func (cm *clusterMetricsImpl) Name() string {
+	return "clustermetrics.clusterMetricsImpl"
+}
+
 func (cm *clusterMetricsImpl) Start() error {
 	go cm.Poll(cm.pollTicker.C)
 	return nil
 }
 
-func (cm *clusterMetricsImpl) Stop(_ error) {
+func (cm *clusterMetricsImpl) Stop() {
 	cm.pollTicker.Stop()
 	cm.stopper.Client().Stop()
 	_ = cm.stopper.Client().Stopped().Wait()

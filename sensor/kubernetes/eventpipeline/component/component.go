@@ -9,7 +9,7 @@ import (
 // PipelineComponent components that constitute the eventPipeline
 type PipelineComponent interface {
 	Start() error
-	Stop(error)
+	Stop()
 }
 
 // Resolver component that performs the dependency resolution. This is the core component of the pipeline, and the reason

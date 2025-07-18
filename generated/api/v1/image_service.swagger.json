@@ -999,9 +999,12 @@
         },
         "isClusterLocal": {
           "type": "boolean"
+        },
+        "idV2": {
+          "type": "string"
         }
       },
-      "title": "Next tag: 12"
+      "title": "Next tag: 13"
     },
     "storageCosignSignature": {
       "type": "object",
@@ -1304,7 +1307,7 @@
           }
         }
       },
-      "title": "Next Tag: 19"
+      "title": "This proto is deprecated and replaced by ImageV2.\nNext Tag: 19"
     },
     "storageImageLayer": {
       "type": "object",

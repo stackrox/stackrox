@@ -294,7 +294,8 @@ func (s *Sensor) Start() {
 			log.Warnf("Sensor connection was not yet established when internal message for connection restart was received. Skipping soft restart")
 			return
 		}
-		s.centralCommunication.Stop(errors.Wrap(errForcedConnectionRestart, message.Text))
+		log.Infof("Connection restart requested: %s", message.Text)
+		s.centralCommunication.Stop()
 	})
 
 	if err != nil {
@@ -345,12 +346,12 @@ func (s *Sensor) Stop() {
 	} else {
 		// Stop communication with central.
 		if s.centralConnection != nil {
-			s.centralCommunication.Stop(nil)
+			s.centralCommunication.Stop()
 		}
 	}
 
 	for _, c := range s.components {
-		c.Stop(nil)
+		c.Stop()
 	}
 
 	log.Infof("Sensor stop was called. Stopping all listeners")
@@ -506,7 +507,7 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 		case <-s.stoppedSig.WaitC():
 			// This means sensor was signaled to finish, this error shouldn't be retried
 			log.Info("Received stop signal from Sensor. Stopping without retrying")
-			s.centralCommunication.Stop(nil)
+			s.centralCommunication.Stop()
 			return backoff.Permanent(wrapOrNewError(s.stoppedSig.Err(), "received sensor stop signal"))
 		}
 	}, exponential, func(err error, d time.Duration) {

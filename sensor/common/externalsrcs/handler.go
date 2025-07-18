@@ -60,8 +60,12 @@ func (h *handlerImpl) Start() error {
 	return nil
 }
 
-func (h *handlerImpl) Stop(_ error) {
+func (h *handlerImpl) Stop() {
 	h.stopSig.Signal()
+}
+
+func (h *handlerImpl) Name() string {
+	return "externalsrcs.handlerImpl"
 }
 
 func (h *handlerImpl) Notify(common.SensorComponentEvent) {}

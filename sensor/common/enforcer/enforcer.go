@@ -43,6 +43,10 @@ type enforcer struct {
 	stopper        concurrency.Stopper
 }
 
+func (e *enforcer) Name() string {
+	return "enforcer.enforcer"
+}
+
 func (e *enforcer) Capabilities() []centralsensor.SensorCapability {
 	return nil
 }
@@ -147,7 +151,7 @@ func (e *enforcer) Start() error {
 	return nil
 }
 
-func (e *enforcer) Stop(_ error) {
+func (e *enforcer) Stop() {
 	e.stopper.Client().Stop()
 	_ = e.stopper.Client().Stopped().Wait()
 }

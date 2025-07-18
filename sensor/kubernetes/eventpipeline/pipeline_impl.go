@@ -5,7 +5,6 @@ import (
 	"sync/atomic"
 
 	"github.com/pkg/errors"
-
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
@@ -40,6 +39,10 @@ type eventPipeline struct {
 	contextMtx    sync.Mutex
 	context       context.Context
 	cancelContext context.CancelFunc
+}
+
+func (p *eventPipeline) Name() string {
+	return "eventpipeline.eventPipeline"
 }
 
 // Capabilities implements common.SensorComponent
@@ -106,7 +109,7 @@ func (p *eventPipeline) Start() error {
 }
 
 // Stop implements common.SensorComponent
-func (p *eventPipeline) Stop(_ error) {
+func (p *eventPipeline) Stop() {
 	if !p.stopper.Client().Stopped().IsDone() {
 		defer func() {
 			_ = p.stopper.Client().Stopped().Wait()
@@ -114,9 +117,9 @@ func (p *eventPipeline) Stop(_ error) {
 	}
 	// The order is important here, we need to stop the components
 	// that send messages to other components first
-	p.listener.Stop(nil)
-	p.resolver.Stop(nil)
-	p.output.Stop(nil)
+	p.listener.Stop()
+	p.resolver.Stop()
+	p.output.Stop()
 	p.stopper.Client().Stop()
 }
 
@@ -129,7 +132,7 @@ func (p *eventPipeline) Notify(e common.SensorComponentEvent) {
 			log.Info("Connection established: Starting Kubernetes listener")
 			// Stopping the listener here will allow Sensor to maintain the stores populated while offline.
 			// This is needed to capture runtime events in offline mode.
-			p.listener.Stop(nil)
+			p.listener.Stop()
 			// TODO(ROX-18613): use contextProvider to provide context for listener
 			p.createNewContext()
 			if err := p.listener.StartWithContext(p.context); err != nil {
