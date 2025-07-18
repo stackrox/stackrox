@@ -155,6 +155,14 @@ jobs:
           set -x
           unset CI  # include only the host arch build of roxctl
           parallel="${{ matrix.parallel }}"
+          cache_registry='ghcr.io'
+          cache_image='${{ github.repository }}'
+          cache_tag="${GITHUB_REF_NAME}-${{ env.ROX_PRODUCT_BRANDING }}-main"
+          cache_tag_master='master'
+          
+          export DOCKER_BUILD_CACHE_ARGS="--cache-to type=registry,ref=${cache_registry}/${cache_image}:${cache_tag},mode=max \
+            --cache-from type=registry,ref=${cache_registry}/${cache_image}:${cache_tag} \
+            --cache-from type=registry,ref=${cache_registry}/${cache_image}:${cache_tag_master}"
           make -j${parallel} -Oline docker-build-main-image docker-build-roxctl-image
             # copies bin/*/ to image/rhel/bin/
             # copies ui/build to image/rhel/ui/

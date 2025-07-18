@@ -638,6 +638,7 @@ main-image: all-builds
 
 .PHONY: docker-build-main-image
 docker-build-main-image: copy-binaries-to-image-dir central-db-image
+	set -x
 	$(DOCKERBUILD) \
 		-t stackrox/main:$(TAG) \
 		-t $(DEFAULT_IMAGE_REGISTRY)/main:$(TAG) \
@@ -649,6 +650,7 @@ docker-build-main-image: copy-binaries-to-image-dir central-db-image
 		--build-arg LABEL_RELEASE=$(TAG) \
 		--build-arg QUAY_TAG_EXPIRATION=$(QUAY_TAG_EXPIRATION) \
 		$(CENTRAL_DB_DOCKER_ARGS) \
+		$(DOCKER_BUILD_CACHE_ARGS) \
 		--file image/rhel/Dockerfile \
 		image/rhel
 	@echo "Built main image for RHEL with tag: $(TAG), image flavor: $(ROX_IMAGE_FLAVOR)"
