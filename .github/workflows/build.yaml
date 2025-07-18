@@ -345,12 +345,14 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-      - name: cache all os_arch roxctl binaries
+      - name: cache bin/os_arch/roxctl binaries
         id: restore-roxctl-build
         uses: actions/cache@v4
         with:
-          key: roxctl-built-all-${{ hashFiles('roxctl/**', 'proto/**', 'generated/**') }}
-          path: bin/*/roxctl
+          key: roxctl-built-${{ hashFiles('roxctl/**', 'proto/**', 'generated/**') }}
+          path: |
+            bin/*/roxctl
+            bin/*/roxctl.exe
 
       - name: Cache Go dependencies
         if: ${{ steps.restore-roxctl-build.outputs.cache-hit != 'true' }}
@@ -360,7 +362,7 @@ jobs:
 
       - name: Build CLI
         run: |
-          export SKIP_CLI_BUILD=true  # check for built binaries and do not rebuild
+          export SKIP_CLI_BUILD=true  # for each os_arch if binary exists, do not rebuild
           make cli
 
       - name: Bundle build to preserve permissions
