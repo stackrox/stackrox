@@ -369,7 +369,7 @@ func (m *networkFlowManager) Name() string {
 	return "networkflow.manager.networkFlowManager"
 }
 
-func (m *networkFlowManager) ProcessMessage(_ *central.MsgToSensor) error {
+func (m *networkFlowManager) ProcessMessage(_ context.Context, _ *central.MsgToSensor) error {
 	return nil
 }
 

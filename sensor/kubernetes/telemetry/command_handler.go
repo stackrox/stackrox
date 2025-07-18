@@ -109,7 +109,7 @@ func (h *commandHandler) Notify(e common.SensorComponentEvent) {
 	}
 }
 
-func (h *commandHandler) ProcessMessage(msg *central.MsgToSensor) error {
+func (h *commandHandler) ProcessMessage(_ context.Context, msg *central.MsgToSensor) error {
 	switch m := msg.GetMsg().(type) {
 	case *central.MsgToSensor_TelemetryDataRequest:
 		return h.processRequest(m.TelemetryDataRequest)
