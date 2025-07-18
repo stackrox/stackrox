@@ -89,7 +89,9 @@ jobs:
         id: restore-roxctl-build
         with:
           key: built-roxctl-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('roxctl/**', 'proto/**', 'generated/**') }}
-          path: bin/${{ env.GOOS }}_${{ env.GOARCH }}/roxctl
+          path: |
+            bin/*/roxctl
+            bin/*/roxctl.exe
 
       - name: restore cached central go build
         uses: actions/cache/restore@v4
@@ -177,7 +179,9 @@ jobs:
         if: ${{ steps.restore-roxctl-build.outputs.cache-hit != 'true' }}
         with:
           key: ${{ steps.restore-roxctl-build.outputs.cache-primary-key }}
-          path: bin/${{ env.GOOS }}_${{ env.GOARCH }}/roxctl
+          path: |
+            bin/*/roxctl
+            bin/*/roxctl.exe
 
       - name: Generate OSS notice
         if: false
@@ -381,7 +385,7 @@ jobs:
         id: restore-roxctl-build
         uses: actions/cache@v4
         with:
-          key: roxctl-built-${{ hashFiles('roxctl/**', 'proto/**', 'generated/**') }}
+          key: built-roxctl-${{ hashFiles('roxctl/**', 'proto/**', 'generated/**') }}
           path: |
             bin/*/roxctl
             bin/*/roxctl.exe
