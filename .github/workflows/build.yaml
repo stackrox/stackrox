@@ -85,7 +85,7 @@ jobs:
         if: steps.restore-ui-build.outputs.cache-hit != 'true'
 
       - name: restore cached roxctl
-        uses: actions/cache/restore@v4
+        uses: actions/cache@v4
         id: restore-roxctl-build
         with:
           key: built-roxctl-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('roxctl/**', 'proto/**', 'generated/**') }}
@@ -94,35 +94,35 @@ jobs:
             bin/*/roxctl.exe
 
       - name: restore cached central go build
-        uses: actions/cache/restore@v4
+        uses: actions/cache@v4
         id: restore-central-build
         with:
           key: built-central-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('central/**', 'proto/**', 'generated/**') }}
           path: bin/${{ env.GOOS }}_${{ env.GOARCH }}/central
 
       - name: restore cached compliance go build
-        uses: actions/cache/restore@v4
+        uses: actions/cache@v4
         id: restore-compliance-build
         with:
           key: built-compliance-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('compliance/**', 'proto/**', 'generated/**') }}
           path: bin/${{ env.GOOS }}_${{ env.GOARCH }}/compliance
 
       - name: restore cached config-controller go build
-        uses: actions/cache/restore@v4
+        uses: actions/cache@v4
         id: restore-config-controller-build
         with:
           key: built-config-controller-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('config-controller/**', 'proto/**', 'generated/**') }}
           path: bin/${{ env.GOOS }}_${{ env.GOARCH }}/config-controller
 
       - name: restore cached migrator go build
-        uses: actions/cache/restore@v4
+        uses: actions/cache@v4
         id: restore-migrator-build
         with:
           key: built-migrator-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('migrator/**', 'proto/**', 'generated/**') }}
           path: bin/${{ env.GOOS }}_${{ env.GOARCH }}/migrator
 
       - name: restore cached sensor go build
-        uses: actions/cache/restore@v4
+        uses: actions/cache@v4
         id: restore-sensor-build
         with:
           key: built-sensor-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('sensor/**', 'proto/**', 'generated/**') }}
