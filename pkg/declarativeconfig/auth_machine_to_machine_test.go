@@ -54,6 +54,44 @@ issuer: https://kubernetes.default.svc
 	assert.ErrorIs(t, err, errox.InvalidArgs)
 }
 
+func TestAuthMachineToMachineConfigTypeDecoding(t *testing.T) {
+	for name, tc := range map[string]struct {
+		inputNode           *yaml.Node
+		expectedError       error
+		expectedErrorString string
+	}{
+		"Scalar node with a known value returns no error": {
+			inputNode: &yaml.Node{
+				Kind:  yaml.ScalarNode,
+				Value: "KUBE_SERVICE_ACCOUNT",
+			},
+		},
+		"Scalar node with an unknown value returns an InvalidArg error": {
+			inputNode: &yaml.Node{
+				Kind:  yaml.ScalarNode,
+				Value: "Some random garbage",
+			},
+			expectedError: errox.InvalidArgs,
+		},
+		"Non-scalar node returns a yaml decoding error": {
+			inputNode: &yaml.Node{
+				Kind: yaml.MappingNode,
+			},
+			expectedErrorString: "yaml: unmarshal errors:\n  line 0: cannot unmarshal !!map into string",
+		},
+	} {
+		t.Run(name, func(it *testing.T) {
+			m2mConfigType := AuthMachineToMachineConfigType(storage.AuthMachineToMachineConfig_GENERIC)
+			err := m2mConfigType.UnmarshalYAML(tc.inputNode)
+			if tc.expectedErrorString == "" {
+				assert.ErrorIs(it, err, tc.expectedError)
+			} else {
+				assert.ErrorContains(it, err, tc.expectedErrorString)
+			}
+		})
+	}
+}
+
 func TestAuthMachineToMachineConfigConfigurationType(t *testing.T) {
 	authMachineToMachineObj := &AuthMachineToMachineConfig{}
 	assert.Equal(t, AuthMachineToMachineConfiguration, authMachineToMachineObj.ConfigurationType())
