@@ -51,7 +51,7 @@ func (s *centralReceiverImpl) receive(stream central.SensorService_CommunicateCl
 			}()
 		}
 		for name, ch := range componentsQueues {
-			log.Debug("Closing component queue %s", name)
+			log.Debugf("Closing component queue %s", name)
 			close(ch)
 		}
 	}()
@@ -72,7 +72,7 @@ func (s *centralReceiverImpl) receive(stream central.SensorService_CommunicateCl
 	}
 
 	for _, receiver := range s.receivers {
-		go process(componentsQueues[receiver.Name()], receiver, receiver.Name())
+		go process(ctx, componentsQueues[receiver.Name()], receiver, receiver.Name())
 	}
 
 	for {
@@ -103,11 +103,16 @@ func (s *centralReceiverImpl) receive(stream central.SensorService_CommunicateCl
 	}
 }
 
-func process(ch <-chan *central.MsgToSensor, r common.CentralReceiver, name string) {
-	for msg := range ch {
-		if err := r.ProcessMessage(msg); err != nil {
-			log.Errorf("%s: %+v", name, err)
+func process(ctx context.Context, ch <-chan *central.MsgToSensor, r common.CentralReceiver, name string) {
+	for {
+		select {
+		case msg := <-ch:
+			if err := r.ProcessMessage(msg); err != nil {
+				log.Errorf("%s: %+v", name, err)
+			}
+		case <-ctx.Done():
+			log.Infof("Stopping %s", name)
+			return
 		}
 	}
-	log.Infof("Stopping %s", name)
 }
