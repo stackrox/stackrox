@@ -55,7 +55,7 @@ type configHandlerImpl struct {
 }
 
 func (c *configHandlerImpl) Name() string {
-	return common.DefaultComponentName(c)
+	return "config.configHandlerImpl"
 }
 
 func (c *configHandlerImpl) Start() error {

@@ -5,9 +5,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/k8scfgwatch"
+	"sigs.k8s.io/yaml"
 )
 
 type reloadProxyConfigHandler struct {

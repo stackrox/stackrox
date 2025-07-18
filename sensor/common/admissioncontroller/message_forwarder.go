@@ -56,7 +56,7 @@ func (h *admCtrlMsgForwarderImpl) Stop() {
 }
 
 func (h *admCtrlMsgForwarderImpl) Name() string {
-	return common.DefaultComponentName(h)
+	return "admissioncontroller.admCtrlMsgForwarderImpl"
 }
 
 func (h *admCtrlMsgForwarderImpl) Notify(event common.SensorComponentEvent) {

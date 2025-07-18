@@ -44,7 +44,7 @@ type handlerImpl struct {
 }
 
 func (h *handlerImpl) Name() string {
-	return common.DefaultComponentName(h)
+	return "reprocessor.handlerImpl"
 }
 
 func (h *handlerImpl) Start() error {

@@ -7,10 +7,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ghodss/yaml"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/net/http/httpproxy"
+	"sigs.k8s.io/yaml"
 )
 
 func TestProxyConfig(t *testing.T) {

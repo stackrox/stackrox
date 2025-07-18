@@ -113,7 +113,7 @@ type tlsIssuerImpl struct {
 }
 
 func (i *tlsIssuerImpl) Name() string {
-	return common.DefaultComponentName(i)
+	return "certrefresh.tlsIssuerImpl"
 }
 
 // Start starts the Sensor component and launches a certificate refresher that:

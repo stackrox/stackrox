@@ -48,7 +48,7 @@ type serviceImpl struct {
 }
 
 func (s *serviceImpl) Name() string {
-	return common.DefaultComponentName(s)
+	return "compliance.serviceImpl"
 }
 
 func (s *serviceImpl) Notify(e common.SensorComponentEvent) {

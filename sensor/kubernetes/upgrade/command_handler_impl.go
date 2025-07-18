@@ -42,7 +42,7 @@ type commandHandler struct {
 }
 
 func (h *commandHandler) Name() string {
-	return common.DefaultComponentName(h)
+	return "upgrade.commandHandler"
 }
 
 // NewCommandHandler returns a new upgrade command handler for Kubernetes.
