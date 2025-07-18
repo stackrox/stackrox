@@ -86,7 +86,7 @@ jobs:
       - uses: actions/cache/restore@v4
         id: restore-roxctl-build
         with:
-          key: roxctl-built-${{ env.ROX_PRODUCT_BRANDING }}-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('roxctl/**', 'proto/**', 'generated/**') }}
+          key: roxctl-built-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('roxctl/**', 'proto/**', 'generated/**') }}
           path: bin/${{ env.GOOS }}_${{ env.GOARCH }}/roxctl
 
       - uses: ./.github/actions/cache-ui-dependencies
