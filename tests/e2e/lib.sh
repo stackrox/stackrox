@@ -983,7 +983,6 @@ collect_and_check_stackrox_logs() {
 # system tests against the same cluster.
 # shellcheck disable=SC2120
 remove_existing_stackrox_resources() {
-    set | grep ROX
     if [[ "${REMOVE_EXISTING_STACKROX_RESOURCES:-true}" == 'false' ]]; then
       info 'Skipped removal of existing stackrox resources [REMOVE_EXISTING_STACKROX_RESOURCES=false].'
       return
