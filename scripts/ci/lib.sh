@@ -2379,30 +2379,29 @@ _record_cluster_info() {
     oc_version="$(oc version -o json 2>&1 || true)"
     local openshiftVersion
     openshiftVersion=$(jq -r <<<"$oc_version" '.openshiftVersion')
-    set_ci_shared_export cut_product_version "$openshiftVersion"
+    set_ci_shared_export "cut_product_version" "$openshiftVersion"
 
     # K8s version.
     local kubectl_version
     kubectl_version="$(kubectl version -o json 2>&1 || true)"
     local serverGitVersion
     serverGitVersion=$(jq -r <<<"$kubectl_version" '.serverVersion.gitVersion')
-    set_ci_shared_export cut_k8s_version "$serverGitVersion"
+    set_ci_shared_export "cut_k8s_version" "$serverGitVersion"
 
     # Node info: OS, Kernel & Container Runtime.
     local nodes
     nodes="$(kubectl get nodes -o json 2>&1 || true)"
     local osImage
     osImage=$(jq -r <<<"$nodes" '.items[0].status.nodeInfo.osImage')
-    local cut_os_image=""
-    set_ci_shared_export cut_os_image "$osImage"
+    set_ci_shared_export "cut_os_image" "$osImage"
 
     local kernelVersion
     kernelVersion=$(jq -r <<<"$nodes" '.items[0].status.nodeInfo.kernelVersion')
-    set_ci_shared_export cut_kernel_version "$kernelVersion"
+    set_ci_shared_export "cut_kernel_version" "$kernelVersion"
 
     local containerRuntimeVersion
     containerRuntimeVersion=$(jq -r <<<"$nodes" '.items[0].status.nodeInfo.containerRuntimeVersion')
-    set_ci_shared_export cut_container_runtime_version "$containerRuntimeVersion"
+    set_ci_shared_export "cut_container_runtime_version" "$containerRuntimeVersion"
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
