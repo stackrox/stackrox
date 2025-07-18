@@ -346,6 +346,7 @@ jobs:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       - name: cache all os_arch roxctl binaries
+        id: restore-roxctl-build
         uses: actions/cache@v4
         with:
           key: roxctl-built-all-${{ hashFiles('roxctl/**', 'proto/**', 'generated/**') }}
