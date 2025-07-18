@@ -9,15 +9,11 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/version"
-	v1 "k8s.io/api/core/v1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
 )
 
 const (
@@ -72,19 +68,19 @@ func sensorMetadataString(data []*SensorMetadata) string {
 	return str.String()
 }
 
-// Using this as one cannot import the client.Interface from 'sensor/kubernetes/client' directly
-type k8sClient interface {
-	Kubernetes() kubernetes.Interface
+type configMapWriter interface {
+	Write(ctx context.Context, data ...*SensorMetadata) error
+	Read(ctx context.Context) ([]*SensorMetadata, error)
 }
 
 type Manager struct {
-	k8sClient k8sClient
 	namespace string
 
 	// Cache the data for the current instance of Sensor
 	currentSensor SensorMetadata
 
-	// Timestamp of the latest update to the config map. Used to limit the number of updates to the cm.
+	cmWriter configMapWriter
+	// Timestamp of the latest update to the config map. Used to rate-limit the number of updates to the cm.
 	lastCmWrite time.Time
 	// Time that defines a window where only a single write to config map should happen in case of cache hit.
 	writeCmFrequency time.Duration
@@ -102,13 +98,17 @@ type Manager struct {
 func NewHeritageManager(ns string, client k8sClient, start time.Time) *Manager {
 	return &Manager{
 		cacheIsPopulated: atomic.Bool{},
-		k8sClient:        client,
 		cache:            []*SensorMetadata{},
 		namespace:        ns,
 		currentSensor: SensorMetadata{
 			SensorVersion: version.GetMainVersion(),
 			SensorStart:   start,
 		},
+		cmWriter: &cmWriter{
+			k8sClient: client,
+			namespace: ns,
+		},
+		lastCmWrite:      time.Unix(0, 0),
 		writeCmFrequency: 5 * time.Minute,
 		maxSize:          env.PastSensorsMaxEntries.IntegerSetting(), // Setting value is already validated
 		minSize:          heritageMinSize,                            // Keep in sync with minimum of `env.PastSensorsMaxEntries`
@@ -117,7 +117,7 @@ func NewHeritageManager(ns string, client k8sClient, start time.Time) *Manager {
 }
 
 func (h *Manager) populateCacheFromConfigMapNoLock(ctx context.Context) error {
-	data, err := h.readConfigMap(ctx)
+	data, err := h.cmWriter.Read(ctx)
 	if err != nil {
 		if apiErrors.IsNotFound(err) {
 			h.cacheIsPopulated.Store(true)
@@ -182,60 +182,33 @@ func (h *Manager) upsertConfigMap(ctx context.Context, now time.Time) error {
 			log.Warnf("%v", err)
 		}
 	}
+	wrote, err := h.write(ctx, now)
+	if wrote {
+		log.Debugf("Wrote heritage data %s to ConfigMap %s/%s", sensorMetadataString(h.cache), h.namespace, cmName)
+	}
+	return err
+}
 
+func (h *Manager) write(ctx context.Context, now time.Time) (wrote bool, err error) {
 	if cacheHit := h.updateCachedTimestampNoLock(now); !cacheHit {
 		h.currentSensor.LatestUpdate = now
 		h.cache = append(h.cache, &h.currentSensor)
 	} else {
-		// On cache-hit, we would update only the `LatestUpdate` field. Let's not do this too often.
+		// On cache-hit, we would update the `LatestUpdate` field, which should not happen too often to save on IO load.
 		timeSinceLastWrite := now.Sub(h.lastCmWrite)
 		if timeSinceLastWrite < h.writeCmFrequency {
-			return nil
+			return false, nil
 		}
 	}
+
 	h.cache = pruneOldHeritageData(h.cache, now, h.maxAge, h.minSize, h.maxSize)
 
-	log.Debugf("Writing Heritage data %s to ConfigMap %s/%s", sensorMetadataString(h.cache), h.namespace, cmName)
-	return h.write(ctx, now, h.cache...)
-}
-
-func (h *Manager) write(ctx context.Context, now time.Time, data ...*SensorMetadata) error {
-	cm, err := pastSensorDataToConfigMap(data...)
-	if err != nil {
-		return errors.Wrap(err, "converting past sensor data to config map")
+	err = h.cmWriter.Write(ctx, h.cache...)
+	if err == nil {
+		h.lastCmWrite = now
+		return true, nil
 	}
-
-	if err := h.ensureConfigMapExists(ctx, cm); err != nil {
-		return errors.Wrap(err, "preparing configMap for writing")
-	}
-	if _, err := h.k8sClient.Kubernetes().CoreV1().ConfigMaps(h.namespace).
-		Update(ctx, cm, metav1.UpdateOptions{}); err != nil {
-		return errors.Wrapf(err, "writing to config map %s/%s", h.namespace, cmName)
-	}
-	h.lastCmWrite = now
-	return nil
-}
-
-func (h *Manager) ensureConfigMapExists(ctx context.Context, cm *v1.ConfigMap) error {
-	if _, errCr := h.k8sClient.Kubernetes().CoreV1().ConfigMaps(h.namespace).
-		Create(ctx, cm, metav1.CreateOptions{}); errCr != nil {
-		if !apiErrors.IsAlreadyExists(errCr) {
-			return errors.Wrapf(errCr, "creating config map %s/%s", h.namespace, cmName)
-		}
-	}
-	return nil
-}
-
-func (h *Manager) readConfigMap(ctx context.Context) ([]*SensorMetadata, error) {
-	cm, err := h.k8sClient.Kubernetes().CoreV1().ConfigMaps(h.namespace).Get(ctx, cmName, metav1.GetOptions{})
-	if err != nil {
-		return []*SensorMetadata{}, errors.Wrapf(err, "retrieving config map %s/%s", h.namespace, cmName)
-	}
-	data, err := configMapToPastSensorData(cm)
-	if err != nil {
-		return []*SensorMetadata{}, errors.Wrap(err, "converting config map to past sensor data")
-	}
-	return data, nil
+	return false, err
 }
 
 // pruneOldHeritageData reduces the number of elements in the []*PastSensor slice by removing
