@@ -9,10 +9,12 @@ import (
 	// Required for the usage of go:embed below.
 	_ "embed"
 
+	"github.com/go-logr/logr"
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
+	"github.com/stackrox/rox/operator/internal/securedcluster"
 	"github.com/stackrox/rox/operator/internal/securedcluster/scanner"
 	"github.com/stackrox/rox/operator/internal/values/translation"
 	"github.com/stackrox/rox/pkg/crs"
@@ -46,14 +48,15 @@ var (
 // New creates a translator.
 // direct should be an uncached Reader to allow directly
 // reading resources that don't match the caching configuration.
-func New(client ctrlClient.Client, direct ctrlClient.Reader) Translator {
-	return Translator{client: client, direct: direct}
+func New(client ctrlClient.Client, direct ctrlClient.Reader, logger logr.Logger) Translator {
+	return Translator{client: client, direct: direct, logger: logger.WithName("translation")}
 }
 
 // Translator translates and enriches helm values
 type Translator struct {
 	client ctrlClient.Client
 	direct ctrlClient.Reader
+	logger logr.Logger
 }
 
 // Translate translates and enriches helm values
@@ -187,9 +190,51 @@ func (t Translator) getTLSValues(ctx context.Context, sc platform.SecuredCluster
 		}
 		centralCA = string(ca)
 	}
+
+	// Attempt to get the CA bundle from the tls-ca-bundle ConfigMap, which is created by Sensor at runtime
+	// based on data received from Central, and may contain multiple CA certificates.
+	// This is needed so that the Operator can update the ValidatingWebhookConfiguration's caBundle field.
+	caBundle, err := t.getCABundleFromConfigMap(ctx, sc)
+	if err != nil {
+		t.logger.Error(err, "failed to get CA bundle from ConfigMap", "configMap", securedcluster.CABundleConfigMapName)
+	} else if caBundle != "" {
+		centralCA = caBundle
+	}
+
 	v.SetStringMap("ca", map[string]string{"cert": centralCA})
 
 	return &v
+}
+
+// getCABundleFromConfigMap reads the CA bundle from the ConfigMap created by Sensor
+func (t Translator) getCABundleFromConfigMap(ctx context.Context, sc platform.SecuredCluster) (string, error) {
+	const (
+		caBundleKey = "ca-bundle.pem"
+	)
+
+	var configMap corev1.ConfigMap
+	key := ctrlClient.ObjectKey{
+		Namespace: sc.Namespace,
+		Name:      securedcluster.CABundleConfigMapName,
+	}
+
+	if err := t.client.Get(ctx, key, &configMap); err != nil {
+		if k8sErrors.IsNotFound(err) {
+			return "", nil // ConfigMap doesn't exist yet - this is normal for fresh installs
+		}
+		return "", errors.Wrapf(err, "failed to get CA bundle ConfigMap %s", key)
+	}
+
+	caBundlePEM, ok := configMap.Data[caBundleKey]
+	if !ok {
+		return "", errors.Errorf("key %q not found in ConfigMap %s", caBundleKey, key)
+	}
+
+	if caBundlePEM == "" {
+		return "", errors.Errorf("CA bundle is empty in ConfigMap %s", key)
+	}
+
+	return caBundlePEM, nil
 }
 
 func (t Translator) checkRequiredTLSSecrets(ctx context.Context, sc platform.SecuredCluster) (*crs.CRS, error) {
