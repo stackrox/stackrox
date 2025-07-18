@@ -2,6 +2,8 @@ package compliancemanager
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	"github.com/adhocore/gronx"
 	"github.com/pkg/errors"
@@ -435,6 +437,7 @@ func (m *managerImpl) ProcessRescanRequest(ctx context.Context, scanID string) e
 		return err
 	}
 
+	errList := make([]string, 0)
 	for _, c := range clusters {
 		msg := &central.MsgToSensor{
 			Msg: &central.MsgToSensor_ComplianceRequest{
@@ -452,16 +455,17 @@ func (m *managerImpl) ProcessRescanRequest(ctx context.Context, scanID string) e
 				},
 			},
 		}
-		err := m.sensorConnMgr.SendMessage(c.GetClusterId(), msg)
-		if err != nil {
-			log.Errorf("Unable to rescan cluster %s due to message failure: %s", c.GetClusterId(), err)
-			// Update status in DB
-			err = m.updateClusterStatus(ctx, scanConfig.GetId(), c.GetClusterId(), err.Error())
-			if err != nil {
-				log.Error(err)
-				return errors.Errorf("Unable to save scan configuration status for scan configuration %q.", scanConfig.GetScanConfigName())
-			}
+
+		errSendMessage := m.sensorConnMgr.SendMessage(c.GetClusterId(), msg)
+		if errSendMessage != nil {
+			errMsg := fmt.Sprintf("Unable to rescan cluster %s due to message failure: %s", c.GetClusterId(), errSendMessage)
+			log.Error(errMsg)
+			errList = append(errList, errMsg)
 		}
+	}
+
+	if len(errList) > 0 {
+		return errors.New(strings.Join(errList, "\n"))
 	}
 
 	return nil
