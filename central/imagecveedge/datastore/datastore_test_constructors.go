@@ -4,11 +4,10 @@ import (
 	"testing"
 
 	pgStore "github.com/stackrox/rox/central/imagecveedge/datastore/postgres"
-	"github.com/stackrox/rox/central/imagecveedge/search"
 	"github.com/stackrox/rox/pkg/postgres"
 )
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
 func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) DataStore {
-	return New(pgStore.New(pool), search.NewV2(pgStore.New(pool)))
+	return New(pgStore.New(pool))
 }

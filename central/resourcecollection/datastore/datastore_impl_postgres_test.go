@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/heimdalr/dag"
-	"github.com/stackrox/rox/central/resourcecollection/datastore/search"
 	pgStore "github.com/stackrox/rox/central/resourcecollection/datastore/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -41,7 +40,7 @@ func (s *CollectionPostgresDataStoreTestSuite) SetupSuite() {
 	s.testDB = pgtest.ForT(s.T())
 
 	s.store = pgStore.New(s.testDB)
-	ds, qs, err := New(s.store, search.New(s.store))
+	ds, qs, err := New(s.store)
 	s.NoError(err)
 	s.datastore = ds
 	s.qr = qs
