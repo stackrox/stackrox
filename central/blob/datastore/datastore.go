@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/stackrox/rox/central/blob/datastore/search"
 	"github.com/stackrox/rox/central/blob/datastore/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -39,16 +38,14 @@ type Datastore interface {
 }
 
 // NewDatastore creates a new Blob datastore
-func NewDatastore(store store.Store, searcher search.Searcher) Datastore {
+func NewDatastore(store store.Store) Datastore {
 	return &datastoreImpl{
-		store:    store,
-		searcher: searcher,
+		store: store,
 	}
 }
 
 type datastoreImpl struct {
-	store    store.Store
-	searcher search.Searcher
+	store store.Store
 }
 
 // Upsert adds a new blob to the database
@@ -93,7 +90,7 @@ func (d *datastoreImpl) Search(ctx context.Context, query *v1.Query) ([]pkgSearc
 	if !scopeChecker.IsAllowed() {
 		return nil, errox.NotAuthorized
 	}
-	return d.searcher.Search(ctx, query)
+	return d.store.Search(ctx, query)
 }
 
 // SearchIDs searches and return blob IDs
@@ -102,7 +99,12 @@ func (d *datastoreImpl) SearchIDs(ctx context.Context, q *v1.Query) ([]string, e
 	if !scopeChecker.IsAllowed() {
 		return nil, errox.NotAuthorized
 	}
-	return d.searcher.SearchIDs(ctx, q)
+	results, err := d.store.Search(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+	ids := pkgSearch.ResultsToIDs(results)
+	return ids, nil
 }
 
 // SearchMetadata searches and return blob metadata only
@@ -111,5 +113,5 @@ func (d *datastoreImpl) SearchMetadata(ctx context.Context, q *v1.Query) ([]*sto
 	if !scopeChecker.IsAllowed() {
 		return nil, errox.NotAuthorized
 	}
-	return d.searcher.SearchMetadata(ctx, q)
+	return d.store.GetMetadataByQuery(ctx, q)
 }
