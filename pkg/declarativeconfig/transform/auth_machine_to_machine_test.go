@@ -7,7 +7,6 @@ import (
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/protoassert"
-	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -33,7 +32,6 @@ func TestTransformAuthMachineToMachineConfig(t *testing.T) {
 	testMappingValue := "system:serviceaccount:stackrox:config-controller"
 	testRoleName := "Configuration Controller"
 	testConfig := &declarativeconfig.AuthMachineToMachineConfig{
-		ID:                      uuid.NewTestUUID(5).String(),
 		Type:                    testConfigType,
 		TokenExpirationDuration: testTokenExpirationDuration,
 		Mappings: []declarativeconfig.MachineToMachineRoleMapping{
