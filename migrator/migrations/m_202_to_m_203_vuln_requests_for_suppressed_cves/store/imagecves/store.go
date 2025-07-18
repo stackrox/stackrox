@@ -39,6 +39,8 @@ func New(db postgres.DB) Store {
 		nil,
 		nil,
 		targetResource,
+		nil,
+		nil,
 	)
 }
 
