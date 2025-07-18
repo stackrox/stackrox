@@ -1,6 +1,6 @@
 import React, { CSSProperties, ReactElement } from 'react';
 import { Activity } from 'react-feather';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom-v5-compat';
 import { Tooltip } from '@patternfly/react-core';
 
 import { clustersBasePath } from 'routePaths';

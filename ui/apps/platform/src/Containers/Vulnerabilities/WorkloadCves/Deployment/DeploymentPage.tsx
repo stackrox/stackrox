@@ -9,7 +9,7 @@ import {
     TabTitleText,
     Tabs,
 } from '@patternfly/react-core';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom-v5-compat';
 import { gql, useQuery } from '@apollo/client';
 
 import PageTitle from 'Components/PageTitle';

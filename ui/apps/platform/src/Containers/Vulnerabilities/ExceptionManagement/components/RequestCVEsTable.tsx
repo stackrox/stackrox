@@ -11,7 +11,7 @@ import {
 } from '@patternfly/react-core';
 import { ExpandableRowContent, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { gql, useQuery } from '@apollo/client';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom-v5-compat';
 import pluralize from 'pluralize';
 
 import { vulnerabilitiesWorkloadCvesPath } from 'routePaths';

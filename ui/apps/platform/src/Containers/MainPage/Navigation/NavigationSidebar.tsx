@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { Location, matchPath, useLocation } from 'react-router-dom';
+import { Location, matchPath, useLocation } from 'react-router-dom-v5-compat';
 import {
     Nav,
     NavExpandable,

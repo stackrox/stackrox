@@ -1,4 +1,4 @@
-import { Location, matchPath } from 'react-router-dom';
+import { Location, matchPath } from 'react-router-dom-v5-compat';
 import qs, { ParsedQs } from 'qs';
 
 import useCases from 'constants/useCaseTypes';

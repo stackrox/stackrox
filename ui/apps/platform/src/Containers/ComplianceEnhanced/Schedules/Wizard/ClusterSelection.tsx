@@ -1,6 +1,6 @@
 import React, { ReactElement, RefObject, useCallback } from 'react';
 import { FormikContextType, useFormikContext } from 'formik';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom-v5-compat';
 import {
     Alert,
     Bullseye,

@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { Location, useLocation } from 'react-router-dom';
+import { Location, useLocation } from 'react-router-dom-v5-compat';
 import capitalize from 'lodash/capitalize';
 
 import { basePathToLabelMap } from 'routePaths';

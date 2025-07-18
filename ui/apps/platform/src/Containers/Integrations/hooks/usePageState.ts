@@ -1,4 +1,4 @@
-import { useLocation, useMatch } from 'react-router-dom';
+import { useLocation, useMatch } from 'react-router-dom-v5-compat';
 import {
     integrationCreatePath,
     integrationDetailsPath,

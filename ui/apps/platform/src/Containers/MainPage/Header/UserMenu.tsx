@@ -4,7 +4,7 @@ import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { Divider, DropdownItem } from '@patternfly/react-core';
 import initials from 'initials';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom-v5-compat';
 
 import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 import useAnalytics, { INVITE_USERS_MODAL_OPENED } from 'hooks/useAnalytics';
