@@ -358,7 +358,9 @@ jobs:
       - uses: ./.github/actions/handle-tagged-build
 
       - name: Build CLI
-        run: make cli
+        run: \
+          export SKIP_CLI_BUILD=true  # check for built binaries and do not rebuild
+          make cli
 
       - name: Bundle build to preserve permissions
         run: tar -cvzf cli-build.tgz bin
