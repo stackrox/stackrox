@@ -29,7 +29,7 @@ type alertHandlerImpl struct {
 }
 
 func (h *alertHandlerImpl) Name() string {
-	return common.DefaultComponentName(h)
+	return "admissioncontroller.alertHandlerImpl"
 }
 
 func (h *alertHandlerImpl) Start() error {

@@ -56,7 +56,7 @@ type updaterImpl struct {
 }
 
 func (u *updaterImpl) Name() string {
-	return common.DefaultComponentName(u)
+	return "clusterhealth.updaterImpl"
 }
 
 func (u *updaterImpl) Start() error {

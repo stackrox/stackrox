@@ -180,7 +180,7 @@ type detectorImpl struct {
 }
 
 func (d *detectorImpl) Name() string {
-	return common.DefaultComponentName(d)
+	return "detector.detectorImpl"
 }
 
 func (d *detectorImpl) Start() error {

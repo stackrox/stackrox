@@ -53,7 +53,7 @@ type commandHandler struct {
 }
 
 func (h *commandHandler) Name() string {
-	return common.DefaultComponentName(h)
+	return "telemetry.commandHandler"
 }
 
 // DiagnosticConfigurationFunc is a function that modifies the diagnostic configuration.

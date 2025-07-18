@@ -42,7 +42,7 @@ type handlerImpl struct {
 }
 
 func (m *handlerImpl) Name() string {
-	return common.DefaultComponentName(m)
+	return "complianceoperator.handlerImpl"
 }
 
 type scanScheduleConfiguration struct {

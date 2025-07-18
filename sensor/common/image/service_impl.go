@@ -62,7 +62,7 @@ type serviceImpl struct {
 }
 
 func (s *serviceImpl) Name() string {
-	return common.DefaultComponentName(s)
+	return "image.serviceImpl"
 }
 
 func (s *serviceImpl) SetClient(conn grpc.ClientConnInterface) {

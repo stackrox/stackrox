@@ -52,7 +52,7 @@ type nodeInventoryHandlerImpl struct {
 }
 
 func (c *nodeInventoryHandlerImpl) Name() string {
-	return common.DefaultComponentName(c)
+	return "compliance.nodeInventoryHandlerImpl"
 }
 
 func (c *nodeInventoryHandlerImpl) Stopped() concurrency.ReadOnlyErrorSignal {

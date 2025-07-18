@@ -64,7 +64,7 @@ type serviceImpl struct {
 }
 
 func (s *serviceImpl) Name() string {
-	return common.DefaultComponentName(s)
+	return "signal.serviceImpl"
 }
 
 func authFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {

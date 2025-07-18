@@ -43,7 +43,7 @@ type delegatedRegistryImpl struct {
 }
 
 func (d *delegatedRegistryImpl) Name() string {
-	return common.DefaultComponentName(d)
+	return "delegatedregistry.delegatedRegistryImpl"
 }
 
 // NewHandler returns a new instance of Handler.

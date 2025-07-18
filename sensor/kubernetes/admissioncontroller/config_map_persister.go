@@ -41,7 +41,7 @@ type configMapPersister struct {
 }
 
 func (p *configMapPersister) Name() string {
-	return common.DefaultComponentName(p)
+	return "admissioncontroller.configMapPersister"
 }
 
 // NewConfigMapSettingsPersister creates a config persister object for the admission controller.

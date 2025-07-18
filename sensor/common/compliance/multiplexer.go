@@ -22,7 +22,7 @@ type Multiplexer struct {
 }
 
 func (c *Multiplexer) Name() string {
-	return common.DefaultComponentName(c)
+	return "compliance.Multiplexer"
 }
 
 // Stopped returns a signal allowing to check whether the component has been stopped

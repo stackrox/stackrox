@@ -40,7 +40,7 @@ type auditLogCollectionManagerImpl struct {
 }
 
 func (a *auditLogCollectionManagerImpl) Name() string {
-	return common.DefaultComponentName(a)
+	return "compliance.auditLogCollectionManagerImpl"
 }
 
 func (a *auditLogCollectionManagerImpl) Start() error {
