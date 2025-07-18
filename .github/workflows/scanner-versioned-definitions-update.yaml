@@ -171,6 +171,7 @@ jobs:
       run: |
         case "$SCANNER_BUNDLE_VERSION" in
           v1|v2)
+            echo "Running updater with --split for version $SCANNER_BUNDLE_VERSION"
             scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" --split bundles
             ;;
           *)
@@ -269,7 +270,7 @@ jobs:
   upload-definitions:
     needs:
     - build-and-run
-    if: ${{ (failure() || success()) && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') }}
+    # if: ${{ (failure() || success()) && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') }}
     runs-on: ubuntu-latest
     steps:
     # Checkout to run ./.github/actions/download-artifact-with-retry
