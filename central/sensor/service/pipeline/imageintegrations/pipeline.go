@@ -9,7 +9,7 @@ import (
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/enrichment"
 	"github.com/stackrox/rox/central/imageintegration/datastore"
-	iitlscheckcache "github.com/stackrox/rox/central/imageintegration/tlscheckcache"
+	iiTLSCheckCache "github.com/stackrox/rox/central/imageintegration/tlscheckcache"
 	countMetrics "github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/central/sensor/service/common"
@@ -44,7 +44,7 @@ func GetPipeline() pipeline.Fragment {
 		datastore.Singleton(),
 		clusterDatastore.Singleton(),
 		reprocessor.Singleton(),
-		iitlscheckcache.Singleton(),
+		iiTLSCheckCache.Singleton(),
 	)
 }
 
