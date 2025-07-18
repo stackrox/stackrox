@@ -26,7 +26,7 @@ import { AccessControlQueryAction } from '../accessControlPaths';
 
 import PermissionsTable from './PermissionsTable';
 import usePermissions from '../../../hooks/usePermissions';
-import { TraitsOriginLabel } from '../TraitsOriginLabel';
+import { TraitsOriginLabel } from '../../TraitsOriginLabel';
 
 export type PermissionSetFormProps = {
     isActionable: boolean;
