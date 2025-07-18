@@ -19,6 +19,12 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 ### Removed Features
 
+- ROX-29994: Removing the following roxctl sensor generate options that have been marked as deprecated
+since 4.7 and prior.
+  - --create-admission-controller
+  - --admission-controller-enabled
+  - --slim-collector
+
 ### Deprecated Features
 
 ### Technical Changes

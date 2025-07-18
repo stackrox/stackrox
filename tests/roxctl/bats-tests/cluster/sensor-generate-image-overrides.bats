@@ -78,11 +78,3 @@ any_version_slim="${any_version}[0-9]+\-slim"
   generate_bundle k8s "--collector-image-repository=example.com/stackrox/collector:3.2.1" --name "$cluster_name"
   assert_failure
 }
-
-@test "roxctl sensor generate: should succeed if collector slim is requested" {
-  generate_bundle k8s "--slim-collector=true" --name "$cluster_name"
-  assert_success
-  assert_line --partial "The --slim-collector flag has been deprecated and will be removed in future versions of roxctl. It will be ignored from version 4.7 onwards."
-  assert_bundle_registry "$out_dir" "collector" "$(registry_from_flavor)/collector:$any_version"
-  delete_cluster "$cluster_name"
-}
