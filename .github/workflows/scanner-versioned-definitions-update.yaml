@@ -167,6 +167,7 @@ jobs:
       run: |
         scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" "definitions/${SCANNER_BUNDLE_VERSION}"
     # Starting with ACS 4.8.1, the --split flag is no longer required for v2 bundle.
+    # TODO: backport ROX-26366 changes to 4.8
     - name: Run updater (multi bundle)
       run: |
         case "$SCANNER_BUNDLE_VERSION" in
