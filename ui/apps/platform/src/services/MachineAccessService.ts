@@ -1,5 +1,6 @@
 import axios from './instance';
 import { Empty } from './types';
+import { Traits } from '../types/traits.proto';
 
 export type MachineConfigType = 'GENERIC' | 'GITHUB_ACTIONS' | 'KUBE_SERVICE_ACCOUNT';
 
@@ -15,6 +16,7 @@ export type AuthMachineToMachineConfig = {
     type: MachineConfigType;
     issuer: string;
     mappings: MachineConfigMapping[];
+    traits?: Traits;
 };
 
 const machineAccessURL = `/v1/auth/m2m`;
