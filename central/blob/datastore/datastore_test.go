@@ -10,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stackrox/rox/central/blob/datastore/search"
 	"github.com/stackrox/rox/central/blob/datastore/store"
 	"github.com/stackrox/rox/central/reports/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -42,7 +41,7 @@ func (s *blobTestSuite) SetupSuite() {
 	s.ctx = sac.WithAllAccess(context.Background())
 	s.testDB = pgtest.ForT(s.T())
 	s.store = store.New(s.testDB.DB)
-	s.datastore = NewDatastore(s.store, search.New(s.store))
+	s.datastore = NewDatastore(s.store)
 }
 
 func (s *blobTestSuite) SetupTest() {
